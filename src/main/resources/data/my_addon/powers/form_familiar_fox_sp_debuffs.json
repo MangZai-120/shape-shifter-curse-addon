@@ -1,0 +1,157 @@
+{
+    "type": "origins:multiple",
+    "exhaustion": {
+        "type": "origins:modify_exhaustion",
+        "modifier": {
+            "name": "Low Mana Exhaustion",
+            "operation": "multiply_base",
+            "value": 1.0
+        },
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:inverted",
+                    "condition": {
+                        "type": "shape-shifter-curse:has_mana_percent",
+                        "mana_percent": 0.03
+                    }
+                },
+                {
+                    "type": "shape-shifter-curse:has_mana",
+                    "mana": 1.0
+                }
+            ]
+        }
+    },
+    "stage_1_damage": {
+        "type": "origins:modify_damage_dealt",
+        "modifier": {
+            "name": "Low Mana Weakness 1",
+            "operation": "multiply_total",
+            "value": -0.2
+        },
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:inverted",
+                    "condition": {
+                        "type": "shape-shifter-curse:has_mana_percent",
+                        "mana_percent": 0.1
+                    }
+                },
+                {
+                    "type": "shape-shifter-curse:has_mana_percent",
+                    "mana_percent": 0.03
+                },
+                {
+                    "type": "shape-shifter-curse:has_mana",
+                    "mana": 1.0
+                }
+            ]
+        }
+    },
+    "stage_1_speed": {
+        "type": "origins:attribute",
+        "modifier": {
+            "attribute": "minecraft:generic.movement_speed",
+            "operation": "multiply_total",
+            "value": -0.2,
+            "name": "Low Mana Slowness 1"
+        },
+        "condition": {
+             "type": "origins:and",
+             "conditions": [
+                 {
+                     "type": "origins:inverted",
+                     "condition": {
+                         "type": "shape-shifter-curse:has_mana_percent",
+                         "mana_percent": 0.1
+                     }
+                 },
+                 {
+                     "type": "shape-shifter-curse:has_mana_percent",
+                     "mana_percent": 0.03
+                 },
+                 {
+                     "type": "shape-shifter-curse:has_mana",
+                     "mana": 1.0
+                 }
+             ]
+        }
+    },
+    "stage_2_damage": {
+        "type": "origins:modify_damage_dealt",
+        "modifier": {
+            "name": "Low Mana Weakness 2",
+            "operation": "multiply_total",
+            "value": -0.6
+        },
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:inverted",
+                    "condition": {
+                        "type": "shape-shifter-curse:has_mana_percent",
+                        "mana_percent": 0.03
+                    }
+                },
+                {
+                    "type": "shape-shifter-curse:has_mana",
+                    "mana": 1.0
+                }
+            ]
+        }
+    },
+    "stage_2_speed": {
+        "type": "origins:attribute",
+        "modifier": {
+            "attribute": "minecraft:generic.movement_speed",
+            "operation": "multiply_total",
+            "value": -0.5,
+            "name": "Low Mana Slowness 2"
+        },
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:inverted",
+                    "condition": {
+                        "type": "shape-shifter-curse:has_mana_percent",
+                        "mana_percent": 0.03
+                    }
+                },
+                {
+                    "type": "shape-shifter-curse:has_mana",
+                    "mana": 1.0
+                }
+            ]
+        }
+    },
+    "stage_2_mining": {
+        "type": "origins:modify_break_speed",
+        "modifier": {
+            "name": "Low Mana Mining Fatigue",
+            "operation": "multiply_total",
+            "value": -0.6
+        },
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:inverted",
+                    "condition": {
+                        "type": "shape-shifter-curse:has_mana_percent",
+                        "mana_percent": 0.03
+                    }
+                },
+                {
+                    "type": "shape-shifter-curse:has_mana",
+                    "mana": 1.0
+                }
+            ]
+        }
+    }
+}

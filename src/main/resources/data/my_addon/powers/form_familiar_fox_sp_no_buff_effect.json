@@ -1,0 +1,24 @@
+{
+  "type": "origins:effect_immunity",
+  "effects": [
+    "minecraft:poison",
+    "minecraft:hunger",
+    "minecraft:speed",
+    "minecraft:haste",
+    "minecraft:strength",
+    "minecraft:regeneration",
+    "minecraft:fire_resistance",
+    "minecraft:water_breathing",
+    "minecraft:resistance",
+    "minecraft:health_boost",
+    "minecraft:jump_boost",
+    "minecraft:wither",
+    "minecraft:absorption",
+    "minecraft:slowness",
+    "minecraft:weakness",
+    "minecraft:mining_fatigue",
+    "minecraft:nausea",
+    "minecraft:blindness",
+    "ssc_addon:fox_fire_burn"
+  ]
+}

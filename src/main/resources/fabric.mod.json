@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "ssc-addon",
+  "version": "${version}",
+  "name": "幻形者诅咒附属",
+  "description": "An addon for Shape Shifter Curse mod.",
+  "authors": [
+    "Me"
+  ],
+  "contact": {
+    "homepage": "https://example.com/",
+    "sources": "https://github.com/onixary/shape-shifter-curse-fabric"
+  },
+  "license": "MIT",
+  "icon": "assets/ssc-addon/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon"
+    ],
+    "client": [
+      "net.onixary.shapeShifterCurseFabric.ssc_addon.client.SscAddonClient"
+    ]
+  },
+  "mixins": [
+    "my_addon.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.21",
+    "minecraft": "~1.20.1",
+    "java": ">=17",
+    "fabric": "*",
+    "shape-shifter-curse": "*"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}

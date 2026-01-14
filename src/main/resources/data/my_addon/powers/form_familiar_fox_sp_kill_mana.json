@@ -1,0 +1,34 @@
+{
+    "type": "origins:self_action_on_kill",
+    "entity_action": {
+        "type": "origins:and",
+        "actions": [
+            {
+                "type": "shape-shifter-curse:gain_mana",
+                "mana": 10
+            },
+            {
+                "type": "origins:if_else",
+                "condition": {
+                    "type": "origins:status_effect",
+                    "effect": "ssc_addon:blue_fire_ring"
+                },
+                "if_action": {
+                    "type": "origins:and",
+                    "actions": [
+                        {
+                            "type": "shape-shifter-curse:gain_mana",
+                            "mana": 5
+                        },
+                        {
+                            "type": "origins:heal",
+                            "amount": 3
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "name": "灵魂收割",
+    "description": "击杀目标后恢复10点魔力。"
+}

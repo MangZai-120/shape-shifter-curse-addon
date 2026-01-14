@@ -1,0 +1,15 @@
+{
+    "type": "origins:action_on_callback",
+    "entity_action_added": {
+        "type": "origins:execute_command",
+        "command": "tag @s add is_beast_form"
+    },
+    "entity_action_removed": {
+        "type": "origins:execute_command",
+        "command": "tag @s remove is_beast_form"
+    },
+    "entity_action_respawned": {
+        "type": "origins:execute_command",
+        "command": "tag @s add is_beast_form"
+    }
+}

@@ -1,0 +1,126 @@
+{
+  "groupIndex": 5,
+  "phase": "PHASE_SP",
+  "bodyType": "FERAL",
+  "isCustomForm": false,
+  "originID": "my_addon:form_familiar_fox_sp",
+  "hasSlowFall": false,
+  "canSneakRush": false,
+  "canRushJump": false,
+  "anim": {
+    "shape-shifter-curse:idle_state": {
+      "controllerType": "shape-shifter-curse:sneak_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:form_feral_common_idle"
+      },
+      "sneakAnim": {
+        "animID": "shape-shifter-curse:form_feral_common_sneak_idle"
+      }
+    },
+    "shape-shifter-curse:walk_state": {
+      "controllerType": "shape-shifter-curse:sneak_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:form_feral_common_walk",
+        "speed": 1.2
+      },
+      "sneakAnim": {
+        "animID": "shape-shifter-curse:form_feral_common_sneak_walk"
+      }
+    },
+    "shape-shifter-curse:sprint_state": {
+      "controllerType": "shape-shifter-curse:sneak_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:form_feral_common_run",
+        "speed": 2.3
+      },
+      "sneakAnim": {
+        "animID": "shape-shifter-curse:form_feral_common_sneak_walk"
+      }
+    },
+    "shape-shifter-curse:jump_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:form_feral_common_jump"
+      }
+    },
+    "shape-shifter-curse:fall_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:form_feral_common_fall"
+      }
+    },
+    "shape-shifter-curse:swim_state": {
+      "controllerType": "shape-shifter-curse:swim_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:form_feral_common_float"
+      },
+      "swimAnim": {
+        "animID": "shape-shifter-curse:form_feral_common_swim"
+      }
+    },
+    "shape-shifter-curse:sleep_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:form_feral_common_sleep"
+      }
+    },
+    "shape-shifter-curse:flying_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:form_feral_common_elytra_fly"
+      }
+    },
+    "shape-shifter-curse:fall_flying_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:form_feral_common_elytra_fly"
+      }
+    },
+    "shape-shifter-curse:mining_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:form_feral_common_dig"
+      }
+    },
+    "shape-shifter-curse:use_item_state": {
+      "controllerType": "shape-shifter-curse:use_item_anim_controller",
+      "idleAnim": {
+        "animID": "shape-shifter-curse:form_feral_common_idle"
+      },
+      "walkAnim": {
+        "animID": "shape-shifter-curse:form_feral_common_idle"
+      },
+      "sneakIdleAnim": {
+        "animID": "shape-shifter-curse:form_feral_common_sneak_idle"
+      },
+      "sneakWalkAnim": {
+        "animID": "shape-shifter-curse:form_feral_common_sneak_walk"
+      }
+    },
+    "shape-shifter-curse:attack_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:form_feral_common_attack"
+      }
+    },
+    "shape-shifter-curse:climb_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:form_feral_common_climb"
+      }
+    },
+    "shape-shifter-curse:ride_state": {
+      "controllerType": "shape-shifter-curse:ride_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:familiar_fox_3_riding"
+      },
+      "rideVehicleAnim": {
+        "animID": "shape-shifter-curse:form_feral_common_sneak_idle"
+      }
+    }
+  },
+  "animDefault": {
+      "speed": 1.0,
+      "fade": 2
+  }
+}

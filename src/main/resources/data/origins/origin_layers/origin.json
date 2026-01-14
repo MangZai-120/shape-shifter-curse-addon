@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "order": 0,
+  "enabled": true,
+  "origins": [
+    "my_addon:form_familiar_fox_sp"
+  ],
+  "allow_random": true,
+  "allow_random_unchoosable": false,
+  "hidden": false
+}

@@ -1,0 +1,56 @@
+{
+	"format_version": "1.8.0",
+    "animID": "idle",
+    "controllerType": "none",
+	"animations": {
+		"idle": {
+			"loop": true
+		},
+        "shape-shifter-curse:form_feral_common_idle": {
+			"loop": true
+		},
+        "shape-shifter-curse:form_feral_common_walk": {
+            "loop": true
+        },
+        "shape-shifter-curse:form_feral_common_run": {
+            "loop": true
+        },
+        "shape-shifter-curse:form_feral_common_jump": {
+            "loop": "hold_on_last_frame"
+        },
+        "shape-shifter-curse:form_feral_common_fall": {
+            "loop": true
+        },
+        "shape-shifter-curse:form_feral_common_swim": {
+            "loop": true
+        },
+        "shape-shifter-curse:form_feral_common_float": {
+            "loop": true
+        },
+        "shape-shifter-curse:form_feral_common_sleep": {
+            "loop": true
+        },
+        "shape-shifter-curse:form_feral_common_elytra_fly": {
+            "loop": true
+        },
+        "shape-shifter-curse:form_feral_common_dig": {
+            "loop": true
+        },
+        "shape-shifter-curse:form_feral_common_attack": {
+            "loop": "hold_on_last_frame"
+        },
+        "shape-shifter-curse:form_feral_common_sneak_idle": {
+            "loop": true
+        },
+        "shape-shifter-curse:form_feral_common_sneak_walk": {
+            "loop": true
+        },
+        "shape-shifter-curse:form_feral_common_climb": {
+            "loop": true
+        },
+        "shape-shifter-curse:familiar_fox_3_riding": {
+            "loop": true
+        }
+	},
+	"geckolib_format_version": 2
+}
