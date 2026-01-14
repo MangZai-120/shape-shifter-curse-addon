@@ -80,10 +80,6 @@
                         "change": 0
                     },
                     {
-                        "type": "origins:execute_command",
-                        "command": "tellraw @s [{\"text\":\"[System] Blue Fire Ring: OFF (Cooldown Started)\",\"color\":\"yellow\"}]"
-                    },
-                    {
                         "type": "origins:play_sound",
                         "sound": "minecraft:block.fire.extinguish",
                         "volume": 0.5,
@@ -124,10 +120,6 @@
                             }
                         },
                         {
-                            "type": "origins:execute_command",
-                            "command": "tellraw @s [{\"text\":\"[System] Blue Fire Ring: ON\",\"color\":\"aqua\"}]"
-                        },
-                        {
                             "type": "origins:play_sound",
                             "sound": "minecraft:item.firecharge.use",
                             "volume": 0.5,
@@ -136,8 +128,7 @@
                     ]
                 },
                 "else_action": {
-                    "type": "origins:execute_command",
-                    "command": "tellraw @s [{\"text\":\"[System] Not enough Mana! (Need 99)\",\"color\":\"red\"}]"
+                    "type": "origins:nothing"
                 }
             }
         },
@@ -233,10 +224,6 @@
                                 "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_cooldown_timer",
                                 "operation": "set",
                                 "change": 400
-                            },
-                            {
-                                "type": "origins:execute_command",
-                                "command": "tellraw @s [{\"text\":\"[System] Mana Low! Ring OFF.\",\"color\":\"red\"}]"
                             },
                             {
                                 "type": "origins:play_sound",

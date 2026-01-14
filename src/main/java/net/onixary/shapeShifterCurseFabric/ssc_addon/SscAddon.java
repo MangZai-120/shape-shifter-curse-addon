@@ -10,6 +10,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.BlueFireRingEffect;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.command.SscAddonCommands;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.action.SscAddonActions;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.condition.SscAddonConditions;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
@@ -36,6 +37,7 @@ public class SscAddon implements ModInitializer {
         });
         
         SscAddonActions.register();
+        SscAddonConditions.register();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             SscAddonCommands.register(dispatcher);
