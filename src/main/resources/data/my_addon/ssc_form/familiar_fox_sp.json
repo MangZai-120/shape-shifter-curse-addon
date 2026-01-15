@@ -1,6 +1,7 @@
 {
   "groupIndex": 5,
-  "phase": "PHASE_3",
+  "phase": "PHASE_SP",
+  "status": "codex.status.my_addon.SP_status",
   "bodyType": "FERAL",
   "isCustomForm": false,
   "originID": "my_addon:form_familiar_fox_sp",

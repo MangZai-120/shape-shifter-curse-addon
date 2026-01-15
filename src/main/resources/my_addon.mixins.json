@@ -4,7 +4,8 @@
   "package": "net.onixary.shapeShifterCurseFabric.ssc_addon.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "SscAddonEntityIgnitionMixin"
+    "SscAddonEntityIgnitionMixin",
+    "InstinctBarRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

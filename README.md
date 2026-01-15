@@ -1,1 +1,0 @@
-# shape-shifter-curse-addon

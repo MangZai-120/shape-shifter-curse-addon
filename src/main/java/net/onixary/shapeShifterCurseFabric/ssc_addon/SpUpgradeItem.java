@@ -22,6 +22,12 @@ import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.text.Text;
 import net.minecraft.client.item.TooltipContext;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManager;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
 import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import net.minecraft.registry.RegistryKeys;
@@ -43,7 +49,7 @@ public class SpUpgradeItem extends Item {
         // Registers the SP evolution for Familiar Fox
         // From: shape-shifter-curse:form_familiar_fox_3
         // To:   my_addon:form_familiar_fox_sp
-        registerUpgrade("shape-shifter-curse", "form_familiar_fox_3", "my_addon", "form_familiar_fox_sp");
+        registerUpgrade("shape-shifter-curse", "familiar_fox_3", "my_addon", "familiar_fox_sp");
         
         // Future forms can be added here easily like:
         // registerUpgrade("shape-shifter-curse", "form_axolotl_3", "my_addon", "axolotl_sp");
@@ -92,17 +98,27 @@ public class SpUpgradeItem extends Item {
                 }
             } else if (isValidForm && isCursedMoon) {
                 // Success: Base Form + Cursed Moon
-                OriginComponent component = ModComponents.ORIGIN.get(player);
-                Identifier layerId = new Identifier("shape-shifter-curse", "cursed_origin");
-                
-                Origin targetOrigin = OriginRegistry.get(targetFormId);
-                if (targetOrigin != null) {
-                    component.setOrigin(OriginLayers.getLayer(layerId), targetOrigin);
-                    component.sync();
-                    
+                // OriginComponent component = ModComponents.ORIGIN.get(player);
+                // Identifier layerId = new Identifier("shape-shifter-curse", "cursed_origin");
+                //
+                // Origin targetOrigin = OriginRegistry.get(targetFormId);
+                // if (targetOrigin != null) {
+                //     // component.setOrigin(OriginLayers.getLayer(layerId), targetOrigin);
+                //     // component.sync();
+                //
+                //
+                //     player.sendMessage(Text.translatable("message.ssc_addon.evolution.success").formatted(Formatting.GREEN, Formatting.ITALIC), false);
+                //     world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0F, 1.0F);
+                //
+                //     if (!player.getAbilities().creativeMode) {
+                //         stack.decrement(1);
+                //     }
+                // }
+                PlayerFormBase formBase = RegPlayerForms.getPlayerForm(targetFormId);
+                if (formBase != null) {
+                    TransformManager.handleDirectTransform(player, formBase, false);
                     player.sendMessage(Text.translatable("message.ssc_addon.evolution.success").formatted(Formatting.GREEN, Formatting.ITALIC), false);
                     world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0F, 1.0F);
-
                     if (!player.getAbilities().creativeMode) {
                         stack.decrement(1);
                     }
@@ -147,27 +163,48 @@ public class SpUpgradeItem extends Item {
     }
 
     private boolean isAlreadySP(PlayerEntity player) {
-        OriginComponent component = ModComponents.ORIGIN.get(player);
-        for (Identifier targetFormId : UPGRADE_MAP.values()) {
-            if (component.getOrigins().values().stream().anyMatch(o -> o.getIdentifier().equals(targetFormId))) {
+        // OriginComponent component = ModComponents.ORIGIN.get(player);
+        // for (Identifier targetFormId : UPGRADE_MAP.values()) {
+        //     if (component.getOrigins().values().stream().anyMatch(o -> o.getIdentifier().equals(targetFormId))) {
+        //         return true;
+        //     }
+        // }
+        // return false;
+        Identifier playerFormID = getPlayerFormID(player);
+        for (Identifier id : UPGRADE_MAP.values()) {
+            if (id.equals(playerFormID)) {
                 return true;
             }
         }
         return false;
     }
 
+    private Identifier getPlayerFormID(PlayerEntity player) {
+        PlayerFormComponent playerFormComponent = RegPlayerFormComponent.PLAYER_FORM.get(player);
+        return playerFormComponent.getCurrentForm().FormID;
+    }
+
     private Identifier getTargetFormId(PlayerEntity player) {
-        OriginComponent component = ModComponents.ORIGIN.get(player);
-        // Iterate through all origins the player has to see if any match our upgrade map
+        // OriginComponent component = ModComponents.ORIGIN.get(player);
+        // // Iterate through all origins the player has to see if any match our upgrade map
+        // for (Map.Entry<Identifier, Identifier> entry : UPGRADE_MAP.entrySet()) {
+        //     Identifier currentFormId = entry.getKey();
+        //     Identifier targetFormId = entry.getValue();
+        //
+        //     // Check if player has the 'current' origin
+        //     // We check specifically on the cursed_origin layer, or generally if layers aren't strict in the map
+        //     // For safety, let's check if the player possesses this origin in ANY layer,
+        //     // though typically it's the main layer.
+        //     if (component.getOrigins().values().stream().anyMatch(o -> o.getIdentifier().equals(currentFormId))) {
+        //         return targetFormId;
+        //     }
+        // }
+        // return null;
+        Identifier playerFormID = getPlayerFormID(player);
         for (Map.Entry<Identifier, Identifier> entry : UPGRADE_MAP.entrySet()) {
             Identifier currentFormId = entry.getKey();
             Identifier targetFormId = entry.getValue();
-            
-            // Check if player has the 'current' origin
-            // We check specifically on the cursed_origin layer, or generally if layers aren't strict in the map
-            // For safety, let's check if the player possesses this origin in ANY layer, 
-            // though typically it's the main layer.
-            if (component.getOrigins().values().stream().anyMatch(o -> o.getIdentifier().equals(currentFormId))) {
+            if (playerFormID.equals(currentFormId)) {
                 return targetFormId;
             }
         }
