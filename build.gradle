@@ -129,7 +129,4 @@ jar {
     from("LICENSE") {
         rename { "${it}_${project.base.archivesName.get()}"}
     }
-    if (project.hasProperty('channel') && project.hasProperty('build_version')) {
-        archiveClassifier.set("${project.findProperty('channel')}.${project.findProperty('build_version')}")
-    }
 }
