@@ -1,0 +1,21 @@
+{
+    "type": "origins:action_over_time",
+    "interval": 20,
+    "entity_action": {
+        "type": "origins:gain_air",
+        "value": 60
+    },
+    "condition": {
+        "type": "origins:and",
+        "conditions": [
+            {
+                "type": "origins:in_rain"
+            },
+            {
+                "type": "origins:exposed_to_sky"
+            }
+        ]
+    },
+    "name": "Rain Hydration",
+    "description": "Slowly gain wetness (air) when exposed to rain."
+}

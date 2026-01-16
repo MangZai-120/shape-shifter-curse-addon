@@ -1,0 +1,207 @@
+{
+    "type": "origins:multiple",
+    "cooldown": {
+        "type": "origins:cooldown",
+        "cooldown": 2400,
+        "hud_render": {
+            "should_render": true,
+            "bar_index": 5
+        }
+    },
+    "trigger": {
+        "type": "origins:action_over_time",
+        "interval": 5,
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:resource",
+                    "resource": "*:*_cooldown",
+                    "comparison": "==",
+                    "compare_to": 0
+                },
+                {
+                    "type": "origins:health",
+                    "comparison": "<=",
+                    "compare_to": 8.0,
+                    "inverted": false
+                },
+                {
+                    "type": "origins:dead",
+                    "inverted": true
+                },
+                {
+                    "type": "origins:status_effect",
+                    "effect": "minecraft:regeneration",
+                    "inverted": true
+                }
+            ]
+        },
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:trigger_cooldown",
+                    "power": "*:*_cooldown"
+                },
+                {
+                    "type": "origins:apply_status_effect",
+                    "effect": {
+                        "effect": "minecraft:blindness",
+                        "duration": 100,
+                        "amplifier": 0,
+                        "show_particles": false,
+                        "show_icon": true
+                    }
+                },
+                {
+                    "type": "origins:apply_status_effect",
+                    "effect": {
+                        "effect": "minecraft:nausea",
+                        "duration": 100,
+                        "amplifier": 0,
+                        "show_particles": false,
+                        "show_icon": true
+                    }
+                },
+                {
+                    "type": "origins:execute_command",
+                    "command": "tellraw @a[distance=..50] {\"text\":\"[SP Axolotl] Feign Death Triggered!\",\"color\":\"gray\"}"
+                },
+                {
+                     "type": "origins:execute_command",
+                     "command": "damage @e[type=!player,distance=..30] 0"
+                }, 
+                {
+                    "type": "origins:execute_command",
+                    "command": "execute as @e[type=!player,distance=..32] run data remove entity @s Target"
+                },
+                {
+                    "type": "origins:execute_command",
+                    "command": "execute as @e[type=!player,distance=..32] run data remove entity @s AngryAt"
+                },
+                {
+                    "type": "origins:apply_status_effect",
+                    "effect": {
+                        "effect": "minecraft:regeneration",
+                        "duration": 100,
+                        "amplifier": 6,
+                        "show_particles": true,
+                        "show_icon": true
+                    }
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_active_state",
+                    "change": 100
+                }
+            ]
+        }
+    },
+    "active_state": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 100,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "active_state_decay": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "entity_action": {
+            "type": "origins:change_resource",
+            "resource": "*:*_active_state",
+            "change": -1
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_active_state",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "damage_reduction": {
+        "type": "origins:modify_damage_taken",
+        "modifier": {
+            "operation": "multiply_total",
+            "value": -0.9
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_active_state",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "immobilize": {
+         "type": "origins:modify_velocity",
+         "modifier": {
+             "value": -1.0,
+             "operation": "multiply_total"
+         },
+         "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_active_state",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "prevent_jump": {
+        "type": "origins:modify_jump",
+        "modifier": {
+            "operation": "multiply_total",
+            "value": -1.0
+        },
+         "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_active_state",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "pose": {
+        "type": "origins:model_pose",
+        "pose": "sleeping",
+         "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_active_state",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "prevent_target": {
+        "type": "origins:action_over_time",
+        "interval": 20,
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_active_state",
+            "comparison": ">",
+            "compare_to": 0
+        },
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:execute_command",
+                    "command": "execute as @e[type=!player,distance=..32] run data remove entity @s Target"
+                },
+                {
+                    "type": "origins:execute_command",
+                    "command": "execute as @e[type=!player,distance=..32] run data remove entity @s AngryAt"
+                }
+            ]
+        }
+    },
+    "reset_death": {
+        "type": "origins:action_on_callback",
+        "entity_action_respawned": {
+            "type": "origins:change_resource",
+            "resource": "*:*_cooldown",
+            "change": -2400
+        }
+    },
+    "name": "Feign Death",
+    "description": "When health drops to 4 hearts or less, play dead to heal and avoid aggro. 120s cooldown (resets on death)."
+}

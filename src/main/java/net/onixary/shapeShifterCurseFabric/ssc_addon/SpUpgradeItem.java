@@ -50,6 +50,7 @@ public class SpUpgradeItem extends Item {
         // From: shape-shifter-curse:form_familiar_fox_3
         // To:   my_addon:form_familiar_fox_sp
         registerUpgrade("shape-shifter-curse", "familiar_fox_3", "my_addon", "familiar_fox_sp");
+        registerUpgrade("shape-shifter-curse", "form_axolotl_3", "my_addon", "form_axolotl_sp");
         
         // Future forms can be added here easily like:
         // registerUpgrade("shape-shifter-curse", "form_axolotl_3", "my_addon", "axolotl_sp");
