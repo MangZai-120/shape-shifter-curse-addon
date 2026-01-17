@@ -7,6 +7,7 @@ import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.FoxFireBurnEffect;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.BlueFireRingEffect;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.PlayingDeadEffect;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormPhase;
@@ -28,6 +29,7 @@ public class SscAddon implements ModInitializer {
 
     public static final StatusEffect FOX_FIRE_BURN = new FoxFireBurnEffect();
     public static final StatusEffect BLUE_FIRE_RING = new BlueFireRingEffect();
+    public static final StatusEffect PLAYING_DEAD = new PlayingDeadEffect();
     
     public static final Item SP_UPGRADE_THING = new SpUpgradeItem(new Item.Settings().maxCount(1));
     public static final Item PORTABLE_MOISTURIZER = new PortableMoisturizerItem(new Item.Settings().maxCount(1));
@@ -37,6 +39,7 @@ public class SscAddon implements ModInitializer {
     @Override
     public void onInitialize() {
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "fox_fire_burn"), FOX_FIRE_BURN);
+        Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "playing_dead"), PLAYING_DEAD);
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "blue_fire_ring"), BLUE_FIRE_RING);
         
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "sp_upgrade_thing"), SP_UPGRADE_THING);

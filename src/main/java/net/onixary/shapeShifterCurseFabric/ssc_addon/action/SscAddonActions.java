@@ -16,8 +16,11 @@ import net.minecraft.util.Pair;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.EntityPose;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SscIgnitedEntityAccessor;
+
+import net.minecraft.entity.effect.StatusEffects;
 
 public class SscAddonActions {
 
@@ -88,6 +91,61 @@ public class SscAddonActions {
                     Vec3d oldVelocity = target.getVelocity();
                     target.damage(target.getDamageSources().create(damageTypeKey, null, actor), amount);
                     target.setVelocity(oldVelocity);
+                }
+            }));
+            
+        registerEntity(new ActionFactory<>(new Identifier("my_addon", "force_pose"),
+            new SerializableData()
+                .add("pose", SerializableDataTypes.STRING),
+            (data, entity) -> {
+                String poseName = data.getString("pose");
+                try {
+                    EntityPose pose = EntityPose.valueOf(poseName.toUpperCase());
+                    entity.setPose(pose);
+                    if (pose == EntityPose.SWIMMING) {
+                        entity.setSwimming(true);
+                    }
+                } catch (IllegalArgumentException ignored) {}
+            }));
+
+        registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "clear_aggro"),
+            new SerializableData()
+                .add("radius", SerializableDataTypes.DOUBLE, 64.0),
+            (data, entity) -> {
+                System.out.println("SSC ADDON DEBUG: Play Dead / Clear Aggro Triggered!");
+                double radius = data.getDouble("radius");
+                Box box = entity.getBoundingBox().expand(radius);
+                entity.getWorld().getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class, box, mob -> mob.getTarget() == entity).forEach(mob -> {
+                    mob.setTarget(null);
+                    mob.setAttacker(null);
+                });
+            }));
+
+        registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "trigger_play_dead"),
+            new SerializableData(),
+            (data, entity) -> {
+                if (entity instanceof LivingEntity living) {
+                    // 1. Effects
+                    // Duration 6s = 120 ticks
+                    int duration = 120;
+                    // visible=false to hide icon
+                    living.addStatusEffect(new StatusEffectInstance(SscAddon.PLAYING_DEAD, duration, 0, false, false, false));
+                    living.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, duration, 2, false, true));
+                    living.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, duration, 0, false, false));
+                    living.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, duration, 10, false, false));
+                    
+                    // 2. Clear Aggro
+                    double radius = 64.0;
+                    Box box = living.getBoundingBox().expand(radius);
+                    living.getWorld().getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class, box, mob -> mob.getTarget() == living).forEach(mob -> {
+                        mob.setTarget(null);
+                        mob.setAttacker(null);
+                    });
+                    
+                    // 3. Force Pose
+                    living.setPose(EntityPose.SLEEPING);
+                    
+                    System.out.println("SSC ADDON: Triggered Play Dead (Composite Java Action)");
                 }
             }));
     }

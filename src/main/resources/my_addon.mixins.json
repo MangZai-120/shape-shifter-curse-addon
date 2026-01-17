@@ -6,7 +6,9 @@
   "refmap": "ssc-addon.refmap.json",
   "mixins": [
     "SscAddonEntityIgnitionMixin",
-    "InstinctBarRendererMixin"
+    "InstinctBarRendererMixin",
+    "SscAddonEntityMixin",
+    "MobEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1

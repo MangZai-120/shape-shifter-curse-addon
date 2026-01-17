@@ -32,13 +32,22 @@ public class SscAddonClient implements ClientModInitializer {
         CATEGORY
     );
 
+    public static final KeyBinding KEY_PLAY_DEAD = new KeyBinding(
+        "key.ssc_addon.play_dead", 
+        InputUtil.Type.KEYSYM, 
+        GLFW.GLFW_KEY_Z, 
+        CATEGORY
+    );
+
     @Override
     public void onInitializeClient() {
+        System.out.println("SSC ADDON DEBUG: Registering Client KeyBindings...");
         // SP Familiar Fox Keys
         KeyBindingHelper.registerKeyBinding(KEY_FOX_FIRE);
         KeyBindingHelper.registerKeyBinding(KEY_BLUE_RING);
         
         // SP Axolotl Keys
         KeyBindingHelper.registerKeyBinding(KEY_VORTEX);
+        KeyBindingHelper.registerKeyBinding(KEY_PLAY_DEAD);
     }
 }
