@@ -2,41 +2,57 @@
     "groupIndex": 5,
     "phase": "PHASE_SP",
     "status": "codex.status.my_addon.SP_status",
-    "bodyType": "FERAL",
+    "bodyType": "NORMAL",
     "isCustomForm": false,
     "originID": "my_addon:form_axolotl_sp",
     "hasSlowFall": false,
     "canSneakRush": false,
-    "canRushJump": false,
+    "canRushJump": true,
     "canStepWater": false,
     "anim": {
         "shape-shifter-curse:idle_state": {
             "controllerType": "shape-shifter-curse:sneak_anim_controller",
-            "anim": { "animID": "shape-shifter-curse:form_axolotl_idle_water" },
-            "sneakAnim": { "animID": "shape-shifter-curse:form_axolotl_idle_water" }
+            "anim": { "animID": "shape-shifter-curse:axolotl_3_idle" },
+            "sneakAnim": { "animID": "shape-shifter-curse:axolotl_3_crawling_idle" }
         },
         "shape-shifter-curse:walk_state": {
             "controllerType": "shape-shifter-curse:sneak_anim_controller",
-            "anim": { "animID": "shape-shifter-curse:form_axolotl_walk" },
-            "sneakAnim": { "animID": "shape-shifter-curse:form_axolotl_walk" }
+            "anim": { "animID": "shape-shifter-curse:axolotl_3_walk" },
+            "sneakAnim": { "animID": "shape-shifter-curse:axolotl_3_crawling" }
         },
         "shape-shifter-curse:sprint_state": {
             "controllerType": "shape-shifter-curse:sneak_anim_controller",
-            "anim": { "animID": "shape-shifter-curse:form_axolotl_swim", "speed": 1.5 },
-            "sneakAnim": { "animID": "shape-shifter-curse:form_axolotl_swim" }
+            "anim": { "animID": "shape-shifter-curse:axolotl_3_run" },
+            "sneakAnim": { "animID": "shape-shifter-curse:axolotl_3_crawling" }
         },
         "shape-shifter-curse:swim_state": {
             "controllerType": "shape-shifter-curse:swim_anim_controller",
-            "anim": { "animID": "shape-shifter-curse:form_axolotl_idle_water" },
-            "swimAnim": { "animID": "shape-shifter-curse:form_axolotl_swim" }
+            "anim": { "animID": "shape-shifter-curse:axolotl_2_swimming_idle" },
+            "swimAnim": { "animID": "shape-shifter-curse:axolotl_2_swimming" }
+        },
+        "shape-shifter-curse:jump_state": {
+            "controllerType": "shape-shifter-curse:rush_jump_anim_controller",
+            "anim": { "animID": "shape-shifter-curse:axolotl_3_jump" },
+            "sneakAnim": { "animID": "shape-shifter-curse:axolotl_2_crawling_jump" },
+            "rushJumpAnim": { "animID": "shape-shifter-curse:axolotl_3_rush_jump", "speed": 1.0, "transitionTime": 10 },
+            "sneakRushJumpAnim": { "animID": "shape-shifter-curse:axolotl_2_crawling_jump" }
+        },
+        "shape-shifter-curse:fall_state": {
+            "controllerType": "shape-shifter-curse:sneak_anim_controller",
+            "anim": { "animID": "shape-shifter-curse:axolotl_3_jump" },
+            "sneakAnim": { "animID": "shape-shifter-curse:axolotl_3_crawling_idle" }
         },
         "shape-shifter-curse:sleep_state": {
             "controllerType": "shape-shifter-curse:one_anim_controller",
-            "anim": { "animID": "shape-shifter-curse:form_axolotl_play_dead" }
+            "anim": { "animID": "shape-shifter-curse:form_feral_common_sleep" }
         },
         "shape-shifter-curse:attack_state": {
-            "controllerType": "shape-shifter-curse:one_anim_controller",
-            "anim": { "animID": "shape-shifter-curse:form_axolotl_kiss" }
+            "controllerType": "shape-shifter-curse:sneak_anim_controller",
+            "sneakAnim": { "animID": "shape-shifter-curse:axolotl_2_crawling_attack_once" }
+        },
+        "shape-shifter-curse:mining_state": {
+            "controllerType": "shape-shifter-curse:sneak_anim_controller",
+            "sneakAnim": { "animID": "shape-shifter-curse:axolotl_2_crawling_tool_swing" }
         }
     },
     "animDefault": {

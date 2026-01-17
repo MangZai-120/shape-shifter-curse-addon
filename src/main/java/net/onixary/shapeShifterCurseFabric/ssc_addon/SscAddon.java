@@ -20,6 +20,8 @@ import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.item.ItemGroups;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.WaterSpearItem;
 import net.minecraft.item.ToolMaterials;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Axolotl3;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_FamiliarFox3;
 
 public class SscAddon implements ModInitializer {
 
@@ -48,13 +50,13 @@ public class SscAddon implements ModInitializer {
         
         SscAddonActions.register();
         SscAddonConditions.register();
+        
+        // Register SP Forms with custom animation controllers
+        RegPlayerForms.registerPlayerForm(new Form_Axolotl3(new Identifier("my_addon", "axolotl_sp")).setPhase(PlayerFormPhase.PHASE_SP));
+        RegPlayerForms.registerPlayerForm(new Form_FamiliarFox3(new Identifier("my_addon", "familiar_fox_sp")).setPhase(PlayerFormPhase.PHASE_SP));
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             SscAddonCommands.register(dispatcher);
         });
-
-        // Register SP Forms
-        RegPlayerForms.registerPlayerForm(new PlayerFormBase(new Identifier("my_addon", "axolotl_sp")).setPhase(PlayerFormPhase.PHASE_SP));
-        RegPlayerForms.registerPlayerForm(new PlayerFormBase(new Identifier("my_addon", "familiar_fox_sp")).setPhase(PlayerFormPhase.PHASE_SP));
     }
 }

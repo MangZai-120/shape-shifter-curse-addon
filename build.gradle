@@ -92,6 +92,9 @@ dependencies {
 
     // Shape Shifter Curse Main Mod
     modImplementation "net.onixary:shape-shifter-curse-fabric:1.8.1"
+    
+    // Player Animator
+    modImplementation "dev.kosmx.player-anim:player-animation-lib-fabric:${project.player_anim}"
 
     // Apoli & Dependencies
     modImplementation "com.github.apace100:apoli:${project.apoli_version}"
