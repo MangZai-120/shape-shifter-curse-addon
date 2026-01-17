@@ -1,0 +1,83 @@
+{
+    "type": "origins:multiple",
+    "craft_spear": {
+        "type": "origins:active_self",
+        "cooldown": 100,
+        "hud_render": {
+            "should_render": false
+        },
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:gain_air",
+                    "value": -30
+                },
+                {
+                    "type": "origins:equipped_item_action",
+                    "equipment_slot": "offhand",
+                    "action": {
+                        "type": "origins:consume",
+                        "amount": 1
+                    }
+                },
+                {
+                    "type": "origins:give",
+                    "stack": {
+                        "item": "ssc_addon:water_spear",
+                        "amount": 1
+                    }
+                },
+                {
+                    "type": "origins:play_sound",
+                    "sound": "minecraft:entity.axolotl.splash",
+                    "volume": 1.0,
+                    "pitch": 1.2
+                },
+                {
+                    "type": "origins:play_sound",
+                    "sound": "minecraft:block.pointed_dripstone.drip_water",
+                    "volume": 1.5,
+                    "pitch": 0.8
+                },
+                {
+                    "type": "origins:spawn_particles",
+                    "particle": "minecraft:splash",
+                    "count": 20,
+                    "speed": 0.2,
+                    "force": true,
+                    "spread": {
+                        "x": 0.5,
+                        "y": 0.5,
+                        "z": 0.5
+                    }
+                }
+            ]
+        },
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:air",
+                    "comparison": ">=",
+                    "compare_to": 30
+                },
+                {
+                    "type": "origins:equipped_item",
+                    "equipment_slot": "offhand",
+                    "item_condition": {
+                        "type": "origins:ingredient",
+                        "ingredient": {
+                            "item": "minecraft:arrow"
+                        }
+                    }
+                }
+            ]
+        },
+        "key": {
+            "key": "key.use"
+        }
+    },
+    "name": "Water Spear Crafting",
+    "description": "Right-click while holding an arrow in offhand to craft a Water Spear. Costs 10% wetness and 1 arrow. Water Spear disappears on hit or landing, deals area damage and applies Slowness II for 5 seconds."
+}

@@ -7,10 +7,10 @@
         "shape-shifter-curse:form_axolotl_3_sneaking_speed",
         "shape-shifter-curse:form_axolotl_3_sprinting_speed",
         "shape-shifter-curse:form_axolotl_3_sprinting_cost_oxygen",
-        "shape-shifter-curse:form_axolotl_3_sprinting_sneaking_water_explode",
         "shape-shifter-curse:form_axolotl_3_sprinting_jump",
         "shape-shifter-curse:form_axolotl_3_sprinting_jump_high",
         "shape-shifter-curse:form_axolotl_3_sprinting_attack",
+        "my_addon:form_axolotl_sp_water_ball",
         "shape-shifter-curse:form_axolotl_3_sprint_step_height",
         "shape-shifter-curse:form_axolotl_3_particle",
         "shape-shifter-curse:form_axolotl_3_keep_sneaking_no_air",
@@ -49,7 +49,10 @@
         "shape-shifter-curse:form_axolotl_sound_key",
         "my_addon:form_axolotl_sp_rain_wetness",
         "my_addon:form_axolotl_sp_natural_regen_boost",
-        "my_addon:form_axolotl_sp_play_dead"
+        "my_addon:form_axolotl_sp_play_dead",
+        "my_addon:form_axolotl_sp_water_spear",
+        "my_addon:form_axolotl_sp_vortex_impact",
+        "shape-shifter-curse:beast_form_tag"
     ],
     "icon": {
         "item": "minecraft:axolotl_bucket"

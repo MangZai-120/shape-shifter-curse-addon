@@ -18,6 +18,8 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.item.ItemGroups;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.item.WaterSpearItem;
+import net.minecraft.item.ToolMaterials;
 
 public class SscAddon implements ModInitializer {
 
@@ -25,6 +27,8 @@ public class SscAddon implements ModInitializer {
     public static final StatusEffect BLUE_FIRE_RING = new BlueFireRingEffect();
     
     public static final Item SP_UPGRADE_THING = new SpUpgradeItem(new Item.Settings().maxCount(1));
+    // 60 durability like wooden sword, auto-consumed over 60 seconds
+    public static final Item WATER_SPEAR = new WaterSpearItem(new Item.Settings().maxCount(1).maxDamage(60));
 
     @Override
     public void onInitialize() {
@@ -32,9 +36,14 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "blue_fire_ring"), BLUE_FIRE_RING);
         
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "sp_upgrade_thing"), SP_UPGRADE_THING);
+        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "water_spear"), WATER_SPEAR);
         
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.FOOD_AND_DRINK).register(content -> {
             content.add(SP_UPGRADE_THING);
+        });
+        
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.COMBAT).register(content -> {
+            content.add(WATER_SPEAR);
         });
         
         SscAddonActions.register();

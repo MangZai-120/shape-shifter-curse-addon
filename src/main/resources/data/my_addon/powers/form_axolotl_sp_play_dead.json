@@ -23,7 +23,7 @@
                 {
                     "type": "origins:health",
                     "comparison": "<=",
-                    "compare_to": 8.0,
+                    "compare_to": 4.0,
                     "inverted": false
                 },
                 {

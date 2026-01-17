@@ -5,6 +5,7 @@
     "bodyType": "FERAL",
     "isCustomForm": false,
     "originID": "my_addon:form_axolotl_sp",
+    "originLayerID": "shape-shifter-curse:cursed_origin",
     "hasSlowFall": false,
     "canSneakRush": false,
     "canRushJump": false,

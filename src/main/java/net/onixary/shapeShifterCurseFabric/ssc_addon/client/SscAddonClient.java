@@ -9,6 +9,7 @@ import org.lwjgl.glfw.GLFW;
 public class SscAddonClient implements ClientModInitializer {
     public static final String CATEGORY = "key.categories.ssc_addon";
     
+    // SP Familiar Fox Keys
     public static final KeyBinding KEY_FOX_FIRE = new KeyBinding(
         "key.ssc_addon.fox_fire", 
         InputUtil.Type.KEYSYM, 
@@ -22,10 +23,22 @@ public class SscAddonClient implements ClientModInitializer {
         GLFW.GLFW_KEY_G, 
         CATEGORY
     );
+    
+    // SP Axolotl Keys
+    public static final KeyBinding KEY_VORTEX = new KeyBinding(
+        "key.ssc_addon.vortex", 
+        InputUtil.Type.KEYSYM, 
+        GLFW.GLFW_KEY_G, 
+        CATEGORY
+    );
 
     @Override
     public void onInitializeClient() {
+        // SP Familiar Fox Keys
         KeyBindingHelper.registerKeyBinding(KEY_FOX_FIRE);
         KeyBindingHelper.registerKeyBinding(KEY_BLUE_RING);
+        
+        // SP Axolotl Keys
+        KeyBindingHelper.registerKeyBinding(KEY_VORTEX);
     }
 }

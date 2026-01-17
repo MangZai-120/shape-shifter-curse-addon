@@ -1,32 +1,30 @@
 {
-  "model": "my_addon:geo/axolotl_sp.geo.json",
-  "texture": "my_addon:textures/axolotl_sp/axolotl_sp.png",
-  "texture_mask": "my_addon:textures/axolotl_sp/axolotl_sp_colormask.png",
+  "model": "orif-defaults:geo/form_axolotl_3.geo.json",
+  "texture": "orif-defaults:textures/form_axolotl_3/form_axolotl_3.png",
+  "texture_mask": "orif-defaults:textures/form_axolotl_3/form_axolotl_3_colormask.png",
   "hidden": [
-    "head",
-    "body",
-    "leftArm",
-    "rightArm",
     "leftLeg",
     "rightLeg",
-    "hat",
-    "jacket",
+    "rightPants",
+    "leftPants",
     "leftSleeve",
     "rightSleeve",
-    "leftPants",
-    "rightPants"
+    "leftArm",
+    "rightArm",
+    "body",
+    "jacket",
+    "head",
+    "hat"
   ],
   "tail_chain": {
-    "tail": [
-      0,
-      1,
-      2,
-      3
-    ]
+    "tail": [0, 1, 2, 3]
   },
   "tail_chain_head": {
-    "tail_head_a": [
-      0
-    ]
+    "tail_head_a": [0],
+    "tail_head_b": [0],
+    "tail_head_c": [0],
+    "tail_head_d": [0],
+    "tail_head_e": [0],
+    "tail_head_f": [0]
   }
 }

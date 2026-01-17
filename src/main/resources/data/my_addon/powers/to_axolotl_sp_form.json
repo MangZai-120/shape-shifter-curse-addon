@@ -1,0 +1,26 @@
+{
+  "type": "origins:action_on_item_use",
+  "entity_action": {
+    "type": "shape-shifter-curse:transform_to_form",
+    "form_id": "my_addon:axolotl_sp"
+  },
+  "item_action": {
+    "type": "origins:consume",
+    "amount": 1
+  },
+  "item_condition": {
+    "type": "origins:ingredient",
+    "ingredient": {
+      "item": "shape-shifter-curse:powerful_catalyst"
+    }
+  },
+  "condition": {
+    "type": "origins:and",
+    "conditions": [
+      {
+        "type": "origins:origin",
+        "origin": "shape-shifter-curse:form_axolotl_3"
+      }
+    ]
+  }
+}

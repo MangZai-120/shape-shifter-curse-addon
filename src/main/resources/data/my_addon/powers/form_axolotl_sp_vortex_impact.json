@@ -1,0 +1,372 @@
+{
+    "type": "origins:multiple",
+    "cooldown_timer": {
+        "type": "origins:cooldown",
+        "cooldown": 400,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "vortex_state": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 60,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "key_activation": {
+        "type": "origins:active_self",
+        "cooldown": 400,
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:gain_air",
+                    "value": -60
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_vortex_state",
+                    "operation": "set",
+                    "change": 60
+                },
+                {
+                    "type": "origins:play_sound",
+                    "sound": "minecraft:entity.player.splash.high_speed",
+                    "volume": 1.5,
+                    "pitch": 0.5
+                },
+                {
+                    "type": "origins:play_sound",
+                    "sound": "minecraft:entity.elder_guardian.curse",
+                    "volume": 0.6,
+                    "pitch": 1.5
+                }
+            ]
+        },
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:air",
+                    "comparison": ">=",
+                    "compare_to": 60
+                },
+                {
+                    "type": "origins:resource",
+                    "resource": "*:*_vortex_state",
+                    "comparison": "==",
+                    "compare_to": 0
+                }
+            ]
+        },
+        "key": {
+            "key": "key.ssc_addon.vortex"
+        }
+    },
+    "vortex_decay": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "entity_action": {
+            "type": "origins:change_resource",
+            "resource": "*:*_vortex_state",
+            "operation": "add",
+            "change": -1
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_vortex_state",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "damage_reduction_active": {
+        "type": "origins:modify_damage_taken",
+        "modifier": {
+            "operation": "multiply_total",
+            "value": -0.3
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_vortex_state",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "knockback_immunity": {
+        "type": "origins:action_when_damage_taken",
+        "entity_action": {
+            "type": "origins:add_velocity",
+            "y": 0,
+            "set": true
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_vortex_state",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "speed_reduction_during_vortex": {
+        "type": "origins:modify_attribute",
+        "attribute": "minecraft:generic.movement_speed",
+        "modifier": {
+            "operation": "multiply_total",
+            "value": -0.5,
+            "name": "Vortex speed reduction"
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_vortex_state",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "prevent_push": {
+        "type": "origins:prevent_entity_collision",
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_vortex_state",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "pull_effect": {
+        "type": "origins:action_over_time",
+        "interval": 2,
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:resource",
+                    "resource": "*:*_vortex_state",
+                    "comparison": ">",
+                    "compare_to": 1
+                }
+            ]
+        },
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:spawn_particles",
+                    "particle": "minecraft:bubble",
+                    "count": 40,
+                    "speed": 0.6,
+                    "force": true,
+                    "spread": {
+                        "x": 6.0,
+                        "y": 2.5,
+                        "z": 6.0
+                    }
+                },
+                {
+                    "type": "origins:spawn_particles",
+                    "particle": {
+                        "type": "minecraft:dust",
+                        "params": "0.2 0.6 0.9 2.0"
+                    },
+                    "count": 30,
+                    "speed": 0.4,
+                    "force": true,
+                    "spread": {
+                        "x": 5.0,
+                        "y": 2.0,
+                        "z": 5.0
+                    }
+                },
+                {
+                    "type": "origins:area_of_effect",
+                    "radius": 10.0,
+                    "bientity_action": {
+                        "type": "origins:and",
+                        "actions": [
+                            {
+                                "type": "origins:add_velocity",
+                                "x": 0,
+                                "y": 0.12,
+                                "z": -0.6,
+                                "space": "local_horizontal_normalized",
+                                "set": false
+                            },
+                            {
+                                "type": "origins:target_action",
+                                "action": {
+                                    "type": "origins:spawn_particles",
+                                    "particle": "minecraft:bubble_pop",
+                                    "count": 5,
+                                    "speed": 0.1,
+                                    "force": true,
+                                    "spread": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    "bientity_condition": {
+                        "type": "origins:and",
+                        "conditions": [
+                            {
+                                "type": "origins:target_condition",
+                                "condition": {
+                                    "type": "origins:living"
+                                }
+                            },
+                            {
+                                "type": "origins:target_condition",
+                                "condition": {
+                                    "type": "origins:entity_type",
+                                    "entity_type": "minecraft:player"
+                                },
+                                "inverted": true
+                            },
+                            {
+                                "type": "origins:target_condition",
+                                "condition": {
+                                    "type": "origins:tamed"
+                                },
+                                "inverted": true
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "pull_sound": {
+        "type": "origins:action_over_time",
+        "interval": 10,
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_vortex_state",
+            "comparison": ">",
+            "compare_to": 1
+        },
+        "entity_action": {
+            "type": "origins:play_sound",
+            "sound": "minecraft:entity.fishing_bobber.splash",
+            "volume": 0.8,
+            "pitch": 0.6
+        }
+    },
+    "final_explosion": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_vortex_state",
+            "comparison": "==",
+            "compare_to": 1
+        },
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:play_sound",
+                    "sound": "minecraft:entity.generic.explode",
+                    "volume": 1.0,
+                    "pitch": 1.2
+                },
+                {
+                    "type": "origins:play_sound",
+                    "sound": "minecraft:entity.axolotl.splash",
+                    "volume": 1.5,
+                    "pitch": 0.5
+                },
+                {
+                    "type": "origins:spawn_particles",
+                    "particle": "minecraft:splash",
+                    "count": 150,
+                    "speed": 1.0,
+                    "force": true,
+                    "spread": {
+                        "x": 8.0,
+                        "y": 4.0,
+                        "z": 8.0
+                    }
+                },
+                {
+                    "type": "origins:spawn_particles",
+                    "particle": "minecraft:explosion",
+                    "count": 8,
+                    "speed": 0.1,
+                    "force": true,
+                    "spread": {
+                        "x": 4.0,
+                        "y": 2.0,
+                        "z": 4.0
+                    }
+                },
+                {
+                    "type": "origins:area_of_effect",
+                    "radius": 10.0,
+                    "bientity_action": {
+                        "type": "origins:and",
+                        "actions": [
+                            {
+                                "type": "origins:add_velocity",
+                                "x": 0,
+                                "y": 1.5,
+                                "z": 2.0,
+                                "space": "local_horizontal_normalized",
+                                "set": true
+                            },
+                            {
+                                "type": "origins:damage",
+                                "amount": 20.0,
+                                "damage_type": "minecraft:mob_attack"
+                            },
+                            {
+                                "type": "origins:target_action",
+                                "action": {
+                                    "type": "origins:apply_effect",
+                                    "effect": {
+                                        "effect": "minecraft:slowness",
+                                        "duration": 80,
+                                        "amplifier": 2,
+                                        "is_ambient": false,
+                                        "show_particles": true,
+                                        "show_icon": true
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    "bientity_condition": {
+                        "type": "origins:and",
+                        "conditions": [
+                            {
+                                "type": "origins:target_condition",
+                                "condition": {
+                                    "type": "origins:living"
+                                }
+                            },
+                            {
+                                "type": "origins:target_condition",
+                                "condition": {
+                                    "type": "origins:entity_type",
+                                    "entity_type": "minecraft:player"
+                                },
+                                "inverted": true
+                            },
+                            {
+                                "type": "origins:target_condition",
+                                "condition": {
+                                    "type": "origins:tamed"
+                                },
+                                "inverted": true
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "name": "Vortex Impact",
+    "description": "Create a vortex that pulls enemies for 3 seconds, then knockback and deal massive damage. 30% damage reduction while active. Costs 20% wetness."
+}
