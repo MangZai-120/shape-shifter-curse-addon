@@ -51,7 +51,7 @@
   "power.my_addon.form_axolotl_sp_water_spear.name": "水矛制作",
   "power.my_addon.form_axolotl_sp_water_spear.description": "副手持箭时，蹲下+右键可制作一根水矛（三叉戟）。消耗10%湿润值和1支箭。水矛命中敌人时施加缓慢II效果5秒。",
   "power.my_addon.form_axolotl_sp_vortex_impact.name": "涡流冲击",
-  "power.my_addon.form_axolotl_sp_vortex_impact.description": "以自身为中心创建涡流，持续3秒将周围敌人吸往自己身边，结束时击飞并造成20点伤害。技能期间减少30%受到的伤害。消耗20%湿润值。",
+  "power.my_addon.form_axolotl_sp_vortex_impact.description": "以自身为中心创建涡流，持续3秒将周围敌人吸往自己身边，结束时击飞并造成12点伤害。技能期间减少30%受到的伤害。消耗20%湿润值。",
   "key.ssc_addon.water_ball": "强化水流爆破",
   "key.ssc_addon.vortex": "涡流冲击",
   "origin.my_addon.form_axolotl_sp.name": "SP美西螈",

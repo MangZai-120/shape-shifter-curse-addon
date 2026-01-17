@@ -50,7 +50,7 @@
   "power.my_addon.form_axolotl_sp_water_spear.name": "Water Spear Crafting",
   "power.my_addon.form_axolotl_sp_water_spear.description": "Sneak + Right Click with an Arrow in offhand to craft a Water Spear (Trident). Consumes 10% Moisture and 1 Arrow. Water Spear applies Slowness II for 5s on hit.",
   "power.my_addon.form_axolotl_sp_vortex_impact.name": "Vortex Impact",
-  "power.my_addon.form_axolotl_sp_vortex_impact.description": "Create a vortex around yourself, pulling enemies in for 3s, then launching them and dealing 20 damage. Reduces incoming damage by 30% during skill. Consumes 20% Moisture.",
+  "power.my_addon.form_axolotl_sp_vortex_impact.description": "Create a vortex around yourself, pulling enemies in for 3s, then launching them and dealing 12 damage. Reduces incoming damage by 30% during skill. Consumes 20% Moisture.",
   "key.ssc_addon.water_ball": "Enhanced Water Burst",
   "key.ssc_addon.vortex": "Vortex Impact",
   "origin.my_addon.form_axolotl_sp.name": "SP Axolotl",
