@@ -109,6 +109,13 @@ The **Axolotl Moisturizer** is a lifesaver for this form.
 - **强化水流爆破**：你的主动水流攻击造成的伤害远高于标准形态。
 - **涡流冲击**：吸附敌人并造成高额伤害的主动技能，释放期间自己减速50%，免疫30%的伤害。
 - **水矛**：副手拿箭右键可获得一根持续一分钟的水矛，命中可造成伤害并附带减速效果，小范围内的敌人也会受到额外伤害。
+
+### Risks (Changes from Old Form)
+### 风险（与旧形态的变化）
+
+None
+无
+
 ---
 *Tutorial updated for Addon Version - January 2026*
 *附属版教程已更新 - 2026年1月*
