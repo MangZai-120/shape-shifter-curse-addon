@@ -1,0 +1,1000 @@
+[18:15:16] [Render thread/INFO]: Created: 1024x1024x4 minecraft:textures/atlas/blocks.png-atlas
+[18:15:17] [Render thread/INFO]: Created: 256x256x4 minecraft:textures/atlas/signs.png-atlas
+[18:15:17] [Render thread/INFO]: Created: 512x512x4 minecraft:textures/atlas/banner_patterns.png-atlas
+[18:15:17] [Render thread/INFO]: Created: 512x512x4 minecraft:textures/atlas/shield_patterns.png-atlas
+[18:15:17] [Render thread/INFO]: Created: 1024x1024x4 minecraft:textures/atlas/armor_trims.png-atlas
+[18:15:17] [Render thread/INFO]: Created: 256x256x4 minecraft:textures/atlas/chest.png-atlas
+[18:15:17] [Render thread/INFO]: Created: 128x64x4 minecraft:textures/atlas/decorated_pot.png-atlas
+[18:15:17] [Render thread/INFO]: Created: 512x256x4 minecraft:textures/atlas/beds.png-atlas
+[18:15:17] [Render thread/INFO]: Created: 512x256x4 minecraft:textures/atlas/shulker_boxes.png-atlas
+[18:15:17] [Render thread/WARN]: Method overwrite conflict for isHidden in mixins.iris.compat.sodium.json:copyEntity.ModelPartMixin from mod iris, previously written by dev.tr7zw.firstperson.mixins.ModelPartMixin. Skipping method.
+[18:15:17] [Render thread/WARN]: Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2 in the specified shader program.
+[18:15:17] [Render thread/WARN]: Shader moonlightmoonlight_markertext_alpha_color could not find sampler named Sampler2 in the specified shader program.
+[18:15:17] [Render thread/WARN]: Shader moonlightmoonlight_markertext_alpha_color could not find uniform named IViewRotMat in the specified shader program.
+[18:15:17] [Render thread/INFO]: Created: 512x256x0 minecraft:textures/atlas/particles.png-atlas
+[18:15:17] [Render thread/INFO]: Created: 256x256x0 minecraft:textures/atlas/paintings.png-atlas
+[18:15:17] [Render thread/INFO]: Created: 1024x1024x0 minecraft:textures/atlas/mob_effects.png-atlas
+[18:15:17] [Render thread/INFO]: Created: 256x256x0 moonlight:textures/atlas/map_markers.png-atlas
+[18:15:17] [Render thread/ERROR]: Mixin apply for mod ssc-addon failed my_addon.mixins.json:OriginFurMixin from mod ssc-addon -> net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur: org.spongepowered.asm.mixin.transformer.throwables.InvalidMixinException @Shadow method getGeoModel in my_addon.mixins.json:OriginFurMixin from mod ssc-addon was not located in the target class net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur. Using refmap ssc-addon.refmap.json
+org.spongepowered.asm.mixin.transformer.throwables.InvalidMixinException: @Shadow method getGeoModel in my_addon.mixins.json:OriginFurMixin from mod ssc-addon was not located in the target class net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur. Using refmap ssc-addon.refmap.json
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachSpecialMethod(MixinPreProcessorStandard.java:436) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachShadowMethod(MixinPreProcessorStandard.java:412) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachMethods(MixinPreProcessorStandard.java:340) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attach(MixinPreProcessorStandard.java:299) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.createContextFor(MixinPreProcessorStandard.java:277) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinInfo.createContextFor(MixinInfo.java:1292) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinApplicatorStandard.apply(MixinApplicatorStandard.java:203) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.apply(TargetClassContext.java:437) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.applyMixins(TargetClassContext.java:418) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:352) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:237) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:202) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:435) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:336) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:231) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:119) ~[fabric-loader-0.17.3.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$1.method_14491(OriginalFurClient.java:145) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at net.minecraft.class_4013.method_29490(class_4013.java:15) ~[client-intermediary.jar:?]
+	at java.util.concurrent.CompletableFuture$UniRun.tryFire(CompletableFuture.java:808) ~[?:?]
+	at java.util.concurrent.CompletableFuture$Completion.run(CompletableFuture.java:503) ~[?:?]
+	at net.minecraft.class_4014.method_18365(class_4014.java:69) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1255.method_18859(class_1255.java:156) ~[client-intermediary.jar:?]
+	at net.minecraft.class_4093.method_18859(class_4093.java:23) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1255.method_16075(class_1255.java:130) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1255.method_5383(class_1255.java:115) ~[client-intermediary.jar:?]
+	at net.minecraft.class_310.method_1523(class_310.java:1175) ~[client-intermediary.jar:?]
+	at net.minecraft.class_310.method_1514(class_310.java:802) ~[client-intermediary.jar:?]
+	at net.minecraft.client.main.Main.main(Main.java:250) ~[%e5%b9%bb%e5%bd%a2%e8%80%85%e8%af%85%e5%92%92%e6%b5%8b%e8%af%95.jar:?]
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:506) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23) ~[fabric-loader-0.17.3.jar:?]
+[18:15:17] [Render thread/INFO]: Caught error loading resourcepacks, removing all selected resourcepacks
+java.util.concurrent.CompletionException: java.lang.RuntimeException: Mixin transformation of net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur failed
+	at java.util.concurrent.CompletableFuture.wrapInCompletionException(CompletableFuture.java:323) ~[?:?]
+	at java.util.concurrent.CompletableFuture.encodeThrowable(CompletableFuture.java:359) ~[?:?]
+	at java.util.concurrent.CompletableFuture.completeThrowable(CompletableFuture.java:364) ~[?:?]
+	at java.util.concurrent.CompletableFuture$UniRun.tryFire(CompletableFuture.java:812) ~[?:?]
+	at java.util.concurrent.CompletableFuture$Completion.run(CompletableFuture.java:503) ~[?:?]
+	at net.minecraft.class_4014.method_18365(class_4014.java:69) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1255.method_18859(class_1255.java:156) ~[client-intermediary.jar:?]
+	at net.minecraft.class_4093.method_18859(class_4093.java:23) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1255.method_16075(class_1255.java:130) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1255.method_5383(class_1255.java:115) ~[client-intermediary.jar:?]
+	at net.minecraft.class_310.method_1523(class_310.java:1175) ~[client-intermediary.jar:?]
+	at net.minecraft.class_310.method_1514(class_310.java:802) ~[client-intermediary.jar:?]
+	at net.minecraft.client.main.Main.main(Main.java:250) ~[%e5%b9%bb%e5%bd%a2%e8%80%85%e8%af%85%e5%92%92%e6%b5%8b%e8%af%95.jar:?]
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:506) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23) ~[fabric-loader-0.17.3.jar:?]
+Caused by: java.lang.RuntimeException: Mixin transformation of net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur failed
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:440) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:336) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:231) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:119) ~[fabric-loader-0.17.3.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$1.method_14491(OriginalFurClient.java:145) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at net.minecraft.class_4013.method_29490(class_4013.java:15) ~[client-intermediary.jar:?]
+	at java.util.concurrent.CompletableFuture$UniRun.tryFire(CompletableFuture.java:808) ~[?:?]
+	... 12 more
+Caused by: org.spongepowered.asm.mixin.transformer.throwables.MixinTransformerError: An unexpected critical error was encountered
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:381) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:237) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:202) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:435) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:336) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:231) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:119) ~[fabric-loader-0.17.3.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$1.method_14491(OriginalFurClient.java:145) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at net.minecraft.class_4013.method_29490(class_4013.java:15) ~[client-intermediary.jar:?]
+	at java.util.concurrent.CompletableFuture$UniRun.tryFire(CompletableFuture.java:808) ~[?:?]
+	... 12 more
+Caused by: org.spongepowered.asm.mixin.throwables.MixinApplyError: Mixin [my_addon.mixins.json:OriginFurMixin from mod ssc-addon] from phase [DEFAULT] in config [my_addon.mixins.json] FAILED during APPLY
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.handleMixinError(MixinProcessor.java:686) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.handleMixinApplyError(MixinProcessor.java:637) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:368) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:237) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:202) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:435) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:336) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:231) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:119) ~[fabric-loader-0.17.3.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$1.method_14491(OriginalFurClient.java:145) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at net.minecraft.class_4013.method_29490(class_4013.java:15) ~[client-intermediary.jar:?]
+	at java.util.concurrent.CompletableFuture$UniRun.tryFire(CompletableFuture.java:808) ~[?:?]
+	... 12 more
+Caused by: org.spongepowered.asm.mixin.transformer.throwables.InvalidMixinException: @Shadow method getGeoModel in my_addon.mixins.json:OriginFurMixin from mod ssc-addon was not located in the target class net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur. Using refmap ssc-addon.refmap.json
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachSpecialMethod(MixinPreProcessorStandard.java:436) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachShadowMethod(MixinPreProcessorStandard.java:412) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachMethods(MixinPreProcessorStandard.java:340) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attach(MixinPreProcessorStandard.java:299) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.createContextFor(MixinPreProcessorStandard.java:277) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinInfo.createContextFor(MixinInfo.java:1292) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinApplicatorStandard.apply(MixinApplicatorStandard.java:203) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.apply(TargetClassContext.java:437) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.applyMixins(TargetClassContext.java:418) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:352) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:237) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:202) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:435) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:336) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:231) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:119) ~[fabric-loader-0.17.3.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$1.method_14491(OriginalFurClient.java:145) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at net.minecraft.class_4013.method_29490(class_4013.java:15) ~[client-intermediary.jar:?]
+	at java.util.concurrent.CompletableFuture$UniRun.tryFire(CompletableFuture.java:808) ~[?:?]
+	... 12 more
+[18:15:17] [Render thread/INFO]: Found non-pack entry 'D:\HMCL-3.5.8 (1)\.minecraft\versions\幻形者诅咒测试\resourcepacks\零雾构想 基岩版：官方光追、灵动视效', ignoring
+[18:15:17] [Render thread/INFO]: Found non-pack entry 'D:\HMCL-3.5.8 (1)\.minecraft\versions\幻形者诅咒测试\resourcepacks\零雾构想 旧版本中使用', ignoring
+[18:15:17] [Render thread/INFO]: Reloading ResourceManager: vanilla, Moonlight Mods Dynamic Assets, fabric (additionalentityattributes, apoli, appleskin, azurelib, caffeineconfig, calio, cardinal-components, cardinal-components-base, cardinal-components-block, cardinal-components-chunk, cardinal-components-entity, cardinal-components-item, cardinal-components-level, cardinal-components-scoreboard, cardinal-components-world, cloth-config, fabric-api, fabric-api-base, fabric-api-lookup-api-v1, fabric-biome-api-v1, fabric-block-api-v1, fabric-block-view-api-v2, fabric-blockrenderlayer-v1, fabric-client-tags-api-v1, fabric-command-api-v1, fabric-command-api-v2, fabric-commands-v0, fabric-containers-v0, fabric-content-registries-v0, fabric-convention-tags-v1, fabric-crash-report-info-v1, fabric-data-attachment-api-v1, fabric-data-generation-api-v1, fabric-dimensions-v1, fabric-entity-events-v1, fabric-events-interaction-v0, fabric-events-lifecycle-v0, fabric-game-rule-api-v1, fabric-item-api-v1, fabric-item-group-api-v1, fabric-key-binding-api-v1, fabric-keybindings-v0, fabric-language-kotlin, fabric-lifecycle-events-v1, fabric-loot-api-v2, fabric-loot-tables-v1, fabric-message-api-v1, fabric-mining-level-api-v1, fabric-model-loading-api-v1, fabric-models-v0, fabric-networking-api-v1, fabric-networking-v0, fabric-object-builder-api-v1, fabric-particles-v1, fabric-recipe-api-v1, fabric-registry-sync-v0, fabric-renderer-api-v1, fabric-renderer-indigo, fabric-renderer-registries-v1, fabric-rendering-data-attachment-v1, fabric-rendering-fluids-v1, fabric-rendering-v0, fabric-rendering-v1, fabric-resource-conditions-api-v1, fabric-resource-loader-v0, fabric-screen-api-v1, fabric-screen-handler-api-v1, fabric-sound-api-v1, fabric-transfer-api-v1, fabric-transitive-access-wideners-v1, fabricloader, firstperson, forgeconfigapiport, geckolib, imblocker, immersive_weathering, indium, iris, kanos_config, lazydfu, modmenu, moonlight, neat, notenoughanimations, pehkui, playerabilitylib, reach-entity-attributes, rich_translatable_text, roughlyenoughitems, satin, shape-shifter-curse, simplestorybooks, sodium, sodium-extra, spark, ssc-addon, trender, trinkets)
+[18:15:17] [Worker-Main-15/INFO]: Starting runtime resource generation for pack type CLIENT_RESOURCES with generators from mods [immersive_weathering, moonlight, immersive_weathering]: [net.mehvahdjukaar.moonlight.core.MoonlightClient$Gen@30af930b, com.ordana.immersive_weathering.dynamicpack.ClientDynamicResourcesHandler@70ed644a]
+[18:15:17] [Worker-Main-15/INFO]: Generating runtime assets for pack Moonlight Mods Dynamic Assets (moonlight)
+[18:15:17] [Worker-Main-15/INFO]: Generated runtime CLIENT_RESOURCES for pack Moonlight Mods Dynamic Assets (moonlight) in: 0 ms (multithreaded)
+[18:15:17] [Worker-Main-15/INFO]: Generating runtime assets for pack Moonlight Mods Dynamic Assets (immersive_weathering)
+[18:15:17] [Worker-Main-15/INFO]: Generated runtime CLIENT_RESOURCES for pack Moonlight Mods Dynamic Assets (immersive_weathering) in: 6 ms (multithreaded)
+[18:15:17] [Worker-Main-15/INFO]: Finished runtime resources generation for 3 packs in a total of 6 ms
+[18:15:17] [Worker-Main-5/INFO]: Found unifont_all_no_pua-15.0.06.hex, loading
+[18:15:17] [Worker-Main-26/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_anubis_wolf_0.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-10/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_allay_sp.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-12/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_anubis_wolf_1.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-26/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_anubis_wolf_2.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-12/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_anubis_wolf_3.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-26/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_axolotl_0.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-11/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_axolotl_1.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-12/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_bat_0.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-11/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_bat_1.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-26/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_axolotl_2.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-25/WARN]: Unsupported geometry json version for model my_addon:geo/form_axolotl_sp.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-27/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_axolotl_3.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-12/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_bat_2.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-25/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_familiar_fox_0.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-27/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_familiar_fox_1.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-21/WARN]: Unsupported geometry json version for model my_addon:geo/form_familiar_fox_3.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-18/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_familiar_fox_2.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-26/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_bat_3.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-25/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_familiar_fox_3.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-21/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_feral_cat_sp.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-18/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_ocelot_0.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-3/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_ocelot_1.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-11/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_snow_fox_0.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-25/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_ocelot_3.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-16/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_snow_fox_1.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-26/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_ocelot_2.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-3/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_snow_fox_3.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-22/WARN]: Unsupported geometry json version for model orif-defaults:geo/form_snow_fox_2.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-3/WARN]: Unsupported geometry json version for model shape-shifter-curse:geo/item/netherite_morphscale_armor.geo.json. Supported versions: 1.12.0
+[18:15:17] [Worker-Main-26/WARN]: Unsupported geometry json version for model shape-shifter-curse:geo/item/morphscale_armor.geo.json. Supported versions: 1.12.0
+[18:15:18] [Render thread/WARN]: Missing sound for event: minecraft:item.goat_horn.play
+[18:15:18] [Render thread/WARN]: Missing sound for event: minecraft:entity.goat.screaming.horn_break
+[18:15:18] [Render thread/INFO]: OpenAL initialized on device OpenAL Soft on 扬声器 (HECATE G1500 BAR)
+[18:15:18] [Render thread/INFO]: Sound engine started
+[18:15:18] [Render thread/INFO]: Created: 1024x1024x4 minecraft:textures/atlas/blocks.png-atlas
+[18:15:18] [Render thread/INFO]: Created: 256x256x4 minecraft:textures/atlas/signs.png-atlas
+[18:15:18] [Render thread/INFO]: Created: 512x512x4 minecraft:textures/atlas/banner_patterns.png-atlas
+[18:15:18] [Render thread/INFO]: Created: 512x512x4 minecraft:textures/atlas/shield_patterns.png-atlas
+[18:15:18] [Render thread/INFO]: Created: 1024x1024x4 minecraft:textures/atlas/armor_trims.png-atlas
+[18:15:18] [Render thread/INFO]: Created: 256x256x4 minecraft:textures/atlas/chest.png-atlas
+[18:15:18] [Render thread/INFO]: Created: 128x64x4 minecraft:textures/atlas/decorated_pot.png-atlas
+[18:15:18] [Render thread/INFO]: Created: 512x256x4 minecraft:textures/atlas/beds.png-atlas
+[18:15:18] [Render thread/INFO]: Created: 512x256x4 minecraft:textures/atlas/shulker_boxes.png-atlas
+[18:15:18] [Render thread/WARN]: Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2 in the specified shader program.
+[18:15:18] [Render thread/INFO]: Created: 512x256x0 minecraft:textures/atlas/particles.png-atlas
+[18:15:18] [Render thread/INFO]: Created: 256x256x0 minecraft:textures/atlas/paintings.png-atlas
+[18:15:18] [Render thread/INFO]: Created: 1024x1024x0 minecraft:textures/atlas/mob_effects.png-atlas
+[18:15:18] [Render thread/INFO]: Created: 256x256x0 moonlight:textures/atlas/map_markers.png-atlas
+[18:15:18] [Render thread/ERROR]: Mixin apply for mod ssc-addon failed my_addon.mixins.json:OriginFurMixin from mod ssc-addon -> net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur: org.spongepowered.asm.mixin.transformer.throwables.InvalidMixinException @Shadow method getGeoModel in my_addon.mixins.json:OriginFurMixin from mod ssc-addon was not located in the target class net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur. Using refmap ssc-addon.refmap.json
+org.spongepowered.asm.mixin.transformer.throwables.InvalidMixinException: @Shadow method getGeoModel in my_addon.mixins.json:OriginFurMixin from mod ssc-addon was not located in the target class net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur. Using refmap ssc-addon.refmap.json
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachSpecialMethod(MixinPreProcessorStandard.java:436) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachShadowMethod(MixinPreProcessorStandard.java:412) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachMethods(MixinPreProcessorStandard.java:340) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attach(MixinPreProcessorStandard.java:299) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.createContextFor(MixinPreProcessorStandard.java:277) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinInfo.createContextFor(MixinInfo.java:1292) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinApplicatorStandard.apply(MixinApplicatorStandard.java:203) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.apply(TargetClassContext.java:437) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.applyMixins(TargetClassContext.java:418) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:352) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:237) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:202) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:435) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:336) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:231) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:119) ~[fabric-loader-0.17.3.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$1.method_14491(OriginalFurClient.java:145) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at net.minecraft.class_4013.method_29490(class_4013.java:15) ~[client-intermediary.jar:?]
+	at java.util.concurrent.CompletableFuture$UniRun.tryFire(CompletableFuture.java:808) ~[?:?]
+	at java.util.concurrent.CompletableFuture$Completion.run(CompletableFuture.java:503) ~[?:?]
+	at net.minecraft.class_4014.method_18365(class_4014.java:69) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1255.method_18859(class_1255.java:156) ~[client-intermediary.jar:?]
+	at net.minecraft.class_4093.method_18859(class_4093.java:23) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1255.method_16075(class_1255.java:130) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1255.method_5383(class_1255.java:115) ~[client-intermediary.jar:?]
+	at net.minecraft.class_310.method_1523(class_310.java:1175) ~[client-intermediary.jar:?]
+	at net.minecraft.class_310.method_1514(class_310.java:802) ~[client-intermediary.jar:?]
+	at net.minecraft.client.main.Main.main(Main.java:250) ~[%e5%b9%bb%e5%bd%a2%e8%80%85%e8%af%85%e5%92%92%e6%b5%8b%e8%af%95.jar:?]
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:506) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23) ~[fabric-loader-0.17.3.jar:?]
+[18:15:20] [Render thread/INFO]: Found new data pack Immersive Weathering Generated Pack, loading it automatically
+[18:15:20] [Render thread/INFO]: Found new data pack Moonlight Mods Dynamic Assets, loading it automatically
+[18:15:20] [Render thread/INFO]: Starting runtime resource generation for pack type SERVER_DATA with generators from mods [immersive_weathering, moonlight, immersive_weathering]: [com.ordana.immersive_weathering.dynamicpack.ServerDynamicResourcesHandler@352ef8ce]
+[18:15:20] [Render thread/INFO]: Generating runtime assets for pack Immersive Weathering Generated Pack (immersive_weathering)
+[18:15:20] [Render thread/INFO]: Generated runtime SERVER_DATA for pack Immersive Weathering Generated Pack (immersive_weathering) in: 3 ms (multithreaded)
+[18:15:20] [Render thread/INFO]: Finished runtime resources generation for 3 packs in a total of 3 ms
+[18:15:21] [Render thread/INFO]: Loaded 7 recipes
+[18:15:21] [Render thread/INFO]: Loaded 1380 advancements
+[18:15:21] [Render thread/INFO]: Finished loading powers from data files. Registry contains 523 powers.
+[18:15:21] [Render thread/INFO]: Finished loading origins from data files. Registry contains 31 origins.
+[18:15:21] [Render thread/INFO]: Trying to read layer file: shape-shifter-curse:cursed_origin
+[18:15:21] [Render thread/INFO]: Trying to read layer file: origins:origin
+[18:15:21] [Render thread/INFO]: Trying to read layer file: origins:origin
+[18:15:21] [Render thread/INFO]: Finished loading origin layers from data files. Read 2 layers.
+[18:15:21] [Render thread/WARN]: Error while loading player animation: Cannot invoke "com.google.gson.JsonElement.getAsString()" because the return value of "com.google.gson.JsonObject.get(String)" is null
+[18:15:21] [Render thread/INFO]: Loaded form data for my_addon:axolotl_sp
+[18:15:21] [Render thread/WARN]: Error while loading player animation: Cannot invoke "com.google.gson.JsonElement.getAsString()" because the return value of "com.google.gson.JsonObject.get(String)" is null
+[18:15:21] [Render thread/INFO]: Loaded form data for my_addon:familiar_fox_sp
+[18:15:21] [Render thread/INFO]: Loaded extra power data for my_addon:append_transform
+[18:15:21] [Render thread/INFO]: Loaded 0 global power sets.
+[18:15:21] [Render thread/INFO]: Loaded 78 block growths configurations
+[18:15:21] [Render thread/INFO]: Loaded 14 liquid generators configurations
+[18:15:23] [Render thread/INFO]: Starting runtime resource generation for pack type SERVER_DATA with generators from mods [immersive_weathering, moonlight, immersive_weathering]: [com.ordana.immersive_weathering.dynamicpack.ServerDynamicResourcesHandler@352ef8ce]
+[18:15:23] [Render thread/INFO]: Generating runtime assets for pack Immersive Weathering Generated Pack (immersive_weathering)
+[18:15:23] [Render thread/INFO]: Generated runtime SERVER_DATA for pack Immersive Weathering Generated Pack (immersive_weathering) in: 0 ms (multithreaded)
+[18:15:23] [Render thread/INFO]: Finished runtime resources generation for 3 packs in a total of 0 ms
+[18:15:23] [Render thread/INFO]: Applied 178 biome modifications to 53 of 64 new biomes in 3.957 ms
+[18:15:23] [Server thread/INFO]: Starting background profiler...
+[18:15:23] [Server thread/INFO]: The async-profiler engine is not supported for your os/arch (windows11/amd64), so the built-in Java engine will be used instead.
+[18:15:23] [Server thread/INFO]: Starting integrated minecraft server version 1.20.1
+[18:15:23] [Server thread/INFO]: Generating keypair
+[18:15:24] [Server thread/INFO]: Preparing start region for dimension minecraft:overworld
+[18:15:24] [Render thread/INFO]: 准备生成区域中：0%
+[18:15:25] [Render thread/INFO]: 准备生成区域中：0%
+[18:15:25] [Render thread/INFO]: 准备生成区域中：3%
+[18:15:26] [Render thread/INFO]: 准备生成区域中：9%
+[18:15:26] [Render thread/INFO]: 准备生成区域中：14%
+[18:15:27] [Render thread/INFO]: 准备生成区域中：20%
+[18:15:27] [Render thread/INFO]: 准备生成区域中：28%
+[18:15:28] [Render thread/INFO]: 准备生成区域中：34%
+[18:15:28] [Render thread/INFO]: 准备生成区域中：44%
+[18:15:29] [Render thread/INFO]: 准备生成区域中：53%
+[18:15:29] [Render thread/INFO]: 准备生成区域中：57%
+[18:15:30] [Render thread/INFO]: 准备生成区域中：66%
+[18:15:30] [Render thread/INFO]: 准备生成区域中：71%
+[18:15:31] [Render thread/INFO]: 准备生成区域中：77%
+[18:15:32] [Render thread/INFO]: 准备生成区域中：84%
+[18:15:32] [Render thread/INFO]: 准备生成区域中：85%
+[18:15:32] [Render thread/INFO]: 准备生成区域中：92%
+[18:15:33] [Render thread/INFO]: Time elapsed: 8428 ms
+[18:15:33] [Server thread/INFO]: Updated Cursed Moon status for new day: 1, Moon Phase: 0, Is Cursed: false
+[18:15:33] [Server thread/INFO]: Updated Cursed Moon status for new day: 1, Moon Phase: 0, Is Cursed: false
+[18:15:33] [Server thread/INFO]: Updated Cursed Moon status for new day: 1, Moon Phase: 0, Is Cursed: false
+[18:15:33] [Server thread/INFO]: Changing view distance to 12, from 10
+[18:15:33] [Server thread/INFO]: Changing simulation distance to 12, from 0
+[18:15:33] [Server thread/INFO]: MangZai120[local:E:a03a2ea3] logged in with entity id 178 at (41.5, 73.0, -13.5)
+[18:15:33] [Server thread/INFO]: PlayerDataStorage initialized for server.
+[18:15:33] [Server thread/INFO]: Checking for migration: oldFile=config\shape_shifter_curse_fabric\.\e78b38e0-071d-4350-81a7-393073194933_form.dat, newFile=D:\HMCL-3.5.8 (1)\.minecraft\versions\幻形者诅咒测试\saves\新的世界 (18)\.\data\shape-shifter-curse\e78b38e0-071d-4350-81a7-393073194933_form.dat
+[18:15:33] [Server thread/INFO]: No old file found for migration: config\shape_shifter_curse_fabric\.\e78b38e0-071d-4350-81a7-393073194933_form.dat
+[18:15:33] [Server thread/INFO]: Loading PlayerFormComponent: file exists = false, path = D:\HMCL-3.5.8 (1)\.minecraft\versions\幻形者诅咒测试\saves\新的世界 (18)\.\data\shape-shifter-curse\e78b38e0-071d-4350-81a7-393073194933_form.dat
+[18:15:33] [Server thread/INFO]: PlayerFormComponent load failed, returning null
+[18:15:33] [Server thread/INFO]: No saved data found, this is first join with mod
+[18:15:33] [Server thread/INFO]: Checking for migration: oldFile=config\shape_shifter_curse_fabric\.\e78b38e0-071d-4350-81a7-393073194933_form.dat, newFile=D:\HMCL-3.5.8 (1)\.minecraft\versions\幻形者诅咒测试\saves\新的世界 (18)\.\data\shape-shifter-curse\e78b38e0-071d-4350-81a7-393073194933_form.dat
+[18:15:33] [Server thread/INFO]: New file already exists, skipping migration: D:\HMCL-3.5.8 (1)\.minecraft\versions\幻形者诅咒测试\saves\新的世界 (18)\.\data\shape-shifter-curse\e78b38e0-071d-4350-81a7-393073194933_form.dat
+[18:15:33] [Server thread/INFO]: Loading PlayerFormComponent: file exists = true, path = D:\HMCL-3.5.8 (1)\.minecraft\versions\幻形者诅咒测试\saves\新的世界 (18)\.\data\shape-shifter-curse\e78b38e0-071d-4350-81a7-393073194933_form.dat
+[18:15:33] [Server thread/INFO]: NBT loaded: nbt != null = true, nbt.isEmpty() = false
+[18:15:33] [Server thread/INFO]: PlayerFormComponent loaded successfully
+[18:15:33] [Server thread/INFO]: Set form origin shape-shifter-curse:form_original_before_enable for player literal{MangZai120}
+[18:15:33] [Server thread/INFO]: Sent form change to client: shape-shifter-curse:original_before_enable
+[18:15:33] [Server thread/INFO]: Sent form change notification to client: shape-shifter-curse:original_before_enable
+[18:15:33] [Server thread/INFO]: Checking for migration: oldFile=config\shape_shifter_curse_fabric\.\e78b38e0-071d-4350-81a7-393073194933_instinct.dat, newFile=D:\HMCL-3.5.8 (1)\.minecraft\versions\幻形者诅咒测试\saves\新的世界 (18)\.\data\shape-shifter-curse\e78b38e0-071d-4350-81a7-393073194933_instinct.dat
+[18:15:33] [Server thread/INFO]: No old file found for migration: config\shape_shifter_curse_fabric\.\e78b38e0-071d-4350-81a7-393073194933_instinct.dat
+[18:15:33] [Server thread/INFO]: Loading PlayerInstinctComponent: file exists = false, path = D:\HMCL-3.5.8 (1)\.minecraft\versions\幻形者诅咒测试\saves\新的世界 (18)\.\data\shape-shifter-curse\e78b38e0-071d-4350-81a7-393073194933_instinct.dat
+[18:15:33] [Server thread/INFO]: PlayerInstinctComponent load failed, returning null
+[18:15:33] [Server thread/INFO]: 向玩家同步诅咒之月状态: false, 月相: 0
+[18:15:33] [Render thread/INFO]: Reloading pipeline on dimension change: minecraft:overworld => minecraft:overworld
+[18:15:33] [Render thread/INFO]: Destroying pipeline minecraft:overworld
+[18:15:33] [Render thread/INFO]: Creating pipeline for dimension minecraft:overworld
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI] ========================================
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI] REIPlugin starting main-reload for START.
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI] Plugins (8):
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (-100.00) DefaultClientPlugin of DefaultClientPlugin [roughlyenoughitems]
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (-100.00) DefaultPlugin of DefaultPlugin [roughlyenoughitems]
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) FabricFluidAPISupportPlugin
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) TrinketsREIPlugin of TrinketsREIPlugin [trinkets]
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) HideIngredientsFromTagsPlugin of HideIngredientsFromTagsPlugin [roughlyenoughitems]
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) DefaultClientRuntimePlugin of DefaultClientRuntimePlugin [roughlyenoughitems]
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) REITooltipPlugin of REITooltipPlugin [appleskin]
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) DefaultRuntimePlugin of DefaultRuntimePlugin [roughlyenoughitems]
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI] ========================================
+[18:15:33] [Server thread/INFO]: MangZai120加入了游戏
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI] ========================================
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI] REIClientPlugin starting main-reload for START.
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI] Plugins (5):
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (-100.00) DefaultClientPlugin of DefaultClientPlugin [roughlyenoughitems]
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) TrinketsREIPlugin of TrinketsREIPlugin [trinkets]
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) HideIngredientsFromTagsPlugin of HideIngredientsFromTagsPlugin [roughlyenoughitems]
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) DefaultClientRuntimePlugin of DefaultClientRuntimePlugin [roughlyenoughitems]
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) REITooltipPlugin of REITooltipPlugin [appleskin]
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI] ========================================
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI] ****************************************
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI] REIServerPlugin starting main-reload for START.
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI] Plugins (3):
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (-100.00) DefaultPlugin of DefaultPlugin [roughlyenoughitems]
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) FabricFluidAPISupportPlugin
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) DefaultRuntimePlugin of DefaultRuntimePlugin [roughlyenoughitems]
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI] ****************************************
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI] REIPlugin finished post-reload for START in 473.1 μs, totaling 27.44 ms.
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI] REIClientPlugin finished post-reload for START in 321.8 μs, totaling 170.0 ms.
+[18:15:33] [REI-ReloadPlugins/INFO]: [REI] REIServerPlugin finished post-reload for START in 90.60 μs, totaling 1.281 ms.
+[18:15:34] [Render thread/INFO]: Started 10 worker threads
+[18:15:34] [Render thread/WARN]: Failed to get file path of mod moonlight: /
+[18:15:34] [Render thread/WARN]: Failed to get file path of mod immersive_weathering: /
+[18:15:34] [Render thread/WARN]: Error while loading player animation: Cannot invoke "com.google.gson.JsonElement.getAsString()" because the return value of "com.google.gson.JsonObject.get(String)" is null
+[18:15:34] [Render thread/WARN]: Error while loading player animation: Cannot invoke "com.google.gson.JsonElement.getAsString()" because the return value of "com.google.gson.JsonObject.get(String)" is null
+[18:15:34] [Render thread/INFO]: Client received form change: shape-shifter-curse:original_before_enable
+[18:15:34] [Render thread/INFO]: Refreshing player animations on client
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] ----------------------------------------
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] REIPlugin starting main-reload for START.
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] Plugins (8):
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (-100.00) DefaultClientPlugin of DefaultClientPlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (-100.00) DefaultPlugin of DefaultPlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) FabricFluidAPISupportPlugin
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) TrinketsREIPlugin of TrinketsREIPlugin [trinkets]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) HideIngredientsFromTagsPlugin of HideIngredientsFromTagsPlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) DefaultClientRuntimePlugin of DefaultClientRuntimePlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) REITooltipPlugin of REITooltipPlugin [appleskin]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) DefaultRuntimePlugin of DefaultRuntimePlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] ----------------------------------------
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] REIClientPlugin starting main-reload for START.
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] Plugins (5):
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (-100.00) DefaultClientPlugin of DefaultClientPlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) TrinketsREIPlugin of TrinketsREIPlugin [trinkets]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) HideIngredientsFromTagsPlugin of HideIngredientsFromTagsPlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) DefaultClientRuntimePlugin of DefaultClientRuntimePlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) REITooltipPlugin of REITooltipPlugin [appleskin]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] REIServerPlugin starting main-reload for START.
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] Plugins (3):
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (-100.00) DefaultPlugin of DefaultPlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) FabricFluidAPISupportPlugin
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) DefaultRuntimePlugin of DefaultRuntimePlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] REIPlugin finished post-reload for START in 613.9 μs, totaling 3.515 ms.
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] REIClientPlugin finished post-reload for START in 752.2 μs, totaling 46.36 ms.
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] REIServerPlugin finished post-reload for START in 107.5 μs, totaling 1.264 ms.
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] ########################################
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] REIPlugin starting main-reload for END.
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] Plugins (8):
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (-100.00) DefaultClientPlugin of DefaultClientPlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (-100.00) DefaultPlugin of DefaultPlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) FabricFluidAPISupportPlugin
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) TrinketsREIPlugin of TrinketsREIPlugin [trinkets]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) HideIngredientsFromTagsPlugin of HideIngredientsFromTagsPlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) DefaultClientRuntimePlugin of DefaultClientRuntimePlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) REITooltipPlugin of REITooltipPlugin [appleskin]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) DefaultRuntimePlugin of DefaultRuntimePlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] ########################################
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] ========================================
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] REIClientPlugin starting main-reload for END.
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] Plugins (5):
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (-100.00) DefaultClientPlugin of DefaultClientPlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) TrinketsREIPlugin of TrinketsREIPlugin [trinkets]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) HideIngredientsFromTagsPlugin of HideIngredientsFromTagsPlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) DefaultClientRuntimePlugin of DefaultClientRuntimePlugin [roughlyenoughitems]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) REITooltipPlugin of REITooltipPlugin [appleskin]
+[18:15:34] [REI-ReloadPlugins/INFO]: [REI] ========================================
+[18:15:34] [Render thread/INFO]: Loaded 3 advancements
+[18:15:34] [Render thread/WARN]: Failed to find the tag minecraft:concrete_powder
+[18:15:34] [Render thread/INFO]: Stopping worker threads
+[18:15:34] [Render thread/INFO]: Started 10 worker threads
+[18:15:34] [Render thread/INFO]: [STDOUT]: [Origin Furs] Fur was null in entity mixin: shape-shifter-curse:form_original_before_enable. This should NEVER happen! Report this to the devs!
+[18:15:34] [Render thread/INFO]: [STDOUT]: []
+[18:15:34] [Render thread/INFO]: [STDOUT]: [Origin Furs] Listed all registered furs. Please include the previous line!
+[18:15:34] [Render thread/INFO]: [STDOUT]: [Origin Furs] Please copy all mods, and this log file and create an issue:
+[18:15:34] [Render thread/INFO]: [STDOUT]: [Origin Furs] https://github.com/avetharun/OriginalFur/issues/new
+[18:15:34] [Render thread/ERROR]: Mixin apply for mod ssc-addon failed my_addon.mixins.json:OriginFurMixin from mod ssc-addon -> net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur: org.spongepowered.asm.mixin.transformer.throwables.InvalidMixinException @Shadow method getGeoModel in my_addon.mixins.json:OriginFurMixin from mod ssc-addon was not located in the target class net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur. Using refmap ssc-addon.refmap.json
+org.spongepowered.asm.mixin.transformer.throwables.InvalidMixinException: @Shadow method getGeoModel in my_addon.mixins.json:OriginFurMixin from mod ssc-addon was not located in the target class net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur. Using refmap ssc-addon.refmap.json
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachSpecialMethod(MixinPreProcessorStandard.java:436) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachShadowMethod(MixinPreProcessorStandard.java:412) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachMethods(MixinPreProcessorStandard.java:340) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attach(MixinPreProcessorStandard.java:299) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.createContextFor(MixinPreProcessorStandard.java:277) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinInfo.createContextFor(MixinInfo.java:1292) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinApplicatorStandard.apply(MixinApplicatorStandard.java:203) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.apply(TargetClassContext.java:437) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.applyMixins(TargetClassContext.java:418) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:352) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:237) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:202) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:435) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:336) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:231) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:119) ~[fabric-loader-0.17.3.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at net.minecraft.class_742.originalFur$getCurrentFurs(class_742.java:1761) ~[client-intermediary.jar:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.IPlayerEntityMixins.originalFur$getCurrentModels(IPlayerEntityMixins.java:18) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$ItemRendererFeatureAnim.setupAnim(OriginalFurClient.java:51) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at dev.kosmx.playerAnim.api.layered.AnimationStack.setupAnim(AnimationStack.java:54) ~[player-animation-lib-fabric-1.0.2-rc1+1.20.jar:?]
+	at dev.kosmx.playerAnim.core.impl.AnimationProcessor.setTickDelta(AnimationProcessor.java:40) ~[player-animation-lib-fabric-1.0.2-rc1+1.20.jar:?]
+	at net.minecraft.class_1007.handler$cne000$player-animator$applyBodyTransforms(class_1007.java:3076) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_4212(class_1007.java:239) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_4058(class_1007.java:43) ~[client-intermediary.jar:?]
+	at net.minecraft.class_922.method_4054(class_922.java:102) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_4215(class_1007.java:66) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_3936(class_1007.java:43) ~[client-intermediary.jar:?]
+	at net.minecraft.class_898.method_3954(class_898.java:145) ~[client-intermediary.jar:?]
+	at net.minecraft.class_761.method_22977(class_761.java:1574) ~[client-intermediary.jar:?]
+	at net.minecraft.class_761.invokeRenderEntity(class_761.java) ~[client-intermediary.jar:?]
+	at net.irisshaders.iris.shadows.ShadowRenderer.renderPlayerEntity(ShadowRenderer.java:673) ~[iris-1.7.6+mc1.20.1.jar:?]
+	at net.irisshaders.iris.shadows.ShadowRenderer.renderShadows(ShadowRenderer.java:507) ~[iris-1.7.6+mc1.20.1.jar:?]
+	at net.irisshaders.iris.pipeline.IrisRenderingPipeline.renderShadows(IrisRenderingPipeline.java:1022) ~[iris-1.7.6+mc1.20.1.jar:?]
+	at net.minecraft.class_761.handler$bki000$iris$renderTerrainShadows(class_761.java:8052) ~[client-intermediary.jar:?]
+	at net.minecraft.class_761.method_22710(class_761.java:1241) ~[client-intermediary.jar:?]
+	at net.minecraft.class_757.method_3188(class_757.java:1110) ~[client-intermediary.jar:?]
+	at net.minecraft.class_757.method_3192(class_757.java:880) ~[client-intermediary.jar:?]
+	at net.minecraft.class_310.method_1523(class_310.java:1219) ~[client-intermediary.jar:?]
+	at net.minecraft.class_310.method_1514(class_310.java:802) ~[client-intermediary.jar:?]
+	at net.minecraft.client.main.Main.main(Main.java:250) ~[%e5%b9%bb%e5%bd%a2%e8%80%85%e8%af%85%e5%92%92%e6%b5%8b%e8%af%95.jar:?]
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:506) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23) ~[fabric-loader-0.17.3.jar:?]
+[18:15:35] [Server thread/INFO]: Cursed moon data saved by server stop
+[18:15:35] [Server thread/INFO]: Stopping server
+[18:15:35] [Server thread/INFO]: Saving players
+[18:15:35] [Server thread/INFO]: Saving worlds
+[18:15:35] [Netty Server IO #1/INFO]: Player disconnect, save attachment
+[18:15:35] [REI-ReloadPlugins/INFO]: [REI] %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[18:15:35] [REI-ReloadPlugins/INFO]: [REI] REIServerPlugin starting main-reload for END.
+[18:15:35] [REI-ReloadPlugins/INFO]: [REI] Plugins (3):
+[18:15:35] [REI-ReloadPlugins/INFO]: [REI]  - (-100.00) DefaultPlugin of DefaultPlugin [roughlyenoughitems]
+[18:15:35] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) FabricFluidAPISupportPlugin
+[18:15:35] [REI-ReloadPlugins/INFO]: [REI]  - (0.00) DefaultRuntimePlugin of DefaultRuntimePlugin [roughlyenoughitems]
+[18:15:35] [REI-ReloadPlugins/INFO]: [REI] %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[18:15:35] [REI-ReloadPlugins/INFO]: [REI] REIPlugin finished post-reload for END in 464.8 μs, totaling 18.27 ms.
+[18:15:35] [REI-ReloadPlugins/INFO]: [REI] REIClientPlugin finished post-reload for END in 1.403 ms, totaling 866.5 ms.
+[18:15:35] [REI-ReloadPlugins/INFO]: [REI] REIServerPlugin finished post-reload for END in 185.2 μs, totaling 3.050 ms.
+[18:15:35] [Thread-11/INFO]: 延迟同步诅咒之月状态: false, 月相: 0, 玩家: MangZai120
+[18:15:36] [Server thread/INFO]: Saving chunks for level 'ServerLevel[新的世界]'/minecraft:overworld
+[18:15:36] [Server thread/INFO]: Saving chunks for level 'ServerLevel[新的世界]'/minecraft:the_end
+[18:15:36] [Server thread/INFO]: Saving chunks for level 'ServerLevel[新的世界]'/minecraft:the_nether
+[18:15:36] [Server thread/INFO]: ThreadedAnvilChunkStorage (新的世界 (18)): All chunks are saved
+[18:15:36] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[18:15:36] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[18:15:36] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[18:15:36] [Render thread/INFO]: Stopping worker threads
+[18:15:37] [Render thread/ERROR]: Reported exception thrown!
+net.minecraft.class_148: Rendering entity in world
+	at net.minecraft.class_898.method_3954(class_898.java:176) ~[client-intermediary.jar:?]
+	at net.minecraft.class_761.method_22977(class_761.java:1574) ~[client-intermediary.jar:?]
+	at net.minecraft.class_761.invokeRenderEntity(class_761.java) ~[client-intermediary.jar:?]
+	at net.irisshaders.iris.shadows.ShadowRenderer.renderPlayerEntity(ShadowRenderer.java:673) ~[iris-1.7.6+mc1.20.1.jar:?]
+	at net.irisshaders.iris.shadows.ShadowRenderer.renderShadows(ShadowRenderer.java:507) ~[iris-1.7.6+mc1.20.1.jar:?]
+	at net.irisshaders.iris.pipeline.IrisRenderingPipeline.renderShadows(IrisRenderingPipeline.java:1022) ~[iris-1.7.6+mc1.20.1.jar:?]
+	at net.minecraft.class_761.handler$bki000$iris$renderTerrainShadows(class_761.java:8052) ~[client-intermediary.jar:?]
+	at net.minecraft.class_761.method_22710(class_761.java:1241) ~[client-intermediary.jar:?]
+	at net.minecraft.class_757.method_3188(class_757.java:1110) ~[client-intermediary.jar:?]
+	at net.minecraft.class_757.method_3192(class_757.java:880) ~[client-intermediary.jar:?]
+	at net.minecraft.class_310.method_1523(class_310.java:1219) ~[client-intermediary.jar:?]
+	at net.minecraft.class_310.method_1514(class_310.java:802) ~[client-intermediary.jar:?]
+	at net.minecraft.client.main.Main.main(Main.java:250) ~[%e5%b9%bb%e5%bd%a2%e8%80%85%e8%af%85%e5%92%92%e6%b5%8b%e8%af%95.jar:?]
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:506) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23) ~[fabric-loader-0.17.3.jar:?]
+Caused by: java.lang.RuntimeException: Mixin transformation of net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur failed
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:440) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:336) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:231) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:119) ~[fabric-loader-0.17.3.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at net.minecraft.class_742.originalFur$getCurrentFurs(class_742.java:1761) ~[client-intermediary.jar:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.IPlayerEntityMixins.originalFur$getCurrentModels(IPlayerEntityMixins.java:18) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$ItemRendererFeatureAnim.setupAnim(OriginalFurClient.java:51) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at dev.kosmx.playerAnim.api.layered.AnimationStack.setupAnim(AnimationStack.java:54) ~[player-animation-lib-fabric-1.0.2-rc1+1.20.jar:?]
+	at dev.kosmx.playerAnim.core.impl.AnimationProcessor.setTickDelta(AnimationProcessor.java:40) ~[player-animation-lib-fabric-1.0.2-rc1+1.20.jar:?]
+	at net.minecraft.class_1007.handler$cne000$player-animator$applyBodyTransforms(class_1007.java:3076) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_4212(class_1007.java:239) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_4058(class_1007.java:43) ~[client-intermediary.jar:?]
+	at net.minecraft.class_922.method_4054(class_922.java:102) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_4215(class_1007.java:66) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_3936(class_1007.java:43) ~[client-intermediary.jar:?]
+	at net.minecraft.class_898.method_3954(class_898.java:145) ~[client-intermediary.jar:?]
+	... 15 more
+Caused by: org.spongepowered.asm.mixin.transformer.throwables.MixinTransformerError: An unexpected critical error was encountered
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:381) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:237) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:202) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:435) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:336) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:231) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:119) ~[fabric-loader-0.17.3.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at net.minecraft.class_742.originalFur$getCurrentFurs(class_742.java:1761) ~[client-intermediary.jar:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.IPlayerEntityMixins.originalFur$getCurrentModels(IPlayerEntityMixins.java:18) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$ItemRendererFeatureAnim.setupAnim(OriginalFurClient.java:51) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at dev.kosmx.playerAnim.api.layered.AnimationStack.setupAnim(AnimationStack.java:54) ~[player-animation-lib-fabric-1.0.2-rc1+1.20.jar:?]
+	at dev.kosmx.playerAnim.core.impl.AnimationProcessor.setTickDelta(AnimationProcessor.java:40) ~[player-animation-lib-fabric-1.0.2-rc1+1.20.jar:?]
+	at net.minecraft.class_1007.handler$cne000$player-animator$applyBodyTransforms(class_1007.java:3076) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_4212(class_1007.java:239) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_4058(class_1007.java:43) ~[client-intermediary.jar:?]
+	at net.minecraft.class_922.method_4054(class_922.java:102) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_4215(class_1007.java:66) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_3936(class_1007.java:43) ~[client-intermediary.jar:?]
+	at net.minecraft.class_898.method_3954(class_898.java:145) ~[client-intermediary.jar:?]
+	... 15 more
+Caused by: org.spongepowered.asm.mixin.throwables.MixinApplyError: Mixin [my_addon.mixins.json:OriginFurMixin from mod ssc-addon] from phase [DEFAULT] in config [my_addon.mixins.json] FAILED during APPLY
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.handleMixinError(MixinProcessor.java:686) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.handleMixinApplyError(MixinProcessor.java:637) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:368) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:237) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:202) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:435) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:336) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:231) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:119) ~[fabric-loader-0.17.3.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at net.minecraft.class_742.originalFur$getCurrentFurs(class_742.java:1761) ~[client-intermediary.jar:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.IPlayerEntityMixins.originalFur$getCurrentModels(IPlayerEntityMixins.java:18) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$ItemRendererFeatureAnim.setupAnim(OriginalFurClient.java:51) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at dev.kosmx.playerAnim.api.layered.AnimationStack.setupAnim(AnimationStack.java:54) ~[player-animation-lib-fabric-1.0.2-rc1+1.20.jar:?]
+	at dev.kosmx.playerAnim.core.impl.AnimationProcessor.setTickDelta(AnimationProcessor.java:40) ~[player-animation-lib-fabric-1.0.2-rc1+1.20.jar:?]
+	at net.minecraft.class_1007.handler$cne000$player-animator$applyBodyTransforms(class_1007.java:3076) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_4212(class_1007.java:239) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_4058(class_1007.java:43) ~[client-intermediary.jar:?]
+	at net.minecraft.class_922.method_4054(class_922.java:102) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_4215(class_1007.java:66) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_3936(class_1007.java:43) ~[client-intermediary.jar:?]
+	at net.minecraft.class_898.method_3954(class_898.java:145) ~[client-intermediary.jar:?]
+	... 15 more
+Caused by: org.spongepowered.asm.mixin.transformer.throwables.InvalidMixinException: @Shadow method getGeoModel in my_addon.mixins.json:OriginFurMixin from mod ssc-addon was not located in the target class net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur. Using refmap ssc-addon.refmap.json
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachSpecialMethod(MixinPreProcessorStandard.java:436) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachShadowMethod(MixinPreProcessorStandard.java:412) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachMethods(MixinPreProcessorStandard.java:340) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attach(MixinPreProcessorStandard.java:299) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.createContextFor(MixinPreProcessorStandard.java:277) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinInfo.createContextFor(MixinInfo.java:1292) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinApplicatorStandard.apply(MixinApplicatorStandard.java:203) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.apply(TargetClassContext.java:437) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.applyMixins(TargetClassContext.java:418) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:352) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:237) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:202) ~[sponge-mixin-0.16.5+mixin.0.8.7.jar:0.16.5+mixin.0.8.7]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:435) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:336) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:231) ~[fabric-loader-0.17.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:119) ~[fabric-loader-0.17.3.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at net.minecraft.class_742.originalFur$getCurrentFurs(class_742.java:1761) ~[client-intermediary.jar:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.IPlayerEntityMixins.originalFur$getCurrentModels(IPlayerEntityMixins.java:18) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$ItemRendererFeatureAnim.setupAnim(OriginalFurClient.java:51) ~[shape-shifter-curse-fabric-1.8.2.jar:?]
+	at dev.kosmx.playerAnim.api.layered.AnimationStack.setupAnim(AnimationStack.java:54) ~[player-animation-lib-fabric-1.0.2-rc1+1.20.jar:?]
+	at dev.kosmx.playerAnim.core.impl.AnimationProcessor.setTickDelta(AnimationProcessor.java:40) ~[player-animation-lib-fabric-1.0.2-rc1+1.20.jar:?]
+	at net.minecraft.class_1007.handler$cne000$player-animator$applyBodyTransforms(class_1007.java:3076) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_4212(class_1007.java:239) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_4058(class_1007.java:43) ~[client-intermediary.jar:?]
+	at net.minecraft.class_922.method_4054(class_922.java:102) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_4215(class_1007.java:66) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1007.method_3936(class_1007.java:43) ~[client-intermediary.jar:?]
+	at net.minecraft.class_898.method_3954(class_898.java:145) ~[client-intermediary.jar:?]
+	... 15 more
+---- Minecraft Crash Report ----
+// You should try our sister game, Minceraft!
+
+Time: 2026-01-18 18:15:37
+Description: Rendering entity in world
+
+java.lang.RuntimeException: Mixin transformation of net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur failed
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:440)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:336)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:231)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:119)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:490)
+	at knot//net.minecraft.class_742.originalFur$getCurrentFurs(class_742.java:1761)
+	at knot//net.onixary.shapeShifterCurseFabric.player_form_render.IPlayerEntityMixins.originalFur$getCurrentModels(IPlayerEntityMixins.java:18)
+	at knot//net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$ItemRendererFeatureAnim.setupAnim(OriginalFurClient.java:51)
+	at knot//dev.kosmx.playerAnim.api.layered.AnimationStack.setupAnim(AnimationStack.java:54)
+	at knot//dev.kosmx.playerAnim.core.impl.AnimationProcessor.setTickDelta(AnimationProcessor.java:40)
+	at knot//net.minecraft.class_1007.handler$cne000$player-animator$applyBodyTransforms(class_1007.java:3076)
+	at knot//net.minecraft.class_1007.method_4212(class_1007.java:239)
+	at knot//net.minecraft.class_1007.method_4058(class_1007.java:43)
+	at knot//net.minecraft.class_922.method_4054(class_922.java:102)
+	at knot//net.minecraft.class_1007.method_4215(class_1007.java:66)
+	at knot//net.minecraft.class_1007.method_3936(class_1007.java:43)
+	at knot//net.minecraft.class_898.method_3954(class_898.java:145)
+	at knot//net.minecraft.class_761.method_22977(class_761.java:1574)
+	at knot//net.minecraft.class_761.invokeRenderEntity(class_761.java)
+	at knot//net.irisshaders.iris.shadows.ShadowRenderer.renderPlayerEntity(ShadowRenderer.java:673)
+	at knot//net.irisshaders.iris.shadows.ShadowRenderer.renderShadows(ShadowRenderer.java:507)
+	at knot//net.irisshaders.iris.pipeline.IrisRenderingPipeline.renderShadows(IrisRenderingPipeline.java:1022)
+	at knot//net.minecraft.class_761.handler$bki000$iris$renderTerrainShadows(class_761.java:8052)
+	at knot//net.minecraft.class_761.method_22710(class_761.java:1241)
+	at knot//net.minecraft.class_757.method_3188(class_757.java:1110)
+	at knot//net.minecraft.class_757.method_3192(class_757.java:880)
+	at knot//net.minecraft.class_310.method_1523(class_310.java:1219)
+	at knot//net.minecraft.class_310.method_1514(class_310.java:802)
+	at knot//net.minecraft.client.main.Main.main(Main.java:250)
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:506)
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72)
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)
+Caused by: org.spongepowered.asm.mixin.transformer.throwables.MixinTransformerError: An unexpected critical error was encountered
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:381)
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:237)
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:202)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:435)
+	... 31 more
+Caused by: org.spongepowered.asm.mixin.throwables.MixinApplyError: Mixin [my_addon.mixins.json:OriginFurMixin from mod ssc-addon] from phase [DEFAULT] in config [my_addon.mixins.json] FAILED during APPLY
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.handleMixinError(MixinProcessor.java:686)
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.handleMixinApplyError(MixinProcessor.java:637)
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:368)
+	... 34 more
+Caused by: org.spongepowered.asm.mixin.transformer.throwables.InvalidMixinException: @Shadow method getGeoModel in my_addon.mixins.json:OriginFurMixin from mod ssc-addon was not located in the target class net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur. Using refmap ssc-addon.refmap.json
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachSpecialMethod(MixinPreProcessorStandard.java:436)
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachShadowMethod(MixinPreProcessorStandard.java:412)
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachMethods(MixinPreProcessorStandard.java:340)
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attach(MixinPreProcessorStandard.java:299)
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.createContextFor(MixinPreProcessorStandard.java:277)
+	at org.spongepowered.asm.mixin.transformer.MixinInfo.createContextFor(MixinInfo.java:1292)
+	at org.spongepowered.asm.mixin.transformer.MixinApplicatorStandard.apply(MixinApplicatorStandard.java:203)
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.apply(TargetClassContext.java:437)
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.applyMixins(TargetClassContext.java:418)
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:352)
+	... 34 more
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- Head --
+Thread: Render thread
+Stacktrace:
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:440)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:336)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:231)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:119)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:490)
+	at knot//net.minecraft.class_742.originalFur$getCurrentFurs(class_742.java:1761)
+	at knot//net.onixary.shapeShifterCurseFabric.player_form_render.IPlayerEntityMixins.originalFur$getCurrentModels(IPlayerEntityMixins.java:18)
+	at knot//net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$ItemRendererFeatureAnim.setupAnim(OriginalFurClient.java:51)
+	at knot//dev.kosmx.playerAnim.api.layered.AnimationStack.setupAnim(AnimationStack.java:54)
+	at knot//dev.kosmx.playerAnim.core.impl.AnimationProcessor.setTickDelta(AnimationProcessor.java:40)
+	at knot//net.minecraft.class_1007.handler$cne000$player-animator$applyBodyTransforms(class_1007.java:3076)
+	at knot//net.minecraft.class_1007.method_4212(class_1007.java:239)
+	at knot//net.minecraft.class_1007.method_4058(class_1007.java:43)
+	at knot//net.minecraft.class_922.method_4054(class_922.java:102)
+	at knot//net.minecraft.class_1007.method_4215(class_1007.java:66)
+	at knot//net.minecraft.class_1007.method_3936(class_1007.java:43)
+	at knot//net.minecraft.class_898.method_3954(class_898.java:145)
+	at knot//net.minecraft.class_761.method_22977(class_761.java:1574)
+	at knot//net.minecraft.class_761.invokeRenderEntity(class_761.java)
+	at knot//net.irisshaders.iris.shadows.ShadowRenderer.renderPlayerEntity(ShadowRenderer.java:673)
+	at knot//net.irisshaders.iris.shadows.ShadowRenderer.renderShadows(ShadowRenderer.java:507)
+	at knot//net.irisshaders.iris.pipeline.IrisRenderingPipeline.renderShadows(IrisRenderingPipeline.java:1022)
+	at knot//net.minecraft.class_761.handler$bki000$iris$renderTerrainShadows(class_761.java:8052)
+	at knot//net.minecraft.class_761.method_22710(class_761.java:1241)
+	at knot//net.minecraft.class_757.method_3188(class_757.java:1110)
+
+-- Entity being rendered --
+Details:
+	Entity Type: minecraft:player (net.minecraft.class_746)
+	Entity ID: 178
+	Entity Name: MangZai120
+	Entity's Exact location: 41.50, 73.00, -13.50
+	Entity's Block location: World: (41,73,-14), Section: (at 9,9,2 in 2,4,-1; chunk contains blocks 32,-64,-16 to 47,319,-1), Region: (0,-1; contains chunks 0,-32 to 31,-1, blocks 0,-64,-512 to 511,319,-1)
+	Entity's Momentum: 0.00, 0.00, 0.00
+	Entity's Passengers: []
+	Entity's Vehicle: null
+Stacktrace:
+	at knot//net.minecraft.class_898.method_3954(class_898.java:145)
+	at knot//net.minecraft.class_761.method_22977(class_761.java:1574)
+	at knot//net.minecraft.class_761.invokeRenderEntity(class_761.java)
+	at knot//net.irisshaders.iris.shadows.ShadowRenderer.renderPlayerEntity(ShadowRenderer.java:673)
+	at knot//net.irisshaders.iris.shadows.ShadowRenderer.renderShadows(ShadowRenderer.java:507)
+	at knot//net.irisshaders.iris.pipeline.IrisRenderingPipeline.renderShadows(IrisRenderingPipeline.java:1022)
+	at knot//net.minecraft.class_761.handler$bki000$iris$renderTerrainShadows(class_761.java:8052)
+	at knot//net.minecraft.class_761.method_22710(class_761.java:1241)
+	at knot//net.minecraft.class_757.method_3188(class_757.java:1110)
+	at knot//net.minecraft.class_757.method_3192(class_757.java:880)
+	at knot//net.minecraft.class_310.method_1523(class_310.java:1219)
+	at knot//net.minecraft.class_310.method_1514(class_310.java:802)
+	at knot//net.minecraft.client.main.Main.main(Main.java:250)
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:506)
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72)
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)
+
+-- Renderer details --
+Details:
+	Assigned renderer: net.minecraft.class_1007@1320d53a
+	Location: 0.00,0.00,0.00 - World: (0,0,0), Section: (at 0,0,0 in 0,0,0; chunk contains blocks 0,-64,0 to 15,319,15), Region: (0,0; contains chunks 0,0 to 31,31, blocks 0,-64,0 to 511,319,511)
+	Rotation: 0.0
+	Delta: 0.0
+Stacktrace:
+	at knot//net.minecraft.class_898.method_3954(class_898.java:145)
+	at knot//net.minecraft.class_761.method_22977(class_761.java:1574)
+	at knot//net.minecraft.class_761.invokeRenderEntity(class_761.java)
+	at knot//net.irisshaders.iris.shadows.ShadowRenderer.renderPlayerEntity(ShadowRenderer.java:673)
+	at knot//net.irisshaders.iris.shadows.ShadowRenderer.renderShadows(ShadowRenderer.java:507)
+	at knot//net.irisshaders.iris.pipeline.IrisRenderingPipeline.renderShadows(IrisRenderingPipeline.java:1022)
+	at knot//net.minecraft.class_761.handler$bki000$iris$renderTerrainShadows(class_761.java:8052)
+	at knot//net.minecraft.class_761.method_22710(class_761.java:1241)
+	at knot//net.minecraft.class_757.method_3188(class_757.java:1110)
+	at knot//net.minecraft.class_757.method_3192(class_757.java:880)
+	at knot//net.minecraft.class_310.method_1523(class_310.java:1219)
+	at knot//net.minecraft.class_310.method_1514(class_310.java:802)
+	at knot//net.minecraft.client.main.Main.main(Main.java:250)
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:506)
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72)
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)
+
+-- Affected level --
+Details:
+	All players: 1 total; [class_746['MangZai120'/178, l='ClientLevel', x=41.50, y=73.00, z=-13.50]]
+	Chunk stats: 961, 441
+	Level dimension: minecraft:overworld
+	Level spawn location: World: (32,67,-16), Section: (at 0,3,0 in 2,4,-1; chunk contains blocks 32,-64,-16 to 47,319,-1), Region: (0,-1; contains chunks 0,-32 to 31,-1, blocks 0,-64,-512 to 511,319,-1)
+	Level time: 19 game time, 19 day time
+	Server brand: fabric
+	Server type: Integrated singleplayer server
+	pehkui:debug/render/entity: minecraft:player
+Stacktrace:
+	at knot//net.minecraft.class_638.method_8538(class_638.java:458)
+	at knot//net.minecraft.class_310.method_1587(class_310.java:2406)
+	at knot//net.minecraft.class_310.method_1514(class_310.java:821)
+	at knot//net.minecraft.client.main.Main.main(Main.java:250)
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:506)
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72)
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)
+
+-- Last reload --
+Details:
+	Reload number: 1
+	Reload reason: initial
+	Finished: No
+	Packs: vanilla, fabric, Moonlight Mods Dynamic Assets
+	Recovery: Yes
+	Recovery reason: java.util.concurrent.CompletionException: java.lang.RuntimeException: Mixin transformation of net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur failed
+	at java.base/java.util.concurrent.CompletableFuture.wrapInCompletionException(CompletableFuture.java:323)
+	at java.base/java.util.concurrent.CompletableFuture.encodeThrowable(CompletableFuture.java:359)
+	at java.base/java.util.concurrent.CompletableFuture.completeThrowable(CompletableFuture.java:364)
+	at java.base/java.util.concurrent.CompletableFuture$UniRun.tryFire(CompletableFuture.java:812)
+	at java.base/java.util.concurrent.CompletableFuture$Completion.run(CompletableFuture.java:503)
+	at knot//net.minecraft.class_4014.method_18365(class_4014.java:69)
+	at knot//net.minecraft.class_1255.method_18859(class_1255.java:156)
+	at knot//net.minecraft.class_4093.method_18859(class_4093.java:23)
+	at knot//net.minecraft.class_1255.method_16075(class_1255.java:130)
+	at knot//net.minecraft.class_1255.method_5383(class_1255.java:115)
+	at knot//net.minecraft.class_310.method_1523(class_310.java:1175)
+	at knot//net.minecraft.class_310.method_1514(class_310.java:802)
+	at knot//net.minecraft.client.main.Main.main(Main.java:250)
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:506)
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72)
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)
+Caused by: java.lang.RuntimeException: Mixin transformation of net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur failed
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:440)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:336)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:231)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:119)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:490)
+	at knot//net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$1.method_14491(OriginalFurClient.java:145)
+	at knot//net.minecraft.class_4013.method_29490(class_4013.java:15)
+	at java.base/java.util.concurrent.CompletableFuture$UniRun.tryFire(CompletableFuture.java:808)
+	... 12 more
+Caused by: org.spongepowered.asm.mixin.transformer.throwables.MixinTransformerError: An unexpected critical error was encountered
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:381)
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:237)
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:202)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:435)
+	... 19 more
+Caused by: org.spongepowered.asm.mixin.throwables.MixinApplyError: Mixin [my_addon.mixins.json:OriginFurMixin from mod ssc-addon] from phase [DEFAULT] in config [my_addon.mixins.json] FAILED during APPLY
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.handleMixinError(MixinProcessor.java:686)
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.handleMixinApplyError(MixinProcessor.java:637)
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:368)
+	... 22 more
+Caused by: org.spongepowered.asm.mixin.transformer.throwables.InvalidMixinException: @Shadow method getGeoModel in my_addon.mixins.json:OriginFurMixin from mod ssc-addon was not located in the target class net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient$OriginFur. Using refmap ssc-addon.refmap.json
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachSpecialMethod(MixinPreProcessorStandard.java:436)
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachShadowMethod(MixinPreProcessorStandard.java:412)
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attachMethods(MixinPreProcessorStandard.java:340)
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.attach(MixinPreProcessorStandard.java:299)
+	at org.spongepowered.asm.mixin.transformer.MixinPreProcessorStandard.createContextFor(MixinPreProcessorStandard.java:277)
+	at org.spongepowered.asm.mixin.transformer.MixinInfo.createContextFor(MixinInfo.java:1292)
+	at org.spongepowered.asm.mixin.transformer.MixinApplicatorStandard.apply(MixinApplicatorStandard.java:203)
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.apply(TargetClassContext.java:437)
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.applyMixins(TargetClassContext.java:418)
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:352)
+	... 22 more
+
+
+-- System Details --
+Details:
+	Minecraft Version: 1.20.1
+	Minecraft Version ID: 1.20.1
+	Operating System: Windows 11 (amd64) version 10.0
+	Java Version: 25, Azul Systems, Inc.
+	Java VM Version: OpenJDK 64-Bit Server VM (mixed mode, sharing), Azul Systems, Inc.
+	Memory: 1809347320 bytes (1725 MiB) / 3355443200 bytes (3200 MiB) up to 14260633600 bytes (13600 MiB)
+	CPUs: 32
+	Processor Vendor: GenuineIntel
+	Processor Name: Intel(R) Core(TM) i9-14900HX
+	Identifier: Intel64 Family 6 Model 183 Stepping 1
+	Microarchitecture: unknown
+	Frequency (GHz): 2.42
+	Number of physical packages: 1
+	Number of physical CPUs: 24
+	Number of logical CPUs: 32
+	Graphics card #0 name: GameViewer Virtual Display Adapter
+	Graphics card #0 vendor: GameViewer
+	Graphics card #0 VRAM (MB): 0.00
+	Graphics card #0 deviceId: unknown
+	Graphics card #0 versionInfo: DriverVersion=17.13.25.697
+	Graphics card #1 name: NVIDIA GeForce RTX 4090 Laptop GPU
+	Graphics card #1 vendor: NVIDIA (0x10de)
+	Graphics card #1 VRAM (MB): 4095.00
+	Graphics card #1 deviceId: 0x2757
+	Graphics card #1 versionInfo: DriverVersion=32.0.15.8180
+	Graphics card #2 name: Intel(R) UHD Graphics
+	Graphics card #2 vendor: Intel Corporation (0x8086)
+	Graphics card #2 VRAM (MB): 128.00
+	Graphics card #2 deviceId: 0xa788
+	Graphics card #2 versionInfo: DriverVersion=31.0.101.5186
+	Memory slot #0 capacity (MB): 32768.00
+	Memory slot #0 clockSpeed (GHz): 5.60
+	Memory slot #0 type: Unknown
+	Memory slot #1 capacity (MB): 32768.00
+	Memory slot #1 clockSpeed (GHz): 5.60
+	Memory slot #1 type: Unknown
+	Virtual memory max (MB): 69250.47
+	Virtual memory used (MB): 32109.86
+	Swap memory total (MB): 4096.00
+	Swap memory used (MB): 0.00
+	JVM Flags: 20 total; -Xmx13580m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+UseG1GC -XX:G1MixedGCCountTarget=5 -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32m -XX:-OmitStackTraceInFastThrow -XX:-DontCompileHugeMethods -XX:MaxNodeLimit=240000 -XX:NodeLimitFudgeFactor=8000 -XX:TieredCompileTaskTimeout=10000 -XX:ReservedCodeCacheSize=400M -XX:NonNMethodCodeHeapSize=12M -XX:ProfiledCodeHeapSize=194M -XX:NmethodSweepActivity=1 -XX:+UseCompactObjectHeaders -XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump
+	Fabric Mods: 
+		appleskin: AppleSkin 2.5.1+mc1.20
+		architectury: Architectury 9.2.14
+		azurelib: AzureLib 3.0.17
+		cardinal-components: Cardinal Components API 5.2.3
+			cardinal-components-base: Cardinal Components API (base) 5.2.3
+			cardinal-components-block: Cardinal Components API (blocks) 5.2.3
+			cardinal-components-chunk: Cardinal Components API (chunks) 5.2.3
+			cardinal-components-entity: Cardinal Components API (entities) 5.2.3
+			cardinal-components-item: Cardinal Components API (items) 5.2.3
+			cardinal-components-level: Cardinal Components API (world saves) 5.2.3
+			cardinal-components-scoreboard: Cardinal Components API (scoreboard) 5.2.3
+			cardinal-components-world: Cardinal Components API (worlds) 5.2.3
+		cloth-config: Cloth Config v11 11.1.136
+			cloth-basic-math: cloth-basic-math 0.6.1
+		fabric-api: Fabric API 0.92.6+1.20.1
+			fabric-api-base: Fabric API Base 0.4.32+1802ada577
+			fabric-api-lookup-api-v1: Fabric API Lookup API (v1) 1.6.37+1802ada577
+			fabric-biome-api-v1: Fabric Biome API (v1) 13.0.14+1802ada577
+			fabric-block-api-v1: Fabric Block API (v1) 1.0.12+1802ada577
+			fabric-block-view-api-v2: Fabric BlockView API (v2) 1.0.3+924f046a77
+			fabric-blockrenderlayer-v1: Fabric BlockRenderLayer Registration (v1) 1.1.42+1802ada577
+			fabric-client-tags-api-v1: Fabric Client Tags 1.1.3+1802ada577
+			fabric-command-api-v1: Fabric Command API (v1) 1.2.35+f71b366f77
+			fabric-command-api-v2: Fabric Command API (v2) 2.2.14+1802ada577
+			fabric-commands-v0: Fabric Commands (v0) 0.2.52+df3654b377
+			fabric-containers-v0: Fabric Containers (v0) 0.1.67+df3654b377
+			fabric-content-registries-v0: Fabric Content Registries (v0) 4.0.13+1802ada577
+			fabric-convention-tags-v1: Fabric Convention Tags 1.5.6+1802ada577
+			fabric-crash-report-info-v1: Fabric Crash Report Info (v1) 0.2.20+1802ada577
+			fabric-data-attachment-api-v1: Fabric Data Attachment API (v1) 1.0.2+de0fd6d177
+			fabric-data-generation-api-v1: Fabric Data Generation API (v1) 12.3.7+1802ada577
+			fabric-dimensions-v1: Fabric Dimensions API (v1) 2.1.55+1802ada577
+			fabric-entity-events-v1: Fabric Entity Events (v1) 1.6.1+1c78457f77
+			fabric-events-interaction-v0: Fabric Events Interaction (v0) 0.6.5+13a40c6677
+			fabric-events-lifecycle-v0: Fabric Events Lifecycle (v0) 0.2.64+df3654b377
+			fabric-game-rule-api-v1: Fabric Game Rule API (v1) 1.0.41+1802ada577
+			fabric-item-api-v1: Fabric Item API (v1) 2.1.29+1802ada577
+			fabric-item-group-api-v1: Fabric Item Group API (v1) 4.0.14+1802ada577
+			fabric-key-binding-api-v1: Fabric Key Binding API (v1) 1.0.38+1802ada577
+			fabric-keybindings-v0: Fabric Key Bindings (v0) 0.2.36+df3654b377
+			fabric-lifecycle-events-v1: Fabric Lifecycle Events (v1) 2.2.23+1802ada577
+			fabric-loot-api-v2: Fabric Loot API (v2) 1.2.3+1802ada577
+			fabric-loot-tables-v1: Fabric Loot Tables (v1) 1.1.47+9e7660c677
+			fabric-message-api-v1: Fabric Message API (v1) 5.1.10+1802ada577
+			fabric-mining-level-api-v1: Fabric Mining Level API (v1) 2.1.52+1802ada577
+			fabric-model-loading-api-v1: Fabric Model Loading API (v1) 1.0.4+1802ada577
+			fabric-models-v0: Fabric Models (v0) 0.4.3+9386d8a777
+			fabric-networking-api-v1: Fabric Networking API (v1) 1.3.14+a158aa0477
+			fabric-networking-v0: Fabric Networking (v0) 0.3.54+df3654b377
+			fabric-object-builder-api-v1: Fabric Object Builder API (v1) 11.1.5+e35120df77
+			fabric-particles-v1: Fabric Particles (v1) 1.1.3+1802ada577
+			fabric-recipe-api-v1: Fabric Recipe API (v1) 1.0.24+1802ada577
+			fabric-registry-sync-v0: Fabric Registry Sync (v0) 2.3.6+1802ada577
+			fabric-renderer-api-v1: Fabric Renderer API (v1) 3.2.2+1802ada577
+			fabric-renderer-indigo: Fabric Renderer - Indigo 1.5.3+85287f9f77
+			fabric-renderer-registries-v1: Fabric Renderer Registries (v1) 3.2.47+df3654b377
+			fabric-rendering-data-attachment-v1: Fabric Rendering Data Attachment (v1) 0.3.39+92a0d36777
+			fabric-rendering-fluids-v1: Fabric Rendering Fluids (v1) 3.0.29+1802ada577
+			fabric-rendering-v0: Fabric Rendering (v0) 1.1.50+df3654b377
+			fabric-rendering-v1: Fabric Rendering (v1) 3.0.9+1802ada577
+			fabric-resource-conditions-api-v1: Fabric Resource Conditions API (v1) 2.3.9+1802ada577
+			fabric-resource-loader-v0: Fabric Resource Loader (v0) 0.11.12+fb82e9d777
+			fabric-screen-api-v1: Fabric Screen API (v1) 2.0.9+1802ada577
+			fabric-screen-handler-api-v1: Fabric Screen Handler API (v1) 1.3.33+1802ada577
+			fabric-sound-api-v1: Fabric Sound API (v1) 1.0.14+1802ada577
+			fabric-transfer-api-v1: Fabric Transfer API (v1) 3.3.6+8dd72ea377
+			fabric-transitive-access-wideners-v1: Fabric Transitive Access Wideners (v1) 4.3.2+1802ada577
+		fabric-language-kotlin: Fabric Language Kotlin 1.13.6+kotlin.2.2.20
+			org_jetbrains_kotlin_kotlin-reflect: kotlin-reflect 2.2.20
+			org_jetbrains_kotlin_kotlin-stdlib: kotlin-stdlib 2.2.20
+			org_jetbrains_kotlin_kotlin-stdlib-jdk7: kotlin-stdlib-jdk7 2.2.20
+			org_jetbrains_kotlin_kotlin-stdlib-jdk8: kotlin-stdlib-jdk8 2.2.20
+			org_jetbrains_kotlinx_atomicfu-jvm: atomicfu-jvm 0.29.0
+			org_jetbrains_kotlinx_kotlinx-coroutines-core-jvm: kotlinx-coroutines-core-jvm 1.10.2
+			org_jetbrains_kotlinx_kotlinx-coroutines-jdk8: kotlinx-coroutines-jdk8 1.10.2
+			org_jetbrains_kotlinx_kotlinx-datetime-jvm: kotlinx-datetime-jvm 0.7.1
+			org_jetbrains_kotlinx_kotlinx-io-bytestring-jvm: kotlinx-io-bytestring-jvm 0.8.0
+			org_jetbrains_kotlinx_kotlinx-io-core-jvm: kotlinx-io-core-jvm 0.8.0
+			org_jetbrains_kotlinx_kotlinx-serialization-cbor-jvm: kotlinx-serialization-cbor-jvm 1.9.0
+			org_jetbrains_kotlinx_kotlinx-serialization-core-jvm: kotlinx-serialization-core-jvm 1.9.0
+			org_jetbrains_kotlinx_kotlinx-serialization-json-jvm: kotlinx-serialization-json-jvm 1.9.0
+		fabricloader: Fabric Loader 0.17.3
+			mixinextras: MixinExtras 0.5.0
+		firstperson: FirstPerson 2.5.0
+		forgeconfigapiport: Forge Config API Port 8.0.2
+		geckolib: GeckoLib 4 4.8.2
+			com_eliotlash_mclib_mclib: mclib 20
+		imblocker: IMBlocker 5.4.6
+		immersive_weathering: Immersive Weathering 1.20.1-2.0.5
+		indium: Indium 1.0.36+mc1.20.1
+		iris: Iris 1.7.6+mc1.20.1
+			io_github_douira_glsl-transformer: glsl-transformer 2.0.1
+			org_anarres_jcpp: jcpp 1.4.14
+			org_antlr_antlr4-runtime: antlr4-runtime 4.13.1
+		java: OpenJDK 64-Bit Server VM 25
+		lazydfu: LazyDFU 0.1.3
+		minecraft: Minecraft 1.20.1
+		modmenu: Mod Menu 7.2.2
+		moonlight: Moonlight 1.20-2.16.13
+		neat: Neat 1.20.1-41-FABRIC
+			fiber: fiber 0.23.0-2
+		notenoughanimations: NotEnoughAnimations 1.10.4.1
+			transition: TRansition 1.0.6
+			trender: TRender 1.0.7
+		pehkui: Pehkui 3.8.3+1.14.4-1.21
+			kanos_config: Kanos Config 0.4.1+1.14.4-1.19.4
+		player-animator: Player Animator 1.0.2-rc1+1.20
+		playerabilitylib: Pal 1.8.0
+		rich_translatable_text: Rich-Translatable-Text 1.0.1
+		roughlyenoughitems: Roughly Enough Items 12.1.785
+			error_notifier: Error Notifier 1.0.9
+		satin: Satin 1.14.0
+		shape-shifter-curse: Shape Shifter Curse 1.8.2
+			apoli: Apoli 2.9.2+mc.1.20.x
+				additionalentityattributes: Additional Entity Attributes 1.7.4+1.20.0
+				calio: Calio 1.11.2+mc.1.20.x
+			reach-entity-attributes: Reach Entity Attributes 2.4.0
+		simplestorybooks: Simple Story Books 0.1.1Alpha
+		sodium: Sodium 0.5.13+mc1.20.1
+		sodium-extra: Sodium Extra 0.5.9+mc1.20.1
+			caffeineconfig: CaffeineConfig 1.3.0+1.17
+		spark: spark 1.10.53
+			fabric-permissions-api-v0: fabric-permissions-api 0.1-SNAPSHOT
+		ssc-addon: 幻形者诅咒附属 1.1.2
+		trinkets: Trinkets 3.7.2
+	Loaded Shaderpack: ComplementaryReimagined_r5.3 + EuphoriaPatches_1.4.3 Original
+		Profile: HIGH (+0 options changed by user)
+	Launched Version: 幻形者诅咒测试
+	Backend library: LWJGL version 3.3.1 SNAPSHOT
+	Backend API: NVIDIA GeForce RTX 4090 Laptop GPU/PCIe/SSE2 GL version 3.2.0 NVIDIA 581.80, NVIDIA Corporation
+	Window size: 2560x1440
+	GL Caps: Using framebuffer using OpenGL 3.2
+	GL debug messages: 
+	Using VBOs: Yes
+	Is Modded: Definitely; Client brand changed to 'fabric'; Server brand changed to 'fabric'
+	Type: Integrated Server (map_client.txt)
+	Graphics mode: fancy
+	Resource Packs: 
+	Current Language: zh_cn
+	CPU: 32x Intel(R) Core(TM) i9-14900HX
+	Server Running: true
+	Player Count: 1 / 8; [class_3222['MangZai120'/178, l='ServerLevel[新的世界]', x=41.50, y=73.00, z=-13.50]]
+	Data Packs: vanilla, fabric, Immersive Weathering Generated Pack, Moonlight Mods Dynamic Assets
+	Enabled Feature Flags: minecraft:vanilla
+	World Generation: Stable
+#@!@# Game crashed! Crash report saved to: #@!@# D:\HMCL-3.5.8 (1)\.minecraft\versions\幻形者诅咒测试\crash-reports\crash-2026-01-18_18.15.37-client.txt
+[HMCL ProcessListener] Minecraft exit with code -1(0xffffffff), type is APPLICATION_ERROR.
