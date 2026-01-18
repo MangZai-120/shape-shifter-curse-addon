@@ -2,12 +2,23 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.client;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.entity.model.EntityModelLayers;
+import net.minecraft.client.render.entity.model.TridentEntityModel;
+import net.minecraft.client.render.item.ItemRenderer;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.util.Identifier;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import org.lwjgl.glfw.GLFW;
 
 public class SscAddonClient implements ClientModInitializer {
     public static final String CATEGORY = "key.categories.ssc_addon";
+    
+    private TridentEntityModel tridentModel;
+
     
     // SP Familiar Fox Keys
     public static final KeyBinding KEY_FOX_FIRE = new KeyBinding(
@@ -49,5 +60,18 @@ public class SscAddonClient implements ClientModInitializer {
         // SP Axolotl Keys
         KeyBindingHelper.registerKeyBinding(KEY_VORTEX);
         KeyBindingHelper.registerKeyBinding(KEY_PLAY_DEAD);
+
+        // Register Water Spear Item Renderer to look like a Trident
+        BuiltinItemRendererRegistry.INSTANCE.register(SscAddon.WATER_SPEAR, (stack, mode, matrices, vertexConsumers, light, overlay) -> {
+            if (tridentModel == null) {
+                // Initialize model only when client is fully ready and has loaded models
+                tridentModel = new TridentEntityModel(MinecraftClient.getInstance().getEntityModelLoader().getModelPart(EntityModelLayers.TRIDENT));
+            }
+            matrices.push();
+            matrices.scale(1.0F, -1.0F, -1.0F);
+            VertexConsumer vertexConsumer = ItemRenderer.getDirectItemGlintConsumer(vertexConsumers, tridentModel.getLayer(new Identifier("textures/entity/trident.png")), false, stack.hasGlint());
+            tridentModel.render(matrices, vertexConsumer, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+            matrices.pop();
+        });
     }
 }

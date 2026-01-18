@@ -25,6 +25,11 @@ import net.minecraft.util.math.Box;
 import net.minecraft.particle.ParticleTypes;
 import java.util.List;
 
+import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormPhase;
+
 public class WaterSpearItem extends TridentItem {
     // 60 durability consumed over 60 seconds = 1 durability per second = 20 ticks per durability
     private static final int TICKS_PER_DURABILITY = 20;
@@ -82,6 +87,22 @@ public class WaterSpearItem extends TridentItem {
     @Override
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         ItemStack itemStack = user.getStackInHand(hand);
+        
+        PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(user);
+        boolean isSpAxolotl = false;
+        if (component != null) {
+            PlayerFormBase currentForm = component.getCurrentForm();
+            if (currentForm != null && currentForm.FormID != null) {
+                if (currentForm.getPhase() == PlayerFormPhase.PHASE_SP && currentForm.FormID.getPath().contains("axolotl")) {
+                    isSpAxolotl = true;
+                }
+            }
+        }
+        
+        if (!isSpAxolotl) {
+             return TypedActionResult.fail(itemStack);
+        }
+
         user.setCurrentHand(hand);
         return TypedActionResult.consume(itemStack);
     }
@@ -119,12 +140,37 @@ public class WaterSpearItem extends TridentItem {
     @Override
     public void inventoryTick(ItemStack stack, World world, Entity entity, int slot, boolean selected) {
         super.inventoryTick(stack, world, entity, slot, selected);
+
+        if (!world.isClient && entity instanceof PlayerEntity player) {
+            PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
+            boolean isSpAxolotl = false;
+            
+            // Allow creative mode players to hold it for testing
+            if (player.isCreative()) {
+                isSpAxolotl = true;
+            } else if (component != null) {
+                PlayerFormBase currentForm = component.getCurrentForm();
+                if (currentForm != null && currentForm.FormID != null) {
+                    // Check phase is SP AND form ID contains "axolotl"
+                    // Also check for "form_axolotl_sp" explicitly
+                    if ((currentForm.getPhase() == PlayerFormPhase.PHASE_SP && currentForm.FormID.getPath().contains("axolotl")) 
+                        || currentForm.FormID.getPath().contains("form_axolotl_sp")) {
+                        isSpAxolotl = true;
+                    }
+                }
+            }
+            
+            if (!isSpAxolotl) {
+                stack.setCount(0);
+                return;
+            }
+        }
         
         // Auto-consume durability: 60 durability over 60 seconds = 1 per second = every 20 ticks
-        if (!world.isClient && entity instanceof PlayerEntity player) {
+        if (!world.isClient && entity instanceof LivingEntity livingEntity) {
             // Use world age modulo 20 to damage once per second
             if (world.getTime() % TICKS_PER_DURABILITY == 0) {
-                stack.damage(1, player, e -> {
+                stack.damage(1, livingEntity, e -> {
                     // When durability is depleted, the item will break automatically
                 });
             }

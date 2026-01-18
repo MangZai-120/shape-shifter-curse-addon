@@ -26,6 +26,10 @@ import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.particle.ParticleTypes;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormPhase;
 
 import java.util.List;
 
@@ -121,5 +125,24 @@ public class WaterSpearEntity extends TridentEntity {
     @Override
     public boolean hasNoGravity() {
         return false;
+    }
+
+    @Override
+    public void onPlayerCollision(PlayerEntity player) {
+         // Allow pickup only if player is SP Axolotl
+        PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
+        boolean isSpAxolotl = false;
+        if (component != null) {
+            PlayerFormBase currentForm = component.getCurrentForm();
+            if (currentForm != null && currentForm.FormID != null) {
+                if (currentForm.getPhase() == PlayerFormPhase.PHASE_SP && currentForm.FormID.getPath().contains("axolotl")) {
+                    isSpAxolotl = true;
+                }
+            }
+        }
+        
+        if (isSpAxolotl) {
+            super.onPlayerCollision(player);
+        }
     }
 }

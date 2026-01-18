@@ -24,6 +24,9 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableMoisturizerIte
 import net.minecraft.item.ToolMaterials;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Axolotl3;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_FamiliarFox3;
+import net.minecraft.recipe.RecipeSerializer;
+import net.minecraft.recipe.SpecialRecipeSerializer;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.RefillMoisturizerRecipe;
 
 public class SscAddon implements ModInitializer {
 
@@ -33,6 +36,7 @@ public class SscAddon implements ModInitializer {
     
     public static final Item SP_UPGRADE_THING = new SpUpgradeItem(new Item.Settings().maxCount(1));
     public static final Item PORTABLE_MOISTURIZER = new PortableMoisturizerItem(new Item.Settings().maxCount(1));
+    public static final RecipeSerializer<RefillMoisturizerRecipe> REFILL_MOISTURIZER_SERIALIZER = new SpecialRecipeSerializer<>(RefillMoisturizerRecipe::new);
     // 60 durability like wooden sword, auto-consumed over 60 seconds
     public static final Item WATER_SPEAR = new WaterSpearItem(new Item.Settings().maxCount(1).maxDamage(60));
 
@@ -45,6 +49,8 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "sp_upgrade_thing"), SP_UPGRADE_THING);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "portable_moisturizer"), PORTABLE_MOISTURIZER);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "water_spear"), WATER_SPEAR);
+        
+        Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "refill_moisturizer"), REFILL_MOISTURIZER_SERIALIZER);
         
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.FOOD_AND_DRINK).register(content -> {
             content.add(SP_UPGRADE_THING);

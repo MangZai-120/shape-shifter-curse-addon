@@ -1,16 +1,3 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    {
-      "item": "ssc_addon:portable_moisturizer"
-    },
-    {
-      "item": "minecraft:axolotl_bucket"
-    }
-  ],
-  "result": {
-    "item": "ssc_addon:portable_moisturizer",
-    "count": 1,
-    "nbt": "{Charge:600,Active:0b}"
-  }
+  "type": "ssc_addon:refill_moisturizer"
 }
