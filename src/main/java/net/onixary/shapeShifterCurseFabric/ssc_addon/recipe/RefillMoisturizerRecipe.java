@@ -11,6 +11,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableMoisturizerItem;
 
 public class RefillMoisturizerRecipe extends SpecialCraftingRecipe {
 
@@ -59,8 +60,8 @@ public class RefillMoisturizerRecipe extends SpecialCraftingRecipe {
             boolean wasActive = moisturizer.getOrCreateNbt().getBoolean("Active");
             moisturizer.setCount(1);
             
-            // Set Charge to Max (600)
-            moisturizer.getOrCreateNbt().putInt("Charge", 600);
+            // Set Charge to Max (5400)
+            moisturizer.getOrCreateNbt().putInt("Charge", PortableMoisturizerItem.MAX_CHARGE);
             
             // Should we keep it active? Usually refilling allows it to continue working immediately.
             moisturizer.getOrCreateNbt().putBoolean("Active", wasActive);

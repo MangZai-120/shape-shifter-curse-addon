@@ -21,8 +21,8 @@ import java.util.List;
 
 public class PortableMoisturizerItem extends Item {
     
-    // 10 minutes = 10 * 60 = 600 seconds
-    public static final int MAX_CHARGE = 600;
+    // 1.5 hours = 90 minutes = 90 * 60 = 5400 seconds
+    public static final int MAX_CHARGE = 5400;
     
     public PortableMoisturizerItem(Settings settings) {
         super(settings);
