@@ -7,7 +7,6 @@
   "mixins": [
     "ItemEntityMixin",
     "MobEntityMixin",
-    "OriginFurModelMixin",
     "SscAddonEntityIgnitionMixin",
     "SscAddonEntityMixin",
     "TransformRelatedItemsMixin"
@@ -15,6 +14,7 @@
   "client": [
     "InstinctBarRendererMixin",
     "OriginFurMixin",
+    "OriginFurModelMixin",
     "SscPlayerEntityRendererMixin"
   ],
   "injectors": {
