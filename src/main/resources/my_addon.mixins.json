@@ -5,11 +5,12 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "ssc-addon.refmap.json",
   "mixins": [
+    "ItemEntityMixin",
+    "MobEntityMixin",
+    "OriginFurModelMixin",
     "SscAddonEntityIgnitionMixin",
     "SscAddonEntityMixin",
-    "MobEntityMixin",
-    "TransformRelatedItemsMixin",
-    "ItemEntityMixin"
+    "TransformRelatedItemsMixin"
   ],
   "client": [
     "InstinctBarRendererMixin",
