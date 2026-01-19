@@ -13,9 +13,22 @@ import net.minecraft.nbt.NbtCompound;
 
 import java.util.Collection;
 import java.util.UUID;
+import net.minecraft.text.Text;
+
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.Ability_AllayHeal;
 
 public class SscAddonCommands {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+        dispatcher.register(CommandManager.literal("ssc_addon_action")
+             .then(CommandManager.literal("hold_allay_heal")
+                 .executes(context -> {
+                     ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                     Ability_AllayHeal.onHold(player);
+                     return 1;
+                 })
+             )
+        );
+
         dispatcher.register(CommandManager.literal("ssc-addon")
             .then(CommandManager.literal("mark_owner")
                 .then(CommandManager.argument("targets", EntityArgumentType.entities())
@@ -23,6 +36,27 @@ public class SscAddonCommands {
                 )
             )
         );
+
+        dispatcher.register(CommandManager.literal("my_addon_allay_treatment")
+                .then(CommandManager.argument("allayPlayer", EntityArgumentType.player())
+                        .then(CommandManager.argument("targetPlayer", EntityArgumentType.player())
+                                .executes(SscAddonCommands::registerTreatmentWhitelist)
+                        )
+                )
+        );
+    }
+
+    private static int registerTreatmentWhitelist(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity allayPlayer = EntityArgumentType.getPlayer(context, "allayPlayer");
+        ServerPlayerEntity targetPlayer = EntityArgumentType.getPlayer(context, "targetPlayer");
+
+        // Format: "ssc_allay_whitelist:<TargetUUID>"
+        // Stored on the Allay Player
+        allayPlayer.addCommandTag("ssc_allay_whitelist:" + targetPlayer.getUuidAsString());
+        
+        context.getSource().sendFeedback(() -> Text.literal("Added " + targetPlayer.getName().getString() + " to " + allayPlayer.getName().getString() + "'s treatment whitelist."), false);
+
+        return 1;
     }
 
     private static int markOwner(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

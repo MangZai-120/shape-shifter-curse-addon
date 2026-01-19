@@ -24,9 +24,13 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableMoisturizerIte
 import net.minecraft.item.ToolMaterials;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Axolotl3;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_FamiliarFox3;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Allay;
 import net.minecraft.recipe.RecipeSerializer;
 import net.minecraft.recipe.SpecialRecipeSerializer;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.RefillMoisturizerRecipe;
+
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormGroup;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
 
 public class SscAddon implements ModInitializer {
 
@@ -66,13 +70,57 @@ public class SscAddon implements ModInitializer {
         
         SscAddonActions.register();
         SscAddonConditions.register();
+
+        SscAddonNetworking.registerServerReceivers();
+
+        SpAllayMana.register();
         
         // Register SP Forms with custom animation controllers
-        RegPlayerForms.registerPlayerForm(new Form_Axolotl3(new Identifier("my_addon", "axolotl_sp")).setPhase(PlayerFormPhase.PHASE_SP));
-        RegPlayerForms.registerPlayerForm(new Form_FamiliarFox3(new Identifier("my_addon", "familiar_fox_sp")).setPhase(PlayerFormPhase.PHASE_SP));
+        Form_Axolotl3 axolotlForm = new Form_Axolotl3(new Identifier("my_addon", "axolotl_sp"));
+        axolotlForm.setPhase(PlayerFormPhase.PHASE_SP);
+        RegPlayerForms.registerPlayerForm(axolotlForm);
+        RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_axolotl_sp")).addForm(axolotlForm, 5));
+
+        Form_FamiliarFox3 familiarFoxForm = new Form_FamiliarFox3(new Identifier("my_addon", "familiar_fox_sp"));
+        familiarFoxForm.setPhase(PlayerFormPhase.PHASE_SP);
+        RegPlayerForms.registerPlayerForm(familiarFoxForm);
+        RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_familiar_fox_sp")).addForm(familiarFoxForm, 5));
+
+        Form_Allay allayForm = new Form_Allay(new Identifier("my_addon", "form_allay_sp"));
+        allayForm.setPhase(PlayerFormPhase.PHASE_SP);
+        RegPlayerForms.registerPlayerForm(allayForm);
+        RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_form_allay_sp")).addForm(allayForm, 5));
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             SscAddonCommands.register(dispatcher);
+        });
+
+        // Tick Event for SP Allay Ability
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.START_WORLD_TICK.register(world -> {
+            for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()) {
+                net.onixary.shapeShifterCurseFabric.ssc_addon.ability.Ability_AllayHeal.tick(player);
+            }
+        });
+
+        // Amethyst Consumption for Mana
+        net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.register((player, world, hand) -> {
+            if (!world.isClient && player instanceof net.minecraft.server.network.ServerPlayerEntity serverPlayer) {
+                net.minecraft.item.ItemStack stack = player.getStackInHand(hand);
+                if (stack.isOf(net.minecraft.item.Items.AMETHYST_SHARD)) {
+                    PlayerFormBase currentForm = net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManager.getForm(serverPlayer);
+                    if (currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "form_allay_sp"))) {
+                        net.onixary.shapeShifterCurseFabric.mana.ManaComponent component = net.onixary.shapeShifterCurseFabric.mana.ManaUtils.getManaComponent(serverPlayer);
+                        if (component.getManaTypeID() != null && component.getManaTypeID().equals(SpAllayMana.INSTANCE)) {
+                            if (!player.isCreative()) {
+                                stack.decrement(1);
+                            }
+                            component.gainMana(50.0);
+                            return net.minecraft.util.TypedActionResult.success(stack);
+                        }
+                    }
+                }
+            }
+            return net.minecraft.util.TypedActionResult.pass(player.getStackInHand(hand));
         });
     }
 }

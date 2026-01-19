@@ -1,0 +1,18 @@
+{
+    "powers": [
+        "my_addon:form_allay_sp_levitate",
+        "my_addon:form_allay_sp_fly_hunger",
+        "my_addon:form_allay_sp_levitate_speed_up",
+        "my_addon:form_allay_sp_walk_on_powder_snow",
+        "my_addon:form_allay_sp_heal_active",
+        "my_addon:no_step_sound",
+        "origins:slow_falling",
+        "origins:velvet_paws"
+    ],
+    "icon": {
+        "item": "minecraft:amethyst_shard"
+    },
+    "order": 0,
+    "unchoosable": true,
+    "impact": 0
+}

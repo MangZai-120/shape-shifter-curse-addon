@@ -27,12 +27,31 @@ public class SscPlayerEntityRendererMixin {
             if (currentForm != null && currentForm.FormID != null) {
                 PlayerFormPhase phase = currentForm.getPhase();
                 String path = currentForm.FormID.getPath();
-                // 仅在Phase 3 (永久形态)、Phase SP (特殊形态) 或悦灵/野猫形态时隐藏原版模型
-                if (phase == PlayerFormPhase.PHASE_3 || phase == PlayerFormPhase.PHASE_SP || path.contains("allay") || path.contains("ocelot")) {
-                     PlayerEntityRenderer renderer = (PlayerEntityRenderer)(Object)this;
-                     PlayerEntityModel<AbstractClientPlayerEntity> model = renderer.getModel();
+                
+                PlayerEntityRenderer renderer = (PlayerEntityRenderer)(Object)this;
+                PlayerEntityModel<AbstractClientPlayerEntity> model = renderer.getModel();
+
+                // 优先判断特定形态的渲染需求
+
+                // 1. 悦灵 (Allay) - 包括原版和SP: 保留头部和手臂，隐藏身体和腿
+                // 由于Mixin是底层修改，必须在此处显式隐藏原版模型的身体/腿部，否则会造成重叠
+                if (path.contains("allay")) {
+                     model.body.visible = false;
+                     model.jacket.visible = false;
+                     model.leftLeg.visible = false;
+                     model.rightLeg.visible = false;
+                     model.leftPants.visible = false;
+                     model.rightPants.visible = false;
                      
-                     // Hide all parts
+                     model.head.visible = true;
+                     model.hat.visible = true;
+                     model.rightArm.visible = true;
+                     model.leftArm.visible = true;
+                     model.rightSleeve.visible = true;
+                     model.leftSleeve.visible = true;
+                } 
+                // 2. 其他完全变身 (Phase 3 或 Phase SP) - 排除 Allay
+                else if ((phase == PlayerFormPhase.PHASE_3 || phase == PlayerFormPhase.PHASE_SP) && !path.contains("allay")) {
                      model.head.visible = false;
                      model.hat.visible = false;
                      model.body.visible = false;
@@ -45,6 +64,63 @@ public class SscPlayerEntityRendererMixin {
                      model.leftPants.visible = false;
                      model.rightPants.visible = false;
                      model.jacket.visible = false;
+                }
+                // 3. 过渡形态 - 狐狸 (Fox) Phase 1 & 2
+                else if (path.contains("fox") && (phase == PlayerFormPhase.PHASE_1 || phase == PlayerFormPhase.PHASE_2)) {
+                     // 隐藏四肢
+                     model.leftLeg.visible = false;
+                     model.rightLeg.visible = false;
+                     model.leftPants.visible = false;
+                     model.rightPants.visible = false;
+                     model.leftArm.visible = false;
+                     model.rightArm.visible = false;
+                     model.leftSleeve.visible = false;
+                     model.rightSleeve.visible = false;
+                }
+                // 4. 过渡形态 - 狼 (Wolf)
+                else if (path.contains("wolf")) {
+                     if (phase == PlayerFormPhase.PHASE_1) {
+                         // 隐藏腿部和袖子
+                         model.leftLeg.visible = false;
+                         model.rightLeg.visible = false;
+                         model.leftPants.visible = false;
+                         model.rightPants.visible = false;
+                         model.leftSleeve.visible = false;
+                         model.rightSleeve.visible = false;
+                     } else if (phase == PlayerFormPhase.PHASE_2) {
+                         // 隐藏四肢和帽子
+                         model.leftLeg.visible = false;
+                         model.rightLeg.visible = false;
+                         model.leftPants.visible = false;
+                         model.rightPants.visible = false;
+                         model.leftArm.visible = false;
+                         model.rightArm.visible = false;
+                         model.leftSleeve.visible = false;
+                         model.rightSleeve.visible = false;
+                         model.hat.visible = false;
+                     }
+                }
+                // 5. 过渡形态 - 蝙蝠 (Bat) Phase 2
+                else if (path.contains("bat") && phase == PlayerFormPhase.PHASE_2) {
+                     // 隐藏四肢
+                     model.leftLeg.visible = false;
+                     model.rightLeg.visible = false;
+                     model.leftPants.visible = false;
+                     model.rightPants.visible = false;
+                     model.leftArm.visible = false;
+                     model.rightArm.visible = false;
+                     model.leftSleeve.visible = false;
+                     model.rightSleeve.visible = false;
+                }
+                // 6. 过渡形态 - 野猫 (Ocelot) Phase 2
+                else if (path.contains("ocelot") && phase == PlayerFormPhase.PHASE_2) {
+                     // 隐藏腿部和袖子 (同狼 Phase 1)
+                     model.leftLeg.visible = false;
+                     model.rightLeg.visible = false;
+                     model.leftPants.visible = false;
+                     model.rightPants.visible = false;
+                     model.leftSleeve.visible = false;
+                     model.rightSleeve.visible = false;
                 }
             }
         }
