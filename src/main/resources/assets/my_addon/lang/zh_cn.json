@@ -45,7 +45,7 @@
   "power.my_addon.form_axolotl_sp_natural_regen_boost.name": "快速代谢",
   "power.my_addon.form_axolotl_sp_natural_regen_boost.description": "你的自然生命恢复速度比普通美西螈快20%。",
   "power.my_addon.form_axolotl_sp_play_dead.name": "假死",
-  "power.my_addon.form_axolotl_sp_play_dead.description": "当生命值降至2颗心或更低时，进入假死状态持续5秒，期间获得失明和反胃效果，消除所有怪物仇恨，恢复15滴血并减免90%伤害。120秒冷却（死亡重置）。",
+  "power.my_addon.form_axolotl_sp_play_dead.description": "主动进入假死状态持续6秒，期间获得失明和无法移动效果，消除所有怪物仇恨，提供生命恢复3并减免90%伤害。36秒冷却。",
   "power.my_addon.form_axolotl_sp_water_ball.name": "强化水流爆破",
   "power.my_addon.form_axolotl_sp_water_ball.description": "在地面上从奔跑切换为蹲下时触发水流爆破，造成比普通美西螈更高的伤害。消耗5%湿润值。",
   "power.my_addon.form_axolotl_sp_water_spear.name": "水矛制作",

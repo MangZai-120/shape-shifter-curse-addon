@@ -5,7 +5,7 @@
         "entity_action": {
             "type": "ssc_addon:trigger_play_dead"
         },
-        "cooldown": 420,
+        "cooldown": 720,
         "key": {
             "key": "key.ssc_addon.play_dead"
         },

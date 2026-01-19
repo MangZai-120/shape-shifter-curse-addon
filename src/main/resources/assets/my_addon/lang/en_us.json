@@ -44,7 +44,7 @@
   "power.my_addon.form_axolotl_sp_natural_regen_boost.name": "Rapid Metabolism",
   "power.my_addon.form_axolotl_sp_natural_regen_boost.description": "Your natural regeneration speed is 20% faster than a normal Axolotl.",
   "power.my_addon.form_axolotl_sp_play_dead.name": "Play Dead",
-  "power.my_addon.form_axolotl_sp_play_dead.description": "When health drops to 2 hearts or lower, enter Play Dead state for 5s. Gain Blindness and Nausea, remove all mob aggro, restore 15 HP, and reduce incoming damage by 90%. 120s Cooldown (resets on death).",
+  "power.my_addon.form_axolotl_sp_play_dead.description": "Actively enter Play Dead state for 6s. Gain Blindness and Immobility, remove all mob aggro, provide Regeneration III and reduce incoming damage by 90%. 36s Cooldown.",
   "power.my_addon.form_axolotl_sp_water_ball.name": "Enhanced Water Burst",
   "power.my_addon.form_axolotl_sp_water_ball.description": "Trigger Water Burst when switching from sprinting to sneaking on ground, dealing higher damage than normal Axolotls. Consumes 5% Moisture.",
   "power.my_addon.form_axolotl_sp_water_spear.name": "Water Spear Crafting",
