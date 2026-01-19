@@ -25,12 +25,12 @@ public class SscAddonClient implements ClientModInitializer {
     private TridentEntityModel tridentModel;
     
     // SP Allay Keys
-    public static final KeyBinding KEY_ALLAY_HEAL = new KeyBinding(
+    /*public static final KeyBinding KEY_ALLAY_HEAL = new KeyBinding(
         "key.ssc_addon.allay_heal", 
         InputUtil.Type.KEYSYM, 
         GLFW.GLFW_KEY_R, 
         CATEGORY
-    );
+    );*/
 
     
     // SP Familiar Fox Keys
@@ -68,7 +68,7 @@ public class SscAddonClient implements ClientModInitializer {
         System.out.println("SSC ADDON DEBUG: Registering Client KeyBindings...");
         
         // SP Allay Keys
-        KeyBindingHelper.registerKeyBinding(KEY_ALLAY_HEAL);
+        //KeyBindingHelper.registerKeyBinding(KEY_ALLAY_HEAL);
 
         // SP Familiar Fox Keys
         KeyBindingHelper.registerKeyBinding(KEY_FOX_FIRE);
@@ -94,11 +94,11 @@ public class SscAddonClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null) return;
             
-            if (KEY_ALLAY_HEAL.isPressed()) {
+            /*if (KEY_ALLAY_HEAL.isPressed()) {
                 net.minecraft.network.PacketByteBuf buf = PacketByteBufs.create();
                 buf.writeInt(1); // Key ID 1 for Allay Heal
                 ClientPlayNetworking.send(SscAddonNetworking.PACKET_KEY_PRESS, buf);
-            }
+            }*/
             
             // Add other key checks here
         });

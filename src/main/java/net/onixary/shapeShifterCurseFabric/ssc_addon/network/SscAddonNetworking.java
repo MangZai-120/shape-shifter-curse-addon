@@ -5,7 +5,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManager;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.Ability_AllayHeal;
+//import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.Ability_AllayHeal;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.client.SscAddonClient;
 
@@ -31,9 +31,9 @@ public class SscAddonNetworking {
         System.out.println("SSC Addon Key Press: " + keyId + ", Form: " + formId);
         
         // Allay Heal (using keyId 1 for now, mapped from client)
-        if (keyId == 1 && (formId.getPath().equals("form_allay_sp") || formId.getPath().equals("allay_sp"))) {
+        /*if (keyId == 1 && (formId.getPath().equals("form_allay_sp") || formId.getPath().equals("allay_sp"))) {
              Ability_AllayHeal.onHold(player);
-        }
+        }*/
         
         // Add other key handlers here if needed (e.g. Fox Fire)
     }

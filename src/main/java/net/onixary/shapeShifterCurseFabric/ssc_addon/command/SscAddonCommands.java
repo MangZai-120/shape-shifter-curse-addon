@@ -15,11 +15,12 @@ import java.util.Collection;
 import java.util.UUID;
 import net.minecraft.text.Text;
 
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.Ability_AllayHeal;
+//import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.Ability_AllayHeal;
 
 public class SscAddonCommands {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("ssc_addon_action")
+             /*
              .then(CommandManager.literal("hold_allay_heal")
                  .executes(context -> {
                      ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
@@ -27,6 +28,7 @@ public class SscAddonCommands {
                      return 1;
                  })
              )
+             */
         );
 
         dispatcher.register(CommandManager.literal("ssc-addon")
@@ -37,6 +39,7 @@ public class SscAddonCommands {
             )
         );
 
+        /*
         dispatcher.register(CommandManager.literal("my_addon_allay_treatment")
                 .then(CommandManager.argument("allayPlayer", EntityArgumentType.player())
                         .then(CommandManager.argument("targetPlayer", EntityArgumentType.player())
@@ -44,8 +47,10 @@ public class SscAddonCommands {
                         )
                 )
         );
+        */
     }
 
+    /*
     private static int registerTreatmentWhitelist(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity allayPlayer = EntityArgumentType.getPlayer(context, "allayPlayer");
         ServerPlayerEntity targetPlayer = EntityArgumentType.getPlayer(context, "targetPlayer");
@@ -58,6 +63,7 @@ public class SscAddonCommands {
 
         return 1;
     }
+    */
 
     private static int markOwner(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         Collection<? extends Entity> targets = EntityArgumentType.getEntities(context, "targets");
