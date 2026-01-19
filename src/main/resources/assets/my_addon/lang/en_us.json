@@ -1,5 +1,6 @@
 {
   "item.ssc_addon.portable_moisturizer": "Axolotl Humidifier",
+  "key.ssc_addon.play_dead": "Feign Death",
   "message.ssc_addon.moisturizer.on": "Axolotl Humidifier ON",
   "message.ssc_addon.moisturizer.off": "Axolotl Humidifier OFF",
   "message.ssc_addon.moisturizer.empty": "Axolotl Humidifier Drained, Auto-Off",
