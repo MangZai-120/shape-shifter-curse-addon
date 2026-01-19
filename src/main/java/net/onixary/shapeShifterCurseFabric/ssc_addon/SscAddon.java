@@ -24,7 +24,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableMoisturizerIte
 import net.minecraft.item.ToolMaterials;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Axolotl3;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_FamiliarFox3;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Allay;
+//import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Allay;
 import net.minecraft.recipe.RecipeSerializer;
 import net.minecraft.recipe.SpecialRecipeSerializer;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.RefillMoisturizerRecipe;
@@ -73,7 +73,7 @@ public class SscAddon implements ModInitializer {
 
         SscAddonNetworking.registerServerReceivers();
 
-        SpAllayMana.register();
+        //SpAllayMana.register();
         
         // Register SP Forms with custom animation controllers
         Form_Axolotl3 axolotlForm = new Form_Axolotl3(new Identifier("my_addon", "axolotl_sp"));
@@ -86,15 +86,16 @@ public class SscAddon implements ModInitializer {
         RegPlayerForms.registerPlayerForm(familiarFoxForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_familiar_fox_sp")).addForm(familiarFoxForm, 5));
 
-        Form_Allay allayForm = new Form_Allay(new Identifier("my_addon", "form_allay_sp"));
-        allayForm.setPhase(PlayerFormPhase.PHASE_SP);
-        RegPlayerForms.registerPlayerForm(allayForm);
-        RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_form_allay_sp")).addForm(allayForm, 5));
+        //Form_Allay allayForm = new Form_Allay(new Identifier("my_addon", "form_allay_sp"));
+        //allayForm.setPhase(PlayerFormPhase.PHASE_SP);
+        //RegPlayerForms.registerPlayerForm(allayForm);
+        //RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_form_allay_sp")).addForm(allayForm, 5));
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             SscAddonCommands.register(dispatcher);
         });
 
+        /*
         // Tick Event for SP Allay Ability
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.START_WORLD_TICK.register(world -> {
             for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()) {
@@ -118,9 +119,11 @@ public class SscAddon implements ModInitializer {
                             return net.minecraft.util.TypedActionResult.success(stack);
                         }
                     }
+                    }
                 }
             }
             return net.minecraft.util.TypedActionResult.pass(player.getStackInHand(hand));
         });
+        */
     }
 }
