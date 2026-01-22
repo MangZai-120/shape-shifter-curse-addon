@@ -1,0 +1,30 @@
+{
+    "type": "origins:self_action_on_kill",
+    "condition": {
+        "type": "origins:and",
+        "conditions": [
+            {
+                "type": "ssc_addon:has_blue_fire_amulet"
+            },
+            {
+                "type": "origins:resource",
+                "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state",
+                "comparison": "==",
+                "compare_to": 1
+            }
+        ]
+    },
+    "entity_action": {
+        "type": "origins:and",
+        "actions": [
+            {
+                "type": "origins:heal",
+                "amount": 2.0
+            },
+            {
+                "type": "shape-shifter-curse:gain_mana",
+                "mana": 5.0
+            }
+        ]
+    }
+}

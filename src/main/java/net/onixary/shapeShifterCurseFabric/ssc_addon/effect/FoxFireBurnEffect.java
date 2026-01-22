@@ -65,7 +65,10 @@ public class FoxFireBurnEffect extends StatusEffect {
                      source = entity.getDamageSources().playerAttack(player);
                  }
                  
-                 entity.damage(source, 1.0f);
+                 net.minecraft.util.math.Vec3d oldVelocity = entity.getVelocity();
+                 if (entity.damage(source, 1.0f)) {
+                     entity.setVelocity(oldVelocity);
+                 }
                  
                  // Spawn explicit particles on server for everyone to see
                  if (entity.getWorld() instanceof ServerWorld serverWorld) {

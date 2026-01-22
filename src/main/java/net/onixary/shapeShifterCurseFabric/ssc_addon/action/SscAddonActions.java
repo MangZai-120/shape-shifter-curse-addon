@@ -47,7 +47,10 @@ public class SscAddonActions {
                     double distSq = living.squaredDistanceTo(target);
                     
                     if (dot > 0.8 && distSq < distance * distance) {
-                         target.damage(target.getDamageSources().playerAttack((PlayerEntity)living), damageAmount);
+                         Vec3d oldVelocity = target.getVelocity();
+                         if (target.damage(target.getDamageSources().playerAttack((PlayerEntity)living), damageAmount)) {
+                             target.setVelocity(oldVelocity);
+                         }
                          target.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, 100, 0)); // 5 seconds
                     }
                 });
@@ -89,8 +92,9 @@ public class SscAddonActions {
                 if (target instanceof LivingEntity) {
                     RegistryKey<DamageType> damageTypeKey = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, damageTypeId);
                     Vec3d oldVelocity = target.getVelocity();
-                    target.damage(target.getDamageSources().create(damageTypeKey, null, actor), amount);
-                    target.setVelocity(oldVelocity);
+                    if (target.damage(target.getDamageSources().create(damageTypeKey, null, actor), amount)) {
+                        target.setVelocity(oldVelocity);
+                    }
                 }
             }));
             

@@ -11,10 +11,23 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import dev.emi.trinkets.api.TrinketsApi;
 
 public class SscAddonConditions {
 
     public static void register() {
+        register(new ConditionFactory<>(new Identifier("ssc_addon", "has_blue_fire_amulet"),
+            new SerializableData(),
+            (data, entity) -> {
+                if (entity instanceof PlayerEntity player) {
+                     return TrinketsApi.getTrinketComponent(player).map(component -> 
+                         component.isEquipped(SscAddon.BLUE_FIRE_AMULET)
+                     ).orElse(false);
+                }
+                return false;
+            }));
+
         register(new ConditionFactory<>(new Identifier("ssc_addon", "has_mana_percent_safe"),
             new SerializableData()
                 .add("mana_percent", SerializableDataTypes.DOUBLE)
