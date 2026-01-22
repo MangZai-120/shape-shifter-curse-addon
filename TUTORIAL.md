@@ -85,13 +85,13 @@ The **Axolotl Moisturizer** is a lifesaver for this form.
 - **How to Obtain**: Crafted using **Iron Ingots**, **Redstone**, and a **Sponge**.
 - **Usage**: Right-click while holding to toggle on/off. It maintains your humidity levels when out of water.
 - **Recharge**: Craft with a Bucket of Axolotl to refill its energy.
-- **Effect**: Continuously restores SP Axolotl's moisture, lasting up to 10 minutes.
+- **Effect**: Continuously restores SP Axolotl's moisture, lasting up to 90 minutes.
 
 **美西螈加湿器**是此形态的救命稻草。
 - **如何获得**: 需要铁锭，红石，海绵合成。
 - **用法**：手持该物品右键点击切换开关。它能在离开水时维持你的湿润度。
 - **充能**：使用美西螈桶合成以补充能量。
-- **效果**：持续回复sp美西螈的湿润度，最多持续10分钟。
+- **效果**：持续回复sp美西螈的湿润度，最多持续90分钟。
 
 
 
