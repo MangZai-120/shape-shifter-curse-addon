@@ -1,6 +1,8 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin;
 
 import io.github.apace100.apoli.component.PowerHolderComponent;
+import io.github.apace100.apoli.power.PowerType;
+import io.github.apace100.apoli.power.PowerTypeRegistry;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.TargetPredicate;
 import net.minecraft.util.Identifier;
@@ -14,8 +16,11 @@ public class SscAddonTargetPredicateMixin {
 
     @ModifyVariable(method = "test", at = @At("STORE"), ordinal = 0)
     private double modifyMaxDistance(double d, @Nullable LivingEntity baseEntity, LivingEntity targetEntity) {
-        if (targetEntity != null && PowerHolderComponent.hasPower(targetEntity, new Identifier("my_addon", "form_familiar_fox_sp_visibility"))) {
-            return d * 0.67D;
+        if (targetEntity != null) {
+            PowerType<?> powerType = PowerTypeRegistry.get(new Identifier("my_addon", "form_familiar_fox_sp_visibility"));
+            if (powerType != null && PowerHolderComponent.KEY.get(targetEntity).hasPower(powerType)) {
+                return d * 0.67D;
+            }
         }
         return d;
     }
