@@ -10,6 +10,7 @@
     "SscAddonEntityIgnitionMixin",
     "SscAddonEntityMixin",
     "SscAddonCodexStatusMixin",
+    "SscAddonVillagerInteractionMixin",
     "SscAddonTargetPredicateMixin",
     "TransformRelatedItemsMixin"
   ],

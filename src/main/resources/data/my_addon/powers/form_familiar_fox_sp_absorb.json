@@ -80,7 +80,7 @@
                 {
                     "type": "my_addon:damage_target_from_actor",
                     "amount": 0.1,
-                    "damage_type": "minecraft:generic"
+                    "damage_type": "minecraft:player_attack"
                 }
             ]
         },
@@ -172,7 +172,7 @@
                     {
                         "type": "my_addon:damage_target_from_actor",
                         "amount": 0.1,
-                        "damage_type": "minecraft:generic"
+                        "damage_type": "minecraft:player_attack"
                     }
                  ]
             },
