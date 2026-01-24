@@ -28,18 +28,35 @@ public class PortableMoisturizerItem extends Item {
     }
 
     @Override
-    public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
-        ItemStack stack = user.getStackInHand(hand);
+    public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
+        ItemStack stack = player.getStackInHand(hand);
+
+        // 对stack判空，尽管正常游戏时NPE的可能性很小
+        if (stack == null){
+            return TypedActionResult.fail(stack);
+        }
         
         // Toggle Active State
         boolean isActive = isActive(stack);
+	    boolean newState = !isActive; // 切换状态
         setActive(stack, !isActive);
-        
-        if (!world.isClient) {
-            user.sendMessage(Text.translatable(!isActive ? 
-                "message.ssc_addon.moisturizer.on" : 
-                "message.ssc_addon.moisturizer.off"), true);
-        }
+
+		// 形态检查
+	    PlayerFormComponent formComponent = RegPlayerFormComponent.PLAYER_FORM.get(player);
+	    boolean isValidForm = formComponent != null &&
+			    formComponent.getCurrentForm() != null &&
+			    formComponent.getCurrentForm().FormID != null &&
+			    formComponent.getCurrentForm().FormID.equals(new Identifier("my_addon", "axolotl_sp"));
+
+	    if (newState && !isValidForm) {
+		    // 想开启但形态不对
+		    player.sendMessage(Text.translatable("message.ssc_addon.moisturizer.off"), true);
+	    } else {
+		    // 形态正确，或者想关闭
+		    player.sendMessage(Text.translatable(newState ?
+				    "message.ssc_addon.moisturizer.on" :
+				    "message.ssc_addon.moisturizer.off"), true);
+	    }
         
         return TypedActionResult.success(stack);
     }
@@ -53,8 +70,10 @@ public class PortableMoisturizerItem extends Item {
     private void humidifyLogic(ItemStack stack, World world, PlayerEntity player) {
         // 1. Check if user is in Axolotl SP form
         PlayerFormComponent formComponent = RegPlayerFormComponent.PLAYER_FORM.get(player);
-        if (formComponent.getCurrentForm() == null || 
-            !formComponent.getCurrentForm().FormID.equals(new Identifier("my_addon", "axolotl_sp"))) {
+        if (formComponent == null ||
+                formComponent.getCurrentForm() == null ||
+                formComponent.getCurrentForm().FormID == null ||
+                !formComponent.getCurrentForm().FormID.equals(new Identifier("my_addon", "axolotl_sp"))) {
             // Automatically turn off if not in correct form
             if (isActive(stack)) {
                 setActive(stack, false);
@@ -75,7 +94,8 @@ public class PortableMoisturizerItem extends Item {
                     // Recover 2% Moisture (using Air as moisture)
                     int maxAir = player.getMaxAir();
                     int currentAir = player.getAir();
-                    int recoveryAmount = (int)(maxAir * 0.02); // 2% of max (e.g. 6 air points)
+                    // 考虑到有些模组有骚操作导致maxAir很小然后导致recoveryAmount为0，所以这里加上Math.ceil
+                    int recoveryAmount = (int) Math.ceil(maxAir * 0.02); // 2% of max (e.g. 6 air points)
                     
                     // Only increase if needed
                     if (currentAir < maxAir) {
