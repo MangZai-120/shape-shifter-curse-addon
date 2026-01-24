@@ -17,6 +17,7 @@ public class PlayingDeadEffect extends StatusEffect {
 
     @Override
     public void applyUpdateEffect(LivingEntity entity, int amplifier) {
+        if (entity == null || entity.isDead()){return;}
         // Use SWIMMING pose which forces the model to lie flat (crawl animation) on client side
         entity.setPose(EntityPose.SWIMMING);
         entity.setSwimming(true);
