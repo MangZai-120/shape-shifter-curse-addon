@@ -7,11 +7,12 @@
   "mixins": [
     "ItemEntityMixin",
     "MobEntityMixin",
+    "SscAddonCodexStatusMixin",
     "SscAddonEntityIgnitionMixin",
     "SscAddonEntityMixin",
-    "SscAddonCodexStatusMixin",
-    "SscAddonVillagerInteractionMixin",
     "SscAddonTargetPredicateMixin",
+    "SscAddonTravelMixin",
+    "SscAddonVillagerInteractionMixin",
     "TransformRelatedItemsMixin"
   ],
   "client": [
