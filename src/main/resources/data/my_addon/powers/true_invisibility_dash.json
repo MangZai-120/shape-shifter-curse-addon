@@ -1,0 +1,12 @@
+{
+    "type": "my_addon:true_invisibility_dash",
+    "cooldown": 240,
+    "hud_render": {
+        "should_render": false
+    },
+    "key": {
+        "key": "key.ssc_addon.sp_secondary"
+    },
+    "name": "震慑冲刺",
+    "description": "隐身时按下次要技能键，破隐并向前冲刺5格。落地时震慑周围8格内敌人1.5秒。"
+}

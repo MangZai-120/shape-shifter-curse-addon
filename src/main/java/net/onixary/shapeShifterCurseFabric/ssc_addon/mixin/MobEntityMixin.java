@@ -13,10 +13,34 @@ public abstract class MobEntityMixin {
 
     @Inject(method = "setTarget", at = @At("HEAD"), cancellable = true)
     private void ssc_addon$onSetTarget(LivingEntity target, CallbackInfo ci) {
-        if (target != null && target.hasStatusEffect(SscAddon.PLAYING_DEAD)) {
-            // Prevent mob from optimizing onto the player
-            // System.out.println("SSC ADDON DEBUG: Mob " + ((MobEntity)(Object)this).getName().getString() + " ignored Playing Dead target!");
+        if (target != null) {
+            if (target.hasStatusEffect(SscAddon.PLAYING_DEAD)) {
+                // Prevent mob from optimizing onto the player
+                ci.cancel();
+            }
+            if (target.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) {
+                // Prevent mob from optimizing onto the invisible player
+                ci.cancel();
+            }
+        }
+    }
+
+    @Inject(method = "mobTick", at = @At("HEAD"), cancellable = true)
+    private void ssc_addon$onMobTick(CallbackInfo ci) {
+        MobEntity mob = (MobEntity)(Object)this;
+        
+        // 1. Stun Logic
+        if (mob.hasStatusEffect(SscAddon.STUN)) {
+            // Disable AI goals/logic while stunned, but allow basic physics (in tick/travel) to run
             ci.cancel();
+            return;
+        }
+        
+        // 2. Continuous Aggression Drop for True Invisibility
+        // If the mob is currently targeting someone who is invisible, forget them immediately.
+        LivingEntity target = mob.getTarget();
+        if (target != null && target.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) {
+            mob.setTarget(null);
         }
     }
 }

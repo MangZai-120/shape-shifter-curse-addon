@@ -6,6 +6,7 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.integration.origins.origin.Origin;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
@@ -44,6 +45,11 @@ public abstract class OriginFurMixin extends GeoObjectRenderer<OriginFurAnimatab
     @Override
     public void render(MatrixStack poseStack, OriginFurAnimatable animatable, VertexConsumerProvider bufferSource, RenderLayer renderType, VertexConsumer buffer, int packedLight) {
         if (animatable.e != null) {
+            // Check for True Invisibility Effect
+            if (animatable.e.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) {
+                return;
+            }
+
             try {
                 PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(animatable.e);
                 PlayerFormBase currentForm = component.getCurrentForm();
