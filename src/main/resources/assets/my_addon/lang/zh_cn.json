@@ -69,5 +69,12 @@
   "codex.form.my_addon.axolotl_sp.pros": "深渊之主\n你对水元素的掌控已达到全新的高度，赋予你强大的水系技能：\n\n水矛制作：使用箭矢和湿润值凝聚一根临时的水矛，近战攻击距离和伤害与三叉戟相同，命中敌人时施加减速效果。\n\n涡流冲击：以自身为中心创建一个强大的涡流，吸引周围的敌人。3秒后爆发，击飞敌人并造成高额伤害。技能期间减少30%受到的伤害。\n\n假死：主动进入假死状态，消除所有怪物仇恨，快速恢复生命值并大幅减少受到的伤害。\n\n雨润：在雨中可以恢复湿润值。\n\n快速代谢：自然生命恢复速度提升20%。\n\n此外，你保留了先前的所有能力：水中呼吸、水中视野、游泳速度提升等。",
   "codex.form.my_addon.axolotl_sp.cons": "强大的水系能力需要湿润值来维持：\n\n所有主动技能都会消耗湿润值。\n\n在陆地上时，你的移动速度仍然较慢。\n\n你依然无法装备头盔。\n\n作为肉食性生物，你只能食用肉类食物。",
   "codex.form.my_addon.axolotl_sp.instincts": "你对水元素的感知已达到巅峰，但你的身体也因此变得更加依赖水分。你能感受到远处水体的存在，总是渴望着回到水中。\n即使在陆地上，雨水也能为你带来慰藉。",
-  "message.ssc_addon.inhibitor.fail.sp_form": "抑制剂无法逆转这种形态"
+  "message.ssc_addon.inhibitor.fail.sp_form": "抑制剂无法逆转这种形态",
+  "origin.my_addon.form_wild_cat_sp.name": "野猫(SP)",
+  "origin.my_addon.form_wild_cat_sp.description": "野猫的特殊变体形态。",
+  "codex.form.my_addon.wild_cat_sp.title": "\n'当诅咒与野性的力量完全融合，你便不再仅仅是一只野猫…\n你是丛林的幽灵，暗夜的猎手'",
+  "codex.form.my_addon.wild_cat_sp.appearance": "你的身体看起来与普通的野性猫并无太大区别，但你的眼中闪烁着更加危险的光芒，皮毛在月光下泛着神秘的光泽。",
+  "codex.form.my_addon.wild_cat_sp.pros": "暗夜猎手\n你保留了野性猫的所有基础能力：\n\n静音脚步：你的脚步声几乎无法被察觉\n\n威慑苦力怕：苦力怕对你敬而远之\n\n完美落地：你不会受到摔落伤害\n\n嘶嘶威慑：你可以向幻翼发出威吓的嘶嘶声",
+  "codex.form.my_addon.wild_cat_sp.cons": "野性的代价：\n\n你无法装备腿甲和鞋",
+  "codex.form.my_addon.wild_cat_sp.instincts": "你的野性本能已经达到了顶峰，但你的灵魂也被月之诅咒所侵蚀。你感觉自己与丛林的联系更加紧密，总是渴望着在黑暗中狩猎。"
 }
