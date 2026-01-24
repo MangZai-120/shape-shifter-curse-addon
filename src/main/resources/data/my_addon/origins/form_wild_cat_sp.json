@@ -11,6 +11,8 @@
         "shape-shifter-curse:form_ocelot_sound_hurt",
         "shape-shifter-curse:form_ocelot_hiss_phantom",
         "shape-shifter-curse:form_ocelot_sound_key",
+        "my_addon:true_invisibility",
+        "my_addon:true_invisibility_dash",
         "shape-shifter-curse:beast_form_tag"
     ],
     "icon": {

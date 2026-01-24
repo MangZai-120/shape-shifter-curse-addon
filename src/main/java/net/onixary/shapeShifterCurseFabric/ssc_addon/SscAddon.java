@@ -46,6 +46,10 @@ public class SscAddon implements ModInitializer {
     public static final StatusEffect FOX_FIRE_BURN = new FoxFireBurnEffect();
     public static final StatusEffect BLUE_FIRE_RING = new BlueFireRingEffect();
     public static final StatusEffect PLAYING_DEAD = new PlayingDeadEffect();
+    public static final StatusEffect TRUE_INVISIBILITY = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.TrueInvisibilityEffect();
+    public static final StatusEffect PRE_INVISIBILITY = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.PreInvisibilityEffect();
+    public static final StatusEffect STUN = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.StunEffect();
+    public static final StatusEffect GUARANTEED_CRIT = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.GuaranteedCritEffect();
     
     public static final EntityType<WaterSpearEntity> WATER_SPEAR_ENTITY = Registry.register(
             Registries.ENTITY_TYPE,
@@ -69,6 +73,10 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "fox_fire_burn"), FOX_FIRE_BURN);
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "playing_dead"), PLAYING_DEAD);
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "blue_fire_ring"), BLUE_FIRE_RING);
+        Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "true_invisibility"), TRUE_INVISIBILITY);
+        Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "pre_invisibility"), PRE_INVISIBILITY);
+        Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "stun"), STUN);
+        Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "guaranteed_crit"), GUARANTEED_CRIT);
         
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "sp_upgrade_thing"), SP_UPGRADE_THING);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "portable_moisturizer"), PORTABLE_MOISTURIZER);

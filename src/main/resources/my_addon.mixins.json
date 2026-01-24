@@ -12,13 +12,19 @@
     "SscAddonCodexStatusMixin",
     "SscAddonVillagerInteractionMixin",
     "SscAddonTargetPredicateMixin",
-    "TransformRelatedItemsMixin"
+    "TransformRelatedItemsMixin",
+    "SscPlayerMixin",
+    "StunnedJumpMixin"
   ],
   "client": [
     "InstinctBarRendererMixin",
     "OriginFurMixin",
     "OriginFurModelMixin",
-    "SscPlayerEntityRendererMixin"
+    "SscPlayerEntityRendererMixin",
+    "TrueInvisibilityArmorMixin",
+    "StunnedMouseMixin",
+    "StunnedInputMixin",
+    "StunnedCameraMixin"
   ],
   "injectors": {
     "defaultRequire": 1
