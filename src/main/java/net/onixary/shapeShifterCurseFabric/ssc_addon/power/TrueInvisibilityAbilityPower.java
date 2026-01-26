@@ -20,6 +20,7 @@ import io.github.apace100.apoli.component.PowerHolderComponent;
 import net.minecraft.text.Text;
 import net.minecraft.entity.player.PlayerEntity;
 import java.util.List;
+import dev.emi.trinkets.api.TrinketsApi;
 
 public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
     
@@ -40,7 +41,16 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
         this.setTicking(true);
     }
 
+    private boolean hasInvisibilityCloak() {
+        return TrinketsApi.getTrinketComponent(entity).map(component -> 
+            component.isEquipped(SscAddon.INVISIBILITY_CLOAK)
+        ).orElse(false);
+    }
+
     public int getEffectDuration() {
+        if (hasInvisibilityCloak()) {
+            return this.effectDuration + 40; // Add 2 seconds (40 ticks)
+        }
         return this.effectDuration;
     }
 
@@ -61,7 +71,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
             entity.getWorld().playSound(null, entity.getX(), entity.getY(), entity.getZ(), 
                 SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
             if (entity instanceof PlayerEntity player) {
-                player.sendMessage(Text.of("§7隐身时间结束"), true);
+                // player.sendMessage(Text.of("§7隐身时间结束"), true);
             }
         }
         
@@ -109,11 +119,15 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
     }
     
     /**
-     * Apply 12 second cooldown to both this power and the dash power
+     * Apply cooldown to both this power and the dash power
      */
     public void applyUniversalCooldown() {
         // Use real time for reliable cooldown
-        internalCooldownEndTime = System.currentTimeMillis() + (COOLDOWN_TICKS * 50); // 50ms per tick
+        int cooldownTicks = COOLDOWN_TICKS;
+        if (hasInvisibilityCloak()) {
+            cooldownTicks += 40; // Add 2 seconds to cooldown (from 12s to 14s)
+        }
+        internalCooldownEndTime = System.currentTimeMillis() + (cooldownTicks * 50); // 50ms per tick
         
         // Also set dash ability cooldown
         List<TrueInvisibilityDashAbiltyPower> dashPowers = PowerHolderComponent.getPowers(entity, TrueInvisibilityDashAbiltyPower.class);
@@ -156,14 +170,14 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
             entity.addStatusEffect(new StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.SPEED, 100, 1, false, false, true));
             
             if (entity instanceof PlayerEntity player) {
-                player.sendMessage(Text.of("§a隐身已主动解除，获得爆发增益!"), true);
+                // player.sendMessage(Text.of("§a隐身已主动解除，获得爆发增益!"), true);
             }
         } else {
             // Action Break: Glass Break
             serverWorld.playSound(null, entity.getX(), entity.getY(), entity.getZ(), 
                 SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
             if (entity instanceof PlayerEntity player) {
-                player.sendMessage(Text.of("§c隐身被打破!"), true);
+                // player.sendMessage(Text.of("§c隐身被打破!"), true);
             }
         }
         
@@ -196,13 +210,13 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
                 entity.addStatusEffect(new StatusEffectInstance(SscAddon.PRE_INVISIBILITY, 20, 0, false, false, true));
                 
                 if (entity instanceof PlayerEntity player) {
-                    player.sendMessage(Text.of("§7正在引导隐身..."), true);
+                    // player.sendMessage(Text.of("§7正在引导隐身..."), true);
                 }
             } else {
                 // On cooldown - show remaining time
                 if (entity instanceof PlayerEntity player) {
                     int remaining = getRemainingCooldownSeconds();
-                    player.sendMessage(Text.of("§c技能冷却中... " + remaining + "秒"), true);
+                    // player.sendMessage(Text.of("§c技能冷却中... " + remaining + "秒"), true);
                 }
             }
         }

@@ -1,0 +1,18 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+      "#E#"
+    ],
+    "key": {
+      "#": {
+        "item": "minecraft:phantom_membrane"
+      },
+      "E": {
+        "item": "minecraft:ender_eye"
+      }
+    },
+    "result": {
+      "item": "ssc_addon:invisibility_cloak",
+      "count": 1
+    }
+  }

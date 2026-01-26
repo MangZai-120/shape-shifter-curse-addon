@@ -106,7 +106,7 @@ public class TrueInvisibilityDashAbiltyPower extends ActiveCooldownPower {
         }
         
         if (entity instanceof PlayerEntity player) {
-            player.sendMessage(Text.of("§6震慑冲刺!"), true);
+            // player.sendMessage(Text.of("§6震慑冲刺!"), true);
         }
     }
     
@@ -159,7 +159,7 @@ public class TrueInvisibilityDashAbiltyPower extends ActiveCooldownPower {
                 SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 0.5f, 1.5f);
         
         if (entity instanceof PlayerEntity player) {
-            player.sendMessage(Text.of("§e震慑波动!"), true);
+            // player.sendMessage(Text.of("§e震慑波动!"), true);
         }
         
         isWaitingForStun = false;

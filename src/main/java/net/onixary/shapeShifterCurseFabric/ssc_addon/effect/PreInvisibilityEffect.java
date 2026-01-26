@@ -60,7 +60,7 @@ public class PreInvisibilityEffect extends StatusEffect {
 
             // 5. Notify Player
             if (entity instanceof PlayerEntity player) {
-                player.sendMessage(Text.of("§b§lInvisibility Active! (Press again to Strike)"), true);
+                // player.sendMessage(Text.of("§b§lInvisibility Active! (Press again to Strike)"), true);
             }
         }
     }
