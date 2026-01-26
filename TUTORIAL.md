@@ -167,7 +167,7 @@ None
 '当野性的力量完全觉醒，你便不再仅仅是一只野猫… 你是丛林的幽灵，暗夜的猎手'
 
 ### Unique Item: Cloak of Invisibility
-### 专属物品：隐匿斗篷
+### 专属物品：隐身斗篷
 
 - **How to Obtain**: Crafted using two **Phantom Membranes** sandwiching an **Ender Eye**.
 - **Usage**: Worn in the chestplate slot (or automatically active as accessory? Check in-game, assumed passive or equipable).
@@ -175,7 +175,7 @@ None
 
 - **如何获得**: 使用两个**幻翼膜**中间夹一个**末影之眼**合成。
 - **用法**：装备在胸甲槽（或作为饰品生效）。
-- **效果**：增加真实急迫持续时间2秒，但增加冷却时间2秒。野猫SP专属。
+- **效果**：增加真实隐身时间2秒，增加冷却时间2秒。野猫SP专属。
 
 ### Abilities
 ### 能力
