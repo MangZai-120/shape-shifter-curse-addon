@@ -23,10 +23,25 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.client.renderer.WaterSpearE
 
 import net.onixary.shapeShifterCurseFabric.ssc_addon.client.SscAddonKeybindings;
 
+import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+import net.minecraft.client.resource.language.I18n;
+import java.util.List;
+
 public class SscAddonClient implements ClientModInitializer {
     public static final String CATEGORY = "key.categories.ssc_addon";
     
     private TridentEntityModel tridentModel;
+    
+    private void addSplitTooltip(List<Text> lines, String key) {
+        if (I18n.hasTranslation(key)) {
+            String translated = I18n.translate(key);
+            for (String line : translated.split("\n")) {
+                lines.add(Text.literal(line).formatted(Formatting.GRAY));
+            }
+        }
+    }
     
     // SP Keybindings are now managed in SscAddonKeybindings.java
     
@@ -35,6 +50,24 @@ public class SscAddonClient implements ClientModInitializer {
         System.out.println("SSC ADDON DEBUG: Registering Client KeyBindings...");
         
         SscAddonKeybindings.register();
+
+        ItemTooltipCallback.EVENT.register((stack, context, lines) -> {
+            if (stack.getItem() == SscAddon.SHADOW_SHARD) {
+                addSplitTooltip(lines, "item.ssc_addon.shadow_shard.tooltip");
+            }
+            if (stack.getItem() == SscAddon.NIGHT_VISION_SHARD) {
+                addSplitTooltip(lines, "item.ssc_addon.night_vision_shard.tooltip");
+            }
+            if (stack.getItem() == SscAddon.ENDER_SHARD) {
+                addSplitTooltip(lines, "item.ssc_addon.ender_shard.tooltip");
+            }
+            if (stack.getItem() == SscAddon.HUNT_SHARD) {
+                addSplitTooltip(lines, "item.ssc_addon.hunt_shard.tooltip");
+            }
+            if (stack.getItem() == SscAddon.SCULK_SHARD) {
+                addSplitTooltip(lines, "item.ssc_addon.sculk_shard.tooltip");
+            }
+        });
 
         EntityRendererRegistry.register(SscAddon.WATER_SPEAR_ENTITY, WaterSpearEntityRenderer::new);
 

@@ -17,6 +17,8 @@ import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.minecraft.client.resource.language.I18n;
+
 import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
 
 public class EvolutionStoneItem extends Item {
@@ -79,7 +81,15 @@ public class EvolutionStoneItem extends Item {
     @Override
     public void appendTooltip(ItemStack stack, @org.jetbrains.annotations.Nullable World world, java.util.List<Text> tooltip, net.minecraft.client.item.TooltipContext context) {
         super.appendTooltip(stack, world, tooltip, context);
-        tooltip.add(Text.translatable("item.ssc_addon.evolution_stone.tooltip"));
+        String key = "item.ssc_addon.evolution_stone.tooltip";
+        if (I18n.hasTranslation(key)) {
+            String translated = I18n.translate(key);
+            for (String line : translated.split("\n")) {
+                tooltip.add(Text.literal(line).formatted(Formatting.GRAY));
+            }
+        } else {
+            tooltip.add(Text.translatable(key).formatted(Formatting.GRAY));
+        }
     }
 
     private Identifier getPlayerFormID(PlayerEntity player) {
