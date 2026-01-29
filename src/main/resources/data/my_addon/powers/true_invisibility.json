@@ -3,7 +3,7 @@
     "cooldown": 240,
     "duration": 100,
     "hud_render": {
-        "should_render": true,
+        "should_render": false,
         "sprite_location": "shape-shifter-curse:textures/gui/resource_bar.png",
         "bar_index": 5
     },
