@@ -137,7 +137,7 @@ public class SscAddon implements ModInitializer {
         //SpAllayMana.register();
         
         // Register SP Forms with custom animation controllers
-        Form_Axolotl3 axolotlForm = new Form_Axolotl3(new Identifier("my_addon", "form_axolotl_sp"));
+        Form_Axolotl3 axolotlForm = new Form_Axolotl3(new Identifier("my_addon", "axolotl_sp"));
         axolotlForm.setPhase(PlayerFormPhase.PHASE_SP);
         RegPlayerForms.registerPlayerForm(axolotlForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_axolotl_sp")).addForm(axolotlForm, 5));
