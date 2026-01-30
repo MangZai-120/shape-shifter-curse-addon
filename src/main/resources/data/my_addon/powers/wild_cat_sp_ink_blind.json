@@ -27,7 +27,7 @@
             },
             {
                 "type": "origins:area_of_effect",
-                "radius": 2.5,
+                "radius": 4.5,
                 "bientity_action": {
                     "type": "origins:target_action",
                     "action": {
@@ -47,20 +47,28 @@
                 "pitch": 1.0
             },
             {
+                "type": "origins:apply_effect",
+                "effect": {
+                    "effect": "ssc_addon:true_invisibility",
+                    "duration": 20,
+                    "amplifier": 1
+                }
+            },
+            {
                 "type": "origins:spawn_particles",
                 "particle": "minecraft:squid_ink",
                 "count": 50,
                 "speed": 0.0,
                 "force": true,
                 "spread": {
-                    "x": 2.5,
+                    "x": 4.5,
                     "y": 1.5,
-                    "z": 2.5
+                    "z": 4.5
                 }
             }
         ]
     },
-    "cooldown": 30,
+    "cooldown": 80,
     "hud_render": {
         "should_render": false,
         "bar_index": 5

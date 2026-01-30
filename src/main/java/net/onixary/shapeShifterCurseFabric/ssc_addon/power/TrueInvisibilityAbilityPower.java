@@ -29,6 +29,8 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
     
     // Internal cooldown tracking (separate from parent class)
     private long internalCooldownEndTime = 0;
+    private int gracePeriodTicks = 0;
+    private int lastAmplifier = 0;
     
     private boolean wasInvisible = false;
     private boolean wasUsingItem = false;
@@ -65,13 +67,16 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
         
         // Natural End Detection (Time expired - not from action break or key cancel)
         if (wasInvisible && !isInvisible && !isPrecasting) {
-            // Effect expired naturally - apply 12s CD
-            applyUniversalCooldown();
-            // Play glass break sound for natural expiration
-            entity.getWorld().playSound(null, entity.getX(), entity.getY(), entity.getZ(), 
-                SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
-            if (entity instanceof PlayerEntity player) {
-                // player.sendMessage(Text.of("§7隐身时间结束"), true);
+            // Effect expired naturally
+            // Only apply cooldown if it was the main ability (Amplifier 0)
+            if (lastAmplifier == 0) {
+                applyUniversalCooldown();
+                // Play glass break sound for natural expiration
+                entity.getWorld().playSound(null, entity.getX(), entity.getY(), entity.getZ(), 
+                    SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
+                if (entity instanceof PlayerEntity player) {
+                    // player.sendMessage(Text.of("§7隐身时间结束"), true);
+                }
             }
         }
         
@@ -79,6 +84,24 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
             wasUsingItem = false;
             wasHandSwinging = false;
             wasInvisible = false;
+            gracePeriodTicks = 5; // Reset grace period when not invisible
+            lastAmplifier = 0; // Reset amplifier tracking
+            return;
+        }
+
+        // Track current amplifier
+        StatusEffectInstance currentEffect = entity.getStatusEffect(SscAddon.TRUE_INVISIBILITY);
+        if (currentEffect != null) {
+            lastAmplifier = currentEffect.getAmplifier();
+        }
+        
+        // Decrease grace period if > 0
+        if (gracePeriodTicks > 0) {
+            gracePeriodTicks--;
+            // Update previous states to prevent immediate break after grace period
+            wasUsingItem = entity.isUsingItem();
+            wasHandSwinging = entity.handSwinging;
+            wasInvisible = isInvisible;
             return;
         }
         
@@ -154,6 +177,10 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
         
         if (!entity.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) return;
         
+        // Check amplifier before removing
+        StatusEffectInstance currentEffect = entity.getStatusEffect(SscAddon.TRUE_INVISIBILITY);
+        int currentAmp = (currentEffect != null) ? currentEffect.getAmplifier() : 0;
+        
         // Remove invisibility effect
         entity.removeStatusEffect(SscAddon.TRUE_INVISIBILITY);
         wasInvisible = false;
@@ -181,8 +208,10 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
             }
         }
         
-        // Apply universal 12s cooldown ONLY when breaking invisibility
-        applyUniversalCooldown();
+        // Apply universal 12s cooldown ONLY when breaking invisibility AND it was the main ability (Amp 0)
+        if (currentAmp == 0) {
+            applyUniversalCooldown();
+        }
     }
 
     @Override
