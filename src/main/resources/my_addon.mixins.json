@@ -24,6 +24,7 @@
     "SscPlayerEntityRendererMixin",
     "StunnedCameraMixin",
     "StunnedInputMixin",
+    "StunnedKeyBindingMixin",
     "StunnedMouseMixin",
     "TrueInvisibilityArmorMixin"
   ],
