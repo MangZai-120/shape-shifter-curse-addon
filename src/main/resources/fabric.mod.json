@@ -35,5 +35,13 @@
   },
   "suggests": {
     "another-mod": "*"
-  }
+  },
+  "contributors": [
+    {
+      "name": "MangZai-120",
+      "contact": {
+        "github": "https://github.com/MangZai-120"
+      }
+    }
+  ]
 }
