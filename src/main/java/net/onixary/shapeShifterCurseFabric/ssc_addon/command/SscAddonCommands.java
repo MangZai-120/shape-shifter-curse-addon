@@ -13,7 +13,6 @@ import net.minecraft.nbt.NbtCompound;
 
 import java.util.Collection;
 import java.util.UUID;
-import net.minecraft.text.Text;
 
 //import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.Ability_AllayHeal;
 

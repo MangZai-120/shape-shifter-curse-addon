@@ -4,8 +4,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.WaterSpearItem;
 import org.spongepowered.asm.mixin.Mixin;

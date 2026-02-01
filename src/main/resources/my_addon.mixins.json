@@ -5,27 +5,27 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "ssc-addon.refmap.json",
   "mixins": [
-    "SscAddonCodexStatusMixin",
     "ItemEntityMixin",
     "MobEntityMixin",
     "SscAddonCodexStatusMixin",
     "SscAddonEntityIgnitionMixin",
     "SscAddonEntityMixin",
     "SscAddonTargetPredicateMixin",
-    "TransformRelatedItemsMixin",
+    "SscAddonTravelMixin",
+    "SscAddonVillagerInteractionMixin",
     "SscPlayerMixin",
     "StunnedJumpMixin",
-    "SscAddonTravelMixin"
+    "TransformRelatedItemsMixin"
   ],
   "client": [
     "InstinctBarRendererMixin",
     "OriginFurMixin",
     "OriginFurModelMixin",
     "SscPlayerEntityRendererMixin",
-    "TrueInvisibilityArmorMixin",
-    "StunnedMouseMixin",
+    "StunnedCameraMixin",
     "StunnedInputMixin",
-    "StunnedCameraMixin"
+    "StunnedMouseMixin",
+    "TrueInvisibilityArmorMixin"
   ],
   "injectors": {
     "defaultRequire": 1

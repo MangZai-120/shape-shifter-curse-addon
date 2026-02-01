@@ -6,8 +6,7 @@ import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManager;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 //import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.Ability_AllayHeal;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.client.SscAddonClient;
+
 
 public class SscAddonNetworking {
     public static final Identifier PACKET_KEY_PRESS = new Identifier("my_addon", "key_press");
@@ -15,9 +14,7 @@ public class SscAddonNetworking {
     public static void registerServerReceivers() {
         ServerPlayNetworking.registerGlobalReceiver(PACKET_KEY_PRESS, (server, player, handler, buf, responseSender) -> {
             int keyId = buf.readInt();
-            server.execute(() -> {
-                handleKeyPress(player, keyId);
-            });
+            server.execute(() -> handleKeyPress(player, keyId));
         });
     }
 

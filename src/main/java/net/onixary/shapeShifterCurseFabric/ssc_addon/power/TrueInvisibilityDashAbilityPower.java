@@ -15,12 +15,11 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import io.github.apace100.apoli.power.Active;
-import net.minecraft.text.Text;
 import net.minecraft.entity.player.PlayerEntity;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import java.util.List;
 
-public class TrueInvisibilityDashAbiltyPower extends ActiveCooldownPower {
+public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
     
     private int ticksSinceDash = 0;
     private boolean isWaitingForStun = false;
@@ -30,7 +29,7 @@ public class TrueInvisibilityDashAbiltyPower extends ActiveCooldownPower {
     // Internal cooldown tracking (same as TrueInvisibilityAbilityPower)
     private long internalCooldownEndTime = 0;
 
-    public TrueInvisibilityDashAbiltyPower(PowerType<?> type, LivingEntity entity, int cooldownAfter, HudRender hudRender, Active.Key key) {
+    public TrueInvisibilityDashAbilityPower(PowerType<?> type, LivingEntity entity, int cooldownAfter, HudRender hudRender, Active.Key key) {
         super(type, entity, cooldownAfter, hudRender, (e) -> {});
         this.setKey(key);
         this.setTicking(true);
@@ -138,8 +137,8 @@ public class TrueInvisibilityDashAbiltyPower extends ActiveCooldownPower {
             
             // 2. Not other "Wild Cats" - check if they have the TrueInvisibility power
             // This includes all wild cats, whether visible or not
-            if (PowerHolderComponent.getPowers(e, TrueInvisibilityAbilityPower.class).size() > 0) return false;
-            if (PowerHolderComponent.getPowers(e, TrueInvisibilityDashAbiltyPower.class).size() > 0) return false;
+            if (!PowerHolderComponent.getPowers(e, TrueInvisibilityAbilityPower.class).isEmpty()) return false;
+            if (!PowerHolderComponent.getPowers(e, TrueInvisibilityDashAbilityPower.class).isEmpty()) return false;
 
             return e.distanceTo(entity) <= 5.0;
         })
@@ -173,15 +172,13 @@ public class TrueInvisibilityDashAbiltyPower extends ActiveCooldownPower {
                 .add("hud_render", ApoliDataTypes.HUD_RENDER, HudRender.DONT_RENDER)
                 .add("key", ApoliDataTypes.BACKWARDS_COMPATIBLE_KEY, new Active.Key()),
             data ->
-                (type, player) -> {
-                    return new TrueInvisibilityDashAbiltyPower(
-                        type, 
-                        player, 
-                        data.getInt("cooldown"), 
-                        data.get("hud_render"),
-                        data.get("key")
-                    );
-                }
+                (type, player) -> new TrueInvisibilityDashAbilityPower(
+                    type,
+                    player,
+                    data.getInt("cooldown"),
+                    data.get("hud_render"),
+                    data.get("key")
+                )
         ).allowCondition();
     }
 }
