@@ -5,7 +5,12 @@
   "name": "幻形者诅咒附属",
   "description": "An addon for Shape Shifter Curse mod.",
   "authors": [
-    "Me"
+    {
+      "name": "MangZai-120",
+      "contact": {
+        "github": "https://github.com/MangZai-120"
+      }
+    }
   ],
   "contact": {
     "homepage": "https://example.com/",
