@@ -13,11 +13,12 @@
     }
   ],
   "contact": {
-    "homepage": "https://example.com/",
-    "sources": "https://github.com/onixary/shape-shifter-curse-fabric"
+    "homepage": "https://modrinth.com/mod/shape-shifter-curse-addon",
+    "sources": "https://github.com/MangZai-120/shape-shifter-curse-addon",
+    "issues": "https://github.com/MangZai-120/shape-shifter-curse-addon/issues"
   },
   "license": "MIT",
-  "icon": "assets/ssc-addon/icon.png",
+  "icon": "assets/ssc_addon/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [
@@ -34,9 +35,9 @@
     "fabricloader": ">=0.14.21",
     "minecraft": "~1.20.1",
     "java": ">=17",
-    "fabric": "*",
-    "shape-shifter-curse": "*",
-    "trinkets": "*"
+    "fabric": ">=0.83.0",
+    "shape-shifter-curse": ">=1.0.71",
+    "trinkets": ">=3.7.2"
   },
   "suggests": {
     "another-mod": "*"
