@@ -17,7 +17,6 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 
 import io.github.apace100.apoli.power.Active;
 import io.github.apace100.apoli.component.PowerHolderComponent;
-import net.minecraft.text.Text;
 import net.minecraft.entity.player.PlayerEntity;
 import java.util.List;
 import dev.emi.trinkets.api.TrinketsApi;
@@ -153,8 +152,8 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
         internalCooldownEndTime = System.currentTimeMillis() + (cooldownTicks * 50); // 50ms per tick
         
         // Also set dash ability cooldown
-        List<TrueInvisibilityDashAbiltyPower> dashPowers = PowerHolderComponent.getPowers(entity, TrueInvisibilityDashAbiltyPower.class);
-        for (TrueInvisibilityDashAbiltyPower dashPower : dashPowers) {
+        List<TrueInvisibilityDashAbilityPower> dashPowers = PowerHolderComponent.getPowers(entity, TrueInvisibilityDashAbilityPower.class);
+        for (TrueInvisibilityDashAbilityPower dashPower : dashPowers) {
             dashPower.applyInternalCooldown();
         }
     }
@@ -259,16 +258,14 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
                 .add("hud_render", ApoliDataTypes.HUD_RENDER, HudRender.DONT_RENDER)
                 .add("key", ApoliDataTypes.BACKWARDS_COMPATIBLE_KEY, new Active.Key()),
             data ->
-                (type, player) -> {
-                    return new TrueInvisibilityAbilityPower(
-                        type, 
-                        player, 
-                        data.getInt("cooldown"), 
-                        data.getInt("duration"), 
-                        data.get("hud_render"),
-                        data.get("key")
-                    );
-                }
+                (type, player) -> new TrueInvisibilityAbilityPower(
+                    type,
+                    player,
+                    data.getInt("cooldown"),
+                    data.getInt("duration"),
+                    data.get("hud_render"),
+                    data.get("key")
+                )
         ).allowCondition();
     }
 }

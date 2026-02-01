@@ -8,7 +8,6 @@ import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.FoxFireBurnEffect;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.BlueFireRingEffect;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.PlayingDeadEffect;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormPhase;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -17,13 +16,11 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.action.SscAddonActions;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.condition.SscAddonConditions;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.power.SscAddonPowers;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.item.ItemGroups;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.WaterSpearItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableMoisturizerItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.BlueFireAmuletItem;
-import net.minecraft.item.ToolMaterials;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Axolotl3;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_FamiliarFox3;
 import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_FeralCatSP;
@@ -105,13 +102,9 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "refill_moisturizer"), REFILL_MOISTURIZER_SERIALIZER);
         Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "sp_upgrade_crafting"), SP_UPGRADE_SERIALIZER);
         
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.FOOD_AND_DRINK).register(content -> {
-            content.add(SP_UPGRADE_THING);
-        });
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.FOOD_AND_DRINK).register(content -> content.add(SP_UPGRADE_THING));
         
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.COMBAT).register(content -> {
-            content.add(WATER_SPEAR);
-        });
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.COMBAT).register(content -> content.add(WATER_SPEAR));
 
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(content -> {
             content.add(PORTABLE_MOISTURIZER);
@@ -159,9 +152,7 @@ public class SscAddon implements ModInitializer {
         RegPlayerForms.registerPlayerForm(wildCatForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_wild_cat_sp")).addForm(wildCatForm, 5));
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            SscAddonCommands.register(dispatcher);
-        });
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> SscAddonCommands.register(dispatcher));
 
         /*
         // Tick Event for SP Allay Ability

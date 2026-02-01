@@ -2,7 +2,6 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin;
 
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.data.CodexData;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;

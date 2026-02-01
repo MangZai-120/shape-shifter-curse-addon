@@ -1,8 +1,6 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.input.KeyboardInput;
-import net.minecraft.client.network.ClientPlayerEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

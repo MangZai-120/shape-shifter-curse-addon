@@ -16,7 +16,6 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.power.TrueInvisibilityAbili
 import java.util.List;
 
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.text.Text;
 
 public class PreInvisibilityEffect extends StatusEffect {
     public PreInvisibilityEffect() {
