@@ -1,0 +1,10 @@
+{
+    "type": "origins:action_on_callback",
+    "entity_action_chosen": {
+        "type": "origins:change_resource",
+        "resource": "my_addon:form_snow_fox_sp_resource",
+        "change": 100,
+        "operation": "set"
+    },
+    "execute_chosen_when_orb": true
+}

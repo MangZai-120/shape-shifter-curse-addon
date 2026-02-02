@@ -1,0 +1,6 @@
+{
+    "type": "ssc_addon:snow_fox_sp_form_speed",
+    "resource": "my_addon:form_snow_fox_sp_switch_state",
+    "melee_speed_bonus": 0.1,
+    "ranged_speed_penalty": -0.1
+}

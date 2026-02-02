@@ -15,6 +15,9 @@ import net.minecraft.util.Formatting;
 import net.minecraft.client.resource.language.I18n;
 import java.util.List;
 
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.client.mana.SnowFoxSPManaBar;
+
 public class SscAddonClient implements ClientModInitializer {
     public static final String CATEGORY = "key.categories.ssc_addon";
     
@@ -78,5 +81,7 @@ public class SscAddonClient implements ClientModInitializer {
             
             // Add other key checks here
         });
+
+        HudRenderCallback.EVENT.register(new SnowFoxSPManaBar());
     }
 }

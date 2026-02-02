@@ -16,13 +16,18 @@ import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
+import net.onixary.shapeShifterCurseFabric.mana.ManaComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.UUID;
+import io.github.apace100.apoli.component.PowerHolderComponent;
+import io.github.apace100.apoli.power.VariableIntPower;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 
-//import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.Ability_AllayHeal;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.UUID;
 
 public class SscAddonCommands {
     private static final Logger LOGGER = LoggerFactory.getLogger("SscAddon-Debug");
@@ -41,6 +46,14 @@ public class SscAddonCommands {
         );
 
         dispatcher.register(CommandManager.literal("ssc-addon")
+            .then(CommandManager.literal("set_mana")
+                .requires(source -> source.hasPermissionLevel(2))
+                .then(CommandManager.argument("targets", EntityArgumentType.players())
+                    .then(CommandManager.argument("amount", IntegerArgumentType.integer(0, 100))
+                        .executes(context -> setMana(context, EntityArgumentType.getPlayers(context, "targets"), IntegerArgumentType.getInteger(context, "amount")))
+                    )
+                )
+            )
             .then(CommandManager.literal("mark_owner")
                 .then(CommandManager.argument("targets", EntityArgumentType.entities())
                     .executes(SscAddonCommands::markOwner)
@@ -62,6 +75,41 @@ public class SscAddonCommands {
                 )
         );
         */
+    }
+
+    private static int setMana(CommandContext<ServerCommandSource> context, Collection<ServerPlayerEntity> targets, int amount) {
+        Identifier resourceId = new Identifier("my_addon", "form_snow_fox_sp_resource");
+        int count = 0;
+        for (ServerPlayerEntity player : targets) {
+            boolean updated = false;
+            // 1. Try Apoli Resource (Snow Fox SP)
+            PowerHolderComponent component = PowerHolderComponent.KEY.get(player);
+            for (VariableIntPower power : component.getPowers(VariableIntPower.class)) {
+                if (power.getType().getIdentifier().equals(resourceId)) {
+                    power.setValue(amount);
+                    PowerHolderComponent.syncPower(player, power.getType());
+                    updated = true;
+                }
+            }
+
+            // 2. Try Global Mana (Familiar SP)
+            try {
+                ManaComponent manaComponent = ManaUtils.getManaComponent(player);
+                if (manaComponent != null) {
+                    manaComponent.setMana((double) amount);
+                    updated = true;
+                }
+            } catch (Exception e) {
+                // Ignore
+            }
+
+            if (updated) {
+                count++;
+            }
+        }
+        final int finalCount = count;
+        context.getSource().sendFeedback(() -> Text.literal("Set mana to " + amount + " for " + finalCount + " players."), true);
+        return count;
     }
 
     /*

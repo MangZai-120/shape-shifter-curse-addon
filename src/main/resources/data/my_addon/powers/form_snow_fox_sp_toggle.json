@@ -1,0 +1,100 @@
+{
+    "type": "origins:active_self",
+    "entity_action": {
+        "type": "origins:and",
+        "actions": [
+            {
+                "type": "origins:if_else",
+                "condition": {
+                    "type": "origins:resource",
+                    "resource": "my_addon:form_snow_fox_sp_switch_state",
+                    "comparison": "==",
+                    "compare_to": 0
+                },
+                "if_action": {
+                    "type": "origins:and",
+                    "actions": [
+                        {
+                            "type": "origins:change_resource",
+                            "resource": "my_addon:form_snow_fox_sp_switch_state",
+                            "change": 1,
+                            "operation": "set"
+                        },
+                        {
+                            "type": "origins:play_sound",
+                            "sound": "minecraft:item.crossbow.loading_start",
+                            "volume": 0.5,
+                            "pitch": 1.0
+                        },
+                        {
+                            "type": "origins:execute_command",
+                            "command": "title @s actionbar [\"\",{\"text\":\"切换到远程形态\",\"color\":\"aqua\"}]"
+                        }
+                    ]
+                },
+                "else_action": {
+                    "type": "origins:and",
+                    "actions": [
+                        {
+                            "type": "origins:change_resource",
+                            "resource": "my_addon:form_snow_fox_sp_switch_state",
+                            "change": 0,
+                            "operation": "set"
+                        },
+                        {
+                            "type": "origins:play_sound",
+                            "sound": "minecraft:entity.player.attack.sweep",
+                            "volume": 0.5,
+                            "pitch": 1.0
+                        },
+                        {
+                            "type": "origins:execute_command",
+                            "command": "title @s actionbar [\"\",{\"text\":\"切换到近战形态\",\"color\":\"gold\"}]"
+                        }
+                    ]
+                }
+            },
+            {
+                "type": "origins:change_resource",
+                "resource": "my_addon:form_snow_fox_sp_frost_regen_cooldown_resource",
+                "change": 100,
+                "operation": "set"
+            },
+            {
+                "type": "origins:if_else",
+                "condition": {
+                    "type": "origins:resource",
+                    "resource": "my_addon:form_snow_fox_sp_gain_cooldown",
+                    "comparison": "==",
+                    "compare_to": 0
+                },
+                "if_action": {
+                    "type": "origins:and",
+                    "actions": [
+                        {
+                            "type": "origins:change_resource",
+                            "resource": "my_addon:form_snow_fox_sp_resource",
+                            "change": 60
+                        },
+                        {
+                            "type": "origins:change_resource",
+                            "resource": "my_addon:form_snow_fox_sp_gain_cooldown",
+                            "change": 300,
+                            "operation": "set"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "key": {
+        "key": "key.ssc_addon.sp_primary"
+    },
+    "condition": {
+        "type": "origins:sneaking"
+    },
+    "cooldown": 100,
+    "hud_render": {
+        "should_render": false
+    }
+}

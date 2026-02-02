@@ -1,0 +1,68 @@
+{
+    "type": "origins:multiple",
+    "cooldown_resource": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 100,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "tick_cooldown": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "condition": {
+            "type": "origins:resource",
+            "resource": "my_addon:form_snow_fox_sp_frost_regen_cooldown_resource",
+            "comparison": ">",
+            "compare_to": 0
+        },
+        "entity_action": {
+            "type": "origins:change_resource",
+            "resource": "my_addon:form_snow_fox_sp_frost_regen_cooldown_resource",
+            "change": -1
+        }
+    },
+    "reset_cooldown_on_hit": {
+        "type": "origins:action_when_damage_taken",
+        "entity_action": {
+            "type": "origins:change_resource",
+            "resource": "my_addon:form_snow_fox_sp_frost_regen_cooldown_resource",
+            "change": 100,
+            "operation": "set"
+        },
+        "cooldown": 0
+    },
+    "natural_regen": {
+        "type": "origins:action_over_time",
+        "interval": 20,
+        "condition": {
+            "type": "origins:resource",
+            "resource": "my_addon:form_snow_fox_sp_frost_regen_cooldown_resource",
+            "comparison": "==",
+            "compare_to": 0
+        },
+        "entity_action": {
+            "type": "origins:if_else",
+            "condition": {
+                "type": "origins:biome",
+                "condition": {
+                    "type": "origins:temperature",
+                    "comparison": "<",
+                    "compare_to": 0.15
+                }
+            },
+            "if_action": {
+                "type": "origins:change_resource",
+                "resource": "my_addon:form_snow_fox_sp_resource",
+                "change": 5
+            },
+            "else_action": {
+                "type": "origins:change_resource",
+                "resource": "my_addon:form_snow_fox_sp_resource",
+                "change": 3
+            }
+        }
+    }
+}
