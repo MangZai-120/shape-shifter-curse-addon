@@ -1,0 +1,41 @@
+{
+    "type": "origins:multiple",
+    "health": {
+        "type": "shape-shifter-curse:delay_attribute",
+        "modifier": {
+            "name": "SP Snow Fox Cold Buff Health",
+            "attribute": "minecraft:generic.max_health",
+            "value": 4.0,
+            "operation": "addition"
+        },
+        "tick_rate": 20,
+        "updateHealth": true,
+        "delay": 5,
+        "condition": {
+            "type": "origins:biome",
+            "condition": {
+                "type": "origins:temperature",
+                "comparison": "<",
+                "compare_to": 0.15
+            }
+        }
+    },
+    "speed": {
+        "type": "origins:conditioned_attribute",
+        "modifier": {
+            "name": "SP Snow Fox Cold Buff Speed",
+            "attribute": "minecraft:generic.movement_speed",
+            "value": 0.15,
+            "operation": "multiply_total"
+        },
+        "tick_rate": 20,
+        "condition": {
+            "type": "origins:biome",
+            "condition": {
+                "type": "origins:temperature",
+                "comparison": "<",
+                "compare_to": 0.15
+            }
+        }
+    }
+}

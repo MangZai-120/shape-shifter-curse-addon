@@ -4,6 +4,7 @@
   "origins": [
     "my_addon:form_familiar_fox_sp",
     "my_addon:form_axolotl_sp",
-    "my_addon:form_wild_cat_sp"
+    "my_addon:form_wild_cat_sp",
+    "my_addon:form_snow_fox_sp"
   ]
 }

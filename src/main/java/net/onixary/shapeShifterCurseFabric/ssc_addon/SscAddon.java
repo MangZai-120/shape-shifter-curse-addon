@@ -23,6 +23,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableMoisturizerIte
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.BlueFireAmuletItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Axolotl3;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_FamiliarFox3;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_SnowFoxSP;
 import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_FeralCatSP;
 //import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Allay;
 import net.minecraft.recipe.RecipeSerializer;
@@ -140,6 +141,11 @@ public class SscAddon implements ModInitializer {
         RegPlayerForms.registerPlayerForm(familiarFoxForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_familiar_fox_sp")).addForm(familiarFoxForm, 5));
 
+        Form_SnowFoxSP snowFoxForm = new Form_SnowFoxSP(new Identifier("my_addon", "snow_fox_sp"));
+        snowFoxForm.setPhase(PlayerFormPhase.PHASE_SP);
+        RegPlayerForms.registerPlayerForm(snowFoxForm);
+        RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_snow_fox_sp")).addForm(snowFoxForm, 7));
+
         //Form_Allay allayForm = new Form_Allay(new Identifier("my_addon", "form_allay_sp"));
         //allayForm.setPhase(PlayerFormPhase.PHASE_SP);
         //RegPlayerForms.registerPlayerForm(allayForm);
@@ -151,6 +157,7 @@ public class SscAddon implements ModInitializer {
         wildCatForm.setCanSneakRush(true);
         RegPlayerForms.registerPlayerForm(wildCatForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_wild_cat_sp")).addForm(wildCatForm, 5));
+
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> SscAddonCommands.register(dispatcher));
 

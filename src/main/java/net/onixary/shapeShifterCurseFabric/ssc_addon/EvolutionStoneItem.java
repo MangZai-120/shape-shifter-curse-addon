@@ -48,12 +48,18 @@ public class EvolutionStoneItem extends Item {
         if (!world.isClient && user instanceof PlayerEntity player) {
             Identifier playerFormID = getPlayerFormID(player);
             
-            Identifier targetFormId = new Identifier("my_addon", "wild_cat_sp");
+            Identifier targetFormId = null;
             boolean canEvolve = false;
 
             if (playerFormID != null) {
-                // Only Allow Wild Cat (Feral Cat SP) to evolve
+                // Allow Wild Cat (Feral Cat SP) to evolve to Wild Cat SP
                 if (playerFormID.equals(new Identifier("shape-shifter-curse", "feral_cat_sp"))) {
+                    targetFormId = new Identifier("my_addon", "wild_cat_sp");
+                    canEvolve = true;
+                }
+                // Allow Snow Fox 3 (permanent phase) to evolve to Snow Fox SP
+                else if (playerFormID.equals(new Identifier("shape-shifter-curse", "snow_fox_3"))) {
+                    targetFormId = new Identifier("my_addon", "snow_fox_sp");
                     canEvolve = true;
                 }
             }

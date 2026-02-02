@@ -10,6 +10,14 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -17,6 +25,8 @@ import java.util.UUID;
 //import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.Ability_AllayHeal;
 
 public class SscAddonCommands {
+    private static final Logger LOGGER = LoggerFactory.getLogger("SscAddon-Debug");
+
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("ssc_addon_action")
              /*
@@ -34,6 +44,11 @@ public class SscAddonCommands {
             .then(CommandManager.literal("mark_owner")
                 .then(CommandManager.argument("targets", EntityArgumentType.entities())
                     .executes(SscAddonCommands::markOwner)
+                )
+            )
+            .then(CommandManager.literal("debug")
+                .then(CommandManager.literal("form")
+                    .executes(SscAddonCommands::debugFormInfo)
                 )
             )
         );
@@ -97,5 +112,42 @@ public class SscAddonCommands {
             return targets.size();
         }
         return 0;
+    }
+
+    private static int debugFormInfo(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+        
+        // Get player form component
+        PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
+        
+        // Prepare debug info
+        StringBuilder debugInfo = new StringBuilder();
+        debugInfo.append("===== SSC-ADDON FORM DEBUG =====\n");
+        
+        if (component == null) {
+            debugInfo.append("PlayerFormComponent: NULL\n");
+        } else {
+            PlayerFormBase currentForm = component.getCurrentForm();
+            if (currentForm == null) {
+                debugInfo.append("Current Form: NULL (no form active)\n");
+            } else {
+                debugInfo.append("Form ID: ").append(currentForm.FormID).append("\n");
+                debugInfo.append("Form Class: ").append(currentForm.getClass().getName()).append("\n");
+                debugInfo.append("Phase: ").append(currentForm.getPhase()).append("\n");
+                debugInfo.append("Body Type: ").append(currentForm.getBodyType()).append("\n");
+            }
+        }
+        debugInfo.append("================================");
+        
+        // Log to console
+        LOGGER.info("\n" + debugInfo.toString());
+        
+        // Send to player chat
+        String[] lines = debugInfo.toString().split("\n");
+        for (String line : lines) {
+            player.sendMessage(Text.literal(line).formatted(Formatting.AQUA), false);
+        }
+        
+        return 1;
     }
 }
