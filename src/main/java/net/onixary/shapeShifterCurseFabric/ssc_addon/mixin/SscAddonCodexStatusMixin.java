@@ -25,6 +25,8 @@ public class SscAddonCodexStatusMixin {
                     cir.setReturnValue(Text.translatable("codex.status.my_addon.SP_status"));
                 } else if (formPath.equals("wild_cat_sp")) {
                     cir.setReturnValue(Text.translatable("codex.status.my_addon.wild_cat_sp_status"));
+                } else if (formPath.equals("snow_fox_sp")) {
+                    cir.setReturnValue(Text.translatable("codex.status.my_addon.snow_fox_sp_status"));
                 }
             }
         }

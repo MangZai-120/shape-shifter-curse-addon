@@ -39,7 +39,7 @@ public class SnowFoxSpMeleeAbility {
     
     private static final double DASH_DISTANCE = 8.0; // 冲刺距离（格）
     private static final double DASH_SPEED = 1.5; // 冲刺速度（每tick移动的格数）
-    private static final float DAMAGE = 6.0f; // 伤害
+    private static final float DAMAGE = 8.0f; // 伤害
     private static final int FROST_FREEZE_DURATION = 60; // 霜凝持续时间（3秒 = 60tick）
     private static final int MANA_COST = 15; // 霜寒值消耗
     
@@ -129,8 +129,8 @@ public class SnowFoxSpMeleeAbility {
                 // 标记已击中
                 data.hitEntities.add(entity.getUuid());
                 
-                // 造成魔法伤害
-                DamageSource source = player.getDamageSources().magic();
+                // 造成玩家物理伤害
+                DamageSource source = player.getDamageSources().playerAttack(player);
                 target.damage(source, DAMAGE);
                 
                 // 施加霜凝效果

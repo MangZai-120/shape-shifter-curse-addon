@@ -65,8 +65,8 @@ public class FrostStormEntity extends Entity {
         }
         
         if (!this.getWorld().isClient && this.getWorld() instanceof ServerWorld serverWorld) {
-            // 每秒造成伤害（每20tick）
-            if (ticksAlive % 20 == 0) {
+            // 每0.5秒造成一次伤害（每10tick）
+            if (ticksAlive % 10 == 0) {
                 dealDamage(serverWorld);
             }
             
@@ -101,7 +101,7 @@ public class FrostStormEntity extends Entity {
             double dist = this.squaredDistanceTo(target.getX(), this.getY(), target.getZ());
             if (dist <= DAMAGE_RADIUS * DAMAGE_RADIUS) {
                 DamageSource source = owner != null 
-                    ? target.getDamageSources().magic() 
+                    ? target.getDamageSources().playerAttack(owner)
                     : target.getDamageSources().magic();
                 target.damage(source, DAMAGE_PER_SECOND);
             }
