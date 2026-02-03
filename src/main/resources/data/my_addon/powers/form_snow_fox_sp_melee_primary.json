@@ -1,0 +1,30 @@
+{
+    "type": "origins:active_self",
+    "entity_action": {
+        "type": "ssc_addon:snow_fox_sp_dash"
+    },
+    "key": {
+        "key": "key.ssc_addon.sp_secondary"
+    },
+    "condition": {
+        "type": "origins:and",
+        "conditions": [
+            {
+                "type": "origins:resource",
+                "resource": "my_addon:form_snow_fox_sp_switch_state",
+                "comparison": "==",
+                "compare_to": 0
+            },
+            {
+                "type": "origins:sneaking",
+                "inverted": true
+            }
+        ]
+    },
+    "cooldown": 0,
+    "hud_render": {
+        "should_render": false
+    },
+    "name": "雪刺冲刺",
+    "description": "向准星方向冲刺8格，碰撞敌人造成6点魔法伤害并施加霜凝效果3秒。消耗15点霜寒值，冷却6秒。"
+}

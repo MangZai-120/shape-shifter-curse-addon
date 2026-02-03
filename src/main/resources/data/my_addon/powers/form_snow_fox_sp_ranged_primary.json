@@ -1,0 +1,30 @@
+{
+    "type": "origins:active_self",
+    "entity_action": {
+        "type": "ssc_addon:snow_fox_sp_frost_ball"
+    },
+    "key": {
+        "key": "key.ssc_addon.sp_secondary"
+    },
+    "condition": {
+        "type": "origins:and",
+        "conditions": [
+            {
+                "type": "origins:resource",
+                "resource": "my_addon:form_snow_fox_sp_switch_state",
+                "comparison": "==",
+                "compare_to": 1
+            },
+            {
+                "type": "origins:sneaking",
+                "inverted": true
+            }
+        ]
+    },
+    "cooldown": 0,
+    "hud_render": {
+        "should_render": false
+    },
+    "name": "法术冰球",
+    "description": "发射无下坠冰球，飞行速度10b/s，最多飞行25格。命中施加霜降效果4秒（移速-30%）。消耗15点霜寒值，冷却5秒。"
+}

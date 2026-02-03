@@ -1,5 +1,10 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.action;
 
+import io.github.apace100.apoli.component.PowerHolderComponent;
+import io.github.apace100.apoli.power.Power;
+import io.github.apace100.apoli.power.PowerType;
+import io.github.apace100.apoli.power.PowerTypeRegistry;
+import io.github.apace100.apoli.power.VariableIntPower;
 import io.github.apace100.apoli.power.factory.action.ActionFactory;
 import io.github.apace100.apoli.registry.ApoliRegistries;
 import io.github.apace100.calio.data.SerializableData;
@@ -19,10 +24,23 @@ import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.EntityPose;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SscIgnitedEntityAccessor;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostBallEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 
 import net.minecraft.entity.effect.StatusEffects;
 
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class SscAddonActions {
+    
+    // 冰球自定义CD跟踪
+    private static final ConcurrentHashMap<UUID, Long> FROST_BALL_COOLDOWN = new ConcurrentHashMap<>();
 
     public static void register() {
         registerEntity(new ActionFactory<>(new Identifier("my_addon", "fire_breath"),
@@ -151,6 +169,69 @@ public class SscAddonActions {
                 });
             }));
 
+        // SP雪狐 - 雪刺冲刺技能
+        registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "snow_fox_sp_dash"),
+            new SerializableData(),
+            (data, entity) -> {
+                if (entity instanceof ServerPlayerEntity player) {
+                    SnowFoxSpMeleeAbility.execute(player);
+                }
+            }));
+
+        // SP雪狐 - 瞬移攻击技能
+        registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "snow_fox_sp_teleport_attack"),
+            new SerializableData(),
+            (data, entity) -> {
+                if (entity instanceof ServerPlayerEntity player) {
+                    SnowFoxSpTeleportAttack.execute(player);
+                }
+            }));
+
+        // SP雪狐 - 法术冰球技能
+        registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "snow_fox_sp_frost_ball"),
+            new SerializableData(),
+            (data, entity) -> {
+                if (entity instanceof ServerPlayerEntity player) {
+                    // 检查自定义CD是否结束
+                    Long cdEndTime = FROST_BALL_COOLDOWN.get(player.getUuid());
+                    if (cdEndTime != null && System.currentTimeMillis() < cdEndTime) {
+                        return;
+                    }
+                    
+                    // 检查并消耗霜寒值
+                    int currentMana = getResourceValue(player, "my_addon:form_snow_fox_sp_resource");
+                    int manaCost = 15;
+                    if (currentMana < manaCost) {
+                        player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
+                        return;
+                    }
+                    changeResourceValue(player, "my_addon:form_snow_fox_sp_resource", -manaCost);
+                    // 设置回复冷却（5秒）
+                    setRegenCooldown(player, 100);
+                    // 设置技能CD（5秒 = 5000ms）
+                    FROST_BALL_COOLDOWN.put(player.getUuid(), System.currentTimeMillis() + 5000L);
+                    
+                    // 创建并发射冰球
+                    FrostBallEntity frostBall = new FrostBallEntity(player.getWorld(), player);
+                    Vec3d lookVec = player.getRotationVec(1.0F);
+                    frostBall.setDirection(lookVec);
+                    player.getWorld().spawnEntity(frostBall);
+                    
+                    // 播放发射音效
+                    player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+                        SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.PLAYERS, 1.0f, 0.8f);
+                }
+            }));
+
+        // SP雪狐 - 冰风暴技能（点按开始蓄力）
+        registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "snow_fox_sp_frost_storm"),
+            new SerializableData(),
+            (data, entity) -> {
+                if (entity instanceof ServerPlayerEntity player) {
+                    SnowFoxSpFrostStorm.startCharging(player);
+                }
+            }));
+
         registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "trigger_play_dead"),
             new SerializableData(),
             (data, entity) -> {
@@ -238,6 +319,58 @@ public class SscAddonActions {
     private static void registerEntity(ActionFactory<Entity> actionFactory) {
         if (!ApoliRegistries.ENTITY_ACTION.containsId(actionFactory.getSerializerId())) {
             Registry.register(ApoliRegistries.ENTITY_ACTION, actionFactory.getSerializerId(), actionFactory);
+        }
+    }
+    
+    /**
+     * 获取Resource值
+     */
+    private static int getResourceValue(ServerPlayerEntity player, String resourceId) {
+        try {
+            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
+            PowerType<?> powerType = PowerTypeRegistry.get(new Identifier(resourceId));
+            Power power = powerHolder.getPower(powerType);
+            if (power instanceof VariableIntPower variablePower) {
+                return variablePower.getValue();
+            }
+        } catch (Exception e) {
+            // Resource not found
+        }
+        return 0;
+    }
+    
+    /**
+     * 修改Resource值
+     */
+    private static void changeResourceValue(ServerPlayerEntity player, String resourceId, int change) {
+        try {
+            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
+            PowerType<?> powerType = PowerTypeRegistry.get(new Identifier(resourceId));
+            Power power = powerHolder.getPower(powerType);
+            if (power instanceof VariableIntPower variablePower) {
+                int newValue = Math.max(0, Math.min(100, variablePower.getValue() + change));
+                variablePower.setValue(newValue);
+                PowerHolderComponent.sync(player); // 同步到客户端
+            }
+        } catch (Exception e) {
+            // Resource not found
+        }
+    }
+    
+    /**
+     * 设置回复冷却（使用后5秒内无法自然回复霜寒值）
+     */
+    private static void setRegenCooldown(ServerPlayerEntity player, int value) {
+        try {
+            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
+            PowerType<?> powerType = PowerTypeRegistry.get(new Identifier("my_addon:form_snow_fox_sp_frost_regen_cooldown_resource"));
+            Power power = powerHolder.getPower(powerType);
+            if (power instanceof VariableIntPower variablePower) {
+                variablePower.setValue(value);
+                PowerHolderComponent.sync(player);
+            }
+        } catch (Exception e) {
+            // Resource not found
         }
     }
 }

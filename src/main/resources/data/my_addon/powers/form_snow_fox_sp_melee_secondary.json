@@ -1,0 +1,30 @@
+{
+    "type": "origins:active_self",
+    "entity_action": {
+        "type": "ssc_addon:snow_fox_sp_teleport_attack"
+    },
+    "key": {
+        "key": "key.ssc_addon.sp_primary"
+    },
+    "condition": {
+        "type": "origins:and",
+        "conditions": [
+            {
+                "type": "origins:resource",
+                "resource": "my_addon:form_snow_fox_sp_switch_state",
+                "comparison": "==",
+                "compare_to": 0
+            },
+            {
+                "type": "origins:sneaking",
+                "inverted": true
+            }
+        ]
+    },
+    "cooldown": 0,
+    "hud_render": {
+        "should_render": false
+    },
+    "name": "瞬移攻击",
+    "description": "瞬移到10格范围内最多3个敌人身后攻击，造成6点伤害（霜凝状态+3点魔法伤害），技能期间受伤减少65%。消耗30点霜寒值，冷却20秒(失败5秒)。"
+}

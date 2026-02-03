@@ -8,6 +8,8 @@ import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.FoxFireBurnEffect;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.BlueFireRingEffect;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.PlayingDeadEffect;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.FrostFreezeEffect;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.FrostFallEffect;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormPhase;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -40,6 +42,8 @@ import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.EntityDimensions;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.WaterSpearEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.InvisibilityCloakItem;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostBallEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostStormEntity;
 
 public class SscAddon implements ModInitializer {
 
@@ -50,6 +54,8 @@ public class SscAddon implements ModInitializer {
     public static final StatusEffect PRE_INVISIBILITY = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.PreInvisibilityEffect();
     public static final StatusEffect STUN = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.StunEffect();
     public static final StatusEffect GUARANTEED_CRIT = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.GuaranteedCritEffect();
+    public static final StatusEffect FROST_FREEZE = new FrostFreezeEffect();
+    public static final StatusEffect FROST_FALL = new FrostFallEffect();
     
     public static final EntityType<WaterSpearEntity> WATER_SPEAR_ENTITY = Registry.register(
             Registries.ENTITY_TYPE,
@@ -57,6 +63,24 @@ public class SscAddon implements ModInitializer {
             FabricEntityTypeBuilder.<WaterSpearEntity>create(SpawnGroup.MISC, WaterSpearEntity::new)
                     .dimensions(EntityDimensions.fixed(0.5f, 0.5f))
                     .trackRangeBlocks(4).trackedUpdateRate(20)
+                    .build()
+    );
+
+    public static final EntityType<FrostBallEntity> FROST_BALL_ENTITY = Registry.register(
+            Registries.ENTITY_TYPE,
+            new Identifier("ssc_addon", "frost_ball"),
+            FabricEntityTypeBuilder.<FrostBallEntity>create(SpawnGroup.MISC, FrostBallEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.25f, 0.25f))
+                    .trackRangeBlocks(64).trackedUpdateRate(10)
+                    .build()
+    );
+
+    public static final EntityType<FrostStormEntity> FROST_STORM_ENTITY = Registry.register(
+            Registries.ENTITY_TYPE,
+            new Identifier("ssc_addon", "frost_storm"),
+            FabricEntityTypeBuilder.<FrostStormEntity>create(SpawnGroup.MISC, FrostStormEntity::new)
+                    .dimensions(EntityDimensions.fixed(1.0f, 2.0f))
+                    .trackRangeBlocks(64).trackedUpdateRate(10)
                     .build()
     );
 
@@ -86,6 +110,8 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "pre_invisibility"), PRE_INVISIBILITY);
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "stun"), STUN);
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "guaranteed_crit"), GUARANTEED_CRIT);
+        Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "frost_freeze"), FROST_FREEZE);
+        Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "frost_fall"), FROST_FALL);
         
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "sp_upgrade_thing"), SP_UPGRADE_THING);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "portable_moisturizer"), PORTABLE_MOISTURIZER);
@@ -160,6 +186,15 @@ public class SscAddon implements ModInitializer {
 
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> SscAddonCommands.register(dispatcher));
+
+        // Register tick event for SP Snow Fox abilities
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.START_WORLD_TICK.register(world -> {
+            for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()) {
+                net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility.tick(player);
+                net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack.tick(player);
+                net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm.tick(player);
+            }
+        });
 
         /*
         // Tick Event for SP Allay Ability
