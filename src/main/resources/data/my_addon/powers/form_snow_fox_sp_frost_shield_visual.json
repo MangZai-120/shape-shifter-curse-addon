@@ -1,0 +1,17 @@
+{
+    "type": "origins:action_over_time",
+    "interval": 16,
+    "condition": {
+        "type": "origins:resource",
+        "resource": "my_addon:form_snow_fox_sp_resource",
+        "comparison": ">=",
+        "compare_to": 20
+    },
+    "entity_action": {
+        "type": "origins:execute_command",
+        "command": "particle minecraft:snowflake ~ ~0.5 ~ 0.5 0.8 0.5 0.05 1"
+    },
+    "hud_render": {
+        "should_render": false
+    }
+}

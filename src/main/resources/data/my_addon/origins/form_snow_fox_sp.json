@@ -27,6 +27,7 @@
         "my_addon:form_snow_fox_sp_init_mana",
         "my_addon:form_snow_fox_sp_frost_regen",
         "my_addon:form_snow_fox_sp_frost_shield",
+        "my_addon:form_snow_fox_sp_frost_shield_visual",
         "my_addon:form_snow_fox_sp_switch_state",
         "my_addon:form_snow_fox_sp_gain_cooldown",
         "my_addon:form_snow_fox_sp_gain_cooldown_tick",
