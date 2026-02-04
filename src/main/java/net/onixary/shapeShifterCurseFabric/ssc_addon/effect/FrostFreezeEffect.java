@@ -15,9 +15,9 @@ import java.util.UUID;
 /**
  * 霜凝效果 - SP雪狐近战技能造成的debuff
  * 效果：
- * - 移动速度 -40%
+ * - 移动速度 -35%
  * - 攻击速度 -40%
- * - 受到物理/魔法伤害 +20% (通过Mixin实现)
+ * - 受到物理/魔法伤害 +35% (通过Mixin实现)
  * - 持续时间：3秒
  */
 public class FrostFreezeEffect extends StatusEffect {
@@ -36,14 +36,14 @@ public class FrostFreezeEffect extends StatusEffect {
     public void onApplied(LivingEntity entity, AttributeContainer attributes, int amplifier) {
         super.onApplied(entity, attributes, amplifier);
         
-        // Apply movement speed reduction (-40%)
+        // Apply movement speed reduction (-35%)
         EntityAttributeInstance speedAttr = entity.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
         if (speedAttr != null) {
             speedAttr.removeModifier(SPEED_MODIFIER_UUID);
             speedAttr.addTemporaryModifier(new EntityAttributeModifier(
                 SPEED_MODIFIER_UUID,
                 SPEED_MODIFIER_NAME,
-                -0.4,
+                -0.35,
                 EntityAttributeModifier.Operation.MULTIPLY_TOTAL
             ));
         }

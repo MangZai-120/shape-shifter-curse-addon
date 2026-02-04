@@ -35,12 +35,12 @@ public abstract class FrostFreezeDamageMixin {
             }
         }
         
-        // 2. Check if entity has Frost Freeze effect (increase damage by 20%)
+        // 2. Check if entity has Frost Freeze effect (increase damage by 35%)
         StatusEffectInstance frostFreezeEffect = self.getStatusEffect(SscAddon.FROST_FREEZE);
         if (frostFreezeEffect != null) {
             // Only increase damage for physical and magic damage types
             if (FrostFreezeEffect.isPhysicalOrMagicDamage(source)) {
-                modifiedAmount = modifiedAmount * 1.2f;
+                modifiedAmount = modifiedAmount * 1.35f;
             }
         }
         

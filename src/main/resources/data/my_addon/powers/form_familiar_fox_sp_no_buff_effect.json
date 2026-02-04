@@ -19,6 +19,8 @@
     "minecraft:mining_fatigue",
     "minecraft:nausea",
     "minecraft:blindness",
-    "ssc_addon:fox_fire_burn"
+    "ssc_addon:fox_fire_burn",
+    "ssc_addon:frost_freeze",
+    "ssc_addon:frost_fall"
   ]
 }

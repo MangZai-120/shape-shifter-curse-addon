@@ -1,4 +1,4 @@
-# Shape Shifter Curse Addon - Advanced Gameplay Guide
+﻿# Shape Shifter Curse Addon - Advanced Gameplay Guide
 # 幻形者诅咒附属 - 进阶玩法指南
 
 This guide details the advanced content provided by this addon, specifically focusing on the new SP Forms (Special Forms) and the new items associated with them.
@@ -211,3 +211,59 @@ None
 ## 5.
 *Tutorial updated for Addon Version - January 2026*
 *附属版教程已更新 - 2026年1月*
+
+---
+
+## 2. Winter Spirit Update
+## 2. 凛冬之灵更新
+
+### 2.1 SP Snow Fox / SP雪狐
+*A master of cryomancy, capable of controlling the battlefield with freezing cold.*
+*掌控极寒的法师，能够用冰霜控制战场。*
+  **Passive: Glass Cannon / 被动：玻璃大炮**
+  *   **Effect**: Max Health is reduced by **4 Hearts** (-8 HP). High risk for high mobility.
+  *   **效果**：最大生命值减少 **4颗心** (-8点)。以高风险换取高机动性。
+**Passive: Frost Shield / 被动：霜雪护盾**
+*   Surrounded by a protective blizzard of snowflakes.
+*   被暴风雪环绕，提供防护。
+
+**Debuff: Frost Freeze / 减益：霜凝**
+*   **Effect**: 
+    1.  **Extreme Slow**: Reduces **Movement Speed** by 35% and **Attack Speed** by 40%.
+    2.  **No Regeneration**.
+    3.  **Vulnerability**: Target takes **35% increased damage** from Physical and Magic sources.
+*   **效果**：
+    1.  **极度迟缓**：移动速度降低 **35%**，且攻击速度降低 **40%**。
+    2.  **禁疗**（无法自然恢复生命）。
+    3.  **易伤**：目标受到的物理和魔法伤害增加 **35%**。
+
+**Debuff: Frost Fall / 减益：霜降**
+*   **Effect**: Reduces Movement Speed by **30%**.
+*   **Visual**: Snowflake particles trail.
+*   **效果**：降低 **30%** 移动速度。
+*   **视觉**：雪花粒子残留。
+
+### 2.2 SP Familiar Fox / SP眷属狐
+*A loyal spirit unaffected by the cold.*
+*忠诚的灵魂，不受严寒侵扰。*
+
+**Immunities / 免疫**:
+*   Immune to **Frost Freeze** and **Frost Fall**.
+*   免疫 **霜凝** 和 **霜降** 效果。
+
+### 2.3 New Artifacts / 新增神器
+
+#### Snowball Launcher / 雪球发射器
+*   **Fire Rate / 射速**: Heavy Machine Gun (Every 0.35s / 每0.35秒一发).
+*   **Capacity / 容量**: 20 Rounds.
+*   **Usage**: Consumes Snowballs from inventory. High knockback suppression.
+*   **用途**: 消耗背包内的雪球。高击退压制。
+
+#### Portable Fridge (Blizzard Tank) / 便携式冰箱（暴雪储罐）
+*   **Role / 定位**: Infinite Ammo Backpack / 无限弹药背包.
+*   **Capacity / 容量**: 64 Charges.
+*   **Mechanics / 机制**:
+    *   **Auto-Loader**: Refills Snowball Launcher (2 ammo/sec) while equipped.
+    *   **自动装填**: 装备时每秒为发射器补充2发弹药。
+    *   **Self-Recharge**: Regenerates internal ice supply automatically (1 charge every 2s). No fuel needed.
+    *   **自充能**: 自动恢复内部冰霜储备（每2秒1点）。无需燃料。
