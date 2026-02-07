@@ -7,6 +7,6 @@
     },
     "condition": {
         "type": "shape-shifter-curse:has_mana",
-        "mana": 80
+        "mana": 50
     }
 }

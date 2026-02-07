@@ -8,6 +8,7 @@ import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
 import java.util.UUID;
 import net.minecraft.entity.player.PlayerEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SscIgnitedEntityAccessor;
 
 public class FoxFireBurnEffect extends StatusEffect {
     public FoxFireBurnEffect() {
@@ -53,9 +54,28 @@ public class FoxFireBurnEffect extends StatusEffect {
             if (entity.age % 20 == 0) {
                  DamageSource source = entity.getDamageSources().inFire();
                  
-                 // Priority 1: Explicit owner from NBT tag (set by ssc-addon:mark_owner command)
-                 PlayerEntity owner = getOwnerFromTags(entity);
+                 PlayerEntity owner = null;
+                 if (entity instanceof SscIgnitedEntityAccessor accessor) {
+                     UUID igniterUuid = accessor.sscAddon$getIgniterUuid();
+                     if (igniterUuid != null) {
+                         owner = entity.getWorld().getPlayerByUuid(igniterUuid);
+                     }
+                 }
+                 
+                 // Priority 1: Explicit owner from NBT tag or Accessor
+                 if (owner == null) {
+                    owner = getOwnerFromTags(entity);
+                 }
+                 
                  if (owner != null) {
+                     // We use onFire damage source logic but with player attribution
+                     // Vanilla doesn't have a direct "fire from player" source helper that's standard for DoT
+                     // So we construct a generic override or simulate player attack but keeping it fire related if possible
+                     // Or just use playerAttack for simplicity to ensure drops.
+                     // A better way is creating a source that is "onFire" but has an attacker.
+                     // But getDamageSources().inFire() doesn't take attacker.
+                     // We can use create(DamageTypes.IN_FIRE, null, owner) if we want.
+                     // But typically 'playerAttack' is safest for credit.
                      source = entity.getDamageSources().playerAttack(owner);
                  } 
                  // Priority 2: Standard vanilla attribution fallback
