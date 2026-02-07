@@ -33,18 +33,6 @@ public class SscAddonCommands {
     private static final Logger LOGGER = LoggerFactory.getLogger("SscAddon-Debug");
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("ssc_addon_action")
-             /*
-             .then(CommandManager.literal("hold_allay_heal")
-                 .executes(context -> {
-                     ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-                     Ability_AllayHeal.onHold(player);
-                     return 1;
-                 })
-             )
-             */
-        );
-
         dispatcher.register(CommandManager.literal("ssc-addon")
             .then(CommandManager.literal("set_mana")
                 .requires(source -> source.hasPermissionLevel(2))
