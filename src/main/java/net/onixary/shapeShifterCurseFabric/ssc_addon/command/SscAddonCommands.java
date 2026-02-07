@@ -33,7 +33,7 @@ public class SscAddonCommands {
     private static final Logger LOGGER = LoggerFactory.getLogger("SscAddon-Debug");
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("ssc-addon")
+        dispatcher.register(CommandManager.literal("ssc_addon")
             .then(CommandManager.literal("set_mana")
                 .requires(source -> source.hasPermissionLevel(2))
                 .then(CommandManager.argument("targets", EntityArgumentType.players())
@@ -158,7 +158,7 @@ public class SscAddonCommands {
         
         // Prepare debug info
         StringBuilder debugInfo = new StringBuilder();
-        debugInfo.append("===== SSC-ADDON FORM DEBUG =====\n");
+        debugInfo.append("===== SSC_ADDON FORM DEBUG =====\n");
         
         if (component == null) {
             debugInfo.append("PlayerFormComponent: NULL\n");

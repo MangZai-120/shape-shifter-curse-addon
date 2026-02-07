@@ -21,10 +21,10 @@
     - Textures: `sp_snow_fox_mana_bar_*.png`.
 
 ### 3. Administration
-- **Command Updated**: `/ssc-addon set_mana <targets> <amount>`
+- **Command Updated**: `/ssc_addon set_mana <targets> <amount>`
     - Replaces `set_frost`.
     - Supports setting energy for both **SP Snow Fox** (Frost Value) and **SP Familiar** (Global Mana).
-    - Usage: `/ssc-addon set_mana @s 100` or `/ssc-addon set_mana PlayerName 50`.
+    - Usage: `/ssc_addon set_mana @s 100` or `/ssc_addon set_mana PlayerName 50`.
 
 ### 4. UI/Rendering
 - **Mana Bar Positioning**:
