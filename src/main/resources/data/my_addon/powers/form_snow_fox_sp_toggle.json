@@ -23,7 +23,7 @@
                         {
                             "type": "origins:play_sound",
                             "sound": "minecraft:item.crossbow.loading_start",
-                            "volume": 0.5,
+                            "volume": 4.5,
                             "pitch": 1.0
                         },
                         {
