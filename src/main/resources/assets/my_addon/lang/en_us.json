@@ -136,6 +136,9 @@
   "codex.form.my_addon.wild_cat_sp.pros": "Moonlight Phantom\nTrue Invisibility: You can actively enter complete invisibility. Attacking or using items breaks it. While invisible, you can use 'Stun Dash' or 'Weakness Spotting'.\n\nInk Blindness: Right-click with Ink Sac to blind nearby creatures momentarily, aiding escape or offense.\n\nNight Walker: When night falls, your body becomes light, significantly increasing movement speed.\n\nPower of the Night: At night, your attacks become more deadly, dealing increased damage.\n\nFeral Diet: Your digestive system returns to the primitive state; eating raw meat (like raw beef, raw porkchop, etc.) grants double food and saturation.\n\nAdditionally, you retain all feral cat instincts:\nSilent Steps, Creeper Deterrent, No Fall Damage, Phantom Scare.",
   "codex.form.my_addon.wild_cat_sp.cons": "Price of the Wild:\n\nDay/Night Dependence: Agile at night, but sluggish in sunlight.\n\nEquipment Limit: You cannot wear leggings or boots as they hinder your agility.",
   "codex.form.my_addon.wild_cat_sp.instincts": "Your wild instincts have reached their peak, but your soul has also been eroded by the Moon Curse. You feel a stronger connection to the jungle, always yearning to hunt in the darkness.",
-  "origin.my_addon.form_snow_fox_sp.name": "Snow Fox (SP)",
-  "origin.my_addon.form_snow_fox_sp.description": "A special variant form of the snow fox."
+  "text.autoconfig.ssc-addon.title": "Shape Shifter Curse Addon Settings",
+  "text.autoconfig.ssc-addon.option.bookLanguage": "Story Book Language",
+  "text.autoconfig.ssc-addon.option.bookLanguage.@Tooltip": "Select the language for the generated Story Book (Forgotten Legend). Requires restart.",
+  "text.autoconfig.ssc-addon.option.bookLanguage.CHINESE": "zh_cn",
+  "text.autoconfig.ssc-addon.option.bookLanguage.ENGLISH": "en_us"
 }

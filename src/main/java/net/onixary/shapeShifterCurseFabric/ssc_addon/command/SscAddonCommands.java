@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import io.github.apace100.apoli.power.VariableIntPower;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import net.minecraft.command.CommandSource;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -50,6 +52,19 @@ public class SscAddonCommands {
             .then(CommandManager.literal("debug")
                 .then(CommandManager.literal("form")
                     .executes(SscAddonCommands::debugFormInfo)
+                )
+                .then(CommandManager.literal("mana")
+                    .executes(SscAddonCommands::debugMana)
+                )
+            )
+            .then(CommandManager.literal("get_book")
+                .requires(source -> source.hasPermissionLevel(2))
+                .then(CommandManager.argument("chapter", IntegerArgumentType.integer(1, 9))
+                    .executes(SscAddonCommands::giveStoryBook)
+                    .then(CommandManager.argument("language", StringArgumentType.string())
+                        .suggests((context, builder) -> CommandSource.suggestMatching(new String[]{"zh_cn", "en_us"}, builder))
+                        .executes(SscAddonCommands::giveStoryBookWithLang)
+                    )
                 )
             )
         );
@@ -184,6 +199,75 @@ public class SscAddonCommands {
             player.sendMessage(Text.literal(line).formatted(Formatting.AQUA), false);
         }
         
+        return 1;
+    }
+
+    private static int giveStoryBook(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return giveStoryBookInternal(context, null);
+    }
+
+    private static int giveStoryBookWithLang(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        String lang = StringArgumentType.getString(context, "language");
+        return giveStoryBookInternal(context, lang);
+    }
+
+    private static int giveStoryBookInternal(CommandContext<ServerCommandSource> context, String language) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+        int chapter = IntegerArgumentType.getInteger(context, "chapter");
+        net.minecraft.item.ItemStack book = net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.getStoryBook(chapter, language);
+        
+        if (book.isEmpty()) {
+            player.sendMessage(Text.literal("Book chapter not found.").formatted(Formatting.RED), false);
+            return 0;
+        }
+        
+        if (!player.getInventory().insertStack(book)) {
+            player.dropItem(book, false);
+        }
+        
+        player.sendMessage(Text.literal("Received story book: Chapter " + chapter).formatted(Formatting.GREEN), false);
+        return 1;
+    }
+
+    private static int debugMana(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+        StringBuilder debugMsg = new StringBuilder();
+        boolean foundMana = false;
+
+        // 1. Check Apoli Resource (Snow Fox SP)
+        Identifier resourceId = new Identifier("my_addon", "form_snow_fox_sp_resource");
+        PowerHolderComponent component = PowerHolderComponent.KEY.get(player);
+        for (VariableIntPower power : component.getPowers(VariableIntPower.class)) {
+            if (power.getType().getIdentifier().equals(resourceId)) {
+                debugMsg.append("Snow Fox SP: ").append(power.getValue()).append("/").append(power.getMax()).append("\n");
+                foundMana = true;
+            }
+        }
+        
+        // 2. Check Global ManaComponent
+        try {
+            ManaComponent manaComponent = ManaUtils.getManaComponent(player);
+            if (manaComponent != null) {
+                // Check if it has any mana type associated or just valid mana
+                if (manaComponent.getManaTypeID() != null) {
+                     debugMsg.append("Mana Type: ").append(manaComponent.getManaTypeID()).append("\n");
+                     debugMsg.append("Mana: ").append(manaComponent.getMana()).append("/").append(manaComponent.getMaxMana()).append("\n");
+                     foundMana = true;
+                } else if (manaComponent.getMaxMana() > 0) {
+                     // Fallback if type is null but max mana is > 0
+                     debugMsg.append("Mana (No Type): ").append(manaComponent.getMana()).append("/").append(manaComponent.getMaxMana()).append("\n");
+                     foundMana = true;
+                }
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        
+        if (!foundMana) {
+            player.sendMessage(Text.literal("无能量条 (No Mana Bar)").formatted(Formatting.YELLOW), false);
+        } else {
+             player.sendMessage(Text.literal(debugMsg.toString().trim()).formatted(Formatting.AQUA), false);
+        }
         return 1;
     }
 }

@@ -48,6 +48,9 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.item.WaterSpearEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.InvisibilityCloakItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostBallEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostStormEntity;
+import me.shedaniel.autoconfig.AutoConfig;
+import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
 
 public class SscAddon implements ModInitializer {
 
@@ -111,6 +114,7 @@ public class SscAddon implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        AutoConfig.register(SSCAddonConfig.class, GsonConfigSerializer::new);
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "fox_fire_burn"), FOX_FIRE_BURN);
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "playing_dead"), PLAYING_DEAD);
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "blue_fire_ring"), BLUE_FIRE_RING);
@@ -167,6 +171,8 @@ public class SscAddon implements ModInitializer {
         SscAddonPowers.register();
 
         SscAddonNetworking.registerServerReceivers();
+
+        net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.init();
 
         //SpAllayMana.register();
         

@@ -71,6 +71,17 @@
                             "item": "minecraft:arrow"
                         }
                     }
+                },
+                {
+                    "type": "origins:inventory",
+                    "item_condition": {
+                        "type": "origins:ingredient",
+                        "ingredient": {
+                            "item": "ssc_addon:water_spear"
+                        }
+                    },
+                    "comparison": "==",
+                    "compare_to": 0
                 }
             ]
         },

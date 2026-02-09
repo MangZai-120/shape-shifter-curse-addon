@@ -17,6 +17,13 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.Box;
 
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
+import net.minecraft.entity.attribute.EntityAttribute;
+import net.minecraft.entity.attribute.EntityAttributeModifier;
+import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.EquipmentSlot;
+
 import java.util.List;
 
 import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
@@ -179,5 +186,16 @@ public class WaterSpearItem extends TridentItem {
     @Override
     public boolean canRepair(ItemStack stack, ItemStack ingredient) {
         return false;
+    }
+
+    @Override
+    public Multimap<EntityAttribute, EntityAttributeModifier> getAttributeModifiers(EquipmentSlot slot) {
+        if (slot == EquipmentSlot.MAINHAND) {
+            ImmutableMultimap.Builder<EntityAttribute, EntityAttributeModifier> builder = ImmutableMultimap.builder();
+            builder.put(EntityAttributes.GENERIC_ATTACK_DAMAGE, new EntityAttributeModifier(ATTACK_DAMAGE_MODIFIER_ID, "Tool modifier", 7.0, EntityAttributeModifier.Operation.ADDITION));
+            builder.put(EntityAttributes.GENERIC_ATTACK_SPEED, new EntityAttributeModifier(ATTACK_SPEED_MODIFIER_ID, "Tool modifier", -3.0, EntityAttributeModifier.Operation.ADDITION));
+            return builder.build();
+        }
+        return super.getAttributeModifiers(slot);
     }
 }
