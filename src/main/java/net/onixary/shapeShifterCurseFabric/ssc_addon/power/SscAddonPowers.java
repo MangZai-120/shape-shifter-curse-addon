@@ -9,5 +9,6 @@ public class SscAddonPowers {
          Registry.register(ApoliRegistries.POWER_FACTORY, TrueInvisibilityAbilityPower.createFactory().getSerializerId(), TrueInvisibilityAbilityPower.createFactory());
          Registry.register(ApoliRegistries.POWER_FACTORY, TrueInvisibilityDashAbilityPower.createFactory().getSerializerId(), TrueInvisibilityDashAbilityPower.createFactory());
          Registry.register(ApoliRegistries.POWER_FACTORY, SnowFoxSpFormSpeedPower.createFactory().getSerializerId(), SnowFoxSpFormSpeedPower.createFactory());
+         Registry.register(ApoliRegistries.POWER_FACTORY, EffectEfficiencyReductionPower.createFactory().getSerializerId(), EffectEfficiencyReductionPower.createFactory());
     }
 }

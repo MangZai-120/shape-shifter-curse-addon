@@ -1,0 +1,7 @@
+{
+    "type": "origins:night_vision",
+    "strength": 1.0,
+    "activate_automatically": true,
+    "name": "Permanent Night Vision",
+    "description": "You have permanent night vision."
+}

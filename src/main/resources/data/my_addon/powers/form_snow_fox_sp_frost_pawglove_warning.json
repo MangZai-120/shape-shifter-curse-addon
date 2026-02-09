@@ -1,0 +1,13 @@
+{
+    "type": "origins:action_over_time",
+    "interval": 60,
+    "entity_action": {
+        "type": "origins:execute_command",
+        "command": "title @s actionbar {\"translate\":\"ssc_addon.warning.frost_pawglove_incompatible\",\"color\":\"red\"}"
+    },
+    "condition": {
+        "type": "ssc_addon:has_trinket",
+        "item": "shape-shifter-curse:frost_pawglove"
+    },
+    "hidden": true
+}

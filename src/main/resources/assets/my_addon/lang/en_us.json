@@ -1,4 +1,5 @@
 {
+  "ssc_addon.warning.frost_pawglove_incompatible": "Incompatible mana structure, Frost Pawglove cannot function in this form.",
   "item.ssc_addon.frost_protection_ring": "Frost Protection Ring",
   "item.ssc_addon.frost_protection_ring.tooltip.1": "§bExclusive to SP Snow Fox",
   "item.ssc_addon.frost_protection_ring.tooltip.2": "§7Increases Mana Cap by 20",

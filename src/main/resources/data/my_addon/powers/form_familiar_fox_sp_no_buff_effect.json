@@ -21,6 +21,9 @@
     "minecraft:invisibility",
     "minecraft:night_vision",
     "minecraft:blindness",
+    "minecraft:saturation",
+    "minecraft:slow_falling",
+    "minecraft:levitation",
     "ssc_addon:fox_fire_burn",
     "ssc_addon:frost_freeze",
     "ssc_addon:frost_fall"

@@ -18,7 +18,7 @@
         "my_addon:wild_cat_sp_night_strength",
         "my_addon:wild_cat_sp_diet",
         "my_addon:wild_cat_sp_ink_blind",
-        "origins:cat_vision",
+        "my_addon:wild_cat_sp_night_vision",
         "shape-shifter-curse:beast_form_tag"
     ],
     "icon": {

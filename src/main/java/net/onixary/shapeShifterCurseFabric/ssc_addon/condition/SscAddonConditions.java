@@ -29,6 +29,18 @@ public class SscAddonConditions {
                 return false;
             }));
 
+        register(new ConditionFactory<>(new Identifier("ssc_addon", "has_trinket"),
+            new SerializableData()
+                .add("item", SerializableDataTypes.ITEM),
+            (data, entity) -> {
+                if (entity instanceof PlayerEntity player) {
+                    return TrinketsApi.getTrinketComponent(player).map(component -> 
+                        component.isEquipped((net.minecraft.item.Item)data.get("item"))
+                    ).orElse(false);
+                }
+                return false;
+            }));
+
         register(new ConditionFactory<>(new Identifier("ssc_addon", "has_blue_fire_amulet"),
             new SerializableData(),
             (data, entity) -> {
