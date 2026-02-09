@@ -12,12 +12,51 @@
         "updateHealth": true,
         "delay": 5,
         "condition": {
-            "type": "origins:biome",
-            "condition": {
-                "type": "origins:temperature",
-                "comparison": "<",
-                "compare_to": 0.15
-            }
+            "type": "origins:or",
+            "conditions": [
+                {
+                    "type": "origins:and",
+                    "conditions": [
+                        {
+                            "type": "origins:biome",
+                            "condition": {
+                                "type": "origins:temperature",
+                                "comparison": "<",
+                                "compare_to": 0.15
+                            }
+                        },
+                        {
+                            "type": "ssc_addon:has_reverse_thermometer",
+                            "inverted": true
+                        }
+                    ]
+                },
+                {
+                    "type": "origins:and",
+                    "conditions": [
+                        {
+                            "type": "origins:or",
+                            "conditions": [
+                                {
+                                    "type": "origins:biome",
+                                    "condition": {
+                                        "type": "origins:temperature",
+                                        "comparison": ">=",
+                                        "compare_to": 1.0
+                                    }
+                                },
+                                {
+                                    "type": "origins:dimension",
+                                    "dimension": "minecraft:the_nether"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "ssc_addon:has_reverse_thermometer"
+                        }
+                    ]
+                }
+            ]
         }
     },
     "speed": {
@@ -30,12 +69,51 @@
         },
         "tick_rate": 20,
         "condition": {
-            "type": "origins:biome",
-            "condition": {
-                "type": "origins:temperature",
-                "comparison": "<",
-                "compare_to": 0.15
-            }
+            "type": "origins:or",
+            "conditions": [
+                {
+                    "type": "origins:and",
+                    "conditions": [
+                        {
+                            "type": "origins:biome",
+                            "condition": {
+                                "type": "origins:temperature",
+                                "comparison": "<",
+                                "compare_to": 0.15
+                            }
+                        },
+                        {
+                            "type": "ssc_addon:has_reverse_thermometer",
+                            "inverted": true
+                        }
+                    ]
+                },
+                {
+                    "type": "origins:and",
+                    "conditions": [
+                        {
+                            "type": "origins:or",
+                            "conditions": [
+                                {
+                                    "type": "origins:biome",
+                                    "condition": {
+                                        "type": "origins:temperature",
+                                        "comparison": ">=",
+                                        "compare_to": 1.0
+                                    }
+                                },
+                                {
+                                    "type": "origins:dimension",
+                                    "dimension": "minecraft:the_nether"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "ssc_addon:has_reverse_thermometer"
+                        }
+                    ]
+                }
+            ]
         }
     }
 }

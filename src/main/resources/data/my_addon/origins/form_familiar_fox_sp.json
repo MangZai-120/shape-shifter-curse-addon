@@ -46,6 +46,9 @@
         "my_addon:form_familiar_fox_sp_damage_reduction",
         "my_addon:form_familiar_fox_sp_fox_fire_breath",
         "my_addon:form_familiar_fox_sp_visibility",
+        "shape-shifter-curse:form_familiar_fox_3_craft_harming_potion",
+        "shape-shifter-curse:form_familiar_fox_3_craft_healing_potion",
+        "shape-shifter-curse:form_familiar_fox_3_craft_poison_potion",
         "shape-shifter-curse:form_familiar_fox_sound_key",
         "shape-shifter-curse:beast_form_tag"
     ],

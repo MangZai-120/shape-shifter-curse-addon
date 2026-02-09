@@ -18,6 +18,8 @@
     "minecraft:weakness",
     "minecraft:mining_fatigue",
     "minecraft:nausea",
+    "minecraft:invisibility",
+    "minecraft:night_vision",
     "minecraft:blindness",
     "ssc_addon:fox_fire_burn",
     "ssc_addon:frost_freeze",

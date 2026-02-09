@@ -15,16 +15,46 @@
             "type": "origins:or",
             "conditions": [
                 {
-                    "type": "origins:biome",
-                    "condition": {
-                        "type": "origins:temperature",
-                        "comparison": ">=",
-                        "compare_to": 1.0
-                    }
+                    "type": "origins:and",
+                    "conditions": [
+                        {
+                            "type": "origins:or",
+                            "conditions": [
+                                {
+                                    "type": "origins:biome",
+                                    "condition": {
+                                        "type": "origins:temperature",
+                                        "comparison": ">=",
+                                        "compare_to": 1.0
+                                    }
+                                },
+                                {
+                                    "type": "origins:dimension",
+                                    "dimension": "minecraft:the_nether"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "ssc_addon:has_reverse_thermometer",
+                            "inverted": true
+                        }
+                    ]
                 },
                 {
-                    "type": "origins:dimension",
-                    "dimension": "minecraft:the_nether"
+                    "type": "origins:and",
+                    "conditions": [
+                        {
+                            "type": "origins:biome",
+                            "condition": {
+                                "type": "origins:temperature",
+                                "comparison": "<",
+                                "compare_to": 0.15
+                            }
+                        },
+                        {
+                            "type": "ssc_addon:has_reverse_thermometer"
+                        }
+                    ]
                 }
             ]
         }
@@ -42,16 +72,46 @@
             "type": "origins:or",
             "conditions": [
                 {
-                    "type": "origins:biome",
-                    "condition": {
-                        "type": "origins:temperature",
-                        "comparison": ">=",
-                        "compare_to": 1.0
-                    }
+                    "type": "origins:and",
+                    "conditions": [
+                        {
+                            "type": "origins:or",
+                            "conditions": [
+                                {
+                                    "type": "origins:biome",
+                                    "condition": {
+                                        "type": "origins:temperature",
+                                        "comparison": ">=",
+                                        "compare_to": 1.0
+                                    }
+                                },
+                                {
+                                    "type": "origins:dimension",
+                                    "dimension": "minecraft:the_nether"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "ssc_addon:has_reverse_thermometer",
+                            "inverted": true
+                        }
+                    ]
                 },
                 {
-                    "type": "origins:dimension",
-                    "dimension": "minecraft:the_nether"
+                    "type": "origins:and",
+                    "conditions": [
+                        {
+                            "type": "origins:biome",
+                            "condition": {
+                                "type": "origins:temperature",
+                                "comparison": "<",
+                                "compare_to": 0.15
+                            }
+                        },
+                        {
+                            "type": "ssc_addon:has_reverse_thermometer"
+                        }
+                    ]
                 }
             ]
         }

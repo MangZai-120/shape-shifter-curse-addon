@@ -8,6 +8,7 @@ import io.github.apace100.calio.data.SerializableData;
 import io.github.apace100.calio.data.SerializableDataTypes;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
@@ -17,6 +18,17 @@ import dev.emi.trinkets.api.TrinketsApi;
 public class SscAddonConditions {
 
     public static void register() {
+        register(new ConditionFactory<>(new Identifier("ssc_addon", "has_reverse_thermometer"),
+            new SerializableData(),
+            (data, entity) -> {
+                if (entity instanceof PlayerEntity player) {
+                    return TrinketsApi.getTrinketComponent(player).map(component -> 
+                        component.isEquipped(Registries.ITEM.get(new Identifier("shape-shifter-curse", "charm_of_reverse_thermometer")))
+                    ).orElse(false);
+                }
+                return false;
+            }));
+
         register(new ConditionFactory<>(new Identifier("ssc_addon", "has_blue_fire_amulet"),
             new SerializableData(),
             (data, entity) -> {
