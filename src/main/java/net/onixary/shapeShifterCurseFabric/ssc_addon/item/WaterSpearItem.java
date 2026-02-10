@@ -142,26 +142,33 @@ public class WaterSpearItem extends TridentItem {
     public void inventoryTick(ItemStack stack, World world, Entity entity, int slot, boolean selected) {
         super.inventoryTick(stack, world, entity, slot, selected);
 
-        if (!world.isClient && entity instanceof PlayerEntity player) {
-            PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
-            boolean isSpAxolotl = false;
-            
-            // Allow creative mode players to hold it for testing
-            if (player.isCreative()) {
-                isSpAxolotl = true;
-            } else if (component != null) {
-                PlayerFormBase currentForm = component.getCurrentForm();
-                if (currentForm != null && currentForm.FormID != null) {
-                    // Check phase is SP AND form ID contains "axolotl"
-                    // Also check for "form_axolotl_sp" explicitly
-                    if ((currentForm.getPhase() == PlayerFormPhase.PHASE_SP && currentForm.FormID.getPath().contains("axolotl")) 
-                        || currentForm.FormID.getPath().contains("form_axolotl_sp")) {
-                        isSpAxolotl = true;
+        if (!world.isClient) {
+            // Check if it is a player
+            if (entity instanceof PlayerEntity player) {
+                PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
+                boolean isSpAxolotl = false;
+                
+                // Allow creative mode players to hold it for testing
+                if (player.isCreative()) {
+                    isSpAxolotl = true;
+                } else if (component != null) {
+                    PlayerFormBase currentForm = component.getCurrentForm();
+                    if (currentForm != null && currentForm.FormID != null) {
+                        // Check phase is SP AND form ID contains "axolotl"
+                        // Also check for "form_axolotl_sp" explicitly
+                        if ((currentForm.getPhase() == PlayerFormPhase.PHASE_SP && currentForm.FormID.getPath().contains("axolotl")) 
+                            || currentForm.FormID.getPath().contains("form_axolotl_sp")) {
+                            isSpAxolotl = true;
+                        }
                     }
                 }
-            }
-            
-            if (!isSpAxolotl) {
+                
+                if (!isSpAxolotl) {
+                    stack.setCount(0);
+                    return;
+                }
+            } else {
+                // Non-player entities (including TLM Maids) cannot hold this item
                 stack.setCount(0);
                 return;
             }
