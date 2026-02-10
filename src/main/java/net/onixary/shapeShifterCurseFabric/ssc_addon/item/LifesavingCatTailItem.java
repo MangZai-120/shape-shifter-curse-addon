@@ -45,7 +45,7 @@ public class LifesavingCatTailItem extends Item {
         // "保命猫尾"
         // 装备到腰带栏生效，无法修补、叠加、附魔、交易
         // 在sp野猫受到致命伤害时免疫一次死亡...
-        tooltip.add(Text.translatable("item.ssc_addon.lifesaving_cat_tail.tooltip.1").formatted(Formatting.GRAY));
+        // tooltip.add(Text.translatable("item.ssc_addon.lifesaving_cat_tail.tooltip.1").formatted(Formatting.GRAY));
         tooltip.add(Text.translatable("item.ssc_addon.lifesaving_cat_tail.tooltip.2").formatted(Formatting.BLUE));
         tooltip.add(Text.translatable("item.ssc_addon.lifesaving_cat_tail.tooltip.exclusive").formatted(Formatting.LIGHT_PURPLE));
         super.appendTooltip(stack, world, tooltip, context);
