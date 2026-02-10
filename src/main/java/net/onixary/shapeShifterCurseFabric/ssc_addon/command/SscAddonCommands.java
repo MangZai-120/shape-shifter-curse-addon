@@ -59,7 +59,7 @@ public class SscAddonCommands {
             )
             .then(CommandManager.literal("get_book")
                 .requires(source -> source.hasPermissionLevel(2))
-                .then(CommandManager.argument("chapter", IntegerArgumentType.integer(1, 9))
+                .then(CommandManager.argument("chapter", IntegerArgumentType.integer(1))
                     .executes(SscAddonCommands::giveStoryBook)
                     .then(CommandManager.argument("language", StringArgumentType.string())
                         .suggests((context, builder) -> CommandSource.suggestMatching(new String[]{"zh_cn", "en_us"}, builder))
@@ -217,7 +217,7 @@ public class SscAddonCommands {
         net.minecraft.item.ItemStack book = net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.getStoryBook(chapter, language);
         
         if (book.isEmpty()) {
-            player.sendMessage(Text.literal("Book chapter not found.").formatted(Formatting.RED), false);
+            player.sendMessage(Text.literal("No book found for ID: " + chapter).formatted(Formatting.RED), false);
             return 0;
         }
         

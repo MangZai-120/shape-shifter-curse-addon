@@ -50,20 +50,12 @@ public class StoryBookLoot {
         }
     }
 
-    private static void loadBooks() {
-        SSCAddonConfig config = AutoConfig.getConfigHolder(SSCAddonConfig.class).getConfig();
-        // Reload if language changed or not loaded
-        if (!loadedBooks.isEmpty() && loadedLanguage == config.bookLanguage) return;
-        
-        loadedBooks.clear();
-        loadedLanguage = config.bookLanguage;
-        
-        String fileName = (config.bookLanguage == SSCAddonConfig.BookLanguage.ENGLISH) ? "books_en.json" : "books_cn.json";
-        
+    private static List<BookData> parseBookFile(String fileName) {
+        List<BookData> books = new ArrayList<>();
         try (InputStream is = StoryBookLoot.class.getResourceAsStream("/data/ssc_addon/story_books/" + fileName)) {
             if (is == null) {
                 System.err.println("Failed to load " + fileName + ": file not found");
-                return;
+                return books;
             }
             JsonObject root = JsonParser.parseReader(new InputStreamReader(is, StandardCharsets.UTF_8)).getAsJsonObject();
             JsonArray booksArray = root.getAsJsonArray("books");
@@ -77,12 +69,26 @@ public class StoryBookLoot {
                 bookData.author = bookObj.get("author").getAsString();
                 bookData.content = bookObj.get("content").getAsString();
                 
-                loadedBooks.add(bookData);
+                books.add(bookData);
             }
-            System.out.println("Loaded " + loadedBooks.size() + " books from " + fileName);
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return books;
+    }
+
+    private static void loadBooks() {
+        SSCAddonConfig config = AutoConfig.getConfigHolder(SSCAddonConfig.class).getConfig();
+        // Reload if language changed or not loaded
+        if (!loadedBooks.isEmpty() && loadedLanguage == config.bookLanguage) return;
+        
+        loadedBooks.clear();
+        loadedLanguage = config.bookLanguage;
+        
+        String fileName = (config.bookLanguage == SSCAddonConfig.BookLanguage.ENGLISH) ? "books_en.json" : "books_cn.json";
+        
+        loadedBooks = parseBookFile(fileName);
+        System.out.println("Loaded " + loadedBooks.size() + " books from " + fileName);
     }
 
     public static net.minecraft.item.ItemStack getStoryBook(int chapter) {
@@ -90,13 +96,24 @@ public class StoryBookLoot {
     }
 
     public static net.minecraft.item.ItemStack getStoryBook(int chapter, String language) {
-        loadBooks();
-        if (chapter < 1 || chapter > loadedBooks.size()) {
-            return net.minecraft.item.ItemStack.EMPTY;
+        List<BookData> sourceBooks;
+        
+        if (language != null && !language.isEmpty()) {
+            String fileName = language.equalsIgnoreCase("en_us") ? "books_en.json" : "books_cn.json";
+            sourceBooks = parseBookFile(fileName);
+        } else {
+            loadBooks();
+            sourceBooks = loadedBooks;
         }
 
-        BookData book = loadedBooks.get(chapter - 1);
-        return createBookStack(book.title, book.author, book.content);
+        String targetId = String.valueOf(chapter);
+        for (BookData book : sourceBooks) {
+            if (book.id.equals(targetId)) {
+                return createBookStack(book.title, book.author, book.content);
+            }
+        }
+        
+        return net.minecraft.item.ItemStack.EMPTY;
     }
 
     private static net.minecraft.item.ItemStack createBookStack(String title, String author, String content) {
@@ -168,41 +185,61 @@ public class StoryBookLoot {
 
     private static List<String> splitIntoPages(String content) {
         List<String> pages = new ArrayList<>();
-        // Split by newlines first to preserve paragraphs
+        // Split by newlines. No regex special handling needed for standard \n
         String[] paragraphs = content.split("\n");
         StringBuilder currentPage = new StringBuilder();
-        int PAGE_MAX = 200; // Safe limit
+        
+        int PAGE_MAX_CHARS = 200; 
+        int MAX_LINES = 13; 
+        int currentLines = 0;
 
         for (String para : paragraphs) {
-            if (para.trim().isEmpty()) continue;
+            // Note: intentionally NOT skipping empty lines to preserve poetry stanzas.
             
-            // If adding this paragraph exceeds limit...
-            if (currentPage.length() + para.length() > PAGE_MAX) {
-                 // If current page has content, save it
+            int paraLen = para.length();
+            // Heuristic: 1 line for every ~16 characters (conservative for CJK)
+            // Empty line = 1 line height.
+            int estimatedLines = (paraLen < 1) ? 1 : (int)Math.ceil((double)paraLen / 16.0);
+
+            // 1. Check if we need a new page before adding this paragraph
+            boolean overflowChars = (currentPage.length() + paraLen > PAGE_MAX_CHARS);
+            boolean overflowLines = (currentLines + estimatedLines > MAX_LINES);
+
+            if (overflowChars || overflowLines) {
                  if (currentPage.length() > 0) {
                      pages.add(currentPage.toString());
                      currentPage = new StringBuilder();
+                     currentLines = 0;
+                 }
+            }
+
+            // 2. Add paragraph (handling potentially huge paragraphs)
+            // If the paragraph itself is larger than a page, we split it into chunks
+            String remaining = para;
+            
+            // While the remaining text is too big for a single fresh page...
+            while (remaining.length() > PAGE_MAX_CHARS) {
+                 // Take a chunk
+                 int splitIndex = PAGE_MAX_CHARS;
+                 int lastSpace = remaining.substring(0, PAGE_MAX_CHARS).lastIndexOf(' ');
+                 if (lastSpace > PAGE_MAX_CHARS / 2) {
+                     splitIndex = lastSpace + 1;
                  }
                  
-                 // Handle long paragraph
-                 String remaining = para;
-                 while (remaining.length() > PAGE_MAX) {
-                     // Try to find a space near the limit to break cleanly
-                     int splitIndex = PAGE_MAX;
-                     // Look back for space
-                     int lastSpace = remaining.substring(0, PAGE_MAX).lastIndexOf(' ');
-                     if (lastSpace > PAGE_MAX / 2) { // Only if space is reasonably far
-                         splitIndex = lastSpace + 1; // split at space.
-                     }
-                     
-                     pages.add(remaining.substring(0, splitIndex));
-                     remaining = remaining.substring(splitIndex).trim(); // trim leading space
-                 }
-                 currentPage.append(remaining).append("\n");
-            } else {
-                currentPage.append(para).append("\n");
+                 String chunk = remaining.substring(0, splitIndex);
+                 pages.add(chunk); // Add as its own page
+                 remaining = remaining.substring(splitIndex).trim(); // Prepare next chunk
             }
+            
+            // Append remaining (or original small para) to current buffer
+            currentPage.append(remaining).append("\n");
+            
+            // Update estimates based on what we actually added to the specific buffer
+            // (Re-calculate lines for the added part)
+            int addedLines = (remaining.length() < 1) ? 1 : (int)Math.ceil((double)remaining.length() / 16.0);
+            currentLines += addedLines;
         }
+        
         if (currentPage.length() > 0) {
             pages.add(currentPage.toString());
         }
