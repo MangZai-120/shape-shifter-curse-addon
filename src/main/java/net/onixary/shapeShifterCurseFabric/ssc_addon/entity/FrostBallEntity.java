@@ -23,6 +23,9 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import dev.emi.trinkets.api.TrinketsApi;
+import net.minecraft.util.math.Box;
+import java.util.List;
 
 /**
  * SP雪狐远程主要技能 - 法术冰球
@@ -38,6 +41,10 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
     private Vec3d startPos;
     private int ticksAlive = 0;
     
+    // 追踪相关
+    private LivingEntity trackingTarget;
+    private boolean isChild = false;
+
     public FrostBallEntity(EntityType<? extends FrostBallEntity> entityType, World world) {
         super(entityType, world);
         this.startPos = this.getPos();
@@ -48,6 +55,14 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
         this.setOwner(owner);
         this.setPosition(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         this.startPos = this.getPos();
+    }
+    
+    public void setTrackingTarget(LivingEntity target) {
+        this.trackingTarget = target;
+    }
+
+    public void setIsChild(boolean isChild) {
+        this.isChild = isChild;
     }
     
     /**
@@ -68,6 +83,20 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
         super.tick();
         ticksAlive++;
         
+        // 追踪逻辑
+        if (this.trackingTarget != null && this.trackingTarget.isAlive()) {
+            Vec3d targetPos = this.trackingTarget.getEyePos();
+            Vec3d currentPos = this.getPos();
+            Vec3d direction = targetPos.subtract(currentPos).normalize();
+            
+            // 简单的追踪转向
+            Vec3d currentVel = this.getVelocity().normalize();
+            // 0.2f 的转向系数
+            Vec3d newVel = currentVel.add(direction.multiply(0.2)).normalize().multiply(SPEED);
+            
+            this.setVelocity(newVel.x, newVel.y, newVel.z);
+        }
+
         // 无重力移动
         Vec3d velocity = this.getVelocity();
         this.setPosition(this.getX() + velocity.x, this.getY() + velocity.y, this.getZ() + velocity.z);
@@ -77,6 +106,9 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
         if (hitResult.getType() != HitResult.Type.MISS) {
             this.onCollision(hitResult);
         }
+
+        // 如果在碰撞处理中实体被移除了（比如撞到了什么），就不再移动
+        if (this.isRemoved()) return;
         
         // 检查是否超过最大飞行距离
         if (startPos != null && this.squaredDistanceTo(startPos) > MAX_DISTANCE * MAX_DISTANCE) {
@@ -137,6 +169,50 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
             // 播放击中音效
             this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
                 SoundEvents.ENTITY_PLAYER_HURT_FREEZE, SoundCategory.PLAYERS, 1.0f, 1.2f);
+
+            // 霜之护符逻辑：如果是玩家发射的，且不是分裂的子弹，且装备了护符
+            if (this.getOwner() instanceof LivingEntity owner && !this.isChild) {
+                 boolean hasAmulet = TrinketsApi.getTrinketComponent(owner).map(
+                    c -> c.isEquipped(SscAddon.FROST_AMULET)
+                 ).orElse(false);
+
+                 if (hasAmulet) {
+                     spawnTrackingShards(owner, livingTarget);
+                 }
+            }
+        }
+    }
+
+    private void spawnTrackingShards(LivingEntity owner, LivingEntity hitTarget) {
+        // 直径10格 = 半径5格
+        double radius = 5.0;
+        Box box = hitTarget.getBoundingBox().expand(radius);
+        List<LivingEntity> nearby = this.getWorld().getEntitiesByClass(LivingEntity.class, box,
+            e -> e != owner && e != hitTarget && e.isAlive() && !e.isSpectator());
+        
+        if (nearby.isEmpty()) return;
+        
+        // 按距离排序
+        nearby.sort((e1, e2) -> Double.compare(e1.squaredDistanceTo(hitTarget), e2.squaredDistanceTo(hitTarget)));
+        
+        int count = 0;
+        int maxShards = 2; // 发射两个
+        
+        for (LivingEntity target : nearby) {
+            if (count >= maxShards) break;
+            
+            FrostBallEntity shard = new FrostBallEntity(this.getWorld(), owner);
+            // 从被命中者位置发射
+            shard.setPosition(hitTarget.getX(), hitTarget.getEyeY(), hitTarget.getZ());
+            shard.setTrackingTarget(target);
+            shard.setIsChild(true); // 标记为子弹，防止递归爆炸
+            
+            // 初始朝向目标
+            Vec3d direction = target.getEyePos().subtract(hitTarget.getEyePos()).normalize();
+            shard.setDirection(direction);
+            
+            this.getWorld().spawnEntity(shard);
+            count++;
         }
     }
     
@@ -155,6 +231,9 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
                 nbt.getDouble("StartZ")
             );
         }
+        if (nbt.contains("IsChild")) {
+            this.setIsChild(nbt.getBoolean("IsChild"));
+        }
     }
     
     @Override
@@ -165,6 +244,7 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
             nbt.putDouble("StartY", startPos.y);
             nbt.putDouble("StartZ", startPos.z);
         }
+        nbt.putBoolean("IsChild", this.isChild);
     }
     
     @Override

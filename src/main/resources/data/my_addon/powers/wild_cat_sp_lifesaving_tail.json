@@ -12,6 +12,11 @@
                 "item": "ssc_addon:lifesaving_cat_tail"
             },
             {
+                "type": "ssc_addon:item_on_cooldown",
+                "item": "ssc_addon:lifesaving_cat_tail",
+                "inverted": true
+            },
+            {
                 "type": "origins:equipped_item",
                 "equipment_slot": "mainhand",
                 "item_condition": {

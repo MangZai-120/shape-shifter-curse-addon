@@ -41,6 +41,16 @@ public class SscAddonConditions {
                 return false;
             }));
 
+        register(new ConditionFactory<>(new Identifier("ssc_addon", "item_on_cooldown"),
+            new SerializableData()
+                .add("item", SerializableDataTypes.ITEM),
+            (data, entity) -> {
+                if (entity instanceof PlayerEntity player) {
+                    return player.getItemCooldownManager().isCoolingDown((net.minecraft.item.Item)data.get("item"));
+                }
+                return false;
+            }));
+
         register(new ConditionFactory<>(new Identifier("ssc_addon", "has_blue_fire_amulet"),
             new SerializableData(),
             (data, entity) -> {

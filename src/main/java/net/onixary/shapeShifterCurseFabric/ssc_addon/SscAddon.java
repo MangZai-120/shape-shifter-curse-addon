@@ -28,6 +28,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.item.LifesavingCatTailItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableMoisturizerItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.SnowballLauncherItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableFridgeItem;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.item.FrostAmuletItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.BlueFireAmuletItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Axolotl3;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_FamiliarFox3;
@@ -102,6 +103,7 @@ public class SscAddon implements ModInitializer {
     public static final Item BLUE_FIRE_AMULET = new BlueFireAmuletItem(new Item.Settings().maxCount(1).fireproof());
     public static final Item INVISIBILITY_CLOAK = new InvisibilityCloakItem(new Item.Settings().maxCount(1).fireproof());
     public static final Item LIFESAVING_CAT_TAIL = new LifesavingCatTailItem(new Item.Settings().maxCount(1).fireproof());
+    public static final Item FROST_AMULET = new FrostAmuletItem(new Item.Settings().maxCount(1).fireproof());
     public static final RecipeSerializer<RefillMoisturizerRecipe> REFILL_MOISTURIZER_SERIALIZER = new SpecialRecipeSerializer<>(RefillMoisturizerRecipe::new);
     public static final RecipeSerializer<ReloadSnowballLauncherRecipe> RELOAD_SNOWBALL_LAUNCHER_SERIALIZER = new SpecialRecipeSerializer<>(ReloadSnowballLauncherRecipe::new);
     public static final RecipeSerializer<BlizzardTankRechargeRecipe> BLIZZARD_TANK_RECHARGE_SERIALIZER = new SpecialRecipeSerializer<>(BlizzardTankRechargeRecipe::new);
@@ -126,6 +128,7 @@ public class SscAddon implements ModInitializer {
                         entries.add(SP_UPGRADE_THING);
                         entries.add(EVOLUTION_STONE);
                         entries.add(LIFESAVING_CAT_TAIL);
+                        entries.add(FROST_AMULET);
                         entries.add(BLUE_FIRE_AMULET);
                         entries.add(INVISIBILITY_CLOAK);
                         entries.add(PORTABLE_MOISTURIZER);
@@ -158,6 +161,7 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "snowball_launcher"), SNOWBALL_LAUNCHER);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "portable_fridge"), PORTABLE_FRIDGE);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "blue_fire_amulet"), BLUE_FIRE_AMULET);
+        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "frost_amulet"), FROST_AMULET);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "invisibility_cloak"), INVISIBILITY_CLOAK);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "lifesaving_cat_tail"), LIFESAVING_CAT_TAIL);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "water_spear"), WATER_SPEAR);
