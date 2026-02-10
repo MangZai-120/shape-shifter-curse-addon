@@ -18,7 +18,7 @@
             },
             {
                 "type": "origins:health",
-                "comparison": "<=",
+                "comparison": "<",
                 "compare_to": 4.0
             }
         ]
@@ -62,10 +62,10 @@
             {
                 "type": "ssc_addon:item_cooldown",
                 "item": "ssc_addon:phantom_bell",
-                "duration": 3600
+                "duration": 1200
             }
         ]
     },
     "name": "Phantom Bell Effect",
-    "description": "Triggers illusion escape when health is low."
+    "description": "Triggers illusion escape when health is below 2 and attacked by entities."
 }

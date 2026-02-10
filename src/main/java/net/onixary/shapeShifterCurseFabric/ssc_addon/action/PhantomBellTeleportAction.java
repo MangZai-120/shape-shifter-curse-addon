@@ -29,8 +29,15 @@ public class PhantomBellTeleportAction {
             new Identifier("ssc_addon", "phantom_bell_teleport"),
             new SerializableData(),
             (data, entity) -> {
-                if (!(entity instanceof LivingEntity player)) return;
+                System.out.println("[PhantomBell] Action triggered!");
+                
+                if (!(entity instanceof LivingEntity player)) {
+                    System.out.println("[PhantomBell] Entity is not LivingEntity, returning");
+                    return;
+                }
 
+                System.out.println("[PhantomBell] Player: " + player.getName().getString());
+                
                 World world = player.getWorld();
                 BlockPos startBlockPos = player.getBlockPos();
 
@@ -62,7 +69,7 @@ public class PhantomBellTeleportAction {
                             BlockPos pos = startBlockPos.add(x, y, z);
                             
                             // 检查基本有效性
-                            if (isValidSpot(world, pos, startBlockPos)) {
+                            if (isValidSpot(world, pos)) {
                                 candidates.add(pos);
                             }
                         }
@@ -98,15 +105,10 @@ public class PhantomBellTeleportAction {
     private static double calculateScore(World world, BlockPos pos, BlockPos startPos, List<LivingEntity> threats) {
         double score = 0.0;
 
-        // ===== 0. 距离原点越远越好（最高优先级：必须尽可能远离原点） =====
-        double distanceToStart = Math.sqrt(pos.getSquaredDistance(startPos));
-        // 给距离一个非常高的权重，确保优先选择最远的位置
-        score += distanceToStart * 100.0;
-
-        // ===== 1. 离威胁（怪物和玩家）越远越好 =====
+        // ===== 最高优先级：离威胁（怪物和玩家）越远越好 =====
         double minDistanceToThreat = Double.MAX_VALUE;
         if (threats.isEmpty()) {
-            minDistanceToThreat = DETECTION_RADIUS; // 没有威胁时固定值
+            minDistanceToThreat = DETECTION_RADIUS;
         } else {
             for (LivingEntity threat : threats) {
                 double dist = Math.sqrt(threat.squaredDistanceTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5));
@@ -115,38 +117,38 @@ public class PhantomBellTeleportAction {
                 }
             }
         }
-        // 距离加分（权重高）
-        score += minDistanceToThreat * 10.0;
+        // 最高权重：离威胁越远越好
+        score += minDistanceToThreat * 200.0;
 
-        // ===== 2. 高度差惩罚（越小越好） =====
+        // ===== 次高优先级：距离原点越远越好 =====
+        double distanceToStart = Math.sqrt(pos.getSquaredDistance(startPos));
+        score += distanceToStart * 50.0;
+
+        // ===== 高度差惩罚（越小越好） =====
         double heightDiff = Math.abs(pos.getY() - startPos.getY());
-        score -= heightDiff * 30.0; // 高权重惩罚高度差
+        score -= heightDiff * 20.0;
 
-        // ===== 3. 悬崖检测（周围地面越稳固越好） =====
-        int cliffScore = calculateCliffScore(world, pos);
-        score += cliffScore * 5.0;
+        // ===== 悬崖检测（简化版：只检查5x5范围） =====
+        int cliffScore = calculateSimpleCliffScore(world, pos);
+        score += cliffScore * 3.0;
 
-        // ===== 4. 大片流体检测（周围流体越少越好） =====
-        int fluidPenalty = calculateFluidPenalty(world, pos);
-        score -= fluidPenalty * 8.0;
-
-        // ===== 5. 空间开阔度（3x3x3空间越开阔越好） =====
-        int spaceScore = calculate3x3x3SpaceScore(world, pos);
-        score += spaceScore * 3.0;
+        // ===== 流体检测（简化版） =====
+        int fluidPenalty = calculateSimpleFluidPenalty(world, pos);
+        score -= fluidPenalty * 10.0;
 
         return score;
     }
 
     /**
-     * 检查候选点是否有效
+     * 检查候选点是否有效（简化版）
      */
-    private static boolean isValidSpot(World world, BlockPos pos, BlockPos startPos) {
+    private static boolean isValidSpot(World world, BlockPos pos) {
         BlockState floorState = world.getBlockState(pos.down());
         
         // 1. 脚下必须是实体方块
         if (!floorState.isSolidBlock(world, pos.down())) return false;
 
-        // 2. 身体位置必须是空气（或可替换）且无流体
+        // 2. 身体位置必须是空气且无流体
         BlockState stateBody = world.getBlockState(pos);
         if (stateBody.isSolidBlock(world, pos) || !stateBody.getFluidState().isEmpty()) return false;
 
@@ -154,108 +156,65 @@ public class PhantomBellTeleportAction {
         BlockState stateHead = world.getBlockState(pos.up());
         if (stateHead.isSolidBlock(world, pos.up()) || !stateHead.getFluidState().isEmpty()) return false;
 
-        // 4. 3x3x3空间检测：不能几乎全被方块填满
-        int solidCount = 0;
-        int totalCount = 0;
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = 0; dy <= 2; dy++) { // 从脚到头上方
-                for (int dz = -1; dz <= 1; dz++) {
-                    totalCount++;
-                    BlockPos checkPos = pos.add(dx, dy, dz);
-                    if (world.getBlockState(checkPos).isSolidBlock(world, checkPos)) {
-                        solidCount++;
-                    }
-                }
-            }
-        }
-        // 如果超过70%被方块填满，认为太拥挤
-        if ((double)solidCount / totalCount > 0.7) return false;
-
-        // 5. 可掉落方块检测（沙子、砂砾等）
+        // 4. 可掉落方块检测（沙子、砂砾等）- 简化：只检查脚下
         Block floorBlock = floorState.getBlock();
         if (floorBlock instanceof FallingBlock) {
-            // 检查周围是否全是可掉落方块
-            int fallingBlockCount = 0;
-            int totalFloorBlocks = 0;
-            for (int dx = -2; dx <= 2; dx++) {
-                for (int dz = -2; dz <= 2; dz++) {
-                    totalFloorBlocks++;
-                    BlockPos floorCheckPos = pos.add(dx, -1, dz);
-                    Block checkBlock = world.getBlockState(floorCheckPos).getBlock();
-                    if (checkBlock instanceof FallingBlock) {
-                        fallingBlockCount++;
+            // 简化：如果脚下是沙子，检查周围3x3是否至少50%也是沙子
+            int fallingCount = 0;
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    if (world.getBlockState(pos.add(dx, -1, dz)).getBlock() instanceof FallingBlock) {
+                        fallingCount++;
                     }
                 }
             }
-            // 如果周围不全是可掉落方块（<80%），则排除这个点
-            if ((double)fallingBlockCount / totalFloorBlocks < 0.8) {
-                return false;
-            }
-            // 否则（周围全是沙子），允许传送
+            // 如果周围沙子不够多（<50%），排除
+            if (fallingCount < 5) return false;
         }
 
         return true;
     }
 
-    // 悬崖检测半径
-    private static final int CLIFF_DETECTION_RADIUS = 10;
-
     /**
-     * 计算悬崖评分（周围地面越稳固分数越高，检测10格半径球形区域）
+     * 简化版悬崖检测（5x5范围）
      */
-    private static int calculateCliffScore(World world, BlockPos pos) {
+    private static int calculateSimpleCliffScore(World world, BlockPos pos) {
         int score = 0;
-        int solidGroundCount = 0;
-        int voidCount = 0;
         
-        // 检查10格半径球形区域内的地面稳固性
-        for (int dx = -CLIFF_DETECTION_RADIUS; dx <= CLIFF_DETECTION_RADIUS; dx++) {
-            for (int dy = -CLIFF_DETECTION_RADIUS; dy <= CLIFF_DETECTION_RADIUS; dy++) {
-                for (int dz = -CLIFF_DETECTION_RADIUS; dz <= CLIFF_DETECTION_RADIUS; dz++) {
-                    // 限制为球形范围
-                    if (dx * dx + dy * dy + dz * dz > CLIFF_DETECTION_RADIUS * CLIFF_DETECTION_RADIUS) continue;
-                    
-                    BlockPos checkPos = pos.add(dx, dy, dz);
-                    
-                    // 检查地面方块（dy <= 0 的区域）
-                    if (dy <= 0) {
-                        if (world.getBlockState(checkPos).isSolidBlock(world, checkPos)) {
-                            solidGroundCount++;
-                        }
-                        // 检查是否是深渊/悬崖（连续的空气）
-                        if (!world.getBlockState(checkPos).isSolidBlock(world, checkPos) &&
-                            !world.getBlockState(checkPos.down()).isSolidBlock(world, checkPos.down()) &&
-                            !world.getBlockState(checkPos.down(2)).isSolidBlock(world, checkPos.down(2))) {
-                            voidCount++;
-                        }
+        // 检查5x5范围内的地面稳固性
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                BlockPos floorPos = pos.add(dx, -1, dz);
+                if (world.getBlockState(floorPos).isSolidBlock(world, floorPos)) {
+                    score++;
+                } else {
+                    // 检查下方是否有深渊
+                    if (!world.getBlockState(floorPos.down()).isSolidBlock(world, floorPos.down()) &&
+                        !world.getBlockState(floorPos.down(2)).isSolidBlock(world, floorPos.down(2))) {
+                        score -= 3; // 悬崖惩罚
                     }
                 }
             }
         }
         
-        // 评分：实心地面越多越好，深渊/悬崖越少越好
-        score = solidGroundCount - (voidCount * 3);
-        
         return score;
     }
 
     /**
-     * 计算流体惩罚（周围20格内的流体越多惩罚越高）
+     * 简化版流体检测（5x5x3范围）
      */
-    private static int calculateFluidPenalty(World world, BlockPos pos) {
+    private static int calculateSimpleFluidPenalty(World world, BlockPos pos) {
         int penalty = 0;
         
-        // 检查7x7x5范围内的流体
-        for (int dx = -3; dx <= 3; dx++) {
-            for (int dy = -2; dy <= 2; dy++) {
-                for (int dz = -3; dz <= 3; dz++) {
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dz = -2; dz <= 2; dz++) {
                     BlockPos checkPos = pos.add(dx, dy, dz);
                     BlockState state = world.getBlockState(checkPos);
                     
                     if (!state.getFluidState().isEmpty()) {
-                        // 岩浆惩罚更高
                         if (state.getBlock() == Blocks.LAVA) {
-                            penalty += 3;
+                            penalty += 5; // 岩浆高惩罚
                         } else {
                             penalty += 1; // 水
                         }
@@ -265,27 +224,5 @@ public class PhantomBellTeleportAction {
         }
         
         return penalty;
-    }
-
-    /**
-     * 计算3x3x3空间开阔度（越开阔分数越高）
-     */
-    private static int calculate3x3x3SpaceScore(World world, BlockPos pos) {
-        int airCount = 0;
-        
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = 0; dy <= 2; dy++) {
-                for (int dz = -1; dz <= 1; dz++) {
-                    BlockPos checkPos = pos.add(dx, dy, dz);
-                    BlockState state = world.getBlockState(checkPos);
-                    
-                    if (!state.isSolidBlock(world, checkPos) && state.getFluidState().isEmpty()) {
-                        airCount++;
-                    }
-                }
-            }
-        }
-        
-        return airCount;
     }
 }
