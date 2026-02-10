@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "ssc_addon:frost_amulet"
+    "ssc_addon:frost_amulet",
+    "ssc_addon:phantom_bell"
   ]
 }

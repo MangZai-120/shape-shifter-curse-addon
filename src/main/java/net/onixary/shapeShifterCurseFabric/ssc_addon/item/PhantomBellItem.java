@@ -13,50 +13,32 @@ import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
-import org.jetbrains.annotations.Nullable;
-
-// Loot Table imports
-import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
-import net.minecraft.loot.LootPool;
-import net.minecraft.loot.entry.ItemEntry;
-import net.minecraft.loot.provider.number.ConstantLootNumberProvider;
 import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class LifesavingCatTailItem extends TrinketItem {
+public class PhantomBellItem extends TrinketItem {
     
-    public static final int MAX_COOLDOWN = 3600; // 3 minutes = 3600 ticks
+    public static final int MAX_COOLDOWN = 1200; // 1 minute = 1200 ticks
     
-    public LifesavingCatTailItem(Settings settings) {
+    public PhantomBellItem(Settings settings) {
         super(settings);
     }
 
     @Override
     public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+        // 限制为 SP 使魔形态 (familiar_fox_sp)
         if (entity instanceof PlayerEntity player) {
             PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
             if (component != null) {
                 PlayerFormBase currentForm = component.getCurrentForm();
                 if (currentForm != null && currentForm.FormID != null) {
-                    return currentForm.FormID.equals(new Identifier("my_addon", "wild_cat_sp"));
+                    return currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_sp"));
                 }
             }
         }
         return false;
-    }
-    
-    public static void registerLootTable() {
-         LootTableEvents.MODIFY.register((resourceManager, lootManager, id, tableBuilder, source) -> {
-            // Add Lifesaving Cat Tail to Cat drops (1% chance)
-            if (id.equals(new Identifier("minecraft", "entities/cat"))) {
-                LootPool.Builder poolBuilder = LootPool.builder()
-                        .rolls(ConstantLootNumberProvider.create(1.0f))
-                        .conditionally(net.minecraft.loot.condition.RandomChanceLootCondition.builder(0.01f).build())
-                        .with(ItemEntry.builder(net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.LIFESAVING_CAT_TAIL));
-                tableBuilder.pool(poolBuilder);
-            }
-         });
     }
 
     /**
@@ -122,11 +104,6 @@ public class LifesavingCatTailItem extends TrinketItem {
     }
 
     @Override
-    public boolean isEnchantable(ItemStack stack) {
-        return false;
-    }
-
-    @Override
     public boolean isItemBarVisible(ItemStack stack) {
         // 只有在冷却中才显示进度条
         return isOnCooldown();
@@ -150,11 +127,8 @@ public class LifesavingCatTailItem extends TrinketItem {
 
     @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        // "保命猫尾"
-        // 装备到腰带栏生效，无法修补、叠加、附魔、交易
-        // 在sp野猫受到致命伤害时免疫一次死亡...
-        // tooltip.add(Text.translatable("item.ssc_addon.lifesaving_cat_tail.tooltip.1").formatted(Formatting.GRAY));
-        tooltip.add(Text.translatable("item.ssc_addon.lifesaving_cat_tail.tooltip.2").formatted(Formatting.BLUE));
+        tooltip.add(Text.translatable("item.ssc_addon.phantom_bell.tooltip.1").formatted(Formatting.GRAY));
+        tooltip.add(Text.translatable("item.ssc_addon.phantom_bell.tooltip.2").formatted(Formatting.BLUE));
         
         // 显示CD状态
         if (isOnCooldown()) {
@@ -162,12 +136,12 @@ public class LifesavingCatTailItem extends TrinketItem {
             int remainingSeconds = remainingTicks / 20;
             float progress = 1.0f - ((float)remainingTicks / MAX_COOLDOWN);
             Formatting color = getFormattingForProgress(progress);
-            tooltip.add(Text.translatable("item.ssc_addon.lifesaving_cat_tail.cooldown", remainingSeconds).formatted(color));
+            tooltip.add(Text.translatable("item.ssc_addon.phantom_bell.cooldown", remainingSeconds).formatted(color));
         } else {
-            tooltip.add(Text.translatable("item.ssc_addon.lifesaving_cat_tail.ready").formatted(Formatting.GREEN));
+            tooltip.add(Text.translatable("item.ssc_addon.phantom_bell.ready").formatted(Formatting.GREEN));
         }
         
-        tooltip.add(Text.translatable("item.ssc_addon.lifesaving_cat_tail.tooltip.exclusive").formatted(Formatting.LIGHT_PURPLE));
+        tooltip.add(Text.translatable("item.ssc_addon.phantom_bell.tooltip.exclusive").formatted(Formatting.RED));
         super.appendTooltip(stack, world, tooltip, context);
     }
 }

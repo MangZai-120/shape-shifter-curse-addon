@@ -1,6 +1,6 @@
 {
     "type": "origins:prevent_death",
-    "cooldown": 3600,
+    "cooldown": 1,
     "hud_render": {
         "should_render": false
     },

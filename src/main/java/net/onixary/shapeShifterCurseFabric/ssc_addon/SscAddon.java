@@ -27,6 +27,8 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.item.WaterSpearItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.LifesavingCatTailItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableMoisturizerItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.SnowballLauncherItem;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PhantomBellItem;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableFridgeItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.FrostAmuletItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.BlueFireAmuletItem;
@@ -103,6 +105,7 @@ public class SscAddon implements ModInitializer {
     public static final Item BLUE_FIRE_AMULET = new BlueFireAmuletItem(new Item.Settings().maxCount(1).fireproof());
     public static final Item INVISIBILITY_CLOAK = new InvisibilityCloakItem(new Item.Settings().maxCount(1).fireproof());
     public static final Item LIFESAVING_CAT_TAIL = new LifesavingCatTailItem(new Item.Settings().maxCount(1).fireproof());
+    public static final Item PHANTOM_BELL = new PhantomBellItem(new Item.Settings().maxCount(1).fireproof());
     public static final Item FROST_AMULET = new FrostAmuletItem(new Item.Settings().maxCount(1).fireproof());
     public static final RecipeSerializer<RefillMoisturizerRecipe> REFILL_MOISTURIZER_SERIALIZER = new SpecialRecipeSerializer<>(RefillMoisturizerRecipe::new);
     public static final RecipeSerializer<ReloadSnowballLauncherRecipe> RELOAD_SNOWBALL_LAUNCHER_SERIALIZER = new SpecialRecipeSerializer<>(ReloadSnowballLauncherRecipe::new);
@@ -128,6 +131,7 @@ public class SscAddon implements ModInitializer {
                         entries.add(SP_UPGRADE_THING);
                         entries.add(EVOLUTION_STONE);
                         entries.add(LIFESAVING_CAT_TAIL);
+                        entries.add(PHANTOM_BELL);
                         entries.add(FROST_AMULET);
                         entries.add(BLUE_FIRE_AMULET);
                         entries.add(INVISIBILITY_CLOAK);
@@ -164,6 +168,7 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "frost_amulet"), FROST_AMULET);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "invisibility_cloak"), INVISIBILITY_CLOAK);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "lifesaving_cat_tail"), LIFESAVING_CAT_TAIL);
+        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "phantom_bell"), PHANTOM_BELL);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "water_spear"), WATER_SPEAR);
 
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "evolution_stone"), EVOLUTION_STONE);
@@ -252,6 +257,15 @@ public class SscAddon implements ModInitializer {
                 net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility.tick(player);
                 net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack.tick(player);
                 net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm.tick(player);
+            }
+        });
+
+        // 复活后重置特定饰品的冷却时间
+        ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
+            // 只有死亡复活才重置冷却，从末地返回不重置
+            if (!alive) {
+                newPlayer.getItemCooldownManager().remove(LIFESAVING_CAT_TAIL);
+                newPlayer.getItemCooldownManager().remove(PHANTOM_BELL);
             }
         });
 

@@ -43,6 +43,8 @@ public class SscAddonActions {
     private static final ConcurrentHashMap<UUID, Long> FROST_BALL_COOLDOWN = new ConcurrentHashMap<>();
 
     public static void register() {
+            registerEntity(PhantomBellTeleportAction.getFactory());
+
             registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "item_cooldown"),
             new SerializableData()
                 .add("item", SerializableDataTypes.ITEM)
