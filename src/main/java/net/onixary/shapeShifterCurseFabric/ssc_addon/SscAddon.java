@@ -18,9 +18,13 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.action.SscAddonActions;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.condition.SscAddonConditions;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.power.SscAddonPowers;
 import net.minecraft.item.Item;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.minecraft.item.ItemGroups;
+//import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+//import net.minecraft.item.ItemGroups;
+import net.minecraft.item.ItemGroup;
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
+import net.minecraft.text.Text;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.WaterSpearItem;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.item.LifesavingCatTailItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableMoisturizerItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.SnowballLauncherItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableFridgeItem;
@@ -97,6 +101,7 @@ public class SscAddon implements ModInitializer {
     public static final Item PORTABLE_FRIDGE = new PortableFridgeItem(new Item.Settings().maxCount(1));
     public static final Item BLUE_FIRE_AMULET = new BlueFireAmuletItem(new Item.Settings().maxCount(1).fireproof());
     public static final Item INVISIBILITY_CLOAK = new InvisibilityCloakItem(new Item.Settings().maxCount(1).fireproof());
+    public static final Item LIFESAVING_CAT_TAIL = new LifesavingCatTailItem(new Item.Settings().maxCount(1).fireproof());
     public static final RecipeSerializer<RefillMoisturizerRecipe> REFILL_MOISTURIZER_SERIALIZER = new SpecialRecipeSerializer<>(RefillMoisturizerRecipe::new);
     public static final RecipeSerializer<ReloadSnowballLauncherRecipe> RELOAD_SNOWBALL_LAUNCHER_SERIALIZER = new SpecialRecipeSerializer<>(ReloadSnowballLauncherRecipe::new);
     public static final RecipeSerializer<BlizzardTankRechargeRecipe> BLIZZARD_TANK_RECHARGE_SERIALIZER = new SpecialRecipeSerializer<>(BlizzardTankRechargeRecipe::new);
@@ -111,6 +116,29 @@ public class SscAddon implements ModInitializer {
     public static final Item ENDER_SHARD = new Item(new Item.Settings().maxCount(1));
     public static final Item HUNT_SHARD = new Item(new Item.Settings().maxCount(1));
     public static final Item SCULK_SHARD = new Item(new Item.Settings().maxCount(1));
+
+    public static final ItemGroup SSC_ADDON_GROUP = Registry.register(Registries.ITEM_GROUP,
+            new Identifier("ssc_addon", "group"),
+            FabricItemGroup.builder()
+                    .displayName(Text.translatable("itemGroup.ssc_addon.group"))
+                    .icon(() -> new net.minecraft.item.ItemStack(SP_UPGRADE_THING))
+                    .entries((displayContext, entries) -> {
+                        entries.add(SP_UPGRADE_THING);
+                        entries.add(EVOLUTION_STONE);
+                        entries.add(LIFESAVING_CAT_TAIL);
+                        entries.add(BLUE_FIRE_AMULET);
+                        entries.add(INVISIBILITY_CLOAK);
+                        entries.add(PORTABLE_MOISTURIZER);
+                        entries.add(PORTABLE_FRIDGE);
+                        entries.add(SNOWBALL_LAUNCHER);
+                        entries.add(WATER_SPEAR);
+                        entries.add(SHADOW_SHARD);
+                        entries.add(NIGHT_VISION_SHARD);
+                        entries.add(ENDER_SHARD);
+                        entries.add(HUNT_SHARD);
+                        entries.add(SCULK_SHARD);
+                    })
+                    .build());
 
     @Override
     public void onInitialize() {
@@ -131,6 +159,7 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "portable_fridge"), PORTABLE_FRIDGE);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "blue_fire_amulet"), BLUE_FIRE_AMULET);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "invisibility_cloak"), INVISIBILITY_CLOAK);
+        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "lifesaving_cat_tail"), LIFESAVING_CAT_TAIL);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "water_spear"), WATER_SPEAR);
 
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "evolution_stone"), EVOLUTION_STONE);
@@ -145,6 +174,7 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "blizzard_tank_recharge"), BLIZZARD_TANK_RECHARGE_SERIALIZER);
         Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "sp_upgrade_crafting"), SP_UPGRADE_SERIALIZER);
         
+        /*
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.FOOD_AND_DRINK).register(content -> content.add(SP_UPGRADE_THING));
         
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.COMBAT).register(content -> content.add(WATER_SPEAR));
@@ -155,6 +185,7 @@ public class SscAddon implements ModInitializer {
             content.add(PORTABLE_FRIDGE);
             content.add(BLUE_FIRE_AMULET);
             content.add(INVISIBILITY_CLOAK);
+            content.add(LIFESAVING_CAT_TAIL);
             content.add(EVOLUTION_STONE);
         });
 
@@ -165,6 +196,7 @@ public class SscAddon implements ModInitializer {
             content.add(HUNT_SHARD);
             content.add(SCULK_SHARD);
         });
+        */
         
         SscAddonActions.register();
         SscAddonConditions.register();
@@ -173,6 +205,9 @@ public class SscAddon implements ModInitializer {
         SscAddonNetworking.registerServerReceivers();
 
         net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.init();
+        
+        // Register loot tables for items
+        LifesavingCatTailItem.registerLootTable();
 
         //SpAllayMana.register();
         

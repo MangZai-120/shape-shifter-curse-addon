@@ -107,7 +107,7 @@ public class PortableFridgeItem extends TrinketItem {
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
         tooltip.add(Text.translatable("tooltip.ssc_addon.portable_fridge.desc").formatted(Formatting.AQUA));
         tooltip.add(Text.translatable("tooltip.ssc_addon.portable_fridge.status", getCharge(stack), MAX_CHARGE).formatted(Formatting.GRAY));
-        tooltip.add(Text.translatable("tooltip.ssc_addon.portable_fridge.exclusive").formatted(Formatting.DARK_PURPLE));
+        tooltip.add(Text.translatable("tooltip.ssc_addon.portable_fridge.exclusive").formatted(Formatting.LIGHT_PURPLE));
         super.appendTooltip(stack, world, tooltip, context);
     }
 }

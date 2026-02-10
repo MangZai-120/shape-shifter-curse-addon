@@ -1,0 +1,107 @@
+{
+    "type": "origins:prevent_death",
+    "cooldown": 3600,
+    "hud_render": {
+        "should_render": false
+    },
+    "condition": {
+        "type": "origins:and",
+        "conditions": [
+            {
+                "type": "ssc_addon:has_trinket",
+                "item": "ssc_addon:lifesaving_cat_tail"
+            },
+            {
+                "type": "origins:equipped_item",
+                "equipment_slot": "mainhand",
+                "item_condition": {
+                    "type": "origins:ingredient",
+                    "ingredient": {
+                        "item": "minecraft:totem_of_undying"
+                    }
+                },
+                "inverted": true
+            },
+            {
+                "type": "origins:equipped_item",
+                "equipment_slot": "offhand",
+                "item_condition": {
+                    "type": "origins:ingredient",
+                    "ingredient": {
+                        "item": "minecraft:totem_of_undying"
+                    }
+                },
+                "inverted": true
+            }
+        ]
+    },
+    "entity_action": {
+        "type": "origins:and",
+        "actions": [
+            {
+                "type": "origins:heal",
+                "amount": 6.0
+            },
+            {
+                "type": "origins:apply_effect",
+                "effect": {
+                    "effect": "minecraft:absorption",
+                    "duration": 300,
+                    "amplifier": 0
+                }
+            },
+            {
+                "type": "origins:apply_effect",
+                "effect": {
+                    "effect": "ssc_addon:true_invisibility",
+                    "duration": 100,
+                    "amplifier": 0
+                }
+            },
+            {
+                "type": "origins:apply_effect",
+                "effect": {
+                    "effect": "minecraft:slowness",
+                    "duration": 100,
+                    "amplifier": 1
+                }
+            },
+            {
+                "type": "origins:apply_effect",
+                "effect": {
+                    "effect": "minecraft:resistance",
+                    "duration": 100,
+                    "amplifier": 2
+                }
+            },
+            {
+                "type": "origins:apply_effect",
+                "effect": {
+                    "effect": "minecraft:weakness",
+                    "duration": 100,
+                    "amplifier": 1
+                }
+            },
+            {
+                "type": "origins:emit_game_event",
+                "event": "minecraft:item_interact_finish"
+            },
+            {
+                "type": "origins:play_sound",
+                "sound": "minecraft:item.totem.use",
+                "volume": 0.5,
+                "pitch": 1.2
+            },
+            {
+                "type": "origins:spawn_entity",
+                "entity_type": "minecraft:area_effect_cloud",
+                "tag": "{Radius:5.0f,Duration:80,Particle:\"large_smoke\"}"
+            },
+            {
+                "type": "ssc_addon:item_cooldown",
+                "item": "ssc_addon:lifesaving_cat_tail",
+                "duration": 3600
+            }
+        ]
+    }
+}

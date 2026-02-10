@@ -43,6 +43,16 @@ public class SscAddonActions {
     private static final ConcurrentHashMap<UUID, Long> FROST_BALL_COOLDOWN = new ConcurrentHashMap<>();
 
     public static void register() {
+            registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "item_cooldown"),
+            new SerializableData()
+                .add("item", SerializableDataTypes.ITEM)
+                .add("duration", SerializableDataTypes.INT),
+            (data, entity) -> {
+                if(entity instanceof PlayerEntity player) {
+                    player.getItemCooldownManager().set((net.minecraft.item.Item)data.get("item"), data.getInt("duration"));
+                }
+            }));
+
         registerEntity(new ActionFactory<>(new Identifier("my_addon", "fire_breath"),
             new SerializableData()
                 .add("distance", SerializableDataTypes.FLOAT)
