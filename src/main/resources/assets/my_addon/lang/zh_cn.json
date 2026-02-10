@@ -1,5 +1,8 @@
 {
   "ssc_addon.warning.frost_pawglove_incompatible": "魔力构造不兼容，结霜护爪无法在此形态下生效。",
+  "item.ssc_addon.active_coral_necklace": "活性珊瑚项链",
+  "item.ssc_addon.active_coral_necklace.desc": "具有活力的珊瑚项链，为装备者带来更多活力",
+  "item.ssc_addon.active_coral_necklace.tooltip.exclusive": "SP美西螈形态专属",
   "item.ssc_addon.portable_moisturizer": "美西螈加湿器",
   "key.ssc_addon.play_dead": "装死",
   "message.ssc_addon.moisturizer.on": "美西螈加湿器已开启",
@@ -88,6 +91,8 @@
   "message.ssc_addon.evolution_stone.success": "进化石已融合到你的身体里",
   "message.ssc_addon.evolution_stone.fail": "进化失败！",
   "message.ssc_addon.evolution_stone.no_response": "进化石未响应你的请求",
+  "item.ssc_addon.coral_ball": "珊瑚球",
+  "item.ssc_addon.coral_ball.tooltip": "由各类珊瑚制作出的彩球",
   "item.ssc_addon.invisibility_cloak": "隐匿斗篷",
   "item.ssc_addon.invisibility_cloak.tooltip": "真实隐身状态持续时间提升2秒，但冷却时间增加2秒。",
   "item.ssc_addon.invisibility_cloak.special": "sp野猫专属",

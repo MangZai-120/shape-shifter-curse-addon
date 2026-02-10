@@ -58,6 +58,9 @@ public class SscAddonClient implements ClientModInitializer {
             if (stack.getItem() == SscAddon.SCULK_SHARD) {
                 addSplitTooltip(lines, "item.ssc_addon.sculk_shard.tooltip");
             }
+            if (stack.getItem() == SscAddon.CORAL_BALL) {
+                addSplitTooltip(lines, "item.ssc_addon.coral_ball.tooltip");
+            }
         });
 
         EntityRendererRegistry.register(SscAddon.WATER_SPEAR_ENTITY, WaterSpearEntityRenderer::new);

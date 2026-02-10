@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " S ",
+    "S S",
+    " C "
+  ],
+  "key": {
+    "S": {
+      "item": "minecraft:string"
+    },
+    "C": {
+      "item": "ssc_addon:coral_ball"
+    }
+  },
+  "result": {
+    "item": "ssc_addon:active_coral_necklace",
+    "count": 1
+  }
+}

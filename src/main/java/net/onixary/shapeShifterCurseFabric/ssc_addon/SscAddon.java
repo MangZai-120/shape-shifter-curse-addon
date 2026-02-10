@@ -28,6 +28,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.item.LifesavingCatTailItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableMoisturizerItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.SnowballLauncherItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PhantomBellItem;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.item.ActiveCoralNecklaceItem;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableFridgeItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.FrostAmuletItem;
@@ -121,6 +122,8 @@ public class SscAddon implements ModInitializer {
     public static final Item ENDER_SHARD = new Item(new Item.Settings().maxCount(1));
     public static final Item HUNT_SHARD = new Item(new Item.Settings().maxCount(1));
     public static final Item SCULK_SHARD = new Item(new Item.Settings().maxCount(1));
+    public static final Item CORAL_BALL = new Item(new Item.Settings().maxCount(64));
+    public static final Item ACTIVE_CORAL_NECKLACE = new ActiveCoralNecklaceItem(new Item.Settings().maxCount(1));
 
     public static final ItemGroup SSC_ADDON_GROUP = Registry.register(Registries.ITEM_GROUP,
             new Identifier("ssc_addon", "group"),
@@ -144,6 +147,8 @@ public class SscAddon implements ModInitializer {
                         entries.add(ENDER_SHARD);
                         entries.add(HUNT_SHARD);
                         entries.add(SCULK_SHARD);
+                        entries.add(CORAL_BALL);
+                        entries.add(ACTIVE_CORAL_NECKLACE);
                     })
                     .build());
 
@@ -177,6 +182,8 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "ender_shard"), ENDER_SHARD);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "hunt_shard"), HUNT_SHARD);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "sculk_shard"), SCULK_SHARD);
+        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "coral_ball"), CORAL_BALL);
+        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "active_coral_necklace"), ACTIVE_CORAL_NECKLACE);
         
         Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "refill_moisturizer"), REFILL_MOISTURIZER_SERIALIZER);
         Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "reload_snowball_launcher"), RELOAD_SNOWBALL_LAUNCHER_SERIALIZER);

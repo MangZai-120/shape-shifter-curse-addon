@@ -34,6 +34,10 @@ import net.minecraft.sound.SoundEvents;
 
 import net.minecraft.entity.effect.StatusEffects;
 
+import dev.emi.trinkets.api.TrinketsApi;
+import dev.emi.trinkets.api.TrinketComponent;
+import java.util.Optional;
+
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -272,9 +276,30 @@ public class SscAddonActions {
                     // 1. Effects
                     // Duration 6s = 120 ticks
                     int duration = 120;
+                    
+                    int regenAmp = 2; // Default Regeneration III (Regen I=0, II=1, III=2)
+                    boolean hasNecklace = false;
+                    
+                    if (living instanceof PlayerEntity player) {
+                        try {
+                            Optional<TrinketComponent> component = TrinketsApi.getTrinketComponent(player);
+                            if (component.isPresent()) {
+                                hasNecklace = component.get().isEquipped(SscAddon.ACTIVE_CORAL_NECKLACE);
+                            }
+                        } catch (Exception e) {
+                            // Ignore if trinkets not available or error
+                        }
+                    }
+
+                    if (hasNecklace) {
+                        regenAmp = 0; // Regeneration I (Level 1)
+                        // Absorption V (Amp 4) for 15s (300 ticks)
+                        living.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, 300, 4, false, false));
+                    }
+
                     // visible=false to hide icon
                     living.addStatusEffect(new StatusEffectInstance(SscAddon.PLAYING_DEAD, duration, 0, false, false, false));
-                    living.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, duration, 2, false, true));
+                    living.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, duration, regenAmp, false, true));
                     living.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, duration, 0, false, false));
                     living.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, duration, 10, false, false));
                     
