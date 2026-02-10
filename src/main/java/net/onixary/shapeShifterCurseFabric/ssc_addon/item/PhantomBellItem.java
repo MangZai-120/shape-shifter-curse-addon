@@ -127,8 +127,9 @@ public class PhantomBellItem extends TrinketItem {
 
     @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        tooltip.add(Text.translatable("item.ssc_addon.phantom_bell.tooltip.1").formatted(Formatting.GRAY));
-        tooltip.add(Text.translatable("item.ssc_addon.phantom_bell.tooltip.2").formatted(Formatting.BLUE));
+        // 移除了"装备在项链栏生效"的提示
+        tooltip.add(Text.translatable("item.ssc_addon.phantom_bell.desc.1").formatted(Formatting.BLUE));
+        tooltip.add(Text.translatable("item.ssc_addon.phantom_bell.desc.2").formatted(Formatting.BLUE));
         
         // 显示CD状态
         if (isOnCooldown()) {
@@ -141,7 +142,7 @@ public class PhantomBellItem extends TrinketItem {
             tooltip.add(Text.translatable("item.ssc_addon.phantom_bell.ready").formatted(Formatting.GREEN));
         }
         
-        tooltip.add(Text.translatable("item.ssc_addon.phantom_bell.tooltip.exclusive").formatted(Formatting.RED));
+        tooltip.add(Text.translatable("item.ssc_addon.phantom_bell.tooltip.exclusive").formatted(Formatting.LIGHT_PURPLE));
         super.appendTooltip(stack, world, tooltip, context);
     }
 }
