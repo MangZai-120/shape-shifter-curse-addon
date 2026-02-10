@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "ssc-addon.refmap.json",
   "mixins": [
+    "CursedMoonSpMessageMixin",
     "FrostFreezeDamageMixin",
     "ItemEntityMixin",
     "MobEntityMixin",
@@ -15,8 +16,6 @@
     "SscAddonTargetPredicateMixin",
     "SscAddonTravelMixin",
     "SscAddonVillagerInteractionMixin",
-    "SscAddonCursedMoonMixin",
-    "SscAddonTransformManagerMixin",
     "SscPlayerMixin",
     "StunnedJumpMixin",
     "TransformRelatedItemsMixin"

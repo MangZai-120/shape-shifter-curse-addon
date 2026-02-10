@@ -155,5 +155,6 @@
   "text.autoconfig.ssc-addon.option.bookLanguage": "故事书语言",
   "text.autoconfig.ssc-addon.option.bookLanguage.@Tooltip": "选择生成的被遗忘的传说故事书的语言。修改后需要重启游戏生效。",
   "text.autoconfig.ssc-addon.option.bookLanguage.CHINESE": "zh_cn",
-  "text.autoconfig.ssc-addon.option.bookLanguage.ENGLISH": "en_us"
+  "text.autoconfig.ssc-addon.option.bookLanguage.ENGLISH": "en_us",
+  "message.ssc_addon.cursed_moon_sp_special": "奇怪的是，它似乎没有对你的身体产生可见的影响..也许你当前的形态比较[特殊]？"
 }
