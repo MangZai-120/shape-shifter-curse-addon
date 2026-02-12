@@ -293,8 +293,8 @@ public class SscAddonActions {
 
                     if (hasNecklace) {
                         regenAmp = 0; // Regeneration I (Level 1)
-                        // Absorption V (Amp 4) for 15s (300 ticks)
-                        living.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, 300, 4, false, false));
+                        // Absorption V (Amp 4) for 25s (500 ticks)
+                        living.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, 500, 4, false, false));
                     }
 
                     // visible=false to hide icon
