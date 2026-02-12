@@ -3,3 +3,4 @@ build/
 bin/
 .git/
 .history/
+.github
