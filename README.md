@@ -2,7 +2,7 @@
 
 > **📖 玩法指南 / Gameplay Guide**  
 > THIS MOD IS FREE FOR ALL,DON'T TRUST ANYONE WHO CLAIMS TO SELL THIS MOD.
-> **本模组免费提供给所有人使用，请不要相信任何声称出售此模组的人。**
+> **\n本模组免费提供给所有人使用，请不要相信任何声称出售此模组的人。**
 >
 > 如果您正在寻找关于 SP 形态、月髓十字环等进阶内容的玩法介绍，请查看：  
 > **[👉 进阶玩法指南 (TUTORIAL.md)](TUTORIAL.md)**  
