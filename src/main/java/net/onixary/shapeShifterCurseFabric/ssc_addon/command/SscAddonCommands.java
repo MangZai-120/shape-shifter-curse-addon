@@ -59,13 +59,33 @@ public class SscAddonCommands {
             )
             .then(CommandManager.literal("get_book")
                 .requires(source -> source.hasPermissionLevel(2))
-                .then(CommandManager.argument("chapter", IntegerArgumentType.integer(1))
-                    .executes(SscAddonCommands::giveStoryBook)
+                // 使用字符串ID参数，支持任意书籍ID（不仅仅是数字）
+                .then(CommandManager.argument("book_id", StringArgumentType.string())
+                    .suggests((context, builder) -> {
+                        // 自动补全：显示所有可用的书籍ID
+                        return CommandSource.suggestMatching(
+                            net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.getBookIds(),
+                            builder
+                        );
+                    })
+                    .executes(SscAddonCommands::giveStoryBookById)
                     .then(CommandManager.argument("language", StringArgumentType.string())
                         .suggests((context, builder) -> CommandSource.suggestMatching(new String[]{"zh_cn", "en_us"}, builder))
-                        .executes(SscAddonCommands::giveStoryBookWithLang)
+                        .executes(SscAddonCommands::giveStoryBookByIdWithLang)
                     )
                 )
+            )
+            .then(CommandManager.literal("list_books")
+                .requires(source -> source.hasPermissionLevel(2))
+                .executes(SscAddonCommands::listBooks)
+                .then(CommandManager.argument("language", StringArgumentType.string())
+                    .suggests((context, builder) -> CommandSource.suggestMatching(new String[]{"zh_cn", "en_us"}, builder))
+                    .executes(SscAddonCommands::listBooksWithLang)
+                )
+            )
+            .then(CommandManager.literal("reload_books")
+                .requires(source -> source.hasPermissionLevel(2))
+                .executes(SscAddonCommands::reloadBooks)
             )
         );
 
@@ -269,5 +289,125 @@ public class SscAddonCommands {
              player.sendMessage(Text.literal(debugMsg.toString().trim()).formatted(Formatting.AQUA), false);
         }
         return 1;
+    }
+
+    // ===== 新增：书籍命令方法 =====
+
+    /**
+     * 通过书籍ID获取书籍（使用配置的默认语言）
+     */
+    private static int giveStoryBookById(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return giveStoryBookByIdInternal(context, null);
+    }
+
+    /**
+     * 通过书籍ID和指定语言获取书籍
+     */
+    private static int giveStoryBookByIdWithLang(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        String lang = StringArgumentType.getString(context, "language");
+        return giveStoryBookByIdInternal(context, lang);
+    }
+
+    /**
+     * 内部方法：通过书籍ID获取书籍
+     */
+    private static int giveStoryBookByIdInternal(CommandContext<ServerCommandSource> context, String language) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+        String bookId = StringArgumentType.getString(context, "book_id");
+        
+        net.minecraft.item.ItemStack book = net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.getStoryBookById(bookId, language);
+        
+        if (book.isEmpty()) {
+            player.sendMessage(Text.literal("未找到书籍 ID: " + bookId + " (Book not found)").formatted(Formatting.RED), false);
+            return 0;
+        }
+        
+        // 获取书籍信息用于显示
+        net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.BookData bookData = 
+            net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.getBookDataById(bookId, language);
+        
+        if (!player.getInventory().insertStack(book)) {
+            player.dropItem(book, false);
+        }
+        
+        String bookTitle = bookData != null ? bookData.title : bookId;
+        player.sendMessage(Text.literal("已获得书籍: " + bookTitle).formatted(Formatting.GREEN), false);
+        return 1;
+    }
+
+    /**
+     * 列出所有可用书籍（使用配置的默认语言）
+     */
+    private static int listBooks(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return listBooksInternal(context, null);
+    }
+
+    /**
+     * 列出所有可用书籍（指定语言）
+     */
+    private static int listBooksWithLang(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        String lang = StringArgumentType.getString(context, "language");
+        return listBooksInternal(context, lang);
+    }
+
+    /**
+     * 内部方法：列出所有可用书籍
+     */
+    private static int listBooksInternal(CommandContext<ServerCommandSource> context, String language) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+        
+        java.util.List<String> bookIds;
+        if (language != null && !language.isEmpty()) {
+            bookIds = net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.getBookIds(language);
+        } else {
+            bookIds = net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.getBookIds();
+        }
+        
+        if (bookIds.isEmpty()) {
+            player.sendMessage(Text.literal("没有可用的书籍 (No books available)").formatted(Formatting.YELLOW), false);
+            return 0;
+        }
+        
+        player.sendMessage(Text.literal("===== 可用书籍列表 (Available Books) =====").formatted(Formatting.GOLD), false);
+        player.sendMessage(Text.literal("共 " + bookIds.size() + " 本书籍:").formatted(Formatting.AQUA), false);
+        
+        for (String bookId : bookIds) {
+            net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.BookData bookData = 
+                net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.getBookDataById(bookId, language);
+            
+            if (bookData != null) {
+                // 截断过长的标题
+                String displayTitle = bookData.title;
+                if (displayTitle.length() > 30) {
+                    displayTitle = displayTitle.substring(0, 27) + "...";
+                }
+                player.sendMessage(Text.literal("  [" + bookId + "] " + displayTitle + " - " + bookData.author).formatted(Formatting.WHITE), false);
+            } else {
+                player.sendMessage(Text.literal("  [" + bookId + "] (数据加载失败)").formatted(Formatting.RED), false);
+            }
+        }
+        
+        player.sendMessage(Text.literal("=========================================").formatted(Formatting.GOLD), false);
+        player.sendMessage(Text.literal("使用 /ssc_addon get_book <ID> 获取书籍").formatted(Formatting.GRAY), false);
+        
+        return bookIds.size();
+    }
+
+    /**
+     * 重新加载书籍配置
+     */
+    private static int reloadBooks(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+        
+        try {
+            net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.reloadBooks();
+            int bookCount = net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.getBookCount();
+            player.sendMessage(Text.literal("书籍配置已重新加载！共加载 " + bookCount + " 本书籍。").formatted(Formatting.GREEN), false);
+            player.sendMessage(Text.literal("Books reloaded! Loaded " + bookCount + " books.").formatted(Formatting.GREEN), false);
+            return 1;
+        } catch (Exception e) {
+            player.sendMessage(Text.literal("重新加载书籍失败: " + e.getMessage()).formatted(Formatting.RED), false);
+            return 0;
+        }
     }
 }
