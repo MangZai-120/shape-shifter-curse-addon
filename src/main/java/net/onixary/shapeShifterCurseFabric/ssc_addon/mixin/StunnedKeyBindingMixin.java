@@ -25,12 +25,21 @@ public class StunnedKeyBindingMixin {
                key.equals("key.ssc_addon.sp_primary") ||
                key.equals("key.ssc_addon.sp_secondary") ||
                key.equals("key.use") || 
-               key.equals("key.attack");
+               key.equals("key.attack") ||
+               key.equals("key.tacz.shoot.desc") ||
+               key.equals("key.tacz.aim.desc") ||
+               key.equals("key.tacz.inspect.desc") ||
+               key.equals("key.tacz.reload.desc") ||
+               key.equals("key.tacz.fire_select.desc") ||
+               key.equals("key.tacz.crawl.desc") ||
+               key.equals("key.tacz.refit.desc") ||
+               key.equals("key.tacz.zoom.desc") ||
+               key.equals("key.tacz.melee.desc");
     }
 
     private boolean isPlayerStunned() {
         MinecraftClient client = MinecraftClient.getInstance();
-        return client != null && client.player != null && client.player.hasStatusEffect(SscAddon.STUN);
+        return client != null && client.player != null && (client.player.hasStatusEffect(SscAddon.STUN) || client.player.hasStatusEffect(SscAddon.PLAYING_DEAD));
     }
 
     @Inject(method = "wasPressed", at = @At("HEAD"), cancellable = true)
@@ -64,6 +73,26 @@ public class StunnedKeyBindingMixin {
         if (pressed && isTargetKey(key) && isPlayerStunned()) {
             this.pressed = false;
             ci.cancel();
+        }
+    }
+
+    @Inject(method = "matchesKey", at = @At("HEAD"), cancellable = true)
+    private void onMatchesKey(int key, int scancode, CallbackInfoReturnable<Boolean> cir) {
+        KeyBinding binding = (KeyBinding) (Object) this;
+        String translationKey = binding.getTranslationKey();
+        
+        if (isTargetKey(translationKey) && isPlayerStunned()) {
+            cir.setReturnValue(false);
+        }
+    }
+
+    @Inject(method = "matchesMouse", at = @At("HEAD"), cancellable = true)
+    private void onMatchesMouse(int button, CallbackInfoReturnable<Boolean> cir) {
+        KeyBinding binding = (KeyBinding) (Object) this;
+        String translationKey = binding.getTranslationKey();
+        
+        if (isTargetKey(translationKey) && isPlayerStunned()) {
+            cir.setReturnValue(false);
         }
     }
 }
