@@ -167,6 +167,6 @@
   "text.autoconfig.ssc-addon.option.bookLanguage.CHINESE": "zh_cn",
   "text.autoconfig.ssc-addon.option.bookLanguage.ENGLISH": "en_us",
   "message.ssc_addon.cursed_moon_sp_special": "Strangely, it doesn't seem to have any visible effect on your body... Perhaps your current form is rather [special]?",
-  "origin.my_addon.form_familiar_fox_red.name": "Familiar (Red)",
-  "origin.my_addon.form_familiar_fox_red.description": "A special red variant form of the Familiar."
+  "origin.my_addon.form_familiar_fox_red.name": "Red",
+  "origin.my_addon.form_familiar_fox_red.description": "Just a story"
 }

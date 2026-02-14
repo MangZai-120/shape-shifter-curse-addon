@@ -163,6 +163,6 @@
   "text.autoconfig.ssc-addon.option.bookLanguage.CHINESE": "zh_cn",
   "text.autoconfig.ssc-addon.option.bookLanguage.ENGLISH": "en_us",
   "message.ssc_addon.cursed_moon_sp_special": "奇怪的是，它似乎没有对你的身体产生可见的影响..也许你当前的形态比较[特殊]？",
-  "origin.my_addon.form_familiar_fox_red.name": "使魔(Red)",
-  "origin.my_addon.form_familiar_fox_red.description": "使魔的特殊红色变体形态。"
+  "origin.my_addon.form_familiar_fox_red.name": "红",
+  "origin.my_addon.form_familiar_fox_red.description": "只是一个故事罢了"
 }

@@ -1,0 +1,8 @@
+{
+    "type": "origins:invisibility",
+    "render_armor": false,
+    "condition": {
+        "type": "origins:status_effect",
+        "effect": "ssc_addon:true_invisibility"
+    }
+}

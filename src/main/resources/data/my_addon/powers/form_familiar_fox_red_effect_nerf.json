@@ -14,7 +14,7 @@
              "conditions": [
                  {
                     "type": "origins:origin",
-                    "origin": "my_addon:form_familiar_fox_sp"
+                    "origin": "my_addon:form_familiar_fox_red"
                  }
              ]
         }

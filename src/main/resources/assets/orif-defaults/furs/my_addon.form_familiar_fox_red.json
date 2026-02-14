@@ -1,6 +1,7 @@
 {
   "model": "my_addon:geo/form_familiar_fox_red.geo.json",
   "texture": "my_addon:textures/form_familiar_fox_red/form_familiar_fox_red.png",
+  "texture_mask": "my_addon:textures/form_familiar_fox_red/form_familiar_fox_red_colormask.png",
   "hidden": [
     "leftLeg",
     "rightLeg",
