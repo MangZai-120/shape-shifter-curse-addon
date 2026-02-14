@@ -20,14 +20,10 @@ public class SscAddonVillagerInteractionMixin {
         if (player.isSneaking()) {
             try {
                 PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
-                if (component != null && component.getCurrentForm() != null) {
-                    Identifier formId = component.getCurrentForm().FormID;
-                    // Check for both SP and RED familiar fox forms
-                    if (new Identifier("my_addon", "form_familiar_fox_sp").equals(formId) ||
-                        new Identifier("my_addon", "familiar_fox_red").equals(formId)) {
-                        // Prevent opening trade GUI
-                        cir.setReturnValue(ActionResult.PASS);
-                    }
+                if (component != null && component.getCurrentForm() != null && 
+                    new Identifier("my_addon", "form_familiar_fox_sp").equals(component.getCurrentForm().FormID)) {
+                    // Prevent opening trade GUI
+                    cir.setReturnValue(ActionResult.PASS);
                 }
             } catch (Exception ignored) {}
         }

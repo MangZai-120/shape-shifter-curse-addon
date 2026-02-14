@@ -25,9 +25,9 @@
              "operation": "multiply_total",
              "value": -0.5
         },
-        "damage_condition": {
-            "type": "origins:name",
-            "name": "magic"
+        "condition": {
+            "type": "origins:damage_type",
+            "damage_type": "minecraft:magic"
         }
     }
 }
