@@ -1,6 +1,6 @@
 {
+  "replace": false,
   "values": [
-    "ssc_addon:blue_fire_amulet",
-    "ssc_addon:frost_protection_ring"
+    "ssc_addon:blue_fire_amulet"
   ]
 }

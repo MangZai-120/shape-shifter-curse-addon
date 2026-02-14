@@ -61,6 +61,7 @@
   "item.ssc_addon.blue_fire_amulet": "Blue Fire Amulet",
   "item.ssc_addon.blue_fire_amulet.tooltip_1": "Exclusive to SP Familiar Form",
   "item.ssc_addon.blue_fire_amulet.tooltip_2": "Sealed with the magic of an ancient red fox",
+  "item.ssc_addon.blue_fire_amulet.tooltip.exclusive": "Exclusive to SP Familiar Fox",
   "item.ssc_addon.water_spear": "Water Spear",
   "message.ssc_addon.evolution.success": "“Excellent…” The moonlight whispers in your mind, closer and clearer than ever. With the whisper comes unparalleled power. You embraced evolution, meaning you embraced a deeper hug of the curse. It is a dangerous symbiosis, and you can no longer separate.",
   "item.ssc_addon.lifesaving_cat_tail": "Lifesaving Cat Tail",
@@ -165,5 +166,7 @@
   "text.autoconfig.ssc-addon.option.bookLanguage.@Tooltip": "Select the language for the generated Story Book (Forgotten Legend). Requires restart.",
   "text.autoconfig.ssc-addon.option.bookLanguage.CHINESE": "zh_cn",
   "text.autoconfig.ssc-addon.option.bookLanguage.ENGLISH": "en_us",
-  "message.ssc_addon.cursed_moon_sp_special": "Strangely, it doesn't seem to have any visible effect on your body... Perhaps your current form is rather [special]?"
+  "message.ssc_addon.cursed_moon_sp_special": "Strangely, it doesn't seem to have any visible effect on your body... Perhaps your current form is rather [special]?",
+  "origin.my_addon.form_familiar_fox_red.name": "Familiar (Red)",
+  "origin.my_addon.form_familiar_fox_red.description": "A special red variant form of the Familiar."
 }
