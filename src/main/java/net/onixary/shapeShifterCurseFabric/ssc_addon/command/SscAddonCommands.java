@@ -39,7 +39,7 @@ public class SscAddonCommands {
             .then(CommandManager.literal("set_mana")
                 .requires(source -> source.hasPermissionLevel(2))
                 .then(CommandManager.argument("targets", EntityArgumentType.players())
-                    .then(CommandManager.argument("amount", IntegerArgumentType.integer(0, 100))
+                    .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
                         .executes(context -> setMana(context, EntityArgumentType.getPlayers(context, "targets"), IntegerArgumentType.getInteger(context, "amount")))
                     )
                 )
@@ -109,7 +109,11 @@ public class SscAddonCommands {
             PowerHolderComponent component = PowerHolderComponent.KEY.get(player);
             for (VariableIntPower power : component.getPowers(VariableIntPower.class)) {
                 if (power.getType().getIdentifier().equals(resourceId)) {
-                    power.setValue(amount);
+                    int newVal = amount;
+                    if (newVal > power.getMax()) {
+                        newVal = power.getMax();
+                    }
+                    power.setValue(newVal);
                     PowerHolderComponent.syncPower(player, power.getType());
                     updated = true;
                 }
@@ -119,7 +123,11 @@ public class SscAddonCommands {
             try {
                 ManaComponent manaComponent = ManaUtils.getManaComponent(player);
                 if (manaComponent != null) {
-                    manaComponent.setMana((double) amount);
+                    double newVal = (double) amount;
+                    if (newVal > manaComponent.getMaxMana()) {
+                         newVal = manaComponent.getMaxMana();
+                    }
+                    manaComponent.setMana(newVal);
                     updated = true;
                 }
             } catch (Exception e) {

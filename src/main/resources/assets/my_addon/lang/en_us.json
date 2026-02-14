@@ -165,5 +165,7 @@
   "text.autoconfig.ssc-addon.option.bookLanguage.@Tooltip": "Select the language for the generated Story Book (Forgotten Legend). Requires restart.",
   "text.autoconfig.ssc-addon.option.bookLanguage.CHINESE": "zh_cn",
   "text.autoconfig.ssc-addon.option.bookLanguage.ENGLISH": "en_us",
-  "message.ssc_addon.cursed_moon_sp_special": "Strangely, it doesn't seem to have any visible effect on your body... Perhaps your current form is rather [special]?"
+  "message.ssc_addon.cursed_moon_sp_special": "Strangely, it doesn't seem to have any visible effect on your body... Perhaps your current form is rather [special]?",
+  "origin.my_addon.form_familiar_fox_red.name": "Familiar Fox (Red)",
+  "origin.my_addon.form_familiar_fox_red.description": "A Red variant form of the Familiar Fox."
 }

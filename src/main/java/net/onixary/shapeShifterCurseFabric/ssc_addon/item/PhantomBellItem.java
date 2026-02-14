@@ -34,7 +34,8 @@ public class PhantomBellItem extends TrinketItem {
             if (component != null) {
                 PlayerFormBase currentForm = component.getCurrentForm();
                 if (currentForm != null && currentForm.FormID != null) {
-                    return currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_sp"));
+                    return currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_sp")) ||
+                           currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_red"));
                 }
             }
         }

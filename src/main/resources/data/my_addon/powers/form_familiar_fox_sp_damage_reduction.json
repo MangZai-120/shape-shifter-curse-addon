@@ -3,10 +3,10 @@
     "modifier": {
         "name": "High Mana Protection",
         "operation": "multiply_total",
-        "value": -0.2
+        "value": -0.35
     },
     "condition": {
         "type": "shape-shifter-curse:has_mana",
-        "mana": 50
+        "mana": 10.0
     }
 }

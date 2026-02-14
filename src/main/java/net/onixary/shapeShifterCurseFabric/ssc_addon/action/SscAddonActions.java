@@ -62,12 +62,14 @@ public class SscAddonActions {
         registerEntity(new ActionFactory<>(new Identifier("my_addon", "fire_breath"),
             new SerializableData()
                 .add("distance", SerializableDataTypes.FLOAT)
-                .add("damage", SerializableDataTypes.FLOAT),
+                .add("damage", SerializableDataTypes.FLOAT)
+                .add("duration", SerializableDataTypes.INT, 100),
             (data, entity) -> {
                 if (!(entity instanceof LivingEntity living)) return;
                 
                 float distance = data.getFloat("distance");
                 float damageAmount = data.getFloat("damage");
+                int duration = data.getInt("duration");
                 
                 Vec3d eyePos = living.getEyePos();
                 Vec3d lookVec = living.getRotationVec(1.0F);
@@ -102,7 +104,7 @@ public class SscAddonActions {
                               target.setVelocity(oldVelocity);
                          }
 
-                         target.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, 100, 0)); // 5 seconds
+                         target.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, duration, 0)); // Duration from data
                          
                          if (living instanceof PlayerEntity player && target instanceof SscIgnitedEntityAccessor accessor) {
                              accessor.sscAddon$setIgniterUuid(player.getUuid());

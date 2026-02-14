@@ -1,0 +1,8 @@
+{
+  "type": "shape-shifter-curse:mana_attribute",
+  "modifierID": "my_addon:familiar_fox_red_max_mana",
+  "max_mana_modifier": {
+    "add": 20.0
+  },
+  "player_side": true
+}

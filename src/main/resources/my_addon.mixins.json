@@ -18,7 +18,8 @@
     "SscAddonVillagerInteractionMixin",
     "SscPlayerMixin",
     "StunnedJumpMixin",
-    "TransformRelatedItemsMixin"
+    "TransformRelatedItemsMixin",
+    "RedFoxThrowDistanceMixin"
   ],
   "client": [
     "InstinctBarRendererMixin",

@@ -35,6 +35,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.item.FrostAmuletItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.BlueFireAmuletItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Axolotl3;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_FamiliarFox3;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_FamiliarFoxRed;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_SnowFoxSP;
 import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_FeralCatSP;
 //import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Allay;
@@ -237,6 +238,12 @@ public class SscAddon implements ModInitializer {
         familiarFoxForm.setPhase(PlayerFormPhase.PHASE_SP);
         RegPlayerForms.registerPlayerForm(familiarFoxForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_familiar_fox_sp")).addForm(familiarFoxForm, 5));
+
+        // 注册Red使魔形态（与SP使魔相同能力，不同模型与材质，目前无法通过任何方式变成）
+        Form_FamiliarFoxRed familiarFoxRedForm = new Form_FamiliarFoxRed(new Identifier("my_addon", "familiar_fox_red"));
+        familiarFoxRedForm.setPhase(PlayerFormPhase.PHASE_SP);
+        RegPlayerForms.registerPlayerForm(familiarFoxRedForm);
+        RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_familiar_fox_red")).addForm(familiarFoxRedForm, 5));
 
         Form_SnowFoxSP snowFoxForm = new Form_SnowFoxSP(new Identifier("my_addon", "snow_fox_sp"));
         snowFoxForm.setPhase(PlayerFormPhase.PHASE_SP);
