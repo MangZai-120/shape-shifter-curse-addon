@@ -93,22 +93,30 @@ public class SpUpgradeItem extends Item {
                 }
             } else if (isValidForm && isCursedMoon) {
                 // Success: Base Form + Cursed Moon
-                // OriginComponent component = ModComponents.ORIGIN.get(player);
-                // Identifier layerId = new Identifier("shape-shifter-curse", "cursed_origin");
-                //
-                // Origin targetOrigin = OriginRegistry.get(targetFormId);
-                // if (targetOrigin != null) {
-                //     // component.setOrigin(OriginLayers.getLayer(layerId), targetOrigin);
-                //     // component.sync();
-                //
-                //
-                //     player.sendMessage(Text.translatable("message.ssc_addon.evolution.success").formatted(Formatting.GREEN, Formatting.ITALIC), false);
-                //     world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0F, 1.0F);
-                //
-                //     if (!player.getAbilities().creativeMode) {
-                //         stack.decrement(1);
-                //     }
-                // }
+                
+                // 5% Chance for Red Form (when upgrading to SP Fox)
+                if (targetFormId.equals(new Identifier("my_addon", "familiar_fox_sp"))) {
+                     if (world.random.nextFloat() < 0.05f) {
+                          Identifier redFormId = new Identifier("my_addon", "familiar_fox_red");
+                          PlayerFormBase redForm = RegPlayerForms.getPlayerForm(redFormId);
+                          if (redForm != null) {
+                               TransformManager.handleDirectTransform(player, redForm, false);
+                               
+                               // 10 Minutes = 12000 ticks
+                               long expireTime = world.getTime() + 12000; 
+                               player.addCommandTag("ssc_addon_red_expire:" + expireTime);
+                               
+                               player.sendMessage(Text.translatable("message.ssc_addon.red_transformation_special").formatted(Formatting.GREEN), false);
+                               world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 1.0F, 1.0F); // Special sound
+                               
+                               if (!player.getAbilities().creativeMode) {
+                                   stack.decrement(1);
+                               }
+                               return stack;
+                          }
+                     }
+                }
+
                 PlayerFormBase formBase = RegPlayerForms.getPlayerForm(targetFormId);
                 if (formBase != null) {
                     TransformManager.handleDirectTransform(player, formBase, false);

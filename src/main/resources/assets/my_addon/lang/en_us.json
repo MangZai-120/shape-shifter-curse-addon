@@ -63,6 +63,8 @@
   "item.ssc_addon.blue_fire_amulet.tooltip_2": "Sealed with the magic of an ancient red fox",
   "item.ssc_addon.water_spear": "Water Spear",
   "message.ssc_addon.evolution.success": "“Excellent…” The moonlight whispers in your mind, closer and clearer than ever. With the whisper comes unparalleled power. You embraced evolution, meaning you embraced a deeper hug of the curse. It is a dangerous symbiosis, and you can no longer separate.",
+  "message.ssc_addon.red_transformation_special": "You merged with the power of the cursed moon, but your body seems to have temporarily transformed into a 'special' form. You only want to protect your teammates; for them, you can sacrifice your life.",
+  "message.ssc_addon.red_revert_timeout": "You came back to your senses and realized your appearance had returned to its original form. You felt confused, but how could the characters in the story be real?",
   "item.ssc_addon.lifesaving_cat_tail": "Lifesaving Cat Tail",
   "item.ssc_addon.lifesaving_cat_tail.tooltip.1": "Equip in Belt Slot",
   "item.ssc_addon.lifesaving_cat_tail.tooltip.2": "A tail from another cat, perhaps it can prevent death",

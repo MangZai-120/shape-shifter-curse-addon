@@ -19,7 +19,8 @@
     "SscPlayerMixin",
     "StunnedJumpMixin",
     "TransformRelatedItemsMixin",
-    "RedFoxThrowDistanceMixin"
+    "RedFoxThrowDistanceMixin",
+    "RedFormTickMixin"
   ],
   "client": [
     "InstinctBarRendererMixin",

@@ -24,13 +24,13 @@
         "interval": 1,
         "entity_action": {
             "type": "origins:change_resource",
-            "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_cooldown_timer",
+            "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_cooldown_timer",
             "operation": "add",
             "change": -1
         },
         "condition": {
              "type": "origins:resource",
-             "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_cooldown_timer",
+             "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_cooldown_timer",
              "comparison": ">",
              "compare_to": 0
         }
@@ -54,7 +54,7 @@
                     "type": "origins:if_else",
                     "condition": {
                         "type": "origins:resource",
-                        "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state",
+                        "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_toggle_state",
                         "comparison": "==",
                         "compare_to": 1
                     },
@@ -63,7 +63,7 @@
                         "actions": [
                             {
                                 "type": "origins:change_resource",
-                                "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state",
+                                "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_toggle_state",
                                 "operation": "set",
                                 "change": 0
                             },
@@ -73,13 +73,13 @@
                             },
                             {
                                 "type": "origins:change_resource",
-                                "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_cooldown_timer",
+                                "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_cooldown_timer",
                                 "operation": "set",
                                 "change": 560
                             },
                             {
                                 "type": "origins:change_resource",
-                                "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_internal_timer",
+                                "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_internal_timer",
                                 "operation": "set",
                                 "change": 0
                             },
@@ -102,13 +102,13 @@
                             "actions": [
                                 {
                                     "type": "origins:change_resource",
-                                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state",
+                                    "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_toggle_state",
                                     "operation": "set",
                                     "change": 1
                                 },
                                 {
                                     "type": "origins:change_resource",
-                                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_internal_timer",
+                                    "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_internal_timer",
                                     "operation": "set",
                                     "change": 0
                                 },
@@ -140,7 +140,7 @@
             "conditions": [
                 {
                     "type": "origins:resource",
-                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_cooldown_timer",
+                    "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_cooldown_timer",
                     "comparison": "==",
                     "compare_to": 0
                 },
@@ -152,8 +152,8 @@
         "key": {
             "key": "key.ssc_addon.sp_primary"
         },
-        "name": "Blue Fire Ring (Boosted)",
-        "description": "Powerful Blue Fire Ring enabled by Amulet.",
+        "name": "Red Fire Ring (Boosted)",
+        "description": "Powerful Red Fire Ring enabled by Amulet.",
         "icon": {
             "texture": "ssc_addon:textures/item/blue_fire_amulet.png"
         }
@@ -166,7 +166,7 @@
             "conditions": [
                 {
                     "type": "origins:resource",
-                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state",
+                    "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_toggle_state",
                     "comparison": "==",
                     "compare_to": 1
                 },
@@ -182,13 +182,13 @@
             "actions": [
                 {
                     "type": "origins:change_resource",
-                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state",
+                    "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_toggle_state",
                     "operation": "set",
                     "change": 0
                 },
                 {
                     "type": "origins:change_resource",
-                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_cooldown_timer",
+                    "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_cooldown_timer",
                     "operation": "set",
                     "change": 560
                 }
@@ -203,7 +203,7 @@
             "conditions": [
                 {
                     "type": "origins:resource",
-                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state",
+                    "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_toggle_state",
                     "comparison": "==",
                     "compare_to": 1
                 },
@@ -218,7 +218,7 @@
             "actions": [
                 {
                     "type": "origins:change_resource",
-                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state",
+                    "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_toggle_state",
                     "operation": "set",
                     "change": 0
                 },
@@ -228,7 +228,7 @@
                 },
                 {
                     "type": "origins:change_resource",
-                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_cooldown_timer",
+                    "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_cooldown_timer",
                     "operation": "set",
                     "change": 560
                 },
@@ -249,7 +249,7 @@
             "conditions": [
                 {
                     "type": "origins:resource",
-                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state",
+                    "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_toggle_state",
                     "comparison": "==",
                     "compare_to": 1
                 },
@@ -276,7 +276,7 @@
                         "actions": [
                             {
                                 "type": "origins:change_resource",
-                                "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state",
+                                "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_toggle_state",
                                 "operation": "set",
                                 "change": 0
                             },
@@ -286,7 +286,7 @@
                             },
                             {
                                 "type": "origins:change_resource",
-                                "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_cooldown_timer",
+                                "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_cooldown_timer",
                                 "operation": "set",
                                 "change": 560
                             },
@@ -301,7 +301,7 @@
                 },
                 {
                     "type": "origins:change_resource",
-                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_internal_timer",
+                    "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_internal_timer",
                     "operation": "add",
                     "change": 1
                 },
@@ -309,16 +309,16 @@
                     "type": "origins:if_else",
                     "condition": {
                         "type": "origins:resource",
-                        "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_internal_timer",
+                        "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_internal_timer",
                         "comparison": ">=",
-                        "compare_to": 5
+                        "compare_to": 4
                     },
                     "if_action": {
                         "type": "origins:and",
                         "actions": [
                              {
                                 "type": "origins:change_resource",
-                                "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_internal_timer",
+                                "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_internal_timer",
                                 "operation": "set",
                                 "change": 0
                              },
@@ -330,7 +330,7 @@
                                     "actions": [
                                         {
                                             "type": "my_addon:damage_target_from_actor",
-                                            "amount": 6.0,
+                                            "amount": 7.0,
                                             "damage_type": "minecraft:generic"
                                         },
                                         {
@@ -390,7 +390,7 @@
             "conditions": [
                 {
                     "type": "origins:resource",
-                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state",
+                    "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_toggle_state",
                     "comparison": "==",
                     "compare_to": 1
                 },
