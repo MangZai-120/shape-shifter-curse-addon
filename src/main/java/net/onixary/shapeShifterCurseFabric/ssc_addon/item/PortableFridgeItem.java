@@ -28,7 +28,10 @@ public class PortableFridgeItem extends TrinketItem {
 
     public static int getCharge(ItemStack stack) {
         if (!stack.hasNbt()) return 0;
-        return stack.getNbt().getInt("Charge");
+	    if (stack.getNbt() != null) {
+		    return stack.getNbt().getInt("Charge");
+	    }
+	    return 0;
     }
 
     public static void setCharge(ItemStack stack, int amount) {
