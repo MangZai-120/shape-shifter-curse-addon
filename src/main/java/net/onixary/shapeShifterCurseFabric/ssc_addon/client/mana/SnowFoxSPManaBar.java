@@ -13,7 +13,6 @@ import net.minecraft.util.Pair;
 import net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric;
 import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
 
-import java.lang.reflect.Field;
 import java.util.List;
 
 @Environment(EnvType.CLIENT)
