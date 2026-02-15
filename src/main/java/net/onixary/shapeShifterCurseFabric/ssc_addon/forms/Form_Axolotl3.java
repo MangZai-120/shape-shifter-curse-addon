@@ -36,48 +36,23 @@ public class Form_Axolotl3 extends PlayerFormBase {
 
 
     public AnimationHolder Anim_getFormAnimToPlay(PlayerAnimState currentState) {
-        switch (currentState) {
-            case ANIM_JUMP:
-            case ANIM_FALL:
-                return anim_jump;
-            case ANIM_SNEAK_JUMP:
-            case ANIM_SNEAK_RUSH_JUMP:
-                return anim_crawling_jump;
-            case ANIM_SNEAK_FALL:
-                return anim_crawling_idle;
-            case ANIM_RUSH_JUMP:
-                return anim_rush_jump;
-
-            case ANIM_WALK:
-                return anim_walking;
-            case ANIM_RUN:
-                return anim_running;
-            case ANIM_IDLE:
-                return anim_idle;
-
-            case ANIM_SWIM:
-                return anim_swimming;
-            case ANIM_SWIM_IDLE:
-                return anim_swimming_idle;
-
-            case ANIM_SNEAK_WALK:
-                return anim_crawling;
-
-            case ANIM_SNEAK_IDLE:
-                return anim_crawling_idle;
-
-            case ANIM_SLEEP:
-                return anim_sleep;
-
-            case ANIM_SNEAK_ATTACK_ONCE:
-                return anim_crawling_attack_once;
-
-            case ANIM_SNEAK_TOOL_SWING:
-                return anim_crawling_tool_swing;
-
-            default:
-                return null;
-        }
+	    return switch (currentState) {
+		    case ANIM_JUMP, ANIM_FALL -> anim_jump;
+		    case ANIM_SNEAK_JUMP, ANIM_SNEAK_RUSH_JUMP -> anim_crawling_jump;
+		    case ANIM_SNEAK_FALL -> anim_crawling_idle;
+		    case ANIM_RUSH_JUMP -> anim_rush_jump;
+		    case ANIM_WALK -> anim_walking;
+		    case ANIM_RUN -> anim_running;
+		    case ANIM_IDLE -> anim_idle;
+		    case ANIM_SWIM -> anim_swimming;
+		    case ANIM_SWIM_IDLE -> anim_swimming_idle;
+		    case ANIM_SNEAK_WALK -> anim_crawling;
+		    case ANIM_SNEAK_IDLE -> anim_crawling_idle;
+		    case ANIM_SLEEP -> anim_sleep;
+		    case ANIM_SNEAK_ATTACK_ONCE -> anim_crawling_attack_once;
+		    case ANIM_SNEAK_TOOL_SWING -> anim_crawling_tool_swing;
+		    default -> null;
+	    };
     }
 
     public void Anim_registerAnims() {
@@ -109,26 +84,17 @@ public class Form_Axolotl3 extends PlayerFormBase {
     public @Nullable AbstractAnimStateController getAnimStateController(PlayerEntity player, AnimSystem.AnimSystemData animSystemData, @NotNull Identifier animStateID) {
         @Nullable AnimStateEnum animStateEnum = AnimStateEnum.getStateEnum(animStateID);
         if (animStateEnum != null) {
-            switch (animStateEnum) {
-                case ANIM_STATE_SWIM:
-                    return SWIM_CONTROLLER;
-                case ANIM_STATE_IDLE:
-                    return IDLE_CONTROLLER;
-                case ANIM_STATE_WALK:
-                    return WALK_CONTROLLER;
-                case ANIM_STATE_SPRINT:
-                    return SPRINT_CONTROLLER;
-                case ANIM_STATE_JUMP:
-                    return JUMP_CONTROLLER;
-                case ANIM_STATE_FALL:
-                    return FALL_CONTROLLER;
-                case ANIM_STATE_ATTACK:
-                    return ATTACK_CONTROLLER;
-                case ANIM_STATE_MINING:
-                    return MINING_CONTROLLER;
-                default:
-                    return null;
-            }
+	        return switch (animStateEnum) {
+		        case ANIM_STATE_SWIM -> SWIM_CONTROLLER;
+		        case ANIM_STATE_IDLE -> IDLE_CONTROLLER;
+		        case ANIM_STATE_WALK -> WALK_CONTROLLER;
+		        case ANIM_STATE_SPRINT -> SPRINT_CONTROLLER;
+		        case ANIM_STATE_JUMP -> JUMP_CONTROLLER;
+		        case ANIM_STATE_FALL -> FALL_CONTROLLER;
+		        case ANIM_STATE_ATTACK -> ATTACK_CONTROLLER;
+		        case ANIM_STATE_MINING -> MINING_CONTROLLER;
+		        default -> null;
+	        };
         }
         return super.getAnimStateController(player, animSystemData, animStateID);
     }
