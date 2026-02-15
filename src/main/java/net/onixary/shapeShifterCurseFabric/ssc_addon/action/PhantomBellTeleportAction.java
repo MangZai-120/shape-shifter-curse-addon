@@ -52,8 +52,7 @@ public class PhantomBellTeleportAction {
                         // 正在攻击玩家的生物
                         if (e.getAttacking() == player) return true;
                         // 其它玩家
-                        if (e instanceof PlayerEntity) return true;
-                        return false;
+	                    return e instanceof PlayerEntity;
                     }
                 );
 
@@ -169,7 +168,7 @@ public class PhantomBellTeleportAction {
                 }
             }
             // 如果周围沙子不够多（<50%），排除
-            if (fallingCount < 5) return false;
+	        return fallingCount >= 5;
         }
 
         return true;
