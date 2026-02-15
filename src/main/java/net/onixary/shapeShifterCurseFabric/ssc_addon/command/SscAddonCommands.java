@@ -28,7 +28,6 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.command.CommandSource;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.UUID;
 
 public class SscAddonCommands {
@@ -123,7 +122,7 @@ public class SscAddonCommands {
             try {
                 ManaComponent manaComponent = ManaUtils.getManaComponent(player);
                 if (manaComponent != null) {
-                    double newVal = (double) amount;
+                    double newVal = amount;
                     if (newVal > manaComponent.getMaxMana()) {
                          newVal = manaComponent.getMaxMana();
                     }
@@ -219,7 +218,7 @@ public class SscAddonCommands {
         debugInfo.append("================================");
         
         // Log to console
-        LOGGER.info("\n" + debugInfo.toString());
+        LOGGER.info("\n" + debugInfo);
         
         // Send to player chat
         String[] lines = debugInfo.toString().split("\n");

@@ -43,7 +43,7 @@ public abstract class SscAddonLivingEntityMixin {
                 effect.isAmbient(),
                 effect.shouldShowParticles(),
                 effect.shouldShowIcon(),
-                (StatusEffectInstance)null, 
+		            null,
                 effect.getFactorCalculationData()
             );
         }

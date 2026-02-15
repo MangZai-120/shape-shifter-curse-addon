@@ -46,7 +46,7 @@ public class SscAddonConditions {
                 .add("item", SerializableDataTypes.ITEM),
             (data, entity) -> {
                 if (entity instanceof PlayerEntity player) {
-                    return player.getItemCooldownManager().isCoolingDown((net.minecraft.item.Item)data.get("item"));
+                    return player.getItemCooldownManager().isCoolingDown(data.get("item"));
                 }
                 return false;
             }));

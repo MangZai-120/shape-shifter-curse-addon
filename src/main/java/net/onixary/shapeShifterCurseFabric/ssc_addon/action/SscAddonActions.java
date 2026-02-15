@@ -55,7 +55,7 @@ public class SscAddonActions {
                 .add("duration", SerializableDataTypes.INT),
             (data, entity) -> {
                 if(entity instanceof PlayerEntity player) {
-                    player.getItemCooldownManager().set((net.minecraft.item.Item)data.get("item"), data.getInt("duration"));
+                    player.getItemCooldownManager().set(data.get("item"), data.getInt("duration"));
                 }
             }));
 
