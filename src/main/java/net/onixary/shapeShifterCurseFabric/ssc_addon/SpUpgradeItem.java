@@ -32,8 +32,9 @@ import net.minecraft.entity.effect.StatusEffects;
 
 public class SpUpgradeItem extends Item {
 
-    // Map storing the mapping from Base Form ID to Target SP Form ID
-    // Key: Current Origin ID (Identifier), Value: Target Origin ID (Identifier)
+    /** Map storing the mapping from Base Form ID to Target SP Form ID
+     Key: Current Origin ID (Identifier), Value: Target Origin ID (Identifier)
+     */
     public static final Map<Identifier, Identifier> UPGRADE_MAP = new HashMap<>();
 
     public static final RegistryKey<DamageType> CURSED_EROSION = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("my_addon", "cursed_erosion"));
