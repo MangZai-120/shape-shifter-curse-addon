@@ -5,6 +5,7 @@ import net.minecraft.client.option.KeyBinding;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -19,6 +20,7 @@ public class StunnedKeyBindingMixin {
     @Shadow
     private boolean pressed;
 
+    @Unique
     private boolean isTargetKey(String key) {
         return key.equals("key.origins.primary_active") || 
                key.equals("key.origins.secondary_active") ||
@@ -37,6 +39,7 @@ public class StunnedKeyBindingMixin {
                key.equals("key.tacz.melee.desc");
     }
 
+    @Unique
     private boolean isPlayerStunned() {
         MinecraftClient client = MinecraftClient.getInstance();
         return client != null && client.player != null && (client.player.hasStatusEffect(SscAddon.STUN) || client.player.hasStatusEffect(SscAddon.PLAYING_DEAD));
