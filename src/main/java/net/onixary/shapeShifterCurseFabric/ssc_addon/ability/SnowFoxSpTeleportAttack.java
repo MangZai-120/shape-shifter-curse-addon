@@ -6,7 +6,6 @@ import io.github.apace100.apoli.power.Power;
 import io.github.apace100.apoli.power.PowerType;
 import io.github.apace100.apoli.power.PowerTypeRegistry;
 import io.github.apace100.apoli.power.VariableIntPower;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -255,9 +254,7 @@ public class SnowFoxSpTeleportAttack {
         );
         
         // 按距离排序
-        nearbyEntities.sort((a, b) -> Double.compare(
-            player.squaredDistanceTo(a), player.squaredDistanceTo(b)
-        ));
+        nearbyEntities.sort(Comparator.comparingDouble(player::squaredDistanceTo));
         
         // 取最近的最多MAX_TARGETS个
         for (int i = 0; i < Math.min(MAX_TARGETS, nearbyEntities.size()); i++) {
