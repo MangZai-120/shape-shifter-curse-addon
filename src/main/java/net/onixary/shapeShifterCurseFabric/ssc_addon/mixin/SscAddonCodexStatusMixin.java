@@ -28,6 +28,8 @@ public class SscAddonCodexStatusMixin {
 				            cir.setReturnValue(Text.translatable("codex.status.my_addon.wild_cat_sp_status"));
 		            case "snow_fox_sp" ->
 				            cir.setReturnValue(Text.translatable("codex.status.my_addon.snow_fox_sp_status"));
+		            default ->
+			            cir.setReturnValue(Text.translatable("codex.status.normal"));
 	            }
             }
         }
