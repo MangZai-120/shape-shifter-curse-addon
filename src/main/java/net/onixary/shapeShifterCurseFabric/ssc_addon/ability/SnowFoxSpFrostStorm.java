@@ -27,6 +27,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * 蓄力期间减少50%准星移动速度
  */
 public class SnowFoxSpFrostStorm {
+
+    private SnowFoxSpFrostStorm() {
+        throw new UnsupportedOperationException("This class cannot be instantiated.");
+    }
     
     private static final ConcurrentHashMap<UUID, ChargingData> CHARGING_PLAYERS = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, Long> COOLDOWN_PLAYERS = new ConcurrentHashMap<>(); // 自定义CD跟踪
@@ -34,7 +38,7 @@ public class SnowFoxSpFrostStorm {
     private static final int CHARGE_TICKS = 30; // 1.5秒蓄力
     private static final double MAX_RANGE = 30.0; // 最大释放距离
     private static final int MANA_COST = 30; // 霜寒值消耗
-    private static final int COOLDOWN = 600; // 30秒CD = 600tick
+    //未使用: private static final int COOLDOWN = 600;  30秒CD = 600tick
     
     private static final Identifier RESOURCE_ID = new Identifier("my_addon", "form_snow_fox_sp_resource");
     private static final Identifier REGEN_COOLDOWN_ID = new Identifier("my_addon", "form_snow_fox_sp_frost_regen_cooldown_resource");
@@ -209,6 +213,7 @@ public class SnowFoxSpFrostStorm {
     /**
      * 设置power的cooldown
      */
+    /* 未使用,已移除
     private static void setPowerCooldown(ServerPlayerEntity player, int ticks) {
         try {
             PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
@@ -221,6 +226,7 @@ public class SnowFoxSpFrostStorm {
             // Power not found
         }
     }
+     */
     
     /**
      * 蓄力数据
