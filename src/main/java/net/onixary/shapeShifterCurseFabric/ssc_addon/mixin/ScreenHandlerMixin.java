@@ -17,8 +17,11 @@ import net.minecraft.util.collection.DefaultedList;
 @Mixin(ScreenHandler.class)
 public abstract class ScreenHandlerMixin {
 
-    @Shadow public final DefaultedList<Slot> slots = DefaultedList.of();
-    @Shadow public abstract Slot getSlot(int index);
+	@Shadow
+	public final DefaultedList<Slot> slots = DefaultedList.of();
+
+	@Shadow
+	public abstract Slot getSlot(int index);
 
 	@Inject(method = "onSlotClick", at = @At("HEAD"), cancellable = true)
 	private void onSlotClick(int slotIndex, int button, SlotActionType actionType, PlayerEntity player, CallbackInfo ci) {

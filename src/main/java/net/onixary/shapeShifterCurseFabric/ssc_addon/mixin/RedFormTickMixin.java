@@ -20,7 +20,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import net.minecraft.item.ItemStack;
-import net.minecraft.entity.ItemEntity;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtCompound;
 

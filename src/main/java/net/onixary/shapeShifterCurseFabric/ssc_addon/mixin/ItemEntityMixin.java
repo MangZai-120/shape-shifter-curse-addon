@@ -15,13 +15,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ItemEntity.class)
 public abstract class ItemEntityMixin extends Entity {
 
-    public ItemEntityMixin(EntityType<?> type, World world) {
-        super(type, world);
-    }
+	protected ItemEntityMixin(EntityType<?> type, World world) {
+		super(type, world);
+	}
 
-    @Shadow public abstract ItemStack getStack();
+	@Shadow
+	public abstract ItemStack getStack();
 
-    @Shadow public abstract int getItemAge();
+	@Shadow
+	public abstract int getItemAge();
 
 	@Inject(method = "tick", at = @At("HEAD"))
 	private void waterSpearDurabilityTick(CallbackInfo ci) {
