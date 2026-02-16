@@ -216,9 +216,12 @@ public class SscAddonCommands {
             }
         }
         debugInfo.append("================================");
-        
-        // Log to console
-        LOGGER.info("\n" + debugInfo);
+
+        debugInfo.append("================================");
+        // Check if info level is enabled before logging
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(debugInfo.toString());
+        }
         
         // Send to player chat
         String[] lines = debugInfo.toString().split("\n");
