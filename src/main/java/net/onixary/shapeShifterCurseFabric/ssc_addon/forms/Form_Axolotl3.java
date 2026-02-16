@@ -35,6 +35,7 @@ public class Form_Axolotl3 extends PlayerFormBase {
     private static AnimationHolder anim_sleep = AnimationHolder.EMPTY;
 
 
+	@Override
     public AnimationHolder Anim_getFormAnimToPlay(PlayerAnimState currentState) {
 	    return switch (currentState) {
 		    case ANIM_JUMP, ANIM_FALL -> anim_jump;
@@ -55,6 +56,7 @@ public class Form_Axolotl3 extends PlayerFormBase {
 	    };
     }
 
+	@Override
     public void Anim_registerAnims() {
         anim_swimming = new AnimationHolder(new Identifier(MOD_ID, "axolotl_2_swimming"), true);
         anim_swimming_idle = new AnimationHolder(new Identifier(MOD_ID, "axolotl_2_swimming_idle"), true);
