@@ -17,7 +17,7 @@ public class EffectEfficiencyReductionPower extends Power {
         return new PowerFactory<>(new Identifier("ssc_addon", "effect_efficiency_reduction"),
             new SerializableData(),
             data ->
-                (type, entity) -> new EffectEfficiencyReductionPower(type, entity)
+                    EffectEfficiencyReductionPower::new
         ).allowCondition();
     }
 }
