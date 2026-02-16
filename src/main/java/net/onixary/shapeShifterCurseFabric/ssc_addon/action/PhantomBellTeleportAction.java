@@ -19,6 +19,12 @@ import java.util.List;
 
 public class PhantomBellTeleportAction {
 
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(PhantomBellTeleportAction.class);
+
+	private PhantomBellTeleportAction() {
+        // This utility class should not be instantiated
+    }
+
     // 检测怪物和玩家的范围
     private static final double DETECTION_RADIUS = 20.0;
     // 传送最大距离（半径）

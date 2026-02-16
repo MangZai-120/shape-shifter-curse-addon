@@ -27,6 +27,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * 瞬移到10格范围内最多3个敌人身后攻击
  */
 public class SnowFoxSpTeleportAttack {
+
+    private SnowFoxSpTeleportAttack() {
+        // This utility class should not be instantiated
+    }
     
     private static final ConcurrentHashMap<UUID, TeleportAttackData> ATTACKING_PLAYERS = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, Long> COOLDOWN_PLAYERS = new ConcurrentHashMap<>(); // 自定义CD跟踪

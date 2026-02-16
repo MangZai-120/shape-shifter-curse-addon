@@ -25,6 +25,12 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
 
 public class StoryBookLoot {
 
+	private static final Logger log = LoggerFactory.getLogger(StoryBookLoot.class);
+
+	private StoryBookLoot() {
+        // This utility class should not be instantiated
+    }
+
     private static float chance = 0.038f;
     private static List<BookData> loadedBooks = new ArrayList<>();
     private static SSCAddonConfig.BookLanguage loadedLanguage = null;

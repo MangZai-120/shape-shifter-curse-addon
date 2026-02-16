@@ -33,6 +33,10 @@ import java.util.UUID;
 public class SscAddonCommands {
     private static final Logger LOGGER = LoggerFactory.getLogger("SscAddon-Debug");
 
+    private SscAddonCommands() {
+        // This utility class should not be instantiated
+    }
+
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("ssc_addon")
             .then(CommandManager.literal("set_mana")

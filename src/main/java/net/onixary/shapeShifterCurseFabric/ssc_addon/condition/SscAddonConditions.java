@@ -17,6 +17,10 @@ import dev.emi.trinkets.api.TrinketsApi;
 
 public class SscAddonConditions {
 
+    private SscAddonConditions() {
+        // This utility class should not be instantiated
+    }
+
     public static void register() {
         register(new ConditionFactory<>(new Identifier("ssc_addon", "has_reverse_thermometer"),
             new SerializableData(),

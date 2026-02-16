@@ -15,6 +15,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(CursedMoon.class)
 public class CursedMoonSpMessageMixin {
 
+    private CursedMoonSpMessageMixin(){
+        // This utility class should not be instantiated
+    }
+
     /**
      * 在诅咒之月效果应用时，为SP形态显示额外消息
      * SP形态（Index 5或7）不会被诅咒之月影响，显示特殊消息

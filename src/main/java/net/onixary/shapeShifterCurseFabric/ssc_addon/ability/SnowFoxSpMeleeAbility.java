@@ -32,7 +32,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * 向准星方向冲刺8格，碰撞敌人造成6点魔法伤害并施加霜凝效果3秒
  */
 public class SnowFoxSpMeleeAbility {
-    
+
+	private static final Logger log = LoggerFactory.getLogger(SnowFoxSpMeleeAbility.class);
+
+	private SnowFoxSpMeleeAbility() {
+        // This utility class should not be instantiated
+    }
+
     // 存储正在冲刺的玩家和已经击中的敌人
     private static final ConcurrentHashMap<UUID, DashingPlayerData> DASHING_PLAYERS = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, Long> COOLDOWN_PLAYERS = new ConcurrentHashMap<>(); // 自定义CD跟踪

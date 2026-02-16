@@ -42,6 +42,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SscAddonActions {
+
+	private static final Logger log = LoggerFactory.getLogger(SscAddonActions.class);
+
+	private SscAddonActions() {
+        // This utility class should not be instantiated
+    }
     
     // 冰球自定义CD跟踪
     private static final ConcurrentHashMap<UUID, Long> FROST_BALL_COOLDOWN = new ConcurrentHashMap<>();

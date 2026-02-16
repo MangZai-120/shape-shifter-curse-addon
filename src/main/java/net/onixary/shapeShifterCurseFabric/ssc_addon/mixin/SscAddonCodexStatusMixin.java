@@ -14,6 +14,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(CodexData.class)
 public class SscAddonCodexStatusMixin {
 
+    private SscAddonCodexStatusMixin() {
+        // This utility class should not be instantiated
+    }
+
     @Inject(method = "getPlayerStatusText", at = @At("HEAD"), cancellable = true)
     private static void getPlayerStatusText(PlayerEntity player, CallbackInfoReturnable<Text> cir) {
         PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
