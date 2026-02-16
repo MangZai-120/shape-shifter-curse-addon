@@ -52,6 +52,7 @@ public class FrostStormEntity extends Entity {
     
     @Override
     protected void initDataTracker() {
+        // 暂时不需要初始化数据跟踪器
     }
     
     @Override
