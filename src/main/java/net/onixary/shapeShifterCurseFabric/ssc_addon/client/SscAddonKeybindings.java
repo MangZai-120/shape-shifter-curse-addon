@@ -8,6 +8,10 @@ import org.lwjgl.glfw.GLFW;
 public class SscAddonKeybindings {
     public static final String CATEGORY = "key.categories.ssc_addon";
 
+    private SscAddonKeybindings() {
+        // This utility class should not be instantiated
+    }
+
     // Replaced specific keys with generic SP keys
     public static final KeyBinding KEY_SP_PRIMARY = new KeyBinding(
         "key.ssc_addon.sp_primary", // Unified Primary

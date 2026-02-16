@@ -6,7 +6,6 @@ import io.github.apace100.apoli.power.Power;
 import io.github.apace100.apoli.power.PowerType;
 import io.github.apace100.apoli.power.PowerTypeRegistry;
 import io.github.apace100.apoli.power.VariableIntPower;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -28,6 +27,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * 瞬移到10格范围内最多3个敌人身后攻击
  */
 public class SnowFoxSpTeleportAttack {
+
+    private SnowFoxSpTeleportAttack() {
+        // This utility class should not be instantiated
+    }
     
     private static final ConcurrentHashMap<UUID, TeleportAttackData> ATTACKING_PLAYERS = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, Long> COOLDOWN_PLAYERS = new ConcurrentHashMap<>(); // 自定义CD跟踪
@@ -255,9 +258,7 @@ public class SnowFoxSpTeleportAttack {
         );
         
         // 按距离排序
-        nearbyEntities.sort((a, b) -> Double.compare(
-            player.squaredDistanceTo(a), player.squaredDistanceTo(b)
-        ));
+        nearbyEntities.sort(Comparator.comparingDouble(player::squaredDistanceTo));
         
         // 取最近的最多MAX_TARGETS个
         for (int i = 0; i < Math.min(MAX_TARGETS, nearbyEntities.size()); i++) {

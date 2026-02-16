@@ -17,6 +17,10 @@ import dev.emi.trinkets.api.TrinketsApi;
 
 public class SscAddonConditions {
 
+    private SscAddonConditions() {
+        // This utility class should not be instantiated
+    }
+
     public static void register() {
         register(new ConditionFactory<>(new Identifier("ssc_addon", "has_reverse_thermometer"),
             new SerializableData(),
@@ -46,7 +50,7 @@ public class SscAddonConditions {
                 .add("item", SerializableDataTypes.ITEM),
             (data, entity) -> {
                 if (entity instanceof PlayerEntity player) {
-                    return player.getItemCooldownManager().isCoolingDown((net.minecraft.item.Item)data.get("item"));
+                    return player.getItemCooldownManager().isCoolingDown(data.get("item"));
                 }
                 return false;
             }));

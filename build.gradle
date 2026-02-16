@@ -91,7 +91,7 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     // Shape Shifter Curse Main Mod
-    modImplementation "net.onixary:shape-shifter-curse-fabric:1.8.1"
+    modImplementation "maven.modrinth:shape-shifter-curse:${project.ssc_version}"
     
     // Player Animator
     modImplementation "dev.kosmx.player-anim:player-animation-lib-fabric:${project.player_anim}"
@@ -100,8 +100,7 @@ dependencies {
     modImplementation "com.github.apace100:apoli:${project.apoli_version}"
     modImplementation "mod.azure.azurelib:azurelib-fabric-1.20.1:${azurelib_version}"
     modImplementation "dev.emi:trinkets:${project.trinkets_version}"
-    modCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
-    modLocalRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
+    modImplementation ("com.terraformersmc:modmenu:${project.modmenu_version}"){transitive = false}
     modImplementation "com.jamieswhiteshirt:reach-entity-attributes:${project.reach_version}"
     
     // Config & Components (Usually needed by Apoli/Origins)

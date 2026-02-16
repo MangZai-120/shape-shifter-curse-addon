@@ -14,6 +14,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(CodexData.class)
 public class SscAddonCodexStatusMixin {
 
+    private SscAddonCodexStatusMixin() {
+        // This utility class should not be instantiated
+    }
+
     @Inject(method = "getPlayerStatusText", at = @At("HEAD"), cancellable = true)
     private static void getPlayerStatusText(PlayerEntity player, CallbackInfoReturnable<Text> cir) {
         PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
@@ -21,15 +25,18 @@ public class SscAddonCodexStatusMixin {
             PlayerFormBase currentForm = component.getCurrentForm();
             if (currentForm != null && currentForm.FormID != null) {
                 String formPath = currentForm.FormID.getPath();
-                if (formPath.equals("axolotl_sp") || formPath.equals("familiar_fox_sp")) {
-                    cir.setReturnValue(Text.translatable("codex.status.my_addon.SP_status"));
-                } else if (formPath.equals("wild_cat_sp")) {
-                    cir.setReturnValue(Text.translatable("codex.status.my_addon.wild_cat_sp_status"));
-                } else if (formPath.equals("snow_fox_sp")) {
-                    cir.setReturnValue(Text.translatable("codex.status.my_addon.snow_fox_sp_status"));
-                } else if (formPath.equals("familiar_fox_red")) {
-                    cir.setReturnValue(Text.translatable("codex.status.my_addon.familiar_fox_red_status"));
-                }
+	            switch (formPath) {
+		            case "axolotl_sp", "familiar_fox_sp" ->
+				            cir.setReturnValue(Text.translatable("codex.status.my_addon.SP_status"));
+		            case "wild_cat_sp" ->
+				            cir.setReturnValue(Text.translatable("codex.status.my_addon.wild_cat_sp_status"));
+		            case "snow_fox_sp" ->
+				            cir.setReturnValue(Text.translatable("codex.status.my_addon.snow_fox_sp_status"));
+		            case "familiar_fox_red" ->
+				            cir.setReturnValue(Text.translatable("codex.status.my_addon.familiar_fox_red_status"));
+                    default ->
+                            cir.setReturnValue(Text.translatable("codex.status.normal"));
+	            }
             }
         }
     }

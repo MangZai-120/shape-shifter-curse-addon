@@ -3,5 +3,7 @@ build/
 bin/
 .git/
 .history/
+/out/
+/.idea/
 .github
 story

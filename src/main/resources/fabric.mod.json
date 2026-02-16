@@ -45,5 +45,13 @@
   },
   "suggests": {
     "modmenu": "*"
-  }
+  },
+  "contributors": [
+    {
+      "name": "wuhenqiubai",
+      "contact": {
+        "github": "https://github.com/wuhenqiubai"
+      }
+    }
+  ]
 }

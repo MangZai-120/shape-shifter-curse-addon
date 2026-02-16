@@ -63,22 +63,19 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
         
         boolean isInvisible = entity.hasStatusEffect(SscAddon.TRUE_INVISIBILITY);
         boolean isPrecasting = entity.hasStatusEffect(SscAddon.PRE_INVISIBILITY);
-        
+
         // Natural End Detection (Time expired - not from action break or key cancel)
-        if (wasInvisible && !isInvisible && !isPrecasting) {
-            // Effect expired naturally
-            // Only apply cooldown if it was the main ability (Amplifier 0)
-            if (lastAmplifier == 0) {
-                applyUniversalCooldown();
-                // Play glass break sound for natural expiration
-                entity.getWorld().playSound(null, entity.getX(), entity.getY(), entity.getZ(), 
+        if (wasInvisible && !isInvisible && !isPrecasting && lastAmplifier == 0) {
+            applyUniversalCooldown();
+            // Play glass break sound for natural expiration
+            entity.getWorld().playSound(null, entity.getX(), entity.getY(), entity.getZ(),
                     SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
-                if (entity instanceof PlayerEntity player) {
-                    // player.sendMessage(Text.of("§7隐身时间结束"), true);
-                }
+            if (entity instanceof PlayerEntity player) {
+                // player.sendMessage(Text.of("§7隐身时间结束"), true);
             }
         }
-        
+
+
         if (!isInvisible) {
             wasUsingItem = false;
             wasHandSwinging = false;

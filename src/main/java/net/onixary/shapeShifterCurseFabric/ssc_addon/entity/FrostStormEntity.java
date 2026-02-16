@@ -52,6 +52,7 @@ public class FrostStormEntity extends Entity {
     
     @Override
     protected void initDataTracker() {
+        // 暂时不需要初始化数据跟踪器
     }
     
     @Override
@@ -125,8 +126,7 @@ public class FrostStormEntity extends Entity {
             Vec3d targetPos = target.getPos();
             double dist = Math.sqrt(target.squaredDistanceTo(this.getX(), this.getY(), this.getZ()));
             
-            if (dist > PULL_RADIUS_WEAK) continue;
-            if (dist < 0.5) continue; // 太近不吸附
+            if (dist > PULL_RADIUS_WEAK || dist < 0.5) continue;
             
             // 计算吸附速度
             double pullStrength;

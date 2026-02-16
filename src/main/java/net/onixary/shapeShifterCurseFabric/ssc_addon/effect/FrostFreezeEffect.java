@@ -125,10 +125,6 @@ public class FrostFreezeEffect extends StatusEffect {
         }
         
         // 通用伤害(通常用于mod自定义伤害)
-        if (source.isOf(net.minecraft.entity.damage.DamageTypes.GENERIC)) {
-            return true;
-        }
-        
-        return false;
+	    return source.isOf(net.minecraft.entity.damage.DamageTypes.GENERIC);
     }
 }

@@ -15,24 +15,24 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ItemEntity.class)
 public abstract class ItemEntityMixin extends Entity {
 
-    public ItemEntityMixin(EntityType<?> type, World world) {
-        super(type, world);
-    }
+	protected ItemEntityMixin(EntityType<?> type, World world) {
+		super(type, world);
+	}
 
-    @Shadow public abstract ItemStack getStack();
+	@Shadow
+	public abstract ItemStack getStack();
 
-    @Shadow public abstract int getItemAge();
+	@Shadow
+	public abstract int getItemAge();
 
-    @Inject(method = "tick", at = @At("HEAD"))
-    private void waterSpearDurabilityTick(CallbackInfo ci) {
-        if (!this.getWorld().isClient) {
-            ItemStack stack = this.getStack();
-            if (stack.getItem() instanceof WaterSpearItem) {
-                // Disappear after 1 second (20 ticks) of existing
-                if (this.getItemAge() >= 20) {
-                    this.discard();
-                }
-            }
-        }
-    }
+	@Inject(method = "tick", at = @At("HEAD"))
+	private void waterSpearDurabilityTick(CallbackInfo ci) {
+		if (!this.getWorld().isClient) {
+			ItemStack stack = this.getStack();
+			if (stack.getItem() instanceof WaterSpearItem && this.getItemAge() >= 20) {
+				this.discard();
+			}
+
+		}
+	}
 }

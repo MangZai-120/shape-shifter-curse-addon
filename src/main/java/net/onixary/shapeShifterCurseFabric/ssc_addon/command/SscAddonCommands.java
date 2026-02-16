@@ -28,11 +28,14 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.command.CommandSource;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.UUID;
 
 public class SscAddonCommands {
     private static final Logger LOGGER = LoggerFactory.getLogger("SscAddon-Debug");
+
+    private SscAddonCommands() {
+        // This utility class should not be instantiated
+    }
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("ssc_addon")
@@ -123,7 +126,7 @@ public class SscAddonCommands {
             try {
                 ManaComponent manaComponent = ManaUtils.getManaComponent(player);
                 if (manaComponent != null) {
-                    double newVal = (double) amount;
+                    double newVal = amount;
                     if (newVal > manaComponent.getMaxMana()) {
                          newVal = manaComponent.getMaxMana();
                     }
@@ -217,9 +220,12 @@ public class SscAddonCommands {
             }
         }
         debugInfo.append("================================");
-        
-        // Log to console
-        LOGGER.info("\n" + debugInfo.toString());
+
+        debugInfo.append("================================");
+        // Check if info level is enabled before logging
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(debugInfo.toString());
+        }
         
         // Send to player chat
         String[] lines = debugInfo.toString().split("\n");

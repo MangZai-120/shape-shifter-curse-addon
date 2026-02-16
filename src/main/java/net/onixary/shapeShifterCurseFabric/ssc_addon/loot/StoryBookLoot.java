@@ -5,13 +5,11 @@ import net.minecraft.item.Items;
 import net.minecraft.loot.LootPool;
 import net.minecraft.loot.entry.ItemEntry;
 import net.minecraft.loot.provider.number.ConstantLootNumberProvider;
-import net.minecraft.loot.LootTables;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.util.Identifier;
 import net.minecraft.loot.function.SetNbtLootFunction;
-import net.minecraft.text.Text;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
@@ -21,11 +19,19 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 import me.shedaniel.autoconfig.AutoConfig;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StoryBookLoot {
+
+	private static final Logger log = LoggerFactory.getLogger(StoryBookLoot.class);
+
+	private StoryBookLoot() {
+        // This utility class should not be instantiated
+    }
 
     private static float chance = 0.038f;
     private static List<BookData> loadedBooks = new ArrayList<>();
@@ -55,7 +61,7 @@ public class StoryBookLoot {
         List<BookData> books = new ArrayList<>();
         try (InputStream is = StoryBookLoot.class.getResourceAsStream("/data/ssc_addon/story_books/" + fileName)) {
             if (is == null) {
-                System.err.println("Failed to load " + fileName + ": file not found");
+	            log.error("Failed to load {}: file not found", fileName);
                 return books;
             }
             JsonObject root = JsonParser.parseReader(new InputStreamReader(is, StandardCharsets.UTF_8)).getAsJsonObject();
@@ -91,7 +97,7 @@ public class StoryBookLoot {
         String fileName = (config.bookLanguage == SSCAddonConfig.BookLanguage.ENGLISH) ? "books_en.json" : "books_cn.json";
         
         loadedBooks = parseBookFile(fileName);
-        System.out.println("Loaded " + loadedBooks.size() + " books from " + fileName);
+	    log.info("Loaded {} books from {}", loadedBooks.size(), fileName);
     }
 
     /**
@@ -102,17 +108,17 @@ public class StoryBookLoot {
         loadedLanguage = null;
         loadConfig();
         loadBooks();
-        System.out.println("Books reloaded. Total: " + loadedBooks.size());
+	    log.info("Books reloaded. Total: {}", loadedBooks.size());
     }
 
-    /**
+        /**
      * 获取所有书籍ID列表（用于命令自动补全）
      */
     public static List<String> getBookIds() {
         loadBooks();
         return loadedBooks.stream()
                 .map(book -> book.id)
-                .collect(Collectors.toList());
+                .toList(); // 使用 Stream.toList() 替代 collect(Collectors.toList())
     }
 
     /**
@@ -123,8 +129,9 @@ public class StoryBookLoot {
         List<BookData> books = parseBookFile(fileName);
         return books.stream()
                 .map(book -> book.id)
-                .collect(Collectors.toList());
+                .toList(); // 同样使用 Stream.toList()
     }
+
 
     /**
      * 获取书籍数量
@@ -278,7 +285,7 @@ public class StoryBookLoot {
 
     /**
      * 将长文本分割成适合 Minecraft 书籍的页面
-     * 
+     * <p>
      * 修复中文换页丢失文本的问题：
      * 1. 使用更保守的每页字符限制（中文字符显示宽度是英文的2倍）
      * 2. 逐字符处理，确保不丢失任何内容
@@ -316,19 +323,13 @@ public class StoryBookLoot {
             int lineEffectiveChars = calculateEffectiveLength(line);
             
             // 检查是否需要换页
-            boolean needNewPage = false;
-            
-            // 条件1：加上这行会超过字符限制
-            if (currentPageEffectiveChars + lineEffectiveChars > MAX_CHARS_PER_PAGE_CJK * 2) {
-                needNewPage = true;
-            }
-            
-            // 条件2：加上这行会超过行数限制
+            boolean needNewPage = currentPageEffectiveChars + lineEffectiveChars > MAX_CHARS_PER_PAGE_CJK * 2;
+
             if (currentEstimatedLines + lineDisplayLines > MAX_LINES_PER_PAGE) {
                 needNewPage = true;
             }
             
-            if (needNewPage && currentPage.length() > 0) {
+            if (needNewPage && !currentPage.isEmpty()) {
                 // 保存当前页，开始新页
                 pages.add(currentPage.toString());
                 currentPage = new StringBuilder();
@@ -350,7 +351,7 @@ public class StoryBookLoot {
                     remaining = remaining.substring(splitIndex);
                     
                     // 如果当前页有内容且加上chunk会溢出，先保存当前页
-                    if (currentPage.length() > 0 && 
+                    if (!currentPage.isEmpty() &&
                         calculateEffectiveLength(currentPage.toString()) + calculateEffectiveLength(chunk) > MAX_CHARS_PER_PAGE_CJK * 2) {
                         pages.add(currentPage.toString());
                         currentPage = new StringBuilder();
@@ -383,12 +384,12 @@ public class StoryBookLoot {
         }
         
         // 保存最后一页
-        if (currentPage.length() > 0) {
+        if (!currentPage.isEmpty()) {
             pages.add(currentPage.toString());
         }
         
         // 调试输出
-        System.out.println("[StoryBookLoot] Split content into " + pages.size() + " pages");
+	    log.info("[StoryBookLoot] Split content into {} pages", pages.size());
         
         return pages;
     }
@@ -506,20 +507,19 @@ public class StoryBookLoot {
         if (c == ' ' || c == ',' || c == '.' || c == '!' || c == '?') {
             return true;
         }
-        // 中文标点（使用Unicode码点避免字符常量问题）
-        // ， = \uFF0C, 。 = \u3002, ！ = \uFF01, ？ = \uFF1F, ； = \uFF1B
-        // ： = \uFF1A, " = \u201C, " = \u201D, ' = \u2018, ' = \u2019
-        // 、 = \u3001, ） = \uFF09, 】 = \u3011, 」 = \u300D, 》 = \u300B
-        if (c == '\uFF0C' || c == '\u3002' || c == '\uFF01' || c == '\uFF1F' || c == '\uFF1B') {
+        /* ---中文标点（使用Unicode码点避免字符常量问题）---
+        转义序列不再建议使用，在开发中所有项目理应使用UTF-8编码，直接使用字符本身即可，提升可读性
+           ， = \uFF0C, 。 = \u3002, ！ = \uFF01, ？ = \uFF1F, ； = \uFF1B
+           ： = \uFF1A, " = \u201C, " = \u201D, ' = \u2018, ' = \u2019
+           、 = \u3001, ） = \uFF09, 】 = \u3011, 」 = \u300D, 》 = \u300B
+        */
+        if (c == '，' || c == '。' || c == '！' || c == '？' || c == '；') {
             return true;
         }
-        if (c == '\uFF1A' || c == '\u201C' || c == '\u201D' || c == '\u2018' || c == '\u2019') {
+        if (c == '：' || c == '“' || c == '”' || c == '‘' || c == '’') {
             return true;
         }
-        if (c == '\u3001' || c == '\uFF09' || c == '\u3011' || c == '\u300D' || c == '\u300B') {
-            return true;
-        }
-        return false;
+	    return c == '、' || c == '）' || c == '】' || c == '」' || c == '》';
     }
 
 }

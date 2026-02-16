@@ -26,14 +26,13 @@ public class StunnedInputMixin {
             ci.cancel();
         }
     }
-    
+
     @Inject(method = "handleBlockBreaking", at = @At("HEAD"), cancellable = true)
     private void onHandleBlockBreaking(boolean breaking, CallbackInfo ci) {
         MinecraftClient client = (MinecraftClient) (Object) this;
-        if (client.player != null && client.player.hasStatusEffect(SscAddon.STUN)) {
-            if (breaking) {
-                ci.cancel();
-            }
+        if (client.player != null && client.player.hasStatusEffect(SscAddon.STUN) && breaking) {
+            ci.cancel();
         }
+
     }
 }

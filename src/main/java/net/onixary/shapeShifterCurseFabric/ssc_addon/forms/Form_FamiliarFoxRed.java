@@ -46,54 +46,30 @@ public class Form_FamiliarFoxRed extends PlayerFormBase {
     private static AnimationHolder anim_elytra_fly = AnimationHolder.EMPTY;
 
 
+	@Override
     public AnimationHolder Anim_getFormAnimToPlay(PlayerAnimState currentState) {
-        switch (currentState) {
-            case ANIM_IDLE:
-                return anim_idle;
-            case ANIM_SNEAK_IDLE:
-            case ANIM_RIDE_VEHICLE_IDLE:
-                return anim_sneak_idle;
-            case ANIM_RIDE_IDLE:
-                return anim_ride;
-            case ANIM_WALK:
-                return anim_walk;
-            case ANIM_SNEAK_WALK:
-                return anim_sneak_walk;
-            case ANIM_SNEAK_RUSH:
-                return anim_sneak_rush;
-            case ANIM_RUN:
-                return anim_run;
-            case ANIM_SWIM_IDLE:
-                return anim_float;
-            case ANIM_SWIM:
-                return anim_swim;
-            case ANIM_TOOL_SWING:
-            case ANIM_SNEAK_TOOL_SWING:
-                return anim_dig;
-            case ANIM_JUMP:
-            case ANIM_SNEAK_JUMP:
-                return anim_jump;
-            case ANIM_CLIMB_IDLE:
-            case ANIM_CLIMB:
-                return anim_climb;
-            case ANIM_FALL:
-            case ANIM_SNEAK_FALL:
-                return anim_fall;
-            case ANIM_SLEEP:
-                return anim_sleep;
-
-            case ANIM_ATTACK_ONCE:
-            case ANIM_SNEAK_ATTACK_ONCE:
-                return anim_attack;
-            case ANIM_ELYTRA_FLY:
-            case ANIM_CREATIVE_FLY:
-                return anim_elytra_fly;
-
-            default:
-                return anim_idle;
-        }
+	    return switch (currentState) {
+		    case ANIM_IDLE -> anim_idle;
+		    case ANIM_SNEAK_IDLE, ANIM_RIDE_VEHICLE_IDLE -> anim_sneak_idle;
+		    case ANIM_RIDE_IDLE -> anim_ride;
+		    case ANIM_WALK -> anim_walk;
+		    case ANIM_SNEAK_WALK -> anim_sneak_walk;
+		    case ANIM_SNEAK_RUSH -> anim_sneak_rush;
+		    case ANIM_RUN -> anim_run;
+		    case ANIM_SWIM_IDLE -> anim_float;
+		    case ANIM_SWIM -> anim_swim;
+		    case ANIM_TOOL_SWING, ANIM_SNEAK_TOOL_SWING -> anim_dig;
+		    case ANIM_JUMP, ANIM_SNEAK_JUMP -> anim_jump;
+		    case ANIM_CLIMB_IDLE, ANIM_CLIMB -> anim_climb;
+		    case ANIM_FALL, ANIM_SNEAK_FALL -> anim_fall;
+		    case ANIM_SLEEP -> anim_sleep;
+		    case ANIM_ATTACK_ONCE, ANIM_SNEAK_ATTACK_ONCE -> anim_attack;
+		    case ANIM_ELYTRA_FLY, ANIM_CREATIVE_FLY -> anim_elytra_fly;
+		    default -> anim_idle;
+	    };
     }
 
+    @Override
     public void Anim_registerAnims() {
         anim_idle = new AnimationHolder(new Identifier(MOD_ID, "form_feral_common_idle"), true);
         anim_sneak_idle = new AnimationHolder(new Identifier(MOD_ID, "form_feral_common_sneak_idle"), true);
@@ -115,40 +91,26 @@ public class Form_FamiliarFoxRed extends PlayerFormBase {
 
     public static final AbstractAnimStateController RIDE_CONTROLLER = new RideAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("familiar_fox_3_riding")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("form_feral_common_sneak_idle")));
 
+    @Override
     public @Nullable AbstractAnimStateController getAnimStateController(PlayerEntity player, AnimSystem.AnimSystemData animSystemData, @NotNull Identifier animStateID) {
         @Nullable AnimStateEnum animStateEnum = AnimStateEnum.getStateEnum(animStateID);
         if (animStateEnum != null) {
-            switch (animStateEnum) {
-                case ANIM_STATE_SLEEP:
-                    return Form_FeralBase.SLEEP_CONTROLLER;
-                case ANIM_STATE_CLIMB:
-                    return Form_FeralBase.CLIMB_CONTROLLER;
-                case ANIM_STATE_FALL:
-                    return Form_FeralBase.FALL_CONTROLLER;
-                case ANIM_STATE_JUMP:
-                    return Form_FeralBase.JUMP_CONTROLLER;
-                case ANIM_STATE_RIDE:
-                    return RIDE_CONTROLLER;
-                case ANIM_STATE_SWIM:
-                    return Form_FeralBase.SWIM_CONTROLLER;
-                case ANIM_STATE_USE_ITEM:
-                    return Form_FeralBase.USE_ITEM_CONTROLLER;
-                case ANIM_STATE_WALK:
-                    return Form_FeralBase.WALK_CONTROLLER;
-                case ANIM_STATE_SPRINT:
-                    return Form_FeralBase.SPRINT_CONTROLLER;
-                case ANIM_STATE_IDLE:
-                    return Form_FeralBase.IDLE_CONTROLLER;
-                case ANIM_STATE_MINING:
-                    return Form_FeralBase.MINING_CONTROLLER;
-                case ANIM_STATE_ATTACK:
-                    return Form_FeralBase.ATTACK_CONTROLLER;
-                case ANIM_STATE_FLYING:
-                case ANIM_STATE_FALL_FLYING:
-                    return Form_FeralBase.FALL_FLYING_CONTROLLER;
-                default:
-                    return Form_FeralBase.IDLE_CONTROLLER;
-            }
+	        return switch (animStateEnum) {
+		        case ANIM_STATE_SLEEP -> Form_FeralBase.SLEEP_CONTROLLER;
+		        case ANIM_STATE_CLIMB -> Form_FeralBase.CLIMB_CONTROLLER;
+		        case ANIM_STATE_FALL -> Form_FeralBase.FALL_CONTROLLER;
+		        case ANIM_STATE_JUMP -> Form_FeralBase.JUMP_CONTROLLER;
+		        case ANIM_STATE_RIDE -> RIDE_CONTROLLER;
+		        case ANIM_STATE_SWIM -> Form_FeralBase.SWIM_CONTROLLER;
+		        case ANIM_STATE_USE_ITEM -> Form_FeralBase.USE_ITEM_CONTROLLER;
+		        case ANIM_STATE_WALK -> Form_FeralBase.WALK_CONTROLLER;
+		        case ANIM_STATE_SPRINT -> Form_FeralBase.SPRINT_CONTROLLER;
+		        case ANIM_STATE_IDLE -> Form_FeralBase.IDLE_CONTROLLER;
+		        case ANIM_STATE_MINING -> Form_FeralBase.MINING_CONTROLLER;
+		        case ANIM_STATE_ATTACK -> Form_FeralBase.ATTACK_CONTROLLER;
+		        case ANIM_STATE_FLYING, ANIM_STATE_FALL_FLYING -> Form_FeralBase.FALL_FLYING_CONTROLLER;
+		        default -> Form_FeralBase.IDLE_CONTROLLER;
+	        };
         }
         return super.getAnimStateController(player, animSystemData, animStateID);
     }

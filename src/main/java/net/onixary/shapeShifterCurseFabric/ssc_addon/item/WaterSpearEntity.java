@@ -146,20 +146,15 @@ public class WaterSpearEntity extends TridentEntity {
 
     @Override
     public void onPlayerCollision(PlayerEntity player) {
-         // Allow pickup only if player is SP Axolotl
+        // Allow pickup only if player is SP Axolotl
         PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
-        boolean isSpAxolotl = false;
-        if (component != null) {
-            PlayerFormBase currentForm = component.getCurrentForm();
-            if (currentForm != null && currentForm.FormID != null) {
-                if (currentForm.getPhase() == PlayerFormPhase.PHASE_SP && currentForm.FormID.getPath().contains("axolotl")) {
-                    isSpAxolotl = true;
-                }
-            }
-        }
-        
-        if (isSpAxolotl) {
+        PlayerFormBase currentForm = component != null ? component.getCurrentForm() : null;
+
+        if (currentForm != null && currentForm.FormID != null
+                && currentForm.getPhase() == PlayerFormPhase.PHASE_SP
+                && currentForm.FormID.getPath().contains("axolotl")) {
             super.onPlayerCollision(player);
         }
     }
+
 }

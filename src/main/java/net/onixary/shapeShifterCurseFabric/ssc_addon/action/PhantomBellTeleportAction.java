@@ -13,11 +13,18 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class PhantomBellTeleportAction {
+
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(PhantomBellTeleportAction.class);
+
+	private PhantomBellTeleportAction() {
+        // This utility class should not be instantiated
+    }
 
     // 检测怪物和玩家的范围
     private static final double DETECTION_RADIUS = 20.0;
@@ -29,14 +36,14 @@ public class PhantomBellTeleportAction {
             new Identifier("ssc_addon", "phantom_bell_teleport"),
             new SerializableData(),
             (data, entity) -> {
-                System.out.println("[PhantomBell] Action triggered!");
+                log.info("[PhantomBell] Action triggered!");
                 
                 if (!(entity instanceof LivingEntity player)) {
-                    System.out.println("[PhantomBell] Entity is not LivingEntity, returning");
+                    log.info("[PhantomBell] Entity is not LivingEntity, returning");
                     return;
                 }
 
-                System.out.println("[PhantomBell] Player: " + player.getName().getString());
+	            log.info("[PhantomBell] Player: {}", player.getName().getString());
                 
                 World world = player.getWorld();
                 BlockPos startBlockPos = player.getBlockPos();
@@ -52,8 +59,7 @@ public class PhantomBellTeleportAction {
                         // 正在攻击玩家的生物
                         if (e.getAttacking() == player) return true;
                         // 其它玩家
-                        if (e instanceof PlayerEntity) return true;
-                        return false;
+	                    return e instanceof PlayerEntity;
                     }
                 );
 
@@ -169,7 +175,7 @@ public class PhantomBellTeleportAction {
                 }
             }
             // 如果周围沙子不够多（<50%），排除
-            if (fallingCount < 5) return false;
+	        return fallingCount >= 5;
         }
 
         return true;

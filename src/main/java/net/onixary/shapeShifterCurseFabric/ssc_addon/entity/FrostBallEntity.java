@@ -5,7 +5,6 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.FlyingItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.entity.projectile.ProjectileUtil;
 import net.minecraft.item.ItemStack;
@@ -25,6 +24,8 @@ import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import dev.emi.trinkets.api.TrinketsApi;
 import net.minecraft.util.math.Box;
+
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -193,7 +194,7 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
         if (nearby.isEmpty()) return;
         
         // 按距离排序
-        nearby.sort((e1, e2) -> Double.compare(e1.squaredDistanceTo(hitTarget), e2.squaredDistanceTo(hitTarget)));
+        nearby.sort(Comparator.comparingDouble(e -> e.squaredDistanceTo(hitTarget)));
         
         int count = 0;
         int maxShards = 2; // 发射两个
