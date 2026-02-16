@@ -9,6 +9,12 @@
     "FrostFreezeDamageMixin",
     "ItemEntityMixin",
     "MobEntityMixin",
+    "PlayerInventoryMixin",
+    "PotionBagDeathDropMixin",
+    "PreventPotionBagDropMixin",
+    "RedFoxThrowDistanceMixin",
+    "RedFormTickMixin",
+    "ScreenHandlerMixin",
     "SscAddonCodexStatusMixin",
     "SscAddonEntityIgnitionMixin",
     "SscAddonEntityMixin",
@@ -18,9 +24,7 @@
     "SscAddonVillagerInteractionMixin",
     "SscPlayerMixin",
     "StunnedJumpMixin",
-    "TransformRelatedItemsMixin",
-    "RedFoxThrowDistanceMixin",
-    "RedFormTickMixin"
+    "TransformRelatedItemsMixin"
   ],
   "client": [
     "InstinctBarRendererMixin",
