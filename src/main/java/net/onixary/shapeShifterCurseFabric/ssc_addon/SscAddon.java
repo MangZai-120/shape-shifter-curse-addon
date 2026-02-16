@@ -60,6 +60,10 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostStormEntity;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
+import net.minecraft.screen.ScreenHandlerType;
+import net.minecraft.resource.featuretoggle.FeatureSet;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.screen.PotionBagScreenHandler;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PotionBagItem;
 
 public class SscAddon implements ModInitializer {
 
@@ -72,6 +76,9 @@ public class SscAddon implements ModInitializer {
     public static final StatusEffect GUARANTEED_CRIT = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.GuaranteedCritEffect();
     public static final StatusEffect FROST_FREEZE = new FrostFreezeEffect();
     public static final StatusEffect FROST_FALL = new FrostFallEffect();
+
+    public static final ScreenHandlerType<PotionBagScreenHandler> POTION_BAG_SCREEN_HANDLER = new ScreenHandlerType<>(PotionBagScreenHandler::new, FeatureSet.empty());
+    public static final Item POTION_BAG = new PotionBagItem(new Item.Settings().maxCount(1));
     
     public static final EntityType<WaterSpearEntity> WATER_SPEAR_ENTITY = Registry.register(
             Registries.ENTITY_TYPE,
@@ -176,6 +183,9 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "lifesaving_cat_tail"), LIFESAVING_CAT_TAIL);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "phantom_bell"), PHANTOM_BELL);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "water_spear"), WATER_SPEAR);
+
+        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "potion_bag"), POTION_BAG);
+        Registry.register(Registries.SCREEN_HANDLER, new Identifier("ssc_addon", "potion_bag"), POTION_BAG_SCREEN_HANDLER);
 
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "evolution_stone"), EVOLUTION_STONE);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "shadow_shard"), SHADOW_SHARD);
