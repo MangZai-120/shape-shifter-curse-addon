@@ -23,16 +23,14 @@ public abstract class ItemEntityMixin extends Entity {
 
     @Shadow public abstract int getItemAge();
 
-    @Inject(method = "tick", at = @At("HEAD"))
-    private void waterSpearDurabilityTick(CallbackInfo ci) {
-        if (!this.getWorld().isClient) {
-            ItemStack stack = this.getStack();
-            if (stack.getItem() instanceof WaterSpearItem) {
-                // Disappear after 1 second (20 ticks) of existing
-                if (this.getItemAge() >= 20) {
-                    this.discard();
-                }
-            }
-        }
-    }
+	@Inject(method = "tick", at = @At("HEAD"))
+	private void waterSpearDurabilityTick(CallbackInfo ci) {
+		if (!this.getWorld().isClient) {
+			ItemStack stack = this.getStack();
+			if (stack.getItem() instanceof WaterSpearItem && this.getItemAge() >= 20) {
+				this.discard();
+			}
+
+		}
+	}
 }

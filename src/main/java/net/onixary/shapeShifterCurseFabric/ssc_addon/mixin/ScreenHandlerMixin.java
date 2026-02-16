@@ -20,25 +20,23 @@ public abstract class ScreenHandlerMixin {
     @Shadow public final DefaultedList<Slot> slots = DefaultedList.of();
     @Shadow public abstract Slot getSlot(int index);
 
-    @Inject(method = "onSlotClick", at = @At("HEAD"), cancellable = true)
-    private void onSlotClick(int slotIndex, int button, SlotActionType actionType, PlayerEntity player, CallbackInfo ci) {
-        if (slotIndex >= 0 && slotIndex < this.slots.size()) {
-            Slot slot = this.getSlot(slotIndex);
-            if (slot != null && slot.hasStack()) {
-                ItemStack stack = slot.getStack();
-                if (stack.isOf(SscAddon.POTION_BAG)) {
-                    ci.cancel();
-                    return;
-                }
-            }
-        } else if (actionType == SlotActionType.SWAP) {
-             // Button is the hotbar slot index (0-8)
-             if (button >= 0 && button < 9) {
-                 ItemStack hotbarStack = player.getInventory().getStack(button);
-                 if (hotbarStack.isOf(SscAddon.POTION_BAG)) {
-                     ci.cancel();
-                 }
-             }
-        }
-    }
+	@Inject(method = "onSlotClick", at = @At("HEAD"), cancellable = true)
+	private void onSlotClick(int slotIndex, int button, SlotActionType actionType, PlayerEntity player, CallbackInfo ci) {
+		if (slotIndex >= 0 && slotIndex < this.slots.size()) {
+			Slot slot = this.getSlot(slotIndex);
+			if (slot != null && slot.hasStack()) {
+				ItemStack stack = slot.getStack();
+				if (stack.isOf(SscAddon.POTION_BAG)) {
+					ci.cancel();
+					return;
+				}
+			}
+		} else if (actionType == SlotActionType.SWAP && button >= 0 && button < 9) {
+			ItemStack hotbarStack = player.getInventory().getStack(button);
+			if (hotbarStack.isOf(SscAddon.POTION_BAG)) {
+				ci.cancel();
+			}
+		}
+
+	}
 }
