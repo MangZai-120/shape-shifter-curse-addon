@@ -212,8 +212,8 @@ public class SnowFoxSpFrostStorm {
     
     /**
      * 设置power的cooldown
+     * 未使用，建议移除
      */
-    /* 未使用,已移除
     private static void setPowerCooldown(ServerPlayerEntity player, int ticks) {
         try {
             PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
@@ -224,9 +224,9 @@ public class SnowFoxSpFrostStorm {
             }
         } catch (Exception e) {
             // Power not found
+
         }
     }
-     */
     
     /**
      * 蓄力数据
