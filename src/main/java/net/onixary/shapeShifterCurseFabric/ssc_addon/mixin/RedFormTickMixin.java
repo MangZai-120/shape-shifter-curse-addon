@@ -15,6 +15,7 @@ import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -37,9 +38,37 @@ public class RedFormTickMixin {
         // Performance check: Only run logic every 20 ticks (1 second)
         if (player.age % 20 != 0) return;
 
+        boolean isCursedMoon = CursedMoon.isCursedMoon(player.getWorld());
+        
+        // Reset the attempt tag if it is not Cursed Moon
+        if (!isCursedMoon && player.getCommandTags().contains("ssc_addon_red_attempted")) {
+            player.getCommandTags().remove("ssc_addon_red_attempted");
+        }
+
         // Potion Bag Logic
         PlayerFormBase currentForm = FormAbilityManager.getForm(player);
         boolean isRedForm = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_red"));
+
+        // SP Form + Cursed Moon Transformation Logic
+        if (currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_sp")) && isCursedMoon && !player.getCommandTags().contains("ssc_addon_red_attempted")) {
+            player.addCommandTag("ssc_addon_red_attempted");
+            // 5% Chance to transform to Red
+            if (player.getRandom().nextFloat() < 0.05f) {
+                Identifier redFormId = new Identifier("my_addon", "familiar_fox_red");
+                PlayerFormBase redForm = RegPlayerForms.getPlayerForm(redFormId);
+                if (redForm != null) {
+                    TransformManager.handleDirectTransform(player, redForm, false);
+                    
+                    // 10 Minutes = 12000 ticks
+                    long expireTime = player.getWorld().getTime() + 12000; 
+                    player.addCommandTag("ssc_addon_red_expire:" + expireTime);
+                    
+                    player.sendMessage(Text.translatable("message.ssc_addon.red_transformation_special").formatted(Formatting.GREEN), false);
+                    player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 1.0F, 1.0F);
+                    return; // Exit after successful transformation
+                }
+            }
+        }
 
         if (isRedForm) {
             ItemStack stackInSlot8 = player.getInventory().getStack(8);
