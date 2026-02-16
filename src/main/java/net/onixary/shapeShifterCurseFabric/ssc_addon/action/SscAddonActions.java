@@ -36,6 +36,9 @@ import net.minecraft.entity.effect.StatusEffects;
 
 import dev.emi.trinkets.api.TrinketsApi;
 import dev.emi.trinkets.api.TrinketComponent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Optional;
 
 import java.util.UUID;
@@ -172,7 +175,9 @@ public class SscAddonActions {
                     if (pose == EntityPose.SWIMMING) {
                         entity.setSwimming(true);
                     }
-                } catch (IllegalArgumentException ignored) {}
+                } catch (IllegalArgumentException ignored) {
+                    // 忽略无效的pose
+                }
             }));
 
         registerEntity(new ActionFactory<>(new Identifier("my_addon", "adaptive_water_jump"),
@@ -205,7 +210,7 @@ public class SscAddonActions {
             new SerializableData()
                 .add("radius", SerializableDataTypes.DOUBLE, 64.0),
             (data, entity) -> {
-                System.out.println("SSC ADDON DEBUG: Play Dead / Clear Aggro Triggered!");
+                log.info("SSC ADDON DEBUG: Play Dead / Clear Aggro Triggered!");
                 double radius = data.getDouble("radius");
                 Box box = entity.getBoundingBox().expand(radius);
                 entity.getWorld().getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class, box, mob -> mob.getTarget() == entity).forEach(mob -> {
@@ -322,7 +327,7 @@ public class SscAddonActions {
                     // 3. Force Pose
                     living.setPose(EntityPose.SLEEPING);
                     
-                    System.out.println("SSC ADDON: Triggered Play Dead (Composite Java Action)");
+                    log.info("SSC ADDON: Triggered Play Dead (Composite Java Action)");
                 }
             }));
             

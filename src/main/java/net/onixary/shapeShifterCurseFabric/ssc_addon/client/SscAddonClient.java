@@ -22,11 +22,14 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.client.mana.SnowFoxSPManaBa
 
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.client.screen.PotionBagScreen;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SscAddonClient implements ClientModInitializer {
     public static final String CATEGORY = "key.categories.ssc_addon";
-    
-    private TridentEntityModel tridentModel;
+	private static final Logger log = LoggerFactory.getLogger(SscAddonClient.class);
+
+	private TridentEntityModel tridentModel;
     
     private void addSplitTooltip(List<Text> lines, String key) {
         if (I18n.hasTranslation(key)) {
@@ -41,7 +44,7 @@ public class SscAddonClient implements ClientModInitializer {
     
     @Override
     public void onInitializeClient() {
-        System.out.println("SSC ADDON DEBUG: Registering Client KeyBindings...");
+        log.info("SSC ADDON DEBUG: Registering Client KeyBindings...");
         
         SscAddonKeybindings.register();
 

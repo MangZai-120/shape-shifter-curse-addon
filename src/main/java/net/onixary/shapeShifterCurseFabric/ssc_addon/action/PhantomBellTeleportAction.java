@@ -13,6 +13,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,14 +36,14 @@ public class PhantomBellTeleportAction {
             new Identifier("ssc_addon", "phantom_bell_teleport"),
             new SerializableData(),
             (data, entity) -> {
-                System.out.println("[PhantomBell] Action triggered!");
+                log.info("[PhantomBell] Action triggered!");
                 
                 if (!(entity instanceof LivingEntity player)) {
-                    System.out.println("[PhantomBell] Entity is not LivingEntity, returning");
+                    log.info("[PhantomBell] Entity is not LivingEntity, returning");
                     return;
                 }
 
-                System.out.println("[PhantomBell] Player: " + player.getName().getString());
+	            log.info("[PhantomBell] Player: {}", player.getName().getString());
                 
                 World world = player.getWorld();
                 BlockPos startBlockPos = player.getBlockPos();

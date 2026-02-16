@@ -20,6 +20,8 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
@@ -58,7 +60,7 @@ public class SnowFoxSpMeleeAbility {
      * 执行雪刺冲刺
      */
     public static boolean execute(ServerPlayerEntity player) {
-        System.out.println("[SnowFoxSpDash] execute() called for player: " + player.getName().getString());
+	    log.info("[SnowFoxSpDash] execute() called for player: {}", player.getName().getString());
         
         // 检查自定义CD是否结束
         Long cdEndTime = COOLDOWN_PLAYERS.get(player.getUuid());
@@ -68,11 +70,11 @@ public class SnowFoxSpMeleeAbility {
         
         // 检查霜寒值是否足够
         int currentMana = getResourceValue(player);
-        System.out.println("[SnowFoxSpDash] Current mana: " + currentMana + ", required: " + MANA_COST);
+	    log.info("[SnowFoxSpDash] Current mana: {}, required: " + MANA_COST, currentMana);
         
         if (currentMana < MANA_COST) {
             // 霜寒值不足，播放失败音效
-            System.out.println("[SnowFoxSpDash] Not enough mana, failing");
+            log.info("[SnowFoxSpDash] Not enough mana, failing");
             player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
             return false;
         }

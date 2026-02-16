@@ -5,13 +5,16 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManager;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 //import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.Ability_AllayHeal;
 
 
 public class SscAddonNetworking {
     public static final Identifier PACKET_KEY_PRESS = new Identifier("my_addon", "key_press");
+	private static final Logger log = LoggerFactory.getLogger(SscAddonNetworking.class);
 
-    public static void registerServerReceivers() {
+	public static void registerServerReceivers() {
         ServerPlayNetworking.registerGlobalReceiver(PACKET_KEY_PRESS, (server, player, handler, buf, responseSender) -> {
             int keyId = buf.readInt();
             server.execute(() -> handleKeyPress(player, keyId));
@@ -25,7 +28,7 @@ public class SscAddonNetworking {
 
         Identifier formId = form.FormID;
         // Debug print
-        System.out.println("SSC Addon Key Press: " + keyId + ", Form: " + formId);
+	    log.info("SSC Addon Key Press: {}, Form: {}", keyId, formId);
         
         // Allay Heal (using keyId 1 for now, mapped from client)
         /*if (keyId == 1 && (formId.getPath().equals("form_allay_sp") || formId.getPath().equals("allay_sp"))) {

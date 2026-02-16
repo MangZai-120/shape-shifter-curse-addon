@@ -19,9 +19,11 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 import me.shedaniel.autoconfig.AutoConfig;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StoryBookLoot {
 
@@ -59,7 +61,7 @@ public class StoryBookLoot {
         List<BookData> books = new ArrayList<>();
         try (InputStream is = StoryBookLoot.class.getResourceAsStream("/data/ssc_addon/story_books/" + fileName)) {
             if (is == null) {
-                System.err.println("Failed to load " + fileName + ": file not found");
+	            log.error("Failed to load {}: file not found", fileName);
                 return books;
             }
             JsonObject root = JsonParser.parseReader(new InputStreamReader(is, StandardCharsets.UTF_8)).getAsJsonObject();
@@ -95,7 +97,7 @@ public class StoryBookLoot {
         String fileName = (config.bookLanguage == SSCAddonConfig.BookLanguage.ENGLISH) ? "books_en.json" : "books_cn.json";
         
         loadedBooks = parseBookFile(fileName);
-        System.out.println("Loaded " + loadedBooks.size() + " books from " + fileName);
+	    log.info("Loaded {} books from {}", loadedBooks.size(), fileName);
     }
 
     /**
@@ -106,17 +108,17 @@ public class StoryBookLoot {
         loadedLanguage = null;
         loadConfig();
         loadBooks();
-        System.out.println("Books reloaded. Total: " + loadedBooks.size());
+	    log.info("Books reloaded. Total: {}", loadedBooks.size());
     }
 
-    /**
+        /**
      * 获取所有书籍ID列表（用于命令自动补全）
      */
     public static List<String> getBookIds() {
         loadBooks();
         return loadedBooks.stream()
                 .map(book -> book.id)
-                .collect(Collectors.toList());
+                .toList(); // 使用 Stream.toList() 替代 collect(Collectors.toList())
     }
 
     /**
@@ -127,8 +129,9 @@ public class StoryBookLoot {
         List<BookData> books = parseBookFile(fileName);
         return books.stream()
                 .map(book -> book.id)
-                .collect(Collectors.toList());
+                .toList(); // 同样使用 Stream.toList()
     }
+
 
     /**
      * 获取书籍数量
@@ -386,7 +389,7 @@ public class StoryBookLoot {
         }
         
         // 调试输出
-        System.out.println("[StoryBookLoot] Split content into " + pages.size() + " pages");
+	    log.info("[StoryBookLoot] Split content into {} pages", pages.size());
         
         return pages;
     }
