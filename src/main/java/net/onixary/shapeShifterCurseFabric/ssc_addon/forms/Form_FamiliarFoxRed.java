@@ -46,6 +46,7 @@ public class Form_FamiliarFoxRed extends PlayerFormBase {
     private static AnimationHolder anim_elytra_fly = AnimationHolder.EMPTY;
 
 
+	@Override
     public AnimationHolder Anim_getFormAnimToPlay(PlayerAnimState currentState) {
 	    return switch (currentState) {
 		    case ANIM_IDLE -> anim_idle;
@@ -68,6 +69,7 @@ public class Form_FamiliarFoxRed extends PlayerFormBase {
 	    };
     }
 
+    @Override
     public void Anim_registerAnims() {
         anim_idle = new AnimationHolder(new Identifier(MOD_ID, "form_feral_common_idle"), true);
         anim_sneak_idle = new AnimationHolder(new Identifier(MOD_ID, "form_feral_common_sneak_idle"), true);
@@ -89,6 +91,7 @@ public class Form_FamiliarFoxRed extends PlayerFormBase {
 
     public static final AbstractAnimStateController RIDE_CONTROLLER = new RideAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("familiar_fox_3_riding")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("form_feral_common_sneak_idle")));
 
+    @Override
     public @Nullable AbstractAnimStateController getAnimStateController(PlayerEntity player, AnimSystem.AnimSystemData animSystemData, @NotNull Identifier animStateID) {
         @Nullable AnimStateEnum animStateEnum = AnimStateEnum.getStateEnum(animStateID);
         if (animStateEnum != null) {

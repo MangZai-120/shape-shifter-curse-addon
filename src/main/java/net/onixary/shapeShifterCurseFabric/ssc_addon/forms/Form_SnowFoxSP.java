@@ -41,6 +41,7 @@ public class Form_SnowFoxSP extends PlayerFormBase {
     private static AnimationHolder anim_elytra_fly = AnimationHolder.EMPTY;
 
 
+	@Override
     public AnimationHolder Anim_getFormAnimToPlay(PlayerAnimState currentState) {
 	    return switch (currentState) {
 		    case ANIM_IDLE -> anim_idle;
@@ -63,6 +64,7 @@ public class Form_SnowFoxSP extends PlayerFormBase {
 	    };
     }
 
+	@Override
     public void Anim_registerAnims() {
         anim_idle = new AnimationHolder(new Identifier(MOD_ID, "form_feral_common_idle"), true);
         anim_sneak_idle = new AnimationHolder(new Identifier(MOD_ID, "form_feral_common_sneak_idle"), true);
@@ -87,6 +89,7 @@ public class Form_SnowFoxSP extends PlayerFormBase {
     // Custom fall controller for Snow Fox SP
     public static final AbstractAnimStateController FALL_CONTROLLER_SP = new OneAnimController(new AnimUtils.AnimationHolderData(new Identifier("my_addon", "form_snow_fox_sp_fall")));
 
+	@Override
     public @Nullable AbstractAnimStateController getAnimStateController(PlayerEntity player, AnimSystem.AnimSystemData animSystemData, @NotNull Identifier animStateID) {
         @Nullable AnimStateEnum animStateEnum = AnimStateEnum.getStateEnum(animStateID);
         if (animStateEnum != null) {
