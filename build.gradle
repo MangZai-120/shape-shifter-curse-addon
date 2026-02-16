@@ -91,7 +91,7 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     // Shape Shifter Curse Main Mod
-    modImplementation "maven.modrinth:shape-shifter-curse:latest.release"
+    modImplementation "maven.modrinth:shape-shifter-curse:${project.ssc_version}"
     
     // Player Animator
     modImplementation "dev.kosmx.player-anim:player-animation-lib-fabric:${project.player_anim}"
