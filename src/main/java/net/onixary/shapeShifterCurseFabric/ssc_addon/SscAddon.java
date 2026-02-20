@@ -38,7 +38,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_FamiliarFox3;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_FamiliarFoxRed;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_SnowFoxSP;
 import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_FeralCatSP;
-//import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Allay;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Allay;
 import net.minecraft.recipe.RecipeSerializer;
 import net.minecraft.recipe.SpecialRecipeSerializer;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.RefillMoisturizerRecipe;
@@ -76,6 +76,7 @@ public class SscAddon implements ModInitializer {
     public static final StatusEffect GUARANTEED_CRIT = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.GuaranteedCritEffect();
     public static final StatusEffect FROST_FREEZE = new FrostFreezeEffect();
     public static final StatusEffect FROST_FALL = new FrostFallEffect();
+    public static final StatusEffect PURIFIED = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.PurifiedEffect();
 
     public static final ScreenHandlerType<PotionBagScreenHandler> POTION_BAG_SCREEN_HANDLER = new ScreenHandlerType<>(PotionBagScreenHandler::new, FeatureSet.empty());
     public static final Item POTION_BAG = new PotionBagItem(new Item.Settings().maxCount(1));
@@ -172,6 +173,7 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "guaranteed_crit"), GUARANTEED_CRIT);
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "frost_freeze"), FROST_FREEZE);
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "frost_fall"), FROST_FALL);
+        Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "purified"), PURIFIED);
         
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "sp_upgrade_thing"), SP_UPGRADE_THING);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "portable_moisturizer"), PORTABLE_MOISTURIZER);
@@ -260,10 +262,10 @@ public class SscAddon implements ModInitializer {
         RegPlayerForms.registerPlayerForm(snowFoxForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_snow_fox_sp")).addForm(snowFoxForm, 7));
 
-        //Form_Allay allayForm = new Form_Allay(new Identifier("my_addon", "form_allay_sp"));
-        //allayForm.setPhase(PlayerFormPhase.PHASE_SP);
-        //RegPlayerForms.registerPlayerForm(allayForm);
-        //RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_form_allay_sp")).addForm(allayForm, 5));
+        Form_Allay allayForm = new Form_Allay(new Identifier("my_addon", "allay_sp"));
+        allayForm.setPhase(PlayerFormPhase.PHASE_SP);
+        RegPlayerForms.registerPlayerForm(allayForm);
+        RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_allay_sp")).addForm(allayForm, 8));
 
         Form_FeralCatSP wildCatForm = new Form_FeralCatSP(new Identifier("my_addon", "wild_cat_sp"));
         wildCatForm.setPhase(PlayerFormPhase.PHASE_SP);
@@ -275,12 +277,13 @@ public class SscAddon implements ModInitializer {
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> SscAddonCommands.register(dispatcher));
 
-        // Register tick event for SP Snow Fox abilities
+        // Register tick event for SP Snow Fox abilities and SP Allay group heal
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.START_WORLD_TICK.register(world -> {
             for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()) {
                 net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility.tick(player);
                 net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack.tick(player);
                 net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm.tick(player);
+                net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal.tick(player);
             }
         });
 

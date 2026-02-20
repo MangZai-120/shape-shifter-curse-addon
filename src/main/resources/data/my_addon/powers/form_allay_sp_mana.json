@@ -1,0 +1,30 @@
+{
+    "type": "origins:multiple",
+    "resource": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 100,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "regen": {
+        "type": "origins:action_over_time",
+        "interval": 4,
+        "entity_action": {
+            "type": "origins:change_resource",
+            "resource": "my_addon:form_allay_sp_mana_resource",
+            "change": 1,
+            "operation": "add"
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "my_addon:form_allay_sp_mana_resource",
+            "comparison": "<",
+            "compare_to": 100
+        }
+    },
+    "name": "Mana",
+    "description": "Custom mana resource for Allay SP form."
+}

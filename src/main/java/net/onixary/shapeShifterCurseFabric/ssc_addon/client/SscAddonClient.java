@@ -19,6 +19,7 @@ import java.util.List;
 
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.client.mana.SnowFoxSPManaBar;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.client.mana.AllaySPManaBar;
 
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.client.screen.PotionBagScreen;
@@ -98,6 +99,7 @@ public class SscAddonClient implements ClientModInitializer {
         });
 
         HudRenderCallback.EVENT.register(new SnowFoxSPManaBar());
+        HudRenderCallback.EVENT.register(new AllaySPManaBar());
         
         HandledScreens.register(SscAddon.POTION_BAG_SCREEN_HANDLER, PotionBagScreen::new);
     }

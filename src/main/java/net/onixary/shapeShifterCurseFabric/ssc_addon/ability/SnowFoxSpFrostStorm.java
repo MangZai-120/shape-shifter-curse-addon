@@ -84,11 +84,28 @@ public class SnowFoxSpFrostStorm {
     }
     
     /**
+     * 取消蓄力（被净化时调用）
+     */
+    public static void cancelCharging(ServerPlayerEntity player) {
+        if (CHARGING_PLAYERS.remove(player.getUuid()) != null) {
+            // 播放打断音效
+            player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.5f);
+        }
+    }
+    
+    /**
      * 每tick更新蓄力状态
      */
     public static void tick(ServerPlayerEntity player) {
         ChargingData data = CHARGING_PLAYERS.get(player.getUuid());
         if (data == null) return;
+        
+        // 检查是否被净化 - 如果有purified效果则取消蓄力
+        if (player.hasStatusEffect(net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.PURIFIED)) {
+            cancelCharging(player);
+            return;
+        }
         
         data.chargeTicks++;
         

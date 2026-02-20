@@ -122,6 +122,13 @@ public class SnowFoxSpTeleportAttack {
         TeleportAttackData data = ATTACKING_PLAYERS.get(player.getUuid());
         if (data == null) return;
         
+        // 检查是否被净化 - 如果有purified效果则立即返回原位并取消攻击
+        if (player.hasStatusEffect(net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.PURIFIED)) {
+            returnToOrigin(player, data);
+            ATTACKING_PLAYERS.remove(player.getUuid());
+            return;
+        }
+        
         data.ticksSinceLastTeleport++;
         
         // 技能期间禁止移动

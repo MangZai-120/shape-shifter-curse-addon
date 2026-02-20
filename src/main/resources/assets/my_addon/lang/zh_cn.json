@@ -174,5 +174,17 @@
   "codex.form.my_addon.familiar_fox_red.instincts": "誓约三：保护队友",
   "item.ssc_addon.potion_bag": "药水包",
   "item.ssc_addon.potion_bag.tooltip": "Red专属的药水储存包，只能存放药水，每格最多8瓶",
-  "container.ssc_addon.potion_bag": "药水包"
+  "container.ssc_addon.potion_bag": "药水包",
+  "origin.my_addon.form_allay_sp.name": "SP悦灵",
+  "origin.my_addon.form_allay_sp.description": "悦灵的特殊进化形态，拥有飞行和紫水晶能力。",
+  "codex.status.my_addon.allay_sp_status": "诅咒与月华已彻底同调，你的灵魂已彻底融入了那股力量之中。",
+  "codex.form.my_addon.allay_sp.title": "\n'当诅咒与紫水晶的共鸣完全融合，你便不再仅仅是一只悦灵…\n你是旋律的化身，水晶之音的主人'",
+  "codex.form.my_addon.allay_sp.appearance": "你的身体散发着淡蓝色的光芒，翅膀轻盈地拍打着空气，飘浮在半空中。你的存在本身就是一首无声的乐章。",
+  "codex.form.my_addon.allay_sp.pros": "水晶之音\n你掌握了紫水晶的共鸣之力：\n\n飘浮飞行：你可以通过跳跃键在空中飘浮，但会消耗饥饿值。\n\n紫水晶食物：你只能食用紫水晶碎片来恢复饥饿值，食用时会产生共鸣爆炸，对周围敌人造成伤害并为自己恢复生命。\n\n远程增强：你的远程攻击伤害大幅提升。\n\n击中回复：造成足够伤害时可以回复生命。\n\n生物感知：你可以看到附近生物的发光轮廓。\n\n唱片治愈：在播放唱片的唱片机附近时可以缓慢回复生命。\n\n粉雪行走：你可以在粉雪上行走而不会陷入。",
+  "codex.form.my_addon.allay_sp.cons": "灵体的代价：\n\n体质脆弱：你的最大生命值较低。\n\n挖掘缓慢：你的挖掘速度降低，飞行时更加严重。\n\n近战削弱：使用高级武器时近战伤害降低。\n\n装备限制：你无法装备腿甲和靴子。",
+  "codex.form.my_addon.allay_sp.instincts": "你渴望着紫水晶的光芒，音乐是你力量的源泉。你感觉自己轻如鸿毛，仿佛随时都会飘向天空。",
+  "power.my_addon.form_allay_sp_purify.name": "群体净化",
+  "power.my_addon.form_allay_sp_purify.description": "蓄力2.5秒后净化半径15格内所有生物的药水效果，并打断其它SP形态的主动技能使其进入冷却。蓄力期间移速降低50%。再次按键可取消蓄力。30秒冷却。",
+  "power.my_addon.form_allay_sp_group_heal.name": "群体治疗",
+  "power.my_addon.form_allay_sp_group_heal.description": "蓄力3秒后消耗全部能量，治疗15格球形范围内所有生物20点血量。蓄力期间减速50%，经验球叮叮声由低到高提示蓄力进度。受治疗个体释放爱心粒子。被攻击打断蓄力并进入5秒冷却。30秒冷却。"
 }
