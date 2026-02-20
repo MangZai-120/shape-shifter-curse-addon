@@ -1,0 +1,18 @@
+{
+  "allay_heal_music": {
+    "sounds": [
+      {
+        "name": "ssc_addon:allay_heal_music",
+        "stream": true
+      }
+    ]
+  },
+  "allay_speed_music": {
+    "sounds": [
+      {
+        "name": "ssc_addon:allay_speed_music",
+        "stream": true
+      }
+    ]
+  }
+}

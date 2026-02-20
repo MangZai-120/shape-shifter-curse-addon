@@ -24,65 +24,104 @@ public abstract class PlayerInventoryMixin {
     @Shadow public abstract boolean insertStack(ItemStack stack);
 
     /**
+     * Helper to check if an item is a locked form-exclusive item in a specific slot
+     */
+    private boolean isLockedAllayItem(int slot, ItemStack stack) {
+        PlayerFormBase currentForm = FormAbilityManager.getForm(player);
+        boolean isAllaySp = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "allay_sp"));
+        if (!isAllaySp) return false;
+        
+        if (slot == 0 && stack.isOf(SscAddon.ALLAY_HEAL_WAND)) return true;
+        if (slot == 1 && stack.isOf(SscAddon.ALLAY_JUKEBOX)) return true;
+        return false;
+    }
+
+    /**
      * Prevents removing potion bag from slot 8 if player is Red form
+     * Prevents removing allay items from slots 0/1 if player is Allay SP form
      */
     @Inject(method = "removeStack(II)Lnet/minecraft/item/ItemStack;", at = @At("HEAD"), cancellable = true)
-    private void preventPotionBagRemoval(int slot, int amount, CallbackInfoReturnable<ItemStack> cir) {
-        if (slot == 8) {
-            ItemStack stack = this.getStack(8);
-            if (stack.isOf(SscAddon.POTION_BAG)) {
-                PlayerFormBase currentForm = FormAbilityManager.getForm(player);
-                boolean isRedForm = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_red"));
-                if (isRedForm) {
-                    cir.setReturnValue(ItemStack.EMPTY);
-                }
+    private void preventLockedItemRemoval(int slot, int amount, CallbackInfoReturnable<ItemStack> cir) {
+        ItemStack stack = this.getStack(slot);
+
+        // Red form: lock potion bag in slot 8
+        if (slot == 8 && stack.isOf(SscAddon.POTION_BAG)) {
+            PlayerFormBase currentForm = FormAbilityManager.getForm(player);
+            boolean isRedForm = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_red"));
+            if (isRedForm) {
+                cir.setReturnValue(ItemStack.EMPTY);
+                return;
             }
+        }
+
+        // Allay SP form: lock heal wand in slot 0, jukebox in slot 1
+        if (isLockedAllayItem(slot, stack)) {
+            cir.setReturnValue(ItemStack.EMPTY);
         }
     }
 
     /**
-     * Prevents setting potion bag to any slot other than slot 8
-     * Also ensures if potion bag is somehow placed elsewhere, it gets moved back to slot 8
+     * Prevents setting locked items to wrong slots
      */
     @Inject(method = "setStack(ILnet/minecraft/item/ItemStack;)V", at = @At("HEAD"), cancellable = true)
-    private void preventPotionBagMisplacement(int slot, ItemStack stack, CallbackInfo ci) {
+    private void preventLockedItemMisplacement(int slot, ItemStack stack, CallbackInfo ci) {
+        // Potion Bag logic (existing)
         if (stack.isOf(SscAddon.POTION_BAG) && slot != 8) {
             PlayerFormBase currentForm = FormAbilityManager.getForm(player);
             boolean isRedForm = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_red"));
-            
             if (isRedForm) {
-                // Cancel this operation
                 ci.cancel();
-                
-                // If slot 8 is empty or not a potion bag, move it there
                 ItemStack slot8Stack = this.getStack(8);
                 if (!slot8Stack.isOf(SscAddon.POTION_BAG)) {
-                    // Move whatever is in slot 8 to the intended slot
                     if (!slot8Stack.isEmpty()) {
                         this.setStack(slot, slot8Stack);
                     }
-                    // Place potion bag in slot 8
                     this.setStack(8, stack);
                 }
+                return;
+            }
+        }
+
+        // Allay Heal Wand: must stay in slot 0
+        if (stack.isOf(SscAddon.ALLAY_HEAL_WAND) && slot != 0) {
+            PlayerFormBase currentForm = FormAbilityManager.getForm(player);
+            boolean isAllaySp = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "allay_sp"));
+            if (isAllaySp) {
+                ci.cancel();
+                return;
+            }
+        }
+
+        // Allay Jukebox: must stay in slot 1
+        if (stack.isOf(SscAddon.ALLAY_JUKEBOX) && slot != 1) {
+            PlayerFormBase currentForm = FormAbilityManager.getForm(player);
+            boolean isAllaySp = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "allay_sp"));
+            if (isAllaySp) {
+                ci.cancel();
+                return;
             }
         }
     }
 
     /**
-     * Prevents inserting potion bag into inventory if it's not for Red form
+     * Prevents inserting locked items outside their designated slots
      */
     @Inject(method = "insertStack(ILnet/minecraft/item/ItemStack;)Z", at = @At("HEAD"), cancellable = true)
-    private void preventPotionBagInsert(int slot, ItemStack stack, CallbackInfoReturnable<Boolean> cir) {
+    private void preventLockedItemInsert(int slot, ItemStack stack, CallbackInfoReturnable<Boolean> cir) {
         if (stack.isOf(SscAddon.POTION_BAG)) {
             PlayerFormBase currentForm = FormAbilityManager.getForm(player);
             boolean isRedForm = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_red"));
-            
-            // If not Red form, prevent insertion
             if (!isRedForm) {
                 cir.setReturnValue(false);
+            } else if (slot != 8 && slot != -1) {
+                cir.setReturnValue(false);
             }
-            // If Red form and slot is not 8, redirect to slot 8
-            else if (slot != 8 && slot != -1) {
+        }
+
+        if (stack.isOf(SscAddon.ALLAY_HEAL_WAND) || stack.isOf(SscAddon.ALLAY_JUKEBOX)) {
+            PlayerFormBase currentForm = FormAbilityManager.getForm(player);
+            boolean isAllaySp = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "allay_sp"));
+            if (!isAllaySp) {
                 cir.setReturnValue(false);
             }
         }

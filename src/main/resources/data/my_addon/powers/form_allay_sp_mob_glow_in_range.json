@@ -1,0 +1,106 @@
+{
+    "type": "origins:multiple",
+    "glow_green": {
+        "type": "origins:entity_glow",
+        "bientity_condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:distance",
+                    "comparison": "<=",
+                    "compare_to": 20
+                },
+                {
+                    "type": "origins:actor_condition",
+                    "condition": {
+                        "type": "shape-shifter-curse:can_render_gui"
+                    }
+                },
+                {
+                    "type": "origins:target_condition",
+                    "condition": {
+                        "type": "origins:relative_health",
+                        "comparison": ">",
+                        "compare_to": 0.8
+                    }
+                }
+            ]
+        },
+        "use_teams": false,
+        "red": 0.0,
+        "green": 1.0,
+        "blue": 0.0
+    },
+    "glow_orange": {
+        "type": "origins:entity_glow",
+        "bientity_condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:distance",
+                    "comparison": "<=",
+                    "compare_to": 20
+                },
+                {
+                    "type": "origins:actor_condition",
+                    "condition": {
+                        "type": "shape-shifter-curse:can_render_gui"
+                    }
+                },
+                {
+                    "type": "origins:target_condition",
+                    "condition": {
+                        "type": "origins:and",
+                        "conditions": [
+                            {
+                                "type": "origins:relative_health",
+                                "comparison": "<=",
+                                "compare_to": 0.8
+                            },
+                            {
+                                "type": "origins:relative_health",
+                                "comparison": ">",
+                                "compare_to": 0.4
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "use_teams": false,
+        "red": 1.0,
+        "green": 0.65,
+        "blue": 0.0
+    },
+    "glow_red": {
+        "type": "origins:entity_glow",
+        "bientity_condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:distance",
+                    "comparison": "<=",
+                    "compare_to": 20
+                },
+                {
+                    "type": "origins:actor_condition",
+                    "condition": {
+                        "type": "shape-shifter-curse:can_render_gui"
+                    }
+                },
+                {
+                    "type": "origins:target_condition",
+                    "condition": {
+                        "type": "origins:relative_health",
+                        "comparison": "<=",
+                        "compare_to": 0.4
+                    }
+                }
+            ]
+        },
+        "use_teams": false,
+        "red": 1.0,
+        "green": 0.0,
+        "blue": 0.0
+    }
+}

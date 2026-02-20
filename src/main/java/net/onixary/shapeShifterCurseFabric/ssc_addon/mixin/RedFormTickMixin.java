@@ -68,6 +68,43 @@ public class RedFormTickMixin {
             }
         }
 
+        // === SP Allay Form: Auto-grant heal wand (slot 0) and jukebox (slot 1) ===
+        boolean isAllaySp = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "allay_sp"));
+        if (isAllaySp) {
+            // Slot 0: Allay Heal Wand
+            ItemStack stackInSlot0 = player.getInventory().getStack(0);
+            if (!stackInSlot0.isOf(SscAddon.ALLAY_HEAL_WAND)) {
+                if (!stackInSlot0.isEmpty()) {
+                    if (!player.getInventory().insertStack(stackInSlot0.copy())) {
+                        player.dropItem(stackInSlot0, false, true);
+                    }
+                    player.getInventory().setStack(0, ItemStack.EMPTY);
+                }
+                player.getInventory().setStack(0, new ItemStack(SscAddon.ALLAY_HEAL_WAND));
+            }
+            // Slot 1: Allay Jukebox
+            ItemStack stackInSlot1 = player.getInventory().getStack(1);
+            if (!stackInSlot1.isOf(SscAddon.ALLAY_JUKEBOX)) {
+                if (!stackInSlot1.isEmpty()) {
+                    if (!player.getInventory().insertStack(stackInSlot1.copy())) {
+                        player.dropItem(stackInSlot1, false, true);
+                    }
+                    player.getInventory().setStack(1, ItemStack.EMPTY);
+                }
+                player.getInventory().setStack(1, new ItemStack(SscAddon.ALLAY_JUKEBOX));
+            }
+        } else {
+            // Not Allay SP: Remove any allay items found
+            for (int i = 0; i < player.getInventory().size(); ++i) {
+                ItemStack stack = player.getInventory().getStack(i);
+                if (stack.isOf(SscAddon.ALLAY_HEAL_WAND)) {
+                    player.getInventory().setStack(i, ItemStack.EMPTY);
+                } else if (stack.isOf(SscAddon.ALLAY_JUKEBOX)) {
+                    player.getInventory().setStack(i, ItemStack.EMPTY);
+                }
+            }
+        }
+
         if (isRedForm) {
             ItemStack stackInSlot8 = player.getInventory().getStack(8);
             if (!stackInSlot8.isOf(SscAddon.POTION_BAG)) {

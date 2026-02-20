@@ -1,0 +1,419 @@
+{
+    "type": "origins:multiple",
+    "charging_state": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 1,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "charge_timer": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 60,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "cooldown_timer": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 600,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "heal_execute": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 1,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "cooldown_tick": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "entity_action": {
+            "type": "origins:change_resource",
+            "resource": "my_addon:form_allay_sp_group_heal_cooldown_timer",
+            "operation": "add",
+            "change": -1
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "my_addon:form_allay_sp_group_heal_cooldown_timer",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "key_activation": {
+        "type": "origins:active_self",
+        "key": {
+            "key": "key.ssc_addon.sp_secondary"
+        },
+        "cooldown": 10,
+        "entity_action": {
+            "type": "origins:if_else",
+            "condition": {
+                "type": "origins:resource",
+                "resource": "my_addon:form_allay_sp_group_heal_charging_state",
+                "comparison": "==",
+                "compare_to": 0
+            },
+            "if_action": {
+                "type": "origins:and",
+                "actions": [
+                    {
+                        "type": "origins:change_resource",
+                        "resource": "my_addon:form_allay_sp_group_heal_charging_state",
+                        "operation": "set",
+                        "change": 1
+                    },
+                    {
+                        "type": "origins:change_resource",
+                        "resource": "my_addon:form_allay_sp_group_heal_charge_timer",
+                        "operation": "set",
+                        "change": 0
+                    },
+                    {
+                        "type": "origins:apply_effect",
+                        "effect": {
+                            "effect": "minecraft:slowness",
+                            "duration": 70,
+                            "amplifier": 1,
+                            "is_ambient": true,
+                            "show_particles": false,
+                            "show_icon": false
+                        }
+                    },
+                    {
+                        "type": "origins:execute_command",
+                        "command": "playsound block.beacon.activate master @s ~ ~ ~ 0.5 1.5"
+                    }
+                ]
+            },
+            "else_action": {
+                "type": "origins:and",
+                "actions": [
+                    {
+                        "type": "origins:change_resource",
+                        "resource": "my_addon:form_allay_sp_group_heal_charging_state",
+                        "operation": "set",
+                        "change": 0
+                    },
+                    {
+                        "type": "origins:change_resource",
+                        "resource": "my_addon:form_allay_sp_group_heal_charge_timer",
+                        "operation": "set",
+                        "change": 0
+                    },
+                    {
+                        "type": "origins:clear_effect",
+                        "effect": "minecraft:slowness"
+                    },
+                    {
+                        "type": "origins:play_sound",
+                        "sound": "block.beacon.deactivate",
+                        "volume": 0.5,
+                        "pitch": 1.5
+                    }
+                ]
+            }
+        },
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:resource",
+                    "resource": "my_addon:form_allay_sp_group_heal_cooldown_timer",
+                    "comparison": "==",
+                    "compare_to": 0
+                },
+                {
+                    "type": "origins:resource",
+                    "resource": "my_addon:form_allay_sp_mana_resource",
+                    "comparison": ">=",
+                    "compare_to": 100
+                }
+            ]
+        }
+    },
+    "charging_tick": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "condition": {
+            "type": "origins:resource",
+            "resource": "my_addon:form_allay_sp_group_heal_charging_state",
+            "comparison": "==",
+            "compare_to": 1
+        },
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_allay_sp_group_heal_charge_timer",
+                    "operation": "add",
+                    "change": 1
+                },
+                {
+                    "type": "origins:if_else",
+                    "condition": {
+                        "type": "origins:resource",
+                        "resource": "my_addon:form_allay_sp_group_heal_charge_timer",
+                        "comparison": ">=",
+                        "compare_to": 60
+                    },
+                    "if_action": {
+                        "type": "origins:and",
+                        "actions": [
+                            {
+                                "type": "origins:change_resource",
+                                "resource": "my_addon:form_allay_sp_group_heal_charging_state",
+                                "operation": "set",
+                                "change": 0
+                            },
+                            {
+                                "type": "origins:change_resource",
+                                "resource": "my_addon:form_allay_sp_group_heal_charge_timer",
+                                "operation": "set",
+                                "change": 0
+                            },
+                            {
+                                "type": "origins:change_resource",
+                                "resource": "my_addon:form_allay_sp_group_heal_cooldown_timer",
+                                "operation": "set",
+                                "change": 600
+                            },
+                            {
+                                "type": "origins:change_resource",
+                                "resource": "my_addon:form_allay_sp_mana_resource",
+                                "operation": "set",
+                                "change": 0
+                            },
+                            {
+                                "type": "origins:clear_effect",
+                                "effect": "minecraft:slowness"
+                            },
+                            {
+                                "type": "origins:change_resource",
+                                "resource": "my_addon:form_allay_sp_group_heal_heal_execute",
+                                "operation": "set",
+                                "change": 1
+                            },
+                            {
+                                "type": "origins:play_sound",
+                                "sound": "entity.player.levelup",
+                                "volume": 1.5,
+                                "pitch": 1.2
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "charging_slowness": {
+        "type": "origins:action_over_time",
+        "interval": 20,
+        "condition": {
+            "type": "origins:resource",
+            "resource": "my_addon:form_allay_sp_group_heal_charging_state",
+            "comparison": "==",
+            "compare_to": 1
+        },
+        "entity_action": {
+            "type": "origins:apply_effect",
+            "effect": {
+                "effect": "minecraft:slowness",
+                "duration": 30,
+                "amplifier": 1,
+                "is_ambient": true,
+                "show_particles": false,
+                "show_icon": false
+            }
+        }
+    },
+    "charging_sound": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "condition": {
+            "type": "origins:resource",
+            "resource": "my_addon:form_allay_sp_group_heal_charging_state",
+            "comparison": "==",
+            "compare_to": 1
+        },
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:if_else",
+                    "condition": {
+                        "type": "origins:resource",
+                        "resource": "my_addon:form_allay_sp_group_heal_charge_timer",
+                        "comparison": "==",
+                        "compare_to": 1
+                    },
+                    "if_action": {
+                        "type": "origins:execute_command",
+                        "command": "playsound entity.experience_orb.pickup master @s ~ ~ ~ 0.8 0.5"
+                    }
+                },
+                {
+                    "type": "origins:if_else",
+                    "condition": {
+                        "type": "origins:resource",
+                        "resource": "my_addon:form_allay_sp_group_heal_charge_timer",
+                        "comparison": "==",
+                        "compare_to": 10
+                    },
+                    "if_action": {
+                        "type": "origins:execute_command",
+                        "command": "playsound entity.experience_orb.pickup master @s ~ ~ ~ 0.8 0.65"
+                    }
+                },
+                {
+                    "type": "origins:if_else",
+                    "condition": {
+                        "type": "origins:resource",
+                        "resource": "my_addon:form_allay_sp_group_heal_charge_timer",
+                        "comparison": "==",
+                        "compare_to": 18
+                    },
+                    "if_action": {
+                        "type": "origins:execute_command",
+                        "command": "playsound entity.experience_orb.pickup master @s ~ ~ ~ 0.8 0.8"
+                    }
+                },
+                {
+                    "type": "origins:if_else",
+                    "condition": {
+                        "type": "origins:resource",
+                        "resource": "my_addon:form_allay_sp_group_heal_charge_timer",
+                        "comparison": "==",
+                        "compare_to": 26
+                    },
+                    "if_action": {
+                        "type": "origins:execute_command",
+                        "command": "playsound entity.experience_orb.pickup master @s ~ ~ ~ 0.8 0.95"
+                    }
+                },
+                {
+                    "type": "origins:if_else",
+                    "condition": {
+                        "type": "origins:resource",
+                        "resource": "my_addon:form_allay_sp_group_heal_charge_timer",
+                        "comparison": "==",
+                        "compare_to": 34
+                    },
+                    "if_action": {
+                        "type": "origins:execute_command",
+                        "command": "playsound entity.experience_orb.pickup master @s ~ ~ ~ 0.9 1.1"
+                    }
+                },
+                {
+                    "type": "origins:if_else",
+                    "condition": {
+                        "type": "origins:resource",
+                        "resource": "my_addon:form_allay_sp_group_heal_charge_timer",
+                        "comparison": "==",
+                        "compare_to": 40
+                    },
+                    "if_action": {
+                        "type": "origins:execute_command",
+                        "command": "playsound entity.experience_orb.pickup master @s ~ ~ ~ 1.0 1.25"
+                    }
+                },
+                {
+                    "type": "origins:if_else",
+                    "condition": {
+                        "type": "origins:resource",
+                        "resource": "my_addon:form_allay_sp_group_heal_charge_timer",
+                        "comparison": "==",
+                        "compare_to": 46
+                    },
+                    "if_action": {
+                        "type": "origins:execute_command",
+                        "command": "playsound entity.experience_orb.pickup master @s ~ ~ ~ 1.0 1.4"
+                    }
+                },
+                {
+                    "type": "origins:if_else",
+                    "condition": {
+                        "type": "origins:resource",
+                        "resource": "my_addon:form_allay_sp_group_heal_charge_timer",
+                        "comparison": "==",
+                        "compare_to": 52
+                    },
+                    "if_action": {
+                        "type": "origins:execute_command",
+                        "command": "playsound entity.experience_orb.pickup master @s ~ ~ ~ 1.2 1.6"
+                    }
+                },
+                {
+                    "type": "origins:if_else",
+                    "condition": {
+                        "type": "origins:resource",
+                        "resource": "my_addon:form_allay_sp_group_heal_charge_timer",
+                        "comparison": "==",
+                        "compare_to": 56
+                    },
+                    "if_action": {
+                        "type": "origins:execute_command",
+                        "command": "playsound entity.experience_orb.pickup master @s ~ ~ ~ 1.5 1.8"
+                    }
+                }
+            ]
+        }
+    },
+    "interrupt_on_damage": {
+        "type": "origins:action_when_damage_taken",
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_allay_sp_group_heal_charging_state",
+                    "operation": "set",
+                    "change": 0
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_allay_sp_group_heal_charge_timer",
+                    "operation": "set",
+                    "change": 0
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_allay_sp_group_heal_cooldown_timer",
+                    "operation": "set",
+                    "change": 100
+                },
+                {
+                    "type": "origins:clear_effect",
+                    "effect": "minecraft:slowness"
+                },
+                {
+                    "type": "origins:play_sound",
+                    "sound": "block.beacon.deactivate",
+                    "volume": 0.5,
+                    "pitch": 1.5
+                }
+            ]
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "my_addon:form_allay_sp_group_heal_charging_state",
+            "comparison": "==",
+            "compare_to": 1
+        }
+    },
+    "name": "Group Heal",
+    "description": "Charge for 3 seconds to heal all living entities within 20 blocks for 20 HP. Consumes all mana. Healed entities display heart particles. 30s cooldown."
+}
