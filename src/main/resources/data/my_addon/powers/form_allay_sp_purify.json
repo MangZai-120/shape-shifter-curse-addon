@@ -172,6 +172,12 @@
                                 "change": 600
                             },
                             {
+                                "type": "origins:change_resource",
+                                "resource": "my_addon:form_allay_sp_mana_cooldown_resource",
+                                "operation": "set",
+                                "change": 70
+                            },
+                            {
                                 "type": "origins:execute_command",
                                 "command": "effect clear @s"
                             },

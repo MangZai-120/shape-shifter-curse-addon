@@ -6,12 +6,15 @@ import io.github.apace100.apoli.power.PowerType;
 import io.github.apace100.apoli.power.PowerTypeRegistry;
 import io.github.apace100.apoli.power.VariableIntPower;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.mob.Monster;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 
 import java.util.List;
 import java.util.Set;
@@ -65,6 +68,8 @@ public class AllaySPGroupHeal {
         // 治疗自身
         allayPlayer.heal(HEAL_AMOUNT);
         spawnHealParticles(world, allayPlayer);
+        // 只有SP悦灵自己能听见
+        allayPlayer.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
 
         // 获取范围内所有活体
         Box box = allayPlayer.getBoundingBox().expand(HEAL_RADIUS);
@@ -72,10 +77,23 @@ public class AllaySPGroupHeal {
                 e -> e != allayPlayer && e.isAlive() && e.squaredDistanceTo(allayPlayer) <= HEAL_RADIUS * HEAL_RADIUS);
 
         for (LivingEntity entity : entities) {
-            // 白名单为空时治疗所有活体；有白名单时进行过滤
-            if (whitelistEmpty || shouldHeal(entity, tags)) {
+            // 白名单为空时治疗所有玩家和友好生物；有白名单时进行过滤
+            if (whitelistEmpty) {
+                if (entity instanceof ServerPlayerEntity || !(entity instanceof Monster)) {
+                    entity.heal(HEAL_AMOUNT);
+                    spawnHealParticles(world, entity);
+                    // 播放声音：治疗者听见私有声音，其他人听见空间声音
+                    allayPlayer.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
+                    world.playSound(allayPlayer, entity.getX(), entity.getY(), entity.getZ(), 
+                        SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
+                }
+            } else if (shouldHeal(entity, tags)) {
                 entity.heal(HEAL_AMOUNT);
                 spawnHealParticles(world, entity);
+                // 播放声音：治疗者听见私有声音，其他人听见空间声音
+                allayPlayer.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
+                world.playSound(allayPlayer, entity.getX(), entity.getY(), entity.getZ(), 
+                    SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
             }
         }
     }
@@ -117,8 +135,21 @@ public class AllaySPGroupHeal {
     /**
      * 检查UUID是否在白名单中
      */
-    private static boolean isInWhitelist(Set<String> allayTags, UUID targetUuid) {
+    public static boolean isInWhitelist(Set<String> allayTags, UUID targetUuid) {
         return allayTags.contains(WHITELIST_TAG_PREFIX + targetUuid.toString());
+    }
+
+    /**
+     * 便捷方法：检查一个实体是否在玩家的白名单中（供唱片机等外部系统使用）
+     * 白名单为空时返回true（允许所有玩家和友好生物）
+     */
+    public static boolean isInWhitelist(ServerPlayerEntity allayPlayer, LivingEntity entity) {
+        Set<String> tags = allayPlayer.getCommandTags();
+        boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(WHITELIST_TAG_PREFIX));
+        if (whitelistEmpty) {
+            return entity instanceof ServerPlayerEntity || !(entity instanceof Monster);
+        }
+        return shouldHeal(entity, tags);
     }
 
     /**

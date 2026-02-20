@@ -122,19 +122,21 @@ public class SscAddonCommands {
 
     private static int setMana(CommandContext<ServerCommandSource> context, Collection<ServerPlayerEntity> targets, int amount) {
         Identifier resourceId = new Identifier("my_addon", "form_snow_fox_sp_resource");
+        Identifier allayResourceId = new Identifier("my_addon", "form_allay_sp_mana_resource");
         int count = 0;
         for (ServerPlayerEntity player : targets) {
             boolean updated = false;
             // 1. Try Apoli Resource (Snow Fox SP)
             PowerHolderComponent component = PowerHolderComponent.KEY.get(player);
             for (VariableIntPower power : component.getPowers(VariableIntPower.class)) {
-                if (power.getType().getIdentifier().equals(resourceId)) {
+                if (power.getType().getIdentifier().equals(resourceId) || power.getType().getIdentifier().equals(allayResourceId)) {
                     int newVal = amount;
                     if (newVal > power.getMax()) {
                         newVal = power.getMax();
                     }
                     power.setValue(newVal);
-                    PowerHolderComponent.syncPower(player, power.getType());
+                    // Force sync immediately
+                    component.sync();
                     updated = true;
                 }
             }

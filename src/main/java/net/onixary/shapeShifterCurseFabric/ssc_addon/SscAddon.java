@@ -64,6 +64,9 @@ import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.resource.featuretoggle.FeatureSet;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.screen.PotionBagScreenHandler;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PotionBagItem;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.item.AllayHealWandItem;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.item.AllayJukeboxItem;
+import net.minecraft.sound.SoundEvent;
 
 public class SscAddon implements ModInitializer {
 
@@ -134,6 +137,16 @@ public class SscAddon implements ModInitializer {
     public static final Item CORAL_BALL = new Item(new Item.Settings().maxCount(64));
     public static final Item ACTIVE_CORAL_NECKLACE = new ActiveCoralNecklaceItem(new Item.Settings().maxCount(1));
 
+    // SP Allay items
+    public static final Item ALLAY_HEAL_WAND = new AllayHealWandItem(new Item.Settings().maxCount(1));
+    public static final Item ALLAY_JUKEBOX = new AllayJukeboxItem(new Item.Settings().maxCount(1));
+
+    // SP Allay sound events
+    public static final Identifier ALLAY_HEAL_MUSIC_ID = new Identifier("ssc_addon", "allay_heal_music");
+    public static final Identifier ALLAY_SPEED_MUSIC_ID = new Identifier("ssc_addon", "allay_speed_music");
+    public static final SoundEvent ALLAY_HEAL_MUSIC_EVENT = SoundEvent.of(ALLAY_HEAL_MUSIC_ID);
+    public static final SoundEvent ALLAY_SPEED_MUSIC_EVENT = SoundEvent.of(ALLAY_SPEED_MUSIC_ID);
+
     public static final ItemGroup SSC_ADDON_GROUP = Registry.register(Registries.ITEM_GROUP,
             new Identifier("ssc_addon", "group"),
             FabricItemGroup.builder()
@@ -158,6 +171,8 @@ public class SscAddon implements ModInitializer {
                         entries.add(SCULK_SHARD);
                         entries.add(CORAL_BALL);
                         entries.add(ACTIVE_CORAL_NECKLACE);
+                        entries.add(ALLAY_HEAL_WAND);
+                        entries.add(ALLAY_JUKEBOX);
                     })
                     .build());
 
@@ -197,6 +212,14 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "sculk_shard"), SCULK_SHARD);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "coral_ball"), CORAL_BALL);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "active_coral_necklace"), ACTIVE_CORAL_NECKLACE);
+
+        // SP Allay items
+        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "allay_heal_wand"), ALLAY_HEAL_WAND);
+        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "allay_jukebox"), ALLAY_JUKEBOX);
+
+        // SP Allay sound events
+        Registry.register(Registries.SOUND_EVENT, ALLAY_HEAL_MUSIC_ID, ALLAY_HEAL_MUSIC_EVENT);
+        Registry.register(Registries.SOUND_EVENT, ALLAY_SPEED_MUSIC_ID, ALLAY_SPEED_MUSIC_EVENT);
         
         Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "refill_moisturizer"), REFILL_MOISTURIZER_SERIALIZER);
         Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "reload_snowball_launcher"), RELOAD_SNOWBALL_LAUNCHER_SERIALIZER);
@@ -284,6 +307,7 @@ public class SscAddon implements ModInitializer {
                 net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack.tick(player);
                 net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm.tick(player);
                 net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal.tick(player);
+                net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPJukebox.tick(player);
             }
         });
 

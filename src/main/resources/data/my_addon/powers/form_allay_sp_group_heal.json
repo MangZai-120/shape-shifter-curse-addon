@@ -127,10 +127,21 @@
             }
         },
         "condition": {
-            "type": "origins:resource",
-            "resource": "my_addon:form_allay_sp_group_heal_cooldown_timer",
-            "comparison": "==",
-            "compare_to": 0
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:resource",
+                    "resource": "my_addon:form_allay_sp_group_heal_cooldown_timer",
+                    "comparison": "==",
+                    "compare_to": 0
+                },
+                {
+                    "type": "origins:resource",
+                    "resource": "my_addon:form_allay_sp_mana_resource",
+                    "comparison": ">=",
+                    "compare_to": 100
+                }
+            ]
         }
     },
     "charging_tick": {

@@ -9,6 +9,31 @@
             "should_render": false
         }
     },
+    "cooldown_resource": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 100,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "cooldown_tick": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "entity_action": {
+            "type": "origins:change_resource",
+            "resource": "my_addon:form_allay_sp_mana_cooldown_resource",
+            "change": -1,
+            "operation": "add"
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "my_addon:form_allay_sp_mana_cooldown_resource",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
     "regen": {
         "type": "origins:action_over_time",
         "interval": 4,
@@ -19,10 +44,21 @@
             "operation": "add"
         },
         "condition": {
-            "type": "origins:resource",
-            "resource": "my_addon:form_allay_sp_mana_resource",
-            "comparison": "<",
-            "compare_to": 100
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:resource",
+                    "resource": "my_addon:form_allay_sp_mana_resource",
+                    "comparison": "<",
+                    "compare_to": 100
+                },
+                {
+                    "type": "origins:resource",
+                    "resource": "my_addon:form_allay_sp_mana_cooldown_resource",
+                    "comparison": "==",
+                    "compare_to": 0
+                }
+            ]
         }
     },
     "name": "Mana",
