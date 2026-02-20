@@ -29,8 +29,8 @@
   ],
   "client": [
     "InstinctBarRendererMixin",
-    "OriginFurMixin",
     "OriginFurModelMixin",
+    "OverlayRenderMixin",
     "SscPlayerEntityRendererMixin",
     "StunnedCameraMixin",
     "StunnedInputMixin",
