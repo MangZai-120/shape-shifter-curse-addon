@@ -1,6 +1,5 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.ability;
 
-import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
@@ -9,34 +8,28 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtElement;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.math.Box;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import io.github.apace100.apoli.component.PowerHolderComponent;
+
 import java.util.List;
 
 public class AllaySPTotem {
 
     private static final String ACTIVE_TAG = "ssc_totem_active";
     private static final double RANGE = 20.0;
-    
-    // Identifier for the SP Allay form
-    private static final Identifier ALLAY_SP_ID = new Identifier("my_addon", "allay_sp");
 
     public static void init() {
         UseItemCallback.EVENT.register(AllaySPTotem::onUseItem);
-        ServerLivingEntityEvents.ALLOW_DEATH.register(AllaySPTotem::onAllowDeath);
+        // Removed ALLOW_DEATH listener, logic moved to tryUseAllayTotem called by Mixin
     }
 
     private static TypedActionResult<ItemStack> onUseItem(PlayerEntity player, net.minecraft.world.World world, Hand hand) {
@@ -62,8 +55,7 @@ public class AllaySPTotem {
             // Deactivate
             nbt.remove(ACTIVE_TAG);
             
-            // Remove glint (Enchantments and HideFlags) if checking specific structure
-            // Simplified: Remove if existing
+            // Remove glint
             if (nbt.contains("Enchantments")) {
                  nbt.remove("Enchantments");
             }
@@ -95,10 +87,15 @@ public class AllaySPTotem {
         return TypedActionResult.success(stack);
     }
 
-    private static boolean onAllowDeath(LivingEntity entity, DamageSource damageSource, float damageAmount) {
-        if (entity.getWorld().isClient) return true;
+    /**
+     * Called by Mixin when an entity would die or use a totem.
+     * @param entity The entity attempting to use a totem.
+     * @return true if an Allay SP totem was used and prevented death.
+     */
+    public static boolean tryUseAllayTotem(LivingEntity entity) {
+        if (entity.getWorld().isClient) return false;
 
-        // Get nearby players
+        // Get nearby players within range
         Box box = entity.getBoundingBox().expand(RANGE);
         List<PlayerEntity> nearbyPlayers = entity.getWorld().getEntitiesByClass(PlayerEntity.class, box, p -> p instanceof ServerPlayerEntity);
 
@@ -108,24 +105,11 @@ public class AllaySPTotem {
             // a. Check if they are SP Allay
             if (!isSpAllay(serverPlayer)) continue;
 
-            // b. Check whitelist only if entity is NOT the player themselves (or keep logic consistent)
-            // Logic: Allay protects OTHERS or SELVES? Usually others. The prompt says "Protect whitelisted players".
-            // Since AllaySPGroupHeal handles whitelist logic, let's use it.
-            // Note: If AllaySPGroupHeal.shouldHeal returns true, it means they are whitelisted (or owner/friend).
+            // b. Check whitelist
+            // If entity == serverPlayer (self), we SKIP waitlist check (always allowed to save self with carried totem)
+            // But wait, if they have totem in hand, vanilla logic handles it. If in inventory, we handle it via Mixed logic.
+            // If entity != serverPlayer (ally), we check whitelist.
             if (entity != serverPlayer && !AllaySPGroupHeal.shouldHeal(entity, serverPlayer.getCommandTags())) continue;
-            
-            // Allow self-protection: If entity IS the serverPlayer, we skip the basic check (since an SP Allay should protect itself if it has the totem active)
-            // But wait, the standard Totem behavior already protects the player holding it.
-            // Why doesn't it trigger?
-            // "ServerLivingEntityEvents.ALLOW_DEATH" is called. If we return true, death happens (unless vanilla totem triggers).
-            // Vanilla totem logic is inside LivingEntity.tryUseTotem which is called BEFORE death actually happens to check.
-            // But `ALLOW_DEATH` event is from Fabric API, typically fired if damage would be fatal.
-            // If the player holds the totem in hand, vanilla logic should trigger FIRST.
-            // UNLESS our totem is in inventory (not hands). Our feature allows "Consume totem from SP Allay inventory".
-            // So if it's in inventory (not main/offhand), vanilla won't see it. We must handle it.
-            
-            // So, if entity == serverPlayer, we definitely want to protect them if they have a totem in inventory (or hand if vanilla failed?)
-            // Actually, if it's in hand, vanilla handles it. If it's in inventory, we handle it.
             
             // c. Check inventory for Active Totem
             ItemStack activeTotem = findActiveTotem(serverPlayer);
@@ -145,14 +129,13 @@ public class AllaySPTotem {
                 entity.getWorld().sendEntityStatus(entity, (byte)35);
                 
                 // Notify SP Allay
-                // Using entity.getName() or entity.getDisplayName()
                 serverPlayer.sendMessage(Text.translatable("message.ssc_addon.totem.triggered", entity.getDisplayName()), true);
                 
-                return false; // Prevent death
+                return true; // Prevent death
             }
         }
 
-        return true; // Allow death
+        return false; // Did not prevent death
     }
 
     private static ItemStack findActiveTotem(ServerPlayerEntity player) {
@@ -164,8 +147,6 @@ public class AllaySPTotem {
         for (ItemStack stack : player.getInventory().main) {
             if (isActiveTotem(stack)) return stack;
         }
-        // Check inventory offhand is already done in getOffHandStack? No, inventory.offHand is separated usually.
-        // But getOffHandStack() covers it.
         
         return ItemStack.EMPTY;
     }
