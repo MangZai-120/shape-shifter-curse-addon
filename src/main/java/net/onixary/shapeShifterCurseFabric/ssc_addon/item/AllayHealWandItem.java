@@ -187,7 +187,8 @@ public class AllayHealWandItem extends Item {
             Power power = powerHolder.getPower(powerType);
             if (power instanceof VariableIntPower variablePower) {
                 variablePower.setValue(Math.max(0, value));
-                PowerHolderComponent.sync(player);
+                // 只同步mana这一个power，避免全量sync重置飘浮power客户端的ascendProgress
+                PowerHolderComponent.syncPower(player, powerType);
             }
         } catch (Exception e) {
             // Resource not found
@@ -201,7 +202,8 @@ public class AllayHealWandItem extends Item {
             Power power = powerHolder.getPower(powerType);
             if (power instanceof VariableIntPower variablePower) {
                 variablePower.setValue(70); // 3.5 seconds cooldown
-                PowerHolderComponent.sync(player);
+                // 只同步cooldown这一个power
+                PowerHolderComponent.syncPower(player, powerType);
             }
         } catch (Exception e) {
             // Resource not found

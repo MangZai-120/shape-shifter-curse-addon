@@ -47,8 +47,8 @@ public class AllaySPGroupHeal {
         int healExecute = getResourceValue(player, HEAL_EXECUTE_ID);
         if (healExecute != 1) return;
 
-        // 立即重置触发器
-        setResourceValue(player, HEAL_EXECUTE_ID, 0);
+        // 立即重置触发器（不同步，避免重置飘浮计时器）
+        setResourceValueNoSync(player, HEAL_EXECUTE_ID, 0);
 
         // 执行白名单过滤治疗
         executeWhitelistHeal(player);
@@ -246,7 +246,26 @@ public class AllaySPGroupHeal {
             Power power = powerHolder.getPower(powerType);
             if (power instanceof VariableIntPower variablePower) {
                 variablePower.setValue(value);
-                PowerHolderComponent.sync(player);
+                // 只同步特定power，避免全量sync重置飘浮power客户端的ascendProgress
+                PowerHolderComponent.syncPower(player, powerType);
+            }
+        } catch (Exception e) {
+            // Resource not found
+        }
+    }
+
+    /**
+     * 设置资源值但不同步到客户端，避免重置飘浮等power的内部计时器
+     * 仅用于不需要客户端感知的内部触发器（如 heal_execute）
+     */
+    private static void setResourceValueNoSync(ServerPlayerEntity player, Identifier resourceId, int value) {
+        try {
+            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
+            PowerType<?> powerType = PowerTypeRegistry.get(resourceId);
+            Power power = powerHolder.getPower(powerType);
+            if (power instanceof VariableIntPower variablePower) {
+                variablePower.setValue(value);
+                // 不调用 PowerHolderComponent.sync(player)，避免重置飘浮计时器
             }
         } catch (Exception e) {
             // Resource not found
