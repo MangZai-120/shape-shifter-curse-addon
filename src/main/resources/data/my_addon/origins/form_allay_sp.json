@@ -29,7 +29,8 @@
         "my_addon:form_allay_sp_resonant_core_trinket",
         "my_addon:form_allay_sp_mana",
         "my_addon:form_allay_sp_purify",
-        "my_addon:form_allay_sp_group_heal"
+        "my_addon:form_allay_sp_group_heal",
+        "my_addon:form_allay_sp_hero_of_village"
     ],
     "icon": {
         "item": "minecraft:player_head"
