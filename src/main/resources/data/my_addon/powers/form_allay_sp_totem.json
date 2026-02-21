@@ -1,0 +1,5 @@
+{
+    "type": "origins:simple",
+    "name": "Totem Guard",
+    "description": "Right-click with Totem of Undying to activate. Prevents death of nearby allies."
+}

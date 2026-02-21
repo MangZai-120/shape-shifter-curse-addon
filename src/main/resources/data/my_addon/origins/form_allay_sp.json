@@ -31,6 +31,7 @@
         "my_addon:form_allay_sp_purify",
         "my_addon:form_allay_sp_group_heal",
         "my_addon:form_allay_sp_portable_beacon",
+        "my_addon:form_allay_sp_totem",
         "my_addon:form_allay_sp_emergency_food",
         "my_addon:form_allay_sp_hero_of_village"
     ],
