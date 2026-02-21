@@ -45,6 +45,9 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.RefillMoisturizerRec
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.ReloadSnowballLauncherRecipe;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.SpUpgradeRecipe;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.BlizzardTankRechargeRecipe;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormGroup;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
@@ -357,8 +360,9 @@ public class SscAddon implements ModInitializer {
             }
         });
 
-        net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPPortableBeacon.init();
-        net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPTotem.init();
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            handler.player.sendMessage(Text.translatable("message.ssc_addon.join.beta_test").formatted(Formatting.GOLD));
+        });
 
         /*
         // Tick Event for SP Allay Ability

@@ -225,4 +225,5 @@
   "power.my_addon.form_allay_sp_emergency_food.name": "Emergency Food",
   "power.my_addon.form_allay_sp_emergency_food.description": "Consumes 50 Mana to restore 1 Food (0.5 Shanks) and pauses Mana Regeneration for 3.5s.",
 
+  "message.ssc_addon.join.beta_test": "This version is a beta test. If you can, please help test the SP Allay's totem resurrection mechanism. SP Allay can right-click with a totem to activate it. When activated, it will resurrect players within a 20-block radius and consume the totem. You can use commands or the newly added 'Add Ally Mark' in the addon pack to add a whitelist. When players are in the whitelist, other units' buff effects will be blocked. If there are any issues, please help by opening an issue on GitHub to help me improve this mod, thanks! When you open an issue, please attach your log file to help me locate the problem faster, thanks!"
 }
