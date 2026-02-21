@@ -19,6 +19,8 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import io.github.apace100.apoli.component.PowerHolderComponent;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.world.World;
 
 import java.util.List;
 
@@ -29,7 +31,64 @@ public class AllaySPTotem {
 
     public static void init() {
         UseItemCallback.EVENT.register(AllaySPTotem::onUseItem);
-        // Removed ALLOW_DEATH listener, logic moved to tryUseAllayTotem called by Mixin
+        // Register tick event to handle deactivation if form changes
+        ServerTickEvents.START_WORLD_TICK.register(AllaySPTotem::onWorldTick);
+    }
+    
+    private static void onWorldTick(World world) {
+        if (world.isClient) return;
+        
+        // Every 20 ticks (1 second) check active totems to save performance?
+        // Or check every tick for instant feedback? 
+        // Form change might happen instantly. 
+        // A small delay is acceptable, e.g., 10 ticks.
+        if (world.getTime() % 10 != 0) return;
+
+        for (PlayerEntity player : world.getPlayers()) {
+            if (player instanceof ServerPlayerEntity serverPlayer) {
+                // If player is NOT SP Allay, ensure they have no active totems
+                if (!isSpAllay(serverPlayer)) {
+                    deactivateAllTotems(serverPlayer);
+                }
+            }
+        }
+    }
+
+    private static void deactivateAllTotems(ServerPlayerEntity player) {
+        // Check main inventory and offhand
+        boolean deactivatedAny = false;
+        
+        // Check main inventory
+        for (ItemStack stack : player.getInventory().main) {
+            if (isActiveTotem(stack)) {
+                deactivateTotem(stack);
+                deactivatedAny = true;
+            }
+        }
+        
+        // Check offhand
+        for (ItemStack stack : player.getInventory().offHand) {
+            if (isActiveTotem(stack)) {
+                deactivateTotem(stack);
+                deactivatedAny = true;
+            }
+        }
+        
+        if (deactivatedAny) {
+            player.sendMessage(Text.translatable("message.ssc_addon.totem.deactivated"), true);
+            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 0.5f);
+        }
+    }
+
+    private static void deactivateTotem(ItemStack stack) {
+        NbtCompound nbt = stack.getOrCreateNbt();
+        nbt.remove(ACTIVE_TAG);
+        if (nbt.contains("Enchantments")) {
+             nbt.remove("Enchantments");
+        }
+        if (nbt.contains("HideFlags")) {
+             nbt.remove("HideFlags");
+        }
     }
 
     private static TypedActionResult<ItemStack> onUseItem(PlayerEntity player, net.minecraft.world.World world, Hand hand) {
