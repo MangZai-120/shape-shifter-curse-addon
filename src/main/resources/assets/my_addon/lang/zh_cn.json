@@ -212,5 +212,8 @@
   "item.ssc_addon.clear_friend_marker": "消除友军标记",
   "item.ssc_addon.allay_heal_wand.no_mana": "能量不足！",
   "item.ssc_addon.allay_heal_wand.blocked": "目标被遮挡",
-  "item.ssc_addon.allay_heal_wand.no_target": "没有目标"
+  "item.ssc_addon.allay_heal_wand.no_target": "没有目标",
+  "message.ssc_addon.beacon.depleted": "§c信标能量耗尽",
+  "message.ssc_addon.beacon.deactivated": "§e信标已关闭",
+  "message.ssc_addon.beacon.activated": "§a信标已激活"
 }

@@ -291,6 +291,9 @@ public class SscAddon implements ModInitializer {
 
         net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.init();
         
+        // Register SP Allay abilities
+        net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPPortableBeacon.init();
+        
         // Register loot tables for items
         LifesavingCatTailItem.registerLootTable();
 
@@ -352,6 +355,8 @@ public class SscAddon implements ModInitializer {
                 newPlayer.getItemCooldownManager().remove(PHANTOM_BELL);
             }
         });
+
+        net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPPortableBeacon.init();
 
         /*
         // Tick Event for SP Allay Ability
