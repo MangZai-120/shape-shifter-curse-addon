@@ -187,6 +187,8 @@
   "power.my_addon.form_allay_sp_purify.description": "蓄力2.5秒后净化半径15格内所有生物的药水效果，并打断其它SP形态的主动技能使其进入冷却。蓄力期间移速降低50%。再次按键可取消蓄力。30秒冷却。",
   "power.my_addon.form_allay_sp_group_heal.name": "群体治疗",
   "power.my_addon.form_allay_sp_group_heal.description": "蓄力3秒后消耗全部能量，治疗15格球形范围内所有生物20点血量。蓄力期间减速50%，经验球叮叮声由低到高提示蓄力进度。受治疗个体释放爱心粒子。被攻击打断蓄力并进入5秒冷却。30秒冷却。",
+  "power.my_addon.form_allay_sp_amethyst_shard_only.name": "水晶食性",
+  "power.my_addon.form_allay_sp_amethyst_shard_only.description": "你只能食用紫水晶碎片，其他食物对你来说难以下咽。",
   "item.ssc_addon.allay_heal_wand": "治疗术",
   "item.ssc_addon.allay_heal_wand.tooltip": "右键对准星指向的生物释放治疗",
   "item.ssc_addon.allay_heal_wand.tooltip.exclusive": "SP悦灵形态专属",
@@ -204,7 +206,7 @@
   "item.ssc_addon.allay_jukebox.mode_speed": "切换为加速模式",
   "item.ssc_addon.allay_jukebox.mode_heal": "切换为回血模式",
   "item.ssc_addon.allay_jukebox.not_active": "唱片机未激活",
-  "item.ssc_addon.allay_heal_wand.no_mana": "能量不足！需要12点能量",
+  "item.ssc_addon.allay_heal_wand.no_mana": "能量不足！",
   "item.ssc_addon.allay_heal_wand.blocked": "目标被遮挡",
   "item.ssc_addon.allay_heal_wand.no_target": "没有目标"
 }

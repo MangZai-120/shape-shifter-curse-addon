@@ -192,6 +192,8 @@
   "power.my_addon.form_allay_sp_purify.description": "Charge for 2.5 seconds to purify all entities within a 15 block radius, clearing all potion effects and interrupting other SP form abilities, putting them on cooldown. Movement speed reduced by 50% while charging. Press again to cancel. 30s cooldown.",
   "power.my_addon.form_allay_sp_group_heal.name": "Group Heal",
   "power.my_addon.form_allay_sp_group_heal.description": "Charge for 3 seconds to consume all mana and heal all living entities within a 15 block sphere for 20 HP. 50% slow while charging. Experience orb ding sounds indicate charge progress. Healed entities emit heart particles. Interrupted by damage (5s cooldown). 30s cooldown.",
+  "power.my_addon.form_allay_sp_amethyst_shard_only.name": "Amethyst Consumer",
+  "power.my_addon.form_allay_sp_amethyst_shard_only.description": "You can only eat Amethyst Shards. Other food is inedible to you.",
   "item.ssc_addon.allay_heal_wand": "Healing Spell",
   "item.ssc_addon.allay_heal_wand.tooltip": "Right-click to heal the targeted entity",
   "item.ssc_addon.allay_heal_wand.tooltip.exclusive": "Exclusive to SP Allay Form",
@@ -209,10 +211,8 @@
   "item.ssc_addon.allay_jukebox.mode_speed": "Switched to Speed Mode",
   "item.ssc_addon.allay_jukebox.mode_heal": "Switched to Heal Mode",
   "item.ssc_addon.allay_jukebox.not_active": "Jukebox not active",
-  "item.ssc_addon.allay_heal_wand.no_mana": "Not enough mana! Requires 12 mana",
-  "item.ssc_addon.allay_heal_wand.blocked": "Target obstructed",
-  "item.ssc_addon.allay_heal_wand.no_target": "No target"
-  "item.ssc_addon.allay_heal_wand.no_mana": "Not enough mana! Need 12 mana",
-  "item.ssc_addon.allay_heal_wand.blocked": "Target is blocked",
-  "item.ssc_addon.allay_heal_wand.no_target": "No target"
+  "item.ssc_addon.allay_heal_wand.no_target": "No target",
+  "item.ssc_addon.allay_heal_wand.no_mana": "Not enough mana!",
+  "item.ssc_addon.allay_heal_wand.blocked": "Target is blocked"
+
 }

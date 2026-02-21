@@ -5,6 +5,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.WaterSpearItem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -26,13 +27,15 @@ public abstract class ItemEntityMixin extends Entity {
 	public abstract int getItemAge();
 
 	@Inject(method = "tick", at = @At("HEAD"))
-	private void waterSpearDurabilityTick(CallbackInfo ci) {
+	private void onTick(CallbackInfo ci) {
 		if (!this.getWorld().isClient) {
 			ItemStack stack = this.getStack();
 			if (stack.getItem() instanceof WaterSpearItem && this.getItemAge() >= 20) {
 				this.discard();
 			}
-
+			if (stack.isOf(SscAddon.ALLAY_HEAL_WAND) || stack.isOf(SscAddon.ALLAY_JUKEBOX) || stack.isOf(SscAddon.POTION_BAG)) {
+				this.discard();
+			}
 		}
 	}
 }

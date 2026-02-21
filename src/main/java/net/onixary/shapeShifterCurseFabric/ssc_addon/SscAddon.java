@@ -171,8 +171,6 @@ public class SscAddon implements ModInitializer {
                         entries.add(SCULK_SHARD);
                         entries.add(CORAL_BALL);
                         entries.add(ACTIVE_CORAL_NECKLACE);
-                        entries.add(ALLAY_HEAL_WAND);
-                        entries.add(ALLAY_JUKEBOX);
                     })
                     .build());
 
