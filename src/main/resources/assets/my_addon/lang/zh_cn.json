@@ -189,6 +189,8 @@
   "power.my_addon.form_allay_sp_group_heal.description": "蓄力3秒后消耗全部能量，治疗15格球形范围内所有生物20点血量。蓄力期间减速50%，经验球叮叮声由低到高提示蓄力进度。受治疗个体释放爱心粒子。被攻击打断蓄力并进入5秒冷却。30秒冷却。",
   "power.my_addon.form_allay_sp_amethyst_shard_only.name": "水晶食性",
   "power.my_addon.form_allay_sp_amethyst_shard_only.description": "你只能食用紫水晶碎片，其他食物对你来说难以下咽。",
+  "power.my_addon.form_allay_sp_emergency_food.name": "应急食品",
+  "power.my_addon.form_allay_sp_emergency_food.description": "消耗50点魔力恢复1点饱食度（0.5个鸡腿），并暂停魔力回复3.5秒。",
   "item.ssc_addon.allay_heal_wand": "治疗术",
   "item.ssc_addon.allay_heal_wand.tooltip": "右键对准星指向的生物释放治疗",
   "item.ssc_addon.allay_heal_wand.tooltip.exclusive": "SP悦灵形态专属",

@@ -213,6 +213,8 @@
   "item.ssc_addon.allay_jukebox.not_active": "Jukebox not active",
   "item.ssc_addon.allay_heal_wand.no_target": "No target",
   "item.ssc_addon.allay_heal_wand.no_mana": "Not enough mana!",
-  "item.ssc_addon.allay_heal_wand.blocked": "Target is blocked"
+  "item.ssc_addon.allay_heal_wand.blocked": "Target is blocked",
+  "power.my_addon.form_allay_sp_emergency_food.name": "Emergency Food",
+  "power.my_addon.form_allay_sp_emergency_food.description": "Consumes 50 Mana to restore 1 Food (0.5 Shanks) and pauses Mana Regeneration for 3.5s.",
 
 }

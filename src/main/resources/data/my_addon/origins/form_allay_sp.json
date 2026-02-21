@@ -30,6 +30,7 @@
         "my_addon:form_allay_sp_mana",
         "my_addon:form_allay_sp_purify",
         "my_addon:form_allay_sp_group_heal",
+        "my_addon:form_allay_sp_emergency_food",
         "my_addon:form_allay_sp_hero_of_village"
     ],
     "icon": {

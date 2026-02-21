@@ -1,0 +1,41 @@
+{
+    "type": "origins:action_over_time",
+    "interval": 20,
+    "condition": {
+        "type": "origins:and",
+        "conditions": [
+            {
+                "type": "origins:food_level",
+                "comparison": "==",
+                "compare_to": 0
+            },
+            {
+                "type": "origins:resource",
+                "resource": "my_addon:form_allay_sp_mana_resource",
+                "comparison": ">=",
+                "compare_to": 50
+            }
+        ]
+    },
+    "entity_action": {
+        "type": "origins:and",
+        "actions": [
+            {
+                "type": "origins:change_resource",
+                "resource": "my_addon:form_allay_sp_mana_resource",
+                "change": -50
+            },
+            {
+                "type": "origins:change_resource",
+                "resource": "my_addon:form_allay_sp_mana_cooldown_resource",
+                "operation": "set",
+                "change": 70
+            },
+            {
+                "type": "origins:feed",
+                "food": 1,
+                "saturation": 0
+            }
+        ]
+    }
+}
