@@ -137,8 +137,8 @@ public class AllaySPJukebox {
         }
 
         if (mode == AllayJukeboxItem.MODE_HEAL) {
-            // Heal mode: every 5 seconds (100 ticks), heal 1 HP
-            if (player.age % 100 == 0) {
+            // Heal mode: every 3 seconds (60 ticks), heal 1 HP
+            if (player.age % 60 == 0) {
                 for (LivingEntity entity : nearbyEntities) {
                     entity.heal(1.0f);
                 }

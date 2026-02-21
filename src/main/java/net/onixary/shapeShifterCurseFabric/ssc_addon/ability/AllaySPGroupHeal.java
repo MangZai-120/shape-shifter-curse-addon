@@ -121,15 +121,43 @@ public class AllaySPGroupHeal {
             if (tag.startsWith("ssc_owner:")) {
                 try {
                     UUID ownerUuid = UUID.fromString(tag.substring("ssc_owner:".length()));
-                    return isInWhitelist(allayTags, ownerUuid);
+                    if (isInWhitelist(allayTags, ownerUuid)) return true;
                 } catch (IllegalArgumentException e) {
                     // 无效UUID，跳过
                 }
             }
         }
 
-        // 其他无归属实体不治疗
-        return false;
+        // 最后检查实体本身的UUID是否直接在白名单中
+        return isInWhitelist(allayTags, entity.getUuid());
+    }
+
+    /**
+     * 将目标实体的所有者（如果是宠物）或实体本身（如果是普通生物/玩家）加入白名单
+     */
+    public static void addToWhitelist(ServerPlayerEntity allayPlayer, LivingEntity target) {
+        if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) {
+            allayPlayer.getCommandTags().add(WHITELIST_TAG_PREFIX + tameable.getOwnerUuid().toString());
+        } else {
+            // 普通生物或玩家，添加自身UUID
+            allayPlayer.getCommandTags().add(WHITELIST_TAG_PREFIX + target.getUuid().toString());
+        }
+    }
+
+    /**
+     * 将目标实体的所有者（如果是宠物）或实体本身（如果是普通生物/玩家）从白名单移除
+     */
+    public static void removeFromWhitelist(ServerPlayerEntity allayPlayer, LivingEntity target) {
+        String tagToRemove;
+        if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) {
+            tagToRemove = WHITELIST_TAG_PREFIX + tameable.getOwnerUuid().toString();
+        } else {
+            tagToRemove = WHITELIST_TAG_PREFIX + target.getUuid().toString();
+        }
+        
+        if (tagToRemove != null) {
+            allayPlayer.getCommandTags().remove(tagToRemove);
+        }
     }
 
     /**

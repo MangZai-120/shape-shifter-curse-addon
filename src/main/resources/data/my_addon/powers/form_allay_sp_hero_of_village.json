@@ -1,0 +1,24 @@
+{
+    "type": "origins:action_on_entity_use",
+    "bientity_condition": {
+        "type": "origins:target_condition",
+        "condition": {
+            "type": "origins:entity_type",
+            "entity_type": "minecraft:villager"
+        }
+    },
+    "bientity_action": {
+        "type": "origins:actor_action",
+        "action": {
+            "type": "origins:apply_effect",
+            "effect": {
+                "effect": "minecraft:hero_of_the_village",
+                "duration": 10,
+                "amplifier": 1,
+                "is_ambient": true,
+                "show_particles": false,
+                "show_icon": false
+            }
+        }
+    }
+}

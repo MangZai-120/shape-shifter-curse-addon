@@ -48,6 +48,14 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.BlizzardTankRecharge
 
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormGroup;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.SpawnGroup;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
+import net.minecraft.entity.EntityDimensions;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.item.AllayFriendMarkerItem;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.item.AllayClearMarkerItem;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayFriendMarkerEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayClearMarkerEntity;
 
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.minecraft.entity.EntityType;
@@ -140,6 +148,27 @@ public class SscAddon implements ModInitializer {
     // SP Allay items
     public static final Item ALLAY_HEAL_WAND = new AllayHealWandItem(new Item.Settings().maxCount(1));
     public static final Item ALLAY_JUKEBOX = new AllayJukeboxItem(new Item.Settings().maxCount(1));
+    public static final Item FRIEND_MARKER = new AllayFriendMarkerItem(new Item.Settings().maxCount(64));
+    public static final Item CLEAR_FRIEND_MARKER = new AllayClearMarkerItem(new Item.Settings().maxCount(64));
+
+    // Entities
+    public static final EntityType<AllayFriendMarkerEntity> FRIEND_MARKER_ENTITY_TYPE = Registry.register(
+            Registries.ENTITY_TYPE,
+            new Identifier("ssc_addon", "friend_marker"),
+            FabricEntityTypeBuilder.<AllayFriendMarkerEntity>create(SpawnGroup.MISC, AllayFriendMarkerEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.25f, 0.25f))
+                    .trackRangeBlocks(4).trackedUpdateRate(10)
+                    .build()
+    );
+
+    public static final EntityType<AllayClearMarkerEntity> CLEAR_MARKER_ENTITY_TYPE = Registry.register(
+            Registries.ENTITY_TYPE,
+            new Identifier("ssc_addon", "clear_friend_marker"),
+            FabricEntityTypeBuilder.<AllayClearMarkerEntity>create(SpawnGroup.MISC, AllayClearMarkerEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.25f, 0.25f))
+                    .trackRangeBlocks(4).trackedUpdateRate(10)
+                    .build()
+    );
 
     // SP Allay sound events
     public static final Identifier ALLAY_HEAL_MUSIC_ID = new Identifier("ssc_addon", "allay_heal_music");
@@ -171,6 +200,10 @@ public class SscAddon implements ModInitializer {
                         entries.add(SCULK_SHARD);
                         entries.add(CORAL_BALL);
                         entries.add(ACTIVE_CORAL_NECKLACE);
+                        entries.add(ALLAY_HEAL_WAND);
+                        entries.add(ALLAY_JUKEBOX);
+                        entries.add(FRIEND_MARKER);
+                        entries.add(CLEAR_FRIEND_MARKER);
                     })
                     .build());
 
@@ -214,6 +247,8 @@ public class SscAddon implements ModInitializer {
         // SP Allay items
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "allay_heal_wand"), ALLAY_HEAL_WAND);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "allay_jukebox"), ALLAY_JUKEBOX);
+        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "friend_marker"), FRIEND_MARKER);
+        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "clear_friend_marker"), CLEAR_FRIEND_MARKER);
 
         // SP Allay sound events
         Registry.register(Registries.SOUND_EVENT, ALLAY_HEAL_MUSIC_ID, ALLAY_HEAL_MUSIC_EVENT);
@@ -255,6 +290,9 @@ public class SscAddon implements ModInitializer {
         SscAddonNetworking.registerServerReceivers();
 
         net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.init();
+        
+        // Register SP Allay abilities
+        net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPPortableBeacon.init();
         
         // Register loot tables for items
         LifesavingCatTailItem.registerLootTable();
@@ -317,6 +355,8 @@ public class SscAddon implements ModInitializer {
                 newPlayer.getItemCooldownManager().remove(PHANTOM_BELL);
             }
         });
+
+        net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPPortableBeacon.init();
 
         /*
         // Tick Event for SP Allay Ability

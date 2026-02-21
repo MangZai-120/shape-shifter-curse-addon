@@ -1,0 +1,6 @@
+{
+    "type": "origins:simple",
+    "hidden": true,
+    "name": "SP Allay Portable Beacon",
+    "description": "Allows the SP Allay to use a Beacon as a portable buff source."
+}

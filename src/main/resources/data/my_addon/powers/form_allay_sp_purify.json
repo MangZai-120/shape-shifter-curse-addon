@@ -12,7 +12,7 @@
     "charge_timer": {
         "type": "origins:resource",
         "min": 0,
-        "max": 50,
+        "max": 30,
         "start_value": 0,
         "hud_render": {
             "should_render": false
@@ -85,7 +85,7 @@
                     },
                     {
                         "type": "origins:execute_command",
-                        "command": "playsound block.beacon.activate master @s ~ ~ ~ 0.5 1.5"
+                        "command": "playsound block.beacon.activate master @s ~ ~ ~ 0.5 2.0"
                     }
                 ]
             },
@@ -148,7 +148,7 @@
                         "type": "origins:resource",
                         "resource": "my_addon:form_allay_sp_purify_charge_timer",
                         "comparison": ">=",
-                        "compare_to": 50
+                        "compare_to": 30
                     },
                     "if_action": {
                         "type": "origins:and",

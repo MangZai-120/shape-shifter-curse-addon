@@ -75,6 +75,8 @@ public class SscAddonClient implements ClientModInitializer {
         // 注册冰球渲染器（使用雪球材质）和冰风暴渲染器（粒子效果，空渲染器）
         EntityRendererRegistry.register(SscAddon.FROST_BALL_ENTITY, FlyingItemEntityRenderer::new);
         EntityRendererRegistry.register(SscAddon.FROST_STORM_ENTITY, EmptyEntityRenderer::new);
+        EntityRendererRegistry.register(SscAddon.FRIEND_MARKER_ENTITY_TYPE, FlyingItemEntityRenderer::new);
+        EntityRendererRegistry.register(SscAddon.CLEAR_MARKER_ENTITY_TYPE, FlyingItemEntityRenderer::new);
 
         // Register predicate for 3D model when held (0.0 = inventory/ground, 1.0 = held)
         ModelPredicateProviderRegistry.register(SscAddon.WATER_SPEAR, new Identifier("ssc_addon", "held"), (stack, world, entity, seed) -> 
