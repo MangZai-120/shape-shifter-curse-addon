@@ -211,6 +211,8 @@
   "item.ssc_addon.allay_jukebox.mode_speed": "Switched to Speed Mode",
   "item.ssc_addon.allay_jukebox.mode_heal": "Switched to Heal Mode",
   "item.ssc_addon.allay_jukebox.not_active": "Jukebox not active",
+  "item.ssc_addon.friend_marker": "Friend Marker",
+  "item.ssc_addon.clear_friend_marker": "Clear Friend Marker",
   "item.ssc_addon.allay_heal_wand.no_target": "No target",
   "item.ssc_addon.allay_heal_wand.no_mana": "Not enough mana!",
   "item.ssc_addon.allay_heal_wand.blocked": "Target is blocked",

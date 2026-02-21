@@ -208,6 +208,8 @@
   "item.ssc_addon.allay_jukebox.mode_speed": "切换为加速模式",
   "item.ssc_addon.allay_jukebox.mode_heal": "切换为回血模式",
   "item.ssc_addon.allay_jukebox.not_active": "唱片机未激活",
+  "item.ssc_addon.friend_marker": "友军标记",
+  "item.ssc_addon.clear_friend_marker": "消除友军标记",
   "item.ssc_addon.allay_heal_wand.no_mana": "能量不足！",
   "item.ssc_addon.allay_heal_wand.blocked": "目标被遮挡",
   "item.ssc_addon.allay_heal_wand.no_target": "没有目标"
