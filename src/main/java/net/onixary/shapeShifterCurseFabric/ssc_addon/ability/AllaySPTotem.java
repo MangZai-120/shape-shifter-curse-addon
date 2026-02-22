@@ -230,7 +230,7 @@ public class AllaySPTotem {
         if (player instanceof ServerPlayerEntity serverPlayer) {
             try {
                 return PowerHolderComponent.KEY.get(serverPlayer).getPowers().stream()
-                        .anyMatch(p -> p.getType().getIdentifier().toString().contains("form_allay_sp"));
+                        .anyMatch(p -> p.getType().getIdentifier().getNamespace().equals("my_addon") && p.getType().getIdentifier().getPath().contains("form_allay_sp"));
             } catch (Exception e) {
                 return false;
             }
