@@ -176,7 +176,7 @@ public class AllaySPPortableBeacon {
         // This relies on the power structure being consistent with "form_allay_sp" naming convention
         try {
             return PowerHolderComponent.KEY.get(player).getPowers().stream()
-                    .anyMatch(p -> p.getType().getIdentifier().toString().contains("form_allay_sp"));
+                    .anyMatch(p -> p.getType().getIdentifier().getNamespace().equals("my_addon") && p.getType().getIdentifier().getPath().contains("form_allay_sp"));
         } catch (Exception e) {
             return false;
         }
