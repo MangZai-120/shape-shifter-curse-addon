@@ -167,8 +167,19 @@ public class AllaySPTotem {
             // b. Check whitelist
             // If entity == serverPlayer (self), we SKIP waitlist check (always allowed to save self with carried totem)
             // But wait, if they have totem in hand, vanilla logic handles it. If in inventory, we handle it via Mixed logic.
-            // If entity != serverPlayer (ally), we check whitelist.
-            if (entity != serverPlayer && !AllaySPGroupHeal.shouldHeal(entity, serverPlayer.getCommandTags())) continue;
+            // If entity != serverPlayer (ally), check whitelist.
+            if (entity != serverPlayer) {
+                java.util.Set<String> tags = serverPlayer.getCommandTags();
+                boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
+                
+                if (whitelistEmpty) {
+                    // If whitelist is empty, ONLY other PLAYERS can benefit
+                    if (!(entity instanceof PlayerEntity)) continue;
+                } else {
+                    // If whitelist is not empty, only whitelisted entities benefit
+                    if (!AllaySPGroupHeal.shouldHeal(entity, tags)) continue;
+                }
+            }
             
             // c. Check inventory for Active Totem
             ItemStack activeTotem = findActiveTotem(serverPlayer);
