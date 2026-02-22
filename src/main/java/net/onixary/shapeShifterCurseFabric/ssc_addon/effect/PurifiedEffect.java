@@ -1,7 +1,12 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.effect;
 
-import net.minecraft.entity.effect.StatusEffect;
-import net.minecraft.entity.effect.StatusEffectCategory;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.effect.StatusEffect; // Added back
+import net.minecraft.entity.effect.StatusEffectCategory; // Added back
+import net.minecraft.entity.effect.StatusEffectInstance;
+import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 净化标记效果 - SP悦灵净化技能施加的短暂标记
@@ -17,6 +22,24 @@ public class PurifiedEffect extends StatusEffect {
     
     @Override
     public boolean canApplyUpdateEffect(int duration, int amplifier) {
-        return false; // No update effect needed, just a marker
+        return true; 
+    }
+    
+    @Override
+    public void applyUpdateEffect(LivingEntity entity, int amplifier) {
+        if (entity.getWorld().isClient) return;
+
+        // Clear all harmful effects (or all effects except this one)
+        // Since we are iterating while modifying, we need a copy
+        List<StatusEffectInstance> effects = new ArrayList<>(entity.getStatusEffects());
+        
+        for (StatusEffectInstance instance : effects) {
+            // Don't remove self
+            if (instance.getEffectType() == this) continue;
+            
+            // Remove the effect
+            // Note: removeStatusEffect returns boolean, doesn't throw concurrent modification if we iterate over a copy
+            entity.removeStatusEffect(instance.getEffectType());
+        }
     }
 }

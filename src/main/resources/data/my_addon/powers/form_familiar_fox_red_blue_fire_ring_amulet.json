@@ -195,6 +195,52 @@
             ]
         }
     },
+    "interrupt_on_purified": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_toggle_state",
+                    "operation": "set",
+                    "change": 0
+                },
+                {
+                    "type": "origins:clear_effect",
+                    "effect": "ssc_addon:blue_fire_ring"
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_cooldown_timer",
+                    "operation": "set",
+                    "change": 560
+                },
+                {
+                    "type": "origins:play_sound",
+                    "sound": "minecraft:block.fire.extinguish",
+                    "volume": 0.5,
+                    "pitch": 1.0
+                }
+            ]
+        },
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:resource",
+                    "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_toggle_state",
+                    "comparison": "==",
+                    "compare_to": 1
+                },
+                {
+                    "type": "origins:status_effect",
+                    "effect": "ssc_addon:purified"
+                }
+            ]
+        }
+    },
     "validate_amulet_state": {
         "type": "origins:action_over_time",
         "interval": 20,
