@@ -101,7 +101,7 @@ public class AllaySPGroupHeal {
     /**
      * 判断实体是否应被治疗
      */
-    private static boolean shouldHeal(LivingEntity entity, Set<String> allayTags) {
+    public static boolean shouldHeal(LivingEntity entity, Set<String> allayTags) {
         // 如果是玩家，检查白名单
         if (entity instanceof ServerPlayerEntity targetPlayer) {
             return isInWhitelist(allayTags, targetPlayer.getUuid());

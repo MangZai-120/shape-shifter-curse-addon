@@ -8,6 +8,9 @@
   "message.ssc_addon.moisturizer.on": "美西螈加湿器已开启",
   "message.ssc_addon.moisturizer.off": "美西螈加湿器已关闭",
   "message.ssc_addon.moisturizer.empty": "美西螈加湿器能量耗尽！",
+  "message.ssc_addon.totem.activated": "§a图腾守护已激活",
+  "message.ssc_addon.totem.deactivated": "§e图腾守护已关闭",
+  "message.ssc_addon.totem.triggered": "§6守护图腾已触发！",
   "tooltip.ssc_addon.moisturizer.status": "状态: ",
   "tooltip.ssc_addon.moisturizer.charge": "充能: %s / %s",
   "tooltip.ssc_addon.moisturizer.usage": "§7右键切换开关状态",
@@ -215,5 +218,6 @@
   "item.ssc_addon.allay_heal_wand.no_target": "没有目标",
   "message.ssc_addon.beacon.depleted": "§c信标能量耗尽",
   "message.ssc_addon.beacon.deactivated": "§e信标已关闭",
-  "message.ssc_addon.beacon.activated": "§a信标已激活"
+  "message.ssc_addon.beacon.activated": "§a信标已激活",
+  "message.ssc_addon.join.beta_test": "此版本为测试版，如果您有能力请帮忙测试一下sp悦灵的图腾复活机制。sp悦灵手持图腾右键可激活图腾，激活时可让20格范围内玩家复活并消耗此图腾。您可用指令或附属包内新加的”添加友军标记“来添加白名单，当白名单内存在玩家时就会屏蔽其它单位的增益效果。如果有问题请帮忙在GitHub里发个issue来帮我完善此模组，感谢！在您发issue的时候请附带自己的日志log，帮助我更快的定位到问题，感谢！"
 }
