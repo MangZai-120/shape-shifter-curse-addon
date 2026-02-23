@@ -360,9 +360,7 @@ public class SscAddon implements ModInitializer {
             }
         });
 
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            handler.player.sendMessage(Text.translatable("message.ssc_addon.join.beta_test").formatted(Formatting.GOLD));
-        });
+
 
         /*
         // Tick Event for SP Allay Ability
