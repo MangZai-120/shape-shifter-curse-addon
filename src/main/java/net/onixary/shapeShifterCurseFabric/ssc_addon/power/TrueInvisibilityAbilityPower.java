@@ -61,6 +61,18 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
         
         if (entity == null || entity.getWorld().isClient) return;
         
+        if (entity.hasStatusEffect(SscAddon.PURIFIED)) {
+            if (entity.hasStatusEffect(SscAddon.PRE_INVISIBILITY)) {
+                entity.removeStatusEffect(SscAddon.PRE_INVISIBILITY);
+                applyUniversalCooldown();
+            }
+            if (entity.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) {
+                breakInvisibility(false);
+            }
+            wasInvisible = false;
+            return;
+        }
+        
         boolean isInvisible = entity.hasStatusEffect(SscAddon.TRUE_INVISIBILITY);
         boolean isPrecasting = entity.hasStatusEffect(SscAddon.PRE_INVISIBILITY);
 

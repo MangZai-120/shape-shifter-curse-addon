@@ -8,6 +8,7 @@ import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
 import java.util.UUID;
 import net.minecraft.entity.player.PlayerEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SscIgnitedEntityAccessor;
 
 public class FoxFireBurnEffect extends StatusEffect {
@@ -37,6 +38,11 @@ public class FoxFireBurnEffect extends StatusEffect {
 
     @Override
     public void applyUpdateEffect(LivingEntity entity, int amplifier) {
+        if (entity.hasStatusEffect(SscAddon.PURIFIED)) {
+            entity.removeStatusEffect(SscAddon.FOX_FIRE_BURN);
+            return;
+        }
+
         if (entity.getWorld().isClient) {
             // Client side particles can be handled here or via separate client tick handler
             // But applyUpdateEffect runs on both usually if registered correctly.

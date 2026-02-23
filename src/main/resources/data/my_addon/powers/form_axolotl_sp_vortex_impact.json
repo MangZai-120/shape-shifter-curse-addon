@@ -88,6 +88,31 @@
             "compare_to": 0
         }
     },
+    "interrupt_on_purified": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "entity_action": {
+            "type": "origins:change_resource",
+            "resource": "*:*_vortex_state",
+            "operation": "set",
+            "change": 0
+        },
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:resource",
+                    "resource": "*:*_vortex_state",
+                    "comparison": ">",
+                    "compare_to": 0
+                },
+                {
+                    "type": "origins:status_effect",
+                    "effect": "ssc_addon:purified"
+                }
+            ]
+        }
+    },
     "damage_reduction_active": {
         "type": "origins:modify_damage_taken",
         "modifier": {
