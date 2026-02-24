@@ -57,6 +57,11 @@ public class EvolutionStoneItem extends Item {
                     targetFormId = new Identifier("my_addon", "snow_fox_sp");
                     canEvolve = true;
                 }
+                // Allow Allay to evolve to SP Allay
+                else if (playerFormID.equals(new Identifier("shape-shifter-curse", "allay_sp"))) {
+                    targetFormId = new Identifier("my_addon", "allay_sp");
+                    canEvolve = true;
+                }
             }
 
             if (canEvolve) {
