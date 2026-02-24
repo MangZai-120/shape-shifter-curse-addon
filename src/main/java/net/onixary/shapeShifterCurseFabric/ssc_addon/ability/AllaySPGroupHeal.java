@@ -154,10 +154,8 @@ public class AllaySPGroupHeal {
         } else {
             tagToRemove = WHITELIST_TAG_PREFIX + target.getUuid().toString();
         }
-        
-        if (tagToRemove != null) {
-            allayPlayer.getCommandTags().remove(tagToRemove);
-        }
+
+	    allayPlayer.getCommandTags().remove(tagToRemove);
     }
 
     /**
