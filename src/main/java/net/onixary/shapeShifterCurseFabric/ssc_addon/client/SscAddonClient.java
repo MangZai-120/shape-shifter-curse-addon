@@ -88,6 +88,7 @@ public class SscAddonClient implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null) {
+                // 如果玩家为空，则不进行任何操作
             }
             
             /*if (KEY_ALLAY_HEAL.isPressed()) {

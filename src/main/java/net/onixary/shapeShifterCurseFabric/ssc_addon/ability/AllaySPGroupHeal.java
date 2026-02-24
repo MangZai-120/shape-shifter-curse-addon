@@ -22,10 +22,10 @@ import java.util.UUID;
 
 /**
  * SP悦灵群体治疗 - 白名单治疗系统
- * 
+ * <p>
  * 当JSON蓄力完成后设置 heal_execute 资源为1，
  * 此类的tick检测到后执行白名单过滤治疗，然后重置为0。
- * 
+ * <p>
  * 白名单存储在SP悦灵玩家的 command tags 中，
  * 格式: "ssc_allay_wl:<目标玩家UUID>"
  */
