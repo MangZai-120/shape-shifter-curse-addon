@@ -1,25 +1,25 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.power;
 
+import dev.emi.trinkets.api.TrinketsApi;
+import io.github.apace100.apoli.component.PowerHolderComponent;
+import io.github.apace100.apoli.data.ApoliDataTypes;
+import io.github.apace100.apoli.power.Active;
 import io.github.apace100.apoli.power.ActiveCooldownPower;
 import io.github.apace100.apoli.power.PowerType;
 import io.github.apace100.apoli.power.factory.PowerFactory;
 import io.github.apace100.apoli.util.HudRender;
-import io.github.apace100.apoli.data.ApoliDataTypes;
 import io.github.apace100.calio.data.SerializableData;
 import io.github.apace100.calio.data.SerializableDataTypes;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 
-import io.github.apace100.apoli.power.Active;
-import io.github.apace100.apoli.component.PowerHolderComponent;
-import net.minecraft.entity.player.PlayerEntity;
 import java.util.List;
-import dev.emi.trinkets.api.TrinketsApi;
 
 public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
     

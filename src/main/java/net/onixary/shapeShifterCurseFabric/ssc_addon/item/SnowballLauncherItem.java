@@ -1,7 +1,6 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
 import dev.emi.trinkets.api.TrinketsApi;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -17,6 +16,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.UseAction;
 import net.minecraft.world.World;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;

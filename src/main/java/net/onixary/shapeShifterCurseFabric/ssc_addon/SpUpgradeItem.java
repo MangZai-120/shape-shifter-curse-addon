@@ -1,34 +1,31 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon;
 
+import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageType;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.Hand;
-import net.minecraft.util.TypedActionResult;
-import net.minecraft.util.UseAction;
-import net.minecraft.world.World;
-import net.minecraft.sound.SoundEvents;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.sound.SoundCategory;
-import net.minecraft.util.Formatting;
-import net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon;
-import net.minecraft.util.Identifier;
-import java.util.HashMap;
-import java.util.Map;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
-import net.minecraft.client.item.TooltipContext;
+import net.minecraft.util.*;
+import net.minecraft.world.World;
+import net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.HashMap;
 import java.util.List;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.entity.damage.DamageType;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
+import java.util.Map;
 
 public class SpUpgradeItem extends Item {
 

@@ -1,21 +1,21 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin;
 
+import mod.azure.azurelib.model.GeoModel;
+import mod.azure.azurelib.renderer.GeoObjectRenderer;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.integration.origins.origin.Origin;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient;
-import net.onixary.shapeShifterCurseFabric.player_form_render.OriginFurModel;
 import net.onixary.shapeShifterCurseFabric.player_form_render.OriginFurAnimatable;
-import mod.azure.azurelib.model.GeoModel;
-import mod.azure.azurelib.renderer.GeoObjectRenderer;
+import net.onixary.shapeShifterCurseFabric.player_form_render.OriginFurModel;
+import net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
