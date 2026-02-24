@@ -47,12 +47,10 @@ public class AllaySPTotem {
         if (world.getTime() % 10 != 0) return;
 
         for (PlayerEntity player : world.getPlayers()) {
-            if (player instanceof ServerPlayerEntity serverPlayer) {
-                // If player is NOT SP Allay, ensure they have no active totems
-                if (!isSpAllay(serverPlayer)) {
-                    deactivateAllTotems(serverPlayer);
-                }
-            }
+	        // If player is NOT SP Allay, ensure they have no active totems
+	        if (player instanceof ServerPlayerEntity serverPlayer && !isSpAllay(serverPlayer)) {
+		        deactivateAllTotems(serverPlayer);
+	        }
         }
     }
 
