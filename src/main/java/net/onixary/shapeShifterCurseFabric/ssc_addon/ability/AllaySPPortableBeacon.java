@@ -30,6 +30,10 @@ import java.util.List;
 
 public class AllaySPPortableBeacon {
 
+    private AllaySPPortableBeacon() {
+        // Utilitary class
+    }
+
     private static final String ACTIVE_TAG = "ssc_beacon_active";
     private static final double RANGE = 20.0;
     private static final int COST_INTERVAL = 60; // 3 seconds (60 ticks)

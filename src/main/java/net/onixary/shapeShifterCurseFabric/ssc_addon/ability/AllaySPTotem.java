@@ -24,6 +24,10 @@ import java.util.List;
 
 public class AllaySPTotem {
 
+    private AllaySPTotem() {
+        // Utility class
+    }
+
     private static final String ACTIVE_TAG = "ssc_totem_active";
     private static final double RANGE = 20.0;
 
