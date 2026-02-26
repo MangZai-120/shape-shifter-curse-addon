@@ -9,11 +9,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -40,6 +38,8 @@ public class PortableFridgeItem extends TrinketItem {
 
     @Override
     public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+        /*
+        // 旧代码
         if (entity instanceof PlayerEntity player) {
              PlayerFormComponent formComponent = RegPlayerFormComponent.PLAYER_FORM.get(player);
              if (formComponent != null && formComponent.getCurrentForm() != null) {
@@ -47,6 +47,10 @@ public class PortableFridgeItem extends TrinketItem {
              }
         }
         return false;
+        */
+
+        // 新代码
+        return FormUtils.isSnowFoxSP(entity);
     }
 
     @Override

@@ -6,7 +6,6 @@ import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.loot.LootPool;
 import net.minecraft.loot.entry.ItemEntry;
@@ -15,16 +14,14 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 public class LifesavingCatTailItem extends TrinketItem {
     
-    public static final int MAX_COOLDOWN = 3600; // 3 minutes = 3600 ticks
+    public static final int MAX_COOLDOWN = 3600;
     
     public LifesavingCatTailItem(Settings settings) {
         super(settings);
@@ -32,6 +29,8 @@ public class LifesavingCatTailItem extends TrinketItem {
 
     @Override
     public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+        /*
+        // 旧代码
         if (entity instanceof PlayerEntity player) {
             PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
             if (component != null) {
@@ -42,6 +41,10 @@ public class LifesavingCatTailItem extends TrinketItem {
             }
         }
         return false;
+        */
+
+        // 新代码
+        return FormUtils.isWildCatSP(entity);
     }
     
     public static void registerLootTable() {

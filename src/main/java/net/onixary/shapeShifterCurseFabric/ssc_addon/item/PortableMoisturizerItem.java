@@ -9,18 +9,15 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 public class PortableMoisturizerItem extends Item {
     
-    // 1.5 hours = 90 minutes = 90 * 60 = 5400 seconds
     public static final int MAX_CHARGE = 5400;
     
     public PortableMoisturizerItem(Settings settings) {
@@ -31,28 +28,30 @@ public class PortableMoisturizerItem extends Item {
     public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
         ItemStack stack = player.getStackInHand(hand);
 
-        // 对stack判空，尽管正常游戏时NPE的可能性很小
         if (stack == null){
             return TypedActionResult.fail(stack);
         }
         
-        // Toggle Active State
         boolean isActive = isActive(stack);
-	    boolean newState = !isActive; // 切换状态
+	    boolean newState = !isActive;
         setActive(stack, !isActive);
 
-		// 形态检查
+		/*
+        // 旧代码
+	    // 形态检查
 	    PlayerFormComponent formComponent = RegPlayerFormComponent.PLAYER_FORM.get(player);
 	    boolean isValidForm = formComponent != null &&
 			    formComponent.getCurrentForm() != null &&
 			    formComponent.getCurrentForm().FormID != null &&
 			    formComponent.getCurrentForm().FormID.equals(new Identifier("my_addon", "axolotl_sp"));
+        */
+
+	    // 新代码
+	    boolean isValidForm = FormUtils.isAxolotlSP(player);
 
 	    if (newState && !isValidForm) {
-		    // 想开启但形态不对
 		    player.sendMessage(Text.translatable("message.ssc_addon.moisturizer.off"), true);
 	    } else {
-		    // 形态正确，或者想关闭
 		    player.sendMessage(Text.translatable(newState ?
 				    "message.ssc_addon.moisturizer.on" :
 				    "message.ssc_addon.moisturizer.off"), true);
@@ -68,6 +67,8 @@ public class PortableMoisturizerItem extends Item {
     }
 
     private void humidifyLogic(ItemStack stack, World world, PlayerEntity player) {
+        /*
+        // 旧代码
         // 1. Check if user is in Axolotl SP form
         PlayerFormComponent formComponent = RegPlayerFormComponent.PLAYER_FORM.get(player);
         if (formComponent == null ||
@@ -80,30 +81,32 @@ public class PortableMoisturizerItem extends Item {
             }
             return;
         }
+        */
 
-        // 2. Logic when Active
+        // 新代码
+        if (!FormUtils.isAxolotlSP(player)) {
+            if (isActive(stack)) {
+                setActive(stack, false);
+            }
+            return;
+        }
+
         if (isActive(stack)) {
             int currentCharge = getCharge(stack);
             
             if (currentCharge > 0) {
-                // Run every second (20 ticks)
                 if (world.getTime() % 20 == 0) {
-                    // Consume 1 charge
                     setCharge(stack, currentCharge - 1);
                     
-                    // Recover 2% Moisture (using Air as moisture)
                     int maxAir = player.getMaxAir();
                     int currentAir = player.getAir();
-                    // 考虑到有些模组有骚操作导致maxAir很小然后导致recoveryAmount为0，所以这里加上Math.ceil
-                    int recoveryAmount = (int) Math.ceil(maxAir * 0.02); // 2% of max (e.g. 6 air points)
+                    int recoveryAmount = (int) Math.ceil(maxAir * 0.02);
                     
-                    // Only increase if needed
                     if (currentAir < maxAir) {
                         player.setAir(Math.min(currentAir + recoveryAmount, maxAir));
                     }
                 }
             } else {
-                // Charge is 0, turn off
                 setActive(stack, false);
                 player.sendMessage(Text.translatable("message.ssc_addon.moisturizer.empty"), true);
             }

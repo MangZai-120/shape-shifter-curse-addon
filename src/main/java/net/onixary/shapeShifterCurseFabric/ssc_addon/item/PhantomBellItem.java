@@ -5,22 +5,18 @@ import dev.emi.trinkets.api.TrinketItem;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 public class PhantomBellItem extends TrinketItem {
     
-    public static final int MAX_COOLDOWN = 1200; // 1 minute = 1200 ticks
+    public static final int MAX_COOLDOWN = 1200;
     
     public PhantomBellItem(Settings settings) {
         super(settings);
@@ -28,6 +24,8 @@ public class PhantomBellItem extends TrinketItem {
 
     @Override
     public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+        /*
+        // 旧代码
         // 限制为 SP 使魔形态 (familiar_fox_sp)
         if (entity instanceof PlayerEntity player) {
             PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
@@ -40,6 +38,10 @@ public class PhantomBellItem extends TrinketItem {
             }
         }
         return false;
+        */
+
+        // 新代码
+        return FormUtils.isFamiliarFoxForm(entity);
     }
 
     /**
