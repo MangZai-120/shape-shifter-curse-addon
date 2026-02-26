@@ -29,7 +29,7 @@ public class IronsSpellbooksAnimationMixin {
                     ci.cancel();
                 }
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             // Ignore if FormAbilityManager is unavailable or other errors occur
         }
     }
