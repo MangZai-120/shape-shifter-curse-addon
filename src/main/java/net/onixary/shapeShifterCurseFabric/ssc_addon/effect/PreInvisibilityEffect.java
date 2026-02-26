@@ -7,15 +7,15 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.power.TrueInvisibilityAbilityPower; // Need to make this public or accessible if not already
-import java.util.List;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.power.TrueInvisibilityAbilityPower;
 
-import net.minecraft.entity.player.PlayerEntity;
+import java.util.List;
 
 public class PreInvisibilityEffect extends StatusEffect {
     public PreInvisibilityEffect() {

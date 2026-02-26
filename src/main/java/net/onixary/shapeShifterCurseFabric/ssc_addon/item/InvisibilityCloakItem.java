@@ -1,20 +1,17 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
-import dev.emi.trinkets.api.TrinketItem;
 import dev.emi.trinkets.api.SlotReference;
+import dev.emi.trinkets.api.TrinketItem;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.world.World;
 import net.minecraft.util.Formatting;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
-import java.util.List;
+import net.minecraft.world.World;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class InvisibilityCloakItem extends TrinketItem {
     public InvisibilityCloakItem(Settings settings) {
@@ -23,6 +20,8 @@ public class InvisibilityCloakItem extends TrinketItem {
 
     @Override
     public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+        /*
+        // 旧代码
         if (entity instanceof PlayerEntity player) {
             PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
             if (component != null) {
@@ -33,6 +32,10 @@ public class InvisibilityCloakItem extends TrinketItem {
             }
         }
         return false;
+        */
+
+        // 新代码
+        return FormUtils.isWildCatSP(entity);
     }
 
     @Override

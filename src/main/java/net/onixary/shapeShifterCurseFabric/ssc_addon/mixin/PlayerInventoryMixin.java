@@ -9,10 +9,11 @@ import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManage
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PlayerInventory.class)
 public abstract class PlayerInventoryMixin {
@@ -26,14 +27,14 @@ public abstract class PlayerInventoryMixin {
     /**
      * Helper to check if an item is a locked form-exclusive item in a specific slot
      */
+    @Unique
     private boolean isLockedAllayItem(int slot, ItemStack stack) {
         PlayerFormBase currentForm = FormAbilityManager.getForm(player);
         boolean isAllaySp = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "allay_sp"));
         if (!isAllaySp) return false;
         
         if (slot == 0 && stack.isOf(SscAddon.ALLAY_HEAL_WAND)) return true;
-        if (slot == 1 && stack.isOf(SscAddon.ALLAY_JUKEBOX)) return true;
-        return false;
+	    return slot == 1 && stack.isOf(SscAddon.ALLAY_JUKEBOX);
     }
 
     /**
@@ -98,7 +99,6 @@ public abstract class PlayerInventoryMixin {
             boolean isAllaySp = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "allay_sp"));
             if (isAllaySp) {
                 ci.cancel();
-                return;
             }
         }
     }

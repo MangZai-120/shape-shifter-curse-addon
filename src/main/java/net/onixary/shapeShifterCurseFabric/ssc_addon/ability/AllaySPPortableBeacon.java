@@ -14,8 +14,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -29,6 +29,10 @@ import net.minecraft.world.World;
 import java.util.List;
 
 public class AllaySPPortableBeacon {
+
+    private AllaySPPortableBeacon() {
+        // Utilitary class
+    }
 
     private static final String ACTIVE_TAG = "ssc_beacon_active";
     private static final double RANGE = 20.0;
@@ -153,19 +157,13 @@ public class AllaySPPortableBeacon {
     private static TypedActionResult<ItemStack> onUseItem(PlayerEntity player, World world, Hand hand) {
         if (!world.isClient && player instanceof ServerPlayerEntity serverPlayer) {
             ItemStack stack = player.getStackInHand(hand);
-            if (stack.isOf(Items.BEACON)) {
-                
-                // Toggle logic:
-                // If sneaking -> Do nothing (let vanilla behavior happen, i.e., place block)
-                // If not sneaking -> Toggle activation (and consume item use)
-                
-                if (!player.isSneaking()) {
-                    if (isSpAllay(serverPlayer)) {
-                        toggleBeacon(serverPlayer, stack);
-                        return TypedActionResult.success(stack); // Consume the action so block is not placed
-                    }
-                }
-            }
+	        // Toggle logic:
+	        // If sneaking -> Do nothing (let vanilla behavior happen, i.e., place block)
+	        // If not sneaking -> Toggle activation (and consume item use)
+	        if (stack.isOf(Items.BEACON) && !player.isSneaking() && isSpAllay(serverPlayer)) {
+		        toggleBeacon(serverPlayer, stack);
+		        return TypedActionResult.success(stack); // Consume the action so block is not placed
+	        }
         }
         // Pass to allow vanilla behavior (or other mods)
         return TypedActionResult.pass(player.getStackInHand(hand));

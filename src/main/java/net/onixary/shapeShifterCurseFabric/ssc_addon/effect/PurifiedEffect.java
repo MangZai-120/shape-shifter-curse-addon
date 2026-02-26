@@ -1,10 +1,10 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.effect;
 
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.effect.StatusEffect; // Added back
-import net.minecraft.entity.effect.StatusEffectCategory; // Added back
+import net.minecraft.entity.effect.StatusEffect;
+import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.entity.effect.StatusEffectInstance;
-import java.util.Iterator;
+
 import java.util.ArrayList;
 import java.util.List;
 

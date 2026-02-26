@@ -1,34 +1,30 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon;
 
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Hand;
-import net.minecraft.util.TypedActionResult;
-import net.minecraft.util.UseAction;
-import net.minecraft.world.World;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.util.Formatting;
-import net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon;
-import net.minecraft.util.Identifier;
-import java.util.HashMap;
-import java.util.Map;
-import net.minecraft.text.Text;
 import net.minecraft.client.item.TooltipContext;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
-import org.jetbrains.annotations.Nullable;
-import java.util.List;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.RegistryKey;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageType;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.Text;
+import net.minecraft.util.*;
+import net.minecraft.world.World;
+import net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
+import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SpUpgradeItem extends Item {
 
@@ -162,13 +158,6 @@ public class SpUpgradeItem extends Item {
      */
 
     private boolean isAlreadySP(PlayerEntity player) {
-        // OriginComponent component = ModComponents.ORIGIN.get(player);
-        // for (Identifier targetFormId : UPGRADE_MAP.values()) {
-        //     if (component.getOrigins().values().stream().anyMatch(o -> o.getIdentifier().equals(targetFormId))) {
-        //         return true;
-        //     }
-        // }
-        // return false;
         Identifier playerFormID = getPlayerFormID(player);
         if (playerFormID == null) return false;
         for (Identifier id : UPGRADE_MAP.values()) {
@@ -180,34 +169,38 @@ public class SpUpgradeItem extends Item {
     }
 
     private Identifier getPlayerFormID(PlayerEntity player) {
-        // 玩家本身为null返回null
+        /*
+        // 旧代码
         if (player == null) return null;
-        // 组件为null直接返回null
         PlayerFormComponent playerFormComponent = RegPlayerFormComponent.PLAYER_FORM.get(player);
         if (playerFormComponent == null) return null;
-        // 获取当前形态，形态为null返回null
         PlayerFormBase currentForm = playerFormComponent.getCurrentForm();
         if (currentForm == null) return null;
-        // 形态的FormID为null返回null
         return currentForm.FormID;
+        */
+
+        // 新代码
+        PlayerFormBase currentForm = FormUtils.getCurrentForm(player);
+        return currentForm != null ? currentForm.FormID : null;
     }
 
     private Identifier getTargetFormId(PlayerEntity player) {
-        // OriginComponent component = ModComponents.ORIGIN.get(player);
-        // // Iterate through all origins the player has to see if any match our upgrade map
-        // for (Map.Entry<Identifier, Identifier> entry : UPGRADE_MAP.entrySet()) {
-        //     Identifier currentFormId = entry.getKey();
-        //     Identifier targetFormId = entry.getValue();
-        //
-        //     // Check if player has the 'current' origin
-        //     // We check specifically on the cursed_origin layer, or generally if layers aren't strict in the map
-        //     // For safety, let's check if the player possesses this origin in ANY layer,
-        //     // though typically it's the main layer.
-        //     if (component.getOrigins().values().stream().anyMatch(o -> o.getIdentifier().equals(currentFormId))) {
-        //         return targetFormId;
-        //     }
-        // }
-        // return null;
+        /* OriginComponent component = ModComponents.ORIGIN.get(player);
+         // Iterate through all origins the player has to see if any match our upgrade map
+         for (Map.Entry<Identifier, Identifier> entry : UPGRADE_MAP.entrySet()) {
+             Identifier currentFormId = entry.getKey();
+             Identifier targetFormId = entry.getValue();
+
+             // Check if player has the 'current' origin
+             // We check specifically on the cursed_origin layer, or generally if layers aren't strict in the map
+             // For safety, let's check if the player possesses this origin in ANY layer,
+             // though typically it's the main layer.
+             if (component.getOrigins().values().stream().anyMatch(o -> o.getIdentifier().equals(currentFormId))) {
+                 return targetFormId;
+             }
+         }
+         return null;
+        */
         Identifier playerFormID = getPlayerFormID(player);
         // playerFormID为null时，直接返回null，不进入遍历
         if (playerFormID == null) return null;

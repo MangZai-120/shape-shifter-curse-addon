@@ -14,7 +14,6 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPJukebox;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;

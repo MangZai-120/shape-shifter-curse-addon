@@ -1,83 +1,55 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon;
 
+import me.shedaniel.autoconfig.AutoConfig;
+import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
-import net.minecraft.entity.effect.StatusEffect;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.FoxFireBurnEffect;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.BlueFireRingEffect;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.PlayingDeadEffect;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.FrostFreezeEffect;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.FrostFallEffect;
-import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormPhase;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.command.SscAddonCommands;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.action.SscAddonActions;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.condition.SscAddonConditions;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.power.SscAddonPowers;
-import net.minecraft.item.Item;
-//import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-//import net.minecraft.item.ItemGroups;
-import net.minecraft.item.ItemGroup;
-import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
-import net.minecraft.text.Text;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.WaterSpearItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.LifesavingCatTailItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableMoisturizerItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.SnowballLauncherItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PhantomBellItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.ActiveCoralNecklaceItem;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableFridgeItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.FrostAmuletItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.BlueFireAmuletItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Axolotl3;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_FamiliarFox3;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_FamiliarFoxRed;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_SnowFoxSP;
-import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_FeralCatSP;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_Allay;
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
+import net.minecraft.entity.EntityDimensions;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.SpawnGroup;
+import net.minecraft.entity.effect.StatusEffect;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroup;
 import net.minecraft.recipe.RecipeSerializer;
 import net.minecraft.recipe.SpecialRecipeSerializer;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.resource.featuretoggle.FeatureSet;
+import net.minecraft.screen.ScreenHandlerType;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormGroup;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormPhase;
+import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
+import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_FeralCatSP;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.action.SscAddonActions;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.command.SscAddonCommands;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.condition.SscAddonConditions;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.*;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayClearMarkerEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayFriendMarkerEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostBallEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostStormEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.*;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.item.*;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.power.SscAddonPowers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.BlizzardTankRechargeRecipe;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.RefillMoisturizerRecipe;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.ReloadSnowballLauncherRecipe;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.SpUpgradeRecipe;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.BlizzardTankRechargeRecipe;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormGroup;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.SpawnGroup;
-import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
-import net.minecraft.entity.EntityDimensions;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.AllayFriendMarkerItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.AllayClearMarkerItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayFriendMarkerEntity;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayClearMarkerEntity;
-
-import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.SpawnGroup;
-import net.minecraft.entity.EntityDimensions;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.WaterSpearEntity;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.InvisibilityCloakItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostBallEntity;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostStormEntity;
-import me.shedaniel.autoconfig.AutoConfig;
-import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.resource.featuretoggle.FeatureSet;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.screen.PotionBagScreenHandler;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PotionBagItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.AllayHealWandItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.AllayJukeboxItem;
-import net.minecraft.sound.SoundEvent;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPJukebox;
 
 public class SscAddon implements ModInitializer {
 
@@ -212,7 +184,40 @@ public class SscAddon implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        /*
+        // 旧代码(保留参考) 已拆分为私有方法
         AutoConfig.register(SSCAddonConfig.class, GsonConfigSerializer::new);
+        // 注册状态效果
+        // 注册物品
+        // 注册实体
+        // 注册配方
+        // 注册技能
+        // 注册形态
+        // 注册命令
+        // 注册Tick事件
+        */
+
+        // 新代码
+        registerConfig();
+        registerStatusEffects();
+        registerItems();
+        registerEntities();
+        registerRecipeSerializers();
+        registerSoundEvents();
+        registerApoliSystems();
+        registerForms();
+        registerCommands();
+        registerTickHandlers();
+        registerPlayerEventHandlers();
+    }
+
+    // 拆分的私有方法
+
+    private void registerConfig() {
+        AutoConfig.register(SSCAddonConfig.class, GsonConfigSerializer::new);
+    }
+
+    private void registerStatusEffects() {
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "fox_fire_burn"), FOX_FIRE_BURN);
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "playing_dead"), PLAYING_DEAD);
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "blue_fire_ring"), BLUE_FIRE_RING);
@@ -223,7 +228,9 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "frost_freeze"), FROST_FREEZE);
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "frost_fall"), FROST_FALL);
         Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "purified"), PURIFIED);
-        
+    }
+
+    private void registerItems() {
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "sp_upgrade_thing"), SP_UPGRADE_THING);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "portable_moisturizer"), PORTABLE_MOISTURIZER);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "snowball_launcher"), SNOWBALL_LAUNCHER);
@@ -234,10 +241,8 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "lifesaving_cat_tail"), LIFESAVING_CAT_TAIL);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "phantom_bell"), PHANTOM_BELL);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "water_spear"), WATER_SPEAR);
-
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "potion_bag"), POTION_BAG);
         Registry.register(Registries.SCREEN_HANDLER, new Identifier("ssc_addon", "potion_bag"), POTION_BAG_SCREEN_HANDLER);
-
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "evolution_stone"), EVOLUTION_STONE);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "shadow_shard"), SHADOW_SHARD);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "night_vision_shard"), NIGHT_VISION_SHARD);
@@ -246,151 +251,99 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "sculk_shard"), SCULK_SHARD);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "coral_ball"), CORAL_BALL);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "active_coral_necklace"), ACTIVE_CORAL_NECKLACE);
-
-        // SP Allay items
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "allay_heal_wand"), ALLAY_HEAL_WAND);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "allay_jukebox"), ALLAY_JUKEBOX);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "friend_marker"), FRIEND_MARKER);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "clear_friend_marker"), CLEAR_FRIEND_MARKER);
+    }
 
-        // SP Allay sound events
-        Registry.register(Registries.SOUND_EVENT, ALLAY_HEAL_MUSIC_ID, ALLAY_HEAL_MUSIC_EVENT);
-        Registry.register(Registries.SOUND_EVENT, ALLAY_SPEED_MUSIC_ID, ALLAY_SPEED_MUSIC_EVENT);
-        
+    private void registerEntities() {
+        Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "water_spear"), WATER_SPEAR_ENTITY);
+        Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "frost_ball"), FROST_BALL_ENTITY);
+        Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "frost_storm"), FROST_STORM_ENTITY);
+        Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "friend_marker"), FRIEND_MARKER_ENTITY_TYPE);
+        Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "clear_friend_marker"), CLEAR_MARKER_ENTITY_TYPE);
+    }
+
+    private void registerRecipeSerializers() {
         Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "refill_moisturizer"), REFILL_MOISTURIZER_SERIALIZER);
         Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "reload_snowball_launcher"), RELOAD_SNOWBALL_LAUNCHER_SERIALIZER);
         Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "blizzard_tank_recharge"), BLIZZARD_TANK_RECHARGE_SERIALIZER);
         Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "sp_upgrade_crafting"), SP_UPGRADE_SERIALIZER);
-        
-        /*
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.FOOD_AND_DRINK).register(content -> content.add(SP_UPGRADE_THING));
-        
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.COMBAT).register(content -> content.add(WATER_SPEAR));
+    }
 
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(content -> {
-            content.add(PORTABLE_MOISTURIZER);
-            content.add(SNOWBALL_LAUNCHER);
-            content.add(PORTABLE_FRIDGE);
-            content.add(BLUE_FIRE_AMULET);
-            content.add(INVISIBILITY_CLOAK);
-            content.add(LIFESAVING_CAT_TAIL);
-            content.add(EVOLUTION_STONE);
-        });
+    private void registerSoundEvents() {
+        Registry.register(Registries.SOUND_EVENT, ALLAY_HEAL_MUSIC_ID, ALLAY_HEAL_MUSIC_EVENT);
+        Registry.register(Registries.SOUND_EVENT, ALLAY_SPEED_MUSIC_ID, ALLAY_SPEED_MUSIC_EVENT);
+    }
 
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS).register(content -> {
-            content.add(SHADOW_SHARD);
-            content.add(NIGHT_VISION_SHARD);
-            content.add(ENDER_SHARD);
-            content.add(HUNT_SHARD);
-            content.add(SCULK_SHARD);
-        });
-        */
-        
+    private void registerApoliSystems() {
         SscAddonActions.register();
         SscAddonConditions.register();
         SscAddonPowers.register();
-
         SscAddonNetworking.registerServerReceivers();
-
         net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.init();
-        
-        // Register SP Allay abilities
         net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPPortableBeacon.init();
         net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPTotem.init();
-        
-        // Register loot tables for items
         LifesavingCatTailItem.registerLootTable();
+    }
 
-        //SpAllayMana.register();
-        
-        // Register SP Forms with custom animation controllers
-        Form_Axolotl3 axolotlForm = new Form_Axolotl3(new Identifier("my_addon", "axolotl_sp"));
+    private void registerForms() {
+        Form_Axolotl3 axolotlForm = new Form_Axolotl3(FormIdentifiers.AXOLOTL_SP);
         axolotlForm.setPhase(PlayerFormPhase.PHASE_SP);
         RegPlayerForms.registerPlayerForm(axolotlForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_axolotl_sp")).addForm(axolotlForm, 5));
 
-        Form_FamiliarFox3 familiarFoxForm = new Form_FamiliarFox3(new Identifier("my_addon", "familiar_fox_sp"));
+        Form_FamiliarFox3 familiarFoxForm = new Form_FamiliarFox3(FormIdentifiers.FAMILIAR_FOX_SP);
         familiarFoxForm.setPhase(PlayerFormPhase.PHASE_SP);
         RegPlayerForms.registerPlayerForm(familiarFoxForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_familiar_fox_sp")).addForm(familiarFoxForm, 5));
 
-        // 注册Red使魔形态（与SP使魔相同能力，不同模型与材质，目前无法通过任何方式变成）
-        Form_FamiliarFoxRed familiarFoxRedForm = new Form_FamiliarFoxRed(new Identifier("my_addon", "familiar_fox_red"));
+        Form_FamiliarFoxRed familiarFoxRedForm = new Form_FamiliarFoxRed(FormIdentifiers.FAMILIAR_FOX_RED);
         familiarFoxRedForm.setPhase(PlayerFormPhase.PHASE_SP);
         RegPlayerForms.registerPlayerForm(familiarFoxRedForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_familiar_fox_red")).addForm(familiarFoxRedForm, 5));
 
-        Form_SnowFoxSP snowFoxForm = new Form_SnowFoxSP(new Identifier("my_addon", "snow_fox_sp"));
+        Form_SnowFoxSP snowFoxForm = new Form_SnowFoxSP(FormIdentifiers.SNOW_FOX_SP);
         snowFoxForm.setPhase(PlayerFormPhase.PHASE_SP);
         RegPlayerForms.registerPlayerForm(snowFoxForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_snow_fox_sp")).addForm(snowFoxForm, 7));
 
-        Form_Allay allayForm = new Form_Allay(new Identifier("my_addon", "allay_sp"));
+        Form_Allay allayForm = new Form_Allay(FormIdentifiers.ALLAY_SP);
         allayForm.setPhase(PlayerFormPhase.PHASE_SP);
         RegPlayerForms.registerPlayerForm(allayForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_allay_sp")).addForm(allayForm, 8));
 
-        Form_FeralCatSP wildCatForm = new Form_FeralCatSP(new Identifier("my_addon", "wild_cat_sp"));
+        Form_FeralCatSP wildCatForm = new Form_FeralCatSP(FormIdentifiers.WILD_CAT_SP);
         wildCatForm.setPhase(PlayerFormPhase.PHASE_SP);
         wildCatForm.setBodyType(net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType.FERAL);
         wildCatForm.setCanSneakRush(true);
         RegPlayerForms.registerPlayerForm(wildCatForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_wild_cat_sp")).addForm(wildCatForm, 5));
+    }
 
-
+    private void registerCommands() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> SscAddonCommands.register(dispatcher));
+    }
 
-        // Register tick event for SP Snow Fox abilities and SP Allay group heal
+    private void registerTickHandlers() {
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.START_WORLD_TICK.register(world -> {
             for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()) {
-                net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility.tick(player);
-                net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack.tick(player);
-                net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm.tick(player);
-                net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal.tick(player);
-                net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPJukebox.tick(player);
+                SnowFoxSpMeleeAbility.tick(player);
+                SnowFoxSpTeleportAttack.tick(player);
+                SnowFoxSpFrostStorm.tick(player);
+                AllaySPGroupHeal.tick(player);
+                AllaySPJukebox.tick(player);
             }
         });
+    }
 
-        // 复活后重置特定饰品的冷却时间
+    private void registerPlayerEventHandlers() {
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
-            // 只有死亡复活才重置冷却，从末地返回不重置
             if (!alive) {
                 newPlayer.getItemCooldownManager().remove(LIFESAVING_CAT_TAIL);
                 newPlayer.getItemCooldownManager().remove(PHANTOM_BELL);
             }
         });
-
-
-
-        /*
-        // Tick Event for SP Allay Ability
-        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.START_WORLD_TICK.register(world -> {
-            for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()) {
-                net.onixary.shapeShifterCurseFabric.ssc_addon.ability.Ability_AllayHeal.tick(player);
-            }
-        });
-
-        // Amethyst Consumption for Mana
-        net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.register((player, world, hand) -> {
-            if (!world.isClient && player instanceof net.minecraft.server.network.ServerPlayerEntity serverPlayer) {
-                net.minecraft.item.ItemStack stack = player.getStackInHand(hand);
-                if (stack.isOf(net.minecraft.item.Items.AMETHYST_SHARD)) {
-                    PlayerFormBase currentForm = net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManager.getForm(serverPlayer);
-                    if (currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "form_allay_sp"))) {
-                        net.onixary.shapeShifterCurseFabric.mana.ManaComponent component = net.onixary.shapeShifterCurseFabric.mana.ManaUtils.getManaComponent(serverPlayer);
-                        if (component.getManaTypeID() != null && component.getManaTypeID().equals(SpAllayMana.INSTANCE)) {
-                            if (!player.isCreative()) {
-                                stack.decrement(1);
-                            }
-                            component.gainMana(50.0);
-                            return net.minecraft.util.TypedActionResult.success(stack);
-                        }
-                    }
-                    }
-                }
-            }
-            return net.minecraft.util.TypedActionResult.pass(player.getStackInHand(hand));
-        });
-        */
     }
 }

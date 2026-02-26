@@ -14,10 +14,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(TransformRelatedItems.class)
 public class TransformRelatedItemsMixin {
 
-    private TransformRelatedItemsMixin() {
-        // This utility class should not be instantiated
-    }
-
     @Inject(method = "OnUseCure", at = @At("HEAD"), cancellable = true, remap = false)
     private static void onUseCure(PlayerEntity player, CallbackInfo ci) {
         PlayerFormBase currentForm = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).getCurrentForm();

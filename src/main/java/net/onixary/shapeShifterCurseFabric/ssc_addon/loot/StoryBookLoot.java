@@ -1,29 +1,29 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.loot;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import me.shedaniel.autoconfig.AutoConfig;
 import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.minecraft.item.Items;
 import net.minecraft.loot.LootPool;
 import net.minecraft.loot.entry.ItemEntry;
+import net.minecraft.loot.function.SetNbtLootFunction;
 import net.minecraft.loot.provider.number.ConstantLootNumberProvider;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.util.Identifier;
-import net.minecraft.loot.function.SetNbtLootFunction;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-
-import me.shedaniel.autoconfig.AutoConfig;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class StoryBookLoot {
 

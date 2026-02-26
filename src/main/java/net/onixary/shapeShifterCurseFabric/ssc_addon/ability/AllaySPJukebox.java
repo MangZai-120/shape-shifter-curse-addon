@@ -17,12 +17,9 @@ import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManage
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.AllayJukeboxItem;
 
-import net.minecraft.entity.passive.TameableEntity;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -33,6 +30,9 @@ import java.util.UUID;
  * - 播放自定义音乐
  */
 public class AllaySPJukebox {
+    private AllaySPJukebox() {
+        // Utility class
+    }
 
     public static final double RANGE = 20.0;
     private static final UUID SPEED_MODIFIER_UUID = UUID.fromString("a3b4c5d6-e7f8-9012-3456-789abcdef012");

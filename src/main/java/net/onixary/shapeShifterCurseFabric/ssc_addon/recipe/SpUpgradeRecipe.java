@@ -12,6 +12,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.items.RegCustomItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+
 import java.util.ArrayList;
 import java.util.List;
 

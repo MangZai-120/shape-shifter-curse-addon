@@ -2,12 +2,14 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.forms;
 
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric;
 import net.onixary.shapeShifterCurseFabric.player_animation.AnimationHolder;
 import net.onixary.shapeShifterCurseFabric.player_animation.v2.PlayerAnimState;
-import net.onixary.shapeShifterCurseFabric.player_animation.v3.*;
+import net.onixary.shapeShifterCurseFabric.player_animation.v3.AbstractAnimStateController;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateControllerDP.OneAnimController;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateControllerDP.WithSneakAnimController;
+import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateEnum;
+import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimSystem;
+import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimUtils;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,34 +30,21 @@ public class Form_Allay extends PlayerFormBase {
     private static AnimationHolder anim_idle = AnimationHolder.EMPTY;
     private static AnimationHolder anim_attack = AnimationHolder.EMPTY;
 
+    @Override
     public AnimationHolder Anim_getFormAnimToPlay(PlayerAnimState currentState) {
-        switch (currentState) {
-            case ANIM_WALK:
-                return anim_walk;
-            case ANIM_RUN:
-                return anim_run;
-            case ANIM_SNEAK_IDLE:
-                return anim_sneak_idle;
-            case ANIM_SNEAK_WALK:
-                return anim_sneak_walk;
-            case ANIM_IDLE:
-                return anim_idle;
-            case ANIM_FLY:
-            case ANIM_JUMP:
-            case ANIM_FALL:
-            case ANIM_SNEAK_FALL:
-            case ANIM_SLOW_FALL:
-            case ANIM_CREATIVE_FLY:
-                return anim_flying;
-            case ANIM_TOOL_SWING:
-                return anim_digging;
-            case ANIM_ATTACK_ONCE:
-                return anim_attack;
-            default:
-                return anim_walk;
-        }
+	    return switch (currentState) {
+		    case ANIM_RUN -> anim_run;
+		    case ANIM_SNEAK_IDLE -> anim_sneak_idle;
+		    case ANIM_SNEAK_WALK -> anim_sneak_walk;
+		    case ANIM_IDLE -> anim_idle;
+		    case ANIM_FLY, ANIM_JUMP, ANIM_FALL, ANIM_SNEAK_FALL, ANIM_SLOW_FALL, ANIM_CREATIVE_FLY -> anim_flying;
+		    case ANIM_TOOL_SWING -> anim_digging;
+		    case ANIM_ATTACK_ONCE -> anim_attack;
+		    default -> anim_walk;
+	    };
     }
 
+    @Override
     public void Anim_registerAnims() {
         anim_walk = new AnimationHolder(new Identifier(ANIM_NS, "allay_sp_moving"), true);
         anim_run = new AnimationHolder(new Identifier(ANIM_NS, "allay_sp_run"), true);
@@ -74,28 +63,18 @@ public class Form_Allay extends PlayerFormBase {
     public static final AbstractAnimStateController ATTACK_CONTROLLER = new OneAnimController(new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_attack")));
     public static final AbstractAnimStateController FLYING_CONTROLLER = new OneAnimController(new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_fly")));
 
+    @Override
     public @Nullable AbstractAnimStateController getAnimStateController(PlayerEntity player, AnimSystem.AnimSystemData animSystemData, @NotNull Identifier animStateID) {
         @Nullable AnimStateEnum animStateEnum = AnimStateEnum.getStateEnum(animStateID);
         if (animStateEnum != null) {
-            switch (animStateEnum) {
-                case ANIM_STATE_WALK:
-                    return WALK_CONTROLLER;
-                case ANIM_STATE_SPRINT:
-                    return SPRINT_CONTROLLER;
-                case ANIM_STATE_IDLE:
-                    return IDLE_CONTROLLER;
-                case ANIM_STATE_MINING:
-                    return MINING_CONTROLLER;
-                case ANIM_STATE_ATTACK:
-                    return ATTACK_CONTROLLER;
-                case ANIM_STATE_JUMP:
-                case ANIM_STATE_FALL:
-                case ANIM_STATE_FALL_FLYING:
-                case ANIM_STATE_FLYING:
-                    return FLYING_CONTROLLER;
-                default:
-                    return WALK_CONTROLLER;
-            }
+	        return switch (animStateEnum) {
+		        case ANIM_STATE_SPRINT -> SPRINT_CONTROLLER;
+		        case ANIM_STATE_IDLE -> IDLE_CONTROLLER;
+		        case ANIM_STATE_MINING -> MINING_CONTROLLER;
+		        case ANIM_STATE_ATTACK -> ATTACK_CONTROLLER;
+		        case ANIM_STATE_JUMP, ANIM_STATE_FALL, ANIM_STATE_FALL_FLYING, ANIM_STATE_FLYING -> FLYING_CONTROLLER;
+		        default -> WALK_CONTROLLER;
+	        };
         }
         return super.getAnimStateController(player, animSystemData, animStateID);
     }

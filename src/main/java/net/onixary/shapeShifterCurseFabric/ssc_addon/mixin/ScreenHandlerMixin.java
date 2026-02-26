@@ -1,13 +1,14 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin;
 
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.MusicDiscItem;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.item.ItemStack;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.collection.DefaultedList;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.AllayJukeboxItem;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,8 +16,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import net.minecraft.util.collection.DefaultedList;
 
 @Mixin(ScreenHandler.class)
 public abstract class ScreenHandlerMixin {
@@ -53,16 +52,14 @@ public abstract class ScreenHandlerMixin {
 				if (stack.isOf(SscAddon.ALLAY_JUKEBOX)) {
 					// Check if cursor has a music disc - allow charging
 					ItemStack cursorStack = this.getCursorStack();
-					if (cursorStack != null && !cursorStack.isEmpty() && cursorStack.getItem() instanceof MusicDiscItem) {
-						// Try to charge the jukebox with the disc
-						if (AllayJukeboxItem.tryChargeWithDisc(stack, cursorStack)) {
-							// Play charge sound
-							player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
-									SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), SoundCategory.PLAYERS, 1.0f, 1.5f);
-						}
+					// Try to charge the jukebox with the disc
+					if (cursorStack != null && !cursorStack.isEmpty() && cursorStack.getItem() instanceof MusicDiscItem &&
+							AllayJukeboxItem.tryChargeWithDisc(stack, cursorStack)) {
+						// Play charge sound
+						player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+								SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), SoundCategory.PLAYERS, 1.0f, 1.5f);
 					}
 					ci.cancel();
-					return;
 				}
 			}
 		} else if (actionType == SlotActionType.SWAP && button >= 0 && button < 9) {
