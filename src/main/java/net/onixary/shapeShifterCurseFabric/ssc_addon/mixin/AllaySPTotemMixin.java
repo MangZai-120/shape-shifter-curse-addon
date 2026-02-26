@@ -16,11 +16,8 @@ public class AllaySPTotemMixin {
     
     @Inject(method = "tryUseTotem", at = @At("RETURN"), cancellable = true)
     private void tryUseTotem(DamageSource source, CallbackInfoReturnable<Boolean> cir) {
-        if (!cir.getReturnValue()) {
-            LivingEntity entity = (LivingEntity) (Object) this;
-            if (AllaySPTotem.tryUseAllayTotem(entity)) {
-                cir.setReturnValue(true);
-            }
+        if (!cir.getReturnValue() && AllaySPTotem.tryUseAllayTotem((LivingEntity) (Object) this)) {
+            cir.setReturnValue(true);
         }
     }
 }

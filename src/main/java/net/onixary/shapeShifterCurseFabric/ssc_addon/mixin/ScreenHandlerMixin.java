@@ -52,13 +52,12 @@ public abstract class ScreenHandlerMixin {
 				if (stack.isOf(SscAddon.ALLAY_JUKEBOX)) {
 					// Check if cursor has a music disc - allow charging
 					ItemStack cursorStack = this.getCursorStack();
-					if (cursorStack != null && !cursorStack.isEmpty() && cursorStack.getItem() instanceof MusicDiscItem) {
-						// Try to charge the jukebox with the disc
-						if (AllayJukeboxItem.tryChargeWithDisc(stack, cursorStack)) {
-							// Play charge sound
-							player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
-									SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), SoundCategory.PLAYERS, 1.0f, 1.5f);
-						}
+					// Try to charge the jukebox with the disc
+					if (cursorStack != null && !cursorStack.isEmpty() && cursorStack.getItem() instanceof MusicDiscItem &&
+							AllayJukeboxItem.tryChargeWithDisc(stack, cursorStack)) {
+						// Play charge sound
+						player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+								SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), SoundCategory.PLAYERS, 1.0f, 1.5f);
 					}
 					ci.cancel();
 				}
