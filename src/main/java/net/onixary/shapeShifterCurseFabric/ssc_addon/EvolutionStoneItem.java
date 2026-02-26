@@ -12,9 +12,8 @@ import net.minecraft.util.*;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 
 public class EvolutionStoneItem extends Item {
 
@@ -99,11 +98,18 @@ public class EvolutionStoneItem extends Item {
     }
 
     private Identifier getPlayerFormID(PlayerEntity player) {
+        /*
+        // 旧代码
         if (player == null) return null;
         PlayerFormComponent playerFormComponent = RegPlayerFormComponent.PLAYER_FORM.get(player);
         if (playerFormComponent == null) return null;
         PlayerFormBase currentForm = playerFormComponent.getCurrentForm();
         if (currentForm == null) return null;
         return currentForm.FormID;
+        */
+
+        // 新代码
+        PlayerFormBase currentForm = FormUtils.getCurrentForm(player);
+        return currentForm != null ? currentForm.FormID : null;
     }
 }
