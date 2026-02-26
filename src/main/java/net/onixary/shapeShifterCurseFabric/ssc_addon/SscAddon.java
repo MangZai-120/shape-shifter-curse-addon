@@ -258,11 +258,11 @@ public class SscAddon implements ModInitializer {
     }
 
     private void registerEntities() {
-        Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "water_spear"), WATER_SPEAR_ENTITY);
-        Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "frost_ball"), FROST_BALL_ENTITY);
-        Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "frost_storm"), FROST_STORM_ENTITY);
-        Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "friend_marker"), FRIEND_MARKER_ENTITY_TYPE);
-        Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "clear_friend_marker"), CLEAR_MARKER_ENTITY_TYPE);
+        // Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "water_spear"), WATER_SPEAR_ENTITY);
+        // Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "frost_ball"), FROST_BALL_ENTITY);
+        // Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "frost_storm"), FROST_STORM_ENTITY);
+        // Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "friend_marker"), FRIEND_MARKER_ENTITY_TYPE);
+        // Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "clear_friend_marker"), CLEAR_MARKER_ENTITY_TYPE);
     }
 
     private void registerRecipeSerializers() {
