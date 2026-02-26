@@ -5,7 +5,6 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -15,6 +14,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 
 import java.util.HashSet;
@@ -121,13 +121,9 @@ public class SnowFoxSpMeleeAbility {
                     true
                 ));
                 
+                // 使用ParticleUtils
                 if (player.getWorld() instanceof ServerWorld serverWorld) {
-                    serverWorld.spawnParticles(ParticleTypes.SNOWFLAKE,
-                        target.getX(), target.getY() + target.getHeight() / 2, target.getZ(),
-                        20, 0.5, 0.5, 0.5, 0.1);
-                    serverWorld.spawnParticles(ParticleTypes.CLOUD,
-                        target.getX(), target.getY() + target.getHeight() / 2, target.getZ(),
-                        10, 0.3, 0.3, 0.3, 0.05);
+                    ParticleUtils.spawnHitParticles(serverWorld, new Vec3d(target.getX(), target.getY() + target.getHeight() / 2, target.getZ()));
                 }
                 
                 player.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
@@ -135,10 +131,9 @@ public class SnowFoxSpMeleeAbility {
             }
         }
         
+        // 使用ParticleUtils
         if (player.getWorld() instanceof ServerWorld serverWorld) {
-            serverWorld.spawnParticles(ParticleTypes.SNOWFLAKE,
-                player.getX(), player.getY() + 0.5, player.getZ(),
-                5, 0.2, 0.2, 0.2, 0.02);
+            ParticleUtils.spawnSnowflakeParticles(serverWorld, new Vec3d(player.getX(), player.getY() + 0.5, player.getZ()));
         }
         
         data.ticksElapsed++;
