@@ -40,7 +40,7 @@ public class FrostAmuletItem extends TrinketItem {
 
     @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        tooltip.add(Text.translatable("item.ssc_addon.frost_amulet.tooltip_2").formatted(Formatting.BLUE));
+        tooltip.add(Text.translatable("item.ssc_addon.frost_amulet.tooltip.2").formatted(Formatting.BLUE));
         tooltip.add(Text.translatable("item.ssc_addon.frost_amulet.tooltip.exclusive").formatted(Formatting.AQUA));
         super.appendTooltip(stack, world, tooltip, context);
     }
