@@ -1,0 +1,37 @@
+{
+    "powers": [
+        "my_addon:form_allay_sp_scale",
+        "my_addon:form_allay_sp_fly_hunger",
+        "my_addon:form_fallen_allay_sp_projectile_damage_down",
+        "my_addon:form_fallen_allay_sp_melee_damage_up",
+        "my_addon:form_allay_sp_slow_falling",
+        "my_addon:form_fallen_allay_sp_cooked_meat_only",
+        "my_addon:form_fallen_allay_sp_vex_cd",
+        "my_addon:form_fallen_allay_sp_active_vex",
+        "my_addon:form_fallen_allay_sp_active_scream",
+        "my_addon:form_fallen_allay_sp_attack_mark",
+        "my_addon:form_allay_sp_prevent_digging_when_fly",
+        "my_addon:form_allay_sp_levitate_speed_up",
+        "my_addon:form_allay_sp_digging_speed_down",
+        "shape-shifter-curse:no_exhaustion",
+        "shape-shifter-curse:form_force_disable_leg_armor",
+        "shape-shifter-curse:form_force_disable_feet_armor",
+        "my_addon:form_allay_sp_walk_on_powder_snow",
+        "origins:velvet_paws",
+        "my_addon:form_allay_sp_sound",
+        "my_addon:form_allay_sp_sound_hurt",
+        "my_addon:form_allay_sp_levitate",
+        "my_addon:form_allay_sp_slipperiness",
+        "my_addon:form_allay_sp_health",
+        "shape-shifter-curse:no_step_sound",
+        "my_addon:form_allay_sp_sound_key",
+        "my_addon:form_fallen_allay_sp_fire_immune",
+        "my_addon:form_fallen_allay_sp_raid_faction"
+    ],
+    "icon": {
+        "item": "minecraft:player_head"
+    },
+    "order": 0,
+    "unchoosable": true,
+    "impact": 0
+}

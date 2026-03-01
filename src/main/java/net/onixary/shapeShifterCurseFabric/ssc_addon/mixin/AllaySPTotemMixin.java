@@ -12,7 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class AllaySPTotemMixin {
     
     // VirtualTotemMixin uses priority 10.
-    // Higher priority runs earlier, so we can check and return true (cancel death) before Anubis logic runs.
     
     @Inject(method = "tryUseTotem", at = @At("RETURN"), cancellable = true)
     private void tryUseTotem(DamageSource source, CallbackInfoReturnable<Boolean> cir) {

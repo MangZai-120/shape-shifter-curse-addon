@@ -1,0 +1,82 @@
+{
+  "groupIndex": 8,
+  "phase": "PHASE_SP",
+  "status": "codex.status.my_addon.SP_status",
+  "bodyType": "NORMAL",
+  "isCustomForm": false,
+  "originID": "my_addon:form_fallen_allay_sp",
+  "hasSlowFall": true,
+  "canSneakRush": false,
+  "canRushJump": false,
+  "anim": {
+    "shape-shifter-curse:idle_state": {
+      "controllerType": "shape-shifter-curse:sneak_anim_controller",
+      "anim": {
+        "animID": "my_addon:allay_sp_idle"
+      },
+      "sneakAnim": {
+        "animID": "my_addon:allay_sp_sneaking"
+      }
+    },
+    "shape-shifter-curse:walk_state": {
+      "controllerType": "shape-shifter-curse:sneak_anim_controller",
+      "anim": {
+        "animID": "my_addon:allay_sp_moving",
+        "speed": 1.0
+      },
+      "sneakAnim": {
+        "animID": "my_addon:allay_sp_sneaking_walk"
+      }
+    },
+    "shape-shifter-curse:sprint_state": {
+      "controllerType": "shape-shifter-curse:sneak_anim_controller",
+      "anim": {
+        "animID": "my_addon:allay_sp_run",
+        "speed": 1.0
+      },
+      "sneakAnim": {
+        "animID": "my_addon:allay_sp_sneaking_walk"
+      }
+    },
+    "shape-shifter-curse:jump_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "my_addon:allay_sp_fly"
+      }
+    },
+    "shape-shifter-curse:fall_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "my_addon:allay_sp_fly"
+      }
+    },
+    "shape-shifter-curse:flying_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "my_addon:allay_sp_fly"
+      }
+    },
+    "shape-shifter-curse:fall_flying_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "my_addon:allay_sp_fly"
+      }
+    },
+    "shape-shifter-curse:mining_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "my_addon:allay_sp_digging"
+      }
+    },
+    "shape-shifter-curse:attack_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "my_addon:allay_sp_attack"
+      }
+    }
+  },
+  "animDefault": {
+      "speed": 1.0,
+      "fade": 2
+  }
+}

@@ -29,6 +29,7 @@ import net.minecraft.util.Pair;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack;
@@ -53,6 +54,107 @@ public class SscAddonActions {
     private static final ConcurrentHashMap<UUID, Long> FROST_BALL_COOLDOWN = new ConcurrentHashMap<>();
 
     public static void register() {
+            registerEntity(new ActionFactory<>(new Identifier("my_addon", "fallen_allay_scream"),
+                new SerializableData(),
+                (data, entity) -> {
+                    if (entity instanceof ServerPlayerEntity player) {
+                        net.minecraft.server.world.ServerWorld world = (net.minecraft.server.world.ServerWorld) player.getWorld();
+                        
+                        // Particle and sound effects
+                        world.playSound(null, player.getX(), player.getY(), player.getZ(), net.minecraft.sound.SoundEvents.ENTITY_WARDEN_SONIC_BOOM, net.minecraft.sound.SoundCategory.PLAYERS, 2.0f, 1.5f);
+                        world.playSound(null, player.getX(), player.getY(), player.getZ(), net.minecraft.sound.SoundEvents.ENTITY_ENDER_DRAGON_GROWL, net.minecraft.sound.SoundCategory.PLAYERS, 1.0f, 1.2f);
+                        world.spawnParticles(net.minecraft.particle.ParticleTypes.SONIC_BOOM, player.getX(), player.getY() + 1.0, player.getZ(), 1, 0, 0, 0, 0);
+                        world.spawnParticles(net.minecraft.particle.ParticleTypes.SCULK_SOUL, player.getX(), player.getY() + 1.0, player.getZ(), 30, 3.0, 2.0, 3.0, 0.05);
+                        world.spawnParticles(net.minecraft.particle.ParticleTypes.LARGE_SMOKE, player.getX(), player.getY() + 1.0, player.getZ(), 20, 2.0, 1.5, 2.0, 0.03);
+                        // Spawn particle ring at radius 25
+                        for (int i = 0; i < 48; i++) {
+                            double angle = 2.0 * Math.PI * i / 48;
+                            double px = player.getX() + 25.0 * Math.cos(angle);
+                            double pz = player.getZ() + 25.0 * Math.sin(angle);
+                            world.spawnParticles(net.minecraft.particle.ParticleTypes.SCULK_SOUL, px, player.getY() + 0.5, pz, 1, 0.3, 0.3, 0.3, 0.02);
+                        }
+
+                        Box box = player.getBoundingBox().expand(25.0);
+                        
+                        // Glow non-whitelisted
+                        java.util.List<LivingEntity> entities = world.getEntitiesByClass(LivingEntity.class, box, e -> e != player && e.isAlive());
+                        java.util.Set<String> tags = player.getCommandTags();
+                        boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
+                        for (LivingEntity e : entities) {
+                            if (e instanceof net.minecraft.entity.passive.TameableEntity tameable && player.getUuid().equals(tameable.getOwnerUuid())) {
+                                continue;
+                            }
+                            if (e instanceof net.minecraft.entity.mob.VexEntity vex && vex.getCommandTags().contains("owner:" + player.getUuidAsString())) {
+                                continue;
+                            }
+                            // Skip raid faction entities (pillagers, illagers, vex, etc.)
+                            if (e instanceof net.minecraft.entity.raid.RaiderEntity || e instanceof net.minecraft.entity.mob.VexEntity) {
+                                continue;
+                            }
+
+                            if (whitelistEmpty) {
+                                if (e instanceof PlayerEntity) {
+                                    continue;
+                                }
+                            } else {
+                                if (AllaySPGroupHeal.shouldHeal(e, tags)) {
+                                    continue;
+                                }
+                            }
+
+                            e.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, 160, 0)); // 8s
+                        }
+                        
+                        // Kill projectiles
+                        java.util.List<Entity> projectiles = world.getOtherEntities(player, box, e -> e instanceof net.minecraft.entity.projectile.ProjectileEntity);
+                        for (Entity p : projectiles) {
+                            world.spawnParticles(net.minecraft.particle.ParticleTypes.SMOKE, p.getX(), p.getY(), p.getZ(), 5, 0.1, 0.1, 0.1, 0.05);
+                            p.discard();
+                        }
+                    }
+                }
+            ));
+            
+            registerEntity(new ActionFactory<>(new Identifier("my_addon", "summon_fallen_allay_vex"),
+                new SerializableData(),
+                (data, entity) -> {
+                    if (entity instanceof ServerPlayerEntity player) {
+                        net.minecraft.server.world.ServerWorld world = (net.minecraft.server.world.ServerWorld) player.getWorld();
+                        
+                        // Check if player already has vex
+                        boolean hasVex = false;
+                        for (Entity e : world.getEntitiesByClass(net.minecraft.entity.mob.VexEntity.class, player.getBoundingBox().expand(128.0), v -> true)) {
+                            if (e.getCommandTags().contains("owner:" + player.getUuidAsString()) && e.getCommandTags().contains("ssc_fallen_allay_vex")) {
+                                hasVex = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!hasVex) {
+                            // Sound + particles
+                            world.playSound(null, player.getX(), player.getY(), player.getZ(),
+                                    net.minecraft.sound.SoundEvents.ENTITY_EVOKER_PREPARE_SUMMON,
+                                    net.minecraft.sound.SoundCategory.PLAYERS, 1.5f, 1.0f);
+                            world.spawnParticles(net.minecraft.particle.ParticleTypes.SMOKE,
+                                    player.getX(), player.getEyeY(), player.getZ(), 20, 0.5, 0.5, 0.5, 0.05);
+                            world.spawnParticles(net.minecraft.particle.ParticleTypes.LARGE_SMOKE,
+                                    player.getX(), player.getEyeY(), player.getZ(), 10, 0.3, 0.3, 0.3, 0.02);
+
+                            for (int i = 0; i < 2; i++) {
+                                net.minecraft.entity.mob.VexEntity vex = net.minecraft.entity.EntityType.VEX.create(world);
+                                if (vex != null) {
+                                    vex.refreshPositionAndAngles(player.getX(), player.getEyeY(), player.getZ(), player.getYaw(), player.getPitch());
+                                    vex.addCommandTag("ssc_fallen_allay_vex");
+                                    vex.addCommandTag("owner:" + player.getUuidAsString());
+                                    world.spawnEntity(vex);
+                                }
+                            }
+                            // Mark player as having active vexes for tick handler tracking
+                            player.addCommandTag("ssc_vex_active");
+                        }
+                    }
+                }
+            ));
             registerEntity(PhantomBellTeleportAction.getFactory());
 
             registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "item_cooldown"),

@@ -117,7 +117,7 @@
         "type": "origins:modify_damage_taken",
         "modifier": {
             "operation": "multiply_total",
-            "value": -0.3
+            "value": -0.5
         },
         "condition": {
             "type": "origins:resource",
@@ -389,6 +389,70 @@
             ]
         }
     },
+    "hit_invuln_timer": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 18,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "invuln_timer_tick": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "entity_action": {
+            "type": "origins:change_resource",
+            "resource": "*:*_hit_invuln_timer",
+            "operation": "add",
+            "change": -1
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_hit_invuln_timer",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "vortex_invuln_set": {
+        "type": "origins:action_when_damage_taken",
+        "entity_action": {
+            "type": "origins:change_resource",
+            "resource": "*:*_hit_invuln_timer",
+            "operation": "set",
+            "change": 18
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_vortex_state",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "vortex_invuln_block": {
+        "type": "origins:modify_damage_taken",
+        "modifier": {
+            "operation": "multiply_total",
+            "value": -1.0
+        },
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:resource",
+                    "resource": "*:*_vortex_state",
+                    "comparison": ">",
+                    "compare_to": 0
+                },
+                {
+                    "type": "origins:resource",
+                    "resource": "*:*_hit_invuln_timer",
+                    "comparison": ">",
+                    "compare_to": 0
+                }
+            ]
+        }
+    },
     "name": "Vortex Impact",
-    "description": "Create a vortex that pulls enemies for 3 seconds, then knockback and deal massive damage. 30% damage reduction while active. Costs 20% wetness."
+    "description": "Create a vortex that pulls enemies for 3 seconds, then knockback and deal massive damage. 50% damage reduction while active. Costs 20% wetness. Post-hit invulnerability extended to 0.9s during vortex."
 }

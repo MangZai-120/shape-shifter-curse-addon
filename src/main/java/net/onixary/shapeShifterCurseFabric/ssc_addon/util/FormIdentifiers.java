@@ -12,6 +12,7 @@ public class FormIdentifiers {
     public static final Identifier ALLAY_SP = new Identifier("my_addon", "allay_sp");
     public static final Identifier WILD_CAT_SP = new Identifier("my_addon", "wild_cat_sp");
     public static final Identifier AXOLOTL_SP = new Identifier("my_addon", "axolotl_sp");
+    public static final Identifier FALLEN_ALLAY_SP = new Identifier("my_addon", "fallen_allay_sp");
 
     public static final Identifier SNOW_FOX_RESOURCE = new Identifier("my_addon", "form_snow_fox_sp_resource");
     public static final Identifier SNOW_FOX_REGEN_COOLDOWN = new Identifier("my_addon", "form_snow_fox_sp_frost_regen_cooldown_resource");

@@ -26,6 +26,7 @@ import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormGroup;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormPhase;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_FeralCatSP;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.Form_FallenAllaySP;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.action.SscAddonActions;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.command.SscAddonCommands;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.condition.SscAddonConditions;
@@ -50,6 +51,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAt
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPJukebox;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.FallenAllayVexTracker;
 
 public class SscAddon implements ModInitializer {
 
@@ -320,6 +322,12 @@ public class SscAddon implements ModInitializer {
         wildCatForm.setCanSneakRush(true);
         RegPlayerForms.registerPlayerForm(wildCatForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_wild_cat_sp")).addForm(wildCatForm, 5));
+
+        // Fallen Allay SP
+        Form_FallenAllaySP fallenAllayForm = new Form_FallenAllaySP(FormIdentifiers.FALLEN_ALLAY_SP);
+        fallenAllayForm.setPhase(PlayerFormPhase.PHASE_SP);
+        RegPlayerForms.registerPlayerForm(fallenAllayForm);
+        RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_fallen_allay_sp")).addForm(fallenAllayForm, 8));
     }
 
     private void registerCommands() {
@@ -334,6 +342,7 @@ public class SscAddon implements ModInitializer {
                 SnowFoxSpFrostStorm.tick(player);
                 AllaySPGroupHeal.tick(player);
                 AllaySPJukebox.tick(player);
+                FallenAllayVexTracker.tick(player);
             }
         });
     }

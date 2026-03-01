@@ -2,6 +2,9 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin;
 
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.entity.mob.VexEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.raid.RaiderEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -22,6 +25,13 @@ public abstract class MobEntityMixin {
                 // Prevent mob from optimizing onto the invisible player
                 ci.cancel();
             }
+            // Prevent raid faction mobs from targeting players with ssc_raid_friend tag
+            MobEntity self = (MobEntity)(Object)this;
+            if ((self instanceof RaiderEntity || self instanceof VexEntity)
+                    && target instanceof PlayerEntity player
+                    && player.getCommandTags().contains("ssc_raid_friend")) {
+                ci.cancel();
+            }
         }
     }
 
@@ -40,6 +50,15 @@ public abstract class MobEntityMixin {
         // If the mob is currently targeting someone who is invisible, forget them immediately.
         LivingEntity target = mob.getTarget();
         if (target != null && target.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) {
+            mob.setTarget(null);
+        }
+
+        // 3. Raid faction mobs should not target ssc_raid_friend players
+        // This clears targets that were set before the mixin check (e.g. vanilla AI initial targeting)
+        if ((mob instanceof RaiderEntity || mob instanceof VexEntity)
+                && target != null
+                && target instanceof PlayerEntity player
+                && player.getCommandTags().contains("ssc_raid_friend")) {
             mob.setTarget(null);
         }
     }

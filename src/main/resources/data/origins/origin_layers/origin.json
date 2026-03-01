@@ -8,7 +8,8 @@
     "my_addon:form_axolotl_sp",
     "my_addon:form_wild_cat_sp",
     "my_addon:form_snow_fox_sp",
-    "my_addon:form_allay_sp"
+    "my_addon:form_allay_sp",
+    "my_addon:form_fallen_allay_sp"
   ],
   "allow_random": true,
   "allow_random_unchoosable": false,

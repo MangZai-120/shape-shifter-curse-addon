@@ -42,9 +42,7 @@ public class SpUpgradeItem extends Item {
         // To:   my_addon:form_familiar_fox_sp
         registerUpgrade("shape-shifter-curse", "familiar_fox_3", "my_addon", "familiar_fox_sp");
         registerUpgrade("shape-shifter-curse", "axolotl_3", "my_addon", "axolotl_sp");
-        
-        // Future forms can be added here easily like:
-        // registerUpgrade("shape-shifter-curse", "form_axolotl_3", "my_addon", "axolotl_sp");
+        registerUpgrade("shape-shifter-curse", "allay_sp", "my_addon", "fallen_allay_sp");
     }
 
     public static void registerUpgrade(String fromNamespace, String fromPath, String toNamespace, String toPath) {

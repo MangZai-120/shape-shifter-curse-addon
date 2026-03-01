@@ -1,0 +1,307 @@
+{
+    "type": "origins:multiple",
+    "charging_state": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 1,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "charge_timer": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 30,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "vex_summoned": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 1,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "cooldown_tick": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "entity_action": {
+            "type": "origins:change_resource",
+            "resource": "my_addon:form_fallen_allay_sp_vex_cd",
+            "operation": "add",
+            "change": -1
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "my_addon:form_fallen_allay_sp_vex_cd",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "check_vex_gone": {
+        "type": "origins:action_over_time",
+        "interval": 20,
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:resource",
+                    "resource": "*:*_vex_summoned",
+                    "comparison": "==",
+                    "compare_to": 1
+                },
+                {
+                    "type": "origins:command",
+                    "command": "execute unless entity @e[type=vex,tag=ssc_fallen_allay_vex,distance=..128]",
+                    "comparison": ">=",
+                    "compare_to": 1
+                }
+            ]
+        },
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_vex_summoned",
+                    "operation": "set",
+                    "change": 0
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_fallen_allay_sp_vex_cd",
+                    "operation": "set",
+                    "change": 400
+                }
+            ]
+        }
+    },
+    "key_activation": {
+        "type": "origins:active_self",
+        "key": {
+            "key": "key.ssc_addon.sp_primary"
+        },
+        "cooldown": 10,
+        "entity_action": {
+            "type": "origins:if_else",
+            "condition": {
+                "type": "origins:resource",
+                "resource": "*:*_charging_state",
+                "comparison": "==",
+                "compare_to": 0
+            },
+            "if_action": {
+                "type": "origins:and",
+                "actions": [
+                    {
+                        "type": "origins:change_resource",
+                        "resource": "*:*_charging_state",
+                        "operation": "set",
+                        "change": 1
+                    },
+                    {
+                        "type": "origins:change_resource",
+                        "resource": "*:*_charge_timer",
+                        "operation": "set",
+                        "change": 0
+                    },
+                    {
+                        "type": "origins:apply_effect",
+                        "effect": {
+                            "effect": "minecraft:slowness",
+                            "duration": 30,
+                            "amplifier": 3,
+                            "is_ambient": true,
+                            "show_particles": false,
+                            "show_icon": false
+                        }
+                    },
+                    {
+                        "type": "origins:execute_command",
+                        "command": "playsound entity.evoker.prepare_summon player @s ~ ~ ~ 1.5 1.0"
+                    }
+                ]
+            },
+            "else_action": {
+                "type": "origins:and",
+                "actions": [
+                    {
+                        "type": "origins:change_resource",
+                        "resource": "*:*_charging_state",
+                        "operation": "set",
+                        "change": 0
+                    },
+                    {
+                        "type": "origins:change_resource",
+                        "resource": "*:*_charge_timer",
+                        "operation": "set",
+                        "change": 0
+                    },
+                    {
+                        "type": "origins:clear_effect",
+                        "effect": "minecraft:slowness"
+                    },
+                    {
+                        "type": "origins:play_sound",
+                        "sound": "block.beacon.deactivate",
+                        "volume": 0.5,
+                        "pitch": 1.5
+                    }
+                ]
+            }
+        },
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:resource",
+                    "resource": "my_addon:form_fallen_allay_sp_vex_cd",
+                    "comparison": "==",
+                    "compare_to": 0
+                },
+                {
+                    "type": "origins:resource",
+                    "resource": "*:*_vex_summoned",
+                    "comparison": "==",
+                    "compare_to": 0
+                }
+            ]
+        }
+    },
+    "charging_tick": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_charging_state",
+            "comparison": "==",
+            "compare_to": 1
+        },
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_charge_timer",
+                    "operation": "add",
+                    "change": 1
+                },
+                {
+                    "type": "origins:if_else",
+                    "condition": {
+                        "type": "origins:resource",
+                        "resource": "*:*_charge_timer",
+                        "comparison": ">=",
+                        "compare_to": 20
+                    },
+                    "if_action": {
+                        "type": "origins:and",
+                        "actions": [
+                            {
+                                "type": "origins:change_resource",
+                                "resource": "*:*_charging_state",
+                                "operation": "set",
+                                "change": 0
+                            },
+                            {
+                                "type": "origins:change_resource",
+                                "resource": "*:*_charge_timer",
+                                "operation": "set",
+                                "change": 0
+                            },
+                            {
+                                "type": "origins:change_resource",
+                                "resource": "*:*_vex_summoned",
+                                "operation": "set",
+                                "change": 1
+                            },
+                            {
+                                "type": "origins:clear_effect",
+                                "effect": "minecraft:slowness"
+                            },
+                            {
+                                "type": "my_addon:summon_fallen_allay_vex"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "charging_slowness": {
+        "type": "origins:action_over_time",
+        "interval": 20,
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_charging_state",
+            "comparison": "==",
+            "compare_to": 1
+        },
+        "entity_action": {
+            "type": "origins:apply_effect",
+            "effect": {
+                "effect": "minecraft:slowness",
+                "duration": 30,
+                "amplifier": 3,
+                "is_ambient": true,
+                "show_particles": false,
+                "show_icon": false
+            }
+        }
+    },
+    "charging_particles": {
+        "type": "origins:action_over_time",
+        "interval": 4,
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_charging_state",
+            "comparison": "==",
+            "compare_to": 1
+        },
+        "entity_action": {
+            "type": "origins:execute_command",
+            "command": "particle minecraft:smoke ~ ~1 ~ 0.3 0.5 0.3 0.02 8 force @a"
+        }
+    },
+    "interrupt_on_damage": {
+        "type": "origins:action_when_damage_taken",
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_charging_state",
+                    "operation": "set",
+                    "change": 0
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_charge_timer",
+                    "operation": "set",
+                    "change": 0
+                },
+                {
+                    "type": "origins:clear_effect",
+                    "effect": "minecraft:slowness"
+                },
+                {
+                    "type": "origins:play_sound",
+                    "sound": "block.beacon.deactivate",
+                    "volume": 0.5,
+                    "pitch": 1.5
+                }
+            ]
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_charging_state",
+            "comparison": "==",
+            "compare_to": 1
+        }
+    }
+}

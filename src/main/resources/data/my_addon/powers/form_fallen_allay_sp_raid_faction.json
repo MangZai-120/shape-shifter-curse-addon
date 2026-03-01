@@ -1,0 +1,147 @@
+{
+    "type": "origins:multiple",
+    "raid_friend_tag": {
+        "type": "origins:action_on_callback",
+        "entity_action_gained": {
+            "type": "origins:execute_command",
+            "command": "tag @s add ssc_raid_friend"
+        },
+        "entity_action_lost": {
+            "type": "origins:execute_command",
+            "command": "tag @s remove ssc_raid_friend"
+        },
+        "entity_action_added": {
+            "type": "origins:execute_command",
+            "command": "tag @s add ssc_raid_friend"
+        },
+        "entity_action_removed": {
+            "type": "origins:execute_command",
+            "command": "tag @s remove ssc_raid_friend"
+        }
+    },
+    "scare_villager": {
+        "type": "origins:entity_glow",
+        "bientity_condition": {
+            "type": "origins:target_condition",
+            "condition": {
+                "type": "origins:entity_type",
+                "entity_type": "minecraft:villager"
+            }
+        }
+    },
+    "prevent_attack_raid_mobs": {
+        "type": "origins:prevent_entity_use",
+        "bientity_condition": {
+            "type": "origins:target_condition",
+            "condition": {
+                "type": "origins:or",
+                "conditions": [
+                    {
+                        "type": "origins:entity_type",
+                        "entity_type": "minecraft:pillager"
+                    },
+                    {
+                        "type": "origins:entity_type",
+                        "entity_type": "minecraft:vindicator"
+                    },
+                    {
+                        "type": "origins:entity_type",
+                        "entity_type": "minecraft:evoker"
+                    },
+                    {
+                        "type": "origins:entity_type",
+                        "entity_type": "minecraft:ravager"
+                    },
+                    {
+                        "type": "origins:entity_type",
+                        "entity_type": "minecraft:witch"
+                    },
+                    {
+                        "type": "origins:entity_type",
+                        "entity_type": "minecraft:illusioner"
+                    },
+                    {
+                        "type": "origins:entity_type",
+                        "entity_type": "minecraft:vex"
+                    }
+                ]
+            }
+        }
+    },
+    "villager_flee": {
+        "type": "origins:action_over_time",
+        "interval": 20,
+        "entity_action": {
+            "type": "origins:execute_command",
+            "command": "execute at @s run effect give @e[type=minecraft:villager,distance=..16] minecraft:speed 3 2 true"
+        }
+    },
+    "clear_bad_omen": {
+        "type": "origins:action_over_time",
+        "interval": 20,
+        "entity_action": {
+            "type": "origins:execute_command",
+            "command": "effect clear @s minecraft:bad_omen"
+        },
+        "condition": {
+            "type": "origins:status_effect",
+            "effect": "minecraft:bad_omen"
+        }
+    },
+    "clear_hero_of_village": {
+        "type": "origins:action_over_time",
+        "interval": 20,
+        "entity_action": {
+            "type": "origins:execute_command",
+            "command": "effect clear @s minecraft:hero_of_the_village"
+        },
+        "condition": {
+            "type": "origins:status_effect",
+            "effect": "minecraft:hero_of_the_village"
+        }
+    },
+    "prevent_damage_to_raid": {
+        "type": "origins:modify_damage_dealt",
+        "bientity_condition": {
+            "type": "origins:target_condition",
+            "condition": {
+                "type": "origins:or",
+                "conditions": [
+                    {"type": "origins:entity_type", "entity_type": "minecraft:pillager"},
+                    {"type": "origins:entity_type", "entity_type": "minecraft:vindicator"},
+                    {"type": "origins:entity_type", "entity_type": "minecraft:evoker"},
+                    {"type": "origins:entity_type", "entity_type": "minecraft:ravager"},
+                    {"type": "origins:entity_type", "entity_type": "minecraft:witch"},
+                    {"type": "origins:entity_type", "entity_type": "minecraft:illusioner"},
+                    {"type": "origins:entity_type", "entity_type": "minecraft:vex"}
+                ]
+            }
+        },
+        "modifier": {
+            "operation": "multiply_total",
+            "value": -1.0
+        }
+    },
+    "prevent_damage_from_raid": {
+        "type": "origins:modify_damage_taken",
+        "bientity_condition": {
+            "type": "origins:actor_condition",
+            "condition": {
+                "type": "origins:or",
+                "conditions": [
+                    {"type": "origins:entity_type", "entity_type": "minecraft:pillager"},
+                    {"type": "origins:entity_type", "entity_type": "minecraft:vindicator"},
+                    {"type": "origins:entity_type", "entity_type": "minecraft:evoker"},
+                    {"type": "origins:entity_type", "entity_type": "minecraft:ravager"},
+                    {"type": "origins:entity_type", "entity_type": "minecraft:witch"},
+                    {"type": "origins:entity_type", "entity_type": "minecraft:illusioner"},
+                    {"type": "origins:entity_type", "entity_type": "minecraft:vex"}
+                ]
+            }
+        },
+        "modifier": {
+            "operation": "multiply_total",
+            "value": -1.0
+        }
+    }
+}

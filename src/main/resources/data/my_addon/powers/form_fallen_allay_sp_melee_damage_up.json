@@ -1,0 +1,22 @@
+{
+    "type": "origins:modify_damage_dealt",
+    "bientity_condition": {
+        "type": "origins:actor_condition",
+        "condition": {
+            "type": "origins:inventory",
+            "process_mode": "items",
+            "item_condition": {
+                "type": "origins:harvest_level",
+                "comparison": ">",
+                "compare_to": 1
+            },
+            "slots": [
+                "weapon.mainhand"
+            ]
+        }
+    },
+    "modifier": {
+        "operation": "addition",
+        "value": 2.0
+    }
+}
