@@ -1,4 +1,4 @@
-﻿{
+{
     "type": "origins:multiple",
     "charging_state": {
         "type": "origins:resource",
@@ -12,10 +12,17 @@
     "charge_timer": {
         "type": "origins:resource",
         "min": 0,
-        "max": 30,
+        "max": 20,
         "start_value": 0,
         "hud_render": {
-            "should_render": false
+            "should_render": true,
+            "bar_index": 5,
+            "condition": {
+                "type": "origins:resource",
+                "resource": "*:*_charge_timer",
+                "comparison": ">",
+                "compare_to": 0
+            }
         }
     },
     "cooldown_timer": {
@@ -40,8 +47,8 @@
         "entity_action": {
             "type": "origins:change_resource",
             "resource": "*:*_cooldown_timer",
-            "operation": "add",
-            "change": -1
+            "change": -1,
+            "operation": "add"
         },
         "condition": {
             "type": "origins:resource",
@@ -55,83 +62,58 @@
         "key": {
             "key": "key.ssc_addon.sp_secondary"
         },
-        "cooldown": 10,
+        "cooldown": 20,
         "entity_action": {
-            "type": "origins:if_else",
-            "condition": {
-                "type": "origins:resource",
-                "resource": "*:*_charging_state",
-                "comparison": "==",
-                "compare_to": 0
-            },
-            "if_action": {
-                "type": "origins:and",
-                "actions": [
-                    {
-                        "type": "origins:change_resource",
-                        "resource": "*:*_charging_state",
-                        "operation": "set",
-                        "change": 1
-                    },
-                    {
-                        "type": "origins:change_resource",
-                        "resource": "*:*_charge_timer",
-                        "operation": "set",
-                        "change": 0
-                    },
-                    {
-                        "type": "origins:apply_effect",
-                        "effect": {
-                            "effect": "minecraft:slowness",
-                            "duration": 30,
-                            "amplifier": 3,
-                            "is_ambient": true,
-                            "show_particles": false,
-                            "show_icon": false
-                        }
-                    },
-                    {
-                        "type": "origins:execute_command",
-                        "command": "playsound entity.warden.heartbeat hostile @s ~ ~ ~ 1.5 0.5"
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_charging_state",
+                    "change": 1,
+                    "operation": "set"
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_charge_timer",
+                    "change": 0,
+                    "operation": "set"
+                },
+                {
+                    "type": "origins:execute_command",
+                    "command": "playsound entity.warden.heartbeat hostile @a ~ ~ ~ 1.5 0.5"
+                },
+                {
+                    "type": "origins:apply_effect",
+                    "effect": {
+                        "effect": "minecraft:slowness",
+                        "duration": 30,
+                        "amplifier": 3,
+                        "is_ambient": true,
+                        "show_particles": false,
+                        "show_icon": false
                     }
-                ]
-            },
-            "else_action": {
-                "type": "origins:and",
-                "actions": [
-                    {
-                        "type": "origins:change_resource",
-                        "resource": "*:*_charging_state",
-                        "operation": "set",
-                        "change": 0
-                    },
-                    {
-                        "type": "origins:change_resource",
-                        "resource": "*:*_charge_timer",
-                        "operation": "set",
-                        "change": 0
-                    },
-                    {
-                        "type": "origins:clear_effect",
-                        "effect": "minecraft:slowness"
-                    },
-                    {
-                        "type": "origins:play_sound",
-                        "sound": "block.beacon.deactivate",
-                        "volume": 0.5,
-                        "pitch": 1.5
-                    }
-                ]
-            }
+                }
+            ]
         },
         "condition": {
-            "type": "origins:resource",
-            "resource": "*:*_cooldown_timer",
-            "comparison": "==",
-            "compare_to": 0
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:resource",
+                    "resource": "*:*_cooldown_timer",
+                    "comparison": "==",
+                    "compare_to": 0
+                },
+                {
+                    "type": "origins:resource",
+                    "resource": "*:*_charging_state",
+                    "comparison": "==",
+                    "compare_to": 0
+                }
+            ]
         }
     },
-    "charging_tick": {
+    "tick_charging": {
         "type": "origins:action_over_time",
         "interval": 1,
         "condition": {
@@ -141,75 +123,10 @@
             "compare_to": 1
         },
         "entity_action": {
-            "type": "origins:and",
-            "actions": [
-                {
-                    "type": "origins:change_resource",
-                    "resource": "*:*_charge_timer",
-                    "operation": "add",
-                    "change": 1
-                },
-                {
-                    "type": "origins:if_else",
-                    "condition": {
-                        "type": "origins:resource",
-                        "resource": "*:*_charge_timer",
-                        "comparison": ">=",
-                        "compare_to": 20
-                    },
-                    "if_action": {
-                        "type": "origins:and",
-                        "actions": [
-                            {
-                                "type": "origins:change_resource",
-                                "resource": "*:*_charging_state",
-                                "operation": "set",
-                                "change": 0
-                            },
-                            {
-                                "type": "origins:change_resource",
-                                "resource": "*:*_charge_timer",
-                                "operation": "set",
-                                "change": 0
-                            },
-                            {
-                                "type": "origins:change_resource",
-                                "resource": "*:*_cooldown_timer",
-                                "operation": "set",
-                                "change": 400
-                            },
-                            {
-                                "type": "origins:clear_effect",
-                                "effect": "minecraft:slowness"
-                            },
-                            {
-                                "type": "my_addon:fallen_allay_scream"
-                            }
-                        ]
-                    }
-                }
-            ]
-        }
-    },
-    "charging_slowness": {
-        "type": "origins:action_over_time",
-        "interval": 20,
-        "condition": {
-            "type": "origins:resource",
-            "resource": "*:*_charging_state",
-            "comparison": "==",
-            "compare_to": 1
-        },
-        "entity_action": {
-            "type": "origins:apply_effect",
-            "effect": {
-                "effect": "minecraft:slowness",
-                "duration": 30,
-                "amplifier": 3,
-                "is_ambient": true,
-                "show_particles": false,
-                "show_icon": false
-            }
+            "type": "origins:change_resource",
+            "resource": "*:*_charge_timer",
+            "change": 1,
+            "operation": "add"
         }
     },
     "charging_particles": {
@@ -224,6 +141,76 @@
         "entity_action": {
             "type": "origins:execute_command",
             "command": "particle minecraft:smoke ~ ~1 ~ 0.3 0.5 0.3 0.02 8 force @a"
+        }
+    },
+    "trigger_scream": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_charge_timer",
+            "comparison": ">=",
+            "compare_to": 20
+        },
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_charging_state",
+                    "change": 0,
+                    "operation": "set"
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_charge_timer",
+                    "change": 0,
+                    "operation": "set"
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_cooldown_timer",
+                    "change": 400,
+                    "operation": "set"
+                },
+                {
+                    "type": "origins:clear_effect",
+                    "effect": "minecraft:slowness"
+                },
+                {
+                    "type": "origins:execute_command",
+                    "command": "playsound entity.warden.sonic_boom hostile @a ~ ~ ~ 2.0 1.5"
+                },
+                {
+                    "type": "my_addon:fallen_allay_scream"
+                },
+                {
+                    "type": "origins:execute_command",
+                    "command": "particle minecraft:sonic_boom ~ ~1 ~ 0 0 0 0 1 force @a"
+                },
+                {
+                    "type": "origins:execute_command",
+                    "command": "particle minecraft:sculk_soul ~ ~1 ~ 3.0 2.0 3.0 0.05 30 force @a"
+                },
+                {
+                    "type": "origins:execute_command",
+                    "command": "particle minecraft:large_smoke ~ ~1 ~ 2.0 1.5 2.0 0.03 20 force @a"
+                },
+                {
+                    "type": "shape-shifter-curse:spawn_particles_in_circle",
+                    "particle": "minecraft:sculk_soul",
+                    "count": 1,
+                    "speed": 0.02,
+                    "force": true,
+                    "spread": {
+                        "x": 0.3,
+                        "y": 0.3,
+                        "z": 0.3
+                    },
+                    "radius": 25.0,
+                    "sample_count": 48
+                }
+            ]
         }
     },
     "interrupt_on_damage": {

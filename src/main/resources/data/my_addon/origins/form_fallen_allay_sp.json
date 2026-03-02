@@ -26,7 +26,8 @@
         "shape-shifter-curse:no_step_sound",
         "my_addon:form_allay_sp_sound_key",
         "my_addon:form_fallen_allay_sp_fire_immune",
-        "my_addon:form_fallen_allay_sp_raid_faction"
+        "my_addon:form_fallen_allay_sp_raid_faction",
+        "shape-shifter-curse:scare_villager"
     ],
     "icon": {
         "item": "minecraft:player_head"

@@ -18,6 +18,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayFriendMarkerEnt
 
 public class AllayFriendMarkerItem extends Item {
     private static final Identifier REQUIRED_POWER = new Identifier("my_addon", "form_allay_sp_group_heal");
+    private static final Identifier FALLEN_ALLAY_POWER = new Identifier("my_addon", "form_fallen_allay_sp_raid_faction");
 
     public AllayFriendMarkerItem(Settings settings) {
         super(settings);
@@ -27,7 +28,10 @@ public class AllayFriendMarkerItem extends Item {
     public void inventoryTick(ItemStack stack, World world, Entity entity, int slot, boolean selected) {
         if (!world.isClient && entity instanceof PlayerEntity player) {
             PowerType<?> powerType = PowerTypeRegistry.get(REQUIRED_POWER);
-            if (powerType == null || !PowerHolderComponent.KEY.get(player).hasPower(powerType)) {
+            PowerType<?> fallenPowerType = PowerTypeRegistry.get(FALLEN_ALLAY_POWER);
+            boolean hasAllayPower = powerType != null && PowerHolderComponent.KEY.get(player).hasPower(powerType);
+            boolean hasFallenPower = fallenPowerType != null && PowerHolderComponent.KEY.get(player).hasPower(fallenPowerType);
+            if (!hasAllayPower && !hasFallenPower) {
                 stack.setCount(0);
             }
         }

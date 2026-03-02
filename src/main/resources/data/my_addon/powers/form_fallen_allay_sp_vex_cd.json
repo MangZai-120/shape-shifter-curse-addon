@@ -8,7 +8,7 @@
         "bar_index": 4,
         "condition": {
             "type": "origins:resource",
-            "resource": "*:*",
+            "resource": "my_addon:form_fallen_allay_sp_vex_cd",
             "comparison": ">",
             "compare_to": 0
         }

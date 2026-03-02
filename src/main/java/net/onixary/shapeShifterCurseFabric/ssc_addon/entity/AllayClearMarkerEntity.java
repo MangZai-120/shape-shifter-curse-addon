@@ -58,7 +58,9 @@ public class AllayClearMarkerEntity extends ThrownItemEntity {
         Entity owner = this.getOwner();
 
         if (owner instanceof ServerPlayerEntity player && entity instanceof LivingEntity target) {
+            // 从白名单移除 + 移除 ssc_raid_friend
             AllaySPGroupHeal.removeFromWhitelist(player, target);
+            target.getCommandTags().remove("ssc_raid_friend");
         }
     }
 

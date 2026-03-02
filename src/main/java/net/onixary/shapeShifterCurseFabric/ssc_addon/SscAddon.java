@@ -51,7 +51,6 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAt
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPJukebox;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.FallenAllayVexTracker;
 
 public class SscAddon implements ModInitializer {
 
@@ -342,7 +341,6 @@ public class SscAddon implements ModInitializer {
                 SnowFoxSpFrostStorm.tick(player);
                 AllaySPGroupHeal.tick(player);
                 AllaySPJukebox.tick(player);
-                FallenAllayVexTracker.tick(player);
             }
         });
     }

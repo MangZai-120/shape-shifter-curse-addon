@@ -24,6 +24,8 @@ public class SscAddonCodexStatusMixin {
 	            switch (formPath) {
 		            case "axolotl_sp", "familiar_fox_sp" ->
 				            cir.setReturnValue(Text.translatable("codex.status.my_addon.SP_status"));
+		            case "fallen_allay_sp" ->
+				            cir.setReturnValue(Text.translatable("codex.status.my_addon.fallen_allay_sp_status"));
 		            case "wild_cat_sp" ->
 				            cir.setReturnValue(Text.translatable("codex.status.my_addon.wild_cat_sp_status"));
 		            case "snow_fox_sp" ->

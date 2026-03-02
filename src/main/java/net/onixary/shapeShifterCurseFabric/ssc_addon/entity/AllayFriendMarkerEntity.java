@@ -58,8 +58,9 @@ public class AllayFriendMarkerEntity extends ThrownItemEntity {
         Entity owner = this.getOwner();
 
         if (owner instanceof ServerPlayerEntity player && entity instanceof LivingEntity target) {
+            // 加入白名单（vex 不攻击、尖吓不标记）+ ssc_raid_friend（袭击生物不攻击目标）
             AllaySPGroupHeal.addToWhitelist(player, target);
-            // Optionally print a message or play a sound
+            target.addCommandTag("ssc_raid_friend");
         }
     }
 

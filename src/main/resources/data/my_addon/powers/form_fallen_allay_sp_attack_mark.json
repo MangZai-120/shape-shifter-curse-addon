@@ -1,6 +1,6 @@
 ﻿{
     "type": "origins:multiple",
-    "mark_on_attack": {
+    "attack_mark": {
         "type": "origins:target_action_on_hit",
         "entity_action": {
             "type": "origins:apply_effect",
@@ -19,20 +19,17 @@
             "compare_to": 0
         }
     },
-    "mark_on_hurt": {
-        "type": "origins:action_when_damage_taken",
-        "bientity_action": {
-            "type": "origins:actor_action",
-            "action": {
-                "type": "origins:apply_effect",
-                "effect": {
-                    "effect": "minecraft:glowing",
-                    "duration": 200,
-                    "amplifier": 0,
-                    "is_ambient": false,
-                    "show_particles": true,
-                    "show_icon": true
-                }
+    "defense_mark": {
+        "type": "origins:attacker_action_when_hit",
+        "entity_action": {
+            "type": "origins:apply_effect",
+            "effect": {
+                "effect": "minecraft:glowing",
+                "duration": 200,
+                "amplifier": 0,
+                "is_ambient": false,
+                "show_particles": true,
+                "show_icon": true
             }
         },
         "damage_condition": {
