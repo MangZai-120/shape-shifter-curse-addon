@@ -89,7 +89,7 @@ public class SscAddonCommands {
                 .requires(source -> source.hasPermissionLevel(2))
                 .executes(SscAddonCommands::reloadBooks)
             )
-            .then(CommandManager.literal("allay_whitelist")
+            .then(CommandManager.literal("whitelist")
                 .requires(source -> source.hasPermissionLevel(2))
                 .then(CommandManager.literal("add")
                     .then(CommandManager.argument("allayPlayer", EntityArgumentType.player())
@@ -457,11 +457,11 @@ public class SscAddonCommands {
         
         if (added) {
             context.getSource().sendFeedback(() -> Text.literal(
-                "已将 " + targetPlayer.getName().getString() + " 添加到 " + allayPlayer.getName().getString() + " 的治疗白名单"
+                "已将 " + targetPlayer.getName().getString() + " 添加到 " + allayPlayer.getName().getString() + " 的白名单"
             ).formatted(Formatting.GREEN), true);
         } else {
             context.getSource().sendFeedback(() -> Text.literal(
-                targetPlayer.getName().getString() + " 已在 " + allayPlayer.getName().getString() + " 的治疗白名单中"
+                targetPlayer.getName().getString() + " 已在 " + allayPlayer.getName().getString() + " 的白名单中"
             ).formatted(Formatting.YELLOW), false);
         }
         return 1;
@@ -479,11 +479,11 @@ public class SscAddonCommands {
         
         if (removed) {
             context.getSource().sendFeedback(() -> Text.literal(
-                "已将 " + targetPlayer.getName().getString() + " 从 " + allayPlayer.getName().getString() + " 的治疗白名单中移除"
+                "已将 " + targetPlayer.getName().getString() + " 从 " + allayPlayer.getName().getString() + " 的白名单中移除"
             ).formatted(Formatting.GREEN), true);
         } else {
             context.getSource().sendFeedback(() -> Text.literal(
-                targetPlayer.getName().getString() + " 不在 " + allayPlayer.getName().getString() + " 的治疗白名单中"
+                targetPlayer.getName().getString() + " 不在 " + allayPlayer.getName().getString() + " 的白名单中"
             ).formatted(Formatting.YELLOW), false);
         }
         return 1;
@@ -500,13 +500,13 @@ public class SscAddonCommands {
         
         if (uuids.isEmpty()) {
             context.getSource().sendFeedback(() -> Text.literal(
-                allayPlayer.getName().getString() + " 的治疗白名单为空"
+                allayPlayer.getName().getString() + " 的白名单为空"
             ).formatted(Formatting.YELLOW), false);
             return 0;
         }
 
         context.getSource().sendFeedback(() -> Text.literal(
-            "===== " + allayPlayer.getName().getString() + " 的治疗白名单 (" + uuids.size() + "人) ====="
+            "===== " + allayPlayer.getName().getString() + " 的白名单 (" + uuids.size() + "人) ====="
         ).formatted(Formatting.GOLD), false);
 
         net.minecraft.server.MinecraftServer server = context.getSource().getServer();
@@ -529,7 +529,7 @@ public class SscAddonCommands {
         int count = net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal.clearWhitelist(allayPlayer);
         
         context.getSource().sendFeedback(() -> Text.literal(
-            "已清空 " + allayPlayer.getName().getString() + " 的治疗白名单 (移除了 " + count + " 名玩家)"
+            "已清空 " + allayPlayer.getName().getString() + " 的白名单 (移除了 " + count + " 名玩家)"
         ).formatted(Formatting.GREEN), true);
 
         return 1;

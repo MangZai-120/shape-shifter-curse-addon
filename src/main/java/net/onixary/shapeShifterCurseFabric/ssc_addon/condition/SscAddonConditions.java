@@ -8,12 +8,16 @@ import io.github.apace100.apoli.util.Comparison;
 import io.github.apace100.calio.data.SerializableData;
 import io.github.apace100.calio.data.SerializableDataTypes;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Pair;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 public class SscAddonConditions {
 
@@ -82,9 +86,23 @@ public class SscAddonConditions {
                 
                 return comparison.compare(current / max, requiredPercent);
             }));
+
+        registerBiEntity(new ConditionFactory<>(new Identifier("my_addon", "not_actor_whitelisted"),
+            new SerializableData(),
+            (data, pair) -> {
+                Entity actor = pair.getLeft();
+                Entity target = pair.getRight();
+                if (!(actor instanceof ServerPlayerEntity player)) return true;
+                if (!(target instanceof LivingEntity living)) return true;
+                return !WhitelistUtils.isProtected(player, living);
+            }));
     }
 
     private static void register(ConditionFactory<Entity> factory) {
         Registry.register(ApoliRegistries.ENTITY_CONDITION, factory.getSerializerId(), factory);
+    }
+
+    private static void registerBiEntity(ConditionFactory<Pair<Entity, Entity>> factory) {
+        Registry.register(ApoliRegistries.BIENTITY_CONDITION, factory.getSerializerId(), factory);
     }
 }

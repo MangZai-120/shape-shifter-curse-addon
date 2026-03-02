@@ -34,6 +34,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbili
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostBallEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SscIgnitedEntityAccessor;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -170,6 +171,7 @@ public class SscAddonActions {
                 Box box = living.getBoundingBox().expand(distance).stretch(lookVec.multiply(distance));
                 
                 living.getWorld().getEntitiesByClass(LivingEntity.class, box, target -> target != living).forEach(target -> {
+                    if (living instanceof ServerPlayerEntity sPlayer && WhitelistUtils.isProtected(sPlayer, target)) return;
                     Vec3d targetVec = target.getPos().add(0, target.getHeight() / 2, 0).subtract(eyePos).normalize();
                     double dot = lookVec.dotProduct(targetVec);
                     double distSq = living.squaredDistanceTo(target);

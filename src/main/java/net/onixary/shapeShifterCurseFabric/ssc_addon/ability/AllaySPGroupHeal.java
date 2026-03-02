@@ -27,7 +27,7 @@ import java.util.UUID;
  * 此类的tick检测到后执行白名单过滤治疗，然后重置为0。
  * <p>
  * 白名单存储在SP悦灵玩家的 command tags 中，
- * 格式: "ssc_allay_wl:<目标玩家UUID>"
+ * 格式: "wl:<目标玩家UUID>"
  */
 public class AllaySPGroupHeal {
 

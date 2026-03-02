@@ -16,6 +16,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 import java.util.HashSet;
 import java.util.List;
@@ -107,6 +108,10 @@ public class SnowFoxSpMeleeAbility {
         
         for (Entity entity : nearbyEntities) {
             if (entity instanceof LivingEntity target) {
+                if (WhitelistUtils.isProtected(player, target)) {
+                    data.hitEntities.add(entity.getUuid());
+                    continue;
+                }
                 data.hitEntities.add(entity.getUuid());
                 
                 DamageSource source = player.getDamageSources().playerAttack(player);

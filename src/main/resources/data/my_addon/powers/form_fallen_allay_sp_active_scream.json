@@ -254,5 +254,57 @@
             "comparison": "==",
             "compare_to": 1
         }
+    },
+    "interrupt_on_purified": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:resource",
+                    "resource": "*:*_charging_state",
+                    "comparison": ">",
+                    "compare_to": 0
+                },
+                {
+                    "type": "origins:status_effect",
+                    "effect": "ssc_addon:purified"
+                }
+            ]
+        },
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_charging_state",
+                    "operation": "set",
+                    "change": 0
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_charge_timer",
+                    "operation": "set",
+                    "change": 0
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_cooldown_timer",
+                    "operation": "set",
+                    "change": 100
+                },
+                {
+                    "type": "origins:clear_effect",
+                    "effect": "minecraft:slowness"
+                },
+                {
+                    "type": "origins:play_sound",
+                    "sound": "block.beacon.deactivate",
+                    "volume": 0.5,
+                    "pitch": 1.5
+                }
+            ]
+        }
     }
 }

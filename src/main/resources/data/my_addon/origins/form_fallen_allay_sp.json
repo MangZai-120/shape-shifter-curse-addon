@@ -2,7 +2,6 @@
     "powers": [
         "my_addon:form_allay_sp_scale",
         "my_addon:form_allay_sp_fly_hunger",
-        "my_addon:form_fallen_allay_sp_projectile_damage_down",
         "my_addon:form_fallen_allay_sp_melee_damage_up",
         "my_addon:form_allay_sp_slow_falling",
         "my_addon:form_fallen_allay_sp_cooked_meat_only",

@@ -12,11 +12,13 @@ import io.github.apace100.calio.data.SerializableDataTypes;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 import java.util.List;
 
@@ -144,6 +146,8 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
             return e.distanceTo(entity) <= 5.0;
         })
         .forEach(target -> {
+            // Whitelist check
+            if (entity instanceof ServerPlayerEntity sPlayer && WhitelistUtils.isProtected(sPlayer, target)) return;
             // Apply Stun: 1.5s = 30 ticks
             target.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, 30, 0, false, false, true));
         });

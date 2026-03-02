@@ -14,6 +14,7 @@ import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -227,7 +228,8 @@ public class SnowFoxSpTeleportAttack {
             entity -> entity != player && 
                       !entity.isSpectator() && 
                       entity.isAlive() &&
-                      player.squaredDistanceTo(entity) <= RANGE * RANGE
+                      player.squaredDistanceTo(entity) <= RANGE * RANGE &&
+                      !WhitelistUtils.isProtected(player, entity)
         );
         
         nearbyEntities.sort(Comparator.comparingDouble(player::squaredDistanceTo));

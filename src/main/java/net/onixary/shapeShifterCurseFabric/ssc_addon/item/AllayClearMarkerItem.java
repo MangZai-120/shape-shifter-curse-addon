@@ -1,8 +1,5 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
-import io.github.apace100.apoli.component.PowerHolderComponent;
-import io.github.apace100.apoli.power.PowerType;
-import io.github.apace100.apoli.power.PowerTypeRegistry;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
@@ -11,30 +8,14 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.stat.Stats;
 import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayClearMarkerEntity;
 
 public class AllayClearMarkerItem extends Item {
-    private static final Identifier REQUIRED_POWER = new Identifier("my_addon", "form_allay_sp_group_heal");
-    private static final Identifier FALLEN_ALLAY_POWER = new Identifier("my_addon", "form_fallen_allay_sp_raid_faction");
 
     public AllayClearMarkerItem(Settings settings) {
         super(settings);
-    }
-
-    @Override
-    public void inventoryTick(ItemStack stack, World world, Entity entity, int slot, boolean selected) {
-        if (!world.isClient && entity instanceof PlayerEntity player) {
-            PowerType<?> powerType = PowerTypeRegistry.get(REQUIRED_POWER);
-            PowerType<?> fallenPowerType = PowerTypeRegistry.get(FALLEN_ALLAY_POWER);
-            boolean hasAllayPower = powerType != null && PowerHolderComponent.KEY.get(player).hasPower(powerType);
-            boolean hasFallenPower = fallenPowerType != null && PowerHolderComponent.KEY.get(player).hasPower(fallenPowerType);
-            if (!hasAllayPower && !hasFallenPower) {
-                stack.setCount(0);
-            }
-        }
     }
 
     @Override

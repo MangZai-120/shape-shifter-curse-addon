@@ -17,6 +17,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 import java.util.List;
 import java.util.UUID;
@@ -101,6 +102,7 @@ public class FrostStormEntity extends Entity {
         for (LivingEntity target : targets) {
             double dist = this.squaredDistanceTo(target.getX(), this.getY(), target.getZ());
             if (dist <= DAMAGE_RADIUS * DAMAGE_RADIUS) {
+                if (WhitelistUtils.isProtected(ownerUuid, world, target)) continue;
                 DamageSource source = owner != null 
                     ? target.getDamageSources().playerAttack(owner)
                     : target.getDamageSources().magic();
@@ -121,12 +123,14 @@ public class FrostStormEntity extends Entity {
         );
         
         Vec3d center = new Vec3d(this.getX(), this.getY(), this.getZ());
+        ServerWorld pullWorld = this.getWorld() instanceof ServerWorld sw ? sw : null;
         
         for (LivingEntity target : targets) {
             Vec3d targetPos = target.getPos();
             double dist = Math.sqrt(target.squaredDistanceTo(this.getX(), this.getY(), this.getZ()));
             
             if (dist > PULL_RADIUS_WEAK || dist < 0.5) continue;
+            if (pullWorld != null && WhitelistUtils.isProtected(ownerUuid, pullWorld, target)) continue;
             
             // 计算吸附速度
             double pullStrength;

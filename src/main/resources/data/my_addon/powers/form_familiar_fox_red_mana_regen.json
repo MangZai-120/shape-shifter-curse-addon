@@ -1,8 +1,42 @@
 {
-    "type": "origins:action_over_time",
-    "entity_action": {
-        "type": "shape-shifter-curse:gain_mana",
-        "mana": 1.0
+    "type": "origins:multiple",
+    "regen_pause_timer": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 120,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
     },
-    "interval": 200
+    "pause_tick": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_regen_pause_timer",
+            "comparison": ">",
+            "compare_to": 0
+        },
+        "entity_action": {
+            "type": "origins:change_resource",
+            "resource": "*:*_regen_pause_timer",
+            "operation": "add",
+            "change": -1
+        }
+    },
+    "regen": {
+        "type": "origins:action_over_time",
+        "interval": 10,
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_regen_pause_timer",
+            "comparison": "==",
+            "compare_to": 0
+        },
+        "entity_action": {
+            "type": "shape-shifter-curse:gain_mana",
+            "mana": 1.5
+        }
+    }
 }

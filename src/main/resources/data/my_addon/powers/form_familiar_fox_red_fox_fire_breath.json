@@ -11,6 +11,12 @@
                 "mana": 20
             },
             {
+                "type": "origins:change_resource",
+                "resource": "my_addon:form_familiar_fox_red_mana_regen_regen_pause_timer",
+                "operation": "set",
+                "change": 120
+            },
+            {
                 "type": "origins:play_sound",
                 "sound": "minecraft:item.firecharge.use",
                 "volume": 1.0,

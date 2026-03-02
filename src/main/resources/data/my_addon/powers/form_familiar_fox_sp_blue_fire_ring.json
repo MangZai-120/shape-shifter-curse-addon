@@ -131,6 +131,12 @@
                                     "sound": "minecraft:item.firecharge.use",
                                     "volume": 0.5,
                                     "pitch": 1.0
+                                },
+                                {
+                                    "type": "origins:change_resource",
+                                    "resource": "my_addon:form_familiar_fox_sp_mana_regen_regen_pause_timer",
+                                    "operation": "set",
+                                    "change": 120
                                 }
                             ]
                         }
@@ -309,6 +315,12 @@
             "type": "origins:and",
             "actions": [
                 {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_familiar_fox_sp_mana_regen_regen_pause_timer",
+                    "operation": "set",
+                    "change": 124
+                },
+                {
                     "type": "origins:if_else",
                     "condition": {
                         "type": "shape-shifter-curse:has_mana",
@@ -408,17 +420,12 @@
                                         {
                                             "type": "origins:target_condition",
                                             "condition": {
-                                                "type": "origins:entity_type",
-                                                "entity_type": "minecraft:player"
+                                                 "type": "origins:tamed"
                                             },
                                             "inverted": true
                                         },
                                         {
-                                            "type": "origins:target_condition",
-                                            "condition": {
-                                                 "type": "origins:tamed"
-                                            },
-                                            "inverted": true
+                                            "type": "my_addon:not_actor_whitelisted"
                                         }
                                     ]
                                 }

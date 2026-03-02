@@ -34,6 +34,38 @@
             "should_render": false
         }
     },
+    "interrupt_penalty_timer": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 200,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": true,
+            "bar_index": 7,
+            "condition": {
+                "type": "origins:resource",
+                "resource": "*:*_interrupt_penalty_timer",
+                "comparison": ">",
+                "compare_to": 0
+            }
+        }
+    },
+    "interrupt_penalty_tick": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "condition": {
+            "type": "origins:resource",
+            "resource": "*:*_interrupt_penalty_timer",
+            "comparison": ">",
+            "compare_to": 0
+        },
+        "entity_action": {
+            "type": "origins:change_resource",
+            "resource": "*:*_interrupt_penalty_timer",
+            "change": -1,
+            "operation": "add"
+        }
+    },
     "key_activation": {
         "type": "origins:active_self",
         "key": {
@@ -84,6 +116,12 @@
                 {
                     "type": "origins:resource",
                     "resource": "*:*_charging_state",
+                    "comparison": "==",
+                    "compare_to": 0
+                },
+                {
+                    "type": "origins:resource",
+                    "resource": "*:*_interrupt_penalty_timer",
                     "comparison": "==",
                     "compare_to": 0
                 }
@@ -188,6 +226,64 @@
                     "resource": "*:*_charge_timer",
                     "operation": "set",
                     "change": 0
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_interrupt_penalty_timer",
+                    "operation": "set",
+                    "change": 200
+                },
+                {
+                    "type": "origins:clear_effect",
+                    "effect": "minecraft:slowness"
+                },
+                {
+                    "type": "origins:play_sound",
+                    "sound": "block.beacon.deactivate",
+                    "volume": 0.5,
+                    "pitch": 1.5
+                }
+            ]
+        }
+    },
+    "interrupt_on_purified": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:resource",
+                    "resource": "*:*_charging_state",
+                    "comparison": ">",
+                    "compare_to": 0
+                },
+                {
+                    "type": "origins:status_effect",
+                    "effect": "ssc_addon:purified"
+                }
+            ]
+        },
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_charging_state",
+                    "operation": "set",
+                    "change": 0
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_charge_timer",
+                    "operation": "set",
+                    "change": 0
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "*:*_interrupt_penalty_timer",
+                    "operation": "set",
+                    "change": 200
                 },
                 {
                     "type": "origins:clear_effect",
