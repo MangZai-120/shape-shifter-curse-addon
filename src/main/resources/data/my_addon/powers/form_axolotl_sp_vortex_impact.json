@@ -49,6 +49,12 @@
                     "sound": "minecraft:entity.elder_guardian.curse",
                     "volume": 0.6,
                     "pitch": 1.5
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_sp_primary_cd",
+                    "operation": "set",
+                    "change": 400
                 }
             ]
         },

@@ -27,4 +27,27 @@ public class FormIdentifiers {
 
     public static final Identifier FAMILIAR_FOX_MANA = new Identifier("my_addon", "form_familiar_fox_sp_init_mana");
     public static final Identifier FAMILIAR_FOX_VISIBILITY = new Identifier("my_addon", "form_familiar_fox_sp_visibility");
+
+    // 通用技能CD资源（用于HUD显示）
+    public static final Identifier SP_PRIMARY_CD = new Identifier("my_addon", "form_sp_primary_cd");
+    public static final Identifier SP_SECONDARY_CD = new Identifier("my_addon", "form_sp_secondary_cd");
+
+    // 堕灵形态特有的CD资源
+    public static final Identifier FALLEN_ALLAY_VEX_CD = new Identifier("my_addon", "form_fallen_allay_sp_vex_cd");
+    public static final Identifier FALLEN_ALLAY_SCREAM_CD = new Identifier("my_addon", "form_fallen_allay_sp_active_scream_cooldown_timer");
+
+    // 悦灵形态群体治疗CD
+    public static final Identifier ALLAY_GROUP_HEAL_CD = new Identifier("my_addon", "form_allay_sp_group_heal_cooldown_timer");
+
+    // 悦灵形态净化技能CD
+    public static final Identifier ALLAY_PURIFY_CD = new Identifier("my_addon", "form_allay_sp_purify_cooldown_timer");
+
+    // 雪狐形态切换状态
+    public static final Identifier SNOW_FOX_SWITCH_STATE = new Identifier("my_addon", "form_snow_fox_sp_switch_state");
+
+    // 雪狐形态4个独立CD记录点（每个技能独立记录，按模式读取）
+    public static final Identifier SNOW_FOX_MELEE_PRIMARY_CD = new Identifier("my_addon", "form_snow_fox_sp_melee_primary_cd");
+    public static final Identifier SNOW_FOX_MELEE_SECONDARY_CD = new Identifier("my_addon", "form_snow_fox_sp_melee_secondary_cd");
+    public static final Identifier SNOW_FOX_RANGED_PRIMARY_CD = new Identifier("my_addon", "form_snow_fox_sp_ranged_primary_cd");
+    public static final Identifier SNOW_FOX_RANGED_SECONDARY_CD = new Identifier("my_addon", "form_snow_fox_sp_ranged_secondary_cd");
 }

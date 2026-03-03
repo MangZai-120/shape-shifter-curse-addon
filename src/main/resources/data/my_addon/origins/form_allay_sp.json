@@ -33,7 +33,11 @@
         "my_addon:form_allay_sp_portable_beacon",
         "my_addon:form_allay_sp_totem",
         "my_addon:form_allay_sp_emergency_food",
-        "my_addon:form_allay_sp_hero_of_village"
+        "my_addon:form_allay_sp_hero_of_village",
+        "my_addon:form_sp_primary_cd",
+        "my_addon:form_sp_secondary_cd",
+        "my_addon:form_sp_primary_cd_tick",
+        "my_addon:form_sp_secondary_cd_tick"
     ],
     "icon": {
         "item": "minecraft:player_head"

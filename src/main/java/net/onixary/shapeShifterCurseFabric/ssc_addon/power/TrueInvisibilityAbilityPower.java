@@ -18,6 +18,8 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 
 import java.util.List;
 
@@ -159,6 +161,12 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
             cooldownTicks += 40; // Add 2 seconds to cooldown (from 12s to 14s)
         }
         internalCooldownEndTime = System.currentTimeMillis() + (cooldownTicks * 50); // 50ms per tick
+        
+        // 设置CD显示资源（主要和次要技能共享CD）
+        if (entity instanceof net.minecraft.server.network.ServerPlayerEntity serverPlayer) {
+            PowerUtils.setResourceValueAndSync(serverPlayer, FormIdentifiers.SP_PRIMARY_CD, cooldownTicks);
+            PowerUtils.setResourceValueAndSync(serverPlayer, FormIdentifiers.SP_SECONDARY_CD, cooldownTicks);
+        }
         
         // Also set dash ability cooldown
         List<TrueInvisibilityDashAbilityPower> dashPowers = PowerHolderComponent.getPowers(entity, TrueInvisibilityDashAbilityPower.class);

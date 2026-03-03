@@ -17,6 +17,8 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostStormEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,6 +74,8 @@ public class SnowFoxSpFrostStorm {
         setRegenCooldown(player, 100);
         // 设置技能CD（30秒 = 30000ms）
         COOLDOWN_PLAYERS.put(player.getUuid(), System.currentTimeMillis() + 30000L);
+        // 设置CD显示资源（30秒 = 600tick）
+        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RANGED_SECONDARY_CD, 600);
         
         // 开始蓄力
         CHARGING_PLAYERS.put(player.getUuid(), new ChargingData(0));

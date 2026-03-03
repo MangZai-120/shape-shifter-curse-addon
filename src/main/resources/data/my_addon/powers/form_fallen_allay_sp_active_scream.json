@@ -15,7 +15,7 @@
         "max": 20,
         "start_value": 0,
         "hud_render": {
-            "should_render": true,
+            "should_render": false,
             "bar_index": 5,
             "condition": {
                 "type": "origins:resource",
@@ -31,7 +31,7 @@
         "max": 400,
         "start_value": 0,
         "hud_render": {
-            "should_render": true,
+            "should_render": false,
             "bar_index": 6,
             "condition": {
                 "type": "origins:resource",

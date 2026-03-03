@@ -21,7 +21,11 @@
         "my_addon:wild_cat_sp_night_vision",
         "my_addon:wild_cat_sp_lifesaving_tail",
         "my_addon:wild_cat_sp_health",
-        "shape-shifter-curse:beast_form_tag"
+        "shape-shifter-curse:beast_form_tag",
+        "my_addon:form_sp_primary_cd",
+        "my_addon:form_sp_secondary_cd",
+        "my_addon:form_sp_primary_cd_tick",
+        "my_addon:form_sp_secondary_cd_tick"
     ],
     "icon": {
         "item": "minecraft:ocelot_spawn_egg"

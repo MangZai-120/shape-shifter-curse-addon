@@ -54,7 +54,11 @@
         "shape-shifter-curse:form_familiar_fox_3_craft_healing_potion",
         "shape-shifter-curse:form_familiar_fox_3_craft_poison_potion",
         "shape-shifter-curse:form_familiar_fox_sound_key",
-        "shape-shifter-curse:beast_form_tag"
+        "shape-shifter-curse:beast_form_tag",
+        "my_addon:form_sp_primary_cd",
+        "my_addon:form_sp_secondary_cd",
+        "my_addon:form_sp_primary_cd_tick",
+        "my_addon:form_sp_secondary_cd_tick"
     ],
     "icon": {
         "item": "minecraft:fox_spawn_egg"

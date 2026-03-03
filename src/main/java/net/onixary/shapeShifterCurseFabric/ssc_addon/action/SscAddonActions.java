@@ -35,6 +35,8 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAt
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostBallEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SscIgnitedEntityAccessor;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -326,6 +328,8 @@ public class SscAddonActions {
                     setRegenCooldown(player, 100);
                     // 设置技能CD（5秒 = 5000ms）
                     FROST_BALL_COOLDOWN.put(player.getUuid(), System.currentTimeMillis() + 5000L);
+                    // 设置CD显示资源（5秒 = 100tick）
+                    PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RANGED_PRIMARY_CD, 100);
                     
                     // 创建并发射冰球
                     FrostBallEntity frostBall = new FrostBallEntity(player.getWorld(), player);
@@ -393,6 +397,10 @@ public class SscAddonActions {
                     // 3. Force Pose
                     living.setPose(EntityPose.SLEEPING);
                     
+                    // 4. 设置CD显示资源
+                    if (living instanceof ServerPlayerEntity sp) {
+                        PowerUtils.setResourceValueAndSync(sp, FormIdentifiers.SP_SECONDARY_CD, 720);
+                    }
 
                 }
             }));

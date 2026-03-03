@@ -52,7 +52,11 @@
         "my_addon:form_axolotl_sp_play_dead",
         "my_addon:form_axolotl_sp_water_spear",
         "my_addon:form_axolotl_sp_vortex_impact",
-        "shape-shifter-curse:beast_form_tag"
+        "shape-shifter-curse:beast_form_tag",
+        "my_addon:form_sp_primary_cd",
+        "my_addon:form_sp_secondary_cd",
+        "my_addon:form_sp_primary_cd_tick",
+        "my_addon:form_sp_secondary_cd_tick"
     ],
     "icon": {
         "item": "minecraft:axolotl_bucket"

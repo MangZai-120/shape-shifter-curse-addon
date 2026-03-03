@@ -79,6 +79,12 @@
                             },
                             {
                                 "type": "origins:change_resource",
+                                "resource": "my_addon:form_sp_primary_cd",
+                                "operation": "set",
+                                "change": 560
+                            },
+                            {
+                                "type": "origins:change_resource",
                                 "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_internal_timer",
                                 "operation": "set",
                                 "change": 0
@@ -191,6 +197,12 @@
                     "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_cooldown_timer",
                     "operation": "set",
                     "change": 560
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_sp_primary_cd",
+                    "operation": "set",
+                    "change": 560
                 }
             ]
         }
@@ -214,6 +226,12 @@
                 {
                     "type": "origins:change_resource",
                     "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_cooldown_timer",
+                    "operation": "set",
+                    "change": 560
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_sp_primary_cd",
                     "operation": "set",
                     "change": 560
                 },
@@ -279,6 +297,12 @@
                     "change": 560
                 },
                 {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_sp_primary_cd",
+                    "operation": "set",
+                    "change": 560
+                },
+                {
                     "type": "origins:play_sound",
                     "sound": "minecraft:block.fire.extinguish",
                     "volume": 0.5,
@@ -333,6 +357,12 @@
                             {
                                 "type": "origins:change_resource",
                                 "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_cooldown_timer",
+                                "operation": "set",
+                                "change": 560
+                            },
+                            {
+                                "type": "origins:change_resource",
+                                "resource": "my_addon:form_sp_primary_cd",
                                 "operation": "set",
                                 "change": 560
                             },

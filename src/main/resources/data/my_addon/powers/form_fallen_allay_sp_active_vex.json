@@ -40,7 +40,7 @@
         "max": 200,
         "start_value": 0,
         "hud_render": {
-            "should_render": true,
+            "should_render": false,
             "bar_index": 7,
             "condition": {
                 "type": "origins:resource",
@@ -234,6 +234,12 @@
                     "change": 200
                 },
                 {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_fallen_allay_sp_vex_cd",
+                    "operation": "set",
+                    "change": 200
+                },
+                {
                     "type": "origins:clear_effect",
                     "effect": "minecraft:slowness"
                 },
@@ -282,6 +288,12 @@
                 {
                     "type": "origins:change_resource",
                     "resource": "*:*_interrupt_penalty_timer",
+                    "operation": "set",
+                    "change": 200
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_fallen_allay_sp_vex_cd",
                     "operation": "set",
                     "change": 200
                 },

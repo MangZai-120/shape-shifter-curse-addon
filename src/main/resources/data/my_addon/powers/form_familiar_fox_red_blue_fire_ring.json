@@ -82,6 +82,12 @@
                             },
                             {
                                 "type": "origins:change_resource",
+                                "resource": "my_addon:form_sp_primary_cd",
+                                "operation": "set",
+                                "change": 400
+                            },
+                            {
+                                "type": "origins:change_resource",
                                 "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_internal_timer",
                                 "operation": "set",
                                 "change": 0
@@ -198,6 +204,12 @@
                     "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_cooldown_timer",
                     "operation": "set",
                     "change": 400
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_sp_primary_cd",
+                    "operation": "set",
+                    "change": 400
                 }
             ]
         }
@@ -221,6 +233,12 @@
                 {
                     "type": "origins:change_resource",
                     "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_cooldown_timer",
+                    "operation": "set",
+                    "change": 400
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_sp_primary_cd",
                     "operation": "set",
                     "change": 400
                 },
@@ -281,6 +299,12 @@
                 {
                     "type": "origins:change_resource",
                     "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_cooldown_timer",
+                    "operation": "set",
+                    "change": 400
+                },
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_sp_primary_cd",
                     "operation": "set",
                     "change": 400
                 },
@@ -346,6 +370,12 @@
                             {
                                 "type": "origins:change_resource",
                                 "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_cooldown_timer",
+                                "operation": "set",
+                                "change": 400
+                            },
+                            {
+                                "type": "origins:change_resource",
+                                "resource": "my_addon:form_sp_primary_cd",
                                 "operation": "set",
                                 "change": 400
                             },

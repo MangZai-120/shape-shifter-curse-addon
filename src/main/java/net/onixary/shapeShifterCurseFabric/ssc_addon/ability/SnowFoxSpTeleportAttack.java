@@ -76,6 +76,8 @@ public class SnowFoxSpTeleportAttack {
             PowerUtils.changeResourceValueAndSync(player, RESOURCE_ID, -MANA_COST_FAIL);
             setRegenCooldown(player, 100);
             COOLDOWN_PLAYERS.put(player.getUuid(), System.currentTimeMillis() + 5000L);
+            // 设置CD显示资源（失败5秒 = 100tick）
+            PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_MELEE_SECONDARY_CD, 100);
             return false;
         }
         
@@ -214,6 +216,8 @@ public class SnowFoxSpTeleportAttack {
         }
         
         COOLDOWN_PLAYERS.put(player.getUuid(), System.currentTimeMillis() + 20000L);
+        // 设置CD显示资源（成功20秒 = 400tick）
+        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_MELEE_SECONDARY_CD, 400);
     }
     
     /**

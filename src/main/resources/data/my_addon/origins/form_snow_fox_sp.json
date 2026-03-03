@@ -50,7 +50,19 @@
         "shape-shifter-curse:form_snow_fox_bottled_snowfall_tool",
         "shape-shifter-curse:form_snow_fox_bottled_snowfall_cooldown",
         "shape-shifter-curse:form_familiar_fox_sound_key",
-        "shape-shifter-curse:beast_form_tag"
+        "shape-shifter-curse:beast_form_tag",
+        "my_addon:form_sp_primary_cd",
+        "my_addon:form_sp_secondary_cd",
+        "my_addon:form_sp_primary_cd_tick",
+        "my_addon:form_sp_secondary_cd_tick",
+        "my_addon:form_snow_fox_sp_melee_primary_cd",
+        "my_addon:form_snow_fox_sp_melee_primary_cd_tick",
+        "my_addon:form_snow_fox_sp_melee_secondary_cd",
+        "my_addon:form_snow_fox_sp_melee_secondary_cd_tick",
+        "my_addon:form_snow_fox_sp_ranged_primary_cd",
+        "my_addon:form_snow_fox_sp_ranged_primary_cd_tick",
+        "my_addon:form_snow_fox_sp_ranged_secondary_cd",
+        "my_addon:form_snow_fox_sp_ranged_secondary_cd_tick"
     ],
     "icon": {
         "item": "minecraft:fox_spawn_egg"

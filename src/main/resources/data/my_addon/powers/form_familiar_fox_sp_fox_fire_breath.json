@@ -52,6 +52,12 @@
                 "type": "my_addon:fire_breath",
                 "distance": 8.0,
                 "damage": 6.0
+            },
+            {
+                "type": "origins:change_resource",
+                "resource": "my_addon:form_sp_secondary_cd",
+                "operation": "set",
+                "change": 20
             }
         ]
     },

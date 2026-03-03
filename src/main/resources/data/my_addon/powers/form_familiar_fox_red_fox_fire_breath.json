@@ -53,6 +53,12 @@
                 "distance": 8.0,
                 "damage": 7.0,
                 "duration": 120
+            },
+            {
+                "type": "origins:change_resource",
+                "resource": "my_addon:form_sp_secondary_cd",
+                "operation": "set",
+                "change": 20
             }
         ]
     },

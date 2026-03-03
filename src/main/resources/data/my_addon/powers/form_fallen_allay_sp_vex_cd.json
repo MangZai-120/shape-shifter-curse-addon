@@ -4,7 +4,7 @@
     "max": 400,
     "start_value": 0,
     "hud_render": {
-        "should_render": true,
+        "should_render": false,
         "bar_index": 4,
         "condition": {
             "type": "origins:resource",
