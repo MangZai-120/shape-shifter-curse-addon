@@ -150,6 +150,14 @@ public class SnowFoxSpMeleeAbility {
     public static boolean isDashing(PlayerEntity player) {
         return DASHING_PLAYERS.containsKey(player.getUuid());
     }
+
+    /**
+     * 玩家断线/死亡时清理所有状态，防止内存泄漏和重连后状态错乱
+     */
+    public static void clearPlayer(java.util.UUID uuid) {
+        DASHING_PLAYERS.remove(uuid);
+        COOLDOWN_PLAYERS.remove(uuid);
+    }
     
     /*
     // 旧代码 (保留参考) 已移至PowerUtils

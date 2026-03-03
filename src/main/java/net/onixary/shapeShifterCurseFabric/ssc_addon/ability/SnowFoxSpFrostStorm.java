@@ -93,6 +93,14 @@ public class SnowFoxSpFrostStorm {
                 SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.5f);
         }
     }
+
+    /**
+     * 玩家断线时清理所有状态，防止内存泄漏
+     */
+    public static void clearPlayer(java.util.UUID uuid) {
+        CHARGING_PLAYERS.remove(uuid);
+        COOLDOWN_PLAYERS.remove(uuid);
+    }
     
     /**
      * 每tick更新蓄力状态

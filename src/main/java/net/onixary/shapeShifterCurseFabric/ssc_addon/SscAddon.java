@@ -5,6 +5,7 @@ import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.minecraft.entity.EntityDimensions;
@@ -351,6 +352,15 @@ public class SscAddon implements ModInitializer {
                 newPlayer.getItemCooldownManager().remove(LIFESAVING_CAT_TAIL);
                 newPlayer.getItemCooldownManager().remove(PHANTOM_BELL);
             }
+        });
+
+        // 玩家断线时清理所有静态状态Map，防止内存泄漏和重连后状态错乱
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            java.util.UUID uuid = handler.player.getUuid();
+            SnowFoxSpMeleeAbility.clearPlayer(uuid);
+            SnowFoxSpTeleportAttack.clearPlayer(uuid);
+            SnowFoxSpFrostStorm.clearPlayer(uuid);
+            AllaySPJukebox.onPlayerDisconnect(handler.player);
         });
     }
 }

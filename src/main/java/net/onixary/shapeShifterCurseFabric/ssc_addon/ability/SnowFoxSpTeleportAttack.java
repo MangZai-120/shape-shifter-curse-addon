@@ -247,6 +247,14 @@ public class SnowFoxSpTeleportAttack {
     public static boolean isAttacking(ServerPlayerEntity player) {
         return ATTACKING_PLAYERS.containsKey(player.getUuid());
     }
+
+    /**
+     * 玩家断线/死亡时清理所有状态，防止内存泄漏和重连后传送到错误位置
+     */
+    public static void clearPlayer(java.util.UUID uuid) {
+        ATTACKING_PLAYERS.remove(uuid);
+        COOLDOWN_PLAYERS.remove(uuid);
+    }
     
     /**
      * 获取伤害减免系数（用于Mixin）

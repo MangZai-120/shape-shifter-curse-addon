@@ -17,7 +17,6 @@ import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManage
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.AllayJukeboxItem;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -40,7 +39,17 @@ public class AllaySPJukebox {
     private static final double SPEED_BONUS = 0.10; // 10% speed
 
     // Track per-player: -1 = not playing, 0 = speed music, 1 = heal music
-    private static final Map<UUID, Integer> playerMusicState = new HashMap<>();
+    private static final java.util.concurrent.ConcurrentHashMap<UUID, Integer> playerMusicState = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * 玩家断线时清理音乐状态并移除速度加成，防止内存泄漏和其他玩家永久保留速度buff
+     */
+    public static void onPlayerDisconnect(ServerPlayerEntity player) {
+        Integer currentState = playerMusicState.remove(player.getUuid());
+        if (currentState != null && currentState != -1) {
+            removeSpeedFromAll(player);
+        }
+    }
 
     /**
      * Stop all jukebox music for a player by sending StopSoundS2CPacket
