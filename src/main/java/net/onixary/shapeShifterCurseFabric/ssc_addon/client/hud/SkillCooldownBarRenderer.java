@@ -10,8 +10,10 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import me.shedaniel.autoconfig.AutoConfig;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 
 import java.util.HashMap;
@@ -64,6 +66,9 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
     @Override
     public void onHudRender(DrawContext context, float tickDelta) {
         if (mc.options.hudHidden || mc.player == null) return;
+
+        SSCAddonConfig config = AutoConfig.getConfigHolder(SSCAddonConfig.class).getConfig();
+        if (!config.showCdBar) return;
 
         PlayerEntity player = mc.player;
 
@@ -194,7 +199,8 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
         renderCdBar(context, x, y, cdPercent);
 
         // 显示剩余秒数（0.75倍缩放，靠近快捷栏中间）
-        if (remainSec > 0) {
+        SSCAddonConfig cfg = AutoConfig.getConfigHolder(SSCAddonConfig.class).getConfig();
+        if (remainSec > 0 && cfg.showCdSeconds) {
             String text = String.valueOf(remainSec);
             float scale = 0.75f;
             int textW = (int) (mc.textRenderer.getWidth(text) * scale);
