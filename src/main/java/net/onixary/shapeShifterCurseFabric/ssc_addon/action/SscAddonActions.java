@@ -35,16 +35,12 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAt
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostBallEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SscIgnitedEntityAccessor;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SscAddonActions {
-
-	private static final Logger log = LoggerFactory.getLogger(SscAddonActions.class);
 
 	private SscAddonActions() {
         // This utility class should not be instantiated
@@ -178,21 +174,6 @@ public class SscAddonActions {
                     
                     if (dot > 0.8 && distSq < distance * distance) {
                          Vec3d oldVelocity = target.getVelocity();
-                         // Use INDIRECT_MAGIC damage type sourced from player (bypasses armor often, but counts as player kill)
-                         // If we want it to be just MAGIC but from player, we construct it via damageSources
-                         if (target.damage(target.getDamageSources().magic(), damageAmount)) {
-                             // Restore velocity to prevent knockback
-                             target.setVelocity(oldVelocity);
-                             // Manually setting attacker to player because .magic() source usually doesn't carry attacker info by default in some mappings,
-                             // or we can use create(DamageTypes.MAGIC, player, player)
-                         }
-                         
-                         // To properly attribute damage to player for kill credit while keeping it MAGIC:
-                         // We should use a custom damage source or existing one that fits
-                         // Let's try playerAttack first but just override the damage type if possible, OR
-                         // use new DamageSource(target.getWorld().getRegistryManager().get(RegistryKeys.DAMAGE_TYPE).entryOf(DamageTypes.MAGIC), living, living)
-                         
-                         // Re-implementation for "Magic Damage from Player without Knockback":
                          RegistryKey<DamageType> magicKey = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("minecraft", "magic"));
                          if (target.damage(target.getDamageSources().create(magicKey, living, living), damageAmount)) {
                               target.setVelocity(oldVelocity);
@@ -295,7 +276,7 @@ public class SscAddonActions {
             new SerializableData()
                 .add("radius", SerializableDataTypes.DOUBLE, 64.0),
             (data, entity) -> {
-                log.info("SSC ADDON DEBUG: Play Dead / Clear Aggro Triggered!");
+
                 double radius = data.getDouble("radius");
                 Box box = entity.getBoundingBox().expand(radius);
                 entity.getWorld().getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class, box, mob -> mob.getTarget() == entity).forEach(mob -> {
@@ -412,7 +393,7 @@ public class SscAddonActions {
                     // 3. Force Pose
                     living.setPose(EntityPose.SLEEPING);
                     
-                    log.info("SSC ADDON: Triggered Play Dead (Composite Java Action)");
+
                 }
             }));
             
