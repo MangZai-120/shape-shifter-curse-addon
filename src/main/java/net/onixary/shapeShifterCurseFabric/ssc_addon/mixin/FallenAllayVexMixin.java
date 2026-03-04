@@ -162,7 +162,7 @@ public abstract class FallenAllayVexMixin extends MobEntity {
      */
     private LivingEntity findBestTarget(PlayerEntity owner, String ownerUuidStr,
                                         ServerWorld serverWorld, boolean hasWhitelist) {
-        Box searchBox = this.getBoundingBox().expand(8.0);
+        Box searchBox = this.getBoundingBox().expand(16.0);
         List<LivingEntity> candidates = serverWorld.getEntitiesByClass(LivingEntity.class, searchBox,
                 e -> e != owner && e != (Object) this && e.isAlive()
                         && !(e instanceof VexEntity)
