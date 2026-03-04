@@ -26,6 +26,8 @@
         "my_addon:form_allay_sp_sound_key",
         "my_addon:form_fallen_allay_sp_fire_immune",
         "my_addon:form_fallen_allay_sp_raid_faction",
+        "shape-shifter-curse:pillager_friendly",
+        "shape-shifter-curse:witch_friendly",
         "shape-shifter-curse:scare_villager",
         "my_addon:form_sp_primary_cd",
         "my_addon:form_sp_secondary_cd",
