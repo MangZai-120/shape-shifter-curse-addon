@@ -19,6 +19,8 @@
 
 这是一个基于 Fabric 的附属模组项目，用于为《幻形者诅咒》模组添加更多玩法。
 
+Wiki：https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/
+
 ## 添加模组
 
 - 将下载后的.jar文件放入游戏的 `mods` 文件夹，并确保你下载的是.jar格式的模组文件，而不是源代码。下载请到Releases(发行作品)里去找。
