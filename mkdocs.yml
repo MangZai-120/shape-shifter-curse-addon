@@ -11,35 +11,34 @@ theme:
   locale: zh_CN
 
 nav:
-  - 首页: index.md
-  - 新手上路:
-    - 安装指南: getting_started/installation.md
-  - SP形态:
-    - 形态概述: sp_forms/overview.md
-    - SP使魔（灵界之主）: sp_forms/sp_familiar_fox.md
-    - SP美西螈（深渊霸主）: sp_forms/sp_axolotl.md
-    - SP野猫（暗夜猎手）: sp_forms/sp_wild_cat.md
-    - SP雪狐（霜寒之灵）: sp_forms/sp_snow_fox.md
-    - SP悦灵: sp_forms/sp_allay.md
-    - SP堕落悦灵: sp_forms/sp_fallen_allay.md
-  - 物品:
-    - 进化用品: items/evolution_items.md
-    - 材料与素材: items/materials.md
-    - 道具: items/tools.md
-    - 饰品（Trinkets）: items/trinkets.md
-  - 效果:
-    - 增益效果: effects/buffs.md
-    - 减益效果: effects/debuffs.md
-  - 指令: commands/commands.md
-  - 世界观与故事:
-    - 背景设定: lore/background.md
-    - 月光的诅咒: lore/moonlight_curse.md
-    - 故事集 · 月痕：灵界之主: lore/story_collection.md
-    - 丛林的幽灵: lore/jungle_ghost.md
-    - 使魔研究记录: lore/familiar_research.md
-    - 月髓环诗篇: lore/moon_ring_poems.md
-  - 更新日志: update_log/update_log.md
-
+- 首页: index.md
+- 新手上路:
+  - 安装指南: getting_started/installation.md
+- SP形态:
+  - 形态概述: sp_forms/overview.md
+  - SP使魔（灵界之主）: sp_forms/sp_familiar_fox.md
+  - SP美西螈（深渊霸主）: sp_forms/sp_axolotl.md
+  - SP野猫（暗夜猎手）: sp_forms/sp_wild_cat.md
+  - SP雪狐（霜寒之灵）: sp_forms/sp_snow_fox.md
+  - SP悦灵: sp_forms/sp_allay.md
+  - SP堕落悦灵: sp_forms/sp_fallen_allay.md
+- 物品:
+  - 进化用品: items/evolution_items.md
+  - 材料与素材: items/materials.md
+  - 道具: items/tools.md
+  - 饰品（Trinkets）: items/trinkets.md
+- 效果:
+  - 增益效果: effects/buffs.md
+  - 减益效果: effects/debuffs.md
+- 指令: commands/commands.md
+- 世界观与故事:
+  - 背景设定: lore/background.md
+  - 月光的诅咒: lore/moonlight_curse.md
+  - 故事集 · 月痕：灵界之主: lore/story_collection.md
+  - 丛林的幽灵: lore/jungle_ghost.md
+  - 使魔研究记录: lore/familiar_research.md
+  - 月髓环诗篇: lore/moon_ring_poems.md
+- 更新日志: update_log/update_log.md
 plugins:
   - search
 
