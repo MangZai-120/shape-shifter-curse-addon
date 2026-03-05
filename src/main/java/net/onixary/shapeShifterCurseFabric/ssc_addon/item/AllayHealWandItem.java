@@ -81,7 +81,7 @@ public class AllayHealWandItem extends Item {
 
                     // Spawn heal particles
                     ServerWorld serverWorld = (ServerWorld) world;
-                    serverWorld.spawnParticles(ParticleTypes.HEART,
+                    net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.HEART,
                             target.getX(), target.getY() + target.getHeight() + 0.5, target.getZ(),
                             5, 0.3, 0.3, 0.3, 0.01);
 

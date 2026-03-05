@@ -1,6 +1,8 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.util;
 
+import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
 import net.minecraft.particle.ParticleEffect;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Vec3d;
 
@@ -8,18 +10,27 @@ public class ParticleUtils {
     private ParticleUtils() {
     }
 
-    public static void spawnParticles(ServerWorld world, ParticleEffect particle, Vec3d pos, int count, double offsetX, double offsetY, double offsetZ, double speed) {
-        if (world == null) return;
-        try {
-            world.spawnParticles(particle, pos.x, pos.y, pos.z, count, offsetX, offsetY, offsetZ, speed);
-        } catch (Exception e) {
-        }
+    /**
+     * 强制生成粒子效果，无视客户端粒子设置（最小/减少）
+     */
+    public static <T extends ParticleEffect> void spawnParticles(ServerWorld world, T particle, Vec3d pos, int count, double offsetX, double offsetY, double offsetZ, double speed) {
+        spawnParticles(world, particle, pos.x, pos.y, pos.z, count, offsetX, offsetY, offsetZ, speed);
     }
 
-    public static void spawnParticles(ServerWorld world, ParticleEffect particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed) {
+    /**
+     * 强制生成粒子效果，无视客户端粒子设置（最小/减少）
+     */
+    public static <T extends ParticleEffect> void spawnParticles(ServerWorld world, T particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed) {
         if (world == null) return;
         try {
-            world.spawnParticles(particle, x, y, z, count, offsetX, offsetY, offsetZ, speed);
+            // 使用 force=true 的 ParticleS2CPacket，使粒子在"最小"设置下仍然可见
+            ParticleS2CPacket packet = new ParticleS2CPacket(particle, true, x, y, z,
+                    (float) offsetX, (float) offsetY, (float) offsetZ, (float) speed, count);
+            for (ServerPlayerEntity player : world.getPlayers()) {
+                if (player.squaredDistanceTo(x, y, z) <= 262144.0) { // 512格范围内
+                    player.networkHandler.sendPacket(packet);
+                }
+            }
         } catch (Exception e) {
         }
     }

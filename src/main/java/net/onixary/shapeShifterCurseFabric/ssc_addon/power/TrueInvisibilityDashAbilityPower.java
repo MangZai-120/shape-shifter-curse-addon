@@ -153,9 +153,9 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
         });
         
         // Particle effect
-        world.spawnParticles(net.minecraft.particle.ParticleTypes.POOF, 
+        net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(world, net.minecraft.particle.ParticleTypes.POOF, 
             entity.getX(), entity.getY(), entity.getZ(), 15, 0.8, 0.2, 0.8, 0.1);
-        world.spawnParticles(net.minecraft.particle.ParticleTypes.CLOUD, 
+        net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(world, net.minecraft.particle.ParticleTypes.CLOUD, 
             entity.getX(), entity.getY(), entity.getZ(), 10, 0.5, 0.1, 0.5, 0.05);
         
         // Play additional sound when stun triggers

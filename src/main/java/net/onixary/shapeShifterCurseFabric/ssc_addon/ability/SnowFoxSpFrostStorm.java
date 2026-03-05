@@ -18,6 +18,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostStormEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 
 import java.util.UUID;
@@ -128,7 +129,7 @@ public class SnowFoxSpFrostStorm {
             double radius = 0.8;
             double x = pos.x + Math.cos(angle) * radius;
             double z = pos.z + Math.sin(angle) * radius;
-            serverWorld.spawnParticles(ParticleTypes.SNOWFLAKE, x, pos.y + 1, z, 1, 0, 0.1, 0, 0);
+            ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SNOWFLAKE, x, pos.y + 1, z, 1, 0, 0.1, 0, 0);
         }
         
         // 蓄力完成
@@ -174,7 +175,7 @@ public class SnowFoxSpFrostStorm {
         
         // 生成释放粒子
         if (player.getWorld() instanceof ServerWorld serverWorld) {
-            serverWorld.spawnParticles(ParticleTypes.CLOUD,
+            ParticleUtils.spawnParticles(serverWorld, ParticleTypes.CLOUD,
                 targetPos.x, targetPos.y + 1, targetPos.z,
                 30, 1.5, 1.0, 1.5, 0.05);
         }

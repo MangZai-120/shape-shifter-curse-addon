@@ -65,7 +65,7 @@ public class FrostFallEffect extends StatusEffect {
     public void applyUpdateEffect(LivingEntity entity, int amplifier) {
         // Spawn snowflake particles
         if (entity.getWorld() instanceof ServerWorld serverWorld) {
-            serverWorld.spawnParticles(
+            net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld,
                 ParticleTypes.SNOWFLAKE,
                 entity.getX(),
                 entity.getY() + entity.getHeight() / 2.0,

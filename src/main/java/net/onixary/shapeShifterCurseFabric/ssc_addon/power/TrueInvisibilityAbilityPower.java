@@ -118,7 +118,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
         // Particles while invisible
         if (entity.getRandom().nextFloat() < 0.07f) {
             ServerWorld serverWorld = (ServerWorld) entity.getWorld();
-            serverWorld.spawnParticles(net.minecraft.particle.ParticleTypes.SQUID_INK, 
+            net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, net.minecraft.particle.ParticleTypes.SQUID_INK, 
                 entity.getX(), entity.getY() + entity.getHeight() * 0.5, entity.getZ(),
                 1, 0.3, 0.5, 0.3, 0.05);
         }

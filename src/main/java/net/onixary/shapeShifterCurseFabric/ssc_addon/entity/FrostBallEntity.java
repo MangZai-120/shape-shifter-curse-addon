@@ -125,7 +125,7 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
         
         // 生成粒子效果
         if (this.getWorld() instanceof ServerWorld serverWorld) {
-            serverWorld.spawnParticles(ParticleTypes.SNOWFLAKE,
+            net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SNOWFLAKE,
                 this.getX(), this.getY(), this.getZ(),
                 2, 0.1, 0.1, 0.1, 0.02);
         }
@@ -142,7 +142,7 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
             
             // 生成爆炸粒子
             if (this.getWorld() instanceof ServerWorld serverWorld) {
-                serverWorld.spawnParticles(ParticleTypes.SNOWFLAKE,
+                net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SNOWFLAKE,
                     this.getX(), this.getY(), this.getZ(),
                     15, 0.3, 0.3, 0.3, 0.1);
             }

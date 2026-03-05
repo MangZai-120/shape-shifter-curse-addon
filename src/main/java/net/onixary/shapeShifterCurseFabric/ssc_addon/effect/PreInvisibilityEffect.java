@@ -39,7 +39,7 @@ public class PreInvisibilityEffect extends StatusEffect {
             ServerWorld serverWorld = (ServerWorld) entity.getWorld();
             
             // 1. Spawn Black Particles
-            serverWorld.spawnParticles(ParticleTypes.SQUID_INK, 
+            net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SQUID_INK, 
                 entity.getX(), entity.getY() + entity.getHeight() / 2.0, entity.getZ(), 
                 20, 0.5, 0.5, 0.5, 0.1);
 

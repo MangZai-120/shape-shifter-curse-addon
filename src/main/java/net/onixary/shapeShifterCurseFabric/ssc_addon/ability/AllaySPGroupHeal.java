@@ -182,7 +182,7 @@ public class AllaySPGroupHeal {
      * 在实体位置生成爱心粒子
      */
     private static void spawnHealParticles(ServerWorld world, LivingEntity entity) {
-        world.spawnParticles(ParticleTypes.HEART,
+        net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(world, ParticleTypes.HEART,
                 entity.getX(), entity.getY() + entity.getHeight() + 0.5, entity.getZ(),
                 5, 0.3, 0.3, 0.3, 0.01);
     }

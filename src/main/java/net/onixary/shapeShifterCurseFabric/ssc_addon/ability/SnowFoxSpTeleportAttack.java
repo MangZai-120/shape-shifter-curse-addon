@@ -13,6 +13,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
@@ -163,7 +164,7 @@ public class SnowFoxSpTeleportAttack {
             SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0f, 1.0f);
         
         if (player.getWorld() instanceof ServerWorld serverWorld) {
-            serverWorld.spawnParticles(ParticleTypes.REVERSE_PORTAL,
+            ParticleUtils.spawnParticles(serverWorld, ParticleTypes.REVERSE_PORTAL,
                 player.getX(), player.getY() + player.getHeight() / 2, player.getZ(),
                 20, 0.3, 0.5, 0.3, 0.05);
         }
@@ -184,10 +185,10 @@ public class SnowFoxSpTeleportAttack {
         }
         
         if (player.getWorld() instanceof ServerWorld serverWorld) {
-            serverWorld.spawnParticles(ParticleTypes.SNOWFLAKE,
+            ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SNOWFLAKE,
                 target.getX(), target.getY() + target.getHeight() / 2, target.getZ(),
                 15, 0.3, 0.3, 0.3, 0.1);
-            serverWorld.spawnParticles(ParticleTypes.SWEEP_ATTACK,
+            ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SWEEP_ATTACK,
                 target.getX(), target.getY() + target.getHeight() / 2, target.getZ(),
                 1, 0, 0, 0, 0);
         }
@@ -210,7 +211,7 @@ public class SnowFoxSpTeleportAttack {
             SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0f, 0.8f);
         
         if (player.getWorld() instanceof ServerWorld serverWorld) {
-            serverWorld.spawnParticles(ParticleTypes.REVERSE_PORTAL,
+            ParticleUtils.spawnParticles(serverWorld, ParticleTypes.REVERSE_PORTAL,
                 player.getX(), player.getY() + player.getHeight() / 2, player.getZ(),
                 30, 0.3, 0.5, 0.3, 0.05);
         }

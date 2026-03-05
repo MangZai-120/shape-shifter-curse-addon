@@ -60,7 +60,7 @@ public class SscAddonActions {
                         
                         // Particle and sound
                         world.playSound(null, player.getX(), player.getY(), player.getZ(), net.minecraft.sound.SoundEvents.ENTITY_ENDER_DRAGON_GROWL, net.minecraft.sound.SoundCategory.PLAYERS, 1.0f, 1.2f);
-                        world.spawnParticles(net.minecraft.particle.ParticleTypes.SONIC_BOOM, player.getX(), player.getY() + 1.0, player.getZ(), 10, 0.5, 0.5, 0.5, 0.1);
+                        net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(world, net.minecraft.particle.ParticleTypes.SONIC_BOOM, player.getX(), player.getY() + 1.0, player.getZ(), 10, 0.5, 0.5, 0.5, 0.1);
 
                         Box box = player.getBoundingBox().expand(25.0);
                         
@@ -98,7 +98,7 @@ public class SscAddonActions {
                         // Kill projectiles
                         java.util.List<Entity> projectiles = world.getOtherEntities(player, box, e -> e instanceof net.minecraft.entity.projectile.ProjectileEntity);
                         for (Entity p : projectiles) {
-                            world.spawnParticles(net.minecraft.particle.ParticleTypes.SMOKE, p.getX(), p.getY(), p.getZ(), 5, 0.1, 0.1, 0.1, 0.05);
+                            net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(world, net.minecraft.particle.ParticleTypes.SMOKE, p.getX(), p.getY(), p.getZ(), 5, 0.1, 0.1, 0.1, 0.05);
                             p.discard();
                         }
                     }

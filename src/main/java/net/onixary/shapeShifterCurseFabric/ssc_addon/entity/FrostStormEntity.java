@@ -162,7 +162,7 @@ public class FrostStormEntity extends Entity {
             double z = this.getZ() + Math.sin(angle) * radius;
             double y = this.getY() + Math.random() * 2;
             
-            world.spawnParticles(ParticleTypes.SNOWFLAKE, x, y, z, 1, 0, 0, 0, 0.05);
+            net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(world, ParticleTypes.SNOWFLAKE, x, y, z, 1, 0, 0, 0, 0.05);
         }
         
         // 旋转粒子效果
@@ -171,7 +171,7 @@ public class FrostStormEntity extends Entity {
             double angle = rotAngle + (i * Math.PI * 2 / 3);
             double x = this.getX() + Math.cos(angle) * 2;
             double z = this.getZ() + Math.sin(angle) * 2;
-            world.spawnParticles(ParticleTypes.CLOUD, x, this.getY() + 1, z, 1, 0, 0.1, 0, 0);
+            net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(world, ParticleTypes.CLOUD, x, this.getY() + 1, z, 1, 0, 0.1, 0, 0);
         }
     }
     

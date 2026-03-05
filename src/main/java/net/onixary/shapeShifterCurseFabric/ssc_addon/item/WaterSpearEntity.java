@@ -112,8 +112,8 @@ public class WaterSpearEntity extends TridentEntity {
         
         // Spawn particles on server
         if (world instanceof net.minecraft.server.world.ServerWorld serverWorld) {
-            serverWorld.spawnParticles(ParticleTypes.SPLASH, x, y, z, 30, 1.0, 0.5, 1.0, 0.1);
-            serverWorld.spawnParticles(ParticleTypes.BUBBLE, x, y, z, 20, 1.0, 0.5, 1.0, 0.05);
+            net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SPLASH, x, y, z, 30, 1.0, 0.5, 1.0, 0.1);
+            net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.BUBBLE, x, y, z, 20, 1.0, 0.5, 1.0, 0.05);
         }
     }
     
@@ -125,7 +125,7 @@ public class WaterSpearEntity extends TridentEntity {
         World world = this.getWorld();
         if (world.isClient && !this.inGround) {
             for (int i = 0; i < 2; i++) {
-                world.addParticle(ParticleTypes.DRIPPING_WATER, 
+                world.addParticle(ParticleTypes.DRIPPING_WATER, true,
                     this.getX() + (world.random.nextDouble() - 0.5) * 0.3,
                     this.getY() + (world.random.nextDouble() - 0.5) * 0.3,
                     this.getZ() + (world.random.nextDouble() - 0.5) * 0.3,

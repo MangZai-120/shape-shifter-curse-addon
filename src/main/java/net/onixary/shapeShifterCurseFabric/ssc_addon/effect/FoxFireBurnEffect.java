@@ -50,7 +50,7 @@ public class FoxFireBurnEffect extends StatusEffect {
             // For simple visuals, we might rely on server spawning particles or client side implementation.
             // StatusEffect particles are usually handled by the game automatically if color is set,
             // but we want Soul Fire particles.
-            entity.getWorld().addParticle(ParticleTypes.SOUL_FIRE_FLAME, 
+            entity.getWorld().addParticle(ParticleTypes.SOUL_FIRE_FLAME, true,
                 entity.getX() + (entity.getRandom().nextDouble() - 0.5) * entity.getWidth(), 
                 entity.getY() + entity.getRandom().nextDouble() * entity.getHeight(), 
                 entity.getZ() + (entity.getRandom().nextDouble() - 0.5) * entity.getWidth(), 
@@ -99,7 +99,7 @@ public class FoxFireBurnEffect extends StatusEffect {
                  
                  // Spawn explicit particles on server for everyone to see
                  if (entity.getWorld() instanceof ServerWorld serverWorld) {
-                     serverWorld.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME,
+                     net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SOUL_FIRE_FLAME,
                         entity.getX(), entity.getY() + entity.getHeight() / 2.0, entity.getZ(),
                         2, 0.3, 0.3, 0.3, 0.05);
                  }
