@@ -26,7 +26,7 @@ nav:
   - 进化用品: items/evolution_items.md
   - 材料与素材: items/materials.md
   - 道具: items/tools.md
-  - 饰品（Trinkets）: items/trinkets.md
+  - 饰品: items/trinkets.md
 - 效果:
   - 增益效果: effects/buffs.md
   - 减益效果: effects/debuffs.md
