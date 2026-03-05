@@ -35,8 +35,8 @@
 | [SP雪狐](sp_forms/sp_snow_fox.md) | 霜寒之灵 | 玻璃大炮 / 冰霜控场 |
 | [SP美西螈](sp_forms/sp_axolotl.md) | 深渊霸主 | 水下霸主 / 生存专家 |
 | [SP野猫](sp_forms/sp_wild_cat.md) | 月光魅影 | 隐身刺客 / 暗夜猎手 |
-| [SP悦灵](sp_forms/sp_allay.md) | 水晶之音 | 空中支援 |
-| [SP堕落悦灵](sp_forms/sp_fallen_allay.md) | 堕落之灵 | 恼鬼大军 / 劫掠阵营 |
+| [SP悦灵](sp_forms/sp_allay.md) | 水晶之音 | 空中支援 / 超级奶妈 |
+| [SP堕落悦灵](sp_forms/sp_fallen_allay.md) | 堕落之灵 | 远程骚扰 / 劫掠阵营 |
 
 ---
 
