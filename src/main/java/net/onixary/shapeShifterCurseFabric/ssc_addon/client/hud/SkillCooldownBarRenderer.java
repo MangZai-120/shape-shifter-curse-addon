@@ -22,7 +22,7 @@ import java.util.Map;
 
 /**
  * 技能冷却条HUD渲染器
- *
+ * <p>
  * CD追踪策略：
  * 1. 形态切换：压制通用CD资源(SP_PRIMARY/SECONDARY_CD)的残留值，
  *    直到检测到技能触发（值偏离自然衰减）或资源归零才解除。
