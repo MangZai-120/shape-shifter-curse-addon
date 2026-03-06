@@ -1,6 +1,6 @@
 # SP 悦灵
 
-> Crystal Sound —— 水晶之音
+> “Crystal Sound —— 水晶之音”
 
 SP 悦灵是悦灵形态的特殊进化版本，拥有增强的空中支援能力。
 
