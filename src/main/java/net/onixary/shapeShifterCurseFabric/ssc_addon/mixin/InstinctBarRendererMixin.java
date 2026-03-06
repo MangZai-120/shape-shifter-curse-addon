@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 @Mixin(InstinctBarRenderer.class)
 public class InstinctBarRendererMixin {
 
-    @ModifyVariable(method = "render", at = @At("STORE"), ordinal = 0)
+    @ModifyVariable(method = "render", at = @At("STORE"), name = "showInstinctBar")
     private boolean hideInstinctBarForSP(boolean original) {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player != null) {
