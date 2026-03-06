@@ -202,7 +202,6 @@ public class SscAddon implements ModInitializer {
         registerConfig();
         registerStatusEffects();
         registerItems();
-        registerEntities();
         registerRecipeSerializers();
         registerSoundEvents();
         registerApoliSystems();
@@ -256,14 +255,6 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "allay_jukebox"), ALLAY_JUKEBOX);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "friend_marker"), FRIEND_MARKER);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "clear_friend_marker"), CLEAR_FRIEND_MARKER);
-    }
-
-    private void registerEntities() {
-        // Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "water_spear"), WATER_SPEAR_ENTITY);
-        // Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "frost_ball"), FROST_BALL_ENTITY);
-        // Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "frost_storm"), FROST_STORM_ENTITY);
-        // Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "friend_marker"), FRIEND_MARKER_ENTITY_TYPE);
-        // Registry.register(Registries.ENTITY_TYPE, new Identifier("ssc_addon", "clear_friend_marker"), CLEAR_MARKER_ENTITY_TYPE);
     }
 
     private void registerRecipeSerializers() {
