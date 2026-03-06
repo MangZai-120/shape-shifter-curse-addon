@@ -40,8 +40,7 @@ public class WhitelistUtils {
                 if (attacker.getServerWorld().getPlayerByUuid(tameable.getOwnerUuid()) != null) return true;
             }
             // 保护：带 "owner:" 标签的实体（即恕魔类召唤物）
-            if (hasOwnerTag(target)) return true;
-            return false;
+            return hasOwnerTag(target);
         } else {
             // 保护：直接在白名单中的实体（玩家/生物 UUID）
             if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + target.getUuidAsString())) return true;
