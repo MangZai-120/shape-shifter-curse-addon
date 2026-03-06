@@ -15,6 +15,7 @@
   "contact": {
     "modrinth": "https://modrinth.com/mod/shape-shifter-curse-addon",
     "curseforge": "https://www.curseforge.com/minecraft/mc-mods/shape-shifter-curse-addon",
+    "homepage": "https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/",
     "sources": "https://github.com/MangZai-120/shape-shifter-curse-addon",
     "issues": "https://github.com/MangZai-120/shape-shifter-curse-addon/issues"
   },
