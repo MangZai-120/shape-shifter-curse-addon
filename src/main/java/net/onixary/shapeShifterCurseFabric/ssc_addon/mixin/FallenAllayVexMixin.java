@@ -14,6 +14,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -27,10 +28,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class FallenAllayVexMixin extends MobEntity {
 
     // Persistent target lock (vex UUID -> target entity UUID)
+    @Unique
     private static final ConcurrentHashMap<UUID, UUID> VEX_TARGET = new ConcurrentHashMap<>();
     // Idle wander destination when no target (vex UUID -> [x, y, z])
+    @Unique
     private static final ConcurrentHashMap<UUID, double[]> VEX_WANDER_DEST = new ConcurrentHashMap<>();
     // Ticks until a new wander point is picked
+    @Unique
     private static final ConcurrentHashMap<UUID, Integer> VEX_WANDER_TIMER = new ConcurrentHashMap<>();
 
     protected FallenAllayVexMixin(EntityType<? extends MobEntity> entityType, World world) {
@@ -102,6 +106,7 @@ public abstract class FallenAllayVexMixin extends MobEntity {
      * Picks a new random destination every 40 ticks (or when the current one is reached).
      * If already beyond 10 blocks, fly back toward owner instead.
      */
+    @Unique
     private void wanderNearOwner(PlayerEntity owner) {
         UUID id = this.getUuid();
         double dist2ToOwner = this.squaredDistanceTo(owner);
@@ -147,6 +152,7 @@ public abstract class FallenAllayVexMixin extends MobEntity {
     }
 
     /** Resolve the stored target; clear slot if dead or absent. */
+    @Unique
     private LivingEntity resolveTarget(ServerWorld serverWorld) {
         UUID targetId = VEX_TARGET.get(this.getUuid());
         if (targetId == null) return null;
@@ -160,6 +166,7 @@ public abstract class FallenAllayVexMixin extends MobEntity {
      * Find the best target centered on the VEX ITSELF (radius 16).
      * Priority: marked (glowing) > player > hostile > other
      */
+    @Unique
     private LivingEntity findBestTarget(PlayerEntity owner, String ownerUuidStr,
                                         ServerWorld serverWorld, boolean hasWhitelist) {
         Box searchBox = this.getBoundingBox().expand(16.0);
@@ -223,6 +230,7 @@ public abstract class FallenAllayVexMixin extends MobEntity {
     }
 
     /** While at least one vex is alive, keep vex_cd pinned at 400 so the skill can't be recast. */
+    @Unique
     private void pinVexCd(PlayerEntity owner) {
         try {
             io.github.apace100.apoli.component.PowerHolderComponent component = io.github.apace100.apoli.component.PowerHolderComponent.KEY.get(owner);
@@ -236,6 +244,7 @@ public abstract class FallenAllayVexMixin extends MobEntity {
     }
 
     /** When the last vex dies, set vex_cd to 400 and let the JSON ticker count it down. */
+    @Unique
     private void applyCooldownIfLast(PlayerEntity owner, String ownerUuidStr, ServerWorld serverWorld) {
         boolean hasOtherVex = false;
         for (Entity v : serverWorld.getEntitiesByClass(VexEntity.class, owner.getBoundingBox().expand(128.0),
