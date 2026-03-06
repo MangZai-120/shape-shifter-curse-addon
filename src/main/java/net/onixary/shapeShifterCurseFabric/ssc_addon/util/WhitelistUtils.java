@@ -1,7 +1,6 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.util;
 
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.mob.VexEntity;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
