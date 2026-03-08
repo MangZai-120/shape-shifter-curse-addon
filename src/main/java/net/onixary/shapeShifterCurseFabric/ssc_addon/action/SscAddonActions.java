@@ -28,6 +28,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDomain;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility;
@@ -451,6 +452,15 @@ public class SscAddonActions {
                          entity.setVelocity(newVx, newVy, newVz);
                          entity.velocityModified = true;
                     }
+                }
+            }));
+
+        // ==== SP阿努比斯之狼 - 死亡领域 ====
+        registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "anubis_wolf_sp_death_domain"),
+            new SerializableData(),
+            (data, entity) -> {
+                if (entity instanceof ServerPlayerEntity sp) {
+                    AnubisWolfSpDeathDomain.execute(sp);
                 }
             }));
     }
