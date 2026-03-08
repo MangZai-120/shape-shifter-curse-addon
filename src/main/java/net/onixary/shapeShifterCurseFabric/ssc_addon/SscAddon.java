@@ -318,6 +318,13 @@ public class SscAddon implements ModInitializer {
         fallenAllayForm.setPhase(PlayerFormPhase.PHASE_SP);
         RegPlayerForms.registerPlayerForm(fallenAllayForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_fallen_allay_sp")).addForm(fallenAllayForm, 8));
+
+        // Anubis Wolf SP
+        Form_AnubisWolfSP anubisWolfForm = new Form_AnubisWolfSP(FormIdentifiers.ANUBIS_WOLF_SP);
+        anubisWolfForm.setPhase(PlayerFormPhase.PHASE_SP);
+        anubisWolfForm.setCanSneakRush(true);
+        RegPlayerForms.registerPlayerForm(anubisWolfForm);
+        RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_anubis_wolf_sp")).addForm(anubisWolfForm, 12));
     }
 
     private void registerCommands() {
