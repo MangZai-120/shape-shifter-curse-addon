@@ -2,6 +2,7 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin;
 
 import mod.azure.azurelib.model.GeoModel;
 import mod.azure.azurelib.renderer.GeoObjectRenderer;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -16,6 +17,7 @@ import net.onixary.shapeShifterCurseFabric.player_form_render.OriginFurAnimatabl
 import net.onixary.shapeShifterCurseFabric.player_form_render.OriginFurModel;
 import net.onixary.shapeShifterCurseFabric.player_form_render.OriginalFurClient;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -78,6 +80,29 @@ public abstract class OriginFurMixin extends GeoObjectRenderer<OriginFurAnimatab
                 // Ignore errors during rendering check to prevent crash
             }
         }
+
+        // Hide turf bone in first person only for SP Anubis Wolf form
+        if (animatable.e != null
+                && animatable.e == MinecraftClient.getInstance().player
+                && MinecraftClient.getInstance().options.getPerspective().isFirstPerson()) {
+            try {
+                PlayerFormComponent comp = RegPlayerFormComponent.PLAYER_FORM.get(animatable.e);
+                PlayerFormBase form = comp.getCurrentForm();
+                if (form != null && form.FormID != null && form.FormID.equals(FormIdentifiers.ANUBIS_WOLF_SP)) {
+                    GeoModel<OriginFurAnimatable> geoModel = this.getGeoModel();
+                    if (geoModel instanceof OriginFurModel furModel) {
+                        furModel.getAnimationProcessor().getRegisteredBones().forEach(bone -> {
+                            if ("turf".equals(bone.getName())) {
+                                bone.setHidden(true);
+                            }
+                        });
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore errors during form check
+            }
+        }
+
         super.render(poseStack, animatable, bufferSource, renderType, buffer, packedLight);
     }
 }

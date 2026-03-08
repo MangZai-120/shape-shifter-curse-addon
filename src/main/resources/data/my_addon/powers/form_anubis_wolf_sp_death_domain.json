@@ -1,0 +1,19 @@
+{
+    "type": "origins:active_self",
+    "entity_action": {
+        "type": "ssc_addon:anubis_wolf_sp_death_domain"
+    },
+    "key": {
+        "key": "key.ssc_addon.sp_primary"
+    },
+    "condition": {
+        "type": "origins:sneaking",
+        "inverted": true
+    },
+    "cooldown": 0,
+    "hud_render": {
+        "should_render": false
+    },
+    "name": "死亡领域",
+    "description": "蓄力2秒后，将周围16格半径的圆柱范围内所有方块暂时变为灵魂沙。领域内的敌对生物受到缓慢I、凋零I并被削减15%的生命值上限。领域持续15秒。"
+}

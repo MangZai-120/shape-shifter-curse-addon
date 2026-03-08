@@ -52,6 +52,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAt
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPJukebox;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDomain;
 
 public class SscAddon implements ModInitializer {
 
@@ -349,6 +350,7 @@ public class SscAddon implements ModInitializer {
                 SnowFoxSpFrostStorm.tick(player);
                 AllaySPGroupHeal.tick(player);
                 AllaySPJukebox.tick(player);
+                AnubisWolfSpDeathDomain.tick(player);
             }
         });
     }
@@ -367,6 +369,7 @@ public class SscAddon implements ModInitializer {
             SnowFoxSpMeleeAbility.clearPlayer(uuid);
             SnowFoxSpTeleportAttack.clearPlayer(uuid);
             SnowFoxSpFrostStorm.clearPlayer(uuid);
+            AnubisWolfSpDeathDomain.clearPlayer(uuid);
             AllaySPJukebox.onPlayerDisconnect(handler.player);
         });
     }
