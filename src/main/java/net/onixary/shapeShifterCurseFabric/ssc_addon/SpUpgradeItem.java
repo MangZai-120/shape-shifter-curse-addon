@@ -43,6 +43,7 @@ public class SpUpgradeItem extends Item {
         registerUpgrade("shape-shifter-curse", "familiar_fox_3", "my_addon", "familiar_fox_sp");
         registerUpgrade("shape-shifter-curse", "axolotl_3", "my_addon", "axolotl_sp");
         registerUpgrade("shape-shifter-curse", "allay_sp", "my_addon", "fallen_allay_sp");
+        registerUpgrade("shape-shifter-curse", "anubis_wolf_3", "my_addon", "anubis_wolf_sp");
     }
 
     public static void registerUpgrade(String fromNamespace, String fromPath, String toNamespace, String toPath) {
