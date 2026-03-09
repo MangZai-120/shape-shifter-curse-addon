@@ -16,6 +16,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.client.mana.AllaySPManaBar;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.client.mana.AnubisWolfSPSoulBar;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.client.mana.SnowFoxSPManaBar;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.client.hud.SkillCooldownBarRenderer;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.client.renderer.WaterSpearEntityRenderer;
@@ -103,6 +104,7 @@ public class SscAddonClient implements ClientModInitializer {
 
         HudRenderCallback.EVENT.register(new SnowFoxSPManaBar());
         HudRenderCallback.EVENT.register(new AllaySPManaBar());
+        HudRenderCallback.EVENT.register(new AnubisWolfSPSoulBar());
         HudRenderCallback.EVENT.register(new SkillCooldownBarRenderer());
         
         HandledScreens.register(SscAddon.POTION_BAG_SCREEN_HANDLER, PotionBagScreen::new);

@@ -33,6 +33,9 @@ public class FormIdentifiers {
     public static final Identifier SP_PRIMARY_CD = new Identifier("my_addon", "form_sp_primary_cd");
     public static final Identifier SP_SECONDARY_CD = new Identifier("my_addon", "form_sp_secondary_cd");
 
+    // 阿努比斯之狼SP灵魂能量资源
+    public static final Identifier ANUBIS_WOLF_SP_SOUL_ENERGY = new Identifier("my_addon", "form_anubis_wolf_sp_soul_energy");
+
     // 堕灵形态特有的CD资源
     public static final Identifier FALLEN_ALLAY_VEX_CD = new Identifier("my_addon", "form_fallen_allay_sp_vex_cd");
     public static final Identifier FALLEN_ALLAY_SCREAM_CD = new Identifier("my_addon", "form_fallen_allay_sp_active_scream_cooldown_timer");

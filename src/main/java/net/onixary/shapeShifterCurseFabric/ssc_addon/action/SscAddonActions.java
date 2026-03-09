@@ -29,6 +29,7 @@ import net.minecraft.util.Pair;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDomain;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility;
@@ -461,6 +462,15 @@ public class SscAddonActions {
             (data, entity) -> {
                 if (entity instanceof ServerPlayerEntity sp) {
                     AnubisWolfSpDeathDomain.execute(sp);
+                }
+            }));
+
+        // ==== SP阿努比斯之狼 - 冥狼裁庭 ====
+        registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "anubis_wolf_sp_summon_wolves"),
+            new SerializableData(),
+            (data, entity) -> {
+                if (entity instanceof ServerPlayerEntity sp) {
+                    AnubisWolfSpSummonWolves.execute(sp);
                 }
             }));
     }

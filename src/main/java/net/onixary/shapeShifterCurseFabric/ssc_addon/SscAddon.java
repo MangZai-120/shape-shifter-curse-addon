@@ -5,6 +5,7 @@ import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
@@ -52,6 +53,8 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPJukebox;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDomain;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEnergy;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
 
 public class SscAddon implements ModInitializer {
 
@@ -210,6 +213,8 @@ public class SscAddon implements ModInitializer {
         registerCommands();
         registerTickHandlers();
         registerPlayerEventHandlers();
+        registerServerLifecycleHandlers();
+        AnubisWolfSpSoulEnergy.registerEvents();
     }
 
     // 拆分的私有方法
@@ -334,6 +339,10 @@ public class SscAddon implements ModInitializer {
 
     private void registerTickHandlers() {
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.START_WORLD_TICK.register(world -> {
+            // 在服务器线程上处理断线玩家的领域方块还原
+            if (world.getRegistryKey() == net.minecraft.world.World.OVERWORLD) {
+                AnubisWolfSpDeathDomain.tickCleanup();
+            }
             for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()) {
                 SnowFoxSpMeleeAbility.tick(player);
                 SnowFoxSpTeleportAttack.tick(player);
@@ -341,7 +350,18 @@ public class SscAddon implements ModInitializer {
                 AllaySPGroupHeal.tick(player);
                 AllaySPJukebox.tick(player);
                 AnubisWolfSpDeathDomain.tick(player);
+                AnubisWolfSpSummonWolves.tick(player);
+                AnubisWolfSpSoulEnergy.tickSync(player);
             }
+        });
+    }
+
+    private void registerServerLifecycleHandlers() {
+        // 服务器关闭前还原所有死亡领域方块（在世界存档之前触发）
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+            System.out.println("[SSC_ADDON] SERVER_STOPPING event fired, calling forceRestoreAll");
+            AnubisWolfSpDeathDomain.forceRestoreAll();
+            System.out.println("[SSC_ADDON] SERVER_STOPPING forceRestoreAll completed");
         });
     }
 
@@ -356,11 +376,15 @@ public class SscAddon implements ModInitializer {
         // 玩家断线时清理所有静态状态Map，防止内存泄漏和重连后状态错乱
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             java.util.UUID uuid = handler.player.getUuid();
+            System.out.println("[SSC_ADDON] DISCONNECT event fired for player: " + handler.player.getName().getString());
             SnowFoxSpMeleeAbility.clearPlayer(uuid);
             SnowFoxSpTeleportAttack.clearPlayer(uuid);
             SnowFoxSpFrostStorm.clearPlayer(uuid);
-            AnubisWolfSpDeathDomain.clearPlayer(uuid);
+            AnubisWolfSpDeathDomain.clearPlayer(handler.player);
+            AnubisWolfSpSummonWolves.clearPlayer(uuid);
+            AnubisWolfSpSoulEnergy.clearPlayer(uuid);
             AllaySPJukebox.onPlayerDisconnect(handler.player);
+            System.out.println("[SSC_ADDON] DISCONNECT cleanup completed");
         });
     }
 }

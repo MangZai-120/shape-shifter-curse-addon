@@ -25,6 +25,9 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * SP阿努比斯之狼主要技能 - 死亡领域
  * 将周围24格半径、高低差9格的圆柱范围内的方块暂时变为灵魂沙。
@@ -35,6 +38,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 领域结束后从最远处开始以5格/秒速度回退并还原方块。
  */
 public class AnubisWolfSpDeathDomain {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger("DeathDomain");
 
     private AnubisWolfSpDeathDomain() {
     }
@@ -60,6 +65,18 @@ public class AnubisWolfSpDeathDomain {
     private static final int COOLDOWN_TICKS = 1000; // 50秒
     /** 惩罚性CD时间（tick） */
     private static final int PENALTY_COOLDOWN_TICKS = 200; // 10秒
+
+    // ==================== 增强模式常量 ====================
+    /** 增强领域最大半径（格） */
+    private static final int ENHANCED_DOMAIN_RADIUS = 32;
+    /** 增强充能时间（tick） */
+    private static final int ENHANCED_CHARGE_TICKS = 20; // 1秒
+    /** 增强领域持续时间（tick） */
+    private static final int ENHANCED_DOMAIN_DURATION = 400; // 20秒
+    /** 增强凋零等级（Wither II） */
+    private static final int ENHANCED_WITHER_AMPLIFIER = 1;
+    /** 增强模式自动召唤冥狼数量 */
+    private static final int ENHANCED_AUTO_SUMMON_COUNT = 6;
     /** 血量减少修饰符UUID */
     private static final UUID HEALTH_MODIFIER_UUID = UUID.fromString("a7b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d");
     /** 充能减速修饰符UUID */
@@ -74,7 +91,8 @@ public class AnubisWolfSpDeathDomain {
         CHARGING,    // 充能中（2秒）
         EXPANDING,   // 延展中（灵魂沙从中心向外扩散）
         SUSTAINING,  // 领域维持中（15秒）
-        RETRACTING   // 回退中（从外向内还原）
+        RETRACTING,  // 回退中（从外向内还原）
+        CLEANUP      // 等待服务器线程清理（玩家断线后）
     }
 
     // ==================== 数据类 ====================
@@ -84,17 +102,21 @@ public class AnubisWolfSpDeathDomain {
         double currentRadius;       // 当前延展/回退的半径
         BlockPos center;            // 领域中心
         int centerY;                // 施法者Y坐标
+        ServerWorld world;          // 领域所在世界（用于断线/关服还原）
         // 按距离分层存储被改变的方块: 距离 -> (位置 -> 原始方块状态)
         TreeMap<Integer, Map<BlockPos, BlockState>> changedBlocksByDistance = new TreeMap<>();
         // 被削减血量的生物UUID集合
         Set<UUID> debuffedEntities = new HashSet<>();
         // 每个实体受到的凋零伤害次数追踪（每次凋零效果触发1HP，上限10次=10HP）
         Map<UUID, Integer> witherHitCount = new HashMap<>();
+        // 增强模式标记（灵魂能量满时施放）
+        boolean enhanced;
 
-        DomainData(BlockPos center, int centerY) {
+        DomainData(ServerWorld world, BlockPos center, int centerY) {
             this.phase = Phase.CHARGING;
             this.ticksElapsed = 0;
             this.currentRadius = 0;
+            this.world = world;
             this.center = center;
             this.centerY = centerY;
         }
@@ -120,8 +142,20 @@ public class AnubisWolfSpDeathDomain {
         // 直接开始蓄力，不做前置检查
         // 创建领域数据
         BlockPos center = player.getBlockPos();
-        DomainData data = new DomainData(center, (int) player.getY());
+        ServerWorld serverWorld = (ServerWorld) player.getWorld();
+        DomainData data = new DomainData(serverWorld, center, (int) player.getY());
+
+        // 检查灵魂能量是否满：满则进入增强模式并消耗能量
+        if (AnubisWolfSpSoulEnergy.isFullEnergy(player.getUuid())) {
+            data.enhanced = true;
+            AnubisWolfSpSoulEnergy.consumeEnergy(player);
+            LOGGER.info("[DeathDomain] ENHANCED mode activated for player={}", player.getName().getString());
+        }
+
         ACTIVE_DOMAINS.put(player.getUuid(), data);
+
+        LOGGER.info("[DeathDomain] execute: player={}, center={}, world={}, ACTIVE_DOMAINS size={}",
+                player.getName().getString(), center, serverWorld.getRegistryKey().getValue(), ACTIVE_DOMAINS.size());
 
         // 应用充能减速效果
         applyChargeSlow(player);
@@ -155,17 +189,53 @@ public class AnubisWolfSpDeathDomain {
     }
 
     /**
-     * 玩家断线/死亡时清理
+     * 玩家断线/死亡时清理，还原所有已转化方块
      */
-    public static void clearPlayer(UUID uuid) {
-        DomainData data = ACTIVE_DOMAINS.remove(uuid);
+    /**
+     * 玩家断线时清理玩家特有状态（CD、减速修饰符）
+     * 不在此处做方块还原，因为DISCONNECT事件在Netty IO线程上触发，
+     * world.setBlockState()不是线程安全的。
+     * 方块还原由 tickCleanup()（服务器线程）或 forceRestoreAll()（SERVER_STOPPING）处理。
+     */
+    public static void clearPlayer(ServerPlayerEntity player) {
+        UUID uuid = player.getUuid();
+        LOGGER.info("[DeathDomain] clearPlayer called: player={}, uuid={}, ACTIVE_DOMAINS size={}, containsKey={}",
+                player.getName().getString(), uuid, ACTIVE_DOMAINS.size(), ACTIVE_DOMAINS.containsKey(uuid));
+        DomainData data = ACTIVE_DOMAINS.get(uuid);
         if (data != null) {
-            // 立即还原所有方块
-            // 注意：此时玩家可能已不在线，需要通过存储的世界信息处理
-            // 由于我们只存了BlockPos和BlockState，无法获取world引用
-            // 方块会在下次tick中由服务器清理
+            // 只清理玩家特有状态，不移除ACTIVE_DOMAINS中的数据
+            if (data.phase == Phase.CHARGING) {
+                removeChargeSlow(player);
+            }
+            // 标记为待清理，让tickCleanup在服务器线程上处理方块还原
+            data.phase = Phase.CLEANUP;
+            LOGGER.info("[DeathDomain] clearPlayer: marked for CLEANUP, totalBlocks={}",
+                    data.changedBlocksByDistance.values().stream().mapToInt(Map::size).sum());
+        } else {
+            LOGGER.info("[DeathDomain] clearPlayer: no active domain found for player");
         }
         COOLDOWN_PLAYERS.remove(uuid);
+    }
+
+    /**
+     * 在服务器线程的tick中检查并清理已断线玩家的领域（方块还原）
+     * 由SscAddon的tick处理器调用，确保在Server thread上执行
+     */
+    public static void tickCleanup() {
+        Iterator<Map.Entry<UUID, DomainData>> it = ACTIVE_DOMAINS.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<UUID, DomainData> entry = it.next();
+            DomainData data = entry.getValue();
+            if (data.phase == Phase.CLEANUP && data.world != null) {
+                int totalBlocks = data.changedBlocksByDistance.values().stream().mapToInt(Map::size).sum();
+                LOGGER.info("[DeathDomain] tickCleanup: restoring uuid={}, totalBlocks={}, world={}",
+                        entry.getKey(), totalBlocks, data.world.getRegistryKey().getValue());
+                restoreAllBlocks(data.world, data);
+                cleanupDebuffs(data.world, data);
+                it.remove();
+                LOGGER.info("[DeathDomain] tickCleanup: restoration completed");
+            }
+        }
     }
 
     /**
@@ -177,21 +247,63 @@ public class AnubisWolfSpDeathDomain {
     }
 
     /**
-     * 服务器关闭或玩家变更形态时，强制还原领域
+     * 检查玩家是否有激活的死亡领域（用于冥狼裁庭联动）
+     * 处于EXPANDING、SUSTAINING阶段均视为激活状态
      */
-    public static void forceRestoreAll(ServerWorld world) {
+    public static boolean hasActiveDomain(UUID playerUuid) {
+        DomainData data = ACTIVE_DOMAINS.get(playerUuid);
+        if (data == null) return false;
+        return data.phase == Phase.EXPANDING || data.phase == Phase.SUSTAINING;
+    }
+
+    /**
+     * 检查指定位置是否在玩家激活的死亡领域范围内
+     */
+    public static boolean isInActiveDomain(UUID playerUuid, BlockPos pos) {
+        DomainData data = ACTIVE_DOMAINS.get(playerUuid);
+        if (data == null) return false;
+        if (data.phase != Phase.EXPANDING && data.phase != Phase.SUSTAINING) return false;
+        double dx = pos.getX() - data.center.getX();
+        double dz = pos.getZ() - data.center.getZ();
+        double radius = data.enhanced ? ENHANCED_DOMAIN_RADIUS : DOMAIN_RADIUS;
+        return dx * dx + dz * dz <= radius * radius;
+    }
+
+    /**
+     * 检查玩家的死亡领域是否为增强模式
+     */
+    public static boolean isEnhancedDomain(UUID playerUuid) {
+        DomainData data = ACTIVE_DOMAINS.get(playerUuid);
+        return data != null && data.enhanced;
+    }
+
+    /**
+     * 服务器关闭或玩家变更形态时，强制还原所有领域
+     * 每个领域使用自身存储的世界引用，确保还原到正确的维度
+     */
+    public static void forceRestoreAll() {
+        LOGGER.info("[DeathDomain] forceRestoreAll called, ACTIVE_DOMAINS size={}", ACTIVE_DOMAINS.size());
         for (Map.Entry<UUID, DomainData> entry : ACTIVE_DOMAINS.entrySet()) {
             DomainData data = entry.getValue();
-            restoreAllBlocks(world, data);
-            cleanupDebuffs(world, data);
+            int totalBlocks = 0;
+            for (Map<BlockPos, BlockState> m : data.changedBlocksByDistance.values()) {
+                totalBlocks += m.size();
+            }
+            LOGGER.info("[DeathDomain] forceRestoreAll: uuid={}, phase={}, world={}, totalBlocks={}",
+                    entry.getKey(), data.phase, data.world != null ? data.world.getRegistryKey().getValue() : "NULL", totalBlocks);
+            if (data.world != null) {
+                restoreAllBlocks(data.world, data);
+                cleanupDebuffs(data.world, data);
+            }
         }
         ACTIVE_DOMAINS.clear();
+        LOGGER.info("[DeathDomain] forceRestoreAll completed");
     }
 
     // ==================== 阶段处理 ====================
 
     /**
-     * 检查玩家脚下4格范围内是否有可转化为灵魂沙的方块
+     * 检查玩家脚下4格范围内是否有可转化为灵魂沙的方块，或已经是灵魂沙/灵魂土
      */
     private static boolean hasConvertibleBlocksBelow(ServerPlayerEntity player) {
         BlockPos feetPos = player.getBlockPos();
@@ -201,7 +313,8 @@ public class AnubisWolfSpDeathDomain {
                 for (int dy = -4; dy <= 0; dy++) {
                     BlockPos pos = feetPos.add(dx, dy, dz);
                     BlockState state = player.getWorld().getBlockState(pos);
-                    if (shouldConvert(state)) {
+                    Block block = state.getBlock();
+                    if (shouldConvert(state) || block == Blocks.SOUL_SAND || block == Blocks.SOUL_SOIL) {
                         return true;
                     }
                 }
@@ -210,17 +323,23 @@ public class AnubisWolfSpDeathDomain {
         return false;
     }
 
-    /** 充能阶段：2秒，期间减速70% */
+    /** 充能阶段：普通2秒/增强1秒，期间减速70% */
     private static void tickCharging(ServerPlayerEntity player, ServerWorld world, DomainData data) {
+        int chargeTicks = data.enhanced ? ENHANCED_CHARGE_TICKS : CHARGE_TICKS;
+
         // 充能粒子效果：灵魂粒子围绕玩家旋转上升
         double angle = (data.ticksElapsed * 0.2) % (Math.PI * 2);
         double radius = 1.0 + data.ticksElapsed * 0.03;
-        for (int i = 0; i < 3; i++) {
-            double a = angle + i * (Math.PI * 2 / 3);
+        int particleStreams = data.enhanced ? 5 : 3;
+        for (int i = 0; i < particleStreams; i++) {
+            double a = angle + i * (Math.PI * 2 / particleStreams);
             double px = player.getX() + Math.cos(a) * radius;
             double pz = player.getZ() + Math.sin(a) * radius;
             double py = player.getY() + 0.5 + data.ticksElapsed * 0.025;
             ParticleUtils.spawnParticles(world, ParticleTypes.SOUL, px, py, pz, 1, 0, 0.05, 0, 0.01);
+            if (data.enhanced) {
+                ParticleUtils.spawnParticles(world, ParticleTypes.SOUL_FIRE_FLAME, px, py, pz, 1, 0, 0.08, 0, 0.02);
+            }
         }
 
         // 心跳音效（每10tick一次）
@@ -229,7 +348,7 @@ public class AnubisWolfSpDeathDomain {
                     SoundEvents.ENTITY_WITHER_HURT, SoundCategory.PLAYERS, 0.8f, 0.5f + data.ticksElapsed * 0.01f);
         }
 
-        if (data.ticksElapsed >= CHARGE_TICKS) {
+        if (data.ticksElapsed >= chargeTicks) {
             // 充能完成，移除充能减速
             removeChargeSlow(player);
 
@@ -260,16 +379,25 @@ public class AnubisWolfSpDeathDomain {
                     SoundEvents.ENTITY_WITHER_SHOOT, SoundCategory.PLAYERS, 0.7f, 0.4f);
             player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.ENTITY_WITHER_DEATH, SoundCategory.PLAYERS, 0.5f, 0.5f);
+
+            // 增强模式：自动召唤6只冥狼
+            if (data.enhanced) {
+                AnubisWolfSpSummonWolves.autoSummonForEnhancedDomain(player, ENHANCED_AUTO_SUMMON_COUNT);
+                // 增强模式额外音效
+                player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+                        SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 0.8f, 0.8f);
+            }
         }
     }
 
     /** 延展阶段：以5格/秒速度从中心向外扩散灵魂沙 */
     private static void tickExpanding(ServerPlayerEntity player, ServerWorld world, DomainData data) {
+        int maxRadius = data.enhanced ? ENHANCED_DOMAIN_RADIUS : DOMAIN_RADIUS;
         double prevRadius = data.currentRadius;
         data.currentRadius += EXPAND_SPEED;
 
-        if (data.currentRadius > DOMAIN_RADIUS) {
-            data.currentRadius = DOMAIN_RADIUS;
+        if (data.currentRadius > maxRadius) {
+            data.currentRadius = maxRadius;
         }
 
         // 转化半径range内的方块
@@ -289,8 +417,7 @@ public class AnubisWolfSpDeathDomain {
                     SoundEvents.BLOCK_SOUL_SAND_STEP, SoundCategory.BLOCKS, 0.6f, 0.7f);
         }
 
-        if (data.currentRadius >= DOMAIN_RADIUS) {
-            // 延展完成，进入维持阶段
+        if (data.currentRadius >= maxRadius) {
             data.phase = Phase.SUSTAINING;
             data.ticksElapsed = 0;
 
@@ -302,8 +429,11 @@ public class AnubisWolfSpDeathDomain {
         data.ticksElapsed++;
     }
 
-    /** 维持阶段：领域持续15秒 */
+    /** 维持阶段：普通15秒/增强20秒 */
     private static void tickSustaining(ServerPlayerEntity player, ServerWorld world, DomainData data) {
+        int duration = data.enhanced ? ENHANCED_DOMAIN_DURATION : DOMAIN_DURATION;
+        int maxRadius = data.enhanced ? ENHANCED_DOMAIN_RADIUS : DOMAIN_RADIUS;
+
         // 持续检查范围内踩在灵魂沙上的生物，施加/移除debuff
         if (data.ticksElapsed % 10 == 0) {
             tickAreaDebuffs(player, world, data);
@@ -320,11 +450,11 @@ public class AnubisWolfSpDeathDomain {
                     SoundEvents.BLOCK_SOUL_SAND_BREAK, SoundCategory.AMBIENT, 1.0f, 0.5f);
         }
 
-        if (data.ticksElapsed >= DOMAIN_DURATION) {
+        if (data.ticksElapsed >= duration) {
             // 维持结束，进入回退阶段
             data.phase = Phase.RETRACTING;
             data.ticksElapsed = 0;
-            data.currentRadius = DOMAIN_RADIUS;
+            data.currentRadius = maxRadius;
 
             // 回退开始音效
             player.getWorld().playSound(null, data.center.getX() + 0.5, (double) data.centerY, data.center.getZ() + 0.5,
@@ -487,13 +617,20 @@ public class AnubisWolfSpDeathDomain {
      * 强制还原所有方块
      */
     private static void restoreAllBlocks(ServerWorld world, DomainData data) {
+        int restored = 0;
+        int skipped = 0;
         for (Map<BlockPos, BlockState> blocks : data.changedBlocksByDistance.values()) {
             for (Map.Entry<BlockPos, BlockState> entry : blocks.entrySet()) {
                 if (isStillConverted(world, entry.getKey(), entry.getValue())) {
                     world.setBlockState(entry.getKey(), entry.getValue(), Block.NOTIFY_ALL);
+                    restored++;
+                } else {
+                    skipped++;
                 }
             }
         }
+        LOGGER.info("[DeathDomain] restoreAllBlocks: restored={}, skipped={}, world={}",
+                restored, skipped, world.getRegistryKey().getValue());
         data.changedBlocksByDistance.clear();
     }
 
@@ -689,9 +826,11 @@ public class AnubisWolfSpDeathDomain {
             // 施加/刷新短时debuff
             entity.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 40, 0, false, true, true));
             // 凋零仅在实体没有该效果且未达到伤害上限时施加；每次42tick周期造成1HP，上限10HP
+            // 增强模式使用凋零II（amplifier=1）
+            int witherAmplifier = data.enhanced ? ENHANCED_WITHER_AMPLIFIER : 0;
             int witherCount = data.witherHitCount.getOrDefault(entity.getUuid(), 0);
             if (witherCount < 10 && !entity.hasStatusEffect(StatusEffects.WITHER)) {
-                entity.addStatusEffect(new StatusEffectInstance(StatusEffects.WITHER, 42, 0, false, true, true));
+                entity.addStatusEffect(new StatusEffectInstance(StatusEffects.WITHER, 42, witherAmplifier, false, true, true));
                 data.witherHitCount.put(entity.getUuid(), witherCount + 1);
             }
 
