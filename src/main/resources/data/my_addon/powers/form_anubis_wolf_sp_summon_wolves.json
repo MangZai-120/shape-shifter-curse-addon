@@ -1,0 +1,19 @@
+{
+    "type": "origins:active_self",
+    "entity_action": {
+        "type": "ssc_addon:anubis_wolf_sp_summon_wolves"
+    },
+    "key": {
+        "key": "key.ssc_addon.sp_secondary"
+    },
+    "condition": {
+        "type": "origins:sneaking",
+        "inverted": true
+    },
+    "cooldown": 0,
+    "hud_render": {
+        "should_render": false
+    },
+    "name": "冥狼裁庭",
+    "description": "嚎叫1.5秒后召唤冥狼仆从。冥狼攻击目标时附加凋零效果，攻击已凋零的目标时治愈施法者。死亡领域激活时，召唤数量翻倍且冥狼获得增强属性。"
+}

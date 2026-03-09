@@ -122,20 +122,25 @@ public class SscAddonCommands {
     private static int setMana(CommandContext<ServerCommandSource> context, Collection<ServerPlayerEntity> targets, int amount) {
         Identifier resourceId = new Identifier("my_addon", "form_snow_fox_sp_resource");
         Identifier allayResourceId = new Identifier("my_addon", "form_allay_sp_mana_resource");
+        Identifier soulEnergyId = new Identifier("my_addon", "form_anubis_wolf_sp_soul_energy");
         int count = 0;
         for (ServerPlayerEntity player : targets) {
             boolean updated = false;
-            // 1. Try Apoli Resource (Snow Fox SP)
+            // 1. Try Apoli Resource (Snow Fox SP / Allay SP / Anubis Wolf SP Soul Energy)
             PowerHolderComponent component = PowerHolderComponent.KEY.get(player);
             for (VariableIntPower power : component.getPowers(VariableIntPower.class)) {
-                if (power.getType().getIdentifier().equals(resourceId) || power.getType().getIdentifier().equals(allayResourceId)) {
+                Identifier powerId = power.getType().getIdentifier();
+                if (powerId.equals(resourceId) || powerId.equals(allayResourceId)) {
                     int newVal = amount;
                     if (newVal > power.getMax()) {
                         newVal = power.getMax();
                     }
                     power.setValue(newVal);
-                    // Force sync immediately
                     component.sync();
+                    updated = true;
+                } else if (powerId.equals(soulEnergyId)) {
+                    // 同时更新ENERGY_MAP以保持一致
+                    net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEnergy.setEnergy(player, amount);
                     updated = true;
                 }
             }
