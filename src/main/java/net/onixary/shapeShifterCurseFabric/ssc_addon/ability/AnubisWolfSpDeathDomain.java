@@ -72,7 +72,7 @@ public class AnubisWolfSpDeathDomain {
     /** 增强充能时间（tick） */
     private static final int ENHANCED_CHARGE_TICKS = 20; // 1秒
     /** 增强领域持续时间（tick） */
-    private static final int ENHANCED_DOMAIN_DURATION = 400; // 20秒
+    private static final int ENHANCED_DOMAIN_DURATION = 500; // 25秒
     /** 增强凋零等级（Wither II） */
     private static final int ENHANCED_WITHER_AMPLIFIER = 1;
     /** 增强模式自动召唤冥狼数量 */
@@ -380,9 +380,11 @@ public class AnubisWolfSpDeathDomain {
             player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.ENTITY_WITHER_DEATH, SoundCategory.PLAYERS, 0.5f, 0.5f);
 
-            // 增强模式：自动召唤6只冥狼
+            // 增强模式：自动召唤6只冥狼，并立即让召唤技能也进入CD
             if (data.enhanced) {
                 AnubisWolfSpSummonWolves.autoSummonForEnhancedDomain(player, ENHANCED_AUTO_SUMMON_COUNT);
+                PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD,
+                        AnubisWolfSpSummonWolves.getCooldownTicks());
                 // 增强模式额外音效
                 player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
                         SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 0.8f, 0.8f);

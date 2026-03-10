@@ -85,6 +85,7 @@ public class AnubisWolfSpSummonWolves {
         int wolvesToSummon;     // 本次需要召唤的总数
         int wolvesSummoned;     // 已召唤的数量
         boolean domainActive;   // 召唤时是否有激活的死亡领域
+        boolean enhancedDomain; // 是否为增强死亡领域召唤（不显示灵魂冒出粒子）
         List<UUID> summonedWolfUuids = new ArrayList<>(); // 当前批次召唤的狼UUID
 
         SummonData(int wolvesToSummon, boolean domainActive) {
@@ -93,10 +94,18 @@ public class AnubisWolfSpSummonWolves {
             this.wolvesToSummon = wolvesToSummon;
             this.wolvesSummoned = 0;
             this.domainActive = domainActive;
+            this.enhancedDomain = false;
         }
     }
 
     // ==================== 公开接口 ====================
+
+    /**
+     * 获取召唤技能CD时间（tick），供增强死亡领域联动使用
+     */
+    public static int getCooldownTicks() {
+        return COOLDOWN_TICKS;
+    }
 
     /**
      * 玩家按下次要技能键触发
@@ -174,17 +183,20 @@ public class AnubisWolfSpSummonWolves {
      * 实际召唤数量 = min(requestCount, MAX_WOLVES - 已有数量)
      */
     public static void autoSummonForEnhancedDomain(ServerPlayerEntity player, int requestCount) {
-        int aliveCount = getMinionCount(player);
-        int canSummon = Math.min(requestCount, MAX_WOLVES - aliveCount);
-        if (canSummon <= 0) return;
+        // 增强领域：先消散现有冥狼和召唤流程，确保能召满6只
+        SummonData oldData = ACTIVE_SUMMONS.remove(player.getUuid());
+        if (oldData != null) {
+            dissipateWolves(player, oldData, player.getServerWorld());
+        }
+        // 消散IPlayerEntityMinion系统中残留的冥狼
+        dissipateAllMinions(player);
 
         // 创建一个领域增强的SummonData，直接进入SUMMONING阶段
-        SummonData data = new SummonData(canSummon, true);
+        SummonData data = new SummonData(requestCount, true);
+        data.enhancedDomain = true;
         data.phase = Phase.SUMMONING;
         data.ticksElapsed = 0;
 
-        // 如果已有正在进行的召唤流程，则跳过（避免冲突）
-        if (ACTIVE_SUMMONS.containsKey(player.getUuid())) return;
         ACTIVE_SUMMONS.put(player.getUuid(), data);
     }
 
@@ -296,11 +308,13 @@ public class AnubisWolfSpSummonWolves {
         // 追踪此批次的狼UUID（用于定时消散）
         data.summonedWolfUuids.add(wolf.getUuid());
 
-        // 生成粒子效果
-        ParticleUtils.spawnParticles(world, ParticleTypes.SOUL_FIRE_FLAME,
-                wolf.getX(), wolf.getY() + 0.5, wolf.getZ(), 15, 0.5, 0.5, 0.5, 0.05);
-        ParticleUtils.spawnParticles(world, ParticleTypes.SOUL,
-                wolf.getX(), wolf.getY() + 0.3, wolf.getZ(), 8, 0.3, 0.5, 0.3, 0.02);
+        // 生成粒子效果（增强领域召唤的狼不显示灵魂冒出粒子）
+        if (!data.enhancedDomain) {
+            ParticleUtils.spawnParticles(world, ParticleTypes.SOUL_FIRE_FLAME,
+                    wolf.getX(), wolf.getY() + 0.5, wolf.getZ(), 15, 0.5, 0.5, 0.5, 0.05);
+            ParticleUtils.spawnParticles(world, ParticleTypes.SOUL,
+                    wolf.getX(), wolf.getY() + 0.3, wolf.getZ(), 8, 0.3, 0.5, 0.3, 0.02);
+        }
 
         // 播放出现音效
         world.playSound(null, wolf.getX(), wolf.getY(), wolf.getZ(),
@@ -340,6 +354,25 @@ public class AnubisWolfSpSummonWolves {
                 }
                 wolf.discard();
             }
+        }
+    }
+
+    /**
+     * 消散玩家所有存活的冥狼（通过IPlayerEntityMinion系统）
+     */
+    private static void dissipateAllMinions(ServerPlayerEntity player) {
+        if (!(player instanceof IPlayerEntityMinion minionPlayer)) return;
+        ServerWorld world = player.getServerWorld();
+        // 获取所有冥狼UUID副本后逐个消散
+        List<UUID> minionUuids = new ArrayList<>(minionPlayer.shape_shifter_curse$getMinionsByMinionID(AnubisWolfMinionEntity.MinionID));
+        for (UUID wolfUuid : minionUuids) {
+            Entity entity = world.getEntity(wolfUuid);
+            if (entity instanceof AnubisWolfMinionEntity wolf && wolf.isAlive()) {
+                ParticleUtils.spawnParticles(world, ParticleTypes.SOUL,
+                        wolf.getX(), wolf.getY() + 0.5, wolf.getZ(), 12, 0.4, 0.6, 0.4, 0.03);
+                wolf.discard();
+            }
+            minionPlayer.shape_shifter_curse$removeMinion(AnubisWolfMinionEntity.MinionID, wolfUuid);
         }
     }
 

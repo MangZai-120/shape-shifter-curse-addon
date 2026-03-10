@@ -141,7 +141,10 @@ public class AnubisWolfSpSoulEnergy {
             // 检查击杀是否发生在死亡领域内
             if (AnubisWolfSpDeathDomain.hasActiveDomain(killer.getUuid())
                     && AnubisWolfSpDeathDomain.isInActiveDomain(killer.getUuid(), entity.getBlockPos())) {
-                addEnergy(killer, KILL_IN_DOMAIN_ENERGY);
+                // 增强领域范围内击杀不获取能量
+                if (!AnubisWolfSpDeathDomain.isEnhancedDomain(killer.getUuid())) {
+                    addEnergy(killer, KILL_IN_DOMAIN_ENERGY);
+                }
             } else {
                 addEnergy(killer, REGULAR_KILL_ENERGY);
             }
@@ -156,6 +159,11 @@ public class AnubisWolfSpSoulEnergy {
             PlayerEntity ownerEntity = entity.getWorld().getPlayerByUuid(ownerUuid);
             if (ownerEntity instanceof ServerPlayerEntity ownerPlayer) {
                 if (!FormUtils.isForm(ownerPlayer, FormIdentifiers.ANUBIS_WOLF_SP)) return;
+                // 增强领域范围内冥狼击杀不获取能量
+                if (AnubisWolfSpDeathDomain.isEnhancedDomain(ownerUuid)
+                        && AnubisWolfSpDeathDomain.isInActiveDomain(ownerUuid, entity.getBlockPos())) {
+                    return;
+                }
                 addEnergy(ownerPlayer, MINION_KILL_ENERGY);
             }
         }
