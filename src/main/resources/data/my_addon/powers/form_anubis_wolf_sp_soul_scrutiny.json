@@ -1,0 +1,98 @@
+{
+    "type": "origins:multiple",
+    "soul_glow": {
+        "type": "origins:entity_glow",
+        "bientity_condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:distance",
+                    "comparison": "<=",
+                    "compare_to": 16
+                },
+                {
+                    "type": "origins:actor_condition",
+                    "condition": {
+                        "type": "shape-shifter-curse:can_render_gui"
+                    }
+                },
+                {
+                    "type": "origins:target_condition",
+                    "condition": {
+                        "type": "origins:living"
+                    }
+                },
+                {
+                    "type": "origins:target_condition",
+                    "condition": {
+                        "type": "origins:relative_health",
+                        "comparison": "<=",
+                        "compare_to": 0.2
+                    }
+                }
+            ]
+        },
+        "use_teams": false,
+        "red": 0.2,
+        "green": 0.85,
+        "blue": 0.9
+    },
+    "soul_particle_hint": {
+        "type": "origins:action_over_time",
+        "interval": 20,
+        "entity_action": {
+            "type": "origins:area_of_effect",
+            "radius": 16,
+            "bientity_action": {
+                "type": "origins:target_action",
+                "action": {
+                    "type": "origins:spawn_particles",
+                    "particle": "minecraft:soul",
+                    "count": 6,
+                    "speed": 0.02,
+                    "force": true,
+                    "spread": {
+                        "x": 0.45,
+                        "y": 0.9,
+                        "z": 0.45
+                    }
+                }
+            },
+            "bientity_condition": {
+                "type": "origins:and",
+                "conditions": [
+                    {
+                        "type": "origins:distance",
+                        "comparison": "<=",
+                        "compare_to": 16
+                    },
+                    {
+                        "type": "origins:distance",
+                        "comparison": ">",
+                        "compare_to": 0.1
+                    },
+                    {
+                        "type": "origins:actor_condition",
+                        "condition": {
+                            "type": "shape-shifter-curse:can_render_gui"
+                        }
+                    },
+                    {
+                        "type": "origins:target_condition",
+                        "condition": {
+                            "type": "origins:living"
+                        }
+                    },
+                    {
+                        "type": "origins:target_condition",
+                        "condition": {
+                            "type": "origins:relative_health",
+                            "comparison": "<=",
+                            "compare_to": 0.2
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}
