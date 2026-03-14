@@ -6,7 +6,6 @@
 * **Fabric Loader**
 * **Fabric API**
 * **幻形者诅咒 (Shape Shifter Curse)** 主模组
-* 测试
 
 ## 安装步骤
 
