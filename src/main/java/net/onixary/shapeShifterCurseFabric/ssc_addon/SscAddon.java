@@ -14,6 +14,11 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.item.Item;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.recipe.RecipeSerializer;
 import net.minecraft.recipe.SpecialRecipeSerializer;
@@ -58,6 +63,9 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEne
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
 
 public class SscAddon implements ModInitializer {
+
+    // 存储玩家客户端语言设置，用于发送正确语言的消息
+    public static final java.util.concurrent.ConcurrentHashMap<java.util.UUID, String> PLAYER_LANGUAGES = new java.util.concurrent.ConcurrentHashMap<>();
 
     public static final StatusEffect FOX_FIRE_BURN = new FoxFireBurnEffect();
     public static final StatusEffect BLUE_FIRE_RING = new BlueFireRingEffect();
@@ -383,6 +391,58 @@ public class SscAddon implements ModInitializer {
             }
         });
 
+        // 玩家首次进入世界时发送欢迎消息（延迟3秒，等待客户端语言设置到达服务端后根据语言发送对应文本）
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            var player = handler.player;
+            String welcomeTag = "ssc_addon_welcomed";
+            if (!player.getCommandTags().contains(welcomeTag)) {
+                player.addCommandTag(welcomeTag);
+                final java.util.UUID playerUuid = player.getUuid();
+                java.util.concurrent.CompletableFuture.delayedExecutor(3, java.util.concurrent.TimeUnit.SECONDS)
+                        .execute(() -> server.execute(() -> {
+                            var p = server.getPlayerManager().getPlayer(playerUuid);
+                            if (p == null) return;
+                            String url = "https://github.com/MangZai-120/shape-shifter-curse-addon/issues";
+                            String wikiUrl = "https://www.mcmod.cn/class/24327.html";
+                            // 根据玩家客户端语言选择显示文本
+                            String lang = PLAYER_LANGUAGES.getOrDefault(playerUuid, "en_us");
+                            boolean isChinese = lang.toLowerCase(java.util.Locale.ROOT).startsWith("zh");
+                            MutableText githubLink = Text.literal(url)
+                                    .setStyle(Style.EMPTY
+                                            .withColor(Formatting.AQUA)
+                                            .withUnderline(true)
+                                            .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url)));
+                            MutableText wikiLink = Text.literal(wikiUrl)
+                                    .setStyle(Style.EMPTY
+                                            .withColor(Formatting.AQUA)
+                                            .withUnderline(true)
+                                            .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, wikiUrl)));
+                            if (isChinese) {
+                                // 第一行：欢迎+百科链接+bug说明+GitHub链接+崩溃说明
+                                p.sendMessage(Text.empty()
+                                        .append(Text.literal("欢迎游玩幻形者诅咒扩展，游玩教程在MC百科上：").formatted(Formatting.GOLD))
+                                        .append(wikiLink)
+                                        .append(Text.literal("。由于作者水平有限，模组难免会有bug，如有bug请将日志发到GitHub上：").formatted(Formatting.GOLD))
+                                        .append(githubLink)
+                                        .append(Text.literal("；若后续更新版本导致崩溃请将崩溃日志以及必要信息文件发到模组的GitHub上，谢谢！").formatted(Formatting.GOLD)));
+                                // 第二行：请不要只发送照片（蓄意空格）
+                                p.sendMessage(Text.literal("请 不 要 只 发 送 照 片 过 来 谢 谢！").formatted(Formatting.RED));
+                                // 第三行：ps提示
+                                p.sendMessage(Text.literal("ps：此对话只显示这一次").formatted(Formatting.GRAY));
+                            } else {
+                                p.sendMessage(Text.empty()
+                                        .append(Text.literal("Welcome to Shape Shifter's Curse Addon! Tutorial is available on MCMOD Wiki: ").formatted(Formatting.GOLD))
+                                        .append(wikiLink)
+                                        .append(Text.literal(". Due to the author's limited expertise, the mod may have bugs. If you encounter any, please submit your logs on GitHub: ").formatted(Formatting.GOLD))
+                                        .append(githubLink)
+                                        .append(Text.literal("; If a future update causes a crash, please submit the crash log and necessary info files to the mod's GitHub, thank you!").formatted(Formatting.GOLD)));
+                                p.sendMessage(Text.literal("Please do NOT only send screenshots, thank you!").formatted(Formatting.RED));
+                                p.sendMessage(Text.literal("PS: This message will only be shown once.").formatted(Formatting.GRAY));
+                            }
+                        }));
+            }
+        });
+
         // 玩家断线时清理所有静态状态Map，防止内存泄漏和重连后状态错乱
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             java.util.UUID uuid = handler.player.getUuid();
@@ -394,6 +454,7 @@ public class SscAddon implements ModInitializer {
             AnubisWolfSpSummonWolves.clearPlayer(uuid);
             AnubisWolfSpSoulEnergy.clearPlayer(uuid);
             AllaySPJukebox.onPlayerDisconnect(handler.player);
+            PLAYER_LANGUAGES.remove(uuid);
             System.out.println("[SSC_ADDON] DISCONNECT cleanup completed");
         });
     }

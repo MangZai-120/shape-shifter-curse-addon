@@ -4,6 +4,7 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
+import net.minecraft.network.packet.c2s.play.ClientSettingsC2SPacket;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -28,6 +29,13 @@ import java.util.Set;
 
 @Mixin(ServerPlayerEntity.class)
 public class RedFormTickMixin {
+
+    // 捕获玩家客户端语言设置，存入SscAddon.PLAYER_LANGUAGES
+    @Inject(method = "setClientSettings", at = @At("HEAD"))
+    private void onSetClientSettings(ClientSettingsC2SPacket packet, CallbackInfo ci) {
+        ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
+        SscAddon.PLAYER_LANGUAGES.put(player.getUuid(), packet.language());
+    }
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void onTick(CallbackInfo ci) {
