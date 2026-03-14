@@ -38,6 +38,7 @@ nav:
   - 丛林的幽灵: lore/jungle_ghost.md
   - 使魔研究记录: lore/familiar_research.md
   - 月髓环诗篇: lore/moon_ring_poems.md
+  - 千年纪 · 人魔大战: lore/millennium_war.md
 - 更新日志: update_log/update_log.md
 plugins:
   - search
