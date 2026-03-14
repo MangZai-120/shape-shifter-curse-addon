@@ -124,13 +124,8 @@ public class SscAddon implements ModInitializer {
     // 60 durability like wooden sword, auto-consumed over 60 seconds
     public static final Item WATER_SPEAR = new WaterSpearItem(new Item.Settings().maxCount(1).maxDamage(60));
 
-    // Evolution Stone and Shards
+    // Evolution Stone
     public static final Item EVOLUTION_STONE = new EvolutionStoneItem(new Item.Settings().maxCount(1).fireproof());
-    public static final Item SHADOW_SHARD = new Item(new Item.Settings().maxCount(1));
-    public static final Item NIGHT_VISION_SHARD = new Item(new Item.Settings().maxCount(1));
-    public static final Item ENDER_SHARD = new Item(new Item.Settings().maxCount(1));
-    public static final Item HUNT_SHARD = new Item(new Item.Settings().maxCount(1));
-    public static final Item SCULK_SHARD = new Item(new Item.Settings().maxCount(1));
     public static final Item CORAL_BALL = new Item(new Item.Settings().maxCount(64));
     public static final Item ACTIVE_CORAL_NECKLACE = new ActiveCoralNecklaceItem(new Item.Settings().maxCount(1));
 
@@ -182,11 +177,6 @@ public class SscAddon implements ModInitializer {
                         entries.add(PORTABLE_FRIDGE);
                         entries.add(SNOWBALL_LAUNCHER);
                         entries.add(WATER_SPEAR);
-                        entries.add(SHADOW_SHARD);
-                        entries.add(NIGHT_VISION_SHARD);
-                        entries.add(ENDER_SHARD);
-                        entries.add(HUNT_SHARD);
-                        entries.add(SCULK_SHARD);
                         entries.add(CORAL_BALL);
                         entries.add(ACTIVE_CORAL_NECKLACE);
                         entries.add(ALLAY_HEAL_WAND);
@@ -260,11 +250,6 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "potion_bag"), POTION_BAG);
         Registry.register(Registries.SCREEN_HANDLER, new Identifier("ssc_addon", "potion_bag"), POTION_BAG_SCREEN_HANDLER);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "evolution_stone"), EVOLUTION_STONE);
-        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "shadow_shard"), SHADOW_SHARD);
-        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "night_vision_shard"), NIGHT_VISION_SHARD);
-        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "ender_shard"), ENDER_SHARD);
-        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "hunt_shard"), HUNT_SHARD);
-        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "sculk_shard"), SCULK_SHARD);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "coral_ball"), CORAL_BALL);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "active_coral_necklace"), ACTIVE_CORAL_NECKLACE);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "allay_heal_wand"), ALLAY_HEAL_WAND);
