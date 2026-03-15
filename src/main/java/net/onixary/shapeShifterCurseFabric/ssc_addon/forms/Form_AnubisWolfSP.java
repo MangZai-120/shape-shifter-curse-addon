@@ -5,11 +5,8 @@ import net.onixary.shapeShifterCurseFabric.player_animation.AnimationHolder;
 import net.onixary.shapeShifterCurseFabric.player_animation.v2.PlayerAnimState;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AbstractAnimStateController;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateEnum;
-import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_FeralBase;
 import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_SnowFox3;
 import org.jetbrains.annotations.NotNull;
-
-import static net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric.MOD_ID;
 
 public class Form_AnubisWolfSP extends AbstractFeralForm {
     public Form_AnubisWolfSP(Identifier formID) {
