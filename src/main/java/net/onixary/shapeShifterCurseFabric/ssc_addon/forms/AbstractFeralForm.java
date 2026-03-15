@@ -15,6 +15,10 @@ import org.jetbrains.annotations.Nullable;
 
 import static net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric.MOD_ID;
 
+/**
+ * 仅限雪狐等共用四足形态动画的形态使用
+ * 由于使用了static，故切忌用于美西螈等形态
+ */
 public abstract class AbstractFeralForm extends PlayerFormBase {
     protected static AnimationHolder anim_idle = AnimationHolder.EMPTY;
     protected static AnimationHolder anim_sneak_idle = AnimationHolder.EMPTY;
