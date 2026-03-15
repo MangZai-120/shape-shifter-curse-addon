@@ -17,7 +17,6 @@ import net.minecraft.item.Item;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
-import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.recipe.RecipeSerializer;
