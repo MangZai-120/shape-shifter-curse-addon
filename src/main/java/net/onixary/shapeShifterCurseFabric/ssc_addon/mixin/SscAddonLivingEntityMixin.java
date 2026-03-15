@@ -1,15 +1,40 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin;
 
 import io.github.apace100.apoli.component.PowerHolderComponent;
+import net.minecraft.entity.EntityGroup;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.power.EffectEfficiencyReductionPower;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.UndeadNeutralState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
 public abstract class SscAddonLivingEntityMixin {
+
+    /**
+     * 亡灵被SP阿努比斯玩家攻击时，记录全局挑衅状态。
+     * damage方法定义在LivingEntity上，必须在此注入。
+     */
+    @Inject(method = "damage", at = @At("HEAD"))
+    private void ssc_addon$onUndeadDamaged(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+        LivingEntity self = (LivingEntity)(Object)this;
+        if (self instanceof MobEntity mob
+                && mob.getGroup() == EntityGroup.UNDEAD
+                && source.getAttacker() instanceof PlayerEntity player
+                && FormUtils.isForm(player, FormIdentifiers.ANUBIS_WOLF_SP)) {
+            UndeadNeutralState.PROVOKE_TIMESTAMPS.put(player.getUuid(), mob.getWorld().getTime());
+        }
+    }
+
     @ModifyVariable(method = "addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;Lnet/minecraft/entity/Entity;)Z", at = @At("HEAD"), argsOnly = true)
     private StatusEffectInstance modifyStatusEffect(StatusEffectInstance effect) {
         if (!effect.getEffectType().isInstant() && PowerHolderComponent.hasPower((LivingEntity)(Object)this, EffectEfficiencyReductionPower.class)) {

@@ -9,6 +9,7 @@ import net.minecraft.entity.raid.RaiderEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.UndeadNeutralState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,22 +19,23 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(MobEntity.class)
 public abstract class MobEntityMixin {
 
-    /** 亡灵中立复仇窗口：被攻击后10秒内允许反击 */
+    /** 每个生物实例独立记录：最后一次看到挑衅玩家的世界时间（-1=未追踪） */
     @Unique
-    private static final int UNDEAD_REVENGE_WINDOW = 200;
+    private long ssc_addon$lastSawProvokedTarget = -1;
 
     /**
-     * 检查亡灵生物是否应该对目标玩家保持中立。
-     * 条件：生物是亡灵 + 玩家是SP阿努比斯形态 + 玩家没有最近攻击过该生物
+     * 检查亡灵是否应该忽略该玩家（保持中立）。
+     * 返回true=忽略（不攻击），返回false=不忽略（可攻击）
      */
     @Unique
     private boolean ssc_addon$shouldUndeadIgnore(MobEntity mob, PlayerEntity player) {
         if (mob.getGroup() != EntityGroup.UNDEAD) return false;
         if (!FormUtils.isForm(player, FormIdentifiers.ANUBIS_WOLF_SP)) return false;
-        // 如果玩家最近攻击了该亡灵，允许复仇
-        boolean provoked = mob.getAttacker() == player
-                && (mob.age - mob.getLastAttackedTime()) < UNDEAD_REVENGE_WINDOW;
-        return !provoked;
+        // 玩家处于挑衅状态 → 亡灵可攻击
+        if (UndeadNeutralState.isPlayerProvoked(player.getUuid(), mob.getWorld().getTime())) {
+            return false;
+        }
+        return true;
     }
 
     @Inject(method = "setTarget", at = @At("HEAD"), cancellable = true)
@@ -74,7 +76,10 @@ public abstract class MobEntityMixin {
         }
         
         LivingEntity target = mob.getTarget();
-        if (target == null) return;
+        if (target == null) {
+            ssc_addon$lastSawProvokedTarget = -1;
+            return;
+        }
 
         // 2. 真隐身脱战
         if (target.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) {
@@ -90,10 +95,31 @@ public abstract class MobEntityMixin {
             return;
         }
 
-        // 4. 亡灵中立：清除超出复仇窗口的目标
-        if (target instanceof PlayerEntity player
-                && ssc_addon$shouldUndeadIgnore(mob, player)) {
-            mob.setTarget(null);
+        // 4. 亡灵中立：基于视野的脱战机制（类似僵尸猪灵）
+        if (mob.getGroup() == EntityGroup.UNDEAD
+                && target instanceof PlayerEntity player
+                && FormUtils.isForm(player, FormIdentifiers.ANUBIS_WOLF_SP)) {
+            // 挑衅已过期 → 立即脱战
+            if (!UndeadNeutralState.isPlayerProvoked(player.getUuid(), mob.getWorld().getTime())) {
+                mob.setTarget(null);
+                ssc_addon$lastSawProvokedTarget = -1;
+                return;
+            }
+            long worldTime = mob.getWorld().getTime();
+            if (mob.canSee(target)) {
+                // 能看到目标 → 重置视野计时，同时刷新全局挑衅
+                ssc_addon$lastSawProvokedTarget = worldTime;
+                UndeadNeutralState.PROVOKE_TIMESTAMPS.put(player.getUuid(), worldTime);
+            } else {
+                // 看不到目标 → 脱战倒计时
+                if (ssc_addon$lastSawProvokedTarget < 0) {
+                    ssc_addon$lastSawProvokedTarget = worldTime;
+                }
+                if (worldTime - ssc_addon$lastSawProvokedTarget > UndeadNeutralState.SIGHT_TIMEOUT) {
+                    mob.setTarget(null);
+                    ssc_addon$lastSawProvokedTarget = -1;
+                }
+            }
         }
     }
 }

@@ -1,21 +1,15 @@
 {
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
-    {
-      "item": "ssc_addon:shadow_shard"
-    },
-    {
-      "item": "ssc_addon:night_vision_shard"
-    },
-    {
-      "item": "ssc_addon:ender_shard"
-    },
-    {
-      "item": "ssc_addon:hunt_shard"
-    },
-    {
-      "item": "ssc_addon:sculk_shard"
-    }
+    { "item": "minecraft:amethyst_shard" },
+    { "item": "minecraft:amethyst_shard" },
+    { "item": "minecraft:echo_shard" },
+    { "item": "minecraft:echo_shard" },
+    { "item": "minecraft:diamond" },
+    { "item": "minecraft:diamond" },
+    { "item": "shape-shifter-curse:morphscale_core" },
+    { "item": "shape-shifter-curse:moondust_crystal_shard" },
+    { "item": "minecraft:netherite_ingot" }
   ],
   "result": {
     "item": "ssc_addon:evolution_stone",

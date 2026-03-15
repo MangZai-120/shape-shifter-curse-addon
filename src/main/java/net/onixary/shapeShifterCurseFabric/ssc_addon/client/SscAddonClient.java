@@ -50,21 +50,6 @@ public class SscAddonClient implements ClientModInitializer {
         SscAddonKeybindings.register();
 
         ItemTooltipCallback.EVENT.register((stack, context, lines) -> {
-            if (stack.getItem() == SscAddon.SHADOW_SHARD) {
-                addSplitTooltip(lines, "item.ssc_addon.shadow_shard.tooltip");
-            }
-            if (stack.getItem() == SscAddon.NIGHT_VISION_SHARD) {
-                addSplitTooltip(lines, "item.ssc_addon.night_vision_shard.tooltip");
-            }
-            if (stack.getItem() == SscAddon.ENDER_SHARD) {
-                addSplitTooltip(lines, "item.ssc_addon.ender_shard.tooltip");
-            }
-            if (stack.getItem() == SscAddon.HUNT_SHARD) {
-                addSplitTooltip(lines, "item.ssc_addon.hunt_shard.tooltip");
-            }
-            if (stack.getItem() == SscAddon.SCULK_SHARD) {
-                addSplitTooltip(lines, "item.ssc_addon.sculk_shard.tooltip");
-            }
             if (stack.getItem() == SscAddon.CORAL_BALL) {
                 addSplitTooltip(lines, "item.ssc_addon.coral_ball.tooltip");
             }
