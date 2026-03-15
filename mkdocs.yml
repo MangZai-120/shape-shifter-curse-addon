@@ -32,6 +32,7 @@ nav:
   - 减益效果: effects/debuffs.md
 - 指令: commands/commands.md
 - 世界观与故事:
+  - 📜 故事内容许可声明: lore/license.md
   - 背景设定: lore/background.md
   - 月光的诅咒: lore/moonlight_curse.md
   - 故事集 · 月痕：灵界之主: lore/story_collection.md
@@ -39,7 +40,7 @@ nav:
   - 使魔研究记录: lore/familiar_research.md
   - 月髓环诗篇: lore/moon_ring_poems.md
   - 千年纪 · 人魔大战: lore/millennium_war.md
-- 更新日志: update_log/update_log.md
+
 plugins:
   - search
 
