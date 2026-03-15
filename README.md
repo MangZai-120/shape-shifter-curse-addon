@@ -28,6 +28,7 @@ Wiki：https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/
 ## 注意事项
 
 - 本项目是一个独立的 Fabric 模组，构建后生成的 jar 文件应放入游戏 `mods` 文件夹，与《幻形者诅咒》主模组一起运行。
+- 本模组的文本内容（如技能描述、形态介绍等）默认使用中文，英文文本可能不完整或不准确，请以中文文本为准。
 
 ## 致谢名单
 
