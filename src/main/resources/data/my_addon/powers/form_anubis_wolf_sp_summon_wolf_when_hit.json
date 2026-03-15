@@ -1,0 +1,32 @@
+{
+  "type": "origins:action_when_hit",
+  "bientity_action": {
+    "type": "origins:if_else",
+    "condition": {
+      "type": "origins:target_condition",
+      "condition": {
+        "type": "ssc_addon:has_trinket",
+        "item": "ssc_addon:anubis_crystal"
+      }
+    },
+    "if_action": {
+      "type": "shape-shifter-curse:bi_summon_anubis_wolf_minion",
+      "minion_level": 3,
+      "count": 3,
+      "max_minion_count": 3,
+      "cooldown": 600,
+      "reverse": true
+    },
+    "else_action": {
+      "type": "shape-shifter-curse:bi_summon_anubis_wolf_minion",
+      "minion_level": 3,
+      "count": 2,
+      "max_minion_count": 2,
+      "cooldown": 600,
+      "reverse": true
+    }
+  },
+  "damage_condition": {
+    "type": "origins:attacker"
+  }
+}

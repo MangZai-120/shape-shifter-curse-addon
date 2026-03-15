@@ -15,9 +15,13 @@ import net.minecraft.util.math.BlockPos;
 import net.onixary.shapeShifterCurseFabric.minion.IPlayerEntityMinion;
 import net.onixary.shapeShifterCurseFabric.minion.MinionRegister;
 import net.onixary.shapeShifterCurseFabric.minion.mobs.AnubisWolfMinionEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
+
+import dev.emi.trinkets.api.TrinketsApi;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,6 +71,14 @@ public class AnubisWolfSpSummonWolves {
     private static final UUID DOMAIN_ATTACK_UUID = UUID.fromString("d0e1f2a3-b4c5-4d6e-7f8a-9b0c1d2e3f4a");
     /** 领域增强生命值修饰符UUID */
     private static final UUID DOMAIN_HEALTH_UUID = UUID.fromString("e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b");
+    /** 饰品攻击力削减修饰符UUID */
+    private static final UUID TRINKET_DAMAGE_UUID = UUID.fromString("f2a3b4c5-d6e7-4f8a-9b0c-1d2e3f4a5b6c");
+    /** 饰品攻击力削减比例（-25%） */
+    private static final double TRINKET_DAMAGE_REDUCTION = -0.25;
+    /** 饰品血量削减修饰符UUID */
+    private static final UUID TRINKET_HEALTH_UUID = UUID.fromString("a3b4c5d6-e7f8-4a9b-0c1d-2e3f4a5b6c7d");
+    /** 饰品血量削减比例（-35%） */
+    private static final double TRINKET_HEALTH_REDUCTION = -0.35;
 
     // ==================== 状态追踪 ====================
     private static final ConcurrentHashMap<UUID, SummonData> ACTIVE_SUMMONS = new ConcurrentHashMap<>();
@@ -122,9 +134,13 @@ public class AnubisWolfSpSummonWolves {
             return false;
         }
 
+        // 检查饰品加成
+        boolean hasCrystal = hasTrinketEquipped(player);
+        int maxWolves = hasCrystal ? MAX_WOLVES + 2 : MAX_WOLVES;
+
         // 通过IPlayerEntityMinion系统检查当前冥狼数量
         int aliveCount = getMinionCount(player);
-        if (aliveCount >= MAX_WOLVES) {
+        if (aliveCount >= maxWolves) {
             // 已达上限，给予惩罚CD，播放失败音效
             PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, PENALTY_COOLDOWN_TICKS);
             player.getServerWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -135,9 +151,11 @@ public class AnubisWolfSpSummonWolves {
         // 检查是否在死亡领域中
         boolean domainActive = AnubisWolfSpDeathDomain.hasActiveDomain(player.getUuid());
 
-        // 计算可召唤数量（不超过上限）
-        int targetCount = domainActive ? DOMAIN_SUMMON_COUNT : BASE_SUMMON_COUNT;
-        int canSummon = Math.min(targetCount, MAX_WOLVES - aliveCount);
+        // 计算可召唤数量（饰品增加1只常规召唤）
+        int baseSummon = hasCrystal ? BASE_SUMMON_COUNT + 1 : BASE_SUMMON_COUNT;
+        int domainSummon = hasCrystal ? DOMAIN_SUMMON_COUNT + 1 : DOMAIN_SUMMON_COUNT;
+        int targetCount = domainActive ? domainSummon : baseSummon;
+        int canSummon = Math.min(targetCount, maxWolves - aliveCount);
 
         // 创建召唤数据并进入嚎叫阶段
         SummonData data = new SummonData(canSummon, domainActive);
@@ -158,6 +176,11 @@ public class AnubisWolfSpSummonWolves {
      * 每tick更新
      */
     public static void tick(ServerPlayerEntity player) {
+        // 饰品伤害修饰符周期性更新（覆盖受击/攻击时由JSON触发召唤的冥狼）
+        if (FormUtils.isAnubisWolfSP(player) && player.getServerWorld().getTime() % 20 == 0) {
+            tickTrinketModifiers(player);
+        }
+
         UUID uuid = player.getUuid();
         SummonData data = ACTIVE_SUMMONS.get(uuid);
         if (data == null) return;
@@ -305,6 +328,24 @@ public class AnubisWolfSpSummonWolves {
                     StatusEffects.SPEED, WOLF_DURATION, 0, false, false, true));
         }
 
+        // 饰品效果：降低冥狼攻击力25%、血量35%
+        if (hasTrinketEquipped(player)) {
+            EntityAttributeInstance atkAttr = wolf.getAttributeInstance(EntityAttributes.GENERIC_ATTACK_DAMAGE);
+            if (atkAttr != null && atkAttr.getModifier(TRINKET_DAMAGE_UUID) == null) {
+                atkAttr.addPersistentModifier(new EntityAttributeModifier(
+                        TRINKET_DAMAGE_UUID, "trinket_damage_reduction",
+                        TRINKET_DAMAGE_REDUCTION, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
+            }
+            EntityAttributeInstance hpAttr = wolf.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH);
+            if (hpAttr != null && hpAttr.getModifier(TRINKET_HEALTH_UUID) == null) {
+                hpAttr.addPersistentModifier(new EntityAttributeModifier(
+                        TRINKET_HEALTH_UUID, "trinket_health_reduction",
+                        TRINKET_HEALTH_REDUCTION, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
+                // 同步当前血量到新上限
+                wolf.setHealth(Math.min(wolf.getHealth(), (float) hpAttr.getValue()));
+            }
+        }
+
         // 追踪此批次的狼UUID（用于定时消散）
         data.summonedWolfUuids.add(wolf.getUuid());
 
@@ -385,6 +426,13 @@ public class AnubisWolfSpSummonWolves {
         return 0;
     }
 
+    /** 检查玩家是否装备了阿努比斯权杖上的水晶 */
+    public static boolean hasTrinketEquipped(ServerPlayerEntity player) {
+        return TrinketsApi.getTrinketComponent(player)
+                .map(c -> c.isEquipped(SscAddon.ANUBIS_CRYSTAL))
+                .orElse(false);
+    }
+
     private static void applyHowlSlow(ServerPlayerEntity player) {
         EntityAttributeInstance speedAttr = player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
         if (speedAttr != null && speedAttr.getModifier(HOWL_SLOW_UUID) == null) {
@@ -399,6 +447,50 @@ public class AnubisWolfSpSummonWolves {
         EntityAttributeInstance speedAttr = player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
         if (speedAttr != null) {
             speedAttr.removeModifier(HOWL_SLOW_UUID);
+        }
+    }
+
+    /**
+     * 周期性更新所有冥狼的饰品属性修饰符
+     * 遍历玩家所有冥狼，根据饰品装备状态添加/移除-25%攻击力和-35%血量修饰符
+     * 主要覆盖受击/攻击时由JSON power召唤的冥狼（它们不经过spawnMinionWolf）
+     */
+    private static void tickTrinketModifiers(ServerPlayerEntity player) {
+        if (!(player instanceof IPlayerEntityMinion minionPlayer)) return;
+        ServerWorld world = player.getServerWorld();
+        boolean hasCrystal = hasTrinketEquipped(player);
+
+        List<UUID> wolfUuids = minionPlayer.shape_shifter_curse$getMinionsByMinionID(AnubisWolfMinionEntity.MinionID);
+        for (UUID wolfUuid : wolfUuids) {
+            Entity entity = world.getEntity(wolfUuid);
+            if (!(entity instanceof AnubisWolfMinionEntity wolf) || !wolf.isAlive()) continue;
+
+            // 攻击力修饰符
+            EntityAttributeInstance attackAttr = wolf.getAttributeInstance(EntityAttributes.GENERIC_ATTACK_DAMAGE);
+            if (attackAttr != null) {
+                EntityAttributeModifier dmgMod = attackAttr.getModifier(TRINKET_DAMAGE_UUID);
+                if (hasCrystal && dmgMod == null) {
+                    attackAttr.addPersistentModifier(new EntityAttributeModifier(
+                            TRINKET_DAMAGE_UUID, "trinket_damage_reduction",
+                            TRINKET_DAMAGE_REDUCTION, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
+                } else if (!hasCrystal && dmgMod != null) {
+                    attackAttr.removeModifier(TRINKET_DAMAGE_UUID);
+                }
+            }
+
+            // 血量修饰符
+            EntityAttributeInstance healthAttr = wolf.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH);
+            if (healthAttr != null) {
+                EntityAttributeModifier hpMod = healthAttr.getModifier(TRINKET_HEALTH_UUID);
+                if (hasCrystal && hpMod == null) {
+                    healthAttr.addPersistentModifier(new EntityAttributeModifier(
+                            TRINKET_HEALTH_UUID, "trinket_health_reduction",
+                            TRINKET_HEALTH_REDUCTION, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
+                    wolf.setHealth(Math.min(wolf.getHealth(), (float) healthAttr.getValue()));
+                } else if (!hasCrystal && hpMod != null) {
+                    healthAttr.removeModifier(TRINKET_HEALTH_UUID);
+                }
+            }
         }
     }
 }
