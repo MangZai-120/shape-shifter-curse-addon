@@ -20,22 +20,22 @@ import static net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric.MOD_ID
  * 由于使用了static，故切忌用于美西螈等形态
  */
 public abstract class AbstractFeralForm extends PlayerFormBase {
-    protected static AnimationHolder anim_idle = AnimationHolder.EMPTY;
-    protected static AnimationHolder anim_sneak_idle = AnimationHolder.EMPTY;
-    protected static AnimationHolder anim_ride = AnimationHolder.EMPTY;
-    protected static AnimationHolder anim_walk = AnimationHolder.EMPTY;
-    protected static AnimationHolder anim_sneak_walk = AnimationHolder.EMPTY;
-    protected static AnimationHolder anim_sneak_rush = AnimationHolder.EMPTY;
-    protected static AnimationHolder anim_run = AnimationHolder.EMPTY;
-    protected static AnimationHolder anim_float = AnimationHolder.EMPTY;
-    protected static AnimationHolder anim_swim = AnimationHolder.EMPTY;
-    protected static AnimationHolder anim_dig = AnimationHolder.EMPTY;
-    protected static AnimationHolder anim_jump = AnimationHolder.EMPTY;
-    protected static AnimationHolder anim_climb = AnimationHolder.EMPTY;
-    protected static AnimationHolder anim_fall = AnimationHolder.EMPTY;
-    protected static AnimationHolder anim_attack = AnimationHolder.EMPTY;
-    protected static AnimationHolder anim_sleep = AnimationHolder.EMPTY;
-    protected static AnimationHolder anim_elytra_fly = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_idle = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_sneak_idle = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_ride = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_walk = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_sneak_walk = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_sneak_rush = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_run = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_float = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_swim = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_dig = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_jump = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_climb = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_fall = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_attack = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_sleep = AnimationHolder.EMPTY;
+    protected  AnimationHolder anim_elytra_fly = AnimationHolder.EMPTY;
 
     protected AbstractFeralForm(Identifier formID) {
         super(formID);
