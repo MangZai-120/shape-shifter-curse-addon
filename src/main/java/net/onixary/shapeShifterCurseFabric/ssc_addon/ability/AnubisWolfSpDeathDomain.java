@@ -13,10 +13,8 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.property.Properties;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
-import net.minecraft.util.math.MathHelper;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
@@ -190,8 +188,7 @@ public class AnubisWolfSpDeathDomain {
 
     /**
      * 玩家断线/死亡时清理，还原所有已转化方块
-     */
-    /**
+     * <p>
      * 玩家断线时清理玩家特有状态（CD、减速修饰符）
      * 不在此处做方块还原，因为DISCONNECT事件在Netty IO线程上触发，
      * world.setBlockState()不是线程安全的。
@@ -678,9 +675,7 @@ public class AnubisWolfSpDeathDomain {
 
         // 非完整方块走shouldRemoveTemporarily逻辑
         if (isNonFullButSolidBlock(state)) return false; // 类似农田的视作完整
-        if (!isFullBlock(state)) return false;
-
-        return true;
+        return isFullBlock(state);
     }
 
     /**
