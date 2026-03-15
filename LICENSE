@@ -19,3 +19,42 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+================================================================================
+
+Story Content License / 故事内容许可
+
+All story and narrative content in this project is NOT covered by the MIT
+License above. Instead, it is licensed under:
+
+Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International
+(CC BY-NC-ND 4.0)
+
+https://creativecommons.org/licenses/by-nc-nd/4.0/
+
+© 2026 宋明禹(Song Mingyu). All rights reserved.
+
+This includes, but is not limited to:
+- All files in the "story/" directory
+- In-game book content in "src/main/resources/data/ssc_addon/story_books/"
+- Codex narrative text (codex.form.*, codex.status.*) in language files
+  under "src/main/resources/assets/my_addon/lang/"
+
+You are free to share (copy and redistribute) the story content in any medium
+or format, under the following terms:
+
+- NonCommercial: You may not use the material for commercial purposes.
+- NoDerivatives: You may not modify, transform, or build upon the content.
+- The text must be provided as-is, but changes to font and font size
+  (typographic formatting) are permitted.
+
+本项目中所有故事及叙事内容不受上述 MIT 许可证的约束，
+而是采用 CC BY-NC-ND 4.0 国际许可协议进行许可。
+
+这包括但不限于：
+- "story/" 目录下的所有文件
+- "src/main/resources/data/ssc_addon/story_books/" 下的游戏内书籍内容
+- 语言文件中的 Codex 叙事文本（codex.form.*、codex.status.*）
+
+您可以自由转发这些故事内容，但不得用于商业用途，不得对内容进行修改。
+文本必须按原样提供，但允许更改字体和字号等排版格式。

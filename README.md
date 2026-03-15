@@ -35,3 +35,13 @@ Wiki：https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/
 -  wuhenqiubai 感谢他为我的模组进行bug修复、代码优化以及帮助。
 -  xu233333 感谢他为我的模组进行bug修复以及帮助。
 -  以及所有为这个模组提供过帮助的人们，包括但不限于游玩、推荐、提供bug反馈、测试、建议等的玩家们，感谢你游玩我的模组。
+
+## 许可协议 / License
+
+- **代码部分**：采用 [MIT License](LICENSE) 进行许可。
+- **故事内容**（包括 `story/` 目录、游戏内书籍、Codex 叙事文本）：采用 [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/) 进行许可。
+  - 可自由转发，不得商用，不得修改内容。文本须按原样提供，但允许更改字体和字号。
+
+- **Code**: Licensed under [MIT License](LICENSE).
+- **Story Content** (including `story/` directory, in-game books, and Codex narrative text): Licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
+  - Free to share, no commercial use, no modifications. Text must be provided as-is, but font and font size changes are permitted.
