@@ -27,7 +27,7 @@ import java.util.List;
 
 public class StoryBookLoot {
 
-	private static final Logger log = LoggerFactory.getLogger(StoryBookLoot.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(StoryBookLoot.class);
 
 	private StoryBookLoot() {
         // This utility class should not be instantiated
@@ -53,7 +53,7 @@ public class StoryBookLoot {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Failed to load story book config", e);
         }
     }
 
@@ -61,7 +61,7 @@ public class StoryBookLoot {
         List<BookData> books = new ArrayList<>();
         try (InputStream is = StoryBookLoot.class.getResourceAsStream("/data/ssc_addon/story_books/" + fileName)) {
             if (is == null) {
-	            log.error("Failed to load {}: file not found", fileName);
+	            LOGGER.error("Failed to load {}: file not found", fileName);
                 return books;
             }
             JsonObject root = JsonParser.parseReader(new InputStreamReader(is, StandardCharsets.UTF_8)).getAsJsonObject();
@@ -79,7 +79,7 @@ public class StoryBookLoot {
                 books.add(bookData);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Failed to parse story book file {}", fileName, e);
         }
         return books;
     }
@@ -97,7 +97,7 @@ public class StoryBookLoot {
         String fileName = (config.bookLanguage == SSCAddonConfig.BookLanguage.ENGLISH) ? "books_en.json" : "books_cn.json";
         
         loadedBooks = parseBookFile(fileName);
-	    log.info("Loaded {} books from {}", loadedBooks.size(), fileName);
+	    LOGGER.info("Loaded {} books from {}", loadedBooks.size(), fileName);
     }
 
     /**
@@ -108,7 +108,7 @@ public class StoryBookLoot {
         loadedLanguage = null;
         loadConfig();
         loadBooks();
-	    log.info("Books reloaded. Total: {}", loadedBooks.size());
+	    LOGGER.info("Books reloaded. Total: {}", loadedBooks.size());
     }
 
         /**
@@ -389,7 +389,7 @@ public class StoryBookLoot {
         }
         
         // 调试输出
-	    log.info("[StoryBookLoot] Split content into {} pages", pages.size());
+	    LOGGER.info("[StoryBookLoot] Split content into {} pages", pages.size());
         
         return pages;
     }
