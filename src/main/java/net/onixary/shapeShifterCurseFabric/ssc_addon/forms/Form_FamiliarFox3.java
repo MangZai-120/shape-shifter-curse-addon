@@ -4,8 +4,6 @@ import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AbstractAnimStateController;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateControllerDP.RideAnimController;
-import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateEnum;
-import org.jetbrains.annotations.NotNull;
 
 public class Form_FamiliarFox3 extends AbstractFeralForm {
     public Form_FamiliarFox3(Identifier formID) {
@@ -18,10 +16,7 @@ public class Form_FamiliarFox3 extends AbstractFeralForm {
     );
 
     @Override
-    protected AbstractAnimStateController getControllerMapping(@NotNull AnimStateEnum animStateEnum) {
-        if (animStateEnum == AnimStateEnum.ANIM_STATE_RIDE) {
-            return RIDE_CONTROLLER;
-        }
-        return super.getControllerMapping(animStateEnum);
+    protected AbstractAnimStateController createRideController() {
+        return RIDE_CONTROLLER;
     }
 }

@@ -16,26 +16,26 @@ import org.jetbrains.annotations.Nullable;
 import static net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric.MOD_ID;
 
 /**
+ * 四足野性形态的抽象基类
  * 仅限雪狐等共用四足形态动画的形态使用
- * 由于使用了static，故切忌用于美西螈等形态
  */
 public abstract class AbstractFeralForm extends PlayerFormBase {
-    protected  AnimationHolder anim_idle = AnimationHolder.EMPTY;
-    protected  AnimationHolder anim_sneak_idle = AnimationHolder.EMPTY;
-    protected  AnimationHolder anim_ride = AnimationHolder.EMPTY;
-    protected  AnimationHolder anim_walk = AnimationHolder.EMPTY;
-    protected  AnimationHolder anim_sneak_walk = AnimationHolder.EMPTY;
-    protected  AnimationHolder anim_sneak_rush = AnimationHolder.EMPTY;
-    protected  AnimationHolder anim_run = AnimationHolder.EMPTY;
-    protected  AnimationHolder anim_float = AnimationHolder.EMPTY;
-    protected  AnimationHolder anim_swim = AnimationHolder.EMPTY;
-    protected  AnimationHolder anim_dig = AnimationHolder.EMPTY;
-    protected  AnimationHolder anim_jump = AnimationHolder.EMPTY;
-    protected  AnimationHolder anim_climb = AnimationHolder.EMPTY;
-    protected  AnimationHolder anim_fall = AnimationHolder.EMPTY;
-    protected  AnimationHolder anim_attack = AnimationHolder.EMPTY;
-    protected  AnimationHolder anim_sleep = AnimationHolder.EMPTY;
-    protected  AnimationHolder anim_elytra_fly = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_idle = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_sneak_idle = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_ride = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_walk = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_sneak_walk = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_sneak_rush = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_run = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_float = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_swim = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_dig = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_jump = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_climb = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_fall = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_attack = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_sleep = AnimationHolder.EMPTY;
+    protected AnimationHolder anim_elytra_fly = AnimationHolder.EMPTY;
 
     protected AbstractFeralForm(Identifier formID) {
         super(formID);
@@ -108,20 +108,72 @@ public abstract class AbstractFeralForm extends PlayerFormBase {
 
     protected AbstractAnimStateController getControllerMapping(AnimStateEnum animStateEnum) {
         return switch (animStateEnum) {
-            case ANIM_STATE_SLEEP -> Form_FeralBase.SLEEP_CONTROLLER;
-            case ANIM_STATE_CLIMB -> Form_FeralBase.CLIMB_CONTROLLER;
-            case ANIM_STATE_FALL -> Form_FeralBase.FALL_CONTROLLER;
-            case ANIM_STATE_JUMP -> Form_FeralBase.JUMP_CONTROLLER;
-            case ANIM_STATE_RIDE -> Form_FeralBase.RIDE_CONTROLLER;
-            case ANIM_STATE_SWIM -> Form_FeralBase.SWIM_CONTROLLER;
-            case ANIM_STATE_USE_ITEM -> Form_FeralBase.USE_ITEM_CONTROLLER;
-            case ANIM_STATE_WALK -> Form_FeralBase.WALK_CONTROLLER;
-            case ANIM_STATE_SPRINT -> Form_FeralBase.SPRINT_CONTROLLER;
-            case ANIM_STATE_IDLE -> Form_FeralBase.IDLE_CONTROLLER;
-            case ANIM_STATE_MINING -> Form_FeralBase.MINING_CONTROLLER;
-            case ANIM_STATE_ATTACK -> Form_FeralBase.ATTACK_CONTROLLER;
-            case ANIM_STATE_FLYING, ANIM_STATE_FALL_FLYING -> Form_FeralBase.FALL_FLYING_CONTROLLER;
-            default -> Form_FeralBase.IDLE_CONTROLLER;
+            case ANIM_STATE_SLEEP -> createSleepController();
+            case ANIM_STATE_CLIMB -> createClimbController();
+            case ANIM_STATE_FALL -> createFallController();
+            case ANIM_STATE_JUMP -> createJumpController();
+            case ANIM_STATE_RIDE -> createRideController();
+            case ANIM_STATE_SWIM -> createSwimController();
+            case ANIM_STATE_USE_ITEM -> createUseItemController();
+            case ANIM_STATE_WALK -> createWalkController();
+            case ANIM_STATE_SPRINT -> createSprintController();
+            case ANIM_STATE_IDLE -> createIdleController();
+            case ANIM_STATE_MINING -> createMiningController();
+            case ANIM_STATE_ATTACK -> createAttackController();
+            case ANIM_STATE_FLYING, ANIM_STATE_FALL_FLYING -> createFallFlyingController();
+            default -> createIdleController();
         };
+    }
+
+    protected AbstractAnimStateController createSleepController() {
+        return Form_FeralBase.SLEEP_CONTROLLER;
+    }
+
+    protected AbstractAnimStateController createClimbController() {
+        return Form_FeralBase.CLIMB_CONTROLLER;
+    }
+
+    protected AbstractAnimStateController createFallController() {
+        return Form_FeralBase.FALL_CONTROLLER;
+    }
+
+    protected AbstractAnimStateController createJumpController() {
+        return Form_FeralBase.JUMP_CONTROLLER;
+    }
+
+    protected AbstractAnimStateController createRideController() {
+        return Form_FeralBase.RIDE_CONTROLLER;
+    }
+
+    protected AbstractAnimStateController createSwimController() {
+        return Form_FeralBase.SWIM_CONTROLLER;
+    }
+
+    protected AbstractAnimStateController createUseItemController() {
+        return Form_FeralBase.USE_ITEM_CONTROLLER;
+    }
+
+    protected AbstractAnimStateController createWalkController() {
+        return Form_FeralBase.WALK_CONTROLLER;
+    }
+
+    protected AbstractAnimStateController createSprintController() {
+        return Form_FeralBase.SPRINT_CONTROLLER;
+    }
+
+    protected AbstractAnimStateController createIdleController() {
+        return Form_FeralBase.IDLE_CONTROLLER;
+    }
+
+    protected AbstractAnimStateController createMiningController() {
+        return Form_FeralBase.MINING_CONTROLLER;
+    }
+
+    protected AbstractAnimStateController createAttackController() {
+        return Form_FeralBase.ATTACK_CONTROLLER;
+    }
+
+    protected AbstractAnimStateController createFallFlyingController() {
+        return Form_FeralBase.FALL_FLYING_CONTROLLER;
     }
 }

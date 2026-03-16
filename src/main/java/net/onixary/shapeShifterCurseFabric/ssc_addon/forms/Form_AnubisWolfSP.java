@@ -4,9 +4,7 @@ import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_animation.AnimationHolder;
 import net.onixary.shapeShifterCurseFabric.player_animation.v2.PlayerAnimState;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AbstractAnimStateController;
-import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateEnum;
 import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_SnowFox3;
-import org.jetbrains.annotations.NotNull;
 
 public class Form_AnubisWolfSP extends AbstractFeralForm {
     public Form_AnubisWolfSP(Identifier formID) {
@@ -35,10 +33,7 @@ public class Form_AnubisWolfSP extends AbstractFeralForm {
     }
 
     @Override
-    protected AbstractAnimStateController getControllerMapping(@NotNull AnimStateEnum animStateEnum) {
-        if (animStateEnum == AnimStateEnum.ANIM_STATE_RIDE) {
-            return Form_SnowFox3.RIDE_CONTROLLER;
-        }
-        return super.getControllerMapping(animStateEnum);
+    protected AbstractAnimStateController createRideController() {
+        return Form_SnowFox3.RIDE_CONTROLLER;
     }
 }
