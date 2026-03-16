@@ -377,9 +377,13 @@ public class AnubisWolfSpDeathDomain {
             player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.ENTITY_WITHER_DEATH, SoundCategory.PLAYERS, 0.5f, 0.5f);
 
-            // 增强模式：自动召唤6只冥狼，并立即让召唤技能也进入CD
+            // 增强模式：自动召唤冥狼（饰品增加2只），并立即让召唤技能也进入CD
             if (data.enhanced) {
-                AnubisWolfSpSummonWolves.autoSummonForEnhancedDomain(player, ENHANCED_AUTO_SUMMON_COUNT);
+                int summonCount = ENHANCED_AUTO_SUMMON_COUNT;
+                if (AnubisWolfSpSummonWolves.hasTrinketEquipped(player)) {
+                    summonCount += 2;
+                }
+                AnubisWolfSpSummonWolves.autoSummonForEnhancedDomain(player, summonCount);
                 PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD,
                         AnubisWolfSpSummonWolves.getCooldownTicks());
                 // 增强模式额外音效

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " B ",
+    "BDB",
+    " B "
+  ],
+  "key": {
+    "B": { "item": "minecraft:bone" },
+    "D": { "item": "minecraft:diamond" }
+  },
+  "result": {
+    "item": "ssc_addon:anubis_crystal",
+    "count": 1
+  }
+}
