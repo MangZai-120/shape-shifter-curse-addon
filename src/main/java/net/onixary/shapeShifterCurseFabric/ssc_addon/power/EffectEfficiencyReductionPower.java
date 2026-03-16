@@ -13,7 +13,7 @@ public class EffectEfficiencyReductionPower extends Power {
         super(type, entity);
     }
 
-    public static PowerFactory createFactory() {
+    public static PowerFactory<EffectEfficiencyReductionPower> createFactory() {
         return new PowerFactory<>(new Identifier("ssc_addon", "effect_efficiency_reduction"),
             new SerializableData(),
             data ->

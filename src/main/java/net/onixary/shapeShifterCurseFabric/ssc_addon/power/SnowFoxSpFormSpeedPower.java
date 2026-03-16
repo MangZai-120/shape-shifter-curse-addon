@@ -101,7 +101,7 @@ public class SnowFoxSpFormSpeedPower extends Power {
         }
     }
     
-    public static PowerFactory createFactory() {
+    public static PowerFactory<Power> createFactory() {
         return new PowerFactory<>(
             new Identifier("ssc_addon", "snow_fox_sp_form_speed"),
             new SerializableData()
