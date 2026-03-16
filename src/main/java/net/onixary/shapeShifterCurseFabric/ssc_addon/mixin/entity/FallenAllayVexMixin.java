@@ -171,7 +171,7 @@ public abstract class FallenAllayVexMixin extends MobEntity {
                                         ServerWorld serverWorld, boolean hasWhitelist) {
         Box searchBox = this.getBoundingBox().expand(16.0);
         List<LivingEntity> candidates = serverWorld.getEntitiesByClass(LivingEntity.class, searchBox,
-                e -> e != owner && e != (Object) this && e.isAlive()
+                e -> e != owner && e != this && e.isAlive()
                         && !(e instanceof VexEntity)
                         && !(e instanceof RaiderEntity));
 

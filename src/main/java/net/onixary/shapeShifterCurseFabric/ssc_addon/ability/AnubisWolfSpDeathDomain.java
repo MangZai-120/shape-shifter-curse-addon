@@ -19,12 +19,11 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * SP阿努比斯之狼主要技能 - 死亡领域
@@ -416,7 +415,7 @@ public class AnubisWolfSpDeathDomain {
 
         // 延展音效（每5tick一次沙砾滑动声）
         if (data.ticksElapsed % 5 == 0) {
-            player.getWorld().playSound(null, data.center.getX() + 0.5, (double) data.centerY, data.center.getZ() + 0.5,
+            player.getWorld().playSound(null, data.center.getX() + 0.5, data.centerY, data.center.getZ() + 0.5,
                     SoundEvents.BLOCK_SOUL_SAND_STEP, SoundCategory.BLOCKS, 0.6f, 0.7f);
         }
 
@@ -425,7 +424,7 @@ public class AnubisWolfSpDeathDomain {
             data.ticksElapsed = 0;
 
             // 完全展开音效
-            player.getWorld().playSound(null, data.center.getX() + 0.5, (double) data.centerY, data.center.getZ() + 0.5,
+            player.getWorld().playSound(null, data.center.getX() + 0.5, data.centerY, data.center.getZ() + 0.5,
                     SoundEvents.ENTITY_WITHER_AMBIENT, SoundCategory.PLAYERS, 0.5f, 0.3f);
         }
 
@@ -449,7 +448,7 @@ public class AnubisWolfSpDeathDomain {
 
         // 幽灵低语音效（每60tick / 3秒一次）
         if (data.ticksElapsed % 60 == 0) {
-            player.getWorld().playSound(null, data.center.getX() + 0.5, (double) data.centerY, data.center.getZ() + 0.5,
+            player.getWorld().playSound(null, data.center.getX() + 0.5, data.centerY, data.center.getZ() + 0.5,
                     SoundEvents.BLOCK_SOUL_SAND_BREAK, SoundCategory.AMBIENT, 1.0f, 0.5f);
         }
 
@@ -460,7 +459,7 @@ public class AnubisWolfSpDeathDomain {
             data.currentRadius = maxRadius;
 
             // 回退开始音效
-            player.getWorld().playSound(null, data.center.getX() + 0.5, (double) data.centerY, data.center.getZ() + 0.5,
+            player.getWorld().playSound(null, data.center.getX() + 0.5, data.centerY, data.center.getZ() + 0.5,
                     SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 0.4f, 0.5f);
         }
 
@@ -511,7 +510,7 @@ public class AnubisWolfSpDeathDomain {
 
         // 回退音效
         if (data.ticksElapsed % 5 == 0) {
-            player.getWorld().playSound(null, data.center.getX() + 0.5, (double) data.centerY, data.center.getZ() + 0.5,
+            player.getWorld().playSound(null, data.center.getX() + 0.5, data.centerY, data.center.getZ() + 0.5,
                     SoundEvents.BLOCK_SOUL_SAND_BREAK, SoundCategory.BLOCKS, 0.4f, 0.9f);
         }
 
@@ -527,7 +526,7 @@ public class AnubisWolfSpDeathDomain {
             ACTIVE_DOMAINS.remove(player.getUuid());
 
             // 结束音效
-            player.getWorld().playSound(null, data.center.getX() + 0.5, (double) data.centerY, data.center.getZ() + 0.5,
+            player.getWorld().playSound(null, data.center.getX() + 0.5, data.centerY, data.center.getZ() + 0.5,
                     SoundEvents.ENTITY_WITHER_BREAK_BLOCK, SoundCategory.PLAYERS, 0.6f, 1.2f);
         }
 

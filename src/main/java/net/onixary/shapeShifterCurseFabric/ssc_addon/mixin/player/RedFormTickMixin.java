@@ -134,7 +134,7 @@ public class RedFormTickMixin {
                  ItemStack stack = player.getInventory().getStack(i);
                  if (stack.isOf(SscAddon.POTION_BAG)) {
                      // Found a bag, drop its contents
-                     if (stack.hasNbt() && stack.getNbt().contains("Items", 9)) {
+                     if (stack.getNbt() != null && stack.hasNbt() && stack.getNbt().contains("Items", 9)) {
                          NbtList list = stack.getNbt().getList("Items", 10);
                          for (int j = 0; j < list.size(); ++j) {
                              NbtCompound itemTag = list.getCompound(j);

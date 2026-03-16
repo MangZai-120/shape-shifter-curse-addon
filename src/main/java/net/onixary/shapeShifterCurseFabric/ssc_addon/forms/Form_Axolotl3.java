@@ -43,7 +43,7 @@ public class Form_Axolotl3 extends PlayerFormBase {
 	    return switch (currentState) {
 		    case ANIM_JUMP, ANIM_FALL -> anim_jump;
 		    case ANIM_SNEAK_JUMP, ANIM_SNEAK_RUSH_JUMP -> anim_crawling_jump;
-		    case ANIM_SNEAK_FALL -> anim_crawling_idle;
+		    case ANIM_SNEAK_FALL, ANIM_SNEAK_IDLE -> anim_crawling_idle;
 		    case ANIM_RUSH_JUMP -> anim_rush_jump;
 		    case ANIM_WALK -> anim_walking;
 		    case ANIM_RUN -> anim_running;
@@ -51,8 +51,7 @@ public class Form_Axolotl3 extends PlayerFormBase {
 		    case ANIM_SWIM -> anim_swimming;
 		    case ANIM_SWIM_IDLE -> anim_swimming_idle;
 		    case ANIM_SNEAK_WALK -> anim_crawling;
-		    case ANIM_SNEAK_IDLE -> anim_crawling_idle;
-		    case ANIM_SLEEP -> anim_sleep;
+            case ANIM_SLEEP -> anim_sleep;
 		    case ANIM_SNEAK_ATTACK_ONCE -> anim_crawling_attack_once;
 		    case ANIM_SNEAK_TOOL_SWING -> anim_crawling_tool_swing;
 		    default -> null;

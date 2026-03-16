@@ -73,7 +73,7 @@ public abstract class OverlayRenderMixin<T extends LivingEntity, M extends Entit
             if (fur == null) continue;
 
             OriginFurModel m_Model = (OriginFurModel) fur.getGeoModel();
-            var modelAccessor = (ModelRootAccessor) (PlayerEntityModel<?>) this.getModel();
+            var modelAccessor = (ModelRootAccessor) this.getModel();
 
             Identifier overlayTexture = m_Model.getOverlayTexture(modelAccessor.originalFur$isSlim());
             Identifier emissiveTexture = m_Model.getEmissiveTexture(modelAccessor.originalFur$isSlim());

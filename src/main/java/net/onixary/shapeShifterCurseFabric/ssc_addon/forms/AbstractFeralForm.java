@@ -49,7 +49,6 @@ public abstract class AbstractFeralForm extends PlayerFormBase {
 
     protected AnimationHolder getAnimStateMapping(PlayerAnimState currentState) {
         return switch (currentState) {
-            case ANIM_IDLE -> anim_idle;
             case ANIM_SNEAK_IDLE, ANIM_RIDE_VEHICLE_IDLE -> anim_sneak_idle;
             case ANIM_RIDE_IDLE -> anim_ride;
             case ANIM_WALK -> anim_walk;
@@ -121,7 +120,6 @@ public abstract class AbstractFeralForm extends PlayerFormBase {
             case ANIM_STATE_MINING -> createMiningController();
             case ANIM_STATE_ATTACK -> createAttackController();
             case ANIM_STATE_FLYING, ANIM_STATE_FALL_FLYING -> createFallFlyingController();
-            default -> createIdleController();
         };
     }
 

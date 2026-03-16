@@ -437,18 +437,16 @@ public class SscAddonActions {
                              if (newVy > maxVy) newVy = maxVy;
                              
                              // Maintain Horizontal Acceleration (Fix "stutter/stop" when looking up)
-                             newVx = velocity.x * 1.5;
-                             newVz = velocity.z * 1.5;
                          } else {
                              // Normal Swimming Leap (Flat/Looking Down):
                              // Vertical speed (Rising/Sinking) 1.5x boost
                              newVy = vy * 1.5;
                              // Horizontal boost (1.5x) to create composite vector acceleration
-                             newVx = velocity.x * 1.5;
-                             newVz = velocity.z * 1.5;
                          }
+                        newVx = velocity.x * 1.5;
+                        newVz = velocity.z * 1.5;
 
-                         // Always apply velocity to preserve momentum against water exit drag
+                        // Always apply velocity to preserve momentum against water exit drag
                          // This ensures smooth transition for both cases
                          entity.setVelocity(newVx, newVy, newVz);
                          entity.velocityModified = true;

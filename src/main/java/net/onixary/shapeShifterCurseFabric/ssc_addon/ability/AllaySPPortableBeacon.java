@@ -83,7 +83,10 @@ public class AllaySPPortableBeacon {
     }
 
     private static boolean isActiveBeacon(ItemStack stack) {
-        return !stack.isEmpty() && stack.isOf(Items.BEACON) && stack.hasNbt() && stack.getNbt().getBoolean(ACTIVE_TAG);
+        if (stack.getNbt() != null) {
+            return !stack.isEmpty() && stack.isOf(Items.BEACON) && stack.hasNbt() && stack.getNbt().getBoolean(ACTIVE_TAG);
+        }
+        return false;
     }
 
     private static void processActiveBeacon(ServerPlayerEntity player, ItemStack stack) {
