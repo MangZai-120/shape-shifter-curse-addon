@@ -257,5 +257,11 @@
   "item.ssc_addon.anubis_crystal.tooltip_1": "Exclusive to SP Anubis Wolf Form",
   "item.ssc_addon.anubis_crystal.tooltip_2": "Netherwolf summon count +1, Netherwolf cap +1",
   "item.ssc_addon.anubis_crystal.tooltip_3": "Enhanced Death Domain auto-summon Netherwolf count +2",
-  "item.ssc_addon.anubis_crystal.tooltip_4": "Summoned Netherwolves attack -25%, health -35%"
+  "item.ssc_addon.anubis_crystal.tooltip_4": "Summoned Netherwolves attack -25%, health -35%",
+  "item.ssc_addon.ankh_stone": "Ankh Stone",
+  "item.ssc_addon.ankh_stone.tooltip_1": "Exclusive to SP Anubis Wolf Form",
+  "item.ssc_addon.ankh_stone.tooltip_2": "Removes Wither and Weakness on revival trigger",
+  "item.ssc_addon.ankh_stone.tooltip_3": "Reduces revival passive cooldown by 80%",
+  "item.ssc_addon.ankh_stone.tooltip_4": "Consumed on trigger",
+  "item.ssc_addon.ankh_stone.tooltip_5": "Cannot be crafted, only found in desert temple chests"
 }

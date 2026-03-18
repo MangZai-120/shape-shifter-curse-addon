@@ -6,6 +6,7 @@
   "refmap": "ssc-addon.refmap.json",
   "mixins": [
     "AllaySPTotemMixin",
+    "AnkhStoneTotemMixin",
     "CursedMoonSpMessageMixin",
     "FallenAllayVexMixin",
     "FrostFreezeDamageMixin",

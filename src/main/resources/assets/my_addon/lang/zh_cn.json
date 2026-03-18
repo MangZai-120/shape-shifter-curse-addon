@@ -253,5 +253,11 @@
   "item.ssc_addon.anubis_crystal.tooltip_1": "SP阿努比斯之狼形态专属",
   "item.ssc_addon.anubis_crystal.tooltip_2": "召唤冥狼数量+1，冥狼存在上限+1",
   "item.ssc_addon.anubis_crystal.tooltip_3": "强化死亡领域自动召唤冥狼数量+2",
-  "item.ssc_addon.anubis_crystal.tooltip_4": "召唤的冥狼攻击力-25%，血量-35%"
+  "item.ssc_addon.anubis_crystal.tooltip_4": "召唤的冥狼攻击力-25%，血量-35%",
+  "item.ssc_addon.ankh_stone": "安卡纹石",
+  "item.ssc_addon.ankh_stone.tooltip_1": "SP阿努比斯之狼形态专属",
+  "item.ssc_addon.ankh_stone.tooltip_2": "复活被动触发时消除凋零和虚弱效果",
+  "item.ssc_addon.ankh_stone.tooltip_3": "复活被动冷却时间减少80%",
+  "item.ssc_addon.ankh_stone.tooltip_4": "触发后物品消耗",
+  "item.ssc_addon.ankh_stone.tooltip_5": "无法合成，仅在沙漠神殿箱子中概率获得"
 }

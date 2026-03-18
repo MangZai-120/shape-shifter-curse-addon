@@ -129,6 +129,7 @@ public class SscAddon implements ModInitializer {
     public static final Item CORAL_BALL = new Item(new Item.Settings().maxCount(64));
     public static final Item ACTIVE_CORAL_NECKLACE = new ActiveCoralNecklaceItem(new Item.Settings().maxCount(1));
     public static final Item ANUBIS_CRYSTAL = new AnubisCrystalItem(new Item.Settings().maxCount(1).fireproof());
+    public static final Item ANKH_STONE = new AnkhStoneItem(new Item.Settings().maxCount(1).fireproof());
 
     // SP Allay items
     public static final Item ALLAY_HEAL_WAND = new AllayHealWandItem(new Item.Settings().maxCount(1));
@@ -181,6 +182,7 @@ public class SscAddon implements ModInitializer {
                         entries.add(CORAL_BALL);
                         entries.add(ACTIVE_CORAL_NECKLACE);
                         entries.add(ANUBIS_CRYSTAL);
+                        entries.add(ANKH_STONE);
                         entries.add(ALLAY_HEAL_WAND);
                         entries.add(ALLAY_JUKEBOX);
                         entries.add(FRIEND_MARKER);
@@ -255,6 +257,7 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "coral_ball"), CORAL_BALL);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "active_coral_necklace"), ACTIVE_CORAL_NECKLACE);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "anubis_crystal"), ANUBIS_CRYSTAL);
+        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "ankh_stone"), ANKH_STONE);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "allay_heal_wand"), ALLAY_HEAL_WAND);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "allay_jukebox"), ALLAY_JUKEBOX);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "friend_marker"), FRIEND_MARKER);
@@ -290,6 +293,7 @@ public class SscAddon implements ModInitializer {
         net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPPortableBeacon.init();
         net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPTotem.init();
         LifesavingCatTailItem.registerLootTable();
+        AnkhStoneItem.registerLootTable();
     }
 
     private void registerForms() {
