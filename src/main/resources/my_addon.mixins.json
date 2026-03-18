@@ -28,7 +28,8 @@
     "SscAddonVillagerInteractionMixin",
     "SscPlayerMixin",
     "StunnedJumpMixin",
-    "TransformRelatedItemsMixin"
+    "TransformRelatedItemsMixin",
+    "WanderingTraderTradeMixin"
   ],
   "client": [
     "InstinctBarRendererMixin",
