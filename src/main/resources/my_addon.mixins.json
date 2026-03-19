@@ -6,6 +6,8 @@
   "refmap": "ssc-addon.refmap.json",
   "mixins": [
     "effect.AllaySPTotemMixin",
+    "AllaySPTotemMixin",
+    "AnkhStoneTotemMixin",
     "CursedMoonSpMessageMixin",
     "entity.FallenAllayVexMixin",
     "effect.FrostFreezeDamageMixin",
@@ -29,6 +31,12 @@
     "player.SscPlayerMixin",
     "effect.StunnedJumpMixin",
     "item.TransformRelatedItemsMixin"
+    "SscAddonTravelMixin",
+    "SscAddonVillagerInteractionMixin",
+    "SscPlayerMixin",
+    "StunnedJumpMixin",
+    "TransformRelatedItemsMixin",
+    "WanderingTraderTradeMixin"
   ],
   "client": [
     "render.InstinctBarRendererMixin",

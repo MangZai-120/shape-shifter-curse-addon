@@ -1,0 +1,96 @@
+{
+    "type": "origins:multiple",
+    "wither_detected": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 1,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "scan_wither": {
+        "type": "origins:action_over_time",
+        "interval": 10,
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_anubis_wolf_sp_wither_hunt/wither_detected",
+                    "change": -1
+                },
+                {
+                    "type": "origins:area_of_effect",
+                    "radius": 24,
+                    "bientity_condition": {
+                        "type": "origins:and",
+                        "conditions": [
+                            {
+                                "type": "origins:target_condition",
+                                "condition": {
+                                    "type": "origins:living"
+                                }
+                            },
+                            {
+                                "type": "origins:target_condition",
+                                "condition": {
+                                    "type": "origins:status_effect",
+                                    "effect": "minecraft:wither"
+                                }
+                            }
+                        ]
+                    },
+                    "bientity_action": {
+                        "type": "origins:actor_action",
+                        "action": {
+                            "type": "origins:change_resource",
+                            "resource": "my_addon:form_anubis_wolf_sp_wither_hunt/wither_detected",
+                            "change": 1
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "speed_boost": {
+        "type": "origins:conditioned_attribute",
+        "modifier": {
+            "attribute": "minecraft:generic.movement_speed",
+            "operation": "multiply_total",
+            "value": 0.2,
+            "name": "Wither hunt speed boost"
+        },
+        "tick_rate": 10,
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:resource",
+                    "resource": "my_addon:form_anubis_wolf_sp_wither_hunt/wither_detected",
+                    "comparison": ">=",
+                    "compare_to": 1
+                },
+                {
+                    "type": "origins:on_block",
+                    "block_condition": {
+                        "type": "origins:or",
+                        "conditions": [
+                            {
+                                "type": "origins:block",
+                                "block": "minecraft:soul_sand"
+                            },
+                            {
+                                "type": "origins:block",
+                                "block": "minecraft:soul_soil"
+                            }
+                        ]
+                    },
+                    "inverted": true
+                }
+            ]
+        }
+    },
+    "name": "凋零追猎",
+    "description": "当24格内存在身上带有凋零效果的生物时，在非灵魂沙区域获得20%移动速度加成。"
+}
