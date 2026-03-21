@@ -44,7 +44,7 @@ public class AnkhStoneItem extends TrinketItem {
     }
 
     /**
-     * 复活触发后的安卡纹石效果处理，由 AllaySPTotemMixin 调用
+     * 复活触发后的安卡纹石效果处理，由 AnkhStoneTotemMixin 调用
      */
     public static void onRevival(LivingEntity entity) {
         if (!(entity instanceof ServerPlayerEntity player)) return;
@@ -70,15 +70,9 @@ public class AnkhStoneItem extends TrinketItem {
         }
 
         // 消耗安卡纹石（只消耗第一个）
-        final ItemStack[] found = {null};
-        component.forEach((ref, stack) -> {
-            if (found[0] == null && stack.isOf(SscAddon.ANKH_STONE) && !stack.isEmpty()) {
-                found[0] = stack;
-            }
+        component.getEquipped(SscAddon.ANKH_STONE).stream().findFirst().ifPresent(pair -> {
+            pair.getRight().decrement(1);
         });
-        if (found[0] != null) {
-            found[0].decrement(1);
-        }
 
         // 播放物品碎裂音效
         player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
