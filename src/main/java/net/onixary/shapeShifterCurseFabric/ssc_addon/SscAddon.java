@@ -53,6 +53,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.ReloadSnowballLaunch
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.SpUpgradeRecipe;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.screen.PotionBagScreenHandler;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
@@ -61,6 +62,8 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPJukebox;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDomain;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEnergy;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
+import net.onixary.shapeShifterCurseFabric.additional_power.VirtualTotemPower;
+import io.github.apace100.apoli.component.PowerHolderComponent;
 
 public class SscAddon implements ModInitializer {
 
@@ -380,6 +383,16 @@ public class SscAddon implements ModInitializer {
             if (!alive) {
                 newPlayer.getItemCooldownManager().remove(LIFESAVING_CAT_TAIL);
                 newPlayer.getItemCooldownManager().remove(PHANTOM_BELL);
+
+                // SP阿努比斯之狼：死亡后重置亡灵不死被动冷却
+                if (FormUtils.isAnubisWolfSP(newPlayer)) {
+                    for (VirtualTotemPower power : PowerHolderComponent.getPowers(newPlayer, VirtualTotemPower.class)) {
+                        if (power.getRemainingTicks() > 0) {
+                            power.modify(-power.getRemainingTicks());
+                            PowerHolderComponent.syncPower(newPlayer, power.getType());
+                        }
+                    }
+                }
             }
         });
 
