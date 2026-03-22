@@ -30,7 +30,7 @@
     "entity.SscAddonVillagerInteractionMixin",
     "player.SscPlayerMixin",
     "effect.StunnedJumpMixin",
-    "item.TransformRelatedItemsMixin"
+    "item.TransformRelatedItemsMixin",
     "SscAddonTravelMixin",
     "SscAddonVillagerInteractionMixin",
     "SscPlayerMixin",
