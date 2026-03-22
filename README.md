@@ -19,7 +19,7 @@
 
 这是一个基于 Fabric 的附属模组项目，用于为《幻形者诅咒》模组添加更多玩法。
 
-Wiki：https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/
+### Wiki：[幻形者诅咒扩展包 Wiki](https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/)
 
 ## 添加模组
 

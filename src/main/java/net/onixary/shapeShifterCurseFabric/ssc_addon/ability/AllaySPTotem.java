@@ -223,7 +223,10 @@ public class AllaySPTotem {
 
     private static boolean isActiveTotem(ItemStack stack) {
         // Check if item is Totem and has active tag
-        return !stack.isEmpty() && stack.isOf(Items.TOTEM_OF_UNDYING) && stack.hasNbt() && stack.getNbt().getBoolean(ACTIVE_TAG);
+        if (stack.getNbt() != null) {
+            return !stack.isEmpty() && stack.isOf(Items.TOTEM_OF_UNDYING) && stack.hasNbt() && stack.getNbt().getBoolean(ACTIVE_TAG);
+        }
+        return false;
     }
     
     private static boolean isSpAllay(PlayerEntity player) {

@@ -5,6 +5,7 @@ import io.github.apace100.apoli.component.PowerHolderComponent;
 import io.github.apace100.apoli.data.ApoliDataTypes;
 import io.github.apace100.apoli.power.Active;
 import io.github.apace100.apoli.power.ActiveCooldownPower;
+import io.github.apace100.apoli.power.Power;
 import io.github.apace100.apoli.power.PowerType;
 import io.github.apace100.apoli.power.factory.PowerFactory;
 import io.github.apace100.apoli.util.HudRender;
@@ -202,7 +203,8 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
         wasInvisible = false;
         
         ServerWorld serverWorld = (ServerWorld) entity.getWorld();
-        
+
+        // player.sendMessage(Text.of("§c隐身被打破!"), true);
         if (byKey) {
             // Key Cancel: Cat Hiss
             serverWorld.playSound(null, entity.getX(), entity.getY(), entity.getZ(), 
@@ -211,19 +213,16 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
             // Add Buffs: Guaranteed Crit & Speed II for 5 seconds
             entity.addStatusEffect(new StatusEffectInstance(SscAddon.GUARANTEED_CRIT, 100, 0, false, false, true));
             entity.addStatusEffect(new StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.SPEED, 100, 1, false, false, true));
-            
-            if (entity instanceof PlayerEntity player) {
-                // player.sendMessage(Text.of("§a隐身已主动解除，获得爆发增益!"), true);
-            }
+
         } else {
             // Action Break: Glass Break
             serverWorld.playSound(null, entity.getX(), entity.getY(), entity.getZ(), 
                 SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
-            if (entity instanceof PlayerEntity player) {
-                // player.sendMessage(Text.of("§c隐身被打破!"), true);
-            }
         }
-        
+        if (entity instanceof PlayerEntity player) {
+            // player.sendMessage(Text.of("§a隐身已主动解除，获得爆发增益!"), true);
+        }
+
         // Apply universal 12s cooldown ONLY when breaking invisibility AND it was the main ability (Amp 0)
         if (currentAmp == 0) {
             applyUniversalCooldown();
@@ -267,7 +266,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
         }
     }
     
-    public static PowerFactory createFactory() {
+    public static PowerFactory<Power> createFactory() {
         return new PowerFactory<>(new Identifier("my_addon", "true_invisibility"),
             new SerializableData()
                 .add("cooldown", SerializableDataTypes.INT, COOLDOWN_TICKS)

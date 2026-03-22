@@ -13,20 +13,17 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.property.Properties;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
-import net.minecraft.util.math.MathHelper;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * SP阿努比斯之狼主要技能 - 死亡领域
@@ -190,8 +187,7 @@ public class AnubisWolfSpDeathDomain {
 
     /**
      * 玩家断线/死亡时清理，还原所有已转化方块
-     */
-    /**
+     * <p>
      * 玩家断线时清理玩家特有状态（CD、减速修饰符）
      * 不在此处做方块还原，因为DISCONNECT事件在Netty IO线程上触发，
      * world.setBlockState()不是线程安全的。
@@ -419,7 +415,7 @@ public class AnubisWolfSpDeathDomain {
 
         // 延展音效（每5tick一次沙砾滑动声）
         if (data.ticksElapsed % 5 == 0) {
-            player.getWorld().playSound(null, data.center.getX() + 0.5, (double) data.centerY, data.center.getZ() + 0.5,
+            player.getWorld().playSound(null, data.center.getX() + 0.5, data.centerY, data.center.getZ() + 0.5,
                     SoundEvents.BLOCK_SOUL_SAND_STEP, SoundCategory.BLOCKS, 0.6f, 0.7f);
         }
 
@@ -428,7 +424,7 @@ public class AnubisWolfSpDeathDomain {
             data.ticksElapsed = 0;
 
             // 完全展开音效
-            player.getWorld().playSound(null, data.center.getX() + 0.5, (double) data.centerY, data.center.getZ() + 0.5,
+            player.getWorld().playSound(null, data.center.getX() + 0.5, data.centerY, data.center.getZ() + 0.5,
                     SoundEvents.ENTITY_WITHER_AMBIENT, SoundCategory.PLAYERS, 0.5f, 0.3f);
         }
 
@@ -452,7 +448,7 @@ public class AnubisWolfSpDeathDomain {
 
         // 幽灵低语音效（每60tick / 3秒一次）
         if (data.ticksElapsed % 60 == 0) {
-            player.getWorld().playSound(null, data.center.getX() + 0.5, (double) data.centerY, data.center.getZ() + 0.5,
+            player.getWorld().playSound(null, data.center.getX() + 0.5, data.centerY, data.center.getZ() + 0.5,
                     SoundEvents.BLOCK_SOUL_SAND_BREAK, SoundCategory.AMBIENT, 1.0f, 0.5f);
         }
 
@@ -463,7 +459,7 @@ public class AnubisWolfSpDeathDomain {
             data.currentRadius = maxRadius;
 
             // 回退开始音效
-            player.getWorld().playSound(null, data.center.getX() + 0.5, (double) data.centerY, data.center.getZ() + 0.5,
+            player.getWorld().playSound(null, data.center.getX() + 0.5, data.centerY, data.center.getZ() + 0.5,
                     SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 0.4f, 0.5f);
         }
 
@@ -514,7 +510,7 @@ public class AnubisWolfSpDeathDomain {
 
         // 回退音效
         if (data.ticksElapsed % 5 == 0) {
-            player.getWorld().playSound(null, data.center.getX() + 0.5, (double) data.centerY, data.center.getZ() + 0.5,
+            player.getWorld().playSound(null, data.center.getX() + 0.5, data.centerY, data.center.getZ() + 0.5,
                     SoundEvents.BLOCK_SOUL_SAND_BREAK, SoundCategory.BLOCKS, 0.4f, 0.9f);
         }
 
@@ -530,7 +526,7 @@ public class AnubisWolfSpDeathDomain {
             ACTIVE_DOMAINS.remove(player.getUuid());
 
             // 结束音效
-            player.getWorld().playSound(null, data.center.getX() + 0.5, (double) data.centerY, data.center.getZ() + 0.5,
+            player.getWorld().playSound(null, data.center.getX() + 0.5, data.centerY, data.center.getZ() + 0.5,
                     SoundEvents.ENTITY_WITHER_BREAK_BLOCK, SoundCategory.PLAYERS, 0.6f, 1.2f);
         }
 
@@ -682,9 +678,7 @@ public class AnubisWolfSpDeathDomain {
 
         // 非完整方块走shouldRemoveTemporarily逻辑
         if (isNonFullButSolidBlock(state)) return false; // 类似农田的视作完整
-        if (!isFullBlock(state)) return false;
-
-        return true;
+        return isFullBlock(state);
     }
 
     /**

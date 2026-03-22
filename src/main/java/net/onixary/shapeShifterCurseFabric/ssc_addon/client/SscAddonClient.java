@@ -28,7 +28,7 @@ import java.util.List;
 
 public class SscAddonClient implements ClientModInitializer {
     public static final String CATEGORY = "key.categories.ssc_addon";
-	private static final Logger log = LoggerFactory.getLogger(SscAddonClient.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SscAddonClient.class);
 
 	private TridentEntityModel tridentModel;
     
@@ -45,7 +45,7 @@ public class SscAddonClient implements ClientModInitializer {
     
     @Override
     public void onInitializeClient() {
-        log.info("SSC ADDON DEBUG: Registering Client KeyBindings...");
+        LOGGER.info("SSC ADDON DEBUG: Registering Client KeyBindings...");
         
         SscAddonKeybindings.register();
 

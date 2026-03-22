@@ -4,6 +4,7 @@ import io.github.apace100.apoli.component.PowerHolderComponent;
 import io.github.apace100.apoli.data.ApoliDataTypes;
 import io.github.apace100.apoli.power.Active;
 import io.github.apace100.apoli.power.ActiveCooldownPower;
+import io.github.apace100.apoli.power.Power;
 import io.github.apace100.apoli.power.PowerType;
 import io.github.apace100.apoli.power.factory.PowerFactory;
 import io.github.apace100.apoli.util.HudRender;
@@ -170,7 +171,7 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
         ticksSinceDash = 0;
     }
 
-    public static PowerFactory createFactory() {
+    public static PowerFactory<Power> createFactory() {
         return new PowerFactory<>(new Identifier("my_addon", "true_invisibility_dash"),
             new SerializableData()
                 .add("cooldown", SerializableDataTypes.INT, COOLDOWN_TICKS)

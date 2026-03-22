@@ -21,7 +21,7 @@ public class AdaptiveSwimmingPower extends Power {
     public float getAcceleration() { return acceleration; }
     public float getFriction() { return friction; }
 
-    public static PowerFactory createFactory() {
+    public static PowerFactory<Power> createFactory() {
         return new PowerFactory<>(
             new Identifier("my_addon", "adaptive_swimming"),
             new SerializableData()
