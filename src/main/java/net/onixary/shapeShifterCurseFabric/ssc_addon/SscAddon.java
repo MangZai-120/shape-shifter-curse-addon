@@ -35,6 +35,8 @@ import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_FeralCatSP;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.action.SscAddonActions;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.command.SscAddonCommands;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.condition.SscAddonConditions;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.config.ConfigChangeListener;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.config.ConfigChangeManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.*;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayClearMarkerEntity;

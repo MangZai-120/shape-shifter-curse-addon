@@ -18,7 +18,6 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.AllayJukeboxItem;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 /**

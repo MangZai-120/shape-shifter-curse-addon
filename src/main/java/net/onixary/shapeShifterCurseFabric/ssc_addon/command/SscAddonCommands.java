@@ -20,6 +20,9 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.mana.ManaComponent;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.config.ConfigChangeManager;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
+import me.shedaniel.autoconfig.AutoConfig;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
@@ -88,6 +91,10 @@ public class SscAddonCommands {
             .then(CommandManager.literal("reload_books")
                 .requires(source -> source.hasPermissionLevel(2))
                 .executes(SscAddonCommands::reloadBooks)
+            )
+            .then(CommandManager.literal("reload")
+                .requires(source -> source.hasPermissionLevel(2))
+                .executes(SscAddonCommands::reloadConfig)
             )
             .then(CommandManager.literal("whitelist")
                 .requires(source -> source.hasPermissionLevel(2))
@@ -444,6 +451,24 @@ public class SscAddonCommands {
             return 1;
         } catch (Exception e) {
             player.sendMessage(Text.literal("重新加载书籍失败: " + e.getMessage()).formatted(Formatting.RED), false);
+            return 0;
+        }
+    }
+
+    /**
+     * 重新加载模组配置
+     */
+    private static int reloadConfig(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+        
+        try {
+            SSCAddonConfig config = AutoConfig.getConfigHolder(SSCAddonConfig.class).getConfig();
+            ConfigChangeManager.notifyChange(config);
+            player.sendMessage(Text.literal("模组配置已重新加载！").formatted(Formatting.GREEN), true);
+            player.sendMessage(Text.literal("Mod config reloaded!").formatted(Formatting.GREEN), true);
+            return 1;
+        } catch (Exception e) {
+            player.sendMessage(Text.literal("重新加载配置失败: " + e.getMessage()).formatted(Formatting.RED), true);
             return 0;
         }
     }

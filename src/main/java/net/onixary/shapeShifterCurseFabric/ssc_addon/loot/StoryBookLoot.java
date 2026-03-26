@@ -15,6 +15,8 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.util.Identifier;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.config.ConfigChangeListener;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.config.ConfigChangeManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,12 +27,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-public class StoryBookLoot {
+public class StoryBookLoot implements ConfigChangeListener {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(StoryBookLoot.class);
 
 	private StoryBookLoot() {
         // This utility class should not be instantiated
+    }
+
+    @Override
+    public void onConfigChanged(SSCAddonConfig config) {
+        reloadBooks();
     }
 
     private static float chance = 0.038f;
@@ -247,6 +254,7 @@ public class StoryBookLoot {
     }
 
     public static void init() {
+        ConfigChangeManager.register(new StoryBookLoot());
         LootTableEvents.MODIFY.register((resourceManager, lootManager, id, tableBuilder, source) -> {
             if (isTargetChest(id)) {
                 loadConfig();
