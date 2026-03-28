@@ -10,9 +10,11 @@
         "type": "origins:sneaking",
         "inverted": true
     },
-    "cooldown": 0,
+    "cooldown": 600,
     "hud_render": {
-        "should_render": false
+        "should_render": true,
+        "sprite_location": "my_addon:textures/gui/skill_cd_bar_full.png",
+        "bar_index": 1
     },
     "name": "冥狼裁庭",
     "description": "嚎叫1.5秒后召唤冥狼仆从。冥狼攻击目标时附加凋零效果，攻击已凋零的目标时治愈施法者。死亡领域激活时，召唤数量翻倍且冥狼获得增强属性。"
