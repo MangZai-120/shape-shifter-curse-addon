@@ -11,6 +11,7 @@ import io.github.apace100.apoli.power.factory.action.ActionFactory;
 import io.github.apace100.apoli.registry.ApoliRegistries;
 import io.github.apace100.calio.data.SerializableData;
 import io.github.apace100.calio.data.SerializableDataTypes;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.LivingEntity;
@@ -22,11 +23,14 @@ import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDomain;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
@@ -190,6 +194,11 @@ public class SscAddonActions {
                          }
                     }
                 });
+
+                // 火焰吐息路径上的水有15%概率变为冰霜行者冰
+                if (!living.getWorld().isClient() && living.getWorld() instanceof ServerWorld serverWorld) {
+                    freezeWaterInCone(serverWorld, eyePos, lookVec, distance, 0.15f);
+                }
             }));
 
         registerBiEntity(new ActionFactory<>(new Identifier("my_addon", "set_on_fire_attributed"),
@@ -534,6 +543,48 @@ public class SscAddonActions {
             }
         } catch (Exception e) {
             // Resource not found
+        }
+    }
+
+    /**
+     * 将锥形范围内的水源方块以概率转为冰霜行者冰（Frosted Ice）
+     * @param world 服务器世界
+     * @param origin 起始位置（玩家眼睛位置）
+     * @param direction 方向向量
+     * @param distance 最大距离
+     * @param chance 每个水方块被冻结的概率
+     */
+    private static void freezeWaterInCone(ServerWorld world, Vec3d origin, Vec3d direction, float distance, float chance) {
+        // 沿视线方向每格取样，锥形扩散与吐息粒子范围一致
+        for (float d = 1.0f; d <= distance; d += 1.0f) {
+            Vec3d center = origin.add(direction.multiply(d));
+            // 锥形扩散半径：与吐息粒子效果一致（最远处约3格宽）
+            int radius = Math.max(1, (int) (d * 0.375f));
+
+            int cx = MathHelper.floor(center.x);
+            int cy = MathHelper.floor(center.y);
+            int cz = MathHelper.floor(center.z);
+
+            for (int x = -radius; x <= radius; x++) {
+                for (int y = -1; y <= 1; y++) {
+                    for (int z = -radius; z <= radius; z++) {
+                        if (x * x + z * z > radius * radius) continue;
+
+                        BlockPos pos = new BlockPos(cx + x, cy + y, cz + z);
+                        if (world.getBlockState(pos).isOf(Blocks.WATER)
+                                && world.getFluidState(pos).isStill()
+                                && world.getBlockState(pos.up()).isAir()) {
+
+                            if (world.getRandom().nextFloat() < chance) {
+                                world.setBlockState(pos, Blocks.FROSTED_ICE.getDefaultState());
+                                world.scheduleBlockTick(
+                                        pos, Blocks.FROSTED_ICE,
+                                        MathHelper.nextInt(world.getRandom(), 60, 120));
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
