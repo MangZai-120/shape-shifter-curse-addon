@@ -263,5 +263,7 @@
   "item.ssc_addon.ankh_stone.tooltip_2": "Removes Wither and Weakness on revival trigger",
   "item.ssc_addon.ankh_stone.tooltip_3": "Reduces revival passive cooldown by 80%",
   "item.ssc_addon.ankh_stone.tooltip_4": "Consumed on trigger",
-  "item.ssc_addon.ankh_stone.tooltip_5": "Cannot be crafted, only found in desert temple chests"
+  "item.ssc_addon.ankh_stone.tooltip_5": "Cannot be crafted, only found in desert temple chests",
+  "entity.ssc_addon.witch_familiar": "Witch Familiar",
+  "item.ssc_addon.witch_familiar_spawn_egg": "Witch Familiar Spawn Egg"
 }

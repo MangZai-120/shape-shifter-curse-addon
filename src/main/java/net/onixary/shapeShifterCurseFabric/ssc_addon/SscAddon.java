@@ -6,6 +6,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
@@ -39,10 +40,13 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.config.ConfigChangeListener
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.ConfigChangeManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.*;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
+import net.minecraft.item.SpawnEggItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayClearMarkerEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayFriendMarkerEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostBallEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostStormEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.WitchFamiliarEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.*;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.*;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
@@ -159,6 +163,19 @@ public class SscAddon implements ModInitializer {
                     .build()
     );
 
+    // 女巫使魔实体
+    public static final EntityType<WitchFamiliarEntity> WITCH_FAMILIAR_ENTITY = Registry.register(
+            Registries.ENTITY_TYPE,
+            new Identifier("ssc_addon", "witch_familiar"),
+            FabricEntityTypeBuilder.<WitchFamiliarEntity>create(SpawnGroup.MONSTER, WitchFamiliarEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.5f, 0.7f))
+                    .trackRangeBlocks(64).trackedUpdateRate(3)
+                    .build()
+    );
+
+    // 女巫使魔怪物蛋（主色狐狸沙棕 #D5B48F，次色青蓝 #31C8CC）
+    public static final Item WITCH_FAMILIAR_SPAWN_EGG = new SpawnEggItem(WITCH_FAMILIAR_ENTITY, 0xD5B48F, 0x31C8CC, new Item.Settings());
+
     // SP Allay sound events
     public static final Identifier ALLAY_HEAL_MUSIC_ID = new Identifier("ssc_addon", "allay_heal_music");
     public static final Identifier ALLAY_SPEED_MUSIC_ID = new Identifier("ssc_addon", "allay_speed_music");
@@ -190,6 +207,7 @@ public class SscAddon implements ModInitializer {
                         entries.add(ALLAY_JUKEBOX);
                         entries.add(FRIEND_MARKER);
                         entries.add(CLEAR_FRIEND_MARKER);
+                        entries.add(WITCH_FAMILIAR_SPAWN_EGG);
                     })
                     .build());
 
@@ -214,10 +232,12 @@ public class SscAddon implements ModInitializer {
         registerItems();
         registerRecipeSerializers();
         registerSoundEvents();
+        registerEntityAttributes();
         registerApoliSystems();
         registerForms();
         registerCommands();
         registerTickHandlers();
+        registerEntitySpawnHandlers();
         registerPlayerEventHandlers();
         registerServerLifecycleHandlers();
         AnubisWolfSpSoulEnergy.registerEvents();
@@ -264,6 +284,7 @@ public class SscAddon implements ModInitializer {
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "allay_jukebox"), ALLAY_JUKEBOX);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "friend_marker"), FRIEND_MARKER);
         Registry.register(Registries.ITEM, new Identifier("ssc_addon", "clear_friend_marker"), CLEAR_FRIEND_MARKER);
+        Registry.register(Registries.ITEM, new Identifier("ssc_addon", "witch_familiar_spawn_egg"), WITCH_FAMILIAR_SPAWN_EGG);
     }
 
     private void registerRecipeSerializers() {
@@ -276,6 +297,10 @@ public class SscAddon implements ModInitializer {
     private void registerSoundEvents() {
         Registry.register(Registries.SOUND_EVENT, ALLAY_HEAL_MUSIC_ID, ALLAY_HEAL_MUSIC_EVENT);
         Registry.register(Registries.SOUND_EVENT, ALLAY_SPEED_MUSIC_ID, ALLAY_SPEED_MUSIC_EVENT);
+    }
+
+    private void registerEntityAttributes() {
+        FabricDefaultAttributeRegistry.register(WITCH_FAMILIAR_ENTITY, WitchFamiliarEntity.createWitchFamiliarAttributes());
     }
 
     private void registerApoliSystems() {
@@ -366,6 +391,43 @@ public class SscAddon implements ModInitializer {
             System.out.println("[SSC_ADDON] SERVER_STOPPING event fired, calling forceRestoreAll");
             AnubisWolfSpDeathDomain.forceRestoreAll();
             System.out.println("[SSC_ADDON] SERVER_STOPPING forceRestoreAll completed");
+        });
+    }
+
+    /**
+     * 女巫使魔伴生逻辑：袭击中生成的女巫会在附近生成1-3只女巫使魔
+     * 使用命令标签确保每只女巫只检查一次（重新加载区块不会重复触发）
+     */
+    private void registerEntitySpawnHandlers() {
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
+            if (!(entity instanceof net.minecraft.entity.mob.WitchEntity witch)) return;
+            // 每只女巫只检查一次
+            if (witch.getCommandTags().contains("ssc_familiar_checked")) return;
+            witch.addCommandTag("ssc_familiar_checked");
+
+            // 仅袭击中生成的女巫才会伴生使魔
+            if (!witch.hasActiveRaid()) return;
+
+            // 随机生成1-3只使魔
+            int count = 1 + witch.getRandom().nextInt(3);
+            for (int i = 0; i < count; i++) {
+                WitchFamiliarEntity familiar = WITCH_FAMILIAR_ENTITY.create(world);
+                if (familiar == null) continue;
+
+                // 设置主人为该女巫
+                familiar.setOwnerUuid(witch.getUuid());
+
+                double offsetX = (witch.getRandom().nextDouble() - 0.5) * 3.0;
+                double offsetZ = (witch.getRandom().nextDouble() - 0.5) * 3.0;
+                familiar.refreshPositionAndAngles(
+                        witch.getX() + offsetX,
+                        witch.getY(),
+                        witch.getZ() + offsetZ,
+                        witch.getRandom().nextFloat() * 360f,
+                        0f
+                );
+                world.spawnEntity(familiar);
+            }
         });
     }
 
