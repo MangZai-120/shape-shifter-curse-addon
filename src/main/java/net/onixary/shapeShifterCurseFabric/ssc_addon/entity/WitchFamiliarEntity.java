@@ -18,6 +18,12 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageType;
 import net.minecraft.enchantment.ProtectionEnchantment;
 import net.minecraft.entity.TntEntity;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.SweetBerryBushBlock;
+import net.minecraft.entity.MovementType;
+import net.minecraft.entity.effect.StatusEffect;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.MobEntity;
@@ -325,6 +331,76 @@ public class WitchFamiliarEntity extends HostileEntity implements GeoEntity {
     @Override
     public boolean isFireImmune() {
         return true;
+    }
+
+    // ========== 免疫系统（与SP使魔形态一致） ==========
+
+    /**
+     * 免疫与SSC原版使魔形态相同的14种药水效果
+     * （对应 form_familiar_fox_3_no_buff_effect.json）
+     */
+    @Override
+    public boolean canHaveStatusEffect(StatusEffectInstance effect) {
+        StatusEffect type = effect.getEffectType();
+        if (type == StatusEffects.POISON
+                || type == StatusEffects.HUNGER
+                || type == StatusEffects.SPEED
+                || type == StatusEffects.HASTE
+                || type == StatusEffects.STRENGTH
+                || type == StatusEffects.REGENERATION
+                || type == StatusEffects.FIRE_RESISTANCE
+                || type == StatusEffects.WATER_BREATHING
+                || type == StatusEffects.NIGHT_VISION
+                || type == StatusEffects.RESISTANCE
+                || type == StatusEffects.INVISIBILITY
+                || type == StatusEffects.HEALTH_BOOST
+                || type == StatusEffects.WITHER
+                || type == StatusEffects.ABSORPTION) {
+            return false;
+        }
+        return super.canHaveStatusEffect(effect);
+    }
+
+    /**
+     * 免疫浆果丛减速效果
+     */
+    @Override
+    public void slowMovement(BlockState state, Vec3d multiplier) {
+        if (state.getBlock() instanceof SweetBerryBushBlock) {
+            return; // 浆果丛不对女巫使魔产生减速
+        }
+        super.slowMovement(state, multiplier);
+    }
+
+    /**
+     * 免疫浆果丛伤害
+     */
+    @Override
+    public boolean damage(DamageSource source, float amount) {
+        // sweetBerryBush 是原版甜浆果丛伤害类型的 msgId
+        if ("sweetBerryBush".equals(source.getName())) {
+            return false;
+        }
+        return super.damage(source, amount);
+    }
+
+    /**
+     * 水中移动不减速（消除水中阻力）
+     */
+    @Override
+    public void travel(Vec3d movementInput) {
+        if (this.isLogicalSideForUpdatingMovement() && this.isTouchingWater()) {
+            // 水中使用更高的移动系数和更低的阻力，接近陆地速度
+            this.updateVelocity(0.04f, movementInput); // 原版水中为0.02f
+            this.move(MovementType.SELF, this.getVelocity());
+            this.setVelocity(this.getVelocity().multiply(0.9)); // 原版水中为0.8
+            if (!this.hasNoGravity()) {
+                this.setVelocity(this.getVelocity().add(0.0, -0.04, 0.0));
+            }
+            this.updateLimbs(false);
+        } else {
+            super.travel(movementInput);
+        }
     }
 
     @Override
