@@ -157,15 +157,11 @@ public class WitchFamiliarEntity extends HostileEntity implements GeoEntity {
                     this.getX(), this.getY() + 0.5, this.getZ(), 1, 0.2, 0.3, 0.2, 0.0);
         }
 
-        // 在服务端、冷却完毕时扫描范围内是否有可影响的敌对目标
-        if (!this.getWorld().isClient() && fireRingCooldown <= 0 && this.getWorld() instanceof ServerWorld serverWorld) {
-            boolean hasNearbyTarget = !serverWorld.getEntitiesByClass(LivingEntity.class,
-                    this.getBoundingBox().expand(FIRE_RING_EFFECT_RADIUS),
-                    e -> e != this && shouldFireRingAffect(e)).isEmpty();
-            if (hasNearbyTarget) {
-                useFireRing();
-                fireRingCooldown = FIRE_RING_COOLDOWN_MAX;
-            }
+        // 仅在有攻击目标且目标在火环范围内时释放火环
+        if (!this.getWorld().isClient() && fireRingCooldown <= 0 && this.getTarget() != null
+                && this.squaredDistanceTo(this.getTarget()) <= FIRE_RING_EFFECT_RADIUS * FIRE_RING_EFFECT_RADIUS) {
+            useFireRing();
+            fireRingCooldown = FIRE_RING_COOLDOWN_MAX;
         }
     }
 
