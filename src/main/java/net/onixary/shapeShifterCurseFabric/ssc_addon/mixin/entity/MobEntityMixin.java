@@ -4,9 +4,11 @@ import net.minecraft.entity.EntityGroup;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.VexEntity;
+import net.minecraft.entity.mob.WitchEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.raid.RaiderEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.WitchFamiliarEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.UndeadNeutralState;
@@ -47,6 +49,18 @@ public abstract class MobEntityMixin {
                 return;
             }
             MobEntity self = (MobEntity)(Object)this;
+            // 劫掠阵营不攻击女巫使魔
+            if ((self instanceof RaiderEntity || self instanceof VexEntity || self instanceof WitchEntity)
+                    && target instanceof WitchFamiliarEntity) {
+                ci.cancel();
+                return;
+            }
+            // 女巫使魔不攻击劫掠阵营
+            if (self instanceof WitchFamiliarEntity
+                    && (target instanceof RaiderEntity || target instanceof VexEntity || target instanceof WitchEntity || target instanceof WitchFamiliarEntity)) {
+                ci.cancel();
+                return;
+            }
             // 灾厄中立
             if ((self instanceof RaiderEntity || self instanceof VexEntity)
                     && target instanceof PlayerEntity player
