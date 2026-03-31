@@ -10,6 +10,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RotationAxis;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.client.model.WitchFamiliarModel;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.client.renderer.layer.WitchFamiliarEyesLayer;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.WitchFamiliarEntity;
 
 import java.util.HashMap;
@@ -57,6 +58,8 @@ public class WitchFamiliarRenderer extends GeoEntityRenderer<WitchFamiliarEntity
     public WitchFamiliarRenderer(EntityRendererFactory.Context ctx) {
         super(ctx, new WitchFamiliarModel());
         this.shadowRadius = 0.2f;
+        // 蜘蛛式发光眼睛渲染层
+        addRenderLayer(new WitchFamiliarEyesLayer(this));
     }
 
     @Override
