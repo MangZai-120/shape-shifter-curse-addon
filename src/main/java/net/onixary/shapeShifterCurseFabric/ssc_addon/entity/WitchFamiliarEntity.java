@@ -8,6 +8,7 @@ import mod.azure.azurelib.core.animation.AnimationController;
 import mod.azure.azurelib.core.animation.RawAnimation;
 import mod.azure.azurelib.core.object.PlayState;
 import mod.azure.azurelib.util.AzureLibUtil;
+import net.minecraft.entity.EntityGroup;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.goal.*;
@@ -129,13 +130,11 @@ public class WitchFamiliarEntity extends HostileEntity implements GeoEntity {
 
     /**
      * 判断是否应该攻击该玩家
-     * 不攻击：使魔形态（SP/Red/原版）、堕落悦灵形态的玩家
+     * 不攻击：原版使魔、堕落悦灵形态的玩家（劫掠阵营友军）
      */
     private boolean shouldAttackPlayer(LivingEntity target) {
         if (!(target instanceof PlayerEntity player)) return false;
         return !FormUtils.isAnyForm(player,
-                FormIdentifiers.FAMILIAR_FOX_SP,
-                FormIdentifiers.FAMILIAR_FOX_RED,
                 FormIdentifiers.FALLEN_ALLAY_SP,
                 VANILLA_FAMILIAR_FOX_3
         );
@@ -276,11 +275,9 @@ public class WitchFamiliarEntity extends HostileEntity implements GeoEntity {
         if (entity instanceof VexEntity) return false;
         if (entity instanceof WitchEntity) return false;
         if (entity instanceof WitchFamiliarEntity) return false;
-        // 不影响使魔/堕落悦灵形态的玩家
+        // 不影响原版使魔/堕落悦灵形态的玩家（劫掠阵营友军）
         if (entity instanceof PlayerEntity player) {
             if (FormUtils.isAnyForm(player,
-                    FormIdentifiers.FAMILIAR_FOX_SP,
-                    FormIdentifiers.FAMILIAR_FOX_RED,
                     FormIdentifiers.FALLEN_ALLAY_SP,
                     VANILLA_FAMILIAR_FOX_3)) {
                 return false;
@@ -333,6 +330,16 @@ public class WitchFamiliarEntity extends HostileEntity implements GeoEntity {
         return true;
     }
 
+    /**
+     * 归属劫掠阵营（ILLAGER组）
+     * 使 SSC 的 MobEntityTeamMixin 能正确识别女巫使魔为劫掠阵营成员，
+     * 从而让拥有 PillagerFriendlyPower 的使魔形态玩家被视为队友
+     */
+    @Override
+    public EntityGroup getGroup() {
+        return EntityGroup.ILLAGER;
+    }
+
     // ========== 免疫系统（与SP使魔形态一致） ==========
 
     /**
@@ -373,15 +380,62 @@ public class WitchFamiliarEntity extends HostileEntity implements GeoEntity {
     }
 
     /**
-     * 免疫浆果丛伤害
+     * 免疫浆果丛伤害 + 使魔玩家攻击时复刻SSC原版劫掠阵营交互效果
+     * （对应 form_familiar_fox_3_no_attack_witch.json + hurt_when_attack_witch.json）
      */
     @Override
     public boolean damage(DamageSource source, float amount) {
-        // sweetBerryBush 是原版甜浆果丛伤害类型的 msgId
+        // 浆果丛免疫
         if ("sweetBerryBush".equals(source.getName())) {
             return false;
         }
+
+        // 原版使魔/堕落悦灵形态玩家攻击女巫使魔 → 和SSC原版攻击劫掠阵营效果一致
+        if (source.getAttacker() instanceof PlayerEntity player) {
+            if (FormUtils.isAnyForm(player,
+                    FormIdentifiers.FALLEN_ALLAY_SP,
+                    VANILLA_FAMILIAR_FOX_3)) {
+                handleFamiliarPlayerAttack(player);
+                return false; // 不受伤害
+            }
+        }
+
         return super.damage(source, amount);
+    }
+
+    /**
+     * 处理使魔玩家攻击女巫使魔的效果（复刻SSC原版机制）
+     * - 治疗女巫使魔20HP（no_attack_witch）
+     * - 玩家自伤1HP + 击退（hurt_when_attack_witch）
+     * - 播放末影之眼消散音效
+     */
+    private void handleFamiliarPlayerAttack(PlayerEntity player) {
+        if (!(this.getWorld() instanceof ServerWorld serverWorld)) return;
+
+        // 治疗女巫使魔20HP
+        this.heal(20.0f);
+
+        // 播放音效
+        serverWorld.playSound(null, this.getX(), this.getY(), this.getZ(),
+                SoundEvents.ENTITY_ENDER_EYE_DEATH, SoundCategory.NEUTRAL, 1.0f, 1.0f);
+
+        // 玩家自伤1HP
+        player.damage(player.getDamageSources().generic(), 1.0f);
+
+        // 玩家击退（向后 z:-0.5，向上 y:0.5，local_horizontal_normalized空间）
+        Vec3d lookDir = player.getRotationVector();
+        double horizontalLen = Math.sqrt(lookDir.x * lookDir.x + lookDir.z * lookDir.z);
+        if (horizontalLen > 0.001) {
+            // 归一化水平方向后施加击退
+            player.addVelocity(
+                    -lookDir.x / horizontalLen * 0.5,
+                    0.5,
+                    -lookDir.z / horizontalLen * 0.5
+            );
+        } else {
+            player.addVelocity(0, 0.5, 0);
+        }
+        player.velocityModified = true;
     }
 
     /**
