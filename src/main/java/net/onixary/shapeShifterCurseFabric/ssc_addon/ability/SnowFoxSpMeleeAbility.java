@@ -34,7 +34,6 @@ public class SnowFoxSpMeleeAbility {
     }
 
     private static final ConcurrentHashMap<UUID, DashingPlayerData> DASHING_PLAYERS = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<UUID, Long> COOLDOWN_PLAYERS = new ConcurrentHashMap<>();
     
     private static final double DASH_DISTANCE = 8.0;
     private static final double DASH_SPEED = 1.5;
@@ -50,13 +49,9 @@ public class SnowFoxSpMeleeAbility {
     
     /**
      * 执行雪刺冲刺
+     * 注意：冷却由Apoli origins:active_self power的cooldown字段管理
      */
     public static boolean execute(ServerPlayerEntity player) {
-        Long cdEndTime = COOLDOWN_PLAYERS.get(player.getUuid());
-        if (cdEndTime != null && System.currentTimeMillis() < cdEndTime) {
-            return false;
-        }
-        
         int currentMana = PowerUtils.getResourceValue(player, RESOURCE_ID);
         
         if (currentMana < MANA_COST) {
@@ -70,9 +65,6 @@ public class SnowFoxSpMeleeAbility {
         
         PowerUtils.changeResourceValueAndSync(player, RESOURCE_ID, -MANA_COST);
         PowerUtils.setResourceValueAndSync(player, REGEN_COOLDOWN_ID, 100);
-        COOLDOWN_PLAYERS.put(player.getUuid(), System.currentTimeMillis() + 6000L);
-        // 设置CD显示资源（6秒 = 120tick）
-        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_MELEE_PRIMARY_CD, 120);
         
         Vec3d lookDir = player.getRotationVector().normalize();
         Vec3d startPos = player.getPos();
@@ -158,7 +150,6 @@ public class SnowFoxSpMeleeAbility {
      */
     public static void clearPlayer(java.util.UUID uuid) {
         DASHING_PLAYERS.remove(uuid);
-        COOLDOWN_PLAYERS.remove(uuid);
     }
     
     /*

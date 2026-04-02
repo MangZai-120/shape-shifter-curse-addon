@@ -38,6 +38,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPPortableBeacon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostBallEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SscIgnitedEntityAccessor;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
@@ -145,6 +146,15 @@ public class SscAddonActions {
                 }
             ));
             registerEntity(PhantomBellTeleportAction.getFactory());
+            
+            // SP Allay Portable Beacon toggle
+            registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "allay_sp_beacon_toggle"),
+                new SerializableData(),
+                (data, entity) -> {
+                    if (entity instanceof ServerPlayerEntity player) {
+                        AllaySPPortableBeacon.toggleBeacon(player);
+                    }
+                }));
 
             registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "item_cooldown"),
             new SerializableData()

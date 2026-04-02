@@ -1,0 +1,21 @@
+{
+  "type": "origins:action_over_time",
+  "interval": 80,
+  "entity_action": {
+    "type": "origins:apply_effect",
+    "effect": {
+      "effect": "minecraft:regeneration",
+      "duration": 100,
+      "amplifier": 1,
+      "is_ambient": false,
+      "show_particles": true,
+      "show_icon": true
+    }
+  },
+  "condition": {
+    "type": "origins:resource",
+    "resource": "my_addon:form_allay_sp_beacon_active",
+    "comparison": "==",
+    "compare_to": 1
+  }
+}

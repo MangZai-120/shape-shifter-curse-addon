@@ -40,35 +40,47 @@ public class AllayJukeboxItem extends Item {
         super(settings);
     }
 
-    // ===== NBT accessors =====
+    // ===== Resource accessors (replacing NBT) =====
 
     public static int getCharge(ItemStack stack) {
+        // For item-specific data, we still need to use NBT for now
+        // TODO: Consider if we can store charge in item NBT or find another approach
         if (!stack.hasNbt()) return 0;
         NbtCompound nbt = stack.getNbt();
         return nbt != null ? nbt.getInt("Charge") : 0;
     }
 
     public static void setCharge(ItemStack stack, int amount) {
+        // For item-specific data, we still need to use NBT for now
+        // TODO: Consider if we can store charge in item NBT or find another approach
         stack.getOrCreateNbt().putInt("Charge", Math.max(0, Math.min(amount, MAX_CHARGE)));
     }
 
     public static boolean isActive(ItemStack stack) {
+        // For item-specific data, we still need to use NBT for now
+        // TODO: Consider if we can store active state in item NBT or find another approach
         if (!stack.hasNbt()) return false;
         NbtCompound nbt = stack.getNbt();
         return nbt != null && nbt.getBoolean("Active");
     }
 
     public static void setActive(ItemStack stack, boolean active) {
+        // For item-specific data, we still need to use NBT for now
+        // TODO: Consider if we can store active state in item NBT or find another approach
         stack.getOrCreateNbt().putBoolean("Active", active);
     }
 
     public static int getMode(ItemStack stack) {
+        // For item-specific data, we still need to use NBT for now
+        // TODO: Consider if we can store mode in item NBT or find another approach
         if (!stack.hasNbt()) return MODE_SPEED;
         NbtCompound nbt = stack.getNbt();
         return nbt != null ? nbt.getInt("Mode") : MODE_SPEED;
     }
 
     public static void setMode(ItemStack stack, int mode) {
+        // For item-specific data, we still need to use NBT for now
+        // TODO: Consider if we can store mode in item NBT or find another approach
         stack.getOrCreateNbt().putInt("Mode", mode);
     }
 

@@ -142,10 +142,10 @@ public class AnubisWolfSpDeathDomain {
         ServerWorld serverWorld = (ServerWorld) player.getWorld();
         DomainData data = new DomainData(serverWorld, center, (int) player.getY());
 
-        // 检查灵魂能量是否满：满则进入增强模式并消耗能量
-        if (AnubisWolfSpSoulEnergy.isFullEnergy(player.getUuid())) {
-            data.enhanced = true;
-            AnubisWolfSpSoulEnergy.consumeEnergy(player);
+// 检查灵魂能量是否满：满则进入增强模式并消耗能量
+if (AnubisWolfSpSoulEnergy.isFullEnergy(player)) {
+data.enhanced = true;
+AnubisWolfSpSoulEnergy.consumeEnergy(player);
             LOGGER.info("[DeathDomain] ENHANCED mode activated for player={}", player.getName().getString());
         }
 

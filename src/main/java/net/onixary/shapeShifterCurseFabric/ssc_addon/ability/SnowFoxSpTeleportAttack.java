@@ -33,7 +33,6 @@ public class SnowFoxSpTeleportAttack {
     }
     
     private static final ConcurrentHashMap<UUID, TeleportAttackData> ATTACKING_PLAYERS = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<UUID, Long> COOLDOWN_PLAYERS = new ConcurrentHashMap<>();
     
     private static final double RANGE = 10.0;
     private static final int MAX_TARGETS = 3;
@@ -53,14 +52,10 @@ public class SnowFoxSpTeleportAttack {
     
     /**
      * 执行瞬移攻击
+     * 注意：冷却由Apoli origins:active_self power的cooldown字段管理(400tick成功/100tick失败)
      */
     public static boolean execute(ServerPlayerEntity player) {
         if (ATTACKING_PLAYERS.containsKey(player.getUuid())) {
-            return false;
-        }
-        
-        Long cdEndTime = COOLDOWN_PLAYERS.get(player.getUuid());
-        if (cdEndTime != null && System.currentTimeMillis() < cdEndTime) {
             return false;
         }
         
@@ -76,9 +71,6 @@ public class SnowFoxSpTeleportAttack {
             player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0f, 1.0f);
             PowerUtils.changeResourceValueAndSync(player, RESOURCE_ID, -MANA_COST_FAIL);
             setRegenCooldown(player, 100);
-            COOLDOWN_PLAYERS.put(player.getUuid(), System.currentTimeMillis() + 5000L);
-            // 设置CD显示资源（失败5秒 = 100tick）
-            PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_MELEE_SECONDARY_CD, 100);
             return false;
         }
         
@@ -215,10 +207,6 @@ public class SnowFoxSpTeleportAttack {
                 player.getX(), player.getY() + player.getHeight() / 2, player.getZ(),
                 30, 0.3, 0.5, 0.3, 0.05);
         }
-        
-        COOLDOWN_PLAYERS.put(player.getUuid(), System.currentTimeMillis() + 20000L);
-        // 设置CD显示资源（成功20秒 = 400tick）
-        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_MELEE_SECONDARY_CD, 400);
     }
     
     /**
@@ -258,7 +246,6 @@ public class SnowFoxSpTeleportAttack {
      */
     public static void clearPlayer(java.util.UUID uuid) {
         ATTACKING_PLAYERS.remove(uuid);
-        COOLDOWN_PLAYERS.remove(uuid);
     }
     
     /**

@@ -70,9 +70,7 @@ public class AnkhStoneItem extends TrinketItem {
         }
 
         // 消耗安卡纹石（只消耗第一个）
-        component.getEquipped(SscAddon.ANKH_STONE).stream().findFirst().ifPresent(pair -> {
-            pair.getRight().decrement(1);
-        });
+        component.getEquipped(SscAddon.ANKH_STONE).stream().findFirst().ifPresent(pair -> pair.getRight().decrement(1));
 
         // 播放物品碎裂音效
         player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),

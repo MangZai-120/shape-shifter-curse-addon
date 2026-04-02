@@ -6,7 +6,6 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
@@ -36,8 +35,6 @@ import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_FeralCatSP;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.action.SscAddonActions;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.command.SscAddonCommands;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.condition.SscAddonConditions;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.config.ConfigChangeListener;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.config.ConfigChangeManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.*;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
@@ -60,9 +57,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPJukebox;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDomain;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEnergy;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
@@ -309,7 +304,6 @@ public class SscAddon implements ModInitializer {
         SscAddonPowers.register();
         SscAddonNetworking.registerServerReceivers();
         net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.init();
-        net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPPortableBeacon.init();
         net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPTotem.init();
         LifesavingCatTailItem.registerLootTable();
         AnkhStoneItem.registerLootTable();
@@ -366,22 +360,19 @@ public class SscAddon implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> SscAddonCommands.register(dispatcher));
     }
 
-    private void registerTickHandlers() {
+private void registerTickHandlers() {
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.START_WORLD_TICK.register(world -> {
             // 在服务器线程上处理断线玩家的领域方块还原
             if (world.getRegistryKey() == net.minecraft.world.World.OVERWORLD) {
                 AnubisWolfSpDeathDomain.tickCleanup();
             }
-            for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()) {
-                SnowFoxSpMeleeAbility.tick(player);
-                SnowFoxSpTeleportAttack.tick(player);
-                SnowFoxSpFrostStorm.tick(player);
-                AllaySPGroupHeal.tick(player);
-                AllaySPJukebox.tick(player);
-                AnubisWolfSpDeathDomain.tick(player);
-                AnubisWolfSpSummonWolves.tick(player);
-                AnubisWolfSpSoulEnergy.tickSync(player);
-            }
+for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()) {
+			SnowFoxSpMeleeAbility.tick(player);
+			SnowFoxSpTeleportAttack.tick(player);
+			AllaySPGroupHeal.tick(player);
+			AnubisWolfSpDeathDomain.tick(player);
+			AnubisWolfSpSummonWolves.tick(player);
+		}
         });
     }
 
@@ -507,12 +498,10 @@ public class SscAddon implements ModInitializer {
             System.out.println("[SSC_ADDON] DISCONNECT event fired for player: " + handler.player.getName().getString());
             SnowFoxSpMeleeAbility.clearPlayer(uuid);
             SnowFoxSpTeleportAttack.clearPlayer(uuid);
-            SnowFoxSpFrostStorm.clearPlayer(uuid);
             AnubisWolfSpDeathDomain.clearPlayer(handler.player);
-            AnubisWolfSpSummonWolves.clearPlayer(uuid);
-            AnubisWolfSpSoulEnergy.clearPlayer(uuid);
-            AllaySPJukebox.onPlayerDisconnect(handler.player);
-            PLAYER_LANGUAGES.remove(uuid);
+AnubisWolfSpSummonWolves.clearPlayer(uuid);
+	AnubisWolfSpSoulEnergy.clearPlayer(handler.player);
+	PLAYER_LANGUAGES.remove(uuid);
             System.out.println("[SSC_ADDON] DISCONNECT cleanup completed");
         });
     }

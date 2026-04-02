@@ -17,12 +17,7 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostStormEntity;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
-
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * SP雪狐远程次要技能 - 冰风暴
@@ -35,9 +30,6 @@ public class SnowFoxSpFrostStorm {
         throw new UnsupportedOperationException("This class cannot be instantiated.");
     }
     
-    private static final ConcurrentHashMap<UUID, ChargingData> CHARGING_PLAYERS = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<UUID, Long> COOLDOWN_PLAYERS = new ConcurrentHashMap<>(); // 自定义CD跟踪
-    
     private static final int CHARGE_TICKS = 30; // 1.5秒蓄力
     private static final double MAX_RANGE = 30.0; // 最大释放距离
     private static final int MANA_COST = 30; // 霜寒值消耗
@@ -46,22 +38,14 @@ public class SnowFoxSpFrostStorm {
     private static final Identifier RESOURCE_ID = new Identifier("my_addon", "form_snow_fox_sp_resource");
     private static final Identifier REGEN_COOLDOWN_ID = new Identifier("my_addon", "form_snow_fox_sp_frost_regen_cooldown_resource");
     private static final Identifier POWER_ID = new Identifier("my_addon", "form_snow_fox_sp_ranged_secondary");
+    private static final Identifier CHARGE_RESOURCE_ID = new Identifier("my_addon", "form_snow_fox_sp_frost_charge");
     
     /**
      * 开始蓄力（点按技能键时调用）
+     * 注意：冷却由Apoli origins:active_self power的cooldown字段管理
+     * 实际充值由JSON power处理，此方法仅验证并消耗资源
      */
     public static boolean startCharging(ServerPlayerEntity player) {
-        // 检查是否已经在蓄力
-        if (CHARGING_PLAYERS.containsKey(player.getUuid())) {
-            return false;
-        }
-        
-        // 检查自定义CD是否结束
-        Long cdEndTime = COOLDOWN_PLAYERS.get(player.getUuid());
-        if (cdEndTime != null && System.currentTimeMillis() < cdEndTime) {
-            return false;
-        }
-        
         // 检查霜寒值
         int currentMana = getResourceValue(player);
         if (currentMana < MANA_COST) {
@@ -73,13 +57,6 @@ public class SnowFoxSpFrostStorm {
         changeResourceValue(player, -MANA_COST);
         // 设置回复冷却（5秒）
         setRegenCooldown(player, 100);
-        // 设置技能CD（30秒 = 30000ms）
-        COOLDOWN_PLAYERS.put(player.getUuid(), System.currentTimeMillis() + 30000L);
-        // 设置CD显示资源（30秒 = 600tick）
-        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RANGED_SECONDARY_CD, 600);
-        
-        // 开始蓄力
-        CHARGING_PLAYERS.put(player.getUuid(), new ChargingData(0));
         
         // 播放蓄力开始音效
         player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -89,62 +66,11 @@ public class SnowFoxSpFrostStorm {
     }
     
     /**
-     * 取消蓄力（被净化时调用）
-     */
-    public static void cancelCharging(ServerPlayerEntity player) {
-        if (CHARGING_PLAYERS.remove(player.getUuid()) != null) {
-            // 播放打断音效
-            player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
-                SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.5f);
-        }
-    }
-
-    /**
-     * 玩家断线时清理所有状态，防止内存泄漏
-     */
-    public static void clearPlayer(java.util.UUID uuid) {
-        CHARGING_PLAYERS.remove(uuid);
-        COOLDOWN_PLAYERS.remove(uuid);
-    }
-    
-    /**
-     * 每tick更新蓄力状态
-     */
-    public static void tick(ServerPlayerEntity player) {
-        ChargingData data = CHARGING_PLAYERS.get(player.getUuid());
-        if (data == null) return;
-        
-        // 检查是否被净化 - 如果有purified效果则取消蓄力
-        if (player.hasStatusEffect(net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.PURIFIED)) {
-            cancelCharging(player);
-            return;
-        }
-        
-        data.chargeTicks++;
-        
-        // 生成蓄力粒子效果
-        if (player.getWorld() instanceof ServerWorld serverWorld) {
-            Vec3d pos = player.getPos();
-            double angle = (data.chargeTicks * 0.3) % (Math.PI * 2);
-            double radius = 0.8;
-            double x = pos.x + Math.cos(angle) * radius;
-            double z = pos.z + Math.sin(angle) * radius;
-            ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SNOWFLAKE, x, pos.y + 1, z, 1, 0, 0.1, 0, 0);
-        }
-        
-        // 蓄力完成
-        if (data.chargeTicks >= CHARGE_TICKS) {
-            releaseStorm(player);
-            CHARGING_PLAYERS.remove(player.getUuid());
-        }
-    }
-    
-    /**
      * 释放冰风暴
      */
     private static void releaseStorm(ServerPlayerEntity player) {
         // 霜寒值已在startCharging时消耗，CD也已设置
-
+        
         // 计算准星位置（射线检测）
         Vec3d start = player.getEyePos();
         Vec3d look = player.getRotationVec(1.0f);
@@ -179,13 +105,6 @@ public class SnowFoxSpFrostStorm {
                 targetPos.x, targetPos.y + 1, targetPos.z,
                 30, 1.5, 1.0, 1.5, 0.05);
         }
-    }
-    
-    /**
-     * 检查玩家是否正在蓄力
-     */
-    public static boolean isCharging(ServerPlayerEntity player) {
-        return CHARGING_PLAYERS.containsKey(player.getUuid());
     }
     
     /**
@@ -254,18 +173,7 @@ public class SnowFoxSpFrostStorm {
             }
         } catch (Exception e) {
             // Power not found
-
-        }
-    }
-    
-    /**
-     * 蓄力数据
-     */
-    private static class ChargingData {
-        int chargeTicks;
-        
-        ChargingData(int chargeTicks) {
-            this.chargeTicks = chargeTicks;
+            
         }
     }
 }

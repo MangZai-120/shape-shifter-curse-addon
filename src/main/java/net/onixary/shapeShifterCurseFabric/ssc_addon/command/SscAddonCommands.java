@@ -145,11 +145,11 @@ public class SscAddonCommands {
                     power.setValue(newVal);
                     component.sync();
                     updated = true;
-                } else if (powerId.equals(soulEnergyId)) {
-                    // 同时更新ENERGY_MAP以保持一致
-                    net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEnergy.setEnergy(player, amount);
-                    updated = true;
-                }
+} else if (powerId.equals(soulEnergyId)) {
+// 使用PowerUtils设置灵魂能量
+net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEnergy.setEnergy(player, amount);
+updated = true;
+}
             }
 
             // 2. Try Global Mana (Familiar SP)

@@ -19,7 +19,7 @@ import java.util.Optional;
 
 /**
  * 女巫使魔渲染器 — 完全依据SSC FurRenderFeature.ProcessModel()的骨骼驱动方式
- *
+ * <p>
  * 与SSC原版的区别：
  * - SSC使用Rx(180°)+translates（FeatureRenderer叠加在玩家上），需要旋转反转和腿部左右互换
  * - 此处使用GeoEntityRenderer（独立实体），仅Ry(180°)修正朝向，无需反转/互换
