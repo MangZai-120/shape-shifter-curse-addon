@@ -76,7 +76,8 @@ public class WitchFamiliarEntity extends HostileEntity implements GeoEntity {
     private int fireRingCooldown = 0;
 
     // 原版使魔形态ID（用于友军判定）
-    private static final Identifier VANILLA_FAMILIAR_FOX_3 = new Identifier("shape-shifter-curse", "form_familiar_fox_3");
+    // 注意：PlayerFormBase.FormID 不带 "form_" 前缀，getOriginID() 才会拼接
+    private static final Identifier VANILLA_FAMILIAR_FOX_3 = new Identifier("shape-shifter-curse", "familiar_fox_3");
 
     // 主人（女巫）UUID，用于跟随和攻击同步
     private UUID ownerUuid;
