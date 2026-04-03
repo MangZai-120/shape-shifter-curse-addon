@@ -13,6 +13,7 @@ import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.item.Item;
 import net.minecraft.text.ClickEvent;
@@ -38,7 +39,11 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.command.SscAddonCommands;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.condition.SscAddonConditions;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.*;
+import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
+import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
+import net.minecraft.entity.SpawnRestriction;
+import net.minecraft.world.Heightmap;
 import net.minecraft.item.SpawnEggItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayClearMarkerEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayFriendMarkerEntity;
@@ -393,10 +398,23 @@ public class SscAddon implements ModInitializer {
     }
 
     /**
-     * 女巫使魔伴生逻辑：袭击中生成的女巫会在附近生成1-3只女巫使魔
+     * 女巫使魔伴生逻辑 + 野外自然生成注册
+     * - 袭击中生成的女巫会在附近生成1-3只女巫使魔
+     * - 野外极低概率自然生成无主使魔（会自动寻找附近女巫认主）
      * 使用命令标签确保每只女巫只检查一次（重新加载区块不会重复触发）
      */
     private void registerEntitySpawnHandlers() {
+        // 野外自然生成（末影人权重10的一半=5）
+        SpawnRestriction.register(WITCH_FAMILIAR_ENTITY, SpawnRestriction.Location.ON_GROUND,
+                Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, HostileEntity::canSpawnInDark);
+        BiomeModifications.addSpawn(
+                BiomeSelectors.foundInOverworld(),
+                SpawnGroup.MONSTER,
+                WITCH_FAMILIAR_ENTITY,
+                5,    // 末影人权重10的一半
+                1, 1  // 最小/最大成组数量
+        );
+
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
             if (!(entity instanceof net.minecraft.entity.mob.WitchEntity witch)) return;
             // 每只女巫只检查一次

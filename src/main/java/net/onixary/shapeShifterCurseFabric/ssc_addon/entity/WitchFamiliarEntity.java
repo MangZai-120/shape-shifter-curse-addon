@@ -55,6 +55,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -168,6 +169,46 @@ public class WitchFamiliarEntity extends HostileEntity implements GeoEntity {
                 && this.squaredDistanceTo(this.getTarget()) <= FIRE_RING_EFFECT_RADIUS * FIRE_RING_EFFECT_RADIUS) {
             useFireRing();
             fireRingCooldown = FIRE_RING_COOLDOWN_MAX;
+        }
+
+        // 无主使魔认主逻辑：每秒检查一次，视线范围内有女巫则认主
+        if (!this.getWorld().isClient() && this.ownerUuid == null && this.age % 20 == 0) {
+            tryBondWithNearbyWitch();
+        }
+    }
+
+    /**
+     * 无主使魔认主逻辑：扫描视线范围内的女巫，认最近的为主
+     * 认主后会自动被 FollowOwnerWitchGoal 和 CopyOwnerTargetGoal 管理
+     */
+    private void tryBondWithNearbyWitch() {
+        if (!(this.getWorld() instanceof ServerWorld serverWorld)) return;
+
+        double searchRange = 16.0; // 16格搜索范围
+        List<WitchEntity> witches = serverWorld.getEntitiesByClass(
+                WitchEntity.class,
+                this.getBoundingBox().expand(searchRange),
+                witch -> witch.isAlive() && this.canSee(witch)
+        );
+
+        if (witches.isEmpty()) return;
+
+        // 找最近的女巫
+        WitchEntity nearest = null;
+        double nearestDistSq = Double.MAX_VALUE;
+        for (WitchEntity witch : witches) {
+            double distSq = this.squaredDistanceTo(witch);
+            if (distSq < nearestDistSq) {
+                nearestDistSq = distSq;
+                nearest = witch;
+            }
+        }
+
+        if (nearest != null) {
+            this.setOwnerUuid(nearest.getUuid());
+            // 产生爱心粒子表示认主成功
+            ParticleUtils.spawnParticles(serverWorld, ParticleTypes.HEART,
+                    this.getX(), this.getY() + 0.8, this.getZ(), 3, 0.3, 0.3, 0.3, 0.0);
         }
     }
 
