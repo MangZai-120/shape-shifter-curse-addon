@@ -247,6 +247,13 @@ public class SnowFoxSpTeleportAttack {
     public static void clearPlayer(java.util.UUID uuid) {
         ATTACKING_PLAYERS.remove(uuid);
     }
+
+    /**
+     * 清除所有正在进行的传送攻击状态
+     */
+    public static void clearAll() {
+        ATTACKING_PLAYERS.clear();
+    }
     
     /**
      * 获取伤害减免系数（用于Mixin）

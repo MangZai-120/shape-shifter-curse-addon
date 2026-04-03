@@ -151,6 +151,13 @@ public class SnowFoxSpMeleeAbility {
     public static void clearPlayer(java.util.UUID uuid) {
         DASHING_PLAYERS.remove(uuid);
     }
+
+    /**
+     * 清理所有冲刺状态，用于服务器重置或全局清理
+     */
+    public static void clearAll() {
+        DASHING_PLAYERS.clear();
+    }
     
     /*
     // 旧代码 (保留参考) 已移至PowerUtils

@@ -63,6 +63,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPTotem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDomain;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEnergy;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
@@ -370,23 +371,47 @@ private void registerTickHandlers() {
             // 在服务器线程上处理断线玩家的领域方块还原
             if (world.getRegistryKey() == net.minecraft.world.World.OVERWORLD) {
                 AnubisWolfSpDeathDomain.tickCleanup();
+                for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()) {
+                    SnowFoxSpMeleeAbility.tick(player);
+                    SnowFoxSpTeleportAttack.tick(player);
+                    AllaySPGroupHeal.tick(player);
+                    AnubisWolfSpDeathDomain.tick(player);
+                    AnubisWolfSpSummonWolves.tick(player);
+                }
             }
-for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()) {
-			SnowFoxSpMeleeAbility.tick(player);
-			SnowFoxSpTeleportAttack.tick(player);
-			AllaySPGroupHeal.tick(player);
-			AnubisWolfSpDeathDomain.tick(player);
-			AnubisWolfSpSummonWolves.tick(player);
-		}
         });
     }
 
     private void registerServerLifecycleHandlers() {
+        // 服务器启动时清除所有技能静态状态（在世界加载之前触发）
+        ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+            System.out.println("[SSC_ADDON] SERVER_STARTING event fired, clearing all ability static state");
+            SnowFoxSpMeleeAbility.clearAll();
+            SnowFoxSpTeleportAttack.clearAll();
+            AnubisWolfSpDeathDomain.clearAll();
+            AnubisWolfSpSummonWolves.clearAll();
+            AllaySPTotem.clearAll();
+            System.out.println("[SSC_ADDON] SERVER_STARTING ability state cleared");
+        });
         // 服务器关闭前还原所有死亡领域方块（在世界存档之前触发）
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             System.out.println("[SSC_ADDON] SERVER_STOPPING event fired, calling forceRestoreAll");
             AnubisWolfSpDeathDomain.forceRestoreAll();
             System.out.println("[SSC_ADDON] SERVER_STOPPING forceRestoreAll completed");
+        });
+        // 数据包重新加载成功后清除所有技能静态状态
+        ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resourceManager, success) -> {
+            if (!success) {
+                System.out.println("[SSC_ADDON] END_DATA_PACK_RELOAD: reload failed, skipping ability state clear");
+                return;
+            }
+            System.out.println("[SSC_ADDON] END_DATA_PACK_RELOAD: reload successful, clearing all ability static state");
+            SnowFoxSpMeleeAbility.clearAll();
+            SnowFoxSpTeleportAttack.clearAll();
+            AnubisWolfSpDeathDomain.clearAll();
+            AnubisWolfSpSummonWolves.clearAll();
+            AllaySPTotem.clearAll();
+            System.out.println("[SSC_ADDON] END_DATA_PACK_RELOAD ability state cleared");
         });
     }
 
@@ -517,7 +542,8 @@ for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()
             SnowFoxSpMeleeAbility.clearPlayer(uuid);
             SnowFoxSpTeleportAttack.clearPlayer(uuid);
             AnubisWolfSpDeathDomain.clearPlayer(handler.player);
-AnubisWolfSpSummonWolves.clearPlayer(uuid);
+            AnubisWolfSpSummonWolves.clearPlayer(uuid);
+            AllaySPTotem.clearPlayer(handler.player);
 	AnubisWolfSpSoulEnergy.clearPlayer(handler.player);
 	PLAYER_LANGUAGES.remove(uuid);
             System.out.println("[SSC_ADDON] DISCONNECT cleanup completed");

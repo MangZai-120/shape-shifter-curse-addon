@@ -289,4 +289,12 @@ private static void updateActiveTotemTracking(ServerPlayerEntity player, boolean
 		playersWithActiveTotems.remove(player);
 	}
 }
+
+public static void clearPlayer(ServerPlayerEntity player) {
+	playersWithActiveTotems.remove(player);
+}
+
+public static void clearAll() {
+	playersWithActiveTotems.clear();
+}
 }

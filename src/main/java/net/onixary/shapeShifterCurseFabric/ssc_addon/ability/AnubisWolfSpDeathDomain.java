@@ -214,6 +214,15 @@ AnubisWolfSpSoulEnergy.consumeEnergy(player);
     }
 
     /**
+     * 清除所有领域数据和冷却状态
+     * 用于服务器关闭时清理所有玩家状态
+     */
+    public static void clearAll() {
+        ACTIVE_DOMAINS.clear();
+        COOLDOWN_PLAYERS.clear();
+    }
+
+    /**
      * 在服务器线程的tick中检查并清理已断线玩家的领域（方块还原）
      * 由SscAddon的tick处理器调用，确保在Server thread上执行
      */

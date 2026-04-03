@@ -202,6 +202,13 @@ public class AnubisWolfSpSummonWolves {
     }
 
     /**
+     * 清理所有召唤状态（服务器重启时调用）
+     */
+    public static void clearAll() {
+        ACTIVE_SUMMONS.clear();
+    }
+
+    /**
      * 增强死亡领域自动召唤冥狼（跳过嚎叫阶段，直接生成）
      * 实际召唤数量 = min(requestCount, MAX_WOLVES - 已有数量)
      */
