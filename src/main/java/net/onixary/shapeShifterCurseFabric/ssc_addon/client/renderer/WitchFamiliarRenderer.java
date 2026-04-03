@@ -103,11 +103,17 @@ public class WitchFamiliarRenderer extends GeoEntityRenderer<WitchFamiliarEntity
                           VertexConsumerProvider bufferSource, VertexConsumer buffer,
                           boolean isReRender, float partialTick, int packedLight,
                           int packedOverlay, float red, float green, float blue, float alpha) {
-        poseStack.scale(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE);
+        // reRender（发光眼睛层等overlay）会再次调用preRender(isReRender=true)，
+        // 此时poseStack已携带首次渲染的缩放和骨骼变换，不能重复应用
+        if (!isReRender) {
+            poseStack.scale(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE);
+        }
         super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick,
                 packedLight, packedOverlay, red, green, blue, alpha);
-        // 在AzureLib动画处理后覆写骨骼变换（等效SSC ProcessModel）
-        processModel(animatable);
+        if (!isReRender) {
+            // 在AzureLib动画处理后覆写骨骼变换（等效SSC ProcessModel）
+            processModel(animatable);
+        }
     }
 
     // ==================== ProcessModel（等效SSC FurRenderFeature.ProcessModel） ====================
