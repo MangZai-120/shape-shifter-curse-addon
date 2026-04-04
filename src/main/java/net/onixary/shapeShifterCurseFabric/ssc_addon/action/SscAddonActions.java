@@ -34,6 +34,9 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDomain;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormWitherSand;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormErosionBrand;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormGoldenVerdict;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility;
@@ -488,6 +491,44 @@ public class SscAddonActions {
             (data, entity) -> {
                 if (entity instanceof ServerPlayerEntity sp) {
                     AnubisWolfSpSummonWolves.execute(sp);
+                }
+            }));
+
+        // ==== 金沙岚SP - 侵蚀烙印命中处理 ====
+        registerBiEntity(new ActionFactory<>(new Identifier("ssc_addon", "golden_sandstorm_erosion_brand_hit"),
+            new SerializableData(),
+            (data, pair) -> {
+                Entity actor = pair.getLeft();
+                Entity target = pair.getRight();
+                if (actor instanceof ServerPlayerEntity sp && target instanceof LivingEntity living) {
+                    GoldenSandstormErosionBrand.onPlayerAttack(sp, living);
+                }
+            }));
+
+        // ==== 金沙岚SP - 凋零金沙 ====
+        registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "golden_sandstorm_wither_sand"),
+            new SerializableData(),
+            (data, entity) -> {
+                if (entity instanceof ServerPlayerEntity sp) {
+                    GoldenSandstormWitherSand.execute(sp);
+                }
+            }));
+
+        // ==== 金沙岚SP - 侵蚀烙印 ====
+        registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "golden_sandstorm_erosion_brand"),
+            new SerializableData(),
+            (data, entity) -> {
+                if (entity instanceof ServerPlayerEntity sp) {
+                    GoldenSandstormErosionBrand.execute(sp);
+                }
+            }));
+
+        // ==== 金沙岚SP - 金沙终裁 ====
+        registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "golden_sandstorm_golden_verdict"),
+            new SerializableData(),
+            (data, entity) -> {
+                if (entity instanceof ServerPlayerEntity sp) {
+                    GoldenSandstormGoldenVerdict.execute(sp);
                 }
             }));
     }

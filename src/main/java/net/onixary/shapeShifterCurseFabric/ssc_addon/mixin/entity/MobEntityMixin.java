@@ -32,7 +32,7 @@ public abstract class MobEntityMixin {
     @Unique
     private boolean ssc_addon$shouldUndeadIgnore(MobEntity mob, PlayerEntity player) {
         if (mob.getGroup() != EntityGroup.UNDEAD) return false;
-        if (!FormUtils.isForm(player, FormIdentifiers.ANUBIS_WOLF_SP)) return false;
+        if (!FormUtils.isAnyForm(player, FormIdentifiers.ANUBIS_WOLF_SP, FormIdentifiers.GOLDEN_SANDSTORM_SP)) return false;
         // 玩家处于挑衅状态 → 亡灵可攻击
         return !UndeadNeutralState.isPlayerProvoked(player.getUuid(), mob.getWorld().getTime());
     }
@@ -109,7 +109,7 @@ public abstract class MobEntityMixin {
         // 4. 亡灵中立：基于视野的脱战机制（类似僵尸猪灵）
         if (mob.getGroup() == EntityGroup.UNDEAD
                 && target instanceof PlayerEntity player
-                && FormUtils.isForm(player, FormIdentifiers.ANUBIS_WOLF_SP)) {
+                && FormUtils.isAnyForm(player, FormIdentifiers.ANUBIS_WOLF_SP, FormIdentifiers.GOLDEN_SANDSTORM_SP)) {
             // 挑衅已过期 → 立即脱战
             if (!UndeadNeutralState.isPlayerProvoked(player.getUuid(), mob.getWorld().getTime())) {
                 mob.setTarget(null);

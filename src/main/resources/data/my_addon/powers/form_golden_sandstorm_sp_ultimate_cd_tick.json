@@ -1,0 +1,16 @@
+{
+    "type": "origins:action_over_time",
+    "interval": 1,
+    "entity_action": {
+        "type": "origins:change_resource",
+        "resource": "my_addon:form_golden_sandstorm_sp_ultimate_cd",
+        "change": -1,
+        "operation": "add"
+    },
+    "condition": {
+        "type": "origins:resource",
+        "resource": "my_addon:form_golden_sandstorm_sp_ultimate_cd",
+        "comparison": ">",
+        "compare_to": 0
+    }
+}
