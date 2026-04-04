@@ -72,6 +72,10 @@ public class FormUtils {
         return isForm(entity, FormIdentifiers.ANUBIS_WOLF_SP);
     }
 
+    public static boolean isGoldenSandstormSP(LivingEntity entity) {
+        return isForm(entity, FormIdentifiers.GOLDEN_SANDSTORM_SP);
+    }
+
     public static boolean isFamiliarFoxForm(LivingEntity entity) {
         return isAnyForm(entity, FormIdentifiers.FAMILIAR_FOX_SP, FormIdentifiers.FAMILIAR_FOX_RED);
     }

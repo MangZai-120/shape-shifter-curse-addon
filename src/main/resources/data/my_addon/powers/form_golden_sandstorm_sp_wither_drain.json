@@ -1,0 +1,82 @@
+{
+    "type": "origins:multiple",
+    "wither_nearby": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 1,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "scan": {
+        "type": "origins:action_over_time",
+        "interval": 20,
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_golden_sandstorm_sp_wither_drain/wither_nearby",
+                    "change": -1
+                },
+                {
+                    "type": "origins:area_of_effect",
+                    "radius": 8,
+                    "bientity_condition": {
+                        "type": "origins:and",
+                        "conditions": [
+                            {
+                                "type": "origins:target_condition",
+                                "condition": {
+                                    "type": "origins:living"
+                                }
+                            },
+                            {
+                                "type": "origins:target_condition",
+                                "condition": {
+                                    "type": "origins:status_effect",
+                                    "effect": "minecraft:wither"
+                                }
+                            }
+                        ]
+                    },
+                    "bientity_action": {
+                        "type": "origins:actor_action",
+                        "action": {
+                            "type": "origins:change_resource",
+                            "resource": "my_addon:form_golden_sandstorm_sp_wither_drain/wither_nearby",
+                            "change": 1
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "heal": {
+        "type": "origins:action_over_time",
+        "interval": 40,
+        "entity_action": {
+            "type": "origins:and",
+            "actions": [
+                {
+                    "type": "origins:heal",
+                    "amount": 1
+                },
+                {
+                    "type": "origins:spawn_particles",
+                    "particle": "minecraft:soul_fire_flame",
+                    "count": 3,
+                    "spread": { "x": 0.3, "y": 0.5, "z": 0.3 },
+                    "speed": 0.02
+                }
+            ]
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "my_addon:form_golden_sandstorm_sp_wither_drain/wither_nearby",
+            "comparison": ">=",
+            "compare_to": 1
+        }
+    }
+}

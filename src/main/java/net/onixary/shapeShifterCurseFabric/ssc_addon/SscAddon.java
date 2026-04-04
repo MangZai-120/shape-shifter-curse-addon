@@ -69,6 +69,8 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPJukebox;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDomain;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEnergy;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormErosionBrand;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormSandRetaliation;
 import net.onixary.shapeShifterCurseFabric.additional_power.VirtualTotemPower;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 
@@ -363,6 +365,13 @@ public class SscAddon implements ModInitializer {
         anubisWolfForm.setCanSneakRush(true);
         RegPlayerForms.registerPlayerForm(anubisWolfForm);
         RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_anubis_wolf_sp")).addForm(anubisWolfForm, 12));
+
+        // Golden Sandstorm SP (金沙岚)
+        Form_GoldenSandstormSP goldenSandstormForm = new Form_GoldenSandstormSP(FormIdentifiers.GOLDEN_SANDSTORM_SP);
+        goldenSandstormForm.setPhase(PlayerFormPhase.PHASE_SP);
+        goldenSandstormForm.setCanSneakRush(true);
+        RegPlayerForms.registerPlayerForm(goldenSandstormForm);
+        RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_golden_sandstorm_sp")).addForm(goldenSandstormForm, 12));
     }
 
     private void registerCommands() {
@@ -384,6 +393,8 @@ public class SscAddon implements ModInitializer {
                 AnubisWolfSpDeathDomain.tick(player);
                 AnubisWolfSpSummonWolves.tick(player);
                 AnubisWolfSpSoulEnergy.tickSync(player);
+                GoldenSandstormErosionBrand.tick(player);
+                GoldenSandstormSandRetaliation.tick(player);
             }
         });
     }
