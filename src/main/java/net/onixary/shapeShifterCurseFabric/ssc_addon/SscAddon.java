@@ -384,12 +384,9 @@ private void registerTickHandlers() {
             for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()) {
                 SnowFoxSpMeleeAbility.tick(player);
                 SnowFoxSpTeleportAttack.tick(player);
-                SnowFoxSpFrostStorm.tick(player);
                 AllaySPGroupHeal.tick(player);
-                AllaySPJukebox.tick(player);
                 AnubisWolfSpDeathDomain.tick(player);
                 AnubisWolfSpSummonWolves.tick(player);
-                AnubisWolfSpSoulEnergy.tickSync(player);
                 GoldenSandstormErosionBrand.tick(player);
                 GoldenSandstormSandRetaliation.tick(player);
             }
