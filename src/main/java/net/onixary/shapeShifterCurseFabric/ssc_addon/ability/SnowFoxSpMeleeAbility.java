@@ -30,134 +30,132 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SnowFoxSpMeleeAbility {
 
+	private static final ConcurrentHashMap<UUID, DashingPlayerData> DASHING_PLAYERS = new ConcurrentHashMap<>();
+	private static final double DASH_DISTANCE = 8.0;
+	private static final double DASH_SPEED = 1.5;
+	private static final float DAMAGE = 8.0f;
+	private static final int FROST_FREEZE_DURATION = 60;
+	private static final int MANA_COST = 15;
+	// ==== NEW CODE: 使用FormIdentifiers ====
+	private static final Identifier RESOURCE_ID = FormIdentifiers.SNOW_FOX_RESOURCE;
+	private static final Identifier REGEN_COOLDOWN_ID = FormIdentifiers.SNOW_FOX_REGEN_COOLDOWN;
+	private static final Identifier POWER_ID = FormIdentifiers.SNOW_FOX_MELEE_PRIMARY;
+	private static final int COOLDOWN = 120;
+
 	private SnowFoxSpMeleeAbility() {
-    }
+	}
 
-    private static final ConcurrentHashMap<UUID, DashingPlayerData> DASHING_PLAYERS = new ConcurrentHashMap<>();
-    
-    private static final double DASH_DISTANCE = 8.0;
-    private static final double DASH_SPEED = 1.5;
-    private static final float DAMAGE = 8.0f;
-    private static final int FROST_FREEZE_DURATION = 60;
-    private static final int MANA_COST = 15;
-    
-    // ==== NEW CODE: 使用FormIdentifiers ====
-    private static final Identifier RESOURCE_ID = FormIdentifiers.SNOW_FOX_RESOURCE;
-    private static final Identifier REGEN_COOLDOWN_ID = FormIdentifiers.SNOW_FOX_REGEN_COOLDOWN;
-    private static final Identifier POWER_ID = FormIdentifiers.SNOW_FOX_MELEE_PRIMARY;
-    private static final int COOLDOWN = 120;
-    
-    /**
-     * 执行雪刺冲刺
-     * 注意：冷却由Apoli origins:active_self power的cooldown字段管理
-     */
-    public static boolean execute(ServerPlayerEntity player) {
-        int currentMana = PowerUtils.getResourceValue(player, RESOURCE_ID);
-        
-        if (currentMana < MANA_COST) {
-            player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
-            return false;
-        }
-        
-        if (DASHING_PLAYERS.containsKey(player.getUuid())) {
-            return false;
-        }
-        
-        PowerUtils.changeResourceValueAndSync(player, RESOURCE_ID, -MANA_COST);
-        PowerUtils.setResourceValueAndSync(player, REGEN_COOLDOWN_ID, 100);
-        
-        Vec3d lookDir = player.getRotationVector().normalize();
-        Vec3d startPos = player.getPos();
-        
-        DashingPlayerData data = new DashingPlayerData(startPos, lookDir, 0);
-        DASHING_PLAYERS.put(player.getUuid(), data);
-        
-        player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
-            SoundEvents.ITEM_TRIDENT_RIPTIDE_1, SoundCategory.PLAYERS, 1.0f, 1.2f);
-        
-        return true;
-    }
-    
-    /**
-     * 每tick更新冲刺状态
-     */
-    public static void tick(ServerPlayerEntity player) {
-        DashingPlayerData data = DASHING_PLAYERS.get(player.getUuid());
-        if (data == null) return;
-        
-        double distanceMoved = data.ticksElapsed * DASH_SPEED;
-        
-        if (distanceMoved >= DASH_DISTANCE || player.horizontalCollision || player.verticalCollision) {
-            DASHING_PLAYERS.remove(player.getUuid());
-            return;
-        }
-        
-        Vec3d velocity = data.direction.multiply(DASH_SPEED);
-        player.setVelocity(velocity);
-        player.velocityModified = true;
-        
-        Box hitbox = player.getBoundingBox().expand(0.5);
-        List<Entity> nearbyEntities = player.getWorld().getOtherEntities(player, hitbox, 
-            entity -> entity instanceof LivingEntity && !data.hitEntities.contains(entity.getUuid()));
-        
-        for (Entity entity : nearbyEntities) {
-            if (entity instanceof LivingEntity target) {
-                if (WhitelistUtils.isProtected(player, target)) {
-                    data.hitEntities.add(entity.getUuid());
-                    continue;
-                }
-                data.hitEntities.add(entity.getUuid());
-                
-                DamageSource source = player.getDamageSources().playerAttack(player);
-                target.damage(source, DAMAGE);
-                
-                target.addStatusEffect(new StatusEffectInstance(
-                    SscAddon.FROST_FREEZE,
-                    FROST_FREEZE_DURATION,
-                    0,
-                    false,
-                    true,
-                    true
-                ));
-                
-                // 使用ParticleUtils
-                if (player.getWorld() instanceof ServerWorld serverWorld) {
-                    ParticleUtils.spawnHitParticles(serverWorld, new Vec3d(target.getX(), target.getY() + target.getHeight() / 2, target.getZ()));
-                }
-                
-                player.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
-                    SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.8f, 1.5f);
-            }
-        }
-        
-        // 使用ParticleUtils
-        if (player.getWorld() instanceof ServerWorld serverWorld) {
-            ParticleUtils.spawnSnowflakeParticles(serverWorld, new Vec3d(player.getX(), player.getY() + 0.5, player.getZ()));
-        }
-        
-        data.ticksElapsed++;
-    }
-    
-    /**
-     * 检查玩家是否正在冲刺
-     */
-    public static boolean isDashing(PlayerEntity player) {
-        return DASHING_PLAYERS.containsKey(player.getUuid());
-    }
+	/**
+	 * 执行雪刺冲刺
+	 * 注意：冷却由Apoli origins:active_self power的cooldown字段管理
+	 */
+	public static boolean execute(ServerPlayerEntity player) {
+		int currentMana = PowerUtils.getResourceValue(player, RESOURCE_ID);
 
-    /**
-     * 玩家断线/死亡时清理所有状态，防止内存泄漏和重连后状态错乱
-     */
-    public static void clearPlayer(java.util.UUID uuid) {
-        DASHING_PLAYERS.remove(uuid);
-    }
+		if (currentMana < MANA_COST) {
+			player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
+			return false;
+		}
 
-    /**
-     * 清理所有冲刺状态，用于服务器重置或全局清理
-     */
-    public static void clearAll() {
-        DASHING_PLAYERS.clear();
-    }
+		if (DASHING_PLAYERS.containsKey(player.getUuid())) {
+			return false;
+		}
+
+		PowerUtils.changeResourceValueAndSync(player, RESOURCE_ID, -MANA_COST);
+		PowerUtils.setResourceValueAndSync(player, REGEN_COOLDOWN_ID, 100);
+
+		Vec3d lookDir = player.getRotationVector().normalize();
+		Vec3d startPos = player.getPos();
+
+		DashingPlayerData data = new DashingPlayerData(startPos, lookDir, 0);
+		DASHING_PLAYERS.put(player.getUuid(), data);
+
+		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+				SoundEvents.ITEM_TRIDENT_RIPTIDE_1, SoundCategory.PLAYERS, 1.0f, 1.2f);
+
+		return true;
+	}
+
+	/**
+	 * 每tick更新冲刺状态
+	 */
+	public static void tick(ServerPlayerEntity player) {
+		DashingPlayerData data = DASHING_PLAYERS.get(player.getUuid());
+		if (data == null) return;
+
+		double distanceMoved = data.ticksElapsed * DASH_SPEED;
+
+		if (distanceMoved >= DASH_DISTANCE || player.horizontalCollision || player.verticalCollision) {
+			DASHING_PLAYERS.remove(player.getUuid());
+			return;
+		}
+
+		Vec3d velocity = data.direction.multiply(DASH_SPEED);
+		player.setVelocity(velocity);
+		player.velocityModified = true;
+
+		Box hitbox = player.getBoundingBox().expand(0.5);
+		List<Entity> nearbyEntities = player.getWorld().getOtherEntities(player, hitbox,
+				entity -> entity instanceof LivingEntity && !data.hitEntities.contains(entity.getUuid()));
+
+		for (Entity entity : nearbyEntities) {
+			if (entity instanceof LivingEntity target) {
+				if (WhitelistUtils.isProtected(player, target)) {
+					data.hitEntities.add(entity.getUuid());
+					continue;
+				}
+				data.hitEntities.add(entity.getUuid());
+
+				DamageSource source = player.getDamageSources().playerAttack(player);
+				target.damage(source, DAMAGE);
+
+				target.addStatusEffect(new StatusEffectInstance(
+						SscAddon.FROST_FREEZE,
+						FROST_FREEZE_DURATION,
+						0,
+						false,
+						true,
+						true
+				));
+
+				// 使用ParticleUtils
+				if (player.getWorld() instanceof ServerWorld serverWorld) {
+					ParticleUtils.spawnHitParticles(serverWorld, new Vec3d(target.getX(), target.getY() + target.getHeight() / 2, target.getZ()));
+				}
+
+				player.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
+						SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.8f, 1.5f);
+			}
+		}
+
+		// 使用ParticleUtils
+		if (player.getWorld() instanceof ServerWorld serverWorld) {
+			ParticleUtils.spawnSnowflakeParticles(serverWorld, new Vec3d(player.getX(), player.getY() + 0.5, player.getZ()));
+		}
+
+		data.ticksElapsed++;
+	}
+
+	/**
+	 * 检查玩家是否正在冲刺
+	 */
+	public static boolean isDashing(PlayerEntity player) {
+		return DASHING_PLAYERS.containsKey(player.getUuid());
+	}
+
+	/**
+	 * 玩家断线/死亡时清理所有状态，防止内存泄漏和重连后状态错乱
+	 */
+	public static void clearPlayer(java.util.UUID uuid) {
+		DASHING_PLAYERS.remove(uuid);
+	}
+
+	/**
+	 * 清理所有冲刺状态，用于服务器重置或全局清理
+	 */
+	public static void clearAll() {
+		DASHING_PLAYERS.clear();
+	}
     
     /*
     // 旧代码 (保留参考) 已移至PowerUtils
@@ -218,21 +216,21 @@ public class SnowFoxSpMeleeAbility {
         }
     }
     */
-    
-    /**
-     * 冲刺中玩家数据
-     */
-    private static class DashingPlayerData {
-        final Vec3d startPos;
-        final Vec3d direction;
-        final Set<UUID> hitEntities;
-        int ticksElapsed;
-        
-        DashingPlayerData(Vec3d startPos, Vec3d direction, int ticksElapsed) {
-            this.startPos = startPos;
-            this.direction = direction;
-            this.hitEntities = new HashSet<>();
-            this.ticksElapsed = ticksElapsed;
-        }
-    }
+
+	/**
+	 * 冲刺中玩家数据
+	 */
+	private static class DashingPlayerData {
+		final Vec3d startPos;
+		final Vec3d direction;
+		final Set<UUID> hitEntities;
+		int ticksElapsed;
+
+		DashingPlayerData(Vec3d startPos, Vec3d direction, int ticksElapsed) {
+			this.startPos = startPos;
+			this.direction = direction;
+			this.hitEntities = new HashSet<>();
+			this.ticksElapsed = ticksElapsed;
+		}
+	}
 }

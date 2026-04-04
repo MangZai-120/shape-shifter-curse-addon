@@ -30,79 +30,79 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(OriginalFurClient.OriginFur.class)
 public abstract class OriginFurMixin extends GeoObjectRenderer<OriginFurAnimatable> {
 
-    // Dummy constructor for mixin - never actually called
-    private OriginFurMixin() {
-        super(null);
-    }
+	// Dummy constructor for mixin - never actually called
+	private OriginFurMixin() {
+		super(null);
+	}
 
-    @Inject(method = "setPlayer", at = @At("RETURN"), remap = false)
-    private void ssc_addon$setPlayer(PlayerEntity e, CallbackInfo ci) {
-        // Use inherited getGeoModel() from GeoObjectRenderer
-        GeoModel<OriginFurAnimatable> model = this.getGeoModel();
-        if (model instanceof OriginFurModel) {
-            ((OriginFurModel)model).setPlayer(e);
-        }
-    }
+	@Inject(method = "setPlayer", at = @At("RETURN"), remap = false)
+	private void ssc_addon$setPlayer(PlayerEntity e, CallbackInfo ci) {
+		// Use inherited getGeoModel() from GeoObjectRenderer
+		GeoModel<OriginFurAnimatable> model = this.getGeoModel();
+		if (model instanceof OriginFurModel) {
+			((OriginFurModel) model).setPlayer(e);
+		}
+	}
 
-    @Override
-    public void render(MatrixStack poseStack, OriginFurAnimatable animatable, VertexConsumerProvider bufferSource, RenderLayer renderType, VertexConsumer buffer, int packedLight) {
-        if (animatable.e != null) {
-            // Check for True Invisibility Effect
-            if (animatable.e.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) {
-                return;
-            }
+	@Override
+	public void render(MatrixStack poseStack, OriginFurAnimatable animatable, VertexConsumerProvider bufferSource, RenderLayer renderType, VertexConsumer buffer, int packedLight) {
+		if (animatable.e != null) {
+			// Check for True Invisibility Effect
+			if (animatable.e.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) {
+				return;
+			}
 
-            try {
-                PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(animatable.e);
-                PlayerFormBase currentForm = component.getCurrentForm();
-                
-                if (currentForm != null && currentForm.FormID != null) {
-                    String formPath = currentForm.FormID.getPath();
-                    boolean playerIsShifted = !formPath.contains("original");
+			try {
+				PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(animatable.e);
+				PlayerFormBase currentForm = component.getCurrentForm();
 
-                    if (playerIsShifted) {
-                        // We are in a shifted form (e.g. Fox)
-                        // Access the Origin associated with THIS specific renderer
-                        OriginalFurClient.OriginFur thisRenderer = (OriginalFurClient.OriginFur)(Object)this;
-                        Origin myOrigin = thisRenderer.currentAssociatedOrigin;
-                        
-                        if (myOrigin != null) {
-                            Identifier originId = myOrigin.getIdentifier();
-                            if (originId != null && originId.getPath().contains("original")) {
-                                // This is the "Original" form renderer (Human parts), but we are shifted.
-                                // So hide this one.
-                                return;
-                            }
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                // Ignore errors during rendering check to prevent crash
-            }
-        }
+				if (currentForm != null && currentForm.FormID != null) {
+					String formPath = currentForm.FormID.getPath();
+					boolean playerIsShifted = !formPath.contains("original");
 
-        // Hide turf bone in first person only for SP Anubis Wolf form
-        if (animatable.e != null
-                && animatable.e == MinecraftClient.getInstance().player
-                && MinecraftClient.getInstance().options.getPerspective().isFirstPerson()) {
-            try {
-                PlayerFormComponent comp = RegPlayerFormComponent.PLAYER_FORM.get(animatable.e);
-                PlayerFormBase form = comp.getCurrentForm();
-                if (form != null && form.FormID != null && form.FormID.equals(FormIdentifiers.ANUBIS_WOLF_SP)) {
-                    GeoModel<OriginFurAnimatable> geoModel = this.getGeoModel();
-                    if (geoModel instanceof OriginFurModel furModel) {
-                        furModel.getAnimationProcessor().getRegisteredBones().forEach(bone -> {
-                            if ("turf".equals(bone.getName())) {
-                                bone.setHidden(true);
-                            }
-                        });
-                    }
-                }
-            } catch (Exception e) {
-                // Ignore errors during form check
-            }
-        }
+					if (playerIsShifted) {
+						// We are in a shifted form (e.g. Fox)
+						// Access the Origin associated with THIS specific renderer
+						OriginalFurClient.OriginFur thisRenderer = (OriginalFurClient.OriginFur) (Object) this;
+						Origin myOrigin = thisRenderer.currentAssociatedOrigin;
 
-        super.render(poseStack, animatable, bufferSource, renderType, buffer, packedLight);
-    }
+						if (myOrigin != null) {
+							Identifier originId = myOrigin.getIdentifier();
+							if (originId != null && originId.getPath().contains("original")) {
+								// This is the "Original" form renderer (Human parts), but we are shifted.
+								// So hide this one.
+								return;
+							}
+						}
+					}
+				}
+			} catch (Exception e) {
+				// Ignore errors during rendering check to prevent crash
+			}
+		}
+
+		// Hide turf bone in first person only for SP Anubis Wolf form
+		if (animatable.e != null
+				&& animatable.e == MinecraftClient.getInstance().player
+				&& MinecraftClient.getInstance().options.getPerspective().isFirstPerson()) {
+			try {
+				PlayerFormComponent comp = RegPlayerFormComponent.PLAYER_FORM.get(animatable.e);
+				PlayerFormBase form = comp.getCurrentForm();
+				if (form != null && form.FormID != null && form.FormID.equals(FormIdentifiers.ANUBIS_WOLF_SP)) {
+					GeoModel<OriginFurAnimatable> geoModel = this.getGeoModel();
+					if (geoModel instanceof OriginFurModel furModel) {
+						furModel.getAnimationProcessor().getRegisteredBones().forEach(bone -> {
+							if ("turf".equals(bone.getName())) {
+								bone.setHidden(true);
+							}
+						});
+					}
+				}
+			} catch (Exception e) {
+				// Ignore errors during form check
+			}
+		}
+
+		super.render(poseStack, animatable, bufferSource, renderType, buffer, packedLight);
+	}
 }

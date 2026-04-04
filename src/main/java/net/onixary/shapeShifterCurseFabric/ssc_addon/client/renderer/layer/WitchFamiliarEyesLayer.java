@@ -18,34 +18,34 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.WitchFamiliarEntity;
 @SuppressWarnings("deprecation")
 public class WitchFamiliarEyesLayer extends GeoRenderLayer<WitchFamiliarEntity> {
 
-    // 眼睛发光纹理（只包含眼睛像素，其余透明）
-    private static final Identifier EYES_TEXTURE =
-            new Identifier("ssc_addon", "textures/entity/witch_familiar_eyes.png");
+	// 眼睛发光纹理（只包含眼睛像素，其余透明）
+	private static final Identifier EYES_TEXTURE =
+			new Identifier("ssc_addon", "textures/entity/witch_familiar_eyes.png");
 
-    public WitchFamiliarEyesLayer(GeoEntityRenderer<WitchFamiliarEntity> renderer) {
-        super(renderer);
-    }
+	public WitchFamiliarEyesLayer(GeoEntityRenderer<WitchFamiliarEntity> renderer) {
+		super(renderer);
+	}
 
-    @Override
-    public void render(MatrixStack poseStack, WitchFamiliarEntity animatable,
-                       BakedGeoModel bakedModel, RenderLayer renderType,
-                       VertexConsumerProvider bufferSource, VertexConsumer buffer,
-                       float partialTick, int packedLight, int packedOverlay) {
-        // 使用蜘蛛眼睛的渲染类型（无光照 + 加法透明）
-        RenderLayer eyesRenderType = RenderLayer.getEyes(EYES_TEXTURE);
-        VertexConsumer eyesBuffer = bufferSource.getBuffer(eyesRenderType);
+	@Override
+	public void render(MatrixStack poseStack, WitchFamiliarEntity animatable,
+	                   BakedGeoModel bakedModel, RenderLayer renderType,
+	                   VertexConsumerProvider bufferSource, VertexConsumer buffer,
+	                   float partialTick, int packedLight, int packedOverlay) {
+		// 使用蜘蛛眼睛的渲染类型（无光照 + 加法透明）
+		RenderLayer eyesRenderType = RenderLayer.getEyes(EYES_TEXTURE);
+		VertexConsumer eyesBuffer = bufferSource.getBuffer(eyesRenderType);
 
-        getRenderer().reRender(
-                bakedModel,
-                poseStack,
-                bufferSource,
-                animatable,
-                eyesRenderType,
-                eyesBuffer,
-                partialTick,
-                15728640, // 全亮度（LightmapTextureManager.MAX_LIGHT_COORDINATE）
-                LivingEntityRenderer.getOverlay(animatable, 0),
-                1.0f, 1.0f, 1.0f, 1.0f
-        );
-    }
+		getRenderer().reRender(
+				bakedModel,
+				poseStack,
+				bufferSource,
+				animatable,
+				eyesRenderType,
+				eyesBuffer,
+				partialTick,
+				15728640, // 全亮度（LightmapTextureManager.MAX_LIGHT_COORDINATE）
+				LivingEntityRenderer.getOverlay(animatable, 0),
+				1.0f, 1.0f, 1.0f, 1.0f
+		);
+	}
 }

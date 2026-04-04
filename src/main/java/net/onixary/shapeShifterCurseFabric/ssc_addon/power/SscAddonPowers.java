@@ -4,11 +4,11 @@ import io.github.apace100.apoli.registry.ApoliRegistries;
 import net.minecraft.registry.Registry;
 
 public class SscAddonPowers {
-    public static void register() {
-         Registry.register(ApoliRegistries.POWER_FACTORY, AdaptiveSwimmingPower.createFactory().getSerializerId(), AdaptiveSwimmingPower.createFactory());
-         Registry.register(ApoliRegistries.POWER_FACTORY, TrueInvisibilityAbilityPower.createFactory().getSerializerId(), TrueInvisibilityAbilityPower.createFactory());
-         Registry.register(ApoliRegistries.POWER_FACTORY, TrueInvisibilityDashAbilityPower.createFactory().getSerializerId(), TrueInvisibilityDashAbilityPower.createFactory());
-         Registry.register(ApoliRegistries.POWER_FACTORY, SnowFoxSpFormSpeedPower.createFactory().getSerializerId(), SnowFoxSpFormSpeedPower.createFactory());
-         Registry.register(ApoliRegistries.POWER_FACTORY, EffectEfficiencyReductionPower.createFactory().getSerializerId(), EffectEfficiencyReductionPower.createFactory());
-    }
+	public static void register() {
+		Registry.register(ApoliRegistries.POWER_FACTORY, AdaptiveSwimmingPower.createFactory().getSerializerId(), AdaptiveSwimmingPower.createFactory());
+		Registry.register(ApoliRegistries.POWER_FACTORY, TrueInvisibilityAbilityPower.createFactory().getSerializerId(), TrueInvisibilityAbilityPower.createFactory());
+		Registry.register(ApoliRegistries.POWER_FACTORY, TrueInvisibilityDashAbilityPower.createFactory().getSerializerId(), TrueInvisibilityDashAbilityPower.createFactory());
+		Registry.register(ApoliRegistries.POWER_FACTORY, SnowFoxSpFormSpeedPower.createFactory().getSerializerId(), SnowFoxSpFormSpeedPower.createFactory());
+		Registry.register(ApoliRegistries.POWER_FACTORY, EffectEfficiencyReductionPower.createFactory().getSerializerId(), EffectEfficiencyReductionPower.createFactory());
+	}
 }

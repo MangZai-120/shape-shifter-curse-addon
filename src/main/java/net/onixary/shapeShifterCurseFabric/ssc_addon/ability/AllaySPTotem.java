@@ -26,275 +26,276 @@ import java.util.Set;
 
 public class AllaySPTotem {
 
-    private AllaySPTotem() {
-        // Utility class
-    }
+	private static final String ACTIVE_TAG = "ssc_totem_active";
+	private static final double RANGE = 20.0;
+	// Track players who currently have active totems to avoid scanning all players
+	private static final Set<ServerPlayerEntity> playersWithActiveTotems = new HashSet<>();
+	// Track last check time to reduce frequency of checks
+	private static long lastCheckTick = 0;
 
-    private static final String ACTIVE_TAG = "ssc_totem_active";
-    private static final double RANGE = 20.0;
-    // Track players who currently have active totems to avoid scanning all players
-    private static final Set<ServerPlayerEntity> playersWithActiveTotems = new HashSet<>();
-    // Track last check time to reduce frequency of checks
-    private static long lastCheckTick = 0;
+	private AllaySPTotem() {
+		// Utility class
+	}
 
-    public static void init() {
-        UseItemCallback.EVENT.register(AllaySPTotem::onUseItem);
-        // Register to server tick event but only check players with active totems
-        ServerTickEvents.END_SERVER_TICK.register(AllaySPTotem::onServerTick);
-    }
-    
-    private static void onServerTick(MinecraftServer server) {
-        // Check every 40 ticks (2 seconds) to balance responsiveness with performance
-        long currentTick = server.getOverworld().getTime();
-        if (currentTick % 40 != 0) {
-            return;
-        }
-        
-        // Only check players who have active totems, not all players
-        for (ServerPlayerEntity player : playersWithActiveTotems) {
-            // Double-check they still have an active totem (might have been removed via other means)
-            boolean stillHasActiveTotem = false;
-            
-            // Check main inventory
-            for (ItemStack stack : player.getInventory().main) {
-                if (isActiveTotem(stack)) {
-                    stillHasActiveTotem = true;
-                    break;
-                }
-            }
-            
-            // Check offhand if not found in main inventory
-            if (!stillHasActiveTotem) {
-                for (ItemStack stack : player.getInventory().offHand) {
-                    if (isActiveTotem(stack)) {
-                        stillHasActiveTotem = true;
-                        break;
-                    }
-                }
-            }
-            
-            // If they no longer have an active totem, remove from tracking set
-            if (!stillHasActiveTotem) {
-                playersWithActiveTotems.remove(player);
-                continue;
-            }
-            
-            // If player is NOT SP Allay, deactivate their totems
-            if (!isSpAllay(player)) {
-                deactivateAllTotems(player);
-                playersWithActiveTotems.remove(player);
-            }
-        }
-    }
+	public static void init() {
+		UseItemCallback.EVENT.register(AllaySPTotem::onUseItem);
+		// Register to server tick event but only check players with active totems
+		ServerTickEvents.END_SERVER_TICK.register(AllaySPTotem::onServerTick);
+	}
 
-    private static void deactivateAllTotems(ServerPlayerEntity player) {
-        // Check main inventory and offhand
-        boolean deactivatedAny = false;
-        
-        // Check main inventory
-        for (ItemStack stack : player.getInventory().main) {
-            if (isActiveTotem(stack)) {
-                deactivateTotem(stack);
-                deactivatedAny = true;
-            }
-        }
-        
-        // Check offhand
-        for (ItemStack stack : player.getInventory().offHand) {
-            if (isActiveTotem(stack)) {
-                deactivateTotem(stack);
-                deactivatedAny = true;
-            }
-        }
-        
-        if (deactivatedAny) {
-            player.sendMessage(Text.translatable("message.ssc_addon.totem.deactivated"), true);
-            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 0.5f);
-        }
-    }
+	private static void onServerTick(MinecraftServer server) {
+		// Check every 40 ticks (2 seconds) to balance responsiveness with performance
+		long currentTick = server.getOverworld().getTime();
+		if (currentTick % 40 != 0) {
+			return;
+		}
 
-    private static void deactivateTotem(ItemStack stack) {
-        NbtCompound nbt = stack.getOrCreateNbt();
-        nbt.remove(ACTIVE_TAG);
-        if (nbt.contains("Enchantments")) {
-             nbt.remove("Enchantments");
-        }
-        if (nbt.contains("HideFlags")) {
-             nbt.remove("HideFlags");
-        }
-    }
+		// Only check players who have active totems, not all players
+		for (ServerPlayerEntity player : playersWithActiveTotems) {
+			// Double-check they still have an active totem (might have been removed via other means)
+			boolean stillHasActiveTotem = false;
 
-    private static TypedActionResult<ItemStack> onUseItem(PlayerEntity player, net.minecraft.world.World world, Hand hand) {
-        if (world.isClient) return TypedActionResult.pass(player.getStackInHand(hand));
+			// Check main inventory
+			for (ItemStack stack : player.getInventory().main) {
+				if (isActiveTotem(stack)) {
+					stillHasActiveTotem = true;
+					break;
+				}
+			}
 
-        ItemStack stack = player.getStackInHand(hand);
-        
-        // Only function for Totem of Undying
-        if (!stack.isOf(Items.TOTEM_OF_UNDYING)) {
-            return TypedActionResult.pass(stack);
-        }
+			// Check offhand if not found in main inventory
+			if (!stillHasActiveTotem) {
+				for (ItemStack stack : player.getInventory().offHand) {
+					if (isActiveTotem(stack)) {
+						stillHasActiveTotem = true;
+						break;
+					}
+				}
+			}
 
-        // Must be SP Allay locally checked
-        if (!isSpAllay(player)) {
-            return TypedActionResult.pass(stack);
-        }
+			// If they no longer have an active totem, remove from tracking set
+			if (!stillHasActiveTotem) {
+				playersWithActiveTotems.remove(player);
+				continue;
+			}
 
-        // Toggle Active State
-        NbtCompound nbt = stack.getOrCreateNbt();
-        boolean isActive = nbt.getBoolean(ACTIVE_TAG);
-        
-        if (isActive) {
-            // Deactivate
-            nbt.remove(ACTIVE_TAG);
-            
-            // Remove glint
-            if (nbt.contains("Enchantments")) {
-                 nbt.remove("Enchantments");
-            }
-            if (nbt.contains("HideFlags")) {
-                 nbt.remove("HideFlags");
-            }
-            
-            player.sendMessage(Text.translatable("message.ssc_addon.totem.deactivated"), true);
-            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 0.5f);
-            
-            if (player instanceof ServerPlayerEntity serverPlayer) {
-                updateActiveTotemTracking(serverPlayer, false);
-            }
-        } else {
-            // Activate
-            nbt.putBoolean(ACTIVE_TAG, true);
-            
-            // Add Glint
-            if (!nbt.contains("Enchantments")) {
-                  NbtList enchantments = new NbtList();
-                  NbtCompound unbreaking = new NbtCompound();
-                  unbreaking.putString("id", "minecraft:unbreaking");
-                  unbreaking.putShort("lvl", (short)1);
-                  enchantments.add(unbreaking);
-                  nbt.put("Enchantments", enchantments);
-                  nbt.putInt("HideFlags", 1); // Hide enchantments
-            }
-            
-            player.sendMessage(Text.translatable("message.ssc_addon.totem.activated"), true);
-            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 2.0f);
-            
-            if (player instanceof ServerPlayerEntity serverPlayer) {
-                updateActiveTotemTracking(serverPlayer, true);
-            }
-        }
-        
-        return TypedActionResult.success(stack);
-    }
-
-    /**
-     * Called by Mixin when an entity would die or use a totem.
-     * @param entity The entity attempting to use a totem.
-     * @return true if an Allay SP totem was used and prevented death.
-     */
-    public static boolean tryUseAllayTotem(LivingEntity entity) {
-        if (entity.getWorld().isClient) return false;
-
-        // Get nearby players within range
-        Box box = entity.getBoundingBox().expand(RANGE);
-        List<PlayerEntity> nearbyPlayers = entity.getWorld().getEntitiesByClass(PlayerEntity.class, box, p -> p instanceof ServerPlayerEntity);
-
-        for (PlayerEntity player : nearbyPlayers) {
-            if (!(player instanceof ServerPlayerEntity serverPlayer)) continue;
-
-            // a. Check if they are SP Allay
-            if (!isSpAllay(serverPlayer)) continue;
-
-            // b. Check whitelist
-            // If entity == serverPlayer (self), we SKIP waitlist check (always allowed to save self with carried totem)
-            // But wait, if they have totem in hand, vanilla logic handles it. If in inventory, we handle it via Mixed logic.
-            // If entity != serverPlayer (ally), check whitelist.
-            if (entity != serverPlayer) {
-                java.util.Set<String> tags = serverPlayer.getCommandTags();
-                boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
-                
-                if (whitelistEmpty) {
-                    // If whitelist is empty, ONLY other PLAYERS can benefit
-                    if (!(entity instanceof PlayerEntity)) continue;
-                } else {
-                    // If whitelist is not empty, only whitelisted entities benefit
-                    if (!AllaySPGroupHeal.shouldHeal(entity, tags)) continue;
-                }
-            }
-            
-            // c. Check inventory for Active Totem
-            ItemStack activeTotem = findActiveTotem(serverPlayer);
-            
-            if (!activeTotem.isEmpty()) {
-                // d. Consume totem
-                activeTotem.decrement(1);
-                
-                // e. Trigger Effect on DYING ENTITY
-                entity.setHealth(1.0F);
-                entity.clearStatusEffects();
-                entity.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, 100, 1)); // 5 seconds
-                entity.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 900, 1)); // 45 seconds
-                entity.addStatusEffect(new StatusEffectInstance(StatusEffects.FIRE_RESISTANCE, 800, 0)); // 40 seconds
-                
-                // Visuals: Totem of Undying particle/sound
-                entity.getWorld().sendEntityStatus(entity, (byte)35);
-                
-                // Notify SP Allay
-                serverPlayer.sendMessage(Text.translatable("message.ssc_addon.totem.triggered", entity.getDisplayName()), true);
-                
-                return true; // Prevent death
-            }
-        }
-
-        return false; // Did not prevent death
-    }
-
-    private static ItemStack findActiveTotem(ServerPlayerEntity player) {
-        // Check hands
-        if (isActiveTotem(player.getMainHandStack())) return player.getMainHandStack();
-        if (isActiveTotem(player.getOffHandStack())) return player.getOffHandStack();
-        
-        // Check inventory main
-        for (ItemStack stack : player.getInventory().main) {
-            if (isActiveTotem(stack)) return stack;
-        }
-        
-        return ItemStack.EMPTY;
-    }
-
-    private static boolean isActiveTotem(ItemStack stack) {
-        // Check if item is Totem and has active tag
-        if (stack.getNbt() != null) {
-            return !stack.isEmpty() && stack.isOf(Items.TOTEM_OF_UNDYING) && stack.hasNbt() && stack.getNbt().getBoolean(ACTIVE_TAG);
-        }
-        return false;
-    }
-    
-private static boolean isSpAllay(PlayerEntity player) {
-	if (player instanceof ServerPlayerEntity serverPlayer) {
-		try {
-			return PowerHolderComponent.KEY.get(serverPlayer).getPowers().stream()
-				.anyMatch(p -> p.getType().getIdentifier().getNamespace().equals("my_addon") && p.getType().getIdentifier().getPath().contains("form_allay_sp"));
-		} catch (Exception e) {
-			return false;
+			// If player is NOT SP Allay, deactivate their totems
+			if (!isSpAllay(player)) {
+				deactivateAllTotems(player);
+				playersWithActiveTotems.remove(player);
+			}
 		}
 	}
-	return false;
-}
 
-private static void updateActiveTotemTracking(ServerPlayerEntity player, boolean hasActiveTotem) {
-	if (hasActiveTotem) {
-		playersWithActiveTotems.add(player);
-	} else {
+	private static void deactivateAllTotems(ServerPlayerEntity player) {
+		// Check main inventory and offhand
+		boolean deactivatedAny = false;
+
+		// Check main inventory
+		for (ItemStack stack : player.getInventory().main) {
+			if (isActiveTotem(stack)) {
+				deactivateTotem(stack);
+				deactivatedAny = true;
+			}
+		}
+
+		// Check offhand
+		for (ItemStack stack : player.getInventory().offHand) {
+			if (isActiveTotem(stack)) {
+				deactivateTotem(stack);
+				deactivatedAny = true;
+			}
+		}
+
+		if (deactivatedAny) {
+			player.sendMessage(Text.translatable("message.ssc_addon.totem.deactivated"), true);
+			player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 0.5f);
+		}
+	}
+
+	private static void deactivateTotem(ItemStack stack) {
+		NbtCompound nbt = stack.getOrCreateNbt();
+		nbt.remove(ACTIVE_TAG);
+		if (nbt.contains("Enchantments")) {
+			nbt.remove("Enchantments");
+		}
+		if (nbt.contains("HideFlags")) {
+			nbt.remove("HideFlags");
+		}
+	}
+
+	private static TypedActionResult<ItemStack> onUseItem(PlayerEntity player, net.minecraft.world.World world, Hand hand) {
+		if (world.isClient) return TypedActionResult.pass(player.getStackInHand(hand));
+
+		ItemStack stack = player.getStackInHand(hand);
+
+		// Only function for Totem of Undying
+		if (!stack.isOf(Items.TOTEM_OF_UNDYING)) {
+			return TypedActionResult.pass(stack);
+		}
+
+		// Must be SP Allay locally checked
+		if (!isSpAllay(player)) {
+			return TypedActionResult.pass(stack);
+		}
+
+		// Toggle Active State
+		NbtCompound nbt = stack.getOrCreateNbt();
+		boolean isActive = nbt.getBoolean(ACTIVE_TAG);
+
+		if (isActive) {
+			// Deactivate
+			nbt.remove(ACTIVE_TAG);
+
+			// Remove glint
+			if (nbt.contains("Enchantments")) {
+				nbt.remove("Enchantments");
+			}
+			if (nbt.contains("HideFlags")) {
+				nbt.remove("HideFlags");
+			}
+
+			player.sendMessage(Text.translatable("message.ssc_addon.totem.deactivated"), true);
+			player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 0.5f);
+
+			if (player instanceof ServerPlayerEntity serverPlayer) {
+				updateActiveTotemTracking(serverPlayer, false);
+			}
+		} else {
+			// Activate
+			nbt.putBoolean(ACTIVE_TAG, true);
+
+			// Add Glint
+			if (!nbt.contains("Enchantments")) {
+				NbtList enchantments = new NbtList();
+				NbtCompound unbreaking = new NbtCompound();
+				unbreaking.putString("id", "minecraft:unbreaking");
+				unbreaking.putShort("lvl", (short) 1);
+				enchantments.add(unbreaking);
+				nbt.put("Enchantments", enchantments);
+				nbt.putInt("HideFlags", 1); // Hide enchantments
+			}
+
+			player.sendMessage(Text.translatable("message.ssc_addon.totem.activated"), true);
+			player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 2.0f);
+
+			if (player instanceof ServerPlayerEntity serverPlayer) {
+				updateActiveTotemTracking(serverPlayer, true);
+			}
+		}
+
+		return TypedActionResult.success(stack);
+	}
+
+	/**
+	 * Called by Mixin when an entity would die or use a totem.
+	 *
+	 * @param entity The entity attempting to use a totem.
+	 * @return true if an Allay SP totem was used and prevented death.
+	 */
+	public static boolean tryUseAllayTotem(LivingEntity entity) {
+		if (entity.getWorld().isClient) return false;
+
+		// Get nearby players within range
+		Box box = entity.getBoundingBox().expand(RANGE);
+		List<PlayerEntity> nearbyPlayers = entity.getWorld().getEntitiesByClass(PlayerEntity.class, box, p -> p instanceof ServerPlayerEntity);
+
+		for (PlayerEntity player : nearbyPlayers) {
+			if (!(player instanceof ServerPlayerEntity serverPlayer)) continue;
+
+			// a. Check if they are SP Allay
+			if (!isSpAllay(serverPlayer)) continue;
+
+			// b. Check whitelist
+			// If entity == serverPlayer (self), we SKIP waitlist check (always allowed to save self with carried totem)
+			// But wait, if they have totem in hand, vanilla logic handles it. If in inventory, we handle it via Mixed logic.
+			// If entity != serverPlayer (ally), check whitelist.
+			if (entity != serverPlayer) {
+				java.util.Set<String> tags = serverPlayer.getCommandTags();
+				boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
+
+				if (whitelistEmpty) {
+					// If whitelist is empty, ONLY other PLAYERS can benefit
+					if (!(entity instanceof PlayerEntity)) continue;
+				} else {
+					// If whitelist is not empty, only whitelisted entities benefit
+					if (!AllaySPGroupHeal.shouldHeal(entity, tags)) continue;
+				}
+			}
+
+			// c. Check inventory for Active Totem
+			ItemStack activeTotem = findActiveTotem(serverPlayer);
+
+			if (!activeTotem.isEmpty()) {
+				// d. Consume totem
+				activeTotem.decrement(1);
+
+				// e. Trigger Effect on DYING ENTITY
+				entity.setHealth(1.0F);
+				entity.clearStatusEffects();
+				entity.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, 100, 1)); // 5 seconds
+				entity.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 900, 1)); // 45 seconds
+				entity.addStatusEffect(new StatusEffectInstance(StatusEffects.FIRE_RESISTANCE, 800, 0)); // 40 seconds
+
+				// Visuals: Totem of Undying particle/sound
+				entity.getWorld().sendEntityStatus(entity, (byte) 35);
+
+				// Notify SP Allay
+				serverPlayer.sendMessage(Text.translatable("message.ssc_addon.totem.triggered", entity.getDisplayName()), true);
+
+				return true; // Prevent death
+			}
+		}
+
+		return false; // Did not prevent death
+	}
+
+	private static ItemStack findActiveTotem(ServerPlayerEntity player) {
+		// Check hands
+		if (isActiveTotem(player.getMainHandStack())) return player.getMainHandStack();
+		if (isActiveTotem(player.getOffHandStack())) return player.getOffHandStack();
+
+		// Check inventory main
+		for (ItemStack stack : player.getInventory().main) {
+			if (isActiveTotem(stack)) return stack;
+		}
+
+		return ItemStack.EMPTY;
+	}
+
+	private static boolean isActiveTotem(ItemStack stack) {
+		// Check if item is Totem and has active tag
+		if (stack.getNbt() != null) {
+			return !stack.isEmpty() && stack.isOf(Items.TOTEM_OF_UNDYING) && stack.hasNbt() && stack.getNbt().getBoolean(ACTIVE_TAG);
+		}
+		return false;
+	}
+
+	private static boolean isSpAllay(PlayerEntity player) {
+		if (player instanceof ServerPlayerEntity serverPlayer) {
+			try {
+				return PowerHolderComponent.KEY.get(serverPlayer).getPowers().stream()
+						.anyMatch(p -> p.getType().getIdentifier().getNamespace().equals("my_addon") && p.getType().getIdentifier().getPath().contains("form_allay_sp"));
+			} catch (Exception e) {
+				return false;
+			}
+		}
+		return false;
+	}
+
+	private static void updateActiveTotemTracking(ServerPlayerEntity player, boolean hasActiveTotem) {
+		if (hasActiveTotem) {
+			playersWithActiveTotems.add(player);
+		} else {
+			playersWithActiveTotems.remove(player);
+		}
+	}
+
+	public static void clearPlayer(ServerPlayerEntity player) {
 		playersWithActiveTotems.remove(player);
 	}
-}
 
-public static void clearPlayer(ServerPlayerEntity player) {
-	playersWithActiveTotems.remove(player);
-}
-
-public static void clearAll() {
-	playersWithActiveTotems.clear();
-}
+	public static void clearAll() {
+		playersWithActiveTotems.clear();
+	}
 }

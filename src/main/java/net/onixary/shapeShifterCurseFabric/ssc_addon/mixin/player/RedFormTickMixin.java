@@ -30,175 +30,175 @@ import java.util.Set;
 @Mixin(ServerPlayerEntity.class)
 public class RedFormTickMixin {
 
-    // 捕获玩家客户端语言设置，存入SscAddon.PLAYER_LANGUAGES
-    @Inject(method = "setClientSettings", at = @At("HEAD"))
-    private void onSetClientSettings(ClientSettingsC2SPacket packet, CallbackInfo ci) {
-        ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
-        SscAddon.PLAYER_LANGUAGES.put(player.getUuid(), packet.language());
-    }
+	// 捕获玩家客户端语言设置，存入SscAddon.PLAYER_LANGUAGES
+	@Inject(method = "setClientSettings", at = @At("HEAD"))
+	private void onSetClientSettings(ClientSettingsC2SPacket packet, CallbackInfo ci) {
+		ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
+		SscAddon.PLAYER_LANGUAGES.put(player.getUuid(), packet.language());
+	}
 
-    @Inject(method = "tick", at = @At("HEAD"))
-    private void onTick(CallbackInfo ci) {
-        ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
-        
-        // Performance check: Only run logic every 20 ticks (1 second)
-        if (player.age % 20 != 0) return;
+	@Inject(method = "tick", at = @At("HEAD"))
+	private void onTick(CallbackInfo ci) {
+		ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
 
-        boolean isCursedMoon = CursedMoon.isCursedMoon(player.getWorld());
-        
-        // Reset the attempt tag if it is not Cursed Moon
-        if (!isCursedMoon && player.getCommandTags().contains("ssc_addon_red_attempted")) {
-            player.getCommandTags().remove("ssc_addon_red_attempted");
-        }
+		// Performance check: Only run logic every 20 ticks (1 second)
+		if (player.age % 20 != 0) return;
 
-        // Potion Bag Logic
-        PlayerFormBase currentForm = FormAbilityManager.getForm(player);
-        boolean isRedForm = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_red"));
+		boolean isCursedMoon = CursedMoon.isCursedMoon(player.getWorld());
 
-        // SP Form + Cursed Moon Transformation Logic
-        if (currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_sp")) && isCursedMoon && !player.getCommandTags().contains("ssc_addon_red_attempted")) {
-            player.addCommandTag("ssc_addon_red_attempted");
-            // 5% Chance to transform to Red
-            if (player.getRandom().nextFloat() < 0.05f) {
-                Identifier redFormId = new Identifier("my_addon", "familiar_fox_red");
-                PlayerFormBase redForm = RegPlayerForms.getPlayerForm(redFormId);
-                if (redForm != null) {
-                    TransformManager.handleDirectTransform(player, redForm, false);
-                    
-                    // 10 Minutes = 12000 ticks
-                    long expireTime = player.getWorld().getTime() + 12000; 
-                    player.addCommandTag("ssc_addon_red_expire:" + expireTime);
-                    
-                    player.sendMessage(Text.translatable("message.ssc_addon.red_transformation_special").formatted(Formatting.GREEN), false);
-                    player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 1.0F, 1.0F);
-                    return; // Exit after successful transformation
-                }
-            }
-        }
+		// Reset the attempt tag if it is not Cursed Moon
+		if (!isCursedMoon && player.getCommandTags().contains("ssc_addon_red_attempted")) {
+			player.getCommandTags().remove("ssc_addon_red_attempted");
+		}
 
-        // === SP Allay Form: Auto-grant heal wand (slot 0) and jukebox (slot 1) ===
-        boolean isAllaySp = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "allay_sp"));
-        if (isAllaySp) {
-            // Slot 0: Allay Heal Wand
-            ItemStack stackInSlot0 = player.getInventory().getStack(0);
-            if (!stackInSlot0.isOf(SscAddon.ALLAY_HEAL_WAND)) {
-                if (!stackInSlot0.isEmpty()) {
-                    if (!player.getInventory().insertStack(stackInSlot0.copy())) {
-                        player.dropItem(stackInSlot0, false, true);
-                    }
-                    player.getInventory().setStack(0, ItemStack.EMPTY);
-                }
-                player.getInventory().setStack(0, new ItemStack(SscAddon.ALLAY_HEAL_WAND));
-            }
-            // Slot 1: Allay Jukebox
-            ItemStack stackInSlot1 = player.getInventory().getStack(1);
-            if (!stackInSlot1.isOf(SscAddon.ALLAY_JUKEBOX)) {
-                if (!stackInSlot1.isEmpty()) {
-                    if (!player.getInventory().insertStack(stackInSlot1.copy())) {
-                        player.dropItem(stackInSlot1, false, true);
-                    }
-                    player.getInventory().setStack(1, ItemStack.EMPTY);
-                }
-                player.getInventory().setStack(1, new ItemStack(SscAddon.ALLAY_JUKEBOX));
-            }
-        } else {
-            // Not Allay SP: Remove any allay items found
-            for (int i = 0; i < player.getInventory().size(); ++i) {
-                ItemStack stack = player.getInventory().getStack(i);
-                if (stack.isOf(SscAddon.ALLAY_HEAL_WAND)) {
-                    player.getInventory().setStack(i, ItemStack.EMPTY);
-                } else if (stack.isOf(SscAddon.ALLAY_JUKEBOX)) {
-                    player.getInventory().setStack(i, ItemStack.EMPTY);
-                }
-            }
-        }
+		// Potion Bag Logic
+		PlayerFormBase currentForm = FormAbilityManager.getForm(player);
+		boolean isRedForm = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_red"));
 
-        if (isRedForm) {
-            ItemStack stackInSlot8 = player.getInventory().getStack(8);
-            if (!stackInSlot8.isOf(SscAddon.POTION_BAG)) {
-                // If the player doesn't have the bag in slot 8
-                if (!stackInSlot8.isEmpty()) {
-                    // Try to move existing item to main inventory
-                    if (!player.getInventory().insertStack(stackInSlot8)) {
-                        // Inventory full, drop it
-                        player.dropItem(stackInSlot8, false, true);
-                    }
-                    player.getInventory().setStack(8, ItemStack.EMPTY);
-                }
-                // Give Potion Bag
-                player.getInventory().setStack(8, new ItemStack(SscAddon.POTION_BAG));
-            }
-        } else {
-             // Not Red Form: Remove any Potion Bag found
-             for (int i = 0; i < player.getInventory().size(); ++i) {
-                 ItemStack stack = player.getInventory().getStack(i);
-                 if (stack.isOf(SscAddon.POTION_BAG)) {
-                     // Found a bag, drop its contents
-                     if (stack.getNbt() != null && stack.hasNbt() && stack.getNbt().contains("Items", 9)) {
-                         NbtList list = stack.getNbt().getList("Items", 10);
-                         for (int j = 0; j < list.size(); ++j) {
-                             NbtCompound itemTag = list.getCompound(j);
-                             ItemStack contentStack = ItemStack.fromNbt(itemTag);
-                             if (!contentStack.isEmpty()) {
-                                 player.dropItem(contentStack, false, true);
-                             }
-                         }
-                     }
-                     // Remove bag itself
-                     player.getInventory().setStack(i, ItemStack.EMPTY);
-                 }
-             }
-        }
+		// SP Form + Cursed Moon Transformation Logic
+		if (currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_sp")) && isCursedMoon && !player.getCommandTags().contains("ssc_addon_red_attempted")) {
+			player.addCommandTag("ssc_addon_red_attempted");
+			// 5% Chance to transform to Red
+			if (player.getRandom().nextFloat() < 0.05f) {
+				Identifier redFormId = new Identifier("my_addon", "familiar_fox_red");
+				PlayerFormBase redForm = RegPlayerForms.getPlayerForm(redFormId);
+				if (redForm != null) {
+					TransformManager.handleDirectTransform(player, redForm, false);
 
-        Set<String> tagsToRemove = new HashSet<>();
-        boolean shouldRevert = false;
-        long currentTime = player.getWorld().getTime();
+					// 10 Minutes = 12000 ticks
+					long expireTime = player.getWorld().getTime() + 12000;
+					player.addCommandTag("ssc_addon_red_expire:" + expireTime);
 
-        for (String tag : player.getCommandTags()) {
-            if (tag.startsWith("ssc_addon_red_expire:")) {
-                try {
-                    long expireTime = Long.parseLong(tag.split(":")[1]);
-                    long remainingTicks = expireTime - currentTime;
+					player.sendMessage(Text.translatable("message.ssc_addon.red_transformation_special").formatted(Formatting.GREEN), false);
+					player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 1.0F, 1.0F);
+					return; // Exit after successful transformation
+				}
+			}
+		}
 
-                    // Remaining time logic: simply check for expiration
-                    if (currentTime >= expireTime) {
-                        shouldRevert = true;
-                        tagsToRemove.add(tag);
-                    }
-                } catch (NumberFormatException ignored) {
-                    tagsToRemove.add(tag); // Invalid tag, remove it
-                }
-            }
-        }
+		// === SP Allay Form: Auto-grant heal wand (slot 0) and jukebox (slot 1) ===
+		boolean isAllaySp = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "allay_sp"));
+		if (isAllaySp) {
+			// Slot 0: Allay Heal Wand
+			ItemStack stackInSlot0 = player.getInventory().getStack(0);
+			if (!stackInSlot0.isOf(SscAddon.ALLAY_HEAL_WAND)) {
+				if (!stackInSlot0.isEmpty()) {
+					if (!player.getInventory().insertStack(stackInSlot0.copy())) {
+						player.dropItem(stackInSlot0, false, true);
+					}
+					player.getInventory().setStack(0, ItemStack.EMPTY);
+				}
+				player.getInventory().setStack(0, new ItemStack(SscAddon.ALLAY_HEAL_WAND));
+			}
+			// Slot 1: Allay Jukebox
+			ItemStack stackInSlot1 = player.getInventory().getStack(1);
+			if (!stackInSlot1.isOf(SscAddon.ALLAY_JUKEBOX)) {
+				if (!stackInSlot1.isEmpty()) {
+					if (!player.getInventory().insertStack(stackInSlot1.copy())) {
+						player.dropItem(stackInSlot1, false, true);
+					}
+					player.getInventory().setStack(1, ItemStack.EMPTY);
+				}
+				player.getInventory().setStack(1, new ItemStack(SscAddon.ALLAY_JUKEBOX));
+			}
+		} else {
+			// Not Allay SP: Remove any allay items found
+			for (int i = 0; i < player.getInventory().size(); ++i) {
+				ItemStack stack = player.getInventory().getStack(i);
+				if (stack.isOf(SscAddon.ALLAY_HEAL_WAND)) {
+					player.getInventory().setStack(i, ItemStack.EMPTY);
+				} else if (stack.isOf(SscAddon.ALLAY_JUKEBOX)) {
+					player.getInventory().setStack(i, ItemStack.EMPTY);
+				}
+			}
+		}
 
-        if (!tagsToRemove.isEmpty()) {
-            for (String tag : tagsToRemove) {
-                player.getCommandTags().remove(tag);
-            }
-        }
+		if (isRedForm) {
+			ItemStack stackInSlot8 = player.getInventory().getStack(8);
+			if (!stackInSlot8.isOf(SscAddon.POTION_BAG)) {
+				// If the player doesn't have the bag in slot 8
+				if (!stackInSlot8.isEmpty()) {
+					// Try to move existing item to main inventory
+					if (!player.getInventory().insertStack(stackInSlot8)) {
+						// Inventory full, drop it
+						player.dropItem(stackInSlot8, false, true);
+					}
+					player.getInventory().setStack(8, ItemStack.EMPTY);
+				}
+				// Give Potion Bag
+				player.getInventory().setStack(8, new ItemStack(SscAddon.POTION_BAG));
+			}
+		} else {
+			// Not Red Form: Remove any Potion Bag found
+			for (int i = 0; i < player.getInventory().size(); ++i) {
+				ItemStack stack = player.getInventory().getStack(i);
+				if (stack.isOf(SscAddon.POTION_BAG)) {
+					// Found a bag, drop its contents
+					if (stack.getNbt() != null && stack.hasNbt() && stack.getNbt().contains("Items", 9)) {
+						NbtList list = stack.getNbt().getList("Items", 10);
+						for (int j = 0; j < list.size(); ++j) {
+							NbtCompound itemTag = list.getCompound(j);
+							ItemStack contentStack = ItemStack.fromNbt(itemTag);
+							if (!contentStack.isEmpty()) {
+								player.dropItem(contentStack, false, true);
+							}
+						}
+					}
+					// Remove bag itself
+					player.getInventory().setStack(i, ItemStack.EMPTY);
+				}
+			}
+		}
 
-        if (shouldRevert) {
-            Identifier spFormId = new Identifier("my_addon", "familiar_fox_sp");
-            PlayerFormBase spForm = RegPlayerForms.getPlayerForm(spFormId);
-            if (spForm != null) {
-                // Use setFormDirectly instead of handleDirectTransform to avoid animation
-                TransformManager.setFormDirectly(player, spForm);
-                
-                // Spawn a large amount of white particles to cover the player
-                if (player.getWorld() instanceof ServerWorld serverWorld) {
-                     // 100 CLOUD particles + 50 POOF particles
-                    net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.CLOUD, player.getX(), player.getY() + 1.0, player.getZ(), 100, 0.5, 1.0, 0.5, 0.1);
-                    net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.POOF, player.getX(), player.getY() + 1.0, player.getZ(), 50, 0.5, 1.0, 0.5, 0.1);
-                }
+		Set<String> tagsToRemove = new HashSet<>();
+		boolean shouldRevert = false;
+		long currentTime = player.getWorld().getTime();
+
+		for (String tag : player.getCommandTags()) {
+			if (tag.startsWith("ssc_addon_red_expire:")) {
+				try {
+					long expireTime = Long.parseLong(tag.split(":")[1]);
+					long remainingTicks = expireTime - currentTime;
+
+					// Remaining time logic: simply check for expiration
+					if (currentTime >= expireTime) {
+						shouldRevert = true;
+						tagsToRemove.add(tag);
+					}
+				} catch (NumberFormatException ignored) {
+					tagsToRemove.add(tag); // Invalid tag, remove it
+				}
+			}
+		}
+
+		if (!tagsToRemove.isEmpty()) {
+			for (String tag : tagsToRemove) {
+				player.getCommandTags().remove(tag);
+			}
+		}
+
+		if (shouldRevert) {
+			Identifier spFormId = new Identifier("my_addon", "familiar_fox_sp");
+			PlayerFormBase spForm = RegPlayerForms.getPlayerForm(spFormId);
+			if (spForm != null) {
+				// Use setFormDirectly instead of handleDirectTransform to avoid animation
+				TransformManager.setFormDirectly(player, spForm);
+
+				// Spawn a large amount of white particles to cover the player
+				if (player.getWorld() instanceof ServerWorld serverWorld) {
+					// 100 CLOUD particles + 50 POOF particles
+					net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.CLOUD, player.getX(), player.getY() + 1.0, player.getZ(), 100, 0.5, 1.0, 0.5, 0.1);
+					net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.POOF, player.getX(), player.getY() + 1.0, player.getZ(), 50, 0.5, 1.0, 0.5, 0.1);
+				}
 
 
-                // Clear the negative effects immediately (just in case they were applied, though we removed that logic)
-                player.removeStatusEffect(StatusEffects.SLOWNESS);
-                player.removeStatusEffect(StatusEffects.JUMP_BOOST);
+				// Clear the negative effects immediately (just in case they were applied, though we removed that logic)
+				player.removeStatusEffect(StatusEffects.SLOWNESS);
+				player.removeStatusEffect(StatusEffects.JUMP_BOOST);
 
-                // Send timeout message
-                player.sendMessage(Text.translatable("message.ssc_addon.red_revert_timeout").formatted(Formatting.GREEN), false);
-            }
-        }
-    }
+				// Send timeout message
+				player.sendMessage(Text.translatable("message.ssc_addon.red_revert_timeout").formatted(Formatting.GREEN), false);
+			}
+		}
+	}
 }

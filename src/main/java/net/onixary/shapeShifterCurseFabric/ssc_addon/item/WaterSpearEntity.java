@@ -28,133 +28,133 @@ import java.util.List;
 
 public class WaterSpearEntity extends TridentEntity {
 
-    private ItemStack waterSpearStack = new ItemStack(SscAddon.WATER_SPEAR);
+	private ItemStack waterSpearStack = new ItemStack(SscAddon.WATER_SPEAR);
 
-    public WaterSpearEntity(EntityType<? extends TridentEntity> entityType, World world) {
-        super(SscAddon.WATER_SPEAR_ENTITY, world);
-    }
+	public WaterSpearEntity(EntityType<? extends TridentEntity> entityType, World world) {
+		super(SscAddon.WATER_SPEAR_ENTITY, world);
+	}
 
-    public WaterSpearEntity(World world, LivingEntity owner, ItemStack stack) {
-        super(SscAddon.WATER_SPEAR_ENTITY, world);
-        this.setOwner(owner);
-        this.setPosition(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
-        this.waterSpearStack = stack.copy();
-    }
+	public WaterSpearEntity(World world, LivingEntity owner, ItemStack stack) {
+		super(SscAddon.WATER_SPEAR_ENTITY, world);
+		this.setOwner(owner);
+		this.setPosition(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
+		this.waterSpearStack = stack.copy();
+	}
 
-    public ItemStack getWeaponStack() {
-        return this.waterSpearStack;
-    }
+	public ItemStack getWeaponStack() {
+		return this.waterSpearStack;
+	}
 
-    @Override
-    public void readCustomDataFromNbt(NbtCompound nbt) {
-        super.readCustomDataFromNbt(nbt);
-        if (nbt.contains("WaterSpear", 10)) {
-            this.waterSpearStack = ItemStack.fromNbt(nbt.getCompound("WaterSpear"));
-        }
-    }
+	@Override
+	public void readCustomDataFromNbt(NbtCompound nbt) {
+		super.readCustomDataFromNbt(nbt);
+		if (nbt.contains("WaterSpear", 10)) {
+			this.waterSpearStack = ItemStack.fromNbt(nbt.getCompound("WaterSpear"));
+		}
+	}
 
-    @Override
-    public void writeCustomDataToNbt(NbtCompound nbt) {
-        super.writeCustomDataToNbt(nbt);
-        nbt.put("WaterSpear", this.waterSpearStack.writeNbt(new NbtCompound()));
-    }
+	@Override
+	public void writeCustomDataToNbt(NbtCompound nbt) {
+		super.writeCustomDataToNbt(nbt);
+		nbt.put("WaterSpear", this.waterSpearStack.writeNbt(new NbtCompound()));
+	}
 
 
-    @Override
-    protected void onEntityHit(EntityHitResult entityHitResult) {
-        Entity entity = entityHitResult.getEntity();
-        World world = this.getWorld();
-        
-        if (!world.isClient && entity instanceof LivingEntity target) {
-            // Direct damage
-            float damage = 8.0f;
-            target.damage(this.getDamageSources().trident(this, this.getOwner()), damage);
-            
-            // Apply slowness
-            target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 100, 1));
-            
-            // Area damage
-            doAreaDamage(target.getPos().add(0, target.getHeight() / 2, 0), target);
-        }
-        
-        // Remove the spear after hitting
-        this.discard();
-    }
+	@Override
+	protected void onEntityHit(EntityHitResult entityHitResult) {
+		Entity entity = entityHitResult.getEntity();
+		World world = this.getWorld();
 
-    @Override
-    protected void onBlockHit(BlockHitResult blockHitResult) {
-        World world = this.getWorld();
-        
-        if (!world.isClient) {
-            doAreaDamage(this.getPos(), null);
-        }
-        
-        // Remove the spear after hitting block
-        this.discard();
-    }
+		if (!world.isClient && entity instanceof LivingEntity target) {
+			// Direct damage
+			float damage = 8.0f;
+			target.damage(this.getDamageSources().trident(this, this.getOwner()), damage);
 
-    private void doAreaDamage(Vec3d pos, Entity directTarget) {
-        World world = this.getWorld();
-        double x = pos.x;
-        double y = pos.y;
-        double z = pos.z;
-        
-        // Get entities within 1.5 block radius (3 block diameter)
-        List<Entity> nearbyEntities = world.getOtherEntities(this.getOwner(), new Box(x - 1.5, y - 1.5, z - 1.5, x + 1.5, y + 1.5, z + 1.5));
-        for (Entity nearEntity : nearbyEntities) {
-            if (nearEntity instanceof LivingEntity living && nearEntity != this.getOwner() && nearEntity != directTarget) {
-                living.damage(this.getDamageSources().trident(this, this.getOwner()), 4.0f);
-            }
-        }
-        
-        // Play splash sound and particles
-        world.playSound(null, x, y, z, SoundEvents.ENTITY_GENERIC_SPLASH, SoundCategory.PLAYERS, 1.0F, 0.8F);
-        
-        // Spawn particles on server
-        if (world instanceof net.minecraft.server.world.ServerWorld serverWorld) {
-            net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SPLASH, x, y, z, 30, 1.0, 0.5, 1.0, 0.1);
-            net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.BUBBLE, x, y, z, 20, 1.0, 0.5, 1.0, 0.05);
-        }
-    }
-    
-    @Override
-    public void tick() {
-        super.tick();
-        
-        // Spawn water trail particles
-        World world = this.getWorld();
-        if (world.isClient && !this.inGround) {
-            for (int i = 0; i < 2; i++) {
-                world.addParticle(ParticleTypes.DRIPPING_WATER, true,
-                    this.getX() + (world.random.nextDouble() - 0.5) * 0.3,
-                    this.getY() + (world.random.nextDouble() - 0.5) * 0.3,
-                    this.getZ() + (world.random.nextDouble() - 0.5) * 0.3,
-                    0, 0, 0);
-            }
-        }
-    }
-    
-    @Override
-    protected SoundEvent getHitSound() {
-        return SoundEvents.ENTITY_GENERIC_SPLASH;
-    }
-    
-    @Override
-    public boolean hasNoGravity() {
-        return false;
-    }
+			// Apply slowness
+			target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 100, 1));
 
-    @Override
-    public void onPlayerCollision(PlayerEntity player) {
-        // Allow pickup only if player is SP Axolotl
-        PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
-        PlayerFormBase currentForm = component != null ? component.getCurrentForm() : null;
+			// Area damage
+			doAreaDamage(target.getPos().add(0, target.getHeight() / 2, 0), target);
+		}
 
-        if (currentForm != null && currentForm.FormID != null
-                && currentForm.getPhase() == PlayerFormPhase.PHASE_SP
-                && currentForm.FormID.getPath().contains("axolotl")) {
-            super.onPlayerCollision(player);
-        }
-    }
+		// Remove the spear after hitting
+		this.discard();
+	}
+
+	@Override
+	protected void onBlockHit(BlockHitResult blockHitResult) {
+		World world = this.getWorld();
+
+		if (!world.isClient) {
+			doAreaDamage(this.getPos(), null);
+		}
+
+		// Remove the spear after hitting block
+		this.discard();
+	}
+
+	private void doAreaDamage(Vec3d pos, Entity directTarget) {
+		World world = this.getWorld();
+		double x = pos.x;
+		double y = pos.y;
+		double z = pos.z;
+
+		// Get entities within 1.5 block radius (3 block diameter)
+		List<Entity> nearbyEntities = world.getOtherEntities(this.getOwner(), new Box(x - 1.5, y - 1.5, z - 1.5, x + 1.5, y + 1.5, z + 1.5));
+		for (Entity nearEntity : nearbyEntities) {
+			if (nearEntity instanceof LivingEntity living && nearEntity != this.getOwner() && nearEntity != directTarget) {
+				living.damage(this.getDamageSources().trident(this, this.getOwner()), 4.0f);
+			}
+		}
+
+		// Play splash sound and particles
+		world.playSound(null, x, y, z, SoundEvents.ENTITY_GENERIC_SPLASH, SoundCategory.PLAYERS, 1.0F, 0.8F);
+
+		// Spawn particles on server
+		if (world instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+			net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SPLASH, x, y, z, 30, 1.0, 0.5, 1.0, 0.1);
+			net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.BUBBLE, x, y, z, 20, 1.0, 0.5, 1.0, 0.05);
+		}
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+
+		// Spawn water trail particles
+		World world = this.getWorld();
+		if (world.isClient && !this.inGround) {
+			for (int i = 0; i < 2; i++) {
+				world.addParticle(ParticleTypes.DRIPPING_WATER, true,
+						this.getX() + (world.random.nextDouble() - 0.5) * 0.3,
+						this.getY() + (world.random.nextDouble() - 0.5) * 0.3,
+						this.getZ() + (world.random.nextDouble() - 0.5) * 0.3,
+						0, 0, 0);
+			}
+		}
+	}
+
+	@Override
+	protected SoundEvent getHitSound() {
+		return SoundEvents.ENTITY_GENERIC_SPLASH;
+	}
+
+	@Override
+	public boolean hasNoGravity() {
+		return false;
+	}
+
+	@Override
+	public void onPlayerCollision(PlayerEntity player) {
+		// Allow pickup only if player is SP Axolotl
+		PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
+		PlayerFormBase currentForm = component != null ? component.getCurrentForm() : null;
+
+		if (currentForm != null && currentForm.FormID != null
+				&& currentForm.getPhase() == PlayerFormPhase.PHASE_SP
+				&& currentForm.FormID.getPath().contains("axolotl")) {
+			super.onPlayerCollision(player);
+		}
+	}
 
 }

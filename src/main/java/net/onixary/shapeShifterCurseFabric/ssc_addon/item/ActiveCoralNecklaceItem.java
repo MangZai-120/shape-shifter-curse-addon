@@ -14,12 +14,12 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class ActiveCoralNecklaceItem extends TrinketItem {
-    public ActiveCoralNecklaceItem(Settings settings) {
-        super(settings);
-    }
+	public ActiveCoralNecklaceItem(Settings settings) {
+		super(settings);
+	}
 
-    @Override
-    public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	@Override
+	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
         /*
         // 旧代码
         if (entity instanceof PlayerEntity player) {
@@ -34,14 +34,14 @@ public class ActiveCoralNecklaceItem extends TrinketItem {
         return false;
         */
 
-        // 新代码
-        return FormUtils.isAxolotlSP(entity);
-    }
+		// 新代码
+		return FormUtils.isAxolotlSP(entity);
+	}
 
-    @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        tooltip.add(Text.translatable("item.ssc_addon.active_coral_necklace.desc").formatted(Formatting.BLUE));
-        tooltip.add(Text.translatable("item.ssc_addon.active_coral_necklace.tooltip.exclusive").formatted(Formatting.LIGHT_PURPLE));
-        super.appendTooltip(stack, world, tooltip, context);
-    }
+	@Override
+	public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+		tooltip.add(Text.translatable("item.ssc_addon.active_coral_necklace.desc").formatted(Formatting.BLUE));
+		tooltip.add(Text.translatable("item.ssc_addon.active_coral_necklace.tooltip.exclusive").formatted(Formatting.LIGHT_PURPLE));
+		super.appendTooltip(stack, world, tooltip, context);
+	}
 }

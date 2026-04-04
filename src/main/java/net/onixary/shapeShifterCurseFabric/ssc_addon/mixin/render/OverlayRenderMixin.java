@@ -31,91 +31,91 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(value = LivingEntityRenderer.class, priority = 100000)
 public abstract class OverlayRenderMixin<T extends LivingEntity, M extends EntityModel<T>> {
 
-    @Shadow
-    protected M model;
+	@Shadow
+	protected M model;
 
-    @Shadow
-    public abstract M getModel();
+	@Shadow
+	public abstract M getModel();
 
-    @Shadow
-    protected abstract boolean isVisible(T entity);
+	@Shadow
+	protected abstract boolean isVisible(T entity);
 
-    @Shadow
-    protected abstract float getAnimationCounter(T entity, float tickDelta);
+	@Shadow
+	protected abstract float getAnimationCounter(T entity, float tickDelta);
 
-    @Unique
-    private int ssc_addon$getOverlay(LivingEntity entity, float whiteOverlayProgress) {
-        return OverlayTexture.packUv(
-                OverlayTexture.getU(whiteOverlayProgress),
-                OverlayTexture.getV(entity.hurtTime > 0 || entity.deathTime > 0)
-        );
-    }
+	@Unique
+	private int ssc_addon$getOverlay(LivingEntity entity, float whiteOverlayProgress) {
+		return OverlayTexture.packUv(
+				OverlayTexture.getU(whiteOverlayProgress),
+				OverlayTexture.getV(entity.hurtTime > 0 || entity.deathTime > 0)
+		);
+	}
 
-    @Inject(method = "render(Lnet/minecraft/entity/LivingEntity;FFLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;I)V",
-            at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/client/render/entity/model/EntityModel;render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;IIFFFF)V",
-                    shift = At.Shift.AFTER),
-            require = 0) // require=0: 不强制要求匹配，防止与原版冲突时崩溃
-    private void ssc_addon$renderOverlayTexture(T livingEntity, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int light, CallbackInfo ci) {
-        if (!(livingEntity instanceof AbstractClientPlayerEntity aCPE)) return;
-        if (aCPE.isInvisible() || aCPE.isSpectator()) return;
+	@Inject(method = "render(Lnet/minecraft/entity/LivingEntity;FFLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;I)V",
+			at = @At(value = "INVOKE",
+					target = "Lnet/minecraft/client/render/entity/model/EntityModel;render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;IIFFFF)V",
+					shift = At.Shift.AFTER),
+			require = 0) // require=0: 不强制要求匹配，防止与原版冲突时崩溃
+	private void ssc_addon$renderOverlayTexture(T livingEntity, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int light, CallbackInfo ci) {
+		if (!(livingEntity instanceof AbstractClientPlayerEntity aCPE)) return;
+		if (aCPE.isInvisible() || aCPE.isSpectator()) return;
 
-        // 检查原版的 isInvisible 标志（通过 IPlayerEntityMixins 接口）
-        LivingEntityRenderer<?, ?> self = (LivingEntityRenderer<?, ?>) (Object) this;
-        if (self instanceof IPlayerEntityMixins iPEM && iPEM.originalFur$isPlayerInvisible()) {
-            return;
-        }
+		// 检查原版的 isInvisible 标志（通过 IPlayerEntityMixins 接口）
+		LivingEntityRenderer<?, ?> self = (LivingEntityRenderer<?, ?>) (Object) this;
+		if (self instanceof IPlayerEntityMixins iPEM && iPEM.originalFur$isPlayerInvisible()) {
+			return;
+		}
 
-        IPlayerEntityMixins playerMixins = (IPlayerEntityMixins) aCPE;
-        int overlay = ssc_addon$getOverlay(livingEntity, this.getAnimationCounter(livingEntity, g));
+		IPlayerEntityMixins playerMixins = (IPlayerEntityMixins) aCPE;
+		int overlay = ssc_addon$getOverlay(livingEntity, this.getAnimationCounter(livingEntity, g));
 
-        for (var fur : playerMixins.originalFur$getCurrentFurs()) {
-            if (fur == null) continue;
+		for (var fur : playerMixins.originalFur$getCurrentFurs()) {
+			if (fur == null) continue;
 
-            OriginFurModel m_Model = (OriginFurModel) fur.getGeoModel();
-            var modelAccessor = (ModelRootAccessor) this.getModel();
+			OriginFurModel m_Model = (OriginFurModel) fur.getGeoModel();
+			var modelAccessor = (ModelRootAccessor) this.getModel();
 
-            Identifier overlayTexture = m_Model.getOverlayTexture(modelAccessor.originalFur$isSlim());
-            Identifier emissiveTexture = m_Model.getEmissiveTexture(modelAccessor.originalFur$isSlim());
+			Identifier overlayTexture = m_Model.getOverlayTexture(modelAccessor.originalFur$isSlim());
+			Identifier emissiveTexture = m_Model.getEmissiveTexture(modelAccessor.originalFur$isSlim());
 
-            if (overlayTexture == null && emissiveTexture == null) continue;
+			if (overlayTexture == null && emissiveTexture == null) continue;
 
-            boolean bl = this.isVisible(livingEntity);
-            boolean bl2 = !bl && !livingEntity.isInvisibleTo(MinecraftClient.getInstance().player);
+			boolean bl = this.isVisible(livingEntity);
+			boolean bl2 = !bl && !livingEntity.isInvisibleTo(MinecraftClient.getInstance().player);
 
-            // 渲染 overlay 材质
-            if (overlayTexture != null) {
-                RenderLayer renderLayer;
-                if (OriginalFurClient.isRenderingInWorld && FabricLoader.getInstance().isModLoaded("iris")) {
-                    renderLayer = RenderLayer.getEntityCutoutNoCullZOffset(overlayTexture);
-                } else {
-                    renderLayer = RenderLayer.getEntityCutout(overlayTexture);
-                }
-                this.model.render(matrixStack, vertexConsumerProvider.getBuffer(renderLayer),
-                        light, overlay, 1, 1, 1, bl2 ? 0.15F : 1.0F);
-            }
+			// 渲染 overlay 材质
+			if (overlayTexture != null) {
+				RenderLayer renderLayer;
+				if (OriginalFurClient.isRenderingInWorld && FabricLoader.getInstance().isModLoaded("iris")) {
+					renderLayer = RenderLayer.getEntityCutoutNoCullZOffset(overlayTexture);
+				} else {
+					renderLayer = RenderLayer.getEntityCutout(overlayTexture);
+				}
+				this.model.render(matrixStack, vertexConsumerProvider.getBuffer(renderLayer),
+						light, overlay, 1, 1, 1, bl2 ? 0.15F : 1.0F);
+			}
 
-            // 渲染 emissive (发光) overlay 材质
-            if (emissiveTexture != null) {
-                RenderLayer renderLayer = RenderLayer.getEntityTranslucentEmissive(emissiveTexture);
-                this.model.render(matrixStack, vertexConsumerProvider.getBuffer(renderLayer),
-                        light, overlay, 1, 1, 1, bl2 ? 0.15F : 1.0F);
-            }
+			// 渲染 emissive (发光) overlay 材质
+			if (emissiveTexture != null) {
+				RenderLayer renderLayer = RenderLayer.getEntityTranslucentEmissive(emissiveTexture);
+				this.model.render(matrixStack, vertexConsumerProvider.getBuffer(renderLayer),
+						light, overlay, 1, 1, 1, bl2 ? 0.15F : 1.0F);
+			}
 
-            // 重置 hidden 状态，防止影响后续的 FeatureRenderer
-            var m = (PlayerEntityModel<?>) this.getModel();
-            m.hat.hidden = false;
-            m.head.hidden = false;
-            m.body.hidden = false;
-            m.jacket.hidden = false;
-            m.leftArm.hidden = false;
-            m.leftSleeve.hidden = false;
-            m.rightArm.hidden = false;
-            m.rightSleeve.hidden = false;
-            m.leftLeg.hidden = false;
-            m.leftPants.hidden = false;
-            m.rightLeg.hidden = false;
-            m.rightPants.hidden = false;
-        }
-    }
+			// 重置 hidden 状态，防止影响后续的 FeatureRenderer
+			var m = (PlayerEntityModel<?>) this.getModel();
+			m.hat.hidden = false;
+			m.head.hidden = false;
+			m.body.hidden = false;
+			m.jacket.hidden = false;
+			m.leftArm.hidden = false;
+			m.leftSleeve.hidden = false;
+			m.rightArm.hidden = false;
+			m.rightSleeve.hidden = false;
+			m.leftLeg.hidden = false;
+			m.leftPants.hidden = false;
+			m.rightLeg.hidden = false;
+			m.rightPants.hidden = false;
+		}
+	}
 }

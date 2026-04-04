@@ -13,27 +13,27 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayFriendMarkerEnt
 
 public class AllayFriendMarkerItem extends Item {
 
-    public AllayFriendMarkerItem(Settings settings) {
-        super(settings);
-    }
+	public AllayFriendMarkerItem(Settings settings) {
+		super(settings);
+	}
 
-    @Override
-    public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
-        ItemStack itemStack = user.getStackInHand(hand);
-        world.playSound(null, user.getX(), user.getY(), user.getZ(), SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
-        
-        if (!world.isClient) {
-            AllayFriendMarkerEntity entity = new AllayFriendMarkerEntity(world, user);
-            entity.setItem(itemStack);
-            entity.setVelocity(user, user.getPitch(), user.getYaw(), 0.0F, 1.5F, 1.0F);
-            world.spawnEntity(entity);
-        }
+	@Override
+	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
+		ItemStack itemStack = user.getStackInHand(hand);
+		world.playSound(null, user.getX(), user.getY(), user.getZ(), SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
 
-        user.incrementStat(Stats.USED.getOrCreateStat(this));
-        if (!user.getAbilities().creativeMode) {
-            itemStack.decrement(1);
-        }
+		if (!world.isClient) {
+			AllayFriendMarkerEntity entity = new AllayFriendMarkerEntity(world, user);
+			entity.setItem(itemStack);
+			entity.setVelocity(user, user.getPitch(), user.getYaw(), 0.0F, 1.5F, 1.0F);
+			world.spawnEntity(entity);
+		}
 
-        return TypedActionResult.success(itemStack, world.isClient());
-    }
+		user.incrementStat(Stats.USED.getOrCreateStat(this));
+		if (!user.getAbilities().creativeMode) {
+			itemStack.decrement(1);
+		}
+
+		return TypedActionResult.success(itemStack, world.isClient());
+	}
 }

@@ -19,87 +19,85 @@ import org.jetbrains.annotations.Nullable;
 import static net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric.MOD_ID;
 
 public class Form_Axolotl3 extends PlayerFormBase {
-    public Form_Axolotl3(Identifier formID) {
-        super(formID);
-    }
+	public static final AbstractAnimStateController SWIM_CONTROLLER = new SwimAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_swimming_idle")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_swimming")));
+	public static final AbstractAnimStateController IDLE_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_idle")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_crawling_idle")));
+	public static final AbstractAnimStateController WALK_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_walk")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_crawling")));
+	public static final AbstractAnimStateController SPRINT_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_run")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_crawling")));
+	public static final AbstractAnimStateController JUMP_CONTROLLER = new RushJumpAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_jump")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_crawling_jump")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_rush_jump"), 1.0f, 10), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_crawling_jump")));
+	public static final AbstractAnimStateController FALL_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_jump")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_crawling_idle")));
+	public static final AbstractAnimStateController ATTACK_CONTROLLER = new WithSneakAnimController(null, new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_crawling_attack_once")));
+	public static final AbstractAnimStateController MINING_CONTROLLER = new WithSneakAnimController(null, new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_crawling_tool_swing")));
+	private static AnimationHolder anim_idle = new AnimationHolder();
+	private static AnimationHolder anim_walking = AnimationHolder.EMPTY;
+	private static AnimationHolder anim_running = AnimationHolder.EMPTY;
+	private static AnimationHolder anim_jump = AnimationHolder.EMPTY;
+	private static AnimationHolder anim_swimming = AnimationHolder.EMPTY;
+	private static AnimationHolder anim_swimming_idle = AnimationHolder.EMPTY;
+	private static AnimationHolder anim_crawling = AnimationHolder.EMPTY;
+	private static AnimationHolder anim_crawling_idle = AnimationHolder.EMPTY;
+	private static AnimationHolder anim_crawling_attack_once = AnimationHolder.EMPTY;
+	private static AnimationHolder anim_crawling_tool_swing = AnimationHolder.EMPTY;
+	private static AnimationHolder anim_crawling_jump = AnimationHolder.EMPTY;
+	private static AnimationHolder anim_rush_jump = AnimationHolder.EMPTY;
+	private static AnimationHolder anim_sleep = AnimationHolder.EMPTY;
 
-    private static AnimationHolder anim_idle = new AnimationHolder();
-    private static AnimationHolder anim_walking = AnimationHolder.EMPTY;
-    private static AnimationHolder anim_running = AnimationHolder.EMPTY;
-    private static AnimationHolder anim_jump = AnimationHolder.EMPTY;
-    private static AnimationHolder anim_swimming = AnimationHolder.EMPTY;
-    private static AnimationHolder anim_swimming_idle = AnimationHolder.EMPTY;
-    private static AnimationHolder anim_crawling = AnimationHolder.EMPTY;
-    private static AnimationHolder anim_crawling_idle = AnimationHolder.EMPTY;
-    private static AnimationHolder anim_crawling_attack_once = AnimationHolder.EMPTY;
-    private static AnimationHolder anim_crawling_tool_swing = AnimationHolder.EMPTY;
-    private static AnimationHolder anim_crawling_jump = AnimationHolder.EMPTY;
-    private static AnimationHolder anim_rush_jump = AnimationHolder.EMPTY;
-    private static AnimationHolder anim_sleep = AnimationHolder.EMPTY;
-
-
-	@Override
-    public AnimationHolder Anim_getFormAnimToPlay(PlayerAnimState currentState) {
-	    return switch (currentState) {
-		    case ANIM_JUMP, ANIM_FALL -> anim_jump;
-		    case ANIM_SNEAK_JUMP, ANIM_SNEAK_RUSH_JUMP -> anim_crawling_jump;
-		    case ANIM_SNEAK_FALL, ANIM_SNEAK_IDLE -> anim_crawling_idle;
-		    case ANIM_RUSH_JUMP -> anim_rush_jump;
-		    case ANIM_WALK -> anim_walking;
-		    case ANIM_RUN -> anim_running;
-		    case ANIM_IDLE -> anim_idle;
-		    case ANIM_SWIM -> anim_swimming;
-		    case ANIM_SWIM_IDLE -> anim_swimming_idle;
-		    case ANIM_SNEAK_WALK -> anim_crawling;
-            case ANIM_SLEEP -> anim_sleep;
-		    case ANIM_SNEAK_ATTACK_ONCE -> anim_crawling_attack_once;
-		    case ANIM_SNEAK_TOOL_SWING -> anim_crawling_tool_swing;
-		    default -> null;
-	    };
-    }
+	public Form_Axolotl3(Identifier formID) {
+		super(formID);
+	}
 
 	@Override
-    public void Anim_registerAnims() {
-        anim_swimming = new AnimationHolder(new Identifier(MOD_ID, "axolotl_2_swimming"), true);
-        anim_swimming_idle = new AnimationHolder(new Identifier(MOD_ID, "axolotl_2_swimming_idle"), true);
-        anim_crawling = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_crawling"), true);
-        anim_crawling_idle = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_crawling_idle"), true);
-        anim_crawling_attack_once = new AnimationHolder(new Identifier(MOD_ID, "axolotl_2_crawling_attack_once"), true);
-        anim_crawling_tool_swing = new AnimationHolder(new Identifier(MOD_ID, "axolotl_2_crawling_tool_swing"), true);
-        anim_crawling_jump = new AnimationHolder(new Identifier(MOD_ID, "axolotl_2_crawling_jump"), true);
-        anim_walking = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_walk"), true);
-        anim_running = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_run"), true);
-        anim_jump = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_jump"), true);
-        anim_idle = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_idle"), true);
-        anim_rush_jump = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_rush_jump"), true, 1, 10);
-        anim_sleep = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_idle"), true, 0f);
-    }
+	public AnimationHolder Anim_getFormAnimToPlay(PlayerAnimState currentState) {
+		return switch (currentState) {
+			case ANIM_JUMP, ANIM_FALL -> anim_jump;
+			case ANIM_SNEAK_JUMP, ANIM_SNEAK_RUSH_JUMP -> anim_crawling_jump;
+			case ANIM_SNEAK_FALL, ANIM_SNEAK_IDLE -> anim_crawling_idle;
+			case ANIM_RUSH_JUMP -> anim_rush_jump;
+			case ANIM_WALK -> anim_walking;
+			case ANIM_RUN -> anim_running;
+			case ANIM_IDLE -> anim_idle;
+			case ANIM_SWIM -> anim_swimming;
+			case ANIM_SWIM_IDLE -> anim_swimming_idle;
+			case ANIM_SNEAK_WALK -> anim_crawling;
+			case ANIM_SLEEP -> anim_sleep;
+			case ANIM_SNEAK_ATTACK_ONCE -> anim_crawling_attack_once;
+			case ANIM_SNEAK_TOOL_SWING -> anim_crawling_tool_swing;
+			default -> null;
+		};
+	}
 
-    public static final AbstractAnimStateController SWIM_CONTROLLER = new SwimAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_swimming_idle")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_swimming")));
-    public static final AbstractAnimStateController IDLE_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_idle")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_crawling_idle")));
-    public static final AbstractAnimStateController WALK_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_walk")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_crawling")));
-    public static final AbstractAnimStateController SPRINT_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_run")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_crawling")));
-    public static final AbstractAnimStateController JUMP_CONTROLLER = new RushJumpAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_jump")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_crawling_jump")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_rush_jump"), 1.0f, 10), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_crawling_jump")));
-    public static final AbstractAnimStateController FALL_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_jump")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_crawling_idle")));
-    public static final AbstractAnimStateController ATTACK_CONTROLLER = new WithSneakAnimController(null, new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_crawling_attack_once")));
-    public static final AbstractAnimStateController MINING_CONTROLLER = new WithSneakAnimController(null, new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_crawling_tool_swing")));
+	@Override
+	public void Anim_registerAnims() {
+		anim_swimming = new AnimationHolder(new Identifier(MOD_ID, "axolotl_2_swimming"), true);
+		anim_swimming_idle = new AnimationHolder(new Identifier(MOD_ID, "axolotl_2_swimming_idle"), true);
+		anim_crawling = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_crawling"), true);
+		anim_crawling_idle = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_crawling_idle"), true);
+		anim_crawling_attack_once = new AnimationHolder(new Identifier(MOD_ID, "axolotl_2_crawling_attack_once"), true);
+		anim_crawling_tool_swing = new AnimationHolder(new Identifier(MOD_ID, "axolotl_2_crawling_tool_swing"), true);
+		anim_crawling_jump = new AnimationHolder(new Identifier(MOD_ID, "axolotl_2_crawling_jump"), true);
+		anim_walking = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_walk"), true);
+		anim_running = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_run"), true);
+		anim_jump = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_jump"), true);
+		anim_idle = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_idle"), true);
+		anim_rush_jump = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_rush_jump"), true, 1, 10);
+		anim_sleep = new AnimationHolder(new Identifier(MOD_ID, "axolotl_3_idle"), true, 0f);
+	}
 
-    @Override
-    public @Nullable AbstractAnimStateController getAnimStateController(PlayerEntity player, AnimSystem.AnimSystemData animSystemData, @NotNull Identifier animStateID) {
-        @Nullable AnimStateEnum animStateEnum = AnimStateEnum.getStateEnum(animStateID);
-        if (animStateEnum != null) {
-	        return switch (animStateEnum) {
-		        case ANIM_STATE_SWIM -> SWIM_CONTROLLER;
-		        case ANIM_STATE_IDLE -> IDLE_CONTROLLER;
-		        case ANIM_STATE_WALK -> WALK_CONTROLLER;
-		        case ANIM_STATE_SPRINT -> SPRINT_CONTROLLER;
-		        case ANIM_STATE_JUMP -> JUMP_CONTROLLER;
-		        case ANIM_STATE_FALL -> FALL_CONTROLLER;
-		        case ANIM_STATE_ATTACK -> ATTACK_CONTROLLER;
-		        case ANIM_STATE_MINING -> MINING_CONTROLLER;
-		        default -> null;
-	        };
-        }
-        return super.getAnimStateController(player, animSystemData, animStateID);
-    }
+	@Override
+	public @Nullable AbstractAnimStateController getAnimStateController(PlayerEntity player, AnimSystem.AnimSystemData animSystemData, @NotNull Identifier animStateID) {
+		@Nullable AnimStateEnum animStateEnum = AnimStateEnum.getStateEnum(animStateID);
+		if (animStateEnum != null) {
+			return switch (animStateEnum) {
+				case ANIM_STATE_SWIM -> SWIM_CONTROLLER;
+				case ANIM_STATE_IDLE -> IDLE_CONTROLLER;
+				case ANIM_STATE_WALK -> WALK_CONTROLLER;
+				case ANIM_STATE_SPRINT -> SPRINT_CONTROLLER;
+				case ANIM_STATE_JUMP -> JUMP_CONTROLLER;
+				case ANIM_STATE_FALL -> FALL_CONTROLLER;
+				case ANIM_STATE_ATTACK -> ATTACK_CONTROLLER;
+				case ANIM_STATE_MINING -> MINING_CONTROLLER;
+				default -> null;
+			};
+		}
+		return super.getAnimStateController(player, animSystemData, animStateID);
+	}
 }

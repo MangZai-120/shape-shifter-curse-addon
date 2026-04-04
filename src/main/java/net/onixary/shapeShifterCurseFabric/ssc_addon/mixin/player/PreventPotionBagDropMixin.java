@@ -11,13 +11,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(PlayerEntity.class)
 public class PreventPotionBagDropMixin {
 
-    /**
-     * Prevents dropping the potion bag using Q key or any other drop method
-     */
-    @Inject(method = "dropItem(Lnet/minecraft/item/ItemStack;ZZ)Lnet/minecraft/entity/ItemEntity;", at = @At("HEAD"), cancellable = true)
-    private void preventPotionBagDrop(ItemStack stack, boolean throwRandomly, boolean retainOwnership, CallbackInfoReturnable<?> cir) {
-        if (stack.isOf(SscAddon.POTION_BAG)) {
-            cir.setReturnValue(null);
-        }
-    }
+	/**
+	 * Prevents dropping the potion bag using Q key or any other drop method
+	 */
+	@Inject(method = "dropItem(Lnet/minecraft/item/ItemStack;ZZ)Lnet/minecraft/entity/ItemEntity;", at = @At("HEAD"), cancellable = true)
+	private void preventPotionBagDrop(ItemStack stack, boolean throwRandomly, boolean retainOwnership, CallbackInfoReturnable<?> cir) {
+		if (stack.isOf(SscAddon.POTION_BAG)) {
+			cir.setReturnValue(null);
+		}
+	}
 }

@@ -18,70 +18,70 @@ import java.util.List;
 
 public class SpUpgradeRecipe extends SpecialCraftingRecipe {
 
-    public SpUpgradeRecipe(Identifier id, CraftingRecipeCategory category) {
-        super(id, category);
-    }
+	public SpUpgradeRecipe(Identifier id, CraftingRecipeCategory category) {
+		super(id, category);
+	}
 
-    @Override
-    public boolean matches(RecipeInputInventory inventory, World world) {
-        // Grid must be at least 3x3 for safety, though inventory usually is 3x3
-        if (inventory.getWidth() < 3 || inventory.getHeight() < 3) return false;
+	@Override
+	public boolean matches(RecipeInputInventory inventory, World world) {
+		// Grid must be at least 3x3 for safety, though inventory usually is 3x3
+		if (inventory.getWidth() < 3 || inventory.getHeight() < 3) return false;
 
-        // Check Fixed Positions
-        // 0 1 2
-        // 3 4 5
-        // 6 7 8
-        
-        // Corners: Gold Ingot
-        if (!stackMatches(inventory.getStack(0), Items.GOLD_INGOT) ||
-            !stackMatches(inventory.getStack(2), Items.GOLD_INGOT) ||
-            !stackMatches(inventory.getStack(6), Items.GOLD_INGOT) ||
-            !stackMatches(inventory.getStack(8), Items.GOLD_INGOT)) {
-            return false;
-        }
+		// Check Fixed Positions
+		// 0 1 2
+		// 3 4 5
+		// 6 7 8
 
-        // Center: Morphscale Core
-        if (!stackMatches(inventory.getStack(4), RegCustomItem.MORPHSCALE_CORE)) {
-            return false;
-        }
+		// Corners: Gold Ingot
+		if (!stackMatches(inventory.getStack(0), Items.GOLD_INGOT) ||
+				!stackMatches(inventory.getStack(2), Items.GOLD_INGOT) ||
+				!stackMatches(inventory.getStack(6), Items.GOLD_INGOT) ||
+				!stackMatches(inventory.getStack(8), Items.GOLD_INGOT)) {
+			return false;
+		}
 
-        // Remaining Slots: 1, 3, 5, 7. Must contain exactly {Emerald, Redstone, MoonShard, Netherite}
-        List<Item> finding = new ArrayList<>();
-        finding.add(Items.EMERALD);
-        finding.add(Items.REDSTONE);
-        finding.add(RegCustomItem.MOONDUST_CRYSTAL_SHARD);
-        finding.add(Items.NETHERITE_INGOT);
+		// Center: Morphscale Core
+		if (!stackMatches(inventory.getStack(4), RegCustomItem.MORPHSCALE_CORE)) {
+			return false;
+		}
 
-        int[] checkSlots = {1, 3, 5, 7};
-        for (int i : checkSlots) {
-            ItemStack stack = inventory.getStack(i);
-            if (stack.isEmpty()) return false;
-            if (finding.contains(stack.getItem())) {
-                finding.remove(stack.getItem());
-            } else {
-                return false; // Valid item but duplicate or unexpected
-            }
-        }
+		// Remaining Slots: 1, 3, 5, 7. Must contain exactly {Emerald, Redstone, MoonShard, Netherite}
+		List<Item> finding = new ArrayList<>();
+		finding.add(Items.EMERALD);
+		finding.add(Items.REDSTONE);
+		finding.add(RegCustomItem.MOONDUST_CRYSTAL_SHARD);
+		finding.add(Items.NETHERITE_INGOT);
 
-        return finding.isEmpty();
-    }
+		int[] checkSlots = {1, 3, 5, 7};
+		for (int i : checkSlots) {
+			ItemStack stack = inventory.getStack(i);
+			if (stack.isEmpty()) return false;
+			if (finding.contains(stack.getItem())) {
+				finding.remove(stack.getItem());
+			} else {
+				return false; // Valid item but duplicate or unexpected
+			}
+		}
 
-    private boolean stackMatches(ItemStack stack, Item item) {
-        return !stack.isEmpty() && stack.getItem() == item;
-    }
+		return finding.isEmpty();
+	}
 
-    @Override
-    public ItemStack craft(RecipeInputInventory inventory, DynamicRegistryManager registryManager) {
-        return new ItemStack(SscAddon.SP_UPGRADE_THING);
-    }
+	private boolean stackMatches(ItemStack stack, Item item) {
+		return !stack.isEmpty() && stack.getItem() == item;
+	}
 
-    @Override
-    public boolean fits(int width, int height) {
-        return width >= 3 && height >= 3;
-    }
+	@Override
+	public ItemStack craft(RecipeInputInventory inventory, DynamicRegistryManager registryManager) {
+		return new ItemStack(SscAddon.SP_UPGRADE_THING);
+	}
 
-    @Override
-    public RecipeSerializer<?> getSerializer() {
-        return SscAddon.SP_UPGRADE_SERIALIZER;
-    }
+	@Override
+	public boolean fits(int width, int height) {
+		return width >= 3 && height >= 3;
+	}
+
+	@Override
+	public RecipeSerializer<?> getSerializer() {
+		return SscAddon.SP_UPGRADE_SERIALIZER;
+	}
 }

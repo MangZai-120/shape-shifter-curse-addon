@@ -13,97 +13,97 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SscIgnitedEntityAccess
 import java.util.UUID;
 
 public class FoxFireBurnEffect extends StatusEffect {
-    public FoxFireBurnEffect() {
-        super(StatusEffectCategory.HARMFUL, 0x3366FF); // Blue color
-    }
-    
-    private PlayerEntity getOwnerFromTags(LivingEntity entity) {
-        for (String tag : entity.getCommandTags()) {
-            if (tag.startsWith("ssc_owner:")) {
-                try {
-                    String uuidStr = tag.substring("ssc_owner:".length());
-                    UUID uuid = UUID.fromString(uuidStr);
-                    return entity.getWorld().getPlayerByUuid(uuid);
-                } catch (Exception e) {
-                    // Ignore invalid tags
-                }
-            }
-        }
-        return null;
-    }
+	public FoxFireBurnEffect() {
+		super(StatusEffectCategory.HARMFUL, 0x3366FF); // Blue color
+	}
 
-    @Override
-    public boolean canApplyUpdateEffect(int duration, int amplifier) {
-        return true;
-    }
+	private PlayerEntity getOwnerFromTags(LivingEntity entity) {
+		for (String tag : entity.getCommandTags()) {
+			if (tag.startsWith("ssc_owner:")) {
+				try {
+					String uuidStr = tag.substring("ssc_owner:".length());
+					UUID uuid = UUID.fromString(uuidStr);
+					return entity.getWorld().getPlayerByUuid(uuid);
+				} catch (Exception e) {
+					// Ignore invalid tags
+				}
+			}
+		}
+		return null;
+	}
 
-    @Override
-    public void applyUpdateEffect(LivingEntity entity, int amplifier) {
-        if (entity.hasStatusEffect(SscAddon.PURIFIED)) {
-            entity.removeStatusEffect(SscAddon.FOX_FIRE_BURN);
-            return;
-        }
+	@Override
+	public boolean canApplyUpdateEffect(int duration, int amplifier) {
+		return true;
+	}
 
-        if (entity.getWorld().isClient) {
-            // Client side particles can be handled here or via separate client tick handler
-            // But applyUpdateEffect runs on both usually if registered correctly.
-            // For simple visuals, we might rely on server spawning particles or client side implementation.
-            // StatusEffect particles are usually handled by the game automatically if color is set,
-            // but we want Soul Fire particles.
-            entity.getWorld().addParticle(ParticleTypes.SOUL_FIRE_FLAME, true,
-                entity.getX() + (entity.getRandom().nextDouble() - 0.5) * entity.getWidth(), 
-                entity.getY() + entity.getRandom().nextDouble() * entity.getHeight(), 
-                entity.getZ() + (entity.getRandom().nextDouble() - 0.5) * entity.getWidth(), 
-                0, 0, 0);
-        } else {
-            // Server side logic
-            // Damage every second (20 ticks) like vanilla fire
-            if (entity.age % 20 == 0) {
-                 DamageSource source = entity.getDamageSources().inFire();
-                 
-                 PlayerEntity owner = null;
-                 if (entity instanceof SscIgnitedEntityAccessor accessor) {
-                     UUID igniterUuid = accessor.sscAddon$getIgniterUuid();
-                     if (igniterUuid != null) {
-                         owner = entity.getWorld().getPlayerByUuid(igniterUuid);
-                     }
-                 }
-                 
-                 // Priority 1: Explicit owner from NBT tag or Accessor
-                 if (owner == null) {
-                    owner = getOwnerFromTags(entity);
-                 }
-                 
-                 if (owner != null) {
-                     // We use onFire damage source logic but with player attribution
-                     // Vanilla doesn't have a direct "fire from player" source helper that's standard for DoT
-                     // So we construct a generic override or simulate player attack but keeping it fire related if possible
-                     // Or just use playerAttack for simplicity to ensure drops.
-                     // A better way is creating a source that is "onFire" but has an attacker.
-                     // But getDamageSources().inFire() doesn't take attacker.
-                     // We can use create(DamageTypes.IN_FIRE, null, owner) if we want.
-                     // But typically 'playerAttack' is safest for credit.
-                     source = entity.getDamageSources().playerAttack(owner);
-                 } 
-                 // Priority 2: Standard vanilla attribution fallback
-                 else if (entity.getLastAttacker() instanceof PlayerEntity player) {
-                     source = entity.getDamageSources().playerAttack(player);
-                 } else if (entity.getAttacker() instanceof PlayerEntity player) {
-                     source = entity.getDamageSources().playerAttack(player);
-                 }
-                 
-                 net.minecraft.util.math.Vec3d oldVelocity = entity.getVelocity();
-                 if (entity.damage(source, 1.0f)) {
-                     entity.setVelocity(oldVelocity);
-                 }
-                 
-                 // Spawn explicit particles on server for everyone to see
-                 if (entity.getWorld() instanceof ServerWorld serverWorld) {
-                     net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SOUL_FIRE_FLAME,
-                        entity.getX(), entity.getY() + entity.getHeight() / 2.0, entity.getZ(),
-                        2, 0.3, 0.3, 0.3, 0.05);
-                 }
-            }
-        }
-    }
+	@Override
+	public void applyUpdateEffect(LivingEntity entity, int amplifier) {
+		if (entity.hasStatusEffect(SscAddon.PURIFIED)) {
+			entity.removeStatusEffect(SscAddon.FOX_FIRE_BURN);
+			return;
+		}
+
+		if (entity.getWorld().isClient) {
+			// Client side particles can be handled here or via separate client tick handler
+			// But applyUpdateEffect runs on both usually if registered correctly.
+			// For simple visuals, we might rely on server spawning particles or client side implementation.
+			// StatusEffect particles are usually handled by the game automatically if color is set,
+			// but we want Soul Fire particles.
+			entity.getWorld().addParticle(ParticleTypes.SOUL_FIRE_FLAME, true,
+					entity.getX() + (entity.getRandom().nextDouble() - 0.5) * entity.getWidth(),
+					entity.getY() + entity.getRandom().nextDouble() * entity.getHeight(),
+					entity.getZ() + (entity.getRandom().nextDouble() - 0.5) * entity.getWidth(),
+					0, 0, 0);
+		} else {
+			// Server side logic
+			// Damage every second (20 ticks) like vanilla fire
+			if (entity.age % 20 == 0) {
+				DamageSource source = entity.getDamageSources().inFire();
+
+				PlayerEntity owner = null;
+				if (entity instanceof SscIgnitedEntityAccessor accessor) {
+					UUID igniterUuid = accessor.sscAddon$getIgniterUuid();
+					if (igniterUuid != null) {
+						owner = entity.getWorld().getPlayerByUuid(igniterUuid);
+					}
+				}
+
+				// Priority 1: Explicit owner from NBT tag or Accessor
+				if (owner == null) {
+					owner = getOwnerFromTags(entity);
+				}
+
+				if (owner != null) {
+					// We use onFire damage source logic but with player attribution
+					// Vanilla doesn't have a direct "fire from player" source helper that's standard for DoT
+					// So we construct a generic override or simulate player attack but keeping it fire related if possible
+					// Or just use playerAttack for simplicity to ensure drops.
+					// A better way is creating a source that is "onFire" but has an attacker.
+					// But getDamageSources().inFire() doesn't take attacker.
+					// We can use create(DamageTypes.IN_FIRE, null, owner) if we want.
+					// But typically 'playerAttack' is safest for credit.
+					source = entity.getDamageSources().playerAttack(owner);
+				}
+				// Priority 2: Standard vanilla attribution fallback
+				else if (entity.getLastAttacker() instanceof PlayerEntity player) {
+					source = entity.getDamageSources().playerAttack(player);
+				} else if (entity.getAttacker() instanceof PlayerEntity player) {
+					source = entity.getDamageSources().playerAttack(player);
+				}
+
+				net.minecraft.util.math.Vec3d oldVelocity = entity.getVelocity();
+				if (entity.damage(source, 1.0f)) {
+					entity.setVelocity(oldVelocity);
+				}
+
+				// Spawn explicit particles on server for everyone to see
+				if (entity.getWorld() instanceof ServerWorld serverWorld) {
+					net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SOUL_FIRE_FLAME,
+							entity.getX(), entity.getY() + entity.getHeight() / 2.0, entity.getZ(),
+							2, 0.3, 0.3, 0.3, 0.05);
+				}
+			}
+		}
+	}
 }

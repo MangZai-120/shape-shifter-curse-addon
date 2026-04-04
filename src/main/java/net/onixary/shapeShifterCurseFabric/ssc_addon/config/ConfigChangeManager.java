@@ -4,18 +4,18 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ConfigChangeManager {
-    private static final List<ConfigChangeListener> listeners = new CopyOnWriteArrayList<>();
+	private static final List<ConfigChangeListener> listeners = new CopyOnWriteArrayList<>();
 
-    private ConfigChangeManager() {
-    }
+	private ConfigChangeManager() {
+	}
 
-    public static void register(ConfigChangeListener listener) {
-        listeners.add(listener);
-    }
+	public static void register(ConfigChangeListener listener) {
+		listeners.add(listener);
+	}
 
-    public static void notifyChange(SSCAddonConfig config) {
-        for (ConfigChangeListener listener : listeners) {
-            listener.onConfigChanged(config);
-        }
-    }
+	public static void notifyChange(SSCAddonConfig config) {
+		for (ConfigChangeListener listener : listeners) {
+			listener.onConfigChanged(config);
+		}
+	}
 }
