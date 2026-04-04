@@ -124,4 +124,11 @@ public class GoldenSandstormSandRetaliation {
     public static void clearPlayer(UUID playerUuid) {
         TRIGGERED.remove(playerUuid);
     }
+
+    /**
+     * 服务器重启/热重载时清理所有状态
+     */
+    public static void clearAll() {
+        TRIGGERED.clear();
+    }
 }

@@ -405,6 +405,8 @@ private void registerTickHandlers() {
             AnubisWolfSpDeathDomain.clearAll();
             AnubisWolfSpSummonWolves.clearAll();
             AllaySPTotem.clearAll();
+            GoldenSandstormErosionBrand.clearAll();
+            GoldenSandstormSandRetaliation.clearAll();
             System.out.println("[SSC_ADDON] SERVER_STARTING ability state cleared");
         });
         // 服务器关闭前还原所有死亡领域方块（在世界存档之前触发）
@@ -425,6 +427,8 @@ private void registerTickHandlers() {
             AnubisWolfSpDeathDomain.clearAll();
             AnubisWolfSpSummonWolves.clearAll();
             AllaySPTotem.clearAll();
+            GoldenSandstormErosionBrand.clearAll();
+            GoldenSandstormSandRetaliation.clearAll();
             System.out.println("[SSC_ADDON] END_DATA_PACK_RELOAD ability state cleared");
         });
     }
@@ -558,6 +562,8 @@ private void registerTickHandlers() {
             AnubisWolfSpDeathDomain.clearPlayer(handler.player);
             AnubisWolfSpSummonWolves.clearPlayer(uuid);
             AllaySPTotem.clearPlayer(handler.player);
+            GoldenSandstormErosionBrand.clearPlayer(uuid);
+            GoldenSandstormSandRetaliation.clearPlayer(uuid);
 	AnubisWolfSpSoulEnergy.clearPlayer(handler.player);
 	PLAYER_LANGUAGES.remove(uuid);
             System.out.println("[SSC_ADDON] DISCONNECT cleanup completed");

@@ -204,4 +204,11 @@ public class GoldenSandstormErosionBrand {
     public static void clearPlayer(UUID playerUuid) {
         ACTIVE_BRANDS.remove(playerUuid);
     }
+
+    /**
+     * 服务器重启/热重载时清理所有状态
+     */
+    public static void clearAll() {
+        ACTIVE_BRANDS.clear();
+    }
 }
