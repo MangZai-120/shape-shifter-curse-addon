@@ -4,6 +4,6 @@
   "max": 600,
   "start_value": 0,
   "hud_render": {
-    "should_render": true
+    "should_render": false
   }
 }

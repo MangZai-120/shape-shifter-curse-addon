@@ -23,7 +23,7 @@
     },
     "cooldown": 120,
     "hud_render": {
-        "should_render": true
+        "should_render": false
     },
     "name": "雪刺冲刺",
     "description": "向准星方向冲刺8格，碰撞敌人造成6点魔法伤害并施加霜凝效果3秒。消耗15点霜寒值，冷却6秒。"

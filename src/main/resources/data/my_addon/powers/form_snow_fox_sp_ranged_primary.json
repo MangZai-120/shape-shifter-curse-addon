@@ -23,7 +23,7 @@
     },
     "cooldown": 100,
     "hud_render": {
-        "should_render": true
+        "should_render": false
     },
     "name": "法术冰球",
     "description": "发射无下坠冰球，飞行速度10b/s，最多飞行25格。命中施加霜降效果4秒（移速-30%）。消耗15点霜寒值，冷却5秒。"

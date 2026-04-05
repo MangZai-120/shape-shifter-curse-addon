@@ -12,7 +12,7 @@
     },
     "cooldown": 1000,
     "hud_render": {
-        "should_render": true
+        "should_render": false
     },
     "name": "死亡领域",
     "description": "蓄力2秒后，将周围16格半径的圆柱范围内所有方块暂时变为灵魂沙。领域内的敌对生物受到缓慢I、凋零I并被削减15%的生命值上限。领域持续15秒。"
