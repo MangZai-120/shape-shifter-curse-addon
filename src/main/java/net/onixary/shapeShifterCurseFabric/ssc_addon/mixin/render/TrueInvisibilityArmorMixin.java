@@ -12,11 +12,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ArmorFeatureRenderer.class)
 public class TrueInvisibilityArmorMixin {
-    
-    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-    private void hideArmorWhenTrueInvisible(MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i, LivingEntity livingEntity, float f, float g, float h, float j, float k, float l, CallbackInfo ci) {
-        if (livingEntity.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) {
-            ci.cancel();
-        }
-    }
+
+	@Inject(method = "render", at = @At("HEAD"), cancellable = true)
+	private void hideArmorWhenTrueInvisible(MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i, LivingEntity livingEntity, float f, float g, float h, float j, float k, float l, CallbackInfo ci) {
+		if (livingEntity.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) {
+			ci.cancel();
+		}
+	}
 }

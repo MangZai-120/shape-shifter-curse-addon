@@ -38,182 +38,182 @@ import java.util.function.Predicate;
  */
 public class AllayHealWandItem extends Item {
 
-    public static final float HEAL_AMOUNT = 4.0f;
-    public static final int COOLDOWN_TICKS = 50; // 2.5 seconds
-    public static final double MAX_RANGE = 20.0;
-    public static final int MANA_COST = 12;
+	public static final float HEAL_AMOUNT = 4.0f;
+	public static final int COOLDOWN_TICKS = 50; // 2.5 seconds
+	public static final double MAX_RANGE = 20.0;
+	public static final int MANA_COST = 12;
 
-    private static final Identifier MANA_RESOURCE_ID = new Identifier("my_addon", "form_allay_sp_mana_resource");
-    private static final Identifier MANA_COOLDOWN_ID = new Identifier("my_addon", "form_allay_sp_mana_cooldown_resource");
+	private static final Identifier MANA_RESOURCE_ID = new Identifier("my_addon", "form_allay_sp_mana_resource");
+	private static final Identifier MANA_COOLDOWN_ID = new Identifier("my_addon", "form_allay_sp_mana_cooldown_resource");
 
-    public AllayHealWandItem(Settings settings) {
-        super(settings);
-    }
+	public AllayHealWandItem(Settings settings) {
+		super(settings);
+	}
 
-    @Override
-    public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
-        ItemStack stack = user.getStackInHand(hand);
+	/**
+	 * Get the entity the player is looking at within MAX_RANGE
+	 */
+	@Nullable
+	public static LivingEntity getTargetedEntity(PlayerEntity player) {
+		Vec3d eyePos = player.getEyePos();
+		Vec3d lookDir = player.getRotationVec(1.0f);
+		Vec3d endPos = eyePos.add(lookDir.multiply(MAX_RANGE));
 
-        if (!world.isClient && user instanceof ServerPlayerEntity serverPlayer) {
-            // Find the targeted entity
-            LivingEntity target = getTargetedEntity(serverPlayer);
+		// Get all entities in the range
+		Box searchBox = player.getBoundingBox().expand(MAX_RANGE);
+		Predicate<Entity> predicate = entity -> !entity.isSpectator() && entity.canHit() && entity instanceof LivingEntity && entity != player;
 
-            if (target != null) {
-                // Check line of sight (no block obstruction)
-                boolean hasLineOfSight = hasLineOfSight(serverPlayer, target);
+		double closestDist = MAX_RANGE * MAX_RANGE;
+		LivingEntity closestEntity = null;
 
-                if (hasLineOfSight) {
-                    // Check mana
-                    int currentMana = getManaValue(serverPlayer);
-                    if (currentMana < MANA_COST) {
-                        serverPlayer.sendMessage(Text.translatable("item.ssc_addon.allay_heal_wand.no_mana").formatted(Formatting.RED), true);
-                        return TypedActionResult.fail(stack);
-                    }
+		for (Entity entity : player.getWorld().getOtherEntities(player, searchBox, predicate)) {
+			Box entityBox = entity.getBoundingBox().expand(entity.getTargetingMargin());
+			var optional = entityBox.raycast(eyePos, endPos);
+			if (optional.isPresent()) {
+				double dist = eyePos.squaredDistanceTo(optional.get());
+				if (dist < closestDist) {
+					closestDist = dist;
+					closestEntity = (LivingEntity) entity;
+				}
+			}
+		}
 
-                    // Consume mana
-                    setManaValue(serverPlayer, currentMana - MANA_COST);
+		return closestEntity;
+	}
 
-                    // Trigger mana cooldown
-                    triggerManaCooldown(serverPlayer);
+	/**
+	 * Check if there's a clear line of sight between player and target (no blocks in the way)
+	 */
+	public static boolean hasLineOfSight(PlayerEntity player, LivingEntity target) {
+		Vec3d eyePos = player.getEyePos();
+		Vec3d targetPos = target.getEyePos();
 
-                    // Heal the target
-                    target.heal(HEAL_AMOUNT);
+		HitResult blockHit = player.getWorld().raycast(new RaycastContext(
+				eyePos, targetPos,
+				RaycastContext.ShapeType.COLLIDER,
+				RaycastContext.FluidHandling.NONE,
+				player
+		));
 
-                    // Spawn heal particles
-                    ServerWorld serverWorld = (ServerWorld) world;
-                    net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.HEART,
-                            target.getX(), target.getY() + target.getHeight() + 0.5, target.getZ(),
-                            5, 0.3, 0.3, 0.3, 0.01);
+		// If the block hit is beyond the target or missed, we have line of sight
+		if (blockHit.getType() == HitResult.Type.MISS) {
+			return true;
+		}
 
-                    // Play heal sound
-                    // User hears private sound
-                    serverPlayer.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1.0f, 1.5f);
-                    // Target and nearby players hear positional sound (exclude user to avoid double sound)
-                    world.playSound(serverPlayer, target.getX(), target.getY(), target.getZ(),
-                            SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1.0f, 1.5f);
+		double blockDist = eyePos.squaredDistanceTo(blockHit.getPos());
+		double targetDist = eyePos.squaredDistanceTo(targetPos);
 
-                    // Set cooldown
-                    user.getItemCooldownManager().set(this, COOLDOWN_TICKS);
+		return blockDist >= targetDist;
+	}
 
-                    return TypedActionResult.success(stack);
-                } else {
-                    // Target is behind a wall
-                    serverPlayer.sendMessage(Text.translatable("item.ssc_addon.allay_heal_wand.blocked").formatted(Formatting.RED), true);
-                }
-            } else {
-                serverPlayer.sendMessage(Text.translatable("item.ssc_addon.allay_heal_wand.no_target").formatted(Formatting.GRAY), true);
-            }
-        }
+	private static int getManaValue(ServerPlayerEntity player) {
+		try {
+			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
+			PowerType<?> powerType = PowerTypeRegistry.get(MANA_RESOURCE_ID);
+			Power power = powerHolder.getPower(powerType);
+			if (power instanceof VariableIntPower variablePower) {
+				return variablePower.getValue();
+			}
+		} catch (Exception e) {
+			// Resource not found
+		}
+		return 0;
+	}
 
-        return TypedActionResult.pass(stack);
-    }
+	// ===== Mana resource read/write =====
 
-    /**
-     * Get the entity the player is looking at within MAX_RANGE
-     */
-    @Nullable
-    public static LivingEntity getTargetedEntity(PlayerEntity player) {
-        Vec3d eyePos = player.getEyePos();
-        Vec3d lookDir = player.getRotationVec(1.0f);
-        Vec3d endPos = eyePos.add(lookDir.multiply(MAX_RANGE));
+	private static void setManaValue(ServerPlayerEntity player, int value) {
+		try {
+			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
+			PowerType<?> powerType = PowerTypeRegistry.get(MANA_RESOURCE_ID);
+			Power power = powerHolder.getPower(powerType);
+			if (power instanceof VariableIntPower variablePower) {
+				variablePower.setValue(Math.max(0, value));
+				// 只同步mana这一个power，避免全量sync重置飘浮power客户端的ascendProgress
+				PowerHolderComponent.syncPower(player, powerType);
+			}
+		} catch (Exception e) {
+			// Resource not found
+		}
+	}
 
-        // Get all entities in the range
-        Box searchBox = player.getBoundingBox().expand(MAX_RANGE);
-        Predicate<Entity> predicate = entity -> !entity.isSpectator() && entity.canHit() && entity instanceof LivingEntity && entity != player;
+	private static void triggerManaCooldown(ServerPlayerEntity player) {
+		try {
+			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
+			PowerType<?> powerType = PowerTypeRegistry.get(MANA_COOLDOWN_ID);
+			Power power = powerHolder.getPower(powerType);
+			if (power instanceof VariableIntPower variablePower) {
+				variablePower.setValue(70); // 3.5 seconds cooldown
+				// 只同步cooldown这一个power
+				PowerHolderComponent.syncPower(player, powerType);
+			}
+		} catch (Exception e) {
+			// Resource not found
+		}
+	}
 
-        double closestDist = MAX_RANGE * MAX_RANGE;
-        LivingEntity closestEntity = null;
+	@Override
+	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
+		ItemStack stack = user.getStackInHand(hand);
 
-        for (Entity entity : player.getWorld().getOtherEntities(player, searchBox, predicate)) {
-            Box entityBox = entity.getBoundingBox().expand(entity.getTargetingMargin());
-            var optional = entityBox.raycast(eyePos, endPos);
-            if (optional.isPresent()) {
-                double dist = eyePos.squaredDistanceTo(optional.get());
-                if (dist < closestDist) {
-                    closestDist = dist;
-                    closestEntity = (LivingEntity) entity;
-                }
-            }
-        }
+		if (!world.isClient && user instanceof ServerPlayerEntity serverPlayer) {
+			// Find the targeted entity
+			LivingEntity target = getTargetedEntity(serverPlayer);
 
-        return closestEntity;
-    }
+			if (target != null) {
+				// Check line of sight (no block obstruction)
+				boolean hasLineOfSight = hasLineOfSight(serverPlayer, target);
 
-    /**
-     * Check if there's a clear line of sight between player and target (no blocks in the way)
-     */
-    public static boolean hasLineOfSight(PlayerEntity player, LivingEntity target) {
-        Vec3d eyePos = player.getEyePos();
-        Vec3d targetPos = target.getEyePos();
+				if (hasLineOfSight) {
+					// Check mana
+					int currentMana = getManaValue(serverPlayer);
+					if (currentMana < MANA_COST) {
+						serverPlayer.sendMessage(Text.translatable("item.ssc_addon.allay_heal_wand.no_mana").formatted(Formatting.RED), true);
+						return TypedActionResult.fail(stack);
+					}
 
-        HitResult blockHit = player.getWorld().raycast(new RaycastContext(
-                eyePos, targetPos,
-                RaycastContext.ShapeType.COLLIDER,
-                RaycastContext.FluidHandling.NONE,
-                player
-        ));
+					// Consume mana
+					setManaValue(serverPlayer, currentMana - MANA_COST);
 
-        // If the block hit is beyond the target or missed, we have line of sight
-        if (blockHit.getType() == HitResult.Type.MISS) {
-            return true;
-        }
+					// Trigger mana cooldown
+					triggerManaCooldown(serverPlayer);
 
-        double blockDist = eyePos.squaredDistanceTo(blockHit.getPos());
-        double targetDist = eyePos.squaredDistanceTo(targetPos);
+					// Heal the target
+					target.heal(HEAL_AMOUNT);
 
-        return blockDist >= targetDist;
-    }
+					// Spawn heal particles
+					ServerWorld serverWorld = (ServerWorld) world;
+					net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.HEART,
+							target.getX(), target.getY() + target.getHeight() + 0.5, target.getZ(),
+							5, 0.3, 0.3, 0.3, 0.01);
 
-    // ===== Mana resource read/write =====
+					// Play heal sound
+					// User hears private sound
+					serverPlayer.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1.0f, 1.5f);
+					// Target and nearby players hear positional sound (exclude user to avoid double sound)
+					world.playSound(serverPlayer, target.getX(), target.getY(), target.getZ(),
+							SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1.0f, 1.5f);
 
-    private static int getManaValue(ServerPlayerEntity player) {
-        try {
-            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-            PowerType<?> powerType = PowerTypeRegistry.get(MANA_RESOURCE_ID);
-            Power power = powerHolder.getPower(powerType);
-            if (power instanceof VariableIntPower variablePower) {
-                return variablePower.getValue();
-            }
-        } catch (Exception e) {
-            // Resource not found
-        }
-        return 0;
-    }
+					// Set cooldown
+					user.getItemCooldownManager().set(this, COOLDOWN_TICKS);
 
-    private static void setManaValue(ServerPlayerEntity player, int value) {
-        try {
-            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-            PowerType<?> powerType = PowerTypeRegistry.get(MANA_RESOURCE_ID);
-            Power power = powerHolder.getPower(powerType);
-            if (power instanceof VariableIntPower variablePower) {
-                variablePower.setValue(Math.max(0, value));
-                // 只同步mana这一个power，避免全量sync重置飘浮power客户端的ascendProgress
-                PowerHolderComponent.syncPower(player, powerType);
-            }
-        } catch (Exception e) {
-            // Resource not found
-        }
-    }
+					return TypedActionResult.success(stack);
+				} else {
+					// Target is behind a wall
+					serverPlayer.sendMessage(Text.translatable("item.ssc_addon.allay_heal_wand.blocked").formatted(Formatting.RED), true);
+				}
+			} else {
+				serverPlayer.sendMessage(Text.translatable("item.ssc_addon.allay_heal_wand.no_target").formatted(Formatting.GRAY), true);
+			}
+		}
 
-    private static void triggerManaCooldown(ServerPlayerEntity player) {
-        try {
-            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-            PowerType<?> powerType = PowerTypeRegistry.get(MANA_COOLDOWN_ID);
-            Power power = powerHolder.getPower(powerType);
-            if (power instanceof VariableIntPower variablePower) {
-                variablePower.setValue(70); // 3.5 seconds cooldown
-                // 只同步cooldown这一个power
-                PowerHolderComponent.syncPower(player, powerType);
-            }
-        } catch (Exception e) {
-            // Resource not found
-        }
-    }
+		return TypedActionResult.pass(stack);
+	}
 
-    @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        tooltip.add(Text.translatable("item.ssc_addon.allay_heal_wand.tooltip").formatted(Formatting.AQUA));
-        tooltip.add(Text.translatable("item.ssc_addon.allay_heal_wand.tooltip.exclusive").formatted(Formatting.LIGHT_PURPLE));
-        super.appendTooltip(stack, world, tooltip, context);
-    }
+	@Override
+	public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+		tooltip.add(Text.translatable("item.ssc_addon.allay_heal_wand.tooltip").formatted(Formatting.AQUA));
+		tooltip.add(Text.translatable("item.ssc_addon.allay_heal_wand.tooltip.exclusive").formatted(Formatting.LIGHT_PURPLE));
+		super.appendTooltip(stack, world, tooltip, context);
+	}
 }

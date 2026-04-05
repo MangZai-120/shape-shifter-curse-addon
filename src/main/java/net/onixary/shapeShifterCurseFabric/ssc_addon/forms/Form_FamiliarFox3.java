@@ -6,17 +6,17 @@ import net.onixary.shapeShifterCurseFabric.player_animation.v3.AbstractAnimState
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateControllerDP.RideAnimController;
 
 public class Form_FamiliarFox3 extends AbstractFeralForm {
-    public Form_FamiliarFox3(Identifier formID) {
-        super(formID);
-    }
+	public static final AbstractAnimStateController RIDE_CONTROLLER = new RideAnimController(
+			new net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("familiar_fox_3_riding")),
+			new net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("form_feral_common_sneak_idle"))
+	);
 
-    public static final AbstractAnimStateController RIDE_CONTROLLER = new RideAnimController(
-            new net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("familiar_fox_3_riding")),
-            new net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("form_feral_common_sneak_idle"))
-    );
+	public Form_FamiliarFox3(Identifier formID) {
+		super(formID);
+	}
 
-    @Override
-    protected AbstractAnimStateController createRideController() {
-        return RIDE_CONTROLLER;
-    }
+	@Override
+	protected AbstractAnimStateController createRideController() {
+		return RIDE_CONTROLLER;
+	}
 }

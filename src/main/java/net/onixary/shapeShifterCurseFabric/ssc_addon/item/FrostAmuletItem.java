@@ -14,12 +14,12 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class FrostAmuletItem extends TrinketItem {
-    public FrostAmuletItem(Settings settings) {
-        super(settings);
-    }
+	public FrostAmuletItem(Settings settings) {
+		super(settings);
+	}
 
-    @Override
-    public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	@Override
+	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
         /*
         // 旧代码
         if (entity instanceof PlayerEntity player) {
@@ -34,14 +34,14 @@ public class FrostAmuletItem extends TrinketItem {
         return false;
         */
 
-        // 新代码
-        return FormUtils.isSnowFoxSP(entity);
-    }
+		// 新代码
+		return FormUtils.isSnowFoxSP(entity);
+	}
 
-    @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        tooltip.add(Text.translatable("item.ssc_addon.frost_amulet.tooltip.2").formatted(Formatting.BLUE));
-        tooltip.add(Text.translatable("item.ssc_addon.frost_amulet.tooltip.exclusive").formatted(Formatting.AQUA));
-        super.appendTooltip(stack, world, tooltip, context);
-    }
+	@Override
+	public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+		tooltip.add(Text.translatable("item.ssc_addon.frost_amulet.tooltip.2").formatted(Formatting.BLUE));
+		tooltip.add(Text.translatable("item.ssc_addon.frost_amulet.tooltip.exclusive").formatted(Formatting.AQUA));
+		super.appendTooltip(stack, world, tooltip, context);
+	}
 }

@@ -21,88 +21,88 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 public class SscAddonConditions {
 
-    private SscAddonConditions() {
-        // This utility class should not be instantiated
-    }
+	private SscAddonConditions() {
+		// This utility class should not be instantiated
+	}
 
-    public static void register() {
-        register(new ConditionFactory<>(new Identifier("ssc_addon", "has_reverse_thermometer"),
-            new SerializableData(),
-            (data, entity) -> {
-                if (entity instanceof PlayerEntity player) {
-                    return TrinketsApi.getTrinketComponent(player).map(component -> 
-                        component.isEquipped(Registries.ITEM.get(new Identifier("shape-shifter-curse", "charm_of_reverse_thermometer")))
-                    ).orElse(false);
-                }
-                return false;
-            }));
+	public static void register() {
+		register(new ConditionFactory<>(new Identifier("ssc_addon", "has_reverse_thermometer"),
+				new SerializableData(),
+				(data, entity) -> {
+					if (entity instanceof PlayerEntity player) {
+						return TrinketsApi.getTrinketComponent(player).map(component ->
+								component.isEquipped(Registries.ITEM.get(new Identifier("shape-shifter-curse", "charm_of_reverse_thermometer")))
+						).orElse(false);
+					}
+					return false;
+				}));
 
-        register(new ConditionFactory<>(new Identifier("ssc_addon", "has_trinket"),
-            new SerializableData()
-                .add("item", SerializableDataTypes.ITEM),
-            (data, entity) -> {
-                if (entity instanceof PlayerEntity player) {
-                    return TrinketsApi.getTrinketComponent(player).map(component -> 
-                        component.isEquipped((net.minecraft.item.Item)data.get("item"))
-                    ).orElse(false);
-                }
-                return false;
-            }));
+		register(new ConditionFactory<>(new Identifier("ssc_addon", "has_trinket"),
+				new SerializableData()
+						.add("item", SerializableDataTypes.ITEM),
+				(data, entity) -> {
+					if (entity instanceof PlayerEntity player) {
+						return TrinketsApi.getTrinketComponent(player).map(component ->
+								component.isEquipped((net.minecraft.item.Item) data.get("item"))
+						).orElse(false);
+					}
+					return false;
+				}));
 
-        register(new ConditionFactory<>(new Identifier("ssc_addon", "item_on_cooldown"),
-            new SerializableData()
-                .add("item", SerializableDataTypes.ITEM),
-            (data, entity) -> {
-                if (entity instanceof PlayerEntity player) {
-                    return player.getItemCooldownManager().isCoolingDown(data.get("item"));
-                }
-                return false;
-            }));
+		register(new ConditionFactory<>(new Identifier("ssc_addon", "item_on_cooldown"),
+				new SerializableData()
+						.add("item", SerializableDataTypes.ITEM),
+				(data, entity) -> {
+					if (entity instanceof PlayerEntity player) {
+						return player.getItemCooldownManager().isCoolingDown(data.get("item"));
+					}
+					return false;
+				}));
 
-        register(new ConditionFactory<>(new Identifier("ssc_addon", "has_blue_fire_amulet"),
-            new SerializableData(),
-            (data, entity) -> {
-                if (entity instanceof PlayerEntity player) {
-                     return TrinketsApi.getTrinketComponent(player).map(component -> 
-                         component.isEquipped(SscAddon.BLUE_FIRE_AMULET)
-                     ).orElse(false);
-                }
-                return false;
-            }));
+		register(new ConditionFactory<>(new Identifier("ssc_addon", "has_blue_fire_amulet"),
+				new SerializableData(),
+				(data, entity) -> {
+					if (entity instanceof PlayerEntity player) {
+						return TrinketsApi.getTrinketComponent(player).map(component ->
+								component.isEquipped(SscAddon.BLUE_FIRE_AMULET)
+						).orElse(false);
+					}
+					return false;
+				}));
 
-        register(new ConditionFactory<>(new Identifier("ssc_addon", "has_mana_percent_safe"),
-            new SerializableData()
-                .add("mana_percent", SerializableDataTypes.DOUBLE)
-                .add("comparison", ApoliDataTypes.COMPARISON),
-            (data, entity) -> {
-                if (!(entity instanceof PlayerEntity player)) return false;
-                double requiredPercent = data.getDouble("mana_percent");
-                Comparison comparison = data.get("comparison");
-                
-                double current = ManaUtils.getPlayerMana(player);
-                double max = ManaUtils.getPlayerMaxMana(player);
-                
-                if (max <= 0) return false;
-                
-                return comparison.compare(current / max, requiredPercent);
-            }));
+		register(new ConditionFactory<>(new Identifier("ssc_addon", "has_mana_percent_safe"),
+				new SerializableData()
+						.add("mana_percent", SerializableDataTypes.DOUBLE)
+						.add("comparison", ApoliDataTypes.COMPARISON),
+				(data, entity) -> {
+					if (!(entity instanceof PlayerEntity player)) return false;
+					double requiredPercent = data.getDouble("mana_percent");
+					Comparison comparison = data.get("comparison");
 
-        registerBiEntity(new ConditionFactory<>(new Identifier("my_addon", "not_actor_whitelisted"),
-            new SerializableData(),
-            (data, pair) -> {
-                Entity actor = pair.getLeft();
-                Entity target = pair.getRight();
-                if (!(actor instanceof ServerPlayerEntity player)) return true;
-                if (!(target instanceof LivingEntity living)) return true;
-                return !WhitelistUtils.isProtected(player, living);
-            }));
-    }
+					double current = ManaUtils.getPlayerMana(player);
+					double max = ManaUtils.getPlayerMaxMana(player);
 
-    private static void register(ConditionFactory<Entity> factory) {
-        Registry.register(ApoliRegistries.ENTITY_CONDITION, factory.getSerializerId(), factory);
-    }
+					if (max <= 0) return false;
 
-    private static void registerBiEntity(ConditionFactory<Pair<Entity, Entity>> factory) {
-        Registry.register(ApoliRegistries.BIENTITY_CONDITION, factory.getSerializerId(), factory);
-    }
+					return comparison.compare(current / max, requiredPercent);
+				}));
+
+		registerBiEntity(new ConditionFactory<>(new Identifier("my_addon", "not_actor_whitelisted"),
+				new SerializableData(),
+				(data, pair) -> {
+					Entity actor = pair.getLeft();
+					Entity target = pair.getRight();
+					if (!(actor instanceof ServerPlayerEntity player)) return true;
+					if (!(target instanceof LivingEntity living)) return true;
+					return !WhitelistUtils.isProtected(player, living);
+				}));
+	}
+
+	private static void register(ConditionFactory<Entity> factory) {
+		Registry.register(ApoliRegistries.ENTITY_CONDITION, factory.getSerializerId(), factory);
+	}
+
+	private static void registerBiEntity(ConditionFactory<Pair<Entity, Entity>> factory) {
+		Registry.register(ApoliRegistries.BIENTITY_CONDITION, factory.getSerializerId(), factory);
+	}
 }

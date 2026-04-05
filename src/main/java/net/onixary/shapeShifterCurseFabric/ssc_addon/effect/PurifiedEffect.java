@@ -15,31 +15,31 @@ import java.util.List;
  * 持续时间极短（1秒），仅用于在下一个tick被Java代码检测到
  */
 public class PurifiedEffect extends StatusEffect {
-    
-    public PurifiedEffect() {
-        super(StatusEffectCategory.NEUTRAL, 0x99DDFF); // Light blue color
-    }
-    
-    @Override
-    public boolean canApplyUpdateEffect(int duration, int amplifier) {
-        return true; 
-    }
-    
-    @Override
-    public void applyUpdateEffect(LivingEntity entity, int amplifier) {
-        if (entity.getWorld().isClient) return;
 
-        // Clear all harmful effects (or all effects except this one)
-        // Since we are iterating while modifying, we need a copy
-        List<StatusEffectInstance> effects = new ArrayList<>(entity.getStatusEffects());
-        
-        for (StatusEffectInstance instance : effects) {
-            // Don't remove self
-            if (instance.getEffectType() == this) continue;
-            
-            // Remove the effect
-            // Note: removeStatusEffect returns boolean, doesn't throw concurrent modification if we iterate over a copy
-            entity.removeStatusEffect(instance.getEffectType());
-        }
-    }
+	public PurifiedEffect() {
+		super(StatusEffectCategory.NEUTRAL, 0x99DDFF); // Light blue color
+	}
+
+	@Override
+	public boolean canApplyUpdateEffect(int duration, int amplifier) {
+		return true;
+	}
+
+	@Override
+	public void applyUpdateEffect(LivingEntity entity, int amplifier) {
+		if (entity.getWorld().isClient) return;
+
+		// Clear all harmful effects (or all effects except this one)
+		// Since we are iterating while modifying, we need a copy
+		List<StatusEffectInstance> effects = new ArrayList<>(entity.getStatusEffects());
+
+		for (StatusEffectInstance instance : effects) {
+			// Don't remove self
+			if (instance.getEffectType() == this) continue;
+
+			// Remove the effect
+			// Note: removeStatusEffect returns boolean, doesn't throw concurrent modification if we iterate over a copy
+			entity.removeStatusEffect(instance.getEffectType());
+		}
+	}
 }

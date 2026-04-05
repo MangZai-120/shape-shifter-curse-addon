@@ -61,6 +61,33 @@
             ]
         }
     },
+    "beacon_consume": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "entity_action": {
+            "type": "origins:change_resource",
+            "resource": "my_addon:form_allay_sp_mana_resource",
+            "change": -1,
+            "operation": "add"
+        },
+        "condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:resource",
+                    "resource": "my_addon:form_allay_sp_beacon_active",
+                    "comparison": "==",
+                    "compare_to": 1
+                },
+                {
+                    "type": "origins:resource",
+                    "resource": "my_addon:form_allay_sp_mana_resource",
+                    "comparison": ">=",
+                    "compare_to": 1
+                }
+            ]
+        }
+    },
     "name": "Mana",
     "description": "Custom mana resource for Allay SP form."
 }
