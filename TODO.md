@@ -12,8 +12,6 @@
 
 ## 计划中 (Pending)
 - [ ] Form_RW_Saint形态准备制作,但模型和动画是大问题
-- [ ] 计划充分利用SSC的技能系统,缩减代码量
-- [ ] 利用Apoli的系统将Java代码形式的技能换为JSON缩减代码量
 
 ## 已完成 (Completed)
 - [x] 制作各形态的cd条
