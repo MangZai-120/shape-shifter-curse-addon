@@ -79,6 +79,7 @@ public class SnowFoxSpTeleportAttack {
 
 		PowerUtils.changeResourceValueAndSync(player, RESOURCE_ID, -MANA_COST_SUCCESS);
 		setRegenCooldown(player, 100);
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_MELEE_SECONDARY_CD, 400);
 
 		Vec3d originalPos = player.getPos();
 		Vec3d originalVelocity = player.getVelocity();

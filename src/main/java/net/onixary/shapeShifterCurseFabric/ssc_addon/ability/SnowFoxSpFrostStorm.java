@@ -17,7 +17,9 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostStormEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 
 /**
  * SP雪狐远程次要技能 - 冰风暴
@@ -54,8 +56,8 @@ public class SnowFoxSpFrostStorm {
 
 		// 消耗霜寒值（在蓄力开始时就消耗）
 		changeResourceValue(player, -MANA_COST);
-		// 设置回复冷却（5秒）
 		setRegenCooldown(player, 100);
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RANGED_SECONDARY_CD, 600);
 
 		// 播放蓄力开始音效
 		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),

@@ -63,6 +63,7 @@ public class SnowFoxSpMeleeAbility {
 
 		PowerUtils.changeResourceValueAndSync(player, RESOURCE_ID, -MANA_COST);
 		PowerUtils.setResourceValueAndSync(player, REGEN_COOLDOWN_ID, 100);
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_MELEE_PRIMARY_CD, 120);
 
 		Vec3d lookDir = player.getRotationVector().normalize();
 		Vec3d startPos = player.getPos();
