@@ -62,7 +62,9 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPJukebox;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPTotem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDomain;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEnergy;
@@ -369,7 +371,9 @@ public class SscAddon implements ModInitializer {
 			for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()) {
 				SnowFoxSpMeleeAbility.tick(player);
 				SnowFoxSpTeleportAttack.tick(player);
+				SnowFoxSpFrostStorm.tick(player);
 				AllaySPGroupHeal.tick(player);
+				AllaySPJukebox.tick(player);
 				AnubisWolfSpDeathDomain.tick(player);
 				AnubisWolfSpSummonWolves.tick(player);
 				GoldenSandstormErosionBrand.tick(player);
@@ -541,12 +545,14 @@ public class SscAddon implements ModInitializer {
 			System.out.println("[SSC_ADDON] DISCONNECT event fired for player: " + handler.player.getName().getString());
 			SnowFoxSpMeleeAbility.clearPlayer(uuid);
 			SnowFoxSpTeleportAttack.clearPlayer(uuid);
+			SnowFoxSpFrostStorm.clearPlayer(uuid);
 			AnubisWolfSpDeathDomain.clearPlayer(handler.player);
 			AnubisWolfSpSummonWolves.clearPlayer(uuid);
 			AllaySPTotem.clearPlayer(handler.player);
 			GoldenSandstormErosionBrand.clearPlayer(uuid);
 			GoldenSandstormSandRetaliation.clearPlayer(uuid);
 			AnubisWolfSpSoulEnergy.clearPlayer(handler.player);
+			AllaySPJukebox.onPlayerDisconnect(handler.player);
 			PLAYER_LANGUAGES.remove(uuid);
 			System.out.println("[SSC_ADDON] DISCONNECT cleanup completed");
 		});
