@@ -6,19 +6,13 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "shape-shifter-curse:moondust_crystal_shard",
+          "name": "shape-shifter-curse:moondust_matrix",
           "functions": [
             {
               "function": "minecraft:set_count",
               "count": 1
             }
           ]
-        }
-      ],
-      "conditions": [
-        {
-          "condition": "minecraft:random_chance",
-          "chance": 0.8
         }
       ]
     },
@@ -27,11 +21,11 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "shape-shifter-curse:moondust_crystal_shard",
+          "name": "shape-shifter-curse:moondust_matrix",
           "functions": [
             {
               "function": "minecraft:set_count",
-              "count": 1
+              "count": 2
             }
           ]
         }
@@ -39,7 +33,7 @@
       "conditions": [
         {
           "condition": "minecraft:random_chance",
-          "chance": 0.5
+          "chance": 0.6
         }
       ]
     },
@@ -48,11 +42,32 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "shape-shifter-curse:moondust_crystal_shard",
+          "name": "shape-shifter-curse:moondust_matrix",
           "functions": [
             {
               "function": "minecraft:set_count",
-              "count": 1
+              "count": 3
+            }
+          ]
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "minecraft:random_chance",
+          "chance": 0.4
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "shape-shifter-curse:moondust_matrix",
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": 4
             }
           ]
         }
