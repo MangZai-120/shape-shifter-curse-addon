@@ -14,26 +14,26 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.screen.PotionBagScreenHandl
 
 public class PotionBagItem extends Item {
 
-    public PotionBagItem(Settings settings) {
-        super(settings.maxCount(1));
-    }
+	public PotionBagItem(Settings settings) {
+		super(settings.maxCount(1));
+	}
 
-    @Override
-    public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
-        ItemStack stack = user.getStackInHand(hand);
-        if (!world.isClient) {
-            user.openHandledScreen(new NamedScreenHandlerFactory() {
-                @Override
-                public Text getDisplayName() {
-                    return Text.translatable("item.ssc_addon.potion_bag");
-                }
+	@Override
+	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
+		ItemStack stack = user.getStackInHand(hand);
+		if (!world.isClient) {
+			user.openHandledScreen(new NamedScreenHandlerFactory() {
+				@Override
+				public Text getDisplayName() {
+					return Text.translatable("item.ssc_addon.potion_bag");
+				}
 
-                @Override
-                public ScreenHandler createMenu(int syncId, PlayerInventory inv, PlayerEntity player) {
-                    return new PotionBagScreenHandler(syncId, inv, stack);
-                }
-            });
-        }
-        return TypedActionResult.success(stack);
-    }
+				@Override
+				public ScreenHandler createMenu(int syncId, PlayerInventory inv, PlayerEntity player) {
+					return new PotionBagScreenHandler(syncId, inv, stack);
+				}
+			});
+		}
+		return TypedActionResult.success(stack);
+	}
 }

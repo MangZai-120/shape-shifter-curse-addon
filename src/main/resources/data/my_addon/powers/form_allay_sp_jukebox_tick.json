@@ -1,0 +1,36 @@
+{
+  "type": "origins:action_over_time",
+  "interval": 20,
+  "condition": {
+    "type": "origins:and",
+    "conditions": [
+      {
+        "type": "origins:resource",
+        "resource": "my_addon:form_allay_sp_jukebox_charge",
+        "comparison": ">=",
+        "compare_to": 1
+      },
+      {
+        "type": "origins:resource",
+        "resource": "my_addon:form_allay_sp_jukebox_active",
+        "comparison": "==",
+        "compare_to": 1
+      }
+    ]
+  },
+  "entity_action": {
+    "type": "origins:and",
+    "actions": [
+      {
+        "type": "origins:resource",
+        "resource": "my_addon:form_allay_sp_jukebox_charge",
+        "operation": "subtract",
+        "amount": 1
+      },
+      {
+        "type": "origins:execute_function",
+        "function": "my_addon:jukebox_process_effects"
+      }
+    ]
+  }
+}

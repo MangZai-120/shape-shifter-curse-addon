@@ -19,59 +19,60 @@ import java.util.UUID;
  */
 public class WhitelistUtils {
 
-    private WhitelistUtils() {
-        throw new UnsupportedOperationException("Utility class");
-    }
+	private WhitelistUtils() {
+		throw new UnsupportedOperationException("Utility class");
+	}
 
-    /**
-     * 返回 true 表示 attacker 的技能应跳过（不伤害）target。
-     */
-    public static boolean isProtected(ServerPlayerEntity attacker, LivingEntity target) {
-        if (target == attacker) return true; // 不攻击自身
+	/**
+	 * 返回 true 表示 attacker 的技能应跳过（不伤害）target。
+	 */
+	public static boolean isProtected(ServerPlayerEntity attacker, LivingEntity target) {
+		if (target == attacker) return true; // 不攻击自身
 
-        Set<String> tags = attacker.getCommandTags();
-        boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
+		Set<String> tags = attacker.getCommandTags();
+		boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
 
-        if (whitelistEmpty) {
-            // 保护：所有玩家
-            if (target instanceof PlayerEntity) return true;
-            // 保护：所有玩家拥有的驯服动物
-            if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) {
-                if (attacker.getServerWorld().getPlayerByUuid(tameable.getOwnerUuid()) != null) return true;
-            }
-            // 保护：带 "owner:" 标签的实体（即恕魔类召唤物）
-            return hasOwnerTag(target);
-        } else {
-            // 保护：直接在白名单中的实体（玩家/生物 UUID）
-            if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + target.getUuidAsString())) return true;
-            // 保护：驯服动物的主人在白名单中
-            if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) {
-                if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + tameable.getOwnerUuid().toString())) return true;
-            }
-            // 保护：恕魔类召唤物的主人在白名单中
-            for (String tag : target.getCommandTags()) {
-                if (tag.startsWith("owner:")) {
-                    String ownerUuid = tag.substring(6);
-                    if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + ownerUuid)) return true;
-                }
-            }
-            return false;
-        }
-    }
+		if (whitelistEmpty) {
+			// 保护：所有玩家
+			if (target instanceof PlayerEntity) return true;
+			// 保护：所有玩家拥有的驯服动物
+			if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) {
+				if (attacker.getServerWorld().getPlayerByUuid(tameable.getOwnerUuid()) != null) return true;
+			}
+			// 保护：带 "owner:" 标签的实体（即恕魔类召唤物）
+			return hasOwnerTag(target);
+		} else {
+			// 保护：直接在白名单中的实体（玩家/生物 UUID）
+			if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + target.getUuidAsString())) return true;
+			// 保护：驯服动物的主人在白名单中
+			if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) {
+				if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + tameable.getOwnerUuid().toString()))
+					return true;
+			}
+			// 保护：恕魔类召唤物的主人在白名单中
+			for (String tag : target.getCommandTags()) {
+				if (tag.startsWith("owner:")) {
+					String ownerUuid = tag.substring(6);
+					if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + ownerUuid)) return true;
+				}
+			}
+			return false;
+		}
+	}
 
-    /**
-     * 通过 ownerUuid 查找玩家后调用 {@link #isProtected(ServerPlayerEntity, LivingEntity)}。
-     * 适用于 FrostStorm 等非玩家施法者但有 ownerUuid 的实体。
-     */
-    public static boolean isProtected(UUID ownerUuid, ServerWorld world, LivingEntity target) {
-        if (ownerUuid == null) return false;
-        if (!(world.getPlayerByUuid(ownerUuid) instanceof ServerPlayerEntity owner)) return false;
-        return isProtected(owner, target);
-    }
+	/**
+	 * 通过 ownerUuid 查找玩家后调用 {@link #isProtected(ServerPlayerEntity, LivingEntity)}。
+	 * 适用于 FrostStorm 等非玩家施法者但有 ownerUuid 的实体。
+	 */
+	public static boolean isProtected(UUID ownerUuid, ServerWorld world, LivingEntity target) {
+		if (ownerUuid == null) return false;
+		if (!(world.getPlayerByUuid(ownerUuid) instanceof ServerPlayerEntity owner)) return false;
+		return isProtected(owner, target);
+	}
 
-    // ---- 私有辅助 ----
+	// ---- 私有辅助 ----
 
-    private static boolean hasOwnerTag(LivingEntity entity) {
-        return entity.getCommandTags().stream().anyMatch(t -> t.startsWith("owner:"));
-    }
+	private static boolean hasOwnerTag(LivingEntity entity) {
+		return entity.getCommandTags().stream().anyMatch(t -> t.startsWith("owner:"));
+	}
 }

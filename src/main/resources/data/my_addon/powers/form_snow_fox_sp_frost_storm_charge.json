@@ -1,0 +1,37 @@
+{
+    "type": "origins:action_over_time",
+    "interval": 1,
+    "condition": {
+        "type": "origins:resource",
+        "resource": "my_addon:form_snow_fox_sp_frost_charge",
+        "comparison": "<",
+        "compare_to": 30
+    },
+    "entity_action": {
+        "type": "origins:if_else",
+        "condition": {
+            "type": "origins:resource",
+            "resource": "my_addon:form_snow_fox_sp_frost_charge",
+            "comparison": ">=",
+            "compare_to": 29
+        },
+        "if_action": {
+            "type": "origins:action_action",
+            "actions": [
+                {
+                    "type": "origins:change_resource",
+                    "resource": "my_addon:form_snow_fox_sp_frost_charge",
+                    "change": 1
+                },
+                {
+                    "type": "ssc_addon:snow_fox_sp_frost_storm"
+                }
+            ]
+        },
+        "else_action": {
+            "type": "origins:change_resource",
+            "resource": "my_addon:form_snow_fox_sp_frost_charge",
+            "change": 1
+        }
+    }
+}

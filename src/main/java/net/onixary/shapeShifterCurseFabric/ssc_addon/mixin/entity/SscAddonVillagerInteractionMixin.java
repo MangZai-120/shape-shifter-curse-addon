@@ -15,17 +15,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(VillagerEntity.class)
 public class SscAddonVillagerInteractionMixin {
 
-    @Inject(method = "interactMob", at = @At("HEAD"), cancellable = true)
-    private void ssc_addon$preventTrade(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
-        if (player.isSneaking()) {
-            try {
-                PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
-                if (component != null && component.getCurrentForm() != null && 
-                    new Identifier("my_addon", "form_familiar_fox_sp").equals(component.getCurrentForm().FormID)) {
-                    // Prevent opening trade GUI
-                    cir.setReturnValue(ActionResult.PASS);
-                }
-            } catch (Exception ignored) {}
-        }
-    }
+	@Inject(method = "interactMob", at = @At("HEAD"), cancellable = true)
+	private void ssc_addon$preventTrade(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
+		if (player.isSneaking()) {
+			try {
+				PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
+				if (component != null && component.getCurrentForm() != null &&
+						new Identifier("my_addon", "form_familiar_fox_sp").equals(component.getCurrentForm().FormID)) {
+					// Prevent opening trade GUI
+					cir.setReturnValue(ActionResult.PASS);
+				}
+			} catch (Exception ignored) {
+			}
+		}
+	}
 }

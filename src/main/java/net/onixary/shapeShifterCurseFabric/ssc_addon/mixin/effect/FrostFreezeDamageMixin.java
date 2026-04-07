@@ -18,30 +18,30 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
  */
 @Mixin(LivingEntity.class)
 public abstract class FrostFreezeDamageMixin {
-    
-    /**
-     * Modify the damage amount based on various conditions
-     */
-    @ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
-    private float modifyDamageForFrostEffects(float amount, DamageSource source) {
-        LivingEntity self = (LivingEntity) (Object) this;
-        float modifiedAmount = amount;
-        
-        // 1. Check if player is using Teleport Attack (reduce damage by 65%)
-        if (self instanceof ServerPlayerEntity serverPlayer) {
-            float reduction = SnowFoxSpTeleportAttack.getDamageReduction(serverPlayer);
-            if (reduction > 0) {
-                modifiedAmount = modifiedAmount * (1.0f - reduction);
-            }
-        }
-        
-        // 2. Check if entity has Frost Freeze effect (increase damage by 35%)
-        StatusEffectInstance frostFreezeEffect = self.getStatusEffect(SscAddon.FROST_FREEZE);
-        if (frostFreezeEffect != null && FrostFreezeEffect.isPhysicalOrMagicDamage(source)) {
-            modifiedAmount = modifiedAmount * 1.35f;
-        }
+
+	/**
+	 * Modify the damage amount based on various conditions
+	 */
+	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+	private float modifyDamageForFrostEffects(float amount, DamageSource source) {
+		LivingEntity self = (LivingEntity) (Object) this;
+		float modifiedAmount = amount;
+
+		// 1. Check if player is using Teleport Attack (reduce damage by 65%)
+		if (self instanceof ServerPlayerEntity serverPlayer) {
+			float reduction = SnowFoxSpTeleportAttack.getDamageReduction(serverPlayer);
+			if (reduction > 0) {
+				modifiedAmount = modifiedAmount * (1.0f - reduction);
+			}
+		}
+
+		// 2. Check if entity has Frost Freeze effect (increase damage by 35%)
+		StatusEffectInstance frostFreezeEffect = self.getStatusEffect(SscAddon.FROST_FREEZE);
+		if (frostFreezeEffect != null && FrostFreezeEffect.isPhysicalOrMagicDamage(source)) {
+			modifiedAmount = modifiedAmount * 1.35f;
+		}
 
 
-        return modifiedAmount;
-    }
+		return modifiedAmount;
+	}
 }

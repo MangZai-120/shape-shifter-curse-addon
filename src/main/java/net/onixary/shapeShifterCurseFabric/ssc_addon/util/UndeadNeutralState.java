@@ -10,22 +10,29 @@ import java.util.UUID;
  */
 public final class UndeadNeutralState {
 
-    /** 失去视野后的脱战计时：30秒 */
-    public static final long SIGHT_TIMEOUT = 600L;
+	/**
+	 * 失去视野后的脱战计时：30秒
+	 */
+	public static final long SIGHT_TIMEOUT = 600L;
 
-    /** 全局挑衅时间戳：玩家UUID -> 最后挑衅的世界时间 */
-    public static final Map<UUID, Long> PROVOKE_TIMESTAMPS = new HashMap<>();
+	/**
+	 * 全局挑衅时间戳：玩家UUID -> 最后挑衅的世界时间
+	 */
+	public static final Map<UUID, Long> PROVOKE_TIMESTAMPS = new HashMap<>();
 
-    private UndeadNeutralState() {}
+	private UndeadNeutralState() {
+	}
 
-    /** 检查玩家是否处于挑衅状态 */
-    public static boolean isPlayerProvoked(UUID playerUuid, long worldTime) {
-        Long provokeTime = PROVOKE_TIMESTAMPS.get(playerUuid);
-        if (provokeTime == null) return false;
-        if (worldTime - provokeTime > SIGHT_TIMEOUT) {
-            PROVOKE_TIMESTAMPS.remove(playerUuid);
-            return false;
-        }
-        return true;
-    }
+	/**
+	 * 检查玩家是否处于挑衅状态
+	 */
+	public static boolean isPlayerProvoked(UUID playerUuid, long worldTime) {
+		Long provokeTime = PROVOKE_TIMESTAMPS.get(playerUuid);
+		if (provokeTime == null) return false;
+		if (worldTime - provokeTime > SIGHT_TIMEOUT) {
+			PROVOKE_TIMESTAMPS.remove(playerUuid);
+			return false;
+		}
+		return true;
+	}
 }
