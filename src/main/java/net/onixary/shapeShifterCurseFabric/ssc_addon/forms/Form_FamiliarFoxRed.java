@@ -8,7 +8,7 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.forms;
 import net.minecraft.util.Identifier;
 
 public class Form_FamiliarFoxRed extends Form_FamiliarFox3 {
-    public Form_FamiliarFoxRed(Identifier formID) {
-        super(formID);
-    }
+	public Form_FamiliarFoxRed(Identifier formID) {
+		super(formID);
+	}
 }

@@ -17,87 +17,87 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 
 public class EvolutionStoneItem extends Item {
 
-    public EvolutionStoneItem(Settings settings) {
-        super(settings);
-    }
+	public EvolutionStoneItem(Settings settings) {
+		super(settings);
+	}
 
-    @Override
-    public UseAction getUseAction(ItemStack stack) {
-        return UseAction.BOW;
-    }
+	@Override
+	public UseAction getUseAction(ItemStack stack) {
+		return UseAction.BOW;
+	}
 
-    @Override
-    public int getMaxUseTime(ItemStack stack) {
-        return 32;
-    }
+	@Override
+	public int getMaxUseTime(ItemStack stack) {
+		return 32;
+	}
 
-    @Override
-    public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
-        user.setCurrentHand(hand);
-        return TypedActionResult.consume(user.getStackInHand(hand));
-    }
+	@Override
+	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
+		user.setCurrentHand(hand);
+		return TypedActionResult.consume(user.getStackInHand(hand));
+	}
 
-    @Override
-    public ItemStack finishUsing(ItemStack stack, World world, LivingEntity user) {
-        if (!world.isClient && user instanceof PlayerEntity player) {
-            Identifier playerFormID = getPlayerFormID(player);
-            
-            Identifier targetFormId = null;
-            boolean canEvolve = false;
+	@Override
+	public ItemStack finishUsing(ItemStack stack, World world, LivingEntity user) {
+		if (!world.isClient && user instanceof PlayerEntity player) {
+			Identifier playerFormID = getPlayerFormID(player);
 
-            if (playerFormID != null) {
-                // Allow Wild Cat (Feral Cat SP) to evolve to Wild Cat SP
-                if (playerFormID.equals(new Identifier("shape-shifter-curse", "feral_cat_sp"))) {
-                    targetFormId = new Identifier("my_addon", "wild_cat_sp");
-                    canEvolve = true;
-                }
-                // Allow Snow Fox 3 (permanent phase) to evolve to Snow Fox SP
-                else if (playerFormID.equals(new Identifier("shape-shifter-curse", "snow_fox_3"))) {
-                    targetFormId = new Identifier("my_addon", "snow_fox_sp");
-                    canEvolve = true;
-                }
-                // Allow Allay to evolve to SP Allay
-                else if (playerFormID.equals(new Identifier("shape-shifter-curse", "allay_sp"))) {
-                    targetFormId = new Identifier("my_addon", "allay_sp");
-                    canEvolve = true;
-                }
-            }
+			Identifier targetFormId = null;
+			boolean canEvolve = false;
 
-            if (canEvolve) {
-                PlayerFormBase formBase = RegPlayerForms.getPlayerForm(targetFormId);
-                if (formBase != null) {
-                    TransformManager.handleDirectTransform(player, formBase, false);
-                    player.sendMessage(Text.translatable("message.ssc_addon.evolution_stone.success").formatted(Formatting.GREEN, Formatting.BOLD), false);
-                    world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0F, 1.0F);
-                    if (!player.getAbilities().creativeMode) {
-                        stack.decrement(1);
-                    }
-                } else {
-                    player.sendMessage(Text.literal("Error: Target form not found! ID: " + targetFormId).formatted(Formatting.RED), false);
-                }
-            } else {
-                player.sendMessage(Text.translatable("message.ssc_addon.evolution_stone.no_response").formatted(Formatting.RED), true);
-                world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0F, 1.0F);
-            }
-        }
-        return stack;
-    }
+			if (playerFormID != null) {
+				// Allow Wild Cat (Feral Cat SP) to evolve to Wild Cat SP
+				if (playerFormID.equals(new Identifier("shape-shifter-curse", "feral_cat_sp"))) {
+					targetFormId = new Identifier("my_addon", "wild_cat_sp");
+					canEvolve = true;
+				}
+				// Allow Snow Fox 3 (permanent phase) to evolve to Snow Fox SP
+				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "snow_fox_3"))) {
+					targetFormId = new Identifier("my_addon", "snow_fox_sp");
+					canEvolve = true;
+				}
+				// Allow Allay to evolve to SP Allay
+				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "allay_sp"))) {
+					targetFormId = new Identifier("my_addon", "allay_sp");
+					canEvolve = true;
+				}
+			}
 
-    @Override
-    public void appendTooltip(ItemStack stack, @org.jetbrains.annotations.Nullable World world, java.util.List<Text> tooltip, net.minecraft.client.item.TooltipContext context) {
-        super.appendTooltip(stack, world, tooltip, context);
-        String key = "item.ssc_addon.evolution_stone.tooltip";
-        if (I18n.hasTranslation(key)) {
-            String translated = I18n.translate(key);
-            for (String line : translated.split("\n")) {
-                tooltip.add(Text.literal(line).formatted(Formatting.GRAY));
-            }
-        } else {
-            tooltip.add(Text.translatable(key).formatted(Formatting.GRAY));
-        }
-    }
+			if (canEvolve) {
+				PlayerFormBase formBase = RegPlayerForms.getPlayerForm(targetFormId);
+				if (formBase != null) {
+					TransformManager.handleDirectTransform(player, formBase, false);
+					player.sendMessage(Text.translatable("message.ssc_addon.evolution_stone.success").formatted(Formatting.GREEN, Formatting.BOLD), false);
+					world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0F, 1.0F);
+					if (!player.getAbilities().creativeMode) {
+						stack.decrement(1);
+					}
+				} else {
+					player.sendMessage(Text.literal("Error: Target form not found! ID: " + targetFormId).formatted(Formatting.RED), false);
+				}
+			} else {
+				player.sendMessage(Text.translatable("message.ssc_addon.evolution_stone.no_response").formatted(Formatting.RED), true);
+				world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0F, 1.0F);
+			}
+		}
+		return stack;
+	}
 
-    private Identifier getPlayerFormID(PlayerEntity player) {
+	@Override
+	public void appendTooltip(ItemStack stack, @org.jetbrains.annotations.Nullable World world, java.util.List<Text> tooltip, net.minecraft.client.item.TooltipContext context) {
+		super.appendTooltip(stack, world, tooltip, context);
+		String key = "item.ssc_addon.evolution_stone.tooltip";
+		if (I18n.hasTranslation(key)) {
+			String translated = I18n.translate(key);
+			for (String line : translated.split("\n")) {
+				tooltip.add(Text.literal(line).formatted(Formatting.GRAY));
+			}
+		} else {
+			tooltip.add(Text.translatable(key).formatted(Formatting.GRAY));
+		}
+	}
+
+	private Identifier getPlayerFormID(PlayerEntity player) {
         /*
         // 旧代码
         if (player == null) return null;
@@ -108,8 +108,8 @@ public class EvolutionStoneItem extends Item {
         return currentForm.FormID;
         */
 
-        // 新代码
-        PlayerFormBase currentForm = FormUtils.getCurrentForm(player);
-        return currentForm != null ? currentForm.FormID : null;
-    }
+		// 新代码
+		PlayerFormBase currentForm = FormUtils.getCurrentForm(player);
+		return currentForm != null ? currentForm.FormID : null;
+	}
 }

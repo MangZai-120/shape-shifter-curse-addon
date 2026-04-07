@@ -10,7 +10,7 @@
         "type": "origins:sneaking",
         "inverted": true
     },
-    "cooldown": 0,
+    "cooldown": 1000,
     "hud_render": {
         "should_render": false
     },

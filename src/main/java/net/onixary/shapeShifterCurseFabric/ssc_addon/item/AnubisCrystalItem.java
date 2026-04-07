@@ -18,21 +18,21 @@ import java.util.List;
  * 效果：增加冥狼召唤数量和上限
  */
 public class AnubisCrystalItem extends TrinketItem {
-    public AnubisCrystalItem(Settings settings) {
-        super(settings);
-    }
+	public AnubisCrystalItem(Settings settings) {
+		super(settings);
+	}
 
-    @Override
-    public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
-        return FormUtils.isAnubisWolfSP(entity);
-    }
+	@Override
+	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+		return FormUtils.isAnubisWolfSP(entity);
+	}
 
-    @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        tooltip.add(Text.translatable("item.ssc_addon.anubis_crystal.tooltip_1").formatted(Formatting.LIGHT_PURPLE));
-        tooltip.add(Text.translatable("item.ssc_addon.anubis_crystal.tooltip_2").formatted(Formatting.GRAY));
-        tooltip.add(Text.translatable("item.ssc_addon.anubis_crystal.tooltip_3").formatted(Formatting.GRAY));
-        tooltip.add(Text.translatable("item.ssc_addon.anubis_crystal.tooltip_4").formatted(Formatting.RED));
-        super.appendTooltip(stack, world, tooltip, context);
-    }
+	@Override
+	public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+		tooltip.add(Text.translatable("item.ssc_addon.anubis_crystal.tooltip_1").formatted(Formatting.LIGHT_PURPLE));
+		tooltip.add(Text.translatable("item.ssc_addon.anubis_crystal.tooltip_2").formatted(Formatting.GRAY));
+		tooltip.add(Text.translatable("item.ssc_addon.anubis_crystal.tooltip_3").formatted(Formatting.GRAY));
+		tooltip.add(Text.translatable("item.ssc_addon.anubis_crystal.tooltip_4").formatted(Formatting.RED));
+		super.appendTooltip(stack, world, tooltip, context);
+	}
 }

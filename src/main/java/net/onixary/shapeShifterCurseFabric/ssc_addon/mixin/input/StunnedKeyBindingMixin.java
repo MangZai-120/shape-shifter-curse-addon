@@ -14,88 +14,88 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(KeyBinding.class)
 public class StunnedKeyBindingMixin {
 
-    @Shadow
-    private int timesPressed;
-    
-    @Shadow
-    private boolean pressed;
+	@Shadow
+	private int timesPressed;
 
-    @Unique
-    private boolean isTargetKey(String key) {
-        return key.equals("key.origins.primary_active") || 
-               key.equals("key.origins.secondary_active") ||
-               key.equals("key.ssc_addon.sp_primary") ||
-               key.equals("key.ssc_addon.sp_secondary") ||
-               key.equals("key.use") || 
-               key.equals("key.attack") ||
-               key.equals("key.tacz.shoot.desc") ||
-               key.equals("key.tacz.aim.desc") ||
-               key.equals("key.tacz.inspect.desc") ||
-               key.equals("key.tacz.reload.desc") ||
-               key.equals("key.tacz.fire_select.desc") ||
-               key.equals("key.tacz.crawl.desc") ||
-               key.equals("key.tacz.refit.desc") ||
-               key.equals("key.tacz.zoom.desc") ||
-               key.equals("key.tacz.melee.desc");
-    }
+	@Shadow
+	private boolean pressed;
 
-    @Unique
-    private boolean isPlayerStunned() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        return client != null && client.player != null && (client.player.hasStatusEffect(SscAddon.STUN) || client.player.hasStatusEffect(SscAddon.PLAYING_DEAD));
-    }
+	@Unique
+	private boolean isTargetKey(String key) {
+		return key.equals("key.origins.primary_active") ||
+				key.equals("key.origins.secondary_active") ||
+				key.equals("key.ssc_addon.sp_primary") ||
+				key.equals("key.ssc_addon.sp_secondary") ||
+				key.equals("key.use") ||
+				key.equals("key.attack") ||
+				key.equals("key.tacz.shoot.desc") ||
+				key.equals("key.tacz.aim.desc") ||
+				key.equals("key.tacz.inspect.desc") ||
+				key.equals("key.tacz.reload.desc") ||
+				key.equals("key.tacz.fire_select.desc") ||
+				key.equals("key.tacz.crawl.desc") ||
+				key.equals("key.tacz.refit.desc") ||
+				key.equals("key.tacz.zoom.desc") ||
+				key.equals("key.tacz.melee.desc");
+	}
 
-    @Inject(method = "wasPressed", at = @At("HEAD"), cancellable = true)
-    private void onWasPressed(CallbackInfoReturnable<Boolean> cir) {
-        KeyBinding binding = (KeyBinding) (Object) this;
-        String key = binding.getTranslationKey();
-        
-        if (isTargetKey(key) && isPlayerStunned()) {
-            // Clear any buffered input so it doesn't trigger later
-            this.timesPressed = 0;
-            cir.setReturnValue(false);
-        }
-    }
+	@Unique
+	private boolean isPlayerStunned() {
+		MinecraftClient client = MinecraftClient.getInstance();
+		return client != null && client.player != null && (client.player.hasStatusEffect(SscAddon.STUN) || client.player.hasStatusEffect(SscAddon.PLAYING_DEAD));
+	}
 
-    @Inject(method = "isPressed", at = @At("HEAD"), cancellable = true)
-    private void onIsPressed(CallbackInfoReturnable<Boolean> cir) {
-        KeyBinding binding = (KeyBinding) (Object) this;
-        String key = binding.getTranslationKey();
-        
-        if (isTargetKey(key) && isPlayerStunned()) {
-            cir.setReturnValue(false);
-        }
-    }
+	@Inject(method = "wasPressed", at = @At("HEAD"), cancellable = true)
+	private void onWasPressed(CallbackInfoReturnable<Boolean> cir) {
+		KeyBinding binding = (KeyBinding) (Object) this;
+		String key = binding.getTranslationKey();
 
-    @Inject(method = "setPressed", at = @At("HEAD"), cancellable = true)
-    private void onSetPressed(boolean pressed, CallbackInfo ci) {
-        KeyBinding binding = (KeyBinding) (Object) this;
-        String key = binding.getTranslationKey();
-        
-        // If trying to press the key (pressed=true) while stunned, block it AND ensure internal state is false
-        if (pressed && isTargetKey(key) && isPlayerStunned()) {
-            this.pressed = false;
-            ci.cancel();
-        }
-    }
+		if (isTargetKey(key) && isPlayerStunned()) {
+			// Clear any buffered input so it doesn't trigger later
+			this.timesPressed = 0;
+			cir.setReturnValue(false);
+		}
+	}
 
-    @Inject(method = "matchesKey", at = @At("HEAD"), cancellable = true)
-    private void onMatchesKey(int key, int scancode, CallbackInfoReturnable<Boolean> cir) {
-        KeyBinding binding = (KeyBinding) (Object) this;
-        String translationKey = binding.getTranslationKey();
-        
-        if (isTargetKey(translationKey) && isPlayerStunned()) {
-            cir.setReturnValue(false);
-        }
-    }
+	@Inject(method = "isPressed", at = @At("HEAD"), cancellable = true)
+	private void onIsPressed(CallbackInfoReturnable<Boolean> cir) {
+		KeyBinding binding = (KeyBinding) (Object) this;
+		String key = binding.getTranslationKey();
 
-    @Inject(method = "matchesMouse", at = @At("HEAD"), cancellable = true)
-    private void onMatchesMouse(int button, CallbackInfoReturnable<Boolean> cir) {
-        KeyBinding binding = (KeyBinding) (Object) this;
-        String translationKey = binding.getTranslationKey();
-        
-        if (isTargetKey(translationKey) && isPlayerStunned()) {
-            cir.setReturnValue(false);
-        }
-    }
+		if (isTargetKey(key) && isPlayerStunned()) {
+			cir.setReturnValue(false);
+		}
+	}
+
+	@Inject(method = "setPressed", at = @At("HEAD"), cancellable = true)
+	private void onSetPressed(boolean pressed, CallbackInfo ci) {
+		KeyBinding binding = (KeyBinding) (Object) this;
+		String key = binding.getTranslationKey();
+
+		// If trying to press the key (pressed=true) while stunned, block it AND ensure internal state is false
+		if (pressed && isTargetKey(key) && isPlayerStunned()) {
+			this.pressed = false;
+			ci.cancel();
+		}
+	}
+
+	@Inject(method = "matchesKey", at = @At("HEAD"), cancellable = true)
+	private void onMatchesKey(int key, int scancode, CallbackInfoReturnable<Boolean> cir) {
+		KeyBinding binding = (KeyBinding) (Object) this;
+		String translationKey = binding.getTranslationKey();
+
+		if (isTargetKey(translationKey) && isPlayerStunned()) {
+			cir.setReturnValue(false);
+		}
+	}
+
+	@Inject(method = "matchesMouse", at = @At("HEAD"), cancellable = true)
+	private void onMatchesMouse(int button, CallbackInfoReturnable<Boolean> cir) {
+		KeyBinding binding = (KeyBinding) (Object) this;
+		String translationKey = binding.getTranslationKey();
+
+		if (isTargetKey(translationKey) && isPlayerStunned()) {
+			cir.setReturnValue(false);
+		}
+	}
 }

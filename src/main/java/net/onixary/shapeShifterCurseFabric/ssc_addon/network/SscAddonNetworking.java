@@ -9,28 +9,28 @@ import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManage
 
 
 public class SscAddonNetworking {
-    public static final Identifier PACKET_KEY_PRESS = new Identifier("my_addon", "key_press");
+	public static final Identifier PACKET_KEY_PRESS = new Identifier("my_addon", "key_press");
 
 	public static void registerServerReceivers() {
-        ServerPlayNetworking.registerGlobalReceiver(PACKET_KEY_PRESS, (server, player, handler, buf, responseSender) -> {
-            int keyId = buf.readInt();
-            server.execute(() -> handleKeyPress(player, keyId));
-        });
-    }
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_KEY_PRESS, (server, player, handler, buf, responseSender) -> {
+			int keyId = buf.readInt();
+			server.execute(() -> handleKeyPress(player, keyId));
+		});
+	}
 
-    private static void handleKeyPress(ServerPlayerEntity player, int keyId) {
-        // Find current form
-        PlayerFormBase form = FormAbilityManager.getForm(player);
-        if (form == null) return;
+	private static void handleKeyPress(ServerPlayerEntity player, int keyId) {
+		// Find current form
+		PlayerFormBase form = FormAbilityManager.getForm(player);
+		if (form == null) return;
 
-        Identifier formId = form.FormID;
+		Identifier formId = form.FormID;
 
-        
-        // Allay Heal (using keyId 1 for now, mapped from client)
+
+		// Allay Heal (using keyId 1 for now, mapped from client)
         /*if (keyId == 1 && (formId.getPath().equals("form_allay_sp") || formId.getPath().equals("allay_sp"))) {
              Ability_AllayHeal.onHold(player);
         }*/
-        
-        // Add other key handlers here if needed (e.g. Fox Fire)
-    }
+
+		// Add other key handlers here if needed (e.g. Fox Fire)
+	}
 }
