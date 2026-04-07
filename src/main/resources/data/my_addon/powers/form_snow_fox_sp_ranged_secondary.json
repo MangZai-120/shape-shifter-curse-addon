@@ -1,33 +1,7 @@
 {
     "type": "origins:active_self",
     "entity_action": {
-        "type": "origins:if",
-        "condition": {
-            "type": "origins:resource",
-            "resource": "my_addon:form_snow_fox_sp_frost_charge",
-            "comparison": "==",
-            "compare_to": 0
-        },
-        "if_action": {
-            "type": "origins:action_action",
-            "actions": [
-                {
-                    "type": "origins:change_resource",
-                    "resource": "my_addon:form_snow_fox_sp_resource",
-                    "change": -30
-                },
-                {
-                    "type": "origins:change_resource",
-                    "resource": "my_addon:form_snow_fox_sp_frost_regen_cooldown_resource",
-                    "change": 100
-                },
-                {
-                    "type": "origins:change_resource",
-                    "resource": "my_addon:form_snow_fox_sp_frost_charge",
-                    "change": 1
-                }
-            ]
-        }
+        "type": "ssc_addon:snow_fox_sp_frost_storm"
     },
     "key": {
         "key": "key.ssc_addon.sp_primary"
@@ -47,7 +21,7 @@
             }
         ]
     },
-    "cooldown": 600,
+    "cooldown": 0,
     "hud_render": {
         "should_render": false
     },
