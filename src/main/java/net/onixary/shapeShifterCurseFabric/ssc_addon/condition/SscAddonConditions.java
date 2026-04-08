@@ -17,6 +17,8 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.ErosionBrandClientState;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormErosionBrand;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 public class SscAddonConditions {
@@ -95,6 +97,27 @@ public class SscAddonConditions {
 					if (!(actor instanceof ServerPlayerEntity player)) return true;
 					if (!(target instanceof LivingEntity living)) return true;
 					return !WhitelistUtils.isProtected(player, living);
+				}));
+
+		// 侵蚀烙印颜色状态条件 - 用于entity_glow
+		// 参数 "color"：yellow / orange / red / green
+		// 服务端使用服务器HashMap，客户端使用S2C同步的缓存数据
+		registerBiEntity(new ConditionFactory<>(new Identifier("ssc_addon", "erosion_brand_state"),
+				new SerializableData()
+						.add("color", SerializableDataTypes.STRING),
+				(data, pair) -> {
+					Entity actor = pair.getLeft();
+					Entity target = pair.getRight();
+					String color = data.getString("color");
+					// 服务端检查（actor是ServerPlayerEntity）
+					if (actor instanceof ServerPlayerEntity) {
+						return GoldenSandstormErosionBrand.hasColor(actor.getUuid(), target.getUuid(), color);
+					}
+					// 客户端检查（使用网络同步的本地缓存）
+					if (actor.getWorld().isClient()) {
+						return ErosionBrandClientState.hasColor(target.getUuid(), color);
+					}
+					return false;
 				}));
 	}
 

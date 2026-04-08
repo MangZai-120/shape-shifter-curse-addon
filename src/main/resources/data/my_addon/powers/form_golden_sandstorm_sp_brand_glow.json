@@ -1,0 +1,87 @@
+{
+    "type": "origins:multiple",
+    "glow_yellow": {
+        "type": "origins:entity_glow",
+        "bientity_condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:distance",
+                    "comparison": "<=",
+                    "compare_to": 32
+                },
+                {
+                    "type": "ssc_addon:erosion_brand_state",
+                    "color": "yellow"
+                }
+            ]
+        },
+        "use_teams": false,
+        "red": 1.0,
+        "green": 1.0,
+        "blue": 0.2
+    },
+    "glow_orange": {
+        "type": "origins:entity_glow",
+        "bientity_condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:distance",
+                    "comparison": "<=",
+                    "compare_to": 32
+                },
+                {
+                    "type": "ssc_addon:erosion_brand_state",
+                    "color": "orange"
+                }
+            ]
+        },
+        "use_teams": false,
+        "red": 1.0,
+        "green": 0.55,
+        "blue": 0.0
+    },
+    "glow_red": {
+        "type": "origins:entity_glow",
+        "bientity_condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:distance",
+                    "comparison": "<=",
+                    "compare_to": 32
+                },
+                {
+                    "type": "ssc_addon:erosion_brand_state",
+                    "color": "red"
+                }
+            ]
+        },
+        "use_teams": false,
+        "red": 1.0,
+        "green": 0.0,
+        "blue": 0.0
+    },
+    "glow_green": {
+        "type": "origins:entity_glow",
+        "bientity_condition": {
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "origins:distance",
+                    "comparison": "<=",
+                    "compare_to": 32
+                },
+                {
+                    "type": "ssc_addon:erosion_brand_state",
+                    "color": "green"
+                }
+            ]
+        },
+        "use_teams": false,
+        "red": 0.0,
+        "green": 1.0,
+        "blue": 0.3
+    }
+}

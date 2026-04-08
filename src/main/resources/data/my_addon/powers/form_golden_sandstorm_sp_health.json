@@ -1,9 +1,0 @@
-{
-    "type": "origins:attribute",
-    "modifier": {
-        "name": "SP Golden Sandstorm Health",
-        "attribute": "minecraft:generic.max_health",
-        "value": 4.0,
-        "operation": "addition"
-    }
-}

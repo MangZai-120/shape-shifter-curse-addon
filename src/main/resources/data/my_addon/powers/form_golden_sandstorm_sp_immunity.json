@@ -1,0 +1,8 @@
+{
+    "type": "origins:effect_immunity",
+    "effects": [
+        "minecraft:wither",
+        "minecraft:blindness",
+        "ssc_addon:sand_blind"
+    ]
+}

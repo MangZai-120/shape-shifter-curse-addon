@@ -36,7 +36,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDo
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormWitherSand;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormErosionBrand;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormGoldenVerdict;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormDetonate;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility;
@@ -515,21 +515,12 @@ public class SscAddonActions {
 					}
 				}));
 
-		// ==== 金沙岚SP - 侵蚀烙印 ====
-		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "golden_sandstorm_erosion_brand"),
+		// ==== 金沙岚SP - 引爆烙印 ====
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "golden_sandstorm_detonate"),
 				new SerializableData(),
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity sp) {
-						GoldenSandstormErosionBrand.execute(sp);
-					}
-				}));
-
-		// ==== 金沙岚SP - 金沙终裁 ====
-		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "golden_sandstorm_golden_verdict"),
-				new SerializableData(),
-				(data, entity) -> {
-					if (entity instanceof ServerPlayerEntity sp) {
-						GoldenSandstormGoldenVerdict.execute(sp);
+						GoldenSandstormDetonate.execute(sp);
 					}
 				}));
 	}

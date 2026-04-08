@@ -70,7 +70,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDo
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEnergy;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormErosionBrand;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormSandRetaliation;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormWitherSand;
 import net.onixary.shapeShifterCurseFabric.additional_power.VirtualTotemPower;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 
@@ -89,6 +89,13 @@ public class SscAddon implements ModInitializer {
 	public static final StatusEffect FROST_FREEZE = new FrostFreezeEffect();
 	public static final StatusEffect FROST_FALL = new FrostFallEffect();
 	public static final StatusEffect PURIFIED = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.PurifiedEffect();
+	public static final StatusEffect SAND_BLIND = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.SandBlindEffect();
+	/** 侵蚀烙印标记效果 - 1层(黄色) */
+	public static final StatusEffect EROSION_BRAND_MARKER_1 = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.ErosionBrandMarkerEffect(0xFFD700);
+	/** 侵蚀烙印标记效果 - 2层(橙色) */
+	public static final StatusEffect EROSION_BRAND_MARKER_2 = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.ErosionBrandMarkerEffect(0xFF8C00);
+	/** 侵蚀烙印标记效果 - 3层(红色) */
+	public static final StatusEffect EROSION_BRAND_MARKER_3 = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.ErosionBrandMarkerEffect(0xDC143C);
 	public static final Item POTION_BAG = new PotionBagItem(new Item.Settings().maxCount(1));
 	public static final EntityType<FrostBallEntity> FROST_BALL_ENTITY = Registry.register(
 			Registries.ENTITY_TYPE,
@@ -248,6 +255,10 @@ public class SscAddon implements ModInitializer {
 		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "frost_freeze"), FROST_FREEZE);
 		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "frost_fall"), FROST_FALL);
 		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "purified"), PURIFIED);
+		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "sand_blind"), SAND_BLIND);
+		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "erosion_brand_marker_1"), EROSION_BRAND_MARKER_1);
+		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "erosion_brand_marker_2"), EROSION_BRAND_MARKER_2);
+		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "erosion_brand_marker_3"), EROSION_BRAND_MARKER_3);
 	}
 
 	private void registerItems() {
@@ -377,7 +388,7 @@ public class SscAddon implements ModInitializer {
 				AnubisWolfSpDeathDomain.tick(player);
 				AnubisWolfSpSummonWolves.tick(player);
 				GoldenSandstormErosionBrand.tick(player);
-				GoldenSandstormSandRetaliation.tick(player);
+				GoldenSandstormWitherSand.tick(player);
 			}
 		});
 	}
@@ -392,7 +403,7 @@ public class SscAddon implements ModInitializer {
 			AnubisWolfSpSummonWolves.clearAll();
 			AllaySPTotem.clearAll();
 			GoldenSandstormErosionBrand.clearAll();
-			GoldenSandstormSandRetaliation.clearAll();
+			GoldenSandstormWitherSand.clearAll();
 			System.out.println("[SSC_ADDON] SERVER_STARTING ability state cleared");
 		});
 		// 服务器关闭前还原所有死亡领域方块（在世界存档之前触发）
@@ -414,7 +425,7 @@ public class SscAddon implements ModInitializer {
 			AnubisWolfSpSummonWolves.clearAll();
 			AllaySPTotem.clearAll();
 			GoldenSandstormErosionBrand.clearAll();
-			GoldenSandstormSandRetaliation.clearAll();
+			GoldenSandstormWitherSand.clearAll();
 			System.out.println("[SSC_ADDON] END_DATA_PACK_RELOAD ability state cleared");
 		});
 	}
@@ -549,8 +560,8 @@ public class SscAddon implements ModInitializer {
 			AnubisWolfSpDeathDomain.clearPlayer(handler.player);
 			AnubisWolfSpSummonWolves.clearPlayer(uuid);
 			AllaySPTotem.clearPlayer(handler.player);
-			GoldenSandstormErosionBrand.clearPlayer(uuid);
-			GoldenSandstormSandRetaliation.clearPlayer(uuid);
+			GoldenSandstormErosionBrand.clearPlayer(handler.player);
+			GoldenSandstormWitherSand.clearPlayer(handler.player);
 			AnubisWolfSpSoulEnergy.clearPlayer(handler.player);
 			AllaySPJukebox.onPlayerDisconnect(handler.player);
 			PLAYER_LANGUAGES.remove(uuid);

@@ -3,6 +3,7 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.client;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -17,6 +18,8 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.ErosionBrandClientState;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormErosionBrand;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.client.mana.AllaySPManaBar;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.client.mana.AnubisWolfSPSoulBar;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.client.mana.SnowFoxSPManaBar;
@@ -51,6 +54,18 @@ public class SscAddonClient implements ClientModInitializer {
 		LOGGER.info("SSC ADDON DEBUG: Registering Client KeyBindings...");
 
 		SscAddonKeybindings.register();
+
+		// 注册侵蚀烙印 S2C 同步包接收器
+		ClientPlayNetworking.registerGlobalReceiver(GoldenSandstormErosionBrand.PACKET_BRAND_SYNC, (client, handler, buf, responseSender) -> {
+			int count = buf.readInt();
+			java.util.Map<java.util.UUID, String> brands = new java.util.HashMap<>();
+			for (int i = 0; i < count; i++) {
+				java.util.UUID uuid = buf.readUuid();
+				String color = buf.readString();
+				brands.put(uuid, color);
+			}
+			client.execute(() -> ErosionBrandClientState.update(brands));
+		});
 
 		ItemTooltipCallback.EVENT.register((stack, context, lines) -> {
 			if (stack.getItem() == SscAddon.CORAL_BALL) {
