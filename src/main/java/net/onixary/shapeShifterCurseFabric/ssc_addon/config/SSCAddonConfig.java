@@ -1,5 +1,8 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.config;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
@@ -15,6 +18,11 @@ public class SSCAddonConfig implements ConfigData {
 
 	@ConfigEntry.Gui.Tooltip
 	public boolean showCdSeconds = true;
+
+	// Globally disabled skills (format: "form:skill", e.g., "snow_fox:melee_primary")
+	@ConfigEntry.Gui.Tooltip
+	public List<String> disabledSkills = new ArrayList<>();
+
 	@ConfigEntry.Gui.CollapsibleObject(startExpanded = false)
 	public SnowFoxConfig snowFox = new SnowFoxConfig();
 	@ConfigEntry.Gui.CollapsibleObject(startExpanded = false)
