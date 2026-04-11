@@ -29,10 +29,20 @@
         "type": "origins:action_over_time",
         "interval": 10,
         "condition": {
-            "type": "origins:resource",
-            "resource": "*:*_regen_pause_timer",
-            "comparison": "==",
-            "compare_to": 0
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "ssc_addon:skill_disabled",
+                    "form": "familiar_fox",
+                    "skill": "mana_regen"
+                },
+                {
+                    "type": "origins:resource",
+                    "resource": "*:*_regen_pause_timer",
+                    "comparison": "==",
+                    "compare_to": 0
+                }
+            ]
         },
         "entity_action": {
             "type": "shape-shifter-curse:gain_mana",

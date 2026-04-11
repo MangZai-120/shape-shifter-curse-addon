@@ -40,6 +40,11 @@
     "soul_particle_hint": {
         "type": "origins:action_over_time",
         "interval": 20,
+        "condition": {
+            "type": "ssc_addon:skill_disabled",
+            "form": "anubis_wolf",
+            "skill": "soul_scrutiny"
+        },
         "entity_action": {
             "type": "origins:area_of_effect",
             "radius": 16,

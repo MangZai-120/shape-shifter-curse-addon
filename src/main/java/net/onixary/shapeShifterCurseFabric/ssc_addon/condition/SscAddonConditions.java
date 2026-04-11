@@ -19,6 +19,7 @@ import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.ErosionBrandClientState;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormErosionBrand;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SkillBlocker;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 public class SscAddonConditions {
@@ -118,6 +119,21 @@ public class SscAddonConditions {
 						return ErosionBrandClientState.hasColor(target.getUuid(), color);
 					}
 					return false;
+				}));
+
+		// Skill blocking condition - returns true when skill is NOT blocked (normal behavior)
+		// Add this condition to action_over_time powers so they don't execute when disabled
+		register(new ConditionFactory<>(new Identifier("ssc_addon", "skill_disabled"),
+				new SerializableData()
+						.add("form", SerializableDataTypes.STRING)
+						.add("skill", SerializableDataTypes.STRING),
+				(data, entity) -> {
+					if (entity instanceof ServerPlayerEntity player) {
+						String form = data.getString("form");
+						String skill = data.getString("skill");
+						return !SkillBlocker.isSkillBlocked(player, form, skill);
+					}
+					return true; // Non-player entities not blocked
 				}));
 	}
 

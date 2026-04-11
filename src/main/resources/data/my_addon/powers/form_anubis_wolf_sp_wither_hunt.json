@@ -12,6 +12,11 @@
     "scan_wither": {
         "type": "origins:action_over_time",
         "interval": 10,
+        "condition": {
+            "type": "ssc_addon:skill_disabled",
+            "form": "anubis_wolf",
+            "skill": "wither_hunt"
+        },
         "entity_action": {
             "type": "origins:and",
             "actions": [

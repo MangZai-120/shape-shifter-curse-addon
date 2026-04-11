@@ -16,9 +16,9 @@ import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.AllayJukeboxItem;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SkillBlocker;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -81,6 +81,9 @@ public class AllaySPJukebox {
      * Called every tick for each allay_sp player from the server tick event
      */
     public static void tick(ServerPlayerEntity player) {
+        if (SkillBlocker.isSkillBlocked(player, "allay", "jukebox_charge")) {
+            return;
+        }
         PlayerFormBase currentForm = FormAbilityManager.getForm(player);
         boolean isAllaySp = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "allay_sp"));
 

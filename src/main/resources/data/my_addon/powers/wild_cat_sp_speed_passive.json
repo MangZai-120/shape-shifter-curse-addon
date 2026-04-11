@@ -18,6 +18,11 @@
             "type": "origins:and",
             "conditions": [
                 {
+                    "type": "ssc_addon:skill_disabled",
+                    "form": "wild_cat",
+                    "skill": "night_speed"
+                },
+                {
                     "type": "origins:time_of_day",
                     "compare_to": 13000,
                     "comparison": ">="
@@ -45,17 +50,27 @@
             }
         },
         "condition": {
-            "type": "origins:or",
+            "type": "origins:and",
             "conditions": [
                 {
-                    "type": "origins:time_of_day",
-                    "compare_to": 13000,
-                    "comparison": "<"
+                    "type": "ssc_addon:skill_disabled",
+                    "form": "wild_cat",
+                    "skill": "day_slow"
                 },
                 {
-                    "type": "origins:time_of_day",
-                    "compare_to": 23000,
-                    "comparison": ">"
+                    "type": "origins:or",
+                    "conditions": [
+                        {
+                            "type": "origins:time_of_day",
+                            "compare_to": 13000,
+                            "comparison": "<"
+                        },
+                        {
+                            "type": "origins:time_of_day",
+                            "compare_to": 23000,
+                            "comparison": ">"
+                        }
+                    ]
                 }
             ]
         }

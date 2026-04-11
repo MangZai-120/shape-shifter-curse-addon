@@ -38,10 +38,20 @@
         "type": "origins:action_over_time",
         "interval": 20,
         "condition": {
-            "type": "origins:resource",
-            "resource": "my_addon:form_snow_fox_sp_frost_regen_cooldown_resource",
-            "comparison": "==",
-            "compare_to": 0
+            "type": "origins:and",
+            "conditions": [
+                {
+                    "type": "ssc_addon:skill_disabled",
+                    "form": "snow_fox",
+                    "skill": "frost_regen"
+                },
+                {
+                    "type": "origins:resource",
+                    "resource": "my_addon:form_snow_fox_sp_frost_regen_cooldown_resource",
+                    "comparison": "==",
+                    "compare_to": 0
+                }
+            ]
         },
         "entity_action": {
             "type": "origins:if_else",

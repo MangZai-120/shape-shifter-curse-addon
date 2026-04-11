@@ -15,6 +15,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SkillBlocker;
 
 import java.util.List;
 import java.util.Set;
@@ -44,6 +45,9 @@ public class AllaySPGroupHeal {
 	 * 每tick检查是否需要执行治疗
 	 */
 	public static void tick(ServerPlayerEntity player) {
+		if (SkillBlocker.isSkillBlocked(player, "allay", "group_heal")) {
+			return;
+		}
 		int healExecute = getResourceValue(player, HEAL_EXECUTE_ID);
 		if (healExecute != 1) return;
 

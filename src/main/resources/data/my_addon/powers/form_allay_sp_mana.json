@@ -47,6 +47,11 @@
             "type": "origins:and",
             "conditions": [
                 {
+                    "type": "ssc_addon:skill_disabled",
+                    "form": "allay",
+                    "skill": "mana_regen"
+                },
+                {
                     "type": "origins:resource",
                     "resource": "my_addon:form_allay_sp_mana_resource",
                     "comparison": "<",
