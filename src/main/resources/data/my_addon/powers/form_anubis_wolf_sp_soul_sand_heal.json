@@ -6,13 +6,23 @@
         "amount": 1
     },
     "condition": {
-        "type": "origins:on_block",
-        "block_condition": {
-            "type": "origins:or",
-            "conditions": [
-                { "type": "origins:block", "block": "minecraft:soul_sand" },
-                { "type": "origins:block", "block": "minecraft:soul_soil" }
-            ]
-        }
+        "type": "origins:and",
+        "conditions": [
+            {
+                "type": "ssc_addon:skill_disabled",
+                "form": "anubis_wolf",
+                "skill": "soul_sand_heal"
+            },
+            {
+                "type": "origins:on_block",
+                "block_condition": {
+                    "type": "origins:or",
+                    "conditions": [
+                        { "type": "origins:block", "block": "minecraft:soul_sand" },
+                        { "type": "origins:block", "block": "minecraft:soul_soil" }
+                    ]
+                }
+            }
+        ]
     }
 }

@@ -5,6 +5,11 @@
         "type": "origins:heal",
         "amount": 0.25
     },
+    "condition": {
+        "type": "ssc_addon:skill_disabled",
+        "form": "axolotl",
+        "skill": "natural_regen_boost"
+    },
     "name": "Rapid Metabolism",
     "description": "Natural health regeneration is 20% faster."
 }

@@ -9,6 +9,11 @@
         "type": "origins:and",
         "conditions": [
             {
+                "type": "ssc_addon:skill_disabled",
+                "form": "axolotl",
+                "skill": "rain_wetness"
+            },
+            {
                 "type": "origins:in_rain"
             },
             {
