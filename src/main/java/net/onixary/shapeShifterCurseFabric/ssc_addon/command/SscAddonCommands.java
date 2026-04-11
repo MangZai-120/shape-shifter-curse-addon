@@ -50,6 +50,7 @@ import java.util.UUID;
 
 public class SscAddonCommands {
 	private static final Logger LOGGER = LoggerFactory.getLogger("SscAddon-Debug");
+	private static final String SKILL_BLOCKED_PREFIX = "ssc_skill_blocked:";
 
 	private SscAddonCommands() {
 		// This utility class should not be instantiated
@@ -154,6 +155,44 @@ public class SscAddonCommands {
 										)
 										.executes(SscAddonCommands::invokeSkillOnSelf)
 								)
+						)
+				)
+				.then(CommandManager.literal("block")
+						.requires(source -> source.hasPermissionLevel(2))
+						.then(CommandManager.argument("player", EntityArgumentType.player())
+								.then(CommandManager.argument("form", StringArgumentType.word())
+										.suggests((context, builder) -> CommandSource.suggestMatching(
+												Arrays.asList("snow_fox", "anubis_wolf", "allay"), builder))
+										.then(CommandManager.argument("skill", StringArgumentType.word())
+												.suggests((context, builder) -> {
+													String form = StringArgumentType.getString(context, "form");
+													return CommandSource.suggestMatching(getSkillsForForm(form), builder);
+												})
+												.executes(SscAddonCommands::blockSkill)
+										)
+								)
+						)
+				)
+				.then(CommandManager.literal("unblock")
+						.requires(source -> source.hasPermissionLevel(2))
+						.then(CommandManager.argument("player", EntityArgumentType.player())
+								.then(CommandManager.argument("form", StringArgumentType.word())
+										.suggests((context, builder) -> CommandSource.suggestMatching(
+												Arrays.asList("snow_fox", "anubis_wolf", "allay"), builder))
+										.then(CommandManager.argument("skill", StringArgumentType.word())
+												.suggests((context, builder) -> {
+													String form = StringArgumentType.getString(context, "form");
+													return CommandSource.suggestMatching(getSkillsForForm(form), builder);
+												})
+												.executes(SscAddonCommands::unblockSkill)
+										)
+								)
+						)
+				)
+				.then(CommandManager.literal("list_blocks")
+						.requires(source -> source.hasPermissionLevel(2))
+						.then(CommandManager.argument("player", EntityArgumentType.player())
+								.executes(SscAddonCommands::listBlockedSkills)
 						)
 				)
 		);
@@ -607,6 +646,28 @@ public class SscAddonCommands {
 		};
 	}
 
+	private static boolean isSkillBlocked(ServerPlayerEntity player, String form, String skill) {
+		String tag = SKILL_BLOCKED_PREFIX + form + ":" + skill;
+		return player.getCommandTags().contains(tag);
+	}
+
+	private static void blockSkill(ServerPlayerEntity player, String form, String skill) {
+		String tag = SKILL_BLOCKED_PREFIX + form + ":" + skill;
+		player.addCommandTag(tag);
+	}
+
+	private static void unblockSkill(ServerPlayerEntity player, String form, String skill) {
+		String tag = SKILL_BLOCKED_PREFIX + form + ":" + skill;
+		player.getCommandTags().remove(tag);
+	}
+
+	private static List<String> getBlockedSkills(ServerPlayerEntity player) {
+		return player.getCommandTags().stream()
+				.filter(tag -> tag.startsWith(SKILL_BLOCKED_PREFIX))
+				.map(tag -> tag.substring(SKILL_BLOCKED_PREFIX.length()))
+				.toList();
+	}
+
 	private static int invokeSkillOnSelf(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 		ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
 		String form = StringArgumentType.getString(context, "form");
@@ -621,11 +682,81 @@ public class SscAddonCommands {
 		return invokeSkill(context, target, form, skill);
 	}
 
+	private static int blockSkill(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+		ServerPlayerEntity target = EntityArgumentType.getPlayer(context, "player");
+		String form = StringArgumentType.getString(context, "form");
+		String skill = StringArgumentType.getString(context, "skill");
+
+		if (isSkillBlocked(target, form, skill)) {
+			context.getSource().sendFeedback(() -> Text.literal(
+					"[SSC] " + form + "/" + skill + " is already blocked for " + target.getName().getString()
+			).formatted(Formatting.YELLOW), false);
+			return 0;
+		}
+
+		blockSkill(target, form, skill);
+		LOGGER.info("[SSC] Blocked " + form + "/" + skill + " for " + target.getName().getString());
+		context.getSource().sendFeedback(() -> Text.literal(
+				"[SSC] Blocked " + form + "/" + skill + " for " + target.getName().getString()
+		).formatted(Formatting.GREEN), true);
+		return 1;
+	}
+
+	private static int unblockSkill(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+		ServerPlayerEntity target = EntityArgumentType.getPlayer(context, "player");
+		String form = StringArgumentType.getString(context, "form");
+		String skill = StringArgumentType.getString(context, "skill");
+
+		if (!isSkillBlocked(target, form, skill)) {
+			context.getSource().sendFeedback(() -> Text.literal(
+					"[SSC] " + form + "/" + skill + " is not blocked for " + target.getName().getString()
+			).formatted(Formatting.YELLOW), false);
+			return 0;
+		}
+
+		unblockSkill(target, form, skill);
+		LOGGER.info("[SSC] Unblocked " + form + "/" + skill + " for " + target.getName().getString());
+		context.getSource().sendFeedback(() -> Text.literal(
+				"[SSC] Unblocked " + form + "/" + skill + " for " + target.getName().getString()
+		).formatted(Formatting.GREEN), true);
+		return 1;
+	}
+
+	private static int listBlockedSkills(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+		ServerPlayerEntity target = EntityArgumentType.getPlayer(context, "player");
+		List<String> blockedSkills = getBlockedSkills(target);
+
+		if (blockedSkills.isEmpty()) {
+			context.getSource().sendFeedback(() -> Text.literal(
+					"[SSC] No skills blocked for " + target.getName().getString()
+			).formatted(Formatting.YELLOW), false);
+			return 0;
+		}
+
+		context.getSource().sendFeedback(() -> Text.literal(
+				"[SSC] Blocked skills for " + target.getName().getString() + ":"
+		).formatted(Formatting.GOLD), false);
+
+		for (String blocked : blockedSkills) {
+			context.getSource().sendFeedback(() -> Text.literal(
+					"  - " + blocked
+			).formatted(Formatting.WHITE), false);
+		}
+
+		return blockedSkills.size();
+	}
+
 	private static int invokeSkill(CommandContext<ServerCommandSource> context, ServerPlayerEntity target, String form, String skill) {
 		ServerCommandSource source = context.getSource();
 		String executorName = source.getName();
 
-if ("snow_fox".equals(form)) {
+		if (isSkillBlocked(target, form, skill)) {
+			LOGGER.warn("[SSC] Blocked skill invocation: " + form + "/" + skill + " on " + target.getName());
+			source.sendError(Text.literal("[SSC] Skill is blocked: " + form + "/" + skill));
+			return 0;
+		}
+
+	if ("snow_fox".equals(form)) {
             return invokeSnowFoxSkill(source, target, skill, executorName);
         } else if ("anubis_wolf".equals(form)) {
             return invokeAnubisWolfSkill(source, target, skill, executorName);
