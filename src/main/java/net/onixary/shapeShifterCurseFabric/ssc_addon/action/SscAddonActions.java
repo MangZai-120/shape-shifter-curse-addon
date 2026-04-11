@@ -47,6 +47,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SscIgnitedEntityAccess
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SkillBlocker;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -317,6 +318,9 @@ public class SscAddonActions {
 				new SerializableData(),
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity player) {
+						if (SkillBlocker.isSkillBlocked(player, "snow_fox", "melee_primary")) {
+							return;
+						}
 						SnowFoxSpMeleeAbility.execute(player);
 					}
 				}));
@@ -326,6 +330,9 @@ public class SscAddonActions {
 				new SerializableData(),
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity player) {
+						if (SkillBlocker.isSkillBlocked(player, "snow_fox", "melee_secondary")) {
+							return;
+						}
 						SnowFoxSpTeleportAttack.execute(player);
 					}
 				}));
@@ -335,6 +342,9 @@ public class SscAddonActions {
 				new SerializableData(),
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity player) {
+						if (SkillBlocker.isSkillBlocked(player, "snow_fox", "ranged_primary")) {
+							return;
+						}
 						// 检查自定义CD是否结束
 						Long cdEndTime = FROST_BALL_COOLDOWN.get(player.getUuid());
 						if (cdEndTime != null && System.currentTimeMillis() < cdEndTime) {
@@ -373,6 +383,9 @@ public class SscAddonActions {
 				new SerializableData(),
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity player) {
+						if (SkillBlocker.isSkillBlocked(player, "snow_fox", "ranged_secondary")) {
+							return;
+						}
 						SnowFoxSpFrostStorm.startCharging(player);
 					}
 				}));
@@ -482,6 +495,9 @@ public class SscAddonActions {
 				new SerializableData(),
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity sp) {
+						if (SkillBlocker.isSkillBlocked(sp, "anubis_wolf", "death_domain")) {
+							return;
+						}
 						AnubisWolfSpDeathDomain.execute(sp);
 					}
 				}));
@@ -491,6 +507,9 @@ public class SscAddonActions {
 				new SerializableData(),
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity sp) {
+						if (SkillBlocker.isSkillBlocked(sp, "anubis_wolf", "summon_wolves")) {
+							return;
+						}
 						AnubisWolfSpSummonWolves.execute(sp);
 					}
 				}));
