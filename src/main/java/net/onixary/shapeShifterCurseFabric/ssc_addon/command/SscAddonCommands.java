@@ -144,7 +144,7 @@ public class SscAddonCommands {
 						.requires(source -> source.hasPermissionLevel(2))
 						.then(CommandManager.argument("form", StringArgumentType.word())
 								.suggests((context, builder) -> CommandSource.suggestMatching(
-										Arrays.asList("snow_fox", "anubis_wolf", "allay"), builder))
+										Arrays.asList("snow_fox", "anubis_wolf", "allay", "axolotl", "wild_cat", "familiar_fox", "familiar_fox_red"), builder))
 								.then(CommandManager.argument("skill", StringArgumentType.word())
 										.suggests((context, builder) -> {
 											String form = StringArgumentType.getString(context, "form");
@@ -162,7 +162,7 @@ public class SscAddonCommands {
 						.then(CommandManager.argument("player", EntityArgumentType.player())
 								.then(CommandManager.argument("form", StringArgumentType.word())
 										.suggests((context, builder) -> CommandSource.suggestMatching(
-												Arrays.asList("snow_fox", "anubis_wolf", "allay"), builder))
+												Arrays.asList("snow_fox", "anubis_wolf", "allay", "axolotl", "wild_cat", "familiar_fox", "familiar_fox_red"), builder))
 										.then(CommandManager.argument("skill", StringArgumentType.word())
 												.suggests((context, builder) -> {
 													String form = StringArgumentType.getString(context, "form");
@@ -178,7 +178,7 @@ public class SscAddonCommands {
 						.then(CommandManager.argument("player", EntityArgumentType.player())
 								.then(CommandManager.argument("form", StringArgumentType.word())
 										.suggests((context, builder) -> CommandSource.suggestMatching(
-												Arrays.asList("snow_fox", "anubis_wolf", "allay"), builder))
+												Arrays.asList("snow_fox", "anubis_wolf", "allay", "axolotl", "wild_cat", "familiar_fox", "familiar_fox_red"), builder))
 										.then(CommandManager.argument("skill", StringArgumentType.word())
 												.suggests((context, builder) -> {
 													String form = StringArgumentType.getString(context, "form");
@@ -639,9 +639,13 @@ public class SscAddonCommands {
 
 	private static List<String> getSkillsForForm(String form) {
 		return switch (form) {
-			case "snow_fox" -> Arrays.asList("melee_primary", "melee_secondary", "ranged_primary", "ranged_secondary");
-			case "anubis_wolf" -> Arrays.asList("summon_wolves", "death_domain");
-			case "allay" -> Arrays.asList("jukebox_charge", "group_heal");
+			case "snow_fox" -> Arrays.asList("melee_primary", "melee_secondary", "ranged_primary", "ranged_secondary", "frost_regen");
+			case "anubis_wolf" -> Arrays.asList("summon_wolves", "death_domain", "soul_sand_heal", "wither_hunt", "soul_scrutiny");
+			case "allay" -> Arrays.asList("jukebox_charge", "group_heal", "mana_regen");
+			case "axolotl" -> Arrays.asList("natural_regen_boost", "rain_wetness");
+			case "wild_cat" -> Arrays.asList("night_speed", "day_slow");
+			case "familiar_fox" -> Arrays.asList("mana_regen");
+			case "familiar_fox_red" -> Arrays.asList("red_mana_regen");
 			default -> Collections.emptyList();
 		};
 	}
