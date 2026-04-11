@@ -5,8 +5,7 @@ import io.github.apace100.apoli.power.PowerType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
-import me.shedaniel.autoconfig.AutoConfig;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SkillBlocker;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -44,10 +43,19 @@ public class ActiveSelfPowerMixin {
             return;
         }
 
-        String skillId = powerId.toString();
+        // Parse "namespace:form:skill" to get form and skill parts
+        String fullId = powerId.toString();
+        String[] parts = fullId.split(":", 3);
+        if (parts.length < 3) {
+            return;
+        }
+        // parts[0] = namespace (shape-shifter-curse)
+        // parts[1] = form (e.g., snow_fox)
+        // parts[2] = skill (e.g., melee_primary)
+        String form = parts[1];
+        String skill = parts[2];
 
-        SSCAddonConfig config = AutoConfig.getConfigHolder(SSCAddonConfig.class).getConfig();
-        if (config.disabledSkills.contains(skillId)) {
+        if (SkillBlocker.isSkillBlocked(player, form, skill)) {
             cir.cancel();
         }
     }
