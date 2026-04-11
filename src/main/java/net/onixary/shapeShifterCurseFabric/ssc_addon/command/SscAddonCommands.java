@@ -144,7 +144,7 @@ public class SscAddonCommands {
 						.requires(source -> source.hasPermissionLevel(2))
 						.then(CommandManager.argument("form", StringArgumentType.word())
 								.suggests((context, builder) -> CommandSource.suggestMatching(
-										Arrays.asList("snow_fox", "anubis_wolf", "allay", "axolotl", "wild_cat", "familiar_fox", "familiar_fox_red", "shape-shifter-curse"), builder))
+										Arrays.asList("snow_fox", "anubis_wolf", "allay", "axolotl", "wild_cat", "familiar_fox", "familiar_fox_red"), builder))
 								.then(CommandManager.argument("skill", StringArgumentType.word())
 										.suggests((context, builder) -> {
 											String form = StringArgumentType.getString(context, "form");
