@@ -1,8 +1,8 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.util;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * SP阿努比斯狼亡灵中立机制的共享状态。
@@ -17,8 +17,9 @@ public final class UndeadNeutralState {
 
 	/**
 	 * 全局挑衅时间戳：玩家UUID -> 最后挑衅的世界时间
+	 * 使用ConcurrentHashMap保证多人环境下的线程安全
 	 */
-	public static final Map<UUID, Long> PROVOKE_TIMESTAMPS = new HashMap<>();
+	public static final Map<UUID, Long> PROVOKE_TIMESTAMPS = new ConcurrentHashMap<>();
 
 	private UndeadNeutralState() {
 	}
@@ -35,4 +36,16 @@ public final class UndeadNeutralState {
 		}
 		return true;
 	}
-}
+	/**
+	 * 玩家断线时清理状态，防止内存泄漏
+	 */
+	public static void clearPlayer(UUID playerUuid) {
+		PROVOKE_TIMESTAMPS.remove(playerUuid);
+	}
+
+	/**
+	 * 服务器关闭时清理所有状态
+	 */
+	public static void clearAll() {
+		PROVOKE_TIMESTAMPS.clear();
+	}}

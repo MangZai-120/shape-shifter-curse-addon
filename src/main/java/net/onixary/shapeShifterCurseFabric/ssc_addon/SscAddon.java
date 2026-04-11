@@ -71,6 +71,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEne
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormErosionBrand;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormWitherSand;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.UndeadNeutralState;
 import net.onixary.shapeShifterCurseFabric.additional_power.VirtualTotemPower;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 
@@ -380,6 +381,12 @@ public class SscAddon implements ModInitializer {
 				AnubisWolfSpDeathDomain.tickCleanup();
 			}
 			for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()) {
+				// 修复局域网多人游戏中远程玩家的自定义可食用物品Map未在服务端刷新的问题
+				// 原版mod在集成服务器(EnvType.CLIENT)环境下跳过了OnServerTick，导致非主机玩家无法食用自定义食物（如悦灵吃紫水晶）
+				if (net.fabricmc.loader.api.FabricLoader.getInstance().getEnvironmentType() == net.fabricmc.api.EnvType.CLIENT
+						&& player.age % 100 == 0) {
+					net.onixary.shapeShifterCurseFabric.util.CustomEdibleUtils.ReloadPlayerCustomEdible(player);
+				}
 				SnowFoxSpMeleeAbility.tick(player);
 				SnowFoxSpTeleportAttack.tick(player);
 				SnowFoxSpFrostStorm.tick(player);
@@ -404,6 +411,7 @@ public class SscAddon implements ModInitializer {
 			AllaySPTotem.clearAll();
 			GoldenSandstormErosionBrand.clearAll();
 			GoldenSandstormWitherSand.clearAll();
+			UndeadNeutralState.clearAll();
 			System.out.println("[SSC_ADDON] SERVER_STARTING ability state cleared");
 		});
 		// 服务器关闭前还原所有死亡领域方块（在世界存档之前触发）
@@ -426,6 +434,7 @@ public class SscAddon implements ModInitializer {
 			AllaySPTotem.clearAll();
 			GoldenSandstormErosionBrand.clearAll();
 			GoldenSandstormWitherSand.clearAll();
+			UndeadNeutralState.clearAll();
 			System.out.println("[SSC_ADDON] END_DATA_PACK_RELOAD ability state cleared");
 		});
 	}
@@ -564,6 +573,7 @@ public class SscAddon implements ModInitializer {
 			GoldenSandstormWitherSand.clearPlayer(handler.player);
 			AnubisWolfSpSoulEnergy.clearPlayer(handler.player);
 			AllaySPJukebox.onPlayerDisconnect(handler.player);
+			UndeadNeutralState.clearPlayer(uuid);
 			PLAYER_LANGUAGES.remove(uuid);
 			System.out.println("[SSC_ADDON] DISCONNECT cleanup completed");
 		});

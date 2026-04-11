@@ -20,18 +20,18 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.math.Box;
 
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AllaySPTotem {
 
 	private static final String ACTIVE_TAG = "ssc_totem_active";
 	private static final double RANGE = 20.0;
-	// Track players who currently have active totems to avoid scanning all players
-	private static final Set<ServerPlayerEntity> playersWithActiveTotems = new HashSet<>();
-	// Track last check time to reduce frequency of checks
-	private static long lastCheckTick = 0;
+	// 使用UUID追踪持有激活图腾的玩家，避免存储实体引用导致跨维度/重连后引用过期
+	private static final Set<UUID> playersWithActiveTotems = ConcurrentHashMap.newKeySet();
 
 	private AllaySPTotem() {
 		// Utility class
@@ -44,18 +44,27 @@ public class AllaySPTotem {
 	}
 
 	private static void onServerTick(MinecraftServer server) {
-		// Check every 40 ticks (2 seconds) to balance responsiveness with performance
+		// 每40tick（2秒）检查一次，平衡响应性和性能
 		long currentTick = server.getOverworld().getTime();
 		if (currentTick % 40 != 0) {
 			return;
 		}
 
-		// Only check players who have active totems, not all players
-		for (ServerPlayerEntity player : playersWithActiveTotems) {
-			// Double-check they still have an active totem (might have been removed via other means)
+		// 使用Iterator安全遍历并移除，避免ConcurrentModificationException
+		Iterator<UUID> it = playersWithActiveTotems.iterator();
+		while (it.hasNext()) {
+			UUID uuid = it.next();
+			ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
+
+			// 玩家离线或不存在，移除追踪
+			if (player == null) {
+				it.remove();
+				continue;
+			}
+
+			// 检查是否仍持有激活的图腾
 			boolean stillHasActiveTotem = false;
 
-			// Check main inventory
 			for (ItemStack stack : player.getInventory().main) {
 				if (isActiveTotem(stack)) {
 					stillHasActiveTotem = true;
@@ -63,7 +72,6 @@ public class AllaySPTotem {
 				}
 			}
 
-			// Check offhand if not found in main inventory
 			if (!stillHasActiveTotem) {
 				for (ItemStack stack : player.getInventory().offHand) {
 					if (isActiveTotem(stack)) {
@@ -73,16 +81,15 @@ public class AllaySPTotem {
 				}
 			}
 
-			// If they no longer have an active totem, remove from tracking set
 			if (!stillHasActiveTotem) {
-				playersWithActiveTotems.remove(player);
+				it.remove();
 				continue;
 			}
 
-			// If player is NOT SP Allay, deactivate their totems
+			// 不再是SP悦灵时：关闭图腾并移除追踪
 			if (!isSpAllay(player)) {
 				deactivateAllTotems(player);
-				playersWithActiveTotems.remove(player);
+				it.remove();
 			}
 		}
 	}
@@ -285,14 +292,14 @@ public class AllaySPTotem {
 
 	private static void updateActiveTotemTracking(ServerPlayerEntity player, boolean hasActiveTotem) {
 		if (hasActiveTotem) {
-			playersWithActiveTotems.add(player);
+			playersWithActiveTotems.add(player.getUuid());
 		} else {
-			playersWithActiveTotems.remove(player);
+			playersWithActiveTotems.remove(player.getUuid());
 		}
 	}
 
 	public static void clearPlayer(ServerPlayerEntity player) {
-		playersWithActiveTotems.remove(player);
+		playersWithActiveTotems.remove(player.getUuid());
 	}
 
 	public static void clearAll() {

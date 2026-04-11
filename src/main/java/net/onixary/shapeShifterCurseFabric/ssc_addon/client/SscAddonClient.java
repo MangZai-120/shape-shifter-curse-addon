@@ -1,5 +1,6 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.client;
 
+import io.github.apace100.apoli.ApoliClient;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
@@ -54,6 +55,10 @@ public class SscAddonClient implements ClientModInitializer {
 		LOGGER.info("SSC ADDON DEBUG: Registering Client KeyBindings...");
 
 		SscAddonKeybindings.register();
+
+		// 注册SP技能按键到Apoli框架，确保多人游戏中客机的active_self能力能正确发送激活包到服务器
+		ApoliClient.registerPowerKeybinding("key.ssc_addon.sp_primary", SscAddonKeybindings.KEY_SP_PRIMARY);
+		ApoliClient.registerPowerKeybinding("key.ssc_addon.sp_secondary", SscAddonKeybindings.KEY_SP_SECONDARY);
 
 		// 注册侵蚀烙印 S2C 同步包接收器
 		ClientPlayNetworking.registerGlobalReceiver(GoldenSandstormErosionBrand.PACKET_BRAND_SYNC, (client, handler, buf, responseSender) -> {
