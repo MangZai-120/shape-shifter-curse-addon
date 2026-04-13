@@ -514,6 +514,15 @@ public class GoldenSandstormErosionBrand {
 				}
 			}
 			ACTIVE_BRANDS.remove(player.getUuid());
+			DIRTY_PLAYERS.remove(player.getUuid());
+			// 发送空同步包到客户端，清除发光缓存（防止切回形态时残留旧数据）
+			try {
+				PacketByteBuf buf = PacketByteBufs.create();
+				buf.writeInt(0);
+				ServerPlayNetworking.send(player, PACKET_BRAND_SYNC, buf);
+			} catch (Exception ignored) {
+				// 发送失败时忽略
+			}
 			return;
 		}
 

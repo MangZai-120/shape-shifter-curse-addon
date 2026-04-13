@@ -4,6 +4,7 @@ import io.github.apace100.apoli.ApoliClient;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
@@ -59,6 +60,11 @@ public class SscAddonClient implements ClientModInitializer {
 		// 注册SP技能按键到Apoli框架，确保多人游戏中客机的active_self能力能正确发送激活包到服务器
 		ApoliClient.registerPowerKeybinding("key.ssc_addon.sp_primary", SscAddonKeybindings.KEY_SP_PRIMARY);
 		ApoliClient.registerPowerKeybinding("key.ssc_addon.sp_secondary", SscAddonKeybindings.KEY_SP_SECONDARY);
+
+		// 客户端断线时清理侵蚀烙印缓存，防止重连后残留旧发光数据
+		ClientPlayConnectionEvents.DISCONNECT.register((handler2, client2) -> {
+			ErosionBrandClientState.clear();
+		});
 
 		// 注册侵蚀烙印 S2C 同步包接收器
 		ClientPlayNetworking.registerGlobalReceiver(GoldenSandstormErosionBrand.PACKET_BRAND_SYNC, (client, handler, buf, responseSender) -> {
