@@ -2,6 +2,7 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin.entity;
 
 import net.minecraft.entity.EntityGroup;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.mob.HuskEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.VexEntity;
 import net.minecraft.entity.mob.WitchEntity;
@@ -28,15 +29,29 @@ public abstract class MobEntityMixin {
 	private long ssc_addon$lastSawProvokedTarget = -1;
 
 	/**
-	 * 检查亡灵是否应该忽略该玩家（保持中立）。
+	 * 判断生物是否与玩家形态匹配的中立生物。
+	 * 裁决者: 所有亡灵中立
+	 * 金沙岚: 仅尸壳和咒文胡狼中立
+	 */
+	@Unique
+	private boolean ssc_addon$isNeutralMobPair(MobEntity mob, PlayerEntity player) {
+		if (FormUtils.isForm(player, FormIdentifiers.ANUBIS_WOLF_SP)) {
+			return mob.getGroup() == EntityGroup.UNDEAD;
+		}
+		if (FormUtils.isForm(player, FormIdentifiers.GOLDEN_SANDSTORM_SP)) {
+			return mob instanceof HuskEntity || FormUtils.isTransformativeWolf(mob);
+		}
+		return false;
+	}
+
+	/**
+	 * 检查生物是否应该忽略该玩家（保持中立）。
 	 * 返回true=忽略（不攻击），返回false=不忽略（可攻击）
 	 */
 	@Unique
 	private boolean ssc_addon$shouldUndeadIgnore(MobEntity mob, PlayerEntity player) {
-		if (mob.getGroup() != EntityGroup.UNDEAD) return false;
-		if (!FormUtils.isAnyForm(player, FormIdentifiers.ANUBIS_WOLF_SP, FormIdentifiers.GOLDEN_SANDSTORM_SP))
-			return false;
-		// 玩家处于挑衅状态 → 亡灵可攻击
+		if (!ssc_addon$isNeutralMobPair(mob, player)) return false;
+		// 玩家处于挑衅状态 → 生物可攻击
 		return !UndeadNeutralState.isPlayerProvoked(player.getUuid(), mob.getWorld().getTime());
 	}
 
@@ -109,10 +124,9 @@ public abstract class MobEntityMixin {
 			return;
 		}
 
-		// 4. 亡灵中立：基于视野的脱战机制（类似僵尸猪灵）
-		if (mob.getGroup() == EntityGroup.UNDEAD
-				&& target instanceof PlayerEntity player
-				&& FormUtils.isAnyForm(player, FormIdentifiers.ANUBIS_WOLF_SP, FormIdentifiers.GOLDEN_SANDSTORM_SP)) {
+		// 4. 中立生物脱战机制：基于视野的脱战机制（类似僵尸猪灵）
+		if (target instanceof PlayerEntity player
+				&& ssc_addon$isNeutralMobPair(mob, player)) {
 			// 挑衅已过期 → 立即脱战
 			if (!UndeadNeutralState.isPlayerProvoked(player.getUuid(), mob.getWorld().getTime())) {
 				mob.setTarget(null);

@@ -38,6 +38,7 @@ public class FormIdentifiers {
 	public static final Identifier SNOW_FOX_SWITCH_STATE = new Identifier("my_addon", "form_snow_fox_sp_switch_state");
 	// 金沙岚SP
 	public static final Identifier GOLDEN_SANDSTORM_SP = new Identifier("my_addon", "golden_sandstorm_sp");
+	public static final Identifier GOLDEN_SANDSTORM_COUNTER_BURST_CD = new Identifier("my_addon", "form_golden_sandstorm_sp_counter_burst_cd");
 	// 雪狐形态4个独立CD记录点（每个技能独立记录，按模式读取）
 	public static final Identifier SNOW_FOX_MELEE_PRIMARY_CD = new Identifier("my_addon", "form_snow_fox_sp_melee_primary_cd");
 	public static final Identifier SNOW_FOX_MELEE_SECONDARY_CD = new Identifier("my_addon", "form_snow_fox_sp_melee_secondary_cd");

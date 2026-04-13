@@ -145,19 +145,24 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 
 		// 主要技能CD条（快捷栏左侧）
 		int leftBarX = hotbarX - GAP - TEX_W;
-		renderCdBarWithNumber(context, player, primaryCdId, leftBarX, barY, true);
+		renderCdBarWithNumber(context, player, primaryCdId, leftBarX, barY, true, false);
 
 		// 次要技能CD条（快捷栏右侧）
 		int rightBarX = hotbarX + HOTBAR_WIDTH + GAP;
-		renderCdBarWithNumber(context, player, secondaryCdId, rightBarX, barY, false);
+		renderCdBarWithNumber(context, player, secondaryCdId, rightBarX, barY, false, false);
 	}
 
 	/**
 	 * 渲染一个CD条及数字
+	 * @param hideWhenReady 为true时，CD=0不渲染（可选CD条专用）
 	 */
 	private void renderCdBarWithNumber(DrawContext context, PlayerEntity player, Identifier cdId,
-	                                   int x, int y, boolean isPrimary) {
+	                                   int x, int y, boolean isPrimary, boolean hideWhenReady) {
 		int currentCd = getResourceValue(player, cdId);
+
+		// 可选CD条：不在冷却中则不渲染
+		if (hideWhenReady && currentCd <= 0) return;
+
 		int prevFrameVal = lastFrameValues.getOrDefault(cdId, 0);
 		lastFrameValues.put(cdId, currentCd);
 

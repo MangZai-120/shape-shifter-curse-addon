@@ -36,6 +36,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDo
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormWitherSand;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormErosionBrand;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormCounterBurst;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormDetonate;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
@@ -540,6 +541,15 @@ public class SscAddonActions {
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity sp) {
 						GoldenSandstormDetonate.execute(sp);
+					}
+				}));
+
+		// ==== 金沙岚SP - 反噬冲击（被动） ====
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "golden_sandstorm_counter_burst"),
+				new SerializableData(),
+				(data, entity) -> {
+					if (entity instanceof ServerPlayerEntity sp) {
+						GoldenSandstormCounterBurst.execute(sp);
 					}
 				}));
 	}

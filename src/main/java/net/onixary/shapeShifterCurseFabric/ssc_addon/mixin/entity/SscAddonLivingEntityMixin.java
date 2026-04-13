@@ -5,6 +5,7 @@ import net.minecraft.entity.EntityGroup;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.mob.HuskEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.power.EffectEfficiencyReductionPower;
@@ -21,17 +22,25 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class SscAddonLivingEntityMixin {
 
 	/**
-	 * 亡灵被SP阿努比斯玩家攻击时，记录全局挑衅状态。
-	 * damage方法定义在LivingEntity上，必须在此注入。
+	 * 中立生物被玩家攻击时，记录全局挑衅状态。
+	 * 裁决者: 攻击任何亡灵触发挑衅
+	 * 金沙岚: 攻击尸壳或咒文胡狼触发挑衅
 	 */
 	@Inject(method = "damage", at = @At("HEAD"))
 	private void ssc_addon$onUndeadDamaged(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
 		LivingEntity self = (LivingEntity) (Object) this;
 		if (self instanceof MobEntity mob
-				&& mob.getGroup() == EntityGroup.UNDEAD
-				&& source.getAttacker() instanceof PlayerEntity player
-				&& FormUtils.isForm(player, FormIdentifiers.ANUBIS_WOLF_SP)) {
-			UndeadNeutralState.PROVOKE_TIMESTAMPS.put(player.getUuid(), mob.getWorld().getTime());
+				&& source.getAttacker() instanceof PlayerEntity player) {
+			// 裁决者: 所有亡灵触发挑衅
+			if (mob.getGroup() == EntityGroup.UNDEAD
+					&& FormUtils.isForm(player, FormIdentifiers.ANUBIS_WOLF_SP)) {
+				UndeadNeutralState.PROVOKE_TIMESTAMPS.put(player.getUuid(), mob.getWorld().getTime());
+			}
+			// 金沙岚: 仅尸壳和咒文胡狼触发挑衅
+			if ((mob instanceof HuskEntity || FormUtils.isTransformativeWolf(mob))
+					&& FormUtils.isForm(player, FormIdentifiers.GOLDEN_SANDSTORM_SP)) {
+				UndeadNeutralState.PROVOKE_TIMESTAMPS.put(player.getUuid(), mob.getWorld().getTime());
+			}
 		}
 	}
 

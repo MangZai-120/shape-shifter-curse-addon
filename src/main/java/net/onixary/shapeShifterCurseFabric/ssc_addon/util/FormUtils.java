@@ -2,12 +2,16 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.util;
 
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 
 public class FormUtils {
+	// 通过实体类型ID判断，避免在Mixin类中直接引用原版模组类导致类加载级联
+	private static final Identifier TRANSFORMATIVE_WOLF_TYPE_ID = new Identifier("shape-shifter-curse", "t_wolf");
+
 	private FormUtils() {
 	}
 
@@ -78,5 +82,12 @@ public class FormUtils {
 
 	public static boolean isFamiliarFoxForm(LivingEntity entity) {
 		return isAnyForm(entity, FormIdentifiers.FAMILIAR_FOX_SP, FormIdentifiers.FAMILIAR_FOX_RED);
+	}
+
+	/**
+	 * 判断实体是否为咒文胡狼（通过注册表ID判断，避免直接引用原版类）
+	 */
+	public static boolean isTransformativeWolf(LivingEntity entity) {
+		return Registries.ENTITY_TYPE.getId(entity.getType()).equals(TRANSFORMATIVE_WOLF_TYPE_ID);
 	}
 }
