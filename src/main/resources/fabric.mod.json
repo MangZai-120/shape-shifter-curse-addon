@@ -23,6 +23,9 @@
   "icon": "assets/ssc_addon/icon.png",
   "environment": "*",
   "entrypoints": {
+    "preLaunch": [
+      "net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddonPreLaunch"
+    ],
     "main": [
       "net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon"
     ],

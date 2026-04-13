@@ -246,6 +246,8 @@ public class SscAddon implements ModInitializer {
 		AnubisWolfSpSoulEnergy.registerEvents();
 	}
 
+
+
 	private void registerConfig() {
 		AutoConfig.register(SSCAddonConfig.class, GsonConfigSerializer::new);
 	}
