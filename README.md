@@ -11,7 +11,11 @@
 >For a more accurate and detailed guide, please refer to the [MC百科](https://www.mcmod.cn/class/24327.html). ps
 >更准确详细的教程请在[MC百科](https://www.mcmod.cn/class/24327.html)内查看
 
+>The beta version of this mod may be developed based on the dev build of the original SSC mod, so please make sure you have installed the corresponding version of the original SSC mod before playing, otherwise you may encounter compatibility issues or be unable to play properly. Download from the Releases section on the right, and please confirm that the version you download matches the version of the original SSC mod you have installed.
+>这个模组的beta版可能会使用SSC原版的测试版为基础进行开发，所以请在游玩前确保你已经安装了对应版本的SSC原版模组，否则可能会遇到兼容性问题或者无法正常游玩。下载地点在右侧Releases(发行作品)里，下载前请确认你下载的版本和你安装的SSC原版模组版本一致。
+
 这是一个基于 Fabric 的附属模组项目，用于为《幻形者诅咒》模组添加更多玩法。
+
 
 ### Wiki：[幻形者诅咒扩展包 Wiki](https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/)
 
