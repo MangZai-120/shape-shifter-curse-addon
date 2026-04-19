@@ -58,25 +58,26 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 
 	/**
 	 * Check if internal cooldown is ready
+	 * 使用服务端tick，保证多人一致性
 	 */
 	public boolean isInternalCooldownReady() {
-		return System.currentTimeMillis() >= internalCooldownEndTime;
+		return entity.getWorld().getTime() >= internalCooldownEndTime;
 	}
 
 	/**
 	 * Apply internal cooldown (called from TrueInvisibilityAbilityPower)
 	 */
 	public void applyInternalCooldown() {
-		internalCooldownEndTime = System.currentTimeMillis() + (COOLDOWN_TICKS * 50); // 50ms per tick
+		internalCooldownEndTime = entity.getWorld().getTime() + COOLDOWN_TICKS;
 	}
 
 	/**
 	 * Get remaining cooldown in seconds for display
 	 */
 	public int getRemainingCooldownSeconds() {
-		long remaining = internalCooldownEndTime - System.currentTimeMillis();
+		long remaining = internalCooldownEndTime - entity.getWorld().getTime();
 		if (remaining <= 0) return 0;
-		return (int) Math.ceil(remaining / 1000.0);
+		return (int) Math.ceil(remaining / 20.0);
 	}
 
 	@Override

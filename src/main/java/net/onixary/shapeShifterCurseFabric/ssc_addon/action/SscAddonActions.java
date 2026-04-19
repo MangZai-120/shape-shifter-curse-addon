@@ -346,9 +346,10 @@ public class SscAddonActions {
 						if (SkillBlocker.isSkillBlocked(player, "snow_fox", "ranged_primary")) {
 							return;
 						}
-						// 检查自定义CD是否结束
-						Long cdEndTime = FROST_BALL_COOLDOWN.get(player.getUuid());
-						if (cdEndTime != null && System.currentTimeMillis() < cdEndTime) {
+						// 检查自定义CD是否结束（使用服务端tick保证多人一致性）
+						long currentTickFb = player.getWorld().getTime();
+						Long cdEndTickFb = FROST_BALL_COOLDOWN.get(player.getUuid());
+						if (cdEndTickFb != null && currentTickFb < cdEndTickFb) {
 							return;
 						}
 
@@ -362,8 +363,8 @@ public class SscAddonActions {
 						changeResourceValue(player, "my_addon:form_snow_fox_sp_resource", -manaCost);
 						// 设置回复冷却（5秒）
 						setRegenCooldown(player, 100);
-						// 设置技能CD（5秒 = 5000ms）
-						FROST_BALL_COOLDOWN.put(player.getUuid(), System.currentTimeMillis() + 5000L);
+						// 设置技能CD（5秒 = 100tick，服务端一致）
+						FROST_BALL_COOLDOWN.put(player.getUuid(), currentTickFb + 100L);
 						// 设置CD显示资源（5秒 = 100tick）
 						PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RANGED_PRIMARY_CD, 100);
 

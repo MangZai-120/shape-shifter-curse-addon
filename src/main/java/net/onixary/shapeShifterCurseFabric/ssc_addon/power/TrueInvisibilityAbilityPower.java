@@ -166,9 +166,10 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 
 	/**
 	 * Check if internal cooldown is ready
+	 * 使用服务端tick，保证多人一致性
 	 */
 	public boolean isInternalCooldownReady() {
-		return System.currentTimeMillis() >= internalCooldownEndTime;
+		return entity.getWorld().getTime() >= internalCooldownEndTime;
 	}
 
 	/**
@@ -180,7 +181,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 		if (hasInvisibilityCloak()) {
 			cooldownTicks += 40; // Add 2 seconds to cooldown (from 12s to 14s)
 		}
-		internalCooldownEndTime = System.currentTimeMillis() + (cooldownTicks * 50); // 50ms per tick
+		internalCooldownEndTime = entity.getWorld().getTime() + cooldownTicks; // tick-based, multiplayer-safe
 
 		// 设置CD显示资源（主要和次要技能共享CD）
 		if (entity instanceof net.minecraft.server.network.ServerPlayerEntity serverPlayer) {
@@ -199,9 +200,9 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 	 * Get remaining cooldown in seconds for display
 	 */
 	public int getRemainingCooldownSeconds() {
-		long remaining = internalCooldownEndTime - System.currentTimeMillis();
+		long remaining = internalCooldownEndTime - entity.getWorld().getTime();
 		if (remaining <= 0) return 0;
-		return (int) Math.ceil(remaining / 1000.0);
+		return (int) Math.ceil(remaining / 20.0); // 20 ticks per second
 	}
 
 	/**

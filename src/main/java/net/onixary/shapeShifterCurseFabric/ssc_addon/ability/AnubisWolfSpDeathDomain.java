@@ -120,9 +120,10 @@ public class AnubisWolfSpDeathDomain {
 	 * 玩家按下技能键触发
 	 */
 	public static boolean execute(ServerPlayerEntity player) {
-		// CD检查
-		Long cdEndTime = COOLDOWN_PLAYERS.get(player.getUuid());
-		if (cdEndTime != null && System.currentTimeMillis() < cdEndTime) {
+		// CD检查（使用服务端tick，保证多人一致性）
+		long currentTick = player.getWorld().getTime();
+		Long cdEndTick = COOLDOWN_PLAYERS.get(player.getUuid());
+		if (cdEndTick != null && currentTick < cdEndTick) {
 			return false;
 		}
 
@@ -359,14 +360,14 @@ public class AnubisWolfSpDeathDomain {
 				// 释放失败：播放失败音效，进入惩罚性CD
 				player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.BLOCK_SOUL_SAND_BREAK, SoundCategory.PLAYERS, 1.0f, 1.5f);
-				COOLDOWN_PLAYERS.put(player.getUuid(), System.currentTimeMillis() + (long) PENALTY_COOLDOWN_TICKS * 50);
+				COOLDOWN_PLAYERS.put(player.getUuid(), player.getWorld().getTime() + PENALTY_COOLDOWN_TICKS);
 				PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, PENALTY_COOLDOWN_TICKS);
 				ACTIVE_DOMAINS.remove(player.getUuid());
 				return;
 			}
 
 			// 释放成功：设置正常CD，进入延展阶段
-			COOLDOWN_PLAYERS.put(player.getUuid(), System.currentTimeMillis() + (long) COOLDOWN_TICKS * 50);
+			COOLDOWN_PLAYERS.put(player.getUuid(), player.getWorld().getTime() + COOLDOWN_TICKS);
 			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, COOLDOWN_TICKS);
 
 			// 更新领域中心为充能完成时的位置

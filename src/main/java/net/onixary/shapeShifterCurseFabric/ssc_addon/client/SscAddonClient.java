@@ -53,13 +53,19 @@ public class SscAddonClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		LOGGER.info("SSC ADDON DEBUG: Registering Client KeyBindings...");
+		LOGGER.info("[SSC_ADDON] Registering Client KeyBindings...");
 
-		SscAddonKeybindings.register();
-
-		// 注册SP技能按键到Apoli框架，确保多人游戏中客机的active_self能力能正确发送激活包到服务器
-		ApoliClient.registerPowerKeybinding("key.ssc_addon.sp_primary", SscAddonKeybindings.KEY_SP_PRIMARY);
-		ApoliClient.registerPowerKeybinding("key.ssc_addon.sp_secondary", SscAddonKeybindings.KEY_SP_SECONDARY);
+		// 关键路径：键位注册必须成功，否则客机所有 SP 技能都无法激活。
+		// 包裹 try-catch 防止任何意外（如类加载失败）静默吞掉异常导致客机无反应。
+		try {
+			SscAddonKeybindings.register();
+			// 注册SP技能按键到Apoli框架，确保多人游戏中客机的active_self能力能正确发送激活包到服务器
+			ApoliClient.registerPowerKeybinding("key.ssc_addon.sp_primary", SscAddonKeybindings.KEY_SP_PRIMARY);
+			ApoliClient.registerPowerKeybinding("key.ssc_addon.sp_secondary", SscAddonKeybindings.KEY_SP_SECONDARY);
+			LOGGER.info("[SSC_ADDON] Client KeyBindings registered successfully (sp_primary=G, sp_secondary=R)");
+		} catch (Throwable t) {
+			LOGGER.error("[SSC_ADDON] CRITICAL: Failed to register client keybindings - SP skills will not work on this client!", t);
+		}
 
 		// 客户端断线时清理侵蚀烙印缓存，防止重连后残留旧发光数据
 		ClientPlayConnectionEvents.DISCONNECT.register((handler2, client2) -> {

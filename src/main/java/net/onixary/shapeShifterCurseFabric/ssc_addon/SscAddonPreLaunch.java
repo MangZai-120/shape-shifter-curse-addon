@@ -18,10 +18,12 @@ public class SscAddonPreLaunch implements PreLaunchEntrypoint {
 
 		if (sscOpt.isEmpty()) {
 			// SSC 模组完全不存在 —— 理论上 fabric.mod.json depends 已声明，此处做二次兜底
+			System.out.println("[SSC Addon][PreLaunch] WARNING: shape-shifter-curse mod not found. Skipping version check.");
 			return;
 		}
 
 		String currentVersion = sscOpt.get().getMetadata().getVersion().getFriendlyString();
+		System.out.println("[SSC Addon][PreLaunch] Detected Shape Shifter's Curse version: v" + currentVersion + " (required >= v" + MIN_SSC_VERSION + ")");
 		if (isVersionBelow(currentVersion, MIN_SSC_VERSION)) {
 			String msg = "\n\n" +
 					"================================================================\n" +

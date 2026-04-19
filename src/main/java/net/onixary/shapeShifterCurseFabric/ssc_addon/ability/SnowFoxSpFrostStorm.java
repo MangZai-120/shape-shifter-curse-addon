@@ -56,9 +56,10 @@ public class SnowFoxSpFrostStorm {
             return false;
         }
         
-        // 检查自定义CD是否结束
-        Long cdEndTime = COOLDOWN_PLAYERS.get(player.getUuid());
-        if (cdEndTime != null && System.currentTimeMillis() < cdEndTime) {
+        // 检查自定义CD是否结束（使用服务端tick，多人环境一致）
+        long currentTick = player.getWorld().getTime();
+        Long cdEndTick = COOLDOWN_PLAYERS.get(player.getUuid());
+        if (cdEndTick != null && currentTick < cdEndTick) {
             return false;
         }
         
@@ -73,8 +74,8 @@ public class SnowFoxSpFrostStorm {
         changeResourceValue(player, -MANA_COST);
         // 设置回复冷却（5秒）
         setRegenCooldown(player, 100);
-        // 设置技能CD（30秒 = 30000ms）
-        COOLDOWN_PLAYERS.put(player.getUuid(), System.currentTimeMillis() + 30000L);
+        // 设置技能CD（30秒 = 600tick，使用服务端tick保证多人一致性）
+        COOLDOWN_PLAYERS.put(player.getUuid(), currentTick + 600L);
         // 设置CD显示资源（30秒 = 600tick）
         PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RANGED_SECONDARY_CD, 600);
         
