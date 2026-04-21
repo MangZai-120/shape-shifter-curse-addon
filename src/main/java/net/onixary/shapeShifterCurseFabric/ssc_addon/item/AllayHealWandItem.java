@@ -161,6 +161,13 @@ public class AllayHealWandItem extends Item {
 			LivingEntity target = getTargetedEntity(serverPlayer);
 
 			if (target != null) {
+				// 服务端白名单总开关关闭时：拒绝治疗怪物/敌对生物
+				if (!net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig.server().whitelistEnabled
+						&& (target instanceof net.minecraft.entity.mob.HostileEntity
+							|| target instanceof net.minecraft.entity.mob.Monster)) {
+					serverPlayer.sendMessage(Text.translatable("item.ssc_addon.allay_heal_wand.no_target").formatted(Formatting.RED), true);
+					return TypedActionResult.fail(stack);
+				}
 				// Check line of sight (no block obstruction)
 				boolean hasLineOfSight = hasLineOfSight(serverPlayer, target);
 

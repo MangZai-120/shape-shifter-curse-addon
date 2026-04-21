@@ -16,6 +16,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SkillBlocker;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 import java.util.List;
 import java.util.Set;
@@ -64,10 +65,6 @@ public class AllaySPGroupHeal {
 	 */
 	private static void executeWhitelistHeal(ServerPlayerEntity allayPlayer) {
 		ServerWorld world = (ServerWorld) allayPlayer.getWorld();
-		Set<String> tags = allayPlayer.getCommandTags();
-
-		// 检查白名单是否为空
-		boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(WHITELIST_TAG_PREFIX));
 
 		// 治疗自身
 		allayPlayer.heal(HEAL_AMOUNT);
@@ -81,17 +78,8 @@ public class AllaySPGroupHeal {
 				e -> e != allayPlayer && e.isAlive() && e.squaredDistanceTo(allayPlayer) <= HEAL_RADIUS * HEAL_RADIUS);
 
 		for (LivingEntity entity : entities) {
-			// 白名单为空时治疗所有玩家和友好生物；有白名单时进行过滤
-			if (whitelistEmpty) {
-				if (entity instanceof ServerPlayerEntity || !(entity instanceof Monster)) {
-					entity.heal(HEAL_AMOUNT);
-					spawnHealParticles(world, entity);
-					// 播放声音：治疗者听见私有声音，其他人听见空间声音
-					allayPlayer.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
-					world.playSound(allayPlayer, entity.getX(), entity.getY(), entity.getZ(),
-							SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
-				}
-			} else if (shouldHeal(entity, tags)) {
+			// 统一走 WhitelistUtils.isBuffTarget，同时遵从服务端 whitelistEnabled 总开关
+			if (WhitelistUtils.isBuffTarget(allayPlayer, entity)) {
 				entity.heal(HEAL_AMOUNT);
 				spawnHealParticles(world, entity);
 				// 播放声音：治疗者听见私有声音，其他人听见空间声音
@@ -174,12 +162,8 @@ public class AllaySPGroupHeal {
 	 * 白名单为空时返回true（允许所有玩家和友好生物）
 	 */
 	public static boolean isInWhitelist(ServerPlayerEntity allayPlayer, LivingEntity entity) {
-		Set<String> tags = allayPlayer.getCommandTags();
-		boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(WHITELIST_TAG_PREFIX));
-		if (whitelistEmpty) {
-			return entity instanceof ServerPlayerEntity || !(entity instanceof Monster);
-		}
-		return shouldHeal(entity, tags);
+		// 统一走 WhitelistUtils.isBuffTarget，遵从 whitelistEnabled 总开关
+		return WhitelistUtils.isBuffTarget(allayPlayer, entity);
 	}
 
 	/**

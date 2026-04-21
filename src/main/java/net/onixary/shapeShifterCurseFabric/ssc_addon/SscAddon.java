@@ -36,7 +36,8 @@ import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_FeralCatSP;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.action.SscAddonActions;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.command.SscAddonCommands;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.condition.SscAddonConditions;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonClientConfig;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonServerConfig;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.*;
 import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
 import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
@@ -218,7 +219,8 @@ public class SscAddon implements ModInitializer {
 	public void onInitialize() {
         /*
         // 旧代码(保留参考) 已拆分为私有方法
-        AutoConfig.register(SSCAddonConfig.class, GsonConfigSerializer::new);
+        AutoConfig.register(SSCAddonClientConfig.class, GsonConfigSerializer::new);
+        AutoConfig.register(SSCAddonServerConfig.class, GsonConfigSerializer::new);
         // 注册状态效果
         // 注册物品
         // 注册实体
@@ -249,7 +251,8 @@ public class SscAddon implements ModInitializer {
 
 
 	private void registerConfig() {
-		AutoConfig.register(SSCAddonConfig.class, GsonConfigSerializer::new);
+		AutoConfig.register(SSCAddonClientConfig.class, GsonConfigSerializer::new);
+		AutoConfig.register(SSCAddonServerConfig.class, GsonConfigSerializer::new);
 	}
 
 	private void registerStatusEffects() {

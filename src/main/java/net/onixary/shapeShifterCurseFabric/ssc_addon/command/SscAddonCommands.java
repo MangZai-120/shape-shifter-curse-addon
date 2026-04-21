@@ -24,8 +24,6 @@ import net.minecraft.sound.SoundEvents;
 import net.onixary.shapeShifterCurseFabric.mana.ManaComponent;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.ConfigChangeManager;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
-import me.shedaniel.autoconfig.AutoConfig;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
@@ -534,8 +532,7 @@ public class SscAddonCommands {
 		ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
 
 		try {
-			SSCAddonConfig config = AutoConfig.getConfigHolder(SSCAddonConfig.class).getConfig();
-			ConfigChangeManager.notifyChange(config);
+			ConfigChangeManager.notifyChange();
 			player.sendMessage(Text.literal("模组配置已重新加载！").formatted(Formatting.GREEN), true);
 			player.sendMessage(Text.literal("Mod config reloaded!").formatted(Formatting.GREEN), true);
 			return 1;

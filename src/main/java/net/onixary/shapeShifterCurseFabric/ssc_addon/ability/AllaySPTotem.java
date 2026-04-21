@@ -214,19 +214,24 @@ public class AllaySPTotem {
 			if (!isSpAllay(serverPlayer)) continue;
 
 			// b. Check whitelist
-			// If entity == serverPlayer (self), we SKIP waitlist check (always allowed to save self with carried totem)
-			// But wait, if they have totem in hand, vanilla logic handles it. If in inventory, we handle it via Mixed logic.
-			// If entity != serverPlayer (ally), check whitelist.
+			// If entity == serverPlayer (self), we SKIP whitelist check (always allowed to save self with carried totem)
+			// If entity != serverPlayer (ally), check whitelist with totem-specific semantics:
+			//   whitelistEnabled = false  -> 仅玩家可获救
+			//   whitelistEnabled = true   -> 保留原逻辑（白名单为空时仅玩家；非空时遵从白名单）
 			if (entity != serverPlayer) {
-				java.util.Set<String> tags = serverPlayer.getCommandTags();
-				boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
-
-				if (whitelistEmpty) {
-					// If whitelist is empty, ONLY other PLAYERS can benefit
+				if (!net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig.server().whitelistEnabled) {
 					if (!(entity instanceof PlayerEntity)) continue;
 				} else {
-					// If whitelist is not empty, only whitelisted entities benefit
-					if (!AllaySPGroupHeal.shouldHeal(entity, tags)) continue;
+					java.util.Set<String> tags = serverPlayer.getCommandTags();
+					boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
+
+					if (whitelistEmpty) {
+						// If whitelist is empty, ONLY other PLAYERS can benefit
+						if (!(entity instanceof PlayerEntity)) continue;
+					} else {
+						// If whitelist is not empty, only whitelisted entities benefit
+						if (!AllaySPGroupHeal.shouldHeal(entity, tags)) continue;
+					}
 				}
 			}
 

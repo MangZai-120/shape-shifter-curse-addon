@@ -4,7 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import me.shedaniel.autoconfig.AutoConfig;
 import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.minecraft.item.Items;
 import net.minecraft.loot.LootPool;
@@ -18,6 +17,7 @@ import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.ConfigChangeListener;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.ConfigChangeManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonServerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ public class StoryBookLoot implements ConfigChangeListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(StoryBookLoot.class);
 	private static float chance = 0.038f;
 	private static List<BookData> loadedBooks = new ArrayList<>();
-	private static SSCAddonConfig.BookLanguage loadedLanguage = null;
+	private static SSCAddonServerConfig.BookLanguage loadedLanguage = null;
 
 	private StoryBookLoot() {
 		// This utility class should not be instantiated
@@ -79,14 +79,14 @@ public class StoryBookLoot implements ConfigChangeListener {
 	}
 
 	private static void loadBooks() {
-		SSCAddonConfig config = AutoConfig.getConfigHolder(SSCAddonConfig.class).getConfig();
+		SSCAddonServerConfig config = SSCAddonConfig.server();
 		// Reload if language changed or not loaded
 		if (!loadedBooks.isEmpty() && loadedLanguage == config.bookLanguage) return;
 
 		loadedBooks.clear();
 		loadedLanguage = config.bookLanguage;
 
-		String fileName = (config.bookLanguage == SSCAddonConfig.BookLanguage.ENGLISH) ? "books_en.json" : "books_cn.json";
+		String fileName = (config.bookLanguage == SSCAddonServerConfig.BookLanguage.ENGLISH) ? "books_en.json" : "books_cn.json";
 
 		loadedBooks = parseBookFile(fileName);
 		LOGGER.info("Loaded {} books from {}", loadedBooks.size(), fileName);
@@ -510,7 +510,7 @@ public class StoryBookLoot implements ConfigChangeListener {
 	}
 
 	@Override
-	public void onConfigChanged(SSCAddonConfig config) {
+	public void onConfigChanged() {
 		reloadBooks();
 	}
 

@@ -13,9 +13,9 @@ public class ConfigChangeManager {
 		listeners.add(listener);
 	}
 
-	public static void notifyChange(SSCAddonConfig config) {
+	public static void notifyChange() {
 		for (ConfigChangeListener listener : listeners) {
-			listener.onConfigChanged(config);
+			listener.onConfigChanged();
 		}
 	}
 }
