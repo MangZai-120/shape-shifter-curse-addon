@@ -66,7 +66,7 @@ public class AnubisWolfSpSoulEnergy {
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.ANUBIS_WOLF_SP_SOUL_ENERGY, newValue);
 
 // 刚好满能量时播放提示音
-		if (current < MAX_ENERGY && newValue >= MAX_ENERGY) {
+		if (current < MAX_ENERGY && newValue == MAX_ENERGY) {
 			player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 0.6f, 1.2f);
 		}

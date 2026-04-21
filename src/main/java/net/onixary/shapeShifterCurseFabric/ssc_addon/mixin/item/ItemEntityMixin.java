@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ItemEntity.class)
 public abstract class ItemEntityMixin extends Entity {
 
-	protected ItemEntityMixin(EntityType<?> type, World world) {
+	public ItemEntityMixin(EntityType<?> type, World world) {
 		super(type, world);
 	}
 

@@ -45,11 +45,8 @@ public class WaterSpearItem extends TridentItem {
 				float k = MathHelper.cos(f * ((float) Math.PI / 180)) * MathHelper.cos(g * ((float) Math.PI / 180));
 				float l = MathHelper.sqrt(h * h + j * j + k * k);
 				float m = 2.5F;
-				h *= m / l;
-				j *= m / l;
-				k *= m / l;
 
-				if (!world.isClient) {
+                if (!world.isClient) {
 					WaterSpearEntity waterSpear = new WaterSpearEntity(world, playerEntity, stack);
 					waterSpear.setVelocity(playerEntity, playerEntity.getPitch(), playerEntity.getYaw(), 0.0F, m, 1.0F);
 					stack.decrement(1);

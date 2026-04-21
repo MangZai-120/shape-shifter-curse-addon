@@ -7,7 +7,6 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityType;
@@ -19,7 +18,6 @@ import net.minecraft.text.ClickEvent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.util.Formatting;
-import net.minecraft.item.ItemGroup;
 import net.minecraft.recipe.RecipeSerializer;
 import net.minecraft.recipe.SpecialRecipeSerializer;
 import net.minecraft.registry.Registries;
@@ -172,43 +170,13 @@ public class SscAddon implements ModInitializer {
 	public static final EntityType<WitchFamiliarEntity> WITCH_FAMILIAR_ENTITY = Registry.register(
 			Registries.ENTITY_TYPE,
 			new Identifier("ssc_addon", "witch_familiar"),
-			FabricEntityTypeBuilder.<WitchFamiliarEntity>create(SpawnGroup.MONSTER, WitchFamiliarEntity::new)
+			FabricEntityTypeBuilder.create(SpawnGroup.MONSTER, WitchFamiliarEntity::new)
 					.dimensions(EntityDimensions.fixed(0.5f, 0.7f))
 					.trackRangeBlocks(64).trackedUpdateRate(3)
 					.build()
 	);
 	// 女巫使魔怪物蛋（主色狐狸沙棕 #D5B48F，次色青蓝 #31C8CC）
 	public static final Item WITCH_FAMILIAR_SPAWN_EGG = new SpawnEggItem(WITCH_FAMILIAR_ENTITY, 0xD5B48F, 0x31C8CC, new Item.Settings());
-	public static final ItemGroup SSC_ADDON_GROUP = Registry.register(Registries.ITEM_GROUP,
-			new Identifier("ssc_addon", "group"),
-			FabricItemGroup.builder()
-					.displayName(Text.translatable("itemGroup.ssc_addon.group"))
-					.icon(() -> new net.minecraft.item.ItemStack(SP_UPGRADE_THING))
-					.entries((displayContext, entries) -> {
-						entries.add(SP_UPGRADE_THING);
-						entries.add(EVOLUTION_STONE);
-						entries.add(LIFESAVING_CAT_TAIL);
-						entries.add(PHANTOM_BELL);
-						entries.add(FROST_AMULET);
-						entries.add(BLUE_FIRE_AMULET);
-						entries.add(INVISIBILITY_CLOAK);
-						entries.add(PORTABLE_MOISTURIZER);
-						entries.add(PORTABLE_FRIDGE);
-						entries.add(SNOWBALL_LAUNCHER);
-						entries.add(WATER_SPEAR);
-						entries.add(CORAL_BALL);
-						entries.add(ACTIVE_CORAL_NECKLACE);
-						entries.add(ANUBIS_CRYSTAL);
-						entries.add(ANKH_STONE);
-						entries.add(EROSION_SAND_PRISM);
-						entries.add(WITHERED_SAND_RING);
-						entries.add(ALLAY_HEAL_WAND);
-						entries.add(ALLAY_JUKEBOX);
-						entries.add(FRIEND_MARKER);
-						entries.add(CLEAR_FRIEND_MARKER);
-						entries.add(WITCH_FAMILIAR_SPAWN_EGG);
-					})
-					.build());
 	// SP Allay sound events
 	public static final Identifier ALLAY_HEAL_MUSIC_ID = new Identifier("ssc_addon", "allay_heal_music");
 	public static final Identifier ALLAY_SPEED_MUSIC_ID = new Identifier("ssc_addon", "allay_speed_music");

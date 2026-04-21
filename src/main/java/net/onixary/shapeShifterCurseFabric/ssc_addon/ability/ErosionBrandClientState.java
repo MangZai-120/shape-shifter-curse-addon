@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 存储由服务端通过网络包同步的本地玩家的烙印数据，
  * 用于 entity_glow 的 BiEntity 条件在客户端侧的评估。
  * 这使得发光效果仅对拥有烙印的玩家自己可见。
- *
+ * <p>
  * 注意：本类不引用任何 Minecraft 客户端类，可安全存在于两端。
  */
 public class ErosionBrandClientState {

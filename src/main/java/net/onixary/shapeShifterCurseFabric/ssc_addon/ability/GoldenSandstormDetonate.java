@@ -11,13 +11,13 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 
 /**
  * 金沙岚SP - 引爆标记（主动②次要技能）
- *
+ * <p>
  * 引爆所有非绿色状态的侵蚀烙印标记：
  * - 每层造成5点物理伤害
  * - 自身每层回复10%最大生命值
  * - 3层目标先触发被动爆发（10%当前HP伤害，上限30，自愈10%），再引爆
  * - 引爆后目标进入绿色状态（10秒不可再叠层）
- *
+ * <p>
  * CD: 10秒（200tick）
  */
 public class GoldenSandstormDetonate {

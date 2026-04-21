@@ -1,7 +1,6 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.ability;
 
 import io.github.apace100.apoli.component.PowerHolderComponent;
-import io.github.apace100.apoli.power.CooldownPower;
 import io.github.apace100.apoli.power.Power;
 import io.github.apace100.apoli.power.PowerType;
 import io.github.apace100.apoli.power.PowerTypeRegistry;
@@ -45,8 +44,7 @@ public class SnowFoxSpFrostStorm {
     
     private static final Identifier RESOURCE_ID = new Identifier("my_addon", "form_snow_fox_sp_resource");
     private static final Identifier REGEN_COOLDOWN_ID = new Identifier("my_addon", "form_snow_fox_sp_frost_regen_cooldown_resource");
-    private static final Identifier POWER_ID = new Identifier("my_addon", "form_snow_fox_sp_ranged_secondary");
-    
+
     /**
      * 开始蓄力（点按技能键时调用）
      */
@@ -181,14 +179,7 @@ public class SnowFoxSpFrostStorm {
                 30, 1.5, 1.0, 1.5, 0.05);
         }
     }
-    
-    /**
-     * 检查玩家是否正在蓄力
-     */
-    public static boolean isCharging(ServerPlayerEntity player) {
-        return CHARGING_PLAYERS.containsKey(player.getUuid());
-    }
-    
+
     /**
      * 获取霜寒值
      */
@@ -240,25 +231,7 @@ public class SnowFoxSpFrostStorm {
             // Resource not found
         }
     }
-    
-    /**
-     * 设置power的cooldown
-     * 未使用，建议移除
-     */
-    private static void setPowerCooldown(ServerPlayerEntity player, int ticks) {
-        try {
-            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-            PowerType<?> powerType = PowerTypeRegistry.get(POWER_ID);
-            Power power = powerHolder.getPower(powerType);
-            if (power instanceof CooldownPower cooldownPower) {
-                cooldownPower.setCooldown(ticks);
-            }
-        } catch (Exception e) {
-            // Power not found
 
-        }
-    }
-    
     /**
      * 蓄力数据
      */

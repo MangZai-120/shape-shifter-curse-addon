@@ -64,10 +64,6 @@ public class AnubisWolfSpDeathDomain {
 	 */
 	private static final int DOMAIN_DURATION = 300; // 15秒
 	/**
-	 * debuff持续时间（tick）
-	 */
-	private static final int DEBUFF_DURATION = 300; // 15秒
-	/**
 	 * 血量减少百分比
 	 */
 	private static final double HEALTH_REDUCTION = 0.15;
@@ -239,14 +235,6 @@ public class AnubisWolfSpDeathDomain {
 				LOGGER.info("[DeathDomain] tickCleanup: restoration completed");
 			}
 		}
-	}
-
-	/**
-	 * 检查玩家是否在充能中（用于外部减速检查等）
-	 */
-	public static boolean isCharging(ServerPlayerEntity player) {
-		DomainData data = ACTIVE_DOMAINS.get(player.getUuid());
-		return data != null && data.phase == Phase.CHARGING;
 	}
 
 	/**
@@ -553,8 +541,7 @@ public class AnubisWolfSpDeathDomain {
 	 */
 	private static void convertBlocksInRing(ServerWorld world, DomainData data, int innerR, int outerR) {
 		BlockPos center = data.center;
-		int cy = data.centerY;
-		int halfHeight = DOMAIN_HEIGHT;
+        int halfHeight = DOMAIN_HEIGHT;
 
 		for (int dx = -outerR; dx <= outerR; dx++) {
 			for (int dz = -outerR; dz <= outerR; dz++) {
@@ -580,29 +567,6 @@ public class AnubisWolfSpDeathDomain {
 								.computeIfAbsent(dist, k -> new LinkedHashMap<>())
 								.putIfAbsent(pos, state);
 						world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
-					}
-				}
-			}
-		}
-	}
-
-	/**
-	 * 还原实体周围的已转化方块，防止灵魂沙减速/陷入效果
-	 */
-	private static void restoreBlocksAroundEntity(ServerWorld world, DomainData data, BlockPos center) {
-		for (int dx = -2; dx <= 2; dx++) {
-			for (int dz = -2; dz <= 2; dz++) {
-				for (int dy = -3; dy <= 2; dy++) {
-					BlockPos pos = center.add(dx, dy, dz);
-					for (Map<BlockPos, BlockState> blocks : data.changedBlocksByDistance.values()) {
-						BlockState original = blocks.get(pos);
-						if (original != null) {
-							if (isStillConverted(world, pos, original)) {
-								world.setBlockState(pos, original, Block.NOTIFY_ALL);
-							}
-							blocks.remove(pos);
-							break;
-						}
 					}
 				}
 			}

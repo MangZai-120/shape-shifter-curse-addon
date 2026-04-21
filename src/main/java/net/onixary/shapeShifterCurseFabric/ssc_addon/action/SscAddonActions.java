@@ -185,9 +185,9 @@ public class SscAddonActions {
 
 					Vec3d eyePos = living.getEyePos();
 					Vec3d lookVec = living.getRotationVec(1.0F);
-					Vec3d targetPos = eyePos.add(lookVec.multiply(distance));
+                    eyePos.add(lookVec.multiply(distance));
 
-					Box box = living.getBoundingBox().expand(distance).stretch(lookVec.multiply(distance));
+                    Box box = living.getBoundingBox().expand(distance).stretch(lookVec.multiply(distance));
 
 					living.getWorld().getEntitiesByClass(LivingEntity.class, box, target -> target != living).forEach(target -> {
 						if (living instanceof ServerPlayerEntity sPlayer && WhitelistUtils.isProtected(sPlayer, target))
@@ -456,9 +456,9 @@ public class SscAddonActions {
 						// Only boost if moving upwards
 						// AND looking up (Pitch < -20) for the special "Jump Out" mechanics
 						if (vy > 0) {
-							double newVy = vy;
-							double newVx = velocity.x;
-							double newVz = velocity.z;
+							double newVy;
+							double newVx;
+							double newVz;
 
 							// Special Jump Boost: Only when looking up (Pitch < -20)
 							// Triggers explosive jump out of water

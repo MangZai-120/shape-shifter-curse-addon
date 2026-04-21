@@ -18,9 +18,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(value = VirtualTotemPower.class, remap = false)
 public abstract class AnkhStoneTotemMixin extends CooldownPower {
 
-	// 满足编译器的虚构造，运行时不调用
-	protected AnkhStoneTotemMixin(PowerType<?> type, LivingEntity entity, int cd, HudRender hr) {
-		super(type, entity, cd, hr);
+	public AnkhStoneTotemMixin(PowerType<?> type, LivingEntity entity, int cooldownDuration, HudRender hudRender) {
+		super(type, entity, cooldownDuration, hudRender);
 	}
 
 	@Inject(method = "use", at = @At("TAIL"))

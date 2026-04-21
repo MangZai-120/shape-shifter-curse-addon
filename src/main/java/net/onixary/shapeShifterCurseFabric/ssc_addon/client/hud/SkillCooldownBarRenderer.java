@@ -44,7 +44,6 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 
 	// 快捷栏尺寸
 	private static final int HOTBAR_WIDTH = 182;
-	private static final int HOTBAR_HEIGHT = 22;
 	// CD条与快捷栏间距
 	private static final int GAP = 3;
 	// 技能触发偏差阈值：实际值与期望衰减值偏差超过此值视为技能触发

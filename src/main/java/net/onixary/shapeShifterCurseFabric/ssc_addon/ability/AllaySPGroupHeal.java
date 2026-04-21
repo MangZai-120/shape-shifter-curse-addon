@@ -6,7 +6,6 @@ import io.github.apace100.apoli.power.PowerType;
 import io.github.apace100.apoli.power.PowerTypeRegistry;
 import io.github.apace100.apoli.power.VariableIntPower;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.mob.Monster;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -198,14 +197,6 @@ public class AllaySPGroupHeal {
 	}
 
 	/**
-	 * 从白名单按UUID移除
-	 */
-	public static boolean removeFromWhitelistByUuid(ServerPlayerEntity allayPlayer, UUID targetUuid) {
-		String tag = WHITELIST_TAG_PREFIX + targetUuid.toString();
-		return allayPlayer.getCommandTags().remove(tag);
-	}
-
-	/**
 	 * 清空白名单
 	 */
 	public static int clearWhitelist(ServerPlayerEntity allayPlayer) {
@@ -251,21 +242,6 @@ public class AllaySPGroupHeal {
 			// Resource not found
 		}
 		return 0;
-	}
-
-	private static void setResourceValue(ServerPlayerEntity player, Identifier resourceId, int value) {
-		try {
-			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-			PowerType<?> powerType = PowerTypeRegistry.get(resourceId);
-			Power power = powerHolder.getPower(powerType);
-			if (power instanceof VariableIntPower variablePower) {
-				variablePower.setValue(value);
-				// 只同步特定power，避免全量sync重置飘浮power客户端的ascendProgress
-				PowerHolderComponent.syncPower(player, powerType);
-			}
-		} catch (Exception e) {
-			// Resource not found
-		}
 	}
 
 	/**

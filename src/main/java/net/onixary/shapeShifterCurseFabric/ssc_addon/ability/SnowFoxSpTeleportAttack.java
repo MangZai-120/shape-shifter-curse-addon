@@ -38,12 +38,9 @@ public class SnowFoxSpTeleportAttack {
 	private static final int MANA_COST_FAIL = 20;
 	private static final int TELEPORT_INTERVAL = 10;
 	private static final float DAMAGE_REDUCTION = 0.65f;
-	private static final int FAIL_COOLDOWN = 100;
-	private static final int SUCCESS_COOLDOWN = 400;
 	// ==== NEW CODE: 使用FormIdentifiers ====
 	private static final Identifier RESOURCE_ID = FormIdentifiers.SNOW_FOX_RESOURCE;
 	private static final Identifier REGEN_COOLDOWN_ID = FormIdentifiers.SNOW_FOX_REGEN_COOLDOWN;
-	private static final Identifier POWER_ID = FormIdentifiers.SNOW_FOX_MELEE_SECONDARY;
 
 	private SnowFoxSpTeleportAttack() {
 	}
@@ -82,12 +79,11 @@ public class SnowFoxSpTeleportAttack {
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_MELEE_SECONDARY_CD, 400);
 
 		Vec3d originalPos = player.getPos();
-		Vec3d originalVelocity = player.getVelocity();
-		float originalYaw = player.getYaw();
+        float originalYaw = player.getYaw();
 		float originalPitch = player.getPitch();
 
 		TeleportAttackData data = new TeleportAttackData(
-				originalPos, originalVelocity, originalYaw, originalPitch,
+				originalPos, originalYaw, originalPitch,
 				targets, 0, 0
 		);
 		ATTACKING_PLAYERS.put(player.getUuid(), data);
@@ -333,19 +329,17 @@ public class SnowFoxSpTeleportAttack {
 	 */
 	private static class TeleportAttackData {
 		final Vec3d originalPos;
-		final Vec3d originalVelocity;
 		final float originalYaw;
 		final float originalPitch;
 		final List<LivingEntity> targets;
 		int currentTargetIndex;
 		int ticksSinceLastTeleport;
 
-		TeleportAttackData(Vec3d originalPos, Vec3d originalVelocity,
+		TeleportAttackData(Vec3d originalPos,
 		                   float originalYaw, float originalPitch,
 		                   List<LivingEntity> targets,
 		                   int currentTargetIndex, int ticksSinceLastTeleport) {
 			this.originalPos = originalPos;
-			this.originalVelocity = originalVelocity;
 			this.originalYaw = originalYaw;
 			this.originalPitch = originalPitch;
 			this.targets = targets;

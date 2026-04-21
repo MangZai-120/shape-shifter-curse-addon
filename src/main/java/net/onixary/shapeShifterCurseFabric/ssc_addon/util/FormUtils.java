@@ -25,12 +25,7 @@ public class FormUtils {
 		return null;
 	}
 
-	public static boolean hasForm(LivingEntity entity) {
-		PlayerFormBase currentForm = getCurrentForm(entity);
-		return currentForm != null && currentForm.FormID != null;
-	}
-
-	public static boolean isForm(LivingEntity entity, Identifier formId) {
+    public static boolean isForm(LivingEntity entity, Identifier formId) {
 		PlayerFormBase currentForm = getCurrentForm(entity);
 		return currentForm != null && currentForm.FormID != null && currentForm.FormID.equals(formId);
 	}
@@ -48,23 +43,11 @@ public class FormUtils {
 		return false;
 	}
 
-	public static boolean isFamiliarFoxSP(LivingEntity entity) {
-		return isForm(entity, FormIdentifiers.FAMILIAR_FOX_SP);
-	}
-
-	public static boolean isFamiliarFoxRed(LivingEntity entity) {
-		return isForm(entity, FormIdentifiers.FAMILIAR_FOX_RED);
-	}
-
-	public static boolean isSnowFoxSP(LivingEntity entity) {
+    public static boolean isSnowFoxSP(LivingEntity entity) {
 		return isForm(entity, FormIdentifiers.SNOW_FOX_SP);
 	}
 
-	public static boolean isAllaySP(LivingEntity entity) {
-		return isForm(entity, FormIdentifiers.ALLAY_SP);
-	}
-
-	public static boolean isWildCatSP(LivingEntity entity) {
+    public static boolean isWildCatSP(LivingEntity entity) {
 		return isForm(entity, FormIdentifiers.WILD_CAT_SP);
 	}
 

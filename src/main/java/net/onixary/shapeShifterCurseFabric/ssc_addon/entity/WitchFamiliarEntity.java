@@ -88,10 +88,6 @@ public class WitchFamiliarEntity extends HostileEntity implements GeoEntity {
 				.add(EntityAttributes.GENERIC_FOLLOW_RANGE, 20.0);    // 追踪范围
 	}
 
-	public UUID getOwnerUuid() {
-		return this.ownerUuid;
-	}
-
 	public void setOwnerUuid(UUID uuid) {
 		this.ownerUuid = uuid;
 	}
