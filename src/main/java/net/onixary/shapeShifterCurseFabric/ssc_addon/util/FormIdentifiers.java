@@ -13,7 +13,16 @@ public class FormIdentifiers {
 	public static final Identifier ANUBIS_WOLF_SP = new Identifier("my_addon", "anubis_wolf_sp");
 	public static final Identifier SNOW_FOX_RESOURCE = new Identifier("my_addon", "form_snow_fox_sp_resource");
 	public static final Identifier SNOW_FOX_REGEN_COOLDOWN = new Identifier("my_addon", "form_snow_fox_sp_frost_regen_cooldown_resource");
-    // 通用技能CD资源（用于HUD显示）
+	public static final Identifier SNOW_FOX_MELEE_PRIMARY = new Identifier("my_addon", "form_snow_fox_sp_melee_primary");
+	public static final Identifier SNOW_FOX_MELEE_SECONDARY = new Identifier("my_addon", "form_snow_fox_sp_melee_secondary");
+	public static final Identifier SNOW_FOX_RANGED_SECONDARY = new Identifier("my_addon", "form_snow_fox_sp_ranged_secondary");
+	public static final Identifier ALLAY_MANA_RESOURCE = new Identifier("my_addon", "form_allay_sp_mana_resource");
+	public static final Identifier ALLAY_MANA_COOLDOWN = new Identifier("my_addon", "form_allay_sp_mana_cooldown_resource");
+	public static final Identifier ALLAY_GROUP_HEAL = new Identifier("my_addon", "form_allay_sp_group_heal");
+	public static final Identifier ALLAY_GROUP_HEAL_EXECUTE = new Identifier("my_addon", "form_allay_sp_group_heal_heal_execute");
+	public static final Identifier FAMILIAR_FOX_MANA = new Identifier("my_addon", "form_familiar_fox_sp_init_mana");
+	public static final Identifier FAMILIAR_FOX_VISIBILITY = new Identifier("my_addon", "form_familiar_fox_sp_visibility");
+	// 通用技能CD资源（用于HUD显示）
 	public static final Identifier SP_PRIMARY_CD = new Identifier("my_addon", "form_sp_primary_cd");
 	public static final Identifier SP_SECONDARY_CD = new Identifier("my_addon", "form_sp_secondary_cd");
 	// 阿努比斯之狼SP灵魂能量资源

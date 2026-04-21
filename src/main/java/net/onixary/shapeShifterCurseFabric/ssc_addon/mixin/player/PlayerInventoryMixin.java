@@ -7,7 +7,6 @@ import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -19,8 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(PlayerInventory.class)
 public abstract class PlayerInventoryMixin {
 
-	@Final
-    @Shadow
+	@Shadow
 	public PlayerEntity player;
 
 	@Shadow
@@ -28,6 +26,9 @@ public abstract class PlayerInventoryMixin {
 
 	@Shadow
 	public abstract void setStack(int slot, ItemStack stack);
+
+	@Shadow
+	public abstract boolean insertStack(ItemStack stack);
 
 	/**
 	 * Helper to check if an item is a locked form-exclusive item in a specific slot

@@ -24,6 +24,10 @@ public class AllayFriendMarkerEntity extends ThrownItemEntity {
 		super(SscAddon.FRIEND_MARKER_ENTITY_TYPE, owner, world);
 	}
 
+	public AllayFriendMarkerEntity(World world, double x, double y, double z) {
+		super(SscAddon.FRIEND_MARKER_ENTITY_TYPE, x, y, z, world);
+	}
+
 	@Override
 	protected Item getDefaultItem() {
 		return SscAddon.FRIEND_MARKER;
@@ -40,7 +44,8 @@ public class AllayFriendMarkerEntity extends ThrownItemEntity {
 	@Override
 	public void handleStatus(byte status) {
 		if (status == 3) {
-            for (int i = 0; i < 8; ++i) {
+			double d = 0.08D;
+			for (int i = 0; i < 8; ++i) {
 				this.getWorld().addParticle(new ItemStackParticleEffect(ParticleTypes.ITEM, this.getStack()), this.getX(), this.getY(), this.getZ(), ((double) this.random.nextFloat() - 0.5D) * 0.08D, ((double) this.random.nextFloat() - 0.5D) * 0.08D, ((double) this.random.nextFloat() - 0.5D) * 0.08D);
 			}
 		}

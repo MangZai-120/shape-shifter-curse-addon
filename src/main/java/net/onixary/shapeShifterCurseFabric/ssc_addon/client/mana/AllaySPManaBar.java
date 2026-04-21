@@ -66,11 +66,11 @@ public class AllaySPManaBar implements HudRenderCallback {
 					offsetY
 			);
 
-			renderBar(context, pos.getLeft(), pos.getRight(), percent);
+			renderBar(context, tickDelta, pos.getLeft(), pos.getRight(), percent);
 		}
 	}
 
-	private void renderBar(DrawContext context, int x, int y, double percent) {
+	private void renderBar(DrawContext context, float tickDelta, int x, int y, double percent) {
 		// Assuming texture width is 80 (same as Snow Fox) or use actual width?
 		// Since I can't check texture width, I'll use 80 as default for compatibility with Snow Fox style
 		int fullWidth = 80;

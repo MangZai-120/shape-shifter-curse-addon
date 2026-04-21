@@ -4,6 +4,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -12,6 +13,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(KeyBinding.class)
 public class StunnedKeyBindingMixin {
+
+	@Shadow
+	private int timesPressed;
+
+	@Shadow
+	private boolean pressed;
 
 	@Unique
 	private boolean isTargetKey(String key) {
@@ -45,6 +52,7 @@ public class StunnedKeyBindingMixin {
 
 		if (isTargetKey(key) && isPlayerStunned()) {
 			// Clear any buffered input so it doesn't trigger later
+			this.timesPressed = 0;
 			cir.setReturnValue(false);
 		}
 	}
@@ -66,6 +74,7 @@ public class StunnedKeyBindingMixin {
 
 		// If trying to press the key (pressed=true) while stunned, block it AND ensure internal state is false
 		if (pressed && isTargetKey(key) && isPlayerStunned()) {
+			this.pressed = false;
 			ci.cancel();
 		}
 	}

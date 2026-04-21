@@ -31,22 +31,22 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 金沙岚SP - 侵蚀烙印（被动标记系统）
- * <p>
+ *
  * 近战攻击非白名单目标时自动叠加侵蚀烙印，每秒最多叠1层，每个目标最多3层。
  * 烙印持续10秒（每次叠加刷新计时器）。
- * <p>
+ *
  * 层数颜色对应（用于entity_glow）：
  * - 1层 → 黄色
  * - 2层 → 橙色
  * - 3层 → 红色
  * - 绿色状态 → 已触发被动爆发，5秒内不可再次叠层（绿色标志持续10秒）
- * <p>
+ *
  * 第4次攻击（3层满后继续攻击）触发被动爆发：
  * - 造成目标当前生命值20%的伤害（上限20）
  * - 自身回复10%最大生命值
  * - 清除所有层数，进入绿色状态（5秒不可叠层，绿色标志持续10秒）
  * - 绿色状态5秒冷却期后可重新叠层
- * <p>
+ *
  * 引爆（次要技能）：
  * - 造成目标当前生命值20%的伤害（上限20）
  * - 自身回复已损生命值的20%
@@ -171,7 +171,7 @@ public class GoldenSandstormErosionBrand {
 			updateTargetMarker(target, state, currentTick);
 
 			// 现在安全地造成伤害
-			triggerPassiveBurst(player, target);
+			triggerPassiveBurst(player, target, serverWorld);
 
 			// 蚀沙棱晶：被动爆发也触发扩散（白名单目标不触发扩散）
 			if (hasErosionPrism(player) && !WhitelistUtils.isProtected(player, target)) {
@@ -229,7 +229,7 @@ public class GoldenSandstormErosionBrand {
 	/**
 	 * 触发被动爆发 - 造成20%当前生命伤害（上限20），自我回复10%最大生命
 	 */
-	private static void triggerPassiveBurst(ServerPlayerEntity player, LivingEntity target) {
+	private static void triggerPassiveBurst(ServerPlayerEntity player, LivingEntity target, ServerWorld serverWorld) {
 		// 计算伤害：目标当前生命值的20%（枯沙指环：上限26，默认：上限20）
 		boolean hasRing = hasWitheredRing(player);
 		float cap = hasRing ? BURST_DAMAGE_CAP_WITH_RING : BURST_DAMAGE_CAP;
@@ -293,7 +293,7 @@ public class GoldenSandstormErosionBrand {
 
 			// 如果目标有3层，先触发被动爆发（不消耗层数）
 			if (state.stacks >= MAX_STACKS) {
-				triggerPassiveBurst(player, target);
+				triggerPassiveBurst(player, target, serverWorld);
 				// 被动爆发的额外粒子
 				ParticleUtils.spawnParticles(serverWorld, ParticleTypes.FLASH,
 						target.getX(), target.getY() + target.getHeight() * 0.5, target.getZ(),
@@ -457,7 +457,7 @@ public class GoldenSandstormErosionBrand {
 
 		// 延迟处理满3层的爆发（避免遍历中修改状态冲突）
 		for (LivingEntity burstTarget : burstTargets) {
-			triggerPassiveBurst(player, burstTarget);
+			triggerPassiveBurst(player, burstTarget, serverWorld);
 			serverWorld.playSound(null, burstTarget.getX(), burstTarget.getY(), burstTarget.getZ(),
 					SoundEvents.ENTITY_WITHER_BREAK_BLOCK, SoundCategory.PLAYERS, 0.38f, 1.2f);
 			ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SOUL_FIRE_FLAME,
@@ -531,9 +531,12 @@ public class GoldenSandstormErosionBrand {
 		boolean[] hadExpiry = {false};
 		playerBrands.entrySet().removeIf(entry -> {
 			BrandState state = entry.getValue();
-			boolean expired = state.greenState && currentTick >= state.greenExpiryTick;
+			boolean expired = false;
 			// 绿色状态过期检查
-            // 普通烙印过期检查
+			if (state.greenState && currentTick >= state.greenExpiryTick) {
+				expired = true;
+			}
+			// 普通烙印过期检查
 			if (!state.greenState && currentTick >= state.expiryTick) {
 				expired = true;
 			}

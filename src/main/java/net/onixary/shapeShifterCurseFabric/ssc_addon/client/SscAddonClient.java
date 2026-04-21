@@ -13,6 +13,7 @@ import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.item.ModelPredicateProviderRegistry;
 import net.minecraft.client.render.entity.EmptyEntityRenderer;
 import net.minecraft.client.render.entity.FlyingItemEntityRenderer;
+import net.minecraft.client.render.entity.model.TridentEntityModel;
 import net.minecraft.item.SpawnEggItem;
 import net.minecraft.client.resource.language.I18n;
 import net.minecraft.text.Text;
@@ -34,7 +35,10 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 public class SscAddonClient implements ClientModInitializer {
+	public static final String CATEGORY = "key.categories.ssc_addon";
 	private static final Logger LOGGER = LoggerFactory.getLogger(SscAddonClient.class);
+
+	private TridentEntityModel tridentModel;
 
 	private void addSplitTooltip(List<Text> lines, String key) {
 		if (I18n.hasTranslation(key)) {
@@ -64,7 +68,9 @@ public class SscAddonClient implements ClientModInitializer {
 		}
 
 		// 客户端断线时清理侵蚀烙印缓存，防止重连后残留旧发光数据
-		ClientPlayConnectionEvents.DISCONNECT.register((handler2, client2) -> ErosionBrandClientState.clear());
+		ClientPlayConnectionEvents.DISCONNECT.register((handler2, client2) -> {
+			ErosionBrandClientState.clear();
+		});
 
 		// 注册侵蚀烙印 S2C 同步包接收器
 		ClientPlayNetworking.registerGlobalReceiver(GoldenSandstormErosionBrand.PACKET_BRAND_SYNC, (client, handler, buf, responseSender) -> {

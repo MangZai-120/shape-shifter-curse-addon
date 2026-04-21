@@ -11,6 +11,7 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -269,7 +270,8 @@ public class SscAddonCommands {
 			UUID playerUUID = player.getUuid();
 			for (Entity target : targets) {
 				if (target instanceof LivingEntity livingTarget) {
-                    // We can't safely modify the entity NBT directly while it's alive without using specific methods or writing to custom data if available.
+					NbtCompound nbt = new NbtCompound();
+					// We can't safely modify the entity NBT directly while it's alive without using specific methods or writing to custom data if available.
 					// However, standard entity NBT modification is restricted.
 					// But we can use persistent data if we are using Fabric API or similar, or just manage a map.
 					// But simplest is to reuse the 'killed_by' logic? No.
@@ -331,6 +333,33 @@ public class SscAddonCommands {
 			player.sendMessage(Text.literal(line).formatted(Formatting.AQUA), false);
 		}
 
+		return 1;
+	}
+
+	private static int giveStoryBook(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+		return giveStoryBookInternal(context, null);
+	}
+
+	private static int giveStoryBookWithLang(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+		String lang = StringArgumentType.getString(context, "language");
+		return giveStoryBookInternal(context, lang);
+	}
+
+	private static int giveStoryBookInternal(CommandContext<ServerCommandSource> context, String language) throws CommandSyntaxException {
+		ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+		int chapter = IntegerArgumentType.getInteger(context, "chapter");
+		net.minecraft.item.ItemStack book = net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.getStoryBook(chapter, language);
+
+		if (book.isEmpty()) {
+			player.sendMessage(Text.literal("No book found for ID: " + chapter).formatted(Formatting.RED), false);
+			return 0;
+		}
+
+		if (!player.getInventory().insertStack(book)) {
+			player.dropItem(book, false);
+		}
+
+		player.sendMessage(Text.literal("Received story book: Chapter " + chapter).formatted(Formatting.GREEN), false);
 		return 1;
 	}
 
@@ -612,8 +641,8 @@ public class SscAddonCommands {
 			case "allay" -> Arrays.asList("jukebox_charge", "group_heal", "mana_regen");
 			case "axolotl" -> Arrays.asList("natural_regen_boost", "rain_wetness");
 			case "wild_cat" -> Arrays.asList("night_speed", "day_slow");
-			case "familiar_fox" -> List.of("mana_regen");
-			case "familiar_fox_red" -> List.of("red_mana_regen");
+			case "familiar_fox" -> Arrays.asList("mana_regen");
+			case "familiar_fox_red" -> Arrays.asList("red_mana_regen");
 			default -> Collections.emptyList();
 		};
 	}
@@ -667,7 +696,7 @@ public class SscAddonCommands {
 		}
 
 		blockSkill(target, form, skill);
-        LOGGER.info("[SSC] Blocked {}/{} for {}", form, skill, target.getName().getString());
+		LOGGER.info("[SSC] Blocked " + form + "/" + skill + " for " + target.getName().getString());
 		context.getSource().sendFeedback(() -> Text.literal(
 				"[SSC] Blocked " + form + "/" + skill + " for " + target.getName().getString()
 		).formatted(Formatting.GREEN), true);
@@ -687,7 +716,7 @@ public class SscAddonCommands {
 		}
 
 		unblockSkill(target, form, skill);
-        LOGGER.info("[SSC] Unblocked {}/{} for {}", form, skill, target.getName().getString());
+		LOGGER.info("[SSC] Unblocked " + form + "/" + skill + " for " + target.getName().getString());
 		context.getSource().sendFeedback(() -> Text.literal(
 				"[SSC] Unblocked " + form + "/" + skill + " for " + target.getName().getString()
 		).formatted(Formatting.GREEN), true);
@@ -723,7 +752,7 @@ public class SscAddonCommands {
 		String executorName = source.getName();
 
 		if (isSkillBlocked(target, form, skill)) {
-            LOGGER.warn("[SSC] Blocked skill invocation: {}/{} on {}", form, skill, target.getName());
+			LOGGER.warn("[SSC] Blocked skill invocation: " + form + "/" + skill + " on " + target.getName());
 			source.sendError(Text.literal("[SSC] Skill is blocked: " + form + "/" + skill));
 			return 0;
 		}
@@ -736,7 +765,7 @@ public class SscAddonCommands {
             return invokeAllaySkill(source, target, skill, executorName);
         }
 
-        LOGGER.warn("[SSC] Unknown form: {}", form);
+        LOGGER.warn("[SSC] Unknown form: " + form);
 		source.sendError(Text.literal("[SSC] Unknown form: " + form));
 		return 0;
 	}
@@ -744,7 +773,7 @@ public class SscAddonCommands {
 	private static int invokeSnowFoxSkill(ServerCommandSource source, ServerPlayerEntity target, String skill, String executorName) {
 		return switch (skill) {
 			case "melee_primary" -> {
-                LOGGER.info("[SSC] Invoking snow_fox/melee_primary on {} by {}", target.getName().getString(), executorName);
+				LOGGER.info("[SSC] Invoking snow_fox/melee_primary on " + target.getName().getString() + " by " + executorName);
 				boolean success = SnowFoxSpMeleeAbility.execute(target);
 				if (!success) {
 					source.sendFeedback(() -> Text.literal("[SSC] snow_fox/melee_primary failed (no mana or already dashing)").formatted(Formatting.YELLOW), false);
@@ -754,7 +783,7 @@ public class SscAddonCommands {
 				yield 1;
 			}
 			case "melee_secondary" -> {
-                LOGGER.info("[SSC] Invoking snow_fox/melee_secondary on {} by {}", target.getName().getString(), executorName);
+				LOGGER.info("[SSC] Invoking snow_fox/melee_secondary on " + target.getName().getString() + " by " + executorName);
 				boolean success = SnowFoxSpTeleportAttack.execute(target);
 				if (!success) {
 					source.sendFeedback(() -> Text.literal("[SSC] snow_fox/melee_secondary failed (no targets, mana, or already attacking)").formatted(Formatting.YELLOW), false);
@@ -764,13 +793,13 @@ public class SscAddonCommands {
 				yield 1;
 			}
 			case "ranged_primary" -> {
-                LOGGER.info("[SSC] Invoking snow_fox/ranged_primary (frost_ball) on {} by {}", target.getName().getString(), executorName);
-				invokeSnowFoxFrostBall(target);
+				LOGGER.info("[SSC] Invoking snow_fox/ranged_primary (frost_ball) on " + target.getName().getString() + " by " + executorName);
+				invokeSnowFoxFrostBall(target, executorName);
 				source.sendFeedback(() -> Text.literal("[SSC] snow_fox/ranged_primary invoked").formatted(Formatting.GREEN), false);
 				yield 1;
 			}
 			case "ranged_secondary" -> {
-                LOGGER.info("[SSC] Invoking snow_fox/ranged_secondary (frost_storm) on {} by {}", target.getName().getString(), executorName);
+				LOGGER.info("[SSC] Invoking snow_fox/ranged_secondary (frost_storm) on " + target.getName().getString() + " by " + executorName);
 				boolean success = SnowFoxSpFrostStorm.startCharging(target);
 				if (!success) {
 					source.sendFeedback(() -> Text.literal("[SSC] snow_fox/ranged_secondary failed (already charging, on CD, or no mana)").formatted(Formatting.YELLOW), false);
@@ -780,7 +809,7 @@ public class SscAddonCommands {
 				yield 1;
 			}
 default -> {
-    LOGGER.warn("[SSC] Unknown snow_fox skill: {}", skill);
+                LOGGER.warn("[SSC] Unknown snow_fox skill: " + skill);
                 source.sendError(Text.literal("[SSC] Unknown skill: " + skill + " for form snow_fox"));
                 yield 0;
             }
@@ -790,7 +819,7 @@ default -> {
     private static int invokeAnubisWolfSkill(ServerCommandSource source, ServerPlayerEntity target, String skill, String executorName) {
         return switch (skill) {
             case "summon_wolves" -> {
-                LOGGER.info("[SSC] Invoking anubis_wolf/summon_wolves on {} by {}", target.getName().getString(), executorName);
+                LOGGER.info("[SSC] Invoking anubis_wolf/summon_wolves on " + target.getName().getString() + " by " + executorName);
                 boolean success = AnubisWolfSpSummonWolves.execute(target);
                 if (!success) {
                     source.sendFeedback(() -> Text.literal("[SSC] anubis_wolf/summon_wolves failed (on CD, already summoning, or max wolves)").formatted(Formatting.YELLOW), false);
@@ -800,7 +829,7 @@ default -> {
                 yield 1;
             }
             case "death_domain" -> {
-                LOGGER.info("[SSC] Invoking anubis_wolf/death_domain on {} by {}", target.getName().getString(), executorName);
+                LOGGER.info("[SSC] Invoking anubis_wolf/death_domain on " + target.getName().getString() + " by " + executorName);
                 boolean success = AnubisWolfSpDeathDomain.execute(target);
                 if (!success) {
                     source.sendFeedback(() -> Text.literal("[SSC] anubis_wolf/death_domain failed (on CD or already active)").formatted(Formatting.YELLOW), false);
@@ -810,7 +839,7 @@ default -> {
                 yield 1;
             }
             default -> {
-                LOGGER.warn("[SSC] Unknown anubis_wolf skill: {}", skill);
+                LOGGER.warn("[SSC] Unknown anubis_wolf skill: " + skill);
                 source.sendError(Text.literal("[SSC] Unknown skill: " + skill + " for form anubis_wolf"));
                 yield 0;
             }
@@ -820,26 +849,26 @@ default -> {
     private static int invokeAllaySkill(ServerCommandSource source, ServerPlayerEntity target, String skill, String executorName) {
         return switch (skill) {
             case "jukebox_charge" -> {
-                LOGGER.info("[SSC] Invoking allay/jukebox_charge on {} by {}", target.getName().getString(), executorName);
+                LOGGER.info("[SSC] Invoking allay/jukebox_charge on " + target.getName().getString() + " by " + executorName);
                 AllaySPJukebox.tick(target);
                 source.sendFeedback(() -> Text.literal("[SSC] allay/jukebox_charge invoked").formatted(Formatting.GREEN), false);
                 yield 1;
             }
             case "group_heal" -> {
-                LOGGER.info("[SSC] Invoking allay/group_heal on {} by {}", target.getName().getString(), executorName);
+                LOGGER.info("[SSC] Invoking allay/group_heal on " + target.getName().getString() + " by " + executorName);
                 AllaySPGroupHeal.tick(target);
                 source.sendFeedback(() -> Text.literal("[SSC] allay/group_heal invoked").formatted(Formatting.GREEN), false);
                 yield 1;
             }
             default -> {
-                LOGGER.warn("[SSC] Unknown allay skill: {}", skill);
+                LOGGER.warn("[SSC] Unknown allay skill: " + skill);
                 source.sendError(Text.literal("[SSC] Unknown skill: " + skill + " for form allay"));
                 yield 0;
             }
         };
     }
 
-    private static void invokeSnowFoxFrostBall(ServerPlayerEntity player) {
+    private static void invokeSnowFoxFrostBall(ServerPlayerEntity player, String ownerName) {
 		double manaCost = 10.0;
 		int currentMana = PowerUtils.getResourceValue(player, FormIdentifiers.SNOW_FOX_RESOURCE);
 		if (currentMana >= manaCost) {
@@ -858,4 +887,9 @@ default -> {
 			SoundCategory.PLAYERS, 0.5f, 1.2f);
 	}
 
+	private static int sendError(ServerCommandSource source, String message) {
+		LOGGER.info("[SSC] Skill command error: " + message);
+		source.sendError(Text.literal("[SSC] " + message));
+		return 0;
+	}
 }

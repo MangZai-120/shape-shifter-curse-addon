@@ -21,8 +21,7 @@ public class PowerUtils {
 				return variablePower.getValue();
 			}
 		} catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+		}
 		return 0;
 	}
 
@@ -35,11 +34,23 @@ public class PowerUtils {
 				variablePower.setValue(value);
 			}
 		} catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+		}
 	}
 
-    public static void changeResourceValue(ServerPlayerEntity player, Identifier resourceId, int change) {
+	public static void setResourceValueClamped(ServerPlayerEntity player, Identifier resourceId, int value, int min, int max) {
+		try {
+			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
+			PowerType<?> powerType = PowerTypeRegistry.get(resourceId);
+			Power power = powerHolder.getPower(powerType);
+			if (power instanceof VariableIntPower variablePower) {
+				int clampedValue = Math.max(min, Math.min(max, value));
+				variablePower.setValue(clampedValue);
+			}
+		} catch (Exception e) {
+		}
+	}
+
+	public static void changeResourceValue(ServerPlayerEntity player, Identifier resourceId, int change) {
 		try {
 			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
 			PowerType<?> powerType = PowerTypeRegistry.get(resourceId);
@@ -49,26 +60,27 @@ public class PowerUtils {
 				variablePower.setValue(newValue);
 			}
 		} catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+		}
 	}
 
-	public static void syncPower(ServerPlayerEntity player) {
+	public static void syncPower(ServerPlayerEntity player, Identifier powerId) {
 		try {
 			PowerHolderComponent.sync(player);
 		} catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+		}
 	}
 
 	public static void setResourceValueAndSync(ServerPlayerEntity player, Identifier resourceId, int value) {
 		setResourceValue(player, resourceId, value);
-		syncPower(player);
+		syncPower(player, resourceId);
 	}
 
 	public static void changeResourceValueAndSync(ServerPlayerEntity player, Identifier resourceId, int change) {
 		changeResourceValue(player, resourceId, change);
-		syncPower(player);
+		syncPower(player, resourceId);
 	}
 
+	public static boolean hasResource(ServerPlayerEntity player, Identifier resourceId, int required) {
+		return getResourceValue(player, resourceId) >= required;
+	}
 }

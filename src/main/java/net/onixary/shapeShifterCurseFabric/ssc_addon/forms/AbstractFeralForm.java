@@ -92,7 +92,11 @@ public abstract class AbstractFeralForm extends PlayerFormBase {
 		return "form_feral_common_" + animName;
 	}
 
-    @Override
+	protected Identifier getAnimIdentifier(String animName) {
+		return new Identifier(MOD_ID, getAnimId(animName));
+	}
+
+	@Override
 	public @Nullable AbstractAnimStateController getAnimStateController(PlayerEntity player, AnimSystem.AnimSystemData animSystemData, @NotNull Identifier animStateID) {
 		AnimStateEnum animStateEnum = AnimStateEnum.getStateEnum(animStateID);
 		if (animStateEnum != null) {

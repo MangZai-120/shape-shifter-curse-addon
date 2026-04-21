@@ -24,6 +24,12 @@ public class PortableMoisturizerItem extends Item {
 		super(settings);
 	}
 
+	// Used by Recipe to set full charge
+	public static void setFullCharge(ItemStack stack) {
+		NbtCompound nbt = stack.getOrCreateNbt();
+		nbt.putInt("Charge", MAX_CHARGE);
+	}
+
 	@Override
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
 		ItemStack stack = player.getStackInHand(hand);

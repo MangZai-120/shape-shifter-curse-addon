@@ -26,13 +26,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 金沙岚SP - 凋零金沙（主动①，蓄力型）
- * <p>
+ *
  * 按下技能键开始蓄力（1秒），自身减速50%。
  * 蓄力完成后释放15格AoE金沙风暴：
  * - 对范围内非白名单生物施加致盲效果（3秒）
  * - 给范围内目标各叠加1层侵蚀烙印
  * - 大量沙尘粒子效果
- * <p>
+ *
  * 蓄力期间受到伤害则打断：取消技能，进入7秒CD。
  * 正常释放CD: 26秒（520tick）
  */
@@ -101,7 +101,7 @@ public class GoldenSandstormWitherSand {
 
 		// 形态检查
 		if (!FormUtils.isGoldenSandstormSP(player)) {
-			cancelCharge(player);
+			cancelCharge(player, false);
 			return;
 		}
 
@@ -111,7 +111,7 @@ public class GoldenSandstormWitherSand {
 		// 检查是否被打断（生命值下降 = 受到伤害）
 		if (player.getHealth() < state.healthAtStart) {
 			// 被打断：进入7秒CD
-			cancelCharge(player);
+			cancelCharge(player, true);
 			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, INTERRUPT_CD_TICKS);
 
 			serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -189,8 +189,9 @@ public class GoldenSandstormWitherSand {
 
 	/**
 	 * 取消蓄力
+	 * @param interrupted 是否被打断（受到伤害）
 	 */
-	private static void cancelCharge(ServerPlayerEntity player) {
+	private static void cancelCharge(ServerPlayerEntity player, boolean interrupted) {
 		removeChargeSlow(player);
 		CHARGING_PLAYERS.remove(player.getUuid());
 	}
@@ -216,6 +217,13 @@ public class GoldenSandstormWitherSand {
 		if (speedAttr != null) {
 			speedAttr.removeModifier(CHARGE_SLOW_UUID);
 		}
+	}
+
+	/**
+	 * 检查玩家是否正在蓄力（可用于阻止其他操作）
+	 */
+	public static boolean isCharging(UUID playerUuid) {
+		return CHARGING_PLAYERS.containsKey(playerUuid);
 	}
 
 	/**

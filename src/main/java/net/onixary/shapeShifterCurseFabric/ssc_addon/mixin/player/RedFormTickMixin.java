@@ -158,8 +158,9 @@ public class RedFormTickMixin {
 			if (tag.startsWith("ssc_addon_red_expire:")) {
 				try {
 					long expireTime = Long.parseLong(tag.split(":")[1]);
+					long remainingTicks = expireTime - currentTime;
 
-                    // Remaining time logic: simply check for expiration
+					// Remaining time logic: simply check for expiration
 					if (currentTime >= expireTime) {
 						shouldRevert = true;
 						tagsToRemove.add(tag);

@@ -18,12 +18,12 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 /**
  * 金沙岚SP - 反噬冲击（被动）
- * <p>
+ *
  * 被攻击时自动触发：
  * - 对周围4格内的非白名单生物造成小幅击退
  * - 附加凋零I效果5秒
  * - 冷却15秒
- * <p>
+ *
  * 白名单机制：默认白名单（白名单为空时玩家及其宠物/召唤物不受影响，非空时白名单内不受影响）
  */
 public class GoldenSandstormCounterBurst {
@@ -57,8 +57,9 @@ public class GoldenSandstormCounterBurst {
 		// 搜索范围内的实体
 		Box searchBox = player.getBoundingBox().expand(BURST_RANGE);
 		java.util.List<Entity> allEntities = serverWorld.getOtherEntities(player, searchBox);
+		int hitCount = 0;
 
-        for (Entity entity : allEntities) {
+		for (Entity entity : allEntities) {
 			if (!(entity instanceof LivingEntity living)) continue;
 			if (!living.isAlive()) continue;
 			if (living.getUuid().equals(player.getUuid())) continue;
@@ -87,7 +88,8 @@ public class GoldenSandstormCounterBurst {
 					StatusEffects.WITHER, WITHER_DURATION, WITHER_AMPLIFIER, false, true, true
 			));
 
-        }
+			hitCount++;
+		}
 
 		// 即使没有命中也进入CD（防止频繁触发检测）
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.GOLDEN_SANDSTORM_COUNTER_BURST_CD, COOLDOWN_TICKS);

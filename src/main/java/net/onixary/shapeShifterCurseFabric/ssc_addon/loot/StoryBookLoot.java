@@ -133,6 +133,25 @@ public class StoryBookLoot implements ConfigChangeListener {
 	}
 
 	/**
+	 * 通过数字章节获取书籍（向后兼容）
+	 */
+	public static net.minecraft.item.ItemStack getStoryBook(int chapter) {
+		return getStoryBookById(String.valueOf(chapter), null);
+	}
+
+	/**
+	 * 获取所有书籍的ItemStack列表
+	 */
+	public static List<net.minecraft.item.ItemStack> getAllStoryBooks() {
+		loadBooks();
+		List<net.minecraft.item.ItemStack> stacks = new ArrayList<>();
+		for (BookData book : loadedBooks) {
+			stacks.add(createBookStack(book.title, book.author, book.content));
+		}
+		return stacks;
+	}
+
+	/**
 	 * 通过数字章节和语言获取书籍（向后兼容）
 	 */
 	public static net.minecraft.item.ItemStack getStoryBook(int chapter, String language) {
@@ -274,12 +293,13 @@ public class StoryBookLoot implements ConfigChangeListener {
 
 		// Minecraft 书籍限制（保守值，确保安全）
 		// 中文字符占用约2个显示单位，所以中文页面实际能容纳的字符数更少
+		final int MAX_CHARS_PER_PAGE_LATIN = 256;  // 英文/数字
 		final int MAX_CHARS_PER_PAGE_CJK = 140;    // 中文/日文/韩文（保守估计）
 		final int MAX_LINES_PER_PAGE = 14;         // 最大行数
 		final int CHARS_PER_LINE_CJK = 10;         // 中文每行约10-11个字符
-        // 英文每行约19-20个字符
+		final int CHARS_PER_LINE_LATIN = 19;       // 英文每行约19-20个字符
 
-        StringBuilder currentPage = new StringBuilder();
+		StringBuilder currentPage = new StringBuilder();
 		int currentEstimatedLines = 0;
 
 		// 将内容按行分割，保留空行
@@ -289,7 +309,7 @@ public class StoryBookLoot implements ConfigChangeListener {
 			String line = lines[lineIndex];
 
 			// 计算这一行的显示行数
-			int lineDisplayLines = calculateDisplayLines(line, CHARS_PER_LINE_CJK);
+			int lineDisplayLines = calculateDisplayLines(line, CHARS_PER_LINE_CJK, CHARS_PER_LINE_LATIN);
 
 			// 计算当前页面的有效字符数（考虑中文权重）
 			int currentPageEffectiveChars = calculateEffectiveLength(currentPage.toString());
@@ -314,7 +334,7 @@ public class StoryBookLoot implements ConfigChangeListener {
 				// 处理超长行：逐字符添加
 				String remaining = line;
 				while (!remaining.isEmpty()) {
-					int splitIndex = findSafeSplitPoint(remaining, MAX_CHARS_PER_PAGE_CJK);
+					int splitIndex = findSafeSplitPoint(remaining, MAX_CHARS_PER_PAGE_CJK, MAX_LINES_PER_PAGE, CHARS_PER_LINE_CJK);
 
 					if (splitIndex <= 0) {
 						splitIndex = Math.min(remaining.length(), MAX_CHARS_PER_PAGE_CJK);
@@ -328,7 +348,8 @@ public class StoryBookLoot implements ConfigChangeListener {
 							calculateEffectiveLength(currentPage.toString()) + calculateEffectiveLength(chunk) > MAX_CHARS_PER_PAGE_CJK * 2) {
 						pages.add(currentPage.toString());
 						currentPage = new StringBuilder();
-                    }
+						currentEstimatedLines = 0;
+					}
 
 					currentPage.append(chunk);
 
@@ -336,13 +357,14 @@ public class StoryBookLoot implements ConfigChangeListener {
 					if (!remaining.isEmpty()) {
 						pages.add(currentPage.toString());
 						currentPage = new StringBuilder();
-                    }
+						currentEstimatedLines = 0;
+					}
 				}
 				// 添加换行符（如果不是最后一行）
 				if (lineIndex < lines.length - 1) {
 					currentPage.append("\n");
 				}
-				currentEstimatedLines = calculateDisplayLines(currentPage.toString(), CHARS_PER_LINE_CJK);
+				currentEstimatedLines = calculateDisplayLines(currentPage.toString(), CHARS_PER_LINE_CJK, CHARS_PER_LINE_LATIN);
 			} else {
 				// 正常添加行
 				currentPage.append(line);
@@ -384,7 +406,7 @@ public class StoryBookLoot implements ConfigChangeListener {
 	/**
 	 * 计算文本需要的显示行数
 	 */
-	private static int calculateDisplayLines(String text, int charsPerLineCJK) {
+	private static int calculateDisplayLines(String text, int charsPerLineCJK, int charsPerLineLatin) {
 		if (text == null || text.isEmpty()) return 1;
 
 		int lines = 0;
@@ -419,7 +441,7 @@ public class StoryBookLoot implements ConfigChangeListener {
 	/**
 	 * 找到安全的分割点（优先在标点符号或空格处分割）
 	 */
-	private static int findSafeSplitPoint(String text, int maxChars) {
+	private static int findSafeSplitPoint(String text, int maxChars, int maxLines, int charsPerLineCJK) {
 		if (text.length() <= maxChars) {
 			return text.length();
 		}

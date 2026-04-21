@@ -17,5 +17,14 @@ public class SkillBlocker {
         String skillId = form + ":" + skill;
         return SSCAddonConfig.server().disabledSkills.contains(skillId);
     }
-
+    
+    public static void blockSkill(ServerPlayerEntity player, String form, String skill) {
+        String tag = SKILL_BLOCKED_PREFIX + form + ":" + skill;
+        player.addCommandTag(tag);
+    }
+    
+    public static void unblockSkill(ServerPlayerEntity player, String form, String skill) {
+        String tag = SKILL_BLOCKED_PREFIX + form + ":" + skill;
+        player.getCommandTags().remove(tag);
+    }
 }

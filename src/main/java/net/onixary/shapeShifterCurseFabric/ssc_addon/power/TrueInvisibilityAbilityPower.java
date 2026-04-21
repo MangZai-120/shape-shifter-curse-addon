@@ -104,7 +104,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 			// Play glass break sound for natural expiration
 			entity.getWorld().playSound(null, entity.getX(), entity.getY(), entity.getZ(),
 					SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
-			if (entity instanceof PlayerEntity) {
+			if (entity instanceof PlayerEntity player) {
 				// player.sendMessage(Text.of("§7隐身时间结束"), true);
 			}
 		}
@@ -240,7 +240,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 			serverWorld.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
 					SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
 		}
-		if (entity instanceof PlayerEntity) {
+		if (entity instanceof PlayerEntity player) {
 			// player.sendMessage(Text.of("§a隐身已主动解除，获得爆发增益!"), true);
 		}
 
@@ -274,14 +274,14 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 				// Apply pre-invisibility (casting phase)
 				entity.addStatusEffect(new StatusEffectInstance(SscAddon.PRE_INVISIBILITY, 20, 0, false, false, true));
 
-				if (entity instanceof PlayerEntity) {
+				if (entity instanceof PlayerEntity player) {
 					// player.sendMessage(Text.of("§7正在引导隐身..."), true);
 				}
 			} else {
 				// On cooldown - show remaining time
-				if (entity instanceof PlayerEntity) {
-                    getRemainingCooldownSeconds();
-                    // player.sendMessage(Text.of("§c技能冷却中... " + remaining + "秒"), true);
+				if (entity instanceof PlayerEntity player) {
+					int remaining = getRemainingCooldownSeconds();
+					// player.sendMessage(Text.of("§c技能冷却中... " + remaining + "秒"), true);
 				}
 			}
 		}

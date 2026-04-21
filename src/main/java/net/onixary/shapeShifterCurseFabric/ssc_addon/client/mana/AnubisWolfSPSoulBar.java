@@ -64,11 +64,11 @@ public class AnubisWolfSPSoulBar implements HudRenderCallback {
 					offsetY
 			);
 
-			renderBar(context, pos.getLeft(), pos.getRight(), percent);
+			renderBar(context, tickDelta, pos.getLeft(), pos.getRight(), percent);
 		}
 	}
 
-	private void renderBar(DrawContext context, int x, int y, double percent) {
+	private void renderBar(DrawContext context, float tickDelta, int x, int y, double percent) {
 		int barWidth = (int) Math.ceil(80 * percent);
 		// Draw Empty
 		context.drawTexture(BarTexEmptyID, x, y, 0, 0, 80, 5, 80, 5);

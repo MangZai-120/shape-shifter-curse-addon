@@ -29,8 +29,10 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 	private static final int STUN_DELAY_TICKS = 20; // 1 second
 	private int ticksSinceDash = 0;
 	private boolean isWaitingForStun = false;
+	// Internal cooldown tracking (same as TrueInvisibilityAbilityPower)
+	private long internalCooldownEndTime = 0;
 
-    public TrueInvisibilityDashAbilityPower(PowerType<?> type, LivingEntity entity, int cooldownAfter, HudRender hudRender, Active.Key key) {
+	public TrueInvisibilityDashAbilityPower(PowerType<?> type, LivingEntity entity, int cooldownAfter, HudRender hudRender, Active.Key key) {
 		super(type, entity, cooldownAfter, hudRender, (e) -> {
 		});
 		this.setKey(key);
@@ -55,11 +57,27 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 	}
 
 	/**
+	 * Check if internal cooldown is ready
+	 * 使用服务端tick，保证多人一致性
+	 */
+	public boolean isInternalCooldownReady() {
+		return entity.getWorld().getTime() >= internalCooldownEndTime;
+	}
+
+	/**
 	 * Apply internal cooldown (called from TrueInvisibilityAbilityPower)
 	 */
 	public void applyInternalCooldown() {
-        // Internal cooldown tracking (same as TrueInvisibilityAbilityPower)
-        long internalCooldownEndTime = entity.getWorld().getTime() + COOLDOWN_TICKS;
+		internalCooldownEndTime = entity.getWorld().getTime() + COOLDOWN_TICKS;
+	}
+
+	/**
+	 * Get remaining cooldown in seconds for display
+	 */
+	public int getRemainingCooldownSeconds() {
+		long remaining = internalCooldownEndTime - entity.getWorld().getTime();
+		if (remaining <= 0) return 0;
+		return (int) Math.ceil(remaining / 20.0);
 	}
 
 	@Override
@@ -108,7 +126,7 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 			mainPower.applyUniversalCooldown();
 		}
 
-		if (entity instanceof PlayerEntity) {
+		if (entity instanceof PlayerEntity player) {
 			// player.sendMessage(Text.of("§6震慑冲刺!"), true);
 		}
 	}
@@ -164,12 +182,11 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 		world.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
 				SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 0.5f, 1.5f);
 
-		if (entity instanceof PlayerEntity) {
+		if (entity instanceof PlayerEntity player) {
 			// player.sendMessage(Text.of("§e震慑波动!"), true);
 		}
 
 		isWaitingForStun = false;
 		ticksSinceDash = 0;
 	}
-
 }
