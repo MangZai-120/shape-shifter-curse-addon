@@ -182,6 +182,10 @@ public abstract class FallenAllayVexMixin extends MobEntity {
 		LivingEntity hostileTarget = null;
 		LivingEntity otherTarget = null;
 
+		boolean ownerIsServerPlayer = owner instanceof net.minecraft.server.network.ServerPlayerEntity;
+		net.minecraft.server.network.ServerPlayerEntity serverOwner = ownerIsServerPlayer
+				? (net.minecraft.server.network.ServerPlayerEntity) owner : null;
+
 		for (LivingEntity e : candidates) {
 			// 始终跳过自己的驯服动物
 			if (e instanceof net.minecraft.entity.passive.TameableEntity tameable
@@ -193,35 +197,20 @@ public abstract class FallenAllayVexMixin extends MobEntity {
 					&& vex.getCommandTags().contains("owner:" + ownerUuidStr)) {
 				continue;
 			}
+			// 统一白名单判定：受服务端总开关控制
+			if (serverOwner != null
+					&& net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils.isProtected(serverOwner, e)) {
+				continue;
+			}
 
-			if (!hasWhitelist) {
-				// 白名单为空：跳过玩家，攻击除玩家和劫掠外的所有生物
-				if (e instanceof PlayerEntity) continue;
-				if (e.hasStatusEffect(StatusEffects.GLOWING)) {
-					if (markedTarget == null) markedTarget = e;
-				} else if (e instanceof HostileEntity) {
-					if (hostileTarget == null) hostileTarget = e;
-				} else {
-					if (otherTarget == null) otherTarget = e;
-				}
+			if (e.hasStatusEffect(StatusEffects.GLOWING)) {
+				if (markedTarget == null) markedTarget = e;
+			} else if (e instanceof PlayerEntity) {
+				if (playerTarget == null) playerTarget = e;
+			} else if (e instanceof HostileEntity) {
+				if (hostileTarget == null) hostileTarget = e;
 			} else {
-				// 白名单非空：跳过白名单内实体（驯服动物按主人 UUID 匹配）
-				boolean isWl;
-				if (e instanceof net.minecraft.entity.passive.TameableEntity t2 && t2.getOwnerUuid() != null) {
-					isWl = owner.getCommandTags().contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + t2.getOwnerUuid());
-				} else {
-					isWl = owner.getCommandTags().contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + e.getUuidAsString());
-				}
-				if (isWl) continue;
-				if (e.hasStatusEffect(StatusEffects.GLOWING)) {
-					if (markedTarget == null) markedTarget = e;
-				} else if (e instanceof PlayerEntity) {
-					if (playerTarget == null) playerTarget = e;
-				} else if (e instanceof HostileEntity) {
-					if (hostileTarget == null) hostileTarget = e;
-				} else {
-					if (otherTarget == null) otherTarget = e;
-				}
+				if (otherTarget == null) otherTarget = e;
 			}
 		}
 
