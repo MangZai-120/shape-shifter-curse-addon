@@ -213,25 +213,12 @@ public class AllaySPTotem {
 			// a. Check if they are SP Allay
 			if (!isSpAllay(serverPlayer)) continue;
 
-			// b. Check whitelist
-			// If entity == serverPlayer (self), we SKIP whitelist check (always allowed to save self with carried totem)
-			// If entity != serverPlayer (ally), check whitelist with totem-specific semantics:
-			//   whitelistEnabled = false  -> 仅玩家可获救
-			//   whitelistEnabled = true   -> 保留原逻辑（白名单为空时仅玩家；非空时遵从白名单）
+			// b. Check whitelist：自我救援总是允许；救他人统一走 isBuffTarget
+			//   - whitelistEnabled = false：仅作用于非怪物/非敌对生物
+			//   - whitelistEnabled = true：白名单空时玩家/驯服宠物/owner-tag；非空时仅白名单成员
 			if (entity != serverPlayer) {
-				if (!net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig.server().whitelistEnabled) {
-					if (!(entity instanceof PlayerEntity)) continue;
-				} else {
-					java.util.Set<String> tags = serverPlayer.getCommandTags();
-					boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
-
-					if (whitelistEmpty) {
-						// If whitelist is empty, ONLY other PLAYERS can benefit
-						if (!(entity instanceof PlayerEntity)) continue;
-					} else {
-						// If whitelist is not empty, only whitelisted entities benefit
-						if (!AllaySPGroupHeal.shouldHeal(entity, tags)) continue;
-					}
+				if (!net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils.isBuffTarget(serverPlayer, entity)) {
+					continue;
 				}
 			}
 

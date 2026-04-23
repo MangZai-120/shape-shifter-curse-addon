@@ -161,10 +161,10 @@ public class AllayHealWandItem extends Item {
 			LivingEntity target = getTargetedEntity(serverPlayer);
 
 			if (target != null) {
-				// 服务端白名单总开关关闭时：拒绝治疗怪物/敌对生物
-				if (!net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig.server().whitelistEnabled
-						&& (target instanceof net.minecraft.entity.mob.HostileEntity
-							|| target instanceof net.minecraft.entity.mob.Monster)) {
+				// 统一强化目标判定：受服务端白名单总开关控制
+				// - 开关关闭：仅作用于非怪物/非敌对生物
+				// - 开关开启：白名单空时仅治疗玩家/驯服宠物/owner-tag；非空时仅治疗白名单内对象
+				if (!net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils.isBuffTarget(serverPlayer, target)) {
 					serverPlayer.sendMessage(Text.translatable("item.ssc_addon.allay_heal_wand.no_target").formatted(Formatting.RED), true);
 					return TypedActionResult.fail(stack);
 				}

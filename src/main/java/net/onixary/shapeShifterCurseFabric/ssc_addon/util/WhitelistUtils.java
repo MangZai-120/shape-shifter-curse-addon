@@ -1,6 +1,7 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.util;
 
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.mob.Angerable;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.Monster;
 import net.minecraft.entity.passive.TameableEntity;
@@ -18,7 +19,7 @@ import java.util.UUID;
  *
  * 服务端总开关 SSCAddonServerConfig#whitelistEnabled（默认 true）：
  *  - 开启：保留原白名单行为（玩家/驯服宠物/恕魔友方豁免；白名单非空时仅保护白名单）
- *  - 关闭：攻击性技能 isProtected → 永远 false；强化类 isBuffTarget → 仅作用于非怪物/敌对生物
+ *  - 关闭：攻击性技能 isProtected → 永远 false；强化类 isBuffTarget → 跳过敌对/Monster/未驯服的 Angerable（蜂/野生狼/北极熊/铁傀儡/末影人/僵尸猪灵等）
  */
 public class WhitelistUtils {
 
@@ -50,9 +51,10 @@ if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + tameable.getOwnerUuid(
 return true;
 }
 for (String tag : target.getCommandTags()) {
-if (tag.startsWith("owner:")) {
-String ownerUuid = tag.substring(6);
-if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + ownerUuid)) return true;
+String ownerUuid = extractOwnerUuid(tag);
+if (ownerUuid != null
+&& tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + ownerUuid)) {
+return true;
 }
 }
 return false;
@@ -90,9 +92,10 @@ if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + tameable.getOwnerUuid(
 return true;
 }
 for (String tag : target.getCommandTags()) {
-if (tag.startsWith("owner:")) {
-String ownerUuid = tag.substring(6);
-if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + ownerUuid)) return true;
+String ownerUuid = extractOwnerUuid(tag);
+if (ownerUuid != null
+&& tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + ownerUuid)) {
+return true;
 }
 }
 return false;
@@ -100,10 +103,27 @@ return false;
 }
 
 private static boolean hasOwnerTag(LivingEntity entity) {
-return entity.getCommandTags().stream().anyMatch(t -> t.startsWith("owner:"));
+return entity.getCommandTags().stream()
+.anyMatch(t -> t.startsWith("owner:") || t.startsWith("ssc_owner:"));
+}
+
+/** 抽取 owner tag 中的 UUID 字符串。兼容 owner: 与 ssc_owner: 两种前缀。 */
+private static String extractOwnerUuid(String tag) {
+if (tag.startsWith("ssc_owner:")) return tag.substring("ssc_owner:".length());
+if (tag.startsWith("owner:")) return tag.substring("owner:".length());
+return null;
 }
 
 private static boolean isHostileOrMonster(LivingEntity entity) {
-return entity instanceof HostileEntity || entity instanceof Monster;
+if (entity instanceof HostileEntity || entity instanceof Monster) return true;
+// 中立但受击会激怒的生物（蜂、野生狼、北极熊、铁傀儡、僵尸猪灵、末影人等）
+// 已驯服的 Angerable（如驯服狼）视为友好可治疗
+if (entity instanceof Angerable) {
+if (entity instanceof TameableEntity tame && tame.getOwnerUuid() != null) {
+return false;
+}
+return true;
+}
+return false;
 }
 }

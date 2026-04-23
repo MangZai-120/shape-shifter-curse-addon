@@ -246,21 +246,6 @@
                                 }
                             },
                             {
-                                "type": "origins:target_condition",
-                                "condition": {
-                                    "type": "origins:entity_type",
-                                    "entity_type": "minecraft:player"
-                                },
-                                "inverted": true
-                            },
-                            {
-                                "type": "origins:target_condition",
-                                "condition": {
-                                    "type": "origins:tamed"
-                                },
-                                "inverted": true
-                            },
-                            {
                                 "type": "my_addon:not_actor_whitelisted"
                             }
                         ]
@@ -376,21 +361,6 @@
                                 "condition": {
                                     "type": "origins:living"
                                 }
-                            },
-                            {
-                                "type": "origins:target_condition",
-                                "condition": {
-                                    "type": "origins:entity_type",
-                                    "entity_type": "minecraft:player"
-                                },
-                                "inverted": true
-                            },
-                            {
-                                "type": "origins:target_condition",
-                                "condition": {
-                                    "type": "origins:tamed"
-                                },
-                                "inverted": true
                             },
                             {
                                 "type": "my_addon:not_actor_whitelisted"

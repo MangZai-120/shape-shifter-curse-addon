@@ -78,10 +78,8 @@ public class SscAddonActions {
 
 						// Glow non-whitelisted
 						java.util.List<LivingEntity> entities = world.getEntitiesByClass(LivingEntity.class, box, e -> e != player && e.isAlive());
-						java.util.Set<String> tags = player.getCommandTags();
-						boolean screamWlEmpty = tags.stream().noneMatch(t -> t.startsWith(net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
 						for (LivingEntity e : entities) {
-							// 始终跳过：自己的恕自动物、自己的恕魔、劫掠阵营
+							// 始终跳过：自己的驯服动物、自己的恕魔、劫掠阵营
 							if (e instanceof net.minecraft.entity.passive.TameableEntity tameable && player.getUuid().equals(tameable.getOwnerUuid())) {
 								continue;
 							}
@@ -91,19 +89,8 @@ public class SscAddonActions {
 							if (e instanceof net.minecraft.entity.raid.RaiderEntity) {
 								continue;
 							}
-							if (screamWlEmpty) {
-								// 白名单为空：跳过玩家，对其余所有生物生效
-								if (e instanceof PlayerEntity) continue;
-							} else {
-								// 白名单非空：跳过白名单内的实体（驯服动物按主人匹配）
-								boolean isWl;
-								if (e instanceof net.minecraft.entity.passive.TameableEntity t2 && t2.getOwnerUuid() != null) {
-									isWl = tags.contains(net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal.WHITELIST_TAG_PREFIX + t2.getOwnerUuid());
-								} else {
-									isWl = tags.contains(net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal.WHITELIST_TAG_PREFIX + e.getUuidAsString());
-								}
-								if (isWl) continue;
-							}
+							// 统一白名单判定：受服务端总开关控制
+							if (WhitelistUtils.isProtected(player, e)) continue;
 							e.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, 160, 0)); // 8s
 						}
 
