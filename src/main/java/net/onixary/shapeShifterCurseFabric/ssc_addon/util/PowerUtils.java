@@ -83,4 +83,17 @@ public class PowerUtils {
 	public static boolean hasResource(ServerPlayerEntity player, Identifier resourceId, int required) {
 		return getResourceValue(player, resourceId) >= required;
 	}
+
+	/**
+	 * 检查玩家是否处于 SP Allay 形态
+	 */
+	public static boolean isSpAllay(ServerPlayerEntity player) {
+		try {
+			return PowerHolderComponent.KEY.get(player).getPowers().stream()
+					.anyMatch(p -> p.getType().getIdentifier().getNamespace().equals("my_addon")
+							&& p.getType().getIdentifier().getPath().contains("form_allay_sp"));
+		} catch (Exception e) {
+			return false;
+		}
+	}
 }

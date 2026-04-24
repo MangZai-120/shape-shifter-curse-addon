@@ -1,6 +1,6 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.ability;
 
-import io.github.apace100.apoli.component.PowerHolderComponent;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.entity.LivingEntity;
@@ -271,15 +271,7 @@ public class AllaySPTotem {
 	}
 
 	private static boolean isSpAllay(PlayerEntity player) {
-		if (player instanceof ServerPlayerEntity serverPlayer) {
-			try {
-				return PowerHolderComponent.KEY.get(serverPlayer).getPowers().stream()
-						.anyMatch(p -> p.getType().getIdentifier().getNamespace().equals("my_addon") && p.getType().getIdentifier().getPath().contains("form_allay_sp"));
-			} catch (Exception e) {
-				return false;
-			}
-		}
-		return false;
+		return player instanceof ServerPlayerEntity sp && PowerUtils.isSpAllay(sp);
 	}
 
 	private static void updateActiveTotemTracking(ServerPlayerEntity player, boolean hasActiveTotem) {

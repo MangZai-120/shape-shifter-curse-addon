@@ -42,9 +42,7 @@ public class AllaySPPortableBeacon {
 	}
 
 	private static boolean isSpAllay(ServerPlayerEntity player) {
-		// Check for any power containing "form_allay_sp" in its ID
-		// This relies on the power structure being consistent with "form_allay_sp" naming convention
-		return PowerUtils.hasResource(player, BEACON_ACTIVE_ID, 1);
+		return PowerUtils.isSpAllay(player);
 	}
 
 	private static boolean isBeaconActive(ServerPlayerEntity player) {

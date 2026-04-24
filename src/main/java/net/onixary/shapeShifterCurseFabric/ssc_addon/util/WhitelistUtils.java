@@ -2,6 +2,7 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.util;
 
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.Angerable;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.Monster;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -148,7 +149,7 @@ public class WhitelistUtils {
 	}
 
 	private static boolean isHostileOrMonster(LivingEntity entity) {
-		if (entity instanceof Monster) {
+		if (entity instanceof HostileEntity || entity instanceof Monster) {
 			return true;
 		}
 		// 中立但受击会激怒的生物（蜂、野生狼、北极熊、铁傀儡、僵尸猪灵、末影人等）
