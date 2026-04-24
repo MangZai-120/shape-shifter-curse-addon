@@ -3,6 +3,7 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin.player;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.PlayerEntityRenderer;
+import net.minecraft.client.render.entity.PlayerModelPart;
 import net.minecraft.client.render.entity.model.PlayerEntityModel;
 import net.minecraft.client.util.math.MatrixStack;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
@@ -44,11 +45,12 @@ public class SscPlayerEntityRendererMixin {
 					model.rightPants.visible = false;
 
 					model.head.visible = true;
-					model.hat.visible = true;
+					// 同步原版 Issues 394 修复：尊重玩家原版皮肤定制开关
+					model.hat.visible = player.isPartVisible(PlayerModelPart.HAT);
 					model.rightArm.visible = true;
 					model.leftArm.visible = true;
-					model.rightSleeve.visible = true;
-					model.leftSleeve.visible = true;
+					model.rightSleeve.visible = player.isPartVisible(PlayerModelPart.RIGHT_SLEEVE);
+					model.leftSleeve.visible = player.isPartVisible(PlayerModelPart.LEFT_SLEEVE);
 				}
 				// 2. 其他完全变身 (Phase 3 或 Phase SP) - 排除 Allay
 				else if ((phase == PlayerFormPhase.PHASE_3 || phase == PlayerFormPhase.PHASE_SP) && !path.contains("allay")) {
