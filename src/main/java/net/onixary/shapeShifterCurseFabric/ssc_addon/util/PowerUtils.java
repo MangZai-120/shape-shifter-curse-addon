@@ -5,11 +5,54 @@ import io.github.apace100.apoli.power.Power;
 import io.github.apace100.apoli.power.PowerType;
 import io.github.apace100.apoli.power.PowerTypeRegistry;
 import io.github.apace100.apoli.power.VariableIntPower;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 
+import java.util.List;
+
 public class PowerUtils {
 	private PowerUtils() {
+	}
+
+	/**
+	 * 从Apoli VariableIntPower读取当前值（客户端侧）
+	 * 用于HUD渲染器等只能在客户端读取资源的场景
+	 */
+	@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+	public static int getClientResourceValue(PlayerEntity player, Identifier resourceId) {
+		try {
+			List<VariableIntPower> powers = PowerHolderComponent.KEY.get(player)
+					.getPowers(VariableIntPower.class);
+			for (VariableIntPower power : powers) {
+				if (power.getType().getIdentifier().equals(resourceId)) {
+					return power.getValue();
+				}
+			}
+		} catch (Exception e) {
+			// 客户端资源读取失败时静默返回0
+		}
+		return 0;
+	}
+
+	/**
+	 * 获取客户端资源值和最大值（用于HUD渲染百分比计算）
+	 * @return int[2] {current, max}，失败返回 {0, 1}
+	 */
+	@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+	public static int[] getClientResourceValueAndMax(PlayerEntity player, Identifier resourceId) {
+		try {
+			List<VariableIntPower> powers = PowerHolderComponent.KEY.get(player)
+					.getPowers(VariableIntPower.class);
+			for (VariableIntPower power : powers) {
+				if (power.getType().getIdentifier().equals(resourceId)) {
+					return new int[]{power.getValue(), power.getMax()};
+				}
+			}
+		} catch (Exception e) {
+			// 客户端资源读取失败时静默返回默认值
+		}
+		return new int[]{0, 1};
 	}
 
 	public static int getResourceValue(ServerPlayerEntity player, Identifier resourceId) {

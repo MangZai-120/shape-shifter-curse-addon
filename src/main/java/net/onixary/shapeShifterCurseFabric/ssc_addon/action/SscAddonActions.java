@@ -2,11 +2,6 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.action;
 
 import dev.emi.trinkets.api.TrinketComponent;
 import dev.emi.trinkets.api.TrinketsApi;
-import io.github.apace100.apoli.component.PowerHolderComponent;
-import io.github.apace100.apoli.power.Power;
-import io.github.apace100.apoli.power.PowerType;
-import io.github.apace100.apoli.power.PowerTypeRegistry;
-import io.github.apace100.apoli.power.VariableIntPower;
 import io.github.apace100.apoli.power.factory.action.ActionFactory;
 import io.github.apace100.apoli.registry.ApoliRegistries;
 import io.github.apace100.calio.data.SerializableData;
@@ -51,13 +46,8 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SkillBlocker;
 
 import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class SscAddonActions {
-
-	// 冰球自定义CD跟踪
-	private static final ConcurrentHashMap<UUID, Long> FROST_BALL_COOLDOWN = new ConcurrentHashMap<>();
 
 	private SscAddonActions() {
 		// This utility class should not be instantiated
@@ -333,25 +323,22 @@ public class SscAddonActions {
 						if (SkillBlocker.isSkillBlocked(player, "snow_fox", "ranged_primary")) {
 							return;
 						}
-						// 检查自定义CD是否结束（使用服务端tick保证多人一致性）
-						long currentTickFb = player.getWorld().getTime();
-						Long cdEndTickFb = FROST_BALL_COOLDOWN.get(player.getUuid());
-						if (cdEndTickFb != null && currentTickFb < cdEndTickFb) {
+						// 检查CD资源是否还在冷却中
+						int currentCd = PowerUtils.getResourceValue(player, FormIdentifiers.SNOW_FOX_RANGED_PRIMARY_CD);
+						if (currentCd > 0) {
 							return;
 						}
 
 						// 检查并消耗霜寒值
-						int currentMana = getResourceValue(player, "my_addon:form_snow_fox_sp_resource");
+						int currentMana = PowerUtils.getResourceValue(player, FormIdentifiers.SNOW_FOX_RESOURCE);
 						int manaCost = 15;
 						if (currentMana < manaCost) {
 							player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
 							return;
 						}
-						changeResourceValue(player, "my_addon:form_snow_fox_sp_resource", -manaCost);
+						PowerUtils.changeResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RESOURCE, -manaCost);
 						// 设置回复冷却（5秒）
-						setRegenCooldown(player, 100);
-						// 设置技能CD（5秒 = 100tick，服务端一致）
-						FROST_BALL_COOLDOWN.put(player.getUuid(), currentTickFb + 100L);
+						PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_REGEN_COOLDOWN, 100);
 						// 设置CD显示资源（5秒 = 100tick）
 						PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RANGED_PRIMARY_CD, 100);
 
@@ -432,7 +419,7 @@ public class SscAddonActions {
 					}
 				}));
 
-		registerEntity(new ActionFactory<>(new Identifier("my_addon", "adaptive_water_jump"),
+		registerEntity(new ActionFactory<>(new Identifier("my_addon", "adaptive_water_jump_boost"),
 				new SerializableData().add("multiplier", SerializableDataTypes.FLOAT, 2.0F),
 				(data, entity) -> {
 					// Must be in swimming pose (sprinting in water) to trigger
@@ -551,58 +538,6 @@ public class SscAddonActions {
 	private static void registerEntity(ActionFactory<Entity> actionFactory) {
 		if (!ApoliRegistries.ENTITY_ACTION.containsId(actionFactory.getSerializerId())) {
 			Registry.register(ApoliRegistries.ENTITY_ACTION, actionFactory.getSerializerId(), actionFactory);
-		}
-	}
-
-	/**
-	 * 获取Resource值
-	 */
-	private static int getResourceValue(ServerPlayerEntity player, String resourceId) {
-		try {
-			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-			PowerType<?> powerType = PowerTypeRegistry.get(new Identifier(resourceId));
-			Power power = powerHolder.getPower(powerType);
-			if (power instanceof VariableIntPower variablePower) {
-				return variablePower.getValue();
-			}
-		} catch (Exception e) {
-			// Resource not found
-		}
-		return 0;
-	}
-
-	/**
-	 * 修改Resource值
-	 */
-	private static void changeResourceValue(ServerPlayerEntity player, String resourceId, int change) {
-		try {
-			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-			PowerType<?> powerType = PowerTypeRegistry.get(new Identifier(resourceId));
-			Power power = powerHolder.getPower(powerType);
-			if (power instanceof VariableIntPower variablePower) {
-				int newValue = Math.max(0, Math.min(100, variablePower.getValue() + change));
-				variablePower.setValue(newValue);
-				PowerHolderComponent.sync(player); // 同步到客户端
-			}
-		} catch (Exception e) {
-			// Resource not found
-		}
-	}
-
-	/**
-	 * 设置回复冷却（使用后5秒内无法自然回复霜寒值）
-	 */
-	private static void setRegenCooldown(ServerPlayerEntity player, int value) {
-		try {
-			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-			PowerType<?> powerType = PowerTypeRegistry.get(new Identifier("my_addon:form_snow_fox_sp_frost_regen_cooldown_resource"));
-			Power power = powerHolder.getPower(powerType);
-			if (power instanceof VariableIntPower variablePower) {
-				variablePower.setValue(value);
-				PowerHolderComponent.sync(player);
-			}
-		} catch (Exception e) {
-			// Resource not found
 		}
 	}
 

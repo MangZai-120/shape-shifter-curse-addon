@@ -1,7 +1,5 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.client.hud;
 
-import io.github.apace100.apoli.component.PowerHolderComponent;
-import io.github.apace100.apoli.power.VariableIntPower;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -15,9 +13,9 @@ import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComp
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonClientConfig;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -259,16 +257,6 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 	 * 从Apoli VariableIntPower读取当前值（客户端侧）
 	 */
 	private int getResourceValue(PlayerEntity player, Identifier resourceId) {
-		try {
-			List<VariableIntPower> powers = PowerHolderComponent.KEY.get(player)
-					.getPowers(VariableIntPower.class);
-			for (VariableIntPower power : powers) {
-				if (power.getType().getIdentifier().equals(resourceId)) {
-					return power.getValue();
-				}
-			}
-		} catch (Exception ignored) {
-		}
-		return 0;
+		return PowerUtils.getClientResourceValue(player, resourceId);
 	}
 }
