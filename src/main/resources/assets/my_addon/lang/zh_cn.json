@@ -297,5 +297,14 @@
   "item.ssc_addon.erosion_sand_prism.tooltip_3": "烙印叠加冷却从1秒增加到1.3秒",
   "item.ssc_addon.withered_sand_ring": "枯沙指环",
   "item.ssc_addon.withered_sand_ring.tooltip_1": "SP金沙岚形态专属",
-  "item.ssc_addon.withered_sand_ring.tooltip_2": "引爆及被动爆发伤害上限提高30%（20→26）"
+  "item.ssc_addon.withered_sand_ring.tooltip_2": "引爆及被动爆发伤害上限提高30%（20→26）",
+  "codex.form.my_addon.familiar_fox_sp.name": "sp使魔(灵界之主)",
+  "codex.form.my_addon.familiar_fox_red.name": "红",
+  "codex.form.my_addon.snow_fox_sp.name": "sp雪狐(寒霜之灵)",
+  "codex.form.my_addon.allay_sp.name": "sp悦灵(水晶之音)",
+  "codex.form.my_addon.axolotl_sp.name": "sp美西螈(深渊霸主)",
+  "codex.form.my_addon.wild_cat_sp.name": "sp野猫(月光魅影)",
+  "codex.form.my_addon.fallen_allay_sp.name": "sp堕落悦灵(堕落之灵)",
+  "codex.form.my_addon.anubis_wolf_sp.name": "sp阿努比斯(冥裁者)",
+  "codex.form.my_addon.golden_sandstorm_sp.name": "金沙岚"
 }
