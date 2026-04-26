@@ -83,10 +83,10 @@ public class GoldenSandstormCounterBurst {
 				living.velocityModified = true;
 			}
 
-			// 施加凋零效果
+			// 施加凋零效果（传入 player 作为 source，使金沙岚回血系统可注册凋零来源）
 			living.addStatusEffect(new StatusEffectInstance(
 					StatusEffects.WITHER, WITHER_DURATION, WITHER_AMPLIFIER, false, true, true
-			));
+			), player);
 
 			hitCount++;
 		}

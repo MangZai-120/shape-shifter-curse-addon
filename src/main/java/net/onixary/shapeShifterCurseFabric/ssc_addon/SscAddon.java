@@ -71,6 +71,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDo
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEnergy;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormErosionBrand;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormRegen;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormWitherSand;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.UndeadNeutralState;
 import net.onixary.shapeShifterCurseFabric.additional_power.VirtualTotemPower;
@@ -246,6 +247,7 @@ public class SscAddon implements ModInitializer {
 		registerPlayerEventHandlers();
 		registerServerLifecycleHandlers();
 		AnubisWolfSpSoulEnergy.registerEvents();
+		GoldenSandstormRegen.init();
 	}
 
 
@@ -408,6 +410,7 @@ public class SscAddon implements ModInitializer {
 				AnubisWolfSpSummonWolves.tick(player);
 				GoldenSandstormErosionBrand.tick(player);
 				GoldenSandstormWitherSand.tick(player);
+				GoldenSandstormRegen.tick(player);
 			}
 		});
 	}
@@ -423,6 +426,7 @@ public class SscAddon implements ModInitializer {
 			AllaySPTotem.clearAll();
 			GoldenSandstormErosionBrand.clearAll();
 			GoldenSandstormWitherSand.clearAll();
+			GoldenSandstormRegen.clearAll();
 			UndeadNeutralState.clearAll();
 			System.out.println("[SSC_ADDON] SERVER_STARTING ability state cleared");
 		});
@@ -446,6 +450,7 @@ public class SscAddon implements ModInitializer {
 			AllaySPTotem.clearAll();
 			GoldenSandstormErosionBrand.clearAll();
 			GoldenSandstormWitherSand.clearAll();
+			GoldenSandstormRegen.clearAll();
 			UndeadNeutralState.clearAll();
 			System.out.println("[SSC_ADDON] END_DATA_PACK_RELOAD ability state cleared");
 		});
@@ -583,6 +588,7 @@ public class SscAddon implements ModInitializer {
 			AllaySPTotem.clearPlayer(handler.player);
 			GoldenSandstormErosionBrand.clearPlayer(handler.player);
 			GoldenSandstormWitherSand.clearPlayer(handler.player);
+			GoldenSandstormRegen.clearPlayer(uuid);
 			AnubisWolfSpSoulEnergy.clearPlayer(handler.player);
 			ErosionSandPrismItem.clearPlayer(uuid);
 			WitheredSandRingItem.clearPlayer(uuid);
