@@ -277,6 +277,11 @@
   "item.ssc_addon.witch_familiar_spawn_egg": "女巫使魔蛋",
   "origin.my_addon.form_golden_sandstorm_sp.name": "金沙岚(SP)",
   "origin.my_addon.form_golden_sandstorm_sp.description": "胡狼的特殊变体形态，凋零的本质在金色沙暴的力量下得到了极致的升华。",
+  "codex.form.my_addon.golden_sandstorm_sp.title": "\n'当诅咒与金色沙暴完全融合，你便不再仅仅是沙漠中的胡狼…\n你是荒漠的回响，侵蚀之砂的化身'\n\n专属饰品/工具：蚀沙棱晶、枯沙指环",
+  "codex.form.my_addon.golden_sandstorm_sp.appearance": "你的身躯被金色沙尘与凋零气息缠绕，毛发间流动着像日暮沙丘般的暗金光泽。你踏过的地方仿佛残留着细碎的魂砂，双眼中映着一场永不止息的沙暴。",
+  "codex.form.my_addon.golden_sandstorm_sp.pros": "金沙岚\n凋零的本质在金色沙暴中被推向极致，赋予你侵蚀与反噬的力量：\n\n凋零金沙：蓄力1秒后释放15格范围的金沙风暴，使非白名单生物陷入沙盲3秒，并为其叠加1层侵蚀烙印。蓄力期间移动速度降低50%，受到伤害会打断蓄力并进入7秒冷却；成功释放后进入26秒冷却。\n\n侵蚀烙印：近战攻击会为目标叠加侵蚀烙印，最多3层，持续10秒，同一目标默认每秒最多叠加1层。3层后再次攻击会触发被动爆发，造成目标当前生命值20%的伤害（上限20），并回复自身10%最大生命值；目标随后进入绿色冷却状态，短时间内无法继续叠层。\n\n引爆标记：引爆所有非绿色状态的侵蚀烙印，造成目标当前生命值20%的伤害（上限20），并回复自身20%已损生命值。3层目标会先触发被动爆发再被引爆。\n\n烙印感知：被侵蚀烙印标记的生物会根据层数显示不同颜色的发光轮廓：黄色、橙色、红色；绿色表示叠层冷却。\n\n反噬冲击：受到攻击时自动释放反噬，对周围4格内非白名单生物造成击退，并施加凋零I效果5秒。\n\n凋零适应：你免疫凋零、失明与沙盲效果。\n\n此外，你继承了阿努比斯之狼三进化的大部分亡灵本能：灵魂疾行、亡灵不死、食骨、饥饿与中毒免疫、腐肉饱和度提升、瞬间伤害治疗、灵魂沙回复、对亡灵伤害减免以及震慑骷髅等能力。",
+  "codex.form.my_addon.golden_sandstorm_sp.cons": "金色沙暴无法抹去亡灵体质的代价：\n\n饮生无序：你不再能依靠饱食度自然回血，生命恢复药水对你无效。生命只能通过凋零侵蚀、击杀以及后述被动调息获得：\n\u3000· 凋零伤害 tick：你施加的凋零每次对敌造成伤害 → 回复半颗心\n\u3000· 亲手击杀敌人 → 回复2颗心\n\u3000· 冬狼击杀敌人 → 回复1.5颗心\n\u3000· 被动调息：未交战时每10秒恢复半颗心，交战时每6秒恢复半颗心\n\n凋零饱和限制：击杀生物掉落的肉类会腐烂为腐肉，收获作物时也可能化为沙尘。\n\n素食无法为你提供饱和度，你对亡灵生物造成的直接伤害有所下降。\n\n普通的腿甲与靴子仍然不适合你的四足身体。\n\n凋零金沙需要蓄力，受到伤害会被打断；侵蚀烙印也需要持续压迫目标才能发挥最大威力。",
+  "codex.form.my_addon.golden_sandstorm_sp.instincts": "你听见沙粒在灵魂深处摩擦，像无数亡者的低语。你渴望让敌人被烙印、被风沙吞没、被凋零慢慢侵蚀。\n每一次反噬都像沙暴回应你的怒意，每一次引爆都像荒漠收回它早已标记的猎物。",
   "power.my_addon.form_golden_sandstorm_sp_wither_sand.name": "凋零金沙",
   "power.my_addon.form_golden_sandstorm_sp_wither_sand.description": "蓄力1秒后释放15格AoE金沙风暴，对范围内敌对生物施加致盲效果（3秒）并叠加1层侵蚀烙印。蓄力期间减速50%，受到伤害会打断蓄力并进入7秒CD。正常释放CD: 26秒。",
   "power.my_addon.form_golden_sandstorm_sp_erosion_brand.name": "引爆标记",
@@ -297,5 +302,14 @@
   "item.ssc_addon.erosion_sand_prism.tooltip_3": "烙印叠加冷却从1秒增加到1.3秒",
   "item.ssc_addon.withered_sand_ring": "枯沙指环",
   "item.ssc_addon.withered_sand_ring.tooltip_1": "SP金沙岚形态专属",
-  "item.ssc_addon.withered_sand_ring.tooltip_2": "引爆及被动爆发伤害上限提高30%（20→26）"
+  "item.ssc_addon.withered_sand_ring.tooltip_2": "引爆及被动爆发伤害上限提高30%（20→26）",
+  "codex.form.my_addon.familiar_fox_sp.name": "sp使魔(灵界之主)",
+  "codex.form.my_addon.familiar_fox_red.name": "红",
+  "codex.form.my_addon.snow_fox_sp.name": "sp雪狐(寒霜之灵)",
+  "codex.form.my_addon.allay_sp.name": "sp悦灵(水晶之音)",
+  "codex.form.my_addon.axolotl_sp.name": "sp美西螈(深渊霸主)",
+  "codex.form.my_addon.wild_cat_sp.name": "sp野猫(月光魅影)",
+  "codex.form.my_addon.fallen_allay_sp.name": "sp堕落悦灵(堕落之灵)",
+  "codex.form.my_addon.anubis_wolf_sp.name": "sp阿努比斯(冥裁者)",
+  "codex.form.my_addon.golden_sandstorm_sp.name": "金沙岚"
 }

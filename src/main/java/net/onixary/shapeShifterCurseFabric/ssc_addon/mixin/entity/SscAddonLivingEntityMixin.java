@@ -1,13 +1,18 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin.entity;
 
 import io.github.apace100.apoli.component.PowerHolderComponent;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityGroup;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.HuskEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormRegen;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.power.EffectEfficiencyReductionPower;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
@@ -42,6 +47,43 @@ public abstract class SscAddonLivingEntityMixin {
 				UndeadNeutralState.PROVOKE_TIMESTAMPS.put(player.getUuid(), mob.getWorld().getTime());
 			}
 		}
+
+		// ==== 金沙岚回血系统 ====
+		if (!self.getWorld().isClient()) {
+			// 凋零 tick 伤害 → 为已注册的金沙岚来源回血
+			if (source.isOf(DamageTypes.WITHER)) {
+				GoldenSandstormRegen.onWitherTickDamage(self);
+			}
+			// 金沙岚玩家亲手造成伤害 → 标记战斗状态
+			if (source.getAttacker() instanceof ServerPlayerEntity attacker
+					&& FormUtils.isForm(attacker, FormIdentifiers.GOLDEN_SANDSTORM_SP)) {
+				GoldenSandstormRegen.markCombat(attacker);
+			}
+			// 冥狼造成伤害 → 为主人（金沙岚）标记战斗状态
+			if (source.getAttacker() instanceof net.onixary.shapeShifterCurseFabric.minion.mobs.AnubisWolfMinionEntity wolf
+					&& self.getWorld() instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+				java.util.UUID ownerUuid = wolf.getMinionOwnerUUID();
+				if (ownerUuid != null) {
+					net.minecraft.entity.player.PlayerEntity owner = serverWorld.getPlayerByUuid(ownerUuid);
+					if (owner instanceof ServerPlayerEntity ownerPlayer
+							&& FormUtils.isForm(ownerPlayer, FormIdentifiers.GOLDEN_SANDSTORM_SP)) {
+						GoldenSandstormRegen.markCombat(ownerPlayer);
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * 拦截带源的 addStatusEffect：当金沙岚玩家给受害者施加凋零时，注册凋零来源用于回血。
+	 */
+	@Inject(method = "addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;Lnet/minecraft/entity/Entity;)Z", at = @At("HEAD"))
+	private void ssc_addon$registerGoldenSandstormWitherSource(StatusEffectInstance effect, Entity source, CallbackInfoReturnable<Boolean> cir) {
+		if (effect.getEffectType() != StatusEffects.WITHER) return;
+		if (!(source instanceof ServerPlayerEntity sp)) return;
+		if (!FormUtils.isForm(sp, FormIdentifiers.GOLDEN_SANDSTORM_SP)) return;
+		LivingEntity self = (LivingEntity) (Object) this;
+		GoldenSandstormRegen.registerWitherSource(self, sp, effect.getDuration());
 	}
 
 	@ModifyVariable(method = "addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;Lnet/minecraft/entity/Entity;)Z", at = @At("HEAD"), argsOnly = true)

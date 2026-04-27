@@ -3,6 +3,7 @@
     "effects": [
         "minecraft:wither",
         "minecraft:blindness",
+        "minecraft:regeneration",
         "ssc_addon:sand_blind"
     ]
 }
