@@ -5,13 +5,10 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import io.github.apace100.apoli.component.PowerHolderComponent;
-import io.github.apace100.apoli.power.VariableIntPower;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -197,44 +194,40 @@ public class SscAddonCommands {
 	}
 
 	private static int setMana(CommandContext<ServerCommandSource> context, Collection<ServerPlayerEntity> targets, int amount) {
-		Identifier resourceId = new Identifier("my_addon", "form_snow_fox_sp_resource");
-		Identifier allayResourceId = new Identifier("my_addon", "form_allay_sp_mana_resource");
-		Identifier soulEnergyId = new Identifier("my_addon", "form_anubis_wolf_sp_soul_energy");
 		int count = 0;
 		for (ServerPlayerEntity player : targets) {
 			boolean updated = false;
-			// 1. Try Apoli Resource (Snow Fox SP / Allay SP / Anubis Wolf SP Soul Energy)
-			PowerHolderComponent component = PowerHolderComponent.KEY.get(player);
-			for (VariableIntPower power : component.getPowers(VariableIntPower.class)) {
-				Identifier powerId = power.getType().getIdentifier();
-				if (powerId.equals(resourceId) || powerId.equals(allayResourceId)) {
-					int newVal = amount;
-					if (newVal > power.getMax()) {
-						newVal = power.getMax();
-					}
-					power.setValue(newVal);
-					component.sync();
-					updated = true;
-				} else if (powerId.equals(soulEnergyId)) {
-// 使用PowerUtils设置灵魂能量
-					net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEnergy.setEnergy(player, amount);
-					updated = true;
-				}
+
+			int snowFoxMax = PowerUtils.getResourceMax(player, FormIdentifiers.SNOW_FOX_RESOURCE);
+			if (snowFoxMax > 0) {
+				int clamped = Math.min(amount, snowFoxMax);
+				PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RESOURCE, clamped);
+				updated = true;
 			}
 
-			// 2. Try Global Mana (Familiar SP)
+			int allayMax = PowerUtils.getResourceMax(player, FormIdentifiers.ALLAY_MANA_RESOURCE);
+			if (allayMax > 0) {
+				int clamped = Math.min(amount, allayMax);
+				PowerUtils.setResourceValueAndSync(player, FormIdentifiers.ALLAY_MANA_RESOURCE, clamped);
+				updated = true;
+			}
+
+			int soulMax = PowerUtils.getResourceMax(player, FormIdentifiers.ANUBIS_WOLF_SP_SOUL_ENERGY);
+			if (soulMax > 0) {
+				int clamped = Math.min(amount, soulMax);
+				net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEnergy.setEnergy(player, clamped);
+				updated = true;
+			}
+
 			try {
 				ManaComponent manaComponent = ManaUtils.getManaComponent(player);
 				if (manaComponent != null) {
-					double newVal = amount;
-					if (newVal > manaComponent.getMaxMana()) {
-						newVal = manaComponent.getMaxMana();
-					}
+					double newVal = Math.min(amount, manaComponent.getMaxMana());
 					manaComponent.setMana(newVal);
 					updated = true;
 				}
 			} catch (Exception e) {
-				// Ignore
+				LOGGER.debug("ManaComponent not available for {}", player.getName().getString(), e);
 			}
 
 			if (updated) {
@@ -246,21 +239,6 @@ public class SscAddonCommands {
 		return count;
 	}
 
-    /*
-    private static int registerTreatmentWhitelist(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        ServerPlayerEntity allayPlayer = EntityArgumentType.getPlayer(context, "allayPlayer");
-        ServerPlayerEntity targetPlayer = EntityArgumentType.getPlayer(context, "targetPlayer");
-
-        // Format: "ssc_allay_whitelist:<TargetUUID>"
-        // Stored on the Allay Player
-        allayPlayer.addCommandTag("ssc_allay_whitelist:" + targetPlayer.getUuidAsString());
-        
-        context.getSource().sendFeedback(() -> Text.literal("Added " + targetPlayer.getName().getString() + " to " + allayPlayer.getName().getString() + "'s treatment whitelist."), false);
-
-        return 1;
-    }
-    */
-
 	private static int markOwner(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 		Collection<? extends Entity> targets = EntityArgumentType.getEntities(context, "targets");
 		ServerCommandSource source = context.getSource();
@@ -270,24 +248,8 @@ public class SscAddonCommands {
 			UUID playerUUID = player.getUuid();
 			for (Entity target : targets) {
 				if (target instanceof LivingEntity livingTarget) {
-					NbtCompound nbt = new NbtCompound();
-					// We can't safely modify the entity NBT directly while it's alive without using specific methods or writing to custom data if available.
-					// However, standard entity NBT modification is restricted.
-					// But we can use persistent data if we are using Fabric API or similar, or just manage a map.
-					// But simplest is to reuse the 'killed_by' logic? No.
-
-					// Actually, modifying `target.getNbt()` directly and setting it back is dangerous.
-					// But we can use a custom tag or scoreboard.
-					// Let's write to a custom field used by our effect.
-					// Since we can't add fields to vanilla entities, checking 'FireOwner' mapping is safer?
-					// No, a global map leaks memory.
-
-					// Let's use the Scoreboard Tags!
-					// Tag format: "ssc_owner:<UUID>"
-
-					// Remove old tags
+					// Update ownership tag: remove old owner, set new owner
 					livingTarget.getCommandTags().removeIf(tag -> tag.startsWith("ssc_owner:"));
-					// Add new tag
 					livingTarget.addCommandTag("ssc_owner:" + playerUUID.toString());
 				}
 			}
@@ -320,8 +282,6 @@ public class SscAddonCommands {
 			}
 		}
 		debugInfo.append("================================");
-
-		debugInfo.append("================================");
 		// Check if info level is enabled before logging
 		if (LOGGER.isInfoEnabled()) {
 			LOGGER.info(debugInfo.toString());
@@ -336,65 +296,46 @@ public class SscAddonCommands {
 		return 1;
 	}
 
-	private static int giveStoryBook(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-		return giveStoryBookInternal(context, null);
-	}
-
-	private static int giveStoryBookWithLang(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-		String lang = StringArgumentType.getString(context, "language");
-		return giveStoryBookInternal(context, lang);
-	}
-
-	private static int giveStoryBookInternal(CommandContext<ServerCommandSource> context, String language) throws CommandSyntaxException {
-		ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-		int chapter = IntegerArgumentType.getInteger(context, "chapter");
-		net.minecraft.item.ItemStack book = net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.getStoryBook(chapter, language);
-
-		if (book.isEmpty()) {
-			player.sendMessage(Text.literal("No book found for ID: " + chapter).formatted(Formatting.RED), false);
-			return 0;
-		}
-
-		if (!player.getInventory().insertStack(book)) {
-			player.dropItem(book, false);
-		}
-
-		player.sendMessage(Text.literal("Received story book: Chapter " + chapter).formatted(Formatting.GREEN), false);
-		return 1;
-	}
-
 	private static int debugMana(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 		ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
 		StringBuilder debugMsg = new StringBuilder();
 		boolean foundMana = false;
 
-		// 1. Check Apoli Resource (Snow Fox SP)
-		Identifier resourceId = new Identifier("my_addon", "form_snow_fox_sp_resource");
-		PowerHolderComponent component = PowerHolderComponent.KEY.get(player);
-		for (VariableIntPower power : component.getPowers(VariableIntPower.class)) {
-			if (power.getType().getIdentifier().equals(resourceId)) {
-				debugMsg.append("Snow Fox SP: ").append(power.getValue()).append("/").append(power.getMax()).append("\n");
-				foundMana = true;
-			}
+		int snowFoxVal = PowerUtils.getResourceValue(player, FormIdentifiers.SNOW_FOX_RESOURCE);
+		int snowFoxMax = PowerUtils.getResourceMax(player, FormIdentifiers.SNOW_FOX_RESOURCE);
+		if (snowFoxMax > 0) {
+			debugMsg.append("Snow Fox SP: ").append(snowFoxVal).append("/").append(snowFoxMax).append("\n");
+			foundMana = true;
 		}
 
-		// 2. Check Global ManaComponent
+		int allayVal = PowerUtils.getResourceValue(player, FormIdentifiers.ALLAY_MANA_RESOURCE);
+		int allayMax = PowerUtils.getResourceMax(player, FormIdentifiers.ALLAY_MANA_RESOURCE);
+		if (allayMax > 0) {
+			debugMsg.append("Allay SP: ").append(allayVal).append("/").append(allayMax).append("\n");
+			foundMana = true;
+		}
+
+		int soulVal = PowerUtils.getResourceValue(player, FormIdentifiers.ANUBIS_WOLF_SP_SOUL_ENERGY);
+		int soulMax = PowerUtils.getResourceMax(player, FormIdentifiers.ANUBIS_WOLF_SP_SOUL_ENERGY);
+		if (soulMax > 0) {
+			debugMsg.append("Anubis Wolf SP: ").append(soulVal).append("/").append(soulMax).append("\n");
+			foundMana = true;
+		}
+
 		try {
 			ManaComponent manaComponent = ManaUtils.getManaComponent(player);
 			if (manaComponent != null) {
-				// Check if it has any mana type associated or just valid mana
 				if (manaComponent.getManaTypeID() != null) {
 					debugMsg.append("Mana Type: ").append(manaComponent.getManaTypeID()).append("\n");
 					debugMsg.append("Mana: ").append(manaComponent.getMana()).append("/").append(manaComponent.getMaxMana()).append("\n");
 					foundMana = true;
 				} else if (manaComponent.getMaxMana() > 0) {
-					// Fallback if type is null but max mana is > 0
 					debugMsg.append("Mana (No Type): ").append(manaComponent.getMana()).append("/").append(manaComponent.getMaxMana()).append("\n");
 					foundMana = true;
 				}
 			}
 		} catch (Exception e) {
-			// Ignore
+			LOGGER.debug("ManaComponent not available for {}", player.getName().getString(), e);
 		}
 
 		if (!foundMana) {
@@ -521,6 +462,7 @@ public class SscAddonCommands {
 			return 1;
 		} catch (Exception e) {
 			player.sendMessage(Text.literal("重新加载书籍失败: " + e.getMessage()).formatted(Formatting.RED), false);
+			LOGGER.error("Failed to reload books", e);
 			return 0;
 		}
 	}
@@ -538,6 +480,7 @@ public class SscAddonCommands {
 			return 1;
 		} catch (Exception e) {
 			player.sendMessage(Text.literal("重新加载配置失败: " + e.getMessage()).formatted(Formatting.RED), true);
+			LOGGER.error("Failed to reload config", e);
 			return 0;
 		}
 	}
@@ -794,9 +737,13 @@ public class SscAddonCommands {
 			}
 			case "ranged_primary" -> {
 				LOGGER.info("[SSC] Invoking snow_fox/ranged_primary (frost_ball) on " + target.getName().getString() + " by " + executorName);
-				invokeSnowFoxFrostBall(target, executorName);
-				source.sendFeedback(() -> Text.literal("[SSC] snow_fox/ranged_primary invoked").formatted(Formatting.GREEN), false);
-				yield 1;
+				boolean success = invokeSnowFoxFrostBall(target);
+				if (!success) {
+					source.sendFeedback(() -> Text.literal("[SSC] snow_fox/ranged_primary failed (on CD or insufficient mana)").formatted(Formatting.YELLOW), false);
+				} else {
+					source.sendFeedback(() -> Text.literal("[SSC] snow_fox/ranged_primary invoked").formatted(Formatting.GREEN), false);
+				}
+				yield success ? 1 : 0;
 			}
 			case "ranged_secondary" -> {
 				LOGGER.info("[SSC] Invoking snow_fox/ranged_secondary (frost_storm) on " + target.getName().getString() + " by " + executorName);
@@ -846,33 +793,39 @@ default -> {
         };
     }
 
-    private static int invokeAllaySkill(ServerCommandSource source, ServerPlayerEntity target, String skill, String executorName) {
-        return switch (skill) {
-            case "jukebox_charge" -> {
-                LOGGER.info("[SSC] Invoking allay/jukebox_charge on " + target.getName().getString() + " by " + executorName);
-                AllaySPJukebox.tick(target);
-                source.sendFeedback(() -> Text.literal("[SSC] allay/jukebox_charge invoked").formatted(Formatting.GREEN), false);
-                yield 1;
-            }
-            case "group_heal" -> {
-                LOGGER.info("[SSC] Invoking allay/group_heal on " + target.getName().getString() + " by " + executorName);
-                AllaySPGroupHeal.tick(target);
-                source.sendFeedback(() -> Text.literal("[SSC] allay/group_heal invoked").formatted(Formatting.GREEN), false);
-                yield 1;
-            }
-            default -> {
-                LOGGER.warn("[SSC] Unknown allay skill: " + skill);
-                source.sendError(Text.literal("[SSC] Unknown skill: " + skill + " for form allay"));
-                yield 0;
-            }
-        };
-    }
+	private static int invokeAllaySkill(ServerCommandSource source, ServerPlayerEntity target, String skill, String executorName) {
+		return switch (skill) {
+			case "jukebox_charge" -> {
+				LOGGER.info("[SSC] Invoking allay/jukebox_charge on " + target.getName().getString() + " by " + executorName);
+				AllaySPJukebox.tick(target);
+				source.sendFeedback(() -> Text.literal("[SSC] allay/jukebox_charge triggered").formatted(Formatting.AQUA), false);
+				yield 1;
+			}
+			case "group_heal" -> {
+				LOGGER.info("[SSC] Invoking allay/group_heal on " + target.getName().getString() + " by " + executorName);
+				AllaySPGroupHeal.tick(target);
+				source.sendFeedback(() -> Text.literal("[SSC] allay/group_heal triggered").formatted(Formatting.AQUA), false);
+				yield 1;
+			}
+			default -> {
+				LOGGER.warn("[SSC] Unknown allay skill: " + skill);
+				source.sendError(Text.literal("[SSC] Unknown skill: " + skill + " for form allay"));
+				yield 0;
+			}
+		};
+	}
 
-    private static void invokeSnowFoxFrostBall(ServerPlayerEntity player, String ownerName) {
-		double manaCost = 10.0;
+	private static boolean invokeSnowFoxFrostBall(ServerPlayerEntity player) {
+		if (PowerUtils.getResourceValue(player, FormIdentifiers.SNOW_FOX_RANGED_PRIMARY_CD) > 0) {
+			return false;
+		}
+
+		int manaCost = 10;
 		int currentMana = PowerUtils.getResourceValue(player, FormIdentifiers.SNOW_FOX_RESOURCE);
 		if (currentMana >= manaCost) {
-			PowerUtils.changeResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RESOURCE, -(int)manaCost);
+			PowerUtils.changeResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RESOURCE, -manaCost);
+		} else {
+			return false;
 		}
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RANGED_PRIMARY_CD, 100);
 
@@ -883,13 +836,7 @@ default -> {
 		frostBall.setVelocity(lookDir.multiply(3.0));
 		player.getWorld().spawnEntity(frostBall);
 		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
-			SoundEvents.ENTITY_SNOWBALL_THROW,
-			SoundCategory.PLAYERS, 0.5f, 1.2f);
-	}
-
-	private static int sendError(ServerCommandSource source, String message) {
-		LOGGER.info("[SSC] Skill command error: " + message);
-		source.sendError(Text.literal("[SSC] " + message));
-		return 0;
+			SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.PLAYERS, 0.5f, 1.2f);
+		return true;
 	}
 }

@@ -123,6 +123,22 @@ public class PowerUtils {
 		syncPower(player, resourceId);
 	}
 
+	/**
+	 * 获取Apoli资源最大值（服务端）
+	 */
+	public static int getResourceMax(ServerPlayerEntity player, Identifier resourceId) {
+		try {
+			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
+			PowerType<?> powerType = PowerTypeRegistry.get(resourceId);
+			Power power = powerHolder.getPower(powerType);
+			if (power instanceof VariableIntPower variablePower) {
+				return variablePower.getMax();
+			}
+		} catch (Exception e) {
+		}
+		return 0;
+	}
+
 	public static boolean hasResource(ServerPlayerEntity player, Identifier resourceId, int required) {
 		return getResourceValue(player, resourceId) >= required;
 	}
