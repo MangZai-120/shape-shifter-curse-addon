@@ -238,8 +238,17 @@ public class GoldenSandstormWitherSand {
 
 	/**
 	 * 服务器重启/热重载时清理所有状态
+	 * 传入 server 以便逐个移除在线玩家身上的蓄力减速修饰符，避免 reload 后玩家被永久减速。
+	 * 允许 server 为 null（静态列表仅清空）。
 	 */
-	public static void clearAll() {
+	public static void clearAll(net.minecraft.server.MinecraftServer server) {
+		if (server != null) {
+			for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+				if (CHARGING_PLAYERS.containsKey(player.getUuid())) {
+					removeChargeSlow(player);
+				}
+			}
+		}
 		CHARGING_PLAYERS.clear();
 	}
 

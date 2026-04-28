@@ -107,6 +107,15 @@ public class SnowFoxSpFrostStorm {
         CHARGING_PLAYERS.remove(uuid);
         COOLDOWN_PLAYERS.remove(uuid);
     }
+
+    /**
+     * 清除所有玩家的蓄力 / CD 状态
+     * 用于服务器启动 / 数据包重载，避免长生命周期 JVM 中残留过期数据
+     */
+    public static void clearAll() {
+        CHARGING_PLAYERS.clear();
+        COOLDOWN_PLAYERS.clear();
+    }
     
     /**
      * 每tick更新蓄力状态

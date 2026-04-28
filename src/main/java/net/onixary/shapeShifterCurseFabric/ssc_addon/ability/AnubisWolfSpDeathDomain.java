@@ -297,9 +297,18 @@ public class AnubisWolfSpDeathDomain {
 			if (data.world != null) {
 				restoreAllBlocks(data.world, data);
 				cleanupDebuffs(data.world, data);
+				// 修复：移除在线玩家的 CHARGE_SLOW 修饰符，避免 reload 后 70% 减速永久挂着
+				if (data.phase == Phase.CHARGING) {
+					net.minecraft.entity.player.PlayerEntity playerEntity = data.world.getPlayerByUuid(entry.getKey());
+					if (playerEntity instanceof ServerPlayerEntity sp) {
+						removeChargeSlow(sp);
+					}
+				}
 			}
 		}
 		ACTIVE_DOMAINS.clear();
+		// 修复：同步清理 CD 表，否则 reload 后旧 CD 仍生效
+		COOLDOWN_PLAYERS.clear();
 		LOGGER.info("[DeathDomain] forceRestoreAll completed");
 	}
 

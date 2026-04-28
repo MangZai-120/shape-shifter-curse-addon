@@ -63,6 +63,20 @@ public class SscAddonActions {
 		// This utility class should not be instantiated
 	}
 
+	/**
+	 * 玩家断线时清理冰球 CD，防止内存泄漏
+	 */
+	public static void clearPlayer(UUID uuid) {
+		FROST_BALL_COOLDOWN.remove(uuid);
+	}
+
+	/**
+	 * 服务器启动 / 数据包重载时清空所有冰球 CD
+	 */
+	public static void clearAll() {
+		FROST_BALL_COOLDOWN.clear();
+	}
+
 	public static void register() {
 		registerEntity(new ActionFactory<>(new Identifier("my_addon", "fallen_allay_scream"),
 				new SerializableData(),
@@ -432,7 +446,7 @@ public class SscAddonActions {
 					}
 				}));
 
-		registerEntity(new ActionFactory<>(new Identifier("my_addon", "adaptive_water_jump"),
+		registerEntity(new ActionFactory<>(new Identifier("my_addon", "swim_jump_out"),
 				new SerializableData().add("multiplier", SerializableDataTypes.FLOAT, 2.0F),
 				(data, entity) -> {
 					// Must be in swimming pose (sprinting in water) to trigger

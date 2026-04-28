@@ -72,9 +72,9 @@ public class SSCAddonServerConfig implements ConfigData {
 		@ConfigEntry.Gui.Tooltip
 		public double jukeboxRange = 20.0;
 		@ConfigEntry.Gui.Tooltip
-		public int groupHealRange = 15;
+		public int groupHealRange = 20;
 		@ConfigEntry.Gui.Tooltip
-		public float groupHealAmount = 2.0f;
+		public float groupHealAmount = 20.0f;
 	}
 
 	public static class AnubisWolfConfig {

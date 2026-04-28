@@ -61,11 +61,19 @@ return false;
 }
 }
 
-/** 通过 ownerUuid 查找玩家后调用 isProtected。 */
+/** 通过 ownerUuid 查找玩家后调用 isProtected。
+ * 主人离线/跨维度时采用保守策略：保护玩家、已驯服宠物以及带 owner tag 的实体，
+ * 避免持续实体（如冰风暴）在主人离线后误伤受保护目标。 */
 public static boolean isProtected(UUID ownerUuid, ServerWorld world, LivingEntity target) {
 if (ownerUuid == null) return false;
-if (!(world.getPlayerByUuid(ownerUuid) instanceof ServerPlayerEntity owner)) return false;
+if (world.getPlayerByUuid(ownerUuid) instanceof ServerPlayerEntity owner) {
 return isProtected(owner, target);
+}
+// 主人离线/跨维度：保守保护玩家、已驯实体、带 owner tag 的生物
+if (!SSCAddonConfig.server().whitelistEnabled) return false;
+if (target instanceof PlayerEntity) return true;
+if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) return true;
+return hasOwnerTag(target);
 }
 
 /** 强化/治疗类技能的目标判定。返回 true 表示 target 应该接收 buff。 */

@@ -1,4 +1,4 @@
-﻿{
+{
   "type": "origins:action_on_item_use",
   "entity_action": {
     "type": "shape-shifter-curse:transform_to_form",

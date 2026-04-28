@@ -14,7 +14,7 @@
     "IronsSpellbooksAnimationMixin",
     "item.ItemEntityMixin",
     "entity.MobEntityMixin",
-    "render.OriginFurMixin",
+
     "player.PlayerInventoryMixin",
     "player.PotionBagDeathDropMixin",
     "player.PreventPotionBagDropMixin",
@@ -35,6 +35,7 @@
   ],
   "client": [
     "render.InstinctBarRendererMixin",
+    "render.OriginFurMixin",
     "render.OriginFurModelMixin",
     "render.OverlayRenderMixin",
     "player.SscPlayerEntityRendererMixin",
