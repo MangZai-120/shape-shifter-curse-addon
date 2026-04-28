@@ -23,140 +23,115 @@ import java.util.UUID;
  */
 public class WhitelistUtils {
 
-	private WhitelistUtils() {
-		throw new UnsupportedOperationException("Utility class");
-	}
+private WhitelistUtils() {
+throw new UnsupportedOperationException("Utility class");
+}
 
-	/**
-	 * 攻击性技能保护判定。返回 true 表示 attacker 的技能应跳过 target。
-	 */
-	public static boolean isProtected(ServerPlayerEntity attacker, LivingEntity target) {
-		if (target == attacker) {
-			return true;
-		}
+/** 攻击性技能保护判定。返回 true 表示 attacker 的技能应跳过 target。 */
+public static boolean isProtected(ServerPlayerEntity attacker, LivingEntity target) {
+if (target == attacker) return true;
 
-		if (!SSCAddonConfig.server().whitelistEnabled) {
-			return false;
-		}
+if (!SSCAddonConfig.server().whitelistEnabled) {
+return false;
+}
 
-		Set<String> tags = attacker.getCommandTags();
-		boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
+Set<String> tags = attacker.getCommandTags();
+boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
 
-		if (whitelistEmpty) {
-			if (target instanceof PlayerEntity) {
-				return true;
-			}
-			if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) {
-				if (attacker.getServerWorld().getPlayerByUuid(tameable.getOwnerUuid()) != null) {
-					return true;
-				}
-			}
-			return hasOwnerTag(target);
-		} else {
-			if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + target.getUuidAsString())) {
-				return true;
-			}
-			if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) {
-				if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + tameable.getOwnerUuid().toString())) {
-					return true;
-				}
-			}
-			for (String tag : target.getCommandTags()) {
-				String ownerUuid = extractOwnerUuid(tag);
-				if (ownerUuid != null
-						&& tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + ownerUuid)) {
-					return true;
-				}
-			}
-			return false;
-		}
-	}
+if (whitelistEmpty) {
+if (target instanceof PlayerEntity) return true;
+if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) {
+if (attacker.getServerWorld().getPlayerByUuid(tameable.getOwnerUuid()) != null) return true;
+}
+return hasOwnerTag(target);
+} else {
+if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + target.getUuidAsString())) return true;
+if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) {
+if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + tameable.getOwnerUuid().toString()))
+return true;
+}
+for (String tag : target.getCommandTags()) {
+String ownerUuid = extractOwnerUuid(tag);
+if (ownerUuid != null
+&& tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + ownerUuid)) {
+return true;
+}
+}
+return false;
+}
+}
 
-	/**
-	 * 通过 ownerUuid 查找玩家后调用 isProtected。
-	 */
-	public static boolean isProtected(UUID ownerUuid, ServerWorld world, LivingEntity target) {
-		if (ownerUuid == null) {
-			return false;
-		}
-		if (!(world.getPlayerByUuid(ownerUuid) instanceof ServerPlayerEntity owner)) {
-			return false;
-		}
-		return isProtected(owner, target);
-	}
+/** 通过 ownerUuid 查找玩家后调用 isProtected。
+ * 主人离线/跨维度时采用保守策略：保护玩家、已驯服宠物以及带 owner tag 的实体，
+ * 避免持续实体（如冰风暴）在主人离线后误伤受保护目标。 */
+public static boolean isProtected(UUID ownerUuid, ServerWorld world, LivingEntity target) {
+if (ownerUuid == null) return false;
+if (world.getPlayerByUuid(ownerUuid) instanceof ServerPlayerEntity owner) {
+return isProtected(owner, target);
+}
+// 主人离线/跨维度：保守保护玩家、已驯实体、带 owner tag 的生物
+if (!SSCAddonConfig.server().whitelistEnabled) return false;
+if (target instanceof PlayerEntity) return true;
+if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) return true;
+return hasOwnerTag(target);
+}
 
-	/**
-	 * 强化/治疗类技能的目标判定。返回 true 表示 target 应该接收 buff。
-	 */
-	public static boolean isBuffTarget(ServerPlayerEntity caster, LivingEntity target) {
-		if (target == caster) {
-			return true;
-		}
+/** 强化/治疗类技能的目标判定。返回 true 表示 target 应该接收 buff。 */
+public static boolean isBuffTarget(ServerPlayerEntity caster, LivingEntity target) {
+if (target == caster) return true;
 
-		if (!SSCAddonConfig.server().whitelistEnabled) {
-			return !isHostileOrMonster(target);
-		}
+if (!SSCAddonConfig.server().whitelistEnabled) {
+return !isHostileOrMonster(target);
+}
 
-		Set<String> tags = caster.getCommandTags();
-		boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
+Set<String> tags = caster.getCommandTags();
+boolean whitelistEmpty = tags.stream().noneMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
 
-		if (whitelistEmpty) {
-			if (target instanceof PlayerEntity) {
-				return true;
-			}
-			if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) {
-				if (caster.getServerWorld().getPlayerByUuid(tameable.getOwnerUuid()) != null) {
-					return true;
-				}
-			}
-			return hasOwnerTag(target);
-		} else {
-			if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + target.getUuidAsString())) {
-				return true;
-			}
-			if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) {
-				if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + tameable.getOwnerUuid().toString())) {
-					return true;
-				}
-			}
-			for (String tag : target.getCommandTags()) {
-				String ownerUuid = extractOwnerUuid(tag);
-				if (ownerUuid != null
-						&& tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + ownerUuid)) {
-					return true;
-				}
-			}
-			return false;
-		}
-	}
+if (whitelistEmpty) {
+if (target instanceof PlayerEntity) return true;
+if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) {
+if (caster.getServerWorld().getPlayerByUuid(tameable.getOwnerUuid()) != null) return true;
+}
+return hasOwnerTag(target);
+} else {
+if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + target.getUuidAsString())) return true;
+if (target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null) {
+if (tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + tameable.getOwnerUuid().toString()))
+return true;
+}
+for (String tag : target.getCommandTags()) {
+String ownerUuid = extractOwnerUuid(tag);
+if (ownerUuid != null
+&& tags.contains(AllaySPGroupHeal.WHITELIST_TAG_PREFIX + ownerUuid)) {
+return true;
+}
+}
+return false;
+}
+}
 
-	private static boolean hasOwnerTag(LivingEntity entity) {
-		return entity.getCommandTags().stream()
-				.anyMatch(t -> t.startsWith("owner:") || t.startsWith("ssc_owner:"));
-	}
+private static boolean hasOwnerTag(LivingEntity entity) {
+return entity.getCommandTags().stream()
+.anyMatch(t -> t.startsWith("owner:") || t.startsWith("ssc_owner:"));
+}
 
-	/**
-	 * 抽取 owner tag 中的 UUID 字符串。兼容 owner: 与 ssc_owner: 两种前缀。
-	 */
-	private static String extractOwnerUuid(String tag) {
-		if (tag.startsWith("ssc_owner:")) {
-			return tag.substring("ssc_owner:".length());
-		}
-		if (tag.startsWith("owner:")) {
-			return tag.substring("owner:".length());
-		}
-		return null;
-	}
+/** 抽取 owner tag 中的 UUID 字符串。兼容 owner: 与 ssc_owner: 两种前缀。 */
+private static String extractOwnerUuid(String tag) {
+if (tag.startsWith("ssc_owner:")) return tag.substring("ssc_owner:".length());
+if (tag.startsWith("owner:")) return tag.substring("owner:".length());
+return null;
+}
 
-	private static boolean isHostileOrMonster(LivingEntity entity) {
-		if (entity instanceof HostileEntity || entity instanceof Monster) {
-			return true;
-		}
-		// 中立但受击会激怒的生物（蜂、野生狼、北极熊、铁傀儡、僵尸猪灵、末影人等）
-		// 已驯服的 Angerable（如驯服狼）视为友好可治疗
-		if (entity instanceof Angerable) {
-			return !(entity instanceof TameableEntity tame) || tame.getOwnerUuid() == null;
-		}
-		return false;
-	}
+private static boolean isHostileOrMonster(LivingEntity entity) {
+if (entity instanceof HostileEntity || entity instanceof Monster) return true;
+// 中立但受击会激怒的生物（蜂、野生狼、北极熊、铁傀儡、僵尸猪灵、末影人等）
+// 已驯服的 Angerable（如驯服狼）视为友好可治疗
+if (entity instanceof Angerable) {
+if (entity instanceof TameableEntity tame && tame.getOwnerUuid() != null) {
+return false;
+}
+return true;
+}
+return false;
+}
 }

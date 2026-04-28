@@ -1,0 +1,20 @@
+{
+  "shape-shifter-curse:fountain_belt": {
+    "accessory_powers": [],
+    "all_form": {
+      "add": [],
+      "remove": []
+    },
+    "forms": {
+      "my_addon:axolotl_sp": {
+        "add": [
+          "shape-shifter-curse:form_axolotl_fountain_belt_trinket"
+        ],
+        "remove": [
+          "my_addon:form_axolotl_sp_water_ball",
+          "shape-shifter-curse:form_axolotl_2_falling_protection"
+        ]
+      }
+    }
+  }
+}

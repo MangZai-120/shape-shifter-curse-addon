@@ -225,10 +225,18 @@
                                     }
                                 },
                                 "bientity_condition": {
-                                    "type": "origins:target_condition",
-                                    "condition": {
-                                        "type": "origins:living"
-                                    }
+                                    "type": "origins:and",
+                                    "conditions": [
+                                        {
+                                            "type": "origins:target_condition",
+                                            "condition": {
+                                                "type": "origins:living"
+                                            }
+                                        },
+                                        {
+                                            "type": "my_addon:not_actor_whitelisted"
+                                        }
+                                    ]
                                 }
                             },
                             {

@@ -1,4 +1,4 @@
-﻿{
+{
     "type": "origins:multiple",
     "attack_mark": {
         "type": "origins:target_action_on_hit",

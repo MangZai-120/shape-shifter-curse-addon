@@ -1,4 +1,4 @@
-﻿{
+{
     "type": "origins:multiple",
     "activate": {
         "type": "origins:active_self",

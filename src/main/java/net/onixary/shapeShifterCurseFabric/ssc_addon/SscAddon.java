@@ -421,13 +421,15 @@ public class SscAddon implements ModInitializer {
 			System.out.println("[SSC_ADDON] SERVER_STARTING event fired, clearing all ability static state");
 			SnowFoxSpMeleeAbility.clearAll();
 			SnowFoxSpTeleportAttack.clearAll();
+			SnowFoxSpFrostStorm.clearAll();
 			AnubisWolfSpDeathDomain.clearAll();
 			AnubisWolfSpSummonWolves.clearAll();
 			AllaySPTotem.clearAll();
 			GoldenSandstormErosionBrand.clearAll();
-			GoldenSandstormWitherSand.clearAll();
+			GoldenSandstormWitherSand.clearAll(server);
 			GoldenSandstormRegen.clearAll();
 			UndeadNeutralState.clearAll();
+			net.onixary.shapeShifterCurseFabric.ssc_addon.action.SscAddonActions.clearAll();
 			System.out.println("[SSC_ADDON] SERVER_STARTING ability state cleared");
 		});
 		// 服务器关闭前还原所有死亡领域方块（在世界存档之前触发）
@@ -445,13 +447,16 @@ public class SscAddon implements ModInitializer {
 			System.out.println("[SSC_ADDON] END_DATA_PACK_RELOAD: reload successful, clearing all ability static state");
 			SnowFoxSpMeleeAbility.clearAll();
 			SnowFoxSpTeleportAttack.clearAll();
-			AnubisWolfSpDeathDomain.clearAll();
+			SnowFoxSpFrostStorm.clearAll();
+			// reload 可能遇到玩家正在释放领域，必须先强制还原方块再清状态，避免世界里残留灵魂沙
+			AnubisWolfSpDeathDomain.forceRestoreAll();
 			AnubisWolfSpSummonWolves.clearAll();
 			AllaySPTotem.clearAll();
 			GoldenSandstormErosionBrand.clearAll();
-			GoldenSandstormWitherSand.clearAll();
+			GoldenSandstormWitherSand.clearAll(server);
 			GoldenSandstormRegen.clearAll();
 			UndeadNeutralState.clearAll();
+			net.onixary.shapeShifterCurseFabric.ssc_addon.action.SscAddonActions.clearAll();
 			System.out.println("[SSC_ADDON] END_DATA_PACK_RELOAD ability state cleared");
 		});
 	}
@@ -594,6 +599,7 @@ public class SscAddon implements ModInitializer {
 			WitheredSandRingItem.clearPlayer(uuid);
 			AllaySPJukebox.onPlayerDisconnect(handler.player);
 			UndeadNeutralState.clearPlayer(uuid);
+			net.onixary.shapeShifterCurseFabric.ssc_addon.action.SscAddonActions.clearPlayer(uuid);
 			PLAYER_LANGUAGES.remove(uuid);
 			System.out.println("[SSC_ADDON] DISCONNECT cleanup completed");
 		});

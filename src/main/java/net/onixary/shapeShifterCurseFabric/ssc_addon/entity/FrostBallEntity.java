@@ -24,6 +24,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 import java.util.Comparator;
 import java.util.List;
@@ -157,6 +158,11 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
 
 		Entity target = entityHitResult.getEntity();
 		if (target instanceof LivingEntity livingTarget && !this.getWorld().isClient) {
+			// 白名单检查：如果主人在线且目标受保护，则跳过效果与追踪碎片
+			if (this.getOwner() instanceof net.minecraft.server.network.ServerPlayerEntity ownerPlayer
+					&& WhitelistUtils.isProtected(ownerPlayer, livingTarget)) {
+				return;
+			}
 			// 施加霜降效果
 			livingTarget.addStatusEffect(new StatusEffectInstance(
 					SscAddon.FROST_FALL,
@@ -189,7 +195,8 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
 		double radius = 5.0;
 		Box box = hitTarget.getBoundingBox().expand(radius);
 		List<LivingEntity> nearby = this.getWorld().getEntitiesByClass(LivingEntity.class, box,
-				e -> e != owner && e != hitTarget && e.isAlive() && !e.isSpectator());
+				e -> e != owner && e != hitTarget && e.isAlive() && !e.isSpectator()
+						&& !(owner instanceof net.minecraft.server.network.ServerPlayerEntity sp && WhitelistUtils.isProtected(sp, e)));
 
 		if (nearby.isEmpty()) return;
 

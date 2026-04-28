@@ -62,6 +62,7 @@ public class SscAddonCommands {
 						)
 				)
 				.then(CommandManager.literal("mark_owner")
+						.requires(source -> source.hasPermissionLevel(2))
 						.then(CommandManager.argument("targets", EntityArgumentType.entities())
 								.executes(SscAddonCommands::markOwner)
 						)
