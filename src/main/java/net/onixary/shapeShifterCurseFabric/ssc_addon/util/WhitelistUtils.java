@@ -70,13 +70,15 @@ public class WhitelistUtils {
      */
     public static boolean isProtected(UUID ownerUuid, ServerWorld world, LivingEntity target) {
         if (ownerUuid == null) return false;
-        if (world.getPlayerByUuid(ownerUuid) instanceof ServerPlayerEntity owner) {
+        // 跨维度查找：使用 server.getPlayerManager 而非 world.getPlayerByUuid
+        ServerPlayerEntity owner = world.getServer().getPlayerManager().getPlayer(ownerUuid);
+        if (owner != null) {
             return isProtected(owner, target);
         }
-        // 主人离线/跨维度：保守保护玩家、已驯实体、带 owner tag 的生物
+        // 主人离线：保守保护玩家、已驯实体、带 owner tag 的生物
         if (!SSCAddonConfig.server().whitelistEnabled) return false;
         if (target instanceof PlayerEntity ||
-                target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null)
+            target instanceof TameableEntity tameable && tameable.getOwnerUuid() != null)
             return true;
         return hasOwnerTag(target);
     }

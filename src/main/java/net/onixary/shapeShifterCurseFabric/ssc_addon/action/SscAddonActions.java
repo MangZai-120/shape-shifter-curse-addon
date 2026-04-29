@@ -46,6 +46,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SkillBlocker;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public class SscAddonActions {
 
@@ -54,17 +55,15 @@ public class SscAddonActions {
 	}
 
 	/**
-	 * 玩家断线时清理冰球 CD，防止内存泄漏
+	 * 已迁移至 Apoli 资源系统，保留为接口兼容
 	 */
 	public static void clearPlayer(UUID uuid) {
-		FROST_BALL_COOLDOWN.remove(uuid);
 	}
 
 	/**
-	 * 服务器启动 / 数据包重载时清空所有冰球 CD
+	 * 已迁移至 Apoli 资源系统，保留为接口兼容
 	 */
 	public static void clearAll() {
-		FROST_BALL_COOLDOWN.clear();
 	}
 
 	public static void register() {
