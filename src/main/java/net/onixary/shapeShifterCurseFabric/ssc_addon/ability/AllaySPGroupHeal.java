@@ -1,12 +1,6 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.ability;
 
-import io.github.apace100.apoli.component.PowerHolderComponent;
-import io.github.apace100.apoli.power.Power;
-import io.github.apace100.apoli.power.PowerType;
-import io.github.apace100.apoli.power.PowerTypeRegistry;
-import io.github.apace100.apoli.power.VariableIntPower;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.mob.Monster;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -15,6 +9,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SkillBlocker;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
@@ -237,52 +232,21 @@ public class AllaySPGroupHeal {
 		return uuids;
 	}
 
-	// ===== Apoli资源读写工具 =====
+		// ===== Apoli资源读写工具 =====
 
 	private static int getResourceValue(ServerPlayerEntity player, Identifier resourceId) {
-		try {
-			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-			PowerType<?> powerType = PowerTypeRegistry.get(resourceId);
-			Power power = powerHolder.getPower(powerType);
-			if (power instanceof VariableIntPower variablePower) {
-				return variablePower.getValue();
-			}
-		} catch (Exception e) {
-			// Resource not found
-		}
-		return 0;
+		return PowerUtils.getResourceValue(player, resourceId);
 	}
 
 	private static void setResourceValue(ServerPlayerEntity player, Identifier resourceId, int value) {
-		try {
-			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-			PowerType<?> powerType = PowerTypeRegistry.get(resourceId);
-			Power power = powerHolder.getPower(powerType);
-			if (power instanceof VariableIntPower variablePower) {
-				variablePower.setValue(value);
-				// 只同步特定power，避免全量sync重置飘浮power客户端的ascendProgress
-				PowerHolderComponent.syncPower(player, powerType);
-			}
-		} catch (Exception e) {
-			// Resource not found
-		}
+		PowerUtils.setResourceValueAndSync(player, resourceId, value);
 	}
 
-	/**
+		/**
 	 * 设置资源值但不同步到客户端，避免重置飘浮等power的内部计时器
 	 * 仅用于不需要客户端感知的内部触发器（如 heal_execute）
 	 */
 	private static void setResourceValueNoSync(ServerPlayerEntity player, Identifier resourceId, int value) {
-		try {
-			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-			PowerType<?> powerType = PowerTypeRegistry.get(resourceId);
-			Power power = powerHolder.getPower(powerType);
-			if (power instanceof VariableIntPower variablePower) {
-				variablePower.setValue(value);
-				// 不调用 PowerHolderComponent.sync(player)，避免重置飘浮计时器
-			}
-		} catch (Exception e) {
-			// Resource not found
-		}
+		PowerUtils.setResourceValue(player, resourceId, value);
 	}
 }

@@ -63,6 +63,12 @@ public class WitchFamiliarRenderer extends GeoEntityRenderer<WitchFamiliarEntity
 	@Override
 	public void render(WitchFamiliarEntity entity, float entityYaw, float partialTick,
 	                   MatrixStack poseStack, VertexConsumerProvider bufferSource, int packedLight) {
+		// 清理已移除实体的尾巴状态（防止内存泄漏）
+		if (entity.isRemoved()) {
+			TAIL_STATES.remove(entity.getId());
+			return;
+		}
+
 		// 缓存运动参数（与LivingEntityRenderer.render一致）
 		cachedPartialTick = partialTick;
 		cachedLimbDistance = entity.limbAnimator.getSpeed(partialTick);

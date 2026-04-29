@@ -15,3 +15,22 @@ story
 /.project
 /设定集
 /备忘录
+# AI agent tooling
+/.opencode/
+/.sisyphus/
+/openspec/
+AGENTS.md
+
+# JVM crash dumps
+hs_err_pid*.log
+replay_pid*.log
+
+# Build/run output
+/run/
+
+# IDE
+/qodana.yaml
+
+# Prerequisite source
+/prerequisite module- shape-shifter-curse Mod source code/
+/prerequisite module- apoli-2.9.2-mc.1.20.1 Mod source code/

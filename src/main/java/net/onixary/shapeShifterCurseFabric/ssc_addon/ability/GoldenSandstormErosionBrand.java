@@ -25,33 +25,37 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.item.WitheredSandRingItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 金沙岚SP - 侵蚀烙印（被动标记系统）
- *
+ * <p>
  * 近战攻击非白名单目标时自动叠加侵蚀烙印，每秒最多叠1层，每个目标最多3层。
  * 烙印持续10秒（每次叠加刷新计时器）。
- *
+ * <p>
  * 层数颜色对应（用于entity_glow）：
  * - 1层 → 黄色
  * - 2层 → 橙色
  * - 3层 → 红色
  * - 绿色状态 → 已触发被动爆发，5秒内不可再次叠层（绿色标志持续10秒）
- *
+ * <p>
  * 第4次攻击（3层满后继续攻击）触发被动爆发：
  * - 造成目标当前生命值20%的伤害（上限20）
  * - 自身回复10%最大生命值
  * - 清除所有层数，进入绿色状态（5秒不可叠层，绿色标志持续10秒）
  * - 绿色状态5秒冷却期后可重新叠层
- *
+ * <p>
  * 引爆（次要技能）：
  * - 造成目标当前生命值20%的伤害（上限20）
  * - 自身回复已损生命值的20%
  */
 public class GoldenSandstormErosionBrand {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger("ErosionBrand");
 
 	// ==================== 常量 ====================
 	/** 烙印持续时间（tick），每次叠加刷新 */
@@ -178,7 +182,7 @@ public class GoldenSandstormErosionBrand {
 				float burstDmg = Math.min(target.getHealth() * BURST_HP_PERCENT, hasWitheredRing(player) ? BURST_DAMAGE_CAP_WITH_RING : BURST_DAMAGE_CAP);
 				if (burstDmg < 1.0f) burstDmg = 1.0f;
 				float splashDmg = burstDmg * PRISM_SPLASH_PERCENT;
-				System.out.println("[SSC_ADDON][BURST] 被动爆发触发扩散: splashDmg=" + splashDmg + ", center=" + target.getPos() + ", range=" + SPREAD_RANGE);
+				LOGGER.info("[SSC_ADDON][BURST] 被动爆发触发扩散: splashDmg=" + splashDmg + ", center=" + target.getPos() + ", range=" + SPREAD_RANGE);
 				splashDamageToNearby(player, serverWorld, target.getPos(), splashDmg, target);
 			}
 
@@ -236,13 +240,13 @@ public class GoldenSandstormErosionBrand {
 		float rawDamage = target.getHealth() * BURST_HP_PERCENT;
 		float damage = Math.min(rawDamage, cap);
 		if (damage < 1.0f) damage = 1.0f;
-		System.out.println("[SSC_ADDON][BURST] 被动爆发: target=" + target.getType().getTranslationKey() + ", targetHP=" + target.getHealth() + "/" + target.getMaxHealth() + ", rawDmg=" + rawDamage + ", cap=" + cap + "(ring=" + hasRing + "), finalDmg=" + damage + ", timeUntilRegen=" + target.timeUntilRegen);
+		LOGGER.info("[SSC_ADDON][BURST] 被动爆发: target=" + target.getType().getTranslationKey() + ", targetHP=" + target.getHealth() + "/" + target.getMaxHealth() + ", rawDmg=" + rawDamage + ", cap=" + cap + "(ring=" + hasRing + "), finalDmg=" + damage + ", timeUntilRegen=" + target.timeUntilRegen);
 
 		// 造成自定义伤害（绕过近战攻击的伤害免疫帧）
 		Vec3d oldVelocity = target.getVelocity();
 		target.timeUntilRegen = 0; // 重置伤害免疫计时器
 		boolean damaged = target.damage(target.getDamageSources().create(CURSED_BURST_KEY, player), damage);
-		System.out.println("[SSC_ADDON][BURST] 被动爆发结果: damaged=" + damaged + ", newHP=" + target.getHealth() + ", damageType=cursed_burst");
+		LOGGER.info("[SSC_ADDON][BURST] 被动爆发结果: damaged=" + damaged + ", newHP=" + target.getHealth() + ", damageType=cursed_burst");
 		if (damaged) {
 			target.setVelocity(oldVelocity); // 不击退
 		}
@@ -250,7 +254,7 @@ public class GoldenSandstormErosionBrand {
 		// 自我回复10%最大生命值
 		float healAmount = player.getMaxHealth() * BURST_HEAL_PERCENT;
 		player.heal(healAmount);
-		System.out.println("[SSC_ADDON][BURST] 自愈: healAmount=" + healAmount + ", playerHP=" + player.getHealth() + "/" + player.getMaxHealth());
+		LOGGER.info("[SSC_ADDON][BURST] 自愈: healAmount=" + healAmount + ", playerHP=" + player.getHealth() + "/" + player.getMaxHealth());
 	}
 
 	/**
@@ -268,7 +272,7 @@ public class GoldenSandstormErosionBrand {
 		boolean hasRing = hasWitheredRing(player);
 		boolean hasPrism = hasErosionPrism(player);
 		float cap = hasRing ? BURST_DAMAGE_CAP_WITH_RING : BURST_DAMAGE_CAP;
-		System.out.println("[SSC_ADDON][DETONATE] hasPrism=" + hasPrism + ", hasRing=" + hasRing + ", cap=" + cap + ", targets=" + playerBrands.size());
+		LOGGER.info("[SSC_ADDON][DETONATE] hasPrism=" + hasPrism + ", hasRing=" + hasRing + ", cap=" + cap + ", targets=" + playerBrands.size());
 		int totalTargets = 0;
 		int totalStacks = 0;
 
@@ -279,17 +283,17 @@ public class GoldenSandstormErosionBrand {
 
 			// 绿色状态的目标不参与引爆
 			if (state.greenState || state.stacks <= 0) {
-				System.out.println("[SSC_ADDON][DETONATE] 跳过目标 " + entry.getKey() + ": greenState=" + state.greenState + ", stacks=" + state.stacks);
+				LOGGER.info("[SSC_ADDON][DETONATE] 跳过目标 " + entry.getKey() + ": greenState=" + state.greenState + ", stacks=" + state.stacks);
 				continue;
 			}
 
 			LivingEntity target = findEntity(serverWorld, entry.getKey());
 			if (target == null || !target.isAlive()) {
-				System.out.println("[SSC_ADDON][DETONATE] 跳过目标 " + entry.getKey() + ": target=" + (target == null ? "null" : "dead"));
+				LOGGER.info("[SSC_ADDON][DETONATE] 跳过目标 " + entry.getKey() + ": target=" + (target == null ? "null" : "dead"));
 				it.remove();
 				continue;
 			}
-			System.out.println("[SSC_ADDON][DETONATE] 处理目标: " + target.getType().getTranslationKey() + ", stacks=" + state.stacks + ", HP=" + target.getHealth() + "/" + target.getMaxHealth());
+			LOGGER.info("[SSC_ADDON][DETONATE] 处理目标: " + target.getType().getTranslationKey() + ", stacks=" + state.stacks + ", HP=" + target.getHealth() + "/" + target.getMaxHealth());
 
 			// 如果目标有3层，先触发被动爆发（不消耗层数）
 			if (state.stacks >= MAX_STACKS) {
@@ -310,11 +314,11 @@ public class GoldenSandstormErosionBrand {
 
 			// 蚀沙棱晶：主目标承受60%，40%扩散给周围
 			float mainDamage = hasPrism ? detonateDamage * (1.0f - PRISM_SPLASH_PERCENT) : detonateDamage;
-			System.out.println("[SSC_ADDON][DETONATE] 引爆伤害计算: rawDmg=" + rawDetonateDmg + ", capped=" + detonateDamage + ", mainDmg=" + mainDamage + ", hasPrism=" + hasPrism + ", timeUntilRegen=" + target.timeUntilRegen);
+			LOGGER.info("[SSC_ADDON][DETONATE] 引爆伤害计算: rawDmg=" + rawDetonateDmg + ", capped=" + detonateDamage + ", mainDmg=" + mainDamage + ", hasPrism=" + hasPrism + ", timeUntilRegen=" + target.timeUntilRegen);
 			Vec3d oldVelocity = target.getVelocity();
 			target.timeUntilRegen = 0; // 重置伤害免疫计时器
 			boolean detonateResult = target.damage(target.getDamageSources().create(CURSED_EROSION_KEY, player), mainDamage);
-			System.out.println("[SSC_ADDON][DETONATE] 引爆伤害结果: damaged=" + detonateResult + ", newHP=" + target.getHealth() + ", damageType=cursed_erosion");
+			LOGGER.info("[SSC_ADDON][DETONATE] 引爆伤害结果: damaged=" + detonateResult + ", newHP=" + target.getHealth() + ", damageType=cursed_erosion");
 			if (detonateResult) {
 				target.setVelocity(oldVelocity);
 			}
@@ -322,10 +326,10 @@ public class GoldenSandstormErosionBrand {
 			// 蚀沙棱晶：40%引爆伤害扩散给周围5格内的生物
 			if (hasPrism) {
 				float splashDamage = detonateDamage * PRISM_SPLASH_PERCENT;
-				System.out.println("[SSC_ADDON][DETONATE] 触发扩散: splashDmg=" + splashDamage + ", center=" + target.getPos() + ", range=" + SPREAD_RANGE);
+				LOGGER.info("[SSC_ADDON][DETONATE] 触发扩散: splashDmg=" + splashDamage + ", center=" + target.getPos() + ", range=" + SPREAD_RANGE);
 				splashDamageToNearby(player, serverWorld, target.getPos(), splashDamage, target);
 			} else {
-				System.out.println("[SSC_ADDON][DETONATE] 未装备棱晶，跳过扩散");
+				LOGGER.info("[SSC_ADDON][DETONATE] 未装备棱晶，跳过扩散");
 			}
 
 			// 引爆粒子
@@ -351,11 +355,11 @@ public class GoldenSandstormErosionBrand {
 			if (lostHealth > 0) {
 				float healAmount = lostHealth * DETONATE_HEAL_LOST_PERCENT;
 				player.heal(healAmount);
-				System.out.println("[SSC_ADDON][DETONATE] 引爆自愈: lostHP=" + lostHealth + ", heal=" + healAmount + ", playerHP=" + player.getHealth() + "/" + player.getMaxHealth());
+				LOGGER.info("[SSC_ADDON][DETONATE] 引爆自愈: lostHP=" + lostHealth + ", heal=" + healAmount + ", playerHP=" + player.getHealth() + "/" + player.getMaxHealth());
 			}
 			markDirty(player.getUuid());
 		}
-		System.out.println("[SSC_ADDON][DETONATE] 引爆完成: totalTargets=" + totalTargets + ", totalStacks=" + totalStacks);
+		LOGGER.info("[SSC_ADDON][DETONATE] 引爆完成: totalTargets=" + totalTargets + ", totalStacks=" + totalStacks);
 
 		return new int[]{totalTargets, totalStacks};
 	}
@@ -367,7 +371,7 @@ public class GoldenSandstormErosionBrand {
 	private static void splashDamageToNearby(ServerPlayerEntity player, ServerWorld serverWorld, Vec3d center, float damage, LivingEntity excludeTarget) {
 		UUID playerUuid = player.getUuid();
 		UUID excludeUuid = excludeTarget != null ? excludeTarget.getUuid() : null;
-		System.out.println("[SSC_ADDON][SPLASH] === 扩散开始 === center=" + center + ", damage=" + damage + ", exclude=" + (excludeTarget != null ? excludeTarget.getType().getTranslationKey() : "null"));
+		LOGGER.info("[SSC_ADDON][SPLASH] === 扩散开始 === center=" + center + ", damage=" + damage + ", exclude=" + (excludeTarget != null ? excludeTarget.getType().getTranslationKey() : "null"));
 
 		// 确保最低伤害为1
 		if (damage < 1.0f) damage = 1.0f;
@@ -380,7 +384,7 @@ public class GoldenSandstormErosionBrand {
 		);
 
 		List<Entity> allEntities = serverWorld.getOtherEntities(player, searchBox);
-		System.out.println("[SSC_ADDON][SPLASH] getOtherEntities返回数量: " + allEntities.size());
+		LOGGER.info("[SSC_ADDON][SPLASH] getOtherEntities返回数量: " + allEntities.size());
 
 		DamageSource splashDamageSource = player.getDamageSources().create(CURSED_EROSION_KEY, player);
 		long currentTick = serverWorld.getTime();
@@ -400,7 +404,7 @@ public class GoldenSandstormErosionBrand {
 
 			// 伤害范围检查（5格）
 			if (distSq <= SPREAD_RANGE * SPREAD_RANGE) {
-				System.out.println("[SSC_ADDON][SPLASH]   对 " + living.getType().getTranslationKey() + " 造成 " + damage + " 伤害 (HP=" + living.getHealth() + ")");
+				LOGGER.info("[SSC_ADDON][SPLASH]   对 " + living.getType().getTranslationKey() + " 造成 " + damage + " 伤害 (HP=" + living.getHealth() + ")");
 				Vec3d oldVelocity = living.getVelocity();
 				living.timeUntilRegen = 0;
 				boolean damaged = living.damage(splashDamageSource, damage);
@@ -421,7 +425,7 @@ public class GoldenSandstormErosionBrand {
 				// 绿色状态的目标：检查叠层冷却是否结束
 				if (state != null && state.greenState) {
 					if (currentTick < state.stackCooldownExpiryTick) {
-						System.out.println("[SSC_ADDON][SPLASH]   " + living.getType().getTranslationKey() + " 叠层冷却中，跳过叠标记");
+						LOGGER.info("[SSC_ADDON][SPLASH]   " + living.getType().getTranslationKey() + " 叠层冷却中，跳过叠标记");
 						continue;
 					}
 					// 冷却结束，取消绿色状态，从0开始叠层
@@ -437,7 +441,7 @@ public class GoldenSandstormErosionBrand {
 				state.stacks = Math.min(state.stacks + 1, MAX_STACKS);
 				state.lastStackTick = currentTick;
 				state.expiryTick = currentTick + BRAND_DURATION;
-				System.out.println("[SSC_ADDON][SPLASH]   " + living.getType().getTranslationKey() + " 叠标记至 " + state.stacks + " 层");
+				LOGGER.info("[SSC_ADDON][SPLASH]   " + living.getType().getTranslationKey() + " 叠标记至 " + state.stacks + " 层");
 
 				// 满3层触发爆发
 				if (state.stacks >= MAX_STACKS) {
@@ -448,7 +452,7 @@ public class GoldenSandstormErosionBrand {
 					state.expiryTick = currentTick + GREEN_DURATION;
 					updateTargetMarker(living, state, currentTick);
 					burstTargets.add(living);
-					System.out.println("[SSC_ADDON][SPLASH]   " + living.getType().getTranslationKey() + " 满3层，将触发爆发");
+					LOGGER.info("[SSC_ADDON][SPLASH]   " + living.getType().getTranslationKey() + " 满3层，将触发爆发");
 				} else {
 					updateTargetMarker(living, state, currentTick);
 				}
@@ -470,7 +474,7 @@ public class GoldenSandstormErosionBrand {
 
 		markDirty(playerUuid);
 
-		System.out.println("[SSC_ADDON][SPLASH] === 扩散结束 === 命中: " + hitCount + ", 爆发: " + burstTargets.size());
+		LOGGER.info("[SSC_ADDON][SPLASH] === 扩散结束 === 命中: " + hitCount + ", 爆发: " + burstTargets.size());
 
 		if (hitCount > 0) {
 			serverWorld.playSound(null, center.x, center.y, center.z,
@@ -531,12 +535,8 @@ public class GoldenSandstormErosionBrand {
 		boolean[] hadExpiry = {false};
 		playerBrands.entrySet().removeIf(entry -> {
 			BrandState state = entry.getValue();
-			boolean expired = false;
-			// 绿色状态过期检查
-			if (state.greenState && currentTick >= state.greenExpiryTick) {
-				expired = true;
-			}
-			// 普通烙印过期检查
+			boolean expired = state.greenState && currentTick >= state.greenExpiryTick; // 绿色状态过期检查
+            // 普通烙印过期检查
 			if (!state.greenState && currentTick >= state.expiryTick) {
 				expired = true;
 			}

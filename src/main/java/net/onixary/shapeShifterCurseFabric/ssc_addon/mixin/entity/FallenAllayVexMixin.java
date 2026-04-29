@@ -9,10 +9,12 @@ import net.minecraft.entity.mob.VexEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.raid.RaiderEntity;
 import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -73,19 +75,16 @@ public abstract class FallenAllayVexMixin extends MobEntity {
 			return;
 		}
 
-		if (owner == null) return;
+        if (owner == null) return;
 
-		pinVexCd(owner);
+        pinVexCd(owner);
 
-		boolean hasWhitelist = owner.getCommandTags().stream()
-				.anyMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
-
-		// Validate stored target; clear if dead/gone
-		LivingEntity currentTarget = resolveTarget(serverWorld);
+        // Validate stored target; clear if dead/gone
+        LivingEntity currentTarget = resolveTarget(serverWorld);
 
 		// After a kill (or on first spawn), search around the VEX ITSELF for a new target
 		if (currentTarget == null) {
-			currentTarget = findBestTarget(owner, ownerUuidStr, serverWorld, hasWhitelist);
+			currentTarget = findBestTarget(owner, ownerUuidStr, serverWorld);
 			if (currentTarget != null) {
 				VEX_TARGET.put(this.getUuid(), currentTarget.getUuid());
 			}
@@ -170,7 +169,7 @@ public abstract class FallenAllayVexMixin extends MobEntity {
 	 */
 	@Unique
 	private LivingEntity findBestTarget(PlayerEntity owner, String ownerUuidStr,
-	                                    ServerWorld serverWorld, boolean hasWhitelist) {
+	                                    ServerWorld serverWorld) {
 		Box searchBox = this.getBoundingBox().expand(16.0);
 		List<LivingEntity> candidates = serverWorld.getEntitiesByClass(LivingEntity.class, searchBox,
 				e -> e != owner && e != this && e.isAlive()
@@ -223,45 +222,28 @@ public abstract class FallenAllayVexMixin extends MobEntity {
 	/**
 	 * While at least one vex is alive, keep vex_cd pinned at 400 so the skill can't be recast.
 	 */
-	@Unique
-	private void pinVexCd(PlayerEntity owner) {
-		try {
-			io.github.apace100.apoli.component.PowerHolderComponent component = io.github.apace100.apoli.component.PowerHolderComponent.KEY.get(owner);
-			io.github.apace100.apoli.power.PowerType<?> powerType = io.github.apace100.apoli.power.PowerTypeRegistry.get(new net.minecraft.util.Identifier("my_addon", "form_fallen_allay_sp_vex_cd"));
-			io.github.apace100.apoli.power.Power power = component.getPower(powerType);
-			if (power instanceof io.github.apace100.apoli.power.VariableIntPower vip && vip.getValue() < 400) {
-				vip.setValue(400);
-				io.github.apace100.apoli.component.PowerHolderComponent.syncPower(owner, power.getType());
-			}
-		} catch (Exception ignored) {
-		}
-	}
+    @Unique
+    private void pinVexCd(PlayerEntity owner) {
+        if (!(owner instanceof ServerPlayerEntity serverOwner)) return;
+        int currentCd = PowerUtils.getResourceValue(serverOwner, FormIdentifiers.FALLEN_ALLAY_VEX_CD);
+        if (currentCd < 400) {
+            PowerUtils.setResourceValueAndSync(serverOwner, FormIdentifiers.FALLEN_ALLAY_VEX_CD, 400);
+        }
+    }
 
-	/**
-	 * When the last vex dies, set vex_cd to 400 and let the JSON ticker count it down.
-	 */
-	@Unique
-	private void applyCooldownIfLast(PlayerEntity owner, String ownerUuidStr, ServerWorld serverWorld) {
-		boolean hasOtherVex = false;
-		for (Entity v : serverWorld.getEntitiesByClass(VexEntity.class, owner.getBoundingBox().expand(128.0),
-				e -> e != (Object) this && e.isAlive())) {
-			if (v.getCommandTags().contains("owner:" + ownerUuidStr) && v.getCommandTags().contains("ssc_fallen_allay_vex")) {
-				hasOtherVex = true;
-				break;
-			}
-		}
-		if (!hasOtherVex) {
-			try {
-				io.github.apace100.apoli.component.PowerHolderComponent component = io.github.apace100.apoli.component.PowerHolderComponent.KEY.get(owner);
-				io.github.apace100.apoli.power.PowerType<?> powerType = io.github.apace100.apoli.power.PowerTypeRegistry.get(new net.minecraft.util.Identifier("my_addon", "form_fallen_allay_sp_vex_cd"));
-				io.github.apace100.apoli.power.Power power = component.getPower(powerType);
-				if (power instanceof io.github.apace100.apoli.power.VariableIntPower vip) {
-					vip.setValue(400);
-					io.github.apace100.apoli.component.PowerHolderComponent.syncPower(owner, power.getType());
-				}
-			} catch (Exception ignored) {
-			}
-		}
-	}
+    @Unique
+    private void applyCooldownIfLast(PlayerEntity owner, String ownerUuidStr, ServerWorld serverWorld) {
+        boolean hasOtherVex = false;
+        for (Entity v : serverWorld.getEntitiesByClass(VexEntity.class, owner.getBoundingBox().expand(128.0),
+                e -> e != (Object) this && e.isAlive())) {
+            if (v.getCommandTags().contains("owner:" + ownerUuidStr) && v.getCommandTags().contains("ssc_fallen_allay_vex")) {
+                hasOtherVex = true;
+                break;
+            }
+        }
+        if (!hasOtherVex && owner instanceof ServerPlayerEntity serverOwner) {
+            PowerUtils.setResourceValueAndSync(serverOwner, FormIdentifiers.FALLEN_ALLAY_VEX_CD, 400);
+        }
+    }
 }
 

@@ -1,11 +1,5 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.ability;
 
-import io.github.apace100.apoli.component.PowerHolderComponent;
-import io.github.apace100.apoli.power.CooldownPower;
-import io.github.apace100.apoli.power.Power;
-import io.github.apace100.apoli.power.PowerType;
-import io.github.apace100.apoli.power.PowerTypeRegistry;
-import io.github.apace100.apoli.power.VariableIntPower;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -45,7 +39,6 @@ public class SnowFoxSpFrostStorm {
     
     private static final Identifier RESOURCE_ID = new Identifier("my_addon", "form_snow_fox_sp_resource");
     private static final Identifier REGEN_COOLDOWN_ID = new Identifier("my_addon", "form_snow_fox_sp_frost_regen_cooldown_resource");
-    private static final Identifier POWER_ID = new Identifier("my_addon", "form_snow_fox_sp_ranged_secondary");
     
     /**
      * 开始蓄力（点按技能键时调用）
@@ -190,90 +183,34 @@ public class SnowFoxSpFrostStorm {
                 30, 1.5, 1.0, 1.5, 0.05);
         }
     }
-    
-    /**
-     * 检查玩家是否正在蓄力
-     */
-    public static boolean isCharging(ServerPlayerEntity player) {
-        return CHARGING_PLAYERS.containsKey(player.getUuid());
-    }
-    
+
     /**
      * 获取霜寒值
      */
     private static int getResourceValue(ServerPlayerEntity player) {
-        try {
-            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-            PowerType<?> powerType = PowerTypeRegistry.get(RESOURCE_ID);
-            Power power = powerHolder.getPower(powerType);
-            if (power instanceof VariableIntPower variablePower) {
-                return variablePower.getValue();
-            }
-        } catch (Exception e) {
-            // Resource not found
-        }
-        return 0;
+        return PowerUtils.getResourceValue(player, RESOURCE_ID);
     }
-    
+
     /**
      * 修改霜寒值
      */
     private static void changeResourceValue(ServerPlayerEntity player, int change) {
-        try {
-            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-            PowerType<?> powerType = PowerTypeRegistry.get(RESOURCE_ID);
-            Power power = powerHolder.getPower(powerType);
-            if (power instanceof VariableIntPower variablePower) {
-                int newValue = Math.max(0, Math.min(100, variablePower.getValue() + change));
-                variablePower.setValue(newValue);
-                PowerHolderComponent.sync(player); // 同步到客户端
-            }
-        } catch (Exception e) {
-            // Resource not found
-        }
+        PowerUtils.changeResourceValueAndSync(player, RESOURCE_ID, change);
     }
-    
+
     /**
      * 设置回复冷却（使用后5秒内无法自然回复霜寒值）
      */
     private static void setRegenCooldown(ServerPlayerEntity player, int value) {
-        try {
-            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-            PowerType<?> powerType = PowerTypeRegistry.get(REGEN_COOLDOWN_ID);
-            Power power = powerHolder.getPower(powerType);
-            if (power instanceof VariableIntPower variablePower) {
-                variablePower.setValue(value);
-                PowerHolderComponent.sync(player);
-            }
-        } catch (Exception e) {
-            // Resource not found
-        }
+        PowerUtils.setResourceValueAndSync(player, REGEN_COOLDOWN_ID, value);
     }
-    
-    /**
-     * 设置power的cooldown
-     * 未使用，建议移除
-     */
-    private static void setPowerCooldown(ServerPlayerEntity player, int ticks) {
-        try {
-            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-            PowerType<?> powerType = PowerTypeRegistry.get(POWER_ID);
-            Power power = powerHolder.getPower(powerType);
-            if (power instanceof CooldownPower cooldownPower) {
-                cooldownPower.setCooldown(ticks);
-            }
-        } catch (Exception e) {
-            // Power not found
 
-        }
-    }
-    
     /**
      * 蓄力数据
      */
     private static class ChargingData {
         int chargeTicks;
-        
+
         ChargingData(int chargeTicks) {
             this.chargeTicks = chargeTicks;
         }

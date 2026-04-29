@@ -2,7 +2,6 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.client;
 
 import io.github.apace100.apoli.ApoliClient;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -13,7 +12,6 @@ import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.item.ModelPredicateProviderRegistry;
 import net.minecraft.client.render.entity.EmptyEntityRenderer;
 import net.minecraft.client.render.entity.FlyingItemEntityRenderer;
-import net.minecraft.client.render.entity.model.TridentEntityModel;
 import net.minecraft.item.SpawnEggItem;
 import net.minecraft.client.resource.language.I18n;
 import net.minecraft.text.Text;
@@ -37,8 +35,6 @@ import java.util.List;
 public class SscAddonClient implements ClientModInitializer {
 	public static final String CATEGORY = "key.categories.ssc_addon";
 	private static final Logger LOGGER = LoggerFactory.getLogger(SscAddonClient.class);
-
-	private TridentEntityModel tridentModel;
 
 	private void addSplitTooltip(List<Text> lines, String key) {
 		if (I18n.hasTranslation(key)) {
@@ -115,19 +111,8 @@ public class SscAddonClient implements ClientModInitializer {
 				entity != null && entity.isUsingItem() && entity.getActiveItem() == stack ? 1.0F : 0.0F
 		);
 
-		ClientTickEvents.END_CLIENT_TICK.register(client -> {
-			if (client.player == null) {
-				// 如果玩家为空，则不进行任何操作
-			}
-            
-            /*if (KEY_ALLAY_HEAL.isPressed()) {
-                net.minecraft.network.PacketByteBuf buf = PacketByteBufs.create();
-                buf.writeInt(1); // Key ID 1 for Allay Heal
-                ClientPlayNetworking.send(SscAddonNetworking.PACKET_KEY_PRESS, buf);
-            }*/
-
-			// Add other key checks here
-		});
+		// SP技能键位现在由Apoli框架自动处理，无需手动轮询
+		// 如需添加新的非Apoli键位检测，可在此处注册
 
 		HudRenderCallback.EVENT.register(new SnowFoxSPManaBar());
 		HudRenderCallback.EVENT.register(new AllaySPManaBar());

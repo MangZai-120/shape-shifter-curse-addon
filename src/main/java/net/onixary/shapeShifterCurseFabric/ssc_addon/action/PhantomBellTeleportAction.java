@@ -35,14 +35,14 @@ public class PhantomBellTeleportAction {
 				new Identifier("ssc_addon", "phantom_bell_teleport"),
 				new SerializableData(),
 				(data, entity) -> {
-					log.info("[PhantomBell] Action triggered!");
+					log.debug("[PhantomBell] Action triggered!");
 
 					if (!(entity instanceof LivingEntity player)) {
-						log.info("[PhantomBell] Entity is not LivingEntity, returning");
+						log.debug("[PhantomBell] Entity is not LivingEntity, returning");
 						return;
 					}
 
-					log.info("[PhantomBell] Player: {}", player.getName().getString());
+					log.debug("[PhantomBell] Player: {}", player.getName().getString());
 
 					World world = player.getWorld();
 					BlockPos startBlockPos = player.getBlockPos();
