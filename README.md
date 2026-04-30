@@ -72,5 +72,7 @@
 > ⚠️ **非官方维护分支 — Minecraft 1.21.1 / Fabric 移植**
 > 此分支由 [wuhenqiubai](https://github.com/wuhenqiubai) 移植并维护至 **Minecraft 1.21.1 + Fabric 0.19.2 + Java 21**。
 > 如需原始版本请查看上游 [MangZai-120/shape-shifter-curse-addon](https://github.com/MangZai-120/shape-shifter-curse-addon)。
+> 
+> 目前此模组的移植处于计划阶段，需要等待我对主模组 [Shape-Shifter-Curse](https://github.com/wuhenqiubai/shape-shifter-curse-fabric/tree/ver/1.21.1) 移植完成。
 
 *最后更新: 2026-04-30*
