@@ -66,3 +66,11 @@
 - **Code**: Licensed under [MIT License](LICENSE).
 - **Story Content** (including `story/` directory, in-game books, and Codex narrative text): Licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
   - Free to share, no commercial use, no modifications. Text must be provided as-is, but font and font size changes are permitted.
+
+---
+
+> ⚠️ **非官方维护分支 — Minecraft 1.21.1 / Fabric 移植**
+> 此分支由 [wuhenqiubai](https://github.com/wuhenqiubai) 移植并维护至 **Minecraft 1.21.1 + Fabric 0.19.2 + Java 21**。
+> 如需原始版本请查看上游 [MangZai-120/shape-shifter-curse-addon](https://github.com/MangZai-120/shape-shifter-curse-addon)。
+
+*最后更新: 2026-04-30*
