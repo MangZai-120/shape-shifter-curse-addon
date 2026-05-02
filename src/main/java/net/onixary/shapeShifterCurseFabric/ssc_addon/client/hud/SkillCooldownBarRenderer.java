@@ -39,6 +39,7 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 	// 贴图路径
 	private static final Identifier TEX_EMPTY = new Identifier("my_addon", "textures/gui/skill_cd_bar_empty.png");
 	private static final Identifier TEX_FULL = new Identifier("my_addon", "textures/gui/skill_cd_bar_full.png");
+	private static final String SSCA_FORM_NAMESPACE = "my_addon";
 
 	// 快捷栏尺寸
 	private static final int HOTBAR_WIDTH = 182;
@@ -85,11 +86,19 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 		try {
 			curForm = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).getCurrentForm();
 		} catch (Exception e) {
+			resetCooldownTracking();
 			return;
 		}
-		if (curForm == null || curForm.FormID == null) return;
+		if (curForm == null || curForm.FormID == null) {
+			resetCooldownTracking();
+			return;
+		}
 
 		Identifier formId = curForm.FormID;
+		if (!SSCA_FORM_NAMESPACE.equals(formId.getNamespace())) {
+			resetCooldownTracking();
+			return;
+		}
 
 		// 根据形态确定要显示的CD资源
 		Identifier primaryCdId = FormIdentifiers.SP_PRIMARY_CD;
@@ -258,5 +267,12 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 	 */
 	private int getResourceValue(PlayerEntity player, Identifier resourceId) {
 		return PowerUtils.getClientResourceValue(player, resourceId);
+	}
+
+	private void resetCooldownTracking() {
+		lastFormId = null;
+		trackedMaxValues.clear();
+		lastFrameValues.clear();
+		suppressionBaseline.clear();
 	}
 }
