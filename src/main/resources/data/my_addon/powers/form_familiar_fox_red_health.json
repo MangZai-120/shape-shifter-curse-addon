@@ -1,0 +1,9 @@
+{
+    "type": "origins:attribute",
+    "modifier": {
+        "name": "Red familiar fox health adjustment",
+        "attribute": "minecraft:generic.max_health",
+        "value": -4.0,
+        "operation": "addition"
+    }
+}

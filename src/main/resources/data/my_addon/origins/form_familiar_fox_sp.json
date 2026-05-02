@@ -1,7 +1,7 @@
 {
     "powers": [
         "shape-shifter-curse:no_render_arm",
-        "shape-shifter-curse:form_familiar_fox_3_scale",
+        "my_addon:form_familiar_fox_sp_scale",
         "shape-shifter-curse:form_familiar_fox_3_particle",
         "shape-shifter-curse:form_sprint_speed_up",
         "shape-shifter-curse:form_familiar_fox_3_digging_speed_down",
