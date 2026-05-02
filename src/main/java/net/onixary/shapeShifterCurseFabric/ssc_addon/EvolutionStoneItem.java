@@ -61,6 +61,11 @@ public class EvolutionStoneItem extends Item {
 					targetFormId = new Identifier("my_addon", "allay_sp");
 					canEvolve = true;
 				}
+				// 允许原版三阶段胡狼使用进化石进化为金沙岚
+				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "anubis_wolf_3"))) {
+					targetFormId = new Identifier("my_addon", "golden_sandstorm_sp");
+					canEvolve = true;
+				}
 			}
 
 			if (canEvolve) {
