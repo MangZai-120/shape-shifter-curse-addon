@@ -186,10 +186,6 @@
                 },
                 {
                     "type": "origins:execute_command",
-                    "command": "particle minecraft:sonic_boom ~ ~1 ~ 0 0 0 0 1 force @a"
-                },
-                {
-                    "type": "origins:execute_command",
                     "command": "particle minecraft:sculk_soul ~ ~1 ~ 3.0 2.0 3.0 0.05 30 force @a"
                 },
                 {
