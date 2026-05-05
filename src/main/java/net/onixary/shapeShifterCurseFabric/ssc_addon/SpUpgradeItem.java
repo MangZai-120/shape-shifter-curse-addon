@@ -74,7 +74,7 @@ public class SpUpgradeItem extends Item {
 	public ItemStack finishUsing(ItemStack stack, World world, LivingEntity user) {
 		if (!world.isClient && user instanceof PlayerEntity player) {
 			Identifier targetFormId = getTargetFormId(player);
-			boolean isCursedMoon = CursedMoon.isCursedMoon(world);
+			boolean isCursedMoon = CursedMoon.isCursedMoon(world) && CursedMoon.isNight(world);
 			boolean isValidForm = targetFormId != null;
 			boolean isAlreadySP = isAlreadySP(player);
 
