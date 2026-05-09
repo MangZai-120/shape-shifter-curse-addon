@@ -13,6 +13,7 @@ import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormRegen;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPRangedHitPassive;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.power.EffectEfficiencyReductionPower;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
@@ -20,8 +21,10 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.UndeadNeutralState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(LivingEntity.class)
 public abstract class SscAddonLivingEntityMixin {
@@ -84,6 +87,27 @@ public abstract class SscAddonLivingEntityMixin {
 		if (!FormUtils.isForm(sp, FormIdentifiers.GOLDEN_SANDSTORM_SP)) return;
 		LivingEntity self = (LivingEntity) (Object) this;
 		GoldenSandstormRegen.registerWitherSource(self, sp, effect.getDuration());
+	}
+
+	@Inject(method = "damage", at = @At("RETURN"))
+	private void ssc_addon$onAllayRangedHit(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+		if (!cir.getReturnValue()) return;
+		LivingEntity self = (LivingEntity) (Object) this;
+		AllaySPRangedHitPassive.onDamageApplied(self, source);
+	}
+
+	@ModifyArgs(method = "damage", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;applyDamage(Lnet/minecraft/entity/damage/DamageSource;F)V"))
+	private void ssc_addon$capAllayIncomingDamage(Args args) {
+		LivingEntity self = (LivingEntity) (Object) this;
+		if (self.getWorld().isClient() || !FormUtils.isAllaySP(self)) return;
+		DamageSource source = args.get(0);
+		if (source.isOf(DamageTypes.OUT_OF_WORLD) || source.isOf(DamageTypes.GENERIC_KILL)) return;
+
+		float amount = args.get(1);
+		float maxDamage = self.getMaxHealth() * 0.25F;
+		if (amount > maxDamage) {
+			args.set(1, maxDamage);
+		}
 	}
 
 	@ModifyVariable(method = "addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;Lnet/minecraft/entity/Entity;)Z", at = @At("HEAD"), argsOnly = true)

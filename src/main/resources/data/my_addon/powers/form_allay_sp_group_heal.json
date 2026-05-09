@@ -36,6 +36,31 @@
             "should_render": false
         }
     },
+    "solo_damage_timer": {
+        "type": "origins:resource",
+        "min": 0,
+        "max": 400,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "solo_damage_tick": {
+        "type": "origins:action_over_time",
+        "interval": 1,
+        "entity_action": {
+            "type": "origins:change_resource",
+            "resource": "my_addon:form_allay_sp_group_heal_solo_damage_timer",
+            "operation": "add",
+            "change": -1
+        },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "my_addon:form_allay_sp_group_heal_solo_damage_timer",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
     "cooldown_tick": {
         "type": "origins:action_over_time",
         "interval": 1,
@@ -398,6 +423,28 @@
                 {
                     "type": "origins:clear_effect",
                     "effect": "minecraft:slowness"
+                },
+                {
+                    "type": "origins:apply_effect",
+                    "effect": {
+                        "effect": "minecraft:resistance",
+                        "duration": 200,
+                        "amplifier": 0,
+                        "is_ambient": false,
+                        "show_particles": true,
+                        "show_icon": true
+                    }
+                },
+                {
+                    "type": "origins:apply_effect",
+                    "effect": {
+                        "effect": "minecraft:speed",
+                        "duration": 200,
+                        "amplifier": 0,
+                        "is_ambient": false,
+                        "show_particles": true,
+                        "show_icon": true
+                    }
                 },
                 {
                     "type": "origins:play_sound",

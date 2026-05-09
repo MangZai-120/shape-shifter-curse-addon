@@ -20,6 +20,7 @@ public class FormIdentifiers {
 	public static final Identifier ALLAY_MANA_COOLDOWN = new Identifier("my_addon", "form_allay_sp_mana_cooldown_resource");
 	public static final Identifier ALLAY_GROUP_HEAL = new Identifier("my_addon", "form_allay_sp_group_heal");
 	public static final Identifier ALLAY_GROUP_HEAL_EXECUTE = new Identifier("my_addon", "form_allay_sp_group_heal_heal_execute");
+	public static final Identifier ALLAY_GROUP_HEAL_SOLO_DAMAGE_TIMER = new Identifier("my_addon", "form_allay_sp_group_heal_solo_damage_timer");
 	public static final Identifier FAMILIAR_FOX_MANA = new Identifier("my_addon", "form_familiar_fox_sp_init_mana");
 	public static final Identifier FAMILIAR_FOX_VISIBILITY = new Identifier("my_addon", "form_familiar_fox_sp_visibility");
 	// 通用技能CD资源（用于HUD显示）

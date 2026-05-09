@@ -1,6 +1,8 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.ability;
 
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -11,6 +13,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SkillBlocker;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 import java.util.List;
@@ -30,8 +33,13 @@ public class AllaySPGroupHeal {
 
 	public static final String WHITELIST_TAG_PREFIX = "ssc_allay_wl:";
 	private static final Identifier HEAL_EXECUTE_ID = new Identifier("my_addon", "form_allay_sp_group_heal_heal_execute");
+	private static final Identifier SOLO_DAMAGE_TIMER_ID = FormIdentifiers.ALLAY_GROUP_HEAL_SOLO_DAMAGE_TIMER;
 	private static final double HEAL_RADIUS = 20.0;
 	private static final float HEAL_AMOUNT = 20.0f;
+	private static final int RESISTANCE_TICKS = 200;
+	private static final int STANDARD_ABSORPTION_TICKS = 400;
+	private static final int SOLO_BLESSING_TICKS = 400;
+	private static final int SOLO_ABSORPTION_TICKS = 600;
 
 	private AllaySPGroupHeal() {
 		throw new UnsupportedOperationException("This class cannot be instantiated.");
@@ -60,9 +68,16 @@ public class AllaySPGroupHeal {
 	 */
 	private static void executeWhitelistHeal(ServerPlayerEntity allayPlayer) {
 		ServerWorld world = (ServerWorld) allayPlayer.getWorld();
+		boolean soloHeal = !hasOtherHealablePlayer(allayPlayer, world);
 
 		// 治疗自身
-		allayPlayer.heal(HEAL_AMOUNT);
+		if (soloHeal) {
+			applySoloBlessing(allayPlayer);
+		} else {
+			allayPlayer.heal(HEAL_AMOUNT);
+			allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, STANDARD_ABSORPTION_TICKS, 1, false, true, true));
+			allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, RESISTANCE_TICKS, 0, false, true, true));
+		}
 		spawnHealParticles(world, allayPlayer);
 		// 只有SP悦灵自己能听见
 		allayPlayer.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
@@ -76,6 +91,7 @@ public class AllaySPGroupHeal {
 			// 统一走 WhitelistUtils.isBuffTarget，同时遵从服务端 whitelistEnabled 总开关
 			if (WhitelistUtils.isBuffTarget(allayPlayer, entity)) {
 				entity.heal(HEAL_AMOUNT);
+				entity.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, RESISTANCE_TICKS, 0, false, true, true));
 				spawnHealParticles(world, entity);
 				// 播放声音：治疗者听见私有声音，其他人听见空间声音
 				allayPlayer.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
@@ -83,6 +99,25 @@ public class AllaySPGroupHeal {
 						SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
 			}
 		}
+	}
+
+	private static boolean hasOtherHealablePlayer(ServerPlayerEntity allayPlayer, ServerWorld world) {
+		Box box = allayPlayer.getBoundingBox().expand(HEAL_RADIUS);
+		List<ServerPlayerEntity> players = world.getEntitiesByClass(ServerPlayerEntity.class, box,
+				player -> player != allayPlayer
+						&& player.isAlive()
+						&& !player.isSpectator()
+						&& player.squaredDistanceTo(allayPlayer) <= HEAL_RADIUS * HEAL_RADIUS
+						&& WhitelistUtils.isBuffTarget(allayPlayer, player));
+		return !players.isEmpty();
+	}
+
+	private static void applySoloBlessing(ServerPlayerEntity allayPlayer) {
+		allayPlayer.setHealth(allayPlayer.getMaxHealth());
+		allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.STRENGTH, SOLO_BLESSING_TICKS, 1, false, true, true));
+		allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, SOLO_BLESSING_TICKS, 1, false, true, true));
+		allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, SOLO_ABSORPTION_TICKS, 2, false, true, true));
+		setResourceValue(allayPlayer, SOLO_DAMAGE_TIMER_ID, SOLO_BLESSING_TICKS);
 	}
 
 	/**
