@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 金沙岚SP - 侵蚀烙印（被动标记系统）
  * <p>
- * 近战攻击非白名单目标时自动叠加侵蚀烙印，每秒最多叠1层，每个目标最多3层。
+ * 近战攻击时自动叠加侵蚀烙印，每秒最多叠1层，每个目标最多3层。
  * 烙印持续10秒（每次叠加刷新计时器）。
  * <p>
  * 层数颜色对应（用于entity_glow）：
@@ -51,7 +51,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * 引爆（次要技能）：
  * - 造成目标当前生命值20%的伤害（上限20）
- * - 自身回复已损生命值的20%
+ * - 自身按已损生命值的20%回复一次
  */
 public class GoldenSandstormErosionBrand {
 

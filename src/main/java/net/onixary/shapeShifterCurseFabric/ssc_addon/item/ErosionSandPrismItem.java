@@ -18,9 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 蚀沙棱晶 - SP金沙岚专属饰品（项链槽）
- * 效果：引爆烙印时将1层烙印扩散给被引爆目标周围5格内的其它目标
+ * 效果：引爆/被动爆发时，主目标承受60%伤害，40%伤害扩散给周围5格内其它目标，并给4格内目标额外叠1层烙印
  * 副作用：烙印叠加冷却从1秒变为1.3秒
- * 扩散内置CD：5秒
  */
 public class ErosionSandPrismItem extends TrinketItem {
 

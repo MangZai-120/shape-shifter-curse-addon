@@ -18,8 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 枯沙指环 - SP金沙岚专属饰品（戒指槽）
- * 效果：对已有侵蚀烙印的目标造成的伤害提高15%
- * 效果：被动爆发伤害上限提高30%（30 → 39）
+ * 效果：侵蚀烙印的被动爆发与引爆伤害上限提高30%（20 → 26）
  */
 public class WitheredSandRingItem extends TrinketItem {
 
