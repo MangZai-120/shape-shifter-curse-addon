@@ -55,10 +55,13 @@ public class SscAddonClient implements ClientModInitializer {
 		// 包裹 try-catch 防止任何意外（如类加载失败）静默吞掉异常导致客机无反应。
 		try {
 			SscAddonKeybindings.register();
-			// 注册SP技能按键到Apoli框架，确保多人游戏中客机的active_self能力能正确发送激活包到服务器
-			ApoliClient.registerPowerKeybinding("key.ssc_addon.sp_primary", SscAddonKeybindings.KEY_SP_PRIMARY);
-			ApoliClient.registerPowerKeybinding("key.ssc_addon.sp_secondary", SscAddonKeybindings.KEY_SP_SECONDARY);
-			LOGGER.info("[SSC_ADDON] Client KeyBindings registered successfully (sp_primary=G, sp_secondary=R)");
+			// 关键修复：复用 SSC 原版的 primary_active / secondary_active 键位对象，
+			// 不再单独注册 G 键，避免与 SSC 的 KEY_TO_BINDINGS 注册冲突
+			// （冲突会导致 SSC 与 SSCA 的主动技能在 G 键上互相覆盖、按键失效）。
+			// Apoli 端仍以 ssc_addon.sp_primary / sp_secondary 作为 ID，所有 powers JSON 无需改动。
+			ApoliClient.registerPowerKeybinding("key.ssc_addon.sp_primary", SscAddonKeybindings.getPrimaryKey());
+			ApoliClient.registerPowerKeybinding("key.ssc_addon.sp_secondary", SscAddonKeybindings.getSecondaryKey());
+			LOGGER.info("[SSC_ADDON] SP keybindings bound to SSC primary_active / secondary_active (shared with SSC to avoid G-key conflict)");
 		} catch (Throwable t) {
 			LOGGER.error("[SSC_ADDON] CRITICAL: Failed to register client keybindings - SP skills will not work on this client!", t);
 		}
