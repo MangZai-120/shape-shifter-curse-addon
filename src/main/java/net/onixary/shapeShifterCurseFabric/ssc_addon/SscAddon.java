@@ -399,6 +399,9 @@ public class SscAddon implements ModInitializer {
 				if (world.getServer().getTicks() % 20 == 0) {
 					net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaPassive
 							.serverGlobalFleeCleanup(world.getServer());
+					// 契灵劫掠军组生命周期推进（LINGER → MARCH → 脱适清理）
+					net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaPassive
+							.tickRaiderGroups(world.getServer());
 				}
 			}
 			for (net.minecraft.server.network.ServerPlayerEntity player : world.getPlayers()) {
