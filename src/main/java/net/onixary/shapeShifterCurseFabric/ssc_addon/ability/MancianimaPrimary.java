@@ -75,6 +75,13 @@ public final class MancianimaPrimary {
 		if (mark != null && mark.color == MancianimaMarkManager.MarkColor.RED) {
 			LivingEntity tgt = findLivingByUuid(world, mark.targetUuid);
 			if (tgt == null || !tgt.isAlive()) return;
+			// 阶段冷却：红标刚升级后需等 3s 才能引爆
+			if (now - mark.colorSetTick < MancianimaMarkManager.STAGE_GATE_TICKS) {
+				int secLeft = (int) Math.max(1L, (long) Math.ceil((MancianimaMarkManager.STAGE_GATE_TICKS - (now - mark.colorSetTick)) / 20.0));
+				player.sendMessage(Text.translatable("message.ssc_addon.mancianima.primary.stage_locked_seconds", secLeft), true);
+				playMarkFailSound(player);
+				return;
+			}
 			// 不消耗 mana 立即开始引导；CD 在引导成功后加 15s
 			MancianimaMarkManager.CHANNELING.put(player.getUuid(),
 					new MancianimaMarkManager.ChannelState(mark.targetUuid, now + CHANNEL_DAMAGE_TICKS, 1));
@@ -93,6 +100,13 @@ public final class MancianimaPrimary {
 		// 段 2：橙标的同一目标
 		if (mark != null && mark.color == MancianimaMarkManager.MarkColor.ORANGE
 				&& target != null && target.getUuid().equals(mark.targetUuid)) {
+			// 阶段冷却：首次标记后需等 3s 才能升红
+			if (now - mark.colorSetTick < MancianimaMarkManager.STAGE_GATE_TICKS) {
+				int secLeft = (int) Math.max(1L, (long) Math.ceil((MancianimaMarkManager.STAGE_GATE_TICKS - (now - mark.colorSetTick)) / 20.0));
+				player.sendMessage(Text.translatable("message.ssc_addon.mancianima.primary.stage_locked_seconds", secLeft), true);
+				playMarkFailSound(player);
+				return;
+			}
 			// 1s 触发间隔通过 SP_PRIMARY_CD 是否>0 来检测：但此段不应用 CD ⇒ 用单独资源不太划算。
 			// 简化：若上次红升时间未到（用 RED_LOCKOUT），由 upgradeToRed 内部判定。
 			boolean ok = MancianimaMarkManager.upgradeToRed(player, target);

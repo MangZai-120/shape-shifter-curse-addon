@@ -55,6 +55,8 @@ public final class MancianimaMarkManager {
 	public static final int RANGE_ORANGE = 24;
 	public static final int RANGE_RED_KEEP = 24;
 	public static final int RED_RELOCK_COOLDOWN_TICKS = 300;  // 15s 内不能对同一目标再红标
+	/** 阶段升级冷却：黄标→升红、红标→引爆都至少需要等待 3s */
+	public static final int STAGE_GATE_TICKS = 60;            // 3s
 
 	/** S2C 包：将本地玩家持有的标记同步到客户端，用于 entity_glow */
 	public static final Identifier PACKET_MARK_SYNC = new Identifier("ssc_addon", "mancianima_mark_sync");
@@ -63,7 +65,11 @@ public final class MancianimaMarkManager {
 		public final UUID targetUuid;
 		public MarkColor color;
 		public long expireTick;
-		public Mark(UUID t, MarkColor c, long e) { targetUuid = t; color = c; expireTick = e; }
+		/** 当前阶段开始 tick：黄标=首次标记 tick；红标=升红 tick。用于阶段冷却判定。 */
+		public long colorSetTick;
+		public Mark(UUID t, MarkColor c, long e, long set) {
+			targetUuid = t; color = c; expireTick = e; colorSetTick = set;
+		}
 	}
 
 	/** marker player UUID -> Mark */
@@ -151,19 +157,23 @@ public final class MancianimaMarkManager {
 		if (isFreshYellow) {
 			RED_LOCKOUT.remove(markerId + ":" + target.getUuid());
 		}
-		MARKS.put(markerId, new Mark(target.getUuid(), color, expire));
+		// 全新标记（不同目标）→ colorSetTick 取 now；同目标延续 → 保留旧的 colorSetTick
+		long setTick = (old != null && old.targetUuid.equals(target.getUuid())) ? old.colorSetTick : now;
+		MARKS.put(markerId, new Mark(target.getUuid(), color, expire, setTick));
 		DIRTY.add(markerId);
 	}
 
-	/** 升级到红色（必须当前是 ORANGE 且未在锁定期内）。 */
+	/** 升级到红色（必须当前是 ORANGE、过黄标 3s 阶段冷却且未在锁定期内）。 */
 	public static boolean upgradeToRed(ServerPlayerEntity marker, LivingEntity target) {
 		Mark m = MARKS.get(marker.getUuid());
 		if (m == null || !m.targetUuid.equals(target.getUuid())) return false;
 		if (m.color != MarkColor.ORANGE) return false;
 		long now = ((ServerWorld) marker.getWorld()).getTime();
+		if (now - m.colorSetTick < STAGE_GATE_TICKS) return false;
 		if (!canRedRelock(marker.getUuid(), target.getUuid(), now)) return false;
 		m.color = MarkColor.RED;
 		m.expireTick = now + MARK_DURATION_TICKS;
+		m.colorSetTick = now; // 重置阶段计时，红标→引爆需再等 3s
 		RED_LOCKOUT.put(marker.getUuid() + ":" + target.getUuid(), now + RED_RELOCK_COOLDOWN_TICKS);
 		DIRTY.add(marker.getUuid());
 		return true;

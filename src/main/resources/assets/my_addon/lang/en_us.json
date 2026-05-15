@@ -337,6 +337,7 @@
   "message.ssc_addon.mancianima.target_protected": "§cTarget is protected by whitelist",
   "message.ssc_addon.mancianima.primary.channeling": "§eMancianima Brand is calibrating...",
   "message.ssc_addon.mancianima.primary.red_locked": "§cThat target's red brand is still on cooldown",
+  "message.ssc_addon.mancianima.primary.stage_locked_seconds": "§eThe Mancianima brand has not stabilized yet, wait %ss",
   "message.ssc_addon.mancianima.channel_fail": "§cChanneling interrupted",
   "ssc_addon.mancianima.assault.start": "§4The forbidden weapon has locked onto the village! §c%s villagers are marked for clearing.",
   "ssc_addon.mancianima.assault.complete": "§aClearing complete. The village's spoils are yours.",
@@ -349,5 +350,6 @@
   "ssc_addon.mancianima.assault.failed_msg": "§7You did not return to the village within a day. The Mancianima Assault has failed and progress has been reset.",
   "ssc_addon.mancianima.assault.preparing": "Mancianima Assault §eApproaching...§r (Pillager forces gathering)",
   "ssc_addon.mancianima.assault.preparing_msg": "§eThe bell tolls! Pillager forces will arrive in 10 seconds. %s villagers locked.",
-  "ssc_addon.mancianima.assault.bossbar": "Mancianima Assault§f: §cVillagers Remaining %s"
+  "ssc_addon.mancianima.assault.bossbar": "Mancianima Assault§f: §cVillagers Remaining %s",
+  "item.shape-shifter-curse.amulet_bracelet.cant_equip_mancianima": "The Amulet Bracelet has no effect in Mancianima form"
 }
