@@ -607,7 +607,7 @@ public class AnubisWolfSpDeathDomain {
 						BlockState original = blocks.get(pos);
 						if (original != null) {
 							if (isStillConverted(world, pos, original)) {
-								world.setBlockState(pos, original, Block.NOTIFY_ALL);
+									world.setBlockState(pos, original, Block.NOTIFY_ALL);
 							}
 							blocks.remove(pos);
 							break;
@@ -773,6 +773,7 @@ public class AnubisWolfSpDeathDomain {
 				block instanceof TripwireBlock ||            // 绊线
 				block instanceof TripwireHookBlock ||        // 绊线钩
 				block instanceof TargetBlock ||              // 标靶
+				block instanceof LightningRodBlock ||        // 避雷针
 				block instanceof NoteBlock;                  // 音符盒
 	}
 
