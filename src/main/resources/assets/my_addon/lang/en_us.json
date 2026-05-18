@@ -350,5 +350,10 @@
   "ssc_addon.mancianima.assault.preparing": "Mancianima Assault §eApproaching...§r (Pillager forces gathering)",
   "ssc_addon.mancianima.assault.preparing_msg": "§eThe bell tolls! Pillager forces will arrive in 10 seconds. %s villagers locked.",
   "ssc_addon.mancianima.assault.bossbar": "Mancianima Assault§f: §cVillagers Remaining %s",
-  "item.shape-shifter-curse.amulet_bracelet.cant_equip_mancianima": "The Amulet Bracelet has no effect in Mancianima form"
+  "item.shape-shifter-curse.amulet_bracelet.cant_equip_mancianima": "The Amulet Bracelet has no effect in Mancianima form",
+  "item.ssc_addon.binding_anklet": "Binding Anklet",
+  "item.ssc_addon.binding_anklet.tooltip_1": "Mancianima Exclusive · Anklet Slot",
+  "item.ssc_addon.binding_anklet.tooltip_2": "Pillager-faction mobs within 16 blocks",
+  "item.ssc_addon.binding_anklet.tooltip_3": "deal +20% damage. The wearer themselves does not receive this bonus.",
+  "item.ssc_addon.binding_anklet.tooltip_4": "Only obtainable from Pillager Outpost loot chests."
 }

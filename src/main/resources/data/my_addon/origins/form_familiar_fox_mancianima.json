@@ -66,7 +66,10 @@
         "my_addon:form_familiar_fox_mancianima_weapon_attack_speed",
         "my_addon:form_familiar_fox_mancianima_weapon_attack_range",
         "my_addon:form_familiar_fox_mancianima_barehand_attack_range",
-        "my_addon:form_familiar_fox_mancianima_no_buff_effect"
+        "my_addon:form_familiar_fox_mancianima_no_buff_effect",
+        "my_addon:form_familiar_fox_mancianima_villager_drain",
+        "my_addon:form_familiar_fox_mancianima_villager_drain_cd",
+        "my_addon:form_familiar_fox_mancianima_villager_drain_cd_tick"
     ],
     "icon": {
         "item": "minecraft:fox_spawn_egg"

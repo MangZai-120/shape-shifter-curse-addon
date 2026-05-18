@@ -8,6 +8,7 @@
     "effect.AllaySPTotemMixin",
     "AnkhStoneTotemMixin",
     "CursedMoonSpMessageMixin",
+    "entity.BindingAnkletAuraMixin",
     "entity.FallenAllayVexMixin",
     "effect.FrostFreezeDamageMixin",
     "entity.GoldenSandstormHungerMixin",

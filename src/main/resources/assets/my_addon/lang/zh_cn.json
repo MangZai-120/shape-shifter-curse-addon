@@ -346,5 +346,10 @@
   "ssc_addon.mancianima.assault.preparing": "契灵袭击§e即将到来§r（劫掠军正在集结）",
   "ssc_addon.mancianima.assault.preparing_msg": "§e钟声招魂！劫掠军将在 10 秒后抵达，已锁定 %s 名村民。",
   "ssc_addon.mancianima.assault.bossbar": "契灵袭击§f：§c剩余村民 %s",
-  "item.shape-shifter-curse.amulet_bracelet.cant_equip_mancianima": "契灵形态下守御脚环无法生效"
+  "item.shape-shifter-curse.amulet_bracelet.cant_equip_mancianima": "契灵形态下守御脚环无法生效",
+  "item.ssc_addon.binding_anklet": "绑定脚环",
+  "item.ssc_addon.binding_anklet.tooltip_1": "契灵专属·脚环槽",
+  "item.ssc_addon.binding_anklet.tooltip_2": "周围 16 格内的劫掠阵营生物",
+  "item.ssc_addon.binding_anklet.tooltip_3": "造成的伤害 +20%。佩戴者本人不享受加成。",
+  "item.ssc_addon.binding_anklet.tooltip_4": "仅能从劫掠者哨塔的宝箱中获取。"
 }

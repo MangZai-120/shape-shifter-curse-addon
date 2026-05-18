@@ -144,6 +144,8 @@ public class SscAddon implements ModInitializer {
 	public static final Item ACTIVE_CORAL_NECKLACE = new ActiveCoralNecklaceItem(new Item.Settings().maxCount(1));
 	public static final Item ANUBIS_CRYSTAL = new AnubisCrystalItem(new Item.Settings().maxCount(1).fireproof());
 	public static final Item ANKH_STONE = new AnkhStoneItem(new Item.Settings().maxCount(1).fireproof());
+	// 契灵专属：绑定脚环（feet/aglet 槽，与守御脚环互斥）
+	public static final Item BINDING_ANKLET = new net.onixary.shapeShifterCurseFabric.ssc_addon.item.BindingAnkletItem(new Item.Settings().maxCount(1).fireproof());
 	// SP Golden Sandstorm items
 	public static final Item EROSION_SAND_PRISM = new ErosionSandPrismItem(new Item.Settings().maxCount(1).fireproof());
 	public static final Item WITHERED_SAND_RING = new WitheredSandRingItem(new Item.Settings().maxCount(1).fireproof());
@@ -201,6 +203,7 @@ public class SscAddon implements ModInitializer {
 						entries.add(ACTIVE_CORAL_NECKLACE);
 						entries.add(ANUBIS_CRYSTAL);
 						entries.add(ANKH_STONE);
+						entries.add(BINDING_ANKLET);
 						entries.add(EROSION_SAND_PRISM);
 						entries.add(WITHERED_SAND_RING);
 						entries.add(ALLAY_HEAL_WAND);
@@ -294,6 +297,8 @@ public class SscAddon implements ModInitializer {
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "active_coral_necklace"), ACTIVE_CORAL_NECKLACE);
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "anubis_crystal"), ANUBIS_CRYSTAL);
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "ankh_stone"), ANKH_STONE);
+		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "binding_anklet"), BINDING_ANKLET);
+		net.onixary.shapeShifterCurseFabric.ssc_addon.item.BindingAnkletItem.registerLootTable();
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "erosion_sand_prism"), EROSION_SAND_PRISM);
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "withered_sand_ring"), WITHERED_SAND_RING);
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "allay_heal_wand"), ALLAY_HEAL_WAND);
