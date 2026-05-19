@@ -15,7 +15,8 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.WitchFamiliarEntity;
  * 女巫使魔发光眼睛渲染层 — 使用与MC蜘蛛完全一致的 RenderLayer.getEyes()
  * 特性：无光照计算 + 加法透明 + 黑暗中可见
  */
-@SuppressWarnings("deprecation")
+// 抑制 AzureLib 上游旧包名 [removal] 警告，待主包统一迁移到 mod.azure.azurelib.common.* 时再处理
+@SuppressWarnings({"removal", "deprecation"})
 public class WitchFamiliarEyesLayer extends GeoRenderLayer<WitchFamiliarEntity> {
 
 	// 眼睛发光纹理（只包含眼睛像素，其余透明）

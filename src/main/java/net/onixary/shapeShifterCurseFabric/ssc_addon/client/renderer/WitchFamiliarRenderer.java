@@ -26,6 +26,8 @@ import java.util.Optional;
  * - SSC从BipedEntityModel读取旋转值，此处用等效公式直接计算
  * - SSC使用static尾巴拖拽字段（单玩家），此处使用per-entity Map
  */
+// 抑制 AzureLib 上游旧包名 [removal] 警告，待主包统一迁移到 mod.azure.azurelib.common.* 时再处理
+@SuppressWarnings({"removal", "deprecation"})
 public class WitchFamiliarRenderer extends GeoEntityRenderer<WitchFamiliarEntity> {
 
 	private static final float MODEL_SCALE = 0.45f;

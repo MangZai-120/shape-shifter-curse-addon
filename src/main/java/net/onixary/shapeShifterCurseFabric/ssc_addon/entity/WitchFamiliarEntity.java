@@ -58,6 +58,8 @@ import java.util.UUID;
  * 女巫使魔 - 一种伴随女巫自然生成的敌对生物
  * 使用原版使魔外观，拥有火环技能，属于劫掠阵营
  */
+// 抑制 AzureLib 上游旧包名 [removal] 警告，待主包统一迁移到 mod.azure.azurelib.common.* 时再处理
+@SuppressWarnings({"removal", "deprecation"})
 public class WitchFamiliarEntity extends HostileEntity implements GeoEntity {
 
 	// 火环参数
