@@ -1,10 +1,21 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.client;
 
 import io.github.apace100.apoli.ApoliClient;
+import com.mojang.brigadier.CommandDispatcher;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.client.colorpicker.AdvancedColorScreen;
+import org.lwjgl.glfw.GLFW;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -38,6 +49,9 @@ import java.util.List;
 public class SscAddonClient implements ClientModInitializer {
 	public static final String CATEGORY = "key.categories.ssc_addon";
 	private static final Logger LOGGER = LoggerFactory.getLogger(SscAddonClient.class);
+
+	/** 打开高级调色 Screen 的键位（默认未绑定，玩家自行设置）。 */
+	public static KeyBinding openAdvancedColorKey;
 
 	private void addSplitTooltip(List<Text> lines, String key) {
 		if (I18n.hasTranslation(key)) {
@@ -148,5 +162,40 @@ public class SscAddonClient implements ClientModInitializer {
 		MancianimaPrimaryClient.register();
 
 		HandledScreens.register(SscAddon.POTION_BAG_SCREEN_HANDLER, PotionBagScreen::new);
+
+		// ====== 高级调色：键位 + 客户端指令 + cloth-config 入口按钮 ======
+		registerAdvancedColorEntries();
+		net.onixary.shapeShifterCurseFabric.ssc_addon.client.colorpicker.ClothConfigInjector.register();
+	}
+
+	private void registerAdvancedColorEntries() {
+		// 注册一个默认未绑定的键位，玩家可在控制设置里自行绑定
+		openAdvancedColorKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+				"key.ssc_addon.open_advanced_color",
+				InputUtil.Type.KEYSYM,
+				GLFW.GLFW_KEY_UNKNOWN,
+				CATEGORY));
+
+		// 每客户端 tick 检查键位（wasPressed 仅消费一次按下事件）
+		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			if (openAdvancedColorKey == null) return;
+			while (openAdvancedColorKey.wasPressed()) {
+				if (client.player != null && client.currentScreen == null) {
+					client.setScreen(new AdvancedColorScreen(null));
+				}
+			}
+		});
+
+		// 注册客户端指令 /ssca_palette advanced — 纯客户端，不发包
+		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+			dispatcher.register(ClientCommandManager.literal("ssca_palette")
+					.then(ClientCommandManager.literal("advanced")
+							.executes(ctx -> {
+								MinecraftClient mc = MinecraftClient.getInstance();
+								if (mc.player == null) return 0;
+								mc.send(() -> mc.setScreen(new AdvancedColorScreen(null)));
+								return 1;
+							})));
+		});
 	}
 }
