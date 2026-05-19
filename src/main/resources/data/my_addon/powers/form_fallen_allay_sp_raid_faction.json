@@ -75,7 +75,7 @@
     "immune_raid_damage": {
         "type": "origins:modify_damage_taken",
         "bientity_condition": {
-            "type": "origins:attacker_condition",
+            "type": "origins:target_condition",
             "condition": {
                 "type": "origins:or",
                 "conditions": [

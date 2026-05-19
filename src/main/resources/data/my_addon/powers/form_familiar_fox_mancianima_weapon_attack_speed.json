@@ -9,6 +9,9 @@
     "tick_rate": 5,
     "condition": {
         "type": "origins:equipped_item",
-        "equipment_slot": "mainhand"
+        "equipment_slot": "mainhand",
+        "item_condition": {
+            "type": "origins:empty"
+        }
     }
 }

@@ -11,7 +11,10 @@
                         {
                             "type": "origins:damage",
                             "amount": 3.0,
-                            "source": "magic"
+                            "source": {
+                                "name": "magic",
+                                "magic": true
+                            }
                         },
                         {
                             "type": "origins:execute_command",

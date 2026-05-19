@@ -10,6 +10,9 @@
     "condition": {
         "type": "origins:equipped_item",
         "equipment_slot": "mainhand",
+        "item_condition": {
+            "type": "origins:empty"
+        },
         "inverted": true
     }
 }

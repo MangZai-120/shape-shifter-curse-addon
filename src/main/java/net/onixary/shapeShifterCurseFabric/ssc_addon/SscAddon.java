@@ -593,6 +593,9 @@ public class SscAddon implements ModInitializer {
 	}
 
 	private void registerPlayerEventHandlers() {
+		// 兜底：玩家加入服务器时清理孤儿 mana 数据，修复老存档残留导致能量条不消失的 bug
+		net.onixary.shapeShifterCurseFabric.ssc_addon.util.StaleManaCleaner.register();
+
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
 			if (!alive) {
 				newPlayer.getItemCooldownManager().remove(LIFESAVING_CAT_TAIL);

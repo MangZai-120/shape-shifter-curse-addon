@@ -3,14 +3,7 @@
     "interval": 1,
     "entity_action": {
         "type": "origins:and",
-        "conditions": [
-            {
-                "type": "origins:resource",
-                "resource": "my_addon:form_allay_sp_beacon_active",
-                "comparison": "==",
-                "compare_to": 1
-            }
-        ]
+        "actions": []
     },
     "condition": {
         "type": "origins:resource",

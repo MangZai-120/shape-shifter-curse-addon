@@ -358,7 +358,7 @@
             "actions": [
                 {
                     "type": "shape-shifter-curse:spawn_particles_in_circle",
-                    "particle": "minecraft:dust 0.6 0.85 1.0 1.0",
+                    "particle": "minecraft:end_rod",
                     "count": 1,
                     "speed": 0.0,
                     "force": true,
