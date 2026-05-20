@@ -14,7 +14,6 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -359,8 +358,8 @@ public class SscAddonCommands {
 	private static int debugFormInfo(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 		ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
 
-		// 获取玩家形态组件
-		PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
+		// 获取玩家形态组件（getPlayerOrThrow 保证非空）
+		PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(java.util.Objects.requireNonNull(player));
 
 		// 准备调试信息（服务器日志保留原始英文，玩家聘天用可翻译版本）
 		StringBuilder debugInfo = new StringBuilder();

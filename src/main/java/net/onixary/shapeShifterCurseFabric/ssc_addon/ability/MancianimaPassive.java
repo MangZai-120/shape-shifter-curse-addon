@@ -77,7 +77,6 @@ public final class MancianimaPassive {
 		final BlockPos villageCenter;
 		RaiderPhase phase = RaiderPhase.ACTIVE;
 		long phaseEndTime = Long.MAX_VALUE;
-		BlockPos marchTarget;
 		RaiderGroup(net.minecraft.util.Identifier dim, BlockPos center) {
 			this.dimensionId = dim;
 			this.villageCenter = center;
@@ -239,7 +238,6 @@ public final class MancianimaPassive {
 		boolean raidersSpawned = false;
 		// —— 离开/暂停机制 ——
 		boolean paused = false; // true：玩家离开村庄，bossbar 灰色显示
-		long startTime;          // 触发袭击时的 world.getTime()
 		long expireTime;         // 触发后 24000 ticks（一日）后自动失败
 		AssaultData(Set<UUID> targets, ServerBossBar bossBar,
 				net.minecraft.util.Identifier dimensionId, Vec3d origin, long startTime) {
@@ -248,7 +246,6 @@ public final class MancianimaPassive {
 			this.bossBar = bossBar;
 			this.dimensionId = dimensionId;
 			this.origin = origin;
-			this.startTime = startTime;
 			this.expireTime = startTime + 24000L;
 		}
 	}
@@ -615,7 +612,6 @@ public final class MancianimaPassive {
 						BlockPos target = group.villageCenter.add(
 								(int) (Math.cos(ang) * RAIDER_MARCH_DISTANCE), 0,
 								(int) (Math.sin(ang) * RAIDER_MARCH_DISTANCE));
-						group.marchTarget = target;
 						group.phase = RaiderPhase.MARCH;
 						for (MobEntity m : alive) {
 							// 解除 home，让他们能离开村庄
