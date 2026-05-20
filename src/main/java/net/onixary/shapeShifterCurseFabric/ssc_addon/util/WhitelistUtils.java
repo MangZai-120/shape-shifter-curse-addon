@@ -152,7 +152,9 @@ public class WhitelistUtils {
     public static boolean isProtected(UUID ownerUuid, ServerWorld world, LivingEntity target) {
         if (ownerUuid == null) return false;
         // 跨维度查找：使用 server.getPlayerManager 而非 world.getPlayerByUuid
-        ServerPlayerEntity owner = world.getServer().getPlayerManager().getPlayer(ownerUuid);
+        // 关服瞬间或客户端世界，getServer() 可能返回 null —— 防御性判空，避免 NPE
+        var server = world.getServer();
+        ServerPlayerEntity owner = (server == null) ? null : server.getPlayerManager().getPlayer(ownerUuid);
         if (owner != null) {
             return isProtected(owner, target);
         }

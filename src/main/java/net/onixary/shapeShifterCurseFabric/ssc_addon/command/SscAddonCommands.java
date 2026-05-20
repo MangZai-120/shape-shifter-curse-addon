@@ -223,71 +223,71 @@ public class SscAddonCommands {
 	private static final long MANCIANIMA_ASSAULT_COOLDOWN_TICKS = 24000L;
 
 	private static int mancianimaAssaultReset(CommandContext<ServerCommandSource> ctx, ServerPlayerEntity player) {
-		if (player == null) { ctx.getSource().sendError(Text.literal("无目标玩家")); return 0; }
+		if (player == null) { ctx.getSource().sendError(Text.translatable("command.ssc_addon.common.no_target_player")); return 0; }
 		net.minecraft.server.MinecraftServer srv = ctx.getSource().getServer();
 		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaAssaultState state =
 				net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaAssaultState.get(srv);
 		if (state.lastRoll.remove(player.getUuid()) != null) {
 			state.markDirty();
 		}
-		ctx.getSource().sendFeedback(() -> Text.literal("§a[契灵袭击]§r 已重置 " + player.getName().getString() + " 的每日冷却（现在可触发）"), true);
+		ctx.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.assault.reset", player.getName().getString()), true);
 		return 1;
 	}
 
 	private static int mancianimaAssaultLock(CommandContext<ServerCommandSource> ctx, ServerPlayerEntity player) {
-		if (player == null) { ctx.getSource().sendError(Text.literal("无目标玩家")); return 0; }
+		if (player == null) { ctx.getSource().sendError(Text.translatable("command.ssc_addon.common.no_target_player")); return 0; }
 		net.minecraft.server.MinecraftServer srv = ctx.getSource().getServer();
 		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaAssaultState state =
 				net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaAssaultState.get(srv);
 		state.lastRoll.put(player.getUuid(), srv.getOverworld().getTime());
 		state.markDirty();
-		ctx.getSource().sendFeedback(() -> Text.literal("§e[契灵袭击]§r 已锁定 " + player.getName().getString() + " 的当日触发权限（24000 tick 内不可再发动）"), true);
+		ctx.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.assault.lock", player.getName().getString()), true);
 		return 1;
 	}
 
 	private static int mancianimaAssaultStatus(CommandContext<ServerCommandSource> ctx, ServerPlayerEntity player) {
-		if (player == null) { ctx.getSource().sendError(Text.literal("无目标玩家")); return 0; }
+		if (player == null) { ctx.getSource().sendError(Text.translatable("command.ssc_addon.common.no_target_player")); return 0; }
 		net.minecraft.server.MinecraftServer srv = ctx.getSource().getServer();
 		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaAssaultState state =
 				net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaAssaultState.get(srv);
 		Long last = state.lastRoll.get(player.getUuid());
 		long now = srv.getOverworld().getTime();
 		if (last == null || now - last >= MANCIANIMA_ASSAULT_COOLDOWN_TICKS) {
-			ctx.getSource().sendFeedback(() -> Text.literal("§a[契灵袭击]§r " + player.getName().getString() + " 当前可触发"), false);
+			ctx.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.assault.status.available", player.getName().getString()), false);
 		} else {
 			long remain = MANCIANIMA_ASSAULT_COOLDOWN_TICKS - (now - last);
-			ctx.getSource().sendFeedback(() -> Text.literal("§c[契灵袭击]§r " + player.getName().getString() + " 冷却中：剩余 " + remain + " tick (" + (remain / 20) + "s)"), false);
+			ctx.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.assault.status.cooldown", player.getName().getString(), remain, remain / 20), false);
 		}
 		return 1;
 	}
 
 	// ============== /ssc_addon resistance ==============
 	private static int resistanceGet(CommandContext<ServerCommandSource> ctx, ServerPlayerEntity player) {
-		if (player == null) { ctx.getSource().sendError(Text.literal("无目标玩家")); return 0; }
+		if (player == null) { ctx.getSource().sendError(Text.translatable("command.ssc_addon.common.no_target_player")); return 0; }
 		int cur = PowerUtils.getResourceValue(player, FormIdentifiers.MANCIANIMA_RESISTANCE);
 		int max = PowerUtils.getResourceMax(player, FormIdentifiers.MANCIANIMA_RESISTANCE);
-		ctx.getSource().sendFeedback(() -> Text.literal("§b[抵抗值]§r " + player.getName().getString() + " : " + cur + " / " + max), false);
+		ctx.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.resistance.get", player.getName().getString(), cur, max), false);
 		return 1;
 	}
 
 	private static int resistanceSet(CommandContext<ServerCommandSource> ctx, ServerPlayerEntity player, int value) {
-		if (player == null) { ctx.getSource().sendError(Text.literal("无目标玩家")); return 0; }
+		if (player == null) { ctx.getSource().sendError(Text.translatable("command.ssc_addon.common.no_target_player")); return 0; }
 		int max = PowerUtils.getResourceMax(player, FormIdentifiers.MANCIANIMA_RESISTANCE);
-		if (max <= 0) { ctx.getSource().sendError(Text.literal("该玩家未持有契灵抗伤 power（非契灵形态？）")); return 0; }
+		if (max <= 0) { ctx.getSource().sendError(Text.translatable("command.ssc_addon.resistance.no_power")); return 0; }
 		int clamped = Math.max(0, Math.min(value, max));
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.MANCIANIMA_RESISTANCE, clamped);
-		ctx.getSource().sendFeedback(() -> Text.literal("§a[抵抗值]§r 设置 " + player.getName().getString() + " = " + clamped + " / " + max), true);
+		ctx.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.resistance.set", player.getName().getString(), clamped, max), true);
 		return 1;
 	}
 
 	private static int resistanceAdd(CommandContext<ServerCommandSource> ctx, ServerPlayerEntity player, int delta) {
-		if (player == null) { ctx.getSource().sendError(Text.literal("无目标玩家")); return 0; }
+		if (player == null) { ctx.getSource().sendError(Text.translatable("command.ssc_addon.common.no_target_player")); return 0; }
 		int max = PowerUtils.getResourceMax(player, FormIdentifiers.MANCIANIMA_RESISTANCE);
-		if (max <= 0) { ctx.getSource().sendError(Text.literal("该玩家未持有契灵抗伤 power（非契灵形态？）")); return 0; }
+		if (max <= 0) { ctx.getSource().sendError(Text.translatable("command.ssc_addon.resistance.no_power")); return 0; }
 		int cur = PowerUtils.getResourceValue(player, FormIdentifiers.MANCIANIMA_RESISTANCE);
 		int next = Math.max(0, Math.min(cur + delta, max));
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.MANCIANIMA_RESISTANCE, next);
-		ctx.getSource().sendFeedback(() -> Text.literal("§a[抵抗值]§r " + player.getName().getString() + " : " + cur + " → " + next + " / " + max), true);
+		ctx.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.resistance.add", player.getName().getString(), cur, next, max), true);
 		return 1;
 	}
 
@@ -333,7 +333,7 @@ public class SscAddonCommands {
 			}
 		}
 		final int finalCount = count;
-		context.getSource().sendFeedback(() -> Text.literal("Set mana to " + amount + " for " + finalCount + " players."), true);
+		context.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.set_mana.result", finalCount, amount), true);
 		return count;
 	}
 
@@ -359,36 +359,39 @@ public class SscAddonCommands {
 	private static int debugFormInfo(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 		ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
 
-		// Get player form component
+		// 获取玩家形态组件
 		PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
 
-		// Prepare debug info
+		// 准备调试信息（服务器日志保留原始英文，玩家聘天用可翻译版本）
 		StringBuilder debugInfo = new StringBuilder();
 		debugInfo.append("===== SSC_ADDON FORM DEBUG =====\n");
+		player.sendMessage(Text.translatable("command.ssc_addon.debug_form.header").formatted(Formatting.AQUA), false);
 
 		if (component == null) {
 			debugInfo.append("PlayerFormComponent: NULL\n");
+			player.sendMessage(Text.translatable("command.ssc_addon.debug_form.no_component").formatted(Formatting.AQUA), false);
 		} else {
 			PlayerFormBase currentForm = component.getCurrentForm();
 			if (currentForm == null) {
 				debugInfo.append("Current Form: NULL (no form active)\n");
+				player.sendMessage(Text.translatable("command.ssc_addon.debug_form.no_form").formatted(Formatting.AQUA), false);
 			} else {
 				debugInfo.append("Form ID: ").append(currentForm.FormID).append("\n");
+				player.sendMessage(Text.translatable("command.ssc_addon.debug_form.form_id", String.valueOf(currentForm.FormID)).formatted(Formatting.AQUA), false);
 				debugInfo.append("Form Class: ").append(currentForm.getClass().getName()).append("\n");
+				player.sendMessage(Text.translatable("command.ssc_addon.debug_form.form_class", currentForm.getClass().getName()).formatted(Formatting.AQUA), false);
 				debugInfo.append("Phase: ").append(currentForm.getPhase()).append("\n");
+				player.sendMessage(Text.translatable("command.ssc_addon.debug_form.phase", String.valueOf(currentForm.getPhase())).formatted(Formatting.AQUA), false);
 				debugInfo.append("Body Type: ").append(currentForm.getBodyType()).append("\n");
+				player.sendMessage(Text.translatable("command.ssc_addon.debug_form.body_type", String.valueOf(currentForm.getBodyType())).formatted(Formatting.AQUA), false);
 			}
 		}
 		debugInfo.append("================================");
-		// Check if info level is enabled before logging
+		player.sendMessage(Text.translatable("command.ssc_addon.debug_form.footer").formatted(Formatting.AQUA), false);
+
+		// 记录到服务器日志
 		if (LOGGER.isInfoEnabled()) {
 			LOGGER.info(debugInfo.toString());
-		}
-
-		// Send to player chat
-		String[] lines = debugInfo.toString().split("\n");
-		for (String line : lines) {
-			player.sendMessage(Text.literal(line).formatted(Formatting.AQUA), false);
 		}
 
 		return 1;
@@ -396,27 +399,26 @@ public class SscAddonCommands {
 
 	private static int debugMana(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 		ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-		StringBuilder debugMsg = new StringBuilder();
 		boolean foundMana = false;
 
 		int snowFoxVal = PowerUtils.getResourceValue(player, FormIdentifiers.SNOW_FOX_RESOURCE);
 		int snowFoxMax = PowerUtils.getResourceMax(player, FormIdentifiers.SNOW_FOX_RESOURCE);
 		if (snowFoxMax > 0) {
-			debugMsg.append("Snow Fox SP: ").append(snowFoxVal).append("/").append(snowFoxMax).append("\n");
+			player.sendMessage(Text.translatable("command.ssc_addon.debug_mana.snow_fox", snowFoxVal, snowFoxMax).formatted(Formatting.AQUA), false);
 			foundMana = true;
 		}
 
 		int allayVal = PowerUtils.getResourceValue(player, FormIdentifiers.ALLAY_MANA_RESOURCE);
 		int allayMax = PowerUtils.getResourceMax(player, FormIdentifiers.ALLAY_MANA_RESOURCE);
 		if (allayMax > 0) {
-			debugMsg.append("Allay SP: ").append(allayVal).append("/").append(allayMax).append("\n");
+			player.sendMessage(Text.translatable("command.ssc_addon.debug_mana.allay", allayVal, allayMax).formatted(Formatting.AQUA), false);
 			foundMana = true;
 		}
 
 		int soulVal = PowerUtils.getResourceValue(player, FormIdentifiers.ANUBIS_WOLF_SP_SOUL_ENERGY);
 		int soulMax = PowerUtils.getResourceMax(player, FormIdentifiers.ANUBIS_WOLF_SP_SOUL_ENERGY);
 		if (soulMax > 0) {
-			debugMsg.append("Anubis Wolf SP: ").append(soulVal).append("/").append(soulMax).append("\n");
+			player.sendMessage(Text.translatable("command.ssc_addon.debug_mana.anubis_wolf", soulVal, soulMax).formatted(Formatting.AQUA), false);
 			foundMana = true;
 		}
 
@@ -424,11 +426,11 @@ public class SscAddonCommands {
 			ManaComponent manaComponent = ManaUtils.getManaComponent(player);
 			if (manaComponent != null) {
 				if (manaComponent.getManaTypeID() != null) {
-					debugMsg.append("Mana Type: ").append(manaComponent.getManaTypeID()).append("\n");
-					debugMsg.append("Mana: ").append(manaComponent.getMana()).append("/").append(manaComponent.getMaxMana()).append("\n");
+					player.sendMessage(Text.translatable("command.ssc_addon.debug_mana.mana_type", manaComponent.getManaTypeID().toString()).formatted(Formatting.AQUA), false);
+					player.sendMessage(Text.translatable("command.ssc_addon.debug_mana.mana", manaComponent.getMana(), manaComponent.getMaxMana()).formatted(Formatting.AQUA), false);
 					foundMana = true;
 				} else if (manaComponent.getMaxMana() > 0) {
-					debugMsg.append("Mana (No Type): ").append(manaComponent.getMana()).append("/").append(manaComponent.getMaxMana()).append("\n");
+					player.sendMessage(Text.translatable("command.ssc_addon.debug_mana.mana_notype", manaComponent.getMana(), manaComponent.getMaxMana()).formatted(Formatting.AQUA), false);
 					foundMana = true;
 				}
 			}
@@ -437,9 +439,7 @@ public class SscAddonCommands {
 		}
 
 		if (!foundMana) {
-			player.sendMessage(Text.literal("无能量条 (No Mana Bar)").formatted(Formatting.YELLOW), false);
-		} else {
-			player.sendMessage(Text.literal(debugMsg.toString().trim()).formatted(Formatting.AQUA), false);
+			player.sendMessage(Text.translatable("command.ssc_addon.debug_mana.no_mana").formatted(Formatting.YELLOW), false);
 		}
 		return 1;
 	}
@@ -471,7 +471,7 @@ public class SscAddonCommands {
 		net.minecraft.item.ItemStack book = net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.getStoryBookById(bookId, language);
 
 		if (book.isEmpty()) {
-			player.sendMessage(Text.literal("未找到书籍 ID: " + bookId + " (Book not found)").formatted(Formatting.RED), false);
+			player.sendMessage(Text.translatable("command.ssc_addon.book.not_found", bookId).formatted(Formatting.RED), false);
 			return 0;
 		}
 
@@ -484,7 +484,7 @@ public class SscAddonCommands {
 		}
 
 		String bookTitle = bookData != null ? bookData.title : bookId;
-		player.sendMessage(Text.literal("已获得书籍: " + bookTitle).formatted(Formatting.GREEN), false);
+		player.sendMessage(Text.translatable("command.ssc_addon.book.obtained", bookTitle).formatted(Formatting.GREEN), false);
 		return 1;
 	}
 
@@ -517,12 +517,12 @@ public class SscAddonCommands {
 		}
 
 		if (bookIds.isEmpty()) {
-			player.sendMessage(Text.literal("没有可用的书籍 (No books available)").formatted(Formatting.YELLOW), false);
+			player.sendMessage(Text.translatable("command.ssc_addon.book.list.empty").formatted(Formatting.YELLOW), false);
 			return 0;
 		}
 
-		player.sendMessage(Text.literal("===== 可用书籍列表 (Available Books) =====").formatted(Formatting.GOLD), false);
-		player.sendMessage(Text.literal("共 " + bookIds.size() + " 本书籍:").formatted(Formatting.AQUA), false);
+		player.sendMessage(Text.translatable("command.ssc_addon.book.list.header").formatted(Formatting.GOLD), false);
+		player.sendMessage(Text.translatable("command.ssc_addon.book.list.count", bookIds.size()).formatted(Formatting.AQUA), false);
 
 		for (String bookId : bookIds) {
 			net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.BookData bookData =
@@ -534,14 +534,14 @@ public class SscAddonCommands {
 				if (displayTitle.length() > 30) {
 					displayTitle = displayTitle.substring(0, 27) + "...";
 				}
-				player.sendMessage(Text.literal("  [" + bookId + "] " + displayTitle + " - " + bookData.author).formatted(Formatting.WHITE), false);
+				player.sendMessage(Text.translatable("command.ssc_addon.book.list.entry", bookId, displayTitle, bookData.author).formatted(Formatting.WHITE), false);
 			} else {
-				player.sendMessage(Text.literal("  [" + bookId + "] (数据加载失败)").formatted(Formatting.RED), false);
+				player.sendMessage(Text.translatable("command.ssc_addon.book.list.entry_failed", bookId).formatted(Formatting.RED), false);
 			}
 		}
 
-		player.sendMessage(Text.literal("=========================================").formatted(Formatting.GOLD), false);
-		player.sendMessage(Text.literal("使用 /ssc_addon get_book <ID> 获取书籍").formatted(Formatting.GRAY), false);
+		player.sendMessage(Text.translatable("command.ssc_addon.book.list.footer").formatted(Formatting.GOLD), false);
+		player.sendMessage(Text.translatable("command.ssc_addon.book.list.hint").formatted(Formatting.GRAY), false);
 
 		return bookIds.size();
 	}
@@ -555,11 +555,10 @@ public class SscAddonCommands {
 		try {
 			net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.reloadBooks();
 			int bookCount = net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.getBookCount();
-			player.sendMessage(Text.literal("书籍配置已重新加载！共加载 " + bookCount + " 本书籍。").formatted(Formatting.GREEN), false);
-			player.sendMessage(Text.literal("Books reloaded! Loaded " + bookCount + " books.").formatted(Formatting.GREEN), false);
+			player.sendMessage(Text.translatable("command.ssc_addon.reload.books.success", bookCount).formatted(Formatting.GREEN), false);
 			return 1;
 		} catch (Exception e) {
-			player.sendMessage(Text.literal("重新加载书籍失败: " + e.getMessage()).formatted(Formatting.RED), false);
+			player.sendMessage(Text.translatable("command.ssc_addon.reload.books.fail", e.getMessage()).formatted(Formatting.RED), false);
 			LOGGER.error("Failed to reload books", e);
 			return 0;
 		}
@@ -573,11 +572,10 @@ public class SscAddonCommands {
 
 		try {
 			ConfigChangeManager.notifyChange();
-			player.sendMessage(Text.literal("模组配置已重新加载！").formatted(Formatting.GREEN), true);
-			player.sendMessage(Text.literal("Mod config reloaded!").formatted(Formatting.GREEN), true);
+			player.sendMessage(Text.translatable("command.ssc_addon.reload.config.success").formatted(Formatting.GREEN), true);
 			return 1;
 		} catch (Exception e) {
-			player.sendMessage(Text.literal("重新加载配置失败: " + e.getMessage()).formatted(Formatting.RED), true);
+			player.sendMessage(Text.translatable("command.ssc_addon.reload.config.fail", e.getMessage()).formatted(Formatting.RED), true);
 			LOGGER.error("Failed to reload config", e);
 			return 0;
 		}
@@ -657,16 +655,16 @@ public class SscAddonCommands {
 		String skill = StringArgumentType.getString(context, "skill");
 
 		if (isSkillBlocked(target, form, skill)) {
-			context.getSource().sendFeedback(() -> Text.literal(
-					"[SSC] " + form + "/" + skill + " is already blocked for " + target.getName().getString()
+			context.getSource().sendFeedback(() -> Text.translatable(
+					"command.ssc_addon.block_skill.already", form, skill, target.getName().getString()
 			).formatted(Formatting.YELLOW), false);
 			return 0;
 		}
 
 		blockSkill(target, form, skill);
 		LOGGER.info("[SSC] Blocked " + form + "/" + skill + " for " + target.getName().getString());
-		context.getSource().sendFeedback(() -> Text.literal(
-				"[SSC] Blocked " + form + "/" + skill + " for " + target.getName().getString()
+		context.getSource().sendFeedback(() -> Text.translatable(
+				"command.ssc_addon.block_skill.success", target.getName().getString(), form, skill
 		).formatted(Formatting.GREEN), true);
 		return 1;
 	}
@@ -677,16 +675,16 @@ public class SscAddonCommands {
 		String skill = StringArgumentType.getString(context, "skill");
 
 		if (!isSkillBlocked(target, form, skill)) {
-			context.getSource().sendFeedback(() -> Text.literal(
-					"[SSC] " + form + "/" + skill + " is not blocked for " + target.getName().getString()
+			context.getSource().sendFeedback(() -> Text.translatable(
+					"command.ssc_addon.unblock_skill.not_blocked", form, skill, target.getName().getString()
 			).formatted(Formatting.YELLOW), false);
 			return 0;
 		}
 
 		unblockSkill(target, form, skill);
 		LOGGER.info("[SSC] Unblocked " + form + "/" + skill + " for " + target.getName().getString());
-		context.getSource().sendFeedback(() -> Text.literal(
-				"[SSC] Unblocked " + form + "/" + skill + " for " + target.getName().getString()
+		context.getSource().sendFeedback(() -> Text.translatable(
+				"command.ssc_addon.unblock_skill.success", target.getName().getString(), form, skill
 		).formatted(Formatting.GREEN), true);
 		return 1;
 	}
@@ -696,19 +694,19 @@ public class SscAddonCommands {
 		List<String> blockedSkills = getBlockedSkills(target);
 
 		if (blockedSkills.isEmpty()) {
-			context.getSource().sendFeedback(() -> Text.literal(
-					"[SSC] No skills blocked for " + target.getName().getString()
+			context.getSource().sendFeedback(() -> Text.translatable(
+					"command.ssc_addon.list_blocked.empty", target.getName().getString()
 			).formatted(Formatting.YELLOW), false);
 			return 0;
 		}
 
-		context.getSource().sendFeedback(() -> Text.literal(
-				"[SSC] Blocked skills for " + target.getName().getString() + ":"
+		context.getSource().sendFeedback(() -> Text.translatable(
+				"command.ssc_addon.list_blocked.header", target.getName().getString()
 		).formatted(Formatting.GOLD), false);
 
 		for (String blocked : blockedSkills) {
-			context.getSource().sendFeedback(() -> Text.literal(
-					"  - " + blocked
+			context.getSource().sendFeedback(() -> Text.translatable(
+					"command.ssc_addon.list_blocked.entry", blocked
 			).formatted(Formatting.WHITE), false);
 		}
 
@@ -721,7 +719,7 @@ public class SscAddonCommands {
 
 		if (isSkillBlocked(target, form, skill)) {
 			LOGGER.warn("[SSC] Blocked skill invocation: " + form + "/" + skill + " on " + target.getName());
-			source.sendError(Text.literal("[SSC] Skill is blocked: " + form + "/" + skill));
+			source.sendError(Text.translatable("command.ssc_addon.ssc_test.skill_blocked", form, skill));
 			return 0;
 		}
 
@@ -734,7 +732,7 @@ public class SscAddonCommands {
         }
 
         LOGGER.warn("[SSC] Unknown form: " + form);
-		source.sendError(Text.literal("[SSC] Unknown form: " + form));
+		source.sendError(Text.translatable("command.ssc_addon.ssc_test.unknown_form", form));
 		return 0;
 	}
 
@@ -744,9 +742,9 @@ public class SscAddonCommands {
 				LOGGER.info("[SSC] Invoking snow_fox/melee_primary on " + target.getName().getString() + " by " + executorName);
 				boolean success = SnowFoxSpMeleeAbility.execute(target);
 				if (!success) {
-					source.sendFeedback(() -> Text.literal("[SSC] snow_fox/melee_primary failed (no mana or already dashing)").formatted(Formatting.YELLOW), false);
+					source.sendFeedback(() -> Text.translatable("command.ssc_addon.ssc_test.snow_fox.melee_primary.fail").formatted(Formatting.YELLOW), false);
 				} else {
-					source.sendFeedback(() -> Text.literal("[SSC] snow_fox/melee_primary invoked").formatted(Formatting.GREEN), false);
+					source.sendFeedback(() -> Text.translatable("command.ssc_addon.ssc_test.snow_fox.melee_primary.success").formatted(Formatting.GREEN), false);
 				}
 				yield 1;
 			}
@@ -754,9 +752,9 @@ public class SscAddonCommands {
 				LOGGER.info("[SSC] Invoking snow_fox/melee_secondary on " + target.getName().getString() + " by " + executorName);
 				boolean success = SnowFoxSpTeleportAttack.execute(target);
 				if (!success) {
-					source.sendFeedback(() -> Text.literal("[SSC] snow_fox/melee_secondary failed (no targets, mana, or already attacking)").formatted(Formatting.YELLOW), false);
+					source.sendFeedback(() -> Text.translatable("command.ssc_addon.ssc_test.snow_fox.melee_secondary.fail").formatted(Formatting.YELLOW), false);
 				} else {
-					source.sendFeedback(() -> Text.literal("[SSC] snow_fox/melee_secondary invoked").formatted(Formatting.GREEN), false);
+					source.sendFeedback(() -> Text.translatable("command.ssc_addon.ssc_test.snow_fox.melee_secondary.success").formatted(Formatting.GREEN), false);
 				}
 				yield 1;
 			}
@@ -764,9 +762,9 @@ public class SscAddonCommands {
 				LOGGER.info("[SSC] Invoking snow_fox/ranged_primary (frost_ball) on " + target.getName().getString() + " by " + executorName);
 				boolean success = invokeSnowFoxFrostBall(target);
 				if (!success) {
-					source.sendFeedback(() -> Text.literal("[SSC] snow_fox/ranged_primary failed (on CD or insufficient mana)").formatted(Formatting.YELLOW), false);
+					source.sendFeedback(() -> Text.translatable("command.ssc_addon.ssc_test.snow_fox.ranged_primary.fail").formatted(Formatting.YELLOW), false);
 				} else {
-					source.sendFeedback(() -> Text.literal("[SSC] snow_fox/ranged_primary invoked").formatted(Formatting.GREEN), false);
+					source.sendFeedback(() -> Text.translatable("command.ssc_addon.ssc_test.snow_fox.ranged_primary.success").formatted(Formatting.GREEN), false);
 				}
 				yield success ? 1 : 0;
 			}
@@ -774,15 +772,15 @@ public class SscAddonCommands {
 				LOGGER.info("[SSC] Invoking snow_fox/ranged_secondary (frost_storm) on " + target.getName().getString() + " by " + executorName);
 				boolean success = SnowFoxSpFrostStorm.startCharging(target);
 				if (!success) {
-					source.sendFeedback(() -> Text.literal("[SSC] snow_fox/ranged_secondary failed (already charging, on CD, or no mana)").formatted(Formatting.YELLOW), false);
+					source.sendFeedback(() -> Text.translatable("command.ssc_addon.ssc_test.snow_fox.ranged_secondary.fail").formatted(Formatting.YELLOW), false);
 				} else {
-					source.sendFeedback(() -> Text.literal("[SSC] snow_fox/ranged_secondary invoked").formatted(Formatting.GREEN), false);
+					source.sendFeedback(() -> Text.translatable("command.ssc_addon.ssc_test.snow_fox.ranged_secondary.success").formatted(Formatting.GREEN), false);
 				}
 				yield 1;
 			}
 default -> {
                 LOGGER.warn("[SSC] Unknown snow_fox skill: " + skill);
-                source.sendError(Text.literal("[SSC] Unknown skill: " + skill + " for form snow_fox"));
+                source.sendError(Text.translatable("command.ssc_addon.ssc_test.unknown_skill", skill, "snow_fox"));
                 yield 0;
             }
         };
@@ -794,9 +792,9 @@ default -> {
                 LOGGER.info("[SSC] Invoking anubis_wolf/summon_wolves on " + target.getName().getString() + " by " + executorName);
                 boolean success = AnubisWolfSpSummonWolves.execute(target);
                 if (!success) {
-                    source.sendFeedback(() -> Text.literal("[SSC] anubis_wolf/summon_wolves failed (on CD, already summoning, or max wolves)").formatted(Formatting.YELLOW), false);
+                    source.sendFeedback(() -> Text.translatable("command.ssc_addon.ssc_test.anubis_wolf.summon_wolves.fail").formatted(Formatting.YELLOW), false);
                 } else {
-                    source.sendFeedback(() -> Text.literal("[SSC] anubis_wolf/summon_wolves invoked").formatted(Formatting.GREEN), false);
+                    source.sendFeedback(() -> Text.translatable("command.ssc_addon.ssc_test.anubis_wolf.summon_wolves.success").formatted(Formatting.GREEN), false);
                 }
                 yield 1;
             }
@@ -804,15 +802,15 @@ default -> {
                 LOGGER.info("[SSC] Invoking anubis_wolf/death_domain on " + target.getName().getString() + " by " + executorName);
                 boolean success = AnubisWolfSpDeathDomain.execute(target);
                 if (!success) {
-                    source.sendFeedback(() -> Text.literal("[SSC] anubis_wolf/death_domain failed (on CD or already active)").formatted(Formatting.YELLOW), false);
+                    source.sendFeedback(() -> Text.translatable("command.ssc_addon.ssc_test.anubis_wolf.death_domain.fail").formatted(Formatting.YELLOW), false);
                 } else {
-                    source.sendFeedback(() -> Text.literal("[SSC] anubis_wolf/death_domain invoked").formatted(Formatting.GREEN), false);
+                    source.sendFeedback(() -> Text.translatable("command.ssc_addon.ssc_test.anubis_wolf.death_domain.success").formatted(Formatting.GREEN), false);
                 }
                 yield 1;
             }
             default -> {
                 LOGGER.warn("[SSC] Unknown anubis_wolf skill: " + skill);
-                source.sendError(Text.literal("[SSC] Unknown skill: " + skill + " for form anubis_wolf"));
+                source.sendError(Text.translatable("command.ssc_addon.ssc_test.unknown_skill", skill, "anubis_wolf"));
                 yield 0;
             }
         };
@@ -823,18 +821,18 @@ default -> {
 			case "jukebox_charge" -> {
 				LOGGER.info("[SSC] Invoking allay/jukebox_charge on " + target.getName().getString() + " by " + executorName);
 				AllaySPJukebox.tick(target);
-				source.sendFeedback(() -> Text.literal("[SSC] allay/jukebox_charge triggered").formatted(Formatting.AQUA), false);
+				source.sendFeedback(() -> Text.translatable("command.ssc_addon.ssc_test.allay.jukebox_charge.triggered").formatted(Formatting.AQUA), false);
 				yield 1;
 			}
 			case "group_heal" -> {
 				LOGGER.info("[SSC] Invoking allay/group_heal on " + target.getName().getString() + " by " + executorName);
 				AllaySPGroupHeal.tick(target);
-				source.sendFeedback(() -> Text.literal("[SSC] allay/group_heal triggered").formatted(Formatting.AQUA), false);
+				source.sendFeedback(() -> Text.translatable("command.ssc_addon.ssc_test.allay.group_heal.triggered").formatted(Formatting.AQUA), false);
 				yield 1;
 			}
 			default -> {
 				LOGGER.warn("[SSC] Unknown allay skill: " + skill);
-				source.sendError(Text.literal("[SSC] Unknown skill: " + skill + " for form allay"));
+				source.sendError(Text.translatable("command.ssc_addon.ssc_test.unknown_skill", skill, "allay"));
 				yield 0;
 			}
 		};

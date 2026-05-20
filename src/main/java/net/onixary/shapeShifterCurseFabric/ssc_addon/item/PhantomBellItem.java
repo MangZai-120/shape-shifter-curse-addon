@@ -2,7 +2,8 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
 import dev.emi.trinkets.api.SlotReference;
 import dev.emi.trinkets.api.TrinketItem;
-import net.minecraft.client.MinecraftClient;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
@@ -45,35 +46,21 @@ public class PhantomBellItem extends TrinketItem {
 	}
 
 	/**
-	 * 获取当前冷却剩余ticks (客户端使用)
+	 * 获取当前冷却剩余ticks (仅客户端有效)。
+	 * 通过 {@link FabricLoader} 环境守卫 + {@link LifesavingCatTailClient} 隔离类，
+	 * 保证专用服务端不会触发 {@code MinecraftClient} 的类链接。
 	 */
 	private int getCooldownRemaining() {
-		try {
-			MinecraftClient client = MinecraftClient.getInstance();
-			if (client.player != null) {
-				float cooldownProgress = client.player.getItemCooldownManager().getCooldownProgress(this, 0.0f);
-				// cooldownProgress: 1.0 = 刚开始冷却, 0.0 = 冷却完成
-				return (int) (cooldownProgress * MAX_COOLDOWN);
-			}
-		} catch (Exception e) {
-			// 服务端调用时可能出错，忽略
-		}
-		return 0;
+		if (FabricLoader.getInstance().getEnvironmentType() != EnvType.CLIENT) return 0;
+		return LifesavingCatTailClient.getCooldownRemaining(this, MAX_COOLDOWN);
 	}
 
 	/**
-	 * 判断是否在冷却中 (客户端使用)
+	 * 判断是否在冷却中 (仅客户端有效)。
 	 */
 	private boolean isOnCooldown() {
-		try {
-			MinecraftClient client = MinecraftClient.getInstance();
-			if (client.player != null) {
-				return client.player.getItemCooldownManager().isCoolingDown(this);
-			}
-		} catch (Exception e) {
-			// 服务端调用时可能出错，忽略
-		}
-		return false;
+		if (FabricLoader.getInstance().getEnvironmentType() != EnvType.CLIENT) return false;
+		return LifesavingCatTailClient.isOnCooldown(this);
 	}
 
 	/**

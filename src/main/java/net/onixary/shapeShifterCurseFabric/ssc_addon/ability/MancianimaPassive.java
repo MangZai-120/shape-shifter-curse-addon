@@ -504,7 +504,9 @@ public final class MancianimaPassive {
 			if (remaining == 0) {
 				ServerPlayerEntity p = dead.getWorld().getServer() == null ? null
 						: dead.getWorld().getServer().getPlayerManager().getPlayer(e.getKey());
-				if (p != null) {
+				// 跨维度防御：若玩家不在 dead 所在的世界（比如已传送走），不在该世界给奖励/播音，
+				// 但仍要清除袭击状态，避免数据残留
+				if (p != null && p.getWorld() == dead.getWorld()) {
 					// 袭击成功完成：在此记录当天冷却（持久化）
 					net.minecraft.server.MinecraftServer srv = p.getServer();
 					if (srv != null) {

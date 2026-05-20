@@ -621,7 +621,10 @@ public class SscAddon implements ModInitializer {
 				player.addCommandTag(welcomeTag);
 				final java.util.UUID playerUuid = player.getUuid();
 				java.util.concurrent.CompletableFuture.delayedExecutor(3, java.util.concurrent.TimeUnit.SECONDS)
-						.execute(() -> server.execute(() -> {
+						.execute(() -> {
+							// 3 秒延迟到达时服务端可能已关闭/重启 —— 防御性检查，避免 IllegalStateException
+							if (!server.isRunning()) return;
+							server.execute(() -> {
 							var p = server.getPlayerManager().getPlayer(playerUuid);
 							if (p == null) return;
 							String url = "https://github.com/MangZai-120/shape-shifter-curse-addon/issues";
@@ -661,7 +664,8 @@ public class SscAddon implements ModInitializer {
 								p.sendMessage(Text.literal("Please do NOT only send screenshots, thank you!").formatted(Formatting.RED));
 								p.sendMessage(Text.literal("PS: This message will only be shown once.").formatted(Formatting.GRAY));
 							}
-						}));
+							});
+						});
 			}
 		});
 

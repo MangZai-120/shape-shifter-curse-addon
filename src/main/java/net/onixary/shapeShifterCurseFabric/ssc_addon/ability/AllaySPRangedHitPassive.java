@@ -28,7 +28,10 @@ public final class AllaySPRangedHitPassive {
 		if (!(source.getSource() instanceof ProjectileEntity)) return;
 		if (!FormUtils.isAllaySP(player)) return;
 
-		long currentTick = player.getServer().getOverworld().getTime();
+		// 集成服关服瞬间 getServer() 可能为 null —— 防御性判空，避免 NPE
+		var srv = player.getServer();
+		if (srv == null) return;
+		long currentTick = srv.getOverworld().getTime();
 		UUID playerUuid = player.getUuid();
 		Long lastTick = LAST_TRIGGER_TICK.get(playerUuid);
 		if (lastTick != null && currentTick - lastTick < COOLDOWN_TICKS) return;
