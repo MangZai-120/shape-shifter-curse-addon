@@ -31,7 +31,7 @@ public class SSCAddonConfigMenuScreen extends Screen {
 		final int btnW = 240;
 		final int btnH = 20;
 		final int gap = 10;
-		final int totalRows = 3; // 客户端 + 服务端 + 关闭
+		final int totalRows = 3; // 客户端 + 服务端 + 关闭（配色预设入口已迁至 原版 玩家颜色自定义 左上角）
 		final int xPos = (width - btnW) / 2;
 		int yPos = (height - btnH * totalRows - gap * (totalRows - 1)) / 2;
 
