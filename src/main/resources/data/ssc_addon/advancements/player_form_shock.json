@@ -1,0 +1,18 @@
+{
+  "parent": "ssc_addon:moon_marrow_whisper",
+  "display": {
+    "icon": { "item": "ssc_addon:evolution_stone" },
+    "title": { "translate": "advancements.ssc_addon.player_form_shock.title" },
+    "description": { "translate": "advancements.ssc_addon.player_form_shock.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "use_evolution_stone": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [["use_evolution_stone"]]
+}

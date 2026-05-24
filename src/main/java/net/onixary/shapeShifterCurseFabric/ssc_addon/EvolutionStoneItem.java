@@ -13,6 +13,7 @@ import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.AdvancementUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 
 public class EvolutionStoneItem extends Item {
@@ -77,6 +78,8 @@ public class EvolutionStoneItem extends Item {
 					if (!player.getAbilities().creativeMode) {
 						stack.decrement(1);
 					}
+					// 成就：哦？玩家的样子......！- 首次使用进化石进化
+					AdvancementUtils.grant(player, new Identifier("ssc_addon", "player_form_shock"));
 				} else {
 					player.sendMessage(Text.literal("Error: Target form not found! ID: " + targetFormId).formatted(Formatting.RED), false);
 				}

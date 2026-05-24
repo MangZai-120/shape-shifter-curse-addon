@@ -1,0 +1,31 @@
+{
+  "display": {
+    "icon": { "item": "ssc_addon:sp_upgrade_thing" },
+    "title": { "translate": "advancements.ssc_addon.moon_marrow_whisper.title" },
+    "description": { "translate": "advancements.ssc_addon.moon_marrow_whisper.description" },
+    "background": "minecraft:textures/gui/advancements/backgrounds/stone.png",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "obtain_moon_marrow": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["ssc_addon:sp_upgrade_thing"] }
+        ]
+      }
+    },
+    "obtain_evolution_stone": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["ssc_addon:evolution_stone"] }
+        ]
+      }
+    }
+  },
+  "requirements": [["obtain_moon_marrow", "obtain_evolution_stone"]]
+}

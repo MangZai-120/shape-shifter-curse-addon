@@ -19,7 +19,9 @@ import net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.AdvancementUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.MoonMarrowFormAdvancements;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -87,6 +89,8 @@ public class SpUpgradeItem extends Item {
 				if (!player.getAbilities().creativeMode) {
 					stack.decrement(1);
 				}
+				// 成就：Boom Boom Boom! - 错误使用月髓环导致爆炸
+				AdvancementUtils.grant(player, new Identifier("ssc_addon", "boom_boom_boom"));
 			} else if (isValidForm && isCursedMoon) {
 				// Success: Base Form + Cursed Moon
 
@@ -113,6 +117,13 @@ public class SpUpgradeItem extends Item {
 					world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0F, 1.0F);
 					if (!player.getAbilities().creativeMode) {
 						stack.decrement(1);
+					}
+					// 成就：今晚月色真美 - 首次使用月髓环成功变形
+					AdvancementUtils.grant(player, new Identifier("ssc_addon", "tonight_moon_beautiful"));
+					// 成就（可选）：每种目标形态对应的子成就，未注册时静默跳过
+					Identifier subAdv = MoonMarrowFormAdvancements.get(targetFormId);
+					if (subAdv != null) {
+						AdvancementUtils.grant(player, subAdv);
 					}
 				}
 			} else {

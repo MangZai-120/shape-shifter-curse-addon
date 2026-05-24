@@ -513,5 +513,13 @@
     "ssc_addon.palette.error.bad_flag_range":  "标志位超出范围（应为 0-7）",
     "ssc_addon.palette.error.hex_parse":  "hex 解析失败：%s",
     "text.ssc_addon.palette.btn.open_folder":  "打开配色文件夹",
-    "text.ssc_addon.palette.status.folder_opened":  "已打开 config/ssca/ 目录"
+    "text.ssc_addon.palette.status.folder_opened":  "已打开 config/ssca/ 目录",
+    "advancements.ssc_addon.moon_marrow_whisper.title":  "月亮的低语",
+    "advancements.ssc_addon.moon_marrow_whisper.description":  "宇宙在向我歌唱",
+    "advancements.ssc_addon.tonight_moon_beautiful.title":  "今晚月色真美",
+    "advancements.ssc_addon.tonight_moon_beautiful.description":  "今夜は月が綺麗ですね",
+    "advancements.ssc_addon.boom_boom_boom.title":  "Boom Boom Boom！",
+    "advancements.ssc_addon.boom_boom_boom.description":  "我叫磁力棒",
+    "advancements.ssc_addon.player_form_shock.title":  "哦？玩家的样子......！",
+    "advancements.ssc_addon.player_form_shock.description":  "什么叫你给我用了火之石？"
 }

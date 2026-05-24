@@ -495,5 +495,13 @@
     "ssc_addon.palette.error.bad_flag_range":  "flag out of range (must be 0-7)",
     "ssc_addon.palette.error.hex_parse":  "Hex parse failed: %s",
     "text.ssc_addon.palette.btn.open_folder":  "Open Folder",
-    "text.ssc_addon.palette.status.folder_opened":  "Opened config/ssca/ folder"
+    "text.ssc_addon.palette.status.folder_opened":  "Opened config/ssca/ folder",
+    "advancements.ssc_addon.moon_marrow_whisper.title":  "Whisper of the Moon",
+    "advancements.ssc_addon.moon_marrow_whisper.description":  "Het universum zingt voor mijn",
+    "advancements.ssc_addon.tonight_moon_beautiful.title":  "The Moon Is Beautiful Tonight",
+    "advancements.ssc_addon.tonight_moon_beautiful.description":  "今夜は月が綺麗ですね",
+    "advancements.ssc_addon.boom_boom_boom.title":  "Boom Boom Boom!",
+    "advancements.ssc_addon.boom_boom_boom.description":  "Watch out for the bumps",
+    "advancements.ssc_addon.player_form_shock.title":  "Oh? A Player Form...?!",
+    "advancements.ssc_addon.player_form_shock.description":  "Why did you use a Fire Stone on me?"
 }

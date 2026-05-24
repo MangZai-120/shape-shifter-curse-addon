@@ -1,0 +1,18 @@
+{
+  "parent": "ssc_addon:moon_marrow_whisper",
+  "display": {
+    "icon": { "item": "minecraft:tnt" },
+    "title": { "translate": "advancements.ssc_addon.boom_boom_boom.title" },
+    "description": { "translate": "advancements.ssc_addon.boom_boom_boom.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "moon_marrow_explosion": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [["moon_marrow_explosion"]]
+}
