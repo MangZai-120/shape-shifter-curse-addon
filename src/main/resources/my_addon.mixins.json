@@ -39,8 +39,6 @@
                ],
     "client":  [
                    "render.InstinctBarRendererMixin",
-                   "render.OriginFurMixin",
-                   "render.OriginFurModelMixin",
                    "render.OverlayRenderMixin",
                    "render.FormColorSelectMenuMixin",
                    "player.SscPlayerEntityRendererMixin",
