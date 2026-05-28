@@ -39,6 +39,9 @@ public class SscAddonClient implements ClientModInitializer {
 	public static final String CATEGORY = "key.categories.ssc_addon";
 	private static final Logger LOGGER = LoggerFactory.getLogger(SscAddonClient.class);
 
+	// 跨存档颜色重同步：JOIN 时置为正值倒数，归零时触发一次 sendUpdateCustomSetting
+	private static int joinResyncDelay = 0;
+
 	private void addSplitTooltip(List<Text> lines, String key) {
 		if (I18n.hasTranslation(key)) {
 			String translated = I18n.translate(key);
@@ -73,6 +76,38 @@ public class SscAddonClient implements ClientModInitializer {
 		ClientPlayConnectionEvents.DISCONNECT.register((handler2, client2) -> {
 			ErosionBrandClientState.clear();
 			MancianimaMarkClientState.clear();
+		});
+
+		// 修复跨存档颜色变白：cloth-config 里的自定义颜色是全局存储，但服务端 PlayerSkinComponent 按存档独立。
+		// 进入新世界/服务器时，主动把本地 cloth-config 的颜色状态重发给当前服务端，避免新存档拿到默认白色。
+		// 用一个静态倒计时 + 单次注册的 tick 监听，避免多次 JOIN 累积监听器。
+		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+			joinResyncDelay = 20; // 约 1 秒，等待网络通道 & 玩家实体就绪
+		});
+		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(c -> {
+			if (joinResyncDelay <= 0) return;
+			if (c.player == null || c.world == null) return;
+			if (--joinResyncDelay > 0) return;
+			try {
+				net.onixary.shapeShifterCurseFabric.networking.ModPacketsS2C.sendUpdateCustomSetting(true);
+				// 同时补发颜色包：SSC 主包的 sendUpdateCustomSetting 漏调 send，
+				// 不在此处手动发，新存档/服务器的 PlayerSkinComponent 颜色不会被同步。
+				net.onixary.shapeShifterCurseFabric.config.PlayerCustomConfig cfg =
+						net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric.playerCustomConfig;
+				net.minecraft.network.PacketByteBuf cbuf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+				cbuf.writeInt(net.onixary.shapeShifterCurseFabric.util.FormTextureUtils.ARGB2ABGR(cfg.primaryColor));
+				cbuf.writeInt(net.onixary.shapeShifterCurseFabric.util.FormTextureUtils.ARGB2ABGR(cfg.accentColor1Color));
+				cbuf.writeInt(net.onixary.shapeShifterCurseFabric.util.FormTextureUtils.ARGB2ABGR(cfg.accentColor2Color));
+				cbuf.writeInt(net.onixary.shapeShifterCurseFabric.util.FormTextureUtils.ARGB2ABGR(cfg.eyeColorA));
+				cbuf.writeInt(net.onixary.shapeShifterCurseFabric.util.FormTextureUtils.ARGB2ABGR(cfg.eyeColorB));
+				cbuf.writeBoolean(cfg.primaryGreyReverse);
+				cbuf.writeBoolean(cfg.accent1GreyReverse);
+				cbuf.writeBoolean(cfg.accent2GreyReverse);
+				net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+						new net.minecraft.util.Identifier(net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric.MOD_ID, "update_custom_color"), cbuf);
+			} catch (Throwable t) {
+				LOGGER.error("[SSC_ADDON] 跨存档颜色重同步失败", t);
+			}
 		});
 
 		// 注册契灵准星射线追踪（每客户端 tick 更新当前瞄准目标）

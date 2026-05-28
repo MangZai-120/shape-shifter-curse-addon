@@ -137,5 +137,23 @@ public final class AdvancedColorBridge {
         }
         // ForceUpdate=true，绕过 auto_sync_config 开关
         ModPacketsS2C.sendUpdateCustomSetting(true);
+        // 修复 SSC 主包 sendUpdateCustomSetting 漏发颜色包的 bug（buf 构造完未调 ClientPlayNetworking.send）。
+        // 直接走 ClientPlayNetworking.send + update_custom_color 通道补发颜色，
+        // 不依赖 SSC 主包是否暴露 sendUpdateCustomColor 方法（1.9.0 上还没暴露）。
+        try {
+            net.minecraft.network.PacketByteBuf cbuf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+            cbuf.writeInt(FormTextureUtils.ARGB2ABGR(s.colorsARGB[IDX_PRIMARY]));
+            cbuf.writeInt(FormTextureUtils.ARGB2ABGR(s.colorsARGB[IDX_ACCENT1]));
+            cbuf.writeInt(FormTextureUtils.ARGB2ABGR(s.colorsARGB[IDX_ACCENT2]));
+            cbuf.writeInt(FormTextureUtils.ARGB2ABGR(s.colorsARGB[IDX_EYE_A]));
+            cbuf.writeInt(FormTextureUtils.ARGB2ABGR(s.colorsARGB[IDX_EYE_B]));
+            cbuf.writeBoolean(s.greyReverse[GR_IDX_PRIMARY]);
+            cbuf.writeBoolean(s.greyReverse[GR_IDX_ACCENT1]);
+            cbuf.writeBoolean(s.greyReverse[GR_IDX_ACCENT2]);
+            net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                    new net.minecraft.util.Identifier(ShapeShifterCurseFabric.MOD_ID, "update_custom_color"), cbuf);
+        } catch (Throwable t) {
+            ShapeShifterCurseFabric.LOGGER.error("[SSC_ADDON] AdvancedColorBridge: failed to send color packet", t);
+        }
     }
 }
