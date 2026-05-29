@@ -42,7 +42,7 @@ public final class PalettePresetStore {
 
     /** 持久化文件结构（按 scope 各存一份；同步开关只取 global 里的值）。 */
     public static class PersistedData {
-        public boolean globalSync = true; // 仅 global.json 中的此字段被认作有效
+        public boolean globalSync = false; // 默认按存档；仅 global.json 中的此字段被认作有效
         public List<Slot> slots = new ArrayList<>();
     }
 
@@ -53,7 +53,8 @@ public final class PalettePresetStore {
     }
 
     private final List<Slot> slots = new ArrayList<>(SLOT_COUNT);
-    private boolean globalSync = true;
+    // 默认「按存档」：每个存档/服务器各自独立，新世界默认为空，避免跨存档污染。
+    private boolean globalSync = false;
     private String activeScopeKey = "global"; // 实际生效的 scope（globalSync=true 时强制 global）
 
     private PalettePresetStore() {
