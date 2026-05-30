@@ -43,6 +43,10 @@
             "anim": { "animID": "shape-shifter-curse:axolotl_3_jump" },
             "sneakAnim": { "animID": "shape-shifter-curse:axolotl_3_crawling_idle" }
         },
+        "shape-shifter-curse:flying_state": {
+            "controllerType": "shape-shifter-curse:one_anim_controller",
+            "anim": { "animID": "shape-shifter-curse:axolotl_3_creative_flight" }
+        },
         "shape-shifter-curse:sleep_state": {
             "controllerType": "shape-shifter-curse:one_anim_controller",
             "anim": { "animID": "my_addon:form_normal_sleep" }
