@@ -330,14 +330,16 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 		if (mist) {
 			if (entity.getWorld().getTime() - lastBloodDrainTime >= 20) {
 				lastBloodDrainTime = entity.getWorld().getTime();
-				int newBlood = getBlood() - BLOOD_PER_SECOND_COST;
-				setBlood(newBlood);
-				if (newBlood <= 0) {
-					// 雾血耗尽：强制解除雾化并进入冷却
-					exitMist(true);
-					applyCooldown();
-					wasMist = false;
-					return;
+				if (BLOOD_PER_SECOND_COST > 0) {
+					int newBlood = getBlood() - BLOOD_PER_SECOND_COST;
+					setBlood(newBlood);
+					if (newBlood <= 0) {
+						// 雾血耗尽：强制解除雾化并进入冷却
+						exitMist(true);
+						applyCooldown();
+						wasMist = false;
+						return;
+					}
 				}
 				// 75-100 血渴值阶段：血雾光环每秒对周围 2 格内非白名单生物造成 2 点伤害，每命中一次回吸血蝙蝠 2 点生命
 				if (entity instanceof ServerPlayerEntity sp

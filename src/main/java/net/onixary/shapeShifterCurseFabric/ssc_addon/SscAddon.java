@@ -557,6 +557,50 @@ public class SscAddon implements ModInitializer {
 			// 让钟声照常播放
 			return net.minecraft.util.ActionResult.PASS;
 		});
+
+		// 吸血蝙蝠血雾期间禁用一切右键交互（用物品/放方块/与生物互动/吃喝/盾牌副手等）
+		net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.register((player, world, hand) -> {
+			if (player.hasStatusEffect(MIST_FORM)
+					&& net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isForm(player,
+							net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.BAT_DESMODUS)) {
+				return net.minecraft.util.TypedActionResult.fail(player.getStackInHand(hand));
+			}
+			return net.minecraft.util.TypedActionResult.pass(player.getStackInHand(hand));
+		});
+		net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
+			if (player.hasStatusEffect(MIST_FORM)
+					&& net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isForm(player,
+							net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.BAT_DESMODUS)) {
+				return net.minecraft.util.ActionResult.FAIL;
+			}
+			return net.minecraft.util.ActionResult.PASS;
+		});
+		net.fabricmc.fabric.api.event.player.UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
+			if (player.hasStatusEffect(MIST_FORM)
+					&& net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isForm(player,
+							net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.BAT_DESMODUS)) {
+				return net.minecraft.util.ActionResult.FAIL;
+			}
+			return net.minecraft.util.ActionResult.PASS;
+		});
+		// 同时禁用左键破坏方块
+		net.fabricmc.fabric.api.event.player.AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
+			if (player.hasStatusEffect(MIST_FORM)
+					&& net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isForm(player,
+							net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.BAT_DESMODUS)) {
+				return net.minecraft.util.ActionResult.FAIL;
+			}
+			return net.minecraft.util.ActionResult.PASS;
+		});
+		// 禁用左键攻击实体（含挥剑/普攻起手动作本身）
+		net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
+			if (player.hasStatusEffect(MIST_FORM)
+					&& net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isForm(player,
+							net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.BAT_DESMODUS)) {
+				return net.minecraft.util.ActionResult.FAIL;
+			}
+			return net.minecraft.util.ActionResult.PASS;
+		});
 	}
 
 	/**

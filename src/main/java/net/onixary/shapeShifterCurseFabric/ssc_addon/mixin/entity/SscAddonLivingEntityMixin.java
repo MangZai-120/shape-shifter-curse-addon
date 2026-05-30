@@ -12,6 +12,7 @@ import net.minecraft.entity.mob.HuskEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormRegen;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPRangedHitPassive;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaMarkManager;
@@ -37,7 +38,7 @@ public abstract class SscAddonLivingEntityMixin {
 	 * 裁决者: 攻击任何亡灵触发挑衅
 	 * 金沙岚: 攻击尸壳或咒文胡狼触发挑衅
 	 */
-	@Inject(method = "damage", at = @At("HEAD"))
+	@Inject(method = "damage", at = @At("HEAD"), cancellable = true)
 	private void ssc_addon$onUndeadDamaged(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
 		LivingEntity self = (LivingEntity) (Object) this;
 		if (self instanceof MobEntity mob

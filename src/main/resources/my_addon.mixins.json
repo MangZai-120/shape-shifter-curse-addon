@@ -48,6 +48,7 @@
                    "input.StunnedKeyBindingMixin",
                    "input.StunnedMouseMixin",
                    "render.TrueInvisibilityArmorMixin",
+                   "render.MistFormHeldItemMixin",
                    "client.MinecraftClientSetScreenMixin"
                ],
     "injectors":  {
