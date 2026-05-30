@@ -92,6 +92,10 @@ public class SscAddon implements ModInitializer {
 	public static final StatusEffect FROST_FREEZE = new FrostFreezeEffect();
 	public static final StatusEffect FROST_FALL = new FrostFallEffect();
 	public static final StatusEffect PURIFIED = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.PurifiedEffect();
+	// 幽雾化形 - 雾化状态标记效果
+	public static final StatusEffect MIST_FORM = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.MistFormEffect();
+	// 幽雾化形 - 凝聚爆破蓄力标记效果（客户端据此减速 50%）
+	public static final StatusEffect MIST_CHARGING = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.MistChargingEffect();
 	public static final StatusEffect SAND_BLIND = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.SandBlindEffect();
 	/** 侵蚀烙印标记效果 - 1层(黄色) */
 	public static final StatusEffect EROSION_BRAND_MARKER_1 = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.ErosionBrandMarkerEffect(0xFFD700);
@@ -273,6 +277,8 @@ public class SscAddon implements ModInitializer {
 		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "frost_freeze"), FROST_FREEZE);
 		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "frost_fall"), FROST_FALL);
 		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "purified"), PURIFIED);
+		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "mist_form"), MIST_FORM);
+		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "mist_charging"), MIST_CHARGING);
 		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "sand_blind"), SAND_BLIND);
 		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "erosion_brand_marker_1"), EROSION_BRAND_MARKER_1);
 		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "erosion_brand_marker_2"), EROSION_BRAND_MARKER_2);
@@ -389,6 +395,14 @@ public class SscAddon implements ModInitializer {
 		goldenSandstormForm.setCanSneakRush(true);
 		RegPlayerForms.registerPlayerForm(goldenSandstormForm);
 		RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_golden_sandstorm_sp")).addForm(goldenSandstormForm, 12));
+
+		// 吸血蝙蝠（Desmodus）SP形态 - 复用蝙蝠模型/动画，经月髓环在诅咒之月夜进化获得
+		Form_BatDesmodus batDesmodusForm = new Form_BatDesmodus(FormIdentifiers.BAT_DESMODUS);
+		batDesmodusForm.setPhase(PlayerFormPhase.PHASE_SP);
+		batDesmodusForm.setHasSlowFall(true);
+		batDesmodusForm.setOverrideHandAnim(true);
+		RegPlayerForms.registerPlayerForm(batDesmodusForm);
+		RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_bat_desmodus")).addForm(batDesmodusForm, 12));
 	}
 
 	private void registerCommands() {

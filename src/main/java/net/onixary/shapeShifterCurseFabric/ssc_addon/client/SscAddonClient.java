@@ -198,6 +198,7 @@ public class SscAddonClient implements ClientModInitializer {
 		HudRenderCallback.EVENT.register(new AnubisWolfSPSoulBar());
 		HudRenderCallback.EVENT.register(new SkillCooldownBarRenderer());
 		HudRenderCallback.EVENT.register(new MancianimaResistanceBar());
+		HudRenderCallback.EVENT.register(new net.onixary.shapeShifterCurseFabric.ssc_addon.client.mana.BatDesmodusBloodBar());
 
 		// 契灵 - 次要技能瞬移：客户端按键监听 + 紫色粒子预览
 		MancianimaTeleportClient.register();

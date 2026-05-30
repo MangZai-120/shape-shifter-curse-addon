@@ -46,6 +46,8 @@ public class SpUpgradeItem extends Item {
 		registerUpgrade("shape-shifter-curse", "axolotl_3", "my_addon", "axolotl_sp");
 		registerUpgrade("shape-shifter-curse", "allay_sp", "my_addon", "fallen_allay_sp");
 		registerUpgrade("shape-shifter-curse", "anubis_wolf_3", "my_addon", "anubis_wolf_sp");
+		// 吸血蝙蝠：原版蝙蝠三阶段永久态 → desmodus（月髓环 + 诅咒之月夜进化）
+		registerUpgrade("shape-shifter-curse", "bat_3", "my_addon", "bat_desmodus");
 	}
 
 	public SpUpgradeItem(Settings settings) {

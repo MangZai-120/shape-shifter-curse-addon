@@ -12,7 +12,8 @@
     "my_addon:form_allay_sp",
     "my_addon:form_fallen_allay_sp",
     "my_addon:form_anubis_wolf_sp",
-    "my_addon:form_golden_sandstorm_sp"
+    "my_addon:form_golden_sandstorm_sp",
+    "my_addon:form_bat_desmodus"
   ],
   "allow_random": true,
   "allow_random_unchoosable": false,

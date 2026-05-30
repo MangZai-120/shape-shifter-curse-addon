@@ -1,0 +1,125 @@
+{
+  "groupIndex": 12,
+  "phase": "PHASE_SP",
+  "status": "codex.status.my_addon.SP_status",
+  "bodyType": "NORMAL",
+  "isCustomForm": false,
+  "originID": "my_addon:form_bat_desmodus",
+  "FurModelID": "my_addon:form_bat_desmodus",
+  "hasSlowFall": true,
+  "canSneakRush": false,
+  "canRushJump": false,
+  "anim": {
+    "shape-shifter-curse:idle_state": {
+      "controllerType": "shape-shifter-curse:sneak_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:bat_3_idle"
+      },
+      "sneakAnim": {
+        "animID": "shape-shifter-curse:bat_1_sneak_idle"
+      }
+    },
+    "shape-shifter-curse:walk_state": {
+      "controllerType": "shape-shifter-curse:sneak_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:bat_3_walk",
+        "speed": 1.7
+      },
+      "sneakAnim": {
+        "animID": "shape-shifter-curse:bat_3_sneak_walk"
+      }
+    },
+    "shape-shifter-curse:sprint_state": {
+      "controllerType": "shape-shifter-curse:sneak_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:bat_3_walk",
+        "speed": 2.4
+      },
+      "sneakAnim": {
+        "animID": "shape-shifter-curse:bat_3_sneak_walk"
+      }
+    },
+    "shape-shifter-curse:jump_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:bat_3_jump"
+      }
+    },
+    "shape-shifter-curse:fall_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:bat_2_slow_falling"
+      }
+    },
+    "shape-shifter-curse:swim_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:bat_2_slow_falling"
+      }
+    },
+    "shape-shifter-curse:sleep_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:bat_3_idle"
+      }
+    },
+    "shape-shifter-curse:flying_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:bat_2_slow_falling"
+      }
+    },
+    "shape-shifter-curse:fall_flying_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:bat_2_slow_falling"
+      }
+    },
+    "shape-shifter-curse:mining_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:bat_3_digging"
+      }
+    },
+    "shape-shifter-curse:use_item_state": {
+      "controllerType": "shape-shifter-curse:use_item_anim_controller",
+      "idleAnim": {
+        "animID": "shape-shifter-curse:bat_3_idle"
+      },
+      "walkAnim": {
+        "animID": "shape-shifter-curse:bat_3_idle"
+      },
+      "sneakIdleAnim": {
+        "animID": "shape-shifter-curse:bat_1_sneak_idle"
+      },
+      "sneakWalkAnim": {
+        "animID": "shape-shifter-curse:bat_1_sneak_idle"
+      }
+    },
+    "shape-shifter-curse:attack_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:bat_3_attack"
+      }
+    },
+    "shape-shifter-curse:climb_state": {
+      "controllerType": "shape-shifter-curse:one_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:bat_3_idle"
+      }
+    },
+    "shape-shifter-curse:ride_state": {
+      "controllerType": "shape-shifter-curse:ride_anim_controller",
+      "anim": {
+        "animID": "shape-shifter-curse:bat_3_riding"
+      },
+      "rideVehicleAnim": {
+        "animID": "shape-shifter-curse:bat_1_sneak_idle"
+      }
+    }
+  },
+  "animDefault": {
+      "speed": 1.0,
+      "fade": 2
+  }
+}

@@ -534,5 +534,12 @@
     "item.ssc_addon.frost_protection_ring":  "防霜护身环",
     "item.ssc_addon.frost_protection_ring.tooltip.1":  "§bsp雪狐专属",
     "item.ssc_addon.frost_protection_ring.tooltip.2":  "§7魔力上限 +20",
-    "item.ssc_addon.frost_protection_ring.tooltip.3":  "魔力恢复速度 +50%"
+    "item.ssc_addon.frost_protection_ring.tooltip.3":  "魔力恢复速度 +50%",
+    "origin.my_addon.form_bat_desmodus.name":  "吸血蝙蝠",
+    "origin.my_addon.form_bat_desmodus.description":  "蝙蝠的特殊变体形态。在月髓环之力的浸染下，其本质蜕变为嗜血的吸血蝙蝠。",
+    "codex.form.my_addon.bat_desmodus.name":  "吸血蝙蝠",
+    "my_addon.form_bat_desmodus.model_name":  "吸血蝙蝠",
+    "power.my_addon.form_bat_desmodus_mist_form.name":  "幽雾化形",
+    "power.my_addon.form_bat_desmodus_mist_form.description":  "按下后化为一团幽雾，模型消散无形。雾化期间除虚空伤害外免疫一切伤害，持续约4.5秒。化雾1秒后再次按主动技能键可凝聚爆破，对周围4格内敌人造成6点伤害并击退。冷却10秒。",
+    "effect.ssc_addon.mist_form":  "幽雾化形"
 }

@@ -23,6 +23,8 @@
                    "player.PotionBagDeathDropMixin",
                    "player.PreventPotionBagDropMixin",
                    "player.RedFormTickMixin",
+                   "player.SscAddonBatAttachMistMixin",
+                   "player.SscAddonMistDimensionsMixin",
                    "entity.RedFoxThrowDistanceMixin",
                    "item.ScreenHandlerMixin",
                    "SscAddonCodexStatusMixin",

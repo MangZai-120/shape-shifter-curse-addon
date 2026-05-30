@@ -1,0 +1,11 @@
+{
+    "type": "origins:self_action_on_kill",
+    "entity_action": {
+        "type": "origins:change_resource",
+        "resource": "my_addon:form_bat_desmodus_blood_resource",
+        "change": 20,
+        "operation": "add"
+    },
+    "name": "猩红汲取",
+    "description": "击杀生物时汲取精血，恢复雾血。"
+}
