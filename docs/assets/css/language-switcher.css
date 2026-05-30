@@ -1,0 +1,49 @@
+.ssca-language-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 6px 11px;
+  border: 0;
+  border-radius: 4px;
+  background: #2980b9;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.ssca-language-switch:hover,
+.ssca-language-switch:active {
+  background: #1f6391;
+  color: #fff;
+}
+
+.ssca-language-switch:focus {
+  outline: 2px solid #f6c343;
+  outline-offset: 2px;
+}
+
+.ssca-language-switch .fa {
+  font-size: 14px;
+}
+
+.wy-breadcrumbs-aside .ssca-language-switch {
+  margin-right: 8px;
+}
+
+@media screen and (max-width: 768px) {
+  .wy-breadcrumbs-aside {
+    display: block;
+    float: none;
+    margin-top: 8px;
+    text-align: left;
+  }
+
+  .wy-breadcrumbs-aside .ssca-language-switch {
+    margin-right: 0;
+    margin-bottom: 8px;
+  }
+}

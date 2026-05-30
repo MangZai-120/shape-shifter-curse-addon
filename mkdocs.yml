@@ -1,5 +1,5 @@
 site_name: SSCA Wiki - 幻形者诅咒扩展包百科
-site_url: https://ssca-wiki.readthedocs.io/
+site_url: https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/
 site_description: 幻形者诅咒扩展包 (Shape Shifter's Curse Addon) 的非官方百科Wiki
 site_author: 芒仔120
 
@@ -9,6 +9,12 @@ repo_name: shape-shifter-curse-addon
 theme:
   name: readthedocs
   locale: zh_CN
+
+extra_css:
+  - assets/css/language-switcher.css
+
+extra_javascript:
+  - assets/js/language-switcher.js
 
 nav:
 - 首页: index.md
