@@ -303,9 +303,10 @@ public abstract class SscAddonLivingEntityMixin {
 			}
 		}
 
-		// 75-100 阶段：攻击方为蝙蝠玩家 → +15%
+		// 75-100 阶段：攻击方为蝙蝠玩家 → +15%（血雾光环等被动伤害不受加成）
 		if (attacker instanceof ServerPlayerEntity ap
 				&& attacker != self
+				&& !BatDesmodusBloodThirst.SUPPRESS_OUTGOING_BUFF.get()
 				&& FormUtils.isForm(ap, FormIdentifiers.BAT_DESMODUS)) {
 			if (BatDesmodusBloodThirst.getStage(ap) == 3) {
 				args.set(1, amount * 1.15f);

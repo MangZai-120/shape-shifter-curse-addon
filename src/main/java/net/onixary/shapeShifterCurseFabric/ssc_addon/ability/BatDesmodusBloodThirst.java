@@ -17,7 +17,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * 复用现有 Apoli 资源 my_addon:form_bat_desmodus_blood_resource (0~100)。
  *
  * 累积:
- *   - 进入战斗后每秒 +1
  *   - 普攻命中非白名单生物 +8 (内部冷却 0.3s)
  *   - 幽雾化形凝聚爆破命中非白名单生物 +12 / +6 / +3 (最多 3 个目标递减 50%)
  *   - 击杀 +15（由 form_bat_desmodus_blood_kill.json 触发，无叠加上限）
@@ -31,8 +30,6 @@ public final class BatDesmodusBloodThirst {
 
     /** 最大值（与 JSON resource 上限一致） */
     public static final int MAX_BLOOD = 100;
-    /** 战斗中每秒回 +1 */
-    private static final int COMBAT_REGEN_PER_SEC = 1;
     /** 普攻命中获得 +8 */
     private static final int ATTACK_HIT_GAIN = 8;
     /** 普攻命中血渴值的内部冷却（tick），0.3s */
@@ -54,6 +51,13 @@ public final class BatDesmodusBloodThirst {
 
     private BatDesmodusBloodThirst() {
     }
+
+    /**
+     * 伤害加成抑制标志：在该标志为 true 期间发生的伤害
+     * 将不受 75-100 阶段 +15% 加成加成。合适使用于“被动/光环型”伤害（如血雾光环）。
+     * 仅服务端使用，在伤害调用前后以 try/finally 配对设置。
+     */
+    public static final ThreadLocal<Boolean> SUPPRESS_OUTGOING_BUFF = ThreadLocal.withInitial(() -> false);
 
     // ==================== 通用 ====================
 
@@ -163,13 +167,8 @@ public final class BatDesmodusBloodThirst {
 
         Long lastCombat = LAST_COMBAT_TICK.get(player.getUuid());
         boolean inCombat = lastCombat != null && now - lastCombat <= OUT_OF_COMBAT_DELAY;
-        if (inCombat) {
-            // 战斗中：每秒 +1
-            int b = getBlood(player);
-            if (b < MAX_BLOOD) setBlood(player, b + COMBAT_REGEN_PER_SEC);
-        } else if (lastCombat != null) {
-            // 已脱战且过了 12s：每秒 -4
-            // (lastCombat == null 表示从未进入战斗，此时不衰减，保留初始值)
+        if (!inCombat) {
+            // 脱战（含从未进入战斗）：每秒 -4，直至 0；战斗中不自动回复
             int b = getBlood(player);
             if (b > 0) setBlood(player, b - DECAY_PER_SEC);
         }

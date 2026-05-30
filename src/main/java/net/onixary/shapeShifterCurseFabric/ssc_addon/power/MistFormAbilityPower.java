@@ -59,9 +59,9 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 	// 血雾红色尘埃粒子（体现“血”雾）
 	private static final DustParticleEffect BLOOD_DUST = new DustParticleEffect(new org.joml.Vector3f(0.78f, 0.06f, 0.06f), 1.2f);
 	// 雾血资源相关（0~100）
-	private static final int BLOOD_ENTER_COST = 10;     // 进入雾化起手消耗
-	private static final int BLOOD_PER_SECOND_COST = 5; // 雾化期间每秒持续消耗
-	private static final int BLOOD_BURST_COST = 15;     // 凝聚爆破额外消耗
+	private static final int BLOOD_ENTER_COST = 0;     // 进入雾化起手消耗（无消耗）
+	private static final int BLOOD_PER_SECOND_COST = 0; // 雾化期间每秒持续消耗（无消耗）
+	private static final int BLOOD_BURST_COST = 0;     // 凝聚爆破额外消耗（无消耗）
 	private long lastBloodDrainTime = 0L;               // 上次每秒扣血时间
 
 	public MistFormAbilityPower(PowerType<?> type, LivingEntity entity, int cooldownAfter, int effectDuration, int cooldownTicks, HudRender hudRender, Active.Key key) {
@@ -338,6 +338,29 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 					applyCooldown();
 					wasMist = false;
 					return;
+				}
+				// 75-100 血渴值阶段：血雾光环每秒对周围 2 格内非白名单生物造成 2 点伤害，每命中一次回吸血蝙蝠 2 点生命
+				if (entity instanceof ServerPlayerEntity sp
+						&& net.onixary.shapeShifterCurseFabric.ssc_addon.ability.BatDesmodusBloodThirst.getStage(sp) == 3) {
+					Box aura = entity.getBoundingBox().expand(2.0, 2.0, 2.0);
+					double auraSq = 2.0 * 2.0;
+					DamageSource auraSrc = entity.getDamageSources().magic();
+					List<LivingEntity> auraTargets = ((ServerWorld) entity.getWorld()).getEntitiesByClass(
+							LivingEntity.class, aura, t -> t != entity && t.isAlive());
+					for (LivingEntity t : auraTargets) {
+						if (entity.squaredDistanceTo(t) > auraSq) continue;
+						if (WhitelistUtils.isProtected(sp, t)) continue;
+						net.onixary.shapeShifterCurseFabric.ssc_addon.ability.BatDesmodusBloodThirst.SUPPRESS_OUTGOING_BUFF.set(true);
+						boolean dealt;
+						try {
+							dealt = t.damage(auraSrc, 2.0f);
+						} finally {
+							net.onixary.shapeShifterCurseFabric.ssc_addon.ability.BatDesmodusBloodThirst.SUPPRESS_OUTGOING_BUFF.set(false);
+						}
+						if (dealt) {
+							sp.heal(2.0f);
+						}
+					}
 				}
 			}
 			// 持续雾化：每 tick 生成浓雾团包裹全身，明显可见
