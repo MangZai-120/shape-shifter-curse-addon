@@ -50,6 +50,42 @@ nav:
   - 使魔研究记录: lore/familiar_research.md
   - 月髓环诗篇: lore/moon_ring_poems.md
   - 千年纪 · 人魔大战: lore/millennium_war.md
+- 版本更新日志: update_log/update_log.md
+- 🌐 English:
+  - Home: en/index.md
+  - Getting Started:
+    - Installation Guide: en/getting_started/installation.md
+  - SP Forms:
+    - Forms Overview: en/sp_forms/overview.md
+    - SP Familiar Fox (Spirit Realm Lord): en/sp_forms/sp_familiar_fox.md
+    - Familiar Fox - Red (A Mere Legend): en/sp_forms/sp_familiar_fox_red.md
+    - Mancianima (Forbidden Weapon): en/sp_forms/sp_familiar_fox_mancianima.md
+    - SP Axolotl (Abyssal Overlord): en/sp_forms/sp_axolotl.md
+    - Wild Cat (SP) (Moonlight Phantom): en/sp_forms/sp_wild_cat.md
+    - SP Snow Fox (Frost Spirit): en/sp_forms/sp_snow_fox.md
+    - SP Allay (Crystal Sound): en/sp_forms/sp_allay.md
+    - SP Fallen Allay (Spirit of the Fallen): en/sp_forms/sp_fallen_allay.md
+    - SP Anubis Wolf (Netherjudge): en/sp_forms/sp_anubis_wolf.md
+    - Golden Sandstorm (SP): en/sp_forms/sp_golden_sandstorm.md
+  - Items:
+    - Evolution Items: en/items/evolution_items.md
+    - Materials: en/items/materials.md
+    - Tools: en/items/tools.md
+    - Trinkets: en/items/trinkets.md
+  - Effects:
+    - Buffs: en/effects/buffs.md
+    - Debuffs: en/effects/debuffs.md
+  - Commands: en/commands/commands.md
+  - Lore:
+    - 📜 Story Content License: en/lore/license.md
+    - Background: en/lore/background.md
+    - Moonlight Curse: en/lore/moonlight_curse.md
+    - "Story Collection · Moon Trace: Spirit Realm Lord": en/lore/story_collection.md
+    - Jungle Ghost: en/lore/jungle_ghost.md
+    - Familiar Research Notes: en/lore/familiar_research.md
+    - Moonshard Ring Poems: en/lore/moon_ring_poems.md
+    - Millennium · Human-Demon War: en/lore/millennium_war.md
+  - Update Log: en/update_log/update_log.md
 plugins:
   - search
 
