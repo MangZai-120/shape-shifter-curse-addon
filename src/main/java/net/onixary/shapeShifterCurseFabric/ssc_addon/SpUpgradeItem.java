@@ -97,7 +97,7 @@ public class SpUpgradeItem extends Item {
 				// Success: Base Form + Cursed Moon
 
 				// 5% Chance for Red Form (when upgrading to SP Fox)
-				if (targetFormId.equals(new Identifier("my_addon", "familiar_fox_sp")) && world.random.nextFloat() < 0.05f) {
+				if (targetFormId != null && targetFormId.equals(new Identifier("my_addon", "familiar_fox_sp")) && world.random.nextFloat() < 0.05f) {
 					Identifier redFormId = new Identifier("my_addon", "familiar_fox_red");
 					PlayerFormBase redForm = RegPlayerForms.getPlayerForm(redFormId);
 					if (redForm != null) {

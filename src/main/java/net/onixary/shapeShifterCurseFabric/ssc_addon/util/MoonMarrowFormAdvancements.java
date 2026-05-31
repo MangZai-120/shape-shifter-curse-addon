@@ -29,7 +29,7 @@ public final class MoonMarrowFormAdvancements {
 	private static final Map<Identifier, Identifier> MAP = new HashMap<>();
 
 	static {
-		// TODO：按需为每个可由月髓环变身的形态注册对应成就，例如：
+		// 按需为每个可由月髓环变身的形态注册对应成就，例如：
 		// register("familiar_fox_sp",  "moon_marrow_to_familiar_fox_sp");
 		// register("axolotl_sp",       "moon_marrow_to_axolotl_sp");
 		// register("fallen_allay_sp",  "moon_marrow_to_fallen_allay_sp");
