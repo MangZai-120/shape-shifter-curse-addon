@@ -223,6 +223,10 @@ public class SscAddon implements ModInitializer {
 	public static final SoundEvent ALLAY_HEAL_MUSIC_EVENT = SoundEvent.of(ALLAY_HEAL_MUSIC_ID);
 	public static final SoundEvent ALLAY_SPEED_MUSIC_EVENT = SoundEvent.of(ALLAY_SPEED_MUSIC_ID);
 
+	// 附属形态切换成就触发器（统一一个 Criterion，不同 advancement JSON 用 form_id 条件区分）
+	public static final net.onixary.shapeShifterCurseFabric.ssc_addon.criteria.OnTransformAddonForm ON_TRANSFORM_ADDON_FORM =
+			net.minecraft.advancement.criterion.Criteria.register(new net.onixary.shapeShifterCurseFabric.ssc_addon.criteria.OnTransformAddonForm());
+
 	@Override
 	public void onInitialize() {
         /*

@@ -1,0 +1,27 @@
+﻿{
+  "display": {
+    "icon": {
+      "item": "minecraft:phantom_membrane"
+    },
+    "title": {
+      "translate": "advancements.my_addon.on_transform_bat_desmodus.title"
+    },
+    "description": {
+      "translate": "advancements.my_addon.on_transform_bat_desmodus.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "ssc_addon:tonight_moon_beautiful",
+  "criteria": {
+    "on_transform_bat_desmodus": {
+      "trigger": "my_addon:on_transform_addon_form",
+      "conditions": {
+        "form_id": "my_addon:bat_desmodus"
+      }
+    }
+  },
+  "requirements": []
+}

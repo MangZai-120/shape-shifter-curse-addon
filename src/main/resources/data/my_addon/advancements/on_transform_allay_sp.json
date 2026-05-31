@@ -1,0 +1,27 @@
+﻿{
+  "display": {
+    "icon": {
+      "item": "ssc_addon:allay_heal_wand"
+    },
+    "title": {
+      "translate": "advancements.my_addon.on_transform_allay_sp.title"
+    },
+    "description": {
+      "translate": "advancements.my_addon.on_transform_allay_sp.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "ssc_addon:player_form_shock",
+  "criteria": {
+    "on_transform_allay_sp": {
+      "trigger": "my_addon:on_transform_addon_form",
+      "conditions": {
+        "form_id": "my_addon:allay_sp"
+      }
+    }
+  },
+  "requirements": []
+}

@@ -37,6 +37,7 @@
                    "player.SscPlayerMixin",
                    "effect.StunnedJumpMixin",
                    "item.TransformRelatedItemsMixin",
+                   "TransformManagerAdvancementMixin",
                    "WanderingTraderTradeMixin"
                ],
     "client":  [

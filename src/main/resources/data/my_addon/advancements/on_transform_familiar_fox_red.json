@@ -1,0 +1,27 @@
+﻿{
+  "display": {
+    "icon": {
+      "item": "ssc_addon:phantom_bell"
+    },
+    "title": {
+      "translate": "advancements.my_addon.on_transform_familiar_fox_red.title"
+    },
+    "description": {
+      "translate": "advancements.my_addon.on_transform_familiar_fox_red.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "parent": "my_addon:on_transform_familiar_fox_sp",
+  "criteria": {
+    "on_transform_familiar_fox_red": {
+      "trigger": "my_addon:on_transform_addon_form",
+      "conditions": {
+        "form_id": "my_addon:familiar_fox_red"
+      }
+    }
+  },
+  "requirements": []
+}

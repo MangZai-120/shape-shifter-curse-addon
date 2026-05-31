@@ -1,0 +1,105 @@
+附属形态成就文案填写表
+========================
+
+说明：
+- 表格已按"进化途径"分组排列。每行为一个成就，对应一个附属形态。
+- 直接在「成就标题(中)」「成就标题(英)」「成就描述(中)」「成就描述(英)」四列里改/写正式文案。
+- 改完后告诉我，我会把这些文本同步写进 zh_cn.json / en_us.json 对应 lang key。
+- Lang key 已固定，无需改：
+    标题：advancements.my_addon.on_transform_<form_id>.title
+    描述：advancements.my_addon.on_transform_<form_id>.description
+
+------------------------------------------------------------
+【月髓环 分支】（parent = ssc_addon:tonight_moon_beautiful）
+------------------------------------------------------------
+
+| 形态ID                      | 形态名(中)            | 形态名(英)                            | 图标                       | 成就标题(中) | 成就标题(英) | 成就描述(中) | 成就描述(英) |
+| --------------------------- | --------------------- | ------------------------------------- | -------------------------- | ------------ | ------------ | ------------ | ------------ |
+| familiar_fox_sp             | sp使魔(灵界之主)      | SP Familiar Fox (Spirit Realm Lord)   | ssc_addon:blue_fire_amulet |       灵界之主       |              |              |              |
+| familiar_fox_red            | 红                    | Red                                   | ssc_addon:phantom_bell     |              |              |              |              |
+| axolotl_sp                  | sp美西螈(深渊霸主)    | SP Axolotl (Abyssal Overlord)         | ssc_addon:portable_moisturizer |          |              |              |              |
+| fallen_allay_sp             | sp堕落悦灵(堕落之灵)  | SP Fallen Allay (Spirit of the Fallen)| minecraft:beacon           |              |              |              |              |
+| anubis_wolf_sp              | sp阿努比斯(冥裁者)    | SP Anubis (Netherjudge)               | ssc_addon:anubis_crystal   |              |              |              |              |
+| bat_desmodus                | 吸血蝙蝠              | Desmodus                              | minecraft:phantom_membrane |              |              |              |              |
+
+------------------------------------------------------------
+【进化石 分支】（parent = ssc_addon:player_form_shock）
+------------------------------------------------------------
+
+| 形态ID                      | 形态名(中)            | 形态名(英)                            | 图标                       | 成就标题(中) | 成就标题(英) | 成就描述(中) | 成就描述(英) |
+| --------------------------- | --------------------- | ------------------------------------- | -------------------------- | ------------ | ------------ | ------------ | ------------ |
+| familiar_fox_mancianima     | 契灵                  | Mancianima                            | ssc_addon:binding_anklet   |              |              |              |              |
+| wild_cat_sp                 | sp野猫(月光魅影)      | SP Wild Cat (Moonlight Phantom)       | ssc_addon:invisibility_cloak |            |              |              |              |
+| snow_fox_sp                 | sp雪狐(寒霜之灵)      | SP Snow Fox (Frost Spirit)            | ssc_addon:frost_amulet     |              |              |              |              |
+| allay_sp                    | sp悦灵(水晶之音)      | SP Allay (Crystal Sound)              | ssc_addon:allay_heal_wand  |              |              |              |              |
+| golden_sandstorm_sp         | 金沙岚                | Golden Sandstorm                      | ssc_addon:withered_sand_ring |            |              |              |              |
+
+------------------------------------------------------------
+当前占位文案（未填则保留）：
+------------------------------------------------------------
+
+[familiar_fox_sp]
+  zh title : 灵界之主
+  zh desc  : 首次变身为 sp使魔(灵界之主)
+  en title : Spirit Realm Lord
+  en desc  : Transform into SP Familiar Fox (Spirit Realm Lord) for the first time
+
+[familiar_fox_red]
+  zh title : 红堕落使魔
+  zh desc  : 首次变身为 红——堕落血脉的灵界之主
+  en title : Red Fallen Familiar
+  en desc  : Transform into Red — a Spirit Realm Lord of fallen lineage — for the first time
+
+[familiar_fox_mancianima]
+  zh title : 禁忌兵器
+  zh desc  : 首次变身为 契灵——女巫以进化石锻造的高级兵器
+  en title : Forbidden Weapon
+  en desc  : Transform into Mancianima — a high-tier weapon forged by witches with the Evolution Stone — for the first time
+
+[axolotl_sp]
+  zh title : 深渊霸主
+  zh desc  : 首次变身为 sp美西螈(深渊霸主)
+  en title : Abyssal Overlord
+  en desc  : Transform into SP Axolotl (Abyssal Overlord) for the first time
+
+[snow_fox_sp]
+  zh title : 寒霜之灵
+  zh desc  : 首次变身为 sp雪狐(寒霜之灵)
+  en title : Frost Spirit
+  en desc  : Transform into SP Snow Fox (Frost Spirit) for the first time
+
+[wild_cat_sp]
+  zh title : 月光魅影
+  zh desc  : 首次变身为 sp野猫(月光魅影)
+  en title : Moonlight Phantom
+  en desc  : Transform into SP Wild Cat (Moonlight Phantom) for the first time
+
+[allay_sp]
+  zh title : 水晶之音
+  zh desc  : 首次变身为 sp悦灵(水晶之音)
+  en title : Crystal Sound
+  en desc  : Transform into SP Allay (Crystal Sound) for the first time
+
+[fallen_allay_sp]
+  zh title : 堕落之灵
+  zh desc  : 首次变身为 sp堕落悦灵(堕落之灵)
+  en title : Spirit of the Fallen
+  en desc  : Transform into SP Fallen Allay (Spirit of the Fallen) for the first time
+
+[anubis_wolf_sp]
+  zh title : 冥裁者
+  zh desc  : 首次变身为 sp阿努比斯(冥裁者)
+  en title : Netherjudge
+  en desc  : Transform into SP Anubis (Netherjudge) for the first time
+
+[golden_sandstorm_sp]
+  zh title : 金沙岚
+  zh desc  : 首次变身为 金沙岚——荒漠的回响
+  en title : Golden Sandstorm
+  en desc  : Transform into Golden Sandstorm — the echo of the desert — for the first time
+
+[bat_desmodus]
+  zh title : 吸血蝙蝠
+  zh desc  : 首次变身为 吸血蝙蝠——月髓环浸染下的嗜血变体
+  en title : Desmodus
+  en desc  : Transform into Desmodus — the blood-thirsty mutation under the Moon Essence Ring — for the first time
