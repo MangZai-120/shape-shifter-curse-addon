@@ -1,0 +1,26 @@
+{
+    "type": "origins:modify_damage_taken",
+    "hud_render": {
+        "should_render": false
+    },
+    "modifier": {
+        "operation": "multiply_total_addition",
+        "value": 0.15,
+        "name": "Bat Desmodus Iron Weakness"
+    },
+    "bientity_condition": {
+        "type": "origins:actor_condition",
+        "condition": {
+            "type": "origins:equipped_item",
+            "equipment_slot": "mainhand",
+            "item_condition": {
+                "type": "origins:ingredient",
+                "ingredient": {
+                    "tag": "ssc_addon:iron_weapons"
+                }
+            }
+        }
+    },
+    "name": "power.my_addon.form_bat_desmodus_iron_weakness.name",
+    "description": "power.my_addon.form_bat_desmodus_iron_weakness.description"
+}

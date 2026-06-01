@@ -25,8 +25,15 @@
         "my_addon:form_bat_desmodus_mist_form_invulnerability",
         "my_addon:form_bat_desmodus_blood",
         "my_addon:form_bat_desmodus_blood_kill",
+        "my_addon:form_bat_desmodus_sonic_wave",
+        "my_addon:form_bat_desmodus_sun_weak",
+        "my_addon:form_bat_desmodus_moon_buff",
+        "my_addon:form_bat_desmodus_echolocation",
+        "my_addon:form_bat_desmodus_iron_weakness",
         "my_addon:form_sp_primary_cd",
-        "my_addon:form_sp_primary_cd_tick"
+        "my_addon:form_sp_primary_cd_tick",
+        "my_addon:form_sp_secondary_cd",
+        "my_addon:form_sp_secondary_cd_tick"
     ],
     "icon": {
         "item": "minecraft:player_head"

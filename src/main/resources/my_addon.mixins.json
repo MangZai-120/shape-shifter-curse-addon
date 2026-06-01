@@ -50,7 +50,8 @@
                    "input.StunnedMouseMixin",
                    "render.TrueInvisibilityArmorMixin",
                    "render.MistFormHeldItemMixin",
-                   "client.MinecraftClientSetScreenMixin"
+                   "client.MinecraftClientSetScreenMixin",
+                   "client.SoundManagerDeafenMixin"
                ],
     "injectors":  {
                       "defaultRequire":  1

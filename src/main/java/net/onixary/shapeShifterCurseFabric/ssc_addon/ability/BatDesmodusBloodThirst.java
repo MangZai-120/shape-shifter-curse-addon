@@ -170,7 +170,21 @@ public final class BatDesmodusBloodThirst {
         if (!inCombat) {
             // 脱战（含从未进入战斗）：每秒 -4，直至 0；战斗中不自动回复
             int b = getBlood(player);
-            if (b > 0) setBlood(player, b - DECAY_PER_SEC);
+            if (b > 0) {
+                int decay = DECAY_PER_SEC;
+                // 头顶天空可见时按昼夜节奏调整（与 sun_weak/moon_buff power 的 time_of_day 判定一致）
+                net.minecraft.server.world.ServerWorld sw = player.getServerWorld();
+                if (sw.isSkyVisible(player.getBlockPos())) {
+                    long tod = sw.getTimeOfDay() % 24000L;
+                    boolean isNight = tod >= 13000L && tod <= 23000L;
+                    if (isNight) {
+                        decay = 2; // 月夜亢奋：衰减减半（4 -> 2）
+                    } else {
+                        decay = decay + decay / 2; // 日光虚弱：4 -> 6
+                    }
+                }
+                if (decay > 0) setBlood(player, b - decay);
+            }
         }
         LAST_REGEN_TICK.put(player.getUuid(), now);
     }

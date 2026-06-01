@@ -1,0 +1,22 @@
+{
+    "type": "my_addon:sonic_wave",
+    "cooldown": 160,
+    "hud_render": {
+        "should_render": false
+    },
+    "key": {
+        "key": "key.ssc_addon.sp_secondary"
+    },
+    "badges": [
+        {
+            "type": "origins:tooltip",
+            "sprite": "my_addon:textures/gui/powers/true_invisibility.png",
+            "text": {
+                "translate": "power.my_addon.form_bat_desmodus_sonic_wave.name",
+                "fallback": "Sonic Wave"
+            }
+        }
+    ],
+    "name": "声破超波",
+    "description": "向前方释放3.5格宽、8格长的超声波，对范围内非白名单生物造成4点物理伤害，并施加3秒反胃；玩家目标额外获得3秒失聪（暂时听不到任何声音），非玩家目标获得3秒失明。冷却8秒。"
+}

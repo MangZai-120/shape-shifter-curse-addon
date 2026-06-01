@@ -51,7 +51,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 	private static final int MIST_BURST_DELAY = 20;   // 化雾后可引爆的最短间隔 tick（1秒）
 	private static final int CHARGE_DURATION = 20;    // 凝聚爆破蓄力时长 tick（1秒）
 	private static final double AOE_RADIUS = 4.0;     // 爆破半径（格）
-	private static final float AOE_DAMAGE = 6.0f;     // 爆破伤害
+	private static final float AOE_DAMAGE = 8.0f;     // 爆破伤害
 	private static final double AOE_KNOCKBACK = 1.0;  // 击退强度
 	private long mistStartTime = 0L;  // 本次化雾起始时间
 	private boolean charging = false;      // 凝聚爆破蓄力中

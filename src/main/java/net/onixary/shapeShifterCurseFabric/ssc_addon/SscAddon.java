@@ -97,6 +97,8 @@ public class SscAddon implements ModInitializer {
 	// 幽雾化形 - 凝聚爆破蓄力标记效果（客户端据此减速 50%）
 	public static final StatusEffect MIST_CHARGING = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.MistChargingEffect();
 	public static final StatusEffect SAND_BLIND = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.SandBlindEffect();
+	// 失聪：客机 SoundManagerDeafenMixin 据此静音受影响玩家自身的所有声音
+	public static final StatusEffect DEAFEN = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.DeafenEffect();
 	/** 侵蚀烙印标记效果 - 1层(黄色) */
 	public static final StatusEffect EROSION_BRAND_MARKER_1 = new net.onixary.shapeShifterCurseFabric.ssc_addon.effect.ErosionBrandMarkerEffect(0xFFD700);
 	/** 侵蚀烙印标记效果 - 2层(橙色) */
@@ -284,6 +286,7 @@ public class SscAddon implements ModInitializer {
 		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "mist_form"), MIST_FORM);
 		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "mist_charging"), MIST_CHARGING);
 		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "sand_blind"), SAND_BLIND);
+		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "deafen"), DEAFEN);
 		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "erosion_brand_marker_1"), EROSION_BRAND_MARKER_1);
 		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "erosion_brand_marker_2"), EROSION_BRAND_MARKER_2);
 		Registry.register(Registries.STATUS_EFFECT, new Identifier("ssc_addon", "erosion_brand_marker_3"), EROSION_BRAND_MARKER_3);
