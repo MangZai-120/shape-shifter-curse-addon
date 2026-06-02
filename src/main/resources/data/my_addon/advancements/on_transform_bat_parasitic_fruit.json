@@ -1,0 +1,27 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:sweet_berries"
+    },
+    "title": {
+      "translate": "advancements.my_addon.on_transform_bat_parasitic_fruit.title"
+    },
+    "description": {
+      "translate": "advancements.my_addon.on_transform_bat_parasitic_fruit.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "ssc_addon:player_form_shock",
+  "criteria": {
+    "on_transform_bat_parasitic_fruit": {
+      "trigger": "my_addon:on_transform_addon_form",
+      "conditions": {
+        "form_id": "my_addon:bat_parasitic_fruit"
+      }
+    }
+  },
+  "requirements": []
+}

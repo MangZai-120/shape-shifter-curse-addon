@@ -1,0 +1,23 @@
+{
+    "type": "my_addon:parasitic_fruit_seed",
+    "cooldown": 200,
+    "duration": 240,
+    "hud_render": {
+        "should_render": false
+    },
+    "key": {
+        "key": "key.ssc_addon.sp_primary"
+    },
+    "badges": [
+        {
+            "type": "origins:tooltip",
+            "sprite": "my_addon:textures/gui/powers/true_invisibility.png",
+            "text": {
+                "translate": "power.my_addon.form_bat_parasitic_fruit_parasitic_seed.name",
+                "fallback": "Parasitic Spiritfruit"
+            }
+        }
+    ],
+    "name": "灵果寄生",
+    "description": "向准星方向播出灵果种子，命中生物后附着在目标身上。友方宿主会根据状态周期性获得治疗、防护、机动或支援果实；敌方宿主则会结出缠藤、苦涩、腐熟或酸涩果实，施加缓慢、虚弱、发光等削弱。果实效果会以宿主为中心小范围扩散。冷却10秒，未命中生物时进入5秒半冷却。"
+}

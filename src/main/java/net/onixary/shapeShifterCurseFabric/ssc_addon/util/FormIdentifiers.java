@@ -31,6 +31,8 @@ public class FormIdentifiers {
 	public static final Identifier ANUBIS_WOLF_SP_SOUL_ENERGY = new Identifier("my_addon", "form_anubis_wolf_sp_soul_energy");
 	// 吸血蝙蝠SP形态ID
 	public static final Identifier BAT_DESMODUS = new Identifier("my_addon", "bat_desmodus");
+	// 寄生果蝠形态ID
+	public static final Identifier BAT_PARASITIC_FRUIT = new Identifier("my_addon", "bat_parasitic_fruit");
 	// 吸血蝙蝠形态雾血资源
 	public static final Identifier BAT_BLOOD_RESOURCE = new Identifier("my_addon", "form_bat_desmodus_blood_resource");
 	// 堕灵形态特有的CD资源

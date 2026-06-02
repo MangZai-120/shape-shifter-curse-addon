@@ -410,6 +410,14 @@ public class SscAddon implements ModInitializer {
 		batDesmodusForm.setOverrideHandAnim(true);
 		RegPlayerForms.registerPlayerForm(batDesmodusForm);
 		RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_bat_desmodus")).addForm(batDesmodusForm, 12));
+
+		// 寄生果蝠 - 原版三阶段蝙蝠使用进化石进化获得，复用蝙蝠模型/动画
+		Form_BatParasiticFruit batParasiticFruitForm = new Form_BatParasiticFruit(FormIdentifiers.BAT_PARASITIC_FRUIT);
+		batParasiticFruitForm.setPhase(PlayerFormPhase.PHASE_SP);
+		batParasiticFruitForm.setHasSlowFall(true);
+		batParasiticFruitForm.setOverrideHandAnim(true);
+		RegPlayerForms.registerPlayerForm(batParasiticFruitForm);
+		RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_bat_parasitic_fruit")).addForm(batParasiticFruitForm, 12));
 	}
 
 	private void registerCommands() {

@@ -72,6 +72,11 @@ public class EvolutionStoneItem extends Item {
 					targetFormId = new Identifier("my_addon", "familiar_fox_mancianima");
 					canEvolve = true;
 				}
+				// 允许原版三阶段蝙蝠使用进化石进化为寄生果蝠
+				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "bat_3"))) {
+					targetFormId = new Identifier("my_addon", "bat_parasitic_fruit");
+					canEvolve = true;
+				}
 			}
 
 			if (canEvolve) {
