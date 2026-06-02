@@ -33,6 +33,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
@@ -54,17 +55,14 @@ import java.util.UUID;
  * 全部判定与状态效果均在服务端执行，确保多人环境主客机一致。
  */
 public class ParasiticFruitSeedPower extends ActiveCooldownPower {
-    private static final double RANGE = 20.0;
-    private static final double SPREAD_RADIUS = 4.0;
-    private static final double SPREAD_RADIUS_SQ = SPREAD_RADIUS * SPREAD_RADIUS;
+    private static final double RANGE = 6.0;
     private static final int MAX_SEEDS = 3;
     private static final int ROOTING_TICKS = 20;
     private static final int FRUIT_INTERVAL_TICKS = 40;
     private static final int DEFAULT_LIFE_TICKS = 240;
     private static final int MIN_LIFE_TICKS = 80;
-    private static final int FRIEND_SPREAD_DIVISOR = 2;
-    private static final int ENEMY_SPREAD_DIVISOR = 2;
     private static final float SELF_DURATION_MULTIPLIER = 0.6f;
+    private static final int ENERGY_COST = 1;
 
     private static final DustParticleEffect FRIEND_DUST = new DustParticleEffect(new Vector3f(0.35f, 0.95f, 0.30f), 1.1f);
     private static final DustParticleEffect ENEMY_DUST = new DustParticleEffect(new Vector3f(0.55f, 0.10f, 0.75f), 1.1f);
@@ -116,14 +114,21 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         if (entity.hasStatusEffect(SscAddon.PURIFIED)) return;
         if (!isInternalCooldownReady()) return;
 
+        // 能量检查：不足则释放失败
+        if (!PowerUtils.hasResource(caster, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY, ENERGY_COST)) {
+            playFailFeedback(caster);
+            return;
+        }
+
         LivingEntity target = raycastLivingTarget(caster);
         if (target == null || !target.isAlive()) {
-            // 未命中生物时只进入半冷却，保留技能瞄准成本但不至于过度惩罚。
+            // 未命中生物时只进入半冷却，不扣能量
             applyCooldown(Math.max(20, cooldownTicks / 2));
             playFailFeedback(caster);
             return;
         }
 
+        PowerUtils.changeResourceValueAndSync(caster, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY, -ENERGY_COST);
         plantSeed(caster, target);
         applyCooldown(cooldownTicks);
     }
@@ -141,11 +146,16 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
             Map.Entry<UUID, SeedData> entry = iterator.next();
             SeedData seed = entry.getValue();
             LivingEntity host = findLiving(caster.getServer(), entry.getKey());
-            if (host == null || !host.isAlive() || now >= seed.endTick) {
+            // 跨维度宿主视为脱离作用范围，主动失效
+            if (host == null || !host.isAlive() || now >= seed.endTick
+                    || host.getWorld() != caster.getWorld()) {
+                if (host != null) {
+                    net.onixary.shapeShifterCurseFabric.ssc_addon.util.GlowMarker.unmark(host);
+                }
                 iterator.remove();
                 continue;
             }
-            spawnAttachedSeedParticles(host, seed, now);
+            spawnAttachedSeedParticles(caster, host, seed, now);
             if (now >= seed.nextFruitTick) {
                 seed.nextFruitTick = now + FRUIT_INTERVAL_TICKS;
                 bearFruit(caster, host, seed);
@@ -156,6 +166,15 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
     @Override
     public void onLost() {
         super.onLost();
+        // 清理本机制留下的 outline 高光
+        if (entity instanceof ServerPlayerEntity caster) {
+            for (UUID uuid : seeds.keySet()) {
+                LivingEntity host = findLiving(caster.getServer(), uuid);
+                if (host != null) {
+                    net.onixary.shapeShifterCurseFabric.ssc_addon.util.GlowMarker.unmark(host);
+                }
+            }
+        }
         seeds.clear();
     }
 
@@ -165,6 +184,8 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
 
     private void applyCooldown(int ticks) {
         internalCooldownEndTime = entity.getWorld().getTime() + ticks;
+        // 同步给父类冷却体系，避免与 Apoli 自身的 isActive() 状态脱节
+        this.use();
         if (entity instanceof ServerPlayerEntity caster) {
             PowerUtils.setResourceValueAndSync(caster, FormIdentifiers.SP_PRIMARY_CD, ticks);
         }
@@ -174,9 +195,18 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         Vec3d eye = caster.getEyePos();
         Vec3d look = caster.getRotationVec(1.0F).normalize();
         Vec3d end = eye.add(look.multiply(RANGE));
-        Box box = caster.getBoundingBox().stretch(look.multiply(RANGE)).expand(1.2D);
-        EntityHitResult hit = ProjectileUtil.raycast(caster, eye, end, box,
-                e -> e instanceof LivingEntity living && e != caster && living.isAlive(), RANGE * RANGE);
+
+        // 方块阻挡检测：不可穿墙
+        net.minecraft.util.hit.BlockHitResult blockHit = caster.getWorld().raycast(
+                new net.minecraft.world.RaycastContext(eye, end,
+                        net.minecraft.world.RaycastContext.ShapeType.COLLIDER,
+                        net.minecraft.world.RaycastContext.FluidHandling.NONE, caster));
+        Vec3d effectiveEnd = blockHit.getType() == net.minecraft.util.hit.HitResult.Type.BLOCK ? blockHit.getPos() : end;
+        double maxDistSq = eye.squaredDistanceTo(effectiveEnd);
+
+        Box box = caster.getBoundingBox().stretch(look.multiply(RANGE)).expand(1.0D);
+        EntityHitResult hit = ProjectileUtil.raycast(caster, eye, effectiveEnd, box,
+                e -> e instanceof LivingEntity living && e != caster && living.isAlive(), maxDistSq);
         if (hit != null && hit.getEntity() instanceof LivingEntity living) {
             return living;
         }
@@ -188,10 +218,14 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         int adjustedLife = getEnvironmentAdjustedLife(host, lifeTicks);
         SeedData seed = seeds.get(host.getUuid());
         if (seed != null) {
+            // 同一宿主：堆叠 1 层（封顶 MAX_SEEDS=3），并重置生命期 / 未来结果时间
+            seed.stack = Math.min(MAX_SEEDS, seed.stack + 1);
             seed.endTick = now + adjustedLife;
             seed.nextFruitTick = now + ROOTING_TICKS;
         } else {
             cleanupExpiredSeeds(caster, now);
+            // 超过同时宿主上限时移除最早一个（FIFO）
+            // 注：MAX_SEEDS 同时作为“同一宿主堆叠上限”与“独立宿主上限”，保持设计简化
             if (seeds.size() >= MAX_SEEDS) {
                 Iterator<UUID> iterator = seeds.keySet().iterator();
                 if (iterator.hasNext()) {
@@ -203,9 +237,10 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         }
 
         if (host.getWorld() instanceof ServerWorld world) {
+            int finalStack = seeds.get(host.getUuid()).stack;
             ParticleUtils.spawnParticles(world, SEED_DUST,
                     host.getX(), host.getY() + host.getHeight() * 0.65, host.getZ(),
-                    18, 0.25, 0.35, 0.25, 0.02);
+                    18 + finalStack * 6, 0.25, 0.35, 0.25, 0.02);
             world.playSound(null, host.getX(), host.getY(), host.getZ(),
                     SoundEvents.BLOCK_GRASS_PLACE, SoundCategory.PLAYERS, 0.9f, 1.5f);
         }
@@ -240,16 +275,14 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         boolean friend = WhitelistUtils.isBuffTarget(caster, host);
         if (friend) {
             FriendFruit fruit = selectFriendFruit(host);
-            applyFriendFruit(host, fruit, host == caster);
-            spreadFriendFruit(caster, host, fruit);
+            applyFriendFruit(host, fruit, host == caster, seed.stack);
             seed.lastFruitName = fruit.name();
-            spawnFruitParticles(host, FRIEND_DUST);
+            spawnFruitParticles(host, FRIEND_DUST, seed.stack);
         } else if (!WhitelistUtils.isProtected(caster, host)) {
             EnemyFruit fruit = selectEnemyFruit(host);
-            applyEnemyFruit(host, fruit);
-            spreadEnemyFruit(caster, host, fruit);
+            applyEnemyFruit(host, fruit, seed.stack);
             seed.lastFruitName = fruit.name();
-            spawnFruitParticles(host, ENEMY_DUST);
+            spawnFruitParticles(host, ENEMY_DUST, seed.stack);
         }
     }
 
@@ -279,65 +312,52 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         return EnemyFruit.SOUR;
     }
 
-    private void spreadFriendFruit(ServerPlayerEntity caster, LivingEntity host, FriendFruit fruit) {
-        ServerWorld world = (ServerWorld) host.getWorld();
-        Box box = host.getBoundingBox().expand(SPREAD_RADIUS);
-        List<LivingEntity> targets = world.getEntitiesByClass(LivingEntity.class, box,
-                e -> e != host && e.isAlive() && host.squaredDistanceTo(e) <= SPREAD_RADIUS_SQ);
-        for (LivingEntity target : targets) {
-            if (WhitelistUtils.isBuffTarget(caster, target)) {
-                applyFriendFruit(target, fruit, target == caster, FRIEND_SPREAD_DIVISOR);
-            }
-        }
-    }
-
-    private void spreadEnemyFruit(ServerPlayerEntity caster, LivingEntity host, EnemyFruit fruit) {
-        ServerWorld world = (ServerWorld) host.getWorld();
-        Box box = host.getBoundingBox().expand(SPREAD_RADIUS);
-        List<LivingEntity> targets = world.getEntitiesByClass(LivingEntity.class, box,
-                e -> e != host && e.isAlive() && host.squaredDistanceTo(e) <= SPREAD_RADIUS_SQ);
-        for (LivingEntity target : targets) {
-            if (!WhitelistUtils.isBuffTarget(caster, target) && !WhitelistUtils.isProtected(caster, target)) {
-                applyEnemyFruit(target, fruit, ENEMY_SPREAD_DIVISOR);
-            }
-        }
-    }
-
     private void applyFriendFruit(LivingEntity target, FriendFruit fruit, boolean self) {
-        applyFriendFruit(target, fruit, self, 1);
+        applyFriendFruit(target, fruit, self, 1, 1);
     }
 
-    private void applyFriendFruit(LivingEntity target, FriendFruit fruit, boolean self, int divisor) {
+    private void applyFriendFruit(LivingEntity target, FriendFruit fruit, boolean self, int stack) {
+        applyFriendFruit(target, fruit, self, 1, stack);
+    }
+
+    private void applyFriendFruit(LivingEntity target, FriendFruit fruit, boolean self, int divisor, int stack) {
         float selfMultiplier = self ? SELF_DURATION_MULTIPLIER : 1.0f;
+        // amplifier = stack-1（0~2），堆叠越高状态效果越强
+        int amp = MathHelper.clamp(stack - 1, 0, 2);
         switch (fruit) {
             case HONEYDEW -> {
-                addEffect(target, StatusEffects.REGENERATION, scaleDuration(60, divisor, selfMultiplier), 0);
-                addEffect(target, StatusEffects.ABSORPTION, scaleDuration(100, divisor, selfMultiplier), 0);
+                addEffect(target, StatusEffects.REGENERATION, scaleDuration(60, divisor, selfMultiplier), amp);
+                addEffect(target, StatusEffects.ABSORPTION, scaleDuration(100, divisor, selfMultiplier), amp);
                 removeOneNegativeEffect(target);
             }
             case PRICKLY_PEAR -> {
-                addEffect(target, StatusEffects.RESISTANCE, scaleDuration(80, divisor, selfMultiplier), 0);
-                addEffect(target, StatusEffects.STRENGTH, scaleDuration(80, divisor, selfMultiplier), 0);
+                addEffect(target, StatusEffects.RESISTANCE, scaleDuration(80, divisor, selfMultiplier), amp);
+                addEffect(target, StatusEffects.STRENGTH, scaleDuration(80, divisor, selfMultiplier), amp);
             }
             case WIND_BERRY -> {
-                addEffect(target, StatusEffects.SPEED, scaleDuration(100, divisor, selfMultiplier), 0);
+                addEffect(target, StatusEffects.SPEED, scaleDuration(100, divisor, selfMultiplier), amp);
                 addEffect(target, StatusEffects.SLOW_FALLING, scaleDuration(80, divisor, selfMultiplier), 0);
             }
             case FRAGRANT -> {
-                addEffect(target, StatusEffects.HASTE, scaleDuration(60, divisor, selfMultiplier), 0);
-                target.heal(divisor == 1 ? 1.0f : 0.5f);
+                addEffect(target, StatusEffects.HASTE, scaleDuration(60, divisor, selfMultiplier), amp);
+                target.heal((divisor == 1 ? 1.0f : 0.5f) * stack);
             }
         }
     }
 
     private void applyEnemyFruit(LivingEntity target, EnemyFruit fruit) {
-        applyEnemyFruit(target, fruit, 1);
+        applyEnemyFruit(target, fruit, 1, 1);
     }
 
-    private void applyEnemyFruit(LivingEntity target, EnemyFruit fruit, int divisor) {
+    private void applyEnemyFruit(LivingEntity target, EnemyFruit fruit, int stack) {
+        applyEnemyFruit(target, fruit, 1, stack);
+    }
+
+    private void applyEnemyFruit(LivingEntity target, EnemyFruit fruit, int divisor, int stack) {
+        int amp = MathHelper.clamp(stack - 1, 0, 2);
         switch (fruit) {
             case VINE -> {
-                addEffect(target, StatusEffects.SLOWNESS, scaleDuration(60, divisor, 1.0f), 0);
+                addEffect(target, StatusEffects.SLOWNESS, scaleDuration(60, divisor, 1.0f), amp);
                 if (!target.isOnGround()) {
                     Vec3d velocity = target.getVelocity();
                     target.setVelocity(velocity.x * 0.75, Math.min(velocity.y, -0.08), velocity.z * 0.75);
@@ -345,19 +365,19 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
                 }
             }
             case BITTER -> {
-                addEffect(target, StatusEffects.WEAKNESS, scaleDuration(80, divisor, 1.0f), 0);
+                addEffect(target, StatusEffects.WEAKNESS, scaleDuration(80, divisor, 1.0f), amp);
                 addEffect(target, StatusEffects.GLOWING, scaleDuration(80, divisor, 1.0f), 0);
             }
             case ROTTEN -> {
                 if (target.getGroup() == EntityGroup.UNDEAD) {
-                    addEffect(target, StatusEffects.SLOWNESS, scaleDuration(70, divisor, 1.0f), 0);
-                    addEffect(target, StatusEffects.WEAKNESS, scaleDuration(70, divisor, 1.0f), 0);
+                    addEffect(target, StatusEffects.SLOWNESS, scaleDuration(70, divisor, 1.0f), amp);
+                    addEffect(target, StatusEffects.WEAKNESS, scaleDuration(70, divisor, 1.0f), amp);
                 } else {
-                    addEffect(target, StatusEffects.POISON, scaleDuration(60, divisor, 1.0f), 0);
+                    addEffect(target, StatusEffects.POISON, scaleDuration(60, divisor, 1.0f), amp);
                 }
             }
             case SOUR -> {
-                addEffect(target, StatusEffects.SLOWNESS, scaleDuration(40, divisor, 1.0f), 0);
+                addEffect(target, StatusEffects.SLOWNESS, scaleDuration(40, divisor, 1.0f), amp);
                 addEffect(target, StatusEffects.GLOWING, scaleDuration(60, divisor, 1.0f), 0);
             }
         }
@@ -400,22 +420,38 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         return null;
     }
 
-    private void spawnAttachedSeedParticles(LivingEntity host, SeedData seed, long now) {
+    private void spawnAttachedSeedParticles(ServerPlayerEntity caster, LivingEntity host, SeedData seed, long now) {
         if (!(host.getWorld() instanceof ServerWorld world)) return;
+        boolean friend = WhitelistUtils.isBuffTarget(caster, host);
+        // 满层 outline 高光：通过 scoreboard team 染色 + 短时长 GLOWING 状态实现客户端描边。
+        // 优先级低于次要技能：被次要技能感染的目标让位（不画绿/红 outline）。
+        boolean infected = net.onixary.shapeShifterCurseFabric.ssc_addon.ability.InfectionSporeManager.isInfected(host.getUuid());
+        if (seed.stack >= MAX_SEEDS && !infected) {
+            if (friend) {
+                net.onixary.shapeShifterCurseFabric.ssc_addon.util.GlowMarker.markFriend(host);
+            } else {
+                net.onixary.shapeShifterCurseFabric.ssc_addon.util.GlowMarker.markEnemy(host);
+            }
+        } else {
+            net.onixary.shapeShifterCurseFabric.ssc_addon.util.GlowMarker.unmark(host);
+        }
         if (now % 10 != 0) return;
-        ParticleEffect particle = WhitelistUtils.isBuffTarget((ServerPlayerEntity) entity, host) ? FRIEND_DUST : ENEMY_DUST;
+        ParticleEffect particle = friend ? FRIEND_DUST : ENEMY_DUST;
+        // 粒子量随堆叠层数增加，仅作为附着指示，不再用于"满层光环"
+        int count = 2 * seed.stack;
         ParticleUtils.spawnParticles(world, particle,
                 host.getX(), host.getY() + host.getHeight() * 0.75, host.getZ(),
-                2, 0.18, 0.25, 0.18, 0.0);
+                count, 0.18, 0.25, 0.18, 0.0);
     }
 
-    private void spawnFruitParticles(LivingEntity host, ParticleEffect particle) {
+    private void spawnFruitParticles(LivingEntity host, ParticleEffect particle, int stack) {
         if (!(host.getWorld() instanceof ServerWorld world)) return;
         double y = host.getY() + host.getHeight() * 0.75;
+        int extra = stack * 4;
         ParticleUtils.spawnParticles(world, particle, host.getX(), y, host.getZ(),
-                16, 0.35, 0.45, 0.35, 0.02);
+                16 + extra, 0.35, 0.45, 0.35, 0.02);
         ParticleUtils.spawnParticles(world, SEED_DUST, host.getX(), y, host.getZ(),
-                8, 0.25, 0.35, 0.25, 0.01);
+                8 + extra / 2, 0.25, 0.35, 0.25, 0.01);
         world.playSound(null, host.getX(), host.getY(), host.getZ(),
                 SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.35f, 1.8f);
     }
@@ -444,6 +480,8 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         private long endTick;
         private long nextFruitTick;
         private String lastFruitName = "ROOTING";
+        /** 堆叠层数 1～3，决定资源加成与粒子密度 */
+        private int stack = 1;
 
         private SeedData(long endTick, long nextFruitTick) {
             this.endTick = endTick;

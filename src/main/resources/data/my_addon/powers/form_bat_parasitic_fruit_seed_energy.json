@@ -1,0 +1,11 @@
+{
+    "type": "origins:resource",
+    "min": 0,
+    "max": 10,
+    "start_value": 10,
+    "hud_render": {
+        "should_render": false
+    },
+    "name": "种子量",
+    "description": "寄生果蝠形态专属能量。上限 10，两个主动技能每次释放消耗 1 点，能量不足时无法释放。潜行下右键主手原版种子可消耗 1 个种子立即回复 1 点能量，同时能量每 5 秒自然回复 1 点。"
+}

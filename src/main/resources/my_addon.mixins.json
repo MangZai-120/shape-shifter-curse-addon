@@ -30,6 +30,7 @@
                    "SscAddonCodexStatusMixin",
                    "entity.SscAddonEntityIgnitionMixin",
                    "entity.SscAddonEntityMixin",
+                   "entity.SeedEnergyEatFoodMixin",
                    "entity.SscAddonLivingEntityMixin",
                    "SscAddonTargetPredicateMixin",
                    "effect.SscAddonTravelMixin",

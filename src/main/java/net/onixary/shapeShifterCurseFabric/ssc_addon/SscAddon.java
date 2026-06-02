@@ -49,6 +49,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayClearMarkerEnti
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.AllayFriendMarkerEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostBallEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostStormEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.InfectionSporeBombEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.WitchFamiliarEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.forms.*;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.*;
@@ -110,6 +111,15 @@ public class SscAddon implements ModInitializer {
 			Registries.ENTITY_TYPE,
 			new Identifier("ssc_addon", "frost_ball"),
 			FabricEntityTypeBuilder.<FrostBallEntity>create(SpawnGroup.MISC, FrostBallEntity::new)
+					.dimensions(EntityDimensions.fixed(0.25f, 0.25f))
+					.trackRangeBlocks(64).trackedUpdateRate(10)
+					.build()
+	);
+	// 寄生果蝠「感染孢子炸弹」投掷物
+	public static final EntityType<InfectionSporeBombEntity> INFECTION_SPORE_BOMB_ENTITY = Registry.register(
+			Registries.ENTITY_TYPE,
+			new Identifier("ssc_addon", "infection_spore_bomb"),
+			FabricEntityTypeBuilder.<InfectionSporeBombEntity>create(SpawnGroup.MISC, InfectionSporeBombEntity::new)
 					.dimensions(EntityDimensions.fixed(0.25f, 0.25f))
 					.trackRangeBlocks(64).trackedUpdateRate(10)
 					.build()
@@ -346,6 +356,8 @@ public class SscAddon implements ModInitializer {
 		SscAddonNetworking.registerServerReceivers();
 		net.onixary.shapeShifterCurseFabric.ssc_addon.loot.StoryBookLoot.init();
 		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPTotem.init();
+		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.InfectionSporeManager.init();
+		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SeedEnergyEatingHandler.register();
 		LifesavingCatTailItem.registerLootTable();
 		AnkhStoneItem.registerLootTable();
 	}

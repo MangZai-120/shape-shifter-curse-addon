@@ -179,7 +179,11 @@ public class SscAddonClient implements ClientModInitializer {
 		EntityRendererRegistry.register(SscAddon.FROST_STORM_ENTITY, EmptyEntityRenderer::new);
 		EntityRendererRegistry.register(SscAddon.FRIEND_MARKER_ENTITY_TYPE, FlyingItemEntityRenderer::new);
 		EntityRendererRegistry.register(SscAddon.CLEAR_MARKER_ENTITY_TYPE, FlyingItemEntityRenderer::new);
+		EntityRendererRegistry.register(SscAddon.INFECTION_SPORE_BOMB_ENTITY, FlyingItemEntityRenderer::new);
 		EntityRendererRegistry.register(SscAddon.WITCH_FAMILIAR_ENTITY, WitchFamiliarRenderer::new);
+
+		// 寄生果蝠形态种子量能量条 HUD
+		SeedEnergyHudRenderer.register();
 
 		// 女巫使魔刷怪蛋颜色注册
 		ColorProviderRegistry.ITEM.register(

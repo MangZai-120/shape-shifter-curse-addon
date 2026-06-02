@@ -587,12 +587,20 @@
     "codex.form.my_addon.bat_parasitic_fruit.name":  "寄生果蝠",
     "my_addon.form_bat_parasitic_fruit.model_name":  "寄生果蝠",
     "power.my_addon.form_bat_parasitic_fruit_parasitic_seed.name":  "灵果寄生",
-    "power.my_addon.form_bat_parasitic_fruit_parasitic_seed.description":  "向准星方向播出灵果种子，命中生物后附着在目标身上。友方宿主会根据状态周期性获得治疗、防护、机动或支援果实；敌方宿主则会结出缠藤、苦涩、腐熟或酸涩果实，施加缓慢、虚弱、发光等削弱。果实效果会以宿主为中心小范围扩散。冷却10秒，未命中生物时进入5秒半冷却。",
+    "power.my_addon.form_bat_parasitic_fruit_parasitic_seed.description":  "向准星方向播出灵果种子（6 格内且不可穿墙）。命中生物后在其身上生根，周期性结果：友方安装蛜露/刺梨/风莓/清香果提供治疗与辅助，敌方安装缠藤/苦涩/腐熟/酸涩果施加减速、虚弱、发光、中毒等削弱。果实只对被命中的宿主生效，不再向周围扩散。冷却 1 秒，消耗 1 点种子量，未命中生物时进入半冷却且不扣能量。",
     "advancements.my_addon.on_transform_bat_parasitic_fruit.title":  "寄生果蝠",
     "advancements.my_addon.on_transform_bat_parasitic_fruit.description":  "首次变成寄生果蝠",
     "codex.form.my_addon.bat_parasitic_fruit.title":  "\n‘当进化石把果实与回声的生命力压入蝙蝠的骨翼，它便不再只是夜色里的掠影……\n你成为了移动果园的播种者，能让种子在同伴与敌人体内同时开花。’\n",
     "codex.form.my_addon.bat_parasitic_fruit.appearance":  "你的蝠翼仍保持原本的轮廓，但皮膜下隐约流动着青绿与金色的脉络。细小的灵果种子像萤火一样绕着你飞舞，等待被播入下一个宿主。",
     "codex.form.my_addon.bat_parasitic_fruit.pros":  "移动果园\n进化石让蝙蝠的果食本能异化为寄生性的辅助能力：\n\n灵果寄生：按下主动技能键向准星方向播出灵果种子。种子必须命中生物，命中后附着在目标身上，短暂生根后每2秒结果一次。若宿主为友方，种子会根据其状态结出蜜露果、刺梨果、风莓果或清香果，提供治疗、吸收、防护、力量、速度、缓降或急迫等支援；若宿主为敌方，则结出缠藤果、苦涩果、腐熟果或酸涩果，施加缓慢、虚弱、发光或中毒等削弱。果实效果会以宿主为中心向周围同阵营单位扩散减半时长版本\n\n寄生上限：你最多同时维持3枚灵果种子，同一目标身上只能存在1枚，重复命中会刷新持续时间\n\n此外，你保留了三阶段蝙蝠的主要能力：小巧体型、夜视、缓降、墙壁附着、空中加速、跳跃增强、徒手快速挖掘与果食本能。",
     "codex.form.my_addon.bat_parasitic_fruit.cons":  "寄生生态并不稳定：\n\n灵果种子必须命中生物才能生效，落空只会进入半冷却\n\n白天且头顶天空无遮挡时，种子持续时间缩短；夜晚或低光照环境下持续时间延长\n\n种在自己身上的正面果实持续时间会降低，避免辅助能力完全转为自我强化\n\n你的身体仍是蝙蝠的小巧身板：无法装备胸甲、腿甲与靴子，也无法使用远程武器；在地面行走时速度较慢。",
-    "codex.form.my_addon.bat_parasitic_fruit.instincts":  "你能听见血肉之中细微的水分流动，也能闻到伤口、恐惧与疲惫散发出的不同气味。你的本能不再只是寻找水果，而是寻找适合种子扎根的身体。队友是移动的果园，敌人也是。"
+    "codex.form.my_addon.bat_parasitic_fruit.instincts":  "你能听见血肉之中细微的水分流动，也能闻到伤口、恐惧与疲惫散发出的不同气味。你的本能不再只是寻找水果，而是寻找适合种子扎根的身体。队友是移动的果园，敌人也是。",
+    "power.my_addon.form_bat_parasitic_fruit_spore_bomb.name":  "感染孢子弹",
+    "power.my_addon.form_bat_parasitic_fruit_spore_bomb.description":  "投出一颗爆炸种子，命中方块或生物时无伤害爆炸并释放孢子。爆炸 4 格内：受白名单保护的友方在 15 秒内每 3 秒回复 1 点生命，其余生物则被感染——15 秒内每 3 秒受到 1 点真伤并被高亮 1 秒，无法以饱食度恢复血量，造成的所有伤害减少 15%；被感染目标 1.5 格内的非白名单生物会被传染，剩余时间继承自当前感染源。冷却 1 秒，消耗 1 点种子量。",
+    "power.my_addon.form_bat_parasitic_fruit_seed_energy.name":  "种子量",
+    "power.my_addon.form_bat_parasitic_fruit_seed_energy.description":  "寄生果蝠形态专属能量。上限 10，两个主动技能每次释放消耗 1 点；能量不足时无法释放。潜行下右键主手原版种子开始持续 2 秒的进食，期间持续潜行可完成；每 3 分钟最多吃 8 颗，超量时会提示「吃不下更多了」。能量每 5 秒自然回复 1 点。",
+    "power.my_addon.form_bat_parasitic_fruit_seed_regen.name":  "种子量恢复",
+    "power.my_addon.form_bat_parasitic_fruit_seed_regen.description":  "每 5 秒回复 1 点种子量，吊顶以 10 点为上限。",
+    "msg.my_addon.seed_eat_progress":  "正在吃种子 %s",
+    "msg.my_addon.seed_eat_too_much":  "你已经吃不下更多的种子了"
 }

@@ -33,6 +33,8 @@ public class FormIdentifiers {
 	public static final Identifier BAT_DESMODUS = new Identifier("my_addon", "bat_desmodus");
 	// 寄生果蝠形态ID
 	public static final Identifier BAT_PARASITIC_FRUIT = new Identifier("my_addon", "bat_parasitic_fruit");
+	// 寄生果蝠"种子量"能量资源（最大 10）
+	public static final Identifier BAT_PARASITIC_FRUIT_SEED_ENERGY = new Identifier("my_addon", "form_bat_parasitic_fruit_seed_energy");
 	// 吸血蝙蝠形态雾血资源
 	public static final Identifier BAT_BLOOD_RESOURCE = new Identifier("my_addon", "form_bat_desmodus_blood_resource");
 	// 堕灵形态特有的CD资源

@@ -11,6 +11,7 @@ public class SscAddonPowers {
 		Registry.register(ApoliRegistries.POWER_FACTORY, MistFormAbilityPower.createFactory().getSerializerId(), MistFormAbilityPower.createFactory());
 		Registry.register(ApoliRegistries.POWER_FACTORY, BatSonicWaveAbilityPower.createFactory().getSerializerId(), BatSonicWaveAbilityPower.createFactory());
 		Registry.register(ApoliRegistries.POWER_FACTORY, ParasiticFruitSeedPower.createFactory().getSerializerId(), ParasiticFruitSeedPower.createFactory());
+		Registry.register(ApoliRegistries.POWER_FACTORY, ParasiticSporeBombPower.createFactory().getSerializerId(), ParasiticSporeBombPower.createFactory());
 		Registry.register(ApoliRegistries.POWER_FACTORY, SnowFoxSpFormSpeedPower.createFactory().getSerializerId(), SnowFoxSpFormSpeedPower.createFactory());
 		Registry.register(ApoliRegistries.POWER_FACTORY, EffectEfficiencyReductionPower.createFactory().getSerializerId(), EffectEfficiencyReductionPower.createFactory());
 	}

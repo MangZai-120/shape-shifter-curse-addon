@@ -1,0 +1,15 @@
+{
+    "type": "shape-shifter-curse:custom_edible",
+    "item_id_list": [
+        "minecraft:melon_seeds",
+        "minecraft:pumpkin_seeds",
+        "minecraft:beetroot_seeds",
+        "minecraft:wheat_seeds",
+        "minecraft:torchflower_seeds",
+        "minecraft:pitcher_pod"
+    ],
+    "hunger": 0,
+    "saturation_modifier": 0.0,
+    "always_edible": true,
+    "snack": true
+}

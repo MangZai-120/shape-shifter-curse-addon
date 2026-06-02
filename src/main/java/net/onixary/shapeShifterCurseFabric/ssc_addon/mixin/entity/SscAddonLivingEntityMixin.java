@@ -16,6 +16,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormRege
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPRangedHitPassive;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaMarkManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.BatDesmodusBloodThirst;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.InfectionSporeManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.power.EffectEfficiencyReductionPower;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
@@ -111,6 +112,22 @@ public abstract class SscAddonLivingEntityMixin {
 		if (amount > maxDamage) {
 			args.set(1, maxDamage);
 		}
+	}
+
+	/**
+	 * 寄生果蝠「感染孢子」：被感染的实体造成伤害时减免 15%。
+	 * 伤害源攻击者命中：检查 attacker 是否处于感染状态，是则按 0.85x 缩放 amount。
+	 */
+	@ModifyArgs(method = "damage", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;applyDamage(Lnet/minecraft/entity/damage/DamageSource;F)V"))
+	private void ssc_addon$infectionAttackerDamageReduction(Args args) {
+		LivingEntity self = (LivingEntity) (Object) this;
+		if (self.getWorld().isClient()) return;
+		DamageSource source = args.get(0);
+		Entity attacker = source.getAttacker();
+		if (!(attacker instanceof LivingEntity living)) return;
+		if (!InfectionSporeManager.isInfected(living.getUuid())) return;
+		float amount = args.get(1);
+		args.set(1, InfectionSporeManager.reduceDamageIfInfected(living, amount));
 	}
 
 	@ModifyVariable(method = "addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;Lnet/minecraft/entity/Entity;)Z", at = @At("HEAD"), argsOnly = true)
