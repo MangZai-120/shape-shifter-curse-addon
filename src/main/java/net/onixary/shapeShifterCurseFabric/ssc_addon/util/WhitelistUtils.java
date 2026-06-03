@@ -23,7 +23,7 @@ import java.util.UUID;
  */
 public class WhitelistUtils {
 
-    /** 自定义模式标志 tag：存在=自定义模式（按列表判定）；缺失=默认模式（保护所有玩家+宠物，无视列表） */
+    /** 自定义模式标志 tag：保留给 GUI 显示；实际判定统一遵循“名单空/非空”规则。 */
     public static final String CUSTOM_MODE_TAG = "ssc_allay_wl_mode:custom";
 
     /** 生物白名单 tag 前缀。约定由"友军标记"物品写入玩家自身的 command tags：
@@ -34,7 +34,7 @@ public class WhitelistUtils {
         throw new UnsupportedOperationException("Utility class");
     }
 
-    /** 是否处于自定义模式。默认模式下列表内容仍保留，但不参与判定。 */
+    /** 是否处于自定义模式。仅供 GUI 显示，不再影响战斗/治疗判定语义。 */
     public static boolean isCustomMode(ServerPlayerEntity player) {
         return player.getCommandTags().contains(CUSTOM_MODE_TAG);
     }
@@ -111,13 +111,11 @@ public class WhitelistUtils {
         }
 
         Set<String> tags = attacker.getCommandTags();
-        boolean customMode = tags.contains(CUSTOM_MODE_TAG);
-        // 默认模式（未启用自定义）= 列表视为空，永远走"保护所有玩家+宠物"分支
-        boolean whitelistEmpty = !customMode
-                || tags.stream().noneMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
+        // 默认白名单语义：名单空 → 保护玩家/宠物/召唤物；名单非空 → 仅名单内对象受保护。
+        // 注意：生物白名单可能只写入 WHITELIST_MOB_TAG_PREFIX，因此必须一起计入“非空”。
+        boolean whitelistEmpty = !hasAnyWhitelistEntry(tags);
 
-        // 自定义模式下额外检查生物白名单（默认模式不生效，因为默认模式不区分名单）
-        if (customMode && isMobWhitelisted(attacker, target.getUuid())) {
+        if (!whitelistEmpty && isMobWhitelisted(attacker, target.getUuid())) {
             return true;
         }
 
@@ -177,11 +175,10 @@ public class WhitelistUtils {
         }
 
         Set<String> tags = caster.getCommandTags();
-        boolean customMode = tags.contains(CUSTOM_MODE_TAG);
-        boolean whitelistEmpty = !customMode
-                || tags.stream().noneMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX));
+        // 与攻击保护判定保持一致：名单空时按默认友方集合；名单非空时仅名单内对象吃 buff。
+        boolean whitelistEmpty = !hasAnyWhitelistEntry(tags);
 
-        if (customMode && isMobWhitelisted(caster, target.getUuid())) {
+        if (!whitelistEmpty && isMobWhitelisted(caster, target.getUuid())) {
             return true;
         }
 
@@ -211,6 +208,12 @@ public class WhitelistUtils {
     private static boolean hasOwnerTag(LivingEntity entity) {
         return entity.getCommandTags().stream()
                 .anyMatch(t -> t.startsWith("owner:") || t.startsWith("ssc_owner:"));
+    }
+
+    /** 玩家白名单 tag 与生物白名单 tag 任一存在，都视为名单非空。 */
+    private static boolean hasAnyWhitelistEntry(Set<String> tags) {
+        return tags.stream().anyMatch(t -> t.startsWith(AllaySPGroupHeal.WHITELIST_TAG_PREFIX)
+                || t.startsWith(WHITELIST_MOB_TAG_PREFIX));
     }
 
     /**

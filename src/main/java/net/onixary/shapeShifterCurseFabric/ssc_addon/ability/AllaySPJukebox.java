@@ -5,7 +5,10 @@ import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
 import net.minecraft.network.packet.s2c.play.StopSoundS2CPacket;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -57,6 +60,8 @@ public class AllaySPJukebox {
     public static void stopAllMusic(ServerPlayerEntity player) {
         player.networkHandler.sendPacket(new StopSoundS2CPacket(SscAddon.ALLAY_HEAL_MUSIC_ID, SoundCategory.RECORDS));
         player.networkHandler.sendPacket(new StopSoundS2CPacket(SscAddon.ALLAY_SPEED_MUSIC_ID, SoundCategory.RECORDS));
+        // 兜底：客机端按 ID 停止偶发不生效（流式音乐 SoundInstance 注册时序问题），再停整个 RECORDS 类别确保彻底停止（#1 关不掉）
+        player.networkHandler.sendPacket(new StopSoundS2CPacket((Identifier) null, SoundCategory.RECORDS));
         playerMusicState.put(player.getUuid(), -1);
     }
 
@@ -67,12 +72,15 @@ public class AllaySPJukebox {
         // Stop both old sounds first
         player.networkHandler.sendPacket(new StopSoundS2CPacket(SscAddon.ALLAY_HEAL_MUSIC_ID, SoundCategory.RECORDS));
         player.networkHandler.sendPacket(new StopSoundS2CPacket(SscAddon.ALLAY_SPEED_MUSIC_ID, SoundCategory.RECORDS));
+        // 兜底停整个 RECORDS 类别：确保客机切换模式时旧音乐彻底停止、不与新音乐重叠（#1）
+        player.networkHandler.sendPacket(new StopSoundS2CPacket((Identifier) null, SoundCategory.RECORDS));
 
-        // Play new music immediately
+        // 只发给当前玩家，避免多人环境下每个悦灵唱片机都向全场广播导致音乐叠加且无法停止。
         SoundEvent newSound = (newMode == AllayJukeboxItem.MODE_SPEED) ? SscAddon.ALLAY_SPEED_MUSIC_EVENT : SscAddon.ALLAY_HEAL_MUSIC_EVENT;
-        ServerWorld serverWorld = player.getServerWorld();
-        serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),
-                newSound, SoundCategory.RECORDS, 0.2f, 1.0f);
+        RegistryEntry<SoundEvent> entry = Registries.SOUND_EVENT.getEntry(newSound);
+        // 音量砍到原来的 30%（0.2 → 0.06）：悦灵唱片机音乐不再过吵（#1 音量调整）
+        player.networkHandler.sendPacket(new PlaySoundS2CPacket(entry, SoundCategory.RECORDS,
+                player.getX(), player.getY(), player.getZ(), 0.06f, 1.0f, player.getRandom().nextLong()));
 
         playerMusicState.put(player.getUuid(), newMode);
     }

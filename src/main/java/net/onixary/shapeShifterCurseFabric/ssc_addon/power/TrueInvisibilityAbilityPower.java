@@ -13,6 +13,7 @@ import io.github.apace100.calio.data.SerializableData;
 import io.github.apace100.calio.data.SerializableDataTypes;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -86,6 +87,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 		if (entity.hasStatusEffect(SscAddon.PURIFIED)) {
 			if (entity.hasStatusEffect(SscAddon.PRE_INVISIBILITY)) {
 				entity.removeStatusEffect(SscAddon.PRE_INVISIBILITY);
+				entity.removeStatusEffect(StatusEffects.INVISIBILITY);
 				applyUniversalCooldown();
 			}
 			if (entity.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) {
@@ -221,6 +223,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 
 		// Remove invisibility effect
 		entity.removeStatusEffect(SscAddon.TRUE_INVISIBILITY);
+		entity.removeStatusEffect(StatusEffects.INVISIBILITY);
 		wasInvisible = false;
 
 		ServerWorld serverWorld = (ServerWorld) entity.getWorld();

@@ -11,6 +11,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -96,6 +97,15 @@ public final class MancianimaTeleport {
 		} else {
 			targetFeet = computeRaycastLanding(world, eye, look, player);
 			if (targetFeet == null) return false;
+		}
+
+		// 传送落点判定：① 落点本身能容纳玩家；② 平台模式要求落点在玩家视野内（眼睛→落点腰部无方块遮挡）。
+		// 用「视野内」替代旧的整条路径碰撞采样——后者会把"传上比自己高的平台"误判为穿墙（脚→台顶直线必经平台实体）而拒绝。
+		// 视野判定既能挡隔栅栏/隔墙传送（落点腰部被遮挡），又允许正常登高/跳跃落点（#6）。
+		if (!isSafeLanding(world, player, targetFeet)
+				|| (mode == 1 && !isLandingVisible(world, player, targetFeet))) {
+			player.sendMessage(Text.translatable("message.ssc_addon.mancianima.teleport.no_platform"), true);
+			return false;
 		}
 
 		// 出发点粒子 + 音效（对周围所有玩家可见/可听）
@@ -293,14 +303,15 @@ public final class MancianimaTeleport {
 			if (hit.getSide() == Direction.UP) {
 				BlockPos solid = hit.getBlockPos();
 				Double topY = collisionTopY(world, solid);
-				if (topY != null && hasHeadroom(world, hitPos.x, topY, hitPos.z)) {
+				if (topY != null && hasHeadroom(world, hitPos.x, topY, hitPos.z)
+						&& isSafeLanding(world, player, new Vec3d(hitPos.x, topY, hitPos.z))) {
 					Vec3d landing = new Vec3d(hitPos.x, topY, hitPos.z);
 					if (withinRange(eye, landing)) return landing;
 				}
 			}
 			// Case 2：命中侧面/底面 → 在命中点前方的空气列里找最贴近命中 Y 的平台（用命中点 XZ）
 			BlockPos airCol = hit.getBlockPos().offset(hit.getSide());
-			Vec3d landing = findBestInColumn(world, hitPos.x, hitPos.z, airCol.getX(), airCol.getZ(), hitPos.y, eye, hitPos);
+			Vec3d landing = findBestInColumn(world, player, hitPos.x, hitPos.z, airCol.getX(), airCol.getZ(), hitPos.y, eye, hitPos);
 			if (landing != null) return landing;
 		}
 
@@ -310,7 +321,7 @@ public final class MancianimaTeleport {
 		double step = 0.5;
 		for (double d = 1.0; d <= MAX_RANGE; d += step) {
 			Vec3d sample = eye.add(look.multiply(d));
-			Vec3d landing = findBestInColumn(world, sample.x, sample.z,
+			Vec3d landing = findBestInColumn(world, player, sample.x, sample.z,
 					MathHelper.floor(sample.x), MathHelper.floor(sample.z), sample.y, eye, end);
 			if (landing == null) continue;
 			double sq = landing.squaredDistanceTo(end);
@@ -328,7 +339,7 @@ public final class MancianimaTeleport {
 	 * 候选窗口为 [refY-3, refY+1]，避免从远处低高度射线样本误取脚下地面。
 	 * 在窗口内全部候选中取离 anchor（射线终点/命中点）3D 距离最近的一个。
 	 */
-	private static Vec3d findBestInColumn(World world, double exactX, double exactZ,
+	private static Vec3d findBestInColumn(World world, PlayerEntity player, double exactX, double exactZ,
 	                                       int bx, int bz, double refY, Vec3d eye, Vec3d anchor) {
 		int topY = MathHelper.floor(refY) + 1;
 		int bottomY = MathHelper.floor(refY) - 3;
@@ -340,6 +351,7 @@ public final class MancianimaTeleport {
 			if (topYExact == null) continue;
 			if (!hasHeadroom(world, exactX, topYExact, exactZ)) continue;
 			Vec3d candidate = new Vec3d(exactX, topYExact, exactZ);
+			if (!isSafeLanding(world, player, candidate)) continue;
 			if (!withinRange(eye, candidate)) continue;
 			double sq = candidate.squaredDistanceTo(anchor);
 			if (sq < bestSq) {
@@ -379,5 +391,32 @@ public final class MancianimaTeleport {
 	/** 落点距离硬限制（眼睛到落点直线距离）。 */
 	private static boolean withinRange(Vec3d eye, Vec3d landing) {
 		return eye.squaredDistanceTo(landing) <= (MAX_RANGE + 0.5) * (MAX_RANGE + 0.5);
+	}
+
+	/** 检查落点处玩家完整碰撞箱是否为空。 */
+	private static boolean isSafeLanding(World world, PlayerEntity player, Vec3d feet) {
+		Box box = playerBoxAt(player, feet.x, feet.y, feet.z);
+		return world.isSpaceEmpty(player, box);
+	}
+
+	/** 落点必须在玩家视野内：眼睛→落点腰部的视线不被方块（含栅栏/墙）遮挡。用于杜绝平台模式隔障传送（#6）。 */
+	private static boolean isLandingVisible(World world, PlayerEntity player, Vec3d targetFeet) {
+		Vec3d eye = player.getEyePos();
+		// 取落点身体中心高度作为可见性参考点（约 0.5~0.9 格高），避免只检查脚底被台阶误判
+		Vec3d targetCenter = targetFeet.add(0, Math.min(0.9, Math.max(0.5, player.getHeight() / 2.0)), 0);
+		BlockHitResult hit = world.raycast(new RaycastContext(
+				eye, targetCenter,
+				RaycastContext.ShapeType.COLLIDER,
+				RaycastContext.FluidHandling.NONE,
+				player));
+		if (hit.getType() != HitResult.Type.BLOCK) return true;
+		// 命中方块点比落点更近（留 0.25 容差）→ 视线被遮挡 → 落点不可见 → 拒绝传送
+		return hit.getPos().squaredDistanceTo(eye) + 0.25 >= targetCenter.squaredDistanceTo(eye);
+	}
+
+	private static Box playerBoxAt(PlayerEntity player, double x, double y, double z) {
+		double halfWidth = Math.max(0.3, player.getWidth() / 2.0);
+		double height = Math.max(1.8, player.getHeight());
+		return new Box(x - halfWidth, y, z - halfWidth, x + halfWidth, y + height, z + halfWidth).contract(1.0E-7);
 	}
 }

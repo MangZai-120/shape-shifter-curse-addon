@@ -12,6 +12,7 @@ import io.github.apace100.calio.data.SerializableData;
 import io.github.apace100.calio.data.SerializableDataTypes;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -98,6 +99,7 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 
 		// Remove invisibility immediately
 		entity.removeStatusEffect(SscAddon.TRUE_INVISIBILITY);
+		entity.removeStatusEffect(StatusEffects.INVISIBILITY);
 
 		// Apply 50% slow (Slowness III = -45%, close enough) for 1 second
 		entity.addStatusEffect(new StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.SLOWNESS, 20, 2, false, false, false));

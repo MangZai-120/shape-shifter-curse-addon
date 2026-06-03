@@ -90,8 +90,8 @@ dependencies {
     // Fabric API
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    // Shape Shifter Curse Main Mod
-    modImplementation "maven.modrinth:shape-shifter-curse:${project.ssc_version}"
+    // Shape Shifter Curse Main Mod (本地 1.9.2 构建版，modrinth 还未发布)
+    modImplementation files("../幻型者诅咒原版/build/libs/shape-shifter-curse-fabric-${project.ssc_version}.jar")
     
     // Player Animator
     modImplementation "dev.kosmx.player-anim:player-animation-lib-fabric:${project.player_anim}"

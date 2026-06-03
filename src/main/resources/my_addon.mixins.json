@@ -42,6 +42,8 @@
                    "WanderingTraderTradeMixin"
                ],
     "client":  [
+                   "render.DefaultModelAnimationSystemMixin",
+                   "render.FormRenderFeatureOutlineMixin",
                    "render.InstinctBarRendererMixin",
                    "render.FormColorSelectMenuMixin",
                    "player.SscPlayerEntityRendererMixin",

@@ -7,6 +7,7 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
@@ -56,6 +57,8 @@ public class PreInvisibilityEffect extends StatusEffect {
 
 			// 4. Apply True Invisibility
 			entity.addStatusEffect(new StatusEffectInstance(SscAddon.TRUE_INVISIBILITY, duration, 0, false, false, true));
+			// 同步叠加原版隐身，确保服务器把“不可见”状态同步给其他客户端。
+			entity.addStatusEffect(new StatusEffectInstance(StatusEffects.INVISIBILITY, duration, 0, false, false, false));
 
 			// 5. Notify Player
 			if (entity instanceof PlayerEntity player) {
