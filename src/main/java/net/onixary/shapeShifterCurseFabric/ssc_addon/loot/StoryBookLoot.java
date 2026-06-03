@@ -270,6 +270,8 @@ public class StoryBookLoot implements ConfigChangeListener {
 				path.equals("chests/ruined_portal");
 	}
 
+	// 1.20.1 vanilla 中 SetNbtLootFunction.builder(NbtCompound) 是唯一可用重载，仍标记 @Deprecated 但无替代
+	@SuppressWarnings("deprecation")
 	private static void addBookToPool(LootPool.Builder pool, String title, String author, String content) {
 		pool.with(ItemEntry.builder(Items.WRITTEN_BOOK)
 				.apply(SetNbtLootFunction.builder(createBookNbt(title, author, content)))

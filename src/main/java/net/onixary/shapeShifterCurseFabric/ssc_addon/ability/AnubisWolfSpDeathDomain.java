@@ -595,29 +595,6 @@ public class AnubisWolfSpDeathDomain {
 		}
 	}
 
-	/**
-	 * 还原实体周围的已转化方块，防止灵魂沙减速/陷入效果
-	 */
-	private static void restoreBlocksAroundEntity(ServerWorld world, DomainData data, BlockPos center) {
-		for (int dx = -2; dx <= 2; dx++) {
-			for (int dz = -2; dz <= 2; dz++) {
-				for (int dy = -3; dy <= 2; dy++) {
-					BlockPos pos = center.add(dx, dy, dz);
-					for (Map<BlockPos, BlockState> blocks : data.changedBlocksByDistance.values()) {
-						BlockState original = blocks.get(pos);
-						if (original != null) {
-							if (isStillConverted(world, pos, original)) {
-									world.setBlockState(pos, original, Block.NOTIFY_ALL);
-							}
-							blocks.remove(pos);
-							break;
-						}
-					}
-				}
-			}
-		}
-	}
-
 	// ==================== 方块转化逻辑 ====================
 
 	/**

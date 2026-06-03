@@ -602,5 +602,7 @@
     "power.my_addon.form_bat_parasitic_fruit_seed_regen.name":  "种子量恢复",
     "power.my_addon.form_bat_parasitic_fruit_seed_regen.description":  "每 5 秒回复 1 点种子量，吊顶以 10 点为上限。",
     "msg.my_addon.seed_eat_progress":  "正在吃种子 %s",
-    "msg.my_addon.seed_eat_too_much":  "你已经吃不下更多的种子了"
+    "msg.my_addon.seed_eat_too_much":  "你已经吃不下更多的种子了",
+    "power.my_addon.form_bat_parasitic_fruit_plant_growth.name":  "灵果催生",
+    "power.my_addon.form_bat_parasitic_fruit_plant_growth.description":  "形态被动：每秒对身周 5 格半径内的每株农作物有 5% 概率促使其再生长一次。"
 }

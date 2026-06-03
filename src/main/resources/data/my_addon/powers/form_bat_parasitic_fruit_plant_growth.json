@@ -1,0 +1,9 @@
+{
+    "type": "my_addon:fruit_bat_plant_growth",
+    "name": "power.my_addon.form_bat_parasitic_fruit_plant_growth.name",
+    "description": "power.my_addon.form_bat_parasitic_fruit_plant_growth.description",
+    "hidden": false,
+    "tick_interval": 20,
+    "radius": 5,
+    "chance": 0.05
+}

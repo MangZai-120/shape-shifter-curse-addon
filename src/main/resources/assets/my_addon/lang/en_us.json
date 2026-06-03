@@ -602,5 +602,7 @@
     "power.my_addon.form_bat_parasitic_fruit_seed_regen.name":  "Seed Charge Regeneration",
     "power.my_addon.form_bat_parasitic_fruit_seed_regen.description":  "Regenerates 1 Seed Charge every 5 seconds, up to a maximum of 10.",
     "msg.my_addon.seed_eat_progress":  "Eating seed %s",
-    "msg.my_addon.seed_eat_too_much":  "You can't stomach any more seeds"
+    "msg.my_addon.seed_eat_too_much":  "You can't stomach any more seeds",
+    "power.my_addon.form_bat_parasitic_fruit_plant_growth.name":  "Spirit Fruit Bloom",
+    "power.my_addon.form_bat_parasitic_fruit_plant_growth.description":  "Form passive: every second, each crop within a 5-block radius has a 5% chance to advance one growth tick."
 }
