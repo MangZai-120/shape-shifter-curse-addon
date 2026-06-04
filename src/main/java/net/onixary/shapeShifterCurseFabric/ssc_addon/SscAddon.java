@@ -763,8 +763,26 @@ public class SscAddon implements ModInitializer {
 			}
 		});
 
+		// #13 修复：后加入的客机看「先在场玩家(含主机)」是 vanilla 玩家模型而非形态模型。
+		// 根因：主包 PlayerFormComponent 是 Cardinal Components 的「玩家组件」(registerForPlayers)，
+		// CCA 只在玩家「自己登录」时做一次初始同步，不会在其它玩家开始追踪该玩家时自动补发，
+		// 导致新观察者追踪到先在场玩家时拿不到其形态数据，于是渲染成原版模型。
+		// 方案：监听实体「开始追踪」事件——任一玩家开始追踪另一名玩家时，对被追踪玩家重发其形态组件，
+		// 让新观察者(以及跨维度/远距离重新进入视野的玩家)及时拿到正确形态。
+		net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents.START_TRACKING.register((trackedEntity, player) -> {
+			if (trackedEntity instanceof net.minecraft.server.network.ServerPlayerEntity tracked) {
+				try {
+					net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.sync(tracked);
+				} catch (Throwable ignored) {
+					// 极端时序下组件容器可能尚未就绪，忽略即可，下次状态变更会自动同步
+				}
+			}
+		});
+
+
 		// 玩家断线时清理所有静态状态Map，防止内存泄漏和重连后状态错乱
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+
 			java.util.UUID uuid = handler.player.getUuid();
 			System.out.println("[SSC_ADDON] DISCONNECT event fired for player: " + handler.player.getName().getString());
 			SnowFoxSpMeleeAbility.clearPlayer(uuid);
