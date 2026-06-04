@@ -268,6 +268,7 @@ public class SscAddon implements ModInitializer {
 		registerTickHandlers();
 		registerEntitySpawnHandlers();
 		registerPlayerEventHandlers();
+		registerStunOrphanCleanup();
 		registerServerLifecycleHandlers();
 		registerMancianimaEvents();
 		AnubisWolfSpSoulEnergy.registerEvents();
@@ -469,6 +470,33 @@ public class SscAddon implements ModInitializer {
 				GoldenSandstormRegen.tick(player);
 				net.onixary.shapeShifterCurseFabric.ssc_addon.ability.BatDesmodusBloodThirst.tick(player);
 				net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaPassive.tick(player);
+			}
+		});
+	}
+
+	/**
+	 * 兜底：清除残留的「定身(STUN)」攻击力/移速孤儿属性修正。
+	 * STUN 用固定 UUID 的属性修正实现「攻击力 -100% / 移速 -100%」。由于
+	 * GENERIC_ATTACK_DAMAGE 不是被同步追踪的属性、且换形态时不会被重建，一旦 STUN 经
+	 * 非正常路径（如换形态清状态效果）被移除而未触发 onStatusEffectRemoved，这个 -100%
+	 * 修正会以孤儿形式残留在玩家身上，导致「任意武器0伤、无图标、跨形态保留、过会才自愈」的bug。
+	 * 此处每服务端 tick 对在线玩家做校正：没有 STUN 效果却仍带 STUN 的固定 UUID 修正 → 立即移除。
+	 * （同时清理已存在于老存档的孤儿残留。）
+	 */
+	private void registerStunOrphanCleanup() {
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> {
+			for (net.minecraft.server.network.ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+				if (player.hasStatusEffect(STUN)) continue;
+				net.minecraft.entity.attribute.EntityAttributeInstance atk =
+						player.getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_ATTACK_DAMAGE);
+				if (atk != null && atk.getModifier(StunEffect.ATTACK_MODIFIER_UUID) != null) {
+					atk.removeModifier(StunEffect.ATTACK_MODIFIER_UUID);
+				}
+				net.minecraft.entity.attribute.EntityAttributeInstance spd =
+						player.getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MOVEMENT_SPEED);
+				if (spd != null && spd.getModifier(StunEffect.SPEED_MODIFIER_UUID) != null) {
+					spd.removeModifier(StunEffect.SPEED_MODIFIER_UUID);
+				}
 			}
 		});
 	}
