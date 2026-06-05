@@ -86,7 +86,11 @@ public class SnowFoxSpMeleeAbility {
 
 		double distanceMoved = data.ticksElapsed * DASH_SPEED;
 
-		if (distanceMoved >= DASH_DISTANCE || player.horizontalCollision || player.verticalCollision) {
+		// 不要检查 verticalCollision：踩在地面时 vanilla Entity.move 会基于"重力让 movement.y=-0.08
+		// 但被地面阻挡到 0，movement.y != vec3d.y"恒置 verticalCollision=true，导致站立触发的 dash
+		// 在第一 tick 就被这里 return 掉，setVelocity 一次都没执行，玩家原地不动也碰不到敌人。
+		// 水平撞墙才需要终止 dash，所以只看 horizontalCollision。
+		if (distanceMoved >= DASH_DISTANCE || player.horizontalCollision) {
 			DASHING_PLAYERS.remove(player.getUuid());
 			return;
 		}
@@ -94,6 +98,13 @@ public class SnowFoxSpMeleeAbility {
 		Vec3d velocity = data.direction.multiply(DASH_SPEED);
 		player.setVelocity(velocity);
 		player.velocityModified = true;
+		// 关键（多人/客机修复）：玩家移动是客户端权威，单靠 velocityModified 不保证把"自身速度"
+		// 下发给控制端，远端客机会原地不动、冲刺无位移、也碰不到沿途实体导致无伤害。
+		// 这里每 tick 显式给该玩家连接补发速度包，强制客机应用冲刺速度（主机本地玩家不受影响）。
+		if (player.networkHandler != null) {
+			player.networkHandler.sendPacket(
+					new net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket(player));
+		}
 
 		Box hitbox = player.getBoundingBox().expand(0.5);
 		List<Entity> nearbyEntities = player.getWorld().getOtherEntities(player, hitbox,
