@@ -28,6 +28,18 @@ public class StunnedKeyBindingMixin {
 				key.equals("key.ssc_addon.sp_secondary") ||
 				key.equals("key.use") ||
 				key.equals("key.attack") ||
+				// 移动 / 跳跃 / 潜行 / 疾跑：装死(PLAYING_DEAD)期间必须彻底屏蔽，否则客户端
+				// ClientPlayerEntity 仍会读到 movementInput 非零，travel(input) 内 updateVelocity
+				// 重新给玩家加水平速度，导致 PlayingDeadEffect 服务端每 tick 清零的 velocity
+				// 又被客户端推回去，玩家仍能 WASD 移动。STUN 已用 -100% 移速属性兜底，多一层
+				// keybinding 屏蔽不会有副作用且能消除客户端预测性滑步。
+				key.equals("key.forward") ||
+				key.equals("key.back") ||
+				key.equals("key.left") ||
+				key.equals("key.right") ||
+				key.equals("key.jump") ||
+				key.equals("key.sneak") ||
+				key.equals("key.sprint") ||
 				key.equals("key.tacz.shoot.desc") ||
 				key.equals("key.tacz.aim.desc") ||
 				key.equals("key.tacz.inspect.desc") ||
