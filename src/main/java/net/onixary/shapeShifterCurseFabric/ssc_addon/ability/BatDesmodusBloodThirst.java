@@ -65,6 +65,20 @@ public final class BatDesmodusBloodThirst {
         return player != null && FormUtils.isForm(player, FormIdentifiers.BAT_DESMODUS);
     }
 
+    /** 是否装备渴血石榴石（gain ×1.5 / decay ×1.5 + 每秒被动流失 1） */
+    private static boolean hasBloodGarnet(ServerPlayerEntity player) {
+        return dev.emi.trinkets.api.TrinketsApi.getTrinketComponent(player)
+                .map(c -> c.isEquipped(net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.BLOOD_GARNET))
+                .orElse(false);
+    }
+
+    /** 是否装备嗜血指环（满血吸血反噬 1 真伤/秒；吸血加成在 mixin 内处理） */
+    public static boolean hasBloodlustRing(ServerPlayerEntity player) {
+        return dev.emi.trinkets.api.TrinketsApi.getTrinketComponent(player)
+                .map(c -> c.isEquipped(net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.BLOODLUST_RING))
+                .orElse(false);
+    }
+
     /** 读取血渴值（仅蝙蝠形态有效） */
     private static int getBlood(ServerPlayerEntity player) {
         return PowerUtils.getResourceValue(player, FormIdentifiers.BAT_BLOOD_RESOURCE);
@@ -132,7 +146,9 @@ public final class BatDesmodusBloodThirst {
         Long last = LAST_ATTACK_HIT_TICK.get(player.getUuid());
         if (last != null && now - last < ATTACK_HIT_CD) return;
         LAST_ATTACK_HIT_TICK.put(player.getUuid(), now);
-        changeBlood(player, ATTACK_HIT_GAIN);
+        // 渴血石榴石：累积 +50%
+        int gain = hasBloodGarnet(player) ? Math.round(ATTACK_HIT_GAIN * 1.5f) : ATTACK_HIT_GAIN;
+        changeBlood(player, gain);
     }
 
     /**
@@ -149,6 +165,8 @@ public final class BatDesmodusBloodThirst {
             total += gain;
             gain = Math.max(1, gain / 2); // 12 -> 6 -> 3
         }
+        // 渴血石榴石：累积 +50%
+        if (hasBloodGarnet(player)) total = Math.round(total * 1.5f);
         if (total > 0) changeBlood(player, total);
     }
 
@@ -167,6 +185,16 @@ public final class BatDesmodusBloodThirst {
 
         Long lastCombat = LAST_COMBAT_TICK.get(player.getUuid());
         boolean inCombat = lastCombat != null && now - lastCombat <= OUT_OF_COMBAT_DELAY;
+        boolean garnet = hasBloodGarnet(player);
+        // 嗜血指环：自身满血时吸血被反噬——每秒对自己造成 1 点真伤（你血太满装不下更多血）。
+        if (hasBloodlustRing(player) && player.getHealth() >= player.getMaxHealth()) {
+            player.damage(player.getDamageSources().magic(), 1.0f);
+        }
+        // 渴血石榴石：不论是否在战斗，血渴值每秒被动流失 1 点（永远在“渴”）。
+        if (garnet) {
+            int cur = getBlood(player);
+            if (cur > 0) setBlood(player, cur - 1);
+        }
         if (!inCombat) {
             // 脱战（含从未进入战斗）：每秒 -4，直至 0；战斗中不自动回复
             int b = getBlood(player);
@@ -183,6 +211,8 @@ public final class BatDesmodusBloodThirst {
                         decay = decay + decay / 2; // 日光虚弱：4 -> 6
                     }
                 }
+                // 渴血石榴石：脱战衰减 +50%
+                if (garnet) decay = Math.round(decay * 1.5f);
                 if (decay > 0) setBlood(player, b - decay);
             }
         }

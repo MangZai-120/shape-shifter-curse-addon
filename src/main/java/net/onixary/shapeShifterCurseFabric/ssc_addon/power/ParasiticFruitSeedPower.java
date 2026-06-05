@@ -72,6 +72,32 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
     private long internalCooldownEndTime = 0L;
     private final LinkedHashMap<UUID, SeedData> seeds = new LinkedHashMap<>();
 
+    /** 腐殖之戒：当前结果的时长系数（bearFruit 临时设置，scaleDuration 读取，结束复位 1.0） */
+    private transient float currentHumusFactor = 1.0f;
+
+    /**
+     * 全局表：当前被「敌方削弱果」寄生的宿主 UUID -> 失效世界 tick。
+     * 由所有果蝠玩家的 tick() 实时维护（host 当前判定为敌方时写入，种子失效/转友方时清理）。
+     * 供 LivingEntity.heal 拦截查询，实现「被削弱果寄生的敌人回血 -50%」被动。
+     * 用绝对 endTick 兜底：即使某果蝠玩家下线导致 tick 停摆，过期后查询也会判定失效。
+     */
+    private static final java.util.concurrent.ConcurrentHashMap<UUID, Long> ENEMY_PARASITIZED_HOSTS =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * 查询某生物当前是否被任意果蝠的敌方削弱果寄生（用于回血削减被动）。
+     * 需传入世界当前 tick 以判定 endTick 是否已过期。
+     */
+    public static boolean isParasitizedByEnemyFruit(UUID hostUuid, long worldTime) {
+        Long end = ENEMY_PARASITIZED_HOSTS.get(hostUuid);
+        if (end == null) return false;
+        if (worldTime >= end) {
+            ENEMY_PARASITIZED_HOSTS.remove(hostUuid);
+            return false;
+        }
+        return true;
+    }
+
     public ParasiticFruitSeedPower(PowerType<?> type, LivingEntity entity, int cooldownTicks, int lifeTicks,
                                    HudRender hudRender, Active.Key key) {
         super(type, entity, cooldownTicks, hudRender, (e) -> {
@@ -113,8 +139,14 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         if (entity.hasStatusEffect(SscAddon.PURIFIED)) return;
         if (!isInternalCooldownReady()) return;
 
+        // 双生种荚：一次播种额外寄生最近的第二目标，但能量消耗翻倍、冷却 +1 秒
+        boolean twinPod = dev.emi.trinkets.api.TrinketsApi.getTrinketComponent(caster)
+                .map(c -> c.isEquipped(SscAddon.TWIN_POD))
+                .orElse(false);
+        int energyCost = twinPod ? ENERGY_COST * 2 : ENERGY_COST;
+
         // 能量检查：不足则释放失败
-        if (!PowerUtils.hasResource(caster, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY, ENERGY_COST)) {
+        if (!PowerUtils.hasResource(caster, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY, energyCost)) {
             playFailFeedback(caster);
             return;
         }
@@ -127,9 +159,35 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
             return;
         }
 
-        PowerUtils.changeResourceValueAndSync(caster, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY, -ENERGY_COST);
+        PowerUtils.changeResourceValueAndSync(caster, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY, -energyCost);
         plantSeed(caster, target);
-        applyCooldown(cooldownTicks);
+        if (twinPod) {
+            LivingEntity second = findNearestOther(caster, target);
+            if (second != null) {
+                plantSeed(caster, second);
+            }
+            applyCooldown(cooldownTicks + 20);
+        } else {
+            applyCooldown(cooldownTicks);
+        }
+    }
+
+    /**
+     * 双生种荚：查找主目标附近最近的另一个可寄生生物（4 格内，排除施法者与主目标本身）。
+     */
+    private LivingEntity findNearestOther(ServerPlayerEntity caster, LivingEntity primary) {
+        Box box = primary.getBoundingBox().expand(4.0D);
+        LivingEntity best = null;
+        double bestDistSq = Double.MAX_VALUE;
+        for (LivingEntity e : caster.getWorld().getEntitiesByClass(LivingEntity.class, box,
+                living -> living.isAlive() && living != caster && living != primary)) {
+            double d = e.squaredDistanceTo(primary);
+            if (d < bestDistSq) {
+                bestDistSq = d;
+                best = e;
+            }
+        }
+        return best;
     }
 
     @Override
@@ -151,8 +209,16 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
                 if (host != null) {
                     net.onixary.shapeShifterCurseFabric.ssc_addon.util.GlowMarker.unmark(host);
                 }
+                ENEMY_PARASITIZED_HOSTS.remove(entry.getKey());
                 iterator.remove();
                 continue;
+            }
+            // 维护全局敌方寄生表：宿主当前为敌方（非友方且非白名单保护）时登记其失效 tick，
+            // 供 heal 拦截实现「被削弱果寄生的敌人回血 -50%」；转为友方/受保护则立即解除登记。
+            if (!WhitelistUtils.isBuffTarget(caster, host) && !WhitelistUtils.isProtected(caster, host)) {
+                ENEMY_PARASITIZED_HOSTS.put(entry.getKey(), seed.endTick);
+            } else {
+                ENEMY_PARASITIZED_HOSTS.remove(entry.getKey());
             }
             spawnAttachedSeedParticles(caster, host, seed, now);
             if (now >= seed.nextFruitTick) {
@@ -173,6 +239,10 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
                     net.onixary.shapeShifterCurseFabric.ssc_addon.util.GlowMarker.unmark(host);
                 }
             }
+        }
+        // 一并解除本玩家种子覆盖的敌方寄生登记，避免换形态/掉线后残留导致目标永久 -50% 回血
+        for (UUID uuid : seeds.keySet()) {
+            ENEMY_PARASITIZED_HOSTS.remove(uuid);
         }
         seeds.clear();
     }
@@ -272,17 +342,24 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
 
     private void bearFruit(ServerPlayerEntity caster, LivingEntity host, SeedData seed) {
         boolean friend = WhitelistUtils.isBuffTarget(caster, host);
+        // 腐殖之戒：装备时敌方削弱果时长 ×1.5、友方增益果时长 ×0.7；未装备 ×1.0。
+        boolean humus = dev.emi.trinkets.api.TrinketsApi.getTrinketComponent(caster)
+                .map(c -> c.isEquipped(net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.HUMUS_RING))
+                .orElse(false);
         if (friend) {
+            this.currentHumusFactor = humus ? 0.7f : 1.0f;
             FriendFruit fruit = selectFriendFruit(host);
             applyFriendFruit(host, fruit, host == caster, seed.stack);
             seed.lastFruitName = fruit.name();
             spawnFruitParticles(host, FRIEND_DUST, seed.stack);
         } else if (!WhitelistUtils.isProtected(caster, host)) {
+            this.currentHumusFactor = humus ? 1.5f : 1.0f;
             EnemyFruit fruit = selectEnemyFruit(host);
             applyEnemyFruit(host, fruit, seed.stack);
             seed.lastFruitName = fruit.name();
             spawnFruitParticles(host, ENEMY_DUST, seed.stack);
         }
+        this.currentHumusFactor = 1.0f;
     }
 
     private FriendFruit selectFriendFruit(LivingEntity host) {
@@ -388,7 +465,9 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
     }
 
     private int scaleDuration(int duration, int divisor, float multiplier) {
-        return Math.max(10, Math.round(duration * multiplier / Math.max(1, divisor)));
+        // 腐殖之戒：敌方果时长 +50% / 友方果时长 -30%（由 bearFruit 在调用前设置本系数）
+        float total = multiplier * currentHumusFactor;
+        return Math.max(10, Math.round(duration * total / Math.max(1, divisor)));
     }
 
     private void removeOneNegativeEffect(LivingEntity target) {

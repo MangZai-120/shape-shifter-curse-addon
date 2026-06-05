@@ -34,13 +34,31 @@ import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 public abstract class SscAddonLivingEntityMixin {
 
 	/**
+	 * 寄生果蝠被动：被「灵果寄生」的敌方削弱果寄生时，目标受到的任何形式回血减少 50%。
+	 * heal(float) 是 vanilla 几乎所有回血的统一入口（自然回血、再生效果、金苹果等食物、治疗等），
+	 * 在 HEAD 处按 0.5 倍缩放 amount 即可统一削减；持续时间跟随削弱果存在时间（由
+	 * ParasiticFruitSeedPower.tick 维护的全局寄生表决定）。仅服务端判定，主客机一致。
+	 */
+	@ModifyVariable(method = "heal", at = @At("HEAD"), argsOnly = true)
+	private float ssc_addon$reduceHealWhenParasitized(float amount) {
+		LivingEntity self = (LivingEntity) (Object) this;
+		if (self.getWorld().isClient() || amount <= 0.0f) {
+			return amount;
+		}
+		if (net.onixary.shapeShifterCurseFabric.ssc_addon.power.ParasiticFruitSeedPower
+				.isParasitizedByEnemyFruit(self.getUuid(), self.getWorld().getTime())) {
+			return amount * 0.5f;
+		}
+		return amount;
+	}
+
+	/**
 	 * 中立生物被玩家攻击时，记录全局挑衅状态。
 	 * 裁决者: 攻击任何亡灵触发挑衅
 	 * 金沙岚: 攻击尸壳或咒文胡狼触发挑衅
 	 */
 	@Inject(method = "damage", at = @At("HEAD"), cancellable = true)
-	private void ssc_addon$onUndeadDamaged(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
-		LivingEntity self = (LivingEntity) (Object) this;
+	private void ssc_addon$onUndeadDamaged(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {		LivingEntity self = (LivingEntity) (Object) this;
 		if (self instanceof MobEntity mob
 				&& source.getAttacker() instanceof PlayerEntity player) {
 			// 裁决者: 所有亡灵触发挑衅
@@ -289,6 +307,10 @@ public abstract class SscAddonLivingEntityMixin {
 			float lifestealRate = 0f;
 			if (stage == 2) lifestealRate = 0.20f;
 			else if (stage == 3) lifestealRate = 0.35f;
+			// 嗜血指环：高血渴阶段（已有吸血）额外 +15% 吸血率
+			if (lifestealRate > 0f && BatDesmodusBloodThirst.hasBloodlustRing(attacker)) {
+				lifestealRate += 0.15f;
+			}
 			if (lifestealRate > 0f && amount > 0f) {
 				attacker.heal(amount * lifestealRate);
 			}

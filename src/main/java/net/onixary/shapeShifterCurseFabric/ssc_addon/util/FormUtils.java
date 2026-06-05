@@ -84,6 +84,14 @@ public class FormUtils {
 		return isAnyForm(entity, FormIdentifiers.FAMILIAR_FOX_SP, FormIdentifiers.FAMILIAR_FOX_RED);
 	}
 
+	public static boolean isBatDesmodus(LivingEntity entity) {
+		return isForm(entity, FormIdentifiers.BAT_DESMODUS);
+	}
+
+	public static boolean isBatParasiticFruit(LivingEntity entity) {
+		return isForm(entity, FormIdentifiers.BAT_PARASITIC_FRUIT);
+	}
+
 	/**
 	 * 判断实体是否为咒文胡狼（通过注册表ID判断，避免直接引用原版类）
 	 */

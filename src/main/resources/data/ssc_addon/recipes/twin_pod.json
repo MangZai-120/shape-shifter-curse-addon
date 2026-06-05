@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SVS",
+    "VMV",
+    "SVS"
+  ],
+  "key": {
+    "S": {
+      "item": "minecraft:string"
+    },
+    "V": {
+      "item": "minecraft:sweet_berries"
+    },
+    "M": {
+      "item": "minecraft:melon_seeds"
+    }
+  },
+  "result": {
+    "item": "ssc_addon:twin_pod",
+    "count": 1
+  }
+}
