@@ -5,6 +5,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageType;
+import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.listener.ClientPlayPacketListener;
@@ -184,6 +185,7 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
             if (this.getOwner() instanceof ServerPlayerEntity op && WhitelistUtils.isProtected(op, e)) continue;
             e.damage(magicSource(e, owner), PIERCE_DAMAGE);
             piercedEntities.add(e.getUuid());
+            applyFoxFireBurn(e);
             double ex = e.getX(), ey = e.getY() + e.getHeight() * 0.5, ez = e.getZ();
             world.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME, ex, ey, ez, 8, 0.3, 0.3, 0.3, 0.02);
             world.spawnParticles(ParticleTypes.FLAME, ex, ey, ez, 6, 0.25, 0.25, 0.25, 0.02);
@@ -239,6 +241,7 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
                 if (dmg < 1.0f) dmg = 1.0f;
             }
             e.damage(physicalSource(e, owner), dmg);
+            applyFoxFireBurn(e);
         }
         // 仅“直接碰到火球”的生物触发额外爆破（腰部火环 + 2 格连锁）；主爆炸范围内其他生物不触发；碰墙无直接目标则不触发
         if (directTarget != null && directTarget.isAlive()) {
@@ -269,6 +272,15 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
                         && !(owner instanceof ServerPlayerEntity op && WhitelistUtils.isProtected(op, e)));
         for (LivingEntity e : chained) {
             e.damage(physicalSource(e, owner), CHAIN_DAMAGE);
+            applyFoxFireBurn(e);
+        }
+    }
+
+    /** 火球命中附加狐火灼烧 5 秒（每秒掉血），并打上施法者归属 tag。 */
+    private void applyFoxFireBurn(LivingEntity target) {
+        target.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, 100, 0, false, true, true));
+        if (this.getOwner() != null) {
+            target.addCommandTag("ssc_owner:" + this.getOwner().getUuid());
         }
     }
 

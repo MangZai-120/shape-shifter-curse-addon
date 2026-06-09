@@ -22,9 +22,18 @@
                 "pitch": 0.8
             },
             {
-                "type": "shape-shifter-curse:explosion_damage_entity",
-                "power": 3,
-                "entity_condition": {
+                "type": "origins:area_of_effect",
+                "radius": 4,
+                "shape": "sphere",
+                "bientity_action": {
+                    "type": "origins:target_action",
+                    "action": {
+                        "type": "origins:damage",
+                        "amount": 15.0,
+                        "damage_type": "minecraft:mob_attack"
+                    }
+                },
+                "bientity_condition": {
                     "type": "origins:and",
                     "conditions": [
                         {

@@ -259,9 +259,9 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         int adjustedLife = baseLife;
         SeedData seed = seeds.get(host.getUuid());
         if (seed != null) {
-            // 同一宿主：堆叠 1 层（封顶 MAX_SEEDS=3），并重置生命期 / 未来结果时间
+            // 同一宿主：堆叠 1 层（封顶 MAX_SEEDS=3）；重复命中在剩余时长基础上叠加（无论敌友）
             seed.stack = Math.min(MAX_SEEDS, seed.stack + 1);
-            seed.endTick = now + adjustedLife;
+            seed.endTick = Math.max(seed.endTick, now) + adjustedLife;
             seed.nextFruitTick = now + ROOTING_TICKS;
         } else {
             cleanupExpiredSeeds(caster, now);
@@ -282,8 +282,9 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
             ParticleUtils.spawnParticles(world, SEED_DUST,
                     host.getX(), host.getY() + host.getHeight() * 0.65, host.getZ(),
                     18 + finalStack * 6, 0.25, 0.35, 0.25, 0.02);
-            world.playSound(null, host.getX(), host.getY(), host.getZ(),
-                    SoundEvents.BLOCK_GRASS_PLACE, SoundCategory.PLAYERS, 0.9f, 1.5f);
+            // 叮声仅施法者本人听见（不广播给其他玩家）
+            net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaMarkManager.playSoundToPlayer(
+                    caster, SoundEvents.BLOCK_GRASS_PLACE, 0.9f, 1.5f);
         }
     }
 

@@ -28,6 +28,9 @@
     "ssc_addon:frost_freeze",
     "ssc_addon:frost_fall",
     "ssc_addon:sand_blind",
-    "ssc_addon:deafen"
+    "ssc_addon:deafen",
+    "ssc_addon:bat_regen",
+    "ssc_addon:bat_poison",
+    "ssc_addon:bat_absorption"
   ]
 }

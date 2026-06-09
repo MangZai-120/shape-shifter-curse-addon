@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
 import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleTypes;
@@ -60,6 +61,8 @@ public final class InfectionSporeManager {
     private static final Map<UUID, HealData> HEAL_ENTRIES = new ConcurrentHashMap<>();
     /** 友方治疗每 tick 量 */
     public static final float TICK_HEAL = 1.0f;
+    /** 毒雾敌人每次掉血量 */
+    public static final float TICK_DAMAGE = 1.0f;
     /** 友方治疗间隔（与感染节奏一致：3 秒） */
     public static final int HEAL_INTERVAL = 60;
 
@@ -278,8 +281,8 @@ public final class InfectionSporeManager {
     // ============================ 滞留毒雾云子系统 ============================
     /** 毒雾云半径（格）：直径 4 格 → 半径 2 格 */
     public static final double CLOUD_RADIUS = 2.0;
-    /** 毒雾云扫描生物的间隔（tick） */
-    public static final int CLOUD_SCAN_INTERVAL = 5;
+    /** 毒雾云扫描生物的间隔（tick）：每 1.5s 一次范围内效果 */
+    public static final int CLOUD_SCAN_INTERVAL = 30;
     /** 毒雾云粒子间隔（tick） */
     public static final int CLOUD_PARTICLE_INTERVAL = 2;
     /** 净化驱散毒雾云的判定半径（格）：被净化个体此范围内的云会被驱散 */
@@ -300,6 +303,15 @@ public final class InfectionSporeManager {
      */
     public static void spawnCloud(ServerPlayerEntity caster, ServerWorld world, Vec3d center, double radius, int durationTicks) {
         long now = world.getTime();
+        // 毒雾不可叠加：若落点附近（两云半径之和内）已有同维度毒雾，则仅刷新其寿命，不新增
+        for (CloudData c : CLOUDS) {
+            if (!c.worldKey.equals(world.getRegistryKey())) continue;
+            double merge = radius + c.radius;
+            if (c.squaredDistanceTo(center.x, center.y, center.z) <= merge * merge) {
+                c.endTick = Math.max(c.endTick, now + Math.max(20, durationTicks));
+                return;
+            }
+        }
         CLOUDS.add(new CloudData(
                 caster.getUuid(),
                 world.getRegistryKey(),
@@ -336,12 +348,11 @@ public final class InfectionSporeManager {
             if (now % CLOUD_PARTICLE_INTERVAL == 0) {
                 emitCloudParticles(world, cloud);
             }
-            // 2) 周期扫描：感染敌人 / 治疗友方
+            // 2) 周期扫描：范围内每 1.5s 直接施加效果（站着才生效，离开即停）
             if (now >= cloud.nextScanTick) {
                 cloud.nextScanTick = now + CLOUD_SCAN_INTERVAL;
                 ServerPlayerEntity caster = server.getPlayerManager().getPlayer(cloud.casterUuid);
-                if (caster == null) continue; // 施放者掉线则仅留粒子，不感染（需其白名单判定）
-                int remaining = (int) Math.max(20, cloud.endTick - now);
+                if (caster == null) continue; // 施放者掉线则仅留粒子，不生效（需其白名单判定）
                 Box box = new Box(
                         cloud.x - cloud.radius, cloud.y - cloud.radius, cloud.z - cloud.radius,
                         cloud.x + cloud.radius, cloud.y + cloud.radius, cloud.z + cloud.radius);
@@ -351,11 +362,16 @@ public final class InfectionSporeManager {
                                 && cloud.squaredDistanceTo(e.getX(), e.getY(), e.getZ()) <= sqRadius);
                 for (LivingEntity target : targets) {
                     if (WhitelistUtils.isProtected(caster, target)) {
-                        // 友方：站进云中获得治疗孢子，时长继承云剩余寿命
-                        applyFriendHeal(caster, target, remaining);
-                    } else if (!ENTRIES.containsKey(target.getUuid())) {
-                        // 敌人：仅当尚未感染时施加，已感染者不再重复获得（不刷新）
-                        infect(caster, target, remaining);
+                        // 友军：回 1 血 + 加速 I（短时，仅范围内维持）
+                        target.heal(TICK_HEAL);
+                        target.addStatusEffect(new StatusEffectInstance(StatusEffects.SPEED, 40, 0, false, true, true));
+                        world.spawnParticles(ParticleTypes.HEART,
+                                target.getX(), target.getY() + target.getHeight() * 0.8, target.getZ(),
+                                1, 0.3, 0.2, 0.3, 0.0);
+                    } else {
+                        // 敌人：掉 1 血 + 减速 I（短时，仅范围内维持）
+                        target.damage(target.getDamageSources().magic(), TICK_DAMAGE);
+                        target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 40, 0, false, true, true));
                     }
                 }
             }
@@ -380,7 +396,7 @@ public final class InfectionSporeManager {
         final double y;
         final double z;
         final double radius;
-        final long endTick;
+        long endTick;
         long nextScanTick;
 
         CloudData(UUID casterUuid, RegistryKey<World> worldKey, double x, double y, double z,

@@ -40,6 +40,22 @@ public final class ParasiticAbsorptionManager {
 
     public static void init() {
         ServerTickEvents.END_WORLD_TICK.register(ParasiticAbsorptionManager::onWorldTick);
+        // 玩家断开连接时清除本机制提供的 absorption（黄心由 setAbsorptionAmount 写入会被存档保存，
+        // 而内存 DATA 在断连后丢失，若不清会导致重连后黄心永久残留）。
+        // DISCONNECT 在 Netty IO 线程触发，setAbsorptionAmount 改实体属性需调度回主线程。
+        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            net.minecraft.server.network.ServerPlayerEntity player = handler.player;
+            if (player == null) return;
+            java.util.UUID uuid = player.getUuid();
+            AbsorptionData d = DATA.remove(uuid);
+            if (d == null) return;
+            float granted = d.granted;
+            server.execute(() -> {
+                if (player.isAlive()) {
+                    player.setAbsorptionAmount(Math.max(0.0f, player.getAbsorptionAmount() - granted));
+                }
+            });
+        });
     }
 
     /** 触发吸收：累加 (amp+1) 颗黄心并把持续刷新到 15s，同时刷新显示图标。 */
