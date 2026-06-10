@@ -623,5 +623,6 @@
     "item.ssc_addon.twin_pod.tooltip_exclusive":  "寄生果蝠形态专属",
     "effect.ssc_addon.bat_regen":  "生命恢复",
     "effect.ssc_addon.bat_poison":  "中毒",
-    "effect.ssc_addon.bat_absorption":  "伤害吸收"
+    "effect.ssc_addon.bat_absorption":  "伤害吸收",
+    "msg.my_addon.charm_night_crystal_cant_equip_parasitic_fruit":  "寄生果蝙无法佩戴黑夜水晶吊坠，已自动卸下"
 }

@@ -1,0 +1,17 @@
+{
+    "shape-shifter-curse:charm_of_night_crystal": {
+        "accessory_powers": [],
+        "all_form": {
+            "add": [],
+            "remove": []
+        },
+        "forms": {
+            "my_addon:bat_desmodus": {
+                "add": [],
+                "remove": [
+                    "shape-shifter-curse:form_bat_2_sun_health"
+                ]
+            }
+        }
+    }
+}

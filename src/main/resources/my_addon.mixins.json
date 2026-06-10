@@ -14,6 +14,7 @@
                    "entity.GoldenSandstormHungerMixin",
                    "IronsSpellbooksAnimationMixin",
                    "item.AmuletBraceletTrinketMixin",
+                   "item.CharmOfNightCrystalTrinketMixin",
                    "item.ItemEntityMixin",
                    "entity.MobEntityMixin",
                    "entity.IronGolemAllayFlowerMixin",

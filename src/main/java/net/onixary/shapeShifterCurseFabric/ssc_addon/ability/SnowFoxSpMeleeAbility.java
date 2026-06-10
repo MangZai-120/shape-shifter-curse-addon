@@ -39,8 +39,6 @@ public class SnowFoxSpMeleeAbility {
 	// ==== NEW CODE: 使用FormIdentifiers ====
 	private static final Identifier RESOURCE_ID = FormIdentifiers.SNOW_FOX_RESOURCE;
 	private static final Identifier REGEN_COOLDOWN_ID = FormIdentifiers.SNOW_FOX_REGEN_COOLDOWN;
-	private static final Identifier POWER_ID = FormIdentifiers.SNOW_FOX_MELEE_PRIMARY;
-	private static final int COOLDOWN = 120;
 
 	private SnowFoxSpMeleeAbility() {
 	}

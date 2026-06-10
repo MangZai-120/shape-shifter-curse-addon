@@ -623,5 +623,6 @@
     "item.ssc_addon.twin_pod.tooltip_exclusive":  "Exclusive to Parasitic Fruit Bat form",
     "effect.ssc_addon.bat_regen":  "Regeneration",
     "effect.ssc_addon.bat_poison":  "Poison",
-    "effect.ssc_addon.bat_absorption":  "Absorption"
+    "effect.ssc_addon.bat_absorption":  "Absorption",
+    "msg.my_addon.charm_night_crystal_cant_equip_parasitic_fruit":  "The Parasitic Fruit Bat cannot wear the Charm of Night Crystal; it has been automatically removed"
 }

@@ -53,8 +53,6 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
     private static final int ROOTING_TICKS = 20;
     private static final int FRUIT_INTERVAL_TICKS = 25;
     private static final int DEFAULT_LIFE_TICKS = 240;
-    private static final int MIN_LIFE_TICKS = 80;
-    private static final float SELF_DURATION_MULTIPLIER = 0.6f;
     private static final int ENERGY_COST = 1;
 
     private static final DustParticleEffect FRIEND_DUST = new DustParticleEffect(new Vector3f(0.35f, 0.95f, 0.30f), 1.1f);
@@ -357,19 +355,6 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         }
     }
 
-    private int getEnvironmentAdjustedLife(LivingEntity host, int baseLife) {
-        if (!(host.getWorld() instanceof ServerWorld world)) return baseLife;
-        boolean openSky = world.isSkyVisible(host.getBlockPos());
-        boolean day = world.isDay();
-        int blockLight = world.getLightLevel(host.getBlockPos());
-        if (day && openSky) {
-            return Math.max(MIN_LIFE_TICKS, Math.round(baseLife * 0.7f));
-        }
-        if (!day || blockLight <= 7) {
-            return Math.round(baseLife * 1.2f);
-        }
-        return baseLife;
-    }
 
     private void bearFruit(ServerPlayerEntity caster, LivingEntity host, SeedData seed) {
         boolean friend = WhitelistUtils.isBuffTarget(caster, host);
@@ -403,10 +388,6 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
             return EnemyFruit.ROTTEN;
         }
         return EnemyFruit.SOUR;
-    }
-
-    private void applyEnemyFruit(LivingEntity target, EnemyFruit fruit) {
-        applyEnemyFruit(target, fruit, 1, 1);
     }
 
     private void applyEnemyFruit(LivingEntity target, EnemyFruit fruit, int stack) {
