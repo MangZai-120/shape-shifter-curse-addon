@@ -14,10 +14,24 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PlayerEntity.class)
 public abstract class SscPlayerMixin {
+
+	/**
+	 * 「月痕之力」假睡演出期间，阻止该玩家参与原版跳夜判定（{@code canResetTimeBySleeping} 返回 false），
+	 * 从而保证假睡不真正推进时间 / 不跳夜。仅在假睡演出中生效（客户端 FAKE_SLEEPING 为空、不介入）。
+	 */
+	@Inject(method = "canResetTimeBySleeping", at = @At("HEAD"), cancellable = true)
+	private void ssc_addon$preventMoonScarFakeSleepSkip(CallbackInfoReturnable<Boolean> cir) {
+		if (net.onixary.shapeShifterCurseFabric.ssc_addon.story.MoonScarStoryManager
+				.isStorySleeping(((PlayerEntity) (Object) this).getUuid())) {
+			cir.setReturnValue(false);
+		}
+	}
 
 	@ModifyVariable(method = "attack", at = @At(value = "STORE", ordinal = 0), ordinal = 2)
 	private boolean forceCrit(boolean isCritical) {

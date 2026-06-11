@@ -1,7 +1,7 @@
 {
   "model": "shape-shifter-curse:geo/form/form_familiar_fox_3.geo.json",
-  "texture": "shape-shifter-curse:textures/form/form_familiar_fox_3/form_familiar_fox_3.png",
-  "texture_mask": "shape-shifter-curse:textures/form/form_familiar_fox_3/form_familiar_fox_3_colormask.png",
+  "texture": "my_addon:textures/form_familiar_fox_sp/form_familiar_fox_sp.png",
+  "texture_mask": "my_addon:textures/form_familiar_fox_sp/form_familiar_fox_sp_colormask.png",
   "hidden": [
     "leftLeg",
     "rightLeg",
