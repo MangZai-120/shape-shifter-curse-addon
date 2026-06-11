@@ -146,7 +146,7 @@ public class StoryBookLoot implements ConfigChangeListener {
 		loadBooks();
 		List<net.minecraft.item.ItemStack> stacks = new ArrayList<>();
 		for (BookData book : loadedBooks) {
-			stacks.add(createBookStack(book.title, book.author, book.content));
+			stacks.add(createBookStack(book.id, book.title, book.author, book.content));
 		}
 		return stacks;
 	}
@@ -178,7 +178,7 @@ public class StoryBookLoot implements ConfigChangeListener {
 
 		for (BookData book : sourceBooks) {
 			if (book.id.equals(bookId)) {
-				return createBookStack(book.title, book.author, book.content);
+				return createBookStack(book.id, book.title, book.author, book.content);
 			}
 		}
 
@@ -208,13 +208,13 @@ public class StoryBookLoot implements ConfigChangeListener {
 		return null;
 	}
 
-	private static net.minecraft.item.ItemStack createBookStack(String title, String author, String content) {
+	private static net.minecraft.item.ItemStack createBookStack(String id, String title, String author, String content) {
 		net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(Items.WRITTEN_BOOK);
-		stack.setNbt(createBookNbt(title, author, content));
+		stack.setNbt(createBookNbt(id, title, author, content));
 		return stack;
 	}
 
-	private static NbtCompound createBookNbt(String title, String author, String content) {
+	private static NbtCompound createBookNbt(String id, String title, String author, String content) {
 		NbtCompound nbt = new NbtCompound();
 		// Truncate title to 32 chars max (Vanilla limit)
 		String safeTitle = title;
@@ -224,6 +224,8 @@ public class StoryBookLoot implements ConfigChangeListener {
 		nbt.putString("title", safeTitle);
 		nbt.putString("author", author);
 		nbt.putInt("generation", 0);
+		// 写入语言无关的唯一书籍标识（不受标题32字符截断影响），供成就(inventory_changed)精确匹配章节
+		nbt.putString("ssc_book_id", id);
 
 		NbtList pages = new NbtList();
 		// Split content into pages
@@ -249,7 +251,7 @@ public class StoryBookLoot implements ConfigChangeListener {
 						.conditionally(net.minecraft.loot.condition.RandomChanceLootCondition.builder(chance).build());
 
 				for (BookData book : loadedBooks) {
-					addBookToPool(poolBuilder, book.title, book.author, book.content);
+					addBookToPool(poolBuilder, book.id, book.title, book.author, book.content);
 				}
 
 				tableBuilder.pool(poolBuilder);
@@ -272,9 +274,9 @@ public class StoryBookLoot implements ConfigChangeListener {
 
 	// 1.20.1 vanilla 中 SetNbtLootFunction.builder(NbtCompound) 是唯一可用重载，仍标记 @Deprecated 但无替代
 	@SuppressWarnings("deprecation")
-	private static void addBookToPool(LootPool.Builder pool, String title, String author, String content) {
+	private static void addBookToPool(LootPool.Builder pool, String id, String title, String author, String content) {
 		pool.with(ItemEntry.builder(Items.WRITTEN_BOOK)
-				.apply(SetNbtLootFunction.builder(createBookNbt(title, author, content)))
+				.apply(SetNbtLootFunction.builder(createBookNbt(id, title, author, content)))
 				.weight(1)); // Equal weight for each book
 	}
 

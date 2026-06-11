@@ -306,6 +306,7 @@ public class SscAddon implements ModInitializer {
 		AnubisWolfSpSoulEnergy.registerEvents();
 		GoldenSandstormRegen.init();
 		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaMarkManager.register();
+		net.onixary.shapeShifterCurseFabric.ssc_addon.story.MoonScarStoryManager.register();
 	}
 
 

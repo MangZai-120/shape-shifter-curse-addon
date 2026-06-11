@@ -19,6 +19,7 @@ import net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.story.MoonScarStoryManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.AdvancementUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.MoonMarrowFormAdvancements;
@@ -77,6 +78,10 @@ public class SpUpgradeItem extends Item {
 	@Override
 	public ItemStack finishUsing(ItemStack stack, World world, LivingEntity user) {
 		if (!world.isClient && user instanceof PlayerEntity player) {
+			// 剧情「月痕之力」：处于剧情触发的 red 形态时，月髓环可随时免费变回 sp 使魔（不消耗）
+			if (MoonScarStoryManager.tryFreeRevertFromStoryRed(player)) {
+				return stack;
+			}
 			Identifier targetFormId = getTargetFormId(player);
 			boolean isCursedMoon = CursedMoon.isCursedMoon(world) && CursedMoon.isNight(world);
 			boolean isValidForm = targetFormId != null;

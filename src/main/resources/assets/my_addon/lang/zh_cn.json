@@ -544,6 +544,8 @@
     "advancements.ssc_addon.boom_boom_boom.description":  "我叫磁力棒",
     "advancements.ssc_addon.player_form_shock.title":  "哦？玩家的样子......！",
     "advancements.ssc_addon.player_form_shock.description":  "什么叫你给我用了火之石？",
+    "advancements.ssc_addon.moon_scar_power.title":  "月痕之力",
+    "advancements.ssc_addon.moon_scar_power.description":  "解锁了所有与灵界之主相关的书",
     "my_addon.form_allay_sp.model_name":  "sp悦灵",
     "my_addon.form_fallen_allay_sp.model_name":  "堕落之灵",
     "my_addon.form_anubis_wolf_sp.model_name":  "sp阿努比斯",
@@ -647,5 +649,8 @@
     "effect.ssc_addon.bat_regen":  "生命恢复",
     "effect.ssc_addon.bat_poison":  "中毒",
     "effect.ssc_addon.bat_absorption":  "伤害吸收",
-    "msg.my_addon.charm_night_crystal_cant_equip_parasitic_fruit":  "寄生果蝙无法佩戴黑夜水晶吊坠，已自动卸下"
+    "msg.my_addon.charm_night_crystal_cant_equip_parasitic_fruit":  "寄生果蝙无法佩戴黑夜水晶吊坠，已自动卸下",
+    "message.ssc_addon.moon_scar.whisper":  "一股强烈的情感涌入你的心中，不属于你的记忆在你的思绪里涌荡，或许你应该在某天晚上好好睡一觉消化一下。",
+    "message.ssc_addon.moon_scar.become_red":  "......我在哪里......他们人呢？他们应该没事吧？",
+    "message.ssc_addon.moon_scar.revert_sp":  "月髓环的微光将你从混沌中唤回，那些不属于你的记忆暂时归于沉寂。"
 }

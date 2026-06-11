@@ -504,6 +504,8 @@
     "advancements.ssc_addon.boom_boom_boom.description":  "Watch out for the bumps",
     "advancements.ssc_addon.player_form_shock.title":  "Oh? A Player Form...?!",
     "advancements.ssc_addon.player_form_shock.description":  "Why did you use a Fire Stone on me?",
+    "advancements.ssc_addon.moon_scar_power.title":  "Power of the Moon Scar",
+    "advancements.ssc_addon.moon_scar_power.description":  "Unlocked all books related to the Lord of the Spirit Realm",
     "my_addon.form_allay_sp.model_name":  "SP Allay",
     "my_addon.form_fallen_allay_sp.model_name":  "Spirit of the Fallen",
     "my_addon.form_anubis_wolf_sp.model_name":  "SP Anubis",
@@ -647,5 +649,8 @@
     "effect.ssc_addon.bat_regen":  "Regeneration",
     "effect.ssc_addon.bat_poison":  "Poison",
     "effect.ssc_addon.bat_absorption":  "Absorption",
-    "msg.my_addon.charm_night_crystal_cant_equip_parasitic_fruit":  "The Parasitic Fruit Bat cannot wear the Charm of Night Crystal; it has been automatically removed"
+    "msg.my_addon.charm_night_crystal_cant_equip_parasitic_fruit":  "The Parasitic Fruit Bat cannot wear the Charm of Night Crystal; it has been automatically removed",
+    "message.ssc_addon.moon_scar.whisper":  "A surge of intense emotion floods your heart; memories that are not your own stir within your mind. Perhaps you should get a good night's sleep some evening to make sense of it all.",
+    "message.ssc_addon.moon_scar.become_red":  "...Where am I... Where is everyone? They should be all right, shouldn't they?",
+    "message.ssc_addon.moon_scar.revert_sp":  "The faint glow of the Moon Marrow Ring calls you back from the chaos, and the memories that are not your own fall silent for now."
 }

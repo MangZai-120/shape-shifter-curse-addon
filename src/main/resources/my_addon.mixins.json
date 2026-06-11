@@ -53,7 +53,8 @@
                    "render.TrueInvisibilityArmorMixin",
                    "render.MistFormHeldItemMixin",
                    "client.MinecraftClientSetScreenMixin",
-                   "client.SoundManagerDeafenMixin"
+                   "client.SoundManagerDeafenMixin",
+                   "client.TransformingControllerFeralAnimMixin"
                ],
     "injectors":  {
                       "defaultRequire":  1

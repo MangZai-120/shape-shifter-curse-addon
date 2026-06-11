@@ -1,0 +1,106 @@
+{
+  "parent": "ssc_addon:tonight_moon_beautiful",
+  "display": {
+    "icon": { "item": "minecraft:written_book" },
+    "title": { "translate": "advancements.ssc_addon.moon_scar_power.title" },
+    "description": { "translate": "advancements.ssc_addon.moon_scar_power.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "book_chapter_1": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"1\"}" }
+        ]
+      }
+    },
+    "book_chapter_2": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"2\"}" }
+        ]
+      }
+    },
+    "book_chapter_3": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"3\"}" }
+        ]
+      }
+    },
+    "book_chapter_4": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"4\"}" }
+        ]
+      }
+    },
+    "book_chapter_5": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"5\"}" }
+        ]
+      }
+    },
+    "book_chapter_6": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"6\"}" }
+        ]
+      }
+    },
+    "book_chapter_7": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"7\"}" }
+        ]
+      }
+    },
+    "book_chapter_8": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"8\"}" }
+        ]
+      }
+    },
+    "book_epilogue": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"9\"}" }
+        ]
+      }
+    },
+    "book_familiar_research": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"13\"}" }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    ["book_chapter_1"],
+    ["book_chapter_2"],
+    ["book_chapter_3"],
+    ["book_chapter_4"],
+    ["book_chapter_5"],
+    ["book_chapter_6"],
+    ["book_chapter_7"],
+    ["book_chapter_8"],
+    ["book_epilogue"],
+    ["book_familiar_research"]
+  ]
+}
