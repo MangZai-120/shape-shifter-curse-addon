@@ -34,6 +34,13 @@ public class SSCAddonClientConfig implements ConfigData {
 	@ConfigEntry.Gui.Tooltip
 	public boolean enableColorEditor = false;
 
+	/**
+	 * 已看过颜色编辑器新手教程的存档/服务器 ID 列表（按存档看一遍）。
+	 * 不在 GUI 中展示，由教程逻辑自动维护。
+	 */
+	@ConfigEntry.Gui.Excluded
+	public java.util.List<String> colorTutorialSeenSaves = new java.util.ArrayList<>();
+
 	public enum MancianimaTeleportMode {
 		RAYCAST,
 		PLATFORM

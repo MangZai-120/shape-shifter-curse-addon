@@ -44,8 +44,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public final class InfectionSporeManager {
 
-    /** 伤害触发间隔（tick）：与中毒 I 一致，每 25t（1.25s）一次 */
-    public static final int DAMAGE_INTERVAL = 25;
     /** 传染半径（格） */
     public static final double INFECT_SPREAD_RADIUS = 1.5;
     /** 他人视角粒子周期 */
@@ -73,7 +71,7 @@ public final class InfectionSporeManager {
         ServerTickEvents.END_WORLD_TICK.register(InfectionSporeManager::onWorldTick);
     }
 
-    /** 施加感染。命中已感染目标时直接重置时长（保留 caster 与 nextDamageTick）。 */
+    /** 施加感染。命中已感染目标时直接重置时长（保留 caster）。 */
     public static void infect(ServerPlayerEntity caster, LivingEntity target, int durationTicks) {
         if (!(target.getWorld() instanceof ServerWorld serverWorld)) return;
         if (target == caster) return;
@@ -85,15 +83,14 @@ public final class InfectionSporeManager {
         long newEnd = now + Math.max(20, durationTicks);
         InfectionData existing = ENTRIES.get(targetUuid);
         if (existing != null) {
-            // 命中已感染目标 → 仅刷新 endTick；保留原 caster 与下一次伤害 tick 节拍
+            // 命中已感染目标 → 仅刷新 endTick；保留原 caster
             existing.endTick = newEnd;
             return;
         }
         InfectionData data = new InfectionData(
                 caster.getUuid(),
                 serverWorld.getRegistryKey(),
-                newEnd,
-                now + DAMAGE_INTERVAL
+                newEnd
         );
         ENTRIES.put(targetUuid, data);
     }
@@ -184,8 +181,7 @@ public final class InfectionSporeManager {
             InfectionData child = new InfectionData(
                     data.casterUuid,
                     world.getRegistryKey(),
-                    now + remaining,
-                    now + DAMAGE_INTERVAL
+                    now + remaining
             );
             ENTRIES.put(candidate.getUuid(), child);
             candidate.addStatusEffect(new StatusEffectInstance(
@@ -229,13 +225,11 @@ public final class InfectionSporeManager {
         final UUID casterUuid;
         final RegistryKey<World> worldKey;
         long endTick;
-        long nextDamageTick;
 
-        InfectionData(UUID casterUuid, RegistryKey<World> worldKey, long endTick, long nextDamageTick) {
+        InfectionData(UUID casterUuid, RegistryKey<World> worldKey, long endTick) {
             this.casterUuid = casterUuid;
             this.worldKey = worldKey;
             this.endTick = endTick;
-            this.nextDamageTick = nextDamageTick;
         }
     }
 

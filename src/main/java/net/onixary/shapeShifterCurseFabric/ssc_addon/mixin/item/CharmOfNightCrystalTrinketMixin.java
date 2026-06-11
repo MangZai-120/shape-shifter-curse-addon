@@ -14,9 +14,9 @@ import org.spongepowered.asm.mixin.Mixin;
 
 /**
  * 黑夜水晶吊坠（charm_of_night_crystal）寄生果蝠适配：
- * - 寄生果蝙固定血量上限、不受日照掉血影响，禁止其装备黑夜水晶吊坠。
- * - canEquip：果蝙形态下无法装入饰品槽。
- * - tick：若玩家在其它形态先戴上吊坠后再变成果蝙，自动卸下并归还（服务端，延迟到下一 tick 执行避免迫代冲突）。
+ * - 寄生果蝠固定血量上限、不受日照掉血影响，禁止其装备黑夜水晶吊坠。
+ * - canEquip：果蝠形态下无法装入饰品槽。
+ * - tick：若玩家在其它形态先戴上吊坠后再变成果蝠，自动卸下并归还（服务端，延迟到下一 tick 执行避免迭代冲突）。
  * 通过同签名方法软覆盖 SSC 主包 TrinketImpl mixin 的桥接（与 AmuletBraceletTrinketMixin 同理），仅作用于本物品类。
  * 其它形态（含吸血蝙蝠）不受影响，保持主包默认可装备。
  */
@@ -24,12 +24,12 @@ import org.spongepowered.asm.mixin.Mixin;
 public abstract class CharmOfNightCrystalTrinketMixin {
 
 	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
-		// 寄生果蝙禁止装备；其它形态保持主包默认（可装备）
+		// 寄生果蝠禁止装备；其它形态保持主包默认（可装备）
 		return !FormUtils.isBatParasiticFruit(entity);
 	}
 
 	public void tick(ItemStack stack, SlotReference slot, LivingEntity entity) {
-		// 玩家在其它形态戴上吊坠后变成寄生果蝙时，自动卸下并归还
+		// 玩家在其它形态戴上吊坠后变成寄生果蝠时，自动卸下并归还
 		if (!(entity instanceof PlayerEntity player)) return;
 		if (player.getWorld().isClient) return;
 		if (!FormUtils.isBatParasiticFruit(player)) return;

@@ -60,7 +60,6 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
     private static final DustParticleEffect SEED_DUST = new DustParticleEffect(new Vector3f(0.95f, 0.72f, 0.24f), 1.0f);
 
     private final int cooldownTicks;
-    private final int lifeTicks;
     private long internalCooldownEndTime = 0L;
     private final LinkedHashMap<UUID, SeedData> seeds = new LinkedHashMap<>();
 
@@ -95,7 +94,6 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         super(type, entity, cooldownTicks, hudRender, (e) -> {
         });
         this.cooldownTicks = cooldownTicks;
-        this.lifeTicks = lifeTicks;
         this.setKey(key);
         this.setTicking(true);
     }
@@ -365,13 +363,11 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         if (friend) {
             this.currentHumusFactor = humus ? 0.7f : 1.0f;
             applyFriendBuff(host, host == caster, seed.stack);
-            seed.lastFruitName = "friend_buff";
             spawnFruitParticles(host, FRIEND_DUST, seed.stack);
         } else if (!WhitelistUtils.isProtected(caster, host)) {
             this.currentHumusFactor = humus ? 1.5f : 1.0f;
             EnemyFruit fruit = selectEnemyFruit(host);
             applyEnemyFruit(host, fruit, seed.stack);
-            seed.lastFruitName = fruit.name();
             spawnFruitParticles(host, ENEMY_DUST, seed.stack);
         }
         this.currentHumusFactor = 1.0f;
@@ -536,7 +532,6 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
     private static class SeedData {
         private long endTick;
         private long nextFruitTick;
-        private String lastFruitName = "ROOTING";
         /** 堆叠层数 1～3，决定资源加成与粒子密度 */
         private int stack = 1;
 

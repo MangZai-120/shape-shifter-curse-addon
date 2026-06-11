@@ -201,7 +201,95 @@ public class AdvancedColorScreen extends Screen {
         addDrawableChild(ButtonWidget.builder(Text.translatable("text.ssc_addon.adv_color.btn.save"),
                 b -> doSave()).size(botBtnW, botBtnH).position(botStartX + (botBtnW + botGap) * 2, btnY).build());
 
+        // 左下角：重新观看教程
+        addDrawableChild(ButtonWidget.builder(Text.translatable("text.ssc_addon.adv_color.tutorial.replay"),
+                b -> {
+                    tutorialPrompted = true;   // 跳过确认框，直接重放
+                    this.client.setScreen(new ColorTutorialOverlay(this, () -> {}, buildTutorialSteps()));
+                }).size(64, 16).position(8, height - 22).build());
+
         refreshAllFromWorking();
+
+        maybeShowTutorial();
+    }
+
+    /** 本次界面会话是否已询问过教程（防止 init 重复触发 / 教程结束返回时再弹）。 */
+    private boolean tutorialPrompted = false;
+
+    /** 首次（当前存档未看过）进入颜色编辑器时，先弹「是否查看教程」确认框。 */
+    private void maybeShowTutorial() {
+        if (this.client == null) return;
+        if (tutorialPrompted) return;   // 同一界面实例只问一次，避免 init 重入递归
+        String saveId = net.onixary.shapeShifterCurseFabric.ssc_addon.util.ClientSaveUtils.getCurrentSaveId();
+        net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonClientConfig cfg =
+                me.shedaniel.autoconfig.AutoConfig.getConfigHolder(
+                        net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonClientConfig.class).getConfig();
+        if (cfg.colorTutorialSeenSaves.contains(saveId)) return;
+        tutorialPrompted = true;
+
+        Runnable markSeen = () -> {
+            if (!cfg.colorTutorialSeenSaves.contains(saveId)) {
+                cfg.colorTutorialSeenSaves.add(saveId);
+                me.shedaniel.autoconfig.AutoConfig.getConfigHolder(
+                        net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonClientConfig.class).save();
+            }
+        };
+
+        // 先弹「是否查看教程」确认框：确认 → 播放教程；取消 → 标记已看过、直接进入编辑界面
+        net.minecraft.client.gui.screen.ConfirmScreen confirm = new net.minecraft.client.gui.screen.ConfirmScreen(
+                yes -> {
+                    if (yes) {
+                        this.client.setScreen(new ColorTutorialOverlay(this, markSeen, buildTutorialSteps()));
+                    } else {
+                        markSeen.run();
+                        this.client.setScreen(this);
+                    }
+                },
+                Text.translatable("text.ssc_addon.adv_color.tutorial.prompt.title"),
+                Text.translatable("text.ssc_addon.adv_color.tutorial.prompt.body"),
+                Text.translatable("text.ssc_addon.adv_color.tutorial.prompt.yes"),
+                Text.translatable("text.ssc_addon.adv_color.tutorial.prompt.no"));
+        this.client.setScreen(confirm);
+    }
+
+    /** 构造教程步骤列表（高亮区域用屏幕相对坐标实时计算）。 */
+    private java.util.List<ColorTutorialOverlay.TutorialStep> buildTutorialSteps() {
+        java.util.List<ColorTutorialOverlay.TutorialStep> steps = new java.util.ArrayList<>();
+        // 1. 颜色项切换色块（顶部居中）
+        steps.add(new ColorTutorialOverlay.TutorialStep(
+                () -> rectOf(colorTabs[0], colorTabs[colorTabs.length - 1]),
+                "text.ssc_addon.adv_color.tutorial.step.swatches"));
+        // 2. 颜色修改区域（左 RGBA/Hex + 中滑条 + 右 HSV）
+        steps.add(new ColorTutorialOverlay.TutorialStep(
+                () -> new int[]{8, 64, this.width - 16, 180},
+                "text.ssc_addon.adv_color.tutorial.step.edit_area"));
+        // 3. 保存 / 导出（底部按钮行：→预设/取消/保存）
+        steps.add(new ColorTutorialOverlay.TutorialStep(
+                () -> new int[]{(width - (100 * 3 + 10 * 2)) / 2 - 2, height - 30, 100 * 3 + 10 * 2 + 4, 24},
+                "text.ssc_addon.adv_color.tutorial.step.save_export"));
+        // 4. 引导点击「→预设管理」按钮，进入预设管理界面并续讲预设教程（必须点该按钮）
+        steps.add(new ColorTutorialOverlay.TutorialStep(
+                () -> new int[]{(width - (100 * 3 + 10 * 2)) / 2 - 2, height - 30, 100 + 4, 24},
+                "text.ssc_addon.adv_color.tutorial.step.goto_presets",
+                () -> {
+                    PENDING_PRESET_TUTORIAL = true;
+                    MinecraftClient.getInstance().setScreen(
+                            new net.onixary.shapeShifterCurseFabric.ssc_addon.client.palette.PalettePresetsScreen(this));
+                }));
+        return steps;
+    }
+
+    /** 由调色屏跳到预设屏时置位：预设屏 init 后自动续讲预设教程。 */
+    public static boolean PENDING_PRESET_TUTORIAL = false;
+
+    /** 由两个控件计算包围矩形（含小边距）。 */
+    private static int[] rectOf(net.minecraft.client.gui.widget.ClickableWidget a,
+                                net.minecraft.client.gui.widget.ClickableWidget b) {
+        int x1 = Math.min(a.getX(), b.getX());
+        int y1 = Math.min(a.getY(), b.getY());
+        int x2 = Math.max(a.getX() + a.getWidth(), b.getX() + b.getWidth());
+        int y2 = Math.max(a.getY() + a.getHeight(), b.getY() + b.getHeight());
+        return new int[]{x1 - 2, y1 - 2, x2 - x1 + 4, y2 - y1 + 4};
     }
 
     private TextFieldWidget makeNumField(int x, int y, int w, int min, int max, java.util.function.IntConsumer onValid) {

@@ -66,9 +66,8 @@ public class SnowFoxSpMeleeAbility {
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_MELEE_PRIMARY_CD, 120);
 
 		Vec3d lookDir = player.getRotationVector().normalize();
-		Vec3d startPos = player.getPos();
 
-		DashingPlayerData data = new DashingPlayerData(startPos, lookDir, 0);
+		DashingPlayerData data = new DashingPlayerData(lookDir, 0);
 		DASHING_PLAYERS.put(player.getUuid(), data);
 
 		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -233,13 +232,11 @@ public class SnowFoxSpMeleeAbility {
 	 * 冲刺中玩家数据
 	 */
 	private static class DashingPlayerData {
-		final Vec3d startPos;
 		final Vec3d direction;
 		final Set<UUID> hitEntities;
 		int ticksElapsed;
 
-		DashingPlayerData(Vec3d startPos, Vec3d direction, int ticksElapsed) {
-			this.startPos = startPos;
+		DashingPlayerData(Vec3d direction, int ticksElapsed) {
 			this.direction = direction;
 			this.hitEntities = new HashSet<>();
 			this.ticksElapsed = ticksElapsed;

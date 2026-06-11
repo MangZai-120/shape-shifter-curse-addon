@@ -178,6 +178,41 @@ public class PalettePresetsScreen extends Screen {
             btn -> exportAllToFile()).size(botBtnW, botBtnH).position(botStartX + (botBtnW + botGap) * 2, closeY).build());
 
         updateRowPositions();
+
+        maybeContinuePresetTutorial(botStartX, closeY, botBtnW);
+    }
+
+    /** 由调色屏教程跳转而来时，自动续讲「预设管理」教程。 */
+    private void maybeContinuePresetTutorial(int botStartX, int closeY, int botBtnW) {
+        if (this.client == null) return;
+        if (!net.onixary.shapeShifterCurseFabric.ssc_addon.client.colorpicker.AdvancedColorScreen.PENDING_PRESET_TUTORIAL) return;
+        net.onixary.shapeShifterCurseFabric.ssc_addon.client.colorpicker.AdvancedColorScreen.PENDING_PRESET_TUTORIAL = false;
+
+        java.util.List<net.onixary.shapeShifterCurseFabric.ssc_addon.client.colorpicker.ColorTutorialOverlay.TutorialStep> steps =
+                new java.util.ArrayList<>();
+        // 1. 同步范围（按世界 / 全局存储）
+        steps.add(new net.onixary.shapeShifterCurseFabric.ssc_addon.client.colorpicker.ColorTutorialOverlay.TutorialStep(
+                () -> new int[]{width - 332, 20, 164, 24},
+                "text.ssc_addon.palette.tutorial.step.sync_scope"));
+        // 2. 复制当前配色到剪贴板
+        steps.add(new net.onixary.shapeShifterCurseFabric.ssc_addon.client.colorpicker.ColorTutorialOverlay.TutorialStep(
+                () -> new int[]{width - 167, 20, 164, 24},
+                "text.ssc_addon.palette.tutorial.step.export_current"));
+        // 3. 槽位：命名 + 粘贴配色码 + 应用/导出（保存颜色流程）
+        steps.add(new net.onixary.shapeShifterCurseFabric.ssc_addon.client.colorpicker.ColorTutorialOverlay.TutorialStep(
+                () -> new int[]{viewportLeft - 2, viewportY - 2, (viewportRight - viewportLeft) + 4, ROW_H * 2 + 4},
+                "text.ssc_addon.palette.tutorial.step.slot_save"));
+        // 4. 全部导出到文件
+        steps.add(new net.onixary.shapeShifterCurseFabric.ssc_addon.client.colorpicker.ColorTutorialOverlay.TutorialStep(
+                () -> new int[]{botStartX + (botBtnW + 10) * 2 - 2, closeY - 2, botBtnW + 4, 24},
+                "text.ssc_addon.palette.tutorial.step.export_all"));
+        // 5. 返回颜色编辑器
+        steps.add(new net.onixary.shapeShifterCurseFabric.ssc_addon.client.colorpicker.ColorTutorialOverlay.TutorialStep(
+                () -> new int[]{botStartX - 2, closeY - 2, botBtnW + 4, 24},
+                "text.ssc_addon.palette.tutorial.step.back_editor"));
+
+        this.client.setScreen(new net.onixary.shapeShifterCurseFabric.ssc_addon.client.colorpicker.ColorTutorialOverlay(
+                this, () -> {}, steps));
     }
 
     /** 根据 scrollOffset 同步槽位 widget 的 y 与 visible。 */
