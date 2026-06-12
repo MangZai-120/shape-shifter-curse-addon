@@ -13,14 +13,17 @@ import net.minecraft.nbt.NbtList;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.item.InfiniteEnergyPotionItem;
 
 public class PotionBagScreenHandler extends ScreenHandler {
 	private final Inventory inventory;
 	private final ItemStack bagStack;
+	private final PlayerEntity player;
 
 	public PotionBagScreenHandler(int syncId, PlayerInventory playerInventory, ItemStack bagStack) {
 		super(SscAddon.POTION_BAG_SCREEN_HANDLER, syncId);
 		this.bagStack = bagStack;
+		this.player = playerInventory.player;
 		// 1 Row x 9 Columns (Standard Single Chest Layout) = 9 Slots
 		this.inventory = new SimpleInventory(9) {
 			@Override
@@ -38,12 +41,15 @@ public class PotionBagScreenHandler extends ScreenHandler {
 			public boolean isValid(int slot, ItemStack stack) {
 				return stack.getItem() instanceof PotionItem ||
 						stack.getItem() instanceof SplashPotionItem ||
-						stack.getItem() instanceof LingeringPotionItem;
+						stack.getItem() instanceof LingeringPotionItem ||
+						stack.getItem() instanceof InfiniteEnergyPotionItem;
 			}
 		};
 
 		// Load NBT
 		loadFromNbt(bagStack.getNbt());
+		// 清理已充满的无限药水空瓶标记，使打开时袋内显示正常名称
+		cleanRechargedInfinitePotions();
 
 		inventory.onOpen(playerInventory.player);
 
@@ -55,11 +61,16 @@ public class PotionBagScreenHandler extends ScreenHandler {
 				public boolean canInsert(ItemStack stack) {
 					return stack.getItem() instanceof PotionItem ||
 							stack.getItem() instanceof SplashPotionItem ||
-							stack.getItem() instanceof LingeringPotionItem;
+							stack.getItem() instanceof LingeringPotionItem ||
+							stack.getItem() instanceof InfiniteEnergyPotionItem;
 				}
 
 				@Override
 				public int getMaxItemCount(ItemStack stack) {
+					// 无限压缩能量药水每瓶独立自充能，不可叠加（每格仅 1 个）
+					if (stack.getItem() instanceof InfiniteEnergyPotionItem) {
+						return 1;
+					}
 					if (stack.getItem() instanceof PotionItem ||
 							stack.getItem() instanceof SplashPotionItem ||
 							stack.getItem() instanceof LingeringPotionItem) {
@@ -155,6 +166,75 @@ public class PotionBagScreenHandler extends ScreenHandler {
 	public void onClosed(PlayerEntity player) {
 		super.onClosed(player);
 		saveToNbt(); // Ensure save on close
+	}
+
+	/**
+	 * 同步内容前先清理已充满的无限药水空瓶标记，使打开期间充满的药水实时恢复正常名称（仅服务端）。
+	 */
+	@Override
+	public void sendContentUpdates() {
+		cleanRechargedInfinitePotions();
+		super.sendContentUpdates();
+	}
+
+	/**
+	 * 清除袋内已充满的无限压缩能量药水的空瓶标记（仅服务端）。
+	 * 药水袋存储物不走物品 inventoryTick，需在此主动清理，否则充满后仍显示「（空）」。
+	 */
+	private void cleanRechargedInfinitePotions() {
+		if (player == null || player.getWorld() == null || player.getWorld().isClient) {
+			return;
+		}
+		net.minecraft.world.World world = player.getWorld();
+		for (int i = 0; i < inventory.size(); ++i) {
+			ItemStack s = inventory.getStack(i);
+			if (s.getItem() instanceof InfiniteEnergyPotionItem
+					&& InfiniteEnergyPotionItem.clearRechargeMarkIfDone(s, world)) {
+				inventory.markDirty(); // 触发写回药水袋 NBT
+			}
+		}
+	}
+
+	/**
+	 * 读取药水包指定槽位存储的物品（NBT 结构与 {@link #saveToNbt} 一致）。
+	 * 供 PotionBagItem 的快捷投放栏（槽位 0）在不打开 GUI 时直接读取，多人下读的是服务端同步过来的手持物 NBT。
+	 *
+	 * @return 该槽位物品；不存在时返回 {@link ItemStack#EMPTY}
+	 */
+	public static ItemStack getStoredStack(ItemStack bagStack, int slot) {
+		NbtCompound nbt = bagStack.getNbt();
+		if (nbt == null || !nbt.contains("Items", 9)) {
+			return ItemStack.EMPTY;
+		}
+		NbtList list = nbt.getList("Items", 10);
+		for (int i = 0; i < list.size(); ++i) {
+			NbtCompound itemTag = list.getCompound(i);
+			if ((itemTag.getByte("Slot") & 255) == slot) {
+				return ItemStack.fromNbt(itemTag);
+			}
+		}
+		return ItemStack.EMPTY;
+	}
+
+	/**
+	 * 写回药水包指定槽位的物品（{@code stack} 为空则移除该槽位条目）。
+	 * 供快捷投放栏消耗药水后更新存储，与 GUI 的 {@link #saveToNbt} 使用同一 NBT 结构。
+	 */
+	public static void setStoredStack(ItemStack bagStack, int slot, ItemStack stack) {
+		NbtCompound nbt = bagStack.getOrCreateNbt();
+		NbtList list = nbt.contains("Items", 9) ? nbt.getList("Items", 10) : new NbtList();
+		for (int i = list.size() - 1; i >= 0; --i) {
+			if ((list.getCompound(i).getByte("Slot") & 255) == slot) {
+				list.remove(i);
+			}
+		}
+		if (!stack.isEmpty()) {
+			NbtCompound itemTag = new NbtCompound();
+			itemTag.putByte("Slot", (byte) slot);
+			stack.writeNbt(itemTag);
+			list.add(itemTag);
+		}
+		nbt.put("Items", list);
 	}
 
 }

@@ -20,6 +20,8 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.util.Formatting;
 import net.minecraft.item.ItemGroup;
+import net.minecraft.recipe.BrewingRecipeRegistry;
+import net.minecraft.recipe.Ingredient;
 import net.minecraft.recipe.RecipeSerializer;
 import net.minecraft.recipe.SpecialRecipeSerializer;
 import net.minecraft.registry.Registries;
@@ -58,6 +60,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.power.SscAddonPowers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.BlizzardTankRechargeRecipe;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.RefillMoisturizerRecipe;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.ReloadSnowballLauncherRecipe;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.InfiniteEnergyPotionRecipe;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.SpUpgradeRecipe;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.screen.PotionBagScreenHandler;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
@@ -225,6 +228,14 @@ public class SscAddon implements ModInitializer {
 	);
 	// 女巫使魔怪物蛋（主色狐狸沙棕 #D5B48F，次色青蓝 #31C8CC）
 	public static final Item WITCH_FAMILIAR_SPAWN_EGG = new SpawnEggItem(WITCH_FAMILIAR_ENTITY, 0xD5B48F, 0x31C8CC, new Item.Settings());
+	// 无限压缩能量药水（饮用/喷溅/滞留三型；使用后空瓶自充能，效果同压缩能量药水 feed_potion）
+	public static final Item INFINITE_ENERGY_POTION = new net.onixary.shapeShifterCurseFabric.ssc_addon.item.InfiniteEnergyPotionItem(
+			new Item.Settings().maxCount(1), net.onixary.shapeShifterCurseFabric.ssc_addon.item.InfiniteEnergyPotionItem.Type.DRINK);
+	public static final Item INFINITE_ENERGY_POTION_SPLASH = new net.onixary.shapeShifterCurseFabric.ssc_addon.item.InfiniteEnergyPotionItem(
+			new Item.Settings().maxCount(1), net.onixary.shapeShifterCurseFabric.ssc_addon.item.InfiniteEnergyPotionItem.Type.SPLASH);
+	public static final Item INFINITE_ENERGY_POTION_LINGERING = new net.onixary.shapeShifterCurseFabric.ssc_addon.item.InfiniteEnergyPotionItem(
+			new Item.Settings().maxCount(1), net.onixary.shapeShifterCurseFabric.ssc_addon.item.InfiniteEnergyPotionItem.Type.LINGERING);
+	public static final RecipeSerializer<InfiniteEnergyPotionRecipe> INFINITE_ENERGY_POTION_SERIALIZER = new SpecialRecipeSerializer<>(InfiniteEnergyPotionRecipe::new);
 	public static final ItemGroup SSC_ADDON_GROUP = Registry.register(Registries.ITEM_GROUP,
 			new Identifier("ssc_addon", "group"),
 			FabricItemGroup.builder()
@@ -258,6 +269,9 @@ public class SscAddon implements ModInitializer {
 						entries.add(FRIEND_MARKER);
 						entries.add(CLEAR_FRIEND_MARKER);
 						entries.add(WITCH_FAMILIAR_SPAWN_EGG);
+						entries.add(INFINITE_ENERGY_POTION);
+						entries.add(INFINITE_ENERGY_POTION_SPLASH);
+						entries.add(INFINITE_ENERGY_POTION_LINGERING);
 					})
 					.build());
 	// SP Allay sound events
@@ -370,6 +384,14 @@ public class SscAddon implements ModInitializer {
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "friend_marker"), FRIEND_MARKER);
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "clear_friend_marker"), CLEAR_FRIEND_MARKER);
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "witch_familiar_spawn_egg"), WITCH_FAMILIAR_SPAWN_EGG);
+		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "infinite_energy_potion"), INFINITE_ENERGY_POTION);
+		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "infinite_energy_potion_splash"), INFINITE_ENERGY_POTION_SPLASH);
+		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "infinite_energy_potion_lingering"), INFINITE_ENERGY_POTION_LINGERING);
+		// 酿造：饮用+火药→喷溅；喷溅+龙息→滞留。直接注册静态 item 配方到 ITEM_RECIPES（不依赖主包数据驱动版本，且不会被动态酿造 reload 清除）
+		BrewingRecipeRegistry.ITEM_RECIPES.add(new net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.InfinitePotionBrewingRecipe(
+				INFINITE_ENERGY_POTION, Ingredient.ofItems(net.minecraft.item.Items.GUNPOWDER), INFINITE_ENERGY_POTION_SPLASH));
+		BrewingRecipeRegistry.ITEM_RECIPES.add(new net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.InfinitePotionBrewingRecipe(
+				INFINITE_ENERGY_POTION_SPLASH, Ingredient.ofItems(net.minecraft.item.Items.DRAGON_BREATH), INFINITE_ENERGY_POTION_LINGERING));
 	}
 
 	private void registerRecipeSerializers() {
@@ -377,6 +399,7 @@ public class SscAddon implements ModInitializer {
 		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "reload_snowball_launcher"), RELOAD_SNOWBALL_LAUNCHER_SERIALIZER);
 		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "blizzard_tank_recharge"), BLIZZARD_TANK_RECHARGE_SERIALIZER);
 		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "sp_upgrade_crafting"), SP_UPGRADE_SERIALIZER);
+		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "infinite_energy_potion_crafting"), INFINITE_ENERGY_POTION_SERIALIZER);
 	}
 
 	// 拆分的私有方法

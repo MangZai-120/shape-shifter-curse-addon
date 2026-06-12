@@ -1,0 +1,14 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "ssc_addon:item/infinite_energy_potion_lingering"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "ssc_addon:empty": 1
+      },
+      "model": "ssc_addon:item/infinite_energy_potion_lingering_empty"
+    }
+  ]
+}

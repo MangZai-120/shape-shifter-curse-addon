@@ -207,8 +207,7 @@
     "codex.form.my_addon.familiar_fox_mancianima.cons":  "Forced stabilization is not gentle:\n\nAll active abilities draw on mana. Without enough mana, you cannot teleport and Mancianima Brand escalates more slowly\n\nThe Evolution Stone\u0027s power is not a natural flow, but high-pressure spiritual energy forced into your body by stabilization rites; you must keep your combat loop alive through killing and draining\n\nPillager weapon instincts are carved into you. You cannot trade with villagers or wandering traders; they will flee from you and become targets for plunder\n\nBell Assault aggroes nearby iron golems and locks you out for 1 MC-day, making it dangerous for players who need to live near villages\n\nYour body is still based on a familiar\u0027s frame: you cannot equip leggings or boots, and you move sluggishly in water\n\nFood gives less satiety, so ordinary meals alone struggle to sustain this modified soul-vessel",
     "codex.form.my_addon.familiar_fox_mancianima.instincts":  "The echo of the stabilization rites remains nailed into your soul: obey, lock on, pursue, clear the field. If no master is present, the weapon will find its own next command.",
     "item.ssc_addon.potion_bag":  "Potion Bag",
-    "item.ssc_addon.potion_bag.tooltip":  "Red\u0027s exclusive potion storage bag, can only store potions, max 8 per slot",
-    "container.ssc_addon.potion_bag":  "Potion Bag",
+    "item.ssc_addon.potion_bag.tooltip":  "Red\u0027s exclusive potion storage bag, can only store potions, max 8 per slot",    "item.ssc_addon.potion_bag.tooltip.controls":  "Sneak + Right-click to open; Right-click to quick-use the leftmost quick-slot potion: drinkable ones are drunk over time, throwable ones have a 5s cooldown after throwing",    "container.ssc_addon.potion_bag":  "Potion Bag",
     "origin.my_addon.form_allay_sp.name":  "SP Allay",
     "origin.my_addon.form_fallen_allay_sp.name":  "SP Fallen Allay",
     "origin.my_addon.form_fallen_allay_sp.description":  "The fallen form of the Allay, belonging to the raid faction, can summon vexes to fight.",
@@ -652,5 +651,14 @@
     "msg.my_addon.charm_night_crystal_cant_equip_parasitic_fruit":  "The Parasitic Fruit Bat cannot wear the Charm of Night Crystal; it has been automatically removed",
     "message.ssc_addon.moon_scar.whisper":  "A surge of intense emotion floods your heart; memories that are not your own stir within your mind. Perhaps you should get a good night's sleep some evening to make sense of it all.",
     "message.ssc_addon.moon_scar.become_red":  "...Where am I... Where is everyone? They should be all right, shouldn't they?",
-    "message.ssc_addon.moon_scar.revert_sp":  "The faint glow of the Moon Essence Cross calls you back from the chaos, and the memories that are not your own fall silent for now."
+    "message.ssc_addon.moon_scar.revert_sp":  "The faint glow of the Moon Essence Cross calls you back from the chaos, and the memories that are not your own fall silent for now.",
+    "item.ssc_addon.infinite_energy_potion":  "Infinite Compressed Energy Potion",
+    "item.ssc_addon.infinite_energy_potion.empty":  "Infinite Compressed Energy Potion (Empty)",
+    "item.ssc_addon.infinite_energy_potion_splash":  "Splash Infinite Compressed Energy Potion",
+    "item.ssc_addon.infinite_energy_potion_splash.empty":  "Splash Infinite Compressed Energy Potion (Empty)",
+    "item.ssc_addon.infinite_energy_potion_lingering":  "Lingering Infinite Compressed Energy Potion",
+    "item.ssc_addon.infinite_energy_potion_lingering.empty":  "Lingering Infinite Compressed Energy Potion (Empty)",
+    "item.ssc_addon.infinite_energy_potion.tooltip":  "Same effect as the Compressed Energy Potion: restores hunger, and grants extra mana in Familiar Fox forms. After use the empty bottle recharges automatically and can be used again once full.",
+    "item.ssc_addon.infinite_energy_potion.tooltip.recharging":  "Recharging: %s s left",
+    "item.ssc_addon.infinite_energy_potion.tooltip.ready":  "Charged and ready"
 }

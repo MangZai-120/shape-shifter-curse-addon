@@ -7,7 +7,7 @@
 
   "wide_only": true,
 
-  "model": "shape-shifter-curse:geo/form/form_familiar_fox_3.geo.json",
+  "model": "my_addon:geo/form_familiar_fox_3.geo.json",
   "texture": "my_addon:textures/form_familiar_fox_sp/form_familiar_fox_sp.png",
   "texture_mask": "my_addon:textures/form_familiar_fox_sp/form_familiar_fox_sp_colormask.png",
   "hidden": [

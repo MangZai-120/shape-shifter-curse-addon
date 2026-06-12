@@ -11,6 +11,7 @@ base {
 }
 
 loom {
+    accessWidenerPath = file("src/main/resources/ssc_addon.accesswidener")
     mixin {
         defaultRefmapName = "ssc-addon.refmap.json"
     }

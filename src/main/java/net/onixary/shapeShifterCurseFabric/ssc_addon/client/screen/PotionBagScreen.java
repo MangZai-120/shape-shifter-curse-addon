@@ -30,6 +30,15 @@ public class PotionBagScreen extends HandledScreen<PotionBagScreenHandler> {
 		// Explicitly specify texture size (textureWidth, textureHeight) as 256x256
 		// params: texture, x, y, u, v, width, height, textureWidth, textureHeight
 		context.drawTexture(TEXTURE, x, y, 0, 0, this.backgroundWidth, this.backgroundHeight, 256, 256);
+
+		// 高亮最左侧槽位（快捷投放栏）：金色边框，提示该槽位可在手持时直接右键快速使用
+		int slotX = x + 8;
+		int slotY = y + 18;
+		int border = 0xFFFFD700; // 不透明金色
+		context.fill(slotX - 1, slotY - 1, slotX + 17, slotY, border);       // 上
+		context.fill(slotX - 1, slotY + 16, slotX + 17, slotY + 17, border); // 下
+		context.fill(slotX - 1, slotY, slotX, slotY + 16, border);           // 左
+		context.fill(slotX + 16, slotY, slotX + 17, slotY + 16, border);     // 右
 	}
 
 	@Override
