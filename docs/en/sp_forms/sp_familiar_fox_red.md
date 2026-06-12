@@ -20,13 +20,29 @@ Red is a limited-time rare branch SP Familiar Fox can trigger during the Cursed 
 
 ## Evolution Requirements
 
+Red has two acquisition paths: a **limited-time random branch** and the **Power of the Moon Scar story path (permanent)**.
+
+### Path 1: Limited-time Random Branch
+
 | Condition | Requirement |
 | --- | --- |
 | Base form | SP Familiar Fox (`my_addon:form_familiar_fox_sp`) |
 | Trigger | During the Cursed Moon |
 | Branch check | First check per Cursed Moon has a **5%** chance to convert to Red |
 | Duration | Receives the `ssc_addon_red_expire` tag, lasts **12000 ticks (10 minutes)**, then reverts to SP Familiar Fox |
-| Note | The Moon Essence Cross upgrade code also has a Red branch check, but still proceeds to standard SP conversion afterwards; this page documents the stable Cursed-Moon SP conversion path |
+| Note | The Moon Essence Cross upgrade code also has a Red branch check, but still proceeds to standard SP conversion afterwards; this path documents the stable Cursed-Moon SP conversion logic |
+
+### Path 2: Power of the Moon Scar Story Path (Permanent)
+
+| Condition | Requirement |
+| --- | --- |
+| Prerequisite form | SP Familiar Fox (`my_addon:form_familiar_fox_sp`) |
+| Prerequisite advancement | Unlock the hidden advancement "**Power of the Moon Scar**" — collect all books related to the Lord of the Spirit Realm: Moon Scar: Lord of the Spirit Realm Chapters 1–8 + Epilogue (9 books) plus the Familiar Research Record FF-E-013 |
+| Guidance hint | Once the advancement is unlocked while in SP Familiar Fox form, you receive a one-time whisper hint guiding you to sleep |
+| Trigger | **Sleep during a Cursed Moon night**: the SP Familiar Fox truly falls asleep (using the feral sleeping animation) and transforms into Red upon waking |
+| Duration | **Permanent** — it does not expire and revert like the limited-time branch |
+| Reversion | While in the story Red state, use the **Moon Essence Cross** at any time to freely revert to SP Familiar Fox (without consuming the item) |
+| Note | This path does not apply the `ssc_addon_red_expire` tag, so it is never reverted by the limited-time branch's expiry logic; the two paths are independent |
 
 ---
 

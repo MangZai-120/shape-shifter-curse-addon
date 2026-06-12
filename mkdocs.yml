@@ -32,6 +32,8 @@ nav:
   - SP堕落悦灵（堕落之灵）: sp_forms/sp_fallen_allay.md
   - SP阿努比斯（冥裁者）: sp_forms/sp_anubis_wolf.md
   - 金沙岚 (尘卷风): sp_forms/sp_golden_sandstorm.md
+  - 吸血蝙蝠（嗜血者）: sp_forms/sp_bat_desmodus.md
+  - 寄生果蝠（移动果园）: sp_forms/sp_bat_parasitic_fruit.md
 - 物品:
   - 进化用品: items/evolution_items.md
   - 材料与素材: items/materials.md
@@ -67,6 +69,8 @@ nav:
     - SP Fallen Allay (Spirit of the Fallen): en/sp_forms/sp_fallen_allay.md
     - SP Anubis Wolf (Netherjudge): en/sp_forms/sp_anubis_wolf.md
     - Golden Sandstorm (SP): en/sp_forms/sp_golden_sandstorm.md
+    - Desmodus (Bloodthirster): en/sp_forms/sp_bat_desmodus.md
+    - Parasitic Fruit Bat (Moving Orchard): en/sp_forms/sp_bat_parasitic_fruit.md
   - Items:
     - Evolution Items: en/items/evolution_items.md
     - Materials: en/items/materials.md

@@ -16,6 +16,7 @@ The Moon Essence Cross route requires the **night of the Cursed Moon**, plus the
 | Axolotl Stage 3 | [SP Axolotl (Abyssal Overlord)](sp_axolotl.md) |
 | Vanilla Allay form | [SP Fallen Allay (Spirit of the Fallen)](sp_fallen_allay.md) |
 | Anubis Wolf Stage 3 | [SP Anubis Wolf (Netherjudge)](sp_anubis_wolf.md) |
+| Bat Stage 3 | [Desmodus (Bloodthirster)](sp_bat_desmodus.md) |
 
 Familiar Fox (Red) is **not** a stable Moon Essence Cross target; instead, an SP Familiar Fox under the Cursed Moon has a **5%** chance of a temporary transformation into Red, lasting **12000 ticks (10 minutes)** before reverting back to SP Familiar Fox.
 
@@ -30,6 +31,7 @@ The Evolution Stone route does not require a Cursed Moon — long-press to use i
 | Vanilla Allay form | [SP Allay (Crystal Sound)](sp_allay.md) |
 | Anubis Wolf Stage 3 | [Golden Sandstorm (SP)](sp_golden_sandstorm.md) |
 | Familiar Fox (Red Fox) special branch | [Mancianima (Forbidden Weapon)](sp_familiar_fox_mancianima.md) |
+| Bat Stage 3 | [Parasitic Fruit Bat (Moving Orchard)](sp_bat_parasitic_fruit.md) |
 
 ---
 
@@ -47,6 +49,8 @@ The Evolution Stone route does not require a Cursed Moon — long-press to use i
 | [SP Fallen Allay](sp_fallen_allay.md) | Spirit of the Fallen | Moon Essence Cross | Vex Summons / Battlefield Disruption |
 | [SP Anubis Wolf](sp_anubis_wolf.md) | Netherjudge | Moon Essence Cross | Death Domain / Netherwolf Summons |
 | [Golden Sandstorm](sp_golden_sandstorm.md) | Golden Sandstorm | Evolution Stone | Brand Burst / Wither Sustain |
+| [Desmodus](sp_bat_desmodus.md) | Bloodthirster | Moon Essence Cross | High-mobility Melee / Blood Thirst Lifesteal |
+| [Parasitic Fruit Bat](sp_bat_parasitic_fruit.md) | Moving Orchard | Evolution Stone | Team Support / Sustained Control |
 
 ---
 
@@ -62,11 +66,11 @@ SP Snow Fox, SP Fallen Allay, and SP Anubis Wolf focus on reshaping the battlefi
 
 ### Assassin & Burst type
 
-Wild Cat (SP), Mancianima, and Golden Sandstorm focus on locking in a target and finishing the burst. Their power comes from stealth openers, brand pressure, or percent-based execute — not from standing toe-to-toe.
+Wild Cat (SP), Mancianima, and Golden Sandstorm focus on locking in a target and finishing the burst. Their power comes from stealth openers, brand pressure, or percent-based execute — not from standing toe-to-toe. Desmodus is a classic night-fighting melee hunter: it grows stronger the more Blood Thirst it stacks, but is especially fragile by day and against iron weapons.
 
 ### Team Support type
 
-SP Allay is the closest thing to a pure support: purify, heal, totem guard, and ranged damage boost make it extremely valuable in multiplayer, but its low HP means it needs teammate protection during cast windows.
+SP Allay is the closest thing to a pure support: purify, heal, totem guard, and ranged damage boost make it extremely valuable in multiplayer, but its low HP means it needs teammate protection during cast windows. The Parasitic Fruit Bat runs on a "seed" economy: buffing allies, debuffing enemies, and using infection spore bombs to provide sustained group pressure and team healing.
 
 ---
 
