@@ -39,7 +39,7 @@
 | 形态 | 称号 | 进化方式 | 战斗定位 |
 | --- | --- | ---- | ---- |
 | [SP使魔](sp_familiar_fox.md) | 灵界之主 | 月髓十字环 | 魔力法师 / 持续 AOE |
-| [红 · 堕落使魔](sp_familiar_fox_red.md) | 灵界之主分支 | SP使魔咒月限时转化 | 高风险火环 / 强化吐息 |
+| [红 · 一个传说罢了](https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/sp_forms/sp_familiar_fox_red/) | 红 | SP使魔咒月限时转化/成就解锁 | 魔力法师 / 持续AOE |
 | [契灵](sp_familiar_fox_mancianima.md) | 禁忌兵器 | 进化石特殊分支 | 单体猎杀 / 烙印真伤 |
 | [SP美西螈](sp_axolotl.md) | 深渊霸主 | 月髓十字环 | 水域控场 / 近身爆破 |
 | [SP野猫](sp_wild_cat.md) | 月光魅影 | 进化石 | 真实隐身 / 破隐爆发 |
