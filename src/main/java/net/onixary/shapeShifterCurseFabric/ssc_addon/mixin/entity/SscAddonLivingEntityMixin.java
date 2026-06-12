@@ -27,7 +27,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
@@ -51,21 +50,6 @@ public abstract class SscAddonLivingEntityMixin {
 			return amount * 0.5f;
 		}
 		return amount;
-	}
-
-	/**
-	 * 「月痕之力」假睡演出：玩家上床进入假睡期间，顶住一切对其的唤醒（含诅咒之月
-	 * {@code CursedMoonWorldMixin} 每 tick 的强制唤醒、以及玩家手动起床），让其保持睡姿、无法操作；
-	 * 10 秒后由 {@code MoonScarStoryManager.tickFakeSleep} 移除标记后主动叫醒。
-	 * 仅对“处于假睡演出的服务端玩家”生效（{@code instanceof ServerPlayerEntity} 短路，
-	 * 客户端实体不读状态、无跨线程访问）；其它生物完全不受影响。
-	 */
-	@Inject(method = "wakeUp()V", at = @At("HEAD"), cancellable = true)
-	private void ssc_addon$keepMoonScarFakeSleeping(CallbackInfo ci) {
-		if ((Object) this instanceof ServerPlayerEntity sp
-				&& net.onixary.shapeShifterCurseFabric.ssc_addon.story.MoonScarStoryManager.isStorySleeping(sp.getUuid())) {
-			ci.cancel();
-		}
 	}
 
 	/**

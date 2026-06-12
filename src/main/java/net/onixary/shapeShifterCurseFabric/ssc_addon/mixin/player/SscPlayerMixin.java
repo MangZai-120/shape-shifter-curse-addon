@@ -7,6 +7,7 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.raid.RaiderEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundEvents;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaAggroTracker;
@@ -16,20 +17,40 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PlayerEntity.class)
 public abstract class SscPlayerMixin {
 
 	/**
-	 * 「月痕之力」假睡演出期间，阻止该玩家参与原版跳夜判定（{@code canResetTimeBySleeping} 返回 false），
-	 * 从而保证假睡不真正推进时间 / 不跳夜。仅在假睡演出中生效（客户端 FAKE_SLEEPING 为空、不介入）。
+	 * 「月痕之力」剧情真睡期间，阻止该玩家参与原版跳夜判定（{@code canResetTimeBySleeping} 返回 false），
+	 * 从而保证真睡不推进时间 / 不跳夜。仅在剧情真睡中生效（客户端 STORY_SLEEPING 为空、不介入）。
 	 */
 	@Inject(method = "canResetTimeBySleeping", at = @At("HEAD"), cancellable = true)
-	private void ssc_addon$preventMoonScarFakeSleepSkip(CallbackInfoReturnable<Boolean> cir) {
+	private void ssc_addon$preventMoonScarStorySleepSkip(CallbackInfoReturnable<Boolean> cir) {
 		if (net.onixary.shapeShifterCurseFabric.ssc_addon.story.MoonScarStoryManager
 				.isStorySleeping(((PlayerEntity) (Object) this).getUuid())) {
 			cir.setReturnValue(false);
+		}
+	}
+
+	/**
+	 * 「月痕之力」剧情真睡：sp 使魔上床真正睡眠期间，顶住 SSC {@code CursedMoonWorldMixin} 每 tick
+	 * 对其的「诅咒之月强制唤醒」（SSC 唯一禁睡点），让玩家能真正睡着、不被弹起。
+	 * <p>
+	 * <b>关键</b>：SSC 调的是 {@code player.wakeUp()}（无参），而 {@code PlayerEntity} 重写了无参
+	 * {@code wakeUp()} → 它覆盖了 {@code LivingEntity.wakeUp()}，所以必须注入 <b>PlayerEntity 层</b>的
+	 * {@code wakeUp()V} 才拦得住（注入 LivingEntity 层会被多态绕过，这正是之前「假睡」抖动的根因）。
+	 * <p>
+	 * 仅对「处于剧情真睡的服务端玩家」生效（{@code instanceof ServerPlayerEntity} 短路，客户端实体不读状态、
+	 * 无跨线程访问）；睡满后由 {@code MoonScarStoryManager.tickStorySleep} 移除标记后主动叫醒。
+	 */
+	@Inject(method = "wakeUp()V", at = @At("HEAD"), cancellable = true)
+	private void ssc_addon$keepMoonScarStorySleeping(CallbackInfo ci) {
+		if ((Object) this instanceof ServerPlayerEntity sp
+				&& net.onixary.shapeShifterCurseFabric.ssc_addon.story.MoonScarStoryManager.isStorySleeping(sp.getUuid())) {
+			ci.cancel();
 		}
 	}
 
