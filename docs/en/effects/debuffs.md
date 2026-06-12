@@ -67,3 +67,47 @@ SP Snow Fox's persistent slowing debuff.
 
 !!! note "Immunity"
     SP Snow Fox is immune to this effect.
+
+---
+
+## Deafen
+
+**Deafen** (`effect.ssc_addon.deafen`)
+
+The special control Desmodus's Sonic Burst applies to player targets.
+
+- **Type**: Sense Deprivation
+- **Source**: Desmodus's Sonic Burst (on hitting a player target)
+- **Effect**: Temporarily cannot hear any sound (client-side mute)
+- **Duration**: 3 seconds
+- **Note**: Non-player targets instead gain 3 seconds of Blindness
+
+---
+
+## Poison
+
+**Poison** (`effect.ssc_addon.bat_poison`)
+
+One of the debuff-fruit effects the Parasitic Fruit Bat plants on enemies.
+
+- **Type**: Damage (DoT)
+- **Source**: Parasitic Fruit Bat's Parasitic Spiritfruit (Sour Fruit etc. grown on hostile hosts)
+- **Effect**: Periodic damage over time
+- **Note**: A separate custom poison effect; some "no-buff" forms (e.g. SP Familiar Fox) are immune to it
+
+---
+
+## Infection
+
+**Infection**
+
+The sustained debuff and contagion state caused by the Parasitic Fruit Bat's Infection Spore Bomb.
+
+- **Type**: DoT / Debuff / Contagion
+- **Source**: Parasitic Fruit Bat's Infection Spore Bomb (non-whitelisted creatures within the explosion and poison fog cloud)
+- **Effects**:
+    - Over 15 seconds, takes **1 magic damage** and Glows for 1 second every 3 seconds
+    - **Cannot heal from food saturation**
+    - All damage dealt is **reduced by 15%**
+    - Spreads to non-whitelisted creatures within 1.5 blocks
+- **Cleanse**: The Allay's Purify clears the infection and dissipates the cloud

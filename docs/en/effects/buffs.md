@@ -87,3 +87,45 @@ A buff that removes negative status effects.
 - **Type**: Cleanse
 - **Source**: Specific skills or items
 - **Effects**: Removes some negative status effects from the target
+
+---
+
+## Mist Form
+
+**Mist Form** (`effect.ssc_addon.mist_form`)
+
+The signature escape state of Desmodus (Vampire Bat).
+
+- **Type**: Damage Immunity / Mobility
+- **Source**: Desmodus active skill
+- **Effects**:
+    - Dissolve into a cloud of mist, your model fading away
+    - **Immune to all damage** except the **void**
+    - After 1 second in mist, press again to charge a Burst (8 damage and knockback within 4 blocks)
+- **Duration**: About 4.5 seconds
+
+---
+
+## Regeneration
+
+**Regeneration** (`effect.ssc_addon.bat_regen`)
+
+The healing-fruit effect the Parasitic Fruit Bat plants on allies.
+
+- **Type**: Recovery
+- **Source**: Parasitic Fruit Bat's Parasitic Spiritfruit (allied host) / Infection Spore Bomb (allies)
+- **Effect**: Periodically restores health
+- **Note**: A separate custom recovery effect; some "no-buff" forms (e.g. SP Familiar Fox) are immune to it
+
+---
+
+## Absorption
+
+**Absorption** (`effect.ssc_addon.bat_absorption`)
+
+The shield-fruit effect the Parasitic Fruit Bat plants on allies.
+
+- **Type**: Shield
+- **Source**: Parasitic Fruit Bat's Parasitic Spiritfruit (allied host)
+- **Effect**: Grants extra absorption health (yellow hearts) to soak damage
+- **Note**: A separate custom absorption effect; some "no-buff" forms (e.g. SP Familiar Fox) are immune to it

@@ -52,7 +52,7 @@ Use it on a player already marked as a friend to remove their friendly status.
 
 **Healing Spell**
 
-A hotbar active skill of the SP Familiar Fox form — consume mana to heal yourself or allies.
+A hotbar active skill of the SP Allay form — consume mana to heal yourself or allies.
 
 ### Allay Jukebox
 

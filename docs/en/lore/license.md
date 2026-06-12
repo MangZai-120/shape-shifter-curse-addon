@@ -8,7 +8,7 @@ All story and narrative content under the "Lore & Stories" section of this Wiki,
 - *Story Collection · Moon Trace: Spirit Realm Lord*
 - *The Jungle Ghost*
 - *Familiar Research Notes*
-- *Moonshard Ring Poems*
+- *Moon Essence Cross Poems*
 - *Millennium Chronicle · The Human-Demon War*
 - *Background Lore*
 - In-game book content and Codex narrative text

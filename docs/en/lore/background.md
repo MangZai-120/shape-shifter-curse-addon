@@ -59,4 +59,4 @@ The state in which a Shape Shifter has completely finished their transformation 
 - [Story Collection: Moon Trace · Spirit Realm Lord](story_collection.md) — Full long-form story
 - [The Jungle Ghost](jungle_ghost.md) — Short story
 - [Familiar Research Notes](familiar_research.md) — Experimental archives
-- [Moonshard Ring Poems](moon_ring_poems.md) — Poetry collection
+- [Moon Essence Cross Poems](moon_ring_poems.md) — Poetry collection

@@ -32,11 +32,17 @@ Tired of plain animal instincts? Time to break through!
 | SP Form | Title | Combat Role |
 |---------|-------|-------------|
 | [SP Familiar Fox](sp_forms/sp_familiar_fox.md) | Spirit Realm Lord | Mana Mage / Sustained DoT |
+| [Familiar Fox · Red](sp_forms/sp_familiar_fox_red.md) | Spirit Realm Lord variant | High-risk Fire Ring / Empowered Breath |
+| [Mancianima](sp_forms/sp_familiar_fox_mancianima.md) | Forbidden Weapon | Single-target Hunter / Brand True Damage |
 | [SP Snow Fox](sp_forms/sp_snow_fox.md) | Frost Spirit | Glass Cannon / Frost Control |
 | [SP Axolotl](sp_forms/sp_axolotl.md) | Abyssal Overlord | Aquatic Tyrant / Survival Specialist |
 | [Wild Cat (SP)](sp_forms/sp_wild_cat.md) | Moonlight Phantom | Stealth Assassin / Night Hunter |
 | [SP Allay](sp_forms/sp_allay.md) | Crystal Sound | Aerial Support / Mass Healer |
 | [SP Fallen Allay](sp_forms/sp_fallen_allay.md) | Spirit of the Fallen | Ranged Harasser / Raid Faction |
+| [SP Anubis Wolf](sp_forms/sp_anubis_wolf.md) | Netherjudge | Death Domain / Netherwolf Summons |
+| [Golden Sandstorm](sp_forms/sp_golden_sandstorm.md) | Golden Sandstorm | Brand Burst / Wither Sustain |
+| [Desmodus](sp_forms/sp_bat_desmodus.md) | Bloodthirster | High-mobility Melee / Blood Thirst Lifesteal |
+| [Parasitic Fruit Bat](sp_forms/sp_bat_parasitic_fruit.md) | Moving Orchard | Team Support / Sustained Control |
 
 ---
 

@@ -53,10 +53,10 @@ This item is used for evolutions related to the Cursed Moon. The player must mee
 ### Applicable Forms
 
 - SP Familiar Fox (Spirit Realm Lord)
-- SP Snow Fox (Frost Spirit)
 - SP Axolotl (Abyssal Overlord)
 - SP Fallen Allay (Spirit of the Fallen)
-- SP Anubis (Netherjudge)
+- SP Anubis Wolf (Netherjudge)
+- Desmodus (Bloodthirster)
 
 ---
 
@@ -98,6 +98,8 @@ Hold right-click to use. Used for evolutions **not requiring the Cursed Moon**.
 ### Applicable Forms
 
 - Wild Cat (SP) (Moonlight Phantom)
-- Mancianima (Forbidden Weapon)
+- SP Snow Fox (Frost Spirit)
 - SP Allay (Crystal Sound)
 - Golden Sandstorm (SP)
+- Mancianima (Forbidden Weapon)
+- Parasitic Fruit Bat (Moving Orchard)

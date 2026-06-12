@@ -1,4 +1,4 @@
-# Moonshard Ring Poems
+# Moon Essence Cross Poems
 
 *An ancient anthology of poems about the Moon Essence Cross*
 

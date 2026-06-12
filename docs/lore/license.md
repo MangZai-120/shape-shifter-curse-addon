@@ -42,7 +42,7 @@ All story and narrative content under the "Lore & Stories" section of this Wiki,
 - *Story Collection · Moon Scar: Lord of the Spirit Realm*
 - *The Jungle Ghost*
 - *Familiar Research Records*
-- *Moon Marrow Ring Poems*
+- *Moon Essence Cross Poems*
 - *Millennium Chronicle · The Human-Demon War*
 - *Background Lore*
 - In-game book content and Codex narrative text

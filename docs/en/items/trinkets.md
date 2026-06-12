@@ -74,6 +74,54 @@ Exclusive trinket of the SP Axolotl form.
 
 ***
 
+### Blood Garnet
+
+**Blood Garnet**
+
+Exclusive trinket of the Desmodus (Vampire Bat) form.
+
+* **Form**: Desmodus (Vampire Bat)
+* **Effect**: Blood Thirst gains **+50% faster**
+* **Cost**: Out-of-combat decay **+50%**, and passively loses 1 Blood Thirst per second
+
+***
+
+### Bloodlust Ring
+
+**Bloodlust Ring**
+
+Exclusive trinket of the Desmodus (Vampire Bat) form.
+
+* **Form**: Desmodus (Vampire Bat)
+* **Effect**: **+15% extra lifesteal** at high Blood Thirst stages
+* **Cost**: When at full health, lifesteal backfires for 1 true damage per second
+
+***
+
+### Humus Ring
+
+**Humus Ring**
+
+Exclusive trinket of the Parasitic Fruit Bat form, strengthening the debuff route.
+
+* **Form**: Parasitic Fruit Bat
+* **Effect**: Hostile debuff fruit duration **+50%**
+* **Cost**: Allied buff fruit duration **-30%**
+
+***
+
+### Twin Pod
+
+**Twin Pod**
+
+Exclusive trinket of the Parasitic Fruit Bat form, strengthening coverage.
+
+* **Form**: Parasitic Fruit Bat
+* **Effect**: Each cast also parasitizes the nearest second target
+* **Cost**: Doubles Seed Charge cost and adds **+1s** cooldown
+
+***
+
 ## Non-Equippable Trinkets
 
 ### Axolotl Humidifier
