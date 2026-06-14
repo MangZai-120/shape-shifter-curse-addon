@@ -428,6 +428,9 @@ public class SscAddon implements ModInitializer {
 		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SeedEnergyEatingHandler.register();
 		LifesavingCatTailItem.registerLootTable();
 		AnkhStoneItem.registerLootTable();
+		net.onixary.shapeShifterCurseFabric.ssc_addon.item.BloodGarnetItem.registerLootTable();
+		net.onixary.shapeShifterCurseFabric.ssc_addon.item.BloodlustRingItem.registerLootTable();
+		net.onixary.shapeShifterCurseFabric.ssc_addon.item.HumusRingItem.registerLootTable();
 	}
 
 	private void registerForms() {
