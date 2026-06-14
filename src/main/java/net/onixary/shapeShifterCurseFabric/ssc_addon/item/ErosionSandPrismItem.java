@@ -2,13 +2,20 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
 import dev.emi.trinkets.api.SlotReference;
 import dev.emi.trinkets.api.TrinketItem;
+import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.loot.LootPool;
+import net.minecraft.loot.condition.RandomChanceLootCondition;
+import net.minecraft.loot.entry.ItemEntry;
+import net.minecraft.loot.provider.number.ConstantLootNumberProvider;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 蚀沙棱晶 - SP金沙岚专属饰品（项链槽）
  * 效果：引爆/被动爆发时，主目标承受60%伤害，40%伤害扩散给周围5格内其它目标，并给4格内目标额外叠1层烙印
  * 副作用：烙印叠加冷却从1秒变为1.3秒
+ * 获取途径：沙漠神殿战利品箱，15%概率
  */
 public class ErosionSandPrismItem extends TrinketItem {
 
@@ -28,6 +36,21 @@ public class ErosionSandPrismItem extends TrinketItem {
 
 	public ErosionSandPrismItem(Settings settings) {
 		super(settings);
+	}
+
+	/**
+	 * 注册到沙漠神殿战利品表（15%概率，1个）
+	 */
+	public static void registerLootTable() {
+		LootTableEvents.MODIFY.register((resourceManager, lootManager, id, tableBuilder, source) -> {
+			if (id.equals(new Identifier("minecraft", "chests/desert_pyramid"))) {
+				LootPool.Builder poolBuilder = LootPool.builder()
+						.rolls(ConstantLootNumberProvider.create(1.0F))
+						.conditionally(RandomChanceLootCondition.builder(0.15F).build())
+						.with(ItemEntry.builder(SscAddon.EROSION_SAND_PRISM));
+				tableBuilder.pool(poolBuilder);
+			}
+		});
 	}
 
 	@Override
