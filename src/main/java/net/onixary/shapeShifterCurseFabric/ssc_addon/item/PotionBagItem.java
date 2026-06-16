@@ -262,6 +262,19 @@ public class PotionBagItem extends Item {
 		super.appendTooltip(stack, world, tooltip, context);
 	}
 
+	/**
+	 * 物品名实时反映快捷投放栏（槽位 0）的药水：空时显示「药水包（空）」，有药水时显示「药水包（药水名）」。
+	 * 名称取自快捷栏药水自身的 {@link ItemStack#getName()}（普通药水含药效后缀，无限药水为其本地名）。
+	 */
+	@Override
+	public Text getName(ItemStack stack) {
+		ItemStack potion = PotionBagScreenHandler.getStoredStack(stack, QUICK_SLOT);
+		if (potion.isEmpty()) {
+			return Text.translatable("item.ssc_addon.potion_bag.empty");
+		}
+		return Text.translatable("item.ssc_addon.potion_bag.named", potion.getName());
+	}
+
 	// ====== 快捷收纳：在其它界面把药水直接放入药水袋（交互逻辑与原版收纳袋一致，优先放入非快捷消耗栏） ======
 
 	/** 药水袋槽位总数（与 {@link PotionBagScreenHandler} 一致：槽位 0 为快捷投放栏，1-8 为非快捷消耗栏）。 */

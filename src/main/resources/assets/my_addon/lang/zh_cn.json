@@ -200,6 +200,8 @@
     "codex.form.my_addon.familiar_fox_mancianima.cons":  "被强行稳定的力量并不温柔：\n\n你的主动技能都依赖魔力驱动。魔力不足时无法传送，契灵烙印的推进也会变慢\n\n进化石带来的魔力并不是自然流动，而是被稳定化仪式压入体内的高压灵能；你必须不断通过杀戮与汲取维持战斗循环\n\n你被刻入劫掠阵营的兵器本能，无法与村民或流浪商人交易；他们会逃离你，也会成为你的掠夺目标\n\n敲钟袭击会拉仇附近所有铁傀儡，且冷却为 1 MC 天，不适合需要长期居住在村庄附近的玩家\n\n你的身体仍以使魔为基底，无法装备腿甲与鞋，在水中行动迟缓\n\n你从食物中获得的饱腹感更少，单靠普通进食难以支撑这具被改造过的灵魂躯壳",
     "codex.form.my_addon.familiar_fox_mancianima.instincts":  "稳定化仪式的回声仍钉在你的魂中：服从、锁定、追击、清场。若主人不在，兵器会自己寻找下一道命令。",
     "item.ssc_addon.potion_bag":  "药水包",
+    "item.ssc_addon.potion_bag.empty":  "药水袋（空）",
+    "item.ssc_addon.potion_bag.named":  "药水袋（%s）",
     "item.ssc_addon.potion_bag.tooltip":  "Red专属的药水储存包，只能存放药水，每格最多8瓶",
     "item.ssc_addon.potion_bag.tooltip.controls":  "潜行+右键打开；直接右键快速使用最左侧快捷栏的药水：饮用型需读条饮用，投掷型投出后有5秒冷却",
     "container.ssc_addon.potion_bag":  "药水包",
@@ -660,7 +662,7 @@
     "item.ssc_addon.infinite_energy_potion_splash.empty":  "喷溅型无限压缩能量药水（空）",
     "item.ssc_addon.infinite_energy_potion_lingering":  "滞留型无限压缩能量药水",
     "item.ssc_addon.infinite_energy_potion_lingering.empty":  "滞留型无限压缩能量药水（空）",
-    "item.ssc_addon.infinite_energy_potion.tooltip":  "效果同压缩能量药水：恢复饱食度，使魔形态额外恢复魔力。使用后空瓶会自动充能，充满后可再次使用。",
+    "item.ssc_addon.infinite_energy_potion.tooltip":  "效果同压缩能量药水，使用后空瓶会随时间充满。",
     "item.ssc_addon.infinite_energy_potion.tooltip.recharging":  "充能中：剩余 %s 秒",
     "item.ssc_addon.infinite_energy_potion.tooltip.ready":  "已充满，可以使用"
 }

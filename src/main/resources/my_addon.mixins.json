@@ -58,7 +58,8 @@
                    "render.MistFormHeldItemMixin",
                     "client.MinecraftClientSetScreenMixin",
                    "client.SoundManagerDeafenMixin",
-                   "client.TransformingControllerFeralAnimMixin"
+                   "client.TransformingControllerFeralAnimMixin",
+                   "client.CreativePotionStackMixin"
                ],
     "injectors":  {
                       "defaultRequire":  1
