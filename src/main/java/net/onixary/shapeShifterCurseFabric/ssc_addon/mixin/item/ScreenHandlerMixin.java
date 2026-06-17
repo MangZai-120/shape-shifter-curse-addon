@@ -17,6 +17,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.item.AllayJukeboxItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PotionBagItem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -36,6 +37,13 @@ public abstract class ScreenHandlerMixin {
 
 	@Inject(method = "onSlotClick", at = @At("HEAD"), cancellable = true)
 	private void onSlotClick(int slotIndex, int button, SlotActionType actionType, PlayerEntity player, CallbackInfo ci) {
+		// 药水可叠加形态：双击(PICKUP_ALL)合并同类药水。原版 PICKUP_ALL 走静态 canInsertItemIntoSlot，
+		// 其 getMaxCount 不受本类 internalOnSlotClick 重定向影响(药水原版=1)，导致 2+ 堆叠被跳过、无法合并。
+		// 故对持有该 Power 的玩家自行实现合并并取消原版处理，背包与箱子等任意容器界面通用。
+		if (actionType == SlotActionType.PICKUP_ALL && ssc_addon$tryMergeStackablePotions(button, player)) {
+			ci.cancel();
+			return;
+		}
 		if (slotIndex >= 0 && slotIndex < this.slots.size()) {
 			Slot slot = this.getSlot(slotIndex);
 			if (slot != null && slot.hasStack()) {
@@ -82,6 +90,46 @@ public abstract class ScreenHandlerMixin {
 				ci.cancel();
 			}
 		}
+	}
+
+	/**
+	 * 为「药水可叠加」形态(持有 {@link ModifyPotionStackPower})的玩家自行实现双击合并同类药水，叠到 N。
+	 * 与原版双击一致采用两轮收集(先取未满堆叠、保留满堆叠，再取满堆叠)，对 {@code button==0/其它} 取不同遍历方向。
+	 * 仅处理光标为药水且持有该 Power 的情形；返回 {@code true} 表示已接管本次 PICKUP_ALL，应取消原版。
+	 * 双端一致(用方法参数 player、与原版相同的 takeStackRange/increment 操作，不引用客户端类)。
+	 */
+	@Unique
+	private boolean ssc_addon$tryMergeStackablePotions(int button, PlayerEntity player) {
+		ItemStack cursor = this.getCursorStack();
+		if (cursor.isEmpty() || !(cursor.getItem() instanceof PotionItem)) {
+			return false;
+		}
+		int n = PowerHolderComponent.getPowers(player, ModifyPotionStackPower.class)
+				.stream().mapToInt(ModifyPotionStackPower::getCount).max().orElse(0);
+		int maxStack = Math.max(n, cursor.getMaxCount());
+		if (n <= 0 || cursor.getCount() >= maxStack) {
+			return false;
+		}
+		int start = button == 0 ? 0 : this.slots.size() - 1;
+		int step = button == 0 ? 1 : -1;
+		for (int pass = 0; pass < 2; ++pass) {
+			for (int q = start; q >= 0 && q < this.slots.size() && cursor.getCount() < maxStack; q += step) {
+				Slot slot = this.slots.get(q);
+				if (!slot.hasStack() || !slot.canTakeItems(player)) {
+					continue;
+				}
+				ItemStack slotStack = slot.getStack();
+				if (!ItemStack.canCombine(cursor, slotStack)) {
+					continue;
+				}
+				if (pass == 0 && slotStack.getCount() >= maxStack) {
+					continue;
+				}
+				ItemStack taken = slot.takeStackRange(slotStack.getCount(), maxStack - cursor.getCount(), player);
+				cursor.increment(taken.getCount());
+			}
+		}
+		return true;
 	}
 
 	/**
