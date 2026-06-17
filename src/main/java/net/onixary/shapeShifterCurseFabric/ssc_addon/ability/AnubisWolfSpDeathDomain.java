@@ -64,10 +64,6 @@ public class AnubisWolfSpDeathDomain {
 	 */
 	private static final int DOMAIN_DURATION = 300; // 15秒
 	/**
-	 * debuff持续时间（tick）
-	 */
-	private static final int DEBUFF_DURATION = 300; // 15秒
-	/**
 	 * 血量减少百分比
 	 */
 	private static final double HEALTH_REDUCTION = 0.15;

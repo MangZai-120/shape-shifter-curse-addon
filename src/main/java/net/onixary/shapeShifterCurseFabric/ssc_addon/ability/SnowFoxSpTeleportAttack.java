@@ -38,8 +38,6 @@ public class SnowFoxSpTeleportAttack {
 	private static final int MANA_COST_FAIL = 20;
 	private static final int TELEPORT_INTERVAL = 10;
 	private static final float DAMAGE_REDUCTION = 0.65f;
-	private static final int FAIL_COOLDOWN = 100;
-	private static final int SUCCESS_COOLDOWN = 400;
 	// ==== NEW CODE: 使用FormIdentifiers ====
 	private static final Identifier RESOURCE_ID = FormIdentifiers.SNOW_FOX_RESOURCE;
 	private static final Identifier REGEN_COOLDOWN_ID = FormIdentifiers.SNOW_FOX_REGEN_COOLDOWN;
