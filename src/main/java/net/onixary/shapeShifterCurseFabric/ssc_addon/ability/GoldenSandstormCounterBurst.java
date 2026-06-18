@@ -57,7 +57,6 @@ public class GoldenSandstormCounterBurst {
 		// 搜索范围内的实体
 		Box searchBox = player.getBoundingBox().expand(BURST_RANGE);
 		java.util.List<Entity> allEntities = serverWorld.getOtherEntities(player, searchBox);
-		int hitCount = 0;
 
 		for (Entity entity : allEntities) {
 			if (!(entity instanceof LivingEntity living)) continue;
@@ -87,8 +86,6 @@ public class GoldenSandstormCounterBurst {
 			living.addStatusEffect(new StatusEffectInstance(
 					StatusEffects.WITHER, WITHER_DURATION, WITHER_AMPLIFIER, false, true, true
 			), player);
-
-			hitCount++;
 		}
 
 		// 即使没有命中也进入CD（防止频繁触发检测）

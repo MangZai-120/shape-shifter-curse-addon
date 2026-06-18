@@ -44,7 +44,6 @@ public class AllayClearMarkerEntity extends ThrownItemEntity {
 	@Override
 	public void handleStatus(byte status) {
 		if (status == 3) {
-			double d = 0.08D;
 			for (int i = 0; i < 8; ++i) {
 				this.getWorld().addParticle(new ItemStackParticleEffect(ParticleTypes.ITEM, this.getStack()), this.getX(), this.getY(), this.getZ(), ((double) this.random.nextFloat() - 0.5D) * 0.08D, ((double) this.random.nextFloat() - 0.5D) * 0.08D, ((double) this.random.nextFloat() - 0.5D) * 0.08D);
 			}

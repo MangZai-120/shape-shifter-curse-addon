@@ -13,7 +13,6 @@ import io.github.apace100.calio.data.SerializableDataTypes;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -127,10 +126,6 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 		for (TrueInvisibilityAbilityPower mainPower : mainPowers) {
 			mainPower.applyUniversalCooldown();
 		}
-
-		if (entity instanceof PlayerEntity player) {
-			// player.sendMessage(Text.of("§6震慑冲刺!"), true);
-		}
 	}
 
 	@Override
@@ -184,9 +179,6 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 		world.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
 				SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 0.5f, 1.5f);
 
-		if (entity instanceof PlayerEntity player) {
-			// player.sendMessage(Text.of("§e震慑波动!"), true);
-		}
 
 		isWaitingForStun = false;
 		ticksSinceDash = 0;

@@ -175,10 +175,7 @@ public class SscAddonActions {
 
 					Vec3d eyePos = living.getEyePos();
 					Vec3d lookVec = living.getRotationVec(1.0F);
-					Vec3d targetPos = eyePos.add(lookVec.multiply(distance));
-
 					Box box = living.getBoundingBox().expand(distance).stretch(lookVec.multiply(distance));
-
 					living.getWorld().getEntitiesByClass(LivingEntity.class, box, target -> target != living).forEach(target -> {
 						if (living instanceof ServerPlayerEntity sPlayer && WhitelistUtils.isProtected(sPlayer, target))
 							return;

@@ -100,7 +100,6 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower {
 		ServerWorld world = (ServerWorld) entity.getWorld();
 		Vec3d eye = entity.getEyePos();
 		Vec3d look = entity.getRotationVec(1.0F).normalize();
-		double rangeSq = RANGE * RANGE;
 
 		Box box = new Box(eye.x - RANGE, eye.y - RANGE, eye.z - RANGE,
 				eye.x + RANGE, eye.y + RANGE, eye.z + RANGE);

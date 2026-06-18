@@ -14,7 +14,6 @@ import io.github.apace100.calio.data.SerializableDataTypes;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -106,11 +105,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 			// Play glass break sound for natural expiration
 			entity.getWorld().playSound(null, entity.getX(), entity.getY(), entity.getZ(),
 					SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
-			if (entity instanceof PlayerEntity player) {
-				// player.sendMessage(Text.of("§7隐身时间结束"), true);
-			}
 		}
-
 
 		if (!isInvisible) {
 			wasUsingItem = false;
@@ -243,9 +238,6 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 			serverWorld.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
 					SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
 		}
-		if (entity instanceof PlayerEntity player) {
-			// player.sendMessage(Text.of("§a隐身已主动解除，获得爆发增益!"), true);
-		}
 
 		// Apply universal 12s cooldown ONLY when breaking invisibility AND it was the main ability (Amp 0)
 		if (currentAmp == 0) {
@@ -276,16 +268,6 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 			if (isInternalCooldownReady()) {
 				// Apply pre-invisibility (casting phase)
 				entity.addStatusEffect(new StatusEffectInstance(SscAddon.PRE_INVISIBILITY, 20, 0, false, false, true));
-
-				if (entity instanceof PlayerEntity player) {
-					// player.sendMessage(Text.of("§7正在引导隐身..."), true);
-				}
-			} else {
-				// On cooldown - show remaining time
-				if (entity instanceof PlayerEntity player) {
-					int remaining = getRemainingCooldownSeconds();
-					// player.sendMessage(Text.of("§c技能冷却中... " + remaining + "秒"), true);
-				}
 			}
 		}
 	}

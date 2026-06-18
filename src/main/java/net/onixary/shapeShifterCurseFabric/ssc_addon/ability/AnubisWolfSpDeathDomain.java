@@ -174,6 +174,8 @@ public class AnubisWolfSpDeathDomain {
 			case EXPANDING -> tickExpanding(player, serverWorld, data);
 			case SUSTAINING -> tickSustaining(player, serverWorld, data);
 			case RETRACTING -> tickRetracting(player, serverWorld, data);
+			// CLEANUP 阶段由 tickCleanup() 在服务器线程上单独处理方块还原，此处无需操作
+			case CLEANUP -> { }
 		}
 	}
 
@@ -558,7 +560,6 @@ public class AnubisWolfSpDeathDomain {
 	 */
 	private static void convertBlocksInRing(ServerWorld world, DomainData data, int innerR, int outerR) {
 		BlockPos center = data.center;
-		int cy = data.centerY;
 		int halfHeight = DOMAIN_HEIGHT;
 
 		for (int dx = -outerR; dx <= outerR; dx++) {

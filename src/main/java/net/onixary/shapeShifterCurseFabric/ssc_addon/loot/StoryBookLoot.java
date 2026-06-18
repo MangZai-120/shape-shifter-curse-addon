@@ -297,7 +297,6 @@ public class StoryBookLoot implements ConfigChangeListener {
 
 		// Minecraft 书籍限制（保守值，确保安全）
 		// 中文字符占用约2个显示单位，所以中文页面实际能容纳的字符数更少
-		final int MAX_CHARS_PER_PAGE_LATIN = 256;  // 英文/数字
 		final int MAX_CHARS_PER_PAGE_CJK = 140;    // 中文/日文/韩文（保守估计）
 		final int MAX_LINES_PER_PAGE = 14;         // 最大行数
 		final int CHARS_PER_LINE_CJK = 10;         // 中文每行约10-11个字符

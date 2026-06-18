@@ -18,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MinecraftClientSetScreenMixin {
 
     @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
+    @SuppressWarnings("resource") 
     private void ssc_addon(Screen screen, CallbackInfo ci) {
         if (screen == null) return;
         if (screen instanceof AdvancedColorScreen) return; // 防递归
@@ -34,7 +35,6 @@ public abstract class MinecraftClientSetScreenMixin {
         mc.setScreen(new AdvancedColorScreen(parent));
         ci.cancel();
     }
-
     /**
      * 反射方式清理 SSC 的 FormColorSelectMenu / FormTextureUtils 静态状态，使其表现得像 close() 已经被调用。
      * 这里不直接调用 screen.close()，因为 close() 会顺带保存、发包、嵌套 setScreen(parsetScreen)，副作用太大。

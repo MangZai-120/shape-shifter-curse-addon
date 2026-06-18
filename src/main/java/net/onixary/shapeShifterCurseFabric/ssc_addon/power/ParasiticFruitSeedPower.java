@@ -420,7 +420,7 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         }
     }
 
-    /** 立即回血（触发血条回血动画）+ 生命恢复图标显示。TODO: 后续改为专属独立「生命恢复」buff（只回一次）。 */
+    /** 立即回血（触发血条回血动画）+ 生命恢复图标显示。 */
     private void healWithFx(LivingEntity target, int hearts) {
         target.heal(hearts * 2.0f);
         // 专属「生命恢复」buff：立即回血由上面 heal 完成（血条动画），此 buff 仅显示图标、不周期回血（只回一次）

@@ -8,7 +8,6 @@ import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -61,9 +60,7 @@ public class PreInvisibilityEffect extends StatusEffect {
 			entity.addStatusEffect(new StatusEffectInstance(StatusEffects.INVISIBILITY, duration, 0, false, false, false));
 
 			// 5. Notify Player
-			if (entity instanceof PlayerEntity player) {
-				// player.sendMessage(Text.of("§b§lInvisibility Active! (Press again to Strike)"), true);
-			}
+			// 通知逻辑已移除，保留注释占位
 		}
 	}
 }
