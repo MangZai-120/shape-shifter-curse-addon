@@ -33,7 +33,7 @@ public class SSCAddonConfigMenuScreen extends Screen {
 		final int gap = 10;
 		// 颜色编辑器入口仅在开关 ON 时显示；预设界面通过编辑器内部跳转按钮访问
 		final boolean showColorBtn = AutoConfig.getConfigHolder(SSCAddonClientConfig.class).getConfig().enableColorEditor;
-		final int totalRows = showColorBtn ? 4 : 3;
+		final int totalRows = showColorBtn ? 5 : 4;
 		final int xPos = (width - btnW) / 2;
 		int yPos = (height - btnH * totalRows - gap * (totalRows - 1)) / 2;
 
@@ -47,6 +47,12 @@ public class SSCAddonConfigMenuScreen extends Screen {
 		addBtn(xPos, yPos, btnW, btnH,
 				Text.translatable("text.autoconfig.ssc_addon_server.title"),
 				() -> AutoConfig.getConfigScreen(SSCAddonServerConfig.class, this).get());
+		yPos += btnH + gap;
+
+		// 特殊键位设置按钮（按形态自定义主/副技能触发键）
+		addBtn(xPos, yPos, btnW, btnH,
+				Text.translatable("text.ssc_addon.config.open_keybinds"),
+				() -> new net.onixary.shapeShifterCurseFabric.ssc_addon.client.keybind.SscAddonKeybindFormListScreen(this));
 		yPos += btnH + gap;
 
 		// 颜色编辑器（仅在 enableColorEditor=true 时显示；进入后可通过界面内按钮跳转到预设管理）

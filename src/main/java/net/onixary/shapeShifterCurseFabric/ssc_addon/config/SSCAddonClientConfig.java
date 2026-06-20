@@ -41,8 +41,26 @@ public class SSCAddonClientConfig implements ConfigData {
 	@ConfigEntry.Gui.Excluded
 	public java.util.List<String> colorTutorialSeenSaves = new java.util.ArrayList<>();
 
+	/**
+	 * 按形态的「特殊键位」配置（key = 形态 ID 的 path，如 "snow_fox_sp"）。
+	 * 由 SSCA 自定义的「特殊键位设置」二级菜单维护，不在 AutoConfig GUI 中展示。
+	 * 某形态启用后，其主/副技能触发键从「同步 SSC 的 G 键」改为自定义按键。
+	 */
+	@ConfigEntry.Gui.Excluded
+	public java.util.Map<String, FormKeybind> formKeybinds = new java.util.HashMap<>();
+
 	public enum MancianimaTeleportMode {
 		RAYCAST,
 		PLATFORM
+	}
+
+	/** 单个形态的特殊键位设置：是否启用 + 主/副技能自定义键（InputUtil 翻译键，如 "key.keyboard.f"）。 */
+	public static class FormKeybind {
+		public boolean enabled = false;
+		public String primaryKey = "key.keyboard.unknown";
+		public String secondaryKey = "key.keyboard.unknown";
+
+		public FormKeybind() {
+		}
 	}
 }
