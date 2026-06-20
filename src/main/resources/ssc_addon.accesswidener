@@ -1,6 +1,0 @@
-accessWidener v2 named
-
-# 无限压缩能量药水酿造：直接向 BrewingRecipeRegistry.ITEM_RECIPES 注册静态 item 配方
-# （不依赖主包数据驱动版本，且非 DynamicRecipe 不会被动态酿造 reload 清除）
-accessible	class	net/minecraft/recipe/BrewingRecipeRegistry$Recipe
-accessible	field	net/minecraft/recipe/BrewingRecipeRegistry	ITEM_RECIPES	Ljava/util/List;

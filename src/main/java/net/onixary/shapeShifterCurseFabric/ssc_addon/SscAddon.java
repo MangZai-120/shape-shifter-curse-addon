@@ -20,8 +20,6 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.util.Formatting;
 import net.minecraft.item.ItemGroup;
-import net.minecraft.recipe.BrewingRecipeRegistry;
-import net.minecraft.recipe.Ingredient;
 import net.minecraft.recipe.RecipeSerializer;
 import net.minecraft.recipe.SpecialRecipeSerializer;
 import net.minecraft.registry.Registries;
@@ -387,11 +385,9 @@ public class SscAddon implements ModInitializer {
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "infinite_energy_potion"), INFINITE_ENERGY_POTION);
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "infinite_energy_potion_splash"), INFINITE_ENERGY_POTION_SPLASH);
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "infinite_energy_potion_lingering"), INFINITE_ENERGY_POTION_LINGERING);
-		// 酿造：饮用+火药→喷溅；喷溅+龙息→滞留。直接注册静态 item 配方到 ITEM_RECIPES（不依赖主包数据驱动版本，且不会被动态酿造 reload 清除）
-		BrewingRecipeRegistry.ITEM_RECIPES.add(new net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.InfinitePotionBrewingRecipe(
-				INFINITE_ENERGY_POTION, Ingredient.ofItems(net.minecraft.item.Items.GUNPOWDER), INFINITE_ENERGY_POTION_SPLASH));
-		BrewingRecipeRegistry.ITEM_RECIPES.add(new net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.InfinitePotionBrewingRecipe(
-				INFINITE_ENERGY_POTION_SPLASH, Ingredient.ofItems(net.minecraft.item.Items.DRAGON_BREATH), INFINITE_ENERGY_POTION_LINGERING));
+		// 酿造（饮用+火药→喷溅；喷溅+龙息→滞留）完全由 BrewingRegistryInfiniteMixin 接管：
+		// 直接拦截 hasRecipe/craft 驱动产出，槽位放行由 BrewingStandInfinitePotionMixin 处理。
+		// 旧的 ITEM_RECIPES 注册需构造 PotionBrewing$Mix，在 Forge/Sinytra Connector 下构造签名不同会崩溃，已移除。
 	}
 
 	private void registerRecipeSerializers() {

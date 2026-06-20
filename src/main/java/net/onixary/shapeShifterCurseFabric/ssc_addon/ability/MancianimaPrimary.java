@@ -258,38 +258,56 @@ public final class MancianimaPrimary {
 		MancianimaMarkManager.playSoundToPlayer(player, SoundEvents.BLOCK_NOTE_BLOCK_BASS.value(), 0.5f, 0.6f);
 	}
 
-	/** 准星射线找最近 LivingEntity（穿透白名单友军 → 找其后第一个非白名单生物）。 */
+	/** 准星锥形索敌：在前方15度范围内寻找最近的可标记目标。 */
 	private static LivingEntity raycastLiving(ServerPlayerEntity player, double maxRange) {
 		Vec3d eye = player.getEyePos();
 		Vec3d look = player.getRotationVector().normalize();
-		Vec3d end = eye.add(look.multiply(maxRange));
 		ServerWorld world = (ServerWorld) player.getWorld();
-		// 方块 raycast：先确定视线被方块阻挡的距离（视野内才能标记）
-		BlockHitResult blockHit = world.raycast(new RaycastContext(
-				eye, end,
-				RaycastContext.ShapeType.COLLIDER,
-				RaycastContext.FluidHandling.NONE,
-				player));
-		double blockDistSq = blockHit.getType() == HitResult.Type.MISS
-				? Double.MAX_VALUE
-				: eye.squaredDistanceTo(blockHit.getPos());
-		Box searchBox = new Box(eye, end).expand(1.0);
-		// 收集射线 candidates 全部，按命中距离排序，跳过白名单/不可攻击/玩家友军
+
+		// 15° 锥形半角的余弦阈值（cos(7.5°)）
+		double cosHalfAngle = Math.cos(Math.toRadians(7.5));
+
+		// 锥形远端点（用于构建搜索包围盒）
+		Vec3d end = eye.add(look.multiply(maxRange));
+		double r = Math.max(0.5, maxRange * Math.tan(Math.toRadians(7.5)));
+		Box searchBox = new Box(eye, end).expand(r);
+
 		double bestDist = Double.MAX_VALUE;
 		LivingEntity best = null;
+
 		for (Entity e : world.getOtherEntities(player, searchBox, EntityPredicates.EXCEPT_SPECTATOR)) {
 			if (!(e instanceof LivingEntity le) || !le.isAlive()) continue;
-			Box ebox = e.getBoundingBox().expand(0.3);
-			java.util.Optional<Vec3d> hit = ebox.raycast(eye, end);
-			if (hit.isEmpty()) continue;
-			double d = eye.squaredDistanceTo(hit.get());
-			if (d >= bestDist) continue;
-			// 视野遮挡：若该实体命中点比方块碰撞点更远 → 隔墙不可标记
-			if (d > blockDistSq) continue;
-			// 跳过白名单：但仍允许"穿透友军"找到下一个；这里实现穿透：把白名单视为透明
+
+			// 取实体中点
+			Vec3d entityCenter = le.getPos().add(0, le.getHeight() / 2.0, 0);
+			Vec3d toEntity = entityCenter.subtract(eye);
+			double dist = toEntity.length();
+			if (dist > maxRange) continue;
+
+			// 15度锥形范围判定：方向向量与视线夹角 ≤ 7.5°
+			Vec3d toEntityNorm = toEntity.normalize();
+			double dot = look.dotProduct(toEntityNorm);
+			if (dot < cosHalfAngle) continue;
+
+			// 视野遮挡检查：从眼睛到实体中点做射线，看是否被方块挡在实体前
+			BlockHitResult blockHit = world.raycast(new RaycastContext(
+					eye, entityCenter,
+					RaycastContext.ShapeType.COLLIDER,
+					RaycastContext.FluidHandling.NONE,
+					player));
+			if (blockHit.getType() != HitResult.Type.MISS) {
+				double blockDistSq = eye.squaredDistanceTo(blockHit.getPos());
+				// 方块命中点比实体近 → 被方块遮挡
+				if (blockDistSq + 0.5 < dist * dist) continue;
+			}
+
+			// 跳过白名单
 			if (WhitelistUtils.isProtected(player, le)) continue;
-			bestDist = d;
-			best = le;
+
+			if (dist < bestDist) {
+				bestDist = dist;
+				best = le;
+			}
 		}
 		return best;
 	}
