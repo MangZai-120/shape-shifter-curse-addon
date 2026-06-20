@@ -22,7 +22,6 @@
   "license": "MIT",
   "icon": "assets/ssc_addon/icon.png",
   "environment": "*",
-  "accessWidener": "ssc_addon.accesswidener",
   "entrypoints": {
     "preLaunch": [
       "net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddonPreLaunch"
