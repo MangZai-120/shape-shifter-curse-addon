@@ -15,6 +15,7 @@ bin/
 /.project
 /设定集
 /备忘录
+/unused_backup
 # AI agent tooling
 /.opencode/
 /.sisyphus/
