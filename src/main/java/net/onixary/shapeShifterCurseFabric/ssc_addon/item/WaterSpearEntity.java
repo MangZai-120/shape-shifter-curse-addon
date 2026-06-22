@@ -67,7 +67,7 @@ public class WaterSpearEntity extends TridentEntity {
 
 		if (!world.isClient && entity instanceof LivingEntity target) {
 			// Direct damage
-			float damage = 8.0f;
+			float damage = 10.0f;
 			target.damage(this.getDamageSources().trident(this, this.getOwner()), damage);
 
 			// Apply slowness

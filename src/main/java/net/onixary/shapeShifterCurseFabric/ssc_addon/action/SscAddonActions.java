@@ -398,15 +398,10 @@ public class SscAddonActions {
 							}
 						}
 
-						if (hasNecklace) {
-							regenAmp = 0; // Regeneration I (Level 1)
-							// Absorption V (Amp 4) for 25s (500 ticks)
-							living.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, 500, 4, false, false));
-						}
+						// 项链黄心改由 PlayingDeadEffect 每10tick累积，不再用 Absorption 效果
 
-						// visible=false to hide icon
+						// visible=false to hide icon（回血改由 PlayingDeadEffect 每10tick结算）
 						living.addStatusEffect(new StatusEffectInstance(SscAddon.PLAYING_DEAD, duration, 0, false, false, false));
-						living.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, duration, regenAmp, false, true));
 						living.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, duration, 0, false, false));
 						living.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, duration, 10, false, false));
 

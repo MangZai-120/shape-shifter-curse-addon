@@ -11,7 +11,7 @@
             "actions": [
                 {
                     "type": "origins:gain_air",
-                    "value": -30
+                    "value": -15
                 },
                 {
                     "type": "origins:equipped_item_action",
@@ -60,7 +60,7 @@
                 {
                     "type": "origins:air",
                     "comparison": ">=",
-                    "compare_to": 30
+                    "compare_to": 15
                 },
                 {
                     "type": "origins:equipped_item",
