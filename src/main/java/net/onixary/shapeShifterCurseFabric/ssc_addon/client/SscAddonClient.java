@@ -234,5 +234,8 @@ public class SscAddonClient implements ClientModInitializer {
 		MancianimaPrimaryClient.register();
 
 		HandledScreens.register(SscAddon.POTION_BAG_SCREEN_HANDLER, PotionBagScreen::new);
+
+		// SSCA 美西螈装死 - 提前结束检测器
+		PlayDeadEndClient.register();
 	}
 }

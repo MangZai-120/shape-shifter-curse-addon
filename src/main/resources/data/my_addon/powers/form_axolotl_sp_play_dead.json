@@ -5,12 +5,18 @@
         "entity_action": {
             "type": "ssc_addon:trigger_play_dead"
         },
-        "cooldown": 720,
+        "cooldown": 5,
         "key": {
             "key": "key.ssc_addon.sp_secondary"
         },
+        "condition": {
+            "type": "origins:resource",
+            "resource": "my_addon:form_sp_secondary_cd",
+            "comparison": "<=",
+            "compare_to": 0
+        },
         "name": "Play Dead",
-        "description": "Feign death to escape danger. Clears mob aggro, reduces damage by 90%, but locks you in place for 6 seconds."
+        "description": "Feign death to escape danger. Clears mob aggro, reduces damage by 90%, but locks you in place for 6 seconds. Press the skill key again to end early."
     },
     "protection": {
         "type": "origins:modify_damage_taken",

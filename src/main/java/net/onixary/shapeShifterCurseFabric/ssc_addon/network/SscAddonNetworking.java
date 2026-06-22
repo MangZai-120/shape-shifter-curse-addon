@@ -38,6 +38,9 @@ public class SscAddonNetworking {
 	/** C2S：玩家从生物白名单中移除一个 UUID。payload: UUID */
 	public static final Identifier PACKET_WHITELIST_GUI_MOB_REMOVE = new Identifier("my_addon", "whitelist_gui_mob_remove");
 
+	/** C2S：美西螈装死期间按技能键请求提前结束装死。无 payload。 */
+	public static final Identifier PACKET_PLAY_DEAD_END = new Identifier("my_addon", "play_dead_end");
+
 	/** C2S 限频：每玩家每个事件类型记录上一次服务端接收时间，防外挂客户端 spam。 */
 	private static final Map<UUID, Long> LAST_WHITELIST_PACKET_TICK = new ConcurrentHashMap<>();
 	/** 同一玩家两次白名单操作的最小间隔，单位：millis。 */
@@ -119,6 +122,19 @@ public class SscAddonNetworking {
 				// 同时清掉友军标记双写时写入的 player 前缀 tag，避免残留导致 count 不一致
 				AllaySPGroupHeal.removeFromWhitelistByUuid(player, mobUuid);
 				sendWhitelistSync(player);
+			});
+		});
+
+		// SSCA 美西螈装死 - 提前结束（装死期间按 sp_secondary）
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_PLAY_DEAD_END, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> {
+				if (!player.hasStatusEffect(net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.PLAYING_DEAD)) return;
+				player.removeStatusEffect(net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.PLAYING_DEAD);
+				player.removeStatusEffect(net.minecraft.entity.effect.StatusEffects.BLINDNESS);
+				player.removeStatusEffect(net.minecraft.entity.effect.StatusEffects.SLOWNESS);
+				player.setPose(net.minecraft.entity.EntityPose.STANDING);
+				// 提前结束：CD 从此刻起算 25 秒
+				net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils.setResourceValueAndSync(player, net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.SP_SECONDARY_CD, 500);
 			});
 		});
 	}

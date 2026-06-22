@@ -418,7 +418,7 @@ public class SscAddonActions {
 
 						// 4. 设置CD显示资源
 						if (living instanceof ServerPlayerEntity sp) {
-							PowerUtils.setResourceValueAndSync(sp, FormIdentifiers.SP_SECONDARY_CD, 720);
+							PowerUtils.setResourceValueAndSync(sp, FormIdentifiers.SP_SECONDARY_CD, 620);
 						}
 
 					}
