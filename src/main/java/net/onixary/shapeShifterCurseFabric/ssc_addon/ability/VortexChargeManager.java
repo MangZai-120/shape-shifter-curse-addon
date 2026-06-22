@@ -65,8 +65,15 @@ public final class VortexChargeManager {
 		if (player.getAir() < AIR_PER_HIT) return; // 至少够扣一次
 		CHARGING.put(player.getUuid(), new ChargeState());
 		PowerUtils.setResourceValueAndSync(player, VORTEX_STATE, 1); // 标记蓄力中（客户端读 >0）
-		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
-				SoundEvents.ENTITY_PLAYER_SPLASH_HIGH_SPEED, SoundCategory.PLAYERS, 1.0f, 0.6f);
+		ServerWorld sw = (ServerWorld) player.getWorld();
+		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+				SoundEvents.ENTITY_PLAYER_SPLASH_HIGH_SPEED, SoundCategory.PLAYERS, 1.5f, 0.5f);
+		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+				SoundEvents.ENTITY_ELDER_GUARDIAN_CURSE, SoundCategory.PLAYERS, 0.6f, 1.5f);
+		sw.spawnParticles(ParticleTypes.BUBBLE, player.getX(), player.getY() + 1, player.getZ(), 40, 0.6, 0.6, 0.6, 0.6);
+		sw.spawnParticles(new net.minecraft.particle.DustParticleEffect(new org.joml.Vector3f(0.2f, 0.6f, 0.9f), 2.0f),
+				player.getX(), player.getY() + 1, player.getZ(), 30, 0.5, 0.8, 0.5, 0.1);
+		sw.spawnParticles(ParticleTypes.BUBBLE_POP, player.getX(), player.getY() + 1, player.getZ(), 5, 0.3, 0.3, 0.3, 0.1);
 	}
 
 	/** 每服务端 tick 对每个在线玩家调用。 */
@@ -84,10 +91,11 @@ public final class VortexChargeManager {
 				player.setAir(player.getAir() - spend);
 				s.airSpent += spend;
 				s.hits++;
-				((ServerWorld) player.getWorld()).spawnParticles(ParticleTypes.BUBBLE,
-						player.getX(), player.getY() + 1, player.getZ(), 20, 0.6, 0.6, 0.6, 0.4);
-				player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
-						SoundEvents.BLOCK_POINTED_DRIPSTONE_DRIP_WATER, SoundCategory.PLAYERS, 1.2f, 0.8f + s.hits * 0.1f);
+				ServerWorld sw = (ServerWorld) player.getWorld();
+				sw.spawnParticles(ParticleTypes.BUBBLE,
+						player.getX(), player.getY() + 1, player.getZ(), 40, 0.6, 0.6, 0.6, 0.6);
+				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+						SoundEvents.ENTITY_FISHING_BOBBER_SPLASH, SoundCategory.PLAYERS, 0.8f, 0.6f);
 			} else {
 				release(player); // air 不足或已扣满 60 → 自动释放
 				return;
@@ -108,9 +116,13 @@ public final class VortexChargeManager {
 		int damage = s.hits * DAMAGE_PER_HIT;
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
-				SoundEvents.ENTITY_ELDER_GUARDIAN_CURSE, SoundCategory.PLAYERS, 0.8f, 1.2f);
+				SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 1.0f, 1.2f);
+		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+				SoundEvents.ENTITY_AXOLOTL_SPLASH, SoundCategory.PLAYERS, 1.5f, 0.5f);
 		sw.spawnParticles(ParticleTypes.SPLASH, player.getX(), player.getY() + 1, player.getZ(),
-				60, RADIUS, 1.0, RADIUS, 0.2);
+				150, RADIUS, 1.0, RADIUS, 1.0);
+		sw.spawnParticles(ParticleTypes.EXPLOSION, player.getX(), player.getY() + 1, player.getZ(),
+				8, RADIUS * 0.5, 0.5, RADIUS * 0.5, 0.1);
 		if (damage <= 0) return; // 一次都没蓄到，仅取消
 		Box box = player.getBoundingBox().expand(RADIUS);
 		for (Entity e : sw.getOtherEntities(player, box)) {

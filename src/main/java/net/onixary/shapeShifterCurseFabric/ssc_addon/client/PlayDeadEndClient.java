@@ -7,7 +7,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.option.KeyBinding;
 import net.minecraft.network.PacketByteBuf;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
@@ -32,12 +31,12 @@ public final class PlayDeadEndClient {
 
 	private static void onClientTick(MinecraftClient client) {
 		ClientPlayerEntity player = client.player;
-		KeyBinding key = SscAddonKeybindings.getSecondaryKey();
-		if (player == null || client.world == null || key == null) {
+		if (player == null || client.world == null) {
 			wasKeyPressed = false;
 			return;
 		}
-		boolean pressed = key.isPressed();
+		// 用裸 GLFW 物理检测（绕过 StunnedKeyBindingMixin 在装死期对 sp_secondary 的屏蔽）
+		boolean pressed = SscAddonKeybindings.isSecondaryRawPressed();
 		// 仅在装死期间检测边沿；非装死时也持续跟踪按键状态，避免触发装死的那次按键被误判
 		if (player.hasStatusEffect(SscAddon.PLAYING_DEAD) && pressed && !wasKeyPressed) {
 			PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());

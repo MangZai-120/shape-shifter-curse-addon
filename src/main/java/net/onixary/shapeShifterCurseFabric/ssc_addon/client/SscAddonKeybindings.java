@@ -123,6 +123,30 @@ public class SscAddonKeybindings {
 		return false;
 	}
 
+	/**
+	 * 裸 GLFW 物理检测副技能键当前是否按下，<b>绕过</b> {@code KeyBinding.isPressed()}
+	 * （即绕过 StunnedKeyBindingMixin 在装死/眩晕期对技能键的屏蔽）。
+	 *
+	 * <p>专供美西螈装死「再按副技能键提前结束」检测：装死期 StunnedKeyBindingMixin 会把
+	 * sp_secondary / key.origins.secondary_active 的 isPressed 强制返回 false，导致虚拟键
+	 * 读不到按键。此方法直接读物理键状态，不受该 mixin 影响。
+	 */
+	public static boolean isSecondaryRawPressed() {
+		if (MinecraftClient.getInstance().currentScreen != null) {
+			return false;
+		}
+		String formPath = getCurrentFormPath();
+		if (formPath != null) {
+			SSCAddonClientConfig cfg = SSCAddonConfig.client();
+			SSCAddonClientConfig.FormKeybind entry = cfg.formKeybinds.get(formPath);
+			if (entry != null && entry.enabled) {
+				return isPhysicalKeyDown(entry.secondaryKey);
+			}
+		}
+		KeyBinding ssc = OriginsClient.useSecondaryActivePowerKeybind;
+		return ssc != null && isPhysicalKeyDown(ssc.getBoundKeyTranslationKey());
+	}
+
 	/** 虚拟键位：不绑定任何物理键，isPressed 动态计算。 */
 	private static final class VirtualSkillKey extends KeyBinding {
 		private final boolean primary;
