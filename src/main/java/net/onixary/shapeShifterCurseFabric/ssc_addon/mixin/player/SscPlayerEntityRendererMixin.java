@@ -6,10 +6,9 @@ import net.minecraft.client.render.entity.PlayerEntityRenderer;
 import net.minecraft.client.render.entity.PlayerModelPart;
 import net.minecraft.client.render.entity.model.PlayerEntityModel;
 import net.minecraft.client.util.math.MatrixStack;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormPhase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -24,10 +23,11 @@ public class SscPlayerEntityRendererMixin {
 	public void render(AbstractClientPlayerEntity player, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i, CallbackInfo ci) {
 		PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
 		if (component != null) {
-			PlayerFormBase currentForm = component.getCurrentForm();
-			if (currentForm != null && currentForm.FormID != null) {
-				PlayerFormPhase phase = currentForm.getPhase();
-				String path = currentForm.FormID.getPath();
+			IForm currentForm = component.nowForm;
+			if (currentForm != null && currentForm.getFormID() != null) {
+				int phase = currentForm.getFormTier();
+				boolean isSpecial = currentForm.getFormFlag().contains("special_form");
+				String path = currentForm.getFormID().getPath();
 
 				PlayerEntityRenderer renderer = (PlayerEntityRenderer) (Object) this;
 				PlayerEntityModel<AbstractClientPlayerEntity> model = renderer.getModel();
@@ -53,7 +53,7 @@ public class SscPlayerEntityRendererMixin {
 					model.leftSleeve.visible = player.isPartVisible(PlayerModelPart.LEFT_SLEEVE);
 				}
 				// 2. 其他完全变身 (Phase 3 或 Phase SP) - 排除 Allay
-				else if ((phase == PlayerFormPhase.PHASE_3 || phase == PlayerFormPhase.PHASE_SP) && !path.contains("allay")) {
+				else if ((phase == 3 || isSpecial) && !path.contains("allay")) {
 					model.head.visible = false;
 					model.hat.visible = false;
 					model.body.visible = false;
@@ -68,7 +68,7 @@ public class SscPlayerEntityRendererMixin {
 					model.jacket.visible = false;
 				}
 				// 3. 过渡形态 - 狐狸 (Fox) Phase 1 & 2
-				else if (path.contains("fox") && (phase == PlayerFormPhase.PHASE_1 || phase == PlayerFormPhase.PHASE_2)) {
+				else if (path.contains("fox") && (phase == 1 || phase == 2)) {
 					// 隐藏四肢
 					model.leftLeg.visible = false;
 					model.rightLeg.visible = false;
@@ -81,7 +81,7 @@ public class SscPlayerEntityRendererMixin {
 				}
 				// 4. 过渡形态 - 狼 (Wolf)
 				else if (path.contains("wolf")) {
-					if (phase == PlayerFormPhase.PHASE_1) {
+					if (phase == 1) {
 						// 隐藏腿部和袖子
 						model.leftLeg.visible = false;
 						model.rightLeg.visible = false;
@@ -89,7 +89,7 @@ public class SscPlayerEntityRendererMixin {
 						model.rightPants.visible = false;
 						model.leftSleeve.visible = false;
 						model.rightSleeve.visible = false;
-					} else if (phase == PlayerFormPhase.PHASE_2) {
+					} else if (phase == 2) {
 						// 隐藏四肢和帽子
 						model.leftLeg.visible = false;
 						model.rightLeg.visible = false;
@@ -103,7 +103,7 @@ public class SscPlayerEntityRendererMixin {
 					}
 				}
 				// 5. 过渡形态 - 蝙蝠 (Bat) Phase 2
-				else if (path.contains("bat") && phase == PlayerFormPhase.PHASE_2) {
+				else if (path.contains("bat") && phase == 2) {
 					// 隐藏四肢
 					model.leftLeg.visible = false;
 					model.rightLeg.visible = false;
@@ -115,7 +115,7 @@ public class SscPlayerEntityRendererMixin {
 					model.rightSleeve.visible = false;
 				}
 				// 6. 过渡形态 - 野猫 (Ocelot) Phase 2
-				else if (path.contains("ocelot") && phase == PlayerFormPhase.PHASE_2) {
+				else if (path.contains("ocelot") && phase == 2) {
 					// 隐藏腿部和袖子 (同狼 Phase 1)
 					model.leftLeg.visible = false;
 					model.rightLeg.visible = false;

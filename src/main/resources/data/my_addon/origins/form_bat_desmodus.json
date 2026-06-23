@@ -34,7 +34,9 @@
         "my_addon:form_sp_primary_cd",
         "my_addon:form_sp_primary_cd_tick",
         "my_addon:form_sp_secondary_cd",
-        "my_addon:form_sp_secondary_cd_tick"
+        "my_addon:form_sp_secondary_cd_tick",
+        "shape-shifter-curse:form_tan_prevent_dirty_water_thirst",
+        "shape-shifter-curse:form_tan_cold_resistance_mild"
     ],
     "icon": {
         "item": "minecraft:player_head"

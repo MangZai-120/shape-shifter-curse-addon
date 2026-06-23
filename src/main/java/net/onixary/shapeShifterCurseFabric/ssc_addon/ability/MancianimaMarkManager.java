@@ -20,9 +20,9 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManager;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 
 import java.util.HashSet;
@@ -209,8 +209,8 @@ public final class MancianimaMarkManager {
 			Mark m = e.getValue();
 			ServerPlayerEntity marker = server.getPlayerManager().getPlayer(markerId);
 			if (marker == null) { removeAndCleanup(server, it, m, markerId); continue; }
-			PlayerFormBase form = FormAbilityManager.getForm(marker);
-			if (form == null || !FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.FormID)) {
+			IForm form = FormUtils.getCurrentForm(marker);
+			if (form == null || !FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.getFormID())) {
 				removeAndCleanup(server, it, m, markerId); continue;
 			}
 			if (now >= m.expireTick) { removeAndCleanup(server, it, m, markerId); continue; }
@@ -309,8 +309,8 @@ public final class MancianimaMarkManager {
 
 		// 抗伤回复：契灵玩家非战斗 5s 后，每 15s 回 1 抗伤
 		for (ServerPlayerEntity sp : server.getPlayerManager().getPlayerList()) {
-			PlayerFormBase form = FormAbilityManager.getForm(sp);
-			if (form == null || !FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.FormID)) continue;
+			IForm form = FormUtils.getCurrentForm(sp);
+			if (form == null || !FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.getFormID())) continue;
 			UUID id = sp.getUuid();
 			long lastCombat = LAST_COMBAT.getOrDefault(id, 0L);
 			if (now - lastCombat < OUT_OF_COMBAT_TICKS) continue;

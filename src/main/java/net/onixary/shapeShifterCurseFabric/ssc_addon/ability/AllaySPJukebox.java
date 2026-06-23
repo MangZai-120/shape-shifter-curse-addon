@@ -16,10 +16,10 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManager;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.AllayJukeboxItem;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SkillBlocker;
 
 import java.util.List;
@@ -109,8 +109,8 @@ public class AllaySPJukebox {
         if (SkillBlocker.isSkillBlocked(player, "allay", "jukebox_charge")) {
             return;
         }
-        PlayerFormBase currentForm = FormAbilityManager.getForm(player);
-        boolean isAllaySp = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "allay_sp"));
+        IForm currentForm = FormUtils.getCurrentForm(player);
+        boolean isAllaySp = currentForm != null && currentForm.getFormID().equals(new Identifier("my_addon", "allay_sp"));
 
         // Check if cleanup is needed (if form changed OR item is missing/inactive)
         // Note: we check form first. If not Allay SP, we just cleanup and return.

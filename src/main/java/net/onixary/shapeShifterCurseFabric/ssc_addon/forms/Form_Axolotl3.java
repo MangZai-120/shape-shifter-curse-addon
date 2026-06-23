@@ -12,13 +12,13 @@ import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateControll
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateEnum;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimSystem;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimUtils;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.NormalForm;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric.MOD_ID;
 
-public class Form_Axolotl3 extends PlayerFormBase {
+public class Form_Axolotl3 extends NormalForm {
 	public static final AbstractAnimStateController SWIM_CONTROLLER = new SwimAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_swimming_idle")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_swimming")));
 	public static final AbstractAnimStateController IDLE_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_idle")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_crawling_idle")));
 	public static final AbstractAnimStateController WALK_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_walk")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_crawling")));

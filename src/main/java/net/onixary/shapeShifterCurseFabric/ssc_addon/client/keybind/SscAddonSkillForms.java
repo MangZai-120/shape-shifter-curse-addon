@@ -2,7 +2,7 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.client.keybind;
 
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 
 import java.util.ArrayList;
@@ -33,11 +33,11 @@ public final class SscAddonSkillForms {
 	public static List<String> getFormPaths() {
 		LinkedHashSet<String> paths = new LinkedHashSet<>();
 		try {
-			for (PlayerFormBase form : RegPlayerForms.playerForms.values()) {
+			for (IForm form : RegPlayerForms.playerForms.values()) {
 				if (form == null) {
 					continue;
 				}
-				Identifier id = form.FormID;
+				Identifier id = form.getFormID();
 				if (id != null && "my_addon".equals(id.getNamespace())) {
 					paths.add(id.getPath());
 				}

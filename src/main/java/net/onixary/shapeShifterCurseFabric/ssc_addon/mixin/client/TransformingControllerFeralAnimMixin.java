@@ -6,7 +6,7 @@ import net.onixary.shapeShifterCurseFabric.client.ShapeShifterCurseFabricClient;
 import net.onixary.shapeShifterCurseFabric.player_animation.AnimationHolder;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimSystem;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateController.TransformingController;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import org.spongepowered.asm.mixin.Mixin;
@@ -44,23 +44,23 @@ public class TransformingControllerFeralAnimMixin {
 		if (toFormName == null) {
 			return;
 		}
-		PlayerFormBase toForm;
+		IForm toForm;
 		try {
 			toForm = RegPlayerForms.getPlayerForm(toFormName);
 		} catch (IllegalArgumentException e) {
 			return; // 形态名解析失败，交回原逻辑
 		}
-		if (toForm == null || toForm.FormID == null) {
+		if (toForm == null || toForm.getFormID() == null) {
 			return;
 		}
 		// 仅作用于附属(my_addon)的四足形态，主包形态走原逻辑、不受影响
-		if (!"my_addon".equals(toForm.FormID.getNamespace())) {
+		if (!"my_addon".equals(toForm.getFormID().getNamespace())) {
 			return;
 		}
 		// 四足判定：bodyType 为 FERAL；或显式纳入的四足形态——契灵(mancianima)是数据驱动形态、
 		// bodyType 非 FERAL，但视觉上是四足狐（以使魔为胚体），故按形态 ID 单独纳入，仅改变身动画、不动其渲染。
 		boolean isFeralForm = toForm.getBodyType() == PlayerFormBodyType.FERAL
-				|| "familiar_fox_mancianima".equals(toForm.FormID.getPath());
+				|| "familiar_fox_mancianima".equals(toForm.getFormID().getPath());
 		if (!isFeralForm) {
 			return;
 		}

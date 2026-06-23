@@ -13,9 +13,9 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
-import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 
@@ -97,7 +97,7 @@ public final class MoonScarStoryManager {
 		World world = player.getWorld();
 		if (!FormUtils.isFamiliarFoxSP(player)) return;
 		if (!hasMoonScarPower(player)) return;
-		if (!(CursedMoon.isCursedMoon(world) && CursedMoon.isNight(world))) return;
+		if (!(CursedMoon.isCursedMoonDay(world) && CursedMoon.isNight(world))) return;
 		// 加入真睡追踪：mixin 据此仅顶住 SSC 的诅咒之月强制唤醒（让玩家能真睡不被弹起）、并阻止跳夜。
 		// 玩家保持原版睡眠状态（原版睡眠本身锁住视角/移动、呈现睡姿与黑屏过渡），不需 STUN。
 		STORY_SLEEPING.putIfAbsent(player.getUuid(), 0);
@@ -137,10 +137,10 @@ public final class MoonScarStoryManager {
 			player.wakeUp(true, true);
 		}
 		if (!FormUtils.isFamiliarFoxSP(player)) return; // 期间形态已变则不再转化
-		PlayerFormBase redForm = RegPlayerForms.getPlayerForm(FormIdentifiers.FAMILIAR_FOX_RED);
+		IForm redForm = RegPlayerForms.getPlayerForm(FormIdentifiers.FAMILIAR_FOX_RED);
 		if (redForm == null) return;
 		// 起床即变：setFormDirectly 瞬间换形态、不播放变身动画
-		TransformManager.setFormDirectly(player, redForm);
+		TransformManager.immediatelyTransform(player, redForm);
 		MoonScarStoryState state = MoonScarStoryState.get(server);
 		state.storyRedPlayers.add(player.getUuid());
 		state.markDirty();
@@ -173,10 +173,10 @@ public final class MoonScarStoryManager {
 			return false;
 		}
 
-		PlayerFormBase spForm = RegPlayerForms.getPlayerForm(FormIdentifiers.FAMILIAR_FOX_SP);
+		IForm spForm = RegPlayerForms.getPlayerForm(FormIdentifiers.FAMILIAR_FOX_SP);
 		if (spForm == null) return false;
 
-		TransformManager.handleDirectTransform(sp, spForm, false);
+		TransformManager.immediatelyTransform(sp, spForm);
 		state.storyRedPlayers.remove(sp.getUuid());
 		state.markDirty();
 

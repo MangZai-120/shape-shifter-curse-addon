@@ -10,8 +10,8 @@ import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 
@@ -46,9 +46,9 @@ public final class MancianimaPrimaryClient {
 
 	private static boolean isMancianima(ClientPlayerEntity player) {
 		try {
-			PlayerFormBase form = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).getCurrentForm();
+			IForm form = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).nowForm;
 			if (form == null) return false;
-			Identifier id = form.FormID;
+			Identifier id = form.getFormID();
 			return id != null && FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(id);
 		} catch (Exception e) {
 			return false;

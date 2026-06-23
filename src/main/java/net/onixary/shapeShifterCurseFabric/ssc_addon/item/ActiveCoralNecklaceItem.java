@@ -20,21 +20,6 @@ public class ActiveCoralNecklaceItem extends TrinketItem {
 
 	@Override
 	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
-        /*
-        // 旧代码
-        if (entity instanceof PlayerEntity player) {
-            PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
-            if (component != null) {
-                PlayerFormBase currentForm = component.getCurrentForm();
-                if (currentForm != null && currentForm.FormID != null) {
-                    return currentForm.FormID.equals(new Identifier("my_addon", "axolotl_sp"));
-                }
-            }
-        }
-        return false;
-        */
-
-		// 新代码
 		return FormUtils.isAxolotlSP(entity);
 	}
 

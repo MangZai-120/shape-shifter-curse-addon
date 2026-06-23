@@ -9,8 +9,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
 import net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
@@ -74,8 +74,8 @@ public class MancianimaResistanceBar implements HudRenderCallback {
 	@SuppressWarnings("unused")
 	private static boolean isMancianima(PlayerEntity player) {
 		try {
-			PlayerFormBase form = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).getCurrentForm();
-			return form != null && FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.FormID);
+			IForm form = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).nowForm;
+			return form != null && FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.getFormID());
 		} catch (Exception e) {
 			return false;
 		}

@@ -29,10 +29,14 @@ import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormGroup;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormPhase;
+import net.onixary.shapeShifterCurseFabric.player_form.NormalGroup;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_FeralCatSP;
+import static net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils.NoInstinct;
+import static net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils.NoCursedMoonEffect;
+import static net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils.SpecialForm;
+import static net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils.InhibitorImmune;
+import static net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils.HasSlowFall;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.action.SscAddonActions;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.command.SscAddonCommands;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.condition.SscAddonConditions;
@@ -441,72 +445,67 @@ public class SscAddon implements ModInitializer {
 
 	private void registerForms() {
 		Form_Axolotl3 axolotlForm = new Form_Axolotl3(FormIdentifiers.AXOLOTL_SP);
-		axolotlForm.setPhase(PlayerFormPhase.PHASE_SP);
+		axolotlForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		RegPlayerForms.registerPlayerForm(axolotlForm);
-		RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_axolotl_sp")).addForm(axolotlForm, 5));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_axolotl_sp")).registerForm(1, 5, axolotlForm));
 
 		Form_FamiliarFox3 familiarFoxForm = new Form_FamiliarFox3(FormIdentifiers.FAMILIAR_FOX_SP);
-		familiarFoxForm.setPhase(PlayerFormPhase.PHASE_SP);
+		familiarFoxForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		RegPlayerForms.registerPlayerForm(familiarFoxForm);
-		RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_familiar_fox_sp")).addForm(familiarFoxForm, 5));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_familiar_fox_sp")).registerForm(1, 5, familiarFoxForm));
 
 		Form_FamiliarFoxRed familiarFoxRedForm = new Form_FamiliarFoxRed(FormIdentifiers.FAMILIAR_FOX_RED);
-		familiarFoxRedForm.setPhase(PlayerFormPhase.PHASE_SP);
+		familiarFoxRedForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		RegPlayerForms.registerPlayerForm(familiarFoxRedForm);
-		RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_familiar_fox_red")).addForm(familiarFoxRedForm, 5));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_familiar_fox_red")).registerForm(1, 5, familiarFoxRedForm));
 
 		Form_SnowFoxSP snowFoxForm = new Form_SnowFoxSP(FormIdentifiers.SNOW_FOX_SP);
-		snowFoxForm.setPhase(PlayerFormPhase.PHASE_SP);
+		snowFoxForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		RegPlayerForms.registerPlayerForm(snowFoxForm);
-		RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_snow_fox_sp")).addForm(snowFoxForm, 7));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_snow_fox_sp")).registerForm(1, 7, snowFoxForm));
 
 		Form_Allay allayForm = new Form_Allay(FormIdentifiers.ALLAY_SP);
-		allayForm.setPhase(PlayerFormPhase.PHASE_SP);
+		allayForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		RegPlayerForms.registerPlayerForm(allayForm);
-		RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_allay_sp")).addForm(allayForm, 8));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_allay_sp")).registerForm(1, 8, allayForm));
 
 		Form_FeralCatSP wildCatForm = new Form_FeralCatSP(FormIdentifiers.WILD_CAT_SP);
-		wildCatForm.setPhase(PlayerFormPhase.PHASE_SP);
-		wildCatForm.setBodyType(net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType.FERAL);
-		wildCatForm.setCanSneakRush(true);
+		wildCatForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
+		wildCatForm.canSneakRush = true;
 		RegPlayerForms.registerPlayerForm(wildCatForm);
-		RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_wild_cat_sp")).addForm(wildCatForm, 5));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_wild_cat_sp")).registerForm(1, 5, wildCatForm));
 
 		// Fallen Allay SP
 		Form_FallenAllaySP fallenAllayForm = new Form_FallenAllaySP(FormIdentifiers.FALLEN_ALLAY_SP);
-		fallenAllayForm.setPhase(PlayerFormPhase.PHASE_SP);
+		fallenAllayForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		RegPlayerForms.registerPlayerForm(fallenAllayForm);
-		RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_fallen_allay_sp")).addForm(fallenAllayForm, 8));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_fallen_allay_sp")).registerForm(1, 8, fallenAllayForm));
 
 		// Anubis Wolf SP
 		Form_AnubisWolfSP anubisWolfForm = new Form_AnubisWolfSP(FormIdentifiers.ANUBIS_WOLF_SP);
-		anubisWolfForm.setPhase(PlayerFormPhase.PHASE_SP);
-		anubisWolfForm.setCanSneakRush(true);
+		anubisWolfForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
+		anubisWolfForm.canSneakRush = true;
 		RegPlayerForms.registerPlayerForm(anubisWolfForm);
-		RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_anubis_wolf_sp")).addForm(anubisWolfForm, 12));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_anubis_wolf_sp")).registerForm(1, 12, anubisWolfForm));
 
 		// Golden Sandstorm SP (金沙岚)
 		Form_GoldenSandstormSP goldenSandstormForm = new Form_GoldenSandstormSP(FormIdentifiers.GOLDEN_SANDSTORM_SP);
-		goldenSandstormForm.setPhase(PlayerFormPhase.PHASE_SP);
-		goldenSandstormForm.setCanSneakRush(true);
+		goldenSandstormForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
+		goldenSandstormForm.canSneakRush = true;
 		RegPlayerForms.registerPlayerForm(goldenSandstormForm);
-		RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_golden_sandstorm_sp")).addForm(goldenSandstormForm, 12));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_golden_sandstorm_sp")).registerForm(1, 12, goldenSandstormForm));
 
 		// 吸血蝙蝠（Desmodus）SP形态 - 复用蝙蝠模型/动画，经月髓环在诅咒之月夜进化获得
 		Form_BatDesmodus batDesmodusForm = new Form_BatDesmodus(FormIdentifiers.BAT_DESMODUS);
-		batDesmodusForm.setPhase(PlayerFormPhase.PHASE_SP);
-		batDesmodusForm.setHasSlowFall(true);
-		batDesmodusForm.setOverrideHandAnim(true);
+		batDesmodusForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune, HasSlowFall);
 		RegPlayerForms.registerPlayerForm(batDesmodusForm);
-		RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_bat_desmodus")).addForm(batDesmodusForm, 12));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_bat_desmodus")).registerForm(1, 12, batDesmodusForm));
 
 		// 寄生果蝠 - 原版三阶段蝙蝠使用进化石进化获得，复用蝙蝠模型/动画
 		Form_BatParasiticFruit batParasiticFruitForm = new Form_BatParasiticFruit(FormIdentifiers.BAT_PARASITIC_FRUIT);
-		batParasiticFruitForm.setPhase(PlayerFormPhase.PHASE_SP);
-		batParasiticFruitForm.setHasSlowFall(true);
-		batParasiticFruitForm.setOverrideHandAnim(true);
+		batParasiticFruitForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune, HasSlowFall);
 		RegPlayerForms.registerPlayerForm(batParasiticFruitForm);
-		RegPlayerForms.registerPlayerFormGroup(new PlayerFormGroup(new Identifier("my_addon", "group_bat_parasitic_fruit")).addForm(batParasiticFruitForm, 12));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_bat_parasitic_fruit")).registerForm(1, 12, batParasiticFruitForm));
 	}
 
 	private void registerCommands() {
@@ -626,9 +625,8 @@ public class SscAddon implements ModInitializer {
 	private void registerFeralBodyYawSync() {
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> {
 			for (net.minecraft.server.network.ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-				net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase form =
-						net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM
-								.get(player).getCurrentForm();
+				net.onixary.shapeShifterCurseFabric.player_form.IForm form =
+						net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils.getPlayerForm(player);
 				if (form == null
 						|| form.getBodyType() != net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType.FERAL) {
 					continue;
@@ -1021,7 +1019,7 @@ public class SscAddon implements ModInitializer {
 		net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents.START_TRACKING.register((trackedEntity, player) -> {
 			if (trackedEntity instanceof net.minecraft.server.network.ServerPlayerEntity tracked) {
 				try {
-					net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.sync(tracked);
+					net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM.sync(tracked);
 				} catch (Throwable ignored) {
 					// 极端时序下组件容器可能尚未就绪，忽略即可，下次状态变更会自动同步
 				}

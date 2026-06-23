@@ -4,8 +4,8 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.onixary.shapeShifterCurseFabric.integration.origins.OriginsClient;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonClientConfig;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
 import org.lwjgl.glfw.GLFW;
@@ -64,11 +64,11 @@ public class SscAddonKeybindings {
 			return null;
 		}
 		try {
-			PlayerFormBase form = RegPlayerFormComponent.PLAYER_FORM.get(mc.player).getCurrentForm();
-			if (form == null || form.FormID == null) {
+			IForm form = RegPlayerFormComponent.PLAYER_FORM.get(mc.player).nowForm;
+			if (form == null || form.getFormID() == null) {
 				return null;
 			}
-			return form.FormID.getPath();
+			return form.getFormID().getPath();
 		} catch (Throwable t) {
 			return null;
 		}

@@ -10,11 +10,11 @@ import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateControll
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateEnum;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimSystem;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimUtils;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.NormalForm;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class Form_Allay extends PlayerFormBase {
+public class Form_Allay extends NormalForm {
 	private static final String ANIM_NS = "my_addon";
 	public static final AbstractAnimStateController WALK_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_moving")), new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_sneaking_walk")));
 	public static final AbstractAnimStateController SPRINT_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_run")), new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_sneaking_walk")));

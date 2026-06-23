@@ -20,9 +20,9 @@ import net.minecraft.sound.SoundEvents;
 import net.onixary.shapeShifterCurseFabric.mana.ManaComponent;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.ConfigChangeManager;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack;
@@ -437,17 +437,17 @@ public class SscAddonCommands {
 			debugInfo.append("PlayerFormComponent: NULL\n");
 			player.sendMessage(Text.translatable("command.ssc_addon.debug_form.no_component").formatted(Formatting.AQUA), false);
 		} else {
-			PlayerFormBase currentForm = component.getCurrentForm();
+			IForm currentForm = component.nowForm;
 			if (currentForm == null) {
 				debugInfo.append("Current Form: NULL (no form active)\n");
 				player.sendMessage(Text.translatable("command.ssc_addon.debug_form.no_form").formatted(Formatting.AQUA), false);
 			} else {
-				debugInfo.append("Form ID: ").append(currentForm.FormID).append("\n");
-				player.sendMessage(Text.translatable("command.ssc_addon.debug_form.form_id", String.valueOf(currentForm.FormID)).formatted(Formatting.AQUA), false);
+				debugInfo.append("Form ID: ").append(currentForm.getFormID()).append("\n");
+				player.sendMessage(Text.translatable("command.ssc_addon.debug_form.form_id", String.valueOf(currentForm.getFormID())).formatted(Formatting.AQUA), false);
 				debugInfo.append("Form Class: ").append(currentForm.getClass().getName()).append("\n");
 				player.sendMessage(Text.translatable("command.ssc_addon.debug_form.form_class", currentForm.getClass().getName()).formatted(Formatting.AQUA), false);
-				debugInfo.append("Phase: ").append(currentForm.getPhase()).append("\n");
-				player.sendMessage(Text.translatable("command.ssc_addon.debug_form.phase", String.valueOf(currentForm.getPhase())).formatted(Formatting.AQUA), false);
+				debugInfo.append("Phase: ").append(currentForm.getFormTier()).append("\n");
+				player.sendMessage(Text.translatable("command.ssc_addon.debug_form.phase", String.valueOf(currentForm.getFormTier())).formatted(Formatting.AQUA), false);
 				debugInfo.append("Body Type: ").append(currentForm.getBodyType()).append("\n");
 				player.sendMessage(Text.translatable("command.ssc_addon.debug_form.body_type", String.valueOf(currentForm.getBodyType())).formatted(Formatting.AQUA), false);
 			}

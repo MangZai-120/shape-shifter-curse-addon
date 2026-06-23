@@ -2,8 +2,8 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin;
 
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManager;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
@@ -21,9 +21,9 @@ public class IronsSpellbooksAnimationMixin {
 	@Inject(method = "animatePlayerStart", at = @At("HEAD"), cancellable = true, remap = false)
 	private static void onAnimatePlayerStart(PlayerEntity player, Identifier resourceLocation, CallbackInfo ci) {
 		try {
-			PlayerFormBase currentForm = FormAbilityManager.getForm(player);
-			if (currentForm != null && currentForm.FormID != null) {
-				String path = currentForm.FormID.getPath();
+			IForm currentForm = FormUtils.getCurrentForm(player);
+			if (currentForm != null && currentForm.getFormID() != null) {
+				String path = currentForm.getFormID().getPath();
 				// Check if the form is an SP form (contains "_sp") or Red form (contains "red")
 				if ((path.contains("_sp") || path.contains("red")) && !path.contains("axolotl_sp")) {
 					ci.cancel();

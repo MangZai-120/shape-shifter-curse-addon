@@ -77,17 +77,6 @@ public class WaterSpearItem extends TridentItem {
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
 		ItemStack itemStack = user.getStackInHand(hand);
 
-		/*
-		// 旧代码
-		PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(user);
-		if (component != null && component.getCurrentForm() != null && component.getCurrentForm().FormID != null &&
-				component.getCurrentForm().getPhase() == PlayerFormPhase.PHASE_SP && component.getCurrentForm().FormID.getPath().contains("axolotl")) {
-			user.setCurrentHand(hand);
-			return TypedActionResult.success(itemStack);
-		}
-		*/
-
-		// 新代码
 		if (FormUtils.isAxolotlSP(user)) {
 			user.setCurrentHand(hand);
 			return TypedActionResult.success(itemStack);
@@ -127,22 +116,6 @@ public class WaterSpearItem extends TridentItem {
 
 		if (!world.isClient) {
 			if (entity instanceof PlayerEntity player) {
-				/*
-				// 旧代码
-				PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
-				boolean isSpAxolotl = false;
-				if (player.isCreative()) {
-					isSpAxolotl = true;
-				} else if (component != null) {
-					PlayerFormBase currentForm = component.getCurrentForm();
-					if (currentForm != null && currentForm.FormID != null) {
-						isSpAxolotl = (currentForm.getPhase() == PlayerFormPhase.PHASE_SP && currentForm.FormID.getPath().contains("axolotl"))
-								|| currentForm.FormID.getPath().contains("form_axolotl_sp");
-					}
-				}
-				*/
-
-				// 新代码
 				boolean isSpAxolotl = player.isCreative() || FormUtils.isAxolotlSP(player);
 
 				if (!isSpAxolotl) {

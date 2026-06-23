@@ -38,18 +38,6 @@ public class PortableFridgeItem extends TrinketItem {
 
 	@Override
 	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
-        /*
-        // 旧代码
-        if (entity instanceof PlayerEntity player) {
-             PlayerFormComponent formComponent = RegPlayerFormComponent.PLAYER_FORM.get(player);
-             if (formComponent != null && formComponent.getCurrentForm() != null) {
-                 return formComponent.getCurrentForm().FormID.equals(new Identifier("my_addon", "snow_fox_sp"));
-             }
-        }
-        return false;
-        */
-
-		// 新代码
 		return FormUtils.isSnowFoxSP(entity);
 	}
 

@@ -14,8 +14,8 @@ import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaTeleport;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonClientConfig;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
@@ -140,9 +140,9 @@ public final class MancianimaTeleportClient {
 
 	private static boolean isMancianima(ClientPlayerEntity player) {
 		try {
-			PlayerFormBase form = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).getCurrentForm();
+			IForm form = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).nowForm;
 			if (form == null) return false;
-			Identifier id = form.FormID;
+			Identifier id = form.getFormID();
 			return id != null && FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(id);
 		} catch (Exception e) {
 			return false;

@@ -14,8 +14,8 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 
 import java.util.UUID;
@@ -76,8 +76,8 @@ public final class MancianimaCrosshairTracker {
 
 	private static boolean isMancianima(PlayerEntity player) {
 		try {
-			PlayerFormBase form = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).getCurrentForm();
-			return form != null && FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.FormID);
+			IForm form = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).nowForm;
+			return form != null && FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.getFormID());
 		} catch (Exception e) { return false; }
 	}
 }

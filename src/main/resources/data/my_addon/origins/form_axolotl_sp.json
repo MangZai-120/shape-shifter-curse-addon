@@ -56,7 +56,9 @@
         "my_addon:form_sp_primary_cd",
         "my_addon:form_sp_secondary_cd",
         "my_addon:form_sp_primary_cd_tick",
-        "my_addon:form_sp_secondary_cd_tick"
+        "my_addon:form_sp_secondary_cd_tick",
+        "shape-shifter-curse:form_tan_prevent_dirty_water_thirst",
+        "shape-shifter-curse:form_tan_axolotl_thirst_in_water"
     ],
     "icon": {
         "item": "minecraft:axolotl_bucket"

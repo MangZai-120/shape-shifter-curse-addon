@@ -42,17 +42,6 @@ public class PortableMoisturizerItem extends Item {
 		boolean newState = !isActive;
 		setActive(stack, !isActive);
 
-		/*
-        // 旧代码
-	    // 形态检查
-	    PlayerFormComponent formComponent = RegPlayerFormComponent.PLAYER_FORM.get(player);
-	    boolean isValidForm = formComponent != null &&
-			    formComponent.getCurrentForm() != null &&
-			    formComponent.getCurrentForm().FormID != null &&
-			    formComponent.getCurrentForm().FormID.equals(new Identifier("my_addon", "axolotl_sp"));
-        */
-
-		// 新代码
 		boolean isValidForm = FormUtils.isAxolotlSP(player);
 
 		if (newState && !isValidForm) {
@@ -73,23 +62,6 @@ public class PortableMoisturizerItem extends Item {
 	}
 
 	private void humidifyLogic(ItemStack stack, World world, PlayerEntity player) {
-        /*
-        // 旧代码
-        // 1. Check if user is in Axolotl SP form
-        PlayerFormComponent formComponent = RegPlayerFormComponent.PLAYER_FORM.get(player);
-        if (formComponent == null ||
-                formComponent.getCurrentForm() == null ||
-                formComponent.getCurrentForm().FormID == null ||
-                !formComponent.getCurrentForm().FormID.equals(new Identifier("my_addon", "axolotl_sp"))) {
-            // Automatically turn off if not in correct form
-            if (isActive(stack)) {
-                setActive(stack, false);
-            }
-            return;
-        }
-        */
-
-		// 新代码
 		if (!FormUtils.isAxolotlSP(player)) {
 			if (isActive(stack)) {
 				setActive(stack, false);

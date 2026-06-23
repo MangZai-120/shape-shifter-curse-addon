@@ -62,7 +62,9 @@
         "my_addon:form_snow_fox_sp_ranged_primary_cd",
         "my_addon:form_snow_fox_sp_ranged_primary_cd_tick",
         "my_addon:form_snow_fox_sp_ranged_secondary_cd",
-        "my_addon:form_snow_fox_sp_ranged_secondary_cd_tick"
+        "my_addon:form_snow_fox_sp_ranged_secondary_cd_tick",
+        "shape-shifter-curse:form_snow_fox_3_tan_temperature_remap",
+        "shape-shifter-curse:form_tan_prevent_dirty_water_thirst"
     ],
     "icon": {
         "item": "minecraft:fox_spawn_egg"

@@ -7,8 +7,6 @@ import net.onixary.shapeShifterCurseFabric.player_animation.v2.PlayerAnimState;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AbstractAnimStateController;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateEnum;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimSystem;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
 import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_FeralBase;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,8 +16,9 @@ import static net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric.MOD_ID
 /**
  * 四足野性形态的抽象基类
  * 仅限雪狐等共用四足形态动画的形态使用
+ * SSC 新变形系统：继承原版 Form_FeralBase（NormalForm 子类，构造已设 FERAL 体型并提供共用四足动画控制器）
  */
-public abstract class AbstractFeralForm extends PlayerFormBase {
+public abstract class AbstractFeralForm extends Form_FeralBase {
 	protected AnimationHolder anim_idle = AnimationHolder.EMPTY;
 	protected AnimationHolder anim_sneak_idle = AnimationHolder.EMPTY;
 	protected AnimationHolder anim_ride = AnimationHolder.EMPTY;
@@ -39,7 +38,7 @@ public abstract class AbstractFeralForm extends PlayerFormBase {
 
 	protected AbstractFeralForm(Identifier formID) {
 		super(formID);
-		this.setBodyType(PlayerFormBodyType.FERAL);
+		// 父类 Form_FeralBase 构造已 bodyType(FERAL)
 	}
 
 	// SSC 1.9.0 起 PlayerFormBase 已移除该 v2 API，保留作 v3 状态控制器的内部映射用

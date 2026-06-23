@@ -5,8 +5,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,8 +20,8 @@ public class SscAddonVillagerInteractionMixin {
 		if (player.isSneaking()) {
 			try {
 				PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
-				if (component != null && component.getCurrentForm() != null &&
-						new Identifier("my_addon", "form_familiar_fox_sp").equals(component.getCurrentForm().FormID)) {
+				if (component != null && component.nowForm != null &&
+						new Identifier("my_addon", "form_familiar_fox_sp").equals(component.nowForm.getFormID())) {
 					// Prevent opening trade GUI
 					cir.setReturnValue(ActionResult.PASS);
 				}

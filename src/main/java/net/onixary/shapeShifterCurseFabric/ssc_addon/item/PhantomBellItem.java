@@ -25,23 +25,6 @@ public class PhantomBellItem extends TrinketItem {
 
 	@Override
 	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
-        /*
-        // 旧代码
-        // 限制为 SP 使魔形态 (familiar_fox_sp)
-        if (entity instanceof PlayerEntity player) {
-            PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
-            if (component != null) {
-                PlayerFormBase currentForm = component.getCurrentForm();
-                if (currentForm != null && currentForm.FormID != null) {
-                    return currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_sp")) ||
-                           currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_red"));
-                }
-            }
-        }
-        return false;
-        */
-
-		// 新代码
 		return FormUtils.isFamiliarFoxForm(entity);
 	}
 

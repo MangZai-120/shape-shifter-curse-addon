@@ -4,9 +4,9 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManager;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -35,8 +35,8 @@ public abstract class PlayerInventoryMixin {
 	 */
 	@Unique
 	private boolean isLockedAllayItem(int slot, ItemStack stack) {
-		PlayerFormBase currentForm = FormAbilityManager.getForm(player);
-		boolean isAllaySp = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "allay_sp"));
+		IForm currentForm = FormUtils.getCurrentForm(player);
+		boolean isAllaySp = currentForm != null && currentForm.getFormID().equals(new Identifier("my_addon", "allay_sp"));
 		if (!isAllaySp) return false;
 
 		if (slot == 0 && stack.isOf(SscAddon.ALLAY_HEAL_WAND)) return true;
@@ -53,8 +53,8 @@ public abstract class PlayerInventoryMixin {
 
 		// Red form: lock potion bag in slot 8
 		if (slot == 8 && stack.isOf(SscAddon.POTION_BAG)) {
-			PlayerFormBase currentForm = FormAbilityManager.getForm(player);
-			boolean isRedForm = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_red"));
+			IForm currentForm = FormUtils.getCurrentForm(player);
+			boolean isRedForm = currentForm != null && currentForm.getFormID().equals(new Identifier("my_addon", "familiar_fox_red"));
 			if (isRedForm) {
 				cir.setReturnValue(ItemStack.EMPTY);
 				return;
@@ -74,8 +74,8 @@ public abstract class PlayerInventoryMixin {
 	private void preventLockedItemMisplacement(int slot, ItemStack stack, CallbackInfo ci) {
 		// Potion Bag logic (existing)
 		if (stack.isOf(SscAddon.POTION_BAG) && slot != 8) {
-			PlayerFormBase currentForm = FormAbilityManager.getForm(player);
-			boolean isRedForm = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_red"));
+			IForm currentForm = FormUtils.getCurrentForm(player);
+			boolean isRedForm = currentForm != null && currentForm.getFormID().equals(new Identifier("my_addon", "familiar_fox_red"));
 			if (isRedForm) {
 				ci.cancel();
 				ItemStack slot8Stack = this.getStack(8);
@@ -91,8 +91,8 @@ public abstract class PlayerInventoryMixin {
 
 		// Allay Heal Wand: must stay in slot 0
 		if (stack.isOf(SscAddon.ALLAY_HEAL_WAND) && slot != 0) {
-			PlayerFormBase currentForm = FormAbilityManager.getForm(player);
-			boolean isAllaySp = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "allay_sp"));
+			IForm currentForm = FormUtils.getCurrentForm(player);
+			boolean isAllaySp = currentForm != null && currentForm.getFormID().equals(new Identifier("my_addon", "allay_sp"));
 			if (isAllaySp) {
 				ci.cancel();
 				return;
@@ -101,8 +101,8 @@ public abstract class PlayerInventoryMixin {
 
 		// Allay Jukebox: must stay in slot 1
 		if (stack.isOf(SscAddon.ALLAY_JUKEBOX) && slot != 1) {
-			PlayerFormBase currentForm = FormAbilityManager.getForm(player);
-			boolean isAllaySp = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "allay_sp"));
+			IForm currentForm = FormUtils.getCurrentForm(player);
+			boolean isAllaySp = currentForm != null && currentForm.getFormID().equals(new Identifier("my_addon", "allay_sp"));
 			if (isAllaySp) {
 				ci.cancel();
 			}
@@ -115,8 +115,8 @@ public abstract class PlayerInventoryMixin {
 	@Inject(method = "insertStack(ILnet/minecraft/item/ItemStack;)Z", at = @At("HEAD"), cancellable = true)
 	private void preventLockedItemInsert(int slot, ItemStack stack, CallbackInfoReturnable<Boolean> cir) {
 		if (stack.isOf(SscAddon.POTION_BAG)) {
-			PlayerFormBase currentForm = FormAbilityManager.getForm(player);
-			boolean isRedForm = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "familiar_fox_red"));
+			IForm currentForm = FormUtils.getCurrentForm(player);
+			boolean isRedForm = currentForm != null && currentForm.getFormID().equals(new Identifier("my_addon", "familiar_fox_red"));
 			if (!isRedForm) {
 				cir.setReturnValue(false);
 			} else if (slot != 8 && slot != -1) {
@@ -125,8 +125,8 @@ public abstract class PlayerInventoryMixin {
 		}
 
 		if (stack.isOf(SscAddon.ALLAY_HEAL_WAND) || stack.isOf(SscAddon.ALLAY_JUKEBOX)) {
-			PlayerFormBase currentForm = FormAbilityManager.getForm(player);
-			boolean isAllaySp = currentForm != null && currentForm.FormID.equals(new Identifier("my_addon", "allay_sp"));
+			IForm currentForm = FormUtils.getCurrentForm(player);
+			boolean isAllaySp = currentForm != null && currentForm.getFormID().equals(new Identifier("my_addon", "allay_sp"));
 			if (!isAllaySp) {
 				cir.setReturnValue(false);
 			}

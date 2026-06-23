@@ -69,7 +69,9 @@
         "my_addon:form_familiar_fox_mancianima_no_buff_effect",
         "my_addon:form_familiar_fox_mancianima_villager_drain",
         "my_addon:form_familiar_fox_mancianima_villager_drain_cd",
-        "my_addon:form_familiar_fox_mancianima_villager_drain_cd_tick"
+        "my_addon:form_familiar_fox_mancianima_villager_drain_cd_tick",
+        "shape-shifter-curse:form_familiar_fox_3_tan_temperature_modify",
+        "shape-shifter-curse:form_tan_prevent_dirty_water_thirst"
     ],
     "icon": {
         "item": "minecraft:fox_spawn_egg"

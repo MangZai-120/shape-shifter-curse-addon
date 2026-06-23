@@ -5,11 +5,11 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.FormAbilityManager;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaTeleport;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaPrimary;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 import java.util.List;
@@ -176,7 +176,7 @@ public class SscAddonNetworking {
 
 	private static void handleKeyPress(ServerPlayerEntity player, int keyId) {
 		// Find current form
-		PlayerFormBase form = FormAbilityManager.getForm(player);
+		IForm form = FormUtils.getCurrentForm(player);
 		if (form == null) return;
 
 		// formId 暂未使用（旧 Ability_AllayHeal 已废弃），保留 form 引用以便后续按形态分发
