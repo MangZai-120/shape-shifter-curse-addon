@@ -1,8 +1,11 @@
 {
   "schemaVersion": 1,
-  "id": "ssc-addon",
+  "id": "ssc_addon",
+  "provides": [
+    "ssc-addon"
+  ],
   "version": "${version}",
-  "name": "幻形者诅咒附属",
+  "name": "Shape Shifter Curse Addon",
   "description": "An addon for Shape Shifter Curse mod.",
   "authors": [
     {
