@@ -1,0 +1,24 @@
+{
+    "type": "origins:action_on_hit",
+    "bientity_action": {
+        "type": "ssc_addon:anubis_wolf_sp_wither_attack"
+    },
+    "bientity_condition": {
+        "type": "origins:and",
+        "conditions": [
+            {
+                "type": "origins:actor_condition",
+                "condition": {
+                    "type": "origins:equipped_item",
+                    "equipment_slot": "mainhand",
+                    "item_condition": {
+                        "type": "origins:empty"
+                    }
+                }
+            },
+            {
+                "type": "my_addon:not_actor_whitelisted"
+            }
+        ]
+    }
+}

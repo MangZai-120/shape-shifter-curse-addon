@@ -16,13 +16,13 @@
             "compare_to": 0
         },
         "name": "Play Dead",
-        "description": "Feign death to escape danger. Clears mob aggro, reduces damage by 90%, but locks you in place for 6 seconds. Press the skill key again to end early."
+            "description": "Feign death to escape danger. Clears mob aggro, reduces damage by 60%, but locks you in place for 6 seconds. Press the skill key again to end early."
     },
     "protection": {
         "type": "origins:modify_damage_taken",
         "modifier": {
             "operation": "multiply_base",
-            "value": -0.9
+            "value": -0.6
         },
         "condition": {
             "type": "origins:status_effect",

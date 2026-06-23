@@ -51,7 +51,12 @@ public class PlayingDeadEffect extends StatusEffect {
 		if (hasNecklace) {
 			entity.heal(NECKLACE_HEAL_PER_TICK);
 			float cur = entity.getAbsorptionAmount();
-			entity.setAbsorptionAmount(Math.min(NECKLACE_ABSORB_MAX, cur + NECKLACE_ABSORB_PER_TICK));
+			float next = Math.min(NECKLACE_ABSORB_MAX, cur + NECKLACE_ABSORB_PER_TICK);
+			entity.setAbsorptionAmount(next);
+			// 记录「装死给的黄心」增量，供 30s 存留后衰减（仅这部分会衰减，其它来源不动）
+			if (entity instanceof PlayerEntity p) {
+				net.onixary.shapeShifterCurseFabric.ssc_addon.ability.PlayDeadAbsorptionManager.addAbsorption(p, next - cur);
+			}
 		} else {
 			entity.heal(DEFAULT_HEAL_PER_TICK);
 		}

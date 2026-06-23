@@ -17,6 +17,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDomain;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.ErosionBrandClientState;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormErosionBrand;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaMarkClientState;
@@ -169,6 +170,16 @@ public class SscAddonConditions {
 						return !SkillBlocker.isSkillBlocked(player, form, skill);
 					}
 					return true; // Non-player entities not blocked
+				}));
+
+		// SP阿努比斯之狼 - 是否处于自己的死亡领域范围内（用于领域内免疫自身受击凋零）
+		register(new ConditionFactory<>(new Identifier("ssc_addon", "in_own_death_domain"),
+				new SerializableData(),
+				(data, entity) -> {
+					if (entity instanceof ServerPlayerEntity player) {
+						return AnubisWolfSpDeathDomain.isInActiveDomain(player.getUuid(), player.getBlockPos());
+					}
+					return false;
 				}));
 	}
 

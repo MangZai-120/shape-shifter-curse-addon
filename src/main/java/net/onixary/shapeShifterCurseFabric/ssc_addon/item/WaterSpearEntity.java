@@ -18,10 +18,6 @@ import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormPhase;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 
 import java.util.List;
@@ -32,6 +28,8 @@ public class WaterSpearEntity extends TridentEntity {
 
 	public WaterSpearEntity(EntityType<? extends TridentEntity> entityType, World world) {
 		super(SscAddon.WATER_SPEAR_ENTITY, world);
+		// 不可拾取：水矛只能合成获得（走 5 秒 CD + 最多一把），扔出即消耗
+		this.pickupType = net.minecraft.entity.projectile.PersistentProjectileEntity.PickupPermission.DISALLOWED;
 	}
 
 	public WaterSpearEntity(World world, LivingEntity owner, ItemStack stack) {
@@ -39,6 +37,8 @@ public class WaterSpearEntity extends TridentEntity {
 		this.setOwner(owner);
 		this.setPosition(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
 		this.waterSpearStack = stack.copy();
+		// 不可拾取：水矛只能合成获得（走 5 秒 CD + 最多一把），扔出即消耗
+		this.pickupType = net.minecraft.entity.projectile.PersistentProjectileEntity.PickupPermission.DISALLOWED;
 	}
 
 	public ItemStack getWeaponStack() {
@@ -110,10 +110,9 @@ public class WaterSpearEntity extends TridentEntity {
 		// Play splash sound and particles
 		world.playSound(null, x, y, z, SoundEvents.ENTITY_GENERIC_SPLASH, SoundCategory.PLAYERS, 1.0F, 0.8F);
 
-		// Spawn particles on server
+		// Spawn particles on server - 落地水花爆开（仿 RC-4 药水破碎特效）
 		if (world instanceof net.minecraft.server.world.ServerWorld serverWorld) {
-			net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SPLASH, x, y, z, 30, 1.0, 0.5, 1.0, 0.1);
-			net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.BUBBLE, x, y, z, 20, 1.0, 0.5, 1.0, 0.05);
+			net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnWaterBurst(serverWorld, x, y, z, 1.0);
 		}
 	}
 
@@ -146,15 +145,8 @@ public class WaterSpearEntity extends TridentEntity {
 
 	@Override
 	public void onPlayerCollision(PlayerEntity player) {
-		// Allow pickup only if player is SP Axolotl
-		PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
-		PlayerFormBase currentForm = component != null ? component.getCurrentForm() : null;
-
-		if (currentForm != null && currentForm.FormID != null
-				&& currentForm.getPhase() == PlayerFormPhase.PHASE_SP
-				&& currentForm.FormID.getPath().contains("axolotl")) {
-			super.onPlayerCollision(player);
-		}
+		// 水矛扔出即消耗、永远不可拾取（含重启前旧 ALLOWED 实体）：碰撞不做任何拾取处理。
+		// 唯一获取途径=合成（5 秒 CD + 最多一把）。
 	}
 
 }

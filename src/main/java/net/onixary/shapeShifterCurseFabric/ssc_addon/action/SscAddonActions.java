@@ -565,6 +565,20 @@ public class SscAddonActions {
 						}
 					});
 				}));
+
+		// ==== SP阿努比斯之狼 - 空手凋零打击（凋零I，命中累加续时：每次+10秒，上限30秒） ====
+		registerBiEntity(new ActionFactory<>(new Identifier("ssc_addon", "anubis_wolf_sp_wither_attack"),
+				new SerializableData(),
+				(data, pair) -> {
+					Entity target = pair.getRight();
+					if (target instanceof LivingEntity living && !living.getWorld().isClient()) {
+						// 读取目标当前凋零剩余时间，累加200tick(10秒)，上限600tick(30秒)，等级恒为凋零I(amplifier 0)
+						StatusEffectInstance current = living.getStatusEffect(StatusEffects.WITHER);
+						int baseDuration = current != null ? current.getDuration() : 0;
+						int newDuration = Math.min(baseDuration + 200, 600);
+						living.addStatusEffect(new StatusEffectInstance(StatusEffects.WITHER, newDuration, 0));
+					}
+				}));
 	}
 
 	private static void registerBiEntity(ActionFactory<Pair<Entity, Entity>> actionFactory) {

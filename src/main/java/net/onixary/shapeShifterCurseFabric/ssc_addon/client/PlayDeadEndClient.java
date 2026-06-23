@@ -21,6 +21,14 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
 @Environment(EnvType.CLIENT)
 public final class PlayDeadEndClient {
 	private static boolean wasKeyPressed = false;
+	private static boolean wasPlayingDead = false;
+	private static long playDeadStartTime = 0L;
+	/**
+	 * 装死开始后的宽限期（tick）：此期间不响应“再按副技能键提前结束”。
+	 * 原因：单机集成服务端下，“触发装死的那一次按键”与 PLAYING_DEAD 生效可能落在同一 tick，
+	 * 边沿检测会把这次触发误判为“提前结束”导致刚装死就被立即打断。加 10t 宽限彻底规避该竞态。
+	 */
+	private static final int END_GRACE_TICKS = 10;
 
 	private PlayDeadEndClient() {
 	}
@@ -33,15 +41,23 @@ public final class PlayDeadEndClient {
 		ClientPlayerEntity player = client.player;
 		if (player == null || client.world == null) {
 			wasKeyPressed = false;
+			wasPlayingDead = false;
 			return;
+		}
+		boolean isPlayingDead = player.hasStatusEffect(SscAddon.PLAYING_DEAD);
+		// 记录装死开始时刻（用于宽限期判定）
+		if (isPlayingDead && !wasPlayingDead) {
+			playDeadStartTime = client.world.getTime();
 		}
 		// 用裸 GLFW 物理检测（绕过 StunnedKeyBindingMixin 在装死期对 sp_secondary 的屏蔽）
 		boolean pressed = SscAddonKeybindings.isSecondaryRawPressed();
-		// 仅在装死期间检测边沿；非装死时也持续跟踪按键状态，避免触发装死的那次按键被误判
-		if (player.hasStatusEffect(SscAddon.PLAYING_DEAD) && pressed && !wasKeyPressed) {
+		// 仅在装死已持续超过宽限期后，才允许“再按副技能键提前结束”，避免触发那一下被误判
+		if (isPlayingDead && pressed && !wasKeyPressed
+				&& (client.world.getTime() - playDeadStartTime) >= END_GRACE_TICKS) {
 			PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
 			ClientPlayNetworking.send(SscAddonNetworking.PACKET_PLAY_DEAD_END, buf);
 		}
 		wasKeyPressed = pressed;
+		wasPlayingDead = isPlayingDead;
 	}
 }

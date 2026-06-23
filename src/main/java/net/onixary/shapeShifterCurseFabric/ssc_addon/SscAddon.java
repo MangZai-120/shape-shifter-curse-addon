@@ -182,6 +182,13 @@ public class SscAddon implements ModInitializer {
 	public static final RecipeSerializer<SpUpgradeRecipe> SP_UPGRADE_SERIALIZER = new SpecialRecipeSerializer<>(SpUpgradeRecipe::new);
 	// 60 durability like wooden sword, auto-consumed over 60 seconds
 	public static final Item WATER_SPEAR = new WaterSpearItem(new Item.Settings().maxCount(1).maxDamage(60));
+	// SP美西螈水矛合成内部冷却（服务端权威）：UUID -> 冷却结束的服务器 tick；与箭冷却条显示同步
+	private static final java.util.Map<java.util.UUID, Long> WATER_SPEAR_CRAFT_CD = new java.util.concurrent.ConcurrentHashMap<>();
+	private static final int WATER_SPEAR_CRAFT_CD_TICKS = 70; // 3.5 秒（与 Apoli 合成能力 cooldown 对齐；水矛消失后起算）
+	// [DEBUG] 水矛合成监测日志
+	private static final org.slf4j.Logger WS_DBG = org.slf4j.LoggerFactory.getLogger("WaterSpearDebug");
+	// [DEBUG] 每玩家上次水矛数（用于监测水矛出现时刻）
+	private static final java.util.Map<java.util.UUID, Integer> WS_LAST_SPEAR_COUNT = new java.util.concurrent.ConcurrentHashMap<>();
 	// Evolution Stone
 	public static final Item EVOLUTION_STONE = new EvolutionStoneItem(new Item.Settings().maxCount(1).fireproof());
 	public static final Item CORAL_BALL = new Item(new Item.Settings().maxCount(64));
@@ -540,6 +547,7 @@ public class SscAddon implements ModInitializer {
 				net.onixary.shapeShifterCurseFabric.ssc_addon.ability.BatDesmodusBloodThirst.tick(player);
 				net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaPassive.tick(player);
 				net.onixary.shapeShifterCurseFabric.ssc_addon.ability.VortexChargeManager.tick(player);
+				net.onixary.shapeShifterCurseFabric.ssc_addon.ability.PlayDeadAbsorptionManager.tick(player);
 			}
 		});
 	}
@@ -556,6 +564,39 @@ public class SscAddon implements ModInitializer {
 	private void registerStunOrphanCleanup() {
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> {
 			for (net.minecraft.server.network.ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+				// [DEBUG] 水矛出现监测 + 硬上限：背包最多 1 把水矛，多余立即移除（兜底任何未知产出路径）
+				if (net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isAxolotlSP(player)) {
+					net.minecraft.entity.player.PlayerInventory inv = player.getInventory();
+					int wsCnt = 0;
+					for (int i = 0; i < inv.size(); i++) {
+						if (inv.getStack(i).isOf(WATER_SPEAR)) {
+							wsCnt++;
+							if (wsCnt > 1) {
+								inv.setStack(i, net.minecraft.item.ItemStack.EMPTY);
+								WS_DBG.warn("[WS-CAP] 移除多余水矛 slot={} @tick {}", i, server.getTicks());
+								wsCnt--;
+							}
+						}
+					}
+					Integer wsPrev = WS_LAST_SPEAR_COUNT.put(player.getUuid(), wsCnt);
+					if (wsPrev != null && wsCnt > wsPrev) {
+						long wsT = server.getTicks();
+						Long wsUntil = WATER_SPEAR_CRAFT_CD.get(player.getUuid());
+						WS_DBG.warn("[WS-MONITOR] 水矛数 {}->{} @tick {} ; internalCD until={} cooling={} ; arrowCD={}",
+								wsPrev, wsCnt, wsT, wsUntil, (wsUntil != null && wsT < wsUntil),
+								player.getItemCooldownManager().isCoolingDown(net.minecraft.item.Items.ARROW));
+					}
+					// 水矛从「有」变「无」(扛出/消耗) → 重启 Apoli 合成冷却，使「合成CD」从水矛消失那刻起算
+					// 否则持矛期间 active_self 的 cooldown 会走完，扛出后可立即秒合成（用户反馈的 bug）
+					if (wsPrev != null && wsPrev > 0 && wsCnt == 0) {
+						long wsT = server.getTicks();
+						WATER_SPEAR_CRAFT_CD.put(player.getUuid(), wsT + WATER_SPEAR_CRAFT_CD_TICKS);
+						player.getItemCooldownManager().set(net.minecraft.item.Items.ARROW, WATER_SPEAR_CRAFT_CD_TICKS);
+						net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils.resetCooldown(player,
+								new net.minecraft.util.Identifier("my_addon", "form_axolotl_sp_water_spear_craft_spear"));
+						WS_DBG.warn("[WS-CD] 水矛消失 @tick {} → 重启合成冷却(从消失起算 {}t)", wsT, WATER_SPEAR_CRAFT_CD_TICKS);
+					}
+				}
 				if (player.hasStatusEffect(STUN)) continue;
 				net.minecraft.entity.attribute.EntityAttributeInstance atk =
 						player.getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_ATTACK_DAMAGE);
@@ -723,11 +764,82 @@ public class SscAddon implements ModInitializer {
 		});
 
 		// 吸血蝙蝠血雾期间禁用一切右键交互（用物品/放方块/与生物互动/吃喝/盾牌副手等）
-		net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.register((player, world, hand) -> {
-			if (player.hasStatusEffect(MIST_FORM)
+		net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.register((player, world, hand) -> {			if (player.hasStatusEffect(MIST_FORM)
 					&& net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isForm(player,
 							net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.BAT_DESMODUS)) {
 				return net.minecraft.util.TypedActionResult.fail(player.getStackInHand(hand));
+			}			return net.minecraft.util.TypedActionResult.pass(player.getStackInHand(hand));
+		});
+
+		WS_DBG.info("[WS] ===== DEBUG BUILD LOADED (v2): 水矛合成+最多1把 监测启用 =====");
+		// SP美西螈：选中快捷栏(主手)为空 + 副手持箭 + 右键 → 消耗 1 支箭“合成”获得水矛（5 秒CD；身上最多 1 把）
+		// 注：主手为空时 MC 只触发副手(OFF_HAND)交互，故用副手回调
+		net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.register((player, world, hand) -> {
+			boolean axo = net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isAxolotlSP(player);
+			net.minecraft.item.ItemStack mainStack = player.getMainHandStack();
+			net.minecraft.item.ItemStack offStack = player.getOffHandStack();
+			boolean arrowCd = player.getItemCooldownManager().isCoolingDown(net.minecraft.item.Items.ARROW);
+			int spearCount = 0;
+			if (axo) {
+				net.minecraft.entity.player.PlayerInventory inv = player.getInventory();
+				for (int i = 0; i < inv.size(); i++) {
+					if (inv.getStack(i).isOf(WATER_SPEAR)) spearCount++;
+				}
+				WS_DBG.info("[WS] side={} hand={} main={} mainEmpty={} off={} offIsArrow={} arrowCD={} spearInInv={}",
+						world.isClient() ? "CLIENT" : "SERVER", hand,
+						net.minecraft.registry.Registries.ITEM.getId(mainStack.getItem()), mainStack.isEmpty(),
+						net.minecraft.registry.Registries.ITEM.getId(offStack.getItem()), offStack.isOf(net.minecraft.item.Items.ARROW), arrowCd, spearCount);
+			}
+			if (hand != net.minecraft.util.Hand.OFF_HAND || !axo || !mainStack.isEmpty()
+					|| !offStack.isOf(net.minecraft.item.Items.ARROW)) {
+				return net.minecraft.util.TypedActionResult.pass(player.getStackInHand(hand));
+			}
+			// 身上最多一把水矛：背包已有则不合成
+			if (spearCount > 0) {
+				WS_DBG.info("[WS][{}] BLOCKED: already has {} water_spear (max 1)", world.isClient() ? "CLIENT" : "SERVER", spearCount);
+				return net.minecraft.util.TypedActionResult.pass(player.getStackInHand(hand));
+			}
+			if (world.isClient()) {
+				WS_DBG.info("[WS][CLIENT] gate-passed arrowCD={} -> {}", arrowCd, arrowCd ? "PASS(cooling)" : "SUCCESS");
+				return arrowCd ? net.minecraft.util.TypedActionResult.pass(player.getStackInHand(hand))
+						: net.minecraft.util.TypedActionResult.success(player.getStackInHand(hand));
+			}
+			if (player instanceof net.minecraft.server.network.ServerPlayerEntity sp) {
+				int slot = sp.getInventory().selectedSlot;
+				net.minecraft.item.ItemStack selStack = sp.getInventory().getStack(slot);
+				int srvSpears = 0;
+				for (int i = 0; i < sp.getInventory().size(); i++) {
+					if (sp.getInventory().getStack(i).isOf(WATER_SPEAR)) srvSpears++;
+				}
+				long now = sp.getServer().getTicks();
+				Long until = WATER_SPEAR_CRAFT_CD.get(sp.getUuid());
+				boolean cooling = until != null && now < until;
+				WS_DBG.info("[WS][SERVER] gate cooling={} now={} until={} selSlot={} selStack={} selEmpty={} srvSpears={}",
+						cooling, now, until, slot,
+						net.minecraft.registry.Registries.ITEM.getId(selStack.getItem()), selStack.isEmpty(), srvSpears);
+				if (cooling) {
+					return net.minecraft.util.TypedActionResult.pass(sp.getStackInHand(hand));
+				}
+				// 服务端二次硬校验（防御）：选中槽必须真空、且身上无水矛
+				if (!selStack.isEmpty()) {
+					WS_DBG.warn("[WS][SERVER] ABORT: 选中槽非空({})，不合成", net.minecraft.registry.Registries.ITEM.getId(selStack.getItem()));
+					return net.minecraft.util.TypedActionResult.pass(sp.getStackInHand(hand));
+				}
+				if (srvSpears > 0) {
+					WS_DBG.warn("[WS][SERVER] ABORT: 身上已有 {} 把水矛", srvSpears);
+					return net.minecraft.util.TypedActionResult.pass(sp.getStackInHand(hand));
+				}
+				sp.getOffHandStack().decrement(1);
+				net.minecraft.item.ItemStack spear = new net.minecraft.item.ItemStack(WATER_SPEAR);
+				sp.getInventory().setStack(slot, spear);
+				sp.getInventory().markDirty();
+				WS_DBG.info("[WS][SERVER] >>> CRAFTED into selSlot={} ; offhandEmptyNow={} (CD改为水矛消失后触发)", slot, sp.getOffHandStack().isEmpty());
+				if (sp.getWorld() instanceof net.minecraft.server.world.ServerWorld sw) {
+					sw.playSound(null, sp.getX(), sp.getY(), sp.getZ(),
+							net.minecraft.sound.SoundEvents.ITEM_BOTTLE_FILL, sp.getSoundCategory(), 0.8f, 1.0f);
+					net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnWaterBurst(sw, sp.getX(), sp.getY() + 1.0, sp.getZ(), 0.5);
+				}
+				return net.minecraft.util.TypedActionResult.success(sp.getStackInHand(hand));
 			}
 			return net.minecraft.util.TypedActionResult.pass(player.getStackInHand(hand));
 		});

@@ -171,4 +171,22 @@ public class PowerUtils {
 		}
 	}
 
+	/**
+	 * 重启某个 Apoli 冷却型能力（active_self 等 CooldownPower）的冷却到满。
+	 * 用于让“水矛合成冷却”从水矛消失那刻重新起算，避免持矛期间冷却走完后扛出即可秒合成。
+	 */
+	public static void resetCooldown(ServerPlayerEntity player, Identifier cooldownPowerId) {
+		try {
+			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
+			PowerType<?> powerType = PowerTypeRegistry.get(cooldownPowerId);
+			Power power = powerHolder.getPower(powerType);
+			if (power instanceof io.github.apace100.apoli.power.CooldownPower cooldownPower) {
+				cooldownPower.use();
+				PowerHolderComponent.sync(player);
+			}
+		} catch (Exception e) {
+			LOGGER.error("resetCooldown 失败: cooldownPowerId={}", cooldownPowerId, e);
+		}
+	}
+
 }

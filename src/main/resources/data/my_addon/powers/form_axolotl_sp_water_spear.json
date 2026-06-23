@@ -2,7 +2,7 @@
     "type": "origins:multiple",
     "craft_spear": {
         "type": "origins:active_self",
-        "cooldown": 100,
+        "cooldown": 70,
         "hud_render": {
             "should_render": false
         },
@@ -22,7 +22,11 @@
                     }
                 },
                 {
-                    "type": "origins:give",
+                    "type": "apoli:replace_inventory",
+                    "slot": "weapon.mainhand",
+                    "item_condition": {
+                        "type": "origins:empty"
+                    },
                     "stack": {
                         "item": "ssc_addon:water_spear",
                         "amount": 1
@@ -80,6 +84,14 @@
                             "item": "ssc_addon:water_spear"
                         }
                     },
+                    "comparison": "==",
+                    "compare_to": 0
+                },
+                {
+                    "type": "origins:inventory",
+                    "slots": [
+                        "weapon.mainhand"
+                    ],
                     "comparison": "==",
                     "compare_to": 0
                 }
