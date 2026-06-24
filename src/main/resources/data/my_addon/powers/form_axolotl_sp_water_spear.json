@@ -1,23 +1,23 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "craft_spear": {
-        "type": "origins:active_self",
+        "type": "apoli:active_self",
         "cooldown": 70,
         "hud_render": {
             "should_render": false
         },
         "entity_action": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "actions": [
                 {
-                    "type": "origins:gain_air",
+                    "type": "apoli:gain_air",
                     "value": -15
                 },
                 {
-                    "type": "origins:equipped_item_action",
+                    "type": "apoli:equipped_item_action",
                     "equipment_slot": "offhand",
                     "action": {
-                        "type": "origins:consume",
+                        "type": "apoli:consume",
                         "amount": 1
                     }
                 },
@@ -25,7 +25,7 @@
                     "type": "apoli:replace_inventory",
                     "slot": "weapon.mainhand",
                     "item_condition": {
-                        "type": "origins:empty"
+                        "type": "apoli:empty"
                     },
                     "stack": {
                         "item": "ssc_addon:water_spear",
@@ -33,19 +33,19 @@
                     }
                 },
                 {
-                    "type": "origins:play_sound",
+                    "type": "apoli:play_sound",
                     "sound": "minecraft:entity.axolotl.splash",
                     "volume": 1.0,
                     "pitch": 1.2
                 },
                 {
-                    "type": "origins:play_sound",
+                    "type": "apoli:play_sound",
                     "sound": "minecraft:block.pointed_dripstone.drip_water",
                     "volume": 1.5,
                     "pitch": 0.8
                 },
                 {
-                    "type": "origins:spawn_particles",
+                    "type": "apoli:spawn_particles",
                     "particle": "minecraft:splash",
                     "count": 20,
                     "speed": 0.2,
@@ -59,27 +59,27 @@
             ]
         },
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
                 {
-                    "type": "origins:air",
+                    "type": "apoli:air",
                     "comparison": ">=",
                     "compare_to": 15
                 },
                 {
-                    "type": "origins:equipped_item",
+                    "type": "apoli:equipped_item",
                     "equipment_slot": "offhand",
                     "item_condition": {
-                        "type": "origins:ingredient",
+                        "type": "apoli:ingredient",
                         "ingredient": {
                             "item": "minecraft:arrow"
                         }
                     }
                 },
                 {
-                    "type": "origins:inventory",
+                    "type": "apoli:inventory",
                     "item_condition": {
-                        "type": "origins:ingredient",
+                        "type": "apoli:ingredient",
                         "ingredient": {
                             "item": "ssc_addon:water_spear"
                         }
@@ -88,7 +88,7 @@
                     "compare_to": 0
                 },
                 {
-                    "type": "origins:inventory",
+                    "type": "apoli:inventory",
                     "slots": [
                         "weapon.mainhand"
                     ],

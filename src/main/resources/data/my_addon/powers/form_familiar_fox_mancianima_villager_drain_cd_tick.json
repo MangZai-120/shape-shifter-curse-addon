@@ -1,14 +1,14 @@
 {
-    "type": "origins:action_over_time",
+    "type": "apoli:action_over_time",
     "interval": 1,
     "entity_action": {
-        "type": "origins:change_resource",
+        "type": "apoli:change_resource",
         "resource": "my_addon:form_familiar_fox_mancianima_villager_drain_cd",
         "operation": "add",
         "change": -1
     },
     "condition": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "resource": "my_addon:form_familiar_fox_mancianima_villager_drain_cd",
         "comparison": ">",
         "compare_to": 0

@@ -1,10 +1,10 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "night_boost": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 20,
         "entity_action": {
-            "type": "origins:apply_effect",
+            "type": "apoli:apply_effect",
             "effect": {
                 "effect": "minecraft:speed",
                 "duration": 40,
@@ -15,7 +15,7 @@
             }
         },
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
                 {
                     "type": "ssc_addon:skill_disabled",
@@ -23,12 +23,12 @@
                     "skill": "night_speed"
                 },
                 {
-                    "type": "origins:time_of_day",
+                    "type": "apoli:time_of_day",
                     "compare_to": 13000,
                     "comparison": ">="
                 },
                 {
-                    "type": "origins:time_of_day",
+                    "type": "apoli:time_of_day",
                     "compare_to": 23000,
                     "comparison": "<="
                 }
@@ -36,10 +36,10 @@
         }
     },
     "day_debuff": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 20,
         "entity_action": {
-            "type": "origins:apply_effect",
+            "type": "apoli:apply_effect",
             "effect": {
                 "effect": "minecraft:slowness",
                 "duration": 40,
@@ -50,7 +50,7 @@
             }
         },
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
                 {
                     "type": "ssc_addon:skill_disabled",
@@ -58,15 +58,15 @@
                     "skill": "day_slow"
                 },
                 {
-                    "type": "origins:or",
+                    "type": "apoli:or",
                     "conditions": [
                         {
-                            "type": "origins:time_of_day",
+                            "type": "apoli:time_of_day",
                             "compare_to": 13000,
                             "comparison": "<"
                         },
                         {
-                            "type": "origins:time_of_day",
+                            "type": "apoli:time_of_day",
                             "compare_to": 23000,
                             "comparison": ">"
                         }

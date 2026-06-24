@@ -1,23 +1,23 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "vex_cd_tick": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 1,
         "entity_action": {
-            "type": "origins:change_resource",
+            "type": "apoli:change_resource",
             "resource": "my_addon:form_fallen_allay_sp_vex_cd",
             "change": -1,
             "operation": "add"
         },
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "my_addon:form_fallen_allay_sp_vex_cd",
             "comparison": ">",
             "compare_to": 0
         }
     },
     "charging_state": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "min": 0,
         "max": 1,
         "start_value": 0,
@@ -26,7 +26,7 @@
         }
     },
     "charge_timer": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "min": 0,
         "max": 20,
         "start_value": 0,
@@ -35,7 +35,7 @@
         }
     },
     "interrupt_penalty_timer": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "min": 0,
         "max": 200,
         "start_value": 0,
@@ -43,7 +43,7 @@
             "should_render": false,
             "bar_index": 7,
             "condition": {
-                "type": "origins:resource",
+                "type": "apoli:resource",
                 "resource": "*:*_interrupt_penalty_timer",
                 "comparison": ">",
                 "compare_to": 0
@@ -51,48 +51,48 @@
         }
     },
     "interrupt_penalty_tick": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 1,
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "*:*_interrupt_penalty_timer",
             "comparison": ">",
             "compare_to": 0
         },
         "entity_action": {
-            "type": "origins:change_resource",
+            "type": "apoli:change_resource",
             "resource": "*:*_interrupt_penalty_timer",
             "change": -1,
             "operation": "add"
         }
     },
     "key_activation": {
-        "type": "origins:active_self",
+        "type": "apoli:active_self",
         "key": {
             "key": "key.ssc_addon.sp_primary"
         },
         "cooldown": 20,
         "entity_action": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "actions": [
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "*:*_charging_state",
                     "change": 1,
                     "operation": "set"
                 },
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "*:*_charge_timer",
                     "change": 0,
                     "operation": "set"
                 },
                 {
-                    "type": "origins:execute_command",
+                    "type": "apoli:execute_command",
                     "command": "playsound entity.warden.heartbeat hostile @a ~ ~ ~ 1.5 0.5"
                 },
                 {
-                    "type": "origins:apply_effect",
+                    "type": "apoli:apply_effect",
                     "effect": {
                         "effect": "minecraft:slowness",
                         "duration": 25,
@@ -105,22 +105,22 @@
             ]
         },
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
                 {
-                    "type": "origins:resource",
+                    "type": "apoli:resource",
                     "resource": "my_addon:form_fallen_allay_sp_vex_cd",
                     "comparison": "==",
                     "compare_to": 0
                 },
                 {
-                    "type": "origins:resource",
+                    "type": "apoli:resource",
                     "resource": "*:*_charging_state",
                     "comparison": "==",
                     "compare_to": 0
                 },
                 {
-                    "type": "origins:resource",
+                    "type": "apoli:resource",
                     "resource": "*:*_interrupt_penalty_timer",
                     "comparison": "==",
                     "compare_to": 0
@@ -129,122 +129,122 @@
         }
     },
     "tick_charging": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 1,
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "*:*_charging_state",
             "comparison": "==",
             "compare_to": 1
         },
         "entity_action": {
-            "type": "origins:change_resource",
+            "type": "apoli:change_resource",
             "resource": "*:*_charge_timer",
             "change": 1,
             "operation": "add"
         }
     },
     "charging_particles": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 4,
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "*:*_charging_state",
             "comparison": "==",
             "compare_to": 1
         },
         "entity_action": {
-            "type": "origins:execute_command",
+            "type": "apoli:execute_command",
             "command": "particle minecraft:smoke ~ ~1 ~ 0.2 0.3 0.2 0.02 6 force @a"
         }
     },
     "trigger_vex": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 1,
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "*:*_charge_timer",
             "comparison": ">=",
             "compare_to": 20
         },
         "entity_action": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "actions": [
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "*:*_charging_state",
                     "change": 0,
                     "operation": "set"
                 },
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "*:*_charge_timer",
                     "change": 0,
                     "operation": "set"
                 },
                 {
-                    "type": "origins:clear_effect",
+                    "type": "apoli:clear_effect",
                     "effect": "minecraft:slowness"
                 },
                 {
                     "type": "my_addon:summon_fallen_allay_vex"
                 },
                 {
-                    "type": "origins:execute_command",
+                    "type": "apoli:execute_command",
                     "command": "playsound entity.evoker.prepare_summon hostile @a ~ ~ ~ 1.5 1.0"
                 },
                 {
-                    "type": "origins:execute_command",
+                    "type": "apoli:execute_command",
                     "command": "particle minecraft:smoke ~ ~1 ~ 0.5 0.5 0.5 0.05 20 force @a"
                 },
                 {
-                    "type": "origins:execute_command",
+                    "type": "apoli:execute_command",
                     "command": "particle minecraft:large_smoke ~ ~1 ~ 0.3 0.3 0.3 0.02 10 force @a"
                 }
             ]
         }
     },
     "interrupt_on_damage": {
-        "type": "origins:action_when_damage_taken",
+        "type": "apoli:action_when_damage_taken",
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "*:*_charging_state",
             "comparison": "==",
             "compare_to": 1
         },
         "entity_action": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "actions": [
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "*:*_charging_state",
                     "operation": "set",
                     "change": 0
                 },
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "*:*_charge_timer",
                     "operation": "set",
                     "change": 0
                 },
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "*:*_interrupt_penalty_timer",
                     "operation": "set",
                     "change": 200
                 },
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "my_addon:form_fallen_allay_sp_vex_cd",
                     "operation": "set",
                     "change": 200
                 },
                 {
-                    "type": "origins:clear_effect",
+                    "type": "apoli:clear_effect",
                     "effect": "minecraft:slowness"
                 },
                 {
-                    "type": "origins:play_sound",
+                    "type": "apoli:play_sound",
                     "sound": "block.beacon.deactivate",
                     "volume": 0.5,
                     "pitch": 1.5
@@ -253,56 +253,56 @@
         }
     },
     "interrupt_on_purified": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 1,
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
                 {
-                    "type": "origins:resource",
+                    "type": "apoli:resource",
                     "resource": "*:*_charging_state",
                     "comparison": ">",
                     "compare_to": 0
                 },
                 {
-                    "type": "origins:status_effect",
+                    "type": "apoli:status_effect",
                     "effect": "ssc_addon:purified"
                 }
             ]
         },
         "entity_action": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "actions": [
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "*:*_charging_state",
                     "operation": "set",
                     "change": 0
                 },
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "*:*_charge_timer",
                     "operation": "set",
                     "change": 0
                 },
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "*:*_interrupt_penalty_timer",
                     "operation": "set",
                     "change": 200
                 },
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "my_addon:form_fallen_allay_sp_vex_cd",
                     "operation": "set",
                     "change": 200
                 },
                 {
-                    "type": "origins:clear_effect",
+                    "type": "apoli:clear_effect",
                     "effect": "minecraft:slowness"
                 },
                 {
-                    "type": "origins:play_sound",
+                    "type": "apoli:play_sound",
                     "sound": "block.beacon.deactivate",
                     "volume": 0.5,
                     "pitch": 1.5

@@ -1,7 +1,7 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "regen_pause_timer": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "min": 0,
         "max": 120,
         "start_value": 0,
@@ -10,26 +10,26 @@
         }
     },
     "pause_tick": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 1,
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "*:*_regen_pause_timer",
             "comparison": ">",
             "compare_to": 0
         },
         "entity_action": {
-            "type": "origins:change_resource",
+            "type": "apoli:change_resource",
             "resource": "*:*_regen_pause_timer",
             "operation": "add",
             "change": -1
         }
     },
     "regen": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 60,
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
                 {
                     "type": "ssc_addon:skill_disabled",
@@ -37,7 +37,7 @@
                     "skill": "mana_regen"
                 },
                 {
-                    "type": "origins:resource",
+                    "type": "apoli:resource",
                     "resource": "*:*_regen_pause_timer",
                     "comparison": "==",
                     "compare_to": 0

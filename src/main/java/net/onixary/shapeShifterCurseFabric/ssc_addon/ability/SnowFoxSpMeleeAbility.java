@@ -45,7 +45,7 @@ public class SnowFoxSpMeleeAbility {
 
 	/**
 	 * 执行雪刺冲刺
-	 * 注意：冷却由Apoli origins:active_self power的cooldown字段管理
+	 * 注意：冷却由Apoli apoli:active_self power的cooldown字段管理
 	 */
 	public static boolean execute(ServerPlayerEntity player) {
 		int currentMana = PowerUtils.getResourceValue(player, RESOURCE_ID);

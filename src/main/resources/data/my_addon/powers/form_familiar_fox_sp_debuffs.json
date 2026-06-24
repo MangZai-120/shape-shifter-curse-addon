@@ -1,7 +1,7 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "exhaustion": {
-        "type": "origins:modify_exhaustion",
+        "type": "apoli:modify_exhaustion",
         "modifier": {
             "name": "Low Mana Exhaustion",
             "operation": "multiply_base",
@@ -14,7 +14,7 @@
         }
     },
     "high_mana_defense": {
-        "type": "origins:modify_damage_taken",
+        "type": "apoli:modify_damage_taken",
         "modifier": {
             "name": "High Mana Defense",
             "operation": "multiply_total",
@@ -27,14 +27,14 @@
         }
     },
     "stage_1_damage": {
-        "type": "origins:modify_damage_dealt",
+        "type": "apoli:modify_damage_dealt",
         "modifier": {
             "name": "Low Mana Weakness 1",
             "operation": "multiply_total",
             "value": -0.2
         },
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
                 {
                     "type": "ssc_addon:has_mana_percent_safe",
@@ -50,7 +50,7 @@
         }
     },
     "stage_1_speed": {
-        "type": "origins:conditioned_attribute",
+        "type": "apoli:conditioned_attribute",
         "modifier": {
             "attribute": "minecraft:generic.movement_speed",
             "operation": "multiply_total",
@@ -59,7 +59,7 @@
         },
         "tick_rate": 20,
         "condition": {
-             "type": "origins:and",
+             "type": "apoli:and",
              "conditions": [
                  {
                      "type": "ssc_addon:has_mana_percent_safe",
@@ -75,14 +75,14 @@
         }
     },
     "stage_1_mining": {
-        "type": "origins:modify_break_speed",
+        "type": "apoli:modify_break_speed",
         "modifier": {
             "name": "Low Mana Mining Fatigue 1",
             "operation": "multiply_total",
             "value": -0.2
         },
         "condition": {
-             "type": "origins:and",
+             "type": "apoli:and",
              "conditions": [
                  {
                      "type": "ssc_addon:has_mana_percent_safe",
@@ -98,7 +98,7 @@
         }
     },
     "stage_2_damage": {
-        "type": "origins:modify_damage_dealt",
+        "type": "apoli:modify_damage_dealt",
         "modifier": {
             "name": "Low Mana Weakness 2",
             "operation": "multiply_total",
@@ -111,7 +111,7 @@
         }
     },
     "stage_2_speed": {
-        "type": "origins:conditioned_attribute",
+        "type": "apoli:conditioned_attribute",
         "modifier": {
             "attribute": "minecraft:generic.movement_speed",
             "operation": "multiply_total",
@@ -126,7 +126,7 @@
         }
     },
     "stage_2_mining": {
-        "type": "origins:modify_break_speed",
+        "type": "apoli:modify_break_speed",
         "modifier": {
             "name": "Low Mana Mining Fatigue 2",
             "operation": "multiply_total",
@@ -139,7 +139,7 @@
         }
     },
     "stage_2_health_drain": {
-        "type": "origins:modify_damage_taken",
+        "type": "apoli:modify_damage_taken",
         "modifier": {
             "name": "Low Mana Damage Vulnerability",
             "operation": "multiply_total",

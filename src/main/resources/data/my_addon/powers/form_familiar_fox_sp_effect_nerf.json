@@ -1,16 +1,16 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "effect_reduction": {
         "type": "ssc_addon:effect_efficiency_reduction"
     },
     "instant_health_reduction": {
-        "type": "origins:modify_healing",
+        "type": "apoli:modify_healing",
         "modifier": {
             "operation": "multiply_total",
             "value": -0.5
         },
         "condition": {
-             "type": "origins:or",
+             "type": "apoli:or",
              "conditions": [
                  {
                     "type": "origins:origin",
@@ -20,13 +20,13 @@
         }
     },
     "instant_damage_reduction": {
-        "type": "origins:modify_damage_taken",
+        "type": "apoli:modify_damage_taken",
         "modifier": {
              "operation": "multiply_total",
              "value": -0.5
         },
         "damage_condition": {
-            "type": "origins:name",
+            "type": "apoli:name",
             "name": "magic"
         }
     }

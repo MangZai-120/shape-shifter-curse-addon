@@ -1,8 +1,8 @@
 {
-  "type": "origins:action_over_time",
+  "type": "apoli:action_over_time",
   "interval": 80,
   "entity_action": {
-    "type": "origins:apply_effect",
+    "type": "apoli:apply_effect",
     "effect": {
       "effect": "minecraft:regeneration",
       "duration": 100,
@@ -13,7 +13,7 @@
     }
   },
   "condition": {
-    "type": "origins:resource",
+    "type": "apoli:resource",
     "resource": "my_addon:form_allay_sp_beacon_active",
     "comparison": "==",
     "compare_to": 1

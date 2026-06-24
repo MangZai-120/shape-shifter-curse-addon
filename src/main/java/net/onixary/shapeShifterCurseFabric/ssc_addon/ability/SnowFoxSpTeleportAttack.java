@@ -47,7 +47,7 @@ public class SnowFoxSpTeleportAttack {
 
 	/**
 	 * 执行瞬移攻击
-	 * 注意：冷却由Apoli origins:active_self power的cooldown字段管理(400tick成功/100tick失败)
+	 * 注意：冷却由Apoli apoli:active_self power的cooldown字段管理(400tick成功/100tick失败)
 	 */
 	public static boolean execute(ServerPlayerEntity player) {
 		if (ATTACKING_PLAYERS.containsKey(player.getUuid())) {

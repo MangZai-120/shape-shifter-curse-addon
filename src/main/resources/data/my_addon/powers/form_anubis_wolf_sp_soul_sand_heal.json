@@ -1,12 +1,12 @@
 {
-    "type": "origins:action_over_time",
+    "type": "apoli:action_over_time",
     "interval": 60,
     "entity_action": {
-        "type": "origins:heal",
+        "type": "apoli:heal",
         "amount": 1
     },
     "condition": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "conditions": [
             {
                 "type": "ssc_addon:skill_disabled",
@@ -14,12 +14,12 @@
                 "skill": "soul_sand_heal"
             },
             {
-                "type": "origins:on_block",
+                "type": "apoli:on_block",
                 "block_condition": {
-                    "type": "origins:or",
+                    "type": "apoli:or",
                     "conditions": [
-                        { "type": "origins:block", "block": "minecraft:soul_sand" },
-                        { "type": "origins:block", "block": "minecraft:soul_soil" }
+                        { "type": "apoli:block", "block": "minecraft:soul_sand" },
+                        { "type": "apoli:block", "block": "minecraft:soul_soil" }
                     ]
                 }
             }

@@ -1,15 +1,15 @@
 {
-    "type": "origins:action_on_entity_use",
+    "type": "apoli:action_on_entity_use",
     "bientity_action": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "actions": [
             {
-                "type": "origins:target_action",
+                "type": "apoli:target_action",
                 "action": {
-                    "type": "origins:and",
+                    "type": "apoli:and",
                     "actions": [
                         {
-                            "type": "origins:damage",
+                            "type": "apoli:damage",
                             "amount": 3.0,
                             "source": {
                                 "name": "magic",
@@ -17,11 +17,11 @@
                             }
                         },
                         {
-                            "type": "origins:execute_command",
+                            "type": "apoli:execute_command",
                             "command": "particle soul_fire_flame ~ ~0.5 ~ 0.3 0.3 0.3 0.009 15 normal @a"
                         },
                         {
-                            "type": "origins:play_sound",
+                            "type": "apoli:play_sound",
                             "sound": "minecraft:entity.evoker.cast_spell",
                             "volume": 0.6,
                             "pitch": 1.2
@@ -30,12 +30,12 @@
                 }
             },
             {
-                "type": "origins:actor_action",
+                "type": "apoli:actor_action",
                 "action": {
-                    "type": "origins:and",
+                    "type": "apoli:and",
                     "actions": [
                         {
-                            "type": "origins:feed",
+                            "type": "apoli:feed",
                             "food": 3,
                             "saturation": 0.3
                         },
@@ -44,7 +44,7 @@
                             "mana": 15
                         },
                         {
-                            "type": "origins:change_resource",
+                            "type": "apoli:change_resource",
                             "resource": "my_addon:form_familiar_fox_mancianima_villager_drain_cd",
                             "operation": "set",
                             "change": 60
@@ -55,34 +55,34 @@
         ]
     },
     "bientity_condition": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "conditions": [
             {
-                "type": "origins:target_condition",
+                "type": "apoli:target_condition",
                 "condition": {
-                    "type": "origins:or",
+                    "type": "apoli:or",
                     "conditions": [
                         {
-                            "type": "origins:entity_type",
+                            "type": "apoli:entity_type",
                             "entity_type": "minecraft:villager"
                         },
                         {
-                            "type": "origins:entity_type",
+                            "type": "apoli:entity_type",
                             "entity_type": "minecraft:wandering_trader"
                         }
                     ]
                 }
             },
             {
-                "type": "origins:actor_condition",
+                "type": "apoli:actor_condition",
                 "condition": {
-                    "type": "origins:sneaking"
+                    "type": "apoli:sneaking"
                 }
             },
             {
-                "type": "origins:actor_condition",
+                "type": "apoli:actor_condition",
                 "condition": {
-                    "type": "origins:resource",
+                    "type": "apoli:resource",
                     "resource": "my_addon:form_familiar_fox_mancianima_villager_drain_cd",
                     "comparison": "<=",
                     "compare_to": 0
@@ -91,7 +91,7 @@
         ]
     },
     "item_condition": {
-        "type": "origins:empty"
+        "type": "apoli:empty"
     },
     "hands": [
         "main_hand"

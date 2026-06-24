@@ -1,40 +1,40 @@
 {
-    "type": "origins:active_self",
+    "type": "apoli:active_self",
     "key": {
         "key": "key.use",
         "continuous": false
     },
     "condition": {
-        "type": "origins:equipped_item",
+        "type": "apoli:equipped_item",
         "equipment_slot": "mainhand",
         "item_condition": {
-            "type": "origins:ingredient",
+            "type": "apoli:ingredient",
             "ingredient": {
                 "item": "minecraft:ink_sac"
             }
         }
     },
     "entity_action": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "actions": [
             {
-                "type": "origins:swing_hand",
+                "type": "apoli:swing_hand",
                 "hand": "MAIN_HAND"
             },
             {
-                "type": "origins:execute_command",
+                "type": "apoli:execute_command",
                 "command": "clear @s minecraft:ink_sac 1"
             },
             {
-                "type": "origins:area_of_effect",
+                "type": "apoli:area_of_effect",
                 "radius": 4.5,
                 "bientity_condition": {
                     "type": "my_addon:not_actor_whitelisted"
                 },
                 "bientity_action": {
-                    "type": "origins:target_action",
+                    "type": "apoli:target_action",
                     "action": {
-                        "type": "origins:apply_effect",
+                        "type": "apoli:apply_effect",
                         "effect": {
                             "effect": "minecraft:blindness",
                             "duration": 60,
@@ -44,13 +44,13 @@
                 }
             },
             {
-                "type": "origins:play_sound",
+                "type": "apoli:play_sound",
                 "sound": "minecraft:entity.squid.squirt",
                 "volume": 1.0,
                 "pitch": 1.0
             },
             {
-                "type": "origins:apply_effect",
+                "type": "apoli:apply_effect",
                 "effect": {
                     "effect": "ssc_addon:true_invisibility",
                     "duration": 20,
@@ -58,7 +58,7 @@
                 }
             },
             {
-                "type": "origins:spawn_particles",
+                "type": "apoli:spawn_particles",
                 "particle": "minecraft:squid_ink",
                 "count": 50,
                 "speed": 0.0,

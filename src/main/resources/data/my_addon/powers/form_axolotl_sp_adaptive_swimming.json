@@ -3,7 +3,7 @@
     "acceleration": 0.05,
     "friction": 0.93,
     "condition": {
-        "type": "origins:fluid_height",
+        "type": "apoli:fluid_height",
         "fluid": "minecraft:water",
         "comparison": ">",
         "compare_to": 0

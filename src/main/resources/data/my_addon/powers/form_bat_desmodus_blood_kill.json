@@ -1,7 +1,7 @@
 {
-    "type": "origins:self_action_on_kill",
+    "type": "apoli:self_action_on_kill",
     "entity_action": {
-        "type": "origins:change_resource",
+        "type": "apoli:change_resource",
         "resource": "my_addon:form_bat_desmodus_blood_resource",
         "change": 15,
         "operation": "add"

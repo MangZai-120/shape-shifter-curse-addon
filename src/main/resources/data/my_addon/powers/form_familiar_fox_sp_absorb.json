@@ -1,49 +1,49 @@
 {
-    "type": "origins:action_on_entity_use",
+    "type": "apoli:action_on_entity_use",
     "condition": {
-        "type": "origins:status_effect",
+        "type": "apoli:status_effect",
         "effect": "ssc_addon:blue_fire_ring"
     },
     "bientity_action": {
-        "type": "origins:if_else",
+        "type": "apoli:if_else",
         "condition": {
-            "type": "origins:target_condition",
+            "type": "apoli:target_condition",
             "condition": {
-                "type": "origins:in_tag",
+                "type": "apoli:in_tag",
                 "tag": "shape-shifter-curse:familiar_enemy_target"
             }
         },
         "if_action": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "actions": [
                 {
-                    "type": "origins:target_action",
+                    "type": "apoli:target_action",
                     "action": {
-                        "type": "origins:and",
+                        "type": "apoli:and",
                         "actions": [
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "particle soul_fire_flame ~ ~0.5 ~ 0.3 0.3 0.3 0.009 10 normal @a"
                             },
                             {
-                                "type": "origins:play_sound",
+                                "type": "apoli:play_sound",
                                 "sound": "minecraft:entity.evoker.cast_spell"
                             }
                         ]
                     }
                 },
                 {
-                    "type": "origins:actor_action",
+                    "type": "apoli:actor_action",
                     "action": {
-                        "type": "origins:and",
+                        "type": "apoli:and",
                         "actions": [
                             {
-                                "type": "origins:feed",
+                                "type": "apoli:feed",
                                 "food": 4,
                                 "saturation": 0.3
                             },
                             {
-                                "type": "origins:apply_effect",
+                                "type": "apoli:apply_effect",
                                 "effect": {
                                     "effect": "minecraft:blindness",
                                     "amplifier": 1,
@@ -51,7 +51,7 @@
                                 }
                             },
                             {
-                                "type": "origins:apply_effect",
+                                "type": "apoli:apply_effect",
                                 "effect": {
                                     "effect": "minecraft:slowness",
                                     "amplifier": 3,
@@ -59,7 +59,7 @@
                                 }
                             },
                             {
-                                "type": "origins:apply_effect",
+                                "type": "apoli:apply_effect",
                                 "effect": {
                                     "effect": "minecraft:weakness",
                                     "amplifier": 1,
@@ -67,7 +67,7 @@
                                 }
                             },
                             {
-                                "type": "origins:trigger_cooldown",
+                                "type": "apoli:trigger_cooldown",
                                 "power": "shape-shifter-curse:form_familiar_fox_use_entity_cooldown"
                             },
                             {
@@ -85,57 +85,57 @@
             ]
         },
         "else_action": {
-            "type": "origins:if_else",
+            "type": "apoli:if_else",
             "condition": {
-                "type": "origins:or",
+                "type": "apoli:or",
                 "conditions": [
                     {
-                        "type": "origins:target_condition",
+                        "type": "apoli:target_condition",
                         "condition": {
-                            "type": "origins:in_tag",
+                            "type": "apoli:in_tag",
                             "tag": "shape-shifter-curse:familiar_illager_target"
                         }
                     },
                     {
-                        "type": "origins:target_condition",
+                        "type": "apoli:target_condition",
                         "condition": {
-                            "type": "origins:in_tag",
+                            "type": "apoli:in_tag",
                             "tag": "shape-shifter-curse:familiar_sorcery_target"
                         }
                     }
                 ]
             },
             "if_action": {
-                 "type": "origins:and",
+                 "type": "apoli:and",
                  "actions": [
                     {
-                        "type": "origins:target_action",
+                        "type": "apoli:target_action",
                         "action": {
-                            "type": "origins:and",
+                            "type": "apoli:and",
                             "actions": [
                                 {
-                                    "type": "origins:execute_command",
+                                    "type": "apoli:execute_command",
                                     "command": "particle soul_fire_flame ~ ~0.5 ~ 0.3 0.3 0.3 0.009 10 normal @a"
                                 },
                                 {
-                                    "type": "origins:play_sound",
+                                    "type": "apoli:play_sound",
                                     "sound": "minecraft:entity.evoker.cast_spell"
                                 }
                             ]
                         }
                     },
                     {
-                        "type": "origins:actor_action",
+                        "type": "apoli:actor_action",
                         "action": {
-                            "type": "origins:and",
+                            "type": "apoli:and",
                             "actions": [
                                 {
-                                    "type": "origins:feed",
+                                    "type": "apoli:feed",
                                     "food": 4,
                                     "saturation": 0.3
                                 },
                                 {
-                                    "type": "origins:apply_effect",
+                                    "type": "apoli:apply_effect",
                                     "effect": {
                                         "effect": "minecraft:blindness",
                                         "amplifier": 1,
@@ -143,7 +143,7 @@
                                     }
                                 },
                                 {
-                                    "type": "origins:apply_effect",
+                                    "type": "apoli:apply_effect",
                                     "effect": {
                                         "effect": "minecraft:slowness",
                                         "amplifier": 3,
@@ -151,7 +151,7 @@
                                     }
                                 },
                                 {
-                                    "type": "origins:apply_effect",
+                                    "type": "apoli:apply_effect",
                                     "effect": {
                                         "effect": "minecraft:weakness",
                                         "amplifier": 1,
@@ -159,7 +159,7 @@
                                     }
                                 },
                                 {
-                                    "type": "origins:trigger_cooldown",
+                                    "type": "apoli:trigger_cooldown",
                                     "power": "shape-shifter-curse:form_familiar_fox_use_entity_cooldown"
                                 },
                                 {
@@ -177,57 +177,57 @@
                  ]
             },
             "else_action": {
-                 "type": "origins:if_else",
+                 "type": "apoli:if_else",
                  "condition": {
-                     "type": "origins:or",
+                     "type": "apoli:or",
                      "conditions": [
                          {
-                             "type": "origins:target_condition",
+                             "type": "apoli:target_condition",
                              "condition": {
-                                 "type": "origins:in_tag",
+                                 "type": "apoli:in_tag",
                                  "tag": "shape-shifter-curse:familiar_normal_target"
                              }
                          },
                          {
-                             "type": "origins:target_condition",
+                             "type": "apoli:target_condition",
                              "condition": {
-                                 "type": "origins:in_tag",
+                                 "type": "apoli:in_tag",
                                  "tag": "shape-shifter-curse:familiar_human_target"
                              }
                          }
                      ]
                  },
                  "if_action": {
-                     "type": "origins:and",
+                     "type": "apoli:and",
                      "actions": [
                          {
-                             "type": "origins:target_action",
+                             "type": "apoli:target_action",
                              "action": {
-                                 "type": "origins:and",
+                                 "type": "apoli:and",
                                  "actions": [
                                      {
-                                         "type": "origins:execute_command",
+                                         "type": "apoli:execute_command",
                                          "command": "particle soul_fire_flame ~ ~0.5 ~ 0.3 0.3 0.3 0.009 10 normal @a"
                                      },
                                      {
-                                         "type": "origins:play_sound",
+                                         "type": "apoli:play_sound",
                                          "sound": "minecraft:entity.evoker.cast_spell"
                                      }
                                  ]
                              }
                          },
                          {
-                             "type": "origins:actor_action",
+                             "type": "apoli:actor_action",
                              "action": {
-                                 "type": "origins:and",
+                                 "type": "apoli:and",
                                  "actions": [
                                      {
-                                         "type": "origins:feed",
+                                         "type": "apoli:feed",
                                          "food": 6,
                                          "saturation": 0.6
                                      },
                                      {
-                                         "type": "origins:trigger_cooldown",
+                                         "type": "apoli:trigger_cooldown",
                                          "power": "shape-shifter-curse:form_familiar_fox_use_entity_cooldown"
                                      },
                                      {
@@ -248,13 +248,13 @@
         }
     },
     "condition": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "conditions": [
             {
-                "type": "origins:sneaking"
+                "type": "apoli:sneaking"
             },
             {
-                "type": "origins:resource",
+                "type": "apoli:resource",
                 "resource": "shape-shifter-curse:form_familiar_fox_use_entity_cooldown",
                 "comparison": "<",
                 "compare_to": 1

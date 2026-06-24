@@ -1,9 +1,9 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "attack_mark": {
-        "type": "origins:target_action_on_hit",
+        "type": "apoli:target_action_on_hit",
         "entity_action": {
-            "type": "origins:apply_effect",
+            "type": "apoli:apply_effect",
             "effect": {
                 "effect": "minecraft:glowing",
                 "duration": 200,
@@ -14,15 +14,15 @@
             }
         },
         "damage_condition": {
-            "type": "origins:amount",
+            "type": "apoli:amount",
             "comparison": ">",
             "compare_to": 0
         }
     },
     "defense_mark": {
-        "type": "origins:attacker_action_when_hit",
+        "type": "apoli:attacker_action_when_hit",
         "entity_action": {
-            "type": "origins:apply_effect",
+            "type": "apoli:apply_effect",
             "effect": {
                 "effect": "minecraft:glowing",
                 "duration": 200,
@@ -33,7 +33,7 @@
             }
         },
         "damage_condition": {
-            "type": "origins:amount",
+            "type": "apoli:amount",
             "comparison": ">",
             "compare_to": 0
         }

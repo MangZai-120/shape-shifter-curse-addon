@@ -1,7 +1,7 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "vortex_state": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "min": 0,
         "max": 80,
         "start_value": 0,
@@ -10,7 +10,7 @@
         }
     },
     "hit_invuln_timer": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "min": 0,
         "max": 18,
         "start_value": 0,
@@ -19,53 +19,53 @@
         }
     },
     "invuln_timer_tick": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 1,
         "entity_action": {
-            "type": "origins:change_resource",
+            "type": "apoli:change_resource",
             "resource": "*:*_hit_invuln_timer",
             "operation": "add",
             "change": -1
         },
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "*:*_hit_invuln_timer",
             "comparison": ">",
             "compare_to": 0
         }
     },
     "vortex_invuln_set": {
-        "type": "origins:action_when_damage_taken",
+        "type": "apoli:action_when_damage_taken",
         "entity_action": {
-            "type": "origins:change_resource",
+            "type": "apoli:change_resource",
             "resource": "*:*_hit_invuln_timer",
             "operation": "set",
             "change": 18
         },
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "*:*_vortex_state",
             "comparison": ">",
             "compare_to": 0
         }
     },
     "vortex_invuln_block": {
-        "type": "origins:modify_damage_taken",
+        "type": "apoli:modify_damage_taken",
         "modifier": {
             "operation": "multiply_total",
             "value": -1.0
         },
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
                 {
-                    "type": "origins:resource",
+                    "type": "apoli:resource",
                     "resource": "*:*_vortex_state",
                     "comparison": ">",
                     "compare_to": 0
                 },
                 {
-                    "type": "origins:resource",
+                    "type": "apoli:resource",
                     "resource": "*:*_hit_invuln_timer",
                     "comparison": ">",
                     "compare_to": 0
@@ -74,34 +74,34 @@
         }
     },
     "damage_reduction_active": {
-        "type": "origins:modify_damage_taken",
+        "type": "apoli:modify_damage_taken",
         "modifier": {
             "operation": "multiply_total",
             "value": -0.5
         },
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "*:*_vortex_state",
             "comparison": ">",
             "compare_to": 0
         }
     },
     "knockback_immunity": {
-        "type": "origins:action_when_damage_taken",
+        "type": "apoli:action_when_damage_taken",
         "entity_action": {
-            "type": "origins:add_velocity",
+            "type": "apoli:add_velocity",
             "y": 0,
             "set": true
         },
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "*:*_vortex_state",
             "comparison": ">",
             "compare_to": 0
         }
     },
     "speed_reduction_during_vortex": {
-        "type": "origins:modify_attribute",
+        "type": "apoli:modify_attribute",
         "attribute": "minecraft:generic.movement_speed",
         "modifier": {
             "operation": "multiply_total",
@@ -109,26 +109,26 @@
             "name": "Vortex speed reduction"
         },
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "*:*_vortex_state",
             "comparison": ">",
             "compare_to": 0
         }
     },
     "pull_effect": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 2,
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "*:*_vortex_state",
             "comparison": ">",
             "compare_to": 0
         },
         "entity_action": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "actions": [
                 {
-                    "type": "origins:spawn_particles",
+                    "type": "apoli:spawn_particles",
                     "particle": "minecraft:bubble",
                     "count": 40,
                     "speed": 0.6,
@@ -140,13 +140,13 @@
                     }
                 },
                 {
-                    "type": "origins:area_of_effect",
+                    "type": "apoli:area_of_effect",
                     "radius": 6.0,
                     "bientity_action": {
-                        "type": "origins:and",
+                        "type": "apoli:and",
                         "actions": [
                             {
-                                "type": "origins:add_velocity",
+                                "type": "apoli:add_velocity",
                                 "x": 0,
                                 "y": 0.12,
                                 "z": -0.6,
@@ -156,12 +156,12 @@
                         ]
                     },
                     "bientity_condition": {
-                        "type": "origins:and",
+                        "type": "apoli:and",
                         "conditions": [
                             {
-                                "type": "origins:target_condition",
+                                "type": "apoli:target_condition",
                                 "condition": {
-                                    "type": "origins:living"
+                                    "type": "apoli:living"
                                 }
                             },
                             {

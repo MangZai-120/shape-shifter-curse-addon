@@ -1,7 +1,7 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "activate": {
-        "type": "origins:active_self",
+        "type": "apoli:active_self",
         "entity_action": {
             "type": "ssc_addon:trigger_play_dead"
         },
@@ -10,7 +10,7 @@
             "key": "key.ssc_addon.sp_secondary"
         },
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "my_addon:form_sp_secondary_cd",
             "comparison": "<=",
             "compare_to": 0
@@ -19,53 +19,53 @@
             "description": "Feign death to escape danger. Clears mob aggro, reduces damage by 60%, but locks you in place for 6 seconds. Press the skill key again to end early."
     },
     "protection": {
-        "type": "origins:modify_damage_taken",
+        "type": "apoli:modify_damage_taken",
         "modifier": {
             "operation": "multiply_base",
             "value": -0.6
         },
         "condition": {
-            "type": "origins:status_effect",
+            "type": "apoli:status_effect",
             "effect": "ssc_addon:playing_dead"
         }
     },
     "prevent_jump": {
-        "type": "origins:modify_jump",
+        "type": "apoli:modify_jump",
         "modifier": {
             "operation": "multiply_total",
             "value": -1.0
         },
         "condition": {
-            "type": "origins:status_effect",
+            "type": "apoli:status_effect",
             "effect": "ssc_addon:playing_dead"
         }
     },
     "prevent_item_use": {
-        "type": "origins:prevent_item_use",
+        "type": "apoli:prevent_item_use",
         "condition": {
-            "type": "origins:status_effect",
+            "type": "apoli:status_effect",
             "effect": "ssc_addon:playing_dead"
         }
     },
     "prevent_attack": {
-        "type": "origins:modify_damage_dealt",
+        "type": "apoli:modify_damage_dealt",
         "modifier": {
             "operation": "multiply_total",
             "value": -1.0
         },
         "condition": {
-            "type": "origins:status_effect",
+            "type": "apoli:status_effect",
             "effect": "ssc_addon:playing_dead"
         }
     },
     "prevent_mining": {
-        "type": "origins:modify_break_speed",
+        "type": "apoli:modify_break_speed",
         "modifier": {
             "operation": "multiply_total",
             "value": -1.0
         },
         "condition": {
-            "type": "origins:status_effect",
+            "type": "apoli:status_effect",
             "effect": "ssc_addon:playing_dead"
         }
     }

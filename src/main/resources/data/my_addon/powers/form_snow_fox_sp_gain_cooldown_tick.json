@@ -1,8 +1,8 @@
 {
-    "type": "origins:action_over_time",
+    "type": "apoli:action_over_time",
     "interval": 1,
     "entity_action": {
-        "type": "origins:change_resource",
+        "type": "apoli:change_resource",
         "resource": "my_addon:form_snow_fox_sp_gain_cooldown",
         "change": -1
     }

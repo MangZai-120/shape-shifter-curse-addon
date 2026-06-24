@@ -1,5 +1,5 @@
 {
-    "type": "origins:attribute",
+    "type": "apoli:attribute",
     "modifier": {
         "name": "SP Wild Cat Health",
         "attribute": "minecraft:generic.max_health",

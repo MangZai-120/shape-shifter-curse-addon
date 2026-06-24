@@ -1,14 +1,14 @@
 {
-    "type": "origins:action_over_time",
+    "type": "apoli:action_over_time",
     "interval": 1,
     "entity_action": {
-        "type": "origins:change_resource",
+        "type": "apoli:change_resource",
         "resource": "my_addon:form_sp_primary_cd",
         "change": -1,
         "operation": "add"
     },
     "condition": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "resource": "my_addon:form_sp_primary_cd",
         "comparison": ">",
         "compare_to": 0

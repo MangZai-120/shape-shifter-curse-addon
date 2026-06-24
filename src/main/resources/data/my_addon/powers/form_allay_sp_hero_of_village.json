@@ -1,16 +1,16 @@
 {
-    "type": "origins:action_on_entity_use",
+    "type": "apoli:action_on_entity_use",
     "bientity_condition": {
-        "type": "origins:target_condition",
+        "type": "apoli:target_condition",
         "condition": {
-            "type": "origins:entity_type",
+            "type": "apoli:entity_type",
             "entity_type": "minecraft:villager"
         }
     },
     "bientity_action": {
-        "type": "origins:actor_action",
+        "type": "apoli:actor_action",
         "action": {
-            "type": "origins:apply_effect",
+            "type": "apoli:apply_effect",
             "effect": {
                 "effect": "minecraft:hero_of_the_village",
                 "duration": 10,

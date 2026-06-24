@@ -1,7 +1,7 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "wither_detected": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "min": 0,
         "max": 1,
         "start_value": 0,
@@ -10,7 +10,7 @@
         }
     },
     "scan_wither": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 10,
         "condition": {
             "type": "ssc_addon:skill_disabled",
@@ -18,38 +18,38 @@
             "skill": "wither_hunt"
         },
         "entity_action": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "actions": [
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "my_addon:form_anubis_wolf_sp_wither_hunt/wither_detected",
                     "change": -1
                 },
                 {
-                    "type": "origins:area_of_effect",
+                    "type": "apoli:area_of_effect",
                     "radius": 24,
                     "bientity_condition": {
-                        "type": "origins:and",
+                        "type": "apoli:and",
                         "conditions": [
                             {
-                                "type": "origins:target_condition",
+                                "type": "apoli:target_condition",
                                 "condition": {
-                                    "type": "origins:living"
+                                    "type": "apoli:living"
                                 }
                             },
                             {
-                                "type": "origins:target_condition",
+                                "type": "apoli:target_condition",
                                 "condition": {
-                                    "type": "origins:status_effect",
+                                    "type": "apoli:status_effect",
                                     "effect": "minecraft:wither"
                                 }
                             }
                         ]
                     },
                     "bientity_action": {
-                        "type": "origins:actor_action",
+                        "type": "apoli:actor_action",
                         "action": {
-                            "type": "origins:change_resource",
+                            "type": "apoli:change_resource",
                             "resource": "my_addon:form_anubis_wolf_sp_wither_hunt/wither_detected",
                             "change": 1
                         }
@@ -59,7 +59,7 @@
         }
     },
     "speed_boost": {
-        "type": "origins:conditioned_attribute",
+        "type": "apoli:conditioned_attribute",
         "modifier": {
             "attribute": "minecraft:generic.movement_speed",
             "operation": "multiply_total",
@@ -68,25 +68,25 @@
         },
         "tick_rate": 10,
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
                 {
-                    "type": "origins:resource",
+                    "type": "apoli:resource",
                     "resource": "my_addon:form_anubis_wolf_sp_wither_hunt/wither_detected",
                     "comparison": ">=",
                     "compare_to": 1
                 },
                 {
-                    "type": "origins:on_block",
+                    "type": "apoli:on_block",
                     "block_condition": {
-                        "type": "origins:or",
+                        "type": "apoli:or",
                         "conditions": [
                             {
-                                "type": "origins:block",
+                                "type": "apoli:block",
                                 "block": "minecraft:soul_sand"
                             },
                             {
-                                "type": "origins:block",
+                                "type": "apoli:block",
                                 "block": "minecraft:soul_soil"
                             }
                         ]

@@ -1,7 +1,7 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "charging_state": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "min": 0,
         "max": 1,
         "start_value": 0,
@@ -10,7 +10,7 @@
         }
     },
     "charge_timer": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "min": 0,
         "max": 30,
         "start_value": 0,
@@ -19,7 +19,7 @@
         }
     },
     "cooldown_timer": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "min": 0,
         "max": 600,
         "start_value": 0,
@@ -28,52 +28,52 @@
         }
     },
     "cooldown_tick": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 1,
         "entity_action": {
-            "type": "origins:change_resource",
+            "type": "apoli:change_resource",
             "resource": "my_addon:form_allay_sp_purify_cooldown_timer",
             "operation": "add",
             "change": -1
         },
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "my_addon:form_allay_sp_purify_cooldown_timer",
             "comparison": ">",
             "compare_to": 0
         }
     },
     "key_activation": {
-        "type": "origins:active_self",
+        "type": "apoli:active_self",
         "key": {
             "key": "key.ssc_addon.sp_primary"
         },
         "cooldown": 10,
         "entity_action": {
-            "type": "origins:if_else",
+            "type": "apoli:if_else",
             "condition": {
-                "type": "origins:resource",
+                "type": "apoli:resource",
                 "resource": "my_addon:form_allay_sp_purify_charging_state",
                 "comparison": "==",
                 "compare_to": 0
             },
             "if_action": {
-                "type": "origins:and",
+                "type": "apoli:and",
                 "actions": [
                     {
-                        "type": "origins:change_resource",
+                        "type": "apoli:change_resource",
                         "resource": "my_addon:form_allay_sp_purify_charging_state",
                         "operation": "set",
                         "change": 1
                     },
                     {
-                        "type": "origins:change_resource",
+                        "type": "apoli:change_resource",
                         "resource": "my_addon:form_allay_sp_purify_charge_timer",
                         "operation": "set",
                         "change": 0
                     },
                     {
-                        "type": "origins:apply_effect",
+                        "type": "apoli:apply_effect",
                         "effect": {
                             "effect": "minecraft:slowness",
                             "duration": 60,
@@ -84,32 +84,32 @@
                         }
                     },
                     {
-                        "type": "origins:execute_command",
+                        "type": "apoli:execute_command",
                         "command": "playsound block.beacon.activate master @s ~ ~ ~ 0.5 2.0"
                     }
                 ]
             },
             "else_action": {
-                "type": "origins:and",
+                "type": "apoli:and",
                 "actions": [
                     {
-                        "type": "origins:change_resource",
+                        "type": "apoli:change_resource",
                         "resource": "my_addon:form_allay_sp_purify_charging_state",
                         "operation": "set",
                         "change": 0
                     },
                     {
-                        "type": "origins:change_resource",
+                        "type": "apoli:change_resource",
                         "resource": "my_addon:form_allay_sp_purify_charge_timer",
                         "operation": "set",
                         "change": 0
                     },
                     {
-                        "type": "origins:clear_effect",
+                        "type": "apoli:clear_effect",
                         "effect": "minecraft:slowness"
                     },
                     {
-                        "type": "origins:play_sound",
+                        "type": "apoli:play_sound",
                         "sound": "block.beacon.deactivate",
                         "volume": 0.5,
                         "pitch": 1.5
@@ -118,119 +118,119 @@
             }
         },
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "my_addon:form_allay_sp_purify_cooldown_timer",
             "comparison": "==",
             "compare_to": 0
         }
     },
     "charging_tick": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 1,
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "my_addon:form_allay_sp_purify_charging_state",
             "comparison": "==",
             "compare_to": 1
         },
         "entity_action": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "actions": [
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "my_addon:form_allay_sp_purify_charge_timer",
                     "operation": "add",
                     "change": 1
                 },
                 {
-                    "type": "origins:if_else",
+                    "type": "apoli:if_else",
                     "condition": {
-                        "type": "origins:resource",
+                        "type": "apoli:resource",
                         "resource": "my_addon:form_allay_sp_purify_charge_timer",
                         "comparison": ">=",
                         "compare_to": 30
                     },
                     "if_action": {
-                        "type": "origins:and",
+                        "type": "apoli:and",
                         "actions": [
                             {
-                                "type": "origins:change_resource",
+                                "type": "apoli:change_resource",
                                 "resource": "my_addon:form_allay_sp_purify_charging_state",
                                 "operation": "set",
                                 "change": 0
                             },
                             {
-                                "type": "origins:change_resource",
+                                "type": "apoli:change_resource",
                                 "resource": "my_addon:form_allay_sp_purify_charge_timer",
                                 "operation": "set",
                                 "change": 0
                             },
                             {
-                                "type": "origins:change_resource",
+                                "type": "apoli:change_resource",
                                 "resource": "my_addon:form_allay_sp_purify_cooldown_timer",
                                 "operation": "set",
                                 "change": 600
                             },
                             {
-                                "type": "origins:change_resource",
+                                "type": "apoli:change_resource",
                                 "resource": "my_addon:form_allay_sp_mana_cooldown_resource",
                                 "operation": "set",
                                 "change": 70
                             },
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "effect clear @s"
                             },
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "effect give @s ssc_addon:purified 1 0 true"
                             },
                             {
-                                "type": "origins:area_of_effect",
+                                "type": "apoli:area_of_effect",
                                 "radius": 20.0,
                                 "bientity_action": {
-                                    "type": "origins:target_action",
+                                    "type": "apoli:target_action",
                                     "action": {
-                                        "type": "origins:and",
+                                        "type": "apoli:and",
                                         "actions": [
                                             {
-                                                "type": "origins:execute_command",
+                                                "type": "apoli:execute_command",
                                                 "command": "effect clear @s"
                                             },
                                             {
-                                                "type": "origins:execute_command",
+                                                "type": "apoli:execute_command",
                                                 "command": "power resource set @s my_addon:form_axolotl_sp_vortex_impact vortex_state 0"
                                             },
                                             {
-                                                "type": "origins:execute_command",
+                                                "type": "apoli:execute_command",
                                                 "command": "power resource set @s my_addon:form_familiar_fox_red_blue_fire_ring toggle_state 0"
                                             },
                                             {
-                                                "type": "origins:execute_command",
+                                                "type": "apoli:execute_command",
                                                 "command": "power resource set @s my_addon:form_allay_sp_purify charging_state 0"
                                             },
                                             {
-                                                "type": "origins:execute_command",
+                                                "type": "apoli:execute_command",
                                                 "command": "power resource set @s my_addon:form_allay_sp_purify charge_timer 0"
                                             },
                                             {
-                                                "type": "origins:execute_command",
+                                                "type": "apoli:execute_command",
                                                 "command": "effect give @s ssc_addon:purified 1 0 true"
                                             },
                                             {
-                                                "type": "origins:execute_command",
+                                                "type": "apoli:execute_command",
                                                 "command": "particle minecraft:dust 0.6 0.85 1.0 1.0 ~ ~1 ~ 0.5 0.8 0.5 1.0 15 force @a"
                                             }
                                         ]
                                     }
                                 },
                                 "bientity_condition": {
-                                    "type": "origins:and",
+                                    "type": "apoli:and",
                                     "conditions": [
                                         {
-                                            "type": "origins:target_condition",
+                                            "type": "apoli:target_condition",
                                             "condition": {
-                                                "type": "origins:living"
+                                                "type": "apoli:living"
                                             }
                                         },
                                         {
@@ -240,13 +240,13 @@
                                 }
                             },
                             {
-                                "type": "origins:play_sound",
+                                "type": "apoli:play_sound",
                                 "sound": "block.fire.extinguish",
                                 "volume": 2.0,
                                 "pitch": 0.6
                             },
                             {
-                                "type": "origins:play_sound",
+                                "type": "apoli:play_sound",
                                 "sound": "block.amethyst_cluster.break",
                                 "volume": 2.0,
                                 "pitch": 1.2
@@ -266,55 +266,55 @@
                                 "sample_count": 64
                             },
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "particle minecraft:dust 0.6 0.85 1.0 1.5 ~ ~1 ~ 7.0 7.0 7.0 0.01 60 force @a"
                             },
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "execute positioned ~ ~6 ~ run particle minecraft:end_rod ~ ~ ~ 14.0 0.3 14.0 0.015 20 force @a"
                             },
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "execute positioned ~ ~-4 ~ run particle minecraft:end_rod ~ ~ ~ 14.0 0.3 14.0 0.015 20 force @a"
                             },
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "execute positioned ~ ~11 ~ run particle minecraft:end_rod ~ ~ ~ 11.0 0.3 11.0 0.015 16 force @a"
                             },
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "execute positioned ~ ~-9 ~ run particle minecraft:end_rod ~ ~ ~ 11.0 0.3 11.0 0.015 16 force @a"
                             },
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "execute positioned ~ ~15 ~ run particle minecraft:end_rod ~ ~ ~ 5.0 0.3 5.0 0.015 8 force @a"
                             },
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "execute positioned ~ ~-13 ~ run particle minecraft:end_rod ~ ~ ~ 5.0 0.3 5.0 0.015 8 force @a"
                             },
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "execute positioned ~ ~6 ~ run particle minecraft:dust 0.6 0.85 1.0 1.2 ~ ~ ~ 14.0 0.4 14.0 0.005 15 force @a"
                             },
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "execute positioned ~ ~-4 ~ run particle minecraft:dust 0.6 0.85 1.0 1.2 ~ ~ ~ 14.0 0.4 14.0 0.005 15 force @a"
                             },
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "execute positioned ~ ~11 ~ run particle minecraft:dust 0.6 0.85 1.0 1.2 ~ ~ ~ 11.0 0.4 11.0 0.005 10 force @a"
                             },
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "execute positioned ~ ~-9 ~ run particle minecraft:dust 0.6 0.85 1.0 1.2 ~ ~ ~ 11.0 0.4 11.0 0.005 10 force @a"
                             },
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "execute positioned ~ ~15 ~ run particle minecraft:dust 0.6 0.85 1.0 1.2 ~ ~ ~ 5.0 0.4 5.0 0.005 5 force @a"
                             },
                             {
-                                "type": "origins:execute_command",
+                                "type": "apoli:execute_command",
                                 "command": "execute positioned ~ ~-13 ~ run particle minecraft:dust 0.6 0.85 1.0 1.2 ~ ~ ~ 5.0 0.4 5.0 0.005 5 force @a"
                             }
                         ]
@@ -324,16 +324,16 @@
         }
     },
     "charging_slowness": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 20,
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "my_addon:form_allay_sp_purify_charging_state",
             "comparison": "==",
             "compare_to": 1
         },
         "entity_action": {
-            "type": "origins:apply_effect",
+            "type": "apoli:apply_effect",
             "effect": {
                 "effect": "minecraft:slowness",
                 "duration": 30,
@@ -345,16 +345,16 @@
         }
     },
     "charging_particles_sphere": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 5,
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "my_addon:form_allay_sp_purify_charging_state",
             "comparison": "==",
             "compare_to": 1
         },
         "entity_action": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "actions": [
                 {
                     "type": "shape-shifter-curse:spawn_particles_in_circle",
@@ -371,65 +371,65 @@
                     "sample_count": 24
                 },
                 {
-                    "type": "origins:execute_command",
+                    "type": "apoli:execute_command",
                     "command": "execute positioned ~ ~6 ~ run particle minecraft:dust 0.6 0.85 1.0 0.8 ~ ~ ~ 14.0 0.3 14.0 0.003 8 force @a"
                 },
                 {
-                    "type": "origins:execute_command",
+                    "type": "apoli:execute_command",
                     "command": "execute positioned ~ ~-4 ~ run particle minecraft:dust 0.6 0.85 1.0 0.8 ~ ~ ~ 14.0 0.3 14.0 0.003 8 force @a"
                 },
                 {
-                    "type": "origins:execute_command",
+                    "type": "apoli:execute_command",
                     "command": "execute positioned ~ ~11 ~ run particle minecraft:dust 0.6 0.85 1.0 0.8 ~ ~ ~ 11.0 0.3 11.0 0.003 6 force @a"
                 },
                 {
-                    "type": "origins:execute_command",
+                    "type": "apoli:execute_command",
                     "command": "execute positioned ~ ~-9 ~ run particle minecraft:dust 0.6 0.85 1.0 0.8 ~ ~ ~ 11.0 0.3 11.0 0.003 6 force @a"
                 },
                 {
-                    "type": "origins:execute_command",
+                    "type": "apoli:execute_command",
                     "command": "execute positioned ~ ~15 ~ run particle minecraft:dust 0.6 0.85 1.0 0.8 ~ ~ ~ 5.0 0.3 5.0 0.003 3 force @a"
                 },
                 {
-                    "type": "origins:execute_command",
+                    "type": "apoli:execute_command",
                     "command": "execute positioned ~ ~-13 ~ run particle minecraft:dust 0.6 0.85 1.0 0.8 ~ ~ ~ 5.0 0.3 5.0 0.003 3 force @a"
                 },
                 {
-                    "type": "origins:execute_command",
+                    "type": "apoli:execute_command",
                     "command": "particle minecraft:dust 0.6 0.85 1.0 0.6 ~ ~1 ~ 3.0 2.0 3.0 0.003 4 force @a"
                 }
             ]
         }
     },
     "interrupt_on_damage": {
-        "type": "origins:action_when_damage_taken",
+        "type": "apoli:action_when_damage_taken",
         "entity_action": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "actions": [
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "my_addon:form_allay_sp_purify_charging_state",
                     "operation": "set",
                     "change": 0
                 },
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "my_addon:form_allay_sp_purify_charge_timer",
                     "operation": "set",
                     "change": 0
                 },
                 {
-                    "type": "origins:change_resource",
+                    "type": "apoli:change_resource",
                     "resource": "my_addon:form_allay_sp_purify_cooldown_timer",
                     "operation": "set",
                     "change": 100
                 },
                 {
-                    "type": "origins:clear_effect",
+                    "type": "apoli:clear_effect",
                     "effect": "minecraft:slowness"
                 },
                 {
-                    "type": "origins:play_sound",
+                    "type": "apoli:play_sound",
                     "sound": "block.beacon.deactivate",
                     "volume": 0.5,
                     "pitch": 1.5
@@ -437,7 +437,7 @@
             ]
         },
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "my_addon:form_allay_sp_purify_charging_state",
             "comparison": "==",
             "compare_to": 1

@@ -1,5 +1,5 @@
 {
-    "type": "origins:resource",
+    "type": "apoli:resource",
     "min": 0,
     "max": 60,
     "start_value": 0,
@@ -7,7 +7,7 @@
         "should_render": true,
         "bar_index": 6,
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "my_addon:form_familiar_fox_mancianima_villager_drain_cd",
             "comparison": ">",
             "compare_to": 0

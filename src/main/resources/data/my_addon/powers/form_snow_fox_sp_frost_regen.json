@@ -1,7 +1,7 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "cooldown_resource": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "min": 0,
         "max": 100,
         "start_value": 0,
@@ -10,24 +10,24 @@
         }
     },
     "tick_cooldown": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 1,
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "my_addon:form_snow_fox_sp_frost_regen_cooldown_resource",
             "comparison": ">",
             "compare_to": 0
         },
         "entity_action": {
-            "type": "origins:change_resource",
+            "type": "apoli:change_resource",
             "resource": "my_addon:form_snow_fox_sp_frost_regen_cooldown_resource",
             "change": -1
         }
     },
     "reset_cooldown_on_hit": {
-        "type": "origins:action_when_damage_taken",
+        "type": "apoli:action_when_damage_taken",
         "entity_action": {
-            "type": "origins:change_resource",
+            "type": "apoli:change_resource",
             "resource": "my_addon:form_snow_fox_sp_frost_regen_cooldown_resource",
             "change": 100,
             "operation": "set"
@@ -35,10 +35,10 @@
         "cooldown": 0
     },
     "natural_regen": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 20,
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
                 {
                     "type": "ssc_addon:skill_disabled",
@@ -46,7 +46,7 @@
                     "skill": "frost_regen"
                 },
                 {
-                    "type": "origins:resource",
+                    "type": "apoli:resource",
                     "resource": "my_addon:form_snow_fox_sp_frost_regen_cooldown_resource",
                     "comparison": "==",
                     "compare_to": 0
@@ -54,17 +54,17 @@
             ]
         },
         "entity_action": {
-            "type": "origins:if_else",
+            "type": "apoli:if_else",
             "condition": {
-                "type": "origins:or",
+                "type": "apoli:or",
                 "conditions": [
                     {
-                        "type": "origins:and",
+                        "type": "apoli:and",
                         "conditions": [
                             {
-                                "type": "origins:biome",
+                                "type": "apoli:biome",
                                 "condition": {
-                                    "type": "origins:temperature",
+                                    "type": "apoli:temperature",
                                     "comparison": "<",
                                     "compare_to": 0.15
                                 }
@@ -76,21 +76,21 @@
                         ]
                     },
                     {
-                        "type": "origins:and",
+                        "type": "apoli:and",
                         "conditions": [
                             {
-                                "type": "origins:or",
+                                "type": "apoli:or",
                                 "conditions": [
                                     {
-                                        "type": "origins:biome",
+                                        "type": "apoli:biome",
                                         "condition": {
-                                            "type": "origins:temperature",
+                                            "type": "apoli:temperature",
                                             "comparison": ">=",
                                             "compare_to": 1.0
                                         }
                                     },
                                     {
-                                        "type": "origins:dimension",
+                                        "type": "apoli:dimension",
                                         "dimension": "minecraft:the_nether"
                                     }
                                 ]
@@ -103,12 +103,12 @@
                 ]
             },
             "if_action": {
-                "type": "origins:change_resource",
+                "type": "apoli:change_resource",
                 "resource": "my_addon:form_snow_fox_sp_resource",
                 "change": 5
             },
             "else_action": {
-                "type": "origins:change_resource",
+                "type": "apoli:change_resource",
                 "resource": "my_addon:form_snow_fox_sp_resource",
                 "change": 3
             }

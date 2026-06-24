@@ -1,5 +1,5 @@
 {
-    "type": "origins:night_vision",
+    "type": "apoli:night_vision",
     "strength": 1.0,
     "activate_automatically": true,
     "name": "Permanent Night Vision",

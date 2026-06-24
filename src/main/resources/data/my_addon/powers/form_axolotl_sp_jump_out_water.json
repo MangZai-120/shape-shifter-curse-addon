@@ -1,5 +1,5 @@
 {
-    "type": "origins:active_self",
+    "type": "apoli:active_self",
     "entity_action": {
         "type": "my_addon:swim_jump_out",
         "multiplier": 2.0
@@ -13,16 +13,16 @@
         "continuous": true
     },
     "condition": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "conditions": [
             {
-                "type": "origins:fluid_height",
+                "type": "apoli:fluid_height",
                 "fluid": "minecraft:water",
                 "comparison": ">",
                 "compare_to": 0
             },
             {
-                "type": "origins:fluid_height",
+                "type": "apoli:fluid_height",
                 "fluid": "minecraft:water",
                 "comparison": "<",
                 "compare_to": 0.2

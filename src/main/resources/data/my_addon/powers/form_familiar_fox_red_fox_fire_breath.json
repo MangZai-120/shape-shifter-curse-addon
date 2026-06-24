@@ -1,29 +1,29 @@
 {
-    "type": "origins:active_self",
+    "type": "apoli:active_self",
     "key": {
         "key": "key.ssc_addon.sp_secondary"
     },
     "entity_action": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "actions": [
             {
                 "type": "shape-shifter-curse:consume_mana",
                 "mana": 20
             },
             {
-                "type": "origins:change_resource",
+                "type": "apoli:change_resource",
                 "resource": "my_addon:form_familiar_fox_red_mana_regen_regen_pause_timer",
                 "operation": "set",
                 "change": 120
             },
             {
-                "type": "origins:play_sound",
+                "type": "apoli:play_sound",
                 "sound": "minecraft:item.firecharge.use",
                 "volume": 1.0,
                 "pitch": 1.0
             },
             {
-                "type": "origins:play_sound",
+                "type": "apoli:play_sound",
                 "sound": "minecraft:entity.fox.screech",
                 "volume": 1.0,
                 "pitch": 1.0
@@ -32,47 +32,47 @@
                 "type": "my_addon:fox_fireball"
             },
             {
-                "type": "origins:execute_command",
+                "type": "apoli:execute_command",
                 "command": "particle minecraft:soul_fire_flame ^ ^1.2 ^1 0.7 0.7 0.7 0.04 8 force @a"
             },
             {
-                "type": "origins:execute_command",
+                "type": "apoli:execute_command",
                 "command": "particle minecraft:soul_fire_flame ^ ^1.2 ^2 1.0 1.0 1.0 0.04 14 force @a"
             },
             {
-                "type": "origins:execute_command",
+                "type": "apoli:execute_command",
                 "command": "particle minecraft:soul_fire_flame ^ ^1.2 ^3 1.3 1.3 1.3 0.04 20 force @a"
             },
             {
-                "type": "origins:execute_command",
+                "type": "apoli:execute_command",
                 "command": "particle minecraft:soul_fire_flame ^ ^1.2 ^4 1.5 1.5 1.5 0.04 26 force @a"
             },
             {
-                "type": "origins:execute_command",
+                "type": "apoli:execute_command",
                 "command": "particle minecraft:flame ^ ^1.2 ^2 1.0 1.0 1.0 0.03 6 force @a"
             },
             {
-                "type": "origins:execute_command",
+                "type": "apoli:execute_command",
                 "command": "particle minecraft:flame ^ ^1.2 ^3 1.3 1.3 1.3 0.03 8 force @a"
             },
             {
-                "type": "origins:execute_command",
+                "type": "apoli:execute_command",
                 "command": "particle minecraft:dust 0.9 0.12 0.05 1.2 ^ ^1.2 ^2 1.0 1.0 1.0 0.02 6 force @a"
             },
             {
-                "type": "origins:execute_command",
+                "type": "apoli:execute_command",
                 "command": "particle minecraft:dust 0.9 0.12 0.05 1.2 ^ ^1.2 ^3 1.3 1.3 1.3 0.02 8 force @a"
             },
             {
-                "type": "origins:execute_command",
+                "type": "apoli:execute_command",
                 "command": "particle minecraft:lava ^ ^1.2 ^2 0.9 0.8 0.8 0.0 3 force @a"
             },
             {
-                "type": "origins:execute_command",
+                "type": "apoli:execute_command",
                 "command": "particle minecraft:lava ^ ^1.2 ^3 1.1 1.0 1.0 0.0 4 force @a"
             },
             {
-                "type": "origins:change_resource",
+                "type": "apoli:change_resource",
                 "resource": "my_addon:form_sp_secondary_cd",
                 "operation": "set",
                 "change": 100
@@ -80,7 +80,7 @@
         ]
     },
     "condition": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "conditions": [
             {
                 "type": "shape-shifter-curse:has_mana",

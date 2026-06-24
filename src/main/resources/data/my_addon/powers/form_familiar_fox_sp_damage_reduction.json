@@ -1,5 +1,5 @@
 {
-    "type": "origins:modify_damage_taken",
+    "type": "apoli:modify_damage_taken",
     "modifier": {
         "name": "High Mana Protection",
         "operation": "multiply_total",

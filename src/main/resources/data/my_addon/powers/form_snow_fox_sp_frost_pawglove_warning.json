@@ -1,8 +1,8 @@
 {
-    "type": "origins:action_over_time",
+    "type": "apoli:action_over_time",
     "interval": 60,
     "entity_action": {
-        "type": "origins:execute_command",
+        "type": "apoli:execute_command",
         "command": "title @s actionbar {\"translate\":\"ssc_addon.warning.frost_pawglove_incompatible\",\"color\":\"red\"}"
     },
     "condition": {

@@ -1,20 +1,20 @@
 {
-    "type": "origins:modify_damage_dealt",
+    "type": "apoli:modify_damage_dealt",
     "modifier": {
         "operation": "addition",
         "value": 1.0,
         "name": "Wild Cat SP Night Strength"
     },
     "condition": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "conditions": [
             {
-                "type": "origins:time_of_day",
+                "type": "apoli:time_of_day",
                 "compare_to": 13000,
                 "comparison": ">="
             },
             {
-                "type": "origins:time_of_day",
+                "type": "apoli:time_of_day",
                 "compare_to": 23000,
                 "comparison": "<="
             }

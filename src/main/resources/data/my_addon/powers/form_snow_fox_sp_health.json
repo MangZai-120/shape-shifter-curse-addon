@@ -1,5 +1,5 @@
 {
-    "type": "origins:attribute",
+    "type": "apoli:attribute",
     "modifier": {
         "name": "SP Snow Fox Health",
         "attribute": "minecraft:generic.max_health",

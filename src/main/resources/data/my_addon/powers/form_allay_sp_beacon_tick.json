@@ -1,12 +1,12 @@
 {
-    "type": "origins:action_over_time",
+    "type": "apoli:action_over_time",
     "interval": 1,
     "entity_action": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "actions": []
     },
     "condition": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "resource": "my_addon:form_allay_sp_beacon_active",
         "comparison": "==",
         "compare_to": 1

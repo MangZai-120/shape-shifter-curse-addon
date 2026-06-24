@@ -1,9 +1,9 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "raw_bonus": {
-        "type": "origins:modify_food",
+        "type": "apoli:modify_food",
         "item_condition": {
-            "type": "origins:ingredient",
+            "type": "apoli:ingredient",
             "ingredient": {
                 "tag": "my_addon:raw_meats"
             }

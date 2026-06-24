@@ -1,5 +1,5 @@
 {
-    "type": "origins:conditioned_attribute",
+    "type": "apoli:conditioned_attribute",
     "modifier": {
         "attribute": "reach-entity-attributes:attack_range",
         "operation": "multiply_total",
@@ -8,10 +8,10 @@
     },
     "tick_rate": 5,
     "condition": {
-        "type": "origins:equipped_item",
+        "type": "apoli:equipped_item",
         "equipment_slot": "mainhand",
         "item_condition": {
-            "type": "origins:empty"
+            "type": "apoli:empty"
         }
     }
 }

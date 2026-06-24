@@ -1,17 +1,17 @@
 {
-    "type": "origins:action_over_time",
+    "type": "apoli:action_over_time",
     "interval": 60,
     "hud_render": {
         "should_render": false
     },
     "entity_action": {
-        "type": "origins:area_of_effect",
+        "type": "apoli:area_of_effect",
         "radius": 12,
         "shape": "sphere",
         "bientity_action": {
-            "type": "origins:target_action",
+            "type": "apoli:target_action",
             "action": {
-                "type": "origins:apply_effect",
+                "type": "apoli:apply_effect",
                 "effect": {
                     "effect": "minecraft:glowing",
                     "duration": 20,
@@ -23,15 +23,15 @@
             }
         },
         "bientity_condition": {
-            "type": "origins:target_condition",
-            "condition": { "type": "origins:living" }
+            "type": "apoli:target_condition",
+            "condition": { "type": "apoli:living" }
         }
     },
     "condition": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "conditions": [
-            { "type": "origins:time_of_day", "comparison": ">=", "compare_to": 13000 },
-            { "type": "origins:time_of_day", "comparison": "<=", "compare_to": 23000 }
+            { "type": "apoli:time_of_day", "comparison": ">=", "compare_to": 13000 },
+            { "type": "apoli:time_of_day", "comparison": "<=", "compare_to": 23000 }
         ]
     },
     "name": "power.my_addon.form_bat_desmodus_echolocation.name",

@@ -1,18 +1,18 @@
 {
-    "type": "origins:modify_damage_taken",
+    "type": "apoli:modify_damage_taken",
     "condition": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "resource": "my_addon:form_snow_fox_sp_resource",
         "comparison": ">=",
         "compare_to": 20
     },
     "damage_condition": {
-        "type": "origins:amount",
+        "type": "apoli:amount",
         "comparison": ">",
         "compare_to": 0.5
     },
     "self_action": {
-        "type": "origins:change_resource",
+        "type": "apoli:change_resource",
         "resource": "my_addon:form_snow_fox_sp_resource",
         "change": -20
     },

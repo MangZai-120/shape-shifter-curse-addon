@@ -1,7 +1,7 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "resource": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "min": 0,
         "max": 100,
         "start_value": 0,
@@ -10,7 +10,7 @@
         }
     },
     "cooldown_resource": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "min": 0,
         "max": 100,
         "start_value": 0,
@@ -19,32 +19,32 @@
         }
     },
     "cooldown_tick": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 1,
         "entity_action": {
-            "type": "origins:change_resource",
+            "type": "apoli:change_resource",
             "resource": "my_addon:form_allay_sp_mana_cooldown_resource",
             "change": -1,
             "operation": "add"
         },
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "my_addon:form_allay_sp_mana_cooldown_resource",
             "comparison": ">",
             "compare_to": 0
         }
     },
     "regen": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 4,
         "entity_action": {
-            "type": "origins:change_resource",
+            "type": "apoli:change_resource",
             "resource": "my_addon:form_allay_sp_mana_resource",
             "change": 1,
             "operation": "add"
         },
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
                 {
                     "type": "ssc_addon:skill_disabled",
@@ -52,13 +52,13 @@
                     "skill": "mana_regen"
                 },
                 {
-                    "type": "origins:resource",
+                    "type": "apoli:resource",
                     "resource": "my_addon:form_allay_sp_mana_resource",
                     "comparison": "<",
                     "compare_to": 100
                 },
                 {
-                    "type": "origins:resource",
+                    "type": "apoli:resource",
                     "resource": "my_addon:form_allay_sp_mana_cooldown_resource",
                     "comparison": "==",
                     "compare_to": 0
@@ -67,25 +67,25 @@
         }
     },
     "beacon_consume": {
-        "type": "origins:action_over_time",
+        "type": "apoli:action_over_time",
         "interval": 1,
         "entity_action": {
-            "type": "origins:change_resource",
+            "type": "apoli:change_resource",
             "resource": "my_addon:form_allay_sp_mana_resource",
             "change": -1,
             "operation": "add"
         },
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
                 {
-                    "type": "origins:resource",
+                    "type": "apoli:resource",
                     "resource": "my_addon:form_allay_sp_beacon_active",
                     "comparison": "==",
                     "compare_to": 1
                 },
                 {
-                    "type": "origins:resource",
+                    "type": "apoli:resource",
                     "resource": "my_addon:form_allay_sp_mana_resource",
                     "comparison": ">=",
                     "compare_to": 1

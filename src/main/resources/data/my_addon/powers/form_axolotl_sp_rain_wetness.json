@@ -1,12 +1,12 @@
 {
-    "type": "origins:action_over_time",
+    "type": "apoli:action_over_time",
     "interval": 20,
     "entity_action": {
-        "type": "origins:gain_air",
+        "type": "apoli:gain_air",
         "value": 60
     },
     "condition": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "conditions": [
             {
                 "type": "ssc_addon:skill_disabled",
@@ -14,10 +14,10 @@
                 "skill": "rain_wetness"
             },
             {
-                "type": "origins:in_rain"
+                "type": "apoli:in_rain"
             },
             {
-                "type": "origins:exposed_to_sky"
+                "type": "apoli:exposed_to_sky"
             }
         ]
     },

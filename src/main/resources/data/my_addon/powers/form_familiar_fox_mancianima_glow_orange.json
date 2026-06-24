@@ -1,7 +1,7 @@
 {
-    "type": "origins:entity_glow",
+    "type": "apoli:entity_glow",
     "bientity_condition": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "conditions": [
             { "type": "my_addon:mancianima_mark_color", "color": "orange" },
             { "type": "my_addon:mancianima_crosshair_target", "inverted": true }

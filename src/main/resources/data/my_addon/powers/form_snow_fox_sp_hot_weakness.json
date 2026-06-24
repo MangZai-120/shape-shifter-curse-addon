@@ -1,5 +1,5 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "health": {
         "type": "shape-shifter-curse:delay_attribute",
         "modifier": {
@@ -12,24 +12,24 @@
         "updateHealth": true,
         "delay": 5,
         "condition": {
-            "type": "origins:or",
+            "type": "apoli:or",
             "conditions": [
                 {
-                    "type": "origins:and",
+                    "type": "apoli:and",
                     "conditions": [
                         {
-                            "type": "origins:or",
+                            "type": "apoli:or",
                             "conditions": [
                                 {
-                                    "type": "origins:biome",
+                                    "type": "apoli:biome",
                                     "condition": {
-                                        "type": "origins:temperature",
+                                        "type": "apoli:temperature",
                                         "comparison": ">=",
                                         "compare_to": 1.0
                                     }
                                 },
                                 {
-                                    "type": "origins:dimension",
+                                    "type": "apoli:dimension",
                                     "dimension": "minecraft:the_nether"
                                 }
                             ]
@@ -41,12 +41,12 @@
                     ]
                 },
                 {
-                    "type": "origins:and",
+                    "type": "apoli:and",
                     "conditions": [
                         {
-                            "type": "origins:biome",
+                            "type": "apoli:biome",
                             "condition": {
-                                "type": "origins:temperature",
+                                "type": "apoli:temperature",
                                 "comparison": "<",
                                 "compare_to": 0.15
                             }
@@ -60,7 +60,7 @@
         }
     },
     "speed": {
-        "type": "origins:conditioned_attribute",
+        "type": "apoli:conditioned_attribute",
         "modifier": {
             "name": "SP Snow Fox Hot Debuff Speed",
             "attribute": "minecraft:generic.movement_speed",
@@ -69,24 +69,24 @@
         },
         "tick_rate": 20,
         "condition": {
-            "type": "origins:or",
+            "type": "apoli:or",
             "conditions": [
                 {
-                    "type": "origins:and",
+                    "type": "apoli:and",
                     "conditions": [
                         {
-                            "type": "origins:or",
+                            "type": "apoli:or",
                             "conditions": [
                                 {
-                                    "type": "origins:biome",
+                                    "type": "apoli:biome",
                                     "condition": {
-                                        "type": "origins:temperature",
+                                        "type": "apoli:temperature",
                                         "comparison": ">=",
                                         "compare_to": 1.0
                                     }
                                 },
                                 {
-                                    "type": "origins:dimension",
+                                    "type": "apoli:dimension",
                                     "dimension": "minecraft:the_nether"
                                 }
                             ]
@@ -98,12 +98,12 @@
                     ]
                 },
                 {
-                    "type": "origins:and",
+                    "type": "apoli:and",
                     "conditions": [
                         {
-                            "type": "origins:biome",
+                            "type": "apoli:biome",
                             "condition": {
-                                "type": "origins:temperature",
+                                "type": "apoli:temperature",
                                 "comparison": "<",
                                 "compare_to": 0.15
                             }

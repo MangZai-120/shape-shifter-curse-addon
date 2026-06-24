@@ -1,10 +1,10 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "hud_render": {
         "should_render": false
     },
     "attack_down": {
-        "type": "origins:attribute",
+        "type": "apoli:attribute",
         "modifier": {
             "attribute": "minecraft:generic.attack_damage",
             "operation": "multiply_total",
@@ -12,21 +12,21 @@
             "name": "Bat Desmodus Sun Weak Attack"
         },
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
-                { "type": "origins:exposed_to_sky" },
+                { "type": "apoli:exposed_to_sky" },
                 {
-                    "type": "origins:or",
+                    "type": "apoli:or",
                     "conditions": [
-                        { "type": "origins:time_of_day", "comparison": "<", "compare_to": 13000 },
-                        { "type": "origins:time_of_day", "comparison": ">", "compare_to": 23000 }
+                        { "type": "apoli:time_of_day", "comparison": "<", "compare_to": 13000 },
+                        { "type": "apoli:time_of_day", "comparison": ">", "compare_to": 23000 }
                     ]
                 }
             ]
         }
     },
     "speed_down": {
-        "type": "origins:attribute",
+        "type": "apoli:attribute",
         "modifier": {
             "attribute": "minecraft:generic.movement_speed",
             "operation": "multiply_total",
@@ -34,14 +34,14 @@
             "name": "Bat Desmodus Sun Weak Speed"
         },
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
-                { "type": "origins:exposed_to_sky" },
+                { "type": "apoli:exposed_to_sky" },
                 {
-                    "type": "origins:or",
+                    "type": "apoli:or",
                     "conditions": [
-                        { "type": "origins:time_of_day", "comparison": "<", "compare_to": 13000 },
-                        { "type": "origins:time_of_day", "comparison": ">", "compare_to": 23000 }
+                        { "type": "apoli:time_of_day", "comparison": "<", "compare_to": 13000 },
+                        { "type": "apoli:time_of_day", "comparison": ">", "compare_to": 23000 }
                     ]
                 }
             ]

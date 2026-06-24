@@ -1,10 +1,10 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "hud_render": {
         "should_render": false
     },
     "attack_up": {
-        "type": "origins:attribute",
+        "type": "apoli:attribute",
         "modifier": {
             "attribute": "minecraft:generic.attack_damage",
             "operation": "multiply_total",
@@ -12,16 +12,16 @@
             "name": "Bat Desmodus Moon Buff Attack"
         },
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
-                { "type": "origins:exposed_to_sky" },
-                { "type": "origins:time_of_day", "comparison": ">=", "compare_to": 13000 },
-                { "type": "origins:time_of_day", "comparison": "<=", "compare_to": 23000 }
+                { "type": "apoli:exposed_to_sky" },
+                { "type": "apoli:time_of_day", "comparison": ">=", "compare_to": 13000 },
+                { "type": "apoli:time_of_day", "comparison": "<=", "compare_to": 23000 }
             ]
         }
     },
     "speed_up": {
-        "type": "origins:attribute",
+        "type": "apoli:attribute",
         "modifier": {
             "attribute": "minecraft:generic.movement_speed",
             "operation": "multiply_total",
@@ -29,11 +29,11 @@
             "name": "Bat Desmodus Moon Buff Speed"
         },
         "condition": {
-            "type": "origins:and",
+            "type": "apoli:and",
             "conditions": [
-                { "type": "origins:exposed_to_sky" },
-                { "type": "origins:time_of_day", "comparison": ">=", "compare_to": 13000 },
-                { "type": "origins:time_of_day", "comparison": "<=", "compare_to": 23000 }
+                { "type": "apoli:exposed_to_sky" },
+                { "type": "apoli:time_of_day", "comparison": ">=", "compare_to": 13000 },
+                { "type": "apoli:time_of_day", "comparison": "<=", "compare_to": 23000 }
             ]
         }
     },

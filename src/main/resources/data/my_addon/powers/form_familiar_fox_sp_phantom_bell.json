@@ -1,11 +1,11 @@
 {
-    "type": "origins:action_when_damage_taken",
+    "type": "apoli:action_when_damage_taken",
     "cooldown": 1,
     "hud_render": {
         "should_render": false
     },
     "condition": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "conditions": [
             {
                 "type": "ssc_addon:has_trinket",
@@ -17,28 +17,28 @@
                 "inverted": true
             },
             {
-                "type": "origins:health",
+                "type": "apoli:health",
                 "comparison": "<",
                 "compare_to": 4.0
             }
         ]
     },
     "entity_action": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "actions": [
             {
-                "type": "origins:spawn_entity",
+                "type": "apoli:spawn_entity",
                 "entity_type": "minecraft:area_effect_cloud",
                 "tag": "{Radius:2.0f,Duration:60,Particle:\"poof\"}"
             },
             {
-                "type": "origins:play_sound",
+                "type": "apoli:play_sound",
                 "sound": "minecraft:entity.illusioner.mirror_move",
                 "volume": 1.0,
                 "pitch": 1.0
             },
             {
-                "type": "origins:apply_effect",
+                "type": "apoli:apply_effect",
                 "effect": {
                     "effect": "minecraft:invisibility",
                     "duration": 100,
@@ -48,7 +48,7 @@
                 }
             },
             {
-                "type": "origins:apply_effect",
+                "type": "apoli:apply_effect",
                 "effect": {
                     "effect": "minecraft:speed",
                     "duration": 60,

@@ -1,13 +1,13 @@
 {
-    "type": "origins:self_action_on_kill",
+    "type": "apoli:self_action_on_kill",
     "condition": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "conditions": [
             {
                 "type": "ssc_addon:has_blue_fire_amulet"
             },
             {
-                "type": "origins:resource",
+                "type": "apoli:resource",
                 "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state",
                 "comparison": "==",
                 "compare_to": 1
@@ -15,10 +15,10 @@
         ]
     },
     "entity_action": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "actions": [
             {
-                "type": "origins:heal",
+                "type": "apoli:heal",
                 "amount": 2.0
             },
             {

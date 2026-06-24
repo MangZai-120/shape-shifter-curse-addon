@@ -1,9 +1,9 @@
 {
-  "type": "origins:action_on_hit",
+  "type": "apoli:action_on_hit",
   "bientity_action": {
-    "type": "origins:if_else",
+    "type": "apoli:if_else",
     "condition": {
-      "type": "origins:actor_condition",
+      "type": "apoli:actor_condition",
       "condition": {
         "type": "ssc_addon:has_trinket",
         "item": "ssc_addon:anubis_crystal"

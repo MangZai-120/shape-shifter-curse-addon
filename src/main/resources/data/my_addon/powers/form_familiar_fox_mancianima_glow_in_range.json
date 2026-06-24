@@ -1,10 +1,10 @@
 {
-    "type": "origins:entity_glow",
+    "type": "apoli:entity_glow",
     "bientity_condition": {
-        "type": "origins:and",
+        "type": "apoli:and",
         "conditions": [
-            { "type": "origins:distance", "comparison": "<=", "compare_to": 32 },
-            { "type": "origins:target_condition", "condition": { "type": "origins:living" } },
+            { "type": "apoli:distance", "comparison": "<=", "compare_to": 32 },
+            { "type": "apoli:target_condition", "condition": { "type": "apoli:living" } },
             { "type": "my_addon:mancianima_crosshair_target", "inverted": true },
             { "type": "my_addon:mancianima_mark_color", "color": "yellow", "inverted": true },
             { "type": "my_addon:mancianima_mark_color", "color": "orange", "inverted": true },

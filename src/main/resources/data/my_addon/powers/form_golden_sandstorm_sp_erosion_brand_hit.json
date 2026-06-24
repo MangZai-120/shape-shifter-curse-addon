@@ -1,10 +1,10 @@
 {
-    "type": "origins:action_on_hit",
+    "type": "apoli:action_on_hit",
     "bientity_action": {
         "type": "ssc_addon:golden_sandstorm_erosion_brand_hit"
     },
     "damage_condition": {
-        "type": "origins:amount",
+        "type": "apoli:amount",
         "comparison": ">",
         "compare_to": 0
     }

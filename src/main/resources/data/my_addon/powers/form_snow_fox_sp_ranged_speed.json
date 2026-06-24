@@ -1,5 +1,5 @@
 {
-    "type": "origins:stacking_status_effect",
+    "type": "apoli:stacking_status_effect",
     "min_stacks": 0,
     "max_stacks": 1,
     "duration_per_stack": 40,
@@ -12,7 +12,7 @@
         "show_icon": true
     },
     "condition": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "resource": "my_addon:form_snow_fox_sp_switch_state",
         "comparison": "==",
         "compare_to": 1

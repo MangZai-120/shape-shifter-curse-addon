@@ -1,5 +1,5 @@
 {
-    "type": "origins:attribute",
+    "type": "apoli:attribute",
     "modifier": {
         "name": "Parasitic fruit bat fixed max health",
         "attribute": "minecraft:generic.max_health",

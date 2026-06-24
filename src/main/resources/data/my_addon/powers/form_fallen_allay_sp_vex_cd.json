@@ -1,5 +1,5 @@
 {
-    "type": "origins:resource",
+    "type": "apoli:resource",
     "min": 0,
     "max": 400,
     "start_value": 0,
@@ -7,7 +7,7 @@
         "should_render": false,
         "bar_index": 4,
         "condition": {
-            "type": "origins:resource",
+            "type": "apoli:resource",
             "resource": "my_addon:form_fallen_allay_sp_vex_cd",
             "comparison": ">",
             "compare_to": 0

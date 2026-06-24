@@ -1,10 +1,10 @@
 {
-    "type": "origins:action_when_damage_taken",
+    "type": "apoli:action_when_damage_taken",
     "entity_action": {
         "type": "ssc_addon:golden_sandstorm_counter_burst"
     },
     "damage_condition": {
-        "type": "origins:attacker"
+        "type": "apoli:attacker"
     },
     "cooldown": 0,
     "hud_render": {

@@ -1,9 +1,9 @@
 {
-    "type": "origins:multiple",
+    "type": "apoli:multiple",
     "name": "血渴值",
     "description": "战斗中每秒+1；普攻命中+8(0.3s内CD)；凝聚爆破命中+12/6/3；击杀+15。脱战12s后每秒-4。0-25：减伤15%；50-75：吸血20%；75-100：伤害+15%且吸血35%。",
     "resource": {
-        "type": "origins:resource",
+        "type": "apoli:resource",
         "min": 0,
         "max": 100,
         "start_value": 0,
