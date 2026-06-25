@@ -1,0 +1,267 @@
+{
+    "type": "apoli:action_on_entity_use",
+    "bientity_action": {
+        "type": "apoli:if_else",
+        "condition": {
+            "type": "apoli:target_condition",
+            "condition": {
+                "type": "apoli:in_tag",
+                "tag": "shape-shifter-curse:familiar_enemy_target"
+            }
+        },
+        "if_action": {
+            "type": "apoli:and",
+            "actions": [
+                {
+                    "type": "apoli:target_action",
+                    "action": {
+                        "type": "apoli:and",
+                        "actions": [
+                            {
+                                "type": "apoli:execute_command",
+                                "command": "particle soul_fire_flame ~ ~0.5 ~ 0.3 0.3 0.3 0.009 10 normal @a"
+                            },
+                            {
+                                "type": "apoli:play_sound",
+                                "sound": "minecraft:entity.evoker.cast_spell"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "apoli:actor_action",
+                    "action": {
+                        "type": "apoli:and",
+                        "actions": [
+                            {
+                                "type": "apoli:feed",
+                                "food": 4,
+                                "saturation": 0.3
+                            },
+                            {
+                                "type": "apoli:apply_effect",
+                                "effect": {
+                                    "effect": "minecraft:blindness",
+                                    "amplifier": 1,
+                                    "duration": 80
+                                }
+                            },
+                            {
+                                "type": "apoli:apply_effect",
+                                "effect": {
+                                    "effect": "minecraft:slowness",
+                                    "amplifier": 3,
+                                    "duration": 80
+                                }
+                            },
+                            {
+                                "type": "apoli:apply_effect",
+                                "effect": {
+                                    "effect": "minecraft:weakness",
+                                    "amplifier": 1,
+                                    "duration": 200
+                                }
+                            },
+                            {
+                                "type": "apoli:trigger_cooldown",
+                                "power": "shape-shifter-curse:form_familiar_fox_use_entity_cooldown"
+                            },
+                            {
+                                "type": "shape-shifter-curse:gain_mana",
+                                "mana": 1.2
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "my_addon:damage_target_from_actor",
+                    "amount": 0.1,
+                    "damage_type": "minecraft:player_attack"
+                }
+            ]
+        },
+        "else_action": {
+            "type": "apoli:if_else",
+            "condition": {
+                "type": "apoli:or",
+                "conditions": [
+                    {
+                        "type": "apoli:target_condition",
+                        "condition": {
+                            "type": "apoli:in_tag",
+                            "tag": "shape-shifter-curse:familiar_illager_target"
+                        }
+                    },
+                    {
+                        "type": "apoli:target_condition",
+                        "condition": {
+                            "type": "apoli:in_tag",
+                            "tag": "shape-shifter-curse:familiar_sorcery_target"
+                        }
+                    }
+                ]
+            },
+            "if_action": {
+                "type": "apoli:and",
+                "actions": [
+                    {
+                        "type": "apoli:target_action",
+                        "action": {
+                            "type": "apoli:and",
+                            "actions": [
+                                {
+                                    "type": "apoli:execute_command",
+                                    "command": "particle soul_fire_flame ~ ~0.5 ~ 0.3 0.3 0.3 0.009 10 normal @a"
+                                },
+                                {
+                                    "type": "apoli:play_sound",
+                                    "sound": "minecraft:entity.evoker.cast_spell"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "type": "apoli:actor_action",
+                        "action": {
+                            "type": "apoli:and",
+                            "actions": [
+                                {
+                                    "type": "apoli:feed",
+                                    "food": 4,
+                                    "saturation": 0.3
+                                },
+                                {
+                                    "type": "apoli:apply_effect",
+                                    "effect": {
+                                        "effect": "minecraft:blindness",
+                                        "amplifier": 1,
+                                        "duration": 80
+                                    }
+                                },
+                                {
+                                    "type": "apoli:apply_effect",
+                                    "effect": {
+                                        "effect": "minecraft:slowness",
+                                        "amplifier": 3,
+                                        "duration": 80
+                                    }
+                                },
+                                {
+                                    "type": "apoli:apply_effect",
+                                    "effect": {
+                                        "effect": "minecraft:weakness",
+                                        "amplifier": 1,
+                                        "duration": 200
+                                    }
+                                },
+                                {
+                                    "type": "apoli:trigger_cooldown",
+                                    "power": "shape-shifter-curse:form_familiar_fox_use_entity_cooldown"
+                                },
+                                {
+                                "type": "shape-shifter-curse:gain_mana",
+                                "mana": 1.2
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "type": "my_addon:damage_target_from_actor",
+                        "amount": 0.1,
+                        "damage_type": "minecraft:player_attack"
+                    }
+                ]
+            },
+            "else_action": {
+                "type": "apoli:if_else",
+                "condition": {
+                    "type": "apoli:or",
+                    "conditions": [
+                        {
+                            "type": "apoli:target_condition",
+                            "condition": {
+                                "type": "apoli:in_tag",
+                                "tag": "shape-shifter-curse:familiar_normal_target"
+                            }
+                        },
+                        {
+                            "type": "apoli:target_condition",
+                            "condition": {
+                                "type": "apoli:in_tag",
+                                "tag": "shape-shifter-curse:familiar_human_target"
+                            }
+                        }
+                    ]
+                },
+                "if_action": {
+                    "type": "apoli:and",
+                    "actions": [
+                        {
+                            "type": "apoli:target_action",
+                            "action": {
+                                "type": "apoli:and",
+                                "actions": [
+                                    {
+                                        "type": "apoli:execute_command",
+                                        "command": "particle soul_fire_flame ~ ~0.5 ~ 0.3 0.3 0.3 0.009 10 normal @a"
+                                    },
+                                    {
+                                        "type": "apoli:play_sound",
+                                        "sound": "minecraft:entity.evoker.cast_spell"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "type": "apoli:actor_action",
+                            "action": {
+                                "type": "apoli:and",
+                                "actions": [
+                                    {
+                                        "type": "apoli:feed",
+                                        "food": 6,
+                                        "saturation": 0.6
+                                    },
+                                    {
+                                        "type": "apoli:trigger_cooldown",
+                                        "power": "shape-shifter-curse:form_familiar_fox_use_entity_cooldown"
+                                    },
+                                    {
+                                        "type": "shape-shifter-curse:gain_mana",
+                                        "mana": 7.5
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "type": "my_addon:damage_target_from_actor",
+                            "amount": 8.0,
+                            "damage_type": "minecraft:magic"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "condition": {
+        "type": "apoli:and",
+        "conditions": [
+            {
+                "type": "apoli:sneaking"
+            },
+            {
+                "type": "apoli:resource",
+                "resource": "shape-shifter-curse:form_familiar_fox_use_entity_cooldown",
+                "comparison": "<",
+                "compare_to": 1
+            },
+            {
+                "type": "ssc_addon:has_talent",
+                "talent_id": "mana_system"
+            }
+        ]
+    },
+    "hands": [
+        "main_hand"
+    ]
+}

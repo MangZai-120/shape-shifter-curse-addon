@@ -1,0 +1,28 @@
+{
+    "type": "apoli:multiple",
+    "pause_timer": {
+        "type": "apoli:resource",
+        "min": 0,
+        "max": 100,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "pause_tick": {
+        "type": "apoli:action_over_time",
+        "interval": 1,
+        "condition": {
+            "type": "apoli:resource",
+            "resource": "my_addon:form_upgrade_familiar_fox_mana_regen_pause_pause_timer",
+            "comparison": ">",
+            "compare_to": 0
+        },
+        "entity_action": {
+            "type": "apoli:change_resource",
+            "resource": "my_addon:form_upgrade_familiar_fox_mana_regen_pause_pause_timer",
+            "operation": "add",
+            "change": -1
+        }
+    }
+}

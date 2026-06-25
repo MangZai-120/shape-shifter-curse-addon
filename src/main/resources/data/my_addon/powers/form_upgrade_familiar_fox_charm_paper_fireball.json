@@ -1,0 +1,87 @@
+{
+    "type": "apoli:action_on_item_use",
+    "entity_action": {
+        "type": "apoli:and",
+        "actions": [
+            {
+                "type": "apoli:fire_projectile",
+                "entity_type": "minecraft:small_fireball",
+                "divergence": 1.0,
+                "count": 1,
+                "projectile_action": {
+                    "type": "apoli:and",
+                    "actions": [
+                        {
+                            "type": "apoli:spawn_particles",
+                            "particle": "minecraft:soul_fire_flame",
+                            "count": 8,
+                            "speed": 0.0,
+                            "force": false,
+                            "spread": {
+                                "x": 1.0,
+                                "y": 1.0,
+                                "z": 1.0
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "type": "apoli:play_sound",
+                "sound": "minecraft:entity.blaze.shoot"
+            },
+            {
+                "type": "shape-shifter-curse:consume_mana",
+                "mana": 2.5
+            },
+            {
+                "type": "apoli:change_resource",
+                "resource": "my_addon:form_upgrade_familiar_fox_mana_regen_pause_pause_timer",
+                "operation": "set",
+                "change": 100
+            },
+            {
+                "type": "apoli:trigger_cooldown",
+                "power": "shape-shifter-curse:form_familiar_fox_fire_arrow_cooldown"
+            },
+            {
+                "type": "apoli:modify_resource",
+                "modifier": {
+                    "operation": "set_total",
+                    "value": 1
+                },
+                "resource": "shape-shifter-curse:form_familiar_fox_fireball_kind_boolean_resource"
+            }
+        ]
+    },
+    "condition": {
+        "type": "apoli:and",
+        "conditions": [
+            {
+                "type": "apoli:resource",
+                "resource": "shape-shifter-curse:form_familiar_fox_fire_arrow_cooldown",
+                "comparison": "<",
+                "compare_to": 1
+            },
+            {
+                "type": "shape-shifter-curse:has_mana",
+                "mana": 2.5
+            },
+            {
+                "type": "ssc_addon:has_talent",
+                "talent_id": "rocket"
+            }
+        ]
+    },
+    "item_condition": {
+        "type": "apoli:ingredient",
+        "ingredient": {
+            "item": "shape-shifter-curse:fire_charm_paper"
+        }
+    },
+    "item_action": {
+        "type": "apoli:consume",
+        "amount": 1
+    },
+    "trigger": "instant"
+}

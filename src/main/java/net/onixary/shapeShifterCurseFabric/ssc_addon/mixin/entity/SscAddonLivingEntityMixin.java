@@ -276,6 +276,16 @@ public abstract class SscAddonLivingEntityMixin {
 				&& FormUtils.isForm(sp, FormIdentifiers.BAT_DESMODUS)) {
 			BatDesmodusBloodThirst.markCombat(sp);
 		}
+		// 进化使魔战斗打点（受击或主动伤敌）：用于脱战 mana 回复判定，复用契灵的 LAST_COMBAT 计时
+		if (source.getAttacker() instanceof ServerPlayerEntity atkFox
+				&& FormUtils.isForm(atkFox, FormIdentifiers.UPGRADE_FAMILIAR_FOX)) {
+			MancianimaMarkManager.markCombat(atkFox.getUuid(), atkFox.getServerWorld().getTime());
+		}
+		if (self instanceof ServerPlayerEntity defFox
+				&& source.getAttacker() != null && source.getAttacker() != defFox
+				&& FormUtils.isForm(defFox, FormIdentifiers.UPGRADE_FAMILIAR_FOX)) {
+			MancianimaMarkManager.markCombat(defFox.getUuid(), defFox.getServerWorld().getTime());
+		}
 	}
 
 	/**

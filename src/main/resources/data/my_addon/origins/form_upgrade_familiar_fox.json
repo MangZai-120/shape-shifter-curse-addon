@@ -7,6 +7,7 @@
         "shape-shifter-curse:form_familiar_fox_3_digging_speed_down",
         "shape-shifter-curse:form_familiar_fox_3_health",
         "shape-shifter-curse:form_all_food_down3",
+        "shape-shifter-curse:form_familiar_fox_3_looting",
         "shape-shifter-curse:form_familiar_fox_3_jump_high",
         "shape-shifter-curse:form_disable_leg_armor",
         "shape-shifter-curse:form_disable_feet_armor",
@@ -28,7 +29,18 @@
         "shape-shifter-curse:feral_form_step_sound_speed_up",
         "my_addon:form_upgrade_familiar_fox_mana",
         "shape-shifter-curse:form_familiar_fox_use_entity_cooldown",
-        "my_addon:form_upgrade_familiar_fox_use_normal_creature"
+        "my_addon:form_upgrade_familiar_fox_absorb",
+        "my_addon:form_upgrade_familiar_fox_mana_system",
+        "my_addon:form_upgrade_familiar_fox_mana_regen_pause",
+        "my_addon:form_upgrade_familiar_fox_mana_shield",
+        "my_addon:form_upgrade_familiar_fox_buff_immunity",
+        "my_addon:form_upgrade_familiar_fox_rocket_mana_boost",
+        "shape-shifter-curse:form_familiar_fox_fire_arrow_cooldown",
+        "shape-shifter-curse:form_familiar_fox_fireball_kind_boolean_resource",
+        "my_addon:form_upgrade_familiar_fox_stick_fireball",
+        "my_addon:form_upgrade_familiar_fox_charm_paper_fireball",
+        "my_addon:form_upgrade_familiar_fox_stick_fireball_damage",
+        "my_addon:form_upgrade_familiar_fox_charm_paper_fireball_damage"
     ],
     "icon": {
         "item": "minecraft:fox_spawn_egg"

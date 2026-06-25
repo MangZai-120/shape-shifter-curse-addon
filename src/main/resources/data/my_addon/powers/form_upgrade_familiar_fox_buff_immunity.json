@@ -1,0 +1,112 @@
+{
+    "type": "apoli:multiple",
+    "effect_immunity": {
+        "type": "apoli:effect_immunity",
+        "effects": [
+            "minecraft:poison",
+            "minecraft:hunger",
+            "minecraft:speed",
+            "minecraft:haste",
+            "minecraft:strength",
+            "minecraft:regeneration",
+            "minecraft:fire_resistance",
+            "minecraft:water_breathing",
+            "minecraft:resistance",
+            "minecraft:health_boost",
+            "minecraft:jump_boost",
+            "minecraft:wither",
+            "minecraft:absorption",
+            "minecraft:slowness",
+            "minecraft:weakness",
+            "minecraft:mining_fatigue",
+            "minecraft:nausea",
+            "minecraft:invisibility",
+            "minecraft:night_vision",
+            "minecraft:blindness",
+            "minecraft:saturation",
+            "minecraft:slow_falling",
+            "minecraft:levitation",
+            "ssc_addon:fox_fire_burn",
+            "ssc_addon:frost_freeze",
+            "ssc_addon:frost_fall",
+            "ssc_addon:sand_blind",
+            "ssc_addon:deafen",
+            "ssc_addon:bat_regen",
+            "ssc_addon:bat_poison",
+            "ssc_addon:bat_absorption"
+        ],
+        "condition": {
+            "type": "ssc_addon:has_talent",
+            "talent_id": "buff_immunity"
+        }
+    },
+    "fire_immunity": {
+        "type": "apoli:fire_immunity",
+        "condition": {
+            "type": "ssc_addon:has_talent",
+            "talent_id": "buff_immunity"
+        }
+    },
+    "in_fire_cost_mana": {
+        "type": "apoli:action_over_time",
+        "interval": 5,
+        "condition": {
+            "type": "apoli:and",
+            "conditions": [
+                {
+                    "type": "ssc_addon:has_talent",
+                    "talent_id": "buff_immunity"
+                },
+                {
+                    "type": "apoli:in_block",
+                    "block_condition": {
+                        "type": "apoli:or",
+                        "conditions": [
+                            {
+                                "type": "apoli:block",
+                                "block": "minecraft:fire"
+                            },
+                            {
+                                "type": "apoli:block",
+                                "block": "minecraft:lava"
+                            },
+                            {
+                                "type": "apoli:block",
+                                "block": "minecraft:soul_fire"
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "entity_action": {
+            "type": "apoli:and",
+            "actions": [
+                {
+                    "type": "shape-shifter-curse:consume_mana",
+                    "mana": 0.1
+                },
+                {
+                    "type": "apoli:change_resource",
+                    "resource": "my_addon:form_upgrade_familiar_fox_mana_regen_pause_pause_timer",
+                    "operation": "set",
+                    "change": 100
+                }
+            ]
+        }
+    },
+    "max_mana_boost": {
+        "type": "shape-shifter-curse:mana_attribute",
+        "modifierID": "my_addon:upgrade_familiar_fox_buff_mana_boost",
+        "max_mana_modifier": {
+            "add": 0.0,
+            "multiply": 1.0,
+            "add_total": 10.0
+        },
+        "player_side": true,
+        "condition": {
+            "type": "ssc_addon:has_talent",
+            "talent_id": "buff_immunity"
+        }
+    }
+}

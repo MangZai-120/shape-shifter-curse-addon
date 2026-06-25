@@ -1,0 +1,21 @@
+{
+    "type": "apoli:modify_damage_taken",
+    "modifier": {
+        "operation": "multiply_total_multiplicative",
+        "value": 0.85
+    },
+    "condition": {
+        "type": "apoli:and",
+        "conditions": [
+            {
+                "type": "ssc_addon:has_talent",
+                "talent_id": "mana_system"
+            },
+            {
+                "type": "ssc_addon:has_mana_percent_safe",
+                "mana_percent": 0.5,
+                "comparison": ">="
+            }
+        ]
+    }
+}

@@ -1,0 +1,26 @@
+{
+    "type": "apoli:modify_projectile_damage",
+    "condition": {
+        "type": "apoli:and",
+        "conditions": [
+            {
+                "type": "apoli:resource",
+                "resource": "shape-shifter-curse:form_familiar_fox_fireball_kind_boolean_resource",
+                "comparison": "==",
+                "compare_to": 0
+            },
+            {
+                "type": "ssc_addon:has_talent",
+                "talent_id": "rocket"
+            }
+        ]
+    },
+    "damage_condition": {
+        "type": "apoli:projectile",
+        "projectile": "minecraft:small_fireball"
+    },
+    "modifier": {
+        "operation": "set_total",
+        "value": 5.0
+    }
+}

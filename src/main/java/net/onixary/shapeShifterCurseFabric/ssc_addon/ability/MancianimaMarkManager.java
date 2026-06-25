@@ -85,10 +85,16 @@ public final class MancianimaMarkManager {
 	private static final Map<UUID, Long> LAST_COMBAT = new ConcurrentHashMap<>();
 	/** 上次抗伤回复的 tick */
 	private static final Map<UUID, Long> LAST_REGEN = new ConcurrentHashMap<>();
+	/** 上次脱战 mana 回复的 tick（进化使魔专用） */
+	private static final Map<UUID, Long> LAST_MANA_REGEN = new ConcurrentHashMap<>();
 	/** 非战斗判定阈值：5s */
 	public static final int OUT_OF_COMBAT_TICKS = 100;
 	/** 抗伤回复间隔：15s */
 	public static final int RESIST_REGEN_INTERVAL_TICKS = 300;
+	/** 进化使魔脱战 mana 回复间隔：1s（脱战后每秒回1点） */
+	public static final int UPGRADE_FOX_MANA_REGEN_INTERVAL_TICKS = 20;
+	/** 进化使魔脱战每次回复的 mana 量 */
+	public static final double UPGRADE_FOX_MANA_REGEN_AMOUNT = 1.0;
 
 	/** 标记战斗发生（伤害进出契灵玩家时调用） */
 	public static void markCombat(UUID playerUuid, long now) {
@@ -109,7 +115,7 @@ public final class MancianimaMarkManager {
 	public static void register() {
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
 			MARKS.clear(); RED_LOCKOUT.clear(); CHANNELING.clear(); DIRTY.clear();
-			LAST_COMBAT.clear(); LAST_REGEN.clear();
+			LAST_COMBAT.clear(); LAST_REGEN.clear(); LAST_MANA_REGEN.clear();
 		});
 		ServerTickEvents.END_SERVER_TICK.register(MancianimaMarkManager::onTick);
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
@@ -119,6 +125,7 @@ public final class MancianimaMarkManager {
 			DIRTY.remove(id);
 			LAST_COMBAT.remove(id);
 			LAST_REGEN.remove(id);
+			LAST_MANA_REGEN.remove(id);
 		});
 	}
 
@@ -322,6 +329,28 @@ public final class MancianimaMarkManager {
 			if (cur >= max) { LAST_REGEN.put(id, now); continue; }
 			PowerUtils.changeResourceValueAndSync(sp, FormIdentifiers.MANCIANIMA_RESISTANCE, 1);
 			LAST_REGEN.put(id, now);
+		}
+
+		// 进化使魔脱战 mana 回复：脱战 5s 后每 1s 回 1 点 mana（需已解锁 mana_system 节点）
+		for (ServerPlayerEntity sp : server.getPlayerManager().getPlayerList()) {
+			IForm form = FormUtils.getCurrentForm(sp);
+			if (form == null || !FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(form.getFormID())) continue;
+			// 仅在已解锁 mana_system 节点时生效（mana 条显示门控一致）
+			if (!net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.RegEvolutionComponent.EVOLUTION
+					.get(sp).isUnlocked(net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.FamiliarFoxTree.NODE_MANA)) continue;
+			UUID id = sp.getUuid();
+			long lastCombat = LAST_COMBAT.getOrDefault(id, 0L);
+			if (now - lastCombat < OUT_OF_COMBAT_TICKS) continue;
+			// 消耗 mana 后 5s 内暂停自动回复（regen_pause_timer 资源 > 0 表示在暂停窗口）
+			int pauseTimer = PowerUtils.getResourceValue(sp, new Identifier("my_addon", "form_upgrade_familiar_fox_mana_regen_pause_pause_timer"));
+			if (pauseTimer > 0) continue;
+			long lastRegen = LAST_MANA_REGEN.getOrDefault(id, 0L);
+			if (now - lastRegen < UPGRADE_FOX_MANA_REGEN_INTERVAL_TICKS) continue;
+			double curMana = net.onixary.shapeShifterCurseFabric.mana.ManaUtils.getPlayerMana(sp);
+			double maxMana = net.onixary.shapeShifterCurseFabric.mana.ManaUtils.getPlayerMaxMana(sp);
+			if (maxMana <= 0 || curMana >= maxMana) { LAST_MANA_REGEN.put(id, now); continue; }
+			net.onixary.shapeShifterCurseFabric.mana.ManaUtils.gainPlayerMana(sp, UPGRADE_FOX_MANA_REGEN_AMOUNT);
+			LAST_MANA_REGEN.put(id, now);
 		}
 	}
 
