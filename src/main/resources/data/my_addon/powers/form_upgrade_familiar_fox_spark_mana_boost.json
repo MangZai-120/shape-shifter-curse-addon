@@ -1,0 +1,14 @@
+{
+    "type": "shape-shifter-curse:mana_attribute",
+    "modifierID": "my_addon:upgrade_familiar_fox_spark_mana_boost",
+    "max_mana_modifier": {
+        "add": 0.0,
+        "multiply": 1.0,
+        "add_total": 10.0
+    },
+    "player_side": true,
+    "condition": {
+        "type": "ssc_addon:has_talent",
+        "talent_id": "spark"
+    }
+}

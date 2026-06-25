@@ -1,0 +1,160 @@
+{
+    "type": "apoli:active_self",
+    "entity_action": {
+        "type": "apoli:and",
+        "actions": [
+            {
+                "type": "apoli:if_else",
+                "condition": {
+                    "type": "ssc_addon:has_talent",
+                    "talent_id": "spark"
+                },
+                "if_action": {
+                    "type": "apoli:and",
+                    "actions": [
+                        {
+                            "type": "shape-shifter-curse:consume_mana",
+                            "mana": 11
+                        },
+                        {
+                            "type": "apoli:change_resource",
+                            "resource": "my_addon:form_upgrade_familiar_fox_mana_regen_pause_pause_timer",
+                            "operation": "set",
+                            "change": 100
+                        },
+                        {
+                            "type": "apoli:play_sound",
+                            "sound": "minecraft:item.firecharge.use",
+                            "volume": 0.5
+                        },
+                        {
+                            "type": "apoli:play_sound",
+                            "sound": "minecraft:block.fire.ambient",
+                            "volume": 0.5
+                        },
+                        {
+                            "type": "apoli:play_sound",
+                            "sound": "entity.evoker.prepare_summon",
+                            "volume": 0.5
+                        },
+                        {
+                            "type": "shape-shifter-curse:explosion_damage_entity",
+                            "power": 2,
+                            "entity_condition": {
+                                "type": "apoli:and",
+                                "conditions": [
+                                    {
+                                        "type": "apoli:and",
+                                        "conditions": [
+                                            {
+                                                "type": "apoli:actor_condition",
+                                                "condition": {
+                                                    "type": "apoli:power_active",
+                                                    "power": "shape-shifter-curse:pillager_friendly"
+                                                }
+                                            },
+                                            {
+                                                "type": "apoli:target_condition",
+                                                "condition": {
+                                                    "type": "apoli:in_tag",
+                                                    "tag": "shape-shifter-curse:illager"
+                                                }
+                                            }
+                                        ],
+                                        "inverted": true
+                                    },
+                                    {
+                                        "type": "apoli:and",
+                                        "conditions": [
+                                            {
+                                                "type": "apoli:target_condition",
+                                                "condition": {
+                                                    "type": "apoli:in_tag",
+                                                    "tag": "shape-shifter-curse:water_explode_immune"
+                                                },
+                                                "inverted": true
+                                            },
+                                            {
+                                                "type": "apoli:owner",
+                                                "inverted": true
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            "entity_action": {
+                                "type": "apoli:and",
+                                "actions": [
+                                    {
+                                        "type": "apoli:set_on_fire",
+                                        "duration": 5
+                                    },
+                                    {
+                                        "type": "apoli:damage",
+                                        "amount": 4,
+                                        "damage_type": "minecraft:on_fire"
+                                    }
+                                ]
+                            },
+                            "explosion_damage_entity": false
+                        },
+                        {
+                            "type": "shape-shifter-curse:spawn_particles_in_circle",
+                            "particle": "minecraft:flame",
+                            "count": 1,
+                            "speed": 0.01,
+                            "force": true,
+                            "spread": {
+                                "x": 0.4,
+                                "y": 0.6,
+                                "z": 0.4
+                            },
+                            "radius": 3.0,
+                            "sample_count": 48
+                        },
+                        {
+                            "type": "apoli:spawn_particles",
+                            "particle": "minecraft:soul_fire_flame",
+                            "count": 8,
+                            "speed": 0.0,
+                            "force": true,
+                            "spread": {
+                                "x": 1.5,
+                                "y": 1.0,
+                                "z": 1.5
+                            }
+                        },
+                        {
+                            "type": "apoli:trigger_cooldown",
+                            "power": "shape-shifter-curse:form_familiar_fox_fire_explode_cooldown"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "entity_condition": {
+        "type": "apoli:and",
+        "conditions": [
+            {
+                "type": "shape-shifter-curse:has_mana",
+                "mana": 11
+            },
+            {
+                "type": "apoli:resource",
+                "resource": "shape-shifter-curse:form_familiar_fox_fire_explode_cooldown",
+                "comparison": "<",
+                "compare_to": 1
+            }
+        ]
+    },
+    "cooldown": 40,
+    "hud_render": {
+        "should_render": false
+    },
+    "key": {
+        "key": "key.shape-shifter-curse.active_skill_1"
+    },
+    "name": "火花",
+    "description": "消耗11点法力，以自身为中心释放削弱版火环（半径约3格），对非白名单生物造成4点伤害并点燃5秒。需解锁火花节点。"
+}

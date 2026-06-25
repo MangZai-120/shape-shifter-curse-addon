@@ -69,6 +69,39 @@
                             {
                                 "type": "shape-shifter-curse:gain_mana",
                                 "mana": 1.2
+                            },
+                            {
+                                "type": "apoli:if_else",
+                                "condition": {
+                                    "type": "ssc_addon:has_talent",
+                                    "talent_id": "spark"
+                                },
+                                "if_action": {
+                                    "type": "shape-shifter-curse:gain_mana",
+                                    "mana": 0.4
+                                }
+                            },
+                            {
+                                "type": "apoli:if_else",
+                                "condition": {
+                                    "type": "ssc_addon:has_talent",
+                                    "talent_id": "rocket"
+                                },
+                                "if_action": {
+                                    "type": "shape-shifter-curse:gain_mana",
+                                    "mana": 0.4
+                                }
+                            },
+                            {
+                                "type": "apoli:if_else",
+                                "condition": {
+                                    "type": "ssc_addon:has_talent",
+                                    "talent_id": "buff_immunity"
+                                },
+                                "if_action": {
+                                    "type": "shape-shifter-curse:gain_mana",
+                                    "mana": 0.4
+                                }
                             }
                         ]
                     }
@@ -159,8 +192,41 @@
                                     "power": "shape-shifter-curse:form_familiar_fox_use_entity_cooldown"
                                 },
                                 {
-                                "type": "shape-shifter-curse:gain_mana",
-                                "mana": 1.2
+                                    "type": "shape-shifter-curse:gain_mana",
+                                    "mana": 1.2
+                                },
+                                {
+                                    "type": "apoli:if_else",
+                                    "condition": {
+                                        "type": "ssc_addon:has_talent",
+                                        "talent_id": "spark"
+                                    },
+                                    "if_action": {
+                                        "type": "shape-shifter-curse:gain_mana",
+                                        "mana": 0.4
+                                    }
+                                },
+                                {
+                                    "type": "apoli:if_else",
+                                    "condition": {
+                                        "type": "ssc_addon:has_talent",
+                                        "talent_id": "rocket"
+                                    },
+                                    "if_action": {
+                                        "type": "shape-shifter-curse:gain_mana",
+                                        "mana": 0.4
+                                    }
+                                },
+                                {
+                                    "type": "apoli:if_else",
+                                    "condition": {
+                                        "type": "ssc_addon:has_talent",
+                                        "talent_id": "buff_immunity"
+                                    },
+                                    "if_action": {
+                                        "type": "shape-shifter-curse:gain_mana",
+                                        "mana": 0.4
+                                    }
                                 }
                             ]
                         }
@@ -229,6 +295,39 @@
                                     {
                                         "type": "shape-shifter-curse:gain_mana",
                                         "mana": 7.5
+                                    },
+                                    {
+                                        "type": "apoli:if_else",
+                                        "condition": {
+                                            "type": "ssc_addon:has_talent",
+                                            "talent_id": "spark"
+                                        },
+                                        "if_action": {
+                                            "type": "shape-shifter-curse:gain_mana",
+                                            "mana": 2.5
+                                        }
+                                    },
+                                    {
+                                        "type": "apoli:if_else",
+                                        "condition": {
+                                            "type": "ssc_addon:has_talent",
+                                            "talent_id": "rocket"
+                                        },
+                                        "if_action": {
+                                            "type": "shape-shifter-curse:gain_mana",
+                                            "mana": 2.5
+                                        }
+                                    },
+                                    {
+                                        "type": "apoli:if_else",
+                                        "condition": {
+                                            "type": "ssc_addon:has_talent",
+                                            "talent_id": "buff_immunity"
+                                        },
+                                        "if_action": {
+                                            "type": "shape-shifter-curse:gain_mana",
+                                            "mana": 2.5
+                                        }
                                     }
                                 ]
                             }
