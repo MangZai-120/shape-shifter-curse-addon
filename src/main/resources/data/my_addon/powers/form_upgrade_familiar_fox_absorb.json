@@ -102,6 +102,17 @@
                                     "type": "shape-shifter-curse:gain_mana",
                                     "mana": 0.4
                                 }
+                            },
+                            {
+                                "type": "apoli:if_else",
+                                "condition": {
+                                    "type": "ssc_addon:has_talent",
+                                    "talent_id": "alchemy"
+                                },
+                                "if_action": {
+                                    "type": "shape-shifter-curse:gain_mana",
+                                    "mana": 0.4
+                                }
                             }
                         ]
                     }
@@ -227,6 +238,17 @@
                                         "type": "shape-shifter-curse:gain_mana",
                                         "mana": 0.4
                                     }
+                                },
+                                {
+                                    "type": "apoli:if_else",
+                                    "condition": {
+                                        "type": "ssc_addon:has_talent",
+                                        "talent_id": "alchemy"
+                                    },
+                                    "if_action": {
+                                        "type": "shape-shifter-curse:gain_mana",
+                                        "mana": 0.4
+                                    }
                                 }
                             ]
                         }
@@ -323,6 +345,17 @@
                                         "condition": {
                                             "type": "ssc_addon:has_talent",
                                             "talent_id": "buff_immunity"
+                                        },
+                                        "if_action": {
+                                            "type": "shape-shifter-curse:gain_mana",
+                                            "mana": 2.5
+                                        }
+                                    },
+                                    {
+                                        "type": "apoli:if_else",
+                                        "condition": {
+                                            "type": "ssc_addon:has_talent",
+                                            "talent_id": "alchemy"
                                         },
                                         "if_action": {
                                             "type": "shape-shifter-curse:gain_mana",

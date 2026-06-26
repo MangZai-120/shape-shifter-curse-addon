@@ -22,6 +22,8 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.UndeadNeutralState;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.RegEvolutionComponent;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.FamiliarFoxTree;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -360,6 +362,39 @@ public abstract class SscAddonLivingEntityMixin {
 			if (BatDesmodusBloodThirst.getStage(ap) == 3) {
 				args.set(1, amount * 1.15f);
 			}
+		}
+	}
+
+	// ============== 进化使魔 - 药水伤害减免（magic伤害，按加点梯度） ==============
+	/**
+	 * 进化使魔受到 magic 伤害（含伤害药水）时，按加点提供与 ssc 使魔一致的药水免伤：
+	 * - 解锁 buff_immunity 节点：提供一半免伤（25% 减伤）
+	 * - 解锁 alchemy 节点：提供另一半免伤（25% 减伤）
+	 * - 两者都解锁：25% + 25% = 50% 减伤（相加，与 ssc 使魔的 50% 药水免伤一致，
+	 *   而非两个 0.75 相乘得到的 43.75%）。
+	 * 用 Java mixin 而非 Apoli condition，确保严格按加点生效（condition 在 modify_damage_taken 中可能不阻止 modifier）。
+	 */
+	@ModifyArgs(method = "damage", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;applyDamage(Lnet/minecraft/entity/damage/DamageSource;F)V"))
+	private void ssc_addon$upgradeFoxPotionResist(Args args) {
+		LivingEntity self = (LivingEntity) (Object) this;
+		if (self.getWorld().isClient()) return;
+		if (!(self instanceof ServerPlayerEntity sp)) return;
+		if (!FormUtils.isForm(sp, FormIdentifiers.UPGRADE_FAMILIAR_FOX)) return;
+		DamageSource source = args.get(0);
+		// 仅对魔法伤害（含伤害药水）生效
+		if (!source.isOf(DamageTypes.MAGIC) && !source.isOf(DamageTypes.INDIRECT_MAGIC)) return;
+		net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.EvolutionComponent comp = RegEvolutionComponent.EVOLUTION.get(sp);
+		// 两节点各提供 25% 减伤，相加（而非相乘），两者齐备时合计 50%
+		float reduction = 0f;
+		if (comp.isUnlocked(FamiliarFoxTree.NODE_BUFF_IMMUNITY)) {
+			reduction += 0.25f;
+		}
+		if (comp.isUnlocked(FamiliarFoxTree.NODE_ALCHEMY)) {
+			reduction += 0.25f;
+		}
+		if (reduction > 0f) {
+			float amount = args.get(1);
+			args.set(1, amount * (1f - reduction));
 		}
 	}
 }

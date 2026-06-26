@@ -1,0 +1,49 @@
+{
+    "type": "apoli:item_on_item",
+    "using_item_condition": {
+        "type": "apoli:ingredient",
+        "ingredient": {
+            "item": "minecraft:potion"
+        }
+    },
+    "on_item_condition": {
+        "type": "apoli:ingredient",
+        "ingredient": {
+            "item": "minecraft:fermented_spider_eye"
+        }
+    },
+    "using_item_action": {
+        "type": "apoli:consume",
+        "amount": 1
+    },
+    "on_item_action": {
+        "type": "apoli:consume",
+        "amount": 1
+    },
+    "entity_action": {
+        "type": "apoli:and",
+        "actions": [
+            {
+                "type": "apoli:execute_command",
+                "command": "/give @p minecraft:splash_potion{Potion:\"minecraft:strong_harming\"} 3"
+            },
+            {
+                "type": "shape-shifter-curse:consume_mana",
+                "mana": 5
+            }
+        ]
+    },
+    "condition": {
+        "type": "apoli:and",
+        "conditions": [
+            {
+                "type": "shape-shifter-curse:has_mana",
+                "mana": 5
+            },
+            {
+                "type": "ssc_addon:has_talent",
+                "talent_id": "alchemy"
+            }
+        ]
+    }
+}

@@ -4,7 +4,7 @@
         "type": "shape-shifter-curse:mana_attribute",
         "modifierID": "my_addon:upgrade_familiar_fox_max_mana",
         "max_mana_modifier": {
-            "add": 0.0,
+            "add": 10.0,
             "multiply": 0.3,
             "add_total": 0.0
         },
