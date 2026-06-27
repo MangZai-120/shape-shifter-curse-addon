@@ -1048,7 +1048,7 @@ public class SscAddon implements ModInitializer {
 			GoldenSandstormErosionBrand.clearPlayer(handler.player);
 			GoldenSandstormWitherSand.clearPlayer(handler.player);
 			GoldenSandstormRegen.clearPlayer(uuid);
-			AnubisWolfSpSoulEnergy.clearPlayer(handler.player);
+			// 灵魂能量：Apoli resource 本身会随玩家NBT持久化，不再在断线时清零
 			ErosionSandPrismItem.clearPlayer(uuid);
 			WitheredSandRingItem.clearPlayer(uuid);
 			AllaySPJukebox.onPlayerDisconnect(handler.player);

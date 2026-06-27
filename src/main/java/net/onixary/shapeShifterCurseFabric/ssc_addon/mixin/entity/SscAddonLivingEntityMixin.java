@@ -384,6 +384,9 @@ public abstract class SscAddonLivingEntityMixin {
 		// 仅对魔法伤害（含伤害药水）生效
 		if (!source.isOf(DamageTypes.MAGIC) && !source.isOf(DamageTypes.INDIRECT_MAGIC)) return;
 		net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.EvolutionComponent comp = RegEvolutionComponent.EVOLUTION.get(sp);
+		// 门控：仅当玩家已正式走上 SSCA 进化路线（route 非空 + 已真正变身进入过进化形态）才生效，
+		// 避免异常状态（如 route 未设置或尚未完成初始变身）下误判。
+		if (!comp.isOnSscaRoute() || !comp.hasStarted()) return;
 		// 两节点各提供 25% 减伤，相加（而非相乘），两者齐备时合计 50%
 		float reduction = 0f;
 		if (comp.isUnlocked(FamiliarFoxTree.NODE_BUFF_IMMUNITY)) {
