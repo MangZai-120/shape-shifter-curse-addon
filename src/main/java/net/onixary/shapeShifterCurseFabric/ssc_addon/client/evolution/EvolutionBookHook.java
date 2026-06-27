@@ -21,6 +21,10 @@ public final class EvolutionBookHook {
     private EvolutionBookHook() {
     }
 
+
+
+
+
     public static void register() {
         ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
             if (!(screen instanceof BookOfShapeShifterScreenV2_P1)) {
@@ -45,10 +49,11 @@ public final class EvolutionBookHook {
             int btnW = 70 * bookScale;
             int btnH = 12 * bookScale;
             ButtonWidget button = ButtonWidget.builder(
-                    Text.literal("进化加点"),
+                    Text.translatable("text.ssc_addon.evolution.book.button"),
                     b -> client.setScreen(new EvolutionScreen(screen))
             ).dimensions(btnX, btnY, btnW, btnH).build();
             Screens.getButtons(screen).add(button);
+
         });
     }
 }
