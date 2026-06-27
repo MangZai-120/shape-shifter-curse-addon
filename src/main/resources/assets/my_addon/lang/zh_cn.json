@@ -688,7 +688,6 @@
     "item.ssc_addon.infinite_energy_potion.tooltip":  "效果同压缩能量药水，使用后空瓶会随时间充满。",
     "item.ssc_addon.infinite_energy_potion.tooltip.recharging":  "充能中：剩余 %s 秒",
     "item.ssc_addon.infinite_energy_potion.tooltip.ready":  "已充满，可以使用",
-
     "evolution.my_addon.screen.title": "进化使魔",
     "evolution.my_addon.screen.points": "可用点数：%s",
     "evolution.my_addon.screen.no_route": "点击「初始形态」开始进化",
@@ -699,7 +698,6 @@
     "evolution.my_addon.screen.state.locked": "✖ 前置未满足",
     "evolution.my_addon.screen.state.no_points": "✖ 点数不足",
     "evolution.my_addon.screen.state.click_unlock": "▶ 点击解锁",
-
     "evolution.my_addon.familiar_fox.node.familiar_fox_base.name": "初始形态",
     "evolution.my_addon.familiar_fox.node.familiar_fox_base.desc": "维持使魔 Form_3 的基础属性（14HP / 移速 / 跳跃 / 挖掘 / 饥饿 / 盔甲限制 / 村民关系 / TAN）；含 NPC 战斗反馈与杂项被动。独立进化路线，与原版使魔分割。",
     "evolution.my_addon.familiar_fox.node.mana_system.name": "解锁 Mana 系统",
@@ -720,7 +718,6 @@
     "evolution.my_addon.familiar_fox.node.branch_spirit_lord.desc": "50 级自动解锁的 SP 进化分支之一。",
     "evolution.my_addon.familiar_fox.node.branch_mancianima.name": "契灵分支",
     "evolution.my_addon.familiar_fox.node.branch_mancianima.desc": "50 级自动解锁的 SP 进化分支之一。",
-
     "evolution.my_addon.familiar_fox.node.mana_system.book": "魔力系统已在你体内苏醒。你拥有了独立的 mana 储量（上限 30，每秒自动回复 3 点）；右键生物可按其类型吸附能量，同时补充饥饿与魔力。当 mana 充盈（>50%）时，溢出的灵能会为你抵挡 15% 伤害；反之 mana 枯竭会让你虚弱乏力。",
     "evolution.my_addon.familiar_fox.node.spark.book": "你掌握了削弱版的火环——火花。消耗 11 点魔力，以前方 3×3×3 范围为中心释放，对非白名单生物造成 4 点真实伤害并点燃。它是完整火环的雏形，待你修成火环后将被取代。",
     "evolution.my_addon.familiar_fox.node.rocket.book": "火箭术已开启。手持箭矢消耗魔力即可射出燃烧的火箭；同时解锁符纸火球——一种带爆炸、伤害高达 9 点的强火球。这与原版使魔的远程手段完全一致。",
@@ -731,11 +728,9 @@
     "evolution.my_addon.familiar_fox.node.branch_spirit_lord.book": "灵界之主的潜能已在你体内觉醒。这是 50 级自动解锁的两条 SP 进化分支之一——待你以月髓环于诅咒之月下完成最终蜕变，便可化身灵界之主。",
     "evolution.my_addon.familiar_fox.node.branch_mancianima.book": "契灵的潜能已在你体内觉醒。这是 50 级自动解锁的两条 SP 进化分支之一——待你以进化石完成最终蜕变，便可化身劫掠阵营的禁忌兵器·契灵。",
     "text.ssc_addon.evolution.book.summary_stats": "已解锁 %s/%s · 可用点数 %s · 当前等级 %s",
-
     "origin.my_addon.form_upgrade_familiar_fox.name": "进化使魔",
     "origin.my_addon.form_upgrade_familiar_fox.description": "以原版使魔为基础的独立进化形态，能力按进化等级解锁。",
     "my_addon.form_upgrade_familiar_fox.model_name": "进化使魔",
-
     "evolution.my_addon.start.button": "进入 SSCA 进化路线",
     "evolution.my_addon.start.confirm.title": "选择 SSCA 进化路线？",
     "evolution.my_addon.start.confirm.message": "SSCA 进化路线独立于 SSC 本体：开局直接选定进化形态，靠经验升级主动解锁能力天赋，与本体互不影响。确认进入？",
