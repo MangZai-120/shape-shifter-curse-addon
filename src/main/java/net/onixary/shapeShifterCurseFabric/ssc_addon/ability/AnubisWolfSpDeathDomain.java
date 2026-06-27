@@ -8,11 +8,14 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.scoreboard.Scoreboard;
+import net.minecraft.scoreboard.Team;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.property.Properties;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
@@ -412,6 +415,8 @@ public class AnubisWolfSpDeathDomain {
 	 * 延展阶段：以5格/秒速度从中心向外扩散灵魂沙
 	 */
 	private static void tickExpanding(ServerPlayerEntity player, ServerWorld world, DomainData data) {
+		// 首次进入延展阶段时创建发光 team（把 SP阿努比斯加入）
+		ensureGlowTeam(world, player, data);
 		int maxRadius = data.enhanced ? ENHANCED_DOMAIN_RADIUS : DOMAIN_RADIUS;
 		double prevRadius = data.currentRadius;
 		data.currentRadius += EXPAND_SPEED;
@@ -535,6 +540,9 @@ public class AnubisWolfSpDeathDomain {
 			player.getWorld().playSound(null, data.center.getX() + 0.5, data.centerY, data.center.getZ() + 0.5,
 					SoundEvents.BLOCK_SOUL_SAND_BREAK, SoundCategory.BLOCKS, 0.4f, 0.9f);
 		}
+
+		// 回退阶段也要更新发光：随着领域缩小，移除离开领域的生物的发光
+		tickGlowUpdate(player, world, data);
 
 		if (data.currentRadius <= 0) {
 			// 回退完成，还原所有剩余方块（包括距离0的中心点）
@@ -789,7 +797,8 @@ public class AnubisWolfSpDeathDomain {
 	}
 
 	/**
-	 * 对领域范围内踩在灵魂沙上方3格内的生物施加debuff，离开时自动移除
+	 * 对领域范围内踩在灵魂沙上方3格内的生物施加debuff，离开时自动移除。
+	 * 同时对领域范围内所有非白名单生物施加仅SP阿努比斯可见的发光高亮。
 	 */
 	private static void tickAreaDebuffs(ServerPlayerEntity player, ServerWorld world, DomainData data) {
 		Box box = new Box(
@@ -800,6 +809,7 @@ public class AnubisWolfSpDeathDomain {
 		List<LivingEntity> entities = world.getEntitiesByClass(LivingEntity.class, box, e -> e != player && e.isAlive());
 
 		Set<UUID> currentlyAffected = new HashSet<>();
+		Set<UUID> currentlyGlown = new HashSet<>();
 
 		for (LivingEntity entity : entities) {
 			// 检查是否在圆柱范围内
@@ -810,6 +820,14 @@ public class AnubisWolfSpDeathDomain {
 			// 白名单检查
 			if (WhitelistUtils.isProtected(player, entity)) continue;
 
+			// === 发光高亮（领域内所有非白名单生物） ===
+			currentlyGlown.add(entity.getUuid());
+			if (!data.glownEntities.contains(entity.getUuid())) {
+				data.glownEntities.add(entity.getUuid());
+				applyGlowing(world, entity, data);
+			}
+
+			// === Debuff（仅踩在灵魂沙上方3格内的生物） ===
 			// 检查是否踩在灵魂沙上方3格以内
 			if (!isAboveSoulSand(world, entity, 3)) continue;
 
@@ -838,6 +856,19 @@ public class AnubisWolfSpDeathDomain {
 			}
 		}
 
+		// 对离开领域的生物移除发光
+		Iterator<UUID> glowIt = data.glownEntities.iterator();
+		while (glowIt.hasNext()) {
+			UUID uuid = glowIt.next();
+			if (!currentlyGlown.contains(uuid)) {
+				for (LivingEntity entity : world.getEntitiesByClass(LivingEntity.class,
+						box.expand(32), e -> e.getUuid().equals(uuid))) {
+					removeGlowing(world, entity, data);
+				}
+				glowIt.remove();
+			}
+		}
+
 		// 对离开灵魂沙区域的生物移除血量削减
 		Iterator<UUID> it = data.debuffedEntities.iterator();
 		while (it.hasNext()) {
@@ -850,6 +881,121 @@ public class AnubisWolfSpDeathDomain {
 				}
 				it.remove();
 			}
+		}
+	}
+
+	// ==================== 发光高亮逻辑 ====================
+
+	/**
+	 * 确保 SP阿努比斯和发光生物在同一个 scoreboard team 中，
+	 * team 的 nametagVisibility=NEVER/collisionRule=NEVER，
+	 * 这样发光轮廓仅对 team 成员（即 SP阿努比斯）可见。
+	 */
+	private static void ensureGlowTeam(ServerWorld world, ServerPlayerEntity player, DomainData data) {
+		if (data.teamName != null) return;
+		Scoreboard sb = world.getScoreboard();
+		String name = "ssc_dd_" + player.getUuid().toString().substring(0, 8);
+		// 避免名称超长（team名称上限16字符）
+		if (name.length() > 16) name = name.substring(0, 16);
+		data.teamName = name;
+		Team team = sb.getTeam(name);
+		if (team == null) {
+			team = sb.addTeam(name);
+			team.setColor(net.minecraft.util.Formatting.DARK_PURPLE);
+		}
+		// 把 SP阿努比斯加入 team
+		sb.addPlayerToTeam(player.getEntityName(), team);
+	}
+
+	/**
+	 * 给实体施加发光：加入 team 并设置 setGlowing(true)。
+	 * 同 team 的 SP阿努比斯能看到发光轮廓。
+	 */
+	private static void applyGlowing(ServerWorld world, LivingEntity entity, DomainData data) {
+		// 确保 team 已创建（延迟创建，第一次施加发光时触发）
+		if (data.teamName == null) {
+			// team 需要在有玩家上下文时创建，这里跳过——team 应在 tickExpanding 首次调用前创建
+			return;
+		}
+		Scoreboard sb = world.getScoreboard();
+		Team team = sb.getTeam(data.teamName);
+		Team currentTeam = sb.getTeam(entity.getEntityName());
+		if (team != null && (currentTeam == null || !currentTeam.equals(team))) {
+			sb.addPlayerToTeam(entity.getEntityName(), team);
+		}
+		entity.setGlowing(true);
+	}
+
+	/**
+	 * 移除实体发光：从 team 移除并设置 setGlowing(false)。
+	 */
+	private static void removeGlowing(ServerWorld world, LivingEntity entity, DomainData data) {
+		if (data.teamName == null) return;
+		Scoreboard sb = world.getScoreboard();
+		Team team = sb.getTeam(data.teamName);
+		Team currentTeam = sb.getTeam(entity.getEntityName());
+		if (team != null && currentTeam != null && currentTeam.equals(team)) {
+			sb.removePlayerFromTeam(entity.getEntityName(), team);
+		}
+		entity.setGlowing(false);
+	}
+
+	/**
+	 * 回退阶段更新发光：移除离开当前领域范围的生物的发光。
+	 * 与 tickAreaDebuffs 中的发光逻辑对称，但不施加新的发光。
+	 */
+	private static void tickGlowUpdate(ServerPlayerEntity player, ServerWorld world, DomainData data) {
+		Box box = new Box(
+				data.center.getX() - data.currentRadius, data.centerY - DOMAIN_HEIGHT, data.center.getZ() - data.currentRadius,
+				data.center.getX() + data.currentRadius + 1, data.centerY + DOMAIN_HEIGHT + 1, data.center.getZ() + data.currentRadius + 1
+		);
+		// 收集当前仍在领域范围内的实体UUID
+		Set<UUID> stillInDomain = new HashSet<>();
+		for (LivingEntity entity : world.getEntitiesByClass(LivingEntity.class, box, e -> e != player && e.isAlive())) {
+			double dx = entity.getX() - data.center.getX() - 0.5;
+			double dz = entity.getZ() - data.center.getZ() - 0.5;
+			if (dx * dx + dz * dz > data.currentRadius * data.currentRadius) continue;
+			if (WhitelistUtils.isProtected(player, entity)) continue;
+			stillInDomain.add(entity.getUuid());
+		}
+		// 对离开领域的生物移除发光
+		Iterator<UUID> glowIt = data.glownEntities.iterator();
+		while (glowIt.hasNext()) {
+			UUID uuid = glowIt.next();
+			if (!stillInDomain.contains(uuid)) {
+				for (LivingEntity entity : world.getEntitiesByClass(LivingEntity.class,
+						box.expand(32), e -> e.getUuid().equals(uuid))) {
+					removeGlowing(world, entity, data);
+				}
+				glowIt.remove();
+			}
+		}
+	}
+
+	/**
+	 * 清理所有发光状态（领域结束时）。
+	 * 用 glownEntities 中的UUID查找实体并清除发光，确保不遗漏。
+	 */
+	private static void cleanupGlowing(ServerWorld world, DomainData data) {
+		// 用 glownEntities 中的UUID直接查找实体并清除发光
+		for (UUID uuid : data.glownEntities) {
+			net.minecraft.entity.Entity e = world.getEntity(uuid);
+			if (e instanceof LivingEntity le) {
+				le.setGlowing(false);
+			}
+		}
+		data.glownEntities.clear();
+		// 删除 team：遍历 team 成员列表移除，然后删除 team
+		if (data.teamName != null) {
+			Scoreboard sb = world.getScoreboard();
+			Team team = sb.getTeam(data.teamName);
+			if (team != null) {
+				for (String memberName : new HashSet<>(team.getPlayerList())) {
+					sb.removePlayerFromTeam(memberName, team);
+				}
+				sb.removeTeam(team);
+			}
+			data.teamName = null;
 		}
 	}
 
@@ -926,6 +1072,8 @@ public class AnubisWolfSpDeathDomain {
 	 * 清理所有debuff（领域结束后）
 	 */
 	private static void cleanupDebuffs(ServerWorld world, DomainData data) {
+		// 清理发光状态
+		cleanupGlowing(world, data);
 		for (UUID entityUuid : data.debuffedEntities) {
 			// 尝试找到实体并移除血量修饰符
 			for (LivingEntity entity : world.getEntitiesByClass(LivingEntity.class,
@@ -1031,6 +1179,10 @@ public class AnubisWolfSpDeathDomain {
 		Map<UUID, Integer> witherHitCount = new HashMap<>();
 		// 增强模式标记（灵魂能量满时施放）
 		boolean enhanced;
+		// 发光高亮：被施加发光的实体UUID集合
+		Set<UUID> glownEntities = new HashSet<>();
+		// 发光team名称（null=尚未创建）
+		String teamName;
 
 		DomainData(ServerWorld world, BlockPos center, int centerY) {
 			this.phase = Phase.CHARGING;
