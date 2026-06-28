@@ -739,5 +739,16 @@
     "evolution.my_addon.start.select.title": "选择进化形态",
     "evolution.my_addon.start.select.page": "%s / %s",
     "evolution.my_addon.start.select.choose": "选择此形态",
-    "evolution.my_addon.start.form.upgrade_familiar_fox.desc": "以原版使魔为基础的独立进化形态，随经验升级逐步解锁能力天赋。"
+    "evolution.my_addon.start.form.upgrade_familiar_fox.desc": "以原版使魔为基础的独立进化形态，随经验升级逐步解锁能力天赋。",
+    "evolution.my_addon.screen.level": "等级：%s",
+    "evolution.my_addon.screen.progress": "已解锁：%s / %s",
+    "evolution.my_addon.screen.next_milestone": "下一个点数：升至 %s 级",
+    "evolution.my_addon.screen.ready_to_evolve": "✦ 进化条件已满足",
+    "evolution.my_addon.screen.branch_ready": "两条分支已觉醒，可使用月髓环或进化石完成蜕变",
+    "evolution.my_addon.screen.no_milestone": "所有点数里程碑已达成",
+    "evolution.my_addon.screen.prereqs_need": "前置需求：%s",
+    "evolution.my_addon.screen.max_points": "可用点数：%s / %s",
+    "evolution.my_addon.screen.route_active": "进化路线已激活",
+    "evolution.my_addon.screen.route_inactive": "未选择进化路线",
+    "evolution.my_addon.screen.hint_pan": "左键拖动平移 · 滚轮缩放"
 }

@@ -695,5 +695,16 @@
     "item.ssc_addon.infinite_energy_potion_lingering.empty":  "Lingering Infinite Compressed Energy Potion (Empty)",
     "item.ssc_addon.infinite_energy_potion.tooltip":  "Same effect as the Compressed Energy Potion: restores hunger, and grants extra mana in Familiar Fox forms. After use the empty bottle recharges automatically and can be used again once full.",
     "item.ssc_addon.infinite_energy_potion.tooltip.recharging":  "Recharging: %s s left",
-    "item.ssc_addon.infinite_energy_potion.tooltip.ready":  "Charged and ready"
+    "item.ssc_addon.infinite_energy_potion.tooltip.ready":  "Charged and ready",
+    "evolution.my_addon.screen.level": "Level: %s",
+    "evolution.my_addon.screen.progress": "Unlocked: %s / %s",
+    "evolution.my_addon.screen.next_milestone": "Next point: reach level %s",
+    "evolution.my_addon.screen.ready_to_evolve": "Evolution conditions met",
+    "evolution.my_addon.screen.branch_ready": "Both branches awakened, use Moon Essence Cross or Evolution Stone to metamorphose",
+    "evolution.my_addon.screen.no_milestone": "All point milestones reached",
+    "evolution.my_addon.screen.prereqs_need": "Prerequisites: %s",
+    "evolution.my_addon.screen.max_points": "Points: %s / %s",
+    "evolution.my_addon.screen.route_active": "Evolution route active",
+    "evolution.my_addon.screen.route_inactive": "No evolution route selected",
+    "evolution.my_addon.screen.hint_pan": "Left-drag to pan · Scroll to zoom"
 }
