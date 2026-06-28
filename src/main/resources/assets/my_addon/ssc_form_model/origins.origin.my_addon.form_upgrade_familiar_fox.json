@@ -8,8 +8,8 @@
   "wide_only": true,
 
   "model": "my_addon:geo/form_familiar_fox_3.geo.json",
-  "texture": "my_addon:textures/form_familiar_fox_sp/form_familiar_fox_sp.png",
-  "texture_mask": "my_addon:textures/form_familiar_fox_sp/form_familiar_fox_sp_colormask.png",
+  "texture": "my_addon:textures/form_familiar_fox_mancianima/form_familiar_fox_mancianima.png",
+  "texture_mask": "my_addon:textures/form_familiar_fox_mancianima/form_familiar_fox_mancianima_colormask.png",
   "hidden": [
     "leftLeg",
     "rightLeg",
