@@ -697,7 +697,7 @@
     "evolution.my_addon.screen.state.need_route": "需先点初始形态开始进化",
     "evolution.my_addon.screen.state.locked": "✖ 前置未满足",
     "evolution.my_addon.screen.state.no_points": "✖ 点数不足",
-    "evolution.my_addon.screen.state.click_unlock": "▶ 点击解锁",
+    "evolution.my_addon.screen.state.click_unlock": "▶ 点击加入待确认",
     "evolution.my_addon.familiar_fox.node.familiar_fox_base.name": "初始形态",
     "evolution.my_addon.familiar_fox.node.familiar_fox_base.desc": "维持使魔 Form_3 的基础属性（14HP / 移速 / 跳跃 / 挖掘 / 饥饿 / 盔甲限制 / 村民关系 / TAN）；含 NPC 战斗反馈与杂项被动。独立进化路线，与原版使魔分割。",
     "evolution.my_addon.familiar_fox.node.mana_system.name": "解锁 Mana 系统",
@@ -750,5 +750,8 @@
     "evolution.my_addon.screen.max_points": "可用点数：%s / %s",
     "evolution.my_addon.screen.route_active": "进化路线已激活",
     "evolution.my_addon.screen.route_inactive": "未选择进化路线",
+    "evolution.my_addon.screen.confirm": "确认加点",
+    "evolution.my_addon.screen.state.staged": "● 已加入待确认（点击取消）",
+    "evolution.my_addon.screen.pending": "待确认 %s 项 · 合计 %s 点，点「确认加点」生效",
     "evolution.my_addon.screen.hint_pan": "左键拖动平移 · 滚轮缩放"
 }

@@ -9,6 +9,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -19,6 +20,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.RegEvolutionCompo
 import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
@@ -52,11 +54,18 @@ public class EvolutionScreen extends Screen {
     private static final int N_UNLK_FILL = 0x40FFD700, N_UNLK_BOR = 0xFFFFD700, N_UNLK_IN = 0xFFF0E68C;
     private static final int N_CAN_BOR = 0xFF66FF66, N_LK_FILL = 0x99000000, N_LK_BOR = 0xFF555555;
     private static final int N_AUTO_BOR = 0xFF00CED1, N_AUTO_FILL = 0x2000FFFF;
+    /** 配色：暂存待确认节点（橙）。 */
+    private static final int N_PEND_FILL = 0x40FF9A2E, N_PEND_BOR = 0xFFFF9A2E, N_PEND_IN = 0xFFFFD08A;
     /** 配色：连接线。 */
     private static final int LINE_ACT = 0xFFD4AF37, LINE_GLOW = 0xFFF0E68C, LINE_INACT = 0x668B4513;
     /** 返回按钮配色。 */
     private static final int BW = 100, BH = 22, BBG = 0xC0100C08, BBGH = 0xD0181408;
     private static final int BBOR = 0xFFB8893A, BTXT = 0xFFE8C66A;
+    /** 两按钮（返回 / 确认加点）水平间距。 */
+    private static final int BTN_GAP = 14;
+    /** 确认加点按钮（待确认时）高亮配色。 */
+    private static final int CONF_BG = 0xC0102A0C, CONF_BOR = 0xFF55C964, CONF_TXT = 0xFFBFFFC0;
+    private static final int CONF_DIS_TXT = 0xFF6A6A6A;
     /** 动画周期（毫秒）。 */
     private static final double PULSE_MS = 2000.0, RIPPLE_MS = 3000.0;
     /** 虚线参数。 */
@@ -73,6 +82,11 @@ public class EvolutionScreen extends Screen {
     /** 返回按钮矩形（逻辑坐标）。 */
     private int[] btnRect = new int[4];
     private boolean btnHovered;
+    /** 确认加点按钮矩形（逻辑坐标）。 */
+    private int[] confBtnRect = new int[4];
+    private boolean confHovered;
+    /** 客户端暂存：本次待确认解锁的节点（按点击顺序，确认后逐个提交服务端）。 */
+    private final LinkedHashSet<String> pending = new LinkedHashSet<>();
     /** 拖动状态。 */
     private boolean dragging = false;
     private double dragStartMX, dragStartMY, dragStartPX, dragStartPY;
@@ -95,16 +109,24 @@ public class EvolutionScreen extends Screen {
     protected void init() {
         // 不创建默认 ButtonWidget：返回按钮自绘，以便统一深色+金色风格。
         updateBtn();
+        pending.clear();
         panX = 0;
         panY = 0;
         zoom = 1.0;
     }
 
     private void updateBtn() {
-        btnRect[0] = this.width / 2 - BW / 2;
-        btnRect[1] = this.height - BOT_BAR - BH / 2 - 2;
+        int total = BW * 2 + BTN_GAP;
+        int left = this.width / 2 - total / 2;
+        int y = this.height - BOT_BAR - BH / 2 - 2;
+        btnRect[0] = left;
+        btnRect[1] = y;
         btnRect[2] = BW;
         btnRect[3] = BH;
+        confBtnRect[0] = left + BW + BTN_GAP;
+        confBtnRect[1] = y;
+        confBtnRect[2] = BW;
+        confBtnRect[3] = BH;
     }
 
     // ---------------- 树区域几何（逻辑坐标，每帧刷新） ----------------
@@ -157,20 +179,41 @@ public class EvolutionScreen extends Screen {
 
     private boolean preMet(EvolutionComponent c, EvolutionNode n) {
         if (n.prereqs.isEmpty()) return true;
-        for (String p : n.prereqs) if (c.isUnlocked(p)) return true;
+        for (String p : n.prereqs) if (effUnlocked(c, p)) return true;
         return false;
     }
 
     /** 前置全部满足（用于 tooltip 与连线判断）。 */
     private boolean preMetAll(EvolutionComponent c, EvolutionNode n) {
         if (n.prereqs.isEmpty()) return true;
-        for (String p : n.prereqs) if (!c.isUnlocked(p)) return false;
+        for (String p : n.prereqs) if (!effUnlocked(c, p)) return false;
         return true;
     }
 
+    /** 节点在“已解锁或已加入本次暂存”下视为生效。 */
+    private boolean effUnlocked(EvolutionComponent c, String id) {
+        return c.isUnlocked(id) || pending.contains(id);
+    }
+
+    /** 本次暂存合计消耗点数。 */
+    private int pendingCost() {
+        int sum = 0;
+        for (String id : pending) {
+            EvolutionNode n = FamiliarFoxTree.get(id);
+            if (n != null) sum += n.cost;
+        }
+        return sum;
+    }
+
+    /** 扣除暂存后的模拟剩余点数。 */
+    private int simPoints(EvolutionComponent c) {
+        return c.getPoints() - pendingCost();
+    }
+
+    /** 是否可加入暂存（走路线、非自动、未解锁且未暂存、前置满足、模拟点数足）。 */
     private boolean canUn(EvolutionComponent c, EvolutionNode n) {
-        return c.isOnSscaRoute() && !n.autoUnlock && !c.isUnlocked(n.id)
-                && preMet(c, n) && c.getPoints() >= n.cost;
+        return c.isOnSscaRoute() && !n.autoUnlock && !c.isUnlocked(n.id) && !pending.contains(n.id)
+                && preMet(c, n) && simPoints(c) >= n.cost;
     }
 
     private boolean inNode(double mx, double my, EvolutionNode n) {
@@ -181,6 +224,11 @@ public class EvolutionScreen extends Screen {
     private boolean inBtn(double mx, double my) {
         return mx >= btnRect[0] && mx <= btnRect[0] + btnRect[2]
                 && my >= btnRect[1] && my <= btnRect[1] + btnRect[3];
+    }
+
+    private boolean inConfBtn(double mx, double my) {
+        return mx >= confBtnRect[0] && mx <= confBtnRect[0] + confBtnRect[2]
+                && my >= confBtnRect[1] && my <= confBtnRect[1] + confBtnRect[3];
     }
 
     private boolean inTreeArea(double mx, double my) {
@@ -200,6 +248,7 @@ public class EvolutionScreen extends Screen {
 
         // 进化树区域背景（比全局更深）
         ctx.fill(treeLeft, treeTop, treeLeft + treeW, treeTop + treeH, 0xB0060402);
+        drawAmbientGlow(ctx);
         drawPanelBorder(ctx, treeLeft, treeTop, treeW, treeH, GOLD_BOR);
 
         // 裁剪进化树内容：缩放后连线/节点可能溢出，用 scissors 限制在区域内
@@ -213,8 +262,9 @@ public class EvolutionScreen extends Screen {
         if (comp != null) {
             for (EvolutionNode node : FamiliarFoxTree.NODES) {
                 boolean unlocked = comp.isUnlocked(node.id);
+                boolean staged = pending.contains(node.id);
                 boolean canUn = canUn(comp, node);
-                drawNode(ctx, node, unlocked, canUn);
+                drawNode(ctx, node, unlocked, staged, canUn);
                 if (inNode(mouseX, mouseY, node)) {
                     hovered = node;
                 }
@@ -227,9 +277,11 @@ public class EvolutionScreen extends Screen {
         drawTopBar(ctx, comp);
         drawBottomBar(ctx, comp);
 
-        // 返回按钮
+        // 返回按钮 + 确认加点按钮（水平并排、整体居中）
         btnHovered = inBtn(mouseX, mouseY);
         drawBackButton(ctx, btnHovered);
+        confHovered = inConfBtn(mouseX, mouseY);
+        drawConfirmButton(ctx, confHovered, !pending.isEmpty());
 
         // 操作提示（树区域左下角）
         drawHints(ctx);
@@ -272,7 +324,8 @@ public class EvolutionScreen extends Screen {
                 EvolutionNode pre = FamiliarFoxTree.get(pid);
                 if (pre == null) continue;
                 boolean active = comp.isUnlocked(pid);
-                drawConnection(ctx, pre, node, active);
+                boolean staged = !active && pending.contains(pid);
+                drawConnection(ctx, pre, node, active, staged);
             }
         }
     }
@@ -281,7 +334,7 @@ public class EvolutionScreen extends Screen {
      * 绘制前置 pre → node 的折线连接。折线在两端节点边缘外停止（不进入节点框）。
      * 形状：从 pre 右边出发 → 水平到中点 → 垂直到 node 行 → 水平到 node 左边。
      */
-    private void drawConnection(DrawContext ctx, EvolutionNode pre, EvolutionNode node, boolean active) {
+    private void drawConnection(DrawContext ctx, EvolutionNode pre, EvolutionNode node, boolean active, boolean staged) {
         double half = hn();
         double px = ncx(pre), py = ncy(pre);
         double nx = ncx(node), ny = ncy(node);
@@ -291,8 +344,8 @@ public class EvolutionScreen extends Screen {
         double ex = nx - half - 1;
         double ey = ny;
 
-        int color = active ? LINE_ACT : LINE_INACT;
-        int glow = active ? LINE_GLOW : 0;
+        int color = active ? LINE_ACT : (staged ? N_PEND_BOR : LINE_INACT);
+        int glow = active ? LINE_GLOW : (staged ? N_PEND_IN : 0);
 
         if (sy == ey) {
             drawLineH(ctx, sx, ex, sy, color, glow);
@@ -331,7 +384,7 @@ public class EvolutionScreen extends Screen {
 
     // ---------------- 节点 ----------------
 
-    private void drawNode(DrawContext ctx, EvolutionNode node, boolean unlocked, boolean canUn) {
+    private void drawNode(DrawContext ctx, EvolutionNode node, boolean unlocked, boolean staged, boolean canUn) {
         double cx = ncx(node), cy = ncy(node), half = hn();
         int left = (int) Math.round(cx - half);
         int top = (int) Math.round(cy - half);
@@ -339,13 +392,20 @@ public class EvolutionScreen extends Screen {
         if (size < 4) return;
 
         long now = System.currentTimeMillis();
-        int pulse = unlocked ? 0 : (canUn ? pulseAlpha(now, PULSE_MS, 0x55, 0xCC) : 0);
+        int pulse = (!unlocked && (canUn || staged)) ? pulseAlpha(now, PULSE_MS, 0x55, 0xCC) : 0;
 
         if (unlocked) {
             ctx.fill(left, top, left + size, top + size, N_UNLK_FILL);
             ctx.fill(left + 2, top + 2, left + size - 2, top + size - 2, 0x30FFE066);
             drawPanelBorder(ctx, left, top, size, size, N_UNLK_BOR);
             drawPanelBorder(ctx, left + 3, top + 3, size - 6, size - 6, N_UNLK_IN & 0x88FFFFFF);
+        } else if (staged) {
+            ctx.fill(left, top, left + size, top + size, N_PEND_FILL);
+            ctx.fill(left + 2, top + 2, left + size - 2, top + size - 2, 0x40FFB060);
+            ctx.fill(left - 2, top - 2, left + size + 2, top + size + 2,
+                    (N_PEND_BOR & 0x00FFFFFF) | ((pulse / 2) << 24));
+            drawPanelBorder(ctx, left, top, size, size, N_PEND_BOR);
+            drawPanelBorder(ctx, left + 3, top + 3, size - 6, size - 6, N_PEND_IN & 0x88FFFFFF);
         } else if (node.autoUnlock) {
             ctx.fill(left, top, left + size, top + size, N_AUTO_FILL);
             int ripple = (int) ((now % (long) RIPPLE_MS) / RIPPLE_MS * size);
@@ -376,7 +436,8 @@ public class EvolutionScreen extends Screen {
 
         // 节点名称（下方，居中）
         Text name = Text.translatable(node.nameKey);
-        int nameColor = unlocked ? 0xFFFFD700 : (canUn ? 0xFF99FF99 : (node.autoUnlock ? 0xFF66E0E0 : 0xFF888888));
+        int nameColor = unlocked ? 0xFFFFD700 : (staged ? 0xFFFFB060
+                : (canUn ? 0xFF99FF99 : (node.autoUnlock ? 0xFF66E0E0 : 0xFF888888)));
         int nameW = this.textRenderer.getWidth(name);
         ctx.drawTextWithShadow(this.textRenderer, name,
                 (int) Math.round(cx - nameW / 2.0), top + size + 3, nameColor);
@@ -434,7 +495,7 @@ public class EvolutionScreen extends Screen {
             ctx.drawTextWithShadow(this.textRenderer, levelText, this.width - 12 - lw, 8, TXT_GOLD);
 
             if (comp.isOnSscaRoute()) {
-                Text pointsText = Text.translatable("evolution.my_addon.screen.points", comp.getPoints());
+                Text pointsText = Text.translatable("evolution.my_addon.screen.points", simPoints(comp));
                 int pw = this.textRenderer.getWidth(pointsText);
                 ctx.drawTextWithShadow(this.textRenderer, pointsText, this.width - 12 - pw, 26, TITLE_GOLD);
             } else {
@@ -492,6 +553,11 @@ public class EvolutionScreen extends Screen {
         int y = treeTop + treeH - 12;
         ctx.drawTextWithShadow(this.textRenderer,
                 Text.translatable("evolution.my_addon.screen.hint_pan"), x, y, TXT_GRAY);
+        if (!pending.isEmpty()) {
+            ctx.drawTextWithShadow(this.textRenderer,
+                    Text.translatable("evolution.my_addon.screen.pending", pending.size(), pendingCost()),
+                    x, y - 12, N_PEND_BOR);
+        }
     }
 
     // ---------------- 返回按钮 ----------------
@@ -505,6 +571,32 @@ public class EvolutionScreen extends Screen {
         ctx.drawTextWithShadow(this.textRenderer, t, x + (w - tw) / 2, y + (h - 8) / 2, BTXT);
     }
 
+    /** 确认加点按钮：仅有待确认节点时有效，启用时金绿脉冲发光。 */
+    private void drawConfirmButton(DrawContext ctx, boolean hovered, boolean enabled) {
+        int x = confBtnRect[0], y = confBtnRect[1], w = confBtnRect[2], h = confBtnRect[3];
+        ctx.fill(x, y, x + w, y + h, enabled && hovered ? 0xD01A3A12 : (enabled ? CONF_BG : BBG));
+        if (enabled) {
+            int pulse = pulseAlpha(System.currentTimeMillis(), PULSE_MS, 0x44, 0xCC);
+            ctx.fill(x - 2, y - 2, x + w + 2, y + h + 2, (CONF_BOR & 0x00FFFFFF) | (pulse << 24));
+        }
+        drawPanelBorder(ctx, x, y, w, h, enabled ? CONF_BOR : N_LK_BOR);
+        Text t = Text.translatable("evolution.my_addon.screen.confirm");
+        int tw = this.textRenderer.getWidth(t);
+        ctx.drawTextWithShadow(this.textRenderer, t, x + (w - tw) / 2, y + (h - 8) / 2,
+                enabled ? CONF_TXT : CONF_DIS_TXT);
+    }
+
+    /** 进化树区域背景横扫流光（动态装饰，不影响布局）。 */
+    private void drawAmbientGlow(DrawContext ctx) {
+        long now = System.currentTimeMillis();
+        double sweep = (now % 5200L) / 5200.0;
+        int gx = treeLeft + (int) (sweep * treeW);
+        for (int i = 0; i < 4; i++) {
+            int a = (int) (0x22 * (1.0 - i / 4.0));
+            ctx.fill(gx - i, treeTop, gx + i + 1, treeTop + treeH, (a << 24) | 0x00B8893A);
+        }
+    }
+
     // ---------------- Tooltip ----------------
 
     private void drawNodeTooltip(DrawContext ctx, EvolutionNode node, int mouseX, int mouseY, EvolutionComponent comp) {
@@ -516,6 +608,9 @@ public class EvolutionScreen extends Screen {
 
         if (comp.isUnlocked(node.id)) {
             lines.add(Text.translatable("evolution.my_addon.screen.state.unlocked").formatted(Formatting.GREEN));
+        } else if (pending.contains(node.id)) {
+            lines.add(Text.translatable("evolution.my_addon.screen.cost", node.cost).formatted(Formatting.YELLOW));
+            lines.add(Text.translatable("evolution.my_addon.screen.state.staged").formatted(Formatting.GOLD));
         } else if (node.autoUnlock) {
             lines.add(Text.translatable("evolution.my_addon.screen.state.auto").formatted(Formatting.AQUA));
         } else {
@@ -554,6 +649,10 @@ public class EvolutionScreen extends Screen {
                 this.close();
                 return true;
             }
+            if (!pending.isEmpty() && inConfBtn(mouseX, mouseY)) {
+                commitPending();
+                return true;
+            }
             EvolutionComponent comp = getComp();
             if (comp != null) {
                 for (EvolutionNode node : FamiliarFoxTree.NODES) {
@@ -562,8 +661,16 @@ public class EvolutionScreen extends Screen {
                         sendString(SscAddonNetworking.PACKET_EVO_SELECT_ROUTE, FamiliarFoxTree.ROUTE_ID);
                         return true;
                     }
+                    // 已暂存：再次点击取消（退还点数）
+                    if (pending.contains(node.id)) {
+                        pending.remove(node.id);
+                        playClick(0.7F);
+                        return true;
+                    }
+                    // 可加点：加入暂存（仅暂存，点击“确认加点”才生效）
                     if (canUn(comp, node)) {
-                        sendString(SscAddonNetworking.PACKET_EVO_UNLOCK, node.id);
+                        pending.add(node.id);
+                        playClick(1.0F);
                         return true;
                     }
                 }
@@ -613,6 +720,27 @@ public class EvolutionScreen extends Screen {
         PacketByteBuf buf = PacketByteBufs.create();
         buf.writeString(value);
         ClientPlayNetworking.send(packet, buf);
+    }
+
+    /** 提交全部待确认节点：一次性批量发送（服务端限频一次、按序逐个解锁），播放获得经验“叮”声，再清空暂存。 */
+    private void commitPending() {
+        if (pending.isEmpty()) return;
+        PacketByteBuf buf = PacketByteBufs.create();
+        buf.writeInt(pending.size());
+        for (String id : pending) {
+            buf.writeString(id);
+        }
+        ClientPlayNetworking.send(SscAddonNetworking.PACKET_EVO_UNLOCK_BATCH, buf);
+        pending.clear();
+        PlayerEntity p = MinecraftClient.getInstance().player;
+        if (p != null) {
+            p.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
+        }
+    }
+
+    private void playClick(float pitch) {
+        PlayerEntity p = MinecraftClient.getInstance().player;
+        if (p != null) p.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.4F, pitch);
     }
 
     @Override

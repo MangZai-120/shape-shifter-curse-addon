@@ -54,6 +54,8 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_EVO_SELECT_BRANCH = new Identifier("my_addon", "evo_select_branch");
 	/** C2S：玩家请求解锁一个天赋节点。payload: String nodeId */
 	public static final Identifier PACKET_EVO_UNLOCK = new Identifier("my_addon", "evo_unlock");
+	/** C2S：一次性提交多个待确认节点（按点击顺序），服务端限频一次后顺序逐个解锁。payload: int count + count*String */
+	public static final Identifier PACKET_EVO_UNLOCK_BATCH = new Identifier("my_addon", "evo_unlock_batch");
 	/** C2S：开局选形态界面选定一个 SSCA 进化形态、直接走 SSCA 路线进化。payload: String formId */
 	public static final Identifier PACKET_SSCA_START_ROUTE = new Identifier("my_addon", "ssca_start_route");
 
@@ -184,6 +186,16 @@ public class SscAddonNetworking {
 			server.execute(() -> {
 				if (isRateLimited(player)) return;
 				EvolutionManager.tryUnlock(player, nodeId);
+			});
+		});
+
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_EVO_UNLOCK_BATCH, (server, player, handler, buf, responseSender) -> {
+			int count = Math.max(0, Math.min(64, buf.readInt()));
+			java.util.List<String> ids = new java.util.ArrayList<>(count);
+			for (int i = 0; i < count; i++) ids.add(buf.readString(256));
+			server.execute(() -> {
+				if (isRateLimited(player)) return;
+				for (String id : ids) EvolutionManager.tryUnlock(player, id);
 			});
 		});
 
