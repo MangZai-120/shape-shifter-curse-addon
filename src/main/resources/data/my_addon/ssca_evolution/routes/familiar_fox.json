@@ -1,24 +1,28 @@
 {
-  "_comment": "SSCA 进化路线定义【占位 / 格式示范】。当前框架阶段尚未实现 JSON 加载器，本文件未被读取；仅作为后续数据驱动的格式样例。详见 附属根目录 SSCA进化加点系统_设计文档.txt 第 4 节。",
-  "_todo": "start_form 的真实形态 ID 待核实（使魔 Form_3 命名空间）；节点树、EXP 数值、分支前置等由后续业务设计填充。",
+  "_comment": "SSCA 进化路线（数据驱动）：使魔 familiar_fox。文件名=route id。节点 name/desc 省略时自动用 evolution.my_addon.familiar_fox.node.<id>.name/.desc。加/改进化树只改本文件，无需改 Java。",
 
   "enabled": true,
   "display_name": "evolution.my_addon.familiar_fox.name",
-  "icon": "my_addon:textures/gui/evolution/familiar_fox.png",
-  "start_form": "my_addon:familiar_fox_3",
-  "talent_tree": "my_addon:familiar_fox",
-  "exp_curve": { "type": "linear", "base": 3, "per_level": 1 },
+  "start_form": "my_addon:upgrade_familiar_fox",
+  "base_node": "familiar_fox_base",
+  "level_milestones": [5, 10, 15, 20, 30, 40, 45],
+  "auto_branch_level": 50,
+
+  "nodes": [
+    { "id": "familiar_fox_base", "icon": "minecraft:fox_spawn_egg",  "cost": 0, "prereqs": [],                          "col": 0, "row": 1, "auto_unlock": true },
+    { "id": "mana_system",       "icon": "minecraft:experience_bottle", "cost": 1, "prereqs": ["familiar_fox_base"],    "col": 1, "row": 1 },
+    { "id": "spark",             "icon": "minecraft:fire_charge",   "cost": 1, "prereqs": ["mana_system"],              "col": 2, "row": 0 },
+    { "id": "rocket",            "icon": "minecraft:arrow",         "cost": 1, "prereqs": ["mana_system"],              "col": 2, "row": 1 },
+    { "id": "buff_immunity",     "icon": "minecraft:milk_bucket",   "cost": 1, "prereqs": ["mana_system"],              "col": 2, "row": 2 },
+    { "id": "alchemy",           "icon": "minecraft:brewing_stand", "cost": 1, "prereqs": ["spark", "rocket"],          "col": 3, "row": 0 },
+    { "id": "spirit_vision",     "icon": "minecraft:spider_eye",    "cost": 1, "prereqs": ["buff_immunity"],            "col": 3, "row": 2 },
+    { "id": "fire_ring",         "icon": "minecraft:blaze_powder",  "cost": 1, "prereqs": ["alchemy", "spirit_vision"], "col": 4, "row": 1 },
+    { "id": "branch_spirit_lord", "icon": "minecraft:soul_lantern", "cost": 0, "prereqs": ["fire_ring"], "col": 5, "row": 0, "auto_unlock": true, "branch": "spirit_lord" },
+    { "id": "branch_mancianima",  "icon": "minecraft:nether_star",  "cost": 0, "prereqs": ["fire_ring"], "col": 5, "row": 2, "auto_unlock": true, "branch": "mancianima" }
+  ],
 
   "branches": {
-    "branch_a": {
-      "display_name": "evolution.my_addon.familiar_fox.branch_a",
-      "sp_form": "my_addon:familiar_fox_sp",
-      "requires_nodes": ["demo_node_1"]
-    },
-    "branch_b": {
-      "display_name": "evolution.my_addon.familiar_fox.branch_b",
-      "sp_form": "my_addon:familiar_fox_mancianima",
-      "requires_nodes": ["demo_node_1"]
-    }
+    "spirit_lord": { "sp_form": "my_addon:familiar_fox_sp",          "requires_nodes": ["fire_ring"] },
+    "mancianima":  { "sp_form": "my_addon:familiar_fox_mancianima",  "requires_nodes": ["fire_ring"] }
   }
 }

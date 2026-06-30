@@ -260,7 +260,7 @@ public class EvolutionScreen extends Screen {
         // 节点
         EvolutionNode hovered = null;
         if (comp != null) {
-            for (EvolutionNode node : FamiliarFoxTree.NODES) {
+            for (EvolutionNode node : FamiliarFoxTree.nodes()) {
                 boolean unlocked = comp.isUnlocked(node.id);
                 boolean staged = pending.contains(node.id);
                 boolean canUn = canUn(comp, node);
@@ -319,7 +319,7 @@ public class EvolutionScreen extends Screen {
 
     private void drawConnections(DrawContext ctx, EvolutionComponent comp) {
         if (comp == null) return;
-        for (EvolutionNode node : FamiliarFoxTree.NODES) {
+        for (EvolutionNode node : FamiliarFoxTree.nodes()) {
             for (String pid : node.prereqs) {
                 EvolutionNode pre = FamiliarFoxTree.get(pid);
                 if (pre == null) continue;
@@ -513,10 +513,10 @@ public class EvolutionScreen extends Screen {
 
         if (comp != null && comp.isOnSscaRoute()) {
             int unlocked = 0;
-            for (EvolutionNode n : FamiliarFoxTree.NODES) {
+            for (EvolutionNode n : FamiliarFoxTree.nodes()) {
                 if (comp.isUnlocked(n.id)) unlocked++;
             }
-            int total = FamiliarFoxTree.NODES.size();
+            int total = FamiliarFoxTree.nodes().size();
             Text prog = Text.translatable("evolution.my_addon.screen.progress", unlocked, total);
             ctx.drawTextWithShadow(this.textRenderer, prog, 12, y0 + 13, TXT_GOLD);
 
@@ -655,7 +655,7 @@ public class EvolutionScreen extends Screen {
             }
             EvolutionComponent comp = getComp();
             if (comp != null) {
-                for (EvolutionNode node : FamiliarFoxTree.NODES) {
+                for (EvolutionNode node : FamiliarFoxTree.nodes()) {
                     if (!inNode(mouseX, mouseY, node)) continue;
                     if (!comp.isOnSscaRoute() && FamiliarFoxTree.NODE_BASE.equals(node.id)) {
                         sendString(SscAddonNetworking.PACKET_EVO_SELECT_ROUTE, FamiliarFoxTree.ROUTE_ID);

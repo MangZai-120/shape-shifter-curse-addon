@@ -331,6 +331,9 @@ public class SscAddon implements ModInitializer {
 		GoldenSandstormRegen.init();
 		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaMarkManager.register();
 		net.onixary.shapeShifterCurseFabric.ssc_addon.story.MoonScarStoryManager.register();
+		// SSCA 进化路线数据驱动加载器（datapack reload，扫描 data/<ns>/ssca_evolution/routes/*.json）
+		net.fabricmc.fabric.api.resource.ResourceManagerHelper.get(net.minecraft.resource.ResourceType.SERVER_DATA)
+				.registerReloadListener(net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.EvolutionRegistry.INSTANCE);
 	}
 
 

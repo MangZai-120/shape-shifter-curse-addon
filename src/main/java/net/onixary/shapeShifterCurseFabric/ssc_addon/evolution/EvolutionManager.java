@@ -12,7 +12,6 @@ import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 
 /**
  * SSCA 进化加点系统 - 服务端业务逻辑入口（框架骨架）。
@@ -33,58 +32,71 @@ public final class EvolutionManager {
     }
 
     /**
-     * 进化使魔进化门控：必须已解锁两个 50 级分支节点（灵界之主 + 契灵），
-     * 才允许使用月髓环 / 进化石从「进化使魔」继续进化到分支形态。
+     * 进化形态继续进化的门控：当前形态若是某条进化路线的起点形态，
+     * 必须已解锁该路线的【全部分支节点】，才允许月髓环 / 进化石继续进化到分支形态。
      *
-     * <p>对非进化使魔形态或不走 SSCA 路线的玩家恒为 true（不施加门控），
-     * 仅在「当前形态为进化使魔」时校验两分支是否都已解锁。</p>
+     * <p>当前形态不是任何路线的起点形态时恒为 true（不施加门控）。</p>
      */
     public static boolean canUpgradeFoxEvolve(ServerPlayerEntity player) {
         IForm nowForm = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
         Identifier nowFormId = (nowForm == null) ? null : nowForm.getFormID();
-        // 仅对进化使魔形态施加门控；其它形态走原版逻辑，不限制
-        if (!FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(nowFormId)) {
-            return true;
+        EvolutionRoute route = EvolutionRegistry.INSTANCE.getRouteByStartForm(nowFormId);
+        if (route == null) {
+            return true; // 非任何进化路线的起点形态 → 不限制
         }
         EvolutionComponent comp = get(player);
         if (!comp.isOnSscaRoute()) {
             return false;
         }
-        return comp.isUnlocked(FamiliarFoxTree.NODE_BRANCH_SPIRIT_LORD)
-                && comp.isUnlocked(FamiliarFoxTree.NODE_BRANCH_MANCIANIMA);
+        java.util.List<String> branchNodes = route.getBranchNodeIds();
+        if (branchNodes.isEmpty()) {
+            return true;
+        }
+        for (String bn : branchNodes) {
+            if (!comp.isUnlocked(bn)) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    /** 经验等级里程碑：到达这些等级各发放 1 点（与导图设定一致）。 */
+    /** 发点等级里程碑默认值（route JSON 未配置 level_milestones 时回退）。 */
     private static final int[] LEVEL_MILESTONES = {5, 10, 15, 20, 30, 40, 45};
 
-    /** 选择进化路线；选中使魔路线时自动解锁初始形态节点，并从使魔形态进化进入“进化使魔”。 */
+    /** 选择进化路线；自动解锁该路线初始节点，并（若当前非起点形态）变身进入起点形态。 */
     public static void selectRoute(ServerPlayerEntity player, String routeId) {
         EvolutionComponent comp = get(player);
         comp.setRoute(routeId);
-        if (FamiliarFoxTree.ROUTE_ID.equals(routeId)) {
-            comp.unlock(FamiliarFoxTree.NODE_BASE);
-            transformToUpgradeForm(player);
+        EvolutionRoute route = EvolutionRegistry.INSTANCE.getRoute(routeId);
+        if (route != null) {
+            if (route.getBaseNodeId() != null) {
+                comp.unlock(route.getBaseNodeId());
+            }
+            transformToStartForm(player, route);
         }
         sync(player);
     }
 
-    /** 若玩家当前为使魔系列形态（FormID path 含 familiar_fox）且非进化使魔本身，立即变身为“进化使魔”。 */
-    private static void transformToUpgradeForm(ServerPlayerEntity player) {
-        IForm currentForm = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
-        Identifier formId = (currentForm == null) ? null : currentForm.getFormID();
-        Identifier upgradeId = FormIdentifiers.UPGRADE_FAMILIAR_FOX;
-        if (formId == null || !formId.getPath().contains("familiar_fox") || formId.equals(upgradeId)) {
+    /** 若玩家当前形态非该路线起点形态，立即变身为起点形态。 */
+    private static void transformToStartForm(ServerPlayerEntity player, EvolutionRoute route) {
+        if (route.startForm == null) {
             return;
         }
-        IForm upgradeForm = RegPlayerForms.getPlayerForm(upgradeId);
-        if (upgradeForm != null) {
-            TransformManager.immediatelyTransform(player, upgradeForm);
+        IForm currentForm = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
+        Identifier formId = (currentForm == null) ? null : currentForm.getFormID();
+        if (formId == null || formId.equals(route.startForm)) {
+            return;
+        }
+        IForm startForm = RegPlayerForms.getPlayerForm(route.startForm);
+        if (startForm != null) {
+            TransformManager.immediatelyTransform(player, startForm);
         }
     }
 
-    /** 当前唯一可在「开局选形态」界面进入的 SSCA 进化形态，与所属进化路线绑定。 */
+    /** 该形态 id 是否为某条「已开放」进化路线的起点形态（可在开局选形态界面进入）。 */
     private static boolean isStartFormAllowed(Identifier formId) {
-        return FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(formId);
+        EvolutionRoute route = EvolutionRegistry.INSTANCE.getRouteByStartForm(formId);
+        return route != null && route.enabled;
     }
 
     /**
@@ -94,7 +106,7 @@ public final class EvolutionManager {
      * 流程：设置进化路线并解锁初始节点 → 触发启用 mod 语义 → 带黑屏淡入淡出动画变身到目标形态，
      * 动画期间定身（STUN），完成时播放升级音效。</p>
      *
-     * @param formIdStr 目标 SSCA 形态 ID 字符串（当前仅支持「进化使魔」）
+     * @param formIdStr 目标 SSCA 起点形态 ID 字符串
      */
     public static void startSscaRoute(ServerPlayerEntity player, String formIdStr) {
         if (!RegPlayerForms.ORIGINAL_BEFORE_ENABLE.isPlayerForm(player)) {
@@ -108,10 +120,13 @@ public final class EvolutionManager {
         if (targetForm == null) {
             return;
         }
+        EvolutionRoute route = EvolutionRegistry.INSTANCE.getRouteByStartForm(formId);
         // 设置进化路线并解锁初始节点（独立于变身动画）
         EvolutionComponent comp = get(player);
-        comp.setRoute(FamiliarFoxTree.ROUTE_ID);
-        comp.unlock(FamiliarFoxTree.NODE_BASE);
+        comp.setRoute(route.routeId);
+        if (route.getBaseNodeId() != null) {
+            comp.unlock(route.getBaseNodeId());
+        }
         sync(player);
         // 启用 mod 语义（成就 / 状态），与本体「翻开幻形者之书」一致
         ShapeShifterCurseFabric.ON_ENABLE_MOD.trigger(player);
@@ -130,8 +145,8 @@ public final class EvolutionManager {
     }
 
     /**
-     * 请求解锁一个天赋节点：校验节点合法、未解锁、非自动节点、前置满足（OR）、点数足够，
-     * 通过则扣点并解锁。
+     * 请求解锁一个天赋节点：校验节点合法、未解锁、非自动节点、前置满足（AND）、点数足够，
+     * 通过则扣点并解锁。节点取自玩家当前路线（数据驱动）。
      */
     public static boolean tryUnlock(ServerPlayerEntity player, String nodeId) {
         if (nodeId == null || nodeId.isEmpty()) {
@@ -141,7 +156,8 @@ public final class EvolutionManager {
         if (!comp.isOnSscaRoute()) {
             return false;
         }
-        EvolutionNode node = FamiliarFoxTree.get(nodeId);
+        EvolutionRoute route = EvolutionRegistry.INSTANCE.getRoute(comp.getRoute());
+        EvolutionNode node = (route == null) ? null : route.getNode(nodeId);
         if (node == null || node.autoUnlock || comp.isUnlocked(nodeId)) {
             return false;
         }
@@ -170,25 +186,27 @@ public final class EvolutionManager {
     }
 
     /**
-     * 服务端每 tick 调用：按经验等级里程碑发放点数，并在 50 级自动解锁满足前置的分支节点。
-     * 仅对已走 SSCA 路线的玩家生效。
+     * 服务端每 tick 调用：当前形态为某路线起点形态时自动进入该路线并解锁初始节点；
+     * 按 route 的经验等级里程碑发放点数，到达 route 的自动分支等级时解锁满足前置的分支节点；
+     * 离开起点形态则重置进度。仅对已走 SSCA 路线的玩家生效。
      */
     public static void tickPlayer(ServerPlayerEntity player) {
         EvolutionComponent comp = get(player);
         IForm nowForm = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
         Identifier nowFormId = (nowForm == null) ? null : nowForm.getFormID();
-        boolean isUpgradeForm = FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(nowFormId);
 
-        // 成为「进化使魔」即自动进入 SSCA 路线并解锁初始形态节点（base），无需玩家在进化树点击「初始形态」。
-        // 覆盖所有进入进化使魔的途径（开局之书 / 指令等）；放在 isOnSscaRoute 早退之前以便首次自动设路线。
-        if (isUpgradeForm) {
+        // 成为「某进化路线的起点形态」即自动进入该 SSCA 路线并解锁初始节点
+        //（覆盖开局之书 / 指令等所有途径）；放在 isOnSscaRoute 早退之前以便首次自动设路线。
+        EvolutionRoute enterRoute = EvolutionRegistry.INSTANCE.getRouteByStartForm(nowFormId);
+        if (enterRoute != null) {
             boolean autoChanged = false;
             if (!comp.isOnSscaRoute()) {
-                comp.setRoute(FamiliarFoxTree.ROUTE_ID);
+                comp.setRoute(enterRoute.routeId);
                 autoChanged = true;
             }
-            if (!comp.isUnlocked(FamiliarFoxTree.NODE_BASE)) {
-                comp.unlock(FamiliarFoxTree.NODE_BASE);
+            String baseId = enterRoute.getBaseNodeId();
+            if (baseId != null && !comp.isUnlocked(baseId)) {
+                comp.unlock(baseId);
                 autoChanged = true;
             }
             if (!comp.hasStarted()) {
@@ -204,24 +222,32 @@ public final class EvolutionManager {
             return;
         }
 
-        // 变形重置：曾变身进入进化使魔后，若离开该形态（变成任何其它形态），重置全部进化进度。
-        // 用 started 标志避免变身动画期间（route 已设但尚未变成进化使魔）误重置。
-        if (!isUpgradeForm && comp.hasStarted()) {
+        EvolutionRoute route = EvolutionRegistry.INSTANCE.getRoute(comp.getRoute());
+        boolean onOwnStartForm = route != null && route.startForm != null
+                && route.startForm.equals(nowFormId);
+
+        // 离开自己路线的起点形态（变成其它形态）→ 重置进度。
+        // 用 started 标志避免变身动画期间（route 已设但尚未变成起点形态）误重置。
+        if (!onOwnStartForm && comp.hasStarted()) {
             comp.reset();
             sync(player);
             return;
         }
+
         int level = player.experienceLevel;
         boolean changed = false;
-        for (int milestone : LEVEL_MILESTONES) {
+        int[] milestones = (route != null && route.levelMilestones.length > 0)
+                ? route.levelMilestones : LEVEL_MILESTONES;
+        for (int milestone : milestones) {
             if (level >= milestone && !comp.hasGrantedLevel(milestone)) {
                 comp.markGrantedLevel(milestone);
                 comp.addPoints(1);
                 changed = true;
             }
         }
-        if (level >= 50) {
-            for (EvolutionNode node : FamiliarFoxTree.NODES) {
+        int autoBranchLevel = (route != null) ? route.autoBranchLevel : 50;
+        if (route != null && autoBranchLevel > 0 && level >= autoBranchLevel) {
+            for (EvolutionNode node : route.nodes) {
                 if (node.autoUnlock && !node.branch.isEmpty()
                         && !comp.isUnlocked(node.id) && prereqsMet(comp, node)) {
                     comp.unlock(node.id);

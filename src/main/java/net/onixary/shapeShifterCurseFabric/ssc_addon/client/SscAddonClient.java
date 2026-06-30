@@ -119,7 +119,20 @@ public class SscAddonClient implements ClientModInitializer {
 
 		// 注册契灵准星射线追踪（每客户端 tick 更新当前瞄准目标）
 		try { MancianimaCrosshairTracker.register(); } catch (Throwable t) { LOGGER.error("[SSC_ADDON] CrosshairTracker register failed", t); }
-
+		// 注册「SSCA 进化路线定义同步」接收器：服务端把 routes JSON 同步过来，供进化树 UI（多人）渲染。
+		ClientPlayNetworking.registerGlobalReceiver(
+				net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking.PACKET_EVO_ROUTES_SYNC,
+				(client, handler, buf, responseSender) -> {
+					int count = buf.readInt();
+					if (count < 0 || count > 1000) return;
+					java.util.Map<String, String> raw = new java.util.LinkedHashMap<>();
+					for (int i = 0; i < count; i++) {
+						String routeId = buf.readString(256);
+						String json = buf.readString(2000000);
+						raw.put(routeId, json);
+					}
+					client.execute(() -> net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.EvolutionRegistry.INSTANCE.applyClientSync(raw));
+				});
 		// 注册「广播所有玩家形态」接收器：服务端把在场玩家的 formID + 皮肤数据直接广播过来，
 		// 客机按 UUID 直接写入其它玩家的 nowForm/nowFormID 与 PlayerSkinComponent（颜色/是否启用形态颜色等），
 		// 绕过 CCA 同步的不确定性，修复刚进游戏看其它玩家是「白色人类模型」（enableFormColor 未同步=渲染原版人类模型）。

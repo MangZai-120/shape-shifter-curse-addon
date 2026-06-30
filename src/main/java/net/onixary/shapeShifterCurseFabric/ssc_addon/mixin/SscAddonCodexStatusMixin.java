@@ -76,7 +76,7 @@ public class SscAddonCodexStatusMixin {
 		// 统计已解锁的可加点节点数
 		int unlockableCount = 0;
 		int unlockedCount = 0;
-		for (EvolutionNode node : FamiliarFoxTree.NODES) {
+		for (EvolutionNode node : FamiliarFoxTree.nodes()) {
 			if (FamiliarFoxTree.NODE_BASE.equals(node.id)) {
 				continue;
 			}
@@ -93,7 +93,7 @@ public class SscAddonCodexStatusMixin {
 		dynamic.append(Text.translatable("text.ssc_addon.evolution.book.summary_stats",
 				unlockedCount, unlockableCount, comp.getPoints(), player.experienceLevel));
 		// 逐个已解锁节点追加书页化叙述
-		for (EvolutionNode node : FamiliarFoxTree.NODES) {
+		for (EvolutionNode node : FamiliarFoxTree.nodes()) {
 			if (FamiliarFoxTree.NODE_BASE.equals(node.id)) {
 				continue;
 			}

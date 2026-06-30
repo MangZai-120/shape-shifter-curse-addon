@@ -62,6 +62,8 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_REQUEST_ALL_FORM_SYNC = new Identifier("my_addon", "request_all_form_sync");
 	/** S2C：服务端广播所有在场玩家的形态 ID。payload: int count + count*(UUID + String formId) */
 	public static final Identifier PACKET_BROADCAST_FORMS = new Identifier("my_addon", "broadcast_forms");
+	/** S2C：把所有 SSCA 进化路线定义（JSON）同步给客户端，供进化树 UI 渲染。payload: int count + count*(routeId + rawJson) */
+	public static final Identifier PACKET_EVO_ROUTES_SYNC = new Identifier("my_addon", "evo_routes_sync");
 
 	/** C2S 限频：每玩家每个事件类型记录上一次服务端接收时间，防外挂客户端 spam。 */
 	private static final Map<UUID, Long> LAST_WHITELIST_PACKET_TICK = new ConcurrentHashMap<>();
@@ -244,6 +246,16 @@ public class SscAddonNetworking {
 					}
 					ServerPlayNetworking.send(recipient, PACKET_BROADCAST_FORMS, out);
 				}
+				// 同步 SSCA 进化路线定义给请求者（客户端进化树 UI 渲染需要，多人环境客户端无 datapack 数据）
+				net.minecraft.network.PacketByteBuf routesOut = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+				java.util.Map<String, String> rawRoutes =
+						net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.EvolutionRegistry.INSTANCE.getRawJson();
+				routesOut.writeInt(rawRoutes.size());
+				for (java.util.Map.Entry<String, String> e : rawRoutes.entrySet()) {
+					routesOut.writeString(e.getKey(), 256);
+					routesOut.writeString(e.getValue(), 2000000);
+				}
+				ServerPlayNetworking.send(player, PACKET_EVO_ROUTES_SYNC, routesOut);
 			});
 		});
 	}

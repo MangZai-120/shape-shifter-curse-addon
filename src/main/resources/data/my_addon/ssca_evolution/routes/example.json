@@ -1,0 +1,23 @@
+{
+  "_comment": "【模板 / 示例】演示如何用一个 JSON 定义一条新形态的进化路线。enabled=false 故不会出现在游戏入口；复制本文件改名为 <你的形态>.json（文件名=route id）、改字段即可新增一条进化路线。形态本体（origin/model/power 注册）需另行制作；每个节点的能力靠对应 power JSON 挂 ssc_addon:has_talent(节点id) 条件门控（解锁后才生效）。",
+  "_fields": "enabled=是否开放 | display_name=路线名 lang key | start_form=进入该路线对应的形态 id | base_node=初始自动解锁节点(省略则取首个 auto_unlock 主线节点) | level_milestones=到达这些经验等级各发 1 点 | auto_branch_level=到该等级自动解锁分支节点 | nodes[]=节点(id/icon物品/cost/prereqs前置AND/col列/row行/auto_unlock/branch/grants_powers元数据) | branches{}=分支(sp_form目标SP形态/requires_nodes前置)",
+
+  "enabled": false,
+  "display_name": "evolution.my_addon.example.name",
+  "start_form": "my_addon:example_form",
+  "base_node": "example_base",
+  "level_milestones": [10, 20, 30],
+  "auto_branch_level": 50,
+
+  "nodes": [
+    { "id": "example_base",     "icon": "minecraft:nether_star",   "cost": 0, "prereqs": [],                "col": 0, "row": 1, "auto_unlock": true },
+    { "id": "example_skill",    "icon": "minecraft:diamond_sword", "cost": 1, "prereqs": ["example_base"],  "col": 1, "row": 1, "grants_powers": ["my_addon:example_skill_power"] },
+    { "id": "example_branch_a", "icon": "minecraft:soul_lantern",  "cost": 0, "prereqs": ["example_skill"], "col": 2, "row": 0, "auto_unlock": true, "branch": "branch_a" },
+    { "id": "example_branch_b", "icon": "minecraft:end_crystal",   "cost": 0, "prereqs": ["example_skill"], "col": 2, "row": 2, "auto_unlock": true, "branch": "branch_b" }
+  ],
+
+  "branches": {
+    "branch_a": { "sp_form": "my_addon:example_form_sp_a", "requires_nodes": ["example_skill"] },
+    "branch_b": { "sp_form": "my_addon:example_form_sp_b", "requires_nodes": ["example_skill"] }
+  }
+}
