@@ -43,6 +43,8 @@ nav:
   - 增益效果: effects/buffs.md
   - 减益效果: effects/debuffs.md
 - 指令: commands/commands.md
+- 开发者文档:
+  - 进化加点 · 数据驱动加形态: dev/evolution_data_driven.md
 - 世界观与故事:
   - 📜 故事内容许可声明: lore/license.md
   - 背景设定: lore/background.md
@@ -83,6 +85,8 @@ nav:
     - Buffs: en/effects/buffs.md
     - Debuffs: en/effects/debuffs.md
   - Commands: en/commands/commands.md
+  - Developer:
+    - "Evolution Talents · Data-Driven Form Trees": en/dev/evolution_data_driven.md
   - Lore:
     - 📜 Story Content License: en/lore/license.md
     - Background: en/lore/background.md
