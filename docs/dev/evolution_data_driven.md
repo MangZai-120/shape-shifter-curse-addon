@@ -108,17 +108,20 @@
 
 ## 五、当前仍需手改的 Java 触点
 
-试点形态「进化使魔」相关的客户端入口目前**硬编码**，新形态接入需一并处理（或等待后续把它们也泛化）：
+进化加点的客户端入口已全部泛化（按当前 route 动态判断），**加新形态进化无需再改这些**：
 
-| 触点 | 文件 | 作用 |
+| 触点 | 文件 | 状态 |
 |---|---|---|
-| 进化加点按钮显示条件 | `client/evolution/EvolutionBookHook` | 幻形者之书内「进化加点」按钮（现仅对 `upgrade_familiar_fox` 显示） |
-| 开局选形态 | `client/evolution/SscaFormSelectScreen` | 开局之书的 SSCA 路线选形态（现仅含进化使魔） |
-| 进化树渲染 | `client/evolution/EvolutionScreen` | 经 `FamiliarFoxTree` 绑 `familiar_fox` route（多形态时需改按当前玩家 route 取） |
-| cd / mana 条门控 | `SkillCooldownBarRenderer` / mana 条 mixin | 若新形态有这些 HUD 条，需加对应节点门控 |
+| 进化加点按钮显示条件 | `client/evolution/EvolutionBookHook` | ✅ 已泛化（任意 enabled route 的起点形态都显示） |
+| 开局选形态 | `client/evolution/SscaFormSelectScreen` | ✅ 已泛化（自动列出所有 enabled route 的起点形态） |
+| 进化树渲染 | `client/evolution/EvolutionScreen` | ✅ 已泛化（按玩家当前 route 渲染） |
 
-!!! tip "完全数据驱动的下一步"
-    把上述入口改为「按 `EvolutionRegistry.getRouteByStartForm(...)` / `comp.getRoute()` 动态判断」即可让新形态接入也免改 Java。框架已为此预留（`enabled` 字段、`getRouteByStartForm`、客户端 route 镜像均已就绪）。
+仅以下**形态特定的 HUD / 叙述**仍按试点形态硬编码，新形态如有这类需求需另配：
+
+| 触点 | 文件 | 说明 |
+|---|---|---|
+| cd / mana 条门控 | `SkillCooldownBarRenderer` / mana 条 mixin | 形态自带的冷却条 / 法力条的解锁前隐藏（形态特定 HUD） |
+| 书内叙述 | `SscAddonCodexStatusMixin` | 进化使魔书内 appearance 段的加点叙述（形态特定文案） |
 
 ## 六、测试与同步
 

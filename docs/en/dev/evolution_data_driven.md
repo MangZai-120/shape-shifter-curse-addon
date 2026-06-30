@@ -108,17 +108,20 @@ This is **not part of the evolution framework**. Follow existing SP forms:
 
 ## 5. Java hooks that still need manual edits
 
-Client entry points related to the pilot form "Upgrade Familiar Fox" are currently **hardcoded**; a new form needs them handled too (or wait for them to be generalized later):
+The evolution talent client entry points are now all generalized (decided dynamically by the current route), so **adding a new form's evolution no longer requires editing these**:
 
-| Hook | File | Purpose |
+| Hook | File | Status |
 |---|---|---|
-| Talent button visibility | `client/evolution/EvolutionBookHook` | The "Evolution Talents" button inside the Book (currently only for `upgrade_familiar_fox`) |
-| Starting form selection | `client/evolution/SscaFormSelectScreen` | SSCA route's start-form picker (currently only the Upgrade Familiar Fox) |
-| Tree rendering | `client/evolution/EvolutionScreen` | Bound to the `familiar_fox` route via `FamiliarFoxTree` (for multiple forms, switch to the player's current route) |
-| cd / mana bar gating | `SkillCooldownBarRenderer` / mana bar mixin | If the new form has these HUD bars, add per-node gating |
+| Talent button visibility | `client/evolution/EvolutionBookHook` | ✅ Generalized (shows for any enabled route's start form) |
+| Starting form selection | `client/evolution/SscaFormSelectScreen` | ✅ Generalized (auto-lists all enabled routes' start forms) |
+| Tree rendering | `client/evolution/EvolutionScreen` | ✅ Generalized (renders the player's current route) |
 
-!!! tip "Next step toward full data-driving"
-    Change the hooks above to "decide dynamically via `EvolutionRegistry.getRouteByStartForm(...)` / `comp.getRoute()`" and new forms will need no Java either. The framework already prepared for this (`enabled` field, `getRouteByStartForm`, and a client route mirror are all in place).
+Only the following **form-specific HUD / narrative** is still hardcoded for the pilot form; a new form needs its own if applicable:
+
+| Hook | File | Notes |
+|---|---|---|
+| cd / mana bar gating | `SkillCooldownBarRenderer` / mana bar mixin | Hide a form's own cooldown / mana bar before unlock (form-specific HUD) |
+| Book narrative | `SscAddonCodexStatusMixin` | The Upgrade Familiar Fox's in-book appearance narrative (form-specific text) |
 
 ## 6. Testing and sync
 
