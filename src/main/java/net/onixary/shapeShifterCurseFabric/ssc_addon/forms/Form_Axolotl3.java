@@ -6,6 +6,7 @@ import net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric;
 import net.onixary.shapeShifterCurseFabric.player_animation.AnimationHolder;
 import net.onixary.shapeShifterCurseFabric.player_animation.v2.PlayerAnimState;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AbstractAnimStateController;
+import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateControllerDP.OneAnimController;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateControllerDP.RushJumpAnimController;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateControllerDP.SwimAnimController;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateControllerDP.WithSneakAnimController;
@@ -27,6 +28,10 @@ public class Form_Axolotl3 extends NormalForm {
 	public static final AbstractAnimStateController FALL_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_jump")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_crawling_idle")));
 	public static final AbstractAnimStateController ATTACK_CONTROLLER = new WithSneakAnimController(null, new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_crawling_attack_once")));
 	public static final AbstractAnimStateController MINING_CONTROLLER = new WithSneakAnimController(null, new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_crawling_tool_swing")));
+	// 睡眠控制器：复用原版美西螈三阶段睡眠动画 axolotl_3_sleep（与原版 Form_Axolotl3 一致）
+	public static final AbstractAnimStateController SLEEP_CONTROLLER = new OneAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_sleep")));
+	// 创造飞行控制器（与原版 Form_Axolotl3 一致，避免飞行时回到默认姿势）
+	public static final AbstractAnimStateController FLYING_CONTROLLER = new OneAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_creative_flight")));
 	private static AnimationHolder anim_idle = new AnimationHolder();
 	private static AnimationHolder anim_walking = AnimationHolder.EMPTY;
 	private static AnimationHolder anim_running = AnimationHolder.EMPTY;
@@ -95,6 +100,8 @@ public class Form_Axolotl3 extends NormalForm {
 				case ANIM_STATE_FALL -> FALL_CONTROLLER;
 				case ANIM_STATE_ATTACK -> ATTACK_CONTROLLER;
 				case ANIM_STATE_MINING -> MINING_CONTROLLER;
+				case ANIM_STATE_FLYING -> FLYING_CONTROLLER;
+				case ANIM_STATE_SLEEP -> SLEEP_CONTROLLER;
 				default -> null;
 			};
 		}

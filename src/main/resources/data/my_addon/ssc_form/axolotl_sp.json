@@ -49,7 +49,7 @@
         },
         "shape-shifter-curse:sleep_state": {
             "controllerType": "shape-shifter-curse:one_anim_controller",
-            "anim": { "animID": "my_addon:form_normal_sleep" }
+            "anim": { "animID": "shape-shifter-curse:axolotl_3_sleep" }
         },
         "shape-shifter-curse:attack_state": {
             "controllerType": "shape-shifter-curse:sneak_anim_controller",

@@ -2,6 +2,8 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.client.renderer;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.Perspective;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
@@ -84,6 +86,9 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 		// === 蓄力期四条白线（客户端绘制，无粒子残留）===
 		if (phaseId == 0) {
 			drawChargeLines(buf, matrices.peek().getPositionMatrix(), matrices.peek().getNormalMatrix(), pt);
+			// 法阵核心发光粒子（END_ROD）：仅在非第一人称视角下生成
+			// 第一人称下法阵紧贴相机，中央粒子会遮挡视线；第三人称（含自己按 F5 切换）可见
+			spawnArrayCoreParticleIfThirdPerson(ox + ax * d, oy + ay * d, oz + az * d);
 		}
 
 		// === 光柱（release / fade）沿 +Z ===
@@ -100,6 +105,25 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 
 		matrices.pop();
 		super.render(entity, yaw, tickDelta, matrices, vcp, light);
+	}
+
+	/**
+	 * 法阵核心发光粒子（END_ROD）：仅在非第一人称视角下生成。
+	 * <p>第一人称下法阵紧贴相机，中央粒子会遮挡视线 → 不生成；
+	 * 第三人称（含施法者本人按 F5 切换）→ 在法阵位置生成 END_ROD。
+	 * 该粒子为纯客户端粒子，每个玩家各自按自己视角判定，互不影响。
+	 */
+	private void spawnArrayCoreParticleIfThirdPerson(double wx, double wy, double wz) {
+		MinecraftClient mc = MinecraftClient.getInstance();
+		if (mc.world == null) return;
+		// 仅第三人称（含反向第三人称）生成；第一人称跳过
+		if (mc.options.getPerspective() == Perspective.FIRST_PERSON) return;
+		// 每帧生成 1 个，参数与服务端原 spawnParticles(count=2,delta=0.1,speed=0.01) 大致相当
+		mc.world.addParticle(net.minecraft.particle.ParticleTypes.END_ROD,
+				wx, wy, wz,
+				(mc.world.random.nextDouble() - 0.5) * 0.02,
+				(mc.world.random.nextDouble() - 0.5) * 0.02,
+				(mc.world.random.nextDouble() - 0.5) * 0.02);
 	}
 
 	// ==================== 蓄力四线（XY 平面四角 → +Z）====================

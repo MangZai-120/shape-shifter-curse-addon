@@ -184,8 +184,8 @@ public class LaserBeamEntity extends Entity {
 					SoundEvents.BLOCK_CONDUIT_AMBIENT, SoundCategory.PLAYERS, 0.6f, 0.8f + p * 0.8f);
 		}
 
-		// 四条白线由渲染器绘制（客户端，无粒子残留）；这里仅保留法阵核心发光
-		sw.spawnParticles(ParticleTypes.END_ROD, arrayPos.x, arrayPos.y, arrayPos.z, 2, 0.1, 0.1, 0.1, 0.01);
+		// 四条白线由渲染器绘制（客户端，无粒子残留）；法阵核心发光粒子改为客户端渲染器按视角生成
+		// （第一人称不生成、第三人称生成），避免服务端粒子无法区分视角导致第一人称被遮挡
 		if (phaseTicks >= CHARGE_TICKS) {
 			phase = Phase.RELEASE;
 			phaseTicks = 0;

@@ -1,7 +1,6 @@
 {
     "powers": [
         "shape-shifter-curse:no_render_arm",
-        "shape-shifter-curse:form_feral_cat_sp_scale",
         "shape-shifter-curse:form_disable_leg_armor",
         "shape-shifter-curse:form_disable_feet_armor",
         "shape-shifter-curse:velvet_paws",
@@ -27,7 +26,8 @@
         "my_addon:form_sp_primary_cd_tick",
         "my_addon:form_sp_secondary_cd_tick",
         "shape-shifter-curse:form_tan_prevent_dirty_water_thirst",
-        "shape-shifter-curse:form_tan_cold_resistance_mild"
+        "shape-shifter-curse:form_tan_cold_resistance_mild",
+        "shape-shifter-curse:cat_friendly"
     ],
     "icon": {
         "item": "minecraft:ocelot_spawn_egg"
