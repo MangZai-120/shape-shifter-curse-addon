@@ -59,7 +59,7 @@ public class LaserBeamEntity extends Entity {
 
 	// ===== 几何 =====
 	private static final double ARRAY_DIST = 3.0;     // 法阵在玩家前方距离
-	private static final double BEAM_LENGTH = 24.0;    // 光柱/四线长度
+	private static final double BEAM_LENGTH = 32.0;    // 光柱/四线长度
 	private static final double BEAM_RADIUS = 2.5;     // 光柱半径（直径 5 格）
 
 	// ===== 伤害 =====

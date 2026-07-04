@@ -38,8 +38,7 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 	private static final float[] BEAM   = {0.55f, 0.92f, 1.00f, 0.45f};
 	private static final float[] BEAM_CORE = {0.95f, 0.99f, 1.00f, 0.85f};
 
-	// 与 LaserBeamEntity 一致
-	private static final int RELEASE_TICKS = 60;
+	// 与 LaserBeamEntity 一致（RELEASE_TICKS 仅作文档参考，渲染逻辑不直接读取故不在此声明）
 	private static final int FADE_TICKS = 30;
 
 	public FluorescentLaserRenderer(EntityRendererFactory.Context ctx) {
