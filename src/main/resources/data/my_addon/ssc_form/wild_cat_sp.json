@@ -1,7 +1,6 @@
 {
   "groupIndex": 6,
   "phase": "PHASE_SP",
-  "status": "codex.status.my_addon.wild_cat_sp_status",
   "bodyType": "FERAL",
   "isCustomForm": false,
   "originID": "my_addon:form_wild_cat_sp",

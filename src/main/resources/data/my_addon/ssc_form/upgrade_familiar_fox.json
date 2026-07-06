@@ -1,7 +1,6 @@
 {
   "groupIndex": 5,
   "phase": "PHASE_SP",
-  "status": "codex.status.my_addon.SP_status",
   "bodyType": "FERAL",
   "isCustomForm": false,
   "originID": "my_addon:form_upgrade_familiar_fox",

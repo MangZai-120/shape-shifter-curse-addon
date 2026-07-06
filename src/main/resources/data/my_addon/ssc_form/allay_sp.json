@@ -1,7 +1,6 @@
 {
   "groupIndex": 8,
   "phase": "PHASE_SP",
-  "status": "codex.status.my_addon.SP_status",
   "bodyType": "NORMAL",
   "isCustomForm": false,
   "originID": "my_addon:form_allay_sp",
