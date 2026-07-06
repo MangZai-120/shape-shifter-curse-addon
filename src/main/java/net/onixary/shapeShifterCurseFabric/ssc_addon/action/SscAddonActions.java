@@ -1,7 +1,5 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.action;
 
-import dev.emi.trinkets.api.TrinketComponent;
-import dev.emi.trinkets.api.TrinketsApi;
 import io.github.apace100.apoli.power.factory.action.ActionFactory;
 import io.github.apace100.apoli.registry.ApoliRegistries;
 import io.github.apace100.calio.data.SerializableData;
@@ -45,7 +43,6 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SkillBlocker;
 
-import java.util.Optional;
 import java.util.UUID;
 
 public class SscAddonActions {
@@ -383,20 +380,6 @@ public class SscAddonActions {
 						// 1. Effects
 						// Duration 6s = 120 ticks
 						int duration = 120;
-
-						int regenAmp = 2; // Default Regeneration III (Regen I=0, II=1, III=2)
-						boolean hasNecklace = false;
-
-						if (living instanceof PlayerEntity player) {
-							try {
-								Optional<TrinketComponent> component = TrinketsApi.getTrinketComponent(player);
-								if (component.isPresent()) {
-									hasNecklace = component.get().isEquipped(SscAddon.ACTIVE_CORAL_NECKLACE);
-								}
-							} catch (Exception e) {
-								// Ignore if trinkets not available or error
-							}
-						}
 
 						// 项链黄心改由 PlayingDeadEffect 每10tick累积，不再用 Absorption 效果
 

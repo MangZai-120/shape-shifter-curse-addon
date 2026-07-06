@@ -378,5 +378,8 @@ public class SscAddonClient implements ClientModInitializer {
 
 		// SSCA 进化路线 - 在「翻开幻形者之书」开局界面注入「进入 SSCA 进化路线」入口按钮
 		net.onixary.shapeShifterCurseFabric.ssc_addon.client.evolution.SscaStartBookHook.register();
+
+		// SSCA 能量条 / 本能条位置可视化编辑器 - 在 SSC「客户端配置」cloth-config 界面注入入口按钮（fabric ScreenEvents，非 Mixin）
+		net.onixary.shapeShifterCurseFabric.ssc_addon.client.screen.BarPositionEditorScreen.registerEntry();
 	}
 }
