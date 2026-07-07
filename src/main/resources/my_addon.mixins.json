@@ -46,7 +46,8 @@
                    "effect.StunnedJumpMixin",
                    "item.TransformRelatedItemsMixin",
                    "TransformManagerAdvancementMixin",
-                   "WanderingTraderTradeMixin"
+                   "WanderingTraderTradeMixin",
+                   "entity.ClawDamageBoostMixin"
                ],
     "client":  [
                    "render.InstinctBarRendererMixin",

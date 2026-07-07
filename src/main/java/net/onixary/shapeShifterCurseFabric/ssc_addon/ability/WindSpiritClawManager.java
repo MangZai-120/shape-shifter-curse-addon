@@ -14,7 +14,9 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 import java.util.Map;
@@ -60,6 +62,12 @@ public final class WindSpiritClawManager {
 
     private static final Map<UUID, ClawState> STATES = new ConcurrentHashMap<>();
 
+    // 副技能：+50% 徒手/形态伤害 buff
+    private static final int BUFF_DURATION = 10;      // 0.5 秒
+    private static final int SECONDARY_CD_TICKS = 40; // 2 秒
+    private static final float BUFF_MULT = 1.5f;
+    private static final Map<UUID, Integer> BUFF_TICKS = new ConcurrentHashMap<>();
+
     public static final class ClawState {
         boolean holding = false;
         int phase = PHASE_IDLE;
@@ -90,6 +98,13 @@ public final class WindSpiritClawManager {
 
     /** 每服务端 tick 对每个在线玩家调用。 */
     public static void tick(ServerPlayerEntity player) {
+        // 副技能 buff 计时（独立于连击状态）
+        Integer buff = BUFF_TICKS.get(player.getUuid());
+        if (buff != null) {
+            if (buff <= 1 || !FormUtils.isOcelotSP(player)) BUFF_TICKS.remove(player.getUuid());
+            else BUFF_TICKS.put(player.getUuid(), buff - 1);
+        }
+
         ClawState s = STATES.get(player.getUuid());
         if (s == null) return;
 
@@ -140,18 +155,24 @@ public final class WindSpiritClawManager {
     private static void tickOverheat(ServerPlayerEntity player, ClawState s) {
         removeSpeedSlow(player);
 
-        // 停止后延迟内再按死 → 无缝继续爪击
-        if (s.holding) {
-            s.phase = PHASE_CLAW;
-            return;
-        }
+        // 过热回复期间不重启连击：左键 = 弱普攻（伤害按回复进度缩放，见 getNormalMeleeMultiplier）。
         if (s.overheatDelay > 0) {
             s.overheatDelay--;
             return;
         }
         s.recovery += 1.0f / RECOVER_TICKS;
         if (s.recovery >= 1.0f) {
-            clear(player); // 回复完成 → 准星条消失
+            // 回复完成：仍按住 → 无缝重启连击；否则结束、准星条消失
+            if (s.holding) {
+                s.phase = PHASE_CLAW;
+                s.holdTicks = 0;
+                s.sinceLastAttack = MIN_INTERVAL;
+                s.progress = 1.0f;
+                s.recovery = 0.0f;
+                s.overheatDelay = 0;
+            } else {
+                clear(player);
+            }
         }
     }
 
@@ -245,6 +266,29 @@ public final class WindSpiritClawManager {
         };
     }
 
+    /** 徒手/形态近战伤害倍率 = 过热回复缩放(0-0.9) × 副技能 buff(1.5)。给 ClawDamageBoostMixin 用。 */
+    public static float getNormalMeleeMultiplier(ServerPlayerEntity player) {
+        float recovery = 1.0f;
+        ClawState s = STATES.get(player.getUuid());
+        if (s != null && s.phase == PHASE_OVERHEAT) {
+            recovery = s.recovery * 0.9f; // 回复进度 0→1 映射伤害 0→90%
+        }
+        float buff = BUFF_TICKS.containsKey(player.getUuid()) ? BUFF_MULT : 1.0f;
+        return recovery * buff;
+    }
+
+    /** 副技能（sp_secondary）：0.5 秒内徒手/形态伤害 +50%，cd 2 秒。 */
+    public static void activateSecondaryBuff(ServerPlayerEntity player) {
+        if (!FormUtils.isOcelotSP(player)) return;
+        if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_SECONDARY_CD) > 0) return; // CD 中
+        BUFF_TICKS.put(player.getUuid(), BUFF_DURATION);
+        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, SECONDARY_CD_TICKS);
+        ServerWorld sw = (ServerWorld) player.getWorld();
+        sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.ENTITY_PLAYER_ATTACK_STRONG, SoundCategory.PLAYERS, 0.8f, 1.6f);
+        sw.spawnParticles(ParticleTypes.CRIT, player.getX(), player.getY() + 1.0, player.getZ(), 20, 0.4, 0.5, 0.4, 0.2);
+    }
+
     /** 彻底清理：移除状态 + 移速修饰符，并通知客户端准星条消失。 */
     public static void clear(ServerPlayerEntity player) {
         removeSpeedSlow(player);
@@ -256,5 +300,6 @@ public final class WindSpiritClawManager {
     public static void onPlayerDisconnect(ServerPlayerEntity player) {
         removeSpeedSlow(player);
         STATES.remove(player.getUuid());
+        BUFF_TICKS.remove(player.getUuid());
     }
 }

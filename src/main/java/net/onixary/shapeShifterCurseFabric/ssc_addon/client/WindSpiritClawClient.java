@@ -18,6 +18,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
  */
 public final class WindSpiritClawClient {
     private static boolean lastHold = false;
+    private static boolean lastSecPressed = false;
 
     private WindSpiritClawClient() {
     }
@@ -47,6 +48,14 @@ public final class WindSpiritClawClient {
                 ClientPlayNetworking.send(SscAddonNetworking.PACKET_CLAW_HOLD, buf);
                 lastHold = hold;
             }
+
+            // 副技能：sp_secondary 边沿 → 发增伤 buff 包
+            boolean secPressed = isOcelot && client.currentScreen == null
+                    && SscAddonKeybindings.getSecondaryKey().isPressed();
+            if (secPressed && !lastSecPressed) {
+                ClientPlayNetworking.send(SscAddonNetworking.PACKET_CLAW_BUFF, PacketByteBufs.empty());
+            }
+            lastSecPressed = secPressed;
 
             if (!isOcelot) {
                 ClawClientState.reset();

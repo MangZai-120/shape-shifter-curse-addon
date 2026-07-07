@@ -29,6 +29,8 @@ public class SscAddonNetworking {
 	/** 风灵「疾风连爪」：C2S 上报左键按住(boolean)；S2C 同步爪击阶段(int)+准星条进度(float)。 */
 	public static final Identifier PACKET_CLAW_HOLD = new Identifier("my_addon", "claw_hold");
 	public static final Identifier PACKET_CLAW_STATE = new Identifier("my_addon", "claw_state");
+	/** 风灵副技能：C2S 按 sp_secondary 触发 +50% 增伤 buff。无 payload。 */
+	public static final Identifier PACKET_CLAW_BUFF = new Identifier("my_addon", "claw_buff");
 
 	// ===== 白名单 GUI 网络包 =====
 	/** S2C：服务端把调用者当前白名单 UUID 集合推给客户端，用于打开/刷新 GUI。payload: int n + n*UUID */
@@ -193,6 +195,11 @@ public class SscAddonNetworking {
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_CLAW_HOLD, (server, player, handler, buf, responseSender) -> {
 			boolean hold = buf.readBoolean();
 			server.execute(() -> net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindSpiritClawManager.setHolding(player, hold));
+		});
+
+		// 风灵副技能：sp_secondary 触发 +50% 增伤 buff
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_CLAW_BUFF, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindSpiritClawManager.activateSecondaryBuff(player));
 		});
 
 		// 荧光幼灵技能按键：主要（法阵激光）/ 次要（潮汐波动）
