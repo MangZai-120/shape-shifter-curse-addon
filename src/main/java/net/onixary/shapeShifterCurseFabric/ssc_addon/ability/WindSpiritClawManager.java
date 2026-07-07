@@ -1,10 +1,12 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.ability;
 
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -27,8 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 风灵（月髓环豹猫） - 「疾风连爪」左键连击技能（服务端状态机）。
  *
  * 按死左键 → 连续爪击，越打越快（间隔 1.0s → 3 秒后 0.34s）；每次爪击对前方 2.5 格范围造成横扫伤害
- * （基础 8，随时长衰减，且叠加 MC 原版攻击冷却减伤），前冲一小段、扣饱食度。进度条按攻击次数消耗，
- * 最快频率下正好 10 秒打空；松开或打空进入过热回复（延迟 1 秒后 8 秒回满，期间伤害 0%→90%）。
+ * （基础 8，随时长衰减，且叠加 MC 原版攻击冷却减伤），前冲一小段、扣饱食度。准星条即「耐力」，连击开始时满、
+ * 随每次爪击下降；松开或打空后从当前进度慢慢回满（回满约 8 秒，期间左键=弱普攻 0%→90%）。
  * 移速随时长线性衰减（-15%/秒，封顶 -45%）。
  *
  * 客户端准星攻击冷却条由 {@code ClawCrosshairMixin} 读取经 S2C（PACKET_CLAW_STATE）同步的
@@ -43,7 +45,6 @@ public final class WindSpiritClawManager {
     private static final int MIN_INTERVAL = 7;    // ≈0.34s
     private static final int RAMP_TICKS = 60;     // 3 秒达最快
     private static final int MAX_CLAW_TICKS = 200; // 连击最长 10 秒兜底
-    private static final int OVERHEAT_DELAY = 20;  // 过热回复延迟 1 秒
     private static final int RECOVER_TICKS = 160;  // 从 0 回满 8 秒
     private static final float DMG_DECAY_PER_SEC = 0.12f;
     private static final float DMG_DECAY_MAX = 0.36f;
@@ -74,7 +75,6 @@ public final class WindSpiritClawManager {
         int holdTicks = 0;
         int sinceLastAttack = 0;
         float progress = 1.0f;
-        int overheatDelay = 0;
         float recovery = 0.0f;
     }
 
@@ -155,21 +155,16 @@ public final class WindSpiritClawManager {
     private static void tickOverheat(ServerPlayerEntity player, ClawState s) {
         removeSpeedSlow(player);
 
-        // 过热回复期间不重启连击：左键 = 弱普攻（伤害按回复进度缩放，见 getNormalMeleeMultiplier）。
-        if (s.overheatDelay > 0) {
-            s.overheatDelay--;
-            return;
-        }
+        // 停手后立即从当前进度慢慢回满（无延迟）；期间左键 = 弱普攻（getRecoveryMultiplier 缩放 0→90%）。
         s.recovery += 1.0f / RECOVER_TICKS;
         if (s.recovery >= 1.0f) {
-            // 回复完成：仍按住 → 无缝重启连击；否则结束、准星条消失
+            // 回满：仍按住 → 无缝重启连击；否则结束、准星条消失
             if (s.holding) {
                 s.phase = PHASE_CLAW;
                 s.holdTicks = 0;
                 s.sinceLastAttack = MIN_INTERVAL;
                 s.progress = 1.0f;
                 s.recovery = 0.0f;
-                s.overheatDelay = 0;
             } else {
                 clear(player);
             }
@@ -178,8 +173,7 @@ public final class WindSpiritClawManager {
 
     private static void enterOverheat(ClawState s) {
         s.phase = PHASE_OVERHEAT;
-        s.overheatDelay = OVERHEAT_DELAY;
-        s.recovery = MathHelper.clamp(s.progress, 0.0f, 1.0f); // 打得越久剩余越少、回复越久
+        s.recovery = MathHelper.clamp(s.progress, 0.0f, 1.0f); // 从当前剩余进度开始回满（打得越久剩越少、回越久）
     }
 
     private static void performClawAttack(ServerPlayerEntity player, ClawState s) {
@@ -254,19 +248,16 @@ public final class WindSpiritClawManager {
         return Math.round(MAX_INTERVAL - (MAX_INTERVAL - MIN_INTERVAL) * t);
     }
 
-    /** 爪击期=当前这一击的间隔充能（0→1 循环）；过热期=回复进度（0→1）；空闲=1。 */
+    /** 准星条=耐力：爪击期=剩余进度(随每次爪击下降)；过热期=从当前进度回满(0→1)；空闲=1。 */
     public static float crosshairProgress(ClawState s) {
         return switch (s.phase) {
-            case PHASE_CLAW -> {
-                int interval = currentInterval(s.holdTicks);
-                yield MathHelper.clamp(s.sinceLastAttack / (float) interval, 0.0f, 1.0f);
-            }
+            case PHASE_CLAW -> MathHelper.clamp(s.progress, 0.0f, 1.0f);
             case PHASE_OVERHEAT -> MathHelper.clamp(s.recovery, 0.0f, 1.0f);
             default -> 1.0f;
         };
     }
 
-    /** 徒手/形态近战伤害倍率 = 过热回复缩放(0-0.9) × 副技能 buff(1.5)。给 ClawDamageBoostMixin 用。 */
+    /** 徒手/非武器近战伤害倍率 = 过热回复缩放(0-0.9) × 副技能 buff(1.5)。给 ClawDamageBoostMixin 用。 */
     public static float getNormalMeleeMultiplier(ServerPlayerEntity player) {
         float recovery = 1.0f;
         ClawState s = STATES.get(player.getUuid());
@@ -275,6 +266,21 @@ public final class WindSpiritClawManager {
         }
         float buff = BUFF_TICKS.containsKey(player.getUuid()) ? BUFF_MULT : 1.0f;
         return recovery * buff;
+    }
+
+    /** 是否手持武器（与主包 is_weapon 一致：主手攻击力加成 &gt; 1）。拿武器时不吃疾风连爪/副技能加伤（火把/食物/方块等非武器仍吃）。 */
+    public static boolean isHoldingWeapon(ServerPlayerEntity player) {
+        ItemStack stack = player.getMainHandStack();
+        if (stack.isEmpty()) return false;
+        double totalAdd = 0.0;
+        for (EntityAttributeModifier m : stack.getItem()
+                .getAttributeModifiers(stack, EquipmentSlot.MAINHAND)
+                .get(EntityAttributes.GENERIC_ATTACK_DAMAGE)) {
+            if (m.getOperation() == EntityAttributeModifier.Operation.ADDITION) {
+                totalAdd += m.getValue();
+            }
+        }
+        return totalAdd > 1.0;
     }
 
     /** 副技能（sp_secondary）：0.5 秒内徒手/形态伤害 +50%，cd 2 秒。 */
