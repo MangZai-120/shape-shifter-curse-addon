@@ -820,5 +820,7 @@
     "origin.my_addon.form_ocelot_wind_spirit.description": "豹猫挣脱狩猎姿态束缚后的特殊变体形态，重获自由疾跑之力，以疾风般的连续爪击撕裂猎物。",
     "my_addon.form_ocelot_wind_spirit.model_name": "风灵",
     "advancements.my_addon.on_transform_ocelot_wind_spirit.title": "风灵",
-    "advancements.my_addon.on_transform_ocelot_wind_spirit.description": "首次变成风灵"
+    "advancements.my_addon.on_transform_ocelot_wind_spirit.description": "首次变成风灵",
+    "power.my_addon.form_ocelot_wind_spirit_wind_dash.name": "风之冲刺",
+    "power.my_addon.form_ocelot_wind_spirit_wind_dash.description": "按下主技能键，垂直飞向5格高空并悬浮3秒（脚下灰烟缭绕）。悬浮期间准星水平方向最远16格处显示绿色落点指示器；再次按下主技能键，以疾风之势直线冲刺到落点，对落点3格范围内的敌人造成12点物理伤害，落地后进入12秒冷却。超时未冲刺则缓缓落下，不造成伤害但仍会进入冷却。"
 }

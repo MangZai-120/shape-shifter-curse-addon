@@ -31,6 +31,9 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_CLAW_STATE = new Identifier("my_addon", "claw_state");
 	/** 风灵副技能：C2S 按 sp_secondary 触发 +50% 增伤 buff。无 payload。 */
 	public static final Identifier PACKET_CLAW_BUFF = new Identifier("my_addon", "claw_buff");
+	/** 风灵「风之冲刺」：C2S 按主技能键（无 payload，服务端按阶段分支）；S2C 同步阶段(int)+targetY(double)。 */
+	public static final Identifier PACKET_WIND_DASH = new Identifier("my_addon", "wind_dash");
+	public static final Identifier PACKET_DASH_STATE = new Identifier("my_addon", "dash_state");
 
 	// ===== 白名单 GUI 网络包 =====
 	/** S2C：服务端把调用者当前白名单 UUID 集合推给客户端，用于打开/刷新 GUI。payload: int n + n*UUID */
@@ -104,6 +107,14 @@ public class SscAddonNetworking {
 		buf.writeInt(phase);
 		buf.writeFloat(crosshairProgress);
 		ServerPlayNetworking.send(player, PACKET_CLAW_STATE, buf);
+	}
+
+	/** 风灵「风之冲刺」：同步阶段(phase)与目标悬浮 Y 给客户端（驱动落点预览）。 */
+	public static void syncDashState(net.minecraft.server.network.ServerPlayerEntity player, int phase, double targetY) {
+		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+		buf.writeInt(phase);
+		buf.writeDouble(targetY);
+		ServerPlayNetworking.send(player, PACKET_DASH_STATE, buf);
 	}
 
 	public static void registerServerReceivers() {
@@ -200,6 +211,11 @@ public class SscAddonNetworking {
 		// 风灵副技能：sp_secondary 触发 +50% 增伤 buff
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_CLAW_BUFF, (server, player, handler, buf, responseSender) -> {
 			server.execute(() -> net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindSpiritClawManager.activateSecondaryBuff(player));
+		});
+
+		// 风灵「风之冲刺」：主技能键（服务端按当前阶段分支：起飞 / 悬浮中冲刺）
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_WIND_DASH, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindDashManager.onKeyPress(player));
 		});
 
 		// 荧光幼灵技能按键：主要（法阵激光）/ 次要（潮汐波动）

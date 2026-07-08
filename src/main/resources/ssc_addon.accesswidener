@@ -1,5 +1,0 @@
-accessWidener v2 named
-
-# 无限压缩能量药水的酿造完全由 BrewingRegistryInfiniteMixin（拦截 hasRecipe/craft）实现，
-# 不再依赖向 BrewingRecipeRegistry.ITEM_RECIPES 注册静态配方，故此处无需任何额外访问放宽。
-# 注意：fabric.mod.json 仍引用本文件，Loom 在配置阶段强制要求其存在，请勿删除本文件。

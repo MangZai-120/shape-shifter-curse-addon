@@ -54,7 +54,9 @@
     "trinkets": ">=3.7.2"
   },
   "suggests": {
-    "modmenu": "*"
+    "modmenu": "*",
+    "lambdynlights": "*",
+    "asyncparticles": "*"
   },
   "contributors": [
     {

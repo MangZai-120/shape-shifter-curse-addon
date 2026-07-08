@@ -271,11 +271,17 @@ public class SscAddonClient implements ClientModInitializer {
 			client.execute(() -> net.onixary.shapeShifterCurseFabric.ssc_addon.client.ClawClientState.update(phase, progress));
 		});
 
+        // 风灵「风之冲刺」：接收阶段+目标悬浮Y，更新客户端镜像（驱动悬浮期绿色落点预览）
+        ClientPlayNetworking.registerGlobalReceiver(net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking.PACKET_DASH_STATE, (client, handler, buf, responseSender) -> {
+            int phase = buf.readInt();
+            double targetY = buf.readDouble();
+            client.execute(() -> net.onixary.shapeShifterCurseFabric.ssc_addon.client.DashClientState.update(phase, targetY));
+        });
+
 		// 注册白名单 GUI S2C 同步包接收器：收到后打开/刷新 WhitelistManageScreen
 		ClientPlayNetworking.registerGlobalReceiver(net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking.PACKET_WHITELIST_GUI_SYNC, (client, handler, buf, responseSender) -> {
 			boolean customMode = buf.readBoolean();
 			int n = buf.readInt();
-			// 安全守卫：防止被劫持服务器发超大 count 导致客机 OOM
 			if (n < 0 || n > 10000) return;
 			java.util.Set<java.util.UUID> set = new java.util.HashSet<>();
 			for (int i = 0; i < n; i++) set.add(buf.readUuid());
@@ -379,6 +385,8 @@ public class SscAddonClient implements ClientModInitializer {
 		VortexChargeClient.register();
 		// 风灵「疾风连爪」 - 左键按住检测器
 		net.onixary.shapeShifterCurseFabric.ssc_addon.client.WindSpiritClawClient.register();
+		// 风灵「风之冲刺」 - 主技能键检测器 + 悬浮期绿色落点预览
+		net.onixary.shapeShifterCurseFabric.ssc_addon.client.WindDashClient.register();
 		// 荧光幼灵技能按键检测器（主要=潮汐波动 / 次要=水盾）
 		FluorescentKeyClient.register();
 

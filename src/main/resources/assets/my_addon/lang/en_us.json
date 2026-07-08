@@ -818,5 +818,7 @@
     "origin.my_addon.form_ocelot_wind_spirit.description": "A special ocelot variant freed from the hunting stance, regaining the power to sprint freely and tearing prey apart with gale-like consecutive claw strikes.",
     "my_addon.form_ocelot_wind_spirit.model_name": "Wind Spirit",
     "advancements.my_addon.on_transform_ocelot_wind_spirit.title": "Wind Spirit",
-    "advancements.my_addon.on_transform_ocelot_wind_spirit.description": "Transform into Wind Spirit for the first time"
+    "advancements.my_addon.on_transform_ocelot_wind_spirit.description": "Transform into Wind Spirit for the first time",
+    "power.my_addon.form_ocelot_wind_spirit_wind_dash.name": "Wind Dash",
+    "power.my_addon.form_ocelot_wind_spirit_wind_dash.description": "Press the primary skill key to launch straight up 5 blocks and hover for 3 seconds (grey smoke trails beneath your feet). While hovering, a green landing indicator appears up to 16 blocks away in your crosshair's horizontal direction. Press the primary key again to dash in a straight line to the landing point, dealing 12 physical damage to enemies within 3 blocks of impact and entering a 12-second cooldown. If you don't dash in time, you descend slowly with no damage but still trigger the cooldown."
 }
