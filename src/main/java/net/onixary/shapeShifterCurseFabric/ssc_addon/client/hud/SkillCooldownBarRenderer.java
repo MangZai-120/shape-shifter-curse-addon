@@ -147,21 +147,22 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 			lastFrameValues.put(secondaryCdId, getResourceValue(player, secondaryCdId));
 		}
 
-		// 计算快捷栏位置
+		// CD 条位置：由 SSCAddonClientConfig 的九宫格锚点 + 偏移决定（与本能/能量条一致的可视化编辑）
+		// 主条用配置的锚点+偏移；副条 X 相对屏幕中线镜像。
+
+		int cdType = config.cdBarPosType;
+		int cdOffX = config.cdBarPosOffsetX;
+		int cdOffY = config.cdBarPosOffsetY;
+		net.minecraft.util.Pair<Integer, Integer> anchor =
+				net.onixary.shapeShifterCurseFabric.util.UIPositionUtils.getCorrectPosition(cdType, 0, 0);
 		int scaledWidth = mc.getWindow().getScaledWidth();
-		int scaledHeight = mc.getWindow().getScaledHeight();
-		int hotbarX = (scaledWidth - HOTBAR_WIDTH) / 2;
+		int primaryX = anchor.getLeft() + cdOffX;
+		int barY = anchor.getRight() + cdOffY;
+		// 副条：相对屏幕垂直中线镜像主条 X
+		int secondaryX = scaledWidth - primaryX - TEX_W;
 
-		// CD条Y坐标：底部对齐快捷栏底部，整体上移1像素
-		int barY = scaledHeight - TEX_H - 1;
-
-		// 主要技能CD条（快捷栏左侧）
-		int leftBarX = hotbarX - GAP - TEX_W;
-		renderCdBarWithNumber(context, player, primaryCdId, leftBarX, barY, true, false);
-
-		// 次要技能CD条（快捷栏右侧）
-		int rightBarX = hotbarX + HOTBAR_WIDTH + GAP;
-		renderCdBarWithNumber(context, player, secondaryCdId, rightBarX, barY, false, false);
+		renderCdBarWithNumber(context, player, primaryCdId, primaryX, barY, true, false);
+		renderCdBarWithNumber(context, player, secondaryCdId, secondaryX, barY, false, false);
 	}
 
 	/**

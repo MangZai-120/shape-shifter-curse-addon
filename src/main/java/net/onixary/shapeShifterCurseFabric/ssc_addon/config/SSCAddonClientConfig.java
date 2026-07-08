@@ -17,6 +17,18 @@ public class SSCAddonClientConfig implements ConfigData {
 	@ConfigEntry.Gui.Tooltip
 	public boolean showCdSeconds = true;
 
+	// ===== 技能 CD 条位置（与原版本能/能量条一致的 1-9 九宫格锚点 + X/Y 偏移）=====
+	// 不在 GUI 直接展示（由 BarPositionEditorScreen 可视化编辑），默认对齐原快捷栏左右两侧。
+	/** CD 条锚点类型（1-9 九宫格），默认 8=下中。 */
+	@ConfigEntry.Gui.Excluded
+	public int cdBarPosType = 8;
+	/** 主技能 CD 条（左侧）X 偏移：相对锚点的额外平移。 */
+	@ConfigEntry.Gui.Excluded
+	public int cdBarPosOffsetX = -98;
+	/** CD 条 Y 偏移：相对锚点的额外平移。 */
+	@ConfigEntry.Gui.Excluded
+	public int cdBarPosOffsetY = -21;
+
 	/**
 	 * 契灵 - 次要技能瞬移模式
 	 * RAYCAST: 直接朝着准星方向传送（按下立即传送，碰墙停止）

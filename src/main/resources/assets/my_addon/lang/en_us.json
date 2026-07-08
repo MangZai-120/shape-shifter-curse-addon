@@ -813,6 +813,10 @@
     "text.ssc_addon.bar_editor.confirm.body":  "You have unsaved position changes. Discard them?",
     "text.ssc_addon.bar_editor.confirm.discard":  "Discard",
     "text.ssc_addon.bar_editor.confirm.keep":  "Keep editing",
+    "text.ssc_addon.bar_editor.cd":  "Skill CD Bar",
+    "text.ssc_addon.bar_editor.reset_instinct":  "Reset Instinct",
+    "text.ssc_addon.bar_editor.reset_mana":  "Reset Mana",
+    "text.ssc_addon.bar_editor.reset_cd":  "Reset CD Bar",
 
     "origin.my_addon.form_ocelot_wind_spirit.name": "Wind Spirit",
     "origin.my_addon.form_ocelot_wind_spirit.description": "A special ocelot variant freed from the hunting stance, regaining the power to sprint freely and tearing prey apart with gale-like consecutive claw strikes.",

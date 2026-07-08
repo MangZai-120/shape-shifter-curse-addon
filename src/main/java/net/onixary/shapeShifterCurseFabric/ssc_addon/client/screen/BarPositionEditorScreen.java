@@ -17,6 +17,8 @@ import net.minecraft.util.Pair;
 import net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric;
 import net.onixary.shapeShifterCurseFabric.config.ClientConfig;
 import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonClientConfig;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.config.SSCAddonConfig;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.function.IntConsumer;
@@ -47,25 +49,32 @@ public class BarPositionEditorScreen extends Screen {
     // 原版默认值（重置用）
     private static final int DEF_IN_TYPE = 8, DEF_IN_X = 100, DEF_IN_Y = -9;
     private static final int DEF_MA_TYPE = 8, DEF_MA_X = 100, DEF_MA_Y = -17;
+    // SSCA CD 条默认值（与 SkillCooldownBarRenderer 原硬编码位置一致：快捷栏左右两侧、底部对齐）
+    private static final int DEF_CD_TYPE = 8, DEF_CD_X = -98, DEF_CD_Y = -21;
+    // CD 条尺寸（贴图 4×20，比本能/能量条细长）
+    private static final int CD_W = 4;
+    private static final int CD_H = 20;
 
-    private static final int DRAG_NONE = 0, DRAG_INSTINCT = 1, DRAG_MANA = 2;
+    private static final int DRAG_NONE = 0, DRAG_INSTINCT = 1, DRAG_MANA = 2, DRAG_CD = 3;
 
     private final Screen parent;
 
     // 工作副本
     private int inType, inX, inY;   // 本能条
     private int maType, maX, maY;   // 能量条
+    private int cdType, cdX, cdY;   // SSCA 技能 CD 条
     // 进入时的初始快照（取消还原 / 判断是否有改动）
     private int inType0, inX0, inY0, maType0, maX0, maY0;
+    private int cdType0, cdX0, cdY0;
     private boolean snapshotTaken = false;
 
     // 防止联动回填时循环触发回调
     private boolean suppressCallbacks = false;
 
     // 控件引用
-    private ButtonWidget inTypeBtn, maTypeBtn;
-    private OffsetSlider inXSlider, inYSlider, maXSlider, maYSlider;
-    private TextFieldWidget inXField, inYField, maXField, maYField;
+    private ButtonWidget inTypeBtn, maTypeBtn, cdTypeBtn;
+    private OffsetSlider inXSlider, inYSlider, maXSlider, maYSlider, cdXSlider, cdYSlider;
+    private TextFieldWidget inXField, inYField, maXField, maYField, cdXField, cdYField;
 
     // 拖拽状态
     private int dragging = DRAG_NONE;
@@ -101,6 +110,22 @@ public class BarPositionEditorScreen extends Screen {
             maType = maType0 = cfg.manaBarPosType;
             maX = maX0 = cfg.manaBarPosOffsetX;
             maY = maY0 = cfg.manaBarPosOffsetY;
+            // SSCA CD 条从附属自己的 client config 读取
+            SSCAddonClientConfig sscCfg;
+            try {
+                sscCfg = SSCAddonConfig.client();
+            } catch (Exception e) {
+                sscCfg = null;
+            }
+            if (sscCfg != null) {
+                cdType = cdType0 = sscCfg.cdBarPosType;
+                cdX = cdX0 = sscCfg.cdBarPosOffsetX;
+                cdY = cdY0 = sscCfg.cdBarPosOffsetY;
+            } else {
+                cdType = cdType0 = DEF_CD_TYPE;
+                cdX = cdX0 = DEF_CD_X;
+                cdY = cdY0 = DEF_CD_Y;
+            }
             snapshotTaken = true;
         }
 
@@ -142,12 +167,26 @@ public class BarPositionEditorScreen extends Screen {
         maYField = makeNumField(panelX + sliderW + 4, maTop + rowH * 2, fieldW, ctrlH, v -> { maY = v; onWorkingChanged(); });
         addDrawableChild(maYField);
 
-        // ====== 按钮：保存 / 重置默认 / 取消（紧跟能量条区块下方，不放屏幕最底）======
+        // SSCA 技能 CD 条区块
+        int cdTop = maTop + rowH * 3 + 8;
+        cdTypeBtn = ButtonWidget.builder(anchorBtnText("cd", cdType), b -> cycleTypeCd())
+                .dimensions(panelX, cdTop, typeBtnW, typeBtnH).build();
+        addDrawableChild(cdTypeBtn);
+        cdXSlider = new OffsetSlider(panelX, cdTop + rowH, sliderW, ctrlH, "offset_x", cdX, v -> { cdX = v; onWorkingChanged(); });
+        addDrawableChild(cdXSlider);
+        cdXField = makeNumField(panelX + sliderW + 4, cdTop + rowH, fieldW, ctrlH, v -> { cdX = v; onWorkingChanged(); });
+        addDrawableChild(cdXField);
+        cdYSlider = new OffsetSlider(panelX, cdTop + rowH * 2, sliderW, ctrlH, "offset_y", cdY, v -> { cdY = v; onWorkingChanged(); });
+        addDrawableChild(cdYSlider);
+        cdYField = makeNumField(panelX + sliderW + 4, cdTop + rowH * 2, fieldW, ctrlH, v -> { cdY = v; onWorkingChanged(); });
+        addDrawableChild(cdYField);
+
+        // ====== 按钮：保存 + 三组独立重置 + 取消 ======
         final int botBtnW = 50;
         final int botBtnH = 16;
         final int botGap = 3;
         int botStartX = panelX;
-        int botY = maTop + rowH * 3 + 2;
+        int botY = cdTop + rowH * 3 + 2;
         addDrawableChild(ButtonWidget.builder(Text.translatable("text.ssc_addon.bar_editor.save"), b -> doSave())
                 .dimensions(botStartX, botY, botBtnW, botBtnH).build());
         addDrawableChild(ButtonWidget.builder(Text.translatable("text.ssc_addon.bar_editor.reset"), b -> doReset())
@@ -155,11 +194,27 @@ public class BarPositionEditorScreen extends Screen {
         addDrawableChild(ButtonWidget.builder(Text.translatable("text.ssc_addon.bar_editor.cancel"), b -> requestCancel())
                 .dimensions(botStartX + (botBtnW + botGap) * 2, botY, botBtnW, botBtnH).build());
 
+        // 三组独立重置按钮（放在底部按钮下方一行，分别只重置对应 UI）
+        final int rstBtnW = 66;
+        final int rstBtnH = 14;
+        int rstY = botY + botBtnH + 4;
+        int rstTotalW = rstBtnW * 3 + botGap * 2;
+        int rstStartX = panelX + (contentRight - panelX - rstTotalW) / 2;
+        addDrawableChild(ButtonWidget.builder(
+                        Text.translatable("text.ssc_addon.bar_editor.reset_instinct"), b -> doResetInstinct())
+                .dimensions(rstStartX, rstY, rstBtnW, rstBtnH).build());
+        addDrawableChild(ButtonWidget.builder(
+                        Text.translatable("text.ssc_addon.bar_editor.reset_mana"), b -> doResetMana())
+                .dimensions(rstStartX + rstBtnW + botGap, rstY, rstBtnW, rstBtnH).build());
+        addDrawableChild(ButtonWidget.builder(
+                        Text.translatable("text.ssc_addon.bar_editor.reset_cd"), b -> doResetCd())
+                .dimensions(rstStartX + (rstBtnW + botGap) * 2, rstY, rstBtnW, rstBtnH).build());
+
         // 记录面板边界（背景绘制复用）
         panelLeft = panelX - 8;
         panelRight = contentRight + 8;
         panelTop = inTop - 8;
-        panelBottom = botY + botBtnH + 8;
+        panelBottom = rstY + rstBtnH + 8;
 
         syncAllControls();
     }
@@ -173,7 +228,10 @@ public class BarPositionEditorScreen extends Screen {
         }
         onWorkingChanged();
     }
-
+    private void cycleTypeCd() {
+        cdType = cdType % 9 + 1;
+        onWorkingChanged();
+    }
     private Text anchorBtnText(String which, int type) {
         return Text.translatable("text.ssc_addon.bar_editor.anchor",
                 Text.translatable("text.ssc_addon.bar_editor." + which),
@@ -188,7 +246,7 @@ public class BarPositionEditorScreen extends Screen {
         applyToConfig();
     }
 
-    /** 把工作值实时写入原版 ClientConfig，使真实 HUD 中的能量条 / 本能条即时跟随移动。 */
+    /** 把工作值实时写入配置：本能/能量条入原版 ClientConfig，CD 条入附属 SSCAddonClientConfig。 */
     private void applyToConfig() {
         ClientConfig cfg = ShapeShifterCurseFabric.clientConfig;
         cfg.instinctBarPosType = inType;
@@ -197,6 +255,12 @@ public class BarPositionEditorScreen extends Screen {
         cfg.manaBarPosType = maType;
         cfg.manaBarPosOffsetX = maX;
         cfg.manaBarPosOffsetY = maY;
+        try {
+            SSCAddonClientConfig sscCfg = SSCAddonConfig.client();
+            sscCfg.cdBarPosType = cdType;
+            sscCfg.cdBarPosOffsetX = cdX;
+            sscCfg.cdBarPosOffsetY = cdY;
+        } catch (Exception ignored) {}
     }
 
     private void syncAllControls() {
@@ -212,6 +276,11 @@ public class BarPositionEditorScreen extends Screen {
             if (inYField != null) inYField.setText(String.valueOf(inY));
             if (maXField != null) maXField.setText(String.valueOf(maX));
             if (maYField != null) maYField.setText(String.valueOf(maY));
+            if (cdTypeBtn != null) cdTypeBtn.setMessage(anchorBtnText("cd", cdType));
+            if (cdXSlider != null) cdXSlider.setIntValue(cdX);
+            if (cdYSlider != null) cdYSlider.setIntValue(cdY);
+            if (cdXField != null) cdXField.setText(String.valueOf(cdX));
+            if (cdYField != null) cdYField.setText(String.valueOf(cdY));
         } finally {
             suppressCallbacks = false;
         }
@@ -237,7 +306,8 @@ public class BarPositionEditorScreen extends Screen {
     // ====== 保存 / 取消 / 重置 ======
     private boolean isEdited() {
         return inType != inType0 || inX != inX0 || inY != inY0
-                || maType != maType0 || maX != maX0 || maY != maY0;
+                || maType != maType0 || maX != maX0 || maY != maY0
+                || cdType != cdType0 || cdX != cdX0 || cdY != cdY0;
     }
 
     private void doSave() {
@@ -245,15 +315,42 @@ public class BarPositionEditorScreen extends Screen {
         try {
             AutoConfig.getConfigHolder(ClientConfig.class).save();
         } catch (Exception ignored) {}
+        // 同步保存附属 client config（CD 条位置）
+        try {
+            AutoConfig.getConfigHolder(SSCAddonClientConfig.class).save();
+        } catch (Exception ignored) {}
         // 更新快照，避免 close 时又弹确认
         inType0 = inType; inX0 = inX; inY0 = inY;
         maType0 = maType; maX0 = maX; maY0 = maY;
+        cdType0 = cdType; cdX0 = cdX; cdY0 = cdY;
         MinecraftClient.getInstance().setScreen(parent);
     }
 
     private void doReset() {
         inType = DEF_IN_TYPE; inX = DEF_IN_X; inY = DEF_IN_Y;
         maType = DEF_MA_TYPE; maX = DEF_MA_X; maY = DEF_MA_Y;
+        cdType = DEF_CD_TYPE; cdX = DEF_CD_X; cdY = DEF_CD_Y;
+        syncAllControls();
+        applyToConfig();
+    }
+
+    /** 仅重置本能条（不影响能量条与 CD 条）。 */
+    private void doResetInstinct() {
+        inType = DEF_IN_TYPE; inX = DEF_IN_X; inY = DEF_IN_Y;
+        syncAllControls();
+        applyToConfig();
+    }
+
+    /** 仅重置能量条（不影响本能条与 CD 条）。 */
+    private void doResetMana() {
+        maType = DEF_MA_TYPE; maX = DEF_MA_X; maY = DEF_MA_Y;
+        syncAllControls();
+        applyToConfig();
+    }
+
+    /** 仅重置 SSCA CD 条（不影响本能/能量条）。 */
+    private void doResetCd() {
+        cdType = DEF_CD_TYPE; cdX = DEF_CD_X; cdY = DEF_CD_Y;
         syncAllControls();
         applyToConfig();
     }
@@ -279,10 +376,11 @@ public class BarPositionEditorScreen extends Screen {
                 Text.translatable("text.ssc_addon.bar_editor.confirm.keep")));
     }
 
-    /** 取消时把工作值与 ClientConfig 都还原到进入编辑器时的快照。 */
+    /** 取消时把工作值与配置都还原到进入编辑器时的快照。 */
     private void restoreConfigToSnapshot() {
         inType = inType0; inX = inX0; inY = inY0;
         maType = maType0; maX = maX0; maY = maY0;
+        cdType = cdType0; cdX = cdX0; cdY = cdY0;
         applyToConfig();
     }
 
@@ -295,7 +393,7 @@ public class BarPositionEditorScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0) {
-            // 本能条在上层，两条重叠时优先命中本能条
+            // 本能条在上层，三条重叠时优先命中本能条 → 能量条 → CD 条
             if (hitBar(mouseX, mouseY, false)) {
                 selected = dragging = DRAG_INSTINCT;
                 beginDrag(mouseX, mouseY, inX, inY);
@@ -304,6 +402,11 @@ public class BarPositionEditorScreen extends Screen {
             if (hitBar(mouseX, mouseY, true)) {
                 selected = dragging = DRAG_MANA;
                 beginDrag(mouseX, mouseY, maX, maY);
+                return true;
+            }
+            if (hitCdBar(mouseX, mouseY)) {
+                selected = dragging = DRAG_CD;
+                beginDrag(mouseX, mouseY, cdX, cdY);
                 return true;
             }
         }
@@ -326,29 +429,35 @@ public class BarPositionEditorScreen extends Screen {
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         if (dragging != DRAG_NONE) {
             boolean mana = dragging == DRAG_MANA;
+            boolean cd = dragging == DRAG_CD;
+            int curType = cd ? cdType : (mana ? maType : inType);
             int dx = (int) Math.round(mouseX - dragStartMouseX);
             int dy = (int) Math.round(mouseY - dragStartMouseY);
             // 锚点屏幕坐标（offset=0 时）
-            Pair<Integer, Integer> anchor = UIPositionUtils.getCorrectPosition(mana ? maType : inType, 0, 0);
+            Pair<Integer, Integer> anchor = UIPositionUtils.getCorrectPosition(curType, 0, 0);
             int scrX = anchor.getLeft() + dragStartOffX + dx;
             int scrY = anchor.getRight() + dragStartOffY + dy;
             guideVX = null;
             guideHY = null;
             if (!hasShiftDown()) {
                 // 默认：对齐吸附（屏幕中线 / 边缘 / 另一条），失败则轻微网格吸附；按住 Shift 则完全自由
-                int[] sx = snapAxis(scrX, mana, true);
+                int[] sx = snapAxis(scrX, mana, cd, true);
                 scrX = sx[0];
                 if (sx[1] != Integer.MIN_VALUE) guideVX = sx[1];
-                int[] sy = snapAxis(scrY, mana, false);
+                int[] sy = snapAxis(scrY, mana, cd, false);
                 scrY = sy[0];
                 if (sy[1] != Integer.MIN_VALUE) guideHY = sy[1];
             }
             // 安全边界：条至少有一部分留在屏幕内
-            scrX = clampScreenX(scrX);
-            scrY = clampScreenY(scrY);
+            int barW = cd ? CD_W : BAR_W;
+            int barH = cd ? CD_H : BAR_H;
+            scrX = clampScreenX(scrX, barW);
+            scrY = clampScreenY(scrY, barH);
             int nx = clampOffset(scrX - anchor.getLeft());
             int ny = clampOffset(scrY - anchor.getRight());
-            if (mana) { maX = nx; maY = ny; } else { inX = nx; inY = ny; }
+            if (cd) { cdX = nx; cdY = ny; }
+            else if (mana) { maX = nx; maY = ny; }
+            else { inX = nx; inY = ny; }
             syncAllControls();
             applyToConfig();
             return true;
@@ -380,8 +489,8 @@ public class BarPositionEditorScreen extends Screen {
                 case GLFW.GLFW_KEY_DOWN -> dy = step;
                 default -> { return super.keyPressed(keyCode, scanCode, modifiers); }
             }
-            boolean mana = selected == DRAG_MANA;
-            if (mana) { maX = clampOffset(maX + dx); maY = clampOffset(maY + dy); }
+            if (selected == DRAG_CD) { cdX = clampOffset(cdX + dx); cdY = clampOffset(cdY + dy); }
+            else if (selected == DRAG_MANA) { maX = clampOffset(maX + dx); maY = clampOffset(maY + dy); }
             else { inX = clampOffset(inX + dx); inY = clampOffset(inY + dy); }
             syncAllControls();
             applyToConfig();
@@ -395,21 +504,34 @@ public class BarPositionEditorScreen extends Screen {
     }
 
     /**
-     * 单轴对齐吸附：把条的 左/中/右（或上/中/下）三个关键点，向「屏幕中线 / 屏幕边缘 / 另一条的对应关键点」吸附。
+     * 单轴对齐吸附：把条的 左/中/右（或上/中/下）三个关键点，向「屏幕中线 / 屏幕边缘 / 其它条的对应关键点」吸附。
      * @param scr        条在该轴的起始屏幕坐标
      * @param mana       当前拖的是不是能量条
+     * @param cd         当前拖的是不是 CD 条
      * @param horizontal true=X 轴，false=Y 轴
      * @return [吸附后起始坐标, 参考线坐标(无则 Integer.MIN_VALUE)]
      */
-    private int[] snapAxis(int scr, boolean mana, boolean horizontal) {
-        int size = horizontal ? BAR_W : BAR_H;
+    private int[] snapAxis(int scr, boolean mana, boolean cd, boolean horizontal) {
+        int size = horizontal ? (cd ? CD_W : BAR_W) : (cd ? CD_H : BAR_H);
         int screenLen = horizontal ? this.width : this.height;
-        Pair<Integer, Integer> other = barPos(!mana);
-        int otherStart = horizontal ? other.getLeft() : other.getRight();
-        // 条的关键点相对 scr 的偏移：起点 / 中点 / 终点
+        // 另外两条已存在 bar 的起始坐标（作为吸附参考）
+        java.util.List<Integer> others = new java.util.ArrayList<>();
+        if (!mana && !cd) {
+            // 拖本能条 → 参考能量条与 CD 条
+            others.add(horizontal ? barPos(true).getLeft() : barPos(true).getRight());
+            others.add(horizontal ? cdBarPos().getLeft() : cdBarPos().getRight());
+        } else if (mana) {
+            others.add(horizontal ? barPos(false).getLeft() : barPos(false).getRight());
+            others.add(horizontal ? cdBarPos().getLeft() : cdBarPos().getRight());
+        } else { // cd
+            others.add(horizontal ? barPos(false).getLeft() : barPos(false).getRight());
+            others.add(horizontal ? barPos(true).getLeft() : barPos(true).getRight());
+        }
         int[] pointOffsets = {0, size / 2, size};
-        // 对齐目标：屏幕中线、屏幕两端、另一条的起/中/终
-        int[] targets = {screenLen / 2, 0, screenLen, otherStart, otherStart + size / 2, otherStart + size};
+        // 对齐目标：屏幕中线、屏幕两端、其它条的起/中/终
+        java.util.List<Integer> targets = new java.util.ArrayList<>();
+        targets.add(screenLen / 2); targets.add(0); targets.add(screenLen);
+        for (int oStart : others) { targets.add(oStart); targets.add(oStart + size / 2); targets.add(oStart + size); }
         int bestStart = Integer.MIN_VALUE, bestGuide = Integer.MIN_VALUE, bestDist = SNAP_DIST + 1;
         for (int po : pointOffsets) {
             int pointCoord = scr + po;
@@ -427,16 +549,16 @@ public class BarPositionEditorScreen extends Screen {
         return new int[]{Math.round(scr / (float) GRID) * GRID, Integer.MIN_VALUE};
     }
 
-    private int clampScreenX(int scrX) {
+    private int clampScreenX(int scrX, int barW) {
         int minVisible = 8;
-        return Math.max(-(BAR_W - minVisible), Math.min(this.width - minVisible, scrX));
+        return Math.max(-(barW - minVisible), Math.min(this.width - minVisible, scrX));
     }
 
-    private int clampScreenY(int scrY) {
-        return Math.max(0, Math.min(this.height - BAR_H, scrY));
+    private int clampScreenY(int scrY, int barH) {
+        return Math.max(0, Math.min(this.height - barH, scrY));
     }
 
-    /** 判断鼠标是否落在某条预览的热区（比条本体略大，便于点选）。 */
+    /** 判断鼠标是否落在本能/能量条预览的热区（比条本体略大，便于点选）。 */
     private boolean hitBar(double mouseX, double mouseY, boolean mana) {
         Pair<Integer, Integer> pos = barPos(mana);
         int x = pos.getLeft();
@@ -444,11 +566,24 @@ public class BarPositionEditorScreen extends Screen {
         return mouseX >= x - 2 && mouseX <= x + BAR_W + 2 && mouseY >= y - 3 && mouseY <= y + BAR_H + 3;
     }
 
+    /** 判断鼠标是否落在 CD 条预览的热区。 */
+    private boolean hitCdBar(double mouseX, double mouseY) {
+        Pair<Integer, Integer> pos = cdBarPos();
+        int x = pos.getLeft();
+        int y = pos.getRight();
+        return mouseX >= x - 2 && mouseX <= x + CD_W + 2 && mouseY >= y - 3 && mouseY <= y + CD_H + 3;
+    }
+
     private Pair<Integer, Integer> barPos(boolean mana) {
         if (mana) {
             return UIPositionUtils.getCorrectPosition(maType, maX, maY);
         }
         return UIPositionUtils.getCorrectPosition(inType, inX, inY);
+    }
+
+    /** CD 条（主技能左侧）屏幕坐标。 */
+    private Pair<Integer, Integer> cdBarPos() {
+        return UIPositionUtils.getCorrectPosition(cdType, cdX, cdY);
     }
 
     // ====== 渲染 ======
@@ -482,9 +617,10 @@ public class BarPositionEditorScreen extends Screen {
             if (guideHY != null) ctx.fill(0, guideHY, this.width, guideHY + 1, 0x88FFEE00);
         }
 
-        // 能量 / 本能条可拖拽手柄（半透明示意 + 边框 + 标签），确保任何形态都能看到并拖拽
+        // 能量 / 本能条 / CD 条可拖拽手柄（半透明示意 + 边框 + 标签），确保任何形态都能看到并拖拽
         drawBarHandle(ctx, mouseX, mouseY, false);
         drawBarHandle(ctx, mouseX, mouseY, true);
+        drawCdBarHandle(ctx, mouseX, mouseY);
 
         // 标题 + 提示
         ctx.drawCenteredTextWithShadow(this.textRenderer, this.title, width / 2, 12, 0xFFFFFF);
@@ -526,6 +662,31 @@ public class BarPositionEditorScreen extends Screen {
             int offY = mana ? maY : inY;
             ctx.drawTextWithShadow(this.textRenderer, Text.literal("(" + offX + ", " + offY + ")"),
                     x, y + BAR_H + 2, 0xFFFFFFFF);
+        }
+    }
+
+    /** SSCA 技能 CD 条的可拖拽手柄：4×20 细长条，主条（左侧）可拖拽，副条（右侧）自动镜像。 */
+    private void drawCdBarHandle(DrawContext ctx, int mouseX, int mouseY) {
+        Pair<Integer, Integer> pos = cdBarPos();
+        int x = pos.getLeft();
+        int y = pos.getRight();
+        // 主条半透明绿色示意
+        ctx.fill(x, y, x + CD_W, y + CD_H, 0x6000FF00);
+        boolean hovered = hitCdBar(mouseX, mouseY);
+        boolean active = (dragging == DRAG_CD);
+        boolean sel = (selected == DRAG_CD);
+        int border = active ? 0xFFFFEE00 : (sel ? 0xFF00FF88 : (hovered ? 0xFFFFFFAA : 0xFF000000));
+        ctx.drawBorder(x - 1, y - 1, CD_W + 2, CD_H + 2, border);
+        Text label = Text.translatable("text.ssc_addon.bar_editor.cd");
+        ctx.drawTextWithShadow(this.textRenderer, label, x - 2, y - 11, 0xFF66FF99);
+        // 副条镜像示意（不可单独拖拽，跟随主条 X 镜像）
+        int secX = this.width - x - CD_W;
+        ctx.fill(secX, y, secX + CD_W, y + CD_H, 0x6000AAFF);
+        ctx.drawBorder(secX - 1, y - 1, CD_W + 2, CD_H + 2, 0xFF444444);
+        // 选中/拖拽时显示主条偏移坐标
+        if (sel || active) {
+            ctx.drawTextWithShadow(this.textRenderer, Text.literal("(" + cdX + ", " + cdY + ")"),
+                    x, y + CD_H + 2, 0xFFFFFFFF);
         }
     }
 
