@@ -7,16 +7,6 @@
     "key": {
         "key": "key.ssc_addon.sp_secondary"
     },
-    "badges": [
-        {
-            "type": "origins:tooltip",
-            "sprite": "my_addon:textures/gui/powers/true_invisibility.png",
-            "text": {
-                "translate": "power.my_addon.form_bat_parasitic_fruit_spore_bomb.name",
-                "fallback": "Infection Spore Bomb"
-            }
-        }
-    ],
     "name": "感染孢子弹",
     "description": "投出爆炸种子，命中方块或生物时无伤害爆炸并释放孢子。爆炸 4 格内：受白名单保护的友方在 15 秒内每 3 秒回复 1 点生命，其余生物则被感染——15 秒内每 3 秒受到 1 点真伤并被高亮 1 秒，无法以饱食度恢复血量，造成的所有伤害减少 15%；被感染目标 1.5 格内的非白名单生物会被传染，剩余时间继承自当前感染源。冷却 1 秒，消耗 1 点种子量。"
 }

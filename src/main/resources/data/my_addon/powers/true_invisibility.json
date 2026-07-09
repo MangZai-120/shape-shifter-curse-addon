@@ -8,16 +8,6 @@
     "key": {
         "key": "key.ssc_addon.sp_primary"
     },
-    "badges": [
-        {
-            "type": "origins:tooltip",
-            "sprite": "my_addon:textures/gui/powers/true_invisibility.png",
-            "text": {
-                "translate": "power.my_addon.true_invisibility.name",
-                "fallback": "True Invisibility"
-            }
-        }
-    ],
     "name": "真实隐身",
     "description": "按下后进入真实隐身状态，期间所有生物均无法看见你。隐身期间攻击、挖掘或使用物品会破隐（玻璃碎裂声）。再次按键主动解除（猫哈气声）。"
 }

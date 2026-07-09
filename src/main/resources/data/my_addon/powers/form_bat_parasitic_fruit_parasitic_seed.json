@@ -8,16 +8,6 @@
     "key": {
         "key": "key.ssc_addon.sp_primary"
     },
-    "badges": [
-        {
-            "type": "origins:tooltip",
-            "sprite": "my_addon:textures/gui/powers/true_invisibility.png",
-            "text": {
-                "translate": "power.my_addon.form_bat_parasitic_fruit_parasitic_seed.name",
-                "fallback": "Parasitic Spiritfruit"
-            }
-        }
-    ],
     "name": "灵果寄生",
     "description": "抛掷灵果种子（抛物线飞行）。命中生物在其身上生根，周期性结出自适应果实：友方安装蛜露/刺梨/风莓/清香果提供治疗与辅助，敌方安装缠藤/苦涩/腐熟/酸涩果施加减速、虚弱、发光、中毒等削弱。果实只对宿主生效。未命中而落地时种下一圈灵果（绿色治疗环），任意玩家踏入即可拾取并获得相应效果，持续时间随种子留存递减；种子枯萎或被拾取后消失。冷却 1 秒，消耗 1 点种子量。"
 }

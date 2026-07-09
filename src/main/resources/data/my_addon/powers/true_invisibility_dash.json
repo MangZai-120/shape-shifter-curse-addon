@@ -7,16 +7,6 @@
     "key": {
         "key": "key.ssc_addon.sp_secondary"
     },
-    "badges": [
-        {
-            "type": "origins:tooltip",
-            "sprite": "my_addon:textures/gui/powers/true_invisibility_dash.png",
-            "text": {
-                "translate": "power.my_addon.true_invisibility_dash.name",
-                "fallback": "Stun Dash"
-            }
-        }
-    ],
     "name": "震慑冲刺",
     "description": "隐身时按下次要技能键，破隐并向前冲刺5格。落地时震慑周围8格内敌人1.5秒。"
 }

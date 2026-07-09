@@ -166,10 +166,7 @@
             ]
         },
         "name": "Red Fire Ring",
-        "description": "Create a ring of red fire.",
-        "icon": {
-            "texture": "my_addon:textures/gui/powers/blue_fire_aura_effect.png"
-        }
+        "description": "Create a ring of red fire."
     },
     "state_sync_check": {
         "type": "apoli:action_over_time",

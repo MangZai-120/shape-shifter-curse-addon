@@ -1,10 +1,6 @@
 {
     "key.categories.ssc_addon":  "Shape Shifter Curse Addon",
     "ssc_addon.warning.frost_pawglove_incompatible":  "Incompatible mana structure, Frost Pawglove cannot function in this form.",
-    "item.ssc_addon.frost_protection_ring":  "Frost Protection Ring",
-    "item.ssc_addon.frost_protection_ring.tooltip.1":  "§bExclusive to SP Snow Fox",
-    "item.ssc_addon.frost_protection_ring.tooltip.2":  "§7Increases Mana Cap by 20",
-    "item.ssc_addon.frost_protection_ring.tooltip.3":  "Boosts Mana Regen Speed by 50%",
     "effect.ssc_addon.frost_freeze":  "Frost Freeze",
     "effect.ssc_addon.frost_fall":  "Frost Fall",
     "item.ssc_addon.portable_moisturizer":  "Axolotl Humidifier",

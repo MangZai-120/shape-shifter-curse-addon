@@ -1,7 +1,7 @@
 {
-  "model": "my_addon:geo/form_bat_3.geo.json",
-  "texture": "my_addon:textures/form/form_bat_3/form_bat_3.png",
-  "texture_mask": "my_addon:textures/form/form_bat_3/form_bat_3_colormask.png",
+  "model": "my_addon:geo/form_bat_desmodus.geo.json",
+  "texture": "my_addon:textures/form_bat_desmodus/form_bat_desmodus.png",
+  "texture_mask": "my_addon:textures/form_bat_desmodus/form_bat_desmodus_colormask.png",
   "hidden": [
     "leftArm",
     "rightArm",
