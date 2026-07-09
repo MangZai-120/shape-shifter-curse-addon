@@ -58,7 +58,7 @@ public final class FluorescentTidalManager {
     /** 客户端「按下主要技能键」时调用（由网络包触发）。 */
     public static void onKeyPress(ServerPlayerEntity player) {
         Session s = SESSIONS.computeIfAbsent(player.getUuid(), k -> new Session());
-        if (!FormUtils.isForm(player, FormIdentifiers.AXOLOTL_FLUORESCENT)) {
+        if (!FormUtils.isAxolotlFluorescent(player)) {
             return;
         }
         switch (s.state) {
@@ -100,7 +100,7 @@ public final class FluorescentTidalManager {
         Session s = SESSIONS.get(player.getUuid());
         if (s == null) return;
         // 形态丢失 / 死亡 → 清理
-        if (player.isDead() || !FormUtils.isForm(player, FormIdentifiers.AXOLOTL_FLUORESCENT)) {
+        if (player.isDead() || !FormUtils.isAxolotlFluorescent(player)) {
             cleanup(player, s);
             return;
         }

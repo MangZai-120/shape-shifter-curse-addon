@@ -70,12 +70,17 @@ public class LaserBeamEntity extends Entity {
 	private static final TrackedData<Integer> PHASE = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);       // 0 CHARGE / 1 RELEASE / 2 FADE
 	private static final TrackedData<Integer> PHASE_TICK = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);  // 当前阶段已用 tick
 	private static final TrackedData<Integer> OWNER_ID = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);
+	private static final TrackedData<Boolean> IS_ALING = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
 
 	private enum Phase { CHARGE, RELEASE, FADE }
 
 	private Phase phase = Phase.CHARGE;
 	private int phaseTicks = 0;
 	private UUID ownerUuid;
+	// 阿澪(axolotl_aling)差异化：伤害/释放时长 +20%，伤害距离由 beamLength() 按 IS_ALING 放大
+	private boolean isAling = false;
+	private float damage = DAMAGE;
+	private int releaseTicks = RELEASE_TICKS;
 
 	private static final DustParticleEffect CYAN =
 			new DustParticleEffect(new Vector3f(0.35f, 0.90f, 1.0f), 1.3f);
@@ -92,6 +97,13 @@ public class LaserBeamEntity extends Entity {
 		this.ownerUuid = owner.getUuid();
 		this.setPosition(owner.getX(), owner.getEyeY(), owner.getZ());
 		this.dataTracker.set(OWNER_ID, owner.getId());
+		// 阿澪：伤害 20->24、释放 60->72t、伤害距离 32->38.4（同步客机渲染）
+		this.isAling = FormUtils.isForm(owner, FormIdentifiers.AXOLOTL_ALING);
+		this.dataTracker.set(IS_ALING, this.isAling);
+		if (this.isAling) {
+			this.damage = DAMAGE * 1.2f;
+			this.releaseTicks = (int) Math.round(RELEASE_TICKS * 1.2);
+		}
 		this.noClip = true;
 	}
 
@@ -100,6 +112,7 @@ public class LaserBeamEntity extends Entity {
 		this.dataTracker.startTracking(PHASE, 0);
 		this.dataTracker.startTracking(PHASE_TICK, 0);
 		this.dataTracker.startTracking(OWNER_ID, 0);
+		this.dataTracker.startTracking(IS_ALING, false);
 	}
 
 	// ===== 渲染器读取 =====
@@ -119,8 +132,8 @@ public class LaserBeamEntity extends Entity {
 		return ARRAY_DIST;
 	}
 
-	public static double beamLength() {
-		return BEAM_LENGTH;
+	public double beamLength() {
+		return this.dataTracker.get(IS_ALING) ? BEAM_LENGTH * 1.2 : BEAM_LENGTH;
 	}
 
 	public static double beamRadius() {
@@ -137,7 +150,7 @@ public class LaserBeamEntity extends Entity {
 
 		ServerPlayerEntity owner = getOwner(sw);
 		if (owner == null || owner.isRemoved() || owner.isDead()
-				|| !FormUtils.isForm(owner, FormIdentifiers.AXOLOTL_FLUORESCENT)) {
+				|| !FormUtils.isAxolotlFluorescent(owner)) {
 			cancelNoCd(owner);
 			this.discard();
 			return;
@@ -212,7 +225,7 @@ public class LaserBeamEntity extends Entity {
 			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
 					SoundEvents.BLOCK_BEACON_AMBIENT, SoundCategory.PLAYERS, 0.7f, 1.4f);
 		}
-		if (phaseTicks >= RELEASE_TICKS) {
+		if (phaseTicks >= releaseTicks) {
 			phase = Phase.FADE;
 			phaseTicks = 0;
 			this.dataTracker.set(PHASE, 2);
@@ -244,10 +257,11 @@ public class LaserBeamEntity extends Entity {
 		if (right.lengthSquared() < 1.0e-6) right = new Vec3d(1, 0, 0);
 		right = right.normalize();
 		Vec3d up = right.crossProduct(aim).normalize();
-		int steps = (int) (BEAM_LENGTH / 0.8);
+		double beamLen = beamLength();
+		int steps = (int) (beamLen / 0.8);
 		double baseAng = phaseTicks * 0.6;
 		for (int s = 0; s <= steps; s++) {
-			double d = BEAM_LENGTH * s / steps;
+			double d = beamLen * s / steps;
 			// 双螺旋（白 + 青，相位差 π）
 			double ang1 = baseAng + d * 0.9;
 			double ang2 = ang1 + Math.PI;
@@ -269,7 +283,8 @@ public class LaserBeamEntity extends Entity {
 
 	// ==================== 伤害 ====================
 	private void beamDamage(ServerWorld sw, ServerPlayerEntity owner, Vec3d arrayPos, Vec3d aim, double radius) {
-		Vec3d end = arrayPos.add(aim.multiply(BEAM_LENGTH));
+		double beamLen = beamLength();
+		Vec3d end = arrayPos.add(aim.multiply(beamLen));
 		Box box = new Box(arrayPos, end).expand(radius);
 		List<LivingEntity> targets = sw.getEntitiesByClass(LivingEntity.class, box,
 				e -> e.isAlive() && !e.isSpectator() && !e.getUuid().equals(ownerUuid));
@@ -281,11 +296,11 @@ public class LaserBeamEntity extends Entity {
 			// 到光柱轴线的距离（圆柱判定，穿墙 → 不检查方块遮挡）
 			Vec3d toT = t.getPos().add(0, t.getHeight() * 0.5, 0).subtract(arrayPos);
 			double proj = toT.dotProduct(aim);
-			if (proj < 0 || proj > BEAM_LENGTH) continue;
+			if (proj < 0 || proj > beamLen) continue;
 			Vec3d closest = arrayPos.add(aim.multiply(proj));
 			double distSq = t.getPos().add(0, t.getHeight() * 0.5, 0).squaredDistanceTo(closest);
 			if (distSq > radius * radius) continue;
-			t.damage(t.getDamageSources().create(key, owner, owner), DAMAGE);
+			t.damage(t.getDamageSources().create(key, owner, owner), damage);
 		}
 	}
 

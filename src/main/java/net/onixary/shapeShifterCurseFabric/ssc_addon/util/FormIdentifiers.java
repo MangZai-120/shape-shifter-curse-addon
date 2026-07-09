@@ -15,6 +15,8 @@ public class FormIdentifiers {
 	public static final Identifier AXOLOTL_SP = new Identifier("my_addon", "axolotl_sp");
 	// 荧光幼灵（Axolotl Fluorescent）- SP美西螈经进化石进化获得
 	public static final Identifier AXOLOTL_FLUORESCENT = new Identifier("my_addon", "axolotl_fluorescent");
+	// 阿澪（Aling）- 特殊形态，基于荧光幼灵，技能一致，专属模型/贴图，颜色不可改
+	public static final Identifier AXOLOTL_ALING = new Identifier("my_addon", "axolotl_aling");
 	public static final Identifier FALLEN_ALLAY_SP = new Identifier("my_addon", "fallen_allay_sp");
 	public static final Identifier ANUBIS_WOLF_SP = new Identifier("my_addon", "anubis_wolf_sp");
 	public static final Identifier SNOW_FOX_RESOURCE = new Identifier("my_addon", "form_snow_fox_sp_resource");

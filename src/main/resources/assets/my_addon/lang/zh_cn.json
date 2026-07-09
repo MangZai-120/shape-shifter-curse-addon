@@ -815,7 +815,6 @@
     "text.ssc_addon.bar_editor.reset_instinct":  "重置本能条",
     "text.ssc_addon.bar_editor.reset_mana":  "重置能量条",
     "text.ssc_addon.bar_editor.reset_cd":  "重置CD条",
-
     "origin.my_addon.form_ocelot_wind_spirit.name": "风灵",
     "origin.my_addon.form_ocelot_wind_spirit.description": "豹猫挣脱狩猎姿态束缚后的特殊变体形态，重获自由疾跑之力，以疾风般的连续爪击撕裂猎物。",
     "my_addon.form_ocelot_wind_spirit.model_name": "风灵",
@@ -826,5 +825,14 @@
     "power.my_addon.form_ocelot_wind_spirit_landing_surge.name": "落地风涌",
     "power.my_addon.form_ocelot_wind_spirit_landing_surge.description": "显著滞空后落地时，若本次滞空期间未攻击命中任何敌人，则以自身为中心3格半径内造成6点物理伤害并击退敌人（5秒冷却）。空中命中过敌人则不触发，鼓励空中作战。",
     "power.my_addon.form_ocelot_wind_spirit_wind_pressure.name": "风压领域",
-    "power.my_addon.form_ocelot_wind_spirit_wind_pressure.description": "风灵周围8格半径内，白名单外生物发射的弹射物速度降低30%。玩家、驯服宠物及召唤物发射的弹射物不受影响，风灵本人发射的弹射物也不受影响。"
+    "power.my_addon.form_ocelot_wind_spirit_wind_pressure.description": "风灵周围8格半径内，白名单外生物发射的弹射物速度降低30%。玩家、驯服宠物及召唤物发射的弹射物不受影响，风灵本人发射的弹射物也不受影响。",
+    "origin.my_addon.form_axolotl_aling.name": "阿澪",
+    "origin.my_addon.form_axolotl_aling.description": "蔚蓝港的守护灵，荧光幼灵阿澪。基于荧光幼灵的特殊形态，技能一致，拥有专属模型与贴图，颜色不可改。",
+    "my_addon.form_axolotl_aling.model_name": "阿澪",
+    "advancements.my_addon.on_transform_axolotl_aling.title": "荧光幼灵",
+    "advancements.my_addon.on_transform_axolotl_aling.description": "首次变成阿澪",
+    "advancements.ssc_addon.tide_spirit_power.title": "荧光幼灵",
+    "advancements.ssc_addon.tide_spirit_power.description": "集齐蔚蓝港编年史·荧光幼灵的全部故事",
+    "message.ssc_addon.tide_spirit.whisper": "一阵强烈的情感涌入你的心间，一些不属于自己的记忆在脑海中翻涌。或许你该找个诅咒之月的夜晚，好好睡一觉，理清这一切。",
+    "message.ssc_addon.tide_spirit.become_aling": "这是...哪里？我的家呢？"
 }

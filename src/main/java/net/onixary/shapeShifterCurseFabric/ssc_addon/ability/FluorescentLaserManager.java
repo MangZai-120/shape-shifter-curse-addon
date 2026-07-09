@@ -26,7 +26,7 @@ public final class FluorescentLaserManager {
 
 	/** 客户端「按下主要技能键」时调用。 */
 	public static void onKeyPress(ServerPlayerEntity player) {
-		if (!FormUtils.isForm(player, FormIdentifiers.AXOLOTL_FLUORESCENT)) return;
+		if (!FormUtils.isAxolotlFluorescent(player)) return;
 		// CD 中不可用
 		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return;
 		// 已有活跃激光 → 忽略

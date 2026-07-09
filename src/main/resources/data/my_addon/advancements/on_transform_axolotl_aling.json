@@ -1,0 +1,27 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:axolotl_bucket"
+    },
+    "title": {
+      "translate": "advancements.my_addon.on_transform_axolotl_aling.title"
+    },
+    "description": {
+      "translate": "advancements.my_addon.on_transform_axolotl_aling.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "ssc_addon:player_form_shock",
+  "criteria": {
+    "on_transform_axolotl_aling": {
+      "trigger": "my_addon:on_transform_addon_form",
+      "conditions": {
+        "form_id": "my_addon:axolotl_aling"
+      }
+    }
+  },
+  "requirements": []
+}

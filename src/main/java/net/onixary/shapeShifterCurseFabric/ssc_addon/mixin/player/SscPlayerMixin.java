@@ -17,6 +17,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+
+import java.util.UUID;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -29,8 +31,9 @@ public abstract class SscPlayerMixin {
 	 */
 	@Inject(method = "canResetTimeBySleeping", at = @At("HEAD"), cancellable = true)
 	private void ssc_addon$preventMoonScarStorySleepSkip(CallbackInfoReturnable<Boolean> cir) {
-		if (net.onixary.shapeShifterCurseFabric.ssc_addon.story.MoonScarStoryManager
-				.isStorySleeping(((PlayerEntity) (Object) this).getUuid())) {
+		UUID uuid = ((PlayerEntity) (Object) this).getUuid();
+		if (net.onixary.shapeShifterCurseFabric.ssc_addon.story.MoonScarStoryManager.isStorySleeping(uuid)
+				|| net.onixary.shapeShifterCurseFabric.ssc_addon.story.TideSpiritStoryManager.isStorySleeping(uuid)) {
 			cir.setReturnValue(false);
 		}
 	}
@@ -48,9 +51,12 @@ public abstract class SscPlayerMixin {
 	 */
 	@Inject(method = "wakeUp()V", at = @At("HEAD"), cancellable = true)
 	private void ssc_addon$keepMoonScarStorySleeping(CallbackInfo ci) {
-		if ((Object) this instanceof ServerPlayerEntity sp
-				&& net.onixary.shapeShifterCurseFabric.ssc_addon.story.MoonScarStoryManager.isStorySleeping(sp.getUuid())) {
-			ci.cancel();
+		if ((Object) this instanceof ServerPlayerEntity sp) {
+			UUID uuid = sp.getUuid();
+			if (net.onixary.shapeShifterCurseFabric.ssc_addon.story.MoonScarStoryManager.isStorySleeping(uuid)
+					|| net.onixary.shapeShifterCurseFabric.ssc_addon.story.TideSpiritStoryManager.isStorySleeping(uuid)) {
+				ci.cancel();
+			}
 		}
 	}
 

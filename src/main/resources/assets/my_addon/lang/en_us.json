@@ -708,9 +708,9 @@
     "evolution.my_addon.screen.state.staged": "● Pending (click to cancel)",
     "evolution.my_addon.screen.pending": "%s pending · %s pts · click Confirm to apply",
     "evolution.my_addon.screen.hint_pan": "Left-drag to pan · Scroll to zoom",
-    "origin.my_addon.form_axolotl_fluorescent.name": "Axolotl Fluorescent",
+    "origin.my_addon.form_axolotl_fluorescent.name": "Fluorescent Axolotl",
     "origin.my_addon.form_axolotl_fluorescent.description": "A supportive neoteny axolotl variant born from the Evolution Stone, mastering tidal surges and water shields.",
-    "my_addon.form_axolotl_fluorescent.model_name": "Axolotl Fluorescent",
+    "my_addon.form_axolotl_fluorescent.model_name": "Fluorescent Axolotl",
     "power.my_addon.form_axolotl_fluorescent_tidal_state.name": "Tidal State",
     "power.my_addon.form_axolotl_fluorescent_tidal_state.description": "Internal state for Tidal Surge (0=idle, 1=charging, 2=orb flying).",
     "power.my_addon.form_axolotl_fluorescent_laser_state.name": "Array Laser State",
@@ -813,7 +813,6 @@
     "text.ssc_addon.bar_editor.reset_instinct":  "Reset Instinct",
     "text.ssc_addon.bar_editor.reset_mana":  "Reset Mana",
     "text.ssc_addon.bar_editor.reset_cd":  "Reset CD Bar",
-
     "origin.my_addon.form_ocelot_wind_spirit.name": "Wind Spirit",
     "origin.my_addon.form_ocelot_wind_spirit.description": "A special ocelot variant freed from the hunting stance, regaining the power to sprint freely and tearing prey apart with gale-like consecutive claw strikes.",
     "my_addon.form_ocelot_wind_spirit.model_name": "Wind Spirit",
@@ -824,5 +823,14 @@
     "power.my_addon.form_ocelot_wind_spirit_landing_surge.name": "Landing Surge",
     "power.my_addon.form_ocelot_wind_spirit_landing_surge.description": "Upon landing after significant airtime, if you haven't hit any enemy with attacks during the airtime, deal 6 physical damage and knock back enemies within a 3-block radius (5-second cooldown). Hitting enemies mid-air suppresses this, encouraging aerial combat.",
     "power.my_addon.form_ocelot_wind_spirit_wind_pressure.name": "Wind Pressure Field",
-    "power.my_addon.form_ocelot_wind_spirit_wind_pressure.description": "Projectiles fired by non-whitelisted creatures within an 8-block radius have their speed reduced by 30%. Projectiles from players, tamed pets, and summons are unaffected, as are projectiles fired by the Wind Spirit itself."
+    "power.my_addon.form_ocelot_wind_spirit_wind_pressure.description": "Projectiles fired by non-whitelisted creatures within an 8-block radius have their speed reduced by 30%. Projectiles from players, tamed pets, and summons are unaffected, as are projectiles fired by the Wind Spirit itself.",
+    "origin.my_addon.form_axolotl_aling.name": "Aling",
+    "origin.my_addon.form_axolotl_aling.description": "The guardian spirit of Azure Harbor, the Fluorescent Axolotl Aling. A special form based on the Fluorescent Axolotl with identical skills, exclusive model and texture, and non-customizable color.",
+    "my_addon.form_axolotl_aling.model_name": "Aling",
+    "advancements.my_addon.on_transform_axolotl_aling.title": "Fluorescent Axolotl",
+    "advancements.my_addon.on_transform_axolotl_aling.description": "Transform into Aling for the first time",
+    "advancements.ssc_addon.tide_spirit_power.title": "Fluorescent Axolotl",
+    "advancements.ssc_addon.tide_spirit_power.description": "Collect all chapters of the Azure Harbor Chronicle: Fluorescent Axolotl",
+    "message.ssc_addon.tide_spirit.whisper": "A surge of intense emotion floods your heart; memories that are not your own stir within your mind. Perhaps you should sleep well on a Cursed Moon night to make sense of it all.",
+    "message.ssc_addon.tide_spirit.become_aling": "Where... am I? Where is my home?"
 }

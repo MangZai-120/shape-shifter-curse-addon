@@ -19,6 +19,8 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 import org.joml.Vector3f;
 
@@ -74,6 +76,10 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     private int ticksAlive = 0;
     private int phaseTicks = 0;
     private UUID ownerUuid;
+    // 阿澪(axolotl_aling)差异化：飞行/拴人时长 +20%，拴人期间造成伤害
+    private boolean isAling = false;
+    private int maxFlyTicks = MAX_FLY_TICKS;
+    private int tetherDuration = TETHER_DURATION_TICKS;
     private Vec3d flyDir = new Vec3d(0, 0, 1);   // FLYING / DECEL 用
     private double currentSpeed = FLY_SPEED;     // DECEL 时衰减
     private Vec3d tetherCenter = null;           // 落点锚点（拴人中心）
@@ -101,6 +107,12 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         this.setPosition(owner.getX() + look.x * 0.8, owner.getEyeY() - 0.1 + look.y * 0.8, owner.getZ() + look.z * 0.8);
         this.currentSpeed = FLY_SPEED;
         this.noClip = true;
+        // 阿澪：飞行/拴人时长 +20%（拴人伤害在 tickAttracting 结算）
+        this.isAling = FormUtils.isForm(owner, FormIdentifiers.AXOLOTL_ALING);
+        if (this.isAling) {
+            this.maxFlyTicks = (int) Math.round(MAX_FLY_TICKS * 1.2);            // 160 -> 192
+            this.tetherDuration = (int) Math.round(TETHER_DURATION_TICKS * 1.2); // 170 -> 204
+        }
     }
 
     @Override
@@ -169,8 +181,8 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
                     SoundEvents.ENTITY_AXOLOTL_SWIM, SoundCategory.PLAYERS, 0.6f, 1.1f);
         }
 
-        if (ticksAlive >= MAX_FLY_TICKS) {
-            triggerDecelerate();   // 飞满 8 秒自动进入减速
+        if (ticksAlive >= maxFlyTicks) {
+            triggerDecelerate();   // 飞满时长自动进入减速（阿澪 +20%）
         }
     }
 
@@ -246,13 +258,33 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         // 锚点悬停粒子 + 6 格束缚环
         spawnHoverParticles(sw);
         applyTether(sw);
+        // 阿澪：拴人期间每 2 秒(40t)对被拴目标造成 2 点物理伤害
+        if (isAling && phaseTicks > 0 && phaseTicks % 40 == 0) {
+            tickTetherDamage(sw);
+        }
         // 每 10 tick 把被拴目标同步给客机，用于渲染守卫者激光
         if (phaseTicks % 10 == 1) {
             syncTetherToClients(sw);
         }
-        if (phaseTicks >= TETHER_DURATION_TICKS) {
+        if (phaseTicks >= tetherDuration) {
             phase = Phase.DELAY;
             phaseTicks = 0;
+        }
+    }
+
+    /** 阿澪专属：对被拴目标造成物理伤害（走默认白名单豁免，服务端判定）。 */
+    private void tickTetherDamage(ServerWorld sw) {
+        if (tetheredTargets.isEmpty()) return;
+        ServerPlayerEntity owner = getOwner(sw);
+        for (UUID id : tetheredTargets) {
+            Entity e = sw.getEntity(id);
+            if (!(e instanceof LivingEntity t) || !t.isAlive() || t.isSpectator()) continue;
+            if (WhitelistUtils.isProtected(ownerUuid, sw, t)) continue;
+            if (owner != null) {
+                t.damage(t.getDamageSources().playerAttack(owner), 2.0f);
+            } else {
+                t.damage(t.getDamageSources().magic(), 2.0f);
+            }
         }
     }
 

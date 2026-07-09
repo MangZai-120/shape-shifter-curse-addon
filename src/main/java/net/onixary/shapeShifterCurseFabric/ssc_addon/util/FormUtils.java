@@ -82,9 +82,9 @@ public class FormUtils {
 		return isForm(entity, FormIdentifiers.AXOLOTL_SP);
 	}
 
-	/** 荧光幼灵（Axolotl Fluorescent）形态判断。 */
+	/** 荧光幼灵（Axolotl Fluorescent）形态判断（含阿澪 Aling，技能一致）。 */
 	public static boolean isAxolotlFluorescent(LivingEntity entity) {
-		return isForm(entity, FormIdentifiers.AXOLOTL_FLUORESCENT);
+		return isForm(entity, FormIdentifiers.AXOLOTL_FLUORESCENT) || isForm(entity, FormIdentifiers.AXOLOTL_ALING);
 	}
 
 	/** 需要保湿的形态判断（SP 美西螈 或 荧光幼灵），用于加湿器生效判定。 */

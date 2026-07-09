@@ -17,7 +17,8 @@
     "my_addon:form_golden_sandstorm_sp",
     "my_addon:form_bat_desmodus",
     "my_addon:form_bat_parasitic_fruit",
-    "my_addon:form_axolotl_fluorescent"
+    "my_addon:form_axolotl_fluorescent",
+    "my_addon:form_axolotl_aling"
   ],
   "allow_random": true,
   "allow_random_unchoosable": false,

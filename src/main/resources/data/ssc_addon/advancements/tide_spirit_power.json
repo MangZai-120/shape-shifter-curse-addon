@@ -1,0 +1,51 @@
+{
+  "parent": "ssc_addon:player_form_shock",
+  "display": {
+    "icon": { "item": "minecraft:wet_sponge" },
+    "title": { "translate": "advancements.ssc_addon.tide_spirit_power.title" },
+    "description": { "translate": "advancements.ssc_addon.tide_spirit_power.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "book_azure_1": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [ { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"27\"}" } ] }
+    },
+    "book_azure_2": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [ { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"28\"}" } ] }
+    },
+    "book_azure_3": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [ { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"29\"}" } ] }
+    },
+    "book_azure_4": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [ { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"30\"}" } ] }
+    },
+    "book_azure_5": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [ { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"31\"}" } ] }
+    },
+    "book_azure_6": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [ { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"32\"}" } ] }
+    },
+    "book_azure_7": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [ { "items": ["minecraft:written_book"], "nbt": "{ssc_book_id:\"33\"}" } ] }
+    }
+  },
+  "requirements": [
+    ["book_azure_1"],
+    ["book_azure_2"],
+    ["book_azure_3"],
+    ["book_azure_4"],
+    ["book_azure_5"],
+    ["book_azure_6"],
+    ["book_azure_7"]
+  ]
+}

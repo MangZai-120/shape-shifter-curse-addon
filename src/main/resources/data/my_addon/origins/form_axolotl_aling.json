@@ -50,7 +50,7 @@
         "shape-shifter-curse:fall_immunity",
         "my_addon:form_axolotl_fluorescent_fall_immunity",
         "my_addon:form_axolotl_fluorescent_armor_restrict",
-        "my_addon:form_axolotl_fluorescent_moisture_drain",
+        "my_addon:form_axolotl_aling_moisture_drain",
         "my_addon:form_axolotl_fluorescent_dehydration",
         "shape-shifter-curse:beast_form_tag",
         "my_addon:form_sp_primary_cd",
@@ -67,6 +67,6 @@
     "order": 1,
     "unchoosable": true,
     "impact": 3,
-    "name": "Axolotl Fluorescent",
-    "description": "A glowing neoteny axolotl variant born from the Evolution Stone. Support / control / illumination."
+    "name": "阿澪",
+    "description": "蔚蓝港的守护灵，荧光幼灵阿澪。基于荧光幼灵的特殊形态，技能一致，拥有专属模型与贴图，颜色不可改。"
 }

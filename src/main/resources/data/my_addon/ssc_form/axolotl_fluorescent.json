@@ -3,6 +3,7 @@
     "phase": "PHASE_SP",
     "bodyType": "NORMAL",
     "isCustomForm": false,
+    "flag": ["no_instinct", "no_cursed_moon_effect", "special_form", "inhibitor_immune"],
     "originID": "my_addon:form_axolotl_fluorescent",
     "FurModelID": "my_addon:form_axolotl_fluorescent",
     "hasSlowFall": false,

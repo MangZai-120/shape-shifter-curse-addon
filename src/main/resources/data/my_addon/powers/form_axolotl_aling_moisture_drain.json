@@ -1,0 +1,18 @@
+{
+    "type": "apoli:action_over_time",
+    "interval": 27,
+    "entity_action": {
+        "type": "apoli:gain_air",
+        "value": -3
+    },
+    "condition": {
+        "type": "apoli:and",
+        "conditions": [
+            { "type": "apoli:on_block" },
+            { "type": "apoli:submerged_in", "fluid": "water", "inverted": true },
+            { "type": "apoli:in_rain", "inverted": true }
+        ]
+    },
+    "name": "Moisture Drain",
+    "description": "阿澪：陆地每 27 tick 消耗 3 点湿润值(air)，比荧光幼灵(每 20 tick)慢约 25%。"
+}

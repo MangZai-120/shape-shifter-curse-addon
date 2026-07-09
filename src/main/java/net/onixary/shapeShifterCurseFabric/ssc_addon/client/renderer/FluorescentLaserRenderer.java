@@ -84,7 +84,7 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 
 		// === 蓄力期四条白线（客户端绘制，无粒子残留）===
 		if (phaseId == 0) {
-			drawChargeLines(buf, matrices.peek().getPositionMatrix(), matrices.peek().getNormalMatrix(), pt);
+			drawChargeLines(buf, matrices.peek().getPositionMatrix(), matrices.peek().getNormalMatrix(), pt, entity.beamLength());
 			// 法阵核心发光粒子（END_ROD）：仅在非第一人称视角下生成
 			// 第一人称下法阵紧贴相机，中央粒子会遮挡视线；第三人称（含自己按 F5 切换）可见
 			spawnArrayCoreParticleIfThirdPerson(ox + ax * d, oy + ay * d, oz + az * d);
@@ -98,7 +98,7 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 			}
 			if (radius > 0.02f) {
 				drawBeam(buf, matrices.peek().getPositionMatrix(), matrices.peek().getNormalMatrix(),
-						radius, (float) LaserBeamEntity.beamLength());
+						radius, (float) entity.beamLength());
 			}
 		}
 
@@ -131,23 +131,23 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 	private static final float CORNER_START = 2.4f;
 	private static final float CORNER_END = 0.55f;
 
-	private void drawChargeLines(VertexConsumer buf, Matrix4f pose, Matrix3f nrm, float pt) {
+	private void drawChargeLines(VertexConsumer buf, Matrix4f pose, Matrix3f nrm, float pt, double beamLen) {
 		float length;
 		float spacing;
 		float rot;
 		if (pt <= LINE_EXTEND_END) {
 			float p = pt / LINE_EXTEND_END;
-			length = (float) LaserBeamEntity.beamLength() * p;
+			length = (float) beamLen * p;
 			spacing = CORNER_START;
 			rot = 0f;
 		} else if (pt <= LINE_ROTATE_END) {
 			float p = (pt - LINE_EXTEND_END) / (LINE_ROTATE_END - LINE_EXTEND_END);
-			length = (float) LaserBeamEntity.beamLength();
+			length = (float) beamLen;
 			spacing = CORNER_START + (CORNER_END - CORNER_START) * (p * p);   // 加速收拢
 			float smooth = p * p * (3 - 2 * p);
 			rot = smooth * (float) (Math.PI * 6.0);
 		} else {
-			length = (float) LaserBeamEntity.beamLength();
+			length = (float) beamLen;
 			spacing = CORNER_END;
 			rot = (float) (Math.PI * 6.0);
 		}
