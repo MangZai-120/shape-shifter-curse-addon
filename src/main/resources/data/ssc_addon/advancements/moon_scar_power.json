@@ -1,5 +1,5 @@
 {
-  "parent": "ssc_addon:tonight_moon_beautiful",
+  "parent": "my_addon:on_transform_familiar_fox_sp",
   "display": {
     "icon": { "item": "minecraft:written_book" },
     "title": { "translate": "advancements.ssc_addon.moon_scar_power.title" },

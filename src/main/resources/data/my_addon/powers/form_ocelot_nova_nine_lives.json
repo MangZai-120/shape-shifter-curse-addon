@@ -1,0 +1,11 @@
+{
+    "type": "apoli:resource",
+    "min": 0,
+    "max": 8,
+    "start_value": 8,
+    "hud_render": {
+        "should_render": false
+    },
+    "name": "power.my_addon.form_ocelot_nova_nine_lives.name",
+    "description": "power.my_addon.form_ocelot_nova_nine_lives.description"
+}

@@ -14,7 +14,7 @@
         "announce_to_chat": true,
         "hidden": false
     },
-    "parent": "ssc_addon:tonight_moon_beautiful",
+    "parent": "ssc_addon:player_form_shock",
     "criteria": {
         "on_transform_axolotl_fluorescent": {
             "trigger": "my_addon:on_transform_addon_form",

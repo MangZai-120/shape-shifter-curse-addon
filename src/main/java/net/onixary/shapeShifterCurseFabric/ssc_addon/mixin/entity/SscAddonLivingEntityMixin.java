@@ -17,6 +17,8 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPRangedHitPas
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaMarkManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.BatDesmodusBloodThirst;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.InfectionSporeManager;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.NineLivesManager;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.NovaSkillManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.power.EffectEfficiencyReductionPower;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
@@ -61,6 +63,35 @@ public abstract class SscAddonLivingEntityMixin {
 	 */
 	@Inject(method = "damage", at = @At("HEAD"), cancellable = true)
 	private void ssc_addon$onUndeadDamaged(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {		LivingEntity self = (LivingEntity) (Object) this;
+		// 朔望九命：被动死亡触发复活 + 复活后 1s 无敌 + 攻击/受伤标记战斗
+		if (!self.getWorld().isClient()) {
+			if (self instanceof ServerPlayerEntity nova && FormUtils.isForm(nova, FormIdentifiers.OCELOT_NOVA)) {
+				if (NineLivesManager.isInvulnerable(nova)) {
+					cir.setReturnValue(false);
+					return;
+				}
+				if (NovaSkillManager.rollDodge(nova)) {
+					cir.setReturnValue(false);
+					return; // 闪避：概率免疫本次伤害（不受伤、不击退）
+				}
+				NineLivesManager.markCombat(nova);
+				if (!source.isOf(DamageTypes.OUT_OF_WORLD) && amount >= nova.getHealth() + nova.getAbsorptionAmount()) {
+					if (NineLivesManager.tryRevive(nova)) {
+						// 复活仍正常受到本次攻击的击退
+						Entity kbSource = source.getSource();
+						if (kbSource != null) {
+							nova.takeKnockback(0.4, kbSource.getX() - nova.getX(), kbSource.getZ() - nova.getZ());
+							nova.velocityModified = true;
+						}
+						cir.setReturnValue(false);
+						return;
+					}
+				}
+			}
+			if (source.getAttacker() instanceof ServerPlayerEntity attacker && FormUtils.isForm(attacker, FormIdentifiers.OCELOT_NOVA)) {
+				NineLivesManager.markCombat(attacker);
+			}
+		}
 		if (self instanceof MobEntity mob
 				&& source.getAttacker() instanceof PlayerEntity player) {
 			// 裁决者: 所有亡灵触发挑衅

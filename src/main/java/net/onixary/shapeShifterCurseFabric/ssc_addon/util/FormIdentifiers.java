@@ -12,6 +12,12 @@ public class FormIdentifiers {
 	public static final Identifier WILD_CAT_SP = new Identifier("my_addon", "wild_cat_sp");
 	// 风灵（月髓环豹猫）——原版豹猫永久形态 ocelot_3 经月髓环进化获得；注册名 ocelot_wind_spirit
 	public static final Identifier OCELOT_SP = new Identifier("my_addon", "ocelot_wind_spirit");
+	// 朔望（月髓环豹猫）——与风灵同为原版豹猫 ocelot_3 线；定位：九命灵猫（极限生存/不死）
+	public static final Identifier OCELOT_NOVA = new Identifier("my_addon", "ocelot_nova");
+	// 朔望九命资源（0-9，被动死亡触发复活；HUD 用 NineLivesHudRenderer）
+	public static final Identifier OCELOT_NOVA_NINE_LIVES = new Identifier("my_addon", "form_ocelot_nova_nine_lives");
+	// 朔望舍身爆炸蓄力标记资源（0/1，同步客户端；蓄力期门控 sneaking_speed_up，禁 shift 潜行加速）
+	public static final Identifier OCELOT_NOVA_CHARGING = new Identifier("my_addon", "form_ocelot_nova_charging");
 	public static final Identifier AXOLOTL_SP = new Identifier("my_addon", "axolotl_sp");
 	// 荧光幼灵（Axolotl Fluorescent）- SP美西螈经进化石进化获得
 	public static final Identifier AXOLOTL_FLUORESCENT = new Identifier("my_addon", "axolotl_fluorescent");

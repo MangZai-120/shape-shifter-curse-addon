@@ -18,7 +18,8 @@
     "my_addon:form_bat_desmodus",
     "my_addon:form_bat_parasitic_fruit",
     "my_addon:form_axolotl_fluorescent",
-    "my_addon:form_axolotl_aling"
+    "my_addon:form_axolotl_aling",
+    "my_addon:form_ocelot_nova"
   ],
   "allow_random": true,
   "allow_random_unchoosable": false,

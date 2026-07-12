@@ -69,7 +69,8 @@
                    "client.CreativePotionStackMixin",
                    "client.FamiliarFoxManaBarGateMixin",
                    "client.TailVerticalDragFixMixin",
-                   "client.ClawCrosshairMixin"
+                   "client.ClawCrosshairMixin",
+                   "client.NovaSprintLockMixin"
                ],
     "injectors":  {
                       "defaultRequire":  1

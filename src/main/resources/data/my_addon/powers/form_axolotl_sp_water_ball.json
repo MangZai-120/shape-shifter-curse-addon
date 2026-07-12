@@ -22,18 +22,9 @@
                 "pitch": 0.8
             },
             {
-                "type": "apoli:area_of_effect",
-                "radius": 4,
-                "shape": "sphere",
-                "bientity_action": {
-                    "type": "apoli:target_action",
-                    "action": {
-                        "type": "apoli:damage",
-                        "amount": 15.0,
-                        "damage_type": "minecraft:mob_attack"
-                    }
-                },
-                "bientity_condition": {
+                "type": "shape-shifter-curse:explosion_damage_entity",
+                "power": 2,
+                "entity_condition": {
                     "type": "apoli:and",
                     "conditions": [
                         {

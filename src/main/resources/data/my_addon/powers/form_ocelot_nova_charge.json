@@ -1,0 +1,16 @@
+{
+    "type": "apoli:active_self",
+    "cooldown": 1,
+    "hud_render": {
+        "should_render": false
+    },
+    "key": {
+        "key": "key.ssc_addon.sp_primary"
+    },
+    "entity_action": {
+        "type": "apoli:execute_command",
+        "command": "ssc_addon nova primary"
+    },
+    "name": "power.my_addon.form_ocelot_nova_charge.name",
+    "description": "power.my_addon.form_ocelot_nova_charge.description"
+}

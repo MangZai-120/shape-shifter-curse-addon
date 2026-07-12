@@ -1,7 +1,7 @@
 {
-  "parent": "ssc_addon:player_form_shock",
+  "parent": "my_addon:on_transform_axolotl_fluorescent",
   "display": {
-    "icon": { "item": "minecraft:wet_sponge" },
+    "icon": { "item": "minecraft:written_book" },
     "title": { "translate": "advancements.ssc_addon.tide_spirit_power.title" },
     "description": { "translate": "advancements.ssc_addon.tide_spirit_power.description" },
     "frame": "challenge",

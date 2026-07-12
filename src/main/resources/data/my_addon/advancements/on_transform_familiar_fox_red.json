@@ -14,7 +14,7 @@
     "announce_to_chat": false,
     "hidden": true
   },
-  "parent": "my_addon:on_transform_familiar_fox_sp",
+  "parent": "ssc_addon:moon_scar_power",
   "criteria": {
     "on_transform_familiar_fox_red": {
       "trigger": "my_addon:on_transform_addon_form",

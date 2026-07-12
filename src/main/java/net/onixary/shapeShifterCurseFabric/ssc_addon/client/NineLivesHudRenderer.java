@@ -20,37 +20,35 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
 
 /**
- * 寄生果蝠形态种子量能量条 HUD 渲染。
- * 复用主模组魔力条 UI 位置配置（posType=8, offsetX=100, offsetY=-17），与雪狐 / 悦灵 / 吸血蝙蝠等能量条对齐到同一高度；
- * 该形态无魔力条，位置不与其他能量条冲突。
+ * 朔望「九命」剩余命数 HUD 渲染（9 格圆点条，仿寄生果蝠种子条分层贴图）。
+ * 素材由种子条裁剪得到（86px/10 格 → 77px/9 格）。位置复用主模组魔力条配置，与其它能量条对齐同一高度。
  */
 @Environment(EnvType.CLIENT)
-public final class SeedEnergyHudRenderer implements HudRenderCallback {
+public final class NineLivesHudRenderer implements HudRenderCallback {
     private static final MinecraftClient MC = MinecraftClient.getInstance();
-    private static final Identifier TEX_EMPTY = new Identifier("my_addon", "textures/gui/bat_parasitic_fruit_seed_bar_empty.png");
-    private static final Identifier TEX_FULL = new Identifier("my_addon", "textures/gui/bat_parasitic_fruit_seed_bar_full.png");
-    /** 原图尺寸：86 像素宽 × 5 像素高，10 个圆点等距分布。 */
-    private static final int TEX_WIDTH = 86;
+    private static final Identifier TEX_EMPTY = new Identifier("my_addon", "textures/gui/form_ocelot_nova_nine_lives_empty.png");
+    private static final Identifier TEX_FULL = new Identifier("my_addon", "textures/gui/form_ocelot_nova_nine_lives_full.png");
+    /** 命数条尺寸：76 像素宽 × 5 像素高（与实际贴图一致，居中按此宽度计算）。 */
+    private static final int TEX_WIDTH = 76;
     private static final int TEX_HEIGHT = 5;
 
     public static void register() {
-        HudRenderCallback.EVENT.register(new SeedEnergyHudRenderer());
+        HudRenderCallback.EVENT.register(new NineLivesHudRenderer());
     }
 
     @Override
     public void onHudRender(DrawContext context, float tickDelta) {
         if (MC.options.hudHidden || MC.player == null) return;
         PlayerEntity player = MC.player;
-        // 必须真正拥有该 power 才渲染，避免对其他形态/未变形玩家误显示
-        if (!hasSeedEnergyPower(player)) return;
+        if (!hasNineLivesPower(player)) return;
 
-        int[] valMax = PowerUtils.getClientResourceValueAndMax(player, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY);
+        int[] valMax = PowerUtils.getClientResourceValueAndMax(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES);
         int current = valMax[0];
         int max = valMax[1];
         if (max <= 0) return;
         double percent = (double) current / (double) max;
 
-        // 与其他能量条同步使用主模组的 manaBar 位置配置
+        // Y 沿用主模组魔力条配置（与其它能量条同高）；X 水平居中屏幕（修正左右不对称）
         int posType = 8;
         int offsetX = 100;
         int offsetY = -17;
@@ -66,13 +64,12 @@ public final class SeedEnergyHudRenderer implements HudRenderCallback {
             // 反射失败使用默认值
         }
         Pair<Integer, Integer> pos = UIPositionUtils.getCorrectPosition(posType, offsetX, offsetY);
-        // X 水平居中屏幕，Y 沿用魔力条配置（与九命条一致的中心对称）
         int x = (MC.getWindow().getScaledWidth() - TEX_WIDTH) / 2;
         int y = pos.getRight();
 
-        // 底层：空贴图
+        // 底层：空条（9 格空圆点）
         context.drawTexture(TEX_EMPTY, x, y, 0, 0, TEX_WIDTH, TEX_HEIGHT, TEX_WIDTH, TEX_HEIGHT);
-        // 顶层：满贴图按 current/max 比例横向裁剪覆盖
+        // 顶层：满条按 current/max 比例横向裁剪覆盖
         if (current > 0) {
             int filledWidth = (int) Math.ceil(TEX_WIDTH * percent);
             filledWidth = Math.max(0, Math.min(TEX_WIDTH, filledWidth));
@@ -82,10 +79,10 @@ public final class SeedEnergyHudRenderer implements HudRenderCallback {
         }
     }
 
-    private static boolean hasSeedEnergyPower(PlayerEntity player) {
+    private static boolean hasNineLivesPower(PlayerEntity player) {
         try {
             return PowerHolderComponent.KEY.get(player).getPowers().stream()
-                    .anyMatch(p -> p.getType().getIdentifier().equals(FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY));
+                    .anyMatch(p -> p.getType().getIdentifier().equals(FormIdentifiers.OCELOT_NOVA_NINE_LIVES));
         } catch (Exception e) {
             return false;
         }

@@ -1,0 +1,18 @@
+{
+  "parent": "ssc_addon:moon_marrow_whisper",
+  "display": {
+    "icon": { "item": "minecraft:experience_bottle" },
+    "title": { "translate": "advancements.ssc_addon.evolution_form.title" },
+    "description": { "translate": "advancements.ssc_addon.evolution_form.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [["impossible"]]
+}

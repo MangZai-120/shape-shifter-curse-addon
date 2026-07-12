@@ -1,0 +1,27 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:ocelot_spawn_egg"
+    },
+    "title": {
+      "translate": "advancements.my_addon.on_transform_ocelot_nova.title"
+    },
+    "description": {
+      "translate": "advancements.my_addon.on_transform_ocelot_nova.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "ssc_addon:player_form_shock",
+  "criteria": {
+    "on_transform_ocelot_nova": {
+      "trigger": "my_addon:on_transform_addon_form",
+      "conditions": {
+        "form_id": "my_addon:ocelot_nova"
+      }
+    }
+  },
+  "requirements": []
+}

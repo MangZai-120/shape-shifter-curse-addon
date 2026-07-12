@@ -19,6 +19,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 import java.util.Map;
@@ -46,6 +47,7 @@ public final class WindSpiritClawManager {
     private static final int RAMP_TICKS = 60;     // 3 秒达最快
     private static final int MAX_CLAW_TICKS = 200; // 连击最长 10 秒兜底
     private static final int RECOVER_TICKS = 160;  // 从 0 回满 8 秒
+    private static final int RECOVER_TICKS_NECKLACE = 110; // 戴风灵专属项链：耐力回满约 5.5 秒
     private static final float DMG_DECAY_PER_SEC = 0.12f;
     private static final float DMG_DECAY_MAX = 0.36f;
     private static final float SPD_DECAY_PER_SEC = 0.15f;
@@ -156,7 +158,10 @@ public final class WindSpiritClawManager {
         removeSpeedSlow(player);
 
         // 停手后立即从当前进度慢慢回满（无延迟）；期间左键 = 弱普攻（getRecoveryMultiplier 缩放 0→90%）。
-        s.recovery += 1.0f / RECOVER_TICKS;
+        // 戴风灵专属项链「御风爪铃」时耐力回复更快（8s → 5.5s）。
+        int recoverTicks = TrinketUtils.isWearing(player, net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.WIND_SPIRIT_STAMINA_NECKLACE)
+                ? RECOVER_TICKS_NECKLACE : RECOVER_TICKS;
+        s.recovery += 1.0f / recoverTicks;
         if (s.recovery >= 1.0f) {
             // 回满：仍按住 → 无缝重启连击；否则结束、准星条消失
             if (s.holding) {

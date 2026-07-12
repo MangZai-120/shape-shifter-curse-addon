@@ -29,6 +29,16 @@ public class SSCAddonClientConfig implements ConfigData {
 	@ConfigEntry.Gui.Excluded
 	public int cdBarPosOffsetY = -21;
 
+	/** CD 条主/次是否左右对称（true=次条镜像主条；false=次条用下方独立偏移）。 */
+	@ConfigEntry.Gui.Excluded
+	public boolean cdSymmetric = true;
+	/** 非对称时，次技能 CD 条 X 偏移。 */
+	@ConfigEntry.Gui.Excluded
+	public int cdSecondaryBarPosOffsetX = 98;
+	/** 非对称时，次技能 CD 条 Y 偏移。 */
+	@ConfigEntry.Gui.Excluded
+	public int cdSecondaryBarPosOffsetY = -21;
+
 	/**
 	 * 契灵 - 次要技能瞬移模式
 	 * RAYCAST: 直接朝着准星方向传送（按下立即传送，碰墙停止）

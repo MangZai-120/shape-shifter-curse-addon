@@ -33,6 +33,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPGroupHeal;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.FrostBallEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.NovaSkillManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.EvolutionManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.palette.PaletteCodec;
 import net.onixary.shapeShifterCurseFabric.player_form.skin.PlayerSkinComponent;
@@ -120,6 +121,13 @@ public class SscAddonCommands {
 				// 玩家自助白名单 GUI（无 OP 限制，仅作用于调用者自己）
 				.then(CommandManager.literal("my_whitelist")
 						.executes(SscAddonCommands::openWhitelistGui)
+				)
+				// 朔望主/次技能触发（仅作用执行者本人、无 OP 限制，由 power 按键 execute_command 调用）
+				.then(CommandManager.literal("nova")
+						.then(CommandManager.literal("primary")
+								.executes(ctx -> { ServerPlayerEntity p = ctx.getSource().getPlayer(); if (p != null) NovaSkillManager.startCharge(p); return 1; }))
+						.then(CommandManager.literal("secondary")
+								.executes(ctx -> { ServerPlayerEntity p = ctx.getSource().getPlayer(); if (p != null) NovaSkillManager.tryLeap(p); return 1; }))
 				)
 				.then(CommandManager.literal("skill")
 						.requires(source -> source.hasPermissionLevel(2))

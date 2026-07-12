@@ -1,0 +1,26 @@
+{
+  "model": "my_addon:geo/form_ocelot_nova.geo.json",
+  "texture": "my_addon:textures/form_ocelot_nova/form_ocelot_nova.png",
+  "texture_mask": "my_addon:textures/form_ocelot_nova/form_ocelot_nova_colormask.png",
+  "hidden": [
+    "leftLeg",
+    "rightLeg",
+    "rightPants",
+    "leftPants",
+    "leftSleeve",
+    "rightSleeve",
+    "leftArm",
+    "rightArm",
+    "body",
+    "jacket",
+    "head",
+    "hat"
+  ],
+  "tail_chain": {
+    "tail": [0, 1, 2, 3]
+  },
+  "tail_chain_head": {
+    "ear_a": [0],
+    "ear_b": [0]
+  }
+}

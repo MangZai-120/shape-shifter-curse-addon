@@ -1,0 +1,27 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:fox_spawn_egg"
+    },
+    "title": {
+      "translate": "advancements.my_addon.on_transform_upgrade_familiar_fox.title"
+    },
+    "description": {
+      "translate": "advancements.my_addon.on_transform_upgrade_familiar_fox.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "ssc_addon:evolution_form",
+  "criteria": {
+    "on_transform_upgrade_familiar_fox": {
+      "trigger": "my_addon:on_transform_addon_form",
+      "conditions": {
+        "form_id": "my_addon:upgrade_familiar_fox"
+      }
+    }
+  },
+  "requirements": []
+}

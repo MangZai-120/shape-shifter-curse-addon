@@ -220,6 +220,9 @@ public class SscAddon implements ModInitializer {
 	public static final Item EVOLUTION_STONE = new EvolutionStoneItem(new Item.Settings().maxCount(1).fireproof());
 	public static final Item CORAL_BALL = new Item(new Item.Settings().maxCount(64));
 	public static final Item ACTIVE_CORAL_NECKLACE = new ActiveCoralNecklaceItem(new Item.Settings().maxCount(1));
+	// 风灵专属项链：加快疾风连爪耐力回复；朔望专属项链：强化九命复活
+	public static final Item WIND_SPIRIT_STAMINA_NECKLACE = new net.onixary.shapeShifterCurseFabric.ssc_addon.item.WindSpiritStaminaNecklaceItem(new Item.Settings().maxCount(1));
+	public static final Item NOVA_REVIVE_NECKLACE = new net.onixary.shapeShifterCurseFabric.ssc_addon.item.NovaReviveNecklaceItem(new Item.Settings().maxCount(1));
 	public static final Item ANUBIS_CRYSTAL = new AnubisCrystalItem(new Item.Settings().maxCount(1).fireproof());
 	public static final Item ANKH_STONE = new AnkhStoneItem(new Item.Settings().maxCount(1).fireproof());
 	// 契灵专属：绑定脚环（feet/aglet 槽，与守御脚环互斥）
@@ -295,6 +298,8 @@ public class SscAddon implements ModInitializer {
 						entries.add(WATER_SPEAR);
 						entries.add(CORAL_BALL);
 						entries.add(ACTIVE_CORAL_NECKLACE);
+						entries.add(WIND_SPIRIT_STAMINA_NECKLACE);
+						entries.add(NOVA_REVIVE_NECKLACE);
 						entries.add(ANUBIS_CRYSTAL);
 						entries.add(ANKH_STONE);
 						entries.add(BINDING_ANKLET);
@@ -425,6 +430,8 @@ public class SscAddon implements ModInitializer {
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "evolution_stone"), EVOLUTION_STONE);
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "coral_ball"), CORAL_BALL);
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "active_coral_necklace"), ACTIVE_CORAL_NECKLACE);
+		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "wind_spirit_stamina_necklace"), WIND_SPIRIT_STAMINA_NECKLACE);
+		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "nova_revive_necklace"), NOVA_REVIVE_NECKLACE);
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "anubis_crystal"), ANUBIS_CRYSTAL);
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "ankh_stone"), ANKH_STONE);
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "binding_anklet"), BINDING_ANKLET);
@@ -478,6 +485,8 @@ public class SscAddon implements ModInitializer {
 		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.ParasiticCombatTracker.init();
 		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.ParasiticAbsorptionManager.init();
 		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.ParasiticSeedEnergyRegen.init();
+		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.NineLivesManager.init();
+		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.NovaSkillManager.init();
 		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SeedEnergyEatingHandler.register();
 		LifesavingCatTailItem.registerLootTable();
 		AnkhStoneItem.registerLootTable();
@@ -579,6 +588,14 @@ public class SscAddon implements ModInitializer {
 		ocelotSpForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.75f, 0.6f));
 		RegPlayerForms.registerPlayerForm(ocelotSpForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_ocelot_wind_spirit")).registerForm(1, 5, ocelotSpForm));
+
+		// 朔望（月髓环豹猫）——与风灵同源，复用原版豹猫 Form_Ocelot3 模型动画，四足兽形；定位九命灵猫（生存/不死），技能待设计
+		Form_Ocelot3 ocelotNovaForm = new Form_Ocelot3(FormIdentifiers.OCELOT_NOVA);
+		ocelotNovaForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
+		// 缩放与原版豹猫 ocelot_3 一致（与风灵相同 0.75f/0.6f）
+		ocelotNovaForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.75f, 0.6f));
+		RegPlayerForms.registerPlayerForm(ocelotNovaForm);
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_ocelot_nova")).registerForm(1, 5, ocelotNovaForm));
 
 		// Fallen Allay SP
 		Form_FallenAllaySP fallenAllayForm = new Form_FallenAllaySP(FormIdentifiers.FALLEN_ALLAY_SP);

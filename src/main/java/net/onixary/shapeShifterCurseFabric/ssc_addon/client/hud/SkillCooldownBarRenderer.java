@@ -154,11 +154,19 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 		int scaledWidth = mc.getWindow().getScaledWidth();
 		int primaryX = anchor.getLeft() + cdOffX;
 		int barY = anchor.getRight() + cdOffY;
-		// 副条：相对屏幕垂直中线镜像主条 X
-		int secondaryX = scaledWidth - primaryX - TEX_W;
+		// 副条：对称时相对屏幕垂直中线镜像主条 X；非对称时用独立偏移
+		int secondaryX;
+		int secondaryY;
+		if (config.cdSymmetric) {
+			secondaryX = scaledWidth - primaryX - TEX_W;
+			secondaryY = barY;
+		} else {
+			secondaryX = anchor.getLeft() + config.cdSecondaryBarPosOffsetX;
+			secondaryY = anchor.getRight() + config.cdSecondaryBarPosOffsetY;
+		}
 
 		renderCdBarWithNumber(context, player, primaryCdId, primaryX, barY, true, false);
-		renderCdBarWithNumber(context, player, secondaryCdId, secondaryX, barY, false, false);
+		renderCdBarWithNumber(context, player, secondaryCdId, secondaryX, secondaryY, false, false);
 	}
 
 	/**

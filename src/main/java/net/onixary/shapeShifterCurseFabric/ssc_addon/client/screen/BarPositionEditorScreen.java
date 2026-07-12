@@ -63,16 +63,18 @@ public class BarPositionEditorScreen extends Screen {
     private int inType, inX, inY;   // 本能条
     private int maType, maX, maY;   // 能量条
     private int cdType, cdX, cdY;   // SSCA 技能 CD 条
+    private boolean cdSym;          // CD 主/次是否左右对称
     // 进入时的初始快照（取消还原 / 判断是否有改动）
     private int inType0, inX0, inY0, maType0, maX0, maY0;
     private int cdType0, cdX0, cdY0;
+    private boolean cdSym0;
     private boolean snapshotTaken = false;
 
     // 防止联动回填时循环触发回调
     private boolean suppressCallbacks = false;
 
     // 控件引用
-    private ButtonWidget inTypeBtn, maTypeBtn, cdTypeBtn;
+    private ButtonWidget inTypeBtn, maTypeBtn, cdTypeBtn, cdSymBtn;
     private OffsetSlider inXSlider, inYSlider, maXSlider, maYSlider, cdXSlider, cdYSlider;
     private TextFieldWidget inXField, inYField, maXField, maYField, cdXField, cdYField;
 
@@ -121,10 +123,12 @@ public class BarPositionEditorScreen extends Screen {
                 cdType = cdType0 = sscCfg.cdBarPosType;
                 cdX = cdX0 = sscCfg.cdBarPosOffsetX;
                 cdY = cdY0 = sscCfg.cdBarPosOffsetY;
+                cdSym = cdSym0 = sscCfg.cdSymmetric;
             } else {
                 cdType = cdType0 = DEF_CD_TYPE;
                 cdX = cdX0 = DEF_CD_X;
                 cdY = cdY0 = DEF_CD_Y;
+                cdSym = cdSym0 = true;
             }
             snapshotTaken = true;
         }
@@ -134,13 +138,13 @@ public class BarPositionEditorScreen extends Screen {
         final int panelX = (width - panelW) / 2;
         final int sliderW = 116;
         final int fieldW = 36;
-        final int rowH = 18;
-        final int ctrlH = 14;
-        final int typeBtnW = 100, typeBtnH = 16;
+        final int rowH = 14;
+        final int ctrlH = 11;
+        final int typeBtnW = 100, typeBtnH = 13;
         final int contentRight = panelX + sliderW + 4 + fieldW;
 
         // 本能条区块
-        int inTop = Math.max(42, height / 2 - 82);
+        int inTop = Math.max(20, height / 2 - 85);
         inTypeBtn = ButtonWidget.builder(anchorBtnText("instinct", inType), b -> cycleType(true))
                 .dimensions(panelX, inTop, typeBtnW, typeBtnH).build();
         addDrawableChild(inTypeBtn);
@@ -154,7 +158,7 @@ public class BarPositionEditorScreen extends Screen {
         addDrawableChild(inYField);
 
         // 能量条区块
-        int maTop = inTop + rowH * 3 + 8;
+        int maTop = inTop + rowH * 3 + 6;
         maTypeBtn = ButtonWidget.builder(anchorBtnText("mana", maType), b -> cycleType(false))
                 .dimensions(panelX, maTop, typeBtnW, typeBtnH).build();
         addDrawableChild(maTypeBtn);
@@ -168,10 +172,13 @@ public class BarPositionEditorScreen extends Screen {
         addDrawableChild(maYField);
 
         // SSCA 技能 CD 条区块
-        int cdTop = maTop + rowH * 3 + 8;
+        int cdTop = maTop + rowH * 3 + 6;
         cdTypeBtn = ButtonWidget.builder(anchorBtnText("cd", cdType), b -> cycleTypeCd())
                 .dimensions(panelX, cdTop, typeBtnW, typeBtnH).build();
         addDrawableChild(cdTypeBtn);
+        cdSymBtn = ButtonWidget.builder(cdSymText(), b -> { cdSym = !cdSym; onWorkingChanged(); })
+                .dimensions(panelX + typeBtnW + 4, cdTop, Math.max(40, contentRight - (panelX + typeBtnW + 4)), typeBtnH).build();
+        addDrawableChild(cdSymBtn);
         cdXSlider = new OffsetSlider(panelX, cdTop + rowH, sliderW, ctrlH, "offset_x", cdX, v -> { cdX = v; onWorkingChanged(); });
         addDrawableChild(cdXSlider);
         cdXField = makeNumField(panelX + sliderW + 4, cdTop + rowH, fieldW, ctrlH, v -> { cdX = v; onWorkingChanged(); });
@@ -183,7 +190,7 @@ public class BarPositionEditorScreen extends Screen {
 
         // ====== 按钮：保存 + 三组独立重置 + 取消 ======
         final int botBtnW = 50;
-        final int botBtnH = 16;
+        final int botBtnH = 14;
         final int botGap = 3;
         int botStartX = panelX;
         int botY = cdTop + rowH * 3 + 2;
@@ -196,7 +203,7 @@ public class BarPositionEditorScreen extends Screen {
 
         // 三组独立重置按钮（放在底部按钮下方一行，分别只重置对应 UI）
         final int rstBtnW = 66;
-        final int rstBtnH = 14;
+        final int rstBtnH = 12;
         int rstY = botY + botBtnH + 4;
         int rstTotalW = rstBtnW * 3 + botGap * 2;
         int rstStartX = panelX + (contentRight - panelX - rstTotalW) / 2;
@@ -232,6 +239,10 @@ public class BarPositionEditorScreen extends Screen {
         cdType = cdType % 9 + 1;
         onWorkingChanged();
     }
+    private Text cdSymText() {
+        return Text.translatable("text.ssc_addon.bar_editor.cd_symmetric",
+                Text.translatable(cdSym ? "text.ssc_addon.bar_editor.sym_on" : "text.ssc_addon.bar_editor.sym_off"));
+    }
     private Text anchorBtnText(String which, int type) {
         return Text.translatable("text.ssc_addon.bar_editor.anchor",
                 Text.translatable("text.ssc_addon.bar_editor." + which),
@@ -260,6 +271,7 @@ public class BarPositionEditorScreen extends Screen {
             sscCfg.cdBarPosType = cdType;
             sscCfg.cdBarPosOffsetX = cdX;
             sscCfg.cdBarPosOffsetY = cdY;
+            sscCfg.cdSymmetric = cdSym;
         } catch (Exception ignored) {}
     }
 
@@ -281,6 +293,7 @@ public class BarPositionEditorScreen extends Screen {
             if (cdYSlider != null) cdYSlider.setIntValue(cdY);
             if (cdXField != null) cdXField.setText(String.valueOf(cdX));
             if (cdYField != null) cdYField.setText(String.valueOf(cdY));
+            if (cdSymBtn != null) cdSymBtn.setMessage(cdSymText());
         } finally {
             suppressCallbacks = false;
         }
@@ -307,7 +320,7 @@ public class BarPositionEditorScreen extends Screen {
     private boolean isEdited() {
         return inType != inType0 || inX != inX0 || inY != inY0
                 || maType != maType0 || maX != maX0 || maY != maY0
-                || cdType != cdType0 || cdX != cdX0 || cdY != cdY0;
+                || cdType != cdType0 || cdX != cdX0 || cdY != cdY0 || cdSym != cdSym0;
     }
 
     private void doSave() {
@@ -322,14 +335,14 @@ public class BarPositionEditorScreen extends Screen {
         // 更新快照，避免 close 时又弹确认
         inType0 = inType; inX0 = inX; inY0 = inY;
         maType0 = maType; maX0 = maX; maY0 = maY;
-        cdType0 = cdType; cdX0 = cdX; cdY0 = cdY;
+        cdType0 = cdType; cdX0 = cdX; cdY0 = cdY; cdSym0 = cdSym;
         MinecraftClient.getInstance().setScreen(parent);
     }
 
     private void doReset() {
         inType = DEF_IN_TYPE; inX = DEF_IN_X; inY = DEF_IN_Y;
         maType = DEF_MA_TYPE; maX = DEF_MA_X; maY = DEF_MA_Y;
-        cdType = DEF_CD_TYPE; cdX = DEF_CD_X; cdY = DEF_CD_Y;
+        cdType = DEF_CD_TYPE; cdX = DEF_CD_X; cdY = DEF_CD_Y; cdSym = true;
         syncAllControls();
         applyToConfig();
     }
@@ -350,7 +363,7 @@ public class BarPositionEditorScreen extends Screen {
 
     /** 仅重置 SSCA CD 条（不影响本能/能量条）。 */
     private void doResetCd() {
-        cdType = DEF_CD_TYPE; cdX = DEF_CD_X; cdY = DEF_CD_Y;
+        cdType = DEF_CD_TYPE; cdX = DEF_CD_X; cdY = DEF_CD_Y; cdSym = true;
         syncAllControls();
         applyToConfig();
     }
@@ -380,7 +393,7 @@ public class BarPositionEditorScreen extends Screen {
     private void restoreConfigToSnapshot() {
         inType = inType0; inX = inX0; inY = inY0;
         maType = maType0; maX = maX0; maY = maY0;
-        cdType = cdType0; cdX = cdX0; cdY = cdY0;
+        cdType = cdType0; cdX = cdX0; cdY = cdY0; cdSym = cdSym0;
         applyToConfig();
     }
 

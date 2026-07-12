@@ -219,6 +219,13 @@ public class SscAddonClient implements ClientModInitializer {
 										} catch (Throwable ignored) {
 											// power 客户端不全等极端情况，忽略；渲染只需 origins map 写入成功
 										}
+										// 同步形态缩放（Pehkui）：广播原先漏了 scale，导致客机看其它玩家模型偏大/站立、超出判定框。
+										// 对该玩家应用其形态的 applyScale（缩放形态缩小、人类形态复位 1.0），与 nowForm/origin/skin 一致由客机本地重建。
+										try {
+											form.applyScale(p);
+										} catch (Throwable ignored) {
+											// Pehkui 未加载或异常时忽略，不影响其它同步
+										}
 									}
 								}
 							}
@@ -326,6 +333,9 @@ public class SscAddonClient implements ClientModInitializer {
 
 		// 寄生果蝠形态种子量能量条 HUD
 		SeedEnergyHudRenderer.register();
+
+		// 朔望九命剩余命数 HUD
+		net.onixary.shapeShifterCurseFabric.ssc_addon.client.NineLivesHudRenderer.register();
 
 		// 女巫使魔刷怪蛋颜色注册
 		ColorProviderRegistry.ITEM.register(

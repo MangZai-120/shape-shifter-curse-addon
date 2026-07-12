@@ -90,8 +90,11 @@ public class EvolutionStoneItem extends Item {
 				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "axolotl_3"))) {
 					targetFormId = new Identifier("my_addon", "axolotl_fluorescent");
 					canEvolve = true;
-				}
-			}
+				}				// 允许原版豹猫永久形态 ocelot_3 使用进化石进化为朔望（与月髓环→风灵并行存在，不同道具不冲突）
+				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "ocelot_3"))) {
+					targetFormId = new Identifier("my_addon", "ocelot_nova");
+					canEvolve = true;
+				}			}
 
 			if (canEvolve) {
 				// 进化使魔门控：必须先解锁两个 50 级分支（灵界之主 + 契灵）才能用进化石继续进化
