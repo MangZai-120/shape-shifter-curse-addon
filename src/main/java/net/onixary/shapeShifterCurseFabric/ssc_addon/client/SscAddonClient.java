@@ -350,8 +350,10 @@ public class SscAddonClient implements ClientModInitializer {
 		);
 
 		// Register predicate for 3D model when held (0.0 = inventory/ground, 1.0 = held)
+		// GUI/GROUND 渲染上下文时强制返回 0，避免 override 把物品栏图标也切到 3D
 		ModelPredicateProviderRegistry.register(SscAddon.WATER_SPEAR, new Identifier("ssc_addon", "held"), (stack, world, entity, seed) ->
-				entity != null && (entity.getMainHandStack() == stack || entity.getOffHandStack() == stack) ? 1.0F : 0.0F
+				net.onixary.shapeShifterCurseFabric.ssc_addon.util.RenderContextTracker.isGuiContext() ? 0.0F :
+				(entity != null && (entity.getMainHandStack() == stack || entity.getOffHandStack() == stack) ? 1.0F : 0.0F)
 		);
 
 		// Also register "throwing" predicate for trident animation support if needed

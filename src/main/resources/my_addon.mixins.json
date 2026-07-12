@@ -63,6 +63,7 @@
                    "render.MistFormHeldItemMixin",
                    "render.LivingEntityRendererShadowFixMixin",
                    "render.PowerHolderComponentShadowFixMixin",
+                   "render.WaterSpearInventoryMixin",
                     "client.MinecraftClientSetScreenMixin",
                    "client.SoundManagerDeafenMixin",
                    "client.TransformingControllerFeralAnimMixin",
