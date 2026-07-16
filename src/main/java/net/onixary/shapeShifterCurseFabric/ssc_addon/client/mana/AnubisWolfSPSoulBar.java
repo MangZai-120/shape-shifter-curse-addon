@@ -8,7 +8,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
-import net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ManaBarPos;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
 
@@ -30,21 +30,10 @@ public class AnubisWolfSPSoulBar implements HudRenderCallback {
 		if (current <= 0 && max <= 1) return;
 		double percent = (double) current / (double) max;
 
-		int posType = 8;
-		int offsetX = 100;
-		int offsetY = -17;
-
-		try {
-			Object config = ShapeShifterCurseFabric.clientConfig;
-			if (config != null) {
-				Class<?> configClass = config.getClass();
-				posType = configClass.getField("manaBarPosType").getInt(config);
-				offsetX = configClass.getField("manaBarPosOffsetX").getInt(config);
-				offsetY = configClass.getField("manaBarPosOffsetY").getInt(config);
-			}
-		} catch (Exception e) {
-			// Use defaults if reflection fails
-		}
+		int[] mp = ManaBarPos.get(8, 100, -17);
+		int posType = mp[0];
+		int offsetX = mp[1];
+		int offsetY = mp[2];
 
 		Pair<Integer, Integer> pos = UIPositionUtils.getCorrectPosition(
 				posType,

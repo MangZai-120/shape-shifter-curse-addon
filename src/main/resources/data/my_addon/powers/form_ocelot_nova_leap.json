@@ -1,6 +1,6 @@
 {
     "type": "apoli:active_self",
-    "cooldown": 1,
+    "cooldown": 3,
     "hud_render": {
         "should_render": false
     },

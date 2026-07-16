@@ -26,18 +26,8 @@ public class PowerUtils {
 	 */
 	@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 	public static int getClientResourceValue(PlayerEntity player, Identifier resourceId) {
-		try {
-			List<VariableIntPower> powers = PowerHolderComponent.KEY.get(player)
-					.getPowers(VariableIntPower.class);
-			for (VariableIntPower power : powers) {
-				if (power.getType().getIdentifier().equals(resourceId)) {
-					return power.getValue();
-				}
-			}
-		} catch (Exception e) {
-			LOGGER.error("getClientResourceValue 失败: resourceId={}", resourceId, e);
-		}
-		return 0;
+		// 走每 tick 缓存，避免每帧遍历玩家全部 power
+		return ClientResourceCache.getValue(player, resourceId);
 	}
 
 	/**
@@ -47,18 +37,8 @@ public class PowerUtils {
 	 */
 	@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 	public static int[] getClientResourceValueAndMax(PlayerEntity player, Identifier resourceId) {
-		try {
-			List<VariableIntPower> powers = PowerHolderComponent.KEY.get(player)
-					.getPowers(VariableIntPower.class);
-			for (VariableIntPower power : powers) {
-				if (power.getType().getIdentifier().equals(resourceId)) {
-					return new int[]{power.getValue(), power.getMax()};
-				}
-			}
-		} catch (Exception e) {
-			LOGGER.error("getClientResourceValueAndMax 失败: resourceId={}", resourceId, e);
-		}
-		return new int[]{0, 1};
+		// 走每 tick 缓存，避免每帧每个 HUD 条都遍历玩家全部 power
+		return ClientResourceCache.getValueAndMax(player, resourceId);
 	}
 
 	public static int getResourceValue(ServerPlayerEntity player, Identifier resourceId) {

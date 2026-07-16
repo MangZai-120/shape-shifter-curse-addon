@@ -8,10 +8,10 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
-import net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ManaBarPos;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
 
@@ -45,18 +45,10 @@ public class MancianimaResistanceBar implements HudRenderCallback {
 		if (max <= 1) return;
 		if (current < 0) current = 0;
 
-		int posType = 8;
-		int offsetX = 100;
-		int offsetY = 0;
-		try {
-			Object config = ShapeShifterCurseFabric.clientConfig;
-			if (config != null) {
-				Class<?> cc = config.getClass();
-				posType = cc.getField("manaBarPosType").getInt(config);
-				offsetX = cc.getField("manaBarPosOffsetX").getInt(config);
-				offsetY = cc.getField("manaBarPosOffsetY").getInt(config);
-			}
-		} catch (Exception ignored) {}
+		int[] mp = ManaBarPos.get(8, 100, 0);
+		int posType = mp[0];
+		int offsetX = mp[1];
+		int offsetY = mp[2];
 
 		Pair<Integer, Integer> pos = UIPositionUtils.getCorrectPosition(posType, offsetX, offsetY);
 		int x = pos.getLeft() + CENTER_OFFSET_X;

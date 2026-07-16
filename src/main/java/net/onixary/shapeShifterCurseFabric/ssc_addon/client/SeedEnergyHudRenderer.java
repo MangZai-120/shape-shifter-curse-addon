@@ -5,7 +5,6 @@
  */
 package net.onixary.shapeShifterCurseFabric.ssc_addon.client;
 
-import io.github.apace100.apoli.component.PowerHolderComponent;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -14,8 +13,9 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
-import net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ClientResourceCache;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ManaBarPos;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
 
@@ -42,7 +42,7 @@ public final class SeedEnergyHudRenderer implements HudRenderCallback {
         if (MC.options.hudHidden || MC.player == null) return;
         PlayerEntity player = MC.player;
         // 必须真正拥有该 power 才渲染，避免对其他形态/未变形玩家误显示
-        if (!hasSeedEnergyPower(player)) return;
+        if (!ClientResourceCache.has(player, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY)) return;
 
         int[] valMax = PowerUtils.getClientResourceValueAndMax(player, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY);
         int current = valMax[0];
@@ -51,20 +51,10 @@ public final class SeedEnergyHudRenderer implements HudRenderCallback {
         double percent = (double) current / (double) max;
 
         // 与其他能量条同步使用主模组的 manaBar 位置配置
-        int posType = 8;
-        int offsetX = 100;
-        int offsetY = -17;
-        try {
-            Object config = ShapeShifterCurseFabric.clientConfig;
-            if (config != null) {
-                Class<?> configClass = config.getClass();
-                posType = configClass.getField("manaBarPosType").getInt(config);
-                offsetX = configClass.getField("manaBarPosOffsetX").getInt(config);
-                offsetY = configClass.getField("manaBarPosOffsetY").getInt(config);
-            }
-        } catch (Exception ignored) {
-            // 反射失败使用默认值
-        }
+        int[] mp = ManaBarPos.get(8, 100, -17);
+        int posType = mp[0];
+        int offsetX = mp[1];
+        int offsetY = mp[2];
         Pair<Integer, Integer> pos = UIPositionUtils.getCorrectPosition(posType, offsetX, offsetY);
         // X 水平居中屏幕，Y 沿用魔力条配置（与九命条一致的中心对称）
         int x = (MC.getWindow().getScaledWidth() - TEX_WIDTH) / 2;
@@ -79,15 +69,6 @@ public final class SeedEnergyHudRenderer implements HudRenderCallback {
             if (filledWidth > 0) {
                 context.drawTexture(TEX_FULL, x, y, 0, 0, filledWidth, TEX_HEIGHT, TEX_WIDTH, TEX_HEIGHT);
             }
-        }
-    }
-
-    private static boolean hasSeedEnergyPower(PlayerEntity player) {
-        try {
-            return PowerHolderComponent.KEY.get(player).getPowers().stream()
-                    .anyMatch(p -> p.getType().getIdentifier().equals(FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY));
-        } catch (Exception e) {
-            return false;
         }
     }
 }

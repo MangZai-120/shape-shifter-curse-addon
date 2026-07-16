@@ -58,6 +58,7 @@ public final class NovaSkillManager {
     private static final int LEAP_CD = 200;             // 用满 2 次 cd 10s
     private static final int LEAP_CD_SHORT = 120;       // 只用 1 次超时 cd 6s
     private static final double LEAP_POWER = 1.2;       // 跳冲水平速度
+    private static final int LEAP_INPUT_GAP = 5;        // 输入去抖窗口(tick)：必须 > leap power 的 cooldown(3)，否则挡不住按住的重复触发
     // 舍身爆炸
     private static final int CHARGE_TIME = 100;         // 蓄力 5s
     private static final int EXPLODE_CD = 600;          // cd 30s
@@ -73,6 +74,8 @@ public final class NovaSkillManager {
     private static final Map<UUID, Integer> LEAP_COUNT = new ConcurrentHashMap<>();
     private static final Map<UUID, Long> LEAP_FIRST = new ConcurrentHashMap<>();
     private static final Map<UUID, Long> LEAP_CD_END = new ConcurrentHashMap<>();
+    /** 灵跃最近一次「收到触发」的 tick：用于抑制 active_self 电平触发在一次按键内的多 tick 重复。 */
+    private static final Map<UUID, Long> LEAP_LAST_INPUT = new ConcurrentHashMap<>();
     private static final Map<UUID, Long> CHARGE_START = new ConcurrentHashMap<>();
     private static final Map<UUID, Long> EXPLODE_CD_END = new ConcurrentHashMap<>();
 
@@ -113,6 +116,13 @@ public final class NovaSkillManager {
     public static void tryLeap(ServerPlayerEntity player) {
         if (!FormUtils.isForm(player, FormIdentifiers.OCELOT_NOVA)) return;
         long now = player.getWorld().getTime();
+        // 输入去抖：power active_self(cooldown=1) 是电平触发，一次物理按键会持续多 tick 重复触发本方法。
+        // 记录最近一次「收到触发」的 tick（无论如何都更新）；若距上次触发 < GAP，视为同一次按住的重复 → 忽略。
+        // 这样按住/单击只认第一次，松开（停止触发）后再按才算新的一次，正确区分单击与连按。
+        Long lastInput = LEAP_LAST_INPUT.put(player.getUuid(), now);
+        if (lastInput != null && now - lastInput < LEAP_INPUT_GAP) {
+            return;
+        }
         if (now < LEAP_CD_END.getOrDefault(player.getUuid(), 0L)) return; // cd 中
         int count = LEAP_COUNT.getOrDefault(player.getUuid(), 0);
         long first = LEAP_FIRST.getOrDefault(player.getUuid(), 0L);

@@ -5,7 +5,6 @@
  */
 package net.onixary.shapeShifterCurseFabric.ssc_addon.client;
 
-import io.github.apace100.apoli.component.PowerHolderComponent;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -14,8 +13,9 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
-import net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ClientResourceCache;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ManaBarPos;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
 
@@ -40,7 +40,7 @@ public final class NineLivesHudRenderer implements HudRenderCallback {
     public void onHudRender(DrawContext context, float tickDelta) {
         if (MC.options.hudHidden || MC.player == null) return;
         PlayerEntity player = MC.player;
-        if (!hasNineLivesPower(player)) return;
+        if (!ClientResourceCache.has(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES)) return;
 
         int[] valMax = PowerUtils.getClientResourceValueAndMax(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES);
         int current = valMax[0];
@@ -49,20 +49,10 @@ public final class NineLivesHudRenderer implements HudRenderCallback {
         double percent = (double) current / (double) max;
 
         // Y 沿用主模组魔力条配置（与其它能量条同高）；X 水平居中屏幕（修正左右不对称）
-        int posType = 8;
-        int offsetX = 100;
-        int offsetY = -17;
-        try {
-            Object config = ShapeShifterCurseFabric.clientConfig;
-            if (config != null) {
-                Class<?> configClass = config.getClass();
-                posType = configClass.getField("manaBarPosType").getInt(config);
-                offsetX = configClass.getField("manaBarPosOffsetX").getInt(config);
-                offsetY = configClass.getField("manaBarPosOffsetY").getInt(config);
-            }
-        } catch (Exception ignored) {
-            // 反射失败使用默认值
-        }
+        int[] mp = ManaBarPos.get(8, 100, -17);
+        int posType = mp[0];
+        int offsetX = mp[1];
+        int offsetY = mp[2];
         Pair<Integer, Integer> pos = UIPositionUtils.getCorrectPosition(posType, offsetX, offsetY);
         int x = (MC.getWindow().getScaledWidth() - TEX_WIDTH) / 2;
         int y = pos.getRight();
@@ -76,15 +66,6 @@ public final class NineLivesHudRenderer implements HudRenderCallback {
             if (filledWidth > 0) {
                 context.drawTexture(TEX_FULL, x, y, 0, 0, filledWidth, TEX_HEIGHT, TEX_WIDTH, TEX_HEIGHT);
             }
-        }
-    }
-
-    private static boolean hasNineLivesPower(PlayerEntity player) {
-        try {
-            return PowerHolderComponent.KEY.get(player).getPowers().stream()
-                    .anyMatch(p -> p.getType().getIdentifier().equals(FormIdentifiers.OCELOT_NOVA_NINE_LIVES));
-        } catch (Exception e) {
-            return false;
         }
     }
 }
