@@ -55,13 +55,37 @@ public class SscaFormSelectScreen extends Screen {
      */
     private final List<StartForm> forms = new ArrayList<>();
 
-    /** 从已加载的进化路线动态构建可选形态列表。 */
+    /**
+     * 开局可选形态的显示顺序（route id 升序）。不在此表中的 route 排在最后、按 route id 字母序。
+     * <p>调整翻页顺序只需调整此数组。</p>
+     */
+    private static final List<String> DISPLAY_ORDER = List.of(
+            "familiar_fox",  // 进化使魔（第一页）
+            "axolotl"        // 进化美西螈（第二页）
+    );
+
+    /** 从已加载的进化路线动态构建可选形态列表（按 {@link #DISPLAY_ORDER} 排序）。 */
     private void buildForms() {
         forms.clear();
+        // 先按 DISPLAY_ORDER 收集，保证指定顺序；未列出的 route 追加在末尾（字母序兜底）
+        List<EvolutionRoute> ordered = new ArrayList<>();
+        // 用 TreeMap 保证未指定 route 的稳定字母序
+        java.util.Map<String, EvolutionRoute> remain = new java.util.TreeMap<>();
         for (EvolutionRoute route : EvolutionRegistry.INSTANCE.all().values()) {
             if (!route.enabled || route.startForm == null) {
                 continue;
             }
+            remain.put(route.routeId, route);
+        }
+        for (String rid : DISPLAY_ORDER) {
+            EvolutionRoute r = remain.remove(rid);
+            if (r != null) {
+                ordered.add(r);
+            }
+        }
+        ordered.addAll(remain.values());
+
+        for (EvolutionRoute route : ordered) {
             Identifier fid = route.startForm;
             String ns = fid.getNamespace();
             String path = fid.getPath();
