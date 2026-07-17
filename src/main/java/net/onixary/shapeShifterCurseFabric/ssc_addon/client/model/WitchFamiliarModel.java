@@ -1,6 +1,6 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.client.model;
 
-import mod.azure.azurelib.model.GeoModel;
+import software.bernie.geckolib.model.GeoModel;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.WitchFamiliarEntity;
 

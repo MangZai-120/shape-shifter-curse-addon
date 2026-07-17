@@ -80,7 +80,7 @@ public class AnkhStoneItem extends TrinketItem {
 			if (id.equals(new Identifier("minecraft", "chests/desert_pyramid"))) {
 				LootPool.Builder poolBuilder = LootPool.builder()
 						.rolls(UniformLootNumberProvider.create(1.0f, 2.0f))
-						.conditionally(RandomChanceLootCondition.builder(0.15f).build())
+						.conditionally(RandomChanceLootCondition.builder(0.15f))
 						.with(ItemEntry.builder(SscAddon.ANKH_STONE));
 				tableBuilder.pool(poolBuilder);
 			}

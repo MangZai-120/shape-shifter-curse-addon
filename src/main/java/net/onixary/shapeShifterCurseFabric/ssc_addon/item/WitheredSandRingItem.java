@@ -45,7 +45,7 @@ public class WitheredSandRingItem extends TrinketItem {
 			if (id.equals(new Identifier("minecraft", "chests/desert_pyramid"))) {
 				LootPool.Builder poolBuilder = LootPool.builder()
 						.rolls(ConstantLootNumberProvider.create(1.0F))
-						.conditionally(RandomChanceLootCondition.builder(0.15F).build())
+						.conditionally(RandomChanceLootCondition.builder(0.15F))
 						.with(ItemEntry.builder(SscAddon.WITHERED_SAND_RING));
 				tableBuilder.pool(poolBuilder);
 			}

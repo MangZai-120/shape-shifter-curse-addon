@@ -278,8 +278,8 @@ public final class WindSpiritClawManager {
         ItemStack stack = player.getMainHandStack();
         if (stack.isEmpty()) return false;
         double totalAdd = 0.0;
-        for (EntityAttributeModifier m : stack.getItem()
-                .getAttributeModifiers(stack, EquipmentSlot.MAINHAND)
+        for (EntityAttributeModifier m : stack
+                .getAttributeModifiers(EquipmentSlot.MAINHAND)
                 .get(EntityAttributes.GENERIC_ATTACK_DAMAGE)) {
             if (m.getOperation() == EntityAttributeModifier.Operation.ADDITION) {
                 totalAdd += m.getValue();

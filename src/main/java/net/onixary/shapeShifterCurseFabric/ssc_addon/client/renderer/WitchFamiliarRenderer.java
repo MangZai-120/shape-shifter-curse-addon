@@ -1,8 +1,8 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.client.renderer;
 
-import mod.azure.azurelib.cache.object.BakedGeoModel;
-import mod.azure.azurelib.cache.object.GeoBone;
-import mod.azure.azurelib.renderer.GeoEntityRenderer;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRendererFactory;
@@ -98,8 +98,8 @@ public class WitchFamiliarRenderer extends GeoEntityRenderer<WitchFamiliarEntity
 
 	@Override
 	protected void applyRotations(WitchFamiliarEntity animatable, MatrixStack poseStack,
-	                              float ageInTicks, float rotationYaw, float partialTick, float nativeScale) {
-		super.applyRotations(animatable, poseStack, ageInTicks, rotationYaw, partialTick, nativeScale);
+	                              float ageInTicks, float rotationYaw, float partialTick) {
+		super.applyRotations(animatable, poseStack, ageInTicks, rotationYaw, partialTick);
 		// 基岩版模型面朝+Z，追加Ry(180°)修正朝向
 		poseStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180f));
 	}

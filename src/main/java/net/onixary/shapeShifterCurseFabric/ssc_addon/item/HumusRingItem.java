@@ -44,7 +44,7 @@ public class HumusRingItem extends TrinketItem {
 			if (!MINESHAFT_LOOT.equals(id)) return;
 			LootPool.Builder pool = LootPool.builder()
 					.rolls(ConstantLootNumberProvider.create(1.0F))
-					.conditionally(RandomChanceLootCondition.builder(0.20F).build())
+					.conditionally(RandomChanceLootCondition.builder(0.20F))
 					.with(ItemEntry.builder(SscAddon.HUMUS_RING));
 			tableBuilder.pool(pool);
 		});

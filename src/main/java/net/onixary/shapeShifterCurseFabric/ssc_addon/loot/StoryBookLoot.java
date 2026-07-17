@@ -248,7 +248,7 @@ public class StoryBookLoot implements ConfigChangeListener {
 				loadBooks();
 				LootPool.Builder poolBuilder = LootPool.builder()
 						.rolls(ConstantLootNumberProvider.create(1.0f))
-						.conditionally(net.minecraft.loot.condition.RandomChanceLootCondition.builder(chance).build());
+						.conditionally(net.minecraft.loot.condition.RandomChanceLootCondition.builder(chance));
 
 				for (BookData book : loadedBooks) {
 					addBookToPool(poolBuilder, book.id, book.title, book.author, book.content);

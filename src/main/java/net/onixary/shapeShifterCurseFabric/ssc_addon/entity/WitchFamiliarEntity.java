@@ -1,13 +1,13 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.entity;
 
-import mod.azure.azurelib.animatable.GeoEntity;
-import mod.azure.azurelib.core.animatable.instance.AnimatableInstanceCache;
-import mod.azure.azurelib.core.animation.AnimatableManager;
-import mod.azure.azurelib.core.animation.Animation;
-import mod.azure.azurelib.core.animation.AnimationController;
-import mod.azure.azurelib.core.animation.RawAnimation;
-import mod.azure.azurelib.core.object.PlayState;
-import mod.azure.azurelib.util.AzureLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.Animation;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 import net.minecraft.entity.EntityGroup;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -58,7 +58,7 @@ import java.util.UUID;
  * 女巫使魔 - 一种伴随女巫自然生成的敌对生物
  * 使用原版使魔外观，拥有火环技能，属于劫掠阵营
  */
-// 抑制 AzureLib 上游旧包名 [removal] 警告，待主包统一迁移到 mod.azure.azurelib.common.* 时再处理
+// GeckoLib 动画实体（主包已从 AzureLib 迁移到 GeckoLib，附属随之对齐）
 @SuppressWarnings({"removal", "deprecation"})
 public class WitchFamiliarEntity extends HostileEntity implements GeoEntity {
 
@@ -73,7 +73,7 @@ public class WitchFamiliarEntity extends HostileEntity implements GeoEntity {
 	// 原版使魔形态ID（用于友军判定）
 	// 注意：PlayerFormBase.FormID 不带 "form_" 前缀，getOriginID() 才会拼接
 	private static final Identifier VANILLA_FAMILIAR_FOX_3 = new Identifier("shape-shifter-curse", "familiar_fox_3");
-	private final AnimatableInstanceCache cache = AzureLibUtil.createInstanceCache(this);
+	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 	private int fireRingCooldown = 0;
 	// 主人（女巫）UUID，用于跟随和攻击同步
 	private UUID ownerUuid;

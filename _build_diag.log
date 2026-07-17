@@ -1,0 +1,448 @@
+﻿Starting a Gradle Daemon, 5 incompatible Daemons could not be reused, use --status for details
+
+> Configure project :
+Fabric Loom: 1.9.2
+Refresh dependencies is in use, loom will be significantly slower.
+"Lock for cache='C:\Users\ASUS\.gradle\caches\fabric-loom', project=':'" is currently held by pid '3452'.
+Locking process does not exist, assuming abrupt termination and deleting lock file.
+Found existing cache lock file (ACQUIRED_PREVIOUS_OWNER_MISSING), rebuilding loom cache. This may have been caused by a failed or canceled build.
+:remapping 68 mods from modImplementation (java-api)
+:remapping 68 mods from modImplementation (java-runtime)
+:remapping 4 mods from modApi (java-api)
+:remapping 4 mods from modApi (java-runtime)
+:remapping 4 mods from modApi
+
+> Task :compileJava
+.\gradlew : 警告: 未知的枚举常量 Env.CLIENT
+所在位置 行:1 字符: 70
++ ... 属\幻形者诅咒附属"; .\gradlew compileJava --refresh-dependencies 2>&1 | Out-F ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (警告: 未知的枚举常量 Env.CLIENT:String) [] 
+   , RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  原因: 找不到com.demonwav.mcdev.annotations.Env的类文件
+警告: 未知的枚举常量 Env.CLIENT
+  原因: 找不到com.demonwav.mcdev.annotations.Env的类文件
+警告: 未知的枚举常量 Env.CLIENT
+  原因: 找不到com.demonwav.mcdev.annotations.Env的类文件
+C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixary\
+shapeShifterCurseFabric\ssc_addon\ability\WindSpiritClawManager.java:282: 错误: 无
+法将类 Item中的方法 getAttributeModifiers应用到给定类型;
+                .getAttributeModifiers(stack, EquipmentSlot.MAINHAND)
+                ^
+  需要: EquipmentSlot
+  找到:    ItemStack,EquipmentSlot
+  原因: 实际参数列表和形式参数列表长度不同
+C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixary\
+shapeShifterCurseFabric\ssc_addon\item\AnkhStoneItem.java:83: 错误: 对于conditional
+ly(LootCondition), 找不到合适的方法
+						.conditionally(RandomChanceLootCondition.builder(0.15f).build())
+						^
+    方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,ne
+t.minecraft.loot.condition.LootCondition.Builder>)不适用
+      (无法推断类型变量 E
+        (实际参数列表和形式参数列表长度不同))
+    方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.con
+dition.LootCondition.Builder)不适用
+      (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Buil
+der)
+  其中, E,T是类型变量:
+    E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.conditio
+n.LootCondition.Builder>)中声明的Object
+    T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixary\
+shapeShifterCurseFabric\ssc_addon\item\AnubisCrystalItem.java:41: 错误: 对于conditi
+onally(LootCondition), 找不到合适的方法
+						.conditionally(RandomChanceLootCondition.builder(0.15F).build())
+						^
+    方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,ne
+t.minecraft.loot.condition.LootCondition.Builder>)不适用
+      (无法推断类型变量 E
+        (实际参数列表和形式参数列表长度不同))
+    方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.con
+dition.LootCondition.Builder)不适用
+      (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Buil
+der)
+  其中, E,T是类型变量:
+    E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.conditio
+n.LootCondition.Builder>)中声明的Object
+    T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixary\
+shapeShifterCurseFabric\ssc_addon\item\BindingAnkletItem.java:127: 错误: 对于condit
+ionally(LootCondition), 找不到合适的方法
+					.conditionally(RandomChanceLootCondition.builder(0.25F).build())
+					^
+    方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,ne
+t.minecraft.loot.condition.LootCondition.Builder>)不适用
+      (无法推断类型变量 E
+        (实际参数列表和形式参数列表长度不同))
+    方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.con
+dition.LootCondition.Builder)不适用
+      (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Buil
+der)
+  其中, E,T是类型变量:
+    E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.conditio
+n.LootCondition.Builder>)中声明的Object
+    T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixary\
+shapeShifterCurseFabric\ssc_addon\item\BloodGarnetItem.java:47: 错误: 对于condition
+ally(LootCondition), 找不到合适的方法
+					.conditionally(RandomChanceLootCondition.builder(0.20F).build())
+					^
+    方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,ne
+t.minecraft.loot.condition.LootCondition.Builder>)不适用
+      (无法推断类型变量 E
+        (实际参数列表和形式参数列表长度不同))
+    方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.con
+dition.LootCondition.Builder)不适用
+      (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Buil
+der)
+  其中, E,T是类型变量:
+    E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.conditio
+n.LootCondition.Builder>)中声明的Object
+    T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixary\
+shapeShifterCurseFabric\ssc_addon\item\BloodlustRingItem.java:47: 错误: 对于conditi
+onally(LootCondition), 找不到合适的方法
+					.conditionally(RandomChanceLootCondition.builder(0.20F).build())
+					^
+    方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,ne
+t.minecraft.loot.condition.LootCondition.Builder>)不适用
+      (无法推断类型变量 E
+        (实际参数列表和形式参数列表长度不同))
+    方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.con
+dition.LootCondition.Builder)不适用
+      (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Buil
+der)
+  其中, E,T是类型变量:
+    E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.conditio
+n.LootCondition.Builder>)中声明的Object
+    T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixary\
+shapeShifterCurseFabric\ssc_addon\item\ErosionSandPrismItem.java:49: 错误: 对于cond
+itionally(LootCondition), 找不到合适的方法
+						.conditionally(RandomChanceLootCondition.builder(0.15F).build())
+						^
+    方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,ne
+t.minecraft.loot.condition.LootCondition.Builder>)不适用
+      (无法推断类型变量 E
+        (实际参数列表和形式参数列表长度不同))
+    方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.con
+dition.LootCondition.Builder)不适用
+      (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Buil
+der)
+  其中, E,T是类型变量:
+    E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.conditio
+n.LootCondition.Builder>)中声明的Object
+    T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixary\
+shapeShifterCurseFabric\ssc_addon\item\HumusRingItem.java:47: 错误: 对于conditional
+ly(LootCondition), 找不到合适的方法
+					.conditionally(RandomChanceLootCondition.builder(0.20F).build())
+					^
+    方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,ne
+t.minecraft.loot.condition.LootCondition.Builder>)不适用
+      (无法推断类型变量 E
+        (实际参数列表和形式参数列表长度不同))
+    方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.con
+dition.LootCondition.Builder)不适用
+      (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Buil
+der)
+  其中, E,T是类型变量:
+    E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.conditio
+n.LootCondition.Builder>)中声明的Object
+    T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixary\
+shapeShifterCurseFabric\ssc_addon\item\LifesavingCatTailItem.java:37: 错误: 对于con
+ditionally(LootCondition), 找不到合适的方法
+						.conditionally(net.minecraft.loot.condition.RandomChanceLootCondition.bui
+lder(0.01f).build())
+						^
+    方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,ne
+t.minecraft.loot.condition.LootCondition.Builder>)不适用
+      (无法推断类型变量 E
+        (实际参数列表和形式参数列表长度不同))
+    方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.con
+dition.LootCondition.Builder)不适用
+      (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Buil
+der)
+  其中, E,T是类型变量:
+    E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.conditio
+n.LootCondition.Builder>)中声明的Object
+    T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixary\
+shapeShifterCurseFabric\ssc_addon\item\TwinPodItem.java:47: 错误: 对于conditionally
+(LootCondition), 找不到合适的方法
+					.conditionally(RandomChanceLootCondition.builder(0.20F).build())
+					^
+    方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,ne
+t.minecraft.loot.condition.LootCondition.Builder>)不适用
+      (无法推断类型变量 E
+        (实际参数列表和形式参数列表长度不同))
+    方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.con
+dition.LootCondition.Builder)不适用
+      (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Buil
+der)
+  其中, E,T是类型变量:
+    E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.conditio
+n.LootCondition.Builder>)中声明的Object
+    T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixary\
+shapeShifterCurseFabric\ssc_addon\item\WitheredSandRingItem.java:48: 错误: 对于cond
+itionally(LootCondition), 找不到合适的方法
+						.conditionally(RandomChanceLootCondition.builder(0.15F).build())
+						^
+    方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,ne
+t.minecraft.loot.condition.LootCondition.Builder>)不适用
+      (无法推断类型变量 E
+        (实际参数列表和形式参数列表长度不同))
+    方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.con
+dition.LootCondition.Builder)不适用
+      (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Buil
+der)
+  其中, E,T是类型变量:
+    E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.conditio
+n.LootCondition.Builder>)中声明的Object
+    T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixary\
+shapeShifterCurseFabric\ssc_addon\loot\StoryBookLoot.java:251: 错误: 对于conditiona
+lly(LootCondition), 找不到合适的方法
+						.conditionally(net.minecraft.loot.condition.RandomChanceLootCondition.bui
+lder(chance).build());
+						^
+    方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,ne
+t.minecraft.loot.condition.LootCondition.Builder>)不适用
+      (无法推断类型变量 E
+        (实际参数列表和形式参数列表长度不同))
+    方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.con
+dition.LootCondition.Builder)不适用
+      (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Buil
+der)
+  其中, E,T是类型变量:
+    E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.conditio
+n.LootCondition.Builder>)中声明的Object
+    T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+12 个错误
+3 个警告
+
+> Task :compileJava FAILED
+[Incubating] Problems report is available at: file:///C:/Users/ASUS/Desktop/clear%20test/%E6%89%A9%E5%B1%95%E5%8C%85/%E5%B9%BB%E5%BD%A2%E8%80%85%E8%AF%85%E5%92%92%E9%99%84%E5%B1%9E/%E5%B9%BB%E5%BD%A2%E8%80%85%E8%AF%85%E5%92%92%E9%99%84%E5%B1%9E/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileJava'.
+> Compilation failed; see the compiler output below.
+  C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixar
+y\shapeShifterCurseFabric\ssc_addon\item\AnkhStoneItem.java:83: 错误: 对于condition
+ally(LootCondition), 找不到合适的方法
+  						.conditionally(RandomChanceLootCondition.builder(0.15f).build())
+  						^
+      方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,
+net.minecraft.loot.condition.LootCondition.Builder>)不适用
+        (无法推断类型变量 E
+          (实际参数列表和形式参数列表长度不同))
+      方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.c
+ondition.LootCondition.Builder)不适用
+        (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Bu
+ilder)
+    其中, E,T是类型变量:
+      E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.condit
+ion.LootCondition.Builder>)中声明的Object
+      T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+  C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixar
+y\shapeShifterCurseFabric\ssc_addon\item\AnubisCrystalItem.java:41: 错误: 对于condi
+tionally(LootCondition), 找不到合适的方法
+  						.conditionally(RandomChanceLootCondition.builder(0.15F).build())
+  						^
+      方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,
+net.minecraft.loot.condition.LootCondition.Builder>)不适用
+        (无法推断类型变量 E
+          (实际参数列表和形式参数列表长度不同))
+      方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.c
+ondition.LootCondition.Builder)不适用
+        (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Bu
+ilder)
+    其中, E,T是类型变量:
+      E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.condit
+ion.LootCondition.Builder>)中声明的Object
+      T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+  C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixar
+y\shapeShifterCurseFabric\ssc_addon\item\BindingAnkletItem.java:127: 错误: 对于cond
+itionally(LootCondition), 找不到合适的方法
+  					.conditionally(RandomChanceLootCondition.builder(0.25F).build())
+  					^
+      方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,
+net.minecraft.loot.condition.LootCondition.Builder>)不适用
+        (无法推断类型变量 E
+          (实际参数列表和形式参数列表长度不同))
+      方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.c
+ondition.LootCondition.Builder)不适用
+        (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Bu
+ilder)
+    其中, E,T是类型变量:
+      E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.condit
+ion.LootCondition.Builder>)中声明的Object
+      T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+  C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixar
+y\shapeShifterCurseFabric\ssc_addon\item\BloodGarnetItem.java:47: 错误: 对于conditi
+onally(LootCondition), 找不到合适的方法
+  					.conditionally(RandomChanceLootCondition.builder(0.20F).build())
+  					^
+      方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,
+net.minecraft.loot.condition.LootCondition.Builder>)不适用
+        (无法推断类型变量 E
+          (实际参数列表和形式参数列表长度不同))
+      方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.c
+ondition.LootCondition.Builder)不适用
+        (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Bu
+ilder)
+    其中, E,T是类型变量:
+      E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.condit
+ion.LootCondition.Builder>)中声明的Object
+      T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+  C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixar
+y\shapeShifterCurseFabric\ssc_addon\item\BloodlustRingItem.java:47: 错误: 对于condi
+tionally(LootCondition), 找不到合适的方法
+  					.conditionally(RandomChanceLootCondition.builder(0.20F).build())
+  					^
+      方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,
+net.minecraft.loot.condition.LootCondition.Builder>)不适用
+        (无法推断类型变量 E
+          (实际参数列表和形式参数列表长度不同))
+      方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.c
+ondition.LootCondition.Builder)不适用
+        (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Bu
+ilder)
+    其中, E,T是类型变量:
+      E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.condit
+ion.LootCondition.Builder>)中声明的Object
+      T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+  C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixar
+y\shapeShifterCurseFabric\ssc_addon\item\ErosionSandPrismItem.java:49: 错误: 对于co
+nditionally(LootCondition), 找不到合适的方法
+  						.conditionally(RandomChanceLootCondition.builder(0.15F).build())
+  						^
+      方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,
+net.minecraft.loot.condition.LootCondition.Builder>)不适用
+        (无法推断类型变量 E
+          (实际参数列表和形式参数列表长度不同))
+      方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.c
+ondition.LootCondition.Builder)不适用
+        (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Bu
+ilder)
+    其中, E,T是类型变量:
+      E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.condit
+ion.LootCondition.Builder>)中声明的Object
+      T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+  C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixar
+y\shapeShifterCurseFabric\ssc_addon\item\HumusRingItem.java:47: 错误: 对于condition
+ally(LootCondition), 找不到合适的方法
+  					.conditionally(RandomChanceLootCondition.builder(0.20F).build())
+  					^
+      方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,
+net.minecraft.loot.condition.LootCondition.Builder>)不适用
+        (无法推断类型变量 E
+          (实际参数列表和形式参数列表长度不同))
+      方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.c
+ondition.LootCondition.Builder)不适用
+        (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Bu
+ilder)
+    其中, E,T是类型变量:
+      E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.condit
+ion.LootCondition.Builder>)中声明的Object
+      T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+  C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixar
+y\shapeShifterCurseFabric\ssc_addon\item\LifesavingCatTailItem.java:37: 错误: 对于c
+onditionally(LootCondition), 找不到合适的方法
+  						.conditionally(net.minecraft.loot.condition.RandomChanceLootCondition.b
+uilder(0.01f).build())
+  						^
+      方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,
+net.minecraft.loot.condition.LootCondition.Builder>)不适用
+        (无法推断类型变量 E
+          (实际参数列表和形式参数列表长度不同))
+      方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.c
+ondition.LootCondition.Builder)不适用
+        (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Bu
+ilder)
+    其中, E,T是类型变量:
+      E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.condit
+ion.LootCondition.Builder>)中声明的Object
+      T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+  C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixar
+y\shapeShifterCurseFabric\ssc_addon\item\TwinPodItem.java:47: 错误: 对于conditional
+ly(LootCondition), 找不到合适的方法
+  					.conditionally(RandomChanceLootCondition.builder(0.20F).build())
+  					^
+      方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,
+net.minecraft.loot.condition.LootCondition.Builder>)不适用
+        (无法推断类型变量 E
+          (实际参数列表和形式参数列表长度不同))
+      方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.c
+ondition.LootCondition.Builder)不适用
+        (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Bu
+ilder)
+    其中, E,T是类型变量:
+      E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.condit
+ion.LootCondition.Builder>)中声明的Object
+      T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+  C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixar
+y\shapeShifterCurseFabric\ssc_addon\item\WitheredSandRingItem.java:48: 错误: 对于co
+nditionally(LootCondition), 找不到合适的方法
+  						.conditionally(RandomChanceLootCondition.builder(0.15F).build())
+  						^
+      方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,
+net.minecraft.loot.condition.LootCondition.Builder>)不适用
+        (无法推断类型变量 E
+          (实际参数列表和形式参数列表长度不同))
+      方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.c
+ondition.LootCondition.Builder)不适用
+        (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Bu
+ilder)
+    其中, E,T是类型变量:
+      E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.condit
+ion.LootCondition.Builder>)中声明的Object
+      T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+  C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixar
+y\shapeShifterCurseFabric\ssc_addon\loot\StoryBookLoot.java:251: 错误: 对于conditio
+nally(LootCondition), 找不到合适的方法
+  						.conditionally(net.minecraft.loot.condition.RandomChanceLootCondition.b
+uilder(chance).build());
+  						^
+      方法 LootConditionConsumingBuilder.<E>conditionally(Iterable<E>,Function<E,
+net.minecraft.loot.condition.LootCondition.Builder>)不适用
+        (无法推断类型变量 E
+          (实际参数列表和形式参数列表长度不同))
+      方法 net.minecraft.loot.LootPool.Builder.conditionally(net.minecraft.loot.c
+ondition.LootCondition.Builder)不适用
+        (参数不匹配; LootCondition无法转换为net.minecraft.loot.condition.LootCondition.Bu
+ilder)
+    其中, E,T是类型变量:
+      E扩展已在方法 <E>conditionally(Iterable<E>,Function<E,net.minecraft.loot.condit
+ion.LootCondition.Builder>)中声明的Object
+      T扩展已在接口 LootConditionConsumingBuilder中声明的LootConditionConsumingBuilder<T>
+  警告: 未知的枚举常量 Env.CLIENT
+    原因: 找不到com.demonwav.mcdev.annotations.Env的类文件
+  警告: 未知的枚举常量 Env.CLIENT
+    原因: 找不到com.demonwav.mcdev.annotations.Env的类文件
+  警告: 未知的枚举常量 Env.CLIENT
+    原因: 找不到com.demonwav.mcdev.annotations.Env的类文件
+  C:\Users\ASUS\Desktop\clear test\扩展包\幻形者诅咒附属\幻形者诅咒附属\src\main\java\net\onixar
+y\shapeShifterCurseFabric\ssc_addon\ability\WindSpiritClawManager.java:282: 错误:
+ 无法将类 Item中的方法 getAttributeModifiers应用到给定类型;
+                  .getAttributeModifiers(stack, EquipmentSlot.MAINHAND)
+                  ^
+    需要: EquipmentSlot
+    找到:    ItemStack,EquipmentSlot
+    原因: 实际参数列表和形式参数列表长度不同
+  12 个错误
+  3 个警告
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights.
+
+BUILD FAILED in 6m 9s
+1 actionable task: 1 executed
