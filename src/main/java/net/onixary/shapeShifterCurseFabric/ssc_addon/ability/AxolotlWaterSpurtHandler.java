@@ -58,8 +58,6 @@ public final class AxolotlWaterSpurtHandler {
 		// 疾跑时按 shift：sneak 上升沿 + 本/上一 tick 处于疾跑
 		if (sneaking && !wasSneaking && (sprinting || wasSprinting)) {
 			boolean unlocked = RegEvolutionComponent.EVOLUTION.get(player).isUnlocked(AxolotlTree.NODE_WATER_SPURT);
-			LOGGER.warn("[水流爆破] 触发条件命中: 玩家={} unlocked={} cd={}",
-					player.getName().getString(), unlocked, COOLDOWN.getOrDefault(id, 0));
 			if (unlocked && COOLDOWN.getOrDefault(id, 0) <= 0) {
 				// 与原版美西螈水流爆破一致：add_velocity z 1.6 space local（沿视线前方冲量）
 				Vec3d look = player.getRotationVector();

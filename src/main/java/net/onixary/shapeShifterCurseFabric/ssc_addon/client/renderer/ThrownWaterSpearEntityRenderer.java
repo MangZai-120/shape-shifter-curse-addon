@@ -22,7 +22,6 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.ThrownWaterSpearEnti
  */
 @Environment(EnvType.CLIENT)
 public class ThrownWaterSpearEntityRenderer extends EntityRenderer<ThrownWaterSpearEntity> {
-	private static boolean loggedOnce = false;
 	private final ItemRenderer itemRenderer;
 
 	public ThrownWaterSpearEntityRenderer(EntityRendererFactory.Context context) {
@@ -33,11 +32,6 @@ public class ThrownWaterSpearEntityRenderer extends EntityRenderer<ThrownWaterSp
 	@Override
 	public void render(ThrownWaterSpearEntity entity, float yaw, float tickDelta, MatrixStack matrices,
 			VertexConsumerProvider vertexConsumers, int light) {
-		if (!loggedOnce) {
-			loggedOnce = true;
-			org.slf4j.LoggerFactory.getLogger("ThrownWaterSpearRenderer")
-					.warn("[投掷水矛渲染] render 首次被调用，实体 id={}", entity.getId());
-		}
 		matrices.push();
 		matrices.scale(1.4f, 1.4f, 1.4f);
 		// 用同步的 velocity 计算朝向（yaw/pitch 对投射物常不同步）

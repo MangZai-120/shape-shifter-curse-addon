@@ -304,7 +304,7 @@ public class SscAddonClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking.PACKET_SPEAR_CHARGE_STATE, (client, handler, buf, responseSender) -> {
             java.util.UUID id = buf.readUuid();
             boolean charging = buf.readBoolean();
-            LOGGER.warn("[进化美西螈] 客户端收到蓄力状态 id={} charging={}", id, charging);
+
             client.execute(() -> UpgradeAxolotlSpearRenderState.set(id, charging));
         });
 

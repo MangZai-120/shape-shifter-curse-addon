@@ -116,12 +116,9 @@ public class WaterSpearItem extends TridentItem {
 
 		if (!world.isClient) {
 			if (entity instanceof PlayerEntity player) {
-				// 允许持矛：创造 / SP美西螈 / 进化美西螈「投掷水矛」蓄力期（技能临时持矛，结束由技能归还原物品）
-				boolean allowed = player.isCreative() || FormUtils.isAxolotlSP(player)
-						|| (player instanceof net.minecraft.server.network.ServerPlayerEntity sp
-							&& net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WaterSpearLeapManager.isCharging(sp.getUuid()));
+				boolean isSpAxolotl = player.isCreative() || FormUtils.isAxolotlSP(player);
 
-				if (!allowed) {
+				if (!isSpAxolotl) {
 					stack.setCount(0);
 					return;
 				}

@@ -42,11 +42,9 @@ public final class UpgradeAxolotlSkillClient {
 		boolean p = primary != null && primary.isPressed();
 		boolean s = secondary != null && secondary.isPressed();
 		if (p && !wasPrimaryPressed) {
-			org.slf4j.LoggerFactory.getLogger("UpgradeAxolotlSkill").warn("[进化美西螈] 主键按下，发送投掷水矛包");
 			send(SscAddonNetworking.PACKET_UPGRADE_AXOLOTL_SPEAR);
 		}
 		if (s && !wasSecondaryPressed) {
-			org.slf4j.LoggerFactory.getLogger("UpgradeAxolotlSkill").warn("[进化美西螈] 副键按下，发送涡流引导包");
 			send(SscAddonNetworking.PACKET_UPGRADE_AXOLOTL_VORTEX);
 		}
 		wasPrimaryPressed = p;

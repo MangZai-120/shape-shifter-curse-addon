@@ -4,6 +4,9 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.FlyingItemEntity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.data.DataTracker;
+import net.minecraft.entity.data.TrackedData;
+import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.listener.ClientPlayPacketListener;
@@ -33,11 +36,17 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
  */
 public class ThrownWaterSpearEntity extends ProjectileEntity {
 
-	private static final double SPEED = 1.2;          // 格/tick（快速直刺）
-	private static final double MAX_DISTANCE = 32.0;  // 最大飞行距离
+	private static final double SPEED = 8.5;          // 格/tick（高速直刺）
+	private static final double MAX_DISTANCE = 64.0;  // 最大飞行距离
 	private static final float DIRECT_DAMAGE = 12.0f; // 直击物理伤害
 	private static final float AOE_DAMAGE = 5.0f;     // 范围伤害
 	private static final double AOE_RADIUS = 2.0;     // 范围半径
+
+	// 全精度速度同步：生成包 velocity 用 short 编码（约 ±3.9 格/tick），8.5 格/tick 会被逐分量 clamp
+	// → 客户端 velocity 方向失真 + 变慢，视觉方向/位置与服务端真实命中不符。改用 DataTracker 同步全精度速度。
+	private static final TrackedData<Float> VEL_X = DataTracker.registerData(ThrownWaterSpearEntity.class, TrackedDataHandlerRegistry.FLOAT);
+	private static final TrackedData<Float> VEL_Y = DataTracker.registerData(ThrownWaterSpearEntity.class, TrackedDataHandlerRegistry.FLOAT);
+	private static final TrackedData<Float> VEL_Z = DataTracker.registerData(ThrownWaterSpearEntity.class, TrackedDataHandlerRegistry.FLOAT);
 
 	private Vec3d startPos;
 	private int ticksAlive = 0;
@@ -58,6 +67,10 @@ public class ThrownWaterSpearEntity extends ProjectileEntity {
 	public void setDirection(Vec3d direction) {
 		Vec3d velocity = direction.normalize().multiply(SPEED);
 		this.setVelocity(velocity.x, velocity.y, velocity.z);
+		// 全精度速度写入 DataTracker，供客户端精确复现飞行方向/速度
+		this.dataTracker.set(VEL_X, (float) velocity.x);
+		this.dataTracker.set(VEL_Y, (float) velocity.y);
+		this.dataTracker.set(VEL_Z, (float) velocity.z);
 		double horiz = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
 		float yaw = (float) (net.minecraft.util.math.MathHelper.atan2(velocity.x, velocity.z) * (180.0 / Math.PI));
 		float pitch = (float) (net.minecraft.util.math.MathHelper.atan2(velocity.y, horiz) * (180.0 / Math.PI));
@@ -69,16 +82,34 @@ public class ThrownWaterSpearEntity extends ProjectileEntity {
 
 	@Override
 	protected void initDataTracker() {
-		// 无需额外数据追踪器
+		this.dataTracker.startTracking(VEL_X, 0.0f);
+		this.dataTracker.startTracking(VEL_Y, 0.0f);
+		this.dataTracker.startTracking(VEL_Z, 0.0f);
 	}
 
 	@Override
 	public void tick() {
 		super.tick();
 		ticksAlive++;
-
-		// 无重力匀速移动
+		// 客户端用 DataTracker 全精度速度覆盖被生成包截断/失真的 velocity，保证视觉方向/位置与服务端一致
+		if (this.getWorld().isClient) {
+			this.setVelocity(this.dataTracker.get(VEL_X), this.dataTracker.get(VEL_Y), this.dataTracker.get(VEL_Z));
+		}
 		Vec3d velocity = this.getVelocity();
+
+		// 碰撞判定仅服务端，且在移动前做：getCollision 扫掠 当前位置→当前+velocity（本 tick 将经过的整段路径），
+		// 高速（8.5 格/tick）下也不会漏近距离目标。
+		// （另：判定仅服务端——客户端 startPos 未随生成包同步、构造时为 (0,0,0)，若在客户端跑超距判定会被立即 discard，
+		// 导致投射物在客户端瞬间消失、看不到模型。）
+		if (!this.getWorld().isClient) {
+			HitResult hitResult = ProjectileUtil.getCollision(this, this::canHit);
+			if (hitResult.getType() != HitResult.Type.MISS) {
+				this.onCollision(hitResult);
+			}
+			if (this.isRemoved()) return;
+		}
+
+		// 无重力匀速移动（客户端也外推位置，保证飞行平滑）
 		this.prevYaw = this.getYaw();
 		this.prevPitch = this.getPitch();
 		this.setPosition(this.getX() + velocity.x, this.getY() + velocity.y, this.getZ() + velocity.z);
@@ -89,28 +120,20 @@ public class ThrownWaterSpearEntity extends ProjectileEntity {
 			this.setPitch((float) (net.minecraft.util.math.MathHelper.atan2(velocity.y, horiz) * (180.0 / Math.PI)));
 		}
 
-		// 碰撞检测（方块 / 实体）
-		HitResult hitResult = ProjectileUtil.getCollision(this, this::canHit);
-		if (hitResult.getType() != HitResult.Type.MISS) {
-			this.onCollision(hitResult);
-		}
-		if (this.isRemoved()) return;
-
-		// 超距 / 超时销毁
-		if (startPos != null && this.squaredDistanceTo(startPos) > MAX_DISTANCE * MAX_DISTANCE) {
-			this.discard();
-			return;
-		}
-		if (ticksAlive > 60) {
-			this.discard();
-			return;
-		}
-
-		// 水矛飞行水花拖尾
-		if (this.getWorld() instanceof ServerWorld sw) {
-			ParticleUtils.spawnParticles(sw, ParticleTypes.BUBBLE,
+		// 超距 / 超时销毁 + 拖尾 仅服务端
+		if (!this.getWorld().isClient) {
+			if (startPos != null && this.squaredDistanceTo(startPos) > MAX_DISTANCE * MAX_DISTANCE) {
+				this.discard();
+				return;
+			}
+			if (ticksAlive > 60) {
+				this.discard();
+				return;
+			}
+			// 水矛飞行水花拖尾
+			ParticleUtils.spawnParticles((ServerWorld) this.getWorld(), ParticleTypes.BUBBLE,
 					this.getX(), this.getY(), this.getZ(), 3, 0.08, 0.08, 0.08, 0.02);
-			ParticleUtils.spawnParticles(sw, ParticleTypes.SPLASH,
+			ParticleUtils.spawnParticles((ServerWorld) this.getWorld(), ParticleTypes.SPLASH,
 					this.getX(), this.getY(), this.getZ(), 2, 0.05, 0.05, 0.05, 0.0);
 		}
 	}

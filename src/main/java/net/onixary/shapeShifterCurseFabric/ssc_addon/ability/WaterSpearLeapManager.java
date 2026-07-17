@@ -1,14 +1,11 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.ability;
 
-import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.Hand;
 import net.minecraft.util.math.Vec3d;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.ThrownWaterSpearEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.AxolotlTree;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.RegEvolutionComponent;
@@ -24,13 +21,13 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 进化美西螈「投掷水矛」主技能（sp_primary）—— 服务端状态机。
  *
- * <p>按主技能键：把主手物品临时换成真水矛（{@code held} 谓词 → 稳定 3D 水矛模型），
- * 并同步「蓄力中」状态给客户端 → 举矛过肩姿势由 {@code getArmPose}/第一人称矩阵 mixin 持久渲染
- * （不依赖 vanilla「正在使用物品」状态，故不会闪退）。同时冲量斜后上跃并<b>无重力悬浮</b>；
- * 蓄力 1.35 秒后朝准星投出直线水矛并<b>归还原物品</b>。直击 12 物理 + 2 格半径 5 点 AOE，
- * 耗 6% 湿润度（18 air），CD 8 秒。</p>
+ * <p>按主技能键：<b>不往背包放任何物品</b>，仅同步「蓄力中」状态给客户端 →
+ * 由渲染 mixin 纯渲染在手上画出 3D 水矛模型 + 举矛过肩姿势（{@code getArmPose}/第一人称矩阵 mixin，
+ * 靠 {@code CustomModelData=1} 恒定 3D，不依赖 vanilla「正在使用物品」状态、不动玩家背包）。
+ * 同时冲量斜后上跃并<b>无重力悬浮</b>；蓄力 1.35 秒后朝准星投出直线水矛。
+ * 直击 12 物理 + 2 格半径 5 点 AOE，耗 6% 湿润度（18 air），CD 8 秒。</p>
  *
- * <p>物品安全：投出 / 取消 / 死亡 / 形态丢失 / 断线 都会归还原物品并恢复重力。</p>
+ * <p>零背包污染：全程不生成/替换任何物品，投出 / 取消 / 死亡 / 形态丢失 / 断线 只需恢复重力 + 结束渲染。</p>
  */
 public final class WaterSpearLeapManager {
 
@@ -45,8 +42,6 @@ public final class WaterSpearLeapManager {
 
 	private static final class LeapState {
 		int tick = 0;
-		int savedSlot = -1;              // 被替换的热键栏槽位
-		ItemStack savedStack = ItemStack.EMPTY; // 被替换前的原物品
 	}
 
 	private WaterSpearLeapManager() {
@@ -63,16 +58,9 @@ public final class WaterSpearLeapManager {
 		player.setAir(player.getAir() - AIR_COST);
 
 		LeapState s = new LeapState();
-		// 临时把主手物品换成真水矛，并打 CustomModelData=1 → 走 custom_model_data override
-		// 恒定渲染 3D 水矛（不依赖 held 引用相等 / vanilla「使用中」状态，故不会退 2D、不闪）
-		s.savedSlot = player.getInventory().selectedSlot;
-		s.savedStack = player.getInventory().getStack(s.savedSlot).copy();
-		ItemStack spear = new ItemStack(SscAddon.WATER_SPEAR);
-		spear.getOrCreateNbt().putInt("CustomModelData", 1);
-		player.getInventory().setStack(s.savedSlot, spear);
 		STATES.put(player.getUuid(), s);
 
-		// 同步「蓄力中」→ 客户端渲染举矛过肩姿势（getArmPose / 第一人称矩阵 mixin）
+		// 同步「蓄力中」→ 客户端纯渲染：手上渲染 3D 水矛模型（不往背包放任何物品）+ 举矛过肩姿势
 		SscAddonNetworking.syncSpearChargeState(player, true);
 
 		// 无重力 + 一次性冲量斜后上跃（视线反方向 + 上），随后衰减到空中悬浮
@@ -86,6 +74,9 @@ public final class WaterSpearLeapManager {
 		player.fallDistance = 0.0f;
 
 		ServerWorld sw = (ServerWorld) player.getWorld();
+		// 起手蓄力音效：海晶核激活（魔法水涌，音量拉大做明显）+ 高速水花 + 美西螈入水（全员可闻 null）
+		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+				SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 2.0f, 1.2f);
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_PLAYER_SPLASH_HIGH_SPEED, SoundCategory.PLAYERS, 1.0f, 1.1f);
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -115,34 +106,41 @@ public final class WaterSpearLeapManager {
 				sw.spawnParticles(ParticleTypes.FALLING_WATER, player.getX(), player.getY() + 1.0, player.getZ(),
 						6, 0.4, 0.4, 0.4, 0.0);
 			}
+			// 蓄力音效：每 5 tick 一声上升气泡（音调随蓄力进度 0.8→1.7，营造能量聚集感）
+			if (s.tick % 5 == 0) {
+				float progress = (float) s.tick / (float) CHARGE_TICKS;
+				float pitch = 0.8f + progress * 0.9f;
+				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+						SoundEvents.BLOCK_BUBBLE_COLUMN_UPWARDS_INSIDE, SoundCategory.PLAYERS, 0.7f, pitch);
+				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+						SoundEvents.ENTITY_GENERIC_SPLASH, SoundCategory.PLAYERS, 0.35f, pitch);
+			}
+			// 蓄满前瞬间（最后 3 tick）：海晶核短鸣提示「即将投出」
+			if (s.tick == CHARGE_TICKS - 3) {
+				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+						SoundEvents.BLOCK_CONDUIT_AMBIENT_SHORT, SoundCategory.PLAYERS, 0.9f, 1.4f);
+			}
 		} else {
-			// 投矛：归还物品、恢复重力、朝准星发射直线水矛
+			// 投矛：恢复重力、朝准星发射直线水矛
 			throwSpear(player, s);
 			finish(player);
 		}
 	}
 
-	/** 朝准星方向投出直线水矛，归还原物品。 */
+	/** 朝准星方向投出直线水矛。 */
 	private static void throwSpear(ServerPlayerEntity player, LeapState s) {
-		restoreItem(player, s);         // 归还原主手物品
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		Vec3d dir = player.getRotationVector().normalize();
 		ThrownWaterSpearEntity spear = new ThrownWaterSpearEntity(sw, player);
 		spear.setPosition(player.getX() + dir.x * 0.6, player.getEyeY() - 0.1 + dir.y * 0.6, player.getZ() + dir.z * 0.6);
 		spear.setDirection(dir);
 		sw.spawnEntity(spear);
-		player.swingHand(Hand.MAIN_HAND, true); // 投掷挥手动作
+		// 不 swingHand：与 vanilla 水矛（三叉戟）投掷一致——矛从举矛蓄力姿势直接飞出、手臂落回正常，
+		// 而非普通攻击挥手（TridentItem.onStoppedUsing 同样不挥手）。
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ITEM_TRIDENT_THROW, SoundCategory.PLAYERS, 1.2f, 1.1f);
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_PLAYER_SPLASH, SoundCategory.PLAYERS, 1.0f, 0.9f);
-	}
-
-	/** 归还原物品：仅当被替换的槽位仍是水矛（未被玩家操作）时还原，避免覆盖玩家后来放入的东西。 */
-	private static void restoreItem(ServerPlayerEntity player, LeapState s) {
-		if (s.savedSlot >= 0 && player.getInventory().getStack(s.savedSlot).isOf(SscAddon.WATER_SPEAR)) {
-			player.getInventory().setStack(s.savedSlot, s.savedStack);
-		}
 	}
 
 	/** 投矛完成：恢复重力、结束蓄力渲染、进入 CD 并清理状态。 */
@@ -153,11 +151,10 @@ public final class WaterSpearLeapManager {
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, CD_TICKS);
 	}
 
-	/** 取消（不进 CD、不投矛）：归还物品、恢复重力、结束蓄力渲染。 */
+	/** 取消（不进 CD、不投矛）：恢复重力、结束蓄力渲染。 */
 	public static void cancel(ServerPlayerEntity player) {
 		LeapState s = STATES.remove(player.getUuid());
 		if (s != null) {
-			restoreItem(player, s);
 			player.setNoGravity(false);
 			SscAddonNetworking.syncSpearChargeState(player, false);
 		}
@@ -168,11 +165,10 @@ public final class WaterSpearLeapManager {
 		return STATES.containsKey(id);
 	}
 
-	/** 断线：归还原物品、恢复重力并清理，避免水矛残留 / 原物品丢失。 */
+	/** 断线：恢复重力并清理。 */
 	public static void onPlayerDisconnect(ServerPlayerEntity player) {
 		LeapState s = STATES.remove(player.getUuid());
 		if (s != null) {
-			restoreItem(player, s);
 			player.setNoGravity(false);
 		}
 	}

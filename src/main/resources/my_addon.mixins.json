@@ -63,6 +63,7 @@
                    "render.MistFormHeldItemMixin",
                    "render.UpgradeAxolotlFirstPersonSpearMixin",
                    "render.UpgradeAxolotlSpearArmPoseMixin",
+                   "render.UpgradeAxolotlThirdPersonSpearMixin",
                    "render.LivingEntityRendererShadowFixMixin",
                    "render.PowerHolderComponentShadowFixMixin",
                    "render.WaterSpearInventoryMixin",
