@@ -882,7 +882,7 @@
     "evolution.my_addon.axolotl.node.aquatic_adapt.desc": "水下获得夜视；大幅提升游泳速度；贴近水面时可跃出水面。",
     "evolution.my_addon.axolotl.node.water_propel.name": "水流推进",
     "evolution.my_addon.axolotl.node.water_propel.desc": "陆地疾跑时移速提升；疾跑跳跃获得额外前冲与水花。",
-    "evolution.my_addon.axolotl.node.water_spurt.name": "水流爆破",
+    "evolution.my_addon.axolotl.node.water_spurt.name": "水流冲刺",
     "evolution.my_addon.axolotl.node.water_spurt.desc": "深水中按疾跑键向前爆发冲刺（冷却 5 秒）。",
     "evolution.my_addon.axolotl.node.water_spear.name": "技能：投掷水矛",
     "evolution.my_addon.axolotl.node.water_spear.desc": "主技能。斜后上跃约 3 格后定身蓄力 1.35 秒（仅可转动视角），随后朝准星投出直线水矛：直击 12 点物理伤害，命中点 2 格半径额外 5 点范围伤害。消耗 6% 湿润度，冷却 8 秒。",

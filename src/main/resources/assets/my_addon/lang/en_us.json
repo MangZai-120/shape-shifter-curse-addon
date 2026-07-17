@@ -880,7 +880,7 @@
     "evolution.my_addon.axolotl.node.aquatic_adapt.desc": "Grants night vision underwater; greatly boosts swim speed; lets you leap out of the water near the surface.",
     "evolution.my_addon.axolotl.node.water_propel.name": "Water Propulsion",
     "evolution.my_addon.axolotl.node.water_propel.desc": "Increases movement speed while sprinting on land; sprint-jumps gain extra forward burst and splash.",
-    "evolution.my_addon.axolotl.node.water_spurt.name": "Water Spurt",
+    "evolution.my_addon.axolotl.node.water_spurt.name": "Water Dash",
     "evolution.my_addon.axolotl.node.water_spurt.desc": "In deep water, press sprint to burst forward (5s cooldown).",
     "evolution.my_addon.axolotl.node.water_spear.name": "Skill: Throw Water Spear",
     "evolution.my_addon.axolotl.node.water_spear.desc": "Primary skill. Leap back-and-up about 3 blocks, then freeze and aim for 1.35s (view rotation only), then throw a straight water spear toward your crosshair: 12 direct physical damage plus 5 AoE damage within a 2-block radius at the impact point. Costs 6% moisture, 8s cooldown.",
