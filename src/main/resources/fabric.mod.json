@@ -22,7 +22,7 @@
     "sources": "https://github.com/MangZai-120/shape-shifter-curse-addon",
     "issues": "https://github.com/MangZai-120/shape-shifter-curse-addon/issues"
   },
-  "license": "MIT",
+  "license": "AGPL-3.0",
   "icon": "assets/ssc_addon/icon.png",
   "environment": "*",
   "entrypoints": {
