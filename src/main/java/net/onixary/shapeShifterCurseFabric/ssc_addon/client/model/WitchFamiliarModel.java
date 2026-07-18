@@ -7,8 +7,6 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.WitchFamiliarEntity;
 /**
  * 女巫使魔模型 - 复用原版使魔的3D模型，使用专属纹理
  */
-// 抑制 AzureLib 上游 deprecation 警告（removal 警告当前版本已消失，故移除该抑制项）
-@SuppressWarnings("deprecation")
 public class WitchFamiliarModel extends GeoModel<WitchFamiliarEntity> {
 
 	@Override

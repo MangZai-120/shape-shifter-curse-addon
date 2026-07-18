@@ -69,6 +69,15 @@
 					]
 				},
 				{
+					"name": "eyeRoot",
+					"parent": "bipedHead",
+					"pivot": [0, 26, 4],
+					"cubes": [
+						{"origin": [-3, 26, 4.1], "size": [2, 2, 0], "uv": [35, 6]},
+						{"origin": [1, 26, 4.1], "size": [2, 2, 0], "uv": [31, 6]}
+					]
+				},
+				{
 					"name": "bipedBody",
 					"pivot": [-2.8, 16.5, -2.05],
 					"cubes": [

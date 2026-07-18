@@ -58,8 +58,6 @@ import java.util.UUID;
  * 女巫使魔 - 一种伴随女巫自然生成的敌对生物
  * 使用原版使魔外观，拥有火环技能，属于劫掠阵营
  */
-// GeckoLib 动画实体（主包已从 AzureLib 迁移到 GeckoLib，附属随之对齐）
-@SuppressWarnings({"removal", "deprecation"})
 public class WitchFamiliarEntity extends HostileEntity implements GeoEntity {
 
 	// 火环参数

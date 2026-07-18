@@ -23,9 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class AxolotlWaterSpurtHandler {
 
-	private static final org.slf4j.Logger LOGGER =
-			org.slf4j.LoggerFactory.getLogger("AxolotlWaterSpurt");
-
 	private static final int CD_TICKS = 100;   // 5 秒
 	private static final double BURST = 1.6;    // 前冲力度
 
