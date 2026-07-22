@@ -1,11 +1,12 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin.client;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.render.form_render.DefaultModelAnimationSystem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
  * 修复：多人下「其它玩家」的兽形（FERAL）尾巴在被攻击一次后持续下翘，直到该玩家移动/碰撞才恢复。
@@ -24,12 +25,12 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(DefaultModelAnimationSystem.class)
 public class TailVerticalDragFixMixin {
 
-    @Redirect(method = "finishRender",
+    @WrapOperation(method = "finishRender",
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/entity/player/PlayerEntity;getVelocity()Lnet/minecraft/util/math/Vec3d;"),
             require = 0)
-    private Vec3d ssc_addon$fixRemoteTailVerticalDrag(PlayerEntity player) {
-        Vec3d velocity = player.getVelocity();
+    private Vec3d ssc_addon$fixRemoteTailVerticalDrag(PlayerEntity player, Operation<Vec3d> original) {
+        Vec3d velocity = original.call(player);
         double realVerticalDelta = player.getY() - player.prevY;
         return new Vec3d(velocity.x, realVerticalDelta, velocity.z);
     }

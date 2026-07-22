@@ -1,11 +1,10 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin.client;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.client.network.ClientPlayerEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.client.ClawClientState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
  * 风灵「疾风连爪」准星攻击冷却条接管。
@@ -23,15 +22,15 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(InGameHud.class)
 public class ClawCrosshairMixin {
 
-    @Redirect(
+    @ModifyExpressionValue(
             method = "renderCrosshair",
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/client/network/ClientPlayerEntity;getAttackCooldownProgress(F)F"),
             require = 0)
-    private float ssc_addon$clawCrosshairProgress(ClientPlayerEntity player, float tickDelta) {
+    private float ssc_addon$clawCrosshairProgress(float original) {
         if (ClawClientState.isActive()) {
             return ClawClientState.getCrosshairProgress();
         }
-        return player.getAttackCooldownProgress(tickDelta);
+        return original;
     }
 }

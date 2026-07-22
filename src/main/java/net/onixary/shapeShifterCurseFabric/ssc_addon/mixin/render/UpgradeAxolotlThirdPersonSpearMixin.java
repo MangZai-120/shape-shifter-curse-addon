@@ -11,10 +11,11 @@ import net.minecraft.util.Arm;
 import net.minecraft.util.math.RotationAxis;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.client.UpgradeAxolotlSpearRenderState;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
@@ -29,19 +30,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(HeldItemFeatureRenderer.class)
 public class UpgradeAxolotlThirdPersonSpearMixin {
 
-	@Redirect(
+	@WrapOperation(
 			method = "render",
 			at = @At(value = "INVOKE",
 					target = "Lnet/minecraft/entity/LivingEntity;getMainHandStack()Lnet/minecraft/item/ItemStack;")
 	)
-	private ItemStack ssc_addon$swapTpSpear(LivingEntity entity) {
+	private ItemStack ssc_addon$swapTpSpear(LivingEntity entity, Operation<ItemStack> original) {
 		if (entity instanceof AbstractClientPlayerEntity
 				&& UpgradeAxolotlSpearRenderState.isCharging(entity.getUuid())) {
 			ItemStack spear = new ItemStack(SscAddon.WATER_SPEAR);
 			spear.getOrCreateNbt().putInt("CustomModelData", 1);
 			return spear;
 		}
-		return entity.getMainHandStack();
+		return original.call(entity);
 	}
 
 	// 蓄力期把主手渲染的水矛「举起过肩」（第三人称纯渲染抬矛蓄力效果；数值可实机微调）

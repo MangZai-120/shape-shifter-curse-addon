@@ -1,16 +1,15 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin.client;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.entity.player.ItemCooldownManager;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
-import net.minecraft.util.Hand;
-import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PotionBagItem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
  * 绕过服务端冷却拦截，让药水袋在 ItemCooldownManager 冷却期间仍可潜行右键开包。
@@ -31,22 +30,21 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public class PotionBagCooldownBypassMixin {
 
     /**
-     * 拦截 {@code interactItem} 内的 {@code isCoolingDown(Item)} 调用。
-     * Redirect 处理器在自身参数（manager, item）之后追加目标方法的形参
-     * （player, world, stack, hand），用于读取玩家潜行状态。
+     * 拦截 {@code interactItem} 内的 {@code isCoolingDown(Item)} 调用（用 @WrapOperation 兼容其它 mod 的同位注入）。
+     * 接收者 (manager, item) 之后用 {@code Operation} 承接原调用，{@code @Local} 取目标方法的服务端玩家参数读取潜行状态。
      */
-    @Redirect(
+    @WrapOperation(
             method = "interactItem",
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/entity/player/ItemCooldownManager;isCoolingDown(Lnet/minecraft/item/Item;)Z")
     )
     private boolean ssc_addon$bypassCooldownForSneaking(ItemCooldownManager manager, Item item,
-            ServerPlayerEntity player, World world, ItemStack stack, Hand hand) {
+            Operation<Boolean> original, @Local(argsOnly = true) ServerPlayerEntity player) {
         if (item instanceof PotionBagItem && player.isSneaking()) {
             // 潜行开包：绕过冷却检查，让服务端 use() 正常触发
             return false;
         }
         // 非潜行或非药水袋：保持原版冷却行为
-        return manager.isCoolingDown(item);
+        return original.call(manager, item);
     }
 }

@@ -18,9 +18,11 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.item.PotionBagItem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ScreenHandler.class)
@@ -152,13 +154,13 @@ public abstract class ScreenHandlerMixin {
 	 * 使其与生存物品栏(原版 PotionStackMixin)一致叠到 N。仅对药水且持有该 Power 时生效，
 	 * 双端安全(用方法参数 player，不引用客户端类)。
 	 */
-	@Redirect(
+	@WrapOperation(
 			method = "internalOnSlotClick(IILnet/minecraft/screen/slot/SlotActionType;Lnet/minecraft/entity/player/PlayerEntity;)V",
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;getMaxCount()I")
 	)
-	private int ssc_addon$potionStackLimit(ItemStack stack, int slotIndex, int button, SlotActionType actionType, PlayerEntity player) {
+	private int ssc_addon$potionStackLimit(ItemStack stack, Operation<Integer> original, @Local(argsOnly = true) PlayerEntity player) {
 		if (stack.getItem() instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.WitherPotionItem) {
-			return Math.max(net.onixary.shapeShifterCurseFabric.ssc_addon.item.WitherPotionItem.getStackLimitFor(player), stack.getMaxCount());
+			return Math.max(net.onixary.shapeShifterCurseFabric.ssc_addon.item.WitherPotionItem.getStackLimitFor(player), original.call(stack));
 		}
 		if (stack.getItem() instanceof PotionItem) {
 			int n = PowerHolderComponent.getPowers(player, ModifyPotionStackPower.class)
@@ -167,9 +169,9 @@ public abstract class ScreenHandlerMixin {
 					.max()
 					.orElse(0);
 			if (n > 0) {
-				return Math.max(n, stack.getMaxCount());
+				return Math.max(n, original.call(stack));
 			}
 		}
-		return stack.getMaxCount();
+		return original.call(stack);
 	}
 }

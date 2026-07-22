@@ -5,9 +5,10 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.InfectionSporeManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
  * 饱食度自然回血拦截集成点（名由历史原因保留，实际处理多种场景）。
@@ -21,16 +22,16 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(HungerManager.class)
 public abstract class GoldenSandstormHungerMixin {
 
-	@Redirect(
+	@WrapOperation(
 			method = "update",
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/PlayerEntity;heal(F)V"),
 			require = 0
 	)
-	private void ssc_addon$blockNaturalRegen(PlayerEntity player, float amount) {
+	private void ssc_addon$blockNaturalRegen(PlayerEntity player, float amount, Operation<Void> original) {
 		// 金沙岚SP禁用饱食度自然回血
 		if (FormUtils.isForm(player, FormIdentifiers.GOLDEN_SANDSTORM_SP)) return;
 		// 被感染孢子状态的实体禁用饱食度自然回血
 		if (InfectionSporeManager.isInfected(player.getUuid())) return;
-		player.heal(amount);
+		original.call(player, amount);
 	}
 }

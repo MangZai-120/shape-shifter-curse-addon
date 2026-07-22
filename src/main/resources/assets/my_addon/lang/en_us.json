@@ -905,5 +905,9 @@
     "evolution.my_addon.axolotl.node.vortex_guide.book": "You can stir the water around you into a vortex, soothing your wounds with a 3-second channel—healing 6 hearts, and conjuring 2 golden hearts to shield you upon completion. You move slowly while channeling, yet it costs no moisture, on an 8-second cooldown.",
     "evolution.my_addon.axolotl.node.become_water.book": "You have become one with water, no longer fearing to run dry. Your moisture drain on land returns to normal, and that extra 1.5x loss is dispelled.",
     "evolution.my_addon.axolotl.node.branch_moon_ring.book": "The potential of the SP Axolotl has awakened within you. This is one of two SP evolution branches auto-unlocked at level 50—once you complete the transformation with a Moon Marrow Ring under a Cursed Moon, you may become the SP Axolotl.",
-    "evolution.my_addon.axolotl.node.branch_stone.book": "The potential of the Fluorescent Axolotl has awakened within you. This is one of two SP evolution branches auto-unlocked at level 50—once you complete the transformation with an Evolution Stone, you may become the Fluorescent Axolotl."
+    "evolution.my_addon.axolotl.node.branch_stone.book": "The potential of the Fluorescent Axolotl has awakened within you. This is one of two SP evolution branches auto-unlocked at level 50—once you complete the transformation with an Evolution Stone, you may become the Fluorescent Axolotl.",
+    "codex.form.my_addon.upgrade_familiar_fox.name": "Upgrade Familiar",
+    "codex.form.my_addon.upgrade_axolotl.name": "Upgrade Axolotl",
+    "codex.form.my_addon.ocelot_wind_spirit.name": "Wind Spirit",
+    "codex.form.my_addon.ocelot_nova.name": "Nova"
 }

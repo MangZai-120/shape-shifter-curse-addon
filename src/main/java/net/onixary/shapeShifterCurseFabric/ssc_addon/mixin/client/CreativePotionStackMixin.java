@@ -7,9 +7,10 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.PotionItem;
 import net.onixary.shapeShifterCurseFabric.additional_power.ModifyPotionStackPower;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
  * 创造模式物品栏：让使魔等「药水可叠加」形态在创造界面拿取药水时，把叠加上限从原版的 1
@@ -23,14 +24,14 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(CreativeInventoryScreen.class)
 public class CreativePotionStackMixin {
 
-	@Redirect(
+	@WrapOperation(
 			method = "onMouseClick(Lnet/minecraft/screen/slot/Slot;IILnet/minecraft/screen/slot/SlotActionType;)V",
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;getMaxCount()I")
 	)
-	private int ssc_addon$potionCreativeStackLimit(ItemStack stack) {
+	private int ssc_addon$potionCreativeStackLimit(ItemStack stack, Operation<Integer> original) {
 		if (stack.getItem() instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.WitherPotionItem) {
 			return Math.max(net.onixary.shapeShifterCurseFabric.ssc_addon.item.WitherPotionItem
-					.getStackLimitFor(MinecraftClient.getInstance().player), stack.getMaxCount());
+					.getStackLimitFor(MinecraftClient.getInstance().player), original.call(stack));
 		}
 		if (stack.getItem() instanceof PotionItem) {
 			PlayerEntity player = MinecraftClient.getInstance().player;
@@ -41,10 +42,10 @@ public class CreativePotionStackMixin {
 						.max()
 						.orElse(0);
 				if (n > 0) {
-					return Math.max(n, stack.getMaxCount());
+					return Math.max(n, original.call(stack));
 				}
 			}
 		}
-		return stack.getMaxCount();
+		return original.call(stack);
 	}
 }
