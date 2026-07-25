@@ -887,7 +887,7 @@
     "evolution.my_addon.axolotl.node.water_propel.name": "Water Propulsion",
     "evolution.my_addon.axolotl.node.water_propel.desc": "Increases movement speed while sprinting on land; sprint-jumps gain extra forward burst and splash.",
     "evolution.my_addon.axolotl.node.water_spurt.name": "Water Dash",
-    "evolution.my_addon.axolotl.node.water_spurt.desc": "In deep water, press sprint to burst forward (5s cooldown).",
+    "evolution.my_addon.axolotl.node.water_spurt.desc": "In water, press sprint to dash forward (free); on land, press sneak while sprinting to dash (costs moisture). 5s cooldown.",
     "evolution.my_addon.axolotl.node.water_spear.name": "Skill: Throw Water Spear",
     "evolution.my_addon.axolotl.node.water_spear.desc": "Primary skill. Leap back-and-up about 3 blocks, then freeze and aim for 1.35s (view rotation only), then throw a straight water spear toward your crosshair: 12 direct physical damage plus 5 AoE damage within a 2-block radius at the impact point. Costs 6% moisture, 8s cooldown.",
     "evolution.my_addon.axolotl.node.vortex_guide.name": "Skill: Vortex Guidance",
@@ -900,7 +900,7 @@
     "evolution.my_addon.axolotl.node.branch_stone.desc": "One of the SP evolution branches auto-unlocked at level 50. Evolve into the Fluorescent Axolotl with an Evolution Stone.",
     "evolution.my_addon.axolotl.node.aquatic_adapt.book": "Your body grows ever more suited to the water—your eyes see clearly beneath the surface, you swim like an arrow, and a mere touch of the surface lets you leap free.",
     "evolution.my_addon.axolotl.node.water_propel.book": "The water surging within you becomes propulsive force: your strides quicken when sprinting on land, and your leaps carry a splash-wrapped burst of momentum.",
-    "evolution.my_addon.axolotl.node.water_spurt.book": "You have learned to burst forth in deep water—press sprint, and a current hurls you sharply forward.",
+    "evolution.my_addon.axolotl.node.water_spurt.book": "You've learned to harness the current within—in water, press sprint to surge forward; on land, crouch (sneak) while sprinting to force out a burst of water that hurls you onward, at the cost of some moisture.",
     "evolution.my_addon.axolotl.node.water_spear.book": "The art of shaping water into a spear is complete. Leap back and up, gather in midair, hold your breath for 1.35s, then hurl a straight water spear that pierces your target and erupts a 2-block splash. It costs 6% moisture and must wait 8 seconds before reuse.",
     "evolution.my_addon.axolotl.node.vortex_guide.book": "You can stir the water around you into a vortex, soothing your wounds with a 3-second channel—healing 6 hearts, and conjuring 2 golden hearts to shield you upon completion. You move slowly while channeling, yet it costs no moisture, on an 8-second cooldown.",
     "evolution.my_addon.axolotl.node.become_water.book": "You have become one with water, no longer fearing to run dry. Your moisture drain on land returns to normal, and that extra 1.5x loss is dispelled.",
@@ -909,5 +909,7 @@
     "codex.form.my_addon.upgrade_familiar_fox.name": "Upgrade Familiar",
     "codex.form.my_addon.upgrade_axolotl.name": "Upgrade Axolotl",
     "codex.form.my_addon.ocelot_wind_spirit.name": "Wind Spirit",
-    "codex.form.my_addon.ocelot_nova.name": "Nova"
+    "codex.form.my_addon.ocelot_nova.name": "Nova",
+    "item.ssc_addon.music_disc_shape_shifters_dream": "Music Disc",
+    "item.ssc_addon.music_disc_shape_shifters_dream.desc": "Jack Cooper - Shape Shifter's Dream"
 }

@@ -14,5 +14,14 @@
         "stream": true
       }
     ]
+  },
+  "shape_shifters_dream": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "ssc_addon:shape_shifters_dream",
+        "stream": true
+      }
+    ]
   }
 }

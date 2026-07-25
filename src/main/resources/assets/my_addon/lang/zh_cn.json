@@ -889,7 +889,7 @@
     "evolution.my_addon.axolotl.node.water_propel.name": "水流推进",
     "evolution.my_addon.axolotl.node.water_propel.desc": "陆地疾跑时移速提升；疾跑跳跃获得额外前冲与水花。",
     "evolution.my_addon.axolotl.node.water_spurt.name": "水流冲刺",
-    "evolution.my_addon.axolotl.node.water_spurt.desc": "深水中按疾跑键向前爆发冲刺（冷却 5 秒）。",
+    "evolution.my_addon.axolotl.node.water_spurt.desc": "水中按疾跑键向前冲刺（免费）；陆地疾跑时按潜行键向前冲刺（消耗湿润度）。冷却 5 秒。",
     "evolution.my_addon.axolotl.node.water_spear.name": "技能：投掷水矛",
     "evolution.my_addon.axolotl.node.water_spear.desc": "主技能。斜后上跃约 3 格后定身蓄力 1.35 秒（仅可转动视角），随后朝准星投出直线水矛：直击 12 点物理伤害，命中点 2 格半径额外 5 点范围伤害。消耗 6% 湿润度，冷却 8 秒。",
     "evolution.my_addon.axolotl.node.vortex_guide.name": "技能：涡流引导",
@@ -902,7 +902,7 @@
     "evolution.my_addon.axolotl.node.branch_stone.desc": "50 级自动解锁的 SP 进化分支之一。以进化石进化为荧光幼灵。",
     "evolution.my_addon.axolotl.node.aquatic_adapt.book": "你的身躯愈发适应水域——潜入水中双目也能视物，游动如飞；轻触水面便能一跃而起。",
     "evolution.my_addon.axolotl.node.water_propel.book": "体内涌动的水流化作推进之力：陆地疾奔时步伐更快，纵身跃起时更有一股水花裹挟的冲劲。",
-    "evolution.my_addon.axolotl.node.water_spurt.book": "你学会了在深水中骤然爆发——按下疾跑，一股水流便将你向前猛推而出。",
+    "evolution.my_addon.axolotl.node.water_spurt.book": "你学会了驾驭体内的水流——在水中按下疾跑便骤然前冲；在陆地疾奔时俯身（潜行），也能挤出一股水流将自己向前猛推，只是要耗去些许湿润。",
     "evolution.my_addon.axolotl.node.water_spear.book": "凝水成矛之术已成。斜身后跃、于半空凝聚，屏息 1.35 秒后将一柄直线水矛掷出，洞穿目标并激起 2 格水花冲击。此招耗费 6% 湿润，须待 8 秒方能再用。",
     "evolution.my_addon.axolotl.node.vortex_guide.book": "你能引动周身水流成漩，以 3 秒引导抚平伤势——共回 6 颗心，功成之际再凝 2 颗黄心护体。引导时行动迟缓，却不耗湿润，冷却 8 秒。",
     "evolution.my_addon.axolotl.node.become_water.book": "你已与水融为一体，不再惧怕干涸。陆地上的湿润消耗回归寻常，那 1.5 倍的额外流失就此消弭。",
@@ -911,5 +911,7 @@
     "codex.form.my_addon.upgrade_familiar_fox.name": "进化使魔",
     "codex.form.my_addon.upgrade_axolotl.name": "进化美西螈",
     "codex.form.my_addon.ocelot_wind_spirit.name": "风灵",
-    "codex.form.my_addon.ocelot_nova.name": "朔望"
+    "codex.form.my_addon.ocelot_nova.name": "朔望",
+    "item.ssc_addon.music_disc_shape_shifters_dream": "音乐唱片",
+    "item.ssc_addon.music_disc_shape_shifters_dream.desc": "Jack Cooper - Shape Shifter's Dream"
 }

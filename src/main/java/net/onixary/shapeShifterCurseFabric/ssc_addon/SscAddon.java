@@ -288,6 +288,11 @@ public class SscAddon implements ModInitializer {
 	public static final Item WITHER_POTION_LINGERING = new net.onixary.shapeShifterCurseFabric.ssc_addon.item.WitherPotionItem(
 			new Item.Settings().maxCount(1), net.onixary.shapeShifterCurseFabric.ssc_addon.item.WitherPotionItem.Type.LINGERING);
 	public static final RecipeSerializer<InfiniteEnergyPotionRecipe> INFINITE_ENERGY_POTION_SERIALIZER = new SpecialRecipeSerializer<>(InfiniteEnergyPotionRecipe::new);
+	// 幻形之梦 音乐唱片（Shape Shifter's Dream）：流式音效 + vanilla 唱片物品，145 秒
+	public static final Identifier SHAPE_SHIFTERS_DREAM_ID = new Identifier("ssc_addon", "shape_shifters_dream");
+	public static final SoundEvent SHAPE_SHIFTERS_DREAM_EVENT = SoundEvent.of(SHAPE_SHIFTERS_DREAM_ID);
+	public static final Item MUSIC_DISC_SHAPE_SHIFTERS_DREAM = new net.minecraft.item.MusicDiscItem(
+			15, SHAPE_SHIFTERS_DREAM_EVENT, new Item.Settings().maxCount(1).rarity(net.minecraft.util.Rarity.RARE), 145);
 	public static final ItemGroup SSC_ADDON_GROUP = Registry.register(Registries.ITEM_GROUP,
 			new Identifier("ssc_addon", "group"),
 			FabricItemGroup.builder()
@@ -320,6 +325,7 @@ public class SscAddon implements ModInitializer {
 						entries.add(TWIN_POD);
 						entries.add(ALLAY_HEAL_WAND);
 						entries.add(ALLAY_JUKEBOX);
+						entries.add(MUSIC_DISC_SHAPE_SHIFTERS_DREAM);
 						entries.add(FRIEND_MARKER);
 						entries.add(CLEAR_FRIEND_MARKER);
 						entries.add(WITCH_FAMILIAR_SPAWN_EGG);
@@ -464,6 +470,7 @@ public class SscAddon implements ModInitializer {
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "wither_potion"), WITHER_POTION);
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "wither_potion_splash"), WITHER_POTION_SPLASH);
 		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "wither_potion_lingering"), WITHER_POTION_LINGERING);
+		Registry.register(Registries.ITEM, new Identifier("ssc_addon", "music_disc_shape_shifters_dream"), MUSIC_DISC_SHAPE_SHIFTERS_DREAM);
 		// 酿造（饮用+火药→喷溅；喷溅+龙息→滞留）完全由 BrewingRegistryInfiniteMixin 接管：
 		// 直接拦截 hasRecipe/craft 驱动产出，槽位放行由 BrewingStandInfinitePotionMixin 处理。
 		// 旧的 ITEM_RECIPES 注册需构造 PotionBrewing$Mix，在 Forge/Sinytra Connector 下构造签名不同会崩溃，已移除。
@@ -482,6 +489,7 @@ public class SscAddon implements ModInitializer {
 	private void registerSoundEvents() {
 		Registry.register(Registries.SOUND_EVENT, ALLAY_HEAL_MUSIC_ID, ALLAY_HEAL_MUSIC_EVENT);
 		Registry.register(Registries.SOUND_EVENT, ALLAY_SPEED_MUSIC_ID, ALLAY_SPEED_MUSIC_EVENT);
+		Registry.register(Registries.SOUND_EVENT, SHAPE_SHIFTERS_DREAM_ID, SHAPE_SHIFTERS_DREAM_EVENT);
 	}
 
 	private void registerEntityAttributes() {
