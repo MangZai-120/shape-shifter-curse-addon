@@ -17,8 +17,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 进化美西螈「水流爆破」（water_spurt 节点）—— 服务端可靠实现。
  *
- * <p>触发：<b>疾跑时按 shift（下蹲键）</b>。检测 sneak 上升沿且当前/上一 tick 处于疾跑，
- * 沿视线方向施加一次前冲爆发（{@code addVelocity + velocityModified}，同击退机制，对玩家可靠）。
+ * <p>触发：<b>按下疾跑键</b>（sprint 上升沿）。沿视线方向施加一次前冲爆发
+ * （{@code addVelocity + velocityModified}，同击退机制，对玩家可靠）。
  * 已解锁 water_spurt 节点、不在内部冷却时才触发。冷却 5 秒。</p>
  */
 public final class AxolotlWaterSpurtHandler {
@@ -27,7 +27,6 @@ public final class AxolotlWaterSpurtHandler {
 	private static final double BURST = 1.6;    // 前冲力度
 
 	private static final Map<UUID, Boolean> WAS_SPRINTING = new ConcurrentHashMap<>();
-	private static final Map<UUID, Boolean> WAS_SNEAKING = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> COOLDOWN = new ConcurrentHashMap<>();
 
 	private AxolotlWaterSpurtHandler() {
@@ -41,19 +40,15 @@ public final class AxolotlWaterSpurtHandler {
 
 		if (!FormUtils.isUpgradeAxolotl(player)) {
 			WAS_SPRINTING.remove(id);
-			WAS_SNEAKING.remove(id);
 			return;
 		}
 
 		boolean sprinting = player.isSprinting();
-		boolean sneaking = player.isSneaking();
 		boolean wasSprinting = WAS_SPRINTING.getOrDefault(id, false);
-		boolean wasSneaking = WAS_SNEAKING.getOrDefault(id, false);
 		WAS_SPRINTING.put(id, sprinting);
-		WAS_SNEAKING.put(id, sneaking);
 
-		// 疾跑时按 shift：sneak 上升沿 + 本/上一 tick 处于疾跑
-		if (sneaking && !wasSneaking && (sprinting || wasSprinting)) {
+		// 按下疾跑键触发：sprint 上升沿
+		if (sprinting && !wasSprinting) {
 			boolean unlocked = RegEvolutionComponent.EVOLUTION.get(player).isUnlocked(AxolotlTree.NODE_WATER_SPURT);
 			if (unlocked && COOLDOWN.getOrDefault(id, 0) <= 0) {
 				// 与原版美西螈水流爆破一致：add_velocity z 1.6 space local（沿视线前方冲量）
@@ -80,7 +75,6 @@ public final class AxolotlWaterSpurtHandler {
 
 	public static void onPlayerDisconnect(UUID id) {
 		WAS_SPRINTING.remove(id);
-		WAS_SNEAKING.remove(id);
 		COOLDOWN.remove(id);
 	}
 }

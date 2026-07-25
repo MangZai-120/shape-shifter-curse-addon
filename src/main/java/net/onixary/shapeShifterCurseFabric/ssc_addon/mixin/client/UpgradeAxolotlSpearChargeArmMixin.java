@@ -35,7 +35,7 @@ public class UpgradeAxolotlSpearChargeArmMixin {
     private static final float LEFT_ARM_FORWARD_PITCH = -1.4F;   // 手臂近乎水平指向前方
     private static final float LEFT_ARM_FORWARD_YAW = -0.3F;     // 略内收
 
-    @Inject(method = "processAnimation", at = @At("TAIL"))
+    @Inject(method = "processAnimation", at = @At("TAIL"), require = 0)
     private void ssc_addon$raiseSpearChargeArm(FormRenderer formRenderer, FormModel model,
             PlayerEntityRenderer renderer, PlayerEntity player, float limbAngle, float limbDistance,
             float tickDelta, float animationProgress, float headYaw, float headPitch, CallbackInfo ci) {
