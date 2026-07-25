@@ -382,6 +382,9 @@ public class SscAddon implements ModInitializer {
 		net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaMarkManager.register();
 		net.onixary.shapeShifterCurseFabric.ssc_addon.story.MoonScarStoryManager.register();
 		net.onixary.shapeShifterCurseFabric.ssc_addon.story.TideSpiritStoryManager.register();
+		// 原版官方事件监听（由 mixin 迁移而来）：诅咒之月 SP 形态提示 + 附属形态变身成就
+		net.jackcooper.shapeShifterCurseAddon.event.CursedMoonSpMessageHandler.register();
+		net.jackcooper.shapeShifterCurseAddon.event.AddonFormAdvancementHandler.register();
 		// SSCA 进化路线数据驱动加载器（datapack reload，扫描 data/<ns>/ssca_evolution/routes/*.json）
 		net.fabricmc.fabric.api.resource.ResourceManagerHelper.get(net.minecraft.resource.ResourceType.SERVER_DATA)
 				.registerReloadListener(net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.EvolutionRegistry.INSTANCE);
