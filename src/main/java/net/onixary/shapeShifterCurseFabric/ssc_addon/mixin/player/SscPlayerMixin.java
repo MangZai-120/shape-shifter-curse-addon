@@ -20,23 +20,9 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 import java.util.UUID;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PlayerEntity.class)
 public abstract class SscPlayerMixin {
-
-	/**
-	 * 「月痕之力」剧情真睡期间，阻止该玩家参与原版跳夜判定（{@code canResetTimeBySleeping} 返回 false），
-	 * 从而保证真睡不推进时间 / 不跳夜。仅在剧情真睡中生效（客户端 STORY_SLEEPING 为空、不介入）。
-	 */
-	@Inject(method = "canResetTimeBySleeping", at = @At("HEAD"), cancellable = true)
-	private void ssc_addon$preventMoonScarStorySleepSkip(CallbackInfoReturnable<Boolean> cir) {
-		UUID uuid = ((PlayerEntity) (Object) this).getUuid();
-		if (net.onixary.shapeShifterCurseFabric.ssc_addon.story.MoonScarStoryManager.isStorySleeping(uuid)
-				|| net.onixary.shapeShifterCurseFabric.ssc_addon.story.TideSpiritStoryManager.isStorySleeping(uuid)) {
-			cir.setReturnValue(false);
-		}
-	}
 
 	/**
 	 * 「月痕之力」剧情真睡：sp 使魔上床真正睡眠期间，顶住 SSC {@code CursedMoonWorldMixin} 每 tick
