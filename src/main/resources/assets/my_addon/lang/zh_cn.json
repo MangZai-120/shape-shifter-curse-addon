@@ -819,6 +819,8 @@
     "text.ssc_addon.bar_editor.confirm.discard":  "放弃",
     "text.ssc_addon.bar_editor.confirm.keep":  "继续编辑",
     "text.ssc_addon.bar_editor.cd":  "技能CD条",
+    "text.ssc_addon.bar_editor.cd_primary":  "主技能CD",
+    "text.ssc_addon.bar_editor.cd_secondary":  "次技能CD",
     "text.ssc_addon.bar_editor.reset_instinct":  "重置本能条",
     "text.ssc_addon.bar_editor.reset_mana":  "重置能量条",
     "text.ssc_addon.bar_editor.reset_cd":  "重置CD条",

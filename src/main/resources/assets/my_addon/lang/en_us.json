@@ -824,6 +824,8 @@
     "text.ssc_addon.bar_editor.confirm.discard":  "Discard",
     "text.ssc_addon.bar_editor.confirm.keep":  "Keep editing",
     "text.ssc_addon.bar_editor.cd":  "Skill CD Bar",
+    "text.ssc_addon.bar_editor.cd_primary":  "Primary CD",
+    "text.ssc_addon.bar_editor.cd_secondary":  "Secondary CD",
     "text.ssc_addon.bar_editor.reset_instinct":  "Reset Instinct",
     "text.ssc_addon.bar_editor.reset_mana":  "Reset Mana",
     "text.ssc_addon.bar_editor.reset_cd":  "Reset CD Bar",
