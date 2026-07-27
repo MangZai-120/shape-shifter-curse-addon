@@ -1,0 +1,7 @@
+# 法律文件：必须保持官方原文，跳过格式检查
+LICENSE
+LICENSE.txt
+
+# 构建产物：无需检查
+bin/
+build/

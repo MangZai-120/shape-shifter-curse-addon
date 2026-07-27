@@ -54,6 +54,14 @@
 - **Story Content** (including `story/` directory, in-game books, and Codex narrative text): Licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
   - Free to share, no commercial use, no modifications. Text must be provided as-is, but font and font size changes are permitted.
 
+## 赞助说明 / Support
+
+- 本模组的开发耗费了作者大量的时间与心血。如果您愿意支持我继续把它做下去，欢迎通过 **Patreon** 或 **爱发电** 赞助我，在此提前感谢每一位支持者！
+- 赞助完全自愿。赞助者与非赞助者获得的游戏内容**完全一致**——赞助不会带来任何额外功能或特权，也不会对游戏的平衡性和内容产生任何影响。
+
+- The development of this mod has taken a great deal of my time and effort. If you'd like to support me in keeping it going, feel free to sponsor me via **Patreon** or **Afdian (爱发电)**. Thank you in advance to everyone who supports me!
+- Sponsorship is entirely voluntary. Sponsors and non-sponsors receive **exactly the same** in-game content — sponsoring does not grant any additional features or privileges, nor does it have any effect on game balance or content.
+
 ## Q/A
 - Q:这个模组和Xu233的模组能不能共用？
 - A:可以共用，因为Xu233的模组写的很标准，完全可以和这个模组共用。
