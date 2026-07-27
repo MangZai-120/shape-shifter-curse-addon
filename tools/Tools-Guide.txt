@@ -1,0 +1,56 @@
+==============================================================
+ SSCA 开发工具集 - 使用说明 / SSCA Dev Tools - Guide
+==============================================================
+
+本文件夹包含 4 个开发 / 排查辅助工具。
+This folder contains 4 helper tools for development & troubleshooting.
+
+
+--------------------------------------------------------------
+[1] SSC-Mod-Checker.bat   —— 模组自检工具 / Mod Self-Check
+--------------------------------------------------------------
+用途：
+  把它放进任意整合包的 mods 文件夹，双击运行。它会自动读取该目录里每个
+  jar 的 fabric.mod.json（按真实 mod id 判断，而不是靠文件名），检查：
+    1) 重复模组          —— 同一个 mod 装了多个版本，会互相冲突
+    2) GeckoLib >= 4.8.4 —— 版本过低会导致 SSC 所有形态显示为白色人类模型
+    3) 幻型者诅咒本体(shape-shifter-curse) >= 1.10.0
+    4) Trinkets 饰品栏 >= 3.7.2
+  结果显示在窗口里，并在同目录生成《_模组自检报告.txt》。
+
+Purpose:
+  Drop it into ANY modpack's "mods" folder and double-click. It reads each
+  jar's fabric.mod.json (by the REAL mod id, not the filename) and checks:
+    1) Duplicate mods            - same mod id installed in multiple versions
+    2) GeckoLib >= 4.8.4         - older versions make all SSC forms render as white human models
+    3) Shape Shifter's Curse >= 1.10.0
+    4) Trinkets >= 3.7.2
+  Results are printed in the console and saved to "_模组自检报告.txt".
+
+用法 / How to use:
+  双击运行即可。若要修改版本要求，用记事本编辑 .bat，改里面的
+  $REQ_GECKOLIB / $REQ_SSC / $REQ_TRINKETS 三个变量。
+  Just double-click. To change the required versions, edit the three
+  variables $REQ_GECKOLIB / $REQ_SSC / $REQ_TRINKETS inside the .bat.
+
+
+--------------------------------------------------------------
+[2] SSC-Smart-Build.bat   —— 智能构建工具 / Smart Build
+--------------------------------------------------------------
+用途：
+  一键构建 SSCA。放在 SSCA 项目根目录（即有 gradlew.bat 和 build.gradle
+  的那一层），双击运行会：
+    1) 解析 build.gradle 里的本地 files(...) 依赖 jar；
+    2) 若某个上游依赖 jar 缺失，自动去对应上游项目先构建；
+    3) 执行 gradlew clean build 打包 SSCA，并列出产物 jar。
+
+Purpose:
+  One-click build for SSCA. Put it in the SSCA project root (the folder that
+  contains gradlew.bat and build.gradle), then double-click:
+    1) Parses local files(...) dependency jars declared in build.gradle;
+    2) If an upstream dependency jar is missing, builds that upstream project first;
+    3) Runs "gradlew clean build" and lists the output jars.
+
+用法 / How to use:
+  放到项目根目录双击运行。
+  Place it in the project root and double-click.
