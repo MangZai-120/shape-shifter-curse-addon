@@ -30,6 +30,9 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
+import virtuoel.pehkui.api.ScaleData;
+import virtuoel.pehkui.api.ScaleTypes;
+
 import java.util.List;
 
 /**
@@ -96,6 +99,31 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 
 	private boolean isMist() {
 		return entity.hasStatusEffect(SscAddon.MIST_FORM);
+	}
+
+	// ===== 幽雾化形碰撞箱缩放（Pehkui，替代原 SscAddonMistDimensionsMixin）=====
+	// 原版玩家站立尺寸：宽 0.6、高 1.8、眼高 1.62。
+	// 雾化目标：宽 0.2、高 0.1、眼高 0.08，可钻 0.25 格缝隙。
+	// 用独立的 HITBOX_WIDTH / HITBOX_HEIGHT / EYE_HEIGHT 三个 ScaleType 分别设值，
+	// 克服 SSC 原版 ScalePower 宽高共用一个 scale 的限制。
+	// 不调用 setPersistence（默认 false）：玩家退出重连后 scale 重置为 1.0，
+	// 与「雾化效果重连后消失」的行为一致；tick 驱动保证效果消失后立即恢复，死亡无残留。
+	private static final float MIST_WIDTH_SCALE  = 0.2f / 0.6f;   // ≈0.333
+	private static final float MIST_HEIGHT_SCALE = 0.1f / 1.8f;   // ≈0.0556
+	private static final float MIST_EYE_SCALE    = 0.08f / 1.62f; // ≈0.0494
+
+	/** 根据雾化状态设置/恢复 Pehkui 碰撞箱缩放。每 tick 调用，Pehkui 内部脏标记优化，同值不产生网络开销。 */
+	private void refreshMistScale(boolean mist) {
+		float w = mist ? MIST_WIDTH_SCALE  : 1.0f;
+		float h = mist ? MIST_HEIGHT_SCALE : 1.0f;
+		float e = mist ? MIST_EYE_SCALE    : 1.0f;
+		ScaleData widthData  = ScaleTypes.HITBOX_WIDTH.getScaleData(entity);
+		ScaleData heightData = ScaleTypes.HITBOX_HEIGHT.getScaleData(entity);
+		ScaleData eyeData    = ScaleTypes.EYE_HEIGHT.getScaleData(entity);
+		// 仅在值变化时写入，避免无谓的同步开销
+		if (Math.abs(widthData.getScale() - w) > 1e-4f)  widthData.setScale(w);
+		if (Math.abs(heightData.getScale() - h) > 1e-4f) heightData.setScale(h);
+		if (Math.abs(eyeData.getScale() - e) > 1e-4f)    eyeData.setScale(e);
 	}
 
 	/** 读取当前雾血值（仅服务端有效） */
@@ -292,6 +320,10 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 		}
 
 		boolean mist = isMist();
+
+		// 幽雾化形碰撞箱缩放：根据当前雾化状态设置/恢复 Pehkui scale（替代原 mixin）。
+		// 放在所有 return 分支之前，确保蓄力爆破期间（mist 仍为 true）也保持小碰撞箱。
+		refreshMistScale(mist);
 
 		// 凝聚爆破蓄力进行中：持续向内聚集粒子，蓄满 1 秒后突然引爆向外扩散
 		if (charging) {

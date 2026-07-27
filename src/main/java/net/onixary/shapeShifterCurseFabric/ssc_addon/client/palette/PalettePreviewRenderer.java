@@ -40,6 +40,11 @@ public final class PalettePreviewRenderer {
             try {
                 PaletteCodec.PaletteData d = PaletteCodec.decode(previewCode);
                 skin = RegPlayerSkinComponent.SKIN_SETTINGS.get(player);
+                // 防御：未注册皮肤组件的玩家 get 会返回 null，此时跳过配色替换，直接渲染原样
+                if (skin == null) {
+                    drawEntityFollowMouse(context, x, y, size, mouseX, mouseY, player);
+                    return;
+                }
                 backupColor = skin.getFormColor();
                 backupEnabled = skin.isEnableFormColor();
                 FormTextureUtils.ColorSetting preview = new FormTextureUtils.ColorSetting(

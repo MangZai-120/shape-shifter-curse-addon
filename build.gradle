@@ -102,6 +102,11 @@ dependencies {
     modImplementation "com.github.apace100:apoli:${project.apoli_version}"
     modImplementation "software.bernie.geckolib:geckolib-fabric-${project.minecraft_version}:${project.geckolib_version}"
     modImplementation "dev.emi:trinkets:${project.trinkets_version}"
+
+    // Pehkui（碰撞箱缩放，原版 SSC 已依赖；附属用于幽雾化形碰撞箱缩放，替代 mixin）
+    modApi("com.github.Virtuoel:Pehkui:${project.pehkui_version}", {
+        exclude group: "net.fabricmc.fabric-api"
+    })
     modImplementation ("com.terraformersmc:modmenu:${project.modmenu_version}"){transitive = false}
     modImplementation "com.jamieswhiteshirt:reach-entity-attributes:${project.reach_version}"
     
