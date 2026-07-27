@@ -20,9 +20,11 @@ public abstract class PotionBagDeathDropMixin {
 	public abstract PlayerInventory getInventory();
 
 	/**
-	 * Drop potion bag items on death if keepInventory is disabled
+	 * 死亡时掉落药水袋内物品（仅当 keepInventory 关闭时）
+	 * 注意：1.20.1 PlayerEntity 没有 dropInventory()，死亡掉落走 dropEquipment()（method_16078, ()V）
+	 * PlayerEntity 覆写了该方法（先 super.dropEquipment() 再掉玩家物品栏）
 	 */
-	@Inject(method = "dropInventory", at = @At("HEAD"))
+	@Inject(method = "dropEquipment()V", at = @At("HEAD"))
 	private void dropPotionBagItems(CallbackInfo ci) {
 		PlayerEntity player = (PlayerEntity) (Object) this;
 
