@@ -18,13 +18,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(WanderingTraderEntity.class)
 public abstract class WanderingTraderTradeMixin {
 
-	@Inject(method = "afterUsing", at = @At("HEAD"))
-	private void sscAddon$doNothing(TradeOffer offer, CallbackInfo ci) {
-		// 占位，确保mixin能正确加载
-	}
-
 	/**
-	 * 在流浪商人填充交易列表后，以1%概率追加阿努比斯水晶交易
+	 * 在流浪商人填充交易列表后，以1%概率追加阿努比斯水晶交易。
+	 * 注：此处刻意保留 mixin——Fabric TradeOfferHelper 会把交易注册进商人交易池参与抽选
+	 * （占用 5+1 交易槽、概率被池大小稀释），无法等价「填充后独立 1% 额外追加、不占槽」的原语义。
 	 */
 	@Inject(method = "fillRecipes", at = @At("TAIL"))
 	private void sscAddon$injectAnubisCrystalTrade(CallbackInfo ci) {

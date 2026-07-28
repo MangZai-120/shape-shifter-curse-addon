@@ -1,10 +1,12 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin.entity;
 
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SscIgnitedEntityAccessor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -61,5 +63,15 @@ public abstract class SscAddonEntityIgnitionMixin implements SscIgnitedEntityAcc
 			}
 		}
 		return source;
+	}
+
+	/**
+	 * 装死（PLAYING_DEAD）期间锁定视角，取消视角输入。（原 SscAddonEntityMixin 合并至此；行为不变。）
+	 */
+	@Inject(method = "changeLookDirection", at = @At("HEAD"), cancellable = true)
+	private void ssc_addon$onChangeLookDirectionPlayDead(double cursorDeltaX, double cursorDeltaY, CallbackInfo ci) {
+		if ((Object) this instanceof LivingEntity entity && entity.hasStatusEffect(SscAddon.PLAYING_DEAD)) {
+			ci.cancel();
+		}
 	}
 }

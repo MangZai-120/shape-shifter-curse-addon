@@ -63,4 +63,20 @@ public class UpgradeAxolotlThirdPersonSpearMixin {
 			matrices.pop();
 		}
 	}
+
+	/**
+	 * 血雾 / 真隐身期间隐藏玩家手持物品（主手 + 副手）。（原 MistFormHeldItemMixin 合并至此；同为 HeldItemFeatureRenderer 目标，行为不变。）
+	 * vanilla 隐身不隐藏手持物，需在 render 头部直接 cancel。
+	 */
+	@Inject(method = "render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;ILnet/minecraft/entity/LivingEntity;FFFFFF)V",
+			at = @At("HEAD"), cancellable = true)
+	private void ssc_addon$hideHeldItemDuringMist(MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light,
+												 LivingEntity entity, float limbAngle, float limbDistance,
+												 float tickDelta, float animationProgress, float headYaw, float headPitch,
+												 CallbackInfo ci) {
+		if (entity.hasStatusEffect(SscAddon.MIST_FORM)
+				|| entity.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) {
+			ci.cancel();
+		}
+	}
 }

@@ -132,7 +132,8 @@ public class SnowFoxSpFrostStorm {
             double radius = 0.8;
             double x = pos.x + Math.cos(angle) * radius;
             double z = pos.z + Math.sin(angle) * radius;
-            ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SNOWFLAKE, x, pos.y + 1, z, 1, 0, 0.1, 0, 0);
+            // 充能态每 tick 单发：只广播 64 格（原 512 格 ParticleUtils.spawnParticles），减少远处玩家高频网络包；充能主体特效不受影响
+            ParticleUtils.spawnParticlesNearby(serverWorld, ParticleTypes.SNOWFLAKE, x, pos.y + 1, z, 1, 0, 0.1, 0, 0);
         }
         
         // 蓄力完成

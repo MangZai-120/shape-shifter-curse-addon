@@ -1,6 +1,9 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.mixin.client;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.render.form_render.DefaultModelAnimationSystem;
 import net.onixary.shapeShifterCurseFabric.render.form_render.FormModel;
 import net.onixary.shapeShifterCurseFabric.render.form_render.FormRenderer;
@@ -55,5 +58,19 @@ public class UpgradeAxolotlSpearChargeArmMixin {
             leftArm.setRotX(LEFT_ARM_FORWARD_PITCH);
             leftArm.setRotY(LEFT_ARM_FORWARD_YAW);
         }
+    }
+
+    /**
+     * 修复多人下「其它玩家」兽形(FERAL)尾巴被击后持续下翘。（原 TailVerticalDragFixMixin 合并至此；同为 DefaultModelAnimationSystem 目标，行为不变。）
+     * 把垂直速度来源从「不衷减的 velocity」改为「每帧实际垂直位移」getY()-prevY，对本地/远程玩家一致。
+     */
+    @WrapOperation(method = "finishRender",
+            at = @At(value = "INVOKE",
+                    target = "Lnet/minecraft/entity/player/PlayerEntity;getVelocity()Lnet/minecraft/util/math/Vec3d;"),
+            require = 0)
+    private Vec3d ssc_addon$fixRemoteTailVerticalDrag(PlayerEntity player, Operation<Vec3d> original) {
+        Vec3d velocity = original.call(player);
+        double realVerticalDelta = player.getY() - player.prevY;
+        return new Vec3d(velocity.x, realVerticalDelta, velocity.z);
     }
 }

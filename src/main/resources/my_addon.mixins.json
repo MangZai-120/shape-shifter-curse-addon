@@ -11,9 +11,7 @@
                    "item.BrewingPotionSlotMixin",
                    "item.BrewingRegistryInfiniteMixin",
                    "client.PotionBagCooldownBypassMixin",
-                   "entity.BindingAnkletAuraMixin",
                    "entity.FallenAllayVexMixin",
-                   "effect.FrostFreezeDamageMixin",
                    "entity.GoldenSandstormHungerMixin",
                    "IronsSpellbooksAnimationMixin",
                    "item.AnubisEatWitherRoseItemMixin",
@@ -27,8 +25,6 @@
                    "entity.windspirit.WindSpiritProjectilePressureMixin",
                    "entity.PatrolEntityAccessor",
                    "player.PlayerInventoryMixin",
-                   "player.PotionBagDeathDropMixin",
-                   "player.PreventPotionBagDropMixin",
                    "player.RedFormTickMixin",
                    "player.SscAddonBatAttachMistMixin",
                    "entity.RedFoxThrowDistanceMixin",
@@ -36,7 +32,6 @@
                    "SscAddonCodexStatusMixin",
                    "PlayerFormComponentSyncGuardMixin",
                    "entity.SscAddonEntityIgnitionMixin",
-                   "entity.SscAddonEntityMixin",
                    "entity.SeedEnergyEatFoodMixin",
                    "entity.SscAddonLivingEntityMixin",
                    "SscAddonTargetPredicateMixin",
@@ -44,8 +39,7 @@
                    "player.SscPlayerMixin",
                    "effect.StunnedJumpMixin",
                    "item.TransformRelatedItemsMixin",
-                   "WanderingTraderTradeMixin",
-                   "entity.ClawDamageBoostMixin"
+                   "WanderingTraderTradeMixin"
                ],
     "client":  [
                    "render.InstinctBarRendererMixin",
@@ -56,7 +50,6 @@
                    "input.StunnedKeyBindingMixin",
                    "input.ViewRateLimitMixin",
                    "render.TrueInvisibilityArmorMixin",
-                   "render.MistFormHeldItemMixin",
                    "render.UpgradeAxolotlFirstPersonSpearMixin",
                    "render.UpgradeAxolotlThirdPersonSpearMixin",
                    "render.LivingEntityRendererShadowFixMixin",
@@ -67,7 +60,6 @@
                    "client.TransformingControllerFeralAnimMixin",
                    "client.CreativePotionStackMixin",
                    "client.FamiliarFoxManaBarGateMixin",
-                   "client.TailVerticalDragFixMixin",
                    "client.UpgradeAxolotlSpearChargeArmMixin",
                    "client.ClawCrosshairMixin",
                    "client.NovaSprintLockMixin"

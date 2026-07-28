@@ -164,34 +164,37 @@ public class AllaySPJukebox {
         }
 
         int mode = AllayJukeboxItem.getMode(jukeboxStack);
-        List<LivingEntity> nearbyEntities = getNearbyWhitelistEntities(player);
 
-        // ===== Music: detect mode change or first activation =====
+        // ===== Music: 每 tick 检测 mode 变化（不依赖实体扫描，保证切模即时） =====
         Integer lastMusicMode = playerMusicState.getOrDefault(player.getUuid(), -1);
         if (lastMusicMode != mode) {
             // Mode changed or first time: stop old, play new immediately
             switchMusic(player, mode);
         }
 
-        if (mode == AllayJukeboxItem.MODE_HEAL) {
-            // Heal mode: every 3 seconds (60 ticks), heal 1 HP
-            if (player.age % 60 == 0) {
-                for (LivingEntity entity : nearbyEntities) {
-                    entity.heal(1.0f);
-                }
-            }
-            // Remove speed modifier when in heal mode
-            removeSpeedFromAll(player);
-        } else {
-            // Speed mode: apply 10% speed modifier
-            for (LivingEntity entity : nearbyEntities) {
-                applySpeedModifier(entity);
-            }
-        }
+        // 性能优化：范围实体扫描(getEntitiesByClass) + buff 套用/移除 降频到每 5 tick 一次（原每 tick）。
+        // applySpeedModifier 幂等（已有则跳过），回血本就每 60t、cleanup 本就每 40t（均为 5 的倍数，命中不变）；
+        // 新进范围者最多晚 5t 获加速/被回血，肉眼不可察。
+        if (player.age % 5 == 0) {
+            List<LivingEntity> nearbyEntities = getNearbyWhitelistEntities(player);
 
-        // Clean up speed modifiers from entities that moved out of range when in speed mode
-        if (mode == AllayJukeboxItem.MODE_SPEED) {
-            cleanupOutOfRangeEntities(player, nearbyEntities);
+            if (mode == AllayJukeboxItem.MODE_HEAL) {
+                // Heal mode: every 3 seconds (60 ticks), heal 1 HP
+                if (player.age % 60 == 0) {
+                    for (LivingEntity entity : nearbyEntities) {
+                        entity.heal(1.0f);
+                    }
+                }
+                // Remove speed modifier when in heal mode
+                removeSpeedFromAll(player);
+            } else {
+                // Speed mode: apply 10% speed modifier
+                for (LivingEntity entity : nearbyEntities) {
+                    applySpeedModifier(entity);
+                }
+                // Clean up speed modifiers from entities that moved out of range
+                cleanupOutOfRangeEntities(player, nearbyEntities);
+            }
         }
     }
 

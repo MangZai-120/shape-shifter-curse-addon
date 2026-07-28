@@ -19,6 +19,11 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.BatDesmodusBloodThi
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.InfectionSporeManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.NineLivesManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.NovaSkillManager;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindSpiritClawManager;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.item.BindingAnkletItem;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.FrostFreezeEffect;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.power.EffectEfficiencyReductionPower;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
@@ -54,6 +59,60 @@ public abstract class SscAddonLivingEntityMixin {
 			return amount * 0.5f;
 		}
 		return amount;
+	}
+
+	/**
+	 * 契灵·绑定脚环灵气：被劫掠阵营 NPC 攻击、且攻击者 16 格内有装备绑定脚环的契灵玩家时，本次伤害 ×1.2。
+	 * （原 BindingAnkletAuraMixin 合并至此，减少 mixin 文件数；行为不变。）
+	 */
+	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+	private float ssc_addon$bindingAnkletBoost(float amount, DamageSource source) {
+		if (amount <= 0.0F) return amount;
+		Entity raw = source.getAttacker();
+		if (!(raw instanceof LivingEntity attacker)) return amount;
+		if (!BindingAnkletItem.isRaiderFaction(attacker)) return amount;
+		if (!BindingAnkletItem.hasAnkletAuraNearby(attacker)) return amount;
+		return amount * BindingAnkletItem.DAMAGE_MULTIPLIER;
+	}
+
+	/**
+	 * 冰霜冻结受伤 +35% / 传送攻击期间受伤 -65%。（原 FrostFreezeDamageMixin 合并至此；行为不变。）
+	 */
+	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+	private float ssc_addon$modifyDamageForFrostEffects(float amount, DamageSource source) {
+		LivingEntity self = (LivingEntity) (Object) this;
+		float modifiedAmount = amount;
+		// 1. 传送攻击期间减伤 65%
+		if (self instanceof ServerPlayerEntity serverPlayer) {
+			float reduction = SnowFoxSpTeleportAttack.getDamageReduction(serverPlayer);
+			if (reduction > 0) {
+				modifiedAmount = modifiedAmount * (1.0f - reduction);
+			}
+		}
+		// 2. 冰霜冻结效果（物理/魔法伤害）+35%
+		StatusEffectInstance frostFreezeEffect = self.getStatusEffect(SscAddon.FROST_FREEZE);
+		if (frostFreezeEffect != null && FrostFreezeEffect.isPhysicalOrMagicDamage(source)) {
+			modifiedAmount = modifiedAmount * 1.35f;
+		}
+		return modifiedAmount;
+	}
+
+	/**
+	 * 风灵徒手近战伤害缩放（过热期弱普攻 / 副技能 ×1.5；拿武器不吃）。（原 ClawDamageBoostMixin 合并至此；行为不变。）
+	 */
+	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+	private float ssc_addon$scaleWindSpiritMelee(float value, DamageSource source, float amount) {
+		if (source != null
+				&& source.getAttacker() instanceof ServerPlayerEntity p
+				&& source.isOf(DamageTypes.PLAYER_ATTACK)
+				&& FormUtils.isOcelotSP(p)
+				&& !WindSpiritClawManager.isHoldingWeapon(p)) {
+			float mult = WindSpiritClawManager.getNormalMeleeMultiplier(p);
+			if (mult != 1.0f) {
+				return value * mult;
+			}
+		}
+		return value;
 	}
 
 	/**

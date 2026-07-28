@@ -128,7 +128,8 @@ public final class SscAddonServerEvents {
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
 				// [DEBUG] 水矛出现监测 + 硬上限：背包最多 1 把水矛，多余立即移除（兜底任何未知产出路径）
-				if (FormUtils.isAxolotlSP(player)) {
+				// 性能优化：背包全扫（41 格）降频到每 10 tick 一次——水矛「有→无」触发合成CD重置最多晚 10t，肉眼不可察；STUN 属性校正仍每 tick（见下方）。
+				if (server.getTicks() % 10 == 0 && FormUtils.isAxolotlSP(player)) {
 					PlayerInventory inv = player.getInventory();
 					int wsCnt = 0;
 					for (int i = 0; i < inv.size(); i++) {
