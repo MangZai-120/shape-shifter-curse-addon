@@ -15,6 +15,7 @@ import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 import java.util.Map;
 import java.util.UUID;
@@ -41,6 +42,13 @@ public final class VortexChargeManager {
 	private static final int DAMAGE_PER_HIT = 2;
 	private static final int CD_TICKS = 300;     // 15 秒
 	private static final double RADIUS = 3.0;
+	// ===== 蓄力期吸附 =====
+	/** 吸附作用半径（略大于伤害半径，让涡流有"卷入"预览范围） */
+	private static final double PULL_RADIUS = 4.0;
+	/** 基础吸附力度（朝向玩家的水平速度分量） */
+	private static final double PULL_FORCE = 0.12;
+	/** 贴脸阈值：距离小于此值不再施加朝向玩家的吸力，避免怪物在玩家身上反复震荡 */
+	private static final double PULL_MIN_DIST = 1.5;
 
 	// ===== 动态粒子（青蓝/白：蓄力吸附 + 释放抛物线，全部服务端生成并广播给所有客户端） =====
 	/** 青蓝色尘埃（漂浮，吸附与扩散着色用） */
@@ -97,6 +105,8 @@ public final class VortexChargeManager {
 		if (s.ticks % 2 == 0) {
 			spawnAbsorbRing((ServerWorld) player.getWorld(),
 					player.getX(), player.getY() + 1, player.getZ(), 8, s.ticks * 0.35);
+			// 蓄力期实体吸附：把范围内怪物朝玩家牵引，力度随击退抗性衰减（每级 -20%，免疫的吸不动）
+			pullEntitiesDuringCharge((ServerWorld) player.getWorld(), player);
 		}
 		if (s.ticks % HIT_INTERVAL == 0) {
 			if (s.airSpent < MAX_AIR_SPENT && player.getAir() >= AIR_PER_HIT) {
@@ -159,6 +169,57 @@ public final class VortexChargeManager {
 	public static void cancel(ServerPlayerEntity player) {
 		if (CHARGING.remove(player.getUuid()) != null) {
 			PowerUtils.setResourceValueAndSync(player, VORTEX_STATE, 0);
+		}
+	}
+
+	// ==================== 蓄力期实体吸附 ====================
+
+	/**
+	 * 蓄力期把范围内怪物朝玩家牵引。
+	 * <p>力度规则（用户定稿）：
+	 * <ul>
+	 *   <li>读击退抗性属性 {@code EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE}（0.0~1.0）。
+	 *       1.20.1 的 LivingEntity 没有直接的 getter，须走属性实例读取。</li>
+	 *   <li><b>击退抗性 ≥ 1.0（完全免疫，如铁傀儡 / 凋灵 / 末影龙 / 监守者）→ 完全吸不动。</b></li>
+	 *   <li>其余按「每 0.2 点抗性（一级）减少 20% 力度」分档：0→100%、0.2→80%、0.4→60%、0.6→40%、0.8→20%。</li>
+	 *   <li>玩家 / 驯服宠物 / 白名单个体豁免（{@link WhitelistUtils#isProtected}）。</li>
+	 * </ul>
+	 * 每 2 tick 施加一次朝向玩家的水平速度，贴脸阈值内不再拉近（防震荡）。
+	 */
+	private static void pullEntitiesDuringCharge(ServerWorld sw, ServerPlayerEntity player) {
+		Box box = player.getBoundingBox().expand(PULL_RADIUS);
+		Vec3d playerPos = player.getPos();
+		for (Entity e : sw.getOtherEntities(player, box)) {
+			if (!(e instanceof LivingEntity living)) continue;
+			// 白名单 / 玩家 / 宠物豁免
+			if (WhitelistUtils.isProtected(player, living)) continue;
+
+			// 1.20.1：击退抗性须通过属性实例读取（LivingEntity 无 getKnockbackResistance() 方法）
+			double kr = 0.0;
+			if (living.getAttributes().hasAttribute(net.minecraft.entity.attribute.EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE)) {
+				net.minecraft.entity.attribute.EntityAttributeInstance krInst =
+					living.getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE);
+				if (krInst != null) kr = krInst.getValue();
+			}
+			// 击退抗性 ≥ 1.0：完全免疫，吸不动（铁傀儡 / 凋灵 / boss 等）
+			if (kr >= 1.0) continue;
+			// 每 0.2 点抗性 = 一级，每级 -20% 力度（抗性越高越难吸）
+			int level = (int) Math.ceil(kr / 0.2);   // 0→0, 0.2→1, 0.4→2 ... 0.9→5
+			if (level > 5) level = 5;
+			double scale = 1.0 - level * 0.2;        // 1.0/0.8/0.6/0.4/0.2/0.0
+			if (scale <= 0.0) continue;              // 力度归零，吸不动
+
+			Vec3d toPlayer = playerPos.subtract(living.getPos());
+			double dist = toPlayer.length();
+			if (dist < PULL_MIN_DIST) continue;      // 贴脸阈值：不再拉近，防震荡
+			// 朝向玩家的水平方向（忽略 Y，避免把怪吸到天上 / 地下）
+			Vec3d dir = new Vec3d(toPlayer.x, 0, toPlayer.z).normalize();
+			double force = PULL_FORCE * scale;
+			// 叠加朝向玩家的水平速度（不覆盖原有 Y，保留重力 / 跳跃）
+			living.setVelocity(living.getVelocity().x * 0.5 + dir.x * force,
+					living.getVelocity().y,
+					living.getVelocity().z * 0.5 + dir.z * force);
+			living.velocityModified = true;
 		}
 	}
 
