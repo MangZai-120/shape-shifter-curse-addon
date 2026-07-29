@@ -20,6 +20,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.InfectionSporeManag
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.NineLivesManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.NovaSkillManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.VortexChargeManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindSpiritClawManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.BindingAnkletItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.FrostFreezeEffect;
@@ -36,11 +37,35 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(LivingEntity.class)
 public abstract class SscAddonLivingEntityMixin {
+
+	/**
+	 * SP 美西螈涡流蓄力：蓄力中的玩家不参与实体碰撞推挤——被涡流吸到身上的怪也挤不动玩家。
+	 * <p>{@code pushAwayFrom} 是 vanilla 实体互推的统一入口（碰撞双方各调一次），在 HEAD 处判定：
+	 * 只要推挤双方任一是「蓄力中的玩家」就整体取消，玩家站得住、怪仍被吸附/震荡但推不动玩家。
+	 * 服务端用 {@link VortexChargeManager#isCharging} 快速查表；客户端用每 tick 缓存标记，避免每次碰撞读 Apoli 资源。
+	 */
+	@Inject(method = "pushAwayFrom", at = @At("HEAD"), cancellable = true)
+	private void ssc_addon$vortexChargingNoPush(Entity entity, CallbackInfo ci) {
+		LivingEntity self = (LivingEntity) (Object) this;
+		if (ssc_addon$isVortexChargingPlayer(self) || ssc_addon$isVortexChargingPlayer(entity)) {
+			ci.cancel();
+		}
+	}
+
+	private static boolean ssc_addon$isVortexChargingPlayer(Entity e) {
+		if (!(e instanceof PlayerEntity)) return false;
+		if (e instanceof ServerPlayerEntity sp) {
+			return VortexChargeManager.isCharging(sp);
+		}
+		// 客户端本地玩家：用每 tick 缓存标记（避免每次碰撞读 Apoli 资源）
+		return e.getWorld().isClient() && VortexChargeManager.isClientLocalCharging();
+	}
 
 	/**
 	 * 寄生果蝠被动：被「灵果寄生」的敌方削弱果寄生时，目标受到的任何形式回血减少 50%。

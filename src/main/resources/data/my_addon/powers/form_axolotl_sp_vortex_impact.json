@@ -125,52 +125,16 @@
             "compare_to": 0
         },
         "entity_action": {
-            "type": "apoli:and",
-            "actions": [
-                {
-                    "type": "apoli:spawn_particles",
-                    "particle": "minecraft:bubble",
-                    "count": 40,
-                    "speed": 0.6,
-                    "force": true,
-                    "spread": {
-                        "x": 6.0,
-                        "y": 2.5,
-                        "z": 6.0
-                    }
-                },
-                {
-                    "type": "apoli:area_of_effect",
-                    "radius": 6.0,
-                    "bientity_action": {
-                        "type": "apoli:and",
-                        "actions": [
-                            {
-                                "type": "apoli:add_velocity",
-                                "x": 0,
-                                "y": 0.12,
-                                "z": -0.6,
-                                "space": "local_horizontal_normalized",
-                                "set": false
-                            }
-                        ]
-                    },
-                    "bientity_condition": {
-                        "type": "apoli:and",
-                        "conditions": [
-                            {
-                                "type": "apoli:target_condition",
-                                "condition": {
-                                    "type": "apoli:living"
-                                }
-                            },
-                            {
-                                "type": "my_addon:not_actor_whitelisted"
-                            }
-                        ]
-                    }
-                }
-            ]
+            "type": "apoli:spawn_particles",
+            "particle": "minecraft:bubble",
+            "count": 40,
+            "speed": 0.6,
+            "force": true,
+            "spread": {
+                "x": 6.0,
+                "y": 2.5,
+                "z": 6.0
+            }
         }
     },
     "name": "Vortex Impact",

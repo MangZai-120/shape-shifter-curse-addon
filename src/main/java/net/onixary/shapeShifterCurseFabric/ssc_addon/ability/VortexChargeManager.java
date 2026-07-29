@@ -1,10 +1,13 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.ability;
 
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -35,6 +38,15 @@ public final class VortexChargeManager {
 	public static final Identifier VORTEX_STATE =
 			new Identifier("my_addon", "form_axolotl_sp_vortex_impact_vortex_state");
 
+	/**
+	 * 涡流「移动免疫」实体类型 tag：命中的实体不被涡流吸附 / 击退（仍正常受伤）。
+	 * <p>数据包路径 {@code data/my_addon/tags/entity_types/vortex_immune.json}，默认含原版 6 类
+	 * boss / 重甲（铁傀儡·凋灵·末影龙·潜影贝·监守者·远古守卫者）；{@code "replace": false} 允许
+	 * 其它数据包 / 模组把自家 boss 追加进来，无需改代码即可扩展兼容。
+	 */
+	private static final TagKey<EntityType<?>> VORTEX_IMMUNE =
+			TagKey.of(RegistryKeys.ENTITY_TYPE, new Identifier("my_addon", "vortex_immune"));
+
 	private static final int AIR_PER_HIT = 8;
 	private static final int MAX_AIR_SPENT = 60;
 	private static final int MAX_TICKS = 80;     // 4 秒
@@ -42,13 +54,11 @@ public final class VortexChargeManager {
 	private static final int DAMAGE_PER_HIT = 2;
 	private static final int CD_TICKS = 300;     // 15 秒
 	private static final double RADIUS = 3.0;
-	// ===== 蓄力期吸附 =====
-	/** 吸附作用半径（略大于伤害半径，让涡流有"卷入"预览范围） */
-	private static final double PULL_RADIUS = 4.0;
-	/** 基础吸附力度（朝向玩家的水平速度分量） */
-	private static final double PULL_FORCE = 0.12;
-	/** 贴脸阈值：距离小于此值不再施加朝向玩家的吸力，避免怪物在玩家身上反复震荡 */
-	private static final double PULL_MIN_DIST = 1.5;
+	// ===== 蓄力期吸附（唯一吸附源：原 JSON pull_effect 的固定力度吸附已删，改由此处按击退抗性分档牵引）=====
+	/** 吸附作用半径（与原 JSON 吸附触及范围一致） */
+	private static final double PULL_RADIUS = 6.0;
+	/** 基础吸附力度（朝向玩家的水平速度分量；稳态速度≈ 2×本值×分档系数，如太强/太弱调此值） */
+	private static final double PULL_FORCE = 0.6;
 
 	// ===== 动态粒子（青蓝/白：蓄力吸附 + 释放抛物线，全部服务端生成并广播给所有客户端） =====
 	/** 青蓝色尘埃（漂浮，吸附与扩散着色用） */
@@ -71,6 +81,23 @@ public final class VortexChargeManager {
 
 	public static boolean isCharging(ServerPlayerEntity player) {
 		return CHARGING.containsKey(player.getUuid());
+	}
+
+	/**
+	 * 客户端本地玩家「涡流蓄力中」缓存标记：由 VortexChargeClient 每客户端 tick 更新一次，
+	 * 供碰撞推挤 mixin（SscAddonLivingEntityMixin.pushAwayFrom）快速读取，避免每次实体碰撞都读 Apoli 资源。
+	 * 仅客户端有意义（服务端恒 false，服务端走 {@link #isCharging} 查表）。
+	 */
+	private static volatile boolean clientLocalCharging = false;
+
+	/** 客户端每 tick 更新本地玩家蓄力标记。 */
+	public static void setClientLocalCharging(boolean charging) {
+		clientLocalCharging = charging;
+	}
+
+	/** 碰撞推挤 mixin 读取：客户端本地玩家是否处于涡流蓄力。 */
+	public static boolean isClientLocalCharging() {
+		return clientLocalCharging;
 	}
 
 	/** 客户端发「开始蓄力」包时调用。 */
@@ -151,17 +178,22 @@ public final class VortexChargeManager {
 		if (damage <= 0) return; // 一次都没蓄到，仅取消
 		Box box = player.getBoundingBox().expand(RADIUS);
 		for (Entity e : sw.getOtherEntities(player, box)) {
-			if (e instanceof LivingEntity living) {
-				// 默认白名单：豁免玩家/宠物/白名单个体，不受涡流冲击伤害与控制
-				if (net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils.isProtected(player, living)) continue;
-				living.damage(player.getDamageSources().mobAttack(player), damage); // 物理
-				living.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 80, 2));
-				Vec3d push = living.getPos().subtract(player.getPos());
-				if (push.lengthSquared() < 1.0e-4) push = new Vec3d(0, 1, 0);
-				push = push.normalize().multiply(0.8);
-				living.setVelocity(push.x, 0.6, push.z);
-				living.velocityModified = true;
-			}
+			if (!(e instanceof LivingEntity living)) continue;
+			// 默认白名单：豁免玩家/宠物/白名单个体，不受涡流冲击伤害与控制
+			if (net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils.isProtected(player, living)) continue;
+
+			// 伤害：所有受影响生物一律满额（用户定稿「伤害正常」，boss 也照常受伤）
+			living.damage(player.getDamageSources().mobAttack(player), (float) damage);
+
+			// 击退力度 = f(击退抗性等级, 是否为boss)：boss → 0（不击退不缓慢），普通怪按抗性分档
+			double scale = getMovementForceScale(living);
+			if (scale <= 0.0) continue;              // boss / 极高抗性：只受伤，不被移动
+			living.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 80, 2));
+			Vec3d push = living.getPos().subtract(player.getPos());
+			if (push.lengthSquared() < 1.0e-4) push = new Vec3d(0, 1, 0);
+			push = push.normalize().multiply(0.8 * scale);
+			living.setVelocity(push.x, 0.6 * scale, push.z);
+			living.velocityModified = true;
 		}
 	}
 
@@ -172,16 +204,47 @@ public final class VortexChargeManager {
 		}
 	}
 
+	// ==================== Boss 判定 + 移动力度系数 ====================
+
+	/**
+	 * 判定一个生物是否「涡流移动免疫」（不被吸附 / 击退，但仍正常受伤）。
+	 * <p>双重判定：
+	 * <ol>
+	 *   <li><b>击退抗性 ≥ 0.99</b>：自动命中铁傀儡·监守者·以及设了高抗性的模组 boss，无需登记。</li>
+	 *   <li><b>实体类型 tag {@code my_addon:vortex_immune}</b>：补住原版击退抗性=0.0 却应免疫的
+	 *       凋灵·末影龙·潜影贝·远古守卫者（默认已写进 tag），并允许模组把自家 boss 追加进 tag 扩展兼容。</li>
+	 * </ol>
+	 */
+	private static boolean isVortexImmune(LivingEntity living) {
+		return getKnockbackResistance(living) >= 0.99 || living.getType().isIn(VORTEX_IMMUNE);
+	}
+
+	/**
+	 * 计算目标受涡流「移动类效果」（蓄力吸附 / 释放击退）的力度系数 [0.0, 1.0]。
+	 * <p>依据用户定稿的两项判据：
+	 * <ul>
+	 *   <li><b>是否为 boss</b>：{@link #isVortexImmune} 命中 → 返回 0.0（完全不被移动，力度归零）。</li>
+	 *   <li><b>击退抗性等级</b>：普通怪按「每 0.2 点抗性一级、每级 -20% 力度」分档
+	 *       —— 0.0→1.0、0.2→0.8、0.4→0.6、0.6→0.4、0.8→0.2、≥1.0→0.0。</li>
+	 * </ul>
+	 * 吸附与击退共用此系数，保证两处力度口径一致。伤害不走此系数（由调用方按「伤害正常」满额结算）。
+	 */
+	private static double getMovementForceScale(LivingEntity living) {
+		if (isVortexImmune(living)) return 0.0;
+		int level = (int) Math.ceil(getKnockbackResistance(living) / 0.2); // 0→0, 0.2→1 ... 1.0→5
+		if (level > 5) level = 5;
+		return Math.max(0.0, 1.0 - level * 0.2);
+	}
+
 	// ==================== 蓄力期实体吸附 ====================
 
 	/**
 	 * 蓄力期把范围内怪物朝玩家牵引。
-	 * <p>力度规则（用户定稿）：
+	 * <p>吸附力度依据 {@link #getMovementForceScale}（击退抗性等级 + 是否为 boss）：
 	 * <ul>
-	 *   <li>读击退抗性属性 {@code EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE}（0.0~1.0）。
-	 *       1.20.1 的 LivingEntity 没有直接的 getter，须走属性实例读取。</li>
-	 *   <li><b>击退抗性 ≥ 1.0（完全免疫，如铁傀儡 / 凋灵 / 末影龙 / 监守者）→ 完全吸不动。</b></li>
-	 *   <li>其余按「每 0.2 点抗性（一级）减少 20% 力度」分档：0→100%、0.2→80%、0.4→60%、0.6→40%、0.8→20%。</li>
+	 *   <li>Boss / 重甲实体（铁傀儡·凋灵·末影龙·监守者·潜影贝·远古守卫者·高抗性模组 boss）→ 力度 0，不被吸附。</li>
+	 *   <li>普通怪按击退抗性「每 0.2 点一级、每级 -20% 力度」分档衰减。
+	 *       注：setVelocity 直接覆盖速度不经过 takeKnockback，故击退抗性不能自然兑底，靠力度系数显式衰减。</li>
 	 *   <li>玩家 / 驯服宠物 / 白名单个体豁免（{@link WhitelistUtils#isProtected}）。</li>
 	 * </ul>
 	 * 每 2 tick 施加一次朝向玩家的水平速度，贴脸阈值内不再拉近（防震荡）。
@@ -194,25 +257,13 @@ public final class VortexChargeManager {
 			// 白名单 / 玩家 / 宠物豁免
 			if (WhitelistUtils.isProtected(player, living)) continue;
 
-			// 1.20.1：击退抗性须通过属性实例读取（LivingEntity 无 getKnockbackResistance() 方法）
-			double kr = 0.0;
-			if (living.getAttributes().hasAttribute(net.minecraft.entity.attribute.EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE)) {
-				net.minecraft.entity.attribute.EntityAttributeInstance krInst =
-					living.getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE);
-				if (krInst != null) kr = krInst.getValue();
-			}
-			// 击退抗性 ≥ 1.0：完全免疫，吸不动（铁傀儡 / 凋灵 / boss 等）
-			if (kr >= 1.0) continue;
-			// 每 0.2 点抗性 = 一级，每级 -20% 力度（抗性越高越难吸）
-			int level = (int) Math.ceil(kr / 0.2);   // 0→0, 0.2→1, 0.4→2 ... 0.9→5
-			if (level > 5) level = 5;
-			double scale = 1.0 - level * 0.2;        // 1.0/0.8/0.6/0.4/0.2/0.0
-			if (scale <= 0.0) continue;              // 力度归零，吸不动
+			// 吸附力度 = f(击退抗性等级, 是否为boss)：boss → 0（不吸），普通怪按抗性分档
+			double scale = getMovementForceScale(living);
+			if (scale <= 0.0) continue;              // 力度归零：boss 或极高抗性，吸不动
 
 			Vec3d toPlayer = playerPos.subtract(living.getPos());
-			double dist = toPlayer.length();
-			if (dist < PULL_MIN_DIST) continue;      // 贴脸阈值：不再拉近，防震荡
-			// 朝向玩家的水平方向（忽略 Y，避免把怪吸到天上 / 地下）
+			// 不设贴脸阈值：允许怪物被吸到玩家身上后反复震荡（特色效果，用户定稿保留）
+			// 朝向玩家的水平方向（忽略 Y，避免把怪吸到天上 / 地下）；normalize 对零向量返回 ZERO，无 NaN 风险
 			Vec3d dir = new Vec3d(toPlayer.x, 0, toPlayer.z).normalize();
 			double force = PULL_FORCE * scale;
 			// 叠加朝向玩家的水平速度（不覆盖原有 Y，保留重力 / 跳跃）
@@ -225,6 +276,22 @@ public final class VortexChargeManager {
 
 	public static void onPlayerDisconnect(UUID uuid) {
 		CHARGING.remove(uuid);
+	}
+
+	// ==================== 击退抗性读取 ====================
+
+	/**
+	 * 读取一个生物的击退抗性（0.0~1.0）。
+	 * <p>1.20.1 的 LivingEntity 无 getKnockbackResistance() 方法，须走属性实例读取。
+	 * 实体未注册该属性时返回 0.0（可正常被击退/吸附）。
+	 */
+	private static double getKnockbackResistance(LivingEntity living) {
+		if (living.getAttributes().hasAttribute(net.minecraft.entity.attribute.EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE)) {
+			net.minecraft.entity.attribute.EntityAttributeInstance krInst =
+					living.getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE);
+			if (krInst != null) return krInst.getValue();
+		}
+		return 0.0;
 	}
 
 	// ==================== 粒子辅助 ====================

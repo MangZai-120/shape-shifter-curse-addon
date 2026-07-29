@@ -62,17 +62,39 @@ jobs:
       - name: 列出附属构建产物
         run: ls -la build/libs/
 
-      # 只上传主 jar，排除 -sources.jar
-      - name: 整理构建产物
+      # 整理构建产物：附属 jar 与原版 SSC jar 分别放进各自目录，上传为两个独立的 artifact（两个独立下载入口）
+      - name: 整理构建产物（附属 / 原版 SSC 分开）
         run: |
-          mkdir -p artifacts
-          find build/libs -name '*.jar' ! -name '*-sources.jar' -exec cp {} artifacts/ \;
-          echo "整理后的产物："
-          ls -la artifacts/
+          mkdir -p artifacts/ssca artifacts/ssc
 
-      - name: 上传附属构建产物
+          echo "::group::附属 jar"
+          find build/libs -name '*.jar' ! -name '*-sources.jar' -exec cp {} artifacts/ssca/ \;
+          echo "附属产物："
+          ls -la artifacts/ssca/
+          echo "::endgroup::"
+
+          echo "::group::原版 SSC jar（从父级原版目录取）"
+          SSC_DIR="../幻型者诅咒原版_official/build/libs"
+          if [ ! -d "$SSC_DIR" ]; then
+            echo "::error::原版 SSC 构建目录不存在: $SSC_DIR"
+            exit 1
+          fi
+          find "$SSC_DIR" -name '*.jar' ! -name '*-sources.jar' -exec cp {} artifacts/ssc/ \;
+          echo "原版产物："
+          ls -la artifacts/ssc/
+          echo "::endgroup::"
+
+      # 上传为两个独立的 artifact：SSCA 与 SSC 各自一个下载入口
+      - name: 上传附属 SSCA 构建产物
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.addon_props.outputs.archives_base_name }}-${{ steps.addon_props.outputs.mod_version }}
-          path: artifacts/*.jar
+          path: artifacts/ssca/*.jar
+          if-no-files-found: error
+
+      - name: 上传原版 SSC 构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: shape-shifter-curse-fabric-${{ steps.addon_props.outputs.ssc_version }}
+          path: artifacts/ssc/*.jar
           if-no-files-found: error
