@@ -1,0 +1,78 @@
+# 附属构建 | Build SSCA Addon
+# 推送/PR 时自动构建，也可在 Actions 页面手动触发。
+# 注意：附属 build.gradle 硬依赖原版 SSC 的 jar（../幻型者诅咒原版_official/build/libs/...），
+# 而原版目录不在附属仓库内，因此 CI 需先 clone 并构建原版作为依赖。
+
+name: 构建 | Build Addon
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出附属代码
+        uses: actions/checkout@v4
+
+      - name: 读取附属版本配置
+        id: addon_props
+        uses: christian-draeger/read-properties@1.1.1
+        with:
+          path: gradle.properties
+          properties: 'mod_version archives_base_name ssc_version'
+
+      - name: 配置 Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 关键：附属依赖原版 jar，先 clone 并构建原版 SSC 到附属的父级目录（路径与本地一致）
+      - name: 检出并构建原版 SSC（附属依赖）
+        run: |
+          echo "::group::Clone 原版 SSC"
+          cd "$GITHUB_WORKSPACE/.."
+          git clone --depth 1 https://github.com/onixary/shape-shifter-curse-fabric.git 幻型者诅咒原版_official
+          cd 幻型者诅咒原版_official
+          chmod +x ./gradlew
+          echo "::endgroup::"
+
+          echo "::group::Build 原版 SSC"
+          ./gradlew build --no-daemon
+          echo "::endgroup::"
+
+          echo "::group::原版产物列表"
+          ls -la build/libs/
+          echo "::endgroup::"
+
+      - name: 赋予附属 gradlew 可执行权限
+        run: chmod +x ./gradlew
+
+      - name: 初始化 Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: 构建附属
+        run: ./gradlew build
+
+      - name: 列出附属构建产物
+        run: ls -la build/libs/
+
+      # 只上传主 jar，排除 -sources.jar
+      - name: 整理构建产物
+        run: |
+          mkdir -p artifacts
+          find build/libs -name '*.jar' ! -name '*-sources.jar' -exec cp {} artifacts/ \;
+          echo "整理后的产物："
+          ls -la artifacts/
+
+      - name: 上传附属构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.addon_props.outputs.archives_base_name }}-${{ steps.addon_props.outputs.mod_version }}
+          path: artifacts/*.jar
+          if-no-files-found: error
