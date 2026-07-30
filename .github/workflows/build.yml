@@ -32,8 +32,23 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 关键：附属依赖原版 jar，先 clone 并构建原版 SSC 到附属的父级目录（路径与本地一致）
+      # 优化①：Gradle 依赖缓存前置到原版构建之前（原本在原版构建之后才初始化，导致原版每次零缓存全量
+      # 下载依赖 + 重新 remap Minecraft）。前置后原版与附属构建共用 ~/.gradle 缓存，第二次起大幅提速。
+      - name: 初始化 Gradle（依赖缓存）
+        uses: gradle/actions/setup-gradle@v4
+
+      # 优化②：缓存原版 SSC jar；ssc_version 没变就直接复用上次构建的原版 jar，跳过整个原版构建
+      #（构建慢那次里最大的一块）。只有改了 gradle.properties 的 ssc_version 才会重新构建原版。
+      - name: 缓存原版 SSC jar
+        id: cache-ssc-jar
+        uses: actions/cache@v4
+        with:
+          path: ../幻型者诅咒原版_official/build/libs
+          key: ssc-jar-${{ steps.addon_props.outputs.ssc_version }}
+
+      # 关键：附属依赖原版 jar；仅当上面的原版 jar 缓存未命中时，才 clone 并构建原版 SSC。
       - name: 检出并构建原版 SSC（附属依赖）
+        if: steps.cache-ssc-jar.outputs.cache-hit != 'true'
         run: |
           echo "::group::Clone 原版 SSC"
           cd "$GITHUB_WORKSPACE/.."
@@ -43,7 +58,7 @@ jobs:
           echo "::endgroup::"
 
           echo "::group::Build 原版 SSC"
-          ./gradlew build --no-daemon
+          ./gradlew build
           echo "::endgroup::"
 
           echo "::group::原版产物列表"
@@ -52,9 +67,6 @@ jobs:
 
       - name: 赋予附属 gradlew 可执行权限
         run: chmod +x ./gradlew
-
-      - name: 初始化 Gradle
-        uses: gradle/actions/setup-gradle@v4
 
       - name: 构建附属
         run: ./gradlew build
