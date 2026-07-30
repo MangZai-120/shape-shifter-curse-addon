@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 宋明禹(Song Mingyu)
+ * Copyright (c) 2026 MangZai-120
  * This file is part of the "shape shifter curse addon" project.
  * Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
  */
