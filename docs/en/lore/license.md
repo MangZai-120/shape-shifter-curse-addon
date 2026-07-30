@@ -13,7 +13,7 @@ All story and narrative content under the "Lore & Stories" section of this Wiki,
 - *Background Lore*
 - In-game book content and Codex narrative text
 
-are created by **Song Mingyu (宋明禹)** and licensed under:
+are created by **MangZai-120** and licensed under:
 
 ### [CC BY-NC-ND 4.0 International](https://creativecommons.org/licenses/by-nc-nd/4.0/)
 
@@ -28,4 +28,4 @@ are created by **Song Mingyu (宋明禹)** and licensed under:
 - **NoDerivatives** — You may not modify, transform, or build upon the content
 - The text must be provided as-is, but changes to font and font size (typographic formatting) are permitted
 
-© 2026 Song Mingyu (宋明禹). All rights reserved.
+© 2026 MangZai-120. All rights reserved.
