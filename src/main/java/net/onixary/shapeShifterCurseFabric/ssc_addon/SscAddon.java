@@ -180,6 +180,8 @@ public class SscAddon implements ModInitializer {
 	public static final Map<UUID, Integer> WS_LAST_SPEAR_COUNT = new ConcurrentHashMap<>();
 	// Evolution Stone
 	public static final Item EVOLUTION_STONE = new EvolutionStoneItem(new Item.Settings().maxCount(1).fireproof());
+	// 灵能宝珠：进化形态专用转职道具（右键长按开界面选形态转职，扣 3 点、倒退 3 个里程碑）
+	public static final Item PSIONIC_ORB = new net.jackcooper.shapeShifterCurseAddon.item.PsionicOrbItem(new Item.Settings().maxCount(16).fireproof());
 	public static final Item CORAL_BALL = new Item(new Item.Settings().maxCount(64));
 	public static final Item ACTIVE_CORAL_NECKLACE = new ActiveCoralNecklaceItem(new Item.Settings().maxCount(1));
 	// 风灵专属项链：加快疾风连爪耐力回复；朔望专属项链：强化九命复活
@@ -236,6 +238,7 @@ public class SscAddon implements ModInitializer {
 					.entries((displayContext, entries) -> {
 						entries.add(SP_UPGRADE_THING);
 						entries.add(EVOLUTION_STONE);
+						entries.add(PSIONIC_ORB);
 						entries.add(LIFESAVING_CAT_TAIL);
 						entries.add(PHANTOM_BELL);
 						entries.add(FROST_AMULET);
@@ -369,6 +372,7 @@ public class SscAddon implements ModInitializer {
 		registerItem("potion_bag", POTION_BAG);
 		Registry.register(Registries.SCREEN_HANDLER, new Identifier("ssc_addon", "potion_bag"), POTION_BAG_SCREEN_HANDLER);
 		registerItem("evolution_stone", EVOLUTION_STONE);
+		registerItem("psionic_orb", PSIONIC_ORB);
 		registerItem("coral_ball", CORAL_BALL);
 		registerItem("active_coral_necklace", ACTIVE_CORAL_NECKLACE);
 		registerItem("wind_spirit_stamina_necklace", WIND_SPIRIT_STAMINA_NECKLACE);

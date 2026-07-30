@@ -915,5 +915,14 @@
     "item.ssc_addon.music_disc_shape_shifters_dream": "Music Disc",
     "item.ssc_addon.music_disc_shape_shifters_dream.desc": "Jack Cooper - Shape Shifter's Dream",
     "death.attack.ssc_addon.witch_familiar_fire_ring": "%1$s was incinerated by a Witch Familiar's fire ring",
-    "death.attack.ssc_addon.witch_familiar_fire_ring.player": "%1$s was engulfed by a Witch Familiar's fire ring whilst fighting %2$s"
+    "death.attack.ssc_addon.witch_familiar_fire_ring.player": "%1$s was engulfed by a Witch Familiar's fire ring whilst fighting %2$s",
+    "item.ssc_addon.psionic_orb": "Psionic Orb",
+    "item.ssc_addon.psionic_orb.tooltip": "An orb condensed with psionic power, holding the power of form transfiguration.\nHold right-click to change job between evolution forms (needs >=3 skill points, rolls back 3 milestones).\nUsable only in evolution forms.",
+    "evolution.my_addon.job_change.select.title": "Select Job Change Target",
+    "evolution.my_addon.job_change.current": "(Current form, cannot select)",
+    "message.ssc_addon.job_change.success": "Job change successful!",
+    "message.ssc_addon.job_change.fail.not_enough_points": "Not enough skill points (need %s)",
+    "message.ssc_addon.job_change.fail.invalid_target": "Invalid job change target",
+    "message.ssc_addon.job_change.fail.not_evolution": "The Psionic Orb can only be used in an evolution form",
+    "message.ssc_addon.evolution.migrated": "Evolution points now use a built-in EXP system; your evolution level is set to %s based on your points"
 }

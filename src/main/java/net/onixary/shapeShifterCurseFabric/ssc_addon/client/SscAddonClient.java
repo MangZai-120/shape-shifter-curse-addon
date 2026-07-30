@@ -332,6 +332,12 @@ public class SscAddonClient implements ClientModInitializer {
 			});
 		});
 
+		// 灵能宝珠转职：服务端通知打开「转职选择形态」界面（jackcooper 独立类，当前形态灰显不可选）
+		ClientPlayNetworking.registerGlobalReceiver(net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking.PACKET_OPEN_JOB_CHANGE, (client, handler, buf, responseSender) -> {
+			client.execute(() -> client.setScreen(
+					new net.jackcooper.shapeShifterCurseAddon.client.JobChangeSelectScreen()));
+		});
+
 		ItemTooltipCallback.EVENT.register((stack, context, lines) -> {
 			if (stack.getItem() == SscAddon.CORAL_BALL) {
 				addSplitTooltip(lines, "item.ssc_addon.coral_ball.tooltip");

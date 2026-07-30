@@ -140,6 +140,8 @@ public class EvolutionScreen extends Screen {
         panX = 0;
         panY = 0;
         zoom = 1.0;
+        // 通知服务端玩家打开了加点界面，触发旧存档迁移检测（机制改内置 exp 后，旧存档进化等级自动加满）
+        ClientPlayNetworking.send(SscAddonNetworking.PACKET_EVO_OPEN, PacketByteBufs.empty());
     }
 
     private void updateBtn() {
@@ -515,16 +517,31 @@ public class EvolutionScreen extends Screen {
                 12, 26, TXT_GRAY);
 
         if (comp != null) {
-            int level = MinecraftClient.getInstance().player != null
-                    ? MinecraftClient.getInstance().player.experienceLevel : 0;
+            int level = comp.getEvoLevel();
             Text levelText = Text.translatable("evolution.my_addon.screen.level", level);
             int lw = this.textRenderer.getWidth(levelText);
             ctx.drawTextWithShadow(this.textRenderer, levelText, this.width - 12 - lw, 8, TXT_GOLD);
 
             if (comp.isOnSscaRoute()) {
+                // 进化经验到下一级的进度条（等级下方，右对齐窄条）
+                int ebW = 90, ebH = 3;
+                int ebX = this.width - 12 - ebW;
+                int ebY = 19;
+                int curExp = comp.getExp();
+                float eProg;
+                if (level >= EvolutionComponent.EVO_LEVEL_CAP) {
+                    eProg = 1.0f;
+                } else {
+                    int c0 = EvolutionComponent.levelToTotalExp(level) * 2;
+                    int n0 = EvolutionComponent.levelToTotalExp(level + 1) * 2;
+                    eProg = (n0 > c0) ? Math.max(0f, Math.min(1f, (float) (curExp - c0) / (n0 - c0))) : 0f;
+                }
+                ctx.fill(ebX, ebY, ebX + ebW, ebY + ebH, 0xFF201810);
+                ctx.fill(ebX, ebY, ebX + (int) (ebW * eProg), ebY + ebH, 0xFF55C964);
+
                 Text pointsText = Text.translatable("evolution.my_addon.screen.points", simPoints(comp));
                 int pw = this.textRenderer.getWidth(pointsText);
-                ctx.drawTextWithShadow(this.textRenderer, pointsText, this.width - 12 - pw, 26, TITLE_GOLD);
+                ctx.drawTextWithShadow(this.textRenderer, pointsText, this.width - 12 - pw, 30, TITLE_GOLD);
             } else {
                 Text nr = Text.translatable("evolution.my_addon.screen.no_route");
                 int nw = this.textRenderer.getWidth(nr);
@@ -547,8 +564,7 @@ public class EvolutionScreen extends Screen {
             Text prog = Text.translatable("evolution.my_addon.screen.progress", unlocked, total);
             ctx.drawTextWithShadow(this.textRenderer, prog, 12, y0 + 13, TXT_GOLD);
 
-            int level = MinecraftClient.getInstance().player != null
-                    ? MinecraftClient.getInstance().player.experienceLevel : 0;
+            int level = comp.getEvoLevel();
             EvolutionRoute br = route();
             boolean allBranch = br != null && !br.getBranchNodeIds().isEmpty();
             if (br != null) {

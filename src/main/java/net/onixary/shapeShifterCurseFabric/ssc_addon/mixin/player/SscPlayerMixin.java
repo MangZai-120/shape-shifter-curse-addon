@@ -51,6 +51,7 @@ public abstract class SscPlayerMixin {
 		}
 	}
 
+
 	@ModifyVariable(method = "attack", at = @At(value = "STORE", ordinal = 0), ordinal = 2)
 	private boolean forceCrit(boolean isCritical) {
 		if (((PlayerEntity) (Object) this).hasStatusEffect(SscAddon.GUARANTEED_CRIT)) {

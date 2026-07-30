@@ -22,7 +22,7 @@ public class EvolutionComponent implements AutoSyncedComponent {
     private String route = "";
     /** 已选择的 SP 分支 id（空字符串 = 未选择）。 */
     private String branch = "";
-    /** 加点货币快照（框架占位；后续接入原版经验 EXP 消耗时再细化）。 */
+    /** 累积的原版经验值（玩家在进化路线上获得经验时累加；进化 exp = 该值 / 2，见 {@link #getEvoLevel()}）。 */
     private int exp = 0;
     /** 已解锁的天赋节点 id 集合。 */
     private final Set<String> unlockedNodes = new HashSet<>();
@@ -34,6 +34,19 @@ public class EvolutionComponent implements AutoSyncedComponent {
     private final Set<Integer> grantedLevels = new HashSet<>();
     /** 是否已真正变身进入过进化形态（用于「进入后再离开则重置进度」判定，避免变身动画期间误重置）。 */
     private boolean started = false;
+    /**
+     * 转职（灵能宝珠）进行中标志：瞬态（不写 NBT、不同步），转职变身演出期间置 true，
+     * 让 {@code EvolutionManager.tickPlayer} 豁免「离开起点形态即重置」逻辑，避免动画期间清空进度。
+     * 断线后自动为 false（瞬态），此时走原重置逻辑，玩家白赚不扣点（对玩家有利，非死档）。
+     */
+    private transient boolean jobChanging = false;
+    /** 是否已迁移到内置 exp 机制（旧存档首次打开加点界面时按点数定级并置 true，防重复迁移）。 */
+    private boolean migrated = false;
+    /** 上次记录的原版总经验（按正增量累积进化 exp，只算获得、排除花费/死亡）。-1 = 未初始化。 */
+    private int lastTotalExp = -1;
+
+    /** 进化等级上限。 */
+    public static final int EVO_LEVEL_CAP = 50;
 
     // ---------------- 路线 / 分支 ----------------
 
@@ -69,6 +82,40 @@ public class EvolutionComponent implements AutoSyncedComponent {
 
     public void addExp(int delta) {
         setExp(this.exp + delta);
+    }
+
+    /**
+     * 当前进化等级：由累积经验换算（每 2 点原版经验 = 1 点进化 exp，即用 exp/2 走原版经验曲线），封顶 {@link #EVO_LEVEL_CAP}。
+     */
+    public int getEvoLevel() {
+        return Math.min(EVO_LEVEL_CAP, expToLevel(this.exp / 2));
+    }
+
+    /** 原版经验曲线：从 level 升到 level+1 需要的经验（1.20.1，与 PlayerEntity#getNextLevelExperience 一致）。 */
+    private static int levelUpCost(int level) {
+        if (level >= 30) return 112 + (level - 30) * 9;
+        if (level >= 15) return 37 + (level - 15) * 5;
+        return 7 + level * 2;
+    }
+
+    /** 达到 level 级所需的累积经验总量（levelUpCost 前缀和）。 */
+    public static int levelToTotalExp(int level) {
+        int total = 0;
+        for (int i = 0; i < level; i++) {
+            total += levelUpCost(i);
+        }
+        return total;
+    }
+
+    /** 累积经验总量换算成等级（levelToTotalExp 的反函数）。 */
+    public static int expToLevel(int totalExp) {
+        int level = 0;
+        int remaining = Math.max(0, totalExp);
+        while (remaining >= levelUpCost(level)) {
+            remaining -= levelUpCost(level);
+            level++;
+        }
+        return level;
     }
 
     // ---------------- 升级点数 ----------------
@@ -139,6 +186,47 @@ public class EvolutionComponent implements AutoSyncedComponent {
         }
     }
 
+    /** 清空已解锁节点（转职换形态时新技能树重开用）。 */
+    public void clearUnlockedNodes() {
+        unlockedNodes.clear();
+    }
+
+    /** 清空已发放里程碑记录（转职 / 迁移后按新进化等级重发用）。 */
+    public void clearGrantedLevels() {
+        grantedLevels.clear();
+    }
+
+    /** 已发放里程碑数量（迁移检测：旧存档 exp=0 但发过点=有里程碑记录）。 */
+    public int getGrantedLevelCount() {
+        return grantedLevels.size();
+    }
+
+    // ---------------- 转职 / 迁移状态 ----------------
+
+    public boolean isJobChanging() {
+        return jobChanging;
+    }
+
+    public void setJobChanging(boolean jobChanging) {
+        this.jobChanging = jobChanging;
+    }
+
+    public boolean hasMigrated() {
+        return migrated;
+    }
+
+    public void markMigrated() {
+        this.migrated = true;
+    }
+
+    public int getLastTotalExp() {
+        return lastTotalExp;
+    }
+
+    public void setLastTotalExp(int lastTotalExp) {
+        this.lastTotalExp = lastTotalExp;
+    }
+
     /** 重置全部进化数据（/ssc_addon evolution reset）。 */
     public void reset() {
         this.route = "";
@@ -149,6 +237,9 @@ public class EvolutionComponent implements AutoSyncedComponent {
         this.points = 0;
         this.grantedLevels.clear();
         this.started = false;
+        this.jobChanging = false;
+        this.lastTotalExp = -1;
+        // migrated 保持：重置后仍是内置 exp 机制，无需再次迁移
     }
 
     // ---------------- 持久化 / 同步 ----------------
@@ -170,6 +261,8 @@ public class EvolutionComponent implements AutoSyncedComponent {
             this.grantedLevels.add(g);
         }
         this.started = nbt.getBoolean("started");
+        this.migrated = nbt.getBoolean("migrated");
+        this.lastTotalExp = nbt.contains("lastTotalExp") ? nbt.getInt("lastTotalExp") : -1;
     }
 
     @Override
@@ -191,5 +284,7 @@ public class EvolutionComponent implements AutoSyncedComponent {
         }
         nbt.putIntArray("grantedLevels", granted);
         nbt.putBoolean("started", this.started);
+        nbt.putBoolean("migrated", this.migrated);
+        nbt.putInt("lastTotalExp", this.lastTotalExp);
     }
 }

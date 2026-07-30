@@ -87,6 +87,12 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_BROADCAST_FORMS = new Identifier("my_addon", "broadcast_forms");
 	/** S2C：把所有 SSCA 进化路线定义（JSON）同步给客户端，供进化树 UI 渲染。payload: int count + count*(routeId + rawJson) */
 	public static final Identifier PACKET_EVO_ROUTES_SYNC = new Identifier("my_addon", "evo_routes_sync");
+	/** S2C：灵能宝珠长按成功后，让客户端打开「转职选择形态」界面。无 payload。 */
+	public static final Identifier PACKET_OPEN_JOB_CHANGE = new Identifier("my_addon", "open_job_change");
+	/** C2S：玩家在转职界面选定目标进化形态并确认。payload: String formId */
+	public static final Identifier PACKET_JOB_CHANGE_CONFIRM = new Identifier("my_addon", "job_change_confirm");
+	/** C2S：玩家打开进化加点界面（触发旧存档迁移检测）。无 payload。 */
+	public static final Identifier PACKET_EVO_OPEN = new Identifier("my_addon", "evo_open");
 
 	/** C2S 限频：每玩家每个事件类型记录上一次服务端接收时间，防外挂客户端 spam。 */
 	private static final Map<UUID, Long> LAST_WHITELIST_PACKET_TICK = new ConcurrentHashMap<>();
@@ -297,6 +303,23 @@ public class SscAddonNetworking {
 			});
 		});
 
+		// 灵能宝珠转职：玩家在转职界面选定目标进化形态并确认
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_JOB_CHANGE_CONFIRM, (server, player, handler, buf, responseSender) -> {
+			String formId = buf.readString(256);
+			server.execute(() -> {
+				if (isRateLimited(player)) return;
+				EvolutionManager.startJobChange(player, formId);
+			});
+		});
+
+		// 打开进化加点界面：检测旧存档并迁移到内置 exp 机制
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_EVO_OPEN, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> {
+				if (isRateLimited(player)) return;
+				EvolutionManager.checkAndMigrate(player);
+			});
+		});
+
 		// 客机加入后请求：把所有在场玩家的形态 ID + 皮肤数据广播给「所有在线玩家」（含请求者与已在线客机），
 		// 绕过 CCA 同步的不确定性，修复刚进游戏 / 新玩家加入时看其它玩家是默认白模型。
 		// 形态模型由客机据 formId 重建 origin 决定，颜色据皮肤数据上色。
@@ -341,6 +364,11 @@ public class SscAddonNetworking {
 				ServerPlayNetworking.send(player, PACKET_EVO_ROUTES_SYNC, routesOut);
 			});
 		});
+	}
+
+	/** 服务端：通知客户端打开灵能宝珠「转职选择形态」界面（无 payload）。 */
+	public static void sendOpenJobChange(ServerPlayerEntity player) {
+		ServerPlayNetworking.send(player, PACKET_OPEN_JOB_CHANGE, net.fabricmc.fabric.api.networking.v1.PacketByteBufs.empty());
 	}
 
 	/** 服务端：把指定玩家当前白名单推送到其客户端，用于打开/刷新白名单 GUI。 */

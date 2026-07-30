@@ -917,5 +917,14 @@
     "item.ssc_addon.music_disc_shape_shifters_dream": "音乐唱片",
     "item.ssc_addon.music_disc_shape_shifters_dream.desc": "Jack Cooper - Shape Shifter's Dream",
     "death.attack.ssc_addon.witch_familiar_fire_ring": "%1$s 被女巫使魔的烈焰火环烧成了灰烬",
-    "death.attack.ssc_addon.witch_familiar_fire_ring.player": "%1$s 在与 %2$s 战斗时被女巫使魔的火环吞噬"
+    "death.attack.ssc_addon.witch_familiar_fire_ring.player": "%1$s 在与 %2$s 战斗时被女巫使魔的火环吞噬",
+    "item.ssc_addon.psionic_orb": "灵能宝珠",
+    "item.ssc_addon.psionic_orb.tooltip": "凝聚灵能的宝珠，蕴含形态转换之力。\n右键长按，在进化形态之间转职（需 ≥ 3 点加点点数，转职倒退 3 个里程碑档）。\n仅进化形态可用。",
+    "evolution.my_addon.job_change.select.title": "选择转职目标形态",
+    "evolution.my_addon.job_change.current": "（当前形态，不可选）",
+    "message.ssc_addon.job_change.success": "转职成功！",
+    "message.ssc_addon.job_change.fail.not_enough_points": "加点点数不足（需 %s 点）",
+    "message.ssc_addon.job_change.fail.invalid_target": "无效的转职目标",
+    "message.ssc_addon.job_change.fail.not_evolution": "只有进化形态才能使用灵能宝珠",
+    "message.ssc_addon.evolution.migrated": "进化加点已改为内置经验机制，已按你的进化点数将进化等级设为 %s 级"
 }
