@@ -1,7 +1,10 @@
 # 幻形者诅咒附属模组
 
-此版本为已经停更的v7.0.0版本，协议为MIT。
-This version is the discontinued v7.0.0 version, licensed under MIT.
+- 此版本为已经停更的v7.0.0版本，协议为MIT。
+- This version is the discontinued v7.0.0 version, licensed under MIT.
+
+- 任何低于v7.0.0的版本的协议都为MIT，且不再维护和提供支持。
+- Any version below v7.0.0 is licensed under MIT and is no longer maintained or supported.
 
 > **📖 玩法指南 / Gameplay Guide**  
 > **THIS MOD IS FREE FOR ALL,DON'T TRUST ANYONE WHO CLAIMS TO SELL THIS MOD.**
