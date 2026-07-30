@@ -1,0 +1,21 @@
+{
+    "type": "apoli:action_over_time",
+    "interval": 20,
+    "entity_action": {
+        "type": "apoli:and",
+        "actions": [
+            { "type": "apoli:gain_air", "value": -10 },
+            { "type": "apoli:extinguish" }
+        ]
+    },
+    "condition": {
+        "type": "apoli:and",
+        "conditions": [
+            { "type": "ssc_addon:skill_disabled", "form": "axolotl", "skill": "fire_extinguish" },
+            { "type": "apoli:on_fire" },
+            { "type": "apoli:air", "comparison": ">=", "compare_to": 10 }
+        ]
+    },
+    "name": "Moisture Extinguish",
+    "description": "When on fire, consume 10 moisture (air) per second to extinguish. Cannot extinguish if moisture is below 10."
+}

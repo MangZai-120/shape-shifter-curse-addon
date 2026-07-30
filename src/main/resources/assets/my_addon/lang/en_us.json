@@ -913,5 +913,7 @@
     "codex.form.my_addon.ocelot_wind_spirit.name": "Wind Spirit",
     "codex.form.my_addon.ocelot_nova.name": "Nova",
     "item.ssc_addon.music_disc_shape_shifters_dream": "Music Disc",
-    "item.ssc_addon.music_disc_shape_shifters_dream.desc": "Jack Cooper - Shape Shifter's Dream"
+    "item.ssc_addon.music_disc_shape_shifters_dream.desc": "Jack Cooper - Shape Shifter's Dream",
+    "death.attack.ssc_addon.witch_familiar_fire_ring": "%1$s was incinerated by a Witch Familiar's fire ring",
+    "death.attack.ssc_addon.witch_familiar_fire_ring.player": "%1$s was engulfed by a Witch Familiar's fire ring whilst fighting %2$s"
 }

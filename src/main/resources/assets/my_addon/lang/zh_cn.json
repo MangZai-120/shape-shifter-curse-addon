@@ -915,5 +915,7 @@
     "codex.form.my_addon.ocelot_wind_spirit.name": "风灵",
     "codex.form.my_addon.ocelot_nova.name": "朔望",
     "item.ssc_addon.music_disc_shape_shifters_dream": "音乐唱片",
-    "item.ssc_addon.music_disc_shape_shifters_dream.desc": "Jack Cooper - Shape Shifter's Dream"
+    "item.ssc_addon.music_disc_shape_shifters_dream.desc": "Jack Cooper - Shape Shifter's Dream",
+    "death.attack.ssc_addon.witch_familiar_fire_ring": "%1$s 被女巫使魔的烈焰火环烧成了灰烬",
+    "death.attack.ssc_addon.witch_familiar_fire_ring.player": "%1$s 在与 %2$s 战斗时被女巫使魔的火环吞噬"
 }

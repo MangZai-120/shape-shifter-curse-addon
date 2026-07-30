@@ -28,7 +28,8 @@ import java.util.Optional;
  */
 public class WitchFamiliarRenderer extends GeoEntityRenderer<WitchFamiliarEntity> {
 
-	private static final float MODEL_SCALE = 0.45f;
+	// 与原版使魔形态 familiar_fox_3 的缩放一致（RegPlayerForms: NORMAL_SCALE_FUNC_BUILDER.apply(0.55f, 0.6f)）
+	private static final float MODEL_SCALE = 0.55f;
 	private static final float HALF_PI = (float) (Math.PI / 2); // 90°弧度
 
 	// ==================== 尾巴/耳朵链配置 ====================

@@ -1,0 +1,6 @@
+{
+  "exhaustion": 0.1,
+  "message_id": "ssc_addon.witch_familiar_fire_ring",
+  "scaling": "when_caused_by_living_non_player",
+  "effects": "hurt"
+}
