@@ -14,6 +14,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # 防止 Gradle 卡住（网络拉依赖超时、remap 卡死等）烧光 Actions 配额
+    timeout-minutes: 30
 
     steps:
       - name: 检出附属代码
@@ -103,6 +105,8 @@ jobs:
           name: ${{ steps.addon_props.outputs.archives_base_name }}-${{ steps.addon_props.outputs.mod_version }}
           path: artifacts/ssca/*.jar
           if-no-files-found: error
+          # 模组 jar 不需要长期保留，14 天足够测试与回溯
+          retention-days: 14
 
       - name: 上传原版 SSC 构建产物
         uses: actions/upload-artifact@v4
@@ -110,3 +114,4 @@ jobs:
           name: shape-shifter-curse-fabric-${{ steps.addon_props.outputs.ssc_version }}
           path: artifacts/ssc/*.jar
           if-no-files-found: error
+          retention-days: 14
