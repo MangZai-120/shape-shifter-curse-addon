@@ -9,6 +9,9 @@ bin/
 # 例外：GitHub Actions 工作流需要提交到仓库才能在 CI 触发
 !.github/workflows/
 !.github/workflows/build.yml
+# 本地工具（不入版本库，各自从官方下载）
+/tools/cfr.jar
+/tools/_*.jq
 /story/
 /.settings/org.eclipse.buildship.core.prefs
 /.settings/org.eclipse.jdt.core.prefs
