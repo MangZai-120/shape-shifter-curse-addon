@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "minecraft:ocelot_spawn_egg"
+      "item": "ssc_addon:nova_revive_necklace"
     },
     "title": {
       "translate": "advancements.my_addon.on_transform_ocelot_nova.title"
