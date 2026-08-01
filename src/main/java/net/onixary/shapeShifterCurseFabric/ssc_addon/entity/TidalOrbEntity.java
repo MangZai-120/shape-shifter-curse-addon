@@ -21,6 +21,7 @@ import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 import org.joml.Vector3f;
 
@@ -78,9 +79,12 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     private UUID ownerUuid;
     // 阿澪(axolotl_aling)差异化：飞行/拴人时长 +20%，拴人期间造成伤害
     private boolean isAling = false;
+    // 海晶荧光坠增强：落点一次性爆炸（伤害+强减速）、飞行提速 55%
+    private boolean isEnhanced = false;
     private int maxFlyTicks = MAX_FLY_TICKS;
     private int tetherDuration = TETHER_DURATION_TICKS;
     private Vec3d flyDir = new Vec3d(0, 0, 1);   // FLYING / DECEL 用
+    private double flySpeed = FLY_SPEED;         // 基础飞行速度（增强 ×1.55）
     private double currentSpeed = FLY_SPEED;     // DECEL 时衰减
     private Vec3d tetherCenter = null;           // 落点锚点（拴人中心）
     private final Set<UUID> tetheredTargets = new HashSet<>(); // 落点瞬间捕获、被拴住的目标 UUID
@@ -105,7 +109,6 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         Vec3d look = owner.getRotationVec(1.0f);
         this.flyDir = look.normalize();
         this.setPosition(owner.getX() + look.x * 0.8, owner.getEyeY() - 0.1 + look.y * 0.8, owner.getZ() + look.z * 0.8);
-        this.currentSpeed = FLY_SPEED;
         this.noClip = true;
         // 阿澪：飞行/拴人时长 +20%（拴人伤害在 tickAttracting 结算）
         this.isAling = FormUtils.isForm(owner, FormIdentifiers.AXOLOTL_ALING);
@@ -113,6 +116,12 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
             this.maxFlyTicks = (int) Math.round(MAX_FLY_TICKS * 1.2);            // 160 -> 192
             this.tetherDuration = (int) Math.round(TETHER_DURATION_TICKS * 1.2); // 170 -> 204
         }
+        // 海晶荧光坠增强：飞行速度 +55%，落点变一次性爆炸
+        this.isEnhanced = TrinketUtils.isWearing(owner, SscAddon.SEA_CRYSTAL_PENDANT);
+        if (this.isEnhanced) {
+            this.flySpeed = FLY_SPEED * 1.55;
+        }
+        this.currentSpeed = this.flySpeed;
     }
 
     @Override
@@ -190,7 +199,7 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     private void tickDecelerating(ServerWorld sw) {
         // 0.75 秒线性减速到 0，保持当前方向不转向
         double t = (double) phaseTicks / DECEL_TICKS;
-        currentSpeed = FLY_SPEED * (1.0 - MathHelper.clamp(t, 0.0, 1.0));
+        currentSpeed = flySpeed * (1.0 - MathHelper.clamp(t, 0.0, 1.0));
         if (moveWithWallCheck(sw, flyDir.x * currentSpeed, flyDir.y * currentSpeed, flyDir.z * currentSpeed)) {
             enterAttractPhase(sw);
             return;
@@ -251,6 +260,10 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         sw.spawnParticles(ParticleTypes.SPLASH, cx, cy, cz, 50, 0.8, 0.5, 0.8, 0.4);
         sw.spawnParticles(ParticleTypes.BUBBLE_COLUMN_UP, cx, cy - 0.3, cz, 30, 0.6, 0.2, 0.6, 0.3);
         spawnTetherRing(sw, 40);
+        // 海晶荧光坠增强：落点一次性爆炸（8 点物理 + 35% 减速 12 秒），随后立即破裂，不长时间拴人
+        if (isEnhanced) {
+            explodeEnhanced(sw);
+        }
     }
 
     // ==================== ATTRACTING（潮汐束缚 / 拴人）====================
@@ -286,6 +299,32 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
                 t.damage(t.getDamageSources().magic(), 2.0f);
             }
         }
+    }
+
+    /** 海晶荧光坠增强：落点一次性爆炸——对 6 格内捕获目标造成 8 点物理伤害 + 35% 减速 12 秒，随后立即破裂。 */
+    private void explodeEnhanced(ServerWorld sw) {
+        ServerPlayerEntity owner = getOwner(sw);
+        double cx = tetherCenter.x, cy = tetherCenter.y, cz = tetherCenter.z;
+        for (UUID id : tetheredTargets) {
+            Entity e = sw.getEntity(id);
+            if (!(e instanceof LivingEntity t) || !t.isAlive() || t.isSpectator()) continue;
+            if (WhitelistUtils.isProtected(ownerUuid, sw, t)) continue;
+            if (owner != null) {
+                t.damage(t.getDamageSources().playerAttack(owner), 8.0f);
+            } else {
+                t.damage(t.getDamageSources().magic(), 8.0f);
+            }
+            // 35% 减速 12 秒（TIDAL_SLOW amplifier=2 → -0.35）
+            t.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
+                    SscAddon.TIDAL_SLOW, 240, 2, false, false, true));
+        }
+        // 爆炸表现 + 立即破裂（跳过 8.5 秒拴人）
+        sw.spawnParticles(ParticleTypes.EXPLOSION, cx, cy + 0.5, cz, 3, 0.3, 0.3, 0.3, 0.0);
+        sw.spawnParticles(ParticleTypes.SPLASH, cx, cy, cz, 80, 1.5, 1.0, 1.5, 0.5);
+        sw.playSound(null, cx, cy, cz, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 1.0f, 1.3f);
+        this.tetheredTargets.clear();
+        phase = Phase.DELAY;
+        phaseTicks = 0;
     }
 
     /**

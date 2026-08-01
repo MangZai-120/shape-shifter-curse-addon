@@ -29,6 +29,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDo
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AxolotlWaterSpurtHandler;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.BatDesmodusBloodThirst;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.FluorescentLaserManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.FluorescentTidalManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormErosionBrand;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormRegen;
@@ -102,6 +103,7 @@ public final class SscAddonServerEvents {
 				AxolotlWaterSpurtHandler.tick(player);
 				PlayDeadAbsorptionManager.tick(player);
 				FluorescentTidalManager.tick(player);
+				FluorescentLaserManager.tick(player);
 				// 冥裁者凋零阶梯 / 凋零抗性追踪（凋零持续时长分层 + tick 跳过计数）
 				WitherFrenzyManager.tick(player);
 				EvolutionManager.tickPlayer(player);

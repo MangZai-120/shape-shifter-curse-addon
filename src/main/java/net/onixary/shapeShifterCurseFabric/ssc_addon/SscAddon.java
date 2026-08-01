@@ -184,6 +184,8 @@ public class SscAddon implements ModInitializer {
 	public static final Item PSIONIC_ORB = new net.jackcooper.shapeShifterCurseAddon.item.PsionicOrbItem(new Item.Settings().maxCount(16).fireproof());
 	public static final Item CORAL_BALL = new Item(new Item.Settings().maxCount(64));
 	public static final Item ACTIVE_CORAL_NECKLACE = new ActiveCoralNecklaceItem(new Item.Settings().maxCount(1));
+	// 荧光幼灵专属：海晶荧光坠（装备后强化潮汐球与法阵激光）
+	public static final Item SEA_CRYSTAL_PENDANT = new net.jackcooper.shapeShifterCurseAddon.item.SeaCrystalPendantItem(new Item.Settings().maxCount(1));
 	// 风灵专属项链：加快疾风连爪耐力回复；朔望专属项链：强化九命复活
 	public static final Item WIND_SPIRIT_STAMINA_NECKLACE = new WindSpiritStaminaNecklaceItem(new Item.Settings().maxCount(1));
 	public static final Item NOVA_REVIVE_NECKLACE = new NovaReviveNecklaceItem(new Item.Settings().maxCount(1));
@@ -250,6 +252,7 @@ public class SscAddon implements ModInitializer {
 						entries.add(WATER_SPEAR);
 						entries.add(CORAL_BALL);
 						entries.add(ACTIVE_CORAL_NECKLACE);
+						entries.add(SEA_CRYSTAL_PENDANT);
 						entries.add(WIND_SPIRIT_STAMINA_NECKLACE);
 						entries.add(NOVA_REVIVE_NECKLACE);
 						entries.add(ANUBIS_CRYSTAL);
@@ -375,6 +378,7 @@ public class SscAddon implements ModInitializer {
 		registerItem("psionic_orb", PSIONIC_ORB);
 		registerItem("coral_ball", CORAL_BALL);
 		registerItem("active_coral_necklace", ACTIVE_CORAL_NECKLACE);
+		registerItem("sea_crystal_pendant", SEA_CRYSTAL_PENDANT);
 		registerItem("wind_spirit_stamina_necklace", WIND_SPIRIT_STAMINA_NECKLACE);
 		registerItem("nova_revive_necklace", NOVA_REVIVE_NECKLACE);
 		registerItem("anubis_crystal", ANUBIS_CRYSTAL);
@@ -461,6 +465,7 @@ public class SscAddon implements ModInitializer {
 		BloodGarnetItem.registerLootTable();
 		BloodlustRingItem.registerLootTable();
 		HumusRingItem.registerLootTable();
+		net.jackcooper.shapeShifterCurseAddon.item.SeaCrystalPendantItem.registerLootTable();
 		net.jackcooper.shapeShifterCurseAddon.loot.EvolutionItemsLoot.register();
 	}
 

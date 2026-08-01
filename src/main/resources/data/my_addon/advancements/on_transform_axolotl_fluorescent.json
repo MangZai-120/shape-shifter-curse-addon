@@ -1,7 +1,7 @@
 {
     "display": {
         "icon": {
-            "item": "ssc_addon:evolution_stone"
+            "item": "ssc_addon:sea_crystal_pendant"
         },
         "title": {
             "translate": "advancements.my_addon.on_transform_axolotl_fluorescent.title"

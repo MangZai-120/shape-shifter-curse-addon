@@ -925,5 +925,8 @@
     "message.ssc_addon.job_change.fail.not_enough_points": "Not enough skill points (need %s)",
     "message.ssc_addon.job_change.fail.invalid_target": "Invalid job change target",
     "message.ssc_addon.job_change.fail.not_evolution": "The Psionic Orb can only be used in an evolution form",
-    "message.ssc_addon.evolution.migrated": "Evolution points now use a built-in EXP system; your evolution level is set to %s based on your points"
+    "message.ssc_addon.evolution.migrated": "Evolution points now use a built-in EXP system; your evolution level is set to %s based on your points",
+    "item.ssc_addon.sea_crystal_pendant": "Sea Crystal Pendant",
+    "item.ssc_addon.sea_crystal_pendant.desc": "A luminous pendant ground from sea-crystal shards. When worn: the tidal orb becomes a swift bursting sphere, and the array laser condenses into a shrunken triple-shot.",
+    "item.ssc_addon.sea_crystal_pendant.tooltip.exclusive": "Exclusive to Fluorescent Axolotl Form"
 }

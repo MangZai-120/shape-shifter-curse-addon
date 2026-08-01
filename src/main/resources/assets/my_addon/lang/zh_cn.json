@@ -927,5 +927,8 @@
     "message.ssc_addon.job_change.fail.not_enough_points": "加点点数不足（需 %s 点）",
     "message.ssc_addon.job_change.fail.invalid_target": "无效的转职目标",
     "message.ssc_addon.job_change.fail.not_evolution": "只有进化形态才能使用灵能宝珠",
-    "message.ssc_addon.evolution.migrated": "进化加点已改为内置经验机制，已按你的进化点数将进化等级设为 %s 级"
+    "message.ssc_addon.evolution.migrated": "进化加点已改为内置经验机制，已按你的进化点数将进化等级设为 %s 级",
+    "item.ssc_addon.sea_crystal_pendant": "海晶荧光坠",
+    "item.ssc_addon.sea_crystal_pendant.desc": "海晶碎片磨成的荧光坠。装备后：潮汐球化为疾冲爆破，法阵激光凝为缩型三连击。",
+    "item.ssc_addon.sea_crystal_pendant.tooltip.exclusive": "荧光幼灵形态专属"
 }

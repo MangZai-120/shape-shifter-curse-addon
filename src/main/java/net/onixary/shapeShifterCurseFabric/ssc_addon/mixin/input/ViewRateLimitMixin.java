@@ -58,14 +58,14 @@ public abstract class ViewRateLimitMixin {
 		ClientPlayerEntity player = mc.player;
 		LaserBeamEntity laser = LaserBeamEntity.getActiveForClient(player);
 		if (laser == null) {
-			// 无激光：重置状态，放行原版
+			// 无激光（含海晶荧光坠增强激光——已在 getActiveForClient 排除，不限视角）：重置状态，放行原版
 			ssca$velYaw = 0.0;
 			ssca$velPitch = 0.0;
 			ssca$lastNanos = 0L;
 			return;
 		}
 
-		// 当前限速
+		// 当前限速（原激光相位曲线）
 		double limit = currentLimit(laser);
 
 		// 真实时间步长
