@@ -14,7 +14,7 @@
     "announce_to_chat": true,
     "hidden": false
   },
-  "parent": "ssc_addon:player_form_shock",
+  "parent": "ssc_addon:tonight_moon_beautiful",
   "criteria": {
     "on_transform_ocelot_wind_spirit": {
       "trigger": "my_addon:on_transform_addon_form",
