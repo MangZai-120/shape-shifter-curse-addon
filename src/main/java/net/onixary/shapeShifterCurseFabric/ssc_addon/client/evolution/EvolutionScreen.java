@@ -97,8 +97,37 @@ public class EvolutionScreen extends Screen {
     private int treeLeft, treeTop, treeW, treeH;
 
     public EvolutionScreen(Screen parent) {
-        super(Text.translatable("evolution.my_addon.screen.title"));
+        super(resolveTitle());
         this.parent = parent;
+    }
+
+    /**
+     * 解析当前加点界面标题：随玩家所处进化路线动态显示（如「进化使魔」/「进化美西螈」）；
+     * 找不到路线时回退到通用兜底标题 evolution.my_addon.screen.title。
+     */
+    private static net.minecraft.text.Text resolveTitle() {
+        EvolutionRoute r = resolveRoute();
+        return (r != null && r.displayNameKey != null && !r.displayNameKey.isEmpty())
+                ? Text.translatable(r.displayNameKey)
+                : Text.translatable("evolution.my_addon.screen.title");
+    }
+
+    /**
+     * 解析玩家当前所在的进化路线（路线解析的唯一数据源，供构造期与渲染期共用）。
+     * 优先级：玩家已选路线 {@code comp.getRoute()} → 当前形态对应的起点路线 → null。
+     * 必须是静态方法（供 {@code super()} 调用链使用）。
+     */
+    private static EvolutionRoute resolveRoute() {
+        PlayerEntity p = MinecraftClient.getInstance().player;
+        EvolutionComponent comp = (p == null) ? null : RegEvolutionComponent.EVOLUTION.get(p);
+        String rid = (comp == null) ? null : comp.getRoute();
+        if (rid != null && !rid.isEmpty()) {
+            return EvolutionRegistry.INSTANCE.getRoute(rid);
+        }
+        net.onixary.shapeShifterCurseFabric.player_form.IForm f =
+                (p == null) ? null : net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM.get(p).nowForm;
+        Identifier fid = (f == null) ? null : f.getFormID();
+        return EvolutionRegistry.INSTANCE.getRouteByStartForm(fid);
     }
 
     private EvolutionComponent getComp() {
@@ -106,18 +135,9 @@ public class EvolutionScreen extends Screen {
         return p == null ? null : RegEvolutionComponent.EVOLUTION.get(p);
     }
 
-    /** 当前玩家所在的进化路线（优先玩家已选路线，其次当前形态对应路线）。 */
+    /** 当前玩家所在的进化路线（委托静态 {@link #resolveRoute()}，保留实例 API 供渲染期调用）。 */
     private EvolutionRoute route() {
-        EvolutionComponent comp = getComp();
-        String rid = (comp == null) ? null : comp.getRoute();
-        if (rid == null || rid.isEmpty()) {
-            PlayerEntity p = MinecraftClient.getInstance().player;
-            net.onixary.shapeShifterCurseFabric.player_form.IForm f =
-                    (p == null) ? null : net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM.get(p).nowForm;
-            Identifier fid = (f == null) ? null : f.getFormID();
-            return EvolutionRegistry.INSTANCE.getRouteByStartForm(fid);
-        }
-        return EvolutionRegistry.INSTANCE.getRoute(rid);
+        return resolveRoute();
     }
 
     /** 当前路线全部节点（未加载时返回空列表）。 */
@@ -134,6 +154,7 @@ public class EvolutionScreen extends Screen {
 
     @Override
     protected void init() {
+        // 标题在构造期由 resolveTitle() 按当前进化路线动态确定，此处无需再设。
         // 不创建默认 ButtonWidget：返回按钮自绘，以便统一深色+金色风格。
         updateBtn();
         pending.clear();

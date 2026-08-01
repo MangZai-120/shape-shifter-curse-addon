@@ -58,8 +58,11 @@ public class StunnedKeyBindingMixin {
 		if (client == null || client.player == null) {
 			return false;
 		}
-		// 原版 startTransform 黑屏期本就不冻结移动（无移动 mixin，仅靠 TransformOverlay 黑屏遮挡视野），
-		// 故原版催化剂/抑制剂/诅咒之月等触发的变身过渡中玩家仍能 WASD 走动。
+		// 原版 1.10.1（PR #508）已为 startTransform 黑屏期接入移动冻结 mixin（PlayerMovementControlMixin
+		// 的 noMoveTick 机制，getMovementSpeed 返回 0）。原版触发的变身过渡（催化剂/抑制剂/诅咒之月等）
+		// 现在服务端会自动发 sendNoMoveTick 冻结移动。
+		// 本 mixin 的 keybinding 屏蔽是另一层保险：除了移动键，还屏蔽技能/攻击/使用键，
+		// 并消除客户端预测性滑步（装死场景尤其需要）。两层互不冲突。
 		// TransformManager.transformTimer 是客户端 public 字段，黑屏过渡期间 >=0
 		// （receiveTransformState 收到 isTransforming=true 时置 0、结束置 -1），用它统一冻结所有变身（含原版触发）。
 		return client.player.hasStatusEffect(SscAddon.STUN)
