@@ -43,6 +43,12 @@
                         {
                             "type": "apoli:owner",
                             "inverted": true
+                        },
+                        {
+                            "type": "apoli:target_condition",
+                            "condition": {
+                                "type": "apoli:living"
+                            }
                         }
                     ]
                 }

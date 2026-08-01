@@ -30,6 +30,12 @@
                   "tag": "shape-shifter-curse:water_explode_immune"
                 },
                 "inverted": true
+              },
+              {
+                "type": "apoli:target_condition",
+                "condition": {
+                  "type": "apoli:living"
+                }
               }
             ]
           },

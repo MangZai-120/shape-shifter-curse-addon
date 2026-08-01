@@ -41,6 +41,12 @@
                         },
                         {
                             "type": "my_addon:not_actor_whitelisted"
+                        },
+                        {
+                            "type": "apoli:target_condition",
+                            "condition": {
+                                "type": "apoli:living"
+                            }
                         }
                     ]
                 }

@@ -29,7 +29,18 @@
                 "type": "apoli:area_of_effect",
                 "radius": 4.5,
                 "bientity_condition": {
-                    "type": "my_addon:not_actor_whitelisted"
+                    "type": "apoli:and",
+                    "conditions": [
+                        {
+                            "type": "apoli:target_condition",
+                            "condition": {
+                                "type": "apoli:living"
+                            }
+                        },
+                        {
+                            "type": "my_addon:not_actor_whitelisted"
+                        }
+                    ]
                 },
                 "bientity_action": {
                     "type": "apoli:target_action",
