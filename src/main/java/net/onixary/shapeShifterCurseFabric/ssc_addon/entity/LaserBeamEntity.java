@@ -67,6 +67,7 @@ public class LaserBeamEntity extends Entity {
 	private static final float ENH_BEAM_RADIUS = 0.75f;   // 增强光柱半径（原 2.5 的 30%）
 	private static final float ENH_ARRAY_SCALE = 0.3f;    // 增强法阵缩到原 30%
 	private static final int ENH_SHOT_TICKS = 8;          // 增强单道存活 8t（纯视觉）
+	// 注：增强激光射程由 Manager.ENH_BEAM_LENGTH 管（resolveHitPoint 射线长度），实体不再单独存 ENH_LENGTH（渲染改用实时距离）
 
 	// ===== 伤害 =====
 	private static final int DAMAGE_INTERVAL = 10;      // 每 10t 结算
@@ -76,13 +77,11 @@ public class LaserBeamEntity extends Entity {
 	private static final TrackedData<Integer> PHASE = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);       // 0 CHARGE / 1 RELEASE / 2 FADE
 	private static final TrackedData<Integer> PHASE_TICK = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);  // 当前阶段已用 tick
 	private static final TrackedData<Integer> OWNER_ID = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);
-	private static final TrackedData<Boolean> IS_ALING = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
 	// 海晶荧光坠增强：单道视觉标记 + 发射方向（Vec3d 拆 3 个 float 同步给渲染器）
 	private static final TrackedData<Boolean> ENHANCED = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
 	private static final TrackedData<Float> DIR_X = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.FLOAT);
 	private static final TrackedData<Float> DIR_Y = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.FLOAT);
 	private static final TrackedData<Float> DIR_Z = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.FLOAT);
-	private static final TrackedData<Float> ENH_LENGTH = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.FLOAT);
 	private static final TrackedData<Boolean> FIRING = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
 	private static final TrackedData<Integer> ARRAYS_LEFT = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);
 	private static final TrackedData<Integer> FIRING_IDX = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);
@@ -96,8 +95,6 @@ public class LaserBeamEntity extends Entity {
 	private Phase phase = Phase.CHARGE;
 	private int phaseTicks = 0;
 	private UUID ownerUuid;
-	// 阿澪(axolotl_aling)差异化：伤害/释放时长 +20%，伤害距离由 beamLength() 按 IS_ALING 放大
-	private boolean isAling = false;
 	private float damage = DAMAGE;
 	private int releaseTicks = RELEASE_TICKS;
 	private int enhFiringTicks = 0;   // 增强发射态剩余 tick
@@ -117,13 +114,6 @@ public class LaserBeamEntity extends Entity {
 		this.ownerUuid = owner.getUuid();
 		this.setPosition(owner.getX(), owner.getEyeY(), owner.getZ());
 		this.dataTracker.set(OWNER_ID, owner.getId());
-		// 阿澪：伤害 20->24、释放 60->72t、伤害距离 32->38.4（同步客机渲染）
-		this.isAling = FormUtils.isForm(owner, FormIdentifiers.AXOLOTL_ALING);
-		this.dataTracker.set(IS_ALING, this.isAling);
-		if (this.isAling) {
-			this.damage = DAMAGE * 1.2f;
-			this.releaseTicks = (int) Math.round(RELEASE_TICKS * 1.2);
-		}
 		this.noClip = true;
 	}
 
@@ -188,12 +178,10 @@ public class LaserBeamEntity extends Entity {
 		this.dataTracker.startTracking(PHASE, 0);
 		this.dataTracker.startTracking(PHASE_TICK, 0);
 		this.dataTracker.startTracking(OWNER_ID, 0);
-		this.dataTracker.startTracking(IS_ALING, false);
 		this.dataTracker.startTracking(ENHANCED, false);
 		this.dataTracker.startTracking(DIR_X, 0f);
 		this.dataTracker.startTracking(DIR_Y, 0f);
 		this.dataTracker.startTracking(DIR_Z, 0f);
-		this.dataTracker.startTracking(ENH_LENGTH, ENH_BEAM_LENGTH);
 		this.dataTracker.startTracking(FIRING, false);
 		this.dataTracker.startTracking(ARRAYS_LEFT, 3);
 		this.dataTracker.startTracking(FIRING_IDX, 0);
@@ -232,16 +220,12 @@ public class LaserBeamEntity extends Entity {
 		return ENH_BEAM_RADIUS;
 	}
 
-	public float enhBeamLength() {
-		return this.dataTracker.get(ENH_LENGTH);
-	}
-
 	public static double arrayDist() {
 		return ARRAY_DIST;
 	}
 
 	public double beamLength() {
-		return this.dataTracker.get(IS_ALING) ? BEAM_LENGTH * 1.2 : BEAM_LENGTH;
+		return BEAM_LENGTH;
 	}
 
 	public static double beamRadius() {

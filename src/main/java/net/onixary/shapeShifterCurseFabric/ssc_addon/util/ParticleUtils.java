@@ -10,20 +10,20 @@ public class ParticleUtils {
 	private ParticleUtils() {
 	}
 
-	// 广播半径：默认 512 格（技能主特效/一次性爆发，远距 + 最小粒子设置下可见）；
+	// 广播半径：默认 512 格（32 区块，技能主特效/一次性爆发，远距 + 最小粒子设置下可见）；
 	// 充能/引导态「每 tick 持续」的高频粒子用 64 格（见 spawnParticlesNearby），减少远处玩家的高频网络包。
-	private static final double BROADCAST_RANGE_SQ = 262144.0; // 512^2
+	private static final double BROADCAST_RANGE_SQ = 262144.0; // 512^2（32 区块）
 	private static final double NEARBY_RANGE_SQ = 4096.0;      // 64^2
 
 	/**
-	 * 强制生成粒子效果，无视客户端粒子设置（最小/减少）。默认 512 格广播。
+	 * 强制生成粒子效果，无视客户端粒子设置（最小/减少）。默认 512 格（32 区块）广播。
 	 */
 	public static <T extends ParticleEffect> void spawnParticles(ServerWorld world, T particle, Vec3d pos, int count, double offsetX, double offsetY, double offsetZ, double speed) {
 		spawnParticles(world, particle, pos.x, pos.y, pos.z, count, offsetX, offsetY, offsetZ, speed);
 	}
 
 	/**
-	 * 强制生成粒子效果，无视客户端粒子设置（最小/减少）。默认 512 格广播。
+	 * 强制生成粒子效果，无视客户端粒子设置（最小/减少）。默认 512 格（32 区块）广播。
 	 */
 	public static <T extends ParticleEffect> void spawnParticles(ServerWorld world, T particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed) {
 		spawnParticlesRanged(world, particle, x, y, z, count, offsetX, offsetY, offsetZ, speed, BROADCAST_RANGE_SQ);

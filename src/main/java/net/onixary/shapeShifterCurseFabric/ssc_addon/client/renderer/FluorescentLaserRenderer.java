@@ -190,7 +190,7 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 				drawArray(buf, matrices.peek().getPositionMatrix(), matrices.peek().getNormalMatrix(), age);
 				matrices.pop();
 				drawBeam(buf, matrices.peek().getPositionMatrix(), matrices.peek().getNormalMatrix(),
-						entity.enhBeamRadius(), entity.enhBeamLength());
+						entity.enhBeamRadius(), (float) len);   // 光柱长度=当前法阵到固定锁定点实时距离，与伤害判定一致
 				matrices.pop();
 			}
 		}

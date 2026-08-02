@@ -182,6 +182,8 @@ public final class SscAddonPlayerEvents {
 			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaPassive.onPlayerDisconnect(uuid);
 			// 白名单 GUI 限频表：移除退出玩家的时间戳，防止僵尸 UUID 积累
 			net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking.onPlayerDisconnect(uuid);
+			// 海晶荧光坠增强激光：combo 中途断线时清理待机法阵实体 + 移速 modifier，防止残留
+			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.FluorescentLaserManager.onPlayerDisconnect(uuid);
 			System.out.println("[SSC_ADDON] DISCONNECT cleanup completed");
 		});
 	}

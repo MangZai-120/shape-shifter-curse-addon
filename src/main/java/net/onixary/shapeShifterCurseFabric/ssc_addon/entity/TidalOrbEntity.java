@@ -271,8 +271,8 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         // 锚点悬停粒子 + 6 格束缚环
         spawnHoverParticles(sw);
         applyTether(sw);
-        // 阿澪：拴人期间每 2 秒(40t)对被拴目标造成 2 点物理伤害
-        if (isAling && phaseTicks > 0 && phaseTicks % 40 == 0) {
+        // 阿澪：拴人期间每秒(20t)对被拴目标造成 4 点物理伤害
+        if (isAling && phaseTicks > 0 && phaseTicks % 20 == 0) {
             tickTetherDamage(sw);
         }
         // 每 10 tick 把被拴目标同步给客机，用于渲染守卫者激光
@@ -294,9 +294,9 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
             if (!(e instanceof LivingEntity t) || !t.isAlive() || t.isSpectator()) continue;
             if (WhitelistUtils.isProtected(ownerUuid, sw, t)) continue;
             if (owner != null) {
-                t.damage(t.getDamageSources().playerAttack(owner), 2.0f);
+                t.damage(t.getDamageSources().playerAttack(owner), 4.0f);
             } else {
-                t.damage(t.getDamageSources().magic(), 2.0f);
+                t.damage(t.getDamageSources().magic(), 4.0f);
             }
         }
     }
@@ -323,6 +323,7 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         sw.spawnParticles(ParticleTypes.SPLASH, cx, cy, cz, 80, 1.5, 1.0, 1.5, 0.5);
         sw.playSound(null, cx, cy, cz, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 1.0f, 1.3f);
         this.tetheredTargets.clear();
+        this.dataTracker.set(TETHER_ACTIVE, false);   // 爆炸后不再显示拴人束缚环
         phase = Phase.DELAY;
         phaseTicks = 0;
     }
@@ -390,7 +391,10 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
 
     // ==================== DELAY ====================
     private void tickDelay(ServerWorld sw) {
-        spawnHoverParticles(sw);
+        // 增强爆炸球已破裂，DELAY 期不再画拴人悬停粒子/束缚环（避免爆炸后还闪范围环）
+        if (!isEnhanced) {
+            spawnHoverParticles(sw);
+        }
         if (phaseTicks >= POP_DELAY_TICKS) {
             pop(sw);
         }

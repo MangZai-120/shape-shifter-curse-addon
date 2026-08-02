@@ -233,6 +233,7 @@ public final class SscAddonServerEvents {
 			UndeadNeutralState.clearAll();
 			MancianimaPassive.clearAll();
 			SscAddonActions.clearAll();
+			FluorescentLaserManager.clearAll();   // 海晶荧光坠增强激光：清残留待机法阵实体
 			System.out.println("[SSC_ADDON] SERVER_STARTING ability state cleared");
 		});
 		// 服务器关闭前还原所有死亡领域方块（在世界存档之前触发）
@@ -262,6 +263,7 @@ public final class SscAddonServerEvents {
 			UndeadNeutralState.clearAll();
 			MancianimaPassive.clearAll();
 			SscAddonActions.clearAll();
+			FluorescentLaserManager.clearAll();   // 海晶荧光坠增强激光：清残留待机法阵实体
 			System.out.println("[SSC_ADDON] END_DATA_PACK_RELOAD ability state cleared");
 		});
 	}

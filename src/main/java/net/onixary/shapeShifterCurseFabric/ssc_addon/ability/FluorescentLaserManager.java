@@ -61,6 +61,7 @@ public final class FluorescentLaserManager {
 
 	private static final class ComboSession {
 		boolean active = false;
+		boolean isAling = false;        // 阿澪：伤害/射程/判定半径 ×1.2
 		int arraysLeft = ARRAY_COUNT;
 		int windowTicks = 0;
 		int accumulatedCd = 0;
@@ -79,7 +80,10 @@ public final class FluorescentLaserManager {
 	/** 客户端「按下主要技能键」时调用。 */
 	public static void onKeyPress(ServerPlayerEntity player) {
 		if (!FormUtils.isAxolotlFluorescent(player)) return;
-		if (TrinketUtils.isWearing(player, SscAddon.SEA_CRYSTAL_PENDANT)) {
+		// 阿澪天生使用三连发（无需饰品）；荧光幼灵需装备海晶荧光坠才进三连发
+		boolean useEnhanced = FormUtils.isForm(player, FormIdentifiers.AXOLOTL_ALING)
+				|| TrinketUtils.isWearing(player, SscAddon.SEA_CRYSTAL_PENDANT);
+		if (useEnhanced) {
 			onKeyPressEnhanced(player);
 			return;
 		}
@@ -101,6 +105,7 @@ public final class FluorescentLaserManager {
 			// 首次：CD 中不可用
 			if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return;
 			s.active = true;
+			s.isAling = FormUtils.isForm(player, FormIdentifiers.AXOLOTL_ALING);
 			s.arraysLeft = ARRAY_COUNT;
 			s.windowTicks = WINDOW_TICKS;
 			s.accumulatedCd = 0;
@@ -123,8 +128,9 @@ public final class FluorescentLaserManager {
 
 	private static void fireShot(ServerPlayerEntity player, ComboSession s, ServerWorld sw) {
 		int idx = ARRAY_COUNT - s.arraysLeft;       // 0=左 1=右 2=上
+		double beamLen = s.isAling ? ENH_BEAM_LENGTH * 1.2 : ENH_BEAM_LENGTH;   // 阿澪射程 ×1.2
 		// 发射瞬间准星落点（方块 / 微自瞄生物）= 定格世界锁定点；激光落点固定于此，法阵随玩家移动时激光始终指向它（追踪锁定）
-		Vec3d fireLock = resolveHitPoint(player, sw);
+		Vec3d fireLock = resolveHitPoint(player, sw, beamLen);
 		s.fireLock = fireLock;
 		s.firingIdx = idx;
 		s.shotTicks = SHOT_TICKS;
@@ -160,10 +166,10 @@ public final class FluorescentLaserManager {
 	}
 
 	/** 落点解析：准星射线命中方块点；若准星 10 度锥内有非白名单生物则优先取最近生物（微自瞄）。 */
-	private static Vec3d resolveHitPoint(ServerPlayerEntity player, ServerWorld sw) {
+	private static Vec3d resolveHitPoint(ServerPlayerEntity player, ServerWorld sw, double maxDist) {
 		Vec3d eye = player.getEyePos();
 		Vec3d aim = player.getRotationVec(1.0f).normalize();
-		Vec3d end = eye.add(aim.multiply(ENH_BEAM_LENGTH));
+		Vec3d end = eye.add(aim.multiply(maxDist));
 		net.minecraft.util.hit.BlockHitResult bh = sw.raycast(new net.minecraft.world.RaycastContext(
 				eye, end, net.minecraft.world.RaycastContext.ShapeType.COLLIDER,
 				net.minecraft.world.RaycastContext.FluidHandling.NONE, player));
@@ -210,7 +216,8 @@ public final class FluorescentLaserManager {
 		}
 		// 实时锁定点（准星落点）同步给渲染器，剩余待发射法阵据此预瞑转向
 		if (s.laser != null && s.laser.isAlive()) {
-			s.laser.setLockPoint(resolveHitPoint(player, sw));
+			double preLen = s.isAling ? ENH_BEAM_LENGTH * 1.2 : ENH_BEAM_LENGTH;
+			s.laser.setLockPoint(resolveHitPoint(player, sw, preLen));
 		}
 		// 活跃发射推进（8t，其间每 2t 判定，每目标只 1 次）
 		if (s.shotTicks > 0) {
@@ -238,7 +245,9 @@ public final class FluorescentLaserManager {
 		double len = diff.length();
 		if (len < 1.0e-4) return;
 		Vec3d dir = diff.multiply(1.0 / len);
-		double radius = ENH_BEAM_RADIUS;
+		// 阿澪：判定半径 ×1.2
+		double radius = s.isAling ? ENH_BEAM_RADIUS * 1.2 : ENH_BEAM_RADIUS;
+		float dmg = s.isAling ? SHOT_DAMAGE * 1.2f : SHOT_DAMAGE;   // 阿澪伤害 ×1.2（12→14.4）
 		Box box = new Box(origin, end).expand(radius);
 		List<LivingEntity> targets = sw.getEntitiesByClass(LivingEntity.class, box,
 				e -> e.isAlive() && !e.isSpectator() && !e.getUuid().equals(player.getUuid()));
@@ -250,7 +259,7 @@ public final class FluorescentLaserManager {
 			if (proj < 0 || proj > len) continue;
 			Vec3d closest = origin.add(dir.multiply(proj));
 			if (center.squaredDistanceTo(closest) > radius * radius) continue;
-			if (t.damage(t.getDamageSources().playerAttack(player), SHOT_DAMAGE)) {   // 12 点物理
+			if (t.damage(t.getDamageSources().playerAttack(player), dmg)) {   // 12 点物理（阿澪 14.4）
 				t.timeUntilRegen = 10;   // 主要技能：受击无敌 20→10 减半，令目标更快可再次受击
 			}
 			s.damagedThisShot.add(t.getUuid());
