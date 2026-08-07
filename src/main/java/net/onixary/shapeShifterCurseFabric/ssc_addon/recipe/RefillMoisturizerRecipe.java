@@ -56,15 +56,9 @@ public class RefillMoisturizerRecipe extends SpecialCraftingRecipe {
 		}
 
 		if (!moisturizer.isEmpty()) {
-			boolean wasActive = moisturizer.getOrCreateNbt().getBoolean("Active");
 			moisturizer.setCount(1);
-
-			// Set Charge to Max (5400)
-			moisturizer.getOrCreateNbt().putInt("Charge", PortableMoisturizerItem.MAX_CHARGE);
-
-			// Should we keep it active? Usually refilling allows it to continue working immediately.
-			moisturizer.getOrCreateNbt().putBoolean("Active", wasActive);
-
+			// 按当前等级上限充满使用时间
+			PortableMoisturizerItem.setFullCharge(moisturizer);
 			return moisturizer;
 		}
 

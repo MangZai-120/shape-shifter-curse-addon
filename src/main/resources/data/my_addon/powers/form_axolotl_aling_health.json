@@ -1,7 +1,7 @@
 {
     "type": "apoli:attribute",
     "modifier": {
-        "name": "Form axolotl fluorescent health",
+        "name": "Form axolotl aling health",
         "attribute": "minecraft:generic.max_health",
         "value": 2.0,
         "operation": "addition"

@@ -63,7 +63,6 @@ public class LaserBeamEntity extends Entity {
 	private static final double BEAM_RADIUS = 2.5;     // 光柱半径（直径 5 格）
 
 	// ===== 海晶荧光坠增强（三连发单道视觉）=====
-	private static final float ENH_BEAM_LENGTH = 24.0f;   // 增强激光最大射程 24 格
 	private static final float ENH_BEAM_RADIUS = 0.75f;   // 增强光柱半径（原 2.5 的 30%）
 	private static final float ENH_ARRAY_SCALE = 0.3f;    // 增强法阵缩到原 30%
 	private static final int ENH_SHOT_TICKS = 8;          // 增强单道存活 8t（纯视觉）

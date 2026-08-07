@@ -42,6 +42,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.power.SscAddonPowers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.BlizzardTankRechargeRecipe;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.RefillMoisturizerRecipe;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.UpgradeMoisturizerRecipe;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.ReloadSnowballLauncherRecipe;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.InfiniteEnergyPotionRecipe;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.SpUpgradeRecipe;
@@ -165,6 +166,7 @@ public class SscAddon implements ModInitializer {
 	public static final Item HUMUS_RING = new HumusRingItem(new Item.Settings().maxCount(1).fireproof());
 	public static final Item TWIN_POD = new TwinPodItem(new Item.Settings().maxCount(1).fireproof());
 	public static final RecipeSerializer<RefillMoisturizerRecipe> REFILL_MOISTURIZER_SERIALIZER = new SpecialRecipeSerializer<>(RefillMoisturizerRecipe::new);
+	public static final RecipeSerializer<UpgradeMoisturizerRecipe> UPGRADE_MOISTURIZER_SERIALIZER = new SpecialRecipeSerializer<>(UpgradeMoisturizerRecipe::new);
 	public static final RecipeSerializer<ReloadSnowballLauncherRecipe> RELOAD_SNOWBALL_LAUNCHER_SERIALIZER = new SpecialRecipeSerializer<>(ReloadSnowballLauncherRecipe::new);
 	public static final RecipeSerializer<BlizzardTankRechargeRecipe> BLIZZARD_TANK_RECHARGE_SERIALIZER = new SpecialRecipeSerializer<>(BlizzardTankRechargeRecipe::new);
 	public static final RecipeSerializer<SpUpgradeRecipe> SP_UPGRADE_SERIALIZER = new SpecialRecipeSerializer<>(SpUpgradeRecipe::new);
@@ -406,6 +408,7 @@ public class SscAddon implements ModInitializer {
 
 	private void registerRecipeSerializers() {
 		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "refill_moisturizer"), REFILL_MOISTURIZER_SERIALIZER);
+		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "upgrade_moisturizer"), UPGRADE_MOISTURIZER_SERIALIZER);
 		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "reload_snowball_launcher"), RELOAD_SNOWBALL_LAUNCHER_SERIALIZER);
 		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "blizzard_tank_recharge"), BLIZZARD_TANK_RECHARGE_SERIALIZER);
 		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "sp_upgrade_crafting"), SP_UPGRADE_SERIALIZER);

@@ -6,6 +6,8 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.s2c.play.PlaySoundFromEntityS2CPacket;
 import net.minecraft.network.packet.s2c.play.StopSoundS2CPacket;
@@ -41,6 +43,11 @@ public class AllaySPJukebox {
     private static final UUID SPEED_MODIFIER_UUID = UUID.fromString("a3b4c5d6-e7f8-9012-3456-789abcdef012");
     private static final String SPEED_MODIFIER_NAME = "allay_jukebox_speed";
     private static final double SPEED_BONUS = 0.10; // 10% speed
+
+    // 增益 status effect 刷新时长（tick）：每 5 tick 补挂一次，20t 覆盖刷新间隔保证图标常亮不闪断；
+    // 黄心(ABSORPTION)用此时长：退出回血模式后停止刷新，剩余 effect 会在 ≤20t 内过期，
+    // AbsorptionStatusEffect.onRemoved 会自动扣除它施加的护盾，不误删玩家其它来源护盾。
+    private static final int BUFF_REFRESH_DURATION = 20;
 
     // Track per-player: -1 = not playing, 0 = speed music, 1 = heal music
     private static final java.util.concurrent.ConcurrentHashMap<UUID, Integer> playerMusicState = new java.util.concurrent.ConcurrentHashMap<>();
@@ -185,12 +192,20 @@ public class AllaySPJukebox {
                         entity.heal(1.0f);
                     }
                 }
+                // 额外增益：抵抗 I（20% 减伤，短时刷新）+ 黄心（ABSORPTION，amplifier 0 = 4HP = 2 颗，同模式刷新）
+                // 退出回血模式后停止刷新，剩余 effect 在 ≤20t 内过期，onRemoved 自动扣除它施加的护盾，不误删玩家其它护盾
+                for (LivingEntity entity : nearbyEntities) {
+                    entity.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, BUFF_REFRESH_DURATION, 0, false, false, true));
+                    entity.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, BUFF_REFRESH_DURATION, 0, false, false, true));
+                }
                 // Remove speed modifier when in heal mode
                 removeSpeedFromAll(player);
             } else {
                 // Speed mode: apply 10% speed modifier
                 for (LivingEntity entity : nearbyEntities) {
                     applySpeedModifier(entity);
+                    // 额外增益：急迫 I（短时刷新，每 5 tick 补挂）
+                    entity.addStatusEffect(new StatusEffectInstance(StatusEffects.HASTE, BUFF_REFRESH_DURATION, 0, false, false, true));
                 }
                 // Clean up speed modifiers from entities that moved out of range
                 cleanupOutOfRangeEntities(player, nearbyEntities);

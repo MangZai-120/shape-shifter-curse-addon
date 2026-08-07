@@ -29,6 +29,7 @@
         "my_addon:form_upgrade_axolotl_jump_out_water",
         "my_addon:form_upgrade_axolotl_sprint_speed",
         "my_addon:form_upgrade_axolotl_sprint_jump",
+        "my_addon:form_upgrade_axolotl_health",
         "my_addon:form_sp_primary_cd",
         "my_addon:form_sp_secondary_cd",
         "my_addon:form_sp_primary_cd_tick",

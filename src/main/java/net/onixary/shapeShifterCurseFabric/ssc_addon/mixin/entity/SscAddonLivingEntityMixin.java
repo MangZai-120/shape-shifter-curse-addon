@@ -101,6 +101,18 @@ public abstract class SscAddonLivingEntityMixin {
 	}
 
 	/**
+	 * 三级便携加湿器：佩戴者（美西螈系玩家）造成的所有伤害 +15%。
+	 */
+	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+	private float ssc_addon$moisturizerLevel3DamageBoost(float amount, DamageSource source) {
+		if (amount <= 0.0F) return amount;
+		if (!(source.getAttacker() instanceof net.minecraft.entity.player.PlayerEntity attacker)) return amount;
+		if (!FormUtils.isMoistureDependent(attacker)) return amount;
+		if (!net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableMoisturizerItem.isLevel3Equipped(attacker)) return amount;
+		return amount * 1.15F;
+	}
+
+	/**
 	 * 冰霜冻结受伤 +35% / 传送攻击期间受伤 -65%。（原 FrostFreezeDamageMixin 合并至此；行为不变。）
 	 */
 	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)

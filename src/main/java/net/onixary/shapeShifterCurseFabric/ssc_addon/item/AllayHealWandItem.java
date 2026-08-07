@@ -38,7 +38,7 @@ import java.util.function.Predicate;
  */
 public class AllayHealWandItem extends Item {
 
-	public static final float HEAL_AMOUNT = 4.0f;
+	public static final float HEAL_AMOUNT = 8.0f;
 	public static final int COOLDOWN_TICKS = 50; // 2.5 seconds
 	public static final double MAX_RANGE = 20.0;
 	public static final int MANA_COST = 12;

@@ -35,11 +35,12 @@ public class AllaySPGroupHeal {
 	private static final Identifier HEAL_EXECUTE_ID = new Identifier("my_addon", "form_allay_sp_group_heal_heal_execute");
 	private static final Identifier SOLO_DAMAGE_TIMER_ID = FormIdentifiers.ALLAY_GROUP_HEAL_SOLO_DAMAGE_TIMER;
 	private static final double HEAL_RADIUS = 20.0;
-	private static final float HEAL_AMOUNT = 20.0f;
 	private static final int RESISTANCE_TICKS = 200;
-	private static final int STANDARD_ABSORPTION_TICKS = 400;
 	private static final int SOLO_BLESSING_TICKS = 400;
-	private static final int SOLO_ABSORPTION_TICKS = 600;
+	// 群体治疗：每个目标回血 = 最大生命×75%，额外给 最大生命×50% 的黄心，持续30秒
+	private static final float HEAL_PERCENT = 0.75f;
+	private static final float ABSORPTION_PERCENT = 0.5f;
+	private static final int HEAL_ABSORPTION_TICKS = 600;
 
 	private AllaySPGroupHeal() {
 		throw new UnsupportedOperationException("This class cannot be instantiated.");
@@ -74,8 +75,7 @@ public class AllaySPGroupHeal {
 		if (soloHeal) {
 			applySoloBlessing(allayPlayer);
 		} else {
-			allayPlayer.heal(HEAL_AMOUNT);
-			allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, STANDARD_ABSORPTION_TICKS, 1, false, true, true));
+			healTarget(allayPlayer);
 			allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, RESISTANCE_TICKS, 0, false, true, true));
 		}
 		spawnHealParticles(world, allayPlayer);
@@ -90,7 +90,7 @@ public class AllaySPGroupHeal {
 		for (LivingEntity entity : entities) {
 			// 统一走 WhitelistUtils.isBuffTarget，同时遵从服务端 whitelistEnabled 总开关
 			if (WhitelistUtils.isBuffTarget(allayPlayer, entity)) {
-				entity.heal(HEAL_AMOUNT);
+				healTarget(entity);
 				entity.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, RESISTANCE_TICKS, 0, false, true, true));
 				spawnHealParticles(world, entity);
 				// 播放声音：治疗者听见私有声音，其他人听见空间声音
@@ -113,11 +113,18 @@ public class AllaySPGroupHeal {
 	}
 
 	private static void applySoloBlessing(ServerPlayerEntity allayPlayer) {
-		allayPlayer.setHealth(allayPlayer.getMaxHealth());
+		healTarget(allayPlayer);
 		allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.STRENGTH, SOLO_BLESSING_TICKS, 1, false, true, true));
 		allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, SOLO_BLESSING_TICKS, 1, false, true, true));
-		allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, SOLO_ABSORPTION_TICKS, 2, false, true, true));
 		setResourceValue(allayPlayer, SOLO_DAMAGE_TIMER_ID, SOLO_BLESSING_TICKS);
+	}
+
+	/** 治疗单个目标：回血=最大生命×75%，并给予 最大生命×50% 的黄心（持续30秒）。 */
+	private static void healTarget(LivingEntity entity) {
+		float maxHp = entity.getMaxHealth();
+		entity.heal(maxHp * HEAL_PERCENT);
+		int amplifier = Math.max(0, Math.round(maxHp * ABSORPTION_PERCENT / 2.0f) - 1);
+		entity.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, HEAL_ABSORPTION_TICKS, amplifier, false, true, true));
 	}
 
 	/**
