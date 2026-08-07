@@ -499,7 +499,7 @@ public abstract class SscAddonLivingEntityMixin {
 
 	/**
 	 * 蝙蝠玩家普攻命中其它生物（伤害真正生效）→ 累计 +8（受白名单与 0.3s 内CD约束）。
-	 * 同时承担「造成伤害的吸血效果」：50-75 → 20%、75-100 → 35%。
+	 * 同时承担「造成伤害的吸血效果」：50-75 → 30%、75-100 → 52.5%（原 20%/35%，强化 +50%）。
 	 */
 	@Inject(method = "damage", at = @At("RETURN"))
 	private void ssc_addon$batDesmodusOnHit(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
@@ -524,8 +524,8 @@ public abstract class SscAddonLivingEntityMixin {
 				&& !source.isOf(net.minecraft.entity.damage.DamageTypes.GENERIC_KILL))) {
 			int stage = BatDesmodusBloodThirst.getStage(attacker);
 			float lifestealRate = 0f;
-			if (stage == 2) lifestealRate = 0.20f;
-			else if (stage == 3) lifestealRate = 0.35f;
+			if (stage == 2) lifestealRate = 0.30f;    // 原为 0.20f，强化 +50%
+			else if (stage == 3) lifestealRate = 0.525f;   // 原为 0.35f，强化 +50%
 			// 嗜血指环：高血渴阶段（已有吸血）额外 +15% 吸血率
 			if (lifestealRate > 0f && BatDesmodusBloodThirst.hasBloodlustRing(attacker)) {
 				lifestealRate += 0.15f;

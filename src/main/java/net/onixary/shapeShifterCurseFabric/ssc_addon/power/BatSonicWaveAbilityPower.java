@@ -39,7 +39,7 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower {
 	private static final double RANGE = 8.0;          // 长度（8 格）
 	private static final double HALF_WIDTH = 1.75;    // 宽度半径（3.5 格直径）
 	private static final double HALF_WIDTH_SQ = HALF_WIDTH * HALF_WIDTH;
-	private static final float DAMAGE = 4.0f;
+	private static final float DAMAGE = 6.0f;   // 原为 4.0f，强化 +50%
 	private static final int DEBUFF_TICKS = 60; // 3 秒
 	private final int cooldownTicks;
 	private long internalCooldownEndTime = 0L;
