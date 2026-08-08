@@ -46,6 +46,8 @@ public class FormIdentifiers {
 	public static final Identifier ANUBIS_WOLF_SP_SOUL_ENERGY = new Identifier("my_addon", "form_anubis_wolf_sp_soul_energy");
 	// 吸血蝙蝠SP形态ID
 	public static final Identifier BAT_DESMODUS = new Identifier("my_addon", "bat_desmodus");
+	// 魔法蜘蛛SP形态ID（月髓环进化）
+	public static final Identifier SPIDER_MAGIC = new Identifier("my_addon", "spider_magic");
 	// 寄生果蝠形态ID
 	public static final Identifier BAT_PARASITIC_FRUIT = new Identifier("my_addon", "bat_parasitic_fruit");
 	// 寄生果蝠"种子量"能量资源（最大 10）

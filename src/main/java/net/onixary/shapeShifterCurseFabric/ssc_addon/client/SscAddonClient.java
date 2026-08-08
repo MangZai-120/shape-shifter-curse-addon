@@ -57,6 +57,8 @@ public class SscAddonClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		LOGGER.info("[SSC_ADDON] Registering Client KeyBindings...");
+		// 附属方块渲染层注册（蛛网膜等，cutout）
+		net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks.clientInit();
 
 		// 关键路径：键位注册必须成功，否则客机所有 SP 技能都无法激活。
 		// 包裹 try-catch 防止任何意外（如类加载失败）静默吞掉异常导致客机无反应。
@@ -338,6 +340,18 @@ public class SscAddonClient implements ClientModInitializer {
 					new net.jackcooper.shapeShifterCurseAddon.client.JobChangeSelectScreen()));
 		});
 
+		// 动画调试记录开关：/ssc_addon debug anim 指令触发，客户端切换本地日志记录
+		ClientPlayNetworking.registerGlobalReceiver(net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking.PACKET_ANIM_DEBUG_TOGGLE, (client, handler, buf, responseSender) -> {
+			client.execute(() -> {
+				boolean now = net.jackcooper.shapeShifterCurseAddon.client.SpiderMagicAnimDebugHud.toggleRecording();
+				if (client.player != null) {
+					client.player.sendMessage(net.minecraft.text.Text.translatable(
+							now ? "message.ssc_addon.anim_debug.on" : "message.ssc_addon.anim_debug.off")
+							.formatted(now ? net.minecraft.util.Formatting.GREEN : net.minecraft.util.Formatting.RED), true);
+				}
+			});
+		});
+
 		ItemTooltipCallback.EVENT.register((stack, context, lines) -> {
 			if (stack.getItem() == SscAddon.CORAL_BALL) {
 				addSplitTooltip(lines, "item.ssc_addon.coral_ball.tooltip");
@@ -361,6 +375,8 @@ public class SscAddonClient implements ClientModInitializer {
 		// 法阵激光用自定义渲染器画发光法阵 + 穿墙光柱（自发光、粗彩带）
 		EntityRendererRegistry.register(SscAddon.TIDAL_ORB_ENTITY, net.onixary.shapeShifterCurseFabric.ssc_addon.client.renderer.TidalOrbRenderer::new);
 		EntityRendererRegistry.register(SscAddon.LASER_BEAM_ENTITY, FluorescentLaserRenderer::new);
+		// 魔法蜘蛛蓄力蛛丝弹：用 FlyingItemEntityRenderer 渲染蛛丝弹物品精灵（复用原版 web_projectile 物品）
+		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.WEB_MEMBRANE_BULLET, FlyingItemEntityRenderer::new);
 
 		// 寄生果蝠形态种子量能量条 HUD
 		SeedEnergyHudRenderer.register();
@@ -425,8 +441,16 @@ public class SscAddonClient implements ClientModInitializer {
 		PlayDeadEndClient.register();
 
 		// SSCA 美西螈漩涡蓄力 - 按键检测器
-		VortexChargeClient.register();
-		// SSCA 进化美西螈技能 - 主「投掷水矛」/ 次「涡流引导」按键检测器
+		VortexChargeClient.register();		// SSCA 魔法蜘蛛「织网术」- 主键检测器（潜行切换 / 蓄力 / 释放）
+		net.jackcooper.shapeShifterCurseAddon.client.SpiderMagicWebClient.register();
+		// SSCA 魔法蜘蛛二段跳 - 跳跃键空中检测
+		net.jackcooper.shapeShifterCurseAddon.client.SpiderMagicDoubleJumpClient.register();
+		// SSCA 魔法蜘蛛动画调试 HUD - F6 切换（仅客户端调试用，显示当前动画/进度/二段跳状态）
+		net.jackcooper.shapeShifterCurseAddon.client.SpiderMagicAnimDebugHud.register();
+		// SSCA 进化美西蟠水流冲刺 - 真正疾跑键上报器（区分双击 W/游泳自动疾跑）
+		net.jackcooper.shapeShifterCurseAddon.client.AxolotlSprintKeyClient.register();
+		// SSCA 魔法蜘蛛减速网「踩网蓝色高亮」- 客户端专属发光接收器
+		net.jackcooper.shapeShifterCurseAddon.client.WebHighlightClient.register();		// SSCA 进化美西螈技能 - 主「投掷水矛」/ 次「涡流引导」按键检测器
 		UpgradeAxolotlSkillClient.register();
 		// 风灵「疾风连爪」 - 左键按住检测器
 		net.onixary.shapeShifterCurseFabric.ssc_addon.client.WindSpiritClawClient.register();

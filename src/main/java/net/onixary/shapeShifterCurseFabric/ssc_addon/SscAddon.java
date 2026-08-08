@@ -279,6 +279,8 @@ public class SscAddon implements ModInitializer {
 						entries.add(WITHER_POTION);
 						entries.add(WITHER_POTION_SPLASH);
 						entries.add(WITHER_POTION_LINGERING);
+						// 蛛网膜（多面薄层蛛网方块）
+						entries.add(net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks.WEB_MEMBRANE);
 					})
 					.build());
 	// SP Allay sound events
@@ -296,6 +298,12 @@ public class SscAddon implements ModInitializer {
 		registerConfig();
 		registerStatusEffects();
 		registerItems();
+		// 附属方块注册（蛛网膜等，jackcooper）
+		net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks.init();
+		// 附属实体注册（魔法蜘蛛蓄力蛛丝弹，jackcooper）
+		net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.init();
+		// 附属状态效果注册（蜘网缠身，jackcooper）
+		net.jackcooper.shapeShifterCurseAddon.effect.RegAddonEffects.init();
 		registerRecipeSerializers();
 		registerSoundEvents();
 		registerEntityAttributes();

@@ -1,0 +1,88 @@
+{
+  "multipart": [
+    { "when": { "north": "true" }, "apply": [
+        { "model": "ssc_addon:block/web_membrane_0" },
+        { "model": "ssc_addon:block/web_membrane_1" },
+        { "model": "ssc_addon:block/web_membrane_2" },
+        { "model": "ssc_addon:block/web_membrane_3" },
+        { "model": "ssc_addon:block/web_membrane_4" }
+      ] },
+    { "when": { "down": "false", "east": "false", "north": "false", "south": "false", "up": "false", "west": "false" }, "apply": [
+        { "model": "ssc_addon:block/web_membrane_0" },
+        { "model": "ssc_addon:block/web_membrane_1" },
+        { "model": "ssc_addon:block/web_membrane_2" },
+        { "model": "ssc_addon:block/web_membrane_3" },
+        { "model": "ssc_addon:block/web_membrane_4" }
+      ] },
+    { "when": { "east": "true" }, "apply": [
+        { "model": "ssc_addon:block/web_membrane_0", "y": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_1", "y": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_2", "y": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_3", "y": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_4", "y": 90, "uvlock": true }
+      ] },
+    { "when": { "down": "false", "east": "false", "north": "false", "south": "false", "up": "false", "west": "false" }, "apply": [
+        { "model": "ssc_addon:block/web_membrane_0", "y": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_1", "y": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_2", "y": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_3", "y": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_4", "y": 90, "uvlock": true }
+      ] },
+    { "when": { "south": "true" }, "apply": [
+        { "model": "ssc_addon:block/web_membrane_0", "y": 180, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_1", "y": 180, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_2", "y": 180, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_3", "y": 180, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_4", "y": 180, "uvlock": true }
+      ] },
+    { "when": { "down": "false", "east": "false", "north": "false", "south": "false", "up": "false", "west": "false" }, "apply": [
+        { "model": "ssc_addon:block/web_membrane_0", "y": 180, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_1", "y": 180, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_2", "y": 180, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_3", "y": 180, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_4", "y": 180, "uvlock": true }
+      ] },
+    { "when": { "west": "true" }, "apply": [
+        { "model": "ssc_addon:block/web_membrane_0", "y": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_1", "y": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_2", "y": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_3", "y": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_4", "y": 270, "uvlock": true }
+      ] },
+    { "when": { "down": "false", "east": "false", "north": "false", "south": "false", "up": "false", "west": "false" }, "apply": [
+        { "model": "ssc_addon:block/web_membrane_0", "y": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_1", "y": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_2", "y": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_3", "y": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_4", "y": 270, "uvlock": true }
+      ] },
+    { "when": { "up": "true" }, "apply": [
+        { "model": "ssc_addon:block/web_membrane_0", "x": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_1", "x": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_2", "x": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_3", "x": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_4", "x": 270, "uvlock": true }
+      ] },
+    { "when": { "down": "false", "east": "false", "north": "false", "south": "false", "up": "false", "west": "false" }, "apply": [
+        { "model": "ssc_addon:block/web_membrane_0", "x": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_1", "x": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_2", "x": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_3", "x": 270, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_4", "x": 270, "uvlock": true }
+      ] },
+    { "when": { "down": "true" }, "apply": [
+        { "model": "ssc_addon:block/web_membrane_0", "x": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_1", "x": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_2", "x": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_3", "x": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_4", "x": 90, "uvlock": true }
+      ] },
+    { "when": { "down": "false", "east": "false", "north": "false", "south": "false", "up": "false", "west": "false" }, "apply": [
+        { "model": "ssc_addon:block/web_membrane_0", "x": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_1", "x": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_2", "x": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_3", "x": 90, "uvlock": true },
+        { "model": "ssc_addon:block/web_membrane_4", "x": 90, "uvlock": true }
+      ] }
+  ]
+}

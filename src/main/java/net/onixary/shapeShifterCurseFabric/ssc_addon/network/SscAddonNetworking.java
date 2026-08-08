@@ -54,10 +54,29 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_VORTEX_START = new Identifier("my_addon", "vortex_start");
 	/** C2S：美西螈漩涡释放（提前释放）。无 payload。 */
 	public static final Identifier PACKET_VORTEX_RELEASE = new Identifier("my_addon", "vortex_release");
+	/** C2S：魔法蜘蛛织网术 - 潜行双击主键切换 搭路/攻击 模式。无 payload。 */
+	public static final Identifier PACKET_SPIDER_MAGIC_TOGGLE = new Identifier("my_addon", "spider_magic_toggle");
+	/** C2S：魔法蜘蛛织网术 - 主键按下开始蓄力。无 payload。 */
+	public static final Identifier PACKET_SPIDER_MAGIC_CHARGE_START = new Identifier("my_addon", "spider_magic_charge_start");
+	/** C2S：魔法蜘蛛织网术 - 主键按下开始「平铺搭桥」蓄力（双击长按 / 潜行长按触发）。无 payload。 */
+	public static final Identifier PACKET_SPIDER_MAGIC_CHARGE_START_FLAT = new Identifier("my_addon", "spider_magic_charge_start_flat");
+	/** C2S：魔法蜘蛛织网术 - 主键松开释放。无 payload。 */
+	public static final Identifier PACKET_SPIDER_MAGIC_CHARGE_RELEASE = new Identifier("my_addon", "spider_magic_charge_release");
+	/** C2S：魔法蜘蛛二段跳 - 空中按跳跃键。无 payload。 */
+	public static final Identifier PACKET_SPIDER_MAGIC_DOUBLE_JUMP = new Identifier("my_addon", "spider_magic_double_jump");
 
+	/** C2S：进化美西蟠上报「真正疾跑键」按住状态（区分双击 W/游泳自动疾跑）。payload: boolean held。 */
+	public static final Identifier PACKET_AXOLOTL_SPRINT_KEY = new Identifier("my_addon", "axolotl_sprint_key");
+
+	/** S2C：踩网蓝色高亮——仅向施法者发送，令其客户端把受害者描蓝边。payload: varint entityId + varint duration。 */
+	public static final Identifier PACKET_WEB_HIGHLIGHT = new Identifier("my_addon", "web_highlight");
 	/** C2S：进化美西螈主技能「投掷水矛」按键。无 payload。 */
 	public static final Identifier PACKET_UPGRADE_AXOLOTL_SPEAR = new Identifier("my_addon", "upgrade_axolotl_spear");
 	/** C2S：进化美西螈次技能「涡流引导」按键。无 payload。 */
+	public static final Identifier PACKET_UPGRADE_AXOLOTL_VORTEX_GUIDE = new Identifier("my_addon", "upgrade_axolotl_vortex_guide");
+
+	/** S2C：动画调试记录开关切换（由 /ssc_addon debug anim 指令触发，服务端转发给执行者客户端）。无 payload。 */
+	public static final Identifier PACKET_ANIM_DEBUG_TOGGLE = new Identifier("my_addon", "anim_debug_toggle");
 	public static final Identifier PACKET_UPGRADE_AXOLOTL_VORTEX = new Identifier("my_addon", "upgrade_axolotl_vortex");
 	/** S2C：进化美西螈「投掷水矛」蓄力期手持水矛渲染状态（对追踪者+自身广播）。payload: UUID + boolean charging */
 	public static final Identifier PACKET_SPEAR_CHARGE_STATE = new Identifier("my_addon", "spear_charge_state");
@@ -140,6 +159,20 @@ public class SscAddonNetworking {
 			ServerPlayNetworking.send(viewer, PACKET_SPEAR_CHARGE_STATE, net.fabricmc.fabric.api.networking.v1.PacketByteBufs.copy(buf));
 		}
 		ServerPlayNetworking.send(player, PACKET_SPEAR_CHARGE_STATE, buf);
+	}
+
+	/** S2C：向施法者发「踩网蓝色高亮」，令其客户端把 entityId 对应实体描蓝边 duration tick。 */
+	public static void sendWebHighlight(ServerPlayerEntity owner, int entityId, int durationTicks) {
+		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+		buf.writeVarInt(entityId);
+		buf.writeVarInt(durationTicks);
+		ServerPlayNetworking.send(owner, PACKET_WEB_HIGHLIGHT, buf);
+	}
+
+	/** S2C：向执行者发「动画调试记录开关切换」，客户端收到后切换本地日志记录。 */
+	public static void sendAnimDebugToggle(ServerPlayerEntity player) {
+		ServerPlayNetworking.send(player, PACKET_ANIM_DEBUG_TOGGLE,
+				net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create());
 	}
 
 	public static void registerServerReceivers() {
@@ -225,6 +258,30 @@ public class SscAddonNetworking {
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_VORTEX_RELEASE, (server, player, handler, buf, responseSender) -> {
 			server.execute(() -> net.onixary.shapeShifterCurseFabric.ssc_addon.ability.VortexChargeManager.release(player));
+		});
+
+		// SSCA 魔法蜘蛛「织网术」- 切换模式 / 开始蓄力 / 释放
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MAGIC_TOGGLE, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMagicWebManager.toggleMode(player));
+		});
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MAGIC_CHARGE_START, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMagicWebManager.start(player));
+		});
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MAGIC_CHARGE_START_FLAT, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMagicWebManager.startFlat(player));
+		});
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MAGIC_CHARGE_RELEASE, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMagicWebManager.release(player));
+		});
+		// SSCA 魔法蜘蛛二段跳 - 空中按跳跃键触发（跳跃由客户端原版 jump() 完成，此处仅广播音效粒子）
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MAGIC_DOUBLE_JUMP, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMagicDoubleJumpManager.onDoubleJump(player));
+		});
+
+		// SSCA 进化美西蟠水流冲刺 - 真正疾跑键按住状态上报
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_AXOLOTL_SPRINT_KEY, (server, player, handler, buf, responseSender) -> {
+			boolean held = buf.readBoolean();
+			server.execute(() -> net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AxolotlWaterSpurtHandler.setClientSprintHeld(player, held));
 		});
 
 		// SSCA 进化美西螈技能：主「投掷水矛」 / 次「涡流引导」

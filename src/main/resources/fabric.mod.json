@@ -39,7 +39,8 @@
       "net.onixary.shapeShifterCurseFabric.ssc_addon.compat.ModMenuIntegration"
     ],
     "cardinal-components-entity": [
-      "net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.RegEvolutionComponent"
+      "net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.RegEvolutionComponent",
+      "net.jackcooper.shapeShifterCurseAddon.state.RegSpiderMagicStateComponent"
     ]
   },
   "mixins": [
@@ -69,7 +70,8 @@
   ],
   "custom": {
     "cardinal-components": [
-      "ssc_addon:evolution"
+      "ssc_addon:evolution",
+      "ssc_addon:spider_magic_state"
     ]
   }
 }

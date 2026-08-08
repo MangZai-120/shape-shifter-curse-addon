@@ -31,10 +31,17 @@ public final class AxolotlWaterSpurtHandler {
 	/** 陆地冲刺消耗的湿润度（air 值；参照 WaterSpearLeapManager 的 18=6%，冲刺更轻，取 12≈4%）。水下冲刺同 SSC 免费。 */
 	private static final int LAND_MOISTURE_COST = 12;
 
-	private static final Map<UUID, Boolean> WAS_SPRINTING = new ConcurrentHashMap<>();
+	/** 客户端上报的「真正疾跑键」按住状态（区分双击 W / 游泳自动疾跑，避免误触发冲刺）。 */
+	private static final Map<UUID, Boolean> CLIENT_SPRINT = new ConcurrentHashMap<>();
+	private static final Map<UUID, Boolean> WAS_CLIENT_SPRINT = new ConcurrentHashMap<>();
 	private static final Map<UUID, Boolean> WAS_SNEAKING = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> WATER_CD = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> LAND_CD = new ConcurrentHashMap<>();
+
+	/** 客户端发「疾跑键按住状态」包时调用（仅进化美西蟠本机会发；区分真正疾跑键与双击 W/游泳自动疾跑）。 */
+	public static void setClientSprintHeld(ServerPlayerEntity player, boolean held) {
+		CLIENT_SPRINT.put(player.getUuid(), held);
+	}
 
 	private AxolotlWaterSpurtHandler() {
 	}
@@ -48,16 +55,18 @@ public final class AxolotlWaterSpurtHandler {
 		if (lcd > 0) LAND_CD.put(id, lcd - 1);
 
 		if (!FormUtils.isUpgradeAxolotl(player)) {
-			WAS_SPRINTING.remove(id);
+			CLIENT_SPRINT.remove(id);
+			WAS_CLIENT_SPRINT.remove(id);
 			WAS_SNEAKING.remove(id);
 			return;
 		}
 
-		boolean sprinting = player.isSprinting();
+		// 用客户端上报的「真正疾跑键」状态，而非服务端 isSprinting()（后者会被双击 W / 游泳自动置真 → 误冲）
+		boolean sprintKey = CLIENT_SPRINT.getOrDefault(id, false);
 		boolean sneaking = player.isSneaking();
-		boolean wasSprinting = WAS_SPRINTING.getOrDefault(id, false);
+		boolean wasSprintKey = WAS_CLIENT_SPRINT.getOrDefault(id, false);
 		boolean wasSneaking = WAS_SNEAKING.getOrDefault(id, false);
-		WAS_SPRINTING.put(id, sprinting);
+		WAS_CLIENT_SPRINT.put(id, sprintKey);
 		WAS_SNEAKING.put(id, sneaking);
 
 		// 未解锁 water_spurt 节点：只更新状态、不触发任何冲刺
@@ -68,17 +77,17 @@ public final class AxolotlWaterSpurtHandler {
 		boolean inWater = player.isTouchingWater();
 
 		if (inWater) {
-			// ===== 水下冲刺：水里 + 按疾跑（sprint 上升沿）→ 前冲，免费（同 SSC）=====
-			if (sprinting && !wasSprinting && WATER_CD.getOrDefault(id, 0) <= 0) {
+			// ===== 水下冲刺：水里 + 按下真正疾跑键（上升沿）→ 前冲，免费（双击 W/游泳自动疾跑不触发）=====
+			if (sprintKey && !wasSprintKey && WATER_CD.getOrDefault(id, 0) <= 0) {
 				doDash(player);
 				WATER_CD.put(id, CD_TICKS);
 			}
-			// 水里只响应疾跑分支，隔离陆地潜行逻辑
+			// 水里只响应疾跑键分支，隔离陆地潜行逻辑
 			return;
 		}
 
-		// ===== 陆地冲刺：陆地 + 疾跑时按潜行（sneak 上升沿且当前/上一 tick 疾跑）→ 前冲，消耗湿润度 =====
-		if (sneaking && !wasSneaking && (sprinting || wasSprinting) && LAND_CD.getOrDefault(id, 0) <= 0) {
+		// ===== 陆地冲刺：陆地 + 按住真正疾跑键时按潜行（sneak 上升沿）→ 前冲，消耗湿润度 =====
+		if (sneaking && !wasSneaking && sprintKey && LAND_CD.getOrDefault(id, 0) <= 0) {
 			if (player.getAir() < LAND_MOISTURE_COST) {
 				return; // 湿润度不足，不触发
 			}
@@ -108,7 +117,8 @@ public final class AxolotlWaterSpurtHandler {
 	}
 
 	public static void onPlayerDisconnect(UUID id) {
-		WAS_SPRINTING.remove(id);
+		CLIENT_SPRINT.remove(id);
+		WAS_CLIENT_SPRINT.remove(id);
 		WAS_SNEAKING.remove(id);
 		WATER_CD.remove(id);
 		LAND_CD.remove(id);
