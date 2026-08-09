@@ -16,13 +16,13 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 
 /**
- * 魔法蜘蛛二段跳 - 客户端跳跃键检测器。
- * 仅魔法蜘蛛形态：空中按下跳跃键（边沿触发）时手动复刻原版 vanilla 跳跃速度完成二段跳，
+ * 月织蛛二段跳 - 客户端跳跃键检测器。
+ * 仅月织蛛形态：空中按下跳跃键（边沿触发）时手动复刻原版 vanilla 跳跃速度完成二段跳，
  * 跳跃速度含疾跑前冲（走路/跑步两套），动画由原版 v3 动画 FSM 依据「离地 + 垂直速度」自动播放 spider_3_jump→fall；
  * 同时发包通知服务端播二段跳音效粒子。落地后的首跳是 vanilla 跳跃，不处理。
  */
 @Environment(EnvType.CLIENT)
-public final class SpiderMagicDoubleJumpClient {
+public final class SpiderMoonWeaverDoubleJumpClient {
 
 	private static boolean wasJumpPressed = false;
 	/** 本地离地 tick 计数：与服务端对齐，避免紧贴首跳触发。 */
@@ -33,7 +33,7 @@ public final class SpiderMagicDoubleJumpClient {
 	/** 二段跳是否激活（从触发到落地）：期间监控 spider_3_jump 播放进度，在姿态结束前主动切 fall 消除 T-pose 空窗。 */
 	private static boolean doubleJumpActive = false;
 
-	private SpiderMagicDoubleJumpClient() {}
+	private SpiderMoonWeaverDoubleJumpClient() {}
 
 	/** 供动画调试 HUD 读取：本次滞空是否还有二段跳额度。 */
 	public static boolean isJumpAvailable() {
@@ -46,7 +46,7 @@ public final class SpiderMagicDoubleJumpClient {
 	}
 
 	public static void register() {
-		ClientTickEvents.END_CLIENT_TICK.register(SpiderMagicDoubleJumpClient::onClientTick);
+		ClientTickEvents.END_CLIENT_TICK.register(SpiderMoonWeaverDoubleJumpClient::onClientTick);
 	}
 
 	private static void onClientTick(MinecraftClient client) {
@@ -70,16 +70,16 @@ public final class SpiderMagicDoubleJumpClient {
 			player.fallDistance = 0.7f; // >0.6 阈值，触发 FSM 切 ANIM_STATE_FALL
 		}
 		boolean pressed = client.options.jumpKey.isPressed();
-		// 边沿触发 + 仅魔法蜘蛛 + 仅空中 + 有额度 + 离地满 MIN_AIR_TICKS（一次滞空只允许一次二段跳，防连按上天）
+		// 边沿触发 + 仅月织蛛 + 仅空中 + 有额度 + 离地满 MIN_AIR_TICKS（一次滞空只允许一次二段跳，防连按上天）
 		if (pressed && !wasJumpPressed && !player.isOnGround() && jumpAvailable && airTicks >= MIN_AIR_TICKS
-				&& FormUtils.isForm(player, FormIdentifiers.SPIDER_MAGIC)) {
+				&& FormUtils.isForm(player, FormIdentifiers.SPIDER_MOON_WEAVER)) {
 			// 手动复刻 vanilla 跳跃速度：velY 覆盖为跳跃初速、疾跑时自带水平前冲（走路/跑步两套），
 			// 动画由原版 FSM 依离地+速度自动播 spider_3_jump→fall，无需任何自定义动画代码
 			doDoubleJump(player);
 			jumpAvailable = false; // 消耗本次滞空的二段跳额度，落地才补满
 			doubleJumpActive = true; // 标记二段跳激活，期间监控 jump 动画进度以提前切 fall
 			// 通知服务端播二段跳音效粒子（并广播给其他玩家）
-			ClientPlayNetworking.send(SscAddonNetworking.PACKET_SPIDER_MAGIC_DOUBLE_JUMP,
+			ClientPlayNetworking.send(SscAddonNetworking.PACKET_SPIDER_MOON_WEAVER_DOUBLE_JUMP,
 					new PacketByteBuf(Unpooled.buffer()));
 		}
 		wasJumpPressed = pressed;
@@ -119,7 +119,7 @@ public final class SpiderMagicDoubleJumpClient {
 		try {
 			dev.kosmx.playerAnim.api.layered.AnimationStack stack =
 					dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess.getPlayerAnimLayer(player);
-			dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer kp = SpiderMagicAnimDebugHud.findActivePlayerFromStack(stack);
+			dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer kp = SpiderMoonWeaverAnimDebugHud.findActivePlayerFromStack(stack);
 			if (kp == null) return false;
 			dev.kosmx.playerAnim.core.data.KeyframeAnimation data = kp.getData();
 			if (data == null) return false;

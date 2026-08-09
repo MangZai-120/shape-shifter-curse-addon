@@ -95,7 +95,7 @@ public final class SscAddonServerEvents {
 				BatDesmodusBloodThirst.tick(player);
 				MancianimaPassive.tick(player);
 				VortexChargeManager.tick(player);
-				net.jackcooper.shapeShifterCurseAddon.ability.SpiderMagicWebManager.tick(player);
+				net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.tick(player);
 				WindSpiritClawManager.tick(player);
 				WindDashManager.tick(player);
 				WindSpiritLandingSurgeManager.tick(player);
@@ -117,9 +117,9 @@ public final class SscAddonServerEvents {
 			FluorescentTidalManager.tickPendingCd(players);
 		});
 
-		// 魔法蜘蛛「织网术」：玩家掉线清理蓄力状态，防僵尸 UUID 残留
+		// 月织蛛「织网术」：玩家掉线清理蓄力状态，防僵尸 UUID 残留
 		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((netHandler, server) ->
-				net.jackcooper.shapeShifterCurseAddon.ability.SpiderMagicWebManager.onDisconnect(netHandler.player.getUuid()));
+				net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.onDisconnect(netHandler.player.getUuid()));
 
 		// 减速蜘网施法者表：服务器停止时清空，防跨存档/重启残留
 		ServerLifecycleEvents.SERVER_STOPPED.register(server ->

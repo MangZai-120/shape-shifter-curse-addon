@@ -17,8 +17,10 @@ import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.entity.projectile.WebBullet;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
+import java.util.List;
+
 /**
- * 魔法蜘蛛「攻击模式」蛛丝弹：复用原版 {@link WebBullet} 的飞行 / 粒子 / 发射音效，
+ * 月织蛛「攻击模式」蛛丝弹：复用原版 {@link WebBullet} 的飞行 / 粒子 / 发射音效，
  * 但改写命中效果——命中方块 / 实体后按蓄力档在半径内贴面铺减速蛛网（{@link WebMembraneBlock}），
  * 而非原版的临时天梯。tier1/2/3 → 半径 3 / 5 / 6 格。
  */
@@ -117,7 +119,7 @@ public class WebMembraneBullet extends WebBullet {
 	private boolean isBoundImmune(LivingEntity target) {
 		if (target instanceof net.minecraft.entity.mob.SpiderEntity) return true;
 		if (target instanceof net.minecraft.entity.player.PlayerEntity p
-				&& (net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isForm(p, net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.SPIDER_MAGIC)
+				&& (net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isForm(p, net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.SPIDER_MOON_WEAVER)
 				|| net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isForm(p, net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.ALLAY_SP)
 				|| net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isForm(p, net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.FALLEN_ALLAY_SP))) {
 			return true;

@@ -54,16 +54,16 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_VORTEX_START = new Identifier("my_addon", "vortex_start");
 	/** C2S：美西螈漩涡释放（提前释放）。无 payload。 */
 	public static final Identifier PACKET_VORTEX_RELEASE = new Identifier("my_addon", "vortex_release");
-	/** C2S：魔法蜘蛛织网术 - 潜行双击主键切换 搭路/攻击 模式。无 payload。 */
-	public static final Identifier PACKET_SPIDER_MAGIC_TOGGLE = new Identifier("my_addon", "spider_magic_toggle");
-	/** C2S：魔法蜘蛛织网术 - 主键按下开始蓄力。无 payload。 */
-	public static final Identifier PACKET_SPIDER_MAGIC_CHARGE_START = new Identifier("my_addon", "spider_magic_charge_start");
-	/** C2S：魔法蜘蛛织网术 - 主键按下开始「平铺搭桥」蓄力（双击长按 / 潜行长按触发）。无 payload。 */
-	public static final Identifier PACKET_SPIDER_MAGIC_CHARGE_START_FLAT = new Identifier("my_addon", "spider_magic_charge_start_flat");
-	/** C2S：魔法蜘蛛织网术 - 主键松开释放。无 payload。 */
-	public static final Identifier PACKET_SPIDER_MAGIC_CHARGE_RELEASE = new Identifier("my_addon", "spider_magic_charge_release");
-	/** C2S：魔法蜘蛛二段跳 - 空中按跳跃键。无 payload。 */
-	public static final Identifier PACKET_SPIDER_MAGIC_DOUBLE_JUMP = new Identifier("my_addon", "spider_magic_double_jump");
+	/** C2S：月织蛛织网术 - 潜行双击主键切换 搭路/攻击 模式。无 payload。 */
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_TOGGLE = new Identifier("my_addon", "spider_moon_weaver_toggle");
+	/** C2S：月织蛛织网术 - 主键按下开始蓄力。无 payload。 */
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_CHARGE_START = new Identifier("my_addon", "spider_moon_weaver_charge_start");
+	/** C2S：月织蛛织网术 - 主键按下开始「平铺搭桥」蓄力（双击长按 / 潜行长按触发）。无 payload。 */
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_CHARGE_START_FLAT = new Identifier("my_addon", "spider_moon_weaver_charge_start_flat");
+	/** C2S：月织蛛织网术 - 主键松开释放。无 payload。 */
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_CHARGE_RELEASE = new Identifier("my_addon", "spider_moon_weaver_charge_release");
+	/** C2S：月织蛛二段跳 - 空中按跳跃键。无 payload。 */
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_DOUBLE_JUMP = new Identifier("my_addon", "spider_moon_weaver_double_jump");
 
 	/** C2S：进化美西蟠上报「真正疾跑键」按住状态（区分双击 W/游泳自动疾跑）。payload: boolean held。 */
 	public static final Identifier PACKET_AXOLOTL_SPRINT_KEY = new Identifier("my_addon", "axolotl_sprint_key");
@@ -260,22 +260,22 @@ public class SscAddonNetworking {
 			server.execute(() -> net.onixary.shapeShifterCurseFabric.ssc_addon.ability.VortexChargeManager.release(player));
 		});
 
-		// SSCA 魔法蜘蛛「织网术」- 切换模式 / 开始蓄力 / 释放
-		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MAGIC_TOGGLE, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMagicWebManager.toggleMode(player));
+		// SSCA 月织蛛「织网术」- 切换模式 / 开始蓄力 / 释放
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_TOGGLE, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.toggleMode(player));
 		});
-		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MAGIC_CHARGE_START, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMagicWebManager.start(player));
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_CHARGE_START, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.start(player));
 		});
-		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MAGIC_CHARGE_START_FLAT, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMagicWebManager.startFlat(player));
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_CHARGE_START_FLAT, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.startFlat(player));
 		});
-		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MAGIC_CHARGE_RELEASE, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMagicWebManager.release(player));
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_CHARGE_RELEASE, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.release(player));
 		});
-		// SSCA 魔法蜘蛛二段跳 - 空中按跳跃键触发（跳跃由客户端原版 jump() 完成，此处仅广播音效粒子）
-		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MAGIC_DOUBLE_JUMP, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMagicDoubleJumpManager.onDoubleJump(player));
+		// SSCA 月织蛛二段跳 - 空中按跳跃键触发（跳跃由客户端原版 jump() 完成，此处仅广播音效粒子）
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_DOUBLE_JUMP, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverDoubleJumpManager.onDoubleJump(player));
 		});
 
 		// SSCA 进化美西蟠水流冲刺 - 真正疾跑键按住状态上报

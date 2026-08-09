@@ -13,7 +13,7 @@ import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
 
 /**
- * 蛛网缠身：非白名单生物踩过魔法蜘蛛的减速蛛网（web_membrane）时施加，或被蛛网弹爆炸范围波及时直接施加。
+ * 蛛网缠身：非白名单生物踩过月织蛛的减速蛛网（web_membrane）时施加，或被蛛网弹爆炸范围波及时直接施加。
  * <ul>
  *   <li>大幅降低移速（-50%，MULTIPLY_TOTAL，属性修饰不显示图标）；</li>
  *   <li>挖掘疲劳 + 虚弱：在 effect 内持续刷新（vanilla 效果，随蜘网缠身联动，三者同进退）；</li>

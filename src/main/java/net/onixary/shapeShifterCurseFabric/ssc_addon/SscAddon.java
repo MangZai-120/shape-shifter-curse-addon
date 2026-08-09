@@ -300,7 +300,7 @@ public class SscAddon implements ModInitializer {
 		registerItems();
 		// 附属方块注册（蛛网膜等，jackcooper）
 		net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks.init();
-		// 附属实体注册（魔法蜘蛛蓄力蛛丝弹，jackcooper）
+			// 附属实体注册（月织蛛蓄力蛛丝弹，jackcooper）
 		net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.init();
 		// 附属状态效果注册（蜘网缠身，jackcooper）
 		net.jackcooper.shapeShifterCurseAddon.effect.RegAddonEffects.init();

@@ -4,10 +4,10 @@
       "item": "minecraft:spider_eye"
     },
     "title": {
-      "translate": "advancements.my_addon.on_transform_spider_magic.title"
+      "translate": "advancements.my_addon.on_transform_spider_moon_weaver.title"
     },
     "description": {
-      "translate": "advancements.my_addon.on_transform_spider_magic.description"
+      "translate": "advancements.my_addon.on_transform_spider_moon_weaver.description"
     },
     "frame": "task",
     "show_toast": true,
@@ -16,10 +16,10 @@
   },
   "parent": "ssc_addon:tonight_moon_beautiful",
   "criteria": {
-    "on_transform_spider_magic": {
+    "on_transform_spider_moon_weaver": {
       "trigger": "my_addon:on_transform_addon_form",
       "conditions": {
-        "form_id": "my_addon:spider_magic"
+        "form_id": "my_addon:spider_moon_weaver"
       }
     }
   },

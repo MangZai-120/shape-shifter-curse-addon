@@ -1,17 +1,17 @@
 {
   "load_priority": 0,
 
-  "name": "my_addon.form_spider_magic.model_name",
+  "name": "my_addon.form_spider_moon_weaver.model_name",
   "layer": "origins:origin",
-  "form": "my_addon:form_spider_magic",
+  "form": "my_addon:form_spider_moon_weaver",
 
   "wide_only": true,
 
   "model": "shape-shifter-curse:geo/form/form_spider_3.geo.json",
-  "texture": "my_addon:textures/form_spider_magic/form_spider_magic.png",
-  "texture_mask": "my_addon:textures/form_spider_magic/form_spider_magic_colormask.png",
-  "fullbright_texture": "my_addon:textures/form_spider_magic/form_spider_magic_emission.png",
-  "fullbright_texture_mask": "my_addon:textures/form_spider_magic/form_spider_magic_emission_colormask.png",
+  "texture": "my_addon:textures/form_spider_moon_weaver/form_spider_moon_weaver.png",
+  "texture_mask": "my_addon:textures/form_spider_moon_weaver/form_spider_moon_weaver_colormask.png",
+  "fullbright_texture": "my_addon:textures/form_spider_moon_weaver/form_spider_moon_weaver_emission.png",
+  "fullbright_texture_mask": "my_addon:textures/form_spider_moon_weaver/form_spider_moon_weaver_emission_colormask.png",
   "hidden": [
     "leftLeg",
     "rightLeg",

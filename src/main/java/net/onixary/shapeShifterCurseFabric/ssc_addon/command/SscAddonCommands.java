@@ -555,7 +555,7 @@ public class SscAddonCommands {
 	}
 
 	/**
-	 * /ssc_addon debug anim：切换魔法蜘蛛动画调试日志记录（客户端功能）。
+	 * /ssc_addon debug anim：切换月织蛛动画调试日志记录（客户端功能）。
 	 * 服务端发 S2C 包给执行者，客户端切换本地日志记录开关；再次输入关闭。
 	 * 记录期间会把动画切换事件写入游戏日志（搜 SSCA_AnimDebug），便于分析二段跳等动画时序问题。
 	 */

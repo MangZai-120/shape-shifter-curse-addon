@@ -15,7 +15,7 @@ public final class RegAddonEntities {
 
 	private RegAddonEntities() {}
 
-	/** 魔法蜘蛛「攻击模式」蓄力蛛丝弹：命中方块 / 实体后按蓄力档在半径内贴面铺减速蛛网（web_membrane）。 */
+	/** 月织蛛「攻击模式」蓄力蛛丝弹：命中方块 / 实体后按蓄力档在半径内贴面铺减速蛛网（web_membrane）。 */
 	public static final EntityType<WebMembraneBullet> WEB_MEMBRANE_BULLET = Registry.register(
 			Registries.ENTITY_TYPE,
 			new Identifier("ssc_addon", "web_membrane_bullet"),

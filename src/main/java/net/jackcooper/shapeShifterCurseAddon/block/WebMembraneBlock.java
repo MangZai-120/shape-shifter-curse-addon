@@ -150,7 +150,7 @@ public class WebMembraneBlock extends MultifaceGrowthBlock {
 		return false;
 	}
 
-	// 减速 30% + 施加「蛛网缠身」并踩烂脚下这块网（消耗式）；蜘蛛 / 魔法蜘蛛自身 / 施法者白名单个体（队友·宠物）免疫
+	// 减速 30% + 施加「蛛网缠身」并踩烂脚下这块网（消耗式）；蜘蛛 / 月织蛛自身 / 施法者白名单个体（队友·宠物）免疫
 	@Override
 	public void onEntityCollision(BlockState state, World world, BlockPos pos, Entity entity) {
 		if (isImmune(world, pos, entity)) {
@@ -183,7 +183,7 @@ public class WebMembraneBlock extends MultifaceGrowthBlock {
 	/**
 	 * 免疫判定：
 	 * <ul>
-	 *   <li>蜘蛛类实体 / 魔法蜘蛛形态玩家 → 始终免疫（不困住蜘蛛自己）；</li>
+	 *   <li>蜘蛛类实体 / 月织蛛形态玩家 → 始终免疫（不困住蜘蛛自己）；</li>
 	 *   <li>悦灵系形态（悦灵 / 堕落悦灵）玩家 → 始终免疫（轻盈精灵不怕蛛网）；</li>
 	 *   <li>施法者在线 → 走其白名单：队友 / 宠物 /（白名单为空时）所有玩家免疫，敌人（非白名单）被缠；</li>
 	 *   <li>施法者离线 / 记录丢失（重启）→ 安全回退为默认白名单（玩家 + 已驯服宠物免疫，怪物受影响）。</li>
@@ -197,7 +197,7 @@ public class WebMembraneBlock extends MultifaceGrowthBlock {
 			return true;
 		}
 		if (living instanceof PlayerEntity player
-				&& (FormUtils.isForm(player, FormIdentifiers.SPIDER_MAGIC)
+				&& (FormUtils.isForm(player, FormIdentifiers.SPIDER_MOON_WEAVER)
 				|| FormUtils.isForm(player, FormIdentifiers.ALLAY_SP)
 				|| FormUtils.isForm(player, FormIdentifiers.FALLEN_ALLAY_SP))) {
 			return true;

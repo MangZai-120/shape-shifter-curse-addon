@@ -168,14 +168,14 @@ public final class SscAddonForms {
 		RegPlayerForms.registerPlayerForm(batDesmodusForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_bat_desmodus")).registerForm(1, 12, batDesmodusForm));
 
-		// 魔法蜘蛛（Magic Spider）SP形态 - 复用原版蜘蛛三阶段模型/动画，经月髓环在诅咒之月夜进化获得
+		// 月织蛛（Moon Weaver）SP形态 - 复用原版蜘蛛三阶段模型/动画，经月髓环在诅咒之月夜进化获得
 		// 被动与特性完全与原版 spider_3 平齐（爬墙、吐丝、搭桥、毒素免疫、夜视等）
-		Form_SpiderMagic spiderMagicForm = new Form_SpiderMagic(FormIdentifiers.SPIDER_MAGIC);
-		spiderMagicForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
+		Form_SpiderMoonWeaver SpiderMoonWeaverForm = new Form_SpiderMoonWeaver(FormIdentifiers.SPIDER_MOON_WEAVER);
+		SpiderMoonWeaverForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 蜘蛛缩放：原版 spider_3（0.9）的 90% → 0.81；眼睛/碰撞箱保持 1.0（NORMAL 体型第一人称不变）
-		spiderMagicForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.81f, 1.0f));
-		RegPlayerForms.registerPlayerForm(spiderMagicForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_spider_magic")).registerForm(1, 12, spiderMagicForm));
+		SpiderMoonWeaverForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.81f, 1.0f));
+		RegPlayerForms.registerPlayerForm(SpiderMoonWeaverForm);
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_spider_moon_weaver")).registerForm(1, 12, SpiderMoonWeaverForm));
 
 		// 寄生果蝠 - 原版三阶段蝙蝠使用进化石进化获得，复用蝙蝠模型/动画
 		Form_BatParasiticFruit batParasiticFruitForm = new Form_BatParasiticFruit(FormIdentifiers.BAT_PARASITIC_FRUIT);

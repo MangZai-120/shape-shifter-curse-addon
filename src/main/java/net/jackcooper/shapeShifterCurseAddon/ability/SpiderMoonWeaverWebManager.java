@@ -1,8 +1,8 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
 import net.jackcooper.shapeShifterCurseAddon.entity.WebMembraneBullet;
-import net.jackcooper.shapeShifterCurseAddon.state.RegSpiderMagicStateComponent;
-import net.jackcooper.shapeShifterCurseAddon.state.SpiderMagicStateComponent;
+import net.jackcooper.shapeShifterCurseAddon.state.RegSpiderMoonWeaverStateComponent;
+import net.jackcooper.shapeShifterCurseAddon.state.SpiderMoonWeaverStateComponent;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -25,7 +25,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 魔法蜘蛛「织网术」主技能 - 服务端状态机。
+ * 月织蛛「织网术」主技能 - 服务端状态机。
  *
  * <p>单主技能键（sp_primary），客户端边沿检测发包驱动：
  * <ul>
@@ -40,13 +40,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * 蓄力分 3 档：<20t? → tier1、≥40t → tier2、≥60t → tier3（满 3 秒封顶）；边蓄力边耗 mana，
  * mana 不足自动释放。
  *
- * <p>模式存于独立 CCA 组件 {@link SpiderMagicStateComponent}（0=搭路 / 1=攻击，不挂 origin、跨会话/跨形态/死亡重生保留）；蓄力档位存于
+ * <p>模式存于独立 CCA 组件 {@link SpiderMoonWeaverStateComponent}（0=搭路 / 1=攻击，不挂 origin、跨会话/跨形态/死亡重生保留）；蓄力档位存于
  * 本类服务端 map（瞬态）。CD 走通用 {@link FormIdentifiers#SP_PRIMARY_CD} 驱动 HUD 冷却条。
  */
-public final class SpiderMagicWebManager {
+public final class SpiderMoonWeaverWebManager {
 
-	private static final int MODE_BRIDGE = SpiderMagicStateComponent.MODE_BRIDGE;
-	private static final int MODE_ATTACK = SpiderMagicStateComponent.MODE_ATTACK;
+	private static final int MODE_BRIDGE = SpiderMoonWeaverStateComponent.MODE_BRIDGE;
+	private static final int MODE_ATTACK = SpiderMoonWeaverStateComponent.MODE_ATTACK;
 
 	private static final int MAX_TICKS = 60;        // 满档蓄力 3 秒
 	private static final int TIER1_TICKS = 20;      // ≥1 秒抵 tier1
@@ -59,10 +59,10 @@ public final class SpiderMagicWebManager {
 	/** 平铺搭桥蓄力中的玩家（双击长按 / 潜行长按触发），release 时走脚下平铺而非蛛丝弹。 */
 	private static final java.util.Set<UUID> FLAT_CHARGING = ConcurrentHashMap.newKeySet();
 
-	private SpiderMagicWebManager() {}
+	private SpiderMoonWeaverWebManager() {}
 
-	private static boolean isSpiderMagic(ServerPlayerEntity player) {
-		return FormUtils.isForm(player, FormIdentifiers.SPIDER_MAGIC);
+	private static boolean isSpiderMoonWeaver(ServerPlayerEntity player) {
+		return FormUtils.isForm(player, FormIdentifiers.SPIDER_MOON_WEAVER);
 	}
 
 	private static ManaComponent mana(ServerPlayerEntity player) {
@@ -71,27 +71,27 @@ public final class SpiderMagicWebManager {
 
 	/** 读取玩家当前模式（0=搭路 / 1=攻击）。 */
 	private static int getMode(ServerPlayerEntity player) {
-		return RegSpiderMagicStateComponent.SPIDER_MAGIC_STATE.get(player).getMode();
+		return RegSpiderMoonWeaverStateComponent.SPIDER_MOON_WEAVER_STATE.get(player).getMode();
 	}
 
 	/** 潜行双击主键：切换 搭路 / 攻击 模式（客户端手势判定，蓄力中禁止切换）。 */
 	public static void toggleMode(ServerPlayerEntity player) {
-		if (!isSpiderMagic(player)) return;
+		if (!isSpiderMoonWeaver(player)) return;
 		if (CHARGING.containsKey(player.getUuid())) return;
 		int next = (getMode(player) == MODE_ATTACK) ? MODE_BRIDGE : MODE_ATTACK;
-		RegSpiderMagicStateComponent.SPIDER_MAGIC_STATE.get(player).setMode(next);
+		RegSpiderMoonWeaverStateComponent.SPIDER_MOON_WEAVER_STATE.get(player).setMode(next);
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_WOOL_PLACE, SoundCategory.PLAYERS, 0.8f, next == MODE_ATTACK ? 1.4f : 0.9f);
 		player.sendMessage(Text.translatable(next == MODE_ATTACK
-				? "message.my_addon.spider_magic.mode.attack"
-				: "message.my_addon.spider_magic.mode.bridge"), true);
+				? "message.my_addon.spider_moon_weaver.mode.attack"
+				: "message.my_addon.spider_moon_weaver.mode.bridge"), true);
 	}
 
 	/** 主键按住开始蓄力（服务端重校验 form / CD / mana）。 */
 	public static void start(ServerPlayerEntity player) {
 		if (CHARGING.containsKey(player.getUuid())) return;
-		if (!isSpiderMagic(player)) return;
+		if (!isSpiderMoonWeaver(player)) return;
 		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return; // CD 中
 		if (mana(player).getMana() < START_MANA) return; // mana 不足
 		CHARGING.put(player.getUuid(), new int[]{0});
@@ -104,7 +104,7 @@ public final class SpiderMagicWebManager {
 	/** 主键按住开始「平铺搭桥」蓄力（双击长按 / 潜行长按触发；服务端重校验 form / CD / mana）。 */
 	public static void startFlat(ServerPlayerEntity player) {
 		if (CHARGING.containsKey(player.getUuid())) return;
-		if (!isSpiderMagic(player)) return;
+		if (!isSpiderMoonWeaver(player)) return;
 		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return; // CD 中
 		if (mana(player).getMana() < START_MANA) return; // mana 不足
 		CHARGING.put(player.getUuid(), new int[]{0});
@@ -118,7 +118,7 @@ public final class SpiderMagicWebManager {
 	public static void tick(ServerPlayerEntity player) {
 		int[] s = CHARGING.get(player.getUuid());
 		if (s == null) return;
-		if (player.isDead() || !isSpiderMagic(player)) {
+		if (player.isDead() || !isSpiderMoonWeaver(player)) {
 			cancel(player); // 死亡 / 形态丢失 → 取消，不结算
 			return;
 		}

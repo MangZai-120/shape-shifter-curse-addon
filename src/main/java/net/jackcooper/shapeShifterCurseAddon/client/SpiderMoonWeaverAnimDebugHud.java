@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * 魔法蜘蛛动画调试 - 日志记录器。
+ * 月织蛛动画调试 - 日志记录器。
  *
  * <p>由指令 {@code /ssc_addon debug anim} 开关（客户端指令切换）。
  * 开启期间每 tick 检测动画切换并写入游戏日志（搜 SSCA_AnimDebug），包含当前动画名、播放进度(tick/总长)、
@@ -30,7 +30,7 @@ import java.util.List;
  * <p>纯客户端、仅调试用；不影响任何游戏逻辑。
  */
 @Environment(EnvType.CLIENT)
-public final class SpiderMagicAnimDebugHud {
+public final class SpiderMoonWeaverAnimDebugHud {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger("SSCA_AnimDebug");
 	/** 日志记录是否已开启（由 /ssc_addon debug anim 指令切换）。 */
@@ -39,11 +39,11 @@ public final class SpiderMagicAnimDebugHud {
 	private static String lastAnimName = null;
 	private static int lastAnimTick = -1;
 
-	private SpiderMagicAnimDebugHud() {}
+	private SpiderMoonWeaverAnimDebugHud() {}
 
 	/** 注册客户端 tick 监听（检测动画切换写日志）。 */
 	public static void register() {
-		ClientTickEvents.END_CLIENT_TICK.register(SpiderMagicAnimDebugHud::onClientTick);
+		ClientTickEvents.END_CLIENT_TICK.register(SpiderMoonWeaverAnimDebugHud::onClientTick);
 	}
 
 	/** 指令调用：切换日志记录开关，返回切换后的状态（true=已开启）。 */
@@ -99,8 +99,8 @@ public final class SpiderMagicAnimDebugHud {
 		LOGGER.info("[{}] anim=[{}] velY={} fallDist={} onGround={} airTicks={} sprint={} djAvail={}",
 				action, anim, String.format("%.3f", v.getY()),
 				String.format("%.3f", player.fallDistance), player.isOnGround(),
-				SpiderMagicDoubleJumpClient.getAirTicks(), player.isSprinting(),
-				SpiderMagicDoubleJumpClient.isJumpAvailable());
+				SpiderMoonWeaverDoubleJumpClient.getAirTicks(), player.isSprinting(),
+				SpiderMoonWeaverDoubleJumpClient.isJumpAvailable());
 	}
 
 	/** 通过 KosmX API 读玩家当前播放的动画名 + 进度。 */
