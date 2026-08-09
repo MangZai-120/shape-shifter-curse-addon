@@ -25,6 +25,16 @@ public final class RegAddonEntities {
 					.trackedUpdateRate(1)
 					.build());
 
+	/** 月织蛛「蛛丝荡漾」次技能飞弹：抛物线飞行，命中方块→摆荡 / 命中生物→tether 拖拽 / miss→落地消失。 */
+	public static final EntityType<SpiderSwingBullet> SPIDER_SWING_BULLET = Registry.register(
+			Registries.ENTITY_TYPE,
+			new Identifier("ssc_addon", "spider_swing_bullet"),
+			FabricEntityTypeBuilder.<SpiderSwingBullet>create(SpawnGroup.MISC, SpiderSwingBullet::new)
+					.dimensions(EntityDimensions.fixed(0.4f, 0.4f))
+					.trackRangeChunks(10)
+					.trackedUpdateRate(1)
+					.build());
+
 	public static void init() {
 		// 触发静态初始化即完成注册
 	}

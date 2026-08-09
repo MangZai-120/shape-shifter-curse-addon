@@ -116,6 +116,23 @@ public class SscAddonClient implements ClientModInitializer {
 		net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(
 				net.onixary.shapeShifterCurseFabric.ssc_addon.client.renderer.TidalTetherBeamRenderer::render);
 
+		// SSCA 月织蛛「蛛丝荡漾」- 接收服务端 S2C 摆荡状态同步（销点/绳长/状态），更新本地镜像供渲染
+		ClientPlayNetworking.registerGlobalReceiver(
+				net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking.PACKET_SPIDER_MOON_WEAVER_SWING_STATE,
+				(client, handler, buf, responseSender) -> {
+					java.util.UUID uuid = buf.readUuid();
+					boolean active = buf.readBoolean();
+					double ax = buf.readDouble();
+					double ay = buf.readDouble();
+					double az = buf.readDouble();
+					double ropeLen = buf.readDouble();
+					int state = buf.readVarInt();
+					boolean canExtend = buf.readBoolean();
+					int tetherEntityId = buf.readInt();
+					client.execute(() -> net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverSwingClient
+							.onStateSync(uuid, active, ax, ay, az, ropeLen, state, canExtend, tetherEntityId));
+				});
+
 		// 修复跨存档颜色变白：cloth-config 里的自定义颜色是全局存储，但服务端 PlayerSkinComponent 按存档独立。
 		// 进入新世界/服务器时，主动把本地 cloth-config 的颜色状态重发给当前服务端，避免新存档拿到默认白色。
 		// 用一个静态倒计时 + 单次注册的 tick 监听，避免多次 JOIN 累积监听器。
@@ -377,6 +394,8 @@ public class SscAddonClient implements ClientModInitializer {
 		EntityRendererRegistry.register(SscAddon.LASER_BEAM_ENTITY, FluorescentLaserRenderer::new);
 		// 月织蛛蓄力蛛丝弹：用 FlyingItemEntityRenderer 渲染蛛丝弹物品精灵（复用原版 web_projectile 物品）
 		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.WEB_MEMBRANE_BULLET, FlyingItemEntityRenderer::new);
+		// 月织蛛蛛丝荡漾飞弹：同样用 FlyingItemEntityRenderer
+		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.SPIDER_SWING_BULLET, FlyingItemEntityRenderer::new);
 
 		// 寄生果蝠形态种子量能量条 HUD
 		SeedEnergyHudRenderer.register();
@@ -445,6 +464,11 @@ public class SscAddonClient implements ClientModInitializer {
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverWebClient.register();
 		// SSCA 月织蛛二段跳 - 跳跃键空中检测
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverDoubleJumpClient.register();
+		// SSCA 月织蛛「蛛丝荡漾」- 次键检测器（发射/断丝 + WASD/空格/Shift 输入上报）
+		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverSwingClient.register();
+		// SSCA 月织蛛「蛛丝荡漾」绳索渲染器（WorldRenderEvents.AFTER_ENTITIES 逐帧画绳索）
+		net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(
+				net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverSwingRenderer::render);
 		// SSCA 月织蛛动画调试 HUD - F6 切换（仅客户端调试用，显示当前动画/进度/二段跳状态）
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverAnimDebugHud.register();
 		// SSCA 进化美西蟠水流冲刺 - 真正疾跑键上报器（区分双击 W/游泳自动疾跑）

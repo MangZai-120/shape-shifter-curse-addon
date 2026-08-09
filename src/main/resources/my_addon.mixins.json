@@ -64,7 +64,8 @@
                    "client.FamiliarFoxManaBarGateMixin",
                    "client.UpgradeAxolotlSpearChargeArmMixin",
                    "client.ClawCrosshairMixin",
-                   "client.NovaSprintLockMixin"
+                   "client.NovaSprintLockMixin",
+                   "client.SwingPhysicsMixin"
                ],
     "injectors":  {
                       "defaultRequire":  1

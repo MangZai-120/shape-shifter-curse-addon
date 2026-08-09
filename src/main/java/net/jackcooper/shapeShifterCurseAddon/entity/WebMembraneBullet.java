@@ -17,8 +17,6 @@ import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.entity.projectile.WebBullet;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
-import java.util.List;
-
 /**
  * 月织蛛「攻击模式」蛛丝弹：复用原版 {@link WebBullet} 的飞行 / 粒子 / 发射音效，
  * 但改写命中效果——命中方块 / 实体后按蓄力档在半径内贴面铺减速蛛网（{@link WebMembraneBlock}），

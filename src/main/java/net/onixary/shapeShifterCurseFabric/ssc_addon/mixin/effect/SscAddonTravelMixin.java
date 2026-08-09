@@ -18,7 +18,8 @@ import java.util.List;
 @Mixin(LivingEntity.class)
 public abstract class SscAddonTravelMixin {
 
-	@Shadow
+	// aliases 兼容 intermediary(field_6362)/yarn(jumping) 运行时映射，防「jumping was not located」崩溃
+	@Shadow(aliases = {"field_6362", "jumping"})
 	protected boolean jumping;
 
 	@Inject(method = "travel", at = @At("HEAD"), cancellable = true)

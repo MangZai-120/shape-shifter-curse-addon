@@ -71,8 +71,10 @@ public final class SpiderMoonWeaverDoubleJumpClient {
 		}
 		boolean pressed = client.options.jumpKey.isPressed();
 		// 边沿触发 + 仅月织蛛 + 仅空中 + 有额度 + 离地满 MIN_AIR_TICKS（一次滞空只允许一次二段跳，防连按上天）
+		// 挂着蛛丝时（蛛丝荡漾）禁用二段跳：空格此时用作收绳
 		if (pressed && !wasJumpPressed && !player.isOnGround() && jumpAvailable && airTicks >= MIN_AIR_TICKS
-				&& FormUtils.isForm(player, FormIdentifiers.SPIDER_MOON_WEAVER)) {
+				&& FormUtils.isForm(player, FormIdentifiers.SPIDER_MOON_WEAVER)
+				&& !net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverSwingClient.isLocalActive()) {
 			// 手动复刻 vanilla 跳跃速度：velY 覆盖为跳跃初速、疾跑时自带水平前冲（走路/跑步两套），
 			// 动画由原版 FSM 依离地+速度自动播 spider_3_jump→fall，无需任何自定义动画代码
 			doDoubleJump(player);

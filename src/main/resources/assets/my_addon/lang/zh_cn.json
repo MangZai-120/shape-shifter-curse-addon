@@ -117,6 +117,8 @@
     "message.ssc_addon.evolution.fail.branches_locked": "进化的两条分支尚未完全觉醒。唯有当灵界之主与契灵的潜能同时在你体内苏醒，进化才可能继续。",
     "death.attack.cursed_erosion": "%1$s 被诅咒之月的力量侵蚀而死",
     "death.attack.cursed_burst": "%1$s 被诅咒之月的力量撑爆了",
+    "death.attack.tether_sacrifice": "%1$s 为守护同伴，替其分担致命伤害而牺牲",
+    "death.attack.tether_sacrifice.player": "%1$s 用蛛丝替同伴挡下了 %2$s 的致命一击",
     "codex.form.my_addon.snow_fox_sp.title": "\n'当诅咒与极寒的风暴完全融合，你便不再仅仅是一只雪狐...\n你是北境的化身，暴风雪的主宰'",
     "codex.form.my_addon.snow_fox_sp.appearance": "你的皮毛如同万年不化的积雪般洁白，双眼闪烁着凛冽的寒光。你走过的地方，空气都会凝结成霜。你的身体散发着即使在最炎热的夏天也无法消散的寒气。",
     "codex.form.my_addon.snow_fox_sp.pros": "霜寒之灵\n你掌握了极寒的力量，能够操控冰雪打击敌人：\n\n雪刺冲刺：消耗霜寒值，向准星方向瞬间冲刺，利用极寒动能对敌人造成高额物理伤害，并施加霜凝效果（大幅降低移速与攻速，并增加其受到的伤害）。\n\n瞬移攻击：利用风雪的掩护，消耗霜寒值瞬间移动到多个敌人身后发动突袭。如果目标已被冻结，造成的伤害更甚。\n\n法术冰球：消耗霜寒值，发射一枚无视重力的魔法冰球，命中后让敌人陷入霜降状态，行动变得迟缓。\n\n冰风暴：积蓄力量召唤一场局部的冰风暴。风暴会持续吸附周围的敌人，并用无数锋利的冰凌对其造成物理切割伤害。\n\n此外，你保留了雪狐的特性，并且对寒冷完全免疫。",
@@ -945,5 +947,9 @@
     "message.my_addon.spider_moon_weaver.mode.attack": "织网术：已切换为「攻击」模式",
     "effect.ssc_addon.spider_web_bound": "蜘网缠身",
     "message.ssc_addon.anim_debug.on": "[SSCA 动画调试] 日志记录已开启（再次输入指令关闭）",
-    "message.ssc_addon.anim_debug.off": "[SSCA 动画调试] 日志记录已关闭"
+    "message.ssc_addon.anim_debug.off": "[SSCA 动画调试] 日志记录已关闭",
+    "message.my_addon.spider_moon_weaver.swing.no_mana": "法力不足，无法发射蛛丝",
+    "message.my_addon.spider_moon_weaver.swing.no_target": "准星方向没有可钩住的方块",
+    "message.my_addon.spider_moon_weaver.swing.firing": "蛛丝飞行中…",
+    "message.my_addon.spider_moon_weaver.swing.hooked": "蛛丝已钩住！按 WASD 摆荡，空格收绳，Shift 放绳，再按断丝"
 }

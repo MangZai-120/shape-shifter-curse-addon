@@ -24,8 +24,9 @@ public class EntityWebGlowMixin {
 
 	@Inject(method = "getTeamColorValue", at = @At("HEAD"), cancellable = true)
 	private void ssca$webHighlightColor(CallbackInfoReturnable<Integer> cir) {
-		if (WebHighlightClient.isHighlighted(((Entity) (Object) this).getId())) {
-			cir.setReturnValue(0x3AA0FF); // 蓝色描边
+		int id = ((Entity) (Object) this).getId();
+		if (WebHighlightClient.isHighlighted(id)) {
+			cir.setReturnValue(WebHighlightClient.getHighlightColor(id)); // 高亮描边颜色（踩网/敌人蓝、拴住友军绿）
 		}
 	}
 }

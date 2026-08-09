@@ -64,6 +64,12 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_SPIDER_MOON_WEAVER_CHARGE_RELEASE = new Identifier("my_addon", "spider_moon_weaver_charge_release");
 	/** C2S：月织蛛二段跳 - 空中按跳跃键。无 payload。 */
 	public static final Identifier PACKET_SPIDER_MOON_WEAVER_DOUBLE_JUMP = new Identifier("my_addon", "spider_moon_weaver_double_jump");
+	/** C2S：月织蛛蛛丝荡漾 - 次键按下（发射/断丝切换）。无 payload。 */
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_SWING_PRESS = new Identifier("my_addon", "spider_moon_weaver_swing_press");
+	/** C2S：月织蛛蛛丝荡漾 - 摆荡中上报当前绳长 + 收放意图（服务端权威扣 mana）。payload: double ropeLen + varint reel(>0收/<0放/0无)。 */
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_SWING_SYNC = new Identifier("my_addon", "spider_moon_weaver_swing_sync");
+	/** S2C：月织蛛蛛丝荡漾 - 状态同步给附近玩家（销点/绳长/状态/canExtend）。payload: UUID + boolean active + 3×double anchor + double ropeLen + varint state + boolean canExtend。 */
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_SWING_STATE = new Identifier("my_addon", "spider_moon_weaver_swing_state");
 
 	/** C2S：进化美西蟠上报「真正疾跑键」按住状态（区分双击 W/游泳自动疾跑）。payload: boolean held。 */
 	public static final Identifier PACKET_AXOLOTL_SPRINT_KEY = new Identifier("my_addon", "axolotl_sprint_key");
@@ -161,12 +167,39 @@ public class SscAddonNetworking {
 		ServerPlayNetworking.send(player, PACKET_SPEAR_CHARGE_STATE, buf);
 	}
 
-	/** S2C：向施法者发「踩网蓝色高亮」，令其客户端把 entityId 对应实体描蓝边 duration tick。 */
+	/** S2C：向施法者发「高亮」（默认蓝色），令其客户端把 entityId 对应实体描边 duration tick。 */
 	public static void sendWebHighlight(ServerPlayerEntity owner, int entityId, int durationTicks) {
+		sendWebHighlight(owner, entityId, durationTicks, 0x3AA0FF);
+	}
+
+	/** S2C：向施法者发「高亮」并指定描边颜色（RGB），仅施法者可见。 */
+	public static void sendWebHighlight(ServerPlayerEntity owner, int entityId, int durationTicks, int color) {
 		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
 		buf.writeVarInt(entityId);
 		buf.writeVarInt(durationTicks);
+		buf.writeInt(color);
 		ServerPlayNetworking.send(owner, PACKET_WEB_HIGHLIGHT, buf);
+	}
+
+	/** S2C：月织蛛蛛丝荡漾 - 向追踪该玩家的客户端 + 玩家自身广播摆荡状态（销点/绳长/状态/canExtend）。 */
+	public static void syncSwingState(ServerPlayerEntity player, boolean active,
+	                                  double ax, double ay, double az, double ropeLen, int state, boolean canExtend, int tetherEntityId) {
+		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+		buf.writeUuid(player.getUuid());
+		buf.writeBoolean(active);
+		buf.writeDouble(ax);
+		buf.writeDouble(ay);
+		buf.writeDouble(az);
+		buf.writeDouble(ropeLen);
+		buf.writeVarInt(state);
+		buf.writeBoolean(canExtend);
+		buf.writeInt(tetherEntityId);
+		for (ServerPlayerEntity viewer :
+				net.fabricmc.fabric.api.networking.v1.PlayerLookup.tracking(player)) {
+			ServerPlayNetworking.send(viewer, PACKET_SPIDER_MOON_WEAVER_SWING_STATE,
+					net.fabricmc.fabric.api.networking.v1.PacketByteBufs.copy(buf));
+		}
+		ServerPlayNetworking.send(player, PACKET_SPIDER_MOON_WEAVER_SWING_STATE, buf);
 	}
 
 	/** S2C：向执行者发「动画调试记录开关切换」，客户端收到后切换本地日志记录。 */
@@ -276,6 +309,16 @@ public class SscAddonNetworking {
 		// SSCA 月织蛛二段跳 - 空中按跳跃键触发（跳跃由客户端原版 jump() 完成，此处仅广播音效粒子）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_DOUBLE_JUMP, (server, player, handler, buf, responseSender) -> {
 			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverDoubleJumpManager.onDoubleJump(player));
+		});
+		// SSCA 月织蛛蛛丝荡漾 - 次键按下（发射 / 断丝切换）
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_SWING_PRESS, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.onSecondaryPress(player));
+		});
+		// SSCA 月织蛛蛛丝荡漾 - 摆荡中上报绳长 + 收放意图（服务端权威扣 mana）
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_SWING_SYNC, (server, player, handler, buf, responseSender) -> {
+			double ropeLen = buf.readDouble();
+			int reel = buf.readVarInt();
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.onReelSync(player, ropeLen, reel));
 		});
 
 		// SSCA 进化美西蟠水流冲刺 - 真正疾跑键按住状态上报

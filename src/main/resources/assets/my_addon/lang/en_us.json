@@ -121,6 +121,8 @@
     "message.ssc_addon.evolution.fail.branches_locked": "The two branches of evolution have not yet fully awakened. Only when the potentials of the Spirit Lord and the Mancianima awaken together within you may evolution proceed.",
     "death.attack.cursed_erosion": "%1$s was eroded by the power of the Cursed Moon",
     "death.attack.cursed_burst": "%1$s was burst by the power of the Cursed Moon",
+    "death.attack.tether_sacrifice": "%1$s sacrificed themselves sharing an ally's fatal damage",
+    "death.attack.tether_sacrifice.player": "%1$s took a fatal blow from %2$s to shield an ally",
     "codex.form.my_addon.snow_fox_sp.title": "\n'When the curse merges completely with the arctic storm, you are no longer just a snow fox...\nYou are the embodiment of the North, master of the blizzard'",
     "codex.form.my_addon.snow_fox_sp.appearance": "Your fur is as white as eternal snow, and your eyes glimmer with piercing cold light. Where you walk, the air condenses into frost. Your body radiates a chill that not even the hottest summer can dispel.",
     "codex.form.my_addon.snow_fox_sp.pros": "Frost Spirit\nYou command the power of extreme cold to strike your enemies:\n\nSnow Spike Dash: Consumes Frost, dash instantly towards your crosshair, dealing high physical damage with kinetic frost energy and inflicting Frost Freeze (greatly reducing speed/attack speed and increasing damage taken).\n\nTeleport Attack: Use the cover of snow to teleport behind multiple enemies for a surprise attack. Deals increased damage to frozen targets.\n\nFrost Ball: Launch a gravity-defying magic ice ball that inflicts Frost Fall, slowing enemies down.\n\nFrost Storm: Channel power to summon a local frost storm. The storm continuously pulls in surrounding enemies and inflicts physical cutting damage with countless sharp icicles.\n\nAdditionally, you retain the traits of a snow fox and are completely immune to cold.",
@@ -945,5 +947,9 @@
     "message.my_addon.spider_moon_weaver.mode.attack": "Web Weaving: switched to Attack mode",
     "effect.ssc_addon.spider_web_bound": "Web Bound",
     "message.ssc_addon.anim_debug.on": "[SSCA Anim Debug] Logging enabled (enter command again to stop)",
-    "message.ssc_addon.anim_debug.off": "[SSCA Anim Debug] Logging disabled"
+    "message.ssc_addon.anim_debug.off": "[SSCA Anim Debug] Logging disabled",
+    "message.my_addon.spider_moon_weaver.swing.no_mana": "Not enough mana to fire web",
+    "message.my_addon.spider_moon_weaver.swing.no_target": "No block to hook onto in view",
+    "message.my_addon.spider_moon_weaver.swing.firing": "Web traveling...",
+    "message.my_addon.spider_moon_weaver.swing.hooked": "Web hooked! WASD to swing, Space to reel in, Shift to reel out, press again to release"
 }

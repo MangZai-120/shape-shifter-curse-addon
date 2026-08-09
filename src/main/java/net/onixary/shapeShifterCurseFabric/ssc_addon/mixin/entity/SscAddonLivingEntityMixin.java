@@ -5,13 +5,17 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityGroup;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.damage.DamageType;
 import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.HuskEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormRegen;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPRangedHitPassive;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaMarkManager;
@@ -23,6 +27,8 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAt
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.VortexChargeManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindSpiritClawManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.BindingAnkletItem;
+import net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.FrostFreezeEffect;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.power.EffectEfficiencyReductionPower;
@@ -43,7 +49,10 @@ import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(LivingEntity.class)
 public abstract class SscAddonLivingEntityMixin {
-
+	/** 月织蛛拴友军分担伤害致拴主牺牲时的伤害源（死亡消息 death.attack.tether_sacrifice）。 */
+	@org.spongepowered.asm.mixin.Unique
+	private static final RegistryKey<DamageType> ssca$TETHER_SACRIFICE_KEY =
+			RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("my_addon", "tether_sacrifice"));
 	/**
 	 * SP 美西螈涡流蓄力：蓄力中的玩家不参与实体碰撞推挤——被涡流吸到身上的怪也挤不动玩家。
 	 * <p>{@code pushAwayFrom} 是 vanilla 实体互推的统一入口（碰撞双方各调一次），在 HEAD 处判定：
@@ -110,6 +119,58 @@ public abstract class SscAddonLivingEntityMixin {
 		if (!FormUtils.isMoistureDependent(attacker)) return amount;
 		if (!net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableMoisturizerItem.isLevel3Equipped(attacker)) return amount;
 		return amount * 1.15F;
+	}
+
+	/**
+	 * 月织蛛蛛丝拴生物（区分敌我）：
+	 * <ul>
+	 *   <li><b>拴敌人（非白名单）</b>：拴主对其伤害 +25%；它对拴主伤害 -25%。</li>
+	 *   <li><b>拴友军（白名单）</b>：友军只受 50% 伤害，另 50% 转移给拴主代为承担（链接护守）。</li>
+	 * </ul>
+	 * 仅服务端判定，多人一致。转移伤害用 magic()（无 attacker）+ 拴主非被拴目标 → 不会递归。
+	 */
+	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+	private float ssc_addon$spiderTetherDamage(float amount, DamageSource source) {
+		if (amount <= 0.0F || source == null) return amount;
+		LivingEntity self = (LivingEntity) (Object) this;
+		if (self.getWorld().isClient()) return amount;
+		Entity attacker = source.getAttacker();
+
+		// A. self 是被某玩家拴住的目标
+		ServerPlayerEntity owner = SpiderMoonWeaverSwingManager.getTetheringPlayer(self);
+		if (owner != null && owner != self) {
+			if (WhitelistUtils.isProtected(owner, self)) {
+				// 拴住友军：友军只受 50%，另 50% 转移给拴主代为承担。
+				// 转移伤害延迟到主线程下一任务施加，避免在 damage 调用栈内同步重入 damage
+				// （重入会污染 MC/Apoli 伤害中间状态或抛异常，导致友军 damage 异常返回 → 表现为无敌打不动）。
+				// 死亡归属：用 tether_sacrifice 伤害源 + 攻击友军的凶手作为击杀者，死亡消息说明「为守护同伴牺牲」。
+				float transfer = amount * 0.5F;
+				if (transfer > 0.0F) {
+					final ServerPlayerEntity fOwner = owner;
+					final Entity killer = attacker;
+					fOwner.getServer().execute(() -> {
+						if (!fOwner.isAlive()) return;
+						DamageSource ds = (killer != null)
+								? fOwner.getDamageSources().create(ssca$TETHER_SACRIFICE_KEY, killer)
+								: fOwner.getDamageSources().create(ssca$TETHER_SACRIFICE_KEY);
+						fOwner.damage(ds, transfer);
+					});
+				}
+				return amount * 0.5F;
+			} else if (attacker == owner) {
+				// 拴住敌人 && 拴主攻击它 → 伤害 +25%
+				return amount * 1.25F;
+			}
+		}
+
+		// B. self 是玩家，被自己拴住的敌人攻击 → 受伤 -25%
+		if (self instanceof ServerPlayerEntity vp && attacker instanceof LivingEntity la
+				&& SpiderMoonWeaverSwingManager.isTethering(vp, la)
+				&& !WhitelistUtils.isProtected(vp, la)) {
+			return amount * 0.75F;
+		}
+
+		return amount;
 	}
 
 	/**
