@@ -36,7 +36,8 @@ public class PotionBagCooldownBypassMixin {
     @WrapOperation(
             method = "interactItem",
             at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/entity/player/ItemCooldownManager;isCoolingDown(Lnet/minecraft/item/Item;)Z")
+                    target = "Lnet/minecraft/entity/player/ItemCooldownManager;isCoolingDown(Lnet/minecraft/item/Item;)Z"),
+            require = 0
     )
     private boolean ssc_addon$bypassCooldownForSneaking(ItemCooldownManager manager, Item item,
             Operation<Boolean> original, @Local(argsOnly = true) ServerPlayerEntity player) {

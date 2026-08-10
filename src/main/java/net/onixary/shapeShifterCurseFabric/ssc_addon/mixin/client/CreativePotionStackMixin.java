@@ -26,7 +26,8 @@ public class CreativePotionStackMixin {
 
 	@WrapOperation(
 			method = "onMouseClick(Lnet/minecraft/screen/slot/Slot;IILnet/minecraft/screen/slot/SlotActionType;)V",
-			at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;getMaxCount()I")
+			at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;getMaxCount()I"),
+			require = 0
 	)
 	private int ssc_addon$potionCreativeStackLimit(ItemStack stack, Operation<Integer> original) {
 		if (stack.getItem() instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.WitherPotionItem) {

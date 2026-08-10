@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.At;
 @Mixin(MilkBucketItem.class)
 public class MilkBucketWebBoundMixin {
 
-	@WrapOperation(method = "finishUsing", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;clearStatusEffects()Z"))
+	@WrapOperation(method = "finishUsing", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;clearStatusEffects()Z"), require = 0)
 	private boolean ssca$keepWebBound(LivingEntity entity, Operation<Boolean> original) {
 		StatusEffectInstance web = entity.getStatusEffect(RegAddonEffects.SPIDER_WEB_BOUND);
 		boolean result = original.call(entity);
