@@ -948,8 +948,5 @@
     "effect.ssc_addon.spider_web_bound": "蜘网缠身",
     "message.ssc_addon.anim_debug.on": "[SSCA 动画调试] 日志记录已开启（再次输入指令关闭）",
     "message.ssc_addon.anim_debug.off": "[SSCA 动画调试] 日志记录已关闭",
-    "message.my_addon.spider_moon_weaver.swing.no_mana": "法力不足，无法发射蛛丝",
-    "message.my_addon.spider_moon_weaver.swing.no_target": "准星方向没有可钩住的方块",
-    "message.my_addon.spider_moon_weaver.swing.firing": "蛛丝飞行中…",
-    "message.my_addon.spider_moon_weaver.swing.hooked": "蛛丝已钩住！按 WASD 摆荡，空格收绳，Shift 放绳，再按断丝"
+    "message.my_addon.spider_moon_weaver.swing.no_mana": "蛛丝不足，无法发射"
 }

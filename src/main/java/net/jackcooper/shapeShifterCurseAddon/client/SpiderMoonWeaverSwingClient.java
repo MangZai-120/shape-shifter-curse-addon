@@ -37,7 +37,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Environment(EnvType.CLIENT)
 public final class SpiderMoonWeaverSwingClient {
 
-	public static final int STATE_IDLE = 0;
 	public static final int STATE_FIRING = 1;
 	public static final int STATE_SWINGING = 2;
 	public static final int STATE_TETHER = 3;
@@ -69,12 +68,6 @@ public final class SpiderMoonWeaverSwingClient {
 		MinecraftClient mc = MinecraftClient.getInstance();
 		if (mc.player == null) return null;
 		return DATA.get(mc.player.getUuid());
-	}
-
-	/** 本地玩家是否正在摆荡（SWINGING 阶段，供物理 mixin 输入拦截判断）。 */
-	public static boolean isLocalSwinging() {
-		LocalSwing s = getLocalSwing();
-		return s != null && s.active && s.state == STATE_SWINGING;
 	}
 
 	/** 本地玩家蛛丝是否挂着（FIRING 或 SWINGING，用于全程屏蔽空格跳跃）。 */
@@ -151,9 +144,5 @@ public final class SpiderMoonWeaverSwingClient {
 		} else {
 			s.ropeLen = ropeLen;
 		}
-	}
-
-	public static void onDisconnect(UUID uuid) {
-		DATA.remove(uuid);
 	}
 }

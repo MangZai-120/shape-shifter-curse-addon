@@ -35,7 +35,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class SpiderMoonWeaverSwingManager {
 
 	// ==== 发射 / 飞行 ====
-	public static final double FIRE_MAX_REACH = 24.0;
 	private static final float BULLET_SPEED = 1.7f;
 	public static final double MANA_PER_BLOCK = 2.0;
 	public static final double TETHER_HIT_MANA_COST = 8.0; // 勾中生物瞬间额外扣的 mana（不足扣到 0）
@@ -85,11 +84,6 @@ public final class SpiderMoonWeaverSwingManager {
 	private static void broadcastState(ServerPlayerEntity player, SwingState s) {
 		SscAddonNetworking.syncSwingState(player, s.state != STATE_IDLE,
 				s.anchor.x, s.anchor.y, s.anchor.z, s.ropeLen, s.state, s.canExtend, s.tetherEntityId);
-	}
-
-	public static boolean isSwinging(ServerPlayerEntity player) {
-		SwingState s = STATES.get(player.getUuid());
-		return s != null && s.state != STATE_IDLE;
 	}
 
 	/**

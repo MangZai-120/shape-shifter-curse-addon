@@ -948,8 +948,5 @@
     "effect.ssc_addon.spider_web_bound": "Web Bound",
     "message.ssc_addon.anim_debug.on": "[SSCA Anim Debug] Logging enabled (enter command again to stop)",
     "message.ssc_addon.anim_debug.off": "[SSCA Anim Debug] Logging disabled",
-    "message.my_addon.spider_moon_weaver.swing.no_mana": "Not enough mana to fire web",
-    "message.my_addon.spider_moon_weaver.swing.no_target": "No block to hook onto in view",
-    "message.my_addon.spider_moon_weaver.swing.firing": "Web traveling...",
-    "message.my_addon.spider_moon_weaver.swing.hooked": "Web hooked! WASD to swing, Space to reel in, Shift to reel out, press again to release"
+    "message.my_addon.spider_moon_weaver.swing.no_mana": "Not enough silk to fire web"
 }
