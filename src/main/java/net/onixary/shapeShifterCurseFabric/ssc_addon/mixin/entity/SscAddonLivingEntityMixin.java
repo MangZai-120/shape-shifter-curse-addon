@@ -53,6 +53,22 @@ public abstract class SscAddonLivingEntityMixin {
 	@org.spongepowered.asm.mixin.Unique
 	private static final RegistryKey<DamageType> ssca$TETHER_SACRIFICE_KEY =
 			RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("my_addon", "tether_sacrifice"));
+
+	/**
+	 * 定身(STUN)的核心拦截：让 isImmobile() 在 STUN 期间返回 true。
+	 * <p>原版 {@code LivingEntity.tickMovement} 在跑 AI 前判 {@code if (isImmobile()) { 清零跳跃/移动输入 }
+	 * else if (canMoveVoluntarily()) { tickNewAi(); }}——STUN 走前一分支即<b>整体跳过 tickNewAi</b>，
+	 * 而 tickNewAi 含 goalSelector / targetSelector / navigation / moveControl / lookControl / jumpControl / mobTick，
+	 * 是怪物 AI 的全部。原 MobEntityMixin 只 cancel 了其中的 mobTick（子类特定逻辑），拦不住 goalSelector，
+	 * 故此前怪物中 STUN 仍会寻路攻击。改 isImmobile 单点拦截、最小侵入、服务端权威多人一致。
+	 * <p>物理不受影响：重力 / 击退 / 流体由 tickMovement 后续代码处理，STUN 怪仍会下坠/被击退，只是 AI 停。
+	 */
+	@Inject(method = "isImmobile", at = @At("RETURN"), cancellable = true)
+	private void ssca$stunImmobile(CallbackInfoReturnable<Boolean> cir) {
+		if (!cir.getReturnValueZ() && ((LivingEntity) (Object) this).hasStatusEffect(SscAddon.STUN)) {
+			cir.setReturnValue(true);
+		}
+	}
 	/**
 	 * SP 美西螈涡流蓄力：蓄力中的玩家不参与实体碰撞推挤——被涡流吸到身上的怪也挤不动玩家。
 	 * <p>{@code pushAwayFrom} 是 vanilla 实体互推的统一入口（碰撞双方各调一次），在 HEAD 处判定：
