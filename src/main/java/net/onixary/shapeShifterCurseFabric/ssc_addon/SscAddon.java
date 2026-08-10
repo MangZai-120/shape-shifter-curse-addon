@@ -48,6 +48,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.InfiniteEnergyPotion
 import net.onixary.shapeShifterCurseFabric.ssc_addon.recipe.SpUpgradeRecipe;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.screen.PotionBagScreenHandler;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPTotem;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPPortableBeacon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSoulEnergy;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormRegen;
 import java.util.Map;
@@ -460,6 +461,7 @@ public class SscAddon implements ModInitializer {
 		SscAddonNetworking.registerServerReceivers();
 		StoryBookLoot.init();
 		AllaySPTotem.init();
+		AllaySPPortableBeacon.init(); // SP 悦灵右键信标切换激活（UseItemCallback 注册，此前漏注册导致功能失效）
 		InfectionSporeManager.init();
 		ParasiticSeedFieldManager.init();
 		ParasiticCombatTracker.init();
