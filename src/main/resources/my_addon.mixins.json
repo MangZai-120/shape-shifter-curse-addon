@@ -3,6 +3,7 @@
     "minVersion":  "0.8",
     "package":  "net.onixary.shapeShifterCurseFabric.ssc_addon.mixin",
     "compatibilityLevel":  "JAVA_17",
+    "plugin":  "net.jackcooper.shapeShifterCurseAddon.mixin.plugin.SscAddonMixinConfigPlugin",
     "refmap":  "ssc-addon.refmap.json",
     "mixins":  [
                    "effect.AllaySPTotemMixin",
