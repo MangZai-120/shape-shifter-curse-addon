@@ -1,8 +1,7 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
-import dev.emi.trinkets.api.SlotReference;
-import dev.emi.trinkets.api.TrinketItem;
 import net.minecraft.client.item.TooltipContext;
+import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
@@ -13,13 +12,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class ActiveCoralNecklaceItem extends TrinketItem {
+public class ActiveCoralNecklaceItem extends AccessoryItem {
 	public ActiveCoralNecklaceItem(Settings settings) {
 		super(settings);
 	}
 
 	@Override
-	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
 		return FormUtils.isAxolotlSP(entity);
 	}
 

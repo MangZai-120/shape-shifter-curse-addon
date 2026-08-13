@@ -1,7 +1,5 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
-import dev.emi.trinkets.api.SlotReference;
-import dev.emi.trinkets.api.TrinketItem;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -11,12 +9,13 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
+import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class PortableFridgeItem extends TrinketItem {
+public class PortableFridgeItem extends AccessoryItem {
 
 	public static final int MAX_CHARGE = 64;
 
@@ -37,7 +36,7 @@ public class PortableFridgeItem extends TrinketItem {
 	}
 
 	@Override
-	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
 		return FormUtils.isSnowFoxSP(entity);
 	}
 
@@ -50,7 +49,7 @@ public class PortableFridgeItem extends TrinketItem {
 	}
 
 	@Override
-	public void tick(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	public void accessoryTick(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
 		if (entity.getWorld().isClient) return;
 
 		// 1. Logic: Refill Launcher every 0.5s (10 ticks)

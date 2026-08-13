@@ -1,8 +1,7 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
-import dev.emi.trinkets.api.SlotReference;
-import dev.emi.trinkets.api.TrinketItem;
 import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
+import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
@@ -28,7 +27,7 @@ import java.util.List;
  *
  * 获取途径：20% 概率出现在废弃矿井战利品箱中。
  */
-public class BloodlustRingItem extends TrinketItem {
+public class BloodlustRingItem extends AccessoryItem {
 
 	private static final Identifier MINESHAFT_LOOT = new Identifier("minecraft", "chests/abandoned_mineshaft");
 
@@ -51,7 +50,7 @@ public class BloodlustRingItem extends TrinketItem {
 	}
 
 	@Override
-	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
 		return FormUtils.isBatDesmodus(entity);
 	}
 

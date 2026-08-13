@@ -1,6 +1,5 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.entity;
 
-import dev.emi.trinkets.api.TrinketsApi;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.FlyingItemEntity;
@@ -24,6 +23,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 import java.util.Comparator;
@@ -179,9 +179,7 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
 
 			// 霜之护符逻辑：如果是玩家发射的，且不是分裂的子弹，且装备了护符
 			if (this.getOwner() instanceof LivingEntity owner && !this.isChild) {
-				boolean hasAmulet = TrinketsApi.getTrinketComponent(owner).map(
-						c -> c.isEquipped(SscAddon.FROST_AMULET)
-				).orElse(false);
+				boolean hasAmulet = TrinketUtils.isWearing(owner, SscAddon.FROST_AMULET);
 
 				if (hasAmulet) {
 					spawnTrackingShards(owner, livingTarget);

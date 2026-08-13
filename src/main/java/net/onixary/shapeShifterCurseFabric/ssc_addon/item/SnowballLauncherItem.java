@@ -1,6 +1,5 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
-import dev.emi.trinkets.api.TrinketsApi;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -17,6 +16,7 @@ import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.UseAction;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -89,12 +89,10 @@ public class SnowballLauncherItem extends Item {
 
 			world.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.BLOCK_DISPENSER_LAUNCH, SoundCategory.PLAYERS, 1.0F, 1.0F / (world.getRandom().nextFloat() * 0.2F + 0.9F));
 
-			// Play Amethyst sound if Portable Fridge is equipped
-			TrinketsApi.getTrinketComponent(entity).ifPresent(component -> {
-				if (component.isEquipped(SscAddon.PORTABLE_FRIDGE)) {
-					world.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.BLOCK_AMETHYST_BLOCK_FALL, SoundCategory.PLAYERS, 1.0F, 1.0F);
-				}
-			});
+			// 装备便携冰箱时播放紫水晶音效（框架无关）
+			if (TrinketUtils.isWearing(entity, SscAddon.PORTABLE_FRIDGE)) {
+				world.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.BLOCK_AMETHYST_BLOCK_FALL, SoundCategory.PLAYERS, 1.0F, 1.0F);
+			}
 
 			if (!isCreative) {
 				setAmmo(stack, ammo - 1);

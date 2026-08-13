@@ -33,6 +33,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
@@ -130,9 +131,7 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         if (!isInternalCooldownReady()) return;
 
         // 双生种荚：一次播种额外寄生最近的第二目标，但能量消耗翻倍、冷却 +1 秒
-        boolean twinPod = dev.emi.trinkets.api.TrinketsApi.getTrinketComponent(caster)
-                .map(c -> c.isEquipped(SscAddon.TWIN_POD))
-                .orElse(false);
+        boolean twinPod = TrinketUtils.isWearing(caster, SscAddon.TWIN_POD);
         int energyCost = twinPod ? ENERGY_COST * 2 : ENERGY_COST;
 
         // 能量检查：不足则释放失败
@@ -357,9 +356,8 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
     private void bearFruit(ServerPlayerEntity caster, LivingEntity host, SeedData seed) {
         boolean friend = WhitelistUtils.isBuffTarget(caster, host);
         // 腐殖之戒：装备时敌方削弱果时长 ×1.5、友方增益果时长 ×0.7；未装备 ×1.0。
-        boolean humus = dev.emi.trinkets.api.TrinketsApi.getTrinketComponent(caster)
-                .map(c -> c.isEquipped(net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.HUMUS_RING))
-                .orElse(false);
+        boolean humus = TrinketUtils.isWearing(caster,
+                net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.HUMUS_RING);
         if (friend) {
             this.currentHumusFactor = humus ? 0.7f : 1.0f;
             applyFriendBuff(host, host == caster, seed.stack);

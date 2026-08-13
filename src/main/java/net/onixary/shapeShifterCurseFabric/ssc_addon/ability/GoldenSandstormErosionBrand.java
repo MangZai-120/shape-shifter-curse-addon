@@ -1,6 +1,5 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.ability;
 
-import dev.emi.trinkets.api.TrinketsApi;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.entity.Entity;
@@ -24,6 +23,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.item.ErosionSandPrismItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.WitheredSandRingItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,32 +108,20 @@ public class GoldenSandstormErosionBrand {
 
 	// ==================== 饰品检查 ====================
 
-	/** 检查玩家是否装备了蚀沙棱晶（双重检测：tick追踪 + TrinketsApi查询） */
+	/** 检查玩家是否装备了蚀沙棱晶（双重检测：tick追踪 + 抽象层查询） */
 	private static boolean hasErosionPrism(ServerPlayerEntity player) {
 		// 方法1：tick回调追踪
 		if (ErosionSandPrismItem.isEquippedBy(player)) return true;
-		// 方法2：直接查询TrinketsApi（后备方案）
-		try {
-			return TrinketsApi.getTrinketComponent(player)
-					.map(c -> c.isEquipped(stack -> stack.getItem() instanceof ErosionSandPrismItem))
-					.orElse(false);
-		} catch (Exception e) {
-			return false;
-		}
+		// 方法2：走框架无关抽象层（后备方案，自动适配 Trinkets/Curios）
+		return TrinketUtils.isWearing(player, stack -> stack.getItem() instanceof ErosionSandPrismItem);
 	}
 
-	/** 检查玩家是否装备了枯沙指环（双重检测：tick追踪 + TrinketsApi查询） */
+	/** 检查玩家是否装备了枯沙指环（双重检测：tick追踪 + 抽象层查询） */
 	private static boolean hasWitheredRing(ServerPlayerEntity player) {
 		// 方法1：tick回调追踪
 		if (WitheredSandRingItem.isEquippedBy(player)) return true;
-		// 方法2：直接查询TrinketsApi（后备方案）
-		try {
-			return TrinketsApi.getTrinketComponent(player)
-					.map(c -> c.isEquipped(stack -> stack.getItem() instanceof WitheredSandRingItem))
-					.orElse(false);
-		} catch (Exception e) {
-			return false;
-		}
+		// 方法2：走框架无关抽象层（后备方案，自动适配 Trinkets/Curios）
+		return TrinketUtils.isWearing(player, stack -> stack.getItem() instanceof WitheredSandRingItem);
 	}
 
 	/**

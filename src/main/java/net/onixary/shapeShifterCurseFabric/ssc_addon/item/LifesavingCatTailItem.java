@@ -1,11 +1,10 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
-import dev.emi.trinkets.api.SlotReference;
-import dev.emi.trinkets.api.TrinketItem;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.item.TooltipContext;
+import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.loot.LootPool;
@@ -20,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class LifesavingCatTailItem extends TrinketItem {
+public class LifesavingCatTailItem extends AccessoryItem {
 
 	public static final int MAX_COOLDOWN = 3600;
 
@@ -42,7 +41,7 @@ public class LifesavingCatTailItem extends TrinketItem {
 	}
 
 	@Override
-	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
 		return FormUtils.isWildCatSP(entity);
 	}
 

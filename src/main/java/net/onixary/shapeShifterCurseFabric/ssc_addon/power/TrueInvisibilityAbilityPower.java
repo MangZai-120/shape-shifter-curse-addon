@@ -1,6 +1,5 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.power;
 
-import dev.emi.trinkets.api.TrinketsApi;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import io.github.apace100.apoli.data.ApoliDataTypes;
 import io.github.apace100.apoli.power.Active;
@@ -19,6 +18,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 
@@ -65,9 +65,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 	}
 
 	private boolean hasInvisibilityCloak() {
-		return TrinketsApi.getTrinketComponent(entity).map(component ->
-				component.isEquipped(SscAddon.INVISIBILITY_CLOAK)
-		).orElse(false);
+		return TrinketUtils.isWearing(entity, SscAddon.INVISIBILITY_CLOAK);
 	}
 
 	public int getEffectDuration() {

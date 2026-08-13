@@ -20,8 +20,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
-
-import dev.emi.trinkets.api.TrinketsApi;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -443,12 +442,10 @@ public class AnubisWolfSpSummonWolves {
 	}
 
 	/**
-	 * 检查玩家是否装备了阿努比斯权杖上的水晶
+	 * 检查玩家是否装备了阿努比斯权杖上的水晶（框架无关：自动适配 Trinkets/Curios）
 	 */
 	public static boolean hasTrinketEquipped(ServerPlayerEntity player) {
-		return TrinketsApi.getTrinketComponent(player)
-				.map(c -> c.isEquipped(SscAddon.ANUBIS_CRYSTAL))
-				.orElse(false);
+		return TrinketUtils.isWearing(player, SscAddon.ANUBIS_CRYSTAL);
 	}
 
 	// ==================== 辅助方法 ====================

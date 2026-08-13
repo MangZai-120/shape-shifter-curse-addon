@@ -2,9 +2,11 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.ability;
 
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 
 import java.util.List;
@@ -65,18 +67,14 @@ public final class BatDesmodusBloodThirst {
         return player != null && FormUtils.isForm(player, FormIdentifiers.BAT_DESMODUS);
     }
 
-    /** 是否装备渴血石榴石（gain ×1.5 / decay ×1.5 + 每秒被动流失 1） */
+    /** 是否装备渴血石榴石（gain ×1.5 / decay ×1.5 + 每秒被动流失 1；框架无关） */
     private static boolean hasBloodGarnet(ServerPlayerEntity player) {
-        return dev.emi.trinkets.api.TrinketsApi.getTrinketComponent(player)
-                .map(c -> c.isEquipped(net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.BLOOD_GARNET))
-                .orElse(false);
+        return TrinketUtils.isWearing(player, SscAddon.BLOOD_GARNET);
     }
 
-    /** 是否装备嗜血指环（满血吸血反噬 1 真伤/秒；吸血加成在 mixin 内处理） */
+    /** 是否装备嗜血指环（满血吸血反噬 1 真伤/秒；吸血加成在 mixin 内处理；框架无关） */
     public static boolean hasBloodlustRing(ServerPlayerEntity player) {
-        return dev.emi.trinkets.api.TrinketsApi.getTrinketComponent(player)
-                .map(c -> c.isEquipped(net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.BLOODLUST_RING))
-                .orElse(false);
+        return TrinketUtils.isWearing(player, SscAddon.BLOODLUST_RING);
     }
 
     /** 读取血渴值（仅蝙蝠形态有效） */

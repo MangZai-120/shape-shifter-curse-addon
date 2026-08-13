@@ -1,9 +1,5 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
-import dev.emi.trinkets.api.SlotReference;
-import dev.emi.trinkets.api.TrinketComponent;
-import dev.emi.trinkets.api.TrinketItem;
-import dev.emi.trinkets.api.TrinketsApi;
 import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
@@ -25,13 +21,14 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
+import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * 绑定脚环（Binding Anklet）—— 契灵首个专属饰品。
@@ -46,7 +43,7 @@ import java.util.Optional;
  * 加成的伤害侧由 {@link net.onixary.shapeShifterCurseFabric.ssc_addon.mixin.entity.BindingAnkletAuraMixin}
  * 在 LivingEntity#damage 入口 ModifyVariable，调用本类静态方法判定。
  */
-public class BindingAnkletItem extends TrinketItem {
+public class BindingAnkletItem extends AccessoryItem {
 
 	/** 灵气范围（格） */
 	public static final double AURA_RADIUS = 16.0D;
@@ -62,7 +59,7 @@ public class BindingAnkletItem extends TrinketItem {
 	/* ------------------------------------------------------------ */
 
 	@Override
-	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
 		// 仅契灵形态可装备
 		return FormUtils.isForm(entity, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA);
 	}
@@ -108,9 +105,7 @@ public class BindingAnkletItem extends TrinketItem {
 	}
 
 	private static boolean isAnkletEquipped(PlayerEntity player) {
-		Optional<TrinketComponent> opt = TrinketsApi.getTrinketComponent(player);
-		if (opt.isEmpty()) return false;
-		return opt.get().isEquipped(SscAddon.BINDING_ANKLET);
+		return TrinketUtils.isWearing(player, SscAddon.BINDING_ANKLET);
 	}
 
 	/* ------------------------------------------------------------ */

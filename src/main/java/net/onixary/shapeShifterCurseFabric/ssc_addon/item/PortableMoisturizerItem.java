@@ -1,9 +1,7 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
-import dev.emi.trinkets.api.SlotReference;
-import dev.emi.trinkets.api.TrinketItem;
-import dev.emi.trinkets.api.TrinketsApi;
 import net.minecraft.client.item.TooltipContext;
+import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -15,6 +13,7 @@ import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -24,7 +23,7 @@ import java.util.List;
  * 佩戴 + 湿润度(air)未满时自动回复；淋雨露天时暂停回复/消耗、每 2 秒回充 1 秒使用时间；
  * 三级佩戴额外提供全伤害 +15%（伤害侧由 SscAddonLivingEntityMixin 判定）。
  */
-public class PortableMoisturizerItem extends TrinketItem {
+public class PortableMoisturizerItem extends AccessoryItem {
 
 	public static final int MAX_LEVEL = 3;
 
@@ -78,7 +77,7 @@ public class PortableMoisturizerItem extends TrinketItem {
 
 	// ===== 装备限制：仅美西螈系可佩戴 =====
 	@Override
-	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
 		return FormUtils.isMoistureDependent(entity);
 	}
 
@@ -96,7 +95,7 @@ public class PortableMoisturizerItem extends TrinketItem {
 
 	// ===== 佩戴时每 tick 逻辑（服务端） =====
 	@Override
-	public void tick(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	public void accessoryTick(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
 		if (entity.getWorld().isClient || !(entity instanceof PlayerEntity player)) return;
 		if (!FormUtils.isMoistureDependent(player)) return;
 
@@ -124,15 +123,11 @@ public class PortableMoisturizerItem extends TrinketItem {
 		}
 	}
 
-	/** 攻击者是否佩戴了三级加湿器（供伤害 mixin 判定全伤害 +15%，服务端调用）。 */
+	/** 攻击者是否佩戴了三级加湿器（供伤害 mixin 判定全伤害 +15%，服务端调用；框架无关）。 */
 	public static boolean isLevel3Equipped(LivingEntity entity) {
 		if (entity == null) return false;
-		return TrinketsApi.getTrinketComponent(entity).map(component -> {
-			for (var pair : component.getEquipped(SscAddon.PORTABLE_MOISTURIZER)) {
-				if (getLevel(pair.getRight()) >= 3) return true;
-			}
-			return false;
-		}).orElse(false);
+		return TrinketUtils.isWearing(entity, stack ->
+				stack.getItem() == SscAddon.PORTABLE_MOISTURIZER && getLevel(stack) >= 3);
 	}
 
 	// ===== 物品充能条 =====

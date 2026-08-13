@@ -1,9 +1,5 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
-import dev.emi.trinkets.api.SlotReference;
-import dev.emi.trinkets.api.TrinketComponent;
-import dev.emi.trinkets.api.TrinketItem;
-import dev.emi.trinkets.api.TrinketsApi;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.minecraft.client.item.TooltipContext;
@@ -21,18 +17,19 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.additional_power.VirtualTotemPower;
+import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * 安卡纹石 - SP阿努比斯之狼专属饰品（戒指槽）
  * 复活被动触发时：消除凋零和虚弱效果、减少80%冷却、物品消耗并播放碎裂音效
  */
-public class AnkhStoneItem extends TrinketItem {
+public class AnkhStoneItem extends AccessoryItem {
 
 	public AnkhStoneItem(Settings settings) {
 		super(settings);
@@ -45,11 +42,10 @@ public class AnkhStoneItem extends TrinketItem {
 		if (!(entity instanceof ServerPlayerEntity player)) return;
 		if (!FormUtils.isAnubisWolfSP(player)) return;
 
-		// 检查是否装备了安卡纹石
-		Optional<TrinketComponent> trinketOpt = TrinketsApi.getTrinketComponent(player);
-		if (trinketOpt.isEmpty()) return;
-		TrinketComponent component = trinketOpt.get();
-		if (!component.isEquipped(SscAddon.ANKH_STONE)) return;
+		// 检查是否装备了安卡纹石（框架无关：自动适配 Trinkets/Curios）
+		ItemStack ankhStack = TrinketUtils.findFirstEquipped(player,
+				stack -> stack.getItem() == SscAddon.ANKH_STONE);
+		if (ankhStack == null) return;
 
 		// 消除凋零和虚弱效果（保留火焰抗性）
 		player.removeStatusEffect(StatusEffects.WITHER);
@@ -65,7 +61,7 @@ public class AnkhStoneItem extends TrinketItem {
 		}
 
 		// 消耗安卡纹石（只消耗第一个）
-		component.getEquipped(SscAddon.ANKH_STONE).stream().findFirst().ifPresent(pair -> pair.getRight().decrement(1));
+		ankhStack.decrement(1);
 
 		// 播放物品碎裂音效
 		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -88,7 +84,7 @@ public class AnkhStoneItem extends TrinketItem {
 	}
 
 	@Override
-	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
 		return FormUtils.isAnubisWolfSP(entity);
 	}
 

@@ -1,9 +1,8 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
-import dev.emi.trinkets.api.SlotReference;
-import dev.emi.trinkets.api.TrinketItem;
 import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.minecraft.client.item.TooltipContext;
+import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.loot.LootPool;
@@ -25,7 +24,7 @@ import java.util.List;
  * 效果：增加冥狼召唤数量和上限
  * 获取途径：沙漠神殿战利品箱，15%概率
  */
-public class AnubisCrystalItem extends TrinketItem {
+public class AnubisCrystalItem extends AccessoryItem {
 	public AnubisCrystalItem(Settings settings) {
 		super(settings);
 	}
@@ -46,7 +45,7 @@ public class AnubisCrystalItem extends TrinketItem {
 	}
 
 	@Override
-	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
 		return FormUtils.isAnubisWolfSP(entity);
 	}
 

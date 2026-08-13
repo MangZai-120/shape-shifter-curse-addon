@@ -1,7 +1,5 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
-import dev.emi.trinkets.api.SlotReference;
-import dev.emi.trinkets.api.TrinketItem;
 import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
@@ -15,6 +13,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
+import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
@@ -29,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 副作用：烙印叠加冷却从1秒变为1.3秒
  * 获取途径：沙漠神殿战利品箱，15%概率
  */
-public class ErosionSandPrismItem extends TrinketItem {
+public class ErosionSandPrismItem extends AccessoryItem {
 
 	/** 服务端装备状态追踪：玩家UUID -> 最后一次tick的游戏时间 */
 	private static final ConcurrentHashMap<UUID, Long> EQUIPPED_PLAYERS = new ConcurrentHashMap<>();
@@ -54,26 +53,26 @@ public class ErosionSandPrismItem extends TrinketItem {
 	}
 
 	@Override
-	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
 		return FormUtils.isGoldenSandstormSP(entity);
 	}
 
 	@Override
-	public void tick(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	public void accessoryTick(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
 		if (entity instanceof ServerPlayerEntity player) {
 			EQUIPPED_PLAYERS.put(player.getUuid(), entity.getWorld().getTime());
 		}
 	}
 
 	@Override
-	public void onEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	public void onEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
 		if (entity instanceof ServerPlayerEntity player) {
 			EQUIPPED_PLAYERS.put(player.getUuid(), entity.getWorld().getTime());
 		}
 	}
 
 	@Override
-	public void onUnequip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	public void onUnequip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
 		if (entity instanceof ServerPlayerEntity) {
 			EQUIPPED_PLAYERS.remove(entity.getUuid());
 		}

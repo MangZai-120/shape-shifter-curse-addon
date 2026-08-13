@@ -1,6 +1,5 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.condition;
 
-import dev.emi.trinkets.api.TrinketsApi;
 import io.github.apace100.apoli.data.ApoliDataTypes;
 import io.github.apace100.apoli.power.factory.condition.ConditionFactory;
 import io.github.apace100.apoli.registry.ApoliRegistries;
@@ -23,6 +22,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormEros
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaMarkClientState;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaMarkManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.SkillBlocker;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.RegEvolutionComponent;
 
@@ -37,9 +37,8 @@ public class SscAddonConditions {
 				new SerializableData(),
 				(data, entity) -> {
 					if (entity instanceof PlayerEntity player) {
-						return TrinketsApi.getTrinketComponent(player).map(component ->
-								component.isEquipped(Registries.ITEM.get(new Identifier("shape-shifter-curse", "charm_of_reverse_thermometer")))
-						).orElse(false);
+						return TrinketUtils.isWearing(player,
+								Registries.ITEM.get(new Identifier("shape-shifter-curse", "charm_of_reverse_thermometer")));
 					}
 					return false;
 				}));
@@ -49,9 +48,7 @@ public class SscAddonConditions {
 						.add("item", SerializableDataTypes.ITEM),
 				(data, entity) -> {
 					if (entity instanceof PlayerEntity player) {
-						return TrinketsApi.getTrinketComponent(player).map(component ->
-								component.isEquipped((net.minecraft.item.Item) data.get("item"))
-						).orElse(false);
+						return TrinketUtils.isWearing(player, (net.minecraft.item.Item) data.get("item"));
 					}
 					return false;
 				}));
@@ -70,9 +67,7 @@ public class SscAddonConditions {
 				new SerializableData(),
 				(data, entity) -> {
 					if (entity instanceof PlayerEntity player) {
-						return TrinketsApi.getTrinketComponent(player).map(component ->
-								component.isEquipped(SscAddon.BLUE_FIRE_AMULET)
-						).orElse(false);
+						return TrinketUtils.isWearing(player, SscAddon.BLUE_FIRE_AMULET);
 					}
 					return false;
 				}));

@@ -5,27 +5,26 @@
  */
 package net.onixary.shapeShifterCurseFabric.ssc_addon.item;
 
-import dev.emi.trinkets.api.SlotReference;
-import dev.emi.trinkets.api.TrinketItem;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.World;
+import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 /** 风灵专属项链：加快「疾风连爪」过热后的耐力回复速度（效果在 WindSpiritClawManager 生效）。 */
-public class WindSpiritStaminaNecklaceItem extends TrinketItem {
+public class WindSpiritStaminaNecklaceItem extends AccessoryItem {
     public WindSpiritStaminaNecklaceItem(Settings settings) {
         super(settings);
     }
 
     @Override
-    public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
         return FormUtils.isOcelotSP(entity);
     }
 

@@ -5,6 +5,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.entity.player.PlayerEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils;
 
 public class PlayingDeadEffect extends StatusEffect {
 	// 装死回血：每 10 tick 结算一次，6 秒(120t)≈ 12 次
@@ -40,13 +41,9 @@ public class PlayingDeadEffect extends StatusEffect {
 			return;
 		}
 		boolean hasNecklace = false;
-		if (entity instanceof PlayerEntity player) {
-			try {
-				hasNecklace = dev.emi.trinkets.api.TrinketsApi.getTrinketComponent(player)
-						.map(c -> c.isEquipped(net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.ACTIVE_CORAL_NECKLACE))
-						.orElse(false);
-			} catch (Throwable ignored) {
-			}
+		if (entity instanceof PlayerEntity) {
+			hasNecklace = TrinketUtils.isWearing(entity,
+					net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.ACTIVE_CORAL_NECKLACE);
 		}
 		if (hasNecklace) {
 			entity.heal(NECKLACE_HEAL_PER_TICK);

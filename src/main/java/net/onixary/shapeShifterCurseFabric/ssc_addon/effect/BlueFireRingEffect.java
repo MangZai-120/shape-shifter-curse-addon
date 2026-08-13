@@ -1,6 +1,5 @@
 package net.onixary.shapeShifterCurseFabric.ssc_addon.effect;
 
-import dev.emi.trinkets.api.TrinketsApi;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffect;
@@ -11,6 +10,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils;
 
 public class BlueFireRingEffect extends StatusEffect {
 
@@ -72,11 +72,9 @@ public class BlueFireRingEffect extends StatusEffect {
 		}
 	}
 
-	/** 检测玩家是否佩戴蓝火护符（与 ssc_addon:has_blue_fire_amulet 条件判断一致）。 */
+	/** 检测玩家是否佩戴蓝火护符（与 ssc_addon:has_blue_fire_amulet 条件判断一致；框架无关）。 */
 	private static boolean hasBlueFireAmulet(LivingEntity entity) {
-		if (!(entity instanceof PlayerEntity player)) return false;
-		return TrinketsApi.getTrinketComponent(player)
-				.map(component -> component.isEquipped(SscAddon.BLUE_FIRE_AMULET))
-				.orElse(false);
+		if (!(entity instanceof PlayerEntity)) return false;
+		return TrinketUtils.isWearing(entity, SscAddon.BLUE_FIRE_AMULET);
 	}
 }
