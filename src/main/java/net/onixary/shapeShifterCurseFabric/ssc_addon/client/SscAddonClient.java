@@ -392,6 +392,8 @@ public class SscAddonClient implements ClientModInitializer {
 		// 法阵激光用自定义渲染器画发光法阵 + 穿墙光柱（自发光、粗彩带）
 		EntityRendererRegistry.register(SscAddon.TIDAL_ORB_ENTITY, net.onixary.shapeShifterCurseFabric.ssc_addon.client.renderer.TidalOrbRenderer::new);
 		EntityRendererRegistry.register(SscAddon.LASER_BEAM_ENTITY, FluorescentLaserRenderer::new);
+		// 月织蛛搭路模式蛛丝弹：用 FlyingItemEntityRenderer 渲染（复用原版 web_projectile 物品精灵）
+		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.BRIDGE_WEB_BULLET, FlyingItemEntityRenderer::new);
 		// 月织蛛蓄力蛛丝弹：用 FlyingItemEntityRenderer 渲染蛛丝弹物品精灵（复用原版 web_projectile 物品）
 		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.WEB_MEMBRANE_BULLET, FlyingItemEntityRenderer::new);
 		// 月织蛛蛛丝荡漾飞弹：同样用 FlyingItemEntityRenderer

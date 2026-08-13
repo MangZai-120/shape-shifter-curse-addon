@@ -945,5 +945,11 @@
     "effect.ssc_addon.spider_web_bound": "蜘网缠身",
     "message.ssc_addon.anim_debug.on": "[SSCA 动画调试] 日志记录已开启（再次输入指令关闭）",
     "message.ssc_addon.anim_debug.off": "[SSCA 动画调试] 日志记录已关闭",
-    "message.my_addon.spider_moon_weaver.swing.no_mana": "蛛丝不足，无法发射"
+    "message.my_addon.spider_moon_weaver.swing.no_mana": "蛛丝不足，无法发射",
+    "power.my_addon.form_spider_moon_weaver_web_affinity.name": "蛛网亲和",
+    "power.my_addon.form_spider_moon_weaver_web_affinity.description": "当你站上或触碰蜘蛛网与自己所织的蛛网膜时，你的织网主场便会苏醒：移动速度 +20%，每秒回复 1 点蛛丝法力，受到的伤害减少 20%。",
+    "power.my_addon.form_spider_moon_weaver_moon_poison.name": "月毒侵蚀",
+    "power.my_addon.form_spider_moon_weaver_moon_poison.description": "被你的蛛网缠身或裹茧状态所困的敌人，将不断受到月毒侵蚀、持续中毒（中毒 I）。蜘蛛类与悦灵系免疫。",
+    "power.my_addon.form_spider_moon_weaver_cocooned_prey.name": "茧化猎手",
+    "power.my_addon.form_spider_moon_weaver_cocooned_prey.description": "近身攻击被你裹茧（完全无法动弹）的目标时，造成的伤害提高 15%。与攻击茧化目标回复蛛丝法力的本能相辅相成。"
 }

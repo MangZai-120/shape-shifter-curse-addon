@@ -15,6 +15,16 @@ public final class RegAddonEntities {
 
 	private RegAddonEntities() {}
 
+	/** 月织蛛「搭路模式」蛛丝弹：命中方块走附属移植版搭路（网膜让位），其余行为同原版 WebBullet。 */
+	public static final EntityType<BridgeWebBullet> BRIDGE_WEB_BULLET = Registry.register(
+			Registries.ENTITY_TYPE,
+			new Identifier("ssc_addon", "bridge_web_bullet"),
+			FabricEntityTypeBuilder.<BridgeWebBullet>create(SpawnGroup.MISC, BridgeWebBullet::new)
+					.dimensions(EntityDimensions.fixed(0.5f, 0.5f))
+					.trackRangeChunks(10)
+					.trackedUpdateRate(1)
+					.build());
+
 	/** 月织蛛「攻击模式」蓄力蛛丝弹：命中方块 / 实体后按蓄力档在半径内贴面铺减速蛛网（web_membrane）。 */
 	public static final EntityType<WebMembraneBullet> WEB_MEMBRANE_BULLET = Registry.register(
 			Registries.ENTITY_TYPE,

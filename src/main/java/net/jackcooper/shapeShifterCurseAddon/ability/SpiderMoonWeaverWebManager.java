@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.entity.BridgeWebBullet;
 import net.jackcooper.shapeShifterCurseAddon.entity.WebMembraneBullet;
 import net.jackcooper.shapeShifterCurseAddon.state.RegSpiderMoonWeaverStateComponent;
 import net.jackcooper.shapeShifterCurseAddon.state.SpiderMoonWeaverStateComponent;
@@ -11,9 +12,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.onixary.shapeShifterCurseFabric.additional_power.WebBridgeAction;
 import net.onixary.shapeShifterCurseFabric.blocks.RegCustomBlock;
-import net.onixary.shapeShifterCurseFabric.entity.projectile.WebBullet;
 import net.onixary.shapeShifterCurseFabric.mana.ManaComponent;
 import net.onixary.shapeShifterCurseFabric.mana.RegManaComponent;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
@@ -32,8 +31,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li><b>潜行双击主键</b> → {@link #toggleMode} 切换 搭路 / 攻击 模式（客户端手势判定，蓄力中禁止切换）。</li>
  *   <li><b>按住主键蓄力 → 松开</b> → {@link #start} / {@link #release} 发动当前模式：</li>
  *   <ul>
- *     <li>搭路模式：不潜行 → 发射原版 {@link WebBullet} 蛛丝弹（命中方块建蛛丝梯 / 命中实体施缠绕）；
- *         潜行 → 脚下平铺原版 {@link WebBridgeAction} 蛛丝桥。</li>
+ *     <li>搭路模式：不潜行 → 发射附属 {@link BridgeWebBullet} 蛛丝弹（命中方块建蛛丝梯，梯块可替代减速网膜；
+ *         命中实体施缠绕）；
+ *         潜行 → 脚下平铺 {@link AddonWebBridgeAction} 蛛丝桥（同样可替代网膜）。</li>
  *     <li>攻击模式 → 发 {@link WebMembraneBullet}，命中后按档在半径 3/5/6 格内贴面铺减速蛛网。</li>
  *   </ul>
  * </ul>
@@ -195,13 +195,13 @@ public final class SpiderMoonWeaverWebManager {
 				SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.PLAYERS, 0.9f, 0.7f);
 	}
 
-	// 搭路模式-平铺：在玩家前方脚同高水平面铺原版 web_bridge 蛛丝桥（平地也能在前方铺出）
+	// 搭路模式-平铺：在玩家前方脚同高水平面铺蛛丝桥（平地也能在前方铺出）；桥块可替代减速网膜
 	private static void fireBridgeFlat(ServerPlayerEntity player, int tier) {
 		int length = tier >= 3 ? 18 : (tier >= 2 ? 14 : 10);
 		BlockPos pos = player.getBlockPos(); // 脚同高水平面（空气层），从前方第一格开始能铺上
 		Direction dir = player.getHorizontalFacing();
-		WebBridgeAction.BuildWebBridge(player.getWorld(), pos, dir,
-				new WebBridgeAction.WebBridgeConfig(length, 0), RegCustomBlock.TEMP_WEB_BRIDGE);
+		AddonWebBridgeAction.BuildWebBridge(player.getWorld(), pos, dir,
+				new AddonWebBridgeAction.WebBridgeConfig(length, 0), RegCustomBlock.TEMP_WEB_BRIDGE);
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_GRASS_PLACE, SoundCategory.PLAYERS, 0.6f, 0.8f);
@@ -209,9 +209,9 @@ public final class SpiderMoonWeaverWebManager {
 				40, 1.0, 0.5, 1.0, 0.0);
 	}
 
-	// 搭路模式-发射：发射原版 WebBullet 蛛丝弹（命中方块 BuildWebLadder 建蛛丝梯，命中实体施缠绕）
+	// 搭路模式-发射：发射附属 BridgeWebBullet 蛛丝弹（命中方块走移植版 BuildWebLadder 建蛛丝梯——梯块可替代网膜；命中实体施缠绕）
 	private static void fireBridgeShoot(ServerPlayerEntity player, int tier) {
-		WebBullet bullet = new WebBullet(player, tier);
+		BridgeWebBullet bullet = new BridgeWebBullet(player, tier);
 		bullet.setVelocity(player, player.getPitch(), player.getYaw(), 0.0f, 2.0f, 1.0f); // 原版 speed=2, divergence=1
 		player.getWorld().spawnEntity(bullet);
 	}

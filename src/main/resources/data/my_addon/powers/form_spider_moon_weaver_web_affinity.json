@@ -1,0 +1,52 @@
+{
+  "type": "apoli:multiple",
+  "speed_up": {
+    "type": "apoli:conditioned_attribute",
+    "modifier": {
+      "attribute": "minecraft:generic.movement_speed",
+      "operation": "multiply_total",
+      "value": 0.20,
+      "name": "Moon Weaver Web Affinity Speed"
+    },
+    "tick_rate": 5,
+    "condition": {
+      "type": "apoli:in_block_anywhere",
+      "block_condition": {
+        "type": "apoli:in_tag",
+        "tag": "my_addon:spider_web_ground"
+      }
+    }
+  },
+  "mana_regen": {
+    "type": "apoli:action_over_time",
+    "interval": 20,
+    "condition": {
+      "type": "apoli:in_block_anywhere",
+      "block_condition": {
+        "type": "apoli:in_tag",
+        "tag": "my_addon:spider_web_ground"
+      }
+    },
+    "entity_action": {
+      "type": "shape-shifter-curse:gain_mana",
+      "mana": 1.0
+    }
+  },
+  "damage_reduce": {
+    "type": "apoli:modify_damage_taken",
+    "condition": {
+      "type": "apoli:in_block_anywhere",
+      "block_condition": {
+        "type": "apoli:in_tag",
+        "tag": "my_addon:spider_web_ground"
+      }
+    },
+    "modifier": {
+      "operation": "multiply_total",
+      "value": -0.20,
+      "name": "Moon Weaver Web Affinity Damage Reduce"
+    }
+  },
+  "name": "power.my_addon.form_spider_moon_weaver_web_affinity.name",
+  "description": "power.my_addon.form_spider_moon_weaver_web_affinity.description"
+}

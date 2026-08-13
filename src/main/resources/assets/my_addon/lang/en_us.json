@@ -945,5 +945,11 @@
     "effect.ssc_addon.spider_web_bound": "Web Bound",
     "message.ssc_addon.anim_debug.on": "[SSCA Anim Debug] Logging enabled (enter command again to stop)",
     "message.ssc_addon.anim_debug.off": "[SSCA Anim Debug] Logging disabled",
-    "message.my_addon.spider_moon_weaver.swing.no_mana": "Not enough silk to fire web"
+    "message.my_addon.spider_moon_weaver.swing.no_mana": "Not enough silk to fire web",
+    "power.my_addon.form_spider_moon_weaver_web_affinity.name": "Web Affinity",
+    "power.my_addon.form_spider_moon_weaver_web_affinity.description": "When you stand on or touch cobwebs and your own woven web membrane, your web domain awakens: +20% movement speed, +1 web mana per second, and 20% less damage taken.",
+    "power.my_addon.form_spider_moon_weaver_moon_poison.name": "Moon Venom",
+    "power.my_addon.form_spider_moon_weaver_moon_poison.description": "Enemies afflicted by your Web Bound or Cocooning status suffer continuous Moon Venom, afflicted with Poison I. Spiders and Allay-kin are immune.",
+    "power.my_addon.form_spider_moon_weaver_cocooned_prey.name": "Cocooned Prey",
+    "power.my_addon.form_spider_moon_weaver_cocooned_prey.description": "Melee attacks against targets you have cocooned (fully immobilized) deal 15% more damage. Synergizes with your instinct to regain web mana when striking cocooned foes."
 }

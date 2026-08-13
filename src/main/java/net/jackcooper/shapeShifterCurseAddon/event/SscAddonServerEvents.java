@@ -96,8 +96,7 @@ public final class SscAddonServerEvents {
 				MancianimaPassive.tick(player);
 				VortexChargeManager.tick(player);
 				net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.tick(player);
-				net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.tick(player);
-				WindSpiritClawManager.tick(player);
+				net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.tick(player);			net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverMoonPoisonManager.tick(player);				WindSpiritClawManager.tick(player);
 				WindDashManager.tick(player);
 				WindSpiritLandingSurgeManager.tick(player);
 				WaterSpearLeapManager.tick(player);
