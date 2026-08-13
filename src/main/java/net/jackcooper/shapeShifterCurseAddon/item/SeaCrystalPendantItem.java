@@ -1,7 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.item;
 
-import dev.emi.trinkets.api.SlotReference;
-import dev.emi.trinkets.api.TrinketItem;
 import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
@@ -14,6 +12,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
+import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
@@ -26,8 +25,11 @@ import java.util.List;
  * 法阵激光变缩范围三连发（施法期仅半速而非完全定身）。
  * 具体效果在 TidalOrbEntity / LaserBeamEntity / 两个 Manager 里通过
  * TrinketUtils.isWearing(owner, SscAddon.SEA_CRYSTAL_PENDANT) 判定生效。
+ *
+ * <p>饰品后端无关：与附属其余饰品一致继承 SSC 的 {@link AccessoryItem} 抽象层
+ * （Trinkets / Curios 桥接自动适配），不直接依赖 Trinkets 类——附属对 trinkets 为弱依赖。
  */
-public class SeaCrystalPendantItem extends TrinketItem {
+public class SeaCrystalPendantItem extends AccessoryItem {
 	public SeaCrystalPendantItem(Settings settings) {
 		super(settings);
 	}
@@ -49,15 +51,16 @@ public class SeaCrystalPendantItem extends TrinketItem {
 	}
 
 	@Override
-	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
-		// 专属限制：只有荧光幼灵（含阿澪）能装备
-		return FormUtils.isAxolotlFluorescent(entity);
+	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
+		// 专属限制：只有荧光幼灵（含阿澪）能装备。
+		// 登录装载瞬间（age==0）宽容放行（防重开世界被 Curios/Trinkets 校验吐出），
+		// 形态不符的由 AddonAccessoryGuard.tick 全局兜底自动卸下归还。
+		return AddonAccessoryGuard.canEquip(entity, FormUtils::isAxolotlFluorescent);
 	}
 
 	@Override
 	public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
 		tooltip.add(Text.translatable("item.ssc_addon.sea_crystal_pendant.desc").formatted(Formatting.BLUE));
 		tooltip.add(Text.translatable("item.ssc_addon.sea_crystal_pendant.tooltip.exclusive").formatted(Formatting.LIGHT_PURPLE));
-		super.appendTooltip(stack, world, tooltip, context);
 	}
 }

@@ -108,14 +108,17 @@ public final class SscAddonServerEvents {
 				// 冥裁者凋零阶梯 / 凋零抗性追踪（凋零持续时长分层 + tick 跳过计数）
 				WitherFrenzyManager.tick(player);
 				EvolutionManager.tickPlayer(player);
-			}
-		});
+			// SSCA 专属饰品登录守卫：登录宽容放行后，形态不符的自动卸下归还（Curios/Trinkets 双后端）
+			net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.tick(player);
+		}
+	});
 
 		// END_SERVER_TICK：荧光幼灵技能 pendingCd 补设（球/盾消失后回调无法直接拿到 player）
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			Collection<ServerPlayerEntity> players = server.getPlayerManager().getPlayerList();
 			FluorescentTidalManager.tickPendingCd(players);
 		});
+
 
 		// 月织蛛「织网术」/「蛛丝荡漾」：玩家掉线清理状态，防僵尸 UUID 残留
 		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((netHandler, server) -> {

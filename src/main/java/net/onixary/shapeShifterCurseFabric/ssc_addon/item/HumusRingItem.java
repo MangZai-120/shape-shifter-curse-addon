@@ -51,7 +51,7 @@ public class HumusRingItem extends AccessoryItem {
 
 	@Override
 	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-		return FormUtils.isBatParasiticFruit(entity);
+		return net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.canEquip(entity, FormUtils::isBatParasiticFruit);
 	}
 
 	@Override

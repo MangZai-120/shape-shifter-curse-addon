@@ -54,7 +54,7 @@ public class ErosionSandPrismItem extends AccessoryItem {
 
 	@Override
 	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-		return FormUtils.isGoldenSandstormSP(entity);
+		return net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.canEquip(entity, FormUtils::isGoldenSandstormSP);
 	}
 
 	@Override

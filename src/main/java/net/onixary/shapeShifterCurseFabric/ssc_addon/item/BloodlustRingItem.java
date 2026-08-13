@@ -51,7 +51,7 @@ public class BloodlustRingItem extends AccessoryItem {
 
 	@Override
 	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-		return FormUtils.isBatDesmodus(entity);
+		return net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.canEquip(entity, FormUtils::isBatDesmodus);
 	}
 
 	@Override

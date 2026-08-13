@@ -24,7 +24,7 @@ public class PhantomBellItem extends AccessoryItem {
 
 	@Override
 	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-		return FormUtils.isFamiliarFoxForm(entity);
+		return net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.canEquip(entity, FormUtils::isFamiliarFoxForm);
 	}
 
 	/**

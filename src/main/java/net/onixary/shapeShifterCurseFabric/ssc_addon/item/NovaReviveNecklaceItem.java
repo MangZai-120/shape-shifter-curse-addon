@@ -26,7 +26,9 @@ public class NovaReviveNecklaceItem extends AccessoryItem {
 
     @Override
 	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-        return FormUtils.isForm(entity, FormIdentifiers.OCELOT_NOVA);
+        // 朔望专属；登录装载瞬间（age==0）宽容放行，由 AddonAccessoryGuard.tick 兜底卸下
+        return net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.canEquip(entity,
+                e -> FormUtils.isForm(e, FormIdentifiers.OCELOT_NOVA));
     }
 
     @Override

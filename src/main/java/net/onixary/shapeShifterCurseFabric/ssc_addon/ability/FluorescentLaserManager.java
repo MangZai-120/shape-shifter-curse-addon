@@ -208,6 +208,11 @@ public final class FluorescentLaserManager {
 	public static void tick(ServerPlayerEntity player) {
 		ComboSession s = COMBOS.get(player.getUuid());
 		if (s == null || !s.active) return;
+		// 被 SP 悦灵净化打断：立即结束 combo（与死亡/卸饰品同路径，含失活音效 + CD 结算）
+		if (player.hasStatusEffect(SscAddon.PURIFIED)) {
+			endCombo(player, s);
+			return;
+		}
 		if (player.isDead() || !FormUtils.isAxolotlFluorescent(player)
 				|| !TrinketUtils.isWearing(player, SscAddon.SEA_CRYSTAL_PENDANT)
 				|| !(player.getWorld() instanceof ServerWorld sw)) {
@@ -270,6 +275,12 @@ public final class FluorescentLaserManager {
 		applyLaserSpeed(player, false);
 		if (s.accumulatedCd > 0) {
 			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, s.accumulatedCd);
+		}
+		// 结束音效：三发射尽 / 窗口超时失效 / 被 SP 悦灵净化打断 等所有结束路径统一播放
+		// （信标失活，与开场 BLOCK_BEACON_ACTIVATE 呼应；全员可闻）
+		if (player.getWorld() instanceof ServerWorld sw) {
+			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+					SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 1.0f, 1.6f);
 		}
 		if (s.laser != null) { s.laser.discard(); s.laser = null; }
 		s.active = false;

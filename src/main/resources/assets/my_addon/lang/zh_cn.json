@@ -951,5 +951,6 @@
     "power.my_addon.form_spider_moon_weaver_moon_poison.name": "月毒侵蚀",
     "power.my_addon.form_spider_moon_weaver_moon_poison.description": "被你的蛛网缠身或裹茧状态所困的敌人，将不断受到月毒侵蚀、持续中毒（中毒 I）。蜘蛛类与悦灵系免疫。",
     "power.my_addon.form_spider_moon_weaver_cocooned_prey.name": "茧化猎手",
-    "power.my_addon.form_spider_moon_weaver_cocooned_prey.description": "近身攻击被你裹茧（完全无法动弹）的目标时，造成的伤害提高 15%。与攻击茧化目标回复蛛丝法力的本能相辅相成。"
+    "power.my_addon.form_spider_moon_weaver_cocooned_prey.description": "近身攻击被你裹茧（完全无法动弹）的目标时，造成的伤害提高 15%。与攻击茧化目标回复蛛丝法力的本能相辅相成。",
+    "msg.my_addon.accessory_form_mismatch_removed": "当前形态无法佩戴该饰品，已自动取下。"
 }

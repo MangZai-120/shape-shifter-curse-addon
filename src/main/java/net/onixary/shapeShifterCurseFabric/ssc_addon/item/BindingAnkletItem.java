@@ -60,8 +60,9 @@ public class BindingAnkletItem extends AccessoryItem {
 
 	@Override
 	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-		// 仅契灵形态可装备
-		return FormUtils.isForm(entity, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA);
+		// 仅契灵形态可装备；登录装载瞬间（age==0）宽容放行，由 AddonAccessoryGuard.tick 兜底卸下
+		return net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.canEquip(entity,
+				e -> FormUtils.isForm(e, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA));
 	}
 
 	/* ------------------------------------------------------------ */
