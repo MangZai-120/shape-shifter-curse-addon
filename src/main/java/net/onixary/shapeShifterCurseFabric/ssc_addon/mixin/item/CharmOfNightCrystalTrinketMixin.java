@@ -11,6 +11,10 @@ import net.onixary.shapeShifterCurseFabric.items.trinkets.CharmOfNightCrystalTri
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.util.Accessory.AccessoryUtils;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * 黑夜水晶吊坠（charm_of_night_crystal）寄生果蝠适配（饰品后端无关）：
@@ -18,20 +22,31 @@ import org.spongepowered.asm.mixin.Mixin;
  * - canEquip：果蝠形态下无法装入饰品槽。
  * - accessoryTick：若玩家在其它形态先戴上吊坠后再变成果蝠，自动卸下并归还（服务端，延迟到下一 tick 执行避免迭代冲突）。
  *
- * <p>覆写 {@link AccessoryItem} 原生回调（Trinkets / Curios 桥接层最终都会虚分派到它们），
+ * <p><b>注入方式（兼容性关键）</b>：目标是父类 {@link AccessoryItem} 的 {@code canEquip}/
+ * {@code accessoryTick}（子类 {@link CharmOfNightCrystalTrinket} 未覆写，虚分派最终落到父类），
+ * 用 {@code @Inject} 而非隐式 overwrite——canEquip 命中果蝠时 {@code setReturnValue(false)}，
+ * 非果蝠完全透传主包默认（可装备）；accessoryTick 只在吊坠+果蝠时追加卸下逻辑，其余饰品零影响。
+ * 旧写法（mixin 子类 + 无注解同名方法 = 隐式 overwrite）会静默顶掉父类实现，已废弃。
  * 卸下操作走 {@link AccessoryUtils#setEntitySlot} 抽象层（"auto" 自动适配当前活动饰品框架），
- * 不再依赖 Trinkets 的 SlotReference——纯 Curios（经 Kilt 加载）环境同样生效，附属对 trinkets 保持弱依赖。
- * 其它形态（含吸血蝙蝠）不受影响，保持主包默认可装备。
+ * 纯 Curios（经 Kilt 加载）环境同样生效，附属对 trinkets 保持弱依赖。
  */
-@Mixin(CharmOfNightCrystalTrinket.class)
+@Mixin(AccessoryItem.class)
 public abstract class CharmOfNightCrystalTrinketMixin {
 
-	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
+	@Inject(method = "canEquip", at = @At("HEAD"), cancellable = true, remap = false)
+	private void ssc_addon$parasiticFruitCantEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData, CallbackInfoReturnable<Boolean> cir) {
+		// instanceof 守卫：只处理黑夜水晶吊坠，其它饰品完全透传主包默认行为
+		if (!((Object) this instanceof CharmOfNightCrystalTrinket)) return;
 		// 寄生果蝠禁止装备；其它形态保持主包默认（可装备）
-		return !FormUtils.isBatParasiticFruit(entity);
+		if (FormUtils.isBatParasiticFruit(entity)) {
+			cir.setReturnValue(false);
+		}
 	}
 
-	public void accessoryTick(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
+	@Inject(method = "accessoryTick", at = @At("HEAD"), remap = false)
+	private void ssc_addon$parasiticFruitAutoUnequip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData, CallbackInfo ci) {
+		// instanceof 守卫：只处理黑夜水晶吊坠，其它饰品零开销直接返回
+		if (!((Object) this instanceof CharmOfNightCrystalTrinket)) return;
 		// 玩家在其它形态戴上吊坠后变成寄生果蝠时，自动卸下并归还
 		if (!(entity instanceof PlayerEntity player)) return;
 		if (player.getWorld().isClient) return;
