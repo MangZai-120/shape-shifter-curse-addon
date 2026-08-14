@@ -158,6 +158,14 @@ public final class SscAddonServerEvents {
 							}
 						}
 					}
+					// 鼠标拿起/拖拽中的水矛（光标携带）也算「仍在玩家手中」，不计为消失；
+					// 否则左键拾取水矛时光标持有、背包扫描为 0 → 误判「水矛消失」→ 错误触发合成CD。
+					// currentScreenHandler 在无打开容器时是 playerScreenHandler（玩家自身背包），始终非 null。
+					// 必须在 put 取 wsPrev 之前累加，保证 wsCnt 与 wsPrev 都基于「背包+光标」完整口径。
+					net.minecraft.screen.ScreenHandler handler = player.currentScreenHandler;
+					if (handler != null && handler.getCursorStack().isOf(SscAddon.WATER_SPEAR)) {
+						wsCnt += handler.getCursorStack().getCount();
+					}
 					Integer wsPrev = SscAddon.WS_LAST_SPEAR_COUNT.put(player.getUuid(), wsCnt);
 					if (wsPrev != null && wsCnt > wsPrev) {
 						long wsT = server.getTicks();
