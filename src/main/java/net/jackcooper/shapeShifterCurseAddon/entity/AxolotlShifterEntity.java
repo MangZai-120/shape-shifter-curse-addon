@@ -17,6 +17,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.ai.FuzzyTargeting;
+import net.minecraft.entity.ai.goal.ActiveTargetGoal;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.ai.goal.LookAroundGoal;
 import net.minecraft.entity.ai.goal.LookAtEntityGoal;
@@ -33,6 +34,7 @@ import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageType;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
@@ -262,8 +264,21 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 		this.goalSelector.add(7, new LookAtEntityGoal(this, PlayerEntity.class, 8.0f));
 		this.goalSelector.add(8, new LookAroundGoal(this));
 
-		// 中立生物：被攻击才反击；同类之间不互相报复
-		this.targetSelector.add(1, new RevengeGoal(this, AxolotlShifterEntity.class));
+		// 主动索敌：对齐原版美西螈——主动攻击水中的敌对怪物（溟尸/守卫者/远古守卫者等）；
+		// 不主动攻击玩家（保持对玩家中立，仅被玩家攻击时反击）
+		this.targetSelector.add(1, new ActiveTargetGoal<>(this, HostileEntity.class, 10, true, false, this::shouldHuntTarget));
+		// 中立反击：被任何生物攻击都反击（不限于同类）；同类之间不互相报复
+		this.targetSelector.add(2, new RevengeGoal(this).setGroupRevenge(AxolotlShifterEntity.class));
+	}
+
+	/**
+	 * 主动索敌筛选（对齐原版美西螈）：只追击在水中的敌对怪物。
+	 * 排除同类，避免互攻。
+	 */
+	private boolean shouldHuntTarget(LivingEntity target) {
+		if (target instanceof AxolotlShifterEntity) return false;
+		if (!target.isTouchingWater()) return false;
+		return target.isAlive();
 	}
 
 	@Override
