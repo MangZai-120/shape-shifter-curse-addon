@@ -952,5 +952,11 @@
     "power.my_addon.form_spider_moon_weaver_moon_poison.description": "Enemies afflicted by your Web Bound or Cocooning status suffer continuous Moon Venom, afflicted with Poison I. Spiders and Allay-kin are immune.",
     "power.my_addon.form_spider_moon_weaver_cocooned_prey.name": "Cocooned Prey",
     "power.my_addon.form_spider_moon_weaver_cocooned_prey.description": "Melee attacks against targets you have cocooned (fully immobilized) deal 15% more damage. Synergizes with your instinct to regain web mana when striking cocooned foes.",
-    "msg.my_addon.accessory_form_mismatch_removed": "Your current form cannot wear this accessory. It has been removed automatically."
+    "msg.my_addon.accessory_form_mismatch_removed": "Your current form cannot wear this accessory. It has been removed automatically.",
+    "entity.ssc_addon.axolotl_shifter": "Wild Axolotl Shifter",
+    "item.ssc_addon.axolotl_shifter_spawn_egg": "Wild Axolotl Shifter Spawn Egg",
+    "death.attack.ssc_addon.axolotl_shifter_attack": "%1$s was torn apart by a Wild Axolotl Shifter",
+    "death.attack.ssc_addon.axolotl_shifter_attack.player": "%1$s was torn apart by a Wild Axolotl Shifter whilst fighting %2$s",
+    "death.attack.ssc_addon.axolotl_shifter_thirst": "%1$s dried out",
+    "death.attack.ssc_addon.axolotl_shifter_thirst.player": "%1$s dried out whilst fighting %2$s"
 }

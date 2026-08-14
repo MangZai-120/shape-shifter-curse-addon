@@ -388,6 +388,8 @@ public class SscAddonClient implements ClientModInitializer {
 		EntityRendererRegistry.register(SscAddon.INFECTION_SPORE_BOMB_ENTITY, FlyingItemEntityRenderer::new);
 		EntityRendererRegistry.register(SscAddon.PARASITIC_SEED_ENTITY, FlyingItemEntityRenderer::new);
 		EntityRendererRegistry.register(SscAddon.WITCH_FAMILIAR_ENTITY, WitchFamiliarRenderer::new);
+		// 美西螈幻形者：复用原版美西螈模型/贴图，程序化骨骼驱动（jackcooper）
+		EntityRendererRegistry.register(SscAddon.AXOLOTL_SHIFTER_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.AxolotlShifterRenderer::new);
 		// 荧光幼灵：潮汐球用 FlyingItemEntityRenderer 渲染潮涌方块作发光核心（对齐 red 火球标准）；
 		// 法阵激光用自定义渲染器画发光法阵 + 穿墙光柱（自发光、粗彩带）
 		EntityRendererRegistry.register(SscAddon.TIDAL_ORB_ENTITY, net.onixary.shapeShifterCurseFabric.ssc_addon.client.renderer.TidalOrbRenderer::new);

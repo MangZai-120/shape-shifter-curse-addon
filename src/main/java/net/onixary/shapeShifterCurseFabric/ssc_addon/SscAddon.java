@@ -91,6 +91,8 @@ import net.jackcooper.shapeShifterCurseAddon.event.CursedMoonSpMessageHandler;
 import net.jackcooper.shapeShifterCurseAddon.event.FluorescentDodgeHandler;
 import net.jackcooper.shapeShifterCurseAddon.event.StorySleepTimeGuardHandler;
 import net.jackcooper.shapeShifterCurseAddon.event.VillagerTradeGuardHandler;
+import net.jackcooper.shapeShifterCurseAddon.event.AxolotlShifterSpawnHandler;
+import net.jackcooper.shapeShifterCurseAddon.entity.AxolotlShifterEntity;
 
 public class SscAddon implements ModInitializer {
 
@@ -212,8 +214,13 @@ public class SscAddon implements ModInitializer {
 	// 女巫使魔实体
 	public static final EntityType<WitchFamiliarEntity> WITCH_FAMILIAR_ENTITY =
 			registerEntity("witch_familiar", SpawnGroup.MONSTER, WitchFamiliarEntity::new, 0.5f, 0.7f, 64, 3);
-	// 女巫使魔怪物蛋（主色狐狸沙棕 #D5B48F，次色青蓝 #31C8CC）
-	public static final Item WITCH_FAMILIAR_SPAWN_EGG = new SpawnEggItem(WITCH_FAMILIAR_ENTITY, 0xD5B48F, 0x31C8CC, new Item.Settings());
+	// 女巫使魔怪物蛋（主色橙黄 #F0A81E，次色青蓝 #31C8CC）
+	public static final Item WITCH_FAMILIAR_SPAWN_EGG = new SpawnEggItem(WITCH_FAMILIAR_ENTITY, 0xF0A81E, 0x31C8CC, new Item.Settings());
+	// 美西螈幻形者实体（中立水陆两栖，复刻原版美西螈技能，jackcooper）
+	public static final EntityType<AxolotlShifterEntity> AXOLOTL_SHIFTER_ENTITY =
+			registerEntity("axolotl_shifter", SpawnGroup.AXOLOTLS, AxolotlShifterEntity::new, 0.9f, 1.7f, 64, 3);
+	// 美西螈幻形者怪物蛋（仿原版美西螈蛋：主色原版粉 #FBC1E3，次色淡蓝 #A6DCF0）
+	public static final Item AXOLOTL_SHIFTER_SPAWN_EGG = new SpawnEggItem(AXOLOTL_SHIFTER_ENTITY, 0xFBC1E3, 0xA6DCF0, new Item.Settings());
 	// 无限压缩能量药水（饮用/喷溅/滞留三型；使用后空瓶自充能，效果同压缩能量药水 feed_potion）
 	public static final Item INFINITE_ENERGY_POTION = new InfiniteEnergyPotionItem(
 			new Item.Settings().maxCount(1), InfiniteEnergyPotionItem.Type.DRINK);
@@ -273,6 +280,7 @@ public class SscAddon implements ModInitializer {
 						entries.add(FRIEND_MARKER);
 						entries.add(CLEAR_FRIEND_MARKER);
 						entries.add(WITCH_FAMILIAR_SPAWN_EGG);
+					entries.add(AXOLOTL_SHIFTER_SPAWN_EGG);
 						entries.add(INFINITE_ENERGY_POTION);
 						entries.add(INFINITE_ENERGY_POTION_SPLASH);
 						entries.add(INFINITE_ENERGY_POTION_LINGERING);
@@ -313,6 +321,7 @@ public class SscAddon implements ModInitializer {
 		registerCommands();
 		SscAddonServerEvents.registerTickHandlers();
 		WitchFamiliarSpawnHandler.register();
+		AxolotlShifterSpawnHandler.register();
 		SscAddonPlayerEvents.register();
 		SscAddonServerEvents.registerStunOrphanCleanup();
 		// 风灵被动：落地风涌（事件监听）；风压领域由 mixin（WindSpiritProjectilePressureMixin）驱动
@@ -403,6 +412,7 @@ public class SscAddon implements ModInitializer {
 		registerItem("friend_marker", FRIEND_MARKER);
 		registerItem("clear_friend_marker", CLEAR_FRIEND_MARKER);
 		registerItem("witch_familiar_spawn_egg", WITCH_FAMILIAR_SPAWN_EGG);
+		registerItem("axolotl_shifter_spawn_egg", AXOLOTL_SHIFTER_SPAWN_EGG);
 		registerItem("infinite_energy_potion", INFINITE_ENERGY_POTION);
 		registerItem("infinite_energy_potion_splash", INFINITE_ENERGY_POTION_SPLASH);
 		registerItem("infinite_energy_potion_lingering", INFINITE_ENERGY_POTION_LINGERING);
@@ -434,6 +444,7 @@ public class SscAddon implements ModInitializer {
 
 	private void registerEntityAttributes() {
 		FabricDefaultAttributeRegistry.register(WITCH_FAMILIAR_ENTITY, WitchFamiliarEntity.createWitchFamiliarAttributes());
+		FabricDefaultAttributeRegistry.register(AXOLOTL_SHIFTER_ENTITY, AxolotlShifterEntity.createAxolotlShifterAttributes());
 	}
 
 	// 注册辅助方法（消除重复的 Registry.register 样板）
