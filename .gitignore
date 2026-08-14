@@ -12,6 +12,8 @@ bin/
 # 本地工具（不入版本库，各自从官方下载）
 /tools/cfr.jar
 /tools/_*.jq
+# 开发辅助工具目录：不影响游戏内效果，不入版本库
+/tools/
 /story/
 /.settings/org.eclipse.buildship.core.prefs
 /.settings/org.eclipse.jdt.core.prefs

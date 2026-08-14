@@ -2,8 +2,8 @@
  SSCA 开发工具集 - 使用说明 / SSCA Dev Tools - Guide
 ==============================================================
 
-本文件夹包含 4 个开发 / 排查辅助工具。
-This folder contains 4 helper tools for development & troubleshooting.
+本说明覆盖 4 个开发 / 排查辅助工具（[1][2] 在项目根目录，其余在 tools\）。
+This guide covers 4 helper tools ([1][2] in the project root, others in tools\).
 
 
 --------------------------------------------------------------
@@ -28,9 +28,11 @@ Purpose:
   Results are printed in the console and saved to "_模组自检报告.txt".
 
 用法 / How to use:
-  双击运行即可。若要修改版本要求，用记事本编辑 .bat，改里面的
+  本工具已放在 SSCA 项目根目录，双击运行即可（也可拷贝到任意 mods 目录使用）。
+  若要修改版本要求，用记事本编辑 .bat，改里面的
   $REQ_GECKOLIB / $REQ_SSC / $REQ_TRINKETS 三个变量。
-  Just double-click. To change the required versions, edit the three
+  Just double-click (already in the SSCA project root; can also be copied
+  into any mods folder). To change the required versions, edit the three
   variables $REQ_GECKOLIB / $REQ_SSC / $REQ_TRINKETS inside the .bat.
 
 
@@ -52,5 +54,5 @@ Purpose:
     3) Runs "gradlew clean build" and lists the output jars.
 
 用法 / How to use:
-  放到项目根目录双击运行。
-  Place it in the project root and double-click.
+  本工具已放在 SSCA 项目根目录，直接双击运行。
+  Place it in the SSCA project root (already there) and double-click.
