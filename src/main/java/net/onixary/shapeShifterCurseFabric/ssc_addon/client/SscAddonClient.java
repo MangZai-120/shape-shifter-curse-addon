@@ -427,8 +427,12 @@ public class SscAddonClient implements ClientModInitializer {
 		);
 
 		// Also register "throwing" predicate for trident animation support if needed
+		// GUI 上下文同样门控（与 held 一致）：蓄力中 activeItem==stack 会让 throwing 在
+		// 快捷栏/背包图标位也返回 1 → 3D 投掷态模型挤进 GUI 图标位与 2D 材质打架。
+		// GUI 上下文（DrawContext.drawItem 系）强制返回 0，手持渲染（不经过 drawItem）不受影响。
 		ModelPredicateProviderRegistry.register(SscAddon.WATER_SPEAR, new Identifier("ssc_addon", "throwing"), (stack, world, entity, seed) ->
-				entity != null && entity.isUsingItem() && entity.getActiveItem() == stack ? 1.0F : 0.0F
+				net.onixary.shapeShifterCurseFabric.ssc_addon.util.RenderContextTracker.isGuiContext() ? 0.0F :
+				(entity != null && entity.isUsingItem() && entity.getActiveItem() == stack ? 1.0F : 0.0F)
 		);
 
 		// 无限压缩能量药水：empty 谓词（1=空瓶充能中，切换为空瓶材质）。优先用世界时间戳判断，无世界时退回 NBT 标记

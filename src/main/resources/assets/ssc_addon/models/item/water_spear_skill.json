@@ -145,7 +145,7 @@
 	"display": {
 		"thirdperson_righthand": {
 			"rotation": [0, -90, 0],
-			"translation": [0, -7, 18.25]
+			"translation": [0, -7, 1.75]
 		},
 		"thirdperson_lefthand": {
 			"rotation": [0, -90, -180],
