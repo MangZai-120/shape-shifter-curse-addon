@@ -127,7 +127,7 @@ public class SnowFoxSpMeleeAbility {
 						false,
 						true,
 						true
-				));
+				), player);
 
 				// 使用ParticleUtils
 				if (player.getWorld() instanceof ServerWorld serverWorld) {

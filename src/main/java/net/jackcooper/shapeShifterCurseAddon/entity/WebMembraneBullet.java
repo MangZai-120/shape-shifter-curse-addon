@@ -106,9 +106,10 @@ public class WebMembraneBullet extends WebBullet {
 				net.onixary.shapeShifterCurseFabric.status_effects.EntangledEffectUtils.applyEntangledEffect(this.owner, living, 500);
 			} else {
 				// 未裹茧：施加蜘网缠身（减速+挖掘疲劳+虚弱），为后续踩网/再次命中累积裹茧概率
+				// 带施法者 source，供食梦魔「入梦」debuff 拦截归因
 				living.addStatusEffect(new StatusEffectInstance(
 						net.jackcooper.shapeShifterCurseAddon.effect.RegAddonEffects.SPIDER_WEB_BOUND,
-						AURA_DURATION, 0, false, false, true));
+						AURA_DURATION, 0, false, false, true), this.owner);
 			}
 		}
 	}

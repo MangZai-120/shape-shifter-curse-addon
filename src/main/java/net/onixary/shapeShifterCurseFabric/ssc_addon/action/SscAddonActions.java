@@ -91,7 +91,7 @@ public class SscAddonActions {
 							}
 							// 统一白名单判定：受服务端总开关控制
 							if (WhitelistUtils.isProtected(player, e)) continue;
-							e.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, 160, 0)); // 8s
+						e.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, 160, 0), player); // 8s；source=施法者供入梦高光拦截
 						}
 
 						// Kill projectiles
@@ -148,13 +148,21 @@ public class SscAddonActions {
 					}
 				}));
 
-		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "item_cooldown"),
-				new SerializableData()
-						.add("item", SerializableDataTypes.ITEM)
-						.add("duration", SerializableDataTypes.INT),
+		// 食梦魔主要技能「恐惧」：对所有已入梦目标施加恐惧（粉雾/减速/心跳/伤害翻倍/1s隐匿）
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "nightmare_fear"),
+				new SerializableData(),
 				(data, entity) -> {
-					if (entity instanceof PlayerEntity player) {
-						player.getItemCooldownManager().set(data.get("item"), data.getInt("duration"));
+					if (entity instanceof ServerPlayerEntity player) {
+						net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager.execute(player);
+					}
+				}));
+
+		// 食梦魔次要技能「惊吓」：假苦力怕幻影 + 复制品反击（仅目标可见）
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "nightmare_spook"),
+				new SerializableData(),
+				(data, entity) -> {
+					if (entity instanceof ServerPlayerEntity player) {
+						net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.execute(player);
 					}
 				}));
 
@@ -187,7 +195,7 @@ public class SscAddonActions {
 								target.setVelocity(oldVelocity);
 							}
 
-							target.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, duration, 0)); // Duration from data
+							target.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, duration, 0), living); // Duration from data; source=施法者供入梦拦截归因
 
 							if (living instanceof PlayerEntity player && target instanceof SscIgnitedEntityAccessor accessor) {
 								accessor.sscAddon$setIgniterUuid(player.getUuid());
@@ -214,7 +222,7 @@ public class SscAddonActions {
 					// target.setOnFireFor(duration); // Replaced with custom effect
 
 					if (target instanceof LivingEntity livingTarget) {
-						livingTarget.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, duration * 20, 0));
+						livingTarget.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, duration * 20, 0), actor); // source=施法者供入梦拦截归因
 					}
 
 					if (actor instanceof PlayerEntity player && target instanceof SscIgnitedEntityAccessor accessor) {

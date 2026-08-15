@@ -34,6 +34,12 @@ public class EntangledFullStunMixin {
         }
         // 茧内定身：STUN 时长与茧保持一致，茧存在期间始终无法动弹
         int duration = full.getDuration();
-        target.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, duration, 0, false, false, true));
+        // 食梦魔「入梦」：裹茧者已入梦且目标正是把它打入梦的食梦魔 → 茧 STUN 无效（茧本体仍在，仅免定身 debuff）
+        if (owner instanceof LivingEntity livingOwner
+                && net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager.isBlocked(livingOwner, target)) {
+            return;
+        }
+        // 带 source 归因：让 SscAddonLivingEntityMixin 的入梦 debuff 拦截也能按来源归因
+        target.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, duration, 0, false, false, true), owner);
     }
 }

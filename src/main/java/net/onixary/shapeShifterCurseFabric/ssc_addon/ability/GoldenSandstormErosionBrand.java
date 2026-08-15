@@ -160,7 +160,7 @@ public class GoldenSandstormErosionBrand {
 			state.greenExpiryTick = currentTick + GREEN_DURATION;			state.stackCooldownExpiryTick = currentTick + BRAND_STACK_COOLDOWN;			state.expiryTick = currentTick + GREEN_DURATION;
 
 			// 同步标记效果到客户端（放在伤害前确保即时生效）
-			updateTargetMarker(target, state, currentTick);
+			updateTargetMarker(target, state, currentTick, player);
 
 			// 现在安全地造成伤害
 			triggerPassiveBurst(player, target, serverWorld);
@@ -197,7 +197,7 @@ public class GoldenSandstormErosionBrand {
 		if (currentTick - state.lastStackTick < effectiveCooldown) {
 			// 冷却中，刷新持续时间但不叠层
 			state.expiryTick = currentTick + BRAND_DURATION;
-			updateTargetMarker(target, state, currentTick); // 刷新标记持续时间
+			updateTargetMarker(target, state, currentTick, player); // 刷新标记持续时间
 			return;
 		}
 
@@ -206,7 +206,7 @@ public class GoldenSandstormErosionBrand {
 		state.expiryTick = currentTick + BRAND_DURATION;
 
 		// 同步标记效果到客户端
-		updateTargetMarker(target, state, currentTick);
+		updateTargetMarker(target, state, currentTick, player);
 
 		// 叠加粒子提示
 		ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SOUL_FIRE_FLAME,
@@ -334,7 +334,7 @@ public class GoldenSandstormErosionBrand {
 			state.expiryTick = currentTick + GREEN_DURATION;
 
 			// 同步标记效果到客户端
-			updateTargetMarker(target, state, currentTick);
+			updateTargetMarker(target, state, currentTick, player);
 		}
 
 		// 自我回复：已损生命值的20%
@@ -438,11 +438,11 @@ public class GoldenSandstormErosionBrand {
 					state.greenExpiryTick = currentTick + GREEN_DURATION;
 					state.stackCooldownExpiryTick = currentTick + BRAND_STACK_COOLDOWN;
 					state.expiryTick = currentTick + GREEN_DURATION;
-					updateTargetMarker(living, state, currentTick);
+					updateTargetMarker(living, state, currentTick, player);
 					burstTargets.add(living);
 					LOGGER.info("[SSC_ADDON][SPLASH]   " + living.getType().getTranslationKey() + " 满3层，将触发爆发");
 				} else {
-					updateTargetMarker(living, state, currentTick);
+					updateTargetMarker(living, state, currentTick, player);
 				}
 			}
 		}
@@ -663,7 +663,9 @@ public class GoldenSandstormErosionBrand {
 	 * erosion_brand_marker_1: 1层(黄色), erosion_brand_marker_2: 2层(橙色), erosion_brand_marker_3: 3层(红色)
 	 * 绿色冷却状态不显示图标。
 	 */
-	private static void updateTargetMarker(LivingEntity target, BrandState state, long currentTick) {
+	/** 同步标记到目标（owner 作为效果 source，供食梦魔「入梦」debuff/高光拦截归因）。 */
+	private static void updateTargetMarker(LivingEntity target, BrandState state, long currentTick,
+	                                       net.minecraft.server.network.ServerPlayerEntity owner) {
 		if (state == null || (state.stacks <= 0 && !state.greenState)) {
 			removeAllBrandMarkers(target);
 			return;
@@ -692,7 +694,7 @@ public class GoldenSandstormErosionBrand {
 			// ambient=false, showParticles=false, showIcon=true（显示对应层数图标）
 			target.addStatusEffect(new StatusEffectInstance(
 					markerEffect, duration, 0, false, false, true
-			));
+			), owner);
 		}
 	}
 

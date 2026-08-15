@@ -153,7 +153,7 @@ public final class NineLivesManager {
             }
             e.takeKnockback(0.8, -dx, -dz);
             e.velocityModified = true;
-            e.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 60, 1, false, true, true));
+            e.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 60, 1, false, true, true), player);
         }
         sw.spawnParticles(ParticleTypes.SWEEP_ATTACK, player.getX(), player.getY() + 0.5, player.getZ(), 8, 1.5, 0.3, 1.5, 0.0);
         sw.playSound(null, player.getX(), player.getY(), player.getZ(),

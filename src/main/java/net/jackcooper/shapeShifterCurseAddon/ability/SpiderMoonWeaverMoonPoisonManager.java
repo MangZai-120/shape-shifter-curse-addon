@@ -59,9 +59,9 @@ public final class SpiderMoonWeaverMoonPoisonManager {
             boolean cocooned = target.getStatusEffect(
                     net.onixary.shapeShifterCurseFabric.status_effects.RegOtherStatusEffects.ENTANGLED_FULL_EFFECT) != null;
             if (!webBound && !cocooned) continue;
-            // 施加中毒 I（不显示粒子环境效果，显示粒子以让玩家可见）
+            // 施加中毒 I（不显示粒子环境效果，显示粒子以让玩家可见）；带施法者 source 供入梦拦截归因
             target.addStatusEffect(new StatusEffectInstance(
-                    StatusEffects.POISON, POISON_DURATION, 0, false, true, true));
+                    StatusEffects.POISON, POISON_DURATION, 0, false, true, true), player);
         }
     }
 }

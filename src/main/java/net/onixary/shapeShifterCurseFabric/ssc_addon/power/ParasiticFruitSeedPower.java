@@ -360,12 +360,12 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
                 net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.HUMUS_RING);
         if (friend) {
             this.currentHumusFactor = humus ? 0.7f : 1.0f;
-            applyFriendBuff(host, host == caster, seed.stack);
+            applyFriendBuff(host, caster, seed.stack);
             spawnFruitParticles(host, FRIEND_DUST, seed.stack);
         } else if (!WhitelistUtils.isProtected(caster, host)) {
             this.currentHumusFactor = humus ? 1.5f : 1.0f;
             EnemyFruit fruit = selectEnemyFruit(host);
-            applyEnemyFruit(host, fruit, seed.stack);
+            applyEnemyFruit(host, fruit, seed.stack, caster);
             spawnFruitParticles(host, ENEMY_DUST, seed.stack);
         }
         this.currentHumusFactor = 1.0f;
@@ -384,12 +384,12 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         return EnemyFruit.SOUR;
     }
 
-    private void applyEnemyFruit(LivingEntity target, EnemyFruit fruit, int stack) {
-        applyEnemyFruit(target, fruit, 1, stack);
+    private void applyEnemyFruit(LivingEntity target, EnemyFruit fruit, int stack, ServerPlayerEntity caster) {
+        applyEnemyFruit(target, fruit, 1, stack, caster);
     }
 
     /** 友方果实效果重写：交战/未交战 × 血量分级（替代旧 selectFriendFruit/applyFriendFruit）。 */
-    private void applyFriendBuff(LivingEntity target, boolean self, int stack) {
+    private void applyFriendBuff(LivingEntity target, ServerPlayerEntity caster, int stack) {
         boolean inCombat = net.onixary.shapeShifterCurseFabric.ssc_addon.ability.ParasiticCombatTracker.isInCombat(target);
         float hpRatio = target.getHealth() / Math.max(1.0f, target.getMaxHealth());
         // buff 时长 = 叮声间隔 + 0.2s = 44t，再乘腐殖之戒系数（装备时友军增益 ×0.7）
@@ -397,39 +397,39 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         if (!inCombat) {
             if (hpRatio > 0.7f) {
                 // 未交战 + 高血：急迫 I
-                addEffect(target, StatusEffects.HASTE, buffDur, 0);
+                addEffect(target, StatusEffects.HASTE, buffDur, 0, caster);
             } else {
                 // 未交战 + 低血：回血 1 心
-                healWithFx(target, 1);
+                healWithFx(target, caster, 1);
             }
         } else {
             if (hpRatio > 0.8f) {
                 // 交战 + 高血：迅捷 II
-                addEffect(target, StatusEffects.SPEED, buffDur, 1);
+                addEffect(target, StatusEffects.SPEED, buffDur, 1, caster);
             } else if (hpRatio >= 0.5f) {
                 // 交战 + 中血：伤害吸收 I（自定义累加黄心，持续受腐殖之戒系数）+ 生命恢复（1 心）
                 net.onixary.shapeShifterCurseFabric.ssc_addon.ability.ParasiticAbsorptionManager.addAbsorption(target, 0, currentHumusFactor);
-                healWithFx(target, 1);
+                healWithFx(target, caster, 1);
             } else {
                 // 交战 + 低血：伤害吸收 II（自定义累加黄心，持续受腐殖之戒系数）+ 生命恢复（2 心）
                 net.onixary.shapeShifterCurseFabric.ssc_addon.ability.ParasiticAbsorptionManager.addAbsorption(target, 1, currentHumusFactor);
-                healWithFx(target, 2);
+                healWithFx(target, caster, 2);
             }
         }
     }
 
     /** 立即回血（触发血条回血动画）+ 生命恢复图标显示。 */
-    private void healWithFx(LivingEntity target, int hearts) {
+    private void healWithFx(LivingEntity target, ServerPlayerEntity caster, int hearts) {
         target.heal(hearts * 2.0f);
         // 专属「生命恢复」buff：立即回血由上面 heal 完成（血条动画），此 buff 仅显示图标、不周期回血（只回一次）
-        addEffect(target, SscAddon.BAT_REGEN, 60, hearts - 1);
+        addEffect(target, SscAddon.BAT_REGEN, 60, hearts - 1, caster);
     }
 
-    private void applyEnemyFruit(LivingEntity target, EnemyFruit fruit, int divisor, int stack) {
+    private void applyEnemyFruit(LivingEntity target, EnemyFruit fruit, int divisor, int stack, ServerPlayerEntity caster) {
         int amp = MathHelper.clamp(stack - 1, 0, 2);
         switch (fruit) {
             case VINE -> {
-                addEffect(target, StatusEffects.SLOWNESS, scaleDuration(60, divisor, 1.0f), amp);
+                addEffect(target, StatusEffects.SLOWNESS, scaleDuration(60, divisor, 1.0f), amp, caster);
                 if (!target.isOnGround()) {
                     Vec3d velocity = target.getVelocity();
                     target.setVelocity(velocity.x * 0.75, Math.min(velocity.y, -0.08), velocity.z * 0.75);
@@ -437,27 +437,28 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
                 }
             }
             case BITTER -> {
-                addEffect(target, StatusEffects.WEAKNESS, scaleDuration(80, divisor, 1.0f), amp);
-                addEffect(target, StatusEffects.GLOWING, scaleDuration(80, divisor, 1.0f), 0);
+                addEffect(target, StatusEffects.WEAKNESS, scaleDuration(80, divisor, 1.0f), amp, caster);
+                addEffect(target, StatusEffects.GLOWING, scaleDuration(80, divisor, 1.0f), 0, caster);
             }
             case ROTTEN -> {
                 if (target.getGroup() == EntityGroup.UNDEAD) {
-                    addEffect(target, StatusEffects.SLOWNESS, scaleDuration(70, divisor, 1.0f), amp);
-                    addEffect(target, StatusEffects.WEAKNESS, scaleDuration(70, divisor, 1.0f), amp);
+                    addEffect(target, StatusEffects.SLOWNESS, scaleDuration(70, divisor, 1.0f), amp, caster);
+                    addEffect(target, StatusEffects.WEAKNESS, scaleDuration(70, divisor, 1.0f), amp, caster);
                 } else {
-                    addEffect(target, StatusEffects.POISON, scaleDuration(60, divisor, 1.0f), amp);
+                    addEffect(target, StatusEffects.POISON, scaleDuration(60, divisor, 1.0f), amp, caster);
                 }
             }
             case SOUR -> {
-                addEffect(target, StatusEffects.SLOWNESS, scaleDuration(40, divisor, 1.0f), amp);
-                addEffect(target, StatusEffects.GLOWING, scaleDuration(60, divisor, 1.0f), 0);
+                addEffect(target, StatusEffects.SLOWNESS, scaleDuration(40, divisor, 1.0f), amp, caster);
+                addEffect(target, StatusEffects.GLOWING, scaleDuration(60, divisor, 1.0f), 0, caster);
             }
         }
     }
 
-    private void addEffect(LivingEntity target, StatusEffect effect, int duration, int amplifier) {
+    private void addEffect(LivingEntity target, StatusEffect effect, int duration, int amplifier, ServerPlayerEntity caster) {
         if (duration <= 0) return;
-        target.addStatusEffect(new StatusEffectInstance(effect, duration, amplifier, false, true, true));
+        // 带 caster source：供食梦魔「入梦」debuff/高光拦截归因（友方目标 caster 也是合法 source，不影响判定）
+        target.addStatusEffect(new StatusEffectInstance(effect, duration, amplifier, false, true, true), caster);
     }
 
     private int scaleDuration(int duration, int divisor, float multiplier) {
@@ -486,9 +487,9 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         boolean infected = net.onixary.shapeShifterCurseFabric.ssc_addon.ability.InfectionSporeManager.isInfected(host.getUuid());
         if (seed.stack >= MAX_SEEDS && !infected) {
             if (friend) {
-                net.onixary.shapeShifterCurseFabric.ssc_addon.util.GlowMarker.markFriend(host);
+                net.onixary.shapeShifterCurseFabric.ssc_addon.util.GlowMarker.markFriend(host, caster);
             } else {
-                net.onixary.shapeShifterCurseFabric.ssc_addon.util.GlowMarker.markEnemy(host);
+                net.onixary.shapeShifterCurseFabric.ssc_addon.util.GlowMarker.markEnemy(host, caster);
             }
         } else {
             net.onixary.shapeShifterCurseFabric.ssc_addon.util.GlowMarker.unmark(host);

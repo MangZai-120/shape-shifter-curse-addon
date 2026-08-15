@@ -317,11 +317,40 @@ public abstract class SscAddonLivingEntityMixin {
 		GoldenSandstormRegen.registerWitherSource(self, sp, effect.getDuration());
 	}
 
+	/**
+	 * 食梦魔「入梦」debuff 拦截：已入梦的敌方对食梦魔本人施加<b>负面/高光</b>状态效果时整体无效。
+	 * 挂 addStatusEffect(effect, source) 的 HEAD cancellable：source 是入梦者 + 受体是把它打入梦的
+	 * 食梦魔 + 效果为 HARMFUL 或 GLOWING（GLOWING 是 NEUTRAL 类别、属透视高光，用户确认一并拦）→ 直接 cancel
+	 * （含 ssc_addon:stun 定身）。正面效果（自己/队友给的增益）不受影响；未入梦敌方的 debuff 正常生效。
+	 * 注意：项目内大部分敌方施加点已改为双参传施法者；Apoli JSON 的 apply_effect 无 source，
+	 * 由 power JSON 侧的 {@code my_addon:not_dream_blocked} BiEntity 条件门控。
+	 */
+	@Inject(method = "addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;Lnet/minecraft/entity/Entity;)Z", at = @At("HEAD"), cancellable = true)
+	private void ssc_addon$blockDreamingDebuff(StatusEffectInstance effect, Entity source, CallbackInfoReturnable<Boolean> cir) {
+		net.minecraft.entity.effect.StatusEffect type = effect.getEffectType();
+		boolean harmful = type.getCategory() == net.minecraft.entity.effect.StatusEffectCategory.HARMFUL;
+		boolean glowing = type == net.minecraft.entity.effect.StatusEffects.GLOWING;
+		if (!harmful && !glowing) return;
+		if (!(source instanceof LivingEntity livingSource)) return;
+		LivingEntity self = (LivingEntity) (Object) this;
+		if (self.getWorld().isClient()) return;
+		if (net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager.isBlocked(livingSource, self)) {
+			cir.setReturnValue(false);
+		}
+	}
+
 	@Inject(method = "damage", at = @At("RETURN"))
 	private void ssc_addon$onAllayRangedHit(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
 		if (!cir.getReturnValue()) return;
 		LivingEntity self = (LivingEntity) (Object) this;
 		AllaySPRangedHitPassive.onDamageApplied(self, source);
+		// 食梦魔「入梦」累计：食梦魔玩家对目标造成伤害（成功命中）→ 累计 10 点触发入梦 / 已入梦刷新重算
+		if (!self.getWorld().isClient()
+				&& source.getAttacker() instanceof ServerPlayerEntity nightmareAttacker
+				&& net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager.isNightmare(nightmareAttacker)) {
+			net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager
+					.onNightmareDealtDamage(nightmareAttacker, self, amount);
+		}
 		// 冥裁者「凋零传染」：玩家本人或其冥狼攻击命中时，消耗自身凋零时间转移给目标。
 		// 玩家本人攻击
 		if (!self.getWorld().isClient()
@@ -428,6 +457,32 @@ public abstract class SscAddonLivingEntityMixin {
 			args.set(1, 0.0f);
 		} else {
 			args.set(1, (float) args.get(1) * scale);
+		}
+	}
+
+	/**
+	 * 食梦魔「恐惧」伤害翻倍（一次性）：恐惧中的目标受<b>任何食梦魔</b>的<b>第一次</b>伤害 ×2
+	 * （整轮恐惧仅触发一次，由 NightmareFearManager 消耗标记；再次施加恐惧重新可触发）。
+	 * 同时：梦魔攻击恐惧目标 → 该梦魔在目标眼里「显形 1 秒」（清隐匿窗口，显形期内不再隐匿）。
+	 */
+	@ModifyArgs(method = "damage", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;applyDamage(Lnet/minecraft/entity/damage/DamageSource;F)V"))
+	private void ssc_addon$fearDoubleDamage(Args args) {
+		LivingEntity self = (LivingEntity) (Object) this;
+		if (self.getWorld().isClient()) return;
+		if (!net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager
+				.isFeared(self.getUuid(), self.getWorld().getTime())) return;
+		DamageSource source = args.get(0);
+		if (!(source.getAttacker() instanceof ServerPlayerEntity attacker)) return;
+		if (!net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager.isNightmare(attacker)) return;
+		// 一次性消耗：本轮恐惧首次受梦魔伤害才 ×2
+		if (net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager
+				.tryConsumeDoubleDamage(self.getUuid(), self.getWorld().getTime())) {
+			args.set(1, (float) args.get(1) * 2.0f);
+		}
+		// 攻击显形（规格③）：梦魔在恐惧目标眼里现形 1.5s 并重置可见性脉冲相位（每次攻击都触发）
+		if (self instanceof ServerPlayerEntity fearedPlayer) {
+			net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager
+					.onNightmareAttackFeared(fearedPlayer, attacker);
 		}
 	}
 

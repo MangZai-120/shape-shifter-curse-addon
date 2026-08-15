@@ -291,7 +291,8 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
 
     /** 火球命中附加狐火灼烧 5 秒（每秒掉血），并打上施法者归属 tag。 */
     private void applyFoxFireBurn(LivingEntity target) {
-        target.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, 100, 0, false, true, true));
+        // 带施法者 source 供食梦魔「入梦」debuff 拦截归因
+        target.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, 100, 0, false, true, true), this.getOwner());
         if (this.getOwner() != null) {
             target.addCommandTag("ssc_owner:" + this.getOwner().getUuid());
         }

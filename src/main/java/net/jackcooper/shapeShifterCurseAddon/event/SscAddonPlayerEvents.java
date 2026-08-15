@@ -156,6 +156,9 @@ public final class SscAddonPlayerEvents {
 
 			java.util.UUID uuid = handler.player.getUuid();
 			System.out.println("[SSC_ADDON] DISCONNECT event fired for player: " + handler.player.getName().getString());
+			// 食梦魔「恐惧」：梦魔断线结束其恐惧；目标断线清恐惧/免疫表
+			net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager.onCasterRemoved(handler.player);
+			net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager.onTargetDisconnect(uuid);
 			SnowFoxSpMeleeAbility.clearPlayer(uuid);
 			SnowFoxSpTeleportAttack.clearPlayer(uuid);
 			SnowFoxSpFrostStorm.clearPlayer(uuid);
@@ -165,6 +168,7 @@ public final class SscAddonPlayerEvents {
 			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WaterSpearLeapManager.onPlayerDisconnect(handler.player);
 			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.VortexGuideManager.onPlayerDisconnect(uuid);
 			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AxolotlWaterSpurtHandler.onPlayerDisconnect(uuid);
+			net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager.onPlayerDisconnect(handler.player);
 			AnubisWolfSpDeathDomain.clearPlayer(handler.player);
 			AnubisWolfSpSummonWolves.clearPlayer(uuid);
 			AllaySPTotem.clearPlayer(handler.player);

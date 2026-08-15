@@ -41,7 +41,7 @@ final class AddonExclusiveFormCheck {
 		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.FrostAmuletItem) return FormUtils::isSnowFoxSP;
 		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.HumusRingItem) return FormUtils::isBatParasiticFruit;
 		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.InvisibilityCloakItem) return FormUtils::isWildCatSP;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.LifesavingCatTailItem) return FormUtils::isWildCatSP;
+		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.LifesavingCatTailItem) return e -> FormUtils.isWildCatSP(e) || FormUtils.isForm(e, FormIdentifiers.WILD_CAT_NIGHTMARE);
 		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.NovaReviveNecklaceItem) return e -> FormUtils.isForm(e, FormIdentifiers.OCELOT_NOVA);
 		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.PhantomBellItem) return FormUtils::isFamiliarFoxForm;
 		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableFridgeItem) return FormUtils::isSnowFoxSP;

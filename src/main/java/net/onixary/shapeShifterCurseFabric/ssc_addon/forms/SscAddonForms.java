@@ -113,6 +113,17 @@ public final class SscAddonForms {
 		RegPlayerForms.registerPlayerForm(wildCatForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_wild_cat_sp")).registerForm(1, 5, wildCatForm));
 
+		// 食梦魔（Nightmare）- 野猫线月髓环进化形态（原版野猫 feral_cat_sp 经月髓环进化），复用月光魅影野猫模型/贴图
+		// 被动与月光魅影对齐（不含真隐身/震慑冲刺两个主动）；核心被动「入梦」：累计 10 伤害 → 敌方入梦 20s，
+		// 期间入梦敌对其施加的 debuff 全无效（含 STUN），食梦魔看入梦敌有粉红描边
+		Form_FeralCatSP nightmareForm = new Form_FeralCatSP(FormIdentifiers.WILD_CAT_NIGHTMARE);
+		nightmareForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
+		nightmareForm.canSneakRush = true;
+		// 缩放与月光魅影一致（原版野猫 form_feral_cat_sp_scale 同值）
+		nightmareForm.applyScale(0.55f, 0.6f);
+		RegPlayerForms.registerPlayerForm(nightmareForm);
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_wild_cat_nightmare")).registerForm(1, 5, nightmareForm));
+
 		// 风灵（月髓环豹猫）——完全复用原版豹猫 Form_Ocelot3 的模型与动画，四足兽形，可疾跑；核心为「疾风连爪」左键连击技能
 		Form_Ocelot3 ocelotSpForm = new Form_Ocelot3(FormIdentifiers.OCELOT_SP);
 		ocelotSpForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);

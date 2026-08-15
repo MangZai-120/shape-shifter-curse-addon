@@ -314,9 +314,9 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
             } else {
                 t.damage(t.getDamageSources().magic(), 8.0f);
             }
-            // 35% 减速 12 秒（TIDAL_SLOW amplifier=2 → -0.35）
+            // 35% 减速 12 秒（TIDAL_SLOW amplifier=2 → -0.35）；带主人 source 供入梦拦截归因
             t.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
-                    SscAddon.TIDAL_SLOW, 240, 2, false, false, true));
+                    SscAddon.TIDAL_SLOW, 240, 2, false, false, true), owner);
         }
         // 爆炸表现 + 立即破裂（跳过 8.5 秒拴人）
         sw.spawnParticles(ParticleTypes.EXPLOSION, cx, cy + 0.5, cz, 3, 0.3, 0.3, 0.3, 0.0);

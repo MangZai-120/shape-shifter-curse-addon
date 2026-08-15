@@ -165,8 +165,12 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 					// Whitelist check
 					if (entity instanceof ServerPlayerEntity sPlayer && WhitelistUtils.isProtected(sPlayer, target))
 						return;
+					// 食梦魔「入梦」：施加者（冲刺野猫）已入梦且目标正是把它打入梦的食梦魔 → STUN 无效
+					if (net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager.isBlocked(entity, target)) {
+						return;
+					}
 					// Apply Stun: 1.5s = 30 ticks
-					target.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, 30, 0, false, false, true));
+					target.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, 30, 0, false, false, true), entity);
 				});
 
 		// Particle effect

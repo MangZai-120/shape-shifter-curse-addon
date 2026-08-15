@@ -126,13 +126,13 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower {
 			if (entity instanceof ServerPlayerEntity sp && WhitelistUtils.isProtected(sp, target)) continue;
 
 			target.damage(source, DAMAGE);
-			// 反胃（统一）
-			target.addStatusEffect(new StatusEffectInstance(StatusEffects.NAUSEA, DEBUFF_TICKS, 0, false, true, true));
+			// 反胃（统一）；带施法者 source 供入梦拦截归因
+			target.addStatusEffect(new StatusEffectInstance(StatusEffects.NAUSEA, DEBUFF_TICKS, 0, false, true, true), entity);
 			// 失聪：玩家用自定义 DEAFEN（客户端静音）；非玩家附加短暂失明模拟听觉抽离
 			if (target instanceof PlayerEntity) {
-				target.addStatusEffect(new StatusEffectInstance(SscAddon.DEAFEN, DEBUFF_TICKS, 0, false, true, true));
+				target.addStatusEffect(new StatusEffectInstance(SscAddon.DEAFEN, DEBUFF_TICKS, 0, false, true, true), entity);
 			} else {
-				target.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, DEBUFF_TICKS, 0, false, true, true));
+				target.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, DEBUFF_TICKS, 0, false, true, true), entity);
 			}
 			hits.add(target);
 		}

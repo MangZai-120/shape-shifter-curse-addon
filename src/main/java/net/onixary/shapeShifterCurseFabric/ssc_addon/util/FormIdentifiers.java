@@ -10,6 +10,8 @@ public class FormIdentifiers {
 	public static final Identifier SNOW_FOX_SP = new Identifier("my_addon", "snow_fox_sp");
 	public static final Identifier ALLAY_SP = new Identifier("my_addon", "allay_sp");
 	public static final Identifier WILD_CAT_SP = new Identifier("my_addon", "wild_cat_sp");
+	// 食梦魔（Nightmare）——野猫线月髓环进化形态；入梦机制（累计伤害触发 debuff 免疫 + 粉红描边）
+	public static final Identifier WILD_CAT_NIGHTMARE = new Identifier("my_addon", "wild_cat_nightmare");
 	// 风灵（月髓环豹猫）——原版豹猫永久形态 ocelot_3 经月髓环进化获得；注册名 ocelot_wind_spirit
 	public static final Identifier OCELOT_SP = new Identifier("my_addon", "ocelot_wind_spirit");
 	// 朔望（月髓环豹猫）——与风灵同为原版豹猫 ocelot_3 线；定位：九命灵猫（极限生存/不死）

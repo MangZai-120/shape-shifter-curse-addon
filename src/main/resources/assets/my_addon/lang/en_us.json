@@ -958,5 +958,15 @@
     "death.attack.ssc_addon.axolotl_shifter_attack": "%1$s was torn apart by a Wild Axolotl Shifter",
     "death.attack.ssc_addon.axolotl_shifter_attack.player": "%1$s was torn apart by a Wild Axolotl Shifter whilst fighting %2$s",
     "death.attack.ssc_addon.axolotl_shifter_thirst": "%1$s dried out",
-    "death.attack.ssc_addon.axolotl_shifter_thirst.player": "%1$s dried out whilst fighting %2$s"
+    "death.attack.ssc_addon.axolotl_shifter_thirst.player": "%1$s dried out whilst fighting %2$s",
+    "origin.my_addon.form_wild_cat_nightmare.name": "Nightmare",
+    "origin.my_addon.form_wild_cat_nightmare.description": "A wild cat prowling the edge of dreams.",
+    "my_addon.form_wild_cat_nightmare.model_name": "Nightmare",
+    "codex.form.my_addon.wild_cat_nightmare.name": "Nightmare",
+    "advancements.my_addon.on_transform_wild_cat_nightmare.title": "Nightmare",
+    "advancements.my_addon.on_transform_wild_cat_nightmare.description": "Transform into Nightmare for the first time",
+    "power.my_addon.form_wild_cat_nightmare_fear.name": "Fear",
+    "power.my_addon.form_wild_cat_nightmare_fear.description": "Cast terror upon those you have drawn into dreams: their vision is sealed within a 16-block pink fog sphere, their movement slowed by 15%, and a warden-like heartbeat pounds in their ears — faint while the Nightmare is beyond sight, rising louder as it closes in. While feared, their dream is locked in place; the first damage they take from a Nightmare is doubled. Nightmares are fully invisible to them beyond 16 blocks; within range they flicker in a pulse of 2 seconds hidden and 0.6 seconds revealed, and each Nightmare strike reveals it for 1.5 seconds. When the fear ends, they are forcibly awakened and cannot fall asleep again for 20 seconds. 20s cooldown.",
+    "power.my_addon.form_wild_cat_nightmare_spook.name": "Spook",
+    "power.my_addon.form_wild_cat_nightmare_spook.description": "Behind every dreaming enemy, a creeper's fuse begins to hiss — a phantom creeper only they can see, priming to burst harmlessly after 3 seconds. Should they turn and strike it, a ghostly wild cat bursts from the dispersing smoke, hisses low, leaps at their face and rakes them with a cruel blow (12 magic damage), then scatters into fireworks — and only they can see any of it. 8s cooldown."
 }

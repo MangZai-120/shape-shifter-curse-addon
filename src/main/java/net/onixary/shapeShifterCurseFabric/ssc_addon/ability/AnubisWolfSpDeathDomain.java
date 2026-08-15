@@ -823,7 +823,7 @@ public class AnubisWolfSpDeathDomain {
 			currentlyGlown.add(entity.getUuid());
 			if (!data.glownEntities.contains(entity.getUuid())) {
 				data.glownEntities.add(entity.getUuid());
-				applyGlowing(world, entity, data);
+				applyGlowing(world, entity, data, player);
 			}
 
 			// === Debuff（仅踩在灵魂沙上方3格内的生物） ===
@@ -837,14 +837,14 @@ public class AnubisWolfSpDeathDomain {
 					entity.getX(), entity.getY() + entity.getHeight() * 0.5, entity.getZ(),
 					2, 0.2, 0.3, 0.2, 0.02);
 
-			// 施加/刷新短时debuff
-			entity.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 40, 0, false, true, true));
+			// 施加/刷新短时debuff（带领域主 source，供食梦魔「入梦」debuff 拦截归因）
+			entity.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 40, 0, false, true, true), player);
 			// 凋零仅在实体没有该效果且未达到伤害上限时施加；每次42tick周期造成1HP，上限10HP
 			// 增强模式使用凋零II（amplifier=1）
 			int witherAmplifier = data.enhanced ? ENHANCED_WITHER_AMPLIFIER : 0;
 			int witherCount = data.witherHitCount.getOrDefault(entity.getUuid(), 0);
 			if (witherCount < 10 && !entity.hasStatusEffect(StatusEffects.WITHER)) {
-				entity.addStatusEffect(new StatusEffectInstance(StatusEffects.WITHER, 42, witherAmplifier, false, true, true));
+				entity.addStatusEffect(new StatusEffectInstance(StatusEffects.WITHER, 42, witherAmplifier, false, true, true), player);
 				data.witherHitCount.put(entity.getUuid(), witherCount + 1);
 			}
 
@@ -910,7 +910,13 @@ public class AnubisWolfSpDeathDomain {
 	 * 给实体施加发光：加入 team 并设置 setGlowing(true)。
 	 * 同 team 的 SP阿努比斯能看到发光轮廓。
 	 */
-	private static void applyGlowing(ServerWorld world, LivingEntity entity, DomainData data) {
+	/** 带 owner 的施加发光：owner（领域主）被该实体入梦 → 不施加发光（入梦者看不到食梦魔高光）。 */
+	private static void applyGlowing(ServerWorld world, LivingEntity entity, DomainData data,
+	                                 net.minecraft.server.network.ServerPlayerEntity owner) {
+		if (owner != null
+				&& net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager.isBlocked(owner, entity)) {
+			return;
+		}
 		// 确保 team 已创建（延迟创建，第一次施加发光时触发）
 		if (data.teamName == null) {
 			// team 需要在有玩家上下文时创建，这里跳过——team 应在 tickExpanding 首次调用前创建

@@ -42,7 +42,9 @@ public class LifesavingCatTailItem extends AccessoryItem {
 
 	@Override
 	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-		return net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.canEquip(entity, FormUtils::isWildCatSP);
+		// 野猫（月光魅影）与食梦魔（Nightmare）均可佩戴保命猫尾（被动对齐）
+		return net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.canEquip(entity,
+				e -> FormUtils.isWildCatSP(e) || FormUtils.isForm(e, net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.WILD_CAT_NIGHTMARE));
 	}
 
 	/**

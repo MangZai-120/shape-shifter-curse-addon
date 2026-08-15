@@ -156,6 +156,9 @@ public class SscAddon implements ModInitializer {
 	public static final Item PORTABLE_MOISTURIZER = new PortableMoisturizerItem(new Item.Settings().maxCount(1));
 	public static final EntityType<WaterSpearEntity> WATER_SPEAR_ENTITY =
 			registerEntity("water_spear", SpawnGroup.MISC, WaterSpearEntity::new, 0.5f, 0.5f, 4, 20);
+	// 食梦魔「惊吓」幽灵野猫（野猫形态 geo 模型；NoAI/隐身，仅目标客户端显形，jackcooper）
+	public static final EntityType<net.jackcooper.shapeShifterCurseAddon.entity.GhostCatEntity> GHOST_CAT_ENTITY =
+			registerEntity("ghost_cat", SpawnGroup.MISC, net.jackcooper.shapeShifterCurseAddon.entity.GhostCatEntity::new, 0.6f, 0.8f, 6, 2);
 	public static final Item SNOWBALL_LAUNCHER = new SnowballLauncherItem(new Item.Settings().maxCount(1));
 	public static final Item PORTABLE_FRIDGE = new PortableFridgeItem(new Item.Settings().maxCount(1));
 	public static final Item BLUE_FIRE_AMULET = new BlueFireAmuletItem(new Item.Settings().maxCount(1).fireproof());
@@ -445,6 +448,7 @@ public class SscAddon implements ModInitializer {
 	private void registerEntityAttributes() {
 		FabricDefaultAttributeRegistry.register(WITCH_FAMILIAR_ENTITY, WitchFamiliarEntity.createWitchFamiliarAttributes());
 		FabricDefaultAttributeRegistry.register(AXOLOTL_SHIFTER_ENTITY, AxolotlShifterEntity.createAxolotlShifterAttributes());
+		FabricDefaultAttributeRegistry.register(GHOST_CAT_ENTITY, net.jackcooper.shapeShifterCurseAddon.entity.GhostCatEntity.createGhostCatAttributes());
 	}
 
 	// 注册辅助方法（消除重复的 Registry.register 样板）

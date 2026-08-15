@@ -240,9 +240,9 @@ public final class MancianimaMarkManager {
 					playSoundToPlayer(sp, SoundEvents.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
 				}
 			}
-			// 持续辅助效果：仅 SLOWNESS（颜色高亮由 entity_glow 提供）
+			// 持续辅助效果：仅 SLOWNESS（颜色高亮由 entity_glow 提供）；带标记者 source 供入梦拦截归因
 			if (now % 20 == 0) {
-				living.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 25, 0, false, false, false));
+				living.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 25, 0, false, false, false), marker);
 			}
 		}
 

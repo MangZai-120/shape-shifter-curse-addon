@@ -381,8 +381,7 @@ public class SscAddonClient implements ClientModInitializer {
 		EntityRendererRegistry.register(SscAddon.FROST_BALL_ENTITY, FlyingItemEntityRenderer::new);
 		// 进化美西螈「投掷水矛」直线水矛：3D 投掷态模型，沿飞行方向摆正
 		EntityRendererRegistry.register(SscAddon.THROWN_WATER_SPEAR_ENTITY, net.onixary.shapeShifterCurseFabric.ssc_addon.client.renderer.ThrownWaterSpearEntityRenderer::new);
-		EntityRendererRegistry.register(SscAddon.FROST_STORM_ENTITY, EmptyEntityRenderer::new);
-		EntityRendererRegistry.register(SscAddon.FOX_FIREBALL_ENTITY, ctx -> new net.minecraft.client.render.entity.FlyingItemEntityRenderer<>(ctx, 1F, true));
+		EntityRendererRegistry.register(SscAddon.FROST_STORM_ENTITY, EmptyEntityRenderer::new);		EntityRendererRegistry.register(SscAddon.FOX_FIREBALL_ENTITY, ctx -> new net.minecraft.client.render.entity.FlyingItemEntityRenderer<>(ctx, 1F, true));
 		EntityRendererRegistry.register(SscAddon.FRIEND_MARKER_ENTITY_TYPE, FlyingItemEntityRenderer::new);
 		EntityRendererRegistry.register(SscAddon.CLEAR_MARKER_ENTITY_TYPE, FlyingItemEntityRenderer::new);
 		EntityRendererRegistry.register(SscAddon.INFECTION_SPORE_BOMB_ENTITY, FlyingItemEntityRenderer::new);
@@ -400,6 +399,8 @@ public class SscAddonClient implements ClientModInitializer {
 		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.WEB_MEMBRANE_BULLET, FlyingItemEntityRenderer::new);
 		// 月织蛛蛛丝荡漾飞弹：同样用 FlyingItemEntityRenderer
 		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.SPIDER_SWING_BULLET, FlyingItemEntityRenderer::new);
+		// 食梦魔「惊吓」幽灵野猫：野猫形态 geo 模型 + 程序化四足骨骼驱动
+		EntityRendererRegistry.register(SscAddon.GHOST_CAT_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.GhostCatRenderer::new);
 
 		// 寄生果蝠形态种子量能量条 HUD
 		SeedEnergyHudRenderer.register();
@@ -482,7 +483,14 @@ public class SscAddonClient implements ClientModInitializer {
 		// SSCA 进化美西蟠水流冲刺 - 真正疾跑键上报器（区分双击 W/游泳自动疾跑）
 		net.jackcooper.shapeShifterCurseAddon.client.AxolotlSprintKeyClient.register();
 		// SSCA 月织蛛减速网「踩网蓝色高亮」- 客户端专属发光接收器
-		net.jackcooper.shapeShifterCurseAddon.client.WebHighlightClient.register();		// SSCA 进化美西螈技能 - 主「投掷水矛」/ 次「涡流引导」按键检测器
+		net.jackcooper.shapeShifterCurseAddon.client.WebHighlightClient.register();		// SSCA 食梦魔「入梦」目标屏幕粉色晕影（仿原版反胃绿框渲染）
+		net.jackcooper.shapeShifterCurseAddon.client.DreamVeilRenderer.register();
+		// SSCA 食梦魔主要技能「恐惧」客户端状态（粉雾淡入/心跳/1s隐匿窗口）
+		net.jackcooper.shapeShifterCurseAddon.client.NightmareFearClient.register();
+		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(
+				net.jackcooper.shapeShifterCurseAddon.client.NightmareFearClient::tick);
+		// SSCA 食梦魔次要技能「惊吓」客户端幻影（假苦力怕/复制品，仅目标可见）
+		net.jackcooper.shapeShifterCurseAddon.client.NightmareSpookClient.register();		// SSCA 进化美西螈技能 - 主「投掷水矛」/ 次「涡流引导」按键检测器
 		UpgradeAxolotlSkillClient.register();
 		// 风灵「疾风连爪」 - 左键按住检测器
 		net.onixary.shapeShifterCurseFabric.ssc_addon.client.WindSpiritClawClient.register();

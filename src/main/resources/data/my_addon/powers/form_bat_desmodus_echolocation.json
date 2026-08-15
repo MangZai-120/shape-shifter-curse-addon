@@ -23,8 +23,11 @@
             }
         },
         "bientity_condition": {
-            "type": "apoli:target_condition",
-            "condition": { "type": "apoli:living" }
+            "type": "apoli:and",
+            "conditions": [
+                { "type": "apoli:target_condition", "condition": { "type": "apoli:living" } },
+                { "type": "my_addon:not_dream_blocked" }
+            ]
         }
     },
     "condition": {

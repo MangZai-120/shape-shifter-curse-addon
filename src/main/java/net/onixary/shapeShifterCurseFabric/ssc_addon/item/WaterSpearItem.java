@@ -87,7 +87,8 @@ public class WaterSpearItem extends TridentItem {
 
 	@Override
 	public boolean postHit(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-		target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 100, 1));
+		// 带攻击者 source 供入梦拦截归因
+		target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 100, 1), attacker);
 
 		if (!target.getWorld().isClient) {
 			World world = target.getWorld();

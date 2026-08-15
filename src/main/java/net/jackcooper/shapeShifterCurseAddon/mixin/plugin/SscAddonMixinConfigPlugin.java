@@ -55,6 +55,9 @@ public class SscAddonMixinConfigPlugin implements IMixinConfigPlugin {
         // 该 mixin 仍保留 @Pseudo + 字符串 target（编译期附属无此 Forge 类，必须如此才能编译）；
         // 此处 mod 检测是运行期额外条件，未装时更早、更明确地跳过。
         requireMod("IronsSpellbooksAnimationMixin", "irons_spellbooks");
+        // Iris（光影加载器）未装时跳过恐惧失明雾的内存补丁 mixin（目标类 ProgramSource 不存在会崩）。
+        // 该 mixin 在 Iris 载入光影时把 DoBlindnessFog 内存替换为粉色 12→16 格版（不改光影文件）。
+        requireMod("IrisShaderPackMixin", "iris");
 
         // ========== 扩展示例（需要时取消注释并按需修改）==========
         // ① 某 mixin 只在装了某可选 mod 时才应用（缺 mod 就跳过，防崩）：

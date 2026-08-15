@@ -1,0 +1,19 @@
+{
+  "model": "my_addon:geo/form_wild_cat_sp.geo.json",
+  "texture": "my_addon:textures/form_wild_cat_sp/form_wild_cat_sp.png",
+  "texture_mask": "my_addon:textures/form_wild_cat_sp/form_wild_cat_sp_colormask.png",
+  "hidden": [
+    "leftLeg",
+    "rightLeg",
+    "rightPants",
+    "leftPants",
+    "leftSleeve",
+    "rightSleeve",
+    "leftArm",
+    "rightArm",
+    "body",
+    "jacket",
+    "head",
+    "hat"
+  ]
+}

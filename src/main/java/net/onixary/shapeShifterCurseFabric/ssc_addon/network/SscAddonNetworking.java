@@ -76,6 +76,16 @@ public class SscAddonNetworking {
 
 	/** S2C：踩网蓝色高亮——仅向施法者发送，令其客户端把受害者描蓝边。payload: varint entityId + varint duration。 */
 	public static final Identifier PACKET_WEB_HIGHLIGHT = new Identifier("my_addon", "web_highlight");
+	/** S2C：食梦魔「入梦」目标屏幕粉色晕影——仅向入梦目标本人发送。payload: varint durationTicks（<=0 = 该食梦魔的入梦关系结束）+ UUID nightmareUuid（入梦你的食梦魔）。 */
+	public static final Identifier PACKET_DREAM_VEIL = new Identifier("my_addon", "dream_veil");
+	/** S2C：食梦魔「恐惧」状态——仅向恐惧目标本人发送。payload: varint durationTicks（<=0 = 恐惧结束）。驱动粉雾淡入/心跳节奏/出梦表现。 */
+	public static final Identifier PACKET_FEAR_STATE = new Identifier("my_addon", "fear_state");
+	/** S2C：恐惧目标「1 秒看不见梦魔」窗口——仅向恐惧目标本人发送。payload: UUID nightmareUuid + varint hideTicks。 */
+	public static final Identifier PACKET_FEAR_HIDE = new Identifier("my_addon", "fear_hide");
+	/** S2C：恐惧目标「梦魇显形 1 秒」——梦魔攻击恐惧目标时，该梦魔在其眼里显形（清除隐匿窗口并 1s 内不再隐匿）。payload: UUID nightmareUuid + varint revealTicks。 */
+	public static final Identifier PACKET_FEAR_REVEAL = new Identifier("my_addon", "fear_reveal");
+	/** S2C：「惊吓」幽灵实体标记（幽灵苦力怕/幽灵野猫）——仅目标本人。payload: UUID ghostUuid + varint lifeTicks（客户端对该实体局部取消隐身→只有目标看得见它）。 */
+	public static final Identifier PACKET_SPOOK_GHOST = new Identifier("my_addon", "spook_ghost");
 	/** C2S：进化美西螈主技能「投掷水矛」按键。无 payload。 */
 	public static final Identifier PACKET_UPGRADE_AXOLOTL_SPEAR = new Identifier("my_addon", "upgrade_axolotl_spear");
 	/** C2S：进化美西螈次技能「涡流引导」按键。无 payload。 */
@@ -172,13 +182,60 @@ public class SscAddonNetworking {
 		sendWebHighlight(owner, entityId, durationTicks, 0x3AA0FF);
 	}
 
-	/** S2C：向施法者发「高亮」并指定描边颜色（RGB），仅施法者可见。 */
+	/** S2C：向施法者发「高亮」并指定描边颜色（RGB），仅施法者可见。
+	 * 食梦魔「入梦」过滤：接收者（施法者）被目标入梦 → 高光不发送（入梦者看不到食梦魔的描边）。 */
 	public static void sendWebHighlight(ServerPlayerEntity owner, int entityId, int durationTicks, int color) {
+		if (owner.getWorld() instanceof net.minecraft.server.world.ServerWorld sw) {
+			net.minecraft.entity.Entity e = sw.getEntityById(entityId);
+			if (e instanceof net.minecraft.entity.LivingEntity living
+					&& net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager.isBlocked(owner, living)) {
+				return;
+			}
+		}
 		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
 		buf.writeVarInt(entityId);
 		buf.writeVarInt(durationTicks);
 		buf.writeInt(color);
 		ServerPlayNetworking.send(owner, PACKET_WEB_HIGHLIGHT, buf);
+	}
+
+	/** S2C：向入梦目标本人发「粉色晕影 + 入梦你的食梦魔 UUID」（duration<=0 = 该食梦魔的入梦关系结束，客户端移除关系），仅目标可见。 */
+	public static void sendDreamVeil(ServerPlayerEntity target, int durationTicks, UUID nightmareUuid) {
+		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+		buf.writeVarInt(durationTicks);
+		buf.writeUuid(nightmareUuid);
+		ServerPlayNetworking.send(target, PACKET_DREAM_VEIL, buf);
+	}
+
+	/** S2C：向恐惧目标本人发「恐惧」状态（duration<=0 = 结束），仅目标可见。 */
+	public static void sendFearState(ServerPlayerEntity target, int durationTicks) {
+		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+		buf.writeVarInt(durationTicks);
+		ServerPlayNetworking.send(target, PACKET_FEAR_STATE, buf);
+	}
+
+	/** S2C：向恐惧目标本人发「1 秒看不见该梦魔」窗口，仅目标可见。 */
+	public static void sendFearHide(ServerPlayerEntity target, UUID nightmareUuid, int hideTicks) {
+		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+		buf.writeUuid(nightmareUuid);
+		buf.writeVarInt(hideTicks);
+		ServerPlayNetworking.send(target, PACKET_FEAR_HIDE, buf);
+	}
+
+	/** S2C：向恐惧目标本人发「梦魇显形 N tick」（清除该梦魔的隐匿窗口 + 显形期内不触发新隐匿），仅目标可见。 */
+	public static void sendFearReveal(ServerPlayerEntity target, UUID nightmareUuid, int revealTicks) {
+		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+		buf.writeUuid(nightmareUuid);
+		buf.writeVarInt(revealTicks);
+		ServerPlayNetworking.send(target, PACKET_FEAR_REVEAL, buf);
+	}
+
+	/** S2C：向目标本人发「幽灵实体」标记（客户端对该真实体局部取消隐身，仅目标可见）。 */
+	public static void sendSpookGhost(ServerPlayerEntity target, UUID ghostUuid, int lifeTicks) {
+		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+		buf.writeUuid(ghostUuid);
+		buf.writeVarInt(lifeTicks);
+		ServerPlayNetworking.send(target, PACKET_SPOOK_GHOST, buf);
 	}
 
 	/** S2C：月织蛛蛛丝荡漾 - 向追踪该玩家的客户端 + 玩家自身广播摆荡状态（销点/绳长/状态/canExtend）。 */
@@ -284,6 +341,7 @@ public class SscAddonNetworking {
 				net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils.setResourceValueAndSync(player, net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.SP_SECONDARY_CD, 500);
 			});
 		});
+
 
 		// SSCA 美西螈漩涡蓄力 - 开始 / 释放
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_VORTEX_START, (server, player, handler, buf, responseSender) -> {

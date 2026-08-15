@@ -38,14 +38,14 @@ public final class GlowMarker {
     private GlowMarker() {
     }
 
-    /** 给目标打上"满层友军"绿色 outline；幂等，可重复调用。 */
-    public static void markFriend(LivingEntity target) {
-        applyMark(target, TEAM_FRIEND, Formatting.GREEN);
+    /** 给目标打上"满层友军"绿色 outline；幂等，可重复调用。caster 作为 GLOWING source（供入梦拦截归因）。 */
+    public static void markFriend(LivingEntity target, LivingEntity caster) {
+        applyMark(target, TEAM_FRIEND, Formatting.GREEN, caster);
     }
 
-    /** 给目标打上"满层敌方"红色 outline；幂等，可重复调用。 */
-    public static void markEnemy(LivingEntity target) {
-        applyMark(target, TEAM_ENEMY, Formatting.RED);
+    /** 给目标打上"满层敌方"红色 outline；幂等，可重复调用。caster 作为 GLOWING source（供入梦拦截归因）。 */
+    public static void markEnemy(LivingEntity target, LivingEntity caster) {
+        applyMark(target, TEAM_ENEMY, Formatting.RED, caster);
     }
 
     /** 取消目标的本机制 outline（仅在目标当前属于本机制 team 时移除）。 */
@@ -61,7 +61,7 @@ public final class GlowMarker {
         }
     }
 
-    private static void applyMark(LivingEntity target, String teamName, Formatting color) {
+    private static void applyMark(LivingEntity target, String teamName, Formatting color, LivingEntity caster) {
         if (!(target.getWorld() instanceof ServerWorld world)) return;
         MinecraftServer server = world.getServer();
         if (server == null) return;
@@ -80,9 +80,9 @@ public final class GlowMarker {
                 scoreboard.addPlayerToTeam(target.getEntityName(), team);
             }
         }
-        // 持续刷新 GLOWING 状态以保证客户端描边
+        // 持续刷新 GLOWING 状态以保证客户端描边；带 caster source 供入梦拦截归因
         target.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING,
-                GLOWING_DURATION, 0, false, false, false));
+                GLOWING_DURATION, 0, false, false, false), caster);
     }
 
     private static Team ensureTeam(Scoreboard scoreboard, String name, Formatting color) {

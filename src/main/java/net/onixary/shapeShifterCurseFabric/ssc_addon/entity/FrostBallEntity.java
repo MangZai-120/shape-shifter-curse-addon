@@ -163,7 +163,7 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
 					&& WhitelistUtils.isProtected(ownerPlayer, livingTarget)) {
 				return;
 			}
-			// 施加霜降效果
+			// 施加霜降效果（带主人 source 供入梦拦截归因）
 			livingTarget.addStatusEffect(new StatusEffectInstance(
 					SscAddon.FROST_FALL,
 					FROST_FALL_DURATION,
@@ -171,7 +171,7 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
 					false,
 					true,
 					true
-			));
+			), this.getOwner());
 
 			// 播放击中音效
 			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),

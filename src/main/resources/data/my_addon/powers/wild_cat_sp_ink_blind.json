@@ -39,6 +39,9 @@
                         },
                         {
                             "type": "my_addon:not_actor_whitelisted"
+                        },
+                        {
+                            "type": "my_addon:not_dream_blocked"
                         }
                     ]
                 },

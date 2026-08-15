@@ -76,8 +76,9 @@ public final class InfectionSporeManager {
         if (!(target.getWorld() instanceof ServerWorld serverWorld)) return;
         if (target == caster) return;
         // 施加专属「中毒」buff（图标 + 周期扣血，效果同中毒；扣血由 buff 负责，本管理器不再直接伤害）
+        // 带 caster source 供食梦魔「入梦」debuff 拦截归因
         target.addStatusEffect(new StatusEffectInstance(
-                net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.BAT_POISON, Math.max(20, durationTicks), 0, false, true, true));
+                net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.BAT_POISON, Math.max(20, durationTicks), 0, false, true, true), caster);
         UUID targetUuid = target.getUuid();
         long now = serverWorld.getTime();
         long newEnd = now + Math.max(20, durationTicks);
@@ -185,7 +186,7 @@ public final class InfectionSporeManager {
             );
             ENTRIES.put(candidate.getUuid(), child);
             candidate.addStatusEffect(new StatusEffectInstance(
-                    net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.BAT_POISON, Math.max(20, remaining), 0, false, true, true));
+                    net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.BAT_POISON, Math.max(20, remaining), 0, false, true, true), caster);
         }
     }
 
@@ -363,9 +364,9 @@ public final class InfectionSporeManager {
                                 target.getX(), target.getY() + target.getHeight() * 0.8, target.getZ(),
                                 1, 0.3, 0.2, 0.3, 0.0);
                     } else {
-                        // 敌人：掉 1 血 + 减速 I（短时，仅范围内维持）
+                        // 敌人：掉 1 血 + 减速 I（短时，仅范围内维持）；带施放者 source 供入梦拦截归因
                         target.damage(target.getDamageSources().magic(), TICK_DAMAGE);
-                        target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 40, 0, false, true, true));
+                        target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 40, 0, false, true, true), caster);
                     }
                 }
             }

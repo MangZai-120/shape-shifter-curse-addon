@@ -106,8 +106,12 @@ public final class SscAddonServerEvents {
 				FluorescentTidalManager.tick(player);
 				FluorescentLaserManager.tick(player);
 				// 冥裁者凋零阶梯 / 凋零抗性追踪（凋零持续时长分层 + tick 跳过计数）
-				WitherFrenzyManager.tick(player);
-				EvolutionManager.tickPlayer(player);
+				WitherFrenzyManager.tick(player);			// 食梦魔「入梦」状态推进（到期出梦清理 + 粉红描边同步）
+			net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager.tick(player);
+				// 食梦魔「恐惧」状态推进（入梦锁定/心跳/1s隐匿窗口/到期出梦+免疫）
+				net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager.tick(player);
+				// 食梦魔「惊吓」幻影推进（复制品到期攻击结算）
+				net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.tick(player);				EvolutionManager.tickPlayer(player);
 			// SSCA 专属饰品登录守卫：登录宽容放行后，形态不符的自动卸下归还（Curios/Trinkets 双后端）
 			net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.tick(player);
 		}
@@ -120,11 +124,14 @@ public final class SscAddonServerEvents {
 		});
 
 
-		// 月织蛛「织网术」/「蛛丝荡漾」：玩家掉线清理状态，防僵尸 UUID 残留
+		// 月织蛛「织网术」/「蛛丝荡漾」/ 食梦魔「惊吓」：玩家掉线清理状态，防僵尸 UUID 残留
 		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((netHandler, server) -> {
 			net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.onDisconnect(netHandler.player.getUuid());
 			net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.onDisconnect(netHandler.player.getUuid());
+			net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.onDisconnect(netHandler.player.getUuid());
 		});
+		// 食梦魔「惊吓」：服务端监听目标攻击幽灵苦力怕（真实体受击判定）
+		net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.registerEvents();
 
 		// 减速蜘网施法者表：服务器停止时清空，防跨存档/重启残留
 		ServerLifecycleEvents.SERVER_STOPPED.register(server ->
@@ -256,6 +263,7 @@ public final class SscAddonServerEvents {
 			MancianimaPassive.clearAll();
 			SscAddonActions.clearAll();
 			FluorescentLaserManager.clearAll();   // 海晶荧光坠增强激光：清残留待机法阵实体
+			net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.clearAll(server); // 惊吓：清幽灵苦力怕/复制品状态
 			System.out.println("[SSC_ADDON] SERVER_STARTING ability state cleared");
 		});
 		// 服务器关闭前还原所有死亡领域方块（在世界存档之前触发）
@@ -286,6 +294,7 @@ public final class SscAddonServerEvents {
 			MancianimaPassive.clearAll();
 			SscAddonActions.clearAll();
 			FluorescentLaserManager.clearAll();   // 海晶荧光坠增强激光：清残留待机法阵实体
+			net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.clearAll(server); // 惊吓：清幽灵苦力怕/复制品状态
 			System.out.println("[SSC_ADDON] END_DATA_PACK_RELOAD ability state cleared");
 		});
 	}

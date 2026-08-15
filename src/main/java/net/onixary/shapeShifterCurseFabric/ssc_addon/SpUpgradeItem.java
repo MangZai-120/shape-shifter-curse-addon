@@ -56,6 +56,8 @@ public class SpUpgradeItem extends Item {
 		registerUpgrade("shape-shifter-curse", "ocelot_3", "my_addon", "ocelot_wind_spirit");
 		// 月织蛛：原版蜘蛛三阶段永久态 → 月织蛛（月髓环 + 诅咒之月夜进化）
 		registerUpgrade("shape-shifter-curse", "spider_3", "my_addon", "spider_moon_weaver");
+		// 食梦魔：原版野猫 SP 形态 → 食梦魔（月髓环 + 诅咒之月夜进化）
+		registerUpgrade("shape-shifter-curse", "feral_cat_sp", "my_addon", "wild_cat_nightmare");
 		// 进化使魔（SSCA 路线）→ 灵界之主：需 50 级解锁两分支后才允许（门控在 finishUsing）
 		registerUpgrade("my_addon", "upgrade_familiar_fox", "my_addon", "familiar_fox_sp");
 		// 进化美西螈（SSCA 路线）→ SP 美西螈：需 50 级解锁两分支后才允许（门控在 finishUsing）

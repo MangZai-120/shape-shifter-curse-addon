@@ -170,12 +170,12 @@ public final class WitherFrenzyManager {
 					source);
 		}
 
-		// 给目标附加凋零：累加 duration，上限 300t；等级取较高
+		// 给目标附加凋零：累加 duration，上限 300t；等级取较高（带传染源 source 供入梦拦截归因）
 		StatusEffectInstance tgtWither = target.getStatusEffect(StatusEffects.WITHER);
 		int tgtBase = tgtWither != null ? tgtWither.getDuration() : 0;
 		int tgtAmp = tgtWither != null ? Math.max(tgtWither.getAmplifier(), srcAmplifier) : srcAmplifier;
 		int tgtNew = Math.min(tgtBase + cost, INFECT_TARGET_CAP);
-		target.addStatusEffect(new StatusEffectInstance(StatusEffects.WITHER, tgtNew, tgtAmp));
+		target.addStatusEffect(new StatusEffectInstance(StatusEffects.WITHER, tgtNew, tgtAmp), source);
 		return cost;
 	}
 }

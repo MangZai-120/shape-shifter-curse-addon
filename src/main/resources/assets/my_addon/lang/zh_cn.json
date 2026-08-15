@@ -958,5 +958,15 @@
     "death.attack.ssc_addon.axolotl_shifter_attack": "%1$s 被野生美西螈幻形者撕咬致死",
     "death.attack.ssc_addon.axolotl_shifter_attack.player": "%1$s 在与 %2$s 战斗时被野生美西螈幻形者撕咬致死",
     "death.attack.ssc_addon.axolotl_shifter_thirst": "%1$s 因干涸而亡",
-    "death.attack.ssc_addon.axolotl_shifter_thirst.player": "%1$s 在与 %2$s 战斗时因干涸而亡"
+    "death.attack.ssc_addon.axolotl_shifter_thirst.player": "%1$s 在与 %2$s 战斗时因干渴而亡",
+    "origin.my_addon.form_wild_cat_nightmare.name": "食梦魔",
+    "origin.my_addon.form_wild_cat_nightmare.description": "潜行于梦境边缘的野猫。",
+    "my_addon.form_wild_cat_nightmare.model_name": "食梦魔",
+    "codex.form.my_addon.wild_cat_nightmare.name": "食梦魔(Nightmare)",
+    "advancements.my_addon.on_transform_wild_cat_nightmare.title": "食梦魔",
+    "advancements.my_addon.on_transform_wild_cat_nightmare.description": "首次变成食梦魔",
+    "power.my_addon.form_wild_cat_nightmare_fear.name": "恐惧",
+    "power.my_addon.form_wild_cat_nightmare_fear.description": "对已入梦的敌人降下恐惧：其视野被粉色雾气球壳压缩至16格，行动迟缓15%，耳畔萦绕守护者般的心跳——梦魇不在视野内时心跳微弱，靠得越近心跳越响。恐惧期间入梦时间被锁定，首次受到食梦魔的伤害将翻倍；梦魇在16格外对其完全隐身，进入16格后以每2秒隐匿、0.6秒现形的脉冲闪现，而梦魇的攻击会令其现形1.5秒。恐惧结束后目标强制苏醒，并在20秒内无法再次入梦。冷却20秒。",
+    "power.my_addon.form_wild_cat_nightmare_spook.name": "惊吓",
+    "power.my_addon.form_wild_cat_nightmare_spook.description": "在已入梦敌人身后悄悄响起苦力怕的引信声，一只只有它能看见的幽灵苦力怕正在逼近，3秒后原地炸裂（无实伤）。若它忍不住回头攻击那只苦力怕，消散的烟雾中将窜出一只幽灵野猫，哈看低吼着扑向它的脸狠狠一击（12点魔法伤害），随后化作烟花散去，而这一切只有它自己看得见。冷却8秒。"
 }

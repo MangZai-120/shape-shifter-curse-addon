@@ -70,8 +70,8 @@ public class WaterSpearEntity extends TridentEntity {
 			float damage = 10.0f;
 			target.damage(this.getDamageSources().trident(this, this.getOwner()), damage);
 
-			// Apply slowness
-			target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 100, 1));
+			// Apply slowness（带投掷者 source 供入梦拦截归因）
+			target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 100, 1), this.getOwner());
 
 			// Area damage
 			doAreaDamage(target.getPos().add(0, target.getHeight() / 2, 0), target);

@@ -188,7 +188,7 @@ public final class VortexChargeManager {
 			// 击退力度 = f(击退抗性等级, 是否为boss)：boss → 0（不击退不缓慢），普通怪按抗性分档
 			double scale = getMovementForceScale(living);
 			if (scale <= 0.0) continue;              // boss / 极高抗性：只受伤，不被移动
-			living.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 80, 2));
+			living.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 80, 2), player);
 			Vec3d push = living.getPos().subtract(player.getPos());
 			if (push.lengthSquared() < 1.0e-4) push = new Vec3d(0, 1, 0);
 			push = push.normalize().multiply(0.8 * scale);
