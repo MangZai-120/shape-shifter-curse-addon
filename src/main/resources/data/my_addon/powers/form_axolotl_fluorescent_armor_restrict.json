@@ -4,24 +4,21 @@
         "type": "apoli:or",
         "conditions": [
             { "type": "apoli:ingredient", "ingredient": { "item": "minecraft:diamond_chestplate" } },
-            { "type": "apoli:ingredient", "ingredient": { "item": "minecraft:netherite_chestplate" } },
-            { "type": "shape-shifter-curse:is_morph_scale_item", "inverted": true }
+            { "type": "apoli:ingredient", "ingredient": { "item": "minecraft:netherite_chestplate" } }
         ]
     },
     "legs": {
         "type": "apoli:or",
         "conditions": [
             { "type": "apoli:ingredient", "ingredient": { "item": "minecraft:diamond_leggings" } },
-            { "type": "apoli:ingredient", "ingredient": { "item": "minecraft:netherite_leggings" } },
-            { "type": "shape-shifter-curse:is_morph_scale_item", "inverted": true }
+            { "type": "apoli:ingredient", "ingredient": { "item": "minecraft:netherite_leggings" } }
         ]
     },
     "feet": {
         "type": "apoli:or",
         "conditions": [
             { "type": "apoli:ingredient", "ingredient": { "item": "minecraft:diamond_boots" } },
-            { "type": "apoli:ingredient", "ingredient": { "item": "minecraft:netherite_boots" } },
-            { "type": "shape-shifter-curse:is_morph_scale_item", "inverted": true }
+            { "type": "apoli:ingredient", "ingredient": { "item": "minecraft:netherite_boots" } }
         ]
     },
     "name": "Fragile Body",
