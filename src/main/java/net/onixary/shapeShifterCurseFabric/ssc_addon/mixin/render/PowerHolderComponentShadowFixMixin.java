@@ -30,7 +30,8 @@ public class PowerHolderComponentShadowFixMixin {
         method = "getPowers(Ljava/lang/Class;)Ljava/util/List;",
         at = @At("HEAD"),
         cancellable = true,
-        remap = false
+        remap = false,
+        require = 0
     )
     private void sscAddon$returnEmptyDuringShadowPass(Class<?> powerClass, CallbackInfoReturnable<List<?>> cir) {
         if (IrisShadowPassDetector.shouldSuppressPowerQuery()) {

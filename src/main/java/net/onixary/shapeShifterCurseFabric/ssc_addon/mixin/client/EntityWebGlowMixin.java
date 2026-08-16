@@ -15,14 +15,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Entity.class)
 public class EntityWebGlowMixin {
 
-	@Inject(method = "isGlowing", at = @At("RETURN"), cancellable = true)
+	@Inject(method = "isGlowing", at = @At("RETURN"), cancellable = true, require = 0)
 	private void ssca$webHighlightGlow(CallbackInfoReturnable<Boolean> cir) {
 		if (!cir.getReturnValueZ() && WebHighlightClient.isHighlighted(((Entity) (Object) this).getId())) {
 			cir.setReturnValue(true);
 		}
 	}
 
-	@Inject(method = "getTeamColorValue", at = @At("HEAD"), cancellable = true)
+	@Inject(method = "getTeamColorValue", at = @At("HEAD"), cancellable = true, require = 0)
 	private void ssca$webHighlightColor(CallbackInfoReturnable<Integer> cir) {
 		int id = ((Entity) (Object) this).getId();
 		if (WebHighlightClient.isHighlighted(id)) {

@@ -24,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class UpgradeAxolotlFirstPersonSpearMixin {
 
 	// 蓄力期把主手渲染的物品替换成 3D 水矛（仅渲染层，不改背包）
-	@ModifyVariable(method = "renderFirstPersonItem", at = @At("HEAD"), argsOnly = true)
+	@ModifyVariable(method = "renderFirstPersonItem", at = @At("HEAD"), argsOnly = true, require = 0)
 	private ItemStack ssc_addon$swapFpSpear(ItemStack item, AbstractClientPlayerEntity player,
 			float tickDelta, float pitch, Hand hand) {
 		if (player != null && hand == Hand.MAIN_HAND
@@ -36,7 +36,7 @@ public class UpgradeAxolotlFirstPersonSpearMixin {
 		return item;
 	}
 
-	@Inject(method = "renderFirstPersonItem", at = @At("HEAD"))
+	@Inject(method = "renderFirstPersonItem", at = @At("HEAD"), require = 0)
 	private void ssc_addon$raiseFpPush(AbstractClientPlayerEntity player, float tickDelta, float pitch, Hand hand,
 			float swingProgress, ItemStack item, float equipProgress, MatrixStack matrices,
 			VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
@@ -48,7 +48,7 @@ public class UpgradeAxolotlFirstPersonSpearMixin {
 		}
 	}
 
-	@Inject(method = "renderFirstPersonItem", at = @At("RETURN"))
+	@Inject(method = "renderFirstPersonItem", at = @At("RETURN"), require = 0)
 	private void ssc_addon$raiseFpPop(AbstractClientPlayerEntity player, float tickDelta, float pitch, Hand hand,
 			float swingProgress, ItemStack item, float equipProgress, MatrixStack matrices,
 			VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {

@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(targets = "io.redspace.ironsspellbooks.player.ClientSpellCastHelper")
 public class IronsSpellbooksAnimationMixin {
 
-	@Inject(method = "animatePlayerStart", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "animatePlayerStart", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
 	private static void onAnimatePlayerStart(PlayerEntity player, Identifier resourceLocation, CallbackInfo ci) {
 		try {
 			IForm currentForm = FormUtils.getCurrentForm(player);

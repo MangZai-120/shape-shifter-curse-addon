@@ -26,7 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(value = EntityGlowPower.class, remap = false)
 public class EntityGlowPowerMixin {
 
-	@Inject(method = "doesApply", at = @At("HEAD"), cancellable = true, remap = false)
+	@Inject(method = "doesApply", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
 	private void ssca$blockGlowOnDreamTarget(Entity entityToCheck, CallbackInfoReturnable<Boolean> cir) {
 		if (entityToCheck == null) return;
 		MinecraftClient client = MinecraftClient.getInstance();

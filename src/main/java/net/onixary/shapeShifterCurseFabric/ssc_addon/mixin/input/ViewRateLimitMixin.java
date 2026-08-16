@@ -50,7 +50,7 @@ public abstract class ViewRateLimitMixin {
 	@Unique
 	private static long ssca$lastNanos = 0L;
 
-	@Inject(method = "changeLookDirection", at = @At("HEAD"), cancellable = true)
+	@Inject(method = "changeLookDirection", at = @At("HEAD"), cancellable = true, require = 0)
 	private void ssca$smoothView(double cursorDeltaX, double cursorDeltaY, CallbackInfo ci) {
 		Entity self = (Entity) (Object) this;
 		MinecraftClient mc = MinecraftClient.getInstance();

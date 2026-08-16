@@ -14,8 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 食梦魔（Nightmare）「入梦」核心状态机 —— 服务端权威。
  *
- * <p>机制：食梦魔玩家对目标造成<b>累计 10 点</b>伤害后，目标进入「入梦」状态 20 秒（400t）。
- * 入梦期间再次被该食梦魔攻击 → 计数清零重算 + 入梦时长刷新。
+ * <p>机制：食梦魔玩家对目标造成<b>累计 10 点</b>伤害后（诅咒之月共鸣：当夜降为 6 点），目标进入「入梦」状态。
+ * 入梦期间再次被该食梦魔攻击 → 计数清零重算 + 噬梦吸血（15% 转化回血；目标死亡额外回 4 点）。
  * 入梦中的敌方对食梦魔本人施加的一切 debuff（负面状态效果）全部无效——含定身（ssc_addon:stun）、
  * 主动/被动高光描边（GlowMarker / 蛛网高亮 / 侵蚀烙印 / 契灵标记等带源施加点都会被
  * {@code NightmareDreamGuard.isBlocked} 拦截）。
@@ -29,6 +29,20 @@ public final class NightmareDreamManager {
 
 	/** 触发入梦所需累计伤害（每次入梦后清零重算）。 */
 	public static final float DREAM_THRESHOLD = 10.0f;
+	/** 诅咒之月共鸣：诅咒之月当夜入梦阈值降为 6 点（梦魇之力高涨）。 */
+	public static final float DREAM_THRESHOLD_CURSED_MOON = 6.0f;
+	/** 噬梦被动：对已入梦目标造成伤害的吸血比例（按面板伤害计）。 */
+	public static final float DREAM_LIFESTEAL_RATIO = 0.15f;
+	/** 噬梦被动：入梦目标死亡时额外回复的生命值（2 颗心）。 */
+	public static final float DREAM_KILL_HEAL = 4.0f;
+
+	/** 当前生效的入梦阈值：诅咒之月当夜（天黑 + 诅咒之月日）降为 6，否则 10。仅服务端调用。 */
+	public static float currentDreamThreshold(ServerPlayerEntity player) {
+		if (net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon.isInCursedMoon(player.getWorld())) {
+			return DREAM_THRESHOLD_CURSED_MOON;
+		}
+		return DREAM_THRESHOLD;
+	}
 	/** 入梦持续 tick（20 秒）。 */
 	public static final int DREAM_DURATION_TICKS = 400;
 	/** 受击触发入梦的固定时长（tick，10 秒，不随受击刷新；恐惧重置时回到 20 秒锁定）。 */
@@ -66,19 +80,25 @@ public final class NightmareDreamManager {
 		Map<UUID, Float> acc0 = ACCUM.computeIfAbsent(pid, k -> new ConcurrentHashMap<>());
 		long now = player.getWorld().getTime();
 
-		// 已入梦：不再刷新时长（用户定稿：受击入梦固定 10 秒到期；恐惧仍可重置并锁定 20 秒）
+		// 已入梦：噬梦吸血（15% 转化回血，按面板伤害计）+ 目标死亡额外回 2 心；不再刷新时长
+		// （用户定稿：受击入梦固定 10 秒到期；恐惧仍可重置并锁定 20 秒）
 		Long until = dreams.get(tid);
 		if (until != null && until > now) {
 			acc0.remove(tid); // 计数清零重算
+			player.heal(amount * DREAM_LIFESTEAL_RATIO); // 噬梦：汲取梦境之力回血
+			if (!target.isAlive()) {
+				player.heal(DREAM_KILL_HEAL); // 梦尽人亡：额外吞噬残梦
+			}
 			SscAddonNetworking.sendWebHighlight(player, target.getId(),
 					(int) Math.max(20, until - now), DREAM_OUTLINE_COLOR); // 描边剩余时长同步（不延长）
 			return;
 		}
 
-		// 未入梦：累计伤害，达阈值触发入梦（恐惧结束后的 20s 免疫窗口内不再触发）
+		// 未入梦：累计伤害，达阈值触发入梦（恐惧结束后的 20s 免疫窗口内不再触发；
+		// 诅咒之月共鸣：当夜阈值降为 6 点）
 		Map<UUID, Float> acc = acc0;
 		float total = acc.merge(tid, amount, Float::sum);
-		if (total >= DREAM_THRESHOLD
+		if (total >= currentDreamThreshold(player)
 				&& !NightmareFearManager.isDreamImmune(tid, now)) {
 			acc.remove(tid);
 			// 受击触发入梦：固定 10 秒（用户定稿；恐惧重置时才回到 20 秒锁定）

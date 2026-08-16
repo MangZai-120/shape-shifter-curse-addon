@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Entity.class)
 public class SpookGhostVisibleMixin {
 
-	@Inject(method = "isInvisible", at = @At("RETURN"), cancellable = true)
+	@Inject(method = "isInvisible", at = @At("RETURN"), cancellable = true, require = 0)
 	private void ssca$showGhost(CallbackInfoReturnable<Boolean> cir) {
 		if (cir.getReturnValueZ()
 				&& NightmareSpookClient.isGhostVisible(((Entity) (Object) this).getUuid())) {

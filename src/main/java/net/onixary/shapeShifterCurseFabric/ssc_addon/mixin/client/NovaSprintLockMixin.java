@@ -29,7 +29,7 @@ public abstract class NovaSprintLockMixin {
     }
 
     // 禁止开始疾跑
-    @Inject(method = "canStartSprinting", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "canStartSprinting", at = @At("HEAD"), cancellable = true, require = 0)
     private void ssca$novaBlockSprintStart(CallbackInfoReturnable<Boolean> cir) {
         if (ssca$novaCharging()) {
             cir.setReturnValue(false);
@@ -37,7 +37,7 @@ public abstract class NovaSprintLockMixin {
     }
 
     // 每 tick 强制取消当前疾跑（覆盖蓄力开始前已在疾跑的情况）
-    @Inject(method = "tickMovement", at = @At("HEAD"))
+    @Inject(method = "tickMovement", at = @At("HEAD"), require = 0)
     private void ssca$novaStopSprint(CallbackInfo ci) {
         if (ssca$novaCharging()) {
             ((ClientPlayerEntity) (Object) this).setSprinting(false);

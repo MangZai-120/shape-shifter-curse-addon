@@ -23,7 +23,7 @@ public abstract class AnkhStoneTotemMixin extends CooldownPower {
 		super(type, entity, cd, hr);
 	}
 
-	@Inject(method = "use", at = @At("TAIL"))
+	@Inject(method = "use", at = @At("TAIL"), require = 0)
 	private void onVirtualTotemUse(CallbackInfo ci) {
 		AnkhStoneItem.onRevival(this.entity);
 	}

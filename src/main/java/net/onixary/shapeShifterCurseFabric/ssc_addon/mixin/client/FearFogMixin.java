@@ -24,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(BackgroundRenderer.class)
 public class FearFogMixin {
 
-	@Inject(method = "applyFog", at = @At("RETURN"))
+	@Inject(method = "applyFog", at = @At("RETURN"), require = 0)
 	private static void ssca$fearFog(Camera camera, BackgroundRenderer.FogType fogType, float viewDistance,
 	                                 boolean thickFog, float tickDelta, CallbackInfo ci) {
 		float strength = NightmareFearClient.getFogStrength(tickDelta);

@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LivingEntityRenderer.class)
 public class LivingEntityRendererShadowFixMixin {
 
-    @Inject(method = "render", at = @At("HEAD"))
+    @Inject(method = "render", at = @At("HEAD"), require = 0)
     private void sscAddon$markShadowSuppressionStart(LivingEntity entity, float f, float g,
                                                      net.minecraft.client.util.math.MatrixStack matrixStack,
                                                      net.minecraft.client.render.VertexConsumerProvider vertexConsumerProvider,
@@ -32,7 +32,7 @@ public class LivingEntityRendererShadowFixMixin {
         }
     }
 
-    @Inject(method = "render", at = @At("RETURN"))
+    @Inject(method = "render", at = @At("RETURN"), require = 0)
     private void sscAddon$markShadowSuppressionEnd(LivingEntity entity, float f, float g,
                                                    net.minecraft.client.util.math.MatrixStack matrixStack,
                                                    net.minecraft.client.render.VertexConsumerProvider vertexConsumerProvider,

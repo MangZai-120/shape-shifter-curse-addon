@@ -23,7 +23,7 @@ public abstract class WanderingTraderTradeMixin {
 	 * 注：此处刻意保留 mixin——Fabric TradeOfferHelper 会把交易注册进商人交易池参与抽选
 	 * （占用 5+1 交易槽、概率被池大小稀释），无法等价「填充后独立 1% 额外追加、不占槽」的原语义。
 	 */
-	@Inject(method = "fillRecipes", at = @At("TAIL"))
+	@Inject(method = "fillRecipes", at = @At("TAIL"), require = 0)
 	private void sscAddon$injectAnubisCrystalTrade(CallbackInfo ci) {
 		WanderingTraderEntity trader = (WanderingTraderEntity) (Object) this;
 		TradeOfferList offers = trader.getOffers();

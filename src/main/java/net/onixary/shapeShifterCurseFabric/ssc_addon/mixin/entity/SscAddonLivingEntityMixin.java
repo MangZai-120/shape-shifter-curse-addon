@@ -461,8 +461,8 @@ public abstract class SscAddonLivingEntityMixin {
 	}
 
 	/**
-	 * 食梦魔「恐惧」伤害翻倍（一次性）：恐惧中的目标受<b>任何食梦魔</b>的<b>第一次</b>伤害 ×2
-	 * （整轮恐惧仅触发一次，由 NightmareFearManager 消耗标记；再次施加恐惧重新可触发）。
+	 * 食梦魔「恐惧」伤害翻倍（一次性）：恐惧中的目标受「任何食梦魔<b>及其白名单成员</b>」的
+	 * <b>第一次</b>伤害 ×2（整轮恐惧仅触发一次，由 NightmareFearManager 消耗标记；再次施加恐惧重新可触发）。
 	 * 同时：梦魔攻击恐惧目标 → 该梦魔在目标眼里「显形 1 秒」（清隐匿窗口，显形期内不再隐匿）。
 	 */
 	@ModifyArgs(method = "damage", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;applyDamage(Lnet/minecraft/entity/damage/DamageSource;F)V"))
@@ -471,10 +471,13 @@ public abstract class SscAddonLivingEntityMixin {
 		if (self.getWorld().isClient()) return;
 		if (!net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager
 				.isFeared(self.getUuid(), self.getWorld().getTime())) return;
+		if (!(self.getWorld() instanceof net.minecraft.server.world.ServerWorld serverWorld)) return;
 		DamageSource source = args.get(0);
 		if (!(source.getAttacker() instanceof ServerPlayerEntity attacker)) return;
-		if (!net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager.isNightmare(attacker)) return;
-		// 一次性消耗：本轮恐惧首次受梦魔伤害才 ×2
+		// 受益者：任一食梦魔，或任一在线食梦魔的白名单友军（用户定稿扩展）
+		if (!net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager
+				.isDoubleDamageBeneficiary(attacker, serverWorld)) return;
+		// 一次性消耗：本轮恐惧首次受梦魔/白名单成员伤害才 ×2
 		if (net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager
 				.tryConsumeDoubleDamage(self.getUuid(), self.getWorld().getTime())) {
 			args.set(1, (float) args.get(1) * 2.0f);

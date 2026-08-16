@@ -37,7 +37,7 @@ public class TransformingControllerFeralAnimMixin {
 	private static final Identifier SSC_ADDON_NORMAL_TO_FERAL_ANIM =
 			new Identifier("shape-shifter-curse", "player_on_transform_normal_to_feral");
 
-	@Inject(method = "getAnimation", at = @At("HEAD"), cancellable = true)
+	@Inject(method = "getAnimation", at = @At("HEAD"), cancellable = true, require = 0)
 	private void sscAddon$forceFeralTransformAnim(PlayerEntity player, AnimSystem.AnimSystemData data,
 												  CallbackInfoReturnable<AnimationHolder> cir) {
 		String toFormName = ShapeShifterCurseFabricClient.getClientTransformToForm(player.getUuid());

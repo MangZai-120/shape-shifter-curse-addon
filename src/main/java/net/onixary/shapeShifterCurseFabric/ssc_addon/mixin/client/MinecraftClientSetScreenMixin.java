@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(MinecraftClient.class)
 public abstract class MinecraftClientSetScreenMixin {
 
-    @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true, require = 0)
     @SuppressWarnings("resource") 
     private void ssc_addon(Screen screen, CallbackInfo ci) {
         if (screen == null) return;

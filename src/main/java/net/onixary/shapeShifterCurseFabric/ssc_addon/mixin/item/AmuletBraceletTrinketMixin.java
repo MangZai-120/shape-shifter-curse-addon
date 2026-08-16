@@ -32,7 +32,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(AccessoryItem.class)
 public abstract class AmuletBraceletTrinketMixin {
 
-	@Inject(method = "accessoryTick", at = @At("HEAD"), remap = false)
+	@Inject(method = "accessoryTick", at = @At("HEAD"), remap = false, require = 0)
 	private void ssc_addon$mancianimaBraceletHint(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData, CallbackInfo ci) {
 		// instanceof 守卫：只处理守御脚环，其它饰品（附属 19 个 + 主包全部）零开销直接返回
 		if (!((Object) this instanceof AmuletBraceletTrinket)) return;

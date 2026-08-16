@@ -27,7 +27,8 @@ public class WaterSpearInventoryMixin {
 	// 带 LivingEntity 的重载（物品栏带实体上下文时）
 	@Inject(
 			method = "drawItem(Lnet/minecraft/entity/LivingEntity;Lnet/minecraft/item/ItemStack;III)V",
-			at = @At("HEAD")
+			at = @At("HEAD"),
+			require = 0
 	)
 	private void ssc_addon$markGuiContextA(LivingEntity entity, ItemStack stack, int x, int y, int seed, CallbackInfo ci) {
 		RenderContextTracker.setGuiContext(true);
@@ -35,7 +36,8 @@ public class WaterSpearInventoryMixin {
 
 	@Inject(
 			method = "drawItem(Lnet/minecraft/entity/LivingEntity;Lnet/minecraft/item/ItemStack;III)V",
-			at = @At("RETURN")
+			at = @At("RETURN"),
+			require = 0
 	)
 	private void ssc_addon$clearGuiContextA(LivingEntity entity, ItemStack stack, int x, int y, int seed, CallbackInfo ci) {
 		RenderContextTracker.clear();
@@ -44,7 +46,8 @@ public class WaterSpearInventoryMixin {
 	// 不带 LivingEntity 的 3 参重载（背包 slot 渲染常走此路径）
 	@Inject(
 			method = "drawItem(Lnet/minecraft/item/ItemStack;II)V",
-			at = @At("HEAD")
+			at = @At("HEAD"),
+			require = 0
 	)
 	private void ssc_addon$markGuiContextB(ItemStack stack, int x, int y, CallbackInfo ci) {
 		RenderContextTracker.setGuiContext(true);
@@ -52,7 +55,8 @@ public class WaterSpearInventoryMixin {
 
 	@Inject(
 			method = "drawItem(Lnet/minecraft/item/ItemStack;II)V",
-			at = @At("RETURN")
+			at = @At("RETURN"),
+			require = 0
 	)
 	private void ssc_addon$clearGuiContextB(ItemStack stack, int x, int y, CallbackInfo ci) {
 		RenderContextTracker.clear();
@@ -61,7 +65,8 @@ public class WaterSpearInventoryMixin {
 	// 不带 LivingEntity 的 4 参重载（带 seed）
 	@Inject(
 			method = "drawItem(Lnet/minecraft/item/ItemStack;III)V",
-			at = @At("HEAD")
+			at = @At("HEAD"),
+			require = 0
 	)
 	private void ssc_addon$markGuiContextC(ItemStack stack, int x, int y, int seed, CallbackInfo ci) {
 		RenderContextTracker.setGuiContext(true);
@@ -69,7 +74,8 @@ public class WaterSpearInventoryMixin {
 
 	@Inject(
 			method = "drawItem(Lnet/minecraft/item/ItemStack;III)V",
-			at = @At("RETURN")
+			at = @At("RETURN"),
+			require = 0
 	)
 	private void ssc_addon$clearGuiContextC(ItemStack stack, int x, int y, int seed, CallbackInfo ci) {
 		RenderContextTracker.clear();
@@ -78,7 +84,8 @@ public class WaterSpearInventoryMixin {
 	// drawItemWithoutEntity 重载（明确无实体上下文，如某些 tooltip/预览）
 	@Inject(
 			method = "drawItemWithoutEntity(Lnet/minecraft/item/ItemStack;II)V",
-			at = @At("HEAD")
+			at = @At("HEAD"),
+			require = 0
 	)
 	private void ssc_addon$markGuiContextD(ItemStack stack, int x, int y, CallbackInfo ci) {
 		RenderContextTracker.setGuiContext(true);
@@ -86,7 +93,8 @@ public class WaterSpearInventoryMixin {
 
 	@Inject(
 			method = "drawItemWithoutEntity(Lnet/minecraft/item/ItemStack;II)V",
-			at = @At("RETURN")
+			at = @At("RETURN"),
+			require = 0
 	)
 	private void ssc_addon$clearGuiContextD(ItemStack stack, int x, int y, CallbackInfo ci) {
 		RenderContextTracker.clear();

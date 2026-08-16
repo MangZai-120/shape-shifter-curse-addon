@@ -102,10 +102,34 @@ public final class NightmareSpookManager {
 
 		boolean any = false;
 		for (LivingEntity target : targets) {
-			if (spawnGhostCreeper(world, player, target)) any = true;
+			if (target instanceof ServerPlayerEntity sp) {
+				// 玩家目标：幽灵苦力怕幻象全套（引信 → 回击 → 幽灵野猫扑脸）
+				if (spawnGhostCreeper(world, player, sp)) any = true;
+			} else {
+				// 非玩家目标（用户定稿）：无幻象，直接被幽灵野猫撕咬（12 点魔法伤害）；
+				// 入梦时间重置为 20 秒满额，不强制退出（无恐惧联动的强制苏醒）。
+				if (directMobBite(world, player, target, now)) any = true;
+			}
 		}
 		if (!any) return false;
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, SPOOK_COOLDOWN_TICKS);
+		return true;
+	}
+
+	/** 非玩家目标：无形的幽灵野猫直接撕咬（定向声效 + 伤害 + 入梦重置 20s）。 */
+	private static boolean directMobBite(ServerWorld world, ServerPlayerEntity caster, LivingEntity target, long now) {
+		if (!target.isAlive() || target.getWorld() != world) return false;
+		// 白名单保护：白名单内生物不受惊吓伤害
+		if (net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils.isProtected(caster, target)) return false;
+		// 幽灵野猫贴身一击：12 点魔法伤害（同 completeCatAttack 的伤害源，可归因食梦魔）
+		target.damage(caster.getDamageSources().indirectMagic(caster, caster), CLONE_DAMAGE);
+		// 入梦时间重置为 20 秒满额（不强制退出；与恐惧的重置同额）
+		NightmareDreamManager.resetDream(caster.getUuid(), target.getUuid(), now);
+		// 声效与粒子（生物无客户端屏幕：全员可闻的低沉猫啦 + 目标位置烟雾）
+		world.playSound(null, target.getX(), target.getY(), target.getZ(),
+				SoundEvents.ENTITY_CAT_HISS, net.minecraft.sound.SoundCategory.HOSTILE, 1.0f, 0.85f);
+		world.spawnParticles(ParticleTypes.CLOUD,
+				target.getX(), target.getBodyY(0.5), target.getZ(), 6, 0.3, 0.3, 0.3, 0.02);
 		return true;
 	}
 

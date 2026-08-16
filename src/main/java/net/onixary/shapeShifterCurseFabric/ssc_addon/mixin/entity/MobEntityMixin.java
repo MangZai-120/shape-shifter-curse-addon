@@ -4,6 +4,7 @@ import net.minecraft.entity.EntityGroup;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.HuskEntity;
 import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.entity.mob.PhantomEntity;
 import net.minecraft.entity.mob.VexEntity;
 import net.minecraft.entity.mob.WardenEntity;
 import net.minecraft.entity.mob.WitchEntity;
@@ -88,6 +89,21 @@ public abstract class MobEntityMixin {
 				ci.cancel();
 				return;
 			}
+			// 幻翼亲和：幻翼是失眠者梦魇的进生物，视食梦魔为同类——绝不将其设为目标
+			// （含主动索敌与受击反击，同 PLAYING_DEAD/TRUE_INVISIBILITY 先例全拦；被打仍可还手由玩家主动选择）
+			if (self instanceof PhantomEntity
+					&& target instanceof PlayerEntity phantomTarget
+					&& FormUtils.isForm(phantomTarget, FormIdentifiers.WILD_CAT_NIGHTMARE)) {
+				ci.cancel();
+				return;
+			}
+			// 食梦魔「恐惧」非玩家目标：恐惧期间 mob 无法主动获得对该目标的仇恨；
+			// 被梦魔攻击后仅 2 秒反击窗口（isMobAggroAllowed 判 lastAttackedTime），窗口外拦截
+			if (target != null
+					&& !net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager.isMobAggroAllowed(self, target)) {
+				ci.cancel();
+				return;
+			}
 			// 劫掠阵营不攻击女巫使魔
 			if ((self instanceof RaiderEntity || self instanceof VexEntity || self instanceof WitchEntity)
 					&& target instanceof WitchFamiliarEntity) {
@@ -128,6 +144,10 @@ public abstract class MobEntityMixin {
 	@Inject(method = "mobTick", at = @At("HEAD"), cancellable = true)
 	private void ssc_addon$onMobTick(CallbackInfo ci) {
 		MobEntity mob = (MobEntity) (Object) this;
+		// 食梦魔「恐惧」：恐惧中的 mob 每 tick 检查仇恨是否过期（被击 2 秒后清目标）
+		if (!mob.getWorld().isClient()) {
+			net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager.tickFearedMobAggro(mob);
+		}
 
 		// 1. 眩晕逻辑
 		if (mob.hasStatusEffect(SscAddon.STUN)) {

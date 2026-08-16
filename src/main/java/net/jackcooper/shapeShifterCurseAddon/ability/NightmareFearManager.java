@@ -4,6 +4,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
@@ -39,13 +40,19 @@ public final class NightmareFearManager {
 	public static final int FEAR_DURATION_TICKS = 300;
 	/** 技能 CD（tick，20 秒）。 */
 	public static final int FEAR_COOLDOWN_TICKS = 400;
+	/** 诅咒之月共鸣：诅咒之月当夜恐惧 CD 降为 14 秒（280t）。 */
+	public static final int FEAR_COOLDOWN_TICKS_CURSED_MOON = 280;
 	/** 恐惧结束后入梦免疫时长（tick，20 秒）。 */
 	public static final int DREAM_IMMUNE_TICKS = 400;
 	/** 心跳音效间隔（tick，1.6 秒/拍——守卫者心跳节奏）。 */
 	public static final int HEARTBEAT_INTERVAL = 32;
-	/** 减速 15% 的属性 modifier UUID（固定 UUID，可幂等移除）。 */
+	/** 减速 20% 的属性 modifier UUID（固定 UUID，可幂等移除）。 */
 	private static final UUID FEAR_SLOW_UUID = UUID.fromString("e3a1f7c2-9b4d-4e6a-8c15-d2f3a7b9e810");
 	private static final String FEAR_SLOW_NAME = "Nightmare Fear Slow";
+	/** 减速幅度（用户定稿：必备减速 20%，玩家/生物一致）。 */
+	public static final float FEAR_SLOW_RATIO = 0.20f;
+	/** 非玩家目标的仇恨压制：被梦魔攻击后的反击窗口（tick，2 秒）。 */
+	public static final int MOB_AGGRO_WINDOW_TICKS = 40;
 	/** 恐惧视野半径（格）。 */
 	public static final double FEAR_SIGHT_RADIUS = 16.0;
 	/** 可见性脉冲：隐匿相位时长（tick，2 秒）。 */
@@ -116,6 +123,14 @@ public final class NightmareFearManager {
 		return true;
 	}
 
+	/** 当前生效的恐惧 CD：诅咒之月当夜 280t，否则 400t。仅服务端调用。 */
+	public static int currentFearCooldown(ServerPlayerEntity player) {
+		if (net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon.isInCursedMoon(player.getWorld())) {
+			return FEAR_COOLDOWN_TICKS_CURSED_MOON;
+		}
+		return FEAR_COOLDOWN_TICKS;
+	}
+
 	/** 目标当前是否入梦免疫（恐惧结束后的 20s 惩罚窗口）。 */
 	public static boolean isDreamImmune(UUID targetUuid, long now) {
 		Long until = DREAM_IMMUNE.get(targetUuid);
@@ -139,8 +154,8 @@ public final class NightmareFearManager {
 		for (LivingEntity target : targets) {
 			startFear(world, player, target, now);
 		}
-		// 进入 CD
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, FEAR_COOLDOWN_TICKS);
+		// 进入 CD（诅咒之月共鸣：当夜 CD 缩短）
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, currentFearCooldown(player));
 		return true;
 	}
 
@@ -150,12 +165,12 @@ public final class NightmareFearManager {
 		FEARING.put(tid, new FearState(now + FEAR_DURATION_TICKS, caster.getUuid()));
 		// 入梦时间重置回 20s（规格②：获得恐惧即重置）
 		NightmareDreamManager.resetDream(caster.getUuid(), tid, now);
-		// 减速 15%（幂等：先移除再加）
+		// 减速 20%（幂等：先移除再加；用户定稿：必备减速，玩家/生物一致）
 		EntityAttributeInstance attr = target.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
 		if (attr != null) {
 			attr.removeModifier(FEAR_SLOW_UUID);
 			attr.addPersistentModifier(new EntityAttributeModifier(
-					FEAR_SLOW_UUID, FEAR_SLOW_NAME, -0.15, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
+					FEAR_SLOW_UUID, FEAR_SLOW_NAME, -FEAR_SLOW_RATIO, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
 		}
 		// 客户端包（粉雾淡入 + 心跳启动 + 本地失明驱动），仅目标本人
 		if (target instanceof ServerPlayerEntity sp) {
@@ -311,6 +326,54 @@ public final class NightmareFearManager {
 			this.endTick = endTick;
 			this.casterUuid = casterUuid;
 		}
+	}
+
+	// ===== 非玩家目标：仇恨压制（用户定稿） =====
+
+	/**
+	 * 恐惧中的非玩家生物是否允许将 target 设为攻击目标（用户定稿：只对释放玩家不可视）。
+	 * <p>机制：恐惧期间 mob <b>仅对释放该恐惧的梦魇本人</b>失去仇恨（拦 setTarget）；
+	 * 被梦魔攻击后仅有 {@link #MOB_AGGRO_WINDOW_TICKS}（2 秒）反击窗口，
+	 * 窗口过后（lastAttackedTime 超时）仇恨消失（mobTick 清目标）。
+	 * 对其它实体（其它玩家、其它梦魇、生物）一切正常，不受恐惧影响。</p>
+	 */
+	public static boolean isMobAggroAllowed(MobEntity mob, LivingEntity target) {
+		long now = mob.getWorld().getTime();
+		FearState v = FEARING.get(mob.getUuid());
+		if (v == null || v.endTick <= now) return true; // 非恐惧 mob 不受控
+		// 仅当目标正是释放该恐惧的梦魇本人时才压制仇恨
+		if (!(target instanceof ServerPlayerEntity tp) || !tp.getUuid().equals(v.casterUuid)) return true;
+		long lastHit = mob.getLastAttackedTime(); // vanilla：受击成功时更新
+		return now - lastHit <= MOB_AGGRO_WINDOW_TICKS; // 仅被击 2 秒内可反击
+	}
+
+	/** 恐惧中的 mob 每刻清除对「施法梦魇」的过期仇恨（由 MobEntityMixin.mobTick 调用，仅服务端）。 */
+	public static void tickFearedMobAggro(MobEntity mob) {
+		long now = mob.getWorld().getTime();
+		FearState v = FEARING.get(mob.getUuid());
+		if (v == null || v.endTick <= now) return;
+		LivingEntity cur = mob.getTarget();
+		if (cur == null) return;
+		if (!isMobAggroAllowed(mob, cur)) {
+			mob.setTarget(null); // 仇恨消失（放行：setTarget(null) 不受拦截）
+		}
+	}
+
+	/**
+	 * 双倍伤害受益者扩展（用户定稿）：恐惧目标受「任何食梦魔<b>及其白名单成员</b>」的首次伤害 ×2。
+	 * 白名单成员 = 在线恐惧梦魔的白名单友军（WhitelistUtils.isBuffTarget 强化类目标判定）。
+	 */
+	public static boolean isDoubleDamageBeneficiary(LivingEntity attacker, ServerWorld world) {
+		if (!(attacker instanceof ServerPlayerEntity sp)) return false;
+		if (NightmareDreamManager.isNightmare(sp)) return true;
+		// 非梦魔玩家：是任一在线食梦魔的白名单友军 → 受益
+		for (ServerPlayerEntity p : world.getPlayers()) {
+			if (!NightmareDreamManager.isNightmare(p)) continue;
+			if (net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils.isBuffTarget(p, sp)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** 目标断线清理。 */

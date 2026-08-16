@@ -47,7 +47,7 @@ public class UpgradeAxolotlThirdPersonSpearMixin {
 	}
 
 	// 蓄力期把主手渲染的水矛「举起过肩」（第三人称纯渲染抬矛蓄力效果；数值可实机微调）
-	@Inject(method = "renderItem", at = @At("HEAD"))
+	@Inject(method = "renderItem", at = @At("HEAD"), require = 0)
 	private void ssc_addon$raiseTpPush(LivingEntity entity, ItemStack stack, ModelTransformationMode mode, Arm arm,
 			MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
 		if (arm == entity.getMainArm() && UpgradeAxolotlSpearRenderState.isCharging(entity.getUuid())) {
@@ -57,7 +57,7 @@ public class UpgradeAxolotlThirdPersonSpearMixin {
 		}
 	}
 
-	@Inject(method = "renderItem", at = @At("RETURN"))
+	@Inject(method = "renderItem", at = @At("RETURN"), require = 0)
 	private void ssc_addon$raiseTpPop(LivingEntity entity, ItemStack stack, ModelTransformationMode mode, Arm arm,
 			MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
 		if (arm == entity.getMainArm() && UpgradeAxolotlSpearRenderState.isCharging(entity.getUuid())) {
@@ -70,7 +70,7 @@ public class UpgradeAxolotlThirdPersonSpearMixin {
 	 * vanilla 隐身不隐藏手持物，需在 render 头部直接 cancel。
 	 */
 	@Inject(method = "render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;ILnet/minecraft/entity/LivingEntity;FFFFFF)V",
-			at = @At("HEAD"), cancellable = true)
+			at = @At("HEAD"), cancellable = true, require = 0)
 	private void ssc_addon$hideHeldItemDuringMist(MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light,
 												 LivingEntity entity, float limbAngle, float limbDistance,
 												 float tickDelta, float animationProgress, float headYaw, float headPitch,

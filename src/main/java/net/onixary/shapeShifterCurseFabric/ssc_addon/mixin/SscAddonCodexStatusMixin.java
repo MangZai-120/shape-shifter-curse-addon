@@ -35,7 +35,7 @@ import java.util.List;
 @Mixin(CodexData.class)
 public class SscAddonCodexStatusMixin {
 
-    @Inject(method = "getContentText", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "getContentText", at = @At("RETURN"), cancellable = true, require = 0)
     private static void appendEvolutionToAppearance(CodexData.ContentType type, PlayerEntity player,
                                                     CallbackInfoReturnable<Text> cir) {
         if (type != CodexData.ContentType.APPEARANCE) {

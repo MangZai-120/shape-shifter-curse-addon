@@ -966,7 +966,13 @@
     "advancements.my_addon.on_transform_wild_cat_nightmare.title": "食梦魔",
     "advancements.my_addon.on_transform_wild_cat_nightmare.description": "首次变成食梦魔",
     "power.my_addon.form_wild_cat_nightmare_fear.name": "恐惧",
-    "power.my_addon.form_wild_cat_nightmare_fear.description": "对已入梦的敌人降下恐惧：其视野被粉色雾气球壳压缩至16格，行动迟缓15%，耳畔萦绕守护者般的心跳——梦魇不在视野内时心跳微弱，靠得越近心跳越响。恐惧期间入梦时间被锁定，首次受到食梦魔的伤害将翻倍；梦魇在16格外对其完全隐身，进入16格后以每2秒隐匿、0.6秒现形的脉冲闪现，而梦魇的攻击会令其现形1.5秒。恐惧结束后目标强制苏醒，并在20秒内无法再次入梦。冷却20秒。",
+    "power.my_addon.form_wild_cat_nightmare_fear.description": "对已入梦的敌人降下恐惧：其视野被粉色雾气球壳压缩至16格，行动迟缓20%，耳畔萦绕守护者般的心跳——梦魇不在视野内时心跳微弱，靠得越近心跳越响。恐惧期间入梦时间被锁定，首次受到食梦魔或其白名单成员的伤害将翻倍；梦魇在16格外对其完全隐身，进入16格后以每2秒隐匿、0.6秒现形的脉冲闪现，而梦魇的攻击会令其现形1.5秒。对陷入恐惧的生物，它们看不见降下恐惧的梦魔本人，无法对其产生仇恨，被其攻击后仅有2秒的反击之力，随后仇恨彻底消散。恐惧结束后目标强制苏醒，并在20秒内无法再次入梦。冷却20秒。",
     "power.my_addon.form_wild_cat_nightmare_spook.name": "惊吓",
-    "power.my_addon.form_wild_cat_nightmare_spook.description": "在已入梦敌人身后悄悄响起苦力怕的引信声，一只只有它能看见的幽灵苦力怕正在逼近，3秒后原地炸裂（无实伤）。若它忍不住回头攻击那只苦力怕，消散的烟雾中将窜出一只幽灵野猫，哈看低吼着扑向它的脸狠狠一击（12点魔法伤害），随后化作烟花散去，而这一切只有它自己看得见。冷却8秒。"
+    "power.my_addon.form_wild_cat_nightmare_spook.description": "在已入梦敌人身后悄悄响起苦力怕的引信声，一只只有它能看见的幽灵苦力怕正在逼近，3秒后原地炸裂（无实伤）。若它忍不住回头攻击那只苦力怕，消散的烟雾中将窜出一只幽灵野猫，哈看低吼着扑向它的脸狠狠一击（12点魔法伤害），随后化作烟花散去，而这一切只有它自己看得见。对已入梦的生物，无形的幽灵野猫会直接撕咬一口（12点魔法伤害），并将其入梦时间重置为20秒。冷却8秒。",
+    "power.my_addon.form_wild_cat_nightmare_dream_devour.name": "噬梦",
+    "power.my_addon.form_wild_cat_nightmare_dream_devour.description": "你从猎物的梦中汲取滋养：对已入梦目标造成伤害时，将其中的15%转化为自身生命；若目标在梦中死去，你还会吞噬它最后的残梦，额外回复4点生命。",
+    "power.my_addon.form_wild_cat_nightmare_phantom_affinity.name": "幻翼亲和",
+    "power.my_addon.form_wild_cat_nightmare_phantom_affinity.description": "幻翼是失眠者梦魇滋生的造物，它们视你为梦境边缘的同类，绝不会主动将你列为猎物——即使受到你的攻击，也只是远远退开。",
+    "power.my_addon.form_wild_cat_nightmare_cursed_moon_resonance.name": "诅咒之月共鸣",
+    "power.my_addon.form_wild_cat_nightmare_cursed_moon_resonance.description": "你诞生于诅咒之月的魔力，与那轮紫月同频共振：诅咒之月当夜，触发入梦所需的累计伤害从10点降为6点，「恐惧」的冷却从20秒缩短为14秒。"
 }

@@ -13,7 +13,7 @@ public class AllaySPTotemMixin {
 
 	// VirtualTotemMixin uses priority 10.
 
-	@Inject(method = "tryUseTotem", at = @At("RETURN"), cancellable = true)
+	@Inject(method = "tryUseTotem", at = @At("RETURN"), cancellable = true, require = 0)
 	private void tryUseTotem(DamageSource source, CallbackInfoReturnable<Boolean> cir) {
 		if (!cir.getReturnValue() && AllaySPTotem.tryUseAllayTotem((LivingEntity) (Object) this)) {
 			cir.setReturnValue(true);
