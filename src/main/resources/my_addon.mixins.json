@@ -21,6 +21,8 @@
                    "item.MilkBucketWebBoundMixin",
                    "item.AmuletBraceletTrinketMixin",
                    "item.CharmOfNightCrystalTrinketMixin",
+                   "item.AddonTrinketBridgeMixin",
+                   "item.AddonAccessoryIoFallbackMixin",
                    "item.ItemEntityMixin",
                    "entity.MobEntityMixin",
                    "entity.IronGolemAllayFlowerMixin",

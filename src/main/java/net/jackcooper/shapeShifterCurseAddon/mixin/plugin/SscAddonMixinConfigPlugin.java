@@ -49,15 +49,22 @@ public class SscAddonMixinConfigPlugin implements IMixinConfigPlugin {
     /** mixin 全限定类名 → 冲突的 mod id 列表（列表内任一加载，就自动让路跳过该 mixin）。 */
     private static final Map<String, String[]> CONFLICT_MODS = new HashMap<>();
 
+    /** 与主包 TrinketImpl 互斥的桥接 mixin 全限定名（主包那个被跳过时这个才应用）。 */
+    private static final String TRINKET_BRIDGE_MIXIN = MIXIN_PREFIX + "item.AddonTrinketBridgeMixin";
+
     static {
         // Iron's Spellbooks（Forge mod，经 Sinytra Connector 加载；modId 已据其 jar 内
         // META-INF/mods.toml 确认为 "irons_spellbooks"）未装时，跳过施法动画拦截 mixin。
-        // 该 mixin 仍保留 @Pseudo + 字符串 target（编译期附属无此 Forge 类，必须如此才能编译）；
+        // 该 mixin 仍保留 @Pseudo + 字符串 target（编译期附属无此 Forge 类，必须如此编译）；
         // 此处 mod 检测是运行期额外条件，未装时更早、更明确地跳过。
         requireMod("IronsSpellbooksAnimationMixin", "irons_spellbooks");
         // Iris（光影加载器）未装时跳过恐惧失明雾的内存补丁 mixin（目标类 ProgramSource 不存在会崩）。
         // 该 mixin 在 Iris 载入光影时把 DoBlindnessFog 内存替换为粉色 12→16 格版（不改光影文件）。
         requireMod("IrisShaderPackMixin", "iris");
+        // 饰品 Trinkets 桥接兜底（AddonTrinketBridgeMixin）：仅当 trinkets API 可用
+        // （原生 Trinkets 或 tclayer 兼容层 provides "trinkets"）时应用；
+        // 与主包 TrinketImpl 的互斥见 shouldApplyMixin 内专门判定（最高优先级插件非 trinkets 才应用）。
+        requireMod("AddonTrinketBridgeMixin", "trinkets");
 
         // ========== 扩展示例（需要时取消注释并按需修改）==========
         // ① 某 mixin 只在装了某可选 mod 时才应用（缺 mod 就跳过，防崩）：
@@ -91,6 +98,20 @@ public class SscAddonMixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        // 饰品桥接兜底：与主包 TrinketImpl 严格互斥——
+        // 主包 plugin 在「最高优先级插件 == trinkets」时应用 TrinketImpl 并跳过我们；
+        // 反之（如 Kilt 转载的 curios 2000 抢占）主包跳过 TrinketImpl，此时我们才应用。
+        // 两边判定条件互补，保证同一目标类 AccessoryItem 永远只有一份 Trinket 接口实现。
+        if (TRINKET_BRIDGE_MIXIN.equals(mixinClassName)) {
+            String highest = net.onixary.shapeShifterCurseFabric.util.Accessory.AccessoryPriorityUtils
+                    .getHighestPriorityPlugin();
+            if ("trinkets".equals(highest)) {
+                LOGGER.info("[trinket-bridge] main SSC TrinketImpl active (highest=trinkets), skipping bridge mixin");
+                return false;
+            }
+            LOGGER.info("[trinket-bridge] main SSC TrinketImpl skipped (highest={}), applying bridge mixin", highest);
+            return true;
+        }
         // 条件加载：缺任一必需 mod → 跳过
         String[] required = REQUIRED_MODS.get(mixinClassName);
         if (required != null) {

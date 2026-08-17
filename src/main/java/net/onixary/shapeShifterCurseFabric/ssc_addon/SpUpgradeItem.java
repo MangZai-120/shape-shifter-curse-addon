@@ -22,6 +22,7 @@ import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.story.MoonScarStoryManager;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.story.TideSpiritStoryManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.AdvancementUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.EvolutionManager;
@@ -93,6 +94,10 @@ public class SpUpgradeItem extends Item {
 		if (!world.isClient && user instanceof PlayerEntity player) {
 			// 剧情「月痕之力」：处于剧情触发的 red 形态时，月髓环可随时免费变回 sp 使魔（不消耗）
 			if (MoonScarStoryManager.tryFreeRevertFromStoryRed(player)) {
+				return stack;
+			}
+			// 剧情「潮汐之灵」：阿澪形态下使用月髓环可免费变回荧光幼灵（不消耗）
+			if (TideSpiritStoryManager.tryFreeRevertFromAling(player)) {
 				return stack;
 			}
 			Identifier targetFormId = getTargetFormId(player);

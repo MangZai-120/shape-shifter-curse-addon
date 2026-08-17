@@ -2,6 +2,30 @@
   "replace": false,
   "values": [
     "minecraft:cobweb",
-    "ssc_addon:web_membrane"
+    "ssc_addon:web_membrane",
+    {
+      "id": "biomesoplenty:webbing",
+      "required": false
+    },
+    {
+      "id": "biomesoplenty:hanging_cobweb",
+      "required": false
+    },
+    {
+      "id": "biomesoplenty:hanging_cobweb_strand",
+      "required": false
+    },
+    {
+      "id": "biomesoplenty:glowworm_silk",
+      "required": false
+    },
+    {
+      "id": "biomesoplenty:glowworm_silk_strand",
+      "required": false
+    },
+    {
+      "id": "biomesoplenty:stringy_cobweb",
+      "required": false
+    }
   ]
 }

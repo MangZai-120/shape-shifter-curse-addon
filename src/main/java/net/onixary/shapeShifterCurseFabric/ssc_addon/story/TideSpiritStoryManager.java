@@ -3,6 +3,7 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.story;
 import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.advancement.Advancement;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
@@ -12,6 +13,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon;
+import net.onixary.shapeShifterCurseFabric.data.StaticParams;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
@@ -142,5 +144,42 @@ public final class TideSpiritStoryManager {
 		Advancement adv = server.getAdvancementLoader().get(TIDE_SPIRIT_POWER_ADV);
 		if (adv == null) return false;
 		return player.getAdvancementTracker().getProgress(adv).isDone();
+	}
+
+	/**
+	 * 月髓环触发：若玩家当前为阿澪，免费变回荧光幼灵（不消耗物品），任意时间地点均可。
+	 *
+	 * <p>阿澪变身后为永久形态且无其它获取途径（仅剧情真睡），故直接以「当前形态=阿澪」判定，
+	 * 无需持久化标记（与月痕之力 red 的标记式判定不同）。还原后若再次于诅咒之月夜入睡，
+	 * 仍会重新变身阿澪（可逆循环）。</p>
+	 *
+	 * @return true 表示已处理（调用方应直接返回、不再走常规升级逻辑、不消耗物品）。
+	 */
+	public static boolean tryFreeRevertFromAling(PlayerEntity player) {
+		if (player.getWorld().isClient) return false;
+		if (!(player instanceof ServerPlayerEntity sp)) return false;
+
+		if (!FormUtils.isForm(sp, FormIdentifiers.AXOLOTL_ALING)) return false;
+
+		IForm fluorescentForm = RegPlayerForms.getPlayerForm(FormIdentifiers.AXOLOTL_FLUORESCENT);
+		if (fluorescentForm == null) return false;
+
+		// 月髓环免费变回荧光幼灵：带黑屏淡入淡出动画（startTransform），STUN 在动画期间定身
+		TransformManager.startTransform(sp, fluorescentForm, null);
+		sp.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
+				net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.STUN,
+				StaticParams.TRANSFORM_FX_DURATION_IN + StaticParams.TRANSFORM_FX_DURATION_OUT,
+				0, false, false, false));
+
+		World world = sp.getWorld();
+		sp.sendMessage(
+				Text.translatable("message.ssc_addon.tide_spirit.revert_fluorescent")
+						.formatted(Formatting.AQUA, Formatting.ITALIC),
+				false);
+		world.playSound(null, sp.getX(), sp.getY(), sp.getZ(),
+				SoundEvents.AMBIENT_UNDERWATER_EXIT, SoundCategory.PLAYERS, 1.0F, 1.2F);
+		world.playSound(null, sp.getX(), sp.getY(), sp.getZ(),
+				SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 0.7F, 1.0F);
+		return true;
 	}
 }

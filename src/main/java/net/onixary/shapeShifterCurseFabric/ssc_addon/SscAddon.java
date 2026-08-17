@@ -197,6 +197,8 @@ public class SscAddon implements ModInitializer {
 	// 风灵专属项链：加快疾风连爪耐力回复；朔望专属项链：强化九命复活
 	public static final Item WIND_SPIRIT_STAMINA_NECKLACE = new WindSpiritStaminaNecklaceItem(new Item.Settings().maxCount(1));
 	public static final Item NOVA_REVIVE_NECKLACE = new NovaReviveNecklaceItem(new Item.Settings().maxCount(1));
+	// 食梦魔专属：梦魇戒指（恐惧时长+35%，取消首次伤害翻倍）
+	public static final Item NIGHTMARE_RING = new net.jackcooper.shapeShifterCurseAddon.item.NightmareRingItem(new Item.Settings().maxCount(1).fireproof());
 	public static final Item ANUBIS_CRYSTAL = new AnubisCrystalItem(new Item.Settings().maxCount(1).fireproof());
 	public static final Item ANKH_STONE = new AnkhStoneItem(new Item.Settings().maxCount(1).fireproof());
 	// 契灵专属：绑定脚环（feet/aglet 槽，与守御脚环互斥）
@@ -272,8 +274,7 @@ public class SscAddon implements ModInitializer {
 						entries.add(ANKH_STONE);
 						entries.add(BINDING_ANKLET);
 						entries.add(EROSION_SAND_PRISM);
-						entries.add(WITHERED_SAND_RING);
-						entries.add(BLOOD_GARNET);
+						entries.add(WITHERED_SAND_RING);					entries.add(NIGHTMARE_RING);						entries.add(BLOOD_GARNET);
 						entries.add(BLOODLUST_RING);
 						entries.add(HUMUS_RING);
 						entries.add(TWIN_POD);
@@ -410,6 +411,7 @@ public class SscAddon implements ModInitializer {
 		BindingAnkletItem.registerLootTable();
 		registerItem("erosion_sand_prism", EROSION_SAND_PRISM);
 		registerItem("withered_sand_ring", WITHERED_SAND_RING);
+		registerItem("nightmare_ring", NIGHTMARE_RING);
 		registerItem("allay_heal_wand", ALLAY_HEAL_WAND);
 		registerItem("allay_jukebox", ALLAY_JUKEBOX);
 		registerItem("friend_marker", FRIEND_MARKER);
@@ -490,6 +492,7 @@ public class SscAddon implements ModInitializer {
 		AnubisCrystalItem.registerLootTable();
 		ErosionSandPrismItem.registerLootTable();
 		WitheredSandRingItem.registerLootTable();
+		net.jackcooper.shapeShifterCurseAddon.item.NightmareRingItem.registerLootTable();
 		BloodGarnetItem.registerLootTable();
 		BloodlustRingItem.registerLootTable();
 		HumusRingItem.registerLootTable();

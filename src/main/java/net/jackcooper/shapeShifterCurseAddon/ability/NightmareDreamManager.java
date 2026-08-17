@@ -51,6 +51,9 @@ public final class NightmareDreamManager {
 	/** 梦境粒子发射间隔（tick，0.75 秒一次，"偶尔冒"的节奏）。 */
 	public static final int DREAM_PARTICLE_INTERVAL = 15;
 
+	/** 入梦描边同步间隔（tick，1 秒一次；把真实剩余时长刷给食梦魔客户端，修复描边与实际入梦时长脱节）。 */
+	public static final int DREAM_OUTLINE_SYNC_INTERVAL = 20;
+
 	/** 粉红描边颜色（RGB，仅食梦魔本人可见）。 */
 	public static final int DREAM_OUTLINE_COLOR = 0xFF6EC7;
 
@@ -97,6 +100,11 @@ public final class NightmareDreamManager {
 		// 未入梦：累计伤害，达阈值触发入梦（恐惧结束后的 20s 免疫窗口内不再触发；
 		// 诅咒之月共鸣：当夜阈值降为 6 点）
 		Map<UUID, Float> acc = acc0;
+		// 免疫真空期内伤害不累计（修复：免疫期一过下一击立即重新入梦，真空期形同虚设）
+		if (NightmareFearManager.isDreamImmune(tid, now)) {
+			acc.remove(tid); // 清掉免疫期前累积的计数，真空期结束后从零重新累计
+			return;
+		}
 		float total = acc.merge(tid, amount, Float::sum);
 		if (total >= currentDreamThreshold(player)
 				&& !NightmareFearManager.isDreamImmune(tid, now)) {
@@ -147,6 +155,17 @@ public final class NightmareDreamManager {
 				if (e.getValue() <= now) continue;
 				if (!(sw.getEntity(e.getKey()) instanceof LivingEntity target) || !target.isAlive()) continue;
 				spawnDreamParticles(sw, target);
+			}
+		}
+		// 描边周期同步（每 1s）：把每个入梦目标的「真实剩余时长」刷给食梦魔客户端。
+		// 修复：首次入梦描边只发一次 200t 包，若恐惧把入梦锁定 20s/戒指延长 20.25s，
+		// 客户端描边会先于实际入梦结束而熄灭——周期刷新让描边与真实状态始终一致。
+		if (now % DREAM_OUTLINE_SYNC_INTERVAL == 0) {
+			for (Map.Entry<UUID, Long> e : dreams.entrySet()) {
+				long remain = e.getValue() - now;
+				if (remain <= 0) continue;
+				if (!(sw.getEntity(e.getKey()) instanceof LivingEntity target) || !target.isAlive()) continue;
+				SscAddonNetworking.sendWebHighlight(player, target.getId(), (int) remain, DREAM_OUTLINE_COLOR);
 			}
 		}
 	}
@@ -280,10 +299,23 @@ public final class NightmareDreamManager {
 		}
 		ACCUM.values().forEach(acc -> acc.remove(targetUuid));
 		// 向目标本人逐梦魔发关系结束包（客户端镜像逐条移除、晕影无关系时熄灭）
-		if (!wokeBy.isEmpty() && contextWorld != null
-				&& contextWorld.getEntity(targetUuid) instanceof ServerPlayerEntity targetPlayer) {
-			for (UUID nightmareUuid : wokeBy) {
-				SscAddonNetworking.sendDreamVeil(targetPlayer, 0, nightmareUuid);
+		if (!wokeBy.isEmpty() && contextWorld != null) {
+			if (contextWorld.getEntity(targetUuid) instanceof ServerPlayerEntity targetPlayer) {
+				for (UUID nightmareUuid : wokeBy) {
+					SscAddonNetworking.sendDreamVeil(targetPlayer, 0, nightmareUuid);
+				}
+			}
+			// 向每个曾入梦它的食梦魔发描边熄灭包（真实 entityId + duration=0）：服务端已强制出梦，
+			// 但描边客户端表只认到期时间——不发包食梦魔视角粉边会残留最多 20s，
+			// 看起来像「入梦没被强制退出」（多梦魔各自熄灭自己那条）。
+			net.minecraft.entity.Entity targetEntity = contextWorld.getEntity(targetUuid);
+			if (targetEntity != null) {
+				int targetEntityId = targetEntity.getId();
+				for (UUID nightmareUuid : wokeBy) {
+					if (contextWorld.getEntity(nightmareUuid) instanceof ServerPlayerEntity nightmarePlayer) {
+						SscAddonNetworking.sendWebHighlight(nightmarePlayer, targetEntityId, 0, DREAM_OUTLINE_COLOR);
+					}
+				}
 			}
 		}
 	}

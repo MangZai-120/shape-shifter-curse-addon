@@ -318,6 +318,12 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 		if (this.isOnFire() && !this.isTouchingWater()) {
 			this.panicTicks = Math.max(this.panicTicks, 60);
 		}
+		// 已入水 = 惊慌目的达成（水会立即扑灭火）：清除剩余惊慌。
+		// 否则残留 panicTicks 会在它出水追击玩家时再次触发 PanicToWaterGoal 弹回水里，来回横跳不攻击
+		// （用户需求 2026-08-18：灭完火后应继续靠近并攻击玩家）。
+		if (this.panicTicks > 0 && this.isTouchingWater()) {
+			this.panicTicks = 0;
+		}
 
 		// ===== 湿润度管理 =====
 		boolean inWater = this.isTouchingWater();
@@ -896,6 +902,8 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 	/**
 	 * 环境伤害惊慌：受火 / 浆果丛等环境伤害后 panicTicks>0，最高优先级钻进最近水源躲避；
 	 * 附近没水时朝一个方向持续逃离（定向漫游，确保会动）。到水里或惊慌结束则停止。
+	 * <p>用户需求（2026-08-18）：着火且周围没水但正在战斗 → 不惊慌逃跑，优先继续攻击目标
+	 * （交还控制权给 MeleeAttackGoal；有水仍钻水灭火，无水无目标仍逃离火）。</p>
 	 */
 	static class PanicToWaterGoal extends Goal {
 		private final AxolotlShifterEntity shifter;
@@ -905,21 +913,37 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 		private int repathCountdown;
 		private Vec3d lastPos = Vec3d.ZERO;
 		private int stuckTicks;
+		/** 「周围没水」扫描结果缓存（canStart 每 tick 被调，全量扫描 24 格代价高，节流到 2s 重扫一次） */
+		private int waterScanCooldown;
+		private boolean noWaterNearby;
 
 		PanicToWaterGoal(AxolotlShifterEntity shifter) {
 			this.shifter = shifter;
 			this.setControls(EnumSet.of(Control.MOVE, Control.LOOK));
 		}
 
+		/** 惊慌中但周围没水且正在战斗 → 不抢占控制权，优先继续攻击目标（带 2s 节流缓存的水源判定） */
+		private boolean shouldYieldToCombat() {
+			if (this.shifter.getTarget() == null) return false;
+			if (--this.waterScanCooldown <= 0) {
+				this.waterScanCooldown = 40; // 每 2 秒重扫一次（canStart/shouldContinue 高频调用，避免每 tick 全量扫描）
+				this.noWaterNearby = this.shifter.findNearestWater(SEEK_WATER_RANGE, 8) == null;
+			}
+			return this.noWaterNearby;
+		}
+
 		@Override
 		public boolean canStart() {
-			// 惊慌且不在水里就启动（有水冲向水，没水也要逃离火，不再要求一定找到水）
-			return this.shifter.isPanicking() && !this.shifter.isTouchingWater();
+			// 惊慌且不在水里就启动（有水冲向水，没水也要逃离火，不再要求一定找到水）；
+			// 但没水且在战斗中 → 让位给近战（用户需求：着火无水优先攻击）
+			if (!this.shifter.isPanicking() || this.shifter.isTouchingWater()) return false;
+			return !shouldYieldToCombat();
 		}
 
 		@Override
 		public boolean shouldContinue() {
-			return this.shifter.isPanicking() && !this.shifter.isTouchingWater();
+			if (!this.shifter.isPanicking() || this.shifter.isTouchingWater()) return false;
+			return !shouldYieldToCombat(); // 战斗中出现无水情况同样立即让位（含缓存过期重判）
 		}
 
 		@Override

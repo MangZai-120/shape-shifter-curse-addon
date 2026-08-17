@@ -38,6 +38,8 @@ public final class NightmareFearManager {
 
 	/** 恐惧持续 tick（15 秒）。 */
 	public static final int FEAR_DURATION_TICKS = 300;
+	/** 梦魇戒指：恐惧持续时长增幅（+35% → 405t ≈ 20.25 秒），施加瞬间快照。 */
+	public static final float FEAR_DURATION_RING_BONUS = net.jackcooper.shapeShifterCurseAddon.item.NightmareRingItem.FEAR_DURATION_BONUS;
 	/** 技能 CD（tick，20 秒）。 */
 	public static final int FEAR_COOLDOWN_TICKS = 400;
 	/** 诅咒之月共鸣：诅咒之月当夜恐惧 CD 降为 14 秒（280t）。 */
@@ -119,6 +121,8 @@ public final class NightmareFearManager {
 	public static boolean tryConsumeDoubleDamage(UUID targetUuid, long now) {
 		FearState v = FEARING.get(targetUuid);
 		if (v == null || v.endTick <= now || v.doubleDamageUsed) return false;
+		// 梦魇戒指（施加时快照）：本轮恐惧不提供首次伤害翻倍
+		if (!v.doubleDamageAllowed) return false;
 		v.doubleDamageUsed = true;
 		return true;
 	}
@@ -159,10 +163,18 @@ public final class NightmareFearManager {
 		return true;
 	}
 
-	/** 对单目标施加恐惧：状态入表 + 减速 + 包 + 音效（过渡：先低沉震颤音预告，再起心跳）。 */
+	/** 对单目标施加恐惧：状态入表 + 减速 + 包 + 音效（过渡：先低沉震颤音预告，再起心跳）。
+	 * 梦魇戒指（施加瞬间快照）：持续时长 +35%；双倍伤害整轮禁用。进行中的恐惧不受中途戴/摘影响。 */
 	private static void startFear(ServerWorld world, ServerPlayerEntity caster, LivingEntity target, long now) {
 		UUID tid = target.getUuid();
-		FEARING.put(tid, new FearState(now + FEAR_DURATION_TICKS, caster.getUuid()));
+		// 戒指快照：施加瞬间判定佩戴状态，写入本轮 FearState（时长增幅 + 双倍伤害禁用）
+		boolean ringWorn = net.jackcooper.shapeShifterCurseAddon.item.NightmareRingItem.isWearingBy(caster);
+		int duration = ringWorn ? Math.round(FEAR_DURATION_TICKS * (1.0f + FEAR_DURATION_RING_BONUS)) : FEAR_DURATION_TICKS;
+		// [DEBUG] 戒指检测链排查日志（确认佩戴检测是否真正生效）
+		org.slf4j.LoggerFactory.getLogger("NightmareDebug").info(
+				"[恐惧] {} 对 {} 施放恐惧：戒指检测={}，时长={}t",
+				caster.getName().getString(), target.getName().getString(), ringWorn, duration);
+		FEARING.put(tid, new FearState(now + duration, caster.getUuid(), !ringWorn));
 		// 入梦时间重置回 20s（规格②：获得恐惧即重置）
 		NightmareDreamManager.resetDream(caster.getUuid(), tid, now);
 		// 减速 20%（幂等：先移除再加；用户定稿：必备减速，玩家/生物一致）
@@ -172,9 +184,9 @@ public final class NightmareFearManager {
 			attr.addPersistentModifier(new EntityAttributeModifier(
 					FEAR_SLOW_UUID, FEAR_SLOW_NAME, -FEAR_SLOW_RATIO, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
 		}
-		// 客户端包（粉雾淡入 + 心跳启动 + 本地失明驱动），仅目标本人
+		// 客户端包（粉雾淡入 + 心跳启动 + 本地失明驱动），仅目标本人（时长随戒指快照变化）
 		if (target instanceof ServerPlayerEntity sp) {
-			SscAddonNetworking.sendFearState(sp, FEAR_DURATION_TICKS);
+			SscAddonNetworking.sendFearState(sp, duration);
 		}
 		// 施加过渡音效：低沉梦境震颤（目标位置，全员可闻但音量克制）+ 目标本人听到尖啸耳鸣
 		world.playSound(null, target.getX(), target.getY(), target.getZ(),
@@ -300,6 +312,10 @@ public final class NightmareFearManager {
 		if (applyImmune) {
 			DREAM_IMMUNE.put(tid, now + DREAM_IMMUNE_TICKS);
 		}
+		// [DEBUG] 恐惧结束链路排查日志（确认强制出梦+免疫真空期是否执行）
+		org.slf4j.LoggerFactory.getLogger("NightmareDebug").info(
+				"[恐惧] 恐惧结束：目标 {} 强制出梦，免疫真空期={}t（applyImmune={}）",
+				tid, applyImmune ? DREAM_IMMUNE_TICKS : 0, applyImmune);
 	}
 
 	/** 梦魔断线/死亡/失形清理：其施加的恐惧一并结束（目标恢复 + 免疫照常）。 */
@@ -316,15 +332,18 @@ public final class NightmareFearManager {
 		}
 	}
 
-	/** 恐惧状态（到期 + 施恐惧的梦魔 + 双倍伤害已用标记）。 */
+	/** 恐惧状态（到期 + 施恐惧的梦魔 + 双倍伤害开关/已用标记）。 */
 	private static final class FearState {
 		final long endTick;
 		final UUID casterUuid;
+		/** 梦魇戒指快照：本轮恐惧是否保留双倍伤害（戴戒指 → false）。 */
+		final boolean doubleDamageAllowed;
 		/** 本轮恐惧的双倍伤害是否已消耗（整轮只触发一次）。 */
 		boolean doubleDamageUsed;
-		FearState(long endTick, UUID casterUuid) {
+		FearState(long endTick, UUID casterUuid, boolean doubleDamageAllowed) {
 			this.endTick = endTick;
 			this.casterUuid = casterUuid;
+			this.doubleDamageAllowed = doubleDamageAllowed;
 		}
 	}
 
