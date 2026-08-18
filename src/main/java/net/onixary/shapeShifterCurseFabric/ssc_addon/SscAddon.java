@@ -327,6 +327,8 @@ public class SscAddon implements ModInitializer {
 		WitchFamiliarSpawnHandler.register();
 		AxolotlShifterSpawnHandler.register();
 		SscAddonPlayerEvents.register();
+		// 登录血量恢复：修复 max_health 形态（SP 美西螈等）重进存档血量被裸 20 上限钳掉
+		net.jackcooper.shapeShifterCurseAddon.event.LoginHealthRestoreHandler.register();
 		SscAddonServerEvents.registerStunOrphanCleanup();
 		// 风灵被动：落地风涌（事件监听）；风压领域由 mixin（WindSpiritProjectilePressureMixin）驱动
 		WindSpiritLandingSurgeManager.register();

@@ -12,6 +12,8 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.HuskEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -28,6 +30,7 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.VortexChargeManager
 import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindSpiritClawManager;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.item.BindingAnkletItem;
 import net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager;
+import net.jackcooper.shapeShifterCurseAddon.event.LoginHealthRestoreHandler;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.FrostFreezeEffect;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
@@ -69,6 +72,21 @@ public abstract class SscAddonLivingEntityMixin {
 			cir.setReturnValue(true);
 		}
 	}
+
+	/**
+	 * 登录血量恢复（修复带 max_health 修饰符的形态重进存档血量被裸 20 上限钳掉）：
+	 * 在 {@code readCustomDataFromNbt} 末尾记录存档里的原始血量快照，交
+	 * {@link LoginHealthRestoreHandler} 于 Apoli 的 max_health 修饰符挂载完成后把血量补回。
+	 * 仅服务端玩家；非玩家与普通玩家均无副作用。详见该 handler。
+	 */
+	@Inject(method = "readCustomDataFromNbt", at = @At("TAIL"))
+	private void ssca$snapshotLoginHealth(NbtCompound nbt, CallbackInfo ci) {
+		if ((Object) this instanceof ServerPlayerEntity player
+				&& nbt.contains("Health", NbtElement.NUMBER_TYPE)) {
+			LoginHealthRestoreHandler.recordSnapshot(player.getUuid(), nbt.getFloat("Health"));
+		}
+	}
+
 	/**
 	 * SP 美西螈涡流蓄力：蓄力中的玩家不参与实体碰撞推挤——被涡流吸到身上的怪也挤不动玩家。
 	 * <p>{@code pushAwayFrom} 是 vanilla 实体互推的统一入口（碰撞双方各调一次），在 HEAD 处判定：
