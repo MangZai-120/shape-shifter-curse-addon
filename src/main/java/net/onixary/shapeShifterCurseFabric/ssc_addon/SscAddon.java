@@ -133,7 +133,16 @@ public class SscAddon implements ModInitializer {
 			registerEntity("frost_ball", SpawnGroup.MISC, FrostBallEntity::new, 0.25f, 0.25f, 64, 10);
 	// 进化美西螈「投掷水矛」直线水矛投射物（无重力匀速）
 	public static final EntityType<ThrownWaterSpearEntity> THROWN_WATER_SPEAR_ENTITY =
-			registerEntity("thrown_water_spear", SpawnGroup.MISC, ThrownWaterSpearEntity::new, 0.4f, 0.4f, 64, 10);
+			registerEntity("thrown_water_spear", SpawnGroup.MISC, ThrownWaterSpearEntity::new, 0.4f, 0.4f, 64, 10);	// 寒棘狐「冰刺」冰锥投射物（环绕态 HOVER + 飞行态 FLY 双态；最远飞 128 格，trackRange 同步 128 防提前消失）
+	public static final EntityType<net.jackcooper.shapeShifterCurseAddon.entity.FrostThornEntity> FROST_THORN_ENTITY =
+			registerEntity("frost_thorn", SpawnGroup.MISC, net.jackcooper.shapeShifterCurseAddon.entity.FrostThornEntity::new, 0.3f, 0.3f, 128, 1);
+	// 寒棘狐「凝棘」蓄力法阵实体（纯视觉，跟随施法者眼部，trackRange 64）
+	public static final EntityType<net.jackcooper.shapeShifterCurseAddon.entity.FrostArrayEntity> FROST_ARRAY_ENTITY =
+			registerEntity("frost_array", SpawnGroup.MISC, net.jackcooper.shapeShifterCurseAddon.entity.FrostArrayEntity::new, 0.3f, 0.3f, 64, 1);
+	// 寒棘狐蓄力「汇聚冰晶」粒子：匀速直线飞向中心、抵达即消失（自定义粒子保证精确几何）
+	public static final net.minecraft.particle.DefaultParticleType INWARD_ICE_PARTICLE =
+			Registry.register(Registries.PARTICLE_TYPE, new Identifier("ssc_addon", "inward_ice"),
+					net.fabricmc.fabric.api.particle.v1.FabricParticleTypes.simple(true));
 	// red 狐火火球投射物
 	public static final EntityType<FoxFireballEntity> FOX_FIREBALL_ENTITY =
 			registerEntity("fox_fireball", SpawnGroup.MISC, FoxFireballEntity::new, 0.25f, 0.25f, 64, 2);
@@ -178,6 +187,8 @@ public class SscAddon implements ModInitializer {
 	public static final RecipeSerializer<SpUpgradeRecipe> SP_UPGRADE_SERIALIZER = new SpecialRecipeSerializer<>(SpUpgradeRecipe::new);
 	// 60 durability like wooden sword, auto-consumed over 60 seconds
 	public static final Item WATER_SPEAR = new WaterSpearItem(new Item.Settings().maxCount(1).maxDamage(60));
+	// 冰刺冰锥的渲染载体物品（不进创造栏，仅供 FrostThornEntityRenderer 渲染 3D 模型）
+	public static final Item FROST_THORN = new Item(new Item.Settings().maxCount(1));
 	// SP美西螈水矛合成内部冷却（服务端权威）：UUID -> 冷却结束的服务器 tick；与箭冷却条显示同步
 	// 注：以下 4 个水矛调试/冷却字段为 public，供拆分出去的事件类（水矛监测/合成逻辑）跨类访问
 	public static final Map<UUID, Long> WATER_SPEAR_CRAFT_CD = new ConcurrentHashMap<>();
@@ -332,7 +343,6 @@ public class SscAddon implements ModInitializer {
 		SscAddonServerEvents.registerStunOrphanCleanup();
 		// 风灵被动：落地风涌（事件监听）；风压领域由 mixin（WindSpiritProjectilePressureMixin）驱动
 		WindSpiritLandingSurgeManager.register();
-		SscAddonServerEvents.registerFeralBodyYawSync();
 		SscAddonServerEvents.registerServerLifecycleHandlers();
 		SscAddonInteractionEvents.register();
 		AnubisWolfSpSoulEnergy.registerEvents();
@@ -398,6 +408,7 @@ public class SscAddon implements ModInitializer {
 		registerItem("lifesaving_cat_tail", LIFESAVING_CAT_TAIL);
 		registerItem("phantom_bell", PHANTOM_BELL);
 		registerItem("water_spear", WATER_SPEAR);
+		registerItem("frost_thorn", FROST_THORN);
 		registerItem("potion_bag", POTION_BAG);
 		Registry.register(Registries.SCREEN_HANDLER, new Identifier("ssc_addon", "potion_bag"), POTION_BAG_SCREEN_HANDLER);
 		registerItem("evolution_stone", EVOLUTION_STONE);

@@ -8,6 +8,8 @@ public class FormIdentifiers {
 	public static final Identifier FAMILIAR_FOX_RED = new Identifier("my_addon", "familiar_fox_red");
 	public static final Identifier FAMILIAR_FOX_MANCIANIMA = new Identifier("my_addon", "familiar_fox_mancianima");
 	public static final Identifier SNOW_FOX_SP = new Identifier("my_addon", "snow_fox_sp");
+	// 寒棘狐（Frostspine）——雪狐线月髓环进化形态（原版雪狐 snow_fox_3 经月髓环进化）；复用原版雪狐模型/贴图，能力完全等同原版雪狐
+	public static final Identifier SNOW_FOX_FROSTSPINE = new Identifier("my_addon", "snow_fox_frostspine");
 	public static final Identifier ALLAY_SP = new Identifier("my_addon", "allay_sp");
 	public static final Identifier WILD_CAT_SP = new Identifier("my_addon", "wild_cat_sp");
 	// 食梦魔（Nightmare）——野猫线月髓环进化形态；入梦机制（累计伤害触发 debuff 免疫 + 粉红描边）

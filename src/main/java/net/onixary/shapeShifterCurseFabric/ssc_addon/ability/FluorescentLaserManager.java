@@ -214,7 +214,7 @@ public final class FluorescentLaserManager {
 			return;
 		}
 		if (player.isDead() || !FormUtils.isAxolotlFluorescent(player)
-				|| !TrinketUtils.isWearing(player, SscAddon.SEA_CRYSTAL_PENDANT)
+				|| !(s.isAling || TrinketUtils.isWearing(player, SscAddon.SEA_CRYSTAL_PENDANT))
 				|| !(player.getWorld() instanceof ServerWorld sw)) {
 			endCombo(player, s);
 			return;

@@ -11,10 +11,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.action.SscAddonActions;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.effect.StunEffect;
@@ -95,6 +92,7 @@ public final class SscAddonServerEvents {
 				BatDesmodusBloodThirst.tick(player);
 				MancianimaPassive.tick(player);
 				VortexChargeManager.tick(player);
+				net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.tick(player);
 				net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.tick(player);
 				net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.tick(player);			net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverMoonPoisonManager.tick(player);				WindSpiritClawManager.tick(player);
 				WindDashManager.tick(player);
@@ -129,7 +127,12 @@ public final class SscAddonServerEvents {
 			net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.onDisconnect(netHandler.player.getUuid());
 			net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.onDisconnect(netHandler.player.getUuid());
 			net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.onDisconnect(netHandler.player.getUuid());
+			// 寒棘狐冰刺：退出时环绕冰锥随玩家消失（存档保留各槽存在时间，重进由 JOIN 恢复）
+			net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.onDisconnect(netHandler.player);
 		});
+		// 寒棘狐冰刺：重进后按退出前存档重建环绕冰锥（存在时间延续）
+		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
+				server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.onJoin(handler.player)));
 		// 食梦魔「惊吓」：服务端监听目标攻击幽灵苦力怕（真实体受击判定）
 		net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.registerEvents();
 
@@ -202,44 +205,6 @@ public final class SscAddonServerEvents {
 						player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
 				if (spd != null && spd.getModifier(StunEffect.SPEED_MODIFIER_UUID) != null) {
 					spd.removeModifier(StunEffect.SPEED_MODIFIER_UUID);
-				}
-			}
-		});
-	}
-
-	/**
-	 * 修复多人下客机看主机时四足(FERAL)形态头部偶尔「转过身后」的视觉异常。
-	 * 根因：vanilla 服务端 ServerPlayerEntity.bodyYaw 只在玩家「移动」时才被 tickHeadTurn 拉向 headYaw。
-	 * 玩家站着只转鼠标时，移动包只上报 pos+yaw(=headYaw)+pitch，不带 bodyYaw，服务端 bodyYaw 保持陈旧值；
-	 * 服务端再把「新 headYaw + 陈旧 bodyYaw」一起发给远端客机，远端 OtherClientPlayerEntity 直接采信，
-	 * head−body 夹角于是很大。人形头骨绕颈部偏转视觉不明显，但四足形态头骨水平前伸，看上去就是「头扭过身后」。
-	 * 主机走一步路 → 服务端 bodyYaw 被 tickHeadTurn 拉正 → 自愈。生物 bodyYaw 由服务端持续维护所以不受影响。
-	 * 这里每服务端 tick 给已激活 Mod 的 FERAL 形态玩家补一个 tickHeadTurn 等效收敛：把 bodyYaw 限速拉向 headYaw，
-	 * 并夹住头身夹角 ≤ 75°（与 vanilla LivingEntity.tickHeadTurn 一致），使服务端发出的 bodyYaw 不再陈旧。
-	 * 仅作用于玩家自身的 bodyYaw（服务端权威字段），主客机都靠它，零客机预测冲突。
-	 */
-	public static void registerFeralBodyYawSync() {
-		ServerTickEvents.END_SERVER_TICK.register(server -> {
-			for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-				IForm form =
-						net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils.getPlayerForm(player);
-				if (form == null
-						|| form.getBodyType() != PlayerFormBodyType.FERAL) {
-					continue;
-				}
-				// 把 bodyYaw 朝 headYaw 收敛（vanilla tickHeadTurn 同款：限速 + 夹角钳制）。
-				float headYaw = player.getHeadYaw();
-				float bodyYaw = player.bodyYaw;
-				float diff = MathHelper.wrapDegrees(headYaw - bodyYaw);
-				// 头身夹角钳制到 ±75°（超出部分立即并入身体朝向，避免极端扭头）
-				float clampedDiff = MathHelper.clamp(diff, -75.0f, 75.0f);
-				float overflow = diff - clampedDiff;
-				// 收敛速度：每 tick 最多转 10°，模拟身体平滑跟随视角
-				float step = MathHelper.clamp(clampedDiff, -10.0f, 10.0f);
-				float newBodyYaw = bodyYaw + step + overflow;
-				if (newBodyYaw != bodyYaw) {
-					player.bodyYaw = newBodyYaw;
-					player.prevBodyYaw = newBodyYaw;
 				}
 			}
 		});

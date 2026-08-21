@@ -97,6 +97,14 @@ public final class SscAddonForms {
 		RegPlayerForms.registerPlayerForm(snowFoxForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_snow_fox_sp")).registerForm(1, 7, snowFoxForm));
 
+		// 寒棘狐（Frostspine）- 雪狐线月髓环进化形态（原版雪狐 snow_fox_3 经月髓环进化），复用原版雪狐模型/贴图，能力完全等同原版雪狐
+		Form_SnowFoxSP frostspineForm = new Form_SnowFoxSP(FormIdentifiers.SNOW_FOX_FROSTSPINE);
+		frostspineForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
+		// 缩放与雪狐SP一致（对齐原版 SNOW_FOX_3 体型 0.55，eye_scale 0.6 支持潜行过半格）
+		frostspineForm.applyScale(0.55f, 0.6f);
+		RegPlayerForms.registerPlayerForm(frostspineForm);
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_snow_fox_frostspine")).registerForm(1, 7, frostspineForm));
+
 		Form_Allay allayForm = new Form_Allay(FormIdentifiers.ALLAY_SP);
 		allayForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 悦灵缩放对齐原版 ALLAY_SP 上调后的新体型（scale=0.55, eye_scale=1.0 保持正常视角高度）

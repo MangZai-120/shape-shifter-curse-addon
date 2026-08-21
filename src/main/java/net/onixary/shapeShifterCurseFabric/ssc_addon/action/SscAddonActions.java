@@ -138,7 +138,8 @@ public class SscAddonActions {
 				}
 		));
 		registerEntity(PhantomBellTeleportAction.getFactory());
-
+                // 物品冷却动作（幻铃/救命猫尾等饰品 power 用；此前漏注册导致相关 power 整体被跳过）
+                registerEntity(net.jackcooper.shapeShifterCurseAddon.action.ItemCooldownAction.getFactory());
 		// SP Allay Portable Beacon toggle
 		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "allay_sp_beacon_toggle"),
 				new SerializableData(),

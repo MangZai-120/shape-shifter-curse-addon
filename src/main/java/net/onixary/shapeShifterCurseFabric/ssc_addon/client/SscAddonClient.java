@@ -60,6 +60,11 @@ public class SscAddonClient implements ClientModInitializer {
 		// 附属方块渲染层注册（蛛网膜等，cutout）
 		net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks.clientInit();
 
+		// 寒棘狐蓄力「汇聚冰晶」自定义粒子工厂（贴图 assets/ssc_addon/particles/inward_ice.json）
+		net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry.getInstance()
+				.register(SscAddon.INWARD_ICE_PARTICLE,
+						net.jackcooper.shapeShifterCurseAddon.particle.client.InwardIceParticle.Factory::new);
+
 		// 关键路径：键位注册必须成功，否则客机所有 SP 技能都无法激活。
 		// 包裹 try-catch 防止任何意外（如类加载失败）静默吞掉异常导致客机无反应。
 		try {
@@ -380,8 +385,9 @@ public class SscAddonClient implements ClientModInitializer {
 		// 注册冰球渲染器（使用雪球材质）和冰风暴渲染器（粒子效果，空渲染器）
 		EntityRendererRegistry.register(SscAddon.FROST_BALL_ENTITY, FlyingItemEntityRenderer::new);
 		// 进化美西螈「投掷水矛」直线水矛：3D 投掷态模型，沿飞行方向摆正
-		EntityRendererRegistry.register(SscAddon.THROWN_WATER_SPEAR_ENTITY, net.onixary.shapeShifterCurseFabric.ssc_addon.client.renderer.ThrownWaterSpearEntityRenderer::new);
-		EntityRendererRegistry.register(SscAddon.FROST_STORM_ENTITY, EmptyEntityRenderer::new);		EntityRendererRegistry.register(SscAddon.FOX_FIREBALL_ENTITY, ctx -> new net.minecraft.client.render.entity.FlyingItemEntityRenderer<>(ctx, 1F, true));
+		EntityRendererRegistry.register(SscAddon.THROWN_WATER_SPEAR_ENTITY, net.onixary.shapeShifterCurseFabric.ssc_addon.client.renderer.ThrownWaterSpearEntityRenderer::new);		// 寒棘狐「冰刺」冰锥：3D 自定义 item model（CustomModelData 切 3 阶段材质），沿朝向摆正
+		EntityRendererRegistry.register(SscAddon.FROST_THORN_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.FrostThornEntityRenderer::new);
+		EntityRendererRegistry.register(SscAddon.FROST_ARRAY_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.FrostArrayRenderer::new);		EntityRendererRegistry.register(SscAddon.FROST_STORM_ENTITY, EmptyEntityRenderer::new);		EntityRendererRegistry.register(SscAddon.FOX_FIREBALL_ENTITY, ctx -> new net.minecraft.client.render.entity.FlyingItemEntityRenderer<>(ctx, 1F, true));
 		EntityRendererRegistry.register(SscAddon.FRIEND_MARKER_ENTITY_TYPE, FlyingItemEntityRenderer::new);
 		EntityRendererRegistry.register(SscAddon.CLEAR_MARKER_ENTITY_TYPE, FlyingItemEntityRenderer::new);
 		EntityRendererRegistry.register(SscAddon.INFECTION_SPORE_BOMB_ENTITY, FlyingItemEntityRenderer::new);
@@ -471,6 +477,8 @@ public class SscAddonClient implements ClientModInitializer {
 		// SSCA 美西螈漩涡蓄力 - 按键检测器
 		VortexChargeClient.register();		// SSCA 月织蛛「织网术」- 主键检测器（潜行切换 / 蓄力 / 释放）
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverWebClient.register();
+		// SSCA 寒棘狐「冰刺」- 主键检测器（长按蕠力 / 点按发射）
+		net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeClient.register();
 		// SSCA 月织蛛二段跳 - 跳跃键空中检测
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverDoubleJumpClient.register();
 		// SSCA 月织蛛「蛛丝荡漾」- 次键检测器（发射/断丝 + WASD/空格/Shift 输入上报）

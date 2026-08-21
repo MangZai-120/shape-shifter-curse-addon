@@ -4,7 +4,10 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.MathHelper;
+import net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeClient;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.LaserBeamEntity;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -35,6 +38,8 @@ public abstract class ViewRateLimitMixin {
 	// ===== 限速曲线（度/秒）=====
 	private static final double RATE_START = 25.0;
 	private static final double RATE_END = 5.0;
+	// 寒棘狐凝棘蓄力：视角限速同荧光幼灵机制，最大角速度 ×2（荧光幼灵基础 25 → 50°/s）
+	private static final double FROSTSPINE_LIMIT = 50.0;
 	private static final int CHARGE_5S_TICK = 100;
 	private static final int CHARGE_7S_TICK = 140;
 
@@ -57,16 +62,19 @@ public abstract class ViewRateLimitMixin {
 		if (mc == null || self != mc.player) return;
 		ClientPlayerEntity player = mc.player;
 		LaserBeamEntity laser = LaserBeamEntity.getActiveForClient(player);
-		if (laser == null) {
-			// 无激光（含海晶荧光坠增强激光——已在 getActiveForClient 排除，不限视角）：重置状态，放行原版
+		// 寒棘狐凝棘（次技能）蓄力期同样平滑限速（角速度 ×2）
+		boolean frostForge = laser == null && FrostSpikeClient.isSecondaryCharging()
+				&& FormUtils.isForm(player, FormIdentifiers.SNOW_FOX_FROSTSPINE);
+		if (laser == null && !frostForge) {
+			// 无激光 / 无凝棘蓄力（含海晶荧光坮增强激光——已在 getActiveForClient 排除，不限视角）：重置状态，放行原版
 			ssca$velYaw = 0.0;
 			ssca$velPitch = 0.0;
 			ssca$lastNanos = 0L;
 			return;
 		}
 
-		// 当前限速（原激光相位曲线）
-		double limit = currentLimit(laser);
+		// 当前限速：激光走相位曲线；凝棘蓄力用固定 ×2 限速
+		double limit = frostForge ? FROSTSPINE_LIMIT : currentLimit(laser);
 
 		// 真实时间步长
 		long now = System.nanoTime();

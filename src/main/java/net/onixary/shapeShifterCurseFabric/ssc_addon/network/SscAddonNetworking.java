@@ -67,7 +67,16 @@ public class SscAddonNetworking {
 	/** C2S：月织蛛蛛丝荡漾 - 次键按下（发射/断丝切换）。无 payload。 */
 	public static final Identifier PACKET_SPIDER_MOON_WEAVER_SWING_PRESS = new Identifier("my_addon", "spider_moon_weaver_swing_press");
 	/** C2S：月织蛛蛛丝荡漾 - 摆荡中上报当前绳长 + 收放意图（服务端权威扣 mana）。payload: double ropeLen + varint reel(>0收/<0放/0无)。 */
-	public static final Identifier PACKET_SPIDER_MOON_WEAVER_SWING_SYNC = new Identifier("my_addon", "spider_moon_weaver_swing_sync");
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_SWING_SYNC = new Identifier("my_addon", "spider_moon_weaver_swing_sync");	/** C2S：寒棘狐冰刺 - 长按开始蕠力（每 1.2s 凝聚一根冰锥）。无 payload。 */
+	public static final Identifier PACKET_FROST_SPIKE_CHARGE_START = new Identifier("my_addon", "frost_spike_charge_start");
+	/** C2S：寒棘狐冰刺 - 松开停止蕠力（保留已凝聚冰锥）。无 payload。 */
+	public static final Identifier PACKET_FROST_SPIKE_CHARGE_RELEASE = new Identifier("my_addon", "frost_spike_charge_release");
+	/** C2S：寒棘狐冰刺 - 点按发射一根冰锥。无 payload。 */
+	public static final Identifier PACKET_FROST_SPIKE_FIRE = new Identifier("my_addon", "frost_spike_fire");
+	/** C2S：寒棘狐凝棘（次技能） - 长按开始蓄力（每 1s 消耗一个环绕冰锥强化）。无 payload。 */
+	public static final Identifier PACKET_FROST_SPIKE_SECONDARY_START = new Identifier("my_addon", "frost_spike_secondary_start");
+	/** C2S：寒棘狐凝棘（次技能） - 松开发射一根强化冰锥。无 payload。 */
+	public static final Identifier PACKET_FROST_SPIKE_SECONDARY_RELEASE = new Identifier("my_addon", "frost_spike_secondary_release");
 	/** S2C：月织蛛蛛丝荡漾 - 状态同步给附近玩家（销点/绳长/状态/canExtend）。payload: UUID + boolean active + 3×double anchor + double ropeLen + varint state + boolean canExtend。 */
 	public static final Identifier PACKET_SPIDER_MOON_WEAVER_SWING_STATE = new Identifier("my_addon", "spider_moon_weaver_swing_state");
 
@@ -371,6 +380,22 @@ public class SscAddonNetworking {
 		// SSCA 月织蛛蛛丝荡漾 - 次键按下（发射 / 断丝切换）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_SWING_PRESS, (server, player, handler, buf, responseSender) -> {
 			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.onSecondaryPress(player));
+		});		// SSCA 寒棘狐冰刺 - 蕠力开始 / 停止 / 发射
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_FROST_SPIKE_CHARGE_START, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.startCharge(player));
+		});
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_FROST_SPIKE_CHARGE_RELEASE, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.stopCharge(player));
+		});
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_FROST_SPIKE_FIRE, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.fire(player));
+		});
+		// SSCA 寒棘狐凝棘（次技能） - 蓄力开始 / 发射
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_FROST_SPIKE_SECONDARY_START, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.startSecondaryCharge(player));
+		});
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_FROST_SPIKE_SECONDARY_RELEASE, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.releaseSecondary(player));
 		});
 		// SSCA 月织蛛蛛丝荡漾 - 摆荡中上报绳长 + 收放意图（服务端权威扣 mana）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_SWING_SYNC, (server, player, handler, buf, responseSender) -> {

@@ -995,5 +995,19 @@
     "item.ssc_addon.nightmare_ring": "Nightmare Ring",
     "item.ssc_addon.nightmare_ring.tooltip_1": "Fear duration +35% (15s → 20.25s)",
     "item.ssc_addon.nightmare_ring.tooltip_2": "Cost: the first-hit double damage during Fear is removed",
-    "item.ssc_addon.nightmare_ring.tooltip_exclusive": "Exclusive to Nightmare form"
+    "item.ssc_addon.nightmare_ring.tooltip_exclusive": "Exclusive to Nightmare form",
+    "origin.my_addon.form_snow_fox_frostspine.name": "Frostspine",
+    "origin.my_addon.form_snow_fox_frostspine.description": "A snow fox evolution empowered by moon marrow, retaining every instinct of the snow fox and awakening the active ice-control skill Ice Spike.",
+    "my_addon.form_snow_fox_frostspine.model_name": "Frostspine",
+    "advancements.my_addon.on_transform_snow_fox_frostspine.title": "Frostspine",
+    "advancements.my_addon.on_transform_snow_fox_frostspine.description": "Transform into Frostspine for the first time",
+    "codex.form.my_addon.snow_fox_frostspine.name": "Frostspine",
+    "codex.form.my_addon.snow_fox_frostspine.title": "\n'When moon-marrow power seeps into the snow ranger's blood, you are still that nimble snow fox...\nonly now the moonlight gilds every leap with a new frosty gleam'",
+    "codex.form.my_addon.snow_fox_frostspine.appearance": "Your form is no different from a snow fox, snow-white fur glinting with a faint blue chill under the moon. You leap thrice as lightly as snow, kicking up fine powder on landing.",
+    "codex.form.my_addon.snow_fox_frostspine.pros": "Snow Ranger\nYou fully inherit every instinct of the snow fox:\n\nTriple Leap: jump up to three times in midair, roaming the snowfields freely with hover and fall control\n\nDiving Strike: falling attacks deal greatly increased damage after meaningful airtime\n\nSnowtread: walk on powder snow without sinking, with special affinity for snowballs and sweet berries\n\nCold-Born Body: unbothered by the cold, with temperature sense inverted from an ordinary person\n\nYou also retain the snow fox's sprinting, fox affinity and all other instincts.",
+    "codex.form.my_addon.snow_fox_frostspine.cons": "The Snow Fox's Weakness:\n\nYou fear fire — you burn longer and take more fire damage, needing a water bottle to douse it\n\nYou cannot wear leggings or boots\n\nDigging and moving in water are sluggish, and your biome affects your max health.",
+    "codex.form.my_addon.snow_fox_frostspine.instincts": "You crave snow and cold wind, and loathe heat and flame. Treading on powder snow puts you at ease, while nearing fire makes you instinctively recoil.",
+    "codex.form.my_addon.snow_fox_frostspine.equip": "[Bottled Snowfall]",
+    "power.my_addon.form_snow_fox_frostspine_ice_spike.name": "Ice Spike",
+    "power.my_addon.form_snow_fox_frostspine_ice_spike.description": "Hold the primary skill key to condense ice thorns (one per 1.2s, up to 5, arrayed in a 150° fan on the vertical plane of your back); tap to launch the oldest thorn along your crosshair ray at 16 blocks/s, flying straight for 16 blocks then falling, up to 128 blocks, dealing 8 damage on hit and self-destructing after 5s if it misses. Each thorn lasts up to 60s; charging past 5 replaces the oldest, and they can be cleared by the SP Allay's Purification."
 }
