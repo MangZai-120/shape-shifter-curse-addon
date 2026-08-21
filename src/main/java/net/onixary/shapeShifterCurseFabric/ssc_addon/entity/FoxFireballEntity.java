@@ -146,7 +146,7 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
             // 前 12 格：穿过生物造成穿透伤害 + 额外爆炸（火球不灭继续飞）
             pierceTargets(sw);
         }
-        spawnTrail(sw);
+        // 拖尾粒子已移到客户端 FoxFireballRenderer 自绘（实体位置客户端已知，网络包归零）
 
         // 12 格后最多再飞 3 秒（达 18 格），未命中则原地触发一次爆炸后消失
         if (distanceTraveled >= ARM_DISTANCE) {
@@ -195,35 +195,7 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
     }
 
     /** 火球本体：2 格直径（半径 1）火焰球 + 短拖尾（双火焰 + 稀疏烟雾）+ 岩浆火星 + 熔岩滴落。 */
-    private void spawnTrail(ServerWorld w) {
-        double x = this.getX(), y = this.getY(), z = this.getZ();
-        Random rnd = this.random;
-        for (int i = 0; i < 10; i++) {
-            Vec3d p = randomInSphere(1.0, rnd);
-            w.spawnParticles(ParticleTypes.FLAME, x + p.x, y + p.y, z + p.z, 1, 0, 0, 0, 0.01);
-        }
-        for (int i = 0; i < 7; i++) {
-            Vec3d p = randomInSphere(1.0, rnd);
-            w.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME, x + p.x, y + p.y, z + p.z, 1, 0, 0, 0, 0.01);
-        }
-        // 岩浆火星：从火球表面随机迸出的小火花。
-        if (rnd.nextFloat() < 0.3f) {
-            Vec3d p = randomInSphere(0.4, rnd);
-            w.spawnParticles(ParticleTypes.LAVA, x + p.x, y + p.y, z + p.z, 1, 0.003, 0.008, 0.003, 0.0);
-        }
-        // 熔岩往下滴落：火球下方零星滴落的熔岩粒子。
-        if (rnd.nextFloat() < 0.07f) {
-            w.spawnParticles(ParticleTypes.FALLING_LAVA,
-                    x + (rnd.nextDouble() - 0.5) * 1.0,
-                    y - 0.6 + (rnd.nextDouble() - 0.5) * 0.8,
-                    z + (rnd.nextDouble() - 0.5) * 1.0,
-                    1, 0, -0.1, 0, 0.01);
-        }
-        Vec3d back = direction.multiply(-0.5);
-        w.spawnParticles(ParticleTypes.FLAME, x + back.x, y + back.y, z + back.z, 2, 0.15, 0.15, 0.15, 0.0);
-        w.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME, x + back.x, y + back.y, z + back.z, 1, 0.12, 0.12, 0.12, 0.0);
-        w.spawnParticles(ParticleTypes.SMOKE, x + back.x * 1.5, y + back.y * 1.5, z + back.z * 1.5, 1, 0.1, 0.1, 0.1, 0.0);
-    }
+    // 原 spawnTrail（火焰球+拖尾+岩浆火星+熔岩滴落）已移到客户端 FoxFireballRenderer 自绘（网络包归零），此方法删除。
 
     private void explode(ServerWorld w, LivingEntity directTarget) {
         if (exploded) return;

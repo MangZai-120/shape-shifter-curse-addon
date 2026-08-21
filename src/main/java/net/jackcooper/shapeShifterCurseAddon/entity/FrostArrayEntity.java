@@ -67,15 +67,16 @@ public class FrostArrayEntity extends Entity {
 			this.discard();
 			return;
 		}
-		// 跟随施法者眼部（法阵前方位置由渲染器按准星实时算）
-		this.setPosition(p.getX(), p.getEyeY(), p.getZ());
+		// 静态锚点：不逐 tick 跟随施法者（跟随会每 tick 发 move 包，~20包/秒纯浪费——
+		// 渲染位置由客户端按施法者本地算 hoverTarget，实体位置仅作锚点/剔除基准；
+		// 蓄力减速 90% 下 20s 最远 ~12 格，可见盒扩 16 格防远磨被视锥剔除）
 		if (this.age > MAX_TICKS) this.discard(); // 双保险超时
 	}
 
 	@Override
 	public Box getVisibilityBoundingBox() {
-		// 法阵在眼前 0.2 格 + 中央冰锥延伸出锚点，扩大可见盒避免视锥剔除整帧剔除
-		return this.getBoundingBox().expand(4.0);
+		// 静态锚点后玩家可能走离锚点：扩 16 格覆盖蓄力期最大移动距离，防法阵被整帧剔除
+		return this.getBoundingBox().expand(16.0);
 	}
 
 	@Override protected void readCustomDataFromNbt(NbtCompound nbt) {}

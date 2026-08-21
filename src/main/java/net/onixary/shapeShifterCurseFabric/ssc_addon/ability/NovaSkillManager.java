@@ -315,10 +315,13 @@ public final class NovaSkillManager {
             if (player.getWorld() instanceof ServerWorld sw) {
                 double chargeProgress = (now - cs) / (double) CHARGE_TIME; // 0→1 蓄力进度
                 // 蓄力粒子：头顶黑烟 + 身周火星（引信感）
+                // 网络优化：粒子隔 tick 发送且数量翻倍补偿（原每 tick 2 单包 + ~40 预警圈单粒包 ≈ 45包/秒；
+                // 粒子寿命 ~1s 靠存活衔接，旋转光环视觉不变，包率 -50%）
+                if ((now - cs) % 2 == 0) {
                 sw.spawnParticles(ParticleTypes.LARGE_SMOKE, player.getX(), player.getY() + 1.0, player.getZ(),
-                        3, 0.3, 0.4, 0.3, 0.02);
+                        6, 0.3, 0.4, 0.3, 0.02);
                 sw.spawnParticles(ParticleTypes.FLAME, player.getX(), player.getY() + 0.7, player.getZ(),
-                        2, 0.35, 0.4, 0.35, 0.01);
+                        4, 0.35, 0.4, 0.35, 0.01);
                 // 蓄力全程持续预告爆炸范围：致命圈（暗红，稍清晰）+ 最远波及圈（淡灰白，很淡、反向旋转）。
                 // 时间驱动旋转 + 稀疏 + 抖动 = 流动光环勾勒范围，瞬时低密度不刺眼、非固定点；密度随蓄力进度略增。
                 double warnY = player.getY() + 0.08;
@@ -328,6 +331,7 @@ public final class NovaSkillManager {
                 DustParticleEffect edgeWarn = new DustParticleEffect(new Vector3f(0.68f, 0.68f, 0.70f), 0.8f);
                 spawnArcRing(sw, edgeWarn, player.getX(), warnY, player.getZ(),
                         MAX_RADIUS, now, -0.11, 18 + (int) (chargeProgress * 10));
+                }
                 // 蓄力充能音：导管低鸣底噪，每 0.5s 一次、随进度升调（音量压低让位 TNT 引信声）
                 if ((now - cs) % 10 == 0) {
                     float pitch = 0.7F + 0.8F * (float) chargeProgress;

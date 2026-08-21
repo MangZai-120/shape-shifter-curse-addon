@@ -111,6 +111,9 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 			if (radius > 0.02f) {
 				drawBeam(buf, matrices.peek().getPositionMatrix(), matrices.peek().getNormalMatrix(),
 						radius, (float) entity.beamLength());
+				// 螺旋粒子客户端自绘（原服务端逐 tick 广播已删，网络包归零）
+				spawnBeamSpiralClient(ox + ax * d, oy + ay * d, oz + az * d,
+						new Vec3d(ax, ay, az), radius, entity.getPhaseTick() + tickDelta, entity.beamLength());
 			}
 		}
 
@@ -315,6 +318,39 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 				x1 - px, y1 - py, 0f, x2 - px, y2 - py, 0f,
 				x2 + px, y2 + py, 0f, x1 + px, y1 + py, 0f, c);
 	}
+
+	// ==================== 光柱螺旋粒子（客户端自绘）====================
+	/** 双螺旋白+青相位差 π；与原服务端几何一致，几何纯时间函数多人一致；网络包归零。 */
+	private void spawnBeamSpiralClient(double x, double y, double z, Vec3d aim, double radius, float phaseT, double beamLen) {
+		if (radius <= 0.01) return;
+		net.minecraft.client.particle.ParticleManager pm = net.minecraft.client.MinecraftClient.getInstance().particleManager;
+		Vec3d right = aim.crossProduct(new Vec3d(0, 1, 0));
+		if (right.lengthSquared() < 1.0e-6) right = new Vec3d(1, 0, 0);
+		right = right.normalize();
+		Vec3d up = right.crossProduct(aim).normalize();
+		int steps = (int) (beamLen / 0.8);
+		double baseAng = phaseT * 0.6;
+		for (int s = 0; s <= steps; s += 2) {
+			double dd = beamLen * s / steps;
+			double ang1 = baseAng + dd * 0.9;
+			double ang2 = ang1 + Math.PI;
+			Vec3d axis = new Vec3d(x, y, z).add(aim.multiply(dd));
+			Vec3d o1 = right.multiply(Math.cos(ang1) * radius).add(up.multiply(Math.sin(ang1) * radius));
+			Vec3d o2 = right.multiply(Math.cos(ang2) * radius).add(up.multiply(Math.sin(ang2) * radius));
+			Vec3d p1 = axis.add(o1);
+			pm.addParticle(WHITE_DUST, p1.x, p1.y, p1.z, 0, 0, 0);
+			Vec3d p2 = axis.add(o2);
+			pm.addParticle(CYAN_DUST, p2.x, p2.y, p2.z, 0, 0, 0);
+			if (s % 3 == 0) {
+				pm.addParticle(net.minecraft.particle.ParticleTypes.END_ROD, axis.x, axis.y, axis.z, 0.05, 0.05, 0.05);
+			}
+		}
+	}
+
+	private static final net.minecraft.particle.DustParticleEffect WHITE_DUST =
+			new net.minecraft.particle.DustParticleEffect(new org.joml.Vector3f(0.92f, 0.97f, 1.0f), 1.3f);
+	private static final net.minecraft.particle.DustParticleEffect CYAN_DUST =
+			new net.minecraft.particle.DustParticleEffect(new org.joml.Vector3f(0.35f, 0.90f, 1.0f), 1.3f);
 
 	// ==================== 光柱（沿 +Z 的圆柱）====================
 	private void drawBeam(VertexConsumer buf, Matrix4f pose, Matrix3f nrm, float radius, float length) {

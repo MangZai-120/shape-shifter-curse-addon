@@ -152,20 +152,22 @@ public final class ParasiticSeedFieldManager {
         if (stand != null) {
             stand.setYaw(stand.getYaw() + 5.0f);
         }
-        // 旋转治疗环（半径 1 的 8 点圈）
+        // 旋转治疗环（半径 1 的 8 点圈）；网络优化：隔 tick 发送（原每 tick 8 个 count=0 单粒包，粒子寿命 ~1s 靠存活衔接，视觉不变包率 -50%）
         f.ringProgress += 0.12f;
         double rot = f.ringProgress;
-        for (int i = 0; i < 8; i++) {
-            double a = 2 * Math.PI * i / 8 + rot;
-            double px = x + FIELD_RADIUS * Math.cos(a);
-            double pz = z + FIELD_RADIUS * Math.sin(a);
-            world.spawnParticles(RING_DUST, px, y + 0.15, pz, 1, 0.0, 0.0, 0.0, 0.0);
+        if (now % 2 == 0) {
+            for (int i = 0; i < 8; i++) {
+                double a = 2 * Math.PI * i / 8 + rot;
+                double px = x + FIELD_RADIUS * Math.cos(a);
+                double pz = z + FIELD_RADIUS * Math.sin(a);
+                world.spawnParticles(RING_DUST, px, y + 0.15, pz, 1, 0.0, 0.0, 0.0, 0.0);
+            }
         }
-        // 周期绿星 + 青绿孢子上飘
+        // 周期绿星 + 青绿孢子上飘（孢子上飘同步改周期：2/tick → 2/3tick，包率再降）
         if (now % 6 == 0) {
             world.spawnParticles(ParticleTypes.HAPPY_VILLAGER, x, y + 0.8, z, 1, 0.25, 0.4, 0.25, 0.0);
+            world.spawnParticles(ParticleTypes.WARPED_SPORE, x, y + 0.6, z, 2, 0.35, 0.3, 0.35, 0.01);
         }
-        world.spawnParticles(ParticleTypes.WARPED_SPORE, x, y + 0.6, z, 2, 0.35, 0.3, 0.35, 0.01);
     }
 
     private static void spawnPickupParticles(ServerWorld world, Vec3d pos) {

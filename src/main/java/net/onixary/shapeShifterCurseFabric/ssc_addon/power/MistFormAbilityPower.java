@@ -279,8 +279,10 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 		}
 	}
 
-	/** 蓄力期间的向内聚集粒子：外圈红色血雾以 count=0 定向粒子朝中心收束，半径随蓄力缩小 */
+	/** 蓄力期间的向内聚集粒子：外圈红色血雾以 count=0 定向粒子朝中心收束，半径随蓄力缩小。
+	 *  网络优化：隔 tick 发送（原每 tick 10 个单粒包 ≈200包/秒；血尘寿命长靠存活衔接，视觉不变包率 -50%）。 */
 	private void spawnChargeConvergence(long elapsed) {
+		if (elapsed % 2 != 0) return;
 		if (!(entity.getWorld() instanceof ServerWorld sw)) return;
 		double px = entity.getX();
 		double py = entity.getY() + entity.getHeight() * 0.5;

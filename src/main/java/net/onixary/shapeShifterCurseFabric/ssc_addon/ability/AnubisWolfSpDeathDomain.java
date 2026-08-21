@@ -339,19 +339,21 @@ public class AnubisWolfSpDeathDomain {
 	private static void tickCharging(ServerPlayerEntity player, ServerWorld world, DomainData data) {
 		int chargeTicks = data.enhanced ? ENHANCED_CHARGE_TICKS : CHARGE_TICKS;
 
-		// 充能粒子效果：灵魂粒子围绕玩家旋转上升
-		double angle = (data.ticksElapsed * 0.2) % (Math.PI * 2);
-		double radius = 1.0 + data.ticksElapsed * 0.03;
-		int particleStreams = data.enhanced ? 5 : 3;
-		for (int i = 0; i < particleStreams; i++) {
-			double a = angle + i * (Math.PI * 2 / particleStreams);
-			double px = player.getX() + Math.cos(a) * radius;
-			double pz = player.getZ() + Math.sin(a) * radius;
-			double py = player.getY() + 0.5 + data.ticksElapsed * 0.025;
-			ParticleUtils.spawnParticles(world, ParticleTypes.SOUL, px, py, pz, 1, 0, 0.05, 0, 0.01);
-			if (data.enhanced) {
-				ParticleUtils.spawnParticles(world, ParticleTypes.SOUL_FIRE_FLAME, px, py, pz, 1, 0, 0.08, 0, 0.02);
-			}
+// 充能粒子效果：灵魂粒子围绕玩家旋转上升；网络优化：隔 tick 发送（count=0 单粒包，粒子寿命长靠存活衔接，包率 -50%）
+                if (data.ticksElapsed % 2 == 0) {
+                double angle = (data.ticksElapsed * 0.2) % (Math.PI * 2);
+                double radius = 1.0 + data.ticksElapsed * 0.03;
+                int particleStreams = data.enhanced ? 5 : 3;
+                for (int i = 0; i < particleStreams; i++) {
+                        double a = angle + i * (Math.PI * 2 / particleStreams);
+                        double px = player.getX() + Math.cos(a) * radius;
+                        double pz = player.getZ() + Math.sin(a) * radius;
+                        double py = player.getY() + 0.5 + data.ticksElapsed * 0.025;
+                        ParticleUtils.spawnParticles(world, ParticleTypes.SOUL, px, py, pz, 1, 0, 0.05, 0, 0.01);
+                        if (data.enhanced) {
+                                ParticleUtils.spawnParticles(world, ParticleTypes.SOUL_FIRE_FLAME, px, py, pz, 1, 0, 0.08, 0, 0.02);
+                        }
+                }
 		}
 
 		// 心跳音效（每10tick一次）
