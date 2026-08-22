@@ -111,6 +111,10 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 			if (radius > 0.02f) {
 				drawBeam(buf, matrices.peek().getPositionMatrix(), matrices.peek().getNormalMatrix(),
 						radius, (float) entity.beamLength());
+				// 螺旋粒子客户端自绘：逐行照抄服务端 spawnBeamSpiral（白+青双螺旋 + s%3 芯部 END_ROD，
+				// 全参数原样）；tick 门控保证每实体 tick 一次=服务端原频，RELEASE/FADE 期与光柱 mesh 同段触发
+				spawnBeamSpiralClient(entity, ox + ax * d, oy + ay * d, oz + az * d,
+						new Vec3d(ax, ay, az), radius, entity.getPhaseTick());
 			}
 		}
 
@@ -353,5 +357,51 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 	@Override
 	public Identifier getTexture(LaserBeamEntity entity) {
 		return TEXTURE;
+	}
+
+	// ===== 螺旋粒子配色（与服务端 WHITE/CYAN dust 常量逐项一致） =====
+	private static final net.minecraft.particle.DustParticleEffect SPIRAL_WHITE =
+			new net.minecraft.particle.DustParticleEffect(new org.joml.Vector3f(0.92f, 0.98f, 1.0f), 1.2f);
+	private static final net.minecraft.particle.DustParticleEffect SPIRAL_CYAN =
+			new net.minecraft.particle.DustParticleEffect(new org.joml.Vector3f(0.35f, 0.90f, 1.0f), 1.3f);
+
+	/**
+	 * 光柱螺旋粒子客户端自绘：<b>逐行照抄服务端 spawnBeamSpiral</b>（网络包归零）。
+	 * 门控：同实体 tick 只发一次（render 每帧调用不超频，频率=服务端每 tick 原频）。
+	 * 触发段与光柱 mesh 完全一致（RELEASE 满半径 / FADE 缩小半径），时机天然对齐。
+	 */
+	private void spawnBeamSpiralClient(net.onixary.shapeShifterCurseFabric.ssc_addon.entity.LaserBeamEntity entity,
+			double x, double y, double z, Vec3d aim, double radius, int phaseTick) {
+		if (radius <= 0.01) return;
+		if (entity.clientParticleGate == phaseTick) return;  // 同 tick 多帧防重
+		entity.clientParticleGate = phaseTick;
+		net.minecraft.client.particle.ParticleManager pm = net.minecraft.client.MinecraftClient.getInstance().particleManager;
+		// —— 以下逐行照抄服务端 spawnBeamSpiral ——
+		Vec3d right = aim.crossProduct(new Vec3d(0, 1, 0));
+		if (right.lengthSquared() < 1.0e-6) right = new Vec3d(1, 0, 0);
+		right = right.normalize();
+		Vec3d up = right.crossProduct(aim).normalize();
+		double beamLen = entity.beamLength();
+		int steps = (int) (beamLen / 0.8);
+		double baseAng = phaseTick * 0.6;
+		for (int s = 0; s <= steps; s++) {
+			double dd = beamLen * s / steps;
+			// 双螺旋（白 + 青，相位差 π）
+			double ang1 = baseAng + dd * 0.9;
+			double ang2 = ang1 + Math.PI;
+			Vec3d axis = new Vec3d(x, y, z).add(aim.multiply(dd));
+			Vec3d o1 = right.multiply(Math.cos(ang1) * radius).add(up.multiply(Math.sin(ang1) * radius));
+			Vec3d o2 = right.multiply(Math.cos(ang2) * radius).add(up.multiply(Math.sin(ang2) * radius));
+			if (s % 2 == 0) {
+				Vec3d p1 = axis.add(o1);
+				pm.addParticle(SPIRAL_WHITE, p1.x, p1.y, p1.z, 0, 0, 0);
+				Vec3d p2 = axis.add(o2);
+				pm.addParticle(SPIRAL_CYAN, p2.x, p2.y, p2.z, 0, 0, 0);
+			}
+			// 芯部发光（原版设计：沿光柱稀疏分布 s%3，非中央堆叠——保留照抄）
+			if (s % 3 == 0) {
+				pm.addParticle(net.minecraft.particle.ParticleTypes.END_ROD, axis.x, axis.y, axis.z, 0.05, 0.05, 0.05);
+			}
+		}
 	}
 }

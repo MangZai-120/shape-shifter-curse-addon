@@ -190,10 +190,10 @@ public final class FrostSpikeManager {
 				amb.playSound(null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.BLOCK_CONDUIT_AMBIENT, SoundCategory.PLAYERS, 0.35f, 1.0f);
 			}
-			// 持续汇聚：头顶法阵中心（大冰锥真实成形点）向内汇聚（每 4 tick，直到环绕冰锥耗完）
-			if (countThorns(s) > 0 && player.age % 4 == 0 && player.getWorld() instanceof ServerWorld pw) {
-				spawnInwardIceParticles(pw, secondaryFocus(player), false);
-			}
+				// 持续汇聚：头顶法阵中心（大冰锥真实成形点）向内汇聚（每 4 tick，直到环绕冰锥耗完）
+				if (countThorns(s) > 0 && player.age % 4 == 0 && player.getWorld() instanceof ServerWorld pw) {
+					spawnInwardIceParticles(pw, secondaryFocus(player), false);
+				}
 				if (s.secondaryTicks >= SECONDARY_CONSUME_INTERVAL) {
 					s.secondaryTicks = 0;
 				int idx = consumeSlot(s); // 固定消耗顺序：上→左→右→左上→右上（slot 0→4）

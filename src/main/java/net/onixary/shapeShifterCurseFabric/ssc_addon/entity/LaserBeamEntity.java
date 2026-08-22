@@ -11,8 +11,6 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
-import net.minecraft.particle.DustParticleEffect;
-import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -29,7 +27,6 @@ import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
-import org.joml.Vector3f;
 
 import java.util.List;
 import java.util.UUID;
@@ -98,10 +95,9 @@ public class LaserBeamEntity extends Entity {
 	private int releaseTicks = RELEASE_TICKS;
 	private int enhFiringTicks = 0;   // 增强发射态剩余 tick
 
-	private static final DustParticleEffect CYAN =
-			new DustParticleEffect(new Vector3f(0.35f, 0.90f, 1.0f), 1.3f);
-	private static final DustParticleEffect WHITE =
-			new DustParticleEffect(new Vector3f(0.92f, 0.98f, 1.0f), 1.2f);
+	/** 客户端渲染器粒子门控：记录本阶段 tick 已发过粒子（render 每帧调用，同 tick 多帧只放行一次，
+	 *  保证粒子频率与服务端每 tick 一致；非同步字段，仅客户端使用）。 */
+	public int clientParticleGate = -1;
 
 	public LaserBeamEntity(EntityType<?> type, World world) {
 		super(type, world);
@@ -307,15 +303,16 @@ public class LaserBeamEntity extends Entity {
 		}
 		PowerUtils.setResourceValueAndSync(owner, LASER_STATE, 1);
 
-		// 蓄力音效
+		// 蓄力音效（volume=3.0：反编译实证客户端 clamp 到 1，近处响度不变不震耳；
+		// 可闻半径 16×3=48 格=光柱射程 32 格+16 格富余，OpenAL 距离线性衰减到 48 格归零）
 		if (phaseTicks == 1) {
 			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
-					SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 1.0f, 0.8f);
+					SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 3.0f, 0.8f);
 		}
 		if (phaseTicks % 12 == 0) {
 			float p = phaseTicks / (float) CHARGE_TICKS;
 			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
-					SoundEvents.BLOCK_CONDUIT_AMBIENT, SoundCategory.PLAYERS, 0.6f, 0.8f + p * 0.8f);
+					SoundEvents.BLOCK_CONDUIT_AMBIENT, SoundCategory.PLAYERS, 3.0f, 0.8f + p * 0.8f);
 		}
 
 		// 四条白线由渲染器绘制（客户端，无粒子残留）；法阵核心发光粒子改为客户端渲染器按视角生成
@@ -325,26 +322,25 @@ public class LaserBeamEntity extends Entity {
 			phaseTicks = 0;
 			this.dataTracker.set(PHASE, 1);
 			PowerUtils.setResourceValueAndSync(owner, LASER_STATE, 2);
-			// 发射音
-			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
-					SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 1.2f, 1.0f);
-			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
-					SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 1.0f, 0.7f);
+				// 发射音（volume=3.0：48 格可闻=射程+16，距离衰减归零；近处 clamp 到 1 不震耳）
+				sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
+						SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 3.0f, 1.0f);
+				sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
+						SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 3.0f, 0.7f);
 		}
 	}
 
 	// ==================== RELEASE ====================
 	private void tickRelease(ServerWorld sw, ServerPlayerEntity owner, Vec3d aim, Vec3d arrayPos) {
 		PowerUtils.setResourceValueAndSync(owner, LASER_STATE, 2);
-		// 螺旋粒子沿光柱前进
-		spawnBeamSpiral(sw, arrayPos, aim, BEAM_RADIUS);
+		// 螺旋粒子已移到客户端渲染器自绘（逐行照抄未改参数，网络包归零）
 		// 伤害：每 4t 一次，5 格直径穿墙圆柱
 		if (phaseTicks % DAMAGE_INTERVAL == 0) {
 			beamDamage(sw, owner, arrayPos, aim, BEAM_RADIUS);
 		}
 		if (phaseTicks % 8 == 0) {
 			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
-					SoundEvents.BLOCK_BEACON_AMBIENT, SoundCategory.PLAYERS, 0.7f, 1.4f);
+					SoundEvents.BLOCK_BEACON_AMBIENT, SoundCategory.PLAYERS, 3.0f, 1.4f);
 		}
 		if (phaseTicks >= releaseTicks) {
 			phase = Phase.FADE;
@@ -356,52 +352,22 @@ public class LaserBeamEntity extends Entity {
 
 	// ==================== FADE ====================
 	private void tickFade(ServerWorld sw, ServerPlayerEntity owner, Vec3d aim, Vec3d arrayPos) {
-		double shrink = 1.0 - phaseTicks / (double) FADE_TICKS;
-		double r = BEAM_RADIUS * Math.max(0.0, shrink);
-		spawnBeamSpiral(sw, arrayPos, aim, r);
+		// 螺旋粒子已移到客户端渲染器自绘（含消退期半径缩小，网络包归零）
 		if (phaseTicks >= FADE_TICKS) {
 			// 完全消失 → 进 CD、解除定身、清状态
 			owner.removeStatusEffect(SscAddon.ROOTED);
 			PowerUtils.setResourceValueAndSync(owner, LASER_STATE, 0);
 			PowerUtils.setResourceValueAndSync(owner, FormIdentifiers.SP_PRIMARY_CD, CD_TICKS);
 			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
-					SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.8f, 1.0f);
+					SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 3.0f, 1.0f);
 			this.discard();
 		}
 	}
 
 	// ==================== 四线粒子 ====================
 	// ==================== 光柱螺旋粒子 ====================
-	private void spawnBeamSpiral(ServerWorld sw, Vec3d arrayPos, Vec3d aim, double radius) {
-		if (radius <= 0.01) return;
-		Vec3d right = aim.crossProduct(new Vec3d(0, 1, 0));
-		if (right.lengthSquared() < 1.0e-6) right = new Vec3d(1, 0, 0);
-		right = right.normalize();
-		Vec3d up = right.crossProduct(aim).normalize();
-		double beamLen = beamLength();
-		int steps = (int) (beamLen / 0.8);
-		double baseAng = phaseTicks * 0.6;
-		for (int s = 0; s <= steps; s++) {
-			double d = beamLen * s / steps;
-			// 双螺旋（白 + 青，相位差 π）
-			double ang1 = baseAng + d * 0.9;
-			double ang2 = ang1 + Math.PI;
-			Vec3d axis = arrayPos.add(aim.multiply(d));
-			Vec3d o1 = right.multiply(Math.cos(ang1) * radius).add(up.multiply(Math.sin(ang1) * radius));
-			Vec3d o2 = right.multiply(Math.cos(ang2) * radius).add(up.multiply(Math.sin(ang2) * radius));
-			if (s % 2 == 0) {
-				Vec3d p1 = axis.add(o1);
-				sw.spawnParticles(WHITE, p1.x, p1.y, p1.z, 1, 0, 0, 0, 0.0);
-				Vec3d p2 = axis.add(o2);
-				sw.spawnParticles(CYAN, p2.x, p2.y, p2.z, 1, 0, 0, 0, 0.0);
-			}
-			// 芯部发光
-			if (s % 3 == 0) {
-				sw.spawnParticles(ParticleTypes.END_ROD, axis.x, axis.y, axis.z, 1, 0.05, 0.05, 0.05, 0.0);
-			}
-		}
-	}
-
+        // 已移到客户端 FluorescentLaserRenderer.spawnBeamSpiralClient 自绘（逐行照抄未改参数；
+        // phase/phaseTick 已 DataTracker 同步、螺旋角纯时间函数），服务端不再广播——持续粒子网络包归零。方法删除。
 	// ==================== 伤害 ====================
 	private void beamDamage(ServerWorld sw, ServerPlayerEntity owner, Vec3d arrayPos, Vec3d aim, double radius) {
 		double beamLen = beamLength();

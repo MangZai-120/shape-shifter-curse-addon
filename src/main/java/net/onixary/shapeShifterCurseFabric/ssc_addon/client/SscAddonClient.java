@@ -478,7 +478,7 @@ public class SscAddonClient implements ClientModInitializer {
 		VortexChargeClient.register();		// SSCA 月织蛛「织网术」- 主键检测器（潜行切换 / 蓄力 / 释放）
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverWebClient.register();
 		// SSCA 寒棘狐「冰刺」- 主键检测器（长按蕠力 / 点按发射）
-		net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeClient.register();
+		net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeClient.register();		// SSCA 寒棘狐主技能蓄力 - 客户端镜像粒子生成（S2C 状态包驱动，零持续粒子包）
 		// SSCA 月织蛛二段跳 - 跳跃键空中检测
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverDoubleJumpClient.register();
 		// SSCA 月织蛛「蛛丝荡漾」- 次键检测器（发射/断丝 + WASD/空格/Shift 输入上报）

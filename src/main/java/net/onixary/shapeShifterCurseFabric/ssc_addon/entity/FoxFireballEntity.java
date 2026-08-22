@@ -3,6 +3,9 @@ package net.onixary.shapeShifterCurseFabric.ssc_addon.entity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.data.DataTracker;
+import net.minecraft.entity.data.TrackedData;
+import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageType;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -53,6 +56,8 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
     private static final double PHASE2_SPEED = 2.0;    // 12 格后固定 2 格/s
     private static final int PHASE2_DURATION = 60;     // 12 格后最多飞 3 秒（60 tick → 18 格上限）
 
+    private static final TrackedData<Boolean> EXPLODED = DataTracker.registerData(FoxFireballEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
+
     private Vec3d direction = new Vec3d(0, 0, 1);
     private double distanceTraveled = 0;
     private int ticksAlive = 0;
@@ -90,6 +95,7 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
 
     @Override
     protected void initDataTracker() {
+        this.dataTracker.startTracking(EXPLODED, false);
     }
 
     @Override
@@ -97,12 +103,18 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         super.tick();
         ticksAlive++;
         if (this.getWorld().isClient) {
+            // 已爆炸（DataTracker 同步）：冻结位置、不发拖尾——与服务端 exploding 分支停发时机精确对齐
+            if (this.dataTracker.get(EXPLODED)) {
+                return;
+            }
             // 客户端确定性预测移动（与服务端同一速度曲线），渲染插值平滑，避免只靠 tracker 同步的卡顿
             Vec3d v = this.getVelocity();
             Vec3d dir = v.lengthSquared() > 1.0e-6 ? v.normalize() : direction;
             double speed = speedPerTick(distanceTraveled);
             this.setPosition(this.getX() + dir.x * speed, this.getY() + dir.y * speed, this.getZ() + dir.z * speed);
             distanceTraveled += speed;
+            // 拖尾粒子客户端自绘（零网络包；参数逐行照抄服务端 spawnTrail 原版，见方法注释）
+            spawnTrailParticlesClient();
             return;
         }
         if (!(this.getWorld() instanceof ServerWorld sw)) return;
@@ -194,40 +206,68 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         }
     }
 
-    /** 火球本体：2 格直径（半径 1）火焰球 + 短拖尾（双火焰 + 稀疏烟雾）+ 岩浆火星 + 熔岩滴落。 */
+    /**
+     * 拖尾粒子已移至客户端：见 tick() 客户端分支 spawnTrailParticlesClient（零网络包，参数逐行照抄本方法原版）。
+     * 服务端保留空壳只作历史参考；爆炸/穿透/火环等一次性事件粒子仍由服务端广播。
+     */
     private void spawnTrail(ServerWorld w) {
+    }
+
+    /**
+     * 拖尾粒子客户端自绘：<b>逐行照抄服务端 spawnTrail 原版</b>（每 tick 一次，由实体 tick 天然门控不超频）。
+     * 位置全精确；速度按原版 gaussian×speed 的量级取近似常向量（与潮汐球拖尾同标准）。
+     */
+    private void spawnTrailParticlesClient() {
         double x = this.getX(), y = this.getY(), z = this.getZ();
+        World w = this.getWorld();
         Random rnd = this.random;
+        // 火焰球体 ×10（原版：count=1、偏移 0、speed=0.01 → 位置精确、微速上飘）
         for (int i = 0; i < 10; i++) {
             Vec3d p = randomInSphere(1.0, rnd);
-            w.spawnParticles(ParticleTypes.FLAME, x + p.x, y + p.y, z + p.z, 1, 0, 0, 0, 0.01);
+            w.addParticle(ParticleTypes.FLAME, x + p.x, y + p.y, z + p.z, 0, 0.01, 0);
         }
+        // 魂火球体 ×7
         for (int i = 0; i < 7; i++) {
             Vec3d p = randomInSphere(1.0, rnd);
-            w.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME, x + p.x, y + p.y, z + p.z, 1, 0, 0, 0, 0.01);
+            w.addParticle(ParticleTypes.SOUL_FIRE_FLAME, x + p.x, y + p.y, z + p.z, 0, 0.01, 0);
         }
-        // 岩浆火星：从火球表面随机迸出的小火花。
+        // 岩浆火星 30%（原版偏移 ±(0.003,0.008,0.003)≈0、速度 0）
         if (rnd.nextFloat() < 0.3f) {
             Vec3d p = randomInSphere(0.4, rnd);
-            w.spawnParticles(ParticleTypes.LAVA, x + p.x, y + p.y, z + p.z, 1, 0.003, 0.008, 0.003, 0.0);
+            w.addParticle(ParticleTypes.LAVA, x + p.x, y + p.y, z + p.z, 0, 0, 0);
         }
-        // 熔岩往下滴落：火球下方零星滴落的熔岩粒子。
+        // 熔岩滴落 7%
         if (rnd.nextFloat() < 0.07f) {
-            w.spawnParticles(ParticleTypes.FALLING_LAVA,
+            w.addParticle(ParticleTypes.FALLING_LAVA,
                     x + (rnd.nextDouble() - 0.5) * 1.0,
                     y - 0.6 + (rnd.nextDouble() - 0.5) * 0.8,
                     z + (rnd.nextDouble() - 0.5) * 1.0,
-                    1, 0, -0.1, 0, 0.01);
+                    0, 0, 0);
         }
-        Vec3d back = direction.multiply(-0.5);
-        w.spawnParticles(ParticleTypes.FLAME, x + back.x, y + back.y, z + back.z, 2, 0.15, 0.15, 0.15, 0.0);
-        w.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME, x + back.x, y + back.y, z + back.z, 1, 0.12, 0.12, 0.12, 0.0);
-        w.spawnParticles(ParticleTypes.SMOKE, x + back.x * 1.5, y + back.y * 1.5, z + back.z * 1.5, 1, 0.1, 0.1, 0.1, 0.0);
+        // 尾部反向：火焰 ×2 / 魂火 ×1 / 烟雾 ×1（高斯偏移与服务端 spawnParticles count>0 分支同分布）
+        Vec3d v = this.getVelocity();
+        Vec3d dir = v.lengthSquared() > 1.0e-6 ? v.normalize() : this.direction;
+        Vec3d back = dir.multiply(-0.5);
+        for (int i = 0; i < 2; i++) {
+            w.addParticle(ParticleTypes.FLAME,
+                    x + back.x + rnd.nextGaussian() * 0.15,
+                    y + back.y + rnd.nextGaussian() * 0.15,
+                    z + back.z + rnd.nextGaussian() * 0.15, 0, 0, 0);
+        }
+        w.addParticle(ParticleTypes.SOUL_FIRE_FLAME,
+                x + back.x + rnd.nextGaussian() * 0.12,
+                y + back.y + rnd.nextGaussian() * 0.12,
+                z + back.z + rnd.nextGaussian() * 0.12, 0, 0, 0);
+        w.addParticle(ParticleTypes.SMOKE,
+                x + back.x * 1.5 + rnd.nextGaussian() * 0.1,
+                y + back.y * 1.5 + rnd.nextGaussian() * 0.1,
+                z + back.z * 1.5 + rnd.nextGaussian() * 0.1, 0, 0, 0);
     }
 
     private void explode(ServerWorld w, LivingEntity directTarget) {
         if (exploded) return;
         exploded = true;
+        this.dataTracker.set(EXPLODED, true);   // 同步客户端：冻结预测移动、停发拖尾
         double x = this.getX(), y = this.getY(), z = this.getZ();
         LivingEntity owner = this.getOwner() instanceof LivingEntity le ? le : null;
 
