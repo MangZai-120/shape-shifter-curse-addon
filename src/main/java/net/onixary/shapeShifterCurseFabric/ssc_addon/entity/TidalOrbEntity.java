@@ -468,9 +468,34 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     }
 
     private void spawnHoverParticles(ServerWorld sw) {
-        // 网络优化：悬停粒子已全部移到客户端 TidalOrbRenderer 本地自绘（实体位置客户端已知，
-        // 环绕/公转几何纯时间函数），服务端不再广播——持续粒子网络包归零。
-        // 服务端仅保留增强球 DELAY 期不画粒子的判定语义（渲染器按 isTetherActive 自行判定）。
+        double x = getX(), y = getY(), z = getZ();
+        // 三个小粒子球绕锚点旋转（120° 均布，各用一种水系配色）
+        double rot = ticksAlive * 0.12;
+        double orbitR = 1.1;
+        for (int k = 0; k < 3; k++) {
+            double a = rot + k * (Math.PI * 2 / 3);
+            double ox = x + Math.cos(a) * orbitR;
+            double oz = z + Math.sin(a) * orbitR;
+            double oy = y + Math.sin(ticksAlive * 0.15 + k * 2.0) * 0.25; // 上下轻微起伏
+            DustParticleEffect col = (k == 0) ? CYAN_DUST : (k == 1) ? BLUE_DUST : LIGHT_BLUE_DUST;
+            for (int i = 0; i < 4; i++) {
+                Vec3d p = randomInSphere(0.22, random);
+                sw.spawnParticles(col, ox + p.x, oy + p.y, oz + p.z, 1, 0, 0, 0, 0.0);
+            }
+            if (random.nextFloat() < 0.4f) {
+                sw.spawnParticles(ParticleTypes.BUBBLE, ox, oy, oz, 1, 0.04, 0.04, 0.04, 0.0);
+            }
+        }
+        // 核心发光
+        sw.spawnParticles(ParticleTypes.END_ROD, x, y, z, 1, 0.08, 0.1, 0.08, 0.0);
+        // 中间生成、随重力慢慢下落的水滴
+        if (ticksAlive % 2 == 0) {
+            double dx = (random.nextDouble() - 0.5) * 0.5;
+            double dz = (random.nextDouble() - 0.5) * 0.5;
+            sw.spawnParticles(ParticleTypes.FALLING_WATER, x + dx, y + 0.15, z + dz, 1, 0.0, 0.0, 0.0, 0.0);
+        }
+        // 6 格范围提示：公转粒子球（与中央三球同一套视觉语言）
+        spawnBoundaryOrbs(sw);
     }
 
     /** 在 6 格软边界处描一圈 dust（落点瞬间一次性闪现，展示拴人范围）。 */
@@ -484,7 +509,23 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         }
     }
 
-    // 原 spawnBoundaryOrbs（6 格边界公转球）已移到客户端 TidalOrbRenderer 自绘（网络包归零），此方法删除。
+    /** 6 格范围持续提示：几个小粒子球绕 6 格边界公转（与中央三球同一视觉语言）。 */
+    private void spawnBoundaryOrbs(ServerWorld sw) {
+        double x = getX(), y = getY(), z = getZ();
+        double rot = ticksAlive * 0.06;   // 慢速公转
+        int n = 6;                          // 6 个球均布在 6 格边界
+        for (int k = 0; k < n; k++) {
+            double a = rot + k * (Math.PI * 2 / n);
+            double ox = x + Math.cos(a) * TETHER_SOFT_RADIUS;
+            double oz = z + Math.sin(a) * TETHER_SOFT_RADIUS;
+            double oy = y + Math.sin(ticksAlive * 0.12 + k) * 0.3; // 上下起伏
+            DustParticleEffect col = (k % 3 == 0) ? CYAN_DUST : (k % 3 == 1) ? BLUE_DUST : LIGHT_BLUE_DUST;
+            for (int i = 0; i < 3; i++) {
+                Vec3d p = randomInSphere(0.2, random);
+                sw.spawnParticles(col, ox + p.x, oy + p.y, oz + p.z, 1, 0, 0, 0, 0.0);
+            }
+        }
+    }
 
     private void spawnAffectedFootParticles(ServerWorld sw, LivingEntity t) {
         double fx = t.getX(), fy = t.getY() + 0.05, fz = t.getZ();
@@ -622,7 +663,4 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     public boolean isTetherActive() {
         return this.dataTracker.get(TETHER_ACTIVE);
     }
-
-    /** 软边界半径（客户端渲染器画公转边界球用）。 */
-    public static double tetherSoftRadius() { return TETHER_SOFT_RADIUS; }
 }

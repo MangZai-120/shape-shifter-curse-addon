@@ -41,9 +41,6 @@ public class TidalOrbRenderer extends FlyingItemEntityRenderer<TidalOrbEntity> {
     @Override
     public void render(TidalOrbEntity entity, float yaw, float tickDelta, MatrixStack matrices,
                        VertexConsumerProvider vcp, int light) {
-        // 悬停粒子客户端自绘（零网络包）：三色环绕球 + 边界公转球 + 核心发光 + 水滴。
-        // 几何全部由「实体位置（已同步）+ 世界时间（已同步）」决定，多人天然一致。
-        spawnHoverParticlesClient(entity, tickDelta);
         if (!entity.isTetherActive()) {
             // 非拴人期：完全沿用原版飞行物品渲染，外观零变化
             super.render(entity, yaw, tickDelta, matrices, vcp, light);
@@ -83,54 +80,5 @@ public class TidalOrbRenderer extends FlyingItemEntityRenderer<TidalOrbEntity> {
 
         matrices.pop();
         // 拴人期不调用 super：中央只显示激活态潮涌核心
-    }
-
-    // ===== 悬停粒子配色（与服务端原实现一致的三色 dust） =====
-    private static final org.joml.Vector3f C_CYAN = new org.joml.Vector3f(0.20f, 0.78f, 0.92f);
-    private static final org.joml.Vector3f C_BLUE = new org.joml.Vector3f(0.25f, 0.45f, 0.95f);
-    private static final org.joml.Vector3f C_LIGHT = new org.joml.Vector3f(0.55f, 0.80f, 1.0f);
-
-    /**
-     * 悬停粒子客户端自绘（原服务端逐 tick 广播已移除，网络包归零）。
-     * 用 MinecraftClient 粒子管理器直接添加（addParticle → ParticleManager.addParticle 路径），
-     * 保持原 ParticleS2CPacket force=true「无视客户端粒子设置」的视觉行为。
-     * 每 render 帧调用一次（帧率 60+ 时相当于每 tick 1-3 次，粒子寿命 ~1s 自然衔接）。
-     */
-    private void spawnHoverParticlesClient(TidalOrbEntity entity, float tickDelta) {
-        net.minecraft.client.particle.ParticleManager pm = net.minecraft.client.MinecraftClient.getInstance().particleManager;
-        java.util.Random rnd = new java.util.Random();
-        long t = entity.age; // 实体年龄（客户端已知，替代原服务端 ticksAlive）
-        double x = entity.getX(), y = entity.getY(), z = entity.getZ();
-        // 每帧粒子上限（防高帧率下过量）：环绕 3 球×2 粒 + 边界 6 球×2 粒 + 核心 1 + 水滴 1
-        // 三个小粒子球绕锚点旋转（120° 均布，各用一种水系配色）
-        double rot = t * 0.12;
-        for (int k = 0; k < 3; k++) {
-            double a = rot + k * (Math.PI * 2 / 3);
-            double ox = x + Math.cos(a) * 1.1, oz = z + Math.sin(a) * 1.1;
-            double oy = y + Math.sin(t * 0.15 + k * 2.0) * 0.25;
-            org.joml.Vector3f col = (k == 0) ? C_CYAN : (k == 1) ? C_BLUE : C_LIGHT;
-            for (int i = 0; i < 2; i++) {
-                double px = ox + (rnd.nextDouble() - 0.5) * 0.44, py = oy + (rnd.nextDouble() - 0.5) * 0.44, pz = oz + (rnd.nextDouble() - 0.5) * 0.44;
-                pm.addParticle(new net.minecraft.particle.DustParticleEffect(col, 1.5f), px, py, pz, 0, 0, 0);
-            }
-        }
-        // 核心发光
-        pm.addParticle(net.minecraft.particle.ParticleTypes.END_ROD, x, y, z, 0.08, 0.1, 0.08);
-        // 边界 6 格公转提示球（慢速公转 + 上下起伏）
-        double rot2 = t * 0.06;
-        for (int k = 0; k < 6; k++) {
-            double a = rot2 + k * (Math.PI * 2 / 6);
-            double ox = x + Math.cos(a) * TidalOrbEntity.tetherSoftRadius();
-            double oz = z + Math.sin(a) * TidalOrbEntity.tetherSoftRadius();
-            double oy = y + Math.sin(t * 0.12 + k) * 0.3;
-            org.joml.Vector3f col = (k % 3 == 0) ? C_CYAN : (k % 3 == 1) ? C_BLUE : C_LIGHT;
-            for (int i = 0; i < 2; i++) {
-                double px = ox + (rnd.nextDouble() - 0.5) * 0.4, py = oy + (rnd.nextDouble() - 0.5) * 0.4, pz = oz + (rnd.nextDouble() - 0.5) * 0.4;
-                pm.addParticle(new net.minecraft.particle.DustParticleEffect(col, 1.5f), px, py, pz, 0, 0, 0);
-            }
-        }
-        // 中间生成、随重力慢慢下落的水滴
-        pm.addParticle(net.minecraft.particle.ParticleTypes.FALLING_WATER,
-                x + (rnd.nextDouble() - 0.5) * 0.5, y + 0.15, z + (rnd.nextDouble() - 0.5) * 0.5, 0, 0, 0);
     }
 }

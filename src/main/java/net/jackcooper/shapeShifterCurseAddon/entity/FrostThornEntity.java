@@ -1,5 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -24,6 +26,7 @@ import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -447,8 +450,39 @@ public class FrostThornEntity extends ProjectileEntity {
 		if (this.getWorld() instanceof ServerWorld sw) {
 			sw.spawnParticles(ParticleTypes.ITEM_SNOWBALL, getX(), getY(), getZ(), 12, 0.15, 0.15, 0.15, 0.05);
 			sw.playSound(null, getX(), getY(), getZ(), SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.7f, 1.3f);
+			// 寒冰入体：碎裂点周园结冰——水→冰、岩浆源→黑曜石、流动岩浆→圆石（同原版水+岩浆碰撞性质）
+			freezeAround(sw);
 		}
 		this.discard();
+	}
+
+	/**
+	 * 碎裂点周围结冰（仅服务端）：普通冰锥半径 1.5 格；凝棘强化冰锥随等级增大（1 级 2 格 → 5 级 4 格）。
+	 * 照原版冰霜行者做法球形扫描替换源方块；岩浆按原版水碰撞规则分源/流动两种产物。
+	 */
+	private void freezeAround(ServerWorld sw) {
+		int level = getLevel();
+		double radius = 1.5 + 0.5 * level;
+		int r = (int) Math.ceil(radius);
+		BlockPos base = getBlockPos();
+		boolean any = false;
+		for (BlockPos pos : BlockPos.iterate(base.add(-r, -r, -r), base.add(r, r, r))) {
+			double dx = pos.getX() + 0.5 - getX(), dy = pos.getY() + 0.5 - getY(), dz = pos.getZ() + 0.5 - getZ();
+			if (dx * dx + dy * dy + dz * dz > radius * radius) continue;
+			var state = sw.getBlockState(pos);
+			if (state.isOf(Blocks.WATER)) {
+				sw.setBlockState(pos, Blocks.ICE.getDefaultState(), Block.NOTIFY_ALL);
+				any = true;
+			} else if (state.isOf(Blocks.LAVA)) {
+				// 源方块 level=0 → 黑曜石；流动岩浆 → 圆石（原版水碰撞规则）
+				boolean source = state.get(net.minecraft.block.FluidBlock.LEVEL) == 0;
+				sw.setBlockState(pos, (source ? Blocks.OBSIDIAN : Blocks.COBBLESTONE).getDefaultState(), Block.NOTIFY_ALL);
+				any = true;
+			}
+		}
+		if (any) {
+			sw.playSound(null, getX(), getY(), getZ(), SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.5f, 0.6f);
+		}
 	}
 
 	@Override

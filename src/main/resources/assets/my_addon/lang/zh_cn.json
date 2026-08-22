@@ -1009,5 +1009,5 @@
     "codex.form.my_addon.snow_fox_frostspine.instincts": "你渴望雪与寒风，厌恶炎热与烈焰。踏过细雪时你感到安心，靠近火焰则本能地退避。",
     "codex.form.my_addon.snow_fox_frostspine.equip": "[瓶装降雪]",
     "power.my_addon.form_snow_fox_frostspine_ice_spike.name": "冰刺",
-    "power.my_addon.form_snow_fox_frostspine_ice_spike.description": "长按主技能键凝聚冰锥（每1.2秒一根，最多5根，在背部竖直面上按150°扇形开屏排布）；点按将最旧的冰锥沿准星射线以16格/秒激射而出，16格内直线、之后坠落，最远飞行128格，命中造成8点伤害，5秒未命中自毁。每根冰锥在身最多存在60秒，满5根再蕠力会替换最旧的一根；可被SP悦灵的净化清除。"
+    "power.my_addon.form_snow_fox_frostspine_ice_spike.description": "长按主技能键凝聚冰锥（每1.2秒一根，最多5根，在背部竖直面上按150°扇形开屏排布）；点按将最旧的冰锥沿准星射线以16格/秒激射而出，16格内直线、之后坠落，最远飞行128格，命中造成8点伤害，5秒未命中自毁。碎裂点周围合结冰：水变成冰、岩浆源变成黑曜石、流动岩浆变成圆石（普通冰锥半径1.5格，凝棘强化冰锥随等级增大至最多4格）。每根冰锥在身最多存在60秒，满5根再蕠力会替换最旧的一根；可被SP悦灵的净化清除。"
 }

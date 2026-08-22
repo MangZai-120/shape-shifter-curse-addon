@@ -332,17 +332,6 @@ public class SscAddonClient implements ClientModInitializer {
             client.execute(() -> UpgradeAxolotlSpearRenderState.set(id, charging));
         });
 
-        // 寒棘狐蓄力状态（事件级）：客户端本地自算汇聚粒子（替代服务端持续粒子波，网络包 -97%）
-        ClientPlayNetworking.registerGlobalReceiver(net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking.PACKET_FROST_SPIKE_CHARGE_VISUAL, (client, handler, buf, responseSender) -> {
-            java.util.UUID id = buf.readUuid();
-            int mode = buf.readVarInt();
-            client.execute(() -> net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeVisualClient.setMode(id, mode));
-        });
-        net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeVisualClient.register();
-        // 断线清理蓄力可视状态
-        ClientPlayConnectionEvents.DISCONNECT.register((handler2, client2) ->
-                net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeVisualClient.clear());
-
 		// 注册白名单 GUI S2C 同步包接收器：收到后打开/刷新 WhitelistManageScreen
 		ClientPlayNetworking.registerGlobalReceiver(net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking.PACKET_WHITELIST_GUI_SYNC, (client, handler, buf, responseSender) -> {
 			boolean customMode = buf.readBoolean();
@@ -398,7 +387,7 @@ public class SscAddonClient implements ClientModInitializer {
 		// 进化美西螈「投掷水矛」直线水矛：3D 投掷态模型，沿飞行方向摆正
 		EntityRendererRegistry.register(SscAddon.THROWN_WATER_SPEAR_ENTITY, net.onixary.shapeShifterCurseFabric.ssc_addon.client.renderer.ThrownWaterSpearEntityRenderer::new);		// 寒棘狐「冰刺」冰锥：3D 自定义 item model（CustomModelData 切 3 阶段材质），沿朝向摆正
 		EntityRendererRegistry.register(SscAddon.FROST_THORN_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.FrostThornEntityRenderer::new);
-		EntityRendererRegistry.register(SscAddon.FROST_ARRAY_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.FrostArrayRenderer::new);		EntityRendererRegistry.register(SscAddon.FROST_STORM_ENTITY, EmptyEntityRenderer::new);		EntityRendererRegistry.register(SscAddon.FOX_FIREBALL_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.FoxFireballRenderer::new);
+		EntityRendererRegistry.register(SscAddon.FROST_ARRAY_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.FrostArrayRenderer::new);		EntityRendererRegistry.register(SscAddon.FROST_STORM_ENTITY, EmptyEntityRenderer::new);		EntityRendererRegistry.register(SscAddon.FOX_FIREBALL_ENTITY, ctx -> new net.minecraft.client.render.entity.FlyingItemEntityRenderer<>(ctx, 1F, true));
 		EntityRendererRegistry.register(SscAddon.FRIEND_MARKER_ENTITY_TYPE, FlyingItemEntityRenderer::new);
 		EntityRendererRegistry.register(SscAddon.CLEAR_MARKER_ENTITY_TYPE, FlyingItemEntityRenderer::new);
 		EntityRendererRegistry.register(SscAddon.INFECTION_SPORE_BOMB_ENTITY, FlyingItemEntityRenderer::new);
