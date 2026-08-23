@@ -1,0 +1,27 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:spider_eye"
+    },
+    "title": {
+      "translate": "advancements.my_addon.on_transform_spider_salticidae.title"
+    },
+    "description": {
+      "translate": "advancements.my_addon.on_transform_spider_salticidae.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "ssc_addon:tonight_moon_beautiful",
+  "criteria": {
+    "on_transform_spider_salticidae": {
+      "trigger": "my_addon:on_transform_addon_form",
+      "conditions": {
+        "form_id": "my_addon:spider_salticidae"
+      }
+    }
+  },
+  "requirements": []
+}

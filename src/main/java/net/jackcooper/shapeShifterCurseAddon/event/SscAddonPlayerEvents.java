@@ -164,6 +164,10 @@ public final class SscAddonPlayerEvents {
 			SnowFoxSpFrostStorm.clearPlayer(uuid);
 			// 寒棘狐「寒棘护体」：攻击者断线清反刺层
 			net.jackcooper.shapeShifterCurseAddon.ability.FrostArmorManager.clearPlayer(uuid);
+			// 跳蛛「跳杀」：断线清蓄力/跳跃状态
+			net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.clearPlayer(uuid);
+			// 跳蛛「毒液」：断线清冲刺状态
+			net.jackcooper.shapeShifterCurseAddon.ability.VenomSkillManager.clearPlayer(uuid);
 			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindSpiritClawManager.onPlayerDisconnect(handler.player);
 			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindDashManager.onPlayerDisconnect(handler.player);
 			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindSpiritLandingSurgeManager.onPlayerDisconnect(handler.player);

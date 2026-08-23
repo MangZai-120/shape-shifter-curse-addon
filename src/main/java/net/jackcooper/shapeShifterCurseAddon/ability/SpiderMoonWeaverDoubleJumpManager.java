@@ -21,13 +21,15 @@ public final class SpiderMoonWeaverDoubleJumpManager {
 
 	/** 收到客户端二段跳发包：校验形态 + 空中后广播音效粒子（跳跃速度已由客户端原版 jump() 施加）。 */
 	public static void onDoubleJump(ServerPlayerEntity player) {
-		if (!FormUtils.isForm(player, FormIdentifiers.SPIDER_MOON_WEAVER)) return;
+		boolean moonWeaver = FormUtils.isForm(player, FormIdentifiers.SPIDER_MOON_WEAVER);
+		boolean salticidae = FormUtils.isForm(player, FormIdentifiers.SPIDER_SALTICIDAE);
+		if (!moonWeaver && !salticidae) return;
 		if (player.isOnGround()) return; // 地面首跳走 vanilla，不处理
 		boolean lunge = player.isSprinting(); // 疾跑跳对应原版 jump() 的水平前冲，用更多粒子表现
-		playEffects(player, lunge);
+		playEffects(player, lunge, moonWeaver);
 	}
 
-	private static void playEffects(ServerPlayerEntity player, boolean lunge) {
+	private static void playEffects(ServerPlayerEntity player, boolean lunge, boolean moonWeaver) {
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		// 音效：沿用原版蜘蛛跳跃广播声（山羊长跳 + 青蛙长跳，与 form_spider_3 一致）
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -38,7 +40,9 @@ public final class SpiderMoonWeaverDoubleJumpManager {
 		int cloudCount = lunge ? 20 : 12;
 		sw.spawnParticles(ParticleTypes.CLOUD, player.getX(), player.getY() + 0.2, player.getZ(),
 				cloudCount, 0.3, 0.3, 0.3, 0.01);
-		sw.spawnParticles(ParticleTypes.WITCH, player.getX(), player.getY() + 0.2, player.getZ(),
-				8, 0.4, 0.3, 0.4, 0.01);
+		if (moonWeaver) {
+			sw.spawnParticles(ParticleTypes.WITCH, player.getX(), player.getY() + 0.2, player.getZ(),
+					8, 0.4, 0.3, 0.4, 0.01);
+		}
 	}
 }

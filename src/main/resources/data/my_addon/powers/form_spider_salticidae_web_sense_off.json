@@ -1,0 +1,33 @@
+{
+    "type": "apoli:multiple",
+    "climbing": {
+        "type": "apoli:climbing",
+        "condition": {
+            "type": "apoli:and",
+            "conditions": [
+                {
+                    "type": "apoli:in_block_anywhere",
+                    "block_condition": {
+                        "type": "apoli:in_tag",
+                        "tag": "shape-shifter-curse:cobwebs"
+                    }
+                }
+            ]
+        },
+        "hold_condition": {
+            "type": "apoli:sneaking",
+            "inverted": true
+        }
+    },
+    "punch_through": {
+        "type": "apoli:prevent_block_selection",
+        "block_condition": {
+            "type": "apoli:in_tag",
+            "tag": "shape-shifter-curse:cobwebs"
+        },
+        "condition": {
+            "type": "apoli:sneaking",
+            "inverted": true
+        }
+    }
+}

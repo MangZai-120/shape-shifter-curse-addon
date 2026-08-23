@@ -74,6 +74,67 @@ public abstract class SscAddonLivingEntityMixin {
 	}
 
 	/**
+	 * 跳蛛「跳杀」跳跃期免疫：跳杀腾空期间，免疫「已锁定目标」对自己造成的伤害
+	 * （扑猎途中不被猎物反打下来）。仅锁定目标免，其它来源照常。
+	 */
+	@Inject(method = "damage", at = @At("HEAD"), cancellable = true)
+	private void ssca$jumpKillLeapingImmunity(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+		if (self$isJumpKillImmune(source)) {
+			cir.setReturnValue(false);
+		}
+	}
+
+	@org.spongepowered.asm.mixin.Unique
+	private boolean self$isJumpKillImmune(DamageSource source) {
+		LivingEntity self = (LivingEntity) (Object) this;
+		if (self.getWorld().isClient()) return false;
+		if (!(self instanceof ServerPlayerEntity sp)) return false;
+		if (source == null) return false;
+		Entity attacker = source.getAttacker();
+		if (attacker == null) return false;
+		return net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.isLeapingAgainst(sp, attacker);
+	}
+
+	// ============== 跳蛛 - 毒免疫（自控，吃流食囊例外） ==============
+	/** 跳蛛正在吃流食囊的放行标记：吃茧期间放行 minecraft:poison（其余时刻免疫）。服务端单线程 eatFood 期间生效。 */
+	@org.spongepowered.asm.mixin.Unique
+	private static final ThreadLocal<Boolean> ssca$salticidaeCocoonBypass = ThreadLocal.withInitial(() -> Boolean.FALSE);
+	@org.spongepowered.asm.mixin.Unique
+	private static final Identifier ssca$SPIDER_FLUID_COCOON = new Identifier("shape-shifter-curse", "spider_fluid_cocoon");
+
+	/**
+	 * 跳蛛毒免疫（附属自控，替代原版 apoli effect_immunity）：跳蛛保留对毒素的免疫，
+	 * <b>唯独吃流食囊时例外</b>——吃茧期间由下方 eatFood 放行标记开窗，让物品自带的中毒 I 生效
+	 * （与其它形态吃它完全一致）。其余任何毒来源（蜘蛛咬、毒药水等）仍免疫。
+	 */
+	@Inject(method = "canHaveStatusEffect", at = @At("HEAD"), cancellable = true)
+	private void ssca$salticidaePoisonImmunity(StatusEffectInstance effect, CallbackInfoReturnable<Boolean> cir) {
+		if (effect.getEffectType() == StatusEffects.POISON
+				&& (Object) this instanceof ServerPlayerEntity sp
+				&& FormUtils.isForm(sp, FormIdentifiers.SPIDER_SALTICIDAE)
+				&& !ssca$salticidaeCocoonBypass.get()) {
+			cir.setReturnValue(false);
+		}
+	}
+
+	/** 跳蛛吃流食囊：开窗放行毒素（HEAD 置标记，RETURN 复位），让物品自带中毒穿过毒免疫。 */
+	@Inject(method = "eatFood", at = @At("HEAD"))
+	private void ssca$salticidaeCocoonEatHead(net.minecraft.world.World world, net.minecraft.item.ItemStack stack,
+			CallbackInfoReturnable<net.minecraft.item.ItemStack> cir) {
+		if (!world.isClient && (Object) this instanceof ServerPlayerEntity sp
+				&& FormUtils.isForm(sp, FormIdentifiers.SPIDER_SALTICIDAE)
+				&& net.minecraft.registry.Registries.ITEM.getId(stack.getItem()).equals(ssca$SPIDER_FLUID_COCOON)) {
+			ssca$salticidaeCocoonBypass.set(Boolean.TRUE);
+		}
+	}
+
+	@Inject(method = "eatFood", at = @At("RETURN"))
+	private void ssca$salticidaeCocoonEatReturn(net.minecraft.world.World world, net.minecraft.item.ItemStack stack,
+			CallbackInfoReturnable<net.minecraft.item.ItemStack> cir) {
+		if (ssca$salticidaeCocoonBypass.get()) ssca$salticidaeCocoonBypass.set(Boolean.FALSE);
+	}
+
+	/**
 	 * 登录血量恢复（修复带 max_health 修饰符的形态重进存档血量被裸 20 上限钳掉）：
 	 * 在 {@code readCustomDataFromNbt} 末尾记录存档里的原始血量快照，交
 	 * {@link LoginHealthRestoreHandler} 于 Apoli 的 max_health 修饰符挂载完成后把血量补回。

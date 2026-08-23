@@ -77,8 +77,16 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_FROST_SPIKE_SECONDARY_START = new Identifier("my_addon", "frost_spike_secondary_start");
 	/** C2S：寒棘狐凝棘（次技能） - 松开发射一根强化冰锥。无 payload。 */
 	public static final Identifier PACKET_FROST_SPIKE_SECONDARY_RELEASE = new Identifier("my_addon", "frost_spike_secondary_release");
+	/** C2S：跳蛛跳杀 - 主键按下开始蓄力（蓄越久索敌越远）。无 payload。 */
+	public static final Identifier PACKET_JUMP_KILL_CHARGE_START = new Identifier("my_addon", "jump_kill_charge_start");
+	/** C2S：跳蛛跳杀 - 主键松开向前跳扑锁定目标。无 payload。 */
+	public static final Identifier PACKET_JUMP_KILL_CHARGE_RELEASE = new Identifier("my_addon", "jump_kill_charge_release");
+	/** C2S：跳蛛毒液（次技能） - 次键按下（基础区域/丝线强化冲刺由服务端判定）。无 payload。 */
+	public static final Identifier PACKET_VENOM_SKILL_PRESS = new Identifier("my_addon", "venom_skill_press");
 	/** S2C：月织蛛蛛丝荡漾 - 状态同步给附近玩家（销点/绳长/状态/canExtend）。payload: UUID + boolean active + 3×double anchor + double ropeLen + varint state + boolean canExtend。 */
 	public static final Identifier PACKET_SPIDER_MOON_WEAVER_SWING_STATE = new Identifier("my_addon", "spider_moon_weaver_swing_state");
+	/** S2C：跳蛛安全丝 - 锚点状态广播（active=false 即断丝/结束，仅传 UUID）。payload: UUID + boolean + 3×double 锦点。 */
+	public static final Identifier PACKET_JUMP_KILL_SILK_STATE = new Identifier("my_addon", "jump_kill_silk_state");
 
 	/** C2S：进化美西蟠上报「真正疾跑键」按住状态（区分双击 W/游泳自动疾跑）。payload: boolean held。 */
 	public static final Identifier PACKET_AXOLOTL_SPRINT_KEY = new Identifier("my_addon", "axolotl_sprint_key");
@@ -290,6 +298,21 @@ public class SscAddonNetworking {
 				net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create());
 	}
 
+	/** S2C：跳蛛安全丝锦点状态广播给追踪者 + 本人（active=false = 断丝/结束，锦点坐标忽略）。 */
+	public static void syncJumpKillSilk(ServerPlayerEntity player, boolean active, double ax, double ay, double az) {
+		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+		buf.writeUuid(player.getUuid());
+		buf.writeBoolean(active);
+		buf.writeDouble(ax);
+		buf.writeDouble(ay);
+		buf.writeDouble(az);
+		for (ServerPlayerEntity viewer : net.fabricmc.fabric.api.networking.v1.PlayerLookup.tracking(player)) {
+			ServerPlayNetworking.send(viewer, PACKET_JUMP_KILL_SILK_STATE,
+					net.fabricmc.fabric.api.networking.v1.PacketByteBufs.copy(buf));
+		}
+		ServerPlayNetworking.send(player, PACKET_JUMP_KILL_SILK_STATE, buf);
+	}
+
 	public static void registerServerReceivers() {
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_KEY_PRESS, (server, player, handler, buf, responseSender) -> {
 			int keyId = buf.readInt();
@@ -412,6 +435,17 @@ public class SscAddonNetworking {
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FROST_SPIKE_SECONDARY_RELEASE, (server, player, handler, buf, responseSender) -> {
 			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.releaseSecondary(player));
+		});
+		// SSCA 跳蛛跳杀 - 蓄力开始 / 松开跳杀
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_JUMP_KILL_CHARGE_START, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.startCharge(player));
+		});
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_JUMP_KILL_CHARGE_RELEASE, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.release(player));
+		});
+		// SSCA 跳蛛毒液（次技能） - 按下触发
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_VENOM_SKILL_PRESS, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.VenomSkillManager.onPress(player));
 		});
 		// SSCA 月织蛛蛛丝荡漾 - 摆荡中上报绳长 + 收放意图（服务端权威扣 mana）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_SWING_SYNC, (server, player, handler, buf, responseSender) -> {

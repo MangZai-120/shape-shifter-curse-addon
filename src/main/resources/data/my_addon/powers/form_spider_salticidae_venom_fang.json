@@ -1,0 +1,48 @@
+{
+    "type": "apoli:action_on_hit",
+    "bientity_action": {
+        "type": "apoli:and",
+        "actions": [
+            {
+                "type": "apoli:actor_action",
+                "action": {
+                    "type": "apoli:play_sound",
+                    "sound": "minecraft:entity.spider.ambient",
+                    "volume": 0.4,
+                    "pitch": 1.6
+                }
+            },
+            {
+                "type": "apoli:target_action",
+                "action": {
+                    "type": "apoli:apply_effect",
+                    "effect": {
+                        "effect": "minecraft:poison",
+                        "duration": 20,
+                        "amplifier": 1,
+                        "is_ambient": false,
+                        "show_particles": true,
+                        "show_icon": true
+                    }
+                }
+            }
+        ]
+    },
+    "damage_condition": {
+        "type": "apoli:amount",
+        "comparison": ">",
+        "compare_to": 0
+    },
+    "bientity_condition": {
+        "type": "apoli:and",
+        "conditions": [
+            {
+                "type": "apoli:target_condition",
+                "condition": { "type": "apoli:living" }
+            },
+            {
+                "type": "my_addon:not_actor_whitelisted"
+            }
+        ]
+    }
+}

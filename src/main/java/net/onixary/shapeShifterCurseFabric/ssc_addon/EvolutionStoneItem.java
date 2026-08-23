@@ -97,6 +97,11 @@ public class EvolutionStoneItem extends Item {
 				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "ocelot_3"))) {
 					targetFormId = new Identifier("my_addon", "ocelot_nova");
 					canEvolve = true;
+				}
+				// 允许原版三阶段蜘蛛使用进化石进化为跳蛛（与月髓环→月织蛛并行存在，不同道具不冲突）
+				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "spider_3"))) {
+					targetFormId = new Identifier("my_addon", "spider_salticidae");
+					canEvolve = true;
 				}			}
 
 			if (canEvolve) {

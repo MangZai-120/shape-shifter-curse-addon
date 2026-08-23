@@ -333,7 +333,7 @@ public final class FrostSpikeManager {
 	 */
 	public static void refundThorn(ServerPlayerEntity player) {
 		if (!isFrostspine(player)) return;
-		if (!(player.getWorld() instanceof ServerWorld sw)) return;
+		if (!(player.getWorld() instanceof ServerWorld)) return; // 仅服务端（sw 未用，只做维度守卫）
 		State s = STATES.computeIfAbsent(player.getUuid(), k -> new State());
 		cleanupDead(s);
 		spawnOrReplaceThorn(player, s);

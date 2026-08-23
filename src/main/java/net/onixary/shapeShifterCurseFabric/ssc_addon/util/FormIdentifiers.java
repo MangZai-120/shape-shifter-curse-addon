@@ -52,6 +52,8 @@ public class FormIdentifiers {
 	public static final Identifier BAT_DESMODUS = new Identifier("my_addon", "bat_desmodus");
 	// 月织蛛SP形态ID（月髓环进化）
 	public static final Identifier SPIDER_MOON_WEAVER = new Identifier("my_addon", "spider_moon_weaver");
+	// 跳蛛（Salticidae）：蜘蛛_3 进化石分支（与月髓环→月织蛛并行）
+	public static final Identifier SPIDER_SALTICIDAE = new Identifier("my_addon", "spider_salticidae");
 	// 寄生果蝠形态ID
 	public static final Identifier BAT_PARASITIC_FRUIT = new Identifier("my_addon", "bat_parasitic_fruit");
 	// 寄生果蝠"种子量"能量资源（最大 10）

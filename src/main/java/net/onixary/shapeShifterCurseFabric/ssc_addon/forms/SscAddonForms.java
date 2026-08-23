@@ -196,6 +196,15 @@ public final class SscAddonForms {
 		RegPlayerForms.registerPlayerForm(SpiderMoonWeaverForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_spider_moon_weaver")).registerForm(1, 12, SpiderMoonWeaverForm));
 
+		// 跳蛛（Salticidae）SP形态 - 复用原版蜘蛛三阶段模型/动画，经进化石从 spider_3 进化获得
+		// 与月髓环→月织蛛并行（同源不同道具，不冲突）；被动与特性完全与原版 spider_3 平齐
+		Form_SpiderSalticidae SpiderSalticidaeForm = new Form_SpiderSalticidae(FormIdentifiers.SPIDER_SALTICIDAE);
+		SpiderSalticidaeForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
+		// 跳蛛体格：正常（玩家 1.0）的 60% → 0.6（现实中跳蛛体型小巧）；眼睛/碰撞箱保持 1.0
+		SpiderSalticidaeForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.6f, 1.0f));
+		RegPlayerForms.registerPlayerForm(SpiderSalticidaeForm);
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_spider_salticidae")).registerForm(1, 12, SpiderSalticidaeForm));
+
 		// 寄生果蝠 - 原版三阶段蝙蝠使用进化石进化获得，复用蝙蝠模型/动画
 		Form_BatParasiticFruit batParasiticFruitForm = new Form_BatParasiticFruit(FormIdentifiers.BAT_PARASITIC_FRUIT);
 		batParasiticFruitForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune, HasSlowFall);

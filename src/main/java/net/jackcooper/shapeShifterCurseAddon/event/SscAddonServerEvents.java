@@ -95,6 +95,10 @@ public final class SscAddonServerEvents {
 				MancianimaPassive.tick(player);
 				VortexChargeManager.tick(player);
 				net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.tick(player);
+				net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.tick(player);
+				net.jackcooper.shapeShifterCurseAddon.ability.VenomSkillManager.tick(player);
+				// 跳蛛安全丝：纯锚点（跳杀已结束）6 秒倒计时推进，到时丝线消失
+				net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.tickAnchors(player);
 				net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.tick(player);
 				net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.tick(player);			net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverMoonPoisonManager.tick(player);				WindSpiritClawManager.tick(player);
 				WindDashManager.tick(player);

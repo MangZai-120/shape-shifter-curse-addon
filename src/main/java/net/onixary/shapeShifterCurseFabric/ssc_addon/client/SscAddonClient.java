@@ -489,6 +489,10 @@ public class SscAddonClient implements ClientModInitializer {
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverWebClient.register();
 		// SSCA 寒棘狐「冰刺」- 主键检测器（长按蕠力 / 点按发射）
 		net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeClient.register();		// SSCA 寒棘狐主技能蓄力 - 客户端镜像粒子生成（S2C 状态包驱动，零持续粒子包）
+		// SSCA 跳蛛「跳杀」- 主键检测器（长按蓄力 / 松开跳扑）
+		net.jackcooper.shapeShifterCurseAddon.client.JumpKillClient.register();
+		// SSCA 跳蛛「毒液」- 次键检测器（基础区域 / 丝线强化冲刺）
+		net.jackcooper.shapeShifterCurseAddon.client.VenomSkillClient.register();
 		// SSCA 月织蛛二段跳 - 跳跃键空中检测
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverDoubleJumpClient.register();
 		// SSCA 月织蛛「蛛丝荡漾」- 次键检测器（发射/断丝 + WASD/空格/Shift 输入上报）
@@ -496,6 +500,10 @@ public class SscAddonClient implements ClientModInitializer {
 		// SSCA 月织蛛「蛛丝荡漾」绳索渲染器（WorldRenderEvents.AFTER_ENTITIES 逐帧画绳索）
 		net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(
 				net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverSwingRenderer::render);
+		// SSCA 跳蛛「安全丝」- 接收器（锚点镜像）+ 绳索渲染器（复用月织蛛绳索贴图）
+		net.jackcooper.shapeShifterCurseAddon.client.JumpKillSilkClient.register();
+		net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(
+				net.jackcooper.shapeShifterCurseAddon.client.JumpKillSilkClient::render);
 		// SSCA 月织蛛动画调试 HUD - F6 切换（仅客户端调试用，显示当前动画/进度/二段跳状态）
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverAnimDebugHud.register();
 		// SSCA 进化美西蟠水流冲刺 - 真正疾跑键上报器（区分双击 W/游泳自动疾跑）
