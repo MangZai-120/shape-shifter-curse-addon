@@ -1015,5 +1015,11 @@
     "power.my_addon.form_snow_fox_frostspine_frost_armor.name": "寒棘护体",
     "power.my_addon.form_snow_fox_frostspine_frost_armor.description": "棘甲：每根环绕冰锥使你受到的近战伤害降低4%（满5根共20%），发射冰锥后防御随之减弱。反刺：被近战命中时攻击者叠上1层寒棘（缓慢I，2.5秒）；叠满3层触发棘爆——攻击者被冻结1秒并受2点反伤，层数清零（2.5秒未叠新层则重新计数）。",
     "power.my_addon.form_snow_fox_frostspine_cold_metabolism.name": "霜寒代谢",
-    "power.my_addon.form_snow_fox_frostspine_cold_metabolism.description": "身处寒冷生物群系（生物群系温度低于0.2）或站立在细雪上时，每3秒恢复1点生命（技能冷却中暂停恢复）。"
+    "power.my_addon.form_snow_fox_frostspine_cold_metabolism.description": "身处寒冷生物群系（生物群系温度低于0.2）或站立在细雪上时，每3秒恢复1点生命（技能冷却中暂停恢复）。",
+    "item.ssc_addon.frost_spine_collar": "寒棘项圈",
+    "item.ssc_addon.frost_spine_collar.tooltip_1": "「冰刺」命中敌人时立刻免费回补1根环绕冰锥",
+    "item.ssc_addon.frost_spine_collar.tooltip_2": "回补遵循凝聚规则：优先空位，满5根替换最旧",
+    "item.ssc_addon.frost_spine_collar.tooltip_3": "代价：普通冰锥命中伤害降低至80%（8 → 6.4）",
+    "item.ssc_addon.frost_spine_collar.tooltip_4": "代价：凝聚间隔延长至1.75倍（1.2秒 → 2.1秒）",
+    "item.ssc_addon.frost_spine_collar.tooltip_exclusive": "寒棘狐形态专属"
 }

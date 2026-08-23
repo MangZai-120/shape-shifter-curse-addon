@@ -210,6 +210,8 @@ public class SscAddon implements ModInitializer {
 	public static final Item NOVA_REVIVE_NECKLACE = new NovaReviveNecklaceItem(new Item.Settings().maxCount(1));
 	// 食梦魔专属：梦魇戒指（恐惧时长+35%，取消首次伤害翻倍）
 	public static final Item NIGHTMARE_RING = new net.jackcooper.shapeShifterCurseAddon.item.NightmareRingItem(new Item.Settings().maxCount(1).fireproof());
+	// 寒棘项圈（寒棘狐专属：命中回锥 + 伤害减半 + 凝聚变慢）
+	public static final Item FROST_SPINE_COLLAR = new net.jackcooper.shapeShifterCurseAddon.item.FrostSpineCollarItem(new Item.Settings().maxCount(1).fireproof());
 	public static final Item ANUBIS_CRYSTAL = new AnubisCrystalItem(new Item.Settings().maxCount(1).fireproof());
 	public static final Item ANKH_STONE = new AnkhStoneItem(new Item.Settings().maxCount(1).fireproof());
 	// 契灵专属：绑定脚环（feet/aglet 槽，与守御脚环互斥）
@@ -285,7 +287,7 @@ public class SscAddon implements ModInitializer {
 						entries.add(ANKH_STONE);
 						entries.add(BINDING_ANKLET);
 						entries.add(EROSION_SAND_PRISM);
-						entries.add(WITHERED_SAND_RING);					entries.add(NIGHTMARE_RING);						entries.add(BLOOD_GARNET);
+					entries.add(WITHERED_SAND_RING);					entries.add(NIGHTMARE_RING);					entries.add(FROST_SPINE_COLLAR);					entries.add(BLOOD_GARNET);
 						entries.add(BLOODLUST_RING);
 						entries.add(HUMUS_RING);
 						entries.add(TWIN_POD);
@@ -425,6 +427,7 @@ public class SscAddon implements ModInitializer {
 		registerItem("erosion_sand_prism", EROSION_SAND_PRISM);
 		registerItem("withered_sand_ring", WITHERED_SAND_RING);
 		registerItem("nightmare_ring", NIGHTMARE_RING);
+		registerItem("frost_spine_collar", FROST_SPINE_COLLAR);
 		registerItem("allay_heal_wand", ALLAY_HEAL_WAND);
 		registerItem("allay_jukebox", ALLAY_JUKEBOX);
 		registerItem("friend_marker", FRIEND_MARKER);
@@ -506,6 +509,7 @@ public class SscAddon implements ModInitializer {
 		ErosionSandPrismItem.registerLootTable();
 		WitheredSandRingItem.registerLootTable();
 		net.jackcooper.shapeShifterCurseAddon.item.NightmareRingItem.registerLootTable();
+		net.jackcooper.shapeShifterCurseAddon.item.FrostSpineCollarItem.registerLootTable();
 		BloodGarnetItem.registerLootTable();
 		BloodlustRingItem.registerLootTable();
 		HumusRingItem.registerLootTable();

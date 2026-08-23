@@ -231,7 +231,11 @@ public final class FrostSpikeManager {
 		} else if (s.charging) {
 			s.chargeTicks++;
 			// 主技能持续汇聚已移到客户端（状态包驱动本地自算，零网络粒子包）
-			if (s.chargeTicks >= CHARGE_INTERVAL) { s.chargeTicks = 0; spawnOrReplaceThorn(player, s); }
+			// 寒棘项圈：凝聚间隔 ×1.75（1.2s → 2.1s = 42t），与被动/饰品实时判定、摘下即回原
+			int interval = net.jackcooper.shapeShifterCurseAddon.item.FrostSpineCollarItem.isWearingBy(player)
+					? Math.round(CHARGE_INTERVAL * net.jackcooper.shapeShifterCurseAddon.item.FrostSpineCollarItem.CHARGE_INTERVAL_MULTIPLIER)
+					: CHARGE_INTERVAL;
+			if (s.chargeTicks >= interval) { s.chargeTicks = 0; spawnOrReplaceThorn(player, s); }
 		}
 		updateHoverPositions(player, s);
 		if (isEmpty(s) && !s.charging && !s.secondaryCharging) STATES.remove(player.getUuid());
@@ -321,6 +325,18 @@ public final class FrostSpikeManager {
 			thorn.setSlot(idx);
 		}
 		s.slots[idx] = thorn;
+	}
+
+	/**
+	 * 寒棘项圈命中回补：主技能普通冰锥真正命中敌人后，立刻免费凝聚 1 根环绕冰锥。
+	 * 走与主动凝聚完全一致的槽位逻辑（优先空位，满 5 替换最旧）与反馈（成形粒子/凝聚音）。
+	 */
+	public static void refundThorn(ServerPlayerEntity player) {
+		if (!isFrostspine(player)) return;
+		if (!(player.getWorld() instanceof ServerWorld sw)) return;
+		State s = STATES.computeIfAbsent(player.getUuid(), k -> new State());
+		cleanupDead(s);
+		spawnOrReplaceThorn(player, s);
 	}
 
 	private static void spawnOrReplaceThorn(ServerPlayerEntity player, State s) {

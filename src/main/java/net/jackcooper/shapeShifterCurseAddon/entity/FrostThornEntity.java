@@ -435,9 +435,21 @@ public class FrostThornEntity extends ProjectileEntity {
 		if (getState() != STATE_FLY) return;
 		if (hitResult.getEntity() instanceof LivingEntity living) {
 			// 默认白名单：豁免玩家 / 宠物 / 白名单个体
-			if (!(this.getOwner() instanceof ServerPlayerEntity op) || !WhitelistUtils.isProtected(op, living)) {
+			boolean protectedTarget = this.getOwner() instanceof ServerPlayerEntity op
+					&& WhitelistUtils.isProtected(op, living);
+			if (!protectedTarget) {
 				float dmg = getLevel() > 0 ? ENHANCED_BASE_DAMAGE * (1 + getLevel()) : DAMAGE;
-				living.damage(this.getDamageSources().mobAttack(this.getOwner() instanceof LivingEntity l ? l : null), dmg);
+				// 寒棘项圈：普通冰锥（主技能）伤害 ×50% + 真正命中敌人时立刻免费回补 1 根环绕冰锥；
+				// 强化冰锥（次技能）不受项圈影响
+				if (this.getOwner() instanceof ServerPlayerEntity op
+						&& net.jackcooper.shapeShifterCurseAddon.item.FrostSpineCollarItem.isWearingBy(op)
+						&& getLevel() == 0) {
+					dmg *= net.jackcooper.shapeShifterCurseAddon.item.FrostSpineCollarItem.DAMAGE_MULTIPLIER;
+					living.damage(this.getDamageSources().mobAttack(this.getOwner() instanceof LivingEntity l ? l : null), dmg);
+					net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.refundThorn(op);
+				} else {
+					living.damage(this.getDamageSources().mobAttack(this.getOwner() instanceof LivingEntity l ? l : null), dmg);
+				}
 			}
 		}
 		shatter();

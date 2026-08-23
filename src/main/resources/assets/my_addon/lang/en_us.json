@@ -1015,5 +1015,11 @@
     "power.my_addon.form_snow_fox_frostspine_frost_armor.name": "Frost Thorn Aegis",
     "power.my_addon.form_snow_fox_frostspine_frost_armor.description": "Thorn Aegis: each orbiting ice thorn reduces melee damage you take by 4% (up to 20% at 5 thorns); the defense fades as thorns are launched. Retaliation: melee hits against you stack a Frost Thorn (Slowness I, 2.5s) on the attacker; at 3 stacks it triggers a Thorn Burst — freezing the attacker for 1s and dealing 2 retaliation damage, then stacks reset (stacks also reset after 2.5s without a new one).",
     "power.my_addon.form_snow_fox_frostspine_cold_metabolism.name": "Cold Metabolism",
-    "power.my_addon.form_snow_fox_frostspine_cold_metabolism.description": "While in a cold biome (biome temperature below 0.2) or standing on powder snow, recover 1 health every 3 seconds (paused while skill cooldown is active)."
+    "power.my_addon.form_snow_fox_frostspine_cold_metabolism.description": "While in a cold biome (biome temperature below 0.2) or standing on powder snow, recover 1 health every 3 seconds (paused while skill cooldown is active).",
+    "item.ssc_addon.frost_spine_collar": "Frost Spine Collar",
+    "item.ssc_addon.frost_spine_collar.tooltip_1": "Ice Spike hits on enemies instantly refund 1 orbiting thorn for free",
+    "item.ssc_addon.frost_spine_collar.tooltip_2": "Refunds follow condense rules: empty slot first, replaces the oldest at 5",
+    "item.ssc_addon.frost_spine_collar.tooltip_3": "Cost: normal thorn hit damage reduced to 80% (8 -> 6.4)",
+    "item.ssc_addon.frost_spine_collar.tooltip_4": "Cost: condense interval extended to 1.75x (1.2s -> 2.1s)",
+    "item.ssc_addon.frost_spine_collar.tooltip_exclusive": "Frostspine form exclusive"
 }
