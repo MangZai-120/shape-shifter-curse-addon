@@ -64,6 +64,8 @@ public class FrostThornEntity extends ProjectileEntity {
 	private static final TrackedData<Float> VEL_Z = DataTracker.registerData(FrostThornEntity.class, TrackedDataHandlerRegistry.FLOAT);
 	// 强化等级（凝棘次技能）：0=普通冰刺；>=1=强化直飞冰锥（消耗 N 个环绕冰锥凝成），同步客户端用于渲染放大
 	private static final TrackedData<Integer> LEVEL = DataTracker.registerData(FrostThornEntity.class, TrackedDataHandlerRegistry.INTEGER);
+        // 新生标记：仅服务端真正凝聚出的新锥为 true（成形粒子只跟它）；重进存档恢复的旧锥为 false，不重播成形特效
+        private static final TrackedData<Boolean> FRESH = DataTracker.registerData(FrostThornEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
 
 	private static final double SPEED = 0.8;          // 16 格/秒
 	private static final double STRAIGHT_DIST = 16.0; // 16 格内直线，之后下坠
@@ -124,6 +126,7 @@ public class FrostThornEntity extends ProjectileEntity {
 		this.dataTracker.startTracking(VEL_Y, 0.0f);
 		this.dataTracker.startTracking(VEL_Z, 0.0f);
 		this.dataTracker.startTracking(LEVEL, 0);
+		this.dataTracker.startTracking(FRESH, false);
 	}
 
 	public int getState() { return this.dataTracker.get(STATE); }
@@ -134,6 +137,8 @@ public class FrostThornEntity extends ProjectileEntity {
 	public boolean isHover() { return getState() == STATE_HOVER; }
 	public void setSlot(int slot) { this.dataTracker.set(SLOT, slot); }
 	public int getSlot() { return this.dataTracker.get(SLOT); }
+	/** 标记为新生冰锥（服务端凝聚时调用）：成形粒子只在新生锥身上播，重进恢复的旧锥不播。 */
+	public void markFresh() { this.dataTracker.set(FRESH, true); }
 	/** 主人 UUID（DataTracker，重载后由 NBT 恢复）——客户端跟随 / 服务端自认领都用它找回主人。 */
 	public Optional<UUID> getOwnerUuid() { return this.dataTracker.get(OWNER_UUID); }
 	/** 重进重建时恢复已存在 tick（阶段材质/剩余寿命延续退出前状态）。 */
@@ -190,8 +195,9 @@ public class FrostThornEntity extends ProjectileEntity {
 		this.updateTrackedPosition(target.x, target.y, target.z);
 		this.setYaw(hoverYaw(p));
 		this.setPitch(hoverPitch(p));		// 成形汇聚（前 20t）：在自身当前位置发向内汇聚粒子（客户端本地）。
-		// 中心点 = 冰锥渲染位置，每 tick 随本地玩家同步更新——彻底消除服务端预测点与渲染位置的错位。
-		if (this.age < 20) {
+		// 仅新生冰锥（服务端真正凝聚出的，FRESH 同步）才播——重进存档恢复的旧锥 age 同样从 0 起算，
+		// 不加此标记的话每次重进游戏所有旧锥都会重播一遍成形特效（头顶 slot 0 最显眼，即用户看到的误播）。
+		if (this.age < 20 && this.dataTracker.get(FRESH)) {
 			for (int i = 0; i < 2; i++) {
 				double u = this.random.nextDouble() * 2 - 1;
 				double theta = this.random.nextDouble() * Math.PI * 2;
@@ -448,8 +454,15 @@ public class FrostThornEntity extends ProjectileEntity {
 	/** 碎裂：冰晶粒子 + 玻璃碎裂音效 + 移除。 */
 	private void shatter() {
 		if (this.getWorld() instanceof ServerWorld sw) {
-			sw.spawnParticles(ParticleTypes.ITEM_SNOWBALL, getX(), getY(), getZ(), 12, 0.15, 0.15, 0.15, 0.05);
-			sw.playSound(null, getX(), getY(), getZ(), SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.7f, 1.3f);
+			// 碎裂点用「当前真实环绕位」：HOVER 态服务端不逐 tick 移动（残留位置停在生成点），
+			// 直接取 getX() 会让碎裂粒子/结冰出现在冰锥最初诞生处——按主人+槽位现算真实位置
+			Vec3d at = this.getPos();
+			if (isHover() && this.getOwner() instanceof LivingEntity owner) {
+				at = hoverTarget(owner, getSlot());
+				this.setPosition(at.x, at.y, at.z); // 同步刷新，结冰/音效也用真实位
+			}
+			sw.spawnParticles(ParticleTypes.ITEM_SNOWBALL, at.x, at.y, at.z, 12, 0.15, 0.15, 0.15, 0.05);
+			sw.playSound(null, at.x, at.y, at.z, SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.7f, 1.3f);
 			// 寒冰入体：碎裂点周园结冰——水→冰、岩浆源→黑曜石、流动岩浆→圆石（同原版水+岩浆碰撞性质）
 			freezeAround(sw);
 		}

@@ -12,6 +12,7 @@ import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
@@ -57,10 +58,31 @@ public class FrostArrayEntity extends Entity {
 
 	public void setLevel(int level) { if (getLevel() != level) this.dataTracker.set(LEVEL, level); }
 
+	/** 上一次读到的等级（客户端检测 LEVEL 跳变 = 服务端刚消耗一根冰锥 → 播 burst 密集汇聚）。 */
+	private int clientPrevLevel = -1;
+
 	@Override
 	public void tick() {
 		super.tick();
-		if (this.getWorld().isClient) return; // 渲染由 FrostArrayRenderer 负责
+		// 客户端：次技能蓄力粒子本地自算（零网络包）——中心 = 头顶法阵中心（与服务端 secondaryFocus 严格同点）。
+		// 服务端原逻辑：按下/每 4t 持续汇聚 + 每秒消耗时 24 颗 burst；此处等价复现（burst 由 LEVEL 跳变锚定，天然同步）。
+		if (this.getWorld().isClient) {
+			Entity ownerC = this.getWorld().getEntityById(getTrackedOwnerId());
+			if (ownerC instanceof PlayerEntity p && FormUtils.isForm(p, FormIdentifiers.SNOW_FOX_FROSTSPINE)) {
+				Vec3d center = FrostThornEntity.hoverTarget(p, 0);
+				// 每秒消耗 burst：LEVEL 跳变（+1）= 刚消耗一根 → 密集波（24 颗，与服务端原版同密度）
+				int lv = getLevel();
+				if (clientPrevLevel >= 0 && lv > clientPrevLevel) {
+					spawnInwardIceClient(center, 24);
+				}
+				clientPrevLevel = lv;
+				// 持续汇聚（每 4t 一波 18 颗；服务端原条件 countThorns>0 的近似：等级未满 5 即还有冰锥可消耗）
+				if (lv < 5 && this.age % 4 == 0) {
+					spawnInwardIceClient(center, 18);
+				}
+			}
+			return;
+		}
 		Entity owner = this.getWorld().getEntityById(getTrackedOwnerId());
 		if (!(owner instanceof ServerPlayerEntity p) || p.isRemoved() || p.isDead()
 				|| !FormUtils.isForm(p, FormIdentifiers.SNOW_FOX_FROSTSPINE)) {
@@ -90,4 +112,18 @@ public class FrostArrayEntity extends Entity {
 	@Override public boolean isCollidable() { return false; }
 
 	@Override public boolean canHit() { return false; }
+
+	/** 客户端本地生成向内汇聚冰晶（与服务端原 spawnInwardIceParticles 同几何：球面均匀、初速 1格/20t 向心）。 */
+	private void spawnInwardIceClient(Vec3d center, int count) {
+		for (int i = 0; i < count; i++) {
+			double u = this.random.nextDouble() * 2 - 1;
+			double theta = this.random.nextDouble() * Math.PI * 2;
+			double r = Math.sqrt(1 - u * u);
+			double dx = r * Math.cos(theta), dy = u, dz = r * Math.sin(theta);
+			double speed = 1.0 / 20.0;
+			this.getWorld().addParticle(SscAddon.INWARD_ICE_PARTICLE,
+					center.x + dx, center.y + dy, center.z + dz,
+					-dx * speed, -dy * speed, -dz * speed);
+		}
+	}
 }

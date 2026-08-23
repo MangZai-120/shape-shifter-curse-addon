@@ -1004,10 +1004,16 @@
     "codex.form.my_addon.snow_fox_frostspine.name": "寒棘狐(Frostspine)",
     "codex.form.my_addon.snow_fox_frostspine.title": "\n‘当月髓之力浸透雪原游侠的血脉，你依旧是那只轻盈的雪狐……\n只是月光为你的每一次腾跃镀上了新的寒苒’",
     "codex.form.my_addon.snow_fox_frostspine.appearance": "你的身姿与雪狐别无二致，洁白的皮毛在月光下泛着微蓝的寒苒。三段腾跃间轻盈如雪，落地时卷起细碎的雪沫。",
-    "codex.form.my_addon.snow_fox_frostspine.pros": "雪原游侠\n你完整承袭了雪狐的全部本能：\n\n三段腾跃：空中可连续跳跃三次，配合滞空与下落控制自由穿行雪原\n\n凌空扑击：显著滞空后的下落攻击威力大增\n\n踏雪无痕：可在细雪上行走而不陷落，对雪球与甜浆果有特殊亲和\n\n耐寒之躯：不惧严寒，体温感知与常人相反\n\n此外你保留雪狐的疾跑、狐类亲和等全部本能。",
+    "codex.form.my_addon.snow_fox_frostspine.pros": "雪原游侠\n你完整承袭了雪狐的全部本能：\n\n三段腾跃：空中可连续跳跃三次，配合滞空与下落控制自由穿行雪原\n\n冰雪疾行：在冰面与积雪上行动更加迅捷\n\n寒棘护体：环绕冰锥既是矛也是盾，受到的近战伤害随冰锥数减免；近身冒犯者将披上寒棘，棘满则爆\n\n霜寒代谢：身处寒雷生物群系或细雪之上时，寒意会缓缓抚平伤口\n\n踏雪无痕：可在细雪上行走而不陷落，对雪球与甜浆果有特殊亲和\n\n耐寒之躯：不惧严寒，体温感知与常人相反\n\n此外你保留雪狐的疾跑、狐类亲和等全部本能。",
     "codex.form.my_addon.snow_fox_frostspine.cons": "雪狐的软肋：\n\n你畏惧火焰——着火时燃烧更久、受到的火焰伤害更高，需以水瓶灭火\n\n你无法装备腿甲与靴子\n\n掘掘与水中行动较为迟缓，且所处生物群系会影响你的生命上限。",
     "codex.form.my_addon.snow_fox_frostspine.instincts": "你渴望雪与寒风，厌恶炎热与烈焰。踏过细雪时你感到安心，靠近火焰则本能地退避。",
     "codex.form.my_addon.snow_fox_frostspine.equip": "[瓶装降雪]",
     "power.my_addon.form_snow_fox_frostspine_ice_spike.name": "冰刺",
-    "power.my_addon.form_snow_fox_frostspine_ice_spike.description": "长按主技能键凝聚冰锥（每1.2秒一根，最多5根，在背部竖直面上按150°扇形开屏排布）；点按将最旧的冰锥沿准星射线以16格/秒激射而出，16格内直线、之后坠落，最远飞行128格，命中造成8点伤害，5秒未命中自毁。碎裂点周围合结冰：水变成冰、岩浆源变成黑曜石、流动岩浆变成圆石（普通冰锥半径1.5格，凝棘强化冰锥随等级增大至最多4格）。每根冰锥在身最多存在60秒，满5根再蕠力会替换最旧的一根；可被SP悦灵的净化清除。"
+    "power.my_addon.form_snow_fox_frostspine_ice_spike.description": "长按主技能键凝聚冰锥（每1.2秒一根，最多5根，在背部竖直面上按150°扇形开屏排布）；点按将最旧的冰锥沿准星射线以16格/秒激射而出，16格内直线、之后坠落，最远飞行128格，命中造成8点伤害，5秒未命中自毁。碎裂点周围合结冰：水变成冰、岩浆源变成黑曜石、流动岩浆变成圆石（普通冰锥半径1.5格，凝棘强化冰锥随等级增大至最多4格）。每根冰锥在身最多存在60秒，满5根再蕠力会替换最旧的一根；可被SP悦灵的净化清除。",
+    "power.my_addon.form_snow_fox_frostspine_snow_stride.name": "冰雪疾行",
+    "power.my_addon.form_snow_fox_frostspine_snow_stride.description": "在冰、雪与细雪上移动速度提升15%。",
+    "power.my_addon.form_snow_fox_frostspine_frost_armor.name": "寒棘护体",
+    "power.my_addon.form_snow_fox_frostspine_frost_armor.description": "棘甲：每根环绕冰锥使你受到的近战伤害降低4%（满5根共20%），发射冰锥后防御随之减弱。反刺：被近战命中时攻击者叠上1层寒棘（缓慢I，2.5秒）；叠满3层触发棘爆——攻击者被冻结1秒并受2点反伤，层数清零（2.5秒未叠新层则重新计数）。",
+    "power.my_addon.form_snow_fox_frostspine_cold_metabolism.name": "霜寒代谢",
+    "power.my_addon.form_snow_fox_frostspine_cold_metabolism.description": "身处寒冷生物群系（生物群系温度低于0.2）或站立在细雪上时，每3秒恢复1点生命（技能冷却中暂停恢复）。"
 }

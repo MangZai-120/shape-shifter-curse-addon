@@ -72,6 +72,8 @@ public final class SscAddonServerEvents {
 							.tickRaiderGroups(world.getServer());
 				}
 			}
+			// 冻雪智被动「寒棘护体」反刺层过期清理（世界级，每 tick 轻量）
+			net.jackcooper.shapeShifterCurseAddon.ability.FrostArmorManager.tick(world);
 			for (ServerPlayerEntity player : world.getPlayers()) {
 				// 修复局域网多人游戏中远程玩家的自定义可食用物品Map未在服务端刷新的问题
 				// 原版mod在集成服务器(EnvType.CLIENT)环境下跳过了OnServerTick，导致非主机玩家无法食用自定义食物（如悦灵吃紫水晶）
@@ -216,8 +218,7 @@ public final class SscAddonServerEvents {
 			System.out.println("[SSC_ADDON] SERVER_STARTING event fired, clearing all ability static state");
 			SnowFoxSpMeleeAbility.clearAll();
 			SnowFoxSpTeleportAttack.clearAll();
-			SnowFoxSpFrostStorm.clearAll();
-			AnubisWolfSpDeathDomain.clearAll();
+			SnowFoxSpFrostStorm.clearAll();				net.jackcooper.shapeShifterCurseAddon.ability.FrostArmorManager.clearAll();			AnubisWolfSpDeathDomain.clearAll();
 			AnubisWolfSpSummonWolves.clearAll();
 			AllaySPTotem.clearAll();
 			GoldenSandstormErosionBrand.clearAll();

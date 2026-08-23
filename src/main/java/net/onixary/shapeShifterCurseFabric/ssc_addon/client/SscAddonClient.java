@@ -332,6 +332,16 @@ public class SscAddonClient implements ClientModInitializer {
             client.execute(() -> UpgradeAxolotlSpearRenderState.set(id, charging));
         });
 
+        // 寒棘狐主技能蓄力状态（事件级）：客户端本地自算下个冰锥位汇聚流（零网络粒子包）
+        ClientPlayNetworking.registerGlobalReceiver(net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking.PACKET_FROST_SPIKE_CHARGE_STATE, (client, handler, buf, responseSender) -> {
+            java.util.UUID id = buf.readUuid();
+            boolean charging = buf.readBoolean();
+            client.execute(() -> net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeClientState.setCharging(id, charging));
+        });
+        net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeClientState.register();
+        // 断线/换服清理蓄力镜像，防残留
+        ClientPlayConnectionEvents.DISCONNECT.register((h, c) -> net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeClientState.clearAll());
+
 		// 注册白名单 GUI S2C 同步包接收器：收到后打开/刷新 WhitelistManageScreen
 		ClientPlayNetworking.registerGlobalReceiver(net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking.PACKET_WHITELIST_GUI_SYNC, (client, handler, buf, responseSender) -> {
 			boolean customMode = buf.readBoolean();

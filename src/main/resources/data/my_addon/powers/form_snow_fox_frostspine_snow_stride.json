@@ -1,0 +1,20 @@
+{
+    "type": "apoli:conditioned_attribute",
+    "modifier": {
+        "attribute": "minecraft:generic.movement_speed",
+        "operation": "multiply_total",
+        "value": 0.15
+    },
+    "tick_rate": 4,
+    "condition": {
+        "type": "apoli:on_block",
+        "block_condition": {
+            "type": "apoli:or",
+            "conditions": [
+                { "type": "apoli:in_tag", "tag": "minecraft:ice" },
+                { "type": "apoli:in_tag", "tag": "minecraft:snow" },
+                { "type": "apoli:block", "block": "minecraft:powder_snow" }
+            ]
+        }
+    }
+}

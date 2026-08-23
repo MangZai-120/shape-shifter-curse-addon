@@ -362,6 +362,12 @@ public abstract class SscAddonLivingEntityMixin {
 		if (!cir.getReturnValue()) return;
 		LivingEntity self = (LivingEntity) (Object) this;
 		AllaySPRangedHitPassive.onDamageApplied(self, source);
+		// 寒棘狐被动「寒棘护体·反刺」：被近战命中（伤害已生效）→ 攻击者叠寒棘层 / 满 3 层棘爆
+		if (!self.getWorld().isClient()
+				&& self instanceof ServerPlayerEntity frostspine
+				&& FormUtils.isForm(frostspine, FormIdentifiers.SNOW_FOX_FROSTSPINE)) {
+			net.jackcooper.shapeShifterCurseAddon.ability.FrostArmorManager.onFrostspineMeleeHit(frostspine, source);
+		}
 		// 食梦魔「入梦」累计：食梦魔玩家对目标造成伤害（成功命中）→ 累计 10 点触发入梦 / 已入梦刷新重算
 		if (!self.getWorld().isClient()
 				&& source.getAttacker() instanceof ServerPlayerEntity nightmareAttacker
@@ -403,6 +409,24 @@ public abstract class SscAddonLivingEntityMixin {
 		float maxDamage = self.getMaxHealth() * 0.25F;
 		if (amount > maxDamage) {
 			args.set(1, maxDamage);
+		}
+	}
+
+	/**
+	 * 寒棘狐被动「寒棘护体·棘甲」：受近战伤害时按环绕冰锥数动态减伤（每根 4%，满 5 根 20%）。
+	 * 挂 applyDamage 调用点（ModifyArgs），不吞事件不吞击退；冰锥数实时读 FrostSpikeManager。
+	 */
+	@ModifyArgs(method = "damage", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;applyDamage(Lnet/minecraft/entity/damage/DamageSource;F)V"))
+	private void ssc_addon$frostspineThornArmor(Args args) {
+		LivingEntity self = (LivingEntity) (Object) this;
+		if (self.getWorld().isClient()) return;
+		if (!(self instanceof ServerPlayerEntity sp)) return;
+		if (!FormUtils.isForm(sp, FormIdentifiers.SNOW_FOX_FROSTSPINE)) return;
+		DamageSource source = args.get(0);
+		float amount = args.get(1);
+		float modified = net.jackcooper.shapeShifterCurseAddon.ability.FrostArmorManager.applyArmor(sp, source, amount);
+		if (modified != amount) {
+			args.set(1, modified);
 		}
 	}
 

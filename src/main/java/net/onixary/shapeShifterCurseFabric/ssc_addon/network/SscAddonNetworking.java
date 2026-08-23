@@ -114,6 +114,10 @@ public class SscAddonNetworking {
 	/** S2C：荧光幼灵「潮汐束缚」把被拴目标的 entityId 同步给客机，用于渲染守卫者激光。payload: varint orbId + varint count + count*varint entityId */
 	public static final Identifier PACKET_TIDAL_TETHER = new Identifier("my_addon", "tidal_tether");
 
+	// ===== 寒棘狐技能网络包 =====
+	/** S2C：寒棘狐主技能蓄力状态（事件级，蓄力开始/结束各 1 包）：客户端本地自算下个冰锥位的汇聚流，替代原每 4t 粒子波。payload: UUID player + boolean charging */
+	public static final Identifier PACKET_FROST_SPIKE_CHARGE_STATE = new Identifier("my_addon", "frost_spike_charge_state");
+
 	// ===== SSCA 进化加点系统网络包（框架） =====
 	/** C2S：玩家选择进化路线。payload: String routeId */
 	public static final Identifier PACKET_EVO_SELECT_ROUTE = new Identifier("my_addon", "evo_select_route");
@@ -184,6 +188,18 @@ public class SscAddonNetworking {
 			ServerPlayNetworking.send(viewer, PACKET_SPEAR_CHARGE_STATE, net.fabricmc.fabric.api.networking.v1.PacketByteBufs.copy(buf));
 		}
 		ServerPlayNetworking.send(player, PACKET_SPEAR_CHARGE_STATE, buf);
+	}
+
+	/** 寒棘狐主技能蓄力状态广播（蓄力开始/结束各 1 包）：客户端本地自算下个冰锥位汇聚流。 */
+	public static void syncFrostSpikeChargeState(net.minecraft.server.network.ServerPlayerEntity player, boolean charging) {
+		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+		buf.writeUuid(player.getUuid());
+		buf.writeBoolean(charging);
+		for (net.minecraft.server.network.ServerPlayerEntity viewer :
+				net.fabricmc.fabric.api.networking.v1.PlayerLookup.tracking(player)) {
+			ServerPlayNetworking.send(viewer, PACKET_FROST_SPIKE_CHARGE_STATE, net.fabricmc.fabric.api.networking.v1.PacketByteBufs.copy(buf));
+		}
+		ServerPlayNetworking.send(player, PACKET_FROST_SPIKE_CHARGE_STATE, buf);
 	}
 
 	/** S2C：向施法者发「高亮」（默认蓝色），令其客户端把 entityId 对应实体描边 duration tick。 */

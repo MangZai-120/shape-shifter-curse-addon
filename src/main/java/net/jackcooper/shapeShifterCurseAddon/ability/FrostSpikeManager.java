@@ -10,6 +10,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
 import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
@@ -62,13 +63,20 @@ public final class FrostSpikeManager {
 		if (!isFrostspine(player)) return;
 		State s = STATES.computeIfAbsent(player.getUuid(), k -> new State());
 		if (s.secondaryCharging) return; // 凝棘蓄力中：主技能禁用
-		s.charging = true;
+		if (!s.charging) {
+			s.charging = true;
+			// 事件级状态包（发起点直发，不走 tick 对比——上次翻车根因）：客户端开始本地自算汇聚流
+				SscAddonNetworking.syncFrostSpikeChargeState(player, true);
+		}
 	}
 
 	/** 客户端「松开」→ 停止蓄力（保留已凝聚的冰锥）。 */
 	public static void stopCharge(ServerPlayerEntity player) {
 		State s = STATES.get(player.getUuid());
-		if (s != null) { s.charging = false; s.chargeTicks = 0; }
+		if (s != null && s.charging) {
+			s.charging = false; s.chargeTicks = 0;
+			SscAddonNetworking.syncFrostSpikeChargeState(player, false);
+		}
 	}
 
 	/** 客户端「点按」→ 按生成顺序（最旧优先）发射一根冰锥。 */
@@ -120,10 +128,9 @@ public final class FrostSpikeManager {
 			sw.spawnEntity(array);
 			s.arrayEntity = array;
 			// 潮涌核心蓄力启动音
-				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
-						SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 0.9f, 1.0f);
-				// 按下即开始：头顶法阵中心（大冰锥真实成形/发射点）向内汇聚
-				spawnInwardIceParticles(sw, secondaryFocus(player), false);
+			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+					SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 0.9f, 1.0f);
+			// 按下瞬间的汇聚波已移到客户端：法阵实体生成包即客户端开始本地自算（零网络粒子包）
 		}
 	}
 
@@ -178,9 +185,13 @@ public final class FrostSpikeManager {
 	public static void tick(ServerPlayerEntity player) {
 		State s = STATES.get(player.getUuid());
 		if (s == null) return;
-		if (player.isDead() || !isFrostspine(player)) { endSecondaryCharge(player, s); clearAll(s); STATES.remove(player.getUuid()); return; }
+		if (player.isDead() || !isFrostspine(player)) { endSecondaryCharge(player, s); clearAll(s);
+			if (s.charging) SscAddonNetworking.syncFrostSpikeChargeState(player, false);
+			s.charging = false; s.chargeTicks = 0; STATES.remove(player.getUuid()); return; }
 		// 净化：主人被 SP 悦灵净化 → 全部环绕冰锥碎裂（飞行中的由实体自身 tick 处理）
-		if (player.hasStatusEffect(SscAddon.PURIFIED)) { endSecondaryCharge(player, s); clearAll(s); s.charging = false; s.chargeTicks = 0; return; }
+		if (player.hasStatusEffect(SscAddon.PURIFIED)) { endSecondaryCharge(player, s); clearAll(s);
+			if (s.charging) SscAddonNetworking.syncFrostSpikeChargeState(player, false);
+			s.charging = false; s.chargeTicks = 0; return; }
 		cleanupDead(s);
 		// 凝棘次技能蓄力：每 1 秒消耗一个环绕冰锥强化（无冰锥可消耗则停在当前强化等待松开）
 		if (s.secondaryCharging) {
@@ -190,18 +201,14 @@ public final class FrostSpikeManager {
 				amb.playSound(null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.BLOCK_CONDUIT_AMBIENT, SoundCategory.PLAYERS, 0.35f, 1.0f);
 			}
-				// 持续汇聚：头顶法阵中心（大冰锥真实成形点）向内汇聚（每 4 tick，直到环绕冰锥耗完）
-				if (countThorns(s) > 0 && player.age % 4 == 0 && player.getWorld() instanceof ServerWorld pw) {
-					spawnInwardIceParticles(pw, secondaryFocus(player), false);
-				}
-				if (s.secondaryTicks >= SECONDARY_CONSUME_INTERVAL) {
+			// 持续汇聚已移到客户端（法阵实体 tick 本地自算，零网络粒子包）
+			if (s.secondaryTicks >= SECONDARY_CONSUME_INTERVAL) {
 					s.secondaryTicks = 0;
 				int idx = consumeSlot(s); // 固定消耗顺序：上→左→右→左上→右上（slot 0→4）
 					if (idx >= 0) {
-						if (player.getWorld() instanceof ServerWorld sw) {
-							// 消耗成形：头顶法阵中心（大冰锥真实成形点）一波密集汇聚（与持续粒子同位）
-							spawnInwardIceParticles(sw, secondaryFocus(player), true);
-							// 被吸走的冰锥就地一点碎冰反馈（吸走感）
+					// 消耗 burst 已移到客户端（法阵实体检测 LEVEL 跳变即播密集汇聚，零网络粒子包）
+					// 被吸走的冰锥就地碎冰反馈保留服务端（事件级一次性，与实体 discard 同帧到达）
+					if (player.getWorld() instanceof ServerWorld sw) {
 							Vec3d taken = FrostThornEntity.hoverTarget(player, idx);
 							sw.spawnParticles(ParticleTypes.ITEM_SNOWBALL, taken.x, taken.y, taken.z, 5, 0.1, 0.1, 0.1, 0.03);
 						}
@@ -223,12 +230,7 @@ public final class FrostSpikeManager {
 			if (s.arrayEntity != null && !s.arrayEntity.isRemoved()) s.arrayEntity.setLevel(s.secondaryLevel);
 		} else if (s.charging) {
 			s.chargeTicks++;
-			// 蓄力时持续往下一个将生成的冰锥位置汇聚冰晶（汇聚到中心，直到冰锥生成）
-			if (player.age % 4 == 0 && player.getWorld() instanceof ServerWorld cw) {
-				int nextIdx = firstEmptySlot(s);
-				if (nextIdx < 0) nextIdx = oldestSlot(s);
-				if (nextIdx >= 0) spawnInwardIceParticles(cw, FrostThornEntity.hoverTarget(player, nextIdx), false);
-			}
+			// 主技能持续汇聚已移到客户端（状态包驱动本地自算，零网络粒子包）
 			if (s.chargeTicks >= CHARGE_INTERVAL) { s.chargeTicks = 0; spawnOrReplaceThorn(player, s); }
 		}
 		updateHoverPositions(player, s);
@@ -238,7 +240,10 @@ public final class FrostSpikeManager {
 	/** 形态切换 / 断线清理。 */
 	public static void clear(ServerPlayerEntity player) {
 		State s = STATES.remove(player.getUuid());
-		if (s != null) { endSecondaryCharge(player, s); clearAll(s); }
+		if (s != null) {
+			if (s.charging) SscAddonNetworking.syncFrostSpikeChargeState(player, false);
+			endSecondaryCharge(player, s); clearAll(s);
+		}
 	}
 
 	/**
@@ -263,7 +268,7 @@ public final class FrostSpikeManager {
 		state.thorns.put(player.getUuid(), ticks);
 		state.markDirty();
 		// 飞行中的冰锥：同主人的全部清空（速度/起点不持久化，留着会冻在空中）
-		if (player.getWorld() instanceof ServerWorld sw) {
+				if (player.getWorld() instanceof ServerWorld sw) {
 			for (FrostThornEntity e : sw.getEntitiesByClass(FrostThornEntity.class,
 					player.getBoundingBox().expand(256),
 					ex -> ex.getState() == FrostThornEntity.STATE_FLY && player.getUuid().equals(ex.getOwnerUuid().orElse(null)))) {
@@ -328,6 +333,7 @@ public final class FrostSpikeManager {
 		}
 		FrostThornEntity thorn = new FrostThornEntity(sw, player);
 		thorn.setSlot(idx);
+		thorn.markFresh(); // 新生冰锥：成形粒子只跟它（重进恢复的旧锥不标，不重播成形特效）
 		// 生成时直接落在环绕位（否则生成包首帧在眼睛处闪现一帧）
 		thorn.setHoverTransform(FrostThornEntity.hoverTarget(player, idx), FrostThornEntity.hoverYaw(player), FrostThornEntity.hoverPitch(player));
 		sw.spawnEntity(thorn);
@@ -340,31 +346,8 @@ public final class FrostSpikeManager {
 				SoundEvents.BLOCK_AMETHYST_BLOCK_STEP, SoundCategory.PLAYERS, 1.0f, pitch);
 	}
 
-	/**
-	 * 在冰锥中点周围**半径 1 格**的球形范围内生成向内汇聚的冰晶粒子（自定义「汇聚冰晶」粒子）。
-	 *
-	 * <p>原版粒子物理模型（WhiteAsh/Snowflake 带重力、DUST 随机寿命）都无法精确「抵达中心即消失」，
-	 * 故用自定义粒子 {@link net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon#INWARD_ICE_PARTICLE}：
-	 * 无重力、无摩擦、匀速直线、固定寿命 {@code 20} tick。初速 = 方向 × (1格/20t) = 0.05/tick——
-	 * 粒子恰好 20 tick 走完 1 格抵达中心，寿命尽 = 抵达 = 移除（末 5t 淡出）。
-	 * 生成即此粒子的唯一职责，速度精确指向中心，视觉为清晰的向心汇聚流。</p>
-	 *
-	 * @param burst 成形时刻的密集波（数量更多），平时每 4 tick 一波常规汇聚
-	 */
-	private static void spawnInwardIceParticles(ServerWorld sw, Vec3d center, boolean burst) {
-		int count = burst ? 24 : 18;
-		for (int i = 0; i < count; i++) {
-			// 球面均匀随机方向（u∈[-1,1] 均匀 + θ∈[0,2π) 均匀 → 球面均匀）
-			double u = sw.random.nextDouble() * 2 - 1;
-			double theta = sw.random.nextDouble() * Math.PI * 2;
-			double r = Math.sqrt(1 - u * u);
-			double dx = r * Math.cos(theta), dy = u, dz = r * Math.sin(theta);
-			// 初速 = -(方向) × (1格 / 20t)：count=0 模式下 dx/dy/dz 即精确初速（粒子端零物理匀速直线）
-			double speed = 1.0 / 20.0;
-			sw.spawnParticles(SscAddon.INWARD_ICE_PARTICLE, center.x + dx, center.y + dy, center.z + dz,
-					0, -dx * speed, -dy * speed, -dz * speed, 1.0);
-		}
-	}
+	// 汇聚粒子（inward_ice）生成已全部移到客户端本地自算（冰锥实体/法阵实体/蓄力客户端状态三处），
+	// 服务端版 spawnInwardIceParticles 在客户端化改造后无调用方，已删除。
 
 	private static void updateHoverPositions(ServerPlayerEntity player, State s) {
 		// HOVER 态服务端不逐 tick 移动（无移动→无移动包，客户端独占每 tick 自算贴合位置，避免与延迟网络包打架致鬼畜）。
@@ -417,6 +400,14 @@ public final class FrostSpikeManager {
 		int c = 0;
 		for (int i = 0; i < MAX_THORNS; i++) if (s.slots[i] != null) c++;
 		return c;
+	}
+
+	/** 寒棘护体（棘甲）用：指定玩家当前环绕冰锥数（服务端权威；清死槽后计数）。 */
+	public static int getHoverCount(ServerPlayerEntity player) {
+		State s = STATES.get(player.getUuid());
+		if (s == null) return 0;
+		cleanupDead(s);
+		return countThorns(s);
 	}
 
 	private static boolean isEmpty(State s) {

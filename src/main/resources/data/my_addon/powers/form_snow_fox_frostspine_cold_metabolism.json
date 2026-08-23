@@ -1,0 +1,44 @@
+{
+    "type": "apoli:action_over_time",
+    "interval": 60,
+    "entity_action": {
+        "type": "apoli:and",
+        "actions": [
+            {
+                "type": "apoli:heal",
+                "amount": 1.0
+            },
+            {
+                "type": "apoli:play_sound",
+                "sound": "minecraft:block.snow.place",
+                "volume": 0.5,
+                "pitch": 1.8
+            }
+        ]
+    },
+    "condition": {
+        "type": "apoli:and",
+        "conditions": [
+            {
+                "type": "apoli:or",
+                "conditions": [
+                    {
+                        "type": "apoli:biome",
+                        "condition": {
+                            "type": "apoli:temperature",
+                            "comparison": "<",
+                            "compare_to": 0.2
+                        }
+                    },
+                    { "type": "apoli:on_block", "block_condition": { "type": "apoli:block", "block": "minecraft:powder_snow" } }
+                ]
+            },
+            {
+                "type": "apoli:resource",
+                "resource": "my_addon:form_sp_primary_cd",
+                "comparison": "<=",
+                "compare_to": 0
+            }
+        ]
+    }
+}

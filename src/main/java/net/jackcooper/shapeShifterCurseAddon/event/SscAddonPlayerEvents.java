@@ -162,6 +162,8 @@ public final class SscAddonPlayerEvents {
 			SnowFoxSpMeleeAbility.clearPlayer(uuid);
 			SnowFoxSpTeleportAttack.clearPlayer(uuid);
 			SnowFoxSpFrostStorm.clearPlayer(uuid);
+			// 寒棘狐「寒棘护体」：攻击者断线清反刺层
+			net.jackcooper.shapeShifterCurseAddon.ability.FrostArmorManager.clearPlayer(uuid);
 			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindSpiritClawManager.onPlayerDisconnect(handler.player);
 			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindDashManager.onPlayerDisconnect(handler.player);
 			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindSpiritLandingSurgeManager.onPlayerDisconnect(handler.player);
