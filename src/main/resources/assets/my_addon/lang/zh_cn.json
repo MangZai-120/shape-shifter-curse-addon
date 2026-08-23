@@ -1041,6 +1041,6 @@
     "item.ssc_addon.venom_gland.tooltip_1": "你施加的中毒效果等级 +1（毒牙/跳杀/毒液全部生效）",
     "item.ssc_addon.venom_gland.tooltip_2": "代价：中毒持续时间缩短至正常的 70%",
     "item.ssc_addon.venom_gland.tooltip_exclusive": "跳蛛形态专属",
-    "gui.ssc_addon.category.special_crafting": "SSCA 特殊合成",
-    "codex.form.my_addon.spider_salticidae.cons": "捕猎者的代价：\n\n肉食本性：你只能从肉类中获得饱食，其它食物毫无营养\n\n流食禁忌：吾食流食囊仍会像其它形态一样中毒（连毒免疫也挡不住）\n\n身躯依然是蜘蛛的小巧身板：你无法装备胸甲、腿甲与靴子\n\n火焰脆性：作为节肢生物，燃烧时受到的伤害提升\n\n在地面行走时移动速度被削弱——你的真正天地是墙壁与天花板"
+    "codex.form.my_addon.spider_salticidae.cons": "捕猎者的代价：\n\n肉食本性：你只能从肉类中获得饱食，其它食物毫无营养\n\n流食禁忌：吾食流食囊仍会像其它形态一样中毒（连毒免疫也挡不住）\n\n身躯依然是蜘蛛的小巧身板：你无法装备胸甲、腿甲与靴子\n\n火焰脆性：作为节肢生物，燃烧时受到的伤害提升\n\n在地面行走时移动速度被削弱——你的真正天地是墙壁与天花板",
+	"gui.ssc_addon.category.special_crafting": "SSCA 特殊合成"
 }

@@ -38,8 +38,11 @@
     "modmenu": [
       "net.onixary.shapeShifterCurseFabric.ssc_addon.compat.ModMenuIntegration"
     ],
-    "rei_plugins": [
+    "rei_client": [
       "net.jackcooper.shapeShifterCurseAddon.compat.rei.SSCA_REIPlugin"
+    ],
+    "jei_mod_plugin": [
+      "net.jackcooper.shapeShifterCurseAddon.compat.jei.SSCA_JEIPlugin"
     ],
     "emi": [
       "net.jackcooper.shapeShifterCurseAddon.compat.emi.SSCA_EMIPlugin"
