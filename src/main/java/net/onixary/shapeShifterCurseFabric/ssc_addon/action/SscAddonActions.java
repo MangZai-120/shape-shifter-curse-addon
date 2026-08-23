@@ -231,6 +231,24 @@ public class SscAddonActions {
 					}
 				}));
 
+		registerBiEntity(new ActionFactory<>(new Identifier("ssc_addon", "salticidae_venom_fang"),
+				new SerializableData(),
+				(data, pair) -> {
+				// 毒牙（跳蛛被动）：左键命中 → 中毒 I 5s（100t）；毒液腺体：等级+1（变 II）/ 3s（60t）
+				Entity actor = pair.getLeft();
+				Entity target = pair.getRight();
+				if (!(actor instanceof net.minecraft.server.network.ServerPlayerEntity player)
+						|| !(target instanceof net.minecraft.entity.LivingEntity living)) return;
+				boolean gland = net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.isWearingBy(player);
+				int amp = 0 + (gland ? 1 : 0);
+				int dur = gland ? 60 : 100;
+					living.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
+							net.minecraft.entity.effect.StatusEffects.POISON, dur, amp, false, true, true), player);
+					player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+							net.minecraft.sound.SoundEvents.ENTITY_SPIDER_AMBIENT,
+							net.minecraft.sound.SoundCategory.PLAYERS, 0.4f, 1.6f);
+				}));
+
 		registerBiEntity(new ActionFactory<>(new Identifier("my_addon", "damage_target_from_actor"),
 				new SerializableData()
 						.add("amount", SerializableDataTypes.FLOAT)

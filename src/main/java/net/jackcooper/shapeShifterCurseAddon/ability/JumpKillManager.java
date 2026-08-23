@@ -439,12 +439,15 @@ public final class JumpKillManager {
 		}
 	}
 
-	/** 命中结算：8 物理 + 中毒 II 8s + 定身 0.35s + 音效粒子。 */
+	/** 命中结算：8 物理 + 中毒 II 8s（毒液腺体：等级+1 / 时长×70%）+ 定身 0.35s + 音效粒子。 */
 	private static void onHit(ServerPlayerEntity player, ServerWorld sw, LivingEntity target) {
 		if (WhitelistUtils.isProtected(player, target)) return;
 		DamageSource src = player.getDamageSources().playerAttack(player);
 		target.damage(src, DAMAGE);
-		target.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, POISON_DURATION, POISON_AMPLIFIER, false, true, true), player);
+		boolean gland = net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.isWearingBy(player);
+		int amp = POISON_AMPLIFIER + (gland ? 1 : 0);
+		int dur = gland ? Math.round(POISON_DURATION * net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.DURATION_SCALE) : POISON_DURATION;
+		target.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, dur, amp, false, true, true), player);
 		target.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, STUN_DURATION, 0, false, false, false), player);
 		sw.playSound(null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, SoundCategory.PLAYERS, 1.0f, 0.9f);

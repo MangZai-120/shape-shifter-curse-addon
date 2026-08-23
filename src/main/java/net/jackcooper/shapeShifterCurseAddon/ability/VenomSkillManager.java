@@ -80,7 +80,7 @@ public final class VenomSkillManager {
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, CD_TICKS);
 	}
 
-	/** 基础形态：前方 2×2×2 区域毒液——4 魔法 + 中毒 I 15s。 */
+	/** 基础形态：前方 2×2×2 区域毒液——4 魔法 + 中毒 I 15s（毒液腺体：等级+1 / 时长×70%）。 */
 	private static void venomArea(ServerPlayerEntity player, ServerWorld sw) {
 		Vec3d look = player.getRotationVector().normalize();
 		Vec3d center = player.getEyePos().add(look.multiply(AREA_SIZE * 0.75)); // 区域中心在身前
@@ -89,9 +89,12 @@ public final class VenomSkillManager {
 		List<LivingEntity> targets = sw.getEntitiesByClass(LivingEntity.class, box,
 				e -> e != player && e.isAlive() && !e.isSpectator()
 						&& !WhitelistUtils.isProtected(player, e));
+		boolean gland = net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.isWearingBy(player);
+		int amp = gland ? 1 : 0;
+		int dur = gland ? Math.round(BASE_POISON_DURATION * net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.DURATION_SCALE) : BASE_POISON_DURATION;
 		for (LivingEntity t : targets) {
 			t.damage(t.getDamageSources().indirectMagic(player, player), BASE_DAMAGE);
-			t.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, BASE_POISON_DURATION, 0, false, true, true), player);
+			t.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, dur, amp, false, true, true), player);
 		}
 		// 反馈：毒液喷溅粒子（区域中心）+ 喷吐音效
 		sw.spawnParticles(ParticleTypes.WITCH, center.x, center.y, center.z,
@@ -159,7 +162,7 @@ public final class VenomSkillManager {
 				3, 0.15, 0.2, 0.15, 0.05);
 	}
 
-	/** 冲刺结束：以自身为圆心 3 格 AOE——6 魔法 + 中毒 II 15s。 */
+	/** 冲刺结束：以自身为圆心 3 格 AOE——6 魔法 + 中毒 II 15s（毒液腺体：等级+1 / 时长×70%）。 */
 	private static void finishDash(ServerPlayerEntity player, ServerWorld sw) {
 		DASHING.remove(player.getUuid());
 		Vec3d c = player.getPos();
@@ -168,9 +171,12 @@ public final class VenomSkillManager {
 				e -> e != player && e.isAlive() && !e.isSpectator()
 						&& !WhitelistUtils.isProtected(player, e)
 						&& e.getPos().distanceTo(c) <= BURST_RADIUS);
+		boolean gland = net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.isWearingBy(player);
+		int amp = (gland ? 1 : 0) + 1; // 基础中毒 II，腺体 +1
+		int dur = gland ? Math.round(BURST_POISON_DURATION * net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.DURATION_SCALE) : BURST_POISON_DURATION;
 		for (LivingEntity t : targets) {
 			t.damage(t.getDamageSources().indirectMagic(player, player), BURST_DAMAGE);
-			t.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, BURST_POISON_DURATION, 1, false, true, true), player);
+			t.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, dur, amp, false, true, true), player);
 		}
 		// AOE 反馈：毒爆粒子环 + 女巫泼溅
 		sw.spawnParticles(ParticleTypes.WITCH, c.x, c.y + 0.5, c.z,

@@ -1,32 +1,7 @@
 {
     "type": "apoli:action_on_hit",
     "bientity_action": {
-        "type": "apoli:and",
-        "actions": [
-            {
-                "type": "apoli:actor_action",
-                "action": {
-                    "type": "apoli:play_sound",
-                    "sound": "minecraft:entity.spider.ambient",
-                    "volume": 0.4,
-                    "pitch": 1.6
-                }
-            },
-            {
-                "type": "apoli:target_action",
-                "action": {
-                    "type": "apoli:apply_effect",
-                    "effect": {
-                        "effect": "minecraft:poison",
-                        "duration": 20,
-                        "amplifier": 1,
-                        "is_ambient": false,
-                        "show_particles": true,
-                        "show_icon": true
-                    }
-                }
-            }
-        ]
+        "type": "ssc_addon:salticidae_venom_fang"
     },
     "damage_condition": {
         "type": "apoli:amount",

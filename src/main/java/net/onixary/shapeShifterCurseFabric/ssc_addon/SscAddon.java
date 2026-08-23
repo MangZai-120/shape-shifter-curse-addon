@@ -212,6 +212,8 @@ public class SscAddon implements ModInitializer {
 	public static final Item NIGHTMARE_RING = new net.jackcooper.shapeShifterCurseAddon.item.NightmareRingItem(new Item.Settings().maxCount(1).fireproof());
 	// 寒棘项圈（寒棘狐专属：命中回锥 + 伤害减半 + 凝聚变慢）
 	public static final Item FROST_SPINE_COLLAR = new net.jackcooper.shapeShifterCurseAddon.item.FrostSpineCollarItem(new Item.Settings().maxCount(1).fireproof());
+	// 毒液腺体（跳蛛专属头部饰品：中毒 +1 级但时长 70%）
+	public static final Item VENOM_GLAND = new net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem(new Item.Settings().maxCount(1).fireproof());
 	public static final Item ANUBIS_CRYSTAL = new AnubisCrystalItem(new Item.Settings().maxCount(1).fireproof());
 	public static final Item ANKH_STONE = new AnkhStoneItem(new Item.Settings().maxCount(1).fireproof());
 	// 契灵专属：绑定脚环（feet/aglet 槽，与守御脚环互斥）
@@ -255,6 +257,8 @@ public class SscAddon implements ModInitializer {
 	public static final Item WITHER_POTION_LINGERING = new WitherPotionItem(
 			new Item.Settings().maxCount(1), WitherPotionItem.Type.LINGERING);
 	public static final RecipeSerializer<InfiniteEnergyPotionRecipe> INFINITE_ENERGY_POTION_SERIALIZER = new SpecialRecipeSerializer<>(InfiniteEnergyPotionRecipe::new);
+	// 毒液腺体合成（8蜘蛛眼夹剧毒药水，特殊配方按药水 NBT 匹配三级剧毒）
+	public static final RecipeSerializer<net.jackcooper.shapeShifterCurseAddon.recipe.VenomGlandRecipe> VENOM_GLAND_SERIALIZER = new SpecialRecipeSerializer<>(net.jackcooper.shapeShifterCurseAddon.recipe.VenomGlandRecipe::new);
 	// 幻形之梦 音乐唱片（Shape Shifter's Dream）：流式音效 + vanilla 唱片物品，145 秒
 	public static final Identifier SHAPE_SHIFTERS_DREAM_ID = new Identifier("ssc_addon", "shape_shifters_dream");
 	public static final SoundEvent SHAPE_SHIFTERS_DREAM_EVENT = SoundEvent.of(SHAPE_SHIFTERS_DREAM_ID);
@@ -287,7 +291,7 @@ public class SscAddon implements ModInitializer {
 						entries.add(ANKH_STONE);
 						entries.add(BINDING_ANKLET);
 						entries.add(EROSION_SAND_PRISM);
-					entries.add(WITHERED_SAND_RING);					entries.add(NIGHTMARE_RING);					entries.add(FROST_SPINE_COLLAR);					entries.add(BLOOD_GARNET);
+					entries.add(WITHERED_SAND_RING);					entries.add(NIGHTMARE_RING);					entries.add(FROST_SPINE_COLLAR);					entries.add(VENOM_GLAND);					entries.add(BLOOD_GARNET);
 						entries.add(BLOODLUST_RING);
 						entries.add(HUMUS_RING);
 						entries.add(TWIN_POD);
@@ -428,6 +432,7 @@ public class SscAddon implements ModInitializer {
 		registerItem("withered_sand_ring", WITHERED_SAND_RING);
 		registerItem("nightmare_ring", NIGHTMARE_RING);
 		registerItem("frost_spine_collar", FROST_SPINE_COLLAR);
+		registerItem("venom_gland", VENOM_GLAND);
 		registerItem("allay_heal_wand", ALLAY_HEAL_WAND);
 		registerItem("allay_jukebox", ALLAY_JUKEBOX);
 		registerItem("friend_marker", FRIEND_MARKER);
@@ -453,6 +458,7 @@ public class SscAddon implements ModInitializer {
 		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "blizzard_tank_recharge"), BLIZZARD_TANK_RECHARGE_SERIALIZER);
 		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "sp_upgrade_crafting"), SP_UPGRADE_SERIALIZER);
 		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "infinite_energy_potion_crafting"), INFINITE_ENERGY_POTION_SERIALIZER);
+		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "venom_gland_crafting"), VENOM_GLAND_SERIALIZER);
 	}
 
 	// 拆分的私有方法
@@ -510,6 +516,7 @@ public class SscAddon implements ModInitializer {
 		WitheredSandRingItem.registerLootTable();
 		net.jackcooper.shapeShifterCurseAddon.item.NightmareRingItem.registerLootTable();
 		net.jackcooper.shapeShifterCurseAddon.item.FrostSpineCollarItem.registerLootTable();
+		net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.registerLootTable();
 		BloodGarnetItem.registerLootTable();
 		BloodlustRingItem.registerLootTable();
 		HumusRingItem.registerLootTable();
