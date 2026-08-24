@@ -142,7 +142,7 @@
     "power.my_addon.true_invisibility.name": "真实隐身",
     "power.my_addon.true_invisibility.description": "按下后进入真实隐身状态，期间所有生物均无法看见你。隐身期间攻击、挖掘或使用物品会破隐（玻璃碎裂声）。再次按键主动解除（猫哈气声）。无论以何种方式解除隐身，都会进入12秒CD。",
     "power.my_addon.true_invisibility_dash.name": "震慑冲刺",
-    "power.my_addon.true_invisibility_dash.description": "隐身时按下次要技能键，破隐并向前冲刺5格。冲刺1秒后会震慑周围5格内敌人1.5秒，期间敌人无法移动、攻击、使用物品或转动镜头。野猫不吃震慑。",
+    "power.my_addon.true_invisibility_dash.description": "隐身时按下次要技能键，破隐并向前冲刺5格。冲刺1秒后会震慑周围5格内敌人5秒，期间敌人无法移动、攻击、使用物品或转动镜头。野猫不吃震慑。",
     "power.my_addon.wild_cat_sp_speed_passive.name": "夜行者",
     "power.my_addon.wild_cat_sp_speed_passive.description": "在夜晚时获得速度I（移速提升约20%），白天时获得缓慢I（移速降低约15%）。",
     "power.my_addon.wild_cat_sp_night_strength.name": "暗夜之力",

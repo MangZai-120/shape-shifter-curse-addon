@@ -169,8 +169,8 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 					if (net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager.isBlocked(entity, target)) {
 						return;
 					}
-					// Apply Stun: 1.5s = 30 ticks
-					target.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, 30, 0, false, false, true), entity);
+				// Apply Stun: 5s = 100 ticks
+				target.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, 100, 0, false, false, true), entity);
 				});
 
 		// Particle effect

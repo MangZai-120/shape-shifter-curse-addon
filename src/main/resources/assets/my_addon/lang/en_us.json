@@ -146,7 +146,7 @@
     "power.my_addon.true_invisibility.name": "True Invisibility",
     "power.my_addon.true_invisibility.description": "Press to enter true invisibility state, undetectable by any creature. Attacking, mining, or using items breaks invisibility (glass shatter sound). Press again to cancel (cat hiss sound). Any exit triggers a 12s Cooldown.",
     "power.my_addon.true_invisibility_dash.name": "Stun Dash",
-    "power.my_addon.true_invisibility_dash.description": "While invisible, press the secondary key to break concealment and dash 5 blocks forward. 1 second after the dash, stuns enemies within a 5-block radius for 1.5s. Stunned enemies cannot move, attack, use items or turn the camera. Other wild cats are immune to the stun.",
+    "power.my_addon.true_invisibility_dash.description": "While invisible, press the secondary key to break concealment and dash 5 blocks forward. 1 second after the dash, stuns enemies within a 5-block radius for 5s. Stunned enemies cannot move, attack, use items or turn the camera. Other wild cats are immune to the stun.",
     "power.my_addon.wild_cat_sp_speed_passive.name": "Night Walker",
     "power.my_addon.wild_cat_sp_speed_passive.description": "Gain Speed I at night (+~20% movement) and Slowness I during the day (-~15% movement).",
     "power.my_addon.wild_cat_sp_night_strength.name": "Power of the Night",
