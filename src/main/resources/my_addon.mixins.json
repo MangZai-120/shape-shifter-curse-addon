@@ -15,6 +15,7 @@
                    "client.PotionBagCooldownBypassMixin",
                    "entity.FallenAllayVexMixin",
                    "entity.GoldenSandstormHungerMixin",
+                   "entity.ItemFrameGuardMixin",
                    "IronsSpellbooksAnimationMixin",
                    "item.AnubisEatWitherRoseItemMixin",
                    "item.WitherPotionStackMixin",
