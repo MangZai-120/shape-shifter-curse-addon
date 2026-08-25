@@ -1,67 +1,59 @@
 {
 	"format_version": "1.9.0",
-	"credit": "六面独立贴图空心舱（用户 Blockbench 优化版）：底板+后壁+左右壁，前顶开口。#6/#7/#8 为用户自制贴图，其余面用方向占位贴图。",
+	"credit": "Single atlas for all faces. UV in 0-16 grid per vanilla convention.",
 	"parent": "block/block",
-	"texture_size": [32, 32],
+	"texture_size": [64, 64],
 	"textures": {
-		"6": "ssc_addon:block/energy_extractor_0",
-		"7": "ssc_addon:block/energy_extractor_1",
-		"8": "ssc_addon:block/energy_extractor_2",
-		"down": "ssc_addon:block/energy_extractor_down",
-		"up": "ssc_addon:block/energy_extractor_up",
-		"east": "ssc_addon:block/energy_extractor_east",
-		"west": "ssc_addon:block/energy_extractor_west",
-		"particle": "ssc_addon:block/energy_extractor_north",
-		"north": "ssc_addon:block/energy_extractor_north",
-		"south": "ssc_addon:block/energy_extractor_south"
+		"0": "ssc_addon:block/energy_extractor",
+		"particle": "ssc_addon:block/energy_extractor"
 	},
 	"elements": [
 		{
 			"from": [0, 0, 0],
 			"to": [16, 2, 16],
 			"faces": {
-				"north": {"uv": [0, 14, 16, 16], "texture": "#north"},
-				"east": {"uv": [0, 14, 16, 16], "texture": "#east"},
-				"south": {"uv": [0, 14, 16, 16], "texture": "#south"},
-				"west": {"uv": [0, 14, 16, 16], "texture": "#west"},
-				"up": {"uv": [0, 0, 16, 16], "texture": "#up"},
-				"down": {"uv": [0, 0, 16, 16], "texture": "#down", "cullface": "down"}
+				"north": {"uv": [8, 11.5, 12, 12], "texture": "#0"},
+				"east": {"uv": [8, 11.5, 12, 12], "texture": "#0"},
+				"south": {"uv": [8, 11.5, 12, 12], "texture": "#0"},
+				"west": {"uv": [8, 11.5, 12, 12], "texture": "#0"},
+				"up": {"uv": [8, 12, 12, 16], "texture": "#0"},
+				"down": {"uv": [12, 12, 16, 16], "texture": "#0", "cullface": "down"}
 			}
 		},
 		{
 			"from": [0, 2, 14],
 			"to": [16, 14, 16],
 			"faces": {
-				"north": {"uv": [0, 0, 8, 6], "texture": "#7"},
-				"east": {"uv": [8, 2, 9, 8], "texture": "#7"},
-				"south": {"uv": [0, 6, 8, 12], "texture": "#7", "cullface": "south"},
-				"west": {"uv": [8, 8, 9, 14], "texture": "#7"},
-				"up": {"uv": [16, 1, 8, 0], "texture": "#7"},
-				"down": {"uv": [16, 1, 8, 2], "texture": "#7"}
+				"north": {"uv": [0, 0, 4, 3], "texture": "#0"},
+				"east": {"uv": [4, 1, 4.5, 4], "texture": "#0"},
+				"south": {"uv": [0, 3, 4, 6], "texture": "#0", "cullface": "south"},
+				"west": {"uv": [4, 4, 4.5, 7], "texture": "#0"},
+				"up": {"uv": [12, 12.25, 8, 11.75], "texture": "#0"},
+				"down": {"uv": [4, 6, 0, 6.5], "texture": "#0"}
 			}
 		},
 		{
 			"from": [0, 2, 0],
 			"to": [2, 14, 14],
 			"faces": {
-				"north": {"uv": [8, 0, 9, 6], "texture": "#8"},
-				"east": {"uv": [0, 0, 7, 6], "texture": "#8"},
-				"south": {"uv": [8, 6, 9, 12], "texture": "#8"},
-				"west": {"uv": [0, 6, 7, 12], "texture": "#8", "cullface": "west"},
-				"up": {"uv": [8, 7, 7, 0], "texture": "#8"},
-				"down": {"uv": [8, 7, 7, 14], "texture": "#8"}
+				"north": {"uv": [11.5, 0, 12, 3], "texture": "#0"},
+				"east": {"uv": [8, 0, 11.5, 3], "texture": "#0"},
+				"south": {"uv": [0, 6, 0.5, 9], "texture": "#0"},
+				"west": {"uv": [8, 3, 11.5, 6], "texture": "#0", "cullface": "west"},
+				"up": {"uv": [12, 3.5, 11.5, 0], "texture": "#0"},
+				"down": {"uv": [1, 6, 0.5, 9.5], "texture": "#0"}
 			}
 		},
 		{
 			"from": [14, 2, 0],
 			"to": [16, 14, 14],
 			"faces": {
-				"north": {"uv": [0, 2, 2, 14], "texture": "#north"},
-				"east": {"uv": [2, 2, 16, 14], "texture": "#east", "cullface": "east"},
-				"south": {"uv": [14, 2, 16, 14], "texture": "#south"},
-				"west": {"uv": [0, 2, 14, 14], "texture": "#6"},
-				"up": {"uv": [14, 0, 16, 14], "texture": "#up"},
-				"down": {"uv": [14, 2, 16, 16], "texture": "#down"}
+				"north": {"uv": [11.75, 0, 12.25, 3], "texture": "#0"},
+				"east": {"uv": [8.5, 8.5, 12, 11.5], "texture": "#0", "cullface": "east"},
+				"south": {"uv": [0, 6, 0.5, 9], "texture": "#0"},
+				"west": {"uv": [8, 0, 11.5, 3], "texture": "#0"},
+				"up": {"uv": [11.5, 0, 12, 3.5], "texture": "#0"},
+				"down": {"uv": [0, 6, 0.5, 9.5], "texture": "#0"}
 			}
 		}
 	],
