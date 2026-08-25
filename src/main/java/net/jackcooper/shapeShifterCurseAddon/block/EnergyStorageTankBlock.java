@@ -5,6 +5,8 @@ import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.state.StateManager;
+import net.minecraft.state.property.IntProperty;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -20,14 +22,22 @@ import java.util.List;
 
 /**
  * 能量储罐方块（jackcooper）：正方体被动存储节点。
- * <p>相邻储罐/汲取器构成共享能量网络（见 {@link EnergyNetwork}），多个相邻即可叠加总上限。
+ * <p>相邻储罐/汲取器构成能量网络（见 {@link EnergyNetwork}），多个相邻即可叠加总上限；
+ * 同一网络内的储罐能量始终自动均分（破坏储罐时其储能转移给邻近储罐后再全网均分）。
  * 右键在动作栏显示所在网络能量；放置/破坏时广播刷新网络拓扑缓存（事件驱动，非高频扫描）。
  */
 @SuppressWarnings("deprecation") // 覆写 vanilla @Deprecated 的 Block 交互/状态替换方法，统一抑制
 public class EnergyStorageTankBlock extends BlockWithEntity {
+	/** 显示档位：网络能量百分比每 10% 一档（0=0~9%，…，9=90~99%，10=100%）。 */
+	public static final IntProperty LEVEL = IntProperty.of("level", 0, 10);
 
 	public EnergyStorageTankBlock(Settings settings) {
 		super(settings);
+	}
+
+	@Override
+	protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+		builder.add(LEVEL);
 	}
 
 	@Override
@@ -65,9 +75,14 @@ public class EnergyStorageTankBlock extends BlockWithEntity {
 	@Override
 	public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
 		if (!state.isOf(newState.getBlock())) {
+			// 破坏前先抢救本罐储能（BE 会随 super 移除）
+			BlockEntity be = world.getBlockEntity(pos);
+			int rescued = (be instanceof EnergyStorageTankBlockEntity tank) ? tank.getStoredEnergy() : 0;
 			super.onStateReplaced(state, world, pos, newState, moved);
 			if (!world.isClient) {
 				EnergyNetwork.broadcastInvalidate(world, pos);
+				// 能量转移给邻近储罐并全网均分；周围无任何储罐则按设计丢失
+				EnergyNetwork.transferBrokenTankEnergy(world, pos, rescued);
 			}
 		}
 	}

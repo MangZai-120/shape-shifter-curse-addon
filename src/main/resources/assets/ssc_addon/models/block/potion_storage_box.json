@@ -1,13 +1,23 @@
 {
-	"__comment": "六面独立贴图：可在 Blockbench 打开本 json + 6 张贴图逐面优化。",
-	"parent": "minecraft:block/cube",
+	"__comment": "单图集立方体：六面各指向 64x64 atlas 内不同 16x16 格（up/down/north/south/east/west），可在 Blockbench 打开本 json + 单张 potion_storage_box.png 逐面编辑。",
+	"parent": "block/block",
+	"texture_size": [64, 64],
 	"textures": {
-		"particle": "ssc_addon:block/potion_storage_box_north",
-		"down": "ssc_addon:block/potion_storage_box_down",
-		"up": "ssc_addon:block/potion_storage_box_up",
-		"north": "ssc_addon:block/potion_storage_box_north",
-		"east": "ssc_addon:block/potion_storage_box_east",
-		"south": "ssc_addon:block/potion_storage_box_south",
-		"west": "ssc_addon:block/potion_storage_box_west"
-	}
+		"0": "ssc_addon:block/potion_storage_box",
+		"particle": "ssc_addon:block/potion_storage_box"
+	},
+	"elements": [
+		{
+			"from": [0, 0, 0],
+			"to": [16, 16, 16],
+			"faces": {
+				"north": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"east": {"uv": [0, 4, 4, 8], "texture": "#0"},
+				"south": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"west": {"uv": [4, 4, 8, 8], "texture": "#0"},
+				"up": {"uv": [0, 0, 4, 4], "texture": "#0"},
+				"down": {"uv": [4, 0, 8, 4], "texture": "#0"}
+			}
+		}
+	]
 }

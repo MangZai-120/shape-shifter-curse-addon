@@ -1,13 +1,24 @@
 {
-	"__comment": "六面独立贴图：可在 Blockbench 打开本 json + 6 张贴图逐面优化。",
-	"parent": "minecraft:block/cube",
+	"format_version": "1.21.11",
+	"credit": "单图集立方体：六面各指向 64x64 atlas 内不同 16x16 格（up/down/north/south/east/west），可在 Blockbench 打开本 json + 单张 energy_storage_tank.png 逐面编辑。",
+	"parent": "block/block",
+	"texture_size": [64, 64],
 	"textures": {
-		"particle": "ssc_addon:block/energy_storage_tank_north",
-		"down": "ssc_addon:block/energy_storage_tank_down",
-		"up": "ssc_addon:block/energy_storage_tank_up",
-		"north": "ssc_addon:block/energy_storage_tank_north",
-		"east": "ssc_addon:block/energy_storage_tank_east",
-		"south": "ssc_addon:block/energy_storage_tank_south",
-		"west": "ssc_addon:block/energy_storage_tank_west"
-	}
+		"0": "ssc_addon:block/energy_storage_tank0",
+		"particle": "ssc_addon:block/energy_storage_tank0"
+	},
+	"elements": [
+		{
+			"from": [0, 0, 0],
+			"to": [16, 16, 16],
+			"faces": {
+				"north": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"east": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"south": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"west": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"up": {"uv": [0, 0, 4, 4], "texture": "#0"},
+				"down": {"uv": [0, 0, 4, 4], "texture": "#0"}
+			}
+		}
+	]
 }

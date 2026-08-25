@@ -1,6 +1,11 @@
 package net.jackcooper.shapeShifterCurseAddon.energy;
 
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
+import net.jackcooper.shapeShifterCurseAddon.block.EnergyExtractorBlockEntity;
+import net.jackcooper.shapeShifterCurseAddon.block.EnergyStorageTankBlock;
+import net.jackcooper.shapeShifterCurseAddon.block.EnergyStorageTankBlockEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
@@ -82,6 +87,9 @@ public final class EnergyNetwork {
 				remaining -= add;
 			}
 		}
+		// 能量变化后：先把各储罐能量均分，再刷新档位显示（事件驱动）
+		equalizeTanks(members);
+		refreshTankDisplays(members);
 		return amount - remaining;
 	}
 
@@ -99,6 +107,9 @@ public final class EnergyNetwork {
 				remaining -= take;
 			}
 		}
+		// 能量变化后：先把各储罐能量均分，再刷新档位显示（事件驱动）
+		equalizeTanks(members);
+		refreshTankDisplays(members);
 		return amount - remaining;
 	}
 
@@ -127,12 +138,16 @@ public final class EnergyNetwork {
 				consumer.markNetworkDirty();
 			}
 		}
+		BlockPos firstMember = null;
 		int guard = 0;
 		int limit = MAX_NETWORK * 7;
 		while (!queue.isEmpty() && guard++ < limit) {
 			BlockPos p = queue.poll();
 			BlockEntity be = world.getBlockEntity(p);
 			if (be instanceof EnergyNetworkMember member) {
+				if (firstMember == null) {
+					firstMember = p;
+				}
 				member.markNetworkDirty();
 				// 顺带标脏与该成员相邻的消费者（装瓶器）
 				for (Direction dir : Direction.values()) {
@@ -145,6 +160,124 @@ public final class EnergyNetwork {
 						queue.add(np);
 					}
 				}
+			}
+		}
+		// 拓扑变化后：重建幸存网络并均分储罐能量、刷新档位显示（放置/破坏任一成员都会走到这里）
+		if (firstMember != null) {
+			BlockEntity fbe = world.getBlockEntity(firstMember);
+			List<EnergyNetworkMember> net = null;
+			if (fbe instanceof EnergyStorageTankBlockEntity tank) {
+				net = tank.getNetwork();
+			} else if (fbe instanceof EnergyExtractorBlockEntity extractor) {
+				net = extractor.getNetwork();
+			}
+			if (net != null) {
+				equalizeTanks(net);
+				refreshTankDisplays(net);
+			}
+		}
+	}
+
+	/** 网络能量百分比对应的显示档位（0~10，每 10% 一档，100% 为 10）。 */
+	public static int getDisplayLevel(List<EnergyNetworkMember> members) {
+		int cap = getTotalCapacity(members);
+		if (cap <= 0) {
+			return 0;
+		}
+		int pct = getTotalEnergy(members) * 100 / cap;
+		return Math.min(10, pct / 10);
+	}
+
+	/**
+	 * 事件驱动刷新网络内所有能量储罐的档位贴图（仅服务端生效）。
+	 * 所有储罐统一显示所在网络的总能量百分比；档位变化时以 flag 2 同步客户端（不触发邻块更新级联）。
+	 */
+	public static void refreshTankDisplays(List<EnergyNetworkMember> members) {
+		if (members == null || members.isEmpty()) {
+			return;
+		}
+		int level = -1;
+		for (EnergyNetworkMember m : members) {
+			if (!(m instanceof EnergyStorageTankBlockEntity tank)) {
+				continue;
+			}
+			World w = tank.getWorld();
+			if (w == null || w.isClient) {
+				continue;
+			}
+			if (level < 0) {
+				level = getDisplayLevel(members);
+			}
+			BlockState cur = tank.getCachedState();
+			if (cur.contains(EnergyStorageTankBlock.LEVEL) && cur.get(EnergyStorageTankBlock.LEVEL) != level) {
+				w.setBlockState(tank.getPos(), cur.with(EnergyStorageTankBlock.LEVEL, level), Block.NOTIFY_LISTENERS);
+				tank.markDirty();
+			}
+		}
+	}
+
+	/** 收集成员列表中的全部储罐（汲取器缓冲不参与均分）。 */
+	private static List<EnergyStorageTankBlockEntity> collectTanks(List<EnergyNetworkMember> members) {
+		List<EnergyStorageTankBlockEntity> tanks = new ArrayList<>();
+		for (EnergyNetworkMember m : members) {
+			if (m instanceof EnergyStorageTankBlockEntity tank && tank.getWorld() != null && !tank.getWorld().isClient) {
+				tanks.add(tank);
+			}
+		}
+		return tanks;
+	}
+
+	/**
+	 * 把网络内所有储罐的能量均分（仅服务端）。
+	 * 总量取各储罐之和，按「每罐 total/n、前 rem 罐 +1」分配，结果相等或最多相差 1。
+	 */
+	public static void equalizeTanks(List<EnergyNetworkMember> members) {
+		equalizeTanksWithBonus(members, 0);
+	}
+
+	/** 被破坏储罐的能量回归网络：并入储罐总量后整体均分（须存在至少一个储罐，否则能量丢失）。 */
+	public static void donateBrokenTankEnergy(List<EnergyNetworkMember> members, int amount) {
+		equalizeTanksWithBonus(members, amount);
+	}
+
+	/**
+	 * 破坏储罐后调用：把 {@code amount} 能量就近交给任一相邻储罐所在网络均分并刷新显示；
+	 * 周围没有任何相邻储罐时返回 false，能量按设计丢失。
+	 */
+	public static boolean transferBrokenTankEnergy(World world, BlockPos origin, int amount) {
+		if (amount <= 0 || world.isClient) {
+			return false;
+		}
+		for (Direction dir : Direction.values()) {
+			BlockEntity be = world.getBlockEntity(origin.offset(dir));
+			if (be instanceof EnergyStorageTankBlockEntity tank) {
+				List<EnergyNetworkMember> net = tank.getNetwork();
+				donateBrokenTankEnergy(net, amount);
+				refreshTankDisplays(net);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static void equalizeTanksWithBonus(List<EnergyNetworkMember> members, int bonus) {
+		List<EnergyStorageTankBlockEntity> tanks = collectTanks(members);
+		int n = tanks.size();
+		if (n == 0 || (n == 1 && bonus == 0)) {
+			return;
+		}
+		long total = bonus;
+		for (EnergyStorageTankBlockEntity t : tanks) {
+			total += t.getStoredEnergy();
+		}
+		int per = (int) (total / n);
+		int rem = (int) (total % n);
+		for (int i = 0; i < n; i++) {
+			EnergyStorageTankBlockEntity t = tanks.get(i);
+			// 钳制到单罐上限，防止异常超总量时溢出崩溃
+			int target = Math.min(t.getEnergyCapacity(), per + (i < rem ? 1 : 0));
+			if (t.getStoredEnergy() != target) {
+				t.setStoredEnergy(target);
 			}
 		}
 	}

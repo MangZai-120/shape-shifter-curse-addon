@@ -1,0 +1,22 @@
+{
+"parent": "block/block",
+"texture_size": [64, 64],
+"textures": {
+"0": "ssc_addon:block/energy_storage_tank8",
+"particle": "ssc_addon:block/energy_storage_tank8"
+},
+"elements": [
+{
+"from": [0, 0, 0],
+"to": [16, 16, 16],
+"faces": {
+"north": {"uv": [8, 0, 12, 4], "texture": "#0"},
+"east": {"uv": [8, 0, 12, 4], "texture": "#0"},
+"south": {"uv": [8, 0, 12, 4], "texture": "#0"},
+"west": {"uv": [8, 0, 12, 4], "texture": "#0"},
+"up": {"uv": [0, 0, 4, 4], "texture": "#0"},
+"down": {"uv": [0, 0, 4, 4], "texture": "#0"}
+}
+}
+]
+}
