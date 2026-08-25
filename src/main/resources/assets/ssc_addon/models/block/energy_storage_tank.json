@@ -1,24 +1,147 @@
 {
-	"format_version": "1.21.11",
-	"credit": "单图集立方体：六面各指向 64x64 atlas 内不同 16x16 格（up/down/north/south/east/west），可在 Blockbench 打开本 json + 单张 energy_storage_tank.png 逐面编辑。",
-	"parent": "block/block",
+	"format_version": "1.9.0",
+	"credit": "能量储罐（Blockbench）：top/bottom/四角柱 + 玻璃腔，玻璃区 (2,2,2)~(14,14,14) 由 BER 画无级能量液面。",
 	"texture_size": [64, 64],
 	"textures": {
-		"0": "ssc_addon:block/energy_storage_tank0",
-		"particle": "ssc_addon:block/energy_storage_tank0"
+		"0": "ssc_addon:block/energy_storage_tank",
+		"particle": "ssc_addon:block/energy_storage_tank"
 	},
 	"elements": [
 		{
-			"from": [0, 0, 0],
+			"name": "top",
+			"from": [0, 14, 0],
 			"to": [16, 16, 16],
+			"rotation": {"angle": 0, "axis": "y", "origin": [0, 14, 0]},
 			"faces": {
-				"north": {"uv": [8, 0, 12, 4], "texture": "#0"},
-				"east": {"uv": [8, 0, 12, 4], "texture": "#0"},
-				"south": {"uv": [8, 0, 12, 4], "texture": "#0"},
-				"west": {"uv": [8, 0, 12, 4], "texture": "#0"},
-				"up": {"uv": [0, 0, 4, 4], "texture": "#0"},
-				"down": {"uv": [0, 0, 4, 4], "texture": "#0"}
+				"north": {"uv": [4, 4, 8, 4.5], "texture": "#0"},
+				"east": {"uv": [0, 4, 4, 4.5], "texture": "#0"},
+				"south": {"uv": [12, 4, 16, 4.5], "texture": "#0"},
+				"west": {"uv": [8, 4, 12, 4.5], "texture": "#0"},
+				"up": {"uv": [8, 4, 4, 0], "texture": "#0"},
+				"down": {"uv": [12, 0, 8, 4], "texture": "#0"}
 			}
+		},
+		{
+			"name": "bottom",
+			"from": [0, 0, 0],
+			"to": [16, 2, 16],
+			"faces": {
+				"north": {"uv": [4, 8.5, 8, 9], "texture": "#0"},
+				"east": {"uv": [0, 8.5, 4, 9], "texture": "#0"},
+				"south": {"uv": [12, 8.5, 16, 9], "texture": "#0"},
+				"west": {"uv": [8, 8.5, 12, 9], "texture": "#0"},
+				"up": {"uv": [8, 8.5, 4, 4.5], "texture": "#0"},
+				"down": {"uv": [12, 4.5, 8, 8.5], "texture": "#0"}
+			}
+		},
+		{
+			"name": "pillar1",
+			"from": [0, 2, 0],
+			"to": [2, 14, 2],
+			"rotation": {"angle": 0, "axis": "y", "origin": [0, 2, 0]},
+			"faces": {
+				"north": {"uv": [14.5, 13, 15, 16], "texture": "#0"},
+				"east": {"uv": [14, 13, 14.5, 16], "texture": "#0"},
+				"south": {"uv": [15.5, 13, 16, 16], "texture": "#0"},
+				"west": {"uv": [15, 13, 15.5, 16], "texture": "#0"},
+				"up": {"uv": [15, 13, 14.5, 12.5], "texture": "#0"},
+				"down": {"uv": [15.5, 12.5, 15, 13], "texture": "#0"}
+			}
+		},
+		{
+			"name": "pillar2",
+			"from": [14, 2, 0],
+			"to": [16, 14, 2],
+			"rotation": {"angle": 0, "axis": "y", "origin": [14, 2, 0]},
+			"faces": {
+				"north": {"uv": [14.5, 13, 15, 16], "texture": "#0"},
+				"east": {"uv": [14, 13, 14.5, 16], "texture": "#0"},
+				"south": {"uv": [15.5, 13, 16, 16], "texture": "#0"},
+				"west": {"uv": [15, 13, 15.5, 16], "texture": "#0"},
+				"up": {"uv": [15, 13, 14.5, 12.5], "texture": "#0"},
+				"down": {"uv": [15.5, 12.5, 15, 13], "texture": "#0"}
+			}
+		},
+		{
+			"name": "pillar3",
+			"from": [0, 2, 14],
+			"to": [2, 14, 16],
+			"rotation": {"angle": 0, "axis": "y", "origin": [0, 2, 14]},
+			"faces": {
+				"north": {"uv": [14.5, 13, 15, 16], "texture": "#0"},
+				"east": {"uv": [14, 13, 14.5, 16], "texture": "#0"},
+				"south": {"uv": [15.5, 13, 16, 16], "texture": "#0"},
+				"west": {"uv": [15, 13, 15.5, 16], "texture": "#0"},
+				"up": {"uv": [15, 13, 14.5, 12.5], "texture": "#0"},
+				"down": {"uv": [15.5, 12.5, 15, 13], "texture": "#0"}
+			}
+		},
+		{
+			"name": "pillar4",
+			"from": [14, 2, 14],
+			"to": [16, 14, 16],
+			"rotation": {"angle": 0, "axis": "y", "origin": [14, 2, 14]},
+			"faces": {
+				"north": {"uv": [14.5, 13, 15, 16], "texture": "#0"},
+				"east": {"uv": [14, 13, 14.5, 16], "texture": "#0"},
+				"south": {"uv": [15.5, 13, 16, 16], "texture": "#0"},
+				"west": {"uv": [15, 13, 15.5, 16], "texture": "#0"},
+				"up": {"uv": [15, 13, 14.5, 12.5], "texture": "#0"},
+				"down": {"uv": [15.5, 12.5, 15, 13], "texture": "#0"}
+			}
+		},
+		{
+			"name": "glass",
+			"from": [2, 2, 2],
+			"to": [14, 14, 14],
+			"rotation": {"angle": 0, "axis": "y", "origin": [7, 2, 2]},
+			"faces": {
+				"north": {"uv": [3, 12, 6, 15], "texture": "#0"},
+				"east": {"uv": [0, 12, 3, 15], "texture": "#0"},
+				"south": {"uv": [9, 12, 12, 15], "texture": "#0"},
+				"west": {"uv": [6, 12, 9, 15], "texture": "#0"},
+				"up": {"uv": [6, 12, 3, 9], "texture": "#0"},
+				"down": {"uv": [9, 9, 6, 12], "texture": "#0"}
+			}
+		}
+	],
+	"display": {
+		"thirdperson_righthand": {
+			"scale": [0.2, 0.2, 0.2]
+		},
+		"thirdperson_lefthand": {
+			"scale": [0.2, 0.2, 0.2]
+		},
+		"firstperson_righthand": {
+			"translation": [0, 1.5, 0],
+			"scale": [0.2, 0.2, 0.2]
+		},
+		"firstperson_lefthand": {
+			"translation": [0, 1.5, 0],
+			"scale": [0.2, 0.2, 0.2]
+		},
+		"ground": {
+			"translation": [0, 1, 0],
+			"scale": [0.2, 0.2, 0.2]
+		},
+		"gui": {
+			"rotation": [19, -30, 0],
+			"scale": [0.55, 0.55, 0.55]
+		},
+		"fixed": {
+			"scale": [0.77, 0.77, 0.77]
+		},
+		"on_shelf": {
+			"scale": [0.83, 0.83, 0.83]
+		}
+	},
+	"groups": [
+		{
+			"name": "group",
+			"origin": [0, 0, 0],
+			"scope": 0,
+			"color": 0,
+			"children": [0, 1, 2, 3, 4, 5, 6]
 		}
 	]
 }

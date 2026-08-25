@@ -6,8 +6,8 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.block.EnergyBottlerBlockEntity;
 import net.jackcooper.shapeShifterCurseAddon.screen.EnergyBottlerScreenHandler;
 
@@ -18,6 +18,9 @@ import net.jackcooper.shapeShifterCurseAddon.screen.EnergyBottlerScreenHandler;
  */
 @Environment(EnvType.CLIENT)
 public class EnergyBottlerScreen extends HandledScreen<EnergyBottlerScreenHandler> {
+
+	/** 背景图资源（176x184：含边框/面板/全部槽位，坐标与槽位一一对应）。 */
+	private static final Identifier BACKGROUND = new Identifier("ssc_addon", "textures/gui/container/energy_bottler.png");
 
 	private static final int ENERGY_BAR_X = 8;
 	private static final int ENERGY_BAR_Y = 17;
@@ -57,39 +60,29 @@ public class EnergyBottlerScreen extends HandledScreen<EnergyBottlerScreenHandle
 	protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
 		int x = this.x;
 		int y = this.y;
-		// 面板
-		context.fill(x, y, x + backgroundWidth, y + backgroundHeight, 0xFFC6C6C6);
-		context.fill(x + 3, y + 3, x + backgroundWidth - 3, y + 92, 0xFF8B8B8B);
-		// 槽位凹槽
-		for (Slot slot : this.handler.slots) {
-			drawSlotBg(context, x + slot.x, y + slot.y);
-		}
+		// 整张背景图（172x184 容器图：含边框/面板/全部槽位），与槽位坐标一一对应
+		context.drawTexture(BACKGROUND, x, y, 0, 0, this.backgroundWidth, this.backgroundHeight, 176, 184);
 		// 三行进度箭头（输入 → 输出）
 		for (int i = 0; i < EnergyBottlerBlockEntity.LINES; i++) {
-			int ay = y + 21 + i * 24;
-			int ax = x + 64;
-			int aw = 40;
+			int ay = y + 22 + i * 24;
+			int ax = x + 70;
+			int aw = 36;
 			context.fill(ax, ay, ax + aw, ay + 10, 0xFF3B3B3B);
 			int prog = this.handler.getProgress(i);
 			int filled = prog <= 0 ? 0 : Math.max(1, aw * prog / EnergyBottlerBlockEntity.CRAFT_TIME);
 			context.fill(ax, ay, ax + filled, ay + 10, 0xFFFFC24B);
 		}
 		// 竖直能量条（自底向上填充）
-		int bx = x + ENERGY_BAR_X;
-		int by = y + ENERGY_BAR_Y;
-		context.fill(bx - 1, by - 1, bx + ENERGY_BAR_W + 1, by + ENERGY_BAR_H + 1, 0xFF2B2B2B);
-		context.fill(bx, by, bx + ENERGY_BAR_W, by + ENERGY_BAR_H, 0xFF101820);
+		int bx = x + 8;
+		int by = y + 17;
+		context.fill(bx - 1, by - 1, bx + 15, by + 72, 0xFF2B2B2B);
+		context.fill(bx, by, bx + 14, by + 71, 0xFF101820);
 		int cap = Math.max(1, this.handler.getCapacity());
 		int energy = Math.min(cap, this.handler.getEnergy());
 		int fh = ENERGY_BAR_H * energy / cap;
 		if (fh > 0) {
 			context.fill(bx, by + ENERGY_BAR_H - fh, bx + ENERGY_BAR_W, by + ENERGY_BAR_H, 0xFF35D6FF);
 		}
-	}
-
-	private void drawSlotBg(DrawContext ctx, int sx, int sy) {
-		ctx.fill(sx - 1, sy - 1, sx + 17, sy + 17, 0xFF373737);
-		ctx.fill(sx, sy, sx + 16, sy + 16, 0xFF8B8B8B);
 	}
 
 	@Override

@@ -1,5 +1,5 @@
 {
-	"__comment": "单图集立方体：六面各指向 64x64 atlas 内不同 16x16 格（up/down/north/south/east/west），可在 Blockbench 打开本 json + 单张 energy_bottler.png 逐面编辑。",
+	"__comment": "能量装瓶器（Blockbench）：底板/顶板 + 后墙 + 双侧墙，前部 (x2-14, y2-14, z0-8) 为开放凹陷空腔，BER 在腔内动态摆放空瓶/能量瓶。",
 	"parent": "block/block",
 	"texture_size": [64, 64],
 	"textures": {
@@ -8,15 +8,69 @@
 	},
 	"elements": [
 		{
+			"name": "bottom",
 			"from": [0, 0, 0],
-			"to": [16, 16, 16],
+			"to": [16, 2, 16],
 			"faces": {
-				"north": {"uv": [8, 0, 12, 4], "texture": "#0"},
-				"east": {"uv": [0, 4, 4, 8], "texture": "#0"},
-				"south": {"uv": [12, 0, 16, 4], "texture": "#0"},
-				"west": {"uv": [4, 4, 8, 8], "texture": "#0"},
-				"up": {"uv": [0, 0, 4, 4], "texture": "#0"},
-				"down": {"uv": [4, 0, 8, 4], "texture": "#0"}
+				"north": {"uv": [12, 20, 16, 20.5], "texture": "#0"},
+				"east": {"uv": [8, 20, 12, 20.5], "texture": "#0"},
+				"south": {"uv": [20, 20, 24, 20.5], "texture": "#0"},
+				"west": {"uv": [16, 20, 20, 20.5], "texture": "#0"},
+				"up": {"uv": [16, 20, 12, 16], "texture": "#0"},
+				"down": {"uv": [20, 16, 16, 20], "texture": "#0", "cullface": "down"}
+			}
+		},
+		{
+			"name": "top",
+			"from": [0, 14, 0],
+			"to": [16, 16, 16],
+			"rotation": {"angle": 0, "axis": "y", "origin": [0, 14, 0]},
+			"faces": {
+				"north": {"uv": [12, 20, 16, 20.5], "texture": "#0"},
+				"east": {"uv": [8, 20, 12, 20.5], "texture": "#0"},
+				"south": {"uv": [20, 20, 24, 20.5], "texture": "#0"},
+				"west": {"uv": [16, 20, 20, 20.5], "texture": "#0"},
+				"up": {"uv": [16, 20, 12, 16], "texture": "#0"},
+				"down": {"uv": [20, 16, 16, 20], "texture": "#0"}
+			}
+		},
+		{
+			"name": "back_wall",
+			"from": [2, 2, 8],
+			"to": [14, 14, 16],
+			"faces": {
+				"north": {"uv": [1, 7, 4, 10], "texture": "#0"},
+				"east": {"uv": [0, 7, 1, 10], "texture": "#0"},
+				"south": {"uv": [6, 7, 9, 10], "texture": "#0", "cullface": "south"},
+				"west": {"uv": [4, 7, 6, 10], "texture": "#0"},
+				"up": {"uv": [4, 7, 1, 5], "texture": "#0"},
+				"down": {"uv": [7, 5, 4, 7], "texture": "#0"}
+			}
+		},
+		{
+			"name": "left_wall",
+			"from": [0, 2, 0],
+			"to": [2, 14, 16],
+			"faces": {
+				"north": {"uv": [3.5, 3.5, 4, 6.5], "texture": "#0"},
+				"east": {"uv": [0, 3.5, 3.5, 6.5], "texture": "#0"},
+				"south": {"uv": [8, 3.5, 8.5, 6.5], "texture": "#0"},
+				"west": {"uv": [4, 3.5, 8, 6.5], "texture": "#0", "cullface": "west"},
+				"up": {"uv": [4, 3.5, 3.5, 0], "texture": "#0"},
+				"down": {"uv": [4.5, 0, 4, 3.5], "texture": "#0"}
+			}
+		},
+		{
+			"name": "right_wall",
+			"from": [14, 2, 0],
+			"to": [16, 14, 16],
+			"faces": {
+				"north": {"uv": [11.5, 3.5, 12, 6.5], "texture": "#0"},
+				"east": {"uv": [7.5, 3.5, 11.5, 6.5], "texture": "#0", "cullface": "east"},
+				"south": {"uv": [16, 3.5, 16.5, 6.5], "texture": "#0"},
+				"west": {"uv": [12, 3.5, 16, 6.5], "texture": "#0"},
+				"up": {"uv": [12, 3.5, 11.5, 0], "texture": "#0"},
+				"down": {"uv": [12.5, 0, 12, 3.5], "texture": "#0"}
 			}
 		}
 	]

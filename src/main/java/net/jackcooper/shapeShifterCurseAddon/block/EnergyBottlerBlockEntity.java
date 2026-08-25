@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.block;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -9,6 +10,9 @@ import net.minecraft.inventory.SidedInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.network.listener.ClientPlayPacketListener;
+import net.minecraft.network.packet.Packet;
+import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionUtil;
 import net.minecraft.screen.NamedScreenHandlerFactory;
@@ -62,6 +66,11 @@ public class EnergyBottlerBlockEntity extends BlockEntity
 	/** 相邻能量网络缓存（消费者：事件驱动失效，非每 tick 洪泛）。 */
 	private List<EnergyNetworkMember> networkCache;
 	private boolean networkDirty = true;
+
+	/** 客户端槽位镜像（仅渲染用）：索引 0~5 对应输入 0~2 / 输出 0~2。 */
+	private final DefaultedList<ItemStack> clientItems = DefaultedList.ofSize(LINES * 2, ItemStack.EMPTY);
+	/** 上 tick 槽位非空快照（服务端，对比用，炼药台同款思路）。 */
+	private final boolean[] slotsFilledLastTick = new boolean[LINES * 2];
 
 	/** 同步给客户端 GUI 的属性：0=网络能量 1=网络上限 2/3/4=三线进度 5=是否自动。 */
 	private final PropertyDelegate propertyDelegate = new PropertyDelegate() {
@@ -134,6 +143,27 @@ public class EnergyBottlerBlockEntity extends BlockEntity
 		if (dirty) {
 			be.markDirty();
 		}
+		// 槽位快照对比（炼药台同款）：任一槽位空↔非空变化时同步给客户端渲染瓶子
+		boolean[] filled = new boolean[LINES * 2];
+		for (int i = 0; i < LINES * 2; i++) {
+			filled[i] = !be.items.get(i).isEmpty();
+		}
+		if (!java.util.Arrays.equals(filled, be.slotsFilledLastTick)) {
+			System.arraycopy(filled, 0, be.slotsFilledLastTick, 0, filled.length);
+			be.syncItemsToClient();
+		}
+	}
+
+	/** 服务端：把全部槽位 ItemStack 发给客户端（BE 数据包，走 readNbt 更新镜像）。 */
+	private void syncItemsToClient() {
+		if (world != null && !world.isClient) {
+			world.updateListeners(pos, getCachedState(), getCachedState(), Block.NOTIFY_LISTENERS);
+		}
+	}
+
+	/** 客户端：渲染器读取的槽位镜像。 */
+	public ItemStack getClientStack(int slot) {
+		return clientItems.get(slot);
 	}
 
 	/** 第 i 条线是否可合成：网络能量≥25、该输入槽有空玻璃瓶、该输出槽能容纳一瓶能量瓶。 */
@@ -251,6 +281,13 @@ public class EnergyBottlerBlockEntity extends BlockEntity
 		super.readNbt(nbt);
 		items.clear();
 		Inventories.readNbt(nbt, items);
+		// 客户端 BE 数据包路径：刷新渲染镜像（服务端磁盘加载读到也无妨，会被快照同步覆盖）
+		clientItems.clear();
+		DefaultedList<ItemStack> mirror = DefaultedList.ofSize(LINES * 2, ItemStack.EMPTY);
+		Inventories.readNbt(nbt, mirror);
+		for (int i = 0; i < LINES * 2 && i < mirror.size(); i++) {
+			clientItems.set(i, mirror.get(i));
+		}
 		int[] p = nbt.getIntArray("Progress");
 		for (int i = 0; i < LINES; i++) {
 			progress[i] = i < p.length ? p[i] : 0;
@@ -272,6 +309,22 @@ public class EnergyBottlerBlockEntity extends BlockEntity
 	@Override
 	public ScreenHandler createMenu(int syncId, PlayerInventory playerInventory, PlayerEntity player) {
 		return new EnergyBottlerScreenHandler(syncId, playerInventory, this, propertyDelegate);
+	}
+
+	// ==================== 客户端渲染同步（动态瓶子） ====================
+
+	/** BE 更新包：客户端收到后走 readNbt 刷新瓶子镜像。 */
+	@Override
+	public Packet<ClientPlayPacketListener> toUpdatePacket() {
+		return BlockEntityUpdateS2CPacket.create(this);
+	}
+
+	/** 区块数据包：进存档/重进世界时客户端也能拿到槽位内容渲染瓶子。Items 必须在根级（客户端 readNbt 才能读回）。 */
+	@Override
+	public NbtCompound toInitialChunkDataNbt() {
+		NbtCompound nbt = super.toInitialChunkDataNbt();
+		Inventories.writeNbt(nbt, items);
+		return nbt;
 	}
 
 	// ==================== SidedInventory（漏斗互通） ====================

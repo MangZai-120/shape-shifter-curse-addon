@@ -5,16 +5,18 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.screen.PotionStorageBoxScreenHandler;
 
 /**
- * 药品存储箱界面（jackcooper）：纯 fill 自绘占位。8 个存储槽（单排）+ 玩家背包。
- * 后续替换正式贴图时只需把 {@link #drawBackground} 改为 drawTexture。
+ * 药品存储箱界面（jackcooper）：8 个存储槽（单排）+ 玩家背包，背景为正式 GUI 贴图
+ * （textures/gui/container/potion_storage_box.png，176x133，与 ScreenHandler 槽位坐标逐像素对齐）。
  */
 @Environment(EnvType.CLIENT)
 public class PotionStorageBoxScreen extends HandledScreen<PotionStorageBoxScreenHandler> {
+
+	private static final Identifier TEXTURE = new Identifier("ssc_addon", "textures/gui/container/potion_storage_box.png");
 
 	public PotionStorageBoxScreen(PotionStorageBoxScreenHandler handler, PlayerInventory inventory, Text title) {
 		super(handler, inventory, title);
@@ -25,18 +27,8 @@ public class PotionStorageBoxScreen extends HandledScreen<PotionStorageBoxScreen
 
 	@Override
 	protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
-		int x = this.x;
-		int y = this.y;
-		context.fill(x, y, x + backgroundWidth, y + backgroundHeight, 0xFFC6C6C6);
-		context.fill(x + 3, y + 3, x + backgroundWidth - 3, y + 43, 0xFF8B8B8B);
-		for (Slot slot : this.handler.slots) {
-			drawSlotBg(context, x + slot.x, y + slot.y);
-		}
-	}
-
-	private void drawSlotBg(DrawContext ctx, int sx, int sy) {
-		ctx.fill(sx - 1, sy - 1, sx + 17, sy + 17, 0xFF373737);
-		ctx.fill(sx, sy, sx + 16, sy + 16, 0xFF8B8B8B);
+		// 直接绘制正式 GUI 贴图（必须用 9 参版显式传贴图真实尺寸 176x133；6 参版默认 256x256 会导致 UV 错位）
+		context.drawTexture(TEXTURE, this.x, this.y, 0, 0, this.backgroundWidth, this.backgroundHeight, 176, 133);
 	}
 
 	@Override

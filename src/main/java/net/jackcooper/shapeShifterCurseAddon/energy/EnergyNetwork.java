@@ -1,10 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.energy;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.jackcooper.shapeShifterCurseAddon.block.EnergyExtractorBlockEntity;
-import net.jackcooper.shapeShifterCurseAddon.block.EnergyStorageTankBlock;
 import net.jackcooper.shapeShifterCurseAddon.block.EnergyStorageTankBlockEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -178,25 +175,17 @@ public final class EnergyNetwork {
 		}
 	}
 
-	/** 网络能量百分比对应的显示档位（0~10，每 10% 一档，100% 为 10）。 */
-	public static int getDisplayLevel(List<EnergyNetworkMember> members) {
-		int cap = getTotalCapacity(members);
-		if (cap <= 0) {
-			return 0;
-		}
-		int pct = getTotalEnergy(members) * 100 / cap;
-		return Math.min(10, pct / 10);
-	}
-
 	/**
-	 * 事件驱动刷新网络内所有能量储罐的档位贴图（仅服务端生效）。
-	 * 所有储罐统一显示所在网络的总能量百分比；档位变化时以 flag 2 同步客户端（不触发邻块更新级联）。
+	 * 事件驱动刷新网络内所有能量储罐的液面显示（仅服务端生效）。
+	 * 所有储罐统一显示所在网络的总能量/总容量比例；比例变化超过阈值时经 BE 数据包同步客户端
+	 * （见 {@link EnergyStorageTankBlockEntity#syncFillRatio}，BER 无级液面渲染）。
 	 */
 	public static void refreshTankDisplays(List<EnergyNetworkMember> members) {
 		if (members == null || members.isEmpty()) {
 			return;
 		}
-		int level = -1;
+		int cap = getTotalCapacity(members);
+		float ratio = cap > 0 ? (float) getTotalEnergy(members) / cap : 0f;
 		for (EnergyNetworkMember m : members) {
 			if (!(m instanceof EnergyStorageTankBlockEntity tank)) {
 				continue;
@@ -205,14 +194,7 @@ public final class EnergyNetwork {
 			if (w == null || w.isClient) {
 				continue;
 			}
-			if (level < 0) {
-				level = getDisplayLevel(members);
-			}
-			BlockState cur = tank.getCachedState();
-			if (cur.contains(EnergyStorageTankBlock.LEVEL) && cur.get(EnergyStorageTankBlock.LEVEL) != level) {
-				w.setBlockState(tank.getPos(), cur.with(EnergyStorageTankBlock.LEVEL, level), Block.NOTIFY_LISTENERS);
-				tank.markDirty();
-			}
+			tank.syncFillRatio(ratio);
 		}
 	}
 

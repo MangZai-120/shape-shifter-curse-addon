@@ -5,8 +5,6 @@ import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.state.StateManager;
-import net.minecraft.state.property.IntProperty;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -25,19 +23,15 @@ import java.util.List;
  * <p>相邻储罐/汲取器构成能量网络（见 {@link EnergyNetwork}），多个相邻即可叠加总上限；
  * 同一网络内的储罐能量始终自动均分（破坏储罐时其储能转移给邻近储罐后再全网均分）。
  * 右键在动作栏显示所在网络能量；放置/破坏时广播刷新网络拓扑缓存（事件驱动，非高频扫描）。
+ * <p>液面显示：不再用 LEVEL 方块状态档位贴图，改由 BER 在玻璃内画无级液面
+ * （见 {@code EnergyStorageTankRenderer}），比例由服务端同步（见
+ * {@link EnergyStorageTankBlockEntity#syncFillRatio}）。
  */
 @SuppressWarnings("deprecation") // 覆写 vanilla @Deprecated 的 Block 交互/状态替换方法，统一抑制
 public class EnergyStorageTankBlock extends BlockWithEntity {
-	/** 显示档位：网络能量百分比每 10% 一档（0=0~9%，…，9=90~99%，10=100%）。 */
-	public static final IntProperty LEVEL = IntProperty.of("level", 0, 10);
 
 	public EnergyStorageTankBlock(Settings settings) {
 		super(settings);
-	}
-
-	@Override
-	protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-		builder.add(LEVEL);
 	}
 
 	@Override

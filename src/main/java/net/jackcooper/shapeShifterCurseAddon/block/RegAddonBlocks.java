@@ -59,12 +59,14 @@ public final class RegAddonBlocks {
 					.requiresTool());
 
 	// 能量装瓶器：类炼药台，从相邻网络抽能量 + 空瓶合成能量瓶（jackcooper）
+	// nonOpaque：前部凹陷空腔开放，空腔内 BER 瓶子可见且有正确光照
 	public static final Block ENERGY_BOTTLER = new EnergyBottlerBlock(
 			AbstractBlock.Settings.create()
 					.mapColor(MapColor.IRON_GRAY)
 					.strength(2.5f)
 					.sounds(BlockSoundGroup.METAL)
-					.requiresTool());
+					.requiresTool()
+					.nonOpaque());
 
 	// 药品存储箱：专存能量瓶，支持漏斗互通（jackcooper）
 	public static final Block POTION_STORAGE_BOX = new PotionStorageBoxBlock(
@@ -99,6 +101,10 @@ public final class RegAddonBlocks {
 	public static void clientInit() {
 		// 贴图含大量真半透明像素（约 40%），用 translucent 层才能正确渲染 alpha 渐变；cutout 会把半透明二值化导致大片「不显示」
 		BlockRenderLayerMap.INSTANCE.putBlock(WEB_MEMBRANE, RenderLayer.getTranslucent());
+		// 能量储罐无级液面 BER（玻璃内随网络能量比例升降的半透明液体盒）
+		net.jackcooper.shapeShifterCurseAddon.client.renderer.EnergyStorageTankRenderer.register();
+		// 能量装瓶器动态瓶子 BER（类炼药台：按槽位动态显示空瓶/能量瓶）
+		net.jackcooper.shapeShifterCurseAddon.client.renderer.EnergyBottlerRenderer.register();
 		// 能量系统容器界面注册（汲取器/储罐无 GUI，右键走动作栏）
 		net.minecraft.client.gui.screen.ingame.HandledScreens.register(
 				RegAddonBlockEntities.ENERGY_BOTTLER_SH,

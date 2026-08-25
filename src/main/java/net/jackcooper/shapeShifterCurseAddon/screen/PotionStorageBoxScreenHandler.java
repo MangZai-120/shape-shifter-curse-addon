@@ -33,9 +33,9 @@ public class PotionStorageBoxScreenHandler extends ScreenHandler {
 		this.inventory = inventory;
 		inventory.onOpen(playerInventory.player);
 
-		// 8 个存储槽（单排，居中）
+		// 8 个存储槽（单排，居中）：坐标对齐 GUI 贴图槽位内部（贴图内边框起点 x=16/y=20，物品区从 x=17/y=21 起）
 		for (int i = 0; i < CONTAINER_SLOTS; i++) {
-			this.addSlot(new Slot(inventory, i, 16 + i * 18, 20) {
+			this.addSlot(new Slot(inventory, i, 17 + i * 18, 21) {
 				@Override
 				public boolean canInsert(ItemStack stack) {
 					return EnergyBottlerBlockEntity.isEnergyBottle(stack);
@@ -53,15 +53,15 @@ public class PotionStorageBoxScreenHandler extends ScreenHandler {
 			});
 		}
 
-		// 玩家背包（3 行）
+		// 玩家背包（3 行）：对齐贴图内部 y=50/68/86
 		for (int row = 0; row < 3; ++row) {
 			for (int col = 0; col < 9; ++col) {
-				this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 51 + row * 18));
+				this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 50 + row * 18));
 			}
 		}
-		// 快捷栏
+		// 快捷栏：对齐贴图内部 y=108
 		for (int col = 0; col < 9; ++col) {
-			this.addSlot(new Slot(playerInventory, col, 8 + col * 18, 109));
+			this.addSlot(new Slot(playerInventory, col, 8 + col * 18, 108));
 		}
 	}
 
