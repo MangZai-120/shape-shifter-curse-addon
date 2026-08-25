@@ -1,0 +1,13 @@
+{
+	"__comment": "六面独立贴图：可在 Blockbench 打开本 json + 6 张贴图逐面优化。",
+	"parent": "minecraft:block/cube",
+	"textures": {
+		"particle": "ssc_addon:block/potion_storage_box_north",
+		"down": "ssc_addon:block/potion_storage_box_down",
+		"up": "ssc_addon:block/potion_storage_box_up",
+		"north": "ssc_addon:block/potion_storage_box_north",
+		"east": "ssc_addon:block/potion_storage_box_east",
+		"south": "ssc_addon:block/potion_storage_box_south",
+		"west": "ssc_addon:block/potion_storage_box_west"
+	}
+}

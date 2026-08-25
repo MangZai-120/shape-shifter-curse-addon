@@ -1,0 +1,8 @@
+{
+	"variants": {
+		"facing=north": { "model": "ssc_addon:block/energy_extractor" },
+		"facing=east":  { "model": "ssc_addon:block/energy_extractor", "y": 90 },
+		"facing=south": { "model": "ssc_addon:block/energy_extractor", "y": 180 },
+		"facing=west":  { "model": "ssc_addon:block/energy_extractor", "y": 270 }
+	}
+}

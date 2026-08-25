@@ -1042,5 +1042,18 @@
     "item.ssc_addon.venom_gland.tooltip_2": "Cost: poison duration reduced to 70% of normal",
     "item.ssc_addon.venom_gland.tooltip_exclusive": "Salticidae form exclusive",
     "codex.form.my_addon.spider_salticidae.cons": "The Hunter's Price:\n\nCarnivorous: only meat nourishes you; other food gives nothing\n\nNutrient Sac Taboo: eating a nutrient sac still poisons you like any other form (even your poison immunity won't stop it)\n\nStill a spider's small frame: cannot wear chest, leg or feet armor\n\nFire Brittleness: as an arthropod, burning damage is increased\n\nGround walking speed is reduced — your true domain is walls and ceilings",
-	"gui.ssc_addon.category.special_crafting": "SSCA Special Crafting"
+	"gui.ssc_addon.category.special_crafting": "SSCA Special Crafting",
+	"block.ssc_addon.energy_extractor": "Energy Extractor",
+	"gui.ssc_addon.energy_extractor.craft": "Craft",
+	"gui.ssc_addon.energy_extractor.mode.manual": "Manual",
+	"gui.ssc_addon.energy_extractor.mode.auto": "Auto",
+	"gui.ssc_addon.energy_extractor.energy": "Energy: %1$s / %2$s",
+	"block.ssc_addon.energy_storage_tank": "Energy Storage Tank",
+	"block.ssc_addon.energy_bottler": "Energy Bottler",
+	"block.ssc_addon.potion_storage_box": "Potion Storage Box",
+	"message.ssc_addon.energy_network.status": "Energy Network: %1$s / %2$s",
+	"gui.ssc_addon.energy_bottler.craft": "Craft",
+	"gui.ssc_addon.energy_bottler.mode.manual": "Manual",
+	"gui.ssc_addon.energy_bottler.mode.auto": "Auto",
+	"gui.ssc_addon.energy_bottler.energy": "Energy: %1$s / %2$s"
 }

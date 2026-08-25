@@ -203,6 +203,8 @@ public final class WindSpiritClawManager {
         for (Entity e : sw.getOtherEntities(player, box)) {
             if (!(e instanceof LivingEntity living)) continue;
             if (WhitelistUtils.isProtected(player, living)) continue; // 默认白名单
+            // 视线检查：墙后目标不命中（仿原版 PR #523 豹猫冲刺穿墙修复）
+            if (!net.jackcooper.shapeShifterCurseAddon.util.LineOfSightUtils.hasLineOfSight(sw, player, living)) continue;
             living.damage(player.getDamageSources().playerAttack(player), dmg);
             Vec3d push = living.getPos().subtract(player.getPos());
             if (push.lengthSquared() < 1.0e-4) push = look;

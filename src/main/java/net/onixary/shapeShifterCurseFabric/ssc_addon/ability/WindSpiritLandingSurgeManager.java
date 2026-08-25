@@ -123,6 +123,8 @@ public final class WindSpiritLandingSurgeManager {
             if (!(e instanceof LivingEntity living)) continue;
             if (living == player) continue;
             if (WhitelistUtils.isProtected(player, living)) continue; // 默认白名单
+            // 视线检查：墙后目标不命中（仿原版 PR #523 豹猫冲刺穿墙修复）
+            if (!net.jackcooper.shapeShifterCurseAddon.util.LineOfSightUtils.hasLineOfSight(world, player, living)) continue;
             living.damage(player.getDamageSources().playerAttack(player), DAMAGE);
             Vec3d push = living.getPos().subtract(center);
             if (push.lengthSquared() < 1.0e-4) push = new Vec3d(0, 1, 0);

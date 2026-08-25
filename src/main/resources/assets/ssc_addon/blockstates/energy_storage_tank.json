@@ -1,0 +1,5 @@
+{
+	"variants": {
+		"": { "model": "ssc_addon:block/energy_storage_tank" }
+	}
+}

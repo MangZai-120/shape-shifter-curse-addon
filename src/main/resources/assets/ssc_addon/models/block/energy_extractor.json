@@ -1,0 +1,77 @@
+{
+	"format_version": "1.9.0",
+	"credit": "六面独立贴图空心舱（用户 Blockbench 优化版）：底板+后壁+左右壁，前顶开口。#6/#7/#8 为用户自制贴图，其余面用方向占位贴图。",
+	"parent": "block/block",
+	"texture_size": [32, 32],
+	"textures": {
+		"6": "ssc_addon:block/energy_extractor_0",
+		"7": "ssc_addon:block/energy_extractor_1",
+		"8": "ssc_addon:block/energy_extractor_2",
+		"down": "ssc_addon:block/energy_extractor_down",
+		"up": "ssc_addon:block/energy_extractor_up",
+		"east": "ssc_addon:block/energy_extractor_east",
+		"west": "ssc_addon:block/energy_extractor_west",
+		"particle": "ssc_addon:block/energy_extractor_north",
+		"north": "ssc_addon:block/energy_extractor_north",
+		"south": "ssc_addon:block/energy_extractor_south"
+	},
+	"elements": [
+		{
+			"from": [0, 0, 0],
+			"to": [16, 2, 16],
+			"faces": {
+				"north": {"uv": [0, 14, 16, 16], "texture": "#north"},
+				"east": {"uv": [0, 14, 16, 16], "texture": "#east"},
+				"south": {"uv": [0, 14, 16, 16], "texture": "#south"},
+				"west": {"uv": [0, 14, 16, 16], "texture": "#west"},
+				"up": {"uv": [0, 0, 16, 16], "texture": "#up"},
+				"down": {"uv": [0, 0, 16, 16], "texture": "#down", "cullface": "down"}
+			}
+		},
+		{
+			"from": [0, 2, 14],
+			"to": [16, 14, 16],
+			"faces": {
+				"north": {"uv": [0, 0, 8, 6], "texture": "#7"},
+				"east": {"uv": [8, 2, 9, 8], "texture": "#7"},
+				"south": {"uv": [0, 6, 8, 12], "texture": "#7", "cullface": "south"},
+				"west": {"uv": [8, 8, 9, 14], "texture": "#7"},
+				"up": {"uv": [16, 1, 8, 0], "texture": "#7"},
+				"down": {"uv": [16, 1, 8, 2], "texture": "#7"}
+			}
+		},
+		{
+			"from": [0, 2, 0],
+			"to": [2, 14, 14],
+			"faces": {
+				"north": {"uv": [8, 0, 9, 6], "texture": "#8"},
+				"east": {"uv": [0, 0, 7, 6], "texture": "#8"},
+				"south": {"uv": [8, 6, 9, 12], "texture": "#8"},
+				"west": {"uv": [0, 6, 7, 12], "texture": "#8", "cullface": "west"},
+				"up": {"uv": [8, 7, 7, 0], "texture": "#8"},
+				"down": {"uv": [8, 7, 7, 14], "texture": "#8"}
+			}
+		},
+		{
+			"from": [14, 2, 0],
+			"to": [16, 14, 14],
+			"faces": {
+				"north": {"uv": [0, 2, 2, 14], "texture": "#north"},
+				"east": {"uv": [2, 2, 16, 14], "texture": "#east", "cullface": "east"},
+				"south": {"uv": [14, 2, 16, 14], "texture": "#south"},
+				"west": {"uv": [0, 2, 14, 14], "texture": "#6"},
+				"up": {"uv": [14, 0, 16, 14], "texture": "#up"},
+				"down": {"uv": [14, 2, 16, 16], "texture": "#down"}
+			}
+		}
+	],
+	"groups": [
+		{
+			"name": "energy_extractor",
+			"origin": [8, 8, 8],
+			"scope": 0,
+			"color": 0,
+			"children": [0, 1, 2, 3]
+		}
+	]
+}

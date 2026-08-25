@@ -1042,5 +1042,18 @@
     "item.ssc_addon.venom_gland.tooltip_2": "代价：中毒持续时间缩短至正常的 70%",
     "item.ssc_addon.venom_gland.tooltip_exclusive": "跳蛛形态专属",
     "codex.form.my_addon.spider_salticidae.cons": "捕猎者的代价：\n\n肉食本性：你只能从肉类中获得饱食，其它食物毫无营养\n\n流食禁忌：吾食流食囊仍会像其它形态一样中毒（连毒免疫也挡不住）\n\n身躯依然是蜘蛛的小巧身板：你无法装备胸甲、腿甲与靴子\n\n火焰脆性：作为节肢生物，燃烧时受到的伤害提升\n\n在地面行走时移动速度被削弱——你的真正天地是墙壁与天花板",
-	"gui.ssc_addon.category.special_crafting": "SSCA 特殊合成"
+	"gui.ssc_addon.category.special_crafting": "SSCA 特殊合成",
+	"block.ssc_addon.energy_extractor": "能量汲取器",
+	"gui.ssc_addon.energy_extractor.craft": "合成",
+	"gui.ssc_addon.energy_extractor.mode.manual": "手动",
+	"gui.ssc_addon.energy_extractor.mode.auto": "自动",
+	"gui.ssc_addon.energy_extractor.energy": "能量：%1$s / %2$s",
+	"block.ssc_addon.energy_storage_tank": "能量储罐",
+	"block.ssc_addon.energy_bottler": "能量装瓶器",
+	"block.ssc_addon.potion_storage_box": "药品存储箱",
+	"message.ssc_addon.energy_network.status": "能量网络：%1$s / %2$s",
+	"gui.ssc_addon.energy_bottler.craft": "合成",
+	"gui.ssc_addon.energy_bottler.mode.manual": "手动",
+	"gui.ssc_addon.energy_bottler.mode.auto": "自动",
+	"gui.ssc_addon.energy_bottler.energy": "能量：%1$s / %2$s"
 }

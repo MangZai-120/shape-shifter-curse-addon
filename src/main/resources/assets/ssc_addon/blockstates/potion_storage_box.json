@@ -1,0 +1,5 @@
+{
+	"variants": {
+		"": { "model": "ssc_addon:block/potion_storage_box" }
+	}
+}
