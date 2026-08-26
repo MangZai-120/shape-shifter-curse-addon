@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.block;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.HopperBlock;
@@ -11,6 +12,9 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.SidedInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.network.listener.ClientPlayPacketListener;
+import net.minecraft.network.packet.Packet;
+import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.text.Text;
@@ -37,6 +41,11 @@ public class PotionStorageBoxBlockEntity extends BlockEntity implements SidedInv
 
 	private final DefaultedList<ItemStack> items = DefaultedList.ofSize(SLOT_COUNT, ItemStack.EMPTY);
 
+	/** 客户端槽位镜像（仅渲染用）：按总装填档位在柜内 4 个展示位显示药水瓶。 */
+	private final DefaultedList<ItemStack> clientItems = DefaultedList.ofSize(SLOT_COUNT, ItemStack.EMPTY);
+	/** 上次已同步的展示档位（服务端，对比用；-1 表示尚未同步）。 */
+	private int lastTier = -1;
+
 	public PotionStorageBoxBlockEntity(BlockPos pos, BlockState state) {
 		super(RegAddonBlockEntities.POTION_STORAGE_BOX_BE, pos, state);
 	}
@@ -52,6 +61,39 @@ public class PotionStorageBoxBlockEntity extends BlockEntity implements SidedInv
 		if (world.getTime() % PULL_INTERVAL == 0) {
 			be.pullFromFeederHoppers(world, pos);
 		}
+		// 展示档位对比：总装填每跨 25% 档才发 BE 包（柜内瓶数变化但未跨档时不刷包，省带宽）
+		int tier = displayTier(totalBottles(be.items));
+		if (tier != be.lastTier) {
+			be.lastTier = tier;
+			if (!world.isClient) {
+				world.updateListeners(pos, state, state, Block.NOTIFY_LISTENERS);
+			}
+		}
+	}
+
+	/** 柜内总瓶数（所有槽的堆叠数之和）。 */
+	public static int totalBottles(java.util.List<ItemStack> stacks) {
+		int total = 0;
+		for (ItemStack s : stacks) {
+			if (!s.isEmpty()) {
+				total += s.getCount();
+			}
+		}
+		return total;
+	}
+
+	/**
+	 * 展示档位（0~8）：总装填每 12.5% 一档（满柜 8槽×8=64 瓶，即每 8 瓶 +1 档）；
+	 * 有任何瓶子时至少 1 档，满柜 8 档。渲染器与同步触发共用本公式，保证两端一致。
+	 */
+	public static int displayTier(int totalBottles) {
+		if (totalBottles <= 0) return 0;
+		return Math.min(8, (totalBottles + 7) / 8);
+	}
+
+	/** 客户端：渲染器读取的槽位镜像。 */
+	public ItemStack getClientStack(int slot) {
+		return clientItems.get(slot);
 	}
 
 	/** 抽取所有「出口方向正对本箱」的相邻漏斗里的能量瓶（仅馈送漏斗，不抽取从本箱取货的漏斗）。 */
@@ -128,6 +170,13 @@ public class PotionStorageBoxBlockEntity extends BlockEntity implements SidedInv
 		super.readNbt(nbt);
 		items.clear();
 		Inventories.readNbt(nbt, items);
+		// 客户端 BE 数据包路径：刷新柜内瓶子渲染镜像
+		clientItems.clear();
+		DefaultedList<ItemStack> mirror = DefaultedList.ofSize(SLOT_COUNT, ItemStack.EMPTY);
+		Inventories.readNbt(nbt, mirror);
+		for (int i = 0; i < SLOT_COUNT && i < mirror.size(); i++) {
+			clientItems.set(i, mirror.get(i));
+		}
 	}
 
 	// ==================== ScreenHandlerFactory ====================
@@ -140,6 +189,22 @@ public class PotionStorageBoxBlockEntity extends BlockEntity implements SidedInv
 	@Override
 	public ScreenHandler createMenu(int syncId, PlayerInventory playerInventory, PlayerEntity player) {
 		return new PotionStorageBoxScreenHandler(syncId, playerInventory, this);
+	}
+
+	// ==================== 客户端渲染同步（柜内动态瓶子） ====================
+
+	/** BE 更新包：客户端收到后走 readNbt 刷新柜内瓶子镜像。 */
+	@Override
+	public Packet<ClientPlayPacketListener> toUpdatePacket() {
+		return BlockEntityUpdateS2CPacket.create(this);
+	}
+
+	/** 区块数据包：进存档/重进世界时客户端也能拿到槽位内容渲染柜内瓶子。 */
+	@Override
+	public NbtCompound toInitialChunkDataNbt() {
+		NbtCompound nbt = super.toInitialChunkDataNbt();
+		Inventories.writeNbt(nbt, items);
+		return nbt;
 	}
 
 	// ==================== SidedInventory（漏斗互通） ====================

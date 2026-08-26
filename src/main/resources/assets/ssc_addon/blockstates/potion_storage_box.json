@@ -1,5 +1,8 @@
 {
 	"variants": {
-		"": { "model": "ssc_addon:block/potion_storage_box" }
+		"facing=north": { "model": "ssc_addon:block/potion_storage_box" },
+		"facing=east":  { "model": "ssc_addon:block/potion_storage_box", "y": 90 },
+		"facing=south": { "model": "ssc_addon:block/potion_storage_box", "y": 180 },
+		"facing=west":  { "model": "ssc_addon:block/potion_storage_box", "y": 270 }
 	}
 }

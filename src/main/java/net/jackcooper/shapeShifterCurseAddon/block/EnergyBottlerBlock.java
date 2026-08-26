@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.block;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
@@ -8,11 +9,18 @@ import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.state.StateManager;
+import net.minecraft.state.property.DirectionProperty;
+import net.minecraft.state.property.Properties;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.BlockMirror;
+import net.minecraft.util.BlockRotation;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,11 +29,36 @@ import org.jetbrains.annotations.Nullable;
  * <p>右键打开界面（3 空瓶输入槽 + 3 能量瓶输出槽 + 能量条 + 手动/自动按钮）；逻辑由
  * {@link EnergyBottlerBlockEntity#tick} 驱动。从相邻能量网络抽能量，破坏时掉落槽内物品。
  */
-@SuppressWarnings("deprecation") // 覆写 vanilla @Deprecated 的 Block 交互/状态替换方法，统一抑制
+@SuppressWarnings("deprecation") // 覆写 vanilla @Deprecated 的 Block 交互/状态替换/旋转镜像方法，统一抑制
 public class EnergyBottlerBlock extends BlockWithEntity {
+
+	/** 开口所朝的水平方向（同汲取器：放置时开口朝向放置者）。 */
+	public static final DirectionProperty FACING = Properties.HORIZONTAL_FACING;
 
 	public EnergyBottlerBlock(Settings settings) {
 		super(settings);
+		setDefaultState(getStateManager().getDefaultState().with(FACING, Direction.NORTH));
+	}
+
+	@Override
+	protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+		builder.add(FACING);
+	}
+
+	@Override
+	public BlockState getPlacementState(ItemPlacementContext ctx) {
+		// 开口朝向放置者（同汲取器）：玩家水平朝向的反向
+		return getDefaultState().with(FACING, ctx.getHorizontalPlayerFacing().getOpposite());
+	}
+
+	@Override
+	public BlockState rotate(BlockState state, BlockRotation rotation) {
+		return state.with(FACING, rotation.rotate(state.get(FACING)));
+	}
+
+	@Override
+	public BlockState mirror(BlockState state, BlockMirror mirror) {
+		return state.rotate(mirror.getRotation(state.get(FACING)));
 	}
 
 	@Override

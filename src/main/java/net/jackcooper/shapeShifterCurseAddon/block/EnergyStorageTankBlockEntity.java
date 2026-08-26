@@ -115,12 +115,23 @@ public class EnergyStorageTankBlockEntity extends BlockEntity implements EnergyN
 		return net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket.create(this);
 	}
 
-	/** 区块数据包：进存档/重进世界时客户端也能拿到液面比例。 */
+	/** 区块数据包：进存档/重进世界时客户端也能拿到液面比例。
+	 * <p>修复：不再写 {@code clientRatio}（那是服务端的同步缓存，不持久化，服务器重启后为 -1，
+	 * 导致进游戏时包里永远是 0、液面不显示），改为按当前所在网络实时计算比例写入；
+	 * BE 尚无 world（区块加载极早期）时降级用自身 energy/MAX_ENERGY 兜底。 */
 	@Override
 	public NbtCompound toInitialChunkDataNbt() {
 		NbtCompound nbt = super.toInitialChunkDataNbt();
 		nbt.putInt("Energy", energy);
-		nbt.putFloat("ClientRatio", Math.max(0f, clientRatio));
+		float ratio;
+		if (world != null) {
+			List<EnergyNetworkMember> net = getNetwork();
+			int cap = EnergyNetwork.getTotalCapacity(net);
+			ratio = cap > 0 ? (float) EnergyNetwork.getTotalEnergy(net) / cap : 0f;
+		} else {
+			ratio = (float) energy / MAX_ENERGY;
+		}
+		nbt.putFloat("ClientRatio", Math.max(0f, Math.min(1f, ratio)));
 		return nbt;
 	}
 }

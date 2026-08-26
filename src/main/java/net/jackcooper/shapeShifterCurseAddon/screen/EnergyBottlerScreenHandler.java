@@ -46,9 +46,9 @@ public class EnergyBottlerScreenHandler extends ScreenHandler {
 		this.addProperties(propertyDelegate);
 
 		int lines = EnergyBottlerBlockEntity.LINES;
-		// 三条线：输入槽（空玻璃瓶）与输出槽（能量瓶）
+		// 三条线：输入槽（空玻璃瓶）与输出槽（能量瓶）；Y 上移 1px 对齐背景贴图槽位（用户校准）
 		for (int i = 0; i < lines; i++) {
-			int y = 18 + i * 24;
+			int y = 17 + i * 24;
 			// 输入槽
 			this.addSlot(new Slot(inventory, i, 44, y) {
 				@Override

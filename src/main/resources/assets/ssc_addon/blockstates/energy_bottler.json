@@ -1,5 +1,8 @@
 {
 	"variants": {
-		"": { "model": "ssc_addon:block/energy_bottler" }
+		"facing=north": { "model": "ssc_addon:block/energy_bottler" },
+		"facing=east":  { "model": "ssc_addon:block/energy_bottler", "y": 90 },
+		"facing=south": { "model": "ssc_addon:block/energy_bottler", "y": 180 },
+		"facing=west":  { "model": "ssc_addon:block/energy_bottler", "y": 270 }
 	}
 }

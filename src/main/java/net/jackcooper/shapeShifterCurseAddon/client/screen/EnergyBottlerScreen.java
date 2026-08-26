@@ -60,8 +60,9 @@ public class EnergyBottlerScreen extends HandledScreen<EnergyBottlerScreenHandle
 	protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
 		int x = this.x;
 		int y = this.y;
-		// 整张背景图（172x184 容器图：含边框/面板/全部槽位），与槽位坐标一一对应
-		context.drawTexture(BACKGROUND, x, y, 0, 0, this.backgroundWidth, this.backgroundHeight, 176, 184);
+		// 整张背景图（176x184 容器图：含边框/面板/全部槽位），与槽位坐标一一对应
+		// 背景图整体往左上偏移 1px（用户校准）；槽位 Y 也已上移 1px（ScreenHandler 17+i*24）
+		context.drawTexture(BACKGROUND, x - 1, y - 1, 0, 0, this.backgroundWidth, this.backgroundHeight, 176, 184);
 		// 三行进度箭头（输入 → 输出）
 		for (int i = 0; i < EnergyBottlerBlockEntity.LINES; i++) {
 			int ay = y + 22 + i * 24;

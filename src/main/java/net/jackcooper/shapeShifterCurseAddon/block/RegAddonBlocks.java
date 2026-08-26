@@ -105,6 +105,8 @@ public final class RegAddonBlocks {
 		net.jackcooper.shapeShifterCurseAddon.client.renderer.EnergyStorageTankRenderer.register();
 		// 能量装瓶器动态瓶子 BER（类炼药台：按槽位动态显示空瓶/能量瓶）
 		net.jackcooper.shapeShifterCurseAddon.client.renderer.EnergyBottlerRenderer.register();
+		// 储药柜动态药水瓶 BER（8 槽装填后在柜内对应位置显示 3D 能量瓶）
+		net.jackcooper.shapeShifterCurseAddon.client.renderer.PotionStorageBoxRenderer.register();
 		// 能量系统容器界面注册（汲取器/储罐无 GUI，右键走动作栏）
 		net.minecraft.client.gui.screen.ingame.HandledScreens.register(
 				RegAddonBlockEntities.ENERGY_BOTTLER_SH,

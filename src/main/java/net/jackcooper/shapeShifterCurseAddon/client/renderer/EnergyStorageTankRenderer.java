@@ -2,15 +2,15 @@ package net.jackcooper.shapeShifterCurseAddon.client.renderer;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
+import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.texture.SpriteAtlasTexture;
+import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Direction;
@@ -68,8 +68,9 @@ public class EnergyStorageTankRenderer implements BlockEntityRenderer<EnergyStor
 		float h = MIN_H + ratio * (MAX_H - MIN_H);
 
 		// 从方块图集取动画精灵（minU/maxU/minV/maxV 即当前动画帧的图集区域，逐帧自动更新）
+		// 图集 ID 用 PlayerScreenHandler.BLOCK_ATLAS_TEXTURE（非弃用本尊；SpriteAtlasTexture 同名常量仅是转发且已弃用）
 		Sprite sprite = MinecraftClient.getInstance().getBakedModelManager()
-				.getAtlas(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE)
+				.getAtlas(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE)
 				.getSprite(ENERGY_LIQUID);
 
 		VertexConsumer buffer = vcp.getBuffer(RenderLayer.getTranslucent());
@@ -146,7 +147,8 @@ public class EnergyStorageTankRenderer implements BlockEntityRenderer<EnergyStor
 	/** 客户端注册入口：由 {@code RegAddonBlocks.clientInit()} 调用。 */
 	@Environment(EnvType.CLIENT)
 	public static void register() {
-		BlockEntityRendererRegistry.register(
+		// 原版注册入口（经 Fabric transitive-access-wideners 放宽为 public，替代已弃用的 Fabric BlockEntityRendererRegistry）
+		BlockEntityRendererFactories.register(
 				RegAddonBlockEntities.ENERGY_STORAGE_TANK_BE,
 				EnergyStorageTankRenderer::new);
 	}

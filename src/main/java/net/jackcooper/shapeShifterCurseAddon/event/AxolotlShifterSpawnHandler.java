@@ -35,8 +35,11 @@ public final class AxolotlShifterSpawnHandler {
 
 		// 伴生兜底：每只原版美西螈附近确保至少一只野生美西螈幻形者（自然生成受生成组配额限制不稳定，伴生兜底）。
 		// command tag 保证每只原版美西螈只检查一次（区块重载不重复，且对已存在的原版美西螈重进世界时也生效）；附近已有幻形者则跳过，避免成群。
+		// 修复：跳过玩家倒桶放出的美西螈（isFromBucket=true）——它们不是自然生成的野生个体，
+		// 不应触发伴生（否则玩家每次倒桶都会在旁边凭空多出一只野生幻形者）。
 		ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
 			if (!(entity instanceof AxolotlEntity axolotl)) return;
+			if (axolotl.isFromBucket()) return; // 桶放个体：跳过伴生
 			if (axolotl.getCommandTags().contains("ssc_axolotl_shifter_checked")) return;
 			axolotl.addCommandTag("ssc_axolotl_shifter_checked");
 
