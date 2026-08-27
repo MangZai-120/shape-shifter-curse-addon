@@ -22,10 +22,11 @@ import java.util.List;
 /**
  * 通用能量药水（jackcooper）：饮用回复 25 点魔力，判定逻辑与 SSC 压缩能量药水（feed_potion）同源。
  *
- * <p>持有 SSCA 资源条（悦灵 mana / 蝙蝠血 / 阿努比斯灵魂 / 雪狐寒霜 / 果蝠种子）的形态回复对应
- * 资源条；使魔 / 蜘蛛系（原版 ManaComponent 体系）回复标准 mana 条——与压缩能量药水的
- * familiar_fox_mana 判定同源，但数值恒为 25 且不加饥饿（压缩能量药水饮用另 +8 饥饿 / +0.6 饱和）。
- * 契灵（双层抗伤条）与无能量体系的形态（人类）饮用只消耗药水不回复，并动作栏提示。
+ * <p>持有 SSCA 资源条（悦灵 mana / 蝙蝠血 / 阿努比斯灵魂 / 雪狐寒霜）的形态回复对应资源条
+ * （恒 25）；寄生果蝠的种子条上限仅 10，固定回复 2 点；使魔 / 蜘蛛系 / 契灵（原版
+ * ManaComponent 体系，契灵挂 familiar_fox_mana 的 mana_type_power）回复标准 mana 条——与
+ * 压缩能量药水的 familiar_fox_mana 判定同源，但数值恒为 25 且不加饥饿（压缩能量药水饮用
+ * 另 +8 饥饿 / +0.6 饱和）。朔望与无能量体系的形态（人类）饮用只消耗药水不回复，并动作栏提示。
  *
  * <p>实现参照项目内 {@code InfiniteEnergyPotionItem}：不继承 PotionItem（避免可堆叠类模组放开叠加），
  * finishUsing 服务端判定后回复，饮毕返还空玻璃瓶。
@@ -45,7 +46,8 @@ public class UniversalEnergyPotionItem extends Item {
 	 * 持有任意 SSCA 资源条（悦灵 mana / 蝙蝠血 / 阿努比斯灵魂 / 雪狐寒霜 / 果蝠种子），
 	 * 或身上存在原版 mana 类型（ManaComponent 非空——使魔系 familiar_fox_mana /
 	 * 蜘蛛系 spider_mana 的所有阶段自动覆盖，含原版使魔 2/3 阶、红使魔、进化使魔、
-	 * SP 使魔、月织蛛等）。契灵借用 familiar_fox_mana 但其条是双层抗伤语义，显式排除。
+	 * SP 使魔、月织蛛、契灵等）。朔望（ocelot_nova）无能量体系，但切形态后
+	 * ManaComponent 可能残留上一形态的 mana_type 导致误判，显式排除。
 	 */
 	public static boolean canRestore(LivingEntity entity) {
 		if (!(entity instanceof PlayerEntity player)) {
@@ -57,12 +59,12 @@ public class UniversalEnergyPotionItem extends Item {
 				return true;
 			}
 		}
-		// 契灵（familiar_fox_mancianima）：借用 familiar_fox_mana 但为双层抗伤条，排除
+		// 朔望（ocelot_nova）：无能量体系；ManaComponent 若残留旧形态 mana_type 会误判，显式排除
 		if (net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(
-				entity, net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_MANCIANIMA)) {
+				entity, net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.OCELOT_NOVA)) {
 			return false;
 		}
-		// 原版 mana 体系兜底：有任何 mana_type 即可（仅玩家有 ManaComponent）
+		// 原版 mana 体系兜底：有任何 mana_type 即可（仅玩家有 ManaComponent；契灵走此分支）
 		try {
 			return net.onixary.shapeShifterCurseFabric.mana.ManaUtils.getPlayerManaTypeID(player) != null;
 		} catch (Exception e) {
@@ -76,13 +78,18 @@ public class UniversalEnergyPotionItem extends Item {
 	 * 全部经统一门面 {@link ResourceBars}（SSCA-ResourceKit）。
 	 */
 	private static void restoreMana(net.minecraft.server.network.ServerPlayerEntity player) {
+		// 寄生果蝠：种子条上限仅 10，固定回 2 点（喝一瓶约 1/5 条，与其它形态 25 点的体感比例相当）
+		if (ResourceBars.has(player, BarKeys.SEED)) {
+			ResourceBars.gain(player, BarKeys.SEED, 2);
+			return;
+		}
 		for (ResourceBarDef bar : BarKeys.ALL) {
 			if (ResourceBars.has(player, bar)) {
 				ResourceBars.gain(player, bar, (int) MANA_RESTORE);
 				return;
 			}
 		}
-		// 标准型：原版 ManaComponent（gainMana 内部 clamp 到 max）
+		// 标准型：原版 ManaComponent（gainMana 内部 clamp 到 max；含契灵的 familiar_fox_mana）
 		net.onixary.shapeShifterCurseFabric.mana.ManaUtils.gainPlayerMana(player, MANA_RESTORE);
 	}
 

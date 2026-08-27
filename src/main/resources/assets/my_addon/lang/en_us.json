@@ -1057,7 +1057,7 @@
   "gui.ssc_addon.energy_bottler.mode.auto": "Auto",
   "gui.ssc_addon.energy_bottler.energy": "Energy: %1$s / %2$s",
   "item.ssc_addon.universal_energy_potion": "Universal Energy Potion",
-  "tooltip.ssc_addon.universal_potion": "§7Restores 25 energy when drunk (forms with an energy bar or mana system)",
+  "tooltip.ssc_addon.universal_potion": "§7Restores energy when drunk (forms with an energy bar or mana system; Parasitic Fruit Bat gains 2 seed energy)",
   "message.ssc_addon.universal_potion.no_effect": "This body cannot absorb the potion energy...",
   "block.ssc_addon.energy_converter": "Energy Converter",
   "message.ssc_addon.energy_converter.on": "Energy Converter activated (Network: %1$s / %2$s)",
