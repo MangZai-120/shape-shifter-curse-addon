@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ABA",
+    "BCB",
+    "ABA"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:iron_ingot"
+    },
+    "B": {
+      "item": "shape-shifter-curse:moondust_crystal_shard"
+    },
+    "C": {
+      "item": "shape-shifter-curse:morphscale_core"
+    }
+  },
+  "result": {
+    "item": "ssc_addon:energy_storage_tank",
+    "count": 1
+  }
+}
