@@ -31,8 +31,8 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager;
 
 import java.util.Optional;

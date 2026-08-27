@@ -6,7 +6,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.sound.PositionedSoundInstance;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
+import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 
 import java.util.Map;
 import java.util.UUID;
@@ -147,7 +147,7 @@ public final class NightmareFearClient {
 		// 无光影时由 FearFogMixin 覆盖雾距/雾色。粉球壳 FearSphereWallRenderer 增强界限感。
 		if (client.player != null) {
 			java.util.Map<net.minecraft.entity.effect.StatusEffect, net.minecraft.entity.effect.StatusEffectInstance> effects =
-					((net.onixary.shapeShifterCurseFabric.ssc_addon.mixin.client.LivingEntityStatusEffectsAccessor) client.player)
+					((net.jackcooper.shapeShifterCurseAddon.mixin.client.LivingEntityStatusEffectsAccessor) client.player)
 							.sscAddon$getActiveStatusEffects();
 			if (feared) {
 				net.minecraft.entity.effect.StatusEffectInstance cur =
@@ -169,9 +169,9 @@ public final class NightmareFearClient {
 			double nearest = Double.MAX_VALUE;
 			for (net.minecraft.entity.Entity e : client.world.getEntities()) {
 				if (e == client.player || !(e instanceof net.minecraft.entity.player.PlayerEntity)) continue;
-				if (!net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isForm(
+				if (!net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(
 						(net.minecraft.entity.player.PlayerEntity) e,
-						net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.WILD_CAT_NIGHTMARE)) continue;
+						net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.WILD_CAT_NIGHTMARE)) continue;
 				nearest = Math.min(nearest, e.squaredDistanceTo(client.player));
 			}
 			float vol = 0.06f;

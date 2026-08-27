@@ -18,12 +18,12 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
+import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 
 import java.util.List;
 import java.util.UUID;
@@ -375,11 +375,11 @@ public final class JumpKillManager {
 		boolean cryNow = s.chargeTick < CHARGE_MAX && s.chargeTick % interval == 0 && s.chargeTick > 0;
 		if (cryNow) {
 			float pitch = 0.6f + (float) ratio * 0.8f;
-			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaMarkManager
+			net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkManager
 					.playSoundToPlayer(player, SoundEvents.ENTITY_SPIDER_AMBIENT, 0.5f, pitch);
 		}
 		if (justReachedMax) {
-			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaMarkManager
+			net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkManager
 					.playSoundToPlayer(player, SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, 0.8f, 1.6f);
 		}
 	}

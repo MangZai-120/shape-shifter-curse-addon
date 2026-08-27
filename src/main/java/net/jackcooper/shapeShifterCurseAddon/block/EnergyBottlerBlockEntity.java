@@ -29,6 +29,7 @@ import net.jackcooper.shapeShifterCurseAddon.energy.EnergyNetwork;
 import net.jackcooper.shapeShifterCurseAddon.energy.EnergyNetworkConsumer;
 import net.jackcooper.shapeShifterCurseAddon.energy.EnergyNetworkMember;
 import net.jackcooper.shapeShifterCurseAddon.screen.EnergyBottlerScreenHandler;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.onixary.shapeShifterCurseFabric.items.RegCustomPotions;
 
 import java.util.Collections;
@@ -178,7 +179,7 @@ public class EnergyBottlerBlockEntity extends BlockEntity
 		return out.isEmpty() || (isEnergyBottle(out) && out.getCount() < OUTPUT_MAX);
 	}
 
-	/** 结算第 i 条线一瓶：从网络抽 25 能量、耗 1 空瓶、输出槽 +1 瓶能量瓶。 */
+	/** 结算第 i 条线一瓶：从网络抽 25 能量、耗 1 空瓶、输出槽 +1 瓶通用能量药水。 */
 	private void craftOne(int line) {
 		EnergyNetwork.extract(getEnergyNetwork(), ENERGY_PER_BOTTLE);
 		items.get(line).decrement(1);
@@ -190,13 +191,16 @@ public class EnergyBottlerBlockEntity extends BlockEntity
 		}
 	}
 
-	/** 能量瓶 = 原版药水 + 压缩能量药水（feed_potion）药水效果。 */
+	/** 能量瓶 = 通用能量药水（饮用回 25 mana，持有能量条或原版魔力体系的形态生效）。 */
 	public static ItemStack makeEnergyBottle() {
-		return PotionUtil.setPotion(new ItemStack(Items.POTION), RegCustomPotions.FEED_POTION);
+		return new ItemStack(SscAddon.UNIVERSAL_ENERGY_POTION);
 	}
 
-	/** 是否为压缩能量药水瓶。 */
+	/** 是否为通用能量药水（新装瓶器产出）或旧版压缩能量药水瓶（兼容旧存档）。 */
 	public static boolean isEnergyBottle(ItemStack stack) {
+		if (stack.getItem() == SscAddon.UNIVERSAL_ENERGY_POTION) {
+			return true;
+		}
 		if (!stack.isOf(Items.POTION)) {
 			return false;
 		}

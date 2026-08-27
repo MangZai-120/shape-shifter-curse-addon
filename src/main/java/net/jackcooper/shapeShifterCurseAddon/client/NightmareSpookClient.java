@@ -5,7 +5,7 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
+import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 
 import java.util.Map;
 import java.util.UUID;

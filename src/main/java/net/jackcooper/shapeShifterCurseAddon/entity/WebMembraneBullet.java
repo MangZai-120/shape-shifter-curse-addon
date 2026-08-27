@@ -15,7 +15,7 @@ import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.entity.projectile.WebBullet;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
 /**
  * 月织蛛「攻击模式」蛛丝弹：复用原版 {@link WebBullet} 的飞行 / 粒子 / 发射音效，
@@ -118,9 +118,9 @@ public class WebMembraneBullet extends WebBullet {
 	private boolean isBoundImmune(LivingEntity target) {
 		if (target instanceof net.minecraft.entity.mob.SpiderEntity) return true;
 		if (target instanceof net.minecraft.entity.player.PlayerEntity p
-				&& (net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isForm(p, net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.SPIDER_MOON_WEAVER)
-				|| net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isForm(p, net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.ALLAY_SP)
-				|| net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isForm(p, net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.FALLEN_ALLAY_SP))) {
+				&& (net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(p, net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SPIDER_MOON_WEAVER)
+				|| net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(p, net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.ALLAY_SP)
+				|| net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(p, net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FALLEN_ALLAY_SP))) {
 			return true;
 		}
 		return isProtected(target);

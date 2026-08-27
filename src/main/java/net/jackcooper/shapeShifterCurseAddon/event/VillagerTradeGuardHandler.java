@@ -6,7 +6,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 
 /**
  * 阻止特定形态与村民交易（由 SscAddonVillagerInteractionMixin 迁移到官方 {@link UseEntityCallback}）。

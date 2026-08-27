@@ -14,9 +14,9 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 
 /**
  * 寒棘狐「凝棘」蓄力法阵实体（纯视觉，无碰撞无伤害）。

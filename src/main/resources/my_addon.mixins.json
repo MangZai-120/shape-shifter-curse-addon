@@ -1,7 +1,7 @@
 {
     "required":  true,
     "minVersion":  "0.8",
-    "package":  "net.onixary.shapeShifterCurseFabric.ssc_addon.mixin",
+    "package":  "net.jackcooper.shapeShifterCurseAddon.mixin",
     "compatibilityLevel":  "JAVA_17",
     "plugin":  "net.jackcooper.shapeShifterCurseAddon.mixin.plugin.SscAddonMixinConfigPlugin",
     "refmap":  "ssc-addon.refmap.json",
@@ -19,6 +19,7 @@
                    "IronsSpellbooksAnimationMixin",
                    "item.AnubisEatWitherRoseItemMixin",
                    "item.WitherPotionStackMixin",
+                   "item.AddonPotionStackableMixin",
                    "item.MilkBucketWebBoundMixin",
                    "item.AmuletBraceletTrinketMixin",
                    "item.CharmOfNightCrystalTrinketMixin",

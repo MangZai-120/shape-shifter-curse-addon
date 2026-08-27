@@ -83,8 +83,11 @@ public class PotionStorageBoxScreenHandler extends ScreenHandler {
 					return ItemStack.EMPTY;
 				}
 			} else if (EnergyBottlerBlockEntity.isEnergyBottle(originalStack)) {
-				// 玩家背包 → 存储箱（仅能量瓶）
-				if (!this.insertItem(originalStack, 0, CONTAINER_SLOTS, false)) {
+				// 玩家背包 → 存储箱（仅能量瓶）：不论形态，按箱槽上限（8）合并——
+				// 「无 power 不可叠」只限制在玩家身上，自有容器不套用
+				int before = originalStack.getCount();
+				this.insertIntoBoxSlots(originalStack);
+				if (originalStack.getCount() == before) {
 					return ItemStack.EMPTY;
 				}
 			} else {
@@ -98,5 +101,31 @@ public class PotionStorageBoxScreenHandler extends ScreenHandler {
 			}
 		}
 		return newStack;
+	}
+
+	/**
+	 * 玩家背包 → 存储箱的自定义插入（不论形态）：先并入未满同类堆（至 MAX_PER_SLOT），
+	 * 再放入空槽。绕开原版 insertItem 的 power 门控——箱槽叠放不限制形态。
+	 */
+	private void insertIntoBoxSlots(ItemStack stack) {
+		// 先合并进未满的同类堆
+		for (int i = 0; i < CONTAINER_SLOTS && !stack.isEmpty(); i++) {
+			ItemStack target = this.inventory.getStack(i);
+			if (!target.isEmpty() && ItemStack.canCombine(target, stack)) {
+				int room = PotionStorageBoxBlockEntity.MAX_PER_SLOT - target.getCount();
+				if (room > 0) {
+					int moved = Math.min(room, stack.getCount());
+					target.increment(moved);
+					stack.decrement(moved);
+				}
+			}
+		}
+		// 再放空槽
+		for (int i = 0; i < CONTAINER_SLOTS && !stack.isEmpty(); i++) {
+			if (this.inventory.getStack(i).isEmpty()) {
+				int moved = Math.min(PotionStorageBoxBlockEntity.MAX_PER_SLOT, stack.getCount());
+				this.inventory.setStack(i, stack.split(moved));
+			}
+		}
 	}
 }

@@ -1,0 +1,22 @@
+package net.jackcooper.shapeShifterCurseAddon.mixin.effect;
+
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageSource;
+import net.jackcooper.shapeShifterCurseAddon.ability.AllaySPTotem;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+@Mixin(value = LivingEntity.class, priority = 2000)
+public class AllaySPTotemMixin {
+
+	// VirtualTotemMixin uses priority 10.
+
+	@Inject(method = "tryUseTotem", at = @At("RETURN"), cancellable = true, require = 0)
+	private void tryUseTotem(DamageSource source, CallbackInfoReturnable<Boolean> cir) {
+		if (!cir.getReturnValue() && AllaySPTotem.tryUseAllayTotem((LivingEntity) (Object) this)) {
+			cir.setReturnValue(true);
+		}
+	}
+}

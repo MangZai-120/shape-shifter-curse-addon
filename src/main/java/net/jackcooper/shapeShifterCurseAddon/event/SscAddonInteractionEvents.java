@@ -18,10 +18,10 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaPassive;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaPassive;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 
 /**
  * SSCA 各形态交互事件注册（从 SscAddon.registerMancianimaEvents 拆分而来）：
@@ -103,7 +103,7 @@ public final class SscAddonInteractionEvents {
 		// SP美西螈：选中快捷栏(主手)为空 + 副手持箭 + 右键 → 消耗 1 支箭“合成”获得水矛（5 秒CD；身上最多 1 把）
 		// 注：主手为空时 MC 只触发副手(OFF_HAND)交互，故用副手回调
 		net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.register((player, world, hand) -> {
-			boolean axo = net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils.isAxolotlSP(player);
+			boolean axo = net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isAxolotlSP(player);
 			net.minecraft.item.ItemStack mainStack = player.getMainHandStack();
 			net.minecraft.item.ItemStack offStack = player.getOffHandStack();
 			boolean arrowCd = player.getItemCooldownManager().isCoolingDown(net.minecraft.item.Items.ARROW);
@@ -165,7 +165,7 @@ public final class SscAddonInteractionEvents {
 				if (sp.getWorld() instanceof net.minecraft.server.world.ServerWorld sw) {
 					sw.playSound(null, sp.getX(), sp.getY(), sp.getZ(),
 							net.minecraft.sound.SoundEvents.ITEM_BOTTLE_FILL, sp.getSoundCategory(), 0.8f, 1.0f);
-					net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils.spawnWaterBurst(sw, sp.getX(), sp.getY() + 1.0, sp.getZ(), 0.5);
+					net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils.spawnWaterBurst(sw, sp.getX(), sp.getY() + 1.0, sp.getZ(), 0.5);
 				}
 				return net.minecraft.util.TypedActionResult.success(sp.getStackInHand(hand));
 			}

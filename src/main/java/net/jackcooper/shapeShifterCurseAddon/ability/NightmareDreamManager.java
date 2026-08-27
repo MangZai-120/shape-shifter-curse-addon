@@ -2,8 +2,8 @@ package net.jackcooper.shapeShifterCurseAddon.ability;
 
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
+import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +67,7 @@ public final class NightmareDreamManager {
 
 	/** 该玩家是否为食梦魔形态（服务端）。 */
 	public static boolean isNightmare(ServerPlayerEntity player) {
-		return FormUtils.isForm(player, net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers.WILD_CAT_NIGHTMARE);
+		return FormUtils.isForm(player, net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.WILD_CAT_NIGHTMARE);
 	}
 
 	/**

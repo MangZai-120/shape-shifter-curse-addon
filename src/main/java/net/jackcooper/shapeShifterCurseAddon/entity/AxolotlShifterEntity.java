@@ -60,7 +60,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.event.GameEvent;
 import net.minecraft.world.explosion.Explosion;
 import net.minecraft.enchantment.ProtectionEnchantment;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.ParticleUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 

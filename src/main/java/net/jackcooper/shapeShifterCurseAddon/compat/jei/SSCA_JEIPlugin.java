@@ -16,7 +16,7 @@ import net.minecraft.potion.PotionUtil;
 import net.minecraft.potion.Potions;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import org.jetbrains.annotations.NotNull;
 
 /**

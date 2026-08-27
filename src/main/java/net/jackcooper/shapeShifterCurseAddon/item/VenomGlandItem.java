@@ -7,9 +7,9 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -62,7 +62,7 @@ public class VenomGlandItem extends AccessoryItem {
 
 	/** 佩戴者是否正戴着毒液腺体（原生 Trinkets/tclayer + Curios 反射兜底）。 */
 	public static boolean isWearingBy(LivingEntity entity) {
-		if (net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils.isWearing(entity, SscAddon.VENOM_GLAND)) {
+		if (net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils.isWearing(entity, SscAddon.VENOM_GLAND)) {
 			return true;
 		}
 		try {

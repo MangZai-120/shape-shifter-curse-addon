@@ -1,0 +1,152 @@
+package net.jackcooper.shapeShifterCurseAddon.item;
+
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.projectile.TridentEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.particle.ParticleTypes;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+
+import java.util.List;
+
+public class WaterSpearEntity extends TridentEntity {
+
+	private ItemStack waterSpearStack = new ItemStack(SscAddon.WATER_SPEAR);
+
+	public WaterSpearEntity(EntityType<? extends TridentEntity> entityType, World world) {
+		super(SscAddon.WATER_SPEAR_ENTITY, world);
+		// 不可拾取：水矛只能合成获得（走 5 秒 CD + 最多一把），扔出即消耗
+		this.pickupType = net.minecraft.entity.projectile.PersistentProjectileEntity.PickupPermission.DISALLOWED;
+	}
+
+	public WaterSpearEntity(World world, LivingEntity owner, ItemStack stack) {
+		super(SscAddon.WATER_SPEAR_ENTITY, world);
+		this.setOwner(owner);
+		this.setPosition(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
+		this.waterSpearStack = stack.copy();
+		// 不可拾取：水矛只能合成获得（走 5 秒 CD + 最多一把），扔出即消耗
+		this.pickupType = net.minecraft.entity.projectile.PersistentProjectileEntity.PickupPermission.DISALLOWED;
+	}
+
+	public ItemStack getWeaponStack() {
+		return this.waterSpearStack;
+	}
+
+	@Override
+	public void readCustomDataFromNbt(NbtCompound nbt) {
+		super.readCustomDataFromNbt(nbt);
+		if (nbt.contains("WaterSpear", 10)) {
+			this.waterSpearStack = ItemStack.fromNbt(nbt.getCompound("WaterSpear"));
+		}
+	}
+
+	@Override
+	public void writeCustomDataToNbt(NbtCompound nbt) {
+		super.writeCustomDataToNbt(nbt);
+		nbt.put("WaterSpear", this.waterSpearStack.writeNbt(new NbtCompound()));
+	}
+
+
+	@Override
+	protected void onEntityHit(EntityHitResult entityHitResult) {
+		Entity entity = entityHitResult.getEntity();
+		World world = this.getWorld();
+
+		if (!world.isClient && entity instanceof LivingEntity target) {
+			// Direct damage
+			float damage = 10.0f;
+			target.damage(this.getDamageSources().trident(this, this.getOwner()), damage);
+
+			// Apply slowness（带投掷者 source 供入梦拦截归因）
+			target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 100, 1), this.getOwner());
+
+			// Area damage
+			doAreaDamage(target.getPos().add(0, target.getHeight() / 2, 0), target);
+		}
+
+		// Remove the spear after hitting
+		this.discard();
+	}
+
+	@Override
+	protected void onBlockHit(BlockHitResult blockHitResult) {
+		World world = this.getWorld();
+
+		if (!world.isClient) {
+			doAreaDamage(this.getPos(), null);
+		}
+
+		// Remove the spear after hitting block
+		this.discard();
+	}
+
+	private void doAreaDamage(Vec3d pos, Entity directTarget) {
+		World world = this.getWorld();
+		double x = pos.x;
+		double y = pos.y;
+		double z = pos.z;
+
+		// Get entities within 1.5 block radius (3 block diameter)
+		List<Entity> nearbyEntities = world.getOtherEntities(this.getOwner(), new Box(x - 1.5, y - 1.5, z - 1.5, x + 1.5, y + 1.5, z + 1.5));
+		for (Entity nearEntity : nearbyEntities) {
+			if (nearEntity instanceof LivingEntity living && nearEntity != this.getOwner() && nearEntity != directTarget) {
+				living.damage(this.getDamageSources().trident(this, this.getOwner()), 4.0f);
+			}
+		}
+
+		// Play splash sound and particles
+		world.playSound(null, x, y, z, SoundEvents.ENTITY_GENERIC_SPLASH, SoundCategory.PLAYERS, 1.0F, 0.8F);
+
+		// Spawn particles on server - 落地水花爆开（仿 RC-4 药水破碎特效）
+		if (world instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+			net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils.spawnWaterBurst(serverWorld, x, y, z, 1.0);
+		}
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+
+		// Spawn water trail particles
+		World world = this.getWorld();
+		if (world.isClient && !this.inGround) {
+			for (int i = 0; i < 2; i++) {
+				world.addParticle(ParticleTypes.DRIPPING_WATER, true,
+						this.getX() + (world.random.nextDouble() - 0.5) * 0.3,
+						this.getY() + (world.random.nextDouble() - 0.5) * 0.3,
+						this.getZ() + (world.random.nextDouble() - 0.5) * 0.3,
+						0, 0, 0);
+			}
+		}
+	}
+
+	@Override
+	protected SoundEvent getHitSound() {
+		return SoundEvents.ENTITY_GENERIC_SPLASH;
+	}
+
+	@Override
+	public boolean hasNoGravity() {
+		return false;
+	}
+
+	@Override
+	public void onPlayerCollision(PlayerEntity player) {
+		// 水矛扔出即消耗、永远不可拾取（含重启前旧 ALLOWED 实体）：碰撞不做任何拾取处理。
+		// 唯一获取途径=合成（5 秒 CD + 最多一把）。
+	}
+
+}

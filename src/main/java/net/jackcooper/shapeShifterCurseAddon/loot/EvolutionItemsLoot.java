@@ -6,7 +6,7 @@ import net.minecraft.loot.condition.RandomChanceLootCondition;
 import net.minecraft.loot.entry.ItemEntry;
 import net.minecraft.loot.provider.number.ConstantLootNumberProvider;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 
 import java.util.Set;
 

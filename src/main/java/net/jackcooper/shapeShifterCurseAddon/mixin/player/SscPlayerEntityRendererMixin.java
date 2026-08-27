@@ -1,0 +1,131 @@
+package net.jackcooper.shapeShifterCurseAddon.mixin.player;
+
+import net.minecraft.client.network.AbstractClientPlayerEntity;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.entity.PlayerEntityRenderer;
+import net.minecraft.client.render.entity.PlayerModelPart;
+import net.minecraft.client.render.entity.model.PlayerEntityModel;
+import net.minecraft.client.util.math.MatrixStack;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+@Mixin(PlayerEntityRenderer.class)
+public class SscPlayerEntityRendererMixin {
+
+	// Inject before super.render() to ensure setModelPose has run, but modify visibility before Main Model renders.
+	@Inject(method = "render(Lnet/minecraft/client/network/AbstractClientPlayerEntity;FFLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;I)V",
+			at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/LivingEntityRenderer;render(Lnet/minecraft/entity/LivingEntity;FFLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;I)V"),
+			require = 0)
+	public void render(AbstractClientPlayerEntity player, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i, CallbackInfo ci) {
+		PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
+		if (component != null) {
+			IForm currentForm = component.nowForm;
+			if (currentForm != null && currentForm.getFormID() != null) {
+				int phase = currentForm.getFormTier();
+				boolean isSpecial = currentForm.getFormFlag().contains("special_form");
+				String path = currentForm.getFormID().getPath();
+
+				PlayerEntityRenderer renderer = (PlayerEntityRenderer) (Object) this;
+				PlayerEntityModel<AbstractClientPlayerEntity> model = renderer.getModel();
+
+				// 优先判断特定形态的渲染需求
+
+				// 1. 悦灵 (Allay) - 包括原版和SP: 保留头部和手臂，隐藏身体和腿
+				// 由于Mixin是底层修改，必须在此处显式隐藏原版模型的身体/腿部，否则会造成重叠
+				if (path.contains("allay")) {
+					model.body.visible = false;
+					model.jacket.visible = false;
+					model.leftLeg.visible = false;
+					model.rightLeg.visible = false;
+					model.leftPants.visible = false;
+					model.rightPants.visible = false;
+
+					model.head.visible = true;
+					// 同步原版 Issues 394 修复：尊重玩家原版皮肤定制开关
+					model.hat.visible = player.isPartVisible(PlayerModelPart.HAT);
+					model.rightArm.visible = true;
+					model.leftArm.visible = true;
+					model.rightSleeve.visible = player.isPartVisible(PlayerModelPart.RIGHT_SLEEVE);
+					model.leftSleeve.visible = player.isPartVisible(PlayerModelPart.LEFT_SLEEVE);
+				}
+				// 2. 其他完全变身 (Phase 3 或 Phase SP) - 排除 Allay
+				else if ((phase == 3 || isSpecial) && !path.contains("allay")) {
+					model.head.visible = false;
+					model.hat.visible = false;
+					model.body.visible = false;
+					model.rightArm.visible = false;
+					model.leftArm.visible = false;
+					model.rightLeg.visible = false;
+					model.leftLeg.visible = false;
+					model.leftSleeve.visible = false;
+					model.rightSleeve.visible = false;
+					model.leftPants.visible = false;
+					model.rightPants.visible = false;
+					model.jacket.visible = false;
+				}
+				// 3. 过渡形态 - 狐狸 (Fox) Phase 1 & 2
+				else if (path.contains("fox") && (phase == 1 || phase == 2)) {
+					// 隐藏四肢
+					model.leftLeg.visible = false;
+					model.rightLeg.visible = false;
+					model.leftPants.visible = false;
+					model.rightPants.visible = false;
+					model.leftArm.visible = false;
+					model.rightArm.visible = false;
+					model.leftSleeve.visible = false;
+					model.rightSleeve.visible = false;
+				}
+				// 4. 过渡形态 - 狼 (Wolf)
+				else if (path.contains("wolf")) {
+					if (phase == 1) {
+						// 隐藏腿部和袖子
+						model.leftLeg.visible = false;
+						model.rightLeg.visible = false;
+						model.leftPants.visible = false;
+						model.rightPants.visible = false;
+						model.leftSleeve.visible = false;
+						model.rightSleeve.visible = false;
+					} else if (phase == 2) {
+						// 隐藏四肢和帽子
+						model.leftLeg.visible = false;
+						model.rightLeg.visible = false;
+						model.leftPants.visible = false;
+						model.rightPants.visible = false;
+						model.leftArm.visible = false;
+						model.rightArm.visible = false;
+						model.leftSleeve.visible = false;
+						model.rightSleeve.visible = false;
+						model.hat.visible = false;
+					}
+				}
+				// 5. 过渡形态 - 蝙蝠 (Bat) Phase 2
+				else if (path.contains("bat") && phase == 2) {
+					// 隐藏四肢
+					model.leftLeg.visible = false;
+					model.rightLeg.visible = false;
+					model.leftPants.visible = false;
+					model.rightPants.visible = false;
+					model.leftArm.visible = false;
+					model.rightArm.visible = false;
+					model.leftSleeve.visible = false;
+					model.rightSleeve.visible = false;
+				}
+				// 6. 过渡形态 - 野猫 (Ocelot) Phase 2
+				else if (path.contains("ocelot") && phase == 2) {
+					// 隐藏腿部和袖子 (同狼 Phase 1)
+					model.leftLeg.visible = false;
+					model.rightLeg.visible = false;
+					model.leftPants.visible = false;
+					model.rightPants.visible = false;
+					model.leftSleeve.visible = false;
+					model.rightSleeve.visible = false;
+				}
+			}
+		}
+	}
+}

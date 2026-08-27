@@ -44,7 +44,7 @@ public final class JumpKillSilkClient {
 
 	public static void register() {
 		ClientPlayNetworking.registerGlobalReceiver(
-				net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking.PACKET_JUMP_KILL_SILK_STATE,
+				net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_JUMP_KILL_SILK_STATE,
 				(client, handler, buf, responseSender) -> {
 					UUID uuid = buf.readUuid();
 					boolean active = buf.readBoolean();

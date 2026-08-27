@@ -8,7 +8,7 @@ import net.minecraft.entity.SpawnRestriction;
 import net.minecraft.entity.passive.AxolotlEntity;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.biome.BiomeKeys;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.entity.AxolotlShifterEntity;
 
 /**

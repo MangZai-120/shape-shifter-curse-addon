@@ -13,7 +13,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.RotationAxis;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 
 /**
  * 冰刺冰锥 3D 渲染器：用 {@code frost_thorn} 物品的自定义 3D item model 渲染（照 water_spear 式 CustomModelData 路线，零新依赖）。

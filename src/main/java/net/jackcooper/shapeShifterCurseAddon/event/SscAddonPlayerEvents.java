@@ -9,21 +9,21 @@ import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.onixary.shapeShifterCurseFabric.additional_power.VirtualTotemPower;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPJukebox;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AllaySPTotem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpDeathDomain;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AnubisWolfSpSummonWolves;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormErosionBrand;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormRegen;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormWitherSand;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpFrostStorm;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpMeleeAbility;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.ability.SnowFoxSpTeleportAttack;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.ErosionSandPrismItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.item.WitheredSandRingItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.UndeadNeutralState;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.ability.AllaySPJukebox;
+import net.jackcooper.shapeShifterCurseAddon.ability.AllaySPTotem;
+import net.jackcooper.shapeShifterCurseAddon.ability.AnubisWolfSpDeathDomain;
+import net.jackcooper.shapeShifterCurseAddon.ability.AnubisWolfSpSummonWolves;
+import net.jackcooper.shapeShifterCurseAddon.ability.GoldenSandstormErosionBrand;
+import net.jackcooper.shapeShifterCurseAddon.ability.GoldenSandstormRegen;
+import net.jackcooper.shapeShifterCurseAddon.ability.GoldenSandstormWitherSand;
+import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpFrostStorm;
+import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpMeleeAbility;
+import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpTeleportAttack;
+import net.jackcooper.shapeShifterCurseAddon.item.ErosionSandPrismItem;
+import net.jackcooper.shapeShifterCurseAddon.item.WitheredSandRingItem;
+import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.UndeadNeutralState;
 
 /**
  * SSCA 玩家生命周期事件注册（从 SscAddon.registerPlayerEventHandlers 拆分而来）：
@@ -39,7 +39,7 @@ public final class SscAddonPlayerEvents {
 
 	public static void register() {
 		// 兜底：玩家加入服务器时清理孤儿 mana 数据，修复老存档残留导致能量条不消失的 bug
-		net.onixary.shapeShifterCurseFabric.ssc_addon.util.StaleManaCleaner.register();
+		net.jackcooper.shapeShifterCurseAddon.util.StaleManaCleaner.register();
 
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
 			if (!alive) {
@@ -64,8 +64,8 @@ public final class SscAddonPlayerEvents {
 			// 重连/换维度回归后：强制把契灵标记 + 金沙岚侵蚀印记状态重新同步给客户端，
 			// 避免重连后客户端 HUD/渲染缓存为空，直到下一次状态变更才被动恢复。
 			server.execute(() -> {
-				try { net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaMarkManager.resyncToPlayer(player); } catch (Throwable ignored) {}
-				try { net.onixary.shapeShifterCurseFabric.ssc_addon.ability.GoldenSandstormErosionBrand.resyncToPlayer(player); } catch (Throwable ignored) {}
+				try { net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkManager.resyncToPlayer(player); } catch (Throwable ignored) {}
+				try { net.jackcooper.shapeShifterCurseAddon.ability.GoldenSandstormErosionBrand.resyncToPlayer(player); } catch (Throwable ignored) {}
 			});
 			String welcomeTag = "ssc_addon_welcomed";
 			if (!player.getCommandTags().contains(welcomeTag)) {
@@ -138,13 +138,13 @@ public final class SscAddonPlayerEvents {
 
 		// 进化美西螈「投掷水矛」蓄力期：服务端禁用右键放置方块 / 使用方块与物品（蓄力时不能做其它交互）
 		net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
-			if (!world.isClient && net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WaterSpearLeapManager.isCharging(player.getUuid())) {
+			if (!world.isClient && net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager.isCharging(player.getUuid())) {
 				return net.minecraft.util.ActionResult.FAIL;
 			}
 			return net.minecraft.util.ActionResult.PASS;
 		});
 		net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.register((player, world, hand) -> {
-			if (!world.isClient && net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WaterSpearLeapManager.isCharging(player.getUuid())) {
+			if (!world.isClient && net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager.isCharging(player.getUuid())) {
 				return net.minecraft.util.TypedActionResult.fail(player.getStackInHand(hand));
 			}
 			return net.minecraft.util.TypedActionResult.pass(player.getStackInHand(hand));
@@ -168,12 +168,12 @@ public final class SscAddonPlayerEvents {
 			net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.clearPlayer(uuid);
 			// 跳蛛「毒液」：断线清冲刺状态
 			net.jackcooper.shapeShifterCurseAddon.ability.VenomSkillManager.clearPlayer(uuid);
-			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindSpiritClawManager.onPlayerDisconnect(handler.player);
-			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindDashManager.onPlayerDisconnect(handler.player);
-			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WindSpiritLandingSurgeManager.onPlayerDisconnect(handler.player);
-			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.WaterSpearLeapManager.onPlayerDisconnect(handler.player);
-			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.VortexGuideManager.onPlayerDisconnect(uuid);
-			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.AxolotlWaterSpurtHandler.onPlayerDisconnect(uuid);
+			net.jackcooper.shapeShifterCurseAddon.ability.WindSpiritClawManager.onPlayerDisconnect(handler.player);
+			net.jackcooper.shapeShifterCurseAddon.ability.WindDashManager.onPlayerDisconnect(handler.player);
+			net.jackcooper.shapeShifterCurseAddon.ability.WindSpiritLandingSurgeManager.onPlayerDisconnect(handler.player);
+			net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager.onPlayerDisconnect(handler.player);
+			net.jackcooper.shapeShifterCurseAddon.ability.VortexGuideManager.onPlayerDisconnect(uuid);
+			net.jackcooper.shapeShifterCurseAddon.ability.AxolotlWaterSpurtHandler.onPlayerDisconnect(uuid);
 			net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager.onPlayerDisconnect(handler.player);
 			AnubisWolfSpDeathDomain.clearPlayer(handler.player);
 			AnubisWolfSpSummonWolves.clearPlayer(uuid);
@@ -186,14 +186,14 @@ public final class SscAddonPlayerEvents {
 			WitheredSandRingItem.clearPlayer(uuid);
 			AllaySPJukebox.onPlayerDisconnect(handler.player);
 			UndeadNeutralState.clearPlayer(uuid);
-			net.onixary.shapeShifterCurseFabric.ssc_addon.action.SscAddonActions.clearPlayer(uuid);
+			net.jackcooper.shapeShifterCurseAddon.action.SscAddonActions.clearPlayer(uuid);
 			SscAddon.PLAYER_LANGUAGES.remove(uuid);
 			// 契灵：清理袭击 bossBar + raid 状态，防止 bossBar 残留与 Map 泄漏
-			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.MancianimaPassive.onPlayerDisconnect(uuid);
+			net.jackcooper.shapeShifterCurseAddon.ability.MancianimaPassive.onPlayerDisconnect(uuid);
 			// 白名单 GUI 限频表：移除退出玩家的时间戳，防止僵尸 UUID 积累
-			net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking.onPlayerDisconnect(uuid);
+			net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.onPlayerDisconnect(uuid);
 			// 海晶荧光坠增强激光：combo 中途断线时清理待机法阵实体 + 移速 modifier，防止残留
-			net.onixary.shapeShifterCurseFabric.ssc_addon.ability.FluorescentLaserManager.onPlayerDisconnect(uuid);
+			net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.onPlayerDisconnect(uuid);
 			System.out.println("[SSC_ADDON] DISCONNECT cleanup completed");
 		});
 	}

@@ -12,7 +12,7 @@ import net.minecraft.recipe.book.CraftingRecipeCategory;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 
 /**
  * 毒液腺体合成配方（特殊配方：中心必须是剧毒药水，原版 shaped 无法按药水 NBT 匹配）。

@@ -12,7 +12,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
+import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 
 /**
  * 食梦魔「入梦」目标屏幕粉色晕影 —— 客户端 HUD 渲染器。

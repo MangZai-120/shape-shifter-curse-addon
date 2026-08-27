@@ -13,7 +13,7 @@ import net.jackcooper.shapeShifterCurseAddon.energy.EnergyNetwork;
 import net.jackcooper.shapeShifterCurseAddon.energy.EnergyNetworkMember;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.onixary.shapeShifterCurseFabric.mana.RegManaComponent;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 
 import java.util.List;
 

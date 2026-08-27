@@ -2,8 +2,8 @@ package net.jackcooper.shapeShifterCurseAddon.item;
 
 import net.minecraft.entity.LivingEntity;
 import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 
 import java.util.function.Predicate;
 
@@ -30,27 +30,27 @@ final class AddonExclusiveFormCheck {
 
 	private static Predicate<LivingEntity> predicateOf(AccessoryItem item) {
 		// 与各饰品 canEquip 的形态门槛一一对应（维护时同步更新）
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.ActiveCoralNecklaceItem) return FormUtils::isAxolotlSP;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.AnkhStoneItem) return FormUtils::isAnubisWolfSP;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.AnubisCrystalItem) return FormUtils::isAnubisWolfSP;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.BindingAnkletItem) return e -> FormUtils.isForm(e, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA);
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.BloodGarnetItem) return FormUtils::isBatDesmodus;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.BloodlustRingItem) return FormUtils::isBatDesmodus;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.BlueFireAmuletItem) return FormUtils::isFamiliarFoxForm;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.ErosionSandPrismItem) return FormUtils::isGoldenSandstormSP;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.FrostAmuletItem) return FormUtils::isSnowFoxSP;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.HumusRingItem) return FormUtils::isBatParasiticFruit;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.InvisibilityCloakItem) return FormUtils::isWildCatSP;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.LifesavingCatTailItem) return e -> FormUtils.isWildCatSP(e) || FormUtils.isForm(e, FormIdentifiers.WILD_CAT_NIGHTMARE);
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.ActiveCoralNecklaceItem) return FormUtils::isAxolotlSP;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.AnkhStoneItem) return FormUtils::isAnubisWolfSP;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.AnubisCrystalItem) return FormUtils::isAnubisWolfSP;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.BindingAnkletItem) return e -> FormUtils.isForm(e, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA);
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.BloodGarnetItem) return FormUtils::isBatDesmodus;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.BloodlustRingItem) return FormUtils::isBatDesmodus;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.BlueFireAmuletItem) return FormUtils::isFamiliarFoxForm;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.ErosionSandPrismItem) return FormUtils::isGoldenSandstormSP;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.FrostAmuletItem) return FormUtils::isSnowFoxSP;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.HumusRingItem) return FormUtils::isBatParasiticFruit;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.InvisibilityCloakItem) return FormUtils::isWildCatSP;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.LifesavingCatTailItem) return e -> FormUtils.isWildCatSP(e) || FormUtils.isForm(e, FormIdentifiers.WILD_CAT_NIGHTMARE);
 		if (item instanceof NightmareRingItem) return e -> FormUtils.isForm(e, FormIdentifiers.WILD_CAT_NIGHTMARE);
 		if (item instanceof FrostSpineCollarItem) return e -> FormUtils.isForm(e, FormIdentifiers.SNOW_FOX_FROSTSPINE);
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.NovaReviveNecklaceItem) return e -> FormUtils.isForm(e, FormIdentifiers.OCELOT_NOVA);
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.PhantomBellItem) return FormUtils::isFamiliarFoxForm;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableFridgeItem) return FormUtils::isSnowFoxSP;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.PortableMoisturizerItem) return FormUtils::isMoistureDependent;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.TwinPodItem) return FormUtils::isBatParasiticFruit;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.WindSpiritStaminaNecklaceItem) return FormUtils::isOcelotSP;
-		if (item instanceof net.onixary.shapeShifterCurseFabric.ssc_addon.item.WitheredSandRingItem) return FormUtils::isGoldenSandstormSP;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.NovaReviveNecklaceItem) return e -> FormUtils.isForm(e, FormIdentifiers.OCELOT_NOVA);
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.PhantomBellItem) return FormUtils::isFamiliarFoxForm;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.PortableFridgeItem) return FormUtils::isSnowFoxSP;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.PortableMoisturizerItem) return FormUtils::isMoistureDependent;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.TwinPodItem) return FormUtils::isBatParasiticFruit;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.WindSpiritStaminaNecklaceItem) return FormUtils::isOcelotSP;
+		if (item instanceof net.jackcooper.shapeShifterCurseAddon.item.WitheredSandRingItem) return FormUtils::isGoldenSandstormSP;
 		if (item instanceof SeaCrystalPendantItem) return FormUtils::isAxolotlFluorescent;
 		return null; // 非 SSCA 专属饰品（含主包饰品）
 	}

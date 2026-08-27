@@ -17,10 +17,10 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.EvolutionNode;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.EvolutionRegistry;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.EvolutionRoute;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionNode;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRoute;
+import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -20,9 +20,9 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
+import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 
 import java.util.Iterator;
 import java.util.List;
@@ -120,7 +120,7 @@ public final class NightmareSpookManager {
 	private static boolean directMobBite(ServerWorld world, ServerPlayerEntity caster, LivingEntity target, long now) {
 		if (!target.isAlive() || target.getWorld() != world) return false;
 		// 白名单保护：白名单内生物不受惊吓伤害
-		if (net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils.isProtected(caster, target)) return false;
+		if (net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils.isProtected(caster, target)) return false;
 		// 幽灵野猫贴身一击：12 点魔法伤害（同 completeCatAttack 的伤害源，可归因食梦魔）
 		target.damage(caster.getDamageSources().indirectMagic(caster, caster), CLONE_DAMAGE);
 		// 入梦时间重置为 20 秒满额（不强制退出；与恐惧的重置同额）
@@ -200,7 +200,7 @@ public final class NightmareSpookManager {
 		if (pos == null) pos = findAirPosBehind(world, target, 2.0, 3.0, 12, 0.9, 1.0);
 		if (pos == null) return;
 
-		GhostCatEntity cat = net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon.GHOST_CAT_ENTITY.create(world);
+		GhostCatEntity cat = net.jackcooper.shapeShifterCurseAddon.SscAddon.GHOST_CAT_ENTITY.create(world);
 		cat.refreshPositionAndAngles(pos.x, pos.y, pos.z, 0.0f, 0.0f);
 		// 幽灵化：NoAI + 无敌 + 隐身（仅目标客户端显形）；保留重力（要贴地跑/跳）
 		cat.setAiDisabled(true);

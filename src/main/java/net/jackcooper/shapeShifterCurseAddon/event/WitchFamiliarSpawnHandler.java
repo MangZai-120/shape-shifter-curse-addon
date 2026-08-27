@@ -10,8 +10,8 @@ import net.minecraft.entity.mob.WitchEntity;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeKeys;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.entity.WitchFamiliarEntity;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.entity.WitchFamiliarEntity;
 
 /**
  * 女巫使魔伴生逻辑 + 野外自然生成注册（从 SscAddon.registerEntitySpawnHandlers 拆分而来）。

@@ -41,7 +41,7 @@ public class SscAddonMixinConfigPlugin implements IMixinConfigPlugin {
     private static final Logger LOGGER = LoggerFactory.getLogger("ssc-addon-mixin");
 
     /** 附属 mixin 包前缀，配合下方 helper 用简短类名登记，省去每次写全限定名。 */
-    private static final String MIXIN_PREFIX = "net.onixary.shapeShifterCurseFabric.ssc_addon.mixin.";
+    private static final String MIXIN_PREFIX = "net.jackcooper.shapeShifterCurseAddon.mixin.";
 
     /** mixin 全限定类名 → 必需的 mod id 列表（列表内全部加载，该 mixin 才应用；缺任一即跳过）。 */
     private static final Map<String, String[]> REQUIRED_MODS = new HashMap<>();

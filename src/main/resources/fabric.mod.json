@@ -27,16 +27,16 @@
   "environment": "*",
   "entrypoints": {
     "preLaunch": [
-      "net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddonPreLaunch"
+      "net.jackcooper.shapeShifterCurseAddon.SscAddonPreLaunch"
     ],
     "main": [
-      "net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon"
+      "net.jackcooper.shapeShifterCurseAddon.SscAddon"
     ],
     "client": [
-      "net.onixary.shapeShifterCurseFabric.ssc_addon.client.SscAddonClient"
+      "net.jackcooper.shapeShifterCurseAddon.client.SscAddonClient"
     ],
     "modmenu": [
-      "net.onixary.shapeShifterCurseFabric.ssc_addon.compat.ModMenuIntegration"
+      "net.jackcooper.shapeShifterCurseAddon.compat.ModMenuIntegration"
     ],
     "rei_client": [
       "net.jackcooper.shapeShifterCurseAddon.compat.rei.SSCA_REIPlugin"
@@ -48,7 +48,7 @@
       "net.jackcooper.shapeShifterCurseAddon.compat.emi.SSCA_EMIPlugin"
     ],
     "cardinal-components-entity": [
-      "net.onixary.shapeShifterCurseFabric.ssc_addon.evolution.RegEvolutionComponent",
+      "net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent",
       "net.jackcooper.shapeShifterCurseAddon.state.RegSpiderMoonWeaverStateComponent"
     ]
   },

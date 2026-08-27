@@ -7,9 +7,9 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.network.SscAddonNetworking;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.PowerUtils;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
+import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 
 import java.util.Iterator;
 import java.util.List;
@@ -388,7 +388,7 @@ public final class NightmareFearManager {
 		// 非梦魔玩家：是任一在线食梦魔的白名单友军 → 受益
 		for (ServerPlayerEntity p : world.getPlayers()) {
 			if (!NightmareDreamManager.isNightmare(p)) continue;
-			if (net.onixary.shapeShifterCurseFabric.ssc_addon.util.WhitelistUtils.isBuffTarget(p, sp)) {
+			if (net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils.isBuffTarget(p, sp)) {
 				return true;
 			}
 		}

@@ -1,0 +1,262 @@
+package net.jackcooper.shapeShifterCurseAddon;
+
+import net.minecraft.client.item.TooltipContext;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageType;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.Text;
+import net.minecraft.util.*;
+import net.minecraft.world.World;
+import net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon;
+import net.onixary.shapeShifterCurseFabric.data.StaticParams;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
+import net.jackcooper.shapeShifterCurseAddon.story.MoonScarStoryManager;
+import net.jackcooper.shapeShifterCurseAddon.story.TideSpiritStoryManager;
+import net.jackcooper.shapeShifterCurseAddon.util.AdvancementUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionManager;
+import net.jackcooper.shapeShifterCurseAddon.util.MoonMarrowFormAdvancements;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class SpUpgradeItem extends Item {
+
+	public static final RegistryKey<DamageType> CURSED_EROSION = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("my_addon", "cursed_erosion"));
+	public static final RegistryKey<DamageType> CURSED_BURST = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("my_addon", "cursed_burst"));
+	/**
+	 * Map storing the mapping from Base Form ID to Target SP Form ID
+	 * Key: Current Origin ID (Identifier), Value: Target Origin ID (Identifier)
+	 */
+	protected static final Map<Identifier, Identifier> UPGRADE_MAP = new HashMap<>();
+
+	static {
+		// Registers the SP evolution for Familiar Fox
+		// From: shape-shifter-curse:form_familiar_fox_3
+		// To:   my_addon:form_familiar_fox_sp
+		registerUpgrade("shape-shifter-curse", "familiar_fox_3", "my_addon", "familiar_fox_sp");
+		registerUpgrade("shape-shifter-curse", "axolotl_3", "my_addon", "axolotl_sp");
+		registerUpgrade("shape-shifter-curse", "allay_sp", "my_addon", "fallen_allay_sp");
+		registerUpgrade("shape-shifter-curse", "anubis_wolf_3", "my_addon", "anubis_wolf_sp");
+		// 吸血蝙蝠：原版蝙蝠三阶段永久态 → desmodus（月髓环 + 诅咒之月夜进化）
+		registerUpgrade("shape-shifter-curse", "bat_3", "my_addon", "bat_desmodus");
+		// 风灵：原版豹猫永久形态 ocelot_3 → 风灵（月髓环 + 诅咒之月夜进化）
+		registerUpgrade("shape-shifter-curse", "ocelot_3", "my_addon", "ocelot_wind_spirit");
+		// 月织蛛：原版蜘蛛三阶段永久态 → 月织蛛（月髓环 + 诅咒之月夜进化）
+		registerUpgrade("shape-shifter-curse", "spider_3", "my_addon", "spider_moon_weaver");
+		// 食梦魔：原版野猫 SP 形态 → 食梦魔（月髓环 + 诅咒之月夜进化）
+		registerUpgrade("shape-shifter-curse", "feral_cat_sp", "my_addon", "wild_cat_nightmare");
+		// 寒棘狐：原版雪狐三阶段永久态 snow_fox_3 → 寒棘狐（月髓环 + 诅咒之月夜进化）；补齐雪狐线月髓环分支
+		registerUpgrade("shape-shifter-curse", "snow_fox_3", "my_addon", "snow_fox_frostspine");
+		// 进化使魔（SSCA 路线）→ 灵界之主：需 50 级解锁两分支后才允许（门控在 finishUsing）
+		registerUpgrade("my_addon", "upgrade_familiar_fox", "my_addon", "familiar_fox_sp");
+		// 进化美西螈（SSCA 路线）→ SP 美西螈：需 50 级解锁两分支后才允许（门控在 finishUsing）
+		registerUpgrade("my_addon", "upgrade_axolotl", "my_addon", "axolotl_sp");
+	}
+
+	public SpUpgradeItem(Settings settings) {
+		super(settings);
+	}
+
+	public static void registerUpgrade(String fromNamespace, String fromPath, String toNamespace, String toPath) {
+		UPGRADE_MAP.put(new Identifier(fromNamespace, fromPath), new Identifier(toNamespace, toPath));
+	}
+
+	@Override
+	public UseAction getUseAction(ItemStack stack) {
+		return UseAction.BOW;
+	}
+
+	@Override
+	public int getMaxUseTime(ItemStack stack) {
+		return 32;
+	}
+
+	@Override
+	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
+		user.setCurrentHand(hand);
+		return TypedActionResult.consume(user.getStackInHand(hand));
+	}
+
+	@Override
+	public ItemStack finishUsing(ItemStack stack, World world, LivingEntity user) {
+		if (!world.isClient && user instanceof PlayerEntity player) {
+			// 剧情「月痕之力」：处于剧情触发的 red 形态时，月髓环可随时免费变回 sp 使魔（不消耗）
+			if (MoonScarStoryManager.tryFreeRevertFromStoryRed(player)) {
+				return stack;
+			}
+			// 剧情「潮汐之灵」：阿澪形态下使用月髓环可免费变回荧光幼灵（不消耗）
+			if (TideSpiritStoryManager.tryFreeRevertFromAling(player)) {
+				return stack;
+			}
+			Identifier targetFormId = getTargetFormId(player);
+			// 进化形态门控（使魔 / 美西螈等所有 SSCA 进化路线起点形态）：必须先解锁全部分支才能用月髃环继续进化
+			if (targetFormId != null && player instanceof ServerPlayerEntity spEvo
+					&& !EvolutionManager.canUpgradeFoxEvolve(spEvo)) {
+				player.sendMessage(Text.translatable("message.ssc_addon.evolution.fail.branches_locked").formatted(Formatting.RED, Formatting.ITALIC), false);
+				world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0F, 1.0F);
+				return stack;
+			}
+			boolean isCursedMoon = CursedMoon.isCursedMoonDay(world) && CursedMoon.isNight(world);
+			boolean isValidForm = targetFormId != null;
+			boolean isAlreadySP = isAlreadySP(player);
+
+			if (isCursedMoon && isAlreadySP) {
+				// Deadly Resonance: Already SP + Cursed Moon
+				player.sendMessage(Text.translatable("message.ssc_addon.evolution.fail.already_sp").formatted(Formatting.RED, Formatting.ITALIC), false);
+				world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0F, 1.0F);
+				world.createExplosion(player, player.getX(), player.getY(), player.getZ(), 6.0f, World.ExplosionSourceType.BLOCK);
+				player.damage(world.getDamageSources().create(CURSED_BURST), 100000.0f);
+				if (!player.getAbilities().creativeMode) {
+					stack.decrement(1);
+				}
+				// 成就：Boom Boom Boom! - 错误使用月髓环导致爆炸
+				AdvancementUtils.grant(player, new Identifier("ssc_addon", "boom_boom_boom"));
+			} else if (isValidForm && isCursedMoon) {
+				// Success: Base Form + Cursed Moon
+
+				// 5% Chance for Red Form (when upgrading to SP Fox)
+				if (targetFormId != null && targetFormId.equals(new Identifier("my_addon", "familiar_fox_sp"))
+						&& new Identifier("shape-shifter-curse", "familiar_fox_3").equals(getPlayerFormID(player))
+						&& world.random.nextFloat() < 0.05f) {
+					Identifier redFormId = new Identifier("my_addon", "familiar_fox_red");
+					IForm redForm = RegPlayerForms.getPlayerForm(redFormId);
+					if (redForm != null) {
+						// 带黑屏淡入淡出动画变身（原版 1.10.1 把 handleDirectTransform 拆为 startTransform/immediatelyTransform，
+						// 此处对应原 handleDirectTransform(...,false) 的动画变身，应用 startTransform 而非 immediatelyTransform）
+						TransformManager.startTransform(player, redForm, null);
+
+						// 10 Minutes = 12000 ticks
+						long expireTime = world.getTime() + 12000;
+						player.addCommandTag("ssc_addon_red_expire:" + expireTime);
+
+						player.sendMessage(Text.translatable("message.ssc_addon.red_transformation_special").formatted(Formatting.GREEN), false);
+					}
+				}
+
+
+				IForm formBase = RegPlayerForms.getPlayerForm(targetFormId);
+				if (formBase != null) {
+					// 带黑屏淡入淡出动画变身（startTransform），STUN 在动画期间定身
+					TransformManager.startTransform(player, formBase, null);
+					// 变身演出（黑屏淡入 IN + 淡出 OUT，共 160 tick）期间定身玩家，避免演出过程中走动
+					player.addStatusEffect(new StatusEffectInstance(SscAddon.STUN,
+							StaticParams.TRANSFORM_FX_DURATION_IN + StaticParams.TRANSFORM_FX_DURATION_OUT, 0, false, false, false));
+					player.sendMessage(Text.translatable("message.ssc_addon.evolution.success").formatted(Formatting.GREEN, Formatting.ITALIC), false);
+					world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0F, 1.0F);
+					if (!player.getAbilities().creativeMode) {
+						stack.decrement(1);
+					}
+					// 成就：今晚月色真美 - 首次使用月髓环成功变形
+					AdvancementUtils.grant(player, new Identifier("ssc_addon", "tonight_moon_beautiful"));
+					// 成就（可选）：每种目标形态对应的子成就，未注册时静默跳过
+					Identifier subAdv = MoonMarrowFormAdvancements.get(targetFormId);
+					if (subAdv != null) {
+						AdvancementUtils.grant(player, subAdv);
+					}
+				}
+			} else {
+				// Failure Logic
+				if (!player.getAbilities().creativeMode) {
+					stack.decrement(1);
+				}
+
+				if (!isCursedMoon) {
+					// No Moon Condition
+					if (isValidForm || isAlreadySP) {
+						// Correct Form (or SP), but No Moon
+						player.sendMessage(Text.translatable("message.ssc_addon.evolution.fail.no_moon").formatted(Formatting.RED, Formatting.ITALIC), false);
+						world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0F, 1.0F);
+						// No damage in no moon condition
+						// player.damage(player.getDamageSources().magic(), 0.0f);
+					} else {
+						// Wrong Form AND No Moon -> Fatal Fail
+						player.sendMessage(Text.translatable("message.ssc_addon.evolution.fail.both").formatted(Formatting.RED, Formatting.ITALIC), false);
+						world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0F, 1.0F);
+						// No damage in no moon condition
+					}
+				} else {
+					// Cursed Moon Present, but Wrong Form (and not SP)
+					player.sendMessage(Text.translatable("message.ssc_addon.evolution.fail.bad_form").formatted(Formatting.RED, Formatting.ITALIC), false);
+					world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0F, 1.0F);
+					player.damage(world.getDamageSources().create(CURSED_EROSION), 10.0f);
+					player.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 20 * 20, 1));
+					player.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, 20 * 20, 1));
+					player.addStatusEffect(new StatusEffectInstance(StatusEffects.MINING_FATIGUE, 20 * 20, 1));
+				}
+			}
+		}
+		return stack;
+	}
+
+	// Helper to check if player currently has a form that can be upgraded
+    /*
+    private boolean canUpgrade(PlayerEntity player) {
+        return getTargetFormId(player) != null;
+    }
+     */
+
+	private boolean isAlreadySP(PlayerEntity player) {
+		Identifier playerFormID = getPlayerFormID(player);
+		if (playerFormID == null) return false;
+		for (Identifier id : UPGRADE_MAP.values()) {
+			if (id.equals(playerFormID)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private Identifier getPlayerFormID(PlayerEntity player) {
+		IForm currentForm = FormUtils.getCurrentForm(player);
+		return currentForm != null ? currentForm.getFormID() : null;
+	}
+
+	private Identifier getTargetFormId(PlayerEntity player) {
+        /* OriginComponent component = ModComponents.ORIGIN.get(player);
+         // Iterate through all origins the player has to see if any match our upgrade map
+         for (Map.Entry<Identifier, Identifier> entry : UPGRADE_MAP.entrySet()) {
+             Identifier currentFormId = entry.getKey();
+             Identifier targetFormId = entry.getValue();
+
+             // Check if player has the 'current' origin
+             // We check specifically on the cursed_origin layer, or generally if layers aren't strict in the map
+             // For safety, let's check if the player possesses this origin in ANY layer,
+             // though typically it's the main layer.
+             if (component.getOrigins().values().stream().anyMatch(o -> o.getIdentifier().equals(currentFormId))) {
+                 return targetFormId;
+             }
+         }
+         return null;
+        */
+		Identifier playerFormID = getPlayerFormID(player);
+		// playerFormID为null时，直接返回null，不进入遍历
+		if (playerFormID == null) return null;
+		for (Map.Entry<Identifier, Identifier> entry : UPGRADE_MAP.entrySet()) {
+			Identifier currentFormId = entry.getKey();
+			if (playerFormID.equals(currentFormId)) {
+				return entry.getValue();
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+		super.appendTooltip(stack, world, tooltip, context);
+		tooltip.add(Text.translatable("item.ssc_addon.sp_upgrade_thing.tooltip"));
+	}
+}

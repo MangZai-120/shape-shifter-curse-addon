@@ -1,8 +1,8 @@
 package net.jackcooper.shapeShifterCurseAddon.event;
 
 import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.story.MoonScarStoryManager;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.story.TideSpiritStoryManager;
+import net.jackcooper.shapeShifterCurseAddon.story.MoonScarStoryManager;
+import net.jackcooper.shapeShifterCurseAddon.story.TideSpiritStoryManager;
 
 import java.util.UUID;
 

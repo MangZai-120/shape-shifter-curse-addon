@@ -13,9 +13,9 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.SscAddon;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormIdentifiers;
-import net.onixary.shapeShifterCurseFabric.ssc_addon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -58,7 +58,7 @@ public class NightmareRingItem extends AccessoryItem {
 	/** 佩戴者是否正戴着梦魇戒指（框架无关检测：trinkets/tclayer 走 TrinketUtils，Curios 反射兜底）。 */
 	public static boolean isWearingBy(LivingEntity entity) {
 		// ① 原生 Trinkets / Accessories(tclayer) 链路
-		if (net.onixary.shapeShifterCurseFabric.ssc_addon.util.TrinketUtils.isWearing(entity, SscAddon.NIGHTMARE_RING)) {
+		if (net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils.isWearing(entity, SscAddon.NIGHTMARE_RING)) {
 			return true;
 		}
 		// ② Curios（Kilt/Connector 转载的 Forge 版）反射兜底：
