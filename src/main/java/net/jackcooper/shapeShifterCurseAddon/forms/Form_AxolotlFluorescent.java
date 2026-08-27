@@ -36,6 +36,10 @@ public class Form_AxolotlFluorescent extends NormalForm {
 	public static final AbstractAnimStateController MINING_CONTROLLER = new WithSneakAnimController(null, new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_crawling_tool_swing")));
 	// 睡眠控制器：复用原版美西螈三阶段睡眠动画 axolotl_3_sleep（与原版 Form_Axolotl3 一致）
 	public static final AbstractAnimStateController SLEEP_CONTROLLER = new OneAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_sleep")));
+	// 飞行控制器：复用原版美西螈三阶段创造飞行动画（创造/OP 飞行时触发，与原版 Form_Axolotl3 一致；2026-08-27 补齐）
+	public static final AbstractAnimStateController FLYING_CONTROLLER = new OneAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_creative_flight")));
+	// 攀爬控制器：爬梯等攀爬状态复用原版（用 idle 动画兜底，与原版 Form_Axolotl3 一致；2026-08-27 补齐）
+	public static final AbstractAnimStateController CRAWL_CONTROLLER = new OneAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_idle")));
 	private static AnimationHolder anim_idle = new AnimationHolder();
 	private static AnimationHolder anim_walking = AnimationHolder.EMPTY;
 	private static AnimationHolder anim_running = AnimationHolder.EMPTY;
@@ -103,6 +107,8 @@ public class Form_AxolotlFluorescent extends NormalForm {
 				case ANIM_STATE_ATTACK -> ATTACK_CONTROLLER;
 				case ANIM_STATE_MINING -> MINING_CONTROLLER;
 				case ANIM_STATE_SLEEP -> SLEEP_CONTROLLER;
+				case ANIM_STATE_FLYING -> FLYING_CONTROLLER;
+				case ANIM_STATE_CRAWL -> CRAWL_CONTROLLER;
 				default -> null;
 			};
 		}
