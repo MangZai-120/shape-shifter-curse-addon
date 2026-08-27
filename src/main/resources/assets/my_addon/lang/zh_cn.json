@@ -1058,5 +1058,9 @@
   "gui.ssc_addon.energy_bottler.energy": "能量：%1$s / %2$s",
   "item.ssc_addon.universal_energy_potion": "通用能量药水",
   "tooltip.ssc_addon.universal_potion": "§7饮用回复 25 点能量（持有能量条或魔力体系的形态可用）",
-  "message.ssc_addon.universal_potion.no_effect": "这副身躯无法吸收药水中的能量……"
+  "message.ssc_addon.universal_potion.no_effect": "这副身躯无法吸收药水中的能量……",
+  "block.ssc_addon.energy_converter": "能量转变器",
+  "message.ssc_addon.energy_converter.on": "能量转变器已激活（网络：%1$s / %2$s）",
+  "message.ssc_addon.energy_converter.off": "能量转变器已关闭（网络：%1$s / %2$s）",
+  "block.ssc_addon.creative_energy_tank": "创造能量储罐"
 }

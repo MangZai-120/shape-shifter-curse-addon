@@ -1,0 +1,6 @@
+{
+	"variants": {
+		"lit=false": { "model": "ssc_addon:block/energy_converter" },
+		"lit=true": { "model": "ssc_addon:block/energy_converter_on" }
+	}
+}

@@ -1,0 +1,7 @@
+{
+	"parent": "ssc_addon:block/energy_storage_tank",
+	"textures": {
+		"0": "ssc_addon:block/creative_energy_tank",
+		"particle": "ssc_addon:block/creative_energy_tank"
+	}
+}

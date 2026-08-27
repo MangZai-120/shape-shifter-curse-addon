@@ -31,8 +31,8 @@ public class EnergyExtractorBlockEntity extends BlockEntity implements EnergyNet
 	private static final int STEP_INTERVAL = 5;
 	/** 每个节拍消耗的 mana。 */
 	private static final int MANA_PER_STEP = 2;
-	/** 每个节拍转化得到的能量（1:1 无损耗）。 */
-	private static final int ENERGY_PER_STEP = 2;
+	/** 每个节拍转化得到的能量（2026-08-27 效率提升 50%：2→3）。 */
+	private static final int ENERGY_PER_STEP = 3;
 
 	/** 当前存储能量。 */
 	private int energy = 0;

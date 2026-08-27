@@ -68,6 +68,25 @@ public final class RegAddonBlocks {
 					.requiresTool()
 					.nonOpaque());
 
+	// 能量转变器：SSCA 能量 → Team Reborn Energy(E) 单向转换，右键激活，1:4 最高 128 E/t（jackcooper）
+	// luminance：激活态微发光（1.20.1 无 getLuminance 覆写，须走 Settings.luminance(ToIntFunction)）
+	public static final Block ENERGY_CONVERTER = new EnergyConverterBlock(
+			AbstractBlock.Settings.create()
+					.mapColor(MapColor.IRON_GRAY)
+					.strength(3.0f)
+					.sounds(BlockSoundGroup.COPPER)
+					.requiresTool()
+					.nonOpaque()
+					.luminance(EnergyConverterBlock::luminanceOf));
+
+	// 创造能量储罐：仅创造可拿，接入网络后周期补满所有储罐（jackcooper）
+	public static final Block CREATIVE_ENERGY_TANK = new CreativeEnergyTankBlock(
+			AbstractBlock.Settings.create()
+					.mapColor(MapColor.ORANGE)
+					.strength(3.0f)
+					.sounds(BlockSoundGroup.COPPER)
+					.requiresTool());
+
 	// 药品存储箱：专存能量瓶，支持漏斗互通（jackcooper）
 	public static final Block POTION_STORAGE_BOX = new PotionStorageBoxBlock(
 			AbstractBlock.Settings.create()
@@ -83,7 +102,19 @@ public final class RegAddonBlocks {
 		register("energy_extractor", ENERGY_EXTRACTOR);
 		register("energy_storage_tank", ENERGY_STORAGE_TANK);
 		register("energy_bottler", ENERGY_BOTTLER);
+		register("energy_converter", ENERGY_CONVERTER);
 		register("potion_storage_box", POTION_STORAGE_BOX);
+		// 创造储罐：带附魔光效的 BlockItem（无合成表无其它获取途径，仅创造物品栏可拿）
+		{
+			Identifier glintId = new Identifier(NAMESPACE, "creative_energy_tank");
+			Registry.register(Registries.BLOCK, glintId, CREATIVE_ENERGY_TANK);
+			Registry.register(Registries.ITEM, glintId, new BlockItem(CREATIVE_ENERGY_TANK, new Item.Settings()) {
+				@Override
+				public boolean hasGlint(net.minecraft.item.ItemStack stack) {
+					return true; // 附魔光效：创造物品标识
+				}
+			});
+		}
 		// 方块实体 + 容器类型注册（能量系统四方块）
 		RegAddonBlockEntities.register();
 		// 加入 SSCA 创造物品栏
@@ -92,8 +123,8 @@ public final class RegAddonBlocks {
 				.register(entries -> {
 					entries.add(ENERGY_EXTRACTOR);
 					entries.add(ENERGY_STORAGE_TANK);
-					entries.add(ENERGY_BOTTLER);
-					entries.add(POTION_STORAGE_BOX);
+					entries.add(ENERGY_BOTTLER);				entries.add(ENERGY_CONVERTER);					entries.add(POTION_STORAGE_BOX);
+					entries.add(CREATIVE_ENERGY_TANK);
 				});
 	}
 

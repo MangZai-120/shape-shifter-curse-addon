@@ -26,6 +26,8 @@ public final class RegAddonBlockEntities {
 	public static BlockEntityType<EnergyStorageTankBlockEntity> ENERGY_STORAGE_TANK_BE;
 	public static BlockEntityType<EnergyBottlerBlockEntity> ENERGY_BOTTLER_BE;
 	public static BlockEntityType<PotionStorageBoxBlockEntity> POTION_STORAGE_BOX_BE;
+	public static BlockEntityType<EnergyConverterBlockEntity> ENERGY_CONVERTER_BE;
+	public static BlockEntityType<CreativeEnergyTankBlockEntity> CREATIVE_ENERGY_TANK_BE;
 
 	public static ScreenHandlerType<EnergyBottlerScreenHandler> ENERGY_BOTTLER_SH;
 	public static ScreenHandlerType<PotionStorageBoxScreenHandler> POTION_STORAGE_BOX_SH;
@@ -47,6 +49,18 @@ public final class RegAddonBlockEntities {
 				Registries.BLOCK_ENTITY_TYPE,
 				new Identifier(NAMESPACE, "potion_storage_box"),
 				FabricBlockEntityTypeBuilder.create(PotionStorageBoxBlockEntity::new, RegAddonBlocks.POTION_STORAGE_BOX).build());
+		ENERGY_CONVERTER_BE = Registry.register(
+				Registries.BLOCK_ENTITY_TYPE,
+				new Identifier(NAMESPACE, "energy_converter"),
+				FabricBlockEntityTypeBuilder.create(EnergyConverterBlockEntity::new, RegAddonBlocks.ENERGY_CONVERTER).build());
+		// 注册 TB Energy 对外储能：TR 等模组的电缆/机器可经 EnergyStorage.SIDED 拉取电（官方推荐时机：BE 类型创建后）
+		team.reborn.energy.api.EnergyStorage.SIDED.registerForBlockEntity(
+				(EnergyConverterBlockEntity be, net.minecraft.util.math.Direction dir) -> be.getExposedStorage(),
+				ENERGY_CONVERTER_BE);
+		CREATIVE_ENERGY_TANK_BE = Registry.register(
+				Registries.BLOCK_ENTITY_TYPE,
+				new Identifier(NAMESPACE, "creative_energy_tank"),
+				FabricBlockEntityTypeBuilder.create(CreativeEnergyTankBlockEntity::new, RegAddonBlocks.CREATIVE_ENERGY_TANK).build());
 
 		ENERGY_BOTTLER_SH = Registry.register(
 				Registries.SCREEN_HANDLER,
