@@ -37,8 +37,6 @@ public final class MancianimaCrosshairTracker {
 	private static float lastYaw = Float.NaN, lastPitch = Float.NaN;
 	private static double lastX = Double.NaN, lastY = Double.NaN, lastZ = Double.NaN;
 
-	public static UUID getCurrentTarget() { return currentTarget; }
-
 	public static boolean isCurrent(UUID uuid) {
 		UUID cur = currentTarget;
 		return cur != null && uuid != null && cur.equals(uuid);

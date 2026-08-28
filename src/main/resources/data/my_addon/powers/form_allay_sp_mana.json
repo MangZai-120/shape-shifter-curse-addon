@@ -55,7 +55,7 @@
                     "type": "apoli:resource",
                     "resource": "my_addon:form_allay_sp_mana_resource",
                     "comparison": "<",
-                    "compare_to": 100
+                    "compare_to": 200
                 },
                 {
                     "type": "apoli:resource",

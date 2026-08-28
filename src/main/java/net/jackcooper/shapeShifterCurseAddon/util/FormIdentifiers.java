@@ -41,7 +41,9 @@ public class FormIdentifiers {
 	public static final Identifier ALLAY_GROUP_HEAL = new Identifier("my_addon", "form_allay_sp_group_heal");
 	public static final Identifier ALLAY_GROUP_HEAL_EXECUTE = new Identifier("my_addon", "form_allay_sp_group_heal_heal_execute");
 	public static final Identifier ALLAY_GROUP_HEAL_SOLO_DAMAGE_TIMER = new Identifier("my_addon", "form_allay_sp_group_heal_solo_damage_timer");
+	// 使魔系红狐 SP 魔力初始化 resource（form_familiar_fox_sp_init_mana）
 	public static final Identifier FAMILIAR_FOX_MANA = new Identifier("my_addon", "form_familiar_fox_sp_init_mana");
+	// 使魔系红狐 SP 隐身 resource（form_familiar_fox_sp_visibility）
 	public static final Identifier FAMILIAR_FOX_VISIBILITY = new Identifier("my_addon", "form_familiar_fox_sp_visibility");
 	// 通用技能CD资源（用于HUD显示）
 	public static final Identifier SP_PRIMARY_CD = new Identifier("my_addon", "form_sp_primary_cd");

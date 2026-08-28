@@ -223,10 +223,6 @@ public class LaserBeamEntity extends Entity {
 		return BEAM_LENGTH;
 	}
 
-	public static double beamRadius() {
-		return BEAM_RADIUS;
-	}
-
 	/** 增强单道光柱达 24 格、碰撞盒仅 0.5，放宽视锥剔除避免离屏被 cull。 */
 	@Override
 	public boolean shouldRender(double distance) {

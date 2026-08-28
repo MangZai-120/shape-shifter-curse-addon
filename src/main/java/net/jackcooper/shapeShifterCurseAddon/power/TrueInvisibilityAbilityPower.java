@@ -192,15 +192,6 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 	}
 
 	/**
-	 * Get remaining cooldown in seconds for display
-	 */
-	public int getRemainingCooldownSeconds() {
-		long remaining = internalCooldownEndTime - entity.getWorld().getTime();
-		if (remaining <= 0) return 0;
-		return (int) Math.ceil(remaining / 20.0); // 20 ticks per second
-	}
-
-	/**
 	 * Breaks invisibility with appropriate sound effect
 	 *
 	 * @param byKey true if broken by pressing the key again (cat hiss), false if broken by action (glass break)

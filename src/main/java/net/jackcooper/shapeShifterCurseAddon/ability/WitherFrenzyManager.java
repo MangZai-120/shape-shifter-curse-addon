@@ -81,15 +81,6 @@ public final class WitherFrenzyManager {
 		return MULT_T3;
 	}
 
-	/** 当前阶梯编号（1/2/3），用于客户端 HUD / 调试。 */
-	public static int getTier(ServerPlayerEntity player) {
-		float m = getDamageMultiplier(player);
-		if (m >= MULT_T3) return 3;
-		if (m >= MULT_T2) return 2;
-		if (m >= MULT_T1) return 1;
-		return 0;
-	}
-
 	/** 玩家断线 / 变形时清理。 */
 	public static void clear(UUID uuid) {
 		WITHER_START.remove(uuid);

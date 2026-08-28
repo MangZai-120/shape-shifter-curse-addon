@@ -85,25 +85,12 @@ public class WhitelistManageScreen extends Screen {
 
 	private int listX, listY, listW;
 
-	public WhitelistManageScreen(Set<UUID> whitelist) {
-		this(whitelist, false, Collections.emptyList());
-	}
-
-	public WhitelistManageScreen(Set<UUID> whitelist, boolean customMode) {
-		this(whitelist, customMode, Collections.emptyList());
-	}
-
 	public WhitelistManageScreen(Set<UUID> whitelist, boolean customMode, List<MobEntry> mobs) {
 		super(Text.translatable("screen.ssc_addon.whitelist.title"));
 		this.whitelist = whitelist != null ? new HashSet<>(whitelist) : new HashSet<>();
 		this.customMode = customMode;
 		this.mobs = mobs != null ? new ArrayList<>(mobs) : new ArrayList<>();
 		recomputeMobIndices();
-	}
-
-	public void updateWhitelist(Set<UUID> newSet) {
-		this.whitelist = new HashSet<>(newSet);
-		invalidateFilterCache();
 	}
 
 	public void updateState(Set<UUID> newSet, boolean customMode) {

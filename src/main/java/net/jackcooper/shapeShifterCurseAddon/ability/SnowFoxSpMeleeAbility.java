@@ -4,7 +4,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -145,13 +144,6 @@ public class SnowFoxSpMeleeAbility {
 	}
 
 	/**
-	 * 检查玩家是否正在冲刺
-	 */
-	public static boolean isDashing(PlayerEntity player) {
-		return DASHING_PLAYERS.containsKey(player.getUuid());
-	}
-
-	/**
 	 * 玩家断线/死亡时清理所有状态，防止内存泄漏和重连后状态错乱
 	 */
 	public static void clearPlayer(java.util.UUID uuid) {
@@ -164,68 +156,6 @@ public class SnowFoxSpMeleeAbility {
 	public static void clearAll() {
 		DASHING_PLAYERS.clear();
 	}
-    
-    /*
-    // 旧代码 (保留参考) 已移至PowerUtils
-    
-    private static final Identifier RESOURCE_ID_OLD = new Identifier("my_addon", "form_snow_fox_sp_resource");
-    private static final Identifier REGEN_COOLDOWN_ID_OLD = new Identifier("my_addon", "form_snow_fox_sp_frost_regen_cooldown_resource");
-    private static final Identifier POWER_ID_OLD = new Identifier("my_addon", "form_snow_fox_sp_melee_primary");
-    
-    private static int getResourceValue(ServerPlayerEntity player) {
-        try {
-            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-            PowerType<?> powerType = PowerTypeRegistry.get(RESOURCE_ID_OLD);
-            Power power = powerHolder.getPower(powerType);
-            if (power instanceof VariableIntPower variablePower) {
-                return variablePower.getValue();
-            }
-        } catch (Exception e) {
-        }
-        return 0;
-    }
-    
-    private static void changeResourceValue(ServerPlayerEntity player, int change) {
-        try {
-            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-            PowerType<?> powerType = PowerTypeRegistry.get(RESOURCE_ID_OLD);
-            Power power = powerHolder.getPower(powerType);
-            if (power instanceof VariableIntPower variablePower) {
-                int newValue = Math.max(0, Math.min(100, variablePower.getValue() + change));
-                variablePower.setValue(newValue);
-                // 只同步该资源 power 自身，避免全量重发玩家全部 powers
-                PowerHolderComponent.syncPower(player, powerType);
-            }
-        } catch (Exception e) {
-        }
-    }
-    
-    private static void setRegenCooldown(ServerPlayerEntity player, int value) {
-        try {
-            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-            PowerType<?> powerType = PowerTypeRegistry.get(REGEN_COOLDOWN_ID_OLD);
-            Power power = powerHolder.getPower(powerType);
-            if (power instanceof VariableIntPower variablePower) {
-                variablePower.setValue(value);
-                // 只同步该资源 power 自身，避免全量重发玩家全部 powers
-                PowerHolderComponent.syncPower(player, powerType);
-            }
-        } catch (Exception e) {
-        }
-    }
-    
-    private static void setPowerCooldown(ServerPlayerEntity player, int ticks) {
-        try {
-            PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-            PowerType<?> powerType = PowerTypeRegistry.get(POWER_ID_OLD);
-            Power power = powerHolder.getPower(powerType);
-            if (power instanceof CooldownPower cooldownPower) {
-                cooldownPower.setCooldown(ticks);
-            }
-        } catch (Exception e) {
-        }
-    }
-    */
 
 	/**
 	 * 冲刺中玩家数据

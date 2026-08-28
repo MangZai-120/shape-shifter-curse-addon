@@ -1,15 +1,11 @@
 package net.jackcooper.shapeShifterCurseAddon.client;
 
-import io.netty.buffer.Unpooled;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -49,8 +45,8 @@ public final class FrostSpikeClient {
 		if (player == null || client.world == null || key == null
 				|| !FormUtils.isForm(player, FormIdentifiers.SNOW_FOX_FROSTSPINE)) {
 			// 形态切走 / 失焦时若正在蓄力，补发一次 RELEASE 收尾，避免服务端残留蓄力态
-			if (wasPressed && startSent) send(SscAddonNetworking.PACKET_FROST_SPIKE_CHARGE_RELEASE);
-			if (secondaryCharging) { send(SscAddonNetworking.PACKET_FROST_SPIKE_SECONDARY_RELEASE); secondaryCharging = false; }
+			if (wasPressed && startSent) SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_FROST_SPIKE_CHARGE_RELEASE);
+			if (secondaryCharging) { SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_FROST_SPIKE_SECONDARY_RELEASE); secondaryCharging = false; }
 			wasPressed = false;
 			startSent = false;
 			secWasPressed = false;
@@ -65,15 +61,15 @@ public final class FrostSpikeClient {
 		} else if (pressed) {
 			// 持续按住超过阈值 → 确认长按蓄力
 			if (!startSent && (now - pressDownMs) >= HOLD_MS) {
-				send(SscAddonNetworking.PACKET_FROST_SPIKE_CHARGE_START);
+				SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_FROST_SPIKE_CHARGE_START);
 				startSent = true;
 			}
 		} else if (wasPressed) {
 			// 松开沿：长按→停止蓄力；点按→发射
 			if (startSent) {
-				send(SscAddonNetworking.PACKET_FROST_SPIKE_CHARGE_RELEASE);
+				SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_FROST_SPIKE_CHARGE_RELEASE);
 			} else {
-				send(SscAddonNetworking.PACKET_FROST_SPIKE_FIRE);
+				SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_FROST_SPIKE_FIRE);
 			}
 		}
 		wasPressed = pressed;
@@ -84,11 +80,11 @@ public final class FrostSpikeClient {
 			// 按下沿：本地有环绕冰锥才进入蓄力（与服务端判定同源，避免无冰锥误限视角/误发包）
 			if (hasHoverThorn(player)) {
 				secondaryCharging = true;
-				send(SscAddonNetworking.PACKET_FROST_SPIKE_SECONDARY_START);
+				SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_FROST_SPIKE_SECONDARY_START);
 			}
 		} else if (!secPressed && secWasPressed && secondaryCharging) {
 			// 松开沿：发射强化冰锥
-			send(SscAddonNetworking.PACKET_FROST_SPIKE_SECONDARY_RELEASE);
+			SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_FROST_SPIKE_SECONDARY_RELEASE);
 			secondaryCharging = false;
 		}
 		secWasPressed = secPressed;
@@ -106,7 +102,4 @@ public final class FrostSpikeClient {
 				t -> t.isHover() && player.getUuid().equals(t.getOwnerUuid().orElse(null))).isEmpty();
 	}
 
-	private static void send(Identifier packet) {
-		ClientPlayNetworking.send(packet, new PacketByteBuf(Unpooled.buffer()));
-	}
 }

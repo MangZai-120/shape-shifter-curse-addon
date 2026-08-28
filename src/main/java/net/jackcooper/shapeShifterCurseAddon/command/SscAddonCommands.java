@@ -420,6 +420,14 @@ public class SscAddonCommands {
 				updated = true;
 			}
 
+			// 吸血蝙蝠雾血条：同样按各自上限 clamp 后写入
+			int batBloodMax = PowerUtils.getResourceMax(player, FormIdentifiers.BAT_BLOOD_RESOURCE);
+			if (batBloodMax > 0) {
+				int clamped = Math.min(amount, batBloodMax);
+				PowerUtils.setResourceValueAndSync(player, FormIdentifiers.BAT_BLOOD_RESOURCE, clamped);
+				updated = true;
+			}
+
 			int soulMax = PowerUtils.getResourceMax(player, FormIdentifiers.ANUBIS_WOLF_SP_SOUL_ENERGY);
 			if (soulMax > 0) {
 				int clamped = Math.min(amount, soulMax);

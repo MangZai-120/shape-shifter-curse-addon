@@ -71,15 +71,6 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 		internalCooldownEndTime = entity.getWorld().getTime() + COOLDOWN_TICKS;
 	}
 
-	/**
-	 * Get remaining cooldown in seconds for display
-	 */
-	public int getRemainingCooldownSeconds() {
-		long remaining = internalCooldownEndTime - entity.getWorld().getTime();
-		if (remaining <= 0) return 0;
-		return (int) Math.ceil(remaining / 20.0);
-	}
-
 	@Override
 	public boolean canUse() {
 		// Can only use when invisible

@@ -402,11 +402,6 @@ public final class NightmareFearManager {
 		clearPairs(targetUuid);
 	}
 
-	/** 目标重生/换维度兜底清理（保留：跨维度后 world.getTime 基准变化）。 */
-	public static void clearForTarget(UUID targetUuid) {
-		FEARING.remove(targetUuid);
-	}
-
 	/** 当前恐惧目标数（调试用）。 */
 	public static int size() {
 		return FEARING.size();

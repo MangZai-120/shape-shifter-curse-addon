@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.At;
 public class RedFoxThrowDistanceMixin {
 
 	@Unique
-	private static final Identifier RED_FOX_MANA_POWER = new Identifier("my_addon", "form_familiar_fox_sp_init_mana");
+	private static final Identifier RED_FOX_MANA_POWER = net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_MANA;
 
 	@WrapOperation(method = "use", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/projectile/thrown/PotionEntity;setVelocity(Lnet/minecraft/entity/Entity;FFFFF)V"), require = 0)
 	private void modifyThrowVelocity(PotionEntity instance, Entity entity, float pitch, float yaw, float roll, float speed, float divergence, Operation<Void> original) {

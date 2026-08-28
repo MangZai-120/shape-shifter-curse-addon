@@ -1,15 +1,11 @@
 package net.jackcooper.shapeShifterCurseAddon.client;
 
-import io.netty.buffer.Unpooled;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 
@@ -47,19 +43,15 @@ public final class FluorescentKeyClient {
 
 		boolean pNow = primary != null && primary.isPressed();
 		if (pNow && !wasPrimary) {
-			send(SscAddonNetworking.PACKET_FLUO_LASER);
+			SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_FLUO_LASER);
 		}
 		wasPrimary = pNow;
 
 		boolean sNow = secondary != null && secondary.isPressed();
 		if (sNow && !wasSecondary) {
-			send(SscAddonNetworking.PACKET_FLUO_TIDAL);
+			SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_FLUO_TIDAL);
 		}
 		wasSecondary = sNow;
 	}
 
-	private static void send(Identifier packet) {
-		PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
-		ClientPlayNetworking.send(packet, buf);
-	}
 }

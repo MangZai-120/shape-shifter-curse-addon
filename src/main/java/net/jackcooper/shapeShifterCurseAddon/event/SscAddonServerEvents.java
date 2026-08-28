@@ -37,6 +37,7 @@ import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpFrostStorm;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpMeleeAbility;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpTeleportAttack;
 import net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager;
+import net.jackcooper.shapeShifterCurseAddon.ability.WildCatPaceManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.VortexGuideManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.WindDashManager;
@@ -94,6 +95,8 @@ public final class SscAddonServerEvents {
 				BatDesmodusBloodThirst.tick(player);
 				MancianimaPassive.tick(player);
 				VortexChargeManager.tick(player);
+				// 野猫系昼夜移速被动（代码实现：持久修饰符替代药水周期施加，消除 FOV 弹动）
+				WildCatPaceManager.tick(player);
 				net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.tick(player);
 				net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.tick(player);
 				net.jackcooper.shapeShifterCurseAddon.ability.VenomSkillManager.tick(player);
@@ -139,6 +142,18 @@ public final class SscAddonServerEvents {
 		// 寒棘狐冰刺：重进后按退出前存档重建环绕冰锥（存在时间延续）
 		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
 				server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.onJoin(handler.player)));
+		// 漩涡蓄力：VORTEX_STATE 资源随 NBT 持久化，但服务端 CHARGING 表断线即清——
+		// 重进时若资源残留 >0 而 CHARGING 已空，客户端会一直认为"蓄力中"且 tick 无法自动释放，
+		// 故 JOIN 时检测残留并复位为 0（刚进服不可能处于真蓄力，复位永远安全）。
+		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
+				server.execute(() -> {
+					var player = handler.player;
+					if (net.jackcooper.shapeShifterCurseAddon.util.PowerUtils.getResourceValue(
+							player, net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.VORTEX_STATE) > 0) {
+						net.jackcooper.shapeShifterCurseAddon.util.PowerUtils.setResourceValueAndSync(
+								player, net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.VORTEX_STATE, 0);
+					}
+				}));
 		// 食梦魔「惊吓」：服务端监听目标攻击幽灵苦力怕（真实体受击判定）
 		net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.registerEvents();
 
@@ -237,6 +252,9 @@ public final class SscAddonServerEvents {
 			MancianimaPassive.clearAll();
 			SscAddonActions.clearAll();
 			FluorescentLaserManager.clearAll();   // 海晶荧光坠增强激光：清残留待机法阵实体
+			net.jackcooper.shapeShifterCurseAddon.ability.FluorescentTidalManager.clearAll(); // 荧光幼灵潮汐波动：清 session + 法球实体
+			net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.clearAll(); // 跳蛛跳杀：清蓄力/跳跃状态
+			net.jackcooper.shapeShifterCurseAddon.ability.VenomSkillManager.clearAll(); // 跳蛛毒液：清冲刺状态
 			net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.clearAll(server); // 惊吓：清幽灵苦力怕/复制品状态
 			System.out.println("[SSC_ADDON] SERVER_STARTING ability state cleared");
 		});

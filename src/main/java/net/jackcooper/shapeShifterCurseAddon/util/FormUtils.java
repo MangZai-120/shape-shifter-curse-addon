@@ -25,11 +25,6 @@ public class FormUtils {
 		return null;
 	}
 
-	public static boolean hasForm(LivingEntity entity) {
-		IForm currentForm = getCurrentForm(entity);
-		return currentForm != null && currentForm.getFormID() != null;
-	}
-
 	public static boolean isForm(LivingEntity entity, Identifier formId) {
 		IForm currentForm = getCurrentForm(entity);
 		return currentForm != null && currentForm.getFormID() != null && currentForm.getFormID().equals(formId);

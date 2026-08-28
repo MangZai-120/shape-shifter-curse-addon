@@ -70,32 +70,9 @@ public class FrostSpineCollarItem extends AccessoryItem {
 		});
 	}
 
-	/** 佩戴者是否正戴着寒棘项圈（框架无关检测：trinkets/tclayer 走 TrinketUtils，Curios 反射兜底）。 */
+	/** 佩戴者是否正戴着寒棘项圈（框架无关检测：SSC 抽象层 + Curios 反射兜底，统一走 TrinketUtils.isWearingAuto）。 */
 	public static boolean isWearingBy(LivingEntity entity) {
-		// ① 原生 Trinkets / Accessories(tclayer) 链路（"auto" 自动适配 SSC 主包注册的活动饰品框架）
-		if (net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils.isWearing(entity, SscAddon.FROST_SPINE_COLLAR)) {
-			return true;
-		}
-		// ② Curios（Kilt/Connector 转载的 Forge 版）反射兜底：
-		// 该环境下 SSC 主包的原生 AccessoryIO 可能未注册，反射直查 Curios 自有 API；
-		// 类未加载（未装 Curios）或任何异常一律返回 false，安全兜底。
-		try {
-			Class<?> api = Class.forName("top.theillusivec4.curios.api.CuriosApi");
-			Object lazyOptional = api.getMethod("getCuriosInventory", LivingEntity.class).invoke(null, entity);
-			if (lazyOptional == null) return false;
-			Object resolved = lazyOptional.getClass().getMethod("resolve").invoke(lazyOptional);
-			if (!(resolved instanceof java.util.Optional<?> opt) || opt.isEmpty()) return false;
-			Object handler = opt.get();
-			Object equipped = handler.getClass().getMethod("isEquipped", net.minecraft.item.Item.class).invoke(handler, thisItem());
-			return Boolean.TRUE.equals(equipped);
-		} catch (Throwable ignored) {
-			return false;
-		}
-	}
-
-	/** this 的 Item 形式（isEquipped 参数用）。 */
-	private static net.minecraft.item.Item thisItem() {
-		return SscAddon.FROST_SPINE_COLLAR;
+		return net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils.isWearingAuto(entity, SscAddon.FROST_SPINE_COLLAR);
 	}
 
 	@Override

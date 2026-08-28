@@ -25,23 +25,9 @@ public final class AxolotlTree {
     private AxolotlTree() {
     }
 
-    /** 当前 axolotl 路线（数据驱动；未加载 / 未同步时为 null）。 */
-    public static EvolutionRoute route() {
-        return EvolutionRegistry.INSTANCE.getRoute(ROUTE_ID);
-    }
-
     /** 全部节点（数据来自 JSON；未加载时返回空列表）。 */
     public static List<EvolutionNode> nodes() {
-        EvolutionRoute r = route();
+        EvolutionRoute r = EvolutionRegistry.INSTANCE.getRoute(ROUTE_ID);
         return r == null ? List.of() : r.nodes;
-    }
-
-    public static EvolutionNode get(String id) {
-        EvolutionRoute r = route();
-        return r == null ? null : r.getNode(id);
-    }
-
-    public static boolean isValidNode(String id) {
-        return get(id) != null;
     }
 }

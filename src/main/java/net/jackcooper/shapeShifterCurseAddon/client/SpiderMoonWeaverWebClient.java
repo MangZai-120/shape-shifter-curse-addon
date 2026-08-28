@@ -1,15 +1,11 @@
 package net.jackcooper.shapeShifterCurseAddon.client;
 
-import io.netty.buffer.Unpooled;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -76,9 +72,9 @@ public final class SpiderMoonWeaverWebClient {
 			// 持续按住超过阈值 → 确认长按，按按下沿判定的类型发蓄力包
 			if (!startSent && (now - pressDownMs) >= HOLD_MS) {
 				if (flatCandidate) {
-					send(SscAddonNetworking.PACKET_SPIDER_MOON_WEAVER_CHARGE_START_FLAT); // 平铺
+					SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_SPIDER_MOON_WEAVER_CHARGE_START_FLAT); // 平铺
 				} else {
-					send(SscAddonNetworking.PACKET_SPIDER_MOON_WEAVER_CHARGE_START);        // 蛛丝弹
+					SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_SPIDER_MOON_WEAVER_CHARGE_START);        // 蛛丝弹
 				}
 				startSent = true;
 				lastSneakClickMs = -1L; // 转为长按，作废未决的双击切换首击
@@ -86,11 +82,11 @@ public final class SpiderMoonWeaverWebClient {
 		} else if (wasPressed) {
 			// 松开沿
 			if (startSent) {
-				send(SscAddonNetworking.PACKET_SPIDER_MOON_WEAVER_CHARGE_RELEASE);
+				SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_SPIDER_MOON_WEAVER_CHARGE_RELEASE);
 			} else if (pressWhileSneaking) {
 				// 潜行短按 → 双击切换模式判定
 				if (lastSneakClickMs >= 0 && (now - lastSneakClickMs) <= DOUBLE_CLICK_MS) {
-					send(SscAddonNetworking.PACKET_SPIDER_MOON_WEAVER_TOGGLE);
+					SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_SPIDER_MOON_WEAVER_TOGGLE);
 					lastSneakClickMs = -1L;
 				} else {
 					lastSneakClickMs = now;
@@ -103,7 +99,4 @@ public final class SpiderMoonWeaverWebClient {
 		wasPressed = pressed;
 	}
 
-	private static void send(Identifier packet) {
-		ClientPlayNetworking.send(packet, new PacketByteBuf(Unpooled.buffer()));
-	}
 }

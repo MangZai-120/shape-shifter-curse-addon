@@ -252,14 +252,6 @@ public final class NightmareDreamManager {
 		clearAllFor(player);
 	}
 
-	/** 目标死亡 / 消失时移除其入梦项（由外部按需调用）。 */
-	public static void removeTarget(UUID playerId, UUID targetId) {
-		Map<UUID, Long> dreams = DREAMING.get(playerId);
-		if (dreams != null) dreams.remove(targetId);
-		Map<UUID, Float> acc = ACCUM.get(playerId);
-		if (acc != null) acc.remove(targetId);
-	}
-
 	// ===== 「恐惧」技能支撑（由 NightmareFearManager 调用，仅服务端） =====
 
 	/** 收集某食梦魔当前已入梦的全部存活目标实体（跨实体查找，找不到的跳过）。 */

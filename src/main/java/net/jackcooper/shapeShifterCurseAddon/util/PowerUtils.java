@@ -66,20 +66,6 @@ public class PowerUtils {
 		}
 	}
 
-	public static void setResourceValueClamped(ServerPlayerEntity player, Identifier resourceId, int value, int min, int max) {
-		try {
-			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);
-			PowerType<?> powerType = PowerTypeRegistry.get(resourceId);
-			Power power = powerHolder.getPower(powerType);
-			if (power instanceof VariableIntPower variablePower) {
-				int clampedValue = Math.max(min, Math.min(max, value));
-				variablePower.setValue(clampedValue);
-			}
-		} catch (Exception e) {
-			LOGGER.error("setResourceValueClamped 失败: resourceId={}, value={}", resourceId, value, e);
-		}
-	}
-
 	public static void changeResourceValue(ServerPlayerEntity player, Identifier resourceId, int change) {
 		try {
 			PowerHolderComponent powerHolder = PowerHolderComponent.KEY.get(player);

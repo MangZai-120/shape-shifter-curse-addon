@@ -35,7 +35,6 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpFrostStorm;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpMeleeAbility;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpTeleportAttack;
-import net.jackcooper.shapeShifterCurseAddon.ability.AllaySPPortableBeacon;
 import net.jackcooper.shapeShifterCurseAddon.entity.FrostBallEntity;
 import net.jackcooper.shapeShifterCurseAddon.util.SscIgnitedEntityAccessor;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -140,14 +139,6 @@ public class SscAddonActions {
 		registerEntity(PhantomBellTeleportAction.getFactory());
                 // 物品冷却动作（幻铃/救命猫尾等饰品 power 用；此前漏注册导致相关 power 整体被跳过）
                 registerEntity(net.jackcooper.shapeShifterCurseAddon.action.ItemCooldownAction.getFactory());
-		// SP Allay Portable Beacon toggle
-		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "allay_sp_beacon_toggle"),
-				new SerializableData(),
-				(data, entity) -> {
-					if (entity instanceof ServerPlayerEntity player) {
-						AllaySPPortableBeacon.toggleBeacon(player);
-					}
-				}));
 
 		// 食梦魔主要技能「恐惧」：对所有已入梦目标施加恐惧（粉雾/减速/心跳/伤害翻倍/1s隐匿）
 		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "nightmare_fear"),
@@ -210,27 +201,6 @@ public class SscAddonActions {
 					}
 				}));
 
-		registerBiEntity(new ActionFactory<>(new Identifier("my_addon", "set_on_fire_attributed"),
-				new SerializableData()
-						.add("duration", SerializableDataTypes.INT),
-				(data, pair) -> {
-					Entity actor = pair.getLeft();
-					Entity target = pair.getRight();
-					if (actor == null || target == null) return;
-					if (target.getWorld().isClient()) return;
-
-					int duration = data.getInt("duration");
-					// target.setOnFireFor(duration); // Replaced with custom effect
-
-					if (target instanceof LivingEntity livingTarget) {
-						livingTarget.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, duration * 20, 0), actor); // source=施法者供入梦拦截归因
-					}
-
-					if (actor instanceof PlayerEntity player && target instanceof SscIgnitedEntityAccessor accessor) {
-						accessor.sscAddon$setIgniterUuid(player.getUuid());
-					}
-				}));
-
 		registerBiEntity(new ActionFactory<>(new Identifier("ssc_addon", "salticidae_venom_fang"),
 				new SerializableData(),
 				(data, pair) -> {
@@ -268,61 +238,6 @@ public class SscAddonActions {
 							target.setVelocity(oldVelocity);
 						}
 					}
-				}));
-
-		registerEntity(new ActionFactory<>(new Identifier("my_addon", "force_pose"),
-				new SerializableData()
-						.add("pose", SerializableDataTypes.STRING),
-				(data, entity) -> {
-					String poseName = data.getString("pose");
-					try {
-						EntityPose pose = EntityPose.valueOf(poseName.toUpperCase());
-						entity.setPose(pose);
-						if (pose == EntityPose.SWIMMING) {
-							entity.setSwimming(true);
-						}
-					} catch (IllegalArgumentException ignored) {
-						// 忽略无效的pose
-					}
-				}));
-
-		registerEntity(new ActionFactory<>(new Identifier("my_addon", "adaptive_water_jump"),
-				new SerializableData()
-						.add("base_y", SerializableDataTypes.FLOAT, 0.4f)
-						.add("horizontal_momentum", SerializableDataTypes.FLOAT, 1.2f)
-						.add("vertical_conversion", SerializableDataTypes.FLOAT, 0.5f),
-				(data, entity) -> {
-					if (entity instanceof LivingEntity living) {
-						float baseY = data.getFloat("base_y");
-						float hMom = data.getFloat("horizontal_momentum");
-						float vConv = data.getFloat("vertical_conversion");
-
-						Vec3d velocity = living.getVelocity();
-						double hSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-
-						// New Y: Base jump + portion of horizontal speed converted to lift + existing vertical velocity
-						double newY = baseY + (hSpeed * vConv) + (velocity.y > 0 ? velocity.y : 0);
-
-						// New Horizontal: maintain and boost momentum
-						double newX = velocity.x * hMom;
-						double newZ = velocity.z * hMom;
-
-						living.setVelocity(newX, newY, newZ);
-						living.velocityModified = true;
-					}
-				}));
-
-		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "clear_aggro"),
-				new SerializableData()
-						.add("radius", SerializableDataTypes.DOUBLE, 64.0),
-				(data, entity) -> {
-
-					double radius = data.getDouble("radius");
-					Box box = entity.getBoundingBox().expand(radius);
-					entity.getWorld().getEntitiesByClass(net.minecraft.entity.mob.MobEntity.class, box, mob -> mob.getTarget() == entity).forEach(mob -> {
-						mob.setTarget(null);
-						mob.setAttacker(null);
-					});
 				}));
 
 		// SP雪狐 - 雪刺冲刺技能
@@ -545,9 +460,6 @@ public class SscAddonActions {
 
 		// ==== 旋转圆环粒子（附属专用，仅 red 火环外圈使用，不影响主模组 spawn_particles_in_circle） ====
 		registerEntity(SpawnRotatingCircleAction.getFactory());
-
-		// ==== 向前喷射粒子（附属专用，仅 red 吐火使用，不影响共享的 fire_breath） ====
-		registerEntity(SpawnForwardBurstAction.getFactory());
 
 		// ==== red 狐火火球：发射火球投射物 + 近身 60°×4格 锥形霰击（5 魔法伤害，附属专用，只作用 red） ====
 		registerEntity(new ActionFactory<>(new Identifier("my_addon", "fox_fireball"),

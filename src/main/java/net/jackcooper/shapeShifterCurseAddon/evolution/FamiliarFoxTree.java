@@ -11,7 +11,7 @@ import java.util.List;
  * <ol>
  *   <li>保留各节点 id 常量（供少数按「具体节点」做特殊渲染 / 业务的地方引用，
  *       如 cd 条门控、mana 条门控、Codex 叙述）；</li>
- *   <li>转发到 {@link EvolutionRegistry} 提供 {@link #nodes()} / {@link #get(String)}。</li>
+ *   <li>转发到 {@link EvolutionRegistry} 提供 {@link #nodes()}。</li>
  * </ol>
  *
  * <p>加 / 改 familiar_fox 的进化树只需改上述 JSON，无需改 Java。</p>
@@ -33,23 +33,9 @@ public final class FamiliarFoxTree {
     private FamiliarFoxTree() {
     }
 
-    /** 当前 familiar_fox 路线（数据驱动；未加载 / 未同步时为 null）。 */
-    public static EvolutionRoute route() {
-        return EvolutionRegistry.INSTANCE.getRoute(ROUTE_ID);
-    }
-
     /** 全部节点（数据来自 JSON；未加载时返回空列表）。 */
     public static List<EvolutionNode> nodes() {
-        EvolutionRoute r = route();
+        EvolutionRoute r = EvolutionRegistry.INSTANCE.getRoute(ROUTE_ID);
         return r == null ? List.of() : r.nodes;
-    }
-
-    public static EvolutionNode get(String id) {
-        EvolutionRoute r = route();
-        return r == null ? null : r.getNode(id);
-    }
-
-    public static boolean isValidNode(String id) {
-        return get(id) != null;
     }
 }

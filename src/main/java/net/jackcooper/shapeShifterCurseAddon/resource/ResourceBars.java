@@ -102,12 +102,6 @@ public final class ResourceBars {
 		return PowerUtils.getResourceMax((ServerPlayerEntity) player, bar.id);
 	}
 
-	/** 百分比（0~1）。 */
-	public static double percent(PlayerEntity player, ResourceBarDef bar) {
-		int max = maxOf(player, bar);
-		return max <= 0 ? 0d : (double) get(player, bar) / max;
-	}
-
 	// ==================== 判定 ====================
 
 	/** 玩家是否持有该条（resource power 存在 / 原版 mana 类型存在）。 */
@@ -116,16 +110,6 @@ public final class ResourceBars {
 			return ManaUtils.getPlayerManaTypeID(player) != null;
 		}
 		return hasPowerId(player, bar.id);
-	}
-
-	/** 按 kind 判定：玩家是否有任意一条该语义的 resource 型条（不含原版直通）。 */
-	public static boolean hasKind(PlayerEntity player, String kind) {
-		for (ResourceBarDef bar : BarKeys.ALL) {
-			if (bar.kind.equals(kind) && has(player, bar)) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/** 持有指定 id 的 power（PowerTypeRegistry 查表，/reload 安全）。 */

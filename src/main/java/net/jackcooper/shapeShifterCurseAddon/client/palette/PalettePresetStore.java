@@ -65,7 +65,6 @@ public final class PalettePresetStore {
 
     public List<Slot> getSlots() { return slots; }
     public boolean isGlobalSync() { return globalSync; }
-    public String getActiveScopeKey() { return activeScopeKey; }
 
     /** 切换全局同步开关并立即重载对应数据。 */
     public void setGlobalSync(boolean value) {

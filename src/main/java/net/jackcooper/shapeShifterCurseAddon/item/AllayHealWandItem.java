@@ -43,8 +43,8 @@ public class AllayHealWandItem extends Item {
 	public static final double MAX_RANGE = 20.0;
 	public static final int MANA_COST = 12;
 
-	private static final Identifier MANA_RESOURCE_ID = new Identifier("my_addon", "form_allay_sp_mana_resource");
-	private static final Identifier MANA_COOLDOWN_ID = new Identifier("my_addon", "form_allay_sp_mana_cooldown_resource");
+	private static final Identifier MANA_RESOURCE_ID = net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.ALLAY_MANA_RESOURCE;
+	private static final Identifier MANA_COOLDOWN_ID = net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.ALLAY_MANA_COOLDOWN;
 
 	public AllayHealWandItem(Settings settings) {
 		super(settings);

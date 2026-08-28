@@ -117,7 +117,7 @@ public class AllaySPJukebox {
             return;
         }
         IForm currentForm = FormUtils.getCurrentForm(player);
-        boolean isAllaySp = currentForm != null && currentForm.getFormID().equals(new Identifier("my_addon", "allay_sp"));
+        boolean isAllaySp = currentForm != null && currentForm.getFormID().equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.ALLAY_SP);
 
         // Check if cleanup is needed (if form changed OR item is missing/inactive)
         // Note: we check form first. If not Allay SP, we just cleanup and return.

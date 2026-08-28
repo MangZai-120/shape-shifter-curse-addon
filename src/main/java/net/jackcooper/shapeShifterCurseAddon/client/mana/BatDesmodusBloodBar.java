@@ -2,15 +2,7 @@ package net.jackcooper.shapeShifterCurseAddon.client.mana;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Pair;
-import net.jackcooper.shapeShifterCurseAddon.util.ManaBarPos;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
-import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
 
 /**
  * 吸血蝙蝠形态 - 雾血资源条 HUD。
@@ -18,43 +10,23 @@ import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
  * 位置复用魔力条配置，吸血蝙蝠形态无魔力条，两者不冲突。
  */
 @Environment(EnvType.CLIENT)
-public class BatDesmodusBloodBar implements HudRenderCallback {
-	private static final MinecraftClient mc = MinecraftClient.getInstance();
-	private static final Identifier BarTexFullID = new Identifier("my_addon", "textures/gui/bat_desmodus_blood_bar_full.png");
-	private static final Identifier BarTexEmptyID = new Identifier("my_addon", "textures/gui/bat_desmodus_blood_bar_empty.png");
+public class BatDesmodusBloodBar extends SimpleResourceBarRenderer {
+	private static final Identifier TEX_FULL = new Identifier("my_addon", "textures/gui/bat_desmodus_blood_bar_full.png");
+	private static final Identifier TEX_EMPTY = new Identifier("my_addon", "textures/gui/bat_desmodus_blood_bar_empty.png");
 	private static final Identifier RESOURCE_ID = new Identifier("my_addon", "form_bat_desmodus_blood_resource");
 
 	@Override
-	public void onHudRender(DrawContext context, float tickDelta) {
-		if (mc.options.hudHidden || mc.player == null) return;
-
-		PlayerEntity player = mc.player;
-		int[] resourceData = PowerUtils.getClientResourceValueAndMax(player, RESOURCE_ID);
-		int current = resourceData[0];
-		int max = resourceData[1];
-		// 非吸血蝙蝠形态无此资源 -> 不渲染
-		if (current <= 0 && max <= 1) return;
-		double percent = (double) current / (double) max;
-
-		int[] mp = ManaBarPos.get(8, 100, -17);
-		int posType = mp[0];
-		int offsetX = mp[1];
-		int offsetY = mp[2];
-
-		Pair<Integer, Integer> pos = UIPositionUtils.getCorrectPosition(
-				posType,
-				offsetX,
-				offsetY
-		);
-
-		renderBar(context, tickDelta, pos.getLeft(), pos.getRight(), percent);
+	protected Identifier resourceId() {
+		return RESOURCE_ID;
 	}
 
-	private void renderBar(DrawContext context, float tickDelta, int x, int y, double percent) {
-		int barWidth = (int) Math.ceil(80 * percent);
-		// 绘制空槽
-		context.drawTexture(BarTexEmptyID, x, y, 0, 0, 80, 5, 80, 5);
-		// 绘制已填充部分（按百分比裁剪）
-		context.drawTexture(BarTexFullID, x, y, 0, 0, barWidth, 5, 80, 5);
+	@Override
+	protected Identifier texFull() {
+		return TEX_FULL;
+	}
+
+	@Override
+	protected Identifier texEmpty() {
+		return TEX_EMPTY;
 	}
 }

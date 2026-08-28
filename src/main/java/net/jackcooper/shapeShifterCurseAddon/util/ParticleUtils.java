@@ -63,21 +63,9 @@ public class ParticleUtils {
 		spawnParticles(world, net.minecraft.particle.ParticleTypes.SNOWFLAKE, pos, 5, 0.2, 0.2, 0.2, 0.02);
 	}
 
-	public static void spawnSnowflakeParticles(ServerWorld world, Vec3d pos, int count) {
-		spawnParticles(world, net.minecraft.particle.ParticleTypes.SNOWFLAKE, pos, count, 0.3, 0.3, 0.3, 0.1);
-	}
-
 	public static void spawnHitParticles(ServerWorld world, Vec3d pos) {
 		spawnParticles(world, net.minecraft.particle.ParticleTypes.SNOWFLAKE, pos, 20, 0.5, 0.5, 0.5, 0.1);
 		spawnParticles(world, net.minecraft.particle.ParticleTypes.CLOUD, pos, 10, 0.3, 0.3, 0.3, 0.05);
-	}
-
-	public static void spawnTeleportParticles(ServerWorld world, Vec3d pos) {
-		spawnParticles(world, net.minecraft.particle.ParticleTypes.REVERSE_PORTAL, pos, 20, 0.3, 0.5, 0.3, 0.05);
-	}
-
-	public static void spawnSweepAttackParticles(ServerWorld world, Vec3d pos) {
-		spawnParticles(world, net.minecraft.particle.ParticleTypes.SWEEP_ATTACK, pos, 1, 0, 0, 0, 0);
 	}
 
 	// ===== 水花爆开（仿 RC-4 药水破碎）：水矛落地 / 涡流释放共用 =====

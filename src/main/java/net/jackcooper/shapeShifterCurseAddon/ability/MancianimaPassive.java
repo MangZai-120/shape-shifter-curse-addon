@@ -671,13 +671,6 @@ public final class MancianimaPassive {
 		}
 	}
 
-	/** 是否应当因为契灵在场而逃跑（村民/商人 FleeEntityGoal 的谓词）。 */
-	public static boolean shouldVillagerFlee(LivingEntity villager, PlayerEntity player) {
-		if (!FormUtils.isForm(player, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA)) return false;
-		if (player instanceof ServerPlayerEntity sp && WhitelistUtils.isProtected(sp, villager)) return false;
-		return true;
-	}
-
 	public static void clearAll() {
 		for (AssaultData data : ASSAULTS.values()) {
 			if (data.bossBar != null) {

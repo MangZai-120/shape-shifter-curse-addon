@@ -1,15 +1,11 @@
 package net.jackcooper.shapeShifterCurseAddon.client;
 
-import io.netty.buffer.Unpooled;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 
@@ -42,17 +38,13 @@ public final class UpgradeAxolotlSkillClient {
 		boolean p = primary != null && primary.isPressed();
 		boolean s = secondary != null && secondary.isPressed();
 		if (p && !wasPrimaryPressed) {
-			send(SscAddonNetworking.PACKET_UPGRADE_AXOLOTL_SPEAR);
+			SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_UPGRADE_AXOLOTL_SPEAR);
 		}
 		if (s && !wasSecondaryPressed) {
-			send(SscAddonNetworking.PACKET_UPGRADE_AXOLOTL_VORTEX);
+			SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_UPGRADE_AXOLOTL_VORTEX);
 		}
 		wasPrimaryPressed = p;
 		wasSecondaryPressed = s;
 	}
 
-	private static void send(Identifier packet) {
-		PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
-		ClientPlayNetworking.send(packet, buf);
-	}
 }

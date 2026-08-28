@@ -1,15 +1,11 @@
 package net.jackcooper.shapeShifterCurseAddon.client;
 
-import io.netty.buffer.Unpooled;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -50,16 +46,12 @@ public final class VortexChargeClient {
 		boolean pressed = key.isPressed();
 		if (pressed && !wasKeyPressed) {
 			if (vortexState > 0) {
-				send(SscAddonNetworking.PACKET_VORTEX_RELEASE);
+				SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_VORTEX_RELEASE);
 			} else {
-				send(SscAddonNetworking.PACKET_VORTEX_START);
+				SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_VORTEX_START);
 			}
 		}
 		wasKeyPressed = pressed;
 	}
 
-	private static void send(Identifier packet) {
-		PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
-		ClientPlayNetworking.send(packet, buf);
-	}
 }

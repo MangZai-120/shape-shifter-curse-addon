@@ -3,7 +3,6 @@ package net.jackcooper.shapeShifterCurseAddon.ability;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -32,7 +31,7 @@ import java.util.UUID;
 public class AllaySPGroupHeal {
 
 	public static final String WHITELIST_TAG_PREFIX = "ssc_allay_wl:";
-	private static final Identifier HEAL_EXECUTE_ID = new Identifier("my_addon", "form_allay_sp_group_heal_heal_execute");
+	private static final Identifier HEAL_EXECUTE_ID = FormIdentifiers.ALLAY_GROUP_HEAL_EXECUTE;
 	private static final Identifier SOLO_DAMAGE_TIMER_ID = FormIdentifiers.ALLAY_GROUP_HEAL_SOLO_DAMAGE_TIMER;
 	private static final double HEAL_RADIUS = 20.0;
 	private static final int RESISTANCE_TICKS = 200;
@@ -125,40 +124,6 @@ public class AllaySPGroupHeal {
 		entity.heal(maxHp * HEAL_PERCENT);
 		int amplifier = Math.max(0, Math.round(maxHp * ABSORPTION_PERCENT / 2.0f) - 1);
 		entity.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, HEAL_ABSORPTION_TICKS, amplifier, false, true, true));
-	}
-
-	/**
-	 * 判断实体是否应被治疗
-	 */
-	public static boolean shouldHeal(LivingEntity entity, Set<String> allayTags) {
-		// 如果是玩家，检查白名单
-		if (entity instanceof ServerPlayerEntity targetPlayer) {
-			return isInWhitelist(allayTags, targetPlayer.getUuid());
-		}
-
-		// 如果是可驯服的实体（狼、猫等），检查主人是否在白名单
-		if (entity instanceof TameableEntity tameable) {
-			UUID ownerUuid = tameable.getOwnerUuid();
-			if (ownerUuid != null) {
-				return isInWhitelist(allayTags, ownerUuid);
-			}
-			return false; // 无主的可驯服生物不治疗
-		}
-
-		// 检查 ssc_owner: command tag（通过 mark_owner 命令标记的实体）
-		for (String tag : entity.getCommandTags()) {
-			if (tag.startsWith("ssc_owner:")) {
-				try {
-					UUID ownerUuid = UUID.fromString(tag.substring("ssc_owner:".length()));
-					if (isInWhitelist(allayTags, ownerUuid)) return true;
-				} catch (IllegalArgumentException e) {
-					// 无效UUID，跳过
-				}
-			}
-		}
-
-		// 最后检查实体本身的UUID是否直接在白名单中
-		return isInWhitelist(allayTags, entity.getUuid());
 	}
 
 	/**

@@ -110,10 +110,6 @@ public class EnergyBottlerBlockEntity extends BlockEntity
 		super(RegAddonBlockEntities.ENERGY_BOTTLER_BE, pos, state);
 	}
 
-	public PropertyDelegate getPropertyDelegate() {
-		return propertyDelegate;
-	}
-
 	// ==================== 每 tick 逻辑（仅服务端） ====================
 
 	public static void tick(World world, BlockPos pos, BlockState state, EnergyBottlerBlockEntity be) {

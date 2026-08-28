@@ -60,23 +60,9 @@ public class VenomGlandItem extends AccessoryItem {
 		});
 	}
 
-	/** 佩戴者是否正戴着毒液腺体（原生 Trinkets/tclayer + Curios 反射兜底）。 */
+	/** 佩戴者是否正戴着毒液腺体（框架无关检测：SSC 抽象层 + Curios 反射兜底，统一走 TrinketUtils.isWearingAuto）。 */
 	public static boolean isWearingBy(LivingEntity entity) {
-		if (net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils.isWearing(entity, SscAddon.VENOM_GLAND)) {
-			return true;
-		}
-		try {
-			Class<?> api = Class.forName("top.theillusivec4.curios.api.CuriosApi");
-			Object lazyOptional = api.getMethod("getCuriosInventory", LivingEntity.class).invoke(null, entity);
-			if (lazyOptional == null) return false;
-			Object resolved = lazyOptional.getClass().getMethod("resolve").invoke(lazyOptional);
-			if (!(resolved instanceof java.util.Optional<?> opt) || opt.isEmpty()) return false;
-			Object handler = opt.get();
-			Object equipped = handler.getClass().getMethod("isEquipped", net.minecraft.item.Item.class).invoke(handler, SscAddon.VENOM_GLAND);
-			return Boolean.TRUE.equals(equipped);
-		} catch (Throwable ignored) {
-			return false;
-		}
+		return net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils.isWearingAuto(entity, SscAddon.VENOM_GLAND);
 	}
 
 	@Override

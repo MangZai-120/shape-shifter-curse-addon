@@ -37,6 +37,32 @@ public final class TrinketUtils {
     }
 
     /**
+     * 饰品佩戴检测（带 Curios 反射兜底）：
+     * ① 先走 {@link #isWearing}（SSC 抽象层，"auto" 自动适配 Trinkets/Accessories/Curios）；
+     * ② 抽象层未命中时再反射直查 Curios 自有 API（覆盖 Kilt/Connector 转载环境下
+     * SSC 主包原生 AccessoryIO 未注册的情况）。
+     * 方法名均为 Curios 自有 API 名（getCuriosInventory/resolve/isEquipped），不受 MC 映射重映射影响；
+     * 类未加载（未装 Curios）或任何异常一律返回 false，安全兜底。
+     */
+    public static boolean isWearingAuto(LivingEntity entity, Item item) {
+        if (isWearing(entity, item)) {
+            return true;
+        }
+        try {
+            Class<?> api = Class.forName("top.theillusivec4.curios.api.CuriosApi");
+            Object lazyOptional = api.getMethod("getCuriosInventory", LivingEntity.class).invoke(null, entity);
+            if (lazyOptional == null) return false;
+            Object resolved = lazyOptional.getClass().getMethod("resolve").invoke(lazyOptional);
+            if (!(resolved instanceof java.util.Optional<?> opt) || opt.isEmpty()) return false;
+            Object handler = opt.get();
+            Object equipped = handler.getClass().getMethod("isEquipped", Item.class).invoke(handler, item);
+            return Boolean.TRUE.equals(equipped);
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    /**
      * 该实体是否正装备着满足指定谓词的饰品。
      * 用于需要按物品类型（{@code instanceof}）而非具体实例匹配的场合。
      */

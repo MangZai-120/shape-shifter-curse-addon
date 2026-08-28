@@ -1,15 +1,11 @@
 package net.jackcooper.shapeShifterCurseAddon.client;
 
-import io.netty.buffer.Unpooled;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -40,14 +36,11 @@ public final class JumpKillClient {
 		}
 		boolean pressed = key.isPressed();
 		if (pressed && !wasPressed) {
-			send(SscAddonNetworking.PACKET_JUMP_KILL_CHARGE_START);
+			SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_JUMP_KILL_CHARGE_START);
 		} else if (!pressed && wasPressed) {
-			send(SscAddonNetworking.PACKET_JUMP_KILL_CHARGE_RELEASE);
+			SscAddonNetworking.sendEmpty(SscAddonNetworking.PACKET_JUMP_KILL_CHARGE_RELEASE);
 		}
 		wasPressed = pressed;
 	}
 
-	private static void send(Identifier packet) {
-		ClientPlayNetworking.send(packet, new PacketByteBuf(Unpooled.buffer()));
-	}
 }

@@ -129,10 +129,10 @@ public class SpUpgradeItem extends Item {
 				// Success: Base Form + Cursed Moon
 
 				// 5% Chance for Red Form (when upgrading to SP Fox)
-				if (targetFormId != null && targetFormId.equals(new Identifier("my_addon", "familiar_fox_sp"))
+				if (targetFormId != null && targetFormId.equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_SP)
 						&& new Identifier("shape-shifter-curse", "familiar_fox_3").equals(getPlayerFormID(player))
 						&& world.random.nextFloat() < 0.05f) {
-					Identifier redFormId = new Identifier("my_addon", "familiar_fox_red");
+					Identifier redFormId = net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED;
 					IForm redForm = RegPlayerForms.getPlayerForm(redFormId);
 					if (redForm != null) {
 						// 带黑屏淡入淡出动画变身（原版 1.10.1 把 handleDirectTransform 拆为 startTransform/immediatelyTransform，
@@ -203,12 +203,6 @@ public class SpUpgradeItem extends Item {
 	}
 
 	// Helper to check if player currently has a form that can be upgraded
-    /*
-    private boolean canUpgrade(PlayerEntity player) {
-        return getTargetFormId(player) != null;
-    }
-     */
-
 	private boolean isAlreadySP(PlayerEntity player) {
 		Identifier playerFormID = getPlayerFormID(player);
 		if (playerFormID == null) return false;
@@ -226,22 +220,6 @@ public class SpUpgradeItem extends Item {
 	}
 
 	private Identifier getTargetFormId(PlayerEntity player) {
-        /* OriginComponent component = ModComponents.ORIGIN.get(player);
-         // Iterate through all origins the player has to see if any match our upgrade map
-         for (Map.Entry<Identifier, Identifier> entry : UPGRADE_MAP.entrySet()) {
-             Identifier currentFormId = entry.getKey();
-             Identifier targetFormId = entry.getValue();
-
-             // Check if player has the 'current' origin
-             // We check specifically on the cursed_origin layer, or generally if layers aren't strict in the map
-             // For safety, let's check if the player possesses this origin in ANY layer,
-             // though typically it's the main layer.
-             if (component.getOrigins().values().stream().anyMatch(o -> o.getIdentifier().equals(currentFormId))) {
-                 return targetFormId;
-             }
-         }
-         return null;
-        */
 		Identifier playerFormID = getPlayerFormID(player);
 		// playerFormID为null时，直接返回null，不进入遍历
 		if (playerFormID == null) return null;

@@ -5,7 +5,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
@@ -105,17 +104,6 @@ public final class BatDesmodusBloodThirst {
         return 3;
     }
 
-    /** 客户端版本，便于 HUD 染色。经统一资源条门面。 */
-    @net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    public static int getClientStage(net.minecraft.entity.player.PlayerEntity player) {
-        int[] vm = PowerUtils.getClientResourceValueAndMax(player, FormIdentifiers.BAT_BLOOD_RESOURCE);
-        int b = vm[0];
-        if (b < 25) return 0;
-        if (b < 50) return 1;
-        if (b < 75) return 2;
-        return 3;
-    }
-
     /** 战斗打点累积（命中/技能/击杀共用）。经统一门面 gain。 */
     static void gainBlood(ServerPlayerEntity player, int amount) {
         net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.gain(player,
@@ -128,13 +116,6 @@ public final class BatDesmodusBloodThirst {
     public static void markCombat(ServerPlayerEntity player) {
         if (!isBat(player)) return;
         LAST_COMBAT_TICK.put(player.getUuid(), player.getWorld().getTime());
-    }
-
-    /** 是否处于战斗中（最近一次打点 ≤ OUT_OF_COMBAT_DELAY） */
-    public static boolean isInCombat(ServerPlayerEntity player) {
-        Long last = LAST_COMBAT_TICK.get(player.getUuid());
-        if (last == null) return false;
-        return player.getWorld().getTime() - last <= OUT_OF_COMBAT_DELAY;
     }
 
     // ==================== 命中事件 ====================

@@ -55,14 +55,14 @@ public class RedFormTickMixin {
 
 		// Potion Bag Logic
 		IForm currentForm = FormUtils.getCurrentForm(player);
-		boolean isRedForm = currentForm != null && currentForm.getFormID().equals(new Identifier("my_addon", "familiar_fox_red"));
+		boolean isRedForm = currentForm != null && currentForm.getFormID().equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED);
 
 		// SP Form + Cursed Moon Transformation Logic
-		if (currentForm != null && currentForm.getFormID().equals(new Identifier("my_addon", "familiar_fox_sp")) && isCursedMoon && !player.getCommandTags().contains("ssc_addon_red_attempted")) {
+		if (currentForm != null && currentForm.getFormID().equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_SP) && isCursedMoon && !player.getCommandTags().contains("ssc_addon_red_attempted")) {
 			player.addCommandTag("ssc_addon_red_attempted");
 			// 5% Chance to transform to Red
 			if (player.getRandom().nextFloat() < 0.05f) {
-				Identifier redFormId = new Identifier("my_addon", "familiar_fox_red");
+				Identifier redFormId = net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED;
 				IForm redForm = RegPlayerForms.getPlayerForm(redFormId);
 				if (redForm != null) {
 					TransformManager.immediatelyTransform(player, redForm);
@@ -79,7 +79,7 @@ public class RedFormTickMixin {
 		}
 
 		// === SP Allay Form: Auto-grant heal wand (slot 0) and jukebox (slot 1) ===
-		boolean isAllaySp = currentForm != null && currentForm.getFormID().equals(new Identifier("my_addon", "allay_sp"));
+		boolean isAllaySp = currentForm != null && currentForm.getFormID().equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.ALLAY_SP);
 		if (isAllaySp) {
 			placeFormItemSafe(player, 0, SscAddon.ALLAY_HEAL_WAND);
 			placeFormItemSafe(player, 1, SscAddon.ALLAY_JUKEBOX);
@@ -146,7 +146,7 @@ public class RedFormTickMixin {
 		}
 
 		if (shouldRevert) {
-			Identifier spFormId = new Identifier("my_addon", "familiar_fox_sp");
+			Identifier spFormId = net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_SP;
 			IForm spForm = RegPlayerForms.getPlayerForm(spFormId);
 			if (spForm != null) {
 				// Use setFormDirectly instead of handleDirectTransform to avoid animation

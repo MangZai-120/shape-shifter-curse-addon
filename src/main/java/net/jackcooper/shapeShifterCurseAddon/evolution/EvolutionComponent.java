@@ -163,16 +163,8 @@ public class EvolutionComponent implements AutoSyncedComponent {
 
     // ---------------- 解锁状态 ----------------
 
-    public boolean isUnlockAll() {
-        return unlockAll;
-    }
-
     public void setUnlockAll(boolean unlockAll) {
         this.unlockAll = unlockAll;
-    }
-
-    public Set<String> getUnlockedNodes() {
-        return unlockedNodes;
     }
 
     /** 节点是否已解锁（全解锁标记开启时恒为 true）。 */

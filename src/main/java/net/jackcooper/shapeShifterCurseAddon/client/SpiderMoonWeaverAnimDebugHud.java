@@ -24,7 +24,7 @@ import java.util.List;
  * 开启期间每 tick 检测动画切换并写入游戏日志（搜 SSCA_AnimDebug），包含当前动画名、播放进度(tick/总长)、
  * velY、fallDistance、onGround、airTicks、sprint、二段跳额度——便于事后分析二段跳 jump→fall 衔接时序。
  *
- * <p>另提供 {@link #logSnapshotOnce} 供指令输出单条快照，以及 {@link #findActivePlayerFromStack}
+ * <p>另提供 {@link #findActivePlayerFromStack}
  * 供二段跳动画修复逻辑读取当前播放动画。
  *
  * <p>纯客户端、仅调试用；不影响任何游戏逻辑。
@@ -55,13 +55,6 @@ public final class SpiderMoonWeaverAnimDebugHud {
 			lastAnimTick = -1;
 		}
 		return recording;
-	}
-
-	/** 指令调用：无论是否开启记录，都向日志输出一条完整快照。 */
-	public static void logSnapshotOnce(String action) {
-		ClientPlayerEntity player = MinecraftClient.getInstance().player;
-		if (player == null) return;
-		logSnapshot(player, action);
 	}
 
 	private static void onClientTick(MinecraftClient client) {

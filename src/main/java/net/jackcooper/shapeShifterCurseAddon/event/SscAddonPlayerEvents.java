@@ -192,8 +192,14 @@ public final class SscAddonPlayerEvents {
 			net.jackcooper.shapeShifterCurseAddon.ability.MancianimaPassive.onPlayerDisconnect(uuid);
 			// 白名单 GUI 限频表：移除退出玩家的时间戳，防止僵尸 UUID 积累
 			net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.onPlayerDisconnect(uuid);
+			// 野猫昼夜移速：断线摘修饰符（重连由 tick 重挂）
+			net.jackcooper.shapeShifterCurseAddon.ability.WildCatPaceManager.clearPlayer(handler.player);
 			// 海晶荧光坠增强激光：combo 中途断线时清理待机法阵实体 + 移速 modifier，防止残留
 			net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.onPlayerDisconnect(uuid);
+			// 荧光幼灵潮汐波动：断线清 session + 法球实体，防 orb 残留
+			net.jackcooper.shapeShifterCurseAddon.ability.FluorescentTidalManager.onPlayerDisconnect(uuid);
+			// 美西螈漩涡蓄力：断线清蓄力状态
+			net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.onPlayerDisconnect(uuid);
 			System.out.println("[SSC_ADDON] DISCONNECT cleanup completed");
 		});
 	}

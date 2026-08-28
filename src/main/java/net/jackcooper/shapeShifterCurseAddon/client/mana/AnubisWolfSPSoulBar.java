@@ -2,53 +2,27 @@ package net.jackcooper.shapeShifterCurseAddon.client.mana;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Pair;
-import net.jackcooper.shapeShifterCurseAddon.util.ManaBarPos;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
-import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
 
+/** 阿努比斯之狼 SP 灵魂能量条（80×5）。 */
 @Environment(EnvType.CLIENT)
-public class AnubisWolfSPSoulBar implements HudRenderCallback {
-	private static final MinecraftClient mc = MinecraftClient.getInstance();
-	private static final Identifier BarTexFullID = new Identifier("my_addon", "textures/gui/anubis_wolf_sp_soul_bar_full.png");
-	private static final Identifier BarTexEmptyID = new Identifier("my_addon", "textures/gui/anubis_wolf_sp_soul_bar_empty.png");
+public class AnubisWolfSPSoulBar extends SimpleResourceBarRenderer {
+	private static final Identifier TEX_FULL = new Identifier("my_addon", "textures/gui/anubis_wolf_sp_soul_bar_full.png");
+	private static final Identifier TEX_EMPTY = new Identifier("my_addon", "textures/gui/anubis_wolf_sp_soul_bar_empty.png");
 	private static final Identifier RESOURCE_ID = new Identifier("my_addon", "form_anubis_wolf_sp_soul_energy");
 
 	@Override
-	public void onHudRender(DrawContext context, float tickDelta) {
-		if (mc.options.hudHidden || mc.player == null) return;
-
-		PlayerEntity player = mc.player;
-		int[] resourceData = PowerUtils.getClientResourceValueAndMax(player, RESOURCE_ID);
-		int current = resourceData[0];
-		int max = resourceData[1];
-		if (current <= 0 && max <= 1) return;
-		double percent = (double) current / (double) max;
-
-		int[] mp = ManaBarPos.get(8, 100, -17);
-		int posType = mp[0];
-		int offsetX = mp[1];
-		int offsetY = mp[2];
-
-		Pair<Integer, Integer> pos = UIPositionUtils.getCorrectPosition(
-				posType,
-				offsetX,
-				offsetY
-		);
-
-		renderBar(context, tickDelta, pos.getLeft(), pos.getRight(), percent);
+	protected Identifier resourceId() {
+		return RESOURCE_ID;
 	}
 
-	private void renderBar(DrawContext context, float tickDelta, int x, int y, double percent) {
-		int barWidth = (int) Math.ceil(80 * percent);
-		// Draw Empty
-		context.drawTexture(BarTexEmptyID, x, y, 0, 0, 80, 5, 80, 5);
-		// Draw Full (clipped)
-		context.drawTexture(BarTexFullID, x, y, 0, 0, barWidth, 5, 80, 5);
+	@Override
+	protected Identifier texFull() {
+		return TEX_FULL;
+	}
+
+	@Override
+	protected Identifier texEmpty() {
+		return TEX_EMPTY;
 	}
 }

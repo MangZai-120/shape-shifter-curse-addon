@@ -2,18 +2,10 @@ package net.jackcooper.shapeShifterCurseAddon.client.mana;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.ManaBarPos;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
-import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
 
 /**
  * 契灵 - 抗伤值条 HUD。
@@ -21,55 +13,44 @@ import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
  *  - 与 mana 条中心对齐（mana 条宽度 80）。
  *  - 长度 = FULL_WIDTH * current/max（线性），current=0 时不显示。
  *  - 位置紧贴 mana 条上方 2 像素。
- *  - 仅在契灵形态显示。
+ *  - 仅在契灵形态显示（max>1 即代表持有该 power）。
  */
 @Environment(EnvType.CLIENT)
-public class MancianimaResistanceBar implements HudRenderCallback {
-	private static final MinecraftClient mc = MinecraftClient.getInstance();
+public class MancianimaResistanceBar extends SimpleResourceBarRenderer {
 	private static final Identifier BAR_FULL = new Identifier("my_addon", "textures/gui/mancianima_resistance_full.png");
 	private static final Identifier BAR_EMPTY = new Identifier("my_addon", "textures/gui/mancianima_resistance_empty.png");
 	private static final int MANA_WIDTH = 80;
 	private static final int FULL_WIDTH = 92;
-	private static final int HEIGHT = 5;
 	private static final int CENTER_OFFSET_X = -(FULL_WIDTH - MANA_WIDTH) / 2; // -6，在 mana 条上居中
 
 	@Override
-	public void onHudRender(DrawContext context, float tickDelta) {
-		if (mc.options.hudHidden || mc.player == null) return;
-		PlayerEntity player = mc.player;
-
-		int[] data = PowerUtils.getClientResourceValueAndMax(player, FormIdentifiers.MANCIANIMA_RESISTANCE);
-		int current = data[0];
-		int max = data[1];
-		// 仅在玩家持有该 power 时显示（max>1 即代表契灵形态）
-		if (max <= 1) return;
-		if (current < 0) current = 0;
-
-		int[] mp = ManaBarPos.get(8, 100, 0);
-		int posType = mp[0];
-		int offsetX = mp[1];
-		int offsetY = mp[2];
-
-		Pair<Integer, Integer> pos = UIPositionUtils.getCorrectPosition(posType, offsetX, offsetY);
-		int x = pos.getLeft() + CENTER_OFFSET_X;
-		// 与 mana 条同 y 坐标（居中、不上移）
-		int y = pos.getRight();
-		// 按比例填充：先画空槽，再叠 FULL（宽 = full * current/max，从左到右填充 = 从右至左减少）
-		double percent = (double) current / (double) max;
-		int barWidth = (int) Math.ceil(FULL_WIDTH * percent);
-		context.drawTexture(BAR_EMPTY, x, y, 0, 0, FULL_WIDTH, HEIGHT, FULL_WIDTH, HEIGHT);
-		if (barWidth > 0) {
-			context.drawTexture(BAR_FULL, x, y, 0, 0, barWidth, HEIGHT, FULL_WIDTH, HEIGHT);
-		}
+	protected Identifier resourceId() {
+		return FormIdentifiers.MANCIANIMA_RESISTANCE;
 	}
 
-	@SuppressWarnings("unused")
-	private static boolean isMancianima(PlayerEntity player) {
-		try {
-			IForm form = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).nowForm;
-			return form != null && FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.getFormID());
-		} catch (Exception e) {
-			return false;
-		}
+	@Override
+	protected Identifier texFull() {
+		return BAR_FULL;
+	}
+
+	@Override
+	protected Identifier texEmpty() {
+		return BAR_EMPTY;
+	}
+
+	@Override
+	protected int width() {
+		return FULL_WIDTH;
+	}
+
+	/** 与 mana 条同 y（复用 offsetY=0 的布局参数），X 额外做居中偏移。 */
+	@Override
+	protected int[] manaBarPosArgs() {
+		return ManaBarPos.get(8, 100, 0);
+	}
+
+	@Override
+	protected int barX(Pair<Integer, Integer> pos) {
+		return pos.getLeft() + CENTER_OFFSET_X;
 	}
 }

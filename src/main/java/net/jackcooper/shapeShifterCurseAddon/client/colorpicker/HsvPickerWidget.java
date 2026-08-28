@@ -50,9 +50,6 @@ public class HsvPickerWidget implements Element, Selectable {
         this.val = hsv[2];
     }
 
-    public int totalWidth()  { return svSize + gap + hueBarW; }
-    public int totalHeight() { return svSize; }
-
     public void render(DrawContext ctx, int mouseX, int mouseY) {
         // SV 方块：先填当前色相的纯色作为底，再两层渐变叠出 S/V
         int baseHue = hsvToRgb(hue, 1f, 1f) | 0xFF000000;

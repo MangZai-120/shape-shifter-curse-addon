@@ -16,7 +16,7 @@ public class SscAddonTargetPredicateMixin {
 
 	// 缓存 Identifier，避免 AI 索敌高频路径每次 new Identifier 分配；
 	// PowerType 不缓存——/reload 会重建 PowerTypeRegistry，缓存引用会失效，故每次查表（HashMap，开销极小）。
-	private static final Identifier SSCA_FOX_SP_VISIBILITY = new Identifier("my_addon", "form_familiar_fox_sp_visibility");
+	private static final Identifier SSCA_FOX_SP_VISIBILITY = net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_VISIBILITY;
 
 	@ModifyVariable(method = "test", at = @At("STORE"), ordinal = 0)
 	private double modifyMaxDistance(double d, @Nullable LivingEntity baseEntity, LivingEntity targetEntity) {
