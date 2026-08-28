@@ -24,7 +24,6 @@ import java.util.List;
  * 自身不参与能量统计（贡献 0/0），避免污染网络能量显示。
  * 物品带附魔光效（见 RegAddonBlocks 注册处的 glint BlockItem）。
  */
-@SuppressWarnings("deprecation") // 覆写 vanilla @Deprecated 的 Block 方法，统一抑制
 public class CreativeEnergyTankBlock extends EnergyStorageTankBlock {
 
 	public CreativeEnergyTankBlock(Settings settings) {

@@ -35,7 +35,6 @@ import java.util.Map;
  * </ul>
  * 两路共享 {@link #MAX_E_PER_TICK}（512 E/t）预算。
  */
-@SuppressWarnings("deprecation") // Transaction API 在 1.20.1 标记 @UnstableApiUsage，官方推荐用法
 public class EnergyConverterBlockEntity extends BlockEntity implements EnergyNetworkConsumer {
 
 /** SSCA 能量 → E 的换算比（1 SSCA = 16 E）。 */
