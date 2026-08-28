@@ -77,17 +77,21 @@ public final class SpiderMoonWeaverSwingRenderer {
 		}
 
 		// 飞弹飞行期：从 owner 手部到飞行中的蛛丝弹画蛛丝（未断开才连玩家；miss 断开后弹自由飞不连）
-		if (world instanceof net.minecraft.client.world.ClientWorld cw) {
-			for (net.minecraft.entity.Entity e : cw.getEntities()) {
-				if (!(e instanceof net.jackcooper.shapeShifterCurseAddon.entity.SpiderSwingBullet bullet)) continue;
-				net.minecraft.entity.Entity ownerE = bullet.getOwner();
-				if (ownerE == null) continue;
-				Vec3d bp = bullet.getLerpedPos(tickDelta);
-				Vec3d hand = ownerE.getLerpedPos(tickDelta).add(0, ownerE.getHeight() * 0.5, 0);
-				ms.push();
-				ms.translate(hand.x - camPos.x, hand.y - camPos.y, hand.z - camPos.z);
-				drawRope(ms, vc, bp.x - hand.x, bp.y - hand.y, bp.z - hand.z, age, SpiderMoonWeaverSwingClient.STATE_FIRING);
-				ms.pop();
+		// 性能：仅当最近 3t 内有蛛丝弹存活（tick 标记）时才扫实体，替代原「每帧无条件 instanceof
+		// 全实体扫描」；飞行期 ≤2s，扫全实体成本可接受。扫描方式用原版已验证的 getEntities 迭代。
+		if (net.jackcooper.shapeShifterCurseAddon.entity.SpiderSwingBullet.isBulletRecentlySeen(world.getTime())) {
+			if (world instanceof net.minecraft.client.world.ClientWorld cw) {
+				for (net.minecraft.entity.Entity e : cw.getEntities()) {
+					if (!(e instanceof net.jackcooper.shapeShifterCurseAddon.entity.SpiderSwingBullet bullet)) continue;
+					net.minecraft.entity.Entity ownerE = bullet.getOwner();
+					if (ownerE == null) continue;
+					Vec3d bp = bullet.getLerpedPos(tickDelta);
+					Vec3d hand = ownerE.getLerpedPos(tickDelta).add(0, ownerE.getHeight() * 0.5, 0);
+					ms.push();
+					ms.translate(hand.x - camPos.x, hand.y - camPos.y, hand.z - camPos.z);
+					drawRope(ms, vc, bp.x - hand.x, bp.y - hand.y, bp.z - hand.z, age, SpiderMoonWeaverSwingClient.STATE_FIRING);
+					ms.pop();
+				}
 			}
 		}
 	}

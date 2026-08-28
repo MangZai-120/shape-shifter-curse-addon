@@ -80,6 +80,12 @@ public final class SpiderMoonWeaverSwingClient {
 		return DATA.entrySet().iterator();
 	}
 
+	/** 客户端断线清理全部镜像（防换服残留旧绳索渲染）。 */
+	public static void clear() {
+		DATA.clear();
+		wasSecondaryPressed = false;
+	}
+
 	private static void onClientTick(MinecraftClient client) {
 		ClientPlayerEntity player = client.player;
 		if (player == null || client.world == null) return;
@@ -97,10 +103,13 @@ public final class SpiderMoonWeaverSwingClient {
 		}
 		wasSecondaryPressed = pressed;
 
-		// 摆荡中每 tick 上报绳长 + 收放意图（服务端权威扣 mana）
+		// 摆荡中每 2 tick 上报一次绳长 + 收放意图（服务端权威扣 mana，成本按 2t 补偿）。
+		// 降频省 C2S 带宽：绳长断丝余量 3 格 >> 2t×0.16/t 的精度损失，无感。
 		LocalSwing s = DATA.get(player.getUuid());
 		if (s != null && s.active && s.state == STATE_SWINGING) {
-			sendSync(s.ropeLen, s.reelIntent);
+			if ((player.age & 1) == 0) { // 偶数 tick 发，奇数 tick 跳过 → 频率减半
+				sendSync(s.ropeLen, s.reelIntent);
+			}
 		}
 	}
 

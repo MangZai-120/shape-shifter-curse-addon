@@ -98,7 +98,8 @@ public class PowerUtils {
 
 	public static void syncPower(ServerPlayerEntity player, Identifier powerId) {
 		try {
-			PowerHolderComponent.sync(player);
+			// 只同步单个 power（而非全量 sync），避免战斗中频繁重发玩家全部 powers 大包占用带宽
+			PowerHolderComponent.syncPower(player, PowerTypeRegistry.get(powerId));
 		} catch (Exception e) {
 			LOGGER.error("syncPower 失败: powerId={}", powerId, e);
 		}
@@ -160,7 +161,8 @@ public class PowerUtils {
 			Power power = powerHolder.getPower(powerType);
 			if (power instanceof io.github.apace100.apoli.power.CooldownPower cooldownPower) {
 				cooldownPower.use();
-				PowerHolderComponent.sync(player);
+				// 只同步该冷却 power 自身，避免全量重发全部 powers
+				PowerHolderComponent.syncPower(player, powerType);
 			}
 		} catch (Exception e) {
 			LOGGER.error("resetCooldown 失败: cooldownPowerId={}", cooldownPowerId, e);

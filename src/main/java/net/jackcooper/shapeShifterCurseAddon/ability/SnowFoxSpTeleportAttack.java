@@ -294,7 +294,8 @@ public class SnowFoxSpTeleportAttack {
             if (power instanceof VariableIntPower variablePower) {
                 int newValue = Math.max(0, Math.min(100, variablePower.getValue() + change));
                 variablePower.setValue(newValue);
-                PowerHolderComponent.sync(player);
+                // 只同步该资源 power 自身，避免全量重发玩家全部 powers
+                PowerHolderComponent.syncPower(player, powerType);
             }
         } catch (Exception e) {
         }
@@ -307,7 +308,8 @@ public class SnowFoxSpTeleportAttack {
             Power power = powerHolder.getPower(powerType);
             if (power instanceof VariableIntPower variablePower) {
                 variablePower.setValue(value);
-                PowerHolderComponent.sync(player);
+                // 只同步该资源 power 自身，避免全量重发玩家全部 powers
+                PowerHolderComponent.syncPower(player, powerType);
             }
         } catch (Exception e) {
         }

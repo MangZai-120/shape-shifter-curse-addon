@@ -21,6 +21,10 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
  */
 @Environment(EnvType.CLIENT)
 public class FrostThornEntityRenderer extends EntityRenderer<FrostThornEntity> {
+	// 渲染纹理常量（原实现每帧 new Identifier，含字符串规范化开销）
+	private static final Identifier TEXTURE = new Identifier("textures/atlas/blocks.png");
+	// 按 stage 缓存的渲染用 ItemStack（stage 仅 0/1/2 三档，原实现每帧每锥 new + NBT 写入，纯 GC 压力）
+	private static final ItemStack[] CACHED_STACKS = new ItemStack[3];
 
 	private final ItemRenderer itemRenderer;
 
@@ -43,8 +47,14 @@ public class FrostThornEntityRenderer extends EntityRenderer<FrostThornEntity> {
 		// 在旋转后的局部空间里平移，把模型中心对回实体锚点（与旋转无关，始终居中）
 		matrices.translate((8.0 - 1.5) / 16.0, (8.0 - 0.5) / 16.0, (8.0 - 3.0) / 16.0);
 		// CustomModelData = 存在阶段 + 1（1/2/3 → stage0/1/2 三阶段材质）
-		ItemStack stack = new ItemStack(SscAddon.FROST_THORN);
-		stack.getOrCreateNbt().putInt("CustomModelData", entity.getStage() + 1);
+		// 性能：按 stage 缓存复用（渲染器不修改栈内容，itemRenderer 只读 NBT 选模型）
+		int stage = Math.max(0, Math.min(2, entity.getStage()));
+		ItemStack stack = CACHED_STACKS[stage];
+		if (stack == null) {
+			stack = new ItemStack(SscAddon.FROST_THORN);
+			stack.getOrCreateNbt().putInt("CustomModelData", stage + 1);
+			CACHED_STACKS[stage] = stack;
+		}
 		this.itemRenderer.renderItem(stack, ModelTransformationMode.GROUND, light, OverlayTexture.DEFAULT_UV,
 				matrices, vertexConsumers, entity.getWorld(), entity.getId());
 		matrices.pop();
@@ -53,6 +63,6 @@ public class FrostThornEntityRenderer extends EntityRenderer<FrostThornEntity> {
 
 	@Override
 	public Identifier getTexture(FrostThornEntity entity) {
-		return new Identifier("textures/atlas/blocks.png");
+		return TEXTURE;
 	}
 }

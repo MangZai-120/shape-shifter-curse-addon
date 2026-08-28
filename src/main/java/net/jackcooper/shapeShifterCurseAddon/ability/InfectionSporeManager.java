@@ -46,6 +46,8 @@ public final class InfectionSporeManager {
 
     /** 传染半径（格） */
     public static final double INFECT_SPREAD_RADIUS = 1.5;
+    /** 传染扫描间隔（tick）：防群体感染场景每 tick N 次实体区间查询 */
+    public static final int SPREAD_SCAN_INTERVAL = 10;
     /** 他人视角粒子周期 */
     public static final int PARTICLE_INTERVAL_OTHERS = 5;
     /** 第一人称粒子周期（约 1/4 频率） */
@@ -154,8 +156,12 @@ public final class InfectionSporeManager {
 
             // 1) 周期扣血由 BAT_POISON buff 负责（见 infect/spreadFrom），此处不再直接伤害
 
-            // 2) 传染（仅当源施加者仍在线时启用，便于继承"剩余时间"语义）
-            spreadFrom(server, target, data, now);
+            // 2) 传染（仅当源施加者仍在线时启用，便于继承"剩余时间"语义）；
+            // 节流：每 10t 扫一次（同文件毒雾云已有 30t 节流范例），传染延迟 ≤0.5s 无感知
+            if (now >= data.nextScanTick) {
+                data.nextScanTick = now + SPREAD_SCAN_INTERVAL;
+                spreadFrom(server, target, data, now);
+            }
 
             // 3) 粒子表现：他人 1×, 被感染玩家自己 1/4
             emitInfectionParticles(world, target, now);
@@ -226,6 +232,8 @@ public final class InfectionSporeManager {
         final UUID casterUuid;
         final RegistryKey<World> worldKey;
         long endTick;
+        /** 下次传染扫描 tick：传染每 SPREAD_SCAN_INTERVAL 扫一次（原每 tick 一扫，群体感染场景 N 体 = 每 tick N 次实体查询） */
+        long nextScanTick;
 
         InfectionData(UUID casterUuid, RegistryKey<World> worldKey, long endTick) {
             this.casterUuid = casterUuid;

@@ -151,7 +151,8 @@ public final class VortexChargeManager {
 				return;
 			}
 		}
-		PowerUtils.setResourceValueAndSync(player, VORTEX_STATE, s.ticks); // 同步蓄力状态
+		// 注：不再每 tick 同步 vortex_state —— 客户端与 JSON 条件只读「>0」判断蓄力中，
+		// start(1)/release(0)/cancel(0) 三个事件级同步已足够，每 tick 重发是纯带宽浪费。
 		if (s.ticks >= MAX_TICKS) {
 			release(player); // 满 4 秒自动释放
 		}

@@ -41,6 +41,7 @@ public final class WebHighlightClient {
 				HIGHLIGHT.clear();
 				return;
 			}
+			if (HIGHLIGHT.isEmpty()) return; // 空表短路，避免每 tick 无意义 removeIf + lambda 捕获分配
 			long now = client.world.getTime();
 			HIGHLIGHT.entrySet().removeIf(e -> e.getValue()[0] <= now);
 		});

@@ -35,6 +35,9 @@ public class SpiderSwingBullet extends WebBullet {
 	private double lastManaCharge = 0.0;
 	private int life = 0;
 
+	/** 客户端最近一次看到蛛丝弹存活的 world tick（实体 tick 必跑，天然可靠；渲染器据此门控，避免每帧全实体扫描）。 */
+	private static volatile long sscAddon$lastClientBulletSeenTick = -1L;
+
 	public SpiderSwingBullet(EntityType<? extends SpiderSwingBullet> type, World world) {
 		super(type, world);
 	}
@@ -46,6 +49,16 @@ public class SpiderSwingBullet extends WebBullet {
 		this.setPosition(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
 	}
 
+	/** 渲染器门控：最近 3 个 world tick 内是否有蛛丝弹存活（弹消失后标记最多保留 3t 即过期）。 */
+	public static boolean isBulletRecentlySeen(long currentWorldTick) {
+		return sscAddon$lastClientBulletSeenTick >= 0L && currentWorldTick - sscAddon$lastClientBulletSeenTick <= 3L;
+	}
+
+	/** 客户端断线时重置存活标记（断线时实体不逐个走 remove）。 */
+	public static void resetClientState() {
+		sscAddon$lastClientBulletSeenTick = -1L;
+	}
+
 	@Override
 	protected float getGravity() {
 		return 0.025f; // 轻微下坠抛物线
@@ -53,6 +66,10 @@ public class SpiderSwingBullet extends WebBullet {
 
 	@Override
 	public void tick() {
+		// 客户端存活标记：只要本弹还在 tick 就刷新（渲染器据此判断是否需要扫实体画丝）
+		if (this.getWorld().isClient) {
+			sscAddon$lastClientBulletSeenTick = this.getWorld().getTime();
+		}
 		if (this.getWorld() instanceof ServerWorld sw && this.owner instanceof PlayerEntity player) {
 			traveled += this.getVelocity().length();
 			ManaComponent m = RegManaComponent.MANA.get(player);

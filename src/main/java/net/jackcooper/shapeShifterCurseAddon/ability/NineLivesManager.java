@@ -7,6 +7,7 @@ package net.jackcooper.shapeShifterCurseAddon.ability;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
@@ -59,6 +60,15 @@ public final class NineLivesManager {
             for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
                 tickPlayer(p);
             }
+        });
+        // 断线清理状态表：防止离线玩家条目残留（缓慢泄漏），也避免重连后残留旧 CD/蓄力起点
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            UUID id = handler.player.getUuid();
+            LAST_COMBAT.remove(id);
+            REVIVE_TICK.remove(id);
+            INVULN_END.remove(id);
+            REGEN_ACC.remove(id);
+            RESPAWN_REFILL.remove(id);
         });
         // 真死重生后回满 9 命（延迟到 tick 里设，确保重生后 power 已授予）
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) ->

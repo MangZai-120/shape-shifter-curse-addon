@@ -95,6 +95,9 @@ public final class MancianimaMarkManager {
 	public static final int UPGRADE_FOX_MANA_REGEN_INTERVAL_TICKS = 20;
 	/** 进化使魔脱战每次回复的 mana 量 */
 	public static final double UPGRADE_FOX_MANA_REGEN_AMOUNT = 1.0;
+	/** 进化使魔 mana 回复暂停计时器资源 id（常量复用，避免每 tick 现场构造 Identifier） */
+	private static final Identifier UPGRADE_FOX_MANA_REGEN_PAUSE_TIMER =
+			new Identifier("my_addon", "form_upgrade_familiar_fox_mana_regen_pause_pause_timer");
 
 	/** 标记战斗发生（伤害进出契灵玩家时调用） */
 	public static void markCombat(UUID playerUuid, long now) {
@@ -342,7 +345,8 @@ public final class MancianimaMarkManager {
 			long lastCombat = LAST_COMBAT.getOrDefault(id, 0L);
 			if (now - lastCombat < OUT_OF_COMBAT_TICKS) continue;
 			// 消耗 mana 后 5s 内暂停自动回复（regen_pause_timer 资源 > 0 表示在暂停窗口）
-			int pauseTimer = PowerUtils.getResourceValue(sp, new Identifier("my_addon", "form_upgrade_familiar_fox_mana_regen_pause_pause_timer"));
+			// 性能：常量复用（原每 tick 每进化使魔现场 new Identifier，构造含正则校验）
+			int pauseTimer = PowerUtils.getResourceValue(sp, UPGRADE_FOX_MANA_REGEN_PAUSE_TIMER);
 			if (pauseTimer > 0) continue;
 			long lastRegen = LAST_MANA_REGEN.getOrDefault(id, 0L);
 			if (now - lastRegen < UPGRADE_FOX_MANA_REGEN_INTERVAL_TICKS) continue;

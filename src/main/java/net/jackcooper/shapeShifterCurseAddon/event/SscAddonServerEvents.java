@@ -160,7 +160,7 @@ public final class SscAddonServerEvents {
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
 				// [DEBUG] 水矛出现监测 + 硬上限：背包最多 1 把水矛，多余立即移除（兜底任何未知产出路径）
-				// 性能优化：背包全扫（41 格）降频到每 10 tick 一次——水矛「有→无」触发合成CD重置最多晚 10t，肉眼不可察；STUN 属性校正仍每 tick（见下方）。
+				// 性能优化：背包全扫（41 格）降频到每 10 tick 一次——水矛「有→无」触发合成CD重置最多晚 10t，肉眼不可察；STUN 属性校正同样降频到每 10t（见下方）。
 				if (server.getTicks() % 10 == 0 && FormUtils.isAxolotlSP(player)) {
 					PlayerInventory inv = player.getInventory();
 					int wsCnt = 0;
@@ -201,16 +201,20 @@ public final class SscAddonServerEvents {
 						SscAddon.WS_DBG.warn("[WS-CD] 水矛消失 @tick {} → 重启合成冷却(从消失起算 {}t)", wsT, SscAddon.WATER_SPEAR_CRAFT_CD_TICKS);
 					}
 				}
-				if (player.hasStatusEffect(SscAddon.STUN)) continue;
-				EntityAttributeInstance atk =
-						player.getAttributeInstance(EntityAttributes.GENERIC_ATTACK_DAMAGE);
-				if (atk != null && atk.getModifier(StunEffect.ATTACK_MODIFIER_UUID) != null) {
-					atk.removeModifier(StunEffect.ATTACK_MODIFIER_UUID);
-				}
-				EntityAttributeInstance spd =
-						player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
-				if (spd != null && spd.getModifier(StunEffect.SPEED_MODIFIER_UUID) != null) {
-					spd.removeModifier(StunEffect.SPEED_MODIFIER_UUID);
+				// 性能：STUN 孤儿校正降频到每 10 tick——孤儿修正多残留 0.5s 无感知，
+				// 省掉每 tick 每玩家 hasStatusEffect + 2×getAttributeInstance + 2×getModifier
+				if (server.getTicks() % 10 == 0) {
+					if (player.hasStatusEffect(SscAddon.STUN)) continue;
+					EntityAttributeInstance atk =
+							player.getAttributeInstance(EntityAttributes.GENERIC_ATTACK_DAMAGE);
+					if (atk != null && atk.getModifier(StunEffect.ATTACK_MODIFIER_UUID) != null) {
+						atk.removeModifier(StunEffect.ATTACK_MODIFIER_UUID);
+					}
+					EntityAttributeInstance spd =
+							player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
+					if (spd != null && spd.getModifier(StunEffect.SPEED_MODIFIER_UUID) != null) {
+						spd.removeModifier(StunEffect.SPEED_MODIFIER_UUID);
+					}
 				}
 			}
 		});

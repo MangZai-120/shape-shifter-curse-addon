@@ -6,6 +6,7 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
@@ -87,6 +88,18 @@ public final class NovaSkillManager {
             for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
                 tickPlayer(p);
             }
+        });
+        // 断线清理八张状态表：防离线条目残留泄漏，也避免重连后残留旧 CD/蓄力起点误触发
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            UUID id = handler.player.getUuid();
+            DODGE.remove(id);
+            DODGE_EXPIRE.remove(id);
+            LEAP_COUNT.remove(id);
+            LEAP_FIRST.remove(id);
+            LEAP_CD_END.remove(id);
+            LEAP_LAST_INPUT.remove(id);
+            CHARGE_START.remove(id);
+            EXPLODE_CD_END.remove(id);
         });
     }
 

@@ -32,6 +32,10 @@ public final class MancianimaCrosshairTracker {
 
 	private static volatile UUID currentTarget = null;
 	private static final double MAX_DIST = 32.0;
+	// 上次 raycast 时的视角/位置快照：均未变时跳过重算（每 4t 强制刷新兜底目标自身移动）
+	private static int tickCounter = 0;
+	private static float lastYaw = Float.NaN, lastPitch = Float.NaN;
+	private static double lastX = Double.NaN, lastY = Double.NaN, lastZ = Double.NaN;
 
 	public static UUID getCurrentTarget() { return currentTarget; }
 
@@ -49,6 +53,18 @@ public final class MancianimaCrosshairTracker {
 		PlayerEntity player = mc.player;
 		if (!isMancianima(player)) { currentTarget = null; return; }
 
+		// 性能：准星指向 + 位置都没变时跳过双 raycast（原每 tick 无条件重算）；
+		// 每 4t 强制刷新兜底（目标自己移动/死亡不会被视角检测捕获）
+		if (tickCounter++ % 4 == 0
+				|| player.getYaw() != lastYaw || player.getPitch() != lastPitch
+				|| player.getX() != lastX || player.getY() != lastY || player.getZ() != lastZ) {
+			lastYaw = player.getYaw(); lastPitch = player.getPitch();
+			lastX = player.getX(); lastY = player.getY(); lastZ = player.getZ();
+			raycastTarget(mc, player);
+		}
+	}
+
+	private static void raycastTarget(MinecraftClient mc, PlayerEntity player) {
 		Vec3d eye = player.getCameraPosVec(1.0f);
 		Vec3d look = player.getRotationVec(1.0f);
 		Vec3d end = eye.add(look.multiply(MAX_DIST));

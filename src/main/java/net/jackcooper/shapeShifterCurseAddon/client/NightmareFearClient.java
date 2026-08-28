@@ -167,12 +167,12 @@ public final class NightmareFearClient {
 		if (feared && now % HEARTBEAT_INTERVAL == 0 && now != lastHeartbeat && client.player != null) {
 			lastHeartbeat = now;
 			double nearest = Double.MAX_VALUE;
-			for (net.minecraft.entity.Entity e : client.world.getEntities()) {
-				if (e == client.player || !(e instanceof net.minecraft.entity.player.PlayerEntity)) continue;
+			// 性能：只扫玩家列表（原全实体扫描找玩家形态；食梦魔必为玩家，getPlayers 更省）
+			for (net.minecraft.entity.player.PlayerEntity p : client.world.getPlayers()) {
+				if (p == client.player) continue;
 				if (!net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(
-						(net.minecraft.entity.player.PlayerEntity) e,
-						net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.WILD_CAT_NIGHTMARE)) continue;
-				nearest = Math.min(nearest, e.squaredDistanceTo(client.player));
+						p, net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.WILD_CAT_NIGHTMARE)) continue;
+				nearest = Math.min(nearest, p.squaredDistanceTo(client.player));
 			}
 			float vol = 0.06f;
 			if (nearest != Double.MAX_VALUE && nearest <= 16.0 * 16.0) {

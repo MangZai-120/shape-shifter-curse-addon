@@ -22,6 +22,16 @@ import net.jackcooper.shapeShifterCurseAddon.entity.ThrownWaterSpearEntity;
  */
 @Environment(EnvType.CLIENT)
 public class ThrownWaterSpearEntityRenderer extends EntityRenderer<ThrownWaterSpearEntity> {
+	// 渲染纹理常量（原实现每帧 new Identifier）+ CustomModelData=1 投掷态模型缓存
+	private static final Identifier TEXTURE = new Identifier("textures/atlas/blocks.png");
+	private static final ItemStack CACHED_THROWING_STACK = createThrowingStack();
+
+	private static ItemStack createThrowingStack() {
+		ItemStack s = new ItemStack(SscAddon.WATER_SPEAR);
+		s.getOrCreateNbt().putInt("CustomModelData", 1);
+		return s;
+	}
+
 	private final ItemRenderer itemRenderer;
 
 	public ThrownWaterSpearEntityRenderer(EntityRendererFactory.Context context) {
@@ -49,10 +59,8 @@ public class ThrownWaterSpearEntityRenderer extends EntityRenderer<ThrownWaterSp
 		matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(vYaw - 90.0F));
 		matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(vPitch - 90.0F));
 
-		// CustomModelData=1 触发 water_spear_throwing（3D 投掷态）模型
-		ItemStack renderStack = new ItemStack(SscAddon.WATER_SPEAR);
-		renderStack.getOrCreateNbt().putInt("CustomModelData", 1);
-		this.itemRenderer.renderItem(renderStack, ModelTransformationMode.GROUND, light, OverlayTexture.DEFAULT_UV,
+		// CustomModelData=1 触发 water_spear_throwing（3D 投掷态）模型（缓存复用，渲染器不修改栈）
+		this.itemRenderer.renderItem(CACHED_THROWING_STACK, ModelTransformationMode.GROUND, light, OverlayTexture.DEFAULT_UV,
 				matrices, vertexConsumers, entity.getWorld(), entity.getId());
 
 		matrices.pop();
@@ -61,6 +69,6 @@ public class ThrownWaterSpearEntityRenderer extends EntityRenderer<ThrownWaterSp
 
 	@Override
 	public Identifier getTexture(ThrownWaterSpearEntity entity) {
-		return new Identifier("textures/atlas/blocks.png");
+		return TEXTURE;
 	}
 }

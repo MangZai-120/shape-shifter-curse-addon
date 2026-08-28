@@ -140,8 +140,9 @@ public final class ResourceBars {
 
 	// ==================== 统一 tick 调度（服务端） ====================
 
-	/** 各条的独立 tick 计数（调度器用）。 */
-	private static final java.util.Map<Identifier, Integer> TICKS = new java.util.concurrent.ConcurrentHashMap<>();
+	/** 服务端全局 tick 计数（用 server.getTicks()，不再维护独立 TICKS map——原实现只有 replaceAll 自增
+	 *  从不 put，getOrDefault 恒 0 → interval 门控完全失效，一旦有 regen 规则会每 tick 全额触发）。 */
+	private static int serverTickCounter = 0;
 
 	/**
 	 * 服务端每 tick 调度入口（由 {@code ResourceBarsTicker} 挂 ServerTickEvents）：
@@ -149,7 +150,7 @@ public final class ResourceBars {
 	 * 并对命中的 ThresholdEffect 段逐 tick 施加效果。
 	 */
 	public static void serverTick(net.minecraft.server.MinecraftServer server) {
-		TICKS.replaceAll((k, v) -> v + 1);
+		serverTickCounter = server.getTicks(); // 全局权威计数，重启后从 0 起，interval 门控有效
 		for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
 			for (ResourceBarDef bar : BarKeys.ALL) {
 				if (!has(player, bar)) {
@@ -160,8 +161,7 @@ public final class ResourceBars {
 				// 回复规则（按各自 interval）
 				for (RegenRule rule : bar.regenRules()) {
 					int interval = Math.max(1, rule.interval());
-					int t = TICKS.getOrDefault(bar.id, 0);
-					if (t % interval == 0) {
+					if (serverTickCounter % interval == 0) {
 						int delta = rule.tickRegen(player, bar);
 						if (delta != 0) {
 							gain(player, bar, delta);

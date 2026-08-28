@@ -291,6 +291,16 @@ public class LaserBeamEntity extends Entity {
 		this.dataTracker.set(PHASE_TICK, phaseTicks);
 	}
 
+	// ==================== LASER_STATE 去重同步 ====================
+	/** 上次已同步给客户端的 laser_state 值（-1 = 尚未同步）；值不变时不重发，阶段内每 tick 重复同步是纯带宽浪费。 */
+	private int lastSyncedLaserState = -1;
+
+	private void syncLaserStateDedup(ServerPlayerEntity owner, int value) {
+		if (lastSyncedLaserState == value) return;
+		lastSyncedLaserState = value;
+		PowerUtils.setResourceValueAndSync(owner, LASER_STATE, value);
+	}
+
 	// ==================== CHARGE ====================
 	private void tickCharge(ServerWorld sw, ServerPlayerEntity owner, Vec3d aim, Vec3d arrayPos) {
 		// 净化打断：取消，返还 40% CD（进 60% CD）
@@ -301,7 +311,7 @@ public class LaserBeamEntity extends Entity {
 			this.discard();
 			return;
 		}
-		PowerUtils.setResourceValueAndSync(owner, LASER_STATE, 1);
+		syncLaserStateDedup(owner, 1);
 
 		// 蓄力音效（volume=3.0：反编译实证客户端 clamp 到 1，近处响度不变不震耳；
 		// 可闻半径 16×3=48 格=光柱射程 32 格+16 格富余，OpenAL 距离线性衰减到 48 格归零）
@@ -321,7 +331,7 @@ public class LaserBeamEntity extends Entity {
 			phase = Phase.RELEASE;
 			phaseTicks = 0;
 			this.dataTracker.set(PHASE, 1);
-			PowerUtils.setResourceValueAndSync(owner, LASER_STATE, 2);
+			syncLaserStateDedup(owner, 2);
 				// 发射音（volume=3.0：48 格可闻=射程+16，距离衰减归零；近处 clamp 到 1 不震耳）
 				sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
 						SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 3.0f, 1.0f);
@@ -332,7 +342,7 @@ public class LaserBeamEntity extends Entity {
 
 	// ==================== RELEASE ====================
 	private void tickRelease(ServerWorld sw, ServerPlayerEntity owner, Vec3d aim, Vec3d arrayPos) {
-		PowerUtils.setResourceValueAndSync(owner, LASER_STATE, 2);
+		syncLaserStateDedup(owner, 2);
 		// 螺旋粒子已移到客户端渲染器自绘（逐行照抄未改参数，网络包归零）
 		// 伤害：每 4t 一次，5 格直径穿墙圆柱
 		if (phaseTicks % DAMAGE_INTERVAL == 0) {
@@ -346,7 +356,7 @@ public class LaserBeamEntity extends Entity {
 			phase = Phase.FADE;
 			phaseTicks = 0;
 			this.dataTracker.set(PHASE, 2);
-			PowerUtils.setResourceValueAndSync(owner, LASER_STATE, 3);
+			syncLaserStateDedup(owner, 3);
 		}
 	}
 
@@ -356,7 +366,7 @@ public class LaserBeamEntity extends Entity {
 		if (phaseTicks >= FADE_TICKS) {
 			// 完全消失 → 进 CD、解除定身、清状态
 			owner.removeStatusEffect(SscAddon.ROOTED);
-			PowerUtils.setResourceValueAndSync(owner, LASER_STATE, 0);
+			syncLaserStateDedup(owner, 0);
 			PowerUtils.setResourceValueAndSync(owner, FormIdentifiers.SP_PRIMARY_CD, CD_TICKS);
 			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
 					SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 3.0f, 1.0f);
@@ -395,7 +405,7 @@ public class LaserBeamEntity extends Entity {
 	private void cancelNoCd(ServerPlayerEntity owner) {
 		if (owner != null) {
 			owner.removeStatusEffect(SscAddon.ROOTED);
-			PowerUtils.setResourceValueAndSync(owner, LASER_STATE, 0);
+			syncLaserStateDedup(owner, 0);
 		}
 	}
 
@@ -403,7 +413,7 @@ public class LaserBeamEntity extends Entity {
 	private void cancelWithInterruptCd(ServerPlayerEntity owner) {
 		if (owner != null) {
 			owner.removeStatusEffect(SscAddon.ROOTED);
-			PowerUtils.setResourceValueAndSync(owner, LASER_STATE, 0);
+			syncLaserStateDedup(owner, 0);
 			PowerUtils.setResourceValueAndSync(owner, FormIdentifiers.SP_PRIMARY_CD, (int)(CD_TICKS * 0.6));
 		}
 	}

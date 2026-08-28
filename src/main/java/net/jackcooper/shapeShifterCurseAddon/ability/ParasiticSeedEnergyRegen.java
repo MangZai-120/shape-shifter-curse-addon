@@ -44,8 +44,12 @@ public final class ParasiticSeedEnergyRegen {
     }
 
     private static void tickPlayer(ServerPlayerEntity player) {
-        // 仅果蝠形态持有种子量能量资源；非该形态直接清理累计并跳过
-        if (!PowerUtils.hasResource(player, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY, 0)) {
+        // 仅果蝠形态持有种子量能量资源；非该形态直接清理累计并跳过。
+        // 注意：必须用 hasPowerId（是否持有 power），不能用 hasResource(...,0)——
+        // 后者对无 power 玩家 = 0>=0 恒真，守卫完全失效，会导致全玩家每 tick 白跑
+        // 且周期性白发 PowerHolderComponent.sync 全量同步包。
+        if (!net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.hasPowerId(
+                player, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY)) {
             ACCUM.remove(player.getUuid());
             return;
         }

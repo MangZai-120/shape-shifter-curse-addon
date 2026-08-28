@@ -86,6 +86,9 @@ public class SscAddonClient implements ClientModInitializer {
 			MancianimaMarkClientState.clear();
 			net.jackcooper.shapeShifterCurseAddon.client.renderer.TidalTetherBeamRenderer.clear();
 			UpgradeAxolotlSpearRenderState.clear();
+			// 摆荡客户端镜像清理（防换服残留旧绳索渲染）+ 蛛丝弹存活标记重置（断线不走逐实体 remove）
+			SpiderMoonWeaverSwingClient.clear();
+			net.jackcooper.shapeShifterCurseAddon.entity.SpiderSwingBullet.resetClientState();
 		});
 
 		// 进化美西螈「投掷水矛」蓄力期：客户端取消右键预测（放置方块 / 使用物品），避免鬼影

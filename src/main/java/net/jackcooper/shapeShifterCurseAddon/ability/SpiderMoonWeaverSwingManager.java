@@ -326,8 +326,8 @@ public final class SpiderMoonWeaverSwingManager {
 	}
 
 	/**
-	 * 客户端每 tick 上报绳长 + 收放意图（+1 收 / -1 放 / 0）。服务端信任客户端 ropeLen（转发 + 断丝参考），
-	 * 放绳权威扣 mana，mana 不足则 canExtend=false 广播阻止继续放绳。SWINGING / TETHER 均适用。
+	 * 客户端每 2 tick 上报一次绳长 + 收放意图（+1 收 / -1 放 / 0）。服务端信任客户端 ropeLen（转发 + 断丝参考），
+	 * 放绳权威扣 mana（每包扣 2 tick 的量），mana 不足则 canExtend=false 广播阻止继续放绳。SWINGING / TETHER 均适用。
 	 */
 	public static void onReelSync(ServerPlayerEntity player, double clientRopeLen, int reel) {
 		SwingState s = STATES.get(player.getUuid());
@@ -338,7 +338,9 @@ public final class SpiderMoonWeaverSwingManager {
 		if (s.state == STATE_TETHER) reel = 0; // tether 不能延长蛛丝，忽略放绳意图
 		boolean prev = s.canExtend;
 		if (reel < 0) {
-			double cost = REEL_SPEED / MANA_PER_BLOCK;
+			// 客户端每 2 tick 上报一次，每包扣 2 tick 的放绳量（REEL_SPEED 为每 tick 放绳长度），
+			// 保持与原每 tick 上报时相同的 mana 消耗速率
+			double cost = REEL_SPEED * 2.0 / MANA_PER_BLOCK;
 			ManaComponent m = mana(player);
 			if (m.getMana() >= cost) {
 				m.consumeMana(cost);
