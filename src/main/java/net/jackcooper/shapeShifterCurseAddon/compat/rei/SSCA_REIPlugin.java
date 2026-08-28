@@ -6,12 +6,14 @@ import me.shedaniel.rei.api.common.entry.EntryIngredient;
 import me.shedaniel.rei.api.common.util.EntryIngredients;
 import me.shedaniel.rei.api.common.util.EntryStacks;
 import me.shedaniel.rei.plugin.common.displays.crafting.DefaultCraftingDisplay;
+import me.shedaniel.rei.plugin.common.displays.brewing.DefaultBrewingDisplay;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.potion.PotionUtil;
 import net.minecraft.potion.Potions;
 import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.onixary.shapeShifterCurseFabric.items.RegCustomPotions;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +34,17 @@ public class SSCA_REIPlugin implements REIClientPlugin {
 
 	public void registerDisplays(DisplayRegistry registry) {
 		registry.add(venomGlandDisplay());
+		registry.add(infiniteEnergyPotionDisplay());
+		// 酿造转换（mixin 实现，REI 无法自动发现）：饮用型+火药→喷溅型；喷溅型+龙息→滞留型。
+		// DefaultBrewingDisplay 自带酿造分类标识，自动归入 REI 的酿造页。
+		registry.add(new DefaultBrewingDisplay(
+				EntryIngredients.of(SscAddon.INFINITE_ENERGY_POTION),
+				EntryIngredients.of(Items.GUNPOWDER),
+				EntryStacks.of(SscAddon.INFINITE_ENERGY_POTION_SPLASH)));
+		registry.add(new DefaultBrewingDisplay(
+				EntryIngredients.of(SscAddon.INFINITE_ENERGY_POTION_SPLASH),
+				EntryIngredients.of(Items.DRAGON_BREATH),
+				EntryStacks.of(SscAddon.INFINITE_ENERGY_POTION_LINGERING)));
 	}
 
 	/**
@@ -52,6 +65,25 @@ public class SSCA_REIPlugin implements REIClientPlugin {
 				List.of(EntryIngredients.of(SscAddon.VENOM_GLAND)),
 				Optional.empty()) {
 			// SimpleGridMenuDisplay 的两个抽象方法（3×3 满格网格）
+			@Override public int getWidth() { return 3; }
+			@Override public int getHeight() { return 3; }
+		};
+	}
+
+	/**
+	 * 无限压缩能量药水配方卡片：上中月髓环 + 中间行 附魔金苹果/压缩能量药水/附魔金苹果（上对齐摆放）。
+	 * 同为 SpecialCraftingRecipe（按药水 NBT 匹配），REI 默认插件无法自动解析，手工构造展示。
+	 */
+	private static DefaultCraftingDisplay<?> infiniteEnergyPotionDisplay() {
+		EntryIngredient empty = EntryIngredient.empty();
+		EntryIngredient moonRing = EntryIngredients.of(SscAddon.SP_UPGRADE_THING);
+		EntryIngredient apple = EntryIngredients.of(Items.ENCHANTED_GOLDEN_APPLE);
+		EntryIngredient feedPotion = EntryIngredients.of(
+				PotionUtil.setPotion(new ItemStack(Items.POTION), RegCustomPotions.FEED_POTION));
+		return new DefaultCraftingDisplay<>(
+				List.of(empty, moonRing, empty, apple, feedPotion, apple, empty, empty, empty),
+				List.of(EntryIngredients.of(SscAddon.INFINITE_ENERGY_POTION)),
+				Optional.empty()) {
 			@Override public int getWidth() { return 3; }
 			@Override public int getHeight() { return 3; }
 		};
