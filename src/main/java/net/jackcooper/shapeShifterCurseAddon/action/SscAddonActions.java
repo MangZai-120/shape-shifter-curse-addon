@@ -29,6 +29,7 @@ import net.jackcooper.shapeShifterCurseAddon.ability.AnubisWolfSpDeathDomain;
 import net.jackcooper.shapeShifterCurseAddon.ability.AnubisWolfSpSummonWolves;
 import net.jackcooper.shapeShifterCurseAddon.ability.GoldenSandstormWitherSand;
 import net.jackcooper.shapeShifterCurseAddon.ability.GoldenSandstormErosionBrand;
+import net.jackcooper.shapeShifterCurseAddon.ability.NovaSkillManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.GoldenSandstormCounterBurst;
 import net.jackcooper.shapeShifterCurseAddon.ability.GoldenSandstormDetonate;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
@@ -300,6 +301,24 @@ public class SscAddonActions {
 						// 播放发射音效
 						player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
 								SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.PLAYERS, 1.0f, 0.8f);
+					}
+				}));
+
+		// 朔望 - 舍身爆炸（主技能，原指令桥迁移为自定义 action）
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "nova_charge"),
+				new SerializableData(),
+				(data, entity) -> {
+					if (entity instanceof ServerPlayerEntity player) {
+						NovaSkillManager.startCharge(player);
+					}
+				}));
+
+		// 朔望 - 灵跃闪身（次技能，原指令桥迁移为自定义 action）
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "nova_leap"),
+				new SerializableData(),
+				(data, entity) -> {
+					if (entity instanceof ServerPlayerEntity player) {
+						NovaSkillManager.tryLeap(player);
 					}
 				}));
 
