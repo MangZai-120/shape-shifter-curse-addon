@@ -25,15 +25,24 @@ nav:
   - SP使魔（灵界之主）: sp_forms/sp_familiar_fox.md
   - 红（一个传说罢了）: sp_forms/sp_familiar_fox_red.md
   - 契灵（禁忌兵器）: sp_forms/sp_familiar_fox_mancianima.md
+  - 进化使魔（独立进化线）: sp_forms/upgrade_familiar_fox.md
   - SP美西螈（深渊霸主）: sp_forms/sp_axolotl.md
+  - 进化美西螈（独立进化线）: sp_forms/upgrade_axolotl.md
   - SP野猫（月光魅影）: sp_forms/sp_wild_cat.md
+  - 食梦魔（梦境猎手）: sp_forms/sp_nightmare.md
   - SP雪狐（寒霜之灵）: sp_forms/sp_snow_fox.md
+  - 寒棘狐（冰棘开屏）: sp_forms/sp_frostspine.md
   - SP悦灵（水晶之音）: sp_forms/sp_allay.md
   - SP堕落悦灵（堕落之灵）: sp_forms/sp_fallen_allay.md
   - SP阿努比斯（冥裁者）: sp_forms/sp_anubis_wolf.md
   - 金沙岚 (尘卷风): sp_forms/sp_golden_sandstorm.md
+  - 风灵（风之猎手）: sp_forms/sp_ocelot_wind_spirit.md
+  - 朔望（猫有九命）: sp_forms/sp_ocelot_nova.md
   - 吸血蝙蝠（嗜血者）: sp_forms/sp_bat_desmodus.md
   - 寄生果蝠（移动果园）: sp_forms/sp_bat_parasitic_fruit.md
+  - 月织蛛（月下织网者）: sp_forms/sp_moon_weaver.md
+  - 跳蛛（墙壁与天空的猎手）: sp_forms/sp_salticidae.md
+  - 荧光幼灵（深海荧光）: sp_forms/sp_fluorescent.md
 - 物品:
   - 进化用品: items/evolution_items.md
   - 材料与素材: items/materials.md
@@ -67,15 +76,24 @@ nav:
     - SP Familiar Fox (Spirit Realm Lord): en/sp_forms/sp_familiar_fox.md
     - Familiar Fox - Red (A Mere Legend): en/sp_forms/sp_familiar_fox_red.md
     - Mancianima (Forbidden Weapon): en/sp_forms/sp_familiar_fox_mancianima.md
+    - Upgrade Familiar (Standalone Evolution Line): en/sp_forms/upgrade_familiar_fox.md
     - SP Axolotl (Abyssal Overlord): en/sp_forms/sp_axolotl.md
+    - Upgrade Axolotl (Standalone Evolution Line): en/sp_forms/upgrade_axolotl.md
     - Wild Cat (SP) (Moonlight Phantom): en/sp_forms/sp_wild_cat.md
+    - Nightmare (Dream Hunter): en/sp_forms/sp_nightmare.md
     - SP Snow Fox (Frost Spirit): en/sp_forms/sp_snow_fox.md
+    - Frostspine (Ice Spine): en/sp_forms/sp_frostspine.md
     - SP Allay (Crystal Sound): en/sp_forms/sp_allay.md
     - SP Fallen Allay (Spirit of the Fallen): en/sp_forms/sp_fallen_allay.md
     - SP Anubis Wolf (Netherjudge): en/sp_forms/sp_anubis_wolf.md
     - Golden Sandstorm (SP): en/sp_forms/sp_golden_sandstorm.md
+    - Wind Spirit (Wind Hunter): en/sp_forms/sp_ocelot_wind_spirit.md
+    - Nova (Nine Lives): en/sp_forms/sp_ocelot_nova.md
     - Desmodus (Bloodthirster): en/sp_forms/sp_bat_desmodus.md
     - Parasitic Fruit Bat (Moving Orchard): en/sp_forms/sp_bat_parasitic_fruit.md
+    - Moon Weaver: en/sp_forms/sp_moon_weaver.md
+    - Salticidae (Jumping Spider): en/sp_forms/sp_salticidae.md
+    - Fluorescent (Deep Sea Glow): en/sp_forms/sp_fluorescent.md
   - Items:
     - Evolution Items: en/items/evolution_items.md
     - Materials: en/items/materials.md

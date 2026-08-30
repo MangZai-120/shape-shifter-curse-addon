@@ -16,6 +16,11 @@
 | 美西螈三阶段 | [SP美西螈（深渊霸主）](sp_axolotl.md) |
 | 原版悦灵形态 | [SP堕落悦灵（堕落之灵）](sp_fallen_allay.md) |
 | 阿努比斯之狼三阶段 | [SP阿努比斯（冥裁者）](sp_anubis_wolf.md) |
+| 豹猫（永久形态） | [风灵](sp_ocelot_wind_spirit.md) |
+| 雪狐（三阶段） | [寒棘狐](sp_frostspine.md) |
+| 蝙蝠（三阶段） | [吸血蝙蝠（嗜血者）](sp_bat_desmodus.md) |
+| 蜘蛛（三阶段） | [月织蛛](sp_moon_weaver.md) |
+| 野猫特殊形态 | [食梦魔](sp_nightmare.md) |
 
 红不是稳定的月髓十字环目标形态，而是 SP 使魔在被诅咒之月中以 **5%**几率限时转化，持续 **12000 tick（10 分钟）**后回到 SP 使魔。
 
@@ -25,12 +30,23 @@
 
 | 基础形态 | 目标形态 |
 | ---- | ---- |
-| 原版野猫 SP / 豹猫分支 | [SP野猫（月光魅影）](sp_wild_cat.md) |
+| 原版野猫 SP / 豹猫分支 | [SP野猫（月光魅影）](sp_wild_cat.md) / [朔望](sp_ocelot_nova.md) |
 | 雪狐三阶段 | [SP雪狐（寒霜之灵）](sp_snow_fox.md) |
 | 原版悦灵形态 | [SP悦灵（水晶之音）](sp_allay.md) |
 | 阿努比斯之狼三阶段 | [金沙岚](sp_golden_sandstorm.md) |
 | 使魔红狐特殊分支 | [契灵（禁忌兵器）](sp_familiar_fox_mancianima.md) |
 | 蝙蝠三阶段 | [寄生果蝠（移动果园）](sp_bat_parasitic_fruit.md) |
+| 美西螈（三/四阶段） | [荧光幼灵](sp_fluorescent.md) |
+| 蜘蛛（三阶段） | [跳蛛](sp_salticidae.md) |
+
+### SSCA 进化线（独立起点）
+
+进化使魔与进化美西螈不是从原版形态变过去的，而是在初次翻开幻形者之书时于选择界面进入“SSCA 进化线”直接选取的独立起点形态，通过进化树加点逐级解锁能力，满 50 级后蜕变：
+
+| 起点形态 | 月髓十字环分支 | 进化石分支 |
+| ---- | ---- | ---- |
+| [进化使魔](upgrade_familiar_fox.md) | [SP使魔（灵界之主）](sp_familiar_fox.md) | [契灵（禁忌兵器）](sp_familiar_fox_mancianima.md) |
+| [进化美西螈](upgrade_axolotl.md) | [SP美西螈（深渊霸主）](sp_axolotl.md) | [荧光幼灵](sp_fluorescent.md) |
 
 ***
 
@@ -41,6 +57,8 @@
 | [SP使魔](sp_familiar_fox.md) | 灵界之主 | 月髓十字环 | 魔力法师 / 持续 AOE |
 | [红 · 一个传说罢了](https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/sp_forms/sp_familiar_fox_red/) | 红 | SP使魔咒月限时转化/成就解锁 | 魔力法师 / 持续AOE |
 | [契灵](sp_familiar_fox_mancianima.md) | 禁忌兵器 | 进化石特殊分支 | 单体猎杀 / 烙印真伤 |
+| [进化使魔](upgrade_familiar_fox.md) | 独立进化中间态 | SSCA 进化线起点 | 成长型法师 / 自定义构筑 |
+| [进化美西螈](upgrade_axolotl.md) | 独立进化中间态 | SSCA 进化线起点 | 成长型水战 / 自定义构筑 |
 | [SP美西螈](sp_axolotl.md) | 深渊霸主 | 月髓十字环 | 水域控场 / 近身爆破 |
 | [SP野猫](sp_wild_cat.md) | 月光魅影 | 进化石 | 真实隐身 / 破隐爆发 |
 | [SP雪狐](sp_snow_fox.md) | 寒霜之灵 | 进化石 | 双模式冰霜控场 |
@@ -50,6 +68,14 @@
 | [金沙岚](sp_golden_sandstorm.md) | 金沙岚 | 进化石 | 烙印爆发 / 凋零续航 |
 | [吸血蝙蝠](sp_bat_desmodus.md) | 嗜血者 | 月髓十字环 | 高机动近战 / 血渴吸血 |
 | [寄生果蝠](sp_bat_parasitic_fruit.md) | 移动果园 | 进化石 | 团队辅助 / 持续控场 |
+| [风灵](sp_ocelot_wind_spirit.md) | 风之猎手 | 月髓十字环 | 高速连击 / 空中突刺 |
+| [朔望](sp_ocelot_nova.md) | 猫有九命 | 进化石 | 极限生存 / 舍身爆发 |
+| [月织蛛](sp_moon_weaver.md) | 月下织网者 | 月髓十字环 | 领地控场 / 高速位移 |
+| [跳蛛](sp_salticidae.md) | 墙壁与天空的猎手 | 进化石 | 蓄力扑杀 / 空中机动 |
+| [食梦魔](sp_nightmare.md) | 梦境猎手 | 月髓十字环 | 梦境刺客 / 处决续航 |
+| [寒棘狐](sp_frostspine.md) | 冰棘开屏 | 月髓十字环 | 冰锥炮台 / 反近战 |
+| [荧光幼灵](sp_fluorescent.md) | 深海荧光 | 进化石 | 水域控场 / 蓄力激光 |
+| 阿澪 | 剧情限定 | 剧情成就 + 入睡 | 荧光幼灵强化版 |
 
 ***
 
@@ -65,7 +91,7 @@ SP雪狐、SP堕落悦灵、SP阿努比斯偏向改变战场：冰风暴吸附�
 
 ### 刺杀与爆发型
 
-SP野猫、契灵、金沙岚更偏向选定目标后完成爆发。它们的强度来自隐身先手、烙印推进或百分比结算，而不是无脑站桩。吸血蝙蝠则是典型的夜战近战猎手：靠血渴值越打越强，但白天与面对铁器时格外脆弱。
+SP野猫、契灵、金沙岚更偏向选定目标后完成爆发。它们的强度来自隐身先手、烙印推进或百分比结算，而不是无脑站桩。吸血蝙蝠则是典型的夜战近战猎手：靠血渴值越打越强，但白天与面对铁器时格外脆弱。食梦魔把“先累计伤害再处决”做成节奏型刺杀；朔望则用九命容错换舍身自爆的团灭级爆发。
 
 ### 团队辅助型
 
