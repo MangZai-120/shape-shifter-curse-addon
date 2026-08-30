@@ -1,0 +1,6 @@
+{
+  "type": "shape-shifter-curse:modify_footstep_sound_speed",
+  "speed_multiplier": 1.5,
+  "adjust_run_individually": true,
+  "run_speed_multiplier": 0.9
+}
