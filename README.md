@@ -23,6 +23,8 @@
 
 这是一个基于 Fabric 的附属模组项目，用于为《幻形者诅咒》模组添加更多玩法。
 
+也有由wuhenqiubai开发的[SSCA Fabric 1.21.1](https://github.com/wuhenqiubai/shape-shifter-curse-addon/tree/ver/1.21.1)。
+
 
 ### Wiki：[幻形者诅咒扩展包 Wiki](https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/)
 
