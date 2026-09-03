@@ -25,11 +25,18 @@ public final class ResourceBarDef {
 	public final String kind;
 	/** 默认上限（回退显示用，实际以 power JSON max 为准）。 */
 	public final int maxDefault;
+	/** 绑定的形态 formID（该条只由此形态持有，供调度器按当前形态直定位）；null = 无绑定（如原版 mana 适配）。 */
+	public final Identifier ownerFormId;
 
 	public ResourceBarDef(Identifier id, String kind, int maxDefault) {
+		this(id, kind, maxDefault, null);
+	}
+
+	public ResourceBarDef(Identifier id, String kind, int maxDefault, Identifier ownerFormId) {
 		this.id = id;
 		this.kind = kind;
 		this.maxDefault = maxDefault;
+		this.ownerFormId = ownerFormId;
 	}
 
 	// ==================== 可插拔规则（运行时增删） ====================

@@ -317,55 +317,55 @@ public final class MancianimaMarkManager {
 			}
 		}
 
-		// 抗伤回复：契灵玩家非战斗 5s 后，每 15s 回 1 抗伤
+		// 契灵抗伤回复 / 进化使魔脱战 mana 回复：两形态互斥，合并为一次全玩家遍历（每 tick 每玩家少一次 getCurrentForm）
 		for (ServerPlayerEntity sp : server.getPlayerManager().getPlayerList()) {
 			IForm form = FormUtils.getCurrentForm(sp);
-			if (form == null || !FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.getFormID())) continue;
-			UUID id = sp.getUuid();
-			long lastCombat = LAST_COMBAT.getOrDefault(id, 0L);
-			if (now - lastCombat < OUT_OF_COMBAT_TICKS) continue;
-			long lastRegen = LAST_REGEN.getOrDefault(id, 0L);
-			if (now - lastRegen < RESIST_REGEN_INTERVAL_TICKS) continue;
-			int cur = PowerUtils.getResourceValue(sp, FormIdentifiers.MANCIANIMA_RESISTANCE);
-			int max = PowerUtils.getResourceMax(sp, FormIdentifiers.MANCIANIMA_RESISTANCE);
-			if (max <= 0) max = 2;
-			if (cur >= max) { LAST_REGEN.put(id, now); continue; }
-			PowerUtils.changeResourceValueAndSync(sp, FormIdentifiers.MANCIANIMA_RESISTANCE, 1);
-			LAST_REGEN.put(id, now);
-		}
-
-		// 进化使魔脱战 mana 回复：脱战 5s 后每 1s 回 1 点 mana（需已解锁 mana_system 节点）
-		for (ServerPlayerEntity sp : server.getPlayerManager().getPlayerList()) {
-			IForm form = FormUtils.getCurrentForm(sp);
-			if (form == null || !FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(form.getFormID())) continue;
-			// 仅在已解锁 mana_system 节点时生效（mana 条显示门控一致）
-			if (!net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent.EVOLUTION
-					.get(sp).isUnlocked(net.jackcooper.shapeShifterCurseAddon.evolution.FamiliarFoxTree.NODE_MANA)) continue;
-			UUID id = sp.getUuid();
-			long lastCombat = LAST_COMBAT.getOrDefault(id, 0L);
-			if (now - lastCombat < OUT_OF_COMBAT_TICKS) continue;
-			// 消耗 mana 后 5s 内暂停自动回复（regen_pause_timer 资源 > 0 表示在暂停窗口）
-			// 性能：常量复用（原每 tick 每进化使魔现场 new Identifier，构造含正则校验）
-			int pauseTimer = PowerUtils.getResourceValue(sp, UPGRADE_FOX_MANA_REGEN_PAUSE_TIMER);
-			if (pauseTimer > 0) continue;
-			long lastRegen = LAST_MANA_REGEN.getOrDefault(id, 0L);
-			if (now - lastRegen < UPGRADE_FOX_MANA_REGEN_INTERVAL_TICKS) continue;
-			double curMana = net.onixary.shapeShifterCurseFabric.mana.ManaUtils.getPlayerMana(sp);
-			double maxMana = net.onixary.shapeShifterCurseFabric.mana.ManaUtils.getPlayerMaxMana(sp);
-			if (maxMana <= 0 || curMana >= maxMana) { LAST_MANA_REGEN.put(id, now); continue; }
-			// 灵视节点：mana 自动回复速率 +10%
-			double regenAmount = UPGRADE_FOX_MANA_REGEN_AMOUNT;
-			net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionComponent svComp =
-						net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent.EVOLUTION.get(sp);
-			if (svComp.isUnlocked(net.jackcooper.shapeShifterCurseAddon.evolution.FamiliarFoxTree.NODE_SPIRIT_VISION)) {
-				regenAmount *= 1.1;
+			if (form == null) continue;
+			net.minecraft.util.Identifier formId = form.getFormID();
+			if (FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(formId)) {
+				// 抗伤回复：契灵玩家非战斗 5s 后，每 15s 回 1 抗伤
+				UUID id = sp.getUuid();
+				long lastCombat = LAST_COMBAT.getOrDefault(id, 0L);
+				if (now - lastCombat < OUT_OF_COMBAT_TICKS) continue;
+				long lastRegen = LAST_REGEN.getOrDefault(id, 0L);
+				if (now - lastRegen < RESIST_REGEN_INTERVAL_TICKS) continue;
+				int cur = PowerUtils.getResourceValue(sp, FormIdentifiers.MANCIANIMA_RESISTANCE);
+				int max = PowerUtils.getResourceMax(sp, FormIdentifiers.MANCIANIMA_RESISTANCE);
+				if (max <= 0) max = 2;
+				if (cur >= max) { LAST_REGEN.put(id, now); continue; }
+				PowerUtils.changeResourceValueAndSync(sp, FormIdentifiers.MANCIANIMA_RESISTANCE, 1);
+				LAST_REGEN.put(id, now);
+			} else if (FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(formId)) {
+				// 进化使魔脱战 mana 回复：脱战 5s 后每 1s 回 1 点 mana（需已解锁 mana_system 节点）
+				// 仅在已解锁 mana_system 节点时生效（mana 条显示门控一致）
+				if (!net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent.EVOLUTION
+						.get(sp).isUnlocked(net.jackcooper.shapeShifterCurseAddon.evolution.FamiliarFoxTree.NODE_MANA)) continue;
+				UUID id = sp.getUuid();
+				long lastCombat = LAST_COMBAT.getOrDefault(id, 0L);
+				if (now - lastCombat < OUT_OF_COMBAT_TICKS) continue;
+				// 消耗 mana 后 5s 内暂停自动回复（regen_pause_timer 资源 > 0 表示在暂停窗口）
+				// 性能：常量复用（原每 tick 每进化使魔现场 new Identifier，构造含正则校验）
+				int pauseTimer = PowerUtils.getResourceValue(sp, UPGRADE_FOX_MANA_REGEN_PAUSE_TIMER);
+				if (pauseTimer > 0) continue;
+				long lastRegen = LAST_MANA_REGEN.getOrDefault(id, 0L);
+				if (now - lastRegen < UPGRADE_FOX_MANA_REGEN_INTERVAL_TICKS) continue;
+				double curMana = net.onixary.shapeShifterCurseFabric.mana.ManaUtils.getPlayerMana(sp);
+				double maxMana = net.onixary.shapeShifterCurseFabric.mana.ManaUtils.getPlayerMaxMana(sp);
+				if (maxMana <= 0 || curMana >= maxMana) { LAST_MANA_REGEN.put(id, now); continue; }
+				// 灵视节点：mana 自动回复速率 +10%
+				double regenAmount = UPGRADE_FOX_MANA_REGEN_AMOUNT;
+				net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionComponent svComp =
+							net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent.EVOLUTION.get(sp);
+				if (svComp.isUnlocked(net.jackcooper.shapeShifterCurseAddon.evolution.FamiliarFoxTree.NODE_SPIRIT_VISION)) {
+					regenAmount *= 1.1;
+				}
+				// 火环节点：mana 自动回复速率 +20%
+				if (svComp.isUnlocked(net.jackcooper.shapeShifterCurseAddon.evolution.FamiliarFoxTree.NODE_FIRE_RING)) {
+					regenAmount *= 1.2;
+				}
+				net.onixary.shapeShifterCurseFabric.mana.ManaUtils.gainPlayerMana(sp, regenAmount);
+				LAST_MANA_REGEN.put(id, now);
 			}
-			// 火环节点：mana 自动回复速率 +20%
-			if (svComp.isUnlocked(net.jackcooper.shapeShifterCurseAddon.evolution.FamiliarFoxTree.NODE_FIRE_RING)) {
-				regenAmount *= 1.2;
-			}
-			net.onixary.shapeShifterCurseFabric.mana.ManaUtils.gainPlayerMana(sp, regenAmount);
-			LAST_MANA_REGEN.put(id, now);
 		}
 	}
 

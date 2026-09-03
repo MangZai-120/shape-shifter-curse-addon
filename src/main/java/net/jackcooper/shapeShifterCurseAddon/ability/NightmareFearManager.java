@@ -170,10 +170,6 @@ public final class NightmareFearManager {
 		// 戒指快照：施加瞬间判定佩戴状态，写入本轮 FearState（时长增幅 + 双倍伤害禁用）
 		boolean ringWorn = net.jackcooper.shapeShifterCurseAddon.item.NightmareRingItem.isWearingBy(caster);
 		int duration = ringWorn ? Math.round(FEAR_DURATION_TICKS * (1.0f + FEAR_DURATION_RING_BONUS)) : FEAR_DURATION_TICKS;
-		// [DEBUG] 戒指检测链排查日志（确认佩戴检测是否真正生效）
-		org.slf4j.LoggerFactory.getLogger("NightmareDebug").info(
-				"[恐惧] {} 对 {} 施放恐惧：戒指检测={}，时长={}t",
-				caster.getName().getString(), target.getName().getString(), ringWorn, duration);
 		FEARING.put(tid, new FearState(now + duration, caster.getUuid(), !ringWorn));
 		// 入梦时间重置回 20s（规格②：获得恐惧即重置）
 		NightmareDreamManager.resetDream(caster.getUuid(), tid, now);
@@ -312,10 +308,6 @@ public final class NightmareFearManager {
 		if (applyImmune) {
 			DREAM_IMMUNE.put(tid, now + DREAM_IMMUNE_TICKS);
 		}
-		// [DEBUG] 恐惧结束链路排查日志（确认强制出梦+免疫真空期是否执行）
-		org.slf4j.LoggerFactory.getLogger("NightmareDebug").info(
-				"[恐惧] 恐惧结束：目标 {} 强制出梦，免疫真空期={}t（applyImmune={}）",
-				tid, applyImmune ? DREAM_IMMUNE_TICKS : 0, applyImmune);
 	}
 
 	/** 梦魔断线/死亡/失形清理：其施加的恐惧一并结束（目标恢复 + 免疫照常）。 */

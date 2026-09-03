@@ -234,25 +234,25 @@ public abstract class SwingPhysicsMixin {
 		// tether 不能延长蛛丝：潜行不再放绳
 		sw.reelIntent = reelIntent;
 
-		// 拉玩家向目标（抗性越高玩家被拉越多 = 大型生物拉不动就把自己拉过去）
-		// 分轴阻挡检测：前进路上有方块的轴分量去掉，只保留能通过的方向沿障碍滑动，避免被拉进方块卡死
-		// 玩家主动移动(WASD)时不拉，让玩家优先脱困
-		double ropeLen = Math.max(sw.ropeLen, MIN);
-		if (dist > ropeLen + 0.5 && !playerMoving) {
-			double resist = 0.0;
-			if (target instanceof net.minecraft.entity.LivingEntity living) {
-				net.minecraft.entity.attribute.EntityAttributeInstance inst =
-						living.getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE);
-				if (inst != null) resist = MathHelper.clamp(inst.getValue(), 0.0, 1.0);
-			}
+		double ropeLen = Math.max(sw.ropeLen, MIN); // 硬上限（初始 16）
+		double softLen = Math.max(MIN, ropeLen - net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.TETHER_SOFT_BUFFER); // 软拉阈值（初始 12）
+		final double PULL_GAIN = net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.TETHER_PULL_GAIN;
+		final double HARD_GAIN = net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.TETHER_HARD_GAIN;
+		double resist = 0.0;
+		if (target instanceof net.minecraft.entity.LivingEntity livingR) {
+			net.minecraft.entity.attribute.EntityAttributeInstance instR =
+					livingR.getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE);
+			if (instR != null) resist = MathHelper.clamp(instR.getValue(), 0.0, 1.0);
+		}
+		// 牵引玩家向目标：12 起线性加大(over×PULL_GAIN)，超 16 额外大力((dist-16)×HARD_GAIN、线性更陡)靠力防过远。
+		// 不硬吸收速度(不卡)；软拉部分 WASD 脱困时豁免，大力部分(16+)始终施加。分轴阻挡防被拉进方块。
+		if (dist > softLen) {
 			Vec3d dir = tPos.subtract(pPos).normalize();
-			// 地面时去掉向下拉力分量（防被拉进地面）
 			if (self.isOnGround() && dir.y < 0) {
 				dir = new Vec3d(dir.x, 0, dir.z);
 				double h = dir.length();
 				dir = h > 0.01 ? dir.multiply(1.0 / h) : Vec3d.ZERO;
 			}
-			// 分轴阻挡检测：某轴方向紧贴方块则去掉该轴分量，只保留能走的方向（沿障碍滑动）
 			net.minecraft.util.math.Box box = self.getBoundingBox();
 			double ddx = dir.x, ddy = dir.y, ddz = dir.z;
 			if (ddx != 0 && !self.getWorld().isSpaceEmpty(self, box.offset(Math.signum(ddx) * 0.25, 0, 0))) ddx = 0;
@@ -261,18 +261,16 @@ public abstract class SwingPhysicsMixin {
 			Vec3d validDir = new Vec3d(ddx, ddy, ddz);
 			double vl = validDir.length();
 			if (vl > 0.01) {
-				validDir = validDir.multiply(1.0 / vl); // 重新归一化能通过的方向
-				double over = dist - ropeLen;
-				double desired = Math.min(over * 0.2, 0.45) * (0.2 + 0.8 * resist);
+				validDir = validDir.multiply(1.0 / vl);
+				double softPull = (dist - softLen) * PULL_GAIN; // 12 起线性
+				double hardPull = (dist > ropeLen) ? (dist - ropeLen) * HARD_GAIN : 0.0; // 16 起额外大力
+				double pull = (playerMoving ? hardPull : (softPull + hardPull)) * (0.2 + 0.8 * resist);
+				double cap = (dist > ropeLen) ? 0.9 : 0.6;
 				Vec3d vel = self.getVelocity();
 				double toward = vel.dotProduct(validDir);
-				if (toward < desired) {
-					vel = vel.add(validDir.multiply(desired - toward));
-				}
+				if (toward < pull) vel = vel.add(validDir.multiply(pull - toward));
 				double sp = vel.length();
-				if (sp > 0.6) {
-					vel = vel.multiply(0.6 / sp); // 硬速度上限防爆冲
-				}
+				if (sp > cap) vel = vel.multiply(cap / sp); // 速度上限防爆冲（超 16 放宽给大力）
 				self.setVelocity(vel);
 				self.velocityModified = true;
 			}

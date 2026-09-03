@@ -184,7 +184,6 @@ public final class SscAddonServerEvents {
 							wsCnt++;
 							if (wsCnt > 1) {
 								inv.setStack(i, ItemStack.EMPTY);
-								SscAddon.WS_DBG.warn("[WS-CAP] 移除多余水矛 slot={} @tick {}", i, server.getTicks());
 								wsCnt--;
 							}
 						}
@@ -198,13 +197,7 @@ public final class SscAddonServerEvents {
 						wsCnt += handler.getCursorStack().getCount();
 					}
 					Integer wsPrev = SscAddon.WS_LAST_SPEAR_COUNT.put(player.getUuid(), wsCnt);
-					if (wsPrev != null && wsCnt > wsPrev) {
-						long wsT = server.getTicks();
-						Long wsUntil = SscAddon.WATER_SPEAR_CRAFT_CD.get(player.getUuid());
-						SscAddon.WS_DBG.warn("[WS-MONITOR] 水矛数 {}->{} @tick {} ; internalCD until={} cooling={} ; arrowCD={}",
-								wsPrev, wsCnt, wsT, wsUntil, (wsUntil != null && wsT < wsUntil),
-								player.getItemCooldownManager().isCoolingDown(Items.ARROW));
-					}
+
 					// 水矛从「有」变「无」(扛出/消耗) → 重启 Apoli 合成冷却，使「合成CD」从水矛消失那刻起算
 					// 否则持矛期间 active_self 的 cooldown 会走完，扛出后可立即秒合成（用户反馈的 bug）
 					if (wsPrev != null && wsPrev > 0 && wsCnt == 0) {
@@ -213,7 +206,6 @@ public final class SscAddonServerEvents {
 						player.getItemCooldownManager().set(Items.ARROW, SscAddon.WATER_SPEAR_CRAFT_CD_TICKS);
 						PowerUtils.resetCooldown(player,
 								new Identifier("my_addon", "form_axolotl_sp_water_spear_craft_spear"));
-						SscAddon.WS_DBG.warn("[WS-CD] 水矛消失 @tick {} → 重启合成冷却(从消失起算 {}t)", wsT, SscAddon.WATER_SPEAR_CRAFT_CD_TICKS);
 					}
 				}
 				// 性能：STUN 孤儿校正降频到每 10 tick——孤儿修正多残留 0.5s 无感知，

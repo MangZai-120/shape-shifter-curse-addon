@@ -7,6 +7,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
+import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
 /**
@@ -128,6 +130,18 @@ public final class ResourceBars {
 	 *  从不 put，getOrDefault 恒 0 → interval 门控完全失效，一旦有 regen 规则会每 tick 全额触发）。 */
 	private static int serverTickCounter = 0;
 
+	/** formID → 该形态唯一绑定的资源条（从 BarKeys.ALL 的 ownerFormId 自动构建，单一数据源、无手工同步遗漏）。 */
+	private static final java.util.Map<Identifier, ResourceBarDef> FORM_TO_BAR;
+	static {
+		java.util.Map<Identifier, ResourceBarDef> m = new java.util.HashMap<>();
+		for (ResourceBarDef bar : BarKeys.ALL) {
+			if (bar.ownerFormId != null) {
+				m.put(bar.ownerFormId, bar);
+			}
+		}
+		FORM_TO_BAR = java.util.Collections.unmodifiableMap(m);
+	}
+
 	/**
 	 * 服务端每 tick 调度入口（由 {@code ResourceBarsTicker} 挂 ServerTickEvents）：
 	 * 对每个在线玩家持有的条，按各 RegenRule 的 interval 轮询回复/衰减，
@@ -136,27 +150,33 @@ public final class ResourceBars {
 	public static void serverTick(net.minecraft.server.MinecraftServer server) {
 		serverTickCounter = server.getTicks(); // 全局权威计数，重启后从 0 起，interval 门控有效
 		for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-			for (ResourceBarDef bar : BarKeys.ALL) {
-				if (!has(player, bar)) {
-					continue;
-				}
-				int current = get(player, bar);
-				int max = maxOf(player, bar);
-				// 回复规则（按各自 interval）
-				for (RegenRule rule : bar.regenRules()) {
-					int interval = Math.max(1, rule.interval());
-					if (serverTickCounter % interval == 0) {
-						int delta = rule.tickRegen(player, bar);
-						if (delta != 0) {
-							gain(player, bar, delta);
-						}
+			// 形态直定位：5 条 resource 均严格 1:1 绑定单一形态（origins 静态挂载、无跨形态/动态共享，已核实），
+			// 玩家最多持有其一 → 用当前 formID 一次定位，省掉每 tick 对全部条的 hasPower 全量扫描；
+			// 仍保留 has() 实测兜底（映射命中 ≠ 一定已挂载，极端时序以实测为准）。
+			IForm form = FormUtils.getCurrentForm(player);
+			if (form == null || form.getFormID() == null) {
+				continue;
+			}
+			ResourceBarDef bar = FORM_TO_BAR.get(form.getFormID());
+			if (bar == null || !has(player, bar)) {
+				continue;
+			}
+			int current = get(player, bar);
+			int max = maxOf(player, bar);
+			// 回复规则（按各自 interval）
+			for (RegenRule rule : bar.regenRules()) {
+				int interval = Math.max(1, rule.interval());
+				if (serverTickCounter % interval == 0) {
+					int delta = rule.tickRegen(player, bar);
+					if (delta != 0) {
+						gain(player, bar, delta);
 					}
 				}
-				// 分段效果（每 tick）
-				for (ThresholdEffect te : bar.thresholds()) {
-					if (te.isInSegment(current, max)) {
-						te.applyTick(player, current, max);
-					}
+			}
+			// 分段效果（每 tick）
+			for (ThresholdEffect te : bar.thresholds()) {
+				if (te.isInSegment(current, max)) {
+					te.applyTick(player, current, max);
 				}
 			}
 		}

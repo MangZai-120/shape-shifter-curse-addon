@@ -54,8 +54,6 @@ import net.jackcooper.shapeShifterCurseAddon.ability.GoldenSandstormRegen;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.MusicDiscItem;
@@ -193,9 +191,7 @@ public class SscAddon implements ModInitializer {
 	// 注：以下 4 个水矛调试/冷却字段为 public，供拆分出去的事件类（水矛监测/合成逻辑）跨类访问
 	public static final Map<UUID, Long> WATER_SPEAR_CRAFT_CD = new ConcurrentHashMap<>();
 	public static final int WATER_SPEAR_CRAFT_CD_TICKS = 70; // 3.5 秒（与 Apoli 合成能力 cooldown 对齐；水矛消失后起算）
-	// [DEBUG] 水矛合成监测日志
-	public static final Logger WS_DBG = LoggerFactory.getLogger("WaterSpearDebug");
-	// [DEBUG] 每玩家上次水矛数（用于监测水矛出现时刻）
+	// 每玩家上次水矛数（服务端权威：检测水矛从「有」变「无」以重启合成 CD）
 	public static final Map<UUID, Integer> WS_LAST_SPEAR_COUNT = new ConcurrentHashMap<>();
 	// Evolution Stone
 	public static final Item EVOLUTION_STONE = new EvolutionStoneItem(new Item.Settings().maxCount(1).fireproof());

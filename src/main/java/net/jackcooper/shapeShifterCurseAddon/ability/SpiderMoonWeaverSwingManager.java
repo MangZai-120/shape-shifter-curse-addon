@@ -41,7 +41,10 @@ public final class SpiderMoonWeaverSwingManager {
 
 	// ==== 绳长 / 断丝 ====
 	public static final double MAX_ROPE_REACH = 32.0;
-	public static final double TETHER_MAX_LEN = 16.0; // tether 拴生物最大间距（不分敌友，不可延长蛛丝）
+	public static final double TETHER_MAX_LEN = 16.0; // tether 拴生物硬上限（绝不超，吸收远离 + 大力牵引）
+	public static final double TETHER_SOFT_BUFFER = 4.0; // 软拉缓冲：距硬上限 4 格（=12 格）起线性牵引，到 16 大力硬限
+	public static final double TETHER_PULL_GAIN = 0.2; // 12~16 线性牵引系数（每格 over 增加的牵引速度）
+	public static final double TETHER_HARD_GAIN = 0.8; // 超 16 每格额外大力牵引系数（强拉回、防冲出）
 	public static final double MIN_ROPE_LEN = 1.5;
 	public static final double REEL_SPEED = 0.16;
 	private static final double BREAK_OVERSTRETCH = MAX_ROPE_REACH + 3.0;
@@ -181,7 +184,7 @@ public final class SpiderMoonWeaverSwingManager {
 		s.state = STATE_TETHER;
 		s.tetherEntityId = target.getId();
 		s.anchor = Vec3d.ZERO;
-		s.ropeLen = MathHelper.clamp(torso(player).distanceTo(entityCenter(target)), MIN_ROPE_LEN, TETHER_MAX_LEN);
+		s.ropeLen = TETHER_MAX_LEN; // 固定 16 格上限（不用拴住瞬间距离）：允许 0~16 自由，超 16 硬约束拉回、不可延长
 		s.canExtend = true;
 		mana(player).consumeMana(TETHER_HIT_MANA_COST); // 勾中生物瞬间额外扣 8 点 mana（自动 clamp 到 0 不会负、自动同步客户端 mana 条）
 		SscAddonNetworking.sendWebHighlight(player, target.getId(), 40, tetherHighlightColor(player, target)); // 仅施法者可见高光（友军绿/敌人蓝）
@@ -272,28 +275,36 @@ public final class SpiderMoonWeaverSwingManager {
 			breakWeb(player, s, true);
 			return;
 		}
-		double ropeLen = Math.max(s.ropeLen, MIN_ROPE_LEN);
-		// 超出绳长 → 拉目标向玩家（趋向速度，防撞墙累积；按 1-抗性缩放，重型拉不动由客户端把玩家拉过去）
-		if (dist > ropeLen) {
+		double ropeLen = Math.max(s.ropeLen, MIN_ROPE_LEN); // 硬上限（初始 16）
+		double softLen = Math.max(MIN_ROPE_LEN, ropeLen - TETHER_SOFT_BUFFER); // 软拉阈值（初始 12）
+		// 牵引：12~16 线性加大（over×PULL_GAIN），超 16 吸收远离 + 额外大力牵引（强拉回、防冲出 16）；纯速度不改位置。
+		if (dist > softLen) {
 			double resist = knockbackResist(living);
-			Vec3d dir = pPos.subtract(tPos).normalize();
-			double over = dist - ropeLen;
-			double desired = Math.min(over * 0.3, 0.55) * (1.0 - resist);
-			if (desired > 0.001) {
-				Vec3d tv = living.getVelocity();
-				double toward = tv.dotProduct(dir);
-				if (toward < desired) {
-					tv = tv.add(dir.multiply(desired - toward));
-					double sp = tv.length();
-					if (sp > 0.55) tv = tv.multiply(0.55 / sp); // 硬上限防生物爆冲
-					living.setVelocity(tv);
-					living.velocityModified = true;
-					living.velocityDirty = true;
-				}
+			Vec3d dir = pPos.subtract(tPos).normalize(); // 目标 → 玩家
+			Vec3d tv = living.getVelocity();
+			double over = dist - softLen; // 12 格=0，16 格=4
+			double pull = over * TETHER_PULL_GAIN; // 12 起线性加大牵引
+			double cap = 0.55;
+			if (dist > ropeLen) {
+				pull += (dist - ropeLen) * TETHER_HARD_GAIN; // 超 16 额外大力（线性更陡，靠牵引力防过远、不硬吸收速度、不卡）
+				cap = 0.9; // 放宽速度上限给大力
 			}
+			pull *= (1.0 - resist); // 按抗性：轻目标主要拉目标，重目标靠客户端把玩家拉过去
+			if (pull > 0.001) {
+				double toward = tv.dotProduct(dir);
+				if (toward < pull) tv = tv.add(dir.multiply(pull - toward)); // 回拉向玩家
+			}
+			double sp = tv.length();
+			if (sp > cap) tv = tv.multiply(cap / sp); // 速度上限防爆冲（超 16 放宽给大力）
+			living.setVelocity(tv);
+			living.velocityModified = true;
+			living.velocityDirty = true;
 		}
-		// 高光刷新（仅施法者可见；友军绿/敌人蓝）
-		SscAddonNetworking.sendWebHighlight(player, living.getId(), 20, tetherHighlightColor(player, living));
+		// 高光刷新（仅施法者可见；友军绿/敌人蓝）——降频每 10t 刷一次：时长 20t，半程续期不闪断，
+		// 省掉 tether 期每 tick 一个高光包的 ~20× 冗余（对齐 NightmareDreamManager 描边刷新惯例）
+		if (world.getTime() % 10L == 0L) {
+			SscAddonNetworking.sendWebHighlight(player, living.getId(), 20, tetherHighlightColor(player, living));
+		}
 		// 卡死保底：被拉（dist>绳长）但连续不动 → 2 秒后自动断丝解脱（防永久卡死）
 		if (dist > ropeLen + 0.5) {
 			if (!Double.isNaN(s.lastPX)) {

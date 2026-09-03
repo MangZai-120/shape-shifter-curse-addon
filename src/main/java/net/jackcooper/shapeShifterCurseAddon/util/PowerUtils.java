@@ -92,11 +92,15 @@ public class PowerUtils {
 	}
 
 	public static void setResourceValueAndSync(ServerPlayerEntity player, Identifier resourceId, int value) {
+		// 值未变则跳过：省掉一次 setValue + 一个同步包（Apoli 走可靠 TCP，客户端已持有该值）
+		if (getResourceValue(player, resourceId) == value) return;
 		setResourceValue(player, resourceId, value);
 		syncPower(player, resourceId);
 	}
 
 	public static void changeResourceValueAndSync(ServerPlayerEntity player, Identifier resourceId, int change) {
+		// 无变化则跳过同步包（change==0 恒不改值）
+		if (change == 0) return;
 		changeResourceValue(player, resourceId, change);
 		syncPower(player, resourceId);
 	}
