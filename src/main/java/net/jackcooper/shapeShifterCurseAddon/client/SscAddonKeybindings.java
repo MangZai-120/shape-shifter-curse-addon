@@ -40,13 +40,14 @@ public class SscAddonKeybindings {
 	private static KeyBinding sscSkill2Key;
 
 	/**
-	 * 通过反射获取原版 SSC 主动技能键位绑定，并缓存结果。
+	 * 通过反射获取 SSC 1.9.2 的主动技能键位绑定，并缓存结果。
 	 *
-	 * <p>原版 {@link ShapeShifterCurseFabricClient} 的 {@code useActiveSkill1/2PowerKeybind}
-	 * 为 public static 字段，附属可直接引用；但 VS Code Java 扩展对本地文件 jar 依赖
-	 * （{@code files("../...jar")}）的字段索引经常失效，导致 IDE 误报
-	 * 「cannot be resolved or is not a field」。改用反射访问可规避该误报，
-	 * 运行时行为与直接引用完全一致（字段确实存在且为 public）。字段缺失时安全降级返回 null。</p>
+	 * <p>SSC 1.9.2 的技能键字段位于 {@code integration.origins.OriginsClient}
+	 * （usePrimaryActivePowerKeybind / useSecondaryActivePowerKeybind，即 key.origins.primary_active
+	 * 默认 G 与 key.origins.secondary_active 默认鼠标5）；1.10 才迁移到
+	 * ShapeShifterCurseFabricClient.useActiveSkill1/2PowerKeybind。改用反射访问可规避
+	 * IDE 对本地文件 jar 依赖的字段索引误报，运行时行为与直接引用完全一致。
+	 * 字段缺失时安全降级返回 null。</p>
 	 */
 	private static KeyBinding getSscSkillKey(boolean primary) {
 		if (!sscKeysResolved) {
@@ -60,17 +61,30 @@ public class SscAddonKeybindings {
 			return;
 		}
 		try {
-			Class<?> cls = ShapeShifterCurseFabricClient.class;
-			Field f1 = cls.getDeclaredField("useActiveSkill1PowerKeybind");
-			Field f2 = cls.getDeclaredField("useActiveSkill2PowerKeybind");
+			// SSC 1.9.2：技能键在 OriginsClient（key.origins.primary_active=G / secondary_active=鼠标5）
+			Class<?> cls = Class.forName("net.onixary.shapeShifterCurseFabric.integration.origins.OriginsClient");
+			Field f1 = cls.getDeclaredField("usePrimaryActivePowerKeybind");
+			Field f2 = cls.getDeclaredField("useSecondaryActivePowerKeybind");
 			f1.setAccessible(true);
 			f2.setAccessible(true);
 			sscSkill1Key = (KeyBinding) f1.get(null);
 			sscSkill2Key = (KeyBinding) f2.get(null);
 		} catch (Throwable t) {
-			// 原版字段缺失或不可访问：降级为 null，键位检测返回 false
-			sscSkill1Key = null;
-			sscSkill2Key = null;
+			// 兜底：再试 1.10 的字段位置（ShapeShifterCurseFabricClient.useActiveSkill1/2PowerKeybind），
+			// 双版本字段探测，任一命中即可
+			try {
+				Class<?> cls = ShapeShifterCurseFabricClient.class;
+				Field f1 = cls.getDeclaredField("useActiveSkill1PowerKeybind");
+				Field f2 = cls.getDeclaredField("useActiveSkill2PowerKeybind");
+				f1.setAccessible(true);
+				f2.setAccessible(true);
+				sscSkill1Key = (KeyBinding) f1.get(null);
+				sscSkill2Key = (KeyBinding) f2.get(null);
+			} catch (Throwable t2) {
+				// 两处字段都缺失：降级为 null，键位检测返回 false
+				sscSkill1Key = null;
+				sscSkill2Key = null;
+			}
 		}
 		sscKeysResolved = true;
 	}
