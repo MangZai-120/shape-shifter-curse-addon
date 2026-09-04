@@ -1,5 +1,6 @@
 {
     "powers": [
+        "my_addon:form_spider_salticidae_scale",
         "shape-shifter-curse:form_spider_web_no_slow",
         "my_addon:form_spider_salticidae_web_sense_off",
         "shape-shifter-curse:form_spider_3_climb",
@@ -26,13 +27,14 @@
         "shape-shifter-curse:form_spider_sound_hurt",
         "shape-shifter-curse:form_spider_sound_key",
         "shape-shifter-curse:form_spider_3_step_sound_speed_up",
-        "shape-shifter-curse:form_tan_prevent_dirty_water_thirst",
         "my_addon:form_sp_primary_cd",
         "my_addon:form_sp_secondary_cd",
         "my_addon:form_sp_primary_cd_tick",
         "my_addon:form_sp_secondary_cd_tick"
     ],
-    "icon": { "item": "minecraft:spider_eye" },
+    "icon": {
+        "item": "minecraft:spider_eye"
+    },
     "order": 0,
     "unchoosable": true,
     "impact": 0

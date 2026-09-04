@@ -1,4 +1,4 @@
-{
+﻿{
     "type": "apoli:prevent_item_use",
     "item_condition": {
         "type": "apoli:and",
@@ -16,7 +16,7 @@
             {
                 "type": "apoli:ingredient",
                 "ingredient": {
-                    "tag": "shape-shifter-curse:ignore_diet"
+                    "tag": "origins:ignore_diet"
                 },
                 "inverted": true
             }

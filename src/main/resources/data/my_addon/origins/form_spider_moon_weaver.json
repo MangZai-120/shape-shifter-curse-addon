@@ -1,5 +1,6 @@
 {
     "powers": [
+        "my_addon:form_spider_moon_weaver_scale",
         "shape-shifter-curse:form_spider_3_mana",
         "shape-shifter-curse:form_spider_web_no_slow",
         "shape-shifter-curse:form_spider_climb_web",
@@ -33,7 +34,6 @@
         "shape-shifter-curse:form_spider_sound_hurt",
         "shape-shifter-curse:form_spider_sound_key",
         "shape-shifter-curse:form_spider_3_step_sound_speed_up",
-        "shape-shifter-curse:form_tan_prevent_dirty_water_thirst",
         "my_addon:form_sp_primary_cd",
         "my_addon:form_sp_secondary_cd",
         "my_addon:form_sp_primary_cd_tick",
@@ -42,7 +42,9 @@
         "my_addon:form_spider_moon_weaver_moon_poison",
         "my_addon:form_spider_moon_weaver_cocooned_prey"
     ],
-    "icon": { "item": "minecraft:player_head" },
+    "icon": {
+        "item": "minecraft:player_head"
+    },
     "order": 0,
     "unchoosable": true,
     "impact": 0

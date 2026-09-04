@@ -1,5 +1,6 @@
 {
     "powers": [
+        "my_addon:form_golden_sandstorm_sp_scale",
         "shape-shifter-curse:no_render_arm",
         "shape-shifter-curse:form_anubis_wolf_twolf_friendly",
         "shape-shifter-curse:form_anubis_wolf_3_undying",
@@ -37,9 +38,7 @@
         "my_addon:form_sp_primary_cd",
         "my_addon:form_sp_secondary_cd",
         "my_addon:form_sp_primary_cd_tick",
-        "my_addon:form_sp_secondary_cd_tick",
-        "shape-shifter-curse:form_tan_prevent_dirty_water_thirst",
-        "shape-shifter-curse:form_tan_hot_resistance_mild"
+        "my_addon:form_sp_secondary_cd_tick"
     ],
     "icon": {
         "item": "minecraft:wolf_spawn_egg"

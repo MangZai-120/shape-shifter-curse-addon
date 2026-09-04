@@ -1,4 +1,4 @@
-{
+﻿{
     "type": "apoli:multiple",
     "climbing": {
         "type": "apoli:climbing",
@@ -9,7 +9,7 @@
                     "type": "apoli:in_block_anywhere",
                     "block_condition": {
                         "type": "apoli:in_tag",
-                        "tag": "shape-shifter-curse:cobwebs"
+                        "tag": "origins:cobwebs"
                     }
                 }
             ]
@@ -23,7 +23,7 @@
         "type": "apoli:prevent_block_selection",
         "block_condition": {
             "type": "apoli:in_tag",
-            "tag": "shape-shifter-curse:cobwebs"
+            "tag": "origins:cobwebs"
         },
         "condition": {
             "type": "apoli:sneaking",

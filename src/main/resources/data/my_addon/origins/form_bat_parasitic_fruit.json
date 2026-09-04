@@ -1,5 +1,6 @@
 {
     "powers": [
+        "my_addon:form_bat_parasitic_fruit_scale",
         "shape-shifter-curse:no_render_arm",
         "shape-shifter-curse:elytra_no_render",
         "shape-shifter-curse:form_bat_hit_wall_damage_reduce",
@@ -35,9 +36,7 @@
         "my_addon:form_sp_primary_cd",
         "my_addon:form_sp_primary_cd_tick",
         "my_addon:form_sp_secondary_cd",
-        "my_addon:form_sp_secondary_cd_tick",
-        "shape-shifter-curse:form_tan_prevent_dirty_water_thirst",
-        "shape-shifter-curse:form_tan_cold_resistance_mild"
+        "my_addon:form_sp_secondary_cd_tick"
     ],
     "icon": {
         "item": "minecraft:sweet_berries"

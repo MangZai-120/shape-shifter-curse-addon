@@ -1,5 +1,6 @@
 {
     "powers": [
+        "my_addon:form_ocelot_wind_spirit_scale",
         "shape-shifter-curse:no_render_arm",
         "shape-shifter-curse:scare_creepers",
         "shape-shifter-curse:fall_immunity",
@@ -19,7 +20,6 @@
         "shape-shifter-curse:form_ocelot_3_climb_all",
         "shape-shifter-curse:form_ocelot_2_arrow_dodge",
         "shape-shifter-curse:form_ocelot_2_barepaw_sweeping",
-        "shape-shifter-curse:toggle_clip_at_ledge",
         "shape-shifter-curse:form_ocelot_sound",
         "shape-shifter-curse:form_ocelot_sound_hurt",
         "shape-shifter-curse:form_ocelot_hiss_phantom",
@@ -30,10 +30,7 @@
         "my_addon:form_sp_primary_cd",
         "my_addon:form_sp_secondary_cd",
         "my_addon:form_sp_primary_cd_tick",
-        "my_addon:form_sp_secondary_cd_tick",
-        "shape-shifter-curse:form_tan_prevent_dirty_water_thirst",
-        "shape-shifter-curse:form_tan_cold_resistance_mild",
-        "shape-shifter-curse:cat_friendly"
+        "my_addon:form_sp_secondary_cd_tick"
     ],
     "icon": {
         "item": "minecraft:ocelot_spawn_egg"

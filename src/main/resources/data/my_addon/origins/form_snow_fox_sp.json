@@ -1,5 +1,6 @@
 {
     "powers": [
+        "my_addon:form_snow_fox_sp_scale",
         "shape-shifter-curse:no_render_arm",
         "shape-shifter-curse:form_sprint_speed_up",
         "shape-shifter-curse:form_familiar_fox_3_water_speed_down",
@@ -61,9 +62,7 @@
         "my_addon:form_snow_fox_sp_ranged_primary_cd",
         "my_addon:form_snow_fox_sp_ranged_primary_cd_tick",
         "my_addon:form_snow_fox_sp_ranged_secondary_cd",
-        "my_addon:form_snow_fox_sp_ranged_secondary_cd_tick",
-        "shape-shifter-curse:form_snow_fox_3_tan_temperature_remap",
-        "shape-shifter-curse:form_tan_prevent_dirty_water_thirst"
+        "my_addon:form_snow_fox_sp_ranged_secondary_cd_tick"
     ],
     "icon": {
         "item": "minecraft:fox_spawn_egg"

@@ -1,5 +1,6 @@
 {
     "powers": [
+        "my_addon:form_snow_fox_frostspine_scale",
         "shape-shifter-curse:no_render_arm",
         "shape-shifter-curse:form_sprint_speed_up",
         "shape-shifter-curse:form_familiar_fox_3_water_speed_down",
@@ -33,8 +34,6 @@
         "shape-shifter-curse:form_familiar_fox_sound_key",
         "shape-shifter-curse:form_camera_bobbing_feral",
         "my_addon:form_sprint_step_sound_1_5_run_0_9",
-        "shape-shifter-curse:form_snow_fox_3_tan_temperature_remap",
-        "shape-shifter-curse:form_tan_prevent_dirty_water_thirst",
         "my_addon:form_sp_primary_cd",
         "my_addon:form_sp_primary_cd_tick"
     ],

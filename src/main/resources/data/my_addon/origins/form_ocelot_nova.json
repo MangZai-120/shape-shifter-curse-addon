@@ -1,5 +1,6 @@
 {
     "powers": [
+        "my_addon:form_ocelot_nova_scale",
         "shape-shifter-curse:no_render_arm",
         "shape-shifter-curse:scare_creepers",
         "shape-shifter-curse:fall_immunity",
@@ -18,7 +19,6 @@
         "shape-shifter-curse:velvet_paws",
         "shape-shifter-curse:form_ocelot_3_climb_all",
         "shape-shifter-curse:form_ocelot_2_barepaw_sweeping",
-        "shape-shifter-curse:toggle_clip_at_ledge",
         "shape-shifter-curse:form_ocelot_sound",
         "shape-shifter-curse:form_ocelot_sound_hurt",
         "shape-shifter-curse:form_ocelot_hiss_phantom",
@@ -33,10 +33,7 @@
         "my_addon:form_ocelot_nova_nine_lives",
         "my_addon:form_ocelot_nova_charging",
         "my_addon:form_ocelot_nova_charge",
-        "my_addon:form_ocelot_nova_leap",
-        "shape-shifter-curse:form_tan_prevent_dirty_water_thirst",
-        "shape-shifter-curse:form_tan_cold_resistance_mild",
-        "shape-shifter-curse:cat_friendly"
+        "my_addon:form_ocelot_nova_leap"
     ],
     "icon": {
         "item": "minecraft:ocelot_spawn_egg"

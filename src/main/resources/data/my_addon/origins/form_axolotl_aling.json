@@ -1,5 +1,6 @@
 {
     "powers": [
+        "my_addon:form_axolotl_aling_scale",
         "shape-shifter-curse:form_axolotl_3_no_render_arm",
         "my_addon:form_axolotl_fluorescent_scale",
         "shape-shifter-curse:form_axolotl_3_water_breathing",
@@ -57,8 +58,6 @@
         "my_addon:form_sp_secondary_cd",
         "my_addon:form_sp_primary_cd_tick",
         "my_addon:form_sp_secondary_cd_tick",
-        "shape-shifter-curse:form_tan_prevent_dirty_water_thirst",
-        "shape-shifter-curse:form_tan_axolotl_thirst_in_water",
         "my_addon:form_axolotl_aling_health"
     ],
     "icon": {
