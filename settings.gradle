@@ -4,4 +4,4 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
-rootProject.name = "shape-shifter-curse-addon"
+rootProject.name = "shape-shifter-curse-addon-ssc192"
