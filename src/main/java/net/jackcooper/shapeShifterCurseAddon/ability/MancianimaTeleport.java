@@ -47,7 +47,8 @@ public final class MancianimaTeleport {
 	public static final double MAX_RANGE = 8.0;
 	public static final double RED_MARK_TARGET_RANGE = 32.0;
 	public static final int RED_MARK_CHANNEL_TICKS = 20; // 1s
-	public static final float RED_MARK_DAMAGE_CAP = 35.0f;
+	public static final float RED_MARK_DAMAGE_CAP = 37.0f;
+	public static final float RED_MARK_DAMAGE_MIN = 2.0f;
 	public static final double RED_MARK_DAMAGE_PERCENT = 0.50;
 	/** 传送后冻结自然回蓝的 tick 数（5 秒） */
 	public static final int MANA_REGEN_PAUSE_TICKS = 100;
@@ -205,7 +206,7 @@ public final class MancianimaTeleport {
 				40, 0.3, 0.8, 0.3, 0.6);
 		// 50% 缺失血伤害（上限35），无视护甲（用 OUT_OF_WORLD）
 		float missing = target.getMaxHealth() - target.getHealth();
-		float dmg = (float) Math.min(RED_MARK_DAMAGE_CAP, missing * RED_MARK_DAMAGE_PERCENT);
+		float dmg = (float) Math.max(RED_MARK_DAMAGE_MIN, Math.min(RED_MARK_DAMAGE_CAP, missing * RED_MARK_DAMAGE_PERCENT));
 		boolean wasAlive = target.isAlive();
 		target.damage(world.getDamageSources().playerAttack(marker), dmg);
 		// 广播暴击音效

@@ -52,7 +52,8 @@ public final class MancianimaPrimary {
 	public static final double RED_LOCK_RANGE = 24.0;
 	public static final int CHANNEL_DAMAGE_TICKS = 40;       // 2s 引导
 	public static final double DAMAGE_PERCENT = 0.20;
-	public static final float DAMAGE_CAP = 20.0f;
+	public static final float DAMAGE_MIN = 2.0f;
+	public static final float DAMAGE_CAP = 37.0f;
 	public static final int MANA_REGEN_PAUSE_TICKS = 100;    // 5s
 	private static final net.minecraft.util.Identifier MANA_REGEN_PAUSE_RES =
 			new net.minecraft.util.Identifier("my_addon", "form_familiar_fox_sp_mana_regen_regen_pause_timer");
@@ -189,7 +190,7 @@ public final class MancianimaPrimary {
 		if (target == null || !target.isAlive()) return;
 		ServerWorld world = (ServerWorld) marker.getWorld();
 		// 真伤计算
-		float dmg = (float) Math.min(DAMAGE_CAP, target.getHealth() * DAMAGE_PERCENT);
+		float dmg = (float) Math.max(DAMAGE_MIN, Math.min(DAMAGE_CAP, target.getHealth() * DAMAGE_PERCENT));
 		// 伤害归属：使用 indirectMagic 以 marker 为攻击者（生物会什7并带 tag bypasses_armor不被护甲减免）
 		DamageSource src = world.getDamageSources().indirectMagic(marker, marker);
 		target.damage(src, dmg);
