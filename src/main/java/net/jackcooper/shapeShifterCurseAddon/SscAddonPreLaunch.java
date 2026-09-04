@@ -10,11 +10,10 @@ import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
  */
 public class SscAddonPreLaunch implements PreLaunchEntrypoint {
 
-	// SSC 1.9.2 分支：主包锁定 1.9.2；GeckoLib 上限对齐 1.9.2 主包硬约束（<4.7.0）
+	// SSC 1.9.2 分支：主包锁定 1.9.2；GeckoLib 下限对齐 1.9.2 主包 breaks 声明（breaks geckolib<4.7.0，即要求 ≥4.7.0）
 	private static final String MIN_SSC_VERSION = "1.9.2";
 	private static final String MAX_SSC_VERSION = "1.9.2";
-	private static final String MIN_GECKOLIB_VERSION = "4.0.0";
-	private static final String MAX_GECKOLIB_VERSION = "4.7.0";
+	private static final String MIN_GECKOLIB_VERSION = "4.7.0";
 	private static final String MIN_TRINKETS_VERSION = "3.7.2";
 
 	@Override
@@ -95,10 +94,9 @@ public class SscAddonPreLaunch implements PreLaunchEntrypoint {
 	}
 
 	/**
-	 * 检查 GeckoLib 版本（SSC 1.9.2 分支：需要 v4.0.0 ~ v4.6.x 窗口）。
-	 * 过低会白模型；过高（>=4.7.0）则 1.9.2 主包的 FormModel 会因 GeckoLib API 变动
-	 * 抛 IncompatibleClassChangeError，同样全形态白模型——1.9.2 主包 fabric.mod.json
-	 * 已声明 geckolib <4.7.0 硬约束，这里做二次兑底。
+	 * 检查 GeckoLib 版本（SSC 1.9.2 分支：要求 ≥4.7.0）。
+	 * SSC 1.9.2 主包 fabric.mod.json 声明 breaks geckolib<4.7.0（过低会冲突），
+	 * 这里做二次兑底：低于 4.7.0 直接报错，避免启动期更难懂的冲突报错。
 	 */
 	private static void checkGeckolibVersion() {
 		var geckolibOpt = FabricLoader.getInstance().getModContainer("geckolib");
@@ -108,8 +106,8 @@ public class SscAddonPreLaunch implements PreLaunchEntrypoint {
 			return;
 		}
 		String currentVersion = geckolibOpt.get().getMetadata().getVersion().getFriendlyString();
-		System.out.println("[SSC Addon][PreLaunch] Detected GeckoLib version: v" + currentVersion + " (required >= v" + MIN_GECKOLIB_VERSION + " and < v" + MAX_GECKOLIB_VERSION + ")");
-		if (isVersionBelow(currentVersion, MIN_GECKOLIB_VERSION) || isVersionAboveOrEqual(currentVersion, MAX_GECKOLIB_VERSION)) {
+		System.out.println("[SSC Addon][PreLaunch] Detected GeckoLib version: v" + currentVersion + " (required >= v" + MIN_GECKOLIB_VERSION + ")");
+		if (isVersionBelow(currentVersion, MIN_GECKOLIB_VERSION)) {
 			String msg = "\n\n" +
 					"================================================================\n" +
 					"[SSC Addon] GeckoLib 版本过低！检测到 GeckoLib 版本: v" + currentVersion + "\n" +

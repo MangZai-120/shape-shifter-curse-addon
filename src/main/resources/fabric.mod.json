@@ -61,7 +61,7 @@
     "java": ">=17",
     "fabric": ">=0.83.0",
     "shape-shifter-curse": "=1.9.2",
-    "geckolib": "<4.7.0"
+    "geckolib": ">=4.7.0"
   },
   "suggests": {
     "trinkets": ">=3.7.2",
