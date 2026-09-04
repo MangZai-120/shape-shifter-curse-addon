@@ -4,9 +4,9 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 
 public class FormUtils {
 	// 通过实体类型ID判断，避免在Mixin类中直接引用原版模组类导致类加载级联
@@ -15,28 +15,28 @@ public class FormUtils {
 	private FormUtils() {
 	}
 
-	public static IForm getCurrentForm(LivingEntity entity) {
+	public static PlayerFormBase getCurrentForm(LivingEntity entity) {
 		if (entity instanceof PlayerEntity player) {
 			PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
 			if (component != null) {
-				return component.nowForm;
+				return component.getCurrentForm();
 			}
 		}
 		return null;
 	}
 
 	public static boolean isForm(LivingEntity entity, Identifier formId) {
-		IForm currentForm = getCurrentForm(entity);
-		return currentForm != null && currentForm.getFormID() != null && currentForm.getFormID().equals(formId);
+		PlayerFormBase currentForm = getCurrentForm(entity);
+		return currentForm != null && currentForm.FormID != null && currentForm.FormID.equals(formId);
 	}
 
 	public static boolean isAnyForm(LivingEntity entity, Identifier... formIds) {
-		IForm currentForm = getCurrentForm(entity);
-		if (currentForm == null || currentForm.getFormID() == null) {
+		PlayerFormBase currentForm = getCurrentForm(entity);
+		if (currentForm == null || currentForm.FormID == null) {
 			return false;
 		}
 		for (Identifier formId : formIds) {
-			if (currentForm.getFormID().equals(formId)) {
+			if (currentForm.FormID.equals(formId)) {
 				return true;
 			}
 		}

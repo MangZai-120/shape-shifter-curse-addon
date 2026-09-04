@@ -18,7 +18,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.onixary.shapeShifterCurseFabric.mana.ManaComponent;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -245,8 +245,8 @@ public final class MancianimaPrimary {
 	// ============== Helpers ==============
 
 	private static boolean isMancianima(PlayerEntity player) {
-		IForm form = FormUtils.getCurrentForm((ServerPlayerEntity) player);
-		return form != null && FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.getFormID());
+		PlayerFormBase form = FormUtils.getCurrentForm((ServerPlayerEntity) player);
+		return form != null && FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.FormID);
 	}
 
 	private static void pauseManaRegen(ServerPlayerEntity player) {

@@ -18,9 +18,9 @@ import net.minecraft.util.*;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon;
 import net.onixary.shapeShifterCurseFabric.data.StaticParams;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
+import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
 import net.jackcooper.shapeShifterCurseAddon.story.MoonScarStoryManager;
 import net.jackcooper.shapeShifterCurseAddon.story.TideSpiritStoryManager;
 import net.jackcooper.shapeShifterCurseAddon.util.AdvancementUtils;
@@ -32,6 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 public class SpUpgradeItem extends Item {
 
@@ -110,7 +111,7 @@ public class SpUpgradeItem extends Item {
 				world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0F, 1.0F);
 				return stack;
 			}
-			boolean isCursedMoon = CursedMoon.isCursedMoonDay(world) && CursedMoon.isNight(world);
+			boolean isCursedMoon = CursedMoon.isCursedMoon(world) && CursedMoon.isNight(world);
 			boolean isValidForm = targetFormId != null;
 			boolean isAlreadySP = isAlreadySP(player);
 
@@ -133,11 +134,11 @@ public class SpUpgradeItem extends Item {
 						&& new Identifier("shape-shifter-curse", "familiar_fox_3").equals(getPlayerFormID(player))
 						&& world.random.nextFloat() < 0.05f) {
 					Identifier redFormId = net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED;
-					IForm redForm = RegPlayerForms.getPlayerForm(redFormId);
+					PlayerFormBase redForm = RegPlayerForms.getPlayerForm(redFormId);
 					if (redForm != null) {
 						// 带黑屏淡入淡出动画变身（原版 1.10.1 把 handleDirectTransform 拆为 startTransform/immediatelyTransform，
 						// 此处对应原 handleDirectTransform(...,false) 的动画变身，应用 startTransform 而非 immediatelyTransform）
-						TransformManager.startTransform(player, redForm, null);
+						Compat1_9_2.startTransform(player, redForm, null);
 
 						// 10 Minutes = 12000 ticks
 						long expireTime = world.getTime() + 12000;
@@ -148,10 +149,10 @@ public class SpUpgradeItem extends Item {
 				}
 
 
-				IForm formBase = RegPlayerForms.getPlayerForm(targetFormId);
+				PlayerFormBase formBase = RegPlayerForms.getPlayerForm(targetFormId);
 				if (formBase != null) {
 					// 带黑屏淡入淡出动画变身（startTransform），STUN 在动画期间定身
-					TransformManager.startTransform(player, formBase, null);
+					Compat1_9_2.startTransform(player, formBase, null);
 					// 变身演出（黑屏淡入 IN + 淡出 OUT，共 160 tick）期间定身玩家，避免演出过程中走动
 					player.addStatusEffect(new StatusEffectInstance(SscAddon.STUN,
 							StaticParams.TRANSFORM_FX_DURATION_IN + StaticParams.TRANSFORM_FX_DURATION_OUT, 0, false, false, false));
@@ -215,8 +216,8 @@ public class SpUpgradeItem extends Item {
 	}
 
 	private Identifier getPlayerFormID(PlayerEntity player) {
-		IForm currentForm = FormUtils.getCurrentForm(player);
-		return currentForm != null ? currentForm.getFormID() : null;
+		PlayerFormBase currentForm = FormUtils.getCurrentForm(player);
+		return currentForm != null ? currentForm.FormID : null;
 	}
 
 	private Identifier getTargetFormId(PlayerEntity player) {

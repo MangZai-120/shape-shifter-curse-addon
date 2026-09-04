@@ -7,10 +7,11 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric;
 import net.onixary.shapeShifterCurseFabric.custom_ui.BookOfShapeShifterScreenV2_P1;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRoute;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 /**
  * SSCA 进化加点系统 - 在幻形者之书界面内注入「进化加点」入口按钮。
@@ -34,8 +35,8 @@ public final class EvolutionBookHook {
             if (client.player == null) {
                 return;
             }
-            IForm currentForm = RegPlayerFormComponent.PLAYER_FORM.get(client.player).nowForm;
-            Identifier formId = (currentForm == null) ? null : currentForm.getFormID();
+            PlayerFormBase currentForm = Compat1_9_2.nowForm(client.player);
+            Identifier formId = (currentForm == null) ? null : currentForm.FormID;
             // 当前形态是某条「已开放」进化路线的起点形态时，显示进化加点入口
             EvolutionRoute route = EvolutionRegistry.INSTANCE.getRouteByStartForm(formId);
             if (route == null || !route.enabled) {

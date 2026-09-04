@@ -10,11 +10,12 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric;
 import net.onixary.shapeShifterCurseFabric.data.StaticParams;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 /**
  * SSCA 进化加点系统 - 服务端业务逻辑入口（框架骨架）。
@@ -41,8 +42,8 @@ public final class EvolutionManager {
      * <p>当前形态不是任何路线的起点形态时恒为 true（不施加门控）。</p>
      */
     public static boolean canUpgradeFoxEvolve(ServerPlayerEntity player) {
-        IForm nowForm = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
-        Identifier nowFormId = (nowForm == null) ? null : nowForm.getFormID();
+        PlayerFormBase nowForm = Compat1_9_2.nowForm(player);
+        Identifier nowFormId = (nowForm == null) ? null : nowForm.FormID;
         EvolutionRoute route = EvolutionRegistry.INSTANCE.getRouteByStartForm(nowFormId);
         if (route == null) {
             return true; // 非任何进化路线的起点形态 → 不限制
@@ -88,14 +89,14 @@ public final class EvolutionManager {
         if (route.startForm == null) {
             return;
         }
-        IForm currentForm = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
-        Identifier formId = (currentForm == null) ? null : currentForm.getFormID();
+        PlayerFormBase currentForm = Compat1_9_2.nowForm(player);
+        Identifier formId = (currentForm == null) ? null : currentForm.FormID;
         if (formId == null || formId.equals(route.startForm)) {
             return;
         }
-        IForm startForm = RegPlayerForms.getPlayerForm(route.startForm);
+        PlayerFormBase startForm = RegPlayerForms.getPlayerForm(route.startForm);
         if (startForm != null) {
-            TransformManager.immediatelyTransform(player, startForm);
+            Compat1_9_2.immediatelyTransform(player, startForm);
         }
     }
 
@@ -115,14 +116,14 @@ public final class EvolutionManager {
      * @param formIdStr 目标 SSCA 起点形态 ID 字符串
      */
     public static void startSscaRoute(ServerPlayerEntity player, String formIdStr) {
-        if (!RegPlayerForms.ORIGINAL_BEFORE_ENABLE.isPlayerForm(player)) {
+        if (!Compat1_9_2.isPlayerForm(RegPlayerForms.ORIGINAL_BEFORE_ENABLE, player)) {
             return;
         }
         Identifier formId = Identifier.tryParse(formIdStr);
         if (formId == null || !isStartFormAllowed(formId)) {
             return;
         }
-        IForm targetForm = RegPlayerForms.getPlayerForm(formId);
+        PlayerFormBase targetForm = RegPlayerForms.getPlayerForm(formId);
         if (targetForm == null) {
             return;
         }
@@ -139,7 +140,7 @@ public final class EvolutionManager {
         // 进化演出：黑屏淡入淡出动画期间定身，完成时升级音效
         int fxDuration = StaticParams.TRANSFORM_FX_DURATION_IN + StaticParams.TRANSFORM_FX_DURATION_OUT;
         player.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, fxDuration, 0, false, false, false));
-        TransformManager.startTransform(player, targetForm, data ->
+        Compat1_9_2.startTransform(player, targetForm, data ->
                 player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
                         SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0F, 1.0F));
     }
@@ -202,8 +203,8 @@ public final class EvolutionManager {
         if (comp.isJobChanging()) {
             return;
         }
-        IForm nowForm = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
-        Identifier nowFormId = (nowForm == null) ? null : nowForm.getFormID();
+        PlayerFormBase nowForm = Compat1_9_2.nowForm(player);
+        Identifier nowFormId = (nowForm == null) ? null : nowForm.FormID;
 
         // 成为「某进化路线的起点形态」即自动进入该 SSCA 路线并解锁初始节点
         //（覆盖开局之书 / 指令等所有途径）；放在 isOnSscaRoute 早退之前以便首次自动设路线。
@@ -312,8 +313,8 @@ public final class EvolutionManager {
      * 通过则置转职标志并带动画变身，变身完成回调里倒退里程碑、扣点、切换到新路线。
      */
     public static void startJobChange(ServerPlayerEntity player, String targetFormIdStr) {
-        IForm nowForm = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
-        Identifier nowFormId = (nowForm == null) ? null : nowForm.getFormID();
+        PlayerFormBase nowForm = Compat1_9_2.nowForm(player);
+        Identifier nowFormId = (nowForm == null) ? null : nowForm.FormID;
         EvolutionRoute curRoute = EvolutionRegistry.INSTANCE.getRouteByStartForm(nowFormId);
         if (curRoute == null) {
             return; // 当前不是进化起点形态（道具侧已拦，双保险）
@@ -338,7 +339,7 @@ public final class EvolutionManager {
                     SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0F, 1.0F);
             return;
         }
-        IForm targetForm = RegPlayerForms.getPlayerForm(targetFormId);
+        PlayerFormBase targetForm = RegPlayerForms.getPlayerForm(targetFormId);
         if (targetForm == null) {
             return;
         }
@@ -350,7 +351,7 @@ public final class EvolutionManager {
         int fxDuration = StaticParams.TRANSFORM_FX_DURATION_IN + StaticParams.TRANSFORM_FX_DURATION_OUT;
         player.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, fxDuration, 0, false, false, false));
         // 带黑屏淡入淡出动画变身；完成回调里（nowForm 已是目标形态）再倒退里程碑 + 切路线
-        TransformManager.startTransform(player, targetForm, data -> completeJobChange(player, targetRoute));
+        Compat1_9_2.startTransform(player, targetForm, data -> completeJobChange(player, targetRoute));
     }
 
     /** 转职变身完成回调（nowForm 已是新起点形态）：倒退里程碑、切换到新路线、按倒退后等级重发点。 */

@@ -16,7 +16,7 @@ import static net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric.MOD_ID
 /**
  * 四足野性形态的抽象基类
  * 仅限雪狐等共用四足形态动画的形态使用
- * SSC 新变形系统：继承原版 Form_FeralBase（NormalForm 子类，构造已设 FERAL 体型并提供共用四足动画控制器）
+ * SSC 新变形系统：继承原版 Form_FeralBase（PlayerFormBase 子类，构造已设 FERAL 体型并提供共用四足动画控制器）
  */
 public abstract class AbstractFeralForm extends Form_FeralBase {
 	protected AnimationHolder anim_idle = AnimationHolder.EMPTY;

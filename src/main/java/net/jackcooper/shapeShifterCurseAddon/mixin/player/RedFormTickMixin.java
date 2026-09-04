@@ -16,9 +16,9 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
+import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import org.spongepowered.asm.mixin.Mixin;
@@ -28,6 +28,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.HashSet;
 import java.util.Set;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 @Mixin(ServerPlayerEntity.class)
 public class RedFormTickMixin {
@@ -46,7 +47,7 @@ public class RedFormTickMixin {
 		// Performance check: Only run logic every 20 ticks (1 second)
 		if (player.age % 20 != 0) return;
 
-		boolean isCursedMoon = CursedMoon.isCursedMoonDay(player.getWorld());
+		boolean isCursedMoon = CursedMoon.isCursedMoon(player.getWorld());
 
 		// Reset the attempt tag if it is not Cursed Moon
 		if (!isCursedMoon && player.getCommandTags().contains("ssc_addon_red_attempted")) {
@@ -54,18 +55,18 @@ public class RedFormTickMixin {
 		}
 
 		// Potion Bag Logic
-		IForm currentForm = FormUtils.getCurrentForm(player);
-		boolean isRedForm = currentForm != null && currentForm.getFormID().equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED);
+		PlayerFormBase currentForm = FormUtils.getCurrentForm(player);
+		boolean isRedForm = currentForm != null && currentForm.FormID.equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED);
 
 		// SP Form + Cursed Moon Transformation Logic
-		if (currentForm != null && currentForm.getFormID().equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_SP) && isCursedMoon && !player.getCommandTags().contains("ssc_addon_red_attempted")) {
+		if (currentForm != null && currentForm.FormID.equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_SP) && isCursedMoon && !player.getCommandTags().contains("ssc_addon_red_attempted")) {
 			player.addCommandTag("ssc_addon_red_attempted");
 			// 5% Chance to transform to Red
 			if (player.getRandom().nextFloat() < 0.05f) {
 				Identifier redFormId = net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED;
-				IForm redForm = RegPlayerForms.getPlayerForm(redFormId);
+				PlayerFormBase redForm = RegPlayerForms.getPlayerForm(redFormId);
 				if (redForm != null) {
-					TransformManager.immediatelyTransform(player, redForm);
+					Compat1_9_2.immediatelyTransform(player, redForm);
 
 					// 10 Minutes = 12000 ticks
 					long expireTime = player.getWorld().getTime() + 12000;
@@ -79,7 +80,7 @@ public class RedFormTickMixin {
 		}
 
 		// === SP Allay Form: Auto-grant heal wand (slot 0) and jukebox (slot 1) ===
-		boolean isAllaySp = currentForm != null && currentForm.getFormID().equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.ALLAY_SP);
+		boolean isAllaySp = currentForm != null && currentForm.FormID.equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.ALLAY_SP);
 		if (isAllaySp) {
 			placeFormItemSafe(player, 0, SscAddon.ALLAY_HEAL_WAND);
 			placeFormItemSafe(player, 1, SscAddon.ALLAY_JUKEBOX);
@@ -147,10 +148,10 @@ public class RedFormTickMixin {
 
 		if (shouldRevert) {
 			Identifier spFormId = net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_SP;
-			IForm spForm = RegPlayerForms.getPlayerForm(spFormId);
+			PlayerFormBase spForm = RegPlayerForms.getPlayerForm(spFormId);
 			if (spForm != null) {
 				// Use setFormDirectly instead of handleDirectTransform to avoid animation
-				TransformManager.immediatelyTransform(player, spForm);
+				Compat1_9_2.immediatelyTransform(player, spForm);
 
 				// Spawn a large amount of white particles to cover the player
 				if (player.getWorld() instanceof ServerWorld serverWorld) {

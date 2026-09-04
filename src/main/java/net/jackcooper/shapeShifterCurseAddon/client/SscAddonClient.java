@@ -235,22 +235,21 @@ public class SscAddonClient implements ClientModInitializer {
 							if (!fidStr.isEmpty()) {
 								net.minecraft.util.Identifier fid = net.minecraft.util.Identifier.tryParse(fidStr);
 								if (fid != null) {
-									net.onixary.shapeShifterCurseFabric.player_form.IForm form =
+									net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase form =
 											net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms.getPlayerForm(fid);
 									if (form != null) {
-										net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent comp =
-												net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent.COMPONENT.get(p);
-										comp.nowForm = form;
-										comp.nowFormID = fid;
-										// 关键：模型渲染读的是 origin 组件（PlayerOriginComponent）而非 nowForm。
-										// 用形态的 layer 信息在客机重建 origin，渲染才会显示形态模型（否则只同步了 scale/动画 = 白色人类模型）。
+										net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent comp =
+												net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.get(p);
+										comp.setCurrentForm(form);
+										// SSC 1.9.2：origin 信息改用 getFormOriginLayerID()/getFormOriginID()（无 getFormLayer()）
 										try {
-											net.minecraft.util.Pair<net.minecraft.util.Identifier, net.minecraft.util.Identifier> layerData = form.getFormLayer();
+											net.minecraft.util.Identifier layerId = form.getFormOriginLayerID();
+											net.minecraft.util.Identifier originId = form.getFormOriginID();
 											net.onixary.shapeShifterCurseFabric.integration.origins.origin.OriginLayer layer =
-													net.onixary.shapeShifterCurseFabric.integration.origins.origin.OriginLayers.getLayer(layerData.getLeft());
-											if (layer != null && layerData.getRight() != null) {
+													net.onixary.shapeShifterCurseFabric.integration.origins.origin.OriginLayers.getLayer(layerId);
+											if (layer != null && originId != null) {
 												net.onixary.shapeShifterCurseFabric.integration.origins.origin.Origin origin =
-														net.onixary.shapeShifterCurseFabric.integration.origins.origin.OriginRegistry.get(layerData.getRight());
+														net.onixary.shapeShifterCurseFabric.integration.origins.origin.OriginRegistry.get(originId);
 												if (origin != null) {
 													net.onixary.shapeShifterCurseFabric.integration.origins.component.OriginComponent oc =
 															(net.onixary.shapeShifterCurseFabric.integration.origins.component.OriginComponent)
@@ -261,13 +260,7 @@ public class SscAddonClient implements ClientModInitializer {
 										} catch (Throwable ignored) {
 											// power 客户端不全等极端情况，忽略；渲染只需 origins map 写入成功
 										}
-										// 同步形态缩放（Pehkui）：广播原先漏了 scale，导致客机看其它玩家模型偏大/站立、超出判定框。
-										// 对该玩家应用其形态的 applyScale（缩放形态缩小、人类形态复位 1.0），与 nowForm/origin/skin 一致由客机本地重建。
-										try {
-											form.applyScale(p);
-										} catch (Throwable ignored) {
-											// Pehkui 未加载或异常时忽略，不影响其它同步
-										}
+										// SSC 1.9.2：无 applyScale 链，缩放由数据层 shape-shifter-curse:scale power 在客机本地重算
 									}
 								}
 							}

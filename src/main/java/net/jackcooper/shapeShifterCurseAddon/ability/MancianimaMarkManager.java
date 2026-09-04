@@ -20,7 +20,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -219,8 +219,8 @@ public final class MancianimaMarkManager {
 			Mark m = e.getValue();
 			ServerPlayerEntity marker = server.getPlayerManager().getPlayer(markerId);
 			if (marker == null) { removeAndCleanup(server, it, m, markerId); continue; }
-			IForm form = FormUtils.getCurrentForm(marker);
-			if (form == null || !FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.getFormID())) {
+			PlayerFormBase form = FormUtils.getCurrentForm(marker);
+			if (form == null || !FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.FormID)) {
 				removeAndCleanup(server, it, m, markerId); continue;
 			}
 			if (now >= m.expireTick) { removeAndCleanup(server, it, m, markerId); continue; }
@@ -319,9 +319,9 @@ public final class MancianimaMarkManager {
 
 		// 契灵抗伤回复 / 进化使魔脱战 mana 回复：两形态互斥，合并为一次全玩家遍历（每 tick 每玩家少一次 getCurrentForm）
 		for (ServerPlayerEntity sp : server.getPlayerManager().getPlayerList()) {
-			IForm form = FormUtils.getCurrentForm(sp);
+			PlayerFormBase form = FormUtils.getCurrentForm(sp);
 			if (form == null) continue;
-			net.minecraft.util.Identifier formId = form.getFormID();
+			net.minecraft.util.Identifier formId = form.FormID;
 			if (FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(formId)) {
 				// 抗伤回复：契灵玩家非战斗 5s 后，每 15s 回 1 抗伤
 				UUID id = sp.getUuid();

@@ -15,11 +15,12 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import org.joml.Vector3f;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 /**
  * 风灵「风之冲刺」客户端：主技能键检测 + 悬浮期绿色落点预览。
@@ -144,9 +145,9 @@ public final class WindDashClient {
 
     private static boolean isWindSpirit(ClientPlayerEntity player) {
         try {
-            IForm form = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).nowForm;
+            PlayerFormBase form = Compat1_9_2.nowForm(player);
             if (form == null) return false;
-            return FormIdentifiers.OCELOT_SP.equals(form.getFormID());
+            return FormIdentifiers.OCELOT_SP.equals(form.FormID);
         } catch (Exception e) {
             return false;
         }

@@ -4,13 +4,14 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.onixary.shapeShifterCurseFabric.client.ShapeShifterCurseFabricClient;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
 import org.lwjgl.glfw.GLFW;
 
 import java.lang.reflect.Field;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 /**
  * SSCA 主动技能键位管理（特殊键位系统核心）。
@@ -107,11 +108,11 @@ public class SscAddonKeybindings {
 			return null;
 		}
 		try {
-			IForm form = RegPlayerFormComponent.PLAYER_FORM.get(mc.player).nowForm;
-			if (form == null || form.getFormID() == null) {
+			PlayerFormBase form = Compat1_9_2.nowForm(mc.player);
+			if (form == null || form.FormID == null) {
 				return null;
 			}
-			return form.getFormID().getPath();
+			return form.FormID.getPath();
 		} catch (Throwable t) {
 			return null;
 		}

@@ -3,8 +3,8 @@ package net.jackcooper.shapeShifterCurseAddon.mixin.client;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.onixary.shapeShifterCurseFabric.mana.FamiliarFoxManaBar;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.evolution.FamiliarFoxTree;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 /**
  * SSCA 进化使魔 mana 条门控：进化使魔形态下，解锁「mana 系统」节点之前不渲染 mana 条。
@@ -30,9 +31,9 @@ public class FamiliarFoxManaBarGateMixin {
         if (mc.player == null) {
             return;
         }
-        IForm form = RegPlayerFormComponent.PLAYER_FORM.get(mc.player).nowForm;
+        PlayerFormBase form = Compat1_9_2.nowForm(mc.player);
         // 仅门控进化使魔形态；原版使魔等不受影响
-        if (form == null || !FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(form.getFormID())) {
+        if (form == null || !FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(form.FormID)) {
             return;
         }
         if (!RegEvolutionComponent.EVOLUTION.get(mc.player).isUnlocked(FamiliarFoxTree.NODE_MANA)) {

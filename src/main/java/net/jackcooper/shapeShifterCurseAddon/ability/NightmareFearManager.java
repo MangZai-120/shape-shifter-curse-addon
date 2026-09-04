@@ -129,7 +129,7 @@ public final class NightmareFearManager {
 
 	/** 当前生效的恐惧 CD：诅咒之月当夜 280t，否则 400t。仅服务端调用。 */
 	public static int currentFearCooldown(ServerPlayerEntity player) {
-		if (net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon.isInCursedMoon(player.getWorld())) {
+		if (net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon.isCursedMoon(player.getWorld())) {
 			return FEAR_COOLDOWN_TICKS_CURSED_MOON;
 		}
 		return FEAR_COOLDOWN_TICKS;

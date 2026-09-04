@@ -14,8 +14,8 @@ import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaTeleport;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
@@ -23,6 +23,7 @@ import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import org.joml.Vector3f;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 /**
  * 契灵 - 次要技能瞬移：纯客户端按键监听 + 落点预览。
@@ -140,9 +141,9 @@ public final class MancianimaTeleportClient {
 
 	private static boolean isMancianima(ClientPlayerEntity player) {
 		try {
-			IForm form = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).nowForm;
+			PlayerFormBase form = Compat1_9_2.nowForm(player);
 			if (form == null) return false;
-			Identifier id = form.getFormID();
+			Identifier id = form.FormID;
 			return id != null && FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(id);
 		} catch (Exception e) {
 			return false;

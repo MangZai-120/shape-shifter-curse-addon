@@ -129,7 +129,7 @@ public final class SscAddonPlayerEvents {
 		net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents.START_TRACKING.register((trackedEntity, player) -> {
 			if (trackedEntity instanceof net.minecraft.server.network.ServerPlayerEntity tracked) {
 				try {
-					net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM.sync(tracked);
+					net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent.PLAYER_FORM.sync(tracked);
 				} catch (Throwable ignored) {
 					// 极端时序下组件容器可能尚未就绪，忽略即可，下次状态变更会自动同步
 				}

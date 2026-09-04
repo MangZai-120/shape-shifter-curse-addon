@@ -6,6 +6,7 @@
     "plugin":  "net.jackcooper.shapeShifterCurseAddon.mixin.plugin.SscAddonMixinConfigPlugin",
     "refmap":  "ssc-addon.refmap.json",
     "mixins":  [
+                   "TransformManagerAdvancementMixin192",
                    "effect.AllaySPTotemMixin",
                    "effect.EntangledFullStunMixin",
                    "AnkhStoneTotemMixin",
@@ -37,7 +38,6 @@
                    "entity.RedFoxThrowDistanceMixin",
                    "item.ScreenHandlerMixin",
                    "SscAddonCodexStatusMixin",
-                   "PlayerFormComponentSyncGuardMixin",
                    "entity.SscAddonEntityIgnitionMixin",
                    "entity.SeedEnergyEatFoodMixin",
                    "entity.SscAddonLivingEntityMixin",
@@ -49,6 +49,7 @@
                    "WanderingTraderTradeMixin"
                ],
     "client":  [
+                   "CursedMoonSpMessageMixin192",
                    "render.InstinctBarRendererMixin",
                    "render.FormColorSelectMenuMixin",
                    "player.SscPlayerEntityRendererMixin",

@@ -6,13 +6,14 @@ import net.minecraft.client.render.entity.PlayerEntityRenderer;
 import net.minecraft.client.render.entity.PlayerModelPart;
 import net.minecraft.client.render.entity.model.PlayerEntityModel;
 import net.minecraft.client.util.math.MatrixStack;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 @Mixin(PlayerEntityRenderer.class)
 public class SscPlayerEntityRendererMixin {
@@ -24,11 +25,12 @@ public class SscPlayerEntityRendererMixin {
 	public void render(AbstractClientPlayerEntity player, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i, CallbackInfo ci) {
 		PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
 		if (component != null) {
-			IForm currentForm = component.nowForm;
-			if (currentForm != null && currentForm.getFormID() != null) {
-				int phase = currentForm.getFormTier();
-				boolean isSpecial = currentForm.getFormFlag().contains("special_form");
-				String path = currentForm.getFormID().getPath();
+			PlayerFormBase currentForm = component.getCurrentForm();
+			if (currentForm != null && currentForm.FormID != null) {
+				// SSC 1.9.2：无数字 tier，用 phase 枚举重建（PHASE_0=1 … PHASE_3=4，PHASE_SP=5，语义对齐 1.10 的 tier）
+				int phase = currentForm.getPhase().ordinal();
+				boolean isSpecial = Compat1_9_2.hasFlag(currentForm, "special_form");
+				String path = currentForm.FormID.getPath();
 
 				PlayerEntityRenderer renderer = (PlayerEntityRenderer) (Object) this;
 				PlayerEntityModel<AbstractClientPlayerEntity> model = renderer.getModel();
@@ -53,8 +55,8 @@ public class SscPlayerEntityRendererMixin {
 					model.rightSleeve.visible = player.isPartVisible(PlayerModelPart.RIGHT_SLEEVE);
 					model.leftSleeve.visible = player.isPartVisible(PlayerModelPart.LEFT_SLEEVE);
 				}
-				// 2. 其他完全变身 (Phase 3 或 Phase SP) - 排除 Allay
-				else if ((phase == 3 || isSpecial) && !path.contains("allay")) {
+			// 2. 其他完全变身 (Phase 3 或 Phase SP) - 排除 Allay（ordinal：PHASE_3=4，PHASE_SP=5）
+			else if ((phase >= 4 || isSpecial) && !path.contains("allay")) {
 					model.head.visible = false;
 					model.hat.visible = false;
 					model.body.visible = false;

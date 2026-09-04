@@ -4,8 +4,8 @@ import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 
 /**
@@ -28,10 +28,10 @@ public final class VillagerTradeGuardHandler {
 			}
 			try {
 				PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
-				if (component == null || component.nowForm == null) {
+				if (component == null || component.getCurrentForm() == null) {
 					return ActionResult.PASS;
 				}
-				Identifier formId = component.nowForm.getFormID();
+				Identifier formId = component.getCurrentForm().FormID;
 				// 进化使魔：任何右键村民都禁止交易
 				if (FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(formId)) {
 					return ActionResult.FAIL;

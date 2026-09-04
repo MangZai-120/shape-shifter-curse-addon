@@ -15,8 +15,8 @@ import net.minecraft.network.PacketByteBuf;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionNode;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRoute;
@@ -24,6 +24,7 @@ import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 /**
  * 灵能宝珠「转职选择形态」界面（jackcooper 署名新类）。
@@ -173,8 +174,8 @@ public class JobChangeSelectScreen extends Screen {
         if (p == null) {
             return false;
         }
-        IForm nowForm = RegPlayerFormComponent.PLAYER_FORM.get(p).nowForm;
-        Identifier nowFormId = (nowForm == null) ? null : nowForm.getFormID();
+        PlayerFormBase nowForm = Compat1_9_2.nowForm(p);
+        Identifier nowFormId = (nowForm == null) ? null : nowForm.FormID;
         return forms.get(page).formId.equals(nowFormId);
     }
 

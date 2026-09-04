@@ -20,7 +20,7 @@ import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.mana.ManaComponent;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
@@ -144,8 +144,8 @@ public final class MancianimaTeleport {
 	}
 
 	private static boolean isMancianima(PlayerEntity player) {
-		IForm form = FormUtils.getCurrentForm(player);
-		return form != null && FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.getFormID());
+		PlayerFormBase form = FormUtils.getCurrentForm(player);
+		return form != null && FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.FormID);
 	}
 
 	/** 准星上是否有被本玩家红标的目标？返回该目标，否则 null。 */

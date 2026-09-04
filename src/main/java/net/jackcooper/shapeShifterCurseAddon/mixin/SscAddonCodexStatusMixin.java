@@ -4,9 +4,9 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.onixary.shapeShifterCurseFabric.data.CodexData;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionNode;
@@ -45,18 +45,18 @@ public class SscAddonCodexStatusMixin {
         if (component == null) {
             return;
         }
-        IForm currentForm = component.nowForm;
-        if (currentForm == null || currentForm.getFormID() == null) {
+        PlayerFormBase currentForm = component.getCurrentForm();
+        if (currentForm == null || currentForm.FormID == null) {
             return;
         }
 
         // 根据当前形态选择对应的加点树；非进化形态不处理
         List<EvolutionNode> nodes;
         String baseNodeId;
-        if (FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(currentForm.getFormID())) {
+        if (FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(currentForm.FormID)) {
             nodes = FamiliarFoxTree.nodes();
             baseNodeId = FamiliarFoxTree.NODE_BASE;
-        } else if (FormIdentifiers.UPGRADE_AXOLOTL.equals(currentForm.getFormID())) {
+        } else if (FormIdentifiers.UPGRADE_AXOLOTL.equals(currentForm.FormID)) {
             nodes = AxolotlTree.nodes();
             baseNodeId = AxolotlTree.NODE_BASE;
         } else {

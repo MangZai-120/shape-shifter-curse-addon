@@ -14,12 +14,13 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 
 import java.util.UUID;
 import java.util.function.Predicate;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 /**
  * 客户端：契灵准星目标缓存。
@@ -90,8 +91,8 @@ public final class MancianimaCrosshairTracker {
 
 	private static boolean isMancianima(PlayerEntity player) {
 		try {
-			IForm form = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).nowForm;
-			return form != null && FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.getFormID());
+			PlayerFormBase form = Compat1_9_2.nowForm(player);
+			return form != null && FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(form.FormID);
 		} catch (Exception e) { return false; }
 	}
 }

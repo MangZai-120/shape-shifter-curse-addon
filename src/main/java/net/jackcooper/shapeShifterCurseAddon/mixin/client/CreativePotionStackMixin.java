@@ -40,7 +40,7 @@ public class CreativePotionStackMixin {
 			if (player != null) {
 				int n = PowerHolderComponent.getPowers(player, ModifyPotionStackPower.class)
 						.stream()
-						.filter(power -> !power.isOnlyWaterPotion())
+						
 						.mapToInt(ModifyPotionStackPower::getCount)
 						.max()
 						.orElse(0);

@@ -2,7 +2,7 @@ package net.jackcooper.shapeShifterCurseAddon.mixin.input;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
+import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -63,11 +63,11 @@ public class StunnedKeyBindingMixin {
 		// 现在服务端会自动发 sendNoMoveTick 冻结移动。
 		// 本 mixin 的 keybinding 屏蔽是另一层保险：除了移动键，还屏蔽技能/攻击/使用键，
 		// 并消除客户端预测性滑步（装死场景尤其需要）。两层互不冲突。
-		// TransformManager.transformTimer 是客户端 public 字段，黑屏过渡期间 >=0
-		// （receiveTransformState 收到 isTransforming=true 时置 0、结束置 -1），用它统一冻结所有变身（含原版触发）。
+		// SSC 1.9.2：TransformManager 无公开 transformTimer 字段，改用客户端变身状态标记
+		// （ShapeShifterCurseFabricClient.isClientTransforming，同步包 receiveTransformState 维护，语义等价：变身过渡期间为 true）
 		return client.player.hasStatusEffect(SscAddon.STUN)
 				|| client.player.hasStatusEffect(SscAddon.PLAYING_DEAD)
-				|| TransformManager.transformTimer >= 0;
+				|| net.onixary.shapeShifterCurseFabric.client.ShapeShifterCurseFabricClient.isClientTransforming(client.player.getUuid());
 	}
 
 	@Unique

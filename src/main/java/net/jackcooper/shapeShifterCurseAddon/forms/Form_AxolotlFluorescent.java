@@ -13,7 +13,7 @@ import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateControll
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateEnum;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimSystem;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimUtils;
-import net.onixary.shapeShifterCurseFabric.player_form.NormalForm;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,7 +24,7 @@ import static net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric.MOD_ID
  * 由 SP美西螈经进化石进化获得；定位为辅助+控场+照明。
  * 与原美西螈 SP 唯一区别：scale=0.75（更小体型），技能集替换为潮汐波动/水盾/闪避等。
  */
-public class Form_AxolotlFluorescent extends NormalForm {
+public class Form_AxolotlFluorescent extends PlayerFormBase {
 	// 动画控制器与美西螈三阶段完全一致（复用模型）
 	public static final AbstractAnimStateController SWIM_CONTROLLER = new SwimAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_swimming_idle")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_swimming")));
 	public static final AbstractAnimStateController IDLE_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_idle")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_crawling_idle")));
@@ -108,8 +108,8 @@ public class Form_AxolotlFluorescent extends NormalForm {
 				case ANIM_STATE_MINING -> MINING_CONTROLLER;
 				case ANIM_STATE_SLEEP -> SLEEP_CONTROLLER;
 				case ANIM_STATE_FLYING -> FLYING_CONTROLLER;
-				case ANIM_STATE_CRAWL -> CRAWL_CONTROLLER;
-				default -> null;
+				// SSC 1.9.2 无 ANIM_STATE_CRAWL（1.10 新增），爬行态回退游泳控制器
+				default -> SWIM_CONTROLLER;
 			};
 		}
 		return super.getAnimStateController(player, animSystemData, animStateID);

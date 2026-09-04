@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 
 public class SscAddonNetworking {
@@ -561,7 +562,7 @@ public class SscAddonNetworking {
 					for (net.minecraft.server.network.ServerPlayerEntity p : players) {
 						out.writeUuid(p.getUuid());
 						net.minecraft.util.Identifier fid =
-								net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM.get(p).nowFormID;
+								net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2.nowFormId(p);
 						out.writeString(fid == null ? "" : fid.toString());
 						// 皮肤数据：保留原皮 / 是否启用形态颜色 / 五种颜色(ABGR) / 灰度反转 / 随机音效
 						net.onixary.shapeShifterCurseFabric.player_form.skin.PlayerSkinComponent skin =

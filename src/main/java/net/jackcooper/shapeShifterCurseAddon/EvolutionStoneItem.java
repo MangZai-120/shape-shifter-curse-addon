@@ -12,13 +12,14 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.*;
 import net.minecraft.world.World;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.data.StaticParams;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
+import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionManager;
 import net.jackcooper.shapeShifterCurseAddon.util.AdvancementUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 public class EvolutionStoneItem extends Item {
 
@@ -112,10 +113,10 @@ public class EvolutionStoneItem extends Item {
 					world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0F, 1.0F);
 					return stack;
 				}
-				IForm formBase = RegPlayerForms.getPlayerForm(targetFormId);
+				PlayerFormBase formBase = RegPlayerForms.getPlayerForm(targetFormId);
 				if (formBase != null) {
 					// 带黑屏淡入淡出动画变身（startTransform），STUN 在动画期间定身
-					TransformManager.startTransform(player, formBase, null);
+					Compat1_9_2.startTransform(player, formBase, null);
 					// 变身演出（黑屏淡入 IN + 淡出 OUT，共 160 tick）期间定身玩家，避免演出过程中走动
 					player.addStatusEffect(new StatusEffectInstance(SscAddon.STUN,
 							StaticParams.TRANSFORM_FX_DURATION_IN + StaticParams.TRANSFORM_FX_DURATION_OUT, 0, false, false, false));
@@ -153,7 +154,7 @@ public class EvolutionStoneItem extends Item {
 	}
 
 	private Identifier getPlayerFormID(PlayerEntity player) {
-		IForm currentForm = FormUtils.getCurrentForm(player);
-		return currentForm != null ? currentForm.getFormID() : null;
+		PlayerFormBase currentForm = FormUtils.getCurrentForm(player);
+		return currentForm != null ? currentForm.FormID : null;
 	}
 }

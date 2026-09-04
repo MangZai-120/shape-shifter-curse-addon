@@ -3,15 +3,16 @@ package net.jackcooper.shapeShifterCurseAddon.mixin.render;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.InstinctBarRenderer;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.instinct.InstinctBarRenderer;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 /**
  * SSCA 本能值条门控：special_form / 荧光幼灵系形态下不渲染本能值条。
@@ -31,15 +32,15 @@ public class InstinctBarRendererMixin {
 			return;
 		}
 		PlayerFormComponent comp = mc.player.getComponent(RegPlayerFormComponent.PLAYER_FORM);
-		IForm curForm = comp.nowForm;
+		PlayerFormBase curForm = comp.getCurrentForm();
 		// special_form 形态（各 SP）不显示本能值条
-		if (curForm != null && curForm.getFormFlag().contains("special_form")) {
+		if (curForm != null && Compat1_9_2.hasFlag(curForm, "special_form")) {
 			ci.cancel();
 			return;
 		}
 		// 兜底：按当前形态ID判断荧光幼灵系（荧光幼灵 / 阿澪），
 		// 防客户端 form 对象 flag 因同步异常丢失导致本能值条误显示
-		Identifier id = comp.nowFormID;
+		Identifier id = comp.getCurrentForm().FormID;
 		if (id != null && (id.equals(FormIdentifiers.AXOLOTL_FLUORESCENT) || id.equals(FormIdentifiers.AXOLOTL_ALING))) {
 			ci.cancel();
 		}

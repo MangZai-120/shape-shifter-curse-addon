@@ -51,7 +51,7 @@ public abstract class WitherPotionStackMixin {
 			// 与原版药水叠放同源：取非水瓶限定 power 的最大 count（未持有则保持默认 1）
 			int limit = PowerHolderComponent.getPowers(playerInventory.player, ModifyPotionStackPower.class)
 					.stream()
-					.filter(power -> !power.isOnlyWaterPotion())
+					
 					.mapToInt(ModifyPotionStackPower::getCount)
 					.max()
 					.orElse(1);

@@ -8,8 +8,8 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
@@ -17,6 +17,7 @@ import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 /**
  * 技能冷却条HUD渲染器
@@ -77,19 +78,19 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 		}
 
 		// 获取当前形态
-		IForm curForm;
+		PlayerFormBase curForm;
 		try {
-			curForm = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).nowForm;
+			curForm = Compat1_9_2.nowForm(player);
 		} catch (Exception e) {
 			resetCooldownTracking();
 			return;
 		}
-		if (curForm == null || curForm.getFormID() == null) {
+		if (curForm == null || curForm.FormID == null) {
 			resetCooldownTracking();
 			return;
 		}
 
-		Identifier formId = curForm.getFormID();
+		Identifier formId = curForm.FormID;
 		if (!SSCA_FORM_NAMESPACE.equals(formId.getNamespace())) {
 			resetCooldownTracking();
 			return;

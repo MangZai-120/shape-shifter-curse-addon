@@ -5,10 +5,11 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.network.PacketByteBuf;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 /**
  * 风灵「疾风连爪」客户端左键检测器。
@@ -31,9 +32,9 @@ public final class WindSpiritClawClient {
                 return;
             }
             ClientPlayerEntity player = client.player;
-            IForm form = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
-            boolean isOcelot = form != null && form.getFormID() != null
-                    && FormIdentifiers.OCELOT_SP.equals(form.getFormID());
+            PlayerFormBase form = Compat1_9_2.nowForm(player);
+            boolean isOcelot = form != null && form.FormID != null
+                    && FormIdentifiers.OCELOT_SP.equals(form.FormID);
 
             boolean hold;
             if (!isOcelot || client.currentScreen != null) {

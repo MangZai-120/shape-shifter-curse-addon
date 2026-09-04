@@ -7,7 +7,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
@@ -153,11 +153,11 @@ public final class ResourceBars {
 			// 形态直定位：5 条 resource 均严格 1:1 绑定单一形态（origins 静态挂载、无跨形态/动态共享，已核实），
 			// 玩家最多持有其一 → 用当前 formID 一次定位，省掉每 tick 对全部条的 hasPower 全量扫描；
 			// 仍保留 has() 实测兜底（映射命中 ≠ 一定已挂载，极端时序以实测为准）。
-			IForm form = FormUtils.getCurrentForm(player);
-			if (form == null || form.getFormID() == null) {
+			PlayerFormBase form = FormUtils.getCurrentForm(player);
+			if (form == null || form.FormID == null) {
 				continue;
 			}
-			ResourceBarDef bar = FORM_TO_BAR.get(form.getFormID());
+			ResourceBarDef bar = FORM_TO_BAR.get(form.FormID);
 			if (bar == null || !has(player, bar)) {
 				continue;
 			}

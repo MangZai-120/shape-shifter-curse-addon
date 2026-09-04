@@ -142,7 +142,7 @@ public abstract class ScreenHandlerMixin {
 			// 通用能量药水：与原版药水叠放同源，非水瓶限定 power 的最大 count（未持有则不接管）
 			int n = PowerHolderComponent.getPowers(player, ModifyPotionStackPower.class)
 					.stream()
-					.filter(power -> !power.isOnlyWaterPotion())
+					
 					.mapToInt(ModifyPotionStackPower::getCount)
 					.max()
 					.orElse(0);
@@ -203,7 +203,7 @@ public abstract class ScreenHandlerMixin {
 		if (stack.getItem() instanceof UniversalEnergyPotionItem) {
 			int n = PowerHolderComponent.getPowers(player, ModifyPotionStackPower.class)
 					.stream()
-					.filter(power -> !power.isOnlyWaterPotion())
+					
 					.mapToInt(ModifyPotionStackPower::getCount)
 					.max()
 					.orElse(0);
@@ -235,7 +235,7 @@ public abstract class ScreenHandlerMixin {
 		if (stack.getItem() instanceof UniversalEnergyPotionItem) {
 			return Math.max(1, PowerHolderComponent.getPowers(player, ModifyPotionStackPower.class)
 					.stream()
-					.filter(power -> !power.isOnlyWaterPotion())
+					
 					.mapToInt(ModifyPotionStackPower::getCount)
 					.max()
 					.orElse(1));
@@ -244,7 +244,7 @@ public abstract class ScreenHandlerMixin {
 			boolean isWater = PotionUtil.getPotion(stack).equals(Potions.WATER);
 			return Math.max(1, PowerHolderComponent.getPowers(player, ModifyPotionStackPower.class)
 					.stream()
-					.filter(power -> !power.isOnlyWaterPotion() || isWater)
+					.filter(power -> !isWater)
 					.mapToInt(ModifyPotionStackPower::getCount)
 					.max()
 					.orElse(1));

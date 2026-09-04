@@ -80,12 +80,10 @@ import net.jackcooper.shapeShifterCurseAddon.ability.ParasiticSeedEnergyRegen;
 import net.jackcooper.shapeShifterCurseAddon.ability.ParasiticSeedFieldManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.SeedEnergyEatingHandler;
 import net.jackcooper.shapeShifterCurseAddon.ability.WindSpiritLandingSurgeManager;
-import net.jackcooper.shapeShifterCurseAddon.event.AddonFormAdvancementHandler;
 import net.jackcooper.shapeShifterCurseAddon.event.SscAddonServerEvents;
 import net.jackcooper.shapeShifterCurseAddon.event.SscAddonInteractionEvents;
 import net.jackcooper.shapeShifterCurseAddon.event.SscAddonPlayerEvents;
 import net.jackcooper.shapeShifterCurseAddon.event.WitchFamiliarSpawnHandler;
-import net.jackcooper.shapeShifterCurseAddon.event.CursedMoonSpMessageHandler;
 import net.jackcooper.shapeShifterCurseAddon.event.FluorescentDodgeHandler;
 import net.jackcooper.shapeShifterCurseAddon.event.StorySleepTimeGuardHandler;
 import net.jackcooper.shapeShifterCurseAddon.event.VillagerTradeGuardHandler;
@@ -359,9 +357,8 @@ public class SscAddon implements ModInitializer {
 		MancianimaMarkManager.register();
 		MoonScarStoryManager.register();
 		TideSpiritStoryManager.register();
-		// 原版官方事件监听（由 mixin 迁移而来）：诅咒之月 SP 形态提示 + 附属形态变身成就
-		CursedMoonSpMessageHandler.register();
-		AddonFormAdvancementHandler.register();
+		// SSC 1.9.2 分支：诅咒之月 SP 提示 + 附属形态变身成就 改由两个 192 mixin 承担
+		// （CursedMoonSpMessageMixin192 / TransformManagerAdvancementMixin192，见 my_addon.mixins.json）
 		VillagerTradeGuardHandler.register();
 		FluorescentDodgeHandler.register();
 		StorySleepTimeGuardHandler.register();

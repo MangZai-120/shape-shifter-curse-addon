@@ -23,6 +23,7 @@ import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 /**
  * SSCA 进化加点界面：使魔（familiar_fox）进化树。
@@ -124,9 +125,9 @@ public class EvolutionScreen extends Screen {
         if (rid != null && !rid.isEmpty()) {
             return EvolutionRegistry.INSTANCE.getRoute(rid);
         }
-        net.onixary.shapeShifterCurseFabric.player_form.IForm f =
-                (p == null) ? null : net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM.get(p).nowForm;
-        Identifier fid = (f == null) ? null : f.getFormID();
+        net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase f =
+                (p == null) ? null : net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2.nowForm(p);
+        Identifier fid = (f == null) ? null : f.FormID;
         return EvolutionRegistry.INSTANCE.getRouteByStartForm(fid);
     }
 

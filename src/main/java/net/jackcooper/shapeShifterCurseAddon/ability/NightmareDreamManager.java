@@ -38,7 +38,7 @@ public final class NightmareDreamManager {
 
 	/** 当前生效的入梦阈值：诅咒之月当夜（天黑 + 诅咒之月日）降为 6，否则 10。仅服务端调用。 */
 	public static float currentDreamThreshold(ServerPlayerEntity player) {
-		if (net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon.isInCursedMoon(player.getWorld())) {
+		if (net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon.isCursedMoon(player.getWorld())) {
 			return DREAM_THRESHOLD_CURSED_MOON;
 		}
 		return DREAM_THRESHOLD;

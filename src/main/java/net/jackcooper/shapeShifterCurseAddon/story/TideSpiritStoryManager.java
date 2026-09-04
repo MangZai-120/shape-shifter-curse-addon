@@ -14,15 +14,16 @@ import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon;
 import net.onixary.shapeShifterCurseFabric.data.StaticParams;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
+import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 /**
  * 「潮汐之灵」剧情链（阿澪 Aling 解锁，全程服务端权威，状态由 {@link TideSpiritStoryState} 持久化）。
@@ -91,7 +92,7 @@ public final class TideSpiritStoryManager {
 		World world = player.getWorld();
 		if (!FormUtils.isAxolotlFluorescent(player)) return;
 		if (!hasTideSpiritPower(player)) return;
-		if (!(CursedMoon.isCursedMoonDay(world) && CursedMoon.isNight(world))) return;
+		if (!(CursedMoon.isCursedMoon(world) && CursedMoon.isNight(world))) return;
 		ALING_SLEEPING.putIfAbsent(player.getUuid(), 0);
 	}
 
@@ -124,10 +125,10 @@ public final class TideSpiritStoryManager {
 			player.wakeUp(true, true);
 		}
 		if (!FormUtils.isAxolotlFluorescent(player)) return; // 期间形态已变则不再转化
-		IForm alingForm = RegPlayerForms.getPlayerForm(FormIdentifiers.AXOLOTL_ALING);
+		PlayerFormBase alingForm = RegPlayerForms.getPlayerForm(FormIdentifiers.AXOLOTL_ALING);
 		if (alingForm == null) return;
 		// 起床即变：immediatelyTransform 瞬间换形态、不播放变身动画
-		TransformManager.immediatelyTransform(player, alingForm);
+		Compat1_9_2.immediatelyTransform(player, alingForm);
 		World world = player.getWorld();
 		player.sendMessage(
 				Text.translatable("message.ssc_addon.tide_spirit.become_aling").formatted(Formatting.AQUA, Formatting.ITALIC),
@@ -161,11 +162,11 @@ public final class TideSpiritStoryManager {
 
 		if (!FormUtils.isForm(sp, FormIdentifiers.AXOLOTL_ALING)) return false;
 
-		IForm fluorescentForm = RegPlayerForms.getPlayerForm(FormIdentifiers.AXOLOTL_FLUORESCENT);
+		PlayerFormBase fluorescentForm = RegPlayerForms.getPlayerForm(FormIdentifiers.AXOLOTL_FLUORESCENT);
 		if (fluorescentForm == null) return false;
 
 		// 月髓环免费变回荧光幼灵：带黑屏淡入淡出动画（startTransform），STUN 在动画期间定身
-		TransformManager.startTransform(sp, fluorescentForm, null);
+		Compat1_9_2.startTransform(sp, fluorescentForm, null);
 		sp.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
 				net.jackcooper.shapeShifterCurseAddon.SscAddon.STUN,
 				StaticParams.TRANSFORM_FX_DURATION_IN + StaticParams.TRANSFORM_FX_DURATION_OUT,

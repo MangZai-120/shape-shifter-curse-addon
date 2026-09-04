@@ -10,10 +10,11 @@ import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.Identifier;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
+import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 /**
  * 契灵 - 主要技能客户端按键监听。
@@ -46,9 +47,9 @@ public final class MancianimaPrimaryClient {
 
 	private static boolean isMancianima(ClientPlayerEntity player) {
 		try {
-			IForm form = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).nowForm;
+			PlayerFormBase form = Compat1_9_2.nowForm(player);
 			if (form == null) return false;
-			Identifier id = form.getFormID();
+			Identifier id = form.FormID;
 			return id != null && FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(id);
 		} catch (Exception e) {
 			return false;
