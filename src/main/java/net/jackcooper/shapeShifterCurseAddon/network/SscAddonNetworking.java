@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 
 public class SscAddonNetworking {

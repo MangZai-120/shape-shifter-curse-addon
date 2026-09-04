@@ -23,7 +23,6 @@ import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 
 /**
  * SSCA 进化加点界面：使魔（familiar_fox）进化树。

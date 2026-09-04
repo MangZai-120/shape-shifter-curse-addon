@@ -9,8 +9,6 @@ import net.onixary.shapeShifterCurseFabric.player_form.ability.RegPlayerFormComp
 import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormPhase;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.function.Consumer;
 
 /**

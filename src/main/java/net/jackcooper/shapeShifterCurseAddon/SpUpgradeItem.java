@@ -20,7 +20,6 @@ import net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon;
 import net.onixary.shapeShifterCurseFabric.data.StaticParams;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
-import net.onixary.shapeShifterCurseFabric.player_form.transform.TransformManager;
 import net.jackcooper.shapeShifterCurseAddon.story.MoonScarStoryManager;
 import net.jackcooper.shapeShifterCurseAddon.story.TideSpiritStoryManager;
 import net.jackcooper.shapeShifterCurseAddon.util.AdvancementUtils;

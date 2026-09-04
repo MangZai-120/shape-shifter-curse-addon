@@ -166,13 +166,6 @@ public class SscAddonPreLaunch implements PreLaunchEntrypoint {
 	}
 
 	/**
-	 * @return current >= required 时返回 true（含等于）
-	 */
-	private static boolean isVersionAboveOrEqual(String current, String required) {
-		return !isVersionBelow(current, required);
-	}
-
-	/**
 	 * 将版本字符串解析为 [major, minor, patch] 数组
 	 * 例如 "1.9.0-beta.3" → [1, 9, 0]
 	 */
