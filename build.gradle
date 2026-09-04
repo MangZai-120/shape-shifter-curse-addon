@@ -92,8 +92,9 @@ dependencies {
     // Fabric API
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    // Shape Shifter Curse Main Mod（原版源码目录：幻型者诅咒原版_official，onixary 官方 clone 干净版）
-    modImplementation files("../幻型者诅咒原版_official/build/libs/shape-shifter-curse-fabric-${project.ssc_version}.jar")
+    // Shape Shifter Curse Main Mod —— 本分支适配 SSC 1.9.2：依赖官方发布 jar（Modrinth 下载，SHA256 382D3544...）
+    // 注意：不要同步本分支构建产物到 SSC 1.10.1 测试实例；需单独的 SSC 1.9.2 实例测试
+    modImplementation files("libs/shape-shifter-curse-fabric-${project.ssc_version}.jar")
     
     // Team Reborn Energy API（TechReborn 等工业模组通用能量 API；3.0.0 适用 MC 1.19.4~1.20.4）
     // JiJ 打包进附属 jar：未安装任何工业模组时也能安全加载，能量转变器仅在检测到相邻能量方块时工作
