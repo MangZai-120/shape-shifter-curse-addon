@@ -127,8 +127,15 @@ public class SscAddon implements ModInitializer {
 	/** 侵蚀烙印标记效果 - 3层(红色) */
 	public static final StatusEffect EROSION_BRAND_MARKER_3 = new ErosionBrandMarkerEffect(0xDC143C);
 	public static final Item POTION_BAG = new PotionBagItem(new Item.Settings().maxCount(1));
+	// 月尘魔法书（自建 Trinkets 饰品槽 moonlit/spellbook；潜行右键开配置界面）
+	public static final Item MOON_DUST_SPELLBOOK = new MoonDustSpellbookItem(new Item.Settings().maxCount(1));
+	// 魔法卷轴（通用物品，NBT 绑定具体魔法与稀有度）
+	public static final Item MAGIC_SCROLL = new MagicScrollItem(new Item.Settings().maxCount(16));
 	public static final EntityType<FrostBallEntity> FROST_BALL_ENTITY =
 			registerEntity("frost_ball", SpawnGroup.MISC, FrostBallEntity::new, 0.25f, 0.25f, 64, 10);
+	// 月尘魔法·冰锥投射物（独立于雪狐 SP 冰球，供魔法书「冰锥」魔法使用，jackcooper）
+	public static final EntityType<net.jackcooper.shapeShifterCurseAddon.entity.SpellFrostSpikeEntity> SPELL_FROST_SPIKE_ENTITY =
+			registerEntity("spell_frost_spike", SpawnGroup.MISC, net.jackcooper.shapeShifterCurseAddon.entity.SpellFrostSpikeEntity::new, 0.25f, 0.25f, 64, 10);
 	// 进化美西螈「投掷水矛」直线水矛投射物（无重力匀速）
 	public static final EntityType<ThrownWaterSpearEntity> THROWN_WATER_SPEAR_ENTITY =
 			registerEntity("thrown_water_spear", SpawnGroup.MISC, ThrownWaterSpearEntity::new, 0.4f, 0.4f, 64, 10);	// 寒棘狐「冰刺」冰锥投射物（环绕态 HOVER + 飞行态 FLY 双态；最远飞 128 格，trackRange 同步 128 防提前消失）
@@ -151,6 +158,9 @@ public class SscAddon implements ModInitializer {
 	public static final EntityType<ParasiticSeedProjectile> PARASITIC_SEED_ENTITY =
 			registerEntity("parasitic_seed", SpawnGroup.MISC, ParasiticSeedProjectile::new, 0.25f, 0.25f, 64, 10);
 	public static final ScreenHandlerType<PotionBagScreenHandler> POTION_BAG_SCREEN_HANDLER = new ScreenHandlerType<>(PotionBagScreenHandler::new, FeatureSet.empty());
+	// 月尘魔法书配置界面（ExtendedScreenHandler：把卷轴槽数与等级/法力快照传给客户端）
+	public static final ScreenHandlerType<net.jackcooper.shapeShifterCurseAddon.screen.SpellbookScreenHandler> SPELLBOOK_SCREEN_HANDLER =
+			new net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType<>((syncId, inv, buf) -> new net.jackcooper.shapeShifterCurseAddon.screen.SpellbookScreenHandler(syncId, inv, buf));
 	public static final EntityType<FrostStormEntity> FROST_STORM_ENTITY =
 			registerEntity("frost_storm", SpawnGroup.MISC, FrostStormEntity::new, 1.0f, 2.0f, 64, 10);
 	// 荧光幼灵 - 潮汐波动粒子球实体
@@ -271,6 +281,12 @@ public class SscAddon implements ModInitializer {
 					.icon(() -> new ItemStack(SP_UPGRADE_THING))
 					.entries((displayContext, entries) -> {
 						entries.add(SP_UPGRADE_THING);
+						entries.add(MOON_DUST_SPELLBOOK);
+						// 每个已注册魔法生成一张满次数的绑定卷轴（空白卷轴无法放入魔法书）
+						for (net.jackcooper.shapeShifterCurseAddon.spell.Spell spell :
+								net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.all()) {
+							entries.add(net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.create(spell.getId().getPath()));
+						}
 						entries.add(EVOLUTION_STONE);
 						entries.add(PSIONIC_ORB);
 						entries.add(LIFESAVING_CAT_TAIL);
@@ -327,6 +343,8 @@ public class SscAddon implements ModInitializer {
 		registerConfig();
 		registerStatusEffects();
 		registerItems();
+		// 月尘魔法系统：注册所有内置魔法
+		net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.init();
 		// 附属方块注册（蛛网膜等，jackcooper）
 		net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks.init();
 			// 附属实体注册（月织蛛蓄力蛛丝弹，jackcooper）
@@ -420,6 +438,9 @@ public class SscAddon implements ModInitializer {
 		registerItem("frost_thorn", FROST_THORN);
 		registerItem("potion_bag", POTION_BAG);
 		Registry.register(Registries.SCREEN_HANDLER, new Identifier("ssc_addon", "potion_bag"), POTION_BAG_SCREEN_HANDLER);
+		registerItem("moon_dust_spellbook", MOON_DUST_SPELLBOOK);
+		registerItem("magic_scroll", MAGIC_SCROLL);
+		Registry.register(Registries.SCREEN_HANDLER, new Identifier("ssc_addon", "spellbook"), SPELLBOOK_SCREEN_HANDLER);
 		registerItem("evolution_stone", EVOLUTION_STONE);
 		registerItem("psionic_orb", PSIONIC_ORB);
 		registerItem("coral_ball", CORAL_BALL);

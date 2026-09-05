@@ -1,0 +1,8 @@
+{
+  "icon": "ssc_addon:slot/spellbook",
+  "order": 0,
+  "amount": 1,
+  "validator_predicates": ["trinkets:tag"],
+  "tooltip_predicates": ["trinkets:all"],
+  "quick_move_predicates": ["trinkets:all"]
+}

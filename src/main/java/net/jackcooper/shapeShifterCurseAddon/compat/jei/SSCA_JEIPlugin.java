@@ -52,6 +52,19 @@ public class SSCA_JEIPlugin implements IModPlugin {
 	}
 
 	@Override
+	public void registerRecipeTransferHandlers(mezz.jei.api.registration.IRecipeTransferRegistration registration) {
+		// SSCA 特殊配方的快速转移：点击模拟支持带 NBT 的药水材料（JEI 原生转移只按裸 Ingredient 匹配会丢 NBT）
+		registration.addRecipeTransferHandler(
+				new SscClickTransferHandler<>(SSCA_JEIPlugin.INFINITE_ENERGY_POTION, SscGridClickTransfer.GridSpec.infinitePotion(),
+						registration.getTransferHelper()),
+				SSCA_JEIPlugin.INFINITE_ENERGY_POTION);
+		registration.addRecipeTransferHandler(
+				new SscClickTransferHandler<>(SSCA_JEIPlugin.VENOM_GLAND, SscGridClickTransfer.GridSpec.venomGland(),
+						registration.getTransferHelper()),
+				SSCA_JEIPlugin.VENOM_GLAND);
+	}
+
+	@Override
 	public void registerRecipes(mezz.jei.api.registration.IRecipeRegistration registration) {
 		registration.addRecipes(VENOM_GLAND, java.util.List.of(new VenomGlandRecipe()));
 		registration.addRecipes(INFINITE_ENERGY_POTION, java.util.List.of(new InfiniteEnergyPotionDisplay()));
@@ -165,10 +178,12 @@ public class SSCA_JEIPlugin implements IModPlugin {
 
 		@Override
 		public void setRecipe(@NotNull IRecipeLayoutBuilder builder, @NotNull InfiniteEnergyPotionDisplay recipe, @NotNull IFocusGroup focuses) {
-			// 3×3：上中=月髓环，中间行=附魔金苹果 / 压缩能量药水 / 附魔金苹果，其余为空槽
+			// 3×3：上中=月髓环，中间行=附魔金苹果 / 压缩能量药水（三种瓶型可循环）/ 附魔金苹果，其余为空槽
 			ItemStack moonRing = new ItemStack(SscAddon.SP_UPGRADE_THING);
 			ItemStack apple = new ItemStack(Items.ENCHANTED_GOLDEN_APPLE);
-			ItemStack feedPotion = PotionUtil.setPotion(new ItemStack(Items.POTION), RegCustomPotions.FEED_POTION);
+			ItemStack feedDrink = PotionUtil.setPotion(new ItemStack(Items.POTION), RegCustomPotions.FEED_POTION);
+			ItemStack feedSplash = PotionUtil.setPotion(new ItemStack(Items.SPLASH_POTION), RegCustomPotions.FEED_POTION);
+			ItemStack feedLingering = PotionUtil.setPotion(new ItemStack(Items.LINGERING_POTION), RegCustomPotions.FEED_POTION);
 			for (int row = 0; row < 3; row++) {
 				for (int col = 0; col < 3; col++) {
 					int idx = row * 3 + col;
@@ -178,12 +193,17 @@ public class SSCA_JEIPlugin implements IModPlugin {
 					} else if (idx == 3 || idx == 5) {
 						stack = apple;
 					} else if (idx == 4) {
-						stack = feedPotion;
+						stack = feedDrink;
 					}
 					mezz.jei.api.gui.builder.IRecipeSlotBuilder slot =
 							builder.addSlot(RecipeIngredientRole.INPUT, 1 + col * 18, 1 + row * 18);
 					if (stack != null) {
-						slot.addItemStack(stack);
+						if (idx == 4) {
+							// 中间槽：三种瓶型作为可循环选项
+							slot.addItemStack(feedDrink).addItemStack(feedSplash).addItemStack(feedLingering);
+						} else {
+							slot.addItemStack(stack);
+						}
 					}
 				}
 			}

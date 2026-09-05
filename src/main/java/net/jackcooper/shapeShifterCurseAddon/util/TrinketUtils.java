@@ -25,6 +25,11 @@ import java.util.function.Predicate;
  * 一律返回 false，可在服务端 tick 里放心调用。
  */
 public final class TrinketUtils {
+    /** 诊断日志：Curios 反射兜底各阶段失败原因（定位 Kilt 类加载器/能力注入问题用）。 */
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger("ssc-addon");
+    /** 内容转储只打一次（避免 HUD 每帧刷屏）。 */
+    private static final java.util.concurrent.atomic.AtomicBoolean DUMPED = new java.util.concurrent.atomic.AtomicBoolean(false);
+
     private TrinketUtils() {
     }
 
@@ -73,25 +78,103 @@ public final class TrinketUtils {
     /**
      * 查找该实体身上第一件满足谓词的已装备饰品栈；不存在则返回 {@code null}。
      * 用于需要进一步操作饰品栈（如消耗、读 NBT）的场合。框架无关。
+     * <p>带 Curios 反射兜底：SSC 抽象层的 Curios 实现（CurioUtils）在 Kilt 转载环境下
+     * 拿不到数据（恒空 Map），此处反射直查 Curios 自有 API 遍历全部槽位（含 cosmetic），
+     * 保证纯 Curios 环境下 HUD / 施法等取书功能正常。</p>
      */
     public static @Nullable ItemStack findFirstEquipped(LivingEntity entity, Predicate<ItemStack> predicate) {
         try {
             Map<Pair<@Nullable String, String>, List<ItemStack>> slots =
                     AccessoryUtils.getEntitySlots(entity, "auto");
-            if (slots == null || slots.isEmpty()) {
-                return null;
-            }
-            for (List<ItemStack> stacks : slots.values()) {
-                if (stacks == null) continue;
-                for (ItemStack stack : stacks) {
-                    if (stack != null && !stack.isEmpty() && predicate.test(stack)) {
-                        return stack;
+            if (slots != null && !slots.isEmpty()) {
+                for (List<ItemStack> stacks : slots.values()) {
+                    if (stacks == null) continue;
+                    for (ItemStack stack : stacks) {
+                        if (stack != null && !stack.isEmpty() && predicate.test(stack)) {
+                            return stack;
+                        }
                     }
                 }
             }
-            return null;
         } catch (Throwable ignored) {
-            return null;
         }
+        // Curios 反射兜底：遍历 Curios 自有 inventory 的全部槽位（含 cosmetic）。
+        // Kilt 转载环境下 Forge Curios 由独立类加载器加载，需多加载器尝试 CuriosApi；
+        // 各阶段失败均打 warn 日志（不再静默），便于实机定位断点。
+        try {
+            Class<?> api = null;
+            String lastErr = "no classloader tried";
+            for (ClassLoader cl : new ClassLoader[]{
+                    Thread.currentThread().getContextClassLoader(),
+                    TrinketUtils.class.getClassLoader(),
+                    entity.getClass().getClassLoader()}) {
+                if (cl == null) continue;
+                try {
+                    api = Class.forName("top.theillusivec4.curios.api.CuriosApi", true, cl);
+                    break;
+                } catch (ClassNotFoundException e) {
+                    lastErr = e.toString();
+                }
+            }
+            if (api == null) {
+                LOG.warn("[SSCA] Curios fallback: CuriosApi 类不可见（{}）——Kilt 类加载器隔离？", lastErr);
+                return null;
+            }
+            Object lazyOptional = api.getMethod("getCuriosInventory", LivingEntity.class).invoke(null, entity);
+            if (lazyOptional == null) {
+                LOG.warn("[SSCA] Curios fallback: getCuriosInventory 返回 null");
+                return null;
+            }
+            Object resolved = lazyOptional.getClass().getMethod("resolve").invoke(lazyOptional);
+            if (!(resolved instanceof java.util.Optional<?> opt) || opt.isEmpty()) {
+                LOG.warn("[SSCA] Curios fallback: capability 未解析（{}）", resolved);
+                return null;
+            }
+            Object handler = opt.get(); // ICuriosItemHandler
+            Object curiosHandlerMap = handler.getClass().getMethod("getCurios").invoke(handler);
+            if (!(curiosHandlerMap instanceof Map<?, ?> curiosMap)) {
+                LOG.warn("[SSCA] Curios fallback: getCurios() 非 Map（{}）", curiosHandlerMap);
+                return null;
+            }
+            // 一次性内容转储：每个 Curios 槽的 id + 槽数 + 每格物品类名（定位「遍历不到书」用）
+            if (DUMPED.compareAndSet(false, true)) {
+                for (Map.Entry<?, ?> e : curiosMap.entrySet()) {
+                    Object sh = e.getValue();
+                    if (sh == null) continue;
+                    StringBuilder sb = new StringBuilder();
+                    for (String getter : new String[]{"getStacks", "getCosmeticStacks"}) {
+                        try {
+                            Object stacks = sh.getClass().getMethod(getter).invoke(sh);
+                            if (stacks instanceof Iterable<?> it) {
+                                for (Object o : it) {
+                                    sb.append(o == null ? "null" : o.getClass().getName()).append(",");
+                                }
+                            }
+                        } catch (Throwable ignored) {
+                        }
+                        sb.append(" | ");
+                    }
+                    LOG.warn("[SSCA] Curios fallback dump: slot={} items=[{}]", e.getKey(), sb);
+                }
+            }
+            for (Object stacksHandler : curiosMap.values()) {
+                if (stacksHandler == null) continue;
+                for (String getter : new String[]{"getStacks", "getCosmeticStacks"}) {
+                    try {
+                        Object stacks = stacksHandler.getClass().getMethod(getter).invoke(stacksHandler);
+                        if (!(stacks instanceof Iterable<?> iterable)) continue;
+                        for (Object o : iterable) {
+                            if (o instanceof ItemStack s && !s.isEmpty() && predicate.test(s)) {
+                                return s;
+                            }
+                        }
+                    } catch (NoSuchMethodException ignored) {
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            LOG.warn("[SSCA] Curios fallback: 反射链异常 {}", t.toString());
+        }
+        return null;
     }
 }

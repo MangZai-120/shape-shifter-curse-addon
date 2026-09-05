@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    "SMS",
+    "SSS"
+  ],
+  "key": {
+    "C": { "item": "shape-shifter-curse:moondust_crystal_shard" },
+    "M": { "item": "shape-shifter-curse:moondust_matrix" },
+    "S": { "item": "minecraft:smooth_stone" }
+  },
+  "result": {
+    "item": "ssc_addon:infusion_altar",
+    "count": 1
+  }
+}

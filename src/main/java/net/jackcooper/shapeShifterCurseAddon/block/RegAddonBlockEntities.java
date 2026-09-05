@@ -31,6 +31,8 @@ public final class RegAddonBlockEntities {
 
 	public static ScreenHandlerType<EnergyBottlerScreenHandler> ENERGY_BOTTLER_SH;
 	public static ScreenHandlerType<PotionStorageBoxScreenHandler> POTION_STORAGE_BOX_SH;
+	public static BlockEntityType<InfusionAltarBlockEntity> INFUSION_ALTAR_BE;
+	public static ScreenHandlerType<net.jackcooper.shapeShifterCurseAddon.screen.InfusionAltarScreenHandler> INFUSION_ALTAR_SH;
 
 	public static void register() {
 		ENERGY_EXTRACTOR_BE = Registry.register(
@@ -70,5 +72,14 @@ public final class RegAddonBlockEntities {
 				Registries.SCREEN_HANDLER,
 				new Identifier(NAMESPACE, "potion_storage_box"),
 				new ScreenHandlerType<>(PotionStorageBoxScreenHandler::new, FeatureSet.empty()));
+
+		INFUSION_ALTAR_BE = Registry.register(
+				Registries.BLOCK_ENTITY_TYPE,
+				new Identifier(NAMESPACE, "infusion_altar"),
+				FabricBlockEntityTypeBuilder.create(InfusionAltarBlockEntity::new, RegAddonBlocks.INFUSION_ALTAR).build());
+		INFUSION_ALTAR_SH = Registry.register(
+				Registries.SCREEN_HANDLER,
+				new Identifier(NAMESPACE, "infusion_altar"),
+				new ScreenHandlerType<>(net.jackcooper.shapeShifterCurseAddon.screen.InfusionAltarScreenHandler::new, FeatureSet.empty()));
 	}
 }

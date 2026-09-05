@@ -39,8 +39,11 @@ public class SSCA_EMIPlugin implements EmiPlugin {
 		// 注意：EMI 1.1.0 无 EmiIngredient.EMPTY，空槽用 EmiStack.EMPTY 表示
 		EmiIngredient moonRing = EmiStack.of(SscAddon.SP_UPGRADE_THING);
 		EmiIngredient apple = EmiStack.of(Items.ENCHANTED_GOLDEN_APPLE);
-		EmiIngredient feedPotion = EmiStack.of(
-				PotionUtil.setPotion(new ItemStack(Items.POTION), RegCustomPotions.FEED_POTION));
+		// 中间槽：三种瓶型（饮用/喷溅/滞留）的压缩能量药水，EmiIngredient 组合为可切换列表
+		EmiIngredient feedPotion = EmiIngredient.of(List.of(
+				EmiStack.of(PotionUtil.setPotion(new ItemStack(Items.POTION), RegCustomPotions.FEED_POTION)),
+				EmiStack.of(PotionUtil.setPotion(new ItemStack(Items.SPLASH_POTION), RegCustomPotions.FEED_POTION)),
+				EmiStack.of(PotionUtil.setPotion(new ItemStack(Items.LINGERING_POTION), RegCustomPotions.FEED_POTION))));
 		List<EmiIngredient> potionGrid = List.of(
 				EmiStack.EMPTY, moonRing, EmiStack.EMPTY,
 				apple, feedPotion, apple,

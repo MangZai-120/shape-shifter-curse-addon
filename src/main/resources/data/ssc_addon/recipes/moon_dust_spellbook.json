@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CSC",
+    "LBL",
+    "CLC"
+  ],
+  "key": {
+    "C": { "item": "shape-shifter-curse:moondust_crystal_shard" },
+    "S": { "item": "shape-shifter-curse:super_morphscale_core" },
+    "B": { "item": "shape-shifter-curse:book_of_shape_shifter" },
+    "L": { "item": "minecraft:leather" }
+  },
+  "result": {
+    "item": "ssc_addon:moon_dust_spellbook",
+    "count": 1
+  }
+}

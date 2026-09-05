@@ -56,6 +56,7 @@
                    "input.StunnedInputMixin",
                    "input.StunnedKeyBindingMixin",
                    "input.ViewRateLimitMixin",
+                   "input.SpellcastMouseScrollMixin",
                    "render.TrueInvisibilityArmorMixin",
                    "render.UpgradeAxolotlFirstPersonSpearMixin",
                    "render.UpgradeAxolotlThirdPersonSpearMixin",

@@ -39,6 +39,18 @@ public class SSCAddonClientConfig implements ConfigData {
 	@ConfigEntry.Gui.Excluded
 	public int cdSecondaryBarPosOffsetY = -21;
 
+	// ===== 月尘魔法书 HUD 整体位置（1-9 九宫格锚点 + X/Y 偏移，法力条/三槽/魔法名作为一个单元）=====
+	// 不在 GUI 直接展示（由 BarPositionEditorScreen 可视化编辑）。默认锚点 7=左下 + 偏移(16,-52) 还原原硬编码位置。
+	/** 月尘魔法书 HUD 锚点类型（1-9 九宫格），默认 7=左下。 */
+	@ConfigEntry.Gui.Excluded
+	public int spellbookHudPosType = 7;
+	/** 月尘魔法书 HUD X 偏移：相对锚点的额外平移。 */
+	@ConfigEntry.Gui.Excluded
+	public int spellbookHudPosOffsetX = 16;
+	/** 月尘魔法书 HUD Y 偏移：相对锚点的额外平移。 */
+	@ConfigEntry.Gui.Excluded
+	public int spellbookHudPosOffsetY = -52;
+
 	/**
 	 * 契灵 - 次要技能瞬移模式
 	 * RAYCAST: 直接朝着准星方向传送（按下立即传送，碰墙停止）

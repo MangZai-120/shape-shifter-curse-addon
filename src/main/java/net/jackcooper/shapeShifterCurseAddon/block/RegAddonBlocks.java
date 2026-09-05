@@ -94,6 +94,15 @@ public final class RegAddonBlocks {
 					.strength(2.0f)
 					.sounds(BlockSoundGroup.WOOD));
 
+	// 注魔台：给月尘魔法书充法力 + 升级（jackcooper）
+	public static final Block INFUSION_ALTAR = new InfusionAltarBlock(
+			AbstractBlock.Settings.create()
+					.mapColor(MapColor.PURPLE)
+					.strength(2.5f)
+					.sounds(BlockSoundGroup.AMETHYST_BLOCK)
+					.requiresTool()
+					.nonOpaque());
+
 	public static void init() {
 		register("web_membrane", WEB_MEMBRANE);
 		// 燃烧快、蔓延强（蛛丝易燃；数值对齐草 / 树叶级别）
@@ -104,6 +113,7 @@ public final class RegAddonBlocks {
 		register("energy_bottler", ENERGY_BOTTLER);
 		register("energy_converter", ENERGY_CONVERTER);
 		register("potion_storage_box", POTION_STORAGE_BOX);
+		register("infusion_altar", INFUSION_ALTAR);
 		// 创造储罐：带附魔光效的 BlockItem（无合成表无其它获取途径，仅创造物品栏可拿）
 		{
 			Identifier glintId = new Identifier(NAMESPACE, "creative_energy_tank");
@@ -124,6 +134,7 @@ public final class RegAddonBlocks {
 					entries.add(ENERGY_EXTRACTOR);
 					entries.add(ENERGY_STORAGE_TANK);
 					entries.add(ENERGY_BOTTLER);				entries.add(ENERGY_CONVERTER);					entries.add(POTION_STORAGE_BOX);
+					entries.add(INFUSION_ALTAR);
 					entries.add(CREATIVE_ENERGY_TANK);
 				});
 	}
@@ -145,6 +156,9 @@ public final class RegAddonBlocks {
 		net.minecraft.client.gui.screen.ingame.HandledScreens.register(
 				RegAddonBlockEntities.POTION_STORAGE_BOX_SH,
 				net.jackcooper.shapeShifterCurseAddon.client.screen.PotionStorageBoxScreen::new);
+		net.minecraft.client.gui.screen.ingame.HandledScreens.register(
+				RegAddonBlockEntities.INFUSION_ALTAR_SH,
+				net.jackcooper.shapeShifterCurseAddon.client.screen.InfusionAltarScreen::new);
 	}
 
 	private static void register(String path, Block block) {

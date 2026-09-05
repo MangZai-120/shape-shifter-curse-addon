@@ -1,0 +1,6 @@
+{
+  "size": 1,
+  "order": 100,
+  "icon": "ssc_addon:slot/spellbook",
+  "validators": ["curios:tag"]
+}
