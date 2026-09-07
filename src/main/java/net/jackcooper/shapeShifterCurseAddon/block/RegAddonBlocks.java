@@ -94,12 +94,21 @@ public final class RegAddonBlocks {
 					.strength(2.0f)
 					.sounds(BlockSoundGroup.WOOD));
 
-	// 注魔台：给月尘魔法书充法力 + 升级（jackcooper）
+	// 注魔台：给月尘魔法书充法力 + 升级 + 五角星装备法阵（jackcooper）
 	public static final Block INFUSION_ALTAR = new InfusionAltarBlock(
 			AbstractBlock.Settings.create()
 					.mapColor(MapColor.PURPLE)
 					.strength(2.5f)
 					.sounds(BlockSoundGroup.AMETHYST_BLOCK)
+					.requiresTool()
+					.nonOpaque());
+
+	// 法术研究台：法阵抄写 + 法术学习双页签（jackcooper）
+	public static final Block SPELL_RESEARCH_TABLE = new SpellResearchTableBlock(
+			AbstractBlock.Settings.create()
+					.mapColor(MapColor.BLUE)
+					.strength(2.5f)
+					.sounds(BlockSoundGroup.WOOD)
 					.requiresTool()
 					.nonOpaque());
 
@@ -114,6 +123,7 @@ public final class RegAddonBlocks {
 		register("energy_converter", ENERGY_CONVERTER);
 		register("potion_storage_box", POTION_STORAGE_BOX);
 		register("infusion_altar", INFUSION_ALTAR);
+		register("spell_research_table", SPELL_RESEARCH_TABLE);
 		// 创造储罐：带附魔光效的 BlockItem（无合成表无其它获取途径，仅创造物品栏可拿）
 		{
 			Identifier glintId = new Identifier(NAMESPACE, "creative_energy_tank");
@@ -135,6 +145,7 @@ public final class RegAddonBlocks {
 					entries.add(ENERGY_STORAGE_TANK);
 					entries.add(ENERGY_BOTTLER);				entries.add(ENERGY_CONVERTER);					entries.add(POTION_STORAGE_BOX);
 					entries.add(INFUSION_ALTAR);
+					entries.add(SPELL_RESEARCH_TABLE);
 					entries.add(CREATIVE_ENERGY_TANK);
 				});
 	}

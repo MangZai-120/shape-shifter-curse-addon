@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SBS",
+    "BPB",
+    "SBS"
+  ],
+  "key": {
+    "S": { "item": "minecraft:smooth_stone" },
+    "B": { "item": "minecraft:book" },
+    "P": { "item": "shape-shifter-curse:moondust_crystal_shard" }
+  },
+  "result": {
+    "item": "ssc_addon:spell_research_table",
+    "count": 1
+  }
+}

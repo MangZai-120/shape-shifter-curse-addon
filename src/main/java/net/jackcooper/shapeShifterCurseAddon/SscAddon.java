@@ -131,6 +131,17 @@ public class SscAddon implements ModInitializer {
 	public static final Item MOON_DUST_SPELLBOOK = new MoonDustSpellbookItem(new Item.Settings().maxCount(1));
 	// 魔法卷轴（通用物品，NBT 绑定具体魔法与稀有度）
 	public static final Item MAGIC_SCROLL = new MagicScrollItem(new Item.Settings().maxCount(16));
+	// 增强法阵（NBT 绑定系别+等级；右键记录魔法进玩家数据，jackcooper）
+	public static final Item FORMATION = new net.jackcooper.shapeShifterCurseAddon.item.FormationItem(new Item.Settings().maxCount(16));
+	// 空白法阵纸（研究台抄写耗材）
+	public static final Item BLANK_FORMATION_PAPER = new net.jackcooper.shapeShifterCurseAddon.item.BlankFormationPaperItem(new Item.Settings().maxCount(16));
+	// 法阵油墨三型：普通基底 / 冰系 / 火系（抄写对应系法阵耗材）
+	public static final Item FORMATION_INK_NORMAL = new net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem(
+			new Item.Settings().maxCount(16), net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem.Type.NORMAL);
+	public static final Item FORMATION_INK_ICE = new net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem(
+			new Item.Settings().maxCount(16), net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem.Type.ICE);
+	public static final Item FORMATION_INK_FIRE = new net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem(
+			new Item.Settings().maxCount(16), net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem.Type.FIRE);
 	public static final EntityType<FrostBallEntity> FROST_BALL_ENTITY =
 			registerEntity("frost_ball", SpawnGroup.MISC, FrostBallEntity::new, 0.25f, 0.25f, 64, 10);
 	// 月尘魔法·冰锥投射物（独立于雪狐 SP 冰球，供魔法书「冰锥」魔法使用，jackcooper）
@@ -288,8 +299,16 @@ public class SscAddon implements ModInitializer {
 						for (int lv = 1; lv <= net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.MAX_SPELL_LEVEL; lv++) {
 							entries.add(net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.create(spell.getId().getPath(), lv));
 						}
+						}					// 增强法阵全套（火/冰两系×5 级，供创造测试）
+					for (net.jackcooper.shapeShifterCurseAddon.spell.FormationElement element : net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.values()) {
+						for (int lv = 1; lv <= net.jackcooper.shapeShifterCurseAddon.spell.FormationData.MAX_FORMATION_LEVEL; lv++) {
+							entries.add(net.jackcooper.shapeShifterCurseAddon.spell.FormationData.create(element, lv));
 						}
-						entries.add(EVOLUTION_STONE);
+					}
+					entries.add(FORMATION_INK_NORMAL);
+					entries.add(FORMATION_INK_ICE);
+					entries.add(FORMATION_INK_FIRE);
+					entries.add(BLANK_FORMATION_PAPER);						entries.add(EVOLUTION_STONE);
 						entries.add(PSIONIC_ORB);
 						entries.add(LIFESAVING_CAT_TAIL);
 						entries.add(PHANTOM_BELL);
@@ -442,6 +461,11 @@ public class SscAddon implements ModInitializer {
 		Registry.register(Registries.SCREEN_HANDLER, new Identifier("ssc_addon", "potion_bag"), POTION_BAG_SCREEN_HANDLER);
 		registerItem("moon_dust_spellbook", MOON_DUST_SPELLBOOK);
 		registerItem("magic_scroll", MAGIC_SCROLL);
+		registerItem("formation", FORMATION);
+		registerItem("blank_formation_paper", BLANK_FORMATION_PAPER);
+		registerItem("formation_ink_normal", FORMATION_INK_NORMAL);
+		registerItem("formation_ink_ice", FORMATION_INK_ICE);
+		registerItem("formation_ink_fire", FORMATION_INK_FIRE);
 		Registry.register(Registries.SCREEN_HANDLER, new Identifier("ssc_addon", "spellbook"), SPELLBOOK_SCREEN_HANDLER);
 		registerItem("evolution_stone", EVOLUTION_STONE);
 		registerItem("psionic_orb", PSIONIC_ORB);
@@ -550,6 +574,7 @@ public class SscAddon implements ModInitializer {
 		net.jackcooper.shapeShifterCurseAddon.item.SeaCrystalPendantItem.registerLootTable();
 		net.jackcooper.shapeShifterCurseAddon.loot.EvolutionItemsLoot.register();
 		net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.register();
+		net.jackcooper.shapeShifterCurseAddon.loot.FormationLoot.register();
 	}
 
 	private void registerCommands() {

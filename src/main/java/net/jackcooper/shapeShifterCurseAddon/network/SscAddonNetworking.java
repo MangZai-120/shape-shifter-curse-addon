@@ -107,6 +107,10 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_SPOOK_GHOST = new Identifier("my_addon", "spook_ghost");
 	/** C2S：注魔台 - 点击「升级」按钮请求升级魔法书。无 payload，服务端重验条件后扣材料。 */
 	public static final Identifier PACKET_INFUSION_ALTAR_UPGRADE = new Identifier("my_addon", "infusion_altar_upgrade");
+	/** C2S：法术研究台 - 抄写法阵。payload: String elementId + varint level。服务端重验：已学习+纸+对应系墨×等级。 */
+	public static final Identifier PACKET_FORMATION_SCRIBE = new Identifier("my_addon", "formation_scribe");
+	/** C2S：法术研究台 - 学习法阵。payload: String elementId + varint level。服务端重验：已记录+月尘够。 */
+	public static final Identifier PACKET_FORMATION_LEARN = new Identifier("my_addon", "formation_learn");
 
 	/** C2S：进化美西螈主技能「投掷水矛」按键。无 payload。 */
 	public static final Identifier PACKET_UPGRADE_AXOLOTL_SPEAR = new Identifier("my_addon", "upgrade_axolotl_spear");
@@ -421,6 +425,26 @@ public class SscAddonNetworking {
 						&& sh.getInventory() instanceof InfusionAltarBlockEntity be) {
 					be.tryUpgrade(player);
 				}
+			});
+		});
+
+		// SSCA 法术研究台 - 抄写法阵（服务端权威重验：已学习 + 纸 + 对应系墨×等级）
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_FORMATION_SCRIBE, (server, player, handler, buf, responseSender) -> {
+			String elementId = buf.readString(64);
+			int level = buf.readVarInt();
+			server.execute(() -> {
+				if (isRateLimited(player)) return;
+				net.jackcooper.shapeShifterCurseAddon.spell.ResearchTableManager.scribe(player, elementId, level);
+			});
+		});
+
+		// SSCA 法术研究台 - 学习法阵（服务端权威重验：已记录 + 月尘够；discount 预留小游戏接口当前恒 0）
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_FORMATION_LEARN, (server, player, handler, buf, responseSender) -> {
+			String elementId = buf.readString(64);
+			int level = buf.readVarInt();
+			server.execute(() -> {
+				if (isRateLimited(player)) return;
+				net.jackcooper.shapeShifterCurseAddon.spell.ResearchTableManager.learn(player, elementId, level, 0);
 			});
 		});
 

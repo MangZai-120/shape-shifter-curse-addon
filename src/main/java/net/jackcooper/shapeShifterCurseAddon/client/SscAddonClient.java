@@ -496,6 +496,19 @@ public class SscAddonClient implements ClientModInitializer {
 
 		HandledScreens.register(SscAddon.POTION_BAG_SCREEN_HANDLER, PotionBagScreen::new);
 		HandledScreens.register(SscAddon.SPELLBOOK_SCREEN_HANDLER, net.jackcooper.shapeShifterCurseAddon.client.screen.SpellbookScreen::new);
+		// 法术研究台界面（双页签：抄写/学习）
+		HandledScreens.register(net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlockEntities.SPELL_RESEARCH_TABLE_SH,
+				net.jackcooper.shapeShifterCurseAddon.client.screen.SpellResearchTableScreen::new);
+
+		// 增强法阵：按系别染色（火橙红 / 冰青蓝），名称色在 FormationItem 内已处理
+		ColorProviderRegistry.ITEM.register(
+				(stack, tintIndex) -> {
+					net.jackcooper.shapeShifterCurseAddon.spell.FormationElement element =
+							net.jackcooper.shapeShifterCurseAddon.spell.FormationData.getElement(stack);
+					return element == null ? 0xFFFFFF : element.color;
+				},
+				SscAddon.FORMATION
+		);
 
 		// SSCA 美西螈装死 - 提前结束检测器
 		PlayDeadEndClient.register();

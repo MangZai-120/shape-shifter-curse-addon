@@ -43,16 +43,21 @@ public final class SpellCastManager {
 		if (SpellbookData.isOnCooldown(book, slot, world)) {
 			return;
 		}
-		int manaCost = spell.getManaCost();
+		// 法阵加成：耗蓝倍率（全魔法每级 +10%）
+		int manaCost = Math.round(spell.getManaCost() * FormationData.sumManaCostMultiplier(book));
 		if (SpellbookData.getMana(book) < manaCost) {
 			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_mana").formatted(Formatting.RED), true);
 			return;
 		}
 
+		boolean spellIsIce = spell.isIceSpell();
 		float ratio = ScrollData.getDurabilityRatio(scroll);   // 1=满次数, 越低惩罚越大
 		int level = ScrollData.getLevel(scroll);              // 魔法等级（1-5，开箱固定）
-		float damage = spell.getBaseDamage() * ratio * spell.getDamageMultiplier(level);
-		int cd = Math.round(spell.getBaseCooldownTicks() * (2.0f - ratio) * spell.getCooldownMultiplier(level));
+		// 法阵加成：同系伤 +12%/级、对立系伤 -12%/级；同系 cd -5%/级
+		float damage = spell.getBaseDamage() * ratio * spell.getDamageMultiplier(level)
+				* FormationData.sumDamageMultiplier(book, spellIsIce);
+		int cd = Math.round(spell.getBaseCooldownTicks() * (2.0f - ratio) * spell.getCooldownMultiplier(level)
+				* FormationData.sumCooldownMultiplier(book, spellIsIce));
 
 		SpellbookData.consumeMana(book, manaCost);
 		if (spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.FrostSpikeSpell frostSpike) {

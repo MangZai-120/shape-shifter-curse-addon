@@ -26,6 +26,14 @@ public final class SpellbookData {
 	public static final String NBT_ITEMS = "Items";
 	public static final String NBT_COOLDOWNS = "Cooldowns";
 	public static final String NBT_SELECTED = "Selected";
+	/** 增强法阵列表（NbtList，结构同 Items：{Slot:byte, ...stack}）。 */
+	public static final String NBT_FORMATIONS = "Formations";
+
+	/** 五角星法阵槽最大数（一级书 1 / 二级 3 / 三级 5）。 */
+	public static final int MAX_FORMATION_SLOTS = 5;
+
+	/** 各等级可装备法阵数（index = level-1）。 */
+	private static final int[] LEVEL_FORMATION_SLOTS = {1, 3, 5};
 
 	private SpellbookData() {
 	}
@@ -42,6 +50,16 @@ public final class SpellbookData {
 
 	public static int getSlotCount(ItemStack book) {
 		return LEVEL_SLOTS[getLevel(book) - 1];
+	}
+
+	/** 当前书等级可装备的法阵数（注魔台五角星解锁角数）。 */
+	public static int getFormationSlotCount(ItemStack book) {
+		return LEVEL_FORMATION_SLOTS[getLevel(book) - 1];
+	}
+
+	/** 指定法阵槽（五角星角位）是否已解锁。 */
+	public static boolean isFormationSlotUnlocked(ItemStack book, int slot) {
+		return slot >= 0 && slot < getFormationSlotCount(book);
 	}
 
 	public static int getMaxMana(ItemStack book) {
@@ -217,5 +235,58 @@ public final class SpellbookData {
 
 	public static long getCooldownRemaining(ItemStack book, int slot, World world) {
 		return Math.max(0L, getCooldownEnd(book, slot) - world.getTime());
+	}
+
+	// ---- 增强法阵槽读写（五角星，与 Items 同构的 NbtList） ----
+
+	/** 读取书内全部法阵（跳过无效条目；无数据返回空列表）。 */
+	public static java.util.List<ItemStack> getFormations(ItemStack book) {
+		java.util.List<ItemStack> result = new java.util.ArrayList<>();
+		NbtCompound nbt = book.getNbt();
+		if (nbt == null || !nbt.contains(NBT_FORMATIONS, 9)) {
+			return result;
+		}
+		NbtList list = nbt.getList(NBT_FORMATIONS, 10);
+		for (int i = 0; i < list.size(); ++i) {
+			ItemStack stack = ItemStack.fromNbt(list.getCompound(i));
+			if (!stack.isEmpty()) {
+				result.add(stack);
+			}
+		}
+		return result;
+	}
+
+	/** 读取指定法阵槽（空返回 EMPTY）。 */
+	public static ItemStack getFormation(ItemStack book, int slot) {
+		NbtCompound nbt = book.getNbt();
+		if (nbt == null || !nbt.contains(NBT_FORMATIONS, 9)) {
+			return ItemStack.EMPTY;
+		}
+		NbtList list = nbt.getList(NBT_FORMATIONS, 10);
+		for (int i = 0; i < list.size(); ++i) {
+			NbtCompound tag = list.getCompound(i);
+			if ((tag.getByte("Slot") & 255) == slot) {
+				return ItemStack.fromNbt(tag);
+			}
+		}
+		return ItemStack.EMPTY;
+	}
+
+	/** 写入指定法阵槽（空 stack = 移除该槽）。 */
+	public static void setFormation(ItemStack book, int slot, ItemStack formation) {
+		NbtCompound nbt = book.getOrCreateNbt();
+		NbtList list = nbt.contains(NBT_FORMATIONS, 9) ? nbt.getList(NBT_FORMATIONS, 10) : new NbtList();
+		for (int i = list.size() - 1; i >= 0; --i) {
+			if ((list.getCompound(i).getByte("Slot") & 255) == slot) {
+				list.remove(i);
+			}
+		}
+		if (!formation.isEmpty()) {
+			NbtCompound tag = new NbtCompound();
+			tag.putByte("Slot", (byte) slot);
+			formation.writeNbt(tag);
+			list.add(tag);
+		}
+		nbt.put(NBT_FORMATIONS, list);
 	}
 }
