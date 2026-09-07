@@ -1,7 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin.item;
 
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBase;
@@ -16,11 +15,13 @@ import net.jackcooper.shapeShifterCurseAddon.compat.ssc192.Compat1_9_2;
 @Mixin(TransformRelatedItems.class)
 public class TransformRelatedItemsMixin {
 
-	// 原版 1.10.0 起 OnUseCure / OnUseCureFinal 等方法签名新增 @Nullable ItemStack stack 参数，
-	// @Inject handler 必须同步加 ItemStack 形参，否则 mixin 应用失败导致 TransformRelatedItems 整类崩溃
-	// （表现为吃催化剂/抑制剂即崩 Catalyst.finishUsing -> TransformRelatedItems）。
+	// 适配说明：SSC 1.9.2 官方 jar 中 OnUseCure / OnUseCureFinal 均为 (PlayerEntity) 单参数
+	// （ItemStack 参数是 1.10.0 起才加入的，官方提交 f1fb7fea）。本分支固定面向 1.9.2，
+	// handler 必须省略 ItemStack 形参；否则 mixin 应用失败导致 TransformRelatedItems 整类崩溃
+	// （表现为吃任何食物即崩 ItemStack.finishUsing -> SSC mixin -> 类加载失败）。
+	// （main 分支面向 1.10.0+，handler 保留 ItemStack 形参，两分支互不影响。）
 	@Inject(method = "OnUseCure", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
-	private static void onUseCure(PlayerEntity player, ItemStack stack, CallbackInfo ci) {
+	private static void onUseCure(PlayerEntity player, CallbackInfo ci) {
 		PlayerFormBase currentForm = Compat1_9_2.nowForm(player);
 
 		// Block suppressor usage for SP form (special_form flag)
@@ -31,7 +32,7 @@ public class TransformRelatedItemsMixin {
 	}
 
 	@Inject(method = "OnUseCureFinal", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
-	private static void onUseCureFinal(PlayerEntity player, ItemStack stack, CallbackInfo ci) {
+	private static void onUseCureFinal(PlayerEntity player, CallbackInfo ci) {
 		PlayerFormBase currentForm = Compat1_9_2.nowForm(player);
 
 		// Block suppressor usage for SP form (special_form flag)
