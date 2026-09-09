@@ -1,9 +1,7 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "ssc_addon:item/magic_scroll"
-  },
-  "overrides": [
-    { "predicate": { "ssc_addon:ice": 1 }, "model": "ssc_addon:item/magic_scroll_ice" }
-  ]
+    "layer0": "ssc_addon:item/scroll_mask_base",
+    "layer1": "ssc_addon:item/scroll_mask_overlay"
+  }
 }

@@ -24,7 +24,6 @@ import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.BatDesmodusBloodThirst;
 import net.jackcooper.shapeShifterCurseAddon.ability.InfectionSporeManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.NineLivesManager;
-import net.jackcooper.shapeShifterCurseAddon.ability.NovaSkillManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpTeleportAttack;
 import net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.WindSpiritClawManager;
@@ -74,27 +73,7 @@ public abstract class SscAddonLivingEntityMixin {
 		}
 	}
 
-	/**
-	 * 跳蛛「跳杀」跳跃期免疫：跳杀腾空期间，免疫「已锁定目标」对自己造成的伤害
-	 * （扑猎途中不被猎物反打下来）。仅锁定目标免，其它来源照常。
-	 */
-	@Inject(method = "damage", at = @At("HEAD"), cancellable = true)
-	private void ssca$jumpKillLeapingImmunity(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
-		if (self$isJumpKillImmune(source)) {
-			cir.setReturnValue(false);
-		}
-	}
-
-	@org.spongepowered.asm.mixin.Unique
-	private boolean self$isJumpKillImmune(DamageSource source) {
-		LivingEntity self = (LivingEntity) (Object) this;
-		if (self.getWorld().isClient()) return false;
-		if (!(self instanceof ServerPlayerEntity sp)) return false;
-		if (source == null) return false;
-		Entity attacker = source.getAttacker();
-		if (attacker == null) return false;
-		return net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.isLeapingAgainst(sp, attacker);
-	}
+	// 跳蛛「跳杀」腾空期免疫（纯否决）已迁至 SscaDamageVetoHandler（ServerLivingEntityEvents.ALLOW_DAMAGE）。
 
 	// ============== 跳蛛 - 毒免疫（自控，吃流食囊例外） ==============
 	/** 跳蛛正在吃流食囊的放行标记：吃茧期间放行 minecraft:poison（其余时刻免疫）。服务端单线程 eatFood 期间生效。 */
@@ -322,17 +301,10 @@ public abstract class SscAddonLivingEntityMixin {
 	 */
 	@Inject(method = "damage", at = @At("HEAD"), cancellable = true)
 	private void ssc_addon$onUndeadDamaged(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {		LivingEntity self = (LivingEntity) (Object) this;
-		// 朔望九命：被动死亡触发复活 + 复活后 1s 无敌 + 攻击/受伤标记战斗
+		// 朔望九命：复活无敌与概率闪避（纯否决）已迁至 SscaDamageVetoHandler（ALLOW_DAMAGE）；
+		// 此处仅保留：战斗标记、致死触发复活（须在血量结算前发生，事件时机不等价）+ 复活补击退。
 		if (!self.getWorld().isClient()) {
 			if (self instanceof ServerPlayerEntity nova && FormUtils.isForm(nova, FormIdentifiers.OCELOT_NOVA)) {
-				if (NineLivesManager.isInvulnerable(nova)) {
-					cir.setReturnValue(false);
-					return;
-				}
-				if (NovaSkillManager.rollDodge(nova)) {
-					cir.setReturnValue(false);
-					return; // 闪避：概率免疫本次伤害（不受伤、不击退）
-				}
 				NineLivesManager.markCombat(nova);
 				if (!source.isOf(DamageTypes.OUT_OF_WORLD) && amount >= nova.getHealth() + nova.getAbsorptionAmount()) {
 					if (NineLivesManager.tryRevive(nova)) {

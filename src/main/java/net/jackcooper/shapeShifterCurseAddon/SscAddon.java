@@ -403,10 +403,16 @@ public class SscAddon implements ModInitializer {
 		AddonFormAdvancementHandler.register();
 		VillagerTradeGuardHandler.register();
 		FluorescentDodgeHandler.register();
+		// SSCA 纯否决型伤害分支（跳蛛跳杀腾空免疫 / 朔望复活无敌与闪避；由 SscAddonLivingEntityMixin 迁出）
+		net.jackcooper.shapeShifterCurseAddon.event.SscaDamageVetoHandler.register();
 		StorySleepTimeGuardHandler.register();
 		// SSCA 进化路线数据驱动加载器（datapack reload，扫描 data/<ns>/ssca_evolution/routes/*.json）
 		ResourceManagerHelper.get(ResourceType.SERVER_DATA)
 				.registerReloadListener(EvolutionRegistry.INSTANCE);
+		// SSCA 法术数值配置加载器（datapack reload，扫描 data/ssc_addon/spells/*.json，
+		// 仿铁魔法「行为类 + JSON 数值」分离；缺文件回退 Java fallback 数值）
+		ResourceManagerHelper.get(ResourceType.SERVER_DATA)
+				.registerReloadListener(net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE);
 	}
 
 

@@ -1,6 +1,7 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "ssc_addon:item/formation"
+    "layer0": "ssc_addon:item/formation_mask_base",
+    "layer1": "ssc_addon:item/formation_mask_overlay"
   }
 }

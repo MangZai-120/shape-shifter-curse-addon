@@ -42,4 +42,16 @@ public enum SpellRarity {
 	public String getTranslationKey() {
 		return "rarity.ssc_addon." + name().toLowerCase();
 	}
+
+	/** 按 JSON 品质 id（white/green/blue/purple/orange）解析；非法 id 回退白色。 */
+	public static SpellRarity byId(String id) {
+		if (id != null) {
+			for (SpellRarity r : values()) {
+				if (r.name().equalsIgnoreCase(id)) {
+					return r;
+				}
+			}
+		}
+		return WHITE;
+	}
 }

@@ -196,6 +196,21 @@ public class SscAddonClient implements ClientModInitializer {
 					}
 					client.execute(() -> net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.INSTANCE.applyClientSync(raw));
 				});
+		// 注册「法术数值配置同步」接收器：服务端把 spells JSON 同步过来（多人环境客户端无 datapack），
+		// 保证卷轴 tooltip / HUD 数值与服务端施法判定一致。
+		ClientPlayNetworking.registerGlobalReceiver(
+				net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC,
+				(client, handler, buf, responseSender) -> {
+					int count = buf.readInt();
+					if (count < 0 || count > 1000) return; // 防恶意服务端 OOM
+					java.util.Map<String, String> raw = new java.util.LinkedHashMap<>();
+					for (int i = 0; i < count; i++) {
+						String spellPath = buf.readString(256);
+						String json = buf.readString(2000000);
+						raw.put(spellPath, json);
+					}
+					client.execute(() -> net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.applyClientSync(raw));
+				});
 		// 注册「广播所有玩家形态」接收器：服务端把在场玩家的 formID + 皮肤数据直接广播过来，
 		// 客机按 UUID 直接写入其它玩家的 nowForm/nowFormID 与 PlayerSkinComponent（颜色/是否启用形态颜色等），
 		// 绕过 CCA 同步的不确定性，修复刚进游戏看其它玩家是「白色人类模型」（enableFormColor 未同步=渲染原版人类模型）。
@@ -469,13 +484,36 @@ public class SscAddonClient implements ClientModInitializer {
 		ModelPredicateProviderRegistry.register(SscAddon.INFINITE_ENERGY_POTION_SPLASH, new Identifier("ssc_addon", "empty"), infiniteEnergyEmptyPredicate);
 		ModelPredicateProviderRegistry.register(SscAddon.INFINITE_ENERGY_POTION_LINGERING, new Identifier("ssc_addon", "empty"), infiniteEnergyEmptyPredicate);
 
-		// 魔法卷轴：ice 谓词（1=冰系魔法卷轴，切换为冰锥卷轴贴图；HUD 魔法图标不受影响，仍用 spell_icons）
-		ModelPredicateProviderRegistry.register(SscAddon.MAGIC_SCROLL, new Identifier("ssc_addon", "ice"),
-				(stack, world, entity, seed) -> {
+		// 魔法卷轴 + 增强法阵：怪蛋式双层染色（layer0 纸体固定不染，layer1 图案按系别色染）。
+		// 系别来源：法阵读 NBT Element；卷轴读 spells JSON 的 element 字段（无系别染白 → 灰白图案空白态）。
+		java.util.function.BiFunction<net.jackcooper.shapeShifterCurseAddon.spell.FormationElement, Integer, Integer> tintOf =
+				(element, fallback) -> element == null ? fallback : element.color;
+		ColorProviderRegistry.ITEM.register(
+				(stack, tintIndex) -> {
+					if (tintIndex != 1) {
+						return 0xFFFFFF; // layer0 纸体不染色
+					}
+					return tintOf.apply(net.jackcooper.shapeShifterCurseAddon.spell.FormationData.getElement(stack), 0xB8B8B8);
+				},
+				SscAddon.FORMATION
+		);
+		ColorProviderRegistry.ITEM.register(
+				(stack, tintIndex) -> {
+					if (tintIndex != 1) {
+						return 0xFFFFFF; // layer0 纸体不染色
+					}
 					net.jackcooper.shapeShifterCurseAddon.spell.Spell s =
 							net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getSpell(stack);
-					return s != null && s.isIceSpell() ? 1.0F : 0.0F;
-				});
+					if (s == null) {
+						return 0xB8B8B8; // 空白卷轴：灰白图案
+					}
+					String element = s.getConfig().element;
+					net.jackcooper.shapeShifterCurseAddon.spell.FormationElement e =
+							net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.byId(element);
+					return tintOf.apply(e, 0xB8B8B8); // 无系别魔法也走灰白
+				},
+				SscAddon.MAGIC_SCROLL
+		);
 
 		// SP技能键位现在由Apoli框架自动处理，无需手动轮询
 		// 如需添加新的非Apoli键位检测，可在此处注册
@@ -499,16 +537,6 @@ public class SscAddonClient implements ClientModInitializer {
 		// 法术研究台界面（双页签：抄写/学习）
 		HandledScreens.register(net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlockEntities.SPELL_RESEARCH_TABLE_SH,
 				net.jackcooper.shapeShifterCurseAddon.client.screen.SpellResearchTableScreen::new);
-
-		// 增强法阵：按系别染色（火橙红 / 冰青蓝），名称色在 FormationItem 内已处理
-		ColorProviderRegistry.ITEM.register(
-				(stack, tintIndex) -> {
-					net.jackcooper.shapeShifterCurseAddon.spell.FormationElement element =
-							net.jackcooper.shapeShifterCurseAddon.spell.FormationData.getElement(stack);
-					return element == null ? 0xFFFFFF : element.color;
-				},
-				SscAddon.FORMATION
-		);
 
 		// SSCA 美西螈装死 - 提前结束检测器
 		PlayDeadEndClient.register();

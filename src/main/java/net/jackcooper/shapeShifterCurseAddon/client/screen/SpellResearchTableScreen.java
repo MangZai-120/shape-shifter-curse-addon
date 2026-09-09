@@ -1,8 +1,11 @@
 package net.jackcooper.shapeShifterCurseAddon.client.screen;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
+import net.minecraft.client.item.TooltipContext;
 import net.jackcooper.shapeShifterCurseAddon.screen.SpellResearchTableScreenHandler;
+import net.minecraft.item.ItemStack;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationData;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationElement;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationKnowledgeComponent;
@@ -36,8 +39,6 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 	private static final Identifier FRAME = new Identifier("ssc_addon", "textures/gui/formation_frame.png");
 	/** 滚动滑块（8×13，与轨道等宽）。 */
 	private static final Identifier SCROLL_THUMB = new Identifier("ssc_addon", "textures/gui/scroll_thumb.png");
-	/** 法阵物品图标。 */
-	private static final Identifier FORMATION_ICON = new Identifier("ssc_addon", "textures/item/formation.png");
 
 	/** 当前页签：0=法阵抄写，1=法术学习。 */
 	private int tab = 0;
@@ -340,9 +341,12 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 				ctx.fill(cx, cy, cx + 1, cy + 20, 0xFFFFFFFF);
 				ctx.fill(cx + 19, cy, cx + 20, cy + 20, 0xFFFFFFFF);
 			}
-			// 显示包框（20×20）+ 法阵图标（16×16 居中）
+			// 显示包框（20×20）+ 法阵物品本体（drawItem：与背包图标像素一致，双层掩码+系别染色自动生效）
 			ctx.drawTexture(FRAME, cx, cy, 0, 0, 20, 20, 20, 20);
-			ctx.drawTexture(FORMATION_ICON, cx + 2, cy + 2, 0, 0, 16, 16, 16, 16);
+			FormationElement element = FormationElement.byId(entries[index].id);
+			if (element != null) {
+				ctx.drawItem(FormationData.create(element, entries[index].level), cx + 2, cy + 2);
+			}
 			// 等级角标（包框右下角，品质色）
 			int lv = entries[index].level;
 			ctx.drawText(this.textRenderer, String.valueOf(lv), cx + 14, cy + 12,
@@ -357,6 +361,26 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 			int dust = learnDustCost(entries[selected].level);
 			ctx.drawText(this.textRenderer, Text.translatable("gui.ssc_addon.research.learn_cost", dust),
 					this.x + 14, this.y + 104, 0x7070C0, false);
+		}
+		// 抄写页选中项耗材提示：需纸×1 + 对应系油墨×等级；当前墨槽放的墨系别不符时红字警示
+		if (this.tab == 0 && selected >= 0 && selected < entries.length) {
+			FormationElement selElement = FormationElement.byId(entries[selected].id);
+			int lv = entries[selected].level;
+			boolean inkMismatch = false;
+			if (this.handler != null && this.handler.getInventory() != null) {
+				ItemStack inkStack = this.handler.getInventory().getStack(1);
+				if (!inkStack.isEmpty() && inkStack.getItem() instanceof FormationInkItem ink
+						&& ink.getType() != FormationInkItem.Type.NORMAL && ink.getType().element != selElement) {
+					inkMismatch = true;
+				}
+			}
+			int color = inkMismatch ? 0xFF5555 : 0x7070C0;
+			ctx.drawText(this.textRenderer, Text.translatable("gui.ssc_addon.research.scribe_cost",
+					Text.translatable(selElement.getNameKey()), lv), this.x + 14, this.y + 104, color, false);
+			if (inkMismatch) {
+				ctx.drawText(this.textRenderer, Text.translatable("message.ssc_addon.research.ink_mismatch",
+						Text.translatable(selElement.getNameKey())), this.x + 14, this.y + 114, 0xFF5555, false);
+			}
 		}
 	}
 
@@ -386,5 +410,31 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 			updateThumbDrag(mouseY);
 		}
 		super.render(ctx, mouseX, mouseY, delta);
+		// 悬停列表条目：显示与背包悬停完全一致的物品属性框（名称+数值+提示）
+		int hover = hoveredEntryIndex(mouseX, mouseY);
+		if (hover >= 0 && this.client != null && this.client.player != null) {
+			Entry[] entries = currentEntries();
+			FormationElement element = FormationElement.byId(entries[hover].id);
+			if (element != null) {
+				ItemStack stack = FormationData.create(element, entries[hover].level);
+				TooltipContext tipType = this.client.options.advancedItemTooltips
+						? TooltipContext.ADVANCED : TooltipContext.BASIC;
+				ctx.drawTooltip(this.textRenderer, stack.getTooltip(this.client.player, tipType), mouseX, mouseY);
+			}
+		}
+	}
+
+	/** 鼠标悬停命中的列表条目索引（-1 = 未命中；与 mouseClicked 选中判定同一套几何）。 */
+	private int hoveredEntryIndex(int mouseX, int mouseY) {
+		int px = mouseX - this.x;
+		int py = mouseY - this.y;
+		if (!inGridArea(px, py)) {
+			return -1;
+		}
+		int col = (px - gridOriginX()) / CELL;
+		int row = (py - gridOriginY()) / CELL;
+		int index = (currentScroll() + row) * CELLS_PER_ROW + col;
+		Entry[] entries = currentEntries();
+		return index >= 0 && index < entries.length ? index : -1;
 	}
 }

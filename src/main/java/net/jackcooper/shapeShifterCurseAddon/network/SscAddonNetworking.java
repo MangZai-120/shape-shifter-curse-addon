@@ -150,6 +150,9 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_BROADCAST_FORMS = new Identifier("my_addon", "broadcast_forms");
 	/** S2C：把所有 SSCA 进化路线定义（JSON）同步给客户端，供进化树 UI 渲染。payload: int count + count*(routeId + rawJson) */
 	public static final Identifier PACKET_EVO_ROUTES_SYNC = new Identifier("my_addon", "evo_routes_sync");
+	/** S2C：把服务端的法术数值配置（JSON）同步给客机（多人环境客户端无 datapack 数据，tooltip/HUD 数值需一致）。
+	 *  payload: int count + count*(spellPath + rawJson) */
+	public static final Identifier PACKET_SPELL_CONFIG_SYNC = new Identifier("my_addon", "spell_config_sync");
 	/** S2C：灵能宝珠长按成功后，让客户端打开「转职选择形态」界面。无 payload。 */
 	public static final Identifier PACKET_OPEN_JOB_CHANGE = new Identifier("my_addon", "open_job_change");
 	/** C2S：玩家在转职界面选定目标进化形态并确认。payload: String formId */
@@ -644,6 +647,16 @@ public class SscAddonNetworking {
 					routesOut.writeString(e.getValue(), 2000000);
 				}
 				ServerPlayNetworking.send(player, PACKET_EVO_ROUTES_SYNC, routesOut);
+				// 同步法术数值配置（卷轴 tooltip / HUD 显示的数值须与服务端施法判定一致）
+				net.minecraft.network.PacketByteBuf spellsOut = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+				java.util.Map<String, String> rawSpells =
+						net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.getRawJson();
+				spellsOut.writeInt(rawSpells.size());
+				for (java.util.Map.Entry<String, String> e : rawSpells.entrySet()) {
+					spellsOut.writeString(e.getKey(), 256);
+					spellsOut.writeString(e.getValue(), 2000000);
+				}
+				ServerPlayNetworking.send(player, PACKET_SPELL_CONFIG_SYNC, spellsOut);
 			});
 		});
 	}
