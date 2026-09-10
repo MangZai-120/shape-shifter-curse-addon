@@ -347,10 +347,15 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 			if (element != null) {
 				ctx.drawItem(FormationData.create(element, entries[index].level), cx + 2, cy + 2);
 			}
-			// 等级角标（包框右下角，品质色）
+			// 等级角标（包框右下角，品质色）。drawItem 内部在 z=150 渲染物品，
+			// 直接 drawText 画在 z=0 会被物品片元深度遮挡（角标被卷轴材质盖住）。
+			// 照原版 drawItemInSlot 画数量数字的做法：push + translate z=200 让数字浮在物品之上，画完 pop 复位。
 			int lv = entries[index].level;
+			ctx.getMatrices().push();
+			ctx.getMatrices().translate(0.0F, 0.0F, 200.0F);
 			ctx.drawText(this.textRenderer, String.valueOf(lv), cx + 14, cy + 12,
 					0xFF000000 | FormationData.getRarity(lv).color.getColorValue(), false);
+			ctx.getMatrices().pop();
 		}
 		// 滚动滑块（按 thumbY 渲染；拖拽限位在 y6~53，滚轮经 syncThumbFromScroll 同步）
 		if (entries.length > 0) {

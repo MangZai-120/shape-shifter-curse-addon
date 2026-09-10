@@ -60,11 +60,8 @@ public final class SpellCastManager {
 				* FormationData.sumCooldownMultiplier(book, spellIsIce));
 
 		SpellbookData.consumeMana(book, manaCost);
-		if (spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.FrostSpikeSpell frostSpike) {
-			frostSpike.cast(player, damage, false, level); // 冰锥：速度与投射物外观也按等级缩放
-		} else {
-			spell.cast(player, damage, false);
-		}
+		// 统一四参入口：法术内部自行决定是否按等级缩放速度/外观/范围（无 instanceof 特判）
+		spell.cast(player, damage, false, level);
 		SpellbookData.setCooldownEnd(book, slot, world.getTime() + cd);
 		SpellbookData.addExp(book, 1);
 	}

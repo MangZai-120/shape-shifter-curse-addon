@@ -1,0 +1,17 @@
+{
+  "base_damage": 3.0,
+  "base_cooldown_ticks": 100,
+  "base_cast_time_ticks": 0,
+  "mana_cost": 15,
+  "solo_damage_multiplier": 0.5,
+  "solo_cooldown_multiplier": 2.0,
+  "solo_cast_time_multiplier": 2.0,
+  "element": "ice",
+  "levels": [
+    { "rarity": "white" },
+    { "damage_multiplier": 1.25, "speed_multiplier": 1.125, "rarity": "green" },
+    { "damage_multiplier": 1.25, "cooldown_multiplier": 0.75, "speed_multiplier": 1.25, "rarity": "blue" },
+    { "damage_multiplier": 1.5, "cooldown_multiplier": 0.75, "speed_multiplier": 1.375, "rarity": "purple" },
+    { "damage_multiplier": 1.5, "cooldown_multiplier": 0.5, "speed_multiplier": 1.5, "rarity": "orange" }
+  ]
+}

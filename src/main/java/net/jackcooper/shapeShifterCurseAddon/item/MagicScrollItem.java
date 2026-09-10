@@ -55,11 +55,8 @@ public class MagicScrollItem extends Item {
 			int level = ScrollData.getLevel(stack); // 魔法等级（1-5，开箱固定）与卷轴一体，单独使用同样生效
 			float damage = spell.getBaseDamage() * spell.getSoloDamageMultiplier() * spell.getDamageMultiplier(level);
 			int cd = Math.round(spell.getBaseCooldownTicks() * spell.getSoloCooldownMultiplier() * spell.getCooldownMultiplier(level));
-			if (spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.FrostSpikeSpell frostSpike) {
-				frostSpike.cast(sp, damage, true, level); // 冰锥：速度与投射物外观也按等级缩放
-			} else {
-				spell.cast(sp, damage, true);
-			}
+			// 统一四参入口：法术内部自行决定是否按等级缩放速度/外观/范围
+			spell.cast(sp, damage, true, level);
 			ScrollData.setCooldownEnd(stack, world.getTime() + cd);
 			boolean exhausted = ScrollData.consumeSoloUse(stack);
 			if (exhausted) {
@@ -118,17 +115,17 @@ public class MagicScrollItem extends Item {
 		int level = ScrollData.getLevel(stack);
 		tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.level", level).formatted(Formatting.AQUA));
 		tooltip.add(Text.translatable(spell.getDescKey()).formatted(Formatting.GRAY));
-		// 装书内数值（按等级倍率折算为实际值）
+		// 装书内数值（按等级倍率折算为实际值；buff 型法术走专用文案，如「获得 x 点吸收」）
 		String cdSec = formatSeconds(Math.round(spell.getBaseCooldownTicks() * spell.getCooldownMultiplier(level)));
 		int shownDmg = Math.round(spell.getBaseDamage() * spell.getDamageMultiplier(level));
-		tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.tip_in_book",
+		tooltip.add(Text.translatable(spell.getInBookTooltipKey(),
 				shownDmg, cdSec, spell.getManaCost()).formatted(Formatting.GRAY));
 		if (r.canUseSolo()) {
 			tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.tip_uses",
 					ScrollData.getUses(stack), r.soloUses).formatted(Formatting.YELLOW));
 			int soloDmg = Math.round(spell.getBaseDamage() * spell.getSoloDamageMultiplier() * spell.getDamageMultiplier(level));
 			String soloCd = formatSeconds(Math.round(spell.getBaseCooldownTicks() * spell.getSoloCooldownMultiplier() * spell.getCooldownMultiplier(level)));
-			tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.tip_solo", soloDmg, soloCd).formatted(Formatting.DARK_GRAY));
+			tooltip.add(Text.translatable(spell.getSoloTooltipKey(), soloDmg, soloCd).formatted(Formatting.DARK_GRAY));
 		} else {
 			tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.tip_no_solo").formatted(Formatting.RED));
 		}

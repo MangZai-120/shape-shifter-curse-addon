@@ -113,10 +113,18 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	 * 释放魔法（服务端权威）。伤害/范围等已由调用方按耐久与单独/装书惩罚算好，通过 {@code power} 传入。
 	 *
 	 * @param caster 施法者（已确认装备魔法书或持有卷轴）
-	 * @param power  最终威力（多为最终伤害值）
+	 * @param power  最终威力（多为最终伤害值；buff 型法术为效果主数值，如吸收值）
 	 * @param solo   是否为单独使用卷轴（部分魔法可据此微调表现，一般无需区分）
 	 */
 	public abstract void cast(ServerPlayerEntity caster, float power, boolean solo);
+
+	/**
+	 * 带等级释放魔法（服务端权威）：默认忽略等级直接转发三参版；需要按等级缩放速度/外观/
+	 * 范围的法术（如冰锥、齐射、新星类）覆写本方法。调用方统一走本入口，避免逐法术 instanceof 特判。
+	 */
+	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level) {
+		cast(caster, power, solo);
+	}
 
 	/** 魔法名 lang key。 */
 	public String getNameKey() {
@@ -126,6 +134,16 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	/** 魔法描述 lang key。 */
 	public String getDescKey() {
 		return "spell.ssc_addon." + id.getPath() + ".description";
+	}
+
+	/** 卷轴 tooltip「装书内」文案 key（默认伤害版；buff 型法术覆写为吸收版等）。 */
+	public String getInBookTooltipKey() {
+		return "item.ssc_addon.magic_scroll.tip_in_book";
+	}
+
+	/** 卷轴 tooltip「单独使用」文案 key（默认伤害版；buff 型法术覆写）。 */
+	public String getSoloTooltipKey() {
+		return "item.ssc_addon.magic_scroll.tip_solo";
 	}
 
 	/**

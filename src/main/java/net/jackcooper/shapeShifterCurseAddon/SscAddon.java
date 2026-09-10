@@ -147,6 +147,12 @@ public class SscAddon implements ModInitializer {
 	// 月尘魔法·冰锥投射物（独立于雪狐 SP 冰球，供魔法书「冰锥」魔法使用，jackcooper）
 	public static final EntityType<net.jackcooper.shapeShifterCurseAddon.entity.SpellFrostSpikeEntity> SPELL_FROST_SPIKE_ENTITY =
 			registerEntity("spell_frost_spike", SpawnGroup.MISC, net.jackcooper.shapeShifterCurseAddon.entity.SpellFrostSpikeEntity::new, 0.25f, 0.25f, 64, 10);
+	// 月尘魔法·火球投射物（火系单体直线，命中点燃，jackcooper）
+	public static final EntityType<net.jackcooper.shapeShifterCurseAddon.entity.SpellFireBoltEntity> SPELL_FIRE_BOLT_ENTITY =
+			registerEntity("spell_fire_bolt", SpawnGroup.MISC, net.jackcooper.shapeShifterCurseAddon.entity.SpellFireBoltEntity::new, 0.25f, 0.25f, 64, 10);
+	// 月尘魔法·陨火实体（落点预警圈 + 天降火球 AOE，jackcooper）
+	public static final EntityType<net.jackcooper.shapeShifterCurseAddon.entity.SpellMeteorEntity> SPELL_METEOR_ENTITY =
+			registerEntity("spell_meteor", SpawnGroup.MISC, net.jackcooper.shapeShifterCurseAddon.entity.SpellMeteorEntity::new, 0.5f, 0.5f, 64, 10);
 	// 进化美西螈「投掷水矛」直线水矛投射物（无重力匀速）
 	public static final EntityType<ThrownWaterSpearEntity> THROWN_WATER_SPEAR_ENTITY =
 			registerEntity("thrown_water_spear", SpawnGroup.MISC, ThrownWaterSpearEntity::new, 0.4f, 0.4f, 64, 10);	// 寒棘狐「冰刺」冰锥投射物（环绕态 HOVER + 飞行态 FLY 双态；最远飞 128 格，trackRange 同步 128 防提前消失）
@@ -293,18 +299,7 @@ public class SscAddon implements ModInitializer {
 					.entries((displayContext, entries) -> {
 						entries.add(SP_UPGRADE_THING);
 						entries.add(MOON_DUST_SPELLBOOK);
-					// 每个已注册魔法生成全套等级卷轴（冰锥 1-5 级对应白/绿/蓝/紫/橙品质；空白卷轴无法放入魔法书）
-					for (net.jackcooper.shapeShifterCurseAddon.spell.Spell spell :
-							net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.all()) {
-						for (int lv = 1; lv <= net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.MAX_SPELL_LEVEL; lv++) {
-							entries.add(net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.create(spell.getId().getPath(), lv));
-						}
-						}					// 增强法阵全套（火/冰两系×5 级，供创造测试）
-					for (net.jackcooper.shapeShifterCurseAddon.spell.FormationElement element : net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.values()) {
-						for (int lv = 1; lv <= net.jackcooper.shapeShifterCurseAddon.spell.FormationData.MAX_FORMATION_LEVEL; lv++) {
-							entries.add(net.jackcooper.shapeShifterCurseAddon.spell.FormationData.create(element, lv));
-						}
-					}
+					// 魔法卷轴/增强法阵已迁往专属页 SSC_SPELL_GROUP（法术页，图标空白法阵纸）
 					entries.add(FORMATION_INK_NORMAL);
 					entries.add(FORMATION_INK_ICE);
 					entries.add(FORMATION_INK_FIRE);
@@ -347,6 +342,29 @@ public class SscAddon implements ModInitializer {
 						entries.add(WITHER_POTION_LINGERING);
 						// 蛛网膜（多面薄层蛛网方块）
 						entries.add(net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks.WEB_MEMBRANE);
+					})
+					.build());
+	// 法术专属创造页（jackcooper）：所有魔法卷轴（各法术 1-5 级全套）+ 增强法阵（火/冰×5 级全套），
+	// 图标用空白法阵纸；材料（墨/纸/书）留在主物品栏，主物品栏不再重复卷轴/法阵。
+	public static final ItemGroup SSC_SPELL_GROUP = Registry.register(Registries.ITEM_GROUP,
+			new Identifier("ssc_addon", "spells"),
+			FabricItemGroup.builder()
+					.displayName(Text.translatable("itemGroup.ssc_addon.spells"))
+					.icon(() -> new ItemStack(BLANK_FORMATION_PAPER))
+					.entries((displayContext, entries) -> {
+						// 每个已注册魔法生成全套等级卷轴（1-5 级对应白/绿/蓝/紫/橙品质）
+						for (net.jackcooper.shapeShifterCurseAddon.spell.Spell spell :
+								net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.all()) {
+							for (int lv = 1; lv <= net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.MAX_SPELL_LEVEL; lv++) {
+								entries.add(net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.create(spell.getId().getPath(), lv));
+							}
+						}
+						// 增强法阵全套（火/冰两系×5 级）
+						for (net.jackcooper.shapeShifterCurseAddon.spell.FormationElement element : net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.values()) {
+							for (int lv = 1; lv <= net.jackcooper.shapeShifterCurseAddon.spell.FormationData.MAX_FORMATION_LEVEL; lv++) {
+								entries.add(net.jackcooper.shapeShifterCurseAddon.spell.FormationData.create(element, lv));
+							}
+						}
 					})
 					.build());
 	// SP Allay sound events

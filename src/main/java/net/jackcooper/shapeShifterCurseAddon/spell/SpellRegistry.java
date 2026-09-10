@@ -70,6 +70,13 @@ public final class SpellRegistry implements SimpleSynchronousResourceReloadListe
 	/** 注册所有内置魔法行为类（数值等待 JSON 注入）。 */
 	public static void init() {
 		register(new FrostSpikeSpell());
+		// —— 2026-09 新增六法术（火系三 + 冰系三，jackcooper）——
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.FireBoltSpell());       // 火球术
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.FlameNovaSpell());     // 烈焰新星
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.MeteorSpell());        // 陨火术
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.IceBarrageSpell());    // 冰锥齐射
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.FrostNovaSpell());     // 冰霜新星
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.FrostArmorSpell());    // 霜甲术
 	}
 
 	// ---- datapack reload（服务端 / 单人；客机走 applyClientSync 镜像）----

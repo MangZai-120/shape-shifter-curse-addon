@@ -4,9 +4,11 @@ import net.jackcooper.shapeShifterCurseAddon.spell.FormationData;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationElement;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationKnowledgeComponent;
 import net.minecraft.client.item.TooltipContext;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.UseAction;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -22,11 +24,15 @@ import java.util.List;
 /**
  * 增强法阵物品（jackcooper）。类似卷轴的纸片，NBT 绑定系别（火/冰）与等级（1-5）。
  *
- * <p>右键使用 =「记录魔法」：物品消失、法阵记录进玩家数据（{@link FormationKnowledgeComponent}），
- * 之后可在法术研究台消耗月尘学习、抄写。已记录过同系同级时物品不消耗、仅提示（防误损）；
- * 高低等级互不冲突（各等级独立记录）。</p>
+ * <p><b>长按右键蓄力</b>（同 waystone 回城卷轴/进化石，32t=1.6 秒）=「记录魔法」：蓄满后物品消失、
+ * 法阵记录进玩家数据（{@link FormationKnowledgeComponent}），之后可在法术研究台消耗月尘学习、抄写。
+ * 已记录过同系同级时<b>起手即提示</b>、不进入蓄力、物品不消耗（防误损，也不用傻等 1.6 秒）；
+ * 高低等级互不冲突（各等级独立记录）。蓄力中途松开/被打断 = 取消，不记录不消耗。</p>
  */
 public class FormationItem extends Item {
+
+	/** 蓄力时长（tick），与进化石/回城卷轴一致。 */
+	private static final int CHARGE_TICKS = 32;
 
 	public FormationItem(Settings settings) {
 		super(settings);
@@ -36,30 +42,60 @@ public class FormationItem extends Item {
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
 		ItemStack stack = user.getStackInHand(hand);
 		FormationElement element = FormationData.getElement(stack);
-		if (element == null || world.isClient) {
-			return TypedActionResult.success(stack);
-		}
-		if (!(user instanceof ServerPlayerEntity player)) {
+		// 空白法阵（无系别绑定）不响应
+		if (element == null) {
 			return TypedActionResult.pass(stack);
 		}
-		int level = FormationData.getLevel(stack);
-		FormationKnowledgeComponent knowledge = FormationKnowledgeComponent.get(player);
-		if (knowledge.hasRecorded(element, level)) {
-			// 已记录过同级：不消耗物品，仅提示（玩家可把物品留着装箱/给别人）
-			player.sendMessage(Text.translatable("message.ssc_addon.formation.already_recorded",
-					Text.translatable(element.getNameKey()), level).formatted(Formatting.YELLOW), true);
+		// 起手即查「已记录同级」：直接提示并拒绝，避免玩家白等 1.6 秒蓄力
+		// （FormationKnowledgeComponent 是 AutoSyncedComponent，客户端可读，研究台 GUI 同款依赖）
+		if (FormationKnowledgeComponent.get(user).hasRecorded(element, FormationData.getLevel(stack))) {
+			if (world.isClient) {
+				user.sendMessage(Text.translatable("message.ssc_addon.formation.already_recorded",
+						Text.translatable(element.getNameKey()), FormationData.getLevel(stack)).formatted(Formatting.YELLOW), true);
+			}
 			return TypedActionResult.fail(stack);
 		}
-		knowledge.record(element, level);
-		FormationKnowledgeComponent.sync(player);
-		if (!player.getAbilities().creativeMode) {
-			stack.decrement(1);
+		// 进入蓄力（长按右键，进度条满 32t 后触发 finishUsing）
+		user.setCurrentHand(hand);
+		return TypedActionResult.consume(stack);
+	}
+
+	@Override
+	public int getMaxUseTime(ItemStack stack) {
+		return CHARGE_TICKS;
+	}
+
+	@Override
+	public UseAction getUseAction(ItemStack stack) {
+		return UseAction.BOW;
+	}
+
+	@Override
+	public ItemStack finishUsing(ItemStack stack, World world, LivingEntity user) {
+		// 服务端权威：蓄满后完成记录（客户端直接原样返回）
+		if (!world.isClient && user instanceof ServerPlayerEntity player) {
+			FormationElement element = FormationData.getElement(stack);
+			if (element != null) {
+				int level = FormationData.getLevel(stack);
+				FormationKnowledgeComponent knowledge = FormationKnowledgeComponent.get(player);
+				// 二次校验（蓄力期间理论上不会变化，防御性保留）
+				if (!knowledge.hasRecorded(element, level)) {
+					knowledge.record(element, level);
+					FormationKnowledgeComponent.sync(player);
+					if (!player.getAbilities().creativeMode) {
+						stack.decrement(1);
+					}
+					player.sendMessage(Text.translatable("message.ssc_addon.formation.recorded",
+							Text.translatable(element.getNameKey()), level).formatted(Formatting.GREEN), true);
+					world.playSound(null, player.getX(), player.getY(), player.getZ(),
+							SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.PLAYERS, 0.4f, 1.6f);
+				} else {
+					player.sendMessage(Text.translatable("message.ssc_addon.formation.already_recorded",
+							Text.translatable(element.getNameKey()), level).formatted(Formatting.YELLOW), true);
+				}
+			}
 		}
-		player.sendMessage(Text.translatable("message.ssc_addon.formation.recorded",
-				Text.translatable(element.getNameKey()), level).formatted(Formatting.GREEN), true);
-		world.playSound(null, player.getX(), player.getY(), player.getZ(),
-				SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.PLAYERS, 0.4f, 1.6f);
-		return TypedActionResult.success(stack);
+		return stack;
 	}
 
 	@Override

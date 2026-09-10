@@ -14,11 +14,11 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.item.ItemStack;
 
 /**
- * 魔法卷轴的自然宝箱生成（jackcooper）。冰锥魔法卷轴等级固定 1-5 级，<b>不可升级</b>，
+ * 魔法卷轴的自然宝箱生成（jackcooper）。各法术卷轴等级固定 1-5 级，<b>不可升级</b>，
  * 只能从世界内自然生成的箱子中开出（照 {@link EvolutionItemsLoot} 模式注入原版战利品表）。
  *
- * <p>生成规则：目标结构箱子 5% 概率触发 → 在「冰锥 1/2/3/4/5 级卷轴」中按权重抽取一张
- * （1 级最常见、5 级最稀有：权重 30/28/22/13/7）。等级存卷轴 NBT {@code Level}（缺省 1）。</p>
+ * <p>生成规则：目标结构箱子 5% 概率触发 → 先按「法术权重」抽出一个法术，再在「该法术 1-5 级」中
+ * 按等级权重抽出一张（1 级最常见、5 级最稀有：权重 30/28/22/13/7）。等级存卷轴 NBT {@code Level}（缺省 1）。</p>
  */
 public final class MagicScrollLoot {
 	private MagicScrollLoot() {
@@ -26,6 +26,12 @@ public final class MagicScrollLoot {
 
 	/** 各等级生成权重（index = level-1）。 */
 	private static final int[] LEVEL_WEIGHTS = {30, 28, 22, 13, 7};
+	/** 各法术生成权重（与下方法顺序一致；新法术比冰锥稍稀有，AOE/防御类再低一档）。 */
+	private static final int[] SPELL_WEIGHTS = {30, 22, 14, 8, 18, 14, 10};
+	/** 参与宝箱抽取的法术 id 列表（顺序与权重一致）：冰锥/火球/烈焰新星/陨火/冰锥齐射/冰霜新星/霜甲。 */
+	private static final String[] SPELL_PATHS = {
+			"frost_spike", "fire_bolt", "flame_nova", "meteor", "ice_barrage", "frost_nova", "frost_armor"
+	};
 	/** 每个箱子生成魔法卷轴的概率。 */
 	private static final float CHANCE = 0.05F;
 
@@ -73,12 +79,14 @@ public final class MagicScrollLoot {
 			if (!isTargetChest(id)) {
 				return;
 			}
-			// 5% 概率触发；触发后按权重在冰锥 1-5 级卷轴中抽一张（等级写死进 NBT）
+			// 5% 概率触发；触发后先抽法术、再抽等级（权重两层级联）
 			LootPool.Builder pool = LootPool.builder()
 					.rolls(ConstantLootNumberProvider.create(1.0F))
 					.conditionally(RandomChanceLootCondition.builder(CHANCE));
-			for (int level = 1; level <= LEVEL_WEIGHTS.length; level++) {
-				pool.with(scrollEntry(level, LEVEL_WEIGHTS[level - 1]));
+			for (int s = 0; s < SPELL_PATHS.length; s++) {
+				for (int level = 1; level <= LEVEL_WEIGHTS.length; level++) {
+					pool.with(scrollEntry(SPELL_PATHS[s], level, LEVEL_WEIGHTS[level - 1] * SPELL_WEIGHTS[s]));
+				}
 			}
 			tableBuilder.pool(pool);
 		});
@@ -86,11 +94,12 @@ public final class MagicScrollLoot {
 
 	// 1.20.1 中 SetNbtLootFunction.builder(NbtCompound) 是唯一可用重载（@Deprecated 但无替代，同 StoryBookLoot）
 	@SuppressWarnings("deprecation")
-	private static net.minecraft.loot.entry.LootPoolEntry.Builder<?> scrollEntry(int level, int weight) {
+	private static net.minecraft.loot.entry.LootPoolEntry.Builder<?> scrollEntry(String spellPath, int level, int weight) {
 		NbtCompound nbt = new NbtCompound();
-		nbt.putString(ScrollData.NBT_SPELL, "frost_spike");
-		// 单独使用次数按等级对应品质上限（冰锥：白8/绿6/蓝4/紫2/橙1）
-		nbt.putInt(ScrollData.NBT_USES, SpellRegistry.get("frost_spike").getRarity(level).soloUses);
+		nbt.putString(ScrollData.NBT_SPELL, spellPath);
+		// 单独使用次数按等级对应品质上限（如白8/绿6/蓝4/紫2/橙1）
+		net.jackcooper.shapeShifterCurseAddon.spell.Spell spell = SpellRegistry.get(spellPath);
+		nbt.putInt(ScrollData.NBT_USES, spell == null ? 8 : spell.getRarity(level).soloUses);
 		nbt.putInt(ScrollData.NBT_LEVEL, level);
 		return ItemEntry.builder(SscAddon.MAGIC_SCROLL)
 				.apply(SetNbtLootFunction.builder(nbt))

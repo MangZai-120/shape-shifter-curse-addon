@@ -414,6 +414,9 @@ public class SscAddonClient implements ClientModInitializer {
 		EntityRendererRegistry.register(SscAddon.FROST_BALL_ENTITY, FlyingItemEntityRenderer::new);
 		// 月尘魔法·冰锥渲染器：L1-3 雪球贴图，L4+ 寒棘狐同款 3D 冰锥模型（渲染器内按 DataTracker 等级切换）
 		EntityRendererRegistry.register(SscAddon.SPELL_FROST_SPIKE_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.SpellFrostSpikeRenderer::new);
+		// 月尘魔法新投射物：火球（火焰弹物品模型）与陨火（同火焰弹、体积更大）
+		EntityRendererRegistry.register(SscAddon.SPELL_FIRE_BOLT_ENTITY, ctx -> new net.minecraft.client.render.entity.FlyingItemEntityRenderer<net.jackcooper.shapeShifterCurseAddon.entity.SpellFireBoltEntity>(ctx, 1F, true));
+		EntityRendererRegistry.register(SscAddon.SPELL_METEOR_ENTITY, ctx -> new net.minecraft.client.render.entity.FlyingItemEntityRenderer<net.jackcooper.shapeShifterCurseAddon.entity.SpellMeteorEntity>(ctx, 2F, true));
 		// 进化美西螈「投掷水矛」直线水矛：3D 投掷态模型，沿飞行方向摆正
 		EntityRendererRegistry.register(SscAddon.THROWN_WATER_SPEAR_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.ThrownWaterSpearEntityRenderer::new);		// 寒棘狐「冰刺」冰锥：3D 自定义 item model（CustomModelData 切 3 阶段材质），沿朝向摆正
 		EntityRendererRegistry.register(SscAddon.FROST_THORN_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.FrostThornEntityRenderer::new);
