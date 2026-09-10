@@ -33,29 +33,25 @@ public class InfiniteEnergyPotionRecipe extends SpecialCraftingRecipe {
 
 	@Override
 	public boolean matches(CraftingRecipeInput input, World world) {
-		if (input.getWidth() < 3 || input.getHeight() < 3) {
+		// 1.20.5+ 的合成输入会先裁剪到非空物品包围盒（顶左对齐）再传给 matches()：
+		// 布局「0 M 0 / A I A / 0 0 0」底行全空，包围盒恒为 3×2，裁剪后 M=1 A=3 I=4 A=5，空=0,2。
+		// 若玩家在包围盒外多放物品把包围盒撑成 3×3，高度可能为 3，需通过下方空槽循环一并拒绝。
+		if (input.getWidth() < 3 || input.getHeight() < 2) {
 			return false;
 		}
-		// 形状 0 M 0 / A I A / 0 0 0，允许整体上对齐或下对齐两种摆放：
-		// 上：M=1 A=3 I=4 A=5，空=0,2,6,7,8
-		// 下：M=4 A=6 I=7 A=8，空=0,1,2,3,5
-		return matchesLayout(input, 1, 3, 4, 5, new int[]{0, 2, 6, 7, 8})
-				|| matchesLayout(input, 4, 6, 7, 8, new int[]{0, 1, 2, 3, 5});
-	}
-
-	/** 校验一种摆放：moonSlot=月髓环，appleSlotL/appleSlotR=附魔金苹果，potionSlot=压缩能量药水，emptySlots 必须为空。 */
-	private boolean matchesLayout(CraftingRecipeInput input, int moonSlot, int appleSlotL, int potionSlot, int appleSlotR, int[] emptySlots) {
-		if (!isMoonRing(input.getStackInSlot(moonSlot))) {
+		if (!isMoonRing(input.getStackInSlot(1))) {
 			return false;
 		}
-		if (!isEnchantedGoldenApple(input.getStackInSlot(appleSlotL)) || !isEnchantedGoldenApple(input.getStackInSlot(appleSlotR))) {
+		if (!isEnchantedGoldenApple(input.getStackInSlot(3)) || !isEnchantedGoldenApple(input.getStackInSlot(5))) {
 			return false;
 		}
-		if (!isCompressedEnergyPotion(input.getStackInSlot(potionSlot))) {
+		if (!isCompressedEnergyPotion(input.getStackInSlot(4))) {
 			return false;
 		}
-		for (int slot : emptySlots) {
-			if (!input.getStackInSlot(slot).isEmpty()) {
+		// 除 1/3/4/5 四个配方槽外，其余槽（含包围盒被撑大时的额外槽）必须为空
+		int size = input.getSize();
+		for (int slot = 0; slot < size; slot++) {
+			if (slot != 1 && slot != 3 && slot != 4 && slot != 5 && !input.getStackInSlot(slot).isEmpty()) {
 				return false;
 			}
 		}
@@ -87,7 +83,8 @@ public class InfiniteEnergyPotionRecipe extends SpecialCraftingRecipe {
 
 	@Override
 	public boolean fits(int width, int height) {
-		return width >= 3 && height >= 3;
+		// 有效形状经包围盒裁剪后为 3×2（两行），配方书按裁剪后的尺寸询问
+		return width >= 3 && height >= 2;
 	}
 
 	@Override
