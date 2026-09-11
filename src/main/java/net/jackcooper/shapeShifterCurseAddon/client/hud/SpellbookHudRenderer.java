@@ -138,15 +138,16 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 		// 固定三层（底→顶）：空白 → 技能图标(有魔法才画) → 有东西
 		// 底层：空白空槽贴图（始终画）
 		ctx.drawTexture(big ? TEX_SLOT_BIG_EMPTY : TEX_SLOT_EMPTY, x - 1, y - 1, 0, 0, fs, fs, fs, fs);
-		// 中层：技能图标（有魔法才画）。优先用魔法专用 16×16 图标整张映射到槽内容区。
-		// 必须用 11 参重载（显式指定源区域 16×16 → 目标 size×size）实现等比放大（最近邻保像素风）；
-		// 9 参重载的最后两参是整张贴图尺寸，传错会因 UV 越界把 16×16 平铺成 4 张拼图。
+		// 中层：技能图标（有魔法才画）。优先用魔法专用 32×32 图标整张映射到槽内容区。
+		// 必须用 11 参重载（显式指定源区域 32×32 → 目标 size×size）实现等比缩放（最近邻保像素风），
+		// 且源区域与贴图实际尺寸必须一致（图标贴图已全部升级为 32×32）；
+		// 9 参重载的最后两参是整张贴图尺寸，传错会因 UV 越界把贴图平铺成 4 张拼图。
 		// 无专用图标时回落画卷轴物品本身（原 drawItem 固定 16×16）。
 		boolean hasSpell = !scroll.isEmpty();
 		if (hasSpell) {
 			net.minecraft.util.Identifier iconTex = spell != null ? spell.getIconTexture() : null;
 			if (iconTex != null) {
-				ctx.drawTexture(iconTex, x, y, size, size, 0, 0, 16, 16, 16, 16);
+				ctx.drawTexture(iconTex, x, y, size, size, 0, 0, 32, 32, 32, 32);
 			} else {
 				int iconX = x + (size - 16) / 2;
 				int iconY = y + (size - 16) / 2;

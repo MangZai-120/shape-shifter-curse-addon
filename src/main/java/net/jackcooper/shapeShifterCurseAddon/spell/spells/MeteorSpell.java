@@ -7,27 +7,38 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
 
 /**
- * 陨火术（火系，紫色基底，jackcooper）：准星落点（最远 16 格）召唤陨火——
- * 0.5s 落点预警圈后火球从天而降，半径 3 格 AOE（伤害 + 点燃 3s + 击退，中心满伤边缘 40%）。
+ * 陨火术（火系，紫色基底，jackcooper）：按住施法键在准星落点显示瞄准圈（最远 32 格），
+ * 松开后召唤陨火——0.5s 落点预警圈后火球从天而降，半径 3 格 AOE（伤害 + 点燃 3s + 击退，中心满伤边缘 40%）。
  *
  * <p>数值外置 {@code data/ssc_addon/spells/meteor.json}：
  * 基准 8 伤 / 半径 3 格 / cd 10s / 耗蓝 30；半径按 speed_multiplier 缩放（每级 +0.5 格）。
- * 落点用射线检测（含方块），准星指天（无命中）时取 16 格截断点。</p>
+ * 落点用射线检测（含方块），准星指天（无命中）时取 32 格截断点；
+ * 客户端按住预览与服务端施法共用 {@link Spell#computeAimImpact}，所见即所得。</p>
  */
 public class MeteorSpell extends Spell {
 
 	/** 最大施法距离（格）。 */
-	private static final double MAX_RANGE = 16.0;
+	private static final double MAX_RANGE = 32.0;
 	/** 基础 AOE 半径（格），实际 = 基础 × speed_multiplier(level)。 */
 	private static final double BASE_RADIUS = 3.0;
 
 	public MeteorSpell() {
 		super(new Identifier("ssc_addon", "meteor"), SpellRarity.PURPLE);
+	}
+
+	/** 按住瞄准型：最大施法距离 32 格（客户端按住施法键显示落点预览圈，松开施放）。 */
+	@Override
+	public double getAimMaxRange() {
+		return MAX_RANGE;
+	}
+
+	/** 预览圈半径 = 实际 AOE 半径（含等级缩放），与服务端预警圈一致。 */
+	@Override
+	public double getAimRadius(int level) {
+		return BASE_RADIUS * getSpeedMultiplier(level);
 	}
 
 	@Override
@@ -37,18 +48,8 @@ public class MeteorSpell extends Spell {
 
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level) {
-		// 射线求落点：准星命中的方块/实体位置；无命中取 MAX_RANGE 截断点
-		Vec3d eye = caster.getEyePos();
-		Vec3d look = caster.getRotationVec(1.0F);
-		Vec3d end = eye.add(look.multiply(MAX_RANGE));
-		HitResult hit = caster.getWorld().raycast(new RaycastContext(eye, end,
-				RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, caster));
-		Vec3d impact;
-		if (hit.getType() != HitResult.Type.MISS) {
-			impact = hit.getPos();
-		} else {
-			impact = end;
-		}
+		// 射线求落点（与客户端按住预览同一几何）：准星命中的方块/实体位置；无命中取 MAX_RANGE 截断点
+		Vec3d impact = Spell.computeAimImpact(caster, MAX_RANGE);
 		SpellMeteorEntity meteor = new SpellMeteorEntity(caster.getWorld(), caster);
 		meteor.setDamage(power);
 		meteor.setLevel(level);

@@ -1111,7 +1111,7 @@
   "spell.ssc_addon.flame_nova.name": "Flame Nova",
   "spell.ssc_addon.flame_nova.description": "Erupts a ring of flame around you, damaging, knocking back and briefly igniting enemies in range.",
   "spell.ssc_addon.meteor.name": "Meteor",
-  "spell.ssc_addon.meteor.description": "Calls down a meteor at your crosshair's impact point; after a brief warning it slams down, damaging and igniting enemies in the area.",
+  "spell.ssc_addon.meteor.description": "Hold the cast key to aim at your crosshair's impact point (up to 32 blocks); release to call down a meteor that damages and ignites enemies in the area.",
   "spell.ssc_addon.ice_barrage.name": "Ice Barrage",
   "spell.ssc_addon.ice_barrage.description": "Scatters three small ice spikes in a fan toward your crosshair; each spike hits independently.",
   "spell.ssc_addon.frost_nova.name": "Frost Nova",

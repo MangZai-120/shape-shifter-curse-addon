@@ -1,8 +1,12 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
 import net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.RaycastContext;
 
 /**
  * 魔法（法术）抽象基类（jackcooper）。仿 Iron's Spellbooks 的「行为类 + 外置数值」分离：
@@ -110,6 +114,37 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	}
 
 	/**
+	 * 「按住瞄准型」法术的最大施法距离（格）；0 = 非按住瞄准型（默认，按下立即施放）。
+	 * 覆写为正值后，客户端按住施法键时会在准星落点持续显示预览圈，松开才真正施放；
+	 * 服务端落点用同一几何（{@link #computeAimImpact}）计算，双端一致。
+	 */
+	public double getAimMaxRange() {
+		return 0.0;
+	}
+
+	/**
+	 * 按住瞄准时落点预览圈的半径（格，应含等级缩放，与服务端实际 AOE 半径一致）；
+	 * 仅 {@link #getAimMaxRange()} > 0 的法术生效。
+	 */
+	public double getAimRadius(int level) {
+		return 0.0;
+	}
+
+	/**
+	 * 准星落点几何（双端一致）：眼位出发沿视向 raycast（含方块），命中取命中点，
+	 * 未命中取 maxRange 截断点（准星指天时落在空中）。客户端预览圈与服务端施法共用
+	 * 本方法，保证所见即所得。
+	 */
+	public static Vec3d computeAimImpact(LivingEntity caster, double maxRange) {
+		Vec3d eye = caster.getEyePos();
+		Vec3d look = caster.getRotationVec(1.0F);
+		Vec3d end = eye.add(look.multiply(maxRange));
+		HitResult hit = caster.getWorld().raycast(new RaycastContext(eye, end,
+				RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, caster));
+		return hit.getType() != HitResult.Type.MISS ? hit.getPos() : end;
+	}
+
+	/**
 	 * 释放魔法（服务端权威）。伤害/范围等已由调用方按耐久与单独/装书惩罚算好，通过 {@code power} 传入。
 	 *
 	 * @param caster 施法者（已确认装备魔法书或持有卷轴）
@@ -155,7 +190,7 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	}
 
 	/**
-	 * 魔法图标贴图路径（16×16 源图，GUI 内可按需最近邻放大到任意尺寸，保持像素风）。
+	 * 魔法图标贴图路径（32×32 源图，GUI 内可按需最近邻缩放到任意尺寸，保持像素风）。
 	 * 默认 {@code textures/gui/spell_icons/<id path>.png}；子类可覆写自定义路径。
 	 * 返回 null 表示无专用图标（HUD 回落到绘制卷轴物品本身）。
 	 */

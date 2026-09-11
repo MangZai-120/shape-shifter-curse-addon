@@ -1111,7 +1111,7 @@
   "spell.ssc_addon.flame_nova.name": "烈焰新星",
   "spell.ssc_addon.flame_nova.description": "以自身为圆心爆发出环形火焰，范围内敌人受到伤害、被击退并短暂着火。",
   "spell.ssc_addon.meteor.name": "陨火术",
-  "spell.ssc_addon.meteor.description": "在准星落点召唤一颗陨火，短暂预警后砸下，对范围内敌人造成伤害并点燃。",
+  "spell.ssc_addon.meteor.description": "按住施法键在准星落点显示瞄准圈（最远 32 格），松开召唤陨火砸下，对范围内敌人造成伤害并点燃。",
   "spell.ssc_addon.ice_barrage.name": "冰锥齐射",
   "spell.ssc_addon.ice_barrage.description": "朝准星扇形散射三枚小冰锥，每枚独立命中结算。",
   "spell.ssc_addon.frost_nova.name": "冰霜新星",
