@@ -131,9 +131,9 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	}
 
 	/**
-	 * 准星落点几何（双端一致）：眼位出发沿视向 raycast（含方块），命中取命中点，
-	 * 未命中取 maxRange 截断点（准星指天时落在空中）。客户端预览圈与服务端施法共用
-	 * 本方法，保证所见即所得。
+	 * 准星落点几何（双端一致）：眼位出发沿视向 raycast（含方块），命中取命中点；
+	 * <b>未命中（准星指天/最大距离内无方块命中）返回 null</b>——落点必须在方块上（仿契灵传送）；
+	 * 双端调用方都需判空：服务端拒绝施法（不耗法力/CD），客户端不显示预览。
 	 */
 	public static Vec3d computeAimImpact(LivingEntity caster, double maxRange) {
 		Vec3d eye = caster.getEyePos();
@@ -141,7 +141,16 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 		Vec3d end = eye.add(look.multiply(maxRange));
 		HitResult hit = caster.getWorld().raycast(new RaycastContext(eye, end,
 				RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, caster));
-		return hit.getType() != HitResult.Type.MISS ? hit.getPos() : end;
+		return hit.getType() == HitResult.Type.MISS ? null : hit.getPos();
+	}
+
+	/**
+	 * 施法前置校验（服务端权威）：当前是否允许施法。默认恒允许；
+	 * 瞄准型法术可覆写（如陨火要求准星命中方块）。返回 false = 拒绝施法且不消耗法力/CD
+	 * （仿契灵传送失败不消耗语义），由调用方显示红字提示。
+	 */
+	public boolean canCast(ServerPlayerEntity caster) {
+		return true;
 	}
 
 	/**
@@ -182,7 +191,15 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	}
 
 	/**
-	 * 是否为冰系魔法（决定卷轴物品外观：冰系魔法卷轴用冰锥卷轴贴图；HUD 魔法图标不受影响）。
+	 * 魔法系别（来自 spells JSON {@code element} 字段，解析为 FormationElement）。
+	 * 2026-09 起支持 fire/ice/lunar/curse/summon/void/space 七系；无系别或非法 id 返回 null（结算安全降级）。
+	 */
+	public FormationElement getElement() {
+		return FormationElement.byId(config.element);
+	}
+
+	/**
+	 * 是否为冰系魔法（历史方法：决定卷轴外观染色等。新代码请用 {@link #getElement()}）。
 	 * 数值化系别来自 JSON {@code element: "ice"}；本方法 = JSON 标记为 ice 时为 true。
 	 */
 	public boolean isIceSpell() {

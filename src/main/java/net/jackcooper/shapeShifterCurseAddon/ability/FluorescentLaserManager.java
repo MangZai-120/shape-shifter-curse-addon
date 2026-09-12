@@ -44,6 +44,8 @@ public final class FluorescentLaserManager {
 	private static final int ARRAY_COUNT = 3;              // 三法阵
 	private static final int WINDOW_TICKS = 100;           // 5 秒发射窗口
 	private static final int SHOT_TICKS = 8;               // 每道激光 8t
+	private static final net.minecraft.util.Identifier SHOT_HUD =
+			new net.minecraft.util.Identifier("my_addon", "form_axolotl_fluorescent_shot_cd");
 	private static final int SHOT_DAMAGE_INTERVAL = 2;     // 每 2t 判定一次（共 4 次）
 	private static final float SHOT_DAMAGE = 12.0f;        // 每道 12 点物理（每目标每道只 1 次）
 	private static final int CD_PER_SHOT = 120;            // 每发累加 6 秒 CD
@@ -134,6 +136,7 @@ public final class FluorescentLaserManager {
 		s.fireLock = fireLock;
 		s.firingIdx = idx;
 		s.shotTicks = SHOT_TICKS;
+		PowerUtils.setResourceValueAndSync(player, SHOT_HUD, s.shotTicks);
 		s.damagedThisShot.clear();
 		s.arraysLeft--;
 		s.accumulatedCd += CD_PER_SHOT;
@@ -207,7 +210,12 @@ public final class FluorescentLaserManager {
 	/** 每服务端 tick 对每个在线玩家调用（推进增强 combo）。 */
 	public static void tick(ServerPlayerEntity player) {
 		ComboSession s = COMBOS.get(player.getUuid());
-		if (s == null || !s.active) return;
+		if (s == null || !s.active) {
+			if (PowerUtils.getResourceValue(player, SHOT_HUD) > 0) {
+				PowerUtils.setResourceValueAndSync(player, SHOT_HUD, 0);
+			}
+			return;
+		}
 		// 被 SP 悦灵净化打断：立即结束 combo（与死亡/卸饰品同路径，含失活音效 + CD 结算）
 		if (player.hasStatusEffect(SscAddon.PURIFIED)) {
 			endCombo(player, s);
@@ -231,6 +239,7 @@ public final class FluorescentLaserManager {
 				shotDamage(sw, player, s);
 			}
 			s.shotTicks--;
+			PowerUtils.setResourceValueAndSync(player, SHOT_HUD, s.shotTicks);
 		}
 		// 窗口计时（仅在没有活跃发射时倒数）
 		if (s.shotTicks <= 0) {
@@ -272,6 +281,7 @@ public final class FluorescentLaserManager {
 	}
 
 	private static void endCombo(ServerPlayerEntity player, ComboSession s) {
+		PowerUtils.setResourceValueAndSync(player, SHOT_HUD, 0);
 		applyLaserSpeed(player, false);
 		if (s.accumulatedCd > 0) {
 			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, s.accumulatedCd);

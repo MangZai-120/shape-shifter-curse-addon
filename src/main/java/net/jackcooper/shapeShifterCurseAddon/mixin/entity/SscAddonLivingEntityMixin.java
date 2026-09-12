@@ -191,6 +191,23 @@ public abstract class SscAddonLivingEntityMixin {
 	}
 
 	/**
+	 * 诅咒标记（诅咒系法术）：带 CURSE_MARK 状态的实体受到的所有伤害加深。
+	 * 倍率随施法等级：1.2 + 0.1×amplifier（L1=×1.2 … L5=×1.6；amplifier 由施法时写入）。
+	 * HARMFUL 类别 → 月辉系「月华治愈」清负面效果时可一并净化。服务端判定，多人一致。
+	 */
+	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+	private float ssc_addon$curseMarkDamageTaken(float amount, DamageSource source) {
+		if (amount <= 0.0F || source == null) return amount;
+		LivingEntity self = (LivingEntity) (Object) this;
+		if (self.getWorld().isClient()) return amount;
+		StatusEffectInstance mark = self.getStatusEffect(SscAddon.CURSE_MARK);
+		if (mark == null) return amount;
+		float multiplier = net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect.BASE_BONUS + 1.0f
+				+ net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect.BONUS_PER_LEVEL * mark.getAmplifier();
+		return amount * multiplier;
+	}
+
+	/**
 	 * 三级便携加湿器：佩戴者（美西螈系玩家）造成的所有伤害 +15%。
 	 */
 	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)

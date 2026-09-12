@@ -18,7 +18,8 @@ import java.util.List;
  * 烈焰新星（火系，绿色基底，jackcooper）：以自身为圆心爆发火环，范围内造成伤害 + 击退 + 点燃 2s。
  *
  * <p>数值外置 {@code data/ssc_addon/spells/flame_nova.json}：
- * 基准 4 伤 / 半径 4 格 / cd 6s / 耗蓝 20；半径按 speed_multiplier 缩放（每级 +0.5 格）。
+ * 基准 4 伤 / 半径 4 格 / cd 6s / 耗蓝 20；半径按 speed_multiplier 缩放（每级 +0.5 格），
+ * 稀有度为蓝/橙时额外 +25%。
  * 白名单：主人在线且目标受保护 → 免伤；施法者本人不受影响。</p>
  */
 public class FlameNovaSpell extends Spell {
@@ -43,6 +44,11 @@ public class FlameNovaSpell extends Spell {
 			return;
 		}
 		double radius = BASE_RADIUS * getSpeedMultiplier(level);
+		// 稀有度为蓝/橙时，生效范围额外 +25%（独立于等级缩放，数据包改 rarity 自动跟随）
+		SpellRarity rarity = getRarity(level);
+		if (rarity == SpellRarity.BLUE || rarity == SpellRarity.ORANGE) {
+			radius *= 1.25;
+		}
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
 				caster.getBoundingBox().expand(radius), e -> e != caster && e.isAlive());
 		for (LivingEntity target : targets) {

@@ -1,0 +1,87 @@
+{
+	"credit": "3D spectral arrow for moonlight arrow projectile (jackcooper)",
+	"texture_size": [16, 16],
+	"textures": {
+		"0": "minecraft:item/spectral_arrow",
+		"particle": "minecraft:item/spectral_arrow"
+	},
+	"elements": [
+		{
+			"name": "shaft",
+			"from": [7.7, 7.7, 1],
+			"to": [8.3, 8.3, 14],
+			"faces": {
+				"east": {"uv": [1, 4, 14, 4.5], "texture": "#0"},
+				"west": {"uv": [1, 4, 14, 4.5], "texture": "#0"},
+				"up": {"uv": [1, 4, 14, 4.5], "texture": "#0"},
+				"down": {"uv": [1, 4, 14, 4.5], "texture": "#0"}
+			}
+		},
+		{
+			"name": "head_base",
+			"from": [7.1, 7.1, 10],
+			"to": [8.9, 8.9, 12],
+			"faces": {
+				"east": {"uv": [10, 5, 12, 7], "texture": "#0"},
+				"west": {"uv": [10, 5, 12, 7], "texture": "#0"},
+				"up": {"uv": [10, 5, 12, 7], "texture": "#0"},
+				"down": {"uv": [10, 5, 12, 7], "texture": "#0"}
+			}
+		},
+		{
+			"name": "head_tip",
+			"from": [7.4, 7.4, 12],
+			"to": [8.6, 8.6, 14.5],
+			"faces": {
+				"east": {"uv": [12, 5, 14.5, 7], "texture": "#0"},
+				"west": {"uv": [12, 5, 14.5, 7], "texture": "#0"},
+				"up": {"uv": [12, 5, 14.5, 7], "texture": "#0"},
+				"down": {"uv": [12, 5, 14.5, 7], "texture": "#0"}
+			}
+		},
+		{
+			"name": "fletch_1",
+			"from": [6.7, 6.7, 0],
+			"to": [7.7, 7.7, 3],
+			"faces": {
+				"east": {"uv": [0, 5, 3, 6], "texture": "#0"},
+				"west": {"uv": [0, 5, 3, 6], "texture": "#0"},
+				"up": {"uv": [0, 5, 3, 6], "texture": "#0"},
+				"down": {"uv": [0, 5, 3, 6], "texture": "#0"}
+			}
+		},
+		{
+			"name": "fletch_2",
+			"from": [8.3, 8.3, 0],
+			"to": [9.3, 9.3, 3],
+			"faces": {
+				"east": {"uv": [0, 5, 3, 6], "texture": "#0"},
+				"west": {"uv": [0, 5, 3, 6], "texture": "#0"},
+				"up": {"uv": [0, 5, 3, 6], "texture": "#0"},
+				"down": {"uv": [0, 5, 3, 6], "texture": "#0"}
+			}
+		},
+		{
+			"name": "fletch_3",
+			"from": [6.7, 8.3, 0],
+			"to": [7.7, 9.3, 3],
+			"faces": {
+				"east": {"uv": [0, 5, 3, 6], "texture": "#0"},
+				"west": {"uv": [0, 5, 3, 6], "texture": "#0"},
+				"up": {"uv": [0, 5, 3, 6], "texture": "#0"},
+				"down": {"uv": [0, 5, 3, 6], "texture": "#0"}
+			}
+		},
+		{
+			"name": "fletch_4",
+			"from": [8.3, 6.7, 0],
+			"to": [9.3, 7.7, 3],
+			"faces": {
+				"east": {"uv": [0, 5, 3, 6], "texture": "#0"},
+				"west": {"uv": [0, 5, 3, 6], "texture": "#0"},
+				"up": {"uv": [0, 5, 3, 6], "texture": "#0"},
+				"down": {"uv": [0, 5, 3, 6], "texture": "#0"}
+			}
+		}
+	]
+}

@@ -6,299 +6,183 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.text.Text;
+import io.github.apace100.apoli.component.PowerHolderComponent;
+import io.github.apace100.apoli.power.CooldownPower;
+import io.github.apace100.apoli.power.Power;
+import io.github.apace100.apoli.power.PowerTypeRegistry;
+import io.github.apace100.apoli.power.VariableIntPower;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
+import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaPrimary;
+import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkClientState;
+import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkManager;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * 技能冷却条HUD渲染器
- * <p>
- * CD追踪策略：
- * 1. 形态切换：压制通用CD资源(SP_PRIMARY/SECONDARY_CD)的残留值，
- * 直到检测到技能触发（值偏离自然衰减）或资源归零才解除。
- * 形态专属资源（悦灵净化/群体治疗，堕灵尖啸/复仇，雪狐4技能）不压制。
- * 2. 雪狐SP：使用4个独立CD记录点，按switch_state选择对应资源直接读取。
- * 3. 百分比：通过检测资源值偏离自然衰减轨迹来捕获最大值。
- */
 @Environment(EnvType.CLIENT)
 public class SkillCooldownBarRenderer implements HudRenderCallback {
 	private static final MinecraftClient mc = MinecraftClient.getInstance();
 
-	// 贴图尺寸：4×20
-	private static final int TEX_W = 4;
-	private static final int TEX_H = 20;
-
-	// 贴图路径
-	private static final Identifier TEX_EMPTY = new Identifier("my_addon", "textures/gui/skill_cd_bar_empty.png");
-	private static final Identifier TEX_FULL = new Identifier("my_addon", "textures/gui/skill_cd_bar_full.png");
+	private static final Identifier TEX_PANEL = new Identifier("my_addon", "textures/gui/skill_cd_panel.png");
+	private static final Identifier TEX_PANEL_RIGHT = new Identifier("my_addon", "textures/gui/skill_cd_panel_right.png");
 	private static final String SSCA_FORM_NAMESPACE = "my_addon";
-
-	// 技能触发偏差阈值：实际值与期望衰减值偏差超过此值视为技能触发
-	private static final int DEVIATION_THRESHOLD = 2;
-
-	// CD百分比计算：每个资源最近触发时的最大值
+	public static final int ICON_SIZE = 20;
+	public static final int SLOT_WIDTH = 33;
+	public static final int SLOT_HEIGHT = 34;
+	public static final int SLOT_STEP = 34;
+	public static final int PANEL_HEIGHT = 68;
+	private static final int INTERNAL_HEIGHT = 24;
 	private final Map<Identifier, Integer> trackedMaxValues = new HashMap<>();
-	// 逐帧值追踪：用于配合tick计算期望衰减
-	private final Map<Identifier, Integer> lastFrameValues = new HashMap<>();
-	// 形态切换压制：仅对通用资源生效
-	// 只有检测到技能触发（值偏离期望衰减）或归零才解除
-	private final Map<Identifier, Integer> suppressionBaseline = new HashMap<>();
-
-	private Identifier lastFormId = null;
-	// 游戏tick追踪：计算帧间经过的tick数，用于期望衰减计算
-	private long lastRenderTick = -1;
-	private int ticksDelta = 1;
+	private Identifier lastFormId;
+	private PlayerEntity lastPlayer;
+	private Object lastWorld;
 
 	@Override
 	public void onHudRender(DrawContext context, float tickDelta) {
-		if (mc.options.hudHidden || mc.player == null) return;
-
-		SSCAddonClientConfig config = SSCAddonConfig.client();
-		if (!config.showCdBar) return;
-
 		PlayerEntity player = mc.player;
-
-		// 计算帧间经过的tick数（用于期望衰减计算）
-		if (mc.world != null) {
-			long currentTick = mc.world.getTime();
-			if (lastRenderTick >= 0) {
-				ticksDelta = (int) (currentTick - lastRenderTick);
-				if (ticksDelta < 1) ticksDelta = 1;
-			}
-			lastRenderTick = currentTick;
-		}
-
-		// 获取当前形态
-		IForm curForm;
-		try {
-			curForm = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).nowForm;
-		} catch (Exception e) {
-			resetCooldownTracking();
-			return;
-		}
-		if (curForm == null || curForm.getFormID() == null) {
-			resetCooldownTracking();
-			return;
-		}
-
-		Identifier formId = curForm.getFormID();
-		if (!SSCA_FORM_NAMESPACE.equals(formId.getNamespace())) {
-			resetCooldownTracking();
-			return;
-		}
-
-		// SSCA 进化使魔：不显示 CD 条（技能 CD 由 Apoli 内部管理，无需 HUD）
-		if (formId.equals(FormIdentifiers.UPGRADE_FAMILIAR_FOX)) {
-			resetCooldownTracking();
-			return;
-		}
-
-		// 根据形态确定要显示的CD资源
-		Identifier primaryCdId = FormIdentifiers.SP_PRIMARY_CD;
-		Identifier secondaryCdId = FormIdentifiers.SP_SECONDARY_CD;
-
-		if (formId.equals(FormIdentifiers.FALLEN_ALLAY_SP)) {
-			primaryCdId = FormIdentifiers.FALLEN_ALLAY_VEX_CD;
-			secondaryCdId = FormIdentifiers.FALLEN_ALLAY_SCREAM_CD;
-		} else if (formId.equals(FormIdentifiers.ALLAY_SP)) {
-			primaryCdId = FormIdentifiers.ALLAY_PURIFY_CD;
-			secondaryCdId = FormIdentifiers.ALLAY_GROUP_HEAL_CD;
-		} else if (formId.equals(FormIdentifiers.SNOW_FOX_SP)) {
-			// 雪狐SP：根据switch_state选择对应模式的专属CD资源
-			int switchState = getResourceValue(player, FormIdentifiers.SNOW_FOX_SWITCH_STATE);
-			if (switchState == 1) {
-				// 远程模式
-				primaryCdId = FormIdentifiers.SNOW_FOX_RANGED_PRIMARY_CD;
-				secondaryCdId = FormIdentifiers.SNOW_FOX_RANGED_SECONDARY_CD;
-			} else {
-				// 近战模式（默认）
-				primaryCdId = FormIdentifiers.SNOW_FOX_MELEE_PRIMARY_CD;
-				secondaryCdId = FormIdentifiers.SNOW_FOX_MELEE_SECONDARY_CD;
-			}
-		}
-
-		// 形态切换检测
-		if (!formId.equals(lastFormId)) {
-			lastFormId = formId;
+		if (player != lastPlayer || mc.world != lastWorld) {
 			trackedMaxValues.clear();
-			suppressionBaseline.clear();
-
-			// 仅压制通用CD资源（形态专属资源属于当前形态，不压制）
-			int pv = getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD);
-			int sv = getResourceValue(player, FormIdentifiers.SP_SECONDARY_CD);
-			if (pv > 0) suppressionBaseline.put(FormIdentifiers.SP_PRIMARY_CD, pv);
-			if (sv > 0) suppressionBaseline.put(FormIdentifiers.SP_SECONDARY_CD, sv);
-
-			// 初始化帧值追踪，防止首帧残留值被误判为"技能触发"
-			lastFrameValues.clear();
-			lastFrameValues.put(primaryCdId, getResourceValue(player, primaryCdId));
-			lastFrameValues.put(secondaryCdId, getResourceValue(player, secondaryCdId));
+			lastFormId = null;
+			lastPlayer = player;
+			lastWorld = mc.world;
 		}
-
-		// CD 条位置：由 SSCAddonClientConfig 的九宫格锚点 + 偏移决定（与本能/能量条一致的可视化编辑）
-		// 主条用配置的锚点+偏移；副条 X 相对屏幕中线镜像。
-
-		int cdType = config.cdBarPosType;
-		int cdOffX = config.cdBarPosOffsetX;
-		int cdOffY = config.cdBarPosOffsetY;
-		net.minecraft.util.Pair<Integer, Integer> anchor =
-				net.onixary.shapeShifterCurseFabric.util.UIPositionUtils.getCorrectPosition(cdType, 0, 0);
-		int scaledWidth = mc.getWindow().getScaledWidth();
-		int primaryX = anchor.getLeft() + cdOffX;
-		int barY = anchor.getRight() + cdOffY;
-		// 副条：对称时相对屏幕垂直中线镜像主条 X；非对称时用独立偏移
-		int secondaryX;
-		int secondaryY;
-		if (config.cdSymmetric) {
-			secondaryX = scaledWidth - primaryX - TEX_W;
-			secondaryY = barY;
-		} else {
-			secondaryX = anchor.getLeft() + config.cdSecondaryBarPosOffsetX;
-			secondaryY = anchor.getRight() + config.cdSecondaryBarPosOffsetY;
+		if (player == null || mc.world == null) return;
+		IForm form = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).nowForm;
+		Identifier formId = form == null ? null : form.getFormID();
+		if (!java.util.Objects.equals(formId, lastFormId)) {
+			trackedMaxValues.clear();
+			lastFormId = formId;
 		}
-
-		// 进化美西螈：主动技能未解锁前不显示对应 CD 条（主=投掷水矛 / 副=涡流引导）
-		boolean showPrimary = true;
-		boolean showSecondary = true;
-		if (formId.equals(FormIdentifiers.UPGRADE_AXOLOTL)) {
-			try {
-				net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionComponent evo =
-						net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent.EVOLUTION.get(player);
-				showPrimary = evo.isUnlocked(net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree.NODE_WATER_SPEAR);
-				showSecondary = evo.isUnlocked(net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree.NODE_VORTEX_GUIDE);
-			} catch (Exception ignored) {
-				// 组件暂不可用：保守不显示，避免误显示空 CD 条
-				showPrimary = false;
-				showSecondary = false;
+		if (formId == null || !SSCA_FORM_NAMESPACE.equals(formId.getNamespace())) return;
+		SSCAddonClientConfig config = SSCAddonConfig.client();
+		if (mc.options.hudHidden || !config.showCdBar) return;
+		config.migrateSkillHudLayout();
+		var skills = SkillHudCatalog.forHud(formId, player);
+		if (skills.isEmpty()) return;
+		var anchor = net.onixary.shapeShifterCurseFabric.util.UIPositionUtils
+				.getCorrectPosition(config.cdBarPosType, 0, 0);
+		int width = mc.getWindow().getScaledWidth();
+		int height = mc.getWindow().getScaledHeight();
+		Layout layout = panelLayout(anchor.getLeft() + config.cdBarPosOffsetX,
+				anchor.getRight() + config.cdBarPosOffsetY,
+				config.cdMirrorRight, width, height);
+		drawPanel(context, layout.primaryX(), layout.primaryY(), config.cdMirrorRight);
+		for (var skill : skills) {
+			int x = skill.primary() ? layout.primaryX() : layout.secondaryX();
+			int y = skill.primary() ? layout.primaryY() : layout.secondaryY();
+			Cooldown cooldown = readCooldown(player, skill.cooldown());
+			double internalReady = readInternalReady(player, skill);
+			if (formId.equals(FormIdentifiers.AXOLOTL_FLUORESCENT) && skill.primary()
+					&& !net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils.isWearing(player,
+					net.jackcooper.shapeShifterCurseAddon.SscAddon.SEA_CRYSTAL_PENDANT)) {
+				internalReady = -1;
 			}
+			if (formId.equals(FormIdentifiers.FAMILIAR_FOX_MANCIANIMA) && skill.primary()) {
+				double locked = Math.max(0, MancianimaMarkClientState.getStageEndTick() - mc.world.getTime())
+						/ (double) MancianimaMarkManager.STAGE_GATE_TICKS;
+				if (PowerUtils.getClientResourceValue(player, MancianimaPrimary.HUD_LOCK_TYPE) == 1) {
+					locked = Math.max(locked, cooldown.remaining() / (double) MancianimaPrimary.FIRST_PRESS_CD);
+					cooldown = new Cooldown(0, 0);
+				}
+				internalReady = 1 - Math.min(1, locked);
+			}
+			drawSkillSlot(context, skill.icon(), x, y, cooldown.fraction(),
+					(int) Math.ceil(cooldown.remaining() / 20.0), internalReady, skill.primary(), config.showCdSeconds,
+					config.cdMirrorRight);
 		}
-
-		if (showPrimary) renderCdBarWithNumber(context, player, primaryCdId, primaryX, barY, true, false);
-		if (showSecondary) renderCdBarWithNumber(context, player, secondaryCdId, secondaryX, secondaryY, false, false);
 	}
 
-	/**
-	 * 渲染一个CD条及数字
-	 * @param hideWhenReady 为true时，CD=0不渲染（可选CD条专用）
-	 */
-	private void renderCdBarWithNumber(DrawContext context, PlayerEntity player, Identifier cdId,
-	                                   int x, int y, boolean isPrimary, boolean hideWhenReady) {
-		int currentCd = getResourceValue(player, cdId);
+	private double readInternalReady(PlayerEntity player, SkillHudCatalog.Skill skill) {
+		Identifier id = skill.internalCooldown();
+		if (id == null || skill.internalTicks() <= 0 || !PowerTypeRegistry.contains(id)) return -1;
+		io.github.apace100.apoli.power.PowerType<?> type = PowerTypeRegistry.get(id);
+		Power power = PowerHolderComponent.KEY.get(player).getPower(type);
+		if (!(power instanceof CooldownPower) && !(power instanceof VariableIntPower)) return -1;
+		return 1.0 - readCooldown(player, id).remaining() / (double) skill.internalTicks();
+	}
 
-		// 可选CD条：不在冷却中则不渲染
-		if (hideWhenReady && currentCd <= 0) return;
+	public record Layout(int primaryX, int primaryY, int secondaryX, int secondaryY) {}
 
-		int prevFrameVal = lastFrameValues.getOrDefault(cdId, 0);
-		lastFrameValues.put(cdId, currentCd);
+	public static Layout panelLayout(int x, int y, boolean mirrorRight, int width, int height) {
+		x = clampPosition(x, width, SLOT_WIDTH);
+		if (mirrorRight) x = Math.max(0, width - x - SLOT_WIDTH);
+		y = clampPosition(y, height, PANEL_HEIGHT);
+		return new Layout(x, y, x, y + SLOT_STEP);
+	}
 
-		double cdPercent = 0.0;
-		int remainSec = 0;
+	private static int clampPosition(int position, int screenSize, int size) {
+		return Math.max(0, Math.min(Math.max(0, screenSize - size), position));
+	}
 
-		// 技能触发检测：计算期望衰减值，判断实际值是否偏离自然衰减轨迹
-		if (currentCd > 0) {
-			int expectedCd = Math.max(0, prevFrameVal - ticksDelta);
-			boolean skillTriggered = Math.abs(currentCd - expectedCd) > DEVIATION_THRESHOLD;
+	private record Cooldown(int remaining, double fraction) {}
 
-			// 技能触发时解除形态切换压制（无论模式是否匹配都需要）
-			if (skillTriggered) {
-				suppressionBaseline.remove(cdId);
-			}
-
-			// 形态切换压制检查（仅通用资源，技能触发前不显示）
-			if (suppressionBaseline.containsKey(cdId)) {
-				renderCdBar(context, x, y, 0.0);
-				return;
-			}
-
-			// 只有CD可见时才更新trackedMax（避免隐藏期间网络抖动污染最大值）
-			if (skillTriggered) {
-				trackedMaxValues.put(cdId, currentCd);
-			}
-			int trackedMax = trackedMaxValues.getOrDefault(cdId, currentCd);
-			if (currentCd > trackedMax) {
-				trackedMax = currentCd;
-				trackedMaxValues.put(cdId, trackedMax);
-			}
-			cdPercent = (double) currentCd / trackedMax;
-			remainSec = (int) Math.ceil(currentCd / 20.0);
-		} else {
-			trackedMaxValues.remove(cdId);
-			suppressionBaseline.remove(cdId);
+	private Cooldown readCooldown(PlayerEntity player, Identifier id) {
+		if (id == null || !PowerTypeRegistry.contains(id)) return new Cooldown(0, 0);
+		io.github.apace100.apoli.power.PowerType<?> type = PowerTypeRegistry.get(id);
+		Power power = PowerHolderComponent.KEY.get(player).getPower(type);
+		if (power instanceof CooldownPower cooldown) {
+			int remaining = Math.max(0, cooldown.getRemainingTicks());
+			return new Cooldown(remaining, remaining / (double) Math.max(1, cooldown.cooldownDuration));
 		}
+		int remaining = power instanceof VariableIntPower resource ? Math.max(0, resource.getValue()) : 0;
+		if (remaining == 0) {
+			trackedMaxValues.remove(id);
+			return new Cooldown(0, 0);
+		}
+		int maximum = trackedMaxValues.merge(id, remaining, Math::max);
+		return new Cooldown(remaining, remaining / (double) maximum);
+	}
 
-		renderCdBar(context, x, y, cdPercent);
+	public static void drawPanel(DrawContext context, int x, int y, boolean mirrorRight) {
+		context.drawTexture(mirrorRight ? TEX_PANEL_RIGHT : TEX_PANEL, x, y, 0, 0,
+				SLOT_WIDTH, PANEL_HEIGHT, SLOT_WIDTH, PANEL_HEIGHT);
+		int barX = x + (mirrorRight ? 29 : 2);
+		context.fill(barX, y + 8, barX + 2, y + 32, 0xFF8B8B8B);
+		context.fill(barX, y + 36, barX + 2, y + 60, 0xFF8B8B8B);
+	}
 
-		// 显示剩余秒数（0.75倍缩放，靠近快捷栏中间）
-		SSCAddonClientConfig cfg = SSCAddonConfig.client();
-		if (remainSec > 0 && cfg.showCdSeconds) {
-			String text = String.valueOf(remainSec);
-			float scale = 0.75f;
-			int textW = (int) (mc.textRenderer.getWidth(text) * scale);
-			int textX;
-			if (isPrimary) {
-				textX = x - textW - 1;
-			} else {
-				textX = x + TEX_W + 1;
+	public static void drawSkillSlot(DrawContext context, Identifier icon, int x, int y,
+	                                double cooldownFraction, int seconds, double internalReadyFraction,
+	                                boolean primary, boolean showSeconds, boolean mirrorRight) {
+		int iconX = x + (mirrorRight ? 3 : 10);
+		int iconY = y + (primary ? 10 : 4);
+		context.fill(iconX, iconY, iconX + ICON_SIZE, iconY + ICON_SIZE, 0xFF8B8B8B);
+		context.getMatrices().push();
+		context.getMatrices().translate(iconX, iconY, 0);
+		context.getMatrices().scale(ICON_SIZE / 32.0f, ICON_SIZE / 32.0f, 1.0f);
+		context.drawTexture(icon, 0, 0, 0, 0, 32, 32, 32, 32);
+		context.getMatrices().pop();
+		int shadeHeight = (int) Math.ceil(ICON_SIZE * Math.max(0, Math.min(1, cooldownFraction)));
+		if (shadeHeight > 0) {
+			context.fill(iconX, iconY, iconX + ICON_SIZE, iconY + shadeHeight, 0xB0000000);
+		}
+		if (internalReadyFraction >= 0) {
+			int readyHeight = (int) Math.floor(INTERNAL_HEIGHT * Math.max(0, Math.min(1, internalReadyFraction)));
+			if (readyHeight > 0) {
+				int barBottom = primary ? 32 : 26;
+				int textureBottom = primary ? 32 : 60;
+				int barOffset = mirrorRight ? 29 : 2;
+				context.drawTexture(mirrorRight ? TEX_PANEL_RIGHT : TEX_PANEL,
+						x + barOffset, y + barBottom - readyHeight, barOffset, textureBottom - readyHeight,
+						2, readyHeight, SLOT_WIDTH, PANEL_HEIGHT);
 			}
-			int textY = y + (TEX_H - (int) (8 * scale)) / 2;
+		}
+		if (showSeconds && seconds > 0) {
+			String number = Integer.toString(seconds);
+			int textWidth = mc.textRenderer.getWidth(number);
+			float scale = Math.min(1.0f, (ICON_SIZE - 2.0f) / Math.max(1, textWidth));
 			context.getMatrices().push();
-			context.getMatrices().translate(textX, textY, 0);
+			context.getMatrices().translate(iconX + (ICON_SIZE - textWidth * scale) / 2,
+					iconY + (ICON_SIZE - mc.textRenderer.fontHeight * scale) / 2, 0);
 			context.getMatrices().scale(scale, scale, 1.0f);
-			context.drawText(mc.textRenderer, Text.literal(text),
-					0, 0, 0xFFFFFF, true);
+			context.drawText(mc.textRenderer, number, 0, 0, 0xFFFFFFFF, true);
 			context.getMatrices().pop();
 		}
-	}
-
-	/**
-	 * 渲染一个竖向CD条
-	 */
-	private void renderCdBar(DrawContext context, int x, int y, double cdPercent) {
-		if (cdPercent <= 0) {
-			context.drawTexture(TEX_FULL, x, y, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-			return;
-		}
-
-		// 先绘制empty作为完整背景
-		context.drawTexture(TEX_EMPTY, x, y, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-
-		if (cdPercent >= 1.0) return;
-
-		// 计算就绪段数
-		int cdSegments = (int) Math.ceil(cdPercent * 5);
-		if (cdSegments > 5) cdSegments = 5;
-		int readySegments = 5 - cdSegments;
-		if (readySegments <= 0) return;
-
-		int readyH = Math.round(TEX_H * readySegments / 5.0f);
-		if (readyH <= 0) return;
-		if (readyH > TEX_H) readyH = TEX_H;
-
-		// 从底部向上叠加full纹理
-		int fullStartY = y + (TEX_H - readyH);
-		float fullUV = TEX_H - readyH;
-		context.drawTexture(TEX_FULL, x, fullStartY, 0, fullUV, TEX_W, readyH, TEX_W, TEX_H);
-	}
-
-	/**
-	 * 从Apoli VariableIntPower读取当前值（客户端侧）
-	 */
-	private int getResourceValue(PlayerEntity player, Identifier resourceId) {
-		return PowerUtils.getClientResourceValue(player, resourceId);
-	}
-
-	private void resetCooldownTracking() {
-		lastFormId = null;
-		trackedMaxValues.clear();
-		lastFrameValues.clear();
-		suppressionBaseline.clear();
 	}
 }

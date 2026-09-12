@@ -46,6 +46,8 @@ public final class MancianimaPrimary {
 	public static final int MARK_MANA_COST = 15;
 	public static final int FIZZLE_MANA_COST = 5;
 	public static final int FIRST_PRESS_CD = 100;            // 5s
+	public static final net.minecraft.util.Identifier HUD_LOCK_TYPE =
+			new net.minecraft.util.Identifier("my_addon", "form_mancianima_hud_lock_type");
 	public static final int SUCCESS_DAMAGE_CD_ADD = 300;     // +15s
 	public static final int RED_TRIGGER_INTERVAL = 20;       // 1s 触发间隔（防连点升红）
 	public static final double MARK_RANGE = 32.0;
@@ -150,6 +152,7 @@ public final class MancianimaPrimary {
 			pauseManaRegen(player);
 			playMarkFailSound(player);
 			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, FIRST_PRESS_CD);
+			PowerUtils.setResourceValueAndSync(player, HUD_LOCK_TYPE, 1);
 			return;
 		}
 
@@ -172,6 +175,7 @@ public final class MancianimaPrimary {
 
 		MancianimaMarkManager.setMark(player, target, MancianimaMarkManager.MarkColor.YELLOW);
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, FIRST_PRESS_CD);
+		PowerUtils.setResourceValueAndSync(player, HUD_LOCK_TYPE, 1);
 
 		// 标记成功 - 仅 marker 自己能听到的反馈音（多层叠加，增强可辨识度）
 		MancianimaMarkManager.playSoundToPlayer(player, SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, 1.0f, 1.6f);
@@ -236,6 +240,7 @@ public final class MancianimaPrimary {
 		// 成功 CD +15s
 		int cur = PowerUtils.getResourceValue(marker, FormIdentifiers.SP_PRIMARY_CD);
 		PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_PRIMARY_CD, cur + SUCCESS_DAMAGE_CD_ADD);
+		PowerUtils.setResourceValueAndSync(marker, HUD_LOCK_TYPE, 0);
 		// 斩杀完成：补满 mana 能量
 		ManaUtils.setPlayerMana(marker, ManaUtils.getPlayerMaxMana(marker));
 		// 红标使命达成 → 清除（已造成伤害，进入下一轮）

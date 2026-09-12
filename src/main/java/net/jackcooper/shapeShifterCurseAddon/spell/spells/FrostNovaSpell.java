@@ -19,7 +19,8 @@ import java.util.List;
  * 冰霜新星（冰系，绿色基底，jackcooper）：以自身为圆心爆发寒气，范围内造成伤害 + 缓速 II 4s。
  *
  * <p>数值外置 {@code data/ssc_addon/spells/frost_nova.json}：
- * 基准 3 伤 / 半径 4 格 / cd 5s / 耗蓝 15；半径按 speed_multiplier 缩放（每级 +0.5 格）。
+ * 基准 3 伤 / 半径 4 格 / cd 5s / 耗蓝 15；半径按 speed_multiplier 缩放（每级 +0.5 格），
+ * 稀有度为蓝/橙时额外 +25%。
  * 纯控制向：不点燃（对比烈焰新星），缓速时长随等级微涨（L1 4s → L5 6s）。
  * 白名单：主人在线且目标受保护 → 免伤；施法者本人不受影响。</p>
  */
@@ -43,6 +44,11 @@ public class FrostNovaSpell extends Spell {
 			return;
 		}
 		double radius = BASE_RADIUS * getSpeedMultiplier(level);
+		// 稀有度为蓝/橙时，生效范围额外 +25%（独立于等级缩放，数据包改 rarity 自动跟随）
+		SpellRarity rarity = getRarity(level);
+		if (rarity == SpellRarity.BLUE || rarity == SpellRarity.ORANGE) {
+			radius *= 1.25;
+		}
 		// 缓速 II，时长 4s（L1-2）/ 5s（L3-4）/ 6s（L5）
 		int slowTicks = 80 + (level >= 3 ? 20 : 0) + (level >= 5 ? 20 : 0);
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,

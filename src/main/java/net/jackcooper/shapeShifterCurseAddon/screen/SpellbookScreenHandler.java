@@ -33,7 +33,7 @@ public class SpellbookScreenHandler extends ScreenHandler {
 		this(syncId, playerInv, bookStack,
 				SpellbookData.getSlotCount(bookStack),
 				SpellbookData.getLevel(bookStack),
-				SpellbookData.getExp(bookStack),
+				SpellbookData.getExpTen(bookStack),
 				SpellbookData.getMana(bookStack),
 				SpellbookData.getMaxMana(bookStack));
 	}

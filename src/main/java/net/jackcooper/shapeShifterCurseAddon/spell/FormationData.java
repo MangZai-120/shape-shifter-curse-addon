@@ -21,11 +21,12 @@ public final class FormationData {
 	/** 法阵等级上限。 */
 	public static final int MAX_FORMATION_LEVEL = 5;
 
-	/** 每级数值：同系伤 +12%、对立系伤 -12%、同系 cd -5%、全魔法耗蓝 +10%。 */
+	/** 每级数值：同系伤 +12%、对立系伤 -12%、同系 cd -5%、全魔法耗蓝 +10%；空间法阵对空间魔法距离 +6%/级。 */
 	public static final float DAMAGE_BONUS_PER_LEVEL = 0.12f;
 	public static final float DAMAGE_PENALTY_PER_LEVEL = 0.12f;
 	public static final float COOLDOWN_REDUCTION_PER_LEVEL = 0.05f;
 	public static final float MANA_COST_PER_LEVEL = 0.10f;
+	public static final float SPACE_RANGE_BONUS_PER_LEVEL = 0.06f;
 
 	private FormationData() {
 	}
@@ -78,43 +79,69 @@ public final class FormationData {
 		return stack;
 	}
 
-	// ---- 施法数值结算（服务端 SpellCastManager 调用） ----
+	// ---- 施法数值结算（服务端 SpellCastManager 调用；2026-09 签名重构为元素参数，支持多对立对） ----
 
 	/**
 	 * 汇总魔法书内全部法阵对「指定系别魔法」的伤害倍率。
 	 * 同系每级 +12%、对立系每级 -12%，正负抵消后总体 clamp ≥ 0。
+	 * 通用/空间系法阵不参与（空间走专属 cd/距离加成）。
 	 */
-	public static float sumDamageMultiplier(ItemStack book, boolean spellIsIce) {
+	public static float sumDamageMultiplier(ItemStack book, FormationElement spellElement) {
+		if (spellElement == null || spellElement == FormationElement.UNIVERSAL
+				|| spellElement == FormationElement.SPACE) {
+			return 1f;
+		}
 		float total = 0f;
 		for (ItemStack formation : SpellbookData.getFormations(book)) {
 			FormationElement element = getElement(formation);
-			if (element == null) {
+			if (element == null || element == FormationElement.UNIVERSAL || element == FormationElement.SPACE) {
 				continue;
 			}
-			boolean formationIsIce = element == FormationElement.ICE;
-			if (formationIsIce == spellIsIce) {
+			if (element == spellElement) {
 				total += DAMAGE_BONUS_PER_LEVEL * getLevel(formation);
-			} else {
+			} else if (element == spellElement.opponent()) {
 				total -= DAMAGE_PENALTY_PER_LEVEL * getLevel(formation);
 			}
 		}
 		return Math.max(0f, 1f + total);
 	}
 
-	/** 汇总全部法阵对「指定系别魔法」的冷却倍率（同系每级 -5%，最低 0.2 倍防极端）。 */
-	public static float sumCooldownMultiplier(ItemStack book, boolean spellIsIce) {
+	/**
+	 * 汇总全部法阵对「指定系别魔法」的冷却倍率。
+	 * 对立对（火冰/月诅/召虚）同系每级 -5%；空间系法阵只对空间系魔法生效（每级 -5%）；
+	 * 最低 0.2 倍防极端。
+	 */
+	public static float sumCooldownMultiplier(ItemStack book, FormationElement spellElement) {
+		if (spellElement == null) {
+			return 1f;
+		}
 		float total = 0f;
 		for (ItemStack formation : SpellbookData.getFormations(book)) {
 			FormationElement element = getElement(formation);
-			if (element == null) {
+			if (element == null || element == FormationElement.UNIVERSAL) {
 				continue;
 			}
-			boolean formationIsIce = element == FormationElement.ICE;
-			if (formationIsIce == spellIsIce) {
+			boolean isSpacePair = element == FormationElement.SPACE && spellElement == FormationElement.SPACE;
+			if (element == spellElement || isSpacePair) {
 				total -= COOLDOWN_REDUCTION_PER_LEVEL * getLevel(formation);
 			}
 		}
 		return Math.max(0.2f, 1f + total);
+	}
+
+	/** 空间系法阵对「空间系魔法施法距离」的加成倍率（每级 +6%，仅空间法阵且仅空间魔法生效）。 */
+	public static float sumSpaceRangeMultiplier(ItemStack book, FormationElement spellElement) {
+		if (spellElement != FormationElement.SPACE) {
+			return 1f;
+		}
+		float total = 0f;
+		for (ItemStack formation : SpellbookData.getFormations(book)) {
+			FormationElement element = getElement(formation);
+			if (element == FormationElement.SPACE) {
+				total += SPACE_RANGE_BONUS_PER_LEVEL * getLevel(formation);
+			}
+		}
+		return 1f + total;
 	}
 
 	/** 汇总全部法阵对「全魔法」的法力消耗倍率（每级 +10%，不封顶——这就是叠加的代价）。 */
@@ -122,11 +149,22 @@ public final class FormationData {
 		float total = 0f;
 		for (ItemStack formation : SpellbookData.getFormations(book)) {
 			FormationElement element = getElement(formation);
-			if (element == null) {
-				continue;
+			if (element == null || element == FormationElement.UNIVERSAL) {
+				continue; // 通用系不增加耗蓝
 			}
 			total += MANA_COST_PER_LEVEL * getLevel(formation);
 		}
 		return 1f + total;
+	}
+
+	// ---- 通用系：形态能量 → 书法术值转化（数值定义） ----
+
+	/** 通用法阵每秒消耗的形态能量点数。 */
+	public static final double UNIVERSAL_MANA_DRAIN_PER_SEC = 3.0;
+	/** 通用法阵每秒回复的书法术值点数。 */
+	public static final double UNIVERSAL_BOOK_MANA_PER_SEC = 6.0;
+	/** 通用法阵触发水位（书法术值占比）按等级插值：Lv1=20% … Lv5=100%。 */
+	public static double universalThreshold(int level) {
+		return 0.2 + 0.2 * (Math.max(1, Math.min(MAX_FORMATION_LEVEL, level)) - 1);
 	}
 }

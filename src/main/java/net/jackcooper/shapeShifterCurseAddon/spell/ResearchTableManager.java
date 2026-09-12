@@ -38,15 +38,23 @@ public final class ResearchTableManager {
 			player.sendMessage(Text.translatable("message.ssc_addon.research.not_learned").formatted(Formatting.RED), true);
 			return;
 		}
-		// 材料重验：纸×1 + 对应系油墨×level（普通墨不可）
+		// 材料重验：纸×1 + 油墨×level（通用系用普通墨；火/冰必须对应系墨）
 		if (!(be.getStack(SpellResearchTableBlockEntity.SLOT_PAPER).getItem()
 				instanceof net.jackcooper.shapeShifterCurseAddon.item.BlankFormationPaperItem)) {
 			player.sendMessage(Text.translatable("message.ssc_addon.research.no_paper").formatted(Formatting.RED), true);
 			return;
 		}
 		ItemStack ink = be.getStack(SpellResearchTableBlockEntity.SLOT_INK);
-		if (!(ink.getItem() instanceof FormationInkItem inkItem) || inkItem.getType() == FormationInkItem.Type.NORMAL
-				|| inkItem.getType().element != element || ink.getCount() < level) {
+		boolean inkValid;
+		if (element == FormationElement.UNIVERSAL) {
+			// 通用法阵：普通法阵油墨（Type.NORMAL），数量 ≥ level
+			inkValid = ink.getItem() instanceof FormationInkItem inkItem
+					&& inkItem.getType() == FormationInkItem.Type.NORMAL && ink.getCount() >= level;
+		} else {
+			inkValid = ink.getItem() instanceof FormationInkItem inkItem && inkItem.getType() != FormationInkItem.Type.NORMAL
+					&& inkItem.getType().element == element && ink.getCount() >= level;
+		}
+		if (!inkValid) {
 			player.sendMessage(Text.translatable("message.ssc_addon.research.no_ink",
 					Text.translatable(element.getNameKey()), level).formatted(Formatting.RED), true);
 			return;

@@ -77,6 +77,22 @@ public final class SpellRegistry implements SimpleSynchronousResourceReloadListe
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.IceBarrageSpell());    // 冰锥齐射
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.FrostNovaSpell());     // 冰霜新星
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.FrostArmorSpell());    // 霜甲术
+		// —— 2026-09 新增系别：月辉 × 诅咒（对立对，jackcooper）——
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.MoonlightArrowSpell());  // 月光箭
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarMendSpell());       // 月华治愈
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarVeilSpell());       // 月幕
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.CurseMarkSpell());       // 诅咒标记
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.DreadWhisperSpell());    // 恐惧低语
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.CorruptMistSpell());     // 腐蚀之雾
+		// —— 2026-09 新增系别：召唤 × 虚无（对立对）——
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.SummonLunarSpiritSpell()); // 召唤月灵
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.CompanionResonanceSpell()); // 伙伴共鸣
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.VoidDevourSpell());      // 虚空吞噬
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.VoidErosionSpell());     // 虚空侵蚀
+		// —— 2026-09 新增系别：空间（独立，位移探索向）——
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.SpaceBlinkSpell());      // 空间跳跃
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.SpaceStrideSpell());     // 空间漫步
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.SpaceRecallSpell());     // 空间归途
 	}
 
 	// ---- datapack reload（服务端 / 单人；客机走 applyClientSync 镜像）----

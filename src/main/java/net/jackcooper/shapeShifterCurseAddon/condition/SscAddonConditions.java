@@ -25,6 +25,7 @@ import net.jackcooper.shapeShifterCurseAddon.util.SkillBlocker;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
+import net.jackcooper.shapeShifterCurseAddon.spell.UniversalFormationManager;
 
 public class SscAddonConditions {
 
@@ -33,6 +34,11 @@ public class SscAddonConditions {
 	}
 
 	public static void register() {
+		register(new ConditionFactory<>(new Identifier("ssc_addon", "not_universal_formation_charging"),
+				new SerializableData(),
+				(data, entity) -> !(entity instanceof PlayerEntity player)
+						|| !UniversalFormationManager.isCharging(player)));
+
 		register(new ConditionFactory<>(new Identifier("ssc_addon", "has_reverse_thermometer"),
 				new SerializableData(),
 				(data, entity) -> {

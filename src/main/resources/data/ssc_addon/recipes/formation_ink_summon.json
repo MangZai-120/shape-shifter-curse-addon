@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "ssc_addon:formation_ink_normal" },
+    { "item": "minecraft:golden_carrot" }
+  ],
+  "result": {
+    "item": "ssc_addon:formation_ink_summon",
+    "count": 1
+  }
+}

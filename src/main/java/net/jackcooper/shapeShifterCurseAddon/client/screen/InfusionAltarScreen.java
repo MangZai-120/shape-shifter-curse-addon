@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.screen.InfusionAltarScreenHandler;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationData;
+import net.jackcooper.shapeShifterCurseAddon.spell.FormationElement;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
@@ -122,19 +123,41 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 			int lv = SpellbookData.getLevel(book);
 			int mana = SpellbookData.getMana(book);
 			int maxMana = SpellbookData.getMaxMana(book);
-			int exp = SpellbookData.getExp(book);
+			int expTen = SpellbookData.getExpTen(book);
 			int need = SpellbookData.getExpToNext(book);
 			int formationSlots = SpellbookData.getFormationSlotCount(book);
 			ctx.drawText(this.textRenderer, Text.literal("Lv " + lv), 8, 57, 0xB8A0FF, false);
 			ctx.drawText(this.textRenderer, Text.literal(mana + "/" + maxMana + " MP"), 8, 67, 0x88A0FF, false);
-			String expStr = need > 0 ? ("EXP " + exp + "/" + need) : "MAX";
+			// 经验显示（1 位小数）：未满级显示升级进度；满级显示精通档进度（法力上限成长）
+			String expStr;
+			if (need > 0) {
+				expStr = String.format(java.util.Locale.ROOT, "EXP %.1f/%.1f", expTen / 10.0, need / 10.0);
+			} else {
+				int masteryNeed = SpellbookData.getMasteryExpToNextTier(book);
+				if (masteryNeed > 0) {
+					// 当前档内进度：从 ×10 整数取模折算（避免浮点 % 精度误差）
+					float tierProgress = (expTen % SpellbookData.MASTERY_EXP_PER_TIER) / 10.0f;
+					expStr = String.format(java.util.Locale.ROOT, "精通%d档 %.1f/%.1f",
+								SpellbookData.getMasteryTier(book) + 1,
+								tierProgress, masteryNeed / 10.0);
+				} else {
+					expStr = "精通已满档 +" + SpellbookData.getMasteryManaBonus(book);
+				}
+			}
 			ctx.drawText(this.textRenderer, Text.literal(expStr), 8, 77, 0x9A88CC, false);
-			// 已装法阵加成汇总（展示冰伤/冰cd/耗蓝三项；耗蓝对全魔法同一倍率）
-			float iceDmg = FormationData.sumDamageMultiplier(book, true);
-			float iceCd = FormationData.sumCooldownMultiplier(book, true);
+			// 已装法阵加成汇总（耗蓝对全魔法同一倍率；对立对逐对展示当前加成）
 			float manaMul = FormationData.sumManaCostMultiplier(book);
 			ctx.drawText(this.textRenderer, Text.literal(String.format("法阵 %d/%d", countFormations(book), formationSlots)), 8, 87, 0x9A88CC, false);
-			ctx.drawText(this.textRenderer, Text.literal(String.format("冰伤×%.2f CD×%.2f 蓝耗×%.2f", iceDmg, iceCd, manaMul)), 8, 97, 0x8090C8, false);
+			ctx.drawText(this.textRenderer, Text.literal(String.format("火×%.2f 冰×%.2f 月×%.2f 诅×%.2f", 
+					FormationData.sumDamageMultiplier(book, FormationElement.FIRE),
+					FormationData.sumDamageMultiplier(book, FormationElement.ICE),
+					FormationData.sumDamageMultiplier(book, FormationElement.LUNAR),
+					FormationData.sumDamageMultiplier(book, FormationElement.CURSE))), 8, 97, 0x8090C8, false);
+			ctx.drawText(this.textRenderer, Text.literal(String.format("召×%.2f 虚×%.2f 空CD×%.2f 蓝耗×%.2f", 
+					FormationData.sumDamageMultiplier(book, FormationElement.SUMMON),
+					FormationData.sumDamageMultiplier(book, FormationElement.VOID),
+					FormationData.sumCooldownMultiplier(book, FormationElement.SPACE),
+					manaMul)), 8, 107, 0x8090C8, false);
 		}
 		ctx.drawText(this.textRenderer, this.playerInventoryTitle,
 				this.playerInventoryTitleX, this.playerInventoryTitleY, 0x404040, false);

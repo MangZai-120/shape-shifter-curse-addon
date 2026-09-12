@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "ssc_addon:formation_ink_normal" },
+    { "item": "minecraft:chorus_fruit" }
+  ],
+  "result": {
+    "item": "ssc_addon:formation_ink_void",
+    "count": 1
+  }
+}

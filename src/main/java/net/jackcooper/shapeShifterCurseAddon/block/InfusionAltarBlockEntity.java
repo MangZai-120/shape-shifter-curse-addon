@@ -70,7 +70,7 @@ public class InfusionAltarBlockEntity extends BlockEntity implements NamedScreen
 		items.get(1).decrement(1); // 燃料槽月尘纯晶
 		ItemStack book = items.get(0);
 		SpellbookData.setLevel(book, SpellbookData.getLevel(book) + 1);
-		SpellbookData.setExp(book, 0);
+		SpellbookData.setExpTen(book, 0); // 升级经验清零（×10 整数；满级后不再清零，经验转精通档）
 		SpellbookData.setMana(book, SpellbookData.getMaxMana(book)); // 升级补满法力
 		// 升级可能解锁新角位：重置快照强制重新加载（书变分支），角槽显示书内当前法阵
 		this.lastSyncedFormations = null;

@@ -118,6 +118,17 @@ public class FormationItem extends Item {
 			return;
 		}
 		int level = FormationData.getLevel(stack);
+		// 通用系：形态能量转化文案（不参与伤害/CD/耗蓝）
+		if (element == FormationElement.UNIVERSAL) {
+			int pct = (int) Math.round(FormationData.universalThreshold(level) * 100);
+			tooltip.add(Text.translatable("item.ssc_addon.formation.tip_universal",
+					pct,
+					(int) FormationData.UNIVERSAL_MANA_DRAIN_PER_SEC,
+					(int) FormationData.UNIVERSAL_BOOK_MANA_PER_SEC).formatted(Formatting.GRAY));
+			tooltip.add(Text.translatable("item.ssc_addon.formation.tip_use").formatted(Formatting.DARK_GRAY));
+			tooltip.add(Text.translatable("item.ssc_addon.formation.tip_hint").formatted(Formatting.DARK_GRAY));
+			return;
+		}
 		int pct = Math.round(FormationData.DAMAGE_BONUS_PER_LEVEL * level * 100);
 		int cdPct = Math.round(FormationData.COOLDOWN_REDUCTION_PER_LEVEL * level * 100);
 		int manaPct = Math.round(FormationData.MANA_COST_PER_LEVEL * level * 100);

@@ -103,6 +103,8 @@ public class SscAddon implements ModInitializer {
 	public static final StatusEffect TRUE_INVISIBILITY = new TrueInvisibilityEffect();
 	public static final StatusEffect PRE_INVISIBILITY = new PreInvisibilityEffect();
 	public static final StatusEffect STUN = new StunEffect();
+	// 诅咒标记（诅咒系法术：标记期间受伤 +20%，mixin 内结算；月辉系可净化）
+	public static final StatusEffect CURSE_MARK = new net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect();
 	public static final StatusEffect ROOTED = new RootedEffect();
 	public static final StatusEffect GUARANTEED_CRIT = new GuaranteedCritEffect();
 	public static final StatusEffect FROST_FREEZE = new FrostFreezeEffect();
@@ -131,6 +133,8 @@ public class SscAddon implements ModInitializer {
 	public static final Item MOON_DUST_SPELLBOOK = new MoonDustSpellbookItem(new Item.Settings().maxCount(1));
 	// 魔法卷轴（通用物品，NBT 绑定具体魔法与稀有度）
 	public static final Item MAGIC_SCROLL = new MagicScrollItem(new Item.Settings().maxCount(16));
+	// 月光箭渲染专用物品（3D 光灵箭模型，仅投射物渲染用；不进创造栏不可获取）
+	public static final Item MOONLIGHT_ARROW_RENDER = new Item(new Item.Settings());
 	// 增强法阵（NBT 绑定系别+等级；右键记录魔法进玩家数据，jackcooper）
 	public static final Item FORMATION = new net.jackcooper.shapeShifterCurseAddon.item.FormationItem(new Item.Settings().maxCount(16));
 	// 空白法阵纸（研究台抄写耗材）
@@ -142,6 +146,17 @@ public class SscAddon implements ModInitializer {
 			new Item.Settings().maxCount(16), net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem.Type.ICE);
 	public static final Item FORMATION_INK_FIRE = new net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem(
 			new Item.Settings().maxCount(16), net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem.Type.FIRE);
+	// 2026-09 新五系油墨：月辉/诅咒/召唤/虚无/空间（抄写对应系法阵耗材）
+	public static final Item FORMATION_INK_LUNAR = new net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem(
+			new Item.Settings().maxCount(16), net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem.Type.LUNAR);
+	public static final Item FORMATION_INK_CURSE = new net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem(
+			new Item.Settings().maxCount(16), net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem.Type.CURSE);
+	public static final Item FORMATION_INK_SUMMON = new net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem(
+			new Item.Settings().maxCount(16), net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem.Type.SUMMON);
+	public static final Item FORMATION_INK_VOID = new net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem(
+			new Item.Settings().maxCount(16), net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem.Type.VOID);
+	public static final Item FORMATION_INK_SPACE = new net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem(
+			new Item.Settings().maxCount(16), net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem.Type.SPACE);
 	public static final EntityType<FrostBallEntity> FROST_BALL_ENTITY =
 			registerEntity("frost_ball", SpawnGroup.MISC, FrostBallEntity::new, 0.25f, 0.25f, 64, 10);
 	// 月尘魔法·冰锥投射物（独立于雪狐 SP 冰球，供魔法书「冰锥」魔法使用，jackcooper）
@@ -153,6 +168,18 @@ public class SscAddon implements ModInitializer {
 	// 月尘魔法·陨火实体（落点预警圈 + 天降火球 AOE，jackcooper）
 	public static final EntityType<net.jackcooper.shapeShifterCurseAddon.entity.SpellMeteorEntity> SPELL_METEOR_ENTITY =
 			registerEntity("spell_meteor", SpawnGroup.MISC, net.jackcooper.shapeShifterCurseAddon.entity.SpellMeteorEntity::new, 0.5f, 0.5f, 64, 10);
+	// 月尘魔法·月光箭投射物（月辉系单体直线，对亡灵 +50%，jackcooper）
+	public static final EntityType<net.jackcooper.shapeShifterCurseAddon.entity.SpellMoonlightArrowEntity> SPELL_MOONLIGHT_ARROW_ENTITY =
+			registerEntity("spell_moonlight_arrow", SpawnGroup.MISC, net.jackcooper.shapeShifterCurseAddon.entity.SpellMoonlightArrowEntity::new, 0.25f, 0.25f, 64, 10);
+	// 月尘魔法·诅咒标记投射物（诅咒系单体，命中挂受伤加深，jackcooper）
+	public static final EntityType<net.jackcooper.shapeShifterCurseAddon.entity.SpellCurseMarkEntity> SPELL_CURSE_MARK_ENTITY =
+			registerEntity("spell_curse_mark", SpawnGroup.MISC, net.jackcooper.shapeShifterCurseAddon.entity.SpellCurseMarkEntity::new, 0.25f, 0.25f, 64, 10);
+	// 月灵（召唤系法术的协战飞行生物，有限寿命，jackcooper）。同步频率 1t：LivingEntity 客户端不自算位移，投射物模板的 10t 会一顿一顿
+	public static final EntityType<net.jackcooper.shapeShifterCurseAddon.entity.LunarSpiritEntity> LUNAR_SPIRIT_ENTITY =
+			registerEntity("lunar_spirit", SpawnGroup.MISC, net.jackcooper.shapeShifterCurseAddon.entity.LunarSpiritEntity::new, 0.4f, 0.6f, 64, 1);
+	// 月灵光弹（远程曲线光弹：偏 ±45° 射出 + 逐 tick 转向，不穿墙，jackcooper）
+	public static final EntityType<net.jackcooper.shapeShifterCurseAddon.entity.LunarSpiritBoltEntity> LUNAR_SPIRIT_BOLT_ENTITY =
+			registerEntity("lunar_spirit_bolt", SpawnGroup.MISC, net.jackcooper.shapeShifterCurseAddon.entity.LunarSpiritBoltEntity::new, 0.2f, 0.2f, 64, 10);
 	// 进化美西螈「投掷水矛」直线水矛投射物（无重力匀速）
 	public static final EntityType<ThrownWaterSpearEntity> THROWN_WATER_SPEAR_ENTITY =
 			registerEntity("thrown_water_spear", SpawnGroup.MISC, ThrownWaterSpearEntity::new, 0.4f, 0.4f, 64, 10);	// 寒棘狐「冰刺」冰锥投射物（环绕态 HOVER + 飞行态 FLY 双态；最远飞 128 格，trackRange 同步 128 防提前消失）
@@ -303,6 +330,11 @@ public class SscAddon implements ModInitializer {
 					entries.add(FORMATION_INK_NORMAL);
 					entries.add(FORMATION_INK_ICE);
 					entries.add(FORMATION_INK_FIRE);
+					entries.add(FORMATION_INK_LUNAR);
+					entries.add(FORMATION_INK_CURSE);
+					entries.add(FORMATION_INK_SUMMON);
+					entries.add(FORMATION_INK_VOID);
+					entries.add(FORMATION_INK_SPACE);
 					entries.add(BLANK_FORMATION_PAPER);						entries.add(EVOLUTION_STONE);
 						entries.add(PSIONIC_ORB);
 						entries.add(LIFESAVING_CAT_TAIL);
@@ -384,6 +416,8 @@ public class SscAddon implements ModInitializer {
 		registerItems();
 		// 月尘魔法系统：注册所有内置魔法
 		net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.init();
+		// 通用增强法阵：形态能量 → 书法术值转化 tick（jackcooper）
+		net.jackcooper.shapeShifterCurseAddon.spell.UniversalFormationManager.init();
 		// 附属方块注册（蛛网膜等，jackcooper）
 		net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks.init();
 			// 附属实体注册（月织蛛蓄力蛛丝弹，jackcooper）
@@ -463,6 +497,7 @@ public class SscAddon implements ModInitializer {
 		registerEffect("erosion_brand_marker_2", EROSION_BRAND_MARKER_2);
 		registerEffect("erosion_brand_marker_3", EROSION_BRAND_MARKER_3);
 		registerEffect("tidal_slow", TIDAL_SLOW);
+		registerEffect("curse_mark", CURSE_MARK);
 	}
 
 	private void registerItems() {
@@ -485,11 +520,17 @@ public class SscAddon implements ModInitializer {
 		Registry.register(Registries.SCREEN_HANDLER, new Identifier("ssc_addon", "potion_bag"), POTION_BAG_SCREEN_HANDLER);
 		registerItem("moon_dust_spellbook", MOON_DUST_SPELLBOOK);
 		registerItem("magic_scroll", MAGIC_SCROLL);
+		registerItem("moonlight_arrow_render", MOONLIGHT_ARROW_RENDER);
 		registerItem("formation", FORMATION);
 		registerItem("blank_formation_paper", BLANK_FORMATION_PAPER);
 		registerItem("formation_ink_normal", FORMATION_INK_NORMAL);
 		registerItem("formation_ink_ice", FORMATION_INK_ICE);
 		registerItem("formation_ink_fire", FORMATION_INK_FIRE);
+		registerItem("formation_ink_lunar", FORMATION_INK_LUNAR);
+		registerItem("formation_ink_curse", FORMATION_INK_CURSE);
+		registerItem("formation_ink_summon", FORMATION_INK_SUMMON);
+		registerItem("formation_ink_void", FORMATION_INK_VOID);
+		registerItem("formation_ink_space", FORMATION_INK_SPACE);
 		Registry.register(Registries.SCREEN_HANDLER, new Identifier("ssc_addon", "spellbook"), SPELLBOOK_SCREEN_HANDLER);
 		registerItem("evolution_stone", EVOLUTION_STONE);
 		registerItem("psionic_orb", PSIONIC_ORB);
@@ -548,6 +589,7 @@ public class SscAddon implements ModInitializer {
 		FabricDefaultAttributeRegistry.register(WITCH_FAMILIAR_ENTITY, WitchFamiliarEntity.createWitchFamiliarAttributes());
 		FabricDefaultAttributeRegistry.register(AXOLOTL_SHIFTER_ENTITY, AxolotlShifterEntity.createAxolotlShifterAttributes());
 		FabricDefaultAttributeRegistry.register(GHOST_CAT_ENTITY, net.jackcooper.shapeShifterCurseAddon.entity.GhostCatEntity.createGhostCatAttributes());
+		FabricDefaultAttributeRegistry.register(LUNAR_SPIRIT_ENTITY, net.jackcooper.shapeShifterCurseAddon.entity.LunarSpiritEntity.createLunarSpiritAttributes());
 	}
 
 	// 注册辅助方法（消除重复的 Registry.register 样板）
@@ -583,6 +625,10 @@ public class SscAddon implements ModInitializer {
 		ParasiticSeedEnergyRegen.init();
 		NineLivesManager.init();
 		NovaSkillManager.init();
+		net.jackcooper.shapeShifterCurseAddon.ability.CorruptMistManager.init(); // 腐蚀之雾持续区域结算（诅咒系法术）
+		net.jackcooper.shapeShifterCurseAddon.ability.SpaceRecallManager.init(); // 空间归途读条结算（空间系法术）
+		net.jackcooper.shapeShifterCurseAddon.ability.LunarSpiritTargetLink.init(); // 月灵目标联动（主人打谁月灵打谁，召唤系）
+		net.jackcooper.shapeShifterCurseAddon.ability.CompanionResonanceManager.init(); // 伙伴共鸣伤害增益到期清理（召唤系）
 		SeedEnergyEatingHandler.register();
 		LifesavingCatTailItem.registerLootTable();
 		AnkhStoneItem.registerLootTable();

@@ -11,6 +11,8 @@ import net.minecraft.client.option.KeyBinding;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
@@ -100,13 +102,24 @@ public final class SpellcastClient {
 			}
 		}
 
-		// 施法键：按住瞄准型（如陨火术）按住时显示落点预览圈，松开发包；其余上升沿立即发包
+		// 施法键：按住瞄准型（如陨火术）按住时显示落点预览圈，松开发包；其余上升沿立即发包。
+		// 按住瞄准型前置校验（仿契灵传送预览）：法力不足或落点无效时按下沿即红字提示、不显示预览、松开不发包
 		boolean castPressed = SpellcastKeybindings.KEY_CAST != null && SpellcastKeybindings.KEY_CAST.isPressed();
-		if (castPressed) {
-			updateAimPreview(client, player, book, selectedSlot);
-		}
 		boolean isAimSpell = isAimSpell(book, selectedSlot);
-		boolean sendNow = isAimSpell ? (!castPressed && wasCastPressed) : (castPressed && !wasCastPressed);
+		boolean aimReady = false;
+		if (isAimSpell) {
+			aimReady = isAimReady(client, player, book, selectedSlot);
+			if (castPressed && !wasCastPressed && !aimReady) {
+				// 按下沿提示一次（防按住期间刷屏）：法力不足 → 「法力不足」；法力够但落点无效（指天）→ 不提示只无预览
+				if (client.world != null && SpellbookData.getMana(book) < computeManaCost(book, selectedSlot)) {
+					player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_mana").formatted(Formatting.RED), true);
+				}
+			}
+			if (castPressed && aimReady) {
+				updateAimPreview(client, player, book, selectedSlot);
+			}
+		}
+		boolean sendNow = isAimSpell ? (!castPressed && wasCastPressed && aimReady) : (castPressed && !wasCastPressed);
 		if (sendNow) {
 			sendCast(selectedSlot);
 		}
@@ -136,16 +149,40 @@ public final class SpellcastClient {
 		return spell != null && spell.getAimMaxRange() > 0;
 	}
 
+	/** 按住瞄准型施法消耗（与服务端 SpellCastManager 同式：含法阵耗蓝倍率）。客户端仅用于预览/提示。 */
+	private static int computeManaCost(ItemStack book, int slot) {
+		Spell spell = ScrollData.getSpell(SpellbookData.getScroll(book, slot));
+		if (spell == null) {
+			return Integer.MAX_VALUE;
+		}
+		return Math.round(spell.getManaCost() * net.jackcooper.shapeShifterCurseAddon.spell.FormationData.sumManaCostMultiplier(book));
+	}
+
+	/**
+	 * 按住瞄准型前置校验（双端一致的本地复算；服务端施法时仍权威重验）：
+	 * CD 就绪 + 法力足够 + 落点命中方块（指天/超距无方块命中 → 无预览、松开不发包）。
+	 */
+	private static boolean isAimReady(MinecraftClient client, ClientPlayerEntity player, ItemStack book, int slot) {
+		if (client.world == null) {
+			return false;
+		}
+		if (SpellbookData.isOnCooldown(book, slot, client.world)) {
+			return false;
+		}
+		if (SpellbookData.getMana(book) < computeManaCost(book, slot)) {
+			return false;
+		}
+		Spell spell = ScrollData.getSpell(SpellbookData.getScroll(book, slot));
+		return spell != null && Spell.computeAimImpact(player, spell.getAimMaxRange()) != null;
+	}
+
 	/**
 	 * 按住瞄准预览（纯客户端本地粒子，零网络开销）：每 2t 在准星落点撒一圈火焰粒子
-	 * （与服务端陨火预警圈同视觉语言），随准星实时移动；冷却中不预览。
-	 * 落点几何与服务端共用 {@link Spell#computeAimImpact}，所见即所得。
+	 * （与服务端陨火预警圈同视觉语言），随准星实时移动。
+	 * 调用方已保证 CD/法力/落点均就绪（{@link #isAimReady}），此处无需重复校验。
 	 */
 	private static void updateAimPreview(MinecraftClient client, ClientPlayerEntity player, ItemStack book, int slot) {
 		if (client.world == null || client.world.getTime() % 2 != 0) {
-			return;
-		}
-		if (SpellbookData.isOnCooldown(book, slot, client.world)) {
 			return;
 		}
 		ItemStack scroll = SpellbookData.getScroll(book, slot);
@@ -157,14 +194,21 @@ public final class SpellcastClient {
 		if (radius <= 0) {
 			return;
 		}
-		double range = spell.getAimMaxRange();
-		Vec3d impact = Spell.computeAimImpact(player, range);
+		Vec3d impact = Spell.computeAimImpact(player, spell.getAimMaxRange());
+		if (impact == null) {
+			return;
+		}
+		// 圈粒子按法术系别取色（火=火焰 / 虚无=传送门紫 / 其它默认火焰）
+		net.minecraft.particle.ParticleEffect ringParticle = ParticleTypes.FLAME;
+		if (spell.getElement() == net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.VOID) {
+			ringParticle = ParticleTypes.PORTAL;
+		}
 		// 火焰圈勾勒 AOE 范围（旋转角随时间缓慢流动，与服务端预警圈同款动感）
 		int ringCount = (int) Math.min(40, Math.max(16, radius * 10));
 		double baseAngle = (client.world.getTime() / 2) * 0.15;
 		for (int i = 0; i < ringCount; i++) {
 			double angle = (i * 2 * Math.PI / ringCount) + baseAngle;
-			client.world.addParticle(ParticleTypes.FLAME,
+			client.world.addParticle(ringParticle,
 					impact.x + Math.cos(angle) * radius * 0.95,
 					impact.y + 0.1,
 					impact.z + Math.sin(angle) * radius * 0.95,

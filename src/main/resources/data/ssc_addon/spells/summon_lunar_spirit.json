@@ -1,0 +1,17 @@
+{
+  "base_damage": 0.0,
+  "base_cooldown_ticks": 600,
+  "base_cast_time_ticks": 0,
+  "mana_cost": 35,
+  "solo_damage_multiplier": 1.0,
+  "solo_cooldown_multiplier": 2.0,
+  "solo_cast_time_multiplier": 2.0,
+  "element": "summon",
+  "levels": [
+    { "rarity": "white" },
+    { "mana_cost_multiplier": 1.2, "rarity": "green" },
+    { "mana_cost_multiplier": 1.44, "cooldown_multiplier": 0.85, "rarity": "blue" },
+    { "mana_cost_multiplier": 1.73, "cooldown_multiplier": 0.85, "rarity": "purple" },
+    { "mana_cost_multiplier": 2.07, "cooldown_multiplier": 0.7, "rarity": "orange" }
+  ]
+}

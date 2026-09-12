@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "ssc_addon:formation_ink_normal" },
+    { "item": "minecraft:spider_eye" }
+  ],
+  "result": {
+    "item": "ssc_addon:formation_ink_curse",
+    "count": 1
+  }
+}

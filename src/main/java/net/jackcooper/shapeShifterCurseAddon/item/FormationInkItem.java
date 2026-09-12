@@ -18,6 +18,7 @@ import java.util.List;
  *   <li>{@link Type#ICE 冰系}：普通油墨+雪球合成，抄写冰系法阵用；</li>
  *   <li>{@link Type#FIRE 火系}：普通油墨+岩浆膏合成，抄写火系法阵用。</li>
  * </ul>
+ * <p>油墨共七型：普通基底 + 六系到（冰/火/月辉/诅咒/召唤/虚无/空间，抄写对应系法阵耗材）。</p>
  * <p>抄写消耗：法阵每级 1 瓶对应系油墨（L1=1 瓶、L3=3 瓶…）。</p>
  */
 public class FormationInkItem extends Item {
@@ -25,7 +26,12 @@ public class FormationInkItem extends Item {
 	public enum Type {
 		NORMAL("normal", null),
 		ICE("ice", FormationElement.ICE),
-		FIRE("fire", FormationElement.FIRE);
+		FIRE("fire", FormationElement.FIRE),
+		LUNAR("lunar", FormationElement.LUNAR),
+		CURSE("curse", FormationElement.CURSE),
+		SUMMON("summon", FormationElement.SUMMON),
+		VOID("void", FormationElement.VOID),
+		SPACE("space", FormationElement.SPACE);
 
 		/** 类型 id（模型 / lang 用）。 */
 		public final String id;

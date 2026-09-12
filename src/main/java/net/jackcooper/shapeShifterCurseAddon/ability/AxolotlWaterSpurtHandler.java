@@ -5,10 +5,12 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
 import java.util.Map;
 import java.util.UUID;
@@ -27,6 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class AxolotlWaterSpurtHandler {
 
 	private static final int CD_TICKS = 100;   // 5 秒
+	private static final Identifier WATER_HUD = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_water");
+	private static final Identifier LAND_HUD = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_land");
 	private static final double BURST = 1.6;    // 前冲力度（水陆一致）
 	/** 陆地冲刺消耗的湿润度（air 值；参照 WaterSpearLeapManager 的 18=6%，冲刺更轻，取 12≈4%）。水下冲刺同 SSC 免费。 */
 	private static final int LAND_MOISTURE_COST = 12;
@@ -63,6 +67,12 @@ public final class AxolotlWaterSpurtHandler {
 
 		// 用客户端上报的「真正疾跑键」状态，而非服务端 isSprinting()（后者会被双击 W / 游泳自动置真 → 误冲）
 		boolean sprintKey = CLIENT_SPRINT.getOrDefault(id, false);
+		if (PowerUtils.getResourceValue(player, WATER_HUD) != Math.max(0, wcd - 1)) {
+			PowerUtils.setResourceValueAndSync(player, WATER_HUD, Math.max(0, wcd - 1));
+		}
+		if (PowerUtils.getResourceValue(player, LAND_HUD) != Math.max(0, lcd - 1)) {
+			PowerUtils.setResourceValueAndSync(player, LAND_HUD, Math.max(0, lcd - 1));
+		}
 		boolean sneaking = player.isSneaking();
 		boolean wasSprintKey = WAS_CLIENT_SPRINT.getOrDefault(id, false);
 		boolean wasSneaking = WAS_SNEAKING.getOrDefault(id, false);
@@ -81,6 +91,7 @@ public final class AxolotlWaterSpurtHandler {
 			if (sprintKey && !wasSprintKey && WATER_CD.getOrDefault(id, 0) <= 0) {
 				doDash(player);
 				WATER_CD.put(id, CD_TICKS);
+				PowerUtils.setResourceValueAndSync(player, WATER_HUD, CD_TICKS);
 			}
 			// 水里只响应疾跑键分支，隔离陆地潜行逻辑
 			return;
@@ -94,6 +105,7 @@ public final class AxolotlWaterSpurtHandler {
 			player.setAir(player.getAir() - LAND_MOISTURE_COST);
 			doDash(player);
 			LAND_CD.put(id, CD_TICKS);
+			PowerUtils.setResourceValueAndSync(player, LAND_HUD, CD_TICKS);
 		}
 	}
 

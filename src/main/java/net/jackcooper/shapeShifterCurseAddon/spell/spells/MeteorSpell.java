@@ -15,7 +15,7 @@ import net.minecraft.util.math.Vec3d;
  *
  * <p>数值外置 {@code data/ssc_addon/spells/meteor.json}：
  * 基准 8 伤 / 半径 3 格 / cd 10s / 耗蓝 30；半径按 speed_multiplier 缩放（每级 +0.5 格）。
- * 落点用射线检测（含方块），准星指天（无命中）时取 32 格截断点；
+ * 落点用射线检测（含方块），<b>必须命中方块</b>——准星指天（无方块命中）时拒绝施放、不耗法力/CD（仿契灵传送）；
  * 客户端按住预览与服务端施法共用 {@link Spell#computeAimImpact}，所见即所得。</p>
  */
 public class MeteorSpell extends Spell {
@@ -46,10 +46,19 @@ public class MeteorSpell extends Spell {
 		cast(caster, power, solo, 1);
 	}
 
+	/** 施法前置校验：落点必须命中方块（空中拒绝施放；书本路径由 SpellCastManager 预检，不耗法力/CD）。 */
+	@Override
+	public boolean canCast(ServerPlayerEntity caster) {
+		return Spell.computeAimImpact(caster, MAX_RANGE) != null;
+	}
+
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level) {
-		// 射线求落点（与客户端按住预览同一几何）：准星命中的方块/实体位置；无命中取 MAX_RANGE 截断点
+		// 射线求落点（与客户端按住预览同一几何）：必须命中方块；null（指天/超距无方块）→中止施放
 		Vec3d impact = Spell.computeAimImpact(caster, MAX_RANGE);
+		if (impact == null) {
+			return;
+		}
 		SpellMeteorEntity meteor = new SpellMeteorEntity(caster.getWorld(), caster);
 		meteor.setDamage(power);
 		meteor.setLevel(level);

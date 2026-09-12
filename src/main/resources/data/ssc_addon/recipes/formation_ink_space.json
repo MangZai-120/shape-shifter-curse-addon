@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "ssc_addon:formation_ink_normal" },
+    { "item": "minecraft:amethyst_shard" }
+  ],
+  "result": {
+    "item": "ssc_addon:formation_ink_space",
+    "count": 1
+  }
+}

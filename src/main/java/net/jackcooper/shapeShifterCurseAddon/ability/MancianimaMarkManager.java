@@ -24,6 +24,7 @@ import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
+import net.jackcooper.shapeShifterCurseAddon.spell.UniversalFormationManager;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -337,6 +338,7 @@ public final class MancianimaMarkManager {
 				LAST_REGEN.put(id, now);
 			} else if (FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(formId)) {
 				// 进化使魔脱战 mana 回复：脱战 5s 后每 1s 回 1 点 mana（需已解锁 mana_system 节点）
+				if (UniversalFormationManager.isCharging(sp)) continue;
 				// 仅在已解锁 mana_system 节点时生效（mana 条显示门控一致）
 				if (!net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent.EVOLUTION
 						.get(sp).isUnlocked(net.jackcooper.shapeShifterCurseAddon.evolution.FamiliarFoxTree.NODE_MANA)) continue;
@@ -402,6 +404,8 @@ public final class MancianimaMarkManager {
 			buf.writeUuid(m.targetUuid);
 			buf.writeString(colorString(m.color));
 		}
+		buf.writeInt(m == null ? 0 : (int) Math.max(0,
+				STAGE_GATE_TICKS - (player.getWorld().getTime() - m.colorSetTick)));
 		try {
 			ServerPlayNetworking.send(player, PACKET_MARK_SYNC, buf);
 		} catch (Exception ignored) {}

@@ -11,6 +11,40 @@ import me.shedaniel.autoconfig.annotation.ConfigEntry;
 @Config(name = "ssc_addon_client")
 public class SSCAddonClientConfig implements ConfigData {
 
+	public static final int DEFAULT_CD_TYPE = 4;
+	public static final int DEFAULT_CD_X = 0;
+	public static final int DEFAULT_CD_Y = -34;
+	public static final int DEFAULT_CD_SECONDARY_X = 0;
+	public static final int DEFAULT_CD_SECONDARY_Y = 0;
+
+	@ConfigEntry.Gui.Excluded
+	public int skillHudLayoutVersion = 0;
+
+	public void migrateSkillHudLayout() {
+		if (skillHudLayoutVersion >= 3) return;
+		boolean legacyBars = cdBarPosType == 8 && cdBarPosOffsetX == -98 && cdBarPosOffsetY == -21
+				&& cdSymmetric && cdSecondaryBarPosOffsetX == 98 && cdSecondaryBarPosOffsetY == -21;
+		boolean rightIcons = cdBarPosType == 6 && cdBarPosOffsetX == -50 && cdBarPosOffsetY == -78
+				&& !cdSymmetric && cdSecondaryBarPosOffsetX == -50 && cdSecondaryBarPosOffsetY == -38;
+		if (legacyBars || rightIcons) {
+			cdBarPosType = DEFAULT_CD_TYPE;
+			cdBarPosOffsetX = DEFAULT_CD_X;
+			cdBarPosOffsetY = DEFAULT_CD_Y;
+			cdSymmetric = false;
+			cdSecondaryBarPosOffsetX = DEFAULT_CD_SECONDARY_X;
+			cdSecondaryBarPosOffsetY = DEFAULT_CD_SECONDARY_Y;
+		} else if (!cdSymmetric && cdBarPosOffsetX == cdSecondaryBarPosOffsetX
+				&& cdSecondaryBarPosOffsetY - cdBarPosOffsetY == 40) {
+			cdSecondaryBarPosOffsetY = cdBarPosOffsetY + DEFAULT_CD_SECONDARY_Y - DEFAULT_CD_Y;
+		}
+		if (cdBarPosType == DEFAULT_CD_TYPE && cdBarPosOffsetX == DEFAULT_CD_X
+				&& cdBarPosOffsetY == -22) cdBarPosOffsetY = DEFAULT_CD_Y;
+		skillHudLayoutVersion = 3;
+	}
+
+	@ConfigEntry.Gui.Excluded
+	public boolean cdMirrorRight = false;
+
 	@ConfigEntry.Gui.Tooltip
 	public boolean showCdBar = true;
 
@@ -18,26 +52,26 @@ public class SSCAddonClientConfig implements ConfigData {
 	public boolean showCdSeconds = true;
 
 	// ===== 技能 CD 条位置（与原版本能/能量条一致的 1-9 九宫格锚点 + X/Y 偏移）=====
-	// 不在 GUI 直接展示（由 BarPositionEditorScreen 可视化编辑），默认对齐原快捷栏左右两侧。
-	/** CD 条锚点类型（1-9 九宫格），默认 8=下中。 */
+	// 不在 GUI 直接展示（由 BarPositionEditorScreen 可视化编辑），默认贴屏幕左侧纵向排列。
+	/** CD 条锚点类型（1-9 九宫格），默认 4=左中。 */
 	@ConfigEntry.Gui.Excluded
-	public int cdBarPosType = 8;
+	public int cdBarPosType = DEFAULT_CD_TYPE;
 	/** 主技能 CD 条（左侧）X 偏移：相对锚点的额外平移。 */
 	@ConfigEntry.Gui.Excluded
-	public int cdBarPosOffsetX = -98;
+	public int cdBarPosOffsetX = DEFAULT_CD_X;
 	/** CD 条 Y 偏移：相对锚点的额外平移。 */
 	@ConfigEntry.Gui.Excluded
-	public int cdBarPosOffsetY = -21;
+	public int cdBarPosOffsetY = DEFAULT_CD_Y;
 
 	/** CD 条主/次是否左右对称（true=次条镜像主条；false=次条用下方独立偏移）。 */
 	@ConfigEntry.Gui.Excluded
-	public boolean cdSymmetric = true;
+	public boolean cdSymmetric = false;
 	/** 非对称时，次技能 CD 条 X 偏移。 */
 	@ConfigEntry.Gui.Excluded
-	public int cdSecondaryBarPosOffsetX = 98;
+	public int cdSecondaryBarPosOffsetX = DEFAULT_CD_SECONDARY_X;
 	/** 非对称时，次技能 CD 条 Y 偏移。 */
 	@ConfigEntry.Gui.Excluded
-	public int cdSecondaryBarPosOffsetY = -21;
+	public int cdSecondaryBarPosOffsetY = DEFAULT_CD_SECONDARY_Y;
 
 	// ===== 月尘魔法书 HUD 整体位置（1-9 九宫格锚点 + X/Y 偏移，法力条/三槽/魔法名作为一个单元）=====
 	// 不在 GUI 直接展示（由 BarPositionEditorScreen 可视化编辑）。默认锚点 7=左下 + 偏移(16,-52) 还原原硬编码位置。

@@ -245,6 +245,13 @@ public class SscAddonClient implements ClientModInitializer {
 						for (int i = 0; i < uuids.size(); i++) {
 							net.minecraft.entity.player.PlayerEntity p = client.world.getPlayerByUuid(uuids.get(i));
 							if (p == null) continue;
+							// 【特判】必须跳过本地玩家：本段是为「其它玩家」在客机重建 origin 以正确渲染模型，
+							// 而 PlayerOriginComponent.setOrigin 内部会 removeAllPowersFromSource —— 对自己调用
+							// 可能会把服务端刚同步来的 power 全部清空（客户端 origin 的 power 类型列表为空，加不回来）。
+							// 1.20.1 目前靠「OriginRegistry 返回同一实例 + 引用相等早退」碰巧未触发，
+							// 但时序/注册表实例一旦不一致（reload、版本变动）就会翻车，故防御性跳过。
+							// 本地玩家自身的 form/origin/scale/皮肤均有 CCA 同步的权威路径，跳过无功能损失。
+							if (p == client.player) continue;
 							// 形态
 							String fidStr = formIds.get(i);
 							if (!fidStr.isEmpty()) {
@@ -325,7 +332,16 @@ public class SscAddonClient implements ClientModInitializer {
 				String color = buf.readString();
 				marks.put(uuid, color);
 			}
-			client.execute(() -> MancianimaMarkClientState.update(marks));
+			int stageTicks = buf.readableBytes() >= Integer.BYTES
+					? Math.max(0, Math.min(MancianimaMarkManager.STAGE_GATE_TICKS, buf.readInt())) : 0;
+			client.execute(() -> {
+				if (client.world == null) {
+					MancianimaMarkClientState.clear();
+					return;
+				}
+				MancianimaMarkClientState.update(marks);
+				MancianimaMarkClientState.setStageEndTick(client.world.getTime() + stageTicks);
+			});
 		});
 
 		// 风灵「疾风连爪」：接收爪击阶段+准星条进度，更新客户端镜像
@@ -440,6 +456,12 @@ public class SscAddonClient implements ClientModInitializer {
 		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.SPIDER_SWING_BULLET, FlyingItemEntityRenderer::new);
 		// 食梦魔「惊吓」幽灵野猫：野猫形态 geo 模型 + 程序化四足骨骼驱动
 		EntityRendererRegistry.register(SscAddon.GHOST_CAT_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.GhostCatRenderer::new);
+		// 2026-09 新法术实体渲染器：月光箭（3D 光灵箭模型）/诅咒标记（物品渲染）+ 月灵（程序化发光八面体）
+		EntityRendererRegistry.register(SscAddon.SPELL_MOONLIGHT_ARROW_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.MoonlightArrowRenderer::new);
+		EntityRendererRegistry.register(SscAddon.SPELL_CURSE_MARK_ENTITY, ctx -> new net.minecraft.client.render.entity.FlyingItemEntityRenderer<net.jackcooper.shapeShifterCurseAddon.entity.SpellCurseMarkEntity>(ctx, 0.75F, true));
+		EntityRendererRegistry.register(SscAddon.LUNAR_SPIRIT_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.LunarSpiritRenderer::new);
+		// 月灵光弹：小发光体渲染（Lightning 层 POSITION_COLOR，Sodium 安全）
+		EntityRendererRegistry.register(SscAddon.LUNAR_SPIRIT_BOLT_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.LunarSpiritBoltRenderer::new);
 
 		// 寄生果蝠形态种子量能量条 HUD
 		SeedEnergyHudRenderer.register();
@@ -489,6 +511,11 @@ public class SscAddonClient implements ClientModInitializer {
 
 		// 魔法卷轴 + 增强法阵：怪蛋式双层染色（layer0 纸体固定不染，layer1 图案按系别色染）。
 		// 系别来源：法阵读 NBT Element；卷轴读 spells JSON 的 element 字段（无系别染白 → 灰白图案空白态）。
+		// 通用系法阵（UNIVERSAL）通过 universal 谓词切独立模型 formation_universal（单层空白法阵纸材质）。
+		ModelPredicateProviderRegistry.register(SscAddon.FORMATION, new Identifier("ssc_addon", "universal"),
+				(stack, world, entity, seed) ->
+						net.jackcooper.shapeShifterCurseAddon.spell.FormationData.getElement(stack)
+								== net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.UNIVERSAL ? 1.0F : 0.0F);
 		java.util.function.BiFunction<net.jackcooper.shapeShifterCurseAddon.spell.FormationElement, Integer, Integer> tintOf =
 				(element, fallback) -> element == null ? fallback : element.color;
 		ColorProviderRegistry.ITEM.register(

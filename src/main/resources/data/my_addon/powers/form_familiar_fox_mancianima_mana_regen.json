@@ -41,6 +41,9 @@
                     "resource": "*:*_regen_pause_timer",
                     "comparison": "==",
                     "compare_to": 0
+                },
+                {
+                    "type": "ssc_addon:not_universal_formation_charging"
                 }
             ]
         },
