@@ -38,6 +38,8 @@ public final class TrinketUtils {
     private static volatile Class<?> curiosApiCache = null;
     /** 「类不可见」WARN 只打一次的哨兵（失败短路后仍保证首次诊断信息可见）。 */
     private static volatile boolean curiosAbsentWarned = false;
+    /** Curios 反射链各阶段 WARN 的去重键集合（HUD 每帧轮询饰品检测，同一原因只打一次，防刷日志）。 */
+    private static final java.util.Set<String> CURIOS_WARNED_ONCE = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     private TrinketUtils() {
     }
@@ -89,6 +91,13 @@ public final class TrinketUtils {
         }
     }
 
+    /** 同一去重键的 WARN 只打一次（HUD 每帧轮询饰品检测，防同一异常反复刷日志）。 */
+    private static void warnOnce(String key, String msg, Object... args) {
+        if (CURIOS_WARNED_ONCE.add(key)) {
+            LOG.warn(msg, args);
+        }
+    }
+
     /**
      * 该实体是否正装备着指定饰品物品。
      * 遍历当前活动饰品框架下的所有槽位，查找匹配的物品栈。
@@ -112,9 +121,14 @@ public final class TrinketUtils {
         try {
             Class<?> api = probeCuriosApi();
             if (api == null) return false; // 未装 Curios：短路，不重复探测
-            Object lazyOptional = api.getMethod("getCuriosInventory", LivingEntity.class).invoke(null, entity);
-            if (lazyOptional == null) return false;
-            Object resolved = lazyOptional.getClass().getMethod("resolve").invoke(lazyOptional);
+            Object invHolder = api.getMethod("getCuriosInventory", LivingEntity.class).invoke(null, entity);
+            if (invHolder == null) return false;
+            // 1.20.1 Forge 返回 LazyOptional（需 resolve() 解包）；
+            // 1.20.4+/1.21 Curios 移除 capability 后直接返回 Optional，盲调 resolve() 会抛
+            // NoSuchMethodException（1.21.1 移植版日志里的警告即此因），故先判类型再解包。
+            Object resolved = (invHolder instanceof java.util.Optional<?>)
+                    ? invHolder
+                    : invHolder.getClass().getMethod("resolve").invoke(invHolder);
             if (!(resolved instanceof java.util.Optional<?> opt) || opt.isEmpty()) return false;
             Object handler = opt.get();
             Object equipped = handler.getClass().getMethod("isEquipped", Item.class).invoke(handler, item);
@@ -163,20 +177,25 @@ public final class TrinketUtils {
             if (api == null) {
                 return null; // 未装 Curios 或类不可见：已短路（首次失败时已打过唯一一条 WARN）
             }
-            Object lazyOptional = api.getMethod("getCuriosInventory", LivingEntity.class).invoke(null, entity);
-            if (lazyOptional == null) {
-                LOG.warn("[SSCA] Curios fallback: getCuriosInventory 返回 null");
+            Object invHolder = api.getMethod("getCuriosInventory", LivingEntity.class).invoke(null, entity);
+            if (invHolder == null) {
+                warnOnce("curios-inv-null", "[SSCA] Curios fallback: getCuriosInventory 返回 null");
                 return null;
             }
-            Object resolved = lazyOptional.getClass().getMethod("resolve").invoke(lazyOptional);
+            // 1.20.1 Forge 返回 LazyOptional（需 resolve() 解包）；
+            // 1.20.4+/1.21 Curios 移除 capability 后直接返回 Optional，盲调 resolve() 会抛
+            // NoSuchMethodException（1.21.1 移植版日志里的警告即此因），故先判类型再解包。
+            Object resolved = (invHolder instanceof java.util.Optional<?>)
+                    ? invHolder
+                    : invHolder.getClass().getMethod("resolve").invoke(invHolder);
             if (!(resolved instanceof java.util.Optional<?> opt) || opt.isEmpty()) {
-                LOG.warn("[SSCA] Curios fallback: capability 未解析（{}）", resolved);
+                warnOnce("curios-cap-unresolved", "[SSCA] Curios fallback: capability 未解析（{}）", resolved);
                 return null;
             }
             Object handler = opt.get(); // ICuriosItemHandler
             Object curiosHandlerMap = handler.getClass().getMethod("getCurios").invoke(handler);
             if (!(curiosHandlerMap instanceof Map<?, ?> curiosMap)) {
-                LOG.warn("[SSCA] Curios fallback: getCurios() 非 Map（{}）", curiosHandlerMap);
+                warnOnce("curios-not-map", "[SSCA] Curios fallback: getCurios() 非 Map（{}）", curiosHandlerMap);
                 return null;
             }
             // Forge 的 stacks 容器不是 Iterable（IDynamicStackHandler extends IItemHandlerModifiable），
@@ -220,7 +239,7 @@ public final class TrinketUtils {
                 }
             }
         } catch (Throwable t) {
-            LOG.warn("[SSCA] Curios fallback: 反射链异常 {}", t.toString());
+            warnOnce("curios-chain-error", "[SSCA] Curios fallback: 反射链异常 {}", t.toString());
         }
         return null;
     }
