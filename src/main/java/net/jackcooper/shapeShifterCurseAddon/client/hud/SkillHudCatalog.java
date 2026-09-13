@@ -61,7 +61,8 @@ public final class SkillHudCatalog {
                 skill("summon_vex", "form_fallen_allay_sp_vex_cd", true),
                 skill("shadow_scream", "form_fallen_allay_sp_active_scream_cooldown_timer", false)));
         FORMS.put("snow_fox_frostspine", List.of(
-                skill("frost_spikes", null, PRIMARY, 4, null, true)));
+                skill("frost_spikes", null, true),
+                skill("frost_forge", null, false)));
         FORMS.put("axolotl_sp", List.of(
                 skill("vortex_impact", PRIMARY, true), skill("play_dead", SECONDARY, false),
                 skill("water_burst", "form_axolotl_sp_water_ball", false),

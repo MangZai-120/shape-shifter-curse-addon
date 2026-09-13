@@ -78,6 +78,11 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 			int y = skill.primary() ? layout.primaryY() : layout.secondaryY();
 			Cooldown cooldown = readCooldown(player, skill.cooldown());
 			double internalReady = readInternalReady(player, skill);
+			if (formId.equals(FormIdentifiers.SNOW_FOX_FROSTSPINE) && !skill.primary()) {
+				// 凝棘（次技能）蓄力进度：读本地玩家法阵实体的 PROGRESS（服务端权威，0-100 tick）
+				// 扫不到法阵（未蓄力/已被强停）= -1，侧边条不显示
+				internalReady = frostForgeProgress(mc, player);
+			}
 			if (formId.equals(FormIdentifiers.AXOLOTL_FLUORESCENT) && skill.primary()
 					&& !net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils.isWearing(player,
 					net.jackcooper.shapeShifterCurseAddon.SscAddon.SEA_CRYSTAL_PENDANT)) {
@@ -105,6 +110,15 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 		Power power = PowerHolderComponent.KEY.get(player).getPower(type);
 		if (!(power instanceof CooldownPower) && !(power instanceof VariableIntPower)) return -1;
 		return 1.0 - readCooldown(player, id).remaining() / (double) skill.internalTicks();
+	}
+
+	/** 凝棘（次技能）蓄力进度：找本地玩家的法阵实体（PROGRESS 为 0-100 tick），换算 0~1。无实体返回 -1。 */
+	private double frostForgeProgress(MinecraftClient mc, PlayerEntity player) {
+		var arrays = mc.world.getEntitiesByClass(net.jackcooper.shapeShifterCurseAddon.entity.FrostArrayEntity.class,
+				player.getBoundingBox().expand(4.0),
+				a -> a.getTrackedOwnerId() == player.getId());
+		if (arrays.isEmpty()) return -1;
+		return Math.max(0, Math.min(1, arrays.get(0).getProgress() / 100.0));
 	}
 
 	public record Layout(int primaryX, int primaryY, int secondaryX, int secondaryY) {}
