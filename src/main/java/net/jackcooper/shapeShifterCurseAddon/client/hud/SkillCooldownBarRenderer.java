@@ -78,6 +78,8 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 			int y = skill.primary() ? layout.primaryY() : layout.secondaryY();
 			Cooldown cooldown = readCooldown(player, skill.cooldown());
 			double internalReady = readInternalReady(player, skill);
+			// 释放条件未满足 → 半透明黑色遮罩；遮罩期间跳过 CD 渐变阴影，只保留倒计时数字
+			boolean conditionBlocked = skill.condition() != null && !skill.condition().test(player);
 			if (formId.equals(FormIdentifiers.SNOW_FOX_FROSTSPINE) && !skill.primary()) {
 				// 凝棘（次技能）蓄力进度：读本地玩家法阵实体的 PROGRESS（服务端权威，0-100 tick）
 				// 扫不到法阵（未蓄力/已被强停）= -1，侧边条不显示
@@ -97,9 +99,10 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 				}
 				internalReady = 1 - Math.min(1, locked);
 			}
-			drawSkillSlot(context, skill.icon(), x, y, cooldown.fraction(),
+			drawSkillSlot(context, skill.resolveIcon(player), x, y,
+					conditionBlocked ? 0 : cooldown.fraction(),
 					(int) Math.ceil(cooldown.remaining() / 20.0), internalReady, skill.primary(), config.showCdSeconds,
-					config.cdMirrorRight);
+					config.cdMirrorRight, conditionBlocked);
 		}
 	}
 
@@ -164,6 +167,14 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 	public static void drawSkillSlot(DrawContext context, Identifier icon, int x, int y,
 	                                double cooldownFraction, int seconds, double internalReadyFraction,
 	                                boolean primary, boolean showSeconds, boolean mirrorRight) {
+		drawSkillSlot(context, icon, x, y, cooldownFraction, seconds, internalReadyFraction,
+				primary, showSeconds, mirrorRight, false);
+	}
+
+	public static void drawSkillSlot(DrawContext context, Identifier icon, int x, int y,
+	                                double cooldownFraction, int seconds, double internalReadyFraction,
+	                                boolean primary, boolean showSeconds, boolean mirrorRight,
+	                                boolean conditionBlocked) {
 		int iconX = x + (mirrorRight ? 3 : 10);
 		int iconY = y + (primary ? 10 : 4);
 		context.fill(iconX, iconY, iconX + ICON_SIZE, iconY + ICON_SIZE, 0xFF8B8B8B);
@@ -175,6 +186,10 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 		int shadeHeight = (int) Math.ceil(ICON_SIZE * Math.max(0, Math.min(1, cooldownFraction)));
 		if (shadeHeight > 0) {
 			context.fill(iconX, iconY, iconX + ICON_SIZE, iconY + shadeHeight, 0xB0000000);
+		}
+		// 释放条件未满足：整幅半透明黑色遮罩（替代 CD 渐变，倒计时数字照常叠加显示）
+		if (conditionBlocked) {
+			context.fill(iconX, iconY, iconX + ICON_SIZE, iconY + ICON_SIZE, 0x99000000);
 		}
 		if (internalReadyFraction >= 0) {
 			int readyHeight = (int) Math.floor(INTERNAL_HEIGHT * Math.max(0, Math.min(1, internalReadyFraction)));
