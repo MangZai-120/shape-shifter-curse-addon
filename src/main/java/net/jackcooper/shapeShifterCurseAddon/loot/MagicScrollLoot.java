@@ -33,7 +33,7 @@ public final class MagicScrollLoot {
 			"frost_spike", "fire_bolt", "flame_nova", "meteor", "ice_barrage", "frost_nova", "frost_armor",
 			"moonlight_arrow", "lunar_mend", "lunar_veil", "curse_mark", "dread_whisper", "corrupt_mist",
 			"summon_lunar_spirit", "companion_resonance", "void_devour", "void_erosion",
-			"space_blink", "space_stride", "space_recall"
+			"space_blink", "space_stride", "space_recall", "pocket_space"
 	};
 	/** 每个箱子生成魔法卷轴的概率。 */
 	private static final float CHANCE = 0.05F;

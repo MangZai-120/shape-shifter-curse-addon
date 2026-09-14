@@ -113,6 +113,7 @@ public final class RegAddonBlocks {
 					.nonOpaque());
 
 	public static void init() {
+		net.jackcooper.shapeShifterCurseAddon.spell.pocket.PocketSpaceBlocks.init();
 		register("web_membrane", WEB_MEMBRANE);
 		// 燃烧快、蔓延强（蛛丝易燃；数值对齐草 / 树叶级别）
 		FlammableBlockRegistry.getDefaultInstance().add(WEB_MEMBRANE, 60, 100);
@@ -160,6 +161,8 @@ public final class RegAddonBlocks {
 		net.jackcooper.shapeShifterCurseAddon.client.renderer.EnergyBottlerRenderer.register();
 		// 储药柜动态药水瓶 BER（8 槽装填后在柜内对应位置显示 3D 能量瓶）
 		net.jackcooper.shapeShifterCurseAddon.client.renderer.PotionStorageBoxRenderer.register();
+		// 口袋空间隐形基岩虚空面 BER（末地折跃门同款机制：不受光照、透过它只看到虚空）
+		net.jackcooper.shapeShifterCurseAddon.client.renderer.PocketVoidWallRenderer.register();
 		// 能量系统容器界面注册（汲取器/储罐无 GUI，右键走动作栏）
 		net.minecraft.client.gui.screen.ingame.HandledScreens.register(
 				RegAddonBlockEntities.ENERGY_BOTTLER_SH,

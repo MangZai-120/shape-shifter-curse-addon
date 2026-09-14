@@ -87,7 +87,10 @@ public final class SpellcastClient {
 		}
 		ItemStack book = getEquippedBook();
 		if (book == null || book.isEmpty()) {
+			boolean pressed = SpellcastKeybindings.KEY_CAST != null && SpellcastKeybindings.KEY_CAST.isPressed();
+			if (pressed && !wasCastPressed) sendCast(-1);
 			resetKeys();
+			wasCastPressed = pressed;
 			return;
 		}
 		int count = SpellbookData.getSlotCount(book);
@@ -166,7 +169,7 @@ public final class SpellcastClient {
 		if (client.world == null) {
 			return false;
 		}
-		if (SpellbookData.isOnCooldown(book, slot, client.world)) {
+		if (ScrollData.isOnCooldown(SpellbookData.getScroll(book, slot), client.world)) {
 			return false;
 		}
 		if (SpellbookData.getMana(book) < computeManaCost(book, slot)) {

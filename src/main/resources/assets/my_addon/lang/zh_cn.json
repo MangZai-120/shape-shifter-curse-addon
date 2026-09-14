@@ -1173,5 +1173,22 @@
   "entity.ssc_addon.lunar_spirit_bolt": "月灵光弹",
   "text.ssc_addon.bar_editor.cd_left": "左侧",
   "text.ssc_addon.bar_editor.cd_right": "右侧",
-  "text.ssc_addon.bar_editor.cd_panel": "技能栏（上：主技能，下：次技能）"
+  "text.ssc_addon.bar_editor.cd_panel": "技能栏（上：主技能，下：次技能）",
+  "spell.ssc_addon.pocket_space.name": "口袋空间",
+  "spell.ssc_addon.pocket_space.description": "引导5秒后进入卷轴绑定的独立空间；引导时减速80%%，可移动，受伤会打断。再次按施法键取消并返还本次总冷却的20%%，不返还法力或卷轴次数。1级内部为16×16×16格，每级边长增加6格。北侧出口返回开始施法时的原位置；不常加载，不可睡觉。",
+  "item.ssc_addon.magic_scroll.tip_in_book_pocket": "装书内：冷却 %2$s 秒，耗法力 %3$s，不消耗卷轴次数",
+  "item.ssc_addon.magic_scroll.tip_solo_pocket": "单独使用：冷却 %2$s 秒，消耗1次；出口免费",
+  "message.ssc_addon.pocket_space.channel": "口袋空间：引导中，剩余 %s 秒",
+  "message.ssc_addon.pocket_space.interrupted": "口袋空间引导已打断",
+  "message.ssc_addon.pocket_space.unavailable": "暂时无法进入口袋空间，请检查维度、卷轴绑定或骑乘状态",
+  "message.ssc_addon.pocket_space.arrival": "先离开传送台，再踩回并停留3秒即可返回原位置",
+  "message.ssc_addon.pocket_space.exit_countdown": "将在 %s 秒后返回原位置",
+  "message.ssc_addon.pocket_space.return_unavailable": "原维度不可用，暂时无法返回；返回记录已保留",
+  "message.ssc_addon.pocket_space.no_sleep": "口袋空间内无法睡觉",
+  "block.ssc_addon.pocket_space_floor": "口袋空间基底",
+  "block.ssc_addon.pocket_space_portal": "口袋空间传送台",
+  "message.ssc_addon.pocket_space.cancelled": "已取消口袋空间引导，返还本次总冷却的20%%",
+  "message.ssc_addon.pocket_space.collapse_title": "口袋空间正在崩溃",
+  "message.ssc_addon.pocket_space.collapse_subtitle": "绑定的卷轴已消失，%s 秒后送回原位置",
+  "block.ssc_addon.pocket_space_bedrock_wall": "口袋空间隐形基岩"
 }

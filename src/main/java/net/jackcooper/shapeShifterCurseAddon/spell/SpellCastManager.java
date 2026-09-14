@@ -23,6 +23,7 @@ public final class SpellCastManager {
 
 	/** 释放书内指定槽的魔法。 */
 	public static void cast(ServerPlayerEntity player, int slot) {
+		if (net.jackcooper.shapeShifterCurseAddon.spell.pocket.PocketSpaceManager.cancelByKey(player)) return;
 		ItemStack book = getEquippedBook(player);
 		if (book == null || book.isEmpty()) {
 			return;
@@ -40,7 +41,7 @@ public final class SpellCastManager {
 			return;
 		}
 		World world = player.getWorld();
-		if (SpellbookData.isOnCooldown(book, slot, world)) {
+		if (ScrollData.isOnCooldown(scroll, world)) {
 			return;
 		}
 		int level = ScrollData.getLevel(scroll);              // 魔法等级（1-5，开箱固定）
@@ -73,10 +74,28 @@ public final class SpellCastManager {
 				* FormationData.sumCooldownMultiplier(book, spellElement)
 				* FormAffinity.cooldownMultiplier(player, spellElement));
 
+		net.minecraft.nbt.NbtCompound previousNbt = scroll.getNbt() == null ? null : scroll.getNbt().copy();
+		if (!spell.prepareScroll(player, scroll)) return;
+		if (!java.util.Objects.equals(previousNbt, scroll.getNbt())) {
+			SpellbookData.setScroll(book, slot, scroll);
+		}
 		SpellbookData.consumeMana(book, manaCost);
 		// 统一四参入口：法术内部自行决定是否按等级缩放速度/外观/范围（无 instanceof 特判）
-		spell.cast(player, damage, false, level);
-		SpellbookData.setCooldownEnd(book, slot, world.getTime() + cd);
+		spell.cast(player, damage, false, level, scroll);
+		long cooldownEnd = world.getTime() + cd;
+		ScrollData.setCooldownEnd(scroll, cooldownEnd); // CD 跟卷轴走：换卷轴不继承同槽 CD
+		if (!java.util.Objects.equals(previousNbt, scroll.getNbt())) {
+			SpellbookData.setScroll(book, slot, scroll);
+		}
+		spell.onCooldownStarted(player, () -> {
+			ItemStack current = SpellbookData.getScroll(book, slot);
+			if (!current.isEmpty() && ScrollData.getCooldownEnd(current) == cooldownEnd) {
+				ScrollData.setCooldownEnd(current,
+						net.jackcooper.shapeShifterCurseAddon.spell.pocket.PocketChannelRules.refundCooldownEnd(
+								world.getTime(), cooldownEnd, cd));
+				SpellbookData.setScroll(book, slot, current);
+			}
+		});
 		// 经验获取：实际耗蓝 × 有效技能等级 ÷ 10（精确 0.1；×10 整数存储防浮点漂移）。
 		// 蓝色品质（Lv3）中位耗蓝 20 → 6.0 exp/次，600 exp 阈值 ≈ 100 次升一级。
 		// 多耗蓝多得经验：法阵 +10%/级耗蓝 → exp 同步上升，便魔亲和 ×0.85 → exp 同步下降，语义自洽。

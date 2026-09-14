@@ -153,6 +153,16 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 		return true;
 	}
 
+	public boolean prepareScroll(ServerPlayerEntity caster, net.minecraft.item.ItemStack scroll) {
+		return true;
+	}
+
+	public void onCooldownStarted(ServerPlayerEntity caster, Runnable cancelRefund) {}
+
+	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level, net.minecraft.item.ItemStack scroll) {
+		cast(caster, power, solo, level);
+	}
+
 	/**
 	 * 释放魔法（服务端权威）。伤害/范围等已由调用方按耐久与单独/装书惩罚算好，通过 {@code power} 传入。
 	 *

@@ -1173,5 +1173,22 @@
   "entity.ssc_addon.lunar_spirit_bolt": "Lunar Spirit Bolt",
   "text.ssc_addon.bar_editor.cd_left": "Left",
   "text.ssc_addon.bar_editor.cd_right": "Right",
-  "text.ssc_addon.bar_editor.cd_panel": "Skill panel (top: primary, bottom: secondary)"
+  "text.ssc_addon.bar_editor.cd_panel": "Skill panel (top: primary, bottom: secondary)",
+  "spell.ssc_addon.pocket_space.name": "Pocket Space",
+  "spell.ssc_addon.pocket_space.description": "Channel for 5 seconds to enter this scroll's pocket space. Move at 20%% speed while channeling; damage interrupts. Press the cast key again to cancel and refund 20%% of the original cooldown, but not mana or scroll uses. The level 1 interior is 16x16x16 blocks, with each level adding 6 to each side. The northern exit returns you to where you started casting. No forced chunk loading or sleeping.",
+  "item.ssc_addon.magic_scroll.tip_in_book_pocket": "In book: %2$s s cooldown, %3$s mana, no scroll uses consumed",
+  "item.ssc_addon.magic_scroll.tip_solo_pocket": "Solo: %2$s s cooldown, consumes 1 use; exit is free",
+  "message.ssc_addon.pocket_space.channel": "Pocket Space: channeling, %s s remaining",
+  "message.ssc_addon.pocket_space.interrupted": "Pocket Space channel interrupted",
+  "message.ssc_addon.pocket_space.unavailable": "Cannot enter Pocket Space. Check the dimension, scroll binding, or riding state",
+  "message.ssc_addon.pocket_space.arrival": "Step off the portal, then step back on and stay for 3 seconds to return",
+  "message.ssc_addon.pocket_space.exit_countdown": "Returning to your original position in %s s",
+  "message.ssc_addon.pocket_space.return_unavailable": "The original dimension is unavailable. Your return position has been kept",
+  "message.ssc_addon.pocket_space.no_sleep": "You cannot sleep in Pocket Space",
+  "block.ssc_addon.pocket_space_floor": "Pocket Space Foundation",
+  "block.ssc_addon.pocket_space_portal": "Pocket Space Portal",
+  "message.ssc_addon.pocket_space.cancelled": "Pocket Space channel cancelled; 20%% of the original cooldown refunded",
+  "message.ssc_addon.pocket_space.collapse_title": "Pocket Space Collapsing",
+  "message.ssc_addon.pocket_space.collapse_subtitle": "The bound scroll is gone. Returning you in %s s",
+  "block.ssc_addon.pocket_space_bedrock_wall": "Pocket Space Invisible Bedrock"
 }

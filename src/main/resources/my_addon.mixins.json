@@ -6,6 +6,9 @@
     "plugin":  "net.jackcooper.shapeShifterCurseAddon.mixin.plugin.SscAddonMixinConfigPlugin",
     "refmap":  "ssc-addon.refmap.json",
     "mixins":  [
+                   "ThreadedAnvilChunkStorageAccessor",
+                   "PocketSpaceBoundaryMixin",
+                   "PocketSpaceChunkFilterMixin",
                    "effect.AllaySPTotemMixin",
                    "effect.EntangledFullStunMixin",
                    "AnkhStoneTotemMixin",

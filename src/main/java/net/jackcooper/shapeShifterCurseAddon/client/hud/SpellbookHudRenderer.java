@@ -122,7 +122,7 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 			int nameW = mc.textRenderer.getWidth(name);
 			int nameX = centerX - nameW / 2; // 居中锚点，长名向左右自然溢出、不裁剪
 			ctx.drawText(mc.textRenderer, name, nameX, nameY, 0xFFFFFF, true);
-			long cdRem = SpellbookData.getCooldownRemaining(book, sel, mc.world);
+			long cdRem = ScrollData.getCooldownEnd(scroll) - mc.world.getTime();
 			if (cdRem > 0) {
 				String cdStr = String.format("%.1fs", cdRem / 20.0);
 				ctx.drawText(mc.textRenderer, Text.literal(cdStr).formatted(Formatting.RED),
@@ -157,10 +157,9 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 		// 顶层：品质覆盖层 + 冷却遮罩，都要压在图标上方，故整体抬高 z 再绘制
 		ctx.getMatrices().push();
 		ctx.getMatrices().translate(0, 0, 260);
-		// 冷却遮罩：三个槽各自独立显示（冷却是按槽存书 NBT 的，切槽后原槽 cd 仍在走，
-		// 切回/切走都应能看到对应槽的剩余冷却从上往下退去）
+		// 冷却遮罩：CD 跟卷轴走（存卷轴 NBT），三个槽各自读自己卷轴的剩余冷却从上往下退去
 		if (spell != null && spell.getBaseCooldownTicks() > 0) {
-			long cdRem = SpellbookData.getCooldownRemaining(book, slot, mc.world);
+			long cdRem = Math.max(0L, ScrollData.getCooldownEnd(scroll) - mc.world.getTime());
 			if (cdRem > 0) {
 				// 分母用等级后实际 CD（等级 CD 缩减后若仍用基础 CD，遮罩比例会偏小、退得比真实慢）
 				int level = ScrollData.getLevel(scroll);

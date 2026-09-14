@@ -627,6 +627,7 @@ public class SscAddon implements ModInitializer {
 		NovaSkillManager.init();
 		net.jackcooper.shapeShifterCurseAddon.ability.CorruptMistManager.init(); // 腐蚀之雾持续区域结算（诅咒系法术）
 		net.jackcooper.shapeShifterCurseAddon.ability.SpaceRecallManager.init(); // 空间归途读条结算（空间系法术）
+		net.jackcooper.shapeShifterCurseAddon.spell.pocket.PocketSpaceManager.init();
 		net.jackcooper.shapeShifterCurseAddon.ability.LunarSpiritTargetLink.init(); // 月灵目标联动（主人打谁月灵打谁，召唤系）
 		net.jackcooper.shapeShifterCurseAddon.ability.CompanionResonanceManager.init(); // 伙伴共鸣伤害增益到期清理（召唤系）
 		SeedEnergyEatingHandler.register();

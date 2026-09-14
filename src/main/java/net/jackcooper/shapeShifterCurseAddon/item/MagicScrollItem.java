@@ -52,12 +52,21 @@ public class MagicScrollItem extends Item {
 			return TypedActionResult.fail(stack);
 		}
 		if (!world.isClient && user instanceof ServerPlayerEntity sp) {
+			if (!spell.prepareScroll(sp, stack)) return TypedActionResult.fail(stack);
 			int level = ScrollData.getLevel(stack); // 魔法等级（1-5，开箱固定）与卷轴一体，单独使用同样生效
 			float damage = spell.getBaseDamage() * spell.getSoloDamageMultiplier() * spell.getDamageMultiplier(level);
 			int cd = Math.round(spell.getBaseCooldownTicks() * spell.getSoloCooldownMultiplier() * spell.getCooldownMultiplier(level));
 			// 统一四参入口：法术内部自行决定是否按等级缩放速度/外观/范围
-			spell.cast(sp, damage, true, level);
-			ScrollData.setCooldownEnd(stack, world.getTime() + cd);
+			spell.cast(sp, damage, true, level, stack);
+			long cooldownEnd = world.getTime() + cd;
+			ScrollData.setCooldownEnd(stack, cooldownEnd);
+			spell.onCooldownStarted(sp, () -> {
+				if (!stack.isEmpty() && ScrollData.getCooldownEnd(stack) == cooldownEnd) {
+					ScrollData.setCooldownEnd(stack,
+							net.jackcooper.shapeShifterCurseAddon.spell.pocket.PocketChannelRules.refundCooldownEnd(
+									world.getTime(), cooldownEnd, cd));
+				}
+			});
 			boolean exhausted = ScrollData.consumeSoloUse(stack);
 			if (exhausted) {
 				stack.decrement(1);

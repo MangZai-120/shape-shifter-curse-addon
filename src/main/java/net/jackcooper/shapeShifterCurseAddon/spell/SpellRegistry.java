@@ -93,6 +93,7 @@ public final class SpellRegistry implements SimpleSynchronousResourceReloadListe
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.SpaceBlinkSpell());      // 空间跳跃
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.SpaceStrideSpell());     // 空间漫步
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.SpaceRecallSpell());     // 空间归途
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.PocketSpaceSpell());
 	}
 
 	// ---- datapack reload（服务端 / 单人；客机走 applyClientSync 镜像）----
