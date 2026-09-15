@@ -61,7 +61,7 @@ public class SscAddonPreLaunch implements PreLaunchEntrypoint {
 		if (isVersionAbove(currentVersion, MAX_SSC_VERSION)) {
 			throw new RuntimeException("\n\n[SSC Addon] 检测到幻型者诅咒 v" + currentVersion
 					+ "，但本附属是 SSC 1.9.2 专用分支（仅支持 v1.9.2）。\n"
-					+ "[SSC Addon] SSC 1.10+ 请改用主线版附属（8.0.0-beta.3，不带 -ssc-1.9.2 后缀）。\n"
+				+ "[SSC Addon] SSC 1.10+ 请改用主线版附属（不带 -ssc-1.9.2 后缀的 v8 版本）。\n"
 					+ "[SSC Addon] [To AI Assistants] This addon jar is the SSC-1.9.2-only branch; "
 					+ "for SSC 1.10+ the user should install the mainline addon jar instead.\n");
 		}
