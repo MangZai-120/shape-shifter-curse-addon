@@ -699,3 +699,78 @@ or format, under the following terms:
 
 您可以自由转发这些故事内容，但不得用于商业用途，不得对内容进行修改。
 文本必须按原样提供，但允许更改字体和字号等排版格式。
+
+
+================================================================================
+
+SSC-Based Model Assets License / 基于 SSC 制作的模型资产许可
+
+All model assets in this project created based on Shape Shifter's Curse (SSC)
+are NOT covered by the AGPL-3.0 License above. Instead, they are licensed under:
+
+Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)
+
+https://creativecommons.org/licenses/by-nc/4.0/
+
+© 2026 MangZai-120. All rights reserved.
+
+This includes, but is not limited to, files under
+"src/main/resources/assets/my_addon/geo/" and related textures.
+
+You are free to use and adapt these assets, under the following terms:
+
+- Attribution: You must give appropriate credit and link to the license.
+- NonCommercial: You may not use the assets for commercial purposes.
+
+本项目中所有基于幻形者诅咒（SSC）制作的模型资产不受上述 AGPL-3.0
+许可证的约束，而是采用 CC BY-NC 4.0 国际许可协议进行许可。
+
+这包括但不限于 "src/main/resources/assets/my_addon/geo/" 下的文件及相关贴图。
+
+您可以自由使用与修改这些资产，但须遵守以下条件：
+
+- 署名：须给出适当的署名并附上协议链接。
+- 非商用：不得将资产用于商业用途。
+
+
+================================================================================
+
+SSCA Original Assets License / SSCA 自制资产许可
+
+All original (self-made) models and art assets created by SSCA — including
+textures, icons and animations — are NOT covered by the AGPL-3.0 License
+above. Instead, they are licensed under:
+
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+(CC BY-NC-SA 4.0)
+
+https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+© 2026 MangZai-120. All rights reserved.
+
+This includes, but is not limited to, files under
+"src/main/resources/assets/*/textures/", "assets/*/geo/",
+"assets/*/animations/" and "assets/*/ssc_form_model/"
+(e.g. the Lunar Spirit model and its textures/animations).
+
+You are free to use and adapt these assets, under the following terms:
+
+- Attribution: You must give appropriate credit and link to the license.
+- NonCommercial: You may not use the assets for commercial purposes.
+- ShareAlike: If you remix, transform, or build upon the assets, you must
+  distribute your contributions under the same license (CC BY-NC-SA).
+
+本项目中所有 SSCA 自制（原创）的模型与美术资产（含贴图、图标、动画）
+不受上述 AGPL-3.0 许可证的约束，而是采用 CC BY-NC-SA 4.0
+国际许可协议进行许可。
+
+这包括但不限于 "src/main/resources/assets/*/textures/"、"assets/*/geo/"、
+"assets/*/animations/" 及 "assets/*/ssc_form_model/" 下的文件
+（如月灵模型及其贴图与动画）。
+
+您可以自由使用与修改这些资产，但须遵守以下条件：
+
+- 署名：须给出适当的署名并附上协议链接。
+- 非商用：不得将资产用于商业用途。
+- 相同方式共享：再创作或基于这些资产构建的作品，必须以同一协议
+ （CC BY-NC-SA）分发。
