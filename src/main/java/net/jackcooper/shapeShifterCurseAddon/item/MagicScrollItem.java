@@ -4,6 +4,7 @@ import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.client.item.TooltipContext;
+import net.minecraft.client.item.TooltipData;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -11,11 +12,13 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 魔法卷轴（jackcooper）。一个通用物品，通过 NBT（{@link ScrollData}）绑定具体魔法与稀有度。
@@ -111,6 +114,14 @@ public class MagicScrollItem extends Item {
 	}
 
 	@Override
+	public Optional<TooltipData> getTooltipData(ItemStack stack) {
+		Spell spell = ScrollData.getSpell(stack);
+		return spell == null
+				? Optional.empty()
+				: Optional.of(new SpellIconTooltipData(spell.getIconTexture()));
+	}
+
+	@Override
 	public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
 		Spell spell = ScrollData.getSpell(stack);
 		if (spell == null) {
@@ -147,5 +158,8 @@ public class MagicScrollItem extends Item {
 			return String.valueOf((int) sec);
 		}
 		return String.format("%.1f", sec);
+	}
+
+	public record SpellIconTooltipData(Identifier texture) implements TooltipData {
 	}
 }

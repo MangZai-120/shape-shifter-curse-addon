@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.TooltipComponentCallback;
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.item.ModelPredicateProviderRegistry;
 import net.minecraft.client.render.entity.EmptyEntityRenderer;
@@ -31,6 +32,8 @@ import net.jackcooper.shapeShifterCurseAddon.client.renderer.WaterSpearEntityRen
 import net.jackcooper.shapeShifterCurseAddon.client.renderer.FluorescentLaserRenderer;
 import net.jackcooper.shapeShifterCurseAddon.client.renderer.WitchFamiliarRenderer;
 import net.jackcooper.shapeShifterCurseAddon.client.screen.PotionBagScreen;
+import net.jackcooper.shapeShifterCurseAddon.client.tooltip.SpellIconTooltipComponent;
+import net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -422,7 +425,15 @@ public class SscAddonClient implements ClientModInitializer {
 			if (stack.getItem() == SscAddon.CORAL_BALL) {
 				addSplitTooltip(lines, "item.ssc_addon.coral_ball.tooltip");
 			}
+			if (stack.getItem() == SscAddon.MAGIC_SCROLL
+					&& net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getSpell(stack) != null
+					&& !lines.isEmpty()) {
+				lines.set(0, Text.literal("     ").append(lines.get(0)));
+			}
 		});
+		TooltipComponentCallback.EVENT.register(data -> data instanceof MagicScrollItem.SpellIconTooltipData iconData
+				? new SpellIconTooltipComponent(iconData.texture())
+				: null);
 
 		EntityRendererRegistry.register(SscAddon.WATER_SPEAR_ENTITY, WaterSpearEntityRenderer::new);
 
