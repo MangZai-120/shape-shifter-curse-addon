@@ -21,6 +21,7 @@ import net.minecraft.util.JsonHelper;
  *   <li>{@code solo_damage_multiplier} / {@code solo_cooldown_multiplier} /
  *       {@code solo_cast_time_multiplier}（float，默认 0.5 / 2.0 / 2.0）：单独使用惩罚；</li>
  *   <li>{@code element}（string，默认 {@code null}）：系别标记（fire / ice），供法阵对立系判定；</li>
+ *   <li>{@code exp_mode}（int，默认 0）：经验机制（0=释放即得 / 1=命中才得 / 2=释放 20%+命中补到 100%）；</li>
  *   <li>{@code levels}[5]（对象数组，可只写前几级，越界回退默认）：每级
  *       {@code damage_multiplier} / {@code cooldown_multiplier} / {@code speed_multiplier}
  *       （float，默认 1.0）与 {@code rarity}（string：white/green/blue/purple/orange）。</li>
@@ -37,6 +38,8 @@ public final class SpellConfig {
 	public final float soloCastTimeMultiplier;
 	/** 系别标记（fire / ice / null）。null = 无系别（法阵对立系判定不生效）。 */
 	public final String element;
+	/** 经验机制（0=释放即得 / 1=命中才得 / 2=释放得 20% 命中补到 100%；缺省 0）。 */
+	public final int expMode;
 
 	/** 每级倍率与品质（index = level-1；长度可不足 5，读取时越界回退默认）：每级
 	 * {@code damage_multiplier} / {@code cooldown_multiplier} / {@code speed_multiplier} /
@@ -49,7 +52,7 @@ public final class SpellConfig {
 
 	private SpellConfig(float baseDamage, int baseCooldownTicks, int baseCastTimeTicks, int manaCost,
 						float soloDamageMultiplier, float soloCooldownMultiplier, float soloCastTimeMultiplier,
-						String element, float[] damageMultipliers, float[] cooldownMultipliers,
+					String element, int expMode, float[] damageMultipliers, float[] cooldownMultipliers,
 					float[] speedMultipliers, float[] manaCostMultipliers, String[] rarities) {
 		this.baseDamage = baseDamage;
 		this.baseCooldownTicks = baseCooldownTicks;
@@ -59,6 +62,7 @@ public final class SpellConfig {
 		this.soloCooldownMultiplier = soloCooldownMultiplier;
 		this.soloCastTimeMultiplier = soloCastTimeMultiplier;
 		this.element = element;
+		this.expMode = expMode;
 		this.damageMultipliers = damageMultipliers;
 		this.cooldownMultipliers = cooldownMultipliers;
 		this.speedMultipliers = speedMultipliers;
@@ -109,7 +113,7 @@ public final class SpellConfig {
 
 	/** Java 内置默认配置（JSON 缺失/损坏时的兜底全 0 数值 + 全 1.0 倍率）。 */
 	public static SpellConfig fallback() {
-		return new SpellConfig(0f, 20, 0, 0, 0.5f, 2.0f, 2.0f, null,
+		return new SpellConfig(0f, 20, 0, 0, 0.5f, 2.0f, 2.0f, null, 0,
 				new float[0], new float[0], new float[0], new float[0], new String[0]);
 	}
 
@@ -124,6 +128,12 @@ public final class SpellConfig {
 		float soloCast = positive(JsonHelper.getFloat(o, "solo_cast_time_multiplier", 2.0f));
 		String element = o.has("element") && o.get("element").isJsonPrimitive()
 				? normalizeElement(o.get("element").getAsString()) : null;
+		// 经验机制：0=释放即得 / 1=命中才得 / 2=释放 20%+命中补到 100%（非法值归 0）
+		int expMode = switch (JsonHelper.getInt(o, "exp_mode", 0)) {
+			case 1 -> 1;
+			case 2 -> 2;
+			default -> 0;
+		};
 
 		float[] dmg = new float[0];
 		float[] cd = new float[0];
@@ -153,7 +163,7 @@ public final class SpellConfig {
 			}
 		}
 		return new SpellConfig(baseDamage, baseCooldown, baseCastTime, manaCost,
-				soloDmg, soloCd, soloCast, element, dmg, cd, speed, manaMul, rarity);
+				soloDmg, soloCd, soloCast, element, expMode, dmg, cd, speed, manaMul, rarity);
 	}
 
 	/** element 只认七个合法系别 id，其它归 null（与 FormationElement 枚举对齐）。 */

@@ -44,6 +44,17 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 	private int ticksAlive = 0;
 	private float damage = 4.0f;
 
+	/** 命中发放的经验赏金（×10 整数；exp_mode 1/2 挂起部分由施法时装入，NBT 持久化跨 tick）。 */
+	private int expBountyTen = 0;
+
+	public void setExpBountyTen(int expTen) {
+		this.expBountyTen = Math.max(0, expTen);
+	}
+
+	public int getExpBountyTen() {
+		return expBountyTen;
+	}
+
 	public SpellMoonlightArrowEntity(EntityType<? extends SpellMoonlightArrowEntity> entityType, World world) {
 		super(entityType, world);
 		this.startPos = this.getPos();
@@ -144,6 +155,11 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 				livingTarget.damage(this.getDamageSources().indirectMagic(owner, owner), finalDamage);
 			} else {
 				livingTarget.damage(this.getDamageSources().magic(), finalDamage);
+			}
+			// exp_mode 1/2 命中补发：damage 成功才发放，发放后清零防重复
+			if (livingTarget.hurtTime > 0 && this.getOwner() instanceof ServerPlayerEntity ownerPlayer) {
+				net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant.grant(ownerPlayer, expBountyTen);
+				expBountyTen = 0;
 			}
 			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 0.8f, 1.5f);

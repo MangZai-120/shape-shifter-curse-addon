@@ -17,6 +17,10 @@ import net.minecraft.world.World;
  * <p><b>满级成长</b>：Lv3 满级后经验继续累积，每满 {@link #MASTERY_EXP_PER_TIER}（600.0）
  * 提升一档书法力上限 {@link #MASTERY_MANA_PER_TIER}（+50），封顶 {@link #MASTERY_MAX_BONUS}（+600，
  * 即满级满档 300+600=900）。档位不落级：经验只增不减（升级清零只发生在 Lv1→2 / Lv2→3）。</p>
+ *
+ * <p><b>通用法阵蕴能（2026-09-15）</b>：书内通用法阵另提供法力上限加成（基于等级基础值，
+ * Lv1 +20% … Lv5 +60%，取最高等级不叠加，见 {@link #getUniversalFormationManaBonus}）；
+ * 施法经验获取效率同步提升（见 {@code SpellCastManager}，每级 +10%）。</p>
  */
 public final class SpellbookData {
 	public static final int MAX_LEVEL = 3;
@@ -80,7 +84,21 @@ public final class SpellbookData {
 	}
 
 	public static int getMaxMana(ItemStack book) {
-		return LEVEL_MAX_MANA[getLevel(book) - 1] + getMasteryManaBonus(book);
+		int base = LEVEL_MAX_MANA[getLevel(book) - 1];
+		return base + getMasteryManaBonus(book) + getUniversalFormationManaBonus(book);
+	}
+
+	/**
+	 * 增能法阵（通用系 mana 变体）加成：基于书等级基础法力上限的百分比
+	 * （Lv1 +20% … Lv5 +60%，取书内最高等级；与精通档加法叠加，互不干扰）。
+	 */
+	public static int getUniversalFormationManaBonus(ItemStack book) {
+		int best = FormationData.getBestUniversalVariantLevel(book, FormationData.VARIANT_MANA);
+		if (best <= 0) {
+			return 0;
+		}
+		return Math.round(LEVEL_MAX_MANA[getLevel(book) - 1]
+				* FormationData.universalManaBonusPct(best));
 	}
 
 	/** 满级精通档位（第几档，0 = 未满档）。每 {@link #MASTERY_EXP_PER_TIER} 经验一档，封顶不超上限加成。 */

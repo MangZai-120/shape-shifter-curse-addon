@@ -36,12 +36,16 @@ public class IceBarrageSpell extends Spell {
 	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level) {
 		Vec3d look = caster.getRotationVec(1.0F);
 		float speedMul = getSpeedMultiplier(level);
+		// exp 挂起经验均分给三枚（bounty 为绝对值，cast 时一次性取走除以枚数）
+		int bountyTen = solo ? 0 : ssc_addon$takePendingExp();
+		int eachBounty = bountyTen / COUNT;
 		// 按 COUNT 均匀铺开扇形：COUNT=3 时即中心 1 枚 + 两侧各 1 枚偏 SPREAD_DEG
 		for (int i = 0; i < COUNT; i++) {
 			float yawOffset = (i - (COUNT - 1) * 0.5f) * SPREAD_DEG;
 			SpellFrostSpikeEntity spike = new SpellFrostSpikeEntity(caster.getWorld(), caster);
 			spike.setDamage(power);
 			spike.setLevel(Math.max(1, level - 2)); // 齐射单发按低两档外观（视觉上小一号）
+			spike.setExpBountyTen(eachBounty);
 			Vec3d dir = rotateYaw(look, yawOffset);
 			spike.setDirection(dir, speedMul);
 			caster.getWorld().spawnEntity(spike);

@@ -7,6 +7,7 @@
   "solo_cooldown_multiplier": 2.0,
   "solo_cast_time_multiplier": 2.0,
   "element": "space",
+  "exp_mode": 0,
   "levels": [
     { "rarity": "white" },
     { "mana_cost_multiplier": 1.2, "cooldown_multiplier": 0.9, "rarity": "green" },

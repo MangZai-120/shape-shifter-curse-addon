@@ -1190,5 +1190,13 @@
   "message.ssc_addon.pocket_space.cancelled": "已取消口袋空间引导，返还本次总冷却的20%%",
   "message.ssc_addon.pocket_space.collapse_title": "口袋空间正在崩溃",
   "message.ssc_addon.pocket_space.collapse_subtitle": "绑定的卷轴已消失，%s 秒后送回原位置",
-  "block.ssc_addon.pocket_space_bedrock_wall": "口袋空间隐形基岩"
+  "block.ssc_addon.pocket_space_bedrock_wall": "口袋空间隐形基岩",
+  "item.ssc_addon.formation.named_universal": "%1$s增强法阵 Lv.%2$s",
+  "formation.ssc_addon.variant.regen": "回能",
+  "formation.ssc_addon.variant.mana": "增能",
+  "formation.ssc_addon.variant.exp": "经验",
+  "item.ssc_addon.formation.tip_mana": "装入魔法书后：法力上限 +%1$s%%（多张增能法阵取最高等级；与精通档叠加）",
+  "item.ssc_addon.formation.tip_exp": "装入魔法书后：施法获得经验 +%1$s%%（多张经验法阵取最高等级）",
+  "spell.ssc_addon.exp_mode_1": "命中目标才能获得经验",
+  "spell.ssc_addon.exp_mode_2": "释放获得 20%% 经验，命中目标后补足剩余 80%%"
 }

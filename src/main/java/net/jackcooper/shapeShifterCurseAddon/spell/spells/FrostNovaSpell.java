@@ -61,7 +61,11 @@ public class FrostNovaSpell extends Spell {
 			if (WhitelistUtils.isProtected(caster, target)) {
 				continue;
 			}
-			target.damage(serverWorld.getDamageSources().indirectMagic(caster, caster), power);
+			if (target.damage(serverWorld.getDamageSources().indirectMagic(caster, caster), power)) {
+				// exp_mode 1/2 命中补发：首个命中目标取全额（后续取 0，幂等），发放后挂起清零
+				net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant.grant(caster,
+						solo ? 0 : ssc_addon$takePendingExp());
+			}
 			target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, slowTicks, 1));
 		}
 		// 演出：雪粒环 + 寒气音效

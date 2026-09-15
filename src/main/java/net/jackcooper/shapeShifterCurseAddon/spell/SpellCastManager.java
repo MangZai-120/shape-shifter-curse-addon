@@ -80,8 +80,30 @@ public final class SpellCastManager {
 			SpellbookData.setScroll(book, slot, scroll);
 		}
 		SpellbookData.consumeMana(book, manaCost);
+		// 经验机制（exp_mode，2026-09-15）——baseExp 按「实际耗蓝 × 有效技能等级」计算
+		// （蓝色品质中位 6.0 exp/次），再乘经验法阵（通用系 exp 变体）倍率：每级 +10%（Lv5=×1.5）：
+		//   0 = 释放即得全额；1 = 命中才得（释放时 0，全额挂起）；2 = 释放得 20%、命中补 80%。
+		// 挂起部分经 Spell 桥在 cast 调用前装入：弹射物法术在 cast 内取走存进实体（NBT 持久化，
+		// 命中结算时发放）；AOE 法术在 damage 成功后取走发放（首目标取全额、后续取 0，天然幂等）。
+		int expMode = spell.getExpMode();
+		int baseExpTen = manaCost * level;
+		int bestExpFormation = FormationData.getBestUniversalVariantLevel(book, FormationData.VARIANT_EXP);
+		if (bestExpFormation > 0) {
+			baseExpTen = Math.round(baseExpTen * FormationData.universalExpMultiplier(bestExpFormation));
+		}
+		int pendingTen;
+		switch (expMode) {
+			case 1 -> pendingTen = baseExpTen;                // 命中才得：释放时全额挂起
+			case 2 -> pendingTen = baseExpTen * 8 / 10;       // 释放 20% + 命中补 80%（整数截断）
+			default -> pendingTen = 0;                        // 释放即得：无挂起
+		}
+		if (pendingTen > 0) {
+			spell.ssc_addon$setPendingExp(pendingTen);
+		}
 		// 统一四参入口：法术内部自行决定是否按等级缩放速度/外观/范围（无 instanceof 特判）
 		spell.cast(player, damage, false, level, scroll);
+		spell.ssc_addon$clearPendingExp(); // 残留清理：法术未取走（如 AOE 全空放）则丢弃挂起部分
+		SpellbookData.addExpTen(book, baseExpTen - pendingTen);
 		long cooldownEnd = world.getTime() + cd;
 		ScrollData.setCooldownEnd(scroll, cooldownEnd); // CD 跟卷轴走：换卷轴不继承同槽 CD
 		if (!java.util.Objects.equals(previousNbt, scroll.getNbt())) {
@@ -96,10 +118,6 @@ public final class SpellCastManager {
 				SpellbookData.setScroll(book, slot, current);
 			}
 		});
-		// 经验获取：实际耗蓝 × 有效技能等级 ÷ 10（精确 0.1；×10 整数存储防浮点漂移）。
-		// 蓝色品质（Lv3）中位耗蓝 20 → 6.0 exp/次，600 exp 阈值 ≈ 100 次升一级。
-		// 多耗蓝多得经验：法阵 +10%/级耗蓝 → exp 同步上升，便魔亲和 ×0.85 → exp 同步下降，语义自洽。
-		SpellbookData.addExpTen(book, manaCost * level);
 	}
 
 	/** 更新当前选中槽（存书 NBT，持久化 + 服务端一致）。 */

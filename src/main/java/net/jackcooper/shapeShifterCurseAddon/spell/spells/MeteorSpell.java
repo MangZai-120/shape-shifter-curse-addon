@@ -62,6 +62,7 @@ public class MeteorSpell extends Spell {
 		SpellMeteorEntity meteor = new SpellMeteorEntity(caster.getWorld(), caster);
 		meteor.setDamage(power);
 		meteor.setLevel(level);
+		meteor.setExpBountyTen(solo ? 0 : ssc_addon$takePendingExp()); // exp_mode 1/2 挂起经验随落点体走
 		meteor.setRadius(BASE_RADIUS * getSpeedMultiplier(level));
 		meteor.setImpactTarget(impact.x, impact.y, impact.z);
 		caster.getWorld().spawnEntity(meteor);

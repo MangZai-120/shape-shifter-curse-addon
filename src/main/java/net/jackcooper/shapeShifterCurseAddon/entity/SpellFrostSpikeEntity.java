@@ -49,6 +49,17 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 	private int ticksAlive = 0;
 	private float damage = 6.0f;
 
+	/** 命中发放的经验赏金（×10 整数；exp_mode 1/2 挂起部分由施法时装入，NBT 持久化跨 tick；齐射均分后每枚持有份额）。 */
+	private int expBountyTen = 0;
+
+	public void setExpBountyTen(int expTen) {
+		this.expBountyTen = Math.max(0, expTen);
+	}
+
+	public int getExpBountyTen() {
+		return expBountyTen;
+	}
+
 	public SpellFrostSpikeEntity(EntityType<? extends SpellFrostSpikeEntity> entityType, World world) {
 		super(entityType, world);
 		this.startPos = this.getPos();
@@ -166,6 +177,11 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 			} else {
 				livingTarget.damage(this.getDamageSources().magic(), damage);
 			}
+			// exp_mode 1/2 命中补发：damage 成功才发放，发放后清零防重复
+			if (livingTarget.hurtTime > 0 && this.getOwner() instanceof ServerPlayerEntity ownerPlayer) {
+				net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant.grant(ownerPlayer, expBountyTen);
+				expBountyTen = 0;
+			}
 			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.ENTITY_PLAYER_HURT_FREEZE, SoundCategory.PLAYERS, 1.0f, 1.2f);
 		}
@@ -188,6 +204,9 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 		if (nbt.contains("SpellLevel")) {
 			setLevel(nbt.getInt("SpellLevel"));
 		}
+		if (nbt.contains("ExpBountyTen")) {
+			this.expBountyTen = Math.max(0, nbt.getInt("ExpBountyTen"));
+		}
 	}
 
 	@Override
@@ -200,6 +219,7 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 		}
 		nbt.putFloat("Damage", this.damage);
 		nbt.putInt("SpellLevel", getSpellLevel());
+		nbt.putInt("ExpBountyTen", this.expBountyTen);
 	}
 
 	@Override

@@ -59,7 +59,11 @@ public class FlameNovaSpell extends Spell {
 			if (WhitelistUtils.isProtected(caster, target)) {
 				continue;
 			}
-			target.damage(serverWorld.getDamageSources().indirectMagic(caster, caster), power);
+			if (target.damage(serverWorld.getDamageSources().indirectMagic(caster, caster), power)) {
+				// exp_mode 1/2 命中补发：首个命中目标取全额（后续取 0，幂等），发放后挂起清零
+				net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant.grant(caster,
+						solo ? 0 : ssc_addon$takePendingExp());
+			}
 			target.setFireTicks(FIRE_TICKS);
 			// 击退：远离施法者
 			Vec3d knock = new Vec3d(target.getX() - caster.getX(), 0.1, target.getZ() - caster.getZ())

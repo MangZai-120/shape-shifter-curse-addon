@@ -112,6 +112,10 @@ public final class PocketSpaceBlocks {
 		}
 	}
 
+	// 说明：rotate/mirror/getOutlineShape 覆写的父类方法在 vanilla 中标了 @Deprecated（Yarn 映射惯例）。
+	// javac -Xlint:deprecation 对覆写告警、ECJ 却不认覆写属 deprecation 用法 → 任何位置的
+	// @SuppressWarnings 都会被其中一方抱怨（方法级/类级均被 IDE 判 Unnecessary）。
+	// 惯用解：覆写自身标 @Deprecated 继承过时语义，两个编译器均零告警（javac 实测验证）。
 	private static final class PortalBlock extends BlockWithEntity implements OperatorBlock {
 		private static final VoxelShape BASE = VoxelShapes.cuboid(0, 0, 0, 1, PocketSpaceLayout.PORTAL_BASE_HEIGHT, 1);
 		private static final double INSET = PocketSpaceLayout.PORTAL_INSET;
@@ -148,19 +152,19 @@ public final class PocketSpaceBlocks {
 		}
 
 		@Override
-		@SuppressWarnings("deprecation")
+		@Deprecated
 		public BlockState rotate(BlockState state, BlockRotation rotation) {
 			return state.with(PORTAL_FACING, rotation.rotate(state.get(PORTAL_FACING)));
 		}
 
 		@Override
-		@SuppressWarnings("deprecation")
+		@Deprecated
 		public BlockState mirror(BlockState state, BlockMirror mirror) {
 			return rotate(state, mirror.getRotation(state.get(PORTAL_FACING)));
 		}
 
 		@Override
-		@SuppressWarnings("deprecation") // javac -Xlint:deprecation 会告警（IDE 不开该开关才显示多余）
+		@Deprecated
 		public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
 			return switch (state.get(PORTAL_FACING)) {
 				case EAST -> EAST_SHAPE;

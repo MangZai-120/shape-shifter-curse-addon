@@ -53,6 +53,13 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 	private double radius = 3.0;
 	private boolean falling = false;
 
+	/** 命中发放的经验赏金（×10 整数；exp_mode 1/2 挂起部分由施法时装入，NBT 持久化跨 tick）。 */
+	private int expBountyTen = 0;
+
+	public void setExpBountyTen(int expTen) {
+		this.expBountyTen = Math.max(0, expTen);
+	}
+
 	public SpellMeteorEntity(EntityType<? extends SpellMeteorEntity> entityType, World world) {
 		super(entityType, world);
 	}
@@ -150,6 +157,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		double ix = this.getX();
 		double iy = this.getY();
 		double iz = this.getZ();
+		boolean hitAnyTarget = false;
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
 				this.getBoundingBox().expand(radius), e -> e != this.getOwner() && e.isAlive());
 		for (LivingEntity target : targets) {
@@ -172,11 +180,17 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 			} else {
 				target.damage(this.getDamageSources().magic(), dmg);
 			}
+			hitAnyTarget = true;
 			// 点燃 3s + 轻微击退（离开爆心方向）
 			target.setFireTicks(60);
 			Vec3d knock = new Vec3d(target.getX() - ix, 0.1, target.getZ() - iz).normalize().multiply(0.6);
 			target.addVelocity(knock.x, knock.y, knock.z);
 			target.velocityModified = true;
+		}
+		// exp_mode 1/2 命中补发：AOE 内至少伤到一个目标才发放（首目标取全额），发放后清零
+		if (hitAnyTarget && this.getOwner() instanceof ServerPlayerEntity ownerPlayer) {
+			net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant.grant(ownerPlayer, expBountyTen);
+			expBountyTen = 0;
 		}
 		// 演出：爆炸粒子 + 火光 + 双层音效
 		serverWorld.spawnParticles(ParticleTypes.EXPLOSION_EMITTER, ix, iy + 0.5, iz, 1, 0, 0, 0, 0);
@@ -209,6 +223,9 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		if (nbt.contains("Falling")) {
 			this.falling = nbt.getBoolean("Falling");
 		}
+		if (nbt.contains("ExpBountyTen")) {
+			this.expBountyTen = Math.max(0, nbt.getInt("ExpBountyTen"));
+		}
 	}
 
 	@Override
@@ -218,6 +235,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		nbt.putDouble("Radius", this.radius);
 		nbt.putInt("SpellLevel", getSpellLevel());
 		nbt.putBoolean("Falling", this.falling);
+		nbt.putInt("ExpBountyTen", this.expBountyTen);
 	}
 
 	@Override

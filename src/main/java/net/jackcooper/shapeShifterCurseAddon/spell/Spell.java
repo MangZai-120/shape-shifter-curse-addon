@@ -224,4 +224,35 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	public Identifier getIconTexture() {
 		return new Identifier("ssc_addon", "textures/gui/spell_icons/" + id.getPath() + ".png");
 	}
+
+	// ---- 经验机制桥（2026-09-15：exp_mode 0=释放即得 / 1=命中才得 / 2=释放 20%+命中补到 100%） ----
+
+	/**
+	 * 本次施法待补发的经验（×10 整数）。服务端逻辑单线程：SpellCastManager 在调用
+	 * {@code cast()} 前设置、同一次调用栈内由法术实体/局部变量取走，调用返回后由施法管理器清零——
+	 * set→read 之间不会插入其它玩家的施法，无竞态。solo 使用不进本体系（恒 0）。
+	 */
+	private int pendingExpTen = 0;
+
+	/** 经验机制模式（JSON {@code exp_mode}；缺省 0）。 */
+	public int getExpMode() {
+		return config.expMode;
+	}
+
+	/** 施法管理器专用：设置本次施法的待补发经验（仅服务端调用栈内有效）。 */
+	public void ssc_addon$setPendingExp(int expTen) {
+		this.pendingExpTen = expTen;
+	}
+
+	/** 法术实体 / AOE 循环取走并清零待补发经验（取走后再调用返回 0）。 */
+	public int ssc_addon$takePendingExp() {
+		int v = pendingExpTen;
+		pendingExpTen = 0;
+		return v;
+	}
+
+	/** 施法管理器专用：cast 返回后强制清桥（防子类忘取走导致泄漏到下次施法）。 */
+	public void ssc_addon$clearPendingExp() {
+		pendingExpTen = 0;
+	}
 }

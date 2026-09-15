@@ -22,11 +22,11 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 通用增强法阵的「形态能量 → 书法术值」转化（jackcooper，服务端每秒结算）。
  *
- * <p>装入魔法书五角星的通用法阵生效：当玩家当前形态持有能量条（SSCA 资源条
+ * <p>装入魔法书五角星的<b>回能变体</b>通用法阵生效（regen 变体；增能/经验变体不参与转化）：当玩家当前形态持有能量条（SSCA 资源条
  * 悦灵/蝙蝠/阿努比斯/雪狐，或原版 ManaComponent 体系——使魔/蜘蛛/契灵）
  * 且<b>书法术值占比低于阈值</b>时，每秒消耗 3 点形态能量回复 6 点书法术值。</p>
  *
- * <p>阈值按书内<b>等级最高</b>的通用法阵决定（多张不叠加转化速率）：Lv1=20% …
+ * <p>阈值按书内<b>等级最高</b>的回能法阵决定（多张不叠加转化速率）：Lv1=20% …
  * Lv5=100%（{@link FormationData#universalThreshold}）。</p>
  *
  * <p>边界：书满/未装备/无能量条/能量不足 3 点/朔望与寄生果蝠（ManaComponent 可能残留误判）
@@ -75,13 +75,8 @@ public final class UniversalFormationManager {
 		if (book == null || book.isEmpty()) {
 			return;
 		}
-		// 书内没有通用法阵 → 不动作（取等级最高的一张决定阈值）
-		int bestLevel = 0;
-		for (ItemStack formation : SpellbookData.getFormations(book)) {
-			if (FormationData.getElement(formation) == FormationElement.UNIVERSAL) {
-				bestLevel = Math.max(bestLevel, FormationData.getLevel(formation));
-			}
-		}
+		// 书内没有回能变体通用法阵 → 不动作（转化只认 regen 变体；取等级最高的一张决定阈值）
+		int bestLevel = FormationData.getBestUniversalVariantLevel(book, FormationData.VARIANT_REGEN);
 		if (bestLevel <= 0) {
 			return;
 		}

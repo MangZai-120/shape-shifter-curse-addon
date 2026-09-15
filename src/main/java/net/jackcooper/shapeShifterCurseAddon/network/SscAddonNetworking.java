@@ -431,23 +431,25 @@ public class SscAddonNetworking {
 			});
 		});
 
-		// SSCA 法术研究台 - 抄写法阵（服务端权威重验：已学习 + 纸 + 对应系墨×等级）
+		// SSCA 法术研究台 - 抄写法阵（服务端权威重验：已学习 + 纸 + 对应系墨×等级；variant 仅通用系有效）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FORMATION_SCRIBE, (server, player, handler, buf, responseSender) -> {
 			String elementId = buf.readString(64);
+			String variant = buf.readString(16);
 			int level = buf.readVarInt();
 			server.execute(() -> {
 				if (isRateLimited(player)) return;
-				net.jackcooper.shapeShifterCurseAddon.spell.ResearchTableManager.scribe(player, elementId, level);
+				net.jackcooper.shapeShifterCurseAddon.spell.ResearchTableManager.scribe(player, elementId, variant, level);
 			});
 		});
 
 		// SSCA 法术研究台 - 学习法阵（服务端权威重验：已记录 + 月尘够；discount 预留小游戏接口当前恒 0）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FORMATION_LEARN, (server, player, handler, buf, responseSender) -> {
 			String elementId = buf.readString(64);
+			String variant = buf.readString(16);
 			int level = buf.readVarInt();
 			server.execute(() -> {
 				if (isRateLimited(player)) return;
-				net.jackcooper.shapeShifterCurseAddon.spell.ResearchTableManager.learn(player, elementId, level, 0);
+				net.jackcooper.shapeShifterCurseAddon.spell.ResearchTableManager.learn(player, elementId, variant, level, 0);
 			});
 		});
 

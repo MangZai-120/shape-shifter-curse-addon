@@ -48,16 +48,24 @@ public class FormationItem extends Item {
 		}
 		// 起手即查「已记录同级」：直接提示并拒绝，避免玩家白等 1.6 秒蓄力
 		// （FormationKnowledgeComponent 是 AutoSyncedComponent，客户端可读，研究台 GUI 同款依赖）
-		if (FormationKnowledgeComponent.get(user).hasRecorded(element, FormationData.getLevel(stack))) {
+		String variant = FormationData.getVariant(stack);
+		if (FormationKnowledgeComponent.get(user).hasRecorded(element, variant, FormationData.getLevel(stack))) {
 			if (world.isClient) {
 				user.sendMessage(Text.translatable("message.ssc_addon.formation.already_recorded",
-						Text.translatable(element.getNameKey()), FormationData.getLevel(stack)).formatted(Formatting.YELLOW), true);
+						displayName(element, variant), FormationData.getLevel(stack)).formatted(Formatting.YELLOW), true);
 			}
 			return TypedActionResult.fail(stack);
 		}
 		// 进入蓄力（长按右键，进度条满 32t 后触发 finishUsing）
 		user.setCurrentHand(hand);
 		return TypedActionResult.consume(stack);
+	}
+
+	/** 变体感知显示名（通用系显示变体名，其它系显示系别名）。 */
+	private static Text displayName(FormationElement element, String variant) {
+		return element == FormationElement.UNIVERSAL
+				? Text.translatable(variantNameKey(variant))
+				: Text.translatable(element.getNameKey());
 	}
 
 	@Override
@@ -77,37 +85,44 @@ public class FormationItem extends Item {
 			FormationElement element = FormationData.getElement(stack);
 			if (element != null) {
 				int level = FormationData.getLevel(stack);
+				String variant = FormationData.getVariant(stack);
 				FormationKnowledgeComponent knowledge = FormationKnowledgeComponent.get(player);
 				// 二次校验（蓄力期间理论上不会变化，防御性保留）
-				if (!knowledge.hasRecorded(element, level)) {
-					knowledge.record(element, level);
-					FormationKnowledgeComponent.sync(player);
+				if (!knowledge.hasRecorded(element, variant, level)) {
+					knowledge.record(element, variant, level);
+				FormationKnowledgeComponent.sync(player);
 					if (!player.getAbilities().creativeMode) {
 						stack.decrement(1);
 					}
 					player.sendMessage(Text.translatable("message.ssc_addon.formation.recorded",
-							Text.translatable(element.getNameKey()), level).formatted(Formatting.GREEN), true);
+							displayName(element, variant), level).formatted(Formatting.GREEN), true);
 					world.playSound(null, player.getX(), player.getY(), player.getZ(),
-							SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.PLAYERS, 0.4f, 1.6f);
+						SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.PLAYERS, 0.4f, 1.6f);
 				} else {
 					player.sendMessage(Text.translatable("message.ssc_addon.formation.already_recorded",
-							Text.translatable(element.getNameKey()), level).formatted(Formatting.YELLOW), true);
-				}
+							displayName(element, variant), level).formatted(Formatting.YELLOW), true);			}
 			}
 		}
 		return stack;
 	}
 
-	@Override
-	public Text getName(ItemStack stack) {
+	@Override	public Text getName(ItemStack stack) {
 		FormationElement element = FormationData.getElement(stack);
 		if (element != null) {
 			int level = FormationData.getLevel(stack);
-			// 名称按品质色（白/绿/蓝/紫/橙，与卷轴一致）；系别靠后缀名区分
-			return Text.translatable("item.ssc_addon.formation.named",
-					Text.translatable(element.getNameKey()), level).formatted(FormationData.getRarity(level).color);
+			// 名称按品质色（白/绿/蓝/紫/橙，与卷轴一致）；通用系显示变体名，其它系显示系别名
+			return Text.translatable(element == FormationElement.UNIVERSAL
+					? "item.ssc_addon.formation.named_universal" : "item.ssc_addon.formation.named",
+					displayName(element, FormationData.getVariant(stack)), level)
+					.formatted(FormationData.getRarity(level).color);
 		}
 		return super.getName(stack);
+	}
+
+	/** 通用系变体名 lang key。 */
+	private static String variantNameKey(String variant) {
+		String v = FormationData.normalizeVariant(variant);
+		return "formation.ssc_addon.variant." + (v != null ? v : FormationData.VARIANT_REGEN);
 	}
 
 	@Override
@@ -118,13 +133,28 @@ public class FormationItem extends Item {
 			return;
 		}
 		int level = FormationData.getLevel(stack);
-		// 通用系：形态能量转化文案（不参与伤害/CD/耗蓝）
+		// 通用系：按变体分三套文案（回能=能量转化 / 增能=法力上限 / 经验=exp 效率）
 		if (element == FormationElement.UNIVERSAL) {
-			int pct = (int) Math.round(FormationData.universalThreshold(level) * 100);
-			tooltip.add(Text.translatable("item.ssc_addon.formation.tip_universal",
-					pct,
-					(int) FormationData.UNIVERSAL_MANA_DRAIN_PER_SEC,
-					(int) FormationData.UNIVERSAL_BOOK_MANA_PER_SEC).formatted(Formatting.GRAY));
+			String variant = FormationData.getVariant(stack);
+			switch (variant == null ? FormationData.VARIANT_REGEN : variant) {
+				case FormationData.VARIANT_MANA -> {
+					int manaPct = Math.round(FormationData.universalManaBonusPct(level) * 100);
+					tooltip.add(Text.translatable("item.ssc_addon.formation.tip_mana",
+							manaPct).formatted(Formatting.GRAY));
+				}
+				case FormationData.VARIANT_EXP -> {
+					int expPct = Math.round(FormationData.UNIVERSAL_EXP_PER_LEVEL * level * 100);
+					tooltip.add(Text.translatable("item.ssc_addon.formation.tip_exp",
+							expPct).formatted(Formatting.GRAY));
+				}
+				default -> {
+					int pct = (int) Math.round(FormationData.universalThreshold(level) * 100);
+					tooltip.add(Text.translatable("item.ssc_addon.formation.tip_universal",
+							pct,
+							(int) FormationData.UNIVERSAL_MANA_DRAIN_PER_SEC,
+							(int) FormationData.UNIVERSAL_BOOK_MANA_PER_SEC).formatted(Formatting.GRAY));
+				}
+			}
 			tooltip.add(Text.translatable("item.ssc_addon.formation.tip_use").formatted(Formatting.DARK_GRAY));
 			tooltip.add(Text.translatable("item.ssc_addon.formation.tip_hint").formatted(Formatting.DARK_GRAY));
 			return;

@@ -105,41 +105,54 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 		}
 	}
 
-	/** 主操作按钮：按页签发对应 C2S 包（服务端权威重验）。 */
+	/** 主操作按钮：按页签发对应 C2S 包（服务端权威重验；variant 仅通用系条目非空）。 */
 	private void onAction() {
 		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
 		if (this.tab == 0) {
 			if (this.scribeSelected < 0) {
 				return;
 			}
-			buf.writeString(scribeEntries()[this.scribeSelected].id);
-			buf.writeVarInt(scribeEntries()[this.scribeSelected].level);
+			Entry e = scribeEntries()[this.scribeSelected];
+			buf.writeString(e.id);
+			buf.writeString(e.variant == null ? "" : e.variant);
+			buf.writeVarInt(e.level);
 			ClientPlayNetworking.send(SscAddonNetworking.PACKET_FORMATION_SCRIBE, buf);
 		} else {
 			if (this.learnSelected < 0) {
 				return;
 			}
-			buf.writeString(learnEntries()[this.learnSelected].id);
-			buf.writeVarInt(learnEntries()[this.learnSelected].level);
+			Entry e = learnEntries()[this.learnSelected];
+			buf.writeString(e.id);
+			buf.writeString(e.variant == null ? "" : e.variant);
+			buf.writeVarInt(e.level);
 			ClientPlayNetworking.send(SscAddonNetworking.PACKET_FORMATION_LEARN, buf);
 		}
 	}
 
 	// ---- 列表条目（客户端从本地 CCA 同步数据读取） ----
 
-	/** 列表条目：系别 + 等级。 */
-	private record Entry(String id, int level) {
+	/** 列表条目：系别 + 变体（仅通用系非空）+ 等级。 */
+	private record Entry(String id, String variant, int level) {
 	}
 
-	/** 抄写页条目：已学习的全部法阵（各系最高等级以内全部可抄）。 */
+	/** 通用系三变体迭代（非通用系返回 null 占位）。 */
+	private static String[] variantsOf(FormationElement element) {
+		return element == FormationElement.UNIVERSAL
+				? new String[]{FormationData.VARIANT_REGEN, FormationData.VARIANT_MANA, FormationData.VARIANT_EXP}
+				: new String[]{null};
+	}
+
+	/** 抄写页条目：已学习的全部法阵（各变体最高等级以内全部可抄）。 */
 	private Entry[] scribeEntries() {
 		java.util.List<Entry> list = new java.util.ArrayList<>();
 		if (this.client != null && this.client.player != null) {
 			FormationKnowledgeComponent knowledge = FormationKnowledgeComponent.get(this.client.player);
 			for (FormationElement element : FormationElement.values()) {
-				int learned = knowledge.getLearnedLevel(element);
-				for (int lv = 1; lv <= learned; lv++) {
-					list.add(new Entry(element.id, lv));
+				for (String variant : variantsOf(element)) {
+					int learned = knowledge.getLearnedLevel(element, variant);
+					for (int lv = 1; lv <= learned; lv++) {
+						list.add(new Entry(element.id, variant, lv));
+					}
 				}
 			}
 		}
@@ -152,10 +165,12 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 		if (this.client != null && this.client.player != null) {
 			FormationKnowledgeComponent knowledge = FormationKnowledgeComponent.get(this.client.player);
 			for (FormationElement element : FormationElement.values()) {
-				int learned = knowledge.getLearnedLevel(element);
-				for (int lv = learned + 1; lv <= FormationData.MAX_FORMATION_LEVEL; lv++) {
-					if (knowledge.hasRecorded(element, lv)) {
-						list.add(new Entry(element.id, lv));
+				for (String variant : variantsOf(element)) {
+					int learned = knowledge.getLearnedLevel(element, variant);
+					for (int lv = learned + 1; lv <= FormationData.MAX_FORMATION_LEVEL; lv++) {
+						if (knowledge.hasRecorded(element, variant, lv)) {
+							list.add(new Entry(element.id, variant, lv));
+						}
 					}
 				}
 			}
@@ -345,7 +360,8 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 			ctx.drawTexture(FRAME, cx, cy, 0, 0, 20, 20, 20, 20);
 			FormationElement element = FormationElement.byId(entries[index].id);
 			if (element != null) {
-				ctx.drawItem(FormationData.create(element, entries[index].level), cx + 2, cy + 2);
+				ctx.drawItem(FormationData.create(element, entries[index].level,
+						entries[index].variant), cx + 2, cy + 2);
 			}
 			// 等级角标（包框右下角，品质色）。drawItem 内部在 z=150 渲染物品，
 			// 直接 drawText 画在 z=0 会被物品片元深度遮挡（角标被卷轴材质盖住）。
@@ -421,7 +437,7 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 			Entry[] entries = currentEntries();
 			FormationElement element = FormationElement.byId(entries[hover].id);
 			if (element != null) {
-				ItemStack stack = FormationData.create(element, entries[hover].level);
+					ItemStack stack = FormationData.create(element, entries[hover].level, entries[hover].variant);
 				TooltipContext tipType = this.client.options.advancedItemTooltips
 						? TooltipContext.ADVANCED : TooltipContext.BASIC;
 				ctx.drawTooltip(this.textRenderer, stack.getTooltip(this.client.player, tipType), mouseX, mouseY);

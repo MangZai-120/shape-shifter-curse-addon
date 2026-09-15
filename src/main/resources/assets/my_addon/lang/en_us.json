@@ -1190,5 +1190,13 @@
   "message.ssc_addon.pocket_space.cancelled": "Pocket Space channel cancelled; 20%% of the original cooldown refunded",
   "message.ssc_addon.pocket_space.collapse_title": "Pocket Space Collapsing",
   "message.ssc_addon.pocket_space.collapse_subtitle": "The bound scroll is gone. Returning you in %s s",
-  "block.ssc_addon.pocket_space_bedrock_wall": "Pocket Space Invisible Bedrock"
+  "block.ssc_addon.pocket_space_bedrock_wall": "Pocket Space Invisible Bedrock",
+  "item.ssc_addon.formation.named_universal": "%1$s Formation Lv.%2$s",
+  "formation.ssc_addon.variant.regen": "Energy Regen",
+  "formation.ssc_addon.variant.mana": "Mana Boost",
+  "formation.ssc_addon.variant.exp": "Experience",
+  "item.ssc_addon.formation.tip_mana": "In a spellbook: max spell mana +%1$s%% (highest-level takes effect; stacks with mastery tiers)",
+  "item.ssc_addon.formation.tip_exp": "In a spellbook: spell EXP gain +%1$s%% (highest-level takes effect)",
+  "spell.ssc_addon.exp_mode_1": "EXP is only granted when the spell hits a target",
+  "spell.ssc_addon.exp_mode_2": "20%% EXP on cast, remaining 80%% granted on hitting a target"
 }

@@ -157,8 +157,14 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 					FormationData.sumDamageMultiplier(book, FormationElement.SUMMON),
 					FormationData.sumDamageMultiplier(book, FormationElement.VOID),
 					FormationData.sumCooldownMultiplier(book, FormationElement.SPACE),
-					manaMul)), 8, 107, 0x8090C8, false);
-		}
+					manaMul)), 8, 107, 0x8090C8, false);		// 通用法阵成长效果（2026-09-15）：经验法阵 exp 倍率 + 增能法阵法力上限加成（各取最高等级，未装则不显示）
+		int bestExp = FormationData.getBestUniversalVariantLevel(book, FormationData.VARIANT_EXP);
+		int bestMana = FormationData.getBestUniversalVariantLevel(book, FormationData.VARIANT_MANA);
+		if (bestExp > 0 || bestMana > 0) {
+			int manaBonus = SpellbookData.getUniversalFormationManaBonus(book);
+			ctx.drawText(this.textRenderer, Text.literal(String.format("经×%.2f 增能+%d",
+					bestExp > 0 ? FormationData.universalExpMultiplier(bestExp) : 1f, manaBonus)), 8, 117, 0xB8B8B8, false);
+		}		}
 		ctx.drawText(this.textRenderer, this.playerInventoryTitle,
 				this.playerInventoryTitleX, this.playerInventoryTitleY, 0x404040, false);
 	}

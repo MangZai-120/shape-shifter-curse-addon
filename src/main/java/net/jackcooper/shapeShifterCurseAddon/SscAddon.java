@@ -391,12 +391,18 @@ public class SscAddon implements ModInitializer {
 								entries.add(net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.create(spell.getId().getPath(), lv));
 							}
 						}
-						// 增强法阵全套（火/冰两系×5 级）
+						// 增强法阵全套（各系×5 级；通用系含三变体 regen/mana/exp）
 						for (net.jackcooper.shapeShifterCurseAddon.spell.FormationElement element : net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.values()) {
-							for (int lv = 1; lv <= net.jackcooper.shapeShifterCurseAddon.spell.FormationData.MAX_FORMATION_LEVEL; lv++) {
-								entries.add(net.jackcooper.shapeShifterCurseAddon.spell.FormationData.create(element, lv));
+							for (String variant : element == net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.UNIVERSAL
+									? new String[]{net.jackcooper.shapeShifterCurseAddon.spell.FormationData.VARIANT_REGEN,
+											net.jackcooper.shapeShifterCurseAddon.spell.FormationData.VARIANT_MANA,
+											net.jackcooper.shapeShifterCurseAddon.spell.FormationData.VARIANT_EXP}
+									: new String[]{null}) {
+								for (int lv = 1; lv <= net.jackcooper.shapeShifterCurseAddon.spell.FormationData.MAX_FORMATION_LEVEL; lv++) {
+									entries.add(net.jackcooper.shapeShifterCurseAddon.spell.FormationData.create(element, lv, variant));
+								}
+								}
 							}
-						}
 					})
 					.build());
 	// SP Allay sound events

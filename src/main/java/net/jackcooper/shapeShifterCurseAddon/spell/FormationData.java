@@ -7,7 +7,9 @@ import net.minecraft.nbt.NbtCompound;
  * 增强法阵物品的 NBT 数据读写工具（jackcooper）。法阵 NBT：
  * <ul>
  *   <li>{@code Element}（String）：系别 id（fire / ice）；</li>
- *   <li>{@code Level}（int）：法阵等级（1-5，品质白/绿/蓝/紫/橙与卷轴一致）。</li>
+ *   <li>{@code Level}（int）：法阵等级（1-5，品质白/绿/蓝/紫/橙与卷轴一致）；</li>
+ *   <li>{@code Variant}（String，仅通用系）：变体 id（regen 回能 / mana 增能 / exp 经验；
+ *       缺省 = regen，旧档通用法阵自动归回能变体）。</li>
  * </ul>
  *
  * <p>法阵物品链：宝箱开出（1-3 级）→ 右键「记录魔法」（存玩家数据，不依赖物品）→
@@ -17,6 +19,8 @@ import net.minecraft.nbt.NbtCompound;
 public final class FormationData {
 	public static final String NBT_ELEMENT = "Element";
 	public static final String NBT_LEVEL = "Level";
+	/** 通用系变体 NBT 键（仅 UNIVERSAL 系法阵有意义；缺省 = regen，兼容旧档）。 */
+	public static final String NBT_VARIANT = "Variant";
 
 	/** 法阵等级上限。 */
 	public static final int MAX_FORMATION_LEVEL = 5;
@@ -70,12 +74,21 @@ public final class FormationData {
 		};
 	}
 
-	/** 新建一个指定系别、等级的法阵（用于创造物品栏 / 抄写产出）。 */
+	/** 新建一个指定系别、等级的法阵（用于创造物品栏 / 抄写产出；variant 仅通用系有效）。 */
 	public static ItemStack create(FormationElement element, int level) {
+		return create(element, level, null);
+	}
+
+	/** 新建一个指定系别、等级、变体的法阵（variant 仅通用系合法，非法时归 regen）。 */
+	public static ItemStack create(FormationElement element, int level, String variant) {
 		ItemStack stack = new ItemStack(net.jackcooper.shapeShifterCurseAddon.SscAddon.FORMATION);
 		stack.getOrCreateNbt().putString(NBT_ELEMENT, element.id);
 		int lv = Math.max(1, Math.min(MAX_FORMATION_LEVEL, level == 0 ? 1 : level));
 		stack.getOrCreateNbt().putInt(NBT_LEVEL, lv);
+		if (element == FormationElement.UNIVERSAL) {
+			String v = normalizeVariant(variant);
+			stack.getOrCreateNbt().putString(NBT_VARIANT, v != null ? v : VARIANT_REGEN);
+		}
 		return stack;
 	}
 
@@ -165,6 +178,66 @@ public final class FormationData {
 	public static final double UNIVERSAL_BOOK_MANA_PER_SEC = 6.0;
 	/** 通用法阵触发水位（书法术值占比）按等级插值：Lv1=20% … Lv5=100%。 */
 	public static double universalThreshold(int level) {
-		return 0.2 + 0.2 * (Math.max(1, Math.min(MAX_FORMATION_LEVEL, level)) - 1);
+		return 0.2 + 0.2 * (clampFormationLevel(level) - 1);
+	}
+
+	// ---- 通用系三变体：回能（转化）/ 增能（法力上限）/ 经验（exp 效率）（2026-09-15 拆分） ----
+
+	/** 通用系变体 id。 */
+	public static final String VARIANT_REGEN = "regen";
+	public static final String VARIANT_MANA = "mana";
+	public static final String VARIANT_EXP = "exp";
+
+	/** 通用法阵变体合法性校验（非法/空归 null）。 */
+	public static String normalizeVariant(String s) {
+		return switch (s == null ? "" : s) {
+			case VARIANT_REGEN, VARIANT_MANA, VARIANT_EXP -> s;
+			default -> null;
+		};
+	}
+
+	/** 读取通用法阵变体（非通用系返回 null；通用系缺省/非法回退 regen——旧档兼容）。 */
+	public static String getVariant(ItemStack stack) {
+		if (getElement(stack) != FormationElement.UNIVERSAL) {
+			return null;
+		}
+		NbtCompound nbt = stack.getNbt();
+		String v = (nbt != null && nbt.contains(NBT_VARIANT)) ? nbt.getString(NBT_VARIANT) : null;
+		return normalizeVariant(v) != null ? normalizeVariant(v) : VARIANT_REGEN;
+	}
+
+	/** 书内指定变体等级最高的通用法阵（0 = 未装该变体；三种效果均取最高不叠加）。 */
+	public static int getBestUniversalVariantLevel(ItemStack book, String variant) {
+		String v = normalizeVariant(variant);
+		if (v == null) {
+			return 0;
+		}
+		int best = 0;
+		for (ItemStack formation : SpellbookData.getFormations(book)) {
+			if (getElement(formation) == FormationElement.UNIVERSAL && v.equals(getVariant(formation))) {
+				best = Math.max(best, getLevel(formation));
+			}
+		}
+		return best;
+	}
+
+	/** 经验法阵：施法经验倍率每级 +10%（Lv1=×1.1 … Lv5=×1.5）。 */
+	public static final float UNIVERSAL_EXP_PER_LEVEL = 0.10f;
+	/** 增能法阵：法力上限比例 Lv1=+20% 起每级 +10%（Lv5=+60%）。 */
+	public static final float UNIVERSAL_MANA_CAP_BASE = 0.20f;
+
+	/** 经验法阵施法经验倍率。 */
+	public static float universalExpMultiplier(int level) {
+		return 1f + UNIVERSAL_EXP_PER_LEVEL * clampFormationLevel(level);
+	}
+
+	/** 增能法阵法力上限加成比例（基于书等级基础值计算）。 */
+	public static float universalManaBonusPct(int level) {
+		return UNIVERSAL_MANA_CAP_BASE + 0.10f * (clampFormationLevel(level) - 1);
+	}
+
+	/** 等级收敛到 [1, MAX_FORMATION_LEVEL]。 */
+	private static int clampFormationLevel(int level) {
+		return Math.max(1, Math.min(MAX_FORMATION_LEVEL, level));
 	}
 }

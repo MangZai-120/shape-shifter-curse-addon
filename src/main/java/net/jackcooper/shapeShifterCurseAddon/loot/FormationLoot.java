@@ -51,25 +51,38 @@ public final class FormationLoot {
 			if (!isTargetChest(id)) {
 				return;
 			}
-			// 3% 概率触发；触发后在火/冰 × 1-3 级法阵中按权重抽一张
-			LootPool.Builder pool = LootPool.builder()
-					.rolls(ConstantLootNumberProvider.create(1.0F))
-					.conditionally(RandomChanceLootCondition.builder(CHANCE));
+// 3% 概率触发；触发后按系别（+通用系三变体）× 1-3 级法阵按权重抽一张
+		LootPool.Builder pool = LootPool.builder()
+				.rolls(ConstantLootNumberProvider.create(1.0F))
+				.conditionally(RandomChanceLootCondition.builder(CHANCE));
 			for (FormationElement element : FormationElement.values()) {
-				for (int level = 1; level <= LEVEL_WEIGHTS.length; level++) {
-					pool.with(formationEntry(element, level, LEVEL_WEIGHTS[level - 1]));
+				for (String variant : variantsOf(element)) {
+					for (int level = 1; level <= LEVEL_WEIGHTS.length; level++) {
+						pool.with(formationEntry(element, variant, level, LEVEL_WEIGHTS[level - 1]));
+					}
 				}
 			}
 			tableBuilder.pool(pool);
 		});
 	}
 
+	/** 通用系三变体迭代（非通用系返回 null 占位）。 */
+	private static String[] variantsOf(FormationElement element) {
+		return element == FormationElement.UNIVERSAL
+				? new String[]{FormationData.VARIANT_REGEN, FormationData.VARIANT_MANA, FormationData.VARIANT_EXP}
+				: new String[]{null};
+	}
+
 	// 1.20.1 中 SetNbtLootFunction.builder(NbtCompound) 是唯一可用重载（@Deprecated 但无替代，同 MagicScrollLoot）
 	@SuppressWarnings("deprecation")
-	private static net.minecraft.loot.entry.LootPoolEntry.Builder<?> formationEntry(FormationElement element, int level, int weight) {
+	private static net.minecraft.loot.entry.LootPoolEntry.Builder<?> formationEntry(FormationElement element, String variant, int level, int weight) {
 		NbtCompound nbt = new NbtCompound();
 		nbt.putString(FormationData.NBT_ELEMENT, element.id);
 		nbt.putInt(FormationData.NBT_LEVEL, level);
+		if (element == FormationElement.UNIVERSAL) {
+			String v = FormationData.normalizeVariant(variant);
+			nbt.putString(FormationData.NBT_VARIANT, v != null ? v : FormationData.VARIANT_REGEN);
+		}
 		return ItemEntry.builder(SscAddon.FORMATION)
 				.apply(SetNbtLootFunction.builder(nbt))
 				.weight(weight);

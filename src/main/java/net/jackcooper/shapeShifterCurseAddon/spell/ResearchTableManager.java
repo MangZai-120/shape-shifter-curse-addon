@@ -23,18 +23,23 @@ public final class ResearchTableManager {
 	private ResearchTableManager() {
 	}
 
-	/** 抄写：产出对应系别等级的法阵。服务端重验：已学习 + 纸 + 对应系墨×等级 + 产出槽空。 */
-	public static void scribe(ServerPlayerEntity player, String elementId, int level) {
+	/** 抄写：产出对应系别（+变体）等级的法阵。服务端重验：已学习 + 纸 + 对应系墨×等级 + 产出槽空。 */
+	public static void scribe(ServerPlayerEntity player, String elementId, String variant, int level) {
 		if (!(player.currentScreenHandler instanceof SpellResearchTableScreenHandler sh)
 				|| !(sh.getInventory() instanceof SpellResearchTableBlockEntity be)) {
 			return;
 		}
 		FormationElement element = FormationElement.byId(elementId);
+		String v = FormationData.normalizeVariant(variant);
 		if (element == null || level < 1 || level > FormationData.MAX_FORMATION_LEVEL) {
 			return;
 		}
+		// 通用系非法变体归 regen；非通用系忽略变体
+		if (element == FormationElement.UNIVERSAL && v == null) {
+			v = FormationData.VARIANT_REGEN;
+		}
 		FormationKnowledgeComponent knowledge = FormationKnowledgeComponent.get(player);
-		if (!knowledge.hasLearned(element, level)) {
+		if (!knowledge.hasLearned(element, v, level)) {
 			player.sendMessage(Text.translatable("message.ssc_addon.research.not_learned").formatted(Formatting.RED), true);
 			return;
 		}
@@ -64,10 +69,11 @@ public final class ResearchTableManager {
 			player.sendMessage(Text.translatable("message.ssc_addon.research.output_full").formatted(Formatting.RED), true);
 			return;
 		}
-		// 扣材料 + 产出
+		// 扣材料 + 产出（通用系产出带变体）
 		be.getStack(SpellResearchTableBlockEntity.SLOT_PAPER).decrement(1);
 		ink.decrement(level);
-		be.setStack(SpellResearchTableBlockEntity.SLOT_OUTPUT, FormationData.create(element, level));
+		be.setStack(SpellResearchTableBlockEntity.SLOT_OUTPUT,
+				FormationData.create(element, level, element == FormationElement.UNIVERSAL ? v : null));
 		be.markDirty();
 		player.getWorld().playSound(null, be.getPos(), SoundEvents.ITEM_BOOK_PAGE_TURN, SoundCategory.BLOCKS, 1.0f, 1.0f);
 		player.sendMessage(Text.translatable("message.ssc_addon.research.scribed",
@@ -79,21 +85,25 @@ public final class ResearchTableManager {
 	 *
 	 * @param discount 折扣（0-40，百分号；小游戏完美完成 = 40，当前恒 0）
 	 */
-	public static void learn(ServerPlayerEntity player, String elementId, int level, int discount) {
+	public static void learn(ServerPlayerEntity player, String elementId, String variant, int level, int discount) {
 		if (!(player.currentScreenHandler instanceof SpellResearchTableScreenHandler sh)
 				|| !(sh.getInventory() instanceof SpellResearchTableBlockEntity be)) {
 			return;
 		}
 		FormationElement element = FormationElement.byId(elementId);
+		String v = FormationData.normalizeVariant(variant);
 		if (element == null || level < 1 || level > FormationData.MAX_FORMATION_LEVEL) {
 			return;
 		}
+		if (element == FormationElement.UNIVERSAL && v == null) {
+			v = FormationData.VARIANT_REGEN;
+		}
 		FormationKnowledgeComponent knowledge = FormationKnowledgeComponent.get(player);
-		if (!knowledge.hasRecorded(element, level)) {
+		if (!knowledge.hasRecorded(element, v, level)) {
 			player.sendMessage(Text.translatable("message.ssc_addon.research.not_recorded").formatted(Formatting.RED), true);
 			return;
 		}
-		if (knowledge.hasLearned(element, level)) {
+		if (knowledge.hasLearned(element, v, level)) {
 			player.sendMessage(Text.translatable("message.ssc_addon.research.already_learned").formatted(Formatting.YELLOW), true);
 			return;
 		}
@@ -105,7 +115,7 @@ public final class ResearchTableManager {
 			return;
 		}
 		dust.decrement(cost);
-		knowledge.learn(element, level);
+		knowledge.learn(element, v, level);
 		FormationKnowledgeComponent.sync(player);
 		be.markDirty();
 		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
