@@ -1,3 +1,8 @@
 {
-  "variants": { "": { "model": "ssc_addon:block/pocket_space_portal" } }
+  "variants": {
+    "facing=north": { "model": "ssc_addon:block/pocket_space_portal", "y": 0 },
+    "facing=east": { "model": "ssc_addon:block/pocket_space_portal", "y": 90 },
+    "facing=south": { "model": "ssc_addon:block/pocket_space_portal", "y": 180 },
+    "facing=west": { "model": "ssc_addon:block/pocket_space_portal", "y": 270 }
+  }
 }

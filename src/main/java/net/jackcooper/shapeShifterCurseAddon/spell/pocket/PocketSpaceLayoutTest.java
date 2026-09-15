@@ -31,6 +31,10 @@ public final class PocketSpaceLayoutTest {
 			check(layout.size() == 16 + (level - 1) * 6);
 			check(interiorCount == layout.size() * layout.size() * layout.size() + 64);
 			check(portalCount == 4);
+			check(layout.portalRotation(layout.centerX() - 1, layout.minZ() - 3) == 0);
+			check(layout.portalRotation(layout.centerX(), layout.minZ() - 3) == 90);
+			check(layout.portalRotation(layout.centerX(), layout.minZ() - 2) == 180);
+			check(layout.portalRotation(layout.centerX() - 1, layout.minZ() - 2) == 270);
 			check(layout.centerX() * 2 == layout.minX() * 2 + layout.size());
 			// 真实包围盒必须完全覆盖实际生成的全部方块（外壳/凹槽/顶盖），区块过滤按它算
 			check(layout.boundsMinX() <= layout.minX() - 1 && layout.boundsMaxX() >= layout.minX() + layout.size());
@@ -140,6 +144,102 @@ public final class PocketSpaceLayoutTest {
 				+ " bytes; registry(2 rooms)=" + bytes(restored.writeNbt(new NbtCompound())) + " bytes.");
 		System.out.println("Grid checks passed (origin slot 0, 512 spacing, spiral<->coords, no shared slots, >=256 gap).");
 		System.out.println("Dimension JSON structure checks passed (runtime loading requires Fabric).");
+		try (InputStreamReader reader = new InputStreamReader(PocketSpaceLayoutTest.class.getResourceAsStream(
+				"/assets/ssc_addon/blockstates/pocket_space_portal.json"), StandardCharsets.UTF_8)) {
+			var variants = JsonParser.parseReader(reader).getAsJsonObject().getAsJsonObject("variants");
+			String[] directions = {"north", "east", "south", "west"};
+			check(variants.size() == 4);
+			for (int turn = 0; turn < directions.length; turn++) {
+				var variant = variants.getAsJsonObject("facing=" + directions[turn]);
+				check(variant.get("y").getAsInt() == turn * 90);
+				check(variant.get("model").getAsString().equals("ssc_addon:block/pocket_space_portal"));
+				check(!variant.has("uvlock") || !variant.get("uvlock").getAsBoolean());
+			}
+		}
+		var top = javax.imageio.ImageIO.read(PocketSpaceLayoutTest.class.getResourceAsStream(
+				"/assets/ssc_addon/textures/block/pocket_space_portal_top.png"));
+		try (InputStreamReader reader = new InputStreamReader(PocketSpaceLayoutTest.class.getResourceAsStream(
+				"/assets/ssc_addon/models/block/pocket_space_portal.json"), StandardCharsets.UTF_8)) {
+			var elements = JsonParser.parseReader(reader).getAsJsonObject().getAsJsonArray("elements");
+			check(elements.size() == 2);
+			var lower = elements.get(0).getAsJsonObject();
+			var upper = elements.get(1).getAsJsonObject();
+			check(lower.getAsJsonArray("to").get(1).getAsDouble() == PocketSpaceLayout.PORTAL_BASE_HEIGHT * 16);
+			check(upper.getAsJsonArray("from").get(1).getAsDouble() == PocketSpaceLayout.PORTAL_BASE_HEIGHT * 16);
+			check(upper.getAsJsonArray("from").get(0).getAsDouble() == PocketSpaceLayout.PORTAL_INSET * 16);
+			check(upper.getAsJsonArray("from").get(2).getAsDouble() == PocketSpaceLayout.PORTAL_INSET * 16);
+			check(upper.getAsJsonArray("to").get(1).getAsDouble() == PocketSpaceLayout.PORTAL_TOP_HEIGHT * 16);
+			check(upper.getAsJsonArray("to").get(0).getAsDouble() == 16);
+			check(upper.getAsJsonArray("to").get(2).getAsDouble() == 16);
+			var upperUv = upper.getAsJsonObject("faces").getAsJsonObject("up").getAsJsonArray("uv");
+			check(upperUv.get(0).getAsInt() == 2 && upperUv.get(1).getAsInt() == 2);
+			check(upperUv.get(2).getAsInt() == 16 && upperUv.get(3).getAsInt() == 16);
+		}
+		var emission = javax.imageio.ImageIO.read(PocketSpaceLayoutTest.class.getResourceAsStream(
+				"/assets/ssc_addon/textures/block/pocket_space_portal_emission.png"));
+		var side = javax.imageio.ImageIO.read(PocketSpaceLayoutTest.class.getResourceAsStream(
+				"/assets/ssc_addon/textures/block/pocket_space_portal_side.png"));
+		check(top.getWidth() == 16 && top.getHeight() == 16);
+		check(side.getWidth() == 16 && side.getHeight() == 16);
+		check((side.getRGB(4, 4) & 255) > (top.getRGB(4, 4) & 255));
+		check(emission.getWidth() == top.getWidth() && emission.getHeight() == top.getHeight());
+		int transparent = 0;
+		int purple = 0;
+		for (int row = 0; row < emission.getHeight(); row++) {
+			for (int column = 0; column < emission.getWidth(); column++) {
+				int color = emission.getRGB(column, row);
+				int alpha = color >>> 24;
+				if (alpha == 0) transparent++;
+				if (alpha >= 200) {
+					int red = color >> 16 & 255;
+					int green = color >> 8 & 255;
+					int blue = color & 255;
+					check(blue > green && red > green);
+					check(color == top.getRGB(column, row));
+					purple++;
+				}
+				check(top.getRGB(column, row) >>> 24 == 255);
+			}
+		}
+		int pixelCount = emission.getWidth() * emission.getHeight();
+		check(transparent > pixelCount / 2 && purple > pixelCount / 32);
+		int[][] assembled = new int[32][32];
+		for (int quadrantZ = 0; quadrantZ < 2; quadrantZ++) {
+			for (int quadrantX = 0; quadrantX < 2; quadrantX++) {
+				int turns = origin.portalRotation(origin.centerX() - 1 + quadrantX, origin.minZ() - 3 + quadrantZ) / 90;
+				int innerX = 16;
+				int innerZ = 16;
+				for (int turn = 0; turn < turns; turn++) {
+					int previousX = innerX;
+					innerX = 16 - innerZ;
+					innerZ = previousX;
+				}
+				check(quadrantX * 16 + innerX == 16 && quadrantZ * 16 + innerZ == 16);
+				for (int pixelZ = 0; pixelZ < 16; pixelZ++) {
+					for (int pixelX = 0; pixelX < 16; pixelX++) {
+						int rotatedX = pixelX;
+						int rotatedZ = pixelZ;
+						for (int turn = 0; turn < turns; turn++) {
+							int previousX = rotatedX;
+							rotatedX = 15 - rotatedZ;
+							rotatedZ = previousX;
+						}
+						assembled[quadrantZ * 16 + rotatedZ][quadrantX * 16 + rotatedX] =
+								pixelX < 2 || pixelZ < 2 ? side.getRGB(pixelX, pixelZ) : top.getRGB(pixelX, pixelZ);
+					}
+				}
+			}
+		}
+		for (int pixelZ = 0; pixelZ < 32; pixelZ++) {
+			for (int pixelX = 0; pixelX < 32; pixelX++) {
+				check(assembled[pixelZ][pixelX] == assembled[31 - pixelZ][31 - pixelX]);
+				check(assembled[pixelZ][pixelX] == assembled[pixelX][31 - pixelZ]);
+			}
+		}
+		check(Math.abs(PocketSpaceLayout.PORTAL_BASE_HEIGHT - PocketSpaceLayout.PORTAL_TOP_HEIGHT) < 0.08);
+		check(PocketSpaceLayout.PORTAL_TOP_HEIGHT > 0.08);
+		System.out.println("Portal assembly checks passed (4 inward corners, rotational symmetry, two-level landing heights).");
+		System.out.println("Portal material checks passed (4 rotated variants, opaque stone, transparent purple emission).");
 	}
 
 	private static int bytes(NbtCompound nbt) throws Exception {

@@ -163,6 +163,7 @@ public final class RegAddonBlocks {
 		net.jackcooper.shapeShifterCurseAddon.client.renderer.PotionStorageBoxRenderer.register();
 		// 口袋空间隐形基岩虚空面 BER（末地折跃门同款机制：不受光照、透过它只看到虚空）
 		net.jackcooper.shapeShifterCurseAddon.client.renderer.PocketVoidWallRenderer.register();
+		net.jackcooper.shapeShifterCurseAddon.client.renderer.PocketPortalRenderer.register();
 		// 能量系统容器界面注册（汲取器/储罐无 GUI，右键走动作栏）
 		net.minecraft.client.gui.screen.ingame.HandledScreens.register(
 				RegAddonBlockEntities.ENERGY_BOTTLER_SH,

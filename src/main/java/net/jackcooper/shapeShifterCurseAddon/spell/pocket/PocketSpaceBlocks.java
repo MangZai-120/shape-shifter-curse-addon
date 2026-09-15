@@ -3,6 +3,8 @@ package net.jackcooper.shapeShifterCurseAddon.spell.pocket;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.BlockRenderType;
+import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.OperatorBlock;
 import net.minecraft.block.ShapeContext;
@@ -10,8 +12,15 @@ import net.minecraft.block.piston.PistonBehavior;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
+import net.minecraft.state.StateManager;
+import net.minecraft.state.property.DirectionProperty;
+import net.minecraft.state.property.Properties;
+import net.minecraft.util.BlockMirror;
+import net.minecraft.util.BlockRotation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
 
 /**
@@ -20,6 +29,7 @@ import net.minecraft.world.BlockView;
  * （屏障同款）：非OP玩家创造模式下客户端直接拒绝破坏预测，服务端同拦。
  */
 public final class PocketSpaceBlocks {
+	public static final DirectionProperty PORTAL_FACING = Properties.HORIZONTAL_FACING;
 	/** 地面：平滑石英外观，不可破坏（OperatorBlock），保留完整轮廓箱可瞄准可右键。 */
 	public static final Block FLOOR = new FloorBlock();
 	/** 墙壁/顶盖：隐形基岩（仿基岩版 barrier 行为），隐形渲染但保留轮廓箱，可瞄准可右键。 */
@@ -38,6 +48,20 @@ public final class PocketSpaceBlocks {
 				new Identifier("ssc_addon", "pocket_space_bedrock_wall"),
 				net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder
 						.create(VoidWallBlockEntity::new, BEDROCK_WALL).build());
+		PortalBlockEntity.TYPE = Registry.register(Registries.BLOCK_ENTITY_TYPE,
+				new Identifier("ssc_addon", "pocket_space_portal"),
+				net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder
+						.create(PortalBlockEntity::new, PORTAL).build());
+	}
+
+	public static BlockState portalState(PocketSpaceLayout layout, int blockX, int blockZ) {
+		Direction facing = switch (layout.portalRotation(blockX, blockZ)) {
+			case 90 -> Direction.EAST;
+			case 180 -> Direction.SOUTH;
+			case 270 -> Direction.WEST;
+			default -> Direction.NORTH;
+		};
+		return PORTAL.getDefaultState().with(PORTAL_FACING, facing);
 	}
 
 	/** 地面：不可破坏的平滑石英（不落任何掉落物）。 */
@@ -80,18 +104,70 @@ public final class PocketSpaceBlocks {
 		}
 	}
 
-	private static final class PortalBlock extends Block implements OperatorBlock {
-		private static final VoxelShape SHAPE = Block.createCuboidShape(0, 0, 0, 16, 4, 16);
+	public static final class PortalBlockEntity extends net.minecraft.block.entity.BlockEntity {
+		public static net.minecraft.block.entity.BlockEntityType<PortalBlockEntity> TYPE;
+
+		public PortalBlockEntity(BlockPos pos, BlockState state) {
+			super(TYPE, pos, state);
+		}
+	}
+
+	private static final class PortalBlock extends BlockWithEntity implements OperatorBlock {
+		private static final VoxelShape BASE = VoxelShapes.cuboid(0, 0, 0, 1, PocketSpaceLayout.PORTAL_BASE_HEIGHT, 1);
+		private static final double INSET = PocketSpaceLayout.PORTAL_INSET;
+		private static final double BASE_HEIGHT = PocketSpaceLayout.PORTAL_BASE_HEIGHT;
+		private static final double TOP_HEIGHT = PocketSpaceLayout.PORTAL_TOP_HEIGHT;
+		private static final VoxelShape NORTH_SHAPE = VoxelShapes.union(BASE,
+				VoxelShapes.cuboid(INSET, BASE_HEIGHT, INSET, 1, TOP_HEIGHT, 1));
+		private static final VoxelShape EAST_SHAPE = VoxelShapes.union(BASE,
+				VoxelShapes.cuboid(0, BASE_HEIGHT, INSET, 1 - INSET, TOP_HEIGHT, 1));
+		private static final VoxelShape SOUTH_SHAPE = VoxelShapes.union(BASE,
+				VoxelShapes.cuboid(0, BASE_HEIGHT, 0, 1 - INSET, TOP_HEIGHT, 1 - INSET));
+		private static final VoxelShape WEST_SHAPE = VoxelShapes.union(BASE,
+				VoxelShapes.cuboid(INSET, BASE_HEIGHT, 0, 1, TOP_HEIGHT, 1 - INSET));
 
 		private PortalBlock() {
 			super(AbstractBlock.Settings.copy(Blocks.SMOOTH_QUARTZ).strength(-1.0f, 3_600_000.0f)
 					.dropsNothing().pistonBehavior(PistonBehavior.BLOCK).nonOpaque().luminance(state -> 12));
+			setDefaultState(getStateManager().getDefaultState().with(PORTAL_FACING, Direction.NORTH));
+		}
+
+		@Override
+		protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+			builder.add(PORTAL_FACING);
+		}
+
+		@Override
+		public net.minecraft.block.entity.BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+			return new PortalBlockEntity(pos, state);
+		}
+
+		@Override
+		public BlockRenderType getRenderType(BlockState state) {
+			return BlockRenderType.MODEL;
+		}
+
+		@Override
+		@SuppressWarnings("deprecation")
+		public BlockState rotate(BlockState state, BlockRotation rotation) {
+			return state.with(PORTAL_FACING, rotation.rotate(state.get(PORTAL_FACING)));
+		}
+
+		@Override
+		@SuppressWarnings("deprecation")
+		public BlockState mirror(BlockState state, BlockMirror mirror) {
+			return rotate(state, mirror.getRotation(state.get(PORTAL_FACING)));
 		}
 
 		@Override
 		@SuppressWarnings("deprecation") // javac -Xlint:deprecation 会告警（IDE 不开该开关才显示多余）
 		public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
-			return SHAPE;
+			return switch (state.get(PORTAL_FACING)) {
+				case EAST -> EAST_SHAPE;
+				case SOUTH -> SOUTH_SHAPE;
+				case WEST -> WEST_SHAPE;
+				default -> NORTH_SHAPE;
+			};
 		}
 	}
 }

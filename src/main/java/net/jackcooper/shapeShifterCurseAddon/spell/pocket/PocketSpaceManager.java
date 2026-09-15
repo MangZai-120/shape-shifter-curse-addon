@@ -196,7 +196,10 @@ public final class PocketSpaceManager {
 				continue;
 			}
 			PocketSpaceLayout layout = room.layout();
-			PocketPortalGate gate = GATES.computeIfAbsent(player.getUuid(), ignored -> new PocketPortalGate());
+			PocketPortalGate gate = GATES.computeIfAbsent(player.getUuid(), ignored -> {
+				repairPortal(pocket, layout);
+				return new PocketPortalGate();
+			});
 			BlockPos feet = player.getBlockPos();
 			if (!layout.isInterior(feet.getX(), feet.getY(), feet.getZ())) {
 				teleportToPortal(player, pocket, layout);
@@ -205,7 +208,8 @@ public final class PocketSpaceManager {
 			}
 			boolean insidePortal = player.getX() >= layout.centerX() - 1 && player.getX() < layout.centerX() + 1
 					&& player.getZ() >= layout.minZ() - 3 && player.getZ() < layout.minZ() - 1;
-			boolean onPortal = insidePortal && Math.abs(player.getY() - (PocketSpaceLayout.FLOOR_Y + 1.25)) < 0.08
+			boolean onPortal = insidePortal && Math.abs(player.getY()
+					- (PocketSpaceLayout.FLOOR_Y + 1 + PocketSpaceLayout.PORTAL_TOP_HEIGHT)) < 0.08
 					&& player.isOnGround();
 			if (gate.tick(insidePortal, onPortal)) {
 				leave(player, visit);
@@ -352,8 +356,26 @@ public final class PocketSpaceManager {
 		message(player, "arrival");
 	}
 
+	private static void repairPortal(ServerWorld pocket, PocketSpaceLayout layout) {
+		for (int blockX = layout.centerX() - 1; blockX <= layout.centerX(); blockX++) {
+			for (int blockZ = layout.minZ() - 3; blockZ <= layout.minZ() - 2; blockZ++) {
+				BlockPos pos = new BlockPos(blockX, PocketSpaceLayout.FLOOR_Y + 1, blockZ);
+				BlockState current = pocket.getBlockState(pos);
+				if (current.isOf(PocketSpaceBlocks.PORTAL)) {
+					BlockState expected = PocketSpaceBlocks.portalState(layout, blockX, blockZ);
+					if (current != expected) pocket.setBlockState(pos, expected, Block.NOTIFY_LISTENERS);
+					if (pocket.getBlockEntity(pos) == null) {
+						pocket.addBlockEntity(new PocketSpaceBlocks.PortalBlockEntity(pos, pocket.getBlockState(pos)));
+					}
+				}
+			}
+		}
+	}
+
 	private static void teleportToPortal(ServerPlayerEntity player, ServerWorld pocket, PocketSpaceLayout layout) {
-		player.teleport(pocket, layout.centerX(), PocketSpaceLayout.FLOOR_Y + 1.25, layout.minZ() - 2, 0, 0);
+		repairPortal(pocket, layout);
+		player.teleport(pocket, layout.centerX(), PocketSpaceLayout.FLOOR_Y + 1 + PocketSpaceLayout.PORTAL_TOP_HEIGHT,
+				layout.minZ() - 2, 0, 0);
 		player.setVelocity(Vec3d.ZERO);
 		player.fallDistance = 0;
 		pocket.playSound(null, player.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT,
@@ -518,7 +540,7 @@ public final class PocketSpaceManager {
 					cursor++;
 					used++;
 					BlockState state = null;
-					if (layout.isPortal(blockX, blockY, blockZ)) state = PocketSpaceBlocks.PORTAL.getDefaultState();
+					if (layout.isPortal(blockX, blockY, blockZ)) state = PocketSpaceBlocks.portalState(layout, blockX, blockZ);
 					else if (layout.isShell(blockX, blockY, blockZ)) {
 						state = blockY == PocketSpaceLayout.FLOOR_Y ? PocketSpaceBlocks.FLOOR.getDefaultState()
 								: PocketSpaceBlocks.BEDROCK_WALL.getDefaultState();

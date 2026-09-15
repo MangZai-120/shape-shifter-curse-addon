@@ -6,6 +6,9 @@ package net.jackcooper.shapeShifterCurseAddon.spell.pocket;
  */
 public record PocketSpaceLayout(int index, int level) {
 	public static final int FLOOR_Y = 64;
+	public static final double PORTAL_BASE_HEIGHT = 1.5 / 16.0;
+	public static final double PORTAL_TOP_HEIGHT = 2.0 / 16.0;
+	public static final double PORTAL_INSET = 2.0 / 16.0;
 	public static final int SPACING = 512;
 	/** 螺旋最大圈数（±1024 圈），槽位数 = (2*1024+1)^2。 */
 	private static final int MAX_RING = 1024;
@@ -93,6 +96,12 @@ public record PocketSpaceLayout(int index, int level) {
 
 	public boolean isAlcove(int blockX, int blockY, int blockZ) {
 		return blockZ < minZ() && isInterior(blockX, blockY, blockZ);
+	}
+
+	public int portalRotation(int blockX, int blockZ) {
+		boolean east = blockX >= centerX();
+		boolean south = blockZ >= minZ() - 2;
+		return south ? (east ? 180 : 270) : (east ? 90 : 0);
 	}
 
 	/** 真实外包围盒（按等级）：完全覆盖外壳 + 凹槽 + 顶盖的实际生成范围，用于区块过滤。 */
