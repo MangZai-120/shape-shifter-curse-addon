@@ -1042,7 +1042,7 @@
   "item.ssc_addon.magic_scroll.tip_no_solo": "Cannot be used alone; must be placed in a spellbook",
   "item.ssc_addon.magic_scroll.tip_hint": "Place into a Moon Dust Spellbook for unlimited casts (uses book mana)",
   "spell.ssc_addon.frost_spike.name": "Frost Spike",
-  "spell.ssc_addon.frost_spike.description": "Fires an ice spike toward your crosshair, dealing magic damage on hit.",
+  "spell.ssc_addon.frost_spike.description": "Fires an ice spike toward your crosshair, dealing spell damage on hit.",
   "rarity.ssc_addon.white": "White Quality",
   "rarity.ssc_addon.green": "Green Quality",
   "rarity.ssc_addon.blue": "Blue Quality",
@@ -1119,7 +1119,7 @@
   "item.ssc_addon.magic_scroll.tip_in_book_absorb": "In book: gain %1$s absorption · %2$ss CD · %3$s mana",
   "item.ssc_addon.magic_scroll.tip_solo_absorb": "Solo use: gain %1$s absorption · %2$ss CD",
   "spell.ssc_addon.fire_bolt.name": "Fire Bolt",
-  "spell.ssc_addon.fire_bolt.description": "Fires a fire bolt toward your crosshair, dealing magic damage and igniting the target.",
+  "spell.ssc_addon.fire_bolt.description": "Fires a fire bolt toward your crosshair, dealing spell damage and igniting the target.",
   "spell.ssc_addon.flame_nova.name": "Flame Nova",
   "spell.ssc_addon.flame_nova.description": "Erupts a ring of flame around you, damaging, knocking back and briefly igniting enemies in range.",
   "spell.ssc_addon.meteor.name": "Meteor",
@@ -1198,5 +1198,8 @@
   "item.ssc_addon.formation.tip_mana": "In a spellbook: max spell mana +%1$s%% (highest-level takes effect; stacks with mastery tiers)",
   "item.ssc_addon.formation.tip_exp": "In a spellbook: spell EXP gain +%1$s%% (highest-level takes effect)",
   "spell.ssc_addon.exp_mode_1": "EXP is only granted when the spell hits a target",
-  "spell.ssc_addon.exp_mode_2": "20%% EXP on cast, remaining 80%% granted on hitting a target"
+  "spell.ssc_addon.exp_mode_2": "20%% EXP on cast, remaining 80%% granted on hitting a target",
+  "death.attack.ssc_addon.spell_damage": "%1$s was slain by a spell",
+  "death.attack.ssc_addon.spell_damage.player": "%1$s was slain by a spell whilst fighting %2$s",
+  "enchantment.ssc_addon.spell_resistance": "Spell Resistance"
 }

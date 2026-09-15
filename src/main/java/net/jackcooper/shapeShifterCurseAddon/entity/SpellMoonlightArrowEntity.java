@@ -152,9 +152,12 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 			// 对亡灵生物（僵尸/骷髅/幽灵等）额外增伤：每级 +10%（L1=+10% … L5=+50%）
 			float finalDamage = livingTarget.isUndead() ? damage * (1.0f + 0.1f * getSpellLevel()) : damage;
 			if (this.getOwner() instanceof LivingEntity owner) {
-				livingTarget.damage(this.getDamageSources().indirectMagic(owner, owner), finalDamage);
+				// 法术伤害专用类型（ssc_addon:spell_damage）：供法术抗性附魔精确识别（jackcooper）
+				livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+						.of(this.getDamageSources(), owner), finalDamage);
 			} else {
-				livingTarget.damage(this.getDamageSources().magic(), finalDamage);
+				livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+						.of(this.getDamageSources()), finalDamage);
 			}
 			// exp_mode 1/2 命中补发：damage 成功才发放，发放后清零防重复
 			if (livingTarget.hurtTime > 0 && this.getOwner() instanceof ServerPlayerEntity ownerPlayer) {

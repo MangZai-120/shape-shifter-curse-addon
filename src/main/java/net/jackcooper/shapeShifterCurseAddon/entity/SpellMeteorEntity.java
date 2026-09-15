@@ -176,9 +176,12 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 				continue;
 			}
 			if (this.getOwner() instanceof LivingEntity owner) {
-				target.damage(this.getDamageSources().indirectMagic(owner, owner), dmg);
+				// 法术伤害专用类型（ssc_addon:spell_damage）：供法术抗性附魔精确识别（jackcooper）
+				target.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+						.of(this.getDamageSources(), owner), dmg);
 			} else {
-				target.damage(this.getDamageSources().magic(), dmg);
+				target.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+						.of(this.getDamageSources()), dmg);
 			}
 			hitAnyTarget = true;
 			// 点燃 3s + 轻微击退（离开爆心方向）

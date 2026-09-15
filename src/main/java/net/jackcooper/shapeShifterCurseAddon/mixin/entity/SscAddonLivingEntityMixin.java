@@ -191,6 +191,34 @@ public abstract class SscAddonLivingEntityMixin {
 	}
 
 	/**
+	 * 法术抗性附魔（ssc_addon:spell_resistance，最高 5 级，jackcooper）：受到「法术伤害」
+	 * （ssc_addon:spell_damage，魔法体系伤害专用类型）时按总等级每级 -15% 缩放
+	 * （合计最高 -75%）。多件护甲等级求和、上限 5；服务端判定、多人一致；
+	 * 与原版保护系附魔互斥（铁砧侧限制，见 SpellResistanceEnchantment#canAccept）。
+	 */
+	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+	private float ssca$spellResistanceReduce(float amount, DamageSource source) {
+		if (amount <= 0.0F || source == null) return amount;
+		if (!source.isOf(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource.SPELL_DAMAGE)) return amount;
+		LivingEntity self = (LivingEntity) (Object) this;
+		int totalLevel = 0;
+		for (net.minecraft.entity.EquipmentSlot slot : ssca$ARMOR_SLOTS) {
+			totalLevel += net.minecraft.enchantment.EnchantmentHelper.getLevel(
+					net.jackcooper.shapeShifterCurseAddon.enchantment.RegAddonEnchantments.SPELL_RESISTANCE,
+					self.getEquippedStack(slot));
+		}
+		if (totalLevel <= 0) return amount;
+		totalLevel = Math.min(totalLevel, 5);
+		return amount * (1.0F - 0.15F * totalLevel);
+	}
+
+	/** 法术抗性结算的四个护甲槽。 */
+	@org.spongepowered.asm.mixin.Unique
+	private static final net.minecraft.entity.EquipmentSlot[] ssca$ARMOR_SLOTS = {
+				net.minecraft.entity.EquipmentSlot.HEAD, net.minecraft.entity.EquipmentSlot.CHEST,
+				net.minecraft.entity.EquipmentSlot.LEGS, net.minecraft.entity.EquipmentSlot.FEET };
+
+	/**
 	 * 诅咒标记（诅咒系法术）：带 CURSE_MARK 状态的实体受到的所有伤害加深。
 	 * 倍率随施法等级：1.2 + 0.1×amplifier（L1=×1.2 … L5=×1.6；amplifier 由施法时写入）。
 	 * HARMFUL 类别 → 月辉系「月华治愈」清负面效果时可一并净化。服务端判定，多人一致。

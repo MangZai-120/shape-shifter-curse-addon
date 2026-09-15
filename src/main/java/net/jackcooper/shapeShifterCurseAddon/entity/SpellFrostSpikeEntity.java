@@ -173,9 +173,12 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 				return;
 			}
 			if (this.getOwner() instanceof LivingEntity owner) {
-				livingTarget.damage(this.getDamageSources().indirectMagic(owner, owner), damage);
+				// 法术伤害专用类型（ssc_addon:spell_damage）：供法术抗性附魔精确识别（jackcooper）
+				livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+						.of(this.getDamageSources(), owner), damage);
 			} else {
-				livingTarget.damage(this.getDamageSources().magic(), damage);
+				livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+						.of(this.getDamageSources()), damage);
 			}
 			// exp_mode 1/2 命中补发：damage 成功才发放，发放后清零防重复
 			if (livingTarget.hurtTime > 0 && this.getOwner() instanceof ServerPlayerEntity ownerPlayer) {

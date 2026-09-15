@@ -429,8 +429,8 @@ public class SscAddon implements ModInitializer {
 			// 附属实体注册（月织蛛蓄力蛛丝弹，jackcooper）
 		net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.init();
 		// 附属状态效果注册（蜘网缠身，jackcooper）
-		net.jackcooper.shapeShifterCurseAddon.effect.RegAddonEffects.init();
-		registerRecipeSerializers();
+		net.jackcooper.shapeShifterCurseAddon.effect.RegAddonEffects.init();		// 附属附魔注册（法术抗性，jackcooper）
+		net.jackcooper.shapeShifterCurseAddon.enchantment.RegAddonEnchantments.init();		registerRecipeSerializers();
 		registerSoundEvents();
 		registerEntityAttributes();
 		registerApoliSystems();

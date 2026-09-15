@@ -79,7 +79,9 @@ public class VoidDevourSpell extends Spell {
 			if (net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils.isProtected(caster, target)) {
 				continue;
 			}
-			if (target.damage(serverWorld.getDamageSources().indirectMagic(caster, caster), power)) {
+			// 法术伤害专用类型（ssc_addon:spell_damage）：供法术抗性附魔精确识别（jackcooper）
+			if (target.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+					.of(serverWorld.getDamageSources(), caster, caster), power)) {
 				// exp_mode 1/2 命中补发：首个命中目标取全额（后续取 0，幂等），发放后挂起清零
 				net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant.grant(caster,
 						solo ? 0 : ssc_addon$takePendingExp());

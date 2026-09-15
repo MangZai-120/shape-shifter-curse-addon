@@ -1042,7 +1042,7 @@
   "item.ssc_addon.magic_scroll.tip_no_solo": "无法单独使用，只能放入魔法书",
   "item.ssc_addon.magic_scroll.tip_hint": "放入月尘魔法书即可无限次施放（消耗书的法力）",
   "spell.ssc_addon.frost_spike.name": "冰锥",
-  "spell.ssc_addon.frost_spike.description": "朝准星射出一枚冰锥，命中造成魔法伤害。",
+  "spell.ssc_addon.frost_spike.description": "朝准星射出一枚冰锥，命中造成法术伤害。",
   "rarity.ssc_addon.white": "白色品质",
   "rarity.ssc_addon.green": "绿色品质",
   "rarity.ssc_addon.blue": "蓝色品质",
@@ -1119,7 +1119,7 @@
   "item.ssc_addon.magic_scroll.tip_in_book_absorb": "装书内：获得 %1$s 点伤害吸收 · 冷却 %2$s 秒 · 耗法力 %3$s",
   "item.ssc_addon.magic_scroll.tip_solo_absorb": "单独使用：获得 %1$s 点伤害吸收 · 冷却 %2$s 秒",
   "spell.ssc_addon.fire_bolt.name": "火球术",
-  "spell.ssc_addon.fire_bolt.description": "朝准星射出一枚火球，命中造成魔法伤害并点燃目标。",
+  "spell.ssc_addon.fire_bolt.description": "朝准星射出一枚火球，命中造成法术伤害并点燃目标。",
   "spell.ssc_addon.flame_nova.name": "烈焰新星",
   "spell.ssc_addon.flame_nova.description": "以自身为圆心爆发出环形火焰，范围内敌人受到伤害、被击退并短暂着火。",
   "spell.ssc_addon.meteor.name": "陨火术",
@@ -1198,5 +1198,8 @@
   "item.ssc_addon.formation.tip_mana": "装入魔法书后：法力上限 +%1$s%%（多张增能法阵取最高等级；与精通档叠加）",
   "item.ssc_addon.formation.tip_exp": "装入魔法书后：施法获得经验 +%1$s%%（多张经验法阵取最高等级）",
   "spell.ssc_addon.exp_mode_1": "命中目标才能获得经验",
-  "spell.ssc_addon.exp_mode_2": "释放获得 20%% 经验，命中目标后补足剩余 80%%"
+  "spell.ssc_addon.exp_mode_2": "释放获得 20%% 经验，命中目标后补足剩余 80%%",
+  "death.attack.ssc_addon.spell_damage": "%1$s 被法术击杀了",
+  "death.attack.ssc_addon.spell_damage.player": "%1$s 在与 %2$s 战斗时被法术击杀",
+  "enchantment.ssc_addon.spell_resistance": "法术抗性"
 }
