@@ -157,6 +157,16 @@ tasks.withType(JavaCompile).configureEach {
     it.options.compilerArgs << '-Xlint:deprecation'
 }
 
+tasks.register('pocketSpaceTest', JavaExec) {
+    dependsOn classes
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.pocket.PocketSpaceLayoutTest'
+    workingDir = layout.buildDirectory.dir('pocket-space-test').get().asFile
+    doFirst { workingDir.mkdirs() }
+}
+
+check.dependsOn pocketSpaceTest
+
 java {
     // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
     // if it is present.
@@ -168,6 +178,7 @@ java {
 }
 
 jar {
+    exclude 'net/jackcooper/shapeShifterCurseAddon/spell/pocket/PocketSpaceLayoutTest.class'
     from("LICENSE") {
         rename { "${it}_${project.base.archivesName.get()}"}
     }

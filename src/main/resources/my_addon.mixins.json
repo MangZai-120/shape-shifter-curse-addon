@@ -7,6 +7,9 @@
     "refmap":  "ssc-addon.refmap.json",
     "mixins":  [
                    "TransformManagerAdvancementMixin192",
+                   "ThreadedAnvilChunkStorageAccessor",
+                   "PocketSpaceBoundaryMixin",
+                   "PocketSpaceChunkFilterMixin",
                    "effect.AllaySPTotemMixin",
                    "effect.EntangledFullStunMixin",
                    "AnkhStoneTotemMixin",
@@ -57,6 +60,7 @@
                    "input.StunnedInputMixin",
                    "input.StunnedKeyBindingMixin",
                    "input.ViewRateLimitMixin",
+                   "input.SpellcastMouseScrollMixin",
                    "render.TrueInvisibilityArmorMixin",
                    "render.UpgradeAxolotlFirstPersonSpearMixin",
                    "render.UpgradeAxolotlThirdPersonSpearMixin",

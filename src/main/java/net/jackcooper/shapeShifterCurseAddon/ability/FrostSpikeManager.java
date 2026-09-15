@@ -226,8 +226,11 @@ public final class FrostSpikeManager {
 					}
 				}
 			}
-			// 同步法阵中央冰锥大小（随蓄力等级放大）
-			if (s.arrayEntity != null && !s.arrayEntity.isRemoved()) s.arrayEntity.setLevel(s.secondaryLevel);
+			// 同步法阵中央冰锥大小（随蓄力等级放大）+ 蓄力总进度（HUD 副槽侧边内置条从 0 涨到满）
+			if (s.arrayEntity != null && !s.arrayEntity.isRemoved()) {
+				s.arrayEntity.setLevel(s.secondaryLevel);
+				s.arrayEntity.setProgress(s.secondaryLevel * SECONDARY_CONSUME_INTERVAL + s.secondaryTicks);
+			}
 		} else if (s.charging) {
 			s.chargeTicks++;
 			// 主技能持续汇聚已移到客户端（状态包驱动本地自算，零网络粒子包）

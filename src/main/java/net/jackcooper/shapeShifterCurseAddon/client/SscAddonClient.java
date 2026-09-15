@@ -196,6 +196,21 @@ public class SscAddonClient implements ClientModInitializer {
 					}
 					client.execute(() -> net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.INSTANCE.applyClientSync(raw));
 				});
+		// 注册「法术数值配置同步」接收器：服务端把 spells JSON 同步过来（多人环境客户端无 datapack），
+		// 保证卷轴 tooltip / HUD 数值与服务端施法判定一致。
+		ClientPlayNetworking.registerGlobalReceiver(
+				net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC,
+				(client, handler, buf, responseSender) -> {
+					int count = buf.readInt();
+					if (count < 0 || count > 1000) return; // 防恶意服务端 OOM
+					java.util.Map<String, String> raw = new java.util.LinkedHashMap<>();
+					for (int i = 0; i < count; i++) {
+						String spellPath = buf.readString(256);
+						String json = buf.readString(2000000);
+						raw.put(spellPath, json);
+					}
+					client.execute(() -> net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.applyClientSync(raw));
+				});
 		// 注册「广播所有玩家形态」接收器：服务端把在场玩家的 formID + 皮肤数据直接广播过来，
 		// 客机按 UUID 直接写入其它玩家的 nowForm/nowFormID 与 PlayerSkinComponent（颜色/是否启用形态颜色等），
 		// 绕过 CCA 同步的不确定性，修复刚进游戏看其它玩家是「白色人类模型」（enableFormColor 未同步=渲染原版人类模型）。
@@ -230,6 +245,13 @@ public class SscAddonClient implements ClientModInitializer {
 						for (int i = 0; i < uuids.size(); i++) {
 							net.minecraft.entity.player.PlayerEntity p = client.world.getPlayerByUuid(uuids.get(i));
 							if (p == null) continue;
+							// 【特判】必须跳过本地玩家：本段是为「其它玩家」在客机重建 origin 以正确渲染模型，
+							// 而 PlayerOriginComponent.setOrigin 内部会 removeAllPowersFromSource —— 对自己调用
+							// 可能会把服务端刚同步来的 power 全部清空（客户端 origin 的 power 类型列表为空，加不回来）。
+							// 1.20.1 目前靠「OriginRegistry 返回同一实例 + 引用相等早退」碰巧未触发，
+							// 但时序/注册表实例一旦不一致（reload、版本变动）就会翻车，故防御性跳过。
+							// 本地玩家自身的 form/origin/scale/皮肤均有 CCA 同步的权威路径，跳过无功能损失。
+							if (p == client.player) continue;
 							// 形态
 							String fidStr = formIds.get(i);
 							if (!fidStr.isEmpty()) {
@@ -303,7 +325,16 @@ public class SscAddonClient implements ClientModInitializer {
 				String color = buf.readString();
 				marks.put(uuid, color);
 			}
-			client.execute(() -> MancianimaMarkClientState.update(marks));
+			int stageTicks = buf.readableBytes() >= Integer.BYTES
+					? Math.max(0, Math.min(MancianimaMarkManager.STAGE_GATE_TICKS, buf.readInt())) : 0;
+			client.execute(() -> {
+				if (client.world == null) {
+					MancianimaMarkClientState.clear();
+					return;
+				}
+				MancianimaMarkClientState.update(marks);
+				MancianimaMarkClientState.setStageEndTick(client.world.getTime() + stageTicks);
+			});
 		});
 
 		// 风灵「疾风连爪」：接收爪击阶段+准星条进度，更新客户端镜像
@@ -390,6 +421,11 @@ public class SscAddonClient implements ClientModInitializer {
 
 		// 注册冰球渲染器（使用雪球材质）和冰风暴渲染器（粒子效果，空渲染器）
 		EntityRendererRegistry.register(SscAddon.FROST_BALL_ENTITY, FlyingItemEntityRenderer::new);
+		// 月尘魔法·冰锥渲染器：L1-3 雪球贴图，L4+ 寒棘狐同款 3D 冰锥模型（渲染器内按 DataTracker 等级切换）
+		EntityRendererRegistry.register(SscAddon.SPELL_FROST_SPIKE_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.SpellFrostSpikeRenderer::new);
+		// 月尘魔法新投射物：火球（火焰弹物品模型）与陨火（同火焰弹、体积更大）
+		EntityRendererRegistry.register(SscAddon.SPELL_FIRE_BOLT_ENTITY, ctx -> new net.minecraft.client.render.entity.FlyingItemEntityRenderer<net.jackcooper.shapeShifterCurseAddon.entity.SpellFireBoltEntity>(ctx, 1F, true));
+		EntityRendererRegistry.register(SscAddon.SPELL_METEOR_ENTITY, ctx -> new net.minecraft.client.render.entity.FlyingItemEntityRenderer<net.jackcooper.shapeShifterCurseAddon.entity.SpellMeteorEntity>(ctx, 2F, true));
 		// 进化美西螈「投掷水矛」直线水矛：3D 投掷态模型，沿飞行方向摆正
 		EntityRendererRegistry.register(SscAddon.THROWN_WATER_SPEAR_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.ThrownWaterSpearEntityRenderer::new);		// 寒棘狐「冰刺」冰锥：3D 自定义 item model（CustomModelData 切 3 阶段材质），沿朝向摆正
 		EntityRendererRegistry.register(SscAddon.FROST_THORN_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.FrostThornEntityRenderer::new);
@@ -413,6 +449,12 @@ public class SscAddonClient implements ClientModInitializer {
 		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.SPIDER_SWING_BULLET, FlyingItemEntityRenderer::new);
 		// 食梦魔「惊吓」幽灵野猫：野猫形态 geo 模型 + 程序化四足骨骼驱动
 		EntityRendererRegistry.register(SscAddon.GHOST_CAT_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.GhostCatRenderer::new);
+		// 2026-09 新法术实体渲染器：月光箭（3D 光灵箭模型）/诅咒标记（物品渲染）+ 月灵（程序化发光八面体）
+		EntityRendererRegistry.register(SscAddon.SPELL_MOONLIGHT_ARROW_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.MoonlightArrowRenderer::new);
+		EntityRendererRegistry.register(SscAddon.SPELL_CURSE_MARK_ENTITY, ctx -> new net.minecraft.client.render.entity.FlyingItemEntityRenderer<net.jackcooper.shapeShifterCurseAddon.entity.SpellCurseMarkEntity>(ctx, 0.75F, true));
+		EntityRendererRegistry.register(SscAddon.LUNAR_SPIRIT_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.LunarSpiritRenderer::new);
+		// 月灵光弹：小发光体渲染（Lightning 层 POSITION_COLOR，Sodium 安全）
+		EntityRendererRegistry.register(SscAddon.LUNAR_SPIRIT_BOLT_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.LunarSpiritBoltRenderer::new);
 
 		// 寄生果蝠形态种子量能量条 HUD
 		SeedEnergyHudRenderer.register();
@@ -460,6 +502,42 @@ public class SscAddonClient implements ClientModInitializer {
 		ModelPredicateProviderRegistry.register(SscAddon.INFINITE_ENERGY_POTION_SPLASH, new Identifier("ssc_addon", "empty"), infiniteEnergyEmptyPredicate);
 		ModelPredicateProviderRegistry.register(SscAddon.INFINITE_ENERGY_POTION_LINGERING, new Identifier("ssc_addon", "empty"), infiniteEnergyEmptyPredicate);
 
+		// 魔法卷轴 + 增强法阵：怪蛋式双层染色（layer0 纸体固定不染，layer1 图案按系别色染）。
+		// 系别来源：法阵读 NBT Element；卷轴读 spells JSON 的 element 字段（无系别染白 → 灰白图案空白态）。
+		// 通用系法阵（UNIVERSAL）通过 universal 谓词切独立模型 formation_universal（单层空白法阵纸材质）。
+		ModelPredicateProviderRegistry.register(SscAddon.FORMATION, new Identifier("ssc_addon", "universal"),
+				(stack, world, entity, seed) ->
+						net.jackcooper.shapeShifterCurseAddon.spell.FormationData.getElement(stack)
+								== net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.UNIVERSAL ? 1.0F : 0.0F);
+		java.util.function.BiFunction<net.jackcooper.shapeShifterCurseAddon.spell.FormationElement, Integer, Integer> tintOf =
+				(element, fallback) -> element == null ? fallback : element.color;
+		ColorProviderRegistry.ITEM.register(
+				(stack, tintIndex) -> {
+					if (tintIndex != 1) {
+						return 0xFFFFFF; // layer0 纸体不染色
+					}
+					return tintOf.apply(net.jackcooper.shapeShifterCurseAddon.spell.FormationData.getElement(stack), 0xB8B8B8);
+				},
+				SscAddon.FORMATION
+		);
+		ColorProviderRegistry.ITEM.register(
+				(stack, tintIndex) -> {
+					if (tintIndex != 1) {
+						return 0xFFFFFF; // layer0 纸体不染色
+					}
+					net.jackcooper.shapeShifterCurseAddon.spell.Spell s =
+							net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getSpell(stack);
+					if (s == null) {
+						return 0xB8B8B8; // 空白卷轴：灰白图案
+					}
+					String element = s.getConfig().element;
+					net.jackcooper.shapeShifterCurseAddon.spell.FormationElement e =
+							net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.byId(element);
+					return tintOf.apply(e, 0xB8B8B8); // 无系别魔法也走灰白
+				},
+				SscAddon.MAGIC_SCROLL
+		);
+
 		// SP技能键位现在由Apoli框架自动处理，无需手动轮询
 		// 如需添加新的非Apoli键位检测，可在此处注册
 
@@ -467,6 +545,8 @@ public class SscAddonClient implements ClientModInitializer {
 		HudRenderCallback.EVENT.register(new AllaySPManaBar());
 		HudRenderCallback.EVENT.register(new AnubisWolfSPSoulBar());
 		HudRenderCallback.EVENT.register(new SkillCooldownBarRenderer());
+		// SSCA 月尘魔法书 - 左下角魔法选择器 + 法力条 HUD
+		HudRenderCallback.EVENT.register(new net.jackcooper.shapeShifterCurseAddon.client.hud.SpellbookHudRenderer());
 		HudRenderCallback.EVENT.register(new MancianimaResistanceBar());
 		HudRenderCallback.EVENT.register(new net.jackcooper.shapeShifterCurseAddon.client.mana.BatDesmodusBloodBar());
 
@@ -476,12 +556,20 @@ public class SscAddonClient implements ClientModInitializer {
 		MancianimaPrimaryClient.register();
 
 		HandledScreens.register(SscAddon.POTION_BAG_SCREEN_HANDLER, PotionBagScreen::new);
+		HandledScreens.register(SscAddon.SPELLBOOK_SCREEN_HANDLER, net.jackcooper.shapeShifterCurseAddon.client.screen.SpellbookScreen::new);
+		// 法术研究台界面（双页签：抄写/学习）
+		HandledScreens.register(net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlockEntities.SPELL_RESEARCH_TABLE_SH,
+				net.jackcooper.shapeShifterCurseAddon.client.screen.SpellResearchTableScreen::new);
 
 		// SSCA 美西螈装死 - 提前结束检测器
 		PlayDeadEndClient.register();
 
 		// SSCA 美西螈漩涡蓄力 - 按键检测器
-		VortexChargeClient.register();		// SSCA 月织蛛「织网术」- 主键检测器（潜行切换 / 蓄力 / 释放）
+		VortexChargeClient.register();
+		// SSCA 月尘魔法书 - 键位注册 + 施法检测器（切换/施法/7直达键）
+		net.jackcooper.shapeShifterCurseAddon.client.SpellcastKeybindings.register();
+		net.jackcooper.shapeShifterCurseAddon.client.SpellcastClient.register();
+		// SSCA 月织蜷「织网术」- 主键检测器（潜行切换 / 蓄力 / 释放）
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverWebClient.register();
 		// SSCA 寒棘狐「冰刺」- 主键检测器（长按蕠力 / 点按发射）
 		net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeClient.register();		// SSCA 寒棘狐主技能蓄力 - 客户端镜像粒子生成（S2C 状态包驱动，零持续粒子包）

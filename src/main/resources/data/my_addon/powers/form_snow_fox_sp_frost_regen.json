@@ -50,6 +50,9 @@
                     "resource": "my_addon:form_snow_fox_sp_frost_regen_cooldown_resource",
                     "comparison": "==",
                     "compare_to": 0
+                },
+                {
+                    "type": "ssc_addon:not_universal_formation_charging"
                 }
             ]
         },

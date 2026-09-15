@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "ssc_addon:block/spell_research_table" },
+    "facing=east":  { "model": "ssc_addon:block/spell_research_table", "y": 90 },
+    "facing=south": { "model": "ssc_addon:block/spell_research_table", "y": 180 },
+    "facing=west":  { "model": "ssc_addon:block/spell_research_table", "y": 270 }
+  }
+}

@@ -121,6 +121,8 @@ public final class SscAddonServerEvents {
 				net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.tick(player);				EvolutionManager.tickPlayer(player);
 			// SSCA 专属饰品登录守卫：登录宽容放行后，形态不符的自动卸下归还（Curios/Trinkets 双后端）
 			net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.tick(player);
+			// 红使魔 / SP 形态周期逻辑（原 RedFormTickMixin 的 tick 注入迁来；内部自带 1 秒门控）
+			net.jackcooper.shapeShifterCurseAddon.ability.RedFormTickManager.tick(player);
 		}
 	});
 

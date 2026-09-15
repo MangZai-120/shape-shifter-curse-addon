@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class MancianimaMarkClientState {
     private static final Map<UUID, String> COLORS = new ConcurrentHashMap<>();
+    private static long stageEndTick;
     private MancianimaMarkClientState() {}
 
     /** 整体替换；空 map 等价于清空 */
@@ -20,7 +21,7 @@ public final class MancianimaMarkClientState {
         if (snapshot != null && !snapshot.isEmpty()) COLORS.putAll(snapshot);
     }
 
-    public static void clear() { COLORS.clear(); }
+    public static void clear() { COLORS.clear(); stageEndTick = 0; }
 
     /** 客户端 BiEntity 条件查询入口 */
     public static boolean hasColor(UUID targetUuid, String color) {
@@ -31,4 +32,8 @@ public final class MancianimaMarkClientState {
 
     /** 调试用，禁止外部修改返回值 */
     public static Map<UUID, String> snapshot() { return new HashMap<>(COLORS); }
+
+    public static void setStageEndTick(long tick) { stageEndTick = tick; }
+
+    public static long getStageEndTick() { return stageEndTick; }
 }

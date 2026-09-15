@@ -32,6 +32,8 @@ public class FrostArrayEntity extends Entity {
 
 	private static final TrackedData<Integer> OWNER_ID = DataTracker.registerData(FrostArrayEntity.class, TrackedDataHandlerRegistry.INTEGER);
 	private static final TrackedData<Integer> LEVEL = DataTracker.registerData(FrostArrayEntity.class, TrackedDataHandlerRegistry.INTEGER);
+	/** 凝棘蓄力总进度（0-100 tick = 等级×20 + 级内 ticks）：HUD 副槽侧边内置条从 0 涨到满的数据源。 */
+	private static final TrackedData<Integer> PROGRESS = DataTracker.registerData(FrostArrayEntity.class, TrackedDataHandlerRegistry.INTEGER);
 	private static final int MAX_TICKS = 400; // 20s 超时双保险（正常由管理器 discard）
 
 	public FrostArrayEntity(EntityType<? extends FrostArrayEntity> type, World world) {
@@ -57,6 +59,11 @@ public class FrostArrayEntity extends Entity {
 	public int getLevel() { return this.dataTracker.get(LEVEL); }
 
 	public void setLevel(int level) { if (getLevel() != level) this.dataTracker.set(LEVEL, level); }
+
+	/** 凝棘蓄力总进度（0-100）。dirty-check 防每 tick 重发相同值。 */
+	public int getProgress() { return this.dataTracker.get(PROGRESS); }
+
+	public void setProgress(int progress) { if (getProgress() != progress) this.dataTracker.set(PROGRESS, progress); }
 
 	/** 上一次读到的等级（客户端检测 LEVEL 跳变 = 服务端刚消耗一根冰锥 → 播 burst 密集汇聚）。 */
 	private int clientPrevLevel = -1;

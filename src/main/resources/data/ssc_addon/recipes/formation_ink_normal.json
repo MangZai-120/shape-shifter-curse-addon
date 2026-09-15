@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "minecraft:glass_bottle" },
+    { "item": "minecraft:ink_sac" },
+    { "item": "shape-shifter-curse:moondust_crystal_shard" }
+  ],
+  "result": {
+    "item": "ssc_addon:formation_ink_normal",
+    "count": 1
+  }
+}

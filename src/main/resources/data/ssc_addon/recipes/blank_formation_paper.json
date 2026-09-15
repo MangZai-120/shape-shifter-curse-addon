@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    "CPC",
+    " C "
+  ],
+  "key": {
+    "C": { "item": "shape-shifter-curse:moondust_crystal_shard" },
+    "P": { "item": "minecraft:paper" }
+  },
+  "result": {
+    "item": "ssc_addon:blank_formation_paper",
+    "count": 1
+  }
+}

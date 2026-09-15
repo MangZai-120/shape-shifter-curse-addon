@@ -1,5 +1,6 @@
 {
     "powers": [
+        "my_addon:form_axolotl_fluorescent_shot_cd",
         "shape-shifter-curse:form_axolotl_3_no_render_arm",
         "my_addon:form_axolotl_fluorescent_scale",
         "shape-shifter-curse:form_axolotl_3_water_breathing",

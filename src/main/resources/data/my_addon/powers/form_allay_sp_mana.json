@@ -62,6 +62,9 @@
                     "resource": "my_addon:form_allay_sp_mana_cooldown_resource",
                     "comparison": "==",
                     "compare_to": 0
+                },
+                {
+                    "type": "ssc_addon:not_universal_formation_charging"
                 }
             ]
         }

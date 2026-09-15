@@ -67,9 +67,12 @@ public class InfiniteEnergyPotionRecipe extends SpecialCraftingRecipe {
 		return stack.isOf(Items.ENCHANTED_GOLDEN_APPLE);
 	}
 
-	/** 压缩能量药水 = 原版药水物品且药水类型为 feed_potion。 */
+	/** 压缩能量药水 = 饮用/喷溅/滞留三种瓶型之一，且药水类型为 feed_potion。 */
 	private boolean isCompressedEnergyPotion(ItemStack stack) {
-		return stack.isOf(Items.POTION) && PotionUtil.getPotion(stack) == RegCustomPotions.FEED_POTION;
+		boolean isPotionBottle = stack.isOf(Items.POTION)
+				|| stack.isOf(Items.SPLASH_POTION)
+				|| stack.isOf(Items.LINGERING_POTION);
+		return isPotionBottle && PotionUtil.getPotion(stack) == RegCustomPotions.FEED_POTION;
 	}
 
 	@Override
