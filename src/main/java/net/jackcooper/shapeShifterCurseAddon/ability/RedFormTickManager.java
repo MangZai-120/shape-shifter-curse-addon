@@ -64,9 +64,9 @@ public final class RedFormTickManager {
 			player.addCommandTag("ssc_addon_red_attempted");
 			if (player.getRandom().nextFloat() < 0.05f) {
 				Identifier redFormId = net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED;
-				IForm redForm = RegPlayerForms.getPlayerForm(redFormId);
+				PlayerFormBase redForm = RegPlayerForms.getPlayerForm(redFormId);
 				if (redForm != null) {
-Compat1_9_2.immediatelyTransform(player, redForm);
+					Compat1_9_2.immediatelyTransform(player, redForm);
 
 					// 10 分钟 = 12000 tick
 					long expireTime = player.getWorld().getTime() + 12000;
