@@ -58,9 +58,9 @@
 
   ![模型资产示例 1](images/model_asset_showcase_1.png)
 
-  ![模型资产示例 2](images/model_asset_showcase_2.png)
+  ![模型资产示例 2](images/model_asset_showcase_3.png)
 
-  ![模型资产示例 3](images/model_asset_showcase_3.png)
+  ![模型资产示例 3](images/model_asset_showcase_2.png)
 
 - **Code**: Licensed under [AGPL-3.0-or-later License](LICENSE).
 - **Story Content** (including `story/` directory, in-game books, and Codex narrative text): Licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
@@ -72,9 +72,9 @@
 
   ![Model asset showcase 1](images/model_asset_showcase_1.png)
 
-  ![Model asset showcase 2](images/model_asset_showcase_2.png)
+  ![Model asset showcase 2](images/model_asset_showcase_3.png)
 
-  ![Model asset showcase 3](images/model_asset_showcase_3.png)
+  ![Model asset showcase 3](images/model_asset_showcase_2.png)
 
 ## 赞助说明 / Support
 
