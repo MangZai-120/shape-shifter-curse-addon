@@ -51,8 +51,10 @@
 - **代码部分**：采用 [AGPL-3.0-or-later License](LICENSE) 进行许可。
 - **故事内容**（包括 `story/` 目录、游戏内书籍、Codex 叙事文本）：采用 [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/) 进行许可。
   - 可自由转发，不得商用，不得修改内容。文本须按原样提供，但允许更改字体和字号。
-- **模型资产**：所有基于幻形者诅咒（SSC）制作的模型资产采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) 进行许可。
+- **基于 SSC 制作的模型资产**：所有基于幻形者诅咒（SSC）制作的模型资产采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) 进行许可。
   - 可自由使用与修改，须署名，不得商用。
+- **SSCA 自制资产**：SSCA 自制（原创）的模型与美术资产（含贴图、图标、动画等，如月灵模型）采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) 进行许可。
+  - 可自由使用与修改，须署名，不得商用；再创作后的作品须以相同协议（CC BY-NC-SA）共享。
 
   本模组基于 SSC 制作的模型资产示例（均适用于上述 CC BY-NC 4.0 协议）：
 
@@ -65,8 +67,10 @@
 - **Code**: Licensed under [AGPL-3.0-or-later License](LICENSE).
 - **Story Content** (including `story/` directory, in-game books, and Codex narrative text): Licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
   - Free to share, no commercial use, no modifications. Text must be provided as-is, but font and font size changes are permitted.
-- **Model Assets**: All model assets created based on Shape Shifter's Curse (SSC) are licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/).
+- **SSC-Based Model Assets**: All model assets created based on Shape Shifter's Curse (SSC) are licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/).
   - Free to use and adapt with attribution, no commercial use.
+- **SSCA Original Assets**: SSCA's original (self-made) models and art assets (including textures, icons, animations, etc., e.g. the Lunar Spirit model) are licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+  - Free to use and adapt with attribution, no commercial use; adaptations must be shared under the same license (CC BY-NC-SA).
 
   Examples of model assets created based on SSC (all covered by the CC BY-NC 4.0 license above):
 
