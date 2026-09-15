@@ -75,7 +75,6 @@
                    "client.SpookGhostVisibleMixin",
                    "client.LivingEntityStatusEffectsAccessor",
                    "client.IrisShaderPackMixin",
-                   "client.TransformingControllerFeralAnimMixin",
                    "client.CreativePotionStackMixin",
                    "client.FamiliarFoxManaBarGateMixin",
                    "client.UpgradeAxolotlSpearChargeArmMixin",
