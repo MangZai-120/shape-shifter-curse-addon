@@ -13,7 +13,7 @@ import java.util.UUID;
 /**
  * 野猫系「夜行者」昼夜移速被动（代码实现，替代原 wild_cat_sp_speed_passive power JSON）。
  *
- * <p>夜间（13000~23000）移速 +20%（速度 I 等效）、白天移速 -15%（缓慢 I 等效）。
+ * <p>夜间（13000~23000）移速 +20%（速度 I 等效）；白昼不再减速（原 -15% 昼间惩罚已移除）。
  * 用<b>持久属性修饰符</b>而非周期施加的药水效果实现：原 apoli action_over_time 每 20t
  * 重新施加缓慢/速度药水，效果到期→属性移除→再施加的循环会让 FOV（视角随移速缩放）
  * 周期性来回弹动；持久修饰符只在昼夜/形态/禁用状态<b>变化时</b>切换一次，FOV 全程稳定。</p>
@@ -26,8 +26,7 @@ public final class WildCatPaceManager {
 	/** 固定 UUID：状态切换时先移除再按新值添加，防重复堆积。 */
 	private static final UUID PACE_MODIFIER_UUID = UUID.fromString("5f6a2e8c-1b3d-4c7e-9a0f-8e2d1c4b6a3c");
 	private static final String MODIFIER_NAME = "Wild Cat Night Walker";
-	/** 白天缓慢 I 等效（vanilla slowness amplifier 0 = -15% 移速）。 */
-	private static final double DAY_SLOW = -0.15;
+	/** 夜间速度 I 等效（vanilla speed amplifier 0 = +20% 移速）；白昼不再减速，昼间惩罚已移除。 */
 	/** 夜间速度 I 等效（vanilla speed amplifier 0 = +20% 移速）。 */
 	private static final double NIGHT_SPEED = 0.20;
 	/** 检查粒度（tick）：与原 JSON interval 20 一致，昼夜切换响应延迟最多 1 秒。 */
@@ -72,7 +71,8 @@ public final class WildCatPaceManager {
 		if (night) {
 			return SkillBlocker.isSkillBlocked(player, "wild_cat", "night_speed") ? null : NIGHT_SPEED;
 		}
-		return SkillBlocker.isSkillBlocked(player, "wild_cat", "day_slow") ? null : DAY_SLOW;
+		// 白昼：不再减速，返回 null（修饰符保持摘除）。day_slow 标签保留兼容旧存档，仅不再生效。
+		return null;
 	}
 
 	/** 断线兜底清理（temporary modifier 不进 NBT，重连由 tick 重新挂上）。 */
