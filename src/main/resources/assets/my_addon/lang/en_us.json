@@ -1198,5 +1198,8 @@
   "item.ssc_addon.formation.tip_mana": "In a spellbook: max spell mana +%1$s%% (highest-level takes effect; stacks with mastery tiers)",
   "item.ssc_addon.formation.tip_exp": "In a spellbook: spell EXP gain +%1$s%% (highest-level takes effect)",
   "spell.ssc_addon.exp_mode_1": "EXP is only granted when the spell hits a target",
-  "spell.ssc_addon.exp_mode_2": "20%% EXP on cast, remaining 80%% granted on hitting a target"
+  "spell.ssc_addon.exp_mode_2": "20%% EXP on cast, remaining 80%% granted on hitting a target",
+  "item.ssc_addon.universal_energy_potion_splash": "Splash Universal Energy Potion",
+  "item.ssc_addon.universal_energy_potion_lingering": "Lingering Universal Energy Potion",
+  "effect.ssc_addon.universal_energy": "Energy Overflow"
 }

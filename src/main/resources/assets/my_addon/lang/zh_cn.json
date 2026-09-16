@@ -1198,5 +1198,8 @@
   "item.ssc_addon.formation.tip_mana": "装入魔法书后：法力上限 +%1$s%%（多张增能法阵取最高等级；与精通档叠加）",
   "item.ssc_addon.formation.tip_exp": "装入魔法书后：施法获得经验 +%1$s%%（多张经验法阵取最高等级）",
   "spell.ssc_addon.exp_mode_1": "命中目标才能获得经验",
-  "spell.ssc_addon.exp_mode_2": "释放获得 20%% 经验，命中目标后补足剩余 80%%"
+  "spell.ssc_addon.exp_mode_2": "释放获得 20%% 经验，命中目标后补足剩余 80%%",
+  "item.ssc_addon.universal_energy_potion_splash": "喷溅型通用能量药水",
+  "item.ssc_addon.universal_energy_potion_lingering": "滞留型通用能量药水",
+  "effect.ssc_addon.universal_energy": "能量漏溢"
 }
