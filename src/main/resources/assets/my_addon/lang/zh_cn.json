@@ -1201,5 +1201,8 @@
   "spell.ssc_addon.exp_mode_2": "释放获得 20%% 经验，命中目标后补足剩余 80%%",
   "death.attack.ssc_addon.spell_damage": "%1$s 被法术击杀了",
   "death.attack.ssc_addon.spell_damage.player": "%1$s 在与 %2$s 战斗时被法术击杀",
-  "enchantment.ssc_addon.spell_resistance": "法术抗性"
+  "enchantment.ssc_addon.spell_resistance": "法术抗性",
+  "item.ssc_addon.universal_energy_potion_splash": "喷溅型通用能量药水",
+  "item.ssc_addon.universal_energy_potion_lingering": "滞留型通用能量药水",
+  "effect.ssc_addon.universal_energy": "能量漏溢"
 }

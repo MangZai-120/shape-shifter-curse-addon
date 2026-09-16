@@ -1201,5 +1201,8 @@
   "spell.ssc_addon.exp_mode_2": "20%% EXP on cast, remaining 80%% granted on hitting a target",
   "death.attack.ssc_addon.spell_damage": "%1$s was slain by a spell",
   "death.attack.ssc_addon.spell_damage.player": "%1$s was slain by a spell whilst fighting %2$s",
-  "enchantment.ssc_addon.spell_resistance": "Spell Resistance"
+  "enchantment.ssc_addon.spell_resistance": "Spell Resistance",
+  "item.ssc_addon.universal_energy_potion_splash": "Splash Universal Energy Potion",
+  "item.ssc_addon.universal_energy_potion_lingering": "Lingering Universal Energy Potion",
+  "effect.ssc_addon.universal_energy": "Energy Overflow"
 }

@@ -6,15 +6,20 @@ import net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.projectile.thrown.PotionEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.potion.PotionUtil;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.stat.Stats;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.UseAction;
 import net.minecraft.world.World;
+import net.jackcooper.shapeShifterCurseAddon.effect.UniversalEnergyEffect;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -30,15 +35,32 @@ import java.util.List;
  *
  * <p>实现参照项目内 {@code InfiniteEnergyPotionItem}：不继承 PotionItem（避免可堆叠类模组放开叠加），
  * finishUsing 服务端判定后回复，饮毕返还空玻璃瓶。
- * 由能量装瓶器产出（{@code EnergyBottlerBlockEntity.makeEnergyBottle}）。
+ * 由能量装瓶器产出（{@code EnergyBottlerBlockEntity.makeEnergyBottle}）；
+ * 喷溅 / 滞留型由酿造台转换（饮用+火药→喷溅；喷溅+龙息→滞留，见 BrewingStandInfinitePotionMixin），
+ * 投掷时生成携带 {@link UniversalEnergyEffect} 的原版投掷药水弹射物，落点 AOE 回复（距离衰减下限 0.5）。
  */
 public class UniversalEnergyPotionItem extends Item {
 
 	/** 回复的 mana 点数。 */
 	public static final double MANA_RESTORE = 25.0;
 
-	public UniversalEnergyPotionItem(Settings settings) {
+	/** 三种瓶型。 */
+	public enum Type {
+		DRINK, SPLASH, LINGERING
+	}
+
+	/** 饮用读条时长，与原版药水一致（32 tick）。 */
+	private static final int DRINK_TIME = 32;
+
+	private final Type type;
+
+	public UniversalEnergyPotionItem(Settings settings, Type type) {
 		super(settings);
+		this.type = type;
+	}
+
+	public Type getType() {
+		return type;
 	}
 
 	/**
@@ -73,24 +95,30 @@ public class UniversalEnergyPotionItem extends Item {
 	}
 
 	/**
-	 * 回复 mana：依次检查各 apoli resource 型能量条（悦灵 mana / 蝙蝠血 / 阿努比斯灵魂 / 雪狐寒霜），
-	 * 持有哪个就给哪个加值（clamp 到各自 max）；都不是则走原版 ManaComponent（使魔系标准 mana 条）。
-	 * 全部经统一门面 {@link ResourceBars}（SSCA-ResourceKit）。
-	 */
-	private static void restoreMana(net.minecraft.server.network.ServerPlayerEntity player) {
+ * 回复 mana：依次检查各 apoli resource 型能量条（悦灵 mana / 蝙蝠血 / 阿努比斯灵魂 / 雪狐寒霜），
+ * 持有哪个就给哪个加值（clamp 到各自 max）；都不是则走原版 ManaComponent（使魔系标准 mana 条）。
+ * 全部经统一门面 {@link ResourceBars}（SSCA-ResourceKit）。
+ * 回复量按 scale 缩放（饮用=1.0；喷溅 / 滞留按距离衰减 ≥0.5）。
+ */
+	public static void restoreManaScaled(net.minecraft.server.network.ServerPlayerEntity player, double scale) {
+		double amount = MANA_RESTORE * scale;
 		// 寄生果蝠：种子条上限仅 10，固定回 2 点（喝一瓶约 1/5 条，与其它形态 25 点的体感比例相当）
 		if (ResourceBars.has(player, BarKeys.SEED)) {
-			ResourceBars.gain(player, BarKeys.SEED, 2);
+			ResourceBars.gain(player, BarKeys.SEED, (int) Math.max(1, Math.round(2 * scale)));
 			return;
 		}
 		for (ResourceBarDef bar : BarKeys.ALL) {
 			if (ResourceBars.has(player, bar)) {
-				ResourceBars.gain(player, bar, (int) MANA_RESTORE);
+				ResourceBars.gain(player, bar, (int) Math.round(amount));
 				return;
 			}
 		}
 		// 标准型：原版 ManaComponent（gainMana 内部 clamp 到 max；含契灵的 familiar_fox_mana）
-		net.onixary.shapeShifterCurseFabric.mana.ManaUtils.gainPlayerMana(player, MANA_RESTORE);
+		net.onixary.shapeShifterCurseFabric.mana.ManaUtils.gainPlayerMana(player, amount);
+	}
+
+	private static void restoreMana(net.minecraft.server.network.ServerPlayerEntity player) {
+		restoreManaScaled(player, 1.0);
 	}
 
 	@Override
@@ -121,17 +149,44 @@ public class UniversalEnergyPotionItem extends Item {
 
 	@Override
 	public int getMaxUseTime(ItemStack stack) {
-		return 32; // 与原版药水一致的饮用读条
+		return type == Type.DRINK ? DRINK_TIME : 0;
 	}
 
 	@Override
 	public UseAction getUseAction(ItemStack stack) {
-		return UseAction.DRINK;
+		return type == Type.DRINK ? UseAction.DRINK : UseAction.NONE;
 	}
 
 	@Override
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
-		return net.minecraft.item.ItemUsage.consumeHeldItem(world, user, hand);
+		if (type == Type.DRINK) {
+			// 饮用型：起手读条，效果在 finishUsing 服务端结算
+			return net.minecraft.item.ItemUsage.consumeHeldItem(world, user, hand);
+		}
+		// 喷溅 / 滞留型：投掷携带通用能量效果的原版药水弹射物，复用原版 AOE / 滞留云机制（仅服务端生成）
+		if (!world.isClient) {
+			spawnThrownPotion(world, user);
+		}
+		world.playSound(null, user.getX(), user.getY(), user.getZ(),
+				SoundEvents.ENTITY_SPLASH_POTION_THROW, SoundCategory.PLAYERS,
+				0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
+		if (!user.getAbilities().creativeMode) {
+			user.getStackInHand(hand).decrement(1);
+		}
+		user.incrementStat(Stats.USED.getOrCreateStat(this));
+		return TypedActionResult.success(user.getStackInHand(hand), world.isClient());
+	}
+
+	/** 生成携带通用能量效果的原版投掷药水（喷溅 / 滞留）。仅服务端调用。 */
+	private void spawnThrownPotion(World world, PlayerEntity user) {
+		ItemStack thrown = PotionUtil.setPotion(
+				new ItemStack(type == Type.LINGERING ? Items.LINGERING_POTION : Items.SPLASH_POTION),
+				net.jackcooper.shapeShifterCurseAddon.SscAddon.UNIVERSAL_ENERGY_POTION_TYPE);
+		thrown.getOrCreateNbt().putInt("CustomPotionColor", UniversalEnergyEffect.POTION_COLOR);
+		PotionEntity entity = new PotionEntity(world, user);
+		entity.setItem(thrown);
+		entity.setVelocity(user, user.getPitch(), user.getYaw(), -20.0F, 0.5F, 1.0F);
+		world.spawnEntity(entity);
 	}
 
 	@Override

@@ -298,10 +298,17 @@ public class SscAddon implements ModInitializer {
 			new Item.Settings().maxCount(1), InfiniteEnergyPotionItem.Type.SPLASH);
 	public static final Item INFINITE_ENERGY_POTION_LINGERING = new InfiniteEnergyPotionItem(
 			new Item.Settings().maxCount(1), InfiniteEnergyPotionItem.Type.LINGERING);
-	// 通用能量药水（能量装瓶器产出：饮用回 25 能量/魔力，判定同压缩能量药水）
+	// 通用能量药水（能量装瓶器产出：饮用回 25 能量/魔力，判定同压缩能量药水；喷溅/滞留由酿造台转换）
 	// 堆叠：默认不可叠(maxCount 1)；持有 modify_potion_stack 类 power 的形态可叠 N（由 WitherPotionStackMixin 抬升）
 	public static final Item UNIVERSAL_ENERGY_POTION = new net.jackcooper.shapeShifterCurseAddon.item.UniversalEnergyPotionItem(
-			new Item.Settings().maxCount(1));
+			new Item.Settings().maxCount(1), net.jackcooper.shapeShifterCurseAddon.item.UniversalEnergyPotionItem.Type.DRINK);
+	public static final Item UNIVERSAL_ENERGY_POTION_SPLASH = new net.jackcooper.shapeShifterCurseAddon.item.UniversalEnergyPotionItem(
+			new Item.Settings().maxCount(1), net.jackcooper.shapeShifterCurseAddon.item.UniversalEnergyPotionItem.Type.SPLASH);
+	public static final Item UNIVERSAL_ENERGY_POTION_LINGERING = new net.jackcooper.shapeShifterCurseAddon.item.UniversalEnergyPotionItem(
+			new Item.Settings().maxCount(1), net.jackcooper.shapeShifterCurseAddon.item.UniversalEnergyPotionItem.Type.LINGERING);
+	/** 通用能量 Potion（喷溅/滞留投掷载体，见 RegAddonEffects）——供 PotionUtil.setPotion 引用。 */
+	public static final net.minecraft.potion.Potion UNIVERSAL_ENERGY_POTION_TYPE =
+			net.jackcooper.shapeShifterCurseAddon.effect.RegAddonEffects.UNIVERSAL_ENERGY_POTION;
 	// 凋零药水（饮用/喷溅/滞留三型，任何人可用，凋零II 20秒；瓶身附魔光效）
 	// 堆叠：默认不可叠(maxCount 1)；使魔系叠8 / SP阿努比斯叠3（由 WitherPotionStackMixin 按形态抬高）
 	public static final Item WITHER_POTION = new WitherPotionItem(
@@ -368,7 +375,9 @@ public class SscAddon implements ModInitializer {
 					entries.add(AXOLOTL_SHIFTER_SPAWN_EGG);
 						entries.add(INFINITE_ENERGY_POTION);
 						entries.add(INFINITE_ENERGY_POTION_SPLASH);
-						entries.add(INFINITE_ENERGY_POTION_LINGERING);					entries.add(UNIVERSAL_ENERGY_POTION);						// 凋零药水（饮用/喷溅/滞留）
+					entries.add(INFINITE_ENERGY_POTION_LINGERING);					entries.add(UNIVERSAL_ENERGY_POTION);
+					entries.add(UNIVERSAL_ENERGY_POTION_SPLASH);
+					entries.add(UNIVERSAL_ENERGY_POTION_LINGERING);						// 凋零药水（饮用/喷溅/滞留）
 						entries.add(WITHER_POTION);
 						entries.add(WITHER_POTION_SPLASH);
 						entries.add(WITHER_POTION_LINGERING);
@@ -564,6 +573,8 @@ public class SscAddon implements ModInitializer {
 		registerItem("infinite_energy_potion_splash", INFINITE_ENERGY_POTION_SPLASH);
 		registerItem("infinite_energy_potion_lingering", INFINITE_ENERGY_POTION_LINGERING);
 		registerItem("universal_energy_potion", UNIVERSAL_ENERGY_POTION);
+		registerItem("universal_energy_potion_splash", UNIVERSAL_ENERGY_POTION_SPLASH);
+		registerItem("universal_energy_potion_lingering", UNIVERSAL_ENERGY_POTION_LINGERING);
 		registerItem("wither_potion", WITHER_POTION);
 		registerItem("wither_potion_splash", WITHER_POTION_SPLASH);
 		registerItem("wither_potion_lingering", WITHER_POTION_LINGERING);

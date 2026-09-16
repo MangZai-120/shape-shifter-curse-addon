@@ -31,10 +31,11 @@ public abstract class BrewingStandInfinitePotionMixin {
 
     @Inject(method = "isValid", at = @At("HEAD"), cancellable = true)
     private void ssc_addon$allowInfinitePotion(int slot, ItemStack stack, CallbackInfoReturnable<Boolean> cir) {
-        // 底部 3 个药水槽（0/1/2）：额外接受无限压缩能量药水 / 凋零药水，并保持原版「该槽必须为空」的限制
+        // 底部 3 个药水槽（0/1/2）：额外接受无限压缩能量药水 / 凋零药水 / 通用能量药水，并保持原版「该槽必须为空」的限制
         if (slot >= 0 && slot < 3
                 && (stack.getItem() instanceof InfiniteEnergyPotionItem
-                    || stack.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.WitherPotionItem)
+                    || stack.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.WitherPotionItem
+                    || stack.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.UniversalEnergyPotionItem)
                 && this.getStack(slot).isEmpty()) {
             cir.setReturnValue(true);
         }
@@ -51,7 +52,8 @@ abstract class BrewingPotionSlotMixin {
     @Inject(method = "matches", at = @At("HEAD"), cancellable = true)
     private static void ssc_addon$allowInfinitePotion(ItemStack stack, CallbackInfoReturnable<Boolean> cir) {
         if (stack.getItem() instanceof InfiniteEnergyPotionItem
-                || stack.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.WitherPotionItem) {
+                || stack.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.WitherPotionItem
+                || stack.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.UniversalEnergyPotionItem) {
             cir.setReturnValue(true);
         }
     }
@@ -105,6 +107,13 @@ abstract class BrewingRegistryInfiniteMixin {
         }
         if (input.isOf(SscAddon.WITHER_POTION_SPLASH) && ingredient.isOf(Items.DRAGON_BREATH)) {
             return SscAddon.WITHER_POTION_LINGERING;
+        }
+        // 通用能量药水：饮用 + 火药 → 喷溅；喷溅 + 龙息 → 滞留
+        if (input.isOf(SscAddon.UNIVERSAL_ENERGY_POTION) && ingredient.isOf(Items.GUNPOWDER)) {
+            return SscAddon.UNIVERSAL_ENERGY_POTION_SPLASH;
+        }
+        if (input.isOf(SscAddon.UNIVERSAL_ENERGY_POTION_SPLASH) && ingredient.isOf(Items.DRAGON_BREATH)) {
+            return SscAddon.UNIVERSAL_ENERGY_POTION_LINGERING;
         }
         return null;
     }

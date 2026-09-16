@@ -49,6 +49,15 @@ public class SSCA_REIPlugin implements REIClientPlugin {
 				EntryIngredients.of(SscAddon.INFINITE_ENERGY_POTION_SPLASH),
 				EntryIngredients.of(Items.DRAGON_BREATH),
 				EntryStacks.of(SscAddon.INFINITE_ENERGY_POTION_LINGERING)));
+		// 通用能量药水（mixin 实现，同样无法被 REI 自动发现）：饮用+火药→喷溅；喷溅+龙息→滞留
+		registry.add(new DefaultBrewingDisplay(
+				EntryIngredients.of(SscAddon.UNIVERSAL_ENERGY_POTION),
+				EntryIngredients.of(Items.GUNPOWDER),
+				EntryStacks.of(SscAddon.UNIVERSAL_ENERGY_POTION_SPLASH)));
+		registry.add(new DefaultBrewingDisplay(
+				EntryIngredients.of(SscAddon.UNIVERSAL_ENERGY_POTION_SPLASH),
+				EntryIngredients.of(Items.DRAGON_BREATH),
+				EntryStacks.of(SscAddon.UNIVERSAL_ENERGY_POTION_LINGERING)));
 	}
 
 	/**

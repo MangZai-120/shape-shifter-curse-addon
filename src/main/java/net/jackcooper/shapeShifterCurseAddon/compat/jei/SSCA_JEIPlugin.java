@@ -81,7 +81,18 @@ public class SSCA_JEIPlugin implements IModPlugin {
 						java.util.List.of(new ItemStack(SscAddon.INFINITE_ENERGY_POTION_SPLASH)),
 						new ItemStack(Items.DRAGON_BREATH),
 						new ItemStack(SscAddon.INFINITE_ENERGY_POTION_LINGERING),
-						new Identifier("ssc_addon", "infinite_energy_potion_brewing_lingering"))));
+						new Identifier("ssc_addon", "infinite_energy_potion_brewing_lingering")),
+				// 通用能量药水（mixin 实现，同样无法被 JEI 自动发现）：饮用+火药→喷溅；喷溅+龙息→滞留
+				factory.createBrewingRecipe(
+						java.util.List.of(new ItemStack(SscAddon.UNIVERSAL_ENERGY_POTION)),
+						new ItemStack(Items.GUNPOWDER),
+						new ItemStack(SscAddon.UNIVERSAL_ENERGY_POTION_SPLASH),
+						new Identifier("ssc_addon", "universal_energy_potion_brewing_splash")),
+				factory.createBrewingRecipe(
+						java.util.List.of(new ItemStack(SscAddon.UNIVERSAL_ENERGY_POTION_SPLASH)),
+						new ItemStack(Items.DRAGON_BREATH),
+						new ItemStack(SscAddon.UNIVERSAL_ENERGY_POTION_LINGERING),
+						new Identifier("ssc_addon", "universal_energy_potion_brewing_lingering"))));
 	}
 
 	/** 分类：3×3 槽位布局 + 箭头 + 输出。 */
