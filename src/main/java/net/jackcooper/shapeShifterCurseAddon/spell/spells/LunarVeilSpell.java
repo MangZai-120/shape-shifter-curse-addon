@@ -69,20 +69,11 @@ public class LunarVeilSpell extends Spell {
 		caster.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, duration, amplifier));
 		caster.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOW_FALLING, duration, amplifier));
 		// 演出：月幕粒子环 + 空灵音效
-		spawnRing(serverWorld, ParticleTypes.END_ROD, caster.getX(), caster.getY() + 0.2, caster.getZ(), radius, 24);
-		spawnRing(serverWorld, ParticleTypes.CLOUD, caster.getX(), caster.getY() + 0.5, caster.getZ(), radius * 0.7, 12);
+		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.ring(serverWorld, ParticleTypes.END_ROD,
+				caster.getX(), caster.getY() + 0.2, caster.getZ(), radius, 24);
+		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.ring(serverWorld, ParticleTypes.CLOUD,
+				caster.getX(), caster.getY() + 0.5, caster.getZ(), radius * 0.7, 12);
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE, SoundCategory.PLAYERS, 1.0f, 1.6f);
-	}
-
-	/** 沿水平圆周均匀撒粒子（沿半径 radius，count 个）。 */
-	private static void spawnRing(ServerWorld world, net.minecraft.particle.ParticleEffect particle,
-	                              double x, double y, double z, double radius, int count) {
-		for (int i = 0; i < count; i++) {
-			double angle = 2 * Math.PI * i / count;
-			world.spawnParticles(particle,
-					x + Math.cos(angle) * radius, y, z + Math.sin(angle) * radius,
-					1, 0.05, 0.05, 0.05, 0.01);
-		}
 	}
 }

@@ -4,7 +4,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.FlyingItemEntity;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
@@ -17,7 +16,6 @@ import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -28,7 +26,6 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
 /**
  * 月尘魔法·冰锥投射物（jackcooper）。
@@ -196,30 +193,16 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 		super.onEntityHit(entityHitResult);
 		Entity target = entityHitResult.getEntity();
 		if (target instanceof LivingEntity livingTarget && !this.getWorld().isClient) {
-			// 默认白名单：主人在线且目标受保护 → 不造成伤害
-			if (this.getOwner() instanceof ServerPlayerEntity ownerPlayer
-					&& WhitelistUtils.isProtected(ownerPlayer, livingTarget)) {
-				return;
+			// 公共命中结算（白名单豁免 → 法术伤害 → 经验补发 → 流派钩子）：见 SpellHitHelper
+			net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult hit =
+					net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.projectileHit(
+							this.getOwner(), livingTarget, damage,
+							net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.ICE, refundCastId, expBountyTen);
+			if (hit == net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.HIT) {
+				expBountyTen = 0; // 经验已发放，清零防重复
 			}
-			boolean damaged;
-			if (this.getOwner() instanceof LivingEntity owner) {
-				// 法术伤害专用类型（ssc_addon:spell_damage）：供法术抗性附魔精确识别（jackcooper）
-				damaged = livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
-						.of(this.getDamageSources(), owner), damage);
-			} else {
-				damaged = livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
-						.of(this.getDamageSources()), damage);
-			}
-			// exp_mode 1/2 命中补发：damage 成功才发放，发放后清零防重复
-			if (damaged && this.getOwner() instanceof ServerPlayerEntity ownerPlayer) {
-				net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant.grant(ownerPlayer, expBountyTen);
-				expBountyTen = 0;
-			}
-			// 流派命中钩子（2026-09-17）：雪狐霜脉冰系命中+寒霜；噬梦/噬咒等亦经此入口
-			if (damaged && this.getOwner() instanceof ServerPlayerEntity styleOwner) {
-				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(
-						styleOwner, livingTarget,
-						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.ICE, refundCastId);
+			if (hit == net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.PROTECTED) {
+				return; // 白名单豁免：不结算穿刺
 			}
 			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.ENTITY_PLAYER_HURT_FREEZE, SoundCategory.PLAYERS, 1.0f, 1.2f);

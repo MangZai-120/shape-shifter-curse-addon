@@ -1,6 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
-import net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.FlyingItemEntity;
@@ -18,7 +17,6 @@ import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -29,7 +27,6 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
 /**
  * 鏈堝皹榄旀硶路鐏悆鎶曞皠鐗╋紙jackcooper锛夈€傜粨鏋勪笌 {@link SpellFrostSpikeEntity} 鍚岃寖寮忥細
@@ -177,30 +174,18 @@ public class SpellFireBoltEntity extends ProjectileEntity implements FlyingItemE
 		super.onEntityHit(entityHitResult);
 		Entity target = entityHitResult.getEntity();
 		if (target instanceof LivingEntity livingTarget && !this.getWorld().isClient) {
-			// 榛樿鐧藉悕鍗曪細涓讳汉鍦ㄧ嚎涓旂洰鏍囧彈淇濇姢 鈫?涓嶉€犳垚浼ゅ銆佷笉鐐圭噧
-			if (this.getOwner() instanceof ServerPlayerEntity ownerPlayer
-					&& WhitelistUtils.isProtected(ownerPlayer, livingTarget)) {
-				return;
+			// 公共命中结算（白名单豁免 → 法术伤害 → 经验补发 → 流派钩子）：见 SpellHitHelper
+			net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult hit =
+					net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.projectileHit(
+							this.getOwner(), livingTarget, damage,
+							net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.FIRE, refundCastId, expBountyTen);
+			if (hit == net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.HIT) {
+				expBountyTen = 0; // 经验已发放，清零防重复
 			}
-			boolean damaged;
-			if (this.getOwner() instanceof LivingEntity owner) {
-				// 法术伤害专用类型（ssc_addon:spell_damage）：供法术抗性附魔精确识别（jackcooper）
-				damaged = livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
-						.of(this.getDamageSources(), owner), damage);
-			} else {
-				damaged = livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
-						.of(this.getDamageSources()), damage);
+			if (hit == net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.PROTECTED) {
+				return; // 白名单豁免：不点燃、不播音
 			}
-			// exp_mode 1/2 鍛戒腑琛ュ彂锛歞amage 鎴愬姛鎵嶅彂鏀撅紝鍙戞斁鍚庢竻闆堕槻閲嶅
-			if (damaged && this.getOwner() instanceof ServerPlayerEntity ownerPlayer) {
-				SpellExpGrant.grant(ownerPlayer, expBountyTen);
-				expBountyTen = 0;
-			}			// 流派命中钩子（2026-09-17）：燎原/噬咒/噬梦按本次耗蓝返还；固定值类（审魂等）不依赖耗蓝
-			if (damaged && this.getOwner() instanceof ServerPlayerEntity styleOwner) {
-				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(
-						styleOwner, livingTarget,
-						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.FIRE, refundCastId);
-			}			// 鐐圭噧鐩爣锛堜激瀹虫暟鍊煎鐨勫浐瀹氶檮鍔犳晥鏋滐紱鏃堕暱鐢辨柦娉曟椂鎸夌瓑绾у啓鍏ワ級
+			// 点燃目标（伤害数值外的固定附加效果；时长由法术按等级写入）
 			livingTarget.setFireTicks(fireTicks);
 			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.ENTITY_PLAYER_HURT_ON_FIRE, SoundCategory.PLAYERS, 1.0f, 1.0f);

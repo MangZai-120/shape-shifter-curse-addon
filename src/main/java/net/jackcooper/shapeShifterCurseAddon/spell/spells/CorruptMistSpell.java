@@ -53,22 +53,12 @@ public class CorruptMistSpell extends Spell {
 		// 起手演出：紫色雾气扩散 + 酸蚀音效
 		for (int layer = 1; layer <= 3; layer++) {
 			double r = radius * layer / 3.0;
-			spawnRing(serverWorld, ParticleTypes.DRAGON_BREATH, caster.getX(), caster.getY() + 0.15, caster.getZ(), r, 16);
+			net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.ring(serverWorld, ParticleTypes.DRAGON_BREATH,
+					caster.getX(), caster.getY() + 0.15, caster.getZ(), r, 16);
 		}
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_EVOKER_PREPARE_ATTACK, SoundCategory.PLAYERS, 0.8f, 0.5f);
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.BLOCK_BREWING_STAND_BREW, SoundCategory.PLAYERS, 0.7f, 0.6f);
-	}
-
-	/** 沿水平圆周均匀撒粒子（沿半径 radius，count 个）。 */
-	private static void spawnRing(ServerWorld world, net.minecraft.particle.ParticleEffect particle,
-	                              double x, double y, double z, double radius, int count) {
-		for (int i = 0; i < count; i++) {
-			double angle = 2 * Math.PI * i / count;
-			world.spawnParticles(particle,
-					x + Math.cos(angle) * radius, y, z + Math.sin(angle) * radius,
-					1, 0.05, 0.05, 0.05, 0.01);
-		}
 	}
 }

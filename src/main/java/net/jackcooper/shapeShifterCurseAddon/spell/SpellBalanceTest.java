@@ -50,12 +50,14 @@ public final class SpellBalanceTest {
 
 	private static void checkSpell(String id) throws Exception {
 		String path = "/data/ssc_addon/spells/" + id + ".json";
-		try (InputStreamReader r = new InputStreamReader(
-				SpellBalanceTest.class.getResourceAsStream(path), StandardCharsets.UTF_8)) {
-			if (r == null) {
-				fail(id, "资源缺失: " + path);
-				return;
-			}
+		// 判空必须在构造 InputStreamReader 之前：try-with-resources 里 new InputStreamReader(null) 会先抛 NPE，
+		// 原先的 if (r == null) 永远不可达（IDE 死代码警告所指）
+		java.io.InputStream in = SpellBalanceTest.class.getResourceAsStream(path);
+		if (in == null) {
+			fail(id, "资源缺失: " + path);
+			return;
+		}
+		try (InputStreamReader r = new InputStreamReader(in, StandardCharsets.UTF_8)) {
 			JsonObject o = JsonParser.parseReader(r).getAsJsonObject();
 			if (!o.has("spell_tier") || !o.has("interrupt_mode")) fail(id, "缺施法档位或打断策略");
 			else {

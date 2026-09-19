@@ -16,23 +16,28 @@ import net.minecraft.util.Identifier;
 
 /**
  * 法术蓄力条 HUD（jackcooper，2026-09-19 重做）：替换原准星下方横条为
- * CD 条对侧（默认右中、与左中 CD 条镜像对称）的竖向蓄力面板。
+ * CD 条对侧（默认贴屏幕右缘、与左中 CD 条同高镜像对称）的竖向蓄力面板。
  * <ul>
  * <li><b>平时隐藏</b>：开始施法时面板从屏幕侧缘外滑入（0.3s ease-out，先快后慢）；</li>
- * <li><b>框中心倒计时</b>：显示剩余秒数（如 2.4），蓄满后显示就绪；数字随条一起滑入；</li>
+ * <li><b>条旁倒计时</b>：窄条（14px）外侧显示剩余秒数（如 2.4），蓄满后显示就绪；数字随条一起滑入；</li>
  * <li><b>进度填充</b>：空框贴图打底 + 满图按进度自下而上裁切显示（注水式）；</li>
  * <li><b>退场</b>：正常释放完成后原地停留 0.5s，再 0.3s ease-in（先慢后快）加速滑出；
  * 被打断时不停留、快速滑出（0.15s），避免误导性残留；</li>
  * <li><b>零读条不显示</b>：instant 档（空间跳跃）无读条过程，不弹条；basic 档正常显示；</li>
- * <li><b>位置可编辑</b>：chargeBarPosType/OffsetX/OffsetY/chargeOnLeft，位置编辑器可视化调整。</li>
+ * <li><b>位置可编辑</b>：chargeBarPosType/OffsetX/OffsetY/chargeMirrorRight（仿 CD 条左右对换，贴左时材质镜像），位置编辑器可视化调整。</li>
  * </ul>
- * 数据源不变：服务端每 tick 下发的 {@code spell_channel_state} 包。
+ * 数据源：服务端起手发的全量 {@code spell_channel_state} 包 + 每 20t 一次轻量校准包
+ * （token+elapsed+标志位），elapsed 由客户端本地按 tick 推进（原版弓蓄力同款做法，
+ * 施法期间包量较旧版每 tick 全量重发降 ~95%）。
  */
 public final class SpellCastHud {
-	/** 面板贴图（33×68，与 CD 面板同规格）：满=蓄力填充层，空=框体层。 */
+	/** 面板贴图（14×68 窄条，2026-09-19 用户重绘）：满=蓄力填充层，空=框体层；
+	 * 左/右两版镜像贴图，仿 CD 条 TEX_PANEL / TEX_PANEL_RIGHT 双贴图选图显示。 */
 	private static final Identifier TEX_FULL = new Identifier("ssc_addon", "textures/gui/spell_charge_bar_right.png");
 	private static final Identifier TEX_EMPTY = new Identifier("ssc_addon", "textures/gui/spell_charge_bar_right_empty.png");
-	private static final int TEX_W = 33, TEX_H = 68;
+	private static final Identifier TEX_FULL_LEFT = new Identifier("ssc_addon", "textures/gui/spell_charge_bar_left.png");
+	private static final Identifier TEX_EMPTY_LEFT = new Identifier("ssc_addon", "textures/gui/spell_charge_bar_left_empty.png");
+	private static final int TEX_W = 14, TEX_H = 68;
 	/** 滑入动画时长（tick，0.3 秒=6t）。 */
 	private static final float SLIDE_IN_TICKS = 6.0F;
 	/** 释放完成后的停留时长（tick，0.5 秒=10t）。 */
@@ -57,8 +62,14 @@ public final class SpellCastHud {
 	/** 退场起始时刻与退场方式（null = 施法中）。 */
 	private static Long endAt;
 	private static boolean endedByInterrupt;
-	/** 最后一次收到 STATE 包的时刻：服务端活跃期每 tick 重发，静默超 45t 视为会话已死（掉包看门狗）。 */
+	/** 最后一次收到 STATE 包的时刻：校准包每 20t 一发，静默超 45t 视为会话已死（掉包看门狗）。 */
 	private static long lastStateAt;
+	/** 本地推进锚点：最近一次校准包的 (世界 tick, elapsed) 对；两包之间 elapsed 按差值推进。 */
+	private static long anchorAt;
+	private static int anchorElapsed;
+	/** 客户端本地取消标志：施法键再次按下（AUTOMATIC 取消长按）时立即置位，红字即时显示；
+	 * 服务端 cancelTicks 校准包到达后被权威值覆盖。 */
+	private static boolean localCancelling;
 
 	public static void clear() {
 		state = null;
@@ -66,6 +77,9 @@ public final class SpellCastHud {
 		endAt = null;
 		endedByInterrupt = false;
 		lastStateAt = 0;
+		anchorAt = 0;
+		anchorElapsed = 0;
+		localCancelling = false;
 		SpellChannelManager.setClientImmobile(null);
 	}
 
@@ -75,27 +89,47 @@ public final class SpellCastHud {
 				client.execute(SpellCastHud::onChannelEnd);
 				return;
 			}
-			Spell spell = SpellRegistry.get(buf.readIdentifier().getPath());
-			java.util.UUID casterUuid = buf.readUuid();
-			State incoming = new State(casterUuid, spell, buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
-					buf.readEnumConstant(SpellCastingRules.Mode.class), buf.readBoolean(), buf.readBoolean(),
-					buf.readBoolean(), buf.readBoolean(), buf.readVarInt());
+			// 双格式：full=true 全量首包（起手一次）/ false 轻量校准包（每 20t，仅 token+elapsed+标志位）
+			boolean full = buf.readBoolean();
+			State incoming;
+			if (full) {
+				Spell spell = SpellRegistry.get(buf.readIdentifier().getPath());
+				java.util.UUID casterUuid = buf.readUuid();
+				incoming = new State(casterUuid, spell, buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
+						buf.readEnumConstant(SpellCastingRules.Mode.class), buf.readBoolean(), buf.readBoolean(),
+						buf.readBoolean(), buf.readBoolean(), buf.readVarInt());
+			} else {
+				// 轻量校准：只更新 elapsed/已释放/取消计数，静态字段沿用上一状态
+				State old = state;
+				if (old == null) return; // 全量首包丢了：无法恢复静态字段，丢弃（看门狗会兜底清场）
+				incoming = new State(old.casterUuid(), old.spell(), buf.readVarInt(), buf.readVarInt(),
+						old.duration(), old.mode(), buf.readBoolean(), old.immobilized(), old.solo(),
+						old.continuous(), buf.readVarInt());
+			}
+			final boolean fullPacket = full;
+			final State packetState = incoming;
 			client.execute(() -> {
 				State old = state;
-				state = incoming;				lastStateAt = now();				// 新施法到达：作废旧退场（连放时旧 endAt 不能吃掉新 HUD），并触发滑入沿
+				state = packetState;
+				lastStateAt = now();
+				// 本地推进锚点：记住 (当前tick, 包内elapsed)，之后每帧按 tick 差推进
+				anchorAt = lastStateAt;
+				anchorElapsed = packetState.elapsed();
+				if (fullPacket) localCancelling = false; // 新施法起手：清本地取消标志
+				// 新施法到达：作废旧退场（连放时旧 endAt 不能吃掉新 HUD），并触发滑入沿
 				endAt = null;
 				endedByInterrupt = false;
-				if (old == null && incoming != null && incoming.duration() > 0) slideInAt = now();
+				if (old == null && packetState != null && packetState.duration() > 0) slideInAt = now();
 				// 蓄力音：新施法开始沿起播（短蓄力自动截断；CD 中无 STATE 不响）。
 				// 空间广播：跟随施法者坐标、24 格衰减——本人/旁观者各自听到对应响度。
-				if (old == null && incoming != null && incoming.duration() > 0 && client.player != null) {
+				if (old == null && packetState != null && packetState.duration() > 0 && client.player != null) {
 					// 施法者定位：本人施法用本地玩家；他人施法则从玩家列表查 UUID 对应实体
-					var caster = client.player.networkHandler.getWorld().getPlayerByUuid(incoming.casterUuid());
+					var caster = client.player.networkHandler.getWorld().getPlayerByUuid(packetState.casterUuid());
 					if (caster == null) caster = client.player;
 					net.jackcooper.shapeShifterCurseAddon.client.sound.SpellChargeSoundInstance
-							.onChannelStart(caster, incoming.duration());
+							.onChannelStart(caster, packetState.duration());
 				}
-				SpellChannelManager.setClientImmobile(incoming.immobilized() && client.player != null
+				SpellChannelManager.setClientImmobile(packetState.immobilized() && client.player != null
 						? client.player.getUuid() : null);
 			});
 		});
@@ -108,12 +142,21 @@ public final class SpellCastHud {
 		HudRenderCallback.EVENT.register(SpellCastHud::render);
 	}
 
-	/** 通道结束（服务端下发 inactive）：记录退场时刻与方式，进入滑出阶段。 */
+	/** 施法键再次按下（AUTOMATIC 取消长按）本地即时置红字：不等 20t 校准包。 */
+	public static void markLocalCancelling() {
+		localCancelling = true;
+	}
+
+	/** 通道结束（服务端下发 inactive）：冻结本地推进快照 + 记录退场时刻与方式，进入滑出阶段。 */
 	private static void onChannelEnd() {
 		State current = state;
 		if (current != null) {
 			// 打断时进度必然未满（elapsed<duration）；正常结束/蓄满释放 elapsed≥duration
-			endedByInterrupt = current.elapsed() < current.duration();
+			// （用本地推进的有效值判定，而非可能滞后 ≤20t 的包内值）
+			endedByInterrupt = effectiveElapsed(current) < current.duration();
+			// 冻结：退场动画期间进度停在结束时刻，不再随本地推进增长
+			anchorElapsed = effectiveElapsed(current);
+			anchorAt = now();
 		}
 		endAt = current == null ? null : now();
 		SpellChannelManager.setClientImmobile(null);
@@ -131,14 +174,28 @@ public final class SpellCastHud {
 		endAt = null;
 		endedByInterrupt = false;
 		lastStateAt = 0;
+		anchorAt = 0;
+		anchorElapsed = 0;
+		localCancelling = false;
+	}
+
+	/** 本地推进的有效 elapsed：锚点（最近校准包）+ 锚点以来的 tick 差；蓄满后封顶在 duration。 */
+	private static int effectiveElapsed(State current) {
+		int advanced = anchorAt <= 0 ? 0 : (int) Math.max(0, now() - anchorAt);
+		return Math.min(current.duration(), anchorElapsed + advanced);
+	}
+
+	/** 对外暴露本地推进 elapsed（蓄力音 pitch 等帧级消费者用；与 HUD 渲染同源）。 */
+	public static int getEffectiveElapsed(State current) {
+		return effectiveElapsed(current);
 	}
 
 	private static void render(DrawContext context, float tickDelta) {
 		MinecraftClient client = MinecraftClient.getInstance();
 		State current = state;
-		// ===== 掉包看门狗：服务端活跃期每 tick 重发 STATE，静默超 45t（且不在退场动画中）→ 会话已死，直接清 =====
+		// ===== 掉包看门狗：校准包每 20t 一发，静默超 45t（且不在退场动画中）→ 会话已死，直接清 =====
 		// 否则 inactive 包丢失时 state 永驻，后续书内施法全部被 active!=null 吞掉（同 bug1 锁死链）。
-		if (current != null && endAt == null && now() - lastStateAt > 45) {
+		if (current != null && endAt == null && lastStateAt > 0 && now() - lastStateAt > 45) {
 			resetExit();
 			return;
 		}
@@ -184,33 +241,37 @@ public final class SpellCastHud {
 	private static void drawPanel(DrawContext context, MinecraftClient client, State current,
 			float outOffset, float tickDelta, boolean exiting) {
 		SSCAddonClientConfig config = SSCAddonConfig.client();
-		boolean onLeft = config.chargeOnLeft;
+		config.migrateSkillHudLayout(); // 蓄力条可能在不显示 CD 条时渲染，这里兜底跑布局迁移
+		boolean onLeft = !config.chargeMirrorRight;
 		var anchor = net.onixary.shapeShifterCurseFabric.util.UIPositionUtils
 				.getCorrectPosition(config.chargeBarPosType, 0, 0);
 		int screenW = context.getScaledWindowWidth();
-		// 就位位置（与 CD 条 panelLayout 同式：左缘贴锚点 + clampPosition 防出屏）：
-		// 右侧模式锚点取镜像（screenW - 锚点x，右锚点 6/3/9 的 x=screenW → 0），面板左缘贴镜像锚点，
-		// 即右缘贴屏幕右缘——与左中 CD 条（左缘贴左缘）几何对称；offsetX 正值向右平移。
-		int anchorX = onLeft ? anchor.getLeft() : screenW - anchor.getLeft();
-		int baseX = clampPosition(anchorX + config.chargeBarPosOffsetX, screenW, TEX_W);
+		// 就位位置（与 CD 条 panelLayout 完全同式）：面板左缘贴「锚点+偏移」+ clamp 防出屏；
+		// 贴右侧时做镜像换算（x = screenW - x - 条宽）——默认锚点4+偏移(0,-34)+贴右 → 条贴屏幕右缘，
+		// 与左中 CD 条（左缘贴左缘、同 68 高同 Y）几何对称；offsetX 正值向右平移。
+		int baseX = clampPosition(anchor.getLeft() + config.chargeBarPosOffsetX, screenW, TEX_W);
+		if (config.chargeMirrorRight) baseX = Math.max(0, screenW - baseX - TEX_W);
 		int baseY = clampPosition(anchor.getRight() + config.chargeBarPosOffsetY,
 				context.getScaledWindowHeight(), TEX_H);
 		// 位移方向：条在右 → 从右侧屏幕外滑入（+X 方向退场）；条在左 → 从左侧屏幕外（-X）
 		float distance = outOffset * SLIDE_DIST * (onLeft ? -1 : 1);
 		float x = baseX + distance;
-		// ===== 进度与倒计时 =====
+		// ===== 进度与倒计时（elapsed 用本地推进值：锚点校准 + tick 差推进，蓄满封顶）=====
+		int elapsed = effectiveElapsed(current);
 		float progress = current.duration() <= 0 ? 1
-				: clamp01((current.elapsed() + (exiting ? 0 : tickDelta)) / (float) current.duration());
-		boolean full = current.elapsed() >= current.duration();
-		boolean cancelling = current.cancelTicks() > 0;
-		// ===== 绘制：空框 → 满图自下而上裁切 → 中心倒计时 =====
+				: clamp01((elapsed + (exiting ? 0 : tickDelta)) / (float) current.duration());
+		boolean full = elapsed >= current.duration();
+		boolean cancelling = localCancelling || current.cancelTicks() > 0;
+		// ===== 绘制：空框 → 满图自下而上裁切（左/右双贴图选图）→ 条旁倒计时 =====
 		int drawX = (int) x;
 		int drawY = baseY;
-		context.drawTexture(TEX_EMPTY, drawX, drawY, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
+		Identifier texEmpty = onLeft ? TEX_EMPTY_LEFT : TEX_EMPTY;
+		Identifier texFull = onLeft ? TEX_FULL_LEFT : TEX_FULL;
+		context.drawTexture(texEmpty, drawX, drawY, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
 		int fillH = (int) (TEX_H * progress);
 		if (fillH > 0) {
 			// 源区取满图底部 fillH 高 → 目标画在面板底部（注水式自下而上）
-			context.drawTexture(TEX_FULL, drawX, drawY + TEX_H - fillH, 0, TEX_H - fillH, TEX_W, fillH, TEX_W, TEX_H);
+			context.drawTexture(texFull, drawX, drawY + TEX_H - fillH, 0, TEX_H - fillH, TEX_W, fillH, TEX_W, TEX_H);
 		}
 		// 中心倒计时：剩余秒数（一位小数）；蓄满→就绪/待释放；取消长按→红字
 		String timeText;
@@ -224,18 +285,15 @@ public final class SpellCastHud {
 					: Text.translatable("gui.ssc_addon.spell_cast.ready_short").getString();
 			color = 0xFFFFFF66;
 		} else {
-			float remainTicks = current.duration() - (current.elapsed() + (exiting ? 0 : tickDelta));
+			float remainTicks = current.duration() - (elapsed + (exiting ? 0 : tickDelta));
 			timeText = String.format(java.util.Locale.ROOT, "%.1f", Math.max(0, remainTicks) / 20.0F);
 			color = 0xFFFFFFFF;
 		}
 		int textW = client.textRenderer.getWidth(timeText);
-		context.getMatrices().push();
-		float textScale = Math.min(1.0F, (TEX_W - 4.0F) / Math.max(1, textW));
-		context.getMatrices().translate(drawX + (TEX_W - textW * textScale) / 2.0F,
-				drawY + TEX_H / 2.0F - client.textRenderer.fontHeight * textScale / 2.0F, 0);
-		context.getMatrices().scale(textScale, textScale, 1);
-		context.drawText(client.textRenderer, timeText, 0, 0, color, true);
-		context.getMatrices().pop();
+		// 窄条（14px）内放不下文字：倒计时画在条外侧、指向屏幕中心（条在右→文字在左，条在左→文字在右）
+		int textX = onLeft ? drawX + TEX_W + 2 : drawX - textW - 2;
+		int textY = drawY + TEX_H / 2 - client.textRenderer.fontHeight / 2;
+		context.drawText(client.textRenderer, timeText, textX, textY, color, true);
 	}
 
 	private static float clamp01(float v) {

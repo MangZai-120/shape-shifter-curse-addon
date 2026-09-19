@@ -215,6 +215,8 @@ public final class SpellcastClient {
 				if (!active.solo() && active.mode() == net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules.Mode.AUTOMATIC) {
 					cancelToken = active.token();
 					sendCancelHold(cancelToken, true);
+					// 本地即时红字反馈（服务端 cancelTicks 校准包最多 20t 后才到）
+					net.jackcooper.shapeShifterCurseAddon.client.hud.SpellCastHud.markLocalCancelling();
 				}
 			} else if (gestureKey < 0) startGesture(player, book, selectedSlot, 0);
 		}

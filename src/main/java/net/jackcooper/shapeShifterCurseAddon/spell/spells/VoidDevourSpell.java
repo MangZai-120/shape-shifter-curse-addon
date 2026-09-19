@@ -89,19 +89,12 @@ public class VoidDevourSpell extends Spell {
 			if (target.getPos().add(0, target.getHeight() / 2, 0).distanceTo(impact) > radius) {
 				continue;
 			}
-			if (net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils.isProtected(caster, target)) {
+			// 公共命中结算（白名单豁免 → 法术伤害 → 经验补发 → 流派钩子逐目标；VOID 系无击杀分支）：见 SpellHitHelper
+			var hit = net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.projectileHit(
+					caster, target, power, net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.VOID,
+					solo ? null : ssc_addon$getRefundCastId(), solo ? 0 : ssc_addon$takePendingExp());
+			if (hit != net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.HIT) {
 				continue;
-			}
-			// 法术伤害专用类型（ssc_addon:spell_damage）：供法术抗性附魔精确识别（jackcooper）
-			if (target.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
-					.of(serverWorld.getDamageSources(), caster, caster), power)) {
-				// exp_mode 1/2 命中补发：首个命中目标取全额（后续取 0，幂等），发放后挂起清零
-				net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant.grant(caster,
-						solo ? 0 : ssc_addon$takePendingExp());
-				// 流派命中钩子（2026-09-17）：噬梦虚无系命中返 50% 耗蓝（take 幂等+1s 防重窗）
-				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(
-						caster, target, net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.VOID,
-						solo ? null : ssc_addon$getRefundCastId());
 			}
 			target.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
 					net.minecraft.entity.effect.StatusEffects.BLINDNESS,
@@ -112,8 +105,10 @@ public class VoidDevourSpell extends Spell {
 					target.getX(), target.getBodyY(0.5), target.getZ(), 12, 0.3, 0.3, 0.3, 0.05);
 		}
 		// 落点演出：暗紫灄灭圈（双圈 + 中心聚集，随等级缩放）
-		spawnRing(serverWorld, ParticleTypes.PORTAL, impact.x, impact.y + 0.2, impact.z, radius * 0.6, 16);
-		spawnRing(serverWorld, ParticleTypes.PORTAL, impact.x, impact.y + 0.4, impact.z, radius, 24);
+		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.ring(serverWorld, ParticleTypes.PORTAL,
+				impact.x, impact.y + 0.2, impact.z, radius * 0.6, 16);
+		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.ring(serverWorld, ParticleTypes.PORTAL,
+				impact.x, impact.y + 0.4, impact.z, radius, 24);
 		serverWorld.spawnParticles(ParticleTypes.PORTAL,
 				impact.x, impact.y + 0.5, impact.z, 20, 0.3, 0.5, 0.3, 0.15);
 		serverWorld.playSound(null, impact.x, impact.y, impact.z,
@@ -121,17 +116,6 @@ public class VoidDevourSpell extends Spell {
 		if (hitCount > 0) {
 			serverWorld.playSound(null, impact.x, impact.y, impact.z,
 					SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 0.5f, 1.6f);
-		}
-	}
-
-	/** 沿水平圆周均匀撒粒子（沿半径 radius，count 个）。 */
-	private static void spawnRing(ServerWorld world, net.minecraft.particle.ParticleEffect particle,
-	                              double x, double y, double z, double radius, int count) {
-		for (int i = 0; i < count; i++) {
-			double angle = 2 * Math.PI * i / count;
-			world.spawnParticles(particle,
-					x + Math.cos(angle) * radius, y, z + Math.sin(angle) * radius,
-					1, 0.05, 0.05, 0.05, 0.01);
 		}
 	}
 }

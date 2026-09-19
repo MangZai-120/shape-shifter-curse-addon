@@ -16,8 +16,8 @@ public class SSCAddonClientConfig implements ConfigData {
 	public static final int DEFAULT_CD_Y = -34;
 	public static final int DEFAULT_CD_SECONDARY_X = 0;
 	public static final int DEFAULT_CD_SECONDARY_Y = 0;
-	/** 蓄力条默认：锚点 6（右中）+ 偏移(0,-34)，与 CD 条默认（锚点 4 左中 + (0,-34)）屏幕镜像对称。 */
-	public static final int DEFAULT_CHARGE_TYPE = 6;
+	/** 蓄力条默认：锚点 4（左中）+ 偏移(0,-34)，与 CD 条同锚点同高；chargeMirrorRight=true → 贴屏幕右缘（CD 条对侧）。 */
+	public static final int DEFAULT_CHARGE_TYPE = 4;
 	public static final int DEFAULT_CHARGE_X = 0;
 	public static final int DEFAULT_CHARGE_Y = -34;
 
@@ -25,25 +25,34 @@ public class SSCAddonClientConfig implements ConfigData {
 	public int skillHudLayoutVersion = 0;
 
 	public void migrateSkillHudLayout() {
-		if (skillHudLayoutVersion >= 3) return;
-		boolean legacyBars = cdBarPosType == 8 && cdBarPosOffsetX == -98 && cdBarPosOffsetY == -21
-				&& cdSymmetric && cdSecondaryBarPosOffsetX == 98 && cdSecondaryBarPosOffsetY == -21;
-		boolean rightIcons = cdBarPosType == 6 && cdBarPosOffsetX == -50 && cdBarPosOffsetY == -78
-				&& !cdSymmetric && cdSecondaryBarPosOffsetX == -50 && cdSecondaryBarPosOffsetY == -38;
-		if (legacyBars || rightIcons) {
-			cdBarPosType = DEFAULT_CD_TYPE;
-			cdBarPosOffsetX = DEFAULT_CD_X;
-			cdBarPosOffsetY = DEFAULT_CD_Y;
-			cdSymmetric = false;
-			cdSecondaryBarPosOffsetX = DEFAULT_CD_SECONDARY_X;
-			cdSecondaryBarPosOffsetY = DEFAULT_CD_SECONDARY_Y;
-		} else if (!cdSymmetric && cdBarPosOffsetX == cdSecondaryBarPosOffsetX
-				&& cdSecondaryBarPosOffsetY - cdBarPosOffsetY == 40) {
-			cdSecondaryBarPosOffsetY = cdBarPosOffsetY + DEFAULT_CD_SECONDARY_Y - DEFAULT_CD_Y;
+		if (skillHudLayoutVersion < 3) {
+			boolean legacyBars = cdBarPosType == 8 && cdBarPosOffsetX == -98 && cdBarPosOffsetY == -21
+					&& cdSymmetric && cdSecondaryBarPosOffsetX == 98 && cdSecondaryBarPosOffsetY == -21;
+			boolean rightIcons = cdBarPosType == 6 && cdBarPosOffsetX == -50 && cdBarPosOffsetY == -78
+					&& !cdSymmetric && cdSecondaryBarPosOffsetX == -50 && cdSecondaryBarPosOffsetY == -38;
+			if (legacyBars || rightIcons) {
+				cdBarPosType = DEFAULT_CD_TYPE;
+				cdBarPosOffsetX = DEFAULT_CD_X;
+				cdBarPosOffsetY = DEFAULT_CD_Y;
+				cdSymmetric = false;
+				cdSecondaryBarPosOffsetX = DEFAULT_CD_SECONDARY_X;
+				cdSecondaryBarPosOffsetY = DEFAULT_CD_SECONDARY_Y;
+			} else if (!cdSymmetric && cdBarPosOffsetX == cdSecondaryBarPosOffsetX
+					&& cdSecondaryBarPosOffsetY - cdBarPosOffsetY == 40) {
+				cdSecondaryBarPosOffsetY = cdBarPosOffsetY + DEFAULT_CD_SECONDARY_Y - DEFAULT_CD_Y;
+			}
+			if (cdBarPosType == DEFAULT_CD_TYPE && cdBarPosOffsetX == DEFAULT_CD_X
+					&& cdBarPosOffsetY == -22) cdBarPosOffsetY = DEFAULT_CD_Y;
+			skillHudLayoutVersion = 3;
 		}
-		if (cdBarPosType == DEFAULT_CD_TYPE && cdBarPosOffsetX == DEFAULT_CD_X
-				&& cdBarPosOffsetY == -22) cdBarPosOffsetY = DEFAULT_CD_Y;
-		skillHudLayoutVersion = 3;
+		if (skillHudLayoutVersion < 4) {
+			// v4：蓄力条定位语义重做（改 CD 条同款「左基准锚点 + 贴边镜像对换」），旧语义值作废，统一回默认
+			chargeBarPosType = DEFAULT_CHARGE_TYPE;
+			chargeBarPosOffsetX = DEFAULT_CHARGE_X;
+			chargeBarPosOffsetY = DEFAULT_CHARGE_Y;
+			chargeMirrorRight = true;
+			skillHudLayoutVersion = 4;
+		}
 	}
 
 	@ConfigEntry.Gui.Excluded
@@ -87,9 +96,9 @@ public class SSCAddonClientConfig implements ConfigData {
 	/** 蓄力条 Y 偏移：相对锚点的额外平移。 */
 	@ConfigEntry.Gui.Excluded
 	public int chargeBarPosOffsetY = DEFAULT_CHARGE_Y;
-	/** 蓄力条贴左侧（true=条在左、从左缘外滑入；false=条在右、从右缘外滑入）。 */
+	/** 蓄力条贴右侧（true=条贴屏幕右缘、从右缘外滑入、材质正置；false=贴左缘、从左缘外滑入、材质镜像，仿 CD 条 cdMirrorRight）。 */
 	@ConfigEntry.Gui.Excluded
-	public boolean chargeOnLeft = false;
+	public boolean chargeMirrorRight = true;
 
 	// ===== 月尘魔法书 HUD 整体位置（1-9 九宫格锚点 + X/Y 偏移，法力条/三槽/魔法名作为一个单元）=====
 	// 不在 GUI 直接展示（由 BarPositionEditorScreen 可视化编辑）。默认锚点 7=左下 + 偏移(16,-52) 还原原硬编码位置。

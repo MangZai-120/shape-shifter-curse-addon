@@ -45,6 +45,9 @@ public final class SpellChannelManager {
 	public static final int CAST_INTERVAL_TICKS = 16;
 	/** 每玩家下次可起手时刻（游戏 tick）。 */
 	private static final Map<UUID, Long> NEXT_CAST_OK = new HashMap<>();
+	/** 轻量校准包周期（tick）：活跃期内每 20t 只发 token+elapsed+标志位，静态字段仅起手发一次。
+	 * 客户端 elapsed 本地推进（原版弓蓄力同款），包量较每 tick 全量降 ~95%。 */
+	private static final int CALIBRATE_INTERVAL = 20;
 
 	private SpellChannelManager() {}
 
@@ -118,7 +121,7 @@ public final class SpellChannelManager {
 			speed.addTemporaryModifier(new EntityAttributeModifier(SLOW_ID, "Spell casting",
 					channel.profile.speedMultiplier() - 1, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
 		}
-		sync(channel);
+		syncFull(channel);
 		broadcastVisual(channel, true);
 		playChargeSound(channel);
 		if (channel.profile.ticks() == 0) advance(channel);
@@ -183,7 +186,7 @@ public final class SpellChannelManager {
 			advance(channel);
 		}
 		if (ACTIVE.get(player.getUuid()) == channel) {
-			sync(channel);
+			syncCalibration(channel);
 			if (channel.progress.elapsed() % 20 == 0) playChargeSound(channel);
 		}
 		if (ACTIVE.get(player.getUuid()) == channel && ++channel.visualTicks % 20 == 0) {
@@ -292,10 +295,27 @@ public final class SpellChannelManager {
 		}
 	}
 
-	private static void sync(Channel channel) {
+	/** 轻量校准包：仅 token + elapsed + 标志位（客户端本地推进的主纠偏源）。每 20t 一次。 */
+	private static void syncCalibration(Channel channel) {
+		if (channel.progress.elapsed() % CALIBRATE_INTERVAL != 0) return;
 		if (!ServerPlayNetworking.canSend(channel.player, STATE)) return;
 		PacketByteBuf buf = PacketByteBufs.create();
 		buf.writeBoolean(true);
+		buf.writeBoolean(false); // full=false：轻量校准包（客户端双格式分派标志，缺失会导致字段错位解包崩溃）
+		buf.writeVarInt(channel.token);
+		buf.writeVarInt(channel.progress.elapsed());
+		buf.writeBoolean(channel.progress.released());
+		buf.writeVarInt(channel.cancelTicks);
+		ServerPlayNetworking.send(channel.player, STATE, buf);
+	}
+
+	/** 全量首包（仅 start 时发一次）：静态字段（法术 ID/UUID/时长/模式/布尔组）+ 初始 elapsed。
+	 * 后续每 20t 只发轻量校准包（token+elapsed+标志位），elapsed 由客户端本地推进。 */
+	private static void syncFull(Channel channel) {
+		if (!ServerPlayNetworking.canSend(channel.player, STATE)) return;
+		PacketByteBuf buf = PacketByteBufs.create();
+		buf.writeBoolean(true);
+		buf.writeBoolean(true); // full=true：全量包（full=false 为轻量校准）
 		buf.writeIdentifier(channel.spell.getId());
 		buf.writeUuid(channel.player.getUuid());
 		buf.writeVarInt(channel.token);

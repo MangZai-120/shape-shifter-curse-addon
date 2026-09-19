@@ -41,8 +41,9 @@ public class BarPositionEditorScreen extends Screen {
 
     private static final Identifier VANILLA_WIDGETS = new Identifier("minecraft", "textures/gui/widgets.png");
     private static final Identifier VANILLA_ICONS = new Identifier("minecraft", "textures/gui/icons.png");
-    /** 蓄力条空框贴图（编辑器预览示意用，与 SpellCastHud 同源）。 */
+    /** 蓄力条贴图（编辑器预览示意用，与 SpellCastHud 同源；左/右双贴图）。 */
     private static final Identifier CHARGE_TEX_EMPTY = new Identifier("ssc_addon", "textures/gui/spell_charge_bar_right_empty.png");
+    private static final Identifier CHARGE_TEX_EMPTY_LEFT = new Identifier("ssc_addon", "textures/gui/spell_charge_bar_left_empty.png");
 
     private static final int BAR_W = 80;
     private static final int BAR_H = 5;
@@ -60,11 +61,11 @@ public class BarPositionEditorScreen extends Screen {
     private static final int DEF_SB_TYPE = 7, DEF_SB_X = 16, DEF_SB_Y = -52;
     // 单元包围盒：相对锚点(baseX,baseY) 左上偏移(-7,-14)，尺寸 76×49（含法力条+三槽+魔法名区）
     private static final int SB_W = 76, SB_H = 49, SB_ORIGIN_DX = -7, SB_ORIGIN_DY = -14;
-    // 法术蓄力条：默认锚点 6(右中)+偏移(0,-34)（与 SSCAddonClientConfig 默认一致，CD 条对侧）
+    // 法术蓄力条：默认锚点 4(左中)+偏移(0,-34)+贴右侧（与 SSCAddonClientConfig 默认一致，CD 条对侧同高）
     private static final int DEF_CH_TYPE = SSCAddonClientConfig.DEFAULT_CHARGE_TYPE;
     private static final int DEF_CH_X = SSCAddonClientConfig.DEFAULT_CHARGE_X;
     private static final int DEF_CH_Y = SSCAddonClientConfig.DEFAULT_CHARGE_Y;
-    private static final int CH_W = 33, CH_H = 68; // 贴图尺寸
+    private static final int CH_W = 14, CH_H = 68; // 贴图尺寸
 
     private static final int DRAG_NONE = 0, DRAG_INSTINCT = 1, DRAG_MANA = 2, DRAG_CD = 3, DRAG_SPELLBOOK = 5, DRAG_CHARGE = 6;
 
@@ -77,14 +78,14 @@ public class BarPositionEditorScreen extends Screen {
     private boolean cdRight;
     private int sbType, sbX, sbY;   // 月尘魔法书 HUD 整体
     private int chType, chX, chY;   // 法术蓄力条
-    private boolean chLeft;
+    private boolean chRight;
     // 进入时的初始快照（取消还原 / 判断是否有改动）
     private int inType0, inX0, inY0, maType0, maX0, maY0;
     private int cdType0, cdX0, cdY0;
     private boolean cdRight0;
     private int sbType0, sbX0, sbY0;
     private int chType0, chX0, chY0;
-    private boolean chLeft0;
+    private boolean chRight0;
     private boolean snapshotTaken = false;
 
     // 防止联动回填时循环触发回调
@@ -155,7 +156,7 @@ public class BarPositionEditorScreen extends Screen {
                 chType = chType0 = sscCfg.chargeBarPosType;
                 chX = chX0 = sscCfg.chargeBarPosOffsetX;
                 chY = chY0 = sscCfg.chargeBarPosOffsetY;
-                chLeft = chLeft0 = sscCfg.chargeOnLeft;
+                chRight = chRight0 = sscCfg.chargeMirrorRight;
             } else {
                 cdType = cdType0 = DEF_CD_TYPE;
                 cdX = cdX0 = DEF_CD_X;
@@ -167,7 +168,7 @@ public class BarPositionEditorScreen extends Screen {
                 chType = chType0 = DEF_CH_TYPE;
                 chX = chX0 = DEF_CH_X;
                 chY = chY0 = DEF_CH_Y;
-                chLeft = chLeft0 = false;
+                chRight = chRight0 = true;
             }
             snapshotTaken = true;
         }
@@ -364,12 +365,12 @@ public class BarPositionEditorScreen extends Screen {
         onWorkingChanged();
     }
     private void toggleChSide() {
-        chLeft = !chLeft;
+        chRight = !chRight;
         dragging = DRAG_NONE;
         onWorkingChanged();
     }
     private Text chSideText() {
-        return Text.translatable(chLeft ? "text.ssc_addon.bar_editor.cd_left" : "text.ssc_addon.bar_editor.cd_right");
+        return Text.translatable(chRight ? "text.ssc_addon.bar_editor.cd_right" : "text.ssc_addon.bar_editor.cd_left");
     }
     private void toggleCdSide() {
         cdRight = !cdRight;
@@ -414,7 +415,7 @@ public class BarPositionEditorScreen extends Screen {
             sscCfg.chargeBarPosType = chType;
             sscCfg.chargeBarPosOffsetX = chX;
             sscCfg.chargeBarPosOffsetY = chY;
-            sscCfg.chargeOnLeft = chLeft;
+            sscCfg.chargeMirrorRight = chRight;
         } catch (Exception ignored) {}
     }
 
@@ -476,7 +477,7 @@ public class BarPositionEditorScreen extends Screen {
                 || maType != maType0 || maX != maX0 || maY != maY0
                 || cdType != cdType0 || cdX != cdX0 || cdY != cdY0 || cdRight != cdRight0
                 || sbType != sbType0 || sbX != sbX0 || sbY != sbY0
-                || chType != chType0 || chX != chX0 || chY != chY0 || chLeft != chLeft0;
+                || chType != chType0 || chX != chX0 || chY != chY0 || chRight != chRight0;
     }
 
     private void doSave() {
@@ -493,7 +494,7 @@ public class BarPositionEditorScreen extends Screen {
         maType0 = maType; maX0 = maX; maY0 = maY;
         cdType0 = cdType; cdX0 = cdX; cdY0 = cdY; cdRight0 = cdRight;
         sbType0 = sbType; sbX0 = sbX; sbY0 = sbY;
-        chType0 = chType; chX0 = chX; chY0 = chY; chLeft0 = chLeft;
+        chType0 = chType; chX0 = chX; chY0 = chY; chRight0 = chRight;
         MinecraftClient.getInstance().setScreen(parent);
     }
 
@@ -502,7 +503,7 @@ public class BarPositionEditorScreen extends Screen {
         maType = DEF_MA_TYPE; maX = DEF_MA_X; maY = DEF_MA_Y;
         cdType = DEF_CD_TYPE; cdX = DEF_CD_X; cdY = DEF_CD_Y; cdRight = false;
         sbType = DEF_SB_TYPE; sbX = DEF_SB_X; sbY = DEF_SB_Y;
-        chType = DEF_CH_TYPE; chX = DEF_CH_X; chY = DEF_CH_Y; chLeft = false;
+        chType = DEF_CH_TYPE; chX = DEF_CH_X; chY = DEF_CH_Y; chRight = true;
         syncAllControls();
         applyToConfig();
     }
@@ -537,7 +538,7 @@ public class BarPositionEditorScreen extends Screen {
 
     /** 仅重置法术蓄力条（不影响其它条）。 */
     private void doResetCharge() {
-        chType = DEF_CH_TYPE; chX = DEF_CH_X; chY = DEF_CH_Y; chLeft = false;
+        chType = DEF_CH_TYPE; chX = DEF_CH_X; chY = DEF_CH_Y; chRight = true;
         syncAllControls();
         applyToConfig();
     }
@@ -569,7 +570,7 @@ public class BarPositionEditorScreen extends Screen {
         maType = maType0; maX = maX0; maY = maY0;
         cdType = cdType0; cdX = cdX0; cdY = cdY0; cdRight = cdRight0;
         sbType = sbType0; sbX = sbX0; sbY = sbY0;
-        chType = chType0; chX = chX0; chY = chY0; chLeft = chLeft0;
+        chType = chType0; chX = chX0; chY = chY0; chRight = chRight0;
         applyToConfig();
     }
 
@@ -657,9 +658,9 @@ public class BarPositionEditorScreen extends Screen {
                 scrX = clampScreenX(scrX, barW);
                 scrY = clampScreenY(scrY, barH);
                 if (charge) {
-                    // 偏移语义与渲染器一致：右侧=镜像锚点+左缘贴锚（拖拽 x 即面板左上角 x）
-                    int anchorX = chLeft ? a.getLeft() : width - a.getLeft();
-                    chX = clampOffset(scrX - anchorX);
+                    // 偏移语义与渲染器一致（CD 条同式）：左缘贴锚点；贴右侧时镜像换算（拖拽 x 即面板左上角 x）
+                    chX = chRight ? clampOffset(width - scrX - CH_W - a.getLeft())
+                            : clampOffset(scrX - a.getLeft());
                     chY = clampOffset(scrY - a.getRight());
                 } else {
                     sbX = clampOffset(scrX - a.getLeft());
@@ -732,7 +733,7 @@ public class BarPositionEditorScreen extends Screen {
                 default -> { return super.keyPressed(keyCode, scanCode, modifiers); }
             }
             if (selected == DRAG_SPELLBOOK) { sbX = clampOffset(sbX + dx); sbY = clampOffset(sbY + dy); }
-            else if (selected == DRAG_CHARGE) { chX = clampOffset(chX + dx); chY = clampOffset(chY + dy); }
+            else if (selected == DRAG_CHARGE) { chX = clampOffset(chX + (chRight ? -dx : dx)); chY = clampOffset(chY + dy); }
             else if (selected == DRAG_CD) { cdX = clampOffset(cdX + (cdRight ? -dx : dx)); cdY = clampOffset(cdY + dy); }
             else if (selected == DRAG_MANA) { maX = clampOffset(maX + dx); maY = clampOffset(maY + dy); }
             else { inX = clampOffset(inX + dx); inY = clampOffset(inY + dy); }
@@ -819,11 +820,11 @@ public class BarPositionEditorScreen extends Screen {
             && mouseY >= y - 2 && mouseY <= y + SkillCooldownBarRenderer.PANEL_HEIGHT + 2;
     }
 
-    /** 蓄力条屏幕坐标（与 SpellCastHud 同式：镜像锚点 + 左缘贴锚 + clamp 防出屏）。 */
+    /** 蓄力条屏幕坐标（与 SpellCastHud 同式：左缘贴锚点 + clamp 防出屏；贴右侧时镜像换算）。 */
     private Pair<Integer, Integer> chargeBarPos() {
         var anchor = UIPositionUtils.getCorrectPosition(chType, 0, 0);
-        int anchorX = chLeft ? anchor.getLeft() : width - anchor.getLeft();
-        int x = Math.max(0, Math.min(Math.max(0, width - CH_W), anchorX + chX));
+        int x = Math.max(0, Math.min(Math.max(0, width - CH_W), anchor.getLeft() + chX));
+        if (chRight) x = Math.max(0, width - x - CH_W);
         int y = Math.max(0, Math.min(Math.max(0, height - CH_H), anchor.getRight() + chY));
         return new Pair<>(x, y);
     }
@@ -1013,8 +1014,8 @@ public class BarPositionEditorScreen extends Screen {
         Pair<Integer, Integer> pos = chargeBarPos();
         int x = pos.getLeft();
         int y = pos.getRight();
-        // 空框贴图示意（与实际 HUD 同贴图，直观）
-        ctx.drawTexture(CHARGE_TEX_EMPTY, x, y, 0, 0, CH_W, CH_H, CH_W, CH_H);
+        // 空框贴图示意（与实际 HUD 同贴图；左/右双贴图选图，直观）
+        ctx.drawTexture(chRight ? CHARGE_TEX_EMPTY : CHARGE_TEX_EMPTY_LEFT, x, y, 0, 0, CH_W, CH_H, CH_W, CH_H);
         boolean hovered = hitChargeBar(mouseX, mouseY);
         boolean active = (dragging == DRAG_CHARGE);
         boolean sel = (selected == DRAG_CHARGE);

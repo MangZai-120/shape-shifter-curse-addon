@@ -141,7 +141,9 @@ public final class PocketSpaceManager {
 			((net.jackcooper.shapeShifterCurseAddon.mixin.ThreadedAnvilChunkStorageAccessor)
 					pocket.getChunkManager().threadedAnvilChunkStorage).sscAddon$setViewDistance(3);
 		}
-		if (server.getOverworld().getTime() % 20 == 0) census(server, pocket);
+		// census 每 5s 一次（原每 1s）：驱逐宽限 UNSEEN_LIMIT=5min，5s 粒度误差 0.08% 无感，
+		// 但全服背包+全维度掉落物扫描量降 80%（空闲服 CPU 收益）
+		if (server.getOverworld().getTime() % 100 == 0) census(server, pocket);
 		tickEvictions(server, pocket);
 		int budget = 4096;
 		Iterator<Wipe> wipes = WIPES.values().iterator();

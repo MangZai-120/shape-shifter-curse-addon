@@ -83,10 +83,12 @@ public class SpellChargeSoundInstance extends MovingSoundInstance {
 			this.setDone();
 			return;
 		}
-		// 音调随蓄力进度上升（读 HUD 同步的服务端进度，非本地猜测）
+		// 音调随蓄力进度上升（HUD 本地推进的有效进度：锚点校准 + tick 差，非裸包内值——
+		// 校准包每 20t 一发，裸用包内值会让 pitch 每 20t 阶梯跳变而非平滑上升）
 		SpellCastHud.State state = SpellCastHud.getState();
 		if (state != null && state.duration() > 0) {
-			float progress = Math.min(1.0F, (float) state.elapsed() / state.duration());
+			int elapsedTicks = net.jackcooper.shapeShifterCurseAddon.client.hud.SpellCastHud.getEffectiveElapsed(state);
+			float progress = Math.min(1.0F, (float) elapsedTicks / state.duration());
 			this.pitch = PITCH_FROM + (PITCH_TO - PITCH_FROM) * progress;
 		}
 		// 短蓄力淡出：0.5s 起快速线性降 0（在空间衰减基础上叠加）
