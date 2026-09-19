@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.entity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
@@ -55,6 +56,13 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 		return expBountyTen;
 	}
 
+	/** 本次施法实际耗蓝（命中返还类流派用；与经验赏金同模式跨 tick 存 NBT）。 */
+	private java.util.UUID refundCastId;
+
+	public void setRefundCastId(java.util.UUID castId) {
+		this.refundCastId = castId;
+	}
+
 	public SpellMoonlightArrowEntity(EntityType<? extends SpellMoonlightArrowEntity> entityType, World world) {
 		super(entityType, world);
 		this.startPos = this.getPos();
@@ -95,11 +103,11 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 		updateRotationFromVelocity(velocity);
 	}
 
-	/** 按速度自算朝向（同冰锥公式），供渲染对正。 */
+	/** 按速度自算朝向（与寒棘狐冰锥同款公式：尖朝速度方向），供渲染对正。 */
 	private void updateRotationFromVelocity(Vec3d v) {
 		double horiz = Math.sqrt(v.x * v.x + v.z * v.z);
 		this.setYaw((float) (MathHelper.atan2(-v.x, v.z) * (180.0 / Math.PI)));
-		this.setPitch((float) (MathHelper.atan2(v.y, horiz) * (180.0 / Math.PI)));
+		this.setPitch((float) (MathHelper.atan2(-v.y, horiz) * (180.0 / Math.PI))); // 取负：与寒棘狐/冰锥惯例一致，配合渲染器 -pitch 旋转
 	}
 
 	@Override
@@ -151,21 +159,28 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 			}
 			// 对亡灵生物（僵尸/骷髅/幽灵等）额外增伤：每级 +10%（L1=+10% … L5=+50%）
 			float finalDamage = livingTarget.isUndead() ? damage * (1.0f + 0.1f * getSpellLevel()) : damage;
+			boolean damaged;
 			if (this.getOwner() instanceof LivingEntity owner) {
 				// 法术伤害专用类型（ssc_addon:spell_damage）：供法术抗性附魔精确识别（jackcooper）
-				livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+				damaged = livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
 						.of(this.getDamageSources(), owner), finalDamage);
 			} else {
-				livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+				damaged = livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
 						.of(this.getDamageSources()), finalDamage);
 			}
 			// exp_mode 1/2 命中补发：damage 成功才发放，发放后清零防重复
-			if (livingTarget.hurtTime > 0 && this.getOwner() instanceof ServerPlayerEntity ownerPlayer) {
+			if (damaged && this.getOwner() instanceof ServerPlayerEntity ownerPlayer) {
 				net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant.grant(ownerPlayer, expBountyTen);
 				expBountyTen = 0;
 			}
+			// 流派命中钩子（2026-09-17）：月辉系（织月+mana / 审魂+灵魂等）；噬梦/噬咒等亦经此入口
+			if (damaged && this.getOwner() instanceof ServerPlayerEntity styleOwner) {
+				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(
+						styleOwner, livingTarget,
+						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.LUNAR, refundCastId);
+			}
 			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
-					SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 0.8f, 1.5f);
+					SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 1.0f, 1.5f);
 		}
 	}
 
@@ -184,7 +199,9 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 
 	@Override
 	protected boolean canHit(Entity entity) {
-		return super.canHit(entity) && entity != this.getOwner() && entity instanceof LivingEntity;
+		// 排除盔甲架（与月灵光弹同口径）：假人不产返还/经验
+		return super.canHit(entity) && entity != this.getOwner()
+				&& entity instanceof LivingEntity && !(entity instanceof ArmorStandEntity);
 	}
 
 	@Override
@@ -199,6 +216,7 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 		if (nbt.contains("SpellLevel")) {
 			setLevel(nbt.getInt("SpellLevel"));
 		}
+		refundCastId = nbt.containsUuid("RefundCastId") ? nbt.getUuid("RefundCastId") : null;
 	}
 
 	@Override
@@ -211,6 +229,7 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 		}
 		nbt.putFloat("Damage", this.damage);
 		nbt.putInt("SpellLevel", getSpellLevel());
+		if (refundCastId != null) nbt.putUuid("RefundCastId", refundCastId);
 	}
 
 	@Override

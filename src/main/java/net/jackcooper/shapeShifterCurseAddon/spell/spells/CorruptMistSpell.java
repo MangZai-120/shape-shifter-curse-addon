@@ -46,9 +46,10 @@ public class CorruptMistSpell extends Spell {
 		double radius = BASE_RADIUS * getSpeedMultiplier(level);
 		// 雾持续时间：每级 +1.25s（L1=6s … L5=11s）
 		int duration = DURATION_TICKS + Math.round((level - 1) * 1.25f * 20);
+		if (!solo) duration = net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, duration);
 		// 注册持续雾气区域（服务端 tick 结算，见 CorruptMistManager；L4+ 中毒 II）
 		net.jackcooper.shapeShifterCurseAddon.ability.CorruptMistManager.start(
-				caster, radius, duration, INTERVAL_TICKS, level);
+				caster, radius, duration, INTERVAL_TICKS, level, solo ? null : ssc_addon$getRefundCastId());
 		// 起手演出：紫色雾气扩散 + 酸蚀音效
 		for (int layer = 1; layer <= 3; layer++) {
 			double r = radius * layer / 3.0;

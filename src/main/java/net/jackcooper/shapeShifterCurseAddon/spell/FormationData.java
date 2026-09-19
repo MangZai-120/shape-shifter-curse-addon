@@ -173,9 +173,10 @@ public final class FormationData {
 	// ---- 通用系：形态能量 → 书法术值转化（数值定义） ----
 
 	/** 通用法阵每秒消耗的形态能量点数。 */
-	public static final double UNIVERSAL_MANA_DRAIN_PER_SEC = 3.0;
+	// 回能法阵汇率（2026-09-17 用户定稿统一 5:1：1 形态 mana = 5 书法术值）
+	public static final double UNIVERSAL_MANA_DRAIN_PER_SEC = 2.0;
 	/** 通用法阵每秒回复的书法术值点数。 */
-	public static final double UNIVERSAL_BOOK_MANA_PER_SEC = 6.0;
+	public static final double UNIVERSAL_BOOK_MANA_PER_SEC = 10.0;
 	/** 通用法阵触发水位（书法术值占比）按等级插值：Lv1=20% … Lv5=100%。 */
 	public static double universalThreshold(int level) {
 		return 0.2 + 0.2 * (clampFormationLevel(level) - 1);
@@ -187,11 +188,13 @@ public final class FormationData {
 	public static final String VARIANT_REGEN = "regen";
 	public static final String VARIANT_MANA = "mana";
 	public static final String VARIANT_EXP = "exp";
+	/** 回息变体（2026-09-17）：提升书法术值自然回复量，每级 +20%，多张可叠加。 */
+	public static final String VARIANT_RECOVERY = "recovery";
 
 	/** 通用法阵变体合法性校验（非法/空归 null）。 */
 	public static String normalizeVariant(String s) {
 		return switch (s == null ? "" : s) {
-			case VARIANT_REGEN, VARIANT_MANA, VARIANT_EXP -> s;
+			case VARIANT_REGEN, VARIANT_MANA, VARIANT_EXP, VARIANT_RECOVERY -> s;
 			default -> null;
 		};
 	}
@@ -229,6 +232,23 @@ public final class FormationData {
 	/** 经验法阵施法经验倍率。 */
 	public static float universalExpMultiplier(int level) {
 		return 1f + UNIVERSAL_EXP_PER_LEVEL * clampFormationLevel(level);
+	}
+
+	/** 回息变体（可叠加，区别于其它三变体取最高）：书内全部回息法阵等级总和（0 = 未装）。 */
+	public static int sumUniversalRecoveryLevels(ItemStack book) {
+		int total = 0;
+		for (ItemStack formation : SpellbookData.getFormations(book)) {
+			if (getElement(formation) == FormationElement.UNIVERSAL
+					&& VARIANT_RECOVERY.equals(getVariant(formation))) {
+				total += getLevel(formation);
+			}
+		}
+		return total;
+	}
+
+	/** 回息变体：书法术值自然回复量倍率（每级 +20%，可叠加；总和 0 → ×1）。 */
+	public static float universalRecoveryMultiplier(ItemStack book) {
+		return 1f + 0.20f * sumUniversalRecoveryLevels(book);
 	}
 
 	/** 增能法阵法力上限加成比例（基于书等级基础值计算）。 */

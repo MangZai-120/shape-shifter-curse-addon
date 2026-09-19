@@ -78,6 +78,21 @@ public final class PocketSpaceManager {
 				SoundCategory.PLAYERS, 0.6f, 1.6f);
 	}
 
+	public static boolean prepareRoom(ServerPlayerEntity player, UUID scrollId) {
+		PocketSpaceStorage.Room room = PocketSpaceStorage.findRoom(player.getServer(), scrollId);
+		if (room == null) return false;
+		if (!room.initialized()) GENERATIONS.computeIfAbsent(room.layout().index(), ignored -> new Generation(room));
+		return room.initialized() && !WIPES.containsKey(room.layout().index());
+	}
+
+	public static void enterNow(ServerPlayerEntity player, UUID scrollId) {
+		ServerWorld pocket = player.getServer().getWorld(WORLD_KEY);
+		PocketSpaceStorage.Room room = PocketSpaceStorage.findRoom(player.getServer(), scrollId);
+		if (pocket != null && room != null && canEnter(player) && prepareRoom(player, scrollId)) {
+			enter(player, new Channel(player, scrollId, 0), pocket, room);
+		}
+	}
+
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(PocketSpaceManager::tick);
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
@@ -216,6 +231,10 @@ public final class PocketSpaceManager {
 				GATES.put(player.getUuid(), new PocketPortalGate());
 			} else if (gate.counting() && player.age % 20 == 0) {
 				message(player, "exit_countdown", gate.remainingSeconds());
+			}
+			// 出口倒计时期间：传送台法阵冒紫色上升粒子流（仿施法演出，客户端本地渲染）
+			if (gate.counting() && player.age % 5 == 0) {
+				spawnExitFx(pocket, layout);
 			}
 		}
 	}
@@ -380,6 +399,25 @@ public final class PocketSpaceManager {
 		player.fallDistance = 0;
 		pocket.playSound(null, player.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT,
 				SoundCategory.PLAYERS, 0.7f, 1.2f);
+	}
+
+	/**
+	 * 出口传送台法阵粒子（2026-09-19 用户定稿）：站上传送台倒计时期间，
+	 * 以法阵 2×2 区域为界冒紫色上升粒子流——DRAGON_BREATH（龙息紫，服务端发射
+	 * 自带向上飘浮初速，观感与施法头顶流一致）+ PORTAL 传送门紫点缀，
+	 * 每 5t 一轮（视觉连续且包量克制），服务端撒天然多人同步。
+	 */
+	private static void spawnExitFx(ServerWorld pocket, PocketSpaceLayout layout) {
+		// 法阵中心（2×2 台面的几何中心）
+		double cx = layout.centerX();
+		double cz = layout.minZ() - 2.0;
+		double cy = PocketSpaceLayout.FLOOR_Y + 1 + PocketSpaceLayout.PORTAL_TOP_HEIGHT + 0.05;
+		// 龙息紫上升流：法阵范围内随机起爆（±1 格为界），自带缓升
+		pocket.spawnParticles(ParticleTypes.DRAGON_BREATH,
+				cx, cy, cz, 14, 0.8, 0.08, 0.8, 0.01);
+		// 传送门紫：少量高亮点缀（旋升感）
+		pocket.spawnParticles(ParticleTypes.PORTAL,
+				cx, cy + 0.1, cz, 6, 0.7, 0.15, 0.7, 0.3);
 	}
 
 	private static void leave(ServerPlayerEntity player, PocketSpaceStorage.Visit visit) {

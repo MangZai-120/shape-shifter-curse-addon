@@ -164,7 +164,14 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 			int manaBonus = SpellbookData.getUniversalFormationManaBonus(book);
 			ctx.drawText(this.textRenderer, Text.literal(String.format("经×%.2f 增能+%d",
 					bestExp > 0 ? FormationData.universalExpMultiplier(bestExp) : 1f, manaBonus)), 8, 117, 0xB8B8B8, false);
-		}		}
+		}
+		// 回息法阵：自然回复倍率（可叠加，2026-09-17）
+		int recoverySum = FormationData.sumUniversalRecoveryLevels(book);
+		if (recoverySum > 0) {
+			ctx.drawText(this.textRenderer, Text.literal(String.format("回息×%.2f",
+					FormationData.universalRecoveryMultiplier(book))), 8, 127, 0xB8B8B8, false);
+		}
+		}
 		ctx.drawText(this.textRenderer, this.playerInventoryTitle,
 				this.playerInventoryTitleX, this.playerInventoryTitleY, 0x404040, false);
 	}

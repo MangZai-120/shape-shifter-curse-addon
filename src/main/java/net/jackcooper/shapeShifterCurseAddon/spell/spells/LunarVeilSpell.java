@@ -26,8 +26,8 @@ import java.util.List;
  */
 public class LunarVeilSpell extends Spell {
 
-	/** 基础半径（格），实际半径 = 基础 × speed_multiplier(level)。 */
-	private static final double BASE_RADIUS = 3.0;
+	/** 基础半径（格），实际半径 = 基础 × speed_multiplier(level)：L1=4 → L5=7（每级 +0.75）。 */
+	private static final double BASE_RADIUS = 4.0;
 	/** 增益时长（tick）：8s。 */
 	private static final int DURATION_TICKS = 160;
 
@@ -55,11 +55,9 @@ public class LunarVeilSpell extends Spell {
 			if (target.distanceTo(caster) > radius) {
 				continue;
 			}
-			// 增益目标筛选：玩家（含白名单）与驯服宠物；敌对怪物不受益
-			boolean isPlayer = target instanceof net.minecraft.entity.player.PlayerEntity;
-			boolean isTamed = target instanceof net.minecraft.entity.passive.TameableEntity tameable
-					&& tameable.isTamed();
-			if (!isPlayer && !isTamed) {
+			// 增益目标筛选（统一白名单判定）：玩家、驯服宠物、以及 /ssc_addon whitelist add
+			// 加入白名单的 NPC 生物均受益（与 SP 悦灵群体治疗同款 WhitelistUtils.isBuffTarget 语义）
+			if (!net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils.isBuffTarget(caster, target)) {
 				continue;
 			}
 			target.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, duration, amplifier));

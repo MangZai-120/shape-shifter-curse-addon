@@ -1,6 +1,9 @@
 {
+  "spell_tier": "basic_1",
+  "interrupt_mode": 0,
   "base_damage": 5.0,
   "base_cooldown_ticks": 80,
+  "cooldown_floor_ticks": 15,
   "base_cast_time_ticks": 0,
   "mana_cost": 15,
   "solo_damage_multiplier": 0.5,

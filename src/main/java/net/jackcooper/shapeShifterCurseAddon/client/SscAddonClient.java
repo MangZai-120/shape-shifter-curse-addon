@@ -87,8 +87,7 @@ public class SscAddonClient implements ClientModInitializer {
 		ClientPlayConnectionEvents.DISCONNECT.register((handler2, client2) -> {
 			ErosionBrandClientState.clear();
 			MancianimaMarkClientState.clear();
-			net.jackcooper.shapeShifterCurseAddon.client.renderer.TidalTetherBeamRenderer.clear();
-			UpgradeAxolotlSpearRenderState.clear();
+			net.jackcooper.shapeShifterCurseAddon.client.renderer.TidalTetherBeamRenderer.clear();				net.jackcooper.shapeShifterCurseAddon.client.renderer.CurseMarkIconRenderer.clear();			UpgradeAxolotlSpearRenderState.clear();
 			// 摆荡客户端镜像清理（防换服残留旧绳索渲染）+ 蛛丝弹存活标记重置（断线不走逐实体 remove）
 			SpiderMoonWeaverSwingClient.clear();
 			net.jackcooper.shapeShifterCurseAddon.entity.SpiderSwingBullet.resetClientState();
@@ -126,6 +125,10 @@ public class SscAddonClient implements ClientModInitializer {
 		// 逐帧渲染潮汐束缚光束（守卫者激光样式）
 		net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(
 				net.jackcooper.shapeShifterCurseAddon.client.renderer.TidalTetherBeamRenderer::render);
+
+		// 诅咒标记头顶 2D 图标（Billboard 朝向相机；客户端本地扫状态效果，无需网络同步）
+		net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(
+				net.jackcooper.shapeShifterCurseAddon.client.renderer.CurseMarkIconRenderer::render);
 
 		// SSCA 月织蛛「蛛丝荡漾」- 接收服务端 S2C 摆荡状态同步（销点/绳长/状态），更新本地镜像供渲染
 		ClientPlayNetworking.registerGlobalReceiver(
@@ -587,6 +590,8 @@ public class SscAddonClient implements ClientModInitializer {
 		// SSCA 月尘魔法书 - 键位注册 + 施法检测器（切换/施法/7直达键）
 		net.jackcooper.shapeShifterCurseAddon.client.SpellcastKeybindings.register();
 		net.jackcooper.shapeShifterCurseAddon.client.SpellcastClient.register();
+		// SSCA 施法视觉状态接收器（人形态举手 + 特殊档身体朝向跟随，S2C 广播驱动）
+		net.jackcooper.shapeShifterCurseAddon.client.CastingVisualState.register();
 		// SSCA 月织蜷「织网术」- 主键检测器（潜行切换 / 蓄力 / 释放）
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverWebClient.register();
 		// SSCA 寒棘狐「冰刺」- 主键检测器（长按蕠力 / 点按发射）

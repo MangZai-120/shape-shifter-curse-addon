@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.spell.config;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules;
 import net.minecraft.util.JsonHelper;
 
 /**
@@ -32,10 +33,14 @@ public final class SpellConfig {
 	public final float baseDamage;
 	public final int baseCooldownTicks;
 	public final int baseCastTimeTicks;
+	public final SpellCastingRules.Tier spellTier;
+	public final int interruptMode;
 	public final int manaCost;
 	public final float soloDamageMultiplier;
 	public final float soloCooldownMultiplier;
 	public final float soloCastTimeMultiplier;
+	/** 冷却绝对下限（tick；0 = 无绝对下限，仅受相对下限 0.2×C_L 约束）。阶段 B / 计划书 §6.2。 */
+	public final int cooldownFloorTicks;
 	/** 系别标记（fire / ice / null）。null = 无系别（法阵对立系判定不生效）。 */
 	public final String element;
 	/** 经验机制（0=释放即得 / 1=命中才得 / 2=释放得 20% 命中补到 100%；缺省 0）。 */
@@ -51,16 +56,20 @@ public final class SpellConfig {
 	public final String[] rarities;
 
 	private SpellConfig(float baseDamage, int baseCooldownTicks, int baseCastTimeTicks, int manaCost,
+						SpellCastingRules.Tier spellTier, int interruptMode,
 						float soloDamageMultiplier, float soloCooldownMultiplier, float soloCastTimeMultiplier,
-					String element, int expMode, float[] damageMultipliers, float[] cooldownMultipliers,
+					int cooldownFloorTicks, String element, int expMode, float[] damageMultipliers, float[] cooldownMultipliers,
 					float[] speedMultipliers, float[] manaCostMultipliers, String[] rarities) {
 		this.baseDamage = baseDamage;
 		this.baseCooldownTicks = baseCooldownTicks;
 		this.baseCastTimeTicks = baseCastTimeTicks;
+		this.spellTier = spellTier;
+		this.interruptMode = interruptMode;
 		this.manaCost = manaCost;
 		this.soloDamageMultiplier = soloDamageMultiplier;
 		this.soloCooldownMultiplier = soloCooldownMultiplier;
 		this.soloCastTimeMultiplier = soloCastTimeMultiplier;
+		this.cooldownFloorTicks = cooldownFloorTicks;
 		this.element = element;
 		this.expMode = expMode;
 		this.damageMultipliers = damageMultipliers;
@@ -113,7 +122,7 @@ public final class SpellConfig {
 
 	/** Java 内置默认配置（JSON 缺失/损坏时的兜底全 0 数值 + 全 1.0 倍率）。 */
 	public static SpellConfig fallback() {
-		return new SpellConfig(0f, 20, 0, 0, 0.5f, 2.0f, 2.0f, null, 0,
+		return new SpellConfig(0f, 20, 0, 0, SpellCastingRules.Tier.BASIC_1, 0, 0.5f, 2.0f, 2.0f, 0, null, 0,
 				new float[0], new float[0], new float[0], new float[0], new String[0]);
 	}
 
@@ -122,10 +131,15 @@ public final class SpellConfig {
 		float baseDamage = JsonHelper.getFloat(o, "base_damage", 0f);
 		int baseCooldown = Math.max(0, JsonHelper.getInt(o, "base_cooldown_ticks", 20));
 		int baseCastTime = Math.max(0, JsonHelper.getInt(o, "base_cast_time_ticks", 0));
+		SpellCastingRules.Tier spellTier = SpellCastingRules.Tier.byId(JsonHelper.getString(o, "spell_tier", "basic_1"));
+		int interruptMode = JsonHelper.getInt(o, "interrupt_mode", spellTier.defaultInterruptMode());
+		if (interruptMode < 0 || interruptMode > 3) interruptMode = spellTier.defaultInterruptMode();
 		int manaCost = Math.max(0, JsonHelper.getInt(o, "mana_cost", 0));
 		float soloDmg = positive(JsonHelper.getFloat(o, "solo_damage_multiplier", 0.5f));
 		float soloCd = positive(JsonHelper.getFloat(o, "solo_cooldown_multiplier", 2.0f));
 		float soloCast = positive(JsonHelper.getFloat(o, "solo_cast_time_multiplier", 2.0f));
+		// 冷却绝对下限（tick；0 = 无。服务端施法/单独使用/客户端 HUD 三处共用，见 SpellNumbers）
+		int cooldownFloorTicks = Math.max(0, JsonHelper.getInt(o, "cooldown_floor_ticks", 0));
 		String element = o.has("element") && o.get("element").isJsonPrimitive()
 				? normalizeElement(o.get("element").getAsString()) : null;
 		// 经验机制：0=释放即得 / 1=命中才得 / 2=释放 20%+命中补到 100%（非法值归 0）
@@ -163,7 +177,7 @@ public final class SpellConfig {
 			}
 		}
 		return new SpellConfig(baseDamage, baseCooldown, baseCastTime, manaCost,
-				soloDmg, soloCd, soloCast, element, expMode, dmg, cd, speed, manaMul, rarity);
+				spellTier, interruptMode, soloDmg, soloCd, soloCast, cooldownFloorTicks, element, expMode, dmg, cd, speed, manaMul, rarity);
 	}
 
 	/** element 只认七个合法系别 id，其它归 null（与 FormationElement 枚举对齐）。 */

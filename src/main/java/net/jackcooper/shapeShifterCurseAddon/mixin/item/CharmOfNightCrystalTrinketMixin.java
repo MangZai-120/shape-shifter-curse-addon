@@ -33,7 +33,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(AccessoryItem.class)
 public abstract class CharmOfNightCrystalTrinketMixin {
 
-	@Inject(method = "canEquip", at = @At("HEAD"), cancellable = true, remap = false)
+	@Inject(method = "canEquip", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
 	private void ssc_addon$parasiticFruitCantEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData, CallbackInfoReturnable<Boolean> cir) {
 		// instanceof 守卫：只处理黑夜水晶吊坠，其它饰品完全透传主包默认行为
 		if (!((Object) this instanceof CharmOfNightCrystalTrinket)) return;
@@ -43,7 +43,7 @@ public abstract class CharmOfNightCrystalTrinketMixin {
 		}
 	}
 
-	@Inject(method = "accessoryTick", at = @At("HEAD"), remap = false)
+	@Inject(method = "accessoryTick", at = @At("HEAD"), remap = false, require = 0)
 	private void ssc_addon$parasiticFruitAutoUnequip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData, CallbackInfo ci) {
 		// instanceof 守卫：只处理黑夜水晶吊坠，其它饰品零开销直接返回
 		if (!((Object) this instanceof CharmOfNightCrystalTrinket)) return;

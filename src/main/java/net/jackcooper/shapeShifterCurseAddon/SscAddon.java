@@ -105,6 +105,8 @@ public class SscAddon implements ModInitializer {
 	public static final StatusEffect STUN = new StunEffect();
 	// 诅咒标记（诅咒系法术：标记期间受伤 +20%，mixin 内结算；月辉系可净化）
 	public static final StatusEffect CURSE_MARK = new net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect();
+	// 霜碎（寒霜系法术·冰霜新星附加：护甲 -50%，与缓速同步；jackcooper）
+	public static final StatusEffect FROST_SHATTER = new net.jackcooper.shapeShifterCurseAddon.effect.FrostShatterEffect();
 	public static final StatusEffect ROOTED = new RootedEffect();
 	public static final StatusEffect GUARANTEED_CRIT = new GuaranteedCritEffect();
 	public static final StatusEffect FROST_FREEZE = new FrostFreezeEffect();
@@ -405,7 +407,8 @@ public class SscAddon implements ModInitializer {
 							for (String variant : element == net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.UNIVERSAL
 									? new String[]{net.jackcooper.shapeShifterCurseAddon.spell.FormationData.VARIANT_REGEN,
 											net.jackcooper.shapeShifterCurseAddon.spell.FormationData.VARIANT_MANA,
-											net.jackcooper.shapeShifterCurseAddon.spell.FormationData.VARIANT_EXP}
+										net.jackcooper.shapeShifterCurseAddon.spell.FormationData.VARIANT_EXP,
+										net.jackcooper.shapeShifterCurseAddon.spell.FormationData.VARIANT_RECOVERY}
 									: new String[]{null}) {
 								for (int lv = 1; lv <= net.jackcooper.shapeShifterCurseAddon.spell.FormationData.MAX_FORMATION_LEVEL; lv++) {
 									entries.add(net.jackcooper.shapeShifterCurseAddon.spell.FormationData.create(element, lv, variant));
@@ -433,6 +436,8 @@ public class SscAddon implements ModInitializer {
 		net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.init();
 		// 通用增强法阵：形态能量 → 书法术值转化 tick（jackcooper）
 		net.jackcooper.shapeShifterCurseAddon.spell.UniversalFormationManager.init();
+		// 形态施法流派：分担支付 / 命中返还 / 持续回复（jackcooper，2026-09-17）
+		net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.init();
 		// 附属方块注册（蛛网膜等，jackcooper）
 		net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks.init();
 			// 附属实体注册（月织蛛蓄力蛛丝弹，jackcooper）
@@ -513,6 +518,7 @@ public class SscAddon implements ModInitializer {
 		registerEffect("erosion_brand_marker_3", EROSION_BRAND_MARKER_3);
 		registerEffect("tidal_slow", TIDAL_SLOW);
 		registerEffect("curse_mark", CURSE_MARK);
+		registerEffect("frost_shatter", FROST_SHATTER);
 	}
 
 	private void registerItems() {
@@ -642,9 +648,9 @@ public class SscAddon implements ModInitializer {
 		ParasiticSeedEnergyRegen.init();
 		NineLivesManager.init();
 		NovaSkillManager.init();
-		net.jackcooper.shapeShifterCurseAddon.ability.CorruptMistManager.init(); // 腐蚀之雾持续区域结算（诅咒系法术）
-		net.jackcooper.shapeShifterCurseAddon.ability.SpaceRecallManager.init(); // 空间归途读条结算（空间系法术）
+		net.jackcooper.shapeShifterCurseAddon.ability.CorruptMistManager.init(); // 腐蚀之雾持续区域结算（诅咒系法术；归途传送结算 SpaceRecallManager 已无 tick，不需 init）
 		net.jackcooper.shapeShifterCurseAddon.spell.pocket.PocketSpaceManager.init();
+		net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.init();
 		net.jackcooper.shapeShifterCurseAddon.ability.LunarSpiritTargetLink.init(); // 月灵目标联动（主人打谁月灵打谁，召唤系）
 		net.jackcooper.shapeShifterCurseAddon.ability.CompanionResonanceManager.init(); // 伙伴共鸣伤害增益到期清理（召唤系）
 		SeedEnergyEatingHandler.register();

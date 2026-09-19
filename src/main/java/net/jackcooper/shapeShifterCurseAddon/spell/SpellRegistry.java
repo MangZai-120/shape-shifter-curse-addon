@@ -67,33 +67,38 @@ public final class SpellRegistry implements SimpleSynchronousResourceReloadListe
 		return SPELLS.values();
 	}
 
-	/** 注册所有内置魔法行为类（数值等待 JSON 注入）。 */
+	/** 注册所有内置魔法行为类（数值等待 JSON 注入）。
+	 *  按系别聚簇注册（与 {@link FormationElement} 枚举序一致：火→冰→月辉→诅咒→召唤→虚无→空间），
+	 *  创造页「法术」页内同系卷轴紧挨展示；LinkedHashMap 保序（见类注释）。 */
 	public static void init() {
-		register(new FrostSpikeSpell());
-		// —— 2026-09 新增六法术（火系三 + 冰系三，jackcooper）——
+		// —— 火系（对立冰）——
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.FireBoltSpell());       // 火球术
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.FlameNovaSpell());     // 烈焰新星
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.MeteorSpell());        // 陨火术
+		// —— 冰系（对立火）——
+		register(new FrostSpikeSpell());                                                        // 冰锥
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.IceBarrageSpell());    // 冰锥齐射
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.FrostNovaSpell());     // 冰霜新星
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.FrostArmorSpell());    // 霜甲术
-		// —— 2026-09 新增系别：月辉 × 诅咒（对立对，jackcooper）——
+		// —— 月辉系（对立诅咒）——
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.MoonlightArrowSpell());  // 月光箭
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarMendSpell());       // 月华治愈
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarVeilSpell());       // 月幕
+		// —— 诅咒系（对立月辉）——
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.CurseMarkSpell());       // 诅咒标记
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.DreadWhisperSpell());    // 恐惧低语
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.CorruptMistSpell());     // 腐蚀之雾
-		// —— 2026-09 新增系别：召唤 × 虚无（对立对）——
+		// —— 召唤系（对立虚无）——
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.SummonLunarSpiritSpell()); // 召唤月灵
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.CompanionResonanceSpell()); // 伙伴共鸣
+		// —— 虚无系（对立召唤）——
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.VoidDevourSpell());      // 虚空吞噬
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.VoidErosionSpell());     // 虚空侵蚀
-		// —— 2026-09 新增系别：空间（独立，位移探索向）——
+		// —— 空间系（独立，位移探索向）——
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.SpaceBlinkSpell());      // 空间跳跃
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.SpaceStrideSpell());     // 空间漫步
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.SpaceRecallSpell());     // 空间归途
-		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.PocketSpaceSpell());
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.PocketSpaceSpell());     // 随身空间
 	}
 
 	// ---- datapack reload（服务端 / 单人；客机走 applyClientSync 镜像）----

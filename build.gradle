@@ -163,6 +163,17 @@ tasks.register('pocketSpaceTest', JavaExec) {
 
 check.dependsOn pocketSpaceTest
 
+// 21 法术数值回归自检（阶段 B / 计划书 §20.1）：耗蓝逐级↑、CD 逐级不增且 Lv5<Lv1、floor 合法
+tasks.register('spellBalanceTest', JavaExec) {
+    dependsOn classes
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.SpellBalanceTest'
+    workingDir = layout.buildDirectory.dir('spell-balance-test').get().asFile
+    doFirst { workingDir.mkdirs() }
+}
+
+check.dependsOn spellBalanceTest
+
 java {
     // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
     // if it is present.
@@ -175,6 +186,7 @@ java {
 
 jar {
     exclude 'net/jackcooper/shapeShifterCurseAddon/spell/pocket/PocketSpaceLayoutTest.class'
+    exclude 'net/jackcooper/shapeShifterCurseAddon/spell/SpellBalanceTest.class'
     from("LICENSE") {
         rename { "${it}_${project.base.archivesName.get()}"}
     }

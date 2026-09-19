@@ -67,27 +67,56 @@ public class FrostNovaSpell extends Spell {
 				// exp_mode 1/2 命中补发：首个命中目标取全额（后续取 0，幂等），发放后挂起清零
 				net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant.grant(caster,
 						solo ? 0 : ssc_addon$takePendingExp());
+				// 流派命中钩子（2026-09-17）：雪狐霜脉冰系命中+寒霜等（take 幂等+1s 防重窗）
+				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(
+						caster, target, net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.ICE,
+						solo ? null : ssc_addon$getRefundCastId());
 			}
 			target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, slowTicks, 1));
+			// 霜碎：护甲 -50%，时长与缓速同步（L1=3s → L5=5s）
+			target.addStatusEffect(new StatusEffectInstance(
+					net.jackcooper.shapeShifterCurseAddon.SscAddon.FROST_SHATTER, slowTicks, 0));
 		}
-		// 演出：雪粒环 + 寒气音效
-		spawnRing(serverWorld, ParticleTypes.SNOWFLAKE, caster.getX(), caster.getY() + 0.2, caster.getZ(), radius * 0.6, 24);
-		spawnRing(serverWorld, ParticleTypes.SNOWFLAKE, caster.getX(), caster.getY() + 0.2, caster.getZ(), radius, 32);
-		spawnRing(serverWorld, ParticleTypes.CLOUD, caster.getX(), caster.getY() + 0.3, caster.getZ(), radius * 0.8, 12);
+		// 演出：球形寒气粒子（双层雪花球面 + 内部云雾）+ 寒气音效（与烈焰新星同款球形演出）
+		spawnSphere(serverWorld, caster.getX(), caster.getY() + 1.0, caster.getZ(), radius);
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_PLAYER_HURT_FREEZE, SoundCategory.PLAYERS, 1.0f, 0.8f);
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.8f, 0.6f);
 	}
 
-	/** 沿水平圆周均匀撒粒子（沿半径 radius，count 个）。 */
-	private static void spawnRing(ServerWorld world, net.minecraft.particle.ParticleEffect particle,
-	                              double x, double y, double z, double radius, int count) {
-		for (int i = 0; i < count; i++) {
-			double angle = 2 * Math.PI * i / count;
-			world.spawnParticles(particle,
-					x + Math.cos(angle) * radius, y, z + Math.sin(angle) * radius,
-					1, 0.05, 0.05, 0.05, 0.01);
+	/**
+	 * 演出：球形寒气（与烈焰新星 spawnSphere 同款几何：斐波那契球面均匀采样）。
+	 * 外层 SNOWFLAKE 满半径球面 + 内层 SNOWFLAKE 0.65 倍半径球面 + 中心 CLOUD 寒雾。
+	 */
+	private static void spawnSphere(ServerWorld world, double cx, double cy, double cz, double radius) {
+		// 外层球面：雪花沿球面均匀分布
+		int outerCount = (int) Math.max(24, radius * radius * 12);
+		for (int i = 0; i < outerCount; i++) {
+			double phi = Math.acos(1.0 - 2.0 * (i + 0.5) / outerCount);   // 极角均匀
+			double theta = Math.PI * (1.0 + Math.sqrt(5.0)) * i;          // 黄金角方位
+			double x = Math.sin(phi) * Math.cos(theta);
+			double y = Math.cos(phi);
+			double z = Math.sin(phi) * Math.sin(theta);
+			world.spawnParticles(ParticleTypes.SNOWFLAKE,
+					cx + x * radius, cy + y * radius, cz + z * radius,
+					1, 0.02, 0.02, 0.02, 0.001);
 		}
+		// 内层球面（0.65 倍半径）：第二层雪花，增加球体厚度感
+		int innerCount = outerCount / 2;
+		double innerR = radius * 0.65;
+		for (int i = 0; i < innerCount; i++) {
+			double phi = Math.acos(1.0 - 2.0 * (i + 0.5) / innerCount);
+			double theta = Math.PI * (1.0 + Math.sqrt(5.0)) * i;
+			double x = Math.sin(phi) * Math.cos(theta);
+			double y = Math.cos(phi);
+			double z = Math.sin(phi) * Math.sin(theta);
+			world.spawnParticles(ParticleTypes.SNOWFLAKE,
+					cx + x * innerR, cy + y * innerR, cz + z * innerR,
+					1, 0.02, 0.02, 0.02, 0.001);
+		}
+		// 中心：寒气云雾填充
+		world.spawnParticles(ParticleTypes.CLOUD,
+				cx, cy + 0.3, cz, 8, radius * 0.3, 0.2, radius * 0.3, 0.01);
 	}
 }

@@ -33,8 +33,11 @@ public final class CorruptMistManager {
 		final int intervalTicks;
 		int ticksToNextPulse;
 		final int level;
+		final UUID castId;
+		final int poisonTicks;
+		final int slownessTicks;
 
-		Mist(ServerPlayerEntity caster, double radius, int durationTicks, int intervalTicks, int level) {
+		Mist(ServerPlayerEntity caster, double radius, int durationTicks, int intervalTicks, int level, UUID castId) {
 			this.casterId = caster.getUuid();
 			this.caster = caster;
 			this.radius = radius;
@@ -42,6 +45,15 @@ public final class CorruptMistManager {
 			this.intervalTicks = intervalTicks;
 			this.ticksToNextPulse = intervalTicks;
 			this.level = level;
+			this.castId = castId;
+			int basePoisonTicks = net.jackcooper.shapeShifterCurseAddon.spell.spells.CorruptMistSpell.POISON_TICKS;
+			boolean venomAffinity = castId != null && net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(
+					caster, net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SPIDER_SALTICIDAE);
+			this.poisonTicks = (castId == null ? basePoisonTicks
+					: net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, basePoisonTicks))
+					+ (venomAffinity ? 60 : 0);
+			this.slownessTicks = castId == null ? 40
+					: net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, 40);
 		}
 	}
 
@@ -54,7 +66,7 @@ public final class CorruptMistManager {
 			while (it.hasNext()) {
 				Mist mist = it.next();
 				// 施法者离线/被移除 → 雾消散（DISCONNECT 已兜底，这里防意外引用）
-				if (mist.caster.isRemoved()) {
+				if (mist.caster.isRemoved() || !mist.caster.isAlive()) {
 					it.remove();
 					continue;
 				}
@@ -62,16 +74,27 @@ public final class CorruptMistManager {
 					it.remove();
 					continue;
 				}
-				// 雾粒子（每 10 tick 一轮，服务端撒，天然多人同步）
-				if (mist.ticksRemaining % 10 == 0 && mist.caster.getWorld() instanceof ServerWorld serverWorld) {
+				// 雾粒子（每 5 tick 一轮，滞留药水风格：圆盘内均匀密度覆盖，范围轮廓大致可见）
+				if (mist.ticksRemaining % 5 == 0 && mist.caster.getWorld() instanceof ServerWorld serverWorld) {
 					double r = mist.radius;
-					double angle = serverWorld.getRandom().nextDouble() * 2 * Math.PI;
-					double dist = serverWorld.getRandom().nextDouble() * r;
-					serverWorld.spawnParticles(ParticleTypes.DRAGON_BREATH,
-							mist.caster.getX() + Math.cos(angle) * dist,
-							mist.caster.getY() + 0.3 + serverWorld.getRandom().nextDouble() * 0.8,
-							mist.caster.getZ() + Math.sin(angle) * dist,
-							2, 0.2, 0.1, 0.2, 0.005);
+					// 按面积撒点：密度恒定，半径越大数量越多 → 边界轮廓可辨（仿滞留药水云）
+					int count = (int) Math.max(10, r * r * 4);
+					for (int i = 0; i < count; i++) {
+						// 均匀圆盘采样：随机角度 + sqrt 均匀半径（避免中心聚堆）
+						double angle = serverWorld.getRandom().nextDouble() * 2 * Math.PI;
+						double dist = Math.sqrt(serverWorld.getRandom().nextDouble()) * r;
+						double px = mist.caster.getX() + Math.cos(angle) * dist;
+						double pz = mist.caster.getZ() + Math.sin(angle) * dist;
+						double py = mist.caster.getY() + 0.1 + serverWorld.getRandom().nextDouble() * 0.9;
+						// 紫（主）+ 绿（辅，约 1/4）混搭
+						if (serverWorld.getRandom().nextInt(4) == 0) {
+							serverWorld.spawnParticles(ParticleTypes.HAPPY_VILLAGER,
+									px, py, pz, 1, 0.15, 0.1, 0.15, 0.0);
+						} else {
+							serverWorld.spawnParticles(ParticleTypes.DRAGON_BREATH,
+									px, py, pz, 1, 0.15, 0.1, 0.15, 0.002);
+						}
+					}
 				}
 				// 每跳结算
 				if (--mist.ticksToNextPulse <= 0) {
@@ -86,9 +109,9 @@ public final class CorruptMistManager {
 
 	/** 施放/刷新一团雾（同施法者旧雾被覆盖）。 */
 	public static void start(ServerPlayerEntity caster, double radius, int durationTicks,
-	                         int intervalTicks, int level) {
+	                         int intervalTicks, int level, UUID castId) {
 		MISTS.removeIf(m -> m.casterId.equals(caster.getUuid()));
-		MISTS.add(new Mist(caster, radius, durationTicks, intervalTicks, level));
+		MISTS.add(new Mist(caster, radius, durationTicks, intervalTicks, level, castId));
 	}
 
 	/** 单跳结算：雾内敌人中毒 + 缓速（白名单免受；L4+ 中毒 II）。 */
@@ -98,6 +121,8 @@ public final class CorruptMistManager {
 		}
 		// 高等级毒更深：L4+ 中毒 II（紫/橙卷轴）
 		int poisonAmplifier = mist.level >= 4 ? 1 : 0;
+		// 雾跳缓速：L5 升 II 级（2026-09-17 用户定稿）
+		int slownessAmplifier = mist.level >= 5 ? 1 : 0;
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
 				mist.caster.getBoundingBox().expand(mist.radius), e -> e != mist.caster && e.isAlive());
 		for (LivingEntity target : targets) {
@@ -107,9 +132,13 @@ public final class CorruptMistManager {
 			if (WhitelistUtils.isProtected(mist.caster, target)) {
 				continue;
 			}
-			target.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON,
-					net.jackcooper.shapeShifterCurseAddon.spell.spells.CorruptMistSpell.POISON_TICKS, poisonAmplifier));
-			target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 40, 0));
+			boolean hadHarmfulEffect = net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.hasHarmfulEffect(target);
+			boolean applied = target.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, mist.poisonTicks, poisonAmplifier));
+			applied |= target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, mist.slownessTicks, slownessAmplifier));
+			if (applied) {
+				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(mist.caster, target,
+						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.CURSE, mist.castId, hadHarmfulEffect);
+			}
 		}
 	}
 }

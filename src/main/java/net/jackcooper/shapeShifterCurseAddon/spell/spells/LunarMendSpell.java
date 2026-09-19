@@ -10,6 +10,8 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 
+import java.util.List;
+
 /**
  * 月华治愈（月辉系，白色基底，jackcooper）：净化自身——回复生命 + 移除一个负面状态效果。
  * 无伤害魔法，power 语义 = 回复生命值。
@@ -30,18 +32,25 @@ public class LunarMendSpell extends Spell {
 
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level) {
+		// 蝙蝠「血契」配套：月华治愈效果 +25%（吸血蝙蝠主题，2026-09-17）
+		power = net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.lunarMendBonus(caster, power);
 		// 回复生命（不含再生，即时治疗语义）
 		caster.heal(power);
-		// 移除负面效果：每级 +1 个（L1=1 … L5=5）
-		int removeCount = level;
-		int removed = 0;
-		for (StatusEffectInstance instance : caster.getStatusEffects()) {
-			if (removed >= removeCount) {
+		// 净化预算制（2026-09-17）：等级 = 预算点数（L1=1 … L5=5）；
+		// 移除一个 amplifier=n 的负面效果消耗 n+1 点（一级 debuff 消耗 1，二级消耗 2，以此类推）；
+		// 预算不足以移除下一个（如剩 1 点遇到二级）则跳过继续找可移除的，预算耗尽停止。
+		int budget = level;
+		for (StatusEffectInstance instance : List.copyOf(caster.getStatusEffects())) {
+			if (budget <= 0) {
 				break;
 			}
 			if (instance.getEffectType().getCategory() == net.minecraft.entity.effect.StatusEffectCategory.HARMFUL) {
-				caster.removeStatusEffect(instance.getEffectType());
-				removed++;
+				int cost = instance.getAmplifier() + 1;
+				if (cost <= budget) {
+					caster.removeStatusEffect(instance.getEffectType());
+					budget -= cost;
+				}
+				// 预算不够（如剩 1 遇到二级）：跳过找更便宜的，不停止整个净化
 			}
 		}
 		// 演出：月光洒落 + 治愈音效

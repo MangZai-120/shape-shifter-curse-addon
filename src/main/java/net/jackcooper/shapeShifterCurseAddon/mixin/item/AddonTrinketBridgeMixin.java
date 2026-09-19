@@ -53,7 +53,9 @@ public abstract class AddonTrinketBridgeMixin implements Trinket {
 		return data;
 	}
 
-	@Inject(method = "accessoryInit", at = @At("HEAD"), cancellable = true, remap = false)
+	// require = 0：与主包 TrinketImpl 互斥由 SscAddonMixinConfigPlugin 保证；主包更新改 accessoryInit
+	// 签名时本桥接静默失效（饰品回调断）而非崩游戏。
+	@Inject(method = "accessoryInit", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
 	private void ssca$registerTrinket(net.minecraft.item.Item.Settings settings, CallbackInfo ci) {
 		AccessoryItem realThis = ((AccessoryItem) (Object) this);
 		if (realThis instanceof Trinket trinket) {

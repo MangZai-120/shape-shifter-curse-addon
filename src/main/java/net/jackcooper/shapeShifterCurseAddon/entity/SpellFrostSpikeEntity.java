@@ -4,6 +4,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.FlyingItemEntity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
@@ -52,12 +53,31 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 	/** 命中发放的经验赏金（×10 整数；exp_mode 1/2 挂起部分由施法时装入，NBT 持久化跨 tick；齐射均分后每枚持有份额）。 */
 	private int expBountyTen = 0;
 
+	/** 剩余可命中敌人数（含当前；0 = 命中即碎，单发冰锥默认；齐射按等级注入 2+等级-1）。 */
+	private int pierceRemaining = 0;
+	/** 已命中过的实体 UUID（穿刺期防同一目标被多 tick 重复判定）。 */
+	private final java.util.List<java.util.UUID> piercedTargets = new java.util.ArrayList<>();
+	/** 本 tick 命中为「穿刺穿过」的信号旗（onEntityHit 置位 → onCollision 跳过销毁）。 */
+	private boolean passThroughHit = false;
+
+	/** 设置单枚最多可命中敌人数（穿刺数；≤1 等同不穿刺，命中即碎）。 */
+	public void setPierceCount(int count) {
+		this.pierceRemaining = Math.max(0, count);
+	}
+
 	public void setExpBountyTen(int expTen) {
 		this.expBountyTen = Math.max(0, expTen);
 	}
 
 	public int getExpBountyTen() {
 		return expBountyTen;
+	}
+
+	/** 本次施法实际耗蓝（命中返还类流派用；与经验赏金同模式跨 tick 存 NBT）。 */
+	private java.util.UUID refundCastId;
+
+	public void setRefundCastId(java.util.UUID castId) {
+		this.refundCastId = castId;
 	}
 
 	public SpellFrostSpikeEntity(EntityType<? extends SpellFrostSpikeEntity> entityType, World world) {
@@ -150,8 +170,17 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 
 	@Override
 	protected void onCollision(HitResult hitResult) {
+		this.passThroughHit = false; // 每次碰撞先重置穿刺旗标
 		super.onCollision(hitResult);
 		if (!this.getWorld().isClient) {
+			// 穿刺穿过：轻量雪花反馈后继续飞行，不碎裂
+			if (this.passThroughHit) {
+				if (this.getWorld() instanceof ServerWorld serverWorld) {
+					ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SNOWFLAKE,
+							this.getX(), this.getY(), this.getZ(), 5, 0.2, 0.2, 0.2, 0.05);
+				}
+				return;
+			}
 			this.getWorld().playSound(null, this.getX(), this.getY(), this.getZ(),
 					SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.0f, 1.5f);
 			if (this.getWorld() instanceof ServerWorld serverWorld) {
@@ -172,27 +201,45 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 					&& WhitelistUtils.isProtected(ownerPlayer, livingTarget)) {
 				return;
 			}
+			boolean damaged;
 			if (this.getOwner() instanceof LivingEntity owner) {
 				// 法术伤害专用类型（ssc_addon:spell_damage）：供法术抗性附魔精确识别（jackcooper）
-				livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+				damaged = livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
 						.of(this.getDamageSources(), owner), damage);
 			} else {
-				livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+				damaged = livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
 						.of(this.getDamageSources()), damage);
 			}
 			// exp_mode 1/2 命中补发：damage 成功才发放，发放后清零防重复
-			if (livingTarget.hurtTime > 0 && this.getOwner() instanceof ServerPlayerEntity ownerPlayer) {
+			if (damaged && this.getOwner() instanceof ServerPlayerEntity ownerPlayer) {
 				net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant.grant(ownerPlayer, expBountyTen);
 				expBountyTen = 0;
 			}
+			// 流派命中钩子（2026-09-17）：雪狐霜脉冰系命中+寒霜；噬梦/噬咒等亦经此入口
+			if (damaged && this.getOwner() instanceof ServerPlayerEntity styleOwner) {
+				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(
+						styleOwner, livingTarget,
+						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.ICE, refundCastId);
+			}
 			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.ENTITY_PLAYER_HURT_FREEZE, SoundCategory.PLAYERS, 1.0f, 1.2f);
+			// 穿刺结算（齐射来源 pierceRemaining>0）：记入已命中表并递减；
+			// 递减后仍 >0 → 置旗穿过继续飞，否则本次为最后一次命中、照常碎裂。
+			// 默认单发冰锥 pierceRemaining=0 → 减成 -1 不 >0 → 行为不变（命中即碎）。
+			this.pierceRemaining--;
+			this.piercedTargets.add(livingTarget.getUuid());
+			if (this.pierceRemaining > 0) {
+				this.passThroughHit = true;
+			}
 		}
 	}
 
 	@Override
 	protected boolean canHit(Entity entity) {
-		return super.canHit(entity) && entity != this.getOwner() && entity instanceof LivingEntity;
+		// 排除盔甲架（与月灵光弹同口径）：假人不产返还/经验
+		return super.canHit(entity) && entity != this.getOwner() && entity instanceof LivingEntity
+				&& !(entity instanceof net.minecraft.entity.decoration.ArmorStandEntity)
+				&& !this.piercedTargets.contains(entity.getUuid());
 	}
 
 	@Override
@@ -210,6 +257,20 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 		if (nbt.contains("ExpBountyTen")) {
 			this.expBountyTen = Math.max(0, nbt.getInt("ExpBountyTen"));
 		}
+		refundCastId = nbt.containsUuid("RefundCastId") ? nbt.getUuid("RefundCastId") : null;
+		if (nbt.contains("PierceRemaining")) {
+			this.pierceRemaining = nbt.getInt("PierceRemaining");
+		}
+		this.piercedTargets.clear();
+		if (nbt.contains("PiercedTargets")) {
+			net.minecraft.nbt.NbtList pierced = nbt.getList("PiercedTargets", 8);
+			for (int i = 0; i < pierced.size(); i++) {
+				try {
+					this.piercedTargets.add(java.util.UUID.fromString(pierced.getString(i)));
+				} catch (IllegalArgumentException ignored) {
+				}
+			}
+		}
 	}
 
 	@Override
@@ -223,6 +284,13 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 		nbt.putFloat("Damage", this.damage);
 		nbt.putInt("SpellLevel", getSpellLevel());
 		nbt.putInt("ExpBountyTen", this.expBountyTen);
+		if (refundCastId != null) nbt.putUuid("RefundCastId", refundCastId);
+		nbt.putInt("PierceRemaining", this.pierceRemaining);
+		net.minecraft.nbt.NbtList pierced = new net.minecraft.nbt.NbtList();
+		for (java.util.UUID uuid : this.piercedTargets) {
+			pierced.add(net.minecraft.nbt.NbtString.of(uuid.toString()));
+		}
+		nbt.put("PiercedTargets", pierced);
 	}
 
 	@Override

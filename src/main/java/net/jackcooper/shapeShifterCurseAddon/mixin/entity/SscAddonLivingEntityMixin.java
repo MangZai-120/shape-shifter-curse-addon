@@ -65,12 +65,20 @@ public abstract class SscAddonLivingEntityMixin {
 	 * 是怪物 AI 的全部。原 MobEntityMixin 只 cancel 了其中的 mobTick（子类特定逻辑），拦不住 goalSelector，
 	 * 故此前怪物中 STUN 仍会寻路攻击。改 isImmobile 单点拦截、最小侵入、服务端权威多人一致。
 	 * <p>物理不受影响：重力 / 击退 / 流体由 tickMovement 后续代码处理，STUN 怪仍会下坠/被击退，只是 AI 停。
+	 * <p><b>施法特殊档不挂此处</b>（2026-09-18 定稿）：特殊档用「0% 移速属性 + jump HEAD 拦截 +
+	 * 客户端 NovaSprintLockMixin 清跳跃/疾跑输入」实现完全禁移动/禁跳，相机/转身从不受限；
+	 * 不走 isImmobile（该分支语义含 AI 停机，与玩家施法无关且会清 travel 输入）。
 	 */
 	@Inject(method = "isImmobile", at = @At("RETURN"), cancellable = true)
 	private void ssca$stunImmobile(CallbackInfoReturnable<Boolean> cir) {
 		if (!cir.getReturnValueZ() && ((LivingEntity) (Object) this).hasStatusEffect(SscAddon.STUN)) {
 			cir.setReturnValue(true);
 		}
+	}
+
+	@Inject(method = "jump", at = @At("HEAD"), cancellable = true)
+	private void ssca$spellCastingBlockJump(CallbackInfo ci) {
+		if (net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.isImmobile((LivingEntity) (Object) this)) ci.cancel();
 	}
 
 	// 跳蛛「跳杀」腾空期免疫（纯否决）已迁至 SscaDamageVetoHandler（ServerLivingEntityEvents.ALLOW_DAMAGE）。
@@ -233,6 +241,28 @@ public abstract class SscAddonLivingEntityMixin {
 		float multiplier = net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect.BASE_BONUS + 1.0f
 				+ net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect.BONUS_PER_LEVEL * mark.getAmplifier();
 		return amount * multiplier;
+	}
+
+	/**
+	 * 诅咒标记第二段（2026-09-17 用户定稿）：被标记的实体<b>造成的伤害</b>也削弱，
+	 * 幅度 = 0.15 + 0.0875×amplifier（L1=−15% … L5=−50%，线性内插），与受伤加深同源同寿命。
+	 * 判定：受害者身上的 CURSE_MARK 才算（攻击者带标记不影响它打别人）——本 mixin 挂在
+	 * damage HEAD，受害者=self，故需经 source.getAttacker() 找到攻击者再查其标记状态。
+	 * 服务端判定，多人一致。
+	 */
+	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+	private float ssc_addon$curseMarkWeakenOutput(float amount, DamageSource source) {
+		if (amount <= 0.0F || source == null) return amount;
+		LivingEntity self = (LivingEntity) (Object) this;
+		if (self.getWorld().isClient()) return amount;
+		// 攻击者（被标记者）身上的 CURSE_MARK
+		if (!(source.getAttacker() instanceof LivingEntity attacker)) return amount;
+		if (attacker == self) return amount; // 自伤不叠
+		StatusEffectInstance mark = attacker.getStatusEffect(SscAddon.CURSE_MARK);
+		if (mark == null) return amount;
+		float weaken = net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect.OUTPUT_WEAKEN_BASE
+				+ net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect.OUTPUT_WEAKEN_PER_LEVEL * mark.getAmplifier();
+		return amount * (1.0f - weaken);
 	}
 
 	/**
@@ -489,6 +519,9 @@ public abstract class SscAddonLivingEntityMixin {
 	private void ssc_addon$onAllayRangedHit(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
 		if (!cir.getReturnValue()) return;
 		LivingEntity self = (LivingEntity) (Object) this;
+		if (amount > 0 && self instanceof ServerPlayerEntity player) {
+			net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.onDamaged(player);
+		}
 		AllaySPRangedHitPassive.onDamageApplied(self, source);
 		// 寒棘狐被动「寒棘护体·反刺」：被近战命中（伤害已生效）→ 攻击者叠寒棘层 / 满 3 层棘爆
 		if (!self.getWorld().isClient()

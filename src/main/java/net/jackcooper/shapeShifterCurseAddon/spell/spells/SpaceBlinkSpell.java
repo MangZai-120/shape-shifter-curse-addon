@@ -74,7 +74,7 @@ public class SpaceBlinkSpell extends Spell {
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
-		Vec3d dest = computeBlinkDestination(caster, level);
+		Vec3d dest = getCastTarget(caster, level);
 		if (dest == null) {
 			return; // 理论不可达（回退链已兜底），防御性保留
 		}
@@ -95,7 +95,8 @@ public class SpaceBlinkSpell extends Spell {
 	 * ②无 → 视线命中的第一个表面（方块命中面上表面）；
 	 * ③仍无 → 射程尽头点（受阻则从尽头向起点内收到最后无阻挡处）。
 	 */
-	private Vec3d computeBlinkDestination(ServerPlayerEntity caster, int level) {
+	@Override
+	public Vec3d captureCastTarget(ServerPlayerEntity caster, int level) {
 		Vec3d start = caster.getPos();
 		Vec3d dir = caster.getRotationVec(1.0F).normalize();
 		double range = effectiveRange(level);
@@ -135,7 +136,9 @@ public class SpaceBlinkSpell extends Spell {
 				return p;
 			}
 		}
-		return null;
+		// ④ 终极兜底（2026-09-19）：极端挤压几何（贴墙/低天花板下 1 格内也无净空）时回退原地，
+		// 不返回 null——null 会让松手释放被当作「无目标」走打断路径，玩家看到「施法被打断」误报。
+		return start;
 	}
 
 	/** 构造落点判定盒（玩家碰撞箱，脚部对齐 p）。 */

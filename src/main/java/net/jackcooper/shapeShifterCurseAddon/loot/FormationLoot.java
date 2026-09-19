@@ -69,7 +69,8 @@ public final class FormationLoot {
 	/** 通用系三变体迭代（非通用系返回 null 占位）。 */
 	private static String[] variantsOf(FormationElement element) {
 		return element == FormationElement.UNIVERSAL
-				? new String[]{FormationData.VARIANT_REGEN, FormationData.VARIANT_MANA, FormationData.VARIANT_EXP}
+				? new String[]{FormationData.VARIANT_REGEN, FormationData.VARIANT_MANA,
+						FormationData.VARIANT_EXP, FormationData.VARIANT_RECOVERY}
 				: new String[]{null};
 	}
 

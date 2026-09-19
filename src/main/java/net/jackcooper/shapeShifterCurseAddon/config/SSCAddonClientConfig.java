@@ -16,6 +16,10 @@ public class SSCAddonClientConfig implements ConfigData {
 	public static final int DEFAULT_CD_Y = -34;
 	public static final int DEFAULT_CD_SECONDARY_X = 0;
 	public static final int DEFAULT_CD_SECONDARY_Y = 0;
+	/** 蓄力条默认：锚点 6（右中）+ 偏移(0,-34)，与 CD 条默认（锚点 4 左中 + (0,-34)）屏幕镜像对称。 */
+	public static final int DEFAULT_CHARGE_TYPE = 6;
+	public static final int DEFAULT_CHARGE_X = 0;
+	public static final int DEFAULT_CHARGE_Y = -34;
 
 	@ConfigEntry.Gui.Excluded
 	public int skillHudLayoutVersion = 0;
@@ -72,6 +76,20 @@ public class SSCAddonClientConfig implements ConfigData {
 	/** 非对称时，次技能 CD 条 Y 偏移。 */
 	@ConfigEntry.Gui.Excluded
 	public int cdSecondaryBarPosOffsetY = DEFAULT_CD_SECONDARY_Y;
+
+	// ===== 法术蓄力条（读条 HUD）位置（1-9 九宫格锚点 + X/Y 偏移，默认右中与 CD 条对称）=====
+	/** 蓄力条锚点类型（1-9 九宫格），默认 6=右中。 */
+	@ConfigEntry.Gui.Excluded
+	public int chargeBarPosType = DEFAULT_CHARGE_TYPE;
+	/** 蓄力条 X 偏移：相对锚点的额外平移。 */
+	@ConfigEntry.Gui.Excluded
+	public int chargeBarPosOffsetX = DEFAULT_CHARGE_X;
+	/** 蓄力条 Y 偏移：相对锚点的额外平移。 */
+	@ConfigEntry.Gui.Excluded
+	public int chargeBarPosOffsetY = DEFAULT_CHARGE_Y;
+	/** 蓄力条贴左侧（true=条在左、从左缘外滑入；false=条在右、从右缘外滑入）。 */
+	@ConfigEntry.Gui.Excluded
+	public boolean chargeOnLeft = false;
 
 	// ===== 月尘魔法书 HUD 整体位置（1-9 九宫格锚点 + X/Y 偏移，法力条/三槽/魔法名作为一个单元）=====
 	// 不在 GUI 直接展示（由 BarPositionEditorScreen 可视化编辑）。默认锚点 7=左下 + 偏移(16,-52) 还原原硬编码位置。

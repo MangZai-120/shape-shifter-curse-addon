@@ -37,6 +37,7 @@ public class FrostSpikeSpell extends Spell {
 		spike.setDamage(power);
 		spike.setLevel(level);
 		spike.setExpBountyTen(solo ? 0 : ssc_addon$takePendingExp()); // exp_mode 1/2 挂起经验随弹射物走
+		spike.setRefundCastId(solo ? null : ssc_addon$getRefundCastId());
 		Vec3d look = caster.getRotationVec(1.0F);
 		spike.setDirection(look, getSpeedMultiplier(level));
 		caster.getWorld().spawnEntity(spike);

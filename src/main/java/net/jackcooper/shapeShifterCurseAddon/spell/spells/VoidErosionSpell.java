@@ -56,8 +56,13 @@ public class VoidErosionSpell extends Spell {
 			}
 			// 减益每两级 +1 级：L1/L2=疲劳 I + 虚弱 II、L3/L4=II + III、L5=III + IV
 			int debuffAmplifier = (level - 1) / 2;
-			target.addStatusEffect(new StatusEffectInstance(StatusEffects.MINING_FATIGUE, DURATION_TICKS, debuffAmplifier));
-			target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, DURATION_TICKS, 1 + debuffAmplifier));
+			boolean applied = target.addStatusEffect(new StatusEffectInstance(StatusEffects.MINING_FATIGUE, DURATION_TICKS, debuffAmplifier));
+			applied |= target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, DURATION_TICKS, 1 + debuffAmplifier));
+			if (applied) {
+				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(caster, target,
+						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.VOID,
+						solo ? null : ssc_addon$getRefundCastId());
+			}
 		}
 		// 演出：暗紫侵蚀波纹（双圈）+ 低沉音效
 		spawnRing(serverWorld, ParticleTypes.PORTAL, caster.getX(), caster.getY() + 0.2, caster.getZ(), radius * 0.6, 20);

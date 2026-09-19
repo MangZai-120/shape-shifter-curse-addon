@@ -20,8 +20,10 @@ public class VoidDevourSpell extends Spell {
 
 	/** 最大施法距离（格），实际 = 基础 × speed_multiplier(level)——按住瞄准预览与施法共用。 */
 	private static final double BASE_RANGE = 16.0;
-	/** 落点 AOE 半径（格）：中心直射判定，预览圈同步显示。 */
+	/** 基础落点 AOE 半径（格）：实际 = 基础 + 0.75×(等级-1)（L1=2 → L5=5，2026-09-18 用户定稿）。 */
 	private static final double IMPACT_RADIUS = 2.0;
+	/** 每级 AOE 半径增量（格）。 */
+	private static final double RADIUS_PER_LEVEL = 0.75;
 	/** 基础失明时长（tick）：3s，每两级 +1s（L1/L2=3s、L3/L4=4s、L5=5s）。 */
 	private static final int BASE_BLINDNESS_TICKS = 60;
 
@@ -35,15 +37,20 @@ public class VoidDevourSpell extends Spell {
 		return BASE_RANGE; // 预览距离基准；等级缩放在 getBlinkRange 式调用点乘 speed_multiplier
 	}
 
-	/** 预览圈半径 = 落点 AOE 半径（与服务端实际伤害范围一致）。 */
+	/** 预览圈半径 = 落点 AOE 半径（含等级缩放，与服务端实际伤害范围一致）。 */
 	@Override
 	public double getAimRadius(int level) {
-		return IMPACT_RADIUS;
+		return effectiveRadius(level);
 	}
 
 	/** 实际有效射程（含等级缩放）。 */
 	private double effectiveRange(int level) {
 		return BASE_RANGE * getSpeedMultiplier(level);
+	}
+
+	/** 实际 AOE 半径（含等级缩放：L1=2 → L5=5，每级 +0.75）。 */
+	private double effectiveRadius(int level) {
+		return IMPACT_RADIUS + RADIUS_PER_LEVEL * (Math.max(1, Math.min(5, level)) - 1);
 	}
 
 	/** 施法前置校验：落点必须命中方块（指天/超距 → 拒绝，不耗法力/CD）。 */
@@ -58,22 +65,28 @@ public class VoidDevourSpell extends Spell {
 	}
 
 	@Override
+	public net.minecraft.util.math.Vec3d captureCastTarget(ServerPlayerEntity caster, int level) {
+		return Spell.computeAimImpact(caster, effectiveRange(level));
+	}
+
+	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level) {
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
 		// 落点求取（与客户端按住预览同一几何）：必须命中方块；null → 中止施放
-		net.minecraft.util.math.Vec3d impact = Spell.computeAimImpact(caster, effectiveRange(level));
+		net.minecraft.util.math.Vec3d impact = getCastTarget(caster, level);
 		if (impact == null) {
 			return;
 		}
-		// 落点 AOE：半径 IMPACT_RADIUS 内敌人受伤害 + 失明（白名单免伤）
+		// 落点 AOE：半径 effectiveRadius(level) 内敌人受伤害 + 失明（白名单免伤）
+		double radius = effectiveRadius(level);
 		var entities = serverWorld.getEntitiesByClass(net.minecraft.entity.LivingEntity.class,
-				caster.getBoundingBox().expand(effectiveRange(level) + IMPACT_RADIUS),
+				new net.minecraft.util.math.Box(impact, impact).expand(radius + 2),
 				e -> e != caster && e.isAlive());
 		int hitCount = 0;
 		for (var target : entities) {
-			if (target.getPos().add(0, target.getHeight() / 2, 0).distanceTo(impact) > IMPACT_RADIUS) {
+			if (target.getPos().add(0, target.getHeight() / 2, 0).distanceTo(impact) > radius) {
 				continue;
 			}
 			if (net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils.isProtected(caster, target)) {
@@ -85,6 +98,10 @@ public class VoidDevourSpell extends Spell {
 				// exp_mode 1/2 命中补发：首个命中目标取全额（后续取 0，幂等），发放后挂起清零
 				net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant.grant(caster,
 						solo ? 0 : ssc_addon$takePendingExp());
+				// 流派命中钩子（2026-09-17）：噬梦虚无系命中返 50% 耗蓝（take 幂等+1s 防重窗）
+				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(
+						caster, target, net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.VOID,
+						solo ? null : ssc_addon$getRefundCastId());
 			}
 			target.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
 					net.minecraft.entity.effect.StatusEffects.BLINDNESS,
@@ -94,9 +111,9 @@ public class VoidDevourSpell extends Spell {
 			serverWorld.spawnParticles(ParticleTypes.SMOKE,
 					target.getX(), target.getBodyY(0.5), target.getZ(), 12, 0.3, 0.3, 0.3, 0.05);
 		}
-		// 落点演出：暗紫湮灭圈（双圈 + 中心聚集）
-		spawnRing(serverWorld, ParticleTypes.PORTAL, impact.x, impact.y + 0.2, impact.z, IMPACT_RADIUS * 0.6, 16);
-		spawnRing(serverWorld, ParticleTypes.PORTAL, impact.x, impact.y + 0.4, impact.z, IMPACT_RADIUS, 24);
+		// 落点演出：暗紫灄灭圈（双圈 + 中心聚集，随等级缩放）
+		spawnRing(serverWorld, ParticleTypes.PORTAL, impact.x, impact.y + 0.2, impact.z, radius * 0.6, 16);
+		spawnRing(serverWorld, ParticleTypes.PORTAL, impact.x, impact.y + 0.4, impact.z, radius, 24);
 		serverWorld.spawnParticles(ParticleTypes.PORTAL,
 				impact.x, impact.y + 0.5, impact.z, 20, 0.3, 0.5, 0.3, 0.15);
 		serverWorld.playSound(null, impact.x, impact.y, impact.z,

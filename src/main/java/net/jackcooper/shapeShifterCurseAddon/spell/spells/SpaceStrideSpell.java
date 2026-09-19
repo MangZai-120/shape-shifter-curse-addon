@@ -20,10 +20,10 @@ import net.minecraft.util.Identifier;
  */
 public class SpaceStrideSpell extends Spell {
 
-	/** 基础缓降时长（tick）：20s。 */
-	private static final int SLOW_FALL_TICKS = 400;
-	/** 跳升时长（tick）：10s。 */
+	/** 基础跳升时长（tick）：10s；缓降 = 跳升 + 2s（2026-09-19 用户定稿，节奏对齐）。 */
 	private static final int JUMP_TICKS = 200;
+	/** 缓降与跳升的固定差值（tick）：2s。 */
+	private static final int SLOW_FALL_EXTRA_TICKS = 40;
 
 	public SpaceStrideSpell() {
 		super(new Identifier("ssc_addon", "space_stride"), SpellRarity.WHITE);
@@ -39,8 +39,8 @@ public class SpaceStrideSpell extends Spell {
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
-		int slowFall = SLOW_FALL_TICKS + (level - 1) * 100;
 		int jump = JUMP_TICKS + (level - 1) * 50;
+		int slowFall = jump + SLOW_FALL_EXTRA_TICKS; // 缓降恒比跳升多 2s（随等级同步递增）
 		// 跳升每两级 +1 级：L1/L2=I、L3/L4=II、L5=III（amplifier = 级数-1）
 		int jumpAmplifier = (level - 1) / 2;
 		caster.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOW_FALLING, slowFall, 0));

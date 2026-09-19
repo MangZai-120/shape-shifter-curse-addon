@@ -60,6 +60,13 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		this.expBountyTen = Math.max(0, expTen);
 	}
 
+	/** 本次施法实际耗蓝（命中返还类流派用；与经验赏金同模式跨 tick 存 NBT）。 */
+	private java.util.UUID refundCastId;
+
+	public void setRefundCastId(java.util.UUID castId) {
+		this.refundCastId = castId;
+	}
+
 	public SpellMeteorEntity(EntityType<? extends SpellMeteorEntity> entityType, World world) {
 		super(entityType, world);
 	}
@@ -158,6 +165,9 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		double iy = this.getY();
 		double iz = this.getZ();
 		boolean hitAnyTarget = false;
+		LivingEntity lastHitTarget = null;   // 最后一个实际受伤目标（燎原燃烧返还判定用）
+		LivingEntity killedTarget = null;    // 本次爆炸击杀的目标（优先传给命中钩子，击杀返 50% 判定用）
+		boolean hitBurningTarget = false;
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
 				this.getBoundingBox().expand(radius), e -> e != this.getOwner() && e.isAlive());
 		for (LivingEntity target : targets) {
@@ -175,15 +185,23 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 			if (dmg <= 0) {
 				continue;
 			}
+			boolean damaged;
 			if (this.getOwner() instanceof LivingEntity owner) {
 				// 法术伤害专用类型（ssc_addon:spell_damage）：供法术抗性附魔精确识别（jackcooper）
-				target.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+				damaged = target.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
 						.of(this.getDamageSources(), owner), dmg);
 			} else {
-				target.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+				damaged = target.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
 						.of(this.getDamageSources()), dmg);
 			}
+			if (!damaged) continue;
+			hitBurningTarget |= target.getFireTicks() > 0;
 			hitAnyTarget = true;
+			lastHitTarget = target;
+			// 击杀判定快照（damage 后立即查——修复：原先传给钩子的目标先 filter(isAlive) 导致击杀分支永不可达）
+			if (!target.isAlive() || target.getHealth() <= 0f) {
+				killedTarget = target;
+			}
 			// 点燃 3s + 轻微击退（离开爆心方向）
 			target.setFireTicks(60);
 			Vec3d knock = new Vec3d(target.getX() - ix, 0.1, target.getZ() - iz).normalize().multiply(0.6);
@@ -194,6 +212,14 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		if (hitAnyTarget && this.getOwner() instanceof ServerPlayerEntity ownerPlayer) {
 			net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant.grant(ownerPlayer, expBountyTen);
 			expBountyTen = 0;
+		}
+		// 流派命中钩子（2026-09-17）：燎原按本次耗蓝返还（含击杀判定）；固定值类不依赖耗蓝。
+		// 钩子目标优先取被击杀者（击杀返 50% 分支），无击杀取最后受伤目标（燃烧 20% 分支）
+		if (hitAnyTarget && this.getOwner() instanceof ServerPlayerEntity styleOwner) {
+			LivingEntity hookTarget = killedTarget != null ? killedTarget : lastHitTarget;
+			net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(
+					styleOwner, hookTarget,
+					net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.FIRE, refundCastId, hitBurningTarget);
 		}
 		// 演出：爆炸粒子 + 火光 + 双层音效
 		serverWorld.spawnParticles(ParticleTypes.EXPLOSION_EMITTER, ix, iy + 0.5, iz, 1, 0, 0, 0, 0);
@@ -229,6 +255,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		if (nbt.contains("ExpBountyTen")) {
 			this.expBountyTen = Math.max(0, nbt.getInt("ExpBountyTen"));
 		}
+		refundCastId = nbt.containsUuid("RefundCastId") ? nbt.getUuid("RefundCastId") : null;
 	}
 
 	@Override
@@ -239,6 +266,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		nbt.putInt("SpellLevel", getSpellLevel());
 		nbt.putBoolean("Falling", this.falling);
 		nbt.putInt("ExpBountyTen", this.expBountyTen);
+		if (refundCastId != null) nbt.putUuid("RefundCastId", refundCastId);
 	}
 
 	@Override

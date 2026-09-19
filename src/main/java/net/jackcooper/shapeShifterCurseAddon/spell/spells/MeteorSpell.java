@@ -55,7 +55,7 @@ public class MeteorSpell extends Spell {
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level) {
 		// 射线求落点（与客户端按住预览同一几何）：必须命中方块；null（指天/超距无方块）→中止施放
-		Vec3d impact = Spell.computeAimImpact(caster, MAX_RANGE);
+		Vec3d impact = getCastTarget(caster, level);
 		if (impact == null) {
 			return;
 		}
@@ -63,6 +63,7 @@ public class MeteorSpell extends Spell {
 		meteor.setDamage(power);
 		meteor.setLevel(level);
 		meteor.setExpBountyTen(solo ? 0 : ssc_addon$takePendingExp()); // exp_mode 1/2 挂起经验随落点体走
+		meteor.setRefundCastId(solo ? null : ssc_addon$getRefundCastId());
 		meteor.setRadius(BASE_RADIUS * getSpeedMultiplier(level));
 		meteor.setImpactTarget(impact.x, impact.y, impact.z);
 		caster.getWorld().spawnEntity(meteor);

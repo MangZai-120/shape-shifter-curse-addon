@@ -5,6 +5,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.FlyingItemEntity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
@@ -81,6 +82,13 @@ public class SpellFireBoltEntity extends ProjectileEntity implements FlyingItemE
 
 	public int getExpBountyTen() {
 		return expBountyTen;
+	}
+
+	/** 本次施法实际耗蓝（命中返还类流派用；与经验赏金同模式跨 tick 存 NBT）。 */
+	private java.util.UUID refundCastId;
+
+	public void setRefundCastId(java.util.UUID castId) {
+		this.refundCastId = castId;
 	}
 	/** 榄旀硶绛夌骇锛?-5锛夈€?*/
 	public int getSpellLevel() {
@@ -174,20 +182,25 @@ public class SpellFireBoltEntity extends ProjectileEntity implements FlyingItemE
 					&& WhitelistUtils.isProtected(ownerPlayer, livingTarget)) {
 				return;
 			}
+			boolean damaged;
 			if (this.getOwner() instanceof LivingEntity owner) {
 				// 法术伤害专用类型（ssc_addon:spell_damage）：供法术抗性附魔精确识别（jackcooper）
-				livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+				damaged = livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
 						.of(this.getDamageSources(), owner), damage);
 			} else {
-				livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+				damaged = livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
 						.of(this.getDamageSources()), damage);
 			}
 			// exp_mode 1/2 鍛戒腑琛ュ彂锛歞amage 鎴愬姛鎵嶅彂鏀撅紝鍙戞斁鍚庢竻闆堕槻閲嶅
-			if (livingTarget.hurtTime > 0 && this.getOwner() instanceof ServerPlayerEntity ownerPlayer) {
+			if (damaged && this.getOwner() instanceof ServerPlayerEntity ownerPlayer) {
 				SpellExpGrant.grant(ownerPlayer, expBountyTen);
 				expBountyTen = 0;
-			}
-			// 鐐圭噧鐩爣锛堜激瀹虫暟鍊煎鐨勫浐瀹氶檮鍔犳晥鏋滐紱鏃堕暱鐢辨柦娉曟椂鎸夌瓑绾у啓鍏ワ級
+			}			// 流派命中钩子（2026-09-17）：燎原/噬咒/噬梦按本次耗蓝返还；固定值类（审魂等）不依赖耗蓝
+			if (damaged && this.getOwner() instanceof ServerPlayerEntity styleOwner) {
+				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(
+						styleOwner, livingTarget,
+						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.FIRE, refundCastId);
+			}			// 鐐圭噧鐩爣锛堜激瀹虫暟鍊煎鐨勫浐瀹氶檮鍔犳晥鏋滐紱鏃堕暱鐢辨柦娉曟椂鎸夌瓑绾у啓鍏ワ級
 			livingTarget.setFireTicks(fireTicks);
 			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.ENTITY_PLAYER_HURT_ON_FIRE, SoundCategory.PLAYERS, 1.0f, 1.0f);
@@ -196,12 +209,15 @@ public class SpellFireBoltEntity extends ProjectileEntity implements FlyingItemE
 
 	@Override
 	protected boolean canHit(Entity entity) {
-		return super.canHit(entity) && entity != this.getOwner() && entity instanceof LivingEntity;
+		// 排除盔甲架（与月灵光弹同口径）：假人不产返还/经验，防噬梦等流派打假人蹭回蓝
+		return super.canHit(entity) && entity != this.getOwner()
+				&& entity instanceof LivingEntity && !(entity instanceof ArmorStandEntity);
 	}
 
 	@Override
 	public void readCustomDataFromNbt(NbtCompound nbt) {
 		super.readCustomDataFromNbt(nbt);
+		refundCastId = nbt.containsUuid("RefundCastId") ? nbt.getUuid("RefundCastId") : null;
 		if (nbt.contains("StartX")) {
 			this.startPos = new Vec3d(nbt.getDouble("StartX"), nbt.getDouble("StartY"), nbt.getDouble("StartZ"));
 		}
@@ -231,6 +247,7 @@ public class SpellFireBoltEntity extends ProjectileEntity implements FlyingItemE
 		nbt.putInt("SpellLevel", getSpellLevel());
 		nbt.putInt("FireTicks", this.fireTicks);
 		nbt.putInt("ExpBountyTen", this.expBountyTen);
+		if (refundCastId != null) nbt.putUuid("RefundCastId", refundCastId);
 	}
 
 	@Override

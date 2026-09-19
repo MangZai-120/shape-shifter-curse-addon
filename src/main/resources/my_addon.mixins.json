@@ -9,6 +9,7 @@
                    "ThreadedAnvilChunkStorageAccessor",
                    "PocketSpaceBoundaryMixin",
                    "PocketSpaceChunkFilterMixin",
+                   "ItemGroupPositionAccessor",
                    "effect.AllaySPTotemMixin",
                    "effect.EntangledFullStunMixin",
                    "AnkhStoneTotemMixin",
@@ -76,10 +77,14 @@
                    "client.LivingEntityStatusEffectsAccessor",
                    "client.IrisShaderPackMixin",
                    "client.CreativePotionStackMixin",
+                   "client.CreativeTabNeighborMixin",
                    "client.FamiliarFoxManaBarGateMixin",
                    "client.UpgradeAxolotlSpearChargeArmMixin",
                    "client.ClawCrosshairMixin",
                    "client.NovaSprintLockMixin",
+                   "client.SpellCastPoseMixin",
+                   "client.SpellCastGeoPoseMixin",
+                   "client.SpellCastFirstPersonMixin",
                    "client.SwingPhysicsMixin"
                ],
     "injectors":  {
