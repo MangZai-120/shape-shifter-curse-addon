@@ -95,9 +95,9 @@ public class UniversalEnergyPotionItem extends Item {
 	}
 
 	/**
-	 * 回复 mana：依次检查各 apoli resource 型能量条（悦灵 mana / 蝙蝠血 / 阿努比斯灵魂 / 雪狐寒霜），
-	 * 持有哪个就给哪个加值（clamp 到各自 max）；都不是则走原版 ManaComponent（使魔系标准 mana 条）。
-	 * 全部经统一门面 {@link ResourceBars}（SSCA-ResourceKit）。
+ * 回复 mana：依次检查各 apoli resource 型能量条（悦灵 mana / 蝙蝠血 / 阿努比斯灵魂 / 雪狐寒霜），
+ * 持有哪个就给哪个加值（clamp 到各自 max）；都不是则走原版 ManaComponent（使魔系标准 mana 条）。
+ * 全部经统一门面 {@link ResourceBars}（SSCA-ResourceKit）。
  * 回复量按 scale 缩放（饮用=1.0；喷溅 / 滞留按距离衰减 ≥0.5）。
  */
 	public static void restoreManaScaled(net.minecraft.server.network.ServerPlayerEntity player, double scale) {

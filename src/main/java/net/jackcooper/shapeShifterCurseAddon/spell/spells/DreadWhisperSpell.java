@@ -50,6 +50,7 @@ public class DreadWhisperSpell extends Spell {
 		double range = BASE_RANGE * getSpeedMultiplier(level);
 		// 控场时长：每级 +1s（L1=7s … L5=11s）；L3+ 升级为虚弱 II + 缓速 III
 		int duration = DURATION_TICKS + (level - 1) * 20;
+		if (!solo) duration = net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, duration);
 		int weaknessAmp = level >= 3 ? 1 : 0;
 		int slownessAmp = level >= 3 ? 2 : 1;
 		Vec3d look = caster.getRotationVec(1.0F).normalize();
@@ -70,8 +71,14 @@ public class DreadWhisperSpell extends Spell {
 			if (WhitelistUtils.isProtected(caster, target)) {
 				continue;
 			}
-			target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, duration, weaknessAmp));
-			target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, duration, slownessAmp));
+			boolean hadHarmfulEffect = net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.hasHarmfulEffect(target);
+			boolean applied = target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, duration, weaknessAmp));
+			applied |= target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, duration, slownessAmp));
+			if (applied) {
+				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(caster, target,
+						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.CURSE,
+						solo ? null : ssc_addon$getRefundCastId(), hadHarmfulEffect);
+			}
 			// 击退：远离施法者
 			Vec3d knock = new Vec3d(target.getX() - caster.getX(), 0.1, target.getZ() - caster.getZ())
 					.normalize().multiply(0.6);
@@ -81,27 +88,47 @@ public class DreadWhisperSpell extends Spell {
 			serverWorld.spawnParticles(ParticleTypes.SMOKE,
 					target.getX(), target.getBodyY(0.6), target.getZ(), 6, 0.2, 0.3, 0.2, 0.01);
 		}
-		// 演出：锥形低语波（沿视线撒三层扩散环）+ 阴森音效
-		for (int layer = 1; layer <= 3; layer++) {
-			double dist = range * layer / 3.0;
-			double layerRadius = Math.tan(Math.toRadians(HALF_ANGLE_DEG)) * dist;
-			Vec3d center = origin.add(look.multiply(dist));
-			spawnRing(serverWorld, ParticleTypes.SCULK_SOUL, center.x, center.y, center.z, layerRadius, 10);
-		}
+		// 演出：锥形低语波——沿视线方向的锥面螺旋采样（贴合真实锥形判定几何：
+		// 距离 d 处锥面半径 = tan(半角)×d，点随距离扩散；随视线俯仰，不再是水平环）
+		spawnCone(serverWorld, origin, look, range, HALF_ANGLE_DEG);
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
-				SoundEvents.PARTICLE_SOUL_ESCAPE, SoundCategory.PLAYERS, 1.2f, 0.7f);
+				SoundEvents.PARTICLE_SOUL_ESCAPE, SoundCategory.PLAYERS, 2.0f, 0.7f);
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
-				SoundEvents.ENTITY_WARDEN_HEARTBEAT, SoundCategory.PLAYERS, 0.6f, 1.4f);
+				SoundEvents.ENTITY_WARDEN_HEARTBEAT, SoundCategory.PLAYERS, 1.0f, 1.4f);
 	}
 
-	/** 沿水平圆周均匀撒粒子（沿半径 radius，count 个）。 */
-	private static void spawnRing(ServerWorld world, net.minecraft.particle.ParticleEffect particle,
-	                              double x, double y, double z, double radius, int count) {
-		for (int i = 0; i < count; i++) {
-			double angle = 2 * Math.PI * i / count;
-			world.spawnParticles(particle,
-					x + Math.cos(angle) * radius, y, z + Math.sin(angle) * radius,
-					1, 0.05, 0.05, 0.05, 0.01);
+	/**
+	 * 锥面螺旋粒子：沿视线分段（每 0.6 格一段），每段在锥面上绕行撒点；
+	 * 段半径 = tan(半角)×段距，角度随段号旋转（螺旋感）+ 每段多点均匀铺开锥面。
+	 * 微速度让粒子略向外飘（近似扩散感；ServerWorld.spawnParticles 无定向初速重载）。
+	 */
+	private static void spawnCone(ServerWorld world, Vec3d origin, Vec3d look, double range, double halfAngleDeg) {
+		double tanHalf = Math.tan(Math.toRadians(halfAngleDeg));
+		// 视线的正交基（右/上），用于把锥面参数化到世界空间
+		Vec3d right = new Vec3d(-look.z, 0, look.x).normalize(); // 水平垂直向量（已去除俯仰分量）
+		if (right.lengthSquared() < 1.0e-4) {
+			right = new Vec3d(1, 0, 0); // 正上/正下看时兑底
+		}
+		Vec3d up = right.crossProduct(look).normalize();
+		int segments = Math.max(6, (int) (range / 0.6));
+		for (int s = 1; s <= segments; s++) {
+			double dist = range * s / segments;
+			double ringR = tanHalf * dist;
+			int perRing = 4 + s / 2; // 近处稀、远处密（锥面展开面积变大）
+			double spin = s * 0.7;    // 段间旋转，螺旋感
+			for (int i = 0; i < perRing; i++) {
+				double ang = spin + 2 * Math.PI * i / perRing;
+				double cosA = Math.cos(ang), sinA = Math.sin(ang);
+				// 锥面点 = 轴上点 + 半径方向偏移（right·cos + up·sin）
+				Vec3d point = origin.add(look.multiply(dist))
+						.add(right.multiply(cosA * ringR)).add(up.multiply(sinA * ringR));
+				world.spawnParticles(ParticleTypes.SCULK_SOUL,
+						point.x, point.y, point.z, 1, 0.03, 0.03, 0.03, 0.005);
+			}
+			// 锥轴中心粒子（灵魂粒子沿轴前飞的引导感）
+			Vec3d axisPoint = origin.add(look.multiply(dist));
+			world.spawnParticles(ParticleTypes.SOUL,
+					axisPoint.x, axisPoint.y, axisPoint.z, 1, 0.02, 0.02, 0.02, 0.01);
 		}
 	}
 }

@@ -150,9 +150,12 @@ public class LunarSpiritBoltEntity extends ProjectileEntity {
 				damage *= 0.7f;
 			}
 			if (ownerPlayer != null) {
-				livingTarget.damage(this.getDamageSources().indirectMagic(this, ownerPlayer), damage);
+				// 法术伤害专用类型；source 保持光弹本体（供 LunarSpiritTargetLink 区分玩家亲手攻击），attacker 归因主人
+				livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+						.of(this.getDamageSources(), this, ownerPlayer), damage);
 			} else {
-				livingTarget.damage(this.getDamageSources().magic(), damage);
+				livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+						.of(this.getDamageSources()), damage);
 			}
 			// 变体 debuff：粉=点燃 3s / 蓝=缓速 I 3s / 绿=中毒 I 3s
 			if (variant == 0) {

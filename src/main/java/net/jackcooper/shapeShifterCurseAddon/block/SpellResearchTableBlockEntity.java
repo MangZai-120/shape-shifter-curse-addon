@@ -21,20 +21,22 @@ import org.jetbrains.annotations.Nullable;
 import net.onixary.shapeShifterCurseFabric.items.RegCustomItem;
 
 /**
- * 法术研究台方块实体（jackcooper）。四槽：0=空白法阵纸、1=油墨、2=月尘（学习耗材）、3=产出。
+ * 法术研究台方块实体（jackcooper）。五槽：0=空白法阵纸、1=油墨、2=月尘（学习耗材）、3=产出、4=月尘纯晶。
  *
  * <p>抄写（按钮 C2S 驱动，服务端权威重验）：耗 纸×1 + 对应系油墨×等级 → 产出对应等级法阵；
  * 学习（同上）：耗 未加工月之尘 ×(2×等级) → 学习已记录法阵。
- * 支持漏斗：上/下/侧面向均可入纸/墨/尘（0-2 槽），产出面（下方）只出不进。</p>
+ * 支持漏斗：上方和侧面可入纸/墨/尘/纯晶，下方只出不进。</p>
  */
 public class SpellResearchTableBlockEntity extends BlockEntity implements NamedScreenHandlerFactory, SidedInventory {
-
-	private final DefaultedList<ItemStack> items = DefaultedList.ofSize(4, ItemStack.EMPTY);
 
 	public static final int SLOT_PAPER = 0;
 	public static final int SLOT_INK = 1;
 	public static final int SLOT_MOONDUST = 2;
 	public static final int SLOT_OUTPUT = 3;
+	public static final int SLOT_CATALYST = 4;
+	public static final int SLOT_COUNT = 5;
+
+	private final DefaultedList<ItemStack> items = DefaultedList.ofSize(SLOT_COUNT, ItemStack.EMPTY);
 
 	public SpellResearchTableBlockEntity(BlockPos pos, BlockState state) {
 		super(RegAddonBlockEntities.SPELL_RESEARCH_TABLE_BE, pos, state);
@@ -134,8 +136,7 @@ public class SpellResearchTableBlockEntity extends BlockEntity implements NamedS
 
 	@Override
 	public int[] getAvailableSlots(Direction side) {
-		// 下方只暴露产出槽（只出不进）；其余方向暴露耗材三槽（只进不出）
-		return side == Direction.DOWN ? new int[]{SLOT_OUTPUT} : new int[]{SLOT_PAPER, SLOT_INK, SLOT_MOONDUST};
+		return side == Direction.DOWN ? new int[]{SLOT_OUTPUT} : new int[]{SLOT_PAPER, SLOT_INK, SLOT_MOONDUST, SLOT_CATALYST};
 	}
 
 	@Override
@@ -148,6 +149,9 @@ public class SpellResearchTableBlockEntity extends BlockEntity implements NamedS
 		}
 		if (slot == SLOT_MOONDUST) {
 			return stack.getItem() == RegCustomItem.UNTREATED_MOONDUST;
+		}
+		if (slot == SLOT_CATALYST) {
+			return stack.isOf(RegCustomItem.MOONDUST_CRYSTAL_SHARD);
 		}
 		return false; // 产出槽不可入
 	}

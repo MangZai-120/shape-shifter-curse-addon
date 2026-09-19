@@ -19,7 +19,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(BatBlockAttachPower.class)
 public class SscAddonBatAttachMistMixin {
 
-    @Inject(method = "tryAttach", at = @At("HEAD"), cancellable = true)
+    // require = 0：目标是主包类，主包更新改 tryAttach 签名时静默失效（血雾期可贴墙）而非崩游戏。
+    @Inject(method = "tryAttach", at = @At("HEAD"), cancellable = true, require = 0)
     private void sscAddon$disableAttachInMist(PlayerEntity player, BlockHitResult hitResult, CallbackInfoReturnable<Boolean> cir) {
         // 血雾化形期间禁止右键贴墙攀爬
         if (player.hasStatusEffect(SscAddon.MIST_FORM)) {

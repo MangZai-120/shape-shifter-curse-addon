@@ -2,6 +2,7 @@
   "replace": false,
   "values": [
     "ssc_addon:axolotl_shifter_attack",
-    "ssc_addon:axolotl_shifter_thirst"
+    "ssc_addon:axolotl_shifter_thirst",
+    "ssc_addon:spell_damage"
   ]
 }

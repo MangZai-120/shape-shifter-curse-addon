@@ -43,4 +43,21 @@ public abstract class NovaSprintLockMixin {
             ((ClientPlayerEntity) (Object) this).setSprinting(false);
         }
     }
+
+    @Inject(method = "tickMovement", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/client/network/ClientPlayerEntity;canStartSprinting()Z"))
+    private void ssca$spellCastingInput(CallbackInfo ci) {
+        ClientPlayerEntity player = (ClientPlayerEntity) (Object) this;
+        if (player.isUsingItem() && !player.hasVehicle()
+                && player.getActiveItem().getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem) {
+            player.input.movementForward *= 5.0F;
+            player.input.movementSideways *= 5.0F;
+        }
+        if (!net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.isImmobile(player)) return;
+        // 特殊档（归途/口袋）：完全禁止移动与跳跃（0% 移速由服务端属性压死，用户 2026-09-18 定稿）；
+        // 相机/转身从不受限。保留移动输入不清零——避免 prediction 拉扯，速度属性已为 0 无实际位移。
+        player.input.jumping = false;
+        player.input.sneaking = false;
+        player.setSprinting(false);
+    }
 }

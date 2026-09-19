@@ -4,7 +4,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
-import net.minecraft.entity.player.PlayerEntity;
 import net.jackcooper.shapeShifterCurseAddon.item.UniversalEnergyPotionItem;
 import org.jetbrains.annotations.Nullable;
 

@@ -15,18 +15,21 @@ import net.minecraft.util.Identifier;
  * 霜甲术（冰系，蓝色基底，jackcooper）：给自己施加「伤害吸收」（黄心）——
  * 无伤害魔法，power 语义 = 期望吸收点数。
  *
- * <p>实现走原版 {@code AbsorptionStatusEffect} 的 amplifier 档位（amp n = 4×2ⁿ 点吸收，
- * onApplied/onRemoved 对称加减，无泄漏）：power 换算 amp = round(power/4)−1（clamp 0-4），
- * 即 L1 基准 4 点（2 黄心）、高等级/法阵加成后可上探档位。</p>
+ * <p>实现：先加原版 {@code AbsorptionStatusEffect}（取不超过目标量的档位，供图标/到期语义），
+ * 再直接 {@code setAbsorptionAmount(max(current, power))} 精确写入黄心量（原版档位只有 4×2ⁿ，
+ * 无法表达 20/24 等任意值）；用 max 防止低级刷新把已有更高黄心覆盖拉低。
+ * 吸收量到期后残留至受击扣光是原版金苹果同款行为。</p>
  *
  * <p>数值外置 {@code data/ssc_addon/spells/frost_armor.json}：
- * 基准 4 吸收 / 持续 20s / cd 15s / 耗蓝 25。重复施放刷新时长（同类效果取新实例）。</p>
+ * 基准 8 吸收（4 黄心）/ 持续 20s / cd 30s 每级 -2s / 耗蓝 25 每级 ×1.2（复利，与月辉诅咒系 buff 类一致）；
+ * L1-L5 = 吸收 8/12/16/20/24 点（4/6/8/10/12 黄心），耗蓝 25/30/36/43/52，cd 30/28/26/24/22s。
+ * 重复施放刷新时长（吸收量取 max，不叠加）。</p>
  */
 public class FrostArmorSpell extends Spell {
 
 	/** 吸收持续时间（tick）：20s。 */
 	private static final int DURATION_TICKS = 400;
-	/** amplifier 上限（amp4 = 64 点 = 32 黄心，防数据包写飞）。 */
+	/** amplifier 上限（防数据包写飞）。 */
 	private static final int MAX_ABSORPTION_AMPLIFIER = 4;
 
 	public FrostArmorSpell() {
@@ -35,10 +38,12 @@ public class FrostArmorSpell extends Spell {
 
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo) {
-		// power → 原版吸收档位：amp = round(power/4) - 1（4点=amp0 2黄心、8点=amp1 4黄心…）
+		// 档位 = 不超过目标量的最大 2 幂档（onApplied 提到 4<<amp，不会超过 power）；
+		// power<4 时 log 为负 → clamp 0。随后精确直写吸收量（max 防低级拉低已有高黄心）。
 		int amplifier = Math.max(0, Math.min(MAX_ABSORPTION_AMPLIFIER,
-				Math.round(power / 4.0f) - 1));
+				(int) Math.floor(Math.log(power / 4.0f) / Math.log(2.0))));
 		caster.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, DURATION_TICKS, amplifier));
+		caster.setAbsorptionAmount(Math.max(caster.getAbsorptionAmount(), power));
 		// 演出：寒气缠绕 + 冰晶盾碎裂音效
 		if (caster.getWorld() instanceof ServerWorld serverWorld) {
 			serverWorld.spawnParticles(ParticleTypes.SNOWFLAKE,

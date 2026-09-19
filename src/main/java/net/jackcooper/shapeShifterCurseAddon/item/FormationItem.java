@@ -147,6 +147,11 @@ public class FormationItem extends Item {
 					tooltip.add(Text.translatable("item.ssc_addon.formation.tip_exp",
 							expPct).formatted(Formatting.GRAY));
 				}
+				case FormationData.VARIANT_RECOVERY -> {
+					int recPct = Math.round(0.20f * level * 100);
+					tooltip.add(Text.translatable("item.ssc_addon.formation.tip_recovery",
+							recPct).formatted(Formatting.GRAY));
+				}
 				default -> {
 					int pct = (int) Math.round(FormationData.universalThreshold(level) * 100);
 					tooltip.add(Text.translatable("item.ssc_addon.formation.tip_universal",

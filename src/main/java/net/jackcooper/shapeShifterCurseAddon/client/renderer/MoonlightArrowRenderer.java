@@ -45,9 +45,9 @@ public class MoonlightArrowRenderer extends EntityRenderer<SpellMoonlightArrowEn
 		}
 		matrices.push();
 		matrices.scale(SCALE, SCALE, SCALE);
-		// 模型箭头朝 +Z：绕 Y 转 -yaw 对准水平朝向；绕 X 转 pitch 使箭尖随俯仰起落
+		// 模型箭头朝 +Z：绕 Y 转 -yaw 对准水平朝向；绕 X 转 -pitch（与寒棘狐冰锥同款惯例：实体 pitch=atan2(-v.y) 存负值）
 		matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-entity.getYaw()));
-		matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(entity.getPitch()));
+		matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-entity.getPitch()));
 		this.itemRenderer.renderItem(CACHED_STACK, ModelTransformationMode.GROUND, light, OverlayTexture.DEFAULT_UV,
 				matrices, vertexConsumers, entity.getWorld(), entity.getId());
 		matrices.pop();

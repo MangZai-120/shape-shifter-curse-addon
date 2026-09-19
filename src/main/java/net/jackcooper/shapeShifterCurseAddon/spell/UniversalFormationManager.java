@@ -92,13 +92,10 @@ public final class UniversalFormationManager {
 		if (bar == null) {
 			return;
 		}
-		// 转化：耗 3 形态能量 → 回 6 书法术值（能量不足时 consume 返回 false，不回不扣）
-		// 朔望形态亲和：回能效率 +33%（6 → 8/秒，耗不变）
+		// 转化：耗 2 形态能量 → 回 10 书法术值（统一汇率 5:1，用户定稿 2026-09-17；
+		// 朔望旧亲和已作废——朔望无能量条，改走 FormCastingStyle 月相书内自回流派）
 		int drain = (int) FormationData.UNIVERSAL_MANA_DRAIN_PER_SEC;
 		int restore = (int) FormationData.UNIVERSAL_BOOK_MANA_PER_SEC;
-		if (FormUtils.isForm(player, FormIdentifiers.OCELOT_NOVA)) {
-			restore = Math.round(restore * 1.33f); // 朔望亲和：回能 +33%（6 → 8）
-		}
 		if (!ResourceBars.consume(player, bar, drain)) {
 			return;
 		}

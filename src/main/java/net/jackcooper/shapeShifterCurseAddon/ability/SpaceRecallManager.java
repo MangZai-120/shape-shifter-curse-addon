@@ -1,137 +1,77 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
 
 /**
- * 空间归途读条结算（jackcooper，服务端权威）。读条期间移动/受伤打断
- * （打断：CD 已扣不返还法力——由施法方正常结算，这里只负责传送或失败提示）。
- * 传送目标 = 施法时刻的重生点快照（打断重施会重新取）。
+ * 空间归途传送结算（jackcooper，服务端权威）。
+ * <p>
+ * 读条生命周期完全由统一施法管理器 {@code SpellChannelManager}（特殊一级档）负责：
+ * 读条期间禁止主动走动/跳跃，转身/视角不受限（用原版 MC 机制）。打断方式只有两种——受到伤害（外部位）或
+ * 自己再次长按施法键 1 秒（自身位）；<b>移动不算打断</b>（旧版位移打断逻辑已随
+ * 统一施法重构废弃删除）。
+ * <p>
+ * 本类只保留「读条完成瞬间的传送与演出」这一最小职责。
  */
 public final class SpaceRecallManager {
-	private static final List<Recall> RECALLS = new ArrayList<>();
-	/** 打断判定的移动阈值（格²）。 */
-	private static final double MOVE_INTERRUPT_SQ = 0.04;
-
-	private static final class Recall {
-		final UUID playerId;
-		final ServerPlayerEntity player;
-		final Vec3d startPos;
-		final BlockPos spawnPos;
-		int ticksRemaining;
-
-		Recall(ServerPlayerEntity player, int channelTicks) {
-			this.playerId = player.getUuid();
-			this.player = player;
-			this.startPos = player.getPos();
-			this.spawnPos = player.getSpawnPointPosition();
-			this.ticksRemaining = channelTicks;
-		}
-	}
-
 	private SpaceRecallManager() {
 	}
 
-	public static void init() {
-		ServerTickEvents.END_SERVER_TICK.register(server -> {
-			Iterator<Recall> it = RECALLS.iterator();
-			while (it.hasNext()) {
-				Recall recall = it.next();
-				if (recall.player.isRemoved()) {
-					it.remove();
-					continue;
-				}
-				// 打断判定：位移超阈值
-				if (recall.player.getPos().squaredDistanceTo(recall.startPos) > MOVE_INTERRUPT_SQ) {
-					interrupt(recall, "moved");
-					it.remove();
-					continue;
-				}
-				// 读条粒子（每 5t 一圈，收紧感）
-				if (recall.player.getWorld() instanceof ServerWorld serverWorld && recall.ticksRemaining % 5 == 0) {
-					serverWorld.spawnParticles(ParticleTypes.PORTAL,
-							recall.player.getX(), recall.player.getBodyY(0.8), recall.player.getZ(),
-							3, 0.4, 0.6, 0.4, 0.05);
-				}
-				if (--recall.ticksRemaining <= 0) {
-					complete(recall);
-					it.remove();
-				}
-			}
-		});
-		// 受伤打断：钩在伤害事件（比 mixin 轻）
-		net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
-			if (entity instanceof ServerPlayerEntity sp) {
-				RECALLS.removeIf(recall -> {
-					if (recall.playerId.equals(sp.getUuid())) {
-						interrupt(recall, "hurt");
-						return true;
-					}
-					return false;
-				});
-			}
-			return true; // 不否决伤害本身
-		});
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
-				RECALLS.removeIf(recall -> recall.playerId.equals(handler.player.getUuid())));
-	}
-
-	/** 开始读条（同玩家旧读条被覆盖）。 */
-	public static void start(ServerPlayerEntity player, int channelTicks) {
-		RECALLS.removeIf(recall -> recall.playerId.equals(player.getUuid()));
-		RECALLS.add(new Recall(player, channelTicks));
-	}
-
-	/** 该玩家是否正在读条（供其它系统避让）。 */
-	public static boolean isChanneling(ServerPlayerEntity player) {
-		for (Recall recall : RECALLS) {
-			if (recall.playerId.equals(player.getUuid())) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	private static void complete(Recall recall) {
-		ServerWorld world = (ServerWorld) recall.player.getWorld();
-		BlockPos dest = recall.spawnPos;
-		if (dest == null) {
-			interrupt(recall, "no_spawn");
+	/** 读条完成：传送回重生点（绑定床/重生锚）并播出发/收两端演出。
+	 *  <p>落点复用原版 {@link PlayerEntity#findRespawnPosition}（与死亡重生/起床同源算法，
+	 *  含床占位时的周围安全位回退——同床同朝向落点固定，周围堵时顺位下移；2026-09-19 用户定稿）。
+	 *  找不到合法落点（床被完全围死且无回退位）时回退床中心，绝不传送失败。 */
+	public static void completeNow(ServerPlayerEntity player) {
+		if (!(player.getWorld() instanceof ServerWorld world)) {
 			return;
+		}
+		BlockPos dest = player.getSpawnPointPosition();
+		if (dest == null) {
+			return; // canCast 已前置校验；此处双保险
 		}
 		// 起点消散
 		world.spawnParticles(ParticleTypes.PORTAL,
-				recall.player.getX(), recall.player.getBodyY(0.5), recall.player.getZ(), 24, 0.3, 0.5, 0.3, 0.1);
-		// 传送到重生点（找不到安全点时走原版 respawn 语义安全落地）
-		recall.player.teleport(dest.getX() + 0.5, dest.getY() + 0.2, dest.getZ() + 0.5);
-		world.spawnParticles(ParticleTypes.END_ROD,
-				dest.getX() + 0.5, dest.getY() + 1.0, dest.getZ() + 0.5, 20, 0.4, 0.6, 0.4, 0.05);
-		world.playSound(null, dest.getX() + 0.5, dest.getY(), dest.getZ() + 0.5,
-				SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0f, 1.0f);
-		world.playSound(null, dest.getX() + 0.5, dest.getY(), dest.getZ() + 0.5,
-				SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.PLAYERS, 0.8f, 1.4f);
-	}
-
-	private static void interrupt(Recall recall, String reasonKey) {
-		if (!(recall.player.getWorld() instanceof ServerWorld world)) {
-			return;
+				player.getX(), player.getBodyY(0.5), player.getZ(), 24, 0.3, 0.5, 0.3, 0.1);
+		// 目的地维度（重生点可能在其它维度，如重生锚在下界）：跨维度走原版传送链路
+		net.minecraft.server.world.ServerWorld destWorld = world.getServer().getWorld(player.getSpawnPointDimension());
+		if (destWorld == null) {
+			destWorld = world; // 极端兜底：当前维度
 		}
-		recall.player.sendMessage(net.minecraft.text.Text.translatable(
-						"message.ssc_addon.spell.recall_interrupted")
-				.formatted(net.minecraft.util.Formatting.RED), true);
-		world.playSound(null, recall.player.getX(), recall.player.getY(), recall.player.getZ(),
-				SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.6f, 1.6f);
+		// 原版起床/重生同款落点搜索：床占位 → 周围偏移表回退（同床同朝向落点固定）
+		java.util.Optional<net.minecraft.util.math.Vec3d> landing =
+				net.minecraft.entity.player.PlayerEntity.findRespawnPosition(
+						destWorld, dest, player.getSpawnAngle(), false, true);
+		double tx;
+		double ty;
+		double tz;
+		if (landing.isPresent()) {
+			net.minecraft.util.math.Vec3d v = landing.get();
+			tx = v.x;
+			ty = v.y;
+			tz = v.z;
+		} else {
+			// 全堵兜底：床中心（宁可挤在床里也不让传送失败）
+			tx = dest.getX() + 0.5;
+			ty = dest.getY() + 0.2;
+			tz = dest.getZ() + 0.5;
+		}
+		// 传送到起床落点（同维度直接挪；跨维度走原版 teleport 全状态迁移）
+		if (destWorld == world) {
+			player.teleport(tx, ty, tz);
+		} else {
+			player.teleport(destWorld, tx, ty, tz, java.util.Collections.emptySet(),
+					player.getYaw(), player.getPitch());
+		}
+		// 终点光柱与音效
+		world.spawnParticles(ParticleTypes.END_ROD,
+				tx, ty + 1.0, tz, 20, 0.4, 0.6, 0.4, 0.05);
+		destWorld.playSound(null, tx, ty, tz,
+				SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0f, 1.0f);
+		destWorld.playSound(null, tx, ty, tz,
+				SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.PLAYERS, 0.8f, 1.4f);
 	}
 }

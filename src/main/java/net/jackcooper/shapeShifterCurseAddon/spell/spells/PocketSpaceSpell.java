@@ -24,6 +24,7 @@ public final class PocketSpaceSpell extends Spell {
 			PocketSpaceManager.message(caster, "unavailable");
 			return false;
 		}
+		PocketSpaceManager.prepareRoom(caster, scroll.getNbt().getUuid(PocketSpaceStorage.SCROLL_ID));
 		return true;
 	}
 
@@ -31,14 +32,19 @@ public final class PocketSpaceSpell extends Spell {
 	public void cast(ServerPlayerEntity caster, float power, boolean solo) {}
 
 	@Override
-	public void onCooldownStarted(ServerPlayerEntity caster, Runnable cancelRefund) {
-		PocketSpaceManager.setCancelRefund(caster, cancelRefund);
+	public boolean readyToRelease(ServerPlayerEntity caster, ItemStack scroll) {
+		return PocketSpaceManager.prepareRoom(caster, scroll.getNbt().getUuid(PocketSpaceStorage.SCROLL_ID));
+	}
+
+	@Override
+	public boolean canContinueCasting(ServerPlayerEntity caster, ItemStack scroll) {
+		return canCast(caster) && PocketSpaceStorage.findRoom(caster.getServer(),
+				scroll.getNbt().getUuid(PocketSpaceStorage.SCROLL_ID)) != null;
 	}
 
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level, ItemStack scroll) {
-		PocketSpaceManager.start(caster, scroll.getNbt().getUuid(PocketSpaceStorage.SCROLL_ID),
-				getBaseCastTimeTicks());
+		PocketSpaceManager.enterNow(caster, scroll.getNbt().getUuid(PocketSpaceStorage.SCROLL_ID));
 	}
 
 	@Override

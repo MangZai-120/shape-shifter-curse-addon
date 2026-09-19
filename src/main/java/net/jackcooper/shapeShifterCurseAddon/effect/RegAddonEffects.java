@@ -33,7 +33,7 @@ public final class RegAddonEffects {
 			new Potion(new net.minecraft.entity.effect.StatusEffectInstance(UNIVERSAL_ENERGY)));
 
 	public static void init() {
-		// 触发静态初始化即完成注册；引用 Potions 防止药水注册顺序问题（与主包同思路）
+		// 触发静态初始化即完成注册；引用 Potions 防止药水注册顺序问题（与原版 RegCustomPotions 同思路）
 		Potions.WATER.getClass();
 	}
 }

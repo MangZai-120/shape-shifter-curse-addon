@@ -10,11 +10,13 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 
 /**
- * 冰锥齐射（冰系，绿色基底，jackcooper）：朝准星扇形散射 3 枚小冰锥，各自独立命中结算。
+ * 冰锥齐射（冰系，绿色基底，jackcooper）：朝准星扇形散射 3 枚可穿刺冰锥，各自独立命中结算。
  *
  * <p>数值外置 {@code data/ssc_addon/spells/ice_barrage.json}：
- * 基准每枚 2 伤 / cd 5s / 耗蓝 18；三枚呈 ±12° 扇形，速度按等级倍率缩放。
- * 复用 {@link SpellFrostSpikeEntity}（伤害即 power，单发小冰锥），不新建实体。</p>
+ * 基准每枚 4 伤 / cd 25s / 耗蓝 30；三枚呈 ±12° 扇形，速度按等级倍率缩放（Lv5 ×1.75）。
+ * <b>穿刺</b>：每枚最多可命中 2 + (等级-1) 个敌人（Lv1=2 → Lv5=6），命中后不碎裂继续飞行，
+ * 达上限或撞方块/超距才消失（穿刺机制在实体内实现，单发冰锥不受影响）。
+ * 复用 {@link SpellFrostSpikeEntity}（伤害即 power），不新建实体。</p>
  */
 public class IceBarrageSpell extends Spell {
 
@@ -22,6 +24,8 @@ public class IceBarrageSpell extends Spell {
 	private static final int COUNT = 3;
 	/** 扇形半角（度）：三枚 = 中心 1 枚 + 两侧各 1 枚偏转此角度。 */
 	private static final float SPREAD_DEG = 12.0f;
+	/** 基础穿刺数（单枚最多命中敌人数），每级 +1。 */
+	private static final int PIERCE_BASE = 2;
 
 	public IceBarrageSpell() {
 		super(new Identifier("ssc_addon", "ice_barrage"), SpellRarity.GREEN);
@@ -39,13 +43,16 @@ public class IceBarrageSpell extends Spell {
 		// exp 挂起经验均分给三枚（bounty 为绝对值，cast 时一次性取走除以枚数）
 		int bountyTen = solo ? 0 : ssc_addon$takePendingExp();
 		int eachBounty = bountyTen / COUNT;
+		java.util.UUID castId = solo ? null : ssc_addon$getRefundCastId();
 		// 按 COUNT 均匀铺开扇形：COUNT=3 时即中心 1 枚 + 两侧各 1 枚偏 SPREAD_DEG
 		for (int i = 0; i < COUNT; i++) {
 			float yawOffset = (i - (COUNT - 1) * 0.5f) * SPREAD_DEG;
 			SpellFrostSpikeEntity spike = new SpellFrostSpikeEntity(caster.getWorld(), caster);
 			spike.setDamage(power);
-			spike.setLevel(Math.max(1, level - 2)); // 齐射单发按低两档外观（视觉上小一号）
+			spike.setLevel(level); // 真实魔法等级：L4+ 渲染 3D 冰锥模型（与「冰锥」法术同款外观）
+			spike.setPierceCount(PIERCE_BASE + (level - 1)); // 穿刺数：Lv1=2 → Lv5=6（单枚最多命中敌人数）
 			spike.setExpBountyTen(eachBounty);
+			spike.setRefundCastId(castId);
 			Vec3d dir = rotateYaw(look, yawOffset);
 			spike.setDirection(dir, speedMul);
 			caster.getWorld().spawnEntity(spike);

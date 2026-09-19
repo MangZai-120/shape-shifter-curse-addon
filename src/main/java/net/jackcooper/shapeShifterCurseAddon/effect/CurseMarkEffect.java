@@ -18,6 +18,10 @@ public class CurseMarkEffect extends StatusEffect {
 	public static final float BONUS_PER_LEVEL = 0.1f;
 	/** 基础加深幅度（L1 即 +20%）。 */
 	public static final float BASE_BONUS = 0.2f;
+	/** 第二段：被标记者输出削弱基础幅度（L1 = -15%）。 */
+	public static final float OUTPUT_WEAKEN_BASE = 0.15f;
+	/** 第二段：输出削弱每级增量（L5 = -15% - 4×0.0875 = -50%，线性内插）。 */
+	public static final float OUTPUT_WEAKEN_PER_LEVEL = 0.0875f;
 
 	/** 按等级计算总加深倍率（L1=1.2 … L5=1.6）。 */
 	public static float multiplierForLevel(int level) {

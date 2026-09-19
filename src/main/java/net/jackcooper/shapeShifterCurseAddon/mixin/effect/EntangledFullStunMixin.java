@@ -21,7 +21,8 @@ public class EntangledFullStunMixin {
 
     // applyEntangledEffect 只有「本次刚裹满成茧」的路径才会走到方法末尾（TAIL）；
     // 「已经是茧」会在中途 return 不触发 TAIL，故此处即精确的成茧瞬间。
-    @Inject(method = "applyEntangledEffect", at = @At("TAIL"))
+    // require = 0：目标是主包类，主包更新改方法名时本注入静默失效（茧定身丢失）而非 InvalidInjection 崩游戏。
+    @Inject(method = "applyEntangledEffect", at = @At("TAIL"), require = 0)
     private static void ssca$applyCocoonStun(Entity owner, LivingEntity target, int Time, CallbackInfo ci) {
         // 服务端判定（原方法已在服务端调用，这里再判一次保底）
         if (target.getWorld().isClient) {

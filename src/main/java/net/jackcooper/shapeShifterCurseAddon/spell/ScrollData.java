@@ -18,6 +18,8 @@ public final class ScrollData {
 	public static final String NBT_USES = "Uses";
 	public static final String NBT_CD = "Cd";
 	public static final String NBT_LEVEL = "Level";
+	/** 低阶选档施放档位（阶段 C / 计划书 §6.4）：0 = 未设置（用卷轴等级）；1-5 须 ≤ Level。 */
+	public static final String NBT_CAST_LEVEL = "CastLevel";
 
 	/** 魔法等级上限。 */
 	public static final int MAX_SPELL_LEVEL = 5;
@@ -106,6 +108,32 @@ public final class ScrollData {
 	/** 写入魔法等级（内部工具/战利品生成用；等级固定不可升级，正常游玩无升级途径）。 */
 	public static void setLevel(ItemStack stack, int level) {
 		stack.getOrCreateNbt().putInt(NBT_LEVEL, Math.max(1, Math.min(MAX_SPELL_LEVEL, level)));
+	}
+
+	// ---- 低阶选档施放（阶段 C / 计划书 §6.4） ----
+
+	/** 施放档位（0/缺省 = 用卷轴等级；1-5 且 ≤ Level）。 */
+	public static int getCastLevel(ItemStack stack) {
+		NbtCompound nbt = stack.getNbt();
+		if (nbt != null && nbt.contains(NBT_CAST_LEVEL)) {
+			int cl = nbt.getInt(NBT_CAST_LEVEL);
+			if (cl >= 1 && cl <= getLevel(stack)) {
+				return cl;
+			}
+		}
+		return getLevel(stack);
+	}
+
+	/** 写入施放档位（0 = 重置为跟随卷轴等级；自动夹到 [0, Level]）。 */
+	public static void setCastLevel(ItemStack stack, int castLevel) {
+		int cl = Math.max(0, Math.min(getLevel(stack), castLevel));
+		if (cl == 0) {
+			stack.getOrCreateNbt().remove(NBT_CAST_LEVEL);
+		} else if (cl != getLevel(stack)) {
+			stack.getOrCreateNbt().putInt(NBT_CAST_LEVEL, cl);
+		} else {
+			stack.getOrCreateNbt().remove(NBT_CAST_LEVEL);
+		}
 	}
 
 	/** 新建一张绑定指定魔法的卷轴（次数按品质上限；可选指定等级，0/缺省=1）。 */

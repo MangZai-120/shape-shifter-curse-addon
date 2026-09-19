@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.entity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
@@ -13,7 +14,6 @@ import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -24,7 +24,6 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
 /**
  * 月尘魔法·月光箭投射物（月辉系，jackcooper）。结构与 {@link SpellFireBoltEntity} 同范式：
@@ -53,6 +52,13 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 
 	public int getExpBountyTen() {
 		return expBountyTen;
+	}
+
+	/** 本次施法实际耗蓝（命中返还类流派用；与经验赏金同模式跨 tick 存 NBT）。 */
+	private java.util.UUID refundCastId;
+
+	public void setRefundCastId(java.util.UUID castId) {
+		this.refundCastId = castId;
 	}
 
 	public SpellMoonlightArrowEntity(EntityType<? extends SpellMoonlightArrowEntity> entityType, World world) {
@@ -95,11 +101,11 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 		updateRotationFromVelocity(velocity);
 	}
 
-	/** 按速度自算朝向（同冰锥公式），供渲染对正。 */
+	/** 按速度自算朝向（与寒棘狐冰锥同款公式：尖朝速度方向），供渲染对正。 */
 	private void updateRotationFromVelocity(Vec3d v) {
 		double horiz = Math.sqrt(v.x * v.x + v.z * v.z);
 		this.setYaw((float) (MathHelper.atan2(-v.x, v.z) * (180.0 / Math.PI)));
-		this.setPitch((float) (MathHelper.atan2(v.y, horiz) * (180.0 / Math.PI)));
+		this.setPitch((float) (MathHelper.atan2(-v.y, horiz) * (180.0 / Math.PI))); // 取负：与寒棘狐/冰锥惯例一致，配合渲染器 -pitch 旋转
 	}
 
 	@Override
@@ -144,25 +150,21 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 		super.onEntityHit(entityHitResult);
 		Entity target = entityHitResult.getEntity();
 		if (target instanceof LivingEntity livingTarget && !this.getWorld().isClient) {
-			// 默认白名单：主人在线且目标受保护 → 不造成伤害
-			if (this.getOwner() instanceof ServerPlayerEntity ownerPlayer
-					&& WhitelistUtils.isProtected(ownerPlayer, livingTarget)) {
-				return;
-			}
 			// 对亡灵生物（僵尸/骷髅/幽灵等）额外增伤：每级 +10%（L1=+10% … L5=+50%）
 			float finalDamage = livingTarget.isUndead() ? damage * (1.0f + 0.1f * getSpellLevel()) : damage;
-			if (this.getOwner() instanceof LivingEntity owner) {
-				livingTarget.damage(this.getDamageSources().indirectMagic(owner, owner), finalDamage);
-			} else {
-				livingTarget.damage(this.getDamageSources().magic(), finalDamage);
+			// 公共命中结算（白名单豁免 → 法术伤害 → 经验补发 → 流派钩子）：见 SpellHitHelper
+			net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult hit =
+					net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.projectileHit(
+							this.getOwner(), livingTarget, finalDamage,
+							net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.LUNAR, refundCastId, expBountyTen);
+			if (hit == net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.HIT) {
+				expBountyTen = 0; // 经验已发放，清零防重复
 			}
-			// exp_mode 1/2 命中补发：damage 成功才发放，发放后清零防重复
-			if (livingTarget.hurtTime > 0 && this.getOwner() instanceof ServerPlayerEntity ownerPlayer) {
-				net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant.grant(ownerPlayer, expBountyTen);
-				expBountyTen = 0;
+			if (hit == net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.PROTECTED) {
+				return; // 白名单豁免：不播音
 			}
 			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
-					SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 0.8f, 1.5f);
+					SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 1.0f, 1.5f);
 		}
 	}
 
@@ -181,7 +183,9 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 
 	@Override
 	protected boolean canHit(Entity entity) {
-		return super.canHit(entity) && entity != this.getOwner() && entity instanceof LivingEntity;
+		// 排除盔甲架（与月灵光弹同口径）：假人不产返还/经验
+		return super.canHit(entity) && entity != this.getOwner()
+				&& entity instanceof LivingEntity && !(entity instanceof ArmorStandEntity);
 	}
 
 	@Override
@@ -196,6 +200,7 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 		if (nbt.contains("SpellLevel")) {
 			setLevel(nbt.getInt("SpellLevel"));
 		}
+		refundCastId = nbt.containsUuid("RefundCastId") ? nbt.getUuid("RefundCastId") : null;
 	}
 
 	@Override
@@ -208,6 +213,7 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 		}
 		nbt.putFloat("Damage", this.damage);
 		nbt.putInt("SpellLevel", getSpellLevel());
+		if (refundCastId != null) nbt.putUuid("RefundCastId", refundCastId);
 	}
 
 	@Override

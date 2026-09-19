@@ -56,24 +56,20 @@ public class VoidErosionSpell extends Spell {
 			}
 			// 减益每两级 +1 级：L1/L2=疲劳 I + 虚弱 II、L3/L4=II + III、L5=III + IV
 			int debuffAmplifier = (level - 1) / 2;
-			target.addStatusEffect(new StatusEffectInstance(StatusEffects.MINING_FATIGUE, DURATION_TICKS, debuffAmplifier));
-			target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, DURATION_TICKS, 1 + debuffAmplifier));
+			boolean applied = target.addStatusEffect(new StatusEffectInstance(StatusEffects.MINING_FATIGUE, DURATION_TICKS, debuffAmplifier));
+			applied |= target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, DURATION_TICKS, 1 + debuffAmplifier));
+			if (applied) {
+				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(caster, target,
+						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.VOID,
+						solo ? null : ssc_addon$getRefundCastId());
+			}
 		}
 		// 演出：暗紫侵蚀波纹（双圈）+ 低沉音效
-		spawnRing(serverWorld, ParticleTypes.PORTAL, caster.getX(), caster.getY() + 0.2, caster.getZ(), radius * 0.6, 20);
-		spawnRing(serverWorld, ParticleTypes.PORTAL, caster.getX(), caster.getY() + 0.4, caster.getZ(), radius, 28);
+		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.ring(serverWorld, ParticleTypes.PORTAL,
+				caster.getX(), caster.getY() + 0.2, caster.getZ(), radius * 0.6, 20);
+		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.ring(serverWorld, ParticleTypes.PORTAL,
+				caster.getX(), caster.getY() + 0.4, caster.getZ(), radius, 28);
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_WARDEN_AMBIENT, SoundCategory.PLAYERS, 0.6f, 0.6f);
-	}
-
-	/** 沿水平圆周均匀撒粒子（沿半径 radius，count 个）。 */
-	private static void spawnRing(ServerWorld world, net.minecraft.particle.ParticleEffect particle,
-	                              double x, double y, double z, double radius, int count) {
-		for (int i = 0; i < count; i++) {
-			double angle = 2 * Math.PI * i / count;
-			world.spawnParticles(particle,
-					x + Math.cos(angle) * radius, y, z + Math.sin(angle) * radius,
-					1, 0.05, 0.05, 0.05, 0.01);
-		}
 	}
 }

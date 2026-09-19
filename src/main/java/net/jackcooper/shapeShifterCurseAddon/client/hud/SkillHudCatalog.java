@@ -86,8 +86,8 @@ public final class SkillHudCatalog {
                 skill("water_dash", "shape-shifter-curse:form_axolotl_2_water_spurt", false)));
         FORMS.put("axolotl_aling", FORMS.get("axolotl_fluorescent"));
         FORMS.put("anubis_wolf_sp", List.of(
-                skill("death_domain", PRIMARY, true), skill("summon_wolves", SECONDARY, false),
-                skill("wither_brewing", null, false)));
+                skill("death_domain", PRIMARY, true), skill("summon_wolves", SECONDARY, false)));
+        // 纯能力标识（wither_brewing 凋零酿造）同上移出技能栏（无 CD 无交互，进化树可见）。
         pair("bat_desmodus", "blood_mist", "sonic_wave");
         pair("bat_parasitic_fruit", "parasitic_seed", "spore_bomb");
         pair("golden_sandstorm_sp", "wither_sand", "brand_detonation");
@@ -107,8 +107,7 @@ public final class SkillHudCatalog {
                 skill("purify", "form_allay_sp_purify_cooldown_timer", true),
                 // 群体治疗：需能量 100（服务端 mana_resource >= 100）
                 skill("group_heal", "form_allay_sp_group_heal_cooldown_timer", false,
-                        p -> hasResource(p, new Identifier("my_addon", "form_allay_sp_mana_resource"), 100)),
-                skill("amethyst_craft", null, false)));
+                        p -> hasResource(p, new Identifier("my_addon", "form_allay_sp_mana_resource"), 100))));
         FORMS.put("fallen_allay_sp", List.of(
                 skill("summon_vex", "form_fallen_allay_sp_vex_cd", true),
                 skill("shadow_scream", "form_fallen_allay_sp_active_scream_cooldown_timer", false)));
@@ -139,8 +138,9 @@ public final class SkillHudCatalog {
                 skill("fire_ring", "shape-shifter-curse:form_familiar_fox_fire_explode_cooldown", null, 0, "fire_ring", true,
                         p -> hasMana(p, 11.0)),
                 skill("fire_rocket", "shape-shifter-curse:form_familiar_fox_fire_arrow_cooldown", null, 0, "rocket", false,
-                        p -> hasMana(p, 2.5)),
-                skill("alchemy", null, null, 0, "alchemy", false)));
+                        p -> hasMana(p, 2.5))));
+        // 纯能力标识（alchemy 炼药、amethyst_craft 紫水晶工艺）已按用户定稿移出技能栏：
+        // 它们无 CD 无交互，仅静态展示；进化树 GUI 仍可看到对应节点。
     }
 
     private SkillHudCatalog() {}

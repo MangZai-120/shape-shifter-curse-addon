@@ -37,6 +37,7 @@ public class FireBoltSpell extends Spell {
 		bolt.setDamage(power);
 		bolt.setLevel(level);
 		bolt.setExpBountyTen(solo ? 0 : ssc_addon$takePendingExp()); // exp_mode 1/2 挂起经验随弹射物走
+		bolt.setRefundCastId(solo ? null : ssc_addon$getRefundCastId());
 		bolt.setFireTicks(level >= 3 ? FIRE_TICKS_HIGH : FIRE_TICKS_LOW);
 		Vec3d look = caster.getRotationVec(1.0F);
 		bolt.setDirection(look, getSpeedMultiplier(level));

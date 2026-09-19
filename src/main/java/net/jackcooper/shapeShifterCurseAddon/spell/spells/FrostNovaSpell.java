@@ -2,7 +2,6 @@ package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
-import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
@@ -57,35 +56,25 @@ public class FrostNovaSpell extends Spell {
 			if (target.distanceTo(caster) > radius) {
 				continue;
 			}
-			// 默认白名单：受保护目标免伤
-			if (WhitelistUtils.isProtected(caster, target)) {
+			// 公共命中结算（白名单豁免 → 法术伤害 → 经验补发 → 流派钩子逐目标；ICE 系无击杀分支）：见 SpellHitHelper
+			var hit = net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.projectileHit(
+					caster, target, power, net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.ICE,
+					solo ? null : ssc_addon$getRefundCastId(), solo ? 0 : ssc_addon$takePendingExp());
+			if (hit != net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.HIT) {
 				continue;
 			}
-			if (target.damage(serverWorld.getDamageSources().indirectMagic(caster, caster), power)) {
-				// exp_mode 1/2 命中补发：首个命中目标取全额（后续取 0，幂等），发放后挂起清零
-				net.jackcooper.shapeShifterCurseAddon.spell.SpellExpGrant.grant(caster,
-						solo ? 0 : ssc_addon$takePendingExp());
-			}
 			target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, slowTicks, 1));
+			// 霜碎：护甲 -50%，时长与缓速同步（L1=3s → L5=5s）
+			target.addStatusEffect(new StatusEffectInstance(
+					net.jackcooper.shapeShifterCurseAddon.SscAddon.FROST_SHATTER, slowTicks, 0));
 		}
-		// 演出：雪粒环 + 寒气音效
-		spawnRing(serverWorld, ParticleTypes.SNOWFLAKE, caster.getX(), caster.getY() + 0.2, caster.getZ(), radius * 0.6, 24);
-		spawnRing(serverWorld, ParticleTypes.SNOWFLAKE, caster.getX(), caster.getY() + 0.2, caster.getZ(), radius, 32);
-		spawnRing(serverWorld, ParticleTypes.CLOUD, caster.getX(), caster.getY() + 0.3, caster.getZ(), radius * 0.8, 12);
+		// 演出：球形寒气粒子（双层雪花球面 + 内部云雾）+ 寒气音效（与烈焰新星同款球形演出）
+		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.sphere(serverWorld,
+				caster.getX(), caster.getY() + 1.0, caster.getZ(), radius,
+				ParticleTypes.SNOWFLAKE, ParticleTypes.SNOWFLAKE, ParticleTypes.CLOUD, 8);
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_PLAYER_HURT_FREEZE, SoundCategory.PLAYERS, 1.0f, 0.8f);
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.8f, 0.6f);
-	}
-
-	/** 沿水平圆周均匀撒粒子（沿半径 radius，count 个）。 */
-	private static void spawnRing(ServerWorld world, net.minecraft.particle.ParticleEffect particle,
-	                              double x, double y, double z, double radius, int count) {
-		for (int i = 0; i < count; i++) {
-			double angle = 2 * Math.PI * i / count;
-			world.spawnParticles(particle,
-					x + Math.cos(angle) * radius, y, z + Math.sin(angle) * radius,
-					1, 0.05, 0.05, 0.05, 0.01);
-		}
 	}
 }

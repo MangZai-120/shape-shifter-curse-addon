@@ -65,9 +65,9 @@ public abstract class SwingPhysicsMixin {
 	private void ssca$swingTail(CallbackInfo ci) {
 		LocalSwing sw = SpiderMoonWeaverSwingClient.getLocalSwing();
 		if (sw == null || !sw.active) {
-			// 非摆荡：恢复重力（防 noGravity 泄漏）
-			ClientPlayerEntity self0 = (ClientPlayerEntity) (Object) this;
-			self0.setNoGravity(false);
+			// 非摆荡：不再触碰 noGravity。原光这里曾无条件 setNoGravity(false)，
+			// 会踩掉同 tick 其它技能（跳杀腾空/水矛跳跃/雾形态悬停等）刚设置的 noGravity=true，
+			// 导致腾空滞空失效（受重力应声下坠）。摆荡期间重力由下方自积分接管，无需在此恢复。
 			return;
 		}
 

@@ -2,10 +2,10 @@ package net.jackcooper.shapeShifterCurseAddon.ability;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -49,9 +49,9 @@ public final class WindSpiritWindPressureManager {
         Entity ownerEntity = projectile.getOwner();
         if (ownerEntity == null) return false;
 
-        // 寻找范围内是否有风灵
-        Box checkBox = projectile.getBoundingBox().expand(RANGE);
-        ServerPlayerEntity windSpirit = findWindSpiritInRange(world, projectile, checkBox);
+        // 寻找范围内是否有风灵：先扫玩家（数量极小）找不到直接返回，避免无风灵时
+        // 每枚弹射物前 5 tick 都全实体扫描（getOtherEntities 是重调用）。
+        ServerPlayerEntity windSpirit = findWindSpiritInRange(world, projectile);
         if (windSpirit == null) return false;
 
         // 风灵本人发射的弹射物不受影响
@@ -71,11 +71,13 @@ public final class WindSpiritWindPressureManager {
     }
 
     /** 在范围内找一个风灵玩家。 */
-    private static ServerPlayerEntity findWindSpiritInRange(ServerWorld world, Entity projectile, Box box) {
-        for (Entity e : world.getOtherEntities(projectile, box)) {
-            if (!(e instanceof ServerPlayerEntity sp)) continue;
+    private static ServerPlayerEntity findWindSpiritInRange(ServerWorld world, Entity projectile) {
+        // 只扫玩家列表（getPlayers），不做 getOtherEntities 全实体 AABB 扫描；
+        // 判定与原版一致：8 格半径内且为风灵形态。
+        for (PlayerEntity p : world.getPlayers()) {
+            if (!(p instanceof ServerPlayerEntity sp)) continue;
             if (!FormUtils.isOcelotSP(sp)) continue;
-            if (e.squaredDistanceTo(projectile) <= RANGE * RANGE) {
+            if (p.squaredDistanceTo(projectile) <= RANGE * RANGE) {
                 return sp;
             }
         }

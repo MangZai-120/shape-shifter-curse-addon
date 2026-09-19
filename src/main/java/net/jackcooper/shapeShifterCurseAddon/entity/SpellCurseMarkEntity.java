@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.entity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
@@ -46,6 +47,11 @@ public class SpellCurseMarkEntity extends ProjectileEntity implements FlyingItem
 
 	private Vec3d startPos;
 	private int ticksAlive = 0;
+	private java.util.UUID refundCastId;
+
+	public void setRefundCastId(java.util.UUID castId) {
+		refundCastId = castId;
+	}
 
 	public SpellCurseMarkEntity(EntityType<? extends SpellCurseMarkEntity> entityType, World world) {
 		super(entityType, world);
@@ -150,8 +156,13 @@ public class SpellCurseMarkEntity extends ProjectileEntity implements FlyingItem
 				return;
 			}
 			// amplifier = 等级-1（L1=0 … L5=4）：mixin 按其计算受伤加深 1.2+0.1×amp
-			livingTarget.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
+			boolean hadHarmfulEffect = net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.hasHarmfulEffect(livingTarget);
+			boolean applied = livingTarget.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
 					SscAddon.CURSE_MARK, getDuration(), getSpellLevel() - 1));
+			if (applied && this.getOwner() instanceof ServerPlayerEntity caster) {
+				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(caster, livingTarget,
+						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.CURSE, refundCastId, hadHarmfulEffect);
+			}
 			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.ENTITY_EVOKER_PREPARE_SUMMON, SoundCategory.PLAYERS, 1.0f, 1.2f);
 		}
@@ -172,12 +183,15 @@ public class SpellCurseMarkEntity extends ProjectileEntity implements FlyingItem
 
 	@Override
 	protected boolean canHit(Entity entity) {
-		return super.canHit(entity) && entity != this.getOwner() && entity instanceof LivingEntity;
+		// 排除盔甲架：假人不吃诅咒标记，避免浪费弹体
+		return super.canHit(entity) && entity != this.getOwner()
+				&& entity instanceof LivingEntity && !(entity instanceof ArmorStandEntity);
 	}
 
 	@Override
 	public void readCustomDataFromNbt(NbtCompound nbt) {
 		super.readCustomDataFromNbt(nbt);
+		refundCastId = nbt.containsUuid("RefundCastId") ? nbt.getUuid("RefundCastId") : null;
 		if (nbt.contains("StartX")) {
 			this.startPos = new Vec3d(nbt.getDouble("StartX"), nbt.getDouble("StartY"), nbt.getDouble("StartZ"));
 		}
@@ -192,6 +206,7 @@ public class SpellCurseMarkEntity extends ProjectileEntity implements FlyingItem
 	@Override
 	public void writeCustomDataToNbt(NbtCompound nbt) {
 		super.writeCustomDataToNbt(nbt);
+		if (refundCastId != null) nbt.putUuid("RefundCastId", refundCastId);
 		if (startPos != null) {
 			nbt.putDouble("StartX", startPos.x);
 			nbt.putDouble("StartY", startPos.y);
