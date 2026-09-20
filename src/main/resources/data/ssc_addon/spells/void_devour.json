@@ -2,7 +2,7 @@
   "spell_tier": "advanced_1",
   "interrupt_mode": 3,
   "base_damage": 6.0,
-  "base_cooldown_ticks": 160,
+  "base_cooldown_ticks": 300,
   "cooldown_floor_ticks": 15,
   "base_cast_time_ticks": 0,
   "mana_cost": 22,
@@ -13,9 +13,9 @@
   "exp_mode": 2,
   "levels": [
     { "rarity": "white" },
-    { "damage_multiplier": 1.17, "mana_cost_multiplier": 1.2, "speed_multiplier": 1.1, "rarity": "green" },
-    { "damage_multiplier": 1.33, "mana_cost_multiplier": 1.44, "cooldown_multiplier": 0.8, "speed_multiplier": 1.2, "rarity": "blue" },
-    { "damage_multiplier": 1.5, "mana_cost_multiplier": 1.72, "cooldown_multiplier": 0.8, "speed_multiplier": 1.3, "rarity": "purple" },
-    { "damage_multiplier": 1.67, "mana_cost_multiplier": 2.07, "cooldown_multiplier": 0.6, "speed_multiplier": 1.4, "rarity": "orange" }
+    { "damage_multiplier": 1.17, "mana_cost_multiplier": 1.2, "cooldown_multiplier": 0.8833, "speed_multiplier": 1.1, "rarity": "green" },
+    { "damage_multiplier": 1.33, "mana_cost_multiplier": 1.44, "cooldown_multiplier": 0.7667, "speed_multiplier": 1.2, "rarity": "blue" },
+    { "damage_multiplier": 1.5, "mana_cost_multiplier": 1.72, "cooldown_multiplier": 0.65, "speed_multiplier": 1.3, "rarity": "purple" },
+    { "damage_multiplier": 1.67, "mana_cost_multiplier": 2.07, "cooldown_multiplier": 0.5333, "speed_multiplier": 1.4, "rarity": "orange" }
   ]
 }

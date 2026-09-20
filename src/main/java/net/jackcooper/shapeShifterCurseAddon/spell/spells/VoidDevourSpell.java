@@ -14,7 +14,7 @@ import net.minecraft.util.Identifier;
  * 同陨火术交互），松开在落点爆发虚无吞噬——落点 AOE 伤害 + 失明，准星未命中方块时拒绝施放。
  *
  * <p>数值外置 {@code data/ssc_addon/spells/void_devour.json}：
- * 基准 6 伤 + 失明 3s（每两级 +1s）/ 射程 16 格（按 speed_multiplier 缩放）/ cd 8s / 耗蓝 22。</p>
+ * 基准 6 伤 + 失明 3s（每两级 +1s）/ 射程 16 格（按 speed_multiplier 缩放）/ cd 15s（L5 8s，每级 -1.75s）/ 耗蓝 22。</p>
  */
 public class VoidDevourSpell extends Spell {
 

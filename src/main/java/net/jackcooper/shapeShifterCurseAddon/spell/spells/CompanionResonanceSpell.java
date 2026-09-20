@@ -30,7 +30,7 @@ import java.util.List;
  * </ul>
  *
  * <p>数值外置 {@code data/ssc_addon/spells/companion_resonance.json}：
- * 基准半径 8 格 / 30s + 10s/级 / cd 25s / 耗蓝 15。</p>
+ * 基准半径 8 格 / 30s + 10s/级 / cd 25s（L5 15s，每级 -2.5s）/ 耗蓝 15。</p>
  */
 public class CompanionResonanceSpell extends Spell {
 

@@ -18,7 +18,7 @@ public final class SpellNumbers {
 	public static int finalManaCost(Spell spell, net.minecraft.item.ItemStack book,
 	                               net.minecraft.entity.player.PlayerEntity player, int selectedLevel) {
 		int costLevel = FormAffinity.manaCostLevel(player, spell.getElement(), selectedLevel);
-		int manaCost = Math.round(spell.getManaCost() * FormationData.sumManaCostMultiplier(book)
+		int manaCost = Math.round(spell.getManaCost() * FormationData.sumManaCostMultiplier(book, spell.getElement())
 				* FormAffinity.manaCostMultiplier(player) * spell.getConfig().manaCostMultiplier(costLevel));
 		return FormCastingStyle.applyTidalDiscount(player, spell.getElement(), manaCost);
 	}

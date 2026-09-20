@@ -13,9 +13,9 @@
   "exp_mode": 0,
   "levels": [
     { "rarity": "white" },
-    { "speed_multiplier": 1.25, "mana_cost_multiplier": 1.25, "cooldown_multiplier": 0.9, "rarity": "green" },
-    { "speed_multiplier": 1.56, "mana_cost_multiplier": 1.56, "cooldown_multiplier": 0.81, "rarity": "blue" },
-    { "speed_multiplier": 1.95, "mana_cost_multiplier": 1.95, "cooldown_multiplier": 0.73, "rarity": "purple" },
-    { "speed_multiplier": 2.44, "mana_cost_multiplier": 2.44, "cooldown_multiplier": 0.66, "rarity": "orange" }
+    { "speed_multiplier": 1.25, "mana_cost_multiplier": 1.25, "cooldown_multiplier": 0.875, "rarity": "green" },
+    { "speed_multiplier": 1.56, "mana_cost_multiplier": 1.56, "cooldown_multiplier": 0.75, "rarity": "blue" },
+    { "speed_multiplier": 1.95, "mana_cost_multiplier": 1.95, "cooldown_multiplier": 0.625, "rarity": "purple" },
+    { "speed_multiplier": 2.44, "mana_cost_multiplier": 2.44, "cooldown_multiplier": 0.5, "rarity": "orange" }
   ]
 }

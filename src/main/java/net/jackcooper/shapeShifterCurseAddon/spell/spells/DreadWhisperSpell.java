@@ -21,7 +21,7 @@ import java.util.List;
  * 范围内敌人被虚弱 + 缓速 + 击退，零伤害纯控场。
  *
  * <p>数值外置 {@code data/ssc_addon/spells/dread_whisper.json}：
- * 基准锥长 6 格 / 锥角 60° / 虚弱 I + 缓速 II 6s / cd 14s / 耗蓝 18；
+ * 基准锥长 6 格 / 锥角 60° / 虚弱 I + 缓速 II 6s / cd 20s（L5 10s，每级 -2.5s）/ 耗蓝 18；
  * 锥长按 speed_multiplier 缩放。</p>
  */
 public class DreadWhisperSpell extends Spell {

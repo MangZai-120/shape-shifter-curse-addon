@@ -24,7 +24,7 @@ import net.minecraft.world.RaycastContext;
  * （尽头受阻则向起点内收至最后无阻挡处）。</p>
  *
  * <p>数值外置 {@code data/ssc_addon/spells/space_blink.json}：
- * 基准距离 8 格（每级 +25%）/ cd 16s（每级 -10%）/ 耗蓝 30（每级 +25%）；
+ * 基准距离 8 格（每级 +25%）/ cd 16s（L5 8s，每级 -2s）/ 耗蓝 30（每级 +25%）；
  * 吃空间法阵距离加成。</p>
  */
 public class SpaceBlinkSpell extends Spell {

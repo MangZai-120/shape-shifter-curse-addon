@@ -14,7 +14,7 @@ import net.minecraft.util.math.Vec3d;
  * 8 秒内受到的伤害 +20%（伤害加深），且其造成的伤害 -15%（双段削弱）；可被月辉系净化。
  *
  * <p>数值外置 {@code data/ssc_addon/spells/curse_mark.json}：
- * 基准 0 直伤 / 8s 标记（受伤 +20%）/ cd 10s / 耗蓝 15；标记时长按等级 +2s/级（L5=16s）。</p>
+ * 基准 0 直伤 / 8s 标记（受伤 +20%）/ cd 15s（L5 10s，每级 -1.25s）/ 耗蓝 15；标记时长按等级 +2s/级（L5=16s）。</p>
  */
 public class CurseMarkSpell extends Spell {
 

@@ -265,6 +265,11 @@ public final class MancianimaMarkManager {
 			if (!valid || !targetAlive) {
 				cit.remove();
 				marker.sendMessage(net.minecraft.text.Text.translatable("message.ssc_addon.mancianima.channel_fail"), true);
+				// 引导中断 = 联动失败：次技能引导（type=2）进入 3.5s 失败 CD；主技能引导（type=1）维持原行为不设 CD
+				if (cs.type == 2) {
+					PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_SECONDARY_CD,
+							MancianimaTeleport.RED_FAIL_CD_TICKS);
+				}
 				continue;
 			}
 			marker.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 5, 3, false, false, false));

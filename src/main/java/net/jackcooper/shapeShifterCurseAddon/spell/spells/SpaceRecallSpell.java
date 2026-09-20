@@ -17,7 +17,7 @@ import net.minecraft.util.math.BlockPos;
  * 读条完成 → {@code SpaceRecallManager.completeNow} 传送结算。
  *
  * <p>数值外置 {@code data/ssc_addon/spells/space_recall.json}：
- * 读条 8s / cd 45s / 耗蓝 30（每级 +20%）。</p>
+ * 读条 8s / cd 60s（L5 30s，每级 -7.5s）/ 耗蓝 60（每级 +20%）。</p>
  */
 public class SpaceRecallSpell extends Spell {
 

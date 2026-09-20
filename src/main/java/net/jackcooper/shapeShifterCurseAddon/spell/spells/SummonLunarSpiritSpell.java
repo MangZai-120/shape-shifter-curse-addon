@@ -21,7 +21,7 @@ import net.minecraft.entity.Entity;
  * 寿命 30s + 10s/等级。月灵跟随主人、攻击主人攻击过的目标（伤害归因主人）。
  *
  * <p>数值外置 {@code data/ssc_addon/spells/summon_lunar_spirit.json}：
- * cd 30s / 耗蓝 35；召唤数量与寿命由等级在服务端定（数量 1/2 只）。
+ * cd 40s（L5 25s，每级 -3.75s）/ 耗蓝 35；召唤数量与寿命由等级在服务端定（数量 1/2 只）。
  * 契约容量（阶段 B / 计划书 §11.2）：同时存活月灵上限 {@link #CONTRACT_CAPACITY} 只，
  * 满编时新召唤自动顶替最早的（不拦截施法、不误删其它实体）。</p>
  */

@@ -14,7 +14,7 @@ import net.minecraft.util.math.Vec3d;
  * 命中造成魔法伤害；对亡灵生物额外 +50%。
  *
  * <p>数值外置 {@code data/ssc_addon/spells/moonlight_arrow.json}：
- * 基准 4 伤（对亡灵 6）/ cd 4s / 耗蓝 12；速度按 speed_multiplier 缩放（弹道更快）。</p>
+ * 基准 4 伤（对亡灵 6）/ cd 10s（L5 5s） / 耗蓝 12；速度按 speed_multiplier 缩放（弹道更快）。</p>
  */
 public class MoonlightArrowSpell extends Spell {
 

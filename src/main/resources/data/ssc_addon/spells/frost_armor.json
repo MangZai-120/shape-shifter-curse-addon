@@ -2,7 +2,7 @@
   "spell_tier": "basic_2",
   "interrupt_mode": 0,
   "base_damage": 8.0,
-  "base_cooldown_ticks": 600,
+  "base_cooldown_ticks": 500,
   "cooldown_floor_ticks": 60,
   "base_cast_time_ticks": 0,
   "mana_cost": 25,

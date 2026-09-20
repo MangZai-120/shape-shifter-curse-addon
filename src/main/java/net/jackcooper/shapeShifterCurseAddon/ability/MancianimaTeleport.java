@@ -34,15 +34,15 @@ import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
  * - PLATFORM：锁定准星方向最近的可站立平台，落点紫色粒子仅自己可见，
  *   按下时显示预览，松开按键时传送；前方无可传送平台则拒绝（不消耗CD/法力）
  *
- * CD: 5 秒（100 tick）   法力消耗: 15
+ * CD: 3.5 秒（70 tick）   法力消耗: 5
  * 仅自身瞬移，不需要白名单。
  */
 public final class MancianimaTeleport {
 
-	public static final int COOLDOWN_TICKS = 100; // 5s
+	public static final int COOLDOWN_TICKS = 70; // 3.5s
 	public static final int RED_KILL_NO_KILL_CD_TICKS = 200; // 10s 成功CD
-	public static final int RED_FAIL_CD_TICKS = 100; // 5s 失败CD
-	public static final int MANA_COST = 15;
+	public static final int RED_FAIL_CD_TICKS = 70; // 3.5s 失败CD（引导中断/完成时目标已死）
+	public static final int MANA_COST = 5;
 	public static final int RED_MARK_MANA_COST = 20;
 	public static final double MAX_RANGE = 8.0;
 	public static final double RED_MARK_TARGET_RANGE = 32.0;

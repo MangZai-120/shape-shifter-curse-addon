@@ -25,11 +25,16 @@ public final class FormationData {
 	/** 法阵等级上限。 */
 	public static final int MAX_FORMATION_LEVEL = 5;
 
-	/** 每级数值：同系伤 +12%、对立系伤 -12%、同系 cd -5%、全魔法耗蓝 +10%；空间法阵对空间魔法距离 +6%/级。 */
+	/** 每级数值（2026-09-20 重定稿）：同系伤 +12%、对立系伤 -12%、同系 cd -5%、对立系 cd +5%；
+	 * 耗蓝：同系与对立系 +10%/级、其它系仅 +2.5%/级（1/4）；空间法阵对空间魔法距离 +6%/级。 */
 	public static final float DAMAGE_BONUS_PER_LEVEL = 0.12f;
 	public static final float DAMAGE_PENALTY_PER_LEVEL = 0.12f;
 	public static final float COOLDOWN_REDUCTION_PER_LEVEL = 0.05f;
+	/** 对立系冷却惩罚（2026-09-20 新增）：对立系魔法 CD 每级 +5%（与同系缩减对称）。 */
+	public static final float COOLDOWN_PENALTY_PER_LEVEL = 0.05f;
 	public static final float MANA_COST_PER_LEVEL = 0.10f;
+	/** 其它系（非同系非对立）耗蓝代价（2026-09-20）：同系的 1/4，即 +2.5%/级。 */
+	public static final float MANA_COST_OTHER_ELEMENT_PER_LEVEL = MANA_COST_PER_LEVEL / 4f;
 	public static final float SPACE_RANGE_BONUS_PER_LEVEL = 0.06f;
 
 	private FormationData() {
@@ -120,8 +125,9 @@ public final class FormationData {
 	}
 
 	/**
-	 * 汇总全部法阵对「指定系别魔法」的冷却倍率。
-	 * 对立对（火冰/月诅/召虚）同系每级 -5%；空间系法阵只对空间系魔法生效（每级 -5%）；
+	 * 汇总全部法阵对「指定系别魔法」的冷却倍率（2026-09-20 重定稿）。
+	 * 同系每级 -5%；对立系每级 +5%（新增对称惩罚，仅火冰/月诅/召虚三组对立对）；
+	 * 空间系法阵只对空间系魔法生效（每级 -5%，空间无对立不惩罚）；
 	 * 最低 0.2 倍防极端。
 	 */
 	public static float sumCooldownMultiplier(ItemStack book, FormationElement spellElement) {
@@ -137,6 +143,8 @@ public final class FormationData {
 			boolean isSpacePair = element == FormationElement.SPACE && spellElement == FormationElement.SPACE;
 			if (element == spellElement || isSpacePair) {
 				total -= COOLDOWN_REDUCTION_PER_LEVEL * getLevel(formation);
+			} else if (element == spellElement.opponent()) {
+				total += COOLDOWN_PENALTY_PER_LEVEL * getLevel(formation);
 			}
 		}
 		return Math.max(0.2f, 1f + total);
@@ -157,15 +165,27 @@ public final class FormationData {
 		return 1f + total;
 	}
 
-	/** 汇总全部法阵对「全魔法」的法力消耗倍率（每级 +10%，不封顶——这就是叠加的代价）。 */
-	public static float sumManaCostMultiplier(ItemStack book) {
+	/**
+	 * 汇总全部法阵对「指定系别魔法」的法力消耗倍率（2026-09-20 重定稿）。
+	 * 同系 +10%/级、对立系 +10%/级、其它系仅 +2.5%/级（1/4）——不再全系等价；
+	 * 通用系法阵不增加耗蓝；空间法阵对非空间魔法按其它系 +2.5%（空间无对立）。
+	 * 多枚叠加不封顶。
+	 */
+	public static float sumManaCostMultiplier(ItemStack book, FormationElement spellElement) {
+		if (spellElement == null) {
+			return 1f;
+		}
 		float total = 0f;
 		for (ItemStack formation : SpellbookData.getFormations(book)) {
 			FormationElement element = getElement(formation);
 			if (element == null || element == FormationElement.UNIVERSAL) {
 				continue; // 通用系不增加耗蓝
 			}
-			total += MANA_COST_PER_LEVEL * getLevel(formation);
+			if (element == spellElement || element == spellElement.opponent()) {
+				total += MANA_COST_PER_LEVEL * getLevel(formation);
+			} else {
+				total += MANA_COST_OTHER_ELEMENT_PER_LEVEL * getLevel(formation);
+			}
 		}
 		return 1f + total;
 	}

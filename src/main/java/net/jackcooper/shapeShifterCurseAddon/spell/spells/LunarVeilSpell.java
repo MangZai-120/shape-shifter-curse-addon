@@ -19,7 +19,7 @@ import java.util.List;
  * （自己 + 未受白名单保护的玩家/驯服宠物）获得抗性 + 缓降，持续一段时间的即时群体增益。
  *
  * <p>数值外置 {@code data/ssc_addon/spells/lunar_veil.json}：
- * 基准半径 3 格 / 抗性 I 8s + 缓降 I 8s / cd 20s / 耗蓝 25；
+ * 基准半径 3 格 / 抗性 I 8s + 缓降 I 8s / cd 25s（L5 15s） / 耗蓝 25；
  * 半径按 speed_multiplier 缩放（与新星家族一致）。</p>
  *
  * <p>白名单语义：受保护目标（白名单内玩家与宠物）同样受益——增益类法术不做排除。</p>

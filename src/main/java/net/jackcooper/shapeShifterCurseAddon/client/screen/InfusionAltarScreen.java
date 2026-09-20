@@ -145,19 +145,21 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 				}
 			}
 			ctx.drawText(this.textRenderer, Text.literal(expStr), 8, 77, 0x9A88CC, false);
-			// 已装法阵加成汇总（耗蓝对全魔法同一倍率；对立对逐对展示当前加成）
-			float manaMul = FormationData.sumManaCostMultiplier(book);
+			// 已装法阵加成汇总（2026-09-20 新规则：耗蓝按系分档——同系/对立系 +10%/级、其它系 +2.5%/级；对立对逐对展示当前加成）
+			// 耗蓝展示两个档：同系价（对立系同价）与其它系价
+			float manaSame = FormationData.sumManaCostMultiplier(book, FormationElement.FIRE);
+			float manaOther = FormationData.sumManaCostMultiplier(book, FormationElement.LUNAR);
 			ctx.drawText(this.textRenderer, Text.literal(String.format("法阵 %d/%d", countFormations(book), formationSlots)), 8, 87, 0x9A88CC, false);
 			ctx.drawText(this.textRenderer, Text.literal(String.format("火×%.2f 冰×%.2f 月×%.2f 诅×%.2f", 
 					FormationData.sumDamageMultiplier(book, FormationElement.FIRE),
 					FormationData.sumDamageMultiplier(book, FormationElement.ICE),
 					FormationData.sumDamageMultiplier(book, FormationElement.LUNAR),
 					FormationData.sumDamageMultiplier(book, FormationElement.CURSE))), 8, 97, 0x8090C8, false);
-			ctx.drawText(this.textRenderer, Text.literal(String.format("召×%.2f 虚×%.2f 空CD×%.2f 蓝耗×%.2f", 
+			ctx.drawText(this.textRenderer, Text.literal(String.format("召×%.2f 虚×%.2f 空CD×%.2f 蓝耗同系×%.2f/其它×%.2f", 
 					FormationData.sumDamageMultiplier(book, FormationElement.SUMMON),
 					FormationData.sumDamageMultiplier(book, FormationElement.VOID),
 					FormationData.sumCooldownMultiplier(book, FormationElement.SPACE),
-					manaMul)), 8, 107, 0x8090C8, false);		// 通用法阵成长效果（2026-09-15）：经验法阵 exp 倍率 + 增能法阵法力上限加成（各取最高等级，未装则不显示）
+					manaSame, manaOther)), 8, 107, 0x8090C8, false);		// 通用法阵成长效果（2026-09-15）：经验法阵 exp 倍率 + 增能法阵法力上限加成（各取最高等级，未装则显示）
 		int bestExp = FormationData.getBestUniversalVariantLevel(book, FormationData.VARIANT_EXP);
 		int bestMana = FormationData.getBestUniversalVariantLevel(book, FormationData.VARIANT_MANA);
 		if (bestExp > 0 || bestMana > 0) {

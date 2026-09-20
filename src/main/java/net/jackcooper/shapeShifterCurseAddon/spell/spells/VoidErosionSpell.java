@@ -20,7 +20,7 @@ import java.util.List;
  * 范围内敌人挖掘疲劳 + 虚弱 8s（对怪物对玩家均生效，走白名单）。
  *
  * <p>数值外置 {@code data/ssc_addon/spells/void_erosion.json}：
- * 基准半径 3 格 / 8s / cd 16s / 耗蓝 20；半径按 speed_multiplier 缩放。</p>
+ * 基准半径 3 格 / 8s / cd 20s（L5 12s，每级 -2s）/ 耗蓝 20；半径按 speed_multiplier 缩放。</p>
  */
 public class VoidErosionSpell extends Spell {
 

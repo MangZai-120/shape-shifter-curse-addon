@@ -13,7 +13,7 @@ import net.minecraft.util.math.Vec3d;
  * 冰锥齐射（冰系，绿色基底，jackcooper）：朝准星扇形散射 3 枚可穿刺冰锥，各自独立命中结算。
  *
  * <p>数值外置 {@code data/ssc_addon/spells/ice_barrage.json}：
- * 基准每枚 4 伤 / cd 25s / 耗蓝 30；三枚呈 ±12° 扇形，速度按等级倍率缩放（Lv5 ×1.75）。
+ * 基准每枚 4 伤 / cd 15s（L5 8s） / 耗蓝 30；三枚呈 ±12° 扇形，速度按等级倍率缩放（Lv5 ×1.75）。
  * <b>穿刺</b>：每枚最多可命中 2 + (等级-1) 个敌人（Lv1=2 → Lv5=6），命中后不碎裂继续飞行，
  * 达上限或撞方块/超距才消失（穿刺机制在实体内实现，单发冰锥不受影响）。
  * 复用 {@link SpellFrostSpikeEntity}（伤害即 power），不新建实体。</p>

@@ -73,9 +73,9 @@ public final class SkillHudCatalog {
         // 使魔Red：同上
         pair("familiar_fox_red", "red_fire_ring", "red_fire_breath",
                 p -> hasMana(p, 99.0), p -> hasMana(p, 20.0));
-        // 契灵：烙印最低 5 mana；魂跃 15 mana
+        // 契灵：烙印最低 5 mana；魂跃 5 mana
         pair("familiar_fox_mancianima", "contract_mark", "soul_teleport",
-                p -> hasMana(p, 5.0), p -> hasMana(p, 15.0));
+                p -> hasMana(p, 5.0), p -> hasMana(p, 5.0));
         // 月织蛛：织网术起手 6 mana；蛛丝荡漾 1 mana
         pair("spider_moon_weaver", "moon_web", "web_swing",
                 p -> hasMana(p, 6.0), p -> hasMana(p, 1.0));
