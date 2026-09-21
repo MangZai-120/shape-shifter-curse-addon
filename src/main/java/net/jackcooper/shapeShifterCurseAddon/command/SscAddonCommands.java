@@ -124,6 +124,17 @@ public class SscAddonCommands {
 				.then(CommandManager.literal("my_whitelist")
 						.executes(SscAddonCommands::openWhitelistGui)
 				)
+				// 重置法术 CD（OP）：清目标玩家全部法术冷却（共享表 + 书内卷轴 NBT + 施法 GCD）
+				.then(CommandManager.literal("reset_spell_cd")
+						.requires(source -> source.hasPermissionLevel(2))
+						.executes(context -> resetSpellCd(context,
+								context.getSource().getPlayer() == null
+										? Collections.emptyList()
+										: Collections.singletonList(context.getSource().getPlayer())))
+						.then(CommandManager.argument("targets", EntityArgumentType.players())
+								.executes(context -> resetSpellCd(context, EntityArgumentType.getPlayers(context, "targets")))
+						)
+				)
 				// 入门三选一（阶段 C / 计划书 §5：每玩家一次，火球/冰锥/月光箭任选一张 Lv1 卷轴；无 OP 限制）
 				.then(CommandManager.literal("starter")
 						.then(CommandManager.argument("choice", StringArgumentType.word())
@@ -728,6 +739,40 @@ public class SscAddonCommands {
 		}
 		net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.sendWhitelistSync(player);
 		return 1;
+	}
+
+	/**
+	 * 重置目标玩家的全部法术 CD（/ssc_addon reset_spell_cd，OP）。
+	 * 清理三处：① 共享 CD 表（施法判定权威）；② 装备书内所有卷轴的 NBT Cd；
+	 * ③ 施法 GCD 门（释放后 0.8s 间隔）。正在读条的会话不强制中断（CD 重置只影响下一次起手）。
+	 */
+	private static int resetSpellCd(CommandContext<ServerCommandSource> context, Collection<ServerPlayerEntity> targets) {
+		if (targets.isEmpty()) {
+			context.getSource().sendError(Text.translatable("command.ssc_addon.reset_spell_cd.console_need_target"));
+			return 0;
+		}
+		int count = 0;
+		for (ServerPlayerEntity player : targets) {
+			// ① 共享 CD 表（权威）
+			net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.clearAllFor(player);
+			// ② 装备书内卷轴 NBT Cd（HUD 显示用；共享表已清，这里是保持显示一致）
+			net.minecraft.item.ItemStack book = net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.getEquippedBook(player);
+			if (book != null && !book.isEmpty()) {
+				for (int slot = 0; slot < net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.getSlotCount(book); slot++) {
+					net.minecraft.item.ItemStack scroll = net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.getScroll(book, slot);
+					if (!scroll.isEmpty()) {
+						net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.setCooldownEnd(scroll, 0L);
+						net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.setScroll(book, slot, scroll);
+					}
+				}
+			}
+			// ③ 施法 GCD 门
+			net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.clearCastGate(player);
+			count++;
+		}
+		final int cleared = count;
+		context.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.reset_spell_cd.success", cleared), true);
+		return count;
 	}
 
 	/**

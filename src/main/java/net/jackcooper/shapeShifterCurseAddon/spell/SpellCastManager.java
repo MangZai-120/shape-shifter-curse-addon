@@ -129,7 +129,7 @@ public final class SpellCastManager {
 			return;
 		}
 		// 施放档位（低阶选档，§6.4；缺省=卷轴档位；三连击降档由 forcedLevel 指定临时档）
-		int level = forcedLevel > 0 ? forcedLevel : ScrollData.getCastLevel(scroll);
+		int level = Math.max(1, Math.min(spell.getMaxLevel(), forcedLevel > 0 ? forcedLevel : ScrollData.getCastLevel(scroll)));
 		// 法阵加成：耗蓝倍率（全魔法每级 +10%）+ 形态亲和耗蓝乘区（使魔系 ×0.85）+ 每级耗蓝倍率
 		// （耗蓝按施放档位算——低阶施放省蓝；召唤亲和 +1 只加强施法效果，不推高耗蓝）
 		int manaCost = SpellNumbers.finalManaCost(spell, book, player, level);

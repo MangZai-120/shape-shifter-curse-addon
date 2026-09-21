@@ -398,7 +398,7 @@ public class SscAddon implements ModInitializer {
 						// 每个已注册魔法生成全套等级卷轴（1-5 级对应白/绿/蓝/紫/橙品质）
 						for (net.jackcooper.shapeShifterCurseAddon.spell.Spell spell :
 								net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.all()) {
-							for (int lv = 1; lv <= net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.MAX_SPELL_LEVEL; lv++) {
+							for (int lv = 1; lv <= spell.getMaxLevel(); lv++) {
 								entries.add(net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.create(spell.getId().getPath(), lv));
 							}
 						}
@@ -653,6 +653,7 @@ public class SscAddon implements ModInitializer {
 		net.jackcooper.shapeShifterCurseAddon.ability.CorruptMistManager.init(); // 腐蚀之雾持续区域结算（诅咒系法术；归途传送结算 SpaceRecallManager 已无 tick，不需 init）
 		net.jackcooper.shapeShifterCurseAddon.spell.pocket.PocketSpaceManager.init();
 		net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.init();
+		net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.init();
 		net.jackcooper.shapeShifterCurseAddon.ability.LunarSpiritTargetLink.init(); // 月灵目标联动（主人打谁月灵打谁，召唤系）
 		net.jackcooper.shapeShifterCurseAddon.ability.CompanionResonanceManager.init(); // 伙伴共鸣伤害增益到期清理（召唤系）
 		SeedEnergyEatingHandler.register();

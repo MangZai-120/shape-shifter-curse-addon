@@ -176,7 +176,7 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 			FormationKnowledgeComponent knowledge = FormationKnowledgeComponent.get(this.client.player);
 			if (this.tab == 2) {
 				for (Spell spell : SpellRegistry.all()) {
-					if (knowledge.hasSpell(spell.getId().getPath())) {
+					if (spell.getMaxLevel() > 1 && knowledge.hasSpell(spell.getId().getPath())) {
 						next.add(new Entry(spell.getId().getPath(), null, 0, spell));
 					}
 				}

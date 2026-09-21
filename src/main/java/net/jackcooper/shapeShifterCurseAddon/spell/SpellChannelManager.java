@@ -85,6 +85,11 @@ public final class SpellChannelManager {
 		return ACTIVE.containsKey(player.getUuid());
 	}
 
+	/** 清掉玩家的施法 GCD 门（/ssc_addon reset_spell_cd 用；不影响正在进行的读条）。 */
+	public static void clearCastGate(ServerPlayerEntity player) {
+		NEXT_CAST_OK.remove(player.getUuid());
+	}
+
 	public static void setClientImmobile(UUID player) {
 		clientImmobile = player;
 	}
@@ -115,6 +120,7 @@ public final class SpellChannelManager {
 		Channel channel = new Channel(player, spell, scroll, level, solo, token, mana, cooldown,
 				sourceValid, payTo, effect, settleCooldown, consumeUse);
 		ACTIVE.put(player.getUuid(), channel);
+		spell.onChannelStarted(player);
 		var speed = player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
 		if (speed != null) {
 			speed.removeModifier(SLOW_ID);
@@ -231,8 +237,9 @@ public final class SpellChannelManager {
 		if (channel == null) return;
 		clearSlow(player);
 		broadcastVisual(channel, false);
+		channel.spell.onChannelEnded(player, interrupted);
 		channel.settleCooldown.accept(interrupted
-				? SpellCastingRules.interruptedCooldown(channel.cooldown) : channel.cooldown);
+				? channel.spell.getInterruptedCooldown(channel.cooldown) : channel.cooldown);
 		if (!interrupted || channel.progress.started()) channel.consumeUse.run();
 		if (channel.progress.started() && channel.mode == SpellCastingRules.Mode.CONTINUOUS) {
 			channel.spell.endContinuousCast(player, channel.level, interrupted);

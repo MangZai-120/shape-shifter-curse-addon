@@ -40,6 +40,10 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 		return rarity;
 	}
 
+	public int getMaxLevel() {
+		return rarity == SpellRarity.RED ? 1 : ScrollData.MAX_SPELL_LEVEL;
+	}
+
 	/** 数值配置（JSON 加载 / reload 后由注册表写入）。 */
 	public SpellConfig getConfig() {
 		return config;
@@ -103,12 +107,15 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 
 	public void castAtTarget(ServerPlayerEntity caster, float power, boolean solo, int level,
 				net.minecraft.item.ItemStack scroll, Vec3d target) {
+		if (target != null && DomainManager.blocksPath(caster.getWorld(), caster.getPos(), target, 0)) return;
 		Vec3d previousTarget = this.lockedCastTarget;
+		var previousSource = DomainManager.setEffectSource(caster);
 		this.lockedCastTarget = target;
 		try {
 			cast(caster, power, solo, level, scroll);
 		} finally {
 			this.lockedCastTarget = previousTarget;
+			DomainManager.setEffectSource(previousSource);
 		}
 	}
 
@@ -118,6 +125,14 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 
 	public boolean canContinueCasting(ServerPlayerEntity caster, net.minecraft.item.ItemStack scroll) {
 		return true;
+	}
+
+	public void onChannelStarted(ServerPlayerEntity caster) {}
+
+	public void onChannelEnded(ServerPlayerEntity caster, boolean interrupted) {}
+
+	public int getInterruptedCooldown(int cooldown) {
+		return SpellCastingRules.interruptedCooldown(cooldown);
 	}
 
 	public boolean tickContinuousCast(ServerPlayerEntity caster, int level, net.minecraft.item.ItemStack scroll, int ticks) {

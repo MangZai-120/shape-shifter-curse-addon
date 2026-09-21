@@ -100,6 +100,23 @@ public class SscAddonClient implements ClientModInitializer {
 			}
 			return net.minecraft.util.ActionResult.PASS;
 		});
+		// 领域方块跨界隔离（客户端预测层，2026-09-21）：眼睛与目标方块分属壳内外 → FAIL，
+		// 阻止破坏/放置/交互包发出；服务端 DomainManager.init() 同规则兜底防绕过。
+		net.fabricmc.fabric.api.event.player.AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
+			if (world.isClient && net.jackcooper.shapeShifterCurseAddon.client.renderer.DomainRenderer
+					.blocksCrossBoundaryClient(player.getEyePos(), net.minecraft.util.math.Vec3d.ofCenter(pos))) {
+				return net.minecraft.util.ActionResult.FAIL;
+			}
+			return net.minecraft.util.ActionResult.PASS;
+		});
+		net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
+			if (world.isClient && net.jackcooper.shapeShifterCurseAddon.client.renderer.DomainRenderer
+					.blocksCrossBoundaryClient(player.getEyePos(),
+							net.minecraft.util.math.Vec3d.ofCenter(hitResult.getBlockPos()))) {
+				return net.minecraft.util.ActionResult.FAIL;
+			}
+			return net.minecraft.util.ActionResult.PASS;
+		});
 		net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.register((player, world, hand) -> {
 			if (world.isClient && UpgradeAxolotlSpearRenderState.isCharging(player.getUuid())) {
 				return net.minecraft.util.TypedActionResult.fail(player.getStackInHand(hand));
@@ -593,6 +610,7 @@ public class SscAddonClient implements ClientModInitializer {
 		net.jackcooper.shapeShifterCurseAddon.client.SpellcastClient.register();
 		// SSCA 施法视觉状态接收器（人形态举手 + 特殊档身体朝向跟随，S2C 广播驱动）
 		net.jackcooper.shapeShifterCurseAddon.client.CastingVisualState.register();
+		net.jackcooper.shapeShifterCurseAddon.client.renderer.DomainRenderer.register();
 		// SSCA 月织蜷「织网术」- 主键检测器（潜行切换 / 蓄力 / 释放）
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverWebClient.register();
 		// SSCA 寒棘狐「冰刺」- 主键检测器（长按蕠力 / 点按发射）

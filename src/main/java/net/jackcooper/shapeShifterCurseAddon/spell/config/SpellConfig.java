@@ -191,7 +191,7 @@ public final class SpellConfig {
 	/** rarity 只认五个合法品质 id，其它归 null（回退 Java 侧品质）。 */
 	private static String normalizeRarity(String s) {
 		return switch (s == null ? "" : s) {
-			case "white", "green", "blue", "purple", "orange" -> s;
+			case "white", "green", "blue", "purple", "orange", "red" -> s;
 			default -> null;
 		};
 	}

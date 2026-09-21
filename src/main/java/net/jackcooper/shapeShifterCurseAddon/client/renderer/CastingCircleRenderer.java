@@ -19,7 +19,7 @@ public final class CastingCircleRenderer {
 		Vec3d camera = context.camera().getPos();
 		for (var player : client.world.getPlayers()) {
 			if (!player.isAlive() || player.isSpectator() || player.isInvisible()
-					|| !CastingVisualState.hasCircle(player.getUuid())) continue;
+					|| !CastingVisualState.hasCircle(player.getUuid()) || DomainRenderer.isCharging(player.getUuid())) continue;
 			Vec3d feet = player.getLerpedPos(context.tickDelta());
 			if (feet.squaredDistanceTo(camera) > 32 * 32) continue;
 			var ground = client.world.raycast(new RaycastContext(feet.add(0, 0.15, 0),
@@ -55,7 +55,7 @@ public final class CastingCircleRenderer {
 		}
 	}
 
-	private static void ring(VertexConsumer vertices, Matrix4f matrix, double radius, double width,
+	public static void ring(VertexConsumer vertices, Matrix4f matrix, double radius, double width,
 	                         double rotation, int color, float alpha) {
 		for (int segment = 0; segment < 64; segment++) {
 			double start = rotation + segment * Math.PI / 32;
@@ -65,7 +65,7 @@ public final class CastingCircleRenderer {
 		}
 	}
 
-	private static void line(VertexConsumer vertices, Matrix4f matrix, double startX, double startZ,
+	public static void line(VertexConsumer vertices, Matrix4f matrix, double startX, double startZ,
 	                         double endX, double endZ, double width, int color, float alpha) {
 		double length = Math.hypot(endX - startX, endZ - startZ);
 		double offsetX = -(endZ - startZ) / length * width * 0.5;

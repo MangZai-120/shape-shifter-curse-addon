@@ -181,7 +181,7 @@ public class MagicScrollItem extends Item {
 		tooltip.add(Text.translatable(r.getTranslationKey()).formatted(r.color));
 		// 魔法等级（始终显示，便于区分开箱获得的卷轴等级；固定不可升级）
 		int level = ScrollData.getLevel(stack);
-		tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.level", level).formatted(Formatting.AQUA));
+		if (spell.getMaxLevel() > 1) tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.level", level).formatted(Formatting.AQUA));
 		var tier = spell.getConfig().spellTier;
 		tooltip.add((tier == SpellCastingRules.Tier.CUSTOM
 				? Text.translatable("item.ssc_addon.magic_scroll.casting_custom")

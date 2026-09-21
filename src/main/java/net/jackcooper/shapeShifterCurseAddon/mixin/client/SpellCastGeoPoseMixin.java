@@ -63,5 +63,16 @@ public abstract class SpellCastGeoPoseMixin {
 					CAST_ARM_PITCH + CastingVisualState.armSway(player.age + tickDelta, false) * 0.12F));
 			leftArm.setRotY(MathHelper.lerp(progress, leftArm.getRotY(), 0.0F));
 		}
+		// 2026-09-22 反馈修复：手持物品挂点在 vanilla BipedEntityModel.rightArm
+		// （HeldItemFeatureRenderer.renderItem → setArmAngle → ModelPart.rotate，已反编译核实），
+		// 只举 GeoBone 不动 vanilla 手臂会让第三人称手持物品悬空在原位。此处同步覆盖
+		// renderer 的 vanilla 模型手臂角度，让物品跟随施法抬手（与 SpellCastPoseMixin 同公式）。
+		var vanillaModel = renderer.getModel();
+		float swayR = CastingVisualState.armSway(player.age + tickDelta, true) * 0.12F;
+		float swayL = CastingVisualState.armSway(player.age + tickDelta, false) * 0.12F;
+		vanillaModel.rightArm.pitch = MathHelper.lerp(progress, vanillaModel.rightArm.pitch, CAST_ARM_PITCH + swayR);
+		vanillaModel.rightArm.yaw = MathHelper.lerp(progress, vanillaModel.rightArm.yaw, 0.0F);
+		vanillaModel.leftArm.pitch = MathHelper.lerp(progress, vanillaModel.leftArm.pitch, CAST_ARM_PITCH + swayL);
+		vanillaModel.leftArm.yaw = MathHelper.lerp(progress, vanillaModel.leftArm.yaw, 0.0F);
 	}
 }

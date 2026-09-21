@@ -90,7 +90,7 @@ public final class ScrollWorkshopManager {
 	public static void craft(ServerPlayerEntity player, String spellPath, int level) {
 		SpellResearchTableBlockEntity be = context(player);
 		Spell spell = SpellRegistry.get(spellPath);
-		if (be == null || spell == null || level < 1 || level > CRAFT_MAX_LEVEL) {
+		if (be == null || spell == null || spell.getRarity() == SpellRarity.RED || level < 1 || level > CRAFT_MAX_LEVEL) {
 			return;
 		}
 		FormationKnowledgeComponent knowledge = FormationKnowledgeComponent.get(player);
@@ -144,7 +144,7 @@ public final class ScrollWorkshopManager {
 	public static void upgrade(ServerPlayerEntity player, String spellPath, int targetLevel) {
 		SpellResearchTableBlockEntity be = context(player);
 		Spell spell = SpellRegistry.get(spellPath);
-		if (be == null || spell == null || targetLevel < 2 || targetLevel > ScrollData.MAX_SPELL_LEVEL) {
+		if (be == null || spell == null || targetLevel < 2 || targetLevel > spell.getMaxLevel()) {
 			return;
 		}
 		FormationKnowledgeComponent knowledge = FormationKnowledgeComponent.get(player);

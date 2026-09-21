@@ -142,6 +142,21 @@ public final class SharedSpellCooldowns extends PersistentState {
 		}
 	}
 
+	/**
+	 * 清空指定玩家的全部共享冷却（/ssc_addon reset_spell_cd 指令专用）。
+	 * 书内卷轴 NBT Cd 由指令层一并清理；施法中 GCD 由指令层调用清门方法处理。
+	 */
+	public static void clearAllFor(ServerPlayerEntity player) {
+		if (player == null) {
+			return;
+		}
+		SharedSpellCooldowns state = get(player.getServer());
+		if (state != null) {
+			state.data.remove(player.getUuid());
+			state.markDirty();
+		}
+	}
+
 	/** 取共享冷却结束时刻（供被拦截时回写卷轴 NBT 同步 HUD；无表 = 0）。 */
 	public static long getCooldownEndOf(ServerPlayerEntity player, Spell spell) {
 		if (player == null || spell == null) {

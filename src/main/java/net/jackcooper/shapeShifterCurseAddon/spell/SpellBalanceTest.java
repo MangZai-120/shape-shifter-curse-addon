@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.spell;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.minecraft.util.math.Vec3d;
 
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +30,7 @@ public final class SpellBalanceTest {
 		checkCastingRules();
 		checkRefundLedger();
 		checkFormRules();
+		checkDomainRules();
 		// classpath 无目录列举能力：用已知 21 法术 id 清单（与 SpellRegistry 注册序一致）
 		String[] ids = {
 				"fire_bolt", "flame_nova", "meteor",
@@ -37,7 +39,7 @@ public final class SpellBalanceTest {
 				"curse_mark", "dread_whisper", "corrupt_mist",
 				"summon_lunar_spirit", "companion_resonance",
 				"void_devour", "void_erosion",
-				"space_blink", "space_stride", "space_recall", "pocket_space"
+				"space_blink", "space_stride", "space_recall", "pocket_space", "domain"
 		};
 		for (String id : ids) {
 			checkSpell(id);
@@ -46,6 +48,52 @@ public final class SpellBalanceTest {
 			throw new IllegalStateException("法术数值回归失败 " + failures + " 项，详见上方输出");
 		}
 		System.out.println("Spell balance checks passed (" + ids.length + " spells).");
+	}
+
+	private static void checkDomainRules() {
+		if (!DomainRules.crosses(0, 0, 0, 16.1, 0, 0, 0)) fail("domain", "内层不能向外穿越");
+		if (DomainRules.crosses(0, 0, 0, 15, 0, 0, 0)) fail("domain", "内部移动不应被挡");
+		if (!DomainRules.crosses(20, 0, 0, 16.9, 0, 0, 0)) fail("domain", "外层不能向内穿越");
+		if (!DomainRules.crosses(-30, 0, 0, 30, 0, 0, 0)) fail("domain", "高速穿越两端在外仍须拦截");
+		if (DomainRules.crosses(-30, 20, 0, 30, 20, 0, 0)) fail("domain", "球外路径不应被挡");
+		if (!DomainRules.crosses(0, 0, 0, 0, -18, 0, 0)) fail("domain", "地下边界必须封闭");
+		if (!DomainRules.crosses(0, 0, 0, 15.8, 0, 0, 0.5)) fail("domain", "实体尺寸需要计入边界");
+		if (!DomainRules.crosses(17.2, 0, 0, 16.5, 0, 0, 0.9)) fail("domain", "外侧碰撞箱重叠不能向内挤入");
+		if (DomainRules.crosses(16.5, 0, 0, 18, 0, 0, 0.9)) fail("domain", "壳间实体必须能够退到外部");
+		if (DomainRules.crosses(15.8, 0, 0, 14, 0, 0, 0.9)) fail("domain", "内侧边缘允许退向内部");
+		if (DomainRules.layerProgress(59, 60) != 0 || DomainRules.layerProgress(84, 60) != 1
+				|| DomainRules.layerProgress(119, 120) != 0 || DomainRules.layerProgress(144, 120) != 1) fail("domain", "法阵分层展开节奏错误");
+		if (Math.abs(DomainRules.receivedMultiplier(true) * DomainRules.dealtMultiplier(false) - 0.375f) > 0.0001f
+				|| Math.abs(DomainRules.receivedMultiplier(false) * DomainRules.dealtMultiplier(true) - 2.025f) > 0.0001f) {
+			fail("domain", "阵营伤害乘区错误");
+		}
+		// 扩张曲线（2006-09-21）：10s 前无壳；10s 起点 0.75；单调生长；15s 到 16 完全体
+		if (DomainRules.expansionRadius(0) != 0 || DomainRules.expansionRadius(200) != 0.75
+				|| DomainRules.expansionRadius(300) != DomainRules.INNER_RADIUS
+				|| DomainRules.expansionRadius(250) <= DomainRules.expansionRadius(240)
+				|| DomainRules.expansionRadius(250) >= DomainRules.INNER_RADIUS) fail("domain", "扩张半径曲线错误");
+		// 单向阀：扩张期壳内向外=拦，壳外向内=放行
+		double mid = DomainRules.expansionRadius(250);
+		if (!DomainRules.crossesOutward(0, 0, 0, mid + 1, 0, 0, mid)) fail("domain", "扩张期内部不能向外穿越");
+		if (DomainRules.crossesOutward(mid + 1, 0, 0, 0, 0, 0, mid)) fail("domain", "扩张期外部应当可以进入");
+		if (DomainRules.crossesOutward(0, 0, 0, mid - 1, 0, 0, mid)) fail("domain", "扩张期壳内移动不应被挡");
+		if (DomainRules.crossesOutward(1, 0, 0, 2, 0, 0, 0)) fail("domain", "未成壳时不应拦截");
+		// 球面滑行（2026-09-22）：径向撞墙只压径向、保留切向；壳外/纯切向原样返回（返回值=修正后位移）
+		Vec3d slide = DomainRules.slideInside(new Vec3d(15.5, 0, 0), new Vec3d(0.5, 0, 2), 16);
+		if (15.5 + slide.x > 16.0 + 1.0e-6 || Math.abs(slide.z - 2) > 1.0e-6) fail("domain", "滑行必须保留切向并压径向");
+		Vec3d free = DomainRules.slideInside(new Vec3d(10, 0, 0), new Vec3d(0.5, 0, 2), 16);
+		if (free.x != 0.5 || free.z != 2) fail("domain", "不撞墙时不得改动位移");
+		Vec3d outside = DomainRules.slideInside(new Vec3d(20, 0, 0), new Vec3d(-1, 0, 0), 16);
+		if (outside.x != -1) fail("domain", "起点在壳外时原样返回");
+		Vec3d centerOut = DomainRules.slideInside(Vec3d.ZERO, new Vec3d(30, 0, 0), 16);
+		if (centerOut.length() - 16 > 1.0e-6) fail("domain", "球心出发须夹到半径内");
+		// 穿壳回归（2026-09-22）：脚 15.9 + 身高偏移 0.9 的贴墙玩家（旧实现用碰撞箱中心
+		// √(15.9²+0.9²)≈15.93 仍内侧但更高实体 15.5 偏移 1.8 → 15.6……直接测最严场景：
+		// 脚 15.9 向外走，用脚锚点判定必须拦截；壳间带（16.0~17.3）向外允许（可退出语义保留）
+		if (!DomainRules.crosses(15.9, 0, 0, 16.4, 0, 0, 0.3)) fail("domain", "脚锚点下贴墙向外必须拦截");
+		if (DomainRules.crosses(15.9, 0, 0, 15.5, 0, 0, 0.3)) fail("domain", "贴墙向内不应拦截");
+		if (DomainRules.crosses(16.5, 0, 0, 17.0, 0, 0, 0.3)) fail("domain", "壳间带向外应允许退出");
+		System.out.println("Domain geometry checks passed (inner/outer shells, swept paths, underground, hitbox, faction damage).");
 	}
 
 	private static void checkSpell(String id) throws Exception {
@@ -74,6 +122,13 @@ public final class SpellBalanceTest {
 				return;
 			}
 			JsonArray levels = o.getAsJsonArray("levels");
+			if (id.equals("domain")) {
+				if (levels.size() != 1 || !levels.get(0).getAsJsonObject().get("rarity").getAsString().equals("red")) fail(id, "红色必须单级");
+				if (baseCd != 3600 || baseMana != 300 || !o.get("element").getAsString().equals("space")) fail(id, "领域基础数值不符");
+				if (o.get("base_cast_time_ticks").getAsInt() != DomainRules.CHARGE_TICKS
+						|| o.get("interrupt_mode").getAsInt() != 3 || !o.get("spell_tier").getAsString().equals("custom")) fail(id, "领域施法配置不符");
+				return;
+			}
 			if (levels.size() != 5) {
 				fail(id, "levels 长度 != 5 (" + levels.size() + ")");
 				return;

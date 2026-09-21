@@ -29,23 +29,23 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 
 /**
- * 鏈堝皹榄旀硶路鐏悆鎶曞皠鐗╋紙jackcooper锛夈€傜粨鏋勪笌 {@link SpellFrostSpikeEntity} 鍚岃寖寮忥細
- * 鏈濆噯鏄熺洿绾垮寑閫熼琛岋紙鏃犻噸鍔涳級锛屽懡涓€犳垚榄旀硶浼ゅ骞?b>鐐圭噧</b>鐩爣鍚庢秷澶憋紱瓒呰窛/瓒呮椂鑷瘉銆?
- * 榛樿鐧藉悕鍗曪細涓讳汉鍦ㄧ嚎涓旂洰鏍囧彈淇濇姢鍒欎笉浼ゅ銆佷笉鐐圭噧銆?
+ * 月尘魔法·火球投射物（jackcooper）。结构与 {@link SpellFrostSpikeEntity} 同范式：
+ * 朝准星直线匀速飞行（无重力），命中造成魔法伤害并<b>点燃</b>目标后消失；超距/超时自毁。
+ * 默认白名单：主人在线且目标受保护则不伤害、不点燃。
  */
 public class SpellFireBoltEntity extends ProjectileEntity implements FlyingItemEntity {
 
-	private static final double SPEED = 0.8;         // 16 鏍?绉?
-	private static final double MAX_DISTANCE = 50.0; // 鏈€澶ч琛岃窛绂?
+	private static final double SPEED = 0.8;         // 16 格/秒
+	private static final double MAX_DISTANCE = 50.0; // 最大飞行距离
 
-	/** 榄旀硶绛夌骇锛?-5锛夛紝DataTracker 鍚屾锛堥鐣欐覆鏌撶鎹㈡ā鍨?缂╂斁锛屽綋鍓嶄粎瀛樻。鐢級銆?*/
+	/** 魔法等级（1-5），DataTracker 同步（预留渲染端换模型/缩放，当前仅存档用）。 */
 	private static final TrackedData<Integer> LEVEL =
 			DataTracker.registerData(SpellFireBoltEntity.class, TrackedDataHandlerRegistry.INTEGER);
 
 	private Vec3d startPos;
 	private int ticksAlive = 0;
 	private float damage = 5.0f;
-	/** 鍛戒腑鐐圭噧鏃堕暱锛坱ick锛夈€?*/
+	/** 命中点燃时长（tick）。 */
 	private int fireTicks = 60;
 
 	public SpellFireBoltEntity(EntityType<? extends SpellFireBoltEntity> entityType, World world) {
@@ -62,15 +62,15 @@ public class SpellFireBoltEntity extends ProjectileEntity implements FlyingItemE
 
 	@Override
 	protected void initDataTracker() {
-		// 涓嶈皟 super锛圗ntity 鐨勬娊璞℃柟娉曟棤娉曡法涓ょ骇璁块棶锛沝ataTracker 鐢?Entity 鏋勯€犲櫒鍒濆鍖栵紝鍚屽啺閿ュ啓娉曪級
+		// 不调 super（Entity 的抽象方法无法跨两级访问；dataTracker 由 Entity 构造器初始化，同冰锥写法）
 		this.dataTracker.startTracking(LEVEL, 1);
 	}
 
-	/** 璁剧疆鐏悆鍛戒腑浼ゅ銆?*/
+	/** 设置火球命中伤害。 */
 	public void setDamage(float damage) {
 		this.damage = damage;
 	}
-	/** 鍛戒腑鍙戞斁鐨勭粡楠岃祻閲戯紙脳10 鏁存暟锛沞xp_mode 1/2 鎸傝捣閮ㄥ垎鐢辨柦娉曟椂瑁呭叆锛孨BT 鎸佷箙鍖栬法 tick锛夈€?*/
+	/** 命中发放的经验赏金（×10 整数；exp_mode 1/2 挂起部分由施法时装入，NBT 持久化跨 tick）。 */
 	private int expBountyTen = 0;
 
 	public void setExpBountyTen(int expTen) {
@@ -87,29 +87,29 @@ public class SpellFireBoltEntity extends ProjectileEntity implements FlyingItemE
 	public void setRefundCastId(java.util.UUID castId) {
 		this.refundCastId = castId;
 	}
-	/** 榄旀硶绛夌骇锛?-5锛夈€?*/
+	/** 魔法等级（1-5）。 */
 	public int getSpellLevel() {
 		return this.dataTracker.get(LEVEL);
 	}
 
-	/** 璁剧疆榄旀硶绛夌骇锛堟湇鍔＄鏂芥硶鏃惰皟鐢紝DataTracker 鑷姩鍚屾瀹㈡埛绔級銆?*/
+	/** 设置魔法等级（服务端施法时调用，DataTracker 自动同步客户端）。 */
 	public void setLevel(int level) {
 		this.dataTracker.set(LEVEL, Math.max(1, Math.min(5, level)));
 	}
 
-	/** 璁剧疆鍛戒腑鐐圭噧鏃堕暱锛坱ick锛夈€?*/
+	/** 设置命中点燃时长（tick）。 */
 	public void setFireTicks(int fireTicks) {
 		this.fireTicks = fireTicks;
 	}
 
-	/** 璁剧疆椋炶鏂瑰悜锛堟湞鍑嗘槦锛夛紝閫熷害鎸夌瓑绾у€嶇巼缂╂斁銆?*/
+	/** 设置飞行方向（朝准星），速度按等级倍率缩放。 */
 	public void setDirection(Vec3d direction, float speedMultiplier) {
 		Vec3d velocity = direction.normalize().multiply(SPEED * speedMultiplier);
 		this.setVelocity(velocity.x, velocity.y, velocity.z);
 		updateRotationFromVelocity(velocity);
 	}
 
-	/** 鎸夐€熷害鑷畻鏈濆悜锛堝悓鍐伴敟鍏紡锛夛紝渚涙覆鏌撳姝ｃ€?*/
+	/** 按速度自算朝向（同寒棘狐冰锥公式），供渲染对正。 */
 	private void updateRotationFromVelocity(Vec3d v) {
 		double horiz = Math.sqrt(v.x * v.x + v.z * v.z);
 		this.setYaw((float) (MathHelper.atan2(-v.x, v.z) * (180.0 / Math.PI)));
@@ -123,11 +123,11 @@ public class SpellFireBoltEntity extends ProjectileEntity implements FlyingItemE
 		super.tick();
 		ticksAlive++;
 
-		// 鏃犻噸鍔涘寑閫熺Щ鍔?
+		// 无重力匀速移动
 		Vec3d velocity = this.getVelocity();
 		this.setPosition(this.getX() + velocity.x, this.getY() + velocity.y, this.getZ() + velocity.z);
 
-		// 纰版挒妫€娴?
+		// 碰撞检测
 		HitResult hitResult = ProjectileUtil.getCollision(this, this::canHit);
 		if (hitResult.getType() != HitResult.Type.MISS) {
 			this.onCollision(hitResult);
@@ -136,19 +136,19 @@ public class SpellFireBoltEntity extends ProjectileEntity implements FlyingItemE
 			return;
 		}
 
-		// 瓒呰窛 / 瓒呮椂鑷瘉锛堜粎鏈嶅姟绔潈濞侊紝鐞嗙敱鍚屽啺閿ワ細瀹㈡埛绔疄浣?startPos 鎭掑師鐐癸紝鍙岀鍒や細璇垹锛?
+		// 超距 / 超时自毁（仅服务端权威，理由同冰锥：客户端实体 startPos 恒原点，双端判会误删）
 		if (!this.getWorld().isClient) {
 			if (startPos != null && this.squaredDistanceTo(startPos) > MAX_DISTANCE * MAX_DISTANCE) {
 				this.discard();
 				return;
 			}
-			if (ticksAlive > 100) { // 5 绉掕秴鏃?
+			if (ticksAlive > 100) { // 5 秒超时
 				this.discard();
 				return;
 			}
 		}
 
-		// 椋炶鎷栧熬绮掑瓙锛堟湇鍔＄鎾掞紝澶╃劧澶氫汉鍚屾锛?
+		// 飞行拖尾粒子（服务端撒，天然多人同步）
 		if (this.getWorld() instanceof ServerWorld serverWorld) {
 			ParticleUtils.spawnParticles(serverWorld, ParticleTypes.FLAME,
 					this.getX(), this.getY(), this.getZ(), 2, 0.1, 0.1, 0.1, 0.01);

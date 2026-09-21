@@ -1242,6 +1242,8 @@
   "command.ssc_addon.starter.already_claimed": "你已领取过入门卷轴",
   "command.ssc_addon.starter.inventory_full": "背包已满，请腾出空间后重试",
   "command.ssc_addon.starter.claimed": "获得入门卷轴：%1（同时已记录其图谱）",
+  "command.ssc_addon.reset_spell_cd.console_need_target": "控制台执行时必须指定目标玩家",
+  "command.ssc_addon.reset_spell_cd.success": "已重置 %1 名玩家的全部法术冷却",
   "gui.ssc_addon.research.search": "搜索名称 / 学派",
   "gui.ssc_addon.research.search_empty": "没有匹配的记录",
   "gui.ssc_addon.research.entry_count": "%1$s 项",
@@ -1299,5 +1301,8 @@
   "spell.ssc_addon.interrupt.3": "外界伤害或主动取消",
   "message.ssc_addon.mancianima.teleport.link_locked": "§c联动攻击冷却中，需等待 %s 秒",
   "power.my_addon.form_kill_empower.name": "击杀赋能",
-  "power.my_addon.form_kill_empower.description": "正常火环或正常次要技能（火球／吐息）击杀非白名单生物后，获得持续10秒的赋能，无独立冷却。每次赋能只能无视冷却与魔力免费释放一次主要或次要技能，二选一；持有期间不叠加、不刷新。赋能火环持续期间仍可使用正常次要技能。赋能技能及其灼烧不会触发新赋能。佩戴蓝火护符时，赋能火环伤害+4、范围-40%、持续时间-15%，且激活期间的击杀回复增强为额外10点魔力与5点生命。"
+  "power.my_addon.form_kill_empower.description": "正常火环或正常次要技能（火球／吐息）击杀非白名单生物后，获得持续10秒的赋能，无独立冷却。每次赋能只能无视冷却与魔力免费释放一次主要或次要技能，二选一；持有期间不叠加、不刷新。赋能火环持续期间仍可使用正常次要技能。赋能技能及其灼烧不会触发新赋能。佩戴蓝火护符时，赋能火环伤害+4、范围-40%、持续时间-15%，且激活期间的击杀回复增强为额外10点魔力与5点生命。",
+  "spell.ssc_addon.domain.name": "领域",
+  "spell.ssc_addon.domain.description": "红色空间魔法，仅有一个等级。原地蓄力15秒，禁止主动移动和跳跃；受伤、主动取消或离起手点超过3格会打断。蓄力第10秒起，黑色球壳从起手点由极小逐渐扩张，第15秒完全展开；扩张期间外部可进入但内部无法离开。成功后在起手点展开持续40秒的领域：半径16格与17格的不透明黑色双球壳封锁进出、传送及跨界攻击，不改变内部光照。领域内自身与白名单友军受到伤害-50%%、造成伤害+50%%；非白名单目标受到伤害+35%%、造成伤害-25%%。沿用默认白名单。施法者死亡、断线或离开维度时解除。仅在末地自然战利品箱首次生成物品时有2%%概率获得，不可合成或升级。",
+  "item.ssc_addon.magic_scroll.tip_in_book_domain": "领域持续40秒 · 冷却%2$s秒 · 法力%3$s；成功释放后开始冷却，中断不进入冷却、不返还已消耗法力"
 }

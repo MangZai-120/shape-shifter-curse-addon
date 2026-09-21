@@ -98,16 +98,20 @@ public final class ScrollData {
 
 	/** 魔法等级（1-5；无字段或缺省时为 1，与旧存档卷轴兼容）。 */
 	public static int getLevel(ItemStack stack) {
+		Spell spell = getSpell(stack);
+		int maxLevel = spell == null ? MAX_SPELL_LEVEL : spell.getMaxLevel();
 		NbtCompound nbt = stack.getNbt();
 		if (nbt != null && nbt.contains(NBT_LEVEL)) {
-			return Math.max(1, Math.min(MAX_SPELL_LEVEL, nbt.getInt(NBT_LEVEL)));
+			return Math.max(1, Math.min(maxLevel, nbt.getInt(NBT_LEVEL)));
 		}
 		return 1;
 	}
 
 	/** 写入魔法等级（内部工具/战利品生成用；等级固定不可升级，正常游玩无升级途径）。 */
 	public static void setLevel(ItemStack stack, int level) {
-		stack.getOrCreateNbt().putInt(NBT_LEVEL, Math.max(1, Math.min(MAX_SPELL_LEVEL, level)));
+		Spell spell = getSpell(stack);
+		int maxLevel = spell == null ? MAX_SPELL_LEVEL : spell.getMaxLevel();
+		stack.getOrCreateNbt().putInt(NBT_LEVEL, Math.max(1, Math.min(maxLevel, level)));
 	}
 
 	// ---- 低阶选档施放（阶段 C / 计划书 §6.4） ----
@@ -141,7 +145,7 @@ public final class ScrollData {
 		ItemStack stack = new ItemStack(net.jackcooper.shapeShifterCurseAddon.SscAddon.MAGIC_SCROLL);
 		Spell spell = SpellRegistry.get(spellPath);
 		stack.getOrCreateNbt().putString(NBT_SPELL, spellPath);
-		int lv = Math.max(1, Math.min(MAX_SPELL_LEVEL, level == 0 ? 1 : level));
+		int lv = Math.max(1, Math.min(spell == null ? MAX_SPELL_LEVEL : spell.getMaxLevel(), level));
 		stack.getOrCreateNbt().putInt(NBT_LEVEL, lv);
 		stack.getOrCreateNbt().putInt(NBT_USES, spell == null ? 0 : spell.getRarity(lv).soloUses);
 		return stack;

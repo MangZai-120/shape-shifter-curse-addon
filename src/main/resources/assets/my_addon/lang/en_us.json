@@ -1242,6 +1242,8 @@
   "command.ssc_addon.starter.already_claimed": "You have already claimed your starter scroll",
   "command.ssc_addon.starter.inventory_full": "Inventory full; make room and try again",
   "command.ssc_addon.starter.claimed": "Received starter scroll: %1 (pattern recorded)",
+  "command.ssc_addon.reset_spell_cd.console_need_target": "Console execution requires a target player",
+  "command.ssc_addon.reset_spell_cd.success": "Reset all spell cooldowns for %1 player(s)",
   "gui.ssc_addon.research.search": "Name / school",
   "gui.ssc_addon.research.search_empty": "No matching records",
   "gui.ssc_addon.research.entry_count": "%1$s entries",
@@ -1299,5 +1301,8 @@
   "spell.ssc_addon.interrupt.3": "External damage or manual cancellation",
   "message.ssc_addon.mancianima.teleport.link_locked": "§cLinked strike on cooldown, wait %ss",
   "power.my_addon.form_kill_empower.name": "Kill Empowerment",
-  "power.my_addon.form_kill_empower.description": "Kills on non-whitelisted creatures with a normal fire ring or normal secondary skill (fireball or breath) grant empowerment for 10 seconds, with no passive cooldown. Each empowerment grants one free primary or secondary cast, ignoring mana and cooldown; it neither stacks nor refreshes while held. Normal secondary skills remain usable during an empowered fire ring. Empowered skills and their burns cannot grant empowerment. With the Blue Fire Amulet equipped, the empowered fire ring gains +4 damage, -40% radius and -15% duration, and its kill restoration becomes an additional 10 Mana and 5 Health."
+  "power.my_addon.form_kill_empower.description": "Kills on non-whitelisted creatures with a normal fire ring or normal secondary skill (fireball or breath) grant empowerment for 10 seconds, with no passive cooldown. Each empowerment grants one free primary or secondary cast, ignoring mana and cooldown; it neither stacks nor refreshes while held. Normal secondary skills remain usable during an empowered fire ring. Empowered skills and their burns cannot grant empowerment. With the Blue Fire Amulet equipped, the empowered fire ring gains +4 damage, -40% radius and -15% duration, and its kill restoration becomes an additional 10 Mana and 5 Health.",
+  "spell.ssc_addon.domain.name": "Domain",
+  "spell.ssc_addon.domain.description": "A single-level red Space spell. Channel for 15 seconds without voluntary movement or jumping; damage, manual cancellation, or moving over 3 blocks from the starting point interrupts casting. From the 10th second of channeling, the black shells expand from a tiny radius at the starting point, fully forming at 15 seconds; during expansion, outsiders may enter but those inside cannot leave. On completion, create a 40-second domain at that point. Opaque black shells of radii 16 and 17 block entry, exit, teleportation and attacks across the boundary without changing interior lighting. Inside, you and whitelisted allies take 50%% less damage and deal 50%% more; other targets take 35%% more and deal 25%% less. Uses the default whitelist rules. Ends if the caster dies, disconnects or changes dimension. Found only with a 2%% chance when natural loot chests in the End first generate their contents. Cannot be crafted or upgraded.",
+  "item.ssc_addon.magic_scroll.tip_in_book_domain": "Domain lasts 40s | Cooldown %2$ss | Mana %3$s; cooldown starts on successful release. Interrupted casts have no cooldown and do not refund spent mana."
 }

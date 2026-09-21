@@ -112,6 +112,7 @@ public final class CastingVisualState {
 			Entry entry = ACTIVE.get(player.getUuid());
 			if (entry == null || !entry.active || !entry.armPose || !player.isAlive()
 					|| player.isSpectator() || player.isInvisible()) continue;
+			if (net.jackcooper.shapeShifterCurseAddon.client.renderer.DomainRenderer.isCharging(player.getUuid())) continue;
 			if (client.getCameraEntity() == null || player.squaredDistanceTo(client.getCameraEntity()) > 32 * 32) continue;
 			var random = client.world.random;
 			for (int count = 0; count < 2; count++) {

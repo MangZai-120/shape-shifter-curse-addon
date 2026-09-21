@@ -184,6 +184,21 @@ public abstract class SscAddonLivingEntityMixin {
 		return amount;
 	}
 
+	@Inject(method = "damage", at = @At("HEAD"), cancellable = true)
+	private void ssca$domainRejectDamage(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+		if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksDamage((LivingEntity) (Object) this, source)) cir.setReturnValue(false);
+	}
+
+	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+	private float ssca$domainDamage(float amount, DamageSource source) {
+		return net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.modifyDamage((LivingEntity) (Object) this, source, amount);
+	}
+
+	@Inject(method = "addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;Lnet/minecraft/entity/Entity;)Z", at = @At("HEAD"), cancellable = true)
+	private void ssca$domainRejectEffect(StatusEffectInstance effect, Entity source, CallbackInfoReturnable<Boolean> cir) {
+		if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksEffect((LivingEntity) (Object) this, source)) cir.setReturnValue(false);
+	}
+
 	/**
 	 * 契灵·绑定脚环灵气：被劫掠阵营 NPC 攻击、且攻击者 16 格内有装备绑定脚环的契灵玩家时，本次伤害 ×1.2。
 	 * （原 BindingAnkletAuraMixin 合并至此，减少 mixin 文件数；行为不变。）
