@@ -68,12 +68,22 @@ public final class SkillHudCatalog {
             skill("snow_mode_ranged", "form_snow_fox_sp_toggle", "form_snow_fox_sp_gain_cooldown", 300, null, false));
 
     static {
-        // SP使魔：苍蓝火环需满魔力 99（服务端 has_mana 99.0）；狐火吐息 20
-        pair("familiar_fox_sp", "blue_fire_ring", "fox_fire_breath",
-                p -> hasMana(p, 99.0), p -> hasMana(p, 20.0));
-        // 使魔Red：同上
-        pair("familiar_fox_red", "red_fire_ring", "red_fire_breath",
-                p -> hasMana(p, 99.0), p -> hasMana(p, 20.0));
+        FORMS.put("familiar_fox_sp", List.of(
+                skill("blue_fire_ring", "form_familiar_fox_sp_blue_fire_ring_cooldown_timer",
+                        "form_familiar_fox_sp_blue_fire_ring_key_activation", 0, null, true, p -> hasMana(p, 99.0)),
+                skill("fox_fire_breath", "form_familiar_fox_sp_fox_fire_breath", false, p -> hasMana(p, 15.0))));
+        FORMS.put("familiar_fox_red", List.of(
+                skill("red_fire_ring", "form_familiar_fox_red_blue_fire_ring_cooldown_timer",
+                        "form_familiar_fox_red_blue_fire_ring_key_activation", 0, null, true, p -> hasMana(p, 99.0)),
+                skill("red_fire_breath", "form_familiar_fox_red_fox_fire_breath", false, p -> hasMana(p, 20.0))));
+        FORMS.put("familiar_fox_sp_amulet", List.of(
+                skill("blue_fire_ring", "form_familiar_fox_sp_blue_fire_ring_amulet_cooldown_timer",
+                        "form_familiar_fox_sp_blue_fire_ring_amulet_key_activation", 0, null, true, p -> hasMana(p, 99.0)),
+                FORMS.get("familiar_fox_sp").get(1)));
+        FORMS.put("familiar_fox_red_amulet", List.of(
+                skill("red_fire_ring", "form_familiar_fox_red_blue_fire_ring_amulet_cooldown_timer",
+                        "form_familiar_fox_red_blue_fire_ring_amulet_key_activation", 0, null, true, p -> hasMana(p, 119.0)),
+                FORMS.get("familiar_fox_red").get(1)));
         // 契灵：烙印最低 5 mana；魂跃 5 mana；魂跃辅助栏 = 10s 联动攻击 CD 进度
         FORMS.put("familiar_fox_mancianima", List.of(
                 skill("contract_mark", PRIMARY, true, p -> hasMana(p, 5.0)),
@@ -192,6 +202,11 @@ public final class SkillHudCatalog {
 
     public static List<Skill> forForm(Identifier form, PlayerEntity player) {
         if (!"my_addon".equals(form.getNamespace())) return List.of();
+                if ((FormIdentifiers.FAMILIAR_FOX_SP.equals(form) || FormIdentifiers.FAMILIAR_FOX_RED.equals(form))
+                                && net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils.isWearing(
+                                                player, net.jackcooper.shapeShifterCurseAddon.SscAddon.BLUE_FIRE_AMULET)) {
+                        return FORMS.get(form.getPath() + "_amulet");
+                }
         if (FormIdentifiers.SNOW_FOX_SP.equals(form)) {
             return PowerUtils.getClientResourceValue(player, FormIdentifiers.SNOW_FOX_SWITCH_STATE) == 1
                     ? SNOW_RANGED : SNOW_MELEE;

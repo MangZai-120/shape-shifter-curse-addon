@@ -16,9 +16,13 @@ import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
+import net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerCast;
+import net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerManager;
+import net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerState;
 import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkClientState;
 import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkManager;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -94,10 +98,49 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 					/ (double) MancianimaMarkManager.STAGE_GATE_TICKS;
 				internalReady = 1 - Math.min(1, locked);
 			}
+			double cooldownShade = cooldown.fraction();
+			int cooldownSeconds = (int) Math.ceil(cooldown.remaining() / 20.0);
+			boolean countdown = false;
+			boolean empowerForm = formId.equals(FormIdentifiers.FAMILIAR_FOX_SP) || formId.equals(FormIdentifiers.FAMILIAR_FOX_RED);
+			if (empowerForm) {
+				int empowerState = PowerUtils.getClientResourceValue(player, FormIdentifiers.EMPOWER_STATE);
+				boolean empowered = (empowerState & KillEmpowerManager.STATE_READY) != 0;
+				boolean empowerRing = (empowerState & KillEmpowerManager.STATE_RING) != 0;
+				boolean ringActive = skill.primary() && (KillEmpowerCast.isNormalRingActive(player)
+						|| empowerRing);
+				if (skill.primary()) {
+					Cooldown activation = readCooldown(player, skill.internalCooldown());
+					if (activation.remaining() > cooldown.remaining()) {
+						cooldownShade = activation.fraction();
+						cooldownSeconds = (int) Math.ceil(activation.remaining() / 20.0);
+					}
+				}
+				if (ringActive || empowered) {
+					conditionBlocked = false;
+				}
+				if (empowered) {
+					countdown = true;
+					int empowerTicks = PowerUtils.getClientResourceValue(player, FormIdentifiers.EMPOWER_TICKS);
+					cooldownShade = 0;
+					cooldownSeconds = 0;
+					internalReady = KillEmpowerState.countdownFraction(empowerTicks, KillEmpowerManager.EMPOWER_TICKS);
+				}
+				if (skill.primary() && empowerRing) {
+					countdown = true;
+					int ringTicks = PowerUtils.getClientResourceValue(player, FormIdentifiers.EMPOWER_RING_TICKS);
+					int ringMax = PowerUtils.getClientResourceValue(player, FormIdentifiers.EMPOWER_RING_DURATION);
+					internalReady = KillEmpowerState.countdownFraction(ringTicks, ringMax);
+				}
+				if (ringActive) {
+					cooldownShade = 1;
+					cooldownSeconds = 0;
+				}
+			}
 			drawSkillSlot(context, skill.resolveIcon(player), x, y,
-					conditionBlocked ? 0 : cooldown.fraction(),
-					(int) Math.ceil(cooldown.remaining() / 20.0), internalReady, skill.primary(), config.showCdSeconds,
-					config.cdMirrorRight, conditionBlocked);
+					conditionBlocked ? 0 : cooldownShade,
+					cooldownSeconds,
+					internalReady, skill.primary(), config.showCdSeconds,
+					config.cdMirrorRight, conditionBlocked, countdown);
 		}
 	}
 
@@ -170,6 +213,14 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 	                                double cooldownFraction, int seconds, double internalReadyFraction,
 	                                boolean primary, boolean showSeconds, boolean mirrorRight,
 	                                boolean conditionBlocked) {
+		drawSkillSlot(context, icon, x, y, cooldownFraction, seconds, internalReadyFraction,
+				primary, showSeconds, mirrorRight, conditionBlocked, false);
+	}
+
+	private static void drawSkillSlot(DrawContext context, Identifier icon, int x, int y,
+	                                 double cooldownFraction, int seconds, double internalReadyFraction,
+	                                 boolean primary, boolean showSeconds, boolean mirrorRight,
+	                                 boolean conditionBlocked, boolean countdown) {
 		int iconX = x + (mirrorRight ? 3 : 10);
 		int iconY = y + (primary ? 10 : 4);
 		context.fill(iconX, iconY, iconX + ICON_SIZE, iconY + ICON_SIZE, 0xFF8B8B8B);
@@ -187,7 +238,8 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 			context.fill(iconX, iconY, iconX + ICON_SIZE, iconY + ICON_SIZE, 0x99000000);
 		}
 		if (internalReadyFraction >= 0) {
-			int readyHeight = (int) Math.floor(INTERNAL_HEIGHT * Math.max(0, Math.min(1, internalReadyFraction)));
+			int readyHeight = countdown ? KillEmpowerState.countdownHeight(internalReadyFraction, INTERNAL_HEIGHT)
+					: (int) Math.floor(INTERNAL_HEIGHT * Math.max(0, Math.min(1, internalReadyFraction)));
 			if (readyHeight > 0) {
 				int barBottom = primary ? 32 : 26;
 				int textureBottom = primary ? 32 : 60;

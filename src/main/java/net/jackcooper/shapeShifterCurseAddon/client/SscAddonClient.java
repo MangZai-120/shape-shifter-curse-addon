@@ -573,6 +573,7 @@ public class SscAddonClient implements ClientModInitializer {
 
 		// 契灵 - 次要技能瞬移：客户端按键监听 + 紫色粒子预览
 		MancianimaTeleportClient.register();
+
 		// 契灵 - 主要技能：三段标记
 		MancianimaPrimaryClient.register();
 

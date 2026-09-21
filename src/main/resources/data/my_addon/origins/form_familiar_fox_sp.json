@@ -59,6 +59,8 @@
         "my_addon:form_sp_secondary_cd",
         "my_addon:form_sp_primary_cd_tick",
         "my_addon:form_sp_secondary_cd_tick",
+        "my_addon:form_kill_empower",
+        "my_addon:form_empower_state",
         "shape-shifter-curse:form_familiar_fox_3_tan_temperature_modify",
         "shape-shifter-curse:form_tan_prevent_dirty_water_thirst"
     ],

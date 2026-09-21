@@ -79,6 +79,12 @@ public class FormIdentifiers {
 	public static final Identifier MANCIANIMA_IFRAMES = new Identifier("my_addon", "form_mancianima_iframes");
 	// 契灵 - 红标联动攻击独立 CD（10s；期间禁联动、普通闪现仍 3.5s）
 	public static final Identifier MANCIANIMA_LINK_CD = new Identifier("my_addon", "form_mancianima_link_cd");
+	// SP使魔 / 红堕落使魔「击杀赋能」被动资源（KillEmpowerManager）。
+	// 注意：宿主 power 是 apoli:multiple（form_empower_state），子资源真实 ID = power_id + "_" + sub_key
+	public static final Identifier EMPOWER_STATE = new Identifier("my_addon", "form_empower_state_state");
+	public static final Identifier EMPOWER_TICKS = new Identifier("my_addon", "form_empower_state_ticks");
+	public static final Identifier EMPOWER_RING_TICKS = new Identifier("my_addon", "form_empower_state_ring_ticks");
+	public static final Identifier EMPOWER_RING_DURATION = new Identifier("my_addon", "form_empower_state_ring_duration");
 	// 雪狐形态4个独立CD记录点（每个技能独立记录，按模式读取）
 	public static final Identifier SNOW_FOX_MELEE_PRIMARY_CD = new Identifier("my_addon", "form_snow_fox_sp_melee_primary_cd");
 	public static final Identifier SNOW_FOX_MELEE_SECONDARY_CD = new Identifier("my_addon", "form_snow_fox_sp_melee_secondary_cd");

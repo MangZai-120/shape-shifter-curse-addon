@@ -188,7 +188,18 @@ public class SscAddonConditions {
 					return true; // Non-player entities not blocked
 				}));
 
-		// SP阿努比斯之狼 - 是否处于自己的死亡领域范围内（用于领域内免疫自身受击凋零）
+		register(new ConditionFactory<>(new Identifier("ssc_addon", "not_empowered"),
+				new SerializableData().add("primary", SerializableDataTypes.BOOLEAN, false),
+				(data, entity) -> {
+					if (entity instanceof net.minecraft.entity.player.PlayerEntity player) {
+						io.github.apace100.apoli.power.PowerType<?> type = io.github.apace100.apoli.power.PowerTypeRegistry.get(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.EMPOWER_STATE);
+						var power = io.github.apace100.apoli.component.PowerHolderComponent.KEY.get(player).getPower(type);
+						int state = power instanceof io.github.apace100.apoli.power.VariableIntPower resource ? resource.getValue() : 0;
+						return net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerState.allowsNormalSkill(state, data.getBoolean("primary"));
+					}
+					return true;
+				}));
+
 		register(new ConditionFactory<>(new Identifier("ssc_addon", "in_own_death_domain"),
 				new SerializableData(),
 				(data, entity) -> {

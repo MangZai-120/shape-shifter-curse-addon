@@ -655,8 +655,18 @@ public class BarPositionEditorScreen extends Screen {
                 }
                 int barW = charge ? CH_W : SB_W;
                 int barH = charge ? CH_H : SB_H;
-                scrX = clampScreenX(scrX, barW);
-                scrY = clampScreenY(scrY, barH);
+                if (charge) {
+                    // 蓄力条 pos 即贴图左上，直接 clamp 即可
+                    scrX = clampScreenX(scrX, barW);
+                    scrY = clampScreenY(scrY, barH);
+                } else {
+                    // 魔法书：scrX/scrY 是布局逻辑原点(baseX/baseY)，包围盒左上实际在
+                    // (baseX−7, baseY−14)——必须先把包围盒左上换算出来再 clamp 后换回，
+                    // 否则 baseY 被钳到 height−49 而 HUD 内容延伸到 baseY+35，
+                    // 屏幕底部永远留 14px 死区放不进去（顶部同理越界切掉法力条）
+                    scrX = clampScreenX(scrX + SB_ORIGIN_DX, barW) - SB_ORIGIN_DX;
+                    scrY = clampScreenY(scrY + SB_ORIGIN_DY, barH) - SB_ORIGIN_DY;
+                }
                 if (charge) {
                     // 偏移语义与渲染器一致（CD 条同式）：左缘贴锚点；贴右侧时镜像换算（拖拽 x 即面板左上角 x）
                     chX = chRight ? clampOffset(width - scrX - CH_W - a.getLeft())

@@ -164,21 +164,21 @@ public class SscAddonActions {
 						.add("distance", SerializableDataTypes.FLOAT)
 						.add("damage", SerializableDataTypes.FLOAT)
 						.add("duration", SerializableDataTypes.INT, 100)
+						.add("grants_empower", SerializableDataTypes.BOOLEAN, false)
 						// 可选：对非玩家生物的伤害倍率（不传 = 1.0，保持原行为）
-						.add("non_player_multiplier", SerializableDataTypes.FLOAT, 1.0f),
+						.add("non_player_multiplier", SerializableDataTypes.FLOAT, 1.0f)
+						// 可选：双向绕过受击无敌帧（命中前清 timeUntilRegen 使技能不被普攻无敌帧吞；
+						// 命中后清使本技能不留 20t 无敌帧反吞普攻/后续技能段）
+						.add("bypass_iframes", SerializableDataTypes.BOOLEAN, false),
 				(data, entity) -> {
 					if (!(entity instanceof LivingEntity living)) return;
 
 					float distance = data.getFloat("distance");
 					float damageAmount = data.getFloat("damage");
-					// 目标非玩家生物 → 应用倍率（狐火吐息对怪物伤害×2 等）
-					final float finalDamage;
-					if (!(entity instanceof net.minecraft.entity.player.PlayerEntity)) {
-						finalDamage = damageAmount * data.getFloat("non_player_multiplier");
-					} else {
-						finalDamage = damageAmount;
-					}
+					// 注意：倍率按「目标」是否玩家判定（旧代码误查施法者，导致倍率从未生效，已修复）
+					final float nonPlayerMult = data.getFloat("non_player_multiplier");
 					int duration = data.getInt("duration");
+					boolean bypassIframes = data.getBoolean("bypass_iframes");
 
 					Vec3d eyePos = living.getEyePos();
 					Vec3d lookVec = living.getRotationVec(1.0F);
@@ -191,13 +191,22 @@ public class SscAddonActions {
 						double distSq = living.squaredDistanceTo(target);
 
 						if (dot > 0.8 && distSq < distance * distance) {
+							// 目标非玩家生物 → 应用倍率（狐火吐息对怪物伤害×3 等）
+							final float finalDamage = target instanceof net.minecraft.entity.player.PlayerEntity
+									? damageAmount : damageAmount * nonPlayerMult;
 							Vec3d oldVelocity = target.getVelocity();
+							if (bypassIframes) target.timeUntilRegen = 0;	// 命中前清：不被普攻无敌帧吞
 							RegistryKey<DamageType> magicKey = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("minecraft", "magic"));
-							if (target.damage(target.getDamageSources().create(magicKey, living, living), finalDamage)) {
+							if (net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerManager.damage(target,
+									target.getDamageSources().create(magicKey, living, living), finalDamage, data.getBoolean("grants_empower"))) {
 								target.setVelocity(oldVelocity);
+								if (bypassIframes) target.timeUntilRegen = 0;	// 命中后清：不留无敌帧反吞普攻
 							}
 
 							target.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, duration, 0), living); // Duration from data; source=施法者供入梦拦截归因
+							if (living instanceof ServerPlayerEntity player && data.getBoolean("grants_empower")) {
+								net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerManager.trackBurn(player, target, duration, true);
+							}
 
 							if (living instanceof PlayerEntity player && target instanceof SscIgnitedEntityAccessor accessor) {
 								accessor.sscAddon$setIgniterUuid(player.getUuid());
@@ -233,6 +242,8 @@ public class SscAddonActions {
 				new SerializableData()
 						.add("amount", SerializableDataTypes.FLOAT)
 						.add("damage_type", SerializableDataTypes.IDENTIFIER)
+						.add("grants_empower", SerializableDataTypes.BOOLEAN, false)
+						.add("empower_burn_ticks", SerializableDataTypes.INT, 0)
 						// 可选：对非玩家生物的伤害倍率（不传 = 1.0，保持原行为）
 						.add("non_player_multiplier", SerializableDataTypes.FLOAT, 1.0f),
 				(data, pair) -> {
@@ -247,11 +258,17 @@ public class SscAddonActions {
 					}
 					Identifier damageTypeId = data.getId("damage_type");
 
-					if (target instanceof LivingEntity) {
+					if (target instanceof LivingEntity livingTarget) {
 						RegistryKey<DamageType> damageTypeKey = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, damageTypeId);
 						Vec3d oldVelocity = target.getVelocity();
-						if (target.damage(target.getDamageSources().create(damageTypeKey, null, actor), amount)) {
+						if (net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerManager.damage(livingTarget,
+								target.getDamageSources().create(damageTypeKey, null, actor), amount, data.getBoolean("grants_empower"))) {
 							target.setVelocity(oldVelocity);
+						}
+						if (data.getBoolean("grants_empower") && actor instanceof ServerPlayerEntity player
+								&& data.getInt("empower_burn_ticks") > 0) {
+							net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerManager.trackBurn(player, livingTarget,
+									data.getInt("empower_burn_ticks"), true);
 						}
 					}
 				}));
@@ -499,32 +516,31 @@ public class SscAddonActions {
 		registerEntity(new ActionFactory<>(new Identifier("my_addon", "fox_fireball"),
 				new SerializableData(),
 				(data, entity) -> {
-					if (!(entity instanceof ServerPlayerEntity player)) return;
-					if (!(player.getWorld() instanceof ServerWorld world)) return;
-					Vec3d look = player.getRotationVec(1.0F);
-					// 发射火球投射物
-					net.jackcooper.shapeShifterCurseAddon.entity.FoxFireballEntity ball =
-							new net.jackcooper.shapeShifterCurseAddon.entity.FoxFireballEntity(world, player);
-					ball.setDirection(look);
-					world.spawnEntity(ball);
-					// 近身 60°、4 格锥形霰击：5 点魔法伤害，跳过白名单
-					Vec3d eye = player.getEyePos();
-					RegistryKey<DamageType> magicKey = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("minecraft", "magic"));
-					Box box = player.getBoundingBox().expand(4.0);
-					world.getEntitiesByClass(LivingEntity.class, box,
-							e -> e != player && e.isAlive() && !e.isSpectator()).forEach(t -> {
-						if (WhitelistUtils.isProtected(player, t)) return;
-						Vec3d toT = t.getPos().add(0, t.getHeight() / 2.0, 0).subtract(eye).normalize();
-						double dot = look.dotProduct(toT);
-						if (dot > 0.5 && player.squaredDistanceTo(t) < 16.0) {
-								float hpBefore = t.getHealth();								// 绕过受击无敌帧：否则普攻先手后本段霰击 5 伤会被无敌帧吞掉
-								t.timeUntilRegen = 0;								boolean dmgOk = t.damage(t.getDamageSources().create(magicKey, player, player), 5.0f);
-								net.jackcooper.shapeShifterCurseAddon.util.FireballDebugLog.log("CONE target=" + t.getType().toString()
-										+ " amount=5.0 returned=" + dmgOk
-										+ " hp " + hpBefore + " -> " + t.getHealth());
-						}
-					});
+					if (entity instanceof ServerPlayerEntity player) launchFoxFireball(player, false);
 				}));
+	}
+
+	public static void launchFoxFireball(ServerPlayerEntity player, boolean empowered) {
+		ServerWorld world = player.getServerWorld();
+		Vec3d look = player.getRotationVec(1.0F);
+		var ball = new net.jackcooper.shapeShifterCurseAddon.entity.FoxFireballEntity(world, player);
+		ball.setEmpowered(empowered);
+		ball.setDirection(look);
+		world.spawnEntity(ball);
+		Vec3d eye = player.getEyePos();
+		RegistryKey<DamageType> magicKey = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("minecraft", "magic"));
+		Box box = player.getBoundingBox().expand(4.0);
+		world.getEntitiesByClass(LivingEntity.class, box,
+				target -> target != player && target.isAlive() && !target.isSpectator()).forEach(target -> {
+			if (WhitelistUtils.isProtected(player, target)) return;
+			Vec3d toTarget = target.getPos().add(0, target.getHeight() / 2.0, 0).subtract(eye).normalize();
+			if (look.dotProduct(toTarget) > 0.5 && player.squaredDistanceTo(target) < 16.0) {
+				target.timeUntilRegen = 0;
+				float damage = target instanceof PlayerEntity ? 5.0f : 5.0f * 1.5f;
+				net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerManager.damage(target,
+						target.getDamageSources().create(magicKey, player, player), damage, !empowered);
+			}
+		});
 	}
 
 	private static void registerBiEntity(ActionFactory<Pair<Entity, Entity>> actionFactory) {

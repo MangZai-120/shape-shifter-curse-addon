@@ -33,8 +33,7 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_WIND_DASH = new Identifier("my_addon", "wind_dash");
 	public static final Identifier PACKET_DASH_STATE = new Identifier("my_addon", "dash_state");
 
-	// ===== 白名单 GUI 网络包 =====
-	/** S2C：服务端把调用者当前白名单 UUID 集合推给客户端，用于打开/刷新 GUI。payload: int n + n*UUID */
+	// ===== 白名单 GUI 网络包 =====/** S2C：服务端把调用者当前白名单 UUID 集合推给客户端，用于打开/刷新 GUI。payload: int n + n*UUID */
 	public static final Identifier PACKET_WHITELIST_GUI_SYNC = new Identifier("my_addon", "whitelist_gui_sync");
 	/** C2S：玩家在 GUI 中请求把某 UUID 加入自己的白名单。payload: UUID */
 	public static final Identifier PACKET_WHITELIST_GUI_ADD = new Identifier("my_addon", "whitelist_gui_add");
@@ -96,7 +95,6 @@ public class SscAddonNetworking {
 
 	/** C2S：进化美西蟠上报「真正疾跑键」按住状态（区分双击 W/游泳自动疾跑）。payload: boolean held。 */
 	public static final Identifier PACKET_AXOLOTL_SPRINT_KEY = new Identifier("my_addon", "axolotl_sprint_key");
-
 	/** S2C：踩网蓝色高亮——仅向施法者发送，令其客户端把受害者描蓝边。payload: varint entityId + varint duration。 */
 	public static final Identifier PACKET_WEB_HIGHLIGHT = new Identifier("my_addon", "web_highlight");
 	/** S2C：食梦魔「入梦」目标屏幕粉色晕影——仅向入梦目标本人发送。payload: varint durationTicks（<=0 = 该食梦魔的入梦关系结束）+ UUID nightmareUuid（入梦你的食梦魔）。 */
@@ -133,20 +131,17 @@ public class SscAddonNetworking {
 	/** S2C：进化美西螈「投掷水矛」蓄力期手持水矛渲染状态（对追踪者+自身广播）。payload: UUID + boolean charging */
 	public static final Identifier PACKET_SPEAR_CHARGE_STATE = new Identifier("my_addon", "spear_charge_state");
 
-	// ===== 荧光幼灵技能网络包 =====
-	/** C2S：荧光幼灵主要技能（法阵激光）按键。无 payload。 */
+	// ===== 荧光幼灵技能网络包 =====/** C2S：荧光幼灵主要技能（法阵激光）按键。无 payload。 */
 	public static final Identifier PACKET_FLUO_LASER = new Identifier("my_addon", "fluo_laser_key");
 	/** C2S：荧光幼灵次要技能（潮汐波动）按键。无 payload。 */
 	public static final Identifier PACKET_FLUO_TIDAL = new Identifier("my_addon", "fluo_tidal_key");
 	/** S2C：荧光幼灵「潮汐束缚」把被拴目标的 entityId 同步给客机，用于渲染守卫者激光。payload: varint orbId + varint count + count*varint entityId */
 	public static final Identifier PACKET_TIDAL_TETHER = new Identifier("my_addon", "tidal_tether");
 
-	// ===== 寒棘狐技能网络包 =====
-	/** S2C：寒棘狐主技能蓄力状态（事件级，蓄力开始/结束各 1 包）：客户端本地自算下个冰锥位的汇聚流，替代原每 4t 粒子波。payload: UUID player + boolean charging */
+	// ===== 寒棘狐技能网络包 =====/** S2C：寒棘狐主技能蓄力状态（事件级，蓄力开始/结束各 1 包）：客户端本地自算下个冰锥位的汇聚流，替代原每 4t 粒子波。payload: UUID player + boolean charging */
 	public static final Identifier PACKET_FROST_SPIKE_CHARGE_STATE = new Identifier("my_addon", "frost_spike_charge_state");
 
-	// ===== SSCA 进化加点系统网络包（框架） =====
-	/** C2S：玩家选择进化路线。payload: String routeId */
+	// ===== SSCA 进化加点系统网络包（框架） =====/** C2S：玩家选择进化路线。payload: String routeId */
 	public static final Identifier PACKET_EVO_SELECT_ROUTE = new Identifier("my_addon", "evo_select_route");
 	/** C2S：玩家选择 SP 分支。payload: String branchId */
 	public static final Identifier PACKET_EVO_SELECT_BRANCH = new Identifier("my_addon", "evo_select_branch");

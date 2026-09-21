@@ -32,6 +32,7 @@ import net.minecraft.util.math.random.Random;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerManager;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import org.joml.Vector3f;
 
@@ -52,6 +53,8 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
     private static final float PIERCE_DAMAGE = 8.0f;   // 前 12 格穿透（魔法）
     private static final float EXPLODE_DAMAGE = 6.0f;  // 爆炸（物理）
     private static final float CHAIN_DAMAGE = 4.0f;    // 连锁（物理）
+    /** 非玩家目标伤害倍率（用户定稿 ×1.5）：Red 火球对怪物三段全部 ×1.5，对玩家保持原值 */
+    private static final float NON_PLAYER_MULT = 1.5f;
     private static final int RING_DURATION = 7;        // 腰部火环扩散动画帧数（半径 0→2）
     private static final double PHASE2_SPEED = 2.0;    // 12 格后固定 2 格/s
     private static final int PHASE2_DURATION = 60;     // 12 格后最多飞 3 秒（60 tick → 18 格上限）
@@ -63,6 +66,7 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
     private int ticksAlive = 0;
     private int phase2Tick = 0;                  // 12 格后已飞 tick 数
     private boolean exploded = false;
+    private boolean empowered = false;
     private boolean exploding = false;           // 爆炸后停止移动、等待所有火环播完即消失
     private final java.util.List<float[]> activeRings = new java.util.ArrayList<>();   // 活跃火环 [cx,cy,cz,已播放tick]
     private final java.util.Set<java.util.UUID> piercedEntities = new java.util.HashSet<>();
@@ -80,6 +84,10 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
     public void setDirection(Vec3d dir) {
         this.direction = dir.normalize();
         this.setVelocity(this.direction);   // 用速度把方向编进 spawn 包，供客户端预测移动
+    }
+
+    public void setEmpowered(boolean empowered) {
+        this.empowered = empowered;
     }
 
     /** 速度曲线（格/tick = b/s ÷ 20）：0~12 格按距离 20→2 线性递减（约 1.5 秒走完），12 格后固定 2 格/s。 */
@@ -204,7 +212,9 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
             // 穿透段同样绕过受击无敌帧：普攻/近身霰击先命中时会留下无敌帧 + lastDamageTaken，
             // 若其 ≥ 8 伤则本段被原版「amount <= lastDamageTaken」规则整口吞掉（偶发穿透无伤根因）
             e.timeUntilRegen = 0;
-            boolean dmgOk = e.damage(magicSource(e, owner), PIERCE_DAMAGE);
+            float dmg = scaleFor(e, PIERCE_DAMAGE);
+            boolean dmgOk = KillEmpowerManager.damage(e, magicSource(e, owner), dmg, !empowered);
+            if (dmgOk) e.timeUntilRegen = 0;   // 命中后清：不留无敌帧反吞普攻
             net.jackcooper.shapeShifterCurseAddon.util.FireballDebugLog.log("PIERCE target=" + e.getType().toString()
                     + " amount=" + PIERCE_DAMAGE + " returned=" + dmgOk
                     + " hp " + hpBefore + " -> " + e.getHealth());
@@ -310,7 +320,9 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
             // 后续爆炸 6 / 连锁 4 ≤ lastDamageTaken 会被 damage() 直接 return false 吞掉（丢伤害根因）。
             // 清零无敌计时让本技能自己的后续段全额生效（不影响其它伤害源）。
             e.timeUntilRegen = 0;
-            boolean dmgOk = e.damage(physicalSource(e, owner), dmg);
+            float scaledExplode = scaleFor(e, dmg);
+            boolean dmgOk = KillEmpowerManager.damage(e, physicalSource(e, owner), scaledExplode, !empowered);
+            if (dmgOk) e.timeUntilRegen = 0;   // 命中后清：不留无敌帧反吞普攻
             net.jackcooper.shapeShifterCurseAddon.util.FireballDebugLog.log("EXPLODE target=" + e.getType().toString()
                     + " amount=" + dmg + " returned=" + dmgOk
                     + " hp " + hpBefore + " -> " + e.getHealth());
@@ -346,7 +358,8 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         for (LivingEntity e : chained) {
             // 连锁段紧跟穿透段（8 伤）之后，同样需绕过受击无敌帧，否则 4 ≤ 8 被吞
             e.timeUntilRegen = 0;
-            e.damage(physicalSource(e, owner), CHAIN_DAMAGE);
+            boolean chainDmgOk = KillEmpowerManager.damage(e, physicalSource(e, owner), scaleFor(e, CHAIN_DAMAGE), !empowered);
+            if (chainDmgOk) e.timeUntilRegen = 0;   // 命中后清：不留无敌帧反吞普攻
             applyFoxFireBurn(e);
         }
     }
@@ -355,6 +368,9 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
     private void applyFoxFireBurn(LivingEntity target) {
         // 带施法者 source 供食梦魔「入梦」debuff 拦截归因
         target.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, 100, 0, false, true, true), this.getOwner());
+        if (this.getOwner() instanceof ServerPlayerEntity player) {
+            KillEmpowerManager.trackBurn(player, target, 100, !empowered);
+        }
         if (this.getOwner() != null) {
             // 归因必须用专属前缀 ssc_burn: + igniter UUID，绝不能用 ssc_owner:——
             // 白名单 hasOwnerTag 会把 ssc_owner: 当"召唤物归属"凭证，导致被火球打过的目标
@@ -437,6 +453,12 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         return target.getDamageSources().create(key, owner, owner);
     }
 
+    /** 按目标类型缩放伤害：非玩家生物 × NON_PLAYER_MULT（对玩家保持原值）。 */
+    private static float scaleFor(LivingEntity target, float base) {
+        if (target instanceof net.minecraft.entity.player.PlayerEntity) return base;
+        return base * NON_PLAYER_MULT;
+    }
+
     private DamageSource physicalSource(LivingEntity target, LivingEntity owner) {
         RegistryKey<DamageType> key = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("minecraft", "mob_attack"));
         return target.getDamageSources().create(key, owner, owner);
@@ -455,6 +477,7 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         }
         this.distanceTraveled = nbt.getDouble("Dist");
         this.exploded = nbt.getBoolean("Exploded");
+        this.empowered = nbt.getBoolean("Empowered");
     }
 
     @Override
@@ -465,6 +488,7 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         nbt.putDouble("DirZ", direction.z);
         nbt.putDouble("Dist", distanceTraveled);
         nbt.putBoolean("Exploded", exploded);
+        nbt.putBoolean("Empowered", empowered);
     }
 
     @Override

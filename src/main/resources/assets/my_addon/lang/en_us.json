@@ -36,11 +36,11 @@
   "codex.form.my_addon.familiar_fox_sp.cons": "Great power requires a huge price to maintain:\n\nAs a high-ranking spirit, your dependence on mana is more severe. Low or exhausted mana makes you weak and increases damage taken.\n\nYour physical structure remains fragile; your health is no higher than a normal familiar.\nYou cannot equip leggings or boots, and move slowly in water.\nYou gain less saturation from food.",
   "codex.form.my_addon.familiar_fox_sp.instincts": "Your control over spiritual power has reached another level, but your soul is more severely eroded by the Moon Curse. You feel yourself losing control over your body, constantly urged to unleash the Soul Fire within and burn everything in your path.\nYou have become a puppet of the moon, craving destruction and chaos.\nYou can no longer absorb the moon's mana because your body has reached its limit.",
   "power.my_addon.form_familiar_fox_sp_kill_mana.name": "Soul Reaping",
-  "power.my_addon.form_familiar_fox_sp_kill_mana.description": "Restores 10 Mana on kill. If Blue Fire Ring is active, restores an additional 5 Mana and 3 Health.",
+  "power.my_addon.form_familiar_fox_sp_kill_mana.description": "Restores 10 Mana on kill. If Blue Fire Ring is active, restores an additional 5 Mana and 3 Health; while the empowered fire ring is active with the Blue Fire Amulet equipped, this becomes an additional 10 Mana and 5 Health instead.",
   "power.my_addon.form_familiar_fox_sp_blue_fire_ring.name": "Blue Fire Ring",
   "power.my_addon.form_familiar_fox_sp_blue_fire_ring.description": "Requires full Mana to activate. Consumes Mana per second to damage and ignite surroundings. Enhances kill restoration when active.",
   "power.my_addon.form_familiar_fox_sp_fox_fire_breath.name": "Fox Fire Breath",
-  "power.my_addon.form_familiar_fox_sp_fox_fire_breath.description": "Consumes 20 Mana to breathe Soul Fox Fire forward, dealing 6 damage and igniting enemies for 5 seconds.",
+  "power.my_addon.form_familiar_fox_sp_fox_fire_breath.description": "Consumes 15 Mana to breathe Soul Fox Fire forward, dealing 6 damage (x3 to non-player creatures) and igniting enemies for 5 seconds.",
   "power.my_addon.form_familiar_fox_sp_absorb.name": "Mana Absorption",
   "power.my_addon.form_familiar_fox_sp_absorb.description": "Sneak and right-click a mob to drain its life essence: normal creatures and humans give back large amounts of Mana and saturation, while hostile creatures return a little Mana along with Blindness, Slowness and Weakness. Has an internal cooldown.",
   "power.my_addon.form_familiar_fox_sp_no_buff_effect.name": "Spirit Embodiment",
@@ -1297,5 +1297,7 @@
   "spell.ssc_addon.interrupt.1": "External damage only",
   "spell.ssc_addon.interrupt.2": "Manual cancellation only",
   "spell.ssc_addon.interrupt.3": "External damage or manual cancellation",
-  "message.ssc_addon.mancianima.teleport.link_locked": "§cLinked strike on cooldown, wait %ss"
+  "message.ssc_addon.mancianima.teleport.link_locked": "§cLinked strike on cooldown, wait %ss",
+  "power.my_addon.form_kill_empower.name": "Kill Empowerment",
+  "power.my_addon.form_kill_empower.description": "Kills on non-whitelisted creatures with a normal fire ring or normal secondary skill (fireball or breath) grant empowerment for 10 seconds, with no passive cooldown. Each empowerment grants one free primary or secondary cast, ignoring mana and cooldown; it neither stacks nor refreshes while held. Normal secondary skills remain usable during an empowered fire ring. Empowered skills and their burns cannot grant empowerment. With the Blue Fire Amulet equipped, the empowered fire ring gains +4 damage, -40% radius and -15% duration, and its kill restoration becomes an additional 10 Mana and 5 Health."
 }

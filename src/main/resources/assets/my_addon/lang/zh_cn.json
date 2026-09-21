@@ -27,11 +27,11 @@
   "codex.form.my_addon.familiar_fox_sp.cons": "强大的力量需要巨大的代价来维持：\n\n作为高阶灵体，你对魔力的依赖更加严重。当魔力过低甚至耗尽时，你不仅会变得虚弱，还会增加受到的伤害。你的身体结构依然脆弱，生命值并不比普通使魔更高\n你也无法装备腿甲与鞋，且在水中行动迟缓\n你从食物中获取的饱腹感更少了",
   "codex.form.my_addon.familiar_fox_sp.instincts": "你对灵能的力量已到达另一个高度，但你的灵魂已经被月之诅咒侵蚀的更加严重。你感觉自己逐渐失去对自己身体的控制，总是忍不住想要释放体内的灵魂之火，燃烧一切阻挡在你面前的事物。\n你成为了月亮的傀儡，渴望着毁灭与混沌。\n你无法再吸收月亮的魔力了，因为你的身体已经达到了极限。",
   "power.my_addon.form_familiar_fox_sp_kill_mana.name": "灵魂收割",
-  "power.my_addon.form_familiar_fox_sp_kill_mana.description": "击杀目标后恢复10点魔力。若苍蓝火环激活，额外回复5点魔力和3点生命。",
+  "power.my_addon.form_familiar_fox_sp_kill_mana.description": "击杀目标后恢复10点魔力。若苍蓝火环激活，额外回复5点魔力和3点生命；若赋能火环激活且佩戴蓝火护符，则改为额外回复10点魔力和5点生命。",
   "power.my_addon.form_familiar_fox_sp_blue_fire_ring.name": "苍蓝火环",
   "power.my_addon.form_familiar_fox_sp_blue_fire_ring.description": "需要满魔力激活。每秒消耗魔力，对周围造成伤害并点燃。激活时增强击杀回复效果。",
   "power.my_addon.form_familiar_fox_sp_fox_fire_breath.name": "狐火吐息",
-  "power.my_addon.form_familiar_fox_sp_fox_fire_breath.description": "消耗20点法力，向前方喷吐灵魂狐火，造成6点伤害并点燃敌人5秒。",
+  "power.my_addon.form_familiar_fox_sp_fox_fire_breath.description": "消耗15点法力，向前方喷吐灵魂狐火，造成6点伤害（对非玩家生物×3）并点燃敌人5秒。",
   "power.my_addon.form_familiar_fox_sp_absorb.name": "魔力汲取",
   "power.my_addon.form_familiar_fox_sp_absorb.description": "潜行并右击生物可汲取其生命精华：普通生物与人类会回馈大量魔力与饱食度，敌对生物则回馈少量魔力并伴随致盲、缓慢、虚弱等削弱效果。有内置冷却。",
   "power.my_addon.form_familiar_fox_sp_no_buff_effect.name": "灵体化身",
@@ -1297,5 +1297,7 @@
   "spell.ssc_addon.interrupt.1": "仅外界伤害",
   "spell.ssc_addon.interrupt.2": "仅主动取消",
   "spell.ssc_addon.interrupt.3": "外界伤害或主动取消",
-  "message.ssc_addon.mancianima.teleport.link_locked": "§c联动攻击冷却中，需等待 %s 秒"
+  "message.ssc_addon.mancianima.teleport.link_locked": "§c联动攻击冷却中，需等待 %s 秒",
+  "power.my_addon.form_kill_empower.name": "击杀赋能",
+  "power.my_addon.form_kill_empower.description": "正常火环或正常次要技能（火球／吐息）击杀非白名单生物后，获得持续10秒的赋能，无独立冷却。每次赋能只能无视冷却与魔力免费释放一次主要或次要技能，二选一；持有期间不叠加、不刷新。赋能火环持续期间仍可使用正常次要技能。赋能技能及其灼烧不会触发新赋能。佩戴蓝火护符时，赋能火环伤害+4、范围-40%、持续时间-15%，且激活期间的击杀回复增强为额外10点魔力与5点生命。"
 }

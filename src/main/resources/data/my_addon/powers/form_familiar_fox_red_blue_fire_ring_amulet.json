@@ -152,6 +152,10 @@
                 },
                 {
                     "type": "ssc_addon:has_blue_fire_amulet"
+                },
+                {
+                    "type": "ssc_addon:not_empowered",
+                    "primary": true
                 }
             ]
         },
@@ -407,7 +411,11 @@
                                         {
                                             "type": "my_addon:damage_target_from_actor",
                                             "amount": 8.0,
-                                            "damage_type": "minecraft:generic"
+                                            "damage_type": "minecraft:generic",
+                                            "grants_empower": true,
+                                            "empower_burn_ticks": 60,
+                                            "non_player_multiplier": 1.5,
+                                            "bypass_iframes": true
                                         },
                                         {
                                             "type": "apoli:target_action",

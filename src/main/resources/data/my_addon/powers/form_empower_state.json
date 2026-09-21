@@ -1,0 +1,39 @@
+{
+    "type": "apoli:multiple",
+    "state": {
+        "type": "apoli:resource",
+        "min": 0,
+        "max": 3,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "ring_duration": {
+        "type": "apoli:resource",
+        "min": 0,
+        "max": 2147483647,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "ring_ticks": {
+        "type": "apoli:resource",
+        "min": 0,
+        "max": 2147483647,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "ticks": {
+        "type": "apoli:resource",
+        "min": 0,
+        "max": 300,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    }
+}

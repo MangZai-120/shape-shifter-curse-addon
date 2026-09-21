@@ -98,7 +98,7 @@ public class FoxFireBurnEffect extends StatusEffect {
 				}
 
 				net.minecraft.util.math.Vec3d oldVelocity = entity.getVelocity();
-				if (entity.damage(source, 1.0f)) {
+				if (net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerManager.damageBurn(entity, source, 1.0f)) {
 					entity.setVelocity(oldVelocity);
 				}
 

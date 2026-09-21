@@ -468,6 +468,8 @@ public class SscAddon implements ModInitializer {
 		AnubisWolfSpSoulEnergy.registerEvents();
 		GoldenSandstormRegen.init();
 		MancianimaMarkManager.register();
+		// SP便魔/红堕落「击杀赋能」被动（状态机+ 递减计时）
+		net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerManager.register();
 		MoonScarStoryManager.register();
 		TideSpiritStoryManager.register();
 		// 原版官方事件监听（由 mixin 迁移而来）：诅咒之月 SP 形态提示 + 附属形态变身成就

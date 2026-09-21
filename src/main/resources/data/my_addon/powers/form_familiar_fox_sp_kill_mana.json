@@ -14,17 +14,47 @@
                     "effect": "ssc_addon:blue_fire_ring"
                 },
                 "if_action": {
-                    "type": "apoli:and",
-                    "actions": [
-                        {
-                            "type": "shape-shifter-curse:gain_mana",
-                            "mana": 5
-                        },
-                        {
-                            "type": "apoli:heal",
-                            "amount": 3
-                        }
-                    ]
+                    "type": "apoli:if_else",
+                    "condition": {
+                        "type": "apoli:and",
+                        "conditions": [
+                            {
+                                "type": "apoli:resource",
+                                "resource": "my_addon:form_empower_state_ring_ticks",
+                                "comparison": ">",
+                                "compare_to": 0
+                            },
+                            {
+                                "type": "ssc_addon:has_blue_fire_amulet"
+                            }
+                        ]
+                    },
+                    "if_action": {
+                        "type": "apoli:and",
+                        "actions": [
+                            {
+                                "type": "shape-shifter-curse:gain_mana",
+                                "mana": 10
+                            },
+                            {
+                                "type": "apoli:heal",
+                                "amount": 5
+                            }
+                        ]
+                    },
+                    "else_action": {
+                        "type": "apoli:and",
+                        "actions": [
+                            {
+                                "type": "shape-shifter-curse:gain_mana",
+                                "mana": 5
+                            },
+                            {
+                                "type": "apoli:heal",
+                                "amount": 3
+                            }
+                        ]
+                    }
                 }
             }
         ]

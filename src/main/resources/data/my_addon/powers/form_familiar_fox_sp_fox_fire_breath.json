@@ -1,5 +1,5 @@
 {
-    "type": "apoli:active_self",
+    "type": "ssc_addon:familiar_skill",
     "key": {
         "key": "key.ssc_addon.sp_secondary"
     },
@@ -50,9 +50,11 @@
             },
             {
                 "type": "my_addon:fire_breath",
+                "grants_empower": true,
                 "distance": 8.0,
                 "damage": 6.0,
-                "non_player_multiplier": 2.0
+                "non_player_multiplier": 3.0,
+                "bypass_iframes": true
             },
             {
                 "type": "apoli:change_resource",
@@ -68,6 +70,9 @@
             {
                 "type": "shape-shifter-curse:has_mana",
                 "mana": 15
+            },
+            {
+                "type": "ssc_addon:not_empowered"
             }
         ]
     },
@@ -77,5 +82,5 @@
     },
 
     "name": "狐火吐息",
-    "description": "消耗15点法力，向前方8格范围喷吐灵魂狐火，造成6点伤害（对非玩家生物×2）并点燃敌人5秒。"
+    "description": "消耗15点法力，向前方8格范围喷吐灵魂狐火，造成6点伤害（对非玩家生物×3）并点燃敌人5秒。"
 }
