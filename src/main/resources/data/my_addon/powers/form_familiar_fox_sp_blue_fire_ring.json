@@ -417,7 +417,8 @@
                                         {
                                             "type": "my_addon:damage_target_from_actor",
                                             "amount": 4.0,
-                                            "damage_type": "minecraft:generic"
+                                            "damage_type": "minecraft:generic",
+                                            "non_player_multiplier": 3.0
                                         },
                                         {
                                             "type": "apoli:target_action",

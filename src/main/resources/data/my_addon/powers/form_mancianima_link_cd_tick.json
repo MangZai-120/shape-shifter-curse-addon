@@ -1,0 +1,16 @@
+{
+    "type": "apoli:action_over_time",
+    "interval": 1,
+    "entity_action": {
+        "type": "apoli:change_resource",
+        "resource": "my_addon:form_mancianima_link_cd",
+        "change": -1,
+        "operation": "add"
+    },
+    "condition": {
+        "type": "apoli:resource",
+        "resource": "my_addon:form_mancianima_link_cd",
+        "comparison": ">",
+        "compare_to": 0
+    }
+}

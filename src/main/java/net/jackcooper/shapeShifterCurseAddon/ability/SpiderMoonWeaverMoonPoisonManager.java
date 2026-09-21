@@ -43,8 +43,9 @@ public final class SpiderMoonWeaverMoonPoisonManager {
      * 按 {@link #SCAN_INTERVAL} 节流扫描周围受困生物并施加中毒 I。
      */
     public static void tick(ServerPlayerEntity player) {
-        if (!FormUtils.isForm(player, FormIdentifiers.SPIDER_MOON_WEAVER)) return;
+        // 周期门控前置：先降频再做形态/实体扫描，非月织蛛玩家每 tick 只花一次取余（原每 tick 都过一次 CCA 形态查询）
         if (player.age % SCAN_INTERVAL != 0) return;
+        if (!FormUtils.isForm(player, FormIdentifiers.SPIDER_MOON_WEAVER)) return;
         if (!(player.getWorld() instanceof ServerWorld world)) return;
 
         Box box = new Box(player.getBlockPos()).expand(SCAN_RADIUS);

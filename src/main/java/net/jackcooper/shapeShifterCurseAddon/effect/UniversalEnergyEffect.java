@@ -39,10 +39,11 @@ public class UniversalEnergyEffect extends StatusEffect {
 		if (!UniversalEnergyPotionItem.canRestore(player)) {
 			return;
 		}
-		// 距离衰减：爆炸中心 1.0 → 边缘 0.0，下限 0.5（与原版 FeedEffect 同参）
-		double distanceMultiplier = Math.max(0.5, proximity);
-		double restore = UniversalEnergyPotionItem.MANA_RESTORE * distanceMultiplier;
-		UniversalEnergyPotionItem.restoreManaScaled(player, restore);
+		// 距离衰减：爆炸中心 1.0 → 边缘 0.0，下限 0.5（与原版 FeedEffect 同参）。
+		// 只传 scale，由 restoreManaScaled 内部统一乘 MANA_RESTORE——
+		// 曾在此预乘过一次导致双重乘算（25×(12.5~25)=312~625），滞留云/喷溅一跳即溢出回满，勿再预乘。
+		double scale = Math.max(0.5, proximity);
+		UniversalEnergyPotionItem.restoreManaScaled(player, scale);
 	}
 
 	@Override

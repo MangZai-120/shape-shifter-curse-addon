@@ -99,9 +99,21 @@
                                         "duration": 5
                                     },
                                     {
-                                        "type": "apoli:damage",
-                                        "amount": 4,
-                                        "damage_type": "minecraft:on_fire"
+                                        "type": "apoli:if_else",
+                                        "condition": {
+                                            "type": "apoli:entity_type",
+                                            "entity_type": "minecraft:player"
+                                        },
+                                        "if_action": {
+                                            "type": "apoli:damage",
+                                            "amount": 4,
+                                            "damage_type": "minecraft:on_fire"
+                                        },
+                                        "else_action": {
+                                            "type": "apoli:damage",
+                                            "amount": 12,
+                                            "damage_type": "minecraft:on_fire"
+                                        }
                                     }
                                 ]
                             },

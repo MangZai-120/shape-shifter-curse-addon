@@ -21,10 +21,11 @@
     },
     "target_condition": {
         "type": "apoli:entity_type",
-        "entity_type": "minecraft:player"
+        "entity_type": "minecraft:player",
+        "inverted": true
     },
     "modifier": {
         "operation": "set_total",
-        "value": 5.0
+        "value": 10.0
     }
 }

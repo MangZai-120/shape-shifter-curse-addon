@@ -159,8 +159,11 @@ public final class BatDesmodusBloodThirst {
 
     // ==================== Tick ====================
 
-    /** 每 tick 处理战斗回血与脱战衰减（仅蝙蝠形态生效） */
+    /** 每 tick 处理战斗回血与脱战衰减（仅蝙蝠形态生效；结算周期 20t，%20 门控零行为差异） */
     public static void tick(ServerPlayerEntity player) {
+        // 周期门控前置：内部按「world time 差值 ≥ 20」每秒结算，%20 门控后结算时机不变；
+        // 非蝙蝠玩家每 tick 只花一次取余（原每 tick 都过一次 CCA 形态查询）
+        if (player.age % 20 != 0) return;
         if (!isBat(player)) return;
         long now = player.getWorld().getTime();
         Long lastRegen = LAST_REGEN_TICK.get(player.getUuid());

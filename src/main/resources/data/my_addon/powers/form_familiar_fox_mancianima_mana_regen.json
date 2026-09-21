@@ -49,7 +49,7 @@
         },
         "entity_action": {
             "type": "shape-shifter-curse:gain_mana",
-            "mana": 1.0
+            "mana": 5.0
         }
     }
 }

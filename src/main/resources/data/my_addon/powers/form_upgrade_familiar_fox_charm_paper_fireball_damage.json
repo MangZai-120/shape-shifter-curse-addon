@@ -19,6 +19,10 @@
         "type": "apoli:projectile",
         "projectile": "minecraft:small_fireball"
     },
+    "target_condition": {
+        "type": "apoli:entity_type",
+        "entity_type": "minecraft:player"
+    },
     "modifier": {
         "operation": "set_total",
         "value": 9.0

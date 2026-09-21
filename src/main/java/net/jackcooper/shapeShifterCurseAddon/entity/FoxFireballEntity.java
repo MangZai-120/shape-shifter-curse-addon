@@ -46,7 +46,7 @@ import java.util.List;
 public class FoxFireballEntity extends ProjectileEntity implements net.minecraft.entity.FlyingItemEntity {
 
     private static final double ARM_DISTANCE = 12.0;   // 12 格后才进入杀伤（碰墙/生物爆炸）
-    private static final double HIT_RADIUS = 2.0;      // 命中/穿透判定球半径
+    private static final double HIT_RADIUS = 2.5;      // 命中/穿透判定半径（目标碰撞箱 expand，与视觉粒子范围匹配）
     private static final double EXPLODE_RADIUS = 6.0;  // 爆炸球半径
     private static final double CHAIN_RADIUS = 2.0;    // 连锁半径
     private static final float PIERCE_DAMAGE = 8.0f;   // 前 12 格穿透（魔法）
@@ -172,11 +172,13 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
     }
 
     private LivingEntity findTarget(ServerWorld world) {
+        // 判定基准 = 目标碰撞箱（而非脚底坐标点）：高大目标（铁蟹儡高 2.7 格）的脚底点
+        // 与飞行中的火球中心垂直距离常 >1.5 格，旧脚底点判定会把这些“视觉命中”误判为未命中
         Box box = this.getBoundingBox().expand(HIT_RADIUS);
         Vec3d c = this.getPos();
         List<LivingEntity> list = world.getEntitiesByClass(LivingEntity.class, box,
                 e -> e != this.getOwner() && e.isAlive() && !e.isSpectator()
-                        && e.squaredDistanceTo(c.x, c.y, c.z) <= HIT_RADIUS * HIT_RADIUS);
+                        && e.getBoundingBox().expand(HIT_RADIUS).contains(c));
         for (LivingEntity e : list) {
             if (this.getOwner() instanceof ServerPlayerEntity op && WhitelistUtils.isProtected(op, e)) continue;
             return e;
@@ -184,18 +186,28 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         return null;
     }
 
-    /** 前 12 格穿透：对 2 格球内每个非白名单生物造成一次 8 魔法穿透伤害（去重，火球不灭）。 */
+    /** 前 12 格穿透：对判定球内每个非白名单生物造成一次 8 魔法穿透伤害（去重，火球不灭）。判定基于目标碰撞箱。 */
     private void pierceTargets(ServerWorld world) {
         Box box = this.getBoundingBox().expand(HIT_RADIUS);
         Vec3d c = this.getPos();
         LivingEntity owner = this.getOwner() instanceof LivingEntity le ? le : null;
         List<LivingEntity> list = world.getEntitiesByClass(LivingEntity.class, box,
                 e -> e != this.getOwner() && e.isAlive() && !e.isSpectator()
-                        && e.squaredDistanceTo(c.x, c.y, c.z) <= HIT_RADIUS * HIT_RADIUS
+                        && e.getBoundingBox().expand(HIT_RADIUS).contains(c)
                         && !piercedEntities.contains(e.getUuid()));
         for (LivingEntity e : list) {
-            if (this.getOwner() instanceof ServerPlayerEntity op && WhitelistUtils.isProtected(op, e)) continue;
-            e.damage(magicSource(e, owner), PIERCE_DAMAGE);
+            if (this.getOwner() instanceof ServerPlayerEntity op && WhitelistUtils.isProtected(op, e)) {
+                net.jackcooper.shapeShifterCurseAddon.util.FireballDebugLog.log("PIERCE skipped (whitelist) target=" + e.getType().toString());
+                continue;
+            }
+            float hpBefore = e.getHealth();
+            // 穿透段同样绕过受击无敌帧：普攻/近身霰击先命中时会留下无敌帧 + lastDamageTaken，
+            // 若其 ≥ 8 伤则本段被原版「amount <= lastDamageTaken」规则整口吞掉（偶发穿透无伤根因）
+            e.timeUntilRegen = 0;
+            boolean dmgOk = e.damage(magicSource(e, owner), PIERCE_DAMAGE);
+            net.jackcooper.shapeShifterCurseAddon.util.FireballDebugLog.log("PIERCE target=" + e.getType().toString()
+                    + " amount=" + PIERCE_DAMAGE + " returned=" + dmgOk
+                    + " hp " + hpBefore + " -> " + e.getHealth());
             piercedEntities.add(e.getUuid());
             applyFoxFireBurn(e);
             double ex = e.getX(), ey = e.getY() + e.getHeight() * 0.5, ez = e.getZ();
@@ -293,7 +305,15 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
                 dmg = (float) (EXPLODE_DAMAGE - (EXPLODE_DAMAGE - 1.0) * (dist - 2.0) / (EXPLODE_RADIUS - 2.0));
                 if (dmg < 1.0f) dmg = 1.0f;
             }
-            e.damage(physicalSource(e, owner), dmg);
+            float hpBefore = e.getHealth();
+            // 技能多段伤害绕过原版受击无敌帧：穿透段 8 伤命中后目标进入 10t 无敌窗口，
+            // 后续爆炸 6 / 连锁 4 ≤ lastDamageTaken 会被 damage() 直接 return false 吞掉（丢伤害根因）。
+            // 清零无敌计时让本技能自己的后续段全额生效（不影响其它伤害源）。
+            e.timeUntilRegen = 0;
+            boolean dmgOk = e.damage(physicalSource(e, owner), dmg);
+            net.jackcooper.shapeShifterCurseAddon.util.FireballDebugLog.log("EXPLODE target=" + e.getType().toString()
+                    + " amount=" + dmg + " returned=" + dmgOk
+                    + " hp " + hpBefore + " -> " + e.getHealth());
             applyFoxFireBurn(e);
         }
         // 仅“直接碰到火球”的生物触发额外爆破（腰部火环 + 2 格连锁）；主爆炸范围内其他生物不触发；碰墙无直接目标则不触发
@@ -324,17 +344,25 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
                         && e.squaredDistanceTo(cx, cy, cz) <= CHAIN_RADIUS * CHAIN_RADIUS
                         && !(owner instanceof ServerPlayerEntity op && WhitelistUtils.isProtected(op, e)));
         for (LivingEntity e : chained) {
+            // 连锁段紧跟穿透段（8 伤）之后，同样需绕过受击无敌帧，否则 4 ≤ 8 被吞
+            e.timeUntilRegen = 0;
             e.damage(physicalSource(e, owner), CHAIN_DAMAGE);
             applyFoxFireBurn(e);
         }
     }
 
-    /** 火球命中附加狐火灼烧 5 秒（每秒掉血），并打上施法者归属 tag。 */
+    /** 火球命中附加狐火灼烧 5 秒（每秒掉血），并记录施法者归属（供灼烧 DoT 归因）。 */
     private void applyFoxFireBurn(LivingEntity target) {
         // 带施法者 source 供食梦魔「入梦」debuff 拦截归因
         target.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, 100, 0, false, true, true), this.getOwner());
         if (this.getOwner() != null) {
-            target.addCommandTag("ssc_owner:" + this.getOwner().getUuid());
+            // 归因必须用专属前缀 ssc_burn: + igniter UUID，绝不能用 ssc_owner:——
+            // 白名单 hasOwnerTag 会把 ssc_owner: 当"召唤物归属"凭证，导致被火球打过的目标
+            // 从此被当成施法者自己的召唤物而受保护，后续火球对该目标全部零伤害。
+            target.addCommandTag("ssc_burn:" + this.getOwner().getUuid());
+            if (target instanceof net.jackcooper.shapeShifterCurseAddon.util.SscIgnitedEntityAccessor acc) {
+                acc.sscAddon$setIgniterUuid(this.getOwner().getUuid());
+            }
         }
     }
 

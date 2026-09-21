@@ -746,12 +746,12 @@ public abstract class SscAddonLivingEntityMixin {
 		if (!FormUtils.isForm(sp, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA)) return;
 		// 跳过虚空/直接击杀，避免BUG
 		if (source.isOf(DamageTypes.OUT_OF_WORLD) || source.isOf(DamageTypes.GENERIC_KILL)) return;
+		// 受击 → 重置 15s 抗伤回复计时（任何来源的伤害都重置；主动攻击不打断）
+		MancianimaMarkManager.markCombat(sp.getUuid(), sp.getServerWorld().getTime());
 		// 仅处理"由其它玩家/生物造成的伤害"（近战、远程、魔法）。
-		// 环境伤害（坠落、溺水、岩浆、火焰、窒息、仙人掌、饥饿等）的 attacker 为 null，将不抵挡也不进入战斗。
+		// 环境伤害（坠落、溺水、岩浆、火焰、窒息、仙人掌、饥饿等）的 attacker 为 null，将不抵挡（但仍会重置回复计时）。
 		Entity attacker = source.getAttacker();
 		if (!(attacker instanceof LivingEntity) || attacker == sp) return;
-		// 受击 → 进入战斗状态（用于 15s 抗伤回复门槛）
-		MancianimaMarkManager.markCombat(sp.getUuid(), sp.getServerWorld().getTime());
 		int iframes = PowerUtils.getResourceValue(sp, FormIdentifiers.MANCIANIMA_IFRAMES);
 		if (iframes > 0) {
 			cir.setReturnValue(false);
@@ -779,10 +779,7 @@ public abstract class SscAddonLivingEntityMixin {
 		DamageSource source = args.get(0);
 		float amount = args.get(1);
 		Entity attacker = source.getAttacker();
-		// 攻击发生在契灵玩家身上 → 进入战斗（攻击方为契灵也算）
-		if (attacker instanceof ServerPlayerEntity ap && FormUtils.isForm(ap, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA)) {
-			MancianimaMarkManager.markCombat(ap.getUuid(), ap.getServerWorld().getTime());
-		}
+		// 攻击方为契灵：不再重置抗伤回复计时（15s 未受击即回复，主动攻击不打断）
 		if (attacker instanceof ServerPlayerEntity ap
 				&& MancianimaMarkManager.isRedMarkedBy(ap.getUuid(), self.getUuid())) {
 			args.set(1, amount * 1.25f);

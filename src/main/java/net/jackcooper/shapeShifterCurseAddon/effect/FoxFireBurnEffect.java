@@ -19,14 +19,19 @@ public class FoxFireBurnEffect extends StatusEffect {
 
 	private PlayerEntity getOwnerFromTags(LivingEntity entity) {
 		for (String tag : entity.getCommandTags()) {
-			if (tag.startsWith("ssc_owner:")) {
-				try {
-					String uuidStr = tag.substring("ssc_owner:".length());
-					UUID uuid = UUID.fromString(uuidStr);
-					return entity.getWorld().getPlayerByUuid(uuid);
-				} catch (Exception e) {
-					// Ignore invalid tags
-				}
+			// ssc_burn: 为狐火归因前缀（新版）；ssc_owner: 为旧存档兼容（老目标身上可能残留）
+			String uuidStr = null;
+			if (tag.startsWith("ssc_burn:")) {
+				uuidStr = tag.substring("ssc_burn:".length());
+			} else if (tag.startsWith("ssc_owner:")) {
+				uuidStr = tag.substring("ssc_owner:".length());
+			}
+			if (uuidStr == null) continue;
+			try {
+				UUID uuid = UUID.fromString(uuidStr);
+				return entity.getWorld().getPlayerByUuid(uuid);
+			} catch (Exception e) {
+				// Ignore invalid tags
 			}
 		}
 		return null;

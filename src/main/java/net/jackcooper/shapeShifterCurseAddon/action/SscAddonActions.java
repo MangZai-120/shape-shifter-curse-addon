@@ -163,12 +163,21 @@ public class SscAddonActions {
 				new SerializableData()
 						.add("distance", SerializableDataTypes.FLOAT)
 						.add("damage", SerializableDataTypes.FLOAT)
-						.add("duration", SerializableDataTypes.INT, 100),
+						.add("duration", SerializableDataTypes.INT, 100)
+						// 可选：对非玩家生物的伤害倍率（不传 = 1.0，保持原行为）
+						.add("non_player_multiplier", SerializableDataTypes.FLOAT, 1.0f),
 				(data, entity) -> {
 					if (!(entity instanceof LivingEntity living)) return;
 
 					float distance = data.getFloat("distance");
 					float damageAmount = data.getFloat("damage");
+					// 目标非玩家生物 → 应用倍率（狐火吐息对怪物伤害×2 等）
+					final float finalDamage;
+					if (!(entity instanceof net.minecraft.entity.player.PlayerEntity)) {
+						finalDamage = damageAmount * data.getFloat("non_player_multiplier");
+					} else {
+						finalDamage = damageAmount;
+					}
 					int duration = data.getInt("duration");
 
 					Vec3d eyePos = living.getEyePos();
@@ -184,7 +193,7 @@ public class SscAddonActions {
 						if (dot > 0.8 && distSq < distance * distance) {
 							Vec3d oldVelocity = target.getVelocity();
 							RegistryKey<DamageType> magicKey = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("minecraft", "magic"));
-							if (target.damage(target.getDamageSources().create(magicKey, living, living), damageAmount)) {
+							if (target.damage(target.getDamageSources().create(magicKey, living, living), finalDamage)) {
 								target.setVelocity(oldVelocity);
 							}
 
@@ -223,13 +232,19 @@ public class SscAddonActions {
 		registerBiEntity(new ActionFactory<>(new Identifier("my_addon", "damage_target_from_actor"),
 				new SerializableData()
 						.add("amount", SerializableDataTypes.FLOAT)
-						.add("damage_type", SerializableDataTypes.IDENTIFIER),
+						.add("damage_type", SerializableDataTypes.IDENTIFIER)
+						// 可选：对非玩家生物的伤害倍率（不传 = 1.0，保持原行为）
+						.add("non_player_multiplier", SerializableDataTypes.FLOAT, 1.0f),
 				(data, pair) -> {
 					Entity actor = pair.getLeft();
 					Entity target = pair.getRight();
 					if (actor == null || target == null) return;
 
 					float amount = data.getFloat("amount");
+					// 目标非玩家生物 → 应用倍率（SP使魔蓝火环对怪物伤害×2 等）
+					if (!(target instanceof net.minecraft.entity.player.PlayerEntity)) {
+						amount *= data.getFloat("non_player_multiplier");
+					}
 					Identifier damageTypeId = data.getId("damage_type");
 
 					if (target instanceof LivingEntity) {
@@ -502,7 +517,11 @@ public class SscAddonActions {
 						Vec3d toT = t.getPos().add(0, t.getHeight() / 2.0, 0).subtract(eye).normalize();
 						double dot = look.dotProduct(toT);
 						if (dot > 0.5 && player.squaredDistanceTo(t) < 16.0) {
-							t.damage(t.getDamageSources().create(magicKey, player, player), 5.0f);
+								float hpBefore = t.getHealth();								// 绕过受击无敌帧：否则普攻先手后本段霰击 5 伤会被无敌帧吞掉
+								t.timeUntilRegen = 0;								boolean dmgOk = t.damage(t.getDamageSources().create(magicKey, player, player), 5.0f);
+								net.jackcooper.shapeShifterCurseAddon.util.FireballDebugLog.log("CONE target=" + t.getType().toString()
+										+ " amount=5.0 returned=" + dmgOk
+										+ " hp " + hpBefore + " -> " + t.getHealth());
 						}
 					});
 				}));

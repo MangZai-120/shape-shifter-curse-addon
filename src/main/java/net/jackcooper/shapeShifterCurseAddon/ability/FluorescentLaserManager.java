@@ -211,7 +211,9 @@ public final class FluorescentLaserManager {
 	public static void tick(ServerPlayerEntity player) {
 		ComboSession s = COMBOS.get(player.getUuid());
 		if (s == null || !s.active) {
-			if (PowerUtils.getResourceValue(player, SHOT_HUD) > 0) {
+			// 兜底清理降频到每秒一次：endCombo 已统一清零 SHOT_HUD，此查询仅防异常残留；
+			// 原实现对全员每 tick 做 Apoli 资源查询（遍历 power 列表），非荧光幼灵玩家 100% 浪费
+			if (player.age % 20 == 0 && PowerUtils.getResourceValue(player, SHOT_HUD) > 0) {
 				PowerUtils.setResourceValueAndSync(player, SHOT_HUD, 0);
 			}
 			return;

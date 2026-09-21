@@ -16,11 +16,9 @@ import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
-import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaPrimary;
 import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkClientState;
 import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkManager;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -91,12 +89,9 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 				internalReady = -1;
 			}
 			if (formId.equals(FormIdentifiers.FAMILIAR_FOX_MANCIANIMA) && skill.primary()) {
+				// 契灵主技能辅助栏：只显 3 秒烙印稳定门（黄标→升红、红标→引爆）；5s 标记 CD 由主图标数字/渐变显示
 				double locked = Math.max(0, MancianimaMarkClientState.getStageEndTick() - mc.world.getTime())
-						/ (double) MancianimaMarkManager.STAGE_GATE_TICKS;
-				if (PowerUtils.getClientResourceValue(player, MancianimaPrimary.HUD_LOCK_TYPE) == 1) {
-					locked = Math.max(locked, cooldown.remaining() / (double) MancianimaPrimary.FIRST_PRESS_CD);
-					cooldown = new Cooldown(0, 0);
-				}
+					/ (double) MancianimaMarkManager.STAGE_GATE_TICKS;
 				internalReady = 1 - Math.min(1, locked);
 			}
 			drawSkillSlot(context, skill.resolveIcon(player), x, y,

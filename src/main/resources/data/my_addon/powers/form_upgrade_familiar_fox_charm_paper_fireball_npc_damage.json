@@ -7,7 +7,7 @@
                 "type": "apoli:resource",
                 "resource": "shape-shifter-curse:form_familiar_fox_fireball_kind_boolean_resource",
                 "comparison": "==",
-                "compare_to": 0
+                "compare_to": 1
             },
             {
                 "type": "ssc_addon:has_talent",
@@ -21,10 +21,11 @@
     },
     "target_condition": {
         "type": "apoli:entity_type",
-        "entity_type": "minecraft:player"
+        "entity_type": "minecraft:player",
+        "inverted": true
     },
     "modifier": {
         "operation": "set_total",
-        "value": 5.0
+        "value": 18.0
     }
 }

@@ -49,6 +49,11 @@ public class AllaySPGroupHeal {
 	 * 每tick检查是否需要执行治疗
 	 */
 	public static void tick(ServerPlayerEntity player) {
+		// 廉价形态门控前置：非 SP 悦灵玩家直接跳过，避免对全员每 tick 做 Apoli 资源查询
+		// （getResourceValue 每次都要遍历玩家全部 power 列表，非持有者 100% 浪费）
+		if (!net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(player, FormIdentifiers.ALLAY_SP)) {
+			return;
+		}
 		if (SkillBlocker.isSkillBlocked(player, "allay", "group_heal")) {
 			return;
 		}

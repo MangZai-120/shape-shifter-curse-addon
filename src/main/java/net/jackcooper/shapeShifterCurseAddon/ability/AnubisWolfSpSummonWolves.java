@@ -186,8 +186,9 @@ public class AnubisWolfSpSummonWolves {
 	 * 每tick更新
 	 */
 	public static void tick(ServerPlayerEntity player) {
-		// 饰品伤害修饰符周期性更新（覆盖受击/攻击时由JSON触发召唤的冥狼）
-		if (FormUtils.isAnubisWolfSP(player) && player.getServerWorld().getTime() % 20 == 0) {
+		// 周期门控前置（先取余再查形态）：非阿努比斯狼玩家每 tick 只花一次取余，
+		// 避免 %20 判断之前先做 CCA 形态查询
+		if (player.getServerWorld().getTime() % 20 == 0 && FormUtils.isAnubisWolfSP(player)) {
 			tickTrinketModifiers(player);
 		}
 

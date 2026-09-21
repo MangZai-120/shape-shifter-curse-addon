@@ -40,7 +40,8 @@ import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 public final class MancianimaTeleport {
 
 	public static final int COOLDOWN_TICKS = 70; // 3.5s
-	public static final int RED_KILL_NO_KILL_CD_TICKS = 200; // 10s 成功CD
+	/** 联动攻击（红标闪现斩杀）命中后的独立联动 CD：10s 内不能再发动联动，普通闪现仍只走 3.5s 常规 CD */
+	public static final int RED_LINK_CD_TICKS = 200; // 10s 联动攻击CD
 	public static final int RED_FAIL_CD_TICKS = 70; // 3.5s 失败CD（引导中断/完成时目标已死）
 	public static final int MANA_COST = 5;
 	public static final int RED_MARK_MANA_COST = 20;
@@ -67,6 +68,13 @@ public final class MancianimaTeleport {
 		// 红标联动：如果准星在某个被本玩家红标的生物上，启动 1s 引导
 		net.minecraft.entity.LivingEntity redTarget = tryFindRedMarkedInCrosshair(player);
 		if (redTarget != null) {
+			// 联动攻击独立 CD：10s 内不能再发动联动（准星指红标时提示并不闪现；不指红标不受此限，普通闪现照常）
+			int linkCd = PowerUtils.getResourceValue(player, FormIdentifiers.MANCIANIMA_LINK_CD);
+			if (linkCd > 0) {
+				int sec = (int) Math.ceil(linkCd / 20.0);
+				player.sendMessage(Text.translatable("message.ssc_addon.mancianima.teleport.link_locked", sec), true);
+				return false;
+			}
 			if (net.onixary.shapeShifterCurseFabric.mana.ManaUtils.getPlayerMana(player) < RED_MARK_MANA_COST) {
 				player.sendMessage(Text.translatable("message.ssc_addon.mancianima.teleport.no_mana"), true);
 				return false;
@@ -212,13 +220,16 @@ public final class MancianimaTeleport {
 		// 广播暴击音效
 		world.playSound(null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, SoundCategory.PLAYERS, 1.0f, 1.0f);
-		// 设置 CD + 暂停回蓝
-		PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_SECONDARY_CD, RED_KILL_NO_KILL_CD_TICKS);
+		// 设置 CD + 暂停回蓝：普通闪现只进 3.5s 常规 CD；联动攻击进独立的 10s 联动 CD（期间可普通闪现、不可再联动）
+		PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_SECONDARY_CD, COOLDOWN_TICKS);
+		PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.MANCIANIMA_LINK_CD, RED_LINK_CD_TICKS);
 		PowerUtils.setResourceValueAndSync(marker, MANA_REGEN_PAUSE_RES, MANA_REGEN_PAUSE_TICKS);
 		// 击杀奖励：刷新两个 CD + 抗伤补满
 		if (wasAlive && !target.isAlive()) {
 			PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_PRIMARY_CD, 0);
 			PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_SECONDARY_CD, 0);
+			// 击杀奖励同样清空联动 CD，允许立刻再发动下一次联动攻击
+			PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.MANCIANIMA_LINK_CD, 0);
 			int max = PowerUtils.getResourceMax(marker, FormIdentifiers.MANCIANIMA_RESISTANCE);
 			if (max <= 0) max = 2;
 			PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.MANCIANIMA_RESISTANCE, max);

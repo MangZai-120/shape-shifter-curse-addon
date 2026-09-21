@@ -8,7 +8,7 @@
         "actions": [
             {
                 "type": "shape-shifter-curse:consume_mana",
-                "mana": 20
+                "mana": 15
             },
             {
                 "type": "apoli:change_resource",
@@ -51,7 +51,8 @@
             {
                 "type": "my_addon:fire_breath",
                 "distance": 8.0,
-                "damage": 6.0
+                "damage": 6.0,
+                "non_player_multiplier": 2.0
             },
             {
                 "type": "apoli:change_resource",
@@ -66,7 +67,7 @@
         "conditions": [
             {
                 "type": "shape-shifter-curse:has_mana",
-                "mana": 20
+                "mana": 15
             }
         ]
     },
@@ -76,5 +77,5 @@
     },
 
     "name": "狐火吐息",
-    "description": "消耗20点法力，向前方6格范围喷吐灵魂狐火，造成6点伤害并点燃敌人5秒。"
+    "description": "消耗15点法力，向前方8格范围喷吐灵魂狐火，造成6点伤害（对非玩家生物×2）并点燃敌人5秒。"
 }

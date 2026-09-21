@@ -113,20 +113,19 @@ public class AllaySPJukebox {
      * Called every tick for each allay_sp player from the server tick event
      */
     public static void tick(ServerPlayerEntity player) {
-        if (SkillBlocker.isSkillBlocked(player, "allay", "jukebox_charge")) {
-            return;
-        }
+        // 廉价形态门控前置：先判形态再查 SkillBlocker（字符串拼接 + commandTags 线性扫描），
+        // 非悦灵 SP 玩家每 tick 只花一次 CCA 查询（原还要先过 SkillBlocker 才判形态）
         IForm currentForm = FormUtils.getCurrentForm(player);
         boolean isAllaySp = currentForm != null && currentForm.getFormID().equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.ALLAY_SP);
-
-        // Check if cleanup is needed (if form changed OR item is missing/inactive)
-        // Note: we check form first. If not Allay SP, we just cleanup and return.
         if (!isAllaySp) {
             Integer currentState = playerMusicState.getOrDefault(player.getUuid(), -1);
             if (currentState != -1) {
                 stopAllMusic(player);
                 removeSpeedFromAll(player);
             }
+            return;
+        }
+        if (SkillBlocker.isSkillBlocked(player, "allay", "jukebox_charge")) {
             return;
         }
 

@@ -329,10 +329,10 @@ public final class MancianimaMarkManager {
 			if (form == null) continue;
 			net.minecraft.util.Identifier formId = form.getFormID();
 			if (FormIdentifiers.FAMILIAR_FOX_MANCIANIMA.equals(formId)) {
-				// 抗伤回复：契灵玩家非战斗 5s 后，每 15s 回 1 抗伤
+				// 抗伤回复：15s 内未受到任何伤害后，每 15s 回 1 抗伤（主动攻击敌人不打断计时）
 				UUID id = sp.getUuid();
 				long lastCombat = LAST_COMBAT.getOrDefault(id, 0L);
-				if (now - lastCombat < OUT_OF_COMBAT_TICKS) continue;
+				if (now - lastCombat < RESIST_REGEN_INTERVAL_TICKS) continue;
 				long lastRegen = LAST_REGEN.getOrDefault(id, 0L);
 				if (now - lastRegen < RESIST_REGEN_INTERVAL_TICKS) continue;
 				int cur = PowerUtils.getResourceValue(sp, FormIdentifiers.MANCIANIMA_RESISTANCE);

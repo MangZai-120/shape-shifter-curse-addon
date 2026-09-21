@@ -55,7 +55,9 @@
         "my_addon:form_upgrade_familiar_fox_stick_fireball",
         "my_addon:form_upgrade_familiar_fox_charm_paper_fireball",
         "my_addon:form_upgrade_familiar_fox_stick_fireball_damage",
-        "my_addon:form_upgrade_familiar_fox_charm_paper_fireball_damage"
+        "my_addon:form_upgrade_familiar_fox_charm_paper_fireball_damage",
+        "my_addon:form_upgrade_familiar_fox_stick_fireball_npc_damage",
+        "my_addon:form_upgrade_familiar_fox_charm_paper_fireball_npc_damage"
     ],
     "icon": {
         "item": "minecraft:fox_spawn_egg"

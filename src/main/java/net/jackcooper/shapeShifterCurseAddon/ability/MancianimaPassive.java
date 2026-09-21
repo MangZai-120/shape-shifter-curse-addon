@@ -94,11 +94,17 @@ public final class MancianimaPassive {
 	private static final Random RNG = new Random();
 
 	public static void tick(ServerPlayerEntity player) {
+		// 快速路径：袭击读条每 tick 推进（bossbar 百分比刷新需要），先用廉价 map 查询拦截活跃会话；
+		// 无活跃袭击时其余逻辑全为周期性（%10/%60），降频到 %10 再做 CCA 形态查询，
+		// 非契灵玩家每 tick 只花一次 isEmpty/取余（原每 tick 都过一次形态查询）
+		if (!ASSAULTS.isEmpty() && ASSAULTS.containsKey(player.getUuid())) {
+			tickAssaultPrepare(player);
+		}
+		if (player.age % 10 != 0) return;
 		if (!FormUtils.isForm(player, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA)) return;
 		// 驱逃逻辑：每 10t 检一次，低开销
-		if (player.age % 10 == 0) tickFlee(player);
-		// 袭击读条推进（每 tick）
-		tickAssaultPrepare(player);
+		tickFlee(player);
+		// 袭击读条推进（每 tick，活跃会话已在上方快速路径处理）
 		// 袭击超出范围检查（每 20t）
 		if (player.age % 20 == 0) checkAssaultRange(player);
 		if (player.age % 60 != 0) return;
