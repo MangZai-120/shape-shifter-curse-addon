@@ -1,0 +1,12 @@
+{
+  "element": "fire",
+  "base_damage": 1000,
+  "base_cooldown_ticks": 3600,
+  "base_cast_time_ticks": 700,
+  "spell_tier": "custom",
+  "interrupt_mode": 3,
+  "mana_cost": 300,
+  "exp_mode": 0,
+  "cooldown_floor_ticks": 0,
+  "levels": [{"rarity": "red", "damage_multiplier": 1.0, "cooldown_multiplier": 1.0, "mana_cost_multiplier": 1.0, "speed_multiplier": 1.0}]
+}

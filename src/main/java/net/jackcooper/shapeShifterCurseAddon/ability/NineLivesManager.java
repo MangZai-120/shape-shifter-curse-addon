@@ -181,11 +181,13 @@ public final class NineLivesManager {
                 RESPAWN_REFILL.remove(player.getUuid());
             }
         }
-        if (!isNova || !PowerUtils.hasResource(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES, 0)) {
+        int lives = PowerUtils.getResourceValue(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES);
+        if (!isNova || lives <= 0) {
             REGEN_ACC.remove(player.getUuid());
             return;
         }
-        int lives = PowerUtils.getResourceValue(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES);
+        // 上方守卫原为 hasResource(...,0)（内部又读一次同一资源），
+        // 现改为一次 getResourceValue 同时充当存在性（<=0 视为无资源/无命）与数值判定，每 tick 少一次扫描。
         if (lives >= MAX_LIVES) {
             REGEN_ACC.put(player.getUuid(), 0);
             return;

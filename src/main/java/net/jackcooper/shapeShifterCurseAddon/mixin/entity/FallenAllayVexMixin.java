@@ -38,6 +38,13 @@ public abstract class FallenAllayVexMixin extends MobEntity {
 	// Ticks until a new wander point is picked
 	@Unique
 	private static final ConcurrentHashMap<UUID, Integer> VEX_WANDER_TIMER = new ConcurrentHashMap<>();
+	// 标记/owner 解析结果缓存（每 20t 重解析一次；首拍 age/20 变化即初始化）
+	@Unique
+	private int ssc_addon$vexTagCheckedTick = -1;
+	@Unique
+	private boolean ssc_addon$isFallenVex;
+	@Unique
+	private UUID ssc_addon$ownerUuid;
 
 	protected FallenAllayVexMixin(EntityType<? extends MobEntity> entityType, World world) {
 		super(entityType, world);
@@ -47,22 +54,27 @@ public abstract class FallenAllayVexMixin extends MobEntity {
 	private void ssc_addon$onVexTick(CallbackInfo ci) {
 		if (this.getWorld().isClient()) return;
 
-		Set<String> tags = this.getCommandTags();
-		String ownerUuidStr = null;
-		boolean isFallenVex = false;
-
-		for (String tag : tags) {
-			if (tag.equals("ssc_fallen_allay_vex")) {
-				isFallenVex = true;
-			} else if (tag.startsWith("owner:")) {
-				ownerUuidStr = tag.substring("owner:".length());
+		// 标记/owner 解析降频到每 20t（tag 遍历 + UUID.fromString 每 tick 重解析同一字符串）：
+		// 结果存 @Unique 字段，非采样 tick 直接用缓存；召唤后首拍（字段未初始化）立即解析。
+		if (this.ssc_addon$vexTagCheckedTick != this.age / 20) {
+			this.ssc_addon$vexTagCheckedTick = this.age / 20;
+			Set<String> tags = this.getCommandTags();
+			String ownerUuidStr = null;
+			boolean isFallenVex = false;
+			for (String tag : tags) {
+				if (tag.equals("ssc_fallen_allay_vex")) {
+					isFallenVex = true;
+				} else if (tag.startsWith("owner:")) {
+					ownerUuidStr = tag.substring("owner:".length());
+				}
 			}
+			this.ssc_addon$isFallenVex = isFallenVex;
+			this.ssc_addon$ownerUuid = (ownerUuidStr == null || !isFallenVex) ? null : UUID.fromString(ownerUuidStr);
 		}
-
-		if (!isFallenVex || ownerUuidStr == null) return;
+		if (!this.ssc_addon$isFallenVex || this.ssc_addon$ownerUuid == null) return;
 
 		ServerWorld serverWorld = (ServerWorld) this.getWorld();
-		PlayerEntity owner = serverWorld.getServer().getPlayerManager().getPlayer(UUID.fromString(ownerUuidStr));
+		PlayerEntity owner = serverWorld.getServer().getPlayerManager().getPlayer(this.ssc_addon$ownerUuid);
 
 		// On death: clean up all maps, start CD if last vex
 		if (this.isDead() || this.getHealth() <= 0 || !this.isAlive()) {
@@ -70,21 +82,28 @@ public abstract class FallenAllayVexMixin extends MobEntity {
 			VEX_WANDER_DEST.remove(this.getUuid());
 			VEX_WANDER_TIMER.remove(this.getUuid());
 			if (owner != null) {
-				applyCooldownIfLast(owner, ownerUuidStr, serverWorld);
+				applyCooldownIfLast(owner, this.ssc_addon$ownerUuid.toString(), serverWorld);
 			}
 			return;
 		}
 
         if (owner == null) return;
 
-        pinVexCd(owner);
+        // pinVexCd 降频到每 20t（Apoli 资源读为 O(power数) 扫描；CD 释放是秒级，粒度无感）
+        if (this.age % 20 == 0) pinVexCd(owner);
 
         // Validate stored target; clear if dead/gone
         LivingEntity currentTarget = resolveTarget(serverWorld);
 
 		// After a kill (or on first spawn), search around the VEX ITSELF for a new target
+		// 无目标搜索降频到每 10t（待机常态下免每 tick 16 格全实体扫描；有目标后每 tick 照常校验目标存活）
 		if (currentTarget == null) {
-			currentTarget = findBestTarget(owner, ownerUuidStr, serverWorld);
+			if (this.age % 10 != 0) {
+				this.setTarget(null);
+				wanderNearOwner(owner);
+				return;
+			}
+			currentTarget = findBestTarget(owner, this.ssc_addon$ownerUuid.toString(), serverWorld);
 			if (currentTarget != null) {
 				VEX_TARGET.put(this.getUuid(), currentTarget.getUuid());
 			}

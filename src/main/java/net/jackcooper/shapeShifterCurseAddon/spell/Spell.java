@@ -95,6 +95,9 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 		return getAimMaxRange() > 0 ? SpellCastingRules.Mode.RELEASE : SpellCastingRules.Mode.AUTOMATIC;
 	}
 
+	/** Select locally first; the server captures the target before starting the paid channel. */
+	public boolean requiresTargetBeforeChannel() { return false; }
+
 	public Vec3d captureCastTarget(ServerPlayerEntity caster, int level) {
 		return getAimMaxRange() > 0 ? computeAimImpact(caster, getAimMaxRange()) : null;
 	}
@@ -129,10 +132,19 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 
 	public void onChannelStarted(ServerPlayerEntity caster) {}
 
+	public void onChannelStarted(ServerPlayerEntity caster, Vec3d target) { onChannelStarted(caster); }
+
 	public void onChannelEnded(ServerPlayerEntity caster, boolean interrupted) {}
 
 	public int getInterruptedCooldown(int cooldown) {
 		return SpellCastingRules.interruptedCooldown(cooldown);
+	}
+
+	/** 施法锁定点（2026-09-23 用户定稿：领域壳开始扩张后不可打断，必须释放）：
+	 * 返回 true 时伤害/主动取消/长按取消/位移等一切「可放弃」打断均失效，读条必须走完释放。
+	 * 默认 false（无锁定点）；死亡/断线/停服/载体失效等强制终止不在此列，仍会安全结束。 */
+	public boolean isLockedIn(ServerPlayerEntity caster) {
+		return false;
 	}
 
 	public boolean tickContinuousCast(ServerPlayerEntity caster, int level, net.minecraft.item.ItemStack scroll, int ticks) {

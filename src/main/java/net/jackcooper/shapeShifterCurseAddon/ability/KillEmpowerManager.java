@@ -108,6 +108,12 @@ public final class KillEmpowerManager {
 				}
 				continue;
 			}
+			// 空闲态低频守卫：稳态（flags==0）只付 1 次资源读，免掉 readState 剩余 2 读 + writeState
+			// 4 次写比对；每 100t 做一次完整读写自愈（外部写脏 EMPOWER_STATE 时 5s 内拉回 0 态）。
+			if (PowerUtils.getResourceValue(player, FormIdentifiers.EMPOWER_STATE) == STATE_NONE
+					&& player.age % 100 != 0) {
+				continue;
+			}
 			KillEmpowerState state = readState(player);
 			if (state.flags() == STATE_NONE) {
 				writeState(player, state);

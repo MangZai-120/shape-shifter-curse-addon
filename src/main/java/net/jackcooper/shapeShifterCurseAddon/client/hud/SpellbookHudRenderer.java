@@ -61,6 +61,7 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 		if (mc.player == null || mc.world == null || mc.options.hudHidden) {
 			return;
 		}
+		// 每帧全饰品扫描已收敛到 ClientTickCache 每 tick 一次（SpellcastClient.getEquippedBook 同源）
 		ItemStack book = SpellcastClient.getEquippedBook();
 		if (book == null || book.isEmpty()) {
 			return;

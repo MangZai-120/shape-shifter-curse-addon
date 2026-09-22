@@ -34,6 +34,11 @@ public final class DomainManager {
 		int elapsed() { return world.getServer().getTicks() - startTick; }
 	}
 
+	/** 蓄力期锚点（2026-09-22 用户定稿：领域随玩家走）：锚在施法开始时的位置，
+	 * 蓄力期间中心跟随玩家当前位置（掉落中施放不会把领域留在天上），
+	 * 位移超过 MAX_CAST_DISPLACEMENT（3 格）仍会被 canContinue 打断——防止跳跃蹭施放。 */
+	private static final Map<UUID, Vec3d> CHARGE_ANCHORS = new LinkedHashMap<>();
+
 	/** 扩张期当前壳半径（active 恒 0）：蓄力第 10s 起 0.75 格三次缓出生长，15s 达 16 格。 */
 	private static double chargingRadius(Field field) {
 		return field.active ? 0 : DomainRules.expansionRadius(field.elapsed());
@@ -93,6 +98,7 @@ public final class DomainManager {
 		return !enclosedTrapping(player.getServerWorld(), player.getPos());
 	}
 	public static void begin(ServerPlayerEntity player) {
+		CHARGE_ANCHORS.put(player.getUuid(), player.getPos());
 		Field field = new Field(player, player.getServerWorld(), player.getPos(),
 				player.getHeight() + 0.8, player.getServer().getTicks(), false);
 		FIELDS.put(player.getUuid(), field);
@@ -101,18 +107,30 @@ public final class DomainManager {
 	}
 	public static boolean canContinue(ServerPlayerEntity player) {
 		Field field = FIELDS.get(player.getUuid());
-		return field != null && !field.active && player.getWorld() == field.world
-				&& player.getPos().squaredDistanceTo(field.center) <= DomainRules.MAX_CAST_DISPLACEMENT * DomainRules.MAX_CAST_DISPLACEMENT;
+		Vec3d anchor = CHARGE_ANCHORS.get(player.getUuid());
+		// 位移判定改用蓄力锚点（不是跟随中的 center）：随玩家走 + 超 3 格仍打断。
+		// 壳开始扩张后进入锁定态（2026-09-23）：位移不再打断，必须释放。
+		if (isExpanding(player)) return true;
+		return field != null && anchor != null && !field.active && player.getWorld() == field.world
+				&& player.getPos().squaredDistanceTo(anchor) <= DomainRules.MAX_CAST_DISPLACEMENT * DomainRules.MAX_CAST_DISPLACEMENT;
+	}
+
+	/** 壳是否已开始扩张（蓄力 ≥200t，含完全体）：扩张后施法锁定不可打断（2026-09-23 用户定稿）。 */
+	public static boolean isExpanding(ServerPlayerEntity player) {
+		Field field = FIELDS.get(player.getUuid());
+		return field != null && field.elapsed() >= DomainRules.EXPAND_START_TICK;
 	}
 	public static void activate(ServerPlayerEntity player) {
 		Field field = FIELDS.get(player.getUuid());
 		if (field == null || field.active) return;
-		FIELDS.put(player.getUuid(), new Field(player, field.world, field.center, field.headHeight,
+		CHARGE_ANCHORS.remove(player.getUuid()); // 蓄力结束：完全体锁定在跟随后的当前位置
+		FIELDS.put(player.getUuid(), new Field(player, field.world, field.owner.getPos(), field.headHeight,
 				player.getServer().getTicks(), true));
 		broadcast(field, SoundEvents.ENTITY_WITHER_SPAWN, 0.55f);
 		sync(player.getServer());
 	}
 	public static void remove(ServerPlayerEntity player) {
+		CHARGE_ANCHORS.remove(player.getUuid());
 		Field field = FIELDS.remove(player.getUuid());
 		if (field == null) return;
 		if (field.active) broadcast(field, SoundEvents.BLOCK_BEACON_DEACTIVATE, 0.6f);
@@ -139,11 +157,26 @@ public final class DomainManager {
 		}
 	}
 	private static void tick(MinecraftServer server) {
+		if (FIELDS.isEmpty()) return; // 常态（无领域施放）零分配早退
 		for (Field field : java.util.List.copyOf(FIELDS.values())) {
 			if (!field.owner.isAlive() || field.owner.isRemoved() || field.owner.isSpectator()
 					|| field.owner.getWorld() != field.world
 					|| field.active && field.elapsed() >= DomainRules.DURATION_TICKS
-					|| !field.active && !SpellChannelManager.isCasting(field.owner)) remove(field.owner);
+					|| !field.active && !SpellChannelManager.isCasting(field.owner)) {
+				CHARGE_ANCHORS.remove(field.owner.getUuid());
+				remove(field.owner);
+			}
+		}
+		// 蓄力跟随（2026-09-22）：非激活领域中心每 tick 跟随玩家（掉落/破推开都跟），
+		// 位移越界由 canContinue（统一读条 valid 校验）打断；完全体中心锁定不动。
+		for (var entry : java.util.List.copyOf(FIELDS.entrySet())) {
+			Field field = entry.getValue();
+			if (field.active) continue;
+			Vec3d current = field.owner.getPos();
+			if (field.owner.getWorld() == field.world && !field.center.equals(current)) {
+				FIELDS.put(entry.getKey(), new Field(field.owner, field.world, current,
+						field.headHeight, field.startTick, false));
+			}
 		}
 		for (Field field : FIELDS.values()) {
 			if (field.active || field.elapsed() <= 0 || field.elapsed() % 40 != 0) continue;

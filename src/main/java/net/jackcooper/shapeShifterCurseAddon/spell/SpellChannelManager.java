@@ -53,6 +53,7 @@ public final class SpellChannelManager {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
+			if (ACTIVE.isEmpty()) return; // 常态（全服无人读条）零分配早退
 			for (Channel channel : java.util.List.copyOf(ACTIVE.values())) tick(channel);
 		});
 		ServerPlayNetworking.registerGlobalReceiver(RELEASE, (server, player, handler, buf, sender) -> {
@@ -64,8 +65,12 @@ public final class SpellChannelManager {
 			boolean held = buf.readBoolean();
 			server.execute(() -> {
 				Channel channel = ACTIVE.get(player.getUuid());
+				// 锁定态（如领域壳扩张后/爆裂红白球生成后，2026-09-23 用户定稿）忽略取消请求：
+				// 不置 cancelHeld → cancelTicks 不累加 → 校准包不带取消态，客户端不会一直显示「取消中」。
+				if (channel != null && channel.spell.isLockedIn(player)) return;
 				if (channel != null && !channel.solo && channel.token == token
-						&& channel.mode == SpellCastingRules.Mode.AUTOMATIC) {
+						&& (channel.mode == SpellCastingRules.Mode.AUTOMATIC
+						|| channel.mode == SpellCastingRules.Mode.RELEASE)) {
 					channel.cancelHeld = held;
 					if (!held) channel.cancelTicks = 0;
 				}
@@ -140,8 +145,15 @@ public final class SpellChannelManager {
 		}
 		Channel channel = new Channel(player, spell, scroll, level, solo, token, mana, cooldown,
 				sourceValid, payTo, effect, settleCooldown, consumeUse);
+		if (spell.requiresTargetBeforeChannel()) {
+			Vec3d target = spell.captureCastTarget(player, level);
+			if (target == null || !channel.progress.release(token, target)) {
+				player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_target"), true);
+				return false;
+			}
+		}
 		ACTIVE.put(player.getUuid(), channel);
-		spell.onChannelStarted(player);
+		spell.onChannelStarted(player, channel.progress.target());
 		var speed = player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
 		if (speed != null) {
 			speed.removeModifier(SLOW_ID);
@@ -175,12 +187,14 @@ public final class SpellChannelManager {
 
 	public static void cancelSelf(ServerPlayerEntity player) {
 		Channel channel = ACTIVE.get(player.getUuid());
-		if (channel != null && SpellCastingRules.allowsSelf(channel.interruptMode)) stop(player, true);
+		if (channel != null && !channel.spell.isLockedIn(player)
+				&& SpellCastingRules.allowsSelf(channel.interruptMode)) stop(player, true);
 	}
 
 	public static void onDamaged(ServerPlayerEntity player) {
 		Channel channel = ACTIVE.get(player.getUuid());
-		if (channel != null && (!player.isAlive() || SpellCastingRules.allowsExternal(channel.interruptMode))) stop(player, true);
+		if (channel != null && (!player.isAlive()
+				|| !channel.spell.isLockedIn(player) && SpellCastingRules.allowsExternal(channel.interruptMode))) stop(player, true);
 	}
 
 	private static boolean valid(Channel channel) {
@@ -199,6 +213,7 @@ public final class SpellChannelManager {
 			return;
 		}
 		if (channel.cancelHeld && ++channel.cancelTicks >= 20
+				&& !channel.spell.isLockedIn(player)
 				&& SpellCastingRules.allowsSelf(channel.interruptMode)) {
 			stop(player, true);
 			return;
@@ -319,6 +334,7 @@ public final class SpellChannelManager {
 				buf.writeBoolean(!NO_ARM_POSE_TIERS.contains(channel.spell.getConfig().spellTier));
 				buf.writeInt(channel.spell.getElement().color);
 				buf.writeInt(channel.spell.getRarity(channel.level).color.getColorValue());
+				buf.writeIdentifier(channel.spell.getId());
 			}
 			ServerPlayNetworking.send(viewer, CAST_VISUAL, buf);
 		}
@@ -335,6 +351,7 @@ public final class SpellChannelManager {
 		buf.writeVarInt(channel.progress.elapsed());
 		buf.writeBoolean(channel.progress.released());
 		buf.writeVarInt(channel.cancelTicks);
+		buf.writeBoolean(channel.spell.isLockedIn(channel.player)); // 锁定态（进入后客户端红显且忽略取消）
 		ServerPlayNetworking.send(channel.player, STATE, buf);
 	}
 
@@ -356,6 +373,7 @@ public final class SpellChannelManager {
 		buf.writeBoolean(channel.solo);
 		buf.writeBoolean(channel.progress.started());
 		buf.writeVarInt(channel.cancelTicks);
+		buf.writeBoolean(channel.spell.isLockedIn(channel.player)); // 锁定态（进入后客户端红显且忽略取消）
 		ServerPlayNetworking.send(channel.player, STATE, buf);
 	}
 

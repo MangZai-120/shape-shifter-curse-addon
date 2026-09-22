@@ -247,7 +247,8 @@ public final class DomainRenderer {
 				sphere(vertices, matrices.peek().getPositionMatrix(), shellRadius + 1);
 			}
 			float alpha = field.active ? 0.9f : Math.min(1, elapsed / 12f);
-			circle(vertices, matrices, DomainRules.INNER_RADIUS, 0.04, elapsed * 0.002, alpha);
+			CastingCircleRenderer.drawGround(vertices, matrices, DomainRules.INNER_RADIUS, 0.04,
+					elapsed * 0.002, alpha, MagicCircleGeometry.RED_PRIMARY);
 			if (!field.active) {
 				circle(vertices, matrices, 3, field.headHeight, elapsed * 0.013, alpha);
 				double second = DomainRules.layerProgress(elapsed, 60);

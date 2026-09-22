@@ -28,6 +28,11 @@ public class CreativeEnergyTankBlockEntity extends BlockEntity implements Energy
 		if (world.isClient || world.getTime() % FILL_INTERVAL != 0) {
 			return;
 		}
+		// 先用一次轻量 BFS 检查全网是否已满（只读不写），已满（常态）时
+		// 免去逐成员读写与液面刷新，直接返回；未满才走原补满路径。行为不变：满网本就无事可做。
+		if (EnergyNetwork.collect(world, pos).stream().allMatch(m -> m == be || m.getStoredEnergy() >= m.getEnergyCapacity())) {
+			return;
+		}
 		List<EnergyNetworkMember> net = EnergyNetwork.collect(world, pos);
 		boolean filled = false;
 		for (EnergyNetworkMember m : net) {

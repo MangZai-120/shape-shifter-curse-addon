@@ -131,6 +131,9 @@ public final class PocketSpaceManager {
 		});
 	}
 
+	// 分段守卫（非整体短路）：setTimeOfDay/视距/census 必须照常跑，且「有人在
+	//  口袋维度」的检测本身就需要玩家循环——整体短路不可行；改为各迭代器段包空表守卫、GATES.remove
+	//  包 !GATES.isEmpty()，行为不变，常态（四表全空）只剩每玩家一次 isPocket 判断。
 	private static void tick(MinecraftServer server) {
 		ServerWorld pocket = server.getWorld(WORLD_KEY);
 		if (pocket == null) return;
@@ -144,26 +147,31 @@ public final class PocketSpaceManager {
 		// census 每 5s 一次（原每 1s）：驱逐宽限 UNSEEN_LIMIT=5min，5s 粒度误差 0.08% 无感，
 		// 但全服背包+全维度掉落物扫描量降 80%（空闲服 CPU 收益）
 		if (server.getOverworld().getTime() % 100 == 0) census(server, pocket);
-		tickEvictions(server, pocket);
+		if (!EVICTIONS.isEmpty()) tickEvictions(server, pocket);
 		int budget = 4096;
-		Iterator<Wipe> wipes = WIPES.values().iterator();
-		while (wipes.hasNext() && budget > 0) {
-			Wipe wipe = wipes.next();
-			budget -= wipe.advance(pocket, budget);
-			if (wipe.done()) wipes.remove();
-		}
-		Iterator<Generation> builds = GENERATIONS.values().iterator();
-		while (builds.hasNext() && budget > 0) {
-			Generation generation = builds.next();
-			budget -= generation.advance(pocket, budget);
-			if (generation.done()) {
-				generation.room.finishGeneration();
-				PocketSpaceStorage.registry(server).markDirty();
-				builds.remove();
+		if (!WIPES.isEmpty()) {
+			Iterator<Wipe> wipes = WIPES.values().iterator();
+			while (wipes.hasNext() && budget > 0) {
+				Wipe wipe = wipes.next();
+				budget -= wipe.advance(pocket, budget);
+				if (wipe.done()) wipes.remove();
 			}
 		}
-		Iterator<Map.Entry<UUID, Channel>> channels = CHANNELS.entrySet().iterator();
-		while (channels.hasNext()) {
+		if (!GENERATIONS.isEmpty()) {
+			Iterator<Generation> builds = GENERATIONS.values().iterator();
+			while (builds.hasNext() && budget > 0) {
+				Generation generation = builds.next();
+				budget -= generation.advance(pocket, budget);
+				if (generation.done()) {
+					generation.room.finishGeneration();
+					PocketSpaceStorage.registry(server).markDirty();
+					builds.remove();
+				}
+			}
+		}
+		if (!CHANNELS.isEmpty()) {
+			Iterator<Map.Entry<UUID, Channel>> channels = CHANNELS.entrySet().iterator();
+			while (channels.hasNext()) {
 			Map.Entry<UUID, Channel> entry = channels.next();
 			Channel channel = entry.getValue();
 			ServerPlayerEntity player = server.getPlayerManager().getPlayer(entry.getKey());
@@ -192,10 +200,11 @@ public final class PocketSpaceManager {
 				enter(player, channel, pocket, room);
 				channels.remove();
 			}
+			}
 		}
 		for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
 			if (!isPocket(player.getWorld())) {
-				GATES.remove(player.getUuid());
+				if (!GATES.isEmpty()) GATES.remove(player.getUuid());
 				continue;
 			}
 			if (!player.isAlive() || player.isSpectator()) continue;

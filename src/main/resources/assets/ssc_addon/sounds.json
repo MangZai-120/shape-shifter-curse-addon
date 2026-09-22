@@ -23,5 +23,14 @@
         "stream": true
       }
     ]
+  },
+  "explosion_theme": {
+    "category": "players",
+    "sounds": [
+      {
+        "name": "ssc_addon:explosion_theme",
+        "stream": true
+      }
+    ]
   }
 }

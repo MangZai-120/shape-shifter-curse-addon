@@ -40,6 +40,9 @@ public abstract class AmuletBraceletTrinketMixin {
 		if (player.getWorld().isClient) return;
 		if (!FormUtils.isForm(entity, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA)) return;
 
+		// 降频到每 20t 重发（原版 action bar 约 40t 才淡出，视觉无差；
+		// 原每 tick 重发一份 action bar 包 + Text.translatable 分配，装备期间持续浪费）。
+		if (player.age % 20 != 0) return;
 		player.sendMessage(
 				Text.translatable("item.shape-shifter-curse.amulet_bracelet.cant_equip_mancianima")
 						.formatted(Formatting.RED),

@@ -193,18 +193,17 @@ public final class SkillHudCatalog {
                 skill(secondaryIcon, SECONDARY, false, secondaryCond)));
     }
 
-    /** 寒棘狐凝棘门槛：本地扫描玩家身边的环绕冰锥（HOVER 态，DataTracker 同步，与服务端判定同源）。 */
+    /** 寒棘狐凝棘门槛：每 tick 缓存的环绕冰锥存在性（DataTracker 同步，与服务端判定同源）。 */
     private static boolean hasHoverThorn(PlayerEntity player) {
-        return !player.getWorld().getEntitiesByClass(net.jackcooper.shapeShifterCurseAddon.entity.FrostThornEntity.class,
-                player.getBoundingBox().expand(3.0),
-                t -> t.isHover() && player.getUuid().equals(t.getOwnerUuid().orElse(null))).isEmpty();
+        return net.jackcooper.shapeShifterCurseAddon.client.ClientTickCache.hasHoverThorn();
     }
 
     public static List<Skill> forForm(Identifier form, PlayerEntity player) {
         if (!"my_addon".equals(form.getNamespace())) return List.of();
+                // 护符佩戴判定走每 tick 缓存（原每帧全饰品扫描 + Curios 反射链，只为选一张静态技能表）
                 if ((FormIdentifiers.FAMILIAR_FOX_SP.equals(form) || FormIdentifiers.FAMILIAR_FOX_RED.equals(form))
-                                && net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils.isWearing(
-                                                player, net.jackcooper.shapeShifterCurseAddon.SscAddon.BLUE_FIRE_AMULET)) {
+                                && net.jackcooper.shapeShifterCurseAddon.client.ClientTickCache.isWearing(
+                                                net.jackcooper.shapeShifterCurseAddon.SscAddon.BLUE_FIRE_AMULET)) {
                         return FORMS.get(form.getPath() + "_amulet");
                 }
         if (FormIdentifiers.SNOW_FOX_SP.equals(form)) {
@@ -221,11 +220,24 @@ public final class SkillHudCatalog {
         return evolution.isUnlocked(skill.talent());
     }
 
+        // forHud 按 (formId, tick) 缓存：结果只在形态/解锁/护符变化时变，每 tick 重算一次、帧间直读。
+        private static final Map<String, List<Skill>> HUD_CACHE = new HashMap<>();
+        private static long hudCacheTick = Long.MIN_VALUE;
+
         public static List<Skill> forHud(Identifier form, PlayerEntity player) {
+                if (player.getWorld().getTime() != hudCacheTick) {
+                        hudCacheTick = player.getWorld().getTime();
+                        HUD_CACHE.clear();
+                }
+                String key = form.toString();
+                List<Skill> cached = HUD_CACHE.get(key);
+                if (cached != null) return cached;
                 List<Skill> unlocked = forForm(form, player).stream().filter(skill -> isUnlocked(skill, player)).toList();
                 java.util.ArrayList<Skill> result = new java.util.ArrayList<>(2);
                 unlocked.stream().filter(Skill::primary).findFirst().ifPresent(result::add);
                 unlocked.stream().filter(skill -> !skill.primary()).findFirst().ifPresent(result::add);
-                return List.copyOf(result);
+                List<Skill> value = List.copyOf(result);
+                HUD_CACHE.put(key, value);
+                return value;
         }
 }

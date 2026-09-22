@@ -41,6 +41,9 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 	public static final int PANEL_HEIGHT = 68;
 	private static final int INTERNAL_HEIGHT = 24;
 	private final Map<Identifier, Integer> trackedMaxValues = new HashMap<>();
+	/** readInternalReady 的按 tick 缓存（skillId → 0~1；同一 tick 内帧间直读，免每帧 getPower 扫描）。 */
+	private final Map<Identifier, Double> internalReadyCache = new HashMap<>();
+	private long internalCacheTick = Long.MIN_VALUE;
 	private Identifier lastFormId;
 	private PlayerEntity lastPlayer;
 	private Object lastWorld;
@@ -83,13 +86,14 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 			// 释放条件未满足 → 半透明黑色遮罩；遮罩期间跳过 CD 渐变阴影，只保留倒计时数字
 			boolean conditionBlocked = skill.condition() != null && !skill.condition().test(player);
 			if (formId.equals(FormIdentifiers.SNOW_FOX_FROSTSPINE) && !skill.primary()) {
-				// 凝棘（次技能）蓄力进度：读本地玩家法阵实体的 PROGRESS（服务端权威，0-100 tick）
-				// 扫不到法阵（未蓄力/已被强停）= -1，侧边条不显示
-				internalReady = frostForgeProgress(mc, player);
+				// 凝棘（次技能）蓄力进度：读每 tick 缓存的法阵实体 PROGRESS（服务端权威，0-100 tick）
+				// 无缓存值（未蓄力/已被强停）= -1，侧边条不显示
+				internalReady = net.jackcooper.shapeShifterCurseAddon.client.ClientTickCache.frostForgeProgress();
 			}
 			if (formId.equals(FormIdentifiers.AXOLOTL_FLUORESCENT) && skill.primary()
-					&& !net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils.isWearing(player,
-					net.jackcooper.shapeShifterCurseAddon.SscAddon.SEA_CRYSTAL_PENDANT)) {
+					// 海晶吊坠佩戴判定走每 tick 缓存（装备不逐帧变化）
+					&& !net.jackcooper.shapeShifterCurseAddon.client.ClientTickCache.isWearing(
+						net.jackcooper.shapeShifterCurseAddon.SscAddon.SEA_CRYSTAL_PENDANT)) {
 				internalReady = -1;
 			}
 			if (formId.equals(FormIdentifiers.FAMILIAR_FOX_MANCIANIMA) && skill.primary()) {
@@ -148,18 +152,23 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 		Identifier id = skill.internalCooldown();
 		if (id == null || skill.internalTicks() <= 0 || !PowerTypeRegistry.contains(id)) return -1;
 		io.github.apace100.apoli.power.PowerType<?> type = PowerTypeRegistry.get(id);
+		// getPower 的 O(power数) 扫描按 (skillId, tick) 缓存：进度每 tick 变化，帧间直读
+		long tick = player.getWorld().getTime();
+		if (tick != internalCacheTick) {
+			internalCacheTick = tick;
+			internalReadyCache.clear();
+		}
+		double hit = internalReadyCache.getOrDefault(id, Double.NaN);
+		if (!Double.isNaN(hit)) return hit;
 		Power power = PowerHolderComponent.KEY.get(player).getPower(type);
-		if (!(power instanceof CooldownPower) && !(power instanceof VariableIntPower)) return -1;
-		return 1.0 - readCooldown(player, id).remaining() / (double) skill.internalTicks();
-	}
-
-	/** 凝棘（次技能）蓄力进度：找本地玩家的法阵实体（PROGRESS 为 0-100 tick），换算 0~1。无实体返回 -1。 */
-	private double frostForgeProgress(MinecraftClient mc, PlayerEntity player) {
-		var arrays = mc.world.getEntitiesByClass(net.jackcooper.shapeShifterCurseAddon.entity.FrostArrayEntity.class,
-				player.getBoundingBox().expand(4.0),
-				a -> a.getTrackedOwnerId() == player.getId());
-		if (arrays.isEmpty()) return -1;
-		return Math.max(0, Math.min(1, arrays.get(0).getProgress() / 100.0));
+		double value;
+		if (!(power instanceof CooldownPower) && !(power instanceof VariableIntPower)) {
+			value = -1;
+		} else {
+			value = 1.0 - readCooldown(player, id).remaining() / (double) skill.internalTicks();
+		}
+		internalReadyCache.put(id, value);
+		return value;
 	}
 
 	public record Layout(int primaryX, int primaryY, int secondaryX, int secondaryY) {}

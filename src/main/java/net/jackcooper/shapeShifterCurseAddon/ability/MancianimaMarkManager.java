@@ -344,19 +344,21 @@ public final class MancianimaMarkManager {
 				LAST_REGEN.put(id, now);
 			} else if (FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(formId)) {
 				// 进化使魔脱战 mana 回复：脱战 5s 后每 1s 回 1 点 mana（需已解锁 mana_system 节点）
+				// 时间门前置：脱战稳态下先被 20t 时间门拦下，免付「进化组件读 +
+				// isUnlocked + 资源扫描」；两道门均为纯读取，调序不改变行为（对照契灵分支顺序）。
+				UUID id = sp.getUuid();
+				long lastCombat = LAST_COMBAT.getOrDefault(id, 0L);
+				if (now - lastCombat < OUT_OF_COMBAT_TICKS) continue;
+				long lastRegen = LAST_MANA_REGEN.getOrDefault(id, 0L);
+				if (now - lastRegen < UPGRADE_FOX_MANA_REGEN_INTERVAL_TICKS) continue;
 				if (UniversalFormationManager.isCharging(sp)) continue;
 				// 仅在已解锁 mana_system 节点时生效（mana 条显示门控一致）
 				if (!net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent.EVOLUTION
 						.get(sp).isUnlocked(net.jackcooper.shapeShifterCurseAddon.evolution.FamiliarFoxTree.NODE_MANA)) continue;
-				UUID id = sp.getUuid();
-				long lastCombat = LAST_COMBAT.getOrDefault(id, 0L);
-				if (now - lastCombat < OUT_OF_COMBAT_TICKS) continue;
 				// 消耗 mana 后 5s 内暂停自动回复（regen_pause_timer 资源 > 0 表示在暂停窗口）
 				// 性能：常量复用（原每 tick 每进化使魔现场 new Identifier，构造含正则校验）
 				int pauseTimer = PowerUtils.getResourceValue(sp, UPGRADE_FOX_MANA_REGEN_PAUSE_TIMER);
 				if (pauseTimer > 0) continue;
-				long lastRegen = LAST_MANA_REGEN.getOrDefault(id, 0L);
-				if (now - lastRegen < UPGRADE_FOX_MANA_REGEN_INTERVAL_TICKS) continue;
 				double curMana = net.onixary.shapeShifterCurseFabric.mana.ManaUtils.getPlayerMana(sp);
 				double maxMana = net.onixary.shapeShifterCurseFabric.mana.ManaUtils.getPlayerMaxMana(sp);
 				if (maxMana <= 0 || curMana >= maxMana) { LAST_MANA_REGEN.put(id, now); continue; }

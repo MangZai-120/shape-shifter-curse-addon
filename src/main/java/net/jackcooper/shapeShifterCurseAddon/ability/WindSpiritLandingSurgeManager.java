@@ -75,6 +75,15 @@ public final class WindSpiritLandingSurgeManager {
 
     /** 每服务端 tick 对每个在线玩家调用（由 SscAddon tick 循环驱动）。 */
     public static void tick(ServerPlayerEntity player) {
+        // 形态门控前置：非风灵玩家不再每 tick 读写四张全员工表，
+        // 切出形态时顺带清理本玩家状态（切回时 prev 状态缺失 = 首拍不触发，安全）。
+        if (!FormUtils.isOcelotSP(player)) {
+            UUID uuid = player.getUuid();
+            PREV_ON_GROUND.remove(uuid);
+            PREV_FALL_DISTANCE.remove(uuid);
+            HIT_DURING_AIR.remove(uuid);
+            return;
+        }
         UUID uuid = player.getUuid();
         boolean curOnGround = player.isOnGround();
         Boolean prevOnGroundObj = PREV_ON_GROUND.get(uuid);

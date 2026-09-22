@@ -75,6 +75,7 @@ public final class SpellRegistry implements SimpleSynchronousResourceReloadListe
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.FireBoltSpell());       // 火球术
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.FlameNovaSpell());     // 烈焰新星
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.MeteorSpell());        // 陨火术
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.ExplosionSpell());      // 爆裂魔法（红色单级）
 		// —— 冰系（对立火）——
 		register(new FrostSpikeSpell());                                                        // 冰锥
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.IceBarrageSpell());    // 冰锥齐射

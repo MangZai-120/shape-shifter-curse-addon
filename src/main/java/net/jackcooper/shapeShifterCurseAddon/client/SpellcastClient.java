@@ -13,12 +13,10 @@ import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Vec3d;
-import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
-import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
 
 /**
  * 月尘魔法书施法客户端检测器（jackcooper）。仅在佩戴魔法书时生效。
@@ -39,6 +37,9 @@ public final class SpellcastClient {
 	private static int gestureToken;
 	private static int gestureKey = -1;
 	private static int gestureSlot = -1;
+	private static boolean selectingTarget;
+	private static ItemStack targetingScroll = ItemStack.EMPTY;
+	private static net.minecraft.client.world.ClientWorld targetingWorld;
 	private static final net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules.InputGuard inputGuard =
 			new net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules.InputGuard();
 	private static int cancelToken = -1;
@@ -54,13 +55,14 @@ public final class SpellcastClient {
 		ClientTickEvents.END_CLIENT_TICK.register(SpellcastClient::onClientTick);
 	}
 
-	/** 客户端当前佩戴的魔法书（未装备返回 null）。 */
+	/** 客户端当前佩戴的魔法书（未装备返回 null；每 tick 缓存，tick 检测与 HUD 帧渲染共读）。 */
 	public static ItemStack getEquippedBook() {
 		MinecraftClient mc = MinecraftClient.getInstance();
 		if (mc.player == null) {
 			return null;
 		}
-		return TrinketUtils.findFirstEquipped(mc.player, s -> s.getItem() == SscAddon.MOON_DUST_SPELLBOOK);
+		// 每帧全饰品扫描 + Curios 反射兜底链收敛到 ClientTickCache 的每 tick 一次
+		return ClientTickCache.equippedBook();
 	}
 
 	public static boolean hasBookEquipped() {
@@ -155,7 +157,8 @@ public final class SpellcastClient {
 		boolean anyPressed = castPressed;
 		for (KeyBinding key : SpellcastKeybindings.KEY_DIRECT) anyPressed |= key != null && key.isPressed();
 		if (client.currentScreen != null) {
-			if (gestureKey >= 0) sendRelease(gestureToken);
+			if (gestureKey >= 0 && !selectingTarget) sendRelease(gestureToken);
+			clearTargetSelection();
 			if (cancelToken >= 0) sendCancelHold(cancelToken, false);
 			cancelToken = -1;
 			gestureKey = -1;
@@ -171,6 +174,11 @@ public final class SpellcastClient {
 		}
 		ItemStack book = getEquippedBook();
 		if (book == null || book.isEmpty()) {
+			if (selectingTarget) {
+				clearTargetSelection();
+				gestureKey = -1;
+				inputGuard.block();
+			}
 			if (gestureKey >= 0 && !keyPressed(gestureKey)) {
 				sendRelease(gestureToken);
 				gestureKey = -1;
@@ -191,6 +199,13 @@ public final class SpellcastClient {
 		}
 
 		var active = net.jackcooper.shapeShifterCurseAddon.client.hud.SpellCastHud.getState();
+		if (selectingTarget && (active != null || client.world != targetingWorld || selectedSlot != gestureSlot
+				|| !ItemStack.areEqual(SpellbookData.getScroll(book, gestureSlot), targetingScroll)
+				|| !player.isAlive() || player.isSpectator())) {
+			cancelInputForSelection();
+			updatePressedKeys(castPressed);
+			return;
+		}
 		boolean handled = false;
 		for (int index = 0; index < 7; index++) {
 			if (!keyPressed(index + 1) || wasDirectPressed[index] || index >= count) continue;
@@ -207,12 +222,20 @@ public final class SpellcastClient {
 			break;
 		}
 		if (gestureKey >= 0 && !keyPressed(gestureKey)) {
-			sendRelease(gestureToken);
+			if (selectingTarget) {
+				// First request to the server: it validates and locks its own raycast before charging.
+				sendCast(gestureSlot);
+				clearTargetSelection();
+			} else sendRelease(gestureToken);
 			gestureKey = -1;
 		}
 		if (!handled && castPressed && !wasCastPressed) {
 			if (active != null) {
-				if (!active.solo() && active.mode() == net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules.Mode.AUTOMATIC) {
+				// 锁定态（领域壳扩张后/爆裂红白球生成后，2026-09-23）：不可取消，不发取消包、
+				// 不打本地取消标（避免「取消中」红字永驻），HUD 倒计时保持红显。
+				if (!active.solo() && !active.locked()
+						&& (active.mode() == net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules.Mode.AUTOMATIC
+						|| active.mode() == net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules.Mode.RELEASE)) {
 					cancelToken = active.token();
 					sendCancelHold(cancelToken, true);
 					// 本地即时红字反馈（服务端 cancelTicks 校准包最多 20t 后才到）
@@ -231,6 +254,13 @@ public final class SpellcastClient {
 		gestureToken = (gestureToken + 1) & Integer.MAX_VALUE;
 		gestureKey = key;
 		gestureSlot = slot;
+		Spell spell = ScrollData.getSpell(SpellbookData.getScroll(book, slot));
+		if (spell != null && spell.requiresTargetBeforeChannel()) {
+			selectingTarget = true;
+			targetingScroll = SpellbookData.getScroll(book, slot).copy();
+			targetingWorld = MinecraftClient.getInstance().world;
+			return;
+		}
 		if (!hasSharedStyle(player) && SpellbookData.getMana(book) < computeManaCost(book, slot)
 				&& handleTriplePressDowngrade(player, book, slot)) return;
 		sendCast(slot);
@@ -247,7 +277,8 @@ public final class SpellcastClient {
 	}
 
 	private static void cancelInputForSelection() {
-		if (gestureKey >= 0) sendRelease(gestureToken);
+		if (gestureKey >= 0 && !selectingTarget) sendRelease(gestureToken);
+		clearTargetSelection();
 		if (cancelToken >= 0) sendCancelHold(cancelToken, false);
 		gestureKey = -1;
 		cancelToken = -1;
@@ -256,6 +287,7 @@ public final class SpellcastClient {
 	}
 
 	private static void resetKeys() {
+		clearTargetSelection();
 		gestureKey = -1;
 		gestureSlot = -1;
 		cancelToken = -1;
@@ -265,6 +297,24 @@ public final class SpellcastClient {
 		for (int i = 0; i < 7; i++) {
 			wasDirectPressed[i] = false;
 		}
+	}
+
+	private static void clearTargetSelection() {
+		selectingTarget = false;
+		targetingScroll = ItemStack.EMPTY;
+		targetingWorld = null;
+	}
+
+	/** Local-only preview; nothing about this aim stage is broadcast to observers. */
+	public static Vec3d targetSelectionPreview() {
+		var client = MinecraftClient.getInstance();
+		if (!selectingTarget || client.player == null || client.world == null || client.world != targetingWorld || client.currentScreen != null
+				|| gestureKey < 0 || !keyPressed(gestureKey)) return null;
+		ItemStack book = getEquippedBook();
+		if (book == null || book.isEmpty() || selectedSlot != gestureSlot
+				|| !ItemStack.areEqual(SpellbookData.getScroll(book, gestureSlot), targetingScroll)) return null;
+		Spell spell = ScrollData.getSpell(targetingScroll);
+		return spell == null ? null : Spell.computeAimImpact(client.player, spell.getAimMaxRange());
 	}
 
 	/** 分担型形态（雪狐/悦灵/使魔系）：书不足时不拦预检，由服务端权威判书+条合计。

@@ -69,13 +69,18 @@ public final class KillEmpowerCast {
 	/** 判断正常火环（非赋能环）是否正在释放：正常环开时 toggle_state=1；赋能环不置 toggle。客户端可读。 */
 	public static boolean isNormalRingActive(net.minecraft.entity.player.PlayerEntity player) {
 		boolean red = FormUtils.isForm(player, FormIdentifiers.FAMILIAR_FOX_RED);
-		Identifier toggleId = new Identifier("my_addon",
-				red ? "form_familiar_fox_red_blue_fire_ring_toggle_state" : "form_familiar_fox_sp_blue_fire_ring_toggle_state");
-		Identifier amuletToggleId = new Identifier("my_addon",
-				red ? "form_familiar_fox_red_blue_fire_ring_amulet_toggle_state" : "form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state");
+		// 4 个 Identifier 为静态常量
+		Identifier toggleId = red ? TOGGLE_RED : TOGGLE_SP;
+		Identifier amuletToggleId = red ? AMULET_TOGGLE_RED : AMULET_TOGGLE_SP;
 		return PowerUtils.getClientResourceValue(player, toggleId) == 1
 				|| PowerUtils.getClientResourceValue(player, amuletToggleId) == 1;
 	}
+
+	/** 火环 toggle 资源 id 常量（红/SP × 普通/护符，避免 HUD 每帧 new Identifier）。 */
+	private static final Identifier TOGGLE_SP = new Identifier("my_addon", "form_familiar_fox_sp_blue_fire_ring_toggle_state");
+	private static final Identifier TOGGLE_RED = new Identifier("my_addon", "form_familiar_fox_red_blue_fire_ring_toggle_state");
+	private static final Identifier AMULET_TOGGLE_SP = new Identifier("my_addon", "form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state");
+	private static final Identifier AMULET_TOGGLE_RED = new Identifier("my_addon", "form_familiar_fox_red_blue_fire_ring_amulet_toggle_state");
 
 	/** 客户端按主技能键（赋能态）。返回 true 表示已处理。 */
 	public static boolean tryCastRing(ServerPlayerEntity player) {

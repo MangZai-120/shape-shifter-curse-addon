@@ -163,7 +163,7 @@ public final class ResourceBars {
 			}
 			int current = get(player, bar);
 			int max = maxOf(player, bar);
-			// 回复规则（按各自 interval）
+			// 回复规则（按各自 interval；regenRules()/thresholds() 已返回懒加载缓存视图）
 			for (RegenRule rule : bar.regenRules()) {
 				int interval = Math.max(1, rule.interval());
 				if (serverTickCounter % interval == 0) {

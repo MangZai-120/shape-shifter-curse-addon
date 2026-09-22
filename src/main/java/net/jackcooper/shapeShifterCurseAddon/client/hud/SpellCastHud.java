@@ -51,7 +51,9 @@ public final class SpellCastHud {
 	private static State state;
 
 	public record State(java.util.UUID casterUuid, Spell spell, int token, int elapsed, int duration, SpellCastingRules.Mode mode,
-			boolean released, boolean immobilized, boolean solo, boolean continuous, int cancelTicks) {}
+			boolean released, boolean immobilized, boolean solo, boolean continuous, int cancelTicks,
+			/** 锁定态（服务端 isLockedIn：领域壳扩张后/爆裂红白球生成后不可打断）：倒计时红显且忽略取消显示。 */
+			boolean locked) {}
 
 	private SpellCastHud() {}
 
@@ -97,14 +99,14 @@ public final class SpellCastHud {
 				java.util.UUID casterUuid = buf.readUuid();
 				incoming = new State(casterUuid, spell, buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
 						buf.readEnumConstant(SpellCastingRules.Mode.class), buf.readBoolean(), buf.readBoolean(),
-						buf.readBoolean(), buf.readBoolean(), buf.readVarInt());
+						buf.readBoolean(), buf.readBoolean(), buf.readVarInt(), buf.readBoolean());
 			} else {
-				// 轻量校准：只更新 elapsed/已释放/取消计数，静态字段沿用上一状态
+				// 轻量校准：只更新 elapsed/已释放/取消计数/锁定态，静态字段沿用上一状态
 				State old = state;
 				if (old == null) return; // 全量首包丢了：无法恢复静态字段，丢弃（看门狗会兜底清场）
 				incoming = new State(old.casterUuid(), old.spell(), buf.readVarInt(), buf.readVarInt(),
 						old.duration(), old.mode(), buf.readBoolean(), old.immobilized(), old.solo(),
-						old.continuous(), buf.readVarInt());
+						old.continuous(), buf.readVarInt(), buf.readBoolean());
 			}
 			final boolean fullPacket = full;
 			final State packetState = incoming;
@@ -267,7 +269,10 @@ public final class SpellCastHud {
 		float progress = current.duration() <= 0 ? 1
 				: clamp01((elapsed + (exiting ? 0 : tickDelta)) / (float) current.duration());
 		boolean full = elapsed >= current.duration();
-		boolean cancelling = localCancelling || current.cancelTicks() > 0;
+		// 锁定态（2026-09-23 用户定稿）：忽略取消显示（服务端不会取消，避免「取消中」红字永驻），
+		// 倒计时改红提示「不可打断必须释放」。
+		boolean locked = current.locked();
+		boolean cancelling = !locked && (localCancelling || current.cancelTicks() > 0);
 		// ===== 绘制：空框 → 满图自下而上裁切（左/右双贴图选图）→ 条旁倒计时 =====
 		int drawX = (int) x;
 		int drawY = baseY;
@@ -293,7 +298,8 @@ public final class SpellCastHud {
 		} else {
 			float remainTicks = current.duration() - (elapsed + (exiting ? 0 : tickDelta));
 			timeText = String.format(java.util.Locale.ROOT, "%.1f", Math.max(0, remainTicks) / 20.0F);
-			color = 0xFFFFFFFF;
+			// 锁定态红显（2026-09-23 用户定稿）：不可打断阶段倒计时红色提示必须释放
+			color = locked ? 0xFFFF5555 : 0xFFFFFFFF;
 		}
 		int textW = client.textRenderer.getWidth(timeText);
 		// 窄条（14px）内放不下文字：倒计时画在条外侧、指向屏幕中心（条在右→文字在左，条在左→文字在右）

@@ -422,6 +422,9 @@ public class SscAddon implements ModInitializer {
 	public static final Identifier ALLAY_SPEED_MUSIC_ID = new Identifier("ssc_addon", "allay_speed_music");
 	public static final SoundEvent ALLAY_HEAL_MUSIC_EVENT = SoundEvent.of(ALLAY_HEAL_MUSIC_ID);
 	public static final SoundEvent ALLAY_SPEED_MUSIC_EVENT = SoundEvent.of(ALLAY_SPEED_MUSIC_ID);
+	// 爆裂魔法主题音（21 秒，T-8s 起播、3 秒渐入、8 秒处爆炸音；唯一音源）
+	public static final Identifier EXPLOSION_THEME_ID = new Identifier("ssc_addon", "explosion_theme");
+	public static final SoundEvent EXPLOSION_THEME_EVENT = SoundEvent.of(EXPLOSION_THEME_ID);
 
 	// 附属形态切换成就触发器（统一一个 Criterion，不同 advancement JSON 用 form_id 条件区分）
 	public static final OnTransformAddonForm ON_TRANSFORM_ADDON_FORM =
@@ -608,6 +611,7 @@ public class SscAddon implements ModInitializer {
 		Registry.register(Registries.SOUND_EVENT, ALLAY_HEAL_MUSIC_ID, ALLAY_HEAL_MUSIC_EVENT);
 		Registry.register(Registries.SOUND_EVENT, ALLAY_SPEED_MUSIC_ID, ALLAY_SPEED_MUSIC_EVENT);
 		Registry.register(Registries.SOUND_EVENT, SHAPE_SHIFTERS_DREAM_ID, SHAPE_SHIFTERS_DREAM_EVENT);
+		Registry.register(Registries.SOUND_EVENT, EXPLOSION_THEME_ID, EXPLOSION_THEME_EVENT);
 	}
 
 	private void registerEntityAttributes() {
@@ -654,6 +658,7 @@ public class SscAddon implements ModInitializer {
 		net.jackcooper.shapeShifterCurseAddon.spell.pocket.PocketSpaceManager.init();
 		net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.init();
 		net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.init();
+		net.jackcooper.shapeShifterCurseAddon.spell.ExplosionManager.init(); // 爆裂魔法：锁点后 35 秒蓄力演出，完成时服务端爆炸
 		net.jackcooper.shapeShifterCurseAddon.ability.LunarSpiritTargetLink.init(); // 月灵目标联动（主人打谁月灵打谁，召唤系）
 		net.jackcooper.shapeShifterCurseAddon.ability.CompanionResonanceManager.init(); // 伙伴共鸣伤害增益到期清理（召唤系）
 		SeedEnergyEatingHandler.register();

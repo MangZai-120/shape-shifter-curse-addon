@@ -48,6 +48,7 @@ public final class CastingVisualState {
 		boolean armPose;
 		int schoolColor;
 		int rarityColor;
+		boolean explosion;
 
 		Entry(long receivedAt, long expiresAt) {
 			this.receivedAt = receivedAt;
@@ -65,6 +66,7 @@ public final class CastingVisualState {
 			boolean armPose = active && buf.readBoolean();
 			int schoolColor = active ? buf.readInt() : 0;
 			int rarityColor = active ? buf.readInt() : 0;
+			boolean explosion = active && buf.readIdentifier().equals(new net.minecraft.util.Identifier("ssc_addon", "explosion"));
 			client.execute(() -> {
 				checkWorld(client);
 				if (client.world == null) return;
@@ -80,6 +82,7 @@ public final class CastingVisualState {
 					old.armPose = armPose;
 					old.schoolColor = schoolColor;
 					old.rarityColor = rarityColor;
+					old.explosion = explosion;
 				} else {
 					Entry old = ACTIVE.get(uuid);
 					if (old != null && old.active) {
@@ -155,6 +158,11 @@ public final class CastingVisualState {
 
 	public static boolean hasCircle(UUID uuid) {
 		return entryOf(uuid) != null;
+	}
+
+	public static boolean isExplosion(UUID uuid) {
+		Entry entry = entryOf(uuid);
+		return entry != null && entry.explosion;
 	}
 
 	public static int circleColor(UUID uuid) {

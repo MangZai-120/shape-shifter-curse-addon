@@ -48,8 +48,11 @@ public final class ParasiticSeedEnergyRegen {
         // 注意：必须用 hasPowerId（是否持有 power），不能用 hasResource(...,0)——
         // 后者对无 power 玩家 = 0>=0 恒真，守卫完全失效，会导致全玩家每 tick 白跑
         // 且周期性白发 PowerHolderComponent.sync 全量同步包。
-        if (!net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.hasPowerId(
-                player, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY)) {
+        // 先用便宜的形态组件读（单次）挡掉绝大多数非果蝠玩家，
+        // 再做 O(power数) 的 power 检测；果蝠形态才可能挂该 power，两层判定结果等价。
+        if (!net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isBatParasiticFruit(player)
+                || !net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.hasPowerId(
+                        player, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY)) {
             ACCUM.remove(player.getUuid());
             return;
         }

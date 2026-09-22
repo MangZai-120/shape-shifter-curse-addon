@@ -79,7 +79,8 @@ public final class RedFormTickManager {
 			}
 		}
 
-		// SP 悦灵：自动发放治疗杖(0)与唱片机(1)；非该形态则回收
+		// 两轮独立背包扫描合并为单轮（同一次循环内按形态三元处理三类物品），
+		// 每 20t 少扫一整轮 41 格；行为等价（三物品互不重叠，回收逻辑照旧）。
 		boolean isAllaySp = currentForm != null && currentForm.getFormID().equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.ALLAY_SP);
 		if (isAllaySp) {
 			placeFormItemSafe(player, 0, net.jackcooper.shapeShifterCurseAddon.SscAddon.ALLAY_HEAL_WAND);

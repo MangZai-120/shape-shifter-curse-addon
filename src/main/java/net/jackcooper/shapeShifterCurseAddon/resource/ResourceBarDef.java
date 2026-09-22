@@ -44,6 +44,12 @@ public final class ResourceBarDef {
 	private final java.util.List<RegenRule> regen = new java.util.concurrent.CopyOnWriteArrayList<>();
 	private final java.util.List<BarTrigger> triggers = new java.util.concurrent.CopyOnWriteArrayList<>();
 	private final java.util.List<ThresholdEffect> thresholds = new java.util.concurrent.CopyOnWriteArrayList<>();
+	// 只读视图缓存：原每次调用都新建 unmodifiableList 包装，
+	// serverTick 每 tick 每玩家各调一次造成持续 GC churn；CopyOnWriteArrayList 修改军罕，
+	// 首次访问时构建后复用即可（列表变更后重新构建）。
+	private volatile java.util.List<RegenRule> regenView;
+	private volatile java.util.List<BarTrigger> triggersView;
+	private volatile java.util.List<ThresholdEffect> thresholdsView;
 
 	/** 挂一条回复规则（可插拔：删规则 = 从列表移除）。 */
 	public ResourceBarDef addRegen(RegenRule rule) {
@@ -63,17 +69,29 @@ public final class ResourceBarDef {
 		return this;
 	}
 
-	/** 只读视图（调度器遍历用）。 */
+	/** 只读视图（调度器遍历用）：懒加载缓存，列表变更后重建。 */
 	public java.util.List<RegenRule> regenRules() {
-		return java.util.Collections.unmodifiableList(regen);
+		java.util.List<RegenRule> view = regenView;
+		if (view == null) {
+			regenView = view = java.util.Collections.unmodifiableList(regen);
+		}
+		return view;
 	}
 
 	public java.util.List<BarTrigger> triggers() {
-		return java.util.Collections.unmodifiableList(triggers);
+		java.util.List<BarTrigger> view = triggersView;
+		if (view == null) {
+			triggersView = view = java.util.Collections.unmodifiableList(triggers);
+		}
+		return view;
 	}
 
 	public java.util.List<ThresholdEffect> thresholds() {
-		return java.util.Collections.unmodifiableList(thresholds);
+		java.util.List<ThresholdEffect> view = thresholdsView;
+		if (view == null) {
+			thresholdsView = view = java.util.Collections.unmodifiableList(thresholds);
+		}
+		return view;
 	}
 
 	@Override

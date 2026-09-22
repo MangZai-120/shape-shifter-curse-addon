@@ -67,10 +67,19 @@ public final class AxolotlWaterSpurtHandler {
 
 		// 用客户端上报的「真正疾跑键」状态，而非服务端 isSprinting()（后者会被双击 W / 游泳自动置真 → 误冲）
 		boolean sprintKey = CLIENT_SPRINT.getOrDefault(id, false);
-		if (PowerUtils.getResourceValue(player, WATER_HUD) != Math.max(0, wcd - 1)) {
+		// HUD 资源仅在 CD 活跃期同步（空闲稳态 wcd==lcd==0 零资源读写）：CD 归零后补发一次 0，
+		// 之后不再触碰资源；触发冲刺时在分支内直接写 HUD（值必变，无需比对）。
+		// 归零补发若因极端时序被应用层丢弃（换维度/传送瞬间实体未追踪），空闲期每 100t 低频对账
+		// 一次自愈（服务端本地读一次比对，值不符才重发——正常态零额外包，异常态最多残留 5s）。
+		boolean waterCooling = wcd > 0;
+		boolean landCooling = lcd > 0;
+		boolean idleAudit = !waterCooling && !landCooling && wcd != 1 && lcd != 1 && player.age % 100 == 0;
+		if (waterCooling || wcd == 1 || (idleAudit
+				&& PowerUtils.getResourceValue(player, WATER_HUD) != 0)) {
 			PowerUtils.setResourceValueAndSync(player, WATER_HUD, Math.max(0, wcd - 1));
 		}
-		if (PowerUtils.getResourceValue(player, LAND_HUD) != Math.max(0, lcd - 1)) {
+		if (landCooling || lcd == 1 || (idleAudit
+				&& PowerUtils.getResourceValue(player, LAND_HUD) != 0)) {
 			PowerUtils.setResourceValueAndSync(player, LAND_HUD, Math.max(0, lcd - 1));
 		}
 		boolean sneaking = player.isSneaking();

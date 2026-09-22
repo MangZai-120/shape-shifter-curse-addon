@@ -7,6 +7,8 @@ import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
@@ -28,6 +30,11 @@ public final class WindSpiritWindPressureManager {
     private static final int APPLY_WITHIN_AGE = 5;
     /** 已减速标记（防反复减速）。 */
     static final String SLOWED_TAG = "ssc_addon_wind_slowed";
+    /** 当前风灵形态在线玩家缓存：每 20t 刷新；空集 = 全服无风灵，
+    //  弹射物前 5 tick 的玩家扫描直接短路（箭矢农场场景免白跑）。形态切换最多 20t 后生效，
+    //  减速判定仅影响新发射弹射物，短暂误差可接受。 */
+    private static final java.util.Map<RegistryKey<World>, java.util.Set<java.util.UUID>> WIND_SPIRITS = new java.util.concurrent.ConcurrentHashMap<>();
+    private static long lastRefreshTick = Long.MIN_VALUE;
 
     private WindSpiritWindPressureManager() {
     }
@@ -74,14 +81,34 @@ public final class WindSpiritWindPressureManager {
     private static ServerPlayerEntity findWindSpiritInRange(ServerWorld world, Entity projectile) {
         // 只扫玩家列表（getPlayers），不做 getOtherEntities 全实体 AABB 扫描；
         // 判定与原版一致：8 格半径内且为风灵形态。
+        // 先查风灵缓存，无风灵在线（常态）直接短路，
+        // 免去箭矢农场场景下每枚弹射物的全玩家扫描；命中缓存后仍做实时距离判定。
+        refreshWindSpirits(world);
+        java.util.Set<java.util.UUID> cached = WIND_SPIRITS.get(world.getRegistryKey());
+        if (cached == null || cached.isEmpty()) return null;
         for (PlayerEntity p : world.getPlayers()) {
             if (!(p instanceof ServerPlayerEntity sp)) continue;
-            if (!FormUtils.isOcelotSP(sp)) continue;
+            if (!cached.contains(p.getUuid())) continue;
             if (p.squaredDistanceTo(projectile) <= RANGE * RANGE) {
                 return sp;
             }
         }
         return null;
+    }
+
+    /** 每 20t 重建各维度风灵在线集合（无风灵维度移除键）。 */
+    private static void refreshWindSpirits(ServerWorld world) {
+        long now = world.getTime();
+        if (now == lastRefreshTick || now - lastRefreshTick < 20) return;
+        lastRefreshTick = now;
+        java.util.Set<java.util.UUID> spirits = new java.util.HashSet<>();
+        for (PlayerEntity p : world.getPlayers()) {
+            if (p instanceof ServerPlayerEntity sp && FormUtils.isOcelotSP(sp)) {
+                spirits.add(p.getUuid());
+            }
+        }
+        if (spirits.isEmpty()) WIND_SPIRITS.remove(world.getRegistryKey());
+        else WIND_SPIRITS.put(world.getRegistryKey(), spirits);
     }
 }
 

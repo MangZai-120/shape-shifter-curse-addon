@@ -185,7 +185,9 @@ public abstract class MobEntityMixin {
 				return;
 			}
 			long worldTime = mob.getWorld().getTime();
-			if (mob.canSee(target)) {
+			// canSee 降频到每 5t（脱战超时 SIGHT_TIMEOUT 为 600t 级，粒度误差 <1%；
+			// 非采样 tick 沿用上次可见性结果维持计时刷新）
+			if (mob.age % 5 == 0 ? mob.canSee(target) : ssc_addon$lastSawProvokedTarget >= 0) {
 				// 能看到目标 → 重置视野计时，同时刷新全局挑衅
 				ssc_addon$lastSawProvokedTarget = worldTime;
 				UndeadNeutralState.PROVOKE_TIMESTAMPS.put(player.getUuid(), worldTime);

@@ -32,10 +32,11 @@ public final class SpellBalanceTest {
 		checkFormRules();
 		checkDomainRules();
 		checkDomainSound();
+		checkExplosionRules();
 		checkAttachedEffectScope();
 		// classpath 无目录列举能力：用已知 21 法术 id 清单（与 SpellRegistry 注册序一致）
 		String[] ids = {
-				"fire_bolt", "flame_nova", "meteor",
+				"fire_bolt", "flame_nova", "meteor", "explosion",
 				"frost_spike", "ice_barrage", "frost_nova", "frost_armor",
 				"moonlight_arrow", "lunar_mend", "lunar_veil",
 				"curse_mark", "dread_whisper", "corrupt_mist",
@@ -50,6 +51,69 @@ public final class SpellBalanceTest {
 			throw new IllegalStateException("法术数值回归失败 " + failures + " 项，详见上方输出");
 		}
 		System.out.println("Spell balance checks passed (" + ids.length + " spells).");
+	}
+
+	private static void checkExplosionRules() {
+		double[] distances = {0, 16, 32, 32.000001, 48, 64, 65};
+		double[] damages = {1000, 700, 400, 100, 50, 0, 0};
+		for (int i = 0; i < distances.length; i++) {
+			if (Math.abs(1000 * ExplosionRules.damageFactor(distances[i]) - damages[i]) > 0.00001)
+				fail("explosion", "damage band boundary: " + distances[i]);
+		}
+		double[] fireDistances = {0, 32, 32.000001, 42, 42.000001, 50, 50.000001, 64};
+		int[] fireTicks = {0, 0, 200, 200, 100, 100, 0, 0};
+		for (int i = 0; i < fireDistances.length; i++) {
+			if (ExplosionRules.fireTicks(fireDistances[i]) != fireTicks[i]) fail("explosion", "ignition boundary: " + fireDistances[i]);
+		}
+		// 时间线（2026-09-22 音频驱动版）：T-8s=540t 主题音频起播+光柱启动；32 格/s=1.6 格/t，
+		// 128 格 4 秒到顶；途中法阵高度按新速度核验；682t 红白球、700t 引爆（音频 8s 处爆炸音）。
+		if (ExplosionRules.beamHeight(540) != 0 || ExplosionRules.beamHeight(560) != 32
+				|| ExplosionRules.beamHeight(620) != 128 || ExplosionRules.beamHeight(690) != 128) fail("explosion", "audio-driven 35s timeline");
+		// 常量关系校验：两侧均为编译期常量的比较会被折叠成恒假（「identical expressions / dead code」
+		// 警告所指，断言从未生效），故改经 beamHeight()（方法调用不可折叠）验证时间线锚点关系，
+		// 防手改一个常量漏改其余：① 音频起播=光柱启动（起播时光柱恰为 0，1 秒后 32 格=1.6 格/t）；
+		// ② 红白球出现（682t）时光柱已到顶；③ 渐入半程音量=满量一半（SOUND_FADE_TICKS 参与行为）；
+		// ④ 引爆=蓄力完成由下方 Progress 循环用 EXPLODE_TICKS 推进验证。
+		if (ExplosionRules.beamHeight(ExplosionRules.SOUND_START_TICKS) != 0
+				|| ExplosionRules.beamHeight(ExplosionRules.SOUND_START_TICKS + 20) != 32
+				|| ExplosionRules.beamHeight(ExplosionRules.BALL_START_TICKS) != ExplosionRules.BEAM_TOP
+				|| Math.abs(ExplosionRules.themeVolume(
+						ExplosionRules.SOUND_START_TICKS + ExplosionRules.SOUND_FADE_TICKS / 2, 0) - 0.75f) > 1e-6)
+			fail("explosion", "audio-driven timeline constants");
+		for (int layer = 0; layer < ExplosionRules.CIRCLE_HEIGHTS.length; layer++) {
+			double at = 540 + ExplosionRules.CIRCLE_HEIGHTS[layer] / 1.6;
+			if (Math.abs(ExplosionRules.beamHeight(at) - ExplosionRules.CIRCLE_HEIGHTS[layer]) > 1e-6)
+				fail("explosion", "layer reveal timing");
+		}
+		// 主题音量曲线：起播前 0；3 秒渐入 × 距离衰减 × 增益 1.5（2026-09-22 用户反馈音量偏小）。
+		// soundVolume(100) = 0.64，故 570t@100 格 = 0.5×0.64×1.5 = 0.48；渐满后近处 = 1.5。
+		if (ExplosionRules.themeVolume(539, 0) != 0 || ExplosionRules.themeVolume(540, 0) != 0
+				|| Math.abs(ExplosionRules.themeVolume(570, 0) - 0.75f) > 1e-6
+				|| Math.abs(ExplosionRules.themeVolume(570, 100) - 0.48f) > 1e-6
+				|| Math.abs(ExplosionRules.themeVolume(600, 0) - 1.5f) > 1e-6
+				|| ExplosionRules.themeVolume(600, 164) != 0)
+			fail("explosion", "theme fade-in must combine with distance curve");
+		if (ExplosionRules.soundVolume(0) != 1 || ExplosionRules.soundVolume(64) != 1
+				|| ExplosionRules.soundVolume(114) != 0.5f || ExplosionRules.soundVolume(164) != 0
+				|| ExplosionRules.soundVolume(Double.NaN) != 0 || ExplosionRules.soundVolume(Double.POSITIVE_INFINITY) != 0)
+			fail("explosion", "sound range/invalid distance");
+		double previous = 1;
+		for (double distance = 0; distance <= 200; distance += 0.125) {
+			double volume = ExplosionRules.soundVolume(distance);
+			if (volume < 0 || volume > previous) fail("explosion", "sound must decrease monotonically");
+			previous = volume;
+		}
+		var progress = new SpellCastingRules.Progress<String>(SpellCastingRules.Mode.RELEASE, ExplosionRules.CHARGE_TICKS, 9);
+		progress.release(9, "locked");
+		// 用 EXPLODE_TICKS 驱动推进：引爆前 1t 不可释放、恰到 EXPLODE_TICKS 可释放 →
+		// 行为级锁定 EXPLODE_TICKS == CHARGE_TICKS（引爆=蓄力完成）。
+		for (int tick = 0; tick < ExplosionRules.EXPLODE_TICKS - 1; tick++) progress.tick();
+		if (progress.beginEffect()) fail("explosion", "early release must still charge for 35 seconds");
+		progress.tick();
+		if (!progress.beginEffect() || !"locked".equals(progress.target())) fail("explosion", "locked target must survive charge");
+		if (SpellCastingRules.interruptedCooldown(ExplosionRules.CD_TICKS) != 2880)
+			fail("explosion", "interrupt keeps 80% cooldown");
+		System.out.println("Explosion checks passed (damage/ignition boundaries, timeline, sound, locked release, cooldown).");
 	}
 
 	private static void checkDomainSound() {
@@ -251,6 +315,23 @@ public final class SpellBalanceTest {
 				return;
 			}
 			JsonArray levels = o.getAsJsonArray("levels");
+			if (id.equals("explosion")) {
+				if (levels.size() != 1 || !levels.get(0).getAsJsonObject().get("rarity").getAsString().equals("red")) fail(id, "red spell must have one level");
+				if (baseCd != ExplosionRules.CD_TICKS || baseMana != ExplosionRules.MANA_COST
+						|| o.get("base_damage").getAsFloat() != 1000 || !o.get("element").getAsString().equals("fire")) fail(id, "base stats mismatch");
+				if (o.get("base_cast_time_ticks").getAsInt() != ExplosionRules.CHARGE_TICKS
+						|| o.get("interrupt_mode").getAsInt() != 3 || !o.get("spell_tier").getAsString().equals("custom")) fail(id, "casting config mismatch");
+				var spell = new net.jackcooper.shapeShifterCurseAddon.spell.spells.ExplosionSpell();
+				spell.ssc_addon$applyConfig(net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig.fromJson(o));
+				var profile = spell.getCastingProfile(null, 1, false);
+				if (!spell.requiresTargetBeforeChannel() || spell.getCastingMode() != SpellCastingRules.Mode.RELEASE
+						|| spell.getAimMaxRange() != 128 || spell.getAimRadius(1) != 0
+						|| profile.ticks() != 700 || profile.speedMultiplier() != 0 || !profile.immobilized())
+					fail(id, "target selection must precede the 35-second immobile channel");
+				if (new net.jackcooper.shapeShifterCurseAddon.spell.spells.MeteorSpell().requiresTargetBeforeChannel())
+					fail(id, "meteor input behavior must remain unchanged");
+				return;
+			}
 			if (id.equals("domain")) {
 				if (levels.size() != 1 || !levels.get(0).getAsJsonObject().get("rarity").getAsString().equals("red")) fail(id, "红色必须单级");
 				if (baseCd != 3600 || baseMana != 300 || !o.get("element").getAsString().equals("space")) fail(id, "领域基础数值不符");
