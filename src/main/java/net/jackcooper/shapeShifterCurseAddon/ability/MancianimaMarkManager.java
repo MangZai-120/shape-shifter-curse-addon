@@ -246,7 +246,8 @@ public final class MancianimaMarkManager {
 			}
 			// 持续辅助效果：仅 SLOWNESS（颜色高亮由 entity_glow 提供）；带标记者 source 供入梦拦截归因
 			if (now % 20 == 0) {
-				living.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 25, 0, false, false, false), marker);
+				net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.runAttachedEffect(marker, living,
+						() -> living.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 25, 0, false, false, false), marker));
 			}
 		}
 
@@ -262,7 +263,7 @@ public final class MancianimaMarkManager {
 			boolean valid = m != null && m.color == MarkColor.RED && m.targetUuid.equals(cs.targetUuid);
 			Entity tgt = findEntity(server, cs.targetUuid);
 			boolean targetAlive = tgt instanceof LivingEntity le && le.isAlive();
-			if (!valid || !targetAlive) {
+			if (!valid || !targetAlive || net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(marker, tgt)) {
 				cit.remove();
 				marker.sendMessage(net.minecraft.text.Text.translatable("message.ssc_addon.mancianima.channel_fail"), true);
 				// 引导中断 = 联动失败：次技能引导（type=2）进入 3.5s 失败 CD；主技能引导（type=1）维持原行为不设 CD

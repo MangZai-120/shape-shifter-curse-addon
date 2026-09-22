@@ -23,6 +23,7 @@ import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
+import net.jackcooper.shapeShifterCurseAddon.spell.DomainManager;
 
 /**
  * 契灵 - 主要技能：三段标记。
@@ -72,7 +73,7 @@ public final class MancianimaPrimary {
 		// 段 3：已有红标 → 引导 2s 真伤
 		if (mark != null && mark.color == MancianimaMarkManager.MarkColor.RED) {
 			LivingEntity tgt = findLivingByUuid(world, mark.targetUuid);
-			if (tgt == null || !tgt.isAlive()) return;
+			if (tgt == null || !tgt.isAlive() || DomainManager.blocksTargeting(player, tgt)) return;
 			// 阶段冷却：红标刚升级后需等 3s 才能引爆
 			if (now - mark.colorSetTick < MancianimaMarkManager.STAGE_GATE_TICKS) {
 				int secLeft = (int) Math.max(1L, (long) Math.ceil((MancianimaMarkManager.STAGE_GATE_TICKS - (now - mark.colorSetTick)) / 20.0));
@@ -187,7 +188,7 @@ public final class MancianimaPrimary {
 
 	/** 由 MancianimaMarkManager 引导 tick 末尾调用：执行真伤与爆炸特效。 */
 	public static void executeChannelComplete(ServerPlayerEntity marker, LivingEntity target) {
-		if (target == null || !target.isAlive()) return;
+		if (target == null || !target.isAlive() || DomainManager.blocksTargeting(marker, target)) return;
 		ServerWorld world = (ServerWorld) marker.getWorld();
 		// 真伤计算
 		float dmg = (float) Math.max(DAMAGE_MIN, Math.min(DAMAGE_CAP, target.getHealth() * DAMAGE_PERCENT));
@@ -278,6 +279,7 @@ public final class MancianimaPrimary {
 
 		for (Entity e : world.getOtherEntities(player, searchBox, EntityPredicates.EXCEPT_SPECTATOR)) {
 			if (!(e instanceof LivingEntity le) || !le.isAlive()) continue;
+			if (DomainManager.blocksTargeting(player, le)) continue;
 
 			// 取实体中点
 			Vec3d entityCenter = le.getPos().add(0, le.getHeight() / 2.0, 0);

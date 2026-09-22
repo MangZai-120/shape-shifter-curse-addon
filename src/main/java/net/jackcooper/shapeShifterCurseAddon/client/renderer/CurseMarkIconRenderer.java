@@ -78,6 +78,7 @@ public final class CurseMarkIconRenderer {
 			var entity = client.world.getEntityById(id);
 			if (!(entity instanceof LivingEntity living) || !living.isAlive()) continue;
 			if (!living.hasStatusEffect(SscAddon.CURSE_MARK)) continue; // 扫描间隙已净化的跳过
+			if (DomainRenderer.blocksTargetingClient(living)) continue;
 			Vec3d pos = living.getLerpedPos(tickDelta)
 					.add(0.0, living.getHeight() + LIFT - SIZE * 0.5f, 0.0);
 			ms.push();

@@ -31,6 +31,8 @@ public final class SpellBalanceTest {
 		checkRefundLedger();
 		checkFormRules();
 		checkDomainRules();
+		checkDomainSound();
+		checkAttachedEffectScope();
 		// classpath 无目录列举能力：用已知 21 法术 id 清单（与 SpellRegistry 注册序一致）
 		String[] ids = {
 				"fire_bolt", "flame_nova", "meteor",
@@ -50,7 +52,64 @@ public final class SpellBalanceTest {
 		System.out.println("Spell balance checks passed (" + ids.length + " spells).");
 	}
 
+	private static void checkDomainSound() {
+		double[] distances = {0, 8, 16, 16.5, 17, 40.5, 64, 80};
+		float[] volumes = {1, 0.9f, 0.8f, 0.8f, 0.8f, 0.4f, 0, 0};
+		for (int index = 0; index < distances.length; index++) {
+			if (Math.abs(DomainRules.soundVolume(distances[index]) - volumes[index]) > 1.0e-6f) {
+				fail("domain", "音量端点或区间插值不符：" + distances[index]);
+			}
+		}
+		float previous = 1;
+		for (double distance = 0; distance <= 80; distance += 0.125) {
+			float volume = DomainRules.soundVolume(distance);
+			if (volume < 0 || volume > previous || volume > 1) fail("domain", "音量必须在 0～1 内随距离单调递减");
+			previous = volume;
+		}
+		for (double boundary : new double[]{16, 17, 64}) {
+			if (Math.abs(DomainRules.soundVolume(boundary - 0.0001)
+					- DomainRules.soundVolume(boundary + 0.0001)) > 0.00001f) fail("domain", "音量在分段边界不连续");
+		}
+		if (DomainRules.soundVolume(Double.NaN) != 0 || DomainRules.soundVolume(Double.POSITIVE_INFINITY) != 0) {
+			fail("domain", "无效距离不得产生无效音量");
+		}
+		System.out.println("Domain sound checks passed (100%-80% within 16, 80% through 17, fade to zero at 64, continuous and monotonic).");
+	}
+
+	private static void checkAttachedEffectScope() throws Exception {
+		var field = DomainManager.class.getDeclaredField("ATTACHED_EFFECT");
+		field.setAccessible(true);
+		ThreadLocal<?> context = (ThreadLocal<?>) field.get(null);
+		RuntimeException expected = new IllegalStateException("test");
+		try {
+			DomainManager.runAttachedEffect(null, null, () -> {
+				Object outer = context.get();
+				if (outer == null) fail("domain", "自动效果未进入限定上下文");
+				DomainManager.runAttachedEffect(null, null, () -> {
+					if (context.get() == null || context.get() == outer) fail("domain", "嵌套自动效果未建立独立上下文");
+				});
+				if (context.get() != outer) fail("domain", "嵌套结束未恢复外层上下文");
+				throw expected;
+			});
+		} catch (RuntimeException actual) {
+			if (actual != expected) throw actual;
+		}
+		if (context.get() != null) fail("domain", "异常退出残留自动效果放行，可能导致后续主动技能穿墙");
+	}
+
 	private static void checkDomainRules() {
+		for (double radius : new double[]{1.75, 8, 17}) {
+			Vec3d inside = new Vec3d(radius - 0.01, 0, 0);
+			Vec3d outside = new Vec3d(radius + 0.01, 0, 0);
+			if (!DomainRules.separates(inside, outside, radius) || !DomainRules.separates(outside, inside, radius)) {
+				fail("domain", "感知和主动选目标必须双向隔离，扩张期不能沿用移动单向阀");
+			}
+			if (DomainRules.separates(inside, Vec3d.ZERO, radius)
+					|| DomainRules.separates(outside, outside.multiply(2), radius)
+					|| DomainRules.separates(inside, outside, 0)) {
+				fail("domain", "同侧或未成壳时不得屏蔽目标");
+			}
+		}
 		if (!DomainRules.crosses(0, 0, 0, 16.1, 0, 0, 0)) fail("domain", "内层不能向外穿越");
 		if (DomainRules.crosses(0, 0, 0, 15, 0, 0, 0)) fail("domain", "内部移动不应被挡");
 		if (!DomainRules.crosses(20, 0, 0, 16.9, 0, 0, 0)) fail("domain", "外层不能向内穿越");
@@ -87,13 +146,83 @@ public final class SpellBalanceTest {
 		if (outside.x != -1) fail("domain", "起点在壳外时原样返回");
 		Vec3d centerOut = DomainRules.slideInside(Vec3d.ZERO, new Vec3d(30, 0, 0), 16);
 		if (centerOut.length() - 16 > 1.0e-6) fail("domain", "球心出发须夹到半径内");
+		Vec3d contact = new Vec3d(15.7, 0, 0);
+		Vec3d alongWall = DomainRules.slideInside(contact, new Vec3d(0.2, 0, 0.3), 15.7);
+		if (contact.add(alongWall).length() > 15.7 + 1.0e-9 || alongWall.z < 0.29) {
+			fail("domain", "贴墙斜走必须保持切向移动且落点仍在球内");
+		}
+		Vec3d jumpAtWall = DomainRules.slideInside(contact, new Vec3d(0, 0.42, 0), 15.7);
+		if (contact.add(jumpAtWall).length() > 15.7 + 1.0e-9 || jumpAtWall.y < 0.4) {
+			fail("domain", "贴墙跳跃必须保留上升且不能产生越界落点");
+		}
+		Vec3d fastSlide = DomainRules.slideInside(contact, new Vec3d(0.2, 0, 40), 15.7);
+		if (contact.add(fastSlide).length() > 15.7 + 1.0e-9) {
+			fail("domain", "高速切向位移也必须约束在球内");
+		}
 		// 穿壳回归（2026-09-22）：脚 15.9 + 身高偏移 0.9 的贴墙玩家（旧实现用碰撞箱中心
 		// √(15.9²+0.9²)≈15.93 仍内侧但更高实体 15.5 偏移 1.8 → 15.6……直接测最严场景：
 		// 脚 15.9 向外走，用脚锚点判定必须拦截；壳间带（16.0~17.3）向外允许（可退出语义保留）
 		if (!DomainRules.crosses(15.9, 0, 0, 16.4, 0, 0, 0.3)) fail("domain", "脚锚点下贴墙向外必须拦截");
 		if (DomainRules.crosses(15.9, 0, 0, 15.5, 0, 0, 0.3)) fail("domain", "贴墙向内不应拦截");
 		if (DomainRules.crosses(16.5, 0, 0, 17.0, 0, 0, 0.3)) fail("domain", "壳间带向外应允许退出");
+		checkDomainMovement();
 		System.out.println("Domain geometry checks passed (inner/outer shells, swept paths, underground, hitbox, faction damage).");
+	}
+
+	private static void checkDomainMovement() {
+		var complete = new DomainRules.Shell(Vec3d.ZERO, 16, true);
+		var growing = new DomainRules.Shell(Vec3d.ZERO, 8, false);
+		var walls = java.util.List.of(complete);
+		Vec3d outsideStart = new Vec3d(17.3, 0, 0);
+		Vec3d outsideMove = DomainRules.limitMovement(outsideStart, new Vec3d(-0.3, 0.42, 0.3), 0.3, walls);
+		if (complete.blocks(outsideStart, outsideMove, 0.3) || outsideMove.z < 0.29 || outsideMove.y < 0.4) {
+			fail("domain", "外侧撞墙必须封闭并允许侧移与跳跃");
+		}
+		Vec3d edgeStart = new Vec3d(15.9, 0, 0);
+		Vec3d edgeMove = DomainRules.limitMovement(edgeStart, new Vec3d(0.3, 0, 0.3), 0.3, walls);
+		if (complete.blocks(edgeStart, edgeMove, 0.3) || edgeMove.z < 0.29) {
+			fail("domain", "内侧碰撞箱已贴边时仍须滑行而不能穿墙");
+		}
+		Vec3d retreat = new Vec3d(-0.3, 0, 0);
+		if (!DomainRules.limitMovement(edgeStart, retreat, 0.3, walls).equals(retreat)) fail("domain", "内侧后退不能被锁住");
+		Vec3d entryStart = new Vec3d(10, 0, 0);
+		Vec3d entry = new Vec3d(-3, 0, 0);
+		if (!DomainRules.limitMovement(entryStart, entry, 0.3, java.util.List.of(growing)).equals(entry)) {
+			fail("domain", "扩张期必须允许外侧进入");
+		}
+		Vec3d fastEntry = DomainRules.limitMovement(entryStart, new Vec3d(-30, 0, 0), 0.3, java.util.List.of(growing));
+		if (entryStart.add(fastEntry).length() > 8 + 1.0e-6) fail("domain", "扩张期高速进入后不能从另一侧穿出");
+		Vec3d fastStart = new Vec3d(-30, 0, 0);
+		Vec3d fastCross = DomainRules.limitMovement(fastStart, new Vec3d(60, 0, 0), 0.3, walls);
+		if (complete.blocks(fastStart, fastCross, 0.3) || fastStart.add(fastCross).x > -17.3 + 1.0e-6) {
+			fail("domain", "高速外侧穿越必须停在迎面边界");
+		}
+		for (DomainRules.Shell shell : java.util.List.of(complete, growing)) {
+			Vec3d position = new Vec3d(shell.complete() ? 15.7 : 8, 0, 0);
+			for (int tick = 0; tick < 400; tick++) {
+				Vec3d normal = position.normalize();
+				Vec3d wanted = normal.multiply(0.2).add(-normal.z * 0.25, 0, normal.x * 0.25);
+				Vec3d limited = DomainRules.limitMovement(position, wanted, 0.3, java.util.List.of(shell));
+				if (shell.blocks(position, limited, 0.3) || limited.length() < 0.2) {
+					fail("domain", "连续贴墙侧移不能累积越界或卡死");
+					break;
+				}
+				position = position.add(limited);
+			}
+		}
+		var overlap = java.util.List.of(complete, new DomainRules.Shell(new Vec3d(8, 0, 0), 16, true));
+		var random = new java.util.Random(20260922L);
+		for (int sample = 0; sample < 2000; sample++) {
+			Vec3d start = new Vec3d(random.nextDouble() * 60 - 30, random.nextDouble() * 40 - 20, random.nextDouble() * 60 - 30);
+			Vec3d wanted = new Vec3d(random.nextDouble() * 40 - 20, random.nextDouble() * 20 - 10, random.nextDouble() * 40 - 20);
+			Vec3d limited = DomainRules.limitMovement(start, wanted, 0.3, overlap);
+			for (DomainRules.Shell shell : overlap) {
+				if (shell.blocks(start, limited, 0.3)) {
+					fail("domain", "多领域修正后整段移动仍穿墙");
+					return;
+				}
+			}
+		}
 	}
 
 	private static void checkSpell(String id) throws Exception {

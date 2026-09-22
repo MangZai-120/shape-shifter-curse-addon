@@ -126,6 +126,7 @@ public class GoldenSandstormErosionBrand {
 	 */
 	public static void onPlayerAttack(ServerPlayerEntity player, LivingEntity target) {
 		if (!(player.getWorld() instanceof ServerWorld serverWorld)) return;
+		if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(player, target)) return;
 		// 近战攻击不检查白名单（允许对白名单目标叠标记）
 		// 白名单仅限制扩散和引爆的叠标记
 
@@ -270,6 +271,7 @@ public class GoldenSandstormErosionBrand {
 				it.remove();
 				continue;
 			}
+			if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(player, target)) continue;
 
 			// 如果目标有3层，先触发被动爆发（不消耗层数）
 			if (state.stacks >= MAX_STACKS) {
@@ -366,6 +368,7 @@ public class GoldenSandstormErosionBrand {
 			if (!living.isAlive()) continue;
 			if (living.getUuid().equals(playerUuid) || living.getUuid().equals(excludeUuid)) continue;
 			if (WhitelistUtils.isProtected(player, living)) continue;
+			if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(player, living)) continue;
 
 			double distSq = living.squaredDistanceTo(center);
 

@@ -17,6 +17,10 @@ public class EntityWebGlowMixin {
 
 	@Inject(method = "isGlowing", at = @At("RETURN"), cancellable = true, require = 0)
 	private void ssca$webHighlightGlow(CallbackInfoReturnable<Boolean> cir) {
+		if (net.jackcooper.shapeShifterCurseAddon.client.renderer.DomainRenderer.blocksTargetingClient((Entity) (Object) this)) {
+			cir.setReturnValue(false);
+			return;
+		}
 		if (!cir.getReturnValueZ() && WebHighlightClient.isHighlighted(((Entity) (Object) this).getId())) {
 			cir.setReturnValue(true);
 		}

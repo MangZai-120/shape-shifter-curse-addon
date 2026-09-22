@@ -98,9 +98,12 @@ public class FoxFireBurnEffect extends StatusEffect {
 				}
 
 				net.minecraft.util.math.Vec3d oldVelocity = entity.getVelocity();
-				if (net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerManager.damageBurn(entity, source, 1.0f)) {
-					entity.setVelocity(oldVelocity);
-				}
+				DamageSource burnSource = source;
+				net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.runAttachedEffect(burnSource.getAttacker(), entity, () -> {
+					if (net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerManager.damageBurn(entity, burnSource, 1.0f)) {
+						entity.setVelocity(oldVelocity);
+					}
+				});
 
 				// Spawn explicit particles on server for everyone to see
 				if (entity.getWorld() instanceof ServerWorld serverWorld) {

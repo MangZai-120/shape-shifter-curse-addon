@@ -78,6 +78,7 @@ public final class MancianimaCrosshairTracker {
 		Box box = player.getBoundingBox().stretch(look.multiply(MAX_DIST)).expand(1.0);
 		// 过滤：跳过自身、玩家、已驯服宠物（与服务端默认白名单行为对齐）
 		Predicate<Entity> filter = e -> e != player && e.isAlive() && e instanceof LivingEntity
+				&& !net.jackcooper.shapeShifterCurseAddon.client.renderer.DomainRenderer.blocksTargetingClient(e)
 				&& !(e instanceof PlayerEntity)
 				&& !(e instanceof TameableEntity tame && tame.getOwnerUuid() != null);
 		EntityHitResult hit = net.minecraft.entity.projectile.ProjectileUtil.raycast(player, eye, end, box, filter, maxDistSq);

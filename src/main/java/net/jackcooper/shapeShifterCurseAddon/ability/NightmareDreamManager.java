@@ -4,6 +4,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.spell.DomainManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -267,7 +268,7 @@ public final class NightmareDreamManager {
 				net.minecraft.entity.Entity found = w.getEntity(e.getKey());
 				if (found != null) { ent = found; break; }
 			}
-			if (ent instanceof LivingEntity le && le.isAlive()) out.add(le);
+			if (ent instanceof LivingEntity le && le.isAlive() && !DomainManager.blocksTargeting(nightmare, le)) out.add(le);
 		}
 		return out;
 	}

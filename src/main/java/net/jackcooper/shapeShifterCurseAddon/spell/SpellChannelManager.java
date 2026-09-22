@@ -76,6 +76,27 @@ public final class SpellChannelManager {
 			NEXT_CAST_OK.remove(handler.player.getUuid()); // GCD 表断线清理防泄漏
 		});
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> clearSlow(handler.player));
+		// 交互打断（2026-09-22 需求）：读条期间玩家主动进行攻击/放块/用物品等交互 →
+		// 按自身打断位取消当前施法（interrupt_mode 含位 2 的法术会被打断，如领域 mode 3）。
+		// 交互本身照常执行（不 FAIL 不取消——打断施法 ≠ 拦截交互）。
+		// 边界：solo 卷轴起手走 item.use()，UseItemCallback 先于其触发且当时无旧会话，不会自咬尾巴；
+		// 若书内读条中右键卷轴 → 先打断旧会话再起新 solo 施法（符合「新交互打断旧读条」语义）。
+		net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
+			if (!world.isClient && player instanceof ServerPlayerEntity serverPlayer) cancelSelf(serverPlayer);
+			return net.minecraft.util.ActionResult.PASS;
+		});
+		net.fabricmc.fabric.api.event.player.AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
+			if (!world.isClient && player instanceof ServerPlayerEntity serverPlayer) cancelSelf(serverPlayer);
+			return net.minecraft.util.ActionResult.PASS;
+		});
+		net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
+			if (!world.isClient && player instanceof ServerPlayerEntity serverPlayer) cancelSelf(serverPlayer);
+			return net.minecraft.util.ActionResult.PASS;
+		});
+		net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.register((player, world, hand) -> {
+			if (!world.isClient && player instanceof ServerPlayerEntity serverPlayer) cancelSelf(serverPlayer);
+			return net.minecraft.util.TypedActionResult.pass(player.getStackInHand(hand));
+		});
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
 			for (Channel channel : java.util.List.copyOf(ACTIVE.values())) stop(channel.player, true);
 		});
@@ -269,6 +290,7 @@ public final class SpellChannelManager {
 	}
 
 	private static void playChargeSound(Channel channel) {
+		if (channel.spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.DomainSpell) return;
 		// 蓄力嗡嗡声已迁至客户端循环音实例（SpellChargeSoundInstance，HUD STATE 沿驱动，
 		// 可截断/可淡出/可立即停）；服务端只保留起手信标激活一次性短音。
 		if (channel.progress.elapsed() == 0) {

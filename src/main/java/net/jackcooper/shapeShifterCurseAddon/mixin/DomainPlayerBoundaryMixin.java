@@ -32,7 +32,7 @@ public abstract class DomainPlayerBoundaryMixin {
 	@Inject(method = "moveToWorld", at = @At("HEAD"), cancellable = true)
 	private void ssca$domainDimension(ServerWorld world, CallbackInfoReturnable<Entity> cir) {
 		Entity entity = (Entity) (Object) this;
-		if (DomainManager.enclosed(entity.getWorld(), entity.getPos())) { cir.setReturnValue(null); return; }
+		if (DomainManager.enclosedTrapping(entity.getWorld(), entity.getPos())) { cir.setReturnValue(null); return; }
 		if (!DomainManager.hasActive(world)) return;
 		TeleportTarget target = getTeleportTarget(world);
 		if (target != null && DomainManager.blocksTeleport(entity, world, target.position)) cir.setReturnValue(null);

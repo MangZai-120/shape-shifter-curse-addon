@@ -123,11 +123,17 @@ public final class SpellCastHud {
 				// 蓄力音：新施法开始沿起播（短蓄力自动截断；CD 中无 STATE 不响）。
 				// 空间广播：跟随施法者坐标、24 格衰减——本人/旁观者各自听到对应响度。
 				if (old == null && packetState != null && packetState.duration() > 0 && client.player != null) {
-					// 施法者定位：本人施法用本地玩家；他人施法则从玩家列表查 UUID 对应实体
-					var caster = client.player.networkHandler.getWorld().getPlayerByUuid(packetState.casterUuid());
-					if (caster == null) caster = client.player;
-					net.jackcooper.shapeShifterCurseAddon.client.sound.SpellChargeSoundInstance
-							.onChannelStart(caster, packetState.duration());
+					// 领域蓄力除外（2026-09-22 定稿）：领域的服务端广播音（0-16 格零衰减、
+					// 16-64 格线性归零）已覆盖施法者本人，跳过本机循环音保证施法者与
+					// 他人听到的完全一致，避免双重音源音量叠加。
+					if (packetState.spell() == null
+							|| !packetState.spell().getId().getPath().equals("domain")) {
+						// 施法者定位：本人施法用本地玩家；他人施法则从玩家列表查 UUID 对应实体
+						var caster = client.player.networkHandler.getWorld().getPlayerByUuid(packetState.casterUuid());
+						if (caster == null) caster = client.player;
+						net.jackcooper.shapeShifterCurseAddon.client.sound.SpellChargeSoundInstance
+								.onChannelStart(caster, packetState.duration());
+					}
 				}
 				SpellChannelManager.setClientImmobile(packetState.immobilized() && client.player != null
 						? client.player.getUuid() : null);

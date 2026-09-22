@@ -25,8 +25,11 @@ public final class DomainSpell extends Spell {
 	public void onChannelEnded(ServerPlayerEntity caster, boolean interrupted) {
 		if (interrupted) DomainManager.remove(caster);
 	}
+	// 2026-09-22 反馈修正：打断返还 20% CD（走统一规则，与其它法术一致），不再是 0 CD。
 	@Override
-	public int getInterruptedCooldown(int cooldown) { return 0; }
+	public int getInterruptedCooldown(int cooldown) {
+		return net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules.interruptedCooldown(cooldown);
+	}
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo) { DomainManager.activate(caster); }
 	@Override

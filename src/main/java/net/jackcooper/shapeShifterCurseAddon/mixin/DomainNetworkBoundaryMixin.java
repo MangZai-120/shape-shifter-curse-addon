@@ -1,6 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin;
 
 import net.jackcooper.shapeShifterCurseAddon.spell.DomainManager;
+import net.minecraft.entity.Entity;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.VehicleMoveC2SPacket;
 import net.minecraft.network.packet.s2c.play.VehicleMoveS2CPacket;
@@ -16,29 +17,38 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ServerPlayNetworkHandler.class)
 public abstract class DomainNetworkBoundaryMixin {
 	@Shadow public ServerPlayerEntity player;
+	@Shadow private Vec3d requestedTeleportPos;
+	@Shadow private Entity topmostRiddenEntity;
 	@Shadow public abstract void requestTeleport(double x, double y, double z, float yaw, float pitch);
 
-	@Inject(method = "onPlayerMove", at = @At("HEAD"), cancellable = true)
+	@Inject(method = "onPlayerMove", at = @At(value = "INVOKE",
+			target = "Lnet/minecraft/server/network/ServerPlayNetworkHandler;isMovementInvalid(DDDFF)Z"), cancellable = true)
 	private void ssca$domainWalk(PlayerMoveC2SPacket packet, CallbackInfo ci) {
+		if (requestedTeleportPos != null || player.notInAnyWorld || player.hasVehicle()) return;
 		Vec3d next = new Vec3d(packet.getX(player.getX()), packet.getY(player.getY()), packet.getZ(player.getZ()));
+		if (!Double.isFinite(next.x) || !Double.isFinite(next.y) || !Double.isFinite(next.z)
+				|| !Float.isFinite(packet.getYaw(player.getYaw())) || !Float.isFinite(packet.getPitch(player.getPitch()))) return;
 		if (DomainManager.blocksTeleport(player, player.getWorld(), next)) {
-			// 越界钳制墙（2026-09-22 反馈修正版②）：注入点必须在 HEAD——反编译确认 onPlayerMove
-			// 开头有 awaitingTeleport 免检分支（requestedTeleportPos 匹配即 return，跳过一切校验），
-			// 我们每次 clamp 后 requestTeleport 开的确认窗口会被客户端越界包逐个"确认"，形成穿壳通道。
-			// HEAD 先于免检分支执行，领域校验无法被绕过；贴墙坐标经 clampToBoundary 计算。
-			Vec3d clamped = DomainManager.clampToBoundary(player, next);
+			// 2026-09-22 反馈修复：钳制点方块安全化——球面滑行切向在弯曲处带向下分量，
+			// 贴界蹭到「只剩一角」的方块时钳制点可能落进其顶面之下，requestTeleport 绕过
+			// 方块碰撞直接把人传进地里；liftOutOfBlocks 逐格上抬到空气后再传送。
+			Vec3d clamped = DomainManager.liftOutOfBlocks(player, DomainManager.clampToBoundary(player, next));
 			requestTeleport(clamped.x, clamped.y, clamped.z, packet.getYaw(player.getYaw()), packet.getPitch(player.getPitch()));
 			ci.cancel();
 		}
 	}
 
-	@Inject(method = "onVehicleMove", at = @At("HEAD"), cancellable = true)
+	@Inject(method = "onVehicleMove", at = @At(value = "INVOKE",
+			target = "Lnet/minecraft/server/network/ServerPlayNetworkHandler;isMovementInvalid(DDDFF)Z"), cancellable = true)
 	private void ssca$domainRide(VehicleMoveC2SPacket packet, CallbackInfo ci) {
 		var vehicle = player.getRootVehicle();
+		if (vehicle == player || vehicle != topmostRiddenEntity || vehicle.getControllingPassenger() != player) return;
 		Vec3d next = new Vec3d(packet.getX(), packet.getY(), packet.getZ());
+		if (!Double.isFinite(next.x) || !Double.isFinite(next.y) || !Double.isFinite(next.z)
+				|| !Float.isFinite(packet.getYaw()) || !Float.isFinite(packet.getPitch())) return;
 		if (DomainManager.blocksTeleport(vehicle, player.getWorld(), next)) {
-			// 载具同款钳制（HEAD 先于免检分支，防穿壳；服务器权威旧位置为起点）
-			Vec3d clamped = DomainManager.clampToBoundary(vehicle, next);
+			// 载具同款钳制 + 方块安全化（防陷边角方块/地底）
+			Vec3d clamped = DomainManager.liftOutOfBlocks(vehicle, DomainManager.clampToBoundary(vehicle, next));
 			vehicle.requestTeleport(clamped.x, clamped.y, clamped.z);
 			player.networkHandler.sendPacket(new VehicleMoveS2CPacket(vehicle));
 			ci.cancel();

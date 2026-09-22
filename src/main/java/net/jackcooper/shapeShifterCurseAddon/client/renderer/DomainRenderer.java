@@ -29,6 +29,7 @@ public final class DomainRenderer {
 	private DomainRenderer() {}
 
 	public static void register() {
+		net.jackcooper.shapeShifterCurseAddon.client.DomainSound.register();
 		ClientPlayNetworking.registerGlobalReceiver(DomainManager.STATE, (client, handler, buf, sender) -> {
 			var dimension = buf.readIdentifier();
 			int count = buf.readVarInt();
@@ -42,9 +43,15 @@ public final class DomainRenderer {
 				world = client.world;
 				receivedAt = world.getTime();
 				fields = List.copyOf(next);
+				shellCacheTick = Long.MIN_VALUE; // 新同步包：失效壳缓存（下一 tick 重建）
 			});
 		});
-		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> { fields = List.of(); world = null; });
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+			fields = List.of();
+			world = null;
+			shellCache = null;
+			shellCacheTick = Long.MIN_VALUE;
+		});
 		WorldRenderEvents.AFTER_ENTITIES.register(DomainRenderer::render);
 	}
 
@@ -60,24 +67,32 @@ public final class DomainRenderer {
 	 * 客户端预测墙（2026-09-21 需求）：本地玩家所在客户端世界存在领域壳时，
 	 * 返回以壳心为原点的坐标列表（含扩张期半径），供移动缩放判定；否则 null。
 	 * 数据源为服务端 STATE 同步表（40t 过期兜底），与服务器同一套 DomainRules 几何。
+	 *
+	 * <p>热路径缓存（2026-09-22）：本方法被每个客户端实体的 move 每 tick 调用
+	 * （领域期 ~实体数×20 次/秒），壳数据每 tick 只变一次——按 world.getTime() 缓存
+	 * 构建结果（含空结果负缓存），消除每实体每 tick 的 ArrayList/Shell 分配。</p>
 	 */
-	public static java.util.List<Shell> clientShells() {
+	private static List<DomainRules.Shell> shellCache;
+	private static long shellCacheTick = Long.MIN_VALUE;
+
+	public static List<DomainRules.Shell> clientShells() {
 		if (!valid()) return null;
-		java.util.List<Shell> shells = new ArrayList<>();
+		long now = world.getTime();
+		if (shellCacheTick == now) return shellCache;
+		List<DomainRules.Shell> shells = new ArrayList<>();
 		for (View field : fields) {
-			float elapsed = field.elapsed + world.getTime() - receivedAt;
+			float elapsed = field.elapsed + now - receivedAt;
 			if (field.active) {
-				if (elapsed < DomainRules.DURATION_TICKS) shells.add(new Shell(field.center, DomainRules.INNER_RADIUS, true));
+				if (elapsed < DomainRules.DURATION_TICKS) shells.add(new DomainRules.Shell(field.center, DomainRules.INNER_RADIUS, true));
 			} else if (elapsed >= DomainRules.EXPAND_START_TICK && elapsed < DomainRules.CHARGE_TICKS + 20) {
 				double radius = DomainRules.expansionRadius(Math.min(elapsed, DomainRules.CHARGE_TICKS));
-				if (radius > 0.1) shells.add(new Shell(field.center, radius, false));
+				if (radius > 0.1) shells.add(new DomainRules.Shell(field.center, radius, false));
 			}
 		}
-		return shells.isEmpty() ? null : shells;
+		shellCache = shells.isEmpty() ? null : shells;
+		shellCacheTick = now;
+		return shellCache;
 	}
-
-	/** 客户端壳视图：中心 + 当前内层半径（外层固定 +1）；单向=扩张期（只出不拦、出即拦）。 */
-	public record Shell(Vec3d center, double radius, boolean complete) {}
 
 	/**
 	 * 相机壳内钳制（2026-09-21 反馈）：第三人称拉远目标若穿出领域壳，缩回到贴壳内侧。
@@ -165,12 +180,15 @@ public final class DomainRenderer {
 				inner = DomainRules.expansionRadius(Math.min(elapsed, DomainRules.CHARGE_TICKS));
 				if (inner <= 0.1) continue;
 			}
-			double outer = inner + 1;
-			boolean eyeInside = field.center.squaredDistanceTo(eye) <= outer * outer;
-			boolean targetInside = field.center.squaredDistanceTo(target) <= outer * outer;
-			if (eyeInside != targetInside) return true;
+			if (DomainRules.separates(eye.subtract(field.center), target.subtract(field.center), inner + 1)) return true;
 		}
 		return false;
+	}
+
+	public static boolean blocksTargetingClient(net.minecraft.entity.Entity target) {
+		var player = MinecraftClient.getInstance().player;
+		return player != null && target != null && target != player
+				&& blocksCrossBoundaryClient(player.getPos(), target.getPos());
 	}
 
 	/**
@@ -182,6 +200,11 @@ public final class DomainRenderer {
 		var listener = MinecraftClient.getInstance().player;
 		if (listener == null) return false;
 		Vec3d sound = new Vec3d(x, y, z);
+		// 豁免（2026-09-22 需求②）：领域自身的蓄力/开启音从壳心发出，应穿壳可闻，
+		// 不被自己的隔音墙拦掉——声源距任一领域心 <2 格即视为领域自身音。
+		for (View field : fields) {
+			if (field.center.squaredDistanceTo(sound) < 4) return false;
+		}
 		boolean listenerInside = false, soundInside = false;
 		for (View field : fields) {
 			float elapsed = field.elapsed + world.getTime() - receivedAt;

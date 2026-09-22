@@ -558,6 +558,7 @@ public final class JumpKillManager {
 		Box box = player.getBoundingBox().expand(scanDist);
 		List<LivingEntity> all = sw.getEntitiesByClass(LivingEntity.class, box,
 				e -> e != player && e.isAlive() && !e.isSpectator()
+						&& !net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(player, e)
 						&& eye.distanceTo(bodyCenter(e)) <= scanDist
 						&& !WhitelistUtils.isProtected(player, e));
 		List<LivingEntity> visible = new java.util.ArrayList<>(all.size());

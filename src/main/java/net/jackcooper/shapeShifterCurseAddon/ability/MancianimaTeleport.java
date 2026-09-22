@@ -171,6 +171,7 @@ public final class MancianimaTeleport {
 				net.minecraft.predicate.entity.EntityPredicates.EXCEPT_SPECTATOR)) {
 			if (!(e instanceof net.minecraft.entity.LivingEntity le) || !le.isAlive()) continue;
 			if (!le.getUuid().equals(m.targetUuid)) continue;
+			if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(player, le)) continue;
 			net.minecraft.util.math.Box box = e.getBoundingBox().expand(1.0); // "大致对准"放宽
 			java.util.Optional<Vec3d> hit = box.raycast(eye, end);
 			if (hit.isEmpty()) continue;
@@ -182,7 +183,8 @@ public final class MancianimaTeleport {
 
 	/** MancianimaMarkManager 引导 tick 末尾调用：执行红标瞬移斩杀。 */
 	public static void executeRedMarkChannelComplete(ServerPlayerEntity marker, net.minecraft.entity.LivingEntity target) {
-		if (target == null || !target.isAlive()) {
+		if (target == null || !target.isAlive()
+				|| net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(marker, target)) {
 			PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_SECONDARY_CD, RED_FAIL_CD_TICKS);
 			return;
 		}

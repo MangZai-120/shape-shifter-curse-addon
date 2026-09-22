@@ -218,6 +218,7 @@ public class SnowFoxSpTeleportAttack {
 				entity -> entity != player &&
 						!entity.isSpectator() &&
 						entity.isAlive() &&
+						!net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(player, entity) &&
 						player.squaredDistanceTo(entity) <= RANGE * RANGE &&
 						!WhitelistUtils.isProtected(player, entity)
 		);

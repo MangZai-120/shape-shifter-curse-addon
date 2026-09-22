@@ -31,6 +31,10 @@ public class EntityGlowPowerMixin {
 		if (entityToCheck == null) return;
 		MinecraftClient client = MinecraftClient.getInstance();
 		if (client == null || client.world == null) return;
+		if (net.jackcooper.shapeShifterCurseAddon.client.renderer.DomainRenderer.blocksTargetingClient(entityToCheck)) {
+			cir.setReturnValue(false);
+			return;
+		}
 		// 被观察实体 = 把本地玩家（入梦者）打入梦的食梦魔 → 入梦者的透视对它不描边
 		if (net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager
 				.clientIsDreamingMe(entityToCheck.getUuid(), client.world.getTime())) {

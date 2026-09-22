@@ -198,10 +198,12 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
             } else {
                 ENEMY_PARASITIZED_HOSTS.remove(entry.getKey());
             }
-            spawnAttachedSeedParticles(caster, host, seed, now);
+            net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.runAttachedEffect(caster, host,
+                    () -> spawnAttachedSeedParticles(caster, host, seed, now));
             if (now >= seed.nextFruitTick) {
                 seed.nextFruitTick = now + FRUIT_INTERVAL_TICKS;
-                bearFruit(caster, host, seed);
+                net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.runAttachedEffect(caster, host,
+                        () -> bearFruit(caster, host, seed));
             }
         }
     }
@@ -250,6 +252,7 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
 
     /** 带自定义基础时长的种植（种子圈拾取传固定时长）。 */
     public void plantSeed(ServerPlayerEntity caster, LivingEntity host, int baseLife) {
+        if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(caster, host)) return;
         long now = caster.getWorld().getTime();
         int adjustedLife = baseLife;
         SeedData seed = seeds.get(host.getUuid());
@@ -323,6 +326,7 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         double bestDistSq = Double.MAX_VALUE;
         for (LivingEntity e : caster.getWorld().getEntitiesByClass(LivingEntity.class, box,
                 living -> living.isAlive() && living != caster && living != primary)) {
+            if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(caster, e)) continue;
             double d = e.squaredDistanceTo(primary);
             if (d < bestDistSq) {
                 bestDistSq = d;

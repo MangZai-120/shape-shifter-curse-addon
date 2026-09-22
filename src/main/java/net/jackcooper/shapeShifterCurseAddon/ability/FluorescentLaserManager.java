@@ -197,6 +197,7 @@ public final class FluorescentLaserManager {
 		for (Entity e : sw.getOtherEntities(player, search, EntityPredicates.EXCEPT_SPECTATOR)) {
 			if (!(e instanceof LivingEntity le) || !le.isAlive()) continue;
 			if (WhitelistUtils.isProtected(player, le)) continue;
+			if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(player, le)) continue;
 			Vec3d center = le.getPos().add(0, le.getHeight() * 0.5, 0);
 			Vec3d toE = center.subtract(eye);
 			double dist = toE.length();
