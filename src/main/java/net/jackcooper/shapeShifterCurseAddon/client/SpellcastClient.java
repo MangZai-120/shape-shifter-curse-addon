@@ -161,6 +161,7 @@ public final class SpellcastClient {
 			clearTargetSelection();
 			if (cancelToken >= 0) sendCancelHold(cancelToken, false);
 			cancelToken = -1;
+			net.jackcooper.shapeShifterCurseAddon.client.hud.SpellCastHud.clearLocalCancelling();
 			gestureKey = -1;
 			inputGuard.block();
 		}
@@ -168,9 +169,11 @@ public final class SpellcastClient {
 			updatePressedKeys(castPressed);
 			return;
 		}
+		// 松手拍：撤销取消包 + 立即撒销本地红字（取消显示跟随按键按住状态，不残留到读条结束）
 		if (cancelToken >= 0 && !castPressed) {
 			sendCancelHold(cancelToken, false);
 			cancelToken = -1;
+			net.jackcooper.shapeShifterCurseAddon.client.hud.SpellCastHud.clearLocalCancelling();
 		}
 		ItemStack book = getEquippedBook();
 		if (book == null || book.isEmpty()) {
@@ -279,7 +282,10 @@ public final class SpellcastClient {
 	private static void cancelInputForSelection() {
 		if (gestureKey >= 0 && !selectingTarget) sendRelease(gestureToken);
 		clearTargetSelection();
-		if (cancelToken >= 0) sendCancelHold(cancelToken, false);
+		if (cancelToken >= 0) {
+			sendCancelHold(cancelToken, false);
+			net.jackcooper.shapeShifterCurseAddon.client.hud.SpellCastHud.clearLocalCancelling();
+		}
 		gestureKey = -1;
 		cancelToken = -1;
 		downgradePressCount = 0;
@@ -291,6 +297,7 @@ public final class SpellcastClient {
 		gestureKey = -1;
 		gestureSlot = -1;
 		cancelToken = -1;
+		net.jackcooper.shapeShifterCurseAddon.client.hud.SpellCastHud.clearLocalCancelling();
 		inputGuard.reset();
 		downgradePressCount = 0;
 		wasCastPressed = false;

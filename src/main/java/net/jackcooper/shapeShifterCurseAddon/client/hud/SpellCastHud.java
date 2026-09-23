@@ -150,9 +150,17 @@ public final class SpellCastHud {
 		HudRenderCallback.EVENT.register(SpellCastHud::render);
 	}
 
-	/** 施法键再次按下（AUTOMATIC 取消长按）本地即时置红字：不等 20t 校准包。 */
+	/** 施法键再次按下（取消长按）本地即时置红字：仅在按键按住期间有效，
+	 * 松手时由 SpellcastClient 调 clearLocalCancelling 立即撤销（不等 20t 校准包）。
+	 * 与服务端 cancelTicks 权威值叠加：cancelling = localCancelling || cancelTicks > 0。 */
 	public static void markLocalCancelling() {
 		localCancelling = true;
+	}
+
+	/** 取消长按松手：立即撤销本地红字（服务端 cancelTicks 归零最多滞后 20t 校准，
+	 * 此期间按住状态才是权威的「正在取消」信号）。 */
+	public static void clearLocalCancelling() {
+		localCancelling = false;
 	}
 
 	/** 通道结束（服务端下发 inactive）：冻结本地推进快照 + 记录退场时刻与方式，进入滑出阶段。 */
