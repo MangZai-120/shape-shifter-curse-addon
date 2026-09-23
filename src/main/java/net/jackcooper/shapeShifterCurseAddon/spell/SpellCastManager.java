@@ -66,21 +66,21 @@ public final class SpellCastManager {
 			return;
 		}
 		int top = ScrollData.getCastLevel(scroll);
-		if (top <= 1) {
+		// 客户端预检后可能刚好回能；原档已付得起时正常施放，不错误附加降档惩罚。
+		if (SpellbookData.canPayMana(book, SpellNumbers.finalManaCost(spell, book, player, top))) {
+			castInternal(player, slot, 0, 1.0f, token);
+			return;
+		}
+		// 红色稀有度（单档）法术不得降档（2026-09-24 用户定稿）：与已是最低档同路处理。
+		// 服务端防御：防止伪造降档包或未来红色法术配多条 levels 时绕过客户端守卫。
+		if (top <= 1 || spell.getMaxLevel() <= 1) {
 			SpellChannelManager.playNoManaSound(player); // 法力不足：火焰熄灭音
 			// 已是最低档仍不足：与正常施放同样提示（保持行为一致）
 			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_mana").formatted(Formatting.RED), true);
 			return;
 		}
 		// 从高到低找付得起的最高档（与正式结算同式，含法阵/亲和/潮汐）
-		int payable = 0;
-		for (int lv = top; lv >= 1; lv--) {
-			int cost = SpellNumbers.finalManaCost(spell, book, player, lv);
-			if (FormCastingStyle.canPayCombined(player, book, cost, spell.getElement())) {
-				payable = lv;
-				break;
-			}
-		}
+		int payable = SpellNumbers.highestAffordableLevel(spell, book, player, top - 1);
 		if (payable <= 0) {
 			SpellChannelManager.playNoManaSound(player); // 全档位都付不起：熄灭音
 			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_mana").formatted(Formatting.RED), true);
@@ -133,8 +133,8 @@ public final class SpellCastManager {
 		// 法阵加成：耗蓝倍率（全魔法每级 +10%）+ 形态亲和耗蓝乘区（使魔系 ×0.85）+ 每级耗蓝倍率
 		// （耗蓝按施放档位算——低阶施放省蓝；召唤亲和 +1 只加强施法效果，不推高耗蓝）
 		int manaCost = SpellNumbers.finalManaCost(spell, book, player, level);
-		// 流派支付预检（2026-09-17）：分担型形态书+条合计不足才拒施；书够或无分流派同旧逻辑
-		if (!FormCastingStyle.canPayCombined(player, book, manaCost, spell.getElement())) {
+		// 书内法术只按 HUD 书能量判定；形态能量不能把书不足的施法放行。
+		if (!SpellbookData.canPayMana(book, manaCost)) {
 			SpellChannelManager.playNoManaSound(player); // 法力不足：火焰熄灭音
 			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_mana").formatted(Formatting.RED), true);
 			return;
@@ -176,10 +176,10 @@ public final class SpellCastManager {
 		}
 		final int castLevel = level;
 		final int castMana = manaCost;
-		FormCastingStyle.ProgressivePayment payment = new FormCastingStyle.ProgressivePayment(player, book, manaCost, spellElement);
-		SpellChannelManager.start(player, spell, scroll, level, false, token, manaCost, cd,
+		// 起手一次性全额扣除（2026-09-23 用户定稿）：预检通过即锁定报价，通道建立成功后
+		// 立即全额结算——读条期间零扣费（渐进扣蓝已废），中断不返还已扣部分。
+		boolean started = SpellChannelManager.start(player, spell, scroll, level, false, token, manaCost, cd,
 				() -> getEquippedBook(player) == book && ItemStack.areEqual(SpellbookData.getScroll(book, slot), scroll),
-				payment::payTo,
 				target -> finishCast(player, book, scroll, spell, damage, castLevel, castMana, forcedLevel, target),
 				duration -> {
 					ItemStack current = SpellbookData.getScroll(book, slot);
@@ -189,6 +189,11 @@ public final class SpellCastManager {
 					if (unchanged) SpellbookData.setScroll(book, slot, scroll);
 					SharedSpellCooldowns.record(player, spell, end);
 				});
+		if (started) {
+				// 通道建立后才结算（start 失败如落点失效不扣）；预检已确保付得起，此处必成
+				SpellbookData.consumeMana(book, manaCost);
+				FormCastingStyle.markManaSpend(player);
+			}
 	}
 
 	private static void finishCast(ServerPlayerEntity player, ItemStack book, ItemStack scroll, Spell spell,

@@ -16,6 +16,8 @@ import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
 
 /**
@@ -38,14 +40,14 @@ public final class SpellcastClient {
 	private static int gestureKey = -1;
 	private static int gestureSlot = -1;
 	private static boolean selectingTarget;
+	private static boolean targetingDowngraded;
 	private static ItemStack targetingScroll = ItemStack.EMPTY;
 	private static net.minecraft.client.world.ClientWorld targetingWorld;
 	private static final net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules.InputGuard inputGuard =
 			new net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules.InputGuard();
 	private static int cancelToken = -1;
-	/** 三连击降档检测：上次按下时刻 + 连按计数（1 秒窗口内累计三次按下沿）。 */
-	private static long downgradePressAt = -1L;
-	private static int downgradePressCount = 0;
+	private static final SpellCastingRules.TriplePress downgradePresses = new SpellCastingRules.TriplePress();
+	private record DowngradeContext(int slot, int level, int cost, net.minecraft.nbt.NbtCompound book) {}
 
 	private SpellcastClient() {
 	}
@@ -117,32 +119,16 @@ public final class SpellcastClient {
 		sendSetCastLevel(slot, next);
 	}
 
-	/**
-	 * 法力不足时的三连击处理：返回 true = 已触发临时降档施放（本次按键不再走正常施法路径）。
-	 * 第三次按下沿发「降档施放」包（服务端自动降到付得起的最高档 + CD ×1.2 惩罚）；
-	 * 前两次仅计数并提示剩余次数。窗口 1 秒，超窗重置。
-	 */
-	private static boolean handleTriplePressDowngrade(ClientPlayerEntity player, ItemStack book, int slot) {
-		ItemStack scroll = SpellbookData.getScroll(book, slot);
-		if (ScrollData.getSpell(scroll) == null || ScrollData.getLevel(scroll) <= 1) {
-			return false; // 无魔法或一级卷轴：不提供降档
-		}
-		if (ScrollData.isOnCooldown(scroll, player.getWorld())) {
-			return false; // CD 中不计数
-		}
-		long now = System.currentTimeMillis();
-		if (now - downgradePressAt > 1000L) {
-			downgradePressCount = 0; // 超窗重置
-		}
-		downgradePressAt = now;
-		downgradePressCount++;
-		if (downgradePressCount >= 3) {
-			downgradePressCount = 0;
-			sendCastDowngraded(slot);
-			return true;
-		}
-		player.sendMessage(Text.translatable("message.ssc_addon.spell.downgrade_hint",
-				3 - downgradePressCount), true);
+	private static boolean handleTriplePressDowngrade(ClientPlayerEntity player, ItemStack book, int slot, int level, int cost) {
+		// 书蓝/经验的正常同步不打断连按；换槽、换卷轴、换法阵或手选等级则重新计数。
+		var source = book.getNbt() == null ? new net.minecraft.nbt.NbtCompound() : book.getNbt().copy();
+		source.remove(SpellbookData.NBT_MANA);
+		source.remove(SpellbookData.NBT_EXP);
+		source.remove("Exp");
+		source.remove(SpellbookData.NBT_SELECTED);
+		int remaining = downgradePresses.press(new DowngradeContext(slot, level, cost, source), net.minecraft.util.Util.getMeasuringTimeMs());
+		if (remaining == 0) return true;
+		player.sendMessage(Text.translatable("message.ssc_addon.spell.downgrade_hint", remaining), true);
 		return false;
 	}
 
@@ -157,6 +143,7 @@ public final class SpellcastClient {
 		boolean anyPressed = castPressed;
 		for (KeyBinding key : SpellcastKeybindings.KEY_DIRECT) anyPressed |= key != null && key.isPressed();
 		if (client.currentScreen != null) {
+			downgradePresses.reset();
 			if (gestureKey >= 0 && !selectingTarget) sendRelease(gestureToken);
 			clearTargetSelection();
 			if (cancelToken >= 0) sendCancelHold(cancelToken, false);
@@ -177,6 +164,7 @@ public final class SpellcastClient {
 		}
 		ItemStack book = getEquippedBook();
 		if (book == null || book.isEmpty()) {
+			downgradePresses.reset();
 			if (selectingTarget) {
 				clearTargetSelection();
 				gestureKey = -1;
@@ -227,7 +215,8 @@ public final class SpellcastClient {
 		if (gestureKey >= 0 && !keyPressed(gestureKey)) {
 			if (selectingTarget) {
 				// First request to the server: it validates and locks its own raycast before charging.
-				sendCast(gestureSlot);
+				if (targetingDowngraded) sendCastDowngraded(gestureSlot);
+				else sendCast(gestureSlot);
 				clearTargetSelection();
 			} else sendRelease(gestureToken);
 			gestureKey = -1;
@@ -254,19 +243,44 @@ public final class SpellcastClient {
 	}
 
 	private static void startGesture(ClientPlayerEntity player, ItemStack book, int slot, int key) {
+		ItemStack scroll = SpellbookData.getScroll(book, slot);
+		Spell spell = ScrollData.getSpell(scroll);
+		if (spell == null || ScrollData.isOnCooldown(scroll, player.getWorld())) {
+			downgradePresses.reset();
+			return;
+		}
+		int level = ScrollData.getCastLevel(scroll);
+		int cost = SpellNumbers.finalManaCost(spell, book, player, level);
+		boolean downgraded = false;
+		// HUD 上的书能量必须独立付得起整次消耗，契灵等形态的自身能量不参与预检。
+		if (!SpellbookData.canPayMana(book, cost)) {
+			// 红色稀有度（单档，getMaxLevel()==1）法术不得降档（2026-09-24 用户定稿）：
+			// 法力不足直接红字，不进入三连击降档流程。
+			if (spell.getMaxLevel() <= 1 || SpellNumbers.highestAffordableLevel(spell, book, player, level - 1) == 0) {
+				downgradePresses.reset();
+				player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_mana")
+						.formatted(net.minecraft.util.Formatting.RED), true);
+				player.playSound(net.minecraft.sound.SoundEvents.ENTITY_GENERIC_EXTINGUISH_FIRE, 0.9f, 0.9f);
+				return;
+			}
+			if (!handleTriplePressDowngrade(player, book, slot, level, cost)) return;
+			downgraded = true;
+		} else {
+			downgradePresses.reset();
+		}
+		// 只有获准正常起手或完成三连按才建立手势；第三次仍须保留松手/持续施法链路。
 		gestureToken = (gestureToken + 1) & Integer.MAX_VALUE;
 		gestureKey = key;
 		gestureSlot = slot;
-		Spell spell = ScrollData.getSpell(SpellbookData.getScroll(book, slot));
-		if (spell != null && spell.requiresTargetBeforeChannel()) {
+		if (spell.requiresTargetBeforeChannel()) {
 			selectingTarget = true;
-			targetingScroll = SpellbookData.getScroll(book, slot).copy();
+			targetingDowngraded = downgraded;
+			targetingScroll = scroll.copy();
 			targetingWorld = MinecraftClient.getInstance().world;
 			return;
 		}
-		if (!hasSharedStyle(player) && SpellbookData.getMana(book) < computeManaCost(book, slot)
-				&& handleTriplePressDowngrade(player, book, slot)) return;
-		sendCast(slot);
+		if (downgraded) sendCastDowngraded(slot);
+		else sendCast(slot);
 	}
 
 	private static boolean keyPressed(int key) {
@@ -288,7 +302,7 @@ public final class SpellcastClient {
 		}
 		gestureKey = -1;
 		cancelToken = -1;
-		downgradePressCount = 0;
+		downgradePresses.reset();
 		inputGuard.block();
 	}
 
@@ -299,7 +313,7 @@ public final class SpellcastClient {
 		cancelToken = -1;
 		net.jackcooper.shapeShifterCurseAddon.client.hud.SpellCastHud.clearLocalCancelling();
 		inputGuard.reset();
-		downgradePressCount = 0;
+		downgradePresses.reset();
 		wasCastPressed = false;
 		for (int i = 0; i < 7; i++) {
 			wasDirectPressed[i] = false;
@@ -308,6 +322,7 @@ public final class SpellcastClient {
 
 	private static void clearTargetSelection() {
 		selectingTarget = false;
+		targetingDowngraded = false;
 		targetingScroll = ItemStack.EMPTY;
 		targetingWorld = null;
 	}
@@ -324,44 +339,10 @@ public final class SpellcastClient {
 		return spell == null ? null : Spell.computeAimImpact(client.player, spell.getAimMaxRange());
 	}
 
-	/** 分担型形态（雪狐/悦灵/使魔系）：书不足时不拦预检，由服务端权威判书+条合计。
-	 * 客户端无法读服务端 Apoli resource 时 has() 会安全返回 false → 预检退化为旧逻辑，不影响单机。 */
-	private static boolean hasSharedStyle(net.minecraft.client.network.ClientPlayerEntity player) {
-		try {
-			return net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(player,
-					net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SNOW_FOX_SP)
-					|| net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(player,
-							net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.ALLAY_SP)
-					|| net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(player,
-							net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_SP)
-					|| net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(player,
-							net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.UPGRADE_FAMILIAR_FOX)
-					|| net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(player,
-							net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED)
-					|| net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(player,
-							net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_MANCIANIMA);
-		} catch (Exception e) {
-			return false;
-		}
-	}
-
 	/** 当前槽是否为按住瞄准型法术（getAimMaxRange>0，如陨火术）。 */
 	private static boolean isAimSpell(ItemStack book, int slot) {
 		Spell spell = ScrollData.getSpell(SpellbookData.getScroll(book, slot));
 		return spell != null && spell.getAimMaxRange() > 0;
-	}
-
-	/** 使用服务端同一耗蓝公式，包含法阵、等级、形态亲和及潮汐条件；仅用于预览和预检。 */
-	private static int computeManaCost(ItemStack book, int slot) {
-		ItemStack scroll = SpellbookData.getScroll(book, slot);
-		Spell spell = ScrollData.getSpell(scroll);
-		if (spell == null) {
-			return Integer.MAX_VALUE;
-		}
-		ClientPlayerEntity player = MinecraftClient.getInstance().player;
-		return player == null ? Integer.MAX_VALUE
-				: net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers.finalManaCost(
-						spell, book, player, ScrollData.getCastLevel(scroll));
 	}
 
 	/**

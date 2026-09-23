@@ -79,6 +79,20 @@ public final class DomainManager {
 		}
 		return false;
 	}
+
+	/** 客户端领域边界判定钩子（服务端 common 定义、客户端注册）：供双端共用的几何（如法术瞄准）
+	 * 在客户端镜像壳数据上做同款跨界判定。专用服务器上钩子为 null，判定自动退化为不拦。 */
+	public static volatile java.util.function.BiPredicate<net.minecraft.util.math.Vec3d, net.minecraft.util.math.Vec3d> clientBoundaryCheck;
+
+	/** 双端通用：施法者与落点是否被任一领域壳隔开（服务端查权威表；客户端查同步镜像）。 */
+	public static boolean blocksAimBoundary(net.minecraft.world.World world, Vec3d from, Vec3d to) {
+		if (world instanceof ServerWorld serverWorld) {
+			return blocksCrossBoundary(serverWorld, from, to);
+		}
+		// 客户端：镜像判定（钩子未注册时不拦，服务端权威拒兕底）
+		java.util.function.BiPredicate<Vec3d, Vec3d> check = clientBoundaryCheck;
+		return check != null && check.test(from, to);
+	}
 	public static boolean blocksTargeting(Entity source, Entity target) {
 		if (source == null || target == null || source == target || !(source.getWorld() instanceof ServerWorld world)) return false;
 		if (target.getWorld() == world) return blocksCrossBoundary(world, source.getPos(), target.getPos());
@@ -102,7 +116,7 @@ public final class DomainManager {
 		Field field = new Field(player, player.getServerWorld(), player.getPos(),
 				player.getHeight() + 0.8, player.getServer().getTicks(), false);
 		FIELDS.put(player.getUuid(), field);
-		broadcast(field, SoundEvents.BLOCK_BEACON_ACTIVATE, 0.65f);
+		broadcast(field, SoundEvents.BLOCK_BEACON_ACTIVATE, 0.65f, 1.0f);
 		sync(player.getServer());
 	}
 	public static boolean canContinue(ServerPlayerEntity player) {
@@ -126,19 +140,21 @@ public final class DomainManager {
 		CHARGE_ANCHORS.remove(player.getUuid()); // 蓄力结束：完全体锁定在跟随后的当前位置
 		FIELDS.put(player.getUuid(), new Field(player, field.world, field.owner.getPos(), field.headHeight,
 				player.getServer().getTicks(), true));
-		broadcast(field, SoundEvents.ENTITY_WITHER_SPAWN, 0.55f);
+		// 2026-09-23 用户两轮反馈：完全展开的轰鸣仍偏响，音量倍率 0.7 → 0.5（其余领域音效维持 1.0）
+		broadcast(field, SoundEvents.ENTITY_WITHER_SPAWN, 0.55f, 0.5f);
 		sync(player.getServer());
 	}
 	public static void remove(ServerPlayerEntity player) {
 		CHARGE_ANCHORS.remove(player.getUuid());
 		Field field = FIELDS.remove(player.getUuid());
 		if (field == null) return;
-		if (field.active) broadcast(field, SoundEvents.BLOCK_BEACON_DEACTIVATE, 0.6f);
+		if (field.active) broadcast(field, SoundEvents.BLOCK_BEACON_DEACTIVATE, 0.6f, 1.0f);
 		sync(player.getServer());
 	}
 
-	/** 仅向同维度 64 格内发送音效事件；客户端按施法者距离更新音量，避免原版二次衰减与音量钳制。 */
-	private static void broadcast(Field field, net.minecraft.sound.SoundEvent sound, float pitch) {
+	/** 仅向同维度 64 格内发送音效事件；客户端按施法者距离更新音量，避免原版二次衰减与音量钳制。
+	 * volumeScale：该音效的整体音量倍率（2026-09-23 新增，随包下发，客户端乘在距离曲线上）。 */
+	private static void broadcast(Field field, net.minecraft.sound.SoundEvent sound, float pitch, float volumeScale) {
 		Vec3d position = field.owner.getWorld() == field.world ? field.owner.getPos() : field.center;
 		long seed = field.world.getRandom().nextLong();
 		for (ServerPlayerEntity listener : field.world.getPlayers()) {
@@ -152,6 +168,7 @@ public final class DomainManager {
 			buf.writeDouble(position.y);
 			buf.writeDouble(position.z);
 			buf.writeFloat(pitch);
+			buf.writeFloat(volumeScale);
 			buf.writeLong(seed);
 			ServerPlayNetworking.send(listener, SOUND, buf);
 		}
@@ -181,7 +198,7 @@ public final class DomainManager {
 		for (Field field : FIELDS.values()) {
 			if (field.active || field.elapsed() <= 0 || field.elapsed() % 40 != 0) continue;
 			float pitch = 0.65f + Math.min(1f, (float) field.elapsed() / DomainRules.CHARGE_TICKS) * 0.25f;
-			broadcast(field, SoundEvents.BLOCK_CONDUIT_AMBIENT_SHORT, pitch);
+			broadcast(field, SoundEvents.BLOCK_CONDUIT_AMBIENT_SHORT, pitch, 1.0f);
 		}
 		if (!FIELDS.isEmpty() && server.getTicks() % 10 == 0) sync(server);
 	}
@@ -207,7 +224,7 @@ public final class DomainManager {
 		}
 	}
 	public static boolean blocksPath(World world, Vec3d from, Vec3d to, double padding) {
-		if (FIELDS.isEmpty() || !(world instanceof ServerWorld) || from.squaredDistanceTo(to) < 1.0e-12) return false;
+		if (FIELDS.isEmpty() || !(world instanceof ServerWorld) || from.equals(to)) return false;
 		for (Field field : FIELDS.values()) {
 			if (field.world != world) continue;
 			Vec3d start = from.subtract(field.center), end = to.subtract(field.center);
@@ -226,14 +243,23 @@ public final class DomainManager {
 		double padding = entity.getWidth() * 0.5;
 		if (!blocksPath(entity.getWorld(), feet, feet.add(movement), padding)) return movement;
 		if (entity instanceof ProjectileEntity) { entity.discard(); return Vec3d.ZERO; }
-		// 普通循环代替 Stream（热路径：被挡实体每 tick 调用），零分配
+		return DomainRules.limitMovement(feet, movement, padding, movementShells(entity.getWorld()));
+	}
+
+	public static Vec3d finishMovement(Entity entity, Vec3d movement) {
+		if (!blocksPath(entity.getWorld(), entity.getPos(), entity.getPos().add(movement), entity.getWidth() * 0.5)) return movement;
+		if (entity instanceof ProjectileEntity) { entity.discard(); return Vec3d.ZERO; }
+		return DomainCollision.finishMovement(entity, movement, movementShells(entity.getWorld()));
+	}
+
+	private static java.util.List<DomainRules.Shell> movementShells(World world) {
 		java.util.List<DomainRules.Shell> shells = new java.util.ArrayList<>(FIELDS.size());
 		for (Field field : FIELDS.values()) {
-			if (field.world != entity.getWorld()) continue;
+			if (field.world != world) continue;
 			double radius = field.active ? DomainRules.INNER_RADIUS : chargingRadius(field);
 			if (radius > 0) shells.add(new DomainRules.Shell(field.center, radius, field.active));
 		}
-		return DomainRules.limitMovement(feet, movement, padding, shells);
+		return shells;
 	}
 
 	public static Vec3d clampToBoundary(Entity entity, Vec3d target) {
@@ -245,20 +271,14 @@ public final class DomainManager {
 	 * 传送点方块安全化（2026-09-22 反馈：贴界蹭墙陷进地里）：服务端钳制结果直接
 	 * requestTeleport 会绕过方块碰撞——球面滑行的切向在弯曲处带竖直向下分量，贴界蹭到
 	 * 「只剩一角」的方块时钳制点可能落在其顶面之下，玩家被传进方块/地下。
-	 * 此处对钳制点做碰撞检查：碰撞箱与方块相交则逐格上抬到最近的空气位置（最多 6 格）；
-	 * 完全抬不出（例如被流沙掩埋等极端情况）原样返回保持旧行为。仅在越界钳制时触发（低频）。
+	 * 对每个候选点同时检查方块和领域边界；没有安全位置则返回原位，避免纠正传送自身
+	 * 被跨界保护取消、客户端继续在墙外移动。使用当前碰撞箱，兼容潜行、游泳和缩放形态。
 	 */
 	public static Vec3d liftOutOfBlocks(Entity entity, Vec3d target) {
-		World world = entity.getWorld();
-		var dimensions = entity.getDimensions(net.minecraft.entity.EntityPose.STANDING);
-		double y = target.y;
-		for (int attempt = 0; attempt < 6; attempt++) {
-			if (world.isSpaceEmpty(entity, dimensions.getBoxAt(target.x, y, target.z))) {
-				return new Vec3d(target.x, y, target.z);
-			}
-			y = Math.floor(y) + 1.0; // 抬到当前所在格的上一格顶面
-		}
-		return target;
+		Vec3d from = entity.getPos();
+		return DomainRules.safeCorrection(from, target, candidate ->
+				!blocksTeleport(entity, entity.getWorld(), candidate)
+				&& entity.getWorld().isSpaceEmpty(entity, entity.getBoundingBox().offset(candidate.subtract(from))));
 	}
 	public static boolean blocksTeleport(Entity entity, World destination, Vec3d position) {
 		if (!(entity.getWorld() instanceof ServerWorld)) return false;

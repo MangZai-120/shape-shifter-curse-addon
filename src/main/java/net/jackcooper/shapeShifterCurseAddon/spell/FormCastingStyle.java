@@ -5,7 +5,6 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.ability.AnubisWolfSpSoulEnergy;
 import net.jackcooper.shapeShifterCurseAddon.entity.LunarSpiritEntity;
 import net.jackcooper.shapeShifterCurseAddon.resource.BarKeys;
-import net.jackcooper.shapeShifterCurseAddon.resource.ResourceBarDef;
 import net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -24,14 +23,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * 形态施法流派系统（jackcooper，2026-09-17）：把「形态能量条 ↔ 书法术值」从割裂的两套资源
  * 打通为按形态差异化的施法流派。所有结算均在服务端，多人天然一致。
  *
- * <p><b>统一汇率：1 点形态 mana = {@link #EXCHANGE_RATE} 点书法术值</b>（用户定稿 5:1）。</p>
+ * <p>书内施法的起手与扣费只使用书能量（见 {@link SpellbookData}）；形态能量须经
+ * 回能法阵先实际充入书中，才能参与施法。</p>
  *
- * <p>三类流派：</p>
+ * <p>命中与回复流派：</p>
  * <ul>
- *   <li><b>资源分担型</b>（施法时，{@link SpellCastManager} 调用）：亲和系形态施法时
- *       书蓝足够时全由书支付，否则启用形态分担：雪狐 SP 冰系 50%、悦灵 SP 月辉 50%/召唤 30%、
- *       使魔系全系 30%。不足部分由形态条按 5:1 兜底补差；
- *       两者相加仍不足才施法失败（绝不出现「书够蓝但条空了放不出」）。</li>
  *   <li><b>命中触发型</b>（法术命中时，各法术实体/AOE 挂点调用 {@link #onSpellHit}）：
  *       雪狐冰系命中 +1 寒霜；月织蛛月辉命中 +2 蛛 mana；金沙岚火系命中燃烧目标
  *       返 20% 耗蓝、击杀返 50%；堕灵诅咒系命中带负面效果目标返 25%；食梦魔虚无系
@@ -47,9 +43,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class FormCastingStyle {
 	private FormCastingStyle() {}
-
-	/** 统一汇率：1 形态 mana = 5 书法术值（用户定稿）。 */
-	public static final int EXCHANGE_RATE = 5;
 
 	/** 书基础自然回复（每秒，2026-09-19 用户定稿：基础 3，每升一级 +1，即 Lv1=3/Lv2=4/Lv3=5；
 	 * 回息法阵每级 +20% 可叠加）。 */
@@ -74,56 +67,6 @@ public final class FormCastingStyle {
 				last == null ? REGEN_DELAY_TICKS : player.getWorld().getTime() - last, REGEN_DELAY_TICKS);
 	}
 
-	// ==================== 资源分担型（施法时结算） ====================
-
-	/**
-	 * 该形态施放该系法术时分担耗蓝的形态能量条（无分担流派返回 null）。
-	 * 寒棘狐无寒霜条（form_snow_fox_frostspine.json 未挂 resource power），不分担——只保留伤害亲和。
-	 */
-	private static ResourceBarDef sharedBar(ServerPlayerEntity player, FormationElement element) {
-		if (element == FormationElement.ICE && FormUtils.isForm(player, FormIdentifiers.SNOW_FOX_SP)) {
-			return BarKeys.SNOW_FOX;
-		}
-		if (FormUtils.isForm(player, FormIdentifiers.ALLAY_SP)) {
-			if (element == FormationElement.LUNAR) {
-				return BarKeys.ALLAY_MANA;
-			}
-			if (element == FormationElement.SUMMON) {
-				return BarKeys.ALLAY_MANA;
-			}
-		}
-		// 使魔系（SP/进化/红狐/契灵）：原版 mana 体系，全系 30% 分担
-		if (FormUtils.isForm(player, FormIdentifiers.FAMILIAR_FOX_SP)
-				|| FormUtils.isForm(player, FormIdentifiers.UPGRADE_FAMILIAR_FOX)
-				|| FormUtils.isForm(player, FormIdentifiers.FAMILIAR_FOX_RED)
-				|| FormUtils.isForm(player, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA)) {
-			return BarKeys.VANILLA_MANA;
-		}
-		return null;
-	}
-
-	/** 分担比例（条承担的耗蓝量上限占比；无分担返回 0）。 */
-	private static float shareRatio(ServerPlayerEntity player, FormationElement element) {
-		if (element == FormationElement.ICE && FormUtils.isForm(player, FormIdentifiers.SNOW_FOX_SP)) {
-			return 0.5f;
-		}
-		if (FormUtils.isForm(player, FormIdentifiers.ALLAY_SP)) {
-			if (element == FormationElement.LUNAR) {
-				return 0.5f;
-			}
-			if (element == FormationElement.SUMMON) {
-				return 0.3f;
-			}
-		}
-		if (FormUtils.isForm(player, FormIdentifiers.FAMILIAR_FOX_SP)
-				|| FormUtils.isForm(player, FormIdentifiers.UPGRADE_FAMILIAR_FOX)
-				|| FormUtils.isForm(player, FormIdentifiers.FAMILIAR_FOX_RED)
-				|| FormUtils.isForm(player, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA)) {
-			return 0.3f;
-		}
-		return 0f;
-	}
-
 	/** 美西螈「潮汐」：在水中/雨中施法耗蓝 ×0.85（SP 与进化美西螈同享，用户定稿）。 */
 	public static int applyTidalDiscount(net.minecraft.entity.player.PlayerEntity player, FormationElement element, int manaCost) {
 		if (manaCost <= 0) {
@@ -143,121 +86,6 @@ public final class FormCastingStyle {
 			return healAmount * 1.25f;
 		}
 		return healAmount;
-	}
-
-	/**
-	 * 综合支付能力预检：书法术值 + 形态条按 5:1 折算的总和是否够本次耗蓝。
-	 * 宽松预检（未做取整精算）；精算在 {@link #payCombined} 内，不足返回 false 不扣任何资源。
-	 */
-	public static boolean canPayCombined(ServerPlayerEntity player, ItemStack book, int manaCost, FormationElement element) {
-		if (SpellbookData.getMana(book) >= manaCost) {
-			return true;
-		}
-		ResourceBarDef bar = sharedBar(player, element);
-		if (bar == null) {
-			return false;
-		}
-		long total = (long) SpellbookData.getMana(book)
-				+ (long) ResourceBars.get(player, bar) * EXCHANGE_RATE;
-		return total >= manaCost;
-	}
-
-	/**
-	 * 分担结算（施法成功路径调用；调用前须已过 {@link #canPayCombined}）。
-	 *
-	 * <p>数学：barCap = floor(cost × ratio ÷ 5) 为条最多承担的 mana 数（折算书值 = barCap×5
-	 * ≤ cost×ratio，floor 对玩家友好少扣条）；书应付出 cost − barCap×5；书不足时由条
-	 * 按 5:1 兜底补差 ceil(差额/5)。已验证：cost=30/ratio=0.5 → 条 3 mana(15)+书 15；
-	 * 书仅 10 → 书 10 + 条补 1 mana(5)；书 0 → 条共 6 mana(30) 全额兜底。</p>
-	 *
-	 * @return 实际成功支付 true；书+条合计不足返回 false（不扣任何资源）
-	 */
-	public static boolean payCombined(ServerPlayerEntity player, ItemStack book, int manaCost, FormationElement element) {
-		int bookMana = SpellbookData.getMana(book);
-		if (bookMana >= manaCost) {
-			// 无需分担：纯书支付（含无分担流派）
-			SpellbookData.consumeMana(book, manaCost);
-			return true;
-		}
-		ResourceBarDef bar = sharedBar(player, element);
-		if (bar == null) {
-			return false;
-		}
-		float ratio = shareRatio(player, element);
-		if (ratio <= 0f) {
-			return false;
-		}
-		// 条承担上限（mana 数，floor 取整保条）
-		int barCap = (int) Math.floor(manaCost * ratio / EXCHANGE_RATE);
-		// 书应付出 = 总耗蓝 − 条承担的书当量
-		int bookShouldPay = manaCost - barCap * EXCHANGE_RATE;
-		if (bookMana >= bookShouldPay) {
-			// 书够自己那份：书付应付款，条付 barCap
-			if (barCap <= 0 || ResourceBars.consume(player, bar, barCap)) {
-				SpellbookData.setMana(book, bookMana - bookShouldPay);
-				return true;
-			}
-			// 条不足 barCap：逐步降档（条能付多少付多少，差额书兜底）
-			return payFallback(player, book, bookMana, manaCost, bar);
-		}
-		// 书不够自己那份：条兜底补差
-		return payFallback(player, book, bookMana, manaCost, bar);
-	}
-
-	/** 兜底路径：书全额付出 + 条按 5:1 补差额（ceil），条不足则整体失败不扣资源。 */
-	private static boolean payFallback(ServerPlayerEntity player, ItemStack book, int bookMana, int manaCost, ResourceBarDef bar) {
-		int shortfall = manaCost - bookMana;           // 条需补的书值差额
-		int barNeed = (shortfall + EXCHANGE_RATE - 1) / EXCHANGE_RATE; // ceil
-		if (barNeed <= 0 || ResourceBars.consume(player, bar, barNeed)) {
-			SpellbookData.setMana(book, bookMana - (manaCost - Math.min(shortfall, barNeed * EXCHANGE_RATE)));
-			return true;
-		}
-		return false; // 书+条合计不足：不扣任何资源
-	}
-
-	// ==================== 命中触发型（法术命中结算） ====================
-	public static final class ProgressivePayment {
-		private final ServerPlayerEntity player;
-		private final ItemStack book;
-		private final ResourceBarDef bar;
-		private final int total;
-		private final int bookBudget;
-		private final int barBudget;
-		private int bookPaid;
-		private int barPaid;
-
-		public ProgressivePayment(ServerPlayerEntity player, ItemStack book, int total, FormationElement element) {
-			this.player = player;
-			this.book = book;
-			this.total = total;
-			this.bar = sharedBar(player, element);
-			int available = SpellbookData.getMana(book);
-			int plannedBar = 0;
-			int plannedBook = total;
-			if (available < total && this.bar != null) {
-				plannedBar = (int) Math.floor(total * shareRatio(player, element) / EXCHANGE_RATE);
-				plannedBook = total - plannedBar * EXCHANGE_RATE;
-				if (available < plannedBook || ResourceBars.get(player, this.bar) < plannedBar) {
-					plannedBook = available;
-					plannedBar = (total - available + EXCHANGE_RATE - 1) / EXCHANGE_RATE;
-				}
-			}
-			this.bookBudget = plannedBook;
-			this.barBudget = plannedBar;
-		}
-
-		public boolean payTo(int cumulativeMana) {
-			int wantedBook = SpellCastingRules.cumulativeMana(this.bookBudget, cumulativeMana, this.total);
-			int wantedBar = SpellCastingRules.cumulativeMana(this.barBudget, cumulativeMana, this.total);
-			int bookDelta = wantedBook - this.bookPaid;
-			int barDelta = wantedBar - this.barPaid;
-			if (SpellbookData.getMana(this.book) < bookDelta) return false;
-			if (barDelta > 0 && (this.bar == null || !ResourceBars.consume(this.player, this.bar, barDelta))) return false;
-			if (bookDelta > 0) SpellbookData.consumeMana(this.book, bookDelta);
-			this.bookPaid = wantedBook;
-			this.barPaid = wantedBar;
-			return true;
-		}
 	}
 
 	/** 每玩家命中返还防重窗（上次结算的游戏 tick；1 秒 = 20t 内不重复）。 */
@@ -507,9 +335,9 @@ public final class FormCastingStyle {
 				tickSustainStyles(player, server.getTicks());
 			}
 		});
-		// 血契：血值每 +1 → 书法术值 +1（BarTrigger 挂蝙蝠血条；下降不触发）
+		// 血契：血值每 +1 → 书法术值 +1（BarTrigger 挂蝙蝠血条；下降不触发；施法期间暂停）
 		BarKeys.BAT_BLOOD.addTrigger((player, oldV, newV, max) -> {
-			if (newV > oldV) {
+			if (newV > oldV && !SpellChannelManager.isCasting(player)) {
 				ItemStack book = SpellCastManager.getEquippedBook(player);
 				if (book != null && !book.isEmpty()) {
 					SpellbookData.addMana(book, newV - oldV);
@@ -542,8 +370,10 @@ public final class FormCastingStyle {
 			SpellbookData.addMana(book, Math.round(regenPerSec
 					* FormationData.universalRecoveryMultiplier(book)));
 		}
+		// 施法期间书能量不回复（2026-09-23 用户定稿，同回能法阵）：保证整次施法净消耗与报价一致
+		boolean casting = SpellChannelManager.isCasting(player);
 		// 月相（朔望）：书自然回复，无能量体系的纯书流派
-		if (FormUtils.isForm(player, FormIdentifiers.OCELOT_NOVA)) {
+		if (!casting && FormUtils.isForm(player, FormIdentifiers.OCELOT_NOVA)) {
 			if (player.getWorld().isNight()) {
 				SpellbookData.addMana(book, 1);                       // 夜间 1/s
 			} else if (serverTicks % 100 == 0) {
@@ -554,7 +384,7 @@ public final class FormCastingStyle {
 		// 共生（荧光幼灵/阿澪）：每 2 秒 +存活月灵数（= 每只 0.5/s）
 		// 阶段 B（§11.2）：共生回蓝计数上限 3 只——实体数与回蓝收益分别控制，
 		// 多出的月灵仍能战斗，只是不产生额外回蓝
-		if ((FormUtils.isForm(player, FormIdentifiers.AXOLOTL_FLUORESCENT)
+		if (!casting && (FormUtils.isForm(player, FormIdentifiers.AXOLOTL_FLUORESCENT)
 				|| FormUtils.isForm(player, FormIdentifiers.AXOLOTL_ALING))
 				&& serverTicks % 40 == 0
 				&& player.getWorld() instanceof ServerWorld serverWorld) {

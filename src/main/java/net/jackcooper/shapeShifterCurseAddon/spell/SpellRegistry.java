@@ -112,6 +112,8 @@ public final class SpellRegistry implements SimpleSynchronousResourceReloadListe
 
 	@Override
 	public void reload(ResourceManager manager) {
+		// 删除/损坏的配置也要失效，不能沿用旧价格或以未加载时的默认 0 免费施放。
+		for (Spell spell : SPELLS.values()) spell.ssc_addon$applyConfig(null);
 		Map<String, String> loaded = new LinkedHashMap<>();
 		for (Map.Entry<Identifier, Resource> entry :
 				manager.findResources(DIR, path -> path.getPath().endsWith(".json")).entrySet()) {
@@ -156,11 +158,13 @@ public final class SpellRegistry implements SimpleSynchronousResourceReloadListe
 	private static void applyConfig(Spell spell, String json, String path) {
 		JsonObject o = JsonHelper.deserialize(json);
 		SpellConfig config = SpellConfig.fromJson(o);
+		if (!config.manaCostConfigured) throw new IllegalArgumentException("Missing or invalid mana_cost for " + path);
 		((SpellConfigInjector) spell).ssc_addon$applyConfig(config);
 	}
 
 	/** 客户端收到 S2C 同步后重建配置镜像（多人环境下客户端无 datapack 数据）。 */
 	public void applyClientSync(Map<String, String> raw) {
+		for (Spell spell : SPELLS.values()) spell.ssc_addon$applyConfig(null);
 		for (Map.Entry<String, String> e : raw.entrySet()) {
 			Spell spell = get(e.getKey());
 			if (spell == null) {

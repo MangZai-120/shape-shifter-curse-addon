@@ -3,8 +3,10 @@ package net.jackcooper.shapeShifterCurseAddon.spell;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 public final class DomainRules {
+	private static final double BOUNDARY_EPSILON = 1.0e-9;
 	public static final int CHARGE_TICKS = 300;
 	public static final int DURATION_TICKS = 800;
 	public static final double INNER_RADIUS = 16;
@@ -50,13 +52,13 @@ public final class DomainRules {
 		if (radius <= 0) return false;
 		double startSquared = startX * startX + startY * startY + startZ * startZ;
 		double endSquared = endX * endX + endY * endY + endZ * endZ;
-		if (endSquared <= radius * radius + 1.0e-9) return false;
-		if (startSquared <= radius * radius) return true;
+		if (endSquared <= radius * radius + BOUNDARY_EPSILON) return false;
+		if (startSquared <= radius * radius + BOUNDARY_EPSILON) return true;
 		double deltaX = endX - startX;
 		double deltaY = endY - startY;
 		double deltaZ = endZ - startZ;
 		double lengthSquared = deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ;
-		if (lengthSquared < 1.0e-12) return false;
+		if (lengthSquared == 0) return false;
 		double closest = Math.max(0, Math.min(1,
 				-(startX * deltaX + startY * deltaY + startZ * deltaZ) / lengthSquared));
 		double nearX = startX + deltaX * closest;
@@ -93,7 +95,7 @@ public final class DomainRules {
 			if (!blocks(from, movement, padding)) return movement;
 			Vec3d start = from.subtract(center);
 			double distance = start.length();
-			if (distance <= radius) {
+			if (start.lengthSquared() <= radius * radius + BOUNDARY_EPSILON) {
 				double wall = complete ? Math.max(distance, Math.max(0.1, radius - padding)) : radius;
 				return slideInside(start, movement, wall);
 			}
@@ -122,6 +124,12 @@ public final class DomainRules {
 			}
 			if (!changed) return result;
 		}
+		return clipMovement(from, result, padding, shells);
+	}
+
+	/** 最终碰撞结果只能缩短，不能再添加会被地面、墙角抵消的滑行分量。 */
+	public static Vec3d clipMovement(Vec3d from, Vec3d movement, double padding, List<Shell> shells) {
+		Vec3d result = movement;
 		for (Shell shell : shells) {
 			if (!shell.blocks(from, result, padding)) continue;
 			double low = 0, high = 1;
@@ -132,7 +140,20 @@ public final class DomainRules {
 			}
 			result = result.multiply(Math.max(0, low - 1.0e-7));
 		}
+		// 多个壳依次裁剪后仍需整体终检（扩张壳允许进入，沿线可行区间不一定从起点连续）。
+		for (Shell shell : shells) if (shell.blocks(from, result, padding)) return Vec3d.ZERO;
 		return result;
+	}
+
+	/** 校正位置必须同时满足球壳和方块约束；找不到时留在原位，仍可向客户端发送纠正包。 */
+	public static Vec3d safeCorrection(Vec3d from, Vec3d target, Predicate<Vec3d> allowed) {
+		double y = target.y;
+		for (int attempt = 0; attempt < 6; attempt++) {
+			Vec3d candidate = new Vec3d(target.x, y, target.z);
+			if (allowed.test(candidate)) return candidate;
+			y = Math.floor(y) + 1.0;
+		}
+		return from;
 	}
 
 	public static double layerProgress(double elapsedTicks, int startTick) {
@@ -146,12 +167,16 @@ public final class DomainRules {
 		double outer = OUTER_RADIUS + padding;
 		double startSquared = startX * startX + startY * startY + startZ * startZ;
 		double endSquared = endX * endX + endY * endY + endZ * endZ;
-		if (startSquared <= INNER_RADIUS * INNER_RADIUS) return endSquared > Math.max(inner * inner, startSquared) + 1.0e-9;
+		// 终点容差与下一步起点分类必须相同，否则一步极小越界后会被当成壳外实体放行。
+		// 贴内墙时容差锚定在实际半径，不能用每步略微外移后的起点继续向外累积。
+		if (startSquared <= INNER_RADIUS * INNER_RADIUS + BOUNDARY_EPSILON) {
+			return endSquared > Math.max(inner * inner, Math.min(INNER_RADIUS * INNER_RADIUS, startSquared)) + BOUNDARY_EPSILON;
+		}
 		double deltaX = endX - startX;
 		double deltaY = endY - startY;
 		double deltaZ = endZ - startZ;
 		double lengthSquared = deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ;
-		if (lengthSquared < 1.0e-12) return false;
+		if (lengthSquared == 0) return false;
 		double closest = Math.max(0, Math.min(1,
 				-(startX * deltaX + startY * deltaY + startZ * deltaZ) / lengthSquared));
 		double nearX = startX + deltaX * closest;

@@ -29,9 +29,7 @@ public abstract class DomainNetworkBoundaryMixin {
 		if (!Double.isFinite(next.x) || !Double.isFinite(next.y) || !Double.isFinite(next.z)
 				|| !Float.isFinite(packet.getYaw(player.getYaw())) || !Float.isFinite(packet.getPitch(player.getPitch()))) return;
 		if (DomainManager.blocksTeleport(player, player.getWorld(), next)) {
-			// 2026-09-22 反馈修复：钳制点方块安全化——球面滑行切向在弯曲处带向下分量，
-			// 贴界蹭到「只剩一角」的方块时钳制点可能落进其顶面之下，requestTeleport 绕过
-			// 方块碰撞直接把人传进地里；liftOutOfBlocks 逐格上抬到空气后再传送。
+			// 上抬候选点也必须留在边界内；无安全落点时纠正回原位，确保纠正包能发出。
 			Vec3d clamped = DomainManager.liftOutOfBlocks(player, DomainManager.clampToBoundary(player, next));
 			requestTeleport(clamped.x, clamped.y, clamped.z, packet.getYaw(player.getYaw()), packet.getPitch(player.getPitch()));
 			ci.cancel();

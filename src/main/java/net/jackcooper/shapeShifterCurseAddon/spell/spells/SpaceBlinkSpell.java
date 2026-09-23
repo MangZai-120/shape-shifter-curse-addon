@@ -103,13 +103,15 @@ public class SpaceBlinkSpell extends Spell {
 		float width = caster.getDimensions(net.minecraft.entity.EntityPose.STANDING).width;
 		float height = caster.getDimensions(net.minecraft.entity.EntityPose.STANDING).height;
 
-		// ① 首选：最远合法落点（有地面 + 空间无阻挡）
+		// ① 首选：最远合法落点（有地面 + 空间无阻挡；领域跨界候选不算合法——防 blink 逃出领域）
 		Vec3d best = null;
 		for (double d = 1.5; d <= range; d += 0.5) {
 			Vec3d p = start.add(dir.multiply(d));
 			BlockPos feet = BlockPos.ofFloored(p.x, p.y, p.z);
 			if (caster.getWorld().isSpaceEmpty(caster, boxAt(p, width, height))
-					&& !caster.getWorld().getBlockState(feet.down()).isAir()) {
+					&& !caster.getWorld().getBlockState(feet.down()).isAir()
+					&& !net.jackcooper.shapeShifterCurseAddon.spell.DomainManager
+						.blocksAimBoundary(caster.getWorld(), start, p)) {
 				best = p;
 			}
 		}

@@ -23,7 +23,6 @@ import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
-import java.util.function.IntPredicate;
 
 public final class SpellChannelManager {
 	public static final Identifier STATE = new Identifier("ssc_addon", "spell_channel_state");
@@ -128,23 +127,31 @@ public final class SpellChannelManager {
 
 	public static boolean start(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level,
 			boolean solo, int token, int mana, int cooldown, BooleanSupplier sourceValid,
-			IntPredicate payTo, Consumer<Vec3d> effect, IntConsumer settleCooldown) {
+			Consumer<Vec3d> effect, IntConsumer settleCooldown) {
 		return start(player, spell, scroll, level, solo, token, mana, cooldown,
-				sourceValid, payTo, effect, settleCooldown, () -> {});
+				sourceValid, effect, settleCooldown, () -> {});
 	}
 
 	public static boolean start(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level,
 			boolean solo, int token, int mana, int cooldown, BooleanSupplier sourceValid,
-			IntPredicate payTo, Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse) {
+			Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse) {
 		if (isCasting(player) || !player.isAlive() || player.isSpectator()) return false;
+		// 所有法术在捕获目标、创建演出、禁动或渐进扣费之前重验整次消耗。
+		// solo 卷轴按次数结算；书内施法必须有有效 JSON 消耗与足够的实际能量。
+		if (!spell.getConfig().manaCostConfigured || !solo && !SpellbookData.canPayMana(
+				SpellCastManager.getEquippedBook(player), mana)) {
+			playNoManaSound(player);
+			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_mana"), true);
+			return false;
+		}
 		// GCD：释放生效后 0.8s 内不能开始下一次施法（被打断的可立刻重试）
 		long gate = NEXT_CAST_OK.getOrDefault(player.getUuid(), 0L);
 		if (player.getWorld().getTime() < gate) {
 			playNoManaSound(player); // GCD 间隔内（释放后 0.8s）：火焰熄灭音（与 CD 拒绝同语义）
 			return false;
 		}
-		Channel channel = new Channel(player, spell, scroll, level, solo, token, mana, cooldown,
-				sourceValid, payTo, effect, settleCooldown, consumeUse);
+		Channel channel = new Channel(player, spell, scroll, level, solo, token, cooldown,
+				sourceValid, effect, settleCooldown, consumeUse);
 		if (spell.requiresTargetBeforeChannel()) {
 			Vec3d target = spell.captureCastTarget(player, level);
 			if (target == null || !channel.progress.release(token, target)) {
@@ -227,7 +234,15 @@ public final class SpellChannelManager {
 			channel.progress.tick();
 			advance(channel);
 		}
+		// 锁定态转换检测：进入锁定的当 tick 立即补发一次校准包（不等 20t 周期）。
+		// 爆裂锁定窗口 682-700t 落在 680t/700t 两次周期校准之间，且终止于通道完成（stop 发的是
+		// 清除包）——只靠周期包客户端永远收不到 locked=true，倒计时不会变红。
+		boolean lockedNow = channel.spell.isLockedIn(player);
+		boolean lockBegun = lockedNow && !channel.lockedAnnounced;
+		if (lockedNow) channel.lockedAnnounced = true;
 		if (ACTIVE.get(player.getUuid()) == channel) {
+			// 转换 tick 恰在 20t 网格上时（如领域 200t）周期包已携带 true，不重复补发
+			if (lockBegun && channel.progress.elapsed() % CALIBRATE_INTERVAL != 0) sendCalibration(channel);
 			syncCalibration(channel);
 			if (channel.progress.elapsed() % 20 == 0) playChargeSound(channel);
 		}
@@ -239,17 +254,7 @@ public final class SpellChannelManager {
 	private static void advance(Channel channel) {
 		if (ACTIVE.get(channel.player.getUuid()) != channel) return;
 		if (!valid(channel)) { stop(channel.player, true); return; }
-		int due = SpellCastingRules.cumulativeMana(channel.mana, channel.progress.elapsed(), channel.profile.ticks());
-		if (due > channel.paid) {
-			if (!channel.payTo.test(due)) {
-				channel.player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_mana"), true);
-				playNoManaSound(channel.player); // 法力中途耗尽：熄灭音（读条中断处理仍走 stop）
-				stop(channel.player, true);
-				return;
-			}
-			channel.paid = due;
-			FormCastingStyle.markManaSpend(channel.player);
-		}
+		// 耗蓝已在起手一次性全额结清（castInternal）；读条期间不再扣费（渐进扣蓝已废，2026-09-23）。
 		if (!channel.spell.readyToRelease(channel.player, channel.scroll) || !channel.progress.beginEffect()) return;
 		if (channel.mode == SpellCastingRules.Mode.CONTINUOUS) {
 			// 持续模式起手生效即视为释放生效，GCD 从此起算（持续阶段结束不再重置）
@@ -340,9 +345,15 @@ public final class SpellChannelManager {
 		}
 	}
 
-	/** 轻量校准包：仅 token + elapsed + 标志位（客户端本地推进的主纠偏源）。每 20t 一次。 */
+	/** 轻量校准包：仅 token + elapsed + 标志位（客户端本地推进的主纠偏源）。每 20t 一次；
+	 * 锁定态转换的当 tick 由 tick() 额外补发一次（sendCalibration）。 */
 	private static void syncCalibration(Channel channel) {
 		if (channel.progress.elapsed() % CALIBRATE_INTERVAL != 0) return;
+		sendCalibration(channel);
+	}
+
+	/** 无周期守卫的校准包发送（周期校准与锁定转换补发共用）。 */
+	private static void sendCalibration(Channel channel) {
 		if (!ServerPlayNetworking.canSend(channel.player, STATE)) return;
 		PacketByteBuf buf = PacketByteBufs.create();
 		buf.writeBoolean(true);
@@ -381,22 +392,23 @@ public final class SpellChannelManager {
 		final ServerPlayerEntity player;
 		final Spell spell;
 		final ItemStack scroll;
-		final int level, token, mana, cooldown, interruptMode;
+		final int level, token, cooldown, interruptMode;
 		final boolean solo;
 		final SpellCastingRules.Profile profile;
 		final SpellCastingRules.Mode mode;
 		final net.minecraft.registry.RegistryKey<net.minecraft.world.World> dimension;
 		final BooleanSupplier sourceValid;
-		final IntPredicate payTo;
 		final Consumer<Vec3d> effect;
 		final IntConsumer settleCooldown;
 		final Runnable consumeUse;
 		final SpellCastingRules.Progress<Vec3d> progress;
-		int paid, cancelTicks, continuousTicks, visualTicks;
+		int cancelTicks, continuousTicks, visualTicks;
 		boolean cancelHeld;
+		/** 锁定态已广播标志（进入锁定的当 tick 补发一次校准包，防周期网格漏档）。 */
+		boolean lockedAnnounced;
 
 		Channel(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level, boolean solo, int token,
-				int mana, int cooldown, BooleanSupplier sourceValid, IntPredicate payTo,
+				int cooldown, BooleanSupplier sourceValid,
 				Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse) {
 			this.player = player;
 			this.spell = spell;
@@ -404,10 +416,8 @@ public final class SpellChannelManager {
 			this.level = level;
 			this.solo = solo;
 			this.token = token;
-			this.mana = mana;
 			this.cooldown = cooldown;
 			this.sourceValid = sourceValid;
-			this.payTo = payTo;
 			this.effect = effect;
 			this.settleCooldown = settleCooldown;
 			this.consumeUse = consumeUse;

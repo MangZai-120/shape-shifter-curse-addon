@@ -122,14 +122,15 @@ public final class ExplosionRules {
 	/** 视觉（法阵/光柱/球）同步范围：音效外沿 + 余量。 */
 	public static final double VIEW_RANGE = 200.0;
 
-	/** 主题音频整体音量增益（2026-09-22 用户反馈偏小，×1.5）。 */
-	public static final float THEME_VOLUME_GAIN = 1.5f;
+	/** 主题音频整体音量增益。⚠ MC 音频引擎实际增益钳制在 1.0（超过只扩大可闻范围不放大），
+	 * 想加大音量必须提升源文件响度（2026-09-23 已将 ogg 峰值 -16.1dB → -1.1dB，增益还原 1.0）。 */
+	public static final float THEME_VOLUME_GAIN = 1.0f;
 
 	/** 主题音频当前播放音量（渐入 × 距离衰减 × 增益）：T-8s 前 0；3 秒线性渐入 × 64 内满/64-164 递减。 */
 	public static float themeVolume(int elapsed, double distance) {
 		if (elapsed < SOUND_START_TICKS) return 0f;
 		float fade = Math.min(1f, (elapsed - SOUND_START_TICKS) / (float) SOUND_FADE_TICKS);
-		return Math.min(1.5f, fade * soundVolume(distance) * THEME_VOLUME_GAIN);
+		return Math.min(THEME_VOLUME_GAIN, fade * soundVolume(distance) * THEME_VOLUME_GAIN);
 	}
 
 	/** 距爆心 distance 格的伤害系数：0-32 格 1.0→0.4；32-64 格 0.1→0.0（陡降断层）。 */

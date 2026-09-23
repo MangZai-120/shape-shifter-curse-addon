@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import net.jackcooper.shapeShifterCurseAddon.spell.DomainManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.world.ServerWorld;
@@ -20,6 +21,12 @@ public abstract class DomainEntityBoundaryMixin {
 	@ModifyVariable(method = "move", at = @At("HEAD"), argsOnly = true)
 	private Vec3d ssca$domainMovement(Vec3d movement) {
 		return DomainManager.limitMovement((Entity) (Object) this, movement);
+	}
+
+	@ModifyExpressionValue(method = "move", at = @At(value = "INVOKE",
+			target = "Lnet/minecraft/entity/Entity;adjustMovementForCollisions(Lnet/minecraft/util/math/Vec3d;)Lnet/minecraft/util/math/Vec3d;"))
+	private Vec3d ssca$domainFinalMovement(Vec3d movement) {
+		return DomainManager.finishMovement((Entity) (Object) this, movement);
 	}
 
 	@Inject(method = "setPosition(DDD)V", at = @At("HEAD"), cancellable = true)

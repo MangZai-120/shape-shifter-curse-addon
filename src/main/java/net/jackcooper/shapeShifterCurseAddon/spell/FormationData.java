@@ -172,22 +172,38 @@ public final class FormationData {
 	 * 多枚叠加不封顶。
 	 */
 	public static float sumManaCostMultiplier(ItemStack book, FormationElement spellElement) {
+		return sumManaCostMultiplierNbt(book.getNbt(), spellElement);
+	}
+
+	/** NBT 版法力消耗倍率（法阵条目从书 NBT Formations 直读，与 ItemStack 版同式）。 */
+	public static float sumManaCostMultiplierNbt(NbtCompound bookNbt, FormationElement spellElement) {
 		if (spellElement == null) {
 			return 1f;
 		}
 		float total = 0f;
-		for (ItemStack formation : SpellbookData.getFormations(book)) {
-			FormationElement element = getElement(formation);
+		for (NbtCompound entry : SpellbookData.getFormationEntriesNbt(bookNbt)) {
+			if (!entry.contains(NBT_ELEMENT)) {
+				continue;
+			}
+			FormationElement element = FormationElement.byId(entry.getString(NBT_ELEMENT));
 			if (element == null || element == FormationElement.UNIVERSAL) {
 				continue; // 通用系不增加耗蓝
 			}
 			if (element == spellElement || element == spellElement.opponent()) {
-				total += MANA_COST_PER_LEVEL * getLevel(formation);
+				total += MANA_COST_PER_LEVEL * entryLevelNbt(entry);
 			} else {
-				total += MANA_COST_OTHER_ELEMENT_PER_LEVEL * getLevel(formation);
+				total += MANA_COST_OTHER_ELEMENT_PER_LEVEL * entryLevelNbt(entry);
 			}
 		}
 		return 1f + total;
+	}
+
+	/** 法阵条目 NBT 的等级（1-5；缺省 1，与 getLevel 同式）。 */
+	static int entryLevelNbt(NbtCompound entry) {
+		if (entry.contains(NBT_LEVEL)) {
+			return Math.max(1, Math.min(MAX_FORMATION_LEVEL, entry.getInt(NBT_LEVEL)));
+		}
+		return 1;
 	}
 
 	// ---- 通用系：形态能量 → 书法术值转化（数值定义） ----

@@ -28,6 +28,7 @@ public final class SpellBalanceTest {
 
 	public static void main(String[] args) throws Exception {
 		checkCastingRules();
+		checkManaAndDowngradeRules();
 		checkRefundLedger();
 		checkFormRules();
 		checkDomainRules();
@@ -78,19 +79,19 @@ public final class SpellBalanceTest {
 				|| ExplosionRules.beamHeight(ExplosionRules.SOUND_START_TICKS + 20) != 32
 				|| ExplosionRules.beamHeight(ExplosionRules.BALL_START_TICKS) != ExplosionRules.BEAM_TOP
 				|| Math.abs(ExplosionRules.themeVolume(
-						ExplosionRules.SOUND_START_TICKS + ExplosionRules.SOUND_FADE_TICKS / 2, 0) - 0.75f) > 1e-6)
+						ExplosionRules.SOUND_START_TICKS + ExplosionRules.SOUND_FADE_TICKS / 2, 0) - 0.5f) > 1e-6)
 			fail("explosion", "audio-driven timeline constants");
 		for (int layer = 0; layer < ExplosionRules.CIRCLE_HEIGHTS.length; layer++) {
 			double at = 540 + ExplosionRules.CIRCLE_HEIGHTS[layer] / 1.6;
 			if (Math.abs(ExplosionRules.beamHeight(at) - ExplosionRules.CIRCLE_HEIGHTS[layer]) > 1e-6)
 				fail("explosion", "layer reveal timing");
 		}
-		// 主题音量曲线：起播前 0；3 秒渐入 × 距离衰减 × 增益 1.5（2026-09-22 用户反馈音量偏小）。
-		// soundVolume(100) = 0.64，故 570t@100 格 = 0.5×0.64×1.5 = 0.48；渐满后近处 = 1.5。
+		// 主题音量曲线：起播前 0；3 秒渐入 × 距离衰减 × 增益 1.0（2026-09-23：音频文件本身已提升 15.1dB，
+		// 增益还原 1.0——引擎钳制 1.0 使大于 1 的系数从不生效）。soundVolume(100)=0.64，570t@100格 = 0.32。
 		if (ExplosionRules.themeVolume(539, 0) != 0 || ExplosionRules.themeVolume(540, 0) != 0
-				|| Math.abs(ExplosionRules.themeVolume(570, 0) - 0.75f) > 1e-6
-				|| Math.abs(ExplosionRules.themeVolume(570, 100) - 0.48f) > 1e-6
-				|| Math.abs(ExplosionRules.themeVolume(600, 0) - 1.5f) > 1e-6
+				|| Math.abs(ExplosionRules.themeVolume(570, 0) - 0.5f) > 1e-6
+				|| Math.abs(ExplosionRules.themeVolume(570, 100) - 0.32f) > 1e-6
+				|| Math.abs(ExplosionRules.themeVolume(600, 0) - 1.0f) > 1e-6
 				|| ExplosionRules.themeVolume(600, 164) != 0)
 			fail("explosion", "theme fade-in must combine with distance curve");
 		if (ExplosionRules.soundVolume(0) != 1 || ExplosionRules.soundVolume(64) != 1
@@ -230,6 +231,8 @@ public final class SpellBalanceTest {
 		if (DomainRules.crosses(15.9, 0, 0, 15.5, 0, 0, 0.3)) fail("domain", "贴墙向内不应拦截");
 		if (DomainRules.crosses(16.5, 0, 0, 17.0, 0, 0, 0.3)) fail("domain", "壳间带向外应允许退出");
 		checkDomainMovement();
+		checkDomainCollisionFinalization();
+		checkDomainCorrection();
 		System.out.println("Domain geometry checks passed (inner/outer shells, swept paths, underground, hitbox, faction damage).");
 	}
 
@@ -289,6 +292,78 @@ public final class SpellBalanceTest {
 		}
 	}
 
+	private static void checkDomainCollisionFinalization() {
+		int exposed = 0;
+		if (!DomainRules.crosses(Math.nextUp(16.0), 0, 0, 16.2, 0, 0, 0.3)
+				|| !DomainRules.crossesOutward(Math.nextUp(8.0), 0, 0, 8.2, 0, 0, 8)) {
+			fail("domain", "边界浮点余量不能把内侧实体改判为外侧并放行");
+		}
+		if (!DomainRules.crosses(17.3, 0, 0, 17.3 - 1.0e-7, 0, 0, 0.3)) {
+			fail("domain", "微小位移不能跳过边界检查并逐步向内挤入");
+		}
+		// 模拟 move 的真实顺序：球壳滑行 → 地面/墙角消除某个轴 → 最终位移。
+		for (boolean complete : new boolean[] {true, false}) {
+			var shell = new DomainRules.Shell(Vec3d.ZERO, complete ? 16 : 8, complete);
+			var shells = java.util.List.of(shell);
+			for (boolean inside : new boolean[] {true, false}) {
+				if (!complete && !inside) continue;
+				double radius = inside ? shell.radius() - (complete ? 0.3 : 0) : 17.3;
+				for (int angle = 0; angle < 24; angle++) {
+					for (int elevation = -2; elevation <= 2; elevation++) {
+						double yaw = angle * Math.PI / 12;
+						double pitch = elevation * Math.PI / 8;
+						Vec3d initial = new Vec3d(Math.cos(yaw) * Math.cos(pitch), Math.sin(pitch), Math.sin(yaw) * Math.cos(pitch)).multiply(radius);
+						for (int axis = 0; axis < 3; axis++) {
+							Vec3d position = initial;
+							for (int tick = 0; tick < 80; tick++) {
+								Vec3d normal = position.normalize();
+								Vec3d wanted = normal.multiply(inside ? 0.2 : -0.2).add(-normal.z * 0.3, 0.08, normal.x * 0.3);
+								Vec3d slide = DomainRules.limitMovement(position, wanted, 0.3, shells);
+								Vec3d terrain = new Vec3d(axis == 0 ? 0 : slide.x, axis == 1 ? 0 : slide.y, axis == 2 ? 0 : slide.z);
+								if (shell.blocks(position, terrain, 0.3)) exposed++;
+								Vec3d result = DomainRules.clipMovement(position, terrain, 0.3, shells);
+								Vec3d next = position.add(result);
+								if (shell.blocks(position, result, 0.3)
+										|| (inside ? next.length() > radius + 1.0e-6 : next.length() < radius - 1.0e-6)
+										|| result.lengthSquared() > terrain.lengthSquared() + 1.0e-9
+										|| result.crossProduct(terrain).lengthSquared() > 1.0e-12) {
+									fail("domain", "Post-collision escape: complete=" + complete + ", inside=" + inside
+											+ ", angle=" + angle + ", elevation=" + elevation + ", axis=" + axis + ", tick=" + tick
+											+ ", start=" + position + ", terrain=" + terrain + ", result=" + result + ", radius=" + next.length());
+									return;
+								}
+								position = next;
+							}
+						}
+					}
+				}
+			}
+		}
+		if (exposed == 0) fail("domain", "回归场景未复现方块碰撞抵消球壳修正");
+		Vec3d from = new Vec3d(2, 0, 0), free = new Vec3d(0.2, 0.42, 0.3);
+		if (!DomainRules.clipMovement(from, free, 0.3, java.util.List.of(new DomainRules.Shell(Vec3d.ZERO, 16, true))).equals(free)) {
+			fail("domain", "终检不能改变未碰墙的正常移动");
+		}
+		System.out.println("Domain post-collision checks passed (86,400 moves; " + exposed + " unsafe pre-fix moves).");
+	}
+
+	private static void checkDomainCorrection() {
+		var shell = new DomainRules.Shell(Vec3d.ZERO, 16, true);
+		Vec3d from = new Vec3d(Math.sqrt(15.7 * 15.7 - 4), 2, 0);
+		Vec3d target = DomainRules.limitMovement(from, new Vec3d(0.3, 0, 0.3), 0.3, java.util.List.of(shell)).add(from);
+		// 球面修正压到地板下，而抬回地板又会越界：必须发出原位纠正，不能返回越界空气点。
+		Vec3d corrected = DomainRules.safeCorrection(from, target, candidate ->
+				candidate.y >= 2 && !shell.blocks(from, candidate.subtract(from), 0.3));
+		if (!corrected.equals(from)) fail("domain", "地面与球壳无共同安全落点时必须纠正回原位");
+		Vec3d clearFrom = new Vec3d(0, 2, 0), embedded = new Vec3d(1, 1.9, 0);
+		Vec3d lifted = DomainRules.safeCorrection(clearFrom, embedded, candidate ->
+				candidate.y >= 2 && !shell.blocks(clearFrom, candidate.subtract(clearFrom), 0.3));
+		if (!lifted.equals(new Vec3d(1, 2, 0))) fail("domain", "领域内有安全空气落点时仍应正常脱离方块");
+		if (!DomainRules.safeCorrection(clearFrom, embedded, candidate -> false).equals(clearFrom)) {
+			fail("domain", "完全找不到空气落点时不能返回嵌入方块的目标");
+		}
+	}
+
 	private static void checkSpell(String id) throws Exception {
 		String path = "/data/ssc_addon/spells/" + id + ".json";
 		// 判空必须在构造 InputStreamReader 之前：try-with-resources 里 new InputStreamReader(null) 会先抛 NPE，
@@ -315,6 +390,7 @@ public final class SpellBalanceTest {
 				return;
 			}
 			JsonArray levels = o.getAsJsonArray("levels");
+			checkSpellMana(id, o);
 			if (id.equals("explosion")) {
 				if (levels.size() != 1 || !levels.get(0).getAsJsonObject().get("rarity").getAsString().equals("red")) fail(id, "red spell must have one level");
 				if (baseCd != ExplosionRules.CD_TICKS || baseMana != ExplosionRules.MANA_COST
@@ -440,6 +516,81 @@ public final class SpellBalanceTest {
 		}
 		ledger.clear();
 		System.out.println("Refund ledger passed (cast isolation, owner isolation, shared cap, expiry, cleanup).");
+	}
+
+	private static void checkSpellMana(String id, JsonObject json) {
+		var config = net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig.fromJson(json);
+		if (!config.manaCostConfigured || config.manaCost <= 0) fail(id, "Built-in spell must declare a positive JSON mana cost");
+		int maxLevel = json.getAsJsonArray("levels").size();
+		for (int level = 1; level <= maxLevel; level++) {
+			JsonObject levelJson = json.getAsJsonArray("levels").get(level - 1).getAsJsonObject();
+			float levelMultiplier = levelJson.has("mana_cost_multiplier") ? levelJson.get("mana_cost_multiplier").getAsFloat() : 1;
+			for (float formation : new float[] {1, 1.1f, 1.5f, 3.5f}) {
+				for (float affinity : new float[] {1, 0.85f, 0.75f}) {
+					int cost = SpellNumbers.manaCost(config, level, formation, affinity);
+					int expected = Math.max(1, Math.round(json.get("mana_cost").getAsInt() * formation * affinity * levelMultiplier));
+					if (cost != expected || SpellCastingRules.canAfford(cost, 0) || SpellCastingRules.canAfford(cost, cost - 1)
+							|| !SpellCastingRules.canAfford(cost, cost)) fail(id, "JSON/formation/level cost must gate the complete cast before charging");
+					int chosen = SpellCastingRules.highestAffordableLevel(level, cost - 1,
+							lv -> SpellNumbers.manaCost(config, lv, formation, affinity));
+					if (chosen >= level || chosen > 0 && SpellNumbers.manaCost(config, chosen, formation, affinity) > cost - 1) {
+						fail(id, "Downgrade must choose a strictly lower affordable level");
+					}
+					for (int skipped = chosen + 1; skipped < level; skipped++) {
+						if (SpellNumbers.manaCost(config, skipped, formation, affinity) <= cost - 1) fail(id, "Downgrade skipped an affordable higher level");
+					}
+				}
+			}
+		}
+		if (id.equals("domain") || id.equals("explosion")) {
+			int boosted = SpellNumbers.manaCost(config, 1, 1.5f, 1);
+			if (boosted != 450 || SpellCastingRules.canAfford(boosted, 300)
+					|| SpellCastingRules.highestAffordableLevel(0, 449, lv -> boosted) != 0) {
+				fail(id, "Red single-level spell must require 450 mana with a +50% formation and cannot downgrade");
+			}
+		}
+	}
+
+	private static void checkManaAndDowngradeRules() {
+		var missing = net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig.fallback();
+		if (SpellCastingRules.canAfford(SpellNumbers.manaCost(missing, 1, 1, 1), 9999)) fail("mana", "Unloaded JSON cannot grant free spells");
+		var json = JsonParser.parseString("{\"mana_cost\":300,\"levels\":[{\"mana_cost_multiplier\":1.0}]}").getAsJsonObject();
+		var configured = net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig.fromJson(json);
+		if (SpellNumbers.manaCost(configured, 1, 1.5f, 1) != 450) fail("mana", "Formation surcharge missing");
+		json.addProperty("mana_cost", 480);
+		configured = net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig.fromJson(json);
+		if (SpellNumbers.manaCost(configured, 1, 1.5f, 1) != 720) fail("mana", "Cost must follow changed JSON, not a hard-coded spell value");
+		json.remove("mana_cost");
+		if (SpellCastingRules.canAfford(SpellNumbers.manaCost(net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig.fromJson(json), 1, 1, 1), 0)) {
+			fail("mana", "Missing mana_cost cannot be interpreted as free casting");
+		}
+		json.addProperty("mana_cost", 0);
+		if (SpellNumbers.manaCost(net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig.fromJson(json), 1, 1, 1) != 0) {
+			fail("mana", "Explicit zero-cost data pack setting must remain supported");
+		}
+		if (SpellCastingRules.highestAffordableLevel(5, 69, lv -> lv * 30) != 2
+				|| SpellCastingRules.highestAffordableLevel(5, 0, lv -> lv * 30) != 0
+				|| SpellCastingRules.highestAffordableLevel(2, 150, lv -> lv * 30) != 2) {
+			fail("mana", "Temporary level must respect available energy and the selected level");
+		}
+		var presses = new SpellCastingRules.TriplePress();
+		if (presses.press("book/slot/level", 0) != 2 || presses.press("book/slot/level", 400) != 1
+				|| presses.press("book/slot/level", 1000) != 0 || presses.press("book/slot/level", 1001) != 2) {
+			fail("downgrade", "Only the third edge within one second may trigger, once");
+		}
+		presses.reset();
+		if (presses.press("same", 0) != 2 || presses.press("same", 700) != 1 || presses.press("same", 1400) != 2) {
+			fail("downgrade", "Window must be measured from the first press, not extended by each press");
+		}
+		if (presses.press("new slot", 1500) != 2 || presses.press("new level", 1600) != 2
+				|| presses.press("new book", 1700) != 2) fail("downgrade", "Different casts cannot share a triple-press count");
+		presses.reset();
+		if (presses.press("new book", 1800) != 2) fail("downgrade", "Normal cast, cooldown, screen or removal must reset the gesture");
+		// 第三次降档仍沿用释放型会话的 token，松手后才能生效，不会无限等松手。
+		var cast = new SpellCastingRules.Progress<String>(SpellCastingRules.Mode.RELEASE, 1, 3);
+		cast.tick();
+		if (cast.beginEffect() || !cast.release(3, "target") || !cast.beginEffect()) fail("downgrade", "Downgraded aimed cast must keep its release gesture");
+		System.out.println("Mana and downgrade checks passed (JSON, formations, exact funds, absent config, levels, triple-press scope/window, release).");
 	}
 
 	private static void checkFormRules() {

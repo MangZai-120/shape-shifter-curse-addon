@@ -20,11 +20,14 @@ import java.util.UUID;
 public final class DomainSound extends MovingSoundInstance {
 	private final ClientWorld world;
 	private final UUID owner;
+	/** 整体音量倍率（服务端随包下发）：乘在距离曲线上，用于单独压低/抬高某个领域音效。 */
+	private final float volumeScale;
 
-	private DomainSound(ClientWorld world, UUID owner, SoundEvent sound, Vec3d position, float pitch, long seed) {
+	private DomainSound(ClientWorld world, UUID owner, SoundEvent sound, Vec3d position, float pitch, float volumeScale, long seed) {
 		super(sound, SoundCategory.PLAYERS, Random.create(seed));
 		this.world = world;
 		this.owner = owner;
+		this.volumeScale = volumeScale;
 		this.x = position.x;
 		this.y = position.y;
 		this.z = position.z;
@@ -40,12 +43,13 @@ public final class DomainSound extends MovingSoundInstance {
 			var soundId = buf.readIdentifier();
 			Vec3d position = new Vec3d(buf.readDouble(), buf.readDouble(), buf.readDouble());
 			float pitch = buf.readFloat();
+			float volumeScale = buf.readFloat();
 			long seed = buf.readLong();
 			client.execute(() -> {
 				if (client.world == null || client.player == null
 						|| !client.world.getRegistryKey().getValue().equals(dimension)) return;
 				SoundEvent sound = Registries.SOUND_EVENT.get(soundId);
-				if (sound != null) client.getSoundManager().play(new DomainSound(client.world, owner, sound, position, pitch, seed));
+				if (sound != null) client.getSoundManager().play(new DomainSound(client.world, owner, sound, position, pitch, volumeScale, seed));
 			});
 		});
 	}
@@ -64,7 +68,7 @@ public final class DomainSound extends MovingSoundInstance {
 			y = caster.getY();
 			z = caster.getZ();
 		}
-		volume = DomainRules.soundVolume(Math.sqrt(client.player.squaredDistanceTo(x, y, z)));
+		volume = DomainRules.soundVolume(Math.sqrt(client.player.squaredDistanceTo(x, y, z))) * volumeScale;
 	}
 
 	@Override

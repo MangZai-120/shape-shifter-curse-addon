@@ -50,6 +50,10 @@ public class VoidErosionSpell extends Spell {
 			if (target.distanceTo(caster) > radius) {
 				continue;
 			}
+			// 领域隔离：目标被任一领域壳隔开（与施法者分属内外）→ 不变减益
+			if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(caster, target)) {
+				continue;
+			}
 			// 默认白名单：受保护目标免受减益
 			if (WhitelistUtils.isProtected(caster, target)) {
 				continue;

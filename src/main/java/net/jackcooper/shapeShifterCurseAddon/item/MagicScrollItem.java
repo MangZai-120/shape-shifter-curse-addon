@@ -101,7 +101,6 @@ public class MagicScrollItem extends Item {
 			ItemStack snapshot = stack.copy();
 			SpellChannelManager.start(sp, spell, snapshot, level, true, hand.ordinal(), 0, cd,
 					() -> sp.getStackInHand(hand) == stack && ItemStack.areEqual(stack, snapshot),
-					ignored -> true,
 					target -> spell.castAtTarget(sp, damage, true, level, snapshot, target),
 					duration -> {
 						long end = sp.getWorld().getTime() + duration;

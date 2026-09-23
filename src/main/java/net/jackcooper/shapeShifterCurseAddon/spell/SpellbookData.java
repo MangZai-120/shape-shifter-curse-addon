@@ -84,8 +84,59 @@ public final class SpellbookData {
 	}
 
 	public static int getMaxMana(ItemStack book) {
-		int base = LEVEL_MAX_MANA[getLevel(book) - 1];
-		return base + getMasteryManaBonus(book) + getUniversalFormationManaBonus(book);
+		return getMaxManaNbt(book.getNbt());
+	}
+
+	/** NBT 版法力上限（等级基础 + 精通档 + 增能法阵，与 ItemStack 版同式）。 */
+	public static int getMaxManaNbt(NbtCompound nbt) {
+		int base = LEVEL_MAX_MANA[getLevelNbt(nbt) - 1];
+		return base + getMasteryManaBonusNbt(nbt) + getUniversalFormationManaBonusNbt(nbt);
+	}
+
+	private static int getLevelNbt(NbtCompound nbt) {
+		int lv = (nbt != null && nbt.contains(NBT_LEVEL)) ? nbt.getInt(NBT_LEVEL) : 1;
+		return Math.max(1, Math.min(MAX_LEVEL, lv));
+	}
+
+	private static int getMasteryManaBonusNbt(NbtCompound nbt) {
+		if (getLevelNbt(nbt) < MAX_LEVEL) {
+			return 0;
+		}
+		int expTen = nbt != null && nbt.contains(NBT_EXP) ? Math.max(0, nbt.getInt(NBT_EXP)) : 0;
+		int tier = Math.min(MASTERY_MAX_BONUS / MASTERY_MANA_PER_TIER, expTen / MASTERY_EXP_PER_TIER);
+		return Math.min(MASTERY_MAX_BONUS, tier * MASTERY_MANA_PER_TIER);
+	}
+
+	private static int getUniversalFormationManaBonusNbt(NbtCompound nbt) {
+		int best = 0;
+		for (NbtCompound entry : getFormationEntriesNbt(nbt)) {
+			if (!entry.contains(FormationData.NBT_ELEMENT)
+					|| FormationElement.byId(entry.getString(FormationData.NBT_ELEMENT)) != FormationElement.UNIVERSAL) {
+				continue;
+			}
+			String variant = entry.contains(FormationData.NBT_VARIANT)
+					? FormationData.normalizeVariant(entry.getString(FormationData.NBT_VARIANT)) : FormationData.VARIANT_REGEN;
+			if (FormationData.VARIANT_MANA.equals(variant)) {
+				best = Math.max(best, FormationData.entryLevelNbt(entry));
+			}
+		}
+		if (best <= 0) {
+			return 0;
+		}
+		return Math.round(LEVEL_MAX_MANA[getLevelNbt(nbt) - 1] * FormationData.universalManaBonusPct(best));
+	}
+
+	/** NBT 版：读取书内全部法阵条目（纯 NBT，不反序列化 ItemStack——测试环境无注册表）。 */
+	public static java.util.List<NbtCompound> getFormationEntriesNbt(NbtCompound nbt) {
+		java.util.List<NbtCompound> result = new java.util.ArrayList<>();
+		if (nbt == null || !nbt.contains(NBT_FORMATIONS, 9)) {
+			return result;
+		}
+		NbtList list = nbt.getList(NBT_FORMATIONS, 10);
+		for (int i = 0; i < list.size(); ++i) {
+			result.add(list.getCompound(i));
+		}
+		return result;
 	}
 
 	/**
@@ -124,26 +175,44 @@ public final class SpellbookData {
 	}
 
 	public static int getMana(ItemStack book) {
-		NbtCompound nbt = book.getNbt();
-		// 新书（无 Mana 字段）默认满法力
-		if (nbt == null || !nbt.contains(NBT_MANA)) {
-			return getMaxMana(book);
-		}
-		return Math.max(0, Math.min(getMaxMana(book), nbt.getInt(NBT_MANA)));
+		return getManaNbt(book.getNbt(), getMaxMana(book));
 	}
 
 	public static void setMana(ItemStack book, int mana) {
-		book.getOrCreateNbt().putInt(NBT_MANA, Math.max(0, Math.min(getMaxMana(book), mana)));
+		setManaNbt(book.getOrCreateNbt(), mana, getMaxMana(book));
 	}
 
-	/** 尝试消耗法力，够则扣除返回 true。 */
+	/** 起手、临时降档和扣费统一使用 HUD 所显示的书能量，不用形态条替书补差。 */
+	public static boolean canPayMana(ItemStack book, int cost) {
+		return book != null && !book.isEmpty() && canPayManaNbt(book.getNbt(), getMaxMana(book), cost);
+	}
+
+	/** 尝试消耗法力，够则扣除返回 true；非法负数不能变成回能。 */
 	public static boolean consumeMana(ItemStack book, int cost) {
-		int mana = getMana(book);
-		if (mana < cost) {
-			return false;
-		}
-		setMana(book, mana - cost);
+		if (!canPayMana(book, cost)) return false;
+		setMana(book, getMana(book) - cost);
 		return true;
+	}
+
+	// ---- 书能量 NBT 级核心（与 ItemStack 版同式；测试环境无注册表时直接验这条链） ----
+
+	/** NBT 版：当前书能量（缺省满蓝；clamp 到 [0, max]）。 */
+	public static int getManaNbt(NbtCompound nbt, int maxMana) {
+		// 新书（无 Mana 字段）默认满法力
+		if (nbt == null || !nbt.contains(NBT_MANA)) {
+			return maxMana;
+		}
+		return Math.max(0, Math.min(maxMana, nbt.getInt(NBT_MANA)));
+	}
+
+	/** NBT 版：写入书能量（clamp）。 */
+	public static void setManaNbt(NbtCompound nbt, int mana, int maxMana) {
+		nbt.putInt(NBT_MANA, Math.max(0, Math.min(maxMana, mana)));
+	}
+
+	/** NBT 版：全额支付能力判定。 */
+	public static boolean canPayManaNbt(NbtCompound nbt, int maxMana, int cost) {
+		return SpellCastingRules.canAfford(cost, getManaNbt(nbt, maxMana));
 	}
 
 	/** 充能（不超过上限）。返回实际增加量。 */

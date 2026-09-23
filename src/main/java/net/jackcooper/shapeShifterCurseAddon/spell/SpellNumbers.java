@@ -1,5 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.minecraft.nbt.NbtCompound;
+
 /**
  * 法术最终数值统一结算工具（jackcooper，阶段 B 战斗底座）。
  *
@@ -18,8 +20,48 @@ public final class SpellNumbers {
 	public static int finalManaCost(Spell spell, net.minecraft.item.ItemStack book,
 	                               net.minecraft.entity.player.PlayerEntity player, int selectedLevel) {
 		int costLevel = FormAffinity.manaCostLevel(player, spell.getElement(), selectedLevel);
-		int manaCost = Math.round(spell.getManaCost() * FormationData.sumManaCostMultiplier(book, spell.getElement())
-				* FormAffinity.manaCostMultiplier(player) * spell.getConfig().manaCostMultiplier(costLevel));
+		int manaCost = manaCost(spell.getConfig(), costLevel, FormationData.sumManaCostMultiplier(book, spell.getElement()),
+				FormAffinity.manaCostMultiplier(player));
+		return FormCastingStyle.applyTidalDiscount(player, spell.getElement(), manaCost);
+	}
+
+	/** JSON 基础消耗 × 当前施放等级倍率 × 书内法阵倍率 × 形态倍率；-1 表示配置尚不可用。 */
+	public static int manaCost(net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig config,
+	                           int level, float formationMultiplier, float affinityMultiplier) {
+		if (!config.manaCostConfigured || !Float.isFinite(formationMultiplier) || formationMultiplier <= 0
+				|| !Float.isFinite(affinityMultiplier) || affinityMultiplier <= 0) return -1;
+		int cost = Math.round(config.manaCost * formationMultiplier * affinityMultiplier * config.manaCostMultiplier(level));
+		return config.manaCost > 0 ? Math.max(1, cost) : 0;
+	}
+
+	/** 两端共用降档选择；只计算临时档位，不修改卷轴 NBT。 */
+	public static int highestAffordableLevel(Spell spell, net.minecraft.item.ItemStack book,
+	                                         net.minecraft.entity.player.PlayerEntity player, int maxLevel) {
+		if (book == null || book.isEmpty()) return 0;
+		return highestAffordableLevelNbt(spell, book.getNbt(), player, maxLevel);
+	}
+
+	/** NBT 版降档选择（测试环境无注册表时直接验这条链）。 */
+	public static int highestAffordableLevelNbt(Spell spell, net.minecraft.nbt.NbtCompound bookNbt,
+	                                            net.minecraft.entity.player.PlayerEntity player, int maxLevel) {
+		if (bookNbt == null) return 0;
+		long available = SpellbookData.getManaNbt(bookNbt, getMaxManaOf(bookNbt));
+		return SpellCastingRules.highestAffordableLevel(Math.min(spell.getMaxLevel(), maxLevel), available,
+				level -> finalManaCostNbt(spell, bookNbt, player, level));
+	}
+
+	/** 从书 NBT 计算法力上限（等级 + 精通档 + 增能法阵，与 SpellbookData.getMaxMana 同式）。 */
+	static int getMaxManaOf(NbtCompound bookNbt) {
+		return SpellbookData.getMaxManaNbt(bookNbt);
+	}
+
+	/** NBT 版最终耗蓝（法阵系别/等级从书 NBT Formations 直读，与 ItemStack 版同式）。 */
+	static int finalManaCostNbt(Spell spell, NbtCompound bookNbt,
+	                            net.minecraft.entity.player.PlayerEntity player, int selectedLevel) {
+		int costLevel = FormAffinity.manaCostLevel(player, spell.getElement(), selectedLevel);
+		int manaCost = manaCost(spell.getConfig(), costLevel,
+				FormationData.sumManaCostMultiplierNbt(bookNbt, spell.getElement()),
+				FormAffinity.manaCostMultiplier(player));
 		return FormCastingStyle.applyTidalDiscount(player, spell.getElement(), manaCost);
 	}
 

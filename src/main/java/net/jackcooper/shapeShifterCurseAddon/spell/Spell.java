@@ -221,7 +221,11 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 		Vec3d end = eye.add(look.multiply(maxRange));
 		HitResult hit = caster.getWorld().raycast(new RaycastContext(eye, end,
 				RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, caster));
-		return hit.getType() == HitResult.Type.MISS ? null : hit.getPos();
+		if (hit.getType() == HitResult.Type.MISS) return null;
+		// 领域隔离：命中点与施法者分属任一领域壳内外（跨界）→ 视为无合法落点
+		// （与指天拒绝同语义：客户端不显示指针/预览，服务端拒施放不耗蓝不进 CD）
+		if (DomainManager.blocksAimBoundary(caster.getWorld(), caster.getPos(), hit.getPos())) return null;
+		return hit.getPos();
 	}
 
 	/**

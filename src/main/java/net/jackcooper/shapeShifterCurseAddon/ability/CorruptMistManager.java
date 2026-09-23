@@ -129,6 +129,10 @@ public final class CorruptMistManager {
 			if (target.distanceTo(mist.caster) > mist.radius) {
 				continue;
 			}
+			// 领域隔离：目标被任一领域壳隔开（与施法者分属内外）→ 不中毒不缓速
+			if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(mist.caster, target)) {
+				continue;
+			}
 			if (WhitelistUtils.isProtected(mist.caster, target)) {
 				continue;
 			}

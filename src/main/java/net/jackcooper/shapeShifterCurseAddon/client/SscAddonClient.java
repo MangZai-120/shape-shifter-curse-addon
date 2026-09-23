@@ -63,6 +63,10 @@ public class SscAddonClient implements ClientModInitializer {
 		// 附属方块渲染层注册（蛛网膜等，cutout）
 		net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks.clientInit();
 
+		// 领域边界判定钩子（客户端镜像壳数据）：供双端共用的法术瞄准几何在客户端做同款跨界过滤
+		net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.clientBoundaryCheck =
+				net.jackcooper.shapeShifterCurseAddon.client.renderer.DomainRenderer::blocksCrossBoundaryClient;
+
 		// 寒棘狐蓄力「汇聚冰晶」自定义粒子工厂（贴图 assets/ssc_addon/particles/inward_ice.json）
 		net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry.getInstance()
 				.register(SscAddon.INWARD_ICE_PARTICLE,

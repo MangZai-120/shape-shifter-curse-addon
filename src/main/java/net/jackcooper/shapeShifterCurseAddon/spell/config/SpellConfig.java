@@ -11,14 +11,14 @@ import net.minecraft.util.JsonHelper;
  * 本类只承载数值，行为（投射物/音效/粒子）仍在各 {@code Spell} 子类。
  *
  * <p>来源：{@code data/ssc_addon/spells/<id>.json}（数据包可覆盖）。任何字段缺失或非法时
- * 回退 {@link #fallback()} 的 Java 内置默认值——日志警告、不崩溃。</p>
+ * 回退 {@link #fallback()} 的 Java 内置默认值——日志警告、不崩溃；未配置消耗时禁止施法。</p>
  *
  * <p>字段一览（全部可选）：</p>
  * <ul>
  *   <li>{@code base_damage}（float，默认 0）：装书内基础伤害（满次数卷轴）；</li>
  *   <li>{@code base_cooldown_ticks}（int，默认 20）：基础冷却；</li>
  *   <li>{@code base_cast_time_ticks}（int，默认 0）：基础施法前摇，0=瞬发；</li>
- *   <li>{@code mana_cost}（int，默认 0）：每次施法耗书法力；</li>
+ *   <li>{@code mana_cost}（非负 int，施法必需）：每次施法耗书法力；</li>
  *   <li>{@code solo_damage_multiplier} / {@code solo_cooldown_multiplier} /
  *       {@code solo_cast_time_multiplier}（float，默认 0.5 / 2.0 / 2.0）：单独使用惩罚；</li>
  *   <li>{@code element}（string，默认 {@code null}）：系别标记（fire / ice），供法阵对立系判定；</li>
@@ -36,6 +36,8 @@ public final class SpellConfig {
 	public final SpellCastingRules.Tier spellTier;
 	public final int interruptMode;
 	public final int manaCost;
+	/** 缺失/损坏配置不能把默认的 0 当作免费施法。JSON 显式配置 0 仍合法。 */
+	public final boolean manaCostConfigured;
 	public final float soloDamageMultiplier;
 	public final float soloCooldownMultiplier;
 	public final float soloCastTimeMultiplier;
@@ -65,7 +67,8 @@ public final class SpellConfig {
 		this.baseCastTimeTicks = baseCastTimeTicks;
 		this.spellTier = spellTier;
 		this.interruptMode = interruptMode;
-		this.manaCost = manaCost;
+		this.manaCost = Math.max(0, manaCost);
+		this.manaCostConfigured = manaCost >= 0;
 		this.soloDamageMultiplier = soloDamageMultiplier;
 		this.soloCooldownMultiplier = soloCooldownMultiplier;
 		this.soloCastTimeMultiplier = soloCastTimeMultiplier;
@@ -120,9 +123,9 @@ public final class SpellConfig {
 		return arr[i];
 	}
 
-	/** Java 内置默认配置（JSON 缺失/损坏时的兜底全 0 数值 + 全 1.0 倍率）。 */
+	/** 未加载配置的展示兜底；manaCostConfigured=false，不能用于起手施法。 */
 	public static SpellConfig fallback() {
-		return new SpellConfig(0f, 20, 0, 0, SpellCastingRules.Tier.BASIC_1, 0, 0.5f, 2.0f, 2.0f, 0, null, 0,
+		return new SpellConfig(0f, 20, 0, -1, SpellCastingRules.Tier.BASIC_1, 0, 0.5f, 2.0f, 2.0f, 0, null, 0,
 				new float[0], new float[0], new float[0], new float[0], new String[0]);
 	}
 
@@ -134,7 +137,7 @@ public final class SpellConfig {
 		SpellCastingRules.Tier spellTier = SpellCastingRules.Tier.byId(JsonHelper.getString(o, "spell_tier", "basic_1"));
 		int interruptMode = JsonHelper.getInt(o, "interrupt_mode", spellTier.defaultInterruptMode());
 		if (interruptMode < 0 || interruptMode > 3) interruptMode = spellTier.defaultInterruptMode();
-		int manaCost = Math.max(0, JsonHelper.getInt(o, "mana_cost", 0));
+		int manaCost = JsonHelper.getInt(o, "mana_cost", -1);
 		float soloDmg = positive(JsonHelper.getFloat(o, "solo_damage_multiplier", 0.5f));
 		float soloCd = positive(JsonHelper.getFloat(o, "solo_cooldown_multiplier", 2.0f));
 		float soloCast = positive(JsonHelper.getFloat(o, "solo_cast_time_multiplier", 2.0f));
@@ -161,6 +164,7 @@ public final class SpellConfig {
 			cd = new float[n];
 			speed = new float[n];
 			manaMul = new float[n];
+			java.util.Arrays.fill(manaMul, 1.0f);
 			rarity = new String[n];
 			for (int i = 0; i < n; i++) {
 				JsonElement el = levels.get(i);
@@ -171,7 +175,8 @@ public final class SpellConfig {
 				dmg[i] = Math.max(0f, JsonHelper.getFloat(lv, "damage_multiplier", 1.0f));
 				cd[i] = Math.max(0f, JsonHelper.getFloat(lv, "cooldown_multiplier", 1.0f));
 				speed[i] = Math.max(0f, JsonHelper.getFloat(lv, "speed_multiplier", 1.0f));
-				manaMul[i] = Math.max(0f, JsonHelper.getFloat(lv, "mana_cost_multiplier", 1.0f));
+				float costMultiplier = JsonHelper.getFloat(lv, "mana_cost_multiplier", 1.0f);
+				manaMul[i] = Float.isFinite(costMultiplier) && costMultiplier > 0 ? costMultiplier : 1.0f;
 				rarity[i] = lv.has("rarity") && lv.get("rarity").isJsonPrimitive()
 						? normalizeRarity(lv.get("rarity").getAsString()) : null;
 			}

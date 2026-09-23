@@ -10,6 +10,40 @@ public final class SpellCastingRules {
 
 	public enum Mode { AUTOMATIC, RELEASE, CONTINUOUS }
 
+	public static boolean canAfford(int cost, long available) {
+		return cost >= 0 && available >= cost;
+	}
+
+	public static int highestAffordableLevel(int maxLevel, long available, java.util.function.IntUnaryOperator costAtLevel) {
+		for (int level = maxLevel; level >= 1; level--) {
+			if (canAfford(costAtLevel.applyAsInt(level), available)) return level;
+		}
+		return 0;
+	}
+
+	/** 同一书/槽/档位在首按起 1 秒内三次按下沿；返回剩余次数，0 表示本次触发。 */
+	public static final class TriplePress {
+		private Object context;
+		private long startedAt;
+		private int presses;
+
+		public int press(Object context, long now) {
+			if (presses == 0 || !java.util.Objects.equals(this.context, context)
+					|| now < startedAt || now - startedAt > 1000) {
+				this.context = context;
+				startedAt = now;
+				presses = 0;
+			}
+			if (++presses == 3) {
+				reset();
+				return 0;
+			}
+			return 3 - presses;
+		}
+
+		public void reset() { context = null; presses = 0; }
+	}
+
 	public static final class RefundBudget {
 		private final int manaCost;
 		private int remaining;
