@@ -1307,5 +1307,8 @@
   "item.ssc_addon.magic_scroll.tip_in_book_domain": "领域持续40秒 · 冷却%2$s秒 · 法力%3$s；成功释放后开始冷却，被打断时保留20%%冷却时间，不返还已消耗法力",
   "spell.ssc_addon.explosion.name": "爆裂魔法",
   "spell.ssc_addon.explosion.description": "锁定128格内落点，蓄力35秒后在64格球形范围引发无差别爆炸。",
-  "item.ssc_addon.magic_scroll.tip_in_book_explosion": "爆心基础伤害%1$s · 半径64格 · 冷却%2$s秒 · 法力%3$s；35秒禁动蓄力，打断返还20%%总冷却，不退已耗法力"
+  "item.ssc_addon.magic_scroll.tip_in_book_explosion": "爆心基础伤害%1$s · 半径64格 · 冷却%2$s秒 · 法力%3$s；35秒禁动蓄力，打断返还20%%总冷却，不退已耗法力",
+  "spell.ssc_addon.lunar_phase.name": "月相",
+  "spell.ssc_addon.lunar_phase.description": "按住紫色描边标记准星附近的玩家或生物，松手锁定后蓄力1.5秒（双方围圈连线），蓄满按百分比交换生命，每方最多变化50点生命，双方保底1点。",
+  "item.ssc_addon.magic_scroll.tip_in_book_lunar_phase": "百分比换血 · 射程24格 · 冷却%2$s秒 · 法力%3$s；无白名单（含玩家与宠物），准星无目标则释放失败"
 }

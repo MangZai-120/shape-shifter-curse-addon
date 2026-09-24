@@ -57,4 +57,17 @@ public final class WebHighlightClient {
 		long[] v = HIGHLIGHT.get(entityId);
 		return v != null ? (int) v[1] : DEFAULT_COLOR;
 	}
+
+	/** 本地直写高亮（月相按住瞄准，2026-09-24）：不走网络包，客户端每 tick 续约。
+	 * duration 用短租约（5t），按住期间持续调用即持续描边；松手/无目标停止续约后自然过期消失。 */
+	public static void highlightLocal(int entityId, int color) {
+		if (clientWorld() == null) return;
+		HIGHLIGHT.put(entityId, new long[]{clientWorld().getTime() + 5, color});
+	}
+
+	private static net.minecraft.client.world.ClientWorld clientWorld() {
+		var client = net.minecraft.client.MinecraftClient.getInstance();
+		return client.world != null && client.world.isClient
+				? (net.minecraft.client.world.ClientWorld) client.world : null;
+	}
 }

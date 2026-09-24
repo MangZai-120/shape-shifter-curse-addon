@@ -8,7 +8,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
-import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -74,8 +73,10 @@ public class FrostStormEntity extends Entity {
 			// 每tick吸附敌人
 			pullEntities();
 
-			// 生成粒子效果
-			spawnParticles(serverWorld);
+			// 同步时间轴，雪花与旋转云由客户端按原密度生成。
+			net.jackcooper.shapeShifterCurseAddon.network.SustainedVisuals.touch(this,
+					net.jackcooper.shapeShifterCurseAddon.network.VisualRecipe.Kind.FROST_STORM,
+					ticksAlive, DURATION, DAMAGE_RADIUS, 0);
 
 			// 播放环境音效
 			if (ticksAlive % 40 == 0) {
@@ -149,28 +150,6 @@ public class FrostStormEntity extends Entity {
 			Vec3d newVelocity = target.getVelocity().add(pullVelocity);
 			target.setVelocity(newVelocity);
 			target.velocityModified = true;
-		}
-	}
-
-	private void spawnParticles(ServerWorld world) {
-		// 风暴粒子
-		for (int i = 0; i < 5; i++) {
-			double angle = Math.random() * Math.PI * 2;
-			double radius = Math.random() * DAMAGE_RADIUS;
-			double x = this.getX() + Math.cos(angle) * radius;
-			double z = this.getZ() + Math.sin(angle) * radius;
-			double y = this.getY() + Math.random() * 2;
-
-			net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils.spawnParticles(world, ParticleTypes.SNOWFLAKE, x, y, z, 1, 0, 0, 0, 0.05);
-		}
-
-		// 旋转粒子效果
-		double rotAngle = (ticksAlive * 0.2) % (Math.PI * 2);
-		for (int i = 0; i < 3; i++) {
-			double angle = rotAngle + (i * Math.PI * 2 / 3);
-			double x = this.getX() + Math.cos(angle) * 2;
-			double z = this.getZ() + Math.sin(angle) * 2;
-			net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils.spawnParticles(world, ParticleTypes.CLOUD, x, this.getY() + 1, z, 1, 0, 0.1, 0, 0);
 		}
 	}
 

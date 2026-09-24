@@ -206,9 +206,16 @@ public class SscAddonNetworking {
 
 	/** 风灵「疾风连爪」：同步爪击阶段(phase)与准星条进度给客户端。 */
 	public static void syncClawState(net.minecraft.server.network.ServerPlayerEntity player, int phase, float crosshairProgress) {
+		syncClawState(player, phase, crosshairProgress, 0);
+	}
+
+	public static void syncClawState(net.minecraft.server.network.ServerPlayerEntity player, int phase, float crosshairProgress, float recoveryStep) {
 		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
 		buf.writeInt(phase);
 		buf.writeFloat(crosshairProgress);
+		buf.writeFloat(recoveryStep);
+		buf.writeLong(player.getWorld().getTime());
+		buf.writeIdentifier(player.getWorld().getRegistryKey().getValue());
 		ServerPlayNetworking.send(player, PACKET_CLAW_STATE, buf);
 	}
 

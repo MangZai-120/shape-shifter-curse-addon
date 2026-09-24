@@ -1307,5 +1307,8 @@
   "item.ssc_addon.magic_scroll.tip_in_book_domain": "Domain lasts 40s | Cooldown %2$ss | Mana %3$s; cooldown starts on successful release. If interrupted, 20%% of the cooldown is retained; spent mana is not refunded.",
   "spell.ssc_addon.explosion.name": "EXPLOSION",
   "spell.ssc_addon.explosion.description": "Locks a target within 128 blocks, charges for 35s, then detonates indiscriminately in a 64-block sphere.",
-  "item.ssc_addon.magic_scroll.tip_in_book_explosion": "Base center damage %1$s | Radius 64 | Cooldown %2$ss | Mana %3$s; 35s immobile charge. Interruption refunds 20%% of total cooldown, without refunding spent mana."
+  "item.ssc_addon.magic_scroll.tip_in_book_explosion": "Base center damage %1$s | Radius 64 | Cooldown %2$ss | Mana %3$s; 35s immobile charge. Interruption refunds 20%% of total cooldown, without refunding spent mana.",
+  "spell.ssc_addon.lunar_phase.name": "Lunar Phase",
+  "spell.ssc_addon.lunar_phase.description": "Hold to mark a player or creature near your crosshair (purple outline), release to lock and channel 1.5s, then swap health by percentage; each side changes by at most 50 HP and keeps at least 1 HP.",
+  "item.ssc_addon.magic_scroll.tip_in_book_lunar_phase": "Percentage health swap | 24-block range | Cooldown %2$ss | Mana %3$s; no whitelist (includes players and pets); fails if no target under crosshair"
 }

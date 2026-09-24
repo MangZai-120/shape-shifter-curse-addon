@@ -35,6 +35,9 @@ public final class ExplosionManager {
 		final long startTime;
 		float power;
 		boolean exploded;
+		/** 待结算目标队列（2026-09-24 伤害分批）：引爆时快照全部目标，每 tick 只结一批，
+		 * 避免密集场景百余实体同帧过 damage/死亡掉落造成服务端尖峰（「造成伤害后卡一下」）。 */
+		java.util.List<LivingEntity> pendingTargets = java.util.List.of();
 
 		Sequence(ServerPlayerEntity owner, Vec3d center, float power, UUID refundCastId) {
 			this.world = owner.getServerWorld();
@@ -49,7 +52,10 @@ public final class ExplosionManager {
 		int elapsed() { return (int) Math.max(0, world.getTime() - startTime); }
 
 		/** 是否已进入红白球阶段（≥ BALL_START_TICKS）：此后施法锁定不可打断。 */
-		boolean ballCharging() { return elapsed() >= ExplosionRules.BALL_START_TICKS; }
+		/** 锁定阈值（2026-09-24 用户定稿）：主题音频起播（T-8s / 540t）即锁定不可打断——
+		 * 音频响起 = 施法已不可挽回，伤害/主动取消/长按取消/位移全部失效直到释放。
+		 * 原为红白球生成（682t / 34.1s），用户要求提前到音频起播。 */
+		boolean ballCharging() { return elapsed() >= ExplosionRules.SOUND_START_TICKS; }
 
 		/** 施法者是否仍在锚点 3 格内（同领域 MAX_CAST_DISPLACEMENT；离锚点即打断蓄力）。 */
 		boolean ownerWithinAnchor(MinecraftServer server) {
@@ -74,7 +80,12 @@ public final class ExplosionManager {
 		sequence.power = power;
 		sequence.refundCastId = refundCastId;
 		sequence.exploded = true;
-		damageArea(sequence);
+		// 伤害分批（2026-09-24 修卡顿）：引爆时只快照目标列表 + 标记已爆（视觉/音频立即生效），
+		// 实际伤害由 tick() 每 tick 结一批，密集场景伤害/死亡掉落尖峰被摊平（总伤害不变）。
+		double diameter = ExplosionRules.OUTER_RADIUS * 2;
+		sequence.pendingTargets = sequence.world.getEntitiesByClass(LivingEntity.class,
+				Box.of(center, diameter, diameter, diameter),
+				entity -> entity.isAlive() && !entity.isSpectator());
 		syncNow(owner.getServer());
 	}
 
@@ -113,9 +124,12 @@ public final class ExplosionManager {
 		while (iterator.hasNext()) {
 			Sequence sequence = iterator.next();
 			int elapsed = sequence.elapsed();
+			// 分批伤害推进：每 tick ≤ DAMAGE_BATCH 个目标（每目标结算时验 isAlive，跳过批间死亡/卸载）。
+			if (!sequence.pendingTargets.isEmpty()) damageBatch(sequence);
 			// Only the paid channel's successful completion may trigger damage.
 			if ((!sequence.exploded && !isChargingOwner(server, sequence))
-					|| (sequence.exploded && elapsed > ExplosionRules.EXPLODE_TICKS + ExplosionRules.AFTER_GLOW_TICKS)) {
+					|| (sequence.exploded && sequence.pendingTargets.isEmpty()
+					&& elapsed > ExplosionRules.EXPLODE_TICKS + ExplosionRules.AFTER_GLOW_TICKS)) {
 				iterator.remove();
 				removed = true;
 			}
@@ -129,19 +143,26 @@ public final class ExplosionManager {
 		return owner != null && owner.isAlive() && owner.getWorld() == sequence.world && SpellChannelManager.isCasting(owner);
 	}
 
-	private static void damageArea(Sequence sequence) {
+	/** 分批伤害每 tick 结算目标数上限：40 个/批，100+ 实体场景 2-3 tick 摊完（≤150ms 玩家不可感知）。 */
+	private static final int DAMAGE_BATCH = 40;
+
+	/** 分批结算一批伤害（2026-09-24 修卡顿）：从 pendingTargets 头部取 ≤DAMAGE_BATCH 个逐个结算，
+	 * 逻辑与原 damageArea 单目标完全一致（距离衰减/无差别伤害/点燃/击退）；批间已死亡/卸载的目标
+	 * 由 isAlive 跳过。金沙岚连击统计（lastHit/killed/hitBurning）跨批累计，最后一批完成时统一
+	 * 调 onSpellHit——语义与原「全场一次结算」一致。 */
+	private static void damageBatch(Sequence sequence) {
 		ServerWorld world = sequence.world;
 		Vec3d center = sequence.center;
 		ServerPlayerEntity owner = world.getServer().getPlayerManager().getPlayer(sequence.owner);
 		if (owner != null && owner.getWorld() != world) owner = null;
 		var source = owner == null ? SpellDamageSource.of(world.getDamageSources())
 				: SpellDamageSource.of(world.getDamageSources(), owner);
-		double diameter = ExplosionRules.OUTER_RADIUS * 2;
-		var targets = world.getEntitiesByClass(LivingEntity.class, Box.of(center, diameter, diameter, diameter),
-				entity -> entity.isAlive() && !entity.isSpectator());
 		LivingEntity lastHit = null, killed = null;
 		boolean hitBurning = false;
-		for (LivingEntity target : targets) {
+		int settle = Math.min(DAMAGE_BATCH, sequence.pendingTargets.size());
+		var batch = sequence.pendingTargets.subList(0, settle);
+		for (LivingEntity target : batch) {
+			if (!target.isAlive() || target.isRemoved()) continue; // 批间死亡/卸载跳过
 			double distance = target.getPos().distanceTo(center);
 			double factor = ExplosionRules.damageFactor(distance);
 			if (factor <= 0) continue;
@@ -160,6 +181,7 @@ public final class ExplosionManager {
 			target.addVelocity(direction.x * strength, 0.35 + strength * 0.25, direction.z * strength);
 			target.velocityModified = true;
 		}
+		batch.clear(); // 已结算目标出队（subList.clear 原位移除）
 		if (owner != null && lastHit != null) {
 			FormCastingStyle.onSpellHit(owner, killed != null ? killed : lastHit,
 					FormationElement.FIRE, sequence.refundCastId, hitBurning);

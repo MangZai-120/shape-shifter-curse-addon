@@ -26,6 +26,46 @@ import java.util.UUID;
  * 旧卷轴自带较长 CD 时不被清空表清零）。</p>
  */
 public final class SharedSpellCooldowns extends PersistentState {
+	public static final net.minecraft.util.Identifier SYNC = new net.minecraft.util.Identifier("ssc_addon", "shared_spell_cooldowns");
+	// Client mirror only; never populated or cleared by server lifecycle events.
+	private static final Map<String, Long> CLIENT_ENDS = new HashMap<>();
+
+	public static void init() {
+		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> sync(handler.player));
+		net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, player, alive) -> sync(player));
+	}
+
+	public NbtCompound snapshot(UUID player, long now) {
+		prune(player, now);
+		NbtCompound snapshot = new NbtCompound();
+		data.getOrDefault(player, Map.of()).forEach(snapshot::putLong);
+		return snapshot;
+	}
+
+	private static void sync(ServerPlayerEntity player) {
+		var state = get(player.getServer());
+		if (state == null || !net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.canSend(player, SYNC)) return;
+		var buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+		buf.writeNbt(state.snapshot(player.getUuid(), player.getWorld().getTime()));
+		net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, SYNC, buf);
+	}
+
+	public static void applyClientSnapshot(NbtCompound snapshot) {
+		CLIENT_ENDS.clear();
+		if (snapshot != null) for (String spell : snapshot.getKeys()) CLIENT_ENDS.put(spell, snapshot.getLong(spell));
+	}
+
+	public static long getClientCooldownEnd(Spell spell, long scrollEnd) {
+		return Math.max(scrollEnd, spell == null ? 0L : CLIENT_ENDS.getOrDefault(spell.getId().getPath(), 0L));
+	}
+
+	/** Both sides use the same max of the scroll's inherited cooldown and the player's shared cooldown. */
+	public static long getEffectiveCooldownEnd(net.minecraft.entity.player.PlayerEntity player, net.minecraft.item.ItemStack scroll) {
+		Spell spell = ScrollData.getSpell(scroll);
+		long ownEnd = ScrollData.getCooldownEnd(scroll);
+		return player.getWorld().isClient ? getClientCooldownEnd(spell, ownEnd)
+				: player instanceof ServerPlayerEntity serverPlayer ? Math.max(ownEnd, getCooldownEndOf(serverPlayer, spell)) : ownEnd;
+	}
 
 	private static final String KEY = "ssc_addon_shared_spell_cooldowns";
 
@@ -139,6 +179,7 @@ public final class SharedSpellCooldowns extends PersistentState {
 		SharedSpellCooldowns state = get(player.getServer());
 		if (state != null) {
 			state.setCooldownEnd(player.getUuid(), spell.getId().getPath(), cooldownEnd);
+			sync(player);
 		}
 	}
 
@@ -154,6 +195,7 @@ public final class SharedSpellCooldowns extends PersistentState {
 		if (state != null) {
 			state.data.remove(player.getUuid());
 			state.markDirty();
+			sync(player);
 		}
 	}
 
@@ -178,6 +220,7 @@ public final class SharedSpellCooldowns extends PersistentState {
 		if (state != null) {
 			state.shortenCooldownEnd(player.getUuid(), spell.getId().getPath(), newEndTick,
 					player.getWorld().getTime());
+			sync(player);
 		}
 	}
 }

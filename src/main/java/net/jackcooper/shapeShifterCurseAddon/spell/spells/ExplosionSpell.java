@@ -39,11 +39,19 @@ public class ExplosionSpell extends Spell {
 	public boolean canContinueCasting(ServerPlayerEntity caster, net.minecraft.item.ItemStack scroll) {
 		return ExplosionManager.isWithinChargeAnchor(caster);
 	}
-	/** 锁定点（2026-09-23 用户定稿，同领域壳扩张）：红白球开始生成（蓄力 682t / 第 34.1 秒）后
-	 * 不可打断，必须释放——伤害/主动取消/长按取消/位移均不再断。 */
+	/** 锁定点（2026-09-24 用户定稿二次调整）：主题音频起播（蓄力 540t / 第 27 秒 T-8s）后
+	 * 不可打断，必须释放——伤害/主动取消/长按取消/位移均不再断（原为 682t 红白球生成）。 */
 	@Override
 	public boolean isLockedIn(ServerPlayerEntity caster) {
 		return ExplosionManager.isBallCharging(caster);
+	}
+
+	/** 锁定转换 tick（客户端 HUD 本地预测红显兜底，2026-09-24）：与服务端锁定阈值同源。
+	 * 2026-09-24 用户定稿：锁定起点从红白球生成（682t）提前到主题音频起播（540t / 第 27 秒）
+	 * ——音频响起即不可打断，红字从倒数第 8 秒开始显示。 */
+	@Override
+	public int getLockInTick() {
+		return ExplosionRules.SOUND_START_TICKS;
 	}	@Override
 	public String getInBookTooltipKey() {
 		return "item.ssc_addon.magic_scroll.tip_in_book_explosion";

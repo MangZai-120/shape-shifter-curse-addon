@@ -49,10 +49,8 @@
         "type": "apoli:action_over_time",
         "interval": 1,
         "entity_action": {
-            "type": "apoli:change_resource",
-            "resource": "my_addon:form_allay_sp_group_heal_solo_damage_timer",
-            "operation": "add",
-            "change": -1
+            "type": "my_addon:tick_countdown",
+            "resource": "my_addon:form_allay_sp_group_heal_solo_damage_timer"
         },
         "condition": {
             "type": "apoli:resource",
@@ -65,10 +63,8 @@
         "type": "apoli:action_over_time",
         "interval": 1,
         "entity_action": {
-            "type": "apoli:change_resource",
-            "resource": "my_addon:form_allay_sp_group_heal_cooldown_timer",
-            "operation": "add",
-            "change": -1
+            "type": "my_addon:tick_countdown",
+            "resource": "my_addon:form_allay_sp_group_heal_cooldown_timer"
         },
         "condition": {
             "type": "apoli:resource",

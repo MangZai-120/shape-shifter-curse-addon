@@ -136,6 +136,9 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 
 	public void onChannelEnded(ServerPlayerEntity caster, boolean interrupted) {}
 
+	/** Called during preparation, before the effect starts (including release-mode spells). */
+	public void tickChannel(ServerPlayerEntity caster, int level, net.minecraft.item.ItemStack scroll, int ticks) {}
+
 	public int getInterruptedCooldown(int cooldown) {
 		return SpellCastingRules.interruptedCooldown(cooldown);
 	}
@@ -145,6 +148,13 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	 * 默认 false（无锁定点）；死亡/断线/停服/载体失效等强制终止不在此列，仍会安全结束。 */
 	public boolean isLockedIn(ServerPlayerEntity caster) {
 		return false;
+	}
+
+	/** 施法锁定转换 tick（2026-09-24 新增，客户端 HUD 本地预测用）：返回进入锁定态的读条 tick，
+	 * -1 = 无锁定点。服务端判定仍走 isLockedIn（玩家/世界状态），此值仅供客户端在
+	 * 校准包时滞/单点补发丢失时按本地推进 elapsed 兜底红显（如领域 200t、爆裂 682t）。 */
+	public int getLockInTick() {
+		return -1;
 	}
 
 	public boolean tickContinuousCast(ServerPlayerEntity caster, int level, net.minecraft.item.ItemStack scroll, int ticks) {

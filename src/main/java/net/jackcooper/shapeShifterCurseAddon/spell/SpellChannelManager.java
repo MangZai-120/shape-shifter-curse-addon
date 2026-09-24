@@ -232,6 +232,7 @@ public final class SpellChannelManager {
 			}
 		} else {
 			channel.progress.tick();
+			channel.spell.tickChannel(player, channel.level, channel.scroll, channel.progress.elapsed());
 			advance(channel);
 		}
 		// 锁定态转换检测：进入锁定的当 tick 立即补发一次校准包（不等 20t 周期）。

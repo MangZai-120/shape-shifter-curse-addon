@@ -58,8 +58,10 @@ public final class KillEmpowerManager {
 	public static void writeState(ServerPlayerEntity player, KillEmpowerState state) {
 		if (state.hasRing()) ACTIVE_RINGS.add(player.getUuid());
 		else ACTIVE_RINGS.remove(player.getUuid());
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.EMPOWER_TICKS, state.readyTicks());
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.EMPOWER_RING_TICKS, state.ringTicks());
+		// ticks/ringTicks 是每 tick 恰好 -1 的单调倒计时（tickFromRingEffect 里 Math.max(0, x-1)）：
+		// 走批量预测通道；state 标志/ring_duration 是状态型任意跳变，保持立即同步（2026-09-24）。
+		PowerUtils.countDownAndSync(player, FormIdentifiers.EMPOWER_TICKS, state.readyTicks());
+		PowerUtils.countDownAndSync(player, FormIdentifiers.EMPOWER_RING_TICKS, state.ringTicks());
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.EMPOWER_STATE, state.flags());
 		if (!state.hasRing()) PowerUtils.setResourceValueAndSync(player, FormIdentifiers.EMPOWER_RING_DURATION, 0);
 	}

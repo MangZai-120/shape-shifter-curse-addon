@@ -23,10 +23,8 @@
         "type": "apoli:action_over_time",
         "interval": 1,
         "entity_action": {
-            "type": "apoli:change_resource",
-            "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_cooldown_timer",
-            "operation": "add",
-            "change": -1
+            "type": "my_addon:tick_countdown",
+            "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_cooldown_timer"
         },
         "condition": {
              "type": "apoli:resource",

@@ -34,12 +34,15 @@ import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
 @Environment(EnvType.CLIENT)
 public final class SpellcastClient {
 	private static int selectedSlot = 0;
+	/** 上 tick 是否已装备书：无→有沿触发从书 NBT 恢复选中槽（重进游戏不丢选择，2026-09-24）。 */
+	private static boolean bookWasEquipped;
 	private static final boolean[] wasDirectPressed = new boolean[7];
 	private static boolean wasCastPressed = false;
 	private static int gestureToken;
 	private static int gestureKey = -1;
 	private static int gestureSlot = -1;
 	private static boolean selectingTarget;
+	private static net.minecraft.entity.LivingEntity lunarTarget;
 	private static boolean targetingDowngraded;
 	private static ItemStack targetingScroll = ItemStack.EMPTY;
 	private static net.minecraft.client.world.ClientWorld targetingWorld;
@@ -53,6 +56,15 @@ public final class SpellcastClient {
 	}
 
 	public static void register() {
+		net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+				net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.SYNC, (client, handler, buf, sender) -> {
+			var snapshot = buf.readNbt();
+			client.execute(() -> net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.applyClientSnapshot(snapshot));
+		});
+		net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.INIT.register((handler, client) ->
+				net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.applyClientSnapshot(null));
+		net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
+				net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.applyClientSnapshot(null));
 		net.jackcooper.shapeShifterCurseAddon.client.hud.SpellCastHud.register();
 		ClientTickEvents.END_CLIENT_TICK.register(SpellcastClient::onClientTick);
 	}
@@ -165,6 +177,7 @@ public final class SpellcastClient {
 		ItemStack book = getEquippedBook();
 		if (book == null || book.isEmpty()) {
 			downgradePresses.reset();
+			bookWasEquipped = false; // 卸书：下次重新装备时按 NBT 初始化选中槽
 			if (selectingTarget) {
 				clearTargetSelection();
 				gestureKey = -1;
@@ -176,6 +189,13 @@ public final class SpellcastClient {
 			}
 			updatePressedKeys(castPressed);
 			return;
+		}
+		if (!bookWasEquipped) {
+			// 重进游戏/新装备书：从书 NBT 恢复上次选中的槽（修复「选了第三个法术，重进变回第一个」——
+			// 服务端 Selected 一直有存，客户端静态字段却从 0 起步从未读过它）。
+			bookWasEquipped = true;
+			int saved = SpellbookData.getSelectedSlot(book);
+			selectedSlot = SpellbookData.hasScroll(book, saved) ? saved : Math.max(0, SpellbookData.firstFilledSlot(book));
 		}
 		int count = SpellbookData.getSlotCount(book);
 		if (selectedSlot >= count) {
@@ -222,6 +242,8 @@ public final class SpellcastClient {
 			gestureKey = -1;
 		}
 		if (!handled && castPressed && !wasCastPressed) {
+			System.out.println("[SSCA gesture] 施法键按下沿：active=" + (active != null) + " gestureKey=" + gestureKey
+					+ " selectedSlot=" + selectedSlot + " guard=" + inputGuard.getClass().getSimpleName());
 			if (active != null) {
 				// 锁定态（领域壳扩张后/爆裂红白球生成后，2026-09-23）：不可取消，不发取消包、
 				// 不打本地取消标（避免「取消中」红字永驻），HUD 倒计时保持红显。
@@ -239,13 +261,18 @@ public final class SpellcastClient {
 				&& !active.released() && isAimSpell(book, gestureSlot)) {
 			updateAimPreview(client, player, book, gestureSlot);
 		}
+		updateLunarTarget(player);
 		updatePressedKeys(castPressed);
 	}
 
 	private static void startGesture(ClientPlayerEntity player, ItemStack book, int slot, int key) {
 		ItemStack scroll = SpellbookData.getScroll(book, slot);
 		Spell spell = ScrollData.getSpell(scroll);
-		if (spell == null || ScrollData.isOnCooldown(scroll, player.getWorld())) {
+		// 临时诊断（2026-09-24 月相锁不到人排查）：定位 startGesture 到底卡在哪道门
+		System.out.println("[SSCA gesture] startGesture slot=" + slot + " spell="
+				+ (spell == null ? "NULL(nbt=" + (scroll.getNbt() == null ? "无" : scroll.getNbt().getString("Spell")) + ")"
+				: spell.getId()) + " cd=" + ScrollData.isOnCooldown(scroll, player.getWorld()));
+		if (spell == null || player.getWorld().getTime() < net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.getEffectiveCooldownEnd(player, scroll)) {
 			downgradePresses.reset();
 			return;
 		}
@@ -277,6 +304,7 @@ public final class SpellcastClient {
 			targetingDowngraded = downgraded;
 			targetingScroll = scroll.copy();
 			targetingWorld = MinecraftClient.getInstance().world;
+			updateLunarTarget(player);
 			return;
 		}
 		if (downgraded) sendCastDowngraded(slot);
@@ -320,7 +348,26 @@ public final class SpellcastClient {
 		}
 	}
 
+	private static void updateLunarTarget(ClientPlayerEntity player) {
+		lunarTarget = null;
+		if (selectingTarget && gestureKey >= 0 && keyPressed(gestureKey)
+				&& ScrollData.getSpell(targetingScroll) instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarPhaseSpell) {
+			lunarTarget = net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarPhaseSpell.raycastEntity(player);
+		}
+	}
+
+	/** Exact current selection, with immediate release/screen/world invalidation. */
+	public static boolean isLunarTarget(net.minecraft.entity.Entity entity) {
+		var client = MinecraftClient.getInstance();
+		return entity != null && entity == lunarTarget && selectingTarget
+				&& client.world == targetingWorld && client.currentScreen == null
+				&& client.player != null && client.player.isAlive() && entity.isAlive()
+				&& gestureKey >= 0 && keyPressed(gestureKey)
+				&& !net.jackcooper.shapeShifterCurseAddon.client.renderer.DomainRenderer.blocksTargetingClient(entity);
+	}
+
 	private static void clearTargetSelection() {
+		lunarTarget = null;
 		selectingTarget = false;
 		targetingDowngraded = false;
 		targetingScroll = ItemStack.EMPTY;
@@ -346,17 +393,19 @@ public final class SpellcastClient {
 	}
 
 	/**
-	 * 按住瞄准预览（纯客户端本地粒子，零网络开销）：每 2t 在准星落点撒一圈火焰粒子
+	 * 按住瞄准预览（纯客户端本地，零网络开销）：每 2t 在准星落点撒一圈火焰粒子
 	 * （与服务端陨火预警圈同视觉语言），随准星实时移动。
+	 * 月相（实体目标型）：不撒粒子圈，改为对准星射线命中的实体持续紫色描边
+	 * （本地高亮表短租约续约，松手停止续约后自然消失；与服务端 raycastEntity 同几何）。
 	 * 调用方已保证 CD/法力/落点均就绪（服务端施法时权威重验），此处无需重复校验。
 	 */
 	private static void updateAimPreview(MinecraftClient client, ClientPlayerEntity player, ItemStack book, int slot) {
-		if (client.world == null || client.world.getTime() % 2 != 0) {
-			return;
-		}
 		ItemStack scroll = SpellbookData.getScroll(book, slot);
 		Spell spell = ScrollData.getSpell(scroll);
 		if (spell == null) {
+			return;
+		}
+		if (client.world == null || client.world.getTime() % 2 != 0) {
 			return;
 		}
 		double radius = spell.getAimRadius(ScrollData.getLevel(scroll));

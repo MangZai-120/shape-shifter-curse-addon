@@ -28,6 +28,8 @@ public final class SpellBalanceTest {
 
 	public static void main(String[] args) throws Exception {
 		checkCastingRules();
+		checkSharedCooldownSync();
+		checkLunarPhase();
 		checkManaAndDowngradeRules();
 		checkRefundLedger();
 		checkFormRules();
@@ -35,11 +37,11 @@ public final class SpellBalanceTest {
 		checkDomainSound();
 		checkExplosionRules();
 		checkAttachedEffectScope();
-		// classpath 无目录列举能力：用已知 21 法术 id 清单（与 SpellRegistry 注册序一致）
+		// classpath 无目录列举能力：用已知法术 id 清单（与 SpellRegistry 注册序一致）
 		String[] ids = {
 				"fire_bolt", "flame_nova", "meteor", "explosion",
 				"frost_spike", "ice_barrage", "frost_nova", "frost_armor",
-				"moonlight_arrow", "lunar_mend", "lunar_veil",
+				"moonlight_arrow", "lunar_mend", "lunar_veil", "lunar_phase",
 				"curse_mark", "dread_whisper", "corrupt_mist",
 				"summon_lunar_spirit", "companion_resonance",
 				"void_devour", "void_erosion",
@@ -52,6 +54,82 @@ public final class SpellBalanceTest {
 			throw new IllegalStateException("法术数值回归失败 " + failures + " 项，详见上方输出");
 		}
 		System.out.println("Spell balance checks passed (" + ids.length + " spells).");
+	}
+
+	private static void checkSharedCooldownSync() {
+		var state = new SharedSpellCooldowns();
+		var player = java.util.UUID.randomUUID();
+		var otherPlayer = java.util.UUID.randomUUID();
+		Spell spell = new net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarPhaseSpell();
+		Spell otherSpell = new net.jackcooper.shapeShifterCurseAddon.spell.spells.ExplosionSpell();
+		String id = spell.getId().getPath();
+		state.setCooldownEnd(player, id, 500);
+		state.setCooldownEnd(player, id, 300);
+		state.setCooldownEnd(otherPlayer, id, 900);
+		try {
+			SharedSpellCooldowns.applyClientSnapshot(state.snapshot(player, 100));
+			if (SharedSpellCooldowns.getClientCooldownEnd(spell, 0) != 500
+					|| SharedSpellCooldowns.getClientCooldownEnd(spell, 700) != 700
+					|| SharedSpellCooldowns.getClientCooldownEnd(otherSpell, 0) != 0)
+				fail("shared_cd", "fresh copies must immediately inherit shared CD, preserving longer own CD and spell isolation");
+			state.shortenCooldownEnd(player, id, 250, 100);
+			SharedSpellCooldowns.applyClientSnapshot(state.snapshot(player, 100));
+			if (SharedSpellCooldowns.getClientCooldownEnd(spell, 0) != 250)
+				fail("shared_cd", "refund snapshot must replace rather than maximize the old mirror");
+			SharedSpellCooldowns.applyClientSnapshot(state.snapshot(player, 250));
+			if (SharedSpellCooldowns.getClientCooldownEnd(spell, 0) != 0)
+				fail("shared_cd", "expired entries must disappear at the exact deadline");
+			SharedSpellCooldowns.applyClientSnapshot(state.snapshot(otherPlayer, 250));
+			if (SharedSpellCooldowns.getClientCooldownEnd(spell, 0) != 900)
+				fail("shared_cd", "join snapshot must be player-specific");
+			SharedSpellCooldowns.applyClientSnapshot(new net.minecraft.nbt.NbtCompound());
+			if (SharedSpellCooldowns.getClientCooldownEnd(spell, 0) != 0)
+				fail("shared_cd", "reset snapshot must clear the client mirror");
+		} finally {
+			SharedSpellCooldowns.applyClientSnapshot(null);
+		}
+		System.out.println("Shared cooldown sync passed (fresh copies, longer inherited CD, player/spell isolation, refunds, expiry and reset).");
+	}
+
+	private static void checkLunarPhase() throws Exception {
+		var spell = new net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarPhaseSpell();
+		if (spell.getClass().getMethod("tickChannel", net.minecraft.server.network.ServerPlayerEntity.class,
+				int.class, net.minecraft.item.ItemStack.class, int.class).getDeclaringClass() != spell.getClass())
+			fail("lunar_phase", "preparation visuals must run in the charge callback");
+		for (double distance : new double[] {0, 0.1, 1, 12, 24, 32}) {
+			int segments = net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarPhaseSpell.linkSegments(distance);
+			if (segments < 2 || distance / segments > 0.25)
+				fail("lunar_phase", "purple link has visible gaps");
+		}
+		var progress = new SpellCastingRules.Progress<Vec3d>(spell.getCastingMode(), 30, 7);
+		if (!spell.requiresTargetBeforeChannel() || !progress.release(7, new Vec3d(0, 0, 5)))
+			fail("lunar_phase", "target selection must accept release before channel start");
+		for (int tick = 0; tick < 30; tick++) {
+			if (progress.beginEffect()) fail("lunar_phase", "swap before channel completes");
+			progress.tick();
+		}
+		if (!progress.beginEffect()) fail("lunar_phase", "swap missing at channel completion");
+		// The manager calls normal-end before the effect: the locked UUID must survive that hook.
+		var field = spell.getClass().getDeclaredField("CHANNEL_TARGETS");
+		field.setAccessible(true);
+		@SuppressWarnings("unchecked")
+		var targets = (java.util.Map<java.util.UUID, java.util.UUID>) field.get(null);
+		var casterId = java.util.UUID.randomUUID();
+		var targetId = java.util.UUID.randomUUID();
+		targets.put(casterId, targetId);
+		try {
+			spell.onChannelEnded(null, false);
+			if (!targetId.equals(targets.get(casterId))) fail("lunar_phase", "normal-end discarded target");
+		} finally {
+			targets.remove(casterId);
+		}
+		float[][] cases = {{5, 20, 1, 20}, {20, 20, .25f, 5}, {300, 300, .25f, 250},
+				{1, 300, 1, 51}, {20, 20, 0, 1}, {10, 20, .5f, 10}};
+		for (float[] c : cases) {
+			float actual = net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarPhaseSpell.swappedHealth(c[0], c[1], c[2]);
+			if (Math.abs(actual - c[3]) > 1e-5f) fail("lunar_phase", "percentage/cap/floor: " + actual);
+		}
+		System.out.println("Lunar phase release, target lifetime and capped percentage swap checks passed.");
 	}
 
 	private static void checkExplosionRules() {

@@ -192,6 +192,14 @@ tasks.register('killEmpowerTest', JavaExec) {
 
 check.dependsOn killEmpowerTest
 
+tasks.register('networkPredictionTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.network.NetworkPredictionTest'
+}
+
+check.dependsOn networkPredictionTest
+
 java {
     // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
     // if it is present.

@@ -22,10 +22,8 @@
         "type": "apoli:action_over_time",
         "interval": 1,
         "entity_action": {
-            "type": "apoli:change_resource",
-            "resource": "*:*_hit_invuln_timer",
-            "operation": "add",
-            "change": -1
+            "type": "my_addon:tick_countdown",
+            "resource": "*:*_hit_invuln_timer"
         },
         "condition": {
             "type": "apoli:resource",

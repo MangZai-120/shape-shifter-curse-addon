@@ -242,7 +242,8 @@ public final class FluorescentLaserManager {
 				shotDamage(sw, player, s);
 			}
 			s.shotTicks--;
-			PowerUtils.setResourceValueAndSync(player, SHOT_HUD, s.shotTicks);
+			// 每 tick 恰好 -1 的短倒计时：走批量预测通道（2026-09-24）
+			PowerUtils.countDownAndSync(player, SHOT_HUD, s.shotTicks);
 		}
 		// 窗口计时（仅在没有活跃发射时倒数）
 		if (s.shotTicks <= 0) {

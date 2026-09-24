@@ -2,10 +2,8 @@
     "type": "apoli:action_over_time",
     "interval": 1,
     "entity_action": {
-        "type": "apoli:change_resource",
-        "resource": "my_addon:form_golden_sandstorm_sp_counter_burst_cd",
-        "change": -1,
-        "operation": "add"
+        "type": "my_addon:tick_countdown",
+        "resource": "my_addon:form_golden_sandstorm_sp_counter_burst_cd"
     },
     "condition": {
         "type": "apoli:resource",

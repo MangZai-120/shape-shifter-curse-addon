@@ -19,10 +19,8 @@
             "compare_to": 0
         },
         "entity_action": {
-            "type": "apoli:change_resource",
-            "resource": "*:*_regen_pause_timer",
-            "operation": "add",
-            "change": -1
+            "type": "my_addon:tick_countdown",
+            "resource": "*:*_regen_pause_timer"
         }
     },
     "regen": {

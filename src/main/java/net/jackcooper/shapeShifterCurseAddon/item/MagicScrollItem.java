@@ -73,9 +73,7 @@ public class MagicScrollItem extends Item {
 			return TypedActionResult.fail(stack);
 		}
 		// 单独使用冷却中（卷轴 NBT + 玩家共享表双源判定，阶段 B §15.2）
-		if (ScrollData.isOnCooldown(stack, world)
-				|| (!world.isClient && user instanceof ServerPlayerEntity sp0
-					&& net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.isOnSharedCooldown(sp0, spell))) {
+		if (world.getTime() < net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.getEffectiveCooldownEnd(user, stack)) {
 			if (user instanceof ServerPlayerEntity player) SpellChannelManager.playFailureSound(player);
 			return TypedActionResult.fail(stack);
 		}

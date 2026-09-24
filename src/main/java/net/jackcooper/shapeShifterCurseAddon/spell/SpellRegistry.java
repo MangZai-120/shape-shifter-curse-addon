@@ -85,6 +85,7 @@ public final class SpellRegistry implements SimpleSynchronousResourceReloadListe
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.MoonlightArrowSpell());  // 月光箭
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarMendSpell());       // 月华治愈
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarVeilSpell());       // 月幕
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarPhaseSpell());      // 月相（按住描边锁定，松手百分比换血）
 		// —— 诅咒系（对立月辉）——
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.CurseMarkSpell());       // 诅咒标记
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.DreadWhisperSpell());    // 恐惧低语

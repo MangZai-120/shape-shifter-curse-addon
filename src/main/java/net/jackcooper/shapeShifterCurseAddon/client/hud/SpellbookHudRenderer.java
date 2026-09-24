@@ -132,7 +132,7 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 				ctx.drawText(mc.textRenderer, tag, textEndX, nameY, 0x2A7DFF, true);
 				textEndX += mc.textRenderer.getWidth(tag) + 4;
 			}
-			long cdRem = ScrollData.getCooldownEnd(scroll) - mc.world.getTime();
+			long cdRem = net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.getEffectiveCooldownEnd(mc.player, scroll) - mc.world.getTime();
 			if (cdRem > 0) {
 				String cdStr = String.format("%.1fs", cdRem / 20.0);
 				ctx.drawText(mc.textRenderer, Text.literal(cdStr).formatted(Formatting.RED),
@@ -167,9 +167,9 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 		// 顶层：品质覆盖层 + 冷却遮罩，都要压在图标上方，故整体抬高 z 再绘制
 		ctx.getMatrices().push();
 		ctx.getMatrices().translate(0, 0, 260);
-		// 冷却遮罩：CD 跟卷轴走（存卷轴 NBT），三个槽各自读自己卷轴的剩余冷却从上往下退去
+		// 冷却遮罩与数字共用玩家级共享 CD；同名不同等级卷轴立即显示同一截止时间。
 		if (spell != null && spell.getBaseCooldownTicks() > 0) {
-			long cdRem = Math.max(0L, ScrollData.getCooldownEnd(scroll) - mc.world.getTime());
+			long cdRem = Math.max(0L, net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.getEffectiveCooldownEnd(mc.player, scroll) - mc.world.getTime());
 			if (cdRem > 0) {
 				// 分母用等级后实际 CD（等级 CD 缩减后若仍用基础 CD，遮罩比例会偏小、退得比真实慢）；
 			// 阶段 B：再乘法阵 CD 乘区与耐久比 ×(2−ratio)、叠加双层下限（与服务端实际写入的 CD 同式；

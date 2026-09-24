@@ -59,6 +59,8 @@ public class SscAddonClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
+		SustainedVisualClient.init();
+		CountdownClient.init();
 		LOGGER.info("[SSC_ADDON] Registering Client KeyBindings...");
 		// 附属方块渲染层注册（蛛网膜等，cutout）
 		net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks.clientInit();
@@ -375,7 +377,15 @@ public class SscAddonClient implements ClientModInitializer {
 		ClientPlayNetworking.registerGlobalReceiver(net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_CLAW_STATE, (client, handler, buf, responseSender) -> {
 			int phase = buf.readInt();
 			float progress = buf.readFloat();
-			client.execute(() -> net.jackcooper.shapeShifterCurseAddon.client.ClawClientState.update(phase, progress));
+			boolean timed = buf.isReadable();
+			float step = timed ? buf.readFloat() : 0;
+			long serverTime = timed ? buf.readLong() : 0;
+			var dimension = timed ? buf.readIdentifier() : null;
+			client.execute(() -> {
+				if (client.world != null && client.getNetworkHandler() == handler
+						&& (dimension == null || dimension.equals(client.world.getRegistryKey().getValue())))
+					ClawClientState.update(phase, progress, step, serverTime);
+			});
 		});
 
         // 风灵「风之冲刺」：接收阶段+目标悬浮Y，更新客户端镜像（驱动悬浮期绿色落点预览）

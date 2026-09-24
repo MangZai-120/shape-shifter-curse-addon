@@ -76,11 +76,14 @@ public final class AxolotlWaterSpurtHandler {
 		boolean idleAudit = !waterCooling && !landCooling && wcd != 1 && lcd != 1 && player.age % 100 == 0;
 		if (waterCooling || wcd == 1 || (idleAudit
 				&& PowerUtils.getResourceValue(player, WATER_HUD) != 0)) {
-			PowerUtils.setResourceValueAndSync(player, WATER_HUD, Math.max(0, wcd - 1));
+			// 每 tick 恰好 -1 的 CD 倒计时：递减期走批量预测通道，归零帧/对账走立即同步（2026-09-24）
+			if (waterCooling) PowerUtils.countDownAndSync(player, WATER_HUD, Math.max(0, wcd - 1));
+			else PowerUtils.setResourceValueAndSync(player, WATER_HUD, Math.max(0, wcd - 1));
 		}
 		if (landCooling || lcd == 1 || (idleAudit
 				&& PowerUtils.getResourceValue(player, LAND_HUD) != 0)) {
-			PowerUtils.setResourceValueAndSync(player, LAND_HUD, Math.max(0, lcd - 1));
+			if (landCooling) PowerUtils.countDownAndSync(player, LAND_HUD, Math.max(0, lcd - 1));
+			else PowerUtils.setResourceValueAndSync(player, LAND_HUD, Math.max(0, lcd - 1));
 		}
 		boolean sneaking = player.isSneaking();
 		boolean wasSprintKey = WAS_CLIENT_SPRINT.getOrDefault(id, false);

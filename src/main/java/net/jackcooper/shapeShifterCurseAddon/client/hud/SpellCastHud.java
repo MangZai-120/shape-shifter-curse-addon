@@ -279,7 +279,12 @@ public final class SpellCastHud {
 		boolean full = elapsed >= current.duration();
 		// 锁定态（2026-09-23 用户定稿）：忽略取消显示（服务端不会取消，避免「取消中」红字永驻），
 		// 倒计时改红提示「不可打断必须释放」。
-		boolean locked = current.locked();
+		// 本地预测兜底（2026-09-24）：锁定判定 = 服务端包内 locked 位 || 本地 elapsed ≥ 该法术锁定转换 tick。
+		// 爆裂锁定窗口 682-700t 不在 20t 校准网格上，只靠服务端单点补发一次（时滞/丢包即整窗不红，
+		// 领域 200t 恰在网格上由周期包天然冗余携带故从未出问题）——本地预测不依赖网络，红显零时滞。
+		// 一致性：预测基于同一 elapsed 推进链，最多早/晚 1 个校准周期；服务端位到达后即权威覆盖。
+		int lockTick = current.spell().getLockInTick();
+		boolean locked = current.locked() || lockTick >= 0 && elapsed >= lockTick;
 		boolean cancelling = !locked && (localCancelling || current.cancelTicks() > 0);
 		// ===== 绘制：空框 → 满图自下而上裁切（左/右双贴图选图）→ 条旁倒计时 =====
 		int drawX = (int) x;

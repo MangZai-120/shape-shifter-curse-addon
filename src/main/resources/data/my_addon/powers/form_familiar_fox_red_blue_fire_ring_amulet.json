@@ -23,10 +23,8 @@
         "type": "apoli:action_over_time",
         "interval": 1,
         "entity_action": {
-            "type": "apoli:change_resource",
-            "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_cooldown_timer",
-            "operation": "add",
-            "change": -1
+            "type": "my_addon:tick_countdown",
+            "resource": "my_addon:form_familiar_fox_red_blue_fire_ring_amulet_cooldown_timer"
         },
         "condition": {
              "type": "apoli:resource",
@@ -472,63 +470,10 @@
             ]
         },
         "entity_action": {
-            "type": "apoli:and",
-            "actions": [
-                {
-                    "type": "apoli:execute_command",
-                    "command": "particle minecraft:soul_fire_flame ~ ~0.5 ~ 3.0 0.1 3.0 0.02 3 force @a"
-                },
-                {
-                    "type": "my_addon:spawn_rotating_circle",
-                    "particle": "minecraft:soul_fire_flame",
-                    "count": 1,
-                    "speed": 0.02,
-                    "force": true,
-                    "spread": {
-                        "x": 0.1,
-                        "y": 0.1,
-                        "z": 0.1
-                    },
-                    "radius": 3.6,
-                    "sample_count": 16,
-                    "rotation_speed": 0.12
-                },
-				{
-                    "type": "apoli:execute_command",
-                    "command": "particle minecraft:flame ~ ~0.5 ~ 3.0 0.1 3.0 0.02 3 force @a"
-                },
-                {
-                    "type": "my_addon:spawn_rotating_circle",
-                    "particle": "minecraft:flame",
-                    "count": 1,
-                    "speed": 0.02,
-                    "force": true,
-                    "spread": {
-                        "x": 0.1,
-                        "y": 0.1,
-                        "z": 0.1
-                    },
-                    "radius": 3.6,
-                    "sample_count": 14,
-                    "rotation_speed": 0.12
-                },
-                {
-                    "type": "my_addon:spawn_rotating_circle",
-                    "particle": "minecraft:flame",
-                    "count": 0,
-                    "speed": 0.1,
-                    "force": true,
-                    "spread": { "x": 0.0, "y": 0.5, "z": 0.0 },
-                    "offset_y": 0.1,
-                    "radius": 3.6,
-                    "sample_count": 11,
-                    "random_angle": true
-                },
-                {
-                    "type": "apoli:execute_command",
-                    "command": "particle minecraft:lava ~ ~1.0 ~ 2.0 0.2 2.0 0.0 1 force @a"
-                }
-            ]
+            "type": "my_addon:red_fire_ring_visual",
+            "amulet": true,
+            "empowered": false,
+            "radius": 3.6
         }
     }
 }

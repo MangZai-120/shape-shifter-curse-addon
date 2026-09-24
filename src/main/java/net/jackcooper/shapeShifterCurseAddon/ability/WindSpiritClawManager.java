@@ -78,6 +78,10 @@ public final class WindSpiritClawManager {
         int sinceLastAttack = 0;
         float progress = 1.0f;
         float recovery = 0.0f;
+        int sentPhase = -1;
+        float sentProgress = Float.NaN;
+        float sentStep = Float.NaN;
+        long sentAt = Long.MIN_VALUE;
     }
 
     private WindSpiritClawManager() {
@@ -122,9 +126,18 @@ public final class WindSpiritClawManager {
             }
         }
 
-        // 同步爪击阶段 + 准星条进度给客户端
+        // 爪击扣耐力按事件同步；过热条按服务端回复速度本地推进，每秒校准。
         if (STATES.containsKey(player.getUuid())) {
-            SscAddonNetworking.syncClawState(player, s.phase, crosshairProgress(s));
+            float progress = crosshairProgress(s);
+            float step = s.phase == PHASE_OVERHEAT ? recoveryStep(player) : 0;
+            long now = player.getWorld().getTime();
+            boolean legacy = !net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.canSend(player,
+                    net.jackcooper.shapeShifterCurseAddon.network.CountdownSync.STATE);
+            if (legacy || s.sentPhase != s.phase || s.sentStep != step
+                    || s.phase == PHASE_CLAW && s.sentProgress != progress || now - s.sentAt >= 20) {
+                SscAddonNetworking.syncClawState(player, s.phase, progress, step);
+                s.sentPhase = s.phase; s.sentProgress = progress; s.sentStep = step; s.sentAt = now;
+            }
         }
     }
 
@@ -159,9 +172,7 @@ public final class WindSpiritClawManager {
 
         // 停手后立即从当前进度慢慢回满（无延迟）；期间左键 = 弱普攻（getRecoveryMultiplier 缩放 0→90%）。
         // 戴风灵专属项链「御风爪铃」时耐力回复更快（8s → 5.5s）。
-        int recoverTicks = TrinketUtils.isWearing(player, net.jackcooper.shapeShifterCurseAddon.SscAddon.WIND_SPIRIT_STAMINA_NECKLACE)
-                ? RECOVER_TICKS_NECKLACE : RECOVER_TICKS;
-        s.recovery += 1.0f / recoverTicks;
+        s.recovery += recoveryStep(player);
         if (s.recovery >= 1.0f) {
             // 回满：仍按住 → 无缝重启连击；否则结束、准星条消失
             if (s.holding) {
@@ -179,6 +190,12 @@ public final class WindSpiritClawManager {
     private static void enterOverheat(ClawState s) {
         s.phase = PHASE_OVERHEAT;
         s.recovery = MathHelper.clamp(s.progress, 0.0f, 1.0f); // 从当前剩余进度开始回满（打得越久剩越少、回越久）
+    }
+
+    private static float recoveryStep(ServerPlayerEntity player) {
+        return 1.0f / (TrinketUtils.isWearing(player,
+                net.jackcooper.shapeShifterCurseAddon.SscAddon.WIND_SPIRIT_STAMINA_NECKLACE)
+                ? RECOVER_TICKS_NECKLACE : RECOVER_TICKS);
     }
 
     private static void performClawAttack(ServerPlayerEntity player, ClawState s) {

@@ -59,6 +59,7 @@
                    "WanderingTraderTradeMixin"
                ],
     "client":  [
+                   "client.CountdownResourceMixin",
                    "render.InstinctBarRendererMixin",
                    "render.FormColorSelectMenuMixin",
                    "player.SscPlayerEntityRendererMixin",
@@ -79,6 +80,8 @@
                    "client.DomainClientWallMixin",
                    "client.DomainCameraWallMixin",
                    "client.EntityWebGlowMixin",
+                   "client.LunarTargetOutlineMixin",
+                   "client.LunarTargetColorMixin",
                    "client.EntityGlowPowerMixin",
                    "client.FearFogMixin",
                    "client.FearHideRendererMixin",

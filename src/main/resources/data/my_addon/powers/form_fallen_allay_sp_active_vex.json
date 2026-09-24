@@ -4,10 +4,8 @@
         "type": "apoli:action_over_time",
         "interval": 1,
         "entity_action": {
-            "type": "apoli:change_resource",
-            "resource": "my_addon:form_fallen_allay_sp_vex_cd",
-            "change": -1,
-            "operation": "add"
+            "type": "my_addon:tick_countdown",
+            "resource": "my_addon:form_fallen_allay_sp_vex_cd"
         },
         "condition": {
             "type": "apoli:resource",
@@ -60,10 +58,8 @@
             "compare_to": 0
         },
         "entity_action": {
-            "type": "apoli:change_resource",
-            "resource": "*:*_interrupt_penalty_timer",
-            "change": -1,
-            "operation": "add"
+            "type": "my_addon:tick_countdown",
+            "resource": "*:*_interrupt_penalty_timer"
         }
     },
     "key_activation": {

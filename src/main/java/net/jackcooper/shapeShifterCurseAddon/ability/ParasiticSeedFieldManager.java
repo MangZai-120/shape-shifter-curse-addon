@@ -13,7 +13,6 @@ import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
@@ -25,7 +24,6 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.power.ParasiticFruitSeedPower;
-import org.joml.Vector3f;
 
 import java.util.List;
 import java.util.UUID;
@@ -39,13 +37,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * 获得寄生效果（时长 = 最大时长 − 已落地时长，由施法者持有的 power 施加，友/敌果实自动判定）；
  * 寿命耗尽或被拾取后消失，消失时喷绿色粒子。
  * <p>
- * 服务端权威，所有粒子由服务端 spawnParticles 广播，保证多人主客机一致。
+ * 拾取由服务端判定；持续粒子与核心自转由客户端按服务端时间轴生成。
  */
 public final class ParasiticSeedFieldManager {
     /** 拾取 / 治疗环半径（格） */
     public static final double FIELD_RADIUS = 1.0;
-    /** 治疗环绿色粉尘 */
-    private static final DustParticleEffect RING_DUST = new DustParticleEffect(new Vector3f(0.30f, 0.85f, 0.30f), 1.0f);
 
     private static final CopyOnWriteArrayList<SeedField> FIELDS = new CopyOnWriteArrayList<>();
 
@@ -60,7 +56,6 @@ public final class ParasiticSeedFieldManager {
         final long endTick;
         final UUID standUuid;
         final boolean twinPod;
-        float ringProgress;
 
         SeedField(UUID casterUuid, RegistryKey<World> worldKey, Vec3d pos, long spawnTick, long endTick, UUID standUuid, boolean twinPod) {
             this.casterUuid = casterUuid;
@@ -75,6 +70,7 @@ public final class ParasiticSeedFieldManager {
 
     public static void init() {
         ServerTickEvents.END_WORLD_TICK.register(ParasiticSeedFieldManager::onWorldTick);
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> FIELDS.clear());
     }
 
     /** 投掷物落地时调用：在落点生成一个灵果种子圈，寿命 = lifeTicks。双生种荷时核心图标为双生种荷。 */
@@ -146,27 +142,11 @@ public final class ParasiticSeedFieldManager {
 
     /** 绿色混凝土核心 + 旋转绿色治疗环（学 RC4 healing_crystal 并绿色化，半径 1）。 */
     private static void drawField(ServerWorld world, SeedField f, long now) {
-        double x = f.pos.x, y = f.pos.y, z = f.pos.z;
-        // 悬浮方块缓慢自转（仿 RC4 healing_crystal）
         Entity stand = world.getEntity(f.standUuid);
         if (stand != null) {
-            stand.setYaw(stand.getYaw() + 5.0f);
-        }
-        // 旋转治疗环（半径 1 的 8 点圈）；网络优化：隔 tick 发送（原每 tick 8 个 count=0 单粒包，粒子寿命 ~1s 靠存活衔接，视觉不变包率 -50%）
-        f.ringProgress += 0.12f;
-        double rot = f.ringProgress;
-        if (now % 2 == 0) {
-            for (int i = 0; i < 8; i++) {
-                double a = 2 * Math.PI * i / 8 + rot;
-                double px = x + FIELD_RADIUS * Math.cos(a);
-                double pz = z + FIELD_RADIUS * Math.sin(a);
-                world.spawnParticles(RING_DUST, px, y + 0.15, pz, 1, 0.0, 0.0, 0.0, 0.0);
-            }
-        }
-        // 周期绿星 + 青绿孢子上飘（孢子上飘同步改周期：2/tick → 2/3tick，包率再降）
-        if (now % 6 == 0) {
-            world.spawnParticles(ParticleTypes.HAPPY_VILLAGER, x, y + 0.8, z, 1, 0.25, 0.4, 0.25, 0.0);
-            world.spawnParticles(ParticleTypes.WARPED_SPORE, x, y + 0.6, z, 2, 0.35, 0.3, 0.35, 0.01);
+            net.jackcooper.shapeShifterCurseAddon.network.SustainedVisuals.touch(stand,
+                    net.jackcooper.shapeShifterCurseAddon.network.VisualRecipe.Kind.SEED_FIELD,
+                    (int) (now - f.spawnTick), (int) (f.endTick - f.spawnTick), FIELD_RADIUS, 0);
         }
     }
 

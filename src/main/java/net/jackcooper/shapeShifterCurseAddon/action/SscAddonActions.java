@@ -511,6 +511,21 @@ public class SscAddonActions {
 
 		// ==== 旋转圆环粒子（附属专用，仅 red 火环外圈使用，不影响主模组 spawn_particles_in_circle） ====
 		registerEntity(SpawnRotatingCircleAction.getFactory());
+		registerEntity(new ActionFactory<>(new Identifier("my_addon", "tick_countdown"),
+				new SerializableData().add("resource", io.github.apace100.apoli.data.ApoliDataTypes.POWER_TYPE),
+				(data, entity) -> net.jackcooper.shapeShifterCurseAddon.network.CountdownSync.decrement(entity, data.get("resource"))));
+		registerEntity(new ActionFactory<>(new Identifier("my_addon", "red_fire_ring_visual"),
+				new SerializableData().add("amulet", SerializableDataTypes.BOOLEAN, false)
+						.add("empowered", SerializableDataTypes.BOOLEAN, false)
+						.add("radius", SerializableDataTypes.DOUBLE, 6.0), (data, entity) -> {
+			var kind = !data.getBoolean("amulet")
+					? net.jackcooper.shapeShifterCurseAddon.network.VisualRecipe.Kind.RED_RING
+					: data.getBoolean("empowered")
+					? net.jackcooper.shapeShifterCurseAddon.network.VisualRecipe.Kind.EMPOWERED_AMULET_RING
+					: net.jackcooper.shapeShifterCurseAddon.network.VisualRecipe.Kind.AMULET_RING;
+			net.jackcooper.shapeShifterCurseAddon.network.SustainedVisuals.touch(
+					entity, kind, entity.age, 0, data.getDouble("radius"), 0);
+		}));
 
 		// ==== red 狐火火球：发射火球投射物 + 近身 60°×4格 锥形霰击（5 魔法伤害，附属专用，只作用 red） ====
 		registerEntity(new ActionFactory<>(new Identifier("my_addon", "fox_fireball"),

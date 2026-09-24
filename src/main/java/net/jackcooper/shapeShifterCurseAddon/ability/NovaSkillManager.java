@@ -222,6 +222,8 @@ public final class NovaSkillManager {
         }
         PowerUtils.setResourceValueAndSync(player, FormIdentifiers.OCELOT_NOVA_CHARGING, 0);
         CHARGE_START.remove(player.getUuid());
+        net.jackcooper.shapeShifterCurseAddon.network.SustainedVisuals.stop(player,
+                net.jackcooper.shapeShifterCurseAddon.network.VisualRecipe.Kind.NOVA_CHARGE);
     }
 
     private static void explode(ServerPlayerEntity player) {
@@ -280,24 +282,6 @@ public final class NovaSkillManager {
         }
     }
 
-    /**
-     * 时间驱动的旋转范围环：沿半径 radius 圆周稀疏均匀撒 count 个点，起始角随 timeSeed 缓慢旋转（speed 控快慢与方向）
-     * + 每点角度/径向/高度抖动。瞬时低密度（不刺眼）+ 逐 tick 旋转（流动、非固定点）→ 累积勾勒完整范围圈。
-     * 用于蓄力期持续预告爆炸范围。
-     */
-    private static void spawnArcRing(ServerWorld sw, ParticleEffect particle, double cx, double cy, double cz,
-                                     double radius, long timeSeed, double speed, int count) {
-        if (count < 1) count = 1;
-        double base = timeSeed * speed;
-        double step = Math.PI * 2 / count;
-        for (int i = 0; i < count; i++) {
-            double angle = base + step * i + (sw.random.nextDouble() - 0.5) * step * 0.6;
-            double r = radius + (sw.random.nextDouble() - 0.5) * 0.5;
-            sw.spawnParticles(particle, cx + Math.cos(angle) * r, cy + (sw.random.nextDouble() - 0.5) * 0.15,
-                    cz + Math.sin(angle) * r, 1, 0, 0, 0, 0);
-        }
-    }
-
     // ==== tick ====
 
     private static void tickPlayer(ServerPlayerEntity player) {
@@ -325,26 +309,11 @@ public final class NovaSkillManager {
         // 舍身爆炸蓄力：黑烟粒子 + 蓄满自爆
         Long cs = CHARGE_START.get(player.getUuid());
         if (cs != null) {
-            if (player.getWorld() instanceof ServerWorld sw) {
+            if (player.getWorld() instanceof ServerWorld) {
                 double chargeProgress = (now - cs) / (double) CHARGE_TIME; // 0→1 蓄力进度
-                // 蓄力粒子：头顶黑烟 + 身周火星（引信感）
-                // 网络优化：粒子隔 tick 发送且数量翻倍补偿（原每 tick 2 单包 + ~40 预警圈单粒包 ≈ 45包/秒；
-                // 粒子寿命 ~1s 靠存活衔接，旋转光环视觉不变，包率 -50%）
-                if ((now - cs) % 2 == 0) {
-                sw.spawnParticles(ParticleTypes.LARGE_SMOKE, player.getX(), player.getY() + 1.0, player.getZ(),
-                        6, 0.3, 0.4, 0.3, 0.02);
-                sw.spawnParticles(ParticleTypes.FLAME, player.getX(), player.getY() + 0.7, player.getZ(),
-                        4, 0.35, 0.4, 0.35, 0.01);
-                // 蓄力全程持续预告爆炸范围：致命圈（暗红，稍清晰）+ 最远波及圈（淡灰白，很淡、反向旋转）。
-                // 时间驱动旋转 + 稀疏 + 抖动 = 流动光环勾勒范围，瞬时低密度不刺眼、非固定点；密度随蓄力进度略增。
-                double warnY = player.getY() + 0.08;
-                DustParticleEffect lethalWarn = new DustParticleEffect(new Vector3f(0.72f, 0.12f, 0.12f), 0.9f);
-                spawnArcRing(sw, lethalWarn, player.getX(), warnY, player.getZ(),
-                        LETHAL_RADIUS, now, 0.15, 14 + (int) (chargeProgress * 8));
-                DustParticleEffect edgeWarn = new DustParticleEffect(new Vector3f(0.68f, 0.68f, 0.70f), 0.8f);
-                spawnArcRing(sw, edgeWarn, player.getX(), warnY, player.getZ(),
-                        MAX_RADIUS, now, -0.11, 18 + (int) (chargeProgress * 10));
-                }
+                net.jackcooper.shapeShifterCurseAddon.network.SustainedVisuals.touch(player,
+                        net.jackcooper.shapeShifterCurseAddon.network.VisualRecipe.Kind.NOVA_CHARGE,
+                        (int) (now - cs), CHARGE_TIME, LETHAL_RADIUS, MAX_RADIUS);
                 // 蓄力充能音：导管低鸣底噪，每 0.5s 一次、随进度升调（音量压低让位 TNT 引信声）
                 if ((now - cs) % 10 == 0) {
                     float pitch = 0.7F + 0.8F * (float) chargeProgress;

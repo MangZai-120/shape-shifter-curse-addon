@@ -98,6 +98,16 @@ public class PowerUtils {
 		syncPower(player, resourceId);
 	}
 
+	/** 每 tick 单调递减倒计时的批量同步写（2026-09-24，配套 CountdownSync 预测通道）：
+	 *  写值后不立即发 syncPower，而是登记锚点由 CountdownSync.flush 批量/变化即时发包——
+	 *  稳态递减期每 20t 才一包（仅发本人+追踪者），CD 活跃期从每 tick 1 包降 95%+。
+	 *  ⚠ 仅限「每 tick 恰好 -1」的倒计时资源；状态标志/非单调/任意跳变资源禁用（用上面立即同步版）。 */
+	public static void countDownAndSync(ServerPlayerEntity player, Identifier resourceId, int value) {
+		if (getResourceValue(player, resourceId) == value) return;
+		setResourceValue(player, resourceId, value);
+		net.jackcooper.shapeShifterCurseAddon.network.CountdownSync.mark(player, resourceId);
+	}
+
 	public static void changeResourceValueAndSync(ServerPlayerEntity player, Identifier resourceId, int change) {
 		// 无变化则跳过同步包（change==0 恒不改值）
 		if (change == 0) return;

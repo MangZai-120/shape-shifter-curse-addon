@@ -27,11 +27,11 @@ public final class MagicScrollLoot {
 	/** 各等级生成权重（index = level-1）。 */
 	private static final int[] LEVEL_WEIGHTS = {30, 28, 22, 13, 7};
 	/** 各法术生成权重（与下方法顺序一致；新法术比冰锥稍稀有，AOE/防御类再低一档）。 */
-	private static final int[] SPELL_WEIGHTS = {30, 22, 14, 8, 18, 14, 10, 16, 12, 14, 12, 10, 8, 6, 10, 10, 8, 10, 8, 6, 6};
-	/** 参与宝箱抽取的法术 id 列表（顺序与权重一致）：冰锥/火球/烈焰新星/陨火/冰锥齐射/冰霜新星/霜甲/月光箭/月华治愈/月幕/诅咒标记/恐惧低语/腐蚀之雾/召唤月灵/伙伴共鸣/虚空吞噬/虚空侵蚀/空间跳跃/空间漫步/空间归途。 */
+	private static final int[] SPELL_WEIGHTS = {30, 22, 14, 8, 18, 14, 10, 16, 12, 14, 12, 8, 10, 8, 6, 10, 10, 8, 10, 8, 6, 6};
+	/** 参与宝箱抽取的法术 id 列表（顺序与权重一致）：冰锥/火球/烈焰新星/陨火/冰锥齐射/冰霜新星/霜甲/月光箭/月华治愈/月幕/月相/诅咒标记/恐惧低语/腐蚀之雾/召唤月灵/伙伴共鸣/虚空吞噬/虚空侵蚀/空间跳跃/空间漫步/空间归途。 */
 	private static final String[] SPELL_PATHS = {
 			"frost_spike", "fire_bolt", "flame_nova", "meteor", "ice_barrage", "frost_nova", "frost_armor",
-			"moonlight_arrow", "lunar_mend", "lunar_veil", "curse_mark", "dread_whisper", "corrupt_mist",
+			"moonlight_arrow", "lunar_mend", "lunar_veil", "lunar_phase", "curse_mark", "dread_whisper", "corrupt_mist",
 			"summon_lunar_spirit", "companion_resonance", "void_devour", "void_erosion",
 			"space_blink", "space_stride", "space_recall", "pocket_space"
 	};
