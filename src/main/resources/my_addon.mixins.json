@@ -62,6 +62,8 @@
                    "client.CountdownResourceMixin",
                    "render.InstinctBarRendererMixin",
                    "render.FormColorSelectMenuMixin",
+                   "render.FormOverlayEmissiveMixin",
+                   "render.PlayerEntityModelAccessor",
                    "player.SscPlayerEntityRendererMixin",
                    "input.StunnedCameraMixin",
                    "input.StunnedInputMixin",
