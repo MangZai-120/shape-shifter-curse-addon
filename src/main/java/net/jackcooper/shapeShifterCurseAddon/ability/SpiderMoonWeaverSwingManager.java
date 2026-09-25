@@ -250,7 +250,8 @@ public final class SpiderMoonWeaverSwingManager {
 		if (++s.broadcastTick >= 3) {
 			s.broadcastTick = 0;
 			broadcastState(player, s);
-			((ServerWorld) player.getWorld()).spawnParticles(net.minecraft.particle.ParticleTypes.CLOUD,
+			// 锚点丝云（owner 打标：仅本人避让）
+			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn((ServerWorld) player.getWorld(), player, net.minecraft.particle.ParticleTypes.CLOUD,
 					s.anchor.x, s.anchor.y, s.anchor.z, 2, 0.12, 0.12, 0.12, 0.0);
 		}
 	}

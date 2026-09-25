@@ -157,8 +157,8 @@ public final class VenomSkillManager {
 			d.hitDone = true; // 本 tick 结束后停下
 		}
 
-		// 冲刺拖尾
-		sw.spawnParticles(ParticleTypes.WITCH, player.getX(), player.getBodyY(0.5), player.getZ(),
+		// 冲刺拖尾（owner 打标：仅本人第一人称避让）
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.WITCH, player.getX(), player.getBodyY(0.5), player.getZ(),
 				3, 0.15, 0.2, 0.15, 0.05);
 	}
 

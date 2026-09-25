@@ -146,11 +146,11 @@ public final class WindDashManager {
 
         // 起点反方向白粒子（向冲刺反方向喷出）
         Vec3d back = s.dashDir.multiply(-1);
-        sw.spawnParticles(ParticleTypes.CLOUD, player.getX(), player.getY() + 1.0, player.getZ(),
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD, player.getX(), player.getY() + 1.0, player.getZ(),
                 25, 0.2, 0.3, 0.2, 0.02);
         // 给反方向粒子一个速度（用 spawnParticles 的速度分量近似）
         for (int i = 0; i < 15; i++) {
-            sw.spawnParticles(ParticleTypes.CLOUD,
+            net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD,
                     player.getX() + back.x * 0.5, player.getY() + 1.0, player.getZ() + back.z * 0.5,
                     1, 0.1, 0.1, 0.1, 0.0);
         }
@@ -237,7 +237,7 @@ public final class WindDashManager {
         player.setVelocity(0, 0, 0);
         player.velocityModified = true;
         // 脚下持续灰烟
-        sw.spawnParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CAMPFIRE_COSY_SMOKE,
                 player.getX(), player.getY() - 0.1, player.getZ(),
                 3, 0.25, 0.0, 0.25, 0.005);
 
@@ -267,10 +267,10 @@ public final class WindDashManager {
         player.setPosition(next.x, next.y, next.z);
 
         // 路径白粒子拖尾（冲刺中无灰烟）
-        sw.spawnParticles(ParticleTypes.CLOUD,
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD,
                 player.getX(), player.getY() + 0.5, player.getZ(),
                 4, 0.15, 0.15, 0.15, 0.0);
-        sw.spawnParticles(ParticleTypes.CLOUD,
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD,
                 player.getX(), player.getY() + 1.2, player.getZ(),
                 3, 0.1, 0.1, 0.1, 0.0);
 
@@ -292,7 +292,7 @@ public final class WindDashManager {
             player.setVelocity(0, 0, 0);
             player.velocityModified = true;
             // 落地小粒子
-            sw.spawnParticles(ParticleTypes.CLOUD, player.getX(), player.getY(), player.getZ(),
+            net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD, player.getX(), player.getY(), player.getZ(),
                     10, 0.3, 0.0, 0.3, 0.02);
             sw.playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.BLOCK_SAND_PLACE, SoundCategory.PLAYERS, 0.5f, 1.2f);
@@ -304,7 +304,7 @@ public final class WindDashManager {
         player.velocityModified = true;
         player.setPosition(player.getX(), curY - stepY, player.getZ());
         // 下落时脚下灰烟
-        sw.spawnParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CAMPFIRE_COSY_SMOKE,
                 player.getX(), player.getY() - 0.1, player.getZ(),
                 2, 0.2, 0.0, 0.2, 0.005);
     }
@@ -361,7 +361,7 @@ public final class WindDashManager {
     /** 起飞阶段脚下粒子：灰烟 + 烟花上升。 */
     private static void spawnRiseParticles(ServerWorld sw, ServerPlayerEntity player) {
         // 灰烟（脚下）
-        sw.spawnParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CAMPFIRE_COSY_SMOKE,
                 player.getX(), player.getY() - 0.1, player.getZ(),
                 4, 0.3, 0.0, 0.3, 0.01);
         // 烟花同款上升粒子（FIREWORK，带向上速度）

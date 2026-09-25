@@ -156,18 +156,18 @@ public final class NovaSkillManager {
         // 灵跃粒子：脚下蹬地烟环 + 沿跳冲方向破空拖尾 + 锐气暴击（敏捷灵动）
         if (player.getWorld() instanceof ServerWorld sw) {
             // 脚下蹬地烟环（沿脚下一整圈均匀分布，蹬地爆发感、非固定点）
-            spawnRing(sw, ParticleTypes.CLOUD, player.getX(), player.getY() + 0.08, player.getZ(),
+            spawnRing(sw, player, ParticleTypes.CLOUD, player.getX(), player.getY() + 0.08, player.getZ(),
                     0.6, 12, 0.05);
-            // 沿跳冲方向的破空拖尾（锐气流线，敏捷灵动）
+            // 沿跳冲方向的破空拖尾（锐气流线，敏捷灵动；owner 打标：本人第一人称避让）
             for (int i = 1; i <= 6; i++) {
                 double t = i / 6.0;
-                sw.spawnParticles(ParticleTypes.CLOUD,
+                net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD,
                         player.getX() + look.x * t * 1.6,
                         player.getY() + 0.5 + look.y * t * 1.6,
                         player.getZ() + look.z * t * 1.6,
                         1, 0.05, 0.05, 0.05, 0.02);
             }
-            sw.spawnParticles(ParticleTypes.CRIT, player.getX(), player.getY() + 0.6, player.getZ(),
+            net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CRIT, player.getX(), player.getY() + 0.6, player.getZ(),
                     10, 0.3, 0.3, 0.3, 0.35);
         }
         // 灵跃：幻影闪现（幻术师镜像瞬移）+ 轻盈破空，敏捷灵动
@@ -248,14 +248,15 @@ public final class NovaSkillManager {
         // 每圈沿整圈动态分布（随机起始角 + 角度/径向抖动），非固定点、层次清晰而不刺眼。
         double ringY = player.getY() + 0.15;
         DustParticleEffect lethalDust = new DustParticleEffect(new Vector3f(0.82f, 0.14f, 0.12f), 1.2f);
-        spawnRing(sw, lethalDust, player.getX(), ringY, player.getZ(), LETHAL_RADIUS, LETHAL_RADIUS * 10, 0.25);
+        // 范围预警圈（owner=null 不打标）：本人第一人称也要看清爆炸范围，不做避让
+        spawnRing(sw, null, lethalDust, player.getX(), ringY, player.getZ(), LETHAL_RADIUS, LETHAL_RADIUS * 10, 0.25);
         double midRadius = (LETHAL_RADIUS + MAX_RADIUS) / 2.0;
         DustParticleEffect midDust = new DustParticleEffect(new Vector3f(0.62f, 0.36f, 0.22f), 1.0f);
-        spawnRing(sw, midDust, player.getX(), ringY, player.getZ(), midRadius, (int) (midRadius * 7), 0.35);
-        spawnRing(sw, ParticleTypes.SMOKE, player.getX(), ringY, player.getZ(), MAX_RADIUS, MAX_RADIUS * 5, 0.45);
-        // 中心爆炸主体 + 烟云
-        sw.spawnParticles(ParticleTypes.EXPLOSION_EMITTER, player.getX(), player.getY() + 0.5, player.getZ(), 1, 0, 0, 0, 0);
-        sw.spawnParticles(ParticleTypes.LARGE_SMOKE, player.getX(), player.getY() + 0.5, player.getZ(), 30, 1.5, 1.0, 1.5, 0.1);
+        spawnRing(sw, null, midDust, player.getX(), ringY, player.getZ(), midRadius, (int) (midRadius * 7), 0.35);
+        spawnRing(sw, null, ParticleTypes.SMOKE, player.getX(), ringY, player.getZ(), MAX_RADIUS, MAX_RADIUS * 5, 0.45);
+        // 中心爆炸主体 + 烟云（owner 打标：仅本人第一人称避让；爆炸圈是范围预警保留原样）
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.EXPLOSION_EMITTER, player.getX(), player.getY() + 0.5, player.getZ(), 1, 0, 0, 0, 0);
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.LARGE_SMOKE, player.getX(), player.getY() + 0.5, player.getZ(), 30, 1.5, 1.0, 1.5, 0.1);
         // 自爆引爆：音爆冲击 + 厚重爆炸 + 末影龙余威，三层叠出毁灭感
         player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 1.0F, 0.9F);
@@ -269,15 +270,15 @@ public final class NovaSkillManager {
 
     // ==== 粒子辅助 ====
 
-    /** 沿半径 radius 的水平圆周均匀撞 count 个粒子（起始角随机 + 角度/径向抖动，避免呆板固定点）。 */
-    private static void spawnRing(ServerWorld sw, ParticleEffect particle, double cx, double cy, double cz,
+    /** 沿半径 radius 的水平圆周均匀撒 count 个粒子（起始角随机 + 角度/径向抖动，避免呆板固定点）。owner 非空时打标避让。 */
+    private static void spawnRing(ServerWorld sw, net.minecraft.entity.Entity owner, ParticleEffect particle, double cx, double cy, double cz,
                                   double radius, int count, double yJitter) {
         double start = sw.random.nextDouble() * Math.PI * 2;
         double step = Math.PI * 2 / count;
         for (int i = 0; i < count; i++) {
             double angle = start + step * i + (sw.random.nextDouble() - 0.5) * step * 0.7;
             double r = radius + (sw.random.nextDouble() - 0.5) * 0.5;
-            sw.spawnParticles(particle, cx + Math.cos(angle) * r, cy + (sw.random.nextDouble() - 0.5) * yJitter,
+            net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, owner, particle, cx + Math.cos(angle) * r, cy + (sw.random.nextDouble() - 0.5) * yJitter,
                     cz + Math.sin(angle) * r, 1, 0, 0, 0, 0);
         }
     }

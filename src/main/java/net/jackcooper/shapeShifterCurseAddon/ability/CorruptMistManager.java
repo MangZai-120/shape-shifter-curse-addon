@@ -86,12 +86,12 @@ public final class CorruptMistManager {
 						double px = mist.caster.getX() + Math.cos(angle) * dist;
 						double pz = mist.caster.getZ() + Math.sin(angle) * dist;
 						double py = mist.caster.getY() + 0.1 + serverWorld.getRandom().nextDouble() * 0.9;
-						// 紫（主）+ 绿（辅，约 1/4）混搭
-						if (serverWorld.getRandom().nextInt(4) == 0) {
-							serverWorld.spawnParticles(ParticleTypes.HAPPY_VILLAGER,
-									px, py, pz, 1, 0.15, 0.1, 0.15, 0.0);
-						} else {
-							serverWorld.spawnParticles(ParticleTypes.DRAGON_BREATH,
+							// 紫（主）+ 绿（辅，约 1/4）混搭（owner 打标：本人第一人称避让，他人原样）
+							if (serverWorld.getRandom().nextInt(4) == 0) {
+								net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, mist.caster, ParticleTypes.HAPPY_VILLAGER,
+										px, py, pz, 1, 0.15, 0.1, 0.15, 0.0);
+							} else {
+								net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, mist.caster, ParticleTypes.DRAGON_BREATH,
 									px, py, pz, 1, 0.15, 0.1, 0.15, 0.002);
 						}
 					}

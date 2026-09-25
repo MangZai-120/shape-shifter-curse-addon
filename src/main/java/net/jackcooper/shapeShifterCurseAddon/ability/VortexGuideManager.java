@@ -97,7 +97,8 @@ public final class VortexGuideManager {
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 0.7f, 1.6f);
-		sw.spawnParticles(ParticleTypes.SPLASH, player.getX(), player.getY() + 1.0, player.getZ(),
+		// owner 打标：仅本人第一人称避让
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.SPLASH, player.getX(), player.getY() + 1.0, player.getZ(),
 				40, 0.6, 0.6, 0.6, 0.5);
 	}
 

@@ -161,7 +161,7 @@ public final class NetworkPredictionTest {
                     "Respawn entity ID requires a fresh snapshot");
             for (Kind kind : Kind.values()) {
                 buf.clear();
-                var view = new SustainedVisuals.View(new SustainedVisuals.Key(id, kind), 39,
+                var view = new SustainedVisuals.View(new SustainedVisuals.Key(id, kind), new java.util.UUID(31, 47), 39,
                         new net.minecraft.util.math.Vec3d(-120.5, 64.1, 80.2), 4900000, 200, 0.6f, 1.62f, 3.6, 12);
                 view.write(buf);
                 check(view.equals(SustainedVisuals.View.read(buf)) && !buf.isReadable(), "Visual packet round trip: " + kind);

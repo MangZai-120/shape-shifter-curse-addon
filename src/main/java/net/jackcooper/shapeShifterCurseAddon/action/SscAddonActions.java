@@ -70,9 +70,9 @@ public class SscAddonActions {
 					if (entity instanceof ServerPlayerEntity player) {
 						net.minecraft.server.world.ServerWorld world = (net.minecraft.server.world.ServerWorld) player.getWorld();
 
-						// Particle and sound
-						world.playSound(null, player.getX(), player.getY(), player.getZ(), net.minecraft.sound.SoundEvents.ENTITY_ENDER_DRAGON_GROWL, net.minecraft.sound.SoundCategory.PLAYERS, 1.0f, 1.2f);
-						net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils.spawnParticles(world, net.minecraft.particle.ParticleTypes.SONIC_BOOM, player.getX(), player.getY() + 1.0, player.getZ(), 10, 0.5, 0.5, 0.5, 0.1);
+// Particle and sound（owner 打标：仅本人第一人称避让）
+					world.playSound(null, player.getX(), player.getY(), player.getZ(), net.minecraft.sound.SoundEvents.ENTITY_ENDER_DRAGON_GROWL, net.minecraft.sound.SoundCategory.PLAYERS, 1.0f, 1.2f);
+					net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.forced(world, player, net.minecraft.particle.ParticleTypes.SONIC_BOOM, player.getX(), player.getY() + 1.0, player.getZ(), 10, 0.5, 0.5, 0.5, 0.1, 512);
 
 						Box box = player.getBoundingBox().expand(25.0);
 

@@ -37,6 +37,8 @@ public class FrostStormEntity extends Entity {
 	private int ticksAlive = 0;
 	private UUID ownerUuid;
 
+	public UUID getDecorationOwner() { return ownerUuid; }
+
 	public FrostStormEntity(EntityType<?> entityType, World world) {
 		super(entityType, world);
 		this.noClip = true;

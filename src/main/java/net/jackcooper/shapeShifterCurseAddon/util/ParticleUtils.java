@@ -80,11 +80,16 @@ public class ParticleUtils {
 	 * 全部 force=true，最小粒子设置下也可见；scale 控制规模。
 	 */
 	public static void spawnWaterBurst(ServerWorld world, double x, double y, double z, double scale) {
+		spawnWaterBurst(world, null, x, y, z, scale);
+	}
+
+	/** Own skill bursts can avoid the camera; projectile impacts use the original overload. */
+	public static void spawnWaterBurst(ServerWorld world, net.minecraft.entity.Entity owner, double x, double y, double z, double scale) {
 		if (world == null) return;
 		net.minecraft.util.math.random.Random rnd = world.getRandom();
-		spawnParticles(world, net.minecraft.particle.ParticleTypes.SPLASH, x, y, z, (int) (40 * scale), 0.6 * scale, 0.3, 0.6 * scale, 0.2);
-		spawnParticles(world, net.minecraft.particle.ParticleTypes.BUBBLE, x, y, z, (int) (20 * scale), 0.5 * scale, 0.3, 0.5 * scale, 0.05);
-		spawnParticles(world, WATER_CYAN_DUST, x, y + 0.3, z, (int) (18 * scale), 0.5 * scale, 0.35, 0.5 * scale, 0.02);
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.forced(world, owner, net.minecraft.particle.ParticleTypes.SPLASH, x, y, z, (int) (40 * scale), 0.6 * scale, 0.3, 0.6 * scale, 0.2, 512);
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.forced(world, owner, net.minecraft.particle.ParticleTypes.BUBBLE, x, y, z, (int) (20 * scale), 0.5 * scale, 0.3, 0.5 * scale, 0.05, 512);
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.forced(world, owner, WATER_CYAN_DUST, x, y + 0.3, z, (int) (18 * scale), 0.5 * scale, 0.35, 0.5 * scale, 0.02, 512);
 		int n = (int) (24 * scale);
 		for (int i = 0; i < n; i++) {
 			double ang = rnd.nextDouble() * Math.PI * 2;
@@ -93,8 +98,8 @@ public class ParticleUtils {
 			double vz = Math.sin(ang) * horiz;
 			double vy = 0.35 + rnd.nextDouble() * 0.45;
 			// count=0 → offset 作为速度向量；白色水花与青色海晶石碎块都带重力 → 抛物线
-			spawnParticles(world, (i & 1) == 0 ? net.minecraft.particle.ParticleTypes.SPLASH : WATER_PRISMARINE,
-					x, y + 0.2, z, 0, vx, vy, vz, 1.0);
+			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.forced(world, owner, (i & 1) == 0 ? net.minecraft.particle.ParticleTypes.SPLASH : WATER_PRISMARINE,
+					x, y + 0.2, z, 0, vx, vy, vz, 1.0, 512);
 		}
 	}
 }

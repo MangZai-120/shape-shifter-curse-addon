@@ -81,7 +81,7 @@ public final class WaterSpearLeapManager {
 				SoundEvents.ENTITY_PLAYER_SPLASH_HIGH_SPEED, SoundCategory.PLAYERS, 1.0f, 1.1f);
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_AXOLOTL_SPLASH, SoundCategory.PLAYERS, 1.2f, 0.8f);
-		sw.spawnParticles(ParticleTypes.SPLASH, player.getX(), player.getY() + 0.2, player.getZ(),
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.SPLASH, player.getX(), player.getY() + 0.2, player.getZ(),
 				30, 0.4, 0.2, 0.4, 0.3);
 	}
 
@@ -103,7 +103,7 @@ public final class WaterSpearLeapManager {
 			player.velocityModified = true;
 			player.fallDistance = 0.0f;
 			if (s.tick % 4 == 0) {
-				sw.spawnParticles(ParticleTypes.FALLING_WATER, player.getX(), player.getY() + 1.0, player.getZ(),
+				net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.FALLING_WATER, player.getX(), player.getY() + 1.0, player.getZ(),
 						6, 0.4, 0.4, 0.4, 0.0);
 			}
 			// 蓄力音效：每 5 tick 一声上升气泡（音调随蓄力进度 0.8→1.7，营造能量聚集感）

@@ -150,10 +150,10 @@ public final class RedFormTickManager {
 				// 用 immediatelyTransform 避免动画
 				TransformManager.immediatelyTransform(player, spForm);
 
-				// 白色粒子大量覆盖玩家
+				// 白色粒子大量覆盖玩家（owner 打标：仅本人第一人称避让，变身演出他人视角原样）
 				if (player.getWorld() instanceof ServerWorld serverWorld) {
-					net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.CLOUD, player.getX(), player.getY() + 1.0, player.getZ(), 100, 0.5, 1.0, 0.5, 0.1);
-					net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils.spawnParticles(serverWorld, ParticleTypes.POOF, player.getX(), player.getY() + 1.0, player.getZ(), 50, 0.5, 1.0, 0.5, 0.1);
+					net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.forced(serverWorld, player, ParticleTypes.CLOUD, player.getX(), player.getY() + 1.0, player.getZ(), 100, 0.5, 1.0, 0.5, 0.1, 512);
+					net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.forced(serverWorld, player, ParticleTypes.POOF, player.getX(), player.getY() + 1.0, player.getZ(), 50, 0.5, 1.0, 0.5, 0.1, 512);
 				}
 
 				player.removeStatusEffect(StatusEffects.SLOWNESS);

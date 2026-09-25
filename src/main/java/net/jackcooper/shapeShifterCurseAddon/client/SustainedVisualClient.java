@@ -81,9 +81,12 @@ public final class SustainedVisualClient {
             // Same source/time seed on both clients, independent of unrelated local particles.
             var random = new java.util.Random(view.key().source().getLeastSignificantBits() ^ now ^ view.key().kind().ordinal());
             VisualRecipe.emit(view.key().kind(), age, now, view.duration(), view.width(), view.eyeHeight(),
-                    view.radius(), view.outerRadius(), random, batch -> cloud(view, particle(batch.particle()),
-                            pos.add(batch.x(), batch.y(), batch.z()), batch.count(),
-                            batch.dx(), batch.dy(), batch.dz(), batch.speed(), random));
+                    view.radius(), view.outerRadius(), random, batch ->
+                        net.jackcooper.shapeShifterCurseAddon.client.particle.FirstPersonParticles.emit(
+                            VisualRecipe.isDecoration(view.key().kind(), batch) ? view.decorationOwner() : null,
+                            () -> cloud(view, particle(batch.particle()),
+                                pos.add(batch.x(), batch.y(), batch.z()), batch.count(),
+                                batch.dx(), batch.dy(), batch.dz(), batch.speed(), random)));
         }
     }
 

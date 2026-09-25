@@ -60,6 +60,7 @@ public class SscAddonClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		SustainedVisualClient.init();
+		net.jackcooper.shapeShifterCurseAddon.client.particle.FirstPersonParticles.init();
 		CountdownClient.init();
 		LOGGER.info("[SSC_ADDON] Registering Client KeyBindings...");
 		// 附属方块渲染层注册（蛛网膜等，cutout）

@@ -38,10 +38,10 @@ public final class SpiderMoonWeaverDoubleJumpManager {
 				SoundEvents.ENTITY_FROG_LONG_JUMP, SoundCategory.PLAYERS, 0.6f, 0.8f);
 		// 粒子：跑跳前扑用更多云雾（对齐原版蜘蛛 16 个）；月织蛛额外加紫色魔法粒子
 		int cloudCount = lunge ? 20 : 12;
-		sw.spawnParticles(ParticleTypes.CLOUD, player.getX(), player.getY() + 0.2, player.getZ(),
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD, player.getX(), player.getY() + 0.2, player.getZ(),
 				cloudCount, 0.3, 0.3, 0.3, 0.01);
 		if (moonWeaver) {
-			sw.spawnParticles(ParticleTypes.WITCH, player.getX(), player.getY() + 0.2, player.getZ(),
+			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.WITCH, player.getX(), player.getY() + 0.2, player.getZ(),
 					8, 0.4, 0.3, 0.4, 0.01);
 		}
 	}

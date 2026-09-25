@@ -308,7 +308,8 @@ public final class JumpKillManager {
 	private static void snapSilk(ServerPlayerEntity player, ServerWorld sw, SilkAnchor anchor) {
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_WOOL_BREAK, SoundCategory.PLAYERS, 0.9f, 1.4f);
-		sw.spawnParticles(net.minecraft.particle.ParticleTypes.CLOUD, player.getX(), player.getBodyY(0.5), player.getZ(),
+		// owner 打标：仅本人第一人称避让，他人视角原样
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, net.minecraft.particle.ParticleTypes.CLOUD, player.getX(), player.getBodyY(0.5), player.getZ(),
 				10, 0.2, 0.2, 0.2, 0.02);
 	}
 
@@ -432,9 +433,9 @@ public final class JumpKillManager {
 		player.fallDistance = 0.0f;
 		pushVelocity(player);
 
-		// 跳跃拖尾：蛛丝微粒
+		// 跳跃拖尾：蛛丝微粒（owner 打标：仅本人第一人称避让）
 		if (s.leapTick % 2 == 0) {
-			sw.spawnParticles(ParticleTypes.CRIT, player.getX(), player.getBodyY(0.5), player.getZ(),
+			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CRIT, player.getX(), player.getBodyY(0.5), player.getZ(),
 					2, 0.1, 0.1, 0.1, 0.0);
 		}
 	}

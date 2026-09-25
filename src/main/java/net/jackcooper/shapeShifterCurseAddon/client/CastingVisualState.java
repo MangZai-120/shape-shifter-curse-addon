@@ -124,6 +124,9 @@ public final class CastingVisualState {
 						player.getY() + player.getHeight() + 0.12 + random.nextDouble() * 0.12,
 						player.getZ() + (random.nextDouble() - 0.5) * 0.65, 0, 0.04, 0);
 				if (particle == null) continue;
+				if (particle instanceof net.jackcooper.shapeShifterCurseAddon.client.particle.OwnedDecoration decoration) {
+					decoration.ssca$setDecorationOwner(player.getUuid());
+				}
 				particle.setColor(((entry.schoolColor >> 16) & 255) / 255F,
 						((entry.schoolColor >> 8) & 255) / 255F, (entry.schoolColor & 255) / 255F);
 				if (particle instanceof net.minecraft.client.particle.EndRodParticle endRod) {

@@ -40,10 +40,10 @@ public final class FluorescentDodgeHandler {
 				return true;
 			}
 			if (DODGE_RNG.nextFloat() < DODGE_CHANCE) {
-				// 闪避成功：取消伤害 + 水花反馈
+				// 闪避成功：取消伤害 + 水花反馈（owner 打标：仅本人第一人称避让）
 				if (self.getWorld() instanceof ServerWorld sw) {
-					sw.spawnParticles(ParticleTypes.SPLASH, self.getX(), self.getY() + 1.0, self.getZ(), 16, 0.4, 0.6, 0.4, 0.3);
-					sw.spawnParticles(ParticleTypes.BUBBLE, self.getX(), self.getY() + 1.0, self.getZ(), 8, 0.4, 0.6, 0.4, 0.1);
+					net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, self, ParticleTypes.SPLASH, self.getX(), self.getY() + 1.0, self.getZ(), 16, 0.4, 0.6, 0.4, 0.3);
+					net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, self, ParticleTypes.BUBBLE, self.getX(), self.getY() + 1.0, self.getZ(), 8, 0.4, 0.6, 0.4, 0.1);
 					sw.playSound(null, self.getX(), self.getY() + 1.0, self.getZ(),
 							SoundEvents.ENTITY_PLAYER_SPLASH_HIGH_SPEED, SoundCategory.PLAYERS, 0.6f, 1.5f);
 				}

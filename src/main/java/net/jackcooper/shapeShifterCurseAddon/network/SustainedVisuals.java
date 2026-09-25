@@ -26,13 +26,14 @@ import java.util.UUID;
 
 /** Server-authorized visual leases. Gameplay still runs in the original ability/action. */
 public final class SustainedVisuals {
-    public static final Identifier STATE = new Identifier("ssc_addon", "sustained_visuals_v1");
+    public static final Identifier STATE = new Identifier("ssc_addon", "sustained_visuals_v2");
     public record Key(UUID source, Kind kind) {}
-    public record View(Key key, int entityId, Vec3d pos, long epoch, int duration,
+    public record View(Key key, UUID decorationOwner, int entityId, Vec3d pos, long epoch, int duration,
                        float width, float eyeHeight, double radius, double outerRadius) {
         public void write(PacketByteBuf buf) {
             buf.writeUuid(key.source());
             buf.writeEnumConstant(key.kind());
+            buf.writeUuid(decorationOwner);
             buf.writeVarInt(entityId);
             buf.writeDouble(pos.x); buf.writeDouble(pos.y); buf.writeDouble(pos.z);
             buf.writeLong(epoch); buf.writeVarInt(duration);
@@ -41,7 +42,7 @@ public final class SustainedVisuals {
         }
         public static View read(PacketByteBuf buf) {
             Key key = new Key(buf.readUuid(), buf.readEnumConstant(Kind.class));
-            return new View(key, buf.readVarInt(), new Vec3d(buf.readDouble(), buf.readDouble(), buf.readDouble()),
+            return new View(key, buf.readUuid(), buf.readVarInt(), new Vec3d(buf.readDouble(), buf.readDouble(), buf.readDouble()),
                     buf.readLong(), buf.readVarInt(), buf.readFloat(), buf.readFloat(), buf.readDouble(), buf.readDouble());
         }
     }
@@ -71,7 +72,9 @@ public final class SustainedVisuals {
         entry.source = source;
         entry.world = world;
         entry.touched = world.getServer().getTicks();
-        entry.view = new View(key, source.getId(), source.getPos(), world.getTime() - elapsed,
+        UUID owner = source instanceof net.jackcooper.shapeShifterCurseAddon.entity.FrostStormEntity storm
+                && storm.getDecorationOwner() != null ? storm.getDecorationOwner() : source.getUuid();
+        entry.view = new View(key, owner, source.getId(), source.getPos(), world.getTime() - elapsed,
                 duration, source.getWidth(), source.getEyeHeight(source.getPose()), radius, outerRadius);
     }
 
@@ -126,7 +129,8 @@ public final class SustainedVisuals {
         if (a.size() != b.size()) return false;
         for (int i = 0; i < a.size(); i++) {
             View x = a.get(i), y = b.get(i);
-            if (!x.key.equals(y.key) || x.entityId != y.entityId || x.epoch != y.epoch || x.duration != y.duration
+            if (!x.key.equals(y.key) || !x.decorationOwner.equals(y.decorationOwner)
+                    || x.entityId != y.entityId || x.epoch != y.epoch || x.duration != y.duration
                     || x.width != y.width || x.eyeHeight != y.eyeHeight || x.radius != y.radius || x.outerRadius != y.outerRadius) return false;
         }
         return true;

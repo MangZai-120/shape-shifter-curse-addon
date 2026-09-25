@@ -46,9 +46,9 @@ public class SpaceStrideSpell extends Spell {
 		caster.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOW_FALLING, slowFall, 0));
 		caster.addStatusEffect(new StatusEffectInstance(StatusEffects.JUMP_BOOST, jump, jumpAmplifier));
 		// 演出：脚下星尘环绕
-		serverWorld.spawnParticles(ParticleTypes.CLOUD,
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, caster, ParticleTypes.CLOUD,
 				caster.getX(), caster.getY() + 0.2, caster.getZ(), 8, 0.4, 0.1, 0.4, 0.02);
-		serverWorld.spawnParticles(ParticleTypes.END_ROD,
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, caster, ParticleTypes.END_ROD,
 				caster.getX(), caster.getY() + 1.0, caster.getZ(), 10, 0.3, 0.5, 0.3, 0.03);
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_RABBIT_JUMP, SoundCategory.PLAYERS, 0.8f, 1.2f);

@@ -165,7 +165,8 @@ public final class NineLivesManager {
             e.velocityModified = true;
             e.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 60, 1, false, true, true), player);
         }
-        sw.spawnParticles(ParticleTypes.SWEEP_ATTACK, player.getX(), player.getY() + 0.5, player.getZ(), 8, 1.5, 0.3, 1.5, 0.0);
+        // owner 打标：仅本人第一人称避让，他人视角原样
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.SWEEP_ATTACK, player.getX(), player.getY() + 0.5, player.getZ(), 8, 1.5, 0.3, 1.5, 0.0);
         sw.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 1.0F, 0.8F);
     }

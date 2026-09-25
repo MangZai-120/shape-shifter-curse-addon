@@ -59,6 +59,9 @@
                    "WanderingTraderTradeMixin"
                ],
     "client":  [
+                   "client.DecorationParticleManagerMixin",
+                   "client.AsyncParticleSyncBatchMixin",
+                   "client.FirstPersonBillboardParticleMixin",
                    "client.CountdownResourceMixin",
                    "render.InstinctBarRendererMixin",
                    "render.FormColorSelectMenuMixin",

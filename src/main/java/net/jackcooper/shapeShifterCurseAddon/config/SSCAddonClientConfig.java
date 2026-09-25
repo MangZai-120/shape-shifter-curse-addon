@@ -11,14 +11,27 @@ import me.shedaniel.autoconfig.annotation.ConfigEntry;
 @Config(name = "ssc_addon_client")
 public class SSCAddonClientConfig implements ConfigData {
 
+	@ConfigEntry.Gui.Tooltip
+	@ConfigEntry.Gui.EnumHandler(option = ConfigEntry.Gui.EnumHandler.EnumDisplayOption.BUTTON)
+	public net.jackcooper.shapeShifterCurseAddon.client.particle.ParticleAvoidance.Strength firstPersonParticleAvoidance =
+			net.jackcooper.shapeShifterCurseAddon.client.particle.ParticleAvoidance.Strength.STANDARD;
+
+	@ConfigEntry.Gui.Excluded
 	public static final int DEFAULT_CD_TYPE = 4;
+	@ConfigEntry.Gui.Excluded
 	public static final int DEFAULT_CD_X = 0;
+	@ConfigEntry.Gui.Excluded
 	public static final int DEFAULT_CD_Y = -34;
+	@ConfigEntry.Gui.Excluded
 	public static final int DEFAULT_CD_SECONDARY_X = 0;
+	@ConfigEntry.Gui.Excluded
 	public static final int DEFAULT_CD_SECONDARY_Y = 0;
 	/** 蓄力条默认：锚点 4（左中）+ 偏移(0,-34)，与 CD 条同锚点同高；chargeMirrorRight=true → 贴屏幕右缘（CD 条对侧）。 */
+	@ConfigEntry.Gui.Excluded
 	public static final int DEFAULT_CHARGE_TYPE = 4;
+	@ConfigEntry.Gui.Excluded
 	public static final int DEFAULT_CHARGE_X = 0;
+	@ConfigEntry.Gui.Excluded
 	public static final int DEFAULT_CHARGE_Y = -34;
 
 	@ConfigEntry.Gui.Excluded

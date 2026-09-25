@@ -81,7 +81,7 @@ public class FlameNovaSpell extends Spell {
 					solo ? null : ssc_addon$getRefundCastId(), hitBurningTarget);
 		}
 		// 演出：球形火焰粒子（双层球面 + 烟火）+ 音效
-		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.sphere(serverWorld,
+		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.sphere(serverWorld, caster,
 				caster.getX(), caster.getY() + 1.0, caster.getZ(), radius,
 				ParticleTypes.FLAME, ParticleTypes.LAVA, ParticleTypes.CAMPFIRE_COSY_SMOKE, 6);
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),

@@ -316,7 +316,8 @@ public final class WindSpiritClawManager {
         ServerWorld sw = (ServerWorld) player.getWorld();
         sw.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_PLAYER_ATTACK_STRONG, SoundCategory.PLAYERS, 0.8f, 1.6f);
-        sw.spawnParticles(ParticleTypes.CRIT, player.getX(), player.getY() + 1.0, player.getZ(), 20, 0.4, 0.5, 0.4, 0.2);
+        // owner 打标：仅本人第一人称避让
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CRIT, player.getX(), player.getY() + 1.0, player.getZ(), 20, 0.4, 0.5, 0.4, 0.2);
     }
 
     /** 彻底清理：移除状态 + 移速修饰符，并通知客户端准星条消失。 */

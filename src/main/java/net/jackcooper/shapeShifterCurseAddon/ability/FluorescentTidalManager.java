@@ -84,8 +84,8 @@ public final class FluorescentTidalManager {
                 SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.8f);
         sw.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_PLAYER_SPLASH, SoundCategory.PLAYERS, 0.7f, 1.4f);
-        sw.spawnParticles(ParticleTypes.BUBBLE, player.getX(), player.getY() + 1, player.getZ(), 30, 0.5, 0.8, 0.5, 0.15);
-        sw.spawnParticles(ParticleTypes.SPLASH, player.getX(), player.getY() + 1, player.getZ(), 15, 0.5, 0.5, 0.5, 0.1);
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.BUBBLE, player.getX(), player.getY() + 1, player.getZ(), 30, 0.5, 0.8, 0.5, 0.15);
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.SPLASH, player.getX(), player.getY() + 1, player.getZ(), 15, 0.5, 0.5, 0.5, 0.1);
     }
 
     /** 飞行中再次按键：让球开始减速。 */
@@ -128,7 +128,7 @@ public final class FluorescentTidalManager {
                 for (int i = 0; i < 4; i++) {
                     double a = ang + i * (Math.PI / 2);
                     double r = 1.2 - (s.chargeTicks / (double) CHARGE_TICKS) * 0.8;
-                    sw.spawnParticles(ParticleTypes.BUBBLE,
+                    net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.BUBBLE,
                             player.getX() + Math.cos(a) * r, player.getY() + 1.0, player.getZ() + Math.sin(a) * r,
                             1, 0, 0.05, 0, 0.0);
                 }
@@ -155,8 +155,8 @@ public final class FluorescentTidalManager {
                 SoundEvents.ENTITY_DROWNED_SHOOT, SoundCategory.PLAYERS, 1.0f, 1.0f);
         sw.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 0.7f, 1.3f);
-        sw.spawnParticles(ParticleTypes.SPLASH, player.getX(), player.getY() + 1, player.getZ(), 40, 0.6, 0.8, 0.6, 0.3);
-        sw.spawnParticles(ParticleTypes.BUBBLE, player.getX(), player.getY() + 1, player.getZ(), 30, 0.5, 0.5, 0.5, 0.25);
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.SPLASH, player.getX(), player.getY() + 1, player.getZ(), 40, 0.6, 0.8, 0.6, 0.3);
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.BUBBLE, player.getX(), player.getY() + 1, player.getZ(), 30, 0.5, 0.5, 0.5, 0.25);
     }
 
     /** 球实体消失时回调：标记 pendingCd，由 tickPendingCd 在主线程补设 CD（回调拿不到 player 引用）。 */

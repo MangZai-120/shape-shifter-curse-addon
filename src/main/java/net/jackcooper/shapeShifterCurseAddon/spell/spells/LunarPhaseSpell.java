@@ -162,8 +162,8 @@ public class LunarPhaseSpell extends Spell {
 		if (!(target instanceof LivingEntity living) || !living.isAlive()) return;
 		// 浅紫+灵魂沙鬼魂小圈（双方脚下，半径 0.8 格 12 采样点）
 		DustParticleEffect lilac = new DustParticleEffect(new Vector3f(0.85f, 0.65f, 0.95f), 1.0f);
-		spawnRing(world, caster.getPos(), lilac, caster.age);
-		spawnRing(world, target.getPos(), lilac, living.age);
+		spawnRing(world, caster, caster.getPos(), lilac, caster.age);
+		spawnRing(world, null, target.getPos(), lilac, living.age);
 		// 密集紫色粒子连线，随双方位置移动。
 		Vec3d from = caster.getPos().add(0, caster.getHeight() * 0.6, 0);
 		Vec3d to = target.getPos().add(0, living.getHeight() * 0.6, 0);
@@ -172,7 +172,8 @@ public class LunarPhaseSpell extends Spell {
 		DustParticleEffect link = new DustParticleEffect(new Vector3f(0.70f, 0.42f, 0.85f), 0.9f);
 		for (int i = 0; i <= points; i++) {
 			Vec3d p = from.lerp(to, i / (double) points);
-			world.spawnParticles(link, p.x, p.y, p.z, 1, 0.01, 0.01, 0.01, 0.0);
+			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, caster,
+					link, p.x, p.y, p.z, 1, 0.01, 0.01, 0.01, 0.0);
 		}
 	}
 
@@ -217,8 +218,8 @@ public class LunarPhaseSpell extends Spell {
 		caster.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.PLAYERS, 0.8f, 1.8f);
 		if (caster.getWorld() instanceof ServerWorld world) {
-			spawnBurstRing(world, caster.getPos());
-			spawnBurstRing(world, target.getPos());
+			spawnBurstRing(world, caster, caster.getPos());
+			spawnBurstRing(world, null, target.getPos());
 		}
 	}
 
@@ -235,23 +236,23 @@ public class LunarPhaseSpell extends Spell {
 		return target != null && target.getPos().squaredDistanceTo(pos) < 1.0e-6 ? target : null;
 	}
 
-	private static void spawnRing(ServerWorld world, Vec3d pos, DustParticleEffect dust, int seedBase) {
+	private static void spawnRing(ServerWorld world, ServerPlayerEntity owner, Vec3d pos, DustParticleEffect dust, int seedBase) {
 		for (int i = 0; i < 12; i++) {
 			double angle = i * 2 * Math.PI / 12 + (seedBase % 20) * 0.1;
-			world.spawnParticles(dust,
+			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, owner, dust,
 					pos.x + Math.cos(angle) * 0.8, pos.y + 0.1, pos.z + Math.sin(angle) * 0.8,
 					1, 0.0, 0.03, 0.0, 0.0);
-			world.spawnParticles(ParticleTypes.SOUL, // 灵魂沙鬼魂粒子（间隔采样点缀）
+			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, owner, ParticleTypes.SOUL,
 					pos.x + Math.cos(angle) * 0.8, pos.y + 0.4, pos.z + Math.sin(angle) * 0.8,
 					i % 3 == 0 ? 1 : 0, 0.0, 0.02, 0.0, 0.005);
 		}
 	}
 
-	private static void spawnBurstRing(ServerWorld world, Vec3d pos) {
+	private static void spawnBurstRing(ServerWorld world, ServerPlayerEntity owner, Vec3d pos) {
 		var dust = new DustParticleEffect(new Vector3f(0.95f, 0.92f, 0.75f), 1.2f);
 		for (int i = 0; i < 24; i++) {
 			double angle = i * 2 * Math.PI / 24;
-			world.spawnParticles(dust,
+			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, owner, dust,
 					pos.x + Math.cos(angle) * 0.9, pos.y + 0.1, pos.z + Math.sin(angle) * 0.9,
 					1, 0.0, 0.05, 0.0, 0.0);
 		}

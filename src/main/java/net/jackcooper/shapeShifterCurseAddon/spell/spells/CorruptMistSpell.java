@@ -53,7 +53,7 @@ public class CorruptMistSpell extends Spell {
 		// 起手演出：紫色雾气扩散 + 酸蚀音效
 		for (int layer = 1; layer <= 3; layer++) {
 			double r = radius * layer / 3.0;
-			net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.ring(serverWorld, ParticleTypes.DRAGON_BREATH,
+			net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.ring(serverWorld, caster, ParticleTypes.DRAGON_BREATH,
 					caster.getX(), caster.getY() + 0.15, caster.getZ(), r, 16);
 		}
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),

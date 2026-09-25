@@ -200,6 +200,14 @@ tasks.register('networkPredictionTest', JavaExec) {
 
 check.dependsOn networkPredictionTest
 
+tasks.register('particleAvoidanceTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.client.particle.ParticleAvoidanceTest'
+}
+
+check.dependsOn particleAvoidanceTest
+
 java {
     // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
     // if it is present.

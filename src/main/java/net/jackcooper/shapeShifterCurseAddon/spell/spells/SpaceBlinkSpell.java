@@ -79,11 +79,11 @@ public class SpaceBlinkSpell extends Spell {
 			return; // 理论不可达（回退链已兜底），防御性保留
 		}
 		// 起点消散演出
-		serverWorld.spawnParticles(ParticleTypes.PORTAL,
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, caster, ParticleTypes.PORTAL,
 				caster.getX(), caster.getBodyY(0.5), caster.getZ(), 20, 0.3, 0.5, 0.3, 0.1);
 		caster.teleport(dest.x, dest.y, dest.z);
 		// 终点汇聚演出
-		serverWorld.spawnParticles(ParticleTypes.END_ROD,
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, caster, ParticleTypes.END_ROD,
 				dest.x, dest.y + 1.0, dest.z, 16, 0.3, 0.5, 0.3, 0.05);
 		serverWorld.playSound(null, dest.x, dest.y, dest.z,
 				SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0f, 1.4f);

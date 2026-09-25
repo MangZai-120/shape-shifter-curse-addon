@@ -21,11 +21,12 @@ public final class SpellFxUtils {
 	 * @param radius 圆周半径（格）
 	 * @param count  圆周上粒子数
 	 */
-	public static void ring(ServerWorld world, ParticleEffect particle,
+	public static void ring(ServerWorld world, net.minecraft.entity.Entity owner, ParticleEffect particle,
 	                        double x, double y, double z, double radius, int count) {
 		for (int i = 0; i < count; i++) {
 			double angle = 2 * Math.PI * i / count;
-			world.spawnParticles(particle,
+			// owner 打标：本人第一人称贴近镜头时渐隐，他人/范围圈提示不受影响
+			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, owner, particle,
 					x + Math.cos(angle) * radius, y, z + Math.sin(angle) * radius,
 					1, 0.05, 0.05, 0.05, 0.01);
 		}
@@ -40,14 +41,14 @@ public final class SpellFxUtils {
 	 * @param centerParticle 中心填充粒子（如 CAMPFIRE_COSY_SMOKE / CLOUD）
 	 * @param centerCount 中心填充粒子数（原烈焰 6 / 冰霜 8）
 	 */
-	public static void sphere(ServerWorld world, double cx, double cy, double cz, double radius,
+	public static void sphere(ServerWorld world, net.minecraft.entity.Entity owner, double cx, double cy, double cz, double radius,
 	                          ParticleEffect outerParticle, ParticleEffect innerParticle,
 	                          ParticleEffect centerParticle, int centerCount) {
-		// 外层球面：沿球面按表面积近似均匀分布
+		// 外层球面：沿球面按表面积近似均匀分布（owner 打标：本人第一人称避让，他人原样）
 		int outerCount = (int) Math.max(24, radius * radius * 12);
 		for (int i = 0; i < outerCount; i++) {
 			double[] dir = fibonacciSphereDir(i, outerCount);
-			world.spawnParticles(outerParticle,
+			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, owner, outerParticle,
 					cx + dir[0] * radius, cy + dir[1] * radius, cz + dir[2] * radius,
 					1, 0.02, 0.02, 0.02, 0.001);
 		}
@@ -56,12 +57,12 @@ public final class SpellFxUtils {
 		double innerR = radius * 0.65;
 		for (int i = 0; i < innerCount; i++) {
 			double[] dir = fibonacciSphereDir(i, innerCount);
-			world.spawnParticles(innerParticle,
+			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, owner, innerParticle,
 					cx + dir[0] * innerR, cy + dir[1] * innerR, cz + dir[2] * innerR,
 					1, 0.02, 0.02, 0.02, 0.001);
 		}
 		// 中心填充：蘑菇云状/云雾
-		world.spawnParticles(centerParticle,
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, owner, centerParticle,
 				cx, cy + 0.3, cz, centerCount, radius * 0.3, 0.2, radius * 0.3, 0.01);
 	}
 

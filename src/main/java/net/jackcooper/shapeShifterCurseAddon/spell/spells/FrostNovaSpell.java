@@ -69,7 +69,7 @@ public class FrostNovaSpell extends Spell {
 					net.jackcooper.shapeShifterCurseAddon.SscAddon.FROST_SHATTER, slowTicks, 0));
 		}
 		// 演出：球形寒气粒子（双层雪花球面 + 内部云雾）+ 寒气音效（与烈焰新星同款球形演出）
-		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.sphere(serverWorld,
+		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.sphere(serverWorld, caster,
 				caster.getX(), caster.getY() + 1.0, caster.getZ(), radius,
 				ParticleTypes.SNOWFLAKE, ParticleTypes.SNOWFLAKE, ParticleTypes.CLOUD, 8);
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),

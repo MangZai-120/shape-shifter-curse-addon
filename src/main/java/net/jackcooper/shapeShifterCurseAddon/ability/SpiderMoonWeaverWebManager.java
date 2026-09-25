@@ -138,10 +138,10 @@ public final class SpiderMoonWeaverWebManager {
 						SoundEvents.BLOCK_NOTE_BLOCK_HAT.value(), SoundCategory.PLAYERS, 0.8f, chime);
 				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.BLOCK_NOTE_BLOCK_SNARE.value(), SoundCategory.PLAYERS, 0.8f, chime);
-				sw.spawnParticles(ParticleTypes.CLOUD, player.getX(), player.getY() + 1.0, player.getZ(),
+				net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD, player.getX(), player.getY() + 1.0, player.getZ(),
 						10, 0.5, 0.5, 0.5, 0.0);
 			} else if (s[0] % 4 == 0) {
-				sw.spawnParticles(ParticleTypes.CLOUD, player.getX(), player.getY() + 1.0, player.getZ(),
+				net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD, player.getX(), player.getY() + 1.0, player.getZ(),
 						4, 0.4, 0.5, 0.4, 0.0);
 			}
 		}
@@ -205,7 +205,7 @@ public final class SpiderMoonWeaverWebManager {
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_GRASS_PLACE, SoundCategory.PLAYERS, 0.6f, 0.8f);
-		sw.spawnParticles(ParticleTypes.CLOUD, player.getX(), player.getY() + 0.5, player.getZ(),
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD, player.getX(), player.getY() + 0.5, player.getZ(),
 				40, 1.0, 0.5, 1.0, 0.0);
 	}
 

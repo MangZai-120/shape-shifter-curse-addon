@@ -105,9 +105,9 @@ public class VoidDevourSpell extends Spell {
 					target.getX(), target.getBodyY(0.5), target.getZ(), 12, 0.3, 0.3, 0.3, 0.05);
 		}
 		// 落点演出：暗紫灄灭圈（双圈 + 中心聚集，随等级缩放）
-		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.ring(serverWorld, ParticleTypes.PORTAL,
+		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.ring(serverWorld, caster, ParticleTypes.PORTAL,
 				impact.x, impact.y + 0.2, impact.z, radius * 0.6, 16);
-		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.ring(serverWorld, ParticleTypes.PORTAL,
+		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.ring(serverWorld, caster, ParticleTypes.PORTAL,
 				impact.x, impact.y + 0.4, impact.z, radius, 24);
 		serverWorld.spawnParticles(ParticleTypes.PORTAL,
 				impact.x, impact.y + 0.5, impact.z, 20, 0.3, 0.5, 0.3, 0.15);

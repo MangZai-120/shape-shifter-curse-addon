@@ -69,9 +69,10 @@ public final class FrostSpikeChargeClientState {
 				double r = Math.sqrt(1 - u * u);
 				double dx = r * Math.cos(theta), dy = u, dz = r * Math.sin(theta);
 				double speed = 1.0 / 20.0;
-				world.addParticle(SscAddon.INWARD_ICE_PARTICLE,
+				net.jackcooper.shapeShifterCurseAddon.client.particle.FirstPersonParticles.emit(id,
+						() -> world.addParticle(SscAddon.INWARD_ICE_PARTICLE,
 						center.x + dx, center.y + dy, center.z + dz,
-						-dx * speed, -dy * speed, -dz * speed);
+						-dx * speed, -dy * speed, -dz * speed));
 			}
 		}
 	}

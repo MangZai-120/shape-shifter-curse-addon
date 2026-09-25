@@ -46,7 +46,7 @@ public class FrostArmorSpell extends Spell {
 		caster.setAbsorptionAmount(Math.max(caster.getAbsorptionAmount(), power));
 		// 演出：寒气缠绕 + 冰晶盾碎裂音效
 		if (caster.getWorld() instanceof ServerWorld serverWorld) {
-			serverWorld.spawnParticles(ParticleTypes.SNOWFLAKE,
+			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, caster, ParticleTypes.SNOWFLAKE,
 					caster.getX(), caster.getY() + 1.0, caster.getZ(), 24, 0.4, 0.6, 0.4, 0.05);
 			serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 					SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.6f, 1.6f);

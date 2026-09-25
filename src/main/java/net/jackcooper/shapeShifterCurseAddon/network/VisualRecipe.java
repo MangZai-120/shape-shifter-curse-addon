@@ -17,6 +17,16 @@ public final class VisualRecipe {
     @FunctionalInterface public interface Sink { void emit(Batch batch); }
     private VisualRecipe() {}
 
+    /** The owner's near-camera fire can fade; Nova warning outlines and seed boundaries stay intact. */
+    public static boolean isDecoration(Kind kind, Batch batch) {
+        return switch (kind) {
+            case RED_RING, AMULET_RING, EMPOWERED_AMULET_RING -> true;
+            case NOVA_CHARGE -> batch.particle() == Particle.LARGE_SMOKE || batch.particle() == Particle.FLAME;
+            case FROST_STORM -> true;
+            case SEED_FIELD -> false;
+        };
+    }
+
     public static void emit(Kind kind, long age, long now, int duration, float width, float eyeHeight,
                             double radius, double outerRadius, RandomGenerator random, Sink sink) {
         if (age < 0 || duration > 0 && age > duration) return;

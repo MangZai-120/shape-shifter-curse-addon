@@ -113,10 +113,10 @@ public final class VortexChargeManager {
 				SoundEvents.ENTITY_PLAYER_SPLASH_HIGH_SPEED, SoundCategory.PLAYERS, 1.5f, 0.5f);
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_ELDER_GUARDIAN_CURSE, SoundCategory.PLAYERS, 0.6f, 1.5f);
-		sw.spawnParticles(ParticleTypes.BUBBLE, player.getX(), player.getY() + 1, player.getZ(), 40, 0.6, 0.6, 0.6, 0.6);
-		sw.spawnParticles(ParticleTypes.BUBBLE_POP, player.getX(), player.getY() + 1, player.getZ(), 5, 0.3, 0.3, 0.3, 0.1);
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.BUBBLE, player.getX(), player.getY() + 1, player.getZ(), 40, 0.6, 0.6, 0.6, 0.6);
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.BUBBLE_POP, player.getX(), player.getY() + 1, player.getZ(), 5, 0.3, 0.3, 0.3, 0.1);
 		// 青/白粒子向中心吸附（漩涡起手）
-		spawnAbsorbRing(sw, player.getX(), player.getY() + 1, player.getZ(), 16, 0.0);
+		spawnAbsorbRing(sw, player, player.getX(), player.getY() + 1, player.getZ(), 16, 0.0);
 	}
 
 	/** 每服务端 tick 对每个在线玩家调用。 */
@@ -130,7 +130,7 @@ public final class VortexChargeManager {
 		s.ticks++;
 		// 持续吸附漩涡（每 2 tick 一圈，相位随时间旋转 → 动态收束）
 		if (s.ticks % 2 == 0) {
-			spawnAbsorbRing((ServerWorld) player.getWorld(),
+			spawnAbsorbRing((ServerWorld) player.getWorld(), player,
 					player.getX(), player.getY() + 1, player.getZ(), 8, s.ticks * 0.35);
 			// 蓄力期实体吸附：把范围内怪物朝玩家牵引，力度随击退抗性衰减（每级 -20%，免疫的吸不动）
 			pullEntitiesDuringCharge((ServerWorld) player.getWorld(), player);
@@ -142,7 +142,7 @@ public final class VortexChargeManager {
 				s.airSpent += spend;
 				s.hits++;
 				ServerWorld sw = (ServerWorld) player.getWorld();
-				sw.spawnParticles(ParticleTypes.BUBBLE,
+				net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.BUBBLE,
 						player.getX(), player.getY() + 1, player.getZ(), 40, 0.6, 0.6, 0.6, 0.6);
 				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.ENTITY_FISHING_BOBBER_SPLASH, SoundCategory.PLAYERS, 0.8f, 0.6f);
@@ -170,12 +170,13 @@ public final class VortexChargeManager {
 				SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 1.0f, 1.2f);
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_AXOLOTL_SPLASH, SoundCategory.PLAYERS, 1.5f, 0.5f);
-		sw.spawnParticles(ParticleTypes.SPLASH, player.getX(), player.getY() + 1, player.getZ(),
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.SPLASH, player.getX(), player.getY() + 1, player.getZ(),
 				150, RADIUS, 1.0, RADIUS, 1.0);
-		sw.spawnParticles(ParticleTypes.EXPLOSION, player.getX(), player.getY() + 1, player.getZ(),
+		// owner 打标：仅本人第一人称避让，他人视角原样
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.EXPLOSION, player.getX(), player.getY() + 1, player.getZ(),
 				8, RADIUS * 0.5, 0.5, RADIUS * 0.5, 0.1);
 		// 仿 RC-4 药水破碎的水花爆开（与水矛落地同款）
-		net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils.spawnWaterBurst(sw, player.getX(), player.getY() + 1, player.getZ(), 1.3);
+		net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils.spawnWaterBurst(sw, player, player.getX(), player.getY() + 1, player.getZ(), 1.3);
 		if (damage <= 0) return; // 一次都没蓄到，仅取消
 		Box box = player.getBoundingBox().expand(RADIUS);
 		for (Entity e : sw.getOtherEntities(player, box)) {
@@ -298,13 +299,13 @@ public final class VortexChargeManager {
 	// ==================== 粒子辅助 ====================
 
 	/** 生成一个带速度的有向粒子（count=0 时 delta 即为速度向量，speed=1）。 */
-	private static void spawnDirected(ServerWorld sw, net.minecraft.particle.ParticleEffect particle,
+	private static void spawnDirected(ServerWorld sw, ServerPlayerEntity owner, net.minecraft.particle.ParticleEffect particle,
 			double x, double y, double z, double vx, double vy, double vz) {
-		sw.spawnParticles(particle, x, y, z, 0, vx, vy, vz, 1.0);
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, owner, particle, x, y, z, 0, vx, vy, vz, 1.0);
 	}
 
 	/** 蓄力期：在外圈生成青/白粒子，速度指向中心并带切向分量 → 向内吸附 + 旋转漩涡。 */
-	private static void spawnAbsorbRing(ServerWorld sw, double cx, double cy, double cz, int count, double phase) {
+	private static void spawnAbsorbRing(ServerWorld sw, ServerPlayerEntity owner, double cx, double cy, double cz, int count, double phase) {
 		double r = 2.6;
 		for (int i = 0; i < count; i++) {
 			double ang = (Math.PI * 2 / count) * i + phase;
@@ -315,7 +316,7 @@ public final class VortexChargeManager {
 			double inZ = (cz - pz) * 0.20;
 			double tanX = -Math.sin(ang) * 0.10;
 			double tanZ = Math.cos(ang) * 0.10;
-			spawnDirected(sw, (i & 1) == 0 ? CYAN_DUST : WHITE_DUST,
+			spawnDirected(sw, owner, (i & 1) == 0 ? CYAN_DUST : WHITE_DUST,
 					px, py, pz, inX + tanX, 0.04, inZ + tanZ);
 		}
 	}

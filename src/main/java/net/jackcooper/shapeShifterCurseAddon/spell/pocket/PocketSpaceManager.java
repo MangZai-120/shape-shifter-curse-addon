@@ -191,7 +191,8 @@ public final class PocketSpaceManager {
 				GENERATIONS.computeIfAbsent(room.layout().index(), ignored -> new Generation(room));
 			}
 			if (channel.ticks % 5 == 0) {
-				player.getServerWorld().spawnParticles(ParticleTypes.PORTAL, player.getX(), player.getBodyY(0.7),
+				// owner 打标：仅本人第一人称避让（引导门雾）
+				net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(player.getServerWorld(), player, ParticleTypes.PORTAL, player.getX(), player.getBodyY(0.7),
 						player.getZ(), 5, 0.4, 0.5, 0.4, 0.05);
 				message(player, "channel", (Math.max(0, channel.ticks) + 19) / 20);
 			}
