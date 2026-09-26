@@ -229,16 +229,38 @@ public final class ParticleAvoidanceTest {
         }
         for (double far : new double[]{20, 64, 128, 512})
             check(ParticleAvoidance.withCrosshair(1, far, Strength.LIGHT, 1) == 1f, "Far particles beyond the recovery band restore full visibility (projectile gating)");
-        // 2026-09-26 定稿：锥内最低透明度依据消除强度分化——轻度 25% / 中度 15% / 重度 10%
-        check(Math.abs(ParticleAvoidance.withCrosshair(1, 3, Strength.LIGHT, 1) - 0.25f) < 0.00001f, "Light tier keeps 25 percent at the cone center");
-        check(Math.abs(ParticleAvoidance.withCrosshair(1, 3, Strength.STANDARD, 1) - 0.15f) < 0.00001f, "Standard tier keeps 15 percent at the cone center");
+        // 2026-09-26 定稿：中度＝计数式角度剔除（15°内显示 5%、15~45° 递增至 100%，显示者不压透明）；
+        // 轻度＝扦40%豁免+其余压 40%；重度＝全员压 10%
+        check(Math.abs(ParticleAvoidance.withCrosshair(1, 3, Strength.LIGHT, 1) - 0.40f) < 0.00001f, "Light tier keeps 40 percent at the cone center");
         check(Math.abs(ParticleAvoidance.withCrosshair(1, 3, Strength.STRONG, 1) - 0.10f) < 0.00001f, "Strong tier keeps 10 percent at the cone center");
+        check(Math.abs(ParticleAvoidance.standardKeepFraction(Math.cos(Math.toRadians(0))) - 0.20f) < 0.00001f, "Standard tier shows 20 percent of particles at the cone center");
+        check(Math.abs(ParticleAvoidance.standardKeepFraction(Math.cos(Math.toRadians(45))) - 1.0f) < 0.00001f, "Standard tier shows all particles at 45 degrees");
+        check(Math.abs(ParticleAvoidance.standardKeepFraction(Math.cos(Math.toRadians(90))) - 1.0f) < 0.00001f, "Standard tier shows all particles beyond 45 degrees");
+        // 中度最终定稿：周围=重度同款曲线（10%目标），中心 20% 显示（×1.5 补偿）+ 80% 隐藏
+        {
+            Object key = new Object();
+            // 30°（恢复带）：与重度完全一致（无剔除，目标曲线同 10%）
+            float std30 = ParticleAvoidance.applyAngular(1f, 3, Strength.STANDARD, Math.cos(Math.toRadians(30)), false, key);
+            float str30 = ParticleAvoidance.applyAngular(1f, 3, Strength.STRONG, Math.cos(Math.toRadians(30)), false, key);
+            check(Math.abs(std30 - str30) < 0.00001f, "Standard outer zone matches the strong transparency curve exactly");
+            // 中心：显示者 = 重度曲线值×1.5；隐藏者 = 0
+            float strongCenter = ParticleAvoidance.withCrosshair(1f, 3, Strength.STRONG, 1);
+            boolean kept = ParticleAvoidance.keepAngularSample(key, ParticleAvoidance.standardKeepFraction(1.0));
+            float expected = kept ? Math.min(1f, strongCenter * 1.5f) : 0f;
+            check(Math.abs(ParticleAvoidance.applyAngular(1f, 3, Strength.STANDARD, 1, false, key) - expected) < 0.00001f,
+                    "Standard center keeps 20% of particles at 1.5x strong-curve opacity; the rest return zero");
+        }
+        {
+            int kept = 0, samples = 10000;
+            for (int i = 0; i < samples; i++) if (ParticleAvoidance.keepAngularSample(new Object(), 0.20f)) kept++;
+            check(kept > samples * 0.15 && kept < samples * 0.25, "Standard cone center keeps roughly 20 percent of particles");
+        }
         // 2026-09-26 定稿：准星锥全范围生效（普通装饰粒子在避让门内任意距离都受锥压制）；
         // 火球弹道粒子走 applyAngular(projectile=true) 豁免锥压制、只吃距离曲线
         check(Math.abs(ParticleAvoidance.withCrosshair(1, 12, Strength.STRONG, 1) - 0.1f) < 0.00001f,
                 "Ordinary particles keep full-range crosshair suppression inside the avoidance gate");
-        check(Math.abs(ParticleAvoidance.withCrosshair(1, 8, Strength.STANDARD, 1) - 0.15f) < 0.00001f,
-                "Standard tier suppression also applies at full range inside its gate");
+        check(Math.abs(ParticleAvoidance.withCrosshair(1, 8, Strength.STANDARD, 1) - 0.20f) < 0.00001f,
+                "withCrosshair keeps its tiered transparency contract (standard raw path)");
         check(ParticleAvoidance.applyAngular(1, 12, Strength.STRONG, 1, true) == 1f,
                 "Projectile particles skip crosshair suppression entirely (distance curve only)");
         check(Math.abs(ParticleAvoidance.applyAngular(0.5f, 6, Strength.LIGHT, 1, true) - 0.5f) < 0.00001f,
@@ -264,8 +286,27 @@ public final class ParticleAvoidanceTest {
                 }
             }
         }
+        // 近距影子（25%）低于轻度锥目标（40%）时保持原值不增亮；重度锥目标（10%）更深时压到 10%
         check(Math.abs(ParticleAvoidance.withCrosshair(0.25f, 0.5, Strength.LIGHT, 1) - 0.25f) < 0.00001,
-                "Kept near-camera samples receive the crosshair enhancement too");
+                "Kept near-camera samples never brighten under a weaker cone target");
+        check(Math.abs(ParticleAvoidance.withCrosshair(0.25f, 0.5, Strength.STRONG, 1) - 0.10f) < 0.00001,
+                "Kept near-camera samples still deepen under the strong cone target");
+        // 2026-09-26 定稿：轻/中档抽样豁免——被抽中粒子完全跳过锥压制；重度不豁免；大样本豁免率容差 ±5%
+        int exemptLight = 0, exemptStrong = 0, samples = 10000;
+        for (int i = 0; i < samples; i++) {
+            Object key = new Object();
+            if (ParticleAvoidance.coneExempt(key, Strength.LIGHT)) exemptLight++;
+            if (ParticleAvoidance.coneExempt(key, Strength.STRONG)) exemptStrong++;
+        }
+        check(exemptLight > samples * 0.35 && exemptLight < samples * 0.45, "Light tier exempts roughly 40% of particles");
+        check(exemptStrong == 0, "Strong tier never exempts particles");
+        check(ParticleAvoidance.coneExempt(ParticleAvoidanceTest.class, Strength.LIGHT)
+                == ParticleAvoidance.coneExempt(ParticleAvoidanceTest.class, Strength.LIGHT),
+                "Cone exemption is stable per particle (no flicker across frames)");
+        boolean exemptKept = ParticleAvoidance.applyAngular(1, 3, Strength.LIGHT, 1, false,
+                ParticleAvoidanceTest.class) == 1f;
+        check(exemptKept == ParticleAvoidance.coneExempt(ParticleAvoidanceTest.class, Strength.LIGHT),
+                "applyAngular honors the sampled exemption (keyed particles skip cone suppression)");
     }
 
     private static ClassNode readClass(String name) throws Exception {

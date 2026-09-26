@@ -329,7 +329,7 @@
   "codex.form.my_addon.anubis_wolf_sp.name": "sp阿努比斯(冥裁者)",
   "codex.form.my_addon.golden_sandstorm_sp.name": "金沙岚",
   "text.autoconfig.ssc_addon_client.option.firstPersonParticleAvoidance": "第一人称粒子避让",
-  "text.autoconfig.ssc_addon_client.option.firstPersonParticleAvoidance.@Tooltip": "减弱自己的技能装饰粒子（含火球），保留目标、弹道及危险边界提示。\n普通距离衰减：轻度4格、中度10格、重度16格，边缘保留50%可见度，再用2格平滑恢复；贴脸保留少量淡影。\n准星15°内保留10%可见度（远处也有效），15°～45°平滑回到普通距离衰减。\n仅影响本人第一人称；关闭或切换第三人称立即恢复。支持开启或关闭光影。",
+  "text.autoconfig.ssc_addon_client.option.firstPersonParticleAvoidance.@Tooltip": "减弱自己的技能装饰粒子（含火球），保留目标、弹道及危险边界提示。\n普通距离衰减：轻度4格、中度10格、重度16格，边缘保留50%可见度，再用2格平滑恢复；贴脸保留少量淡影。\n准星角度压制按档位：轻度15°内保留40%透明度（另有40%粒子豁免）；中度与重度同款透明度曲线，仅中心15°内叠加数量剔除——显示20%粒子（透明度×1.5补偿）、其余不显示；重度15°内保留10%透明度（全员压制）。\n仅影响本人第一人称；关闭或切换第三人称立即恢复。支持开启或关闭光影。",
   "text.autoconfig.ssc_addon_client.option.firstPersonParticleAvoidance.OFF": "关闭",
   "text.autoconfig.ssc_addon_client.option.firstPersonParticleAvoidance.LIGHT": "轻度（4格）",
   "text.autoconfig.ssc_addon_client.option.firstPersonParticleAvoidance.STANDARD": "中度（10格）",

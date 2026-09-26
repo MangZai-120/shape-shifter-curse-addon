@@ -29,11 +29,31 @@ public final class ParticleAvoidance {
     private static final double CROSSHAIR_INNER_COS = Math.cos(Math.toRadians(15));
     private static final double CROSSHAIR_OUTER_COS = Math.cos(Math.toRadians(45));
     private static final float CROSSHAIR_MULT = 0.10f;
-    /** 2026-09-26 用户定稿：锥内最低透明度依据消除强度分化——轻度 25% / 中度 15% / 重度 10%。 */
+    /**
+     * 2026-09-26 用户定稿（覆盖早前 25/15 方案）：锥内最低透明度依据消除强度分化，
+     * 且轻/中档按粒子抽样豁免——轻度抽 40% 粒子完全跳过锥压制、其余压到 40%；
+     * 中度抽 20% 豁免、其余压到 20%；重度不豁免、全部压到 10%。
+     */
     private static float coneMult(Strength strength) {
-        if (strength == Strength.LIGHT) return 0.25f;
-        if (strength == Strength.STANDARD) return 0.15f;
+        if (strength == Strength.LIGHT) return 0.40f;
+        if (strength == Strength.STANDARD) return 0.20f;
         return CROSSHAIR_MULT;
+    }
+
+    /** 锥压制抽样豁免率：轻度 40%（中度已改计数式剔除、重度不豁免）。 */
+    private static float coneExemptRate(Strength strength) {
+        if (strength == Strength.LIGHT) return 0.40f;
+        return 0f;
+    }
+
+    /**
+     * 锥压制抽样豁免判定：按粒子 identity hash 稳定取样（同粒子终身一致不闪烁），
+     * 命中的粒子完全跳过锥压制（只吃距离曲线）。重度档不豁免。
+     */
+    public static boolean coneExempt(Object particle, Strength strength) {
+        float rate = coneExemptRate(strength);
+        if (rate <= 0 || particle == null) return false;
+        return (System.identityHashCode(particle) & 0xFF) < rate * 0xFF;
     }
     /**
      * 近距抽样区（2026-09-26 用户定稿）：特别近（< NEAR_ZONE 格）的粒子不整体隐藏，
@@ -93,21 +113,67 @@ public final class ParticleAvoidance {
     public static float withCrosshair(float visibility, double distance, Strength strength, double dot) {
         if (strength == null || strength == Strength.OFF || !Double.isFinite(distance)) return visibility;
         if (distance >= strength.radius() + RECOVERY) return visibility;
-        float mult = coneMult(strength);
+        return withCrosshairMult(visibility, distance, dot, coneMult(strength));
+    }
+
+    /** 参数化目标值的锥透明度曲线：15° 内压到 mult、15°~45° 平滑恢复到距离曲线值。 */
+    static float withCrosshairMult(float visibility, double distance, double dot, float mult) {
         float factor = crosshairConeFactor(dot, mult);
         float weight = (1 - factor) / (1 - mult);
-        // A tiered target (25%/15%/10%), not another multiplication after distance fading.
         return visibility + weight * (Math.min(visibility, mult) - visibility);
     }
 
     /**
      * 弹道粒子分派（2026-09-26 火球反馈）：火球等沿视线飞行的投射物特效全程落在准星 15° 锥内，
-     * 若再叠锥压制整条弹道被压到 10%。弹道粒子只吃距离曲线、跳过锥压制；
-     * 其它装饰粒子照常走全范围锥压制（用户定稿规格：锥全范围生效）。
+     * 若再叠锥压制整条弹道被压到最低值。弹道粒子只吃距离曲线、跳过锥压制。
      */
     public static float applyAngular(float visibility, double distance, Strength strength, double dot,
                                      boolean projectile) {
-        return projectile ? visibility : withCrosshair(visibility, distance, strength, dot);
+        return applyAngular(visibility, distance, strength, dot, projectile, null);
+    }
+
+    /** 中度 15° 锥内保留显示的粒子比例（2026-09-26 最终定稿：重度曲线打底+中心数量剔除）。 */
+    private static final float STANDARD_CONE_KEEP = 0.20f;
+
+    /**
+     * 中度中心剔除曲线（2026-09-26 最终定稿）：数量剔除只作用于中心 15° 内（20% 显示），
+     * 15°~45° 与重度完全一致（无剔除、纯重度透明度曲线平滑恢复），45° 外正常。
+     */
+    static float standardKeepFraction(double dot) {
+        if (!Double.isFinite(dot) || dot < CROSSHAIR_INNER_COS) return 1f;
+        return STANDARD_CONE_KEEP;
+    }
+
+    /** 中度显示者透明度补偿：基于重度曲线结果 ×1.5（clamp 1）。 */
+    static float standardOpacityFactor(double dot) { return 1.5f; }
+
+    /** 计数式抽样：按粒子 identity hash 与阈值比较，阈值单调变化时粒子只单次翻转不闪烁。 */
+    static boolean keepAngularSample(Object particle, float keepFraction) {
+        if (particle == null || keepFraction >= 1f) return true;
+        if (keepFraction <= 0f) return false;
+        return (System.identityHashCode(particle) & 0xFF) < keepFraction * 0xFF;
+    }
+
+    /**
+     * 带抽样键的完整分派（2026-09-26 最终定稿）：
+     * 中度＝重度透明度曲线打底（15°~45° 与重度完全一致）+ 中心 15° 内数量剔除：
+     * 抽 20% 粒子显示（透明度×1.5 补偿、clamp 1），其余 80% 不显示。
+     * 轻度＝抽40%豁免+其余压到 40%；重度＝全员压到 10%。
+     */
+    public static float applyAngular(float visibility, double distance, Strength strength, double dot,
+                                     boolean projectile, Object sampleKey) {
+        if (projectile || strength == null || strength == Strength.OFF || !Double.isFinite(distance)) return visibility;
+        if (distance >= strength.radius() + RECOVERY) return visibility;
+        if (strength == Strength.STANDARD) {
+            // 周围区域与重度同款透明度曲线（目标 10%）
+            float faded = withCrosshairMult(visibility, distance, dot, CROSSHAIR_MULT);
+            float keep = standardKeepFraction(dot);
+            if (keep >= 1f) return faded;
+            return keepAngularSample(sampleKey, keep)
+                    ? Math.min(1f, faded * standardOpacityFactor(dot)) : 0;
+        }
+        if (sampleKey != null && coneExempt(sampleKey, strength)) return visibility;
+        return withCrosshair(visibility, distance, strength, dot);
     }
 
 }

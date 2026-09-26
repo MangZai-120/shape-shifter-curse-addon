@@ -64,9 +64,10 @@ public abstract class FirstPersonBillboardParticleMixin extends Particle impleme
             double yaw = Math.toRadians(camera.getYaw()), pitch = Math.toRadians(camera.getPitch());
             double dot = (-Math.sin(yaw) * Math.cos(pitch) * dx - Math.sin(pitch) * dy
                     + Math.cos(yaw) * Math.cos(pitch) * dz) * inv;
-            visibility = ParticleAvoidance.applyAngular(visibility, distance, strength, dot, projectile);
+            // 传 this 作抽样键：轻度 40% / 中度 20% 粒子豁免锥压制（用户 2026-09-26 定稿）
+            visibility = ParticleAvoidance.applyAngular(visibility, distance, strength, dot, projectile, this);
         } else if (distance <= 1.0e-4) {
-            visibility = ParticleAvoidance.applyAngular(visibility, distance, strength, 1, projectile);
+            visibility = ParticleAvoidance.applyAngular(visibility, distance, strength, 1, projectile, this);
         }
         return Math.max(0, Math.min(1, visibility));
     }
