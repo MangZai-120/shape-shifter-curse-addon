@@ -229,11 +229,16 @@ public final class ParticleAvoidanceTest {
         }
         for (double far : new double[]{20, 64, 128, 512})
             check(ParticleAvoidance.withCrosshair(1, far, Strength.LIGHT, 1) == 1f, "Far particles beyond the recovery band restore full visibility (projectile gating)");
-        check(Math.abs(ParticleAvoidance.withCrosshair(1, 3, Strength.LIGHT, 1) - 0.1f) < 0.00001f, "Center-cone particles inside the radius keep 10 percent");
+        // 2026-09-26 定稿：锥内最低透明度依据消除强度分化——轻度 25% / 中度 15% / 重度 10%
+        check(Math.abs(ParticleAvoidance.withCrosshair(1, 3, Strength.LIGHT, 1) - 0.25f) < 0.00001f, "Light tier keeps 25 percent at the cone center");
+        check(Math.abs(ParticleAvoidance.withCrosshair(1, 3, Strength.STANDARD, 1) - 0.15f) < 0.00001f, "Standard tier keeps 15 percent at the cone center");
+        check(Math.abs(ParticleAvoidance.withCrosshair(1, 3, Strength.STRONG, 1) - 0.10f) < 0.00001f, "Strong tier keeps 10 percent at the cone center");
         // 2026-09-26 定稿：准星锥全范围生效（普通装饰粒子在避让门内任意距离都受锥压制）；
         // 火球弹道粒子走 applyAngular(projectile=true) 豁免锥压制、只吃距离曲线
         check(Math.abs(ParticleAvoidance.withCrosshair(1, 12, Strength.STRONG, 1) - 0.1f) < 0.00001f,
                 "Ordinary particles keep full-range crosshair suppression inside the avoidance gate");
+        check(Math.abs(ParticleAvoidance.withCrosshair(1, 8, Strength.STANDARD, 1) - 0.15f) < 0.00001f,
+                "Standard tier suppression also applies at full range inside its gate");
         check(ParticleAvoidance.applyAngular(1, 12, Strength.STRONG, 1, true) == 1f,
                 "Projectile particles skip crosshair suppression entirely (distance curve only)");
         check(Math.abs(ParticleAvoidance.applyAngular(0.5f, 6, Strength.LIGHT, 1, true) - 0.5f) < 0.00001f,
@@ -259,7 +264,7 @@ public final class ParticleAvoidanceTest {
                 }
             }
         }
-        check(Math.abs(ParticleAvoidance.withCrosshair(0.25f, 0.5, Strength.LIGHT, 1) - 0.1f) < 0.00001,
+        check(Math.abs(ParticleAvoidance.withCrosshair(0.25f, 0.5, Strength.LIGHT, 1) - 0.25f) < 0.00001,
                 "Kept near-camera samples receive the crosshair enhancement too");
     }
 

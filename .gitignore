@@ -37,6 +37,8 @@ AGENTS.md
 # JVM crash dumps
 hs_err_pid*.log
 replay_pid*.log
+# 本地运行日志（dev 运行产物）
+/logs/
 
 # Build/run output
 /run/

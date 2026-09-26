@@ -29,6 +29,12 @@ public final class ParticleAvoidance {
     private static final double CROSSHAIR_INNER_COS = Math.cos(Math.toRadians(15));
     private static final double CROSSHAIR_OUTER_COS = Math.cos(Math.toRadians(45));
     private static final float CROSSHAIR_MULT = 0.10f;
+    /** 2026-09-26 用户定稿：锥内最低透明度依据消除强度分化——轻度 25% / 中度 15% / 重度 10%。 */
+    private static float coneMult(Strength strength) {
+        if (strength == Strength.LIGHT) return 0.25f;
+        if (strength == Strength.STANDARD) return 0.15f;
+        return CROSSHAIR_MULT;
+    }
     /**
      * 近距抽样区（2026-09-26 用户定稿）：特别近（< NEAR_ZONE 格）的粒子不整体隐藏，
      * 而是按 hash 抽 20% 显示、透明度压到 25%（= 边缘 50% 再低一半，「留一点影子」），
@@ -71,21 +77,27 @@ public final class ParticleAvoidance {
 
     /** Pure angular policy. Dot is the cosine of the angle from the camera's forward direction. */
     public static float crosshairConeFactor(double dot) {
+        return crosshairConeFactor(dot, CROSSHAIR_MULT);
+    }
+
+    /** 档位感知版：锥内目标值随消除强度分化（轻 25% / 中 15% / 重 10%）。 */
+    static float crosshairConeFactor(double dot, float coneMult) {
         if (!Double.isFinite(dot) || dot <= CROSSHAIR_OUTER_COS) return 1;
-        if (dot >= CROSSHAIR_INNER_COS) return CROSSHAIR_MULT;
+        if (dot >= CROSSHAIR_INNER_COS) return coneMult;
         double t = (dot - CROSSHAIR_OUTER_COS) / (CROSSHAIR_INNER_COS - CROSSHAIR_OUTER_COS);
         double weight = t * t * (3 - 2 * t);
-        return (float) (1 - (1 - CROSSHAIR_MULT) * weight);
+        return (float) (1 - (1 - coneMult) * weight);
     }
 
     /** Angular fading remains active at long range; it never completely removes distant decoration. */
     public static float withCrosshair(float visibility, double distance, Strength strength, double dot) {
         if (strength == null || strength == Strength.OFF || !Double.isFinite(distance)) return visibility;
         if (distance >= strength.radius() + RECOVERY) return visibility;
-        float factor = crosshairConeFactor(dot);
-        float weight = (1 - factor) / (1 - CROSSHAIR_MULT);
-        // A 10% target, not another multiplication by 10% after distance fading.
-        return visibility + weight * (Math.min(visibility, CROSSHAIR_MULT) - visibility);
+        float mult = coneMult(strength);
+        float factor = crosshairConeFactor(dot, mult);
+        float weight = (1 - factor) / (1 - mult);
+        // A tiered target (25%/15%/10%), not another multiplication after distance fading.
+        return visibility + weight * (Math.min(visibility, mult) - visibility);
     }
 
     /**

@@ -62,6 +62,7 @@ public class SscAddonMixinConfigPlugin implements IMixinConfigPlugin {
         // 该 mixin 在 Iris 载入光影时把 DoBlindnessFog 内存替换为粉色 12→16 格版（不改光影文件）。
         requireMod("IrisShaderPackMixin", "iris");
         requireMod("client.AsyncParticleSyncBatchMixin", "asyncparticles");
+        requireMod("client.AsyncParticleGpuEligibilityMixin", "asyncparticles");
         // 饰品 Trinkets 桥接兜底（AddonTrinketBridgeMixin）：仅当 trinkets API 可用
         // （原生 Trinkets 或 tclayer 兼容层 provides "trinkets"）时应用；
         // 与主包 TrinketImpl 的互斥见 shouldApplyMixin 内专门判定（最高优先级插件非 trinkets 才应用）。

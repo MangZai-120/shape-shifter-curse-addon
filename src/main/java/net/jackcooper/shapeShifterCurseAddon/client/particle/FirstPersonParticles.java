@@ -21,7 +21,6 @@ public final class FirstPersonParticles {
     private FirstPersonParticles() {}
 
     public static void init() {
-        AsyncParticleCompatibility.init();
         ClientPlayNetworking.registerGlobalReceiver(DecorationParticles.ID, (client, handler, buf, sender) -> {
             var dimension = buf.readIdentifier();
             var packet = new ParticleS2CPacket(buf);

@@ -34,11 +34,18 @@ public final class ParticleRenderRouting {
         if (particles != null) for (P particle : particles) if (predicate.test(particle)) moved.add(particle);
     }
 
+    private static <P> boolean containsMatch(Iterable<P> particles, Predicate<P> predicate) {
+        // AsyncParticles' queue spliterator.tryAdvance() never signals exhaustion in beta.6/20.1.4.0.
+        // A stream noneMatch on an empty/unaffected sheet can therefore spin forever. Its iterator is bounded.
+        for (P particle : particles) if (predicate.test(particle)) return true;
+        return false;
+    }
+
     /** Same routing for AsyncParticles' per-frame synchronous draw sets. Original sets stay untouched. */
     public static <S, P> Set<P> syncBatch(Map<S, Set<P>> queues, S sheet, Set<P> original,
                                          S opaque, S lit, S translucent, Predicate<P> shouldFade) {
         if (sheet.equals(opaque) || sheet.equals(lit)) {
-            if (original.stream().noneMatch(shouldFade)) return original;
+            if (!containsMatch(original, shouldFade)) return original;
             Set<P> kept = new java.util.LinkedHashSet<>(original);
             kept.removeIf(shouldFade);
             return kept;
@@ -56,7 +63,7 @@ public final class ParticleRenderRouting {
 
     private static <S, P> void split(Map<S, Queue<P>> frame, S sheet, Set<P> moved, Queue<P> blended) {
         Queue<P> particles = frame.get(sheet);
-        if (particles == null || particles.stream().noneMatch(moved::contains)) return;
+        if (particles == null || !containsMatch(particles, moved::contains)) return;
         Queue<P> kept = new ArrayDeque<>();
         for (P particle : particles) {
             if (moved.contains(particle)) blended.add(particle);
