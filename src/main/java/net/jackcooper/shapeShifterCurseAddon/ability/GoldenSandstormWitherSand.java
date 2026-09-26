@@ -124,7 +124,7 @@ public class GoldenSandstormWitherSand {
 			double angle = (elapsed * 0.3) % (Math.PI * 2);
 			double px = player.getX() + Math.cos(angle) * 1.5;
 			double pz = player.getZ() + Math.sin(angle) * 1.5;
-			serverWorld.spawnParticles(
+			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, player,
 					new BlockStateParticleEffect(ParticleTypes.FALLING_DUST, Blocks.SAND.getDefaultState()),
 					px, player.getY() + 1.0, pz, 3, 0.1, 0.3, 0.1, 0);
 		}
@@ -157,11 +157,11 @@ public class GoldenSandstormWitherSand {
 			double px = player.getX() + Math.cos(angle) * dist;
 			double pz = player.getZ() + Math.sin(angle) * dist;
 			double py = player.getY() + Math.random() * 2.5;
-			serverWorld.spawnParticles(
+			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, player,
 					new BlockStateParticleEffect(ParticleTypes.FALLING_DUST, Blocks.SAND.getDefaultState()),
 					px, py, pz, 1, 0, 0, 0, 0);
 		}
-		ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SOUL,
+		ParticleUtils.spawnDecorationParticles(serverWorld, player, ParticleTypes.SOUL,
 				player.getX(), player.getY() + 1.0, player.getZ(),
 				40, RADIUS * 0.5, 1.0, RADIUS * 0.5, 0.02);
 

@@ -142,11 +142,11 @@ public final class WindSpiritLandingSurgeManager {
         }
 
         // 粒子：环形冲击波 + 向上扬尘
-        world.spawnParticles(ParticleTypes.POOF, center.x, center.y + 0.1, center.z,
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, player, ParticleTypes.POOF, center.x, center.y + 0.1, center.z,
                 20, RADIUS * 0.5, 0.1, RADIUS * 0.5, 0.08);
-        world.spawnParticles(ParticleTypes.CLOUD, center.x, center.y + 0.2, center.z,
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, player, ParticleTypes.CLOUD, center.x, center.y + 0.2, center.z,
                 16, RADIUS * 0.6, 0.15, RADIUS * 0.6, 0.06);
-        world.spawnParticles(ParticleTypes.SWEEP_ATTACK, center.x, center.y + 0.5, center.z,
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, player, ParticleTypes.SWEEP_ATTACK, center.x, center.y + 0.5, center.z,
                 4, RADIUS * 0.3, 0.2, RADIUS * 0.3, 0.0);
 
         // 音效（全员可听）

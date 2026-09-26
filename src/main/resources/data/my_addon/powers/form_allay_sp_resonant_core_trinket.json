@@ -1,6 +1,5 @@
 {
   "type": "apoli:multiple",
-
   "eat_amethyst_shard": {
     "type": "shape-shifter-curse:custom_edible",
     "item_id_list": [
@@ -10,7 +9,6 @@
     "saturation_modifier": -0.01,
     "always_edible": true
   },
-
   "eat_amethyst_shard_effect": {
     "type": "apoli:action_on_item_use",
     "trigger": "finish",
@@ -39,8 +37,7 @@
               }
             ]
           },
-          "entity_action":
-          {
+          "entity_action": {
             "type": "apoli:apply_effect",
             "effect": {
               "effect": "minecraft:regeneration",
@@ -48,21 +45,24 @@
               "amplifier": 1
             }
           },
-          "explosion_damage_entity" : false
+          "explosion_damage_entity": false
         },
         {
-          "type": "shape-shifter-curse:spawn_particles_in_circle",
-          "particle": "minecraft:glow",
-          "count": 1,
-          "speed": 0.01,
-          "force": true,
-          "spread": {
-            "x": 0.4,
-            "y": 0.6,
-            "z": 0.4
-          },
-          "radius": 4.0,
-          "sample_count": 64
+          "type": "my_addon:self_decoration",
+          "entity_action": {
+            "type": "shape-shifter-curse:spawn_particles_in_circle",
+            "particle": "minecraft:glow",
+            "count": 1,
+            "speed": 0.01,
+            "force": true,
+            "spread": {
+              "x": 0.4,
+              "y": 0.6,
+              "z": 0.4
+            },
+            "radius": 4.0,
+            "sample_count": 64
+          }
         }
       ]
     },

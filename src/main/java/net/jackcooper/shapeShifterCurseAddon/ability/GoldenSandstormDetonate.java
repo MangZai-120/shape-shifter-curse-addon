@@ -59,7 +59,7 @@ public class GoldenSandstormDetonate {
 				SoundEvents.BLOCK_SAND_BREAK, SoundCategory.PLAYERS, 1.5f, 0.8f);
 
 		// 自身周围粒子提示
-		ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SOUL_FIRE_FLAME,
+		ParticleUtils.spawnDecorationParticles(serverWorld, player, ParticleTypes.SOUL_FIRE_FLAME,
 				player.getX(), player.getY() + 1.0, player.getZ(),
 				20 * totalStacks, 1.0, 1.0, 1.0, 0.1);
 

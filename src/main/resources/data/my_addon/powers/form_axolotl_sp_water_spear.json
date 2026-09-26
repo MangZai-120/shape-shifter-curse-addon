@@ -45,15 +45,18 @@
                     "pitch": 0.8
                 },
                 {
-                    "type": "apoli:spawn_particles",
-                    "particle": "minecraft:splash",
-                    "count": 20,
-                    "speed": 0.2,
-                    "force": true,
-                    "spread": {
-                        "x": 0.5,
-                        "y": 0.5,
-                        "z": 0.5
+                    "type": "my_addon:self_decoration",
+                    "entity_action": {
+                        "type": "apoli:spawn_particles",
+                        "particle": "minecraft:splash",
+                        "count": 20,
+                        "speed": 0.2,
+                        "force": true,
+                        "spread": {
+                            "x": 0.5,
+                            "y": 0.5,
+                            "z": 0.5
+                        }
                     }
                 }
             ]

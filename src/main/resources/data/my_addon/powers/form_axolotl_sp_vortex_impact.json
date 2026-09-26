@@ -123,15 +123,18 @@
             "compare_to": 0
         },
         "entity_action": {
-            "type": "apoli:spawn_particles",
-            "particle": "minecraft:bubble",
-            "count": 40,
-            "speed": 0.6,
-            "force": true,
-            "spread": {
-                "x": 6.0,
-                "y": 2.5,
-                "z": 6.0
+            "type": "my_addon:self_decoration",
+            "entity_action": {
+                "type": "apoli:spawn_particles",
+                "particle": "minecraft:bubble",
+                "count": 40,
+                "speed": 0.6,
+                "force": true,
+                "spread": {
+                    "x": 6.0,
+                    "y": 2.5,
+                    "z": 6.0
+                }
             }
         }
     },

@@ -95,6 +95,7 @@ public final class ParticleAvoidanceTest {
         }
         renderRouting();
         renderOpacity();
+        crosshairCone();
         configUi();
         injectionTargets();
         System.out.println("Particle avoidance: " + checks + " checks passed (policy, cues, 1.20.1 bytecode targets). No in-game render capture.");
@@ -180,6 +181,8 @@ public final class ParticleAvoidanceTest {
                         java.util.Objects.requireNonNull(stream), java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
                 for (Strength strength : Strength.values()) {
                     check(translations.has(strength.toString()), "AutoConfig enum name resolves in " + language);
+                    if (strength != Strength.OFF) check(translations.get(strength.toString()).getAsString()
+                            .contains(Integer.toString((int) strength.radius())), "Displayed radius matches actual policy");
                     check(gson.toJson(strength).equals("\"" + strength.name() + "\""), "UI translation preserves saved enum values");
                     check(gson.fromJson("\"" + strength.name() + "\"", Strength.class) == strength, "Existing config remains readable");
                 }
@@ -203,6 +206,61 @@ public final class ParticleAvoidanceTest {
         boolean returns = false;
         for (var instruction : spawn.instructions) if (instruction.getOpcode() == Opcodes.ARETURN) returns = true;
         check(returns, "Particle tagging has an actual RETURN injection site");
+        var world = readClass("net/minecraft/server/world/ServerWorld");
+        var nearby = world.methods.stream().filter(m -> m.name.equals("sendToPlayerIfNearby")).findFirst().orElseThrow();
+        int sends = 0;
+        for (var instruction : nearby.instructions) {
+            if (instruction instanceof MethodInsnNode call && call.owner.equals("net/minecraft/server/network/ServerPlayNetworkHandler")
+                    && call.name.equals("sendPacket") && call.desc.equals("(Lnet/minecraft/network/packet/Packet;)V")) sends++;
+        }
+        check(sends == 1, "Scoped particle envelope wraps the actual vanilla send after range checks");
+    }
+
+    private static void crosshairCone() {
+        float previous = 0;
+        for (int i = 0; i <= 18000; i++) {
+            double angle = i / 100.0;
+            float factor = ParticleAvoidance.crosshairConeFactor(Math.cos(Math.toRadians(angle)));
+            check(Float.isFinite(factor) && factor >= 0.09999f && factor <= 1, "Finite bounded angular factor");
+            check(factor >= previous && (i == 0 || factor - previous < 0.002), "No angular cutoff or reversal");
+            if (angle <= 15) check(Math.abs(factor - 0.1f) < 0.00001f, "Central 15-degree cone retains only a tenth");
+            if (angle >= 45) check(factor == 1, "Outside 45 degrees uses ordinary distance attenuation");
+            previous = factor;
+        }
+        for (double far : new double[]{20, 64, 128, 512})
+            check(ParticleAvoidance.withCrosshair(1, far, Strength.LIGHT, 1) == 1f, "Far particles beyond the recovery band restore full visibility (projectile gating)");
+        check(Math.abs(ParticleAvoidance.withCrosshair(1, 3, Strength.LIGHT, 1) - 0.1f) < 0.00001f, "Center-cone particles inside the radius keep 10 percent");
+        // 2026-09-26 定稿：准星锥全范围生效（普通装饰粒子在避让门内任意距离都受锥压制）；
+        // 火球弹道粒子走 applyAngular(projectile=true) 豁免锥压制、只吃距离曲线
+        check(Math.abs(ParticleAvoidance.withCrosshair(1, 12, Strength.STRONG, 1) - 0.1f) < 0.00001f,
+                "Ordinary particles keep full-range crosshair suppression inside the avoidance gate");
+        check(ParticleAvoidance.applyAngular(1, 12, Strength.STRONG, 1, true) == 1f,
+                "Projectile particles skip crosshair suppression entirely (distance curve only)");
+        check(Math.abs(ParticleAvoidance.applyAngular(0.5f, 6, Strength.LIGHT, 1, true) - 0.5f) < 0.00001f,
+                "Projectile particles keep their distance-curve visibility untouched by the cone");
+        check(Math.abs(ParticleAvoidance.applyAngular(1, 6, Strength.STRONG, 1, false)
+                - ParticleAvoidance.withCrosshair(1, 6, Strength.STRONG, 1)) < 0.00001f,
+                "Non-projectile particles route through the ordinary cone path");
+        check(ParticleAvoidance.crosshairConeFactor(Double.NaN) == 1, "Invalid direction does not hide unrelated geometry");
+        for (Strength strength : Strength.values()) {
+            if (strength == Strength.OFF) continue;
+            for (double angle : new double[]{0, 15, 30, 45, 90, 180}) {
+                float last = 0;
+                for (int i = 0; i <= 2000; i++) {
+                    double distance = i / 100.0;
+                    float base = ParticleAvoidance.visibility(strength, true, true, distance, 0.1f);
+                    float visible = ParticleAvoidance.withCrosshair(base, distance, strength, Math.cos(Math.toRadians(angle)));
+                    check(visible + 0.000001f >= last && visible <= base, "Angular enhancement preserves distance ordering");
+                    // 门控硬边界（radius+2）处锥衰减一次性释放是设计行为：跳过边界步进检查
+                    boolean gateBoundary = distance >= strength.radius() + 1.9 && distance <= strength.radius() + 2.1;
+                    if (i > 0 && !gateBoundary) check(visible - last < 0.025, "Angular enhancement restores smoothly at outer distance edge");
+                    if (distance >= strength.radius() + 2) check(visible == base, "Distant particles use pure distance fading again");
+                    last = visible;
+                }
+            }
+        }
+        check(Math.abs(ParticleAvoidance.withCrosshair(0.25f, 0.5, Strength.LIGHT, 1) - 0.1f) < 0.00001,
+                "Kept near-camera samples receive the crosshair enhancement too");
     }
 
     private static ClassNode readClass(String name) throws Exception {

@@ -62,30 +62,36 @@
                 "value": -20
             },
             {
-                "type": "apoli:spawn_particles",
-                "particle": "minecraft:rain",
-                "count": 48,
-                "speed": 0.0,
-                "force": true,
-                "spread": {
-                    "x": 2.5,
-                    "y": 0.6,
-                    "z": 2.5
+                "type": "my_addon:self_decoration",
+                "entity_action": {
+                    "type": "apoli:spawn_particles",
+                    "particle": "minecraft:rain",
+                    "count": 48,
+                    "speed": 0.0,
+                    "force": true,
+                    "spread": {
+                        "x": 2.5,
+                        "y": 0.6,
+                        "z": 2.5
+                    }
                 }
             },
             {
-                "type": "apoli:spawn_particles",
-                "particle": {
-                    "type": "minecraft:dust",
-                    "params": "0.11 0.18 0.69 2.5"
-                },
-                "count": 48,
-                "speed": 0.0,
-                "force": true,
-                "spread": {
-                    "x": 2.5,
-                    "y": 1.2,
-                    "z": 2.5
+                "type": "my_addon:self_decoration",
+                "entity_action": {
+                    "type": "apoli:spawn_particles",
+                    "particle": {
+                        "type": "minecraft:dust",
+                        "params": "0.11 0.18 0.69 2.5"
+                    },
+                    "count": 48,
+                    "speed": 0.0,
+                    "force": true,
+                    "spread": {
+                        "x": 2.5,
+                        "y": 1.2,
+                        "z": 2.5
+                    }
                 }
             }
         ]

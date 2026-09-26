@@ -140,7 +140,7 @@ public final class NineLivesManager {
         player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ITEM_TOTEM_USE, SoundCategory.PLAYERS, 0.6F, 1.2F);
         if (player.getWorld() instanceof ServerWorld sw) {
-            sw.spawnParticles(ParticleTypes.TOTEM_OF_UNDYING,
+            net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.TOTEM_OF_UNDYING,
                     player.getX(), player.getY() + 1.0, player.getZ(), 40, 0.4, 0.6, 0.4, 0.2);
             if (hasNecklace) {
                 reviveBurst(player, sw);

@@ -94,10 +94,10 @@ public class GoldenSandstormCounterBurst {
 		// 音效和粒子（无论是否命中都播放，提示玩家触发了反噬）
 		serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_WITHER_SHOOT, SoundCategory.PLAYERS, 0.5f, 1.2f);
-		ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SOUL_FIRE_FLAME,
+		ParticleUtils.spawnDecorationParticles(serverWorld, player, ParticleTypes.SOUL_FIRE_FLAME,
 				player.getX(), player.getY() + 1.0, player.getZ(),
 				25, 1.5, 0.5, 1.5, 0.05);
-		ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SMOKE,
+		ParticleUtils.spawnDecorationParticles(serverWorld, player, ParticleTypes.SMOKE,
 				player.getX(), player.getY() + 0.5, player.getZ(),
 				15, 1.0, 0.3, 1.0, 0.05);
 

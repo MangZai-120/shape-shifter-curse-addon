@@ -120,29 +120,35 @@
                             "explosion_damage_entity": false
                         },
                         {
-                            "type": "shape-shifter-curse:spawn_particles_in_circle",
-                            "particle": "minecraft:flame",
-                            "count": 1,
-                            "speed": 0.01,
-                            "force": true,
-                            "spread": {
-                                "x": 0.4,
-                                "y": 0.6,
-                                "z": 0.4
-                            },
-                            "radius": 3.0,
-                            "sample_count": 48
+                            "type": "my_addon:self_decoration",
+                            "entity_action": {
+                                "type": "shape-shifter-curse:spawn_particles_in_circle",
+                                "particle": "minecraft:flame",
+                                "count": 1,
+                                "speed": 0.01,
+                                "force": true,
+                                "spread": {
+                                    "x": 0.4,
+                                    "y": 0.6,
+                                    "z": 0.4
+                                },
+                                "radius": 3.0,
+                                "sample_count": 48
+                            }
                         },
                         {
-                            "type": "apoli:spawn_particles",
-                            "particle": "minecraft:soul_fire_flame",
-                            "count": 8,
-                            "speed": 0.0,
-                            "force": true,
-                            "spread": {
-                                "x": 1.5,
-                                "y": 1.0,
-                                "z": 1.5
+                            "type": "my_addon:self_decoration",
+                            "entity_action": {
+                                "type": "apoli:spawn_particles",
+                                "particle": "minecraft:soul_fire_flame",
+                                "count": 8,
+                                "speed": 0.0,
+                                "force": true,
+                                "spread": {
+                                    "x": 1.5,
+                                    "y": 1.0,
+                                    "z": 1.5
+                                }
                             }
                         },
                         {

@@ -118,10 +118,10 @@ public final class MancianimaTeleport {
 		}
 
 		// 出发点粒子 + 音效（对周围所有玩家可见/可听）
-		ParticleUtils.spawnParticles(world, ParticleTypes.PORTAL,
+		ParticleUtils.spawnDecorationParticles(world, player, ParticleTypes.PORTAL,
 				player.getX(), player.getY() + 1.0, player.getZ(),
 				40, 0.3, 0.8, 0.3, 0.6);
-		ParticleUtils.spawnParticles(world, ParticleTypes.REVERSE_PORTAL,
+		ParticleUtils.spawnDecorationParticles(world, player, ParticleTypes.REVERSE_PORTAL,
 				player.getX(), player.getY() + 1.0, player.getZ(),
 				20, 0.3, 0.5, 0.3, 0.05);
 		world.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -131,10 +131,10 @@ public final class MancianimaTeleport {
 		player.teleport(targetFeet.x, targetFeet.y, targetFeet.z);
 
 		// 落点粒子 + 音效（对周围所有玩家可见/可听）
-		ParticleUtils.spawnParticles(world, ParticleTypes.PORTAL,
+		ParticleUtils.spawnDecorationParticles(world, player, ParticleTypes.PORTAL,
 				targetFeet.x, targetFeet.y + 1.0, targetFeet.z,
 				40, 0.3, 0.8, 0.3, 0.6);
-		ParticleUtils.spawnParticles(world, ParticleTypes.REVERSE_PORTAL,
+		ParticleUtils.spawnDecorationParticles(world, player, ParticleTypes.REVERSE_PORTAL,
 				targetFeet.x, targetFeet.y + 1.0, targetFeet.z,
 				20, 0.3, 0.5, 0.3, 0.05);
 		world.playSound(null, targetFeet.x, targetFeet.y, targetFeet.z,

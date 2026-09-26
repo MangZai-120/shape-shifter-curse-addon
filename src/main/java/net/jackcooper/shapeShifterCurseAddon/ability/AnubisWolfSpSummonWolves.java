@@ -250,7 +250,7 @@ public class AnubisWolfSpSummonWolves {
 			double radius = 1.5;
 			double px = player.getX() + Math.cos(angle) * radius;
 			double pz = player.getZ() + Math.sin(angle) * radius;
-			ParticleUtils.spawnParticles(world, ParticleTypes.SOUL,
+			ParticleUtils.spawnDecorationParticles(world, player, ParticleTypes.SOUL,
 					px, player.getY() + 0.5, pz, 2, 0.1, 0.3, 0.1, 0.02);
 		}
 

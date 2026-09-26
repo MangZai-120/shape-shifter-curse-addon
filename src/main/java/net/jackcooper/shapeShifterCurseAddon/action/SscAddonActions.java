@@ -64,6 +64,10 @@ public class SscAddonActions {
 	}
 
 	public static void register() {
+		registerEntity(new ActionFactory<>(new Identifier("my_addon", "self_decoration"),
+				new SerializableData().add("entity_action", io.github.apace100.apoli.data.ApoliDataTypes.ENTITY_ACTION),
+				(data, entity) -> net.jackcooper.shapeShifterCurseAddon.network.DecorationParticleScope.run(entity,
+						() -> data.<java.util.function.Consumer<Entity>>get("entity_action").accept(entity))));
 		registerEntity(new ActionFactory<>(new Identifier("my_addon", "fallen_allay_scream"),
 				new SerializableData(),
 				(data, entity) -> {

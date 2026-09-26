@@ -60,6 +60,9 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
     private static final int PHASE2_DURATION = 60;     // 12 格后最多飞 3 秒（60 tick → 18 格上限）
 
     private static final TrackedData<Boolean> EXPLODED = DataTracker.registerData(FoxFireballEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
+    /** 施法者 UUID 同步给客户端：拖尾粒子打 owner 标（仅本人第一人称避让）用，2026-09-26 */
+    private static final TrackedData<java.util.Optional<java.util.UUID>> OWNER_UUID =
+            DataTracker.registerData(FoxFireballEntity.class, TrackedDataHandlerRegistry.OPTIONAL_UUID);
 
     private Vec3d direction = new Vec3d(0, 0, 1);
     private double distanceTraveled = 0;
@@ -79,6 +82,8 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         super(SscAddon.FOX_FIREBALL_ENTITY, world);
         this.setOwner(owner);
         this.setPosition(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
+        // 同步施法者 UUID 给客户端：拖尾粒子 owner 打标用
+        if (owner != null) this.dataTracker.set(OWNER_UUID, java.util.Optional.of(owner.getUuid()));
     }
 
     public void setDirection(Vec3d dir) {
@@ -104,6 +109,7 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
     @Override
     protected void initDataTracker() {
         this.dataTracker.startTracking(EXPLODED, false);
+        this.dataTracker.startTracking(OWNER_UUID, java.util.Optional.empty());
     }
 
     @Override
@@ -221,8 +227,12 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
             piercedEntities.add(e.getUuid());
             applyFoxFireBurn(e);
             double ex = e.getX(), ey = e.getY() + e.getHeight() * 0.5, ez = e.getZ();
-            world.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME, ex, ey, ez, 8, 0.3, 0.3, 0.3, 0.02);
-            world.spawnParticles(ParticleTypes.FLAME, ex, ey, ez, 6, 0.25, 0.25, 0.25, 0.02);
+            // 2026-09-26 用户定稿：火球命中粒子参与避让（owner 作用域，仅本人第一人称淡化，他人原样）
+            // 弹道作用域：豁免准星锥压制（拖尾/爆炸/火环沿视线飞行，再叠锥会把整条弹道压到 10%）
+            net.jackcooper.shapeShifterCurseAddon.network.DecorationParticleScope.runProjectile(owner, () -> {
+                world.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME, ex, ey, ez, 8, 0.3, 0.3, 0.3, 0.02);
+                world.spawnParticles(ParticleTypes.FLAME, ex, ey, ez, 6, 0.25, 0.25, 0.25, 0.02);
+            });
             world.playSound(null, ex, ey, ez, SoundEvents.ENTITY_BLAZE_HURT, SoundCategory.PLAYERS, 0.4f, 1.6f);
             triggerExtraExplosion(world, owner, e);   // 穿透段也触发额外爆炸（腰部火环 + 连锁）
         }
@@ -240,50 +250,59 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
      * 位置全精确；速度按原版 gaussian×speed 的量级取近似常向量（与潮汐球拖尾同标准）。
      */
     private void spawnTrailParticlesClient() {
-        double x = this.getX(), y = this.getY(), z = this.getZ();
-        World w = this.getWorld();
-        Random rnd = this.random;
-        // 火焰球体 ×10（原版：count=1、偏移 0、speed=0.01 → 位置精确、微速上飘）
-        for (int i = 0; i < 10; i++) {
-            Vec3d p = randomInSphere(1.0, rnd);
-            w.addParticle(ParticleTypes.FLAME, x + p.x, y + p.y, z + p.z, 0, 0.01, 0);
+        // 2026-09-26 用户定稿：拖尾参与避让——用 DataTracker 同步的 owner UUID 打标（仅本人第一人称淡化）
+        java.util.Optional<java.util.UUID> ownerUuid = this.dataTracker.get(OWNER_UUID);
+        Runnable spawn = () -> {
+            double x = this.getX(), y = this.getY(), z = this.getZ();
+            World w = this.getWorld();
+            Random rnd = this.random;
+            // 火焰球体 ×10（原版：count=1、偏移 0、speed=0.01 → 位置精确、微速上飘）
+            for (int i = 0; i < 10; i++) {
+                Vec3d p = randomInSphere(1.0, rnd);
+                w.addParticle(ParticleTypes.FLAME, x + p.x, y + p.y, z + p.z, 0, 0.01, 0);
+            }
+            // 魂火球体 ×7
+            for (int i = 0; i < 7; i++) {
+                Vec3d p = randomInSphere(1.0, rnd);
+                w.addParticle(ParticleTypes.SOUL_FIRE_FLAME, x + p.x, y + p.y, z + p.z, 0, 0.01, 0);
+            }
+            // 岩浆火星 30%（原版偏移 ±(0.003,0.008,0.003)≈0、速度 0）
+            if (rnd.nextFloat() < 0.3f) {
+                Vec3d p = randomInSphere(0.4, rnd);
+                w.addParticle(ParticleTypes.LAVA, x + p.x, y + p.y, z + p.z, 0, 0, 0);
+            }
+            // 熔岩滴落 7%
+            if (rnd.nextFloat() < 0.07f) {
+                w.addParticle(ParticleTypes.FALLING_LAVA,
+                        x + (rnd.nextDouble() - 0.5) * 1.0,
+                        y - 0.6 + (rnd.nextDouble() - 0.5) * 0.8,
+                        z + (rnd.nextDouble() - 0.5) * 1.0,
+                        0, 0, 0);
+            }
+            // 尾部反向：火焰 ×2 / 魂火 ×1 / 烟雾 ×1（高斯偏移与服务端 spawnParticles count>0 分支同分布）
+            Vec3d v = this.getVelocity();
+            Vec3d dir = v.lengthSquared() > 1.0e-6 ? v.normalize() : this.direction;
+            Vec3d back = dir.multiply(-0.5);
+            for (int i = 0; i < 2; i++) {
+                w.addParticle(ParticleTypes.FLAME,
+                        x + back.x + rnd.nextGaussian() * 0.15,
+                        y + back.y + rnd.nextGaussian() * 0.15,
+                        z + back.z + rnd.nextGaussian() * 0.15, 0, 0, 0);
+            }
+            w.addParticle(ParticleTypes.SOUL_FIRE_FLAME,
+                    x + back.x + rnd.nextGaussian() * 0.12,
+                    y + back.y + rnd.nextGaussian() * 0.12,
+                    z + back.z + rnd.nextGaussian() * 0.12, 0, 0, 0);
+            w.addParticle(ParticleTypes.SMOKE,
+                    x + back.x * 1.5 + rnd.nextGaussian() * 0.1,
+                    y + back.y * 1.5 + rnd.nextGaussian() * 0.1,
+                    z + back.z * 1.5 + rnd.nextGaussian() * 0.1, 0, 0, 0);
+        };
+        if (ownerUuid.isPresent()) {
+            net.jackcooper.shapeShifterCurseAddon.client.particle.FirstPersonParticles.emitProjectile(ownerUuid.get(), spawn);
+        } else {
+            spawn.run();
         }
-        // 魂火球体 ×7
-        for (int i = 0; i < 7; i++) {
-            Vec3d p = randomInSphere(1.0, rnd);
-            w.addParticle(ParticleTypes.SOUL_FIRE_FLAME, x + p.x, y + p.y, z + p.z, 0, 0.01, 0);
-        }
-        // 岩浆火星 30%（原版偏移 ±(0.003,0.008,0.003)≈0、速度 0）
-        if (rnd.nextFloat() < 0.3f) {
-            Vec3d p = randomInSphere(0.4, rnd);
-            w.addParticle(ParticleTypes.LAVA, x + p.x, y + p.y, z + p.z, 0, 0, 0);
-        }
-        // 熔岩滴落 7%
-        if (rnd.nextFloat() < 0.07f) {
-            w.addParticle(ParticleTypes.FALLING_LAVA,
-                    x + (rnd.nextDouble() - 0.5) * 1.0,
-                    y - 0.6 + (rnd.nextDouble() - 0.5) * 0.8,
-                    z + (rnd.nextDouble() - 0.5) * 1.0,
-                    0, 0, 0);
-        }
-        // 尾部反向：火焰 ×2 / 魂火 ×1 / 烟雾 ×1（高斯偏移与服务端 spawnParticles count>0 分支同分布）
-        Vec3d v = this.getVelocity();
-        Vec3d dir = v.lengthSquared() > 1.0e-6 ? v.normalize() : this.direction;
-        Vec3d back = dir.multiply(-0.5);
-        for (int i = 0; i < 2; i++) {
-            w.addParticle(ParticleTypes.FLAME,
-                    x + back.x + rnd.nextGaussian() * 0.15,
-                    y + back.y + rnd.nextGaussian() * 0.15,
-                    z + back.z + rnd.nextGaussian() * 0.15, 0, 0, 0);
-        }
-        w.addParticle(ParticleTypes.SOUL_FIRE_FLAME,
-                x + back.x + rnd.nextGaussian() * 0.12,
-                y + back.y + rnd.nextGaussian() * 0.12,
-                z + back.z + rnd.nextGaussian() * 0.12, 0, 0, 0);
-        w.addParticle(ParticleTypes.SMOKE,
-                x + back.x * 1.5 + rnd.nextGaussian() * 0.1,
-                y + back.y * 1.5 + rnd.nextGaussian() * 0.1,
-                z + back.z * 1.5 + rnd.nextGaussian() * 0.1, 0, 0, 0);
     }
 
     private void explode(ServerWorld w, LivingEntity directTarget) {
@@ -394,50 +413,54 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         }
     }
 
-    /** 6 格球爆炸粒子：80% 红 dust + 20% 狐火，附加少量 lava 黑渣。 */
+    /** 6 格球爆炸粒子：80% 红 dust + 20% 狐火，附加少量 lava 黑渣。owner 作用域：仅本人第一人称避让。 */
     private void spawnExplosionParticles(ServerWorld w, double x, double y, double z) {
-        Random rnd = this.random;
-        DustParticleEffect red = new DustParticleEffect(new Vector3f(0.85f, 0.1f, 0.05f), 1.3f);
-        for (int i = 0; i < 130; i++) {
-            Vec3d p = randomInSphere(EXPLODE_RADIUS, rnd);
-            double px = x + p.x, py = y + p.y, pz = z + p.z;
-            if (rnd.nextDouble() < 0.8) {
-                w.spawnParticles(red, px, py, pz, 1, 0, 0, 0, 0);
-            } else {
-                w.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME, px, py, pz, 1, 0, 0, 0, 0.01);
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticleScope.runProjectile(getOwner() instanceof LivingEntity le ? le : null, () -> {
+            Random rnd = this.random;
+            DustParticleEffect red = new DustParticleEffect(new Vector3f(0.85f, 0.1f, 0.05f), 1.3f);
+            for (int i = 0; i < 130; i++) {
+                Vec3d p = randomInSphere(EXPLODE_RADIUS, rnd);
+                double px = x + p.x, py = y + p.y, pz = z + p.z;
+                if (rnd.nextDouble() < 0.8) {
+                    w.spawnParticles(red, px, py, pz, 1, 0, 0, 0, 0);
+                } else {
+                    w.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME, px, py, pz, 1, 0, 0, 0, 0.01);
+                }
             }
-        }
-        for (int i = 0; i < 16; i++) {
-            Vec3d p = randomInSphere(EXPLODE_RADIUS * 0.6, rnd);
-            w.spawnParticles(ParticleTypes.LAVA, x + p.x, y + p.y + 1.0, z + p.z, 1, 0, 0, 0, 0);
-        }
-        // === RC4 奥术手雷爆炸特效（放大 1.5 倍版：扩散范围与 dust 尺寸 ×1.5，数量与速度不变） ===
-        w.spawnParticles(ParticleTypes.EXPLOSION, x, y + 0.3, z, 3, 0.3, 0.3, 0.3, 1.0);
-        w.spawnParticles(ParticleTypes.LAVA, x, y + 0.8, z, 20, 0.45, 0.45, 0.45, 0.2);
-        // 紫红→暗红渐变粉尘（dust 尺寸 1→1.5）
-        DustColorTransitionParticleEffect arcaneDust = new DustColorTransitionParticleEffect(
-                new Vector3f(0.322f, 0.0f, 0.149f), new Vector3f(0.149f, 0.012f, 0.039f), 1.5f);
-        w.spawnParticles(arcaneDust, x, y + 0.3, z, 300, 1.05, 1.8, 1.05, 0.01);
-        w.spawnParticles(ParticleTypes.FLAME, x, y + 0.3, z, 80, 0.75, 1.2, 0.75, 0.1);
-        w.spawnParticles(ParticleTypes.SQUID_INK, x, y + 0.3, z, 5, 0.45, 0.45, 0.45, 0.1);
-        w.spawnParticles(ParticleTypes.FALLING_LAVA, x, y + 0.1, z, 125, 1.5, 0.75, 1.5, 0.2);
+            for (int i = 0; i < 16; i++) {
+                Vec3d p = randomInSphere(EXPLODE_RADIUS * 0.6, rnd);
+                w.spawnParticles(ParticleTypes.LAVA, x + p.x, y + p.y + 1.0, z + p.z, 1, 0, 0, 0, 0);
+            }
+            // === RC4 奥术手雷爆炸特效（放大 1.5 倍版：扩散范围与 dust 尺寸 ×1.5，数量与速度不变） ===
+            w.spawnParticles(ParticleTypes.EXPLOSION, x, y + 0.3, z, 3, 0.3, 0.3, 0.3, 1.0);
+            w.spawnParticles(ParticleTypes.LAVA, x, y + 0.8, z, 20, 0.45, 0.45, 0.45, 0.2);
+            // 紫红→暗红渐变粉尘（dust 尺寸 1→1.5）
+            DustColorTransitionParticleEffect arcaneDust = new DustColorTransitionParticleEffect(
+                    new Vector3f(0.322f, 0.0f, 0.149f), new Vector3f(0.149f, 0.012f, 0.039f), 1.5f);
+            w.spawnParticles(arcaneDust, x, y + 0.3, z, 300, 1.05, 1.8, 1.05, 0.01);
+            w.spawnParticles(ParticleTypes.FLAME, x, y + 0.3, z, 80, 0.75, 1.2, 0.75, 0.1);
+            w.spawnParticles(ParticleTypes.SQUID_INK, x, y + 0.3, z, 5, 0.45, 0.45, 0.45, 0.1);
+            w.spawnParticles(ParticleTypes.FALLING_LAVA, x, y + 0.1, z, 125, 1.5, 0.75, 1.5, 0.2);
+        });
     }
 
-    /** 腰部火环扩散动画：每帧画半径递增的环（0→CHAIN_RADIUS），仅火焰 + 灵魂火粒子（无红色粉尘）。 */
+    /** 腰部火环扩散动画：每帧画半径递增的环（0→CHAIN_RADIUS），仅火焰 + 灵魂火粒子（无红色粉尘）。owner 作用域：仅本人避让。 */
     private void spawnWaistRing(ServerWorld w, double x, double y, double z, float progress) {
-        double radius = Math.max(0.1, CHAIN_RADIUS * progress);
-        int pts = Math.max(2, (int) ((12 + 26 * progress) * 0.2));  // 粒子量减至原 20%
-        double rot = progress * 0.6;                                // 轻微旋转更灵动
-        double upward = 0.02 + progress * 0.04;                     // 火苗向上飘
-        for (int i = 0; i < pts; i++) {
-            double a = 2 * Math.PI * i / pts + rot;
-            double px = x + radius * Math.cos(a);
-            double pz = z + radius * Math.sin(a);
-            w.spawnParticles(ParticleTypes.FLAME, px, y, pz, 1, 0, upward, 0, 0.0);
-            if (i % 2 == 0) {
-                w.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME, px, y + 0.05, pz, 1, 0, upward, 0, 0.01);
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticleScope.runProjectile(getOwner() instanceof LivingEntity le ? le : null, () -> {
+            double radius = Math.max(0.1, CHAIN_RADIUS * progress);
+            int pts = Math.max(2, (int) ((12 + 26 * progress) * 0.2));  // 粒子量减至原 20%
+            double rot = progress * 0.6;                                // 轻微旋转更灵动
+            double upward = 0.02 + progress * 0.04;                     // 火苗向上飘
+            for (int i = 0; i < pts; i++) {
+                double a = 2 * Math.PI * i / pts + rot;
+                double px = x + radius * Math.cos(a);
+                double pz = z + radius * Math.sin(a);
+                w.spawnParticles(ParticleTypes.FLAME, px, y, pz, 1, 0, upward, 0, 0.0);
+                if (i % 2 == 0) {
+                    w.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME, px, y + 0.05, pz, 1, 0, upward, 0, 0.01);
+                }
             }
-        }
+        });
     }
 
     private Vec3d randomInSphere(double r, Random rnd) {
@@ -478,6 +501,16 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         this.distanceTraveled = nbt.getDouble("Dist");
         this.exploded = nbt.getBoolean("Exploded");
         this.empowered = nbt.getBoolean("Empowered");
+        // 2026-09-26 状态恢复补齐：此前重载后 exploded=true 但 exploding=false → tick 继续飞行但
+        // explode() 被 if(exploded) 拦截，火球变「哑弹续飞」。已爆的火球重载后直接恢复冻结态等待清理。
+        if (this.exploded) {
+            this.exploding = true;
+            this.dataTracker.set(EXPLODED, true);
+        }
+        // OWNER_UUID 未持久化时从 ProjectileEntity 已恢复的 owner UUID 回填，拖尾打标不断链
+        if (this.dataTracker.get(OWNER_UUID).isEmpty() && super.getOwner() != null) {
+            this.dataTracker.set(OWNER_UUID, java.util.Optional.of(super.getOwner().getUuid()));
+        }
     }
 
     @Override

@@ -111,43 +111,52 @@
                     "explosion_damage_entity": false
                 },
                 {
-                    "type": "shape-shifter-curse:spawn_particles_in_circle",
-                    "particle": "minecraft:flame",
-                    "count": 1,
-                    "speed": 0.01,
-                    "force": true,
-                    "spread": {
-                        "x": 0.4,
-                        "y": 0.6,
-                        "z": 0.4
-                    },
-                    "radius": 4.0,
-                    "sample_count": 64
+                    "type": "my_addon:self_decoration",
+                    "entity_action": {
+                        "type": "shape-shifter-curse:spawn_particles_in_circle",
+                        "particle": "minecraft:flame",
+                        "count": 1,
+                        "speed": 0.01,
+                        "force": true,
+                        "spread": {
+                            "x": 0.4,
+                            "y": 0.6,
+                            "z": 0.4
+                        },
+                        "radius": 4.0,
+                        "sample_count": 64
+                    }
                 },
                 {
-                    "type": "shape-shifter-curse:spawn_particles_in_circle",
-                    "particle": "minecraft:flame",
-                    "count": 1,
-                    "speed": 0.04,
-                    "force": true,
-                    "spread": {
-                        "x": 0.2,
-                        "y": 0.3,
-                        "z": 0.2
-                    },
-                    "radius": 1.5,
-                    "sample_count": 8
+                    "type": "my_addon:self_decoration",
+                    "entity_action": {
+                        "type": "shape-shifter-curse:spawn_particles_in_circle",
+                        "particle": "minecraft:flame",
+                        "count": 1,
+                        "speed": 0.04,
+                        "force": true,
+                        "spread": {
+                            "x": 0.2,
+                            "y": 0.3,
+                            "z": 0.2
+                        },
+                        "radius": 1.5,
+                        "sample_count": 8
+                    }
                 },
                 {
-                    "type": "apoli:spawn_particles",
-                    "particle": "minecraft:soul_fire_flame",
-                    "count": 8,
-                    "speed": 0.0,
-                    "force": true,
-                    "spread": {
-                        "x": 2.0,
-                        "y": 1.0,
-                        "z": 2.0
+                    "type": "my_addon:self_decoration",
+                    "entity_action": {
+                        "type": "apoli:spawn_particles",
+                        "particle": "minecraft:soul_fire_flame",
+                        "count": 8,
+                        "speed": 0.0,
+                        "force": true,
+                        "spread": {
+                            "x": 2.0,
+                            "y": 1.0,
+                            "z": 2.0
+                        }
                     }
                 },
                 {

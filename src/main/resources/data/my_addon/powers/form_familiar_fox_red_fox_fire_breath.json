@@ -32,44 +32,74 @@
                 "type": "my_addon:fox_fireball"
             },
             {
-                "type": "apoli:execute_command",
-                "command": "particle minecraft:soul_fire_flame ^ ^1.2 ^1 0.7 0.7 0.7 0.04 8 force @a"
+                "type": "my_addon:self_decoration",
+                "entity_action": {
+                    "type": "apoli:execute_command",
+                    "command": "particle minecraft:soul_fire_flame ^ ^1.2 ^1 0.7 0.7 0.7 0.04 8 force @a"
+                }
             },
             {
-                "type": "apoli:execute_command",
-                "command": "particle minecraft:soul_fire_flame ^ ^1.2 ^2 1.0 1.0 1.0 0.04 14 force @a"
+                "type": "my_addon:self_decoration",
+                "entity_action": {
+                    "type": "apoli:execute_command",
+                    "command": "particle minecraft:soul_fire_flame ^ ^1.2 ^2 1.0 1.0 1.0 0.04 14 force @a"
+                }
             },
             {
-                "type": "apoli:execute_command",
-                "command": "particle minecraft:soul_fire_flame ^ ^1.2 ^3 1.3 1.3 1.3 0.04 20 force @a"
+                "type": "my_addon:self_decoration",
+                "entity_action": {
+                    "type": "apoli:execute_command",
+                    "command": "particle minecraft:soul_fire_flame ^ ^1.2 ^3 1.3 1.3 1.3 0.04 20 force @a"
+                }
             },
             {
-                "type": "apoli:execute_command",
-                "command": "particle minecraft:soul_fire_flame ^ ^1.2 ^4 1.5 1.5 1.5 0.04 26 force @a"
+                "type": "my_addon:self_decoration",
+                "entity_action": {
+                    "type": "apoli:execute_command",
+                    "command": "particle minecraft:soul_fire_flame ^ ^1.2 ^4 1.5 1.5 1.5 0.04 26 force @a"
+                }
             },
             {
-                "type": "apoli:execute_command",
-                "command": "particle minecraft:flame ^ ^1.2 ^2 1.0 1.0 1.0 0.03 6 force @a"
+                "type": "my_addon:self_decoration",
+                "entity_action": {
+                    "type": "apoli:execute_command",
+                    "command": "particle minecraft:flame ^ ^1.2 ^2 1.0 1.0 1.0 0.03 6 force @a"
+                }
             },
             {
-                "type": "apoli:execute_command",
-                "command": "particle minecraft:flame ^ ^1.2 ^3 1.3 1.3 1.3 0.03 8 force @a"
+                "type": "my_addon:self_decoration",
+                "entity_action": {
+                    "type": "apoli:execute_command",
+                    "command": "particle minecraft:flame ^ ^1.2 ^3 1.3 1.3 1.3 0.03 8 force @a"
+                }
             },
             {
-                "type": "apoli:execute_command",
-                "command": "particle minecraft:dust 0.9 0.12 0.05 1.2 ^ ^1.2 ^2 1.0 1.0 1.0 0.02 6 force @a"
+                "type": "my_addon:self_decoration",
+                "entity_action": {
+                    "type": "apoli:execute_command",
+                    "command": "particle minecraft:dust 0.9 0.12 0.05 1.2 ^ ^1.2 ^2 1.0 1.0 1.0 0.02 6 force @a"
+                }
             },
             {
-                "type": "apoli:execute_command",
-                "command": "particle minecraft:dust 0.9 0.12 0.05 1.2 ^ ^1.2 ^3 1.3 1.3 1.3 0.02 8 force @a"
+                "type": "my_addon:self_decoration",
+                "entity_action": {
+                    "type": "apoli:execute_command",
+                    "command": "particle minecraft:dust 0.9 0.12 0.05 1.2 ^ ^1.2 ^3 1.3 1.3 1.3 0.02 8 force @a"
+                }
             },
             {
-                "type": "apoli:execute_command",
-                "command": "particle minecraft:lava ^ ^1.2 ^2 0.9 0.8 0.8 0.0 3 force @a"
+                "type": "my_addon:self_decoration",
+                "entity_action": {
+                    "type": "apoli:execute_command",
+                    "command": "particle minecraft:lava ^ ^1.2 ^2 0.9 0.8 0.8 0.0 3 force @a"
+                }
             },
             {
-                "type": "apoli:execute_command",
-                "command": "particle minecraft:lava ^ ^1.2 ^3 1.1 1.0 1.0 0.0 4 force @a"
+                "type": "my_addon:self_decoration",
+                "entity_action": {
+                    "type": "apoli:execute_command",
+                    "command": "particle minecraft:lava ^ ^1.2 ^3 1.1 1.0 1.0 0.0 4 force @a"
+                }
             },
             {
                 "type": "apoli:change_resource",
@@ -95,7 +125,6 @@
     "hud_render": {
         "should_render": false
     },
-
     "name": "狐火火球 (Red)",
     "description": "消耗20点法力，向前喷射狐火火球：前12格穿透敌人造成魔法伤害并触发额外爆炸，12格后碰撞爆炸造成范围物理伤害与腰部火环连锁；发射时近身60°、4格扇形霰击。"
 }

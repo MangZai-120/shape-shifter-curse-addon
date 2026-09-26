@@ -150,8 +150,11 @@
             "compare_to": 1
         },
         "entity_action": {
-            "type": "apoli:execute_command",
-            "command": "particle minecraft:smoke ~ ~1 ~ 0.2 0.3 0.2 0.02 6 force @a"
+            "type": "my_addon:self_decoration",
+            "entity_action": {
+                "type": "apoli:execute_command",
+                "command": "particle minecraft:smoke ~ ~1 ~ 0.2 0.3 0.2 0.02 6 force @a"
+            }
         }
     },
     "trigger_vex": {
@@ -190,12 +193,18 @@
                     "command": "playsound entity.evoker.prepare_summon hostile @a ~ ~ ~ 1.5 1.0"
                 },
                 {
-                    "type": "apoli:execute_command",
-                    "command": "particle minecraft:smoke ~ ~1 ~ 0.5 0.5 0.5 0.05 20 force @a"
+                    "type": "my_addon:self_decoration",
+                    "entity_action": {
+                        "type": "apoli:execute_command",
+                        "command": "particle minecraft:smoke ~ ~1 ~ 0.5 0.5 0.5 0.05 20 force @a"
+                    }
                 },
                 {
-                    "type": "apoli:execute_command",
-                    "command": "particle minecraft:large_smoke ~ ~1 ~ 0.3 0.3 0.3 0.02 10 force @a"
+                    "type": "my_addon:self_decoration",
+                    "entity_action": {
+                        "type": "apoli:execute_command",
+                        "command": "particle minecraft:large_smoke ~ ~1 ~ 0.3 0.3 0.3 0.02 10 force @a"
+                    }
                 }
             ]
         }

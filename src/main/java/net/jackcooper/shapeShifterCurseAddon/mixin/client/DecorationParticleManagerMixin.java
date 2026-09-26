@@ -45,6 +45,19 @@ public abstract class DecorationParticleManagerMixin {
         FirstPersonParticles.tag(cir.getReturnValue());
     }
 
+    @WrapOperation(method = "tickParticle", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/client/particle/Particle;tick()V"))
+    private void ssca$inheritDecoration(Particle particle, Operation<Void> original) {
+        var owner = particle instanceof net.jackcooper.shapeShifterCurseAddon.client.particle.ParticleOwnership owned
+                ? owned.ssca$getDecorationOwner() : null;
+        if (owner == null) original.call(particle);
+        else if (particle instanceof net.jackcooper.shapeShifterCurseAddon.client.particle.ParticleOwnership own
+                && own.ssca$isProjectileDecoration())
+            // 子粒子继承弹道标记（火球拖尾的扩散子粒子同样豁免锥压制）
+            net.jackcooper.shapeShifterCurseAddon.client.particle.FirstPersonParticles.emitProjectile(owner, () -> original.call(particle));
+        else FirstPersonParticles.emit(owner, () -> original.call(particle));
+    }
+
     @Inject(method = "renderParticles", at = @At("HEAD"))
     private void ssca$prepareTranslucentBatch(MatrixStack matrices, VertexConsumerProvider.Immediate consumers,
                                               LightmapTextureManager lightmap, Camera camera, float tickDelta,

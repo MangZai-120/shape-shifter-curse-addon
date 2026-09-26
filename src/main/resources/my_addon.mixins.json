@@ -6,6 +6,7 @@
     "plugin":  "net.jackcooper.shapeShifterCurseAddon.mixin.plugin.SscAddonMixinConfigPlugin",
     "refmap":  "ssc-addon.refmap.json",
     "mixins":  [
+                   "DecorationParticlePacketMixin",
                    "DomainEntityBoundaryMixin",
                    "DomainPlayerBoundaryMixin",
                    "DomainNetworkBoundaryMixin",
@@ -20,8 +21,6 @@
                    "effect.EntangledFullStunMixin",
                    "AnkhStoneTotemMixin",
                    "item.BrewingStandInfinitePotionMixin",
-                   "item.BrewingPotionSlotMixin",
-                   "item.BrewingRegistryInfiniteMixin",
                    "client.PotionBagCooldownBypassMixin",
                    "entity.FallenAllayVexMixin",
                    "entity.GoldenSandstormHungerMixin",
@@ -59,6 +58,7 @@
                    "WanderingTraderTradeMixin"
                ],
     "client":  [
+                   "client.ParticleOwnershipMixin",
                    "client.DecorationParticleManagerMixin",
                    "client.AsyncParticleSyncBatchMixin",
                    "client.FirstPersonBillboardParticleMixin",

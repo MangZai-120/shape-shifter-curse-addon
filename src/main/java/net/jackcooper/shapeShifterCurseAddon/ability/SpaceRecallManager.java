@@ -34,7 +34,7 @@ public final class SpaceRecallManager {
 			return; // canCast 已前置校验；此处双保险
 		}
 		// 起点消散
-		world.spawnParticles(ParticleTypes.PORTAL,
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, player, ParticleTypes.PORTAL,
 				player.getX(), player.getBodyY(0.5), player.getZ(), 24, 0.3, 0.5, 0.3, 0.1);
 		// 目的地维度（重生点可能在其它维度，如重生锚在下界）：跨维度走原版传送链路
 		net.minecraft.server.world.ServerWorld destWorld = world.getServer().getWorld(player.getSpawnPointDimension());
@@ -66,8 +66,8 @@ public final class SpaceRecallManager {
 			player.teleport(destWorld, tx, ty, tz, java.util.Collections.emptySet(),
 					player.getYaw(), player.getPitch());
 		}
-		// 终点光柱与音效
-		world.spawnParticles(ParticleTypes.END_ROD,
+		// 终点光柱与音效（落点在 destWorld；跨维度时粒子必须发到落点维度，修复此前发进起点维度的预存在 bug）
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(destWorld, player, ParticleTypes.END_ROD,
 				tx, ty + 1.0, tz, 20, 0.4, 0.6, 0.4, 0.05);
 		destWorld.playSound(null, tx, ty, tz,
 				SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0f, 1.0f);

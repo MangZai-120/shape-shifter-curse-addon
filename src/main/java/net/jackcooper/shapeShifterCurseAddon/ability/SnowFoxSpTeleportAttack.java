@@ -153,7 +153,7 @@ public class SnowFoxSpTeleportAttack {
 				SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0f, 1.0f);
 
 		if (player.getWorld() instanceof ServerWorld serverWorld) {
-			ParticleUtils.spawnParticles(serverWorld, ParticleTypes.REVERSE_PORTAL,
+			ParticleUtils.spawnDecorationParticles(serverWorld, player, ParticleTypes.REVERSE_PORTAL,
 					player.getX(), player.getY() + player.getHeight() / 2, player.getZ(),
 					20, 0.3, 0.5, 0.3, 0.05);
 		}
@@ -200,7 +200,7 @@ public class SnowFoxSpTeleportAttack {
 				SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0f, 0.8f);
 
 		if (player.getWorld() instanceof ServerWorld serverWorld) {
-			ParticleUtils.spawnParticles(serverWorld, ParticleTypes.REVERSE_PORTAL,
+			ParticleUtils.spawnDecorationParticles(serverWorld, player, ParticleTypes.REVERSE_PORTAL,
 					player.getX(), player.getY() + player.getHeight() / 2, player.getZ(),
 					30, 0.3, 0.5, 0.3, 0.05);
 		}

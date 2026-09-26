@@ -78,10 +78,10 @@ public final class VortexGuideManager {
 		// 环绕水/心形引导粒子
 		double ang = tick * 0.4;
 		double r = 0.8;
-		sw.spawnParticles(ParticleTypes.FALLING_WATER,
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.FALLING_WATER,
 				player.getX() + Math.cos(ang) * r, player.getY() + 1.0, player.getZ() + Math.sin(ang) * r,
 				2, 0.05, 0.2, 0.05, 0.0);
-		sw.spawnParticles(ParticleTypes.HEART,
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.HEART,
 				player.getX(), player.getY() + 1.4, player.getZ(), 1, 0.3, 0.3, 0.3, 0.0);
 
 		if (tick >= CHANNEL_TICKS) {

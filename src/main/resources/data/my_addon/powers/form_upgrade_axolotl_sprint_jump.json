@@ -19,34 +19,64 @@
                 "value": -3
             },
             {
-                "type": "apoli:spawn_particles",
-                "particle": "minecraft:rain",
-                "count": 16,
-                "speed": 0.0,
-                "force": true,
-                "spread": { "x": 0.5, "y": 0.5, "z": 0.5 }
+                "type": "my_addon:self_decoration",
+                "entity_action": {
+                    "type": "apoli:spawn_particles",
+                    "particle": "minecraft:rain",
+                    "count": 16,
+                    "speed": 0.0,
+                    "force": true,
+                    "spread": {
+                        "x": 0.5,
+                        "y": 0.5,
+                        "z": 0.5
+                    }
+                }
             },
             {
-                "type": "apoli:spawn_particles",
-                "particle": {
-                    "type": "minecraft:dust",
-                    "params": "0.11 0.18 0.69 2"
-                },
-                "count": 8,
-                "speed": 0.0,
-                "force": true,
-                "spread": { "x": 0.5, "y": 0.5, "z": 0.5 }
+                "type": "my_addon:self_decoration",
+                "entity_action": {
+                    "type": "apoli:spawn_particles",
+                    "particle": {
+                        "type": "minecraft:dust",
+                        "params": "0.11 0.18 0.69 2"
+                    },
+                    "count": 8,
+                    "speed": 0.0,
+                    "force": true,
+                    "spread": {
+                        "x": 0.5,
+                        "y": 0.5,
+                        "z": 0.5
+                    }
+                }
             }
         ]
     },
     "entity_condition": {
         "type": "apoli:and",
         "conditions": [
-            { "type": "apoli:sprinting" },
-            { "type": "apoli:fluid_height", "fluid": "minecraft:water", "comparison": "<=", "compare_to": 0 },
-            { "type": "apoli:on_block" },
-            { "type": "apoli:air", "comparison": ">", "compare_to": 0 },
-            { "type": "ssc_addon:has_talent", "talent_id": "water_propel" }
+            {
+                "type": "apoli:sprinting"
+            },
+            {
+                "type": "apoli:fluid_height",
+                "fluid": "minecraft:water",
+                "comparison": "<=",
+                "compare_to": 0
+            },
+            {
+                "type": "apoli:on_block"
+            },
+            {
+                "type": "apoli:air",
+                "comparison": ">",
+                "compare_to": 0
+            },
+            {
+                "type": "ssc_addon:has_talent",
+                "talent_id": "water_propel"
+            }
         ]
     }
 }

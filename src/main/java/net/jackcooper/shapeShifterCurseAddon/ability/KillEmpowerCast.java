@@ -184,7 +184,7 @@ public final class KillEmpowerCast {
 		// 表现复刻 power JSON：前方多层魂火粒子 + 火焰充能/狐狸叫音效
 		for (int d = 1; d <= 5; d++) {
 			double spread = 0.2 * d;
-			world.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME,
+			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, player, ParticleTypes.SOUL_FIRE_FLAME,
 					player.getX() + look.x * d, player.getY() + 1.2, player.getZ() + look.z * d,
 					4 + d * 3, spread, 0.4 + spread * 0.5, spread, 0.04);
 		}

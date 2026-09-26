@@ -14,7 +14,7 @@ public class SSCAddonClientConfig implements ConfigData {
 	@ConfigEntry.Gui.Tooltip
 	@ConfigEntry.Gui.EnumHandler(option = ConfigEntry.Gui.EnumHandler.EnumDisplayOption.BUTTON)
 	public net.jackcooper.shapeShifterCurseAddon.client.particle.ParticleAvoidance.Strength firstPersonParticleAvoidance =
-			net.jackcooper.shapeShifterCurseAddon.client.particle.ParticleAvoidance.Strength.STANDARD;
+			net.jackcooper.shapeShifterCurseAddon.client.particle.ParticleAvoidance.Strength.OFF;
 
 	@ConfigEntry.Gui.Excluded
 	public static final int DEFAULT_CD_TYPE = 4;

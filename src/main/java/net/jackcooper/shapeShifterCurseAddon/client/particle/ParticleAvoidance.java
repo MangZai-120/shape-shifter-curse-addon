@@ -3,7 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.client.particle;
 /** Pure render policy: no particle position, lifetime or simulation state is changed. */
 public final class ParticleAvoidance {
     public enum Strength {
-        // 2026-09-26 用户定稿：轻度4 / 中度10 / 重度16 格；边缘处保留 50%，准星 30° 锥内再降 25%
+        // Distance settings retained from the current implementation.
         OFF(0), LIGHT(4), STANDARD(10), STRONG(16);
 
         private final double radius;
@@ -24,10 +24,11 @@ public final class ParticleAvoidance {
     /** 边缘（半径外沿）保留的透明度：范围内从 0 升到该值，边界外短恢复带平滑回到 1。 */
     private static final float EDGE_VISIBILITY = 0.5f;
     /** 恢复带宽度（格）：从半径处到 radius+RECOVERY 内从 50% 平滑回到 100%。 */
-    private static final double RECOVERY = 2.0;
-    /** 准星锥半角（度）：视线方向该角度内的粒子透明度再乘 CROSSHAIR_MULT，防挡准星。 */
-    private static final float CROSSHAIR_CONE_DEGREES = 30.0f;
-    private static final float CROSSHAIR_MULT = 0.75f;
+    public static final double RECOVERY = 2.0;
+    /** 0..15 degrees: distant decoration retains 10% visibility; 15..45 smoothly restores normal fading. */
+    private static final double CROSSHAIR_INNER_COS = Math.cos(Math.toRadians(15));
+    private static final double CROSSHAIR_OUTER_COS = Math.cos(Math.toRadians(45));
+    private static final float CROSSHAIR_MULT = 0.10f;
     /**
      * 近距抽样区（2026-09-26 用户定稿）：特别近（< NEAR_ZONE 格）的粒子不整体隐藏，
      * 而是按 hash 抽 20% 显示、透明度压到 25%（= 边缘 50% 再低一半，「留一点影子」），
@@ -68,26 +69,33 @@ public final class ParticleAvoidance {
         return (System.identityHashCode(particle) & 0xFF) < NEAR_KEEP_RATIO * 0xFF;
     }
 
-    /**
-     * 准星锥额外衰减（2026-09-26 用户要求）：粒子方向与视线夹角 < 30° 时，
-     * 透明度再乘 0.75（叠在距离曲线之上）。仅对打标的自身装饰粒子生效。
-     *
-     * @param directionX/Y/Z 粒子中心相对镜头的单位方向向量
-     * @param range          粒子与镜头的距离（格），距离过近时锥判定放宽（避免贴脸粒子全在锥外）
-     */
-    public static float crosshairConeFactor(net.minecraft.client.render.Camera camera, double distance,
-                                            double directionX, double directionY, double directionZ) {
-        if (camera == null) return 1;
-        // 1.20.1 Camera 无 getDirection()，用 yaw/pitch 复算视线单位向量（与 Entity.getRotationVector 同式）
-        double yawRad = Math.toRadians(camera.getYaw());
-        double pitchRad = Math.toRadians(camera.getPitch());
-        double lx = -Math.sin(yawRad) * Math.cos(pitchRad);
-        double ly = -Math.sin(pitchRad);
-        double lz = Math.cos(yawRad) * Math.cos(pitchRad);
-        double dot = lx * directionX + ly * directionY + lz * directionZ;
-        double cosThreshold = Math.cos(Math.toRadians(CROSSHAIR_CONE_DEGREES));
-        // 距离小于 1 格时，锥判定按比例放宽到 60°：贴脸粒子视线夹角普遍偏大，但同样挡准星
-        if (distance < 1.0) cosThreshold = Math.cos(Math.toRadians(CROSSHAIR_CONE_DEGREES * 2));
-        return dot >= cosThreshold ? CROSSHAIR_MULT : 1.0f;
+    /** Pure angular policy. Dot is the cosine of the angle from the camera's forward direction. */
+    public static float crosshairConeFactor(double dot) {
+        if (!Double.isFinite(dot) || dot <= CROSSHAIR_OUTER_COS) return 1;
+        if (dot >= CROSSHAIR_INNER_COS) return CROSSHAIR_MULT;
+        double t = (dot - CROSSHAIR_OUTER_COS) / (CROSSHAIR_INNER_COS - CROSSHAIR_OUTER_COS);
+        double weight = t * t * (3 - 2 * t);
+        return (float) (1 - (1 - CROSSHAIR_MULT) * weight);
     }
+
+    /** Angular fading remains active at long range; it never completely removes distant decoration. */
+    public static float withCrosshair(float visibility, double distance, Strength strength, double dot) {
+        if (strength == null || strength == Strength.OFF || !Double.isFinite(distance)) return visibility;
+        if (distance >= strength.radius() + RECOVERY) return visibility;
+        float factor = crosshairConeFactor(dot);
+        float weight = (1 - factor) / (1 - CROSSHAIR_MULT);
+        // A 10% target, not another multiplication by 10% after distance fading.
+        return visibility + weight * (Math.min(visibility, CROSSHAIR_MULT) - visibility);
+    }
+
+    /**
+     * 弹道粒子分派（2026-09-26 火球反馈）：火球等沿视线飞行的投射物特效全程落在准星 15° 锥内，
+     * 若再叠锥压制整条弹道被压到 10%。弹道粒子只吃距离曲线、跳过锥压制；
+     * 其它装饰粒子照常走全范围锥压制（用户定稿规格：锥全范围生效）。
+     */
+    public static float applyAngular(float visibility, double distance, Strength strength, double dot,
+                                     boolean projectile) {
+        return projectile ? visibility : withCrosshair(visibility, distance, strength, dot);
+    }
+
 }

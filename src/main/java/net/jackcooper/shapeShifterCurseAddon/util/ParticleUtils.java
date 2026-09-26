@@ -15,6 +15,14 @@ public class ParticleUtils {
 	private static final double BROADCAST_RANGE_SQ = 262144.0; // 512^2（32 区块）
 	private static final double NEARBY_RANGE_SQ = 4096.0;      // 64^2
 
+	/** Same forced broadcast as spawnParticles, with explicit ownership for personal skill decoration. */
+	public static void spawnDecorationParticles(ServerWorld world, net.minecraft.entity.Entity owner,
+			ParticleEffect particle, double x, double y, double z, int count,
+			double offsetX, double offsetY, double offsetZ, double speed) {
+		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.forced(world, owner, particle,
+				x, y, z, count, offsetX, offsetY, offsetZ, speed, 512);
+	}
+
 	/**
 	 * 强制生成粒子效果，无视客户端粒子设置（最小/减少）。默认 512 格（32 区块）广播。
 	 */
@@ -52,7 +60,8 @@ public class ParticleUtils {
 					(float) offsetX, (float) offsetY, (float) offsetZ, (float) speed, count);
 			for (ServerPlayerEntity player : world.getPlayers()) {
 				if (player.squaredDistanceTo(x, y, z) <= maxDistSq) {
-					player.networkHandler.sendPacket(packet);
+					if (!net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.trySendScoped(world, player, packet))
+						player.networkHandler.sendPacket(packet);
 				}
 			}
 		} catch (Exception e) {

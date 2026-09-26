@@ -365,7 +365,7 @@ public final class WindDashManager {
                 player.getX(), player.getY() - 0.1, player.getZ(),
                 4, 0.3, 0.0, 0.3, 0.01);
         // 烟花同款上升粒子（FIREWORK，带向上速度）
-        sw.spawnParticles(ParticleTypes.FIREWORK,
+        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.FIREWORK,
                 player.getX(), player.getY() - 0.2, player.getZ(),
                 3, 0.25, 0.0, 0.25, 0.05);
     }

@@ -349,9 +349,9 @@ public class AnubisWolfSpDeathDomain {
                         double px = player.getX() + Math.cos(a) * radius;
                         double pz = player.getZ() + Math.sin(a) * radius;
                         double py = player.getY() + 0.5 + data.ticksElapsed * 0.025;
-                        ParticleUtils.spawnParticles(world, ParticleTypes.SOUL, px, py, pz, 1, 0, 0.05, 0, 0.01);
+                        ParticleUtils.spawnDecorationParticles(world, player, ParticleTypes.SOUL, px, py, pz, 1, 0, 0.05, 0, 0.01);
                         if (data.enhanced) {
-                                ParticleUtils.spawnParticles(world, ParticleTypes.SOUL_FIRE_FLAME, px, py, pz, 1, 0, 0.08, 0, 0.02);
+                                ParticleUtils.spawnDecorationParticles(world, player, ParticleTypes.SOUL_FIRE_FLAME, px, py, pz, 1, 0, 0.08, 0, 0.02);
                         }
                 }
 		}
@@ -469,7 +469,7 @@ public class AnubisWolfSpDeathDomain {
 
 		// 环境粒子效果（每5tick）
 		if (data.ticksElapsed % 5 == 0) {
-			spawnAmbientParticles(world, data);
+			spawnAmbientParticles(world, player, data);
 		}
 
 		// 幽灵低语音效（每60tick / 3秒一次）
@@ -1146,7 +1146,7 @@ public class AnubisWolfSpDeathDomain {
 	/**
 	 * 领域维持时的环境粒子
 	 */
-	private static void spawnAmbientParticles(ServerWorld world, DomainData data) {
+	private static void spawnAmbientParticles(ServerWorld world, ServerPlayerEntity player, DomainData data) {
 		Random random = new Random();
 		for (int i = 0; i < 8; i++) {
 			double angle = random.nextDouble() * Math.PI * 2;
@@ -1154,7 +1154,7 @@ public class AnubisWolfSpDeathDomain {
 			double px = data.center.getX() + 0.5 + Math.cos(angle) * dist;
 			double pz = data.center.getZ() + 0.5 + Math.sin(angle) * dist;
 			double py = data.centerY + random.nextDouble() * 3;
-			ParticleUtils.spawnParticles(world, ParticleTypes.SOUL,
+			ParticleUtils.spawnDecorationParticles(world, player, ParticleTypes.SOUL,
 					px, py, pz, 1, 0.5, 0.5, 0.5, 0.02);
 		}
 	}
