@@ -94,7 +94,7 @@ public final class RegAddonBlocks {
 					.strength(2.0f)
 					.sounds(BlockSoundGroup.WOOD));
 
-	// 注魔台：给月尘魔法书充法力 + 升级 + 五角星装备法阵（jackcooper）
+	// 注魔台：给月尘魔法书充法力 + 升级 + 六芒星装备法阵（jackcooper）
 	public static final Block INFUSION_ALTAR = new InfusionAltarBlock(
 			AbstractBlock.Settings.create()
 					.mapColor(MapColor.PURPLE)

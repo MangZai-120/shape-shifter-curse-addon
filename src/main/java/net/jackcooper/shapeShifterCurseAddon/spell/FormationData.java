@@ -14,7 +14,7 @@ import net.minecraft.nbt.NbtCompound;
  *
  * <p>法阵物品链：宝箱开出（1-3 级）→ 右键「记录魔法」（存玩家数据，不依赖物品）→
  * 法术研究台消耗月尘学习 → 研究台消耗空白法阵纸 + 对应系油墨抄写实体法阵 →
- * 注魔台五角星装入魔法书生效。</p>
+ * 注魔台六芒星装入魔法书生效。</p>
  */
 public final class FormationData {
 	public static final String NBT_ELEMENT = "Element";

@@ -26,19 +26,19 @@ import net.onixary.shapeShifterCurseFabric.items.RegCustomItem;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 注魔台方块实体（jackcooper）。八槽：0=魔法书、1=燃料（月尘粉/月尘纯晶）、2=催化（超级塑形核心）、
- * 3-7=五角星法阵槽（书放入中心时动态显示书内已装备法阵）。
+ * 注魔台方块实体（jackcooper）。九槽：0=魔法书、1=燃料（月尘粉/月尘纯晶）、2=催化（超级塑形核心）、
+ * 3-8=六芒星法阵槽（书放入中心时动态显示书内已装备法阵）。
  *
  * <p>充能/升级逻辑同前：每秒结算一次充能；材料齐备可升级时暂停充能等玩家点「升级」按钮。</p>
  *
- * <p><b>五角星双向同步（三态快照）</b>：以「上一次同步进书的内容」为基准对比——
+ * <p><b>六芒星双向同步（三态快照）</b>：以「上一次同步进书的内容」为基准对比——
  * 槽变（玩家在角槽放/取法阵）→ 把槽内容写回书 NBT；书变（玩家直接换了书）→ 把新书 NBT 加载进角槽。
  * 拿走书后角槽清空（法阵已随书带走），下一本书放入时重新加载。</p>
  */
 public class InfusionAltarBlockEntity extends BlockEntity implements NamedScreenHandlerFactory, Inventory {
 
-	private final DefaultedList<ItemStack> items = DefaultedList.ofSize(8, ItemStack.EMPTY);
-	/** 上一次同步进书的五角星内容快照（null = 从未同步，需要初始加载）。 */
+	private final DefaultedList<ItemStack> items = DefaultedList.ofSize(InfusionAltarScreenHandler.ALTAR_SLOT_COUNT, ItemStack.EMPTY);
+	/** 上一次同步进书的六芒星内容快照（null = 从未同步，需要初始加载）。 */
 	@Nullable
 	private NbtCompound lastSyncedFormations;
 
@@ -59,7 +59,7 @@ public class InfusionAltarBlockEntity extends BlockEntity implements NamedScreen
 
 	/**
 	 * 玩家点击界面「升级」按钮（C2S 包服务端重验后调用）：扣材料、书 +1 级、经验清零、法力补满。
-	 * 升级会解锁更多五角星角位——已有角内法阵保留（书 NBT 不动），重置快照重新加载显示。
+	 * 升级会解锁更多六芒星角位——已有角内法阵保留（书 NBT 不动），重置快照重新加载显示。
 	 */
 	public void tryUpgrade(PlayerEntity player) {
 		World world = getWorld();
@@ -88,7 +88,7 @@ public class InfusionAltarBlockEntity extends BlockEntity implements NamedScreen
 		if (world.isClient || world.getTime() % 20 != 0) {
 			return;
 		}
-		// 五角星双向同步（每秒结算一次，覆盖「无 GUI 直接放书/漏斗放书」场景）
+		// 六芒星双向同步（每秒结算一次，覆盖「无 GUI 直接放书/漏斗放书」场景）
 		be.syncFormations();
 		ItemStack book = be.items.get(0);
 		if (!(book.getItem() instanceof MoonDustSpellbookItem)) {
@@ -122,10 +122,10 @@ public class InfusionAltarBlockEntity extends BlockEntity implements NamedScreen
 		}
 	}
 
-	// ---- 五角星三态同步 ----
+	// ---- 六芒星三态同步 ----
 
 	/**
-	 * 五角星双向同步：把角槽(3-7)当前内容与 {@link #lastSyncedFormations} 对比：
+	 * 六芒星双向同步：把角槽(3-8)当前内容与 {@link #lastSyncedFormations} 对比：
 	 * <ul>
 	 *   <li><b>无书</b>：清空快照与角槽显示（法阵已随书带走）；</li>
 	 *   <li><b>初始</b>（快照为 null）：书 NBT → 角槽；</li>
@@ -142,7 +142,7 @@ public class InfusionAltarBlockEntity extends BlockEntity implements NamedScreen
 		if (!(book.getItem() instanceof MoonDustSpellbookItem) || book.isEmpty()) {
 			// 无书：清快照 + 清空角槽显示
 			this.lastSyncedFormations = null;
-			for (int i = 3; i < 8; i++) {
+			for (int i = 3; i < items.size(); i++) {
 				items.set(i, ItemStack.EMPTY);
 			}
 			return;
@@ -182,7 +182,7 @@ public class InfusionAltarBlockEntity extends BlockEntity implements NamedScreen
 		markDirty();
 	}
 
-	/** 角槽(3-7)内容快照（key=角位 0-4）。 */
+	/** 角槽(3-8)内容快照（key=角位 0-4）。 */
 	private NbtCompound slotsSnapshotOf() {
 		NbtCompound snapshot = new NbtCompound();
 		for (int slot = 0; slot < SpellbookData.MAX_FORMATION_SLOTS; slot++) {

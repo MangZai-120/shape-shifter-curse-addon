@@ -1,7 +1,9 @@
 package net.jackcooper.shapeShifterCurseAddon.client.screen;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.jackcooper.shapeShifterCurseAddon.item.MoonDustSpellbookItem;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.screen.InfusionAltarScreenHandler;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationData;
@@ -14,188 +16,324 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.items.RegCustomItem;
 
-/**
- * 注魔台界面（jackcooper）。顶部书槽（五角星中心）+ 左右燃料/催化槽 + 五角星法阵角槽
- * + 程序化五角星线条与锁定角遮罩，右侧展示书槽内魔法书的等级 / 法力 / 经验 / 已装法阵加成。
- * <p>满足升级条件（经验够 + 纯晶 + 超核）时，左右两物品框中间显示「升级」按钮，
- * 点击发 C2S 包由服务端重验后扣材料升级（见 {@link SscAddonNetworking#PACKET_INFUSION_ALTAR_UPGRADE}）。</p>
- */
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+/** 左侧配置法阵，右侧充能与升级；背包和详细属性不占用法阵的操作区域。 */
 public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandler> {
-
-	private static final Identifier TEXTURE = new Identifier("ssc_addon", "textures/gui/infusion_altar.png");
-	/** 槽位凹槽材质（18×18，与魔法书界面同款）。 */
-	private static final Identifier SLOT_CELL = new Identifier("ssc_addon", "textures/gui/spellbook_slot.png");
-	/** 锁定角槽遮罩材质（18×18，挂锁样式）。 */
-	private static final Identifier SLOT_LOCK = new Identifier("ssc_addon", "textures/gui/spellbook_slot_lock.png");
-
-	/** 升级按钮（仅满足条件时可见，位于左右两物品框中间） */
+	private static final Identifier BACKGROUND = texture("gui/infusion_altar_background");
+	private static final Identifier HEXAGRAM = texture("gui/infusion_altar_hexagram");
+	private static final Identifier SLOT_CELL = texture("gui/spellbook_slot");
+	private static final Identifier SLOT_LOCK = texture("gui/spellbook_slot_lock");
+	// 与 Curios / Trinkets 的 spellbook 槽配置直接共用原图；物品贴图是 3D 模型 UV，不能当槽图标。
+	private static final Identifier BOOK_ICON = texture("slot/spellbook");
+	private static final int INK = 0x393240, MUTED = 0x615B68, ACCENT = 0x65508A;
+	private static final int GOOD = 0x306540, MISSING = 0x8E432E;
 	private ButtonWidget upgradeButton;
+	private ItemStack observedBook = ItemStack.EMPTY;
+	private ItemStack nextBook = ItemStack.EMPTY;
 
 	public InfusionAltarScreen(InfusionAltarScreenHandler handler, PlayerInventory inventory, Text title) {
 		super(handler, inventory, title);
-		this.backgroundWidth = 176;
-		this.backgroundHeight = 212;
-		this.playerInventoryTitleY = this.backgroundHeight - 94;
+		this.backgroundWidth = InfusionAltarScreenHandler.GUI_WIDTH;
+		this.backgroundHeight = InfusionAltarScreenHandler.GUI_HEIGHT;
+		this.titleX = 21;
+		this.titleY = 8;
+		this.playerInventoryTitleX = InfusionAltarScreenHandler.INVENTORY_X;
+		this.playerInventoryTitleY = 137;
+	}
+
+	private static Identifier texture(String path) {
+		return new Identifier("ssc_addon", "textures/" + path + ".png");
+	}
+
+	private static Text label(String key, Object... args) {
+		return Text.translatable("gui.ssc_addon.infusion_altar." + key, args);
 	}
 
 	@Override
 	protected void init() {
 		super.init();
-		// 右下角，不压五角星连线
-		this.upgradeButton = this.addDrawableChild(ButtonWidget.builder(
-				Text.translatable("gui.ssc_addon.infusion_altar.upgrade"),
-				b -> ClientPlayNetworking.send(SscAddonNetworking.PACKET_INFUSION_ALTAR_UPGRADE, PacketByteBufs.empty()))
-				.dimensions(this.x + 119, this.y + 92, 46, 20).build());
-		this.upgradeButton.visible = false;
+		this.upgradeButton = this.addDrawableChild(ButtonWidget.builder(label("upgrade"), button -> {
+			if (canUpgradeNow()) {
+				ClientPlayNetworking.send(SscAddonNetworking.PACKET_INFUSION_ALTAR_UPGRADE, PacketByteBufs.empty());
+			}
+		}).dimensions(this.x + 194, this.y + 180, 110, 20).build());
+		refreshControls();
 	}
 
-	/** 客户端本地预判升级条件（服务端点击时仍会权威重验，此处仅控制按钮显示）。 */
+	private ItemStack book() {
+		return this.handler.getSlot(0).getStack();
+	}
+
+	private boolean hasBook() {
+		return !book().isEmpty() && book().getItem() instanceof MoonDustSpellbookItem;
+	}
+
+	private boolean hasCrystal() {
+		return this.handler.getSlot(1).getStack().isOf(RegCustomItem.MOONDUST_CRYSTAL_SHARD);
+	}
+
+	private boolean hasCore() {
+		return this.handler.getSlot(2).getStack().isOf(RegCustomItem.SUPER_MORPHSCALE_CORE);
+	}
+
+	/** 此处只控制按钮；升级扣费仍由现有 C2S 接收器在服务端重验。 */
 	private boolean canUpgradeNow() {
-		ItemStack book = this.handler.getSlot(0).getStack();
-		if (book.isEmpty() || !SpellbookData.canLevelUp(book)) {
-			return false;
+		return hasBook() && SpellbookData.canLevelUp(book()) && hasCrystal() && hasCore();
+	}
+
+	private void refreshControls() {
+		ItemStack book = book();
+		this.upgradeButton.active = canUpgradeNow();
+		this.upgradeButton.setMessage(!hasBook() ? label("upgrade")
+				: SpellbookData.getLevel(book) == SpellbookData.MAX_LEVEL ? label("max_level")
+				: label("upgrade_to", SpellbookData.getLevel(book) + 1));
+		if (!ItemStack.areEqual(this.observedBook, book)) {
+			this.observedBook = book.copy();
+			this.nextBook = ItemStack.EMPTY;
+			if (hasBook() && SpellbookData.getLevel(book) < SpellbookData.MAX_LEVEL) {
+				// 和服务端升级顺序一致，尤其是 Lv2→3 时不能把旧经验算成精通奖励。
+				this.nextBook = book.copy();
+				SpellbookData.setLevel(this.nextBook, SpellbookData.getLevel(book) + 1);
+				SpellbookData.setExpTen(this.nextBook, 0);
+			}
 		}
-		if (this.handler.getSlot(2).getStack().getItem() != RegCustomItem.SUPER_MORPHSCALE_CORE) {
-			return false;
-		}
-		return this.handler.getSlot(1).getStack().getItem() == RegCustomItem.MOONDUST_CRYSTAL_SHARD;
 	}
 
 	@Override
 	protected void drawBackground(DrawContext ctx, float delta, int mouseX, int mouseY) {
-		int x = (this.width - this.backgroundWidth) / 2;
-		int y = (this.height - this.backgroundHeight) / 2;
-		ctx.drawTexture(TEXTURE, x, y, 0, 0, this.backgroundWidth, this.backgroundHeight, 256, 256);
-		// 五角星连线先画（在槽位凹槽之下，被槽格遮住的线段自然断开）
-		drawPentagram(ctx, x, y);
-		// 8 个功能槽凹槽（18×18 格子材质，与魔法书界面同款；背景只留纯面板）
-		for (int i = 0; i < 8; i++) {
-			Slot slot = this.handler.slots.get(i);
-			ctx.drawTexture(SLOT_CELL, x + slot.x - 1, y + slot.y - 1, 0, 0, 18, 18, 18, 18);
+		// 整张背景和正六芒星都来自绘制的 PNG；六芒星等比缩放，不随槽位拉伸或连线。
+		RenderSystem.disableBlend();
+		ctx.drawTexture(BACKGROUND, this.x, this.y, 0, 0,
+				this.backgroundWidth, this.backgroundHeight, this.backgroundWidth, this.backgroundHeight);
+		RenderSystem.enableBlend();
+		RenderSystem.defaultBlendFunc();
+		ctx.drawTexture(HEXAGRAM, this.x + 56, this.y + 31, 0, 0, 80, 80, 80, 80);
+		for (Slot slot : this.handler.slots) {
+			ctx.drawTexture(SLOT_CELL, this.x + slot.x - 1, this.y + slot.y - 1, 0, 0, 18, 18, 18, 18);
 		}
-		// 锁定角遮罩（书未放入或角位未解锁的角盖挂锁贴图）
-		ItemStack book = this.handler.getSlot(0).getStack();
-		boolean hasBook = !book.isEmpty() && book.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MoonDustSpellbookItem;
+		if (!hasBook()) {
+			ctx.drawTexture(BOOK_ICON, this.x + InfusionAltarScreenHandler.BOOK_X,
+					this.y + InfusionAltarScreenHandler.BOOK_Y, 0, 0, 16, 16, 16, 16);
+		}
 		for (int i = 0; i < SpellbookData.MAX_FORMATION_SLOTS; i++) {
-			boolean unlocked = hasBook && SpellbookData.isFormationSlotUnlocked(book, i);
-			if (!unlocked) {
-				int[] pos = InfusionAltarScreenHandler.PENTAGRAM_SLOT_POS[i];
-				ctx.drawTexture(SLOT_LOCK, x + pos[0] - 1, y + pos[1] - 1, 0, 0, 18, 18, 18, 18);
+			if (!hasBook() || !SpellbookData.isFormationSlotUnlocked(book(), i)) {
+				Slot slot = this.handler.getSlot(3 + i);
+				ctx.drawTexture(SLOT_LOCK, this.x + slot.x - 1, this.y + slot.y - 1, 0, 0, 18, 18, 18, 18);
 			}
 		}
-	}
-
-	/** 程序化画五角星：以各角槽格子中心（+8,+8）为顶点的一笔画星形。 */
-	private void drawPentagram(DrawContext ctx, int x, int y) {
-		int[][] p = InfusionAltarScreenHandler.PENTAGRAM_SLOT_POS;
-		// 角序：0顶,1左上,2右上,3左下,4右下；连线：顶→右下→左上→右上→左下→回顶
-		int[][] order = {p[0], p[4], p[1], p[2], p[3], p[0]};
-		int color = 0xFFB8A0FF;
-		for (int i = 0; i < order.length - 1; i++) {
-			// 角点 = 槽位左上角 + 8 = 格子中心
-			drawLine(ctx, x + order[i][0] + 8, y + order[i][1] + 8, x + order[i + 1][0] + 8, y + order[i + 1][1] + 8, color);
-		}
-	}
-
-	/** 简易整数画线（水平/垂直/斜向步进）。 */
-	private void drawLine(DrawContext ctx, int x1, int y1, int x2, int y2, int color) {
-		int dx = Math.abs(x2 - x1), dy = Math.abs(y2 - y1);
-		int steps = Math.max(dx, dy);
-		if (steps == 0) {
-			return;
-		}
-		for (int i = 0; i <= steps; i++) {
-			int px = x1 + (x2 - x1) * i / steps;
-			int py = y1 + (y2 - y1) * i / steps;
-			ctx.fill(px, py, px + 1, py + 1, color);
-		}
+		RenderSystem.disableBlend();
 	}
 
 	@Override
 	protected void drawForeground(DrawContext ctx, int mouseX, int mouseY) {
-		// 标题改纯黑：背景贴图为浅色，浅色文字看不清
-		ctx.drawText(this.textRenderer, this.title, this.titleX, this.titleY, 0x000000, false);
-		ItemStack book = this.handler.getSlot(0).getStack();
-		if (!book.isEmpty()) {
-			int lv = SpellbookData.getLevel(book);
-			int mana = SpellbookData.getMana(book);
-			int maxMana = SpellbookData.getMaxMana(book);
-			int expTen = SpellbookData.getExpTen(book);
-			int need = SpellbookData.getExpToNext(book);
-			int formationSlots = SpellbookData.getFormationSlotCount(book);
-			ctx.drawText(this.textRenderer, Text.literal("Lv " + lv), 8, 57, 0xB8A0FF, false);
-			ctx.drawText(this.textRenderer, Text.literal(mana + "/" + maxMana + " MP"), 8, 67, 0x88A0FF, false);
-			// 经验显示（1 位小数）：未满级显示升级进度；满级显示精通档进度（法力上限成长）
-			String expStr;
-			if (need > 0) {
-				expStr = String.format(java.util.Locale.ROOT, "EXP %.1f/%.1f", expTen / 10.0, need / 10.0);
+		// 标题右移 13px（一个字位+余量），避免贴住左侧面板边框
+		text(ctx, this.title, 21, 8, 160, INK);
+		// 书籍状态右移 8px，避开右面板框线
+		text(ctx, label("book_status"), 202, 8, 110, INK);
+		text(ctx, this.playerInventoryTitle, this.playerInventoryTitleX, this.playerInventoryTitleY, 162, INK);
+		ItemStack book = book();
+		text(ctx, hasBook() ? label("formations", countFormations(), SpellbookData.getFormationSlotCount(book))
+				: label("insert_book"), 14, 124, 156, ACCENT);
+		text(ctx, hasBook() ? label("level", SpellbookData.getLevel(book), SpellbookData.getSlotCount(book))
+				: label("waiting_book"), 198, 29, 100, INK);
+		text(ctx, label("mana"), 198, 44, 28, MUTED);
+		rightText(ctx, hasBook() ? SpellbookData.getMana(book) + "/" + SpellbookData.getMaxMana(book) : "— / —", 298, 44);
+		bar(ctx, 56, hasBook() ? SpellbookData.getMana(book) : 0,
+				hasBook() ? SpellbookData.getMaxMana(book) : 1, 0xFF647EA8);
+		boolean mastery = hasBook() && SpellbookData.getLevel(book) == SpellbookData.MAX_LEVEL;
+		text(ctx, label(mastery ? "mastery" : "experience"), 198, 68, 28, MUTED);
+		int progress = 0, total = 1;
+		String progressText = "— / —";
+		if (hasBook()) {
+			if (mastery) {
+				total = SpellbookData.MASTERY_EXP_PER_TIER;
+				progress = SpellbookData.getMasteryExpToNextTier(book) == 0 ? total : SpellbookData.getExpTen(book) % total;
 			} else {
-				int masteryNeed = SpellbookData.getMasteryExpToNextTier(book);
-				if (masteryNeed > 0) {
-					// 当前档内进度：从 ×10 整数取模折算（避免浮点 % 精度误差）
-					float tierProgress = (expTen % SpellbookData.MASTERY_EXP_PER_TIER) / 10.0f;
-					expStr = String.format(java.util.Locale.ROOT, "精通%d档 %.1f/%.1f",
-								SpellbookData.getMasteryTier(book) + 1,
-								tierProgress, masteryNeed / 10.0);
-				} else {
-					expStr = "精通已满档 +" + SpellbookData.getMasteryManaBonus(book);
-				}
+				total = SpellbookData.getExpToNext(book);
+				progress = SpellbookData.getExpTen(book);
 			}
-			ctx.drawText(this.textRenderer, Text.literal(expStr), 8, 77, 0x9A88CC, false);
-			// 已装法阵加成汇总（2026-09-20 新规则：耗蓝按系分档——同系/对立系 +10%/级、其它系 +2.5%/级；对立对逐对展示当前加成）
-			// 耗蓝展示两个档：同系价（对立系同价）与其它系价
-			float manaSame = FormationData.sumManaCostMultiplier(book, FormationElement.FIRE);
-			float manaOther = FormationData.sumManaCostMultiplier(book, FormationElement.LUNAR);
-			ctx.drawText(this.textRenderer, Text.literal(String.format("法阵 %d/%d", countFormations(book), formationSlots)), 8, 87, 0x9A88CC, false);
-			ctx.drawText(this.textRenderer, Text.literal(String.format("火×%.2f 冰×%.2f 月×%.2f 诅×%.2f", 
-					FormationData.sumDamageMultiplier(book, FormationElement.FIRE),
-					FormationData.sumDamageMultiplier(book, FormationElement.ICE),
-					FormationData.sumDamageMultiplier(book, FormationElement.LUNAR),
-					FormationData.sumDamageMultiplier(book, FormationElement.CURSE))), 8, 97, 0x8090C8, false);
-			ctx.drawText(this.textRenderer, Text.literal(String.format("召×%.2f 虚×%.2f 空CD×%.2f 蓝耗同系×%.2f/其它×%.2f", 
-					FormationData.sumDamageMultiplier(book, FormationElement.SUMMON),
-					FormationData.sumDamageMultiplier(book, FormationElement.VOID),
-					FormationData.sumCooldownMultiplier(book, FormationElement.SPACE),
-					manaSame, manaOther)), 8, 107, 0x8090C8, false);		// 通用法阵成长效果（2026-09-15）：经验法阵 exp 倍率 + 增能法阵法力上限加成（各取最高等级，未装则显示）
-		int bestExp = FormationData.getBestUniversalVariantLevel(book, FormationData.VARIANT_EXP);
-		int bestMana = FormationData.getBestUniversalVariantLevel(book, FormationData.VARIANT_MANA);
-		if (bestExp > 0 || bestMana > 0) {
-			int manaBonus = SpellbookData.getUniversalFormationManaBonus(book);
-			ctx.drawText(this.textRenderer, Text.literal(String.format("经×%.2f 增能+%d",
-					bestExp > 0 ? FormationData.universalExpMultiplier(bestExp) : 1f, manaBonus)), 8, 117, 0xB8B8B8, false);
+			progressText = mastery && SpellbookData.getMasteryExpToNextTier(book) == 0
+					? label("complete").getString() : decimal(progress) + "/" + decimal(total);
 		}
-		// 回息法阵：自然回复倍率（可叠加，2026-09-17）
-		int recoverySum = FormationData.sumUniversalRecoveryLevels(book);
-		if (recoverySum > 0) {
-			ctx.drawText(this.textRenderer, Text.literal(String.format("回息×%.2f",
-					FormationData.universalRecoveryMultiplier(book))), 8, 127, 0xB8B8B8, false);
+		rightText(ctx, progressText, 298, 68);
+		bar(ctx, 80, progress, total, 0xFF8A70A4);
+		text(ctx, label("materials"), 194, 96, 110, INK);
+		// 燃料标签位置不随槽位移动，保持原位
+		text(ctx, label("fuel_short"), 194, 132, 60, MUTED);
+		// 「核心」与上方催化槽对齐（槽 x=264，与燃料标签 194=槽192+2 同规律）
+		text(ctx, label("core_short"), 264, 132, 40, MUTED);
+		text(ctx, chargingStatus(), 194, 149, 110, canUpgradeNow() ? GOOD : MUTED);
+		if (mastery) {
+			text(ctx, label("mastery_automatic"), 194, 165, 110, MUTED);
+		} else {
+			requirement(ctx, 194, "experience", hasBook() && SpellbookData.canLevelUp(book));
+			requirement(ctx, 231, "crystal_short", hasCrystal());
+			requirement(ctx, 268, "core_short", hasCore());
 		}
+		if (!this.nextBook.isEmpty()) {
+			text(ctx, label("next_slots", SpellbookData.getSlotCount(this.nextBook),
+					SpellbookData.getFormationSlotCount(this.nextBook)), 194, 206, 110, ACCENT);
+			text(ctx, label("next_mana", SpellbookData.getMaxMana(this.nextBook)), 194, 218, 110, MUTED);
+		} else if (hasBook()) {
+			text(ctx, label("mastery_tier", SpellbookData.getMasteryTier(book),
+					SpellbookData.MASTERY_MAX_BONUS / SpellbookData.MASTERY_MANA_PER_TIER), 194, 206, 110, ACCENT);
+			text(ctx, label("mastery_bonus", SpellbookData.getMasteryManaBonus(book)), 194, 218, 110, MUTED);
+		} else {
+			text(ctx, label("gain_exp"), 194, 206, 110, MUTED);
+			text(ctx, label("unlock_hint"), 194, 218, 110, MUTED);
 		}
-		ctx.drawText(this.textRenderer, this.playerInventoryTitle,
-				this.playerInventoryTitleX, this.playerInventoryTitleY, 0x404040, false);
 	}
 
-	private int countFormations(ItemStack book) {
+	private void text(DrawContext ctx, Text text, int x, int y, int width, int color) {
+		// 其他语言或自定义名称保持在各自面板内；完整解释在悬停提示中。
+		if (this.textRenderer.getWidth(text) <= width) {
+			ctx.drawText(this.textRenderer, text, x, y, color, false);
+		} else {
+			String clipped = this.textRenderer.trimToWidth(text.getString(), width - this.textRenderer.getWidth("…"));
+			ctx.drawText(this.textRenderer, clipped + "…", x, y, color, false);
+		}
+	}
+
+	private void rightText(DrawContext ctx, String value, int right, int y) {
+		text(ctx, Text.literal(value), right - Math.min(72, this.textRenderer.getWidth(value)), y, 72, INK);
+	}
+
+	private void bar(DrawContext ctx, int y, int value, int max, int color) {
+		ctx.fill(198, y, 298, y + 5, 0xFFAAA4B1);
+		int filled = (int) (98L * Math.max(0, Math.min(value, max)) / Math.max(1, max));
+		ctx.fill(199, y + 1, 199 + filled, y + 4, color);
+	}
+
+	private void requirement(DrawContext ctx, int x, String key, boolean met) {
+		int color = met ? GOOD : MISSING;
+		if (!hasBook() || SpellbookData.getLevel(book()) == SpellbookData.MAX_LEVEL) color = MUTED;
+		ctx.drawBorder(x, 166, 6, 6, 0xFF000000 | color);
+		if (met) ctx.fill(x + 2, 168, x + 4, 170, 0xFF000000 | color);
+		text(ctx, label(key), x + 9, 165, 29, color);
+	}
+
+	private Text chargingStatus() {
+		if (!hasBook()) return label("waiting_book");
+		if (canUpgradeNow()) return label("charge_paused");
+		if (SpellbookData.getMana(book()) >= SpellbookData.getMaxMana(book())) return label("mana_full");
+		ItemStack fuel = this.handler.getSlot(1).getStack();
+		if (fuel.isOf(RegCustomItem.UNTREATED_MOONDUST)) return label("charging", 10);
+		if (fuel.isOf(RegCustomItem.MOONDUST_CRYSTAL_SHARD)) return label("charging", 80);
+		return label("fuel_needed");
+	}
+
+	private int countFormations() {
 		int count = 0;
-		for (int i = 0; i < SpellbookData.MAX_FORMATION_SLOTS; i++) {
-			if (!SpellbookData.getFormation(book, i).isEmpty()) {
-				count++;
-			}
+		for (int i = 3; i < InfusionAltarScreenHandler.ALTAR_SLOT_COUNT; i++) {
+			if (!this.handler.getSlot(i).getStack().isEmpty()) count++;
 		}
 		return count;
+	}
+
+	private static String decimal(int tenths) {
+		return String.format(Locale.ROOT, "%.1f", tenths / 10.0);
+	}
+
+	private static String multiplier(float value) {
+		return String.format(Locale.ROOT, "%.2f", value);
+	}
+
+	private List<Text> formationTooltip() {
+		List<Text> lines = new ArrayList<>();
+		lines.add(label("formation_details").copy().formatted(Formatting.LIGHT_PURPLE));
+		lines.add(label("formation_help"));
+		if (!hasBook()) return lines;
+		for (FormationElement element : FormationElement.values()) {
+			float effect = element == FormationElement.SPACE ? FormationData.sumSpaceRangeMultiplier(book(), element)
+					: FormationData.sumDamageMultiplier(book(), element);
+			lines.add(label(element == FormationElement.SPACE ? "space_effect" : "element_effect",
+					Text.translatable(element.getNameKey()), multiplier(effect),
+					multiplier(FormationData.sumCooldownMultiplier(book(), element)),
+					multiplier(FormationData.sumManaCostMultiplier(book(), element))));
+		}
+		int expLevel = FormationData.getBestUniversalVariantLevel(book(), FormationData.VARIANT_EXP);
+		lines.add(label("universal_exp", multiplier(expLevel == 0 ? 1f : FormationData.universalExpMultiplier(expLevel))));
+		lines.add(label("universal_mana", SpellbookData.getUniversalFormationManaBonus(book())));
+		lines.add(label("universal_recovery", multiplier(FormationData.universalRecoveryMultiplier(book()))));
+		return lines;
+	}
+
+	private List<Text> upgradeTooltip() {
+		List<Text> lines = new ArrayList<>();
+		if (!hasBook()) {
+			lines.add(label("insert_book"));
+			return lines;
+		}
+		if (SpellbookData.getLevel(book()) == SpellbookData.MAX_LEVEL) {
+			lines.add(label("mastery_help", decimal(SpellbookData.MASTERY_EXP_PER_TIER), SpellbookData.MASTERY_MANA_PER_TIER));
+			return lines;
+		}
+		lines.add(label("upgrade_to", SpellbookData.getLevel(book()) + 1));
+		lines.add(condition(label("exp_required", decimal(SpellbookData.getExpTen(book())), decimal(SpellbookData.getExpToNext(book()))), SpellbookData.canLevelUp(book())));
+		lines.add(condition(label("item_required", RegCustomItem.MOONDUST_CRYSTAL_SHARD.getName()), hasCrystal()));
+		lines.add(condition(label("item_required", RegCustomItem.SUPER_MORPHSCALE_CORE.getName()), hasCore()));
+		lines.add(label("upgrade_effect"));
+		return lines;
+	}
+
+	private static Text condition(Text value, boolean met) {
+		return Text.literal(met ? "+ " : "- ").append(value).formatted(met ? Formatting.GREEN : Formatting.RED);
+	}
+
+	private boolean inside(int mouseX, int mouseY, int x, int y, int width, int height) {
+		return mouseX >= this.x + x && mouseX < this.x + x + width
+				&& mouseY >= this.y + y && mouseY < this.y + y + height;
+	}
+
+	private void drawHelp(DrawContext ctx, int mouseX, int mouseY) {
+		List<Text> lines = null;
+		if (inside(mouseX, mouseY, 12, 122, 160, 13)) {
+			lines = formationTooltip();
+		} else if (inside(mouseX, mouseY, 194, 163, 110, 38) || inside(mouseX, mouseY, 194, 204, 110, 24)) {
+			lines = upgradeTooltip();
+		} else if (inside(mouseX, mouseY, 194, 144, 110, 15) || inside(mouseX, mouseY, 198, 43, 100, 19)) {
+			lines = List.of(chargingStatus(), label("fuel_help"), label("fuel_consumption"), label("fuel_reservation"));
+		} else if (inside(mouseX, mouseY, 194, 130, 60, 12)) {
+			lines = List.of(label("fuel_help"), label("fuel_consumption"), label("fuel_reservation"));
+		} else if (inside(mouseX, mouseY, 264, 130, 38, 12)) {
+			lines = List.of(RegCustomItem.SUPER_MORPHSCALE_CORE.getName(), label("core_help"));
+		} else if (inside(mouseX, mouseY, 198, 66, 100, 21)) {
+			lines = hasBook() && SpellbookData.getLevel(book()) == SpellbookData.MAX_LEVEL
+					? List.of(label("mastery_tier", SpellbookData.getMasteryTier(book()), SpellbookData.MASTERY_MAX_BONUS / SpellbookData.MASTERY_MANA_PER_TIER),
+					label("mastery_help", decimal(SpellbookData.MASTERY_EXP_PER_TIER), SpellbookData.MASTERY_MANA_PER_TIER))
+					: List.of(label("experience_help"));
+		} else if (this.focusedSlot != null && !this.focusedSlot.hasStack()) {
+			int index = this.focusedSlot.id;
+			if (index == 0) lines = List.of(label("insert_book"), label("formation_help"));
+			else if (index == 1) lines = List.of(label("fuel_help"), label("fuel_consumption"), label("fuel_reservation"));
+			else if (index == 2) lines = List.of(RegCustomItem.SUPER_MORPHSCALE_CORE.getName(), label("core_help"));
+			else if (index >= 3 && index < InfusionAltarScreenHandler.ALTAR_SLOT_COUNT) {
+				int slot = index - 3;
+				lines = List.of(!hasBook() ? label("insert_book") : SpellbookData.isFormationSlotUnlocked(book(), slot)
+						? label("formation_insert") : label("formation_locked", slot == 0 ? 1 : slot < 3 ? 2 : 3));
+			}
+		}
+		if (lines != null && this.handler.getCursorStack().isEmpty()) {
+			List<net.minecraft.text.OrderedText> wrapped = new ArrayList<>();
+			int maxWidth = Math.min(270, this.width - 24);
+			for (Text line : lines) wrapped.addAll(this.textRenderer.wrapLines(line, maxWidth));
+			ctx.drawOrderedTooltip(this.textRenderer, wrapped, mouseX, mouseY);
+		}
 	}
 
 	@Override
 	public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
 		this.renderBackground(ctx);
-		// 每帧刷新按钮可见性（槽内物品 / 书 NBT 均会实时同步到客户端）
-		if (this.upgradeButton != null) {
-			this.upgradeButton.visible = canUpgradeNow();
-		}
+		refreshControls();
 		super.render(ctx, mouseX, mouseY, delta);
 		this.drawMouseoverTooltip(ctx, mouseX, mouseY);
+		drawHelp(ctx, mouseX, mouseY);
 	}
 }

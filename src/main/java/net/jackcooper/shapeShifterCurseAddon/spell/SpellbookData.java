@@ -50,11 +50,11 @@ public final class SpellbookData {
 	/** 增强法阵列表（NbtList，结构同 Items：{Slot:byte, ...stack}）。 */
 	public static final String NBT_FORMATIONS = "Formations";
 
-	/** 五角星法阵槽最大数（一级书 1 / 二级 3 / 三级 5）。 */
-	public static final int MAX_FORMATION_SLOTS = 5;
+	/** 六芒星法阵槽最大数（一级书 1 / 二级 3 / 三级 6）。 */
+	public static final int MAX_FORMATION_SLOTS = 6;
 
 	/** 各等级可装备法阵数（index = level-1）。 */
-	private static final int[] LEVEL_FORMATION_SLOTS = {1, 3, 5};
+	private static final int[] LEVEL_FORMATION_SLOTS = {1, 3, 6};
 
 	private SpellbookData() {
 	}
@@ -73,12 +73,12 @@ public final class SpellbookData {
 		return LEVEL_SLOTS[getLevel(book) - 1];
 	}
 
-	/** 当前书等级可装备的法阵数（注魔台五角星解锁角数）。 */
+	/** 当前书等级可装备的法阵数（注魔台六芒星解锁角数）。 */
 	public static int getFormationSlotCount(ItemStack book) {
 		return LEVEL_FORMATION_SLOTS[getLevel(book) - 1];
 	}
 
-	/** 指定法阵槽（五角星角位）是否已解锁。 */
+	/** 指定法阵槽（六芒星角位）是否已解锁。 */
 	public static boolean isFormationSlotUnlocked(ItemStack book, int slot) {
 		return slot >= 0 && slot < getFormationSlotCount(book);
 	}
@@ -382,7 +382,7 @@ public final class SpellbookData {
 		return Math.max(0L, getCooldownEnd(book, slot) - world.getTime());
 	}
 
-	// ---- 增强法阵槽读写（五角星，与 Items 同构的 NbtList） ----
+	// ---- 增强法阵槽读写（六芒星，与 Items 同构的 NbtList） ----
 
 	/** 读取书内全部法阵（跳过无效条目；无数据返回空列表）。 */
 	public static java.util.List<ItemStack> getFormations(ItemStack book) {
