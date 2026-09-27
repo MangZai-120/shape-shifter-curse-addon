@@ -82,8 +82,8 @@ public class FrostStormEntity extends Entity {
 			int duration = stormDuration;
 			double damageRadius = stormDamageRadius;
 
-			// 每0.5秒造成一次伤害（每10tick）
-			if (ticksAlive % 10 == 0) {
+			// damage_per_second is one full hit per 20 server ticks, phased by persisted lifetime.
+			if (ticksAlive % 20 == 0) {
 				dealDamage(serverWorld);
 			}
 

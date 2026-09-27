@@ -235,7 +235,7 @@ public final class SscAddonServerEvents {
 			System.out.println("[SSC_ADDON] SERVER_STARTING event fired, clearing all ability static state");
 			SnowFoxSpMeleeAbility.clearAll();
 			SnowFoxSpTeleportAttack.clearAll();
-			SnowFoxSpFrostStorm.clearAll();				net.jackcooper.shapeShifterCurseAddon.ability.FrostArmorManager.clearAll();			AnubisWolfSpDeathDomain.clearAll();
+			SnowFoxSpFrostStorm.resetForServerStart();				net.jackcooper.shapeShifterCurseAddon.ability.FrostArmorManager.clearAll();			AnubisWolfSpDeathDomain.clearAll();
 			AnubisWolfSpSummonWolves.clearAll();
 			AllaySPTotem.clearAll();
 			GoldenSandstormErosionBrand.clearAll();

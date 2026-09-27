@@ -106,11 +106,16 @@ public class SnowFoxSpFrostStorm {
     }
 
     /**
-     * 清除所有玩家的蓄力 / CD 状态
-     * 用于服务器启动 / 数据包重载，避免长生命周期 JVM 中残留过期数据
+     * Cancel pending charges on reload. Spawned storms own their lifetime/NBT;
+     * active cooldowns must not be reset by a data-pack reload.
      */
     public static void clearAll() {
         CHARGING_PLAYERS.clear();
+    }
+
+    /** A new server has a new tick clock; discard cooldowns left by the previous world. */
+    public static void resetForServerStart() {
+        clearAll();
         COOLDOWN_PLAYERS.clear();
     }
     
