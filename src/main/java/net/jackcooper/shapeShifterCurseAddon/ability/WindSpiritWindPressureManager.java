@@ -9,6 +9,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.world.World;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
@@ -24,10 +25,14 @@ import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
  */
 public final class WindSpiritWindPressureManager {
 
+    // 以下均为默认值；运行时从 balance 快照读取（abilities.wind_pressure）
     private static final double RANGE = 8.0;
     private static final double SLOW_FACTOR = 0.7;
     /** 弹射物发射后前 N tick 内应用减速（超过则不再处理）。 */
     private static final int APPLY_WITHIN_AGE = 5;
+
+    // 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+    private static final BalanceReader BAL = new BalanceReader("abilities.wind_pressure");
     /** 已减速标记（防反复减速）。 */
     static final String SLOWED_TAG = "ssc_addon_wind_slowed";
     /** 当前风灵形态在线玩家缓存：每 20t 刷新；空集 = 全服无风灵，
@@ -49,7 +54,7 @@ public final class WindSpiritWindPressureManager {
         if (!(projectile.getWorld() instanceof ServerWorld world)) return false;
 
         // 发射后超过窗口期不再处理
-        if (projectile.age > APPLY_WITHIN_AGE) return false;
+        if (projectile.age > BAL.i("apply_within_age", APPLY_WITHIN_AGE)) return false;
         // 已减速过则跳过
         if (projectile.getCommandTags().contains(SLOWED_TAG)) return false;
 
@@ -71,7 +76,7 @@ public final class WindSpiritWindPressureManager {
 
         // 应用减速
         Vec3d v = projectile.getVelocity();
-        projectile.setVelocity(v.multiply(SLOW_FACTOR));
+        projectile.setVelocity(v.multiply(BAL.d("slow_factor", SLOW_FACTOR)));
         projectile.velocityModified = true;
         projectile.addCommandTag(SLOWED_TAG);
         return true;
@@ -89,7 +94,7 @@ public final class WindSpiritWindPressureManager {
         for (PlayerEntity p : world.getPlayers()) {
             if (!(p instanceof ServerPlayerEntity sp)) continue;
             if (!cached.contains(p.getUuid())) continue;
-            if (p.squaredDistanceTo(projectile) <= RANGE * RANGE) {
+            if (p.squaredDistanceTo(projectile) <= BAL.d("range", RANGE) * BAL.d("range", RANGE)) {
                 return sp;
             }
         }

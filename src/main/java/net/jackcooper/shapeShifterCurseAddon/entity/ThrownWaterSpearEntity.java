@@ -22,6 +22,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
@@ -39,6 +40,9 @@ public class ThrownWaterSpearEntity extends ProjectileEntity {
 	private static final float DIRECT_DAMAGE = 12.0f; // 直击物理伤害
 	private static final float AOE_DAMAGE = 5.0f;     // 范围伤害
 	private static final double AOE_RADIUS = 2.0;     // 范围半径
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.water_spear_entity");
 
 	// 全精度速度同步：生成包 velocity 用 short 编码（约 ±3.9 格/tick），8.5 格/tick 会被逐分量 clamp
 	// → 客户端 velocity 方向失真 + 变慢，视觉方向/位置与服务端真实命中不符。改用 DataTracker 同步全精度速度。
@@ -63,7 +67,7 @@ public class ThrownWaterSpearEntity extends ProjectileEntity {
 
 	/** 设置飞行方向（归一化后按 SPEED 赋速），并让实体朝向飞行方向。 */
 	public void setDirection(Vec3d direction) {
-		Vec3d velocity = direction.normalize().multiply(SPEED);
+		Vec3d velocity = direction.normalize().multiply(BAL.d("speed", SPEED));
 		this.setVelocity(velocity.x, velocity.y, velocity.z);
 		// 全精度速度写入 DataTracker，供客户端精确复现飞行方向/速度
 		this.dataTracker.set(VEL_X, (float) velocity.x);
@@ -120,7 +124,8 @@ public class ThrownWaterSpearEntity extends ProjectileEntity {
 
 		// 超距 / 超时销毁 + 拖尾 仅服务端
 		if (!this.getWorld().isClient) {
-			if (startPos != null && this.squaredDistanceTo(startPos) > MAX_DISTANCE * MAX_DISTANCE) {
+			double maxDistance = BAL.d("max_distance", MAX_DISTANCE);
+			if (startPos != null && this.squaredDistanceTo(startPos) > maxDistance * maxDistance) {
 				this.discard();
 				return;
 			}
@@ -145,7 +150,8 @@ public class ThrownWaterSpearEntity extends ProjectileEntity {
 			// 直击 12 物理（白名单豁免）
 			if (!(this.getOwner() instanceof net.minecraft.server.network.ServerPlayerEntity ownerP)
 					|| !WhitelistUtils.isProtected(ownerP, living)) {
-				living.damage(this.getDamageSources().mobAttack(this.getOwner() instanceof LivingEntity l ? l : null), DIRECT_DAMAGE);
+				living.damage(this.getDamageSources().mobAttack(this.getOwner() instanceof LivingEntity l ? l : null),
+						(float) BAL.d("direct_damage", DIRECT_DAMAGE));
 			}
 		}
 		// 命中点范围伤害
@@ -173,12 +179,12 @@ public class ThrownWaterSpearEntity extends ProjectileEntity {
 		net.minecraft.server.network.ServerPlayerEntity ownerP =
 				this.getOwner() instanceof net.minecraft.server.network.ServerPlayerEntity p ? p : null;
 		LivingEntity ownerLiving = this.getOwner() instanceof LivingEntity l ? l : null;
-		Box box = this.getBoundingBox().expand(AOE_RADIUS);
+		Box box = this.getBoundingBox().expand(BAL.d("aoe_radius", AOE_RADIUS));
 		for (Entity e : sw.getOtherEntities(this, box)) {
 			if (e == directTarget) continue; // 直击目标不重复受 AOE
 			if (e instanceof LivingEntity living) {
 				if (ownerP != null && WhitelistUtils.isProtected(ownerP, living)) continue;
-				living.damage(this.getDamageSources().mobAttack(ownerLiving), AOE_DAMAGE);
+				living.damage(this.getDamageSources().mobAttack(ownerLiving), (float) BAL.d("aoe_damage", AOE_DAMAGE));
 			}
 		}
 		this.discard();

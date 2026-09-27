@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.minecraft.nbt.NbtCompound;
 
 /**
@@ -16,6 +17,9 @@ import net.minecraft.nbt.NbtCompound;
  */
 public final class SpellNumbers {
 	private SpellNumbers() {}
+
+	// 平衡迁移（systems.casting）：磨损基准/相对下限运行时从快照读取；快照未初始化（测试环境）回退默认常量
+	private static final BalanceReader BAL = new BalanceReader("systems.casting");
 
 	public static int finalManaCost(Spell spell, net.minecraft.item.ItemStack book,
 	                               net.minecraft.entity.player.PlayerEntity player, int selectedLevel) {
@@ -84,7 +88,8 @@ public final class SpellNumbers {
 		}
 		int base = spell.getBaseCooldownTicks();
 		float levelCd = base * spell.getCooldownMultiplier(level);   // C_L
-		int raw = Math.round(levelCd * (2.0f - ratio) * formationCdMul * affinityCdMul);
+		float wornCdBase = (float) BAL.d("worn_cd_base", 2.0);
+		int raw = Math.round(levelCd * (wornCdBase - ratio) * formationCdMul * affinityCdMul);
 		return applyFloors(spell, levelCd, raw);
 	}
 
@@ -105,7 +110,7 @@ public final class SpellNumbers {
 	/** 应用双层下限：绝对 floor（JSON）与相对等级基准 0.2×C_L。 */
 	private static int applyFloors(Spell spell, float levelCd, int raw) {
 		int absoluteFloor = spell.getCooldownFloorTicks();
-		int relativeFloor = Math.round(levelCd * RELATIVE_CD_FLOOR);
+		int relativeFloor = Math.round(levelCd * (float) BAL.d("relative_cd_floor", RELATIVE_CD_FLOOR));
 		return Math.max(raw, Math.max(absoluteFloor, relativeFloor));
 	}
 
@@ -119,9 +124,10 @@ public final class SpellNumbers {
 			return false;
 		}
 		float levelCd = spell.getBaseCooldownTicks() * spell.getCooldownMultiplier(level);
-		int raw = Math.round(levelCd * (2.0f - ratio) * formationCdMul * affinityCdMul);
+		float wornCdBase = (float) BAL.d("worn_cd_base", 2.0);
+		int raw = Math.round(levelCd * (wornCdBase - ratio) * formationCdMul * affinityCdMul);
 		int floor = Math.max(spell.getCooldownFloorTicks(),
-				Math.round(levelCd * RELATIVE_CD_FLOOR));
+				Math.round(levelCd * (float) BAL.d("relative_cd_floor", RELATIVE_CD_FLOOR)));
 		return floor > raw;
 	}
 }

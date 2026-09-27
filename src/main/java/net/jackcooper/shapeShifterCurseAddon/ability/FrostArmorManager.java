@@ -10,6 +10,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.minecraft.particle.ParticleTypes;
 
@@ -32,6 +33,7 @@ import java.util.UUID;
  */
 public final class FrostArmorManager {
 
+	// 以下常量均为默认值；运行时从 balance 快照读取（scope：abilities.frost_armor_manager）
 	/** 每根环绕冰锥的近战减伤比例。 */
 	private static final float PER_THORN_REDUCTION = 0.04f;
 	/** 反刺叠层上限：达到即触发棘爆并清零。 */
@@ -44,6 +46,9 @@ public final class FrostArmorManager {
 	private static final int BURST_FREEZE_TICKS = 20;
 	/** 棘爆反伤。 */
 	private static final float BURST_DAMAGE = 2.0f;
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.frost_armor_manager");
 
 	/** attackerUuid → 叠层状态。 */
 	private static final Map<UUID, Layers> LAYERS = new HashMap<>();
@@ -78,7 +83,7 @@ public final class FrostArmorManager {
 		if (!isMeleeHit(source)) return amount;
 		int thorns = FrostSpikeManager.getHoverCount(victim);
 		if (thorns <= 0) return amount;
-		float reduction = Math.min(0.2f, thorns * PER_THORN_REDUCTION);
+		float reduction = Math.min(0.2f, thorns * (float) BAL.d("per_thorn_reduction", PER_THORN_REDUCTION));
 		return amount * (1.0f - reduction);
 	}
 
@@ -97,25 +102,27 @@ public final class FrostArmorManager {
 
 		Layers l = LAYERS.computeIfAbsent(attacker.getUuid(), k -> new Layers());
 		// 防连击门：同一攻击者 10t 内重复命中不叠层
-		if (now - l.lastHitGameTime < RE_LAYER_GAP_TICKS) return;
+		if (now - l.lastHitGameTime < BAL.i("re_layer_gap_ticks", RE_LAYER_GAP_TICKS)) return;
 		l.lastHitGameTime = now;
 		l.count++;
 		l.lastLayerGameTime = now;
 
-		if (l.count >= BURST_AT) {
+		if (l.count >= BAL.i("burst_at", BURST_AT)) {
 			// 棘爆：冻结 + 反伤 + 清层
 			l.count = 0;
+			final int freezeTicks = BAL.i("burst_freeze_ticks", BURST_FREEZE_TICKS);
+			final float burstDamage = (float) BAL.d("burst_damage", BURST_DAMAGE);
 			final LivingEntity fAttacker = attacker;
 			sw.getServer().execute(() -> {
 				if (!fAttacker.isAlive() || fAttacker.isRemoved()) return;
 				fAttacker.addStatusEffect(new StatusEffectInstance(
-						SscAddon.FROST_FREEZE, BURST_FREEZE_TICKS, 0, false, true, true), victim);
+						SscAddon.FROST_FREEZE, freezeTicks, 0, false, true, true), victim);
 				// 反伤走独立 magic 源（无 attacker=寒棘狐本人）→ 不会在攻击者身上再触发反刺链
 				fAttacker.damage(fAttacker.getDamageSources().create(
 						net.minecraft.registry.RegistryKey.of(
-								net.minecraft.registry.RegistryKeys.DAMAGE_TYPE,
-								new net.minecraft.util.Identifier("my_addon", "thorn_burst")),
-						victim), BURST_DAMAGE);
+							net.minecraft.registry.RegistryKeys.DAMAGE_TYPE,
+							new net.minecraft.util.Identifier("my_addon", "thorn_burst")),
+						victim), burstDamage);
 			});
 			// 棘爆反馈：碎冰音 + 雪花爆裂粒子（攻击者处）
 			sw.playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(),
@@ -140,7 +147,7 @@ public final class FrostArmorManager {
 		Iterator<Map.Entry<UUID, Layers>> it = LAYERS.entrySet().iterator();
 		while (it.hasNext()) {
 			Layers l = it.next().getValue();
-			if (l.count > 0 && now - l.lastLayerGameTime > LAYER_EXPIRE_TICKS) {
+			if (l.count > 0 && now - l.lastLayerGameTime > BAL.i("layer_expire_ticks", LAYER_EXPIRE_TICKS)) {
 				l.count = 0;
 			}
 			// 全冷层且长期无命中 → 直接移除防 map 膨胀

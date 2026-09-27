@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.ability;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
@@ -42,6 +43,10 @@ public final class BatDesmodusBloodThirst {
     private static final long OUT_OF_COMBAT_DELAY = 240L;
     /** 衰减速率：每秒 -4 */
     private static final int DECAY_PER_SEC = 4;
+
+    // 阶段 5：运行时快照读取（abilities.blood_thirst_resource；快照未初始化回退默认常量；
+    // ATTACK_HIT_CD 去抖与 getStage 阶段阈值 25/50/75 不迁移）
+    private static final BalanceReader BAL = new BalanceReader("abilities.blood_thirst_resource");
 
     /** 玩家UUID -> 上次进入战斗的世界 tick */
     private static final Map<UUID, Long> LAST_COMBAT_TICK = new ConcurrentHashMap<>();
@@ -134,7 +139,8 @@ public final class BatDesmodusBloodThirst {
         if (last != null && now - last < ATTACK_HIT_CD) return;
         LAST_ATTACK_HIT_TICK.put(player.getUuid(), now);
         // 渴血石榴石：累积 +50%
-        int gain = hasBloodGarnet(player) ? Math.round(ATTACK_HIT_GAIN * 1.5f) : ATTACK_HIT_GAIN;
+        int attackHitGain = BAL.i("attack_hit_gain", ATTACK_HIT_GAIN);
+        int gain = hasBloodGarnet(player) ? Math.round(attackHitGain * 1.5f) : attackHitGain;
         changeBlood(player, gain);
     }
 
@@ -146,8 +152,8 @@ public final class BatDesmodusBloodThirst {
         if (!isBat(player) || hitTargets == null || hitTargets.isEmpty()) return;
         markCombat(player);
         int total = 0;
-        int count = Math.min(hitTargets.size(), SKILL_HIT_MAX_TARGETS);
-        int gain = SKILL_HIT_BASE;
+        int count = Math.min(hitTargets.size(), BAL.i("skill_hit_max_targets", SKILL_HIT_MAX_TARGETS));
+        int gain = BAL.i("skill_hit_base", SKILL_HIT_BASE);
         for (int i = 0; i < count; i++) {
             total += gain;
             gain = Math.max(1, gain / 2); // 12 -> 6 -> 3
@@ -174,7 +180,7 @@ public final class BatDesmodusBloodThirst {
         if (now - lastRegen < 20L) return; // 每秒结算一次
 
         Long lastCombat = LAST_COMBAT_TICK.get(player.getUuid());
-        boolean inCombat = lastCombat != null && now - lastCombat <= OUT_OF_COMBAT_DELAY;
+        boolean inCombat = lastCombat != null && now - lastCombat <= BAL.i("out_of_combat_delay", (int) OUT_OF_COMBAT_DELAY);
         boolean garnet = hasBloodGarnet(player);
         // 嗜血指环：自身满血时吸血被反噬——每秒对自己造成 1 点真伤（你血太满装不下更多血）。
         if (hasBloodlustRing(player) && player.getHealth() >= player.getMaxHealth()) {
@@ -189,7 +195,7 @@ public final class BatDesmodusBloodThirst {
             // 脱战（含从未进入战斗）：每秒 -4，直至 0；战斗中不自动回复
             int b = getBlood(player);
             if (b > 0) {
-                int decay = DECAY_PER_SEC;
+                int decay = BAL.i("decay_per_sec", DECAY_PER_SEC);
                 // 头顶天空可见时按昼夜节奏调整（与 sun_weak/moon_buff power 的 time_of_day 判定一致）
                 net.minecraft.server.world.ServerWorld sw = player.getServerWorld();
                 if (sw.isSkyVisible(player.getBlockPos())) {

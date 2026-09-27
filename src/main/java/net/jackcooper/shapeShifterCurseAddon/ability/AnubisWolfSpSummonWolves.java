@@ -16,6 +16,7 @@ import net.onixary.shapeShifterCurseFabric.minion.IPlayerEntityMinion;
 import net.onixary.shapeShifterCurseFabric.minion.MinionRegister;
 import net.onixary.shapeShifterCurseFabric.minion.mobs.AnubisWolfMinionEntity;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
@@ -42,6 +43,7 @@ public class AnubisWolfSpSummonWolves {
 	private static final int HOWL_TICKS = 30; // 1.5秒
 
 	// ==================== 常量 ====================
+	// 以下常量均为默认值；运行时从 balance 快照读取（scope：abilities.anubis_summon_wolves）
 	/**
 	 * 嚎叫减速比例（保留50%速度）
 	 */
@@ -117,6 +119,9 @@ public class AnubisWolfSpSummonWolves {
 	// ==================== 状态追踪 ====================
 	private static final ConcurrentHashMap<UUID, SummonData> ACTIVE_SUMMONS = new ConcurrentHashMap<>();
 
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.anubis_summon_wolves");
+
 	private AnubisWolfSpSummonWolves() {
 	}
 
@@ -124,7 +129,7 @@ public class AnubisWolfSpSummonWolves {
 	 * 获取召唤技能CD时间（tick），供增强死亡领域联动使用
 	 */
 	public static int getCooldownTicks() {
-		return COOLDOWN_TICKS;
+		return BAL.i("cooldown_ticks", COOLDOWN_TICKS);
 	}
 
 	/**
@@ -144,13 +149,13 @@ public class AnubisWolfSpSummonWolves {
 
 		// 检查饰品加成
 		boolean hasCrystal = hasTrinketEquipped(player);
-		int maxWolves = hasCrystal ? MAX_WOLVES + 2 : MAX_WOLVES;
+		int maxWolves = hasCrystal ? BAL.i("max_wolves", MAX_WOLVES) + 2 : BAL.i("max_wolves", MAX_WOLVES);
 
 		// 通过IPlayerEntityMinion系统检查当前冥狼数量
 		int aliveCount = getMinionCount(player);
 		if (aliveCount >= maxWolves) {
 			// 已达上限，给予惩罚CD，播放失败音效
-			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, PENALTY_COOLDOWN_TICKS);
+			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, BAL.i("penalty_cooldown_ticks", PENALTY_COOLDOWN_TICKS));
 			player.getServerWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_NOTE_BLOCK_BASS.value(), SoundCategory.PLAYERS, 0.8f, 0.5f);
 			return false;
@@ -160,8 +165,8 @@ public class AnubisWolfSpSummonWolves {
 		boolean domainActive = AnubisWolfSpDeathDomain.hasActiveDomain(player.getUuid());
 
 		// 计算可召唤数量（饰品增加1只常规召唤）
-		int baseSummon = hasCrystal ? BASE_SUMMON_COUNT + 1 : BASE_SUMMON_COUNT;
-		int domainSummon = hasCrystal ? DOMAIN_SUMMON_COUNT + 1 : DOMAIN_SUMMON_COUNT;
+		int baseSummon = hasCrystal ? BAL.i("base_summon_count", BASE_SUMMON_COUNT) + 1 : BAL.i("base_summon_count", BASE_SUMMON_COUNT);
+		int domainSummon = hasCrystal ? BAL.i("domain_summon_count", DOMAIN_SUMMON_COUNT) + 1 : BAL.i("domain_summon_count", DOMAIN_SUMMON_COUNT);
 		int targetCount = domainActive ? domainSummon : baseSummon;
 		int canSummon = Math.min(targetCount, maxWolves - aliveCount);
 
@@ -254,7 +259,7 @@ public class AnubisWolfSpSummonWolves {
 					px, player.getY() + 0.5, pz, 2, 0.1, 0.3, 0.1, 0.02);
 		}
 
-		if (data.ticksElapsed >= HOWL_TICKS) {
+		if (data.ticksElapsed >= BAL.i("howl_ticks", HOWL_TICKS)) {
 			// 蓄力完成，移除减速
 			removeHowlSlow(player);
 
@@ -270,7 +275,7 @@ public class AnubisWolfSpSummonWolves {
 
 	private static void tickSummoning(ServerPlayerEntity player, SummonData data) {
 		// 每SUMMON_INTERVAL tick召唤一只
-		if (data.ticksElapsed % SUMMON_INTERVAL == 0 && data.wolvesSummoned < data.wolvesToSummon) {
+		if (data.ticksElapsed % BAL.i("summon_interval", SUMMON_INTERVAL) == 0 && data.wolvesSummoned < data.wolvesToSummon) {
 			spawnMinionWolf(player, data);
 			data.wolvesSummoned++;
 		}
@@ -281,7 +286,7 @@ public class AnubisWolfSpSummonWolves {
 			data.ticksElapsed = 0;
 
 			// 设置CD
-			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, COOLDOWN_TICKS);
+			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, BAL.i("cooldown_ticks", COOLDOWN_TICKS));
 		}
 	}
 
@@ -289,6 +294,7 @@ public class AnubisWolfSpSummonWolves {
 
 	private static void tickActive(ServerPlayerEntity player, SummonData data) {
 		ServerWorld world = player.getServerWorld();
+		int wolfDuration = BAL.i("wolf_duration", WOLF_DURATION);
 
 		// 每20tick检查一次冥狼的灵魂沙免疫
 		if (data.ticksElapsed % 20 == 0) {
@@ -296,7 +302,7 @@ public class AnubisWolfSpSummonWolves {
 		}
 
 		// 冥狼持续时间到期
-		if (data.ticksElapsed >= WOLF_DURATION) {
+		if (data.ticksElapsed >= wolfDuration) {
 			// 消散所有本批次的狼
 			dissipateWolves(player, data, world);
 			ACTIVE_SUMMONS.remove(player.getUuid());
@@ -319,8 +325,10 @@ public class AnubisWolfSpSummonWolves {
 
 		if (wolf == null) return;
 
+		int wolfDuration = BAL.i("wolf_duration", WOLF_DURATION);
+
 		// 设置等级（level 3: HP=20, Attack=4, 治愈主人2HP/hit）
-		wolf.setMinionLevel(MINION_LEVEL);
+		wolf.setMinionLevel(BAL.i("minion_level", MINION_LEVEL));
 
 		// 死亡领域联动增强
 		if (data.domainActive) {
@@ -329,7 +337,7 @@ public class AnubisWolfSpSummonWolves {
 			if (healthAttr != null) {
 				healthAttr.addPersistentModifier(new EntityAttributeModifier(
 						DOMAIN_HEALTH_UUID, "domain_bonus_health",
-						DOMAIN_BONUS_HEALTH, EntityAttributeModifier.Operation.ADDITION));
+						BAL.d("domain_bonus_health", DOMAIN_BONUS_HEALTH), EntityAttributeModifier.Operation.ADDITION));
 				wolf.setHealth((float) healthAttr.getValue());
 			}
 			// 额外攻击力
@@ -337,11 +345,11 @@ public class AnubisWolfSpSummonWolves {
 			if (attackAttr != null) {
 				attackAttr.addPersistentModifier(new EntityAttributeModifier(
 						DOMAIN_ATTACK_UUID, "domain_bonus_attack",
-						DOMAIN_BONUS_ATTACK, EntityAttributeModifier.Operation.ADDITION));
+						BAL.d("domain_bonus_attack", DOMAIN_BONUS_ATTACK), EntityAttributeModifier.Operation.ADDITION));
 			}
 			// 速度I效果
 			wolf.addStatusEffect(new StatusEffectInstance(
-					StatusEffects.SPEED, WOLF_DURATION, 0, false, false, true));
+					StatusEffects.SPEED, wolfDuration, 0, false, false, true));
 		}
 
 		// 饰品效果：降低冥狼攻击力25%、血量35%
@@ -456,7 +464,7 @@ public class AnubisWolfSpSummonWolves {
 		if (speedAttr != null && speedAttr.getModifier(HOWL_SLOW_UUID) == null) {
 			speedAttr.addTemporaryModifier(new EntityAttributeModifier(
 					HOWL_SLOW_UUID, "howl_slow",
-					HOWL_SLOW_FACTOR - 1.0, // -0.5 = 保留50%
+					BAL.d("howl_slow_factor", HOWL_SLOW_FACTOR) - 1.0, // -0.5 = 保留50%
 					EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
 		}
 	}

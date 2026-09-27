@@ -9,6 +9,7 @@ import net.minecraft.util.math.Box;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.effect.RegAddonEffects;
 
 import java.util.List;
@@ -29,12 +30,16 @@ import java.util.List;
  */
 public final class SpiderMoonWeaverMoonPoisonManager {
 
+    // 以下均为默认值；运行时从 balance 快照读取（abilities.moon_weaver_moon_poison）
     /** 扫描半径（格）：对齐蛛丝弹 AURA_RADIUS。 */
     private static final double SCAN_RADIUS = 8.0;
     /** 扫描间隔（tick）：每 3 秒扫一次。 */
     private static final int SCAN_INTERVAL = 60;
     /** 施加中毒 I 的持续时长（tick）：4 秒，大于扫描间隔保证不断档。 */
     private static final int POISON_DURATION = 80;
+
+    // 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+    private static final BalanceReader BAL = new BalanceReader("abilities.moon_weaver_moon_poison");
 
     private SpiderMoonWeaverMoonPoisonManager() {}
 
@@ -44,11 +49,12 @@ public final class SpiderMoonWeaverMoonPoisonManager {
      */
     public static void tick(ServerPlayerEntity player) {
         // 周期门控前置：先降频再做形态/实体扫描，非月织蛛玩家每 tick 只花一次取余（原每 tick 都过一次 CCA 形态查询）
-        if (player.age % SCAN_INTERVAL != 0) return;
+        if (player.age % BAL.i("scan_interval", SCAN_INTERVAL) != 0) return;
         if (!FormUtils.isForm(player, FormIdentifiers.SPIDER_MOON_WEAVER)) return;
         if (!(player.getWorld() instanceof ServerWorld world)) return;
 
-        Box box = new Box(player.getBlockPos()).expand(SCAN_RADIUS);
+        double scanRadius = BAL.d("scan_radius", SCAN_RADIUS);
+        Box box = new Box(player.getBlockPos()).expand(scanRadius);
         List<LivingEntity> targets = world.getEntitiesByClass(LivingEntity.class, box, e -> true);
         for (LivingEntity target : targets) {
             // 排除施法者本人
@@ -62,7 +68,7 @@ public final class SpiderMoonWeaverMoonPoisonManager {
             if (!webBound && !cocooned) continue;
             // 施加中毒 I（不显示粒子环境效果，显示粒子以让玩家可见）；带施法者 source 供入梦拦截归因
             target.addStatusEffect(new StatusEffectInstance(
-                    StatusEffects.POISON, POISON_DURATION, 0, false, true, true), player);
+                    StatusEffects.POISON, BAL.i("poison_duration", POISON_DURATION), 0, false, true, true), player);
         }
     }
 }

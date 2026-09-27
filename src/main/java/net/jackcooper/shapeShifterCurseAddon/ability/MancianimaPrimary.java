@@ -19,6 +19,7 @@ import net.minecraft.world.RaycastContext;
 import net.onixary.shapeShifterCurseFabric.mana.ManaComponent;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -58,7 +59,8 @@ public final class MancianimaPrimary {
 	public static final int MANA_REGEN_PAUSE_TICKS = 100;    // 5s
 	private static final net.minecraft.util.Identifier MANA_REGEN_PAUSE_RES =
 			new net.minecraft.util.Identifier("my_addon", "form_familiar_fox_sp_mana_regen_regen_pause_timer");
-
+	// 阶段 5：运行时快照读取（abilities.mancianima_primary；快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.mancianima_primary");
 	/** 客户端按键调用的入口。 */
 	public static void execute(ServerPlayerEntity player) {
 		if (!isMancianima(player)) return;
@@ -74,16 +76,17 @@ public final class MancianimaPrimary {
 		if (mark != null && mark.color == MancianimaMarkManager.MarkColor.RED) {
 			LivingEntity tgt = findLivingByUuid(world, mark.targetUuid);
 			if (tgt == null || !tgt.isAlive() || DomainManager.blocksTargeting(player, tgt)) return;
-			// 阶段冷却：红标刚升级后需等 3s 才能引爆
-			if (now - mark.colorSetTick < MancianimaMarkManager.STAGE_GATE_TICKS) {
-				int secLeft = (int) Math.max(1L, (long) Math.ceil((MancianimaMarkManager.STAGE_GATE_TICKS - (now - mark.colorSetTick)) / 20.0));
+			// 阶段冷却：红标刚升级后需等 3s 才能引爆（读 MarkManager 侧同 scope 参数以保持同一值）
+			int stageGate = MancianimaMarkManager.stageGateTicks();
+			if (now - mark.colorSetTick < stageGate) {
+				int secLeft = (int) Math.max(1L, (long) Math.ceil((stageGate - (now - mark.colorSetTick)) / 20.0));
 				player.sendMessage(Text.translatable("message.ssc_addon.mancianima.primary.stage_locked_seconds", secLeft), true);
 				playMarkFailSound(player);
 				return;
 			}
 			// 不消耗 mana 立即开始引导；CD 在引导成功后加 15s
 			MancianimaMarkManager.CHANNELING.put(player.getUuid(),
-					new MancianimaMarkManager.ChannelState(mark.targetUuid, now + CHANNEL_DAMAGE_TICKS, 1));
+					new MancianimaMarkManager.ChannelState(mark.targetUuid, now + BAL.i("channel_damage_ticks", CHANNEL_DAMAGE_TICKS), 1));
 			player.sendMessage(Text.translatable("message.ssc_addon.mancianima.primary.channeling"), true);
 			// 全场低响蓄力嗡鸣（让第三方有所感知）
 			MancianimaMarkManager.broadcastSoundAtEntity(world, player, SoundEvents.BLOCK_BEACON_POWER_SELECT, 0.6f, 1.5f);
@@ -94,14 +97,15 @@ public final class MancianimaPrimary {
 		}
 
 		// 段 1/2：raycast 找目标
-		LivingEntity target = raycastLiving(player, MARK_RANGE);
+		LivingEntity target = raycastLiving(player, BAL.d("mark_range", MARK_RANGE));
 
 		// 段 2：橙标的同一目标
 		if (mark != null && mark.color == MancianimaMarkManager.MarkColor.ORANGE
 				&& target != null && target.getUuid().equals(mark.targetUuid)) {
-			// 阶段冷却：首次标记后需等 3s 才能升红
-			if (now - mark.colorSetTick < MancianimaMarkManager.STAGE_GATE_TICKS) {
-				int secLeft = (int) Math.max(1L, (long) Math.ceil((MancianimaMarkManager.STAGE_GATE_TICKS - (now - mark.colorSetTick)) / 20.0));
+			// 阶段冷却：首次标记后需等 3s 才能升红（读 MarkManager 侧同 scope 参数以保持同一值）
+			int stageGate = MancianimaMarkManager.stageGateTicks();
+			if (now - mark.colorSetTick < stageGate) {
+				int secLeft = (int) Math.max(1L, (long) Math.ceil((stageGate - (now - mark.colorSetTick)) / 20.0));
 				player.sendMessage(Text.translatable("message.ssc_addon.mancianima.primary.stage_locked_seconds", secLeft), true);
 				playMarkFailSound(player);
 				return;
@@ -141,16 +145,17 @@ public final class MancianimaPrimary {
 
 		if (target == null) {
 			// 无目标 fizzle
+			int fizzleCost = BAL.i("fizzle_mana_cost", FIZZLE_MANA_COST);
 			ManaComponent mana = ManaUtils.getManaComponent(player);
-			if (mana == null || mana.getMana() < FIZZLE_MANA_COST) {
+			if (mana == null || mana.getMana() < fizzleCost) {
 				player.sendMessage(Text.translatable("message.ssc_addon.mancianima.no_mana"), true);
 				playMarkFailSound(player);
 				return;
 			}
-			mana.setMana(mana.getMana() - FIZZLE_MANA_COST);
+			mana.setMana(mana.getMana() - fizzleCost);
 			pauseManaRegen(player);
 			playMarkFailSound(player);
-			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, FIRST_PRESS_CD);
+			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, BAL.i("first_press_cd", FIRST_PRESS_CD));
 			return;
 		}
 
@@ -163,16 +168,17 @@ public final class MancianimaPrimary {
 		}
 
 		ManaComponent mana = ManaUtils.getManaComponent(player);
-		if (mana == null || mana.getMana() < MARK_MANA_COST) {
+		int markCost = BAL.i("mark_mana_cost", MARK_MANA_COST);
+		if (mana == null || mana.getMana() < markCost) {
 			player.sendMessage(Text.translatable("message.ssc_addon.mancianima.no_mana"), true);
 			playMarkFailSound(player);
 			return;
 		}
-		mana.setMana(mana.getMana() - MARK_MANA_COST);
+		mana.setMana(mana.getMana() - markCost);
 		pauseManaRegen(player);
 
 		MancianimaMarkManager.setMark(player, target, MancianimaMarkManager.MarkColor.YELLOW);
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, FIRST_PRESS_CD);
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, BAL.i("first_press_cd", FIRST_PRESS_CD));
 
 		// 标记成功 - 仅 marker 自己能听到的反馈音（多层叠加，增强可辨识度）
 		MancianimaMarkManager.playSoundToPlayer(player, SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, 1.0f, 1.6f);
@@ -191,7 +197,7 @@ public final class MancianimaPrimary {
 		if (target == null || !target.isAlive() || DomainManager.blocksTargeting(marker, target)) return;
 		ServerWorld world = (ServerWorld) marker.getWorld();
 		// 真伤计算
-		float dmg = (float) Math.max(DAMAGE_MIN, Math.min(DAMAGE_CAP, target.getHealth() * DAMAGE_PERCENT));
+		float dmg = (float) Math.max(BAL.d("damage_min", DAMAGE_MIN), Math.min(BAL.d("damage_cap", DAMAGE_CAP), target.getHealth() * BAL.d("damage_percent", DAMAGE_PERCENT)));
 		// 伤害归属：使用 indirectMagic 以 marker 为攻击者（生物会什7并带 tag bypasses_armor不被护甲减免）
 		DamageSource src = world.getDamageSources().indirectMagic(marker, marker);
 		target.damage(src, dmg);
@@ -236,7 +242,7 @@ public final class MancianimaPrimary {
 				SoundEvents.ENTITY_ENDER_DRAGON_FLAP, SoundCategory.PLAYERS, 1.2f, 0.8f);
 		// 成功 CD +15s
 		int cur = PowerUtils.getResourceValue(marker, FormIdentifiers.SP_PRIMARY_CD);
-		PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_PRIMARY_CD, cur + SUCCESS_DAMAGE_CD_ADD);
+		PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_PRIMARY_CD, cur + BAL.i("success_damage_cd_add", SUCCESS_DAMAGE_CD_ADD));
 		// 斩杀完成：补满 mana 能量
 		ManaUtils.setPlayerMana(marker, ManaUtils.getPlayerMaxMana(marker));
 		// 红标使命达成 → 清除（已造成伤害，进入下一轮）
@@ -251,7 +257,7 @@ public final class MancianimaPrimary {
 	}
 
 	private static void pauseManaRegen(ServerPlayerEntity player) {
-		PowerUtils.setResourceValueAndSync(player, MANA_REGEN_PAUSE_RES, MANA_REGEN_PAUSE_TICKS);
+		PowerUtils.setResourceValueAndSync(player, MANA_REGEN_PAUSE_RES, BAL.i("mana_regen_pause_ticks", MANA_REGEN_PAUSE_TICKS));
 	}
 
 	/** 标记失败提示音（仅 marker 自己听到，统一格式） */

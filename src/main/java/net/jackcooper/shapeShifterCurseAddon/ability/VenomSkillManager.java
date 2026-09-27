@@ -11,6 +11,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -35,6 +36,7 @@ import java.util.Map;
  */
 public final class VenomSkillManager {
 
+	// 以下已登记常量均为默认值；运行时从 balance 快照读取（abilities.venom_skill）
 	private static final float BASE_DAMAGE = 4.0f;        // 基础：前方区域 4 魔法
 	private static final int BASE_POISON_DURATION = 300; // 中毒 I 15 秒
 	private static final double AREA_SIZE = 2.0;         // 前方 2×2×2 格
@@ -46,6 +48,9 @@ public final class VenomSkillManager {
 	private static final int BURST_POISON_DURATION = 300;// AOE 中毒 II 15 秒
 	private static final int CD_TICKS = 200;             // 10 秒
 	private static final int DASH_TIMEOUT = 20;          // 冲刺超时 1 秒（6 格 / 1.2 每t ≈ 5t，余量充足）
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.venom_skill");
 
 	private static final Map<UUID, DashState> DASHING = new ConcurrentHashMap<>();
 
@@ -77,28 +82,31 @@ public final class VenomSkillManager {
 		} else {
 			venomArea(player, sw);
 		}
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, CD_TICKS);
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD,
+				BAL.i("cd_ticks", CD_TICKS));
 	}
 
 	/** 基础形态：前方 2×2×2 区域毒液——4 魔法 + 中毒 I 15s（毒液腺体：等级+1 / 时长×70%）。 */
 	private static void venomArea(ServerPlayerEntity player, ServerWorld sw) {
 		Vec3d look = player.getRotationVector().normalize();
-		Vec3d center = player.getEyePos().add(look.multiply(AREA_SIZE * 0.75)); // 区域中心在身前
-		Box box = new Box(center.add(-AREA_SIZE / 2, -AREA_SIZE / 2, -AREA_SIZE / 2),
-				center.add(AREA_SIZE / 2, AREA_SIZE / 2, AREA_SIZE / 2));
+		double areaSize = BAL.d("area_size", AREA_SIZE);
+		Vec3d center = player.getEyePos().add(look.multiply(areaSize * 0.75)); // 区域中心在身前
+		Box box = new Box(center.add(-areaSize / 2, -areaSize / 2, -areaSize / 2),
+				center.add(areaSize / 2, areaSize / 2, areaSize / 2));
 		List<LivingEntity> targets = sw.getEntitiesByClass(LivingEntity.class, box,
 				e -> e != player && e.isAlive() && !e.isSpectator()
 						&& !WhitelistUtils.isProtected(player, e));
 		boolean gland = net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.isWearingBy(player);
 		int amp = gland ? 1 : 0;
-		int dur = gland ? Math.round(BASE_POISON_DURATION * net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.DURATION_SCALE) : BASE_POISON_DURATION;
+		int baseDur = BAL.i("base_poison_duration", BASE_POISON_DURATION);
+		int dur = gland ? Math.round(baseDur * net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.DURATION_SCALE) : baseDur;
 		for (LivingEntity t : targets) {
-			t.damage(t.getDamageSources().indirectMagic(player, player), BASE_DAMAGE);
+			t.damage(t.getDamageSources().indirectMagic(player, player), (float) BAL.d("base_damage", BASE_DAMAGE));
 			t.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, dur, amp, false, true, true), player);
 		}
 		// 反馈：毒液喷溅粒子（区域中心）+ 喷吐音效
 		sw.spawnParticles(ParticleTypes.WITCH, center.x, center.y, center.z,
-				24, AREA_SIZE / 2, AREA_SIZE / 2, AREA_SIZE / 2, 0.1);
+				24, areaSize / 2, areaSize / 2, areaSize / 2, 0.1);
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_SPIDER_AMBIENT, SoundCategory.PLAYERS, 0.8f, 0.5f);
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -130,20 +138,22 @@ public final class VenomSkillManager {
 
 		d.ticks++;
 		// 结束条件：跑满 6 格 / 超时 / 撞墙 / 碰到敌方（碰撞伤害后停下）
-		if (d.traveled >= DASH_DISTANCE || d.ticks > DASH_TIMEOUT || player.horizontalCollision || d.hitDone) {
+		if (d.traveled >= BAL.d("dash_distance", DASH_DISTANCE) || d.ticks > BAL.i("dash_timeout", DASH_TIMEOUT)
+				|| player.horizontalCollision || d.hitDone) {
 			finishDash(player, sw);
 			return;
 		}
 
 		// 冲刺推进：沿准星方向（起跳瞬间锁定方向，途中不转向——直线冲刺）
-		Vec3d v = d.dir.multiply(DASH_SPEED);
+		double dashSpeed = BAL.d("dash_speed", DASH_SPEED);
+		Vec3d v = d.dir.multiply(dashSpeed);
 		player.setVelocity(v.x, Math.min(0.1, v.y), v.z); // 竖直限幅防冲天
 		player.velocityModified = true;
 		player.fallDistance = 0.0f;
 		if (player.networkHandler != null) {
 			player.networkHandler.sendPacket(new EntityVelocityUpdateS2CPacket(player));
 		}
-		d.traveled += DASH_SPEED;
+		d.traveled += dashSpeed;
 
 		// 途中碰撞判定：碰到敌方生物 → 2 魔法 + 停下
 		Box hitbox = player.getBoundingBox().expand(0.5);
@@ -152,7 +162,8 @@ public final class VenomSkillManager {
 						&& !WhitelistUtils.isProtected(player, e));
 		if (!hits.isEmpty()) {
 			for (LivingEntity t : hits) {
-				t.damage(t.getDamageSources().indirectMagic(player, player), DASH_HIT_DAMAGE);
+				t.damage(t.getDamageSources().indirectMagic(player, player),
+						(float) BAL.d("dash_hit_damage", DASH_HIT_DAMAGE));
 			}
 			d.hitDone = true; // 本 tick 结束后停下
 		}
@@ -166,21 +177,23 @@ public final class VenomSkillManager {
 	private static void finishDash(ServerPlayerEntity player, ServerWorld sw) {
 		DASHING.remove(player.getUuid());
 		Vec3d c = player.getPos();
-		Box box = player.getBoundingBox().expand(BURST_RADIUS);
+		double burstRadius = BAL.d("burst_radius", BURST_RADIUS);
+		Box box = player.getBoundingBox().expand(burstRadius);
 		List<LivingEntity> targets = sw.getEntitiesByClass(LivingEntity.class, box,
 				e -> e != player && e.isAlive() && !e.isSpectator()
 						&& !WhitelistUtils.isProtected(player, e)
-						&& e.getPos().distanceTo(c) <= BURST_RADIUS);
+						&& e.getPos().distanceTo(c) <= burstRadius);
 		boolean gland = net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.isWearingBy(player);
 		int amp = (gland ? 1 : 0) + 1; // 基础中毒 II，腺体 +1
-		int dur = gland ? Math.round(BURST_POISON_DURATION * net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.DURATION_SCALE) : BURST_POISON_DURATION;
+		int baseDur = BAL.i("burst_poison_duration", BURST_POISON_DURATION);
+		int dur = gland ? Math.round(baseDur * net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.DURATION_SCALE) : baseDur;
 		for (LivingEntity t : targets) {
-			t.damage(t.getDamageSources().indirectMagic(player, player), BURST_DAMAGE);
+			t.damage(t.getDamageSources().indirectMagic(player, player), (float) BAL.d("burst_damage", BURST_DAMAGE));
 			t.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, dur, amp, false, true, true), player);
 		}
 		// AOE 反馈：毒爆粒子环 + 女巫泼溅
 		sw.spawnParticles(ParticleTypes.WITCH, c.x, c.y + 0.5, c.z,
-				60, BURST_RADIUS * 0.7, 0.6, BURST_RADIUS * 0.7, 0.2);
+				60, burstRadius * 0.7, 0.6, burstRadius * 0.7, 0.2);
 		sw.spawnParticles(ParticleTypes.CLOUD, c.x, c.y + 0.3, c.z,
 				16, 0.6, 0.3, 0.6, 0.05);
 		sw.playSound(null, c.x, c.y, c.z,

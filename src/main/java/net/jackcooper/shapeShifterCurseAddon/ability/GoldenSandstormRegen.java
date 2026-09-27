@@ -7,6 +7,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.onixary.shapeShifterCurseFabric.minion.mobs.AnubisWolfMinionEntity;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 
@@ -35,17 +36,19 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class GoldenSandstormRegen {
 
-	/** 凋零每次伤害回血量（HP） = 半颗心 */
+	// 以下带「默认」注释的常量已登记 balance（scope：abilities.golden_sandstorm_regen），运行时从快照读取；
+// COMBAT_DURATION / WITHER_SOURCE_GRACE 未登记，保持编译期常量。
+	/** 凋零每次伤害回血量（HP） = 半颗心。默认；运行时从 balance 快照读取 */
 	private static final float WITHER_TICK_HEAL = 1.0f;
-	/** 玩家击杀回血量（HP） = 2颗心 */
+	/** 玩家击杀回血量（HP） = 2颗心。默认；运行时从 balance 快照读取 */
 	private static final float KILL_HEAL = 4.0f;
-	/** 冥狼击杀回血量（HP） = 1.5颗心 */
+	/** 冥狼击杀回血量（HP） = 1.5颗心。默认；运行时从 balance 快照读取 */
 	private static final float MINION_KILL_HEAL = 3.0f;
-	/** 被动回血量（HP） = 半颗心 */
+	/** 被动回血量（HP） = 半颗心。默认；运行时从 balance 快照读取 */
 	private static final float PASSIVE_HEAL = 1.0f;
-	/** 战斗外被动回血间隔（tick） = 10秒 */
+	/** 战斗外被动回血间隔（tick） = 10秒。默认；运行时从 balance 快照读取 */
 	private static final int PASSIVE_INTERVAL_OOC = 200;
-	/** 战斗内被动回血间隔（tick） = 6秒 */
+	/** 战斗内被动回血间隔（tick） = 6秒。默认；运行时从 balance 快照读取 */
 	private static final int PASSIVE_INTERVAL_IC = 120;
 	/** 战斗状态持续时间（tick） = 8秒 */
 	private static final long COMBAT_DURATION = 160L;
@@ -58,6 +61,9 @@ public final class GoldenSandstormRegen {
 	private static final Map<UUID, Long> LAST_PASSIVE_TICK = new ConcurrentHashMap<>();
 	/** 受害者UUID -> { 金沙岚玩家UUID -> 凋零源记录到期世界时间(tick) } */
 	private static final Map<UUID, Map<UUID, Long>> WITHER_SOURCES = new ConcurrentHashMap<>();
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.golden_sandstorm_regen");
 
 	private GoldenSandstormRegen() {
 	}
@@ -109,7 +115,7 @@ public final class GoldenSandstormRegen {
 			PlayerEntity p = serverWorld.getPlayerByUuid(playerUuid);
 			if (!(p instanceof ServerPlayerEntity sp)) continue;
 			if (!FormUtils.isForm(sp, FormIdentifiers.GOLDEN_SANDSTORM_SP)) continue;
-			sp.heal(WITHER_TICK_HEAL);
+			sp.heal((float) BAL.d("wither_tick_heal", WITHER_TICK_HEAL));
 			markCombat(sp);
 		}
 	}
@@ -135,9 +141,9 @@ public final class GoldenSandstormRegen {
 			LAST_PASSIVE_TICK.put(player.getUuid(), now);
 			return;
 		}
-		int interval = isInCombat(player) ? PASSIVE_INTERVAL_IC : PASSIVE_INTERVAL_OOC;
+		int interval = isInCombat(player) ? BAL.i("passive_interval_ic", PASSIVE_INTERVAL_IC) : BAL.i("passive_interval_ooc", PASSIVE_INTERVAL_OOC);
 		if (now - last >= interval) {
-			player.heal(PASSIVE_HEAL);
+			player.heal((float) BAL.d("passive_heal", PASSIVE_HEAL));
 			LAST_PASSIVE_TICK.put(player.getUuid(), now);
 		}
 	}
@@ -154,7 +160,7 @@ public final class GoldenSandstormRegen {
 		// 1. 玩家直接击杀
 		if (source.getAttacker() instanceof ServerPlayerEntity killer
 				&& FormUtils.isForm(killer, FormIdentifiers.GOLDEN_SANDSTORM_SP)) {
-			killer.heal(KILL_HEAL);
+			killer.heal((float) BAL.d("kill_heal", KILL_HEAL));
 			markCombat(killer);
 		}
 		// 2. 冥狼击杀
@@ -165,7 +171,7 @@ public final class GoldenSandstormRegen {
 				PlayerEntity owner = serverWorld.getPlayerByUuid(ownerUuid);
 				if (owner instanceof ServerPlayerEntity ownerPlayer
 						&& FormUtils.isForm(ownerPlayer, FormIdentifiers.GOLDEN_SANDSTORM_SP)) {
-					ownerPlayer.heal(MINION_KILL_HEAL);
+					ownerPlayer.heal((float) BAL.d("minion_kill_heal", MINION_KILL_HEAL));
 					markCombat(ownerPlayer);
 				}
 			}

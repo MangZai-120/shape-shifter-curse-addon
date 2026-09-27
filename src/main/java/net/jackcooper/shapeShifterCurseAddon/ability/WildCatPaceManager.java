@@ -4,6 +4,7 @@ import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.SkillBlocker;
@@ -26,18 +27,22 @@ public final class WildCatPaceManager {
 	/** 固定 UUID：状态切换时先移除再按新值添加，防重复堆积。 */
 	private static final UUID PACE_MODIFIER_UUID = UUID.fromString("5f6a2e8c-1b3d-4c7e-9a0f-8e2d1c4b6a3c");
 	private static final String MODIFIER_NAME = "Wild Cat Night Walker";
+	// ==== 以下常量为默认值；运行时从 balance 快照读取（scope: abilities.wild_cat_pace，数据包可覆盖）====
 	/** 夜间速度 I 等效（vanilla speed amplifier 0 = +20% 移速）；白昼不再减速，昼间惩罚已移除。 */
-	/** 夜间速度 I 等效（vanilla speed amplifier 0 = +20% 移速）。 */
+	/** 夜间速度 I 等效（vanilla speed amplifier 0 = +20% 移速）。默认；运行时从 balance 快照读取。 */
 	private static final double NIGHT_SPEED = 0.20;
-	/** 检查粒度（tick）：与原 JSON interval 20 一致，昼夜切换响应延迟最多 1 秒。 */
+	/** 检查粒度（tick）：与原 JSON interval 20 一致，昼夜切换响应延迟最多 1 秒。默认；运行时从 balance 快照读取。 */
 	private static final int CHECK_INTERVAL = 20;
+
+	/** 服务端权威 balance 快照读取（快照未初始化时回退上方默认常量）。 */
+	private static final BalanceReader BAL = new BalanceReader("abilities.wild_cat_pace");
 
 	private WildCatPaceManager() {
 	}
 
-	/** 每服务端 tick 对每个在线玩家调用（内部按 CHECK_INTERVAL 降频）。 */
+	/** 每服务端 tick 对每个在线玩家调用（内部按 check_interval 降频）。 */
 	public static void tick(ServerPlayerEntity player) {
-		if (player.getWorld().getTime() % CHECK_INTERVAL != 0) return;
+		if (player.getWorld().getTime() % BAL.i("check_interval", CHECK_INTERVAL) != 0) return;
 
 		Double target = targetValue(player);
 		EntityAttributeInstance attr = player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
@@ -69,7 +74,7 @@ public final class WildCatPaceManager {
 		long timeOfDay = player.getWorld().getTimeOfDay() % 24000L;
 		boolean night = timeOfDay >= 13000L && timeOfDay <= 23000L;
 		if (night) {
-			return SkillBlocker.isSkillBlocked(player, "wild_cat", "night_speed") ? null : NIGHT_SPEED;
+			return SkillBlocker.isSkillBlocked(player, "wild_cat", "night_speed") ? null : BAL.d("night_speed", NIGHT_SPEED);
 		}
 		// 白昼：不再减速，返回 null（修饰符保持摘除）。day_slow 标签保留兼容旧存档，仅不再生效。
 		return null;

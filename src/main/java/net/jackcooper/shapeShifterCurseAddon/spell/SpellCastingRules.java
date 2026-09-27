@@ -5,8 +5,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+
 public final class SpellCastingRules {
 	private SpellCastingRules() {}
+
+	// 平衡迁移（systems.casting）：运行时从服务端权威快照读取；快照未初始化（测试环境）回退默认字面量
+	private static final BalanceReader BAL = new BalanceReader("systems.casting");
 
 	public enum Mode { AUTOMATIC, RELEASE, CONTINUOUS }
 
@@ -29,7 +34,7 @@ public final class SpellCastingRules {
 
 		public int press(Object context, long now) {
 			if (presses == 0 || !java.util.Objects.equals(this.context, context)
-					|| now < startedAt || now - startedAt > 1000) {
+					|| now < startedAt || now - startedAt > BAL.i("triple_press_window_ms", 1000)) {
 				this.context = context;
 				startedAt = now;
 				presses = 0;
@@ -50,7 +55,7 @@ public final class SpellCastingRules {
 
 		private RefundBudget(int manaCost) {
 			this.manaCost = Math.max(0, manaCost);
-			this.remaining = Math.round(this.manaCost * 0.5f);
+			this.remaining = Math.round(this.manaCost * (float) BAL.d("refund_budget_cap", 0.5));
 		}
 
 		public int grant(float fraction) {
@@ -180,11 +185,12 @@ public final class SpellCastingRules {
 	}
 
 	public static int interruptedCooldown(int fullCooldown) {
-		return Math.max(0, fullCooldown) - Math.round(Math.max(0, fullCooldown) * 0.2f);
+		return Math.max(0, fullCooldown) - Math.round(Math.max(0, fullCooldown) * (float) BAL.d("interrupt_cd_refund", 0.2));
 	}
 
 	public static int summonManaLevel(int selectedLevel, boolean affinity) {
-		return Math.max(1, Math.min(affinity ? 4 : 5, selectedLevel));
+		int cap = affinity ? BAL.i("summon_affinity_cap", 4) : BAL.i("summon_normal_cap", 5);
+		return Math.max(1, Math.min(cap, selectedLevel));
 	}
 
 	public static boolean naturalRegenAllowed(boolean casting, long elapsed, int delay) {

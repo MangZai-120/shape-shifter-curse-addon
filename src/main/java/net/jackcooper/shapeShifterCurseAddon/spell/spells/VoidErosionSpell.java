@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -24,10 +25,13 @@ import java.util.List;
  */
 public class VoidErosionSpell extends Spell {
 
-	/** 基础半径（格），实际半径 = 基础 × speed_multiplier(level)。 */
+	/** 基础半径（格）默认，实际半径 = 基础 × speed_multiplier(level)；运行时从 balance 快照读取。 */
 	private static final double BASE_RADIUS = 3.0;
-	/** 减益时长（tick）：8s。 */
+	/** 减益时长（tick）：8s。默认值；运行时从 balance 快照读取。 */
 	private static final int DURATION_TICKS = 160;
+
+	// 阶段 5：运行时快照读取（spells.void_erosion；快照未初始化回退上方默认常量）
+	private static final BalanceReader BAL = new BalanceReader("spells.void_erosion");
 
 	public VoidErosionSpell() {
 		super(new Identifier("ssc_addon", "void_erosion"), SpellRarity.GREEN);
@@ -43,7 +47,9 @@ public class VoidErosionSpell extends Spell {
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
-		double radius = BASE_RADIUS * getSpeedMultiplier(level);
+		double radius = BAL.d("base_radius", BASE_RADIUS) * getSpeedMultiplier(level);
+		// 减益时长运行时读取（下方两种减益共用局部变量，快照未初始化回退默认常量）
+		int durationTicks = BAL.i("duration_ticks", DURATION_TICKS);
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
 				caster.getBoundingBox().expand(radius), e -> e != caster && e.isAlive());
 		for (LivingEntity target : targets) {
@@ -60,8 +66,8 @@ public class VoidErosionSpell extends Spell {
 			}
 			// 减益每两级 +1 级：L1/L2=疲劳 I + 虚弱 II、L3/L4=II + III、L5=III + IV
 			int debuffAmplifier = (level - 1) / 2;
-			boolean applied = target.addStatusEffect(new StatusEffectInstance(StatusEffects.MINING_FATIGUE, DURATION_TICKS, debuffAmplifier));
-			applied |= target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, DURATION_TICKS, 1 + debuffAmplifier));
+			boolean applied = target.addStatusEffect(new StatusEffectInstance(StatusEffects.MINING_FATIGUE, durationTicks, debuffAmplifier));
+			applied |= target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, durationTicks, 1 + debuffAmplifier));
 			if (applied) {
 				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(caster, target,
 						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.VOID,

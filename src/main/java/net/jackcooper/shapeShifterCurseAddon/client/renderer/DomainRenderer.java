@@ -22,7 +22,21 @@ import java.util.UUID;
 
 @Environment(EnvType.CLIENT)
 public final class DomainRenderer {
-	private record View(UUID owner, Vec3d center, double headHeight, boolean active, int elapsed) {}
+	/** innerRadius/outerRadius：服务端起手快照（STATE 包 v2 尾部携带，2026-09-27）。
+	 * 包内无剩余字节（理论不出现的旧端容错）时回退 DomainRules 本地 balance 镜像读取。
+	 * 时序参数（蓄力/持续/扩张起点与时长）不在包内——客户端用本地 balance 镜像（双端同源
+	 * 同步，仅 reload 中途有短暂偏差，仅影响演出计时，不影响碰撞几何）。 */
+	private record View(UUID owner, Vec3d center, double headHeight, boolean active, int elapsed,
+	                    double innerRadius, double outerRadius) {
+		int durationTicks() { return DomainRules.durationTicks(); }
+		int chargeTicks() { return DomainRules.chargeTicks(); }
+		int expandStartTick() { return DomainRules.expandStartTick(); }
+		double expansionRadius(double chargeElapsed) {
+			// 曲线终点用包内快照 inner（几何与包值同源）；曲线时序参数用本地镜像（双端同源同步）。
+			return DomainRules.expansionRadius(chargeElapsed, DomainRules.expandStartTick(),
+					DomainRules.chargeTicks(), DomainRules.expandDurationTicks(), innerRadius);
+		}
+	}
 	private static List<View> fields = List.of();
 	private static ClientWorld world;
 	private static long receivedAt;
@@ -35,8 +49,12 @@ public final class DomainRenderer {
 			int count = buf.readVarInt();
 			List<View> next = new ArrayList<>();
 			for (int index = 0; index < count; index++) {
+				// v2 尾部字段（2026-09-27）：快照 inner/outer 半径。每条领域末尾追加；
+				// isReadable 守卫兼容无半径旧包（理论不出现——本模组双端同装，服务端 v2 起必有）。
 				next.add(new View(buf.readUuid(), new Vec3d(buf.readDouble(), buf.readDouble(), buf.readDouble()),
-						buf.readDouble(), buf.readBoolean(), buf.readVarInt()));
+						buf.readDouble(), buf.readBoolean(), buf.readVarInt(),
+						buf.isReadable() ? buf.readDouble() : DomainRules.innerRadius(),
+						buf.isReadable() ? buf.readDouble() : DomainRules.outerRadius()));
 			}
 			client.execute(() -> {
 				if (client.world == null || !client.world.getRegistryKey().getValue().equals(dimension)) return;
@@ -83,10 +101,11 @@ public final class DomainRenderer {
 		for (View field : fields) {
 			float elapsed = field.elapsed + now - receivedAt;
 			if (field.active) {
-				if (elapsed < DomainRules.DURATION_TICKS) shells.add(new DomainRules.Shell(field.center, DomainRules.INNER_RADIUS, true));
-			} else if (elapsed >= DomainRules.EXPAND_START_TICK && elapsed < DomainRules.CHARGE_TICKS + 20) {
-				double radius = DomainRules.expansionRadius(Math.min(elapsed, DomainRules.CHARGE_TICKS));
-				if (radius > 0.1) shells.add(new DomainRules.Shell(field.center, radius, false));
+				if (elapsed < field.durationTicks()) shells.add(
+						new DomainRules.Shell(field.center, field.innerRadius, field.outerRadius, true));
+			} else if (elapsed >= field.expandStartTick() && elapsed < field.chargeTicks() + 20) {
+				double radius = field.expansionRadius(Math.min(elapsed, field.chargeTicks()));
+				if (radius > 0.1) shells.add(new DomainRules.Shell(field.center, radius, field.outerRadius, false));
 			}
 		}
 		shellCache = shells.isEmpty() ? null : shells;
@@ -105,18 +124,19 @@ public final class DomainRenderer {
 			float elapsed = field.elapsed + world.getTime() - receivedAt;
 			double inner;
 			if (field.active) {
-				if (elapsed >= DomainRules.DURATION_TICKS) continue;
-				inner = DomainRules.INNER_RADIUS;
+				if (elapsed >= field.durationTicks()) continue;
+				inner = field.innerRadius;
 			} else {
-				if (elapsed < DomainRules.EXPAND_START_TICK) continue;
-				inner = DomainRules.expansionRadius(Math.min(elapsed, DomainRules.CHARGE_TICKS));
+				if (elapsed < field.expandStartTick()) continue;
+				inner = field.expansionRadius(Math.min(elapsed, field.chargeTicks()));
 				if (inner <= 0.1) continue;
 			}
 			Vec3d start = from.subtract(field.center), end = target.subtract(field.center);
 			boolean fromInside = start.lengthSquared() <= (inner + 1) * (inner + 1);
 			if (!fromInside) continue;
 			boolean cross = field.active
-					? DomainRules.crosses(start.x, start.y, start.z, end.x, end.y, end.z, 0.3)
+					? DomainRules.crosses(start.x, start.y, start.z, end.x, end.y, end.z, 0.3,
+							field.innerRadius, field.outerRadius)
 					: DomainRules.crossesOutward(start.x, start.y, start.z, end.x, end.y, end.z, inner);
 			if (!cross) continue;
 			Vec3d delta = target.subtract(from);
@@ -125,7 +145,8 @@ public final class DomainRenderer {
 				double middle = (low + high) * 0.5;
 				Vec3d mid = from.add(delta.multiply(middle)).subtract(field.center);
 				boolean midCross = field.active
-						? DomainRules.crosses(start.x, start.y, start.z, mid.x, mid.y, mid.z, 0.3)
+						? DomainRules.crosses(start.x, start.y, start.z, mid.x, mid.y, mid.z, 0.3,
+							field.innerRadius, field.outerRadius)
 						: DomainRules.crossesOutward(start.x, start.y, start.z, mid.x, mid.y, mid.z, inner);
 				if (midCross) high = middle; else low = middle;
 			}
@@ -145,11 +166,11 @@ public final class DomainRenderer {
 			float elapsed = field.elapsed + world.getTime() - receivedAt;
 			double inner;
 			if (field.active) {
-				if (elapsed >= DomainRules.DURATION_TICKS) continue;
-				inner = DomainRules.INNER_RADIUS;
+				if (elapsed >= field.durationTicks()) continue;
+				inner = field.innerRadius;
 			} else {
-				if (elapsed < DomainRules.EXPAND_START_TICK) continue;
-				inner = DomainRules.expansionRadius(Math.min(elapsed, DomainRules.CHARGE_TICKS));
+				if (elapsed < field.expandStartTick()) continue;
+				inner = field.expansionRadius(Math.min(elapsed, field.chargeTicks()));
 				if (inner <= 0.1) continue;
 			}
 			Vec3d eyeRel = eye.subtract(field.center);
@@ -173,11 +194,11 @@ public final class DomainRenderer {
 			float elapsed = field.elapsed + world.getTime() - receivedAt;
 			double inner;
 			if (field.active) {
-				if (elapsed >= DomainRules.DURATION_TICKS) continue;
-				inner = DomainRules.INNER_RADIUS;
+				if (elapsed >= field.durationTicks()) continue;
+				inner = field.innerRadius;
 			} else {
-				if (elapsed < DomainRules.EXPAND_START_TICK) continue;
-				inner = DomainRules.expansionRadius(Math.min(elapsed, DomainRules.CHARGE_TICKS));
+				if (elapsed < field.expandStartTick()) continue;
+				inner = field.expansionRadius(Math.min(elapsed, field.chargeTicks()));
 				if (inner <= 0.1) continue;
 			}
 			if (DomainRules.separates(eye.subtract(field.center), target.subtract(field.center), inner + 1)) return true;
@@ -210,11 +231,11 @@ public final class DomainRenderer {
 			float elapsed = field.elapsed + world.getTime() - receivedAt;
 			double inner;
 			if (field.active) {
-				if (elapsed >= DomainRules.DURATION_TICKS) continue;
-				inner = DomainRules.INNER_RADIUS;
+				if (elapsed >= field.durationTicks()) continue;
+				inner = field.innerRadius;
 			} else {
-				if (elapsed < DomainRules.EXPAND_START_TICK) continue;
-				inner = DomainRules.expansionRadius(Math.min(elapsed, DomainRules.CHARGE_TICKS));
+				if (elapsed < field.expandStartTick()) continue;
+				inner = field.expansionRadius(Math.min(elapsed, field.chargeTicks()));
 				if (inner <= 0.1) continue;
 			}
 			double outer = inner + 1;
@@ -231,23 +252,23 @@ public final class DomainRenderer {
 		VertexConsumer vertices = context.consumers().getBuffer(RenderLayer.getDebugQuads());
 		for (View field : fields) {
 			float elapsed = field.elapsed + world.getTime() - receivedAt + context.tickDelta();
-			if (elapsed >= (field.active ? DomainRules.DURATION_TICKS : DomainRules.CHARGE_TICKS + 20)) continue;
+			if (elapsed >= (field.active ? field.durationTicks() : field.chargeTicks() + 20)) continue;
 			matrices.push();
 			matrices.translate(field.center.x - camera.x, field.center.y - camera.y, field.center.z - camera.z);
-			// 扩张期球壳（2006-09-21 需求）：第 10s 起从 0.75 格生长，15s 到 16/17 双壳完全体；
-			// active 后半径固定 INNER/OUTER（服务端 activate 在 300t 触发，与扩张终点无缝衔接）。
+			// 扩张期球壳（2006-09-21 需求）：第 10s 起从 0.75 格生长，15s 到双壳完全体；
+			// active 后半径固定为包内快照 inner/outer（服务端 activate 在蓄力终点触发，无缝衔接）。
 			double shellRadius = field.active
-					? DomainRules.INNER_RADIUS
-					: DomainRules.expansionRadius(Math.min(elapsed, DomainRules.CHARGE_TICKS));
+				? field.innerRadius
+				: field.expansionRadius(Math.min(elapsed, field.chargeTicks()));
 			if (field.active) {
-				sphere(vertices, matrices.peek().getPositionMatrix(), DomainRules.INNER_RADIUS);
-				sphere(vertices, matrices.peek().getPositionMatrix(), DomainRules.OUTER_RADIUS);
+				sphere(vertices, matrices.peek().getPositionMatrix(), field.innerRadius);
+				sphere(vertices, matrices.peek().getPositionMatrix(), field.outerRadius);
 			} else if (shellRadius > 0.1) {
 				sphere(vertices, matrices.peek().getPositionMatrix(), shellRadius);
 				sphere(vertices, matrices.peek().getPositionMatrix(), shellRadius + 1);
 			}
 			float alpha = field.active ? 0.9f : Math.min(1, elapsed / 12f);
-			CastingCircleRenderer.drawGround(vertices, matrices, DomainRules.INNER_RADIUS, 0.04,
+			CastingCircleRenderer.drawGround(vertices, matrices, field.innerRadius, 0.04,
 					elapsed * 0.002, alpha, MagicCircleGeometry.RED_PRIMARY);
 			if (!field.active) {
 				circle(vertices, matrices, 3, field.headHeight, elapsed * 0.013, alpha);

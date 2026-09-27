@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -40,8 +41,12 @@ public final class SpellChannelManager {
 	private static final Map<UUID, Channel> ACTIVE = new HashMap<>();
 	private static UUID clientImmobile;
 	/** 释放→起手全局间隔（GCD，2026-09-19 用户定稿 0.8s=16t）：释放生效后 16t 内拒绝新起手；
-	 * 被打断不触发（可立刻重试）。书内与 solo 卷轴统一生效（两入口同走 start()）。 */
+	 * 被打断不触发（可立刻重试）。书内与 solo 卷轴统一生效（两入口同走 start()）。
+	 * 常量为默认值；运行时从 balance 快照（systems.casting.gcd_ticks）读取。 */
 	public static final int CAST_INTERVAL_TICKS = 16;
+
+	// 平衡迁移（systems.casting）：GCD/取消保持 tick 运行时从快照读取；快照未初始化回退默认常量
+	private static final BalanceReader BAL = new BalanceReader("systems.casting");
 	/** 每玩家下次可起手时刻（游戏 tick）。 */
 	private static final Map<UUID, Long> NEXT_CAST_OK = new HashMap<>();
 	/** 轻量校准包周期（tick）：活跃期内每 20t 只发 token+elapsed+标志位，静态字段仅起手发一次。
@@ -135,6 +140,7 @@ public final class SpellChannelManager {
 	public static boolean start(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level,
 			boolean solo, int token, int mana, int cooldown, BooleanSupplier sourceValid,
 			Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse) {
+        if (!net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(player)) return false;
 		if (isCasting(player) || !player.isAlive() || player.isSpectator()) return false;
 		// 所有法术在捕获目标、创建演出、禁动或渐进扣费之前重验整次消耗。
 		// solo 卷轴按次数结算；书内施法必须有有效 JSON 消耗与足够的实际能量。
@@ -219,7 +225,7 @@ public final class SpellChannelManager {
 			stop(player, true);
 			return;
 		}
-		if (channel.cancelHeld && ++channel.cancelTicks >= 20
+		if (channel.cancelHeld && ++channel.cancelTicks >= BAL.i("cancel_hold_ticks", 20)
 				&& !channel.spell.isLockedIn(player)
 				&& SpellCastingRules.allowsSelf(channel.interruptMode)) {
 			stop(player, true);
@@ -259,7 +265,7 @@ public final class SpellChannelManager {
 		if (!channel.spell.readyToRelease(channel.player, channel.scroll) || !channel.progress.beginEffect()) return;
 		if (channel.mode == SpellCastingRules.Mode.CONTINUOUS) {
 			// 持续模式起手生效即视为释放生效，GCD 从此起算（持续阶段结束不再重置）
-			NEXT_CAST_OK.put(channel.player.getUuid(), channel.player.getWorld().getTime() + CAST_INTERVAL_TICKS);
+			NEXT_CAST_OK.put(channel.player.getUuid(), channel.player.getWorld().getTime() + BAL.i("gcd_ticks", CAST_INTERVAL_TICKS));
 			try {
 				channel.effect.accept(channel.progress.target());
 			} catch (RuntimeException exception) {
@@ -268,7 +274,7 @@ public final class SpellChannelManager {
 			}
 		} else {
 			// 释放生效（beginEffect 成功即将执行效果）：GCD 从此起算
-			NEXT_CAST_OK.put(channel.player.getUuid(), channel.player.getWorld().getTime() + CAST_INTERVAL_TICKS);
+			NEXT_CAST_OK.put(channel.player.getUuid(), channel.player.getWorld().getTime() + BAL.i("gcd_ticks", CAST_INTERVAL_TICKS));
 			stop(channel.player, false);
 			channel.effect.accept(channel.progress.target());
 		}

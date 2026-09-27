@@ -79,6 +79,8 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 
 	@Override
 	public void onUse() {
+        if (entity instanceof net.minecraft.server.network.ServerPlayerEntity syncPlayer
+                && !net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(syncPlayer)) return;
 		if (entity == null || entity.getWorld().isClient) return;
 
 		// Double check: MUST be invisible to use this

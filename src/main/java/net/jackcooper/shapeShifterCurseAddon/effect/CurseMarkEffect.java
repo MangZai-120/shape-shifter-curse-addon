@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.effect;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 
 /**
  * 诅咒标记（jackcooper，诅咒系法术）：标记期间受到的所有伤害加深（每级 +10%，L1=+20% … L5=+60%）。
@@ -23,9 +24,32 @@ public class CurseMarkEffect extends StatusEffect {
 	/** 第二段：输出削弱每级增量（L5 = -15% - 4×0.0875 = -50%，线性内插）。 */
 	public static final float OUTPUT_WEAKEN_PER_LEVEL = 0.0875f;
 
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量；供本类与 SscAddonLivingEntityMixin 共用）
+	private static final BalanceReader BAL = new BalanceReader("abilities.curse_mark");
+
+	/** 受伤加深基础幅度（balance 快照读取）。 */
+	public static float takenBase() {
+		return (float) BAL.d("taken_base", BASE_BONUS);
+	}
+
+	/** 受伤加深每级增量（balance 快照读取）。 */
+	public static float takenPerLevel() {
+		return (float) BAL.d("taken_per_level", BONUS_PER_LEVEL);
+	}
+
+	/** 输出削弱基础幅度（balance 快照读取）。 */
+	public static float outputWeakenBase() {
+		return (float) BAL.d("output_weaken_base", OUTPUT_WEAKEN_BASE);
+	}
+
+	/** 输出削弱每级增量（balance 快照读取）。 */
+	public static float outputWeakenPerLevel() {
+		return (float) BAL.d("output_weaken_per_level", OUTPUT_WEAKEN_PER_LEVEL);
+	}
+
 	/** 按等级计算总加深倍率（L1=1.2 … L5=1.6）。 */
 	public static float multiplierForLevel(int level) {
-		return 1.0f + BASE_BONUS + BONUS_PER_LEVEL * (Math.max(1, Math.min(5, level)) - 1);
+		return 1.0f + takenBase() + takenPerLevel() * (Math.max(1, Math.min(5, level)) - 1);
 	}
 
 	public CurseMarkEffect() {

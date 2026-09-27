@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -27,10 +28,14 @@ import net.minecraft.util.Identifier;
  */
 public class FrostArmorSpell extends Spell {
 
-	/** 吸收持续时间（tick）：20s。 */
+	/** 吸收持续时间（tick）：20s。默认值；运行时从 balance 快照读取。 */
 	private static final int DURATION_TICKS = 400;
 	/** amplifier 上限（防数据包写飞）。 */
 	private static final int MAX_ABSORPTION_AMPLIFIER = 4;
+
+	// 阶段 5：运行时快照读取（spells.frost_armor；快照未初始化回退上方默认常量。
+	// MAX_ABSORPTION_AMPLIFIER 为结构 clamp，不参与快照迁移）
+	private static final BalanceReader BAL = new BalanceReader("spells.frost_armor");
 
 	public FrostArmorSpell() {
 		super(new Identifier("ssc_addon", "frost_armor"), SpellRarity.BLUE);
@@ -42,7 +47,7 @@ public class FrostArmorSpell extends Spell {
 		// power<4 时 log 为负 → clamp 0。随后精确直写吸收量（max 防低级拉低已有高黄心）。
 		int amplifier = Math.max(0, Math.min(MAX_ABSORPTION_AMPLIFIER,
 				(int) Math.floor(Math.log(power / 4.0f) / Math.log(2.0))));
-		caster.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, DURATION_TICKS, amplifier));
+		caster.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, BAL.i("duration_ticks", DURATION_TICKS), amplifier));
 		caster.setAbsorptionAmount(Math.max(caster.getAbsorptionAmount(), power));
 		// 演出：寒气缠绕 + 冰晶盾碎裂音效
 		if (caster.getWorld() instanceof ServerWorld serverWorld) {

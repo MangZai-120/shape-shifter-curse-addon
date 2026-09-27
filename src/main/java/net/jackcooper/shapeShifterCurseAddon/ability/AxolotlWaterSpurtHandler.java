@@ -7,6 +7,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -28,12 +29,16 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class AxolotlWaterSpurtHandler {
 
+	// 以下均为默认值；运行时从 balance 快照读取（abilities.axolotl_water_spurt）
 	private static final int CD_TICKS = 100;   // 5 秒
 	private static final Identifier WATER_HUD = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_water");
 	private static final Identifier LAND_HUD = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_land");
 	private static final double BURST = 1.6;    // 前冲力度（水陆一致）
 	/** 陆地冲刺消耗的湿润度（air 值；参照 WaterSpearLeapManager 的 18=6%，冲刺更轻，取 12≈4%）。水下冲刺同 SSC 免费。 */
 	private static final int LAND_MOISTURE_COST = 12;
+
+	/** balance 快照读取（快照未初始化回退默认常量） */
+	private static final BalanceReader BAL = new BalanceReader("abilities.axolotl_water_spurt");
 
 	/** 客户端上报的「真正疾跑键」按住状态（区分双击 W / 游泳自动疾跑，避免误触发冲刺）。 */
 	private static final Map<UUID, Boolean> CLIENT_SPRINT = new ConcurrentHashMap<>();
@@ -97,13 +102,14 @@ public final class AxolotlWaterSpurtHandler {
 		}
 
 		boolean inWater = player.isTouchingWater();
+		int cdTicks = BAL.i("cd_ticks", CD_TICKS);
 
 		if (inWater) {
 			// ===== 水下冲刺：水里 + 按下真正疾跑键（上升沿）→ 前冲，免费（双击 W/游泳自动疾跑不触发）=====
 			if (sprintKey && !wasSprintKey && WATER_CD.getOrDefault(id, 0) <= 0) {
 				doDash(player);
-				WATER_CD.put(id, CD_TICKS);
-				PowerUtils.setResourceValueAndSync(player, WATER_HUD, CD_TICKS);
+				WATER_CD.put(id, cdTicks);
+				PowerUtils.setResourceValueAndSync(player, WATER_HUD, cdTicks);
 			}
 			// 水里只响应疾跑键分支，隔离陆地潜行逻辑
 			return;
@@ -111,20 +117,22 @@ public final class AxolotlWaterSpurtHandler {
 
 		// ===== 陆地冲刺：陆地 + 按住真正疾跑键时按潜行（sneak 上升沿）→ 前冲，消耗湿润度 =====
 		if (sneaking && !wasSneaking && sprintKey && LAND_CD.getOrDefault(id, 0) <= 0) {
-			if (player.getAir() < LAND_MOISTURE_COST) {
+			int landCost = BAL.i("land_moisture_cost", LAND_MOISTURE_COST);
+			if (player.getAir() < landCost) {
 				return; // 湿润度不足，不触发
 			}
-			player.setAir(player.getAir() - LAND_MOISTURE_COST);
+			player.setAir(player.getAir() - landCost);
 			doDash(player);
-			LAND_CD.put(id, CD_TICKS);
-			PowerUtils.setResourceValueAndSync(player, LAND_HUD, CD_TICKS);
+			LAND_CD.put(id, cdTicks);
+			PowerUtils.setResourceValueAndSync(player, LAND_HUD, cdTicks);
 		}
 	}
 
 	/** 沿视线前冲一次（水陆一致的位移与视听反馈）。 */
 	private static void doDash(ServerPlayerEntity player) {
 		Vec3d look = player.getRotationVector();
-		player.addVelocity(look.x * BURST, look.y * BURST, look.z * BURST);
+		double burst = BAL.d("burst", BURST);
+		player.addVelocity(look.x * burst, look.y * burst, look.z * burst);
 		player.velocityModified = true;
 
 		ServerWorld sw = (ServerWorld) player.getWorld();

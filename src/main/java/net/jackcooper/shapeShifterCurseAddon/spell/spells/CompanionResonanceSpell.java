@@ -1,6 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
 import net.jackcooper.shapeShifterCurseAddon.ability.CompanionResonanceManager;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.LunarSpiritEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
@@ -34,12 +35,15 @@ import java.util.List;
  */
 public class CompanionResonanceSpell extends Spell {
 
-	/** 增益半径（格）。 */
+	/** 增益半径（格）默认；运行时从 balance 快照读取。 */
 	private static final double RADIUS = 8.0;
-	/** 基础时长（tick）：30s。 */
+	/** 基础时长（tick）默认：30s；运行时从 balance 快照读取。 */
 	private static final int BASE_DURATION_TICKS = 600;
-	/** 每级增加的时长（tick）：10s。 */
+	/** 每级增加的时长（tick）默认：10s；运行时从 balance 快照读取。 */
 	private static final int DURATION_PER_LEVEL = 200;
+
+	// 阶段 5：服务端权威快照读取（spells.companion_resonance；快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("spells.companion_resonance");
 
 	public CompanionResonanceSpell() {
 		super(new Identifier("ssc_addon", "companion_resonance"), SpellRarity.WHITE);
@@ -55,15 +59,17 @@ public class CompanionResonanceSpell extends Spell {
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
-		int duration = BASE_DURATION_TICKS + (level - 1) * DURATION_PER_LEVEL;
+		int duration = BAL.i("base_duration_ticks", BASE_DURATION_TICKS)
+				+ (level - 1) * BAL.i("duration_per_level", DURATION_PER_LEVEL);
 		// 状态效果等级：迅捷每两级 +1（L1=0、L3=1、L5=2）；抗性 L3 起每两级 +1（L3=0、L5=1）
 		int speedAmplifier = (level - 1) / 2;
 		int resistanceAmplifier = level >= 3 ? (level - 3) / 2 : -1; // -1 = 不加抗性
+		double radius = BAL.d("radius", RADIUS); // 同方法多处使用，读一次局部化
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
-				caster.getBoundingBox().expand(RADIUS), e -> e != caster && e.isAlive());
+				caster.getBoundingBox().expand(radius), e -> e != caster && e.isAlive());
 		int buffed = 0;
 		for (LivingEntity target : targets) {
-			if (target.distanceTo(caster) > RADIUS) {
+			if (target.distanceTo(caster) > radius) {
 				continue;
 			}
 			// 目标筛选：自己的驯服宠物 或 自己的召唤物（月灵）

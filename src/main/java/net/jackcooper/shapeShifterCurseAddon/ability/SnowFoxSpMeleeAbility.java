@@ -30,11 +30,15 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SnowFoxSpMeleeAbility {
 
 	private static final ConcurrentHashMap<UUID, DashingPlayerData> DASHING_PLAYERS = new ConcurrentHashMap<>();
-	private static final double DASH_DISTANCE = 8.0;
+	private static final double DASH_DISTANCE = 8.0;   // 默认；balance 可覆盖（abilities.snow_fox_sp_melee）
 	private static final double DASH_SPEED = 1.5;
 	private static final float DAMAGE = 8.0f;
 	private static final int FROST_FREEZE_DURATION = 60;
 	private static final int MANA_COST = 15;
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
+			new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.snow_fox_sp_melee");
 	// ==== NEW CODE: 使用FormIdentifiers ====
 	private static final Identifier REGEN_COOLDOWN_ID = FormIdentifiers.SNOW_FOX_REGEN_COOLDOWN;
 
@@ -47,7 +51,7 @@ public class SnowFoxSpMeleeAbility {
 	 */
 	public static boolean execute(ServerPlayerEntity player) {
 		if (!net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.consume(player,
-				net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX, MANA_COST)) {
+				net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX, BAL.i("mana_cost", MANA_COST))) {
 			// 法力不足提示音仅施法者自己听（player.playSound 在服务端会排除自己，故改为定向发包）
 			net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkManager.playSoundToPlayer(
 					player, SoundEvents.BLOCK_FIRE_EXTINGUISH, 0.5f, 1.0f);
@@ -79,18 +83,18 @@ public class SnowFoxSpMeleeAbility {
 		DashingPlayerData data = DASHING_PLAYERS.get(player.getUuid());
 		if (data == null) return;
 
-		double distanceMoved = data.ticksElapsed * DASH_SPEED;
+		double distanceMoved = data.ticksElapsed * BAL.d("dash_speed", DASH_SPEED);
 
 		// 不要检查 verticalCollision：踩在地面时 vanilla Entity.move 会基于"重力让 movement.y=-0.08
 		// 但被地面阻挡到 0，movement.y != vec3d.y"恒置 verticalCollision=true，导致站立触发的 dash
 		// 在第一 tick 就被这里 return 掉，setVelocity 一次都没执行，玩家原地不动也碰不到敌人。
 		// 水平撞墙才需要终止 dash，所以只看 horizontalCollision。
-		if (distanceMoved >= DASH_DISTANCE || player.horizontalCollision) {
+		if (distanceMoved >= BAL.d("dash_distance", DASH_DISTANCE) || player.horizontalCollision) {
 			DASHING_PLAYERS.remove(player.getUuid());
 			return;
 		}
 
-		Vec3d velocity = data.direction.multiply(DASH_SPEED);
+		Vec3d velocity = data.direction.multiply(BAL.d("dash_speed", DASH_SPEED));
 		player.setVelocity(velocity);
 		player.velocityModified = true;
 		// 关键（多人/客机修复）：玩家移动是客户端权威，单靠 velocityModified 不保证把"自身速度"
@@ -114,11 +118,11 @@ public class SnowFoxSpMeleeAbility {
 				data.hitEntities.add(entity.getUuid());
 
 				DamageSource source = player.getDamageSources().playerAttack(player);
-				target.damage(source, DAMAGE);
+				target.damage(source, (float) BAL.d("damage", DAMAGE));
 
 				target.addStatusEffect(new StatusEffectInstance(
 						SscAddon.FROST_FREEZE,
-						FROST_FREEZE_DURATION,
+						BAL.i("freeze_ticks", FROST_FREEZE_DURATION),
 						0,
 						false,
 						true,

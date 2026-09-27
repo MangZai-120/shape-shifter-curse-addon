@@ -7,24 +7,81 @@ import java.util.function.Predicate;
 
 public final class DomainRules {
 	private static final double BOUNDARY_EPSILON = 1.0e-9;
+	/** 默认蓄力时长（15s）；运行时从 balance 快照读取（systems.domain.charge_ticks）。 */
 	public static final int CHARGE_TICKS = 300;
+	/** 默认完全体持续时长（40s）；运行时从 balance 快照读取（systems.domain.duration_ticks）。 */
 	public static final int DURATION_TICKS = 800;
+	/** 默认内层半径（格）；运行时从 balance 快照读取（systems.domain.inner_radius）。 */
 	public static final double INNER_RADIUS = 16;
+	/** 默认外层半径（格）；运行时从 balance 快照读取（systems.domain.outer_radius）。 */
 	public static final double OUTER_RADIUS = 17;
+	/** 默认蓄力期最大位移（格）；运行时从 balance 快照读取（systems.domain.max_cast_displacement）。 */
 	public static final double MAX_CAST_DISPLACEMENT = 3;
+	/** 音效广播范围（格）：schema 未登记 domain 的 sound_range，保持纯常量不迁移。 */
 	public static final double SOUND_RANGE = 64;
-	/** 扩张起点：蓄力第 200t（10s）球壳开始从极小半径生长。 */
+	/** 扩张起点：默认蓄力第 200t（10s）球壳开始从极小半径生长；运行时从 balance 快照读取（systems.domain.expand_start_tick）。 */
 	public static final int EXPAND_START_TICK = 200;
-	/** 扩张时长：200t→300t（10s→15s）共 100t，300t 时恰好到完整半径。 */
+	/** 扩张时长：默认 200t→300t（10s→15s）共 100t，300t 时恰好到完整半径；运行时从 balance 快照读取（systems.domain.expand_duration_ticks）。 */
 	public static final int EXPAND_DURATION_TICKS = 100;
 
 	private DomainRules() {}
 
+	// ==== balance 快照读取（systems.domain，双端同源）：物理客户端读 clientSnapshot 镜像，
+	// 否则读服务端权威快照，缺快照回退默认常量（测试环境无 Fabric/快照 → 默认值，与原行为一致）。 ====
+
+	private static double balD(String param, double def) {
+		boolean physicalClient = false;
+		try { physicalClient = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isClientThread(); } catch (Throwable ignored) {}
+		if (physicalClient) {
+			var cs = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
+			if (cs != null) return cs.getDouble("systems.domain", param);
+		}
+		var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot();
+		return s == null ? def : s.getDouble("systems.domain", param);
+	}
+
+	private static int balI(String param, int def) {
+		boolean physicalClient = false;
+		try { physicalClient = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isClientThread(); } catch (Throwable ignored) {}
+		if (physicalClient) {
+			var cs = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
+			if (cs != null) return (int) cs.getInt("systems.domain", param);
+		}
+		var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot();
+		return s == null ? def : (int) s.getInt("systems.domain", param);
+	}
+
+	/** 内层半径（双端一致）。 */
+	public static double innerRadius() { return balD("inner_radius", INNER_RADIUS); }
+
+	/** 外层半径（双端一致）。 */
+	public static double outerRadius() { return balD("outer_radius", OUTER_RADIUS); }
+
+	/** 蓄力时长 tick（双端一致）。 */
+	public static int chargeTicks() { return balI("charge_ticks", CHARGE_TICKS); }
+
+	/** 完全体持续时长 tick（双端一致）。 */
+	public static int durationTicks() { return balI("duration_ticks", DURATION_TICKS); }
+
+	/** 扩张起点 tick（双端一致）。 */
+	public static int expandStartTick() { return balI("expand_start_tick", EXPAND_START_TICK); }
+
+	/** 扩张时长 tick（双端一致）。 */
+	public static int expandDurationTicks() { return balI("expand_duration_ticks", EXPAND_DURATION_TICKS); }
+
+	/** 蓄力期最大位移（双端一致）。 */
+	public static double maxCastDisplacement() { return balD("max_cast_displacement", MAX_CAST_DISPLACEMENT); }
+
 	public static float soundVolume(double distance) {
+		return soundVolume(distance, innerRadius(), outerRadius());
+	}
+
+	/** 起手快照版：半径由 Field 快照/网络包传入（2026-09-27，双端几何同源）。 */
+	public static float soundVolume(double distance, double inner, double outer) {
 		if (!Double.isFinite(distance) || distance >= SOUND_RANGE) return 0;
-		if (distance <= INNER_RADIUS) return (float) (1.0 - 0.2 * Math.max(0, distance) / INNER_RADIUS);
-		if (distance <= OUTER_RADIUS) return 0.8f;
-		return (float) (0.8 * (SOUND_RANGE - distance) / (SOUND_RANGE - OUTER_RADIUS));
+		if (distance <= inner) return (float) (1.0 - 0.2 * Math.max(0, distance) / inner);
+		if (distance <= outer) return 0.8f;
+		return (float) (0.8 * (SOUND_RANGE - distance) / (SOUND_RANGE - outer));
 	}
 
 	public static boolean separates(Vec3d from, Vec3d to, double radius) {
@@ -34,12 +91,19 @@ public final class DomainRules {
 	/**
 	 * 蓄力扩张半径（2006-09-21 需求）：蓄力第 10 秒起球壳从极小（0.75 格，仅容纳施法者）
 	 * 以三次缓出曲线生长，第 15 秒到达 INNER_RADIUS 完整体。10 秒前为 0（未成壳）。
+	 * 无参版本读当前 balance 快照（起手前判定用）；领域会话内请用带快照参数的
+	 * {@link #expansionRadius(double, int, int, int, double)}（reload 不影响已展开领域）。
 	 */
 	public static double expansionRadius(double chargeElapsed) {
-		if (chargeElapsed < EXPAND_START_TICK) return 0;
-		if (chargeElapsed >= CHARGE_TICKS) return INNER_RADIUS;
-		double progress = (chargeElapsed - EXPAND_START_TICK) / EXPAND_DURATION_TICKS;
-		return 0.75 + (INNER_RADIUS - 0.75) * (1 - Math.pow(1 - progress, 3));
+		return expansionRadius(chargeElapsed, expandStartTick(), chargeTicks(), expandDurationTicks(), innerRadius());
+	}
+
+	/** 起手快照版：曲线参数由 Field 快照传入（2026-09-27 审计修复，服务端结算与客户端包值同源）。 */
+	public static double expansionRadius(double chargeElapsed, int expandStart, int charge, int expandDuration, double inner) {
+		if (chargeElapsed < expandStart) return 0;
+		if (chargeElapsed >= charge) return inner;
+		double progress = (chargeElapsed - expandStart) / (double) expandDuration;
+		return 0.75 + (inner - 0.75) * (1 - Math.pow(1 - progress, 3));
 	}
 
 	/**
@@ -82,12 +146,18 @@ public final class DomainRules {
 		return tangential.add(normal.multiply(limitedRadial));
 	}
 
-	public record Shell(Vec3d center, double radius, boolean complete) {
+	public record Shell(Vec3d center, double radius, double outerRadius, boolean complete) {
+		/** 兼容构造（测试/未接入快照链路的旧调用点）：outer 读当前 balance，主链路请用 4 参构造传快照。
+		 *  ⚠ record 附加构造器首句必须 this(...)：读值须在调用前完成，且用类名限定避免与组件名遮蔽。 */
+		public Shell(Vec3d center, double radius, boolean complete) {
+			this(center, radius, DomainRules.outerRadius(), complete);
+		}
+
 		public boolean blocks(Vec3d from, Vec3d movement, double padding) {
 			Vec3d start = from.subtract(center);
 			Vec3d end = start.add(movement);
 			return complete
-					? crosses(start.x, start.y, start.z, end.x, end.y, end.z, padding)
+					? crosses(start.x, start.y, start.z, end.x, end.y, end.z, padding, radius, outerRadius)
 					: crossesOutward(start.x, start.y, start.z, end.x, end.y, end.z, radius);
 		}
 
@@ -163,14 +233,21 @@ public final class DomainRules {
 
 	public static boolean crosses(double startX, double startY, double startZ,
 	                              double endX, double endY, double endZ, double padding) {
-		double inner = Math.max(0.1, INNER_RADIUS - padding);
-		double outer = OUTER_RADIUS + padding;
+		return crosses(startX, startY, startZ, endX, endY, endZ, padding, innerRadius(), outerRadius());
+	}
+
+	/** 起手快照版：内外层半径由 Field 快照传入（2026-09-27 审计修复，服务端结算与客户端包值同源）。 */
+	public static boolean crosses(double startX, double startY, double startZ,
+	                              double endX, double endY, double endZ, double padding,
+	                              double innerR, double outerR) {
+		double inner = Math.max(0.1, innerR - padding);
+		double outer = outerR + padding;
 		double startSquared = startX * startX + startY * startY + startZ * startZ;
 		double endSquared = endX * endX + endY * endY + endZ * endZ;
 		// 终点容差与下一步起点分类必须相同，否则一步极小越界后会被当成壳外实体放行。
 		// 贴内墙时容差锚定在实际半径，不能用每步略微外移后的起点继续向外累积。
-		if (startSquared <= INNER_RADIUS * INNER_RADIUS + BOUNDARY_EPSILON) {
-			return endSquared > Math.max(inner * inner, Math.min(INNER_RADIUS * INNER_RADIUS, startSquared)) + BOUNDARY_EPSILON;
+		if (startSquared <= innerR * innerR + BOUNDARY_EPSILON) {
+			return endSquared > Math.max(inner * inner, Math.min(innerR * innerR, startSquared)) + BOUNDARY_EPSILON;
 		}
 		double deltaX = endX - startX;
 		double deltaY = endY - startY;

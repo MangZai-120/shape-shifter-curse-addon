@@ -32,6 +32,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager;
 
@@ -86,6 +87,10 @@ public class FrostThornEntity extends ProjectileEntity {
 	private static final double ENHANCED_CONVERGE_DONE = 0.1;
 	private static final int FLIGHT_SOUND_INTERVAL = 7;  // 飞行中每 7 tick 播一次高速划破空气音（连续呼啸）
 
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）；物理插值（GRAVITY/CONVERGE 系列）与
+	// 环绕摆位（HOVER_*/SLOT_*/MAX_THORN_TURN）不在 schema，保持常量直读
+	private static final BalanceReader BAL = new BalanceReader("abilities.frost_thorn");
+
 	// ===== 环绕几何（锺点参照雪狐 FeralBody 胸部方块：背部竖直面 150° 开屏，服务端 / 客户端共用一套计算） =====
 	private static final double HOVER_RADIUS = 0.7;
 	private static final double HOVER_HEIGHT = 0.45;
@@ -103,7 +108,7 @@ public class FrostThornEntity extends ProjectileEntity {
 	private Vec3d rayOrigin;              // 发射瞬间的准星射线起点（玩家眼睛）
 	private Vec3d rayDir;                 // 发射瞬间的准星射线方向（归一化）
 	private boolean converging = false;   // 是否处于向准星射线靠拢阶段
-	private double enhancedSpeed = SPEED; // 凝棘强化冰锥飞行速度（converging 靠拢/直飞共用）
+	private double enhancedSpeed = BAL.d("speed", SPEED); // 凝棘强化冰锥飞行速度（converging 靠拢/直飞共用；真正发射时在 launchEnhanced 重读快照）
 
 	public FrostThornEntity(EntityType<? extends FrostThornEntity> type, World world) {
 		super(type, world);
@@ -234,7 +239,7 @@ public class FrostThornEntity extends ProjectileEntity {
 		this.rayOrigin = rayOrigin;
 		this.rayDir = rayDir.normalize();
 		this.converging = true;
-		Vec3d v = this.rayDir.multiply(SPEED);
+		Vec3d v = this.rayDir.multiply(BAL.d("speed", SPEED));
 		this.setVelocity(v.x, v.y, v.z);
 		this.dataTracker.set(VEL_X, (float) v.x);
 		this.dataTracker.set(VEL_Y, (float) v.y);
@@ -252,7 +257,7 @@ public class FrostThornEntity extends ProjectileEntity {
 		this.rayOrigin = rayOrigin;
 		this.rayDir = rayDir.normalize();
 		this.converging = true;   // 发射即垂足靠拢并入准星中线（横向位置偏差收敛到 CONVERGE_DONE 后沿准星线直飞）
-		this.enhancedSpeed = SPEED * (1.0 + 0.5 * level); // 每消耗一个冰锥 +50% 飞行速度（基础 16 格/s）
+		this.enhancedSpeed = BAL.d("speed", SPEED) * (1.0 + 0.5 * level); // 每消耗一个冰锥 +50% 飞行速度（基础 16 格/s）
 		Vec3d v = dir.normalize().multiply(this.enhancedSpeed);
 		this.setVelocity(v.x, v.y, v.z);
 		this.dataTracker.set(VEL_X, (float) v.x);
@@ -323,7 +328,7 @@ public class FrostThornEntity extends ProjectileEntity {
 		if (getState() == STATE_HOVER) {
 			hoverTicks++;
 			updateStage();
-			if (hoverTicks > MAX_HOVER_TICKS) { shatter(); return; } // 存在时间到期
+			if (hoverTicks > BAL.i("max_hover_ticks", MAX_HOVER_TICKS)) { shatter(); return; } // 存在时间到期
 			// 重进游戏自找回：ProjectileEntity 的 owner 不写 NBT、管理器静态状态也不持久化，
 			// 重载后环绕冰锥成孤儿——用 OWNER_UUID 找回主人并重新挂进管理器（幂等，已认领则跳过）
 			FrostSpikeManager.adopt(this);
@@ -339,6 +344,9 @@ public class FrostThornEntity extends ProjectileEntity {
 
 	private void tickFly() {
 		flyTicks++;
+		// 阶段 5：同函数多次读取局部变量化
+		double speed = BAL.d("speed", SPEED);
+		int enhancedMaxFlyTicks = BAL.i("enhanced_max_fly_ticks", ENHANCED_MAX_FLY_TICKS);
 		// 凝棘强化冰锥：从法阵中央弯曲汇入准星射线（同主技能），汇入后直飞（无下坠、无距离销毁），10 秒后消失；飞行中持续播高速划破空气音
 		if (getLevel() > 0) {
 			HitResult ehit = ProjectileUtil.getCollision(this, this::canHit);
@@ -381,7 +389,7 @@ public class FrostThornEntity extends ProjectileEntity {
 					}
 				}
 			}
-			if (flyTicks > ENHANCED_MAX_FLY_TICKS) { this.discard(); }
+			if (flyTicks > enhancedMaxFlyTicks) { this.discard(); }
 			return;
 		}
 		// 碰撞判定仅服务端、移动前扫掠整段路径（高速不漏怪）
@@ -390,6 +398,10 @@ public class FrostThornEntity extends ProjectileEntity {
 			this.onCollision(hit);
 			if (this.isRemoved()) return;
 		}
+		// 普通直飞分支参数（同函数多次读取局部变量化）
+		double straightDist = BAL.d("straight_dist", STRAIGHT_DIST);
+		double maxFlyDist = BAL.d("max_fly_dist", MAX_FLY_DIST);
+		int maxFlyTicks = BAL.i("max_fly_ticks", MAX_FLY_TICKS);
 		Vec3d v = this.getVelocity();
 		if (converging && rayDir != null) {
 			// 向发射瞬间的准星射线自然靠拢：速度方向 = 射线方向 + 指向射线垂足的横向分量（随靠近而减小）
@@ -400,11 +412,11 @@ public class FrostThornEntity extends ProjectileEntity {
 			if (lateral.length() < CONVERGE_DONE) {
 				// 已汇入射线 → 转直飞，从此点重新起算 16 格直线
 				converging = false;
-				v = rayDir.multiply(SPEED);
+				v = rayDir.multiply(speed);
 				this.flyStart = pos;
 			} else {
 				Vec3d dir = rayDir.add(lateral.normalize().multiply(CONVERGE)).normalize();
-				v = dir.multiply(SPEED);
+				v = dir.multiply(speed);
 			}
 			this.setVelocity(v);
 			this.dataTracker.set(VEL_X, (float) v.x);
@@ -412,7 +424,7 @@ public class FrostThornEntity extends ProjectileEntity {
 			this.dataTracker.set(VEL_Z, (float) v.z);
 		} else {
 			// 直飞：16 格后逐 tick 下坠
-			if (flyStart != null && this.squaredDistanceTo(flyStart) > STRAIGHT_DIST * STRAIGHT_DIST) {
+			if (flyStart != null && this.squaredDistanceTo(flyStart) > straightDist * straightDist) {
 				v = new Vec3d(v.x, v.y - GRAVITY, v.z);
 				this.setVelocity(v);
 				this.dataTracker.set(VEL_Y, (float) v.y);
@@ -424,8 +436,8 @@ public class FrostThornEntity extends ProjectileEntity {
 		if (this.getWorld() instanceof ServerWorld sw) {
 			sw.spawnParticles(ParticleTypes.SNOWFLAKE, getX(), getY(), getZ(), 2, 0.05, 0.05, 0.05, 0.0);
 		}
-		if (flyStart != null && this.squaredDistanceTo(flyStart) > MAX_FLY_DIST * MAX_FLY_DIST) { this.discard(); return; }
-		if (flyTicks > MAX_FLY_TICKS) { this.discard(); }
+		if (flyStart != null && this.squaredDistanceTo(flyStart) > maxFlyDist * maxFlyDist) { this.discard(); return; }
+		if (flyTicks > maxFlyTicks) { this.discard(); }
 	}
 
 	@Override
@@ -438,7 +450,9 @@ public class FrostThornEntity extends ProjectileEntity {
 			boolean protectedTarget = this.getOwner() instanceof ServerPlayerEntity op
 					&& WhitelistUtils.isProtected(op, living);
 			if (!protectedTarget) {
-				float dmg = getLevel() > 0 ? ENHANCED_BASE_DAMAGE * (1 + getLevel()) : DAMAGE;
+				float dmg = getLevel() > 0
+						? (float) BAL.d("enhanced_base_damage", ENHANCED_BASE_DAMAGE) * (1 + getLevel())
+						: (float) BAL.d("damage", DAMAGE);
 				// 寒棘项圈：普通冰锥（主技能）伤害 ×50% + 真正命中敌人时立刻免费回补 1 根环绕冰锥；
 				// 强化冰锥（次技能）不受项圈影响
 				if (this.getOwner() instanceof ServerPlayerEntity op

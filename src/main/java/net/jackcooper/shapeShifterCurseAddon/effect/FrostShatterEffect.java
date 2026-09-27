@@ -9,6 +9,7 @@ import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 
 import java.util.UUID;
 
@@ -29,6 +30,9 @@ public class FrostShatterEffect extends StatusEffect {
 	/** 护甲减半。 */
 	private static final double ARMOR_REDUCTION = -0.5;
 
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.frost_shatter");
+
 	public FrostShatterEffect() {
 		super(StatusEffectCategory.HARMFUL, 0x9FD8EF); // 浅冰蓝（比霜冻略淡）
 	}
@@ -43,7 +47,7 @@ public class FrostShatterEffect extends StatusEffect {
 			armorAttr.addTemporaryModifier(new EntityAttributeModifier(
 					ARMOR_MODIFIER_UUID,
 					ARMOR_MODIFIER_NAME,
-					ARMOR_REDUCTION,
+					BAL.d("armor_reduction", ARMOR_REDUCTION),
 					EntityAttributeModifier.Operation.MULTIPLY_TOTAL
 			));
 		}

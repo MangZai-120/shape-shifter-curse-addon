@@ -188,6 +188,11 @@ public class SscAddonNetworking {
 	 * 仅包技能触发类包；施法系统自身的 cast/select/release 包不走此处（防自咬尾巴）。
 	 */
 	private static void runSkillAction(ServerPlayerEntity player, Runnable action) {
+        if (!net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(player)) return;
+        runSkillCleanup(player, action);
+    }
+
+    private static void runSkillCleanup(ServerPlayerEntity player, Runnable action) {
 		net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.cancelSelf(player);
 		action.run();
 	}
@@ -435,7 +440,7 @@ public class SscAddonNetworking {
 			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.start(player)));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_VORTEX_RELEASE, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.release(player)));
+			server.execute(() -> runSkillCleanup(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.release(player)));
 		});
 
 		// SSCA 月尘魔法书 - 施法 / 切换选中槽
@@ -540,11 +545,11 @@ public class SscAddonNetworking {
 			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.startFlat(player)));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_CHARGE_RELEASE, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.release(player)));
+			server.execute(() -> runSkillCleanup(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.release(player)));
 		});
 		// SSCA 月织蛛二段跳 - 空中按跳跃键触发（跳跃由客户端原版 jump() 完成，此处仅广播音效粒子）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_DOUBLE_JUMP, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverDoubleJumpManager.onDoubleJump(player));
+			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverDoubleJumpManager.onDoubleJump(player)));
 		});
 		// SSCA 月织蛛蛛丝荡漾 - 次键按下（发射 / 断丝切换）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_SWING_PRESS, (server, player, handler, buf, responseSender) -> {
@@ -554,7 +559,7 @@ public class SscAddonNetworking {
 			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.startCharge(player)));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FROST_SPIKE_CHARGE_RELEASE, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.stopCharge(player)));
+			server.execute(() -> runSkillCleanup(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.stopCharge(player)));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FROST_SPIKE_FIRE, (server, player, handler, buf, responseSender) -> {
 			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.fire(player)));
@@ -571,7 +576,7 @@ public class SscAddonNetworking {
 			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.startCharge(player)));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_JUMP_KILL_CHARGE_RELEASE, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.release(player)));
+			server.execute(() -> runSkillCleanup(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.release(player)));
 		});
 		// SSCA 跳蛛毒液（次技能） - 按下触发
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_VENOM_SKILL_PRESS, (server, player, handler, buf, responseSender) -> {
@@ -601,12 +606,15 @@ public class SscAddonNetworking {
 		// 风灵「疾风连爪」：客户端上报左键按住状态
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_CLAW_HOLD, (server, player, handler, buf, responseSender) -> {
 			boolean hold = buf.readBoolean();
-			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.WindSpiritClawManager.setHolding(player, hold));
+			server.execute(() -> {
+                if (!hold || net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(player))
+                    net.jackcooper.shapeShifterCurseAddon.ability.WindSpiritClawManager.setHolding(player, hold);
+            });
 		});
 
 		// 风灵副技能：sp_secondary 触发 +50% 增伤 buff
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_CLAW_BUFF, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.WindSpiritClawManager.activateSecondaryBuff(player));
+			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.WindSpiritClawManager.activateSecondaryBuff(player)));
 		});
 
 		// 风灵「风之冲刺」：主技能键（服务端按当前阶段分支：起飞 / 悬浮中冲刺）

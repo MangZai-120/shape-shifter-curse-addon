@@ -21,6 +21,7 @@ import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.mana.ManaComponent;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
@@ -56,7 +57,25 @@ public final class MancianimaTeleport {
 	/** sp_mana_regen 的暂停计时子资源（apoli:multiple 子键 → power_id + "_" + sub_key） */
 	private static final net.minecraft.util.Identifier MANA_REGEN_PAUSE_RES =
 			new net.minecraft.util.Identifier("my_addon", "form_familiar_fox_sp_mana_regen_regen_pause_timer");
+	// 阶段 5：运行时快照读取（abilities.mancianima_teleport；快照未初始化回退默认常量）。
+	// MANA_COST=5 与 RED_LINK_CD_TICKS=200 被 client/hud/SkillHudCatalog 引用——HUD 是展示阈值，
+	// 那两处保持常量引用不改；服务端消费一律走 BAL。
+	private static final BalanceReader BAL = new BalanceReader("abilities.mancianima_teleport");
 
+	/** 传送最大距离（双端一致）：客户端预览（computePlatformLanding）与服务端执行共用。
+	 *  客户端读客户端镜像快照，服务端读权威快照（同 MeteorSpell.maxRange 模式）。 */
+	private static double maxRange() {
+		if (net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isClientThread()) {
+			var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
+			if (s != null) return s.getDouble("abilities.mancianima_teleport", "max_range");
+		}
+		return BAL.d("max_range", MAX_RANGE);
+	}
+
+	/** 联动失败 CD（运行时快照读取，供 MancianimaMarkManager 等服务端类共用） */
+	public static int redFailCdTicks() {
+		return BAL.i("red_fail_cd_ticks", RED_FAIL_CD_TICKS);
+	}
 	private MancianimaTeleport() {
 	}
 
@@ -75,19 +94,20 @@ public final class MancianimaTeleport {
 				player.sendMessage(Text.translatable("message.ssc_addon.mancianima.teleport.link_locked", sec), true);
 				return false;
 			}
-			if (net.onixary.shapeShifterCurseFabric.mana.ManaUtils.getPlayerMana(player) < RED_MARK_MANA_COST) {
+			if (net.onixary.shapeShifterCurseFabric.mana.ManaUtils.getPlayerMana(player) < BAL.i("red_mark_mana_cost", RED_MARK_MANA_COST)) {
 				player.sendMessage(Text.translatable("message.ssc_addon.mancianima.teleport.no_mana"), true);
 				return false;
 			}
 			if (MancianimaMarkManager.CHANNELING.containsKey(player.getUuid())) return false;
 			long now = ((ServerWorld) player.getWorld()).getTime();
 			MancianimaMarkManager.CHANNELING.put(player.getUuid(),
-					new MancianimaMarkManager.ChannelState(redTarget.getUuid(), now + RED_MARK_CHANNEL_TICKS, 2));
+					new MancianimaMarkManager.ChannelState(redTarget.getUuid(), now + BAL.i("red_mark_channel_ticks", RED_MARK_CHANNEL_TICKS), 2));
 			player.sendMessage(Text.translatable("message.ssc_addon.mancianima.teleport.channeling"), true);
 			return true;
 		}
 
-		if (ManaUtils.getPlayerMana(player) < MANA_COST) {
+		int manaCost = BAL.i("mana_cost", MANA_COST);
+		if (ManaUtils.getPlayerMana(player) < manaCost) {
 			player.sendMessage(Text.translatable("message.ssc_addon.mancianima.teleport.no_mana"), true);
 			return false;
 		}
@@ -143,11 +163,11 @@ public final class MancianimaTeleport {
 		// 扣除法力 + 设置CD
 		ManaComponent mana = ManaUtils.getManaComponent(player);
 		if (mana != null) {
-			mana.setMana(Math.max(0.0, mana.getMana() - MANA_COST));
+			mana.setMana(Math.max(0.0, mana.getMana() - manaCost));
 		}
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, COOLDOWN_TICKS);
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, BAL.i("cooldown_ticks", COOLDOWN_TICKS));
 		// 传送后冻结自然回蓝 3 秒（不影响主动回蓝技能/消耗）
-		PowerUtils.setResourceValueAndSync(player, MANA_REGEN_PAUSE_RES, MANA_REGEN_PAUSE_TICKS);
+		PowerUtils.setResourceValueAndSync(player, MANA_REGEN_PAUSE_RES, BAL.i("mana_regen_pause_ticks", MANA_REGEN_PAUSE_TICKS));
 		return true;
 	}
 
@@ -162,7 +182,7 @@ public final class MancianimaTeleport {
 		if (m == null || m.color != MancianimaMarkManager.MarkColor.RED) return null;
 		Vec3d eye = player.getEyePos();
 		Vec3d look = player.getRotationVector().normalize();
-		Vec3d end = eye.add(look.multiply(RED_MARK_TARGET_RANGE));
+		Vec3d end = eye.add(look.multiply(BAL.d("red_mark_target_range", RED_MARK_TARGET_RANGE)));
 		ServerWorld world = (ServerWorld) player.getWorld();
 		net.minecraft.util.math.Box searchBox = new net.minecraft.util.math.Box(eye, end).expand(2.0);
 		double bestDist = Double.MAX_VALUE;
@@ -185,12 +205,12 @@ public final class MancianimaTeleport {
 	public static void executeRedMarkChannelComplete(ServerPlayerEntity marker, net.minecraft.entity.LivingEntity target) {
 		if (target == null || !target.isAlive()
 				|| net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(marker, target)) {
-			PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_SECONDARY_CD, RED_FAIL_CD_TICKS);
+			PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_SECONDARY_CD, redFailCdTicks());
 			return;
 		}
 		// 扣 mana
 		ManaComponent mana = ManaUtils.getManaComponent(marker);
-		if (mana != null) mana.setMana(Math.max(0.0, mana.getMana() - RED_MARK_MANA_COST));
+		if (mana != null) mana.setMana(Math.max(0.0, mana.getMana() - BAL.i("red_mark_mana_cost", RED_MARK_MANA_COST)));
 		ServerWorld world = (ServerWorld) marker.getWorld();
 		// 计算落点：目标身后1格地面
 		Vec3d targetPos = target.getPos();
@@ -216,16 +236,16 @@ public final class MancianimaTeleport {
 				40, 0.3, 0.8, 0.3, 0.6);
 		// 50% 缺失血伤害（上限35），无视护甲（用 OUT_OF_WORLD）
 		float missing = target.getMaxHealth() - target.getHealth();
-		float dmg = (float) Math.max(RED_MARK_DAMAGE_MIN, Math.min(RED_MARK_DAMAGE_CAP, missing * RED_MARK_DAMAGE_PERCENT));
+		float dmg = (float) Math.max(BAL.d("red_mark_damage_min", RED_MARK_DAMAGE_MIN), Math.min(BAL.d("red_mark_damage_cap", RED_MARK_DAMAGE_CAP), missing * BAL.d("red_mark_damage_percent", RED_MARK_DAMAGE_PERCENT)));
 		boolean wasAlive = target.isAlive();
 		target.damage(world.getDamageSources().playerAttack(marker), dmg);
 		// 广播暴击音效
 		world.playSound(null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, SoundCategory.PLAYERS, 1.0f, 1.0f);
 		// 设置 CD + 暂停回蓝：普通闪现只进 3.5s 常规 CD；联动攻击进独立的 10s 联动 CD（期间可普通闪现、不可再联动）
-		PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_SECONDARY_CD, COOLDOWN_TICKS);
-		PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.MANCIANIMA_LINK_CD, RED_LINK_CD_TICKS);
-		PowerUtils.setResourceValueAndSync(marker, MANA_REGEN_PAUSE_RES, MANA_REGEN_PAUSE_TICKS);
+		PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_SECONDARY_CD, BAL.i("cooldown_ticks", COOLDOWN_TICKS));
+		PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.MANCIANIMA_LINK_CD, BAL.i("red_link_cd_ticks", RED_LINK_CD_TICKS));
+		PowerUtils.setResourceValueAndSync(marker, MANA_REGEN_PAUSE_RES, BAL.i("mana_regen_pause_ticks", MANA_REGEN_PAUSE_TICKS));
 		// 击杀奖励：刷新两个 CD + 抗伤补满
 		if (wasAlive && !target.isAlive()) {
 			PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_PRIMARY_CD, 0);
@@ -269,7 +289,7 @@ public final class MancianimaTeleport {
 	 * 共享算法（客户端可调用同一份逻辑做预览）。
 	 */
 	public static Vec3d computeRaycastLanding(World world, Vec3d eye, Vec3d look, PlayerEntity player) {
-		Vec3d end = eye.add(look.multiply(MAX_RANGE));
+		Vec3d end = eye.add(look.multiply(maxRange()));
 		BlockHitResult hit = world.raycast(new RaycastContext(
 				eye, end,
 				RaycastContext.ShapeType.COLLIDER,
@@ -304,7 +324,7 @@ public final class MancianimaTeleport {
 	 * 站立条件只要求：方块顶面非空 + 上方有约 1.8 格空气；不限制平台尺寸。
 	 */
 	public static Vec3d computePlatformLanding(World world, Vec3d eye, Vec3d look, PlayerEntity player) {
-		Vec3d end = eye.add(look.multiply(MAX_RANGE));
+		Vec3d end = eye.add(look.multiply(maxRange()));
 		BlockHitResult hit = world.raycast(new RaycastContext(
 				eye, end,
 				RaycastContext.ShapeType.COLLIDER,
@@ -333,7 +353,7 @@ public final class MancianimaTeleport {
 		Vec3d best = null;
 		double bestSqToEnd = Double.MAX_VALUE;
 		double step = 0.5;
-		for (double d = 1.0; d <= MAX_RANGE; d += step) {
+		for (double d = 1.0; d <= maxRange(); d += step) {
 			Vec3d sample = eye.add(look.multiply(d));
 			Vec3d landing = findBestInColumn(world, player, sample.x, sample.z,
 					MathHelper.floor(sample.x), MathHelper.floor(sample.z), sample.y, eye, end);
@@ -404,7 +424,8 @@ public final class MancianimaTeleport {
 
 	/** 落点距离硬限制（眼睛到落点直线距离）。 */
 	private static boolean withinRange(Vec3d eye, Vec3d landing) {
-		return eye.squaredDistanceTo(landing) <= (MAX_RANGE + 0.5) * (MAX_RANGE + 0.5);
+		double maxRange = maxRange();
+		return eye.squaredDistanceTo(landing) <= (maxRange + 0.5) * (maxRange + 0.5);
 	}
 
 	/** 检查落点处玩家完整碰撞箱是否为空。 */

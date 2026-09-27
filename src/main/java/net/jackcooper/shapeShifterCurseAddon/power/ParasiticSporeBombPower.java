@@ -21,6 +21,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.InfectionSporeBombEntity;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -32,11 +33,15 @@ import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
  */
 public class ParasiticSporeBombPower extends ActiveCooldownPower {
 
+    // 以下均为默认值；运行时从 balance 快照读取（abilities.parasitic_spore_bomb）
     /** 投掷物初速度（与原版雪球速度相近） */
     private static final float PROJECTILE_SPEED = 1.4f;
     /** 散布抖动 */
     private static final float PROJECTILE_DIVERGENCE = 0.5f;
     private static final int ENERGY_COST = 1;
+
+    /** balance 快照读取（快照未初始化回退默认常量） */
+    private static final BalanceReader BAL = new BalanceReader("abilities.parasitic_spore_bomb");
 
     private final int cooldownTicks;
     /** 内部冷却结束 tick：作为父类 use() 的双重保险，确保连按完全无效 */
@@ -74,6 +79,8 @@ public class ParasiticSporeBombPower extends ActiveCooldownPower {
 
     @Override
     public void onUse() {
+        if (entity instanceof net.minecraft.server.network.ServerPlayerEntity syncPlayer
+                && !net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(syncPlayer)) return;
         if (!(entity instanceof ServerPlayerEntity caster)) return;
         if (caster.getWorld().isClient) return;
         if (caster.hasStatusEffect(SscAddon.PURIFIED)) return;
@@ -81,12 +88,13 @@ public class ParasiticSporeBombPower extends ActiveCooldownPower {
         if (entity.getWorld().getTime() < internalCooldownEndTime) return;
 
         // 能量检查：不足则播放失败音效
-        if (!PowerUtils.hasResource(caster, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY, ENERGY_COST)) {
+        int energyCost = BAL.i("energy_cost", ENERGY_COST);
+        if (!PowerUtils.hasResource(caster, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY, energyCost)) {
             caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
                     SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.4f, 1.7f);
             return;
         }
-        PowerUtils.changeResourceValueAndSync(caster, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY, -ENERGY_COST);
+        PowerUtils.changeResourceValueAndSync(caster, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY, -energyCost);
 
         // 生成投掷物（贴图改为史莱姆球）
         InfectionSporeBombEntity bomb = new InfectionSporeBombEntity(caster.getWorld(), caster);
@@ -94,7 +102,9 @@ public class ParasiticSporeBombPower extends ActiveCooldownPower {
         bomb.setOwner(caster);
         // 从眼部位置发射；速度向量与玩家视线一致
         bomb.setPos(caster.getX(), caster.getEyeY() - 0.1, caster.getZ());
-        bomb.setVelocity(caster, caster.getPitch(), caster.getYaw(), 0.0f, PROJECTILE_SPEED, PROJECTILE_DIVERGENCE);
+        bomb.setVelocity(caster, caster.getPitch(), caster.getYaw(), 0.0f,
+                (float) BAL.d("projectile_speed", PROJECTILE_SPEED),
+                (float) BAL.d("projectile_divergence", PROJECTILE_DIVERGENCE));
         // 抵消投掷者的水平移动以保持初速一致
         Vec3d ownerVel = caster.getVelocity();
         bomb.setVelocity(bomb.getVelocity().add(ownerVel.x, caster.isOnGround() ? 0.0 : ownerVel.y, ownerVel.z));

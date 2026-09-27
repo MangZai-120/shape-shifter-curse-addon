@@ -22,12 +22,18 @@ public final class DomainSound extends MovingSoundInstance {
 	private final UUID owner;
 	/** 整体音量倍率（服务端随包下发）：乘在距离曲线上，用于单独压低/抬高某个领域音效。 */
 	private final float volumeScale;
+	/** 起手快照半径（SOUND 包 v2 尾部携带，2026-09-27）：距离曲线几何与服务端结算同源。 */
+	private final double innerRadius;
+	private final double outerRadius;
 
-	private DomainSound(ClientWorld world, UUID owner, SoundEvent sound, Vec3d position, float pitch, float volumeScale, long seed) {
+	private DomainSound(ClientWorld world, UUID owner, SoundEvent sound, Vec3d position, float pitch,
+				float volumeScale, long seed, double innerRadius, double outerRadius) {
 		super(sound, SoundCategory.PLAYERS, Random.create(seed));
 		this.world = world;
 		this.owner = owner;
 		this.volumeScale = volumeScale;
+		this.innerRadius = innerRadius;
+		this.outerRadius = outerRadius;
 		this.x = position.x;
 		this.y = position.y;
 		this.z = position.z;
@@ -45,11 +51,15 @@ public final class DomainSound extends MovingSoundInstance {
 			float pitch = buf.readFloat();
 			float volumeScale = buf.readFloat();
 			long seed = buf.readLong();
+			// v2 尾部（2026-09-27）：快照半径；无剩余字节（理论不出现）回退本地 balance 镜像。
+			double inner = buf.isReadable() ? buf.readDouble() : DomainRules.innerRadius();
+			double outer = buf.isReadable() ? buf.readDouble() : DomainRules.outerRadius();
 			client.execute(() -> {
 				if (client.world == null || client.player == null
 						|| !client.world.getRegistryKey().getValue().equals(dimension)) return;
 				SoundEvent sound = Registries.SOUND_EVENT.get(soundId);
-				if (sound != null) client.getSoundManager().play(new DomainSound(client.world, owner, sound, position, pitch, volumeScale, seed));
+				if (sound != null) client.getSoundManager().play(
+						new DomainSound(client.world, owner, sound, position, pitch, volumeScale, seed, inner, outer));
 			});
 		});
 	}
@@ -68,7 +78,8 @@ public final class DomainSound extends MovingSoundInstance {
 			y = caster.getY();
 			z = caster.getZ();
 		}
-		volume = DomainRules.soundVolume(Math.sqrt(client.player.squaredDistanceTo(x, y, z))) * volumeScale;
+		volume = DomainRules.soundVolume(Math.sqrt(client.player.squaredDistanceTo(x, y, z)), innerRadius, outerRadius)
+				* volumeScale;
 	}
 
 	@Override

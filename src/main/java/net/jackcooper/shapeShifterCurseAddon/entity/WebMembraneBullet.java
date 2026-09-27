@@ -15,6 +15,7 @@ import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.entity.projectile.WebBullet;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
 /**
@@ -40,6 +41,9 @@ public class WebMembraneBullet extends WebBullet {
 	private static final double AURA_RADIUS = 8.0;
 	/** 蛛网缠身范围施加持续时长（tick）：5 秒（与踩网施加一致）。 */
 	private static final int AURA_DURATION = 100;
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.web_membrane");
 
 	/** 蓄力档 → 减速网半径：tier3=6 / tier2=5 / 其余=3（最低 3 格）。 */
 	private static double radiusForTier(int tier) {
@@ -86,18 +90,20 @@ public class WebMembraneBullet extends WebBullet {
 	 * 踩网加成：目标身上蜘网缠身每剩 20t 裹茧概率 +5%（上限 +30%，即短时间内踩网过多更易被裹）。
 	 */
 	private void applyBoundAura(ServerWorld world, BlockPos center) {
-		double r2 = AURA_RADIUS * AURA_RADIUS;
+		// 阶段 5：同函数多次读取局部变量化
+		double auraRadius = BAL.d("aura_radius", AURA_RADIUS);
+		double r2 = auraRadius * auraRadius;
 		double cx = center.getX() + 0.5, cy = center.getY() + 0.5, cz = center.getZ() + 0.5;
 		// 中心→边缘裹茧概率（随蓄力档递增）：t1 10%→0%、t2 35%→5%、t3 60%→10%
 		double base = this.Tier >= 3 ? 0.60 : (this.Tier >= 2 ? 0.35 : 0.10);
 		double edge = this.Tier >= 3 ? 0.10 : (this.Tier >= 2 ? 0.05 : 0.00);
 		for (LivingEntity living : world.getEntitiesByClass(LivingEntity.class,
-				new net.minecraft.util.math.Box(center).expand(AURA_RADIUS), e -> !isBoundImmune((LivingEntity) e))) {
+				new net.minecraft.util.math.Box(center).expand(auraRadius), e -> !isBoundImmune((LivingEntity) e))) {
 			double distSq = living.squaredDistanceTo(cx, cy, cz);
 			if (distSq > r2) continue;
 			// 距离线性衰减 + 踩网加成（用 sqrt 还原线性距离参与衰减比例计算）
 			double dist = Math.sqrt(distSq);
-			double prob = base + (edge - base) * (dist / AURA_RADIUS);
+			double prob = base + (edge - base) * (dist / auraRadius);
 			StatusEffectInstance bound = living.getStatusEffect(net.jackcooper.shapeShifterCurseAddon.effect.RegAddonEffects.SPIDER_WEB_BOUND);
 			int boundLeft = bound != null ? bound.getDuration() : 0;
 			prob += Math.min(0.30, (boundLeft / 20.0) * 0.05);
@@ -105,11 +111,11 @@ public class WebMembraneBullet extends WebBullet {
 				// 走原版缠身一次叠满转茧逻辑（500t = 5×100，达 ENTANGLED_DURATION_PER_LEVEL×(MAX_LEVEL+1) 阈值）
 				net.onixary.shapeShifterCurseFabric.status_effects.EntangledEffectUtils.applyEntangledEffect(this.owner, living, 500);
 			} else {
-				// 未裹茧：施加蜘网缠身（减速+挖掘疲劳+虚弱），为后续踩网/再次命中累积裹茧概率
+			// 未裹茧：施加蜘网缠身（减速+挖掘疲劳+虚弱），为后续踩网/再次命中累积裹茧概率
 				// 带施法者 source，供食梦魔「入梦」debuff 拦截归因
 				living.addStatusEffect(new StatusEffectInstance(
 						net.jackcooper.shapeShifterCurseAddon.effect.RegAddonEffects.SPIDER_WEB_BOUND,
-						AURA_DURATION, 0, false, false, true), this.owner);
+						BAL.i("aura_duration", AURA_DURATION), 0, false, false, true), this.owner);
 			}
 		}
 	}

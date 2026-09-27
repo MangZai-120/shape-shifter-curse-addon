@@ -15,6 +15,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -39,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class WindSpiritClawManager {
 
+    // 以下已登记常量均为默认值；运行时从 balance 快照读取（abilities.wind_spirit_claw）
     private static final float BASE_DAMAGE = 8.0f;
     private static final double RADIUS = 2.5;
     private static final double REACH = 2.0;
@@ -71,6 +73,9 @@ public final class WindSpiritClawManager {
     private static final float BUFF_MULT = 1.5f;
     private static final Map<UUID, Integer> BUFF_TICKS = new ConcurrentHashMap<>();
 
+    // 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+    private static final BalanceReader BAL = new BalanceReader("abilities.wind_spirit_claw");
+
     public static final class ClawState {
         boolean holding = false;
         int phase = PHASE_IDLE;
@@ -98,7 +103,7 @@ public final class WindSpiritClawManager {
         if (holding && s.phase == PHASE_IDLE) {
             s.phase = PHASE_CLAW;
             s.holdTicks = 0;
-            s.sinceLastAttack = MIN_INTERVAL; // 按下稍缓冲，避免按下即命中
+            s.sinceLastAttack = BAL.i("min_interval", MIN_INTERVAL); // 按下稍缓冲，避免按下即命中
         }
     }
 
@@ -160,7 +165,7 @@ public final class WindSpiritClawManager {
             player.resetLastAttackedTicks(); // 让原版减伤/准星充能反映爪击节奏
         }
 
-        if (s.progress <= 0.0f || s.holdTicks >= MAX_CLAW_TICKS) {
+        if (s.progress <= 0.0f || s.holdTicks >= BAL.i("max_claw_ticks", MAX_CLAW_TICKS)) {
             s.progress = 0.0f;
             enterOverheat(s);
             removeSpeedSlow(player);
@@ -178,7 +183,7 @@ public final class WindSpiritClawManager {
             if (s.holding) {
                 s.phase = PHASE_CLAW;
                 s.holdTicks = 0;
-                s.sinceLastAttack = MIN_INTERVAL;
+                s.sinceLastAttack = BAL.i("min_interval", MIN_INTERVAL);
                 s.progress = 1.0f;
                 s.recovery = 0.0f;
             } else {
@@ -193,9 +198,11 @@ public final class WindSpiritClawManager {
     }
 
     private static float recoveryStep(ServerPlayerEntity player) {
-        return 1.0f / (TrinketUtils.isWearing(player,
+        int recoverTicks = TrinketUtils.isWearing(player,
                 net.jackcooper.shapeShifterCurseAddon.SscAddon.WIND_SPIRIT_STAMINA_NECKLACE)
-                ? RECOVER_TICKS_NECKLACE : RECOVER_TICKS);
+                ? BAL.i("recover_ticks_necklace", RECOVER_TICKS_NECKLACE)
+                : BAL.i("recover_ticks", RECOVER_TICKS);
+        return 1.0f / recoverTicks;
     }
 
     private static void performClawAttack(ServerPlayerEntity player, ClawState s) {
@@ -205,18 +212,21 @@ public final class WindSpiritClawManager {
         double randSide = (player.getRandom().nextDouble() - 0.5) * 1.2;
         double randUp = (player.getRandom().nextDouble() - 0.5) * 0.6;
         Vec3d side = new Vec3d(-look.z, 0, look.x).normalize();
+        double reach = BAL.d("reach", REACH);
         Vec3d center = player.getEyePos()
-                .add(look.multiply(REACH))
+                .add(look.multiply(reach))
                 .add(side.multiply(randSide))
                 .add(0, randUp, 0);
 
         // MC 原版攻击冷却减伤系数（真实充能进度）× 爪击时长衰减
         float g = player.getAttackCooldownProgress(0.5f);
         float vanillaFactor = 0.2f + g * g * 0.8f;
-        float clawFactor = 1.0f - Math.min(DMG_DECAY_MAX, DMG_DECAY_PER_SEC * (s.holdTicks / 20.0f));
-        float dmg = BASE_DAMAGE * vanillaFactor * clawFactor;
+        float clawFactor = 1.0f - Math.min((float) BAL.d("dmg_decay_max", DMG_DECAY_MAX),
+                (float) BAL.d("dmg_decay_per_sec", DMG_DECAY_PER_SEC) * (s.holdTicks / 20.0f));
+        float dmg = (float) BAL.d("base_damage", BASE_DAMAGE) * vanillaFactor * clawFactor;
 
-        Box box = new Box(center.subtract(RADIUS, RADIUS, RADIUS), center.add(RADIUS, RADIUS, RADIUS));
+        double radius = BAL.d("radius", RADIUS);
+        Box box = new Box(center.subtract(radius, radius, radius), center.add(radius, radius, radius));
         for (Entity e : sw.getOtherEntities(player, box)) {
             if (!(e instanceof LivingEntity living)) continue;
             if (WhitelistUtils.isProtected(player, living)) continue; // 默认白名单
@@ -231,18 +241,19 @@ public final class WindSpiritClawManager {
 
         sw.spawnParticles(ParticleTypes.SWEEP_ATTACK, center.x, center.y, center.z, 1, 0, 0, 0, 0);
 
-        Vec3d flat = new Vec3d(look.x, 0, look.z).normalize().multiply(FORWARD_LUNGE);
+        Vec3d flat = new Vec3d(look.x, 0, look.z).normalize().multiply((float) BAL.d("forward_lunge", FORWARD_LUNGE));
         player.addVelocity(flat.x, 0.0, flat.z);
         player.velocityModified = true;
 
-        player.addExhaustion(EXHAUSTION_PER_HIT);
+        player.addExhaustion((float) BAL.d("exhaustion_per_hit", EXHAUSTION_PER_HIT));
 
         sw.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 0.7f, 1.4f);
     }
 
     private static float slowFactor(int holdTicks) {
-        return Math.min(SPD_DECAY_MAX, SPD_DECAY_PER_SEC * (holdTicks / 20.0f));
+        return Math.min((float) BAL.d("spd_decay_max", SPD_DECAY_MAX),
+                (float) BAL.d("spd_decay_per_sec", SPD_DECAY_PER_SEC) * (holdTicks / 20.0f));
     }
 
     private static void applySpeedSlow(ServerPlayerEntity player, float factor) {
@@ -268,8 +279,11 @@ public final class WindSpiritClawManager {
 
     /** 按住时长 → 当前攻击间隔（tick）：20 → 3 秒后 7。 */
     private static int currentInterval(int holdTicks) {
-        float t = Math.min(holdTicks, RAMP_TICKS) / (float) RAMP_TICKS;
-        return Math.round(MAX_INTERVAL - (MAX_INTERVAL - MIN_INTERVAL) * t);
+        int rampTicks = BAL.i("ramp_ticks", RAMP_TICKS);
+        float t = Math.min(holdTicks, rampTicks) / (float) rampTicks;
+        int maxInterval = BAL.i("max_interval", MAX_INTERVAL);
+        int minInterval = BAL.i("min_interval", MIN_INTERVAL);
+        return Math.round(maxInterval - (maxInterval - minInterval) * t);
     }
 
     /** 准星条=耐力：爪击期=剩余进度(随每次爪击下降)；过热期=从当前进度回满(0→1)；空闲=1。 */
@@ -288,7 +302,8 @@ public final class WindSpiritClawManager {
         if (s != null && s.phase == PHASE_OVERHEAT) {
             recovery = s.recovery * 0.9f; // 回复进度 0→1 映射伤害 0→90%
         }
-        float buff = BUFF_TICKS.containsKey(player.getUuid()) ? BUFF_MULT : 1.0f;
+        float buff = BUFF_TICKS.containsKey(player.getUuid())
+                ? (float) BAL.d("buff_mult", BUFF_MULT) : 1.0f;
         return recovery * buff;
     }
 
@@ -311,8 +326,9 @@ public final class WindSpiritClawManager {
     public static void activateSecondaryBuff(ServerPlayerEntity player) {
         if (!FormUtils.isOcelotSP(player)) return;
         if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_SECONDARY_CD) > 0) return; // CD 中
-        BUFF_TICKS.put(player.getUuid(), BUFF_DURATION);
-        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, SECONDARY_CD_TICKS);
+        BUFF_TICKS.put(player.getUuid(), BAL.i("buff_duration", BUFF_DURATION));
+        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD,
+                BAL.i("secondary_cd_ticks", SECONDARY_CD_TICKS));
         ServerWorld sw = (ServerWorld) player.getWorld();
         sw.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_PLAYER_ATTACK_STRONG, SoundCategory.PLAYERS, 0.8f, 1.6f);

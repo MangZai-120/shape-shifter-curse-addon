@@ -32,9 +32,13 @@ public class SnowFoxSpFrostStorm {
     private static final ConcurrentHashMap<UUID, ChargingData> CHARGING_PLAYERS = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, Long> COOLDOWN_PLAYERS = new ConcurrentHashMap<>(); // 自定义CD跟踪
     
-    private static final int CHARGE_TICKS = 30; // 1.5秒蓄力
-    private static final double MAX_RANGE = 30.0; // 最大释放距离
-    private static final int MANA_COST = 30; // 霜寒值消耗
+    private static final int CHARGE_TICKS = 30; // 默认 1.5秒蓄力；balance 可覆盖（abilities.snow_fox_sp_frost_storm）
+    private static final double MAX_RANGE = 30.0; // 默认最大释放距离
+    private static final int MANA_COST = 30; // 默认霜寒值消耗
+
+    // 阶段 5：服务端权威快照读取
+    private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
+            new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.snow_fox_sp_frost_storm");
     //未使用: private static final int COOLDOWN = 600;  30秒CD = 600tick
     
     private static final Identifier RESOURCE_ID = new Identifier("my_addon", "form_snow_fox_sp_resource");
@@ -58,13 +62,13 @@ public class SnowFoxSpFrostStorm {
         
         // 检查霜寒值
         int currentMana = getResourceValue(player);
-        if (currentMana < MANA_COST) {
+        if (currentMana < BAL.i("mana_cost", MANA_COST)) {
             player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
             return false;
         }
         
         // 消耗霜寒值（在蓄力开始时就消耗）
-        changeResourceValue(player, -MANA_COST);
+        changeResourceValue(player, -BAL.i("mana_cost", MANA_COST));
         // 设置回复冷却（5秒）
         setRegenCooldown(player, 100);
         // 设置技能CD（30秒 = 600tick，使用服务端tick保证多人一致性）
@@ -138,7 +142,7 @@ public class SnowFoxSpFrostStorm {
         }
         
         // 蓄力完成
-        if (data.chargeTicks >= CHARGE_TICKS) {
+        if (data.chargeTicks >= BAL.i("charge_ticks", CHARGE_TICKS)) {
             releaseStorm(player);
             CHARGING_PLAYERS.remove(player.getUuid());
         }
@@ -153,7 +157,7 @@ public class SnowFoxSpFrostStorm {
         // 计算准星位置（射线检测）
         Vec3d start = player.getEyePos();
         Vec3d look = player.getRotationVec(1.0f);
-        Vec3d end = start.add(look.multiply(MAX_RANGE));
+        Vec3d end = start.add(look.multiply(BAL.d("max_range", MAX_RANGE)));
         
         BlockHitResult hitResult = player.getWorld().raycast(new RaycastContext(
             start, end, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, player

@@ -1,15 +1,12 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
-import com.google.gson.JsonObject;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig;
 import net.jackcooper.shapeShifterCurseAddon.spell.spells.FrostSpikeSpell;
-import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
 
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,15 +25,42 @@ import java.util.Map;
  *       客户端 {@link #applyClientSync} 重建镜像——客机自己的 resources 里没有服务器的数据包。</li>
  * </ol>
  *
- * <p>容错（回退默认值）：JSON 缺文件 → 该法术维持 fallback 数值（打日志）；缺字段 → 字段级回退
- * （见 {@link SpellConfig#fromJson}）；JSON 指向未注册法术 → 忽略并警告。任何情况都不崩溃。</p>
+ * <p>所有已注册法术先完整解析成候选表；缺文件或无效耗能使本次重载失败。
+ * 全局重载成功后才提交，客户端也先校验整张表再替换镜像。</p>
  *
  * <p>用 {@link LinkedHashMap} 保持注册顺序（供 REI/JEI 或书内展示按序）。</p>
  */
 public final class SpellRegistry implements SimpleSynchronousResourceReloadListener {
 	private static final Map<Identifier, Spell> SPELLS = new LinkedHashMap<>();
 	/** 原始 JSON 文本镜像（id path → json），供 S2C 同步给客机。 */
-	private final Map<String, String> rawJson = new LinkedHashMap<>();
+	private volatile Map<String, String> rawJson = Map.of();
+    private volatile Map<String, SpellConfig> serverConfigs = Map.of();
+    private volatile Map<String, SpellConfig> clientConfigs = Map.of();
+    private Map<String, String> pendingRaw;
+    private Map<String, SpellConfig> pendingConfigs;
+
+    public SpellConfig configFor(String path, SpellConfig fallback) {
+        var configs = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isClientThread()
+                ? clientConfigs : serverConfigs;
+        return configs.getOrDefault(path, fallback);
+    }
+    public synchronized void commitPending() {
+        if (pendingConfigs == null) return;
+        rawJson = pendingRaw;
+        serverConfigs = pendingConfigs;
+        discardPending();
+    }
+    public synchronized void discardPending() { pendingConfigs = null; pendingRaw = null; }
+    public synchronized void clearServer() { discardPending(); serverConfigs = Map.of(); rawJson = Map.of(); }
+    public void clearClient() { clientConfigs = Map.of(); }
+    public void sendTo(net.minecraft.server.network.ServerPlayerEntity player) {
+        var out = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+        var raw = getRawJson();
+        out.writeInt(raw.size());
+        raw.forEach((id, json) -> { out.writeString(id, 256); out.writeString(json, 2000000); });
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+                net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC, out);
+    }
 
 	public static final SpellRegistry INSTANCE = new SpellRegistry();
 	private static final Identifier LISTENER_ID = new Identifier("ssc_addon", "spell_configs");
@@ -111,73 +135,53 @@ public final class SpellRegistry implements SimpleSynchronousResourceReloadListe
 		return LISTENER_ID;
 	}
 
-	@Override
-	public void reload(ResourceManager manager) {
-		// 删除/损坏的配置也要失效，不能沿用旧价格或以未加载时的默认 0 免费施放。
-		for (Spell spell : SPELLS.values()) spell.ssc_addon$applyConfig(null);
-		Map<String, String> loaded = new LinkedHashMap<>();
-		for (Map.Entry<Identifier, Resource> entry :
-				manager.findResources(DIR, path -> path.getPath().endsWith(".json")).entrySet()) {
-			Identifier fileId = entry.getKey();
-			// 只认自己命名空间的 data/ssc_addon/spells/*.json（数据包覆盖同路径时资源管理器已按优先级取胜者）
-			if (!"ssc_addon".equals(fileId.getNamespace())) {
-				continue;
-			}
-			String path = fileId.getPath();
-			String fileName = path.substring(path.lastIndexOf('/') + 1, path.length() - ".json".length());
-			if (fileName.startsWith("_")) {
-				continue; // 跳过下划线开头的样例/注释文件
-			}
-			try (InputStream is = entry.getValue().getInputStream()) {
-				String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-				Spell spell = get(fileName);
-				if (spell == null) {
-					System.err.println("[ssc_addon] Spell config skipped (no such spell registered): " + fileName);
-					continue;
-				}
-				applyConfig(spell, content, fileName);
-				loaded.put(fileName, content);
-			} catch (Exception e) {
-				System.err.println("[ssc_addon] Failed to load spell config: " + fileId + " - " + e);
-			}
-		}
-		synchronized (this) {
-			rawJson.clear();
-			rawJson.putAll(loaded);
-		}
-		// 提示未获得 JSON 的已注册法术（维持 fallback，方便排查漏文件）
-		for (Spell spell : SPELLS.values()) {
-			if (!loaded.containsKey(spell.getId().getPath())) {
-				System.err.println("[ssc_addon] Spell '" + spell.getId().getPath()
-						+ "' has no JSON config (data/ssc_addon/spells/" + spell.getId().getPath()
-						+ ".json); using fallback values.");
-			}
-		}
-	}
+    @Override
+    public synchronized void reload(ResourceManager manager) {
+        discardPending();
+        Map<String, String> loaded = new LinkedHashMap<>();
+        Map<String, SpellConfig> configs = new LinkedHashMap<>();
+        for (var entry : manager.findResources(DIR, id -> id.getPath().endsWith(".json")).entrySet()) {
+            var id = entry.getKey();
+            if (!id.getNamespace().equals("ssc_addon")) continue;
+            String path = id.getPath();
+            String name = path.substring(path.lastIndexOf('/') + 1, path.length() - 5);
+            if (name.startsWith("_") || get(name) == null) continue;
+            try (var input = entry.getValue().getInputStream()) {
+                String json = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+                configs.put(name, parseConfig(json, name));
+                loaded.put(name, json);
+            } catch (Exception invalid) {
+                throw new IllegalArgumentException("Invalid spell resource " + id, invalid);
+            }
+        }
+        for (Spell spell : SPELLS.values()) {
+            if (!configs.containsKey(spell.getId().getPath()))
+                throw new IllegalArgumentException("Missing spell config: " + spell.getId());
+        }
+        pendingRaw = Map.copyOf(loaded);
+        pendingConfigs = Map.copyOf(configs);
+    }
 
 	/** 解析并注入配置（服务端 reload 与客机 S2C 镜像共用，保证两端解析一致）。 */
-	private static void applyConfig(Spell spell, String json, String path) {
-		JsonObject o = JsonHelper.deserialize(json);
-		SpellConfig config = SpellConfig.fromJson(o);
-		if (!config.manaCostConfigured) throw new IllegalArgumentException("Missing or invalid mana_cost for " + path);
-		((SpellConfigInjector) spell).ssc_addon$applyConfig(config);
-	}
+    private static SpellConfig parseConfig(String json, String path) {
+        SpellConfig config = SpellConfig.fromJson(JsonHelper.deserialize(json));
+        if (!config.manaCostConfigured) throw new IllegalArgumentException("Missing/invalid mana_cost: " + path);
+        return config;
+    }
 
 	/** 客户端收到 S2C 同步后重建配置镜像（多人环境下客户端无 datapack 数据）。 */
-	public void applyClientSync(Map<String, String> raw) {
-		for (Spell spell : SPELLS.values()) spell.ssc_addon$applyConfig(null);
-		for (Map.Entry<String, String> e : raw.entrySet()) {
-			Spell spell = get(e.getKey());
-			if (spell == null) {
-				continue;
-			}
-			try {
-				applyConfig(spell, e.getValue(), e.getKey());
-			} catch (Exception ex) {
-				System.err.println("[ssc_addon] Failed to apply synced spell config: " + e.getKey() + " - " + ex);
-			}
-		}
-	}
+    public void applyClientSync(Map<String, String> raw) {
+        Map<String, SpellConfig> configs = new LinkedHashMap<>();
+        for (var entry : raw.entrySet()) {
+            if (get(entry.getKey()) == null) throw new IllegalArgumentException("Unknown server spell " + entry.getKey());
+            configs.put(entry.getKey(), parseConfig(entry.getValue(), entry.getKey()));
+        }
+        for (Identifier id : SPELLS.keySet()) {
+            if (!configs.containsKey(id.getPath()))
+                throw new IllegalArgumentException("Missing server spell " + id);
+        }
+        clientConfigs = Map.copyOf(configs);
+    }
 
 	/** 各法术的原始 JSON 文本（用于 S2C 同步转发）。 */
 	public Map<String, String> getRawJson() {

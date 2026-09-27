@@ -25,6 +25,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
@@ -37,6 +38,9 @@ public class SpellCurseMarkEntity extends ProjectileEntity implements FlyingItem
 
 	private static final double SPEED = 0.7;         // 14 格/秒（咒印缓慢感）
 	private static final double MAX_DISTANCE = 30.0; // 最大飞行距离
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("spells.curse_mark_entity");
 
 	/** 魔法等级（1-5），DataTracker 同步。 */
 	private static final TrackedData<Integer> LEVEL =
@@ -94,7 +98,7 @@ public class SpellCurseMarkEntity extends ProjectileEntity implements FlyingItem
 
 	/** 设置飞行方向（朝准星），速度按等级倍率缩放。 */
 	public void setDirection(Vec3d direction, float speedMultiplier) {
-		Vec3d velocity = direction.normalize().multiply(SPEED * speedMultiplier);
+		Vec3d velocity = direction.normalize().multiply(BAL.d("speed", SPEED) * speedMultiplier);
 		this.setVelocity(velocity.x, velocity.y, velocity.z);
 		updateRotationFromVelocity(velocity);
 	}
@@ -128,7 +132,8 @@ public class SpellCurseMarkEntity extends ProjectileEntity implements FlyingItem
 
 		// 超距 / 超时自毁（仅服务端权威，理由同冰锥：客户端实体 startPos 恒原点，双端判会误删）
 		if (!this.getWorld().isClient) {
-			if (startPos != null && this.squaredDistanceTo(startPos) > MAX_DISTANCE * MAX_DISTANCE) {
+			double maxDistance = BAL.d("max_distance", MAX_DISTANCE);
+			if (startPos != null && this.squaredDistanceTo(startPos) > maxDistance * maxDistance) {
 				this.discard();
 				return;
 			}

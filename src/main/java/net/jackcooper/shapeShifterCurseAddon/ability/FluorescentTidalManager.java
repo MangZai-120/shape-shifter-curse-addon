@@ -6,6 +6,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.TidalOrbEntity;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -38,6 +39,9 @@ public final class FluorescentTidalManager {
     private static final int CHARGE_TICKS = 25;       // 1.25 秒蓄力
     private static final int CD_TICKS = 160;          // 8 秒 CD（球消失后起算）
     private static final double CHARGE_SPEED_PENALTY = -0.5;  // 蓄力期间移动 -50%
+
+    // 阶段 5：运行时快照读取（abilities.fluorescent_tidal；快照未初始化回退默认常量）
+    private static final BalanceReader BAL = new BalanceReader("abilities.fluorescent_tidal");
 
     private static final UUID CHARGE_SPEED_UUID = UUID.fromString("9d2b3c4d-5e6f-7081-92a3-b4c5d6e7f819");
 
@@ -112,10 +116,11 @@ public final class FluorescentTidalManager {
                 return;
             }
             s.chargeTicks++;
+            int chargeTicks = BAL.i("charge_ticks", CHARGE_TICKS);   // 同函数多次读 → 局部变量
             // 蓄力音效：音高随进度上升（每 5 tick）
             if (s.chargeTicks % 5 == 0) {
                 ServerWorld sw = (ServerWorld) player.getWorld();
-                float prog = s.chargeTicks / (float) CHARGE_TICKS;
+                float prog = s.chargeTicks / (float) chargeTicks;
                 sw.playSound(null, player.getX(), player.getY(), player.getZ(),
                         SoundEvents.BLOCK_NOTE_BLOCK_BIT.value(), SoundCategory.PLAYERS, 0.4f, 0.8f + prog * 0.8f);
                 sw.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -127,13 +132,13 @@ public final class FluorescentTidalManager {
                 double ang = s.chargeTicks * 0.5;
                 for (int i = 0; i < 4; i++) {
                     double a = ang + i * (Math.PI / 2);
-                    double r = 1.2 - (s.chargeTicks / (double) CHARGE_TICKS) * 0.8;
+                    double r = 1.2 - (s.chargeTicks / (double) chargeTicks) * 0.8;
                     net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.BUBBLE,
                             player.getX() + Math.cos(a) * r, player.getY() + 1.0, player.getZ() + Math.sin(a) * r,
                             1, 0, 0.05, 0, 0.0);
                 }
             }
-            if (s.chargeTicks >= CHARGE_TICKS) {
+            if (s.chargeTicks >= chargeTicks) {
                 releaseOrb(player, s);
             }
         }
@@ -176,7 +181,7 @@ public final class FluorescentTidalManager {
         s.chargeTicks = 0;
         PowerUtils.setResourceValueAndSync(player, TIDAL_STATE, 0);
         // 被净化打断：返还 40% CD（进 60% CD = 160 × 0.6 = 96t = 4.8 秒）
-        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, (int)(CD_TICKS * 0.6));
+        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, (int)(BAL.i("cd_ticks", CD_TICKS) * 0.6));
         player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.5f);
     }
@@ -199,7 +204,7 @@ public final class FluorescentTidalManager {
         attr.removeModifier(CHARGE_SPEED_UUID);
         if (apply) {
             attr.addTemporaryModifier(new net.minecraft.entity.attribute.EntityAttributeModifier(
-                    CHARGE_SPEED_UUID, "Tidal Charge Slow", CHARGE_SPEED_PENALTY,
+                    CHARGE_SPEED_UUID, "Tidal Charge Slow", BAL.d("charge_speed_penalty", CHARGE_SPEED_PENALTY),
                     net.minecraft.entity.attribute.EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
         }
     }
@@ -210,7 +215,7 @@ public final class FluorescentTidalManager {
             Session s = SESSIONS.get(p.getUuid());
             if (s == null || !s.pendingCd) continue;
             s.pendingCd = false;
-            PowerUtils.setResourceValueAndSync(p, FormIdentifiers.SP_SECONDARY_CD, CD_TICKS);
+            PowerUtils.setResourceValueAndSync(p, FormIdentifiers.SP_SECONDARY_CD, BAL.i("cd_ticks", CD_TICKS));
             PowerUtils.setResourceValueAndSync(p, TIDAL_STATE, 0);
         }
     }

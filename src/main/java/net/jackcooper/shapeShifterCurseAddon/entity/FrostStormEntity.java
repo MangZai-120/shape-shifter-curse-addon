@@ -15,6 +15,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
 import java.util.List;
@@ -33,6 +34,16 @@ public class FrostStormEntity extends Entity {
 	private static final double PULL_RADIUS_WEAK = 10.0;
 	private static final float DAMAGE_PER_SECOND = 2.0f;
 	private static final double PULL_SPEED = 0.1; // 2格/秒 = 0.1格/tick
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.frost_storm");
+
+    private int stormDuration = BAL.i("duration", DURATION);
+    private double stormDamageRadius = BAL.d("damage_radius", DAMAGE_RADIUS);
+    private double stormPullStrong = BAL.d("pull_radius_strong", PULL_RADIUS_STRONG);
+    private double stormPullWeak = BAL.d("pull_radius_weak", PULL_RADIUS_WEAK);
+    private double stormDamage = BAL.d("damage_per_second", DAMAGE_PER_SECOND);
+    private double stormPullSpeed = BAL.d("pull_speed", PULL_SPEED);
 
 	private int ticksAlive = 0;
 	private UUID ownerUuid;
@@ -61,12 +72,16 @@ public class FrostStormEntity extends Entity {
 		super.tick();
 		ticksAlive++;
 
-		if (ticksAlive > DURATION) {
+		if (!this.getWorld().isClient && ticksAlive > stormDuration) {
 			this.discard();
 			return;
 		}
 
 		if (!this.getWorld().isClient && this.getWorld() instanceof ServerWorld serverWorld) {
+			// 同函数多次读取局部变量化
+			int duration = stormDuration;
+			double damageRadius = stormDamageRadius;
+
 			// 每0.5秒造成一次伤害（每10tick）
 			if (ticksAlive % 10 == 0) {
 				dealDamage(serverWorld);
@@ -78,7 +93,7 @@ public class FrostStormEntity extends Entity {
 			// 同步时间轴，雪花与旋转云由客户端按原密度生成。
 			net.jackcooper.shapeShifterCurseAddon.network.SustainedVisuals.touch(this,
 					net.jackcooper.shapeShifterCurseAddon.network.VisualRecipe.Kind.FROST_STORM,
-					ticksAlive, DURATION, DAMAGE_RADIUS, 0);
+					ticksAlive, duration, damageRadius, 0);
 
 			// 播放环境音效
 			if (ticksAlive % 40 == 0) {
@@ -89,9 +104,11 @@ public class FrostStormEntity extends Entity {
 	}
 
 	private void dealDamage(ServerWorld world) {
+		// 同函数多次读取局部变量化
+		double damageRadius = stormDamageRadius;
 		Box damageBox = new Box(
-				this.getX() - DAMAGE_RADIUS, this.getY() - 1, this.getZ() - DAMAGE_RADIUS,
-				this.getX() + DAMAGE_RADIUS, this.getY() + 3, this.getZ() + DAMAGE_RADIUS
+				this.getX() - damageRadius, this.getY() - 1, this.getZ() - damageRadius,
+				this.getX() + damageRadius, this.getY() + 3, this.getZ() + damageRadius
 		);
 
 		List<LivingEntity> targets = world.getEntitiesByClass(
@@ -103,20 +120,24 @@ public class FrostStormEntity extends Entity {
 
 		for (LivingEntity target : targets) {
 			double dist = this.squaredDistanceTo(target.getX(), this.getY(), target.getZ());
-			if (dist <= DAMAGE_RADIUS * DAMAGE_RADIUS) {
+			if (dist <= damageRadius * damageRadius) {
 				if (WhitelistUtils.isProtected(ownerUuid, world, target)) continue;
 				DamageSource source = owner != null
 						? target.getDamageSources().playerAttack(owner)
 						: target.getDamageSources().magic();
-				target.damage(source, DAMAGE_PER_SECOND);
+				target.damage(source, (float) stormDamage);
 			}
 		}
 	}
 
 	private void pullEntities() {
+		// 同函数多次读取局部变量化
+		double pullRadiusWeak = stormPullWeak;
+		double pullRadiusStrong = stormPullStrong;
+		double pullSpeed = stormPullSpeed;
 		Box pullBox = new Box(
-				this.getX() - PULL_RADIUS_WEAK, this.getY() - 2, this.getZ() - PULL_RADIUS_WEAK,
-				this.getX() + PULL_RADIUS_WEAK, this.getY() + 4, this.getZ() + PULL_RADIUS_WEAK
+				this.getX() - pullRadiusWeak, this.getY() - 2, this.getZ() - pullRadiusWeak,
+				this.getX() + pullRadiusWeak, this.getY() + 4, this.getZ() + pullRadiusWeak
 		);
 
 		List<LivingEntity> targets = this.getWorld().getEntitiesByClass(
@@ -131,17 +152,17 @@ public class FrostStormEntity extends Entity {
 			Vec3d targetPos = target.getPos();
 			double dist = Math.sqrt(target.squaredDistanceTo(this.getX(), this.getY(), this.getZ()));
 
-			if (dist > PULL_RADIUS_WEAK || dist < 0.5) continue;
+			if (dist > pullRadiusWeak || dist < 0.5) continue;
 			if (pullWorld != null && WhitelistUtils.isProtected(ownerUuid, pullWorld, target)) continue;
 
 			// 计算吸附速度
 			double pullStrength;
-			if (dist <= PULL_RADIUS_STRONG) {
-				pullStrength = PULL_SPEED; // 正常吸附速度
+			if (dist <= pullRadiusStrong) {
+				pullStrength = pullSpeed; // 正常吸附速度
 			} else {
 				// 6-10格，吸附减弱
-				double factor = 1.0 - ((dist - PULL_RADIUS_STRONG) / (PULL_RADIUS_WEAK - PULL_RADIUS_STRONG));
-				pullStrength = PULL_SPEED * factor * 0.3; // 骤减吸附
+				double factor = 1.0 - ((dist - pullRadiusStrong) / (pullRadiusWeak - pullRadiusStrong));
+				pullStrength = pullSpeed * factor * 0.3; // 骤减吸附
 			}
 
 			// 计算吸附方向
@@ -157,6 +178,15 @@ public class FrostStormEntity extends Entity {
 
 	@Override
 	public void readCustomDataFromNbt(NbtCompound nbt) {
+        if (nbt.contains("Balance", 10)) {
+            NbtCompound values = nbt.getCompound("Balance");
+            if (values.contains("duration")) stormDuration = values.getInt("duration");
+            if (values.contains("damage_radius")) stormDamageRadius = values.getDouble("damage_radius");
+            if (values.contains("pull_radius_strong")) stormPullStrong = values.getDouble("pull_radius_strong");
+            if (values.contains("pull_radius_weak")) stormPullWeak = values.getDouble("pull_radius_weak");
+            if (values.contains("damage_per_second")) stormDamage = values.getDouble("damage_per_second");
+            if (values.contains("pull_speed")) stormPullSpeed = values.getDouble("pull_speed");
+        }
 		this.ticksAlive = nbt.getInt("TicksAlive");
 		if (nbt.containsUuid("Owner")) {
 			this.ownerUuid = nbt.getUuid("Owner");
@@ -165,6 +195,14 @@ public class FrostStormEntity extends Entity {
 
 	@Override
 	public void writeCustomDataToNbt(NbtCompound nbt) {
+        NbtCompound values = new NbtCompound();
+        values.putInt("duration", stormDuration);
+        values.putDouble("damage_radius", stormDamageRadius);
+        values.putDouble("pull_radius_strong", stormPullStrong);
+        values.putDouble("pull_radius_weak", stormPullWeak);
+        values.putDouble("damage_per_second", stormDamage);
+        values.putDouble("pull_speed", stormPullSpeed);
+        nbt.put("Balance", values);
 		nbt.putInt("TicksAlive", this.ticksAlive);
 		if (ownerUuid != null) {
 			nbt.putUuid("Owner", ownerUuid);

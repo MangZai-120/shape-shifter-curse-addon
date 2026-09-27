@@ -34,6 +34,15 @@ public final class ExplosionManager {
 		UUID refundCastId;
 		final long startTime;
 		float power;
+		// 起手快照（2026-09-27 审计修复）：700t 蓄力可能跨数据包 reload，结算期若即时读
+		// ExplosionRules（balance 可变）会让同一次爆炸前后伤害批用不同参数——
+		// 构造（beginCharge）时捕获一次，damageBatch 结算与 START 包同步全程读快照。
+		final double coreRadius;
+		final double outerRadius;
+		final double igniteNear;
+		final double igniteFar;
+		final int fireTicksNear;
+		final int fireTicksFar;
 		boolean exploded;
 		/** 待结算目标队列（2026-09-24 伤害分批）：引爆时快照全部目标，每 tick 只结一批，
 		 * 避免密集场景百余实体同帧过 damage/死亡掉落造成服务端尖峰（「造成伤害后卡一下」）。 */
@@ -47,6 +56,13 @@ public final class ExplosionManager {
 			this.power = power;
 			this.refundCastId = refundCastId;
 			this.startTime = world.getTime();
+			// 起手捕获结算参数快照（防 reload 批间换参，见字段注释）
+			this.coreRadius = ExplosionRules.coreRadius();
+			this.outerRadius = ExplosionRules.outerRadius();
+			this.igniteNear = ExplosionRules.igniteNear();
+			this.igniteFar = ExplosionRules.igniteFar();
+			this.fireTicksNear = ExplosionRules.fireTicksNear();
+			this.fireTicksFar = ExplosionRules.fireTicksFar();
 		}
 
 		int elapsed() { return (int) Math.max(0, world.getTime() - startTime); }
@@ -82,7 +98,7 @@ public final class ExplosionManager {
 		sequence.exploded = true;
 		// 伤害分批（2026-09-24 修卡顿）：引爆时只快照目标列表 + 标记已爆（视觉/音频立即生效），
 		// 实际伤害由 tick() 每 tick 结一批，密集场景伤害/死亡掉落尖峰被摊平（总伤害不变）。
-		double diameter = ExplosionRules.OUTER_RADIUS * 2;
+		double diameter = sequence.outerRadius * 2;
 		sequence.pendingTargets = sequence.world.getEntitiesByClass(LivingEntity.class,
 				Box.of(center, diameter, diameter, diameter),
 				entity -> entity.isAlive() && !entity.isSpectator());
@@ -164,7 +180,7 @@ public final class ExplosionManager {
 		for (LivingEntity target : batch) {
 			if (!target.isAlive() || target.isRemoved()) continue; // 批间死亡/卸载跳过
 			double distance = target.getPos().distanceTo(center);
-			double factor = ExplosionRules.damageFactor(distance);
+			double factor = damageFactor(sequence, distance);
 			if (factor <= 0) continue;
 			boolean burning = target.getFireTicks() > 0;
 			// Deliberately no ally whitelist or caster exclusion (confirmed friendly fire).
@@ -174,10 +190,10 @@ public final class ExplosionManager {
 				hitBurning |= burning;
 				if (!target.isAlive()) killed = target;
 			}
-			int fire = ExplosionRules.fireTicks(distance);
+			int fire = fireTicks(sequence, distance);
 			if (fire > 0) target.setFireTicks(Math.max(target.getFireTicks(), fire));
 			Vec3d direction = target.getPos().subtract(center).multiply(1, 0, 1).normalize();
-			double strength = ExplosionRules.knockbackStrength(distance);
+			double strength = knockbackStrength(sequence, distance);
 			target.addVelocity(direction.x * strength, 0.35 + strength * 0.25, direction.z * strength);
 			target.velocityModified = true;
 		}
@@ -186,6 +202,34 @@ public final class ExplosionManager {
 			FormCastingStyle.onSpellHit(owner, killed != null ? killed : lastHit,
 					FormationElement.FIRE, sequence.refundCastId, hitBurning);
 		}
+	}
+
+	/** 距爆心 distance 格的伤害系数：读 {@link Sequence} 起手快照（逻辑同
+	 * ExplosionRules.damageFactor，防 reload 批间换参）——0-核心 1.0→0.4；核心-外沿 0.1→0.0。 */
+	private static double damageFactor(Sequence sequence, double distance) {
+		if (!Double.isFinite(distance) || distance < 0) return 0;
+		if (distance <= sequence.coreRadius) {
+			return 1.0 - 0.6 * (distance / sequence.coreRadius);
+		}
+		if (distance <= sequence.outerRadius) {
+			return 0.1 * (1.0 - (distance - sequence.coreRadius) / (sequence.outerRadius - sequence.coreRadius));
+		}
+		return 0;
+	}
+
+	/** 距爆心 distance 格的点燃时长（t）：读 Sequence 起手快照——核心-igniteNear 内圈时长、
+	 * igniteNear-igniteFar 外圈时长、其余 0（逻辑同 ExplosionRules.fireTicks）。 */
+	private static int fireTicks(Sequence sequence, double distance) {
+		if (distance > sequence.coreRadius && distance <= sequence.igniteNear) return sequence.fireTicksNear;
+		if (distance > sequence.igniteNear && distance <= sequence.igniteFar) return sequence.fireTicksFar;
+		return 0;
+	}
+
+	/** 击退水平强度：读 Sequence 起手快照外沿——近处 1.8 线性衰减到外沿 0.2
+	 * （逻辑同 ExplosionRules.knockbackStrength）。 */
+	private static double knockbackStrength(Sequence sequence, double distance) {
+		double t = Math.min(1.0, distance / sequence.outerRadius);
+		return 1.6 * (1.0 - t) + 0.2;
 	}
 
 	private static void syncNow(MinecraftServer server) {
@@ -204,6 +248,10 @@ public final class ExplosionManager {
 				// Duration, never server uptime: old saves and late joins use the same timeline.
 				buf.writeVarInt(sequence.elapsed());
 				buf.writeBoolean(sequence.exploded);
+				// 协议扩展（2026-09-27，本模组双端同装直接扩）：随包下发起手快照半径，
+				// 客户端警示圈/冲击波球读包值，reload 后与服务端结算保持同源。
+				buf.writeDouble(sequence.coreRadius);
+				buf.writeDouble(sequence.outerRadius);
 			}
 			ServerPlayNetworking.send(viewer, START, buf);
 		}

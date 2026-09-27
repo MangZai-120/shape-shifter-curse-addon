@@ -5,6 +5,7 @@ import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 
 import java.util.Map;
@@ -28,18 +29,22 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class WitherFrenzyManager {
 
-	/** 一阶阈值（含）：凋零持续 0~40t */
+	// 以下常量均为默认值；运行时从 balance 快照读取（scope：abilities.wither_frenzy）。
+	// SKIP_PERIOD / SKIP_COUNT / INFECT_COST_TICKS / INFECT_TARGET_CAP 未登记，保持编译期常量。
+	/** 一阶阈值（含）：凋零持续 0~40t。默认 */
 	private static final int T1_MAX = 40;
-	/** 二阶阈值（含）：凋零持续 40~80t */
+	/** 二阶阈值（含）：凋零持续 40~80t。默认 */
 	private static final int T2_MAX = 80;
 
 	private static final float MULT_T1 = 1.10f;
 	private static final float MULT_T2 = 1.20f;
 	private static final float MULT_T3 = 1.30f;
 
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.wither_frenzy");
+
 	/** 玩家UUID -> 进入凋零的服务端 tick（首次检测到凋零时记录） */
 	private static final Map<UUID, Long> WITHER_START = new ConcurrentHashMap<>();
-
 	// ===== 凋零抗性（伤害 -20% + 间隔 +40%）=====
 	/** 玩家UUID -> 凋零 tick 伤害计数（用于跳过计数实现间隔延长） */
 	private static final Map<UUID, Integer> WITHER_TICK_COUNT = new ConcurrentHashMap<>();
@@ -74,11 +79,13 @@ public final class WitherFrenzyManager {
 		if (!FormUtils.isForm(player, FormIdentifiers.ANUBIS_WOLF_SP)) return 1.0f;
 		if (!player.hasStatusEffect(StatusEffects.WITHER)) return 1.0f;
 		Long start = WITHER_START.get(player.getUuid());
-		if (start == null) return MULT_T1; // 有凋零但起点未记录（首 tick 前），按 T1
+		if (start == null) return (float) BAL.d("mult_t1", MULT_T1); // 有凋零但起点未记录（首 tick 前），按 T1
 		long elapsed = player.getServer().getTicks() - start;
-		if (elapsed < T1_MAX) return MULT_T1;
-		if (elapsed < T2_MAX) return MULT_T2;
-		return MULT_T3;
+		int t1Max = BAL.i("t1_max", T1_MAX);
+		int t2Max = BAL.i("t2_max", T2_MAX);
+		if (elapsed < t1Max) return (float) BAL.d("mult_t1", MULT_T1);
+		if (elapsed < t2Max) return (float) BAL.d("mult_t2", MULT_T2);
+		return (float) BAL.d("mult_t3", MULT_T3);
 	}
 
 	/** 玩家断线 / 变形时清理。 */
@@ -104,7 +111,7 @@ public final class WitherFrenzyManager {
 			if (count >= SKIP_PERIOD) WITHER_TICK_COUNT.put(id, 0);
 			return 0.0f;
 		}
-		return WITHER_DAMAGE_REDUCE;
+		return (float) BAL.d("wither_damage_reduce", WITHER_DAMAGE_REDUCE);
 	}
 
 	/** 凋零结束时清理 tick 计数（由 tick() 在凋零结束时统一处理）。 */

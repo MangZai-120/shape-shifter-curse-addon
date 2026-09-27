@@ -21,6 +21,7 @@ import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -58,6 +59,11 @@ public final class MancianimaMarkManager {
 	public static final int RED_RELOCK_COOLDOWN_TICKS = 300;  // 15s 内不能对同一目标再红标
 	/** 阶段升级冷却：黄标→升红、红标→引爆都至少需要等待 3s */
 	public static final int STAGE_GATE_TICKS = 60;            // 3s
+
+	/** 阶段升级冷却（运行时快照读取，供 MancianimaPrimary 等服务端类共用；HUD 客户端仍读常量） */
+	public static int stageGateTicks() {
+		return BAL.i("stage_gate_ticks", STAGE_GATE_TICKS);
+	}
 
 	/** S2C 包：将本地玩家持有的标记同步到客户端，用于 entity_glow */
 	public static final Identifier PACKET_MARK_SYNC = new Identifier("ssc_addon", "mancianima_mark_sync");
@@ -99,6 +105,9 @@ public final class MancianimaMarkManager {
 	/** 进化使魔 mana 回复暂停计时器资源 id（常量复用，避免每 tick 现场构造 Identifier） */
 	private static final Identifier UPGRADE_FOX_MANA_REGEN_PAUSE_TIMER =
 			new Identifier("my_addon", "form_upgrade_familiar_fox_mana_regen_pause_pause_timer");
+
+	// 阶段 5：运行时快照读取（abilities.mancianima_mark；快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.mancianima_mark");
 
 	/** 标记战斗发生（伤害进出契灵玩家时调用） */
 	public static void markCombat(UUID playerUuid, long now) {
@@ -161,7 +170,7 @@ public final class MancianimaMarkManager {
 		}
 		if (target == null) { MARKS.remove(markerId); DIRTY.add(markerId); return; }
 		long now = ((ServerWorld) marker.getWorld()).getTime();
-		long expire = (old != null && old.targetUuid.equals(target.getUuid())) ? old.expireTick : (now + MARK_DURATION_TICKS);
+		long expire = (old != null && old.targetUuid.equals(target.getUuid())) ? old.expireTick : (now + BAL.i("mark_duration_ticks", MARK_DURATION_TICKS));
 		// 全新 YELLOW 标记 → 重置该 marker+target 的红标重锁 CD（允许立刻升红）
 		boolean isFreshYellow = color == MarkColor.YELLOW
 				&& (old == null || !old.targetUuid.equals(target.getUuid()));
@@ -180,12 +189,12 @@ public final class MancianimaMarkManager {
 		if (m == null || !m.targetUuid.equals(target.getUuid())) return false;
 		if (m.color != MarkColor.ORANGE) return false;
 		long now = ((ServerWorld) marker.getWorld()).getTime();
-		if (now - m.colorSetTick < STAGE_GATE_TICKS) return false;
+		if (now - m.colorSetTick < BAL.i("stage_gate_ticks", STAGE_GATE_TICKS)) return false;
 		if (!canRedRelock(marker.getUuid(), target.getUuid(), now)) return false;
 		m.color = MarkColor.RED;
-		m.expireTick = now + MARK_DURATION_TICKS;
+		m.expireTick = now + BAL.i("mark_duration_ticks", MARK_DURATION_TICKS);
 		m.colorSetTick = now; // 重置阶段计时，红标→引爆需再等 3s
-		RED_LOCKOUT.put(marker.getUuid() + ":" + target.getUuid(), now + RED_RELOCK_COOLDOWN_TICKS);
+		RED_LOCKOUT.put(marker.getUuid() + ":" + target.getUuid(), now + BAL.i("red_relock_cooldown_ticks", RED_RELOCK_COOLDOWN_TICKS));
 		DIRTY.add(marker.getUuid());
 		return true;
 	}
@@ -230,12 +239,13 @@ public final class MancianimaMarkManager {
 
 			double dist = marker.distanceTo(living);
 			MarkColor newColor = m.color;
+			int rangeOrange = BAL.i("range_orange", RANGE_ORANGE);
 			if (m.color == MarkColor.YELLOW) {
-				if (dist <= RANGE_ORANGE) newColor = MarkColor.ORANGE;
+				if (dist <= rangeOrange) newColor = MarkColor.ORANGE;
 			} else if (m.color == MarkColor.ORANGE) {
-				if (dist > RANGE_ORANGE) newColor = MarkColor.YELLOW;
+				if (dist > rangeOrange) newColor = MarkColor.YELLOW;
 			} else { // RED
-				if (dist > RANGE_RED_KEEP) newColor = MarkColor.YELLOW;
+				if (dist > BAL.i("range_red_keep", RANGE_RED_KEEP)) newColor = MarkColor.YELLOW;
 			}
 			if (newColor != m.color) {
 				m.color = newColor;
@@ -269,7 +279,7 @@ public final class MancianimaMarkManager {
 				// 引导中断 = 联动失败：次技能引导（type=2）进入 3.5s 失败 CD；主技能引导（type=1）维持原行为不设 CD
 				if (cs.type == 2) {
 					PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_SECONDARY_CD,
-							MancianimaTeleport.RED_FAIL_CD_TICKS);
+							MancianimaTeleport.redFailCdTicks());
 				}
 				continue;
 			}
@@ -333,9 +343,10 @@ public final class MancianimaMarkManager {
 				// 抗伤回复：15s 内未受到任何伤害后，每 15s 回 1 抗伤（主动攻击敌人不打断计时）
 				UUID id = sp.getUuid();
 				long lastCombat = LAST_COMBAT.getOrDefault(id, 0L);
-				if (now - lastCombat < RESIST_REGEN_INTERVAL_TICKS) continue;
+				long resistRegenInterval = BAL.i("resist_regen_interval_ticks", RESIST_REGEN_INTERVAL_TICKS);
+				if (now - lastCombat < resistRegenInterval) continue;
 				long lastRegen = LAST_REGEN.getOrDefault(id, 0L);
-				if (now - lastRegen < RESIST_REGEN_INTERVAL_TICKS) continue;
+				if (now - lastRegen < resistRegenInterval) continue;
 				int cur = PowerUtils.getResourceValue(sp, FormIdentifiers.MANCIANIMA_RESISTANCE);
 				int max = PowerUtils.getResourceMax(sp, FormIdentifiers.MANCIANIMA_RESISTANCE);
 				if (max <= 0) max = 2;
@@ -348,9 +359,9 @@ public final class MancianimaMarkManager {
 				// isUnlocked + 资源扫描」；两道门均为纯读取，调序不改变行为（对照契灵分支顺序）。
 				UUID id = sp.getUuid();
 				long lastCombat = LAST_COMBAT.getOrDefault(id, 0L);
-				if (now - lastCombat < OUT_OF_COMBAT_TICKS) continue;
+				if (now - lastCombat < BAL.i("out_of_combat_ticks", OUT_OF_COMBAT_TICKS)) continue;
 				long lastRegen = LAST_MANA_REGEN.getOrDefault(id, 0L);
-				if (now - lastRegen < UPGRADE_FOX_MANA_REGEN_INTERVAL_TICKS) continue;
+				if (now - lastRegen < BAL.i("upgrade_fox_mana_regen_interval_ticks", UPGRADE_FOX_MANA_REGEN_INTERVAL_TICKS)) continue;
 				if (UniversalFormationManager.isCharging(sp)) continue;
 				// 仅在已解锁 mana_system 节点时生效（mana 条显示门控一致）
 				if (!net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent.EVOLUTION
@@ -363,7 +374,7 @@ public final class MancianimaMarkManager {
 				double maxMana = net.onixary.shapeShifterCurseFabric.mana.ManaUtils.getPlayerMaxMana(sp);
 				if (maxMana <= 0 || curMana >= maxMana) { LAST_MANA_REGEN.put(id, now); continue; }
 				// 灵视节点：mana 自动回复速率 +10%
-				double regenAmount = UPGRADE_FOX_MANA_REGEN_AMOUNT;
+				double regenAmount = BAL.d("upgrade_fox_mana_regen_amount", UPGRADE_FOX_MANA_REGEN_AMOUNT);
 				net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionComponent svComp =
 							net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent.EVOLUTION.get(sp);
 				if (svComp.isUnlocked(net.jackcooper.shapeShifterCurseAddon.evolution.FamiliarFoxTree.NODE_SPIRIT_VISION)) {
@@ -413,7 +424,7 @@ public final class MancianimaMarkManager {
 			buf.writeString(colorString(m.color));
 		}
 		buf.writeInt(m == null ? 0 : (int) Math.max(0,
-				STAGE_GATE_TICKS - (player.getWorld().getTime() - m.colorSetTick)));
+				BAL.i("stage_gate_ticks", STAGE_GATE_TICKS) - (player.getWorld().getTime() - m.colorSetTick)));
 		try {
 			ServerPlayNetworking.send(player, PACKET_MARK_SYNC, buf);
 		} catch (Exception ignored) {}

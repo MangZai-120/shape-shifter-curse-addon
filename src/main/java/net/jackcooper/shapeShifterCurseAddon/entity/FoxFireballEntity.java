@@ -46,18 +46,23 @@ import java.util.List;
  */
 public class FoxFireballEntity extends ProjectileEntity implements net.minecraft.entity.FlyingItemEntity {
 
-    private static final double ARM_DISTANCE = 12.0;   // 12 格后才进入杀伤（碰墙/生物爆炸）
-    private static final double HIT_RADIUS = 2.5;      // 命中/穿透判定半径（目标碰撞箱 expand，与视觉粒子范围匹配）
-    private static final double EXPLODE_RADIUS = 6.0;  // 爆炸球半径
-    private static final double CHAIN_RADIUS = 2.0;    // 连锁半径
-    private static final float PIERCE_DAMAGE = 8.0f;   // 前 12 格穿透（魔法）
-    private static final float EXPLODE_DAMAGE = 6.0f;  // 爆炸（物理）
-    private static final float CHAIN_DAMAGE = 4.0f;    // 连锁（物理）
-    /** 非玩家目标伤害倍率（用户定稿 ×1.5）：Red 火球对怪物三段全部 ×1.5，对玩家保持原值 */
+    // 狐火火球参数：默认与注释一致；运行时从 balance 快照读取（abilities.fox_fireball）
+    private static final double ARM_DISTANCE = 12.0;   // 默认；12 格后才进入杀伤（碰墙/生物爆炸）
+    private static final double HIT_RADIUS = 2.5;      // 默认；命中/穿透判定半径（目标碰撞箱 expand，与视觉粒子范围匹配）
+    private static final double EXPLODE_RADIUS = 6.0;  // 默认；爆炸球半径
+    private static final double CHAIN_RADIUS = 2.0;    // 默认；连锁半径
+    private static final float PIERCE_DAMAGE = 8.0f;   // 默认；前 12 格穿透（魔法）
+    private static final float EXPLODE_DAMAGE = 6.0f;  // 默认；爆炸（物理）
+    private static final float CHAIN_DAMAGE = 4.0f;    // 默认；连锁（物理）
+    /** 非玩家目标伤害倍率（用户定稿 ×1.5）：Red 火球对怪物三段全部 ×1.5，对玩家保持原值；运行时从 balance 快照读取 */
     private static final float NON_PLAYER_MULT = 1.5f;
-    private static final int RING_DURATION = 7;        // 腰部火环扩散动画帧数（半径 0→2）
-    private static final double PHASE2_SPEED = 2.0;    // 12 格后固定 2 格/s
-    private static final int PHASE2_DURATION = 60;     // 12 格后最多飞 3 秒（60 tick → 18 格上限）
+    private static final int RING_DURATION = 7;        // 默认；腰部火环扩散动画帧数（半径 0→2）
+    private static final double PHASE2_SPEED = 2.0;    // 默认；12 格后固定 2 格/s
+    private static final int PHASE2_DURATION = 60;     // 默认；12 格后最多飞 3 秒（60 tick → 18 格上限）
+
+    // 阶段 5：服务端权威快照读取（客户端/快照未初始化回退默认常量；客户端预测分支与原编译期常量行为一致）
+    private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
+            new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.fox_fireball");
 
     private static final TrackedData<Boolean> EXPLODED = DataTracker.registerData(FoxFireballEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
     /** 施法者 UUID 同步给客户端：拖尾粒子打 owner 标（仅本人第一人称避让）用，2026-09-26 */
@@ -95,13 +100,14 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         this.empowered = empowered;
     }
 
-    /** 速度曲线（格/tick = b/s ÷ 20）：0~12 格按距离 20→2 线性递减（约 1.5 秒走完），12 格后固定 2 格/s。 */
+    /** 速度曲线（格/tick = b/s ÷ 20）：0~12 格按距离 20→2 线性递减（约 1.5 秒走完），12 格后固定 2 格/s。arm 距离运行时从 balance 读取（客户端回退默认）。 */
     private double speedPerTick(double d) {
         double bps;
-        if (d < ARM_DISTANCE) {
-            bps = 20.0 - (20.0 - 2.0) * (d / ARM_DISTANCE);  // 20 → 2 线性递减（按距离）
+        double armDistance = BAL.d("arm_distance", ARM_DISTANCE);
+        if (d < armDistance) {
+            bps = 20.0 - (20.0 - 2.0) * (d / armDistance);  // 20 → 2 线性递减（按距离）
         } else {
-            bps = PHASE2_SPEED;                              // 12 格后固定 2 格/s
+            bps = BAL.d("phase2_speed", PHASE2_SPEED);      // 12 格后固定 2 格/s
         }
         return bps / 20.0;
     }
@@ -142,7 +148,7 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
             return;
         }
 
-        boolean armed = distanceTraveled >= ARM_DISTANCE;  // 12 格后才有杀伤
+        boolean armed = distanceTraveled >= BAL.d("arm_distance", ARM_DISTANCE);  // 12 格后才有杀伤
         double speed = speedPerTick(distanceTraveled);
         Vec3d velocity = direction.multiply(speed);
         Vec3d from = this.getPos();
@@ -175,9 +181,9 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         spawnTrail(sw);
 
         // 12 格后最多再飞 3 秒（达 18 格），未命中则原地触发一次爆炸后消失
-        if (distanceTraveled >= ARM_DISTANCE) {
+        if (distanceTraveled >= BAL.d("arm_distance", ARM_DISTANCE)) {
             phase2Tick++;
-            if (phase2Tick >= PHASE2_DURATION) {
+            if (phase2Tick >= BAL.i("phase2_duration", PHASE2_DURATION)) {
                 explode(sw, null);   // 未命中飞到射程上限：原地触发一次爆炸（无连锁）后消失
                 return;
             }
@@ -188,11 +194,12 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
     private LivingEntity findTarget(ServerWorld world) {
         // 判定基准 = 目标碰撞箱（而非脚底坐标点）：高大目标（铁蟹儡高 2.7 格）的脚底点
         // 与飞行中的火球中心垂直距离常 >1.5 格，旧脚底点判定会把这些“视觉命中”误判为未命中
-        Box box = this.getBoundingBox().expand(HIT_RADIUS);
+        double hitRadius = BAL.d("hit_radius", HIT_RADIUS);
+        Box box = this.getBoundingBox().expand(hitRadius);
         Vec3d c = this.getPos();
         List<LivingEntity> list = world.getEntitiesByClass(LivingEntity.class, box,
                 e -> e != this.getOwner() && e.isAlive() && !e.isSpectator()
-                        && e.getBoundingBox().expand(HIT_RADIUS).contains(c));
+                        && e.getBoundingBox().expand(hitRadius).contains(c));
         for (LivingEntity e : list) {
             if (this.getOwner() instanceof ServerPlayerEntity op && WhitelistUtils.isProtected(op, e)) continue;
             return e;
@@ -202,12 +209,13 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
 
     /** 前 12 格穿透：对判定球内每个非白名单生物造成一次 8 魔法穿透伤害（去重，火球不灭）。判定基于目标碰撞箱。 */
     private void pierceTargets(ServerWorld world) {
-        Box box = this.getBoundingBox().expand(HIT_RADIUS);
+        double hitRadius = BAL.d("hit_radius", HIT_RADIUS);
+        Box box = this.getBoundingBox().expand(hitRadius);
         Vec3d c = this.getPos();
         LivingEntity owner = this.getOwner() instanceof LivingEntity le ? le : null;
         List<LivingEntity> list = world.getEntitiesByClass(LivingEntity.class, box,
                 e -> e != this.getOwner() && e.isAlive() && !e.isSpectator()
-                        && e.getBoundingBox().expand(HIT_RADIUS).contains(c)
+                        && e.getBoundingBox().expand(hitRadius).contains(c)
                         && !piercedEntities.contains(e.getUuid()));
         for (LivingEntity e : list) {
             if (this.getOwner() instanceof ServerPlayerEntity op && WhitelistUtils.isProtected(op, e)) {
@@ -218,11 +226,12 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
             // 穿透段同样绕过受击无敌帧：普攻/近身霰击先命中时会留下无敌帧 + lastDamageTaken，
             // 若其 ≥ 8 伤则本段被原版「amount <= lastDamageTaken」规则整口吞掉（偶发穿透无伤根因）
             e.timeUntilRegen = 0;
-            float dmg = scaleFor(e, PIERCE_DAMAGE);
+            float pierceDmg = (float) BAL.d("pierce_damage", PIERCE_DAMAGE);
+            float dmg = scaleFor(e, pierceDmg);
             boolean dmgOk = KillEmpowerManager.damage(e, magicSource(e, owner), dmg, !empowered);
             if (dmgOk) e.timeUntilRegen = 0;   // 命中后清：不留无敌帧反吞普攻
             net.jackcooper.shapeShifterCurseAddon.util.FireballDebugLog.log("PIERCE target=" + e.getType().toString()
-                    + " amount=" + PIERCE_DAMAGE + " returned=" + dmgOk
+                    + " amount=" + pierceDmg + " returned=" + dmgOk
                     + " hp " + hpBefore + " -> " + e.getHealth());
             piercedEntities.add(e.getUuid());
             applyFoxFireBurn(e);
@@ -317,21 +326,24 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         w.playSound(null, x, y, z, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 0.8f, 1.4f);
 
         // 6 格球范围物理伤害；视线被方块阻挡的目标不受伤（爆炸不穿墙）
-        Box box = new Box(x - EXPLODE_RADIUS, y - EXPLODE_RADIUS, z - EXPLODE_RADIUS,
-                x + EXPLODE_RADIUS, y + EXPLODE_RADIUS, z + EXPLODE_RADIUS);
+        double explodeRadius = BAL.d("explode_radius", EXPLODE_RADIUS);
+        double explodeRadiusSq = explodeRadius * explodeRadius;
+        Box box = new Box(x - explodeRadius, y - explodeRadius, z - explodeRadius,
+                x + explodeRadius, y + explodeRadius, z + explodeRadius);
         List<LivingEntity> affected = w.getEntitiesByClass(LivingEntity.class, box,
                 e -> e != owner && e.isAlive() && !e.isSpectator()
-                        && e.squaredDistanceTo(x, y, z) <= EXPLODE_RADIUS * EXPLODE_RADIUS
+                        && e.squaredDistanceTo(x, y, z) <= explodeRadiusSq
                         && !(owner instanceof ServerPlayerEntity op && WhitelistUtils.isProtected(op, e))
                         && hasLineOfSight(w, x, y, z, e));
+        float explodeDamageBase = (float) BAL.d("explode_damage", EXPLODE_DAMAGE);
         for (LivingEntity e : affected) {
             // 爆破伤害按距离衰减：≤2 格全额，2~6 格线性衰减至最低 1
             double dist = Math.sqrt(e.squaredDistanceTo(x, y, z));
             float dmg;
             if (dist <= 2.0) {
-                dmg = EXPLODE_DAMAGE;
+                dmg = explodeDamageBase;
             } else {
-                dmg = (float) (EXPLODE_DAMAGE - (EXPLODE_DAMAGE - 1.0) * (dist - 2.0) / (EXPLODE_RADIUS - 2.0));
+                dmg = (float) (explodeDamageBase - (explodeDamageBase - 1.0) * (dist - 2.0) / (explodeRadius - 2.0));
                 if (dmg < 1.0f) dmg = 1.0f;
             }
             float hpBefore = e.getHealth();
@@ -368,16 +380,19 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
     private void triggerExtraExplosion(ServerWorld w, LivingEntity owner, LivingEntity center) {
         double cx = center.getX(), cy = center.getY() + center.getHeight() * 0.5, cz = center.getZ();
         activeRings.add(new float[]{(float) cx, (float) cy, (float) cz, 0f});   // 腰部火环，由 tick 逐帧播放
-        Box box = new Box(cx - CHAIN_RADIUS, cy - CHAIN_RADIUS, cz - CHAIN_RADIUS,
-                cx + CHAIN_RADIUS, cy + CHAIN_RADIUS, cz + CHAIN_RADIUS);
+        double chainRadius = BAL.d("chain_radius", CHAIN_RADIUS);
+        double chainRadiusSq = chainRadius * chainRadius;
+        Box box = new Box(cx - chainRadius, cy - chainRadius, cz - chainRadius,
+                cx + chainRadius, cy + chainRadius, cz + chainRadius);
         List<LivingEntity> chained = w.getEntitiesByClass(LivingEntity.class, box,
                 e -> e != owner && e != center && e.isAlive() && !e.isSpectator()
-                        && e.squaredDistanceTo(cx, cy, cz) <= CHAIN_RADIUS * CHAIN_RADIUS
+                        && e.squaredDistanceTo(cx, cy, cz) <= chainRadiusSq
                         && !(owner instanceof ServerPlayerEntity op && WhitelistUtils.isProtected(op, e)));
+        float chainDamage = (float) BAL.d("chain_damage", CHAIN_DAMAGE);
         for (LivingEntity e : chained) {
             // 连锁段紧跟穿透段（8 伤）之后，同样需绕过受击无敌帧，否则 4 ≤ 8 被吞
             e.timeUntilRegen = 0;
-            boolean chainDmgOk = KillEmpowerManager.damage(e, physicalSource(e, owner), scaleFor(e, CHAIN_DAMAGE), !empowered);
+            boolean chainDmgOk = KillEmpowerManager.damage(e, physicalSource(e, owner), scaleFor(e, chainDamage), !empowered);
             if (chainDmgOk) e.timeUntilRegen = 0;   // 命中后清：不留无敌帧反吞普攻
             applyFoxFireBurn(e);
         }
@@ -403,23 +418,25 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
 
     /** 推进并绘制所有活跃火环（穿透/爆炸触发），播完移除。 */
     private void updateActiveRings(ServerWorld w) {
+        int ringDuration = BAL.i("ring_duration", RING_DURATION);
         java.util.Iterator<float[]> it = activeRings.iterator();
         while (it.hasNext()) {
             float[] r = it.next();
             r[3] += 1f;
-            float progress = r[3] / (float) RING_DURATION;
+            float progress = r[3] / (float) ringDuration;
             spawnWaistRing(w, r[0], r[1], r[2], progress);
-            if (r[3] >= RING_DURATION) it.remove();
+            if (r[3] >= ringDuration) it.remove();
         }
     }
 
     /** 6 格球爆炸粒子：80% 红 dust + 20% 狐火，附加少量 lava 黑渣。owner 作用域：仅本人第一人称避让。 */
     private void spawnExplosionParticles(ServerWorld w, double x, double y, double z) {
+        double explodeRadius = BAL.d("explode_radius", EXPLODE_RADIUS);
         net.jackcooper.shapeShifterCurseAddon.network.DecorationParticleScope.runProjectile(getOwner() instanceof LivingEntity le ? le : null, () -> {
             Random rnd = this.random;
             DustParticleEffect red = new DustParticleEffect(new Vector3f(0.85f, 0.1f, 0.05f), 1.3f);
             for (int i = 0; i < 130; i++) {
-                Vec3d p = randomInSphere(EXPLODE_RADIUS, rnd);
+                Vec3d p = randomInSphere(explodeRadius, rnd);
                 double px = x + p.x, py = y + p.y, pz = z + p.z;
                 if (rnd.nextDouble() < 0.8) {
                     w.spawnParticles(red, px, py, pz, 1, 0, 0, 0, 0);
@@ -428,7 +445,7 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
                 }
             }
             for (int i = 0; i < 16; i++) {
-                Vec3d p = randomInSphere(EXPLODE_RADIUS * 0.6, rnd);
+                Vec3d p = randomInSphere(explodeRadius * 0.6, rnd);
                 w.spawnParticles(ParticleTypes.LAVA, x + p.x, y + p.y + 1.0, z + p.z, 1, 0, 0, 0, 0);
             }
             // === RC4 奥术手雷爆炸特效（放大 1.5 倍版：扩散范围与 dust 尺寸 ×1.5，数量与速度不变） ===
@@ -444,10 +461,11 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         });
     }
 
-    /** 腰部火环扩散动画：每帧画半径递增的环（0→CHAIN_RADIUS），仅火焰 + 灵魂火粒子（无红色粉尘）。owner 作用域：仅本人避让。 */
+    /** 腰部火环扩散动画：每帧画半径递增的环（0→连锁半径），仅火焰 + 灵魂火粒子（无红色粉尘）。owner 作用域：仅本人避让。 */
     private void spawnWaistRing(ServerWorld w, double x, double y, double z, float progress) {
         net.jackcooper.shapeShifterCurseAddon.network.DecorationParticleScope.runProjectile(getOwner() instanceof LivingEntity le ? le : null, () -> {
-            double radius = Math.max(0.1, CHAIN_RADIUS * progress);
+            double chainRadius = BAL.d("chain_radius", CHAIN_RADIUS);
+            double radius = Math.max(0.1, chainRadius * progress);
             int pts = Math.max(2, (int) ((12 + 26 * progress) * 0.2));  // 粒子量减至原 20%
             double rot = progress * 0.6;                                // 轻微旋转更灵动
             double upward = 0.02 + progress * 0.04;                     // 火苗向上飘
@@ -476,10 +494,10 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         return target.getDamageSources().create(key, owner, owner);
     }
 
-    /** 按目标类型缩放伤害：非玩家生物 × NON_PLAYER_MULT（对玩家保持原值）。 */
+    /** 按目标类型缩放伤害：非玩家生物 × NON_PLAYER_MULT（balance 快照可覆盖；对玩家保持原值）。 */
     private static float scaleFor(LivingEntity target, float base) {
         if (target instanceof net.minecraft.entity.player.PlayerEntity) return base;
-        return base * NON_PLAYER_MULT;
+        return base * (float) BAL.d("non_player_mult", NON_PLAYER_MULT);
     }
 
     private DamageSource physicalSource(LivingEntity target, LivingEntity owner) {

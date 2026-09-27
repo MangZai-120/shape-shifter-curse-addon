@@ -44,11 +44,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class FormCastingStyle {
 	private FormCastingStyle() {}
 
+	// 阶段 5：两参数运行时从 balance 快照读取（systems.casting_style；快照未初始化回退默认常量）
+	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
+			new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("systems.casting_style");
+
 	/** 书基础自然回复（每秒，2026-09-19 用户定稿：基础 3，每升一级 +1，即 Lv1=3/Lv2=4/Lv3=5；
-	 * 回息法阵每级 +20% 可叠加）。 */
+	 * 回息法阵每级 +20% 可叠加）。默认值；运行时从 balance 快照读取。 */
 	public static final float BASE_BOOK_REGEN_PER_SEC = 3.0f;
 
-	/** 自然回复延迟（2026-09-17 用户定稿）：施法耗蓝后 7 秒（140t）内不自然回复，再次消耗重置计时。 */
+	/** 自然回复延迟（2026-09-17 用户定稿）：施法耗蓝后 7 秒（140t）内不自然回复，再次消耗重置计时。
+	 * 默认值；运行时从 balance 快照读取。 */
 	public static final int REGEN_DELAY_TICKS = 140;
 	/** 每玩家最后施法耗蓝时刻（游戏 tick；服务器重启重置——重启即重新计 7 秒，可接受）。 */
 	private static final Map<UUID, Long> LAST_SPEND_TICK = new ConcurrentHashMap<>();
@@ -62,9 +67,10 @@ public final class FormCastingStyle {
 
 	/** 无活动施法且距上次耗蓝已过延迟时，允许基础自然回复。 */
 	private static boolean canRegenerate(ServerPlayerEntity player) {
+		int delay = BAL.i("regen_delay_ticks", REGEN_DELAY_TICKS);
 		Long last = LAST_SPEND_TICK.get(player.getUuid());
 		return SpellCastingRules.naturalRegenAllowed(SpellChannelManager.isCasting(player),
-				last == null ? REGEN_DELAY_TICKS : player.getWorld().getTime() - last, REGEN_DELAY_TICKS);
+				last == null ? delay : player.getWorld().getTime() - last, delay);
 	}
 
 	/** 美西螈「潮汐」：在水中/雨中施法耗蓝 ×0.85（SP 与进化美西螈同享，用户定稿）。 */
@@ -366,7 +372,7 @@ public final class FormCastingStyle {
 		// 全书通用自然回复：基础 3/秒 + 每书等级 +1（Lv1=3/Lv2=4/Lv3=5）× 回息法阵倍率（每级 +20% 可叠加）；
 		// 活动施法及耗蓝后 7 秒内不回复；月相、共生等流派回复不受此限。
 		if (canRegenerate(player)) {
-			float regenPerSec = BASE_BOOK_REGEN_PER_SEC + (SpellbookData.getLevel(book) - 1);
+			float regenPerSec = (float) BAL.d("base_book_regen_per_sec", BASE_BOOK_REGEN_PER_SEC) + (SpellbookData.getLevel(book) - 1);
 			SpellbookData.addMana(book, Math.round(regenPerSec
 					* FormationData.universalRecoveryMultiplier(book)));
 		}

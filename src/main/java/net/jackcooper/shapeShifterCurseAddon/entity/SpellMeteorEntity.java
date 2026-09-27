@@ -19,6 +19,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 
 import java.util.List;
@@ -41,6 +42,9 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 	private static final double FALL_HEIGHT = 20.0;
 	/** 下落速度（格/tick）。 */
 	private static final double FALL_SPEED = 2.5;
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("spells.meteor_entity");
 
 	/** 魔法等级（1-5），DataTracker 同步。 */
 	private static final TrackedData<Integer> LEVEL =
@@ -103,7 +107,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 
 	/** 初始化落点：悬停位置 = 落点上空 FALL_HEIGHT（施法时调用）。 */
 	public void setImpactTarget(double x, double y, double z) {
-		this.setPosition(x, y + FALL_HEIGHT, z);
+		this.setPosition(x, y + BAL.d("fall_height", FALL_HEIGHT), z);
 	}
 
 	@Override
@@ -112,11 +116,13 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		ticksAlive++;
 
 		if (!falling) {
+			// 阶段 5：同函数多次读取局部变量化
+			double fallHeight = BAL.d("fall_height", FALL_HEIGHT);
 			// 标记阶段：服务端撒落点预警粒子（火焰圈 + 上升火星），客户端经粒子包同步
 			if (!this.getWorld().isClient && this.getWorld() instanceof ServerWorld serverWorld) {
 				// 落点 = 当前悬停位置正下方 FALL_HEIGHT 处
 				double ix = this.getX();
-				double iy = this.getY() - FALL_HEIGHT;
+				double iy = this.getY() - fallHeight;
 				double iz = this.getZ();
 				// 预警圈：沿半径撒火焰粒子勾勒 AOE 范围
 				int ringCount = (int) Math.max(12, radius * 10);
@@ -132,7 +138,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 						ix, iy + 0.5, iz, 3, 0.3, 0.5, 0.3, 0.02);
 			}
 			// 延迟期满：切入下落阶段（双端都切，客户端实体也要开始下落动画）
-			if (ticksAlive >= DELAY_TICKS) {
+			if (ticksAlive >= BAL.i("delay_ticks", DELAY_TICKS)) {
 				falling = true;
 				if (!this.getWorld().isClient) {
 					this.getWorld().playSound(null, this.getX(), this.getY(), this.getZ(),
@@ -143,7 +149,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		}
 
 		// 下落阶段：双端同步下坠（客户端按速度插值即可看到火球砸下）
-		Vec3d velocity = new Vec3d(0, -FALL_SPEED, 0);
+		Vec3d velocity = new Vec3d(0, -BAL.d("fall_speed", FALL_SPEED), 0);
 		this.setPosition(this.getX(), this.getY() + velocity.y, this.getZ());
 		if (this.getWorld() instanceof ServerWorld serverWorld) {
 			ParticleUtils.spawnParticles(serverWorld, ParticleTypes.FLAME,
@@ -152,7 +158,11 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 
 		// 服务端：下落阶段每 tick 降 FALL_SPEED，累计 ceil(FALL_HEIGHT / FALL_SPEED) tick 后到达落点，引爆
 		if (!this.getWorld().isClient && this.getWorld() instanceof ServerWorld impactWorld) {
-			if (ticksAlive >= DELAY_TICKS + Math.ceil(FALL_HEIGHT / FALL_SPEED)) {
+			// 阶段 5：同函数多次读取局部变量化（与标记阶段、下落速度保持同一 tick 快照一致性）
+			double fallHeight2 = BAL.d("fall_height", FALL_HEIGHT);
+			double fallSpeed2 = BAL.d("fall_speed", FALL_SPEED);
+			int delayTicks2 = BAL.i("delay_ticks", DELAY_TICKS);
+			if (ticksAlive >= delayTicks2 + Math.ceil(fallHeight2 / fallSpeed2)) {
 				explode(impactWorld);
 			}
 		}

@@ -19,6 +19,7 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.item.ErosionSandPrismItem;
 import net.jackcooper.shapeShifterCurseAddon.item.WitheredSandRingItem;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -54,19 +55,21 @@ import java.util.concurrent.ConcurrentHashMap;
 public class GoldenSandstormErosionBrand {
 
 	// ==================== 常量 ====================
-	/** 烙印持续时间（tick），每次叠加刷新 */
+	// 带「默认」注释的常量已登记 balance（scope：abilities.golden_sandstorm_erosion_brand），运行时从快照读取；
+	// 其余（STACK_COOLDOWN* / BURST_DAMAGE_CAP_WITH_RING / PRISM_SPLASH_PERCENT）未登记，保持编译期常量。
+	/** 烙印持续时间（tick），每次叠加刷新。默认；运行时从 balance 快照读取 */
 	private static final int BRAND_DURATION = 200; // 10秒
-	/** 绿色状态持续时间（tick），仅用于视觉标记 */
+	/** 绿色状态持续时间（tick），仅用于视觉标记。默认；运行时从 balance 快照读取 */
 	private static final int GREEN_DURATION = 200; // 10秒
-	/** 爆发后叠层冷却时间（tick），冷却结束后可重新叠层 */
+	/** 爆发后叠层冷却时间（tick），冷却结束后可重新叠层。默认；运行时从 balance 快照读取 */
 	private static final int BRAND_STACK_COOLDOWN = 100; // 5秒
-	/** 最大叠加层数 */
+	/** 最大叠加层数。默认；运行时从 balance 快照读取 */
 	private static final int MAX_STACKS = 3;
-	/** 被动爆发生命百分比伤害 */
+	/** 被动爆发生命百分比伤害。默认；运行时从 balance 快照读取 */
 	private static final float BURST_HP_PERCENT = 0.20f;
-	/** 被动爆发伤害上限 */
+	/** 被动爆发伤害上限。默认；运行时从 balance 快照读取 */
 	private static final float BURST_DAMAGE_CAP = 20.0f;
-	/** 被动爆发自愈百分比 */
+	/** 被动爆发自愈百分比。默认；运行时从 balance 快照读取 */
 	private static final float BURST_HEAL_PERCENT = 0.10f;
 	/** 叠层冷却（tick），同一目标1秒内最多叠1层 */
 	private static final long STACK_COOLDOWN = 20L;
@@ -74,11 +77,11 @@ public class GoldenSandstormErosionBrand {
 	private static final long STACK_COOLDOWN_WITH_PRISM = 26L;
 	/** 枯沙指环装备时的被动爆发伤害上限（+30%） */
 	private static final float BURST_DAMAGE_CAP_WITH_RING = 26.0f;
-	/** 蚀沙棱晶扩散伤害范围（格） */
+	/** 蚀沙棱晶扩散伤害范围（格）。默认；运行时从 balance 快照读取 */
 	private static final double SPREAD_RANGE = 5.0;
-	/** 扩散叠标记半径（格） */
+	/** 扩散叠标记半径（格）。默认；运行时从 balance 快照读取 */
 	private static final double SPLASH_BRAND_RANGE = 4.0;
-	/** 引爆自愈：回复已损生命值的百分比 */
+	/** 引爆自愈：回复已损生命值的百分比。默认；运行时从 balance 快照读取 */
 	private static final float DETONATE_HEAL_LOST_PERCENT = 0.20f;
 	/** 蚀沙棱晶：扩散伤害占引爆伤害的比例（40%） */
 	private static final float PRISM_SPLASH_PERCENT = 0.40f;
@@ -98,6 +101,9 @@ public class GoldenSandstormErosionBrand {
 	// ==================== 状态追踪 ====================
 	/** 玩家UUID -> { 目标UUID -> 烙印状态 } */
 	private static final ConcurrentHashMap<UUID, Map<UUID, BrandState>> ACTIVE_BRANDS = new ConcurrentHashMap<>();
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.golden_sandstorm_erosion_brand");
 
 	private GoldenSandstormErosionBrand() {
 	}
@@ -149,12 +155,14 @@ public class GoldenSandstormErosionBrand {
 		// 标记需要同步
 		markDirty(playerUuid);
 
-		if (state != null && state.stacks >= MAX_STACKS) {
+		if (state != null && state.stacks >= BAL.i("max_stacks", MAX_STACKS)) {
 			// 已满3层，第4次攻击触发被动爆发
 			// !! 必须先重置状态再造成伤害，否则 target.damage() 会通过 Apoli action 递归调用 onPlayerAttack
 			state.stacks = 0;
 			state.greenState = true;
-			state.greenExpiryTick = currentTick + GREEN_DURATION;			state.stackCooldownExpiryTick = currentTick + BRAND_STACK_COOLDOWN;			state.expiryTick = currentTick + GREEN_DURATION;
+			int greenDuration = BAL.i("green_duration", GREEN_DURATION);
+			int stackCooldown = BAL.i("brand_stack_cooldown", BRAND_STACK_COOLDOWN);
+			state.greenExpiryTick = currentTick + greenDuration;			state.stackCooldownExpiryTick = currentTick + stackCooldown;			state.expiryTick = currentTick + greenDuration;
 
 			// 同步标记效果到客户端（放在伤害前确保即时生效）
 			updateTargetMarker(target, state, currentTick, player);
@@ -164,7 +172,8 @@ public class GoldenSandstormErosionBrand {
 
 			// 蚀沙棱晶：被动爆发也触发扩散（白名单目标不触发扩散）
 			if (hasErosionPrism(player) && !WhitelistUtils.isProtected(player, target)) {
-				float burstDmg = Math.min(target.getHealth() * BURST_HP_PERCENT, hasWitheredRing(player) ? BURST_DAMAGE_CAP_WITH_RING : BURST_DAMAGE_CAP);
+				float burstDmg = Math.min(target.getHealth() * (float) BAL.d("burst_hp_percent", BURST_HP_PERCENT),
+						hasWitheredRing(player) ? BURST_DAMAGE_CAP_WITH_RING : (float) BAL.d("burst_damage_cap", BURST_DAMAGE_CAP));
 				if (burstDmg < 1.0f) burstDmg = 1.0f;
 				float splashDmg = burstDmg * PRISM_SPLASH_PERCENT;
 				splashDamageToNearby(player, serverWorld, target.getPos(), splashDmg, target);
@@ -192,14 +201,14 @@ public class GoldenSandstormErosionBrand {
 		long effectiveCooldown = hasErosionPrism(player) ? STACK_COOLDOWN_WITH_PRISM : STACK_COOLDOWN;
 		if (currentTick - state.lastStackTick < effectiveCooldown) {
 			// 冷却中，刷新持续时间但不叠层
-			state.expiryTick = currentTick + BRAND_DURATION;
+			state.expiryTick = currentTick + BAL.i("brand_duration", BRAND_DURATION);
 			updateTargetMarker(target, state, currentTick, player); // 刷新标记持续时间
 			return;
 		}
 
-		state.stacks = Math.min(state.stacks + 1, MAX_STACKS);
+		state.stacks = Math.min(state.stacks + 1, BAL.i("max_stacks", MAX_STACKS));
 		state.lastStackTick = currentTick;
-		state.expiryTick = currentTick + BRAND_DURATION;
+		state.expiryTick = currentTick + BAL.i("brand_duration", BRAND_DURATION);
 
 		// 同步标记效果到客户端
 		updateTargetMarker(target, state, currentTick, player);
@@ -220,8 +229,8 @@ public class GoldenSandstormErosionBrand {
 	private static void triggerPassiveBurst(ServerPlayerEntity player, LivingEntity target, ServerWorld serverWorld) {
 		// 计算伤害：目标当前生命值的20%（枯沙指环：上限26，默认：上限20）
 		boolean hasRing = hasWitheredRing(player);
-		float cap = hasRing ? BURST_DAMAGE_CAP_WITH_RING : BURST_DAMAGE_CAP;
-		float rawDamage = target.getHealth() * BURST_HP_PERCENT;
+		float cap = hasRing ? BURST_DAMAGE_CAP_WITH_RING : (float) BAL.d("burst_damage_cap", BURST_DAMAGE_CAP);
+		float rawDamage = target.getHealth() * (float) BAL.d("burst_hp_percent", BURST_HP_PERCENT);
 		float damage = Math.min(rawDamage, cap);
 		if (damage < 1.0f) damage = 1.0f;
 
@@ -234,7 +243,7 @@ public class GoldenSandstormErosionBrand {
 		}
 
 		// 自我回复10%最大生命值
-		float healAmount = player.getMaxHealth() * BURST_HEAL_PERCENT;
+		float healAmount = player.getMaxHealth() * (float) BAL.d("burst_heal_percent", BURST_HEAL_PERCENT);
 		player.heal(healAmount);
 	}
 
@@ -252,7 +261,7 @@ public class GoldenSandstormErosionBrand {
 		// 预先检查饰品状态（避免循环内重复检查）
 		boolean hasRing = hasWitheredRing(player);
 		boolean hasPrism = hasErosionPrism(player);
-		float cap = hasRing ? BURST_DAMAGE_CAP_WITH_RING : BURST_DAMAGE_CAP;
+		float cap = hasRing ? BURST_DAMAGE_CAP_WITH_RING : (float) BAL.d("burst_damage_cap", BURST_DAMAGE_CAP);
 		int totalTargets = 0;
 		int totalStacks = 0;
 
@@ -274,7 +283,7 @@ public class GoldenSandstormErosionBrand {
 			if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(player, target)) continue;
 
 			// 如果目标有3层，先触发被动爆发（不消耗层数）
-			if (state.stacks >= MAX_STACKS) {
+			if (state.stacks >= BAL.i("max_stacks", MAX_STACKS)) {
 				triggerPassiveBurst(player, target, serverWorld);
 				// 被动爆发的额外粒子
 				ParticleUtils.spawnParticles(serverWorld, ParticleTypes.FLASH,
@@ -286,7 +295,7 @@ public class GoldenSandstormErosionBrand {
 			totalStacks += state.stacks;
 
 			// 引爆伤害 = 目标当前生命值20%（上限20/26）
-			float rawDetonateDmg = target.getHealth() * BURST_HP_PERCENT;
+			float rawDetonateDmg = target.getHealth() * (float) BAL.d("burst_hp_percent", BURST_HP_PERCENT);
 			float detonateDamage = Math.min(rawDetonateDmg, cap);
 			if (detonateDamage < 1.0f) detonateDamage = 1.0f;
 
@@ -312,11 +321,12 @@ public class GoldenSandstormErosionBrand {
 
 			// 进入绿色状态
 			long currentTick = serverWorld.getTime();
+			int greenDuration = BAL.i("green_duration", GREEN_DURATION);
 			state.stacks = 0;
 			state.greenState = true;
-			state.greenExpiryTick = currentTick + GREEN_DURATION;
-			state.stackCooldownExpiryTick = currentTick + BRAND_STACK_COOLDOWN;
-			state.expiryTick = currentTick + GREEN_DURATION;
+			state.greenExpiryTick = currentTick + greenDuration;
+			state.stackCooldownExpiryTick = currentTick + BAL.i("brand_stack_cooldown", BRAND_STACK_COOLDOWN);
+			state.expiryTick = currentTick + greenDuration;
 
 			// 同步标记效果到客户端
 			updateTargetMarker(target, state, currentTick, player);
@@ -326,7 +336,7 @@ public class GoldenSandstormErosionBrand {
 		if (totalTargets > 0) {
 			float lostHealth = player.getMaxHealth() - player.getHealth();
 			if (lostHealth > 0) {
-				float healAmount = lostHealth * DETONATE_HEAL_LOST_PERCENT;
+				float healAmount = lostHealth * (float) BAL.d("detonate_heal_lost_percent", DETONATE_HEAL_LOST_PERCENT);
 				player.heal(healAmount);
 			}
 			markDirty(player.getUuid());
@@ -347,7 +357,9 @@ public class GoldenSandstormErosionBrand {
 		if (damage < 1.0f) damage = 1.0f;
 
 		// 使用较大的范围搜索（取伤害范围和叠标记范围的较大值）
-		double maxRange = Math.max(SPREAD_RANGE, SPLASH_BRAND_RANGE);
+		double spreadRange = BAL.d("spread_range", SPREAD_RANGE);
+		double splashBrandRange = BAL.d("splash_brand_range", SPLASH_BRAND_RANGE);
+		double maxRange = Math.max(spreadRange, splashBrandRange);
 		Box searchBox = new Box(
 				center.x - maxRange, center.y - maxRange, center.z - maxRange,
 				center.x + maxRange, center.y + maxRange, center.z + maxRange
@@ -373,7 +385,7 @@ public class GoldenSandstormErosionBrand {
 			double distSq = living.squaredDistanceTo(center);
 
 			// 伤害范围检查（5格）
-			if (distSq <= SPREAD_RANGE * SPREAD_RANGE) {
+			if (distSq <= spreadRange * spreadRange) {
 				Vec3d oldVelocity = living.getVelocity();
 				living.timeUntilRegen = 0;
 				boolean damaged = living.damage(splashDamageSource, damage);
@@ -387,7 +399,7 @@ public class GoldenSandstormErosionBrand {
 			}
 
 			// 叠标记范围检查（4格半径）
-			if (distSq <= SPLASH_BRAND_RANGE * SPLASH_BRAND_RANGE) {
+			if (distSq <= splashBrandRange * splashBrandRange) {
 				UUID livingUuid = living.getUuid();
 				BrandState state = playerBrands.get(livingUuid);
 
@@ -406,17 +418,18 @@ public class GoldenSandstormErosionBrand {
 					playerBrands.put(livingUuid, state);
 				}
 
-				state.stacks = Math.min(state.stacks + 1, MAX_STACKS);
+				state.stacks = Math.min(state.stacks + 1, BAL.i("max_stacks", MAX_STACKS));
 				state.lastStackTick = currentTick;
-				state.expiryTick = currentTick + BRAND_DURATION;
+				state.expiryTick = currentTick + BAL.i("brand_duration", BRAND_DURATION);
 
 				// 满3层触发爆发
-				if (state.stacks >= MAX_STACKS) {
+				if (state.stacks >= BAL.i("max_stacks", MAX_STACKS)) {
 					state.stacks = 0;
 					state.greenState = true;
-					state.greenExpiryTick = currentTick + GREEN_DURATION;
-					state.stackCooldownExpiryTick = currentTick + BRAND_STACK_COOLDOWN;
-					state.expiryTick = currentTick + GREEN_DURATION;
+					int greenDuration = BAL.i("green_duration", GREEN_DURATION);
+					state.greenExpiryTick = currentTick + greenDuration;
+					state.stackCooldownExpiryTick = currentTick + BAL.i("brand_stack_cooldown", BRAND_STACK_COOLDOWN);
+					state.expiryTick = currentTick + greenDuration;
 					updateTargetMarker(living, state, currentTick, player);
 					burstTargets.add(living);
 				} else {

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.particle.ParticleTypes;
@@ -20,14 +21,22 @@ import net.minecraft.util.Identifier;
  */
 public class CorruptMistSpell extends Spell {
 
-	/** 基础半径（格），实际半径 = 基础 × speed_multiplier(level)。 */
+	/** 基础半径（格）默认，实际半径 = 基础 × speed_multiplier(level)；运行时从 balance 快照读取。 */
 	private static final double BASE_RADIUS = 3.0;
-	/** 雾气持续时间（tick）：6s。 */
+	/** 雾气持续时间（tick）：6s。默认值；运行时从 balance 快照读取。 */
 	public static final int DURATION_TICKS = 120;
-	/** 每跳间隔（tick）：2s。 */
+	/** 每跳间隔（tick）：2s。默认值；运行时从 balance 快照读取。 */
 	public static final int INTERVAL_TICKS = 40;
-	/** 中毒时长（tick）：4s。 */
+	/** 中毒时长（tick）：4s。默认值；运行时从 balance 快照读取（本类自身不消费，结算方 CorruptMistManager 经下方 poisonTicks() 取值）。 */
 	public static final int POISON_TICKS = 80;
+
+	// 阶段 5：运行时快照读取（spells.corrupt_mist；快照未初始化回退上方默认常量）
+	private static final BalanceReader BAL = new BalanceReader("spells.corrupt_mist");
+
+	/** 中毒时长运行时读取（spells.corrupt_mist.poison_ticks）：供 CorruptMistManager 结算时调用。 */
+	public static int poisonTicks() {
+		return BAL.i("poison_ticks", POISON_TICKS);
+	}
 
 	public CorruptMistSpell() {
 		super(new Identifier("ssc_addon", "corrupt_mist"), SpellRarity.BLUE);
@@ -43,13 +52,13 @@ public class CorruptMistSpell extends Spell {
 		if (caster.getWorld().isClient() || !(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
-		double radius = BASE_RADIUS * getSpeedMultiplier(level);
+		double radius = BAL.d("base_radius", BASE_RADIUS) * getSpeedMultiplier(level);
 		// 雾持续时间：每级 +1.25s（L1=6s … L5=11s）
-		int duration = DURATION_TICKS + Math.round((level - 1) * 1.25f * 20);
+		int duration = BAL.i("duration_ticks", DURATION_TICKS) + Math.round((level - 1) * 1.25f * 20);
 		if (!solo) duration = net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, duration);
 		// 注册持续雾气区域（服务端 tick 结算，见 CorruptMistManager；L4+ 中毒 II）
 		net.jackcooper.shapeShifterCurseAddon.ability.CorruptMistManager.start(
-				caster, radius, duration, INTERVAL_TICKS, level, solo ? null : ssc_addon$getRefundCastId());
+				caster, radius, duration, BAL.i("interval_ticks", INTERVAL_TICKS), level, solo ? null : ssc_addon$getRefundCastId());
 		// 起手演出：紫色雾气扩散 + 酸蚀音效
 		for (int layer = 1; layer <= 3; layer++) {
 			double r = radius * layer / 3.0;

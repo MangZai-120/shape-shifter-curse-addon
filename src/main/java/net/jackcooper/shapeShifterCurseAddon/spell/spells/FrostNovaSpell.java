@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.entity.LivingEntity;
@@ -25,8 +26,11 @@ import java.util.List;
  */
 public class FrostNovaSpell extends Spell {
 
-	/** 基础半径（格），实际半径 = 基础 × speed_multiplier(level)。 */
+	/** 基础半径（格）默认，实际半径 = 基础 × speed_multiplier(level)；运行时从 balance 快照读取。 */
 	private static final double BASE_RADIUS = 4.0;
+
+	// 阶段 5：运行时快照读取（spells.frost_nova；快照未初始化回退上方默认常量）
+	private static final BalanceReader BAL = new BalanceReader("spells.frost_nova");
 
 	public FrostNovaSpell() {
 		super(new Identifier("ssc_addon", "frost_nova"), SpellRarity.GREEN);
@@ -42,7 +46,7 @@ public class FrostNovaSpell extends Spell {
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
-		double radius = BASE_RADIUS * getSpeedMultiplier(level);
+		double radius = BAL.d("base_radius", BASE_RADIUS) * getSpeedMultiplier(level);
 		// 稀有度为蓝/橙时，生效范围额外 +25%（独立于等级缩放，数据包改 rarity 自动跟随）
 		SpellRarity rarity = getRarity(level);
 		if (rarity == SpellRarity.BLUE || rarity == SpellRarity.ORANGE) {

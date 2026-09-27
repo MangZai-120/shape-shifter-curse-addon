@@ -1,5 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -19,6 +21,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
@@ -48,10 +51,10 @@ import java.util.UUID;
  */
 public class TidalOrbEntity extends Entity implements net.minecraft.entity.FlyingItemEntity {
 
-    // ===== 飞行参数 =====
+    // ===== 飞行参数（以下均为默认值；运行时从 balance 快照读取 abilities.tidal_orb）=====
     private static final double FLY_SPEED = 0.2;            // 4 格/s = 0.2 格/tick
     private static final int MAX_FLY_TICKS = 160;           // 8 秒后自动进入吸附
-    private static final double MAX_TURN_RAD = Math.toRadians(3.0); // 每 tick 最多转向 3°（幅度小）
+    private static final double MAX_TURN_RAD = Math.toRadians(3.0); // 每 tick 最多转向 3°（幅度小；未登记不开放）
 
     // ===== 减速参数 =====
     private static final int DECEL_TICKS = 15;              // 0.75 秒减速到 0
@@ -67,6 +70,9 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     // ===== 消失延迟 =====
     private static final int POP_DELAY_TICKS = 7;           // 0.35 秒后破裂
 
+    /** balance 快照读取（快照未初始化回退默认常量） */
+    private static final BalanceReader BAL = new BalanceReader("abilities.tidal_orb");
+
     private enum Phase { FLYING, DECELERATING, ATTRACTING, DELAY }
 
     /** 客户端同步：是否处于拴人（激活）状态，用于把潮涌核心切换为激活态渲染。 */
@@ -81,11 +87,11 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     private boolean isAling = false;
     // 海晶荧光坠增强：落点一次性爆炸（伤害+强减速）、飞行提速 55%
     private boolean isEnhanced = false;
-    private int maxFlyTicks = MAX_FLY_TICKS;
-    private int tetherDuration = TETHER_DURATION_TICKS;
+    private int maxFlyTicks = BAL.i("max_fly_ticks", MAX_FLY_TICKS);
+    private int tetherDuration = BAL.i("tether_duration_ticks", TETHER_DURATION_TICKS);
     private Vec3d flyDir = new Vec3d(0, 0, 1);   // FLYING / DECEL 用
-    private double flySpeed = FLY_SPEED;         // 基础飞行速度（增强 ×1.55）
-    private double currentSpeed = FLY_SPEED;     // DECEL 时衰减
+    private double flySpeed = BAL.d("fly_speed", FLY_SPEED);   // 基础飞行速度（增强 ×1.55）
+    private double currentSpeed = flySpeed;      // DECEL 时衰减
     private Vec3d tetherCenter = null;           // 落点锚点（拴人中心）
     private final Set<UUID> tetheredTargets = new HashSet<>(); // 落点瞬间捕获、被拴住的目标 UUID
 
@@ -113,13 +119,13 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         // 阿澪：飞行/拴人时长 +20%（拴人伤害在 tickAttracting 结算）
         this.isAling = FormUtils.isForm(owner, FormIdentifiers.AXOLOTL_ALING);
         if (this.isAling) {
-            this.maxFlyTicks = (int) Math.round(MAX_FLY_TICKS * 1.2);            // 160 -> 192
-            this.tetherDuration = (int) Math.round(TETHER_DURATION_TICKS * 1.2); // 170 -> 204
+            this.maxFlyTicks = (int) Math.round(this.maxFlyTicks * 1.2);            // 基础值 +20%（默认 160 -> 192）
+            this.tetherDuration = (int) Math.round(this.tetherDuration * 1.2); // 基础值 +20%（默认 170 -> 204）
         }
         // 海晶荧光坠增强：飞行速度 +55%，落点变一次性爆炸
         this.isEnhanced = TrinketUtils.isWearing(owner, SscAddon.SEA_CRYSTAL_PENDANT);
         if (this.isEnhanced) {
-            this.flySpeed = FLY_SPEED * 1.55;
+            this.flySpeed = this.flySpeed * 1.55;
         }
         this.currentSpeed = this.flySpeed;
     }
@@ -198,13 +204,14 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     // ==================== DECELERATING ====================
     private void tickDecelerating(ServerWorld sw) {
         // 0.75 秒线性减速到 0，保持当前方向不转向
-        double t = (double) phaseTicks / DECEL_TICKS;
+        int decelTicks = BAL.i("decel_ticks", DECEL_TICKS);
+        double t = (double) phaseTicks / decelTicks;
         currentSpeed = flySpeed * (1.0 - MathHelper.clamp(t, 0.0, 1.0));
         if (moveWithWallCheck(sw, flyDir.x * currentSpeed, flyDir.y * currentSpeed, flyDir.z * currentSpeed)) {
             enterAttractPhase(sw);
             return;
         }
-        if (phaseTicks >= DECEL_TICKS) {
+        if (phaseTicks >= decelTicks) {
             enterAttractPhase(sw);
         }
     }
@@ -238,12 +245,13 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         // 落点瞬间捕获半径 6 格内的所有合法目标（之后再进入范围的不算）
         tetheredTargets.clear();
         ServerPlayerEntity owner = getOwner(sw);
+        double catchRadius = BAL.d("tether_catch_radius", TETHER_CATCH_RADIUS);
         double cx = tetherCenter.x, cy = tetherCenter.y, cz = tetherCenter.z;
-        Box box = new Box(cx - TETHER_CATCH_RADIUS, cy - TETHER_CATCH_RADIUS, cz - TETHER_CATCH_RADIUS,
-                cx + TETHER_CATCH_RADIUS, cy + TETHER_CATCH_RADIUS, cz + TETHER_CATCH_RADIUS);
+        Box box = new Box(cx - catchRadius, cy - catchRadius, cz - catchRadius,
+                cx + catchRadius, cy + catchRadius, cz + catchRadius);
         List<LivingEntity> found = sw.getEntitiesByClass(LivingEntity.class, box,
                 e -> e.isAlive() && !e.isSpectator()
-                        && e.squaredDistanceTo(cx, cy, cz) <= TETHER_CATCH_RADIUS * TETHER_CATCH_RADIUS);
+                        && e.squaredDistanceTo(cx, cy, cz) <= catchRadius * catchRadius);
         for (LivingEntity t : found) {
             if (WhitelistUtils.isProtected(ownerUuid, sw, t)) continue; // 默认白名单豁免（owner 离线也保守保护玩家/宠物）
             if (t.getUuid().equals(ownerUuid)) continue;                          // 主人自己不被拴
@@ -334,6 +342,10 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
      */
     private void applyTether(ServerWorld sw) {
         if (tetherCenter == null || tetheredTargets.isEmpty()) return;
+        double softRadius = BAL.d("tether_soft_radius", TETHER_SOFT_RADIUS);
+        double hardRadius = BAL.d("tether_hard_radius", TETHER_HARD_RADIUS);
+        double pullPerBlock = BAL.d("tether_pull_per_block", TETHER_PULL_PER_BLOCK);
+        double verticalDamp = BAL.d("tether_vertical_damp", TETHER_VERTICAL_DAMP);
         double cx = tetherCenter.x, cy = tetherCenter.y, cz = tetherCenter.z;
         java.util.Iterator<UUID> it = tetheredTargets.iterator();
         while (it.hasNext()) {
@@ -347,18 +359,18 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
             double tx = t.getX(), ty = t.getY() + t.getHeight() * 0.5, tz = t.getZ();
             double dx = tx - cx, dy = ty - cy, dz = tz - cz;
             double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            if (dist <= TETHER_SOFT_RADIUS || dist < 1.0e-4) continue; // 6 格内自由活动
+            if (dist <= softRadius || dist < 1.0e-4) continue; // 6 格内自由活动
             double inv = 1.0 / dist;
-            double over = dist - TETHER_SOFT_RADIUS;
-            double mag = TETHER_PULL_PER_BLOCK * over;                 // 线性拉力：超得越多、拉得越强
+            double over = dist - softRadius;
+            double mag = pullPerBlock * over;                          // 线性拉力：超得越多、拉得越强
             t.setVelocity(t.getVelocity().add(
                     -dx * inv * mag,
-                    -dy * inv * mag * TETHER_VERTICAL_DAMP,
+                    -dy * inv * mag * verticalDamp,
                     -dz * inv * mag));
             t.velocityModified = true;
             // 硬封：一旦超过 8 格，直接拉回到 8 格球面并抵消向外冲量
-            if (dist > TETHER_HARD_RADIUS) {
-                double k = TETHER_HARD_RADIUS * inv;
+            if (dist > hardRadius) {
+                double k = hardRadius * inv;
                 double nx = cx + dx * k;
                 double ny = cy + dy * k - t.getHeight() * 0.5;
                 double nz = cz + dz * k;
@@ -395,7 +407,7 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         if (!isEnhanced) {
             spawnHoverParticles(sw);
         }
-        if (phaseTicks >= POP_DELAY_TICKS) {
+        if (phaseTicks >= BAL.i("pop_delay_ticks", POP_DELAY_TICKS)) {
             pop(sw);
         }
     }
@@ -474,11 +486,12 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
 
     /** 在 6 格软边界处描一圈 dust（落点瞬间一次性闪现，展示拴人范围）。 */
     private void spawnTetherRing(ServerWorld sw, int count) {
+        double softRadius = BAL.d("tether_soft_radius", TETHER_SOFT_RADIUS);
         double x = getX(), y = getY(), z = getZ();
         for (int i = 0; i < count; i++) {
             double ang = i * (Math.PI * 2 / count);
             sw.spawnParticles(BLUE_DUST,
-                    x + Math.cos(ang) * TETHER_SOFT_RADIUS, y + 0.1, z + Math.sin(ang) * TETHER_SOFT_RADIUS,
+                    x + Math.cos(ang) * softRadius, y + 0.1, z + Math.sin(ang) * softRadius,
                     1, 0, 0, 0, 0.0);
         }
     }
@@ -577,7 +590,7 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         double dy = nbt.contains("DirY") ? nbt.getDouble("DirY") : 0;
         double dz = nbt.contains("DirZ") ? nbt.getDouble("DirZ") : 1;
         flyDir = new Vec3d(dx, dy, dz).normalize();
-        currentSpeed = nbt.contains("Speed") ? nbt.getDouble("Speed") : FLY_SPEED;
+        currentSpeed = nbt.contains("Speed") ? nbt.getDouble("Speed") : BAL.d("fly_speed", FLY_SPEED);
         if (nbt.contains("TetherX")) {
             tetherCenter = new Vec3d(nbt.getDouble("TetherX"), nbt.getDouble("TetherY"), nbt.getDouble("TetherZ"));
         }
@@ -626,6 +639,15 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
      *  保证粒子频率与服务端每 tick 一致；非同步字段，仅客户端使用）。 */
     public int clientParticleGate = -1;
 
-    /** 软边界半径（客户端渲染器画公转边界球用，与服务端 TETHER_SOFT_RADIUS 同值）。 */
-    public static double tetherSoftRadius() { return TETHER_SOFT_RADIUS; }
+    /** 软边界半径（客户端渲染器画公转边界球用，与服务端拴人判定同参数）。 */
+    public static double tetherSoftRadius() {
+        // 仅客户端渲染器调用：优先读客户端镜像快照（多人客机与服务端覆盖值一致）。
+        // clientSnapshot() 带 @Environment(CLIENT)，专用服务器上被剥离——必须先判环境，
+        // 保证专用服务器永不解析该方法引用（tetherSoftRadius 本身也不该在服务端被调）。
+        if (BalanceIntegration.isClientThread()) {
+            var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
+            if (s != null) return s.getDouble("abilities.tidal_orb", "tether_soft_radius");
+        }
+        return BAL.d("tether_soft_radius", TETHER_SOFT_RADIUS);
+    }
 }

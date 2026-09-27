@@ -2,6 +2,7 @@ package net.jackcooper.shapeShifterCurseAddon.ability;
 
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.spell.DomainManager;
@@ -28,28 +29,32 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class NightmareDreamManager {
 
-	/** 触发入梦所需累计伤害（每次入梦后清零重算）。 */
+	// ==== 以下常量为默认值；运行时从 balance 快照读取（scope: abilities.nightmare_dream，数据包可覆盖）====
+	/** 触发入梦所需累计伤害（每次入梦后清零重算）。默认；运行时从 balance 快照读取。 */
 	public static final float DREAM_THRESHOLD = 10.0f;
-	/** 诅咒之月共鸣：诅咒之月当夜入梦阈值降为 6 点（梦魇之力高涨）。 */
+	/** 诅咒之月共鸣：诅咒之月当夜入梦阈值降为 6 点（梦魇之力高涨）。默认；运行时从 balance 快照读取。 */
 	public static final float DREAM_THRESHOLD_CURSED_MOON = 6.0f;
-	/** 噬梦被动：对已入梦目标造成伤害的吸血比例（按面板伤害计）。 */
+	/** 噬梦被动：对已入梦目标造成伤害的吸血比例（按面板伤害计）。默认；运行时从 balance 快照读取。 */
 	public static final float DREAM_LIFESTEAL_RATIO = 0.15f;
-	/** 噬梦被动：入梦目标死亡时额外回复的生命值（2 颗心）。 */
+	/** 噬梦被动：入梦目标死亡时额外回复的生命值（2 颗心）。默认；运行时从 balance 快照读取。 */
 	public static final float DREAM_KILL_HEAL = 4.0f;
+
+	/** 服务端权威 balance 快照读取（快照未初始化时回退上方默认常量）。 */
+	private static final BalanceReader BAL = new BalanceReader("abilities.nightmare_dream");
 
 	/** 当前生效的入梦阈值：诅咒之月当夜（天黑 + 诅咒之月日）降为 6，否则 10。仅服务端调用。 */
 	public static float currentDreamThreshold(ServerPlayerEntity player) {
 		if (net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon.isInCursedMoon(player.getWorld())) {
-			return DREAM_THRESHOLD_CURSED_MOON;
+			return (float) BAL.d("threshold_cursed_moon", DREAM_THRESHOLD_CURSED_MOON);
 		}
-		return DREAM_THRESHOLD;
+		return (float) BAL.d("threshold", DREAM_THRESHOLD);
 	}
-	/** 入梦持续 tick（20 秒）。 */
+	/** 入梦持续 tick（20 秒）。默认；运行时从 balance 快照读取。 */
 	public static final int DREAM_DURATION_TICKS = 400;
-	/** 受击触发入梦的固定时长（tick，10 秒，不随受击刷新；恐惧重置时回到 20 秒锁定）。 */
+	/** 受击触发入梦的固定时长（tick，10 秒，不随受击刷新；恐惧重置时回到 20 秒锁定）。默认；运行时从 balance 快照读取。 */
 	public static final int DREAM_FIXED_TICKS = 200;
 
-	/** 梦境粒子发射间隔（tick，0.75 秒一次，"偶尔冒"的节奏）。 */
+	/** 梦境粒子发射间隔（tick，0.75 秒一次，"偶尔冒"的节奏）。未登记 balance，保持常量。 */
 	public static final int DREAM_PARTICLE_INTERVAL = 15;
 
 	/** 入梦描边同步间隔（tick，1 秒一次；把真实剩余时长刷给食梦魔客户端，修复描边与实际入梦时长脱节）。 */
@@ -89,9 +94,9 @@ public final class NightmareDreamManager {
 		Long until = dreams.get(tid);
 		if (until != null && until > now) {
 			acc0.remove(tid); // 计数清零重算
-			player.heal(amount * DREAM_LIFESTEAL_RATIO); // 噬梦：汲取梦境之力回血
+			player.heal(amount * (float) BAL.d("lifesteal_ratio", DREAM_LIFESTEAL_RATIO)); // 噬梦：汲取梦境之力回血
 			if (!target.isAlive()) {
-				player.heal(DREAM_KILL_HEAL); // 梦尽人亡：额外吞噬残梦
+				player.heal((float) BAL.d("kill_heal", DREAM_KILL_HEAL)); // 梦尽人亡：额外吞噬残梦
 			}
 			SscAddonNetworking.sendWebHighlight(player, target.getId(),
 					(int) Math.max(20, until - now), DREAM_OUTLINE_COLOR); // 描边剩余时长同步（不延长）
@@ -111,9 +116,10 @@ public final class NightmareDreamManager {
 				&& !NightmareFearManager.isDreamImmune(tid, now)) {
 			acc.remove(tid);
 			// 受击触发入梦：固定 10 秒（用户定稿；恐惧重置时才回到 20 秒锁定）
-			dreams.put(tid, now + DREAM_FIXED_TICKS);
-			SscAddonNetworking.sendWebHighlight(player, target.getId(), DREAM_FIXED_TICKS, DREAM_OUTLINE_COLOR);
-			sendVeilToTarget(player, target, DREAM_FIXED_TICKS);
+			int fixedTicks = BAL.i("fixed_ticks", DREAM_FIXED_TICKS);
+			dreams.put(tid, now + fixedTicks);
+			SscAddonNetworking.sendWebHighlight(player, target.getId(), fixedTicks, DREAM_OUTLINE_COLOR);
+			sendVeilToTarget(player, target, fixedTicks);
 			// 入梦音效：低沉梦境钟声（全员可闻 null）+ 梦魇低语
 			net.minecraft.server.world.ServerWorld sw = (net.minecraft.server.world.ServerWorld) player.getWorld();
 			sw.playSound(null, target.getX(), target.getY(), target.getZ(),
@@ -276,7 +282,7 @@ public final class NightmareDreamManager {
 	/** 把某目标在该食梦魔名下的入梦到期时间重置为 now+400（20s）。 */
 	public static void resetDream(UUID nightmareUuid, UUID targetUuid, long now) {
 		Map<UUID, Long> dreams = DREAMING.get(nightmareUuid);
-		if (dreams != null) dreams.put(targetUuid, now + DREAM_DURATION_TICKS);
+		if (dreams != null) dreams.put(targetUuid, now + BAL.i("duration_ticks", DREAM_DURATION_TICKS));
 	}
 
 	/** 恐惧期间持续锁定：把该目标的入梦到期时间钉回 now+400（每 tick 调用）。 */

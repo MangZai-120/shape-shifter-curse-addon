@@ -7,6 +7,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
@@ -26,11 +27,15 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class VortexGuideManager {
 
+	// 以下均为默认值；运行时从 balance 快照读取（abilities.vortex_guide）
 	private static final int CHANNEL_TICKS = 60;   // 引导 3 秒
 	private static final int CD_TICKS = 160;       // 8 秒
 	private static final int HEAL_INTERVAL = 10;   // 每 0.5 秒回血一次
 	private static final float HEAL_PER_TICK = 2.0f; // 每次回 1 心（共 6 次 = 6 心）
 	private static final int ABSORPTION_DURATION = 600; // 黄心持续 30 秒
+
+	/** balance 快照读取（快照未初始化回退默认常量） */
+	private static final BalanceReader BAL = new BalanceReader("abilities.vortex_guide");
 
 	private static final Map<UUID, Integer> CHANNELING = new ConcurrentHashMap<>();
 
@@ -64,13 +69,15 @@ public final class VortexGuideManager {
 		int tick = t + 1;
 		CHANNELING.put(player.getUuid(), tick);
 		ServerWorld sw = (ServerWorld) player.getWorld();
+		int channelTicks = BAL.i("channel_ticks", CHANNEL_TICKS);
+		int healInterval = BAL.i("heal_interval", HEAL_INTERVAL);
 
 		// 引导期间减速约 50%（缓慢 III，短时长滚动续期，引导结束即消散）
 		player.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 8, 2, false, false, false));
 
 		// 周期回血（共 6 心）
-		if (tick % HEAL_INTERVAL == 0) {
-			player.heal(HEAL_PER_TICK);
+		if (tick % healInterval == 0) {
+			player.heal((float) BAL.d("heal_per_tick", HEAL_PER_TICK));
 			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.ENTITY_FISHING_BOBBER_SPLASH, SoundCategory.PLAYERS, 0.6f, 1.4f);
 		}
@@ -84,7 +91,7 @@ public final class VortexGuideManager {
 		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.HEART,
 				player.getX(), player.getY() + 1.4, player.getZ(), 1, 0.3, 0.3, 0.3, 0.0);
 
-		if (tick >= CHANNEL_TICKS) {
+		if (tick >= channelTicks) {
 			complete(player); // 引导完成 → 2 黄心 + CD
 		}
 	}
@@ -92,8 +99,8 @@ public final class VortexGuideManager {
 	/** 引导完成：授予 2 黄心（4 吸收）并进入 CD。 */
 	private static void complete(ServerPlayerEntity player) {
 		CHANNELING.remove(player.getUuid());
-		player.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, ABSORPTION_DURATION, 0, false, false, true));
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, CD_TICKS);
+		player.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, BAL.i("absorption_duration", ABSORPTION_DURATION), 0, false, false, true));
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, BAL.i("cd_ticks", CD_TICKS));
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 0.7f, 1.6f);

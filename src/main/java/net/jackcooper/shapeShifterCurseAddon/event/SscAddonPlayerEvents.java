@@ -61,6 +61,8 @@ public final class SscAddonPlayerEvents {
 		// 玩家首次进入世界时发送欢迎消息（延迟3秒，等待客户端语言设置到达服务端后根据语言发送对应文本）
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			var player = handler.player;
+			// balance 数据包数值（阶段 3）：登录即推送权威快照（未 ACK 前服务端就绪门控拒新施法）
+			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.onPlayerReady(player));
 			// 重连/换维度回归后：强制把契灵标记 + 金沙岚侵蚀印记状态重新同步给客户端，
 			// 避免重连后客户端 HUD/渲染缓存为空，直到下一次状态变更才被动恢复。
 			server.execute(() -> {
@@ -200,6 +202,8 @@ public final class SscAddonPlayerEvents {
 			net.jackcooper.shapeShifterCurseAddon.ability.FluorescentTidalManager.onPlayerDisconnect(uuid);
 			// 美西螈漩涡蓄力：断线清蓄力状态
 			net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.onPlayerDisconnect(uuid);
+			// balance 数据包数值（阶段 3）：清该连接的 ACK/就绪状态
+			net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.onPlayerLeft(handler.player);
 			System.out.println("[SSC_ADDON] DISCONNECT cleanup completed");
 		});
 	}

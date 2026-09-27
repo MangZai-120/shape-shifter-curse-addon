@@ -478,6 +478,10 @@ public class SscAddon implements ModInitializer {
 		// 原版官方事件监听（由 mixin 迁移而来）：诅咒之月 SP 形态提示 + 附属形态变身成就
 		CursedMoonSpMessageHandler.register();
 		AddonFormAdvancementHandler.register();
+		// balance 数据包数值同步（阶段 3）：服务端权威容器 + 网络接收器（重载/登录广播在 ServerEvents 挂）
+		net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.initServer(
+				net.jackcooper.shapeShifterCurseAddon.balance.SscBalanceSchema.create());
+		net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.registerServerReceivers();
 		VillagerTradeGuardHandler.register();
 		FluorescentDodgeHandler.register();
 		// SSCA 纯否决型伤害分支（跳蛛跳杀腾空免疫 / 朔望复活无敌与闪避；由 SscAddonLivingEntityMixin 迁出）

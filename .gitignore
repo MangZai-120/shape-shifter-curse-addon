@@ -34,6 +34,9 @@ bin/
 AGENTS.md
 /记忆/
 
+# 本地测试/调参文档（测试证据与记录，不入版本库）
+/docs/
+
 # JVM crash dumps
 hs_err_pid*.log
 replay_pid*.log

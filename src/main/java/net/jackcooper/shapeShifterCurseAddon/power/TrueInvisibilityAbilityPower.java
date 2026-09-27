@@ -242,6 +242,8 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 
 	@Override
 	public void onUse() {
+        if (entity instanceof net.minecraft.server.network.ServerPlayerEntity syncPlayer
+                && !net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(syncPlayer)) return;
 		if (entity == null || entity.getWorld().isClient) return;
 
 		boolean isInvisible = entity.hasStatusEffect(SscAddon.TRUE_INVISIBILITY);

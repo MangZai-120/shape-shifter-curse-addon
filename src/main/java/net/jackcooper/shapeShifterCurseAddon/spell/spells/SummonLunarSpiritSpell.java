@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.LunarSpiritEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
@@ -27,9 +28,13 @@ import net.minecraft.entity.Entity;
  */
 public class SummonLunarSpiritSpell extends Spell {
 
-	/** 基础寿命（tick）：30s + 10s/级。 */
+	/** 基础寿命（tick）默认：30s + 10s/级；运行时从 balance 快照读取。 */
 	private static final int BASE_LIFE_TICKS = 600;
+	/** 每级增加的寿命（tick）默认：10s；运行时从 balance 快照读取。 */
 	private static final int LIFE_PER_LEVEL = 200;
+
+	// 阶段 5：服务端权威快照读取（spells.summon_lunar_spirit；快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("spells.summon_lunar_spirit");
 
 	/** 契约容量：同时存活的月灵总数上限（每只占 1；超出顶替最早召唤的）。 */
 	public static final int CONTRACT_CAPACITY = 6;
@@ -68,7 +73,8 @@ public class SummonLunarSpiritSpell extends Spell {
 				owned.get(i).discard();
 			}
 		}
-		int lifeTicks = BASE_LIFE_TICKS + (level - 1) * LIFE_PER_LEVEL;
+		int lifeTicks = BAL.i("base_life_ticks", BASE_LIFE_TICKS)
+				+ (level - 1) * BAL.i("life_per_level", LIFE_PER_LEVEL);
 		for (int i = 0; i < count; i++) {
 			LunarSpiritEntity spirit = new LunarSpiritEntity(
 					net.jackcooper.shapeShifterCurseAddon.SscAddon.LUNAR_SPIRIT_ENTITY, serverWorld);

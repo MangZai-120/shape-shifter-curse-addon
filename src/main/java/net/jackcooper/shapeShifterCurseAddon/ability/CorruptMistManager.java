@@ -46,7 +46,7 @@ public final class CorruptMistManager {
 			this.ticksToNextPulse = intervalTicks;
 			this.level = level;
 			this.castId = castId;
-			int basePoisonTicks = net.jackcooper.shapeShifterCurseAddon.spell.spells.CorruptMistSpell.POISON_TICKS;
+			int basePoisonTicks = net.jackcooper.shapeShifterCurseAddon.spell.spells.CorruptMistSpell.poisonTicks(); // 运行时快照读取（spells.corrupt_mist.poison_ticks）
 			boolean venomAffinity = castId != null && net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(
 					caster, net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SPIDER_SALTICIDAE);
 			this.poisonTicks = (castId == null ? basePoisonTicks

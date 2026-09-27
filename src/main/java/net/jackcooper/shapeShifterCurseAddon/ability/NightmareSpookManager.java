@@ -20,6 +20,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
@@ -50,18 +51,22 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class NightmareSpookManager {
 
-	/** 技能 CD（tick，8 秒）。 */
+	// ==== 以下常量为默认值；运行时从 balance 快照读取（scope: abilities.nightmare_spook，数据包可覆盖）====
+	/** 技能 CD（tick，8 秒）。默认；运行时从 balance 快照读取。 */
 	public static final int SPOOK_COOLDOWN_TICKS = 160;
-	/** 幽灵野猫攻击伤害（魔法）。 */
+	/** 幽灵野猫攻击伤害（魔法）。默认；运行时从 balance 快照读取。 */
 	public static final float CLONE_DAMAGE = 12.0f;
-	/** 幽灵苦力怕存活（tick，3 秒）。 */
+	/** 幽灵苦力怕存活（tick，3 秒）。默认；运行时从 balance 快照读取。 */
 	public static final int CREEPER_LIFE_TICKS = 60;
-	/** 幽灵野猫存活上限（tick，兜底；正常 ~1.5-2.5 秒完成扑咬）。 */
+	/** 幽灵野猫存活上限（tick，兜底；正常 ~1.5-2.5 秒完成扑咬）。默认；运行时从 balance 快照读取。 */
 	public static final int CAT_LIFE_TICKS = 90;
-	/** 野猫奔跑步速（格/tick）。 */
+	/** 野猫奔跑步速（格/tick）。默认；运行时从 balance 快照读取。 */
 	public static final double CAT_RUN_SPEED = 0.32;
-	/** 野猫距目标多远起跳（格）。 */
+	/** 野猫距目标多远起跳（格）。默认；运行时从 balance 快照读取。 */
 	public static final double CAT_LEAP_DISTANCE = 4.0;
+
+	/** 服务端权威 balance 快照读取（快照未初始化时回退上方默认常量）。 */
+	private static final BalanceReader BAL = new BalanceReader("abilities.nightmare_spook");
 
 	/** 活跃幽灵苦力怕：实体 UUID -> 目标玩家 UUID。 */
 	private static final Map<UUID, UUID> CREEPERS = new ConcurrentHashMap<>();
@@ -112,7 +117,8 @@ public final class NightmareSpookManager {
 			}
 		}
 		if (!any) return false;
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, SPOOK_COOLDOWN_TICKS);
+		int spookCd = BAL.i("cooldown_ticks", SPOOK_COOLDOWN_TICKS);
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, spookCd);
 		return true;
 	}
 
@@ -122,7 +128,7 @@ public final class NightmareSpookManager {
 		// 白名单保护：白名单内生物不受惊吓伤害
 		if (net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils.isProtected(caster, target)) return false;
 		// 幽灵野猫贴身一击：12 点魔法伤害（同 completeCatAttack 的伤害源，可归因食梦魔）
-		target.damage(caster.getDamageSources().indirectMagic(caster, caster), CLONE_DAMAGE);
+		target.damage(caster.getDamageSources().indirectMagic(caster, caster), (float) BAL.d("clone_damage", CLONE_DAMAGE));
 		// 入梦时间重置为 20 秒满额（不强制退出；与恐惧的重置同额）
 		NightmareDreamManager.resetDream(caster.getUuid(), target.getUuid(), now);
 		// 声效与粒子（生物无客户端屏幕：全员可闻的低沉猫啦 + 目标位置烟雾）
@@ -170,7 +176,7 @@ public final class NightmareSpookManager {
 		if (!world.spawnEntity(creeper)) return false;
 		CREEPERS.put(creeper.getUuid(), sp.getUuid());
 		// 幽灵标记包（仅目标）：客户端对该实体局部取消 invisible
-		SscAddonNetworking.sendSpookGhost(sp, creeper.getUuid(), CREEPER_LIFE_TICKS);
+		SscAddonNetworking.sendSpookGhost(sp, creeper.getUuid(), BAL.i("creeper_life_ticks", CREEPER_LIFE_TICKS));
 		// 引信嘶嘶声（定向，仅目标听到，从幽灵方向传来）
 		playSoundAt(sp, SoundEvents.ENTITY_CREEPER_PRIMED, pos.x, pos.y, pos.z, 1.0f, 1.0f);
 		return true;
@@ -212,7 +218,7 @@ public final class NightmareSpookManager {
 		long now = world.getTime();
 		CATS.put(cat.getUuid(), new CatState(target, target.getUuid(), now));
 		// 显形标记包（仅目标）
-		SscAddonNetworking.sendSpookGhost(target, cat.getUuid(), CAT_LIFE_TICKS);
+		SscAddonNetworking.sendSpookGhost(target, cat.getUuid(), BAL.i("cat_life_ticks", CAT_LIFE_TICKS));
 		// 猫哈气音效（定向，仅目标听到）
 		playSoundAt(target, SoundEvents.ENTITY_CAT_HISS, pos.x, pos.y, pos.z, 1.0f, 1.0f);
 		// 出场小烟雾（定向粒子，仅目标）
@@ -225,7 +231,7 @@ public final class NightmareSpookManager {
 		long now = world.getTime();
 		long age = now - st.bornTick;
 		// 兜底：超时没咬到 / 目标已死 → 烟雾消散
-		if (age >= CAT_LIFE_TICKS || !target.isAlive() || target.getWorld() != world) {
+		if (age >= BAL.i("cat_life_ticks", CAT_LIFE_TICKS) || !target.isAlive() || target.getWorld() != world) {
 			spawnParticlesAt(target, ParticleTypes.CLOUD, cat.getX(), cat.getBodyY(0.5), cat.getZ(), 8, 0.3, 0.3, 0.3);
 			cat.discard();
 			CATS.remove(cat.getUuid());
@@ -244,10 +250,10 @@ public final class NightmareSpookManager {
 		if (st.phase == 0) {
 			// 追跑：朝目标移动（NoAI 下手动驱动；limbAnimator 由位置差驱动腿部动画）
 			Vec3d dir = toEye.normalize();
-			Vec3d next = catPos.add(dir.multiply(CAT_RUN_SPEED));
+			Vec3d next = catPos.add(dir.multiply(BAL.d("cat_run_speed", CAT_RUN_SPEED)));
 			cat.setPosition(next.x, next.y, next.z);
 			// 距离 4 格 → 起跳扑脸
-			if (dist <= CAT_LEAP_DISTANCE) {
+			if (dist <= BAL.d("cat_leap_distance", CAT_LEAP_DISTANCE)) {
 				st.phase = 1;
 				st.jumpFromX = catPos.x;
 				st.jumpFromY = catPos.y;
@@ -283,7 +289,7 @@ public final class NightmareSpookManager {
 		st.phase = 2;
 		ServerPlayerEntity caster = world.getServer().getPlayerManager().getPlayer(st.casterUuid);
 		if (caster != null && target.isAlive() && target.getWorld() == world) {
-			target.damage(caster.getDamageSources().indirectMagic(caster, caster), CLONE_DAMAGE);
+			target.damage(caster.getDamageSources().indirectMagic(caster, caster), (float) BAL.d("clone_damage", CLONE_DAMAGE));
 			// 命中音效：哈气 + 挥击（定向，仅目标）
 			playSoundAt(target, SoundEvents.ENTITY_CAT_HISS, target.getX(), target.getY(), target.getZ(), 1.2f, 0.9f);
 			playSoundAt(target, SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, target.getX(), target.getY(), target.getZ(), 0.7f, 1.2f);
@@ -354,6 +360,7 @@ public final class NightmareSpookManager {
 		if (!(player.getWorld() instanceof ServerWorld world)) return;
 
 		// 幽灵苦力怕：只由目标本人的 tick 推进（去重）
+		int creeperLife = BAL.i("creeper_life_ticks", CREEPER_LIFE_TICKS);
 		Iterator<Map.Entry<UUID, UUID>> cit = CREEPERS.entrySet().iterator();
 		while (cit.hasNext()) {
 			Map.Entry<UUID, UUID> e = cit.next();
@@ -363,7 +370,7 @@ public final class NightmareSpookManager {
 				cit.remove();
 				continue;
 			}
-			if (gc.age >= CREEPER_LIFE_TICKS) {
+			if (gc.age >= creeperLife) {
 				// 到期：无实伤爆除（声/粒直发目标，不广播）
 				cit.remove();
 				playSoundAt(player, SoundEvents.ENTITY_GENERIC_EXPLODE, gc.getX(), gc.getY(), gc.getZ(), 1.0f, 1.0f);
@@ -372,7 +379,7 @@ public final class NightmareSpookManager {
 				continue;
 			}
 			// 最后 1.2 秒：点燃引信（视觉闪白）
-			if (gc.age >= CREEPER_LIFE_TICKS - 24) {
+			if (gc.age >= creeperLife - 24) {
 				gc.setFuseSpeed(1);
 			}
 		}

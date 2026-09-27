@@ -48,9 +48,17 @@ public final class ExplosionRenderer {
 		int elapsed;
 		boolean detonated;
 		long receivedAt;
+		/** 包内快照半径（2026-09-27）：服务端起手捕获随 START 包下发；
+		 * 预设 0 = 旧包无此字段，渲染时回退 ExplosionRules 当前值。 */
+		double coreRadius;
+		double outerRadius;
 		final ExplosionEffects effects = new ExplosionEffects();
 		View(Vec3d center, int elapsed, boolean detonated) { this.center = center; this.elapsed = elapsed; this.detonated = detonated; }
 		float age(float delta) { return elapsed + Math.max(0, world.getTime() - receivedAt) + delta; }
+		/** 生效核心半径：包值优先，无包值（旧版本包/异常）回退 ExplosionRules.coreRadius()。 */
+		double coreRadius() { return coreRadius > 0 ? coreRadius : ExplosionRules.coreRadius(); }
+		/** 生效外沿半径：包值优先，无包值回退 ExplosionRules.outerRadius()。 */
+		double outerRadius() { return outerRadius > 0 ? outerRadius : ExplosionRules.outerRadius(); }
 	}
 
 	private ExplosionRenderer() {}
@@ -64,7 +72,14 @@ public final class ExplosionRenderer {
 				UUID owner = buf.readUuid();
 				Vec3d center = new Vec3d(buf.readDouble(), buf.readDouble(), buf.readDouble());
 				int elapsed = buf.readVarInt();
-				parsed.put(owner, new View(center, elapsed, buf.readBoolean()));
+				boolean detonated = buf.readBoolean();
+				// 快照半径（2026-09-27 协议扩展）：读取后随 View 携带；0 = 未提供（旧包），用回退
+				double coreRadius = 0, outerRadius = 0;
+				if (buf.readableBytes() >= 16) { coreRadius = buf.readDouble(); outerRadius = buf.readDouble(); }
+				View incoming = new View(center, elapsed, detonated);
+				incoming.coreRadius = coreRadius;
+				incoming.outerRadius = outerRadius;
+				parsed.put(owner, incoming);
 			}
 			client.execute(() -> {
 				if (client.world == null || !client.world.getRegistryKey().getValue().equals(dimension)) return;
@@ -79,8 +94,9 @@ public final class ExplosionRenderer {
 					View view = SEQUENCES.computeIfAbsent(id, key -> incoming);
 					view.elapsed = incoming.elapsed;
 					view.detonated = incoming.detonated;
-					view.receivedAt = world.getTime();
-				});
+					view.receivedAt = world.getTime();				// 快照半径同样随包刷新（服务端 reload 后新起手序列会带新值；旧包 0 走回退）
+				if (incoming.coreRadius > 0) view.coreRadius = incoming.coreRadius;
+				if (incoming.outerRadius > 0) view.outerRadius = incoming.outerRadius;				});
 			});
 		});
 		net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT
@@ -94,7 +110,7 @@ public final class ExplosionRenderer {
 				view.effects.stop();
 				return true;
 			});
-			for (View view : SEQUENCES.values()) view.effects.tick(world, view.center, (int) view.age(0), view.detonated);
+			for (View view : SEQUENCES.values()) view.effects.tick(world, view.center, (int) view.age(0), view.detonated, view.coreRadius(), view.outerRadius());
 		});
 	}
 
@@ -160,7 +176,7 @@ public final class ExplosionRenderer {
 				renderBall(matrices, vertices, elapsed);
 			} else {
 				// 终章（2026-09-22）：爆炸后法阵保持 0.7s，随后自上而下间隔 0.12s 逐个加速上飞并淡出
-				renderFinale(matrices, vertices, age - ExplosionRules.EXPLODE_TICKS);
+				renderFinale(matrices, vertices, age - ExplosionRules.EXPLODE_TICKS, view);
 			}
 			matrices.pop();
 		}
@@ -252,13 +268,14 @@ public final class ExplosionRenderer {
 	 * 每隔 0.12s 启动一层，每层 0.5s 内快速加速上飞（0.2s 加速到末速）并线性淡出到消失；
 	 * 末速自上而下 16/14/12/10/7/5/3 格每秒。光柱与红白球在爆炸时已消散，不参与终章。 */
 	private static void renderFinale(net.minecraft.client.util.math.MatrixStack matrices,
-	                                 VertexConsumer vertices, float sinceBlast) {
+	                                 VertexConsumer vertices, float sinceBlast, View view) {
 		if (sinceBlast < 0) return;
 		// 冲击波球（2026-09-22 用户需求）：爆炸瞬间白色半透明球从爆心 0 半径扩张到 64 格，
 		// 0.3s 内完成，透明度 10% 随扩张线性降到 0（与终章保持期重叠，先行消散）。
 		if (sinceBlast < ExplosionRules.SHOCKWAVE_TICKS) {
 			float progress = sinceBlast / (float) ExplosionRules.SHOCKWAVE_TICKS;
-			renderShockwaveSphere(matrices, vertices, ExplosionRules.OUTER_RADIUS * progress,
+			// 冲击波球扩张到直伤外沿：读包内快照半径（outerRadius()，包值优先回退 Rules）
+			renderShockwaveSphere(matrices, vertices, view.outerRadius() * progress,
 					ExplosionRules.SHOCKWAVE_ALPHA * (1f - progress));
 		}
 		for (int layer = 0; layer < ExplosionRules.CIRCLE_HEIGHTS.length; layer++) {

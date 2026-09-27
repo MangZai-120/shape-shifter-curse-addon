@@ -18,6 +18,7 @@ import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.power.ParasiticFruitSeedPower;
 import org.joml.Vector3f;
 
@@ -32,6 +33,9 @@ public class ParasiticSeedProjectile extends ThrownItemEntity {
     private static final DustParticleEffect SEED_TRAIL = new DustParticleEffect(new Vector3f(0.35f, 0.95f, 0.30f), 1.0f);
     /** 落地种子圈寿命（tick，匹配主技能 duration 默认 240=12s） */
     private static final int DEFAULT_FIELD_LIFE = 240;
+
+    // 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+    private static final BalanceReader BAL = new BalanceReader("abilities.parasitic_seed_projectile");
     /** 是否装备双生种荷（命中/落地时启用扩散：额外寄生 1 人，无人则叠 2 层）。 */
     private boolean twinPod = false;
 
@@ -81,7 +85,7 @@ public class ParasiticSeedProjectile extends ThrownItemEntity {
                 && this.getWorld() instanceof ServerWorld sw && caster != null) {
             // 落地：生成灵果种子圈（绿色治疗环 + 核心图标，进圈生物触发；双生种荷时核心为双生种荷）
             net.jackcooper.shapeShifterCurseAddon.ability.ParasiticSeedFieldManager
-                    .spawnField(caster, sw, this.getPos(), DEFAULT_FIELD_LIFE, twinPod);
+                    .spawnField(caster, sw, this.getPos(), BAL.i("default_field_life", DEFAULT_FIELD_LIFE), twinPod);
         }
         this.discard();
     }

@@ -15,6 +15,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.onixary.shapeShifterCurseFabric.mana.ManaComponent;
 import net.onixary.shapeShifterCurseFabric.mana.RegManaComponent;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -34,21 +35,28 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class SpiderMoonWeaverSwingManager {
 
-	// ==== 发射 / 飞行 ====
-	private static final float BULLET_SPEED = 1.7f;
-	public static final double MANA_PER_BLOCK = 2.0;
-	public static final double TETHER_HIT_MANA_COST = 8.0; // 勾中生物瞬间额外扣的 mana（不足扣到 0）
+	// ==== 发射 / 飞行（已登记：bullet_speed / mana_per_block / tether_hit_mana_cost；运行时从 balance 快照读取 abilities.moon_weaver_swing） ====
+	private static final float BULLET_SPEED = 1.7f; // 默认；运行时从 balance 快照读取
+	public static final double MANA_PER_BLOCK = 2.0; // 默认；运行时从 balance 快照读取
+	public static final double TETHER_HIT_MANA_COST = 8.0; // 默认；运行时从 balance 快照读取（勾中生物瞬间额外扣的 mana，不足扣到 0）
 
-	// ==== 绳长 / 断丝 ====
+	// ==== 绳长 / 断丝（以下 6 参被 client 包 SwingPhysicsMixin / SpiderSwingBullet 引用做预测镜像，常量保留不迁移） ====
 	public static final double MAX_ROPE_REACH = 32.0;
-	public static final double TETHER_MAX_LEN = 16.0; // tether 拴生物硬上限（绝不超，吸收远离 + 大力牵引）
+	public static final double TETHER_MAX_LEN = 16.0; // 默认；运行时从 balance 快照读取。tether 拴生物硬上限（绝不超，吸收远离 + 大力牵引）
 	public static final double TETHER_SOFT_BUFFER = 4.0; // 软拉缓冲：距硬上限 4 格（=12 格）起线性牵引，到 16 大力硬限
 	public static final double TETHER_PULL_GAIN = 0.2; // 12~16 线性牵引系数（每格 over 增加的牵引速度）
 	public static final double TETHER_HARD_GAIN = 0.8; // 超 16 每格额外大力牵引系数（强拉回、防冲出）
 	public static final double MIN_ROPE_LEN = 1.5;
 	public static final double REEL_SPEED = 0.16;
-	private static final double BREAK_OVERSTRETCH = MAX_ROPE_REACH + 3.0;
 	private static final double OBSCURE_BREAK_BLOCKS = 1.0;
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.moon_weaver_swing");
+
+	/** 服务端断丝阈值：max_rope_reach 快照值 + 3 格余量（与常量版 BREAK_OVERSTRETCH = MAX_ROPE_REACH + 3.0 等价）。 */
+	private static double breakOverstretch() {
+		return BAL.d("max_rope_reach", MAX_ROPE_REACH) + 3.0;
+	}
 
 	// ==== 状态 ====
 	public static final int STATE_IDLE = 0;
@@ -148,7 +156,8 @@ public final class SpiderMoonWeaverSwingManager {
 			return;
 		}
 		SpiderSwingBullet bullet = new SpiderSwingBullet(player);
-		bullet.setVelocity(player, player.getPitch(), player.getYaw(), 0.0f, BULLET_SPEED, 0.0f);
+		bullet.setVelocity(player, player.getPitch(), player.getYaw(), 0.0f,
+				(float) BAL.d("bullet_speed", BULLET_SPEED), 0.0f);
 		player.getWorld().spawnEntity(bullet);
 		BULLET_IN_FLIGHT.put(player.getUuid(), bullet);
 		ServerWorld sw = (ServerWorld) player.getWorld();
@@ -184,9 +193,9 @@ public final class SpiderMoonWeaverSwingManager {
 		s.state = STATE_TETHER;
 		s.tetherEntityId = target.getId();
 		s.anchor = Vec3d.ZERO;
-		s.ropeLen = TETHER_MAX_LEN; // 固定 16 格上限（不用拴住瞬间距离）：允许 0~16 自由，超 16 硬约束拉回、不可延长
+		s.ropeLen = BAL.d("tether_max_len", TETHER_MAX_LEN); // 固定 16 格上限（不用拴住瞬间距离）：允许 0~16 自由，超 16 硬约束拉回、不可延长
 		s.canExtend = true;
-		mana(player).consumeMana(TETHER_HIT_MANA_COST); // 勾中生物瞬间额外扣 8 点 mana（自动 clamp 到 0 不会负、自动同步客户端 mana 条）
+		mana(player).consumeMana(BAL.d("tether_hit_mana_cost", TETHER_HIT_MANA_COST)); // 勾中生物瞬间额外扣 8 点 mana（自动 clamp 到 0 不会负、自动同步客户端 mana 条）
 		SscAddonNetworking.sendWebHighlight(player, target.getId(), 40, tetherHighlightColor(player, target)); // 仅施法者可见高光（友军绿/敌人蓝）
 		broadcastState(player, s);
 	}
@@ -239,7 +248,7 @@ public final class SpiderMoonWeaverSwingManager {
 		player.fallDistance = 0.0f; // 服务端清摔落距离防摆荡落地摔伤（不影响客户端 fallDistance 驱动的 FALL 动画）
 		Vec3d torso = torso(player);
 		double dist = torso.distanceTo(s.anchor);
-		if (dist > BREAK_OVERSTRETCH) {
+		if (dist > breakOverstretch()) {
 			breakWeb(player, s, true);
 			return;
 		}
@@ -268,7 +277,7 @@ public final class SpiderMoonWeaverSwingManager {
 		Vec3d pPos = torso(player);
 		Vec3d tPos = entityCenter(living);
 		double dist = pPos.distanceTo(tPos);
-		if (dist > BREAK_OVERSTRETCH) {
+		if (dist > breakOverstretch()) {
 			breakWeb(player, s, true);
 			return;
 		}
@@ -345,14 +354,14 @@ public final class SpiderMoonWeaverSwingManager {
 		SwingState s = STATES.get(player.getUuid());
 		if (s == null || (s.state != STATE_SWINGING && s.state != STATE_TETHER)) return;
 		// tether 拴生物：最大间距 16 且禁止放绳延长；swinging 荡漾仍可到 32 并放绳
-		double maxLen = (s.state == STATE_TETHER) ? TETHER_MAX_LEN : MAX_ROPE_REACH;
+		double maxLen = (s.state == STATE_TETHER) ? BAL.d("tether_max_len", TETHER_MAX_LEN) : MAX_ROPE_REACH;
 		s.ropeLen = MathHelper.clamp(clientRopeLen, MIN_ROPE_LEN, maxLen);
 		if (s.state == STATE_TETHER) reel = 0; // tether 不能延长蛛丝，忽略放绳意图
 		boolean prev = s.canExtend;
 		if (reel < 0) {
 			// 客户端每 2 tick 上报一次，每包扣 2 tick 的放绳量（REEL_SPEED 为每 tick 放绳长度），
 			// 保持与原每 tick 上报时相同的 mana 消耗速率
-			double cost = REEL_SPEED * 2.0 / MANA_PER_BLOCK;
+			double cost = REEL_SPEED * 2.0 / BAL.d("mana_per_block", MANA_PER_BLOCK);
 			ManaComponent m = mana(player);
 			if (m.getMana() >= cost) {
 				m.consumeMana(cost);

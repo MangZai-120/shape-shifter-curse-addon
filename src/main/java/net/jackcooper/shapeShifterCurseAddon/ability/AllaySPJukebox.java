@@ -39,15 +39,20 @@ public class AllaySPJukebox {
         // Utility class
     }
 
+    // 唱片机参数：默认与注释一致；运行时从 balance 快照读取（abilities.allay_sp_jukebox）
     public static final double RANGE = 20.0;
     private static final UUID SPEED_MODIFIER_UUID = UUID.fromString("a3b4c5d6-e7f8-9012-3456-789abcdef012");
     private static final String SPEED_MODIFIER_NAME = "allay_jukebox_speed";
-    private static final double SPEED_BONUS = 0.10; // 10% speed
+    private static final double SPEED_BONUS = 0.10; // 默认；10% speed
 
     // 增益 status effect 刷新时长（tick）：每 5 tick 补挂一次，20t 覆盖刷新间隔保证图标常亮不闪断；
     // 黄心(ABSORPTION)用此时长：退出回血模式后停止刷新，剩余 effect 会在 ≤20t 内过期，
     // AbsorptionStatusEffect.onRemoved 会自动扣除它施加的护盾，不误删玩家其它来源护盾。
     private static final int BUFF_REFRESH_DURATION = 20;
+
+    // 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+    private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
+            new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.allay_sp_jukebox");
 
     // Track per-player: -1 = not playing, 0 = speed music, 1 = heal music
     private static final java.util.concurrent.ConcurrentHashMap<UUID, Integer> playerMusicState = new java.util.concurrent.ConcurrentHashMap<>();
@@ -193,18 +198,20 @@ public class AllaySPJukebox {
                 }
                 // 额外增益：抵抗 I（20% 减伤，短时刷新）+ 黄心（ABSORPTION，amplifier 0 = 4HP = 2 颗，同模式刷新）
                 // 退出回血模式后停止刷新，剩余 effect 在 ≤20t 内过期，onRemoved 自动扣除它施加的护盾，不误删玩家其它护盾
+                int buffRefreshDuration = BAL.i("buff_refresh_duration", BUFF_REFRESH_DURATION);
                 for (LivingEntity entity : nearbyEntities) {
-                    entity.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, BUFF_REFRESH_DURATION, 0, false, false, true));
-                    entity.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, BUFF_REFRESH_DURATION, 0, false, false, true));
+                    entity.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, buffRefreshDuration, 0, false, false, true));
+                    entity.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, buffRefreshDuration, 0, false, false, true));
                 }
                 // Remove speed modifier when in heal mode
                 removeSpeedFromAll(player);
             } else {
                 // Speed mode: apply 10% speed modifier
+                int buffRefreshDuration = BAL.i("buff_refresh_duration", BUFF_REFRESH_DURATION);
                 for (LivingEntity entity : nearbyEntities) {
                     applySpeedModifier(entity);
                     // 额外增益：急迫 I（短时刷新，每 5 tick 补挂）
-                    entity.addStatusEffect(new StatusEffectInstance(StatusEffects.HASTE, BUFF_REFRESH_DURATION, 0, false, false, true));
+                    entity.addStatusEffect(new StatusEffectInstance(StatusEffects.HASTE, buffRefreshDuration, 0, false, false, true));
                 }
                 // Clean up speed modifiers from entities that moved out of range
                 cleanupOutOfRangeEntities(player, nearbyEntities);
@@ -213,14 +220,15 @@ public class AllaySPJukebox {
     }
 
     private static List<LivingEntity> getNearbyWhitelistEntities(ServerPlayerEntity player) {
+        double range = BAL.d("range", RANGE);
         Box box = new Box(
-                player.getX() - RANGE, player.getY() - RANGE, player.getZ() - RANGE,
-                player.getX() + RANGE, player.getY() + RANGE, player.getZ() + RANGE
+                player.getX() - range, player.getY() - range, player.getZ() - range,
+                player.getX() + range, player.getY() + range, player.getZ() + range
         );
 
         return player.getServerWorld().getEntitiesByClass(LivingEntity.class, box, entity -> {
             double dist = entity.squaredDistanceTo(player);
-            if (dist > RANGE * RANGE) return false;
+            if (dist > range * range) return false;
             if (entity == player) return true;
             // Use the allay whitelist
             return AllaySPGroupHeal.isInWhitelist(player, entity);
@@ -235,7 +243,7 @@ public class AllaySPJukebox {
         if (existing == null) {
             speedAttr.addTemporaryModifier(new EntityAttributeModifier(
                     SPEED_MODIFIER_UUID, SPEED_MODIFIER_NAME,
-                    SPEED_BONUS, EntityAttributeModifier.Operation.MULTIPLY_TOTAL
+                    BAL.d("speed_bonus", SPEED_BONUS), EntityAttributeModifier.Operation.MULTIPLY_TOTAL
             ));
         }
     }
@@ -247,9 +255,10 @@ public class AllaySPJukebox {
     }
 
     private static void removeSpeedFromAll(ServerPlayerEntity player) {
+        double range = BAL.d("range", RANGE);
         Box box = new Box(
-                player.getX() - RANGE - 10, player.getY() - RANGE - 10, player.getZ() - RANGE - 10,
-                player.getX() + RANGE + 10, player.getY() + RANGE + 10, player.getZ() + RANGE + 10
+                player.getX() - range - 10, player.getY() - range - 10, player.getZ() - range - 10,
+                player.getX() + range + 10, player.getY() + range + 10, player.getZ() + range + 10
         );
         List<LivingEntity> all = player.getServerWorld().getEntitiesByClass(LivingEntity.class, box, e -> true);
         for (LivingEntity entity : all) {
@@ -261,9 +270,10 @@ public class AllaySPJukebox {
         // Every 2 seconds, clean up speed modifiers from entities that left range
         if (player.age % 40 != 0) return;
 
+        double range = BAL.d("range", RANGE);
         Box bigBox = new Box(
-                player.getX() - RANGE - 20, player.getY() - RANGE - 20, player.getZ() - RANGE - 20,
-                player.getX() + RANGE + 20, player.getY() + RANGE + 20, player.getZ() + RANGE + 20
+                player.getX() - range - 20, player.getY() - range - 20, player.getZ() - range - 20,
+                player.getX() + range + 20, player.getY() + range + 20, player.getZ() + range + 20
         );
         List<LivingEntity> allNearby = player.getServerWorld().getEntitiesByClass(LivingEntity.class, bigBox, e -> true);
         for (LivingEntity entity : allNearby) {

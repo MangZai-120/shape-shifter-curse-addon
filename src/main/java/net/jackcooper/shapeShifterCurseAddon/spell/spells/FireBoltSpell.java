@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.SpellFireBoltEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
@@ -18,9 +19,12 @@ import net.minecraft.util.math.Vec3d;
  */
 public class FireBoltSpell extends Spell {
 
-	/** L1-2 点燃 3s；L3+ 点燃 5s。 */
+	/** L1-2 点燃 3s；L3+ 点燃 5s。默认值；运行时从 balance 快照读取。 */
 	private static final int FIRE_TICKS_LOW = 60;
 	private static final int FIRE_TICKS_HIGH = 100;
+
+	// 阶段 5：运行时快照读取（spells.fire_bolt；快照未初始化回退上方默认常量）
+	private static final BalanceReader BAL = new BalanceReader("spells.fire_bolt");
 
 	public FireBoltSpell() {
 		super(new Identifier("ssc_addon", "fire_bolt"), SpellRarity.WHITE);
@@ -38,7 +42,10 @@ public class FireBoltSpell extends Spell {
 		bolt.setLevel(level);
 		bolt.setExpBountyTen(solo ? 0 : ssc_addon$takePendingExp()); // exp_mode 1/2 挂起经验随弹射物走
 		bolt.setRefundCastId(solo ? null : ssc_addon$getRefundCastId());
-		bolt.setFireTicks(level >= 3 ? FIRE_TICKS_HIGH : FIRE_TICKS_LOW);
+		// 低≤高跨字段约束由 balance schema 校验，运行时两值独立读取
+		bolt.setFireTicks(level >= 3
+				? BAL.i("fire_ticks_high", FIRE_TICKS_HIGH)
+				: BAL.i("fire_ticks_low", FIRE_TICKS_LOW));
 		Vec3d look = caster.getRotationVec(1.0F);
 		bolt.setDirection(look, getSpeedMultiplier(level));
 		caster.getWorld().spawnEntity(bolt);

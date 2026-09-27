@@ -1,5 +1,8 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
+
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.particle.ParticleTypes;
@@ -29,8 +32,22 @@ import net.minecraft.world.RaycastContext;
  */
 public class SpaceBlinkSpell extends Spell {
 
-	/** 基础瞬移距离（格），实际 = 基础 × speed_multiplier(level) × 空间法阵距离加成。 */
+	/** 基础瞬移距离（格）默认，实际 = 基础 × speed_multiplier(level) × 空间法阵距离加成；运行时从 balance 快照读取。 */
 	private static final double BASE_RANGE = 8.0;
+
+	// 阶段 5：运行时快照读取（spells.space_blink；快照未初始化回退默认常量）。
+	// 瞄准距离被客户端按住预览（getAimMaxRange 落点圈）与服务端结算共用 → 双端一致：
+	// 客户端读客户端镜像快照，服务端读权威快照（同 TidalOrbEntity.tetherSoftRadius 模式）。
+	private static final BalanceReader BAL = new BalanceReader("spells.space_blink");
+
+	/** 基础瞬移距离（双端一致）：客户端读客户端镜像，服务端读权威快照。 */
+	private static double baseRange() {
+		if (BalanceIntegration.isClientThread()) {
+			var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
+			if (s != null) return s.getDouble("spells.space_blink", "base_range");
+		}
+		return BAL.d("base_range", BASE_RANGE);
+	}
 
 	public SpaceBlinkSpell() {
 		super(new Identifier("ssc_addon", "space_blink"), SpellRarity.GREEN);
@@ -38,13 +55,13 @@ public class SpaceBlinkSpell extends Spell {
 
 	/** 当前有效瞬移距离（客户端预览/服务端结算共用）。 */
 	public double getBlinkRange(int level) {
-		return BASE_RANGE * getSpeedMultiplier(level);
+		return baseRange() * getSpeedMultiplier(level);
 	}
 
 	/** 按住瞄准型：最大施法距离（客户端按住显示落点预览，松开施放）。 */
 	@Override
 	public double getAimMaxRange() {
-		return BASE_RANGE; // 预览基准；等级缩放由 effectiveRange 乘 speed_multiplier
+		return baseRange(); // 预览基准；等级缩放由 effectiveRange 乘 speed_multiplier
 	}
 
 	/** 预览圈半径：小圈标记落点（0.5 格落地标记，同契灵平台传送视觉语言）。 */

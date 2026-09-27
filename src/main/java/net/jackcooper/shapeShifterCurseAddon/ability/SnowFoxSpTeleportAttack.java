@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SnowFoxSpTeleportAttack {
 
 	private static final ConcurrentHashMap<UUID, TeleportAttackData> ATTACKING_PLAYERS = new ConcurrentHashMap<>();
-	private static final double RANGE = 10.0;
+	private static final double RANGE = 10.0;          // 以下常量均为默认锚点；balance 可覆盖（abilities.snow_fox_sp_teleport）
 	private static final int MAX_TARGETS = 3;
 	private static final float BASE_DAMAGE = 6.0f;
 	private static final float BONUS_DAMAGE = 3.0f;
@@ -38,6 +38,10 @@ public class SnowFoxSpTeleportAttack {
 	private static final int MANA_COST_FAIL = 20;
 	private static final int TELEPORT_INTERVAL = 10;
 	private static final float DAMAGE_REDUCTION = 0.65f;
+
+	// 阶段 5：服务端权威快照读取
+	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
+			new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.snow_fox_sp_teleport");
 	// ==== NEW CODE: 使用FormIdentifiers（霜寒值读写已改走 ResourceBars，RESOURCE_ID 仅存于旧注释）====
 	private static final Identifier REGEN_COOLDOWN_ID = FormIdentifiers.SNOW_FOX_REGEN_COOLDOWN;
 
@@ -55,7 +59,7 @@ public class SnowFoxSpTeleportAttack {
 
 		int currentMana = net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.get(player,
 				net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX);
-		if (currentMana < MANA_COST_FAIL) {
+		if (currentMana < BAL.i("mana_cost_fail", MANA_COST_FAIL)) {
 			player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
 			return false;
 		}
@@ -65,18 +69,18 @@ public class SnowFoxSpTeleportAttack {
 		if (targets.isEmpty()) {
 			player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0f, 1.0f);
 			net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.consume(player,
-					net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX, MANA_COST_FAIL);
+					net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX, BAL.i("mana_cost_fail", MANA_COST_FAIL));
 			setRegenCooldown(player, 100);
 			return false;
 		}
 
-		if (currentMana < MANA_COST_SUCCESS) {
+		if (currentMana < BAL.i("mana_cost_success", MANA_COST_SUCCESS)) {
 			player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
 			return false;
 		}
 
 		net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.consume(player,
-				net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX, MANA_COST_SUCCESS);
+				net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX, BAL.i("mana_cost_success", MANA_COST_SUCCESS));
 		setRegenCooldown(player, 100);
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_MELEE_SECONDARY_CD, 400);
 
@@ -113,7 +117,7 @@ public class SnowFoxSpTeleportAttack {
 		player.setVelocity(0, 0, 0);
 		player.velocityModified = true;
 
-		if (data.ticksSinceLastTeleport >= TELEPORT_INTERVAL) {
+		if (data.ticksSinceLastTeleport >= BAL.i("teleport_interval", TELEPORT_INTERVAL)) {
 			data.currentTargetIndex++;
 			data.ticksSinceLastTeleport = 0;
 
@@ -160,11 +164,11 @@ public class SnowFoxSpTeleportAttack {
 
 		player.swingHand(player.getActiveHand());
 
-		float damage = BASE_DAMAGE;
+		float damage = (float) BAL.d("base_damage", BASE_DAMAGE);
 
 		StatusEffectInstance frostEffect = target.getStatusEffect(SscAddon.FROST_FREEZE);
 		if (frostEffect != null) {
-			damage += BONUS_DAMAGE;
+			damage += BAL.d("bonus_damage", BONUS_DAMAGE);
 		}
 
 		DamageSource source = player.getDamageSources().playerAttack(player);
@@ -211,7 +215,7 @@ public class SnowFoxSpTeleportAttack {
 	 */
 	private static List<LivingEntity> findTargets(ServerPlayerEntity player) {
 		List<LivingEntity> result = new ArrayList<>();
-		Box searchBox = player.getBoundingBox().expand(RANGE);
+		Box searchBox = player.getBoundingBox().expand(BAL.d("range", RANGE));
 
 		List<LivingEntity> nearbyEntities = player.getWorld().getEntitiesByClass(
 				LivingEntity.class, searchBox,
@@ -219,13 +223,13 @@ public class SnowFoxSpTeleportAttack {
 						!entity.isSpectator() &&
 						entity.isAlive() &&
 						!net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(player, entity) &&
-						player.squaredDistanceTo(entity) <= RANGE * RANGE &&
+						player.squaredDistanceTo(entity) <= BAL.d("range", RANGE) * BAL.d("range", RANGE) &&
 						!WhitelistUtils.isProtected(player, entity)
 		);
 
 		nearbyEntities.sort(Comparator.comparingDouble(player::squaredDistanceTo));
 
-		for (int i = 0; i < Math.min(MAX_TARGETS, nearbyEntities.size()); i++) {
+		for (int i = 0; i < Math.min(BAL.i("max_targets", MAX_TARGETS), nearbyEntities.size()); i++) {
 			result.add(nearbyEntities.get(i));
 		}
 
@@ -258,7 +262,7 @@ public class SnowFoxSpTeleportAttack {
 	 */
 	public static float getDamageReduction(ServerPlayerEntity player) {
 		if (isAttacking(player)) {
-			return DAMAGE_REDUCTION;
+			return (float) BAL.d("damage_reduction", DAMAGE_REDUCTION);
 		}
 		return 0.0f;
 	}

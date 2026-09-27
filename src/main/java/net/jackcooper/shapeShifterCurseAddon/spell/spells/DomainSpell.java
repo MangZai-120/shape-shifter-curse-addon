@@ -13,7 +13,7 @@ public final class DomainSpell extends Spell {
 	public DomainSpell() { super(new Identifier("ssc_addon", "domain"), SpellRarity.RED); }
 	@Override
 	protected SpellCastingRules.Profile getCustomCastingProfile(ServerPlayerEntity caster, int level, boolean solo) {
-		return new SpellCastingRules.Profile(DomainRules.CHARGE_TICKS, 0, true);
+		return new SpellCastingRules.Profile(DomainRules.chargeTicks(), 0, true);
 	}
 	@Override
 	public boolean canCast(ServerPlayerEntity caster) { return DomainManager.canStart(caster); }
@@ -29,10 +29,10 @@ public final class DomainSpell extends Spell {
 	}
 
 	/** 锁定转换 tick（客户端 HUD 本地预测红显兜底，2026-09-24）：与服务端 isExpanding
-	 * 的 200t 阈值同源（DomainRules.EXPAND_START_TICK），勿单独写数。 */
+	 * 的阈值同源（DomainRules.expandStartTick()），勿单独写数。 */
 	@Override
 	public int getLockInTick() {
-		return DomainRules.EXPAND_START_TICK;
+		return DomainRules.expandStartTick();
 	}
 	@Override
 	public void onChannelEnded(ServerPlayerEntity caster, boolean interrupted) {

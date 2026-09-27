@@ -23,6 +23,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
@@ -39,7 +40,8 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
 	private static final double SPEED = 0.75; // 15格/秒 = 0.75格/tick（原10格/秒增加1.5倍）
 	private static final double MAX_DISTANCE = 50.0; // 最大飞行距离（原25格增加2倍）
 	private static final int FROST_FALL_DURATION = 80; // 霜降持续4秒
-
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.frost_ball");
 	private Vec3d startPos;
 	private int ticksAlive = 0;
 
@@ -71,7 +73,7 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
 	 * 设置冰球的飞行方向
 	 */
 	public void setDirection(Vec3d direction) {
-		Vec3d velocity = direction.normalize().multiply(SPEED);
+		Vec3d velocity = direction.normalize().multiply(BAL.d("speed", SPEED));
 		this.setVelocity(velocity.x, velocity.y, velocity.z);
 	}
 
@@ -94,7 +96,7 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
 			// 简单的追踪转向
 			Vec3d currentVel = this.getVelocity().normalize();
 			// 0.2f 的转向系数
-			Vec3d newVel = currentVel.add(direction.multiply(0.2)).normalize().multiply(SPEED);
+			Vec3d newVel = currentVel.add(direction.multiply(0.2)).normalize().multiply(BAL.d("speed", SPEED));
 
 			this.setVelocity(newVel.x, newVel.y, newVel.z);
 		}
@@ -112,8 +114,9 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
 		// 如果在碰撞处理中实体被移除了（比如撞到了什么），就不再移动
 		if (this.isRemoved()) return;
 
-		// 检查是否超过最大飞行距离
-		if (startPos != null && this.squaredDistanceTo(startPos) > MAX_DISTANCE * MAX_DISTANCE) {
+		// 检查是否超过最大飞行距离（局部变量化：本函数内只读一次快照）
+		double maxDistance = BAL.d("max_distance", MAX_DISTANCE);
+		if (startPos != null && this.squaredDistanceTo(startPos) > maxDistance * maxDistance) {
 			this.discard();
 			return;
 		}
@@ -166,7 +169,7 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
 			// 施加霜降效果（带主人 source 供入梦拦截归因）
 			livingTarget.addStatusEffect(new StatusEffectInstance(
 					SscAddon.FROST_FALL,
-					FROST_FALL_DURATION,
+					BAL.i("frost_fall_duration", FROST_FALL_DURATION),
 					0,
 					false,
 					true,

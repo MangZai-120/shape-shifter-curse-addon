@@ -14,6 +14,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Box;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
@@ -39,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class GoldenSandstormWitherSand {
 
 	// ==================== 常量 ====================
+	// 以下常量均为默认值；运行时从 balance 快照读取（scope：abilities.golden_sandstorm_wither_sand）
 	/** AoE半径 */
 	private static final double RADIUS = 15.0;
 	/** 致盲持续时间（tick） */
@@ -56,6 +58,9 @@ public class GoldenSandstormWitherSand {
 	// ==================== 状态追踪 ====================
 	/** 正在蓄力的玩家：UUID -> 蓄力状态 */
 	private static final ConcurrentHashMap<UUID, ChargeState> CHARGING_PLAYERS = new ConcurrentHashMap<>();
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.golden_sandstorm_wither_sand");
 
 	private GoldenSandstormWitherSand() {
 	}
@@ -112,7 +117,7 @@ public class GoldenSandstormWitherSand {
 		if (player.getHealth() < state.healthAtStart) {
 			// 被打断：进入7秒CD
 			cancelCharge(player, true);
-			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, INTERRUPT_CD_TICKS);
+			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, BAL.i("interrupt_cd_ticks", INTERRUPT_CD_TICKS));
 
 			serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_SAND_FALL, SoundCategory.PLAYERS, 1.0f, 0.3f);
@@ -130,7 +135,7 @@ public class GoldenSandstormWitherSand {
 		}
 
 		// 蓄力完成
-		if (elapsed >= CHARGE_TICKS) {
+		if (elapsed >= BAL.i("charge_ticks", CHARGE_TICKS)) {
 			removeChargeSlow(player);
 			CHARGING_PLAYERS.remove(player.getUuid());
 			releaseSkill(player, serverWorld);
@@ -142,7 +147,8 @@ public class GoldenSandstormWitherSand {
 	 */
 	private static void releaseSkill(ServerPlayerEntity player, ServerWorld serverWorld) {
 		// 设置正常CD
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, COOLDOWN_TICKS);
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, BAL.i("cooldown_ticks", COOLDOWN_TICKS));
+		double radius = BAL.d("radius", RADIUS);
 
 		// 释放音效
 		serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -153,7 +159,7 @@ public class GoldenSandstormWitherSand {
 		// 大量粒子效果：金色沙尘风暴
 		for (int i = 0; i < 100; i++) {
 			double angle = Math.random() * Math.PI * 2;
-			double dist = Math.random() * RADIUS;
+			double dist = Math.random() * radius;
 			double px = player.getX() + Math.cos(angle) * dist;
 			double pz = player.getZ() + Math.sin(angle) * dist;
 			double py = player.getY() + Math.random() * 2.5;
@@ -163,19 +169,19 @@ public class GoldenSandstormWitherSand {
 		}
 		ParticleUtils.spawnDecorationParticles(serverWorld, player, ParticleTypes.SOUL,
 				player.getX(), player.getY() + 1.0, player.getZ(),
-				40, RADIUS * 0.5, 1.0, RADIUS * 0.5, 0.02);
+				40, radius * 0.5, 1.0, radius * 0.5, 0.02);
 
 		// 获取范围内生物
-		Box box = player.getBoundingBox().expand(RADIUS);
+		Box box = player.getBoundingBox().expand(radius);
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class, box,
-				e -> e != player && e.isAlive() && e.squaredDistanceTo(player) <= RADIUS * RADIUS);
+				e -> e != player && e.isAlive() && e.squaredDistanceTo(player) <= radius * radius);
 
 		for (LivingEntity target : targets) {
 			// 白名单检查
 			if (WhitelistUtils.isProtected(player, target)) continue;
 
 			// 施加致盲效果（3秒）；带施法者 source 供入梦拦截归因
-			target.addStatusEffect(new StatusEffectInstance(SscAddon.SAND_BLIND, BLIND_DURATION, 0, false, true), player);
+			target.addStatusEffect(new StatusEffectInstance(SscAddon.SAND_BLIND, BAL.i("blind_duration", BLIND_DURATION), 0, false, true), player);
 
 			// 叠加1层侵蚀烙印
 			GoldenSandstormErosionBrand.onPlayerAttack(player, target);

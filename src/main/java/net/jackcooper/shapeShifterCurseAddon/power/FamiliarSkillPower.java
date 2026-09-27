@@ -31,6 +31,8 @@ public final class FamiliarSkillPower extends ActiveCooldownPower {
 
 	@Override
 	public void onUse() {
+        if (entity instanceof net.minecraft.server.network.ServerPlayerEntity syncPlayer
+                && !net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(syncPlayer)) return;
 		if (!(entity instanceof ServerPlayerEntity player) || !player.isAlive()
 				|| !KillEmpowerManager.isEmpowerForm(player)) return;
 		KillEmpowerState state = KillEmpowerManager.readState(player);

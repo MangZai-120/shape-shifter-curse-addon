@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.entity.LivingEntity;
@@ -26,10 +27,13 @@ import java.util.List;
  */
 public class LunarVeilSpell extends Spell {
 
-	/** 基础半径（格），实际半径 = 基础 × speed_multiplier(level)：L1=4 → L5=7（每级 +0.75）。 */
+	/** 基础半径（格）默认，实际半径 = 基础 × speed_multiplier(level)：L1=4 → L5=7（每级 +0.75）；运行时从 balance 快照读取。 */
 	private static final double BASE_RADIUS = 4.0;
-	/** 增益时长（tick）：8s。 */
+	/** 增益时长（tick）默认：8s；运行时从 balance 快照读取。 */
 	private static final int DURATION_TICKS = 160;
+
+	// 阶段 5：服务端权威快照读取（spells.lunar_veil；快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("spells.lunar_veil");
 
 	public LunarVeilSpell() {
 		super(new Identifier("ssc_addon", "lunar_veil"), SpellRarity.GREEN);
@@ -45,9 +49,9 @@ public class LunarVeilSpell extends Spell {
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
-		double radius = BASE_RADIUS * getSpeedMultiplier(level);
+		double radius = BAL.d("base_radius", BASE_RADIUS) * getSpeedMultiplier(level);
 		// 增益时长：每级 +1s（L1=9s … L5=13s）；L4+ 增益升 II 级（抗性 II + 缓降 II）
-		int duration = DURATION_TICKS + (level - 1) * 20;
+		int duration = BAL.i("duration_ticks", DURATION_TICKS) + (level - 1) * 20;
 		int amplifier = level >= 4 ? 1 : 0;
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
 				caster.getBoundingBox().expand(radius), e -> e != caster && e.isAlive());

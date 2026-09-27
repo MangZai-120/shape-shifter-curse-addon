@@ -23,6 +23,7 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
 /**
@@ -41,7 +42,8 @@ public class LunarSpiritBoltEntity extends ProjectileEntity {
 	private static final double TURN_RATE = 0.14;
 	/** 最大存活（tick）兜底。 */
 	private static final int MAX_TICKS = 80;
-
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.lunar_spirit_bolt");
 	/** 变体（0 粉/1 蓝/2 绿，决定命中 debuff 与拖尾配色）。 */
 	private static final TrackedData<Integer> VARIANT =
 			DataTracker.registerData(LunarSpiritBoltEntity.class, TrackedDataHandlerRegistry.INTEGER);
@@ -94,15 +96,18 @@ public class LunarSpiritBoltEntity extends ProjectileEntity {
 		ticksAlive++;
 
 		// —— 曲线转向：每 tick 把速度方向朝目标方向插值（限转向强度）——
+		// 阶段 5：同函数多次读取局部变量化
 		Vec3d velocity = this.getVelocity();
 		LivingEntity target = resolveTarget();
 		if (target != null) {
+			double speed = BAL.d("speed", SPEED);
+			double turnRate = BAL.d("turn_rate", TURN_RATE);
 			Vec3d desired = target.getPos().add(0, target.getHeight() * 0.6, 0)
 					.subtract(this.getPos()).normalize();
 			Vec3d current = velocity.normalize();
 			// 线性插值转向（夹角大时逐步收拢 → 弧线弹道）
-			Vec3d steered = current.multiply(1.0 - TURN_RATE).add(desired.multiply(TURN_RATE)).normalize();
-			velocity = steered.multiply(SPEED);
+			Vec3d steered = current.multiply(1.0 - turnRate).add(desired.multiply(turnRate)).normalize();
+			velocity = steered.multiply(speed);
 			this.setVelocity(velocity);
 		}
 
@@ -117,7 +122,7 @@ public class LunarSpiritBoltEntity extends ProjectileEntity {
 		}
 
 		// 超时自毁（仅服务端权威）
-		if (!this.getWorld().isClient && ticksAlive > MAX_TICKS) {
+		if (!this.getWorld().isClient && ticksAlive > BAL.i("max_ticks", MAX_TICKS)) {
 			this.discard();
 			return;
 		}

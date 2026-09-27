@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -20,10 +21,13 @@ import net.minecraft.util.Identifier;
  */
 public class SpaceStrideSpell extends Spell {
 
-	/** 基础跳升时长（tick）：10s；缓降 = 跳升 + 2s（2026-09-19 用户定稿，节奏对齐）。 */
+	/** 基础跳升时长（tick）默认：10s；缓降 = 跳升 + 2s（2026-09-19 用户定稿，节奏对齐）；运行时从 balance 快照读取。 */
 	private static final int JUMP_TICKS = 200;
-	/** 缓降与跳升的固定差值（tick）：2s。 */
+	/** 缓降与跳升的固定差值（tick）默认：2s；运行时从 balance 快照读取。 */
 	private static final int SLOW_FALL_EXTRA_TICKS = 40;
+
+	// 阶段 5：服务端权威快照读取（spells.space_stride；快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("spells.space_stride");
 
 	public SpaceStrideSpell() {
 		super(new Identifier("ssc_addon", "space_stride"), SpellRarity.WHITE);
@@ -39,8 +43,8 @@ public class SpaceStrideSpell extends Spell {
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
-		int jump = JUMP_TICKS + (level - 1) * 50;
-		int slowFall = jump + SLOW_FALL_EXTRA_TICKS; // 缓降恒比跳升多 2s（随等级同步递增）
+		int jump = BAL.i("jump_ticks", JUMP_TICKS) + (level - 1) * 50;
+		int slowFall = jump + BAL.i("slow_fall_extra_ticks", SLOW_FALL_EXTRA_TICKS); // 缓降恒比跳升多 2s（随等级同步递增）
 		// 跳升每两级 +1 级：L1/L2=I、L3/L4=II、L5=III（amplifier = 级数-1）
 		int jumpAmplifier = (level - 1) / 2;
 		caster.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOW_FALLING, slowFall, 0));

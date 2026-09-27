@@ -12,6 +12,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.LaserBeamEntity;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -58,6 +59,13 @@ public final class FluorescentLaserManager {
 	private static final double ARRAY_BACK = 1.6;
 	private static final double ARRAY_SIDE = 1.3;
 	private static final double ARRAY_UP = 1.7;
+
+	// 阶段 5：运行时快照读取（abilities.fluorescent_laser；快照未初始化回退默认常量；
+	// 几何摆位 ARRAY_COUNT/ARRAY_BACK/SIDE/UP 不迁移）
+	private static final BalanceReader BAL = new BalanceReader("abilities.fluorescent_laser");
+
+	/** HUD 门槛同源：单发读条 tick（balance 可调；HUD 展示用）。 */
+	public static int shotTicksForHud() { return BAL.i("shot_ticks", SHOT_TICKS); }
 
 	private static final UUID LASER_SPEED_UUID = UUID.fromString("b7e1c2d3-4f50-6172-8394-a5b6c7d8e9f0");
 
@@ -109,7 +117,7 @@ public final class FluorescentLaserManager {
 			s.active = true;
 			s.isAling = FormUtils.isForm(player, FormIdentifiers.AXOLOTL_ALING);
 			s.arraysLeft = ARRAY_COUNT;
-			s.windowTicks = WINDOW_TICKS;
+			s.windowTicks = BAL.i("window_ticks", WINDOW_TICKS);
 			s.accumulatedCd = 0;
 			s.shotTicks = 0;
 			applyLaserSpeed(player, true);
@@ -130,17 +138,18 @@ public final class FluorescentLaserManager {
 
 	private static void fireShot(ServerPlayerEntity player, ComboSession s, ServerWorld sw) {
 		int idx = ARRAY_COUNT - s.arraysLeft;       // 0=左 1=右 2=上
-		double beamLen = s.isAling ? ENH_BEAM_LENGTH * 1.2 : ENH_BEAM_LENGTH;   // 阿澪射程 ×1.2
+		double enhBeamLen = BAL.d("enh_beam_length", ENH_BEAM_LENGTH);
+		double beamLen = s.isAling ? enhBeamLen * 1.2 : enhBeamLen;   // 阿澪射程 ×1.2
 		// 发射瞬间准星落点（方块 / 微自瞄生物）= 定格世界锁定点；激光落点固定于此，法阵随玩家移动时激光始终指向它（追踪锁定）
 		Vec3d fireLock = resolveHitPoint(player, sw, beamLen);
 		s.fireLock = fireLock;
 		s.firingIdx = idx;
-		s.shotTicks = SHOT_TICKS;
+		s.shotTicks = BAL.i("shot_ticks", SHOT_TICKS);
 		PowerUtils.setResourceValueAndSync(player, SHOT_HUD, s.shotTicks);
 		s.damagedThisShot.clear();
 		s.arraysLeft--;
-		s.accumulatedCd += CD_PER_SHOT;
-		s.windowTicks = WINDOW_TICKS;               // 重置窗口
+		s.accumulatedCd += BAL.i("cd_per_shot", CD_PER_SHOT);
+		s.windowTicks = BAL.i("window_ticks", WINDOW_TICKS);               // 重置窗口
 		// 持久待机法阵实体进入发射态（存固定锁定点），并同步剩余法阵数
 		if (s.laser != null && s.laser.isAlive()) {
 			s.laser.startFiring(idx, fireLock);
@@ -188,9 +197,10 @@ public final class FluorescentLaserManager {
 	/** 微自瞄：准星 AIM_CONE_DEG 锥内、maxDist 内、最近的非白名单存活生物。 */
 	private static LivingEntity findAimTarget(ServerPlayerEntity player, ServerWorld sw, Vec3d eye, Vec3d aim, double maxDist) {
 		if (maxDist < 0.5) return null;
-		double cosCone = Math.cos(Math.toRadians(AIM_CONE_DEG));
+		double aimConeDeg = BAL.d("aim_cone_deg", AIM_CONE_DEG);
+		double cosCone = Math.cos(Math.toRadians(aimConeDeg));
 		Vec3d end = eye.add(aim.multiply(maxDist));
-		double expand = maxDist * Math.tan(Math.toRadians(AIM_CONE_DEG)) + 1.0;
+		double expand = maxDist * Math.tan(Math.toRadians(aimConeDeg)) + 1.0;
 		Box search = new Box(eye, end).expand(expand);
 		LivingEntity best = null;
 		double bestDist = Double.MAX_VALUE;
@@ -232,13 +242,15 @@ public final class FluorescentLaserManager {
 		}
 		// 实时锁定点（准星落点）同步给渲染器，剩余待发射法阵据此预瞑转向
 		if (s.laser != null && s.laser.isAlive()) {
-			double preLen = s.isAling ? ENH_BEAM_LENGTH * 1.2 : ENH_BEAM_LENGTH;
+			double enhLen = BAL.d("enh_beam_length", ENH_BEAM_LENGTH);
+			double preLen = s.isAling ? enhLen * 1.2 : enhLen;
 			s.laser.setLockPoint(resolveHitPoint(player, sw, preLen));
 		}
 		// 活跃发射推进（8t，其间每 2t 判定，每目标只 1 次）
 		if (s.shotTicks > 0) {
-			int elapsed = SHOT_TICKS - s.shotTicks;   // 0..7
-			if (elapsed % SHOT_DAMAGE_INTERVAL == 0) {
+			int shotTicks = BAL.i("shot_ticks", SHOT_TICKS);
+			int elapsed = shotTicks - s.shotTicks;   // 0..7
+			if (elapsed % BAL.i("shot_damage_interval", SHOT_DAMAGE_INTERVAL) == 0) {
 				shotDamage(sw, player, s);
 			}
 			s.shotTicks--;
@@ -264,8 +276,10 @@ public final class FluorescentLaserManager {
 		if (len < 1.0e-4) return;
 		Vec3d dir = diff.multiply(1.0 / len);
 		// 阿澪：判定半径 ×1.2
-		double radius = s.isAling ? ENH_BEAM_RADIUS * 1.2 : ENH_BEAM_RADIUS;
-		float dmg = s.isAling ? SHOT_DAMAGE * 1.2f : SHOT_DAMAGE;   // 阿澪伤害 ×1.2（12→14.4）
+		double enhBeamRadius = BAL.d("enh_beam_radius", ENH_BEAM_RADIUS);
+		double radius = s.isAling ? enhBeamRadius * 1.2 : enhBeamRadius;
+		float shotDamageBase = (float) BAL.d("shot_damage", SHOT_DAMAGE);
+		float dmg = s.isAling ? shotDamageBase * 1.2f : shotDamageBase;   // 阿澪伤害 ×1.2（12→14.4）
 		Box box = new Box(origin, end).expand(radius);
 		List<LivingEntity> targets = sw.getEntitiesByClass(LivingEntity.class, box,
 				e -> e.isAlive() && !e.isSpectator() && !e.getUuid().equals(player.getUuid()));
@@ -310,7 +324,7 @@ public final class FluorescentLaserManager {
 		attr.removeModifier(LASER_SPEED_UUID);
 		if (apply) {
 			attr.addTemporaryModifier(new EntityAttributeModifier(
-					LASER_SPEED_UUID, "Enhanced Laser Slow", SPEED_PENALTY,
+					LASER_SPEED_UUID, "Enhanced Laser Slow", BAL.d("speed_penalty", SPEED_PENALTY),
 					EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
 		}
 	}

@@ -33,12 +33,37 @@ public final class SpellbookData {
 	/** 最大卷轴槽数（= 魔法释放快捷键数量）。 */
 	public static final int MAX_SLOTS = 7;
 
-	/** 满级后每提升一档法力上限所需经验（×10 整数 = 600.0 exp）。 */
+	// 阶段 5：精通三参数运行时从 balance 快照读取（systems.spellbook_mastery；未初始化回退默认常量）。
+	// 双端读取：服务端结算/客户端 UI（注魔台界面）共用同一套方法，物理客户端优先读 clientSnapshot 镜像。
+	private static int bal(String param, int def) {
+		// 测试环境（纯 JavaExec）Fabric loader 未初始化：任何环境探测都可能 NPE，整体 try 守卫
+		boolean physicalClient = false;
+		try {
+			physicalClient = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isClientThread();
+		} catch (Throwable ignored) {
+			// 无 Fabric 环境 → 按非客户端处理
+		}
+		if (physicalClient) {
+			var cs = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
+			if (cs != null) return (int) cs.getInt("systems.spellbook_mastery", param);
+		}
+		var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot();
+		return s == null ? def : (int) s.getInt("systems.spellbook_mastery", param);
+	}
+
+	/** 满级后每提升一档法力上限所需经验（×10 整数 = 600.0 exp）。默认值；运行时从 balance 快照读取。 */
 	public static final int MASTERY_EXP_PER_TIER = 600 * 10;
-	/** 满级后每档增加的法力上限。 */
+	/** 满级后每档增加的法力上限。默认值；运行时从 balance 快照读取。 */
 	public static final int MASTERY_MANA_PER_TIER = 50;
-	/** 满级法力上限加成封顶（档数 = 600*10/50 → 12 档 ×50 = +600）。 */
+	/** 满级法力上限加成封顶（档数 = 600*10/50 → 12 档 ×50 = +600）。默认值；运行时从 balance 快照读取。 */
 	public static final int MASTERY_MAX_BONUS = 600;
+
+	/** 当前生效的每档经验（balance 可调）。 */
+	public static int masteryExpPerTier() { return bal("mastery_exp_per_tier", MASTERY_EXP_PER_TIER); }
+	/** 当前生效的每档法力（balance 可调）。 */
+	public static int masteryManaPerTier() { return bal("mastery_mana_per_tier", MASTERY_MANA_PER_TIER); }
+	/** 当前生效的加成封顶（balance 可调）。 */
+	public static int masteryMaxBonus() { return bal("mastery_max_bonus", MASTERY_MAX_BONUS); }
 
 	public static final String NBT_LEVEL = "Level";
 	/** 经验 ×10 整数（6.0 exp = 60）；旧键 {@code Exp} 读档自动迁移。 */
@@ -103,8 +128,10 @@ public final class SpellbookData {
 			return 0;
 		}
 		int expTen = nbt != null && nbt.contains(NBT_EXP) ? Math.max(0, nbt.getInt(NBT_EXP)) : 0;
-		int tier = Math.min(MASTERY_MAX_BONUS / MASTERY_MANA_PER_TIER, expTen / MASTERY_EXP_PER_TIER);
-		return Math.min(MASTERY_MAX_BONUS, tier * MASTERY_MANA_PER_TIER);
+		int cap = masteryMaxBonus();
+		int perTier = masteryManaPerTier();
+		int tier = Math.min(cap / perTier, expTen / masteryExpPerTier());
+		return Math.min(cap, tier * perTier);
 	}
 
 	private static int getUniversalFormationManaBonusNbt(NbtCompound nbt) {
@@ -152,26 +179,26 @@ public final class SpellbookData {
 				* FormationData.universalManaBonusPct(best));
 	}
 
-	/** 满级精通档位（第几档，0 = 未满档）。每 {@link #MASTERY_EXP_PER_TIER} 经验一档，封顶不超上限加成。 */
+	/** 满级精通档位（第几档，0 = 未满档）。每档经验可由 balance 调整，封顶不超上限加成。 */
 	public static int getMasteryTier(ItemStack book) {
 		if (getLevel(book) < MAX_LEVEL) {
 			return 0;
 		}
-		int maxTier = MASTERY_MAX_BONUS / MASTERY_MANA_PER_TIER;
-		return Math.min(maxTier, getExpTen(book) / MASTERY_EXP_PER_TIER);
+		int maxTier = masteryMaxBonus() / masteryManaPerTier();
+		return Math.min(maxTier, getExpTen(book) / masteryExpPerTier());
 	}
 
-	/** 满级精通带来的法力上限加成（+50/档，封顶 +600）。 */
+	/** 满级精通带来的法力上限加成（默认 +50/档封顶 +600；balance 可调）。 */
 	public static int getMasteryManaBonus(ItemStack book) {
-		return Math.min(MASTERY_MAX_BONUS, getMasteryTier(book) * MASTERY_MANA_PER_TIER);
+		return Math.min(masteryMaxBonus(), getMasteryTier(book) * masteryManaPerTier());
 	}
 
 	/** 距下一档精通还差多少经验（×10 整数；已满档或未满级返回 -1）。 */
 	public static int getMasteryExpToNextTier(ItemStack book) {
-		if (getLevel(book) < MAX_LEVEL || getMasteryTier(book) >= MASTERY_MAX_BONUS / MASTERY_MANA_PER_TIER) {
+		if (getLevel(book) < MAX_LEVEL || getMasteryTier(book) >= masteryMaxBonus() / masteryManaPerTier()) {
 			return -1;
 		}
-		return MASTERY_EXP_PER_TIER - getExpTen(book) % MASTERY_EXP_PER_TIER;
+		return masteryExpPerTier() - getExpTen(book) % masteryExpPerTier();
 	}
 
 	public static int getMana(ItemStack book) {

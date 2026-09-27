@@ -47,7 +47,7 @@ public class PurifiedEffect extends StatusEffect {
 		// 净化同样清除“感染孢子”（由自定义管理器维护，非原版状态效果），并驱散身边的滞留毒雾云
 		if (entity.getWorld() instanceof ServerWorld sw) {
 			InfectionSporeManager.cureInfection(entity.getUuid());
-			InfectionSporeManager.dissipateCloudsNear(sw, entity.getPos(), InfectionSporeManager.CLOUD_PURIFY_REACH);
+			InfectionSporeManager.dissipateCloudsNear(sw, entity.getPos(), InfectionSporeManager.cloudPurifyReach());
 		}
 	}
 }

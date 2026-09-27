@@ -28,7 +28,12 @@ public final class ExplosionEffects {
 	/** 分帧计数器（2026-09-24）：爆炸粒子分帧摊平用，正数=尚待发放的剩余批次数。 */
 	private int pendingBlastBatches;
 
-	public void tick(ClientWorld world, Vec3d center, int elapsed, boolean detonated) {
+	/** 生效核心半径：包内快照优先（reload 后与服务端结算同源），无包值回退当前 Rules。 */
+	private static double coreRadius(Double packetCore) {
+		return packetCore != null && packetCore > 0 ? packetCore : ExplosionRules.coreRadius();
+	}
+
+	public void tick(ClientWorld world, Vec3d center, int elapsed, boolean detonated, Double packetCoreRadius, Double packetOuterRadius) {
 		if (detonated) {
 			if (!exploded) {
 				exploded = true;
@@ -38,11 +43,11 @@ public final class ExplosionEffects {
 				// 整数分割发放（详见 spawnBlastBatch）。
 				particle(ParticleTypes.EXPLOSION_EMITTER, center, Vec3d.ZERO, 8);
 				pendingBlastBatches = BLAST_BATCHES;
-				spawnBlastBatch(world, center);
+				spawnBlastBatch(world, center, packetCoreRadius);
 				// 主题音频是唯一音源（用户定稿）：不再叠加原版爆炸音；主题继续自然播完。
 			} else {
-				if (pendingBlastBatches > 0) spawnBlastBatch(world, center);
-				embers(world, center); // 余韵：火星雨持续蹦出（服务端 AFTER_GLOW 后 view 被清，窗口约 20t）
+				if (pendingBlastBatches > 0) spawnBlastBatch(world, center, packetCoreRadius);
+				embers(world, center, packetCoreRadius); // 余韵：火星雨持续蹦出（服务端 AFTER_GLOW 后 view 被清，窗口约 20t）
 			}
 			return;
 		}
@@ -64,7 +69,7 @@ public final class ExplosionEffects {
 		}
 		// 400 伤警示圈（2026-09-22 用户需求）：爆炸前 8 秒起，红/黑/紫三色粒子圈标出 400 伤范围
 		// （32 格处伤害恰为 400，即 CORE_RADIUS；与音频起播、光柱启动同时刻）。
-		if (elapsed >= ExplosionRules.SOUND_START_TICKS) warnRing(world, center, elapsed);
+		if (elapsed >= ExplosionRules.SOUND_START_TICKS) warnRing(world, center, elapsed, packetCoreRadius);
 		// Geometry provides the solid beam/circles; sparse sparks never require particle packets.
 		double height = ExplosionRules.beamHeight(elapsed);
 		for (int i = 0; i < 6 && height > 0; i++) {
@@ -73,10 +78,11 @@ public final class ExplosionEffects {
 		}
 	}
 
-	/** 400 伤警示圈：每 2t 沿 32 格圆周撒红/黑/紫交替粒子，圈体随时间缓慢旋转流动。 */
-	private static void warnRing(ClientWorld world, Vec3d center, int elapsed) {
+	/** 400 伤警示圈：每 2t 沿核心半径圆周撒红/黑/紫交替粒子，圈体随时间缓慢旋转流动。
+	 * 半径读包内快照（packetCore 包值优先，无包值回退 ExplosionRules.coreRadius()）。 */
+	private static void warnRing(ClientWorld world, Vec3d center, int elapsed, Double packetCore) {
 		if (world.getTime() % 2 != 0) return;
-		double radius = ExplosionRules.CORE_RADIUS;
+		double radius = coreRadius(packetCore);
 		int points = 120;
 		double offset = (elapsed - ExplosionRules.SOUND_START_TICKS) * 0.02;
 		for (int i = 0; i < points; i++) {
@@ -103,7 +109,7 @@ public final class ExplosionEffects {
 	 * emitter 双环 18（内 6 + 外 12）、粒子球 1024、火星 240、烟 48 每帧各 3/171/40/8。
 	 * 每粒子的方向/颜色/半径仍由全局下标 i 决定（斐波那契球面 + 红白交替 + i%3 壳层），
 	 * 分帧只改提交时机不改分布；6 帧 0.3 秒内全部发完，窗口远小于 AFTER_GLOW 40t 不会截断。 */
-	private void spawnBlastBatch(ClientWorld world, Vec3d center) {
+	private void spawnBlastBatch(ClientWorld world, Vec3d center, Double packetCore) {
 		int batch = BLAST_BATCHES - pendingBlastBatches; // 0..5
 		pendingBlastBatches--;
 		// emitter 双环（18 个）：全局下标 <6 为内环（半径 8，错高 ±2），≥6 为外环（半径 18，错高 ±8）
@@ -130,18 +136,18 @@ public final class ExplosionEffects {
 			if (i % 8 == 0) particle(ParticleTypes.FLAME, center.add(direction.multiply(radius)), direction.multiply(0.5), 24);
 		}
 		// 火星（每帧 40 共 240）：从杀伤圈内地面窜起；烟（每帧 8 共 48）
-		sparks(world, center, 40);
+		sparks(world, center, 40, packetCore);
 		for (int i = 0; i < 8; i++) {
 			particle(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.add((world.random.nextDouble() - 0.5) * 28,
 					world.random.nextDouble() * 20, (world.random.nextDouble() - 0.5) * 28), new Vec3d(0, 0.3, 0), 45);
 		}
 	}
 
-	/** 火星：火焰粒子从 32 格杀伤圈内随机位置向上蹦出（带随机水平散布，向上速度 0.2-0.7）。 */
-	private static void sparks(ClientWorld world, Vec3d center, int count) {
+	/** 火星：火焰粒子从核心杀伤圈内随机位置向上蹦出（带随机水平散布，向上速度 0.2-0.7）。 */
+	private static void sparks(ClientWorld world, Vec3d center, int count, Double packetCore) {
 		for (int i = 0; i < count; i++) {
 			double angle = world.random.nextDouble() * Math.PI * 2;
-			double dist = world.random.nextDouble() * ExplosionRules.CORE_RADIUS;
+			double dist = world.random.nextDouble() * coreRadius(packetCore);
 			Vec3d pos = center.add(Math.cos(angle) * dist, world.random.nextDouble() * 2, Math.sin(angle) * dist);
 			Vec3d vel = new Vec3d((world.random.nextDouble() - 0.5) * 0.4,
 					0.2 + world.random.nextDouble() * 0.5, (world.random.nextDouble() - 0.5) * 0.4);
@@ -150,8 +156,8 @@ public final class ExplosionEffects {
 	}
 
 	/** 余韵火星雨：爆炸后每个客户端 tick 继续蹦 12 个火星，直至服务端移除序列（约 20t）。 */
-	private static void embers(ClientWorld world, Vec3d center) {
-		sparks(world, center, 12);
+	private static void embers(ClientWorld world, Vec3d center, Double packetCore) {
+		sparks(world, center, 12, packetCore);
 	}
 
 	private static void particle(ParticleEffect effect, Vec3d position, Vec3d velocity, int life) {

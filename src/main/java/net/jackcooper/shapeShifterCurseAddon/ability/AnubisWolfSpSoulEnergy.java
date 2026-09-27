@@ -10,6 +10,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.jackcooper.shapeShifterCurseAddon.resource.BarKeys;
 import net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.onixary.shapeShifterCurseFabric.minion.mobs.AnubisWolfMinionEntity;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -30,11 +31,12 @@ import java.util.UUID;
 public class AnubisWolfSpSoulEnergy {
 
 	/**
-	 * 最大灵魂能量
+	 * 最大灵魂能量（默认值；运行时从 balance 快照读取，scope：abilities.anubis_soul_energy）
 	 */
 	public static final int MAX_ENERGY = 100;
 
 // ==================== 常量 ====================
+	// 以下常量均为默认值；运行时从 balance 快照读取（scope：abilities.anubis_soul_energy）
 	/**
 	 * 在死亡领域内击杀获得的能量
 	 */
@@ -51,6 +53,9 @@ public class AnubisWolfSpSoulEnergy {
 	 * 自身处于凋零时击杀额外获得的能量（凋零收割循环）
 	 */
 	private static final int WITHER_KILL_BONUS_ENERGY = 10;
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.anubis_soul_energy");
 
 	private AnubisWolfSpSoulEnergy() {
 	}
@@ -73,7 +78,7 @@ public class AnubisWolfSpSoulEnergy {
 	public static void addEnergy(ServerPlayerEntity player, int amount) {
 		int max = PowerUtils.getResourceMax(player, FormIdentifiers.ANUBIS_WOLF_SP_SOUL_ENERGY);
 		if (max <= 0) {
-			max = MAX_ENERGY; // power 未就绪/查询失败的回退上限（旧版行为）
+			max = BAL.i("max_energy", MAX_ENERGY); // power 未就绪/查询失败的回退上限（旧版行为）
 		}
 		int current = getEnergy(player);
 		int newValue = Math.min(current + amount, max);
@@ -157,7 +162,7 @@ public class AnubisWolfSpSoulEnergy {
 		PlayerEntity ownerEntity = victim.getWorld().getPlayerByUuid(best);
 		if (ownerEntity instanceof ServerPlayerEntity ownerPlayer
 				&& FormUtils.isForm(ownerPlayer, FormIdentifiers.ANUBIS_WOLF_SP)) {
-			addEnergy(ownerPlayer, WITHER_KILL_BONUS_ENERGY);
+			addEnergy(ownerPlayer, BAL.i("wither_kill_bonus_energy", WITHER_KILL_BONUS_ENERGY));
 		}
 		WITHER_SOURCES.remove(victim.getUuid());
 	}
@@ -207,14 +212,14 @@ public class AnubisWolfSpSoulEnergy {
 					&& AnubisWolfSpDeathDomain.isInActiveDomain(killer.getUuid(), entity.getBlockPos())) {
 // 增强领域范围内击杀不获取能量
 				if (!AnubisWolfSpDeathDomain.isEnhancedDomain(killer.getUuid())) {
-					addEnergy(killer, KILL_IN_DOMAIN_ENERGY);
+					addEnergy(killer, BAL.i("kill_in_domain_energy", KILL_IN_DOMAIN_ENERGY));
 				}
 			} else {
-				addEnergy(killer, REGULAR_KILL_ENERGY);
+				addEnergy(killer, BAL.i("regular_kill_energy", REGULAR_KILL_ENERGY));
 			}
 // 凋零击杀回能：自身处于凋零时击杀额外 +10 灵魂能量
 			if (killer.hasStatusEffect(net.minecraft.entity.effect.StatusEffects.WITHER)) {
-				addEnergy(killer, WITHER_KILL_BONUS_ENERGY);
+				addEnergy(killer, BAL.i("wither_kill_bonus_energy", WITHER_KILL_BONUS_ENERGY));
 			}
 			return;
 		}
@@ -232,10 +237,10 @@ public class AnubisWolfSpSoulEnergy {
 						&& AnubisWolfSpDeathDomain.isInActiveDomain(ownerUuid, entity.getBlockPos())) {
 					return;
 				}
-				addEnergy(ownerPlayer, MINION_KILL_ENERGY);
+				addEnergy(ownerPlayer, BAL.i("minion_kill_energy", MINION_KILL_ENERGY));
 // 凋零击杀回能：冥狼击杀时，若主人处于凋零，额外 +10 灵魂能量
 				if (ownerPlayer.hasStatusEffect(net.minecraft.entity.effect.StatusEffects.WITHER)) {
-					addEnergy(ownerPlayer, WITHER_KILL_BONUS_ENERGY);
+					addEnergy(ownerPlayer, BAL.i("wither_kill_bonus_energy", WITHER_KILL_BONUS_ENERGY));
 				}
 			}
 		}

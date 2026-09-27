@@ -32,6 +32,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
@@ -50,11 +51,17 @@ import java.util.UUID;
  * 全部判定与状态效果均在服务端执行，确保多人环境主客机一致。
  */
 public class ParasiticFruitSeedPower extends ActiveCooldownPower {
+    // 以下均为默认值；运行时从 balance 快照读取（abilities.parasitic_seed_power）。
+    // DEFAULT_LIFE_TICKS 例外：仅作工厂注册时 power JSON "duration" 字段的默认值（早于任何数据包加载），
+    // 运行时无读取点，保持编译期常量。
     private static final int MAX_SEEDS = 3;
     private static final int ROOTING_TICKS = 20;
     private static final int FRUIT_INTERVAL_TICKS = 25;
     private static final int DEFAULT_LIFE_TICKS = 240;
     private static final int ENERGY_COST = 1;
+
+    /** balance 快照读取（快照未初始化回退默认常量） */
+    private static final BalanceReader BAL = new BalanceReader("abilities.parasitic_seed_power");
 
     private static final DustParticleEffect FRIEND_DUST = new DustParticleEffect(new Vector3f(0.35f, 0.95f, 0.30f), 1.1f);
     private static final DustParticleEffect ENEMY_DUST = new DustParticleEffect(new Vector3f(0.55f, 0.10f, 0.75f), 1.1f);
@@ -125,6 +132,8 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
 
     @Override
     public void onUse() {
+        if (entity instanceof net.minecraft.server.network.ServerPlayerEntity syncPlayer
+                && !net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(syncPlayer)) return;
         if (!(entity instanceof ServerPlayerEntity caster)) return;
         if (entity.getWorld().isClient) return;
         if (entity.hasStatusEffect(SscAddon.PURIFIED)) return;
@@ -132,7 +141,8 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
 
         // 双生种荚：一次播种额外寄生最近的第二目标，但能量消耗翻倍、冷却 +1 秒
         boolean twinPod = TrinketUtils.isWearing(caster, SscAddon.TWIN_POD);
-        int energyCost = twinPod ? ENERGY_COST * 2 : ENERGY_COST;
+        int energyCostBase = BAL.i("energy_cost", ENERGY_COST);
+        int energyCost = twinPod ? energyCostBase * 2 : energyCostBase;
 
         // 能量检查：不足则释放失败
         if (!PowerUtils.hasResource(caster, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY, energyCost)) {
@@ -201,7 +211,7 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
             net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.runAttachedEffect(caster, host,
                     () -> spawnAttachedSeedParticles(caster, host, seed, now));
             if (now >= seed.nextFruitTick) {
-                seed.nextFruitTick = now + FRUIT_INTERVAL_TICKS;
+                seed.nextFruitTick = now + BAL.i("fruit_interval_ticks", FRUIT_INTERVAL_TICKS);
                 net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.runAttachedEffect(caster, host,
                         () -> bearFruit(caster, host, seed));
             }
@@ -245,9 +255,11 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
      * public 供 ParasiticSeedProjectile 等外部回调。
      */
     public void plantSeed(ServerPlayerEntity caster, LivingEntity host) {
-        // 种子寿命（=叮声/buff 总持续）：未交战 15s(300t) / 交战 5s(100t)
+        // 种子寿命（=叮声/buff 总持续）：未交战 15s(300t) / 交战 5s(100t)——balance 可调（life_peace/life_combat）
         plantSeed(caster, host,
-                net.jackcooper.shapeShifterCurseAddon.ability.ParasiticCombatTracker.isInCombat(host) ? 100 : 300);
+                net.jackcooper.shapeShifterCurseAddon.ability.ParasiticCombatTracker.isInCombat(host)
+                        ? BAL.i("life_combat", 100)
+                        : BAL.i("life_peace", 300));
     }
 
     /** 带自定义基础时长的种植（种子圈拾取传固定时长）。 */
@@ -255,24 +267,26 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(caster, host)) return;
         long now = caster.getWorld().getTime();
         int adjustedLife = baseLife;
+        int maxSeeds = BAL.i("max_seeds", MAX_SEEDS);
+        int rootingTicks = BAL.i("rooting_ticks", ROOTING_TICKS);
         SeedData seed = seeds.get(host.getUuid());
         if (seed != null) {
-            // 同一宿主：堆叠 1 层（封顶 MAX_SEEDS=3）；重复命中在剩余时长基础上叠加（无论敌友）
-            seed.stack = Math.min(MAX_SEEDS, seed.stack + 1);
+            // 同一宿主：堆叠 1 层（封顶 max_seeds，默认 3）；重复命中在剩余时长基础上叠加（无论敌友）
+            seed.stack = Math.min(maxSeeds, seed.stack + 1);
             seed.endTick = Math.max(seed.endTick, now) + adjustedLife;
-            seed.nextFruitTick = now + ROOTING_TICKS;
+            seed.nextFruitTick = now + rootingTicks;
         } else {
             cleanupExpiredSeeds(caster, now);
             // 超过同时宿主上限时移除最早一个（FIFO）
-            // 注：MAX_SEEDS 同时作为“同一宿主堆叠上限”与“独立宿主上限”，保持设计简化
-            if (seeds.size() >= MAX_SEEDS) {
+            // 注：max_seeds 同时作为“同一宿主堆叠上限”与“独立宿主上限”，保持设计简化
+            if (seeds.size() >= maxSeeds) {
                 Iterator<UUID> iterator = seeds.keySet().iterator();
                 if (iterator.hasNext()) {
                     iterator.next();
                     iterator.remove();
                 }
             }
-            seeds.put(host.getUuid(), new SeedData(now + adjustedLife, now + ROOTING_TICKS));
+            seeds.put(host.getUuid(), new SeedData(now + adjustedLife, now + rootingTicks));
         }
 
         if (host.getWorld() instanceof ServerWorld world) {
@@ -396,8 +410,8 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
     private void applyFriendBuff(LivingEntity target, ServerPlayerEntity caster, int stack) {
         boolean inCombat = net.jackcooper.shapeShifterCurseAddon.ability.ParasiticCombatTracker.isInCombat(target);
         float hpRatio = target.getHealth() / Math.max(1.0f, target.getMaxHealth());
-        // buff 时长 = 叮声间隔 + 0.2s = 44t，再乘腐殖之戒系数（装备时友军增益 ×0.7）
-        int buffDur = Math.max(10, Math.round((FRUIT_INTERVAL_TICKS + 4) * currentHumusFactor));
+        // buff 时长 = 叮声间隔 + 0.2s = 44t（默认），再乘腐殖之戒系数（装备时友军增益 ×0.7）
+        int buffDur = Math.max(10, Math.round((BAL.i("fruit_interval_ticks", FRUIT_INTERVAL_TICKS) + 4) * currentHumusFactor));
         if (!inCombat) {
             if (hpRatio > 0.7f) {
                 // 未交战 + 高血：急迫 I
@@ -489,7 +503,7 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         // 满层 outline 高光：通过 scoreboard team 染色 + 短时长 GLOWING 状态实现客户端描边。
         // 优先级低于次要技能：被次要技能感染的目标让位（不画绿/红 outline）。
         boolean infected = net.jackcooper.shapeShifterCurseAddon.ability.InfectionSporeManager.isInfected(host.getUuid());
-        if (seed.stack >= MAX_SEEDS && !infected) {
+        if (seed.stack >= BAL.i("max_seeds", MAX_SEEDS) && !infected) {
             if (friend) {
                 net.jackcooper.shapeShifterCurseAddon.util.GlowMarker.markFriend(host, caster);
             } else {

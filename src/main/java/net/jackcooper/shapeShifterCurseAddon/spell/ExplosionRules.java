@@ -31,18 +31,69 @@ public final class ExplosionRules {
 	public static final double AIM_RANGE = 128.0;
 
 	// ---- 伤害与附加 ----
-	/** 核心杀伤半径：0-CORE 内伤害 100%→40% 线性递减。 */
+	/** 核心杀伤半径：0-CORE 内伤害 100%→40% 线性递减。默认值；运行时从 balance 快照读取。 */
 	public static final double CORE_RADIUS = 32.0;
-	/** 直伤外沿：CORE-OUTER 内伤害 10%→0 线性递减（CORE 处陡降断层，用户定稿）。 */
+	/** 直伤外沿：CORE-OUTER 内伤害 10%→0 线性递减（CORE 处陡降断层，用户定稿）。默认值；运行时从 balance 快照读取。 */
 	public static final double OUTER_RADIUS = 64.0;
-	/** 点燃内界（CORE-IGNITE_NEAR 点燃 10 秒）。 */
+	/** 点燃内界（CORE-IGNITE_NEAR 点燃 10 秒）。默认值；运行时从 balance 快照读取。 */
 	public static final double IGNITE_NEAR = 42.0;
-	/** 点燃外界（IGNITE_NEAR-IGNITE_FAR 点燃 5 秒，更远不点燃）。 */
+	/** 点燃外界（IGNITE_NEAR-IGNITE_FAR 点燃 5 秒，更远不点燃）。默认值；运行时从 balance 快照读取。 */
 	public static final double IGNITE_FAR = 50.0;
-	/** 32-42 格点燃时长（t）。 */
+	/** 32-42 格点燃时长（t）。默认值；运行时从 balance 快照读取。 */
 	public static final int FIRE_TICKS_NEAR = 200;
-	/** 42-50 格点燃时长（t）。 */
+	/** 42-50 格点燃时长（t）。默认值；运行时从 balance 快照读取。 */
 	public static final int FIRE_TICKS_FAR = 100;
+
+	// 平衡迁移（systems.explosion）：双端从 balance 快照读取，物理客户端优先 clientSnapshot 镜像
+	// （客户端特效/警示圈与服务端结算同源）；服务端/快照未就绪回退默认常量。
+	// 测试环境（纯 JavaExec）无 Fabric loader → 走服务端分支且快照为 null → 回退默认，与原行为一致。
+	private static double balE(String param, double def) {
+		boolean physicalClient = false;
+		try {
+			physicalClient = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isClientThread();
+		} catch (Throwable ignored) {
+			// 无 Fabric 环境 → 按非客户端处理
+		}
+		if (physicalClient) {
+			var cs = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
+			if (cs != null) return cs.getDouble("systems.explosion", param);
+		}
+		var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot();
+		return s == null ? def : s.getDouble("systems.explosion", param);
+	}
+
+	/** int 参数读取（快照中为 long）。 */
+	private static int balEInt(String param, int def) {
+		boolean physicalClient = false;
+		try {
+			physicalClient = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isClientThread();
+		} catch (Throwable ignored) {
+			// 无 Fabric 环境 → 按非客户端处理
+		}
+		if (physicalClient) {
+			var cs = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
+			if (cs != null) return (int) cs.getInt("systems.explosion", param);
+		}
+		var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot();
+		return s == null ? def : (int) s.getInt("systems.explosion", param);
+	}
+
+	/** 当前生效的核心杀伤半径（balance 可调）。 */
+	public static double coreRadius() { return balE("core_radius", CORE_RADIUS); }
+	/** 当前生效的直伤外沿（balance 可调）。 */
+	public static double outerRadius() { return balE("outer_radius", OUTER_RADIUS); }
+	/** 当前生效的点燃内界（balance 可调）。 */
+	public static double igniteNear() { return balE("ignite_near", IGNITE_NEAR); }
+	/** 当前生效的点燃外界（balance 可调）。 */
+	public static double igniteFar() { return balE("ignite_far", IGNITE_FAR); }
+	/** 当前生效的内圈点燃时长（balance 可调）。 */
+	public static int fireTicksNear() { return balEInt("fire_ticks_near", FIRE_TICKS_NEAR); }
+	/** 当前生效的外圈点燃时长（balance 可调）。 */
+	public static int fireTicksFar() { return balEInt("fire_ticks_far", FIRE_TICKS_FAR); }
+	/** 当前生效的满音量半径（balance 可调）。 */
+	public static double soundFull() { return balE("sound_full", SOUND_FULL); }
+	/** 当前生效的音效外沿（balance 可调）。 */
+	public static double soundRange() { return balE("sound_range", SOUND_RANGE); }
 
 	// ---- 视觉序列 ----
 	/** 主题音频起播 + 光柱启动时刻：蓄力第 27 秒（T-8s，伤害前 8 秒）。 */
@@ -115,9 +166,9 @@ public final class ExplosionRules {
 	}
 
 	// ---- 音效与可见范围 ----
-	/** 满音量半径：64 格内音量恒 1.0。 */
+	/** 满音量半径：64 格内音量恒 1.0。默认值；运行时从 balance 快照读取。 */
 	public static final double SOUND_FULL = 64.0;
-	/** 音效外沿：64-164 格线性递减至 0。 */
+	/** 音效外沿：64-164 格线性递减至 0。默认值；运行时从 balance 快照读取。 */
 	public static final double SOUND_RANGE = 164.0;
 	/** 视觉（法阵/光柱/球）同步范围：音效外沿 + 余量。 */
 	public static final double VIEW_RANGE = 200.0;
@@ -133,36 +184,44 @@ public final class ExplosionRules {
 		return Math.min(THEME_VOLUME_GAIN, fade * soundVolume(distance) * THEME_VOLUME_GAIN);
 	}
 
-	/** 距爆心 distance 格的伤害系数：0-32 格 1.0→0.4；32-64 格 0.1→0.0（陡降断层）。 */
+	/** 距爆心 distance 格的伤害系数：0-32 格 1.0→0.4；32-64 格 0.1→0.0（陡降断层）。半径运行时从 balance 读取。 */
 	public static double damageFactor(double distance) {
+		double core = coreRadius();
+		double outer = outerRadius();
 		if (!Double.isFinite(distance) || distance < 0) return 0;
-		if (distance <= CORE_RADIUS) {
-			return 1.0 - 0.6 * (distance / CORE_RADIUS);
+		if (distance <= core) {
+			return 1.0 - 0.6 * (distance / core);
 		}
-		if (distance <= OUTER_RADIUS) {
-			return 0.1 * (1.0 - (distance - CORE_RADIUS) / (OUTER_RADIUS - CORE_RADIUS));
+		if (distance <= outer) {
+			return 0.1 * (1.0 - (distance - core) / (outer - core));
 		}
 		return 0;
 	}
 
-	/** 距爆心 distance 格的点燃时长（t）：32-42 格 200t、42-50 格 100t、其余 0。 */
+	/** 距爆心 distance 格的点燃时长（t）：32-42 格 200t、42-50 格 100t、其余 0。边界运行时从 balance 读取。 */
 	public static int fireTicks(double distance) {
-		if (distance > CORE_RADIUS && distance <= IGNITE_NEAR) return FIRE_TICKS_NEAR;
-		if (distance > IGNITE_NEAR && distance <= IGNITE_FAR) return FIRE_TICKS_FAR;
+		double core = coreRadius();
+		double igniteNear = igniteNear();
+		double igniteFar = igniteFar();
+		if (distance > core && distance <= igniteNear) return fireTicksNear();
+		if (distance > igniteNear && distance <= igniteFar) return fireTicksFar();
 		return 0;
 	}
 
-	/** 击退水平强度：近处 1.8 线性衰减到外沿 0.2。 */
+	/** 击退水平强度：近处 1.8 线性衰减到外沿 0.2。外沿运行时从 balance 读取。 */
 	public static double knockbackStrength(double distance) {
-		double t = Math.min(1.0, distance / OUTER_RADIUS);
+		double outer = outerRadius();
+		double t = Math.min(1.0, distance / outer);
 		return 1.6 * (1.0 - t) + 0.2;
 	}
 
-	/** 音效音量曲线：64 格内恒 1.0，64-164 格线性递减至 0（与领域曲线形状不同，用户定稿）。 */
+	/** 音效音量曲线：64 格内恒 1.0，64-164 格线性递减至 0（与领域曲线形状不同，用户定稿）。边界运行时从 balance 读取。 */
 	public static float soundVolume(double distance) {
 		if (!Double.isFinite(distance)) return 0f;
-		if (distance <= SOUND_FULL) return 1.0f;
-		if (distance >= SOUND_RANGE) return 0f;
-		return (float) (1.0 - (distance - SOUND_FULL) / (SOUND_RANGE - SOUND_FULL));
+		double full = soundFull();
+		double range = soundRange();
+		if (distance <= full) return 1.0f;
+		if (distance >= range) return 0f;
+		return (float) (1.0 - (distance - full) / (range - full));
 	}
 }

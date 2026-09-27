@@ -33,6 +33,7 @@ public class AllaySPGroupHeal {
 	public static final String WHITELIST_TAG_PREFIX = "ssc_allay_wl:";
 	private static final Identifier HEAL_EXECUTE_ID = FormIdentifiers.ALLAY_GROUP_HEAL_EXECUTE;
 	private static final Identifier SOLO_DAMAGE_TIMER_ID = FormIdentifiers.ALLAY_GROUP_HEAL_SOLO_DAMAGE_TIMER;
+	// 群疗参数：默认与注释一致；运行时从 balance 快照读取（abilities.allay_sp_group_heal）
 	private static final double HEAL_RADIUS = 20.0;
 	private static final int RESISTANCE_TICKS = 200;
 	private static final int SOLO_BLESSING_TICKS = 400;
@@ -40,6 +41,10 @@ public class AllaySPGroupHeal {
 	private static final float HEAL_PERCENT = 0.75f;
 	private static final float ABSORPTION_PERCENT = 0.5f;
 	private static final int HEAL_ABSORPTION_TICKS = 600;
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
+			new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.allay_sp_group_heal");
 
 	private AllaySPGroupHeal() {
 		throw new UnsupportedOperationException("This class cannot be instantiated.");
@@ -74,28 +79,32 @@ public class AllaySPGroupHeal {
 	private static void executeWhitelistHeal(ServerPlayerEntity allayPlayer) {
 		ServerWorld world = (ServerWorld) allayPlayer.getWorld();
 		boolean soloHeal = !hasOtherHealablePlayer(allayPlayer, world);
+		// balance 运行时参数（同方法多次使用，先取局部变量）
+		double healRadius = BAL.d("heal_radius", HEAL_RADIUS);
+		double healRadiusSq = healRadius * healRadius;
+		int resistanceTicks = BAL.i("resistance_ticks", RESISTANCE_TICKS);
 
 		// 治疗自身
 		if (soloHeal) {
 			applySoloBlessing(allayPlayer);
 		} else {
 			healTarget(allayPlayer);
-			allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, RESISTANCE_TICKS, 0, false, true, true));
+			allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, resistanceTicks, 0, false, true, true));
 		}
 		spawnHealParticles(world, allayPlayer);
 		// 只有SP悦灵自己能听见
 		allayPlayer.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
 
 		// 获取范围内所有活体
-		Box box = allayPlayer.getBoundingBox().expand(HEAL_RADIUS);
+		Box box = allayPlayer.getBoundingBox().expand(healRadius);
 		List<LivingEntity> entities = world.getEntitiesByClass(LivingEntity.class, box,
-				e -> e != allayPlayer && e.isAlive() && e.squaredDistanceTo(allayPlayer) <= HEAL_RADIUS * HEAL_RADIUS);
+					e -> e != allayPlayer && e.isAlive() && e.squaredDistanceTo(allayPlayer) <= healRadiusSq);
 
 		for (LivingEntity entity : entities) {
 			// 统一走 WhitelistUtils.isBuffTarget，同时遵从服务端 whitelistEnabled 总开关
 			if (WhitelistUtils.isBuffTarget(allayPlayer, entity)) {
 				healTarget(entity);
-				entity.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, RESISTANCE_TICKS, 0, false, true, true));
+				entity.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, resistanceTicks, 0, false, true, true));
 				spawnHealParticles(world, entity);
 				// 播放声音：治疗者听见私有声音，其他人听见空间声音
 				allayPlayer.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
@@ -106,29 +115,32 @@ public class AllaySPGroupHeal {
 	}
 
 	private static boolean hasOtherHealablePlayer(ServerPlayerEntity allayPlayer, ServerWorld world) {
-		Box box = allayPlayer.getBoundingBox().expand(HEAL_RADIUS);
+		double healRadius = BAL.d("heal_radius", HEAL_RADIUS);
+		double healRadiusSq = healRadius * healRadius;
+		Box box = allayPlayer.getBoundingBox().expand(healRadius);
 		List<ServerPlayerEntity> players = world.getEntitiesByClass(ServerPlayerEntity.class, box,
 				player -> player != allayPlayer
 						&& player.isAlive()
 						&& !player.isSpectator()
-						&& player.squaredDistanceTo(allayPlayer) <= HEAL_RADIUS * HEAL_RADIUS
+						&& player.squaredDistanceTo(allayPlayer) <= healRadiusSq
 						&& WhitelistUtils.isBuffTarget(allayPlayer, player));
 		return !players.isEmpty();
 	}
 
 	private static void applySoloBlessing(ServerPlayerEntity allayPlayer) {
+		int soloBlessingTicks = BAL.i("solo_blessing_ticks", SOLO_BLESSING_TICKS);
 		healTarget(allayPlayer);
-		allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.STRENGTH, SOLO_BLESSING_TICKS, 1, false, true, true));
-		allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, SOLO_BLESSING_TICKS, 1, false, true, true));
-		setResourceValue(allayPlayer, SOLO_DAMAGE_TIMER_ID, SOLO_BLESSING_TICKS);
+		allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.STRENGTH, soloBlessingTicks, 1, false, true, true));
+		allayPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, soloBlessingTicks, 1, false, true, true));
+		setResourceValue(allayPlayer, SOLO_DAMAGE_TIMER_ID, soloBlessingTicks);
 	}
 
 	/** 治疗单个目标：回血=最大生命×75%，并给予 最大生命×50% 的黄心（持续30秒）。 */
 	private static void healTarget(LivingEntity entity) {
 		float maxHp = entity.getMaxHealth();
-		entity.heal(maxHp * HEAL_PERCENT);
-		int amplifier = Math.max(0, Math.round(maxHp * ABSORPTION_PERCENT / 2.0f) - 1);
-		entity.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, HEAL_ABSORPTION_TICKS, amplifier, false, true, true));
+		entity.heal(maxHp * (float) BAL.d("heal_percent", HEAL_PERCENT));
+		int amplifier = Math.max(0, Math.round(maxHp * (float) BAL.d("absorption_percent", ABSORPTION_PERCENT) / 2.0f) - 1);
+		entity.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, BAL.i("heal_absorption_ticks", HEAL_ABSORPTION_TICKS), amplifier, false, true, true));
 	}
 
 	/**

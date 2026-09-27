@@ -23,6 +23,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -36,11 +37,16 @@ import java.util.List;
 // CD 8 秒（160t），通过 SP_SECONDARY_CD 资源驱动 HUD CD 条
 public class BatSonicWaveAbilityPower extends ActiveCooldownPower {
 
-	private static final double RANGE = 8.0;          // 长度（8 格）
-	private static final double HALF_WIDTH = 1.75;    // 宽度半径（3.5 格直径）
-	private static final double HALF_WIDTH_SQ = HALF_WIDTH * HALF_WIDTH;
-	private static final float DAMAGE = 6.0f;   // 原为 4.0f，强化 +50%
-	private static final int DEBUFF_TICKS = 60; // 3 秒
+	private static final double RANGE = 8.0;          // 默认长度（8 格）；运行时从 balance 快照读取（可数据包覆盖）
+	private static final double HALF_WIDTH = 1.75;    // 默认宽度半径（3.5 格直径）
+	private static final float DAMAGE = 6.0f;   // 默认伤害
+	private static final int DEBUFF_TICKS = 60; // 默认负面时长（3 秒）
+
+	// 阶段 4：服务端权威快照读取（快照未初始化回退默认常量；伤害/范围/时长可由 balance 数据包覆盖）
+	private static double range() { var s = BalanceIntegration.currentSnapshot(); return s != null ? s.getDouble("abilities.bat_sonic_wave", "range") : RANGE; }
+	private static double halfWidth() { var s = BalanceIntegration.currentSnapshot(); return s != null ? s.getDouble("abilities.bat_sonic_wave", "half_width") : HALF_WIDTH; }
+	private static float damage() { var s = BalanceIntegration.currentSnapshot(); return s != null ? (float) s.getDouble("abilities.bat_sonic_wave", "damage") : DAMAGE; }
+	private static int debuffTicks() { var s = BalanceIntegration.currentSnapshot(); return s != null ? (int) s.getInt("abilities.bat_sonic_wave", "debuff_ticks") : DEBUFF_TICKS; }
 	private final int cooldownTicks;
 	private long internalCooldownEndTime = 0L;
 
@@ -86,6 +92,8 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower {
 
 	@Override
 	public void onUse() {
+        if (entity instanceof net.minecraft.server.network.ServerPlayerEntity syncPlayer
+                && !net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(syncPlayer)) return;
 		if (entity == null || entity.getWorld().isClient) return;
 		if (entity.hasStatusEffect(SscAddon.PURIFIED)) return;
 		if (!isInternalCooldownReady()) return;
@@ -101,8 +109,12 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower {
 		Vec3d eye = entity.getEyePos();
 		Vec3d look = entity.getRotationVec(1.0F).normalize();
 
-		Box box = new Box(eye.x - RANGE, eye.y - RANGE, eye.z - RANGE,
-				eye.x + RANGE, eye.y + RANGE, eye.z + RANGE);
+		double range = range();
+		double halfWidth = halfWidth();
+		double halfWidthSq = halfWidth * halfWidth;   // 派生值：从同源快照值计算，不独立开放
+
+		Box box = new Box(eye.x - range, eye.y - range, eye.z - range,
+				eye.x + range, eye.y + range, eye.z + range);
 		List<LivingEntity> candidates = world.getEntitiesByClass(LivingEntity.class, box,
 				living -> living != entity && living.isAlive());
 
@@ -116,23 +128,23 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower {
 		java.util.List<LivingEntity> hits = new java.util.ArrayList<>();
 		for (LivingEntity target : candidates) {
 			Vec3d toTarget = target.getBoundingBox().getCenter().subtract(eye);
-			// 沿视线投影距离：必须在 [0, RANGE] 区间内（排除背后与超远目标）
+			// 沿视线投影距离：必须在 [0, range] 区间内（排除背后与超远目标）
 			double forward = toTarget.dotProduct(look);
-			if (forward <= 0.0 || forward > RANGE) continue;
+			if (forward <= 0.0 || forward > range) continue;
 			// 垂直于视线的偏离平方：必须在圆柱半径内
 			double perpSq = toTarget.lengthSquared() - forward * forward;
-			if (perpSq > HALF_WIDTH_SQ) continue;
+			if (perpSq > halfWidthSq) continue;
 			// 默认白名单：玩家/宠物/召唤物豁免
 			if (entity instanceof ServerPlayerEntity sp && WhitelistUtils.isProtected(sp, target)) continue;
 
-			target.damage(source, DAMAGE);
+			target.damage(source, damage());
 			// 反胃（统一）；带施法者 source 供入梦拦截归因
-			target.addStatusEffect(new StatusEffectInstance(StatusEffects.NAUSEA, DEBUFF_TICKS, 0, false, true, true), entity);
+			target.addStatusEffect(new StatusEffectInstance(StatusEffects.NAUSEA, debuffTicks(), 0, false, true, true), entity);
 			// 失聪：玩家用自定义 DEAFEN（客户端静音）；非玩家附加短暂失明模拟听觉抽离
 			if (target instanceof PlayerEntity) {
-				target.addStatusEffect(new StatusEffectInstance(SscAddon.DEAFEN, DEBUFF_TICKS, 0, false, true, true), entity);
+				target.addStatusEffect(new StatusEffectInstance(SscAddon.DEAFEN, debuffTicks(), 0, false, true, true), entity);
 			} else {
-				target.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, DEBUFF_TICKS, 0, false, true, true), entity);
+				target.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, debuffTicks(), 0, false, true, true), entity);
 			}
 			hits.add(target);
 		}
@@ -149,8 +161,10 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower {
 	}
 
 	private void spawnBeamParticles(ServerWorld world, Vec3d origin, Vec3d look) {
+		double range = range();
+		double halfWidth = halfWidth();
 		// 主轴：从眼前 0.5 格起，向前每 0.7 格一发 SONIC_BOOM
-		for (double d = 0.5; d <= RANGE; d += 0.7) {
+		for (double d = 0.5; d <= range; d += 0.7) {
 			Vec3d p = origin.add(look.multiply(d));
 			ParticleUtils.spawnParticles(world, ParticleTypes.SONIC_BOOM, p.x, p.y, p.z, 1, 0.0, 0.0, 0.0, 0.0);
 		}
@@ -162,10 +176,11 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower {
 		perp1 = perp1.normalize();
 		Vec3d perp2 = look.crossProduct(perp1).normalize();
 		for (double d : new double[]{2.0, 4.0, 6.0, 8.0}) {
+			if (d > range) break;   // 粒子采样不超出快照范围
 			Vec3d center = origin.add(look.multiply(d));
 			for (int i = 0; i < 12; i++) {
 				double ang = 2 * Math.PI * i / 12;
-				Vec3d off = perp1.multiply(Math.cos(ang) * HALF_WIDTH).add(perp2.multiply(Math.sin(ang) * HALF_WIDTH));
+				Vec3d off = perp1.multiply(Math.cos(ang) * halfWidth).add(perp2.multiply(Math.sin(ang) * halfWidth));
 				Vec3d p = center.add(off);
 				ParticleUtils.spawnParticles(world, ParticleTypes.CLOUD, p.x, p.y, p.z, 1, 0.0, 0.0, 0.0, 0.0);
 			}

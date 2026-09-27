@@ -46,7 +46,7 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 
 	/** 数值配置（JSON 加载 / reload 后由注册表写入）。 */
 	public SpellConfig getConfig() {
-		return config;
+		return SpellRegistry.INSTANCE.configFor(id.getPath(), config);
 	}
 
 	/** 注册表专用注入桥（服务端 reload / 客户端 S2C 同步都会走这里）。 */
@@ -60,7 +60,7 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	 * 品质决定：单独使用次数上限、名称颜色、HUD 品质覆盖层颜色。
 	 */
 	public SpellRarity getRarity(int level) {
-		String fromJson = config.rarity(level);
+		String fromJson = getConfig().rarity(level);
 		if (fromJson != null) {
 			return SpellRarity.byId(fromJson);
 		}
@@ -69,22 +69,22 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 
 	/** 基础伤害（装书内、卷轴满次数时）。无伤害类魔法为 0。 */
 	public float getBaseDamage() {
-		return config.baseDamage;
+		return getConfig().baseDamage;
 	}
 
 	/** 基础冷却（tick）。 */
 	public int getBaseCooldownTicks() {
-		return config.baseCooldownTicks;
+		return getConfig().baseCooldownTicks;
 	}
 
 	/** 基础施法时间（tick），0 = 无前摇瞬发。 */
 	public int getBaseCastTimeTicks() {
-		return config.baseCastTimeTicks;
+		return getConfig().baseCastTimeTicks;
 	}
 
 	public SpellCastingRules.Profile getCastingProfile(ServerPlayerEntity caster, int level, boolean solo) {
-		return config.spellTier == SpellCastingRules.Tier.CUSTOM
-				? getCustomCastingProfile(caster, level, solo) : config.spellTier.profile;
+		return getConfig().spellTier == SpellCastingRules.Tier.CUSTOM
+				? getCustomCastingProfile(caster, level, solo) : getConfig().spellTier.profile;
 	}
 
 	protected SpellCastingRules.Profile getCustomCastingProfile(ServerPlayerEntity caster, int level, boolean solo) {
@@ -165,42 +165,42 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 
 	/** 冷却绝对下限（tick；0 = 无绝对下限，仅受相对下限 0.2×C_L 约束。阶段 B / 计划书 §6.2）。 */
 	public int getCooldownFloorTicks() {
-		return config.cooldownFloorTicks;
+		return getConfig().cooldownFloorTicks;
 	}
 
 	/** 每次施法消耗的魔法书法力。 */
 	public int getManaCost() {
-		return config.manaCost;
+		return getConfig().manaCost;
 	}
 
 	/** 单独使用时的伤害倍率。 */
 	public float getSoloDamageMultiplier() {
-		return config.soloDamageMultiplier;
+		return getConfig().soloDamageMultiplier;
 	}
 
 	/** 单独使用时的冷却倍率。 */
 	public float getSoloCooldownMultiplier() {
-		return config.soloCooldownMultiplier;
+		return getConfig().soloCooldownMultiplier;
 	}
 
 	/** 单独使用时的施法时间倍率。 */
 	public float getSoloCastTimeMultiplier() {
-		return config.soloCastTimeMultiplier;
+		return getConfig().soloCastTimeMultiplier;
 	}
 
 	/** 指定等级的伤害倍率（相对基础值；JSON levels[].damage_multiplier，缺省 1.0）。 */
 	public float getDamageMultiplier(int level) {
-		return config.damageMultiplier(level);
+		return getConfig().damageMultiplier(level);
 	}
 
 	/** 指定等级的冷却倍率（相对基础值；JSON levels[].cooldown_multiplier，缺省 1.0）。 */
 	public float getCooldownMultiplier(int level) {
-		return config.cooldownMultiplier(level);
+		return getConfig().cooldownMultiplier(level);
 	}
 
 	/** 指定等级的飞行速度倍率（相对基础值；JSON levels[].speed_multiplier，缺省 1.0）。 */
 	public float getSpeedMultiplier(int level) {
-		return config.speedMultiplier(level);
+		return getConfig().speedMultiplier(level);
 	}
 
 	/**
@@ -299,7 +299,7 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	 * 2026-09 起支持 fire/ice/lunar/curse/summon/void/space 七系；无系别或非法 id 返回 null（结算安全降级）。
 	 */
 	public FormationElement getElement() {
-		return FormationElement.byId(config.element);
+		return FormationElement.byId(getConfig().element);
 	}
 
 	/**
@@ -307,7 +307,7 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	 * 数值化系别来自 JSON {@code element: "ice"}；本方法 = JSON 标记为 ice 时为 true。
 	 */
 	public boolean isIceSpell() {
-		return "ice".equals(config.element);
+		return "ice".equals(getConfig().element);
 	}
 
 	/**
@@ -330,7 +330,7 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 
 	/** 经验机制模式（JSON {@code exp_mode}；缺省 0）。 */
 	public int getExpMode() {
-		return config.expMode;
+		return getConfig().expMode;
 	}
 
 	/** 施法管理器专用：设置本次施法的待补发经验（仅服务端调用栈内有效）。 */

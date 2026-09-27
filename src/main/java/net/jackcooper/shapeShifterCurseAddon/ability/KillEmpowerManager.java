@@ -21,14 +21,28 @@ public final class KillEmpowerManager {
 
 	/** 赋能持续时间（10s）。 */
 	public static final int EMPOWER_TICKS = KillEmpowerState.WINDOW_TICKS;
-	/** SP 赋能火环基础时长，实际时长以施加后的状态效果为准。 */
+	/** SP 赋能火环基础时长，实际时长以施加后的状态效果为准；默认 232，运行时从 balance 快照读取（abilities.kill_empower_ring）。 */
 	public static final int EMPOWER_RING_TICKS_SP = 232;
-	/** Red 赋能火环基础时长，实际时长以施加后的状态效果为准。 */
+	/** Red 赋能火环基础时长，实际时长以施加后的状态效果为准；默认 280，运行时从 balance 快照读取（abilities.kill_empower_ring）。 */
 	public static final int EMPOWER_RING_TICKS_RED = 280;
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
+			new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.kill_empower_ring");
 
 	public static final int STATE_NONE = 0;
 	public static final int STATE_READY = 1;   // 赋能待释放（击杀触发）
 	public static final int STATE_RING = 2;    // 赋能火环激活中
+
+	/** SP 赋能火环时长（balance 快照可覆盖，回退 EMPOWER_RING_TICKS_SP）。 */
+	public static int ringTicksSp() {
+		return BAL.i("ring_ticks_sp", EMPOWER_RING_TICKS_SP);
+	}
+
+	/** Red 赋能火环时长（balance 快照可覆盖，回退 EMPOWER_RING_TICKS_RED）。 */
+	public static int ringTicksRed() {
+		return BAL.i("ring_ticks_red", EMPOWER_RING_TICKS_RED);
+	}
 
 	private record BurnOrigin(UUID owner, int expiresAtAge, boolean normal) {}
 	private static final Map<LivingEntity, BurnOrigin> BURNS = new WeakHashMap<>();

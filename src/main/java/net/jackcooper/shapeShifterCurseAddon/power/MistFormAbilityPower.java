@@ -25,6 +25,7 @@ import io.github.apace100.apoli.component.PowerHolderComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.onixary.shapeShifterCurseFabric.additional_power.BatBlockAttachPower;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -51,11 +52,21 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 	private long internalCooldownEndTime = 0L;
 	private boolean wasMist = false;
 	// 凝聚爆破相关
-	private static final int MIST_BURST_DELAY = 20;   // 化雾后可引爆的最短间隔 tick（1秒）
-	private static final int CHARGE_DURATION = 20;    // 凝聚爆破蓄力时长 tick（1秒）
-	private static final double AOE_RADIUS = 4.0;     // 爆破半径（格）
-	private static final float AOE_DAMAGE = 12.0f;    // 爆破伤害（原为 8.0f，强化 +50%）
-	private static final double AOE_KNOCKBACK = 1.0;  // 击退强度
+	private static final int MIST_BURST_DELAY = 20;   // 默认：化雾后可引爆的最短间隔 tick（1秒）；运行时从 balance 快照读取
+	private static final int CHARGE_DURATION = 20;    // 默认：凝聚爆破蓄力时长 tick（1秒）
+	private static final double AOE_RADIUS = 4.0;     // 默认：爆破半径（格）
+	private static final float AOE_DAMAGE = 12.0f;    // 默认：爆破伤害
+	private static final double AOE_KNOCKBACK = 1.0;  // 默认：击退强度
+
+	// 阶段 4：服务端权威快照读取（快照未初始化回退默认常量；balance 数据包可覆盖）。
+	// ⚠ 蓄力中重载不换时长：本次爆破的全链路（效果时长/进度计算/判定）都读同一方法，
+	// 已开始的蓄力沿旧值走完（效果实例携带着旧时长），下次蓄力用新值。快照读取无缓存，
+	// 不存在「本次结算用旧半径」的滞留——半径/伤害在结算瞬间读当前快照（文档 §7 引导锁定语义）。
+	private static int mistBurstDelay() { var s = BalanceIntegration.currentSnapshot(); return s != null ? (int) s.getInt("abilities.bat_mist_burst", "min_delay_ticks") : MIST_BURST_DELAY; }
+	private static int chargeDuration() { var s = BalanceIntegration.currentSnapshot(); return s != null ? (int) s.getInt("abilities.bat_mist_burst", "charge_ticks") : CHARGE_DURATION; }
+	private static double aoeRadius() { var s = BalanceIntegration.currentSnapshot(); return s != null ? s.getDouble("abilities.bat_mist_burst", "radius") : AOE_RADIUS; }
+	private static float aoeDamage() { var s = BalanceIntegration.currentSnapshot(); return s != null ? (float) s.getDouble("abilities.bat_mist_burst", "damage") : AOE_DAMAGE; }
+	private static double aoeKnockback() { var s = BalanceIntegration.currentSnapshot(); return s != null ? s.getDouble("abilities.bat_mist_burst", "knockback") : AOE_KNOCKBACK; }
 	private long mistStartTime = 0L;  // 本次化雾起始时间
 	private boolean charging = false;      // 凝聚爆破蓄力中
 	private long chargeStartTime = 0L;     // 蓄力起始时间
@@ -224,8 +235,8 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 	private void detonate() {
 		ServerWorld serverWorld = (ServerWorld) entity.getWorld();
 		DamageSource source = entity.getDamageSources().magic();
-		Box box = entity.getBoundingBox().expand(AOE_RADIUS);
-		double radiusSq = AOE_RADIUS * AOE_RADIUS;
+		Box box = entity.getBoundingBox().expand(aoeRadius());
+		double radiusSq = aoeRadius() * aoeRadius();
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class, box,
 				living -> living != entity && living.isAlive());
 		// 收集真正命中（非白名单）的目标，供血渴值「凝聚爆破命中 +12/6/3」结算
@@ -236,9 +247,9 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 			if (entity instanceof ServerPlayerEntity serverPlayer && WhitelistUtils.isProtected(serverPlayer, target)) {
 				continue;
 			}
-			target.damage(source, AOE_DAMAGE);
+			target.damage(source, aoeDamage());
 			// 从玩家位置向外击退
-			target.takeKnockback(AOE_KNOCKBACK, entity.getX() - target.getX(), entity.getZ() - target.getZ());
+			target.takeKnockback(aoeKnockback(), entity.getX() - target.getX(), entity.getZ() - target.getZ());
 			hitTargets.add(target);
 		}
 		if (entity instanceof ServerPlayerEntity serverPlayer && !hitTargets.isEmpty()) {
@@ -251,7 +262,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 				8, 1.0, 1.0, 1.0, 0.0);
 		ParticleUtils.spawnParticles(serverWorld, ParticleTypes.CAMPFIRE_COSY_SMOKE,
 				entity.getX(), entity.getY() + entity.getHeight() * 0.5, entity.getZ(),
-				60, AOE_RADIUS * 0.5, 0.8, AOE_RADIUS * 0.5, 0.05);
+				60, aoeRadius() * 0.5, 0.8, aoeRadius() * 0.5, 0.05);
 		// 血雾红色尘埃：集中起爆点 + 大速度 → 突然向外快速扩散
 		ParticleUtils.spawnParticles(serverWorld, BLOOD_DUST,
 				entity.getX(), entity.getY() + entity.getHeight() * 0.5, entity.getZ(),
@@ -266,12 +277,12 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 		chargeStartTime = now;
 		setBlood(getBlood() - BLOOD_BURST_COST);
 		// 蓄力标记：客户端据此将化雾飞行减速 50%
-		entity.addStatusEffect(new StatusEffectInstance(SscAddon.MIST_CHARGING, CHARGE_DURATION + 5, 0, false, false, false));
+		entity.addStatusEffect(new StatusEffectInstance(SscAddon.MIST_CHARGING, chargeDuration() + 5, 0, false, false, false));
 		// 防止蓄力期间雾化提前结束：剩余不足则延长 MIST_FORM/隐身至爆破完成
 		StatusEffectInstance mistInst = entity.getStatusEffect(SscAddon.MIST_FORM);
-		if (mistInst == null || mistInst.getDuration() < CHARGE_DURATION + 5) {
-			entity.addStatusEffect(new StatusEffectInstance(SscAddon.MIST_FORM, CHARGE_DURATION + 5, 0, false, false, true));
-			entity.addStatusEffect(new StatusEffectInstance(StatusEffects.INVISIBILITY, CHARGE_DURATION + 5, 0, false, false, false));
+		if (mistInst == null || mistInst.getDuration() < chargeDuration() + 5) {
+			entity.addStatusEffect(new StatusEffectInstance(SscAddon.MIST_FORM, chargeDuration() + 5, 0, false, false, true));
+			entity.addStatusEffect(new StatusEffectInstance(StatusEffects.INVISIBILITY, chargeDuration() + 5, 0, false, false, false));
 		}
 		if (entity.getWorld() instanceof ServerWorld sw) {
 			sw.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
@@ -287,7 +298,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 		double px = entity.getX();
 		double py = entity.getY() + entity.getHeight() * 0.5;
 		double pz = entity.getZ();
-		double progress = Math.min(1.0, elapsed / (double) CHARGE_DURATION);
+		double progress = Math.min(1.0, elapsed / (double) chargeDuration());
 		double radius = 2.6 * (1.0 - progress) + 0.4; // 半径随蓄力缩小，营造向内聚集
 		int n = 10;
 		for (int i = 0; i < n; i++) {
@@ -327,11 +338,11 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 		// 放在所有 return 分支之前，确保蓄力爆破期间（mist 仍为 true）也保持小碰撞箱。
 		refreshMistScale(mist);
 
-		// 凝聚爆破蓄力进行中：持续向内聚集粒子，蓄满 1 秒后突然引爆向外扩散
+		// 凝聚爆破蓄力进行中：持续向内聚集粒子，蓄满后突然引爆向外扩散
 		if (charging) {
 			long elapsed = entity.getWorld().getTime() - chargeStartTime;
 			spawnChargeConvergence(elapsed);
-			if (elapsed >= CHARGE_DURATION) {
+			if (elapsed >= chargeDuration()) {
 				charging = false;
 				if (entity.hasStatusEffect(SscAddon.MIST_CHARGING)) {
 					entity.removeStatusEffect(SscAddon.MIST_CHARGING);
@@ -414,14 +425,16 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 
 	@Override
 	public void onUse() {
+        if (entity instanceof net.minecraft.server.network.ServerPlayerEntity syncPlayer
+                && !net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(syncPlayer)) return;
 		if (entity == null || entity.getWorld().isClient) return;
 		// 净化期间禁止施放
 		if (entity.hasStatusEffect(SscAddon.PURIFIED)) return;
 
 		long now = entity.getWorld().getTime();
 		if (isMist()) {
-			// 凝聚爆破需化雾满 MIST_BURST_DELAY 后才可触发；蓄力中再按键无效
-			boolean burstReady = now - mistStartTime >= MIST_BURST_DELAY;
+			// 凝聚爆破需化雾满最短间隔后才可触发；蓄力中再按键无效
+			boolean burstReady = now - mistStartTime >= mistBurstDelay();
 			if (burstReady && getBlood() >= BLOOD_BURST_COST && !charging) {
 				// 再次按主动键：进入凝聚爆破蓄力（减速50%蓄力1秒后引爆）
 				startCharge(now);

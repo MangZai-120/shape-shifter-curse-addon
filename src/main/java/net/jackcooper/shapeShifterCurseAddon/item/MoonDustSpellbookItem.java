@@ -96,7 +96,7 @@ public class MoonDustSpellbookItem extends AccessoryItem {
 			int tier = SpellbookData.getMasteryTier(stack);
 			if (masteryNeed > 0) {
 				// 当前档内进度：从 ×10 整数取模折算（避免浮点 % 精度误差）
-				float tierProgress = (SpellbookData.getExpTen(stack) % SpellbookData.MASTERY_EXP_PER_TIER) / 10.0f;
+				float tierProgress = (SpellbookData.getExpTen(stack) % SpellbookData.masteryExpPerTier()) / 10.0f;
 				tooltip.add(Text.translatable("item.ssc_addon.moon_dust_spellbook.tip_mastery",
 						tier + 1, String.format(java.util.Locale.ROOT, "%.1f", tierProgress),
 						String.format(java.util.Locale.ROOT, "%.1f", masteryNeed / 10.0f)).formatted(Formatting.GOLD));

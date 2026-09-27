@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -26,12 +27,15 @@ import java.util.List;
  */
 public class DreadWhisperSpell extends Spell {
 
-	/** 基础锥长（格），实际 = 基础 × speed_multiplier(level)。 */
+	/** 基础锥长（格）默认，实际 = 基础 × speed_multiplier(level)；运行时从 balance 快照读取。 */
 	private static final double BASE_RANGE = 6.0;
-	/** 锥形半角（度）。 */
+	/** 锥形半角（度）。默认值；运行时从 balance 快照读取。 */
 	private static final double HALF_ANGLE_DEG = 30.0;
-	/** 控场时长（tick）：6s。 */
+	/** 控场时长（tick）：6s。默认值；运行时从 balance 快照读取。 */
 	private static final int DURATION_TICKS = 120;
+
+	// 阶段 5：运行时快照读取（spells.dread_whisper；快照未初始化回退上方默认常量）
+	private static final BalanceReader BAL = new BalanceReader("spells.dread_whisper");
 
 	public DreadWhisperSpell() {
 		super(new Identifier("ssc_addon", "dread_whisper"), SpellRarity.GREEN);
@@ -47,9 +51,11 @@ public class DreadWhisperSpell extends Spell {
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
-		double range = BASE_RANGE * getSpeedMultiplier(level);
+		double range = BAL.d("base_range", BASE_RANGE) * getSpeedMultiplier(level);
+		// 锥形半角运行时读取（下方判定与演出共用局部变量，快照未初始化回退默认常量）
+		double halfAngleDeg = BAL.d("half_angle_deg", HALF_ANGLE_DEG);
 		// 控场时长：每级 +1s（L1=7s … L5=11s）；L3+ 升级为虚弱 II + 缓速 III
-		int duration = DURATION_TICKS + (level - 1) * 20;
+		int duration = BAL.i("duration_ticks", DURATION_TICKS) + (level - 1) * 20;
 		if (!solo) duration = net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, duration);
 		int weaknessAmp = level >= 3 ? 1 : 0;
 		int slownessAmp = level >= 3 ? 2 : 1;
@@ -64,7 +70,7 @@ public class DreadWhisperSpell extends Spell {
 				continue;
 			}
 			double cosAngle = look.dotProduct(toTarget.normalize());
-			if (cosAngle < Math.cos(Math.toRadians(HALF_ANGLE_DEG))) {
+			if (cosAngle < Math.cos(Math.toRadians(halfAngleDeg))) {
 				continue;
 			}
 			// 领域隔离：目标被任一领域壳隔开（与施法者分属内外）→ 不变减益
@@ -94,7 +100,7 @@ public class DreadWhisperSpell extends Spell {
 		}
 		// 演出：锥形低语波——沿视线方向的锥面螺旋采样（贴合真实锥形判定几何：
 		// 距离 d 处锥面半径 = tan(半角)×d，点随距离扩散；随视线俯仰，不再是水平环）
-		spawnCone(serverWorld, origin, look, range, HALF_ANGLE_DEG);
+		spawnCone(serverWorld, origin, look, range, halfAngleDeg);
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.PARTICLE_SOUL_ESCAPE, SoundCategory.PLAYERS, 2.0f, 0.7f);
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),

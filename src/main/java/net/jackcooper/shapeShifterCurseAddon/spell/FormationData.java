@@ -26,16 +26,71 @@ public final class FormationData {
 	public static final int MAX_FORMATION_LEVEL = 5;
 
 	/** 每级数值（2026-09-20 重定稿）：同系伤 +12%、对立系伤 -12%、同系 cd -5%、对立系 cd +5%；
-	 * 耗蓝：同系与对立系 +10%/级、其它系仅 +2.5%/级（1/4）；空间法阵对空间魔法距离 +6%/级。 */
+	 * 耗蓝：同系与对立系 +10%/级、其它系仅 +2.5%/级（1/4）；空间法阵对空间魔法距离 +6%/级。
+	 * 以下常量均为默认值；运行时从 balance 快照（systems.formation）读取，双端同源。 */
 	public static final float DAMAGE_BONUS_PER_LEVEL = 0.12f;
 	public static final float DAMAGE_PENALTY_PER_LEVEL = 0.12f;
 	public static final float COOLDOWN_REDUCTION_PER_LEVEL = 0.05f;
-	/** 对立系冷却惩罚（2026-09-20 新增）：对立系魔法 CD 每级 +5%（与同系缩减对称）。 */
+	/** 对立系冷却惩罚（2026-09-20 新增）：对立系魔法 CD 每级 +5%（与同系缩减对称）。默认值；运行时从 balance 快照读取。 */
 	public static final float COOLDOWN_PENALTY_PER_LEVEL = 0.05f;
 	public static final float MANA_COST_PER_LEVEL = 0.10f;
-	/** 其它系（非同系非对立）耗蓝代价（2026-09-20）：同系的 1/4，即 +2.5%/级。 */
+	/** 其它系（非同系非对立）耗蓝代价（2026-09-20）：同系的 1/4，即 +2.5%/级。派生默认值，运行时基于读取值计算。 */
 	public static final float MANA_COST_OTHER_ELEMENT_PER_LEVEL = MANA_COST_PER_LEVEL / 4f;
 	public static final float SPACE_RANGE_BONUS_PER_LEVEL = 0.06f;
+
+	// 平衡迁移（systems.formation）：双端从 balance 快照读取，物理客户端优先 clientSnapshot 镜像
+	// （tooltip/界面与服务端结算同源）；服务端/快照未就绪回退默认常量。
+	// 测试环境（纯 JavaExec）无 Fabric loader → 走服务端分支且快照为 null → 回退默认，与原行为一致。
+	private static double balF(String param, double def) {
+		boolean physicalClient = false;
+		try {
+			physicalClient = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isClientThread();
+		} catch (Throwable ignored) {
+			// 无 Fabric 环境 → 按非客户端处理
+		}
+		if (physicalClient) {
+			var cs = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
+			if (cs != null) return cs.getDouble("systems.formation", param);
+		}
+		var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot();
+		return s == null ? def : s.getDouble("systems.formation", param);
+	}
+
+	// 平衡迁移（systems.formation_extra）：通用法阵转化汇率双端从 balance 快照读取，
+	// 物理客户端优先 clientSnapshot 镜像；快照未初始化回退默认常量。与 balF 同构、仅 scope 不同。
+	private static double balX(String param, double def) {
+		boolean physicalClient = false;
+		try {
+			physicalClient = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isClientThread();
+		} catch (Throwable ignored) {
+			// 无 Fabric 环境 → 按非客户端处理
+		}
+		if (physicalClient) {
+			var cs = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
+			if (cs != null) return cs.getDouble("systems.formation_extra", param);
+		}
+		var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot();
+		return s == null ? def : s.getDouble("systems.formation_extra", param);
+	}
+
+	/** 当前生效的同系伤害加成/级（balance 可调）。 */
+	public static float damageBonusPerLevel() { return (float) balF("damage_bonus_per_level", DAMAGE_BONUS_PER_LEVEL); }
+	/** 当前生效的对立系伤害惩罚/级（balance 可调）。 */
+	public static float damagePenaltyPerLevel() { return (float) balF("damage_penalty_per_level", DAMAGE_PENALTY_PER_LEVEL); }
+	/** 当前生效的同系冷却缩减/级（balance 可调）。 */
+	public static float cooldownReductionPerLevel() { return (float) balF("cooldown_reduction_per_level", COOLDOWN_REDUCTION_PER_LEVEL); }
+	/** 当前生效的对立系冷却惩罚/级（balance 可调）。 */
+	public static float cooldownPenaltyPerLevel() { return (float) balF("cooldown_penalty_per_level", COOLDOWN_PENALTY_PER_LEVEL); }
+	/** 当前生效的同系/对立系耗蓝代价/级（balance 可调）。 */
+	public static float manaCostPerLevel() { return (float) balF("mana_cost_per_level", MANA_COST_PER_LEVEL); }
+	/** 当前生效的其它系耗蓝代价/级（派生 = 同系 1/4，基于读取值计算，不独立读取）。 */
+	public static float manaCostOtherElementPerLevel() { return manaCostPerLevel() / 4f; }
+	/** 当前生效的空间魔法距离加成/级（balance 可调）。 */
+	public static float spaceRangeBonusPerLevel() { return (float) balF("space_range_bonus_per_level", SPACE_RANGE_BONUS_PER_LEVEL); }
+	/** 当前生效的经验法阵 exp 效率/级（balance 可调）。 */
+	public static float universalExpPerLevel() { return (float) balF("universal_exp_per_level", UNIVERSAL_EXP_PER_LEVEL); }
+	/** 当前生效的增能法阵法力上限基础比例（Lv1 起始值，balance 可调）。 */
+	public static float universalManaCapBase() { return (float) balF("universal_mana_cap_base", UNIVERSAL_MANA_CAP_BASE); }
 
 	private FormationData() {
 	}
@@ -110,15 +165,17 @@ public final class FormationData {
 			return 1f;
 		}
 		float total = 0f;
+		float bonus = damageBonusPerLevel();
+		float penalty = damagePenaltyPerLevel();
 		for (ItemStack formation : SpellbookData.getFormations(book)) {
 			FormationElement element = getElement(formation);
 			if (element == null || element == FormationElement.UNIVERSAL || element == FormationElement.SPACE) {
 				continue;
 			}
 			if (element == spellElement) {
-				total += DAMAGE_BONUS_PER_LEVEL * getLevel(formation);
+				total += bonus * getLevel(formation);
 			} else if (element == spellElement.opponent()) {
-				total -= DAMAGE_PENALTY_PER_LEVEL * getLevel(formation);
+				total -= penalty * getLevel(formation);
 			}
 		}
 		return Math.max(0f, 1f + total);
@@ -135,6 +192,8 @@ public final class FormationData {
 			return 1f;
 		}
 		float total = 0f;
+		float reduction = cooldownReductionPerLevel();
+		float cdPenalty = cooldownPenaltyPerLevel();
 		for (ItemStack formation : SpellbookData.getFormations(book)) {
 			FormationElement element = getElement(formation);
 			if (element == null || element == FormationElement.UNIVERSAL) {
@@ -142,9 +201,9 @@ public final class FormationData {
 			}
 			boolean isSpacePair = element == FormationElement.SPACE && spellElement == FormationElement.SPACE;
 			if (element == spellElement || isSpacePair) {
-				total -= COOLDOWN_REDUCTION_PER_LEVEL * getLevel(formation);
+				total -= reduction * getLevel(formation);
 			} else if (element == spellElement.opponent()) {
-				total += COOLDOWN_PENALTY_PER_LEVEL * getLevel(formation);
+				total += cdPenalty * getLevel(formation);
 			}
 		}
 		return Math.max(0.2f, 1f + total);
@@ -156,10 +215,11 @@ public final class FormationData {
 			return 1f;
 		}
 		float total = 0f;
+		float rangeBonus = spaceRangeBonusPerLevel();
 		for (ItemStack formation : SpellbookData.getFormations(book)) {
 			FormationElement element = getElement(formation);
 			if (element == FormationElement.SPACE) {
-				total += SPACE_RANGE_BONUS_PER_LEVEL * getLevel(formation);
+				total += rangeBonus * getLevel(formation);
 			}
 		}
 		return 1f + total;
@@ -181,6 +241,8 @@ public final class FormationData {
 			return 1f;
 		}
 		float total = 0f;
+		float sameCost = manaCostPerLevel();
+		float otherCost = manaCostOtherElementPerLevel();
 		for (NbtCompound entry : SpellbookData.getFormationEntriesNbt(bookNbt)) {
 			if (!entry.contains(NBT_ELEMENT)) {
 				continue;
@@ -190,9 +252,9 @@ public final class FormationData {
 				continue; // 通用系不增加耗蓝
 			}
 			if (element == spellElement || element == spellElement.opponent()) {
-				total += MANA_COST_PER_LEVEL * entryLevelNbt(entry);
+				total += sameCost * entryLevelNbt(entry);
 			} else {
-				total += MANA_COST_OTHER_ELEMENT_PER_LEVEL * entryLevelNbt(entry);
+				total += otherCost * entryLevelNbt(entry);
 			}
 		}
 		return 1f + total;
@@ -208,11 +270,16 @@ public final class FormationData {
 
 	// ---- 通用系：形态能量 → 书法术值转化（数值定义） ----
 
-	/** 通用法阵每秒消耗的形态能量点数。 */
+	/** 通用法阵每秒消耗的形态能量点数；默认值，运行时从 balance 快照（systems.formation_extra）读取。 */
 	// 回能法阵汇率（2026-09-17 用户定稿统一 5:1：1 形态 mana = 5 书法术值）
 	public static final double UNIVERSAL_MANA_DRAIN_PER_SEC = 2.0;
-	/** 通用法阵每秒回复的书法术值点数。 */
+	/** 通用法阵每秒回复的书法术值点数；默认值，运行时从 balance 快照（systems.formation_extra）读取。 */
 	public static final double UNIVERSAL_BOOK_MANA_PER_SEC = 10.0;
+
+	/** 当前生效的通用法阵每秒形态能量消耗（balance 可调）。 */
+	public static double universalManaDrainPerSec() { return balX("universal_drain_per_sec", UNIVERSAL_MANA_DRAIN_PER_SEC); }
+	/** 当前生效的通用法阵每秒书法术值回复（balance 可调）。 */
+	public static double universalBookManaPerSec() { return balX("universal_restore_per_sec", UNIVERSAL_BOOK_MANA_PER_SEC); }
 	/** 通用法阵触发水位（书法术值占比）按等级插值：Lv1=20% … Lv5=100%。 */
 	public static double universalThreshold(int level) {
 		return 0.2 + 0.2 * (clampFormationLevel(level) - 1);
@@ -260,14 +327,14 @@ public final class FormationData {
 		return best;
 	}
 
-	/** 经验法阵：施法经验倍率每级 +10%（Lv1=×1.1 … Lv5=×1.5）。 */
+	/** 经验法阵：施法经验倍率每级 +10%（Lv1=×1.1 … Lv5=×1.5）。默认值；运行时从 balance 快照读取。 */
 	public static final float UNIVERSAL_EXP_PER_LEVEL = 0.10f;
-	/** 增能法阵：法力上限比例 Lv1=+20% 起每级 +10%（Lv5=+60%）。 */
+	/** 增能法阵：法力上限比例 Lv1=+20% 起每级 +10%（Lv5=+60%）。默认值（Lv1 起始）；运行时从 balance 快照读取。 */
 	public static final float UNIVERSAL_MANA_CAP_BASE = 0.20f;
 
 	/** 经验法阵施法经验倍率。 */
 	public static float universalExpMultiplier(int level) {
-		return 1f + UNIVERSAL_EXP_PER_LEVEL * clampFormationLevel(level);
+		return 1f + universalExpPerLevel() * clampFormationLevel(level);
 	}
 
 	/** 回息变体（可叠加，区别于其它三变体取最高）：书内全部回息法阵等级总和（0 = 未装）。 */
@@ -287,9 +354,9 @@ public final class FormationData {
 		return 1f + 0.20f * sumUniversalRecoveryLevels(book);
 	}
 
-	/** 增能法阵法力上限加成比例（基于书等级基础值计算）。 */
+	/** 增能法阵法力上限加成比例（基于书等级基础值计算；基础值 balance 可调）。 */
 	public static float universalManaBonusPct(int level) {
-		return UNIVERSAL_MANA_CAP_BASE + 0.10f * (clampFormationLevel(level) - 1);
+		return universalManaCapBase() + 0.10f * (clampFormationLevel(level) - 1);
 	}
 
 	/** 等级收敛到 [1, MAX_FORMATION_LEVEL]。 */

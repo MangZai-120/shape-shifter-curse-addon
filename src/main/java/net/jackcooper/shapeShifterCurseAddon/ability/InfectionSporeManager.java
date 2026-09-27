@@ -20,6 +20,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import org.joml.Vector3f;
 
@@ -44,16 +45,21 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public final class InfectionSporeManager {
 
+    // 以下均为默认值；运行时从 balance 快照读取（abilities.infection_spore）。
+    // 常量保留 public 供 pin 测试反射锁定默认值，运行时不要直接引用。
     /** 传染半径（格） */
     public static final double INFECT_SPREAD_RADIUS = 1.5;
     /** 传染扫描间隔（tick）：防群体感染场景每 tick N 次实体区间查询 */
     public static final int SPREAD_SCAN_INTERVAL = 10;
-    /** 他人视角粒子周期 */
+    /** 他人视角粒子周期（未登记，不开放） */
     public static final int PARTICLE_INTERVAL_OTHERS = 5;
-    /** 第一人称粒子周期（约 1/4 频率） */
+    /** 第一人称粒子周期（约 1/4 频率；未登记，不开放） */
     public static final int PARTICLE_INTERVAL_SELF = 20;
     /** 攻击者造成伤害减免比例 */
     public static final float DAMAGE_REDUCTION = 0.15f;
+
+    /** balance 快照读取（快照未初始化回退默认常量） */
+    private static final BalanceReader BAL = new BalanceReader("abilities.infection_spore");
 
     /** 被感染目标 UUID -> 感染数据 */
     private static final Map<UUID, InfectionData> ENTRIES = new ConcurrentHashMap<>();
@@ -117,7 +123,7 @@ public final class InfectionSporeManager {
         HealData data = new HealData(
                 serverWorld.getRegistryKey(),
                 newEnd,
-                now + HEAL_INTERVAL
+                now + BAL.i("heal_interval", HEAL_INTERVAL)
         );
         HEAL_ENTRIES.put(targetUuid, data);
     }
@@ -159,7 +165,7 @@ public final class InfectionSporeManager {
             // 2) 传染（仅当源施加者仍在线时启用，便于继承"剩余时间"语义）；
             // 节流：每 10t 扫一次（同文件毒雾云已有 30t 节流范例），传染延迟 ≤0.5s 无感知
             if (now >= data.nextScanTick) {
-                data.nextScanTick = now + SPREAD_SCAN_INTERVAL;
+                data.nextScanTick = now + BAL.i("spread_scan_interval", SPREAD_SCAN_INTERVAL);
                 spreadFrom(server, target, data, now);
             }
 
@@ -174,8 +180,9 @@ public final class InfectionSporeManager {
         if (caster == null) return; // 施加者掉线则不传染（保留现有感染计时）
 
         ServerWorld world = (ServerWorld) host.getWorld();
-        Box box = host.getBoundingBox().expand(INFECT_SPREAD_RADIUS);
-        double sqRadius = INFECT_SPREAD_RADIUS * INFECT_SPREAD_RADIUS;
+        double spreadRadius = BAL.d("infect_spread_radius", INFECT_SPREAD_RADIUS);
+        Box box = host.getBoundingBox().expand(spreadRadius);
+        double sqRadius = spreadRadius * spreadRadius;
         List<LivingEntity> candidates = world.getEntitiesByClass(LivingEntity.class, box,
                 e -> e != host && e.isAlive() && host.squaredDistanceTo(e) <= sqRadius
                         && !ENTRIES.containsKey(e.getUuid()));
@@ -225,7 +232,7 @@ public final class InfectionSporeManager {
     public static float reduceDamageIfInfected(LivingEntity attacker, float amount) {
         if (attacker == null) return amount;
         if (!ENTRIES.containsKey(attacker.getUuid())) return amount;
-        return amount * (1.0f - DAMAGE_REDUCTION);
+        return amount * (1.0f - (float) BAL.d("damage_reduction", DAMAGE_REDUCTION));
     }
 
     private static final class InfectionData {
@@ -259,8 +266,8 @@ public final class InfectionSporeManager {
                 continue;
             }
             if (now >= data.nextHealTick) {
-                data.nextHealTick = now + HEAL_INTERVAL;
-                target.heal(TICK_HEAL);
+                data.nextHealTick = now + BAL.i("heal_interval", HEAL_INTERVAL);
+                target.heal((float) BAL.d("tick_heal", TICK_HEAL));
                 // 视觉反馈：心心粒子
                 world.spawnParticles(ParticleTypes.HEART,
                         target.getX(), target.getY() + target.getHeight() * 0.8, target.getZ(),
@@ -282,14 +289,24 @@ public final class InfectionSporeManager {
     }
 
     // ============================ 滞留毒雾云子系统 ============================
-    /** 毒雾云半径（格）：直径 4 格 → 半径 2 格 */
+    /** 毒雾云半径（格）：直径 4 格 → 半径 2 格（默认值；运行时经 {@link #cloudRadius()} 读 balance） */
     public static final double CLOUD_RADIUS = 2.0;
     /** 毒雾云扫描生物的间隔（tick）：每 1.5s 一次范围内效果 */
     public static final int CLOUD_SCAN_INTERVAL = 30;
-    /** 毒雾云粒子间隔（tick） */
+    /** 毒雾云粒子间隔（tick；未登记，不开放） */
     public static final int CLOUD_PARTICLE_INTERVAL = 2;
-    /** 净化驱散毒雾云的判定半径（格）：被净化个体此范围内的云会被驱散 */
+    /** 净化驱散毒雾云的判定半径（格）：被净化个体此范围内的云会被驱散（默认值；运行时经 {@link #cloudPurifyReach()} 读 balance） */
     public static final double CLOUD_PURIFY_REACH = 8.0;
+
+    /** 毒雾云半径（balance 快照读取，供孢子弹落地建云等外部调用）。 */
+    public static double cloudRadius() {
+        return BAL.d("cloud_radius", CLOUD_RADIUS);
+    }
+
+    /** 净化驱散判定半径（balance 快照读取，供悦灵净化等外部调用）。 */
+    public static double cloudPurifyReach() {
+        return BAL.d("cloud_purify_reach", CLOUD_PURIFY_REACH);
+    }
     /** 墨绿色中毒粒子（与感染孢子弹视觉一致） */
     private static final DustParticleEffect CLOUD_POISON_DUST = new DustParticleEffect(new Vector3f(0.30f, 0.50f, 0.10f), 1.2f);
     /** 活跃的毒雾云列表（服务端权威） */
@@ -321,7 +338,7 @@ public final class InfectionSporeManager {
                 center.x, center.y, center.z,
                 radius,
                 now + Math.max(20, durationTicks),
-                now + CLOUD_SCAN_INTERVAL
+                now + BAL.i("cloud_scan_interval", CLOUD_SCAN_INTERVAL)
         ));
     }
 
@@ -353,7 +370,7 @@ public final class InfectionSporeManager {
             }
             // 2) 周期扫描：范围内每 1.5s 直接施加效果（站着才生效，离开即停）
             if (now >= cloud.nextScanTick) {
-                cloud.nextScanTick = now + CLOUD_SCAN_INTERVAL;
+                cloud.nextScanTick = now + BAL.i("cloud_scan_interval", CLOUD_SCAN_INTERVAL);
                 ServerPlayerEntity caster = server.getPlayerManager().getPlayer(cloud.casterUuid);
                 if (caster == null) continue; // 施放者掉线则仅留粒子，不生效（需其白名单判定）
                 Box box = new Box(
@@ -366,14 +383,14 @@ public final class InfectionSporeManager {
                 for (LivingEntity target : targets) {
                     if (WhitelistUtils.isProtected(caster, target)) {
                         // 友军：回 1 血 + 加速 I（短时，仅范围内维持）
-                        target.heal(TICK_HEAL);
+                        target.heal((float) BAL.d("tick_heal", TICK_HEAL));
                         target.addStatusEffect(new StatusEffectInstance(StatusEffects.SPEED, 40, 0, false, true, true));
                         world.spawnParticles(ParticleTypes.HEART,
                                 target.getX(), target.getY() + target.getHeight() * 0.8, target.getZ(),
                                 1, 0.3, 0.2, 0.3, 0.0);
                     } else {
                         // 敌人：掉 1 血 + 减速 I（短时，仅范围内维持）；带施放者 source 供入梦拦截归因
-                        target.damage(target.getDamageSources().magic(), TICK_DAMAGE);
+                        target.damage(target.getDamageSources().magic(), (float) BAL.d("tick_damage", TICK_DAMAGE));
                         target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 40, 0, false, true, true), caster);
                     }
                 }

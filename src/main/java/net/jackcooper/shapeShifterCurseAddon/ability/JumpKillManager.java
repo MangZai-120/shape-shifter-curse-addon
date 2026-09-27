@@ -19,6 +19,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -50,6 +51,7 @@ import java.util.Map;
  */
 public final class JumpKillManager {
 
+	// 以下已登记常量均为默认值；运行时从 balance 快照读取（abilities.jump_kill）
 	private static final int CHARGE_MAX = 60;        // 满蓄 3 秒
 	private static final double BASE_DIST = 3.0;      // 基础索敌 3 格
 	private static final double MAX_DIST = 16.0;      // 满蓄索敌 16 格
@@ -81,6 +83,9 @@ public final class JumpKillManager {
 	private static final double OBSCURE_BREAK_BLOCKS = 1.0; // 丝线被实心方块遮挡累计阈值（同月织蛛，超过即断）
 
 	private static final UUID SLOW_UUID = UUID.fromString("b7e2c9a4-3f81-4d6e-9a25-7c1e0f4d82ab");
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.jump_kill");
 
 	private static final Map<UUID, State> STATES = new ConcurrentHashMap<>();
 
@@ -150,8 +155,12 @@ public final class JumpKillManager {
 		removeChargeSlow(player);
 		if (!(player.getWorld() instanceof ServerWorld sw)) { STATES.remove(player.getUuid()); return; }
 
-		double ratio = Math.min(1.0, (double) s.chargeTick / CHARGE_MAX);
-		double scanDist = BASE_DIST + ratio * (MAX_DIST - BASE_DIST);
+		int chargeMax = BAL.i("charge_max", CHARGE_MAX);
+		double baseDist = BAL.d("base_dist", BASE_DIST);
+		double maxDist = BAL.d("max_dist", MAX_DIST);
+		double leapSpeed = BAL.d("leap_speed", LEAP_SPEED);
+		double ratio = Math.min(1.0, (double) s.chargeTick / chargeMax);
+		double scanDist = baseDist + ratio * (maxDist - baseDist);
 
 		// 松开瞬间按当前准星重新锁定（准星最接近的候选）
 		LivingEntity lock = pickLockTarget(player, sw, scanDist);
@@ -188,11 +197,11 @@ public final class JumpKillManager {
 		if (horizDist < 1.0e-4) { horiz = new Vec3d(look.x, 0, look.z); horizDist = Math.max(1.0e-4, horiz.length()); }
 		horiz = horiz.normalize();
 		double dy = aim.y - player.getY();
-		double T = Math.max(6.0, horizDist / LEAP_SPEED);
+		double T = Math.max(6.0, horizDist / leapSpeed);
 		s.flightTime = T;
 		s.vy0 = dy / T + 0.5 * GRAVITY_STEP * T; // T tick 后竖直到达 aim.y；T 越大（距离越远）起跳越高
 		s.lastDir = horiz;
-		player.setVelocity(horiz.x * LEAP_SPEED, s.vy0, horiz.z * LEAP_SPEED);
+		player.setVelocity(horiz.x * leapSpeed, s.vy0, horiz.z * leapSpeed);
 		player.velocityModified = true;
 		pushVelocity(player);
 
@@ -357,10 +366,11 @@ public final class JumpKillManager {
 	}
 
 	private static void tickCharge(ServerPlayerEntity player, ServerWorld sw, State s) {
-		boolean justReachedMax = s.chargeTick == CHARGE_MAX - 1; // 下一行递增后恰好满蓄（一次性边沿，防满蓄后每 tick 重响）
-		if (s.chargeTick < CHARGE_MAX) s.chargeTick++;
-		double ratio = Math.min(1.0, (double) s.chargeTick / CHARGE_MAX);
-		double scanDist = BASE_DIST + ratio * (MAX_DIST - BASE_DIST);
+		int chargeMax = BAL.i("charge_max", CHARGE_MAX);
+		boolean justReachedMax = s.chargeTick == chargeMax - 1; // 下一行递增后恰好满蓄（一次性边沿，防满蓄后每 tick 重响）
+		if (s.chargeTick < chargeMax) s.chargeTick++;
+		double ratio = Math.min(1.0, (double) s.chargeTick / chargeMax);
+		double scanDist = BAL.d("base_dist", BASE_DIST) + ratio * (BAL.d("max_dist", MAX_DIST) - BAL.d("base_dist", BASE_DIST));
 
 		// 扫描候选：索敌距离内全部可扑目标（无遮挡才显示/可锁）——红边；准星 12° 锥内最近者绿边锁定
 		List<LivingEntity> cands = scanCandidates(player, sw, scanDist);
@@ -372,8 +382,8 @@ public final class JumpKillManager {
 		}
 
 		// 蓄力音效：全程共 5 声上升嘶鸣（仅自己听），间隔均分；满蓄瞬间额外一声经验叮声（边沿触发，防满蓄后循环响）
-		int interval = CHARGE_MAX / CHARGE_CRY_COUNT;
-		boolean cryNow = s.chargeTick < CHARGE_MAX && s.chargeTick % interval == 0 && s.chargeTick > 0;
+		int interval = chargeMax / CHARGE_CRY_COUNT;
+		boolean cryNow = s.chargeTick < chargeMax && s.chargeTick % interval == 0 && s.chargeTick > 0;
 		if (cryNow) {
 			float pitch = 0.6f + (float) ratio * 0.8f;
 			net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkManager
@@ -388,7 +398,7 @@ public final class JumpKillManager {
 	private static void tickLeap(ServerPlayerEntity player, ServerWorld sw, State s) {
 		s.leapTick++;
 		// 结束条件：超预计飞行时间 / 硬上限 / 落地扑空 / 撞墙
-		if (s.leapTick > s.flightTime + 15 || s.leapTick > MAX_LEAP_TICKS
+		if (s.leapTick > s.flightTime + 15 || s.leapTick > BAL.i("max_leap_ticks", MAX_LEAP_TICKS)
 				|| (s.leapTick > 5 && player.isOnGround())
 				|| (s.leapTick > 3 && player.horizontalCollision)) {
 			finish(player, false);
@@ -409,7 +419,7 @@ public final class JumpKillManager {
 				// 提前量拦截点（第七条）：扑向 目标当前位置 + 速度 × LEAD_TICKS
 				targetPoint = bodyCenter(target).add(target.getVelocity().multiply(LEAD_TICKS));
 				// 命中判定
-				if (bodyCenter(target).distanceTo(playerPos) < HIT_RADIUS) {
+				if (bodyCenter(target).distanceTo(playerPos) < BAL.d("hit_radius", HIT_RADIUS)) {
 					onHit(player, sw, target);
 					finish(player, true);
 					return;
@@ -427,8 +437,9 @@ public final class JumpKillManager {
 			s.lastDir = s.lastDir.lerp(desired, TURN_LERP);
 			if (s.lastDir.lengthSquared() > 1.0e-4) s.lastDir = s.lastDir.normalize();
 		}
+		double leapSpeed = BAL.d("leap_speed", LEAP_SPEED);
 		double vy = s.vy0 - GRAVITY_STEP * s.leapTick; // 抛物竖直（不重算，保持平滑）
-		player.setVelocity(s.lastDir.x * LEAP_SPEED, vy, s.lastDir.z * LEAP_SPEED);
+		player.setVelocity(s.lastDir.x * leapSpeed, vy, s.lastDir.z * leapSpeed);
 		player.velocityModified = true;
 		player.fallDistance = 0.0f;
 		pushVelocity(player);
@@ -444,12 +455,13 @@ public final class JumpKillManager {
 	private static void onHit(ServerPlayerEntity player, ServerWorld sw, LivingEntity target) {
 		if (WhitelistUtils.isProtected(player, target)) return;
 		DamageSource src = player.getDamageSources().playerAttack(player);
-		target.damage(src, DAMAGE);
+		target.damage(src, (float) BAL.d("damage", DAMAGE));
 		boolean gland = net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.isWearingBy(player);
-		int amp = POISON_AMPLIFIER + (gland ? 1 : 0);
-		int dur = gland ? Math.round(POISON_DURATION * net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.DURATION_SCALE) : POISON_DURATION;
+		int amp = BAL.i("poison_amplifier", POISON_AMPLIFIER) + (gland ? 1 : 0);
+		int baseDur = BAL.i("poison_duration", POISON_DURATION);
+		int dur = gland ? Math.round(baseDur * net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.DURATION_SCALE) : baseDur;
 		target.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, dur, amp, false, true, true), player);
-		target.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, STUN_DURATION, 0, false, false, false), player);
+		target.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, BAL.i("stun_duration", STUN_DURATION), 0, false, false, false), player);
 		sw.playSound(null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, SoundCategory.PLAYERS, 1.0f, 0.9f);
 		sw.playSound(null, target.getX(), target.getY(), target.getZ(),
@@ -461,7 +473,8 @@ public final class JumpKillManager {
 	/** 跳跃结束：恢复重力、进 CD、清状态。 */
 	private static void finish(ServerPlayerEntity player, boolean hit) {
 		player.setNoGravity(false);
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, hit ? CD_HIT : CD_MISS);
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD,
+				hit ? BAL.i("cd_hit", CD_HIT) : BAL.i("cd_miss", CD_MISS));
 		STATES.remove(player.getUuid());
 	}
 
@@ -613,7 +626,7 @@ public final class JumpKillManager {
 		if (speed != null) {
 			speed.removeModifier(SLOW_UUID);
 			speed.addTemporaryModifier(new EntityAttributeModifier(
-					SLOW_UUID, "Jump Kill Charge Slow", CHARGE_SLOW, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
+					SLOW_UUID, "Jump Kill Charge Slow", BAL.d("charge_slow", CHARGE_SLOW), EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
 		}
 	}
 

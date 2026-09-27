@@ -18,6 +18,7 @@ import net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 
 import java.util.HashSet;
@@ -42,6 +43,9 @@ public final class RedFormTickManager {
 	private RedFormTickManager() {
 	}
 
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认值）
+	private static final BalanceReader BAL = new BalanceReader("abilities.red_form");
+
 	public static void tick(ServerPlayerEntity player) {
 		// 一秒门控（与原 per-player tick 注入一致）
 		if (player.age % 20 != 0) {
@@ -62,14 +66,14 @@ public final class RedFormTickManager {
 		// SP 形态 + 诅咒之月变身红使魔（5%）
 		if (currentForm != null && currentForm.getFormID().equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_SP) && isCursedMoon && !player.getCommandTags().contains("ssc_addon_red_attempted")) {
 			player.addCommandTag("ssc_addon_red_attempted");
-			if (player.getRandom().nextFloat() < 0.05f) {
+			if (player.getRandom().nextFloat() < BAL.d("transform_chance", 0.05)) {
 				Identifier redFormId = net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED;
 				IForm redForm = RegPlayerForms.getPlayerForm(redFormId);
 				if (redForm != null) {
 					TransformManager.immediatelyTransform(player, redForm);
 
-					// 10 分钟 = 12000 tick
-					long expireTime = player.getWorld().getTime() + 12000;
+					// 10 分钟 = 12000 tick（默认；balance 可覆盖 duration_ticks）
+					long expireTime = player.getWorld().getTime() + BAL.i("duration_ticks", 12000);
 					player.addCommandTag("ssc_addon_red_expire:" + expireTime);
 
 					player.sendMessage(Text.translatable("message.ssc_addon.red_transformation_special").formatted(Formatting.GREEN), false);

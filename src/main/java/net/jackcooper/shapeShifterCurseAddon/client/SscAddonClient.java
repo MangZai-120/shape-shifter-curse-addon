@@ -62,6 +62,9 @@ public class SscAddonClient implements ClientModInitializer {
 		SustainedVisualClient.init();
 		net.jackcooper.shapeShifterCurseAddon.client.particle.FirstPersonParticles.init();
 		CountdownClient.init();
+		// balance 数据包数值同步（阶段 3）：客户端会话镜像 + S2C 接收器
+		net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.initClient(
+				net.jackcooper.shapeShifterCurseAddon.balance.SscBalanceSchema.create());
 		LOGGER.info("[SSC_ADDON] Registering Client KeyBindings...");
 		// 附属方块渲染层注册（蛛网膜等，cutout）
 		net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks.clientInit();
@@ -98,6 +101,8 @@ public class SscAddonClient implements ClientModInitializer {
 			// 摆荡客户端镜像清理（防换服残留旧绳索渲染）+ 蛛丝弹存活标记重置（断线不走逐实体 remove）
 			SpiderMoonWeaverSwingClient.clear();
 			net.jackcooper.shapeShifterCurseAddon.entity.SpiderSwingBullet.resetClientState();
+			// balance 会话镜像清理（阶段 3：换服/断线后旧回调与暂存不生效）
+			net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.onClientDisconnect();
 		});
 
 		// 进化美西螈「投掷水矛」蓄力期：客户端取消右键预测（放置方块 / 使用物品），避免鬼影
@@ -239,7 +244,11 @@ public class SscAddonClient implements ClientModInitializer {
 						String json = buf.readString(2000000);
 						raw.put(spellPath, json);
 					}
-					client.execute(() -> net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.applyClientSync(raw));
+					client.execute(() -> {
+                            if (client.getNetworkHandler() != handler) return;
+                            try { net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.applyClientSync(raw); }
+                            catch (RuntimeException invalid) { handler.getConnection().disconnect(net.minecraft.text.Text.literal("SSCA spell configuration mismatch: " + invalid.getMessage())); }
+                        });
 				});
 		// 注册「广播所有玩家形态」接收器：服务端把在场玩家的 formID + 皮肤数据直接广播过来，
 		// 客机按 UUID 直接写入其它玩家的 nowForm/nowFormID 与 PlayerSkinComponent（颜色/是否启用形态颜色等），

@@ -11,6 +11,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 
 import java.util.Map;
 import java.util.UUID;
@@ -27,10 +28,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * 服务端权威，仅追踪玩家；非玩家用简单判定（受击中或有攻击目标）。
  */
 public final class ParasiticCombatTracker {
-    /** 交战判定时长（tick）：10s */
+    /** 交战判定时长（tick）：10s；默认值，运行时从 balance 快照读取（abilities.parasitic_seed_system） */
     private static final int COMBAT_TICKS = 200;
-    /** 来源在场判定半径平方（10 格） */
+    /** 来源在场判定半径平方（10 格；未登记派生值，不开放） */
     private static final double SOURCE_RANGE_SQ = 10.0 * 10.0;
+
+    /** balance 快照读取（快照未初始化回退默认常量） */
+    private static final BalanceReader BAL = new BalanceReader("abilities.parasitic_seed_system");
 
     private static final Map<UUID, CombatData> DATA = new ConcurrentHashMap<>();
 
@@ -73,8 +77,9 @@ public final class ParasiticCombatTracker {
         CombatData d = DATA.get(player.getUuid());
         if (d == null) return false;
         long now = player.getWorld().getTime();
-        if (now - d.lastDamageDealt < COMBAT_TICKS) return true;
-        if (now - d.lastHurt < COMBAT_TICKS) return true;
+        int combatTicks = BAL.i("combat_ticks", COMBAT_TICKS);
+        if (now - d.lastDamageDealt < combatTicks) return true;
+        if (now - d.lastHurt < combatTicks) return true;
         // 10s 后：对其造成伤害的来源仍存活且在 10 格内 → 仍交战
         if (d.lastHurtSource != null && player.getWorld() instanceof ServerWorld sw) {
             Entity src = sw.getEntity(d.lastHurtSource);

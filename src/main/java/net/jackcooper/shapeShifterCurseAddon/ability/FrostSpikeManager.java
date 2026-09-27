@@ -14,6 +14,7 @@ import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.util.math.Vec3d;
 
@@ -34,16 +35,20 @@ import java.util.Map;
  */
 public final class FrostSpikeManager {
 
-	private static final int CHARGE_INTERVAL = 24; // 1.2 秒凝聚一根
-	private static final int MAX_THORNS = 5;
-	private static final int FIRE_CD = 4;          // 0.2 秒内置发射冷却
+	// 以下常量均为默认值；运行时从 balance 快照读取（scope：abilities.frost_spike_manager）
+	private static final int CHARGE_INTERVAL = 24; // 默认 1.2 秒凝聚一根
+	private static final int MAX_THORNS = 5;       // 默认环绕冰锥上限
+	private static final int FIRE_CD = 4;          // 默认 0.2 秒内置发射冷却
 	// ===== 凝棘（次技能）蓄力 =====
-	private static final int SECONDARY_CONSUME_INTERVAL = 20;   // 每 1 秒消耗一个环绕冰锥强化
-	private static final double SECONDARY_SLOW_AMOUNT = -0.90;  // 蓄力时移速降为 10%（MULTIPLY_TOTAL -0.9）
+	private static final int SECONDARY_CONSUME_INTERVAL = 20;   // 默认每 1 秒消耗一个环绕冰锥强化
+	private static final double SECONDARY_SLOW_AMOUNT = -0.90;  // 默认蓄力时移速降为 10%（MULTIPLY_TOTAL -0.9）
 	private static final UUID SECONDARY_SLOW_UUID = UUID.fromString("f2a7c3d1-8b64-4e29-9a11-6c3d0f7e51ab");
 	// 环绕几何统一在 FrostThornEntity.hoverTarget/hoverYaw（服务端权威设置；客户端每 tick 按本地玩家自算贴合，平滑不卡顿）
 
 	private static final Map<UUID, State> STATES = new ConcurrentHashMap<>();
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.frost_spike_manager");
 
 	private static final class State {
 		boolean charging = false;
@@ -53,7 +58,7 @@ public final class FrostSpikeManager {
 		int secondaryTicks = 0;
 		int secondaryLevel = 0;
 		FrostArrayEntity arrayEntity = null; // 蓄力法阵（视觉）
-		final FrostThornEntity[] slots = new FrostThornEntity[MAX_THORNS];
+		final FrostThornEntity[] slots = new FrostThornEntity[BAL.i("max_thorns", MAX_THORNS)];
 	}
 
 	private FrostSpikeManager() {}
@@ -97,7 +102,7 @@ public final class FrostSpikeManager {
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_AMETHYST_BLOCK_HIT, SoundCategory.PLAYERS, 0.9f, 1.4f);
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, FIRE_CD);
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, BAL.i("fire_cd", FIRE_CD));
 	}
 
 /**
@@ -166,7 +171,7 @@ public final class FrostSpikeManager {
 		if (speed != null) {
 			speed.removeModifier(SECONDARY_SLOW_UUID);
 			speed.addTemporaryModifier(new EntityAttributeModifier(
-					SECONDARY_SLOW_UUID, "Frost Forge Charge Slow", SECONDARY_SLOW_AMOUNT,
+					SECONDARY_SLOW_UUID, "Frost Forge Charge Slow", BAL.d("secondary_slow_amount", SECONDARY_SLOW_AMOUNT),
 					EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
 		}
 	}
@@ -195,6 +200,7 @@ public final class FrostSpikeManager {
 		cleanupDead(s);
 		// 凝棘次技能蓄力：每 1 秒消耗一个环绕冰锥强化（无冰锥可消耗则停在当前强化等待松开）
 		if (s.secondaryCharging) {
+			int consumeInterval = BAL.i("secondary_consume_interval", SECONDARY_CONSUME_INTERVAL);
 			s.secondaryTicks++;
 			// 潮涌核心蓄力氛围音（循环嗡鸣，充能感；压低避免盖住每秒的紫水晶消耗钟声）
 			if (player.age % 25 == 0 && player.getWorld() instanceof ServerWorld amb) {
@@ -202,7 +208,7 @@ public final class FrostSpikeManager {
 						SoundEvents.BLOCK_CONDUIT_AMBIENT, SoundCategory.PLAYERS, 0.35f, 1.0f);
 			}
 			// 持续汇聚已移到客户端（法阵实体 tick 本地自算，零网络粒子包）
-			if (s.secondaryTicks >= SECONDARY_CONSUME_INTERVAL) {
+			if (s.secondaryTicks >= consumeInterval) {
 					s.secondaryTicks = 0;
 				int idx = consumeSlot(s); // 固定消耗顺序：上→左→右→左上→右上（slot 0→4）
 					if (idx >= 0) {
@@ -214,7 +220,7 @@ public final class FrostSpikeManager {
 						}
 						if (s.slots[idx] != null) s.slots[idx].discard();
 					s.slots[idx] = null;
-					s.secondaryLevel = Math.min(MAX_THORNS, s.secondaryLevel + 1);
+					s.secondaryLevel = Math.min(BAL.i("max_thorns", MAX_THORNS), s.secondaryLevel + 1);
 					float pitch = 0.8f + s.secondaryLevel * 0.22f; // 越来越高的紫水晶音
 					if (player.getWorld() instanceof ServerWorld sw) {
 							// 双音：经验球叮声本身响亮（主音）+ 紫水晶 CHIME 作水晶泛音。
@@ -229,15 +235,16 @@ public final class FrostSpikeManager {
 			// 同步法阵中央冰锥大小（随蓄力等级放大）+ 蓄力总进度（HUD 副槽侧边内置条从 0 涨到满）
 			if (s.arrayEntity != null && !s.arrayEntity.isRemoved()) {
 				s.arrayEntity.setLevel(s.secondaryLevel);
-				s.arrayEntity.setProgress(s.secondaryLevel * SECONDARY_CONSUME_INTERVAL + s.secondaryTicks);
+				s.arrayEntity.setProgress(s.secondaryLevel * consumeInterval + s.secondaryTicks);
 			}
 		} else if (s.charging) {
 			s.chargeTicks++;
 			// 主技能持续汇聚已移到客户端（状态包驱动本地自算，零网络粒子包）
 			// 寒棘项圈：凝聚间隔 ×1.75（1.2s → 2.1s = 42t），与被动/饰品实时判定、摘下即回原
+			int baseInterval = BAL.i("charge_interval", CHARGE_INTERVAL);
 			int interval = net.jackcooper.shapeShifterCurseAddon.item.FrostSpineCollarItem.isWearingBy(player)
-					? Math.round(CHARGE_INTERVAL * net.jackcooper.shapeShifterCurseAddon.item.FrostSpineCollarItem.CHARGE_INTERVAL_MULTIPLIER)
-					: CHARGE_INTERVAL;
+					? Math.round(baseInterval * net.jackcooper.shapeShifterCurseAddon.item.FrostSpineCollarItem.CHARGE_INTERVAL_MULTIPLIER)
+					: baseInterval;
 			if (s.chargeTicks >= interval) { s.chargeTicks = 0; spawnOrReplaceThorn(player, s); }
 		}
 		updateHoverPositions(player, s);
@@ -261,10 +268,10 @@ public final class FrostSpikeManager {
 		State s = STATES.remove(player.getUuid());
 		if (s != null) endSecondaryCharge(player, s);
 		FrostSpikeState state = FrostSpikeState.get(player.getServer());
-		int[] ticks = new int[MAX_THORNS];
+		int[] ticks = new int[s != null ? s.slots.length : BAL.i("max_thorns", MAX_THORNS)];
 		java.util.Arrays.fill(ticks, -1);
 		if (s != null) {
-			for (int i = 0; i < MAX_THORNS; i++) {
+			for (int i = 0; i < s.slots.length; i++) {
 				FrostThornEntity t = s.slots[i];
 				if (t != null && !t.isRemoved()) {
 					ticks[i] = t.getHoverTicks();
@@ -293,7 +300,7 @@ public final class FrostSpikeManager {
 		if (!isFrostspine(player)) return;
 		if (!(player.getWorld() instanceof ServerWorld sw)) return;
 		State s = STATES.computeIfAbsent(player.getUuid(), k -> new State());
-		for (int i = 0; i < MAX_THORNS; i++) {
+		for (int i = 0; i < ticks.length && i < s.slots.length; i++) {
 			if (ticks[i] < 0) continue;
 			FrostThornEntity thorn = new FrostThornEntity(sw, player);
 			thorn.setSlot(i);
@@ -321,8 +328,8 @@ public final class FrostSpikeManager {
 		State s = STATES.computeIfAbsent(player.getUuid(), k -> new State());
 		cleanupDead(s);
 		int idx = thorn.getSlot();
-		if (idx >= 0 && idx < MAX_THORNS && s.slots[idx] == thorn) return; // 已认领
-		if (idx < 0 || idx >= MAX_THORNS || s.slots[idx] != null) {
+		if (idx >= 0 && idx < s.slots.length && s.slots[idx] == thorn) return; // 已认领
+		if (idx < 0 || idx >= s.slots.length || s.slots[idx] != null) {
 			idx = firstEmptySlot(s);
 			if (idx < 0) { thorn.discard(); return; }     // 超出 5 根（异常）→ 丢弃
 			thorn.setSlot(idx);
@@ -371,7 +378,7 @@ public final class FrostSpikeManager {
 	private static void updateHoverPositions(ServerPlayerEntity player, State s) {
 		// HOVER 态服务端不逐 tick 移动（无移动→无移动包，客户端独占每 tick 自算贴合位置，避免与延迟网络包打架致鬼畜）。
 		// 仅当服务端残留位置离玩家超过 40 格（超出常规移动范围、追踪快失效且远不可见）才校正一次，维持实体在追踪范围内。
-		for (int i = 0; i < MAX_THORNS; i++) {
+		for (int i = 0; i < s.slots.length; i++) {
 			FrostThornEntity t = s.slots[i];
 			if (t == null || t.isRemoved() || !t.isHover()) continue;
 			if (t.squaredDistanceTo(player) > 40.0 * 40.0) {
@@ -381,28 +388,28 @@ public final class FrostSpikeManager {
 	}
 
 	private static void cleanupDead(State s) {
-		for (int i = 0; i < MAX_THORNS; i++) {
+		for (int i = 0; i < s.slots.length; i++) {
 			FrostThornEntity t = s.slots[i];
 			if (t != null && (t.isRemoved() || !t.isHover())) s.slots[i] = null;
 		}
 	}
 
 	private static void clearAll(State s) {
-		for (int i = 0; i < MAX_THORNS; i++) {
+		for (int i = 0; i < s.slots.length; i++) {
 			if (s.slots[i] != null && !s.slots[i].isRemoved()) s.slots[i].discard();
 			s.slots[i] = null;
 		}
 	}
 
 	private static int firstEmptySlot(State s) {
-		for (int i = 0; i < MAX_THORNS; i++) if (s.slots[i] == null) return i;
+		for (int i = 0; i < s.slots.length; i++) if (s.slots[i] == null) return i;
 		return -1;
 	}
 
 	/** 存在时间最久（hoverTicks 最大 = 最旧 = 剩余最短）的 slot。 */
 	private static int oldestSlot(State s) {
 		int idx = -1, max = -1;
-		for (int i = 0; i < MAX_THORNS; i++) {
+		for (int i = 0; i < s.slots.length; i++) {
 			FrostThornEntity t = s.slots[i];
 			if (t != null && t.getHoverTicks() > max) { max = t.getHoverTicks(); idx = i; }
 		}
@@ -417,7 +424,7 @@ public final class FrostSpikeManager {
 
 	private static int countThorns(State s) {
 		int c = 0;
-		for (int i = 0; i < MAX_THORNS; i++) if (s.slots[i] != null) c++;
+		for (int i = 0; i < s.slots.length; i++) if (s.slots[i] != null) c++;
 		return c;
 	}
 

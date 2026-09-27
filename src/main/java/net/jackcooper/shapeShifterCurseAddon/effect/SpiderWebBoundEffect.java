@@ -11,6 +11,7 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 
 /**
  * 蛛网缠身：非白名单生物踩过月织蛛的减速蛛网（web_membrane）时施加，或被蛛网弹爆炸范围波及时直接施加。
@@ -26,6 +27,9 @@ public class SpiderWebBoundEffect extends StatusEffect {
 
 	/** 联动的挖掘疲劳/虚弱持续时长（tick）：略大于刷新间隔 4t，保证无缝衔接。 */
 	private static final int SUB_DURATION = 40;
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.web_bound");
 
 	public SpiderWebBoundEffect() {
 		super(StatusEffectCategory.HARMFUL, 0xBFC4CC);
@@ -47,7 +51,8 @@ public class SpiderWebBoundEffect extends StatusEffect {
 					3, spread, 0.06, spread, 0.0);
 		}
 		// 挖掘疲劳 + 虚弱：放在蜘网缠身内联动，随蜘网缠身同进退（环境/ambient=false，粒子=false）
-		entity.addStatusEffect(new StatusEffectInstance(StatusEffects.MINING_FATIGUE, SUB_DURATION, 0, false, false, false));
-		entity.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, SUB_DURATION, 0, false, false, false));
+		int subDuration = BAL.i("sub_duration", SUB_DURATION);
+		entity.addStatusEffect(new StatusEffectInstance(StatusEffects.MINING_FATIGUE, subDuration, 0, false, false, false));
+		entity.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, subDuration, 0, false, false, false));
 	}
 }

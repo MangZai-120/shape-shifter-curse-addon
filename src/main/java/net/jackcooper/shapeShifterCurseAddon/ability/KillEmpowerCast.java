@@ -34,12 +34,16 @@ public final class KillEmpowerCast {
 
 	private KillEmpowerCast() {}
 
-	/** 赋能吐息参数（与 power JSON 常规吐息一致：8 格 / 6 伤 ×非玩家倍率 / 灼烧 5s）。 */
+	// 赋能吐息参数：默认与 power JSON 常规吐息一致（8 格 / 6 伤 ×非玩家倍率 / 灼烧 5s）；运行时从 balance 快照读取（abilities.kill_empower_cast）
 	private static final float BREATH_DISTANCE = 8.0f;
 	private static final float BREATH_DAMAGE = 6.0f;
-	private static final float BREATH_NON_PLAYER_MULT_SP = 3.0f;   // SP使魔 吐息对怪倍率（与正常版 JSON ×3 对齐）
-	private static final float BREATH_NON_PLAYER_MULT_RED = 1.5f;  // 红堕落 吐息对怪倍率（同源 ×1.5）
+	private static final float BREATH_NON_PLAYER_MULT_SP = 3.0f;   // 默认；SP使魔 吐息对怪倍率（与正常版 JSON ×3 对齐）
+	private static final float BREATH_NON_PLAYER_MULT_RED = 1.5f;  // 默认；红堕落 吐息对怪倍率（同源 ×1.5）
 	private static final int BURN_DURATION = 100;
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
+			new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.kill_empower_cast");
 
 	/** 赋能火环伤害跳（KillEmpowerManager 每 16t 调用一次；与正常环 effects_loop 同节奏同半径）。 */
 	public static void tickEmpowerRing(ServerPlayerEntity player) {
@@ -126,7 +130,7 @@ public final class KillEmpowerCast {
 
 		// 蓝火护符修正：持续时间 -15%（释放瞬间读取；SP 232→197、Red 280→238）
 		boolean amulet = TrinketUtils.isWearing(player, SscAddon.BLUE_FIRE_AMULET);
-		int fullRingTicks = redForm ? KillEmpowerManager.EMPOWER_RING_TICKS_RED : KillEmpowerManager.EMPOWER_RING_TICKS_SP;
+		int fullRingTicks = redForm ? KillEmpowerManager.ringTicksRed() : KillEmpowerManager.ringTicksSp();
 		if (amulet) fullRingTicks = Math.round(fullRingTicks * 0.85f);
 		player.addStatusEffect(new StatusEffectInstance(SscAddon.BLUE_FIRE_RING, fullRingTicks, 0, true, false, true));
 		StatusEffectInstance ringEffect = player.getStatusEffect(SscAddon.BLUE_FIRE_RING);
@@ -146,7 +150,14 @@ public final class KillEmpowerCast {
 
 		ServerWorld world = (ServerWorld) player.getWorld();
 		boolean redForm = FormUtils.isForm(player, FormIdentifiers.FAMILIAR_FOX_RED);
-		float nonPlayerMult = redForm ? BREATH_NON_PLAYER_MULT_RED : BREATH_NON_PLAYER_MULT_SP;
+		// balance 运行时参数（同方法多次使用，先取局部变量）
+		float nonPlayerMult = redForm
+				? (float) BAL.d("breath_mult_red", BREATH_NON_PLAYER_MULT_RED)
+				: (float) BAL.d("breath_mult_sp", BREATH_NON_PLAYER_MULT_SP);
+		double breathDist = BAL.d("breath_distance", BREATH_DISTANCE);
+		double breathDistSq = breathDist * breathDist;
+		float breathDamage = (float) BAL.d("breath_damage", BREATH_DAMAGE);
+		int burnDuration = BAL.i("burn_duration", BURN_DURATION);
 
 		// 消耗赋能（标记赋能击杀 → 本次吐息的击杀不触发新赋能）
 		KillEmpowerManager.writeState(player, state.consume());
@@ -164,17 +175,17 @@ public final class KillEmpowerCast {
 		Vec3d eye = player.getEyePos();
 		Vec3d look = player.getRotationVec(1.0f);
 		RegistryKey<DamageType> magicKey = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("minecraft", "magic"));
-		Box box = player.getBoundingBox().expand(BREATH_DISTANCE).stretch(look.multiply(BREATH_DISTANCE));
+		Box box = player.getBoundingBox().expand(breathDist).stretch(look.multiply(breathDist));
 		world.getEntitiesByClass(LivingEntity.class, box, t -> t != player && t.isAlive() && !t.isSpectator()).forEach(t -> {
 			if (WhitelistUtils.isProtected(player, t)) return;
 			Vec3d toT = t.getPos().add(0, t.getHeight() / 2.0, 0).subtract(eye).normalize();
-			if (look.dotProduct(toT) > 0.8 && player.squaredDistanceTo(t) < BREATH_DISTANCE * BREATH_DISTANCE) {
-				float dmg = t instanceof net.minecraft.entity.player.PlayerEntity ? BREATH_DAMAGE : BREATH_DAMAGE * nonPlayerMult;
+			if (look.dotProduct(toT) > 0.8 && player.squaredDistanceTo(t) < breathDistSq) {
+				float dmg = t instanceof net.minecraft.entity.player.PlayerEntity ? breathDamage : breathDamage * nonPlayerMult;
 				t.timeUntilRegen = 0;	// 命中前清：不被普攻无敌帧吞
 				if (t.damage(t.getDamageSources().create(magicKey, player, player), dmg)) {
 					t.timeUntilRegen = 0;	// 命中后清：不留无敌帧反吞普攻
-					t.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, BURN_DURATION, 0), player);
-					KillEmpowerManager.trackBurn(player, t, BURN_DURATION, false);
+				t.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, burnDuration, 0), player);
+				KillEmpowerManager.trackBurn(player, t, burnDuration, false);
 					if (t instanceof net.jackcooper.shapeShifterCurseAddon.util.SscIgnitedEntityAccessor acc) {
 						acc.sscAddon$setIgniterUuid(player.getUuid());
 					}

@@ -15,7 +15,8 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
- import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
+ import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -50,7 +51,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class WindDashManager {
 
-    // ===== 常量 =====
+    // ===== 常量（均为默认值；运行时从 balance 快照读取 abilities.wind_dash） =====
     private static final float TARGET_HEIGHT = 5.0f;
     private static final double RISE_FAST_SPEED = 0.45;      // 0-3 格阶段速度（格/tick）
     private static final int RISE_FAST_TICKS = 7;            // 0-3 格约 7 tick
@@ -62,6 +63,9 @@ public final class WindDashManager {
     private static final float LANDING_DAMAGE = 12.0f;
     private static final int COOLDOWN_TICKS = 240;           // 12 秒
     private static final double FALL_SPEED = 0.15;           // 3 格/秒 ≈ 0.15 格/tick
+
+    // 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+    private static final BalanceReader BAL = new BalanceReader("abilities.wind_dash");
 
     // ===== 阶段 =====
     public static final int PHASE_NONE = 0;
@@ -111,11 +115,12 @@ public final class WindDashManager {
     private static void startRise(ServerPlayerEntity player) {
         DashState s = new DashState();
         s.phase = PHASE_RISE;
+        double targetHeight = BAL.d("target_height", TARGET_HEIGHT);
         s.startY = player.getY();
-        s.targetY = s.startY + TARGET_HEIGHT;
-        // 顶头检测：从脚部向上 raycast 5.5 格，碰到的方块下方即为可达最高点
-        double headClear = checkVerticalClearance(player, TARGET_HEIGHT + 0.5);
-        if (headClear < TARGET_HEIGHT) {
+        s.targetY = s.startY + targetHeight;
+        // 顶头检测：从脚部向上 raycast（目标高 +0.5 格），碰到的方块下方即为可达最高点
+        double headClear = checkVerticalClearance(player, targetHeight + 0.5);
+        if (headClear < targetHeight) {
             // 上方有方块阻挡，目标降为碰顶处（方块下方）
             s.targetY = s.startY + Math.max(0.5, headClear - 0.05);
         }
@@ -196,13 +201,14 @@ public final class WindDashManager {
             return;
         }
         double traveledFromStart = curY - s.startY;
+        double riseFastSpeed = BAL.d("rise_fast_speed", RISE_FAST_SPEED);
         if (traveledFromStart < 3.0) {
             // 0-3 格快速
-            stepY = Math.min(RISE_FAST_SPEED, dy);
+            stepY = Math.min(riseFastSpeed, dy);
         } else {
-            // 3-5 格线性减速：从 RISE_FAST_SPEED 线性到 0
+            // 3-5 格线性减速：从 rise_fast_speed 线性到 0
             float t = (float) MathHelper.clamp((traveledFromStart - 3.0) / 2.0, 0.0, 1.0);
-            stepY = RISE_FAST_SPEED * (1.0f - t);
+            stepY = riseFastSpeed * (1.0f - t);
             stepY = Math.min(stepY, dy);
             if (stepY < 0.02) stepY = dy; // 收尾，避免抖动
         }
@@ -215,7 +221,8 @@ public final class WindDashManager {
         // 脚下灰烟 + 烟花上升粒子
         spawnRiseParticles(sw, player);
 
-        if (curY + stepY >= s.targetY - 0.05 || s.riseTick > RISE_FAST_TICKS + RISE_SLOW_TICKS + 5) {
+        if (curY + stepY >= s.targetY - 0.05
+                || s.riseTick > BAL.i("rise_fast_ticks", RISE_FAST_TICKS) + BAL.i("rise_slow_ticks", RISE_SLOW_TICKS) + 5) {
             enterHover(player, s);
         }
     }
@@ -241,7 +248,7 @@ public final class WindDashManager {
                 player.getX(), player.getY() - 0.1, player.getZ(),
                 3, 0.25, 0.0, 0.25, 0.005);
 
-        if (s.hoverTick >= HOVER_TICKS) {
+        if (s.hoverTick >= BAL.i("hover_ticks", HOVER_TICKS)) {
             // 超时 → 缓慢落下
             s.phase = PHASE_FALL;
             SscAddonNetworking.syncDashState(player, s.phase, 0);
@@ -250,7 +257,8 @@ public final class WindDashManager {
 
     private static void tickDash(ServerPlayerEntity player, DashState s) {
         ServerWorld sw = (ServerWorld) player.getWorld();
-        double step = Math.min(DASH_SPEED, s.dashTotal - s.dashTraveled);
+        double dashSpeed = BAL.d("dash_speed", DASH_SPEED);
+        double step = Math.min(dashSpeed, s.dashTotal - s.dashTraveled);
         if (step <= 0) {
             enterLand(player, s, true);
             return;
@@ -262,7 +270,7 @@ public final class WindDashManager {
             enterLand(player, s, true);
             return;
         }
-        player.setVelocity(s.dashDir.x * DASH_SPEED, s.dashDir.y * DASH_SPEED, s.dashDir.z * DASH_SPEED);
+        player.setVelocity(s.dashDir.x * dashSpeed, s.dashDir.y * dashSpeed, s.dashDir.z * dashSpeed);
         player.velocityModified = true;
         player.setPosition(next.x, next.y, next.z);
 
@@ -282,7 +290,7 @@ public final class WindDashManager {
     private static void tickFall(ServerPlayerEntity player, DashState s) {
         ServerWorld sw = (ServerWorld) player.getWorld();
         // 3 格/秒 = 0.15 格/tick 缓慢下落
-        double stepY = FALL_SPEED;
+        double stepY = BAL.d("fall_speed", FALL_SPEED);
         double curY = player.getY();
         // 检测脚下方块，落地则结束
         double groundY = findGroundY(sw, player.getX(), player.getZ(), curY);
@@ -324,15 +332,17 @@ public final class WindDashManager {
                 SoundEvents.ENTITY_PLAYER_BIG_FALL, SoundCategory.PLAYERS, 0.8f, 0.8f);
 
         if (withDamage) {
-            // AOE 伤害（3 格半径，默认白名单）
-            Box box = new Box(land.subtract(LANDING_RADIUS, LANDING_RADIUS, LANDING_RADIUS),
-                    land.add(LANDING_RADIUS, LANDING_RADIUS, LANDING_RADIUS));
+            // AOE 伤害（默认白名单）
+            double landingRadius = BAL.d("landing_radius", LANDING_RADIUS);
+            Box box = new Box(land.subtract(landingRadius, landingRadius, landingRadius),
+                    land.add(landingRadius, landingRadius, landingRadius));
             for (Entity e : sw.getOtherEntities(player, box)) {
                 if (!(e instanceof LivingEntity living)) continue;
                 if (WhitelistUtils.isProtected(player, living)) continue; // 默认白名单
                 // 视线检查：墙后目标不命中（仿原版 PR #523 豹猫冲刺穿墙修复）
                 if (!net.jackcooper.shapeShifterCurseAddon.util.LineOfSightUtils.hasLineOfSight(sw, player, living)) continue;
-                living.damage(player.getDamageSources().playerAttack(player), LANDING_DAMAGE);
+                living.damage(player.getDamageSources().playerAttack(player),
+                        (float) BAL.d("landing_damage", LANDING_DAMAGE));
                 Vec3d push = living.getPos().subtract(land);
                 if (push.lengthSquared() < 1.0e-4) push = new Vec3d(0, 1, 0);
                 push = push.normalize();
@@ -340,13 +350,13 @@ public final class WindDashManager {
             }
             // 落地爆发粒子（用快消/瞬消粒子，避免白雾长时间残留）
             sw.spawnParticles(ParticleTypes.POOF, land.x, land.y + 0.2, land.z,
-                    25, LANDING_RADIUS * 0.5, 0.1, LANDING_RADIUS * 0.5, 0.08);
+                    25, landingRadius * 0.5, 0.1, landingRadius * 0.5, 0.08);
             sw.spawnParticles(ParticleTypes.SWEEP_ATTACK, land.x, land.y + 0.5, land.z,
-                    10, LANDING_RADIUS * 0.4, 0.3, LANDING_RADIUS * 0.4, 0.0);
+                    10, landingRadius * 0.4, 0.3, landingRadius * 0.4, 0.0);
             sw.spawnParticles(ParticleTypes.EXPLOSION, land.x, land.y + 0.3, land.z,
-                    2, LANDING_RADIUS * 0.3, 0.1, LANDING_RADIUS * 0.3, 0.0);
+                    2, landingRadius * 0.3, 0.1, landingRadius * 0.3, 0.0);
             // 方块视觉浮动（粒子模拟）：落点半径内方块按远近冒破坏粒子
-            spawnBlockFloatParticles(sw, land, LANDING_RADIUS);
+            spawnBlockFloatParticles(sw, land, landingRadius);
         }
 
         enterCooldown(player);
@@ -355,7 +365,8 @@ public final class WindDashManager {
 
     /** 进入 CD（12 秒）。超时落下也进 CD。 */
     private static void enterCooldown(ServerPlayerEntity player) {
-        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, COOLDOWN_TICKS);
+        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD,
+                BAL.i("cooldown_ticks", COOLDOWN_TICKS));
     }
 
     /** 起飞阶段脚下粒子：灰烟 + 烟花上升。 */
@@ -417,10 +428,11 @@ public final class WindDashManager {
      * 打空（看天空）才退到水平方向最远 MAX_DASH_RANGE 处的地面。这样玩家瞄近处地面=近落点，瞄远处=远落点。
      */
     private static Vec3d computeDashLanding(ServerWorld world, Vec3d eye, Vec3d look, ServerPlayerEntity player) {
+        double maxDashRange = BAL.d("max_dash_range", MAX_DASH_RANGE);
         Vec3d flatLook = new Vec3d(look.x, 0, look.z);
         double flatLen = flatLook.length();
-        // 3D 射线长度上限：保证水平投影不超过 MAX_DASH_RANGE
-        double max3D = flatLen > 1.0e-4 ? MAX_DASH_RANGE / flatLen : MAX_DASH_RANGE;
+        // 3D 射线长度上限：保证水平投影不超过 max_dash_range
+        double max3D = flatLen > 1.0e-4 ? maxDashRange / flatLen : maxDashRange;
         Vec3d end3D = eye.add(look.multiply(max3D));
         BlockHitResult bhr = world.raycast(new RaycastContext(eye, end3D,
                 RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, player));
@@ -437,8 +449,8 @@ public final class WindDashManager {
             float yaw = player.getYaw();
             flatDir = new Vec3d(-MathHelper.sin(yaw * 0.017453292f), 0, MathHelper.cos(yaw * 0.017453292f));
         }
-        double hx = player.getX() + flatDir.x * MAX_DASH_RANGE;
-        double hz = player.getZ() + flatDir.z * MAX_DASH_RANGE;
+        double hx = player.getX() + flatDir.x * maxDashRange;
+        double hz = player.getZ() + flatDir.z * maxDashRange;
         double gy = findGroundY(world, hx, hz, player.getY());
         return new Vec3d(hx, gy, hz);
     }

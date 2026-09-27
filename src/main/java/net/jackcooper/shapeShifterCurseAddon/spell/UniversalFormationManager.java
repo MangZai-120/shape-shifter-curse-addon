@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>装入魔法书六芒星的<b>回能变体</b>通用法阵生效（regen 变体；增能/经验变体不参与转化）：当玩家当前形态持有能量条（SSCA 资源条
  * 悦灵/蝙蝠/阿努比斯/雪狐，或原版 ManaComponent 体系——使魔/蜘蛛/契灵）
- * 且<b>书法术值占比低于阈值</b>时，每秒消耗 3 点形态能量回复 6 点书法术值。</p>
+ * 且<b>书法术值占比低于阈值</b>时，每秒消耗 2 点形态能量回复 10 点书法术值。</p>
  *
  * <p>阈值按书内<b>等级最高</b>的回能法阵决定（多张不叠加转化速率）：Lv1=20% …
  * Lv5=100%（{@link FormationData#universalThreshold}）。</p>
@@ -99,8 +99,8 @@ public final class UniversalFormationManager {
 		}
 		// 转化：耗 2 形态能量 → 回 10 书法术值（统一汇率 5:1，用户定稿 2026-09-17；
 		// 朔望旧亲和已作废——朔望无能量条，改走 FormCastingStyle 月相书内自回流派）
-		int drain = (int) FormationData.UNIVERSAL_MANA_DRAIN_PER_SEC;
-		int restore = (int) FormationData.UNIVERSAL_BOOK_MANA_PER_SEC;
+		int drain = (int) FormationData.universalManaDrainPerSec();
+		int restore = (int) FormationData.universalBookManaPerSec();
 		if (!ResourceBars.consume(player, bar, drain)) {
 			return;
 		}

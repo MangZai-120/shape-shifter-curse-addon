@@ -7,6 +7,7 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
@@ -36,33 +37,37 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class NightmareFearManager {
 
-	/** 恐惧持续 tick（15 秒）。 */
+	// ==== 以下常量为默认值；运行时从 balance 快照读取（scope: abilities.nightmare_fear，数据包可覆盖）====
+	/** 恐惧持续 tick（15 秒）。默认；运行时从 balance 快照读取。 */
 	public static final int FEAR_DURATION_TICKS = 300;
-	/** 梦魇戒指：恐惧持续时长增幅（+35% → 405t ≈ 20.25 秒），施加瞬间快照。 */
+	/** 梦魇戒指：恐惧持续时长增幅（+35% → 405t ≈ 20.25 秒），施加瞬间快照。未登记 balance，保持常量。 */
 	public static final float FEAR_DURATION_RING_BONUS = net.jackcooper.shapeShifterCurseAddon.item.NightmareRingItem.FEAR_DURATION_BONUS;
-	/** 技能 CD（tick，20 秒）。 */
+	/** 技能 CD（tick，20 秒）。默认；运行时从 balance 快照读取。 */
 	public static final int FEAR_COOLDOWN_TICKS = 400;
-	/** 诅咒之月共鸣：诅咒之月当夜恐惧 CD 降为 14 秒（280t）。 */
+	/** 诅咒之月共鸣：诅咒之月当夜恐惧 CD 降为 14 秒（280t）。默认；运行时从 balance 快照读取。 */
 	public static final int FEAR_COOLDOWN_TICKS_CURSED_MOON = 280;
-	/** 恐惧结束后入梦免疫时长（tick，20 秒）。 */
+	/** 恐惧结束后入梦免疫时长（tick，20 秒）。默认；运行时从 balance 快照读取。 */
 	public static final int DREAM_IMMUNE_TICKS = 400;
-	/** 心跳音效间隔（tick，1.6 秒/拍——守卫者心跳节奏）。 */
+	/** 心跳音效间隔（tick，1.6 秒/拍——守卫者心跳节奏）。未登记 balance，保持常量。 */
 	public static final int HEARTBEAT_INTERVAL = 32;
 	/** 减速 20% 的属性 modifier UUID（固定 UUID，可幂等移除）。 */
 	private static final UUID FEAR_SLOW_UUID = UUID.fromString("e3a1f7c2-9b4d-4e6a-8c15-d2f3a7b9e810");
 	private static final String FEAR_SLOW_NAME = "Nightmare Fear Slow";
-	/** 减速幅度（用户定稿：必备减速 20%，玩家/生物一致）。 */
+	/** 减速幅度（用户定稿：必备减速 20%，玩家/生物一致）。默认；运行时从 balance 快照读取。 */
 	public static final float FEAR_SLOW_RATIO = 0.20f;
-	/** 非玩家目标的仇恨压制：被梦魔攻击后的反击窗口（tick，2 秒）。 */
+	/** 非玩家目标的仇恨压制：被梦魔攻击后的反击窗口（tick，2 秒）。默认；运行时从 balance 快照读取。 */
 	public static final int MOB_AGGRO_WINDOW_TICKS = 40;
-	/** 恐惧视野半径（格）。 */
+	/** 恐惧视野半径（格）。默认；运行时从 balance 快照读取。 */
 	public static final double FEAR_SIGHT_RADIUS = 16.0;
-	/** 可见性脉冲：隐匿相位时长（tick，2 秒）。 */
+	/** 可见性脉冲：隐匿相位时长（tick，2 秒）。未登记 balance，保持常量。 */
 	public static final int PULSE_HIDDEN_TICKS = 40;
-	/** 可见性脉冲：现形相位时长（tick，0.6 秒）。 */
+	/** 可见性脉冲：现形相位时长（tick，0.6 秒）。未登记 balance，保持常量。 */
 	public static final int PULSE_VISIBLE_TICKS = 12;
-	/** 攻击显形时长（tick，1.5 秒）。 */
+	/** 攻击显形时长（tick，1.5 秒）。默认；运行时从 balance 快照读取。 */
 	public static final int REVEAL_ON_ATTACK_TICKS = 30;
+
+	/** 服务端权威 balance 快照读取（快照未初始化时回退上方默认常量）。 */
+	private static final BalanceReader BAL = new BalanceReader("abilities.nightmare_fear");
 	/** 范围外完全隐匿的包刷新间隔（tick）。 */
 	private static final int OUT_OF_RANGE_HIDE_REFRESH = 40;
 	/** 心跳基础音量（范围外/无梦魔时的极小固定音量）。 */
@@ -86,12 +91,13 @@ public final class NightmareFearManager {
 	/** 梦魔攻击恐惧目标时调用（damage mixin）：显形 1.5s 并重置该对的脉冲相位。 */
 	public static void onNightmareAttackFeared(ServerPlayerEntity target, ServerPlayerEntity attacker) {
 		long now = target.getWorld().getTime();
+		int reveal = BAL.i("reveal_on_attack_ticks", REVEAL_ON_ATTACK_TICKS);
 		PairState ps = PAIRS.get(target.getUuid() + "|" + attacker.getUuid());
 		if (ps != null) {
 			ps.hidden = false;
-			ps.phaseEnd = now + REVEAL_ON_ATTACK_TICKS;
+			ps.phaseEnd = now + reveal;
 		}
-		SscAddonNetworking.sendFearReveal(target, attacker.getUuid(), REVEAL_ON_ATTACK_TICKS);
+		SscAddonNetworking.sendFearReveal(target, attacker.getUuid(), reveal);
 	}
 
 	/** 清理某目标的全部可见性状态（恐惧结束/断线）。 */
@@ -130,9 +136,9 @@ public final class NightmareFearManager {
 	/** 当前生效的恐惧 CD：诅咒之月当夜 280t，否则 400t。仅服务端调用。 */
 	public static int currentFearCooldown(ServerPlayerEntity player) {
 		if (net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon.isInCursedMoon(player.getWorld())) {
-			return FEAR_COOLDOWN_TICKS_CURSED_MOON;
+			return BAL.i("cooldown_ticks_cursed_moon", FEAR_COOLDOWN_TICKS_CURSED_MOON);
 		}
-		return FEAR_COOLDOWN_TICKS;
+		return BAL.i("cooldown_ticks", FEAR_COOLDOWN_TICKS);
 	}
 
 	/** 目标当前是否入梦免疫（恐惧结束后的 20s 惩罚窗口）。 */
@@ -169,16 +175,18 @@ public final class NightmareFearManager {
 		UUID tid = target.getUuid();
 		// 戒指快照：施加瞬间判定佩戴状态，写入本轮 FearState（时长增幅 + 双倍伤害禁用）
 		boolean ringWorn = net.jackcooper.shapeShifterCurseAddon.item.NightmareRingItem.isWearingBy(caster);
-		int duration = ringWorn ? Math.round(FEAR_DURATION_TICKS * (1.0f + FEAR_DURATION_RING_BONUS)) : FEAR_DURATION_TICKS;
+		int baseDuration = BAL.i("duration_ticks", FEAR_DURATION_TICKS);
+		int duration = ringWorn ? Math.round(baseDuration * (1.0f + FEAR_DURATION_RING_BONUS)) : baseDuration;
 		FEARING.put(tid, new FearState(now + duration, caster.getUuid(), !ringWorn));
 		// 入梦时间重置回 20s（规格②：获得恐惧即重置）
 		NightmareDreamManager.resetDream(caster.getUuid(), tid, now);
 		// 减速 20%（幂等：先移除再加；用户定稿：必备减速，玩家/生物一致）
 		EntityAttributeInstance attr = target.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
 		if (attr != null) {
+			float slowRatio = (float) BAL.d("slow_ratio", FEAR_SLOW_RATIO);
 			attr.removeModifier(FEAR_SLOW_UUID);
 			attr.addPersistentModifier(new EntityAttributeModifier(
-					FEAR_SLOW_UUID, FEAR_SLOW_NAME, -FEAR_SLOW_RATIO, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
+					FEAR_SLOW_UUID, FEAR_SLOW_NAME, -slowRatio, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
 		}
 		// 客户端包（粉雾淡入 + 心跳启动 + 本地失明驱动），仅目标本人（时长随戒指快照变化）
 		if (target instanceof ServerPlayerEntity sp) {
@@ -234,15 +242,16 @@ public final class NightmareFearManager {
 			// 心跳声（规格⑤）：按最近的食梦魔距离动态音量——范围外极小固定音量，
 			// 16 格内越近越响（音量 = 基础 + (1-距离/16)×(最大-基础)）
 			if (now % HEARTBEAT_INTERVAL == 0 && target instanceof ServerPlayerEntity sp) {
+				double sightRadius = BAL.d("sight_radius", FEAR_SIGHT_RADIUS);
 				double nearest = Double.MAX_VALUE;
 				for (ServerPlayerEntity p : world.getPlayers()) {
 					if (p.getUuid().equals(tid) || !NightmareDreamManager.isNightmare(p)) continue;
 					nearest = Math.min(nearest, p.squaredDistanceTo(sp));
 				}
 				float vol = HEARTBEAT_BASE_VOL;
-				if (nearest != Double.MAX_VALUE && nearest <= FEAR_SIGHT_RADIUS * FEAR_SIGHT_RADIUS) {
+				if (nearest != Double.MAX_VALUE && nearest <= sightRadius * sightRadius) {
 					double dist = Math.sqrt(nearest);
-					vol = HEARTBEAT_BASE_VOL + (float) ((1.0 - dist / FEAR_SIGHT_RADIUS) * (HEARTBEAT_MAX_VOL - HEARTBEAT_BASE_VOL));
+					vol = HEARTBEAT_BASE_VOL + (float) ((1.0 - dist / sightRadius) * (HEARTBEAT_MAX_VOL - HEARTBEAT_BASE_VOL));
 				}
 				world.playSound(sp, sp.getX(), sp.getY(), sp.getZ(),
 						net.minecraft.sound.SoundEvents.ENTITY_WARDEN_HEARTBEAT,
@@ -268,7 +277,8 @@ public final class NightmareFearManager {
 			if (nightmare.getUuid().equals(target.getUuid())) continue;
 			if (!NightmareDreamManager.isNightmare(nightmare)) continue;
 			String key = target.getUuid() + "|" + nightmare.getUuid();
-			boolean inRange = nightmare.squaredDistanceTo(target) <= FEAR_SIGHT_RADIUS * FEAR_SIGHT_RADIUS;
+			double sightRadius = BAL.d("sight_radius", FEAR_SIGHT_RADIUS);
+			boolean inRange = nightmare.squaredDistanceTo(target) <= sightRadius * sightRadius;
 			PairState ps = PAIRS.computeIfAbsent(key, k -> new PairState());
 			if (!inRange) {
 				// 规格①：范围外完全隐身（每 2s 重发一次隐匿包保活，防包丢失导致现形）
@@ -306,7 +316,7 @@ public final class NightmareFearManager {
 		// 强制出梦（由施恐惧的梦魔的入梦表移除该目标；其它梦魔若也入梦了它则一并清——恐惧结束强制全出）
 		NightmareDreamManager.forceWakeAll(tid, now, world);
 		if (applyImmune) {
-			DREAM_IMMUNE.put(tid, now + DREAM_IMMUNE_TICKS);
+			DREAM_IMMUNE.put(tid, now + BAL.i("dream_immune_ticks", DREAM_IMMUNE_TICKS));
 		}
 	}
 
@@ -355,7 +365,7 @@ public final class NightmareFearManager {
 		// 仅当目标正是释放该恐惧的梦魇本人时才压制仇恨
 		if (!(target instanceof ServerPlayerEntity tp) || !tp.getUuid().equals(v.casterUuid)) return true;
 		long lastHit = mob.getLastAttackedTime(); // vanilla：受击成功时更新
-		return now - lastHit <= MOB_AGGRO_WINDOW_TICKS; // 仅被击 2 秒内可反击
+		return now - lastHit <= BAL.i("mob_aggro_window_ticks", MOB_AGGRO_WINDOW_TICKS); // 仅被击 2 秒内可反击
 	}
 
 	/** 恐惧中的 mob 每刻清除对「施法梦魇」的过期仇恨（由 MobEntityMixin.mobTick 调用，仅服务端）。 */

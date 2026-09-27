@@ -23,6 +23,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.ability.InfectionSporeManager;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import org.joml.Vector3f;
 
@@ -34,12 +35,16 @@ import java.util.List;
  * 非白名单生物施加感染孢子状态。
  */
 public class InfectionSporeBombEntity extends ThrownItemEntity {
+    // 以下均为默认值；运行时从 balance 快照读取（abilities.parasitic_spore_bomb）
     /** 爆炸特效作用半径 */
     public static final double EXPLOSION_RADIUS = 4.0;
     /** 默认感染/治疗时长（10s）：命中生物与落地毒雾云统一 */
     public static final int DEFAULT_INFECTION_TICKS = 200;
     /** 墨绿色中毒粒子（与 StatusEffects.POISON 视觉色调一致） */
     private static final DustParticleEffect POISON_DUST = new DustParticleEffect(new Vector3f(0.30f, 0.50f, 0.10f), 1.0f);
+
+    /** balance 快照读取（快照未初始化回退默认常量） */
+    private static final BalanceReader BAL = new BalanceReader("abilities.parasitic_spore_bomb");
 
     public InfectionSporeBombEntity(EntityType<? extends InfectionSporeBombEntity> entityType, World world) {
         super(entityType, world);
@@ -81,7 +86,7 @@ public class InfectionSporeBombEntity extends ThrownItemEntity {
             // 落地额外特效：药水粒子向上飘散
             spawnRisingPotionParticles(sw, hitResult.getPos());
             InfectionSporeManager.spawnCloud(caster, sw, hitResult.getPos(),
-                    InfectionSporeManager.CLOUD_RADIUS, DEFAULT_INFECTION_TICKS);
+                    InfectionSporeManager.cloudRadius(), BAL.i("default_infection_ticks", DEFAULT_INFECTION_TICKS));
         }
         this.discard();
     }
@@ -109,9 +114,11 @@ public class InfectionSporeBombEntity extends ThrownItemEntity {
         ServerPlayerEntity caster = (this.getOwner() instanceof ServerPlayerEntity sp) ? sp : null;
         if (caster == null) return;
 
-        Box box = new Box(pos.subtract(EXPLOSION_RADIUS, EXPLOSION_RADIUS, EXPLOSION_RADIUS),
-                pos.add(EXPLOSION_RADIUS, EXPLOSION_RADIUS, EXPLOSION_RADIUS));
-        double sqRadius = EXPLOSION_RADIUS * EXPLOSION_RADIUS;
+        double explosionRadius = BAL.d("explosion_radius", EXPLOSION_RADIUS);
+        int infectionTicks = BAL.i("default_infection_ticks", DEFAULT_INFECTION_TICKS);
+        Box box = new Box(pos.subtract(explosionRadius, explosionRadius, explosionRadius),
+                pos.add(explosionRadius, explosionRadius, explosionRadius));
+        double sqRadius = explosionRadius * explosionRadius;
         List<LivingEntity> targets = world.getEntitiesByClass(LivingEntity.class, box,
                 e -> e.isAlive() && e.squaredDistanceTo(pos) <= sqRadius && e != caster);
 
@@ -119,9 +126,9 @@ public class InfectionSporeBombEntity extends ThrownItemEntity {
             // 受白名单保护的友方（玩家、宠物等）→ 接受治疗孢子（每 3s +1HP，持续 15s）
             // 非白名单目标 → 接受感染孢子
             if (WhitelistUtils.isProtected(caster, target)) {
-                InfectionSporeManager.applyFriendHeal(caster, target, DEFAULT_INFECTION_TICKS);
+                InfectionSporeManager.applyFriendHeal(caster, target, infectionTicks);
             } else {
-                InfectionSporeManager.infect(caster, target, DEFAULT_INFECTION_TICKS);
+                InfectionSporeManager.infect(caster, target, infectionTicks);
             }
         }
     }

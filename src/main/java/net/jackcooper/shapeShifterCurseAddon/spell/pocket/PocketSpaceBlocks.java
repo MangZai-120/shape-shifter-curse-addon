@@ -73,8 +73,7 @@ public final class PocketSpaceBlocks {
 	}
 
 	/**
-	 * 隐形基岩：完全透光（opacity=0）+ 由方块实体渲染器画不受光照影响的虚空色面（末地折跃门同款机制），
-	 * 因此透过它看到的永远是虚空；配合服务端仅向玩家发送自己房间的区块，墙后不存在任何可见方块。
+	 * 完全透明的隐形墙：不绘制模型或方块实体表面，光照衰减为零。
 	 * 保留完整碰撞与轮廓箱（可瞄准、可右键）。
 	 */
 	public static final class InvisibleBedrockBlock extends net.minecraft.block.BlockWithEntity implements OperatorBlock {
@@ -82,6 +81,11 @@ public final class PocketSpaceBlocks {
 			super(AbstractBlock.Settings.copy(Blocks.BEDROCK)
 					.strength(-1.0f, 3_600_000.0f).dropsNothing().pistonBehavior(PistonBehavior.BLOCK)
 					.nonOpaque());
+		}
+
+		@Override
+		public BlockRenderType getRenderType(BlockState state) {
+			return BlockRenderType.INVISIBLE;
 		}
 
 		@Override
@@ -95,7 +99,7 @@ public final class PocketSpaceBlocks {
 		}
 	}
 
-	/** 隐形基岩的方块实体：无数据，只为挂载虚空面渲染器。 */
+	/** 保留已注册的空方块实体以兼容旧存档；客户端不再为它注册渲染器。 */
 	public static final class VoidWallBlockEntity extends net.minecraft.block.entity.BlockEntity {
 		public static net.minecraft.block.entity.BlockEntityType<VoidWallBlockEntity> TYPE;
 

@@ -41,6 +41,7 @@ import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.UndeadNeutralState;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.evolution.FamiliarFoxTree;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -52,6 +53,30 @@ import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(LivingEntity.class)
 public abstract class SscAddonLivingEntityMixin {
+	// ==== 平衡快照读取器：本 mixin 函数内字面量改运行时快照读取（注入点均在服务端 damage/heal 路径，安全）====
+	@org.spongepowered.asm.mixin.Unique
+	private static final BalanceReader BAL_MOON_TETHER = new BalanceReader("abilities.moon_tether");
+	@org.spongepowered.asm.mixin.Unique
+	private static final BalanceReader BAL_BAT_BLOOD_THIRST = new BalanceReader("abilities.bat_blood_thirst");
+	@org.spongepowered.asm.mixin.Unique
+	private static final BalanceReader BAL_MANCIANIMA_EXTRA = new BalanceReader("abilities.mancianima_extra");
+	@org.spongepowered.asm.mixin.Unique
+	private static final BalanceReader BAL_EFFECT_REDUCTION = new BalanceReader("abilities.effect_reduction");
+	@org.spongepowered.asm.mixin.Unique
+	private static final BalanceReader BAL_PARASITIC_FRUIT = new BalanceReader("abilities.parasitic_fruit");
+	@org.spongepowered.asm.mixin.Unique
+	private static final BalanceReader BAL_FROST_FREEZE = new BalanceReader("abilities.frost_freeze");
+	@org.spongepowered.asm.mixin.Unique
+	private static final BalanceReader BAL_NINE_LIVES_EXTRA = new BalanceReader("abilities.nine_lives_extra");
+	@org.spongepowered.asm.mixin.Unique
+	private static final BalanceReader BAL_ANUBIS_WITHER_EXTRA = new BalanceReader("abilities.anubis_wither_extra");
+	@org.spongepowered.asm.mixin.Unique
+	private static final BalanceReader BAL_ALLAY_SP_EXTRA = new BalanceReader("abilities.allay_sp_extra");
+	@org.spongepowered.asm.mixin.Unique
+	private static final BalanceReader BAL_NIGHTMARE_FEAR_EXTRA = new BalanceReader("abilities.nightmare_fear_extra");
+	@org.spongepowered.asm.mixin.Unique
+	private static final BalanceReader BAL_UPGRADE_FOX_NODES = new BalanceReader("abilities.upgrade_fox_nodes");
+
 	/** 月织蛛拴友军分担伤害致拴主牺牲时的伤害源（死亡消息 death.attack.tether_sacrifice）。 */
 	@org.spongepowered.asm.mixin.Unique
 	private static final RegistryKey<DamageType> ssca$TETHER_SACRIFICE_KEY =
@@ -179,7 +204,7 @@ public abstract class SscAddonLivingEntityMixin {
 		}
 		if (net.jackcooper.shapeShifterCurseAddon.power.ParasiticFruitSeedPower
 				.isParasitizedByEnemyFruit(self.getUuid(), self.getWorld().getTime())) {
-			return amount * 0.5f;
+			return amount * (float) BAL_PARASITIC_FRUIT.d("heal_reduce", 0.5);
 		}
 		return amount;
 	}
@@ -253,8 +278,8 @@ public abstract class SscAddonLivingEntityMixin {
 		if (self.getWorld().isClient()) return amount;
 		StatusEffectInstance mark = self.getStatusEffect(SscAddon.CURSE_MARK);
 		if (mark == null) return amount;
-		float multiplier = net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect.BASE_BONUS + 1.0f
-				+ net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect.BONUS_PER_LEVEL * mark.getAmplifier();
+		float multiplier = net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect.takenBase() + 1.0f
+				+ net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect.takenPerLevel() * mark.getAmplifier();
 		return amount * multiplier;
 	}
 
@@ -275,8 +300,8 @@ public abstract class SscAddonLivingEntityMixin {
 		if (attacker == self) return amount; // 自伤不叠
 		StatusEffectInstance mark = attacker.getStatusEffect(SscAddon.CURSE_MARK);
 		if (mark == null) return amount;
-		float weaken = net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect.OUTPUT_WEAKEN_BASE
-				+ net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect.OUTPUT_WEAKEN_PER_LEVEL * mark.getAmplifier();
+		float weaken = net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect.outputWeakenBase()
+				+ net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect.outputWeakenPerLevel() * mark.getAmplifier();
 		return amount * (1.0f - weaken);
 	}
 
@@ -315,7 +340,7 @@ public abstract class SscAddonLivingEntityMixin {
 				// 转移伤害延迟到主线程下一任务施加，避免在 damage 调用栈内同步重入 damage
 				// （重入会污染 MC/Apoli 伤害中间状态或抛异常，导致友军 damage 异常返回 → 表现为无敌打不动）。
 				// 死亡归属：用 tether_sacrifice 伤害源 + 攻击友军的凶手作为击杀者，死亡消息说明「为守护同伴牺牲」。
-				float transfer = amount * 0.5F;
+				float transfer = amount * (float) BAL_MOON_TETHER.d("ally_transfer_share", 0.5);
 				if (transfer > 0.0F) {
 					final ServerPlayerEntity fOwner = owner;
 					final Entity killer = attacker;
@@ -327,10 +352,10 @@ public abstract class SscAddonLivingEntityMixin {
 						fOwner.damage(ds, transfer);
 					});
 				}
-				return amount * 0.5F;
+				return amount * (float) BAL_MOON_TETHER.d("ally_taken_share", 0.5);
 			} else if (attacker == owner) {
 				// 拴住敌人 && 拴主攻击它 → 伤害 +25%
-				return amount * 1.25F;
+				return amount * (float) BAL_MOON_TETHER.d("owner_vs_enemy_mul", 1.25);
 			}
 		}
 
@@ -338,7 +363,7 @@ public abstract class SscAddonLivingEntityMixin {
 		if (self instanceof ServerPlayerEntity vp && attacker instanceof LivingEntity la
 				&& SpiderMoonWeaverSwingManager.isTethering(vp, la)
 				&& !WhitelistUtils.isProtected(vp, la)) {
-			return amount * 0.75F;
+			return amount * (float) BAL_MOON_TETHER.d("enemy_vs_owner_mul", 0.75);
 		}
 
 		return amount;
@@ -361,7 +386,7 @@ public abstract class SscAddonLivingEntityMixin {
 		// 2. 冰霜冻结效果（物理/魔法伤害）+35%
 		StatusEffectInstance frostFreezeEffect = self.getStatusEffect(SscAddon.FROST_FREEZE);
 		if (frostFreezeEffect != null && FrostFreezeEffect.isPhysicalOrMagicDamage(source)) {
-			modifiedAmount = modifiedAmount * 1.35f;
+			modifiedAmount = modifiedAmount * (float) BAL_FROST_FREEZE.d("taken_mul", 1.35);
 		}
 		return modifiedAmount;
 	}
@@ -401,7 +426,8 @@ public abstract class SscAddonLivingEntityMixin {
 						// 复活仍正常受到本次攻击的击退
 						Entity kbSource = source.getSource();
 						if (kbSource != null) {
-							nova.takeKnockback(0.4, kbSource.getX() - nova.getX(), kbSource.getZ() - nova.getZ());
+							double kbStrength = BAL_NINE_LIVES_EXTRA.d("revive_knockback", 0.4);
+							nova.takeKnockback(kbStrength, kbSource.getX() - nova.getX(), kbSource.getZ() - nova.getZ());
 							nova.velocityModified = true;
 						}
 						cir.setReturnValue(false);
@@ -493,7 +519,8 @@ public abstract class SscAddonLivingEntityMixin {
 		if (self.getWorld().isClient()) return;
 		// 找 24 格内最近的阿努比斯玩家（含持有冥狼的主人判定），最多 1 个候选才注册（防多人误归因）
 		ServerPlayerEntity best = null;
-		double bestDist = 24.0 * 24.0;
+		double attribRadius = BAL_ANUBIS_WITHER_EXTRA.d("attrib_radius", 24.0);
+		double bestDist = attribRadius * attribRadius;
 		for (net.minecraft.entity.player.PlayerEntity p : self.getWorld().getPlayers()) {
 			if (!(p instanceof ServerPlayerEntity sp)) continue;
 			if (!FormUtils.isForm(sp, FormIdentifiers.ANUBIS_WOLF_SP)) continue;
@@ -582,7 +609,7 @@ public abstract class SscAddonLivingEntityMixin {
 		if (source.isOf(DamageTypes.OUT_OF_WORLD) || source.isOf(DamageTypes.GENERIC_KILL)) return;
 
 		float amount = args.get(1);
-		float maxDamage = self.getMaxHealth() * 0.25F;
+		float maxDamage = self.getMaxHealth() * (float) BAL_ALLAY_SP_EXTRA.d("damage_cap_ratio", 0.25);
 		if (amount > maxDamage) {
 			args.set(1, maxDamage);
 		}
@@ -698,7 +725,7 @@ public abstract class SscAddonLivingEntityMixin {
 		// 一次性消耗：本轮恐惧首次受梦魔/白名单成员伤害才 ×2
 		if (net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager
 				.tryConsumeDoubleDamage(self.getUuid(), self.getWorld().getTime())) {
-			args.set(1, (float) args.get(1) * 2.0f);
+			args.set(1, (float) args.get(1) * (float) BAL_NIGHTMARE_FEAR_EXTRA.d("first_hit_mul", 2.0));
 		}
 		// 攻击显形（规格③）：梦魔在恐惧目标眼里现形 1.5s 并重置可见性脉冲相位（每次攻击都触发）
 		if (self instanceof ServerPlayerEntity fearedPlayer) {
@@ -721,13 +748,13 @@ public abstract class SscAddonLivingEntityMixin {
 
 			if (originalAmp == 0) {
 				// Level 1
-				newDuration = (int) (effect.getDuration() * 0.4);
+				newDuration = (int) (effect.getDuration() * BAL_EFFECT_REDUCTION.d("dur_l1", 0.4));
 			} else if (originalAmp == 1) {
 				// Level 2
-				newDuration = (int) (effect.getDuration() * 0.6);
+				newDuration = (int) (effect.getDuration() * BAL_EFFECT_REDUCTION.d("dur_l2", 0.6));
 			} else if (originalAmp == 2) {
 				// Level 3
-				newDuration = (int) (effect.getDuration() * 0.8);
+				newDuration = (int) (effect.getDuration() * BAL_EFFECT_REDUCTION.d("dur_l3", 0.8));
 			} else {
 				// Level 4+
 				newDuration = effect.getDuration();
@@ -774,8 +801,8 @@ public abstract class SscAddonLivingEntityMixin {
 		}
 		int resist = PowerUtils.getResourceValue(sp, FormIdentifiers.MANCIANIMA_RESISTANCE);
 		if (resist > 0) {
-			PowerUtils.setResourceValueAndSync(sp, FormIdentifiers.MANCIANIMA_RESISTANCE, resist - 1);
-			PowerUtils.setResourceValueAndSync(sp, FormIdentifiers.MANCIANIMA_IFRAMES, 4);
+			PowerUtils.setResourceValueAndSync(sp, FormIdentifiers.MANCIANIMA_RESISTANCE, resist - BAL_MANCIANIMA_EXTRA.i("resist_cost", 1));
+			PowerUtils.setResourceValueAndSync(sp, FormIdentifiers.MANCIANIMA_IFRAMES, BAL_MANCIANIMA_EXTRA.i("iframes_ticks", 4));
 			// 抵抗触发音效：铁砧落地（全场可听见，提示周围玩家）
 			sp.getServerWorld().playSound(null, sp.getX(), sp.getY(), sp.getZ(),
 					net.minecraft.sound.SoundEvents.BLOCK_ANVIL_LAND,
@@ -797,7 +824,7 @@ public abstract class SscAddonLivingEntityMixin {
 		// 攻击方为契灵：不再重置抗伤回复计时（15s 未受击即回复，主动攻击不打断）
 		if (attacker instanceof ServerPlayerEntity ap
 				&& MancianimaMarkManager.isRedMarkedBy(ap.getUuid(), self.getUuid())) {
-			args.set(1, amount * 1.25f);
+			args.set(1, amount * (float) BAL_MANCIANIMA_EXTRA.d("redmark_attacker_mul", 1.25));
 			return;
 		}
 		if (self instanceof ServerPlayerEntity sp && attacker != null) {
@@ -805,7 +832,7 @@ public abstract class SscAddonLivingEntityMixin {
 			if (markerOf != null && markerOf.equals(sp.getUuid())) {
 				MancianimaMarkManager.Mark m = MancianimaMarkManager.getMark(sp.getUuid());
 				if (m != null && m.color == MancianimaMarkManager.MarkColor.RED) {
-					args.set(1, amount * 0.75f);
+					args.set(1, amount * (float) BAL_MANCIANIMA_EXTRA.d("redmark_victim_mul", 0.75));
 				}
 			}
 		}
@@ -874,11 +901,11 @@ public abstract class SscAddonLivingEntityMixin {
 				&& !source.isOf(net.minecraft.entity.damage.DamageTypes.GENERIC_KILL))) {
 			int stage = BatDesmodusBloodThirst.getStage(attacker);
 			float lifestealRate = 0f;
-			if (stage == 2) lifestealRate = 0.30f;    // 原为 0.20f，强化 +50%
-			else if (stage == 3) lifestealRate = 0.525f;   // 原为 0.35f，强化 +50%
+			if (stage == 2) lifestealRate = (float) BAL_BAT_BLOOD_THIRST.d("lifesteal_stage2", 0.30);    // 原为 0.20f，强化 +50%
+			else if (stage == 3) lifestealRate = (float) BAL_BAT_BLOOD_THIRST.d("lifesteal_stage3", 0.525);   // 原为 0.35f，强化 +50%
 			// 嗜血指环：高血渴阶段（已有吸血）额外 +15% 吸血率
 			if (lifestealRate > 0f && BatDesmodusBloodThirst.hasBloodlustRing(attacker)) {
-				lifestealRate += 0.15f;
+				lifestealRate += (float) BAL_BAT_BLOOD_THIRST.d("ring_bonus", 0.15);
 			}
 			if (lifestealRate > 0f && amount > 0f) {
 				attacker.heal(amount * lifestealRate);
@@ -906,7 +933,7 @@ public abstract class SscAddonLivingEntityMixin {
 				&& !source.isOf(DamageTypes.GENERIC_KILL)
 				&& !source.isOf(DamageTypes.INDIRECT_MAGIC)) {
 			if (BatDesmodusBloodThirst.getStage(sp) == 0) {
-				amount *= 0.85f;
+				amount *= (float) BAL_BAT_BLOOD_THIRST.d("stage0_taken_mul", 0.85);
 				args.set(1, amount);
 			}
 		}
@@ -917,7 +944,7 @@ public abstract class SscAddonLivingEntityMixin {
 				&& !BatDesmodusBloodThirst.SUPPRESS_OUTGOING_BUFF.get()
 				&& FormUtils.isForm(ap, FormIdentifiers.BAT_DESMODUS)) {
 			if (BatDesmodusBloodThirst.getStage(ap) == 3) {
-				args.set(1, amount * 1.15f);
+				args.set(1, amount * (float) BAL_BAT_BLOOD_THIRST.d("stage3_out_mul", 1.15));
 			}
 		}
 	}
@@ -947,10 +974,10 @@ public abstract class SscAddonLivingEntityMixin {
 		// 两节点各提供 25% 减伤，相加（而非相乘），两者齐备时合计 50%
 		float reduction = 0f;
 		if (comp.isUnlocked(FamiliarFoxTree.NODE_BUFF_IMMUNITY)) {
-			reduction += 0.25f;
+			reduction += (float) BAL_UPGRADE_FOX_NODES.d("potion_node_reduction", 0.25);
 		}
 		if (comp.isUnlocked(FamiliarFoxTree.NODE_ALCHEMY)) {
-			reduction += 0.25f;
+			reduction += (float) BAL_UPGRADE_FOX_NODES.d("potion_node_reduction", 0.25);
 		}
 		if (reduction > 0f) {
 			float amount = args.get(1);

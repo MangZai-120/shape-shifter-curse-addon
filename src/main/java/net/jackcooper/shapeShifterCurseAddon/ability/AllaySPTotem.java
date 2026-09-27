@@ -29,9 +29,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AllaySPTotem {
 
 	private static final String ACTIVE_TAG = "ssc_totem_active";
+	// 图腾救援范围：默认 20 格；运行时从 balance 快照读取（abilities.allay_sp_totem）
 	private static final double RANGE = 20.0;
 	// 使用UUID追踪持有激活图腾的玩家，避免存储实体引用导致跨维度/重连后引用过期
 	private static final Set<UUID> playersWithActiveTotems = ConcurrentHashMap.newKeySet();
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
+			new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.allay_sp_totem");
 
 	private AllaySPTotem() {
 		// Utility class
@@ -203,8 +208,8 @@ public class AllaySPTotem {
 	public static boolean tryUseAllayTotem(LivingEntity entity) {
 		if (entity.getWorld().isClient) return false;
 
-		// Get nearby players within range
-		Box box = entity.getBoundingBox().expand(RANGE);
+		// Get nearby players within range（balance 快照可覆盖救援范围）
+		Box box = entity.getBoundingBox().expand(BAL.d("range", RANGE));
 		List<PlayerEntity> nearbyPlayers = entity.getWorld().getEntitiesByClass(PlayerEntity.class, box, p -> p instanceof ServerPlayerEntity);
 
 		for (PlayerEntity player : nearbyPlayers) {

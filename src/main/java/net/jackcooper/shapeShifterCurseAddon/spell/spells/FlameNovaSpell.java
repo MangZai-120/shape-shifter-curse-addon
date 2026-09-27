@@ -24,10 +24,16 @@ import java.util.List;
  */
 public class FlameNovaSpell extends Spell {
 
-	/** 基础半径（格），实际半径 = 基础 × speed_multiplier(level)。 */
+	/** 基础半径（格）默认；实际半径 = 基础 × speed_multiplier(level)。运行时从 balance 快照读取。 */
 	private static final double BASE_RADIUS = 4.0;
-	/** 点燃时长（tick）。 */
+	/** 点燃时长（tick）默认。 */
 	private static final int FIRE_TICKS = 40;
+
+	// 阶段 4：服务端权威快照读取（spells.flame_nova；快照未初始化回退默认常量）
+	private static double baseRadius() { var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot(); return s != null ? s.getDouble("spells.flame_nova", "base_radius") : BASE_RADIUS; }
+	private static int fireTicks() { var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot(); return s != null ? (int) s.getInt("spells.flame_nova", "fire_ticks") : FIRE_TICKS; }
+	private static double knockback() { var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot(); return s != null ? s.getDouble("spells.flame_nova", "knockback") : 0.8; }
+	private static double rarityRadiusMultiplier() { var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot(); return s != null ? s.getDouble("spells.flame_nova", "rarity_radius_multiplier") : 1.25; }
 
 	public FlameNovaSpell() {
 		super(new Identifier("ssc_addon", "flame_nova"), SpellRarity.GREEN);
@@ -43,11 +49,11 @@ public class FlameNovaSpell extends Spell {
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
-		double radius = BASE_RADIUS * getSpeedMultiplier(level);
-		// 稀有度为蓝/橙时，生效范围额外 +25%（独立于等级缩放，数据包改 rarity 自动跟随）
+		double radius = baseRadius() * getSpeedMultiplier(level);
+		// 稀有度为蓝/橙时，生效范围额外 +25%（独立于等级缩放，balance 可调倍率）
 		SpellRarity rarity = getRarity(level);
 		if (rarity == SpellRarity.BLUE || rarity == SpellRarity.ORANGE) {
-			radius *= 1.25;
+			radius *= rarityRadiusMultiplier();
 		}
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
 				caster.getBoundingBox().expand(radius), e -> e != caster && e.isAlive());
@@ -67,10 +73,10 @@ public class FlameNovaSpell extends Spell {
 			lastHitTarget = target;
 			hitBurningTarget |= target.getFireTicks() > 0;
 			if (!target.isAlive()) killedTarget = target;
-			target.setFireTicks(FIRE_TICKS);
-			// 击退：远离施法者
+			target.setFireTicks(fireTicks());
+			// 击退：远离施法者（强度 balance 可调）
 			Vec3d knock = new Vec3d(target.getX() - caster.getX(), 0.1, target.getZ() - caster.getZ())
-					.normalize().multiply(0.8);
+					.normalize().multiply(knockback());
 			target.addVelocity(knock.x, knock.y, knock.z);
 			target.velocityModified = true;
 		}

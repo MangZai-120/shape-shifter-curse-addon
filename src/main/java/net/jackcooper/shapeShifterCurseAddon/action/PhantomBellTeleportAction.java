@@ -18,6 +18,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+
 public class PhantomBellTeleportAction {
 
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(PhantomBellTeleportAction.class);
@@ -25,6 +27,9 @@ public class PhantomBellTeleportAction {
 	private static final double DETECTION_RADIUS = 20.0;
 	// 传送最大距离（半径）
 	private static final int TP_RADIUS = 5;
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.phantom_bell");
 
 	private PhantomBellTeleportAction() {
 		// This utility class should not be instantiated
@@ -46,11 +51,13 @@ public class PhantomBellTeleportAction {
 
 					World world = player.getWorld();
 					BlockPos startBlockPos = player.getBlockPos();
+					double detectionRadius = BAL.d("detection_radius", DETECTION_RADIUS);
+					int tpRadius = BAL.i("tp_radius", TP_RADIUS);
 
 					// 1. 获取20格内的敌对生物和其它玩家
 					List<LivingEntity> threats = world.getEntitiesByClass(
 							LivingEntity.class,
-							player.getBoundingBox().expand(DETECTION_RADIUS),
+							player.getBoundingBox().expand(detectionRadius),
 							e -> {
 								if (e == player) return false; // 排除自己
 								// 敌对生物
@@ -65,11 +72,11 @@ public class PhantomBellTeleportAction {
 					// 2. 寻找候选点（5格球形半径内）
 					List<BlockPos> candidates = new ArrayList<>();
 
-					for (int x = -TP_RADIUS; x <= TP_RADIUS; x++) {
-						for (int y = -TP_RADIUS; y <= TP_RADIUS; y++) {
-							for (int z = -TP_RADIUS; z <= TP_RADIUS; z++) {
+					for (int x = -tpRadius; x <= tpRadius; x++) {
+						for (int y = -tpRadius; y <= tpRadius; y++) {
+							for (int z = -tpRadius; z <= tpRadius; z++) {
 								// 限制为球形范围
-								if (x * x + y * y + z * z > TP_RADIUS * TP_RADIUS) continue;
+								if (x * x + y * y + z * z > tpRadius * tpRadius) continue;
 
 								BlockPos pos = startBlockPos.add(x, y, z);
 
@@ -113,7 +120,7 @@ public class PhantomBellTeleportAction {
 		// ===== 最高优先级：离威胁（怪物和玩家）越远越好 =====
 		double minDistanceToThreat = Double.MAX_VALUE;
 		if (threats.isEmpty()) {
-			minDistanceToThreat = DETECTION_RADIUS;
+			minDistanceToThreat = BAL.d("detection_radius", DETECTION_RADIUS);
 		} else {
 			for (LivingEntity threat : threats) {
 				double dist = Math.sqrt(threat.squaredDistanceTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5));

@@ -1,5 +1,8 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
+
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.DomainManager;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
@@ -37,8 +40,9 @@ import java.util.UUID;
  */
 public class LunarPhaseSpell extends Spell {
 
-	/** 实体瞄准最大距离（格）。 */
+	/** 实体瞄准最大距离（格）默认；运行时从 balance 快照读取。 */
 	public static final double AIM_RANGE = 24.0;
+	/** 瞄准盒外扩容差（格）默认；运行时从 balance 快照读取。 */
 	public static final double AIM_TOLERANCE = 0.5;
 	/** 描边颜色（紫色 RGB）。 */
 	public static final int HIGHLIGHT_COLOR = 0xB26BD9;
@@ -47,6 +51,29 @@ public class LunarPhaseSpell extends Spell {
 
 	/** 蓄力中的目标表（施法者 UUID → 目标实体 UUID）：服务端权威，蓄力演出与结算共用。 */
 	private static final java.util.Map<UUID, UUID> CHANNEL_TARGETS = new java.util.HashMap<>();
+
+	// 阶段 5：运行时快照读取（spells.lunar_phase；快照未初始化回退默认常量）。
+	// 瞄准参数被客户端按住预览（raycastEntity 描边）与服务端判定共用 → 双端一致：
+	// 客户端读客户端镜像快照，服务端读权威快照（同 TidalOrbEntity.tetherSoftRadius 模式）。
+	private static final BalanceReader BAL = new BalanceReader("spells.lunar_phase");
+
+	/** 瞄准距离（双端一致几何）：客户端读客户端镜像，服务端读权威快照。 */
+	private static double aimRange() {
+		if (BalanceIntegration.isClientThread()) {
+			var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
+			if (s != null) return s.getDouble("spells.lunar_phase", "aim_range");
+		}
+		return BAL.d("aim_range", AIM_RANGE);
+	}
+
+	/** 瞄准容差（双端一致几何，同 aimRange）。 */
+	private static double aimTolerance() {
+		if (BalanceIntegration.isClientThread()) {
+			var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
+			if (s != null) return s.getDouble("spells.lunar_phase", "aim_tolerance");
+		}
+		return BAL.d("aim_tolerance", AIM_TOLERANCE);
+	}
 
 	public LunarPhaseSpell() {
 		super(new Identifier("ssc_addon", "lunar_phase"), SpellRarity.WHITE); // NORMAL 五级品质走 JSON levels[].rarity（白→橙），基底回退白色
@@ -90,14 +117,15 @@ public class LunarPhaseSpell extends Spell {
 	public static LivingEntity raycastEntity(PlayerEntity caster) {
 		Vec3d eye = caster.getEyePos();
 		Vec3d look = caster.getRotationVec(1.0F);
-		Vec3d end = eye.add(look.multiply(AIM_RANGE));
+		double aimRange = aimRange(); // 同方法多处使用，读一次局部化（双端一致几何）
+		Vec3d end = eye.add(look.multiply(aimRange));
 		HitResult blockHit = caster.getWorld().raycast(new RaycastContext(eye, end,
 				RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, caster));
 		double maxDist = blockHit.getType() == HitResult.Type.MISS
-				? AIM_RANGE : eye.distanceTo(blockHit.getPos());
+				? aimRange : eye.distanceTo(blockHit.getPos());
 		LivingEntity best = null;
 		double bestDist = maxDist; // 墙后目标不算：实体交点必须不晚于方块交点
-		Box searchBox = caster.getBoundingBox().stretch(look.multiply(AIM_RANGE)).expand(1.0);
+		Box searchBox = caster.getBoundingBox().stretch(look.multiply(aimRange)).expand(1.0);
 		for (Entity entity : caster.getWorld().getOtherEntities(caster, searchBox)) {
 			if (!(entity instanceof LivingEntity living) || !living.isAlive() || living.isSpectator()) continue;
 			if (DomainManager.blocksTargeting(caster, living)) continue;
@@ -107,10 +135,10 @@ public class LunarPhaseSpell extends Spell {
 					net.minecraft.util.math.MathHelper.clamp(eye.x, bounds.minX, bounds.maxX),
 					net.minecraft.util.math.MathHelper.clamp(eye.y, bounds.minY, bounds.maxY),
 					net.minecraft.util.math.MathHelper.clamp(eye.z, bounds.minZ, bounds.maxZ));
-			if (eye.distanceTo(visiblePoint) > AIM_RANGE || caster.getWorld().raycast(new RaycastContext(
+			if (eye.distanceTo(visiblePoint) > aimRange || caster.getWorld().raycast(new RaycastContext(
 					eye, visiblePoint, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, caster))
 					.getType() != HitResult.Type.MISS) continue;
-			Box aimBox = bounds.expand(AIM_TOLERANCE);
+			Box aimBox = bounds.expand(aimTolerance());
 			var hit = aimBox.raycast(eye, end);
 			if (hit.isPresent()) {
 				double dist = eye.distanceTo(hit.get());
@@ -144,7 +172,7 @@ public class LunarPhaseSpell extends Spell {
 		Entity target = caster.getServerWorld().getEntity(targetId);
 		return target instanceof LivingEntity living && living.isAlive()
 				&& !living.isSpectator() && !DomainManager.blocksTargeting(caster, living)
-				&& caster.getPos().distanceTo(target.getPos()) <= AIM_RANGE + 8; // 容许目标小幅移动
+				&& caster.getPos().distanceTo(target.getPos()) <= aimRange() + 8; // 容许目标小幅移动
 	}
 
 	/** 蓄力期间演出（每 2t）：双方围浅紫+鬼魂粒子小圈 + 两人之间紫色粒子连线。 */

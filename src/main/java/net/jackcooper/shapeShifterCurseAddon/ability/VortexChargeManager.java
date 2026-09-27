@@ -15,6 +15,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -47,6 +48,7 @@ public final class VortexChargeManager {
 	private static final TagKey<EntityType<?>> VORTEX_IMMUNE =
 			TagKey.of(RegistryKeys.ENTITY_TYPE, new Identifier("my_addon", "vortex_immune"));
 
+	// 以下均为默认值；运行时从 balance 快照读取（abilities.vortex_charge）
 	private static final int AIR_PER_HIT = 8;
 	private static final int MAX_AIR_SPENT = 60;
 	private static final int MAX_TICKS = 80;     // 4 秒
@@ -59,6 +61,12 @@ public final class VortexChargeManager {
 	private static final double PULL_RADIUS = 6.0;
 	/** 基础吸附力度（朝向玩家的水平速度分量；稳态速度≈ 2×本值×分档系数，如太强/太弱调此值） */
 	private static final double PULL_FORCE = 0.6;
+
+	/** balance 快照读取（快照未初始化回退默认常量） */
+	private static final BalanceReader BAL = new BalanceReader("abilities.vortex_charge");
+
+	/** HUD 门槛同源：每次命中湿润度消耗（balance 可调；HUD 展示用）。 */
+	public static int airPerHitForHud() { return BAL.i("air_per_hit", AIR_PER_HIT); }
 
 	// ===== 动态粒子（青蓝/白：蓄力吸附 + 释放抛物线，全部服务端生成并广播给所有客户端） =====
 	/** 青蓝色尘埃（漂浮，吸附与扩散着色用） */
@@ -105,7 +113,7 @@ public final class VortexChargeManager {
 		if (CHARGING.containsKey(player.getUuid())) return;
 		if (!FormUtils.isAxolotlSP(player)) return;
 		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return; // CD 中
-		if (player.getAir() < AIR_PER_HIT) return; // 至少够扣一次
+		if (player.getAir() < BAL.i("air_per_hit", AIR_PER_HIT)) return; // 至少够扣一次
 		CHARGING.put(player.getUuid(), new ChargeState());
 		PowerUtils.setResourceValueAndSync(player, VORTEX_STATE, 1); // 标记蓄力中（客户端读 >0）
 		ServerWorld sw = (ServerWorld) player.getWorld();
@@ -128,6 +136,8 @@ public final class VortexChargeManager {
 			return;
 		}
 		s.ticks++;
+		int hitInterval = BAL.i("hit_interval", HIT_INTERVAL);
+		int maxTicks = BAL.i("max_ticks", MAX_TICKS);
 		// 持续吸附漩涡（每 2 tick 一圈，相位随时间旋转 → 动态收束）
 		if (s.ticks % 2 == 0) {
 			spawnAbsorbRing((ServerWorld) player.getWorld(), player,
@@ -135,9 +145,11 @@ public final class VortexChargeManager {
 			// 蓄力期实体吸附：把范围内怪物朝玩家牵引，力度随击退抗性衰减（每级 -20%，免疫的吸不动）
 			pullEntitiesDuringCharge((ServerWorld) player.getWorld(), player);
 		}
-		if (s.ticks % HIT_INTERVAL == 0) {
-			if (s.airSpent < MAX_AIR_SPENT && player.getAir() >= AIR_PER_HIT) {
-				int spend = Math.min(AIR_PER_HIT, MAX_AIR_SPENT - s.airSpent);
+		if (s.ticks % hitInterval == 0) {
+			int airPerHit = BAL.i("air_per_hit", AIR_PER_HIT);
+			int maxAirSpent = BAL.i("max_air_spent", MAX_AIR_SPENT);
+			if (s.airSpent < maxAirSpent && player.getAir() >= airPerHit) {
+				int spend = Math.min(airPerHit, maxAirSpent - s.airSpent);
 				player.setAir(player.getAir() - spend);
 				s.airSpent += spend;
 				s.hits++;
@@ -153,7 +165,7 @@ public final class VortexChargeManager {
 		}
 		// 注：不再每 tick 同步 vortex_state —— 客户端与 JSON 条件只读「>0」判断蓄力中，
 		// start(1)/release(0)/cancel(0) 三个事件级同步已足够，每 tick 重发是纯带宽浪费。
-		if (s.ticks >= MAX_TICKS) {
+		if (s.ticks >= maxTicks) {
 			release(player); // 满 4 秒自动释放
 		}
 	}
@@ -163,22 +175,23 @@ public final class VortexChargeManager {
 		ChargeState s = CHARGING.remove(player.getUuid());
 		PowerUtils.setResourceValueAndSync(player, VORTEX_STATE, 0);
 		if (s == null) return;
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, CD_TICKS); // CD 释放后起算
-		int damage = s.hits * DAMAGE_PER_HIT;
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, BAL.i("cd_ticks", CD_TICKS)); // CD 释放后起算
+		double radius = BAL.d("radius", RADIUS);
+		int damage = s.hits * BAL.i("damage_per_hit", DAMAGE_PER_HIT);
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 1.0f, 1.2f);
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_AXOLOTL_SPLASH, SoundCategory.PLAYERS, 1.5f, 0.5f);
 		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.SPLASH, player.getX(), player.getY() + 1, player.getZ(),
-				150, RADIUS, 1.0, RADIUS, 1.0);
+				150, radius, 1.0, radius, 1.0);
 		// owner 打标：仅本人第一人称避让，他人视角原样
 		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.EXPLOSION, player.getX(), player.getY() + 1, player.getZ(),
-				8, RADIUS * 0.5, 0.5, RADIUS * 0.5, 0.1);
+				8, radius * 0.5, 0.5, radius * 0.5, 0.1);
 		// 仿 RC-4 药水破碎的水花爆开（与水矛落地同款）
 		net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils.spawnWaterBurst(sw, player, player.getX(), player.getY() + 1, player.getZ(), 1.3);
 		if (damage <= 0) return; // 一次都没蓄到，仅取消
-		Box box = player.getBoundingBox().expand(RADIUS);
+		Box box = player.getBoundingBox().expand(radius);
 		for (Entity e : sw.getOtherEntities(player, box)) {
 			if (!(e instanceof LivingEntity living)) continue;
 			// 默认白名单：豁免玩家/宠物/白名单个体，不受涡流冲击伤害与控制
@@ -252,7 +265,9 @@ public final class VortexChargeManager {
 	 * 每 2 tick 施加一次朝向玩家的水平速度，贴脸阈值内不再拉近（防震荡）。
 	 */
 	private static void pullEntitiesDuringCharge(ServerWorld sw, ServerPlayerEntity player) {
-		Box box = player.getBoundingBox().expand(PULL_RADIUS);
+		double pullRadius = BAL.d("pull_radius", PULL_RADIUS);
+		double pullForce = BAL.d("pull_force", PULL_FORCE);
+		Box box = player.getBoundingBox().expand(pullRadius);
 		Vec3d playerPos = player.getPos();
 		for (Entity e : sw.getOtherEntities(player, box)) {
 			if (!(e instanceof LivingEntity living)) continue;
@@ -267,7 +282,7 @@ public final class VortexChargeManager {
 			// 不设贴脸阈值：允许怪物被吸到玩家身上后反复震荡（特色效果，用户定稿保留）
 			// 朝向玩家的水平方向（忽略 Y，避免把怪吸到天上 / 地下）；normalize 对零向量返回 ZERO，无 NaN 风险
 			Vec3d dir = new Vec3d(toPlayer.x, 0, toPlayer.z).normalize();
-			double force = PULL_FORCE * scale;
+			double force = pullForce * scale;
 			// 叠加朝向玩家的水平速度（不覆盖原有 Y，保留重力 / 跳跃）
 			living.setVelocity(living.getVelocity().x * 0.5 + dir.x * force,
 					living.getVelocity().y,

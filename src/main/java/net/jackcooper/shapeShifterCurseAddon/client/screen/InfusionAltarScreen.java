@@ -153,7 +153,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 		String progressText = "— / —";
 		if (hasBook()) {
 			if (mastery) {
-				total = SpellbookData.MASTERY_EXP_PER_TIER;
+				total = SpellbookData.masteryExpPerTier();
 				progress = SpellbookData.getMasteryExpToNextTier(book) == 0 ? total : SpellbookData.getExpTen(book) % total;
 			} else {
 				total = SpellbookData.getExpToNext(book);
@@ -183,7 +183,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 			text(ctx, label("next_mana", SpellbookData.getMaxMana(this.nextBook)), 194, 218, 110, MUTED);
 		} else if (hasBook()) {
 			text(ctx, label("mastery_tier", SpellbookData.getMasteryTier(book),
-					SpellbookData.MASTERY_MAX_BONUS / SpellbookData.MASTERY_MANA_PER_TIER), 194, 206, 110, ACCENT);
+					SpellbookData.masteryMaxBonus() / SpellbookData.masteryManaPerTier()), 194, 206, 110, ACCENT);
 			text(ctx, label("mastery_bonus", SpellbookData.getMasteryManaBonus(book)), 194, 218, 110, MUTED);
 		} else {
 			text(ctx, label("gain_exp"), 194, 206, 110, MUTED);
@@ -272,7 +272,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 			return lines;
 		}
 		if (SpellbookData.getLevel(book()) == SpellbookData.MAX_LEVEL) {
-			lines.add(label("mastery_help", decimal(SpellbookData.MASTERY_EXP_PER_TIER), SpellbookData.MASTERY_MANA_PER_TIER));
+			lines.add(label("mastery_help", decimal(SpellbookData.masteryExpPerTier()), SpellbookData.masteryManaPerTier()));
 			return lines;
 		}
 		lines.add(label("upgrade_to", SpellbookData.getLevel(book()) + 1));
@@ -306,8 +306,8 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 			lines = List.of(RegCustomItem.SUPER_MORPHSCALE_CORE.getName(), label("core_help"));
 		} else if (inside(mouseX, mouseY, 198, 66, 100, 21)) {
 			lines = hasBook() && SpellbookData.getLevel(book()) == SpellbookData.MAX_LEVEL
-					? List.of(label("mastery_tier", SpellbookData.getMasteryTier(book()), SpellbookData.MASTERY_MAX_BONUS / SpellbookData.MASTERY_MANA_PER_TIER),
-					label("mastery_help", decimal(SpellbookData.MASTERY_EXP_PER_TIER), SpellbookData.MASTERY_MANA_PER_TIER))
+					? List.of(label("mastery_tier", SpellbookData.getMasteryTier(book()), SpellbookData.masteryMaxBonus() / SpellbookData.masteryManaPerTier()),
+					label("mastery_help", decimal(SpellbookData.masteryExpPerTier()), SpellbookData.masteryManaPerTier()))
 					: List.of(label("experience_help"));
 		} else if (this.focusedSlot != null && !this.focusedSlot.hasStack()) {
 			int index = this.focusedSlot.id;

@@ -18,6 +18,7 @@ import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -45,6 +46,7 @@ public class AnubisWolfSpDeathDomain {
 	private static final int DOMAIN_RADIUS = 24;
 
 	// ==================== 常量 ====================
+	// 以下常量均为默认值；运行时从 balance 快照读取（scope：abilities.anubis_death_domain）
 	/**
 	 * 领域上下高度差（格）
 	 */
@@ -110,6 +112,9 @@ public class AnubisWolfSpDeathDomain {
 	// ==================== 状态追踪 ====================
 	private static final ConcurrentHashMap<UUID, DomainData> ACTIVE_DOMAINS = new ConcurrentHashMap<>();
 	private static final ConcurrentHashMap<UUID, Long> COOLDOWN_PLAYERS = new ConcurrentHashMap<>();
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.anubis_death_domain");
 
 	private AnubisWolfSpDeathDomain() {
 	}
@@ -211,13 +216,31 @@ public class AnubisWolfSpDeathDomain {
 		COOLDOWN_PLAYERS.remove(uuid);
 	}
 
+	/** 清空 CD 表并同步在线玩家的 SP_PRIMARY_CD 资源条为 0（2026-09-27 审计修复）：
+	 * 仅清 COOLDOWN_PLAYERS 不清 Apoli 资源，reload/停服后玩家会看到残留 CD 条却可立即重放
+	 * （表现不一致）。此处与写入处（tickCharging 设 CD）用同款资源 ID 与工具方法；
+	 * 离线玩家无法同步，资源条由 Apoli 自身过期机制自然归零，无需处理。 */
+	private static void clearCooldowns(net.minecraft.server.MinecraftServer server) {
+		// 有服务器引用才逐个同步（server==null 时无在线玩家可查，只清表）
+		if (server != null) {
+			for (UUID uuid : COOLDOWN_PLAYERS.keySet()) {
+				ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
+				if (player != null) {
+					PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, 0);
+				}
+			}
+		}
+		COOLDOWN_PLAYERS.clear();
+	}
+
 	/**
 	 * 清除所有领域数据和冷却状态
 	 * 用于服务器关闭时清理所有玩家状态
 	 */
 	public static void clearAll() {
+		// 先清 CD（clearCooldowns 内部已同步在线玩家资源条并清表；须在 ACTIVE_DOMAINS 清空前取 server）
+		clearCooldowns(findServer());
 		ACTIVE_DOMAINS.clear();
-		COOLDOWN_PLAYERS.clear();
 	}
 
 	/**
@@ -268,7 +291,7 @@ public class AnubisWolfSpDeathDomain {
 		if (data.phase != Phase.EXPANDING && data.phase != Phase.SUSTAINING) return false;
 		double dx = pos.getX() - data.center.getX();
 		double dz = pos.getZ() - data.center.getZ();
-		double radius = data.enhanced ? ENHANCED_DOMAIN_RADIUS : DOMAIN_RADIUS;
+		double radius = data.enhanced ? BAL.i("enhanced_domain_radius", ENHANCED_DOMAIN_RADIUS) : BAL.i("domain_radius", DOMAIN_RADIUS);
 		return dx * dx + dz * dz <= radius * radius;
 	}
 
@@ -284,7 +307,10 @@ public class AnubisWolfSpDeathDomain {
 	 * 服务器关闭或玩家变更形态时，强制还原所有领域
 	 * 每个领域使用自身存储的世界引用，确保还原到正确的维度
 	 */
-	public static void forceRestoreAll() {
+	public static void forceRestoreAll() { forceRestoreAll(false); }
+
+    /** A data reload restores world edits but must not grant a free cooldown reset. */
+    public static void forceRestoreAll(boolean preserveCooldowns) {
 		LOGGER.info("[DeathDomain] forceRestoreAll called, ACTIVE_DOMAINS size={}", ACTIVE_DOMAINS.size());
 		for (Map.Entry<UUID, DomainData> entry : ACTIVE_DOMAINS.entrySet()) {
 			DomainData data = entry.getValue();
@@ -306,10 +332,20 @@ public class AnubisWolfSpDeathDomain {
 				}
 			}
 		}
+		// 先取服务器引用（ACTIVE_DOMAINS 清空后无从获取），再还原/清空
+		net.minecraft.server.MinecraftServer server = findServer();
 		ACTIVE_DOMAINS.clear();
-		// 修复：同步清理 CD 表，否则 reload 后旧 CD 仍生效
-		COOLDOWN_PLAYERS.clear();
+		// 修复：同步清理 CD 表，否则 reload 后旧 CD 仍生效；同步在线玩家 CD 资源条为 0
+		if (!preserveCooldowns) clearCooldowns(server);
 		LOGGER.info("[DeathDomain] forceRestoreAll completed");
+	}
+
+	/** 从任一活跃领域的世界取服务器引用（领域均无世界引用时返回 null，CD 只能清表）。 */
+	private static net.minecraft.server.MinecraftServer findServer() {
+		for (DomainData data : ACTIVE_DOMAINS.values()) {
+			if (data.world != null) return data.world.getServer();
+		}
+		return null;
 	}
 
 	/**
@@ -337,7 +373,7 @@ public class AnubisWolfSpDeathDomain {
 	 * 充能阶段：普通2秒/增强1秒，期间减速70%
 	 */
 	private static void tickCharging(ServerPlayerEntity player, ServerWorld world, DomainData data) {
-		int chargeTicks = data.enhanced ? ENHANCED_CHARGE_TICKS : CHARGE_TICKS;
+		int chargeTicks = data.enhanced ? BAL.i("enhanced_charge_ticks", ENHANCED_CHARGE_TICKS) : BAL.i("charge_ticks", CHARGE_TICKS);
 
 // 充能粒子效果：灵魂粒子围绕玩家旋转上升；网络优化：隔 tick 发送（count=0 单粒包，粒子寿命长靠存活衔接，包率 -50%）
                 if (data.ticksElapsed % 2 == 0) {
@@ -371,15 +407,17 @@ public class AnubisWolfSpDeathDomain {
 				// 释放失败：播放失败音效，进入惩罚性CD
 				player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.BLOCK_SOUL_SAND_BREAK, SoundCategory.PLAYERS, 1.0f, 1.5f);
-				COOLDOWN_PLAYERS.put(player.getUuid(), player.getWorld().getTime() + PENALTY_COOLDOWN_TICKS);
-				PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, PENALTY_COOLDOWN_TICKS);
+				int penaltyCd = BAL.i("penalty_cooldown_ticks", PENALTY_COOLDOWN_TICKS);
+				COOLDOWN_PLAYERS.put(player.getUuid(), player.getWorld().getTime() + penaltyCd);
+				PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, penaltyCd);
 				ACTIVE_DOMAINS.remove(player.getUuid());
 				return;
 			}
 
 			// 释放成功：设置正常CD，进入延展阶段
-			COOLDOWN_PLAYERS.put(player.getUuid(), player.getWorld().getTime() + COOLDOWN_TICKS);
-			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, COOLDOWN_TICKS);
+			int normalCd = BAL.i("cooldown_ticks", COOLDOWN_TICKS);
+			COOLDOWN_PLAYERS.put(player.getUuid(), player.getWorld().getTime() + normalCd);
+			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, normalCd);
 
 			// 更新领域中心为充能完成时的位置
 			data.center = player.getBlockPos();
@@ -396,7 +434,7 @@ public class AnubisWolfSpDeathDomain {
 
 			// 增强模式：自动召唤冥狼（饰品增加2只），并立即让召唤技能也进入CD
 			if (data.enhanced) {
-				int summonCount = ENHANCED_AUTO_SUMMON_COUNT;
+				int summonCount = BAL.i("enhanced_auto_summon_count", ENHANCED_AUTO_SUMMON_COUNT);
 				if (AnubisWolfSpSummonWolves.hasTrinketEquipped(player)) {
 					summonCount += 2;
 				}
@@ -418,7 +456,7 @@ public class AnubisWolfSpDeathDomain {
 	private static void tickExpanding(ServerPlayerEntity player, ServerWorld world, DomainData data) {
 		// 首次进入延展阶段时创建发光 team（把 SP阿努比斯加入）
 		ensureGlowTeam(world, player, data);
-		int maxRadius = data.enhanced ? ENHANCED_DOMAIN_RADIUS : DOMAIN_RADIUS;
+		int maxRadius = data.enhanced ? BAL.i("enhanced_domain_radius", ENHANCED_DOMAIN_RADIUS) : BAL.i("domain_radius", DOMAIN_RADIUS);
 		double prevRadius = data.currentRadius;
 		data.currentRadius += EXPAND_SPEED;
 
@@ -459,8 +497,8 @@ public class AnubisWolfSpDeathDomain {
 	 * 维持阶段：普通15秒/增强20秒
 	 */
 	private static void tickSustaining(ServerPlayerEntity player, ServerWorld world, DomainData data) {
-		int duration = data.enhanced ? ENHANCED_DOMAIN_DURATION : DOMAIN_DURATION;
-		int maxRadius = data.enhanced ? ENHANCED_DOMAIN_RADIUS : DOMAIN_RADIUS;
+		int duration = data.enhanced ? BAL.i("enhanced_domain_duration", ENHANCED_DOMAIN_DURATION) : BAL.i("domain_duration", DOMAIN_DURATION);
+		int maxRadius = data.enhanced ? BAL.i("enhanced_domain_radius", ENHANCED_DOMAIN_RADIUS) : BAL.i("domain_radius", DOMAIN_RADIUS);
 
 		// 持续检查范围内踩在灵魂沙上的生物，施加/移除debuff
 		if (data.ticksElapsed % 10 == 0) {
@@ -517,9 +555,10 @@ public class AnubisWolfSpDeathDomain {
 		}
 
 		// 修正其它生物位置，防止还原方块后陷入地面
+		int domainHeight = BAL.i("domain_height", DOMAIN_HEIGHT);
 		Box ringBox = new Box(
-				data.center.getX() - prevR - 1, data.centerY - DOMAIN_HEIGHT, data.center.getZ() - prevR - 1,
-				data.center.getX() + prevR + 2, data.centerY + DOMAIN_HEIGHT + 2, data.center.getZ() + prevR + 2
+				data.center.getX() - prevR - 1, data.centerY - domainHeight, data.center.getZ() - prevR - 1,
+				data.center.getX() + prevR + 2, data.centerY + domainHeight + 2, data.center.getZ() + prevR + 2
 		);
 		for (LivingEntity entity : world.getEntitiesByClass(LivingEntity.class, ringBox, e -> e != player && e.isAlive())) {
 			BlockPos entityFeetPos = entity.getBlockPos();
@@ -569,7 +608,8 @@ public class AnubisWolfSpDeathDomain {
 	 */
 	private static void convertBlocksInRing(ServerWorld world, DomainData data, int innerR, int outerR) {
 		BlockPos center = data.center;
-		int halfHeight = DOMAIN_HEIGHT;
+		int halfHeight = BAL.i("domain_height", DOMAIN_HEIGHT);
+		int domainRadius = data.enhanced ? BAL.i("enhanced_domain_radius", ENHANCED_DOMAIN_RADIUS) : BAL.i("domain_radius", DOMAIN_RADIUS);
 
 		for (int dx = -outerR; dx <= outerR; dx++) {
 			for (int dz = -outerR; dz <= outerR; dz++) {
@@ -577,7 +617,7 @@ public class AnubisWolfSpDeathDomain {
 				int dist = (int) Math.ceil(Math.sqrt(distSq));
 
 				// 只处理这一环的方块
-				if (dist < innerR || dist > outerR || dist > DOMAIN_RADIUS) continue;
+				if (dist < innerR || dist > outerR || dist > domainRadius) continue;
 
 				for (int dy = -halfHeight; dy <= halfHeight; dy++) {
 					BlockPos pos = center.add(dx, dy, dz);
@@ -802,9 +842,10 @@ public class AnubisWolfSpDeathDomain {
 	 * 同时对领域范围内所有非白名单生物施加仅SP阿努比斯可见的发光高亮。
 	 */
 	private static void tickAreaDebuffs(ServerPlayerEntity player, ServerWorld world, DomainData data) {
+		int domainHeight = BAL.i("domain_height", DOMAIN_HEIGHT);
 		Box box = new Box(
-				data.center.getX() - data.currentRadius, data.centerY - DOMAIN_HEIGHT, data.center.getZ() - data.currentRadius,
-				data.center.getX() + data.currentRadius + 1, data.centerY + DOMAIN_HEIGHT + 1, data.center.getZ() + data.currentRadius + 1
+				data.center.getX() - data.currentRadius, data.centerY - domainHeight, data.center.getZ() - data.currentRadius,
+				data.center.getX() + data.currentRadius + 1, data.centerY + domainHeight + 1, data.center.getZ() + data.currentRadius + 1
 		);
 
 		List<LivingEntity> entities = world.getEntitiesByClass(LivingEntity.class, box, e -> e != player && e.isAlive());
@@ -843,7 +884,7 @@ public class AnubisWolfSpDeathDomain {
 			entity.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 40, 0, false, true, true), player);
 			// 凋零仅在实体没有该效果且未达到伤害上限时施加；每次42tick周期造成1HP，上限10HP
 			// 增强模式使用凋零II（amplifier=1）
-			int witherAmplifier = data.enhanced ? ENHANCED_WITHER_AMPLIFIER : 0;
+			int witherAmplifier = data.enhanced ? BAL.i("enhanced_wither_amplifier", ENHANCED_WITHER_AMPLIFIER) : 0;
 			int witherCount = data.witherHitCount.getOrDefault(entity.getUuid(), 0);
 			if (witherCount < 10 && !entity.hasStatusEffect(StatusEffects.WITHER)) {
 				entity.addStatusEffect(new StatusEffectInstance(StatusEffects.WITHER, 42, witherAmplifier, false, true, true), player);
@@ -952,9 +993,10 @@ public class AnubisWolfSpDeathDomain {
 	 * 与 tickAreaDebuffs 中的发光逻辑对称，但不施加新的发光。
 	 */
 	private static void tickGlowUpdate(ServerPlayerEntity player, ServerWorld world, DomainData data) {
+		int domainHeight = BAL.i("domain_height", DOMAIN_HEIGHT);
 		Box box = new Box(
-				data.center.getX() - data.currentRadius, data.centerY - DOMAIN_HEIGHT, data.center.getZ() - data.currentRadius,
-				data.center.getX() + data.currentRadius + 1, data.centerY + DOMAIN_HEIGHT + 1, data.center.getZ() + data.currentRadius + 1
+				data.center.getX() - data.currentRadius, data.centerY - domainHeight, data.center.getZ() - data.currentRadius,
+				data.center.getX() + data.currentRadius + 1, data.centerY + domainHeight + 1, data.center.getZ() + data.currentRadius + 1
 		);
 		// 收集当前仍在领域范围内的实体UUID
 		Set<UUID> stillInDomain = new HashSet<>();
@@ -1048,7 +1090,7 @@ public class AnubisWolfSpDeathDomain {
 		healthAttr.removeModifier(HEALTH_MODIFIER_UUID);
 
 		double maxHealth = healthAttr.getBaseValue();
-		double reduction = -maxHealth * HEALTH_REDUCTION;
+		double reduction = -maxHealth * BAL.d("health_reduction", HEALTH_REDUCTION);
 
 		EntityAttributeModifier modifier = new EntityAttributeModifier(
 				HEALTH_MODIFIER_UUID,
@@ -1081,13 +1123,15 @@ public class AnubisWolfSpDeathDomain {
 	private static void cleanupDebuffs(ServerWorld world, DomainData data) {
 		// 清理发光状态
 		cleanupGlowing(world, data);
+		int domainRadius = data.enhanced ? BAL.i("enhanced_domain_radius", ENHANCED_DOMAIN_RADIUS) : BAL.i("domain_radius", DOMAIN_RADIUS);
+		int domainHeight = BAL.i("domain_height", DOMAIN_HEIGHT);
 		for (UUID entityUuid : data.debuffedEntities) {
 			// 尝试找到实体并移除血量修饰符
 			for (LivingEntity entity : world.getEntitiesByClass(LivingEntity.class,
-					new Box(data.center.getX() - DOMAIN_RADIUS - 32, data.centerY - DOMAIN_HEIGHT - 32,
-							data.center.getZ() - DOMAIN_RADIUS - 32,
-							data.center.getX() + DOMAIN_RADIUS + 32, data.centerY + DOMAIN_HEIGHT + 32,
-							data.center.getZ() + DOMAIN_RADIUS + 32),
+					new Box(data.center.getX() - domainRadius - 32, data.centerY - domainHeight - 32,
+							data.center.getZ() - domainRadius - 32,
+							data.center.getX() + domainRadius + 32, data.centerY + domainHeight + 32,
+							data.center.getZ() + domainRadius + 32),
 					e -> e.getUuid().equals(entityUuid))) {
 				removeHealthReduction(entity);
 			}
@@ -1102,7 +1146,7 @@ public class AnubisWolfSpDeathDomain {
 		EntityAttributeModifier modifier = new EntityAttributeModifier(
 				CHARGE_SLOW_UUID,
 				"Death Domain Charge Slow",
-				CHARGE_SLOW_FACTOR - 1.0, // -0.7 = 减速70%
+				BAL.d("charge_slow_factor", CHARGE_SLOW_FACTOR) - 1.0, // -0.7 = 减速70%
 				EntityAttributeModifier.Operation.MULTIPLY_TOTAL
 		);
 		speedAttr.addTemporaryModifier(modifier);
@@ -1148,9 +1192,10 @@ public class AnubisWolfSpDeathDomain {
 	 */
 	private static void spawnAmbientParticles(ServerWorld world, ServerPlayerEntity player, DomainData data) {
 		Random random = new Random();
+		int domainRadius = data.enhanced ? BAL.i("enhanced_domain_radius", ENHANCED_DOMAIN_RADIUS) : BAL.i("domain_radius", DOMAIN_RADIUS);
 		for (int i = 0; i < 8; i++) {
 			double angle = random.nextDouble() * Math.PI * 2;
-			double dist = random.nextDouble() * DOMAIN_RADIUS;
+			double dist = random.nextDouble() * domainRadius;
 			double px = data.center.getX() + 0.5 + Math.cos(angle) * dist;
 			double pz = data.center.getZ() + 0.5 + Math.sin(angle) * dist;
 			double py = data.centerY + random.nextDouble() * 3;

@@ -6,6 +6,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Vec3d;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.ThrownWaterSpearEntity;
 import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
@@ -31,12 +32,19 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class WaterSpearLeapManager {
 
+	// 以下均为默认值；运行时从 balance 快照读取（abilities.water_spear_leap）
 	private static final int CHARGE_TICKS = 27;    // 蓄力 ~1.35 秒后投矛
 	private static final int CD_TICKS = 160;       // 8 秒
 	private static final int AIR_COST = 18;        // 6% 湿润度
 	private static final double LEAP_BACK = 0.80;  // 起跃向后冲量（更斜后）
 	private static final double LEAP_UP = 0.62;    // 起跃向上冲量（跳更高）
 	private static final double DECAY = 0.80;       // 每 tick 速度衰减（缓入缓出 + 收束到悬浮）
+
+	/** balance 快照读取（快照未初始化回退默认常量） */
+	private static final BalanceReader BAL = new BalanceReader("abilities.water_spear_leap");
+
+	/** HUD 门槛同源：水矛空气消耗（balance 可调；HUD 展示用）。 */
+	public static int airCostForHud() { return BAL.i("air_cost", AIR_COST); }
 
 	private static final Map<UUID, LeapState> STATES = new ConcurrentHashMap<>();
 
@@ -53,9 +61,10 @@ public final class WaterSpearLeapManager {
 		if (!FormUtils.isUpgradeAxolotl(player)) return;
 		if (!RegEvolutionComponent.EVOLUTION.get(player).isUnlocked(AxolotlTree.NODE_WATER_SPEAR)) return;
 		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return; // CD 中
-		if (player.getAir() < AIR_COST) return; // 湿润度不足
+		int airCost = BAL.i("air_cost", AIR_COST);
+		if (player.getAir() < airCost) return; // 湿润度不足
 
-		player.setAir(player.getAir() - AIR_COST);
+		player.setAir(player.getAir() - airCost);
 
 		LeapState s = new LeapState();
 		STATES.put(player.getUuid(), s);
@@ -66,10 +75,12 @@ public final class WaterSpearLeapManager {
 		// 无重力 + 一次性冲量斜后上跃（视线反方向 + 上），随后衰减到空中悬浮
 		player.setNoGravity(true);
 		Vec3d look = player.getRotationVector();
+		double leapBack = BAL.d("leap_back", LEAP_BACK);
+		double leapUp = BAL.d("leap_up", LEAP_UP);
 		Vec3d back = new Vec3d(-look.x, 0, -look.z);
 		if (back.lengthSquared() < 1.0e-4) back = new Vec3d(0, 0, -1);
 		back = back.normalize();
-		player.setVelocity(back.x * LEAP_BACK, LEAP_UP, back.z * LEAP_BACK);
+		player.setVelocity(back.x * leapBack, leapUp, back.z * leapBack);
 		player.velocityModified = true;
 		player.fallDistance = 0.0f;
 
@@ -95,11 +106,13 @@ public final class WaterSpearLeapManager {
 		}
 		s.tick++;
 		ServerWorld sw = (ServerWorld) player.getWorld();
+		int chargeTicks = BAL.i("charge_ticks", CHARGE_TICKS);
+		double decay = BAL.d("decay", DECAY);
 
-		if (s.tick < CHARGE_TICKS) {
+		if (s.tick < chargeTicks) {
 			// 无重力下速度衰减：起跃冲量平滑收束到 0 → 跃起后悬浮在空中（不落）
 			Vec3d v = player.getVelocity();
-			player.setVelocity(v.x * DECAY, v.y * DECAY, v.z * DECAY);
+			player.setVelocity(v.x * decay, v.y * decay, v.z * decay);
 			player.velocityModified = true;
 			player.fallDistance = 0.0f;
 			if (s.tick % 4 == 0) {
@@ -108,7 +121,7 @@ public final class WaterSpearLeapManager {
 			}
 			// 蓄力音效：每 5 tick 一声上升气泡（音调随蓄力进度 0.8→1.7，营造能量聚集感）
 			if (s.tick % 5 == 0) {
-				float progress = (float) s.tick / (float) CHARGE_TICKS;
+				float progress = (float) s.tick / (float) chargeTicks;
 				float pitch = 0.8f + progress * 0.9f;
 				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.BLOCK_BUBBLE_COLUMN_UPWARDS_INSIDE, SoundCategory.PLAYERS, 0.7f, pitch);
@@ -116,7 +129,7 @@ public final class WaterSpearLeapManager {
 						SoundEvents.ENTITY_GENERIC_SPLASH, SoundCategory.PLAYERS, 0.35f, pitch);
 			}
 			// 蓄满前瞬间（最后 3 tick）：海晶核短鸣提示「即将投出」
-			if (s.tick == CHARGE_TICKS - 3) {
+			if (s.tick == chargeTicks - 3) {
 				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.BLOCK_CONDUIT_AMBIENT_SHORT, SoundCategory.PLAYERS, 0.9f, 1.4f);
 			}
@@ -148,7 +161,7 @@ public final class WaterSpearLeapManager {
 		STATES.remove(player.getUuid());
 		player.setNoGravity(false);
 		SscAddonNetworking.syncSpearChargeState(player, false);
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, CD_TICKS);
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, BAL.i("cd_ticks", CD_TICKS));
 	}
 
 	/** 取消（不进 CD、不投矛）：恢复重力、结束蓄力渲染。 */

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.particle.ParticleTypes;
@@ -18,14 +19,17 @@ import net.minecraft.util.Identifier;
  */
 public class VoidDevourSpell extends Spell {
 
-	/** 最大施法距离（格），实际 = 基础 × speed_multiplier(level)——按住瞄准预览与施法共用。 */
+	/** 最大施法距离（格）默认，实际 = 基础 × speed_multiplier(level)——按住瞄准预览与施法共用；运行时从 balance 快照读取。 */
 	private static final double BASE_RANGE = 16.0;
-	/** 基础落点 AOE 半径（格）：实际 = 基础 + 0.75×(等级-1)（L1=2 → L5=5，2026-09-18 用户定稿）。 */
+	/** 基础落点 AOE 半径（格）：实际 = 基础 + 0.75×(等级-1)（L1=2 → L5=5，2026-09-18 用户定稿）。默认值；运行时从 balance 快照读取。 */
 	private static final double IMPACT_RADIUS = 2.0;
-	/** 每级 AOE 半径增量（格）。 */
+	/** 每级 AOE 半径增量（格）。默认值；运行时从 balance 快照读取。 */
 	private static final double RADIUS_PER_LEVEL = 0.75;
-	/** 基础失明时长（tick）：3s，每两级 +1s（L1/L2=3s、L3/L4=4s、L5=5s）。 */
+	/** 基础失明时长（tick）：3s，每两级 +1s（L1/L2=3s、L3/L4=4s、L5=5s）。默认值；运行时从 balance 快照读取。 */
 	private static final int BASE_BLINDNESS_TICKS = 60;
+
+	// 阶段 5：运行时快照读取（spells.void_devour；快照未初始化回退上方默认常量）
+	private static final BalanceReader BAL = new BalanceReader("spells.void_devour");
 
 	public VoidDevourSpell() {
 		super(new Identifier("ssc_addon", "void_devour"), SpellRarity.BLUE);
@@ -34,7 +38,7 @@ public class VoidDevourSpell extends Spell {
 	/** 按住瞄准型：最大施法距离（含等级缩放；客户端按住施法键显示落点预览圈，松开施放）。 */
 	@Override
 	public double getAimMaxRange() {
-		return BASE_RANGE; // 预览距离基准；等级缩放在 getBlinkRange 式调用点乘 speed_multiplier
+		return BAL.d("base_range", BASE_RANGE); // 预览距离基准；等级缩放在 getBlinkRange 式调用点乘 speed_multiplier
 	}
 
 	/** 预览圈半径 = 落点 AOE 半径（含等级缩放，与服务端实际伤害范围一致）。 */
@@ -45,12 +49,13 @@ public class VoidDevourSpell extends Spell {
 
 	/** 实际有效射程（含等级缩放）。 */
 	private double effectiveRange(int level) {
-		return BASE_RANGE * getSpeedMultiplier(level);
+		return BAL.d("base_range", BASE_RANGE) * getSpeedMultiplier(level);
 	}
 
 	/** 实际 AOE 半径（含等级缩放：L1=2 → L5=5，每级 +0.75）。 */
 	private double effectiveRadius(int level) {
-		return IMPACT_RADIUS + RADIUS_PER_LEVEL * (Math.max(1, Math.min(5, level)) - 1);
+		return BAL.d("impact_radius", IMPACT_RADIUS)
+				+ BAL.d("radius_per_level", RADIUS_PER_LEVEL) * (Math.max(1, Math.min(5, level)) - 1);
 	}
 
 	/** 施法前置校验：落点必须命中方块（指天/超距 → 拒绝，不耗法力/CD）。 */
@@ -98,7 +103,7 @@ public class VoidDevourSpell extends Spell {
 			}
 			target.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
 					net.minecraft.entity.effect.StatusEffects.BLINDNESS,
-					BASE_BLINDNESS_TICKS + ((level - 1) / 2) * 20, 0));
+					BAL.i("base_blindness_ticks", BASE_BLINDNESS_TICKS) + ((level - 1) / 2) * 20, 0));
 			hitCount++;
 			// 命中演出：虚空爆裂
 			serverWorld.spawnParticles(ParticleTypes.SMOKE,

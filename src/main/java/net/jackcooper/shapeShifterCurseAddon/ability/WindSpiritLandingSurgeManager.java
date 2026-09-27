@@ -11,6 +11,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
@@ -34,10 +35,14 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class WindSpiritLandingSurgeManager {
 
+    // 以下均为默认值；运行时从 balance 快照读取（abilities.wind_landing_surge）
     private static final double RADIUS = 3.0;
     private static final float DAMAGE = 6.0f;
     private static final int COOLDOWN_TICKS = 100;          // 5 秒
     private static final float MIN_FALL_DISTANCE = 1.5f;     // 显著滞空阈值
+
+    // 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+    private static final BalanceReader BAL = new BalanceReader("abilities.wind_landing_surge");
 
     /** 每玩家上一 tick 的 onGround 状态（用于检测下降沿）。 */
     private static final Map<UUID, Boolean> PREV_ON_GROUND = new ConcurrentHashMap<>();
@@ -98,7 +103,7 @@ public final class WindSpiritLandingSurgeManager {
         // 落地下降沿：prev 在空中 → cur 在地面
         if (prevOnGroundObj != null && !prevOnGroundObj && curOnGround) {
             float prevFall = prevFallObj != null ? prevFallObj : 0f;
-            if (prevFall >= MIN_FALL_DISTANCE) {
+            if (prevFall >= (float) BAL.d("min_fall_distance", MIN_FALL_DISTANCE)) {
                 tryTriggerSurge(player, uuid);
             }
             // 落地后清理本次滞空状态
@@ -125,16 +130,18 @@ public final class WindSpiritLandingSurgeManager {
         // 本次滞空期间命中过敌人 → 不触发（鼓励空中战斗）
         if (Boolean.TRUE.equals(HIT_DURING_AIR.get(uuid))) return;
 
-        // 触发风涌：3 格半径 AOE
+        // 触发风涌：AOE
+        double radius = BAL.d("radius", RADIUS);
         Vec3d center = player.getPos();
-        Box box = new Box(center.subtract(RADIUS, RADIUS, RADIUS), center.add(RADIUS, RADIUS, RADIUS));
+        Box box = new Box(center.subtract(radius, radius, radius), center.add(radius, radius, radius));
+        float damage = (float) BAL.d("damage", DAMAGE);
         for (Entity e : world.getOtherEntities(player, box)) {
             if (!(e instanceof LivingEntity living)) continue;
             if (living == player) continue;
             if (WhitelistUtils.isProtected(player, living)) continue; // 默认白名单
             // 视线检查：墙后目标不命中（仿原版 PR #523 豹猫冲刺穿墙修复）
             if (!net.jackcooper.shapeShifterCurseAddon.util.LineOfSightUtils.hasLineOfSight(world, player, living)) continue;
-            living.damage(player.getDamageSources().playerAttack(player), DAMAGE);
+            living.damage(player.getDamageSources().playerAttack(player), damage);
             Vec3d push = living.getPos().subtract(center);
             if (push.lengthSquared() < 1.0e-4) push = new Vec3d(0, 1, 0);
             push = push.normalize();
@@ -143,11 +150,11 @@ public final class WindSpiritLandingSurgeManager {
 
         // 粒子：环形冲击波 + 向上扬尘
         net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, player, ParticleTypes.POOF, center.x, center.y + 0.1, center.z,
-                20, RADIUS * 0.5, 0.1, RADIUS * 0.5, 0.08);
+                20, radius * 0.5, 0.1, radius * 0.5, 0.08);
         net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, player, ParticleTypes.CLOUD, center.x, center.y + 0.2, center.z,
-                16, RADIUS * 0.6, 0.15, RADIUS * 0.6, 0.06);
+                16, radius * 0.6, 0.15, radius * 0.6, 0.06);
         net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(world, player, ParticleTypes.SWEEP_ATTACK, center.x, center.y + 0.5, center.z,
-                4, RADIUS * 0.3, 0.2, RADIUS * 0.3, 0.0);
+                4, radius * 0.3, 0.2, radius * 0.3, 0.0);
 
         // 音效（全员可听）
         world.playSound(null, center.x, center.y, center.z,
@@ -156,7 +163,7 @@ public final class WindSpiritLandingSurgeManager {
                 SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 0.4f, 1.5f);
 
         // 设置 CD
-        NEXT_AVAILABLE_TICK.put(uuid, now + COOLDOWN_TICKS);
+        NEXT_AVAILABLE_TICK.put(uuid, now + BAL.i("cooldown_ticks", COOLDOWN_TICKS));
     }
 
     public static void onPlayerDisconnect(ServerPlayerEntity player) {

@@ -16,6 +16,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -35,16 +36,20 @@ import java.util.concurrent.ConcurrentHashMap;
  * 全部判定在服务端，多人一致。
  */
 public final class NineLivesManager {
-    private static final int MAX_LIVES = 8;
-    private static final int REGEN_INTERVAL = 400;      // 脱战每 20s 回 1 命
-    private static final int OUT_OF_COMBAT_TICKS = 200; // 10s 未战斗算脱战
-    private static final int REVIVE_CD_TICKS = 60;      // 复活后 3s 内不再触发（真死窗口）
-    private static final int INVULN_TICKS = 20;         // 复活后 1s 无敌
-    private static final float REVIVE_HEAL = 6.0f;      // 复活回血
-    private static final int ABSORB_DURATION = 600;     // 6 颗黄心吸收持续 30s
-    private static final int ABSORB_AMPLIFIER = 2;      // Absorption III = 6 颗黄心
-    private static final float REVIVE_HEAL_NECKLACE = 8.0f; // 戴朔望专属项链：复活回血 8
-    private static final int INVULN_TICKS_NECKLACE = 36;    // 戴朔望专属项链：复活无敌 1.8s
+    // ==== 以下常量为默认值；运行时从 balance 快照读取（scope: abilities.nine_lives，数据包可覆盖）====
+    private static final int MAX_LIVES = 8;             // 默认命数上限
+    private static final int REGEN_INTERVAL = 400;      // 默认：脱战每 20s 回 1 命
+    private static final int OUT_OF_COMBAT_TICKS = 200; // 默认：10s 未战斗算脱战
+    private static final int REVIVE_CD_TICKS = 60;      // 默认：复活后 3s 内不再触发（真死窗口）
+    private static final int INVULN_TICKS = 20;         // 默认：复活后 1s 无敌
+    private static final float REVIVE_HEAL = 6.0f;      // 默认：复活回血
+    private static final int ABSORB_DURATION = 600;     // 默认：6 颗黄心吸收持续 30s
+    private static final int ABSORB_AMPLIFIER = 2;      // 默认：Absorption III = 6 颗黄心
+    private static final float REVIVE_HEAL_NECKLACE = 8.0f; // 默认：戴朔望专属项链复活回血 8
+    private static final int INVULN_TICKS_NECKLACE = 36;    // 默认：戴朔望专属项链复活无敌 1.8s
+
+    /** 服务端权威 balance 快照读取（快照未初始化时回退上方默认常量）。 */
+    private static final BalanceReader BAL = new BalanceReader("abilities.nine_lives");
 
     private static final Map<UUID, Long> LAST_COMBAT = new ConcurrentHashMap<>();
     private static final Map<UUID, Long> REVIVE_TICK = new ConcurrentHashMap<>();
@@ -83,7 +88,7 @@ public final class NineLivesManager {
     /** 是否脱离战斗（超过 10s 未战斗）。 */
     public static boolean isOutOfCombat(ServerPlayerEntity player) {
         long last = LAST_COMBAT.getOrDefault(player.getUuid(), Long.MIN_VALUE / 2);
-        return player.getWorld().getTime() - last > OUT_OF_COMBAT_TICKS;
+        return player.getWorld().getTime() - last > BAL.i("out_of_combat_ticks", OUT_OF_COMBAT_TICKS);
     }
 
     /** 复活后无敌窗口（此期间 mixin 取消一切伤害）；时长由复活时是否戴朔望专属项链决定（1s / 1.8s）。 */
@@ -98,7 +103,7 @@ public final class NineLivesManager {
     public static boolean tryRevive(ServerPlayerEntity player) {
         long now = player.getWorld().getTime();
         long rev = REVIVE_TICK.getOrDefault(player.getUuid(), Long.MIN_VALUE / 2);
-        if (now - rev < REVIVE_CD_TICKS) {
+        if (now - rev < BAL.i("revive_cd_ticks", REVIVE_CD_TICKS)) {
             return false; // 复活后 3s cd 内不触发（真死）
         }
         int lives = PowerUtils.getResourceValue(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES);
@@ -127,12 +132,17 @@ public final class NineLivesManager {
      */
     private static void doRevive(ServerPlayerEntity player) {
         boolean hasNecklace = TrinketUtils.isWearing(player, net.jackcooper.shapeShifterCurseAddon.SscAddon.NOVA_REVIVE_NECKLACE);
-        float heal = hasNecklace ? REVIVE_HEAL_NECKLACE : REVIVE_HEAL;
-        int invuln = hasNecklace ? INVULN_TICKS_NECKLACE : INVULN_TICKS;
+        float heal = hasNecklace
+                ? (float) BAL.d("revive_heal_necklace", REVIVE_HEAL_NECKLACE)
+                : (float) BAL.d("revive_heal", REVIVE_HEAL);
+        int invuln = hasNecklace
+                ? BAL.i("invuln_ticks_necklace", INVULN_TICKS_NECKLACE)
+                : BAL.i("invuln_ticks", INVULN_TICKS);
         long now = player.getWorld().getTime();
         PowerUtils.changeResourceValueAndSync(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES, -1);
         player.setHealth(heal);
-        player.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, ABSORB_DURATION, ABSORB_AMPLIFIER, false, false, true));
+        player.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION,
+                BAL.i("absorb_duration", ABSORB_DURATION), BAL.i("absorb_amplifier", ABSORB_AMPLIFIER), false, false, true));
         REVIVE_TICK.put(player.getUuid(), now);
         INVULN_END.put(player.getUuid(), now + invuln);
         markCombat(player);
@@ -173,10 +183,11 @@ public final class NineLivesManager {
 
     private static void tickPlayer(ServerPlayerEntity player) {
         boolean isNova = FormUtils.isForm(player, FormIdentifiers.OCELOT_NOVA);
+        int maxLives = BAL.i("max_lives", MAX_LIVES);
         // 重生回满 9 命
         if (Boolean.TRUE.equals(RESPAWN_REFILL.get(player.getUuid()))) {
             if (isNova && PowerUtils.hasResource(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES, 0)) {
-                PowerUtils.setResourceValueAndSync(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES, MAX_LIVES);
+                PowerUtils.setResourceValueAndSync(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES, maxLives);
                 RESPAWN_REFILL.remove(player.getUuid());
             } else if (!isNova) {
                 RESPAWN_REFILL.remove(player.getUuid());
@@ -189,7 +200,7 @@ public final class NineLivesManager {
         }
         // 上方守卫原为 hasResource(...,0)（内部又读一次同一资源），
         // 现改为一次 getResourceValue 同时充当存在性（<=0 视为无资源/无命）与数值判定，每 tick 少一次扫描。
-        if (lives >= MAX_LIVES) {
+        if (lives >= maxLives) {
             REGEN_ACC.put(player.getUuid(), 0);
             return;
         }
@@ -197,7 +208,7 @@ public final class NineLivesManager {
             return; // 战斗中不恢复
         }
         int acc = REGEN_ACC.getOrDefault(player.getUuid(), 0) + 1;
-        if (acc >= REGEN_INTERVAL) {
+        if (acc >= BAL.i("regen_interval", REGEN_INTERVAL)) {
             PowerUtils.changeResourceValueAndSync(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES, 1);
             acc = 0;
         }

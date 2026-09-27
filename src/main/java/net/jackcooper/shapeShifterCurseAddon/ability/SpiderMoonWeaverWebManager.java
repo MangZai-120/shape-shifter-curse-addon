@@ -2,6 +2,7 @@ package net.jackcooper.shapeShifterCurseAddon.ability;
 
 import net.jackcooper.shapeShifterCurseAddon.entity.BridgeWebBullet;
 import net.jackcooper.shapeShifterCurseAddon.entity.WebMembraneBullet;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.state.RegSpiderMoonWeaverStateComponent;
 import net.jackcooper.shapeShifterCurseAddon.state.SpiderMoonWeaverStateComponent;
 import net.minecraft.particle.ParticleTypes;
@@ -48,11 +49,18 @@ public final class SpiderMoonWeaverWebManager {
 	private static final int MODE_BRIDGE = SpiderMoonWeaverStateComponent.MODE_BRIDGE;
 	private static final int MODE_ATTACK = SpiderMoonWeaverStateComponent.MODE_ATTACK;
 
+	// 以下已登记常量均为默认值；运行时从 balance 快照读取（abilities.moon_weaver_web）
 	private static final int MAX_TICKS = 60;        // 满档蓄力 3 秒
 	private static final int TIER1_TICKS = 20;      // ≥1 秒抵 tier1
 	private static final int TIER2_TICKS = 40;      // ≥2 秒进 tier2
 	private static final double START_MANA = 6.0;   // 起手需 6 mana（沿用原版蜘蛛）
 	private static final double MANA_PER_TICK = 0.25;
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.moon_weaver_web");
+
+	/** HUD 门槛同源：织网起手法力（balance 可调；HUD 展示用）。 */
+	public static double startManaForHud() { return BAL.d("start_mana", START_MANA); }
 
 	/** UUID -> {已蓄力 tick 数}。服务端权威，多人一致。 */
 	private static final Map<UUID, int[]> CHARGING = new ConcurrentHashMap<>();
@@ -93,7 +101,7 @@ public final class SpiderMoonWeaverWebManager {
 		if (CHARGING.containsKey(player.getUuid())) return;
 		if (!isSpiderMoonWeaver(player)) return;
 		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return; // CD 中
-		if (mana(player).getMana() < START_MANA) return; // mana 不足
+		if (mana(player).getMana() < BAL.d("start_mana", START_MANA)) return; // mana 不足
 		CHARGING.put(player.getUuid(), new int[]{0});
 		FLAT_CHARGING.remove(player.getUuid()); // 普通蓄力 → 蛛丝弹
 		ServerWorld sw = (ServerWorld) player.getWorld();
@@ -106,7 +114,7 @@ public final class SpiderMoonWeaverWebManager {
 		if (CHARGING.containsKey(player.getUuid())) return;
 		if (!isSpiderMoonWeaver(player)) return;
 		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return; // CD 中
-		if (mana(player).getMana() < START_MANA) return; // mana 不足
+		if (mana(player).getMana() < BAL.d("start_mana", START_MANA)) return; // mana 不足
 		CHARGING.put(player.getUuid(), new int[]{0});
 		FLAT_CHARGING.add(player.getUuid()); // 平铺蓄力 → 脚下平铺
 		ServerWorld sw = (ServerWorld) player.getWorld();
@@ -122,13 +130,14 @@ public final class SpiderMoonWeaverWebManager {
 			cancel(player); // 死亡 / 形态丢失 → 取消，不结算
 			return;
 		}
-		if (s[0] < MAX_TICKS) {
+		if (s[0] < BAL.i("max_ticks", MAX_TICKS)) {
+			double manaPerTick = BAL.d("mana_per_tick", MANA_PER_TICK);
 			ManaComponent m = mana(player);
-			if (m.getMana() < MANA_PER_TICK) {
+			if (m.getMana() < manaPerTick) {
 				release(player); // mana 耗尽 → 自动释放当前档
 				return;
 			}
-			m.consumeMana(MANA_PER_TICK);
+			m.consumeMana(manaPerTick);
 			s[0]++;
 			ServerWorld sw = (ServerWorld) player.getWorld();
 			float chime = tierChimePitch(s[0]);
@@ -150,9 +159,9 @@ public final class SpiderMoonWeaverWebManager {
 
 	/** 蓄力跨档（20/40/60t）的报音音高（靠齐 SSC：1.0 / 1.19 / 1.414）；非跨档点返回 0。 */
 	private static float tierChimePitch(int ticks) {
-		if (ticks == TIER1_TICKS) return 1.0f;
-		if (ticks == TIER2_TICKS) return 1.19f;
-		if (ticks == MAX_TICKS) return 1.414f;
+		if (ticks == BAL.i("tier1_ticks", TIER1_TICKS)) return 1.0f;
+		if (ticks == BAL.i("tier2_ticks", TIER2_TICKS)) return 1.19f;
+		if (ticks == BAL.i("max_ticks", MAX_TICKS)) return 1.414f;
 		return 0f;
 	}
 
@@ -162,7 +171,8 @@ public final class SpiderMoonWeaverWebManager {
 		boolean flat = FLAT_CHARGING.remove(player.getUuid());
 		if (s == null) return;
 		int ticks = s[0];
-		int tier = ticks >= MAX_TICKS ? 3 : (ticks >= TIER2_TICKS ? 2 : 1);
+		int tier = ticks >= BAL.i("max_ticks", MAX_TICKS) ? 3
+				: (ticks >= BAL.i("tier2_ticks", TIER2_TICKS) ? 2 : 1);
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, tier * 20);
 		if (getMode(player) == MODE_ATTACK) {
 			fireAttack(player, tier);

@@ -23,6 +23,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -69,6 +70,10 @@ public class LaserBeamEntity extends Entity {
 	private static final int DAMAGE_INTERVAL = 10;      // 每 10t 结算
 	private static final float DAMAGE = 20.0f;          // 每次 20 魔法伤害（释放 60t 共 6 次 = 120）
 
+	// 阶段 5：运行时快照读取（abilities.laser_beam；快照未初始化回退默认常量；
+	// 几何 ARRAY_DIST 与装饰 ENH_ARRAY_SCALE 不迁移）
+	private static final BalanceReader BAL = new BalanceReader("abilities.laser_beam");
+
 	// ===== 同步数据（供渲染器）=====
 	private static final TrackedData<Integer> PHASE = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);       // 0 CHARGE / 1 RELEASE / 2 FADE
 	private static final TrackedData<Integer> PHASE_TICK = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);  // 当前阶段已用 tick
@@ -91,8 +96,8 @@ public class LaserBeamEntity extends Entity {
 	private Phase phase = Phase.CHARGE;
 	private int phaseTicks = 0;
 	private UUID ownerUuid;
-	private float damage = DAMAGE;
-	private int releaseTicks = RELEASE_TICKS;
+	private float damage = (float) BAL.d("damage", DAMAGE);
+	private int releaseTicks = BAL.i("release_ticks", RELEASE_TICKS);
 	private int enhFiringTicks = 0;   // 增强发射态剩余 tick
 
 	/** 客户端渲染器粒子门控：记录本阶段 tick 已发过粒子（render 每帧调用，同 tick 多帧只放行一次，
@@ -132,7 +137,7 @@ public class LaserBeamEntity extends Entity {
 		this.dataTracker.set(DIR_X, (float) fireLock.x);
 		this.dataTracker.set(DIR_Y, (float) fireLock.y);
 		this.dataTracker.set(DIR_Z, (float) fireLock.z);
-		this.enhFiringTicks = ENH_SHOT_TICKS;
+		this.enhFiringTicks = BAL.i("enh_shot_ticks", ENH_SHOT_TICKS);
 	}
 
 	public boolean isFiring() {
@@ -212,7 +217,12 @@ public class LaserBeamEntity extends Entity {
 	}
 
 	public float enhBeamRadius() {
-		return ENH_BEAM_RADIUS;
+		// 渲染器（客户端）与服务端 shotDamage（Manager 侧独立读）共用：双端一致读取
+		if (net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isClientThread()) {
+			var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
+			if (s != null) return (float) s.getDouble("abilities.laser_beam", "enh_beam_radius");
+		}
+		return (float) BAL.d("enh_beam_radius", ENH_BEAM_RADIUS);
 	}
 
 	public static double arrayDist() {
@@ -220,7 +230,13 @@ public class LaserBeamEntity extends Entity {
 	}
 
 	public double beamLength() {
-		return BEAM_LENGTH;
+		// 渲染器（客户端）与服务端 beamDamage 共用：双端一致读取——
+		// 客户端读客户端镜像快照，服务端读权威快照（同 MeteorSpell.maxRange 模式）
+		if (net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isClientThread()) {
+			var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
+			if (s != null) return s.getDouble("abilities.laser_beam", "beam_length");
+		}
+		return BAL.d("beam_length", BEAM_LENGTH);
 	}
 
 	/** 增强单道光柱达 24 格、碰撞盒仅 0.5，放宽视锥剔除避免离屏被 cull。 */
@@ -308,6 +324,7 @@ public class LaserBeamEntity extends Entity {
 			return;
 		}
 		syncLaserStateDedup(owner, 1);
+		int chargeTicks = BAL.i("charge_ticks", CHARGE_TICKS);   // 同函数多次读 → 局部变量
 
 		// 蓄力音效（volume=3.0：反编译实证客户端 clamp 到 1，近处响度不变不震耳；
 		// 可闻半径 16×3=48 格=光柱射程 32 格+16 格富余，OpenAL 距离线性衰减到 48 格归零）
@@ -316,14 +333,14 @@ public class LaserBeamEntity extends Entity {
 					SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 3.0f, 0.8f);
 		}
 		if (phaseTicks % 12 == 0) {
-			float p = phaseTicks / (float) CHARGE_TICKS;
+			float p = phaseTicks / (float) chargeTicks;
 			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
 					SoundEvents.BLOCK_CONDUIT_AMBIENT, SoundCategory.PLAYERS, 3.0f, 0.8f + p * 0.8f);
 		}
 
 		// 四条白线由渲染器绘制（客户端，无粒子残留）；法阵核心发光粒子改为客户端渲染器按视角生成
 		// （第一人称不生成、第三人称生成），避免服务端粒子无法区分视角导致第一人称被遮挡
-		if (phaseTicks >= CHARGE_TICKS) {
+		if (phaseTicks >= chargeTicks) {
 			phase = Phase.RELEASE;
 			phaseTicks = 0;
 			this.dataTracker.set(PHASE, 1);
@@ -341,8 +358,8 @@ public class LaserBeamEntity extends Entity {
 		syncLaserStateDedup(owner, 2);
 		// 螺旋粒子已移到客户端渲染器自绘（逐行照抄未改参数，网络包归零）
 		// 伤害：每 4t 一次，5 格直径穿墙圆柱
-		if (phaseTicks % DAMAGE_INTERVAL == 0) {
-			beamDamage(sw, owner, arrayPos, aim, BEAM_RADIUS);
+		if (phaseTicks % BAL.i("damage_interval", DAMAGE_INTERVAL) == 0) {
+			beamDamage(sw, owner, arrayPos, aim, BAL.d("beam_radius", BEAM_RADIUS));
 		}
 		if (phaseTicks % 8 == 0) {
 			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
@@ -359,11 +376,11 @@ public class LaserBeamEntity extends Entity {
 	// ==================== FADE ====================
 	private void tickFade(ServerWorld sw, ServerPlayerEntity owner, Vec3d aim, Vec3d arrayPos) {
 		// 螺旋粒子已移到客户端渲染器自绘（含消退期半径缩小，网络包归零）
-		if (phaseTicks >= FADE_TICKS) {
+		if (phaseTicks >= BAL.i("fade_ticks", FADE_TICKS)) {
 			// 完全消失 → 进 CD、解除定身、清状态
 			owner.removeStatusEffect(SscAddon.ROOTED);
 			syncLaserStateDedup(owner, 0);
-			PowerUtils.setResourceValueAndSync(owner, FormIdentifiers.SP_PRIMARY_CD, CD_TICKS);
+			PowerUtils.setResourceValueAndSync(owner, FormIdentifiers.SP_PRIMARY_CD, BAL.i("cd_ticks", CD_TICKS));
 			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
 					SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 3.0f, 1.0f);
 			this.discard();
@@ -410,7 +427,7 @@ public class LaserBeamEntity extends Entity {
 		if (owner != null) {
 			owner.removeStatusEffect(SscAddon.ROOTED);
 			syncLaserStateDedup(owner, 0);
-			PowerUtils.setResourceValueAndSync(owner, FormIdentifiers.SP_PRIMARY_CD, (int)(CD_TICKS * 0.6));
+			PowerUtils.setResourceValueAndSync(owner, FormIdentifiers.SP_PRIMARY_CD, (int)(BAL.i("cd_ticks", CD_TICKS) * 0.6));
 		}
 	}
 

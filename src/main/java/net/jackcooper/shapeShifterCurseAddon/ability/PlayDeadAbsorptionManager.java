@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.ability;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 
 import java.util.Map;
 import java.util.UUID;
@@ -24,6 +25,9 @@ public class PlayDeadAbsorptionManager {
 	private static final int RETAIN_TICKS = 600;      // 30 秒存留
 	private static final int DECAY_INTERVAL = 20;     // 每秒衰减一次
 	private static final float DECAY_PER_SEC = 2.0f;  // 每次减 1 颗心 = 2 HP
+
+	// 阶段 5：运行时快照读取（abilities.playing_dead；快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.playing_dead");
 
 	private PlayDeadAbsorptionManager() {
 	}
@@ -63,11 +67,11 @@ public class PlayDeadAbsorptionManager {
 
 		// 装死已结束 → 确保衰减起点已设（结束那刻 + 30s）
 		long now = player.getServer().getTicks();
-		long decayStart = DECAY_START.computeIfAbsent(id, k -> now + RETAIN_TICKS);
+		long decayStart = DECAY_START.computeIfAbsent(id, k -> now + BAL.i("retain_ticks", RETAIN_TICKS));
 
 		// 到点后每秒减 2 HP（代码直接扣，无受击特效）
-		if (now >= decayStart && (now - decayStart) % DECAY_INTERVAL == 0) {
-			float reduce = Math.min(budget, DECAY_PER_SEC);
+		if (now >= decayStart && (now - decayStart) % BAL.i("decay_interval", DECAY_INTERVAL) == 0) {
+			float reduce = Math.min(budget, (float) BAL.d("decay_per_sec", DECAY_PER_SEC));
 			player.setAbsorptionAmount(Math.max(0f, actual - reduce));
 			budget -= reduce;
 		}

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -25,6 +26,9 @@ public final class FormAffinity {
 	private FormAffinity() {
 	}
 
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认乘区）
+	private static final BalanceReader BAL = new BalanceReader("affinity");
+
 	/** 亲和伤害乘区（无亲和返回 1）。 */
 	public static float damageMultiplier(ServerPlayerEntity player, FormationElement element) {
 		if (player == null || element == null) {
@@ -34,22 +38,22 @@ public final class FormAffinity {
 		if (element == FormationElement.ICE
 				&& (FormUtils.isForm(player, FormIdentifiers.SNOW_FOX_SP)
 				|| FormUtils.isForm(player, FormIdentifiers.SNOW_FOX_FROSTSPINE))) {
-			return 1.15f;
+			return (float) BAL.d("dmg_ice_snow_fox", 1.15);
 		}
 		// 月辉系亲和：月织蛛
 		if (element == FormationElement.LUNAR
 				&& FormUtils.isForm(player, FormIdentifiers.SPIDER_MOON_WEAVER)) {
-			return 1.15f;
+			return (float) BAL.d("dmg_lunar_moon_weaver", 1.15);
 		}
 		// 火系亲和：金沙岚
 		if (element == FormationElement.FIRE
 				&& FormUtils.isForm(player, FormIdentifiers.GOLDEN_SANDSTORM_SP)) {
-			return 1.15f;
+			return (float) BAL.d("dmg_fire_golden_sandstorm", 1.15);
 		}
 		// 虚无系亲和：食梦魔（噬梦流派的伤害面，命中返还见 FormCastingStyle）
 		if (element == FormationElement.VOID
 				&& FormUtils.isForm(player, FormIdentifiers.WILD_CAT_NIGHTMARE)) {
-			return 1.15f;
+			return (float) BAL.d("dmg_void_nightmare", 1.15);
 		}
 		return 1f;
 	}
@@ -69,11 +73,11 @@ public final class FormAffinity {
 				|| FormUtils.isForm(player, FormIdentifiers.UPGRADE_FAMILIAR_FOX)
 				|| FormUtils.isForm(player, FormIdentifiers.FAMILIAR_FOX_RED)
 				|| FormUtils.isForm(player, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA)) {
-			return 0.85f;
+			return (float) BAL.d("mana_mul_familiar_fox_family", 0.85);
 		}
 		// 野猫 SP「猎手本能」：全系耗蓝 ×0.75（与 CD ×0.75 配套）
 		if (FormUtils.isForm(player, FormIdentifiers.WILD_CAT_SP)) {
-			return 0.75f;
+			return (float) BAL.d("mana_mul_wild_cat_sp", 0.75);
 		}
 		return 1f;
 	}
@@ -85,21 +89,21 @@ public final class FormAffinity {
 		}
 		if (element == FormationElement.LUNAR
 					&& FormUtils.isForm(player, FormIdentifiers.ALLAY_SP)) {
-			return 0.9f;
+			return (float) BAL.d("cd_lunar_allay_sp", 0.9);
 		}
 		if (element == FormationElement.SPACE
 				&& FormUtils.isForm(player, FormIdentifiers.OCELOT_SP)) {
-			return 0.9f;
+			return (float) BAL.d("cd_space_ocelot_sp", 0.9);
 		}
 		// 冰系 CD 亲和：美西螈 SP / 进化美西螈「潮汐」（与雪狐伤害亲和区分；水中耗蓝减免见 FormCastingStyle）
 		if (element == FormationElement.ICE
 				&& (FormUtils.isForm(player, FormIdentifiers.AXOLOTL_SP)
 					|| FormUtils.isForm(player, FormIdentifiers.UPGRADE_AXOLOTL))) {
-			return 0.95f;
+			return (float) BAL.d("cd_ice_axolotl", 0.95);
 		}
 		// 野猫 SP「猎手本能」：全系 CD ×0.75（与耗蓝 ×0.75 配套）
 		if (FormUtils.isForm(player, FormIdentifiers.WILD_CAT_SP)) {
-			return 0.75f;
+			return (float) BAL.d("cd_mul_wild_cat_sp", 0.75);
 		}
 		return 1f;
 	}
@@ -111,7 +115,10 @@ public final class FormAffinity {
 					|| FormUtils.isForm(player, FormIdentifiers.AXOLOTL_ALING)
 					|| FormUtils.isForm(player, FormIdentifiers.ALLAY_SP)
 					|| FormUtils.isForm(player, FormIdentifiers.BAT_PARASITIC_FRUIT))) {
-			return Math.min(5, level + 1);
+			// 同函数多次读取 → 局部变量（BalanceReader 不缓存）
+			int bonus = BAL.i("summon_bonus_level", 1);
+			int cap = BAL.i("summon_level_cap", 5);
+			return Math.min(cap, level + bonus);
 		}
 		return level;
 	}

@@ -12,6 +12,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -28,6 +29,7 @@ import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
  */
 public class GoldenSandstormCounterBurst {
 
+	// 以下常量均为默认值；运行时从 balance 快照读取（scope：abilities.golden_sandstorm_counter_burst）
 	/** 反噬冲击范围（格） */
 	private static final double BURST_RANGE = 4.0;
 	/** 击退力度 */
@@ -38,6 +40,9 @@ public class GoldenSandstormCounterBurst {
 	private static final int WITHER_AMPLIFIER = 0;
 	/** 冷却时间（tick） */
 	private static final int COOLDOWN_TICKS = 300; // 15秒
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.golden_sandstorm_counter_burst");
 
 	private GoldenSandstormCounterBurst() {
 	}
@@ -54,8 +59,10 @@ public class GoldenSandstormCounterBurst {
 
 		if (!(player.getWorld() instanceof ServerWorld serverWorld)) return false;
 
-		// 搜索范围内的实体
-		Box searchBox = player.getBoundingBox().expand(BURST_RANGE);
+		// 搜索范围内的实体（范围与击退力度取一次快照读取）
+		double burstRange = BAL.d("burst_range", BURST_RANGE);
+		double knockbackStrength = BAL.d("knockback_strength", KNOCKBACK_STRENGTH);
+		Box searchBox = player.getBoundingBox().expand(burstRange);
 		java.util.List<Entity> allEntities = serverWorld.getOtherEntities(player, searchBox);
 
 		for (Entity entity : allEntities) {
@@ -66,7 +73,7 @@ public class GoldenSandstormCounterBurst {
 			if (WhitelistUtils.isProtected(player, living)) continue;
 
 			double distSq = living.squaredDistanceTo(player);
-			if (distSq > BURST_RANGE * BURST_RANGE) continue;
+			if (distSq > burstRange * burstRange) continue;
 
 			// 计算击退方向：从玩家指向目标
 			Vec3d direction = living.getPos().subtract(player.getPos());
@@ -75,21 +82,21 @@ public class GoldenSandstormCounterBurst {
 				direction = direction.normalize();
 				// 施加击退（水平+轻微上抛）
 				living.setVelocity(living.getVelocity().add(
-						direction.x * KNOCKBACK_STRENGTH,
+						direction.x * knockbackStrength,
 						0.15,
-						direction.z * KNOCKBACK_STRENGTH
+						direction.z * knockbackStrength
 				));
 				living.velocityModified = true;
 			}
 
 			// 施加凋零效果（传入 player 作为 source，使金沙岚回血系统可注册凋零来源）
 			living.addStatusEffect(new StatusEffectInstance(
-					StatusEffects.WITHER, WITHER_DURATION, WITHER_AMPLIFIER, false, true, true
+					StatusEffects.WITHER, BAL.i("wither_duration", WITHER_DURATION), BAL.i("wither_amplifier", WITHER_AMPLIFIER), false, true, true
 			), player);
 		}
 
 		// 即使没有命中也进入CD（防止频繁触发检测）
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.GOLDEN_SANDSTORM_COUNTER_BURST_CD, COOLDOWN_TICKS);
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.GOLDEN_SANDSTORM_COUNTER_BURST_CD, BAL.i("cooldown_ticks", COOLDOWN_TICKS));
 
 		// 音效和粒子（无论是否命中都播放，提示玩家触发了反噬）
 		serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),

@@ -269,7 +269,7 @@ public final class SscAddonServerEvents {
 			SnowFoxSpTeleportAttack.clearAll();
 			SnowFoxSpFrostStorm.clearAll();
 			// reload 可能遇到玩家正在释放领域，必须先强制还原方块再清状态，避免世界里残留灵魂沙
-			AnubisWolfSpDeathDomain.forceRestoreAll();
+			AnubisWolfSpDeathDomain.forceRestoreAll(true);
 			AnubisWolfSpSummonWolves.clearAll();
 			AllaySPTotem.clearAll();
 			GoldenSandstormErosionBrand.clearAll();
@@ -282,6 +282,9 @@ public final class SscAddonServerEvents {
 			FluorescentLaserManager.clearAll();   // 海晶荧光坠增强激光：清残留待机法阵实体
 			net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.clearAll(server); // 惊吓：清幽灵苦力怕/复制品状态
 			System.out.println("[SSC_ADDON] END_DATA_PACK_RELOAD ability state cleared");
+
+			// balance 数据包数值（阶段 4）：提交已在 Loader 回调完成，此处广播在线玩家
+			// BalanceIntegration commits and broadcasts in its own successful-reload callback.
 		});
 	}
 }

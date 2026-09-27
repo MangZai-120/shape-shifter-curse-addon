@@ -23,6 +23,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.power.ParasiticFruitSeedPower;
 
 import java.util.List;
@@ -40,8 +41,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * 拾取由服务端判定；持续粒子与核心自转由客户端按服务端时间轴生成。
  */
 public final class ParasiticSeedFieldManager {
-    /** 拾取 / 治疗环半径（格） */
+    /** 拾取 / 治疗环半径（格）：默认值；运行时从 balance 快照读取（abilities.parasitic_seed_system） */
     public static final double FIELD_RADIUS = 1.0;
+
+    /** balance 快照读取（快照未初始化回退默认常量） */
+    private static final BalanceReader BAL = new BalanceReader("abilities.parasitic_seed_system");
 
     private static final CopyOnWriteArrayList<SeedField> FIELDS = new CopyOnWriteArrayList<>();
 
@@ -121,9 +125,10 @@ public final class ParasiticSeedFieldManager {
             ServerPlayerEntity caster = server.getPlayerManager().getPlayer(f.casterUuid);
             if (caster == null) continue;   // 施法者离线则保留种子圈，等其上线或自然到期
             boolean casterArmed = now - f.spawnTick >= 10;
-            Box box = new Box(f.pos.subtract(FIELD_RADIUS, FIELD_RADIUS, FIELD_RADIUS),
-                    f.pos.add(FIELD_RADIUS, FIELD_RADIUS, FIELD_RADIUS));
-            double sqRadius = FIELD_RADIUS * FIELD_RADIUS;
+            double fieldRadius = BAL.d("field_radius", FIELD_RADIUS);
+            Box box = new Box(f.pos.subtract(fieldRadius, fieldRadius, fieldRadius),
+                    f.pos.add(fieldRadius, fieldRadius, fieldRadius));
+            double sqRadius = fieldRadius * fieldRadius;
             List<LivingEntity> nearby = world.getEntitiesByClass(LivingEntity.class, box,
                     e -> e.isAlive() && !e.getUuid().equals(f.standUuid) && !e.isSpectator()
                             && (casterArmed || e != caster)
@@ -146,7 +151,7 @@ public final class ParasiticSeedFieldManager {
         if (stand != null) {
             net.jackcooper.shapeShifterCurseAddon.network.SustainedVisuals.touch(stand,
                     net.jackcooper.shapeShifterCurseAddon.network.VisualRecipe.Kind.SEED_FIELD,
-                    (int) (now - f.spawnTick), (int) (f.endTick - f.spawnTick), FIELD_RADIUS, 0);
+                    (int) (now - f.spawnTick), (int) (f.endTick - f.spawnTick), BAL.d("field_radius", FIELD_RADIUS), 0);
         }
     }
 

@@ -208,6 +208,40 @@ tasks.register('particleAvoidanceTest', JavaExec) {
 
 check.dependsOn particleAvoidanceTest
 
+// balance 数据包框架自检（阶段 2 · 制作流程 §10.1：解析/合并/校验/hash 确定性）
+tasks.register('balanceFrameworkTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.balance.BalanceFrameworkTest'
+}
+
+check.dependsOn balanceFrameworkTest
+
+// 生产 schema 默认值 pin（阶段 1）：schema 默认 = 代码常量现值，双改必须同步
+tasks.register('balanceSchemaPinTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.balance.SscBalanceSchemaPinTest'
+}
+
+check.dependsOn balanceSchemaPinTest
+
+// 端别与同步状态机测试（阶段 3 · §10.2：双端隔离/分块/ACK/退出清理/hash 一致性）
+tasks.register('balanceSyncTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.balance.BalanceSyncTest'
+}
+
+check.dependsOn balanceSyncTest
+
+tasks.register('balanceReviewTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.balance.BalanceReviewTest'
+}
+check.dependsOn balanceReviewTest
+
 java {
     // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
     // if it is present.

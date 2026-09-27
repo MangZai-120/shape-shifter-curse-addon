@@ -25,6 +25,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 
 /**
@@ -38,6 +39,9 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 
 	private static final double SPEED = 0.75;        // 15 格/秒
 	private static final double MAX_DISTANCE = 50.0; // 最大飞行距离
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("spells.frost_spike_entity");
 
 	/** 魔法等级（1-5），DataTracker 同步供渲染端切换 L4+ 3D 冰锥模型。 */
 	private static final TrackedData<Integer> LEVEL =
@@ -112,7 +116,7 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 
 	/** 设置飞行方向（朝准星），速度按等级倍率缩放。 */
 	public void setDirection(Vec3d direction, float speedMultiplier) {
-		Vec3d velocity = direction.normalize().multiply(SPEED * speedMultiplier);
+		Vec3d velocity = direction.normalize().multiply(BAL.d("speed", SPEED) * speedMultiplier);
 		this.setVelocity(velocity.x, velocity.y, velocity.z);
 		updateRotationFromVelocity(velocity);
 	}
@@ -148,7 +152,8 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 		// 若双端执行会在离原点 50 格外第一 tick 就误删客户端实体 → 模型永不显示（只剩服务端粒子）。
 		// 客户端实体的消失由服务端 discard 后的 tracker 移除包驱动，天然多人同步。
 		if (!this.getWorld().isClient) {
-			if (startPos != null && this.squaredDistanceTo(startPos) > MAX_DISTANCE * MAX_DISTANCE) {
+			double maxDistance = BAL.d("max_distance", MAX_DISTANCE);
+			if (startPos != null && this.squaredDistanceTo(startPos) > maxDistance * maxDistance) {
 				this.discard();
 				return;
 			}

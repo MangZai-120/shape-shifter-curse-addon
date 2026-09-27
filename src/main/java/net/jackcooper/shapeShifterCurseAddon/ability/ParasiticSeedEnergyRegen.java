@@ -7,6 +7,7 @@ package net.jackcooper.shapeShifterCurseAddon.ability;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
@@ -22,12 +23,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * 服务端权威，替代原 JSON action_over_time（其无法判定交战）。
  */
 public final class ParasiticSeedEnergyRegen {
+    // 以下均为默认值；运行时从 balance 快照读取（abilities.parasitic_seed_system）
     /** 未交战回复间隔（tick）：5s */
     private static final int INTERVAL_PEACE = 100;
     /** 交战回复间隔（tick）：8s */
     private static final int INTERVAL_COMBAT = 160;
     /** 能量上限 */
     private static final int MAX_ENERGY = 10;
+
+    /** balance 快照读取（快照未初始化回退默认常量） */
+    private static final BalanceReader BAL = new BalanceReader("abilities.parasitic_seed_system");
 
     /** 玩家 UUID -> 距上次回复已累计 tick 数 */
     private static final Map<UUID, Integer> ACCUM = new ConcurrentHashMap<>();
@@ -57,11 +62,13 @@ public final class ParasiticSeedEnergyRegen {
             return;
         }
         int current = PowerUtils.getResourceValue(player, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY);
-        if (current >= MAX_ENERGY) {
+        if (current >= BAL.i("max_energy", MAX_ENERGY)) {
             ACCUM.put(player.getUuid(), 0);
             return;
         }
-        int interval = ParasiticCombatTracker.isInCombat(player) ? INTERVAL_COMBAT : INTERVAL_PEACE;
+        int interval = ParasiticCombatTracker.isInCombat(player)
+                ? BAL.i("regen_interval_combat", INTERVAL_COMBAT)
+                : BAL.i("regen_interval_peace", INTERVAL_PEACE);
         int acc = ACCUM.getOrDefault(player.getUuid(), 0) + 1;
         if (acc >= interval) {
             PowerUtils.changeResourceValueAndSync(player, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY, 1);

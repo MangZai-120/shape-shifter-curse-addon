@@ -17,6 +17,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 
 import java.util.ArrayDeque;
@@ -48,12 +49,15 @@ public final class SeedEnergyEatingHandler {
             Items.PITCHER_POD
     );
 
-    /** 配额窗口：3 分钟。 */
+    /** 配额窗口：3 分钟（未登记，不开放）。 */
     private static final long QUOTA_WINDOW_TICKS = 60L * 20L * 3L;
-    /** 配额上限：3 分钟内最多 8 次。 */
+    /** 配额上限：3 分钟内最多 8 次；默认值，运行时从 balance 快照读取（abilities.parasitic_seed_system）。 */
     private static final int QUOTA_LIMIT = 8;
-    /** 超额提示节流。 */
+    /** 超额提示节流（未登记，不开放）。 */
     private static final int OVER_QUOTA_HINT_COOLDOWN_TICKS = 40;
+
+    /** balance 快照读取（快照未初始化回退默认常量） */
+    private static final BalanceReader BAL = new BalanceReader("abilities.parasitic_seed_system");
 
     /** 每个玩家近期完成时间戳队列（3 分钟滑动窗口配额）。 */
     private static final Map<UUID, Deque<Long>> RECENT_EATS = new HashMap<>();
@@ -76,9 +80,10 @@ public final class SeedEnergyEatingHandler {
             // 服务端进行配额预检查；超额则红字提示并阻断
             if (player instanceof ServerPlayerEntity sp) {
                 long now = sp.getWorld().getTime();
+                int quotaLimit = BAL.i("quota_limit", QUOTA_LIMIT);
                 pruneQuota(sp.getUuid(), now);
                 Deque<Long> recent = RECENT_EATS.get(sp.getUuid());
-                if (recent != null && recent.size() >= QUOTA_LIMIT) {
+                if (recent != null && recent.size() >= quotaLimit) {
                     sendOverQuotaHint(sp, now);
                     return ActionResult.FAIL;
                 }
@@ -106,8 +111,9 @@ public final class SeedEnergyEatingHandler {
 
             long now = sp.getWorld().getTime();
             pruneQuota(sp.getUuid(), now);
+            int quotaLimit = BAL.i("quota_limit", QUOTA_LIMIT);
             Deque<Long> recent = RECENT_EATS.get(sp.getUuid());
-            if (recent != null && recent.size() >= QUOTA_LIMIT) {
+            if (recent != null && recent.size() >= quotaLimit) {
                 sendOverQuotaHint(sp, now);
                 return TypedActionResult.fail(stack);
             }
@@ -127,7 +133,7 @@ public final class SeedEnergyEatingHandler {
         pruneQuota(sp.getUuid(), now);
 
         Deque<Long> recent = RECENT_EATS.computeIfAbsent(sp.getUuid(), k -> new ArrayDeque<>());
-        if (recent.size() >= QUOTA_LIMIT) {
+        if (recent.size() >= BAL.i("quota_limit", QUOTA_LIMIT)) {
             sendOverQuotaHint(sp, now);
             return true;
         }

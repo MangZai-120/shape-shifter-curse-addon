@@ -10,6 +10,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
 
 public class BlueFireRingEffect extends StatusEffect {
@@ -22,6 +23,9 @@ public class BlueFireRingEffect extends StatusEffect {
 	// 火环攻击间隔：effects_loop interval=4 × internal_timer阈值4 = 16tick
 	private static final int ATTACK_INTERVAL = 16;
 
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.blue_fire_ring");
+
 	public BlueFireRingEffect() {
 		super(StatusEffectCategory.BENEFICIAL, 0x3366FF);
 	}
@@ -29,7 +33,7 @@ public class BlueFireRingEffect extends StatusEffect {
 	@Override
 	public boolean canApplyUpdateEffect(int duration, int amplifier) {
 		// 与火环攻击间隔一致，每16tick触发一次
-		return duration % ATTACK_INTERVAL == 0;
+		return duration % BAL.i("attack_interval", ATTACK_INTERVAL) == 0;
 	}
 
 	@Override
@@ -41,7 +45,9 @@ public class BlueFireRingEffect extends StatusEffect {
 		ServerWorld serverWorld = (ServerWorld) world;
 
 		// 冻水范围跟随火环伤害范围：佩戴蓝火护符时3.6格，否则6格（与JSON area_of_effect一致）
-		double freezeRadius = hasBlueFireAmulet(entity) ? FREEZE_RADIUS_AMULET : FREEZE_RADIUS_DEFAULT;
+		double freezeRadius = hasBlueFireAmulet(entity)
+				? BAL.d("freeze_radius_amulet", FREEZE_RADIUS_AMULET)
+				: BAL.d("freeze_radius_default", FREEZE_RADIUS_DEFAULT);
 		int radiusCeil = MathHelper.ceil(freezeRadius);
 		double radiusSq = freezeRadius * freezeRadius;
 
@@ -59,7 +65,7 @@ public class BlueFireRingEffect extends StatusEffect {
 							&& world.getFluidState(pos).isStill()
 							&& world.getBlockState(pos.up()).isAir()) {
 
-						if (world.getRandom().nextFloat() < FREEZE_CHANCE) {
+						if (world.getRandom().nextFloat() < BAL.d("freeze_chance", FREEZE_CHANCE)) {
 							world.setBlockState(pos, Blocks.FROSTED_ICE.getDefaultState());
 							// 调度冰块融化（60-120tick后开始）
 							serverWorld.scheduleBlockTick(

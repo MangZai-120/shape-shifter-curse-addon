@@ -15,6 +15,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 
@@ -35,6 +36,9 @@ public class FrostArrayEntity extends Entity {
 	/** 凝棘蓄力总进度（0-100 tick = 等级×20 + 级内 ticks）：HUD 副槽侧边内置条从 0 涨到满的数据源。 */
 	private static final TrackedData<Integer> PROGRESS = DataTracker.registerData(FrostArrayEntity.class, TrackedDataHandlerRegistry.INTEGER);
 	private static final int MAX_TICKS = 400; // 20s 超时双保险（正常由管理器 discard）
+
+	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
+	private static final BalanceReader BAL = new BalanceReader("abilities.frost_array");
 
 	public FrostArrayEntity(EntityType<? extends FrostArrayEntity> type, World world) {
 		super(type, world);
@@ -98,7 +102,7 @@ public class FrostArrayEntity extends Entity {
 		}
 		// 跟随施法者眼部（法阵前方位置由渲染器按准星实时算）
 		this.setPosition(p.getX(), p.getEyeY(), p.getZ());
-		if (this.age > MAX_TICKS) this.discard(); // 双保险超时
+		if (this.age > BAL.i("max_ticks", MAX_TICKS)) this.discard(); // 双保险超时
 	}
 
 	@Override

@@ -29,9 +29,21 @@ public final class DomainManager {
 	private static final ThreadLocal<AttachedEffect> ATTACHED_EFFECT = new ThreadLocal<>();
 	private record AttachedEffect(Entity source, LivingEntity target) {}
 	private DomainManager() {}
+	/** 起手快照（2026-09-27 审计修复）：物理约束参数在 begin() 时从 balance 快照捕获一次，
+	 * 会话期间（activate 与蓄力跟随复制）原样携带——reload 中途改变 balance 不再影响
+	 * 已展开领域的结算几何（本次结算用旧快照原则）。 */
 	private record Field(ServerPlayerEntity owner, ServerWorld world, Vec3d center,
-	                     double headHeight, int startTick, boolean active) {
+	                     double headHeight, int startTick, boolean active,
+	                     double innerRadius, double outerRadius, int chargeTicks, int durationTicks,
+	                     int expandStartTick, int expandDurationTicks, double maxCastDisplacement) {
 		int elapsed() { return world.getServer().getTicks() - startTick; }
+
+		/** 扩张期当前壳半径（active 恒 0）：蓄力第 10s 起 0.75 格三次缓出生长至快照 inner。
+		 * 曲线参数全部来自起手快照，reload 不影响已展开领域。 */
+		double chargingRadius() {
+			return active ? 0 : DomainRules.expansionRadius(elapsed(), expandStartTick, chargeTicks,
+					expandDurationTicks, innerRadius);
+		}
 	}
 
 	/** 蓄力期锚点（2026-09-22 用户定稿：领域随玩家走）：锚在施法开始时的位置，
@@ -39,10 +51,6 @@ public final class DomainManager {
 	 * 位移超过 MAX_CAST_DISPLACEMENT（3 格）仍会被 canContinue 打断——防止跳跃蹭施放。 */
 	private static final Map<UUID, Vec3d> CHARGE_ANCHORS = new LinkedHashMap<>();
 
-	/** 扩张期当前壳半径（active 恒 0）：蓄力第 10s 起 0.75 格三次缓出生长，15s 达 16 格。 */
-	private static double chargingRadius(Field field) {
-		return field.active ? 0 : DomainRules.expansionRadius(field.elapsed());
-	}
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(DomainManager::tick);
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> remove(handler.player));
@@ -73,7 +81,7 @@ public final class DomainManager {
 	public static boolean blocksCrossBoundary(ServerWorld world, Vec3d from, Vec3d to) {
 		for (Field field : FIELDS.values()) {
 			if (field.world != world) continue;
-			double inner = field.active ? DomainRules.INNER_RADIUS : chargingRadius(field);
+			double inner = field.active ? field.innerRadius : field.chargingRadius();
 			if (inner <= 0.1) continue;
 			if (DomainRules.separates(from.subtract(field.center), to.subtract(field.center), inner + 1)) return true;
 		}
@@ -101,7 +109,7 @@ public final class DomainManager {
 	private static boolean enclosedForTargeting(World world, Vec3d position) {
 		for (Field field : FIELDS.values()) {
 			if (field.world != world) continue;
-			double inner = field.active ? DomainRules.INNER_RADIUS : chargingRadius(field);
+			double inner = field.active ? field.innerRadius : field.chargingRadius();
 			if (inner > 0.1 && field.center.squaredDistanceTo(position) <= (inner + 1) * (inner + 1)) return true;
 		}
 		return false;
@@ -113,8 +121,13 @@ public final class DomainManager {
 	}
 	public static void begin(ServerPlayerEntity player) {
 		CHARGE_ANCHORS.put(player.getUuid(), player.getPos());
+		// 起手捕获快照：本次领域会话全程沿用这组参数（reload 改 balance 不影响已展开领域）。
 		Field field = new Field(player, player.getServerWorld(), player.getPos(),
-				player.getHeight() + 0.8, player.getServer().getTicks(), false);
+				player.getHeight() + 0.8, player.getServer().getTicks(), false,
+				DomainRules.innerRadius(), DomainRules.outerRadius(),
+				DomainRules.chargeTicks(), DomainRules.durationTicks(),
+				DomainRules.expandStartTick(), DomainRules.expandDurationTicks(),
+				DomainRules.maxCastDisplacement());
 		FIELDS.put(player.getUuid(), field);
 		broadcast(field, SoundEvents.BLOCK_BEACON_ACTIVATE, 0.65f, 1.0f);
 		sync(player.getServer());
@@ -126,20 +139,24 @@ public final class DomainManager {
 		// 壳开始扩张后进入锁定态（2026-09-23）：位移不再打断，必须释放。
 		if (isExpanding(player)) return true;
 		return field != null && anchor != null && !field.active && player.getWorld() == field.world
-				&& player.getPos().squaredDistanceTo(anchor) <= DomainRules.MAX_CAST_DISPLACEMENT * DomainRules.MAX_CAST_DISPLACEMENT;
+				&& player.getPos().squaredDistanceTo(anchor)
+				<= field.maxCastDisplacement * field.maxCastDisplacement;
 	}
 
 	/** 壳是否已开始扩张（蓄力 ≥200t，含完全体）：扩张后施法锁定不可打断（2026-09-23 用户定稿）。 */
 	public static boolean isExpanding(ServerPlayerEntity player) {
 		Field field = FIELDS.get(player.getUuid());
-		return field != null && field.elapsed() >= DomainRules.EXPAND_START_TICK;
+		return field != null && field.elapsed() >= field.expandStartTick;
 	}
 	public static void activate(ServerPlayerEntity player) {
 		Field field = FIELDS.get(player.getUuid());
 		if (field == null || field.active) return;
 		CHARGE_ANCHORS.remove(player.getUuid()); // 蓄力结束：完全体锁定在跟随后的当前位置
+		// 快照沿用蓄力期捕获值（activate 不重读 balance——完全体几何必须与蓄力扩张终点一致）。
 		FIELDS.put(player.getUuid(), new Field(player, field.world, field.owner.getPos(), field.headHeight,
-				player.getServer().getTicks(), true));
+				player.getServer().getTicks(), true,
+				field.innerRadius, field.outerRadius, field.chargeTicks, field.durationTicks,
+				field.expandStartTick, field.expandDurationTicks, field.maxCastDisplacement));
 		// 2026-09-23 用户两轮反馈：完全展开的轰鸣仍偏响，音量倍率 0.7 → 0.5（其余领域音效维持 1.0）
 		broadcast(field, SoundEvents.ENTITY_WITHER_SPAWN, 0.55f, 0.5f);
 		sync(player.getServer());
@@ -170,6 +187,10 @@ public final class DomainManager {
 			buf.writeFloat(pitch);
 			buf.writeFloat(volumeScale);
 			buf.writeLong(seed);
+			// v2 尾部追加（2026-09-27）：起手快照 inner/outer，客户端音量距离曲线用包值
+			// （与服务端结算几何同源；旧端无剩余字节时客户端回退本地 balance 镜像）。
+			buf.writeDouble(field.innerRadius);
+			buf.writeDouble(field.outerRadius);
 			ServerPlayNetworking.send(listener, SOUND, buf);
 		}
 	}
@@ -178,7 +199,7 @@ public final class DomainManager {
 		for (Field field : java.util.List.copyOf(FIELDS.values())) {
 			if (!field.owner.isAlive() || field.owner.isRemoved() || field.owner.isSpectator()
 					|| field.owner.getWorld() != field.world
-					|| field.active && field.elapsed() >= DomainRules.DURATION_TICKS
+					|| field.active && field.elapsed() >= field.durationTicks
 					|| !field.active && !SpellChannelManager.isCasting(field.owner)) {
 				CHARGE_ANCHORS.remove(field.owner.getUuid());
 				remove(field.owner);
@@ -191,13 +212,16 @@ public final class DomainManager {
 			if (field.active) continue;
 			Vec3d current = field.owner.getPos();
 			if (field.owner.getWorld() == field.world && !field.center.equals(current)) {
+				// 快照字段原样携带（跟随复制不改物理约束参数）。
 				FIELDS.put(entry.getKey(), new Field(field.owner, field.world, current,
-						field.headHeight, field.startTick, false));
+						field.headHeight, field.startTick, false,
+						field.innerRadius, field.outerRadius, field.chargeTicks, field.durationTicks,
+						field.expandStartTick, field.expandDurationTicks, field.maxCastDisplacement));
 			}
 		}
 		for (Field field : FIELDS.values()) {
 			if (field.active || field.elapsed() <= 0 || field.elapsed() % 40 != 0) continue;
-			float pitch = 0.65f + Math.min(1f, (float) field.elapsed() / DomainRules.CHARGE_TICKS) * 0.25f;
+			float pitch = 0.65f + Math.min(1f, (float) field.elapsed() / field.chargeTicks) * 0.25f;
 			broadcast(field, SoundEvents.BLOCK_CONDUIT_AMBIENT_SHORT, pitch, 1.0f);
 		}
 		if (!FIELDS.isEmpty() && server.getTicks() % 10 == 0) sync(server);
@@ -219,6 +243,11 @@ public final class DomainManager {
 				buf.writeDouble(field.headHeight);
 				buf.writeBoolean(field.active);
 				buf.writeVarInt(field.elapsed());
+				// v2 尾部追加（2026-09-27）：每条领域末尾附带起手快照 inner/outer 半径——
+				// 客户端渲染与预测墙改用包值，与服务端结算几何同源（本模组双端同装直接扩；
+				// 旧端无剩余字节时客户端回退本地 balance 镜像读取，见 DomainRenderer 接收端）。
+				buf.writeDouble(field.innerRadius);
+				buf.writeDouble(field.outerRadius);
 			}
 			ServerPlayNetworking.send(viewer, STATE, buf);
 		}
@@ -229,11 +258,12 @@ public final class DomainManager {
 			if (field.world != world) continue;
 			Vec3d start = from.subtract(field.center), end = to.subtract(field.center);
 			if (field.active) {
-				if (DomainRules.crosses(start.x, start.y, start.z, end.x, end.y, end.z, padding)) return true;
+				if (DomainRules.crosses(start.x, start.y, start.z, end.x, end.y, end.z, padding,
+						field.innerRadius, field.outerRadius)) return true;
 			} else {
 				// 扩张期单向阀（2006-09-21）：壳内向外=拦（含投射物）；壳外向内=放行
 				if (DomainRules.crossesOutward(start.x, start.y, start.z, end.x, end.y, end.z,
-						chargingRadius(field))) return true;
+						field.chargingRadius())) return true;
 			}
 		}
 		return false;
@@ -256,8 +286,8 @@ public final class DomainManager {
 		java.util.List<DomainRules.Shell> shells = new java.util.ArrayList<>(FIELDS.size());
 		for (Field field : FIELDS.values()) {
 			if (field.world != world) continue;
-			double radius = field.active ? DomainRules.INNER_RADIUS : chargingRadius(field);
-			if (radius > 0) shells.add(new DomainRules.Shell(field.center, radius, field.active));
+			double radius = field.active ? field.innerRadius : field.chargingRadius();
+			if (radius > 0) shells.add(new DomainRules.Shell(field.center, radius, field.outerRadius, field.active));
 		}
 		return shells;
 	}
@@ -297,9 +327,9 @@ public final class DomainManager {
 		for (Field field : FIELDS.values()) {
 			if (field.world != world) continue;
 			if (field.active) {
-				if (field.center.squaredDistanceTo(position) <= DomainRules.OUTER_RADIUS * DomainRules.OUTER_RADIUS) return true;
+				if (field.center.squaredDistanceTo(position) <= field.outerRadius * field.outerRadius) return true;
 			} else {
-				double radius = chargingRadius(field);
+				double radius = field.chargingRadius();
 				if (radius > 0 && field.center.squaredDistanceTo(position) <= radius * radius) return true;
 			}
 		}
@@ -311,7 +341,7 @@ public final class DomainManager {
 		if (!(world instanceof ServerWorld)) return false;
 		for (Field field : FIELDS.values()) {
 			if (field.active && field.world == world && field.center.squaredDistanceTo(position)
-					<= DomainRules.OUTER_RADIUS * DomainRules.OUTER_RADIUS) return true;
+					<= field.outerRadius * field.outerRadius) return true;
 		}
 		return false;
 	}
@@ -358,7 +388,7 @@ public final class DomainManager {
 	private static Field fieldAt(Entity entity) {
 		for (Field field : FIELDS.values()) {
 			if (field.active && field.world == entity.getWorld()
-					&& field.center.squaredDistanceTo(entity.getPos()) <= DomainRules.INNER_RADIUS * DomainRules.INNER_RADIUS) return field;
+					&& field.center.squaredDistanceTo(entity.getPos()) <= field.innerRadius * field.innerRadius) return field;
 		}
 		return null;
 	}

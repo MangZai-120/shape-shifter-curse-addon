@@ -11,6 +11,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.server.world.ServerWorld;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -25,8 +26,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * 服务端权威，多人一致。
  */
 public final class ParasiticAbsorptionManager {
-    /** 最多持续 15s（300t），每次触发刷新到此 */
+    /** 最多持续 15s（300t），每次触发刷新到此；默认值，运行时从 balance 快照读取（abilities.parasitic_seed_system） */
     public static final int MAX_DURATION = 300;
+
+    /** balance 快照读取（快照未初始化回退默认常量） */
+    private static final BalanceReader BAL = new BalanceReader("abilities.parasitic_seed_system");
 
     private static final Map<UUID, AbsorptionData> DATA = new ConcurrentHashMap<>();
 
@@ -67,7 +71,7 @@ public final class ParasiticAbsorptionManager {
     public static void addAbsorption(LivingEntity entity, int amplifier, float durationFactor) {
         if (!(entity.getWorld() instanceof ServerWorld world)) return;
         long now = world.getTime();
-        int duration = Math.max(20, Math.round(MAX_DURATION * durationFactor));
+        int duration = Math.max(20, Math.round(BAL.i("absorption_max_duration", MAX_DURATION) * durationFactor));
         float add = (amplifier + 1) * 2.0f;
         entity.setAbsorptionAmount(entity.getAbsorptionAmount() + add);
         AbsorptionData d = DATA.computeIfAbsent(entity.getUuid(), k -> new AbsorptionData());
