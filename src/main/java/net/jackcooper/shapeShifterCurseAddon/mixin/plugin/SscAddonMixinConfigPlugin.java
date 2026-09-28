@@ -76,8 +76,7 @@ public class SscAddonMixinConfigPlugin implements IMixinConfigPlugin {
         // 简短类名 = my_addon.mixins.json 里 "mixins"/"client" 数组的条目原样填入。
     }
 
-    /** 登记「必需 mod」条件加载规则。 */
-    @SuppressWarnings("unused")
+    /** 登记「必需 mod」条件加载规则。（已被 static 块调用，无需 unused 抑制） */
     private static void requireMod(String simpleMixinName, String... mods) {
         REQUIRED_MODS.put(MIXIN_PREFIX + simpleMixinName, mods);
     }

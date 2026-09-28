@@ -9,30 +9,6 @@
             "should_render": false
         }
     },
-    "cooldown_timer": {
-        "type": "apoli:resource",
-        "min": 0,
-        "max": 400,
-        "start_value": 0,
-        "hud_render": {
-            "should_render": false,
-            "bar_index": 5
-        }
-    },
-    "cooldown_tick": {
-        "type": "apoli:action_over_time",
-        "interval": 1,
-        "entity_action": {
-            "type": "my_addon:tick_countdown",
-            "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_cooldown_timer"
-        },
-        "condition": {
-            "type": "apoli:resource",
-            "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_cooldown_timer",
-            "comparison": ">",
-            "compare_to": 0
-        }
-    },
     "internal_timer": {
         "type": "apoli:resource",
         "min": 0,
@@ -48,7 +24,11 @@
         "key": {
             "key": "key.ssc_addon.sp_primary"
         },
-        "cooldown": 20,
+        "cooldown": 400,
+        "cooldown_start": "on_end",
+        "defer_release": true,
+        "repress_while_active": true,
+        "repress_delay": 20,
         "entity_action": {
             "type": "apoli:and",
             "actions": [
@@ -74,16 +54,8 @@
                                 "effect": "ssc_addon:blue_fire_ring"
                             },
                             {
-                                "type": "apoli:change_resource",
-                                "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_cooldown_timer",
-                                "operation": "set",
-                                "change": 400
-                            },
-                            {
-                                "type": "apoli:change_resource",
-                                "resource": "my_addon:form_sp_primary_cd",
-                                "operation": "set",
-                                "change": 400
+                                "type": "my_addon:skill_completed",
+                                "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
                             },
                             {
                                 "type": "apoli:change_resource",
@@ -115,6 +87,10 @@
                                     "change": 1
                                 },
                                 {
+                                    "type": "my_addon:skill_begin",
+                                    "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
+                                },
+                                {
                                     "type": "apoli:change_resource",
                                     "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_internal_timer",
                                     "operation": "set",
@@ -130,6 +106,10 @@
                                         "show_particles": false,
                                         "show_icon": true
                                     }
+                                },
+                                {
+                                    "type": "my_addon:skill_released",
+                                    "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
                                 },
                                 {
                                     "type": "apoli:play_sound",
@@ -152,12 +132,6 @@
         "condition": {
             "type": "apoli:and",
             "conditions": [
-                {
-                    "type": "apoli:resource",
-                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_cooldown_timer",
-                    "comparison": "==",
-                    "compare_to": 0
-                },
                 {
                     "type": "ssc_addon:has_blue_fire_amulet",
                     "inverted": true
@@ -215,16 +189,8 @@
                     "change": 0
                 },
                 {
-                    "type": "apoli:change_resource",
-                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_cooldown_timer",
-                    "operation": "set",
-                    "change": 400
-                },
-                {
-                    "type": "apoli:change_resource",
-                    "resource": "my_addon:form_sp_primary_cd",
-                    "operation": "set",
-                    "change": 400
+                    "type": "my_addon:skill_completed",
+                    "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
                 }
             ]
         }
@@ -246,16 +212,8 @@
                     "effect": "ssc_addon:blue_fire_ring"
                 },
                 {
-                    "type": "apoli:change_resource",
-                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_cooldown_timer",
-                    "operation": "set",
-                    "change": 400
-                },
-                {
-                    "type": "apoli:change_resource",
-                    "resource": "my_addon:form_sp_primary_cd",
-                    "operation": "set",
-                    "change": 400
+                    "type": "my_addon:skill_completed",
+                    "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
                 },
                 {
                     "type": "apoli:play_sound",
@@ -312,16 +270,8 @@
                     "effect": "ssc_addon:blue_fire_ring"
                 },
                 {
-                    "type": "apoli:change_resource",
-                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_cooldown_timer",
-                    "operation": "set",
-                    "change": 400
-                },
-                {
-                    "type": "apoli:change_resource",
-                    "resource": "my_addon:form_sp_primary_cd",
-                    "operation": "set",
-                    "change": 400
+                    "type": "my_addon:skill_completed",
+                    "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
                 },
                 {
                     "type": "apoli:play_sound",
@@ -383,16 +333,8 @@
                                 "effect": "ssc_addon:blue_fire_ring"
                             },
                             {
-                                "type": "apoli:change_resource",
-                                "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_cooldown_timer",
-                                "operation": "set",
-                                "change": 400
-                            },
-                            {
-                                "type": "apoli:change_resource",
-                                "resource": "my_addon:form_sp_primary_cd",
-                                "operation": "set",
-                                "change": 400
+                                "type": "my_addon:skill_completed",
+                                "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
                             },
                             {
                                 "type": "apoli:play_sound",

@@ -33,6 +33,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
@@ -50,7 +51,7 @@ import java.util.UUID;
  * 命中生物后在目标身上种下灵果种子，种子根据宿主的友敌关系与状态周期性结出自适应果实。
  * 全部判定与状态效果均在服务端执行，确保多人环境主客机一致。
  */
-public class ParasiticFruitSeedPower extends ActiveCooldownPower {
+public class ParasiticFruitSeedPower extends ActiveCooldownPower implements net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownHolder {
     // 以下均为默认值；运行时从 balance 快照读取（abilities.parasitic_seed_power）。
     // DEFAULT_LIFE_TICKS 例外：仅作工厂注册时 power JSON "duration" 字段的默认值（早于任何数据包加载），
     // 运行时无读取点，保持编译期常量。
@@ -67,6 +68,7 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
     private static final DustParticleEffect ENEMY_DUST = new DustParticleEffect(new Vector3f(0.55f, 0.10f, 0.75f), 1.1f);
     private static final DustParticleEffect SEED_DUST = new DustParticleEffect(new Vector3f(0.95f, 0.72f, 0.24f), 1.0f);
 
+    private final net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec spec;
     private final int cooldownTicks;
     private long internalCooldownEndTime = 0L;
     private final LinkedHashMap<UUID, SeedData> seeds = new LinkedHashMap<>();
@@ -97,31 +99,34 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         return true;
     }
 
-    public ParasiticFruitSeedPower(PowerType<?> type, LivingEntity entity, int cooldownTicks, int lifeTicks,
+    public ParasiticFruitSeedPower(PowerType<?> type, LivingEntity entity,
+                                   net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec spec, int lifeTicks,
                                    HudRender hudRender, Active.Key key) {
-        super(type, entity, cooldownTicks, hudRender, (e) -> {
+        super(type, entity, Math.max(1, spec.cooldown()), hudRender, (e) -> {
         });
-        this.cooldownTicks = cooldownTicks;
+        this.spec = spec;
+        this.cooldownTicks = spec.cooldown();
         this.setKey(key);
         this.setTicking(true);
     }
 
+    @Override
+    public net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec cooldownSpec() {
+        return spec;
+    }
+
     public static PowerFactory<Power> createFactory() {
         return new PowerFactory<>(new Identifier("my_addon", "parasitic_fruit_seed"),
-                new SerializableData()
-                        .add("cooldown", SerializableDataTypes.INT, 200)
+                net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec.addFields(new SerializableData()
                         .add("duration", SerializableDataTypes.INT, DEFAULT_LIFE_TICKS)
                         .add("hud_render", ApoliDataTypes.HUD_RENDER, HudRender.DONT_RENDER)
                         .add("key", ApoliDataTypes.BACKWARDS_COMPATIBLE_KEY, new Active.Key()),
-                data ->
-                        (type, player) -> new ParasiticFruitSeedPower(
-                                type,
-                                player,
-                                data.getInt("cooldown"),
-                                data.getInt("duration"),
-                                data.get("hud_render"),
-                                data.get("key")
-                        )
+                        200, SkillCastManager.START_ON_CAST),
+                data -> {
+                    var spec = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec.read(data);
+                    return (type, player) -> new ParasiticFruitSeedPower(type, player, spec,
+                            data.getInt("duration"), data.get("hud_render"), data.get("key"));
+                }
         ).allowCondition();
     }
 
@@ -155,7 +160,7 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         launchSeedProjectile(caster, twinPod);
         if (twinPod) {
             // 双生种荷：命中扩散（额外 1 人，无人叠 2 层），冷却 +1 秒
-            applyCooldown(cooldownTicks + 20);
+            applyCooldown(spec.extra("twin_pod"));
         } else {
             applyCooldown(cooldownTicks);
         }
@@ -238,6 +243,9 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
     }
 
     private boolean isInternalCooldownReady() {
+        if (entity instanceof ServerPlayerEntity sp) {
+            return net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(sp, powerIdentifier());
+        }
         return entity.getWorld().getTime() >= internalCooldownEndTime;
     }
 
@@ -246,8 +254,14 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower {
         // 同步给父类冷却体系，避免与 Apoli 自身的 isActive() 状态脱节
         this.use();
         if (entity instanceof ServerPlayerEntity caster) {
-            PowerUtils.setResourceValueAndSync(caster, FormIdentifiers.SP_PRIMARY_CD, ticks);
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.force(caster, powerIdentifier(), ticks);
         }
+    }
+
+    /** 本 power 的稳定技能 ID（= power 注册路径）。 */
+    public String powerIdentifier() {
+        return type != null && type.getIdentifier() != null
+                ? type.getIdentifier().toString() : "my_addon:parasitic_fruit_seed";
     }
 
     /**

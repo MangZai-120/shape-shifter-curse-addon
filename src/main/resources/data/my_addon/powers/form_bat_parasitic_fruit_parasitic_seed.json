@@ -1,6 +1,11 @@
 {
     "type": "my_addon:parasitic_fruit_seed",
     "cooldown": 20,
+    "fail_cooldown": 0,
+    "cooldown_start": "on_cast",
+    "extra_cooldowns": {
+        "twin_pod": 40
+    },
     "duration": 240,
     "hud_render": {
         "should_render": false

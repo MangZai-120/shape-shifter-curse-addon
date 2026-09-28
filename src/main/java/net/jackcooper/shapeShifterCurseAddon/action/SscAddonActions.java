@@ -36,7 +36,6 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpFrostStorm;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpMeleeAbility;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpTeleportAttack;
-import net.jackcooper.shapeShifterCurseAddon.ability.PlayDeadAbsorptionManager;
 import net.jackcooper.shapeShifterCurseAddon.entity.FrostBallEntity;
 import net.jackcooper.shapeShifterCurseAddon.util.SscIgnitedEntityAccessor;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -66,6 +65,12 @@ public class SscAddonActions {
 	}
 
 	public static void register() {
+		registerSkillLifecycle("skill_begin", net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns::begin);
+		registerSkillLifecycle("skill_released", net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns::released);
+		registerSkillLifecycle("skill_completed", net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns::completed);
+		registerSkillLifecycle("skill_ended", net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns::ended);
+		registerSkillLifecycle("skill_failed", net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns::failed);
+		registerSkillLifecycle("skill_cancelled", net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns::cancelled);
 		registerEntity(new ActionFactory<>(new Identifier("my_addon", "self_decoration"),
 				new SerializableData().add("entity_action", io.github.apace100.apoli.data.ApoliDataTypes.ENTITY_ACTION),
 				(data, entity) -> net.jackcooper.shapeShifterCurseAddon.network.DecorationParticleScope.run(entity,
@@ -140,9 +145,17 @@ public class SscAddonActions {
 								}
 							}
 						}
+						net.jackcooper.shapeShifterCurseAddon.ability.FallenAllayVexSkill.onSummoned(player);
 					}
 				}
 		));
+		registerEntity(new ActionFactory<>(new Identifier("my_addon", "fallen_allay_vex_watchdog"),
+				new SerializableData(),
+				(data, entity) -> {
+					if (entity instanceof ServerPlayerEntity player) {
+						net.jackcooper.shapeShifterCurseAddon.ability.FallenAllayVexSkill.watchdog(player);
+					}
+				}));
 		registerEntity(PhantomBellTeleportAction.getFactory());
                 // 物品冷却动作（幻铃/救命猫尾等饰品 power 用；此前漏注册导致相关 power 整体被跳过）
                 registerEntity(net.jackcooper.shapeShifterCurseAddon.action.ItemCooldownAction.getFactory());
@@ -395,15 +408,6 @@ public class SscAddonActions {
 
 						// 3. Force Pose
 						living.setPose(EntityPose.SLEEPING);
-
-// 4. 设置CD显示资源（P4：balance abilities.playing_dead.cooldown_ticks 可配，原写死 620；
-						//    常量统一引用 PlayDeadAbsorptionManager，消除双份维护）
-						if (living instanceof ServerPlayerEntity sp) {
-							PowerUtils.setResourceValueAndSync(sp, FormIdentifiers.SP_SECONDARY_CD,
-									PLAY_DEAD_BAL.i("cooldown_ticks",
-											PlayDeadAbsorptionManager.PLAY_DEAD_CD_TICKS));
-						}
-
 					}
 				}));
 
@@ -577,6 +581,15 @@ public class SscAddonActions {
 		}
 	}
 
+	/** 纯 JSON 技能的通用冷却生命周期 action：{"type":"my_addon:skill_xxx","power":"<技能 power id>"}。 */
+	private static void registerSkillLifecycle(String name, java.util.function.BiConsumer<ServerPlayerEntity, String> step) {
+		registerEntity(new ActionFactory<>(new Identifier("my_addon", name),
+				new SerializableData().add("power", SerializableDataTypes.IDENTIFIER),
+				(data, entity) -> {
+					if (entity instanceof ServerPlayerEntity player) step.accept(player, data.getId("power").toString());
+				}));
+	}
+
 	/**
 	 * 将锥形范围内的水源方块以概率转为冰霜行者冰（Frosted Ice）
 	 *
@@ -626,8 +639,8 @@ public class SscAddonActions {
 	private static final int FROST_BALL_REGEN_LOCK_TICKS = 100; // 默认 5秒回能锁；balance regen_lock_ticks 可覆盖（pin 锚点）
 
 	/** 装死 CD 读取器（与 PlayDeadAbsorptionManager 共用同 scope 读取器，单一事实源，避免双份维护）。 */
-	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader PLAY_DEAD_BAL =
-			net.jackcooper.shapeShifterCurseAddon.ability.PlayDeadAbsorptionManager.balanceReader();
+	/** 装死的技能 ID（= 按键子 power 注册 ID）。 */
+	public static final String PLAY_DEAD_SKILL_ID = "my_addon:form_axolotl_sp_play_dead_activate";
 
 	private static net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader frostBallBalance() {
 		return FROST_BALL_BAL;

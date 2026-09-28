@@ -16,7 +16,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -54,7 +53,7 @@ public final class VortexChargeManager {
 	private static final int MAX_TICKS = 80;     // 4 秒
 	private static final int HIT_INTERVAL = 10;  // 每 10 tick 扣一次
 	private static final int DAMAGE_PER_HIT = 2;
-	private static final int CD_TICKS = 300;     // 15 秒
+	// CD（15 秒，释放后起算）由统一冷却服务 + power JSON 配置管理，原 CD_TICKS 常量已删
 	private static final double RADIUS = 3.0;
 	// ===== 蓄力期吸附（唯一吸附源：原 JSON pull_effect 的固定力度吸附已删，改由此处按击退抗性分档牵引）=====
 	/** 吸附作用半径（与原 JSON 吸附触及范围一致） */
@@ -64,6 +63,8 @@ public final class VortexChargeManager {
 
 	/** balance 快照读取（快照未初始化回退默认常量） */
 	private static final BalanceReader BAL = new BalanceReader("abilities.vortex_charge");
+	/** 统一冷却服务的稳定技能 ID（网络包触发型）。 */
+	private static final String SKILL_ID = "my_addon:form_axolotl_sp_vortex_charge";
 
 	/** HUD 门槛同源：每次命中湿润度消耗（balance 可调；HUD 展示用）。 */
 	public static int airPerHitForHud() { return BAL.i("air_per_hit", AIR_PER_HIT); }
@@ -79,6 +80,7 @@ public final class VortexChargeManager {
 	private static final Map<UUID, ChargeState> CHARGING = new ConcurrentHashMap<>();
 
 	private static final class ChargeState {
+        long castId = -1;
 		int ticks = 0;
 		int hits = 0;
 		int airSpent = 0;
@@ -112,9 +114,12 @@ public final class VortexChargeManager {
 	public static void start(ServerPlayerEntity player) {
 		if (CHARGING.containsKey(player.getUuid())) return;
 		if (!FormUtils.isAxolotlSP(player)) return;
-		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return; // CD 中
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return;
 		if (player.getAir() < BAL.i("air_per_hit", AIR_PER_HIT)) return; // 至少够扣一次
-		CHARGING.put(player.getUuid(), new ChargeState());
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID);
+		ChargeState s = new ChargeState();
+        s.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
+        CHARGING.put(player.getUuid(), s);
 		PowerUtils.setResourceValueAndSync(player, VORTEX_STATE, 1); // 标记蓄力中（客户端读 >0）
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -175,7 +180,12 @@ public final class VortexChargeManager {
 		ChargeState s = CHARGING.remove(player.getUuid());
 		PowerUtils.setResourceValueAndSync(player, VORTEX_STATE, 0);
 		if (s == null) return;
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, BAL.i("cd_ticks", CD_TICKS)); // CD 释放后起算
+		// 0 蓄力松手按取消处理：不进 CD
+		if (s.hits <= 0) {
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, s == null ? -1 : s.castId);
+			return;
+		}
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, s.castId);
 		double radius = BAL.d("radius", RADIUS);
 		int damage = s.hits * BAL.i("damage_per_hit", DAMAGE_PER_HIT);
 		ServerWorld sw = (ServerWorld) player.getWorld();
@@ -214,9 +224,11 @@ public final class VortexChargeManager {
 
 	/** 取消蓄力（不结算伤害、不进 CD）。 */
 	public static void cancel(ServerPlayerEntity player) {
-		if (CHARGING.remove(player.getUuid()) != null) {
+		ChargeState s = CHARGING.remove(player.getUuid());
+        if (s != null) {
 			PowerUtils.setResourceValueAndSync(player, VORTEX_STATE, 0);
 		}
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, s == null ? -1 : s.castId);
 	}
 
 	// ==================== Boss 判定 + 移动力度系数 ====================

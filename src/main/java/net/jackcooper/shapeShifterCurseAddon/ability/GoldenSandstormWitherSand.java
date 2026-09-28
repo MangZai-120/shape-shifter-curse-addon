@@ -15,10 +15,8 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Box;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
 import java.util.List;
@@ -47,10 +45,7 @@ public class GoldenSandstormWitherSand {
 	private static final int BLIND_DURATION = 60; // 3秒
 	/** 蓄力时间（tick） */
 	private static final int CHARGE_TICKS = 20; // 1秒
-	/** 正常CD时间（tick） */
-	private static final int COOLDOWN_TICKS = 520; // 26秒
-	/** 被打断CD时间（tick） */
-	private static final int INTERRUPT_CD_TICKS = 140; // 7秒
+	// 正常/打断 CD 已由统一冷却服务 SkillCooldowns + power JSON 配置管理，原常量已删
 	/** 蓄力减速修正器UUID */
 	private static final UUID CHARGE_SLOW_UUID = UUID.fromString("b8c9d0e1-f2a3-4b5c-8d6e-7f8901234567");
 	private static final String CHARGE_SLOW_NAME = "Wither Sand Charge Slow";
@@ -61,6 +56,8 @@ public class GoldenSandstormWitherSand {
 
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("abilities.golden_sandstorm_wither_sand");
+	/** 统一冷却服务的稳定技能 ID（= power 注册路径）。 */
+	private static final String SKILL_ID = "my_addon:form_golden_sandstorm_sp_wither_sand";
 
 	private GoldenSandstormWitherSand() {
 	}
@@ -69,11 +66,7 @@ public class GoldenSandstormWitherSand {
 	 * 玩家按下技能键 - 开始蓄力
 	 */
 	public static boolean execute(ServerPlayerEntity player) {
-		// CD检查
-		int cd = PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD);
-		if (cd > 0) return false;
-
-		// 已经在蓄力中则忽略
+		// 已经在蓄力中则忽略（CD 门禁已由 power 层 begin 统一拦截，修 P1-1）
 		if (CHARGING_PLAYERS.containsKey(player.getUuid())) return false;
 
 		if (!(player.getWorld() instanceof ServerWorld serverWorld)) return false;
@@ -83,6 +76,8 @@ public class GoldenSandstormWitherSand {
 		state.startTick = serverWorld.getTime();
 		state.healthAtStart = player.getHealth();
 		CHARGING_PLAYERS.put(player.getUuid(), state);
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID);
+        state.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
 
 		// 施加减速50%
 		applyChargeSlow(player);
@@ -107,6 +102,7 @@ public class GoldenSandstormWitherSand {
 		// 形态检查
 		if (!FormUtils.isGoldenSandstormSP(player)) {
 			cancelCharge(player, false);
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, state.castId);
 			return;
 		}
 
@@ -115,9 +111,9 @@ public class GoldenSandstormWitherSand {
 
 		// 检查是否被打断（生命值下降 = 受到伤害）
 		if (player.getHealth() < state.healthAtStart) {
-			// 被打断：进入7秒CD
+			// 被打断：按 fail_cooldown 结算（统一服务）+ 打断音效
 			cancelCharge(player, true);
-			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, BAL.i("interrupt_cd_ticks", INTERRUPT_CD_TICKS));
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.failed(player, SKILL_ID, state.castId);
 
 			serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_SAND_FALL, SoundCategory.PLAYERS, 1.0f, 0.3f);
@@ -138,16 +134,15 @@ public class GoldenSandstormWitherSand {
 		if (elapsed >= BAL.i("charge_ticks", CHARGE_TICKS)) {
 			removeChargeSlow(player);
 			CHARGING_PLAYERS.remove(player.getUuid());
-			releaseSkill(player, serverWorld);
+			releaseSkill(player, serverWorld, state.castId);
 		}
 	}
 
 	/**
 	 * 释放技能 - 15格AoE
 	 */
-	private static void releaseSkill(ServerPlayerEntity player, ServerWorld serverWorld) {
-		// 设置正常CD
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, BAL.i("cooldown_ticks", COOLDOWN_TICKS));
+	private static void releaseSkill(ServerPlayerEntity player, ServerWorld serverWorld, long castId) {
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, castId);
 		double radius = BAL.d("radius", RADIUS);
 
 		// 释放音效
@@ -264,6 +259,7 @@ public class GoldenSandstormWitherSand {
 
 	// ==================== 内部数据类 ====================
 	private static class ChargeState {
+        long castId = -1;
 		long startTick;
 		float healthAtStart;
 	}

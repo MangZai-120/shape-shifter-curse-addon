@@ -100,12 +100,6 @@
                     "type": "apoli:execute_command",
                     "command": "particle minecraft:lava ^ ^1.2 ^3 1.1 1.0 1.0 0.0 4 force @a"
                 }
-            },
-            {
-                "type": "apoli:change_resource",
-                "resource": "my_addon:form_sp_secondary_cd",
-                "operation": "set",
-                "change": 100
             }
         ]
     },

@@ -242,6 +242,13 @@ tasks.register('balanceReviewTest', JavaExec) {
 }
 check.dependsOn balanceReviewTest
 
+tasks.register('skillCooldownTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownTest'
+}
+check.dependsOn skillCooldownTest
+
 java {
     // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
     // if it is present.

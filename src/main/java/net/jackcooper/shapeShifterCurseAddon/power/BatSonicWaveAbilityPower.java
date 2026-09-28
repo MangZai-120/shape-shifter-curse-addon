@@ -8,7 +8,6 @@ import io.github.apace100.apoli.power.PowerType;
 import io.github.apace100.apoli.power.factory.PowerFactory;
 import io.github.apace100.apoli.util.HudRender;
 import io.github.apace100.calio.data.SerializableData;
-import io.github.apace100.calio.data.SerializableDataTypes;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -24,19 +23,17 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
-import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
+import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager;
 
 import java.util.List;
 
 // 吸血蝙蝠次要技能：直线超声波（3.5 格宽（直径）× 8 格长的圆柱作用域）
 // 命中目标：4 点 playerAttack 伤害；玩家附加 DEAFEN 60t（静音）；非玩家附加 BLINDNESS 60t（模拟听觉抽离）；统一附加 NAUSEA 60t（反胃）
 // 默认白名单：玩家及其宠物/召唤物豁免
-// CD 8 秒（160t），通过 SP_SECONDARY_CD 资源驱动 HUD CD 条
-public class BatSonicWaveAbilityPower extends ActiveCooldownPower {
+// CD 默认 8 秒（160t），由本 power JSON 的 cooldown 字段配置
+public class BatSonicWaveAbilityPower extends ActiveCooldownPower implements net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownHolder {
 
 	private static final double RANGE = 8.0;          // 默认长度（8 格）；运行时从 balance 快照读取（可数据包覆盖）
 	private static final double HALF_WIDTH = 1.75;    // 默认宽度半径（3.5 格直径）
@@ -48,63 +45,46 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower {
 	private static double halfWidth() { var s = BalanceIntegration.currentSnapshot(); return s != null ? s.getDouble("abilities.bat_sonic_wave", "half_width") : HALF_WIDTH; }
 	private static float damage() { var s = BalanceIntegration.currentSnapshot(); return s != null ? (float) s.getDouble("abilities.bat_sonic_wave", "damage") : DAMAGE; }
 	private static int debuffTicks() { var s = BalanceIntegration.currentSnapshot(); return s != null ? (int) s.getInt("abilities.bat_sonic_wave", "debuff_ticks") : DEBUFF_TICKS; }
-	private final int cooldownTicks;
-	/** 失败 CD（power JSON fail_cooldown 字段；默认 60% = 96t）。 */
-	private final int failCooldownTicks;
+	private final net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec spec;
 	private long internalCooldownEndTime = 0L;
 
-	public BatSonicWaveAbilityPower(PowerType<?> type, LivingEntity entity, int cooldownTicks, int failCooldownTicks, HudRender hudRender, Active.Key key) {
-		super(type, entity, cooldownTicks, hudRender, (e) -> {
+	public BatSonicWaveAbilityPower(PowerType<?> type, LivingEntity entity,
+	                                net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec spec, HudRender hudRender, Active.Key key) {
+		super(type, entity, Math.max(1, spec.cooldown()), hudRender, (e) -> {
 		});
-		this.cooldownTicks = cooldownTicks;
-		this.failCooldownTicks = failCooldownTicks;
+		this.spec = spec;
 		this.setKey(key);
+	}
+
+	@Override
+	public net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec cooldownSpec() {
+		return spec;
 	}
 
 	public static PowerFactory<Power> createFactory() {
 		return new PowerFactory<>(new Identifier("my_addon", "sonic_wave"),
-				new SerializableData()
-						.add("cooldown", SerializableDataTypes.INT, 160)
-						// 失败 CD 绝对值（计划书 §3.2）：默认 96 = 160×60%（雪狐同规则折算）
-						.add("fail_cooldown", SerializableDataTypes.INT, 96)
+				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec.addFields(new SerializableData()
 						.add("hud_render", ApoliDataTypes.HUD_RENDER, HudRender.DONT_RENDER)
 						.add("key", ApoliDataTypes.BACKWARDS_COMPATIBLE_KEY, new Active.Key()),
-				data ->
-						(type, player) -> new BatSonicWaveAbilityPower(
-								type,
-								player,
-								data.getInt("cooldown"),
-								data.getInt("fail_cooldown"),
-								data.get("hud_render"),
-								data.get("key")
-						)
+						160, SkillCastManager.START_ON_CAST),
+				data -> {
+					var spec = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec.read(data);
+					return (type, player) -> new BatSonicWaveAbilityPower(type, player, spec, data.get("hud_render"), data.get("key"));
+				}
 		).allowCondition();
 	}
 
 	private boolean isInternalCooldownReady() {
-		// 统一服务权威（持久化；回退内存时间戳兼容）
-		if (entity instanceof ServerPlayerEntity sp
-				&& entity.getWorld() instanceof ServerWorld sw) {
-			return SkillCastManager.get(sw).canBegin(sp, powerIdentifier());
+		if (entity instanceof ServerPlayerEntity sp) {
+			return net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(sp, powerIdentifier());
 		}
 		return entity.getWorld().getTime() >= internalCooldownEndTime;
 	}
 
 	private void applyCooldown() {
-		internalCooldownEndTime = entity.getWorld().getTime() + cooldownTicks;
-		if (entity instanceof ServerPlayerEntity sp
-				&& entity.getWorld() instanceof ServerWorld sw) {
-			SkillCastManager mgr = SkillCastManager.get(sw);
-			// 音波 = on_cast 生命周期（旧行为：按键即起算）；失败档=60%（96t）由 JSON fail_cooldown 提供，
-			// 此处走 begin+released+finish 全链（瞬发技能同 tick 三段，§3.2）
-			SkillCastManager.ResolvedConfig cfg = new SkillCastManager.ResolvedConfig(
-					cooldownTicks, failCooldownTicks, SkillCastManager.START_ON_CAST);
-			long castId = mgr.begin(sp, powerIdentifier(), cfg);
-			if (castId >= 0) {
-				mgr.released(sp, castId);
-				mgr.finish(sp, castId);
-			}
-			PowerUtils.setResourceValueAndSync(sp, FormIdentifiers.SP_SECONDARY_CD, cooldownTicks);
+		internalCooldownEndTime = entity.getWorld().getTime() + spec.cooldown();
+		if (entity instanceof ServerPlayerEntity sp) {
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.instant(sp, powerIdentifier());
 		}
 	}
 

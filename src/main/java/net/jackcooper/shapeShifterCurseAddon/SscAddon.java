@@ -494,6 +494,7 @@ public class SscAddon implements ModInitializer {
 		// 仿铁魔法「行为类 + JSON 数值」分离；缺文件回退 Java fallback 数值）
 		ResourceManagerHelper.get(ResourceType.SERVER_DATA)
 				.registerReloadListener(net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE);
+        net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSync.init();
 	}
 
 

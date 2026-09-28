@@ -1,0 +1,13 @@
+{
+    "type": "my_addon:fail_aware_active_self",
+    "cooldown": 100,
+    "fail_cooldown": 0,
+    "cooldown_start": "on_cast",
+    "extra_cooldowns": {
+        "channel_success": 300
+    },
+    "hud_render": {
+        "should_render": false
+    },
+    "hidden": true
+}

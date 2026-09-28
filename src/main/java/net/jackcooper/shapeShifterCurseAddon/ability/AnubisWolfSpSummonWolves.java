@@ -17,10 +17,8 @@ import net.onixary.shapeShifterCurseFabric.minion.MinionRegister;
 import net.onixary.shapeShifterCurseFabric.minion.mobs.AnubisWolfMinionEntity;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
 
 import java.util.*;
@@ -56,14 +54,7 @@ public class AnubisWolfSpSummonWolves {
 	 * 冥狼存活时间（tick）
 	 */
 	private static final int WOLF_DURATION = 600; // 30秒
-	/**
-	 * CD时间（tick）
-	 */
-	private static final int COOLDOWN_TICKS = 600; // 30秒
-	/**
-	 * 惩罚CD时间（tick）
-	 */
-	private static final int PENALTY_COOLDOWN_TICKS = 100; // 5秒
+	// CD（正常/惩罚）已由统一冷却服务 SkillCooldowns + power JSON 配置管理，原常量已删
 	/**
 	 * 最大同时存在冥狼数
 	 */
@@ -118,6 +109,8 @@ public class AnubisWolfSpSummonWolves {
 	private static final double TRINKET_HEALTH_REDUCTION = -0.35;
 	// ==================== 状态追踪 ====================
 	private static final ConcurrentHashMap<UUID, SummonData> ACTIVE_SUMMONS = new ConcurrentHashMap<>();
+	/** 统一冷却服务的稳定技能 ID（= power 注册路径）。 */
+	public static final String SKILL_ID = "my_addon:form_anubis_wolf_sp_summon_wolves";
 
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("abilities.anubis_summon_wolves");
@@ -126,23 +119,10 @@ public class AnubisWolfSpSummonWolves {
 	}
 
 	/**
-	 * 获取召唤技能CD时间（tick），供增强死亡领域联动使用
-	 */
-	public static int getCooldownTicks() {
-		return BAL.i("cooldown_ticks", COOLDOWN_TICKS);
-	}
-
-	/**
 	 * 玩家按下次要技能键触发
 	 */
 	public static boolean execute(ServerPlayerEntity player) {
-		// CD检查
-		int cdRemaining = PowerUtils.getResourceValue(player, FormIdentifiers.SP_SECONDARY_CD);
-		if (cdRemaining > 0) {
-			return false;
-		}
-
-		// 重复释放检查（正在嚎叫/召唤中）
+		// 重复释放检查（CD 门禁已由 power 层 begin 统一拦截，修 P1-1）
 		if (ACTIVE_SUMMONS.containsKey(player.getUuid())) {
 			return false;
 		}
@@ -154,8 +134,8 @@ public class AnubisWolfSpSummonWolves {
 		// 通过IPlayerEntityMinion系统检查当前冥狼数量
 		int aliveCount = getMinionCount(player);
 		if (aliveCount >= maxWolves) {
-			// 已达上限，给予惩罚CD，播放失败音效
-			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, BAL.i("penalty_cooldown_ticks", PENALTY_COOLDOWN_TICKS));
+			// 已达上限：按 fail_cooldown 结算 + 失败音效
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.penalizeAttempt(player, SKILL_ID);
 			player.getServerWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_NOTE_BLOCK_BASS.value(), SoundCategory.PLAYERS, 0.8f, 0.5f);
 			return false;
@@ -171,7 +151,9 @@ public class AnubisWolfSpSummonWolves {
 		int canSummon = Math.min(targetCount, maxWolves - aliveCount);
 
 		// 创建召唤数据并进入嚎叫阶段
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return false;
 		SummonData data = new SummonData(canSummon, domainActive);
+        data.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
 		ACTIVE_SUMMONS.put(player.getUuid(), data);
 
 		// 播放狼嚎叫声
@@ -285,8 +267,7 @@ public class AnubisWolfSpSummonWolves {
 			data.phase = Phase.ACTIVE;
 			data.ticksElapsed = 0;
 
-			// 设置CD
-			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, BAL.i("cooldown_ticks", COOLDOWN_TICKS));
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, data.castId);
 		}
 	}
 
@@ -529,6 +510,7 @@ public class AnubisWolfSpSummonWolves {
 
 	// ==================== 数据类 ====================
 	private static class SummonData {
+        long castId = -1;
 		Phase phase;
 		int ticksElapsed;
 		int wolvesToSummon;     // 本次需要召唤的总数

@@ -30,6 +30,8 @@
         "my_addon:form_sp_primary_cd",
         "my_addon:form_sp_secondary_cd",
         "my_addon:form_sp_primary_cd_tick",
+        "my_addon:form_spider_salticidae_jump_kill",
+        "my_addon:form_spider_salticidae_venom",
         "my_addon:form_sp_secondary_cd_tick"
     ],
     "icon": { "item": "minecraft:spider_eye" },

@@ -100,7 +100,7 @@ public class SpiderSwingBullet extends WebBullet {
 	public void onBlockHit(BlockHitResult hit) {
 		if (this.getWorld() instanceof ServerWorld sw && this.owner instanceof ServerPlayerEntity sp) {
 			Vec3d anchor = hit.getPos();
-			SpiderMoonWeaverSwingManager.onBulletHitBlock(sp, anchor);
+			SpiderMoonWeaverSwingManager.onBulletHitBlock(sp, anchor, this);
 			sw.playSound(null, anchor.x, anchor.y, anchor.z,
 					SoundEvents.BLOCK_TRIPWIRE_ATTACH, SoundCategory.PLAYERS, 0.9f, 1.4f);
 		}
@@ -112,7 +112,7 @@ public class SpiderSwingBullet extends WebBullet {
 		Entity e = hit.getEntity();
 		if (this.getWorld() instanceof ServerWorld sw && this.owner instanceof ServerPlayerEntity sp
 				&& e instanceof LivingEntity living && living != sp) {
-			SpiderMoonWeaverSwingManager.onBulletHitEntity(sp, living);
+			SpiderMoonWeaverSwingManager.onBulletHitEntity(sp, living, this);
 			sw.playSound(null, living.getX(), living.getY(), living.getZ(),
 					SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.PLAYERS, 0.9f, 1.6f); // 叮！
 			this.discard();
@@ -131,7 +131,7 @@ public class SpiderSwingBullet extends WebBullet {
 	public void remove(Entity.RemovalReason reason) {
 		// 统一 miss 处理（超程/超时/液体/未命中）：onBulletMiss 幂等，仅仍在飞（未命中）时给 5 秒 CD
 		if (!this.getWorld().isClient && this.owner instanceof ServerPlayerEntity sp) {
-			SpiderMoonWeaverSwingManager.onBulletMiss(sp);
+			SpiderMoonWeaverSwingManager.onBulletMiss(sp, this);
 		}
 		super.remove(reason);
 	}

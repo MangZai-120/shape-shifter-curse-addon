@@ -36,7 +36,8 @@
         "shape-shifter-curse:form_snow_fox_3_tan_temperature_remap",
         "shape-shifter-curse:form_tan_prevent_dirty_water_thirst",
         "my_addon:form_sp_primary_cd",
-        "my_addon:form_sp_primary_cd_tick"
+        "my_addon:form_sp_primary_cd_tick",
+        "my_addon:form_snow_fox_frostspine_frost_spike"
     ],
     "icon": {
         "item": "minecraft:snowball"

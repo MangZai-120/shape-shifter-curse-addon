@@ -12,7 +12,6 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.jackcooper.shapeShifterCurseAddon.entity.FrostStormEntity;
 import net.jackcooper.shapeShifterCurseAddon.power.FailAwareActiveSelfPower;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
@@ -43,6 +42,7 @@ public class SnowFoxSpFrostStorm {
     //未使用: private static final int COOLDOWN = 600;  30秒CD = 600tick（CD 已回归 power JSON 原生管理）
     
     private static final Identifier RESOURCE_ID = new Identifier("my_addon", "form_snow_fox_sp_resource");
+    public static final String SKILL_ID = "my_addon:form_snow_fox_sp_ranged_secondary";
     private static final Identifier REGEN_COOLDOWN_ID = new Identifier("my_addon", "form_snow_fox_sp_frost_regen_cooldown_resource");
     
     /**
@@ -64,12 +64,12 @@ public class SnowFoxSpFrostStorm {
         }
 
         // 消耗霜寒值（在蓄力开始时就消耗）
+        if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return false;
         changeResourceValue(player, -BAL.i("mana_cost", MANA_COST));
         // 设置回复冷却（默认5秒；balance regen_lock_ticks 可覆盖）
         setRegenCooldown(player, BAL.i("regen_lock_ticks", REGEN_LOCK_TICKS));
 
-        // 开始蓄力（CD 门禁由 power JSON fail_aware 原生管理）
-        CHARGING_PLAYERS.put(player.getUuid(), new ChargingData(0));
+        CHARGING_PLAYERS.put(player.getUuid(), new ChargingData(0, net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID)));
         
         // 播放蓄力开始音效
         player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -82,7 +82,9 @@ public class SnowFoxSpFrostStorm {
      * 取消蓄力（被净化时调用）
      */
     public static void cancelCharging(ServerPlayerEntity player) {
-        if (CHARGING_PLAYERS.remove(player.getUuid()) != null) {
+        ChargingData data = CHARGING_PLAYERS.remove(player.getUuid());
+        if (data != null) {
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.failed(player, SKILL_ID, data.castId);
             // 播放打断音效
             player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.5f);
@@ -138,7 +140,7 @@ public class SnowFoxSpFrostStorm {
         
         // 蓄力完成
         if (data.chargeTicks >= BAL.i("charge_ticks", CHARGE_TICKS)) {
-            releaseStorm(player);
+            releaseStorm(player, data.castId);
             CHARGING_PLAYERS.remove(player.getUuid());
         }
     }
@@ -146,8 +148,9 @@ public class SnowFoxSpFrostStorm {
     /**
      * 释放冰风暴
      */
-    private static void releaseStorm(ServerPlayerEntity player) {
-        // 霜寒值已在startCharging时消耗，CD也已设置
+    private static void releaseStorm(ServerPlayerEntity player, long castId) {
+        if (castId < 0 || net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID) != castId) return;
+        net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.released(player, SKILL_ID, castId);
 
         // 计算准星位置（射线检测）
         Vec3d start = player.getEyePos();
@@ -165,12 +168,13 @@ public class SnowFoxSpFrostStorm {
             targetPos = end;
         }
         
-        // 创建冰风暴实体
+        // 创建冰风暴实体（绑定本次 cast：旧风暴/重登后不误伤新施放）
         FrostStormEntity storm = new FrostStormEntity(
             player.getWorld(),
             targetPos.x, targetPos.y, targetPos.z,
             player
         );
+        storm.bindCast(castId);
         player.getWorld().spawnEntity(storm);
         
         // 播放释放音效
@@ -211,8 +215,10 @@ public class SnowFoxSpFrostStorm {
      */
     private static class ChargingData {
         int chargeTicks;
+        final long castId;
 
-        ChargingData(int chargeTicks) {
+        ChargingData(int chargeTicks, long castId) {
+            this.castId = castId;
             this.chargeTicks = chargeTicks;
         }
     }

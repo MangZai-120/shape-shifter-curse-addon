@@ -1,0 +1,13 @@
+{
+    "type": "my_addon:fail_aware_active_self",
+    "cooldown": 400,
+    "fail_cooldown": 240,
+    "cooldown_start": "on_end",
+    "extra_cooldowns": {
+        "per_shot": 120
+    },
+    "hud_render": {
+        "should_render": false
+    },
+    "hidden": true
+}

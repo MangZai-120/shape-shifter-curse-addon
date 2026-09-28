@@ -57,6 +57,8 @@
         "my_addon:form_familiar_fox_mancianima_init_mana",
         "my_addon:form_sp_primary_cd",
         "my_addon:form_sp_primary_cd_tick",
+        "my_addon:form_familiar_fox_mancianima_contract_mark",
+        "my_addon:form_familiar_fox_mancianima_soul_teleport",
         "my_addon:form_sp_secondary_cd",
         "my_addon:form_sp_secondary_cd_tick",
         "my_addon:form_mancianima_resistance",

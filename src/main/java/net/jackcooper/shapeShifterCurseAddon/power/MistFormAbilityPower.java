@@ -41,14 +41,16 @@ import java.util.List;
  * 幽雾化形 - 吸血蝙蝠形态核心主动技能。
  * 按下后玩家模型消散为一团雾（原版隐身 → SSC 形态渲染自动跳过），
  * 雾化期间除虚空伤害外免疫一切伤害（由数据驱动的 invulnerability 提供）。
- * 雾化持续 effectDuration tick，结束后进入 cooldownTicks 的冷却（通过 SP_PRIMARY_CD 资源驱动CD条）。
+ * 雾化持续 effectDuration tick，结束后按本 power JSON 的 cooldown 进入冷却。
  * 雾化满 1 秒后再次按主动键可凝聚爆破；被 sp悦灵 净化（PURIFIED）会立即中断雾化并进入冷却。
  * 全部状态判定与计时均在服务端执行，保证多人/主客机一致性。
  */
-public class MistFormAbilityPower extends ActiveCooldownPower {
+public class MistFormAbilityPower extends ActiveCooldownPower implements net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownHolder {
+    private long cooldownCastId = -1;
+
 
 	private final int effectDuration; // 雾化持续 tick
-	private final int cooldownTicks;  // 雾化结束后冷却 tick
+	private final net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec spec;
 	// 基于服务端世界时间的内部冷却，避免多人环境下计时漂移
 	private long internalCooldownEndTime = 0L;
 	private boolean wasMist = false;
@@ -80,32 +82,33 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 	private static final int BLOOD_BURST_COST = 0;     // 凝聚爆破额外消耗（无消耗）
 	private long lastBloodDrainTime = 0L;               // 上次每秒扣血时间
 
-	public MistFormAbilityPower(PowerType<?> type, LivingEntity entity, int cooldownAfter, int effectDuration, int cooldownTicks, HudRender hudRender, Active.Key key) {
-		super(type, entity, cooldownAfter, hudRender, (e) -> {
+	public MistFormAbilityPower(PowerType<?> type, LivingEntity entity, int effectDuration, HudRender hudRender, Active.Key key,
+	                           net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec spec) {
+		super(type, entity, Math.max(1, spec.cooldown()), hudRender, (e) -> {
 		});
 		this.effectDuration = effectDuration;
-		this.cooldownTicks = cooldownTicks;
+		this.spec = spec;
 		this.setKey(key);
 		this.setTicking(true);
 	}
 
+	@Override
+	public net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec cooldownSpec() {
+		return spec;
+	}
+
 	public static PowerFactory<Power> createFactory() {
 		return new PowerFactory<>(new Identifier("my_addon", "mist_form"),
-				new SerializableData()
-						.add("cooldown", SerializableDataTypes.INT, 200)
+				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec.addFields(new SerializableData()
 						.add("duration", SerializableDataTypes.INT, 90)
 						.add("hud_render", ApoliDataTypes.HUD_RENDER, HudRender.DONT_RENDER)
 						.add("key", ApoliDataTypes.BACKWARDS_COMPATIBLE_KEY, new Active.Key()),
-				data ->
-						(type, player) -> new MistFormAbilityPower(
-								type,
-								player,
-								data.getInt("cooldown"),
-								data.getInt("duration"),
-								data.getInt("cooldown"),
-								data.get("hud_render"),
-								data.get("key")
-						)
+						200, SkillCastManager.START_ON_END),
+				data -> {
+					var spec = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec.read(data);
+					return (type, player) -> new MistFormAbilityPower(type, player, data.getInt("duration"),
+							data.get("hud_render"), data.get("key"), spec);
+				}
 		).allowCondition();
 	}
 
@@ -161,39 +164,20 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 		sp.setNoGravity(exempt);
 	}
 
-	/** 内部冷却是否就绪（统一服务 SkillCastManager 权威；回退内存时间戳兼容未接入场景） */
+	/** 冷却是否就绪（服务端以统一冷却服务为准） */
 	public boolean isInternalCooldownReady() {
-		if (entity instanceof ServerPlayerEntity sp
-				&& sp.getWorld() instanceof net.minecraft.server.world.ServerWorld sw) {
-			return SkillCastManager.get(sw).canBegin(sp, powerIdentifier());
+		if (entity instanceof ServerPlayerEntity sp) {
+			return net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(sp, powerIdentifier());
 		}
 		return entity.getWorld().getTime() >= internalCooldownEndTime;
 	}
 
-	/** 进入冷却并同步CD条资源（统一服务接管：幂等结束，三种结束路径均走此处） */
+	/** 雾化结束（三种结束路径均走此处）：按 power JSON cooldown 起算。 */
 	private void applyCooldown() {
-		internalCooldownEndTime = entity.getWorld().getTime() + cooldownTicks;
-		if (entity instanceof ServerPlayerEntity serverPlayer
-				&& serverPlayer.getWorld() instanceof net.minecraft.server.world.ServerWorld sw) {
-			// 雾化 = on_end 生命周期：施放建档在 enterMist，此处为结束结算（finish）
-			SkillCastManager mgr = SkillCastManager.get(sw);
-			SkillCastManager.Cast cast = mgr.control(serverPlayer.getUuid(), powerIdentifier());
-			if (cast != null) {
-				mgr.finish(serverPlayer, cast.castId);
-			} else {
-				// 无进行中 cast（异常路径）：直接写冷却兜底
-				mgr.begin(serverPlayer, powerIdentifier(), resolvedConfig());
-				SkillCastManager.Cast c2 = mgr.control(serverPlayer.getUuid(), powerIdentifier());
-				if (c2 != null) mgr.finish(serverPlayer, c2.castId);
-			}
-			PowerUtils.setResourceValueAndSync(serverPlayer, FormIdentifiers.SP_PRIMARY_CD, cooldownTicks);
+		internalCooldownEndTime = entity.getWorld().getTime() + spec.cooldown();
+		if (entity instanceof ServerPlayerEntity serverPlayer) {
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(serverPlayer, powerIdentifier(), cooldownCastId);
 		}
-	}
-
-	/** 本 power 的统一服务配置（JSON cooldown 字段即真相源）。 */
-	private SkillCastManager.ResolvedConfig resolvedConfig() {
-		// 雾化被打断也吃满 CD（旧行为），失败档=正常档；on_end：效果结束才起算
-		return new SkillCastManager.ResolvedConfig(cooldownTicks, cooldownTicks, SkillCastManager.START_ON_END);
 	}
 
 	/** 本 power 的稳定技能 ID（= power 注册路径）。 */
@@ -206,8 +190,9 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 	private void enterMist() {
 		// 统一生命周期建档（on_end：雾化结束才起算 CD，§4.2 begin）
 		if (entity instanceof ServerPlayerEntity sp) {
-			SkillCastManager.get((ServerWorld) entity.getWorld())
-					.begin(sp, powerIdentifier(), resolvedConfig());
+			if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(sp, powerIdentifier())) return;
+            cooldownCastId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(sp, powerIdentifier());
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.released(sp, powerIdentifier(), cooldownCastId);
 		}
 		// 进入雾化前解除蝙蝠的右键贴墙附着，避免附着锁定与化雾飞行相互冲突
 		if (entity instanceof PlayerEntity player) {

@@ -18,19 +18,21 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager;
+import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
 import java.util.List;
 
-public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
+public class TrueInvisibilityAbilityPower extends ActiveCooldownPower implements net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownHolder {
 
-	private static final int COOLDOWN_TICKS = 240; // 12 seconds（power JSON 未写 cooldown 时的工厂默认）
-	private final int configuredCooldownTicks; // 实际生效：power JSON cooldown 参数（表面可配必须真跟随）
+	private final net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec spec;
+	private final int configuredCooldownTicks;
 	private final int effectDuration;
 	// Internal cooldown tracking (separate from parent class)
 	private long internalCooldownEndTime = 0;
+	private long activeCastId = -1;
 	private int gracePeriodTicks = 0;
 	private int lastAmplifier = 0;
 
@@ -38,31 +40,35 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 	private boolean wasUsingItem = false;
 	private boolean wasHandSwinging = false;
 
-	public TrueInvisibilityAbilityPower(PowerType<?> type, LivingEntity entity, int cooldownAfter, int effectDuration, HudRender hudRender, Active.Key key) {
-		super(type, entity, cooldownAfter, hudRender, (e) -> {
+	public TrueInvisibilityAbilityPower(PowerType<?> type, LivingEntity entity,
+	                                    net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec spec,
+	                                    int effectDuration, HudRender hudRender, Active.Key key) {
+		super(type, entity, Math.max(1, spec.cooldown()), hudRender, (e) -> {
 		});
-		this.configuredCooldownTicks = cooldownAfter;
+		this.spec = spec;
+		this.configuredCooldownTicks = spec.cooldown();
 		this.effectDuration = effectDuration;
 		this.setKey(key);
 		this.setTicking(true);
 	}
 
+	@Override
+	public net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec cooldownSpec() {
+		return spec;
+	}
+
 	public static PowerFactory<Power> createFactory() {
 		return new PowerFactory<>(new Identifier("my_addon", "true_invisibility"),
-				new SerializableData()
-						.add("cooldown", SerializableDataTypes.INT, COOLDOWN_TICKS)
+				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec.addFields(new SerializableData()
 						.add("duration", SerializableDataTypes.INT, 100)
 						.add("hud_render", ApoliDataTypes.HUD_RENDER, HudRender.DONT_RENDER)
 						.add("key", ApoliDataTypes.BACKWARDS_COMPATIBLE_KEY, new Active.Key()),
-				data ->
-						(type, player) -> new TrueInvisibilityAbilityPower(
-								type,
-								player,
-								data.getInt("cooldown"),
-								data.getInt("duration"),
-								data.get("hud_render"),
-								data.get("key")
-						)
+						240, net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager.START_ON_END),
+				data -> {
+					var spec = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec.read(data);
+					return (type, player) -> new TrueInvisibilityAbilityPower(type, player, spec,
+							data.getInt("duration"), data.get("hud_render"), data.get("key"));
+				}
 		).allowCondition();
 	}
 
@@ -82,12 +88,16 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 		super.tick();
 
 		if (entity == null || entity.getWorld().isClient) return;
+		if (entity.isDead()) {
+			interruptCast();
+			return;
+		}
 
 		if (entity.hasStatusEffect(SscAddon.PURIFIED)) {
 			if (entity.hasStatusEffect(SscAddon.PRE_INVISIBILITY)) {
 				entity.removeStatusEffect(SscAddon.PRE_INVISIBILITY);
 				entity.removeStatusEffect(StatusEffects.INVISIBILITY);
-				applyUniversalCooldown();
+				interruptCast();
 			}
 			if (entity.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) {
 				breakInvisibility(false);
@@ -99,8 +109,10 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 		boolean isInvisible = entity.hasStatusEffect(SscAddon.TRUE_INVISIBILITY);
 		boolean isPrecasting = entity.hasStatusEffect(SscAddon.PRE_INVISIBILITY);
 
-		// Natural End Detection (Time expired - not from action break or key cancel)
-		if (wasInvisible && !isInvisible && !isPrecasting && lastAmplifier == 0) {
+		// 蓄力被其他来源清除也必须结算失败，不能遗留门禁。
+		if (!isInvisible && !isPrecasting) applyUniversalCooldown();
+		// 保留自然结束的音效；冷却结算本身是幂等的。
+		if (wasInvisible && !isInvisible && !isPrecasting && lastAmplifier == 0 && !entity.isDead()) {
 			applyUniversalCooldown();
 			// Play glass break sound for natural expiration
 			entity.getWorld().playSound(null, entity.getX(), entity.getY(), entity.getZ(),
@@ -166,25 +178,34 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 	 * 使用服务端tick，保证多人一致性
 	 */
 	public boolean isInternalCooldownReady() {
+		if (entity instanceof net.minecraft.server.network.ServerPlayerEntity sp) {
+			return net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(sp, powerIdentifier());
+		}
 		return entity.getWorld().getTime() >= internalCooldownEndTime;
 	}
 
-	/**
-	 * Apply cooldown to both this power and the dash power
-	 */
-	public void applyUniversalCooldown() {
-		// Use real time for reliable cooldown：以 power JSON 的 cooldown 参数为权威（内部计时/资源显示/冲刺联动同源）
-		int cooldownTicks = configuredCooldownTicks;
-		if (hasInvisibilityCloak()) {
-			cooldownTicks += 40; // Add 2 seconds to cooldown (from 12s to 14s)
-		}
-		internalCooldownEndTime = entity.getWorld().getTime() + cooldownTicks; // tick-based, multiplayer-safe
+	/** 蓄力效果成功转为真实隐身时调用。 */
+	public void onInvisibilityReleased() {
+		if (!(entity instanceof ServerPlayerEntity player) || activeCastId < 0) return;
+		SkillCastManager.get(player.getServerWorld()).released(activeCastId, SkillCastManager.now(player));
+		wasInvisible = true;
+		lastAmplifier = 0;
+		gracePeriodTicks = 5;
+	}
 
-		// 设置CD显示资源（主要和次要技能共享CD）
-		if (entity instanceof net.minecraft.server.network.ServerPlayerEntity serverPlayer) {
-			PowerUtils.setResourceValueAndSync(serverPlayer, FormIdentifiers.SP_PRIMARY_CD, cooldownTicks);
-			PowerUtils.setResourceValueAndSync(serverPlayer, FormIdentifiers.SP_SECONDARY_CD, cooldownTicks);
-		}
+	private void interruptCast() {
+		if (!(entity instanceof ServerPlayerEntity player) || activeCastId < 0) return;
+		SkillCastManager.get(player.getServerWorld()).interrupt(activeCastId, SkillCastManager.now(player));
+		activeCastId = -1;
+		internalCooldownEndTime = entity.getWorld().getTime() + SkillCooldowns.remaining(player, powerIdentifier());
+	}
+
+	/** 隐身结束：只结算本次施放，重复破隐不能重置已起算的 CD。 */
+	public void applyUniversalCooldown() {
+		if (!(entity instanceof ServerPlayerEntity serverPlayer) || activeCastId < 0) return;
+		SkillCastManager.get(serverPlayer.getServerWorld()).interrupt(activeCastId, SkillCastManager.now(serverPlayer));
+		activeCastId = -1;
+		internalCooldownEndTime = entity.getWorld().getTime() + SkillCooldowns.remaining(serverPlayer, powerIdentifier());
 
 		// Also set dash ability cooldown
 		List<TrueInvisibilityDashAbilityPower> dashPowers = PowerHolderComponent.getPowers(entity, TrueInvisibilityDashAbilityPower.class);
@@ -258,10 +279,22 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 			// Currently casting - do nothing
 		} else {
 			// Not invisible - try to cast
-			if (isInternalCooldownReady()) {
+			if (entity instanceof ServerPlayerEntity player && isInternalCooldownReady()
+					&& SkillCooldowns.begin(player, powerIdentifier())) {
+				activeCastId = SkillCastManager.get(player.getServerWorld()).control(player.getUuid(), powerIdentifier()).castId;
+				// 冻结本次斗篷档位；后续破隐不能重启 on_cast/on_release 的计时。
+				SkillCooldowns.retune(player, powerIdentifier(), hasInvisibilityCloak() ? spec.extra("cloak") : configuredCooldownTicks);
 				// Apply pre-invisibility (casting phase)
-				entity.addStatusEffect(new StatusEffectInstance(SscAddon.PRE_INVISIBILITY, 20, 0, false, false, true));
+				if (!entity.addStatusEffect(new StatusEffectInstance(SscAddon.PRE_INVISIBILITY, 20, 0, false, false, true))) {
+					interruptCast();
+				}
 			}
 		}
+	}
+
+	/** 本 power 的稳定技能 ID（= power 注册路径，统一冷却服务存储键）。 */
+	public String powerIdentifier() {
+		return type != null && type.getIdentifier() != null
+				? type.getIdentifier().toString() : "my_addon:true_invisibility";
 	}
 }

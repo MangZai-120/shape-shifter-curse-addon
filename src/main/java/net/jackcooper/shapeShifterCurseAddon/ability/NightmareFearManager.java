@@ -9,8 +9,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 
 import java.util.Iterator;
 import java.util.List;
@@ -44,8 +42,6 @@ public final class NightmareFearManager {
 	public static final float FEAR_DURATION_RING_BONUS = net.jackcooper.shapeShifterCurseAddon.item.NightmareRingItem.FEAR_DURATION_BONUS;
 	/** 技能 CD（tick，20 秒）。默认；运行时从 balance 快照读取。 */
 	public static final int FEAR_COOLDOWN_TICKS = 400;
-	/** 堕落悦灵恶翼 vex CD 默认（pin 锚点；实际写死点在 FallenAllayVexMixin，经此常量统一）。 */
-	public static final int VEX_CD_TICKS = 400;
 	/** 诅咒之月共鸣：诅咒之月当夜恐惧 CD 降为 14 秒（280t）。默认；运行时从 balance 快照读取。 */
 	public static final int FEAR_COOLDOWN_TICKS_CURSED_MOON = 280;
 	/** 恐惧结束后入梦免疫时长（tick，20 秒）。默认；运行时从 balance 快照读取。 */
@@ -70,6 +66,8 @@ public final class NightmareFearManager {
 
 	/** 服务端权威 balance 快照读取（快照未初始化时回退上方默认常量）。 */
 	private static final BalanceReader BAL = new BalanceReader("abilities.nightmare_fear");
+	/** 统一冷却服务的稳定技能 ID（= power 注册路径）。 */
+	private static final String SKILL_ID = "my_addon:form_wild_cat_nightmare_fear";
 	/** 范围外完全隐匿的包刷新间隔（tick）。 */
 	private static final int OUT_OF_RANGE_HIDE_REFRESH = 40;
 	/** 心跳基础音量（范围外/无梦魔时的极小固定音量）。 */
@@ -135,12 +133,12 @@ public final class NightmareFearManager {
 		return true;
 	}
 
-	/** 当前生效的恐惧 CD：诅咒之月当夜 280t，否则 400t。仅服务端调用。 */
-	public static int currentFearCooldown(ServerPlayerEntity player) {
+	/** 诅咒之月共鸣：当夜恐惧 CD 改用 power JSON extra_cooldowns.cursed_moon。仅服务端调用。 */
+	private static void applyCursedMoonCooldown(ServerPlayerEntity player) {
 		if (net.onixary.shapeShifterCurseFabric.cursed_moon.CursedMoon.isInCursedMoon(player.getWorld())) {
-			return BAL.i("cooldown_ticks_cursed_moon", FEAR_COOLDOWN_TICKS_CURSED_MOON);
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.retune(player, SKILL_ID,
+					net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.extra(player, SKILL_ID, "cursed_moon"));
 		}
-		return BAL.i("cooldown_ticks", FEAR_COOLDOWN_TICKS);
 	}
 
 	/** 目标当前是否入梦免疫（恐惧结束后的 20s 惩罚窗口）。 */
@@ -155,19 +153,19 @@ public final class NightmareFearManager {
 	 */
 	public static boolean execute(ServerPlayerEntity player) {
 		if (!(player.getWorld() instanceof ServerWorld world)) return false;
-		// CD 检查（Apoli power 自身 cooldown=0，用 CD 资源统一管理）
-		int cd = PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD);
-		if (cd > 0) return false;
+		// CD 门禁已由 power 层 begin 统一拦截（修 P1-1：去掉内部二次 canBegin 防自锁）
 
 		long now = world.getTime();
 		List<LivingEntity> targets = NightmareDreamManager.collectDreamTargets(player, now);
-		if (targets.isEmpty()) return false; // 没有入梦目标：技能落空（不消耗 CD）
+		if (targets.isEmpty()) {
+			net.jackcooper.shapeShifterCurseAddon.power.FailAwareActiveSelfPower.markFail();
+			return false;
+		}
 
 		for (LivingEntity target : targets) {
 			startFear(world, player, target, now);
 		}
-		// 进入 CD（诅咒之月共鸣：当夜 CD 缩短）
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, currentFearCooldown(player));
+		applyCursedMoonCooldown(player);
 		return true;
 	}
 

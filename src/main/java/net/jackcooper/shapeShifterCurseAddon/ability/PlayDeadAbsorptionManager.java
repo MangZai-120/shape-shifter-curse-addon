@@ -18,16 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class PlayDeadAbsorptionManager {
 
-	/** 装死显示 CD 默认（pin 锚点；消费点在 SscAddonActions 装死 action）。 */
-	public static final int PLAY_DEAD_CD_TICKS = 620;
-	/** 装死提前结束 CD 默认 25秒（pin 锚点；消费点在 SscAddonNetworking 提前结束分支）。 */
-	public static final int PLAY_DEAD_EARLY_END_CD_TICKS = 500;
-
-	/** 提前结束 CD：balance abilities.playing_dead.early_end_cooldown_ticks 可覆盖。 */
-	public static int earlyEndCdTicks() {
-		return EARLY_END_BAL.i("early_end_cooldown_ticks", PLAY_DEAD_EARLY_END_CD_TICKS);
-	}
-
 	/** 对外暴露同 scope 读取器（SscAddonActions 装死 CD 共用，避免双份维护）。 */
 	public static net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader balanceReader() {
 		return EARLY_END_BAL;

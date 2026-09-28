@@ -13,7 +13,6 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.util.math.Vec3d;
@@ -28,7 +27,7 @@ import java.util.Map;
  * <p>长按主技能键蓄力：每 {@value #CHARGE_INTERVAL} tick（1.2 秒）凝聚一根冰锥，最多 {@value #MAX_THORNS} 根，
  * 冰锥在玩家背部竖直面上按 150° 扇形（上→左→右→左上→右上）开屏分布；朝向与身体朝向平行，尖朝头部所指方向（最多偏 30°）。
  * 满 5 根后继续蓄力则替换存在时间最久（剩余最短）的一根。点按主技能键按生成顺序（最旧优先）发射一根，
- * 内置 {@value #FIRE_CD} tick（0.2 秒）发射冷却（走 SP_PRIMARY_CD）。主人被 SP 悦灵净化时全部冰锥碎裂。</p>
+ * 发射冷却读 power JSON form_snow_fox_frostspine_frost_spike。主人被 SP 悦灵净化时全部冰锥碎裂。</p>
  *
  * <p>每根冰锥各自独立 60 秒存在时间由 {@link FrostThornEntity} 自行计时；本管理器只负责环绕定位、蓄力节奏与发射。
  * 全部判定在服务端，冰锥实体走 EntityTracker 天然多人同步。</p>
@@ -38,7 +37,7 @@ public final class FrostSpikeManager {
 	// 以下常量均为默认值；运行时从 balance 快照读取（scope：abilities.frost_spike_manager）
 	private static final int CHARGE_INTERVAL = 24; // 默认 1.2 秒凝聚一根
 	private static final int MAX_THORNS = 5;       // 默认环绕冰锥上限
-	private static final int FIRE_CD = 4;          // 默认 0.2 秒内置发射冷却
+	private static final String SKILL_ID = "my_addon:form_snow_fox_frostspine_frost_spike";
 	// ===== 凝棘（次技能）蓄力 =====
 	private static final int SECONDARY_CONSUME_INTERVAL = 20;   // 默认每 1 秒消耗一个环绕冰锥强化
 	private static final double SECONDARY_SLOW_AMOUNT = -0.90;  // 默认蓄力时移速降为 10%（MULTIPLY_TOTAL -0.9）
@@ -87,7 +86,7 @@ public final class FrostSpikeManager {
 	/** 客户端「点按」→ 按生成顺序（最旧优先）发射一根冰锥。 */
 	public static void fire(ServerPlayerEntity player) {
 		if (!isFrostspine(player)) return;
-		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return; // 0.2s 内置发射冷却
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return; // 发射冷却
 		State s = STATES.get(player.getUuid());
 		if (s == null) return;
 		cleanupDead(s);
@@ -102,7 +101,7 @@ public final class FrostSpikeManager {
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_AMETHYST_BLOCK_HIT, SoundCategory.PLAYERS, 0.9f, 1.4f);
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, BAL.i("fire_cd", FIRE_CD));
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.instant(player, SKILL_ID);
 	}
 
 /**

@@ -24,7 +24,6 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -48,12 +47,14 @@ import java.util.UUID;
  * 渲染（法阵 + 光柱）由 {@code FluorescentLaserRenderer} 负责；四线/螺旋/爆裂粒子服务端生成（所有人可见）。
  */
 public class LaserBeamEntity extends Entity {
+    private long cooldownCastId = -1;
+    public void bindCast(long id) { cooldownCastId = id; }
+
 
 	// ===== 时序 =====
 	private static final int CHARGE_TICKS = 140;      // 7 秒蓄力
 	private static final int RELEASE_TICKS = 60;      // 3 秒激光
 	private static final int FADE_TICKS = 30;         // 1.5 秒消退
-	private static final int CD_TICKS = 400;          // 20 秒 CD
 
 	// ===== 几何 =====
 	private static final double ARRAY_DIST = 3.0;     // 法阵在玩家前方距离
@@ -342,6 +343,7 @@ public class LaserBeamEntity extends Entity {
 		// （第一人称不生成、第三人称生成），避免服务端粒子无法区分视角导致第一人称被遮挡
 		if (phaseTicks >= chargeTicks) {
 			phase = Phase.RELEASE;
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.released(owner, net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.SKILL_ID, cooldownCastId);
 			phaseTicks = 0;
 			this.dataTracker.set(PHASE, 1);
 			syncLaserStateDedup(owner, 2);
@@ -380,7 +382,8 @@ public class LaserBeamEntity extends Entity {
 			// 完全消失 → 进 CD、解除定身、清状态
 			owner.removeStatusEffect(SscAddon.ROOTED);
 			syncLaserStateDedup(owner, 0);
-			PowerUtils.setResourceValueAndSync(owner, FormIdentifiers.SP_PRIMARY_CD, BAL.i("cd_ticks", CD_TICKS));
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(owner,
+					net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.SKILL_ID, cooldownCastId);
 			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
 					SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 3.0f, 1.0f);
 			this.discard();
@@ -417,17 +420,19 @@ public class LaserBeamEntity extends Entity {
 	// ==================== 取消/清理 ====================
 	private void cancelNoCd(ServerPlayerEntity owner) {
 		if (owner != null) {
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(owner, net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.SKILL_ID, cooldownCastId);
 			owner.removeStatusEffect(SscAddon.ROOTED);
 			syncLaserStateDedup(owner, 0);
 		}
 	}
 
-	/** 被净化打断时取消：返还 40% CD（进 60% CD = 400 × 0.6 = 240t = 12 秒）。 */
+	/** 被净化打断时取消：按 power JSON fail_cooldown 进 CD。 */
 	private void cancelWithInterruptCd(ServerPlayerEntity owner) {
 		if (owner != null) {
 			owner.removeStatusEffect(SscAddon.ROOTED);
 			syncLaserStateDedup(owner, 0);
-			PowerUtils.setResourceValueAndSync(owner, FormIdentifiers.SP_PRIMARY_CD, (int)(BAL.i("cd_ticks", CD_TICKS) * 0.6));
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.failed(owner,
+					net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.SKILL_ID, cooldownCastId);
 		}
 	}
 

@@ -13,8 +13,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -81,16 +79,13 @@ public abstract class FallenAllayVexMixin extends MobEntity {
 			VEX_TARGET.remove(this.getUuid());
 			VEX_WANDER_DEST.remove(this.getUuid());
 			VEX_WANDER_TIMER.remove(this.getUuid());
-			if (owner != null) {
-				applyCooldownIfLast(owner, this.ssc_addon$ownerUuid.toString(), serverWorld);
+			if (owner instanceof ServerPlayerEntity serverOwner) {
+				net.jackcooper.shapeShifterCurseAddon.ability.FallenAllayVexSkill.onVexGone(serverOwner, this);
 			}
 			return;
 		}
 
         if (owner == null) return;
-
-        // pinVexCd 降频到每 20t（Apoli 资源读为 O(power数) 扫描；CD 释放是秒级，粒度无感）
-        if (this.age % 20 == 0) pinVexCd(owner);
 
         // Validate stored target; clear if dead/gone
         LivingEntity currentTarget = resolveTarget(serverWorld);
@@ -237,42 +232,5 @@ public abstract class FallenAllayVexMixin extends MobEntity {
 						hostileTarget != null ? hostileTarget :
 								otherTarget;
 	}
-
-	/**
-	 * While at least one vex is alive, keep vex_cd pinned at the configured value so the skill can't be recast.
-	 */
-    @Unique
-    private void pinVexCd(PlayerEntity owner) {
-        if (!(owner instanceof ServerPlayerEntity serverOwner)) return;
-        int vexCd = vexCdTicks();
-        int currentCd = PowerUtils.getResourceValue(serverOwner, FormIdentifiers.FALLEN_ALLAY_VEX_CD);
-        if (currentCd < vexCd) {
-            PowerUtils.setResourceValueAndSync(serverOwner, FormIdentifiers.FALLEN_ALLAY_VEX_CD, vexCd);
-        }
-    }
-
-    @Unique
-    private void applyCooldownIfLast(PlayerEntity owner, String ownerUuidStr, ServerWorld serverWorld) {
-        boolean hasOtherVex = false;
-        for (Entity v : serverWorld.getEntitiesByClass(VexEntity.class, owner.getBoundingBox().expand(128.0),
-                e -> e != (Object) this && e.isAlive())) {
-            if (v.getCommandTags().contains("owner:" + ownerUuidStr) && v.getCommandTags().contains("ssc_fallen_allay_vex")) {
-                hasOtherVex = true;
-                break;
-            }
-        }
-        if (!hasOtherVex && owner instanceof ServerPlayerEntity serverOwner) {
-            PowerUtils.setResourceValueAndSync(serverOwner, FormIdentifiers.FALLEN_ALLAY_VEX_CD, vexCdTicks());
-        }
-    }
-
-    /** 恶翼 vex CD：balance abilities.nightmare_fear.vex_cd_ticks 可配（P4 补全，原写死 400）。 */
-    @Unique
-    private static int vexCdTicks() {
-        return net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot() != null
-                ? (int) net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot()
-                        .getInt("abilities.nightmare_fear", "vex_cd_ticks")
-                : net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager.VEX_CD_TICKS;
-    }
 }
 

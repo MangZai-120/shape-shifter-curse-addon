@@ -31,6 +31,7 @@
         "my_addon:form_allay_sp_purify",
         "my_addon:form_allay_sp_group_heal",
         "my_addon:form_allay_sp_portable_beacon",
+        "my_addon:form_allay_sp_beacon_active",
         "my_addon:form_allay_sp_beacon_effect",
         "my_addon:form_allay_sp_beacon_mana_tick",
         "my_addon:form_allay_sp_totem",

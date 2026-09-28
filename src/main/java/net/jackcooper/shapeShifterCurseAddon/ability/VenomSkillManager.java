@@ -14,7 +14,6 @@ import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
 import java.util.List;
@@ -32,7 +31,7 @@ import java.util.Map;
  * 沿准星方向冲刺，途中撞到敌方生物造成额外 2 点魔法伤害并停下；冲刺结束后以自身为圆心
  * 3 格半径 AOE：6 点魔法伤害 + 中毒 II 15 秒。</p>
  *
- * <p>CD 走 SP_SECONDARY_CD。白名单：默认白名单（护玩家 + 宠物/召唤物）。全判定服务端。</p>
+ * <p>CD 由 power form_spider_salticidae_venom 的 JSON 字段配置。白名单：默认白名单（护玩家 + 宠物/召唤物）。全判定服务端。</p>
  */
 public final class VenomSkillManager {
 
@@ -46,15 +45,18 @@ public final class VenomSkillManager {
 	private static final float BURST_DAMAGE = 6.0f;      // 冲刺后 AOE 6 魔法
 	private static final double BURST_RADIUS = 3.0;      // AOE 半径 3 格
 	private static final int BURST_POISON_DURATION = 300;// AOE 中毒 II 15 秒
-	private static final int CD_TICKS = 200;             // 10 秒
+	// CD 由 power JSON 配置（见类注释），原 CD_TICKS 常量已删
 	private static final int DASH_TIMEOUT = 20;          // 冲刺超时 1 秒（6 格 / 1.2 每t ≈ 5t，余量充足）
 
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("abilities.venom_skill");
+	/** 统一冷却服务的稳定技能 ID（网络包触发型）。 */
+	private static final String SKILL_ID = "my_addon:form_spider_salticidae_venom";
 
 	private static final Map<UUID, DashState> DASHING = new ConcurrentHashMap<>();
 
 	private static final class DashState {
+        long castId = -1;
 		double traveled = 0.0;
 		int ticks = 0;
 		Vec3d dir;
@@ -70,20 +72,20 @@ public final class VenomSkillManager {
 	/** 次键按下：基础毒液区域 / 丝线强化冲刺。 */
 	public static void onPress(ServerPlayerEntity player) {
 		if (!isSalticidae(player)) return;
-		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_SECONDARY_CD) > 0) return; // CD 中
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return;
 		if (DASHING.containsKey(player.getUuid())) return; // 冲刺中不可重入
 		if (!(player.getWorld() instanceof ServerWorld sw)) return;
 
 		// 丝线强化判定：安全丝锚点存在且在有效窗口内 = 「有丝线连着自己」
 		boolean silkActive = JumpKillManager.hasActiveSilk(player);
-
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return;
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.released(player, SKILL_ID);
 		if (silkActive) {
 			startDash(player, sw);
 		} else {
 			venomArea(player, sw);
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, SKILL_ID);
 		}
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD,
-				BAL.i("cd_ticks", CD_TICKS));
 	}
 
 	/** 基础形态：前方 2×2×2 区域毒液——4 魔法 + 中毒 I 15s（毒液腺体：等级+1 / 时长×70%）。 */
@@ -116,6 +118,7 @@ public final class VenomSkillManager {
 	/** 丝线强化：6 格冲刺（撞敌 2 魔法停下 → 结束后 3 格 AOE 6 魔法 + 中毒 II 15s）。 */
 	private static void startDash(ServerPlayerEntity player, ServerWorld sw) {
 		DashState d = new DashState();
+        d.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
 		Vec3d look = player.getRotationVector().normalize();
 		d.dir = look;
 		DASHING.put(player.getUuid(), d);
@@ -133,7 +136,11 @@ public final class VenomSkillManager {
 	public static void tick(ServerPlayerEntity player) {
 		DashState d = DASHING.get(player.getUuid());
 		if (d == null) return;
-		if (player.isDead() || !isSalticidae(player)) { DASHING.remove(player.getUuid()); return; }
+		if (player.isDead() || !isSalticidae(player)) {
+            DASHING.remove(player.getUuid());
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, SKILL_ID, d.castId);
+            return;
+        }
 		if (!(player.getWorld() instanceof ServerWorld sw)) return;
 
 		d.ticks++;
@@ -175,6 +182,9 @@ public final class VenomSkillManager {
 
 	/** 冲刺结束：以自身为圆心 3 格 AOE——6 魔法 + 中毒 II 15s（毒液腺体：等级+1 / 时长×70%）。 */
 	private static void finishDash(ServerPlayerEntity player, ServerWorld sw) {
+        DashState d = DASHING.get(player.getUuid());
+        if (d == null) return;
+        net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, SKILL_ID, d.castId);
 		DASHING.remove(player.getUuid());
 		Vec3d c = player.getPos();
 		double burstRadius = BAL.d("burst_radius", BURST_RADIUS);

@@ -22,8 +22,6 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 
 import java.util.Iterator;
 import java.util.List;
@@ -98,12 +96,14 @@ public final class NightmareSpookManager {
 	/** 次技能入口（power action 调用，仅服务端）。无入梦目标返回 false（不进 CD）。 */
 	public static boolean execute(ServerPlayerEntity player) {
 		if (!(player.getWorld() instanceof ServerWorld world)) return false;
-		int cd = PowerUtils.getResourceValue(player, FormIdentifiers.SP_SECONDARY_CD);
-		if (cd > 0) return false;
+		// CD 门禁已由 power 层 begin 统一拦截（修 P1-1）
 
 		long now = world.getTime();
 		List<LivingEntity> targets = NightmareDreamManager.collectDreamTargets(player, now);
-		if (targets.isEmpty()) return false;
+		if (targets.isEmpty()) {
+			net.jackcooper.shapeShifterCurseAddon.power.FailAwareActiveSelfPower.markFail();
+			return false;
+		}
 
 		boolean any = false;
 		for (LivingEntity target : targets) {
@@ -116,9 +116,10 @@ public final class NightmareSpookManager {
 				if (directMobBite(world, player, target, now)) any = true;
 			}
 		}
-		if (!any) return false;
-		int spookCd = BAL.i("cooldown_ticks", SPOOK_COOLDOWN_TICKS);
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, spookCd);
+		if (!any) {
+			net.jackcooper.shapeShifterCurseAddon.power.FailAwareActiveSelfPower.markFail();
+			return false;
+		}
 		return true;
 	}
 

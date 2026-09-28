@@ -22,7 +22,6 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 
@@ -46,7 +45,7 @@ import java.util.Map;
  * 加大更正范围；脱锁容差以「起跳时锁定位置 lockPos0」为圆心、半径 = {@value #LEASH_K}×跳跃距离
  * （跳越远容差越大、越近越小）；目标移出容差即脱锁、按最后方向直飞扑空。</p>
  *
- * <p><b>CD</b>：扑中 {@value #CD_HIT}t(12s)、扑空 {@value #CD_MISS}t(8s)，走 SP_PRIMARY_CD。
+ * <p><b>CD</b>：扑中按 power JSON cooldown、扑空按 fail_cooldown。
  * 白名单：默认白名单（护玩家 + 宠物/召唤物）。全判定服务端，跳跃每 tick 补发速度包给客机。</p>
  */
 public final class JumpKillManager {
@@ -59,8 +58,7 @@ public final class JumpKillManager {
 	private static final int POISON_DURATION = 160;  // 中毒 II 8 秒
 	private static final int POISON_AMPLIFIER = 1;   // 中毒 II
 	private static final int STUN_DURATION = 7;      // 定身 0.35 秒
-	private static final int CD_HIT = 240;           // 扑中 12 秒
-	private static final int CD_MISS = 160;          // 扑空 8 秒
+	private static final String SKILL_ID = "my_addon:form_spider_salticidae_jump_kill";
 	private static final double CHARGE_SLOW = -0.5;  // 蓄力移速 ×0.5
 	private static final double LEASH_K = 0.4;       // 脱锁容差系数（半径 = LEASH_K × 跳跃距离）
 	private static final int LEAD_TICKS = 6;         // 提前量：扑向 目标位置 + 速度 × LEAD_TICKS
@@ -101,6 +99,7 @@ public final class JumpKillManager {
 	};
 
 	private static final class State {
+        long castId = -1;
 		int phase = 0;        // 0=蓄力 1=跳跃 2=拉回
 		int chargeTick = 0;
 		// 跳跃期
@@ -136,9 +135,11 @@ public final class JumpKillManager {
 				return;
 			}
 		}
-		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return; // CD 中
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return; // CD 中
 		if (STATES.containsKey(player.getUuid())) return; // 施法中不可重入
-		State s = new State();
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return;
+        State s = new State();
+        s.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
 		STATES.put(player.getUuid(), s);
 		applyChargeSlow(player);
 		if (player.getWorld() instanceof ServerWorld sw) {
@@ -166,6 +167,7 @@ public final class JumpKillManager {
 		LivingEntity lock = pickLockTarget(player, sw, scanDist);
 
 		s.phase = 1;
+        net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.released(player, SKILL_ID, s.castId);
 		s.leapTick = 0;
 		Vec3d look = player.getRotationVector().normalize();
 		s.lastDir = look;
@@ -244,7 +246,9 @@ public final class JumpKillManager {
 
 	/** 开始安全丝拉回：锚点从窗口表转入活动状态，phase=2。 */
 	private static void startRecall(ServerPlayerEntity player, SilkAnchor anchor) {
-		State s = new State();
+        State s = new State();
+        State previous = STATES.get(player.getUuid());
+        if (previous != null) net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, previous.castId);
 		s.phase = 2;
 		STATES.put(player.getUuid(), s);
 		player.setNoGravity(true);
@@ -472,9 +476,12 @@ public final class JumpKillManager {
 
 	/** 跳跃结束：恢复重力、进 CD、清状态。 */
 	private static void finish(ServerPlayerEntity player, boolean hit) {
+        State finishing = STATES.get(player.getUuid());
+        if (finishing == null) return;
 		player.setNoGravity(false);
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD,
-				hit ? BAL.i("cd_hit", CD_HIT) : BAL.i("cd_miss", CD_MISS));
+		// 扑中 = 成功 CD（cooldown），扑空 = 失败 CD（fail_cooldown）
+		if (hit) net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, finishing.castId);
+		else net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.failed(player, SKILL_ID, finishing.castId);
 		STATES.remove(player.getUuid());
 	}
 
@@ -514,6 +521,7 @@ public final class JumpKillManager {
 	/** 取消（死亡/丢形态/断线）：移除减速、恢复重力、清状态与锦点（带断丝特效），不进 CD。 */
 	public static void cancel(ServerPlayerEntity player) {
 		State s = STATES.remove(player.getUuid());
+        if (s != null) net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, s.castId);
 		if (s != null) {
 			removeChargeSlow(player);
 			player.setNoGravity(false);

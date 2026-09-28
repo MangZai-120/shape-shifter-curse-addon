@@ -1,6 +1,11 @@
 {
     "type": "my_addon:true_invisibility",
     "cooldown": 240,
+    "fail_cooldown": 0,
+    "cooldown_start": "on_end",
+    "extra_cooldowns": {
+        "cloak": 280
+    },
     "duration": 100,
     "hud_render": {
         "should_render": false

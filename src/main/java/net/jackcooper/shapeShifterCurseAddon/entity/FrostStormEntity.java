@@ -47,6 +47,16 @@ public class FrostStormEntity extends Entity {
 
 	private int ticksAlive = 0;
 	private UUID ownerUuid;
+	/** 本次施放的 castId（修审查#3：旧风暴不能误伤新施放的记录；NBT 持久化）。 */
+	private long boundCastId = 0;
+
+	/** 绑定本次施放（生成时由 SnowFoxSpFrostStorm 调用）。 */
+	public void bindCast(long castId) {
+		this.boundCastId = castId;
+        if (getWorld() instanceof ServerWorld sw) {
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager.get(sw).bindEntity(castId, getUuid());
+        }
+	}
 
 	public UUID getDecorationOwner() { return ownerUuid; }
 
@@ -67,12 +77,30 @@ public class FrostStormEntity extends Entity {
 		// 暂时不需要初始化数据跟踪器
 	}
 
+	/** 风暴消失即冰风暴效果结束：凭 castId 精确结束本次施放，旧风暴不误伤新施放。 */
+	private void settleOwnerEffectEnd() {
+		if (this.getWorld().isClient || !(this.getWorld() instanceof ServerWorld sw) || ownerUuid == null) return;
+        var manager = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager.get(sw);
+        var cast = manager.control(ownerUuid, net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpFrostStorm.SKILL_ID);
+        if (cast != null && cast.castId == boundCastId && (cast.persistentEntity == null || getUuid().equals(cast.persistentEntity))) {
+            manager.finish(boundCastId, sw.getServer().getOverworld().getTime());
+        }
+	}
+
+	@Override
+    public void remove(RemovalReason reason) {
+        // 区块卸载也结算：风暴远离玩家后 CD 照常起算，不会因实体未加载而锁死技能
+        if (!isRemoved() && reason.shouldDestroy()) settleOwnerEffectEnd();
+        super.remove(reason);
+    }
+
 	@Override
 	public void tick() {
 		super.tick();
 		ticksAlive++;
 
 		if (!this.getWorld().isClient && ticksAlive > stormDuration) {
+			// 自然到期：结算（discard() 内统一处理，见下）
 			this.discard();
 			return;
 		}
@@ -191,6 +219,12 @@ public class FrostStormEntity extends Entity {
 		if (nbt.containsUuid("Owner")) {
 			this.ownerUuid = nbt.getUuid("Owner");
 		}
+		this.boundCastId = nbt.getLong("BoundCastId");
+        if (boundCastId > 0 && getWorld() instanceof ServerWorld sw) {
+            var manager = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager.get(sw);
+            var cast = manager.control(ownerUuid, net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpFrostStorm.SKILL_ID);
+            if (cast != null && cast.castId == boundCastId) manager.bindEntity(boundCastId, getUuid());
+        }
 	}
 
 	@Override
@@ -204,6 +238,7 @@ public class FrostStormEntity extends Entity {
         values.putDouble("pull_speed", stormPullSpeed);
         nbt.put("Balance", values);
 		nbt.putInt("TicksAlive", this.ticksAlive);
+		nbt.putLong("BoundCastId", this.boundCastId);
 		if (ownerUuid != null) {
 			nbt.putUuid("Owner", ownerUuid);
 		}

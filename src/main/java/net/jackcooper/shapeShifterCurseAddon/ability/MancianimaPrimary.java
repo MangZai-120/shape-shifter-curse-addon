@@ -47,8 +47,7 @@ public final class MancianimaPrimary {
 
 	public static final int MARK_MANA_COST = 15;
 	public static final int FIZZLE_MANA_COST = 5;
-	public static final int FIRST_PRESS_CD = 100;            // 5s
-	public static final int SUCCESS_DAMAGE_CD_ADD = 300;     // +15s
+	public static final String SKILL_ID = "my_addon:form_familiar_fox_mancianima_contract_mark";
 	public static final int RED_TRIGGER_INTERVAL = 20;       // 1s 触发间隔（防连点升红）
 	public static final double MARK_RANGE = 32.0;
 	public static final double RED_LOCK_RANGE = 24.0;
@@ -137,8 +136,7 @@ public final class MancianimaPrimary {
 
 		// 段 1：标记新目标（或当前没有任何标记）
 		// 检查 CD（如果当前在 CD 中，第一段直接拒绝）
-		int cd = PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD);
-		if (cd > 0) {
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) {
 			playMarkFailSound(player);
 			return;
 		}
@@ -155,7 +153,7 @@ public final class MancianimaPrimary {
 			mana.setMana(mana.getMana() - fizzleCost);
 			pauseManaRegen(player);
 			playMarkFailSound(player);
-			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, BAL.i("first_press_cd", FIRST_PRESS_CD));
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.instant(player, SKILL_ID);
 			return;
 		}
 
@@ -178,7 +176,7 @@ public final class MancianimaPrimary {
 		pauseManaRegen(player);
 
 		MancianimaMarkManager.setMark(player, target, MancianimaMarkManager.MarkColor.YELLOW);
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, BAL.i("first_press_cd", FIRST_PRESS_CD));
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.instant(player, SKILL_ID);
 
 		// 标记成功 - 仅 marker 自己能听到的反馈音（多层叠加，增强可辨识度）
 		MancianimaMarkManager.playSoundToPlayer(player, SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, 1.0f, 1.6f);
@@ -241,8 +239,9 @@ public final class MancianimaPrimary {
 		world.playSound(null, marker.getX(), marker.getY(), marker.getZ(),
 				SoundEvents.ENTITY_ENDER_DRAGON_FLAP, SoundCategory.PLAYERS, 1.2f, 0.8f);
 		// 成功 CD +15s
-		int cur = PowerUtils.getResourceValue(marker, FormIdentifiers.SP_PRIMARY_CD);
-		PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_PRIMARY_CD, cur + BAL.i("success_damage_cd_add", SUCCESS_DAMAGE_CD_ADD));
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.force(marker, SKILL_ID,
+				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.remaining(marker, SKILL_ID)
+						+ net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.extra(marker, SKILL_ID, "channel_success"));
 		// 斩杀完成：补满 mana 能量
 		ManaUtils.setPlayerMana(marker, ManaUtils.getPlayerMaxMana(marker));
 		// 红标使命达成 → 清除（已造成伤害，进入下一轮）

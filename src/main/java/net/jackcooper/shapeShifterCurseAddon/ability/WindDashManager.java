@@ -15,11 +15,10 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
- import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
 import java.util.Map;
@@ -61,11 +60,13 @@ public final class WindDashManager {
     private static final double MAX_DASH_RANGE = 16.0;
     private static final double LANDING_RADIUS = 3.0;
     private static final float LANDING_DAMAGE = 12.0f;
-    private static final int COOLDOWN_TICKS = 240;           // 12 秒
+    // CD（12 秒）由统一冷却服务 + power JSON 配置管理，原 COOLDOWN_TICKS 常量已删
     private static final double FALL_SPEED = 0.15;           // 3 格/秒 ≈ 0.15 格/tick
 
     // 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
     private static final BalanceReader BAL = new BalanceReader("abilities.wind_dash");
+    /** 统一冷却服务的稳定技能 ID（网络包触发型）。 */
+    private static final String SKILL_ID = "my_addon:form_ocelot_wind_spirit_wind_dash";
 
     // ===== 阶段 =====
     public static final int PHASE_NONE = 0;
@@ -77,6 +78,7 @@ public final class WindDashManager {
     private static final Map<UUID, DashState> STATES = new ConcurrentHashMap<>();
 
     public static final class DashState {
+        long castId = -1;
         int phase = PHASE_NONE;
         double startY;          // 起飞前脚部 Y
         double targetY;         // 目标悬浮 Y（可能因顶头而低于 startY+5）
@@ -101,9 +103,9 @@ public final class WindDashManager {
         }
         DashState s = STATES.get(player.getUuid());
         if (s == null || s.phase == PHASE_NONE) {
-            // CD 中不能起飞
-            if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return;
+            if (!SkillCooldowns.begin(player, SKILL_ID)) return;
             startRise(player);
+            SkillCooldowns.released(player, SKILL_ID);
         } else if (s.phase == PHASE_HOVER) {
             // 悬浮中第 2 次按键 → 冲刺
             startDash(player, s);
@@ -114,6 +116,7 @@ public final class WindDashManager {
     /** 开始起飞。 */
     private static void startRise(ServerPlayerEntity player) {
         DashState s = new DashState();
+        s.castId = SkillCooldowns.currentCastId(player, SKILL_ID);
         s.phase = PHASE_RISE;
         double targetHeight = BAL.d("target_height", TARGET_HEIGHT);
         s.startY = player.getY();
@@ -363,10 +366,10 @@ public final class WindDashManager {
         clear(player);
     }
 
-    /** 进入 CD（12 秒）。超时落下也进 CD。 */
+    /** 进入 CD（12 秒，on_end 结算点 = 落地）。超时落下也进 CD。 */
     private static void enterCooldown(ServerPlayerEntity player) {
-        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD,
-                BAL.i("cooldown_ticks", COOLDOWN_TICKS));
+        DashState s = STATES.get(player.getUuid());
+        if (s != null) SkillCooldowns.ended(player, SKILL_ID, s.castId);
     }
 
     /** 起飞阶段脚下粒子：灰烟 + 烟花上升。 */
@@ -488,6 +491,9 @@ public final class WindDashManager {
 
     /** 彻底清理状态并通知客户端。 */
     public static void clear(ServerPlayerEntity player) {
+        // 死亡/变形按实际施放阶段结算；落地路径已先 ended，此处为空操作。
+        DashState s = STATES.get(player.getUuid());
+        if (s != null) SkillCooldowns.cancelled(player, SKILL_ID, s.castId);
         if (STATES.remove(player.getUuid()) != null) {
             SscAddonNetworking.syncDashState(player, PHASE_NONE, 0);
         }

@@ -60,6 +60,8 @@ public final class SscAddonPlayerEvents {
 
 		// 玩家首次进入世界时发送欢迎消息（延迟3秒，等待客户端语言设置到达服务端后根据语言发送对应文本）
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager.get(handler.player.getServerWorld())
+                    .onPlayerJoined(handler.player.getUuid(), server.getOverworld().getTime());
 			var player = handler.player;
 			// balance 数据包数值（阶段 3）：登录即推送权威快照（未 ACK 前服务端就绪门控拒新施法）
 			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.onPlayerReady(player));
@@ -200,10 +202,16 @@ public final class SscAddonPlayerEvents {
 			net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.onPlayerDisconnect(uuid);
 			// 荧光幼灵潮汐波动：断线清 session + 法球实体，防 orb 残留
 			net.jackcooper.shapeShifterCurseAddon.ability.FluorescentTidalManager.onPlayerDisconnect(uuid);
-			// 统一冷却服务：断线保留冷却（持久化），只清进行中施放记录
+			// 统一冷却服务：断线结算（on_end 未起算的效果立即结算 CD；蓄力中按 fail；修审查#4 防绕过）
 			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager castMgr =
 					net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager.instanceOrNull();
-			if (castMgr != null) castMgr.onPlayerRemoved(uuid);
+			if (castMgr != null) {
+				net.minecraft.server.network.ServerPlayerEntity removed = handler.player;
+				castMgr.onPlayerRemoved(uuid,
+						removed != null && removed.getServer() != null && removed.getServer().getOverworld() != null
+								? removed.getServer().getOverworld().getTime() : 0L,
+						id -> removed);
+			}
 			// 美西螈漩涡蓄力：断线清蓄力状态
 			net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.onPlayerDisconnect(uuid);
 			// balance 数据包数值（阶段 3）：清该连接的 ACK/就绪状态

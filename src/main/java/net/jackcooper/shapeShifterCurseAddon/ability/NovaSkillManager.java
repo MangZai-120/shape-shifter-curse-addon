@@ -41,10 +41,10 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li><b>闪避</b>：基础被动闪避 {@link #BASE_DODGE}，灵跃每次 +{@link #DODGE_PER_LEAP}（限时 {@link #DODGE_DURATION}）。
  *       受伤时按当前几率概率免疫（不受伤、不击退）——由 SscAddonLivingEntityMixin 调用 {@link #rollDodge}。</li>
  *   <li><b>灵跃闪身</b>（次技能 sp_secondary）：向准星跳冲，空中可用，可连用 2 次（第 1→2 次窗口 {@link #LEAP_WINDOW}）；
- *       每次 +20% 闪避；用满 2 次 cd {@link #LEAP_CD}，只用 1 次且超时 cd {@link #LEAP_CD_SHORT}。</li>
+ *       每次 +20% 闪避；用满 2 次按 power JSON cooldown，只用 1 次且超时按 extra_cooldowns.single_use。</li>
  *   <li><b>舍身爆炸</b>（主技能 sp_primary）：蓄力 {@link #CHARGE_TIME}（减速 70% + 抗性 III + TNT 音效 + 黑烟粒子），
  *       蓄满自爆——消耗 1 九命，致命半径 {@link #LETHAL_RADIUS} 伤害 {@link #MAX_DAMAGE}，最远 {@link #MAX_RADIUS} 随距离衰减，
- *       不破坏方块、无友伤（白名单/宠物免伤）、归属玩家；cd {@link #EXPLODE_CD}。</li>
+ *       不破坏方块、无友伤（白名单/宠物免伤）、归属玩家；CD 见 power JSON。</li>
  * </ul>
  * 触发接线：sp_primary 按键 → {@link #startCharge}；sp_secondary 按键 → {@link #tryLeap}。
  * 需在 power JSON（apoli:active_self, key.ssc_addon.sp_primary/secondary）或按键 C2S 包里调用本类方法。
@@ -58,13 +58,10 @@ public final class NovaSkillManager {
     private static final float DODGE_CAP = 0.85f;       // 默认：闪避几率上限，避免完全无敌
     // 灵跃闪身
     private static final int LEAP_WINDOW = 100;         // 默认：第 1→2 次窗口 5s
-    private static final int LEAP_CD = 200;             // 默认：用满 2 次 cd 10s
-    private static final int LEAP_CD_SHORT = 120;       // 默认：只用 1 次超时 cd 6s
     private static final double LEAP_POWER = 1.2;       // 默认：跳冲水平速度
     private static final int LEAP_INPUT_GAP = 5;        // 输入去抖窗口(tick)：必须 > leap power 的 cooldown(3)，否则挡不住按住的重复触发。未登记 balance，保持常量
     // 舍身爆炸
     private static final int CHARGE_TIME = 100;         // 默认：蓄力 5s
-    private static final int EXPLODE_CD = 600;          // 默认：cd 30s
     private static final int LETHAL_RADIUS = 5;         // 默认：致命半径 5 格
     private static final int MAX_RADIUS = 12;           // 默认：最远半径 12 格
     private static final float MAX_DAMAGE = 50.0f;      // 默认：致命伤害 50
@@ -74,22 +71,24 @@ public final class NovaSkillManager {
 
     /** 服务端权威 balance 快照读取（快照未初始化时回退上方默认常量）。 */
     private static final BalanceReader BAL = new BalanceReader("abilities.nova");
+    /** 统一冷却服务技能 ID（网络包触发型）。 */
+    private static final String LEAP_SKILL_ID = "my_addon:form_ocelot_nova_leap";
+    private static final String EXPLODE_SKILL_ID = "my_addon:form_ocelot_nova_charge";
 
     private static final Map<UUID, Float> DODGE = new ConcurrentHashMap<>();
     private static final Map<UUID, Long> DODGE_EXPIRE = new ConcurrentHashMap<>();
     private static final Map<UUID, Integer> LEAP_COUNT = new ConcurrentHashMap<>();
+    private static final Map<UUID, Long> LEAP_CAST = new ConcurrentHashMap<>();
     private static final Map<UUID, Long> LEAP_FIRST = new ConcurrentHashMap<>();
-    private static final Map<UUID, Long> LEAP_CD_END = new ConcurrentHashMap<>();
     /** 灵跃最近一次「收到触发」的 tick：用于抑制 active_self 电平触发在一次按键内的多 tick 重复。 */
     private static final Map<UUID, Long> LEAP_LAST_INPUT = new ConcurrentHashMap<>();
     /** 舍身爆炸蓄力会话（2026-09-27 审计修复）：起手把 chargeTime/lethalRadius/maxRadius/maxDamage
      * 快照进会话——100t 蓄力可能跨数据包 reload，若进度判定与 explode 结算即时读 balance，
      * reload 后同一发爆炸会用新参数；改读会话快照保证单次释放全程同参。 */
     private static final Map<UUID, ChargeSession> CHARGE_START = new ConcurrentHashMap<>();
-    private static final Map<UUID, Long> EXPLODE_CD_END = new ConcurrentHashMap<>();
 
     /** 单次蓄力的起手参数快照（构造后不变）。 */
-    private record ChargeSession(long startTick, int chargeTime, int lethalRadius, int maxRadius, float maxDamage) {
+    private record ChargeSession(long castId, long startTick, int chargeTime, int lethalRadius, int maxRadius, float maxDamage) {
     }
 
     private NovaSkillManager() {
@@ -108,10 +107,9 @@ public final class NovaSkillManager {
             DODGE_EXPIRE.remove(id);
             LEAP_COUNT.remove(id);
             LEAP_FIRST.remove(id);
-            LEAP_CD_END.remove(id);
+            LEAP_CAST.remove(id);
             LEAP_LAST_INPUT.remove(id);
             CHARGE_START.remove(id);
-            EXPLODE_CD_END.remove(id);
         });
     }
 
@@ -149,12 +147,14 @@ public final class NovaSkillManager {
         if (lastInput != null && now - lastInput < LEAP_INPUT_GAP) {
             return;
         }
-        if (now < LEAP_CD_END.getOrDefault(player.getUuid(), 0L)) return; // cd 中
         int count = LEAP_COUNT.getOrDefault(player.getUuid(), 0);
         long first = LEAP_FIRST.getOrDefault(player.getUuid(), 0L);
         if (count == 0 || now - first > BAL.i("leap_window", LEAP_WINDOW)) {
+            // 新的一轮：登记施放（两段同属一次施放，CD 在第 2 段或超窗时才起算）
+            if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, LEAP_SKILL_ID)) return;
             count = 1;
             LEAP_FIRST.put(player.getUuid(), now);
+            LEAP_CAST.put(player.getUuid(), net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, LEAP_SKILL_ID));
         } else if (count == 1) {
             count = 2;
         } else {
@@ -190,10 +190,9 @@ public final class NovaSkillManager {
         player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 0.5F, 1.8F);
         if (count >= 2) {
-            int leapCd = BAL.i("leap_cd", LEAP_CD);
-            LEAP_CD_END.put(player.getUuid(), now + leapCd);
             LEAP_COUNT.put(player.getUuid(), 0);
-            PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, leapCd);
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, LEAP_SKILL_ID, LEAP_CAST.getOrDefault(player.getUuid(), -1L));
+            LEAP_CAST.remove(player.getUuid());
         }
     }
 
@@ -202,11 +201,11 @@ public final class NovaSkillManager {
     public static void startCharge(ServerPlayerEntity player) {
         if (!FormUtils.isForm(player, FormIdentifiers.OCELOT_NOVA)) return;
         long now = player.getWorld().getTime();
-        if (now < EXPLODE_CD_END.getOrDefault(player.getUuid(), 0L)) return; // cd 中
         if (CHARGE_START.containsKey(player.getUuid())) return; // 已在蓄力
         if (PowerUtils.getResourceValue(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES) <= 0) return; // 无命不能自爆
+        if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, EXPLODE_SKILL_ID)) return;
         // 起手快照：本次释放全程（进度判定/视觉/爆炸结算）读会话字段，不随 reload 换参
-        ChargeSession session = new ChargeSession(now,
+        ChargeSession session = new ChargeSession(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, EXPLODE_SKILL_ID), now,
                 BAL.i("charge_time", CHARGE_TIME),
                 BAL.i("lethal_radius", LETHAL_RADIUS),
                 BAL.i("max_radius", MAX_RADIUS),
@@ -243,7 +242,9 @@ public final class NovaSkillManager {
             speed.removeModifier(CHARGE_SLOW_UUID);
         }
         PowerUtils.setResourceValueAndSync(player, FormIdentifiers.OCELOT_NOVA_CHARGING, 0);
-        CHARGE_START.remove(player.getUuid());
+        ChargeSession removed = CHARGE_START.remove(player.getUuid());
+        // 自爆路径已先 completed，此处为空操作；变形/自愈路径则无惩罚中止
+        net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, EXPLODE_SKILL_ID, removed == null ? -1 : removed.castId());
         net.jackcooper.shapeShifterCurseAddon.network.SustainedVisuals.stop(player,
                 net.jackcooper.shapeShifterCurseAddon.network.VisualRecipe.Kind.NOVA_CHARGE);
     }
@@ -326,13 +327,14 @@ public final class NovaSkillManager {
             DODGE.remove(player.getUuid());
             DODGE_EXPIRE.remove(player.getUuid());
         }
-        // 灵跃：只用 1 次且超过窗口 → 进入短 cd
+        // 灵跃：只用 1 次且超过窗口 → 本轮结束，CD 改用 extra_cooldowns.single_use
         if (LEAP_COUNT.getOrDefault(player.getUuid(), 0) == 1
                 && now - LEAP_FIRST.getOrDefault(player.getUuid(), 0L) > BAL.i("leap_window", LEAP_WINDOW)) {
-            int leapCdShort = BAL.i("leap_cd_short", LEAP_CD_SHORT);
-            LEAP_CD_END.put(player.getUuid(), now + leapCdShort);
             LEAP_COUNT.put(player.getUuid(), 0);
-            PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, leapCdShort);
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.retune(player, LEAP_SKILL_ID, LEAP_CAST.getOrDefault(player.getUuid(), -1L),
+                    net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.extra(player, LEAP_SKILL_ID, "single_use"));
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, LEAP_SKILL_ID, LEAP_CAST.getOrDefault(player.getUuid(), -1L));
+            LEAP_CAST.remove(player.getUuid());
         }
         // 舍身爆炸蓄力：黑烟粒子 + 蓄满自爆（进度与半径全部读会话快照，reload 不换参）
         ChargeSession session = CHARGE_START.get(player.getUuid());
@@ -367,9 +369,7 @@ public final class NovaSkillManager {
             }
             if (now - cs >= chargeTime) {
                 explode(player, session);
-                int explodeCd = BAL.i("explode_cd", EXPLODE_CD);
-                EXPLODE_CD_END.put(player.getUuid(), now + explodeCd);
-                PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, explodeCd);
+                net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, EXPLODE_SKILL_ID, session.castId());
                 endCharge(player); // 自爆完毕：解除减速 + 禁疾跑标记 + 清蓄力计时
             }
         } else if (PowerUtils.getResourceValue(player, FormIdentifiers.OCELOT_NOVA_CHARGING) > 0) {

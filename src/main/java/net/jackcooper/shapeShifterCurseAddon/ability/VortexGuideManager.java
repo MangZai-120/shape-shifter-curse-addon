@@ -10,9 +10,7 @@ import net.minecraft.sound.SoundEvents;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
 import java.util.Map;
 import java.util.UUID;
@@ -29,16 +27,19 @@ public final class VortexGuideManager {
 
 	// 以下均为默认值；运行时从 balance 快照读取（abilities.vortex_guide）
 	private static final int CHANNEL_TICKS = 60;   // 引导 3 秒
-	private static final int CD_TICKS = 160;       // 8 秒
+	// CD（8 秒）由统一冷却服务 + power JSON 配置管理，原 CD_TICKS 常量已删
 	private static final int HEAL_INTERVAL = 10;   // 每 0.5 秒回血一次
 	private static final float HEAL_PER_TICK = 2.0f; // 每次回 1 心（共 6 次 = 6 心）
 	private static final int ABSORPTION_DURATION = 600; // 黄心持续 30 秒
 
 	/** balance 快照读取（快照未初始化回退默认常量） */
 	private static final BalanceReader BAL = new BalanceReader("abilities.vortex_guide");
+	/** 统一冷却服务的稳定技能 ID（网络包触发型）。 */
+	private static final String SKILL_ID = "my_addon:form_upgrade_axolotl_vortex_guide";
 
-	private static final Map<UUID, Integer> CHANNELING = new ConcurrentHashMap<>();
+	private static final Map<UUID, ChannelState> CHANNELING = new ConcurrentHashMap<>();
 
+	private static final class ChannelState { int ticks; final long castId; ChannelState(long castId) { this.castId = castId; } }
 	private VortexGuideManager() {
 	}
 
@@ -48,9 +49,9 @@ public final class VortexGuideManager {
 		if (!FormUtils.isUpgradeAxolotl(player)) return;
 		// 节点门控：未解锁「涡流引导」不触发
 		if (!RegEvolutionComponent.EVOLUTION.get(player).isUnlocked(AxolotlTree.NODE_VORTEX_GUIDE)) return;
-		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_SECONDARY_CD) > 0) return; // CD 中
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return; // CD 中
 
-		CHANNELING.put(player.getUuid(), 0);
+		CHANNELING.put(player.getUuid(), new ChannelState(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID)));
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_ELDER_GUARDIAN_CURSE, SoundCategory.PLAYERS, 0.7f, 1.4f);
@@ -60,14 +61,13 @@ public final class VortexGuideManager {
 
 	/** 每服务端 tick 对每个在线玩家调用。 */
 	public static void tick(ServerPlayerEntity player) {
-		Integer t = CHANNELING.get(player.getUuid());
+		ChannelState t = CHANNELING.get(player.getUuid());
 		if (t == null) return;
 		if (player.isDead() || !FormUtils.isUpgradeAxolotl(player)) {
 			cancel(player); // 死亡 / 形态丢失 → 中断，不进 CD
 			return;
 		}
-		int tick = t + 1;
-		CHANNELING.put(player.getUuid(), tick);
+		int tick = ++t.ticks;
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		int channelTicks = BAL.i("channel_ticks", CHANNEL_TICKS);
 		int healInterval = BAL.i("heal_interval", HEAL_INTERVAL);
@@ -96,11 +96,12 @@ public final class VortexGuideManager {
 		}
 	}
 
-	/** 引导完成：授予 2 黄心（4 吸收）并进入 CD。 */
+	/** 引导完成：授予 2 黄心（4 吸收）并进入 CD（统一服务 on_release 结算）。 */
 	private static void complete(ServerPlayerEntity player) {
-		CHANNELING.remove(player.getUuid());
+		ChannelState state = CHANNELING.remove(player.getUuid());
+        if (state == null) return;
 		player.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, BAL.i("absorption_duration", ABSORPTION_DURATION), 0, false, false, true));
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, BAL.i("cd_ticks", CD_TICKS));
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, state.castId);
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 0.7f, 1.6f);
@@ -111,7 +112,9 @@ public final class VortexGuideManager {
 
 	/** 中断（不进 CD、不给黄心）。 */
 	public static void cancel(ServerPlayerEntity player) {
-		CHANNELING.remove(player.getUuid());
+		ChannelState state = CHANNELING.remove(player.getUuid());
+        if (state == null) return;
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, state.castId);
 	}
 
 	public static void onPlayerDisconnect(UUID uuid) {

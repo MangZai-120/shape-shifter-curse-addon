@@ -52,6 +52,8 @@ public class SnowFoxSpMeleeAbility {
 	 * 门禁：power JSON（my_addon:fail_aware_active_self）原生 cooldown 字段管理，
 	 * 本方法只负责效果与失败标记：蓝不够/冲刺中 → markFail()（按 fail_cooldown 进 CD）。
 	 */
+	private static final String SKILL_ID = "my_addon:form_snow_fox_sp_melee_primary";
+
 	public static boolean execute(ServerPlayerEntity player) {
 		if (!net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.consume(player,
 				net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX, BAL.i("mana_cost", MANA_COST))) {
@@ -69,9 +71,13 @@ public class SnowFoxSpMeleeAbility {
 
 		PowerUtils.setResourceValueAndSync(player, REGEN_COOLDOWN_ID, BAL.i("regen_lock_ticks", MELEE_REGEN_LOCK_TICKS));
 
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID);
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.released(player, SKILL_ID);
+
 		Vec3d lookDir = player.getRotationVector().normalize();
 
 		DashingPlayerData data = new DashingPlayerData(lookDir, 0);
+        data.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
 		DASHING_PLAYERS.put(player.getUuid(), data);
 
 		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -95,6 +101,7 @@ public class SnowFoxSpMeleeAbility {
 		// 水平撞墙才需要终止 dash，所以只看 horizontalCollision。
 		if (distanceMoved >= BAL.d("dash_distance", DASH_DISTANCE) || player.horizontalCollision) {
 			DASHING_PLAYERS.remove(player.getUuid());
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, SKILL_ID, data.castId);
 			return;
 		}
 
@@ -169,6 +176,7 @@ public class SnowFoxSpMeleeAbility {
 	 * 冲刺中玩家数据
 	 */
 	private static class DashingPlayerData {
+        long castId = -1;
 		final Vec3d direction;
 		final Set<UUID> hitEntities;
 		int ticksElapsed;

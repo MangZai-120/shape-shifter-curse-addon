@@ -21,7 +21,6 @@ import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import org.joml.Vector3f;
 
 /**
@@ -91,7 +90,9 @@ public final class MancianimaTeleportClient {
 			// PLATFORM 模式：按住期间渲染预览，松开发包
 			if (isPressed) {
 				// 仅在能传送时显示预览（CD 已就绪 + 法力足够）
-				boolean canTeleport = PowerUtils.getClientResourceValue(player, FormIdentifiers.SP_SECONDARY_CD) <= 0
+				var cd = net.jackcooper.shapeShifterCurseAddon.client.SkillCooldownClient.get(MancianimaTeleport.SKILL_ID);
+				boolean canTeleport = (cd == null || cd.phase() == net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager.PHASE_IDLE
+						&& cd.remainingNow(net.jackcooper.shapeShifterCurseAddon.client.SkillCooldownClient.now()) <= 0)
 						&& ManaUtils.getPlayerMana(player) >= MancianimaTeleport.MANA_COST;
 				if (canTeleport) {
 					Vec3d landing = MancianimaTeleport.computePlatformLanding(world, eye, look, player);

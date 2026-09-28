@@ -55,6 +55,8 @@ public class SnowFoxSpTeleportAttack {
 	 * 门禁：power JSON（my_addon:fail_aware_active_self）原生 cooldown / fail_cooldown 字段管理，
 	 * 本方法只负责效果与失败标记：无目标/蓝不够 → markFail()（按 fail_cooldown 进 CD）。
 	 */
+	private static final String SKILL_ID = "my_addon:form_snow_fox_sp_melee_secondary";
+
 	public static boolean execute(ServerPlayerEntity player) {
 		if (ATTACKING_PLAYERS.containsKey(player.getUuid())) {
 			FailAwareActiveSelfPower.markFail();
@@ -89,6 +91,8 @@ public class SnowFoxSpTeleportAttack {
 		net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.consume(player,
 				net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX, BAL.i("mana_cost_success", MANA_COST_SUCCESS));
 		setRegenCooldown(player, BAL.i("regen_lock_ticks", TELEPORT_REGEN_LOCK_TICKS));
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID);
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.released(player, SKILL_ID);
 
 		Vec3d originalPos = player.getPos();
 		float originalYaw = player.getYaw();
@@ -98,7 +102,8 @@ public class SnowFoxSpTeleportAttack {
 				originalPos, originalYaw, originalPitch,
 				targets, 0, 0
 		);
-		ATTACKING_PLAYERS.put(player.getUuid(), data);
+		data.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
+        ATTACKING_PLAYERS.put(player.getUuid(), data);
 
 		teleportToTarget(player, data);
 
@@ -115,6 +120,7 @@ public class SnowFoxSpTeleportAttack {
 		if (player.hasStatusEffect(SscAddon.PURIFIED)) {
 			returnToOrigin(player, data);
 			ATTACKING_PLAYERS.remove(player.getUuid());
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, SKILL_ID, data.castId);
 			return;
 		}
 
@@ -132,6 +138,7 @@ public class SnowFoxSpTeleportAttack {
 			} else {
 				returnToOrigin(player, data);
 				ATTACKING_PLAYERS.remove(player.getUuid());
+				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, SKILL_ID, data.castId);
 			}
 		}
 	}
@@ -285,6 +292,7 @@ public class SnowFoxSpTeleportAttack {
 	 * 瞬移攻击数据
 	 */
 	private static class TeleportAttackData {
+        long castId = -1;
 		final Vec3d originalPos;
 		final float originalYaw;
 		final float originalPitch;

@@ -18,35 +18,17 @@
             "should_render": false
         }
     },
-    "cooldown_timer": {
-        "type": "apoli:resource",
-        "min": 0,
-        "max": 400,
-        "start_value": 0,
-        "hud_render": {
-            "should_render": false
-        }
-    },
-    "cooldown_tick": {
-        "type": "apoli:action_over_time",
-        "interval": 1,
-        "entity_action": {
-            "type": "my_addon:tick_countdown",
-            "resource": "my_addon:form_allay_sp_purify_cooldown_timer"
-        },
-        "condition": {
-            "type": "apoli:resource",
-            "resource": "my_addon:form_allay_sp_purify_cooldown_timer",
-            "comparison": ">",
-            "compare_to": 0
-        }
-    },
     "key_activation": {
-        "type": "apoli:active_self",
+        "type": "my_addon:fail_aware_active_self",
         "key": {
             "key": "key.ssc_addon.sp_primary"
         },
-        "cooldown": 20,
+        "cooldown": 400,
+        "fail_cooldown": 80,
+        "cooldown_start": "on_release",
+        "defer_release": true,
+        "repress_while_active": true,
+        "repress_delay": 20,
         "entity_action": {
             "type": "apoli:if_else",
             "condition": {
@@ -58,6 +40,10 @@
             "if_action": {
                 "type": "apoli:and",
                 "actions": [
+                    {
+                        "type": "my_addon:skill_begin",
+                        "power": "my_addon:form_allay_sp_purify_key_activation"
+                    },
                     {
                         "type": "apoli:change_resource",
                         "resource": "my_addon:form_allay_sp_purify_charging_state",
@@ -91,6 +77,10 @@
                 "type": "apoli:and",
                 "actions": [
                     {
+                        "type": "my_addon:skill_cancelled",
+                        "power": "my_addon:form_allay_sp_purify_key_activation"
+                    },
+                    {
                         "type": "apoli:change_resource",
                         "resource": "my_addon:form_allay_sp_purify_charging_state",
                         "operation": "set",
@@ -114,12 +104,6 @@
                     }
                 ]
             }
-        },
-        "condition": {
-            "type": "apoli:resource",
-            "resource": "my_addon:form_allay_sp_purify_cooldown_timer",
-            "comparison": "==",
-            "compare_to": 0
         }
     },
     "charging_tick": {
@@ -164,10 +148,8 @@
                                 "change": 0
                             },
                             {
-                                "type": "apoli:change_resource",
-                                "resource": "my_addon:form_allay_sp_purify_cooldown_timer",
-                                "operation": "set",
-                                "change": 400
+                                "type": "my_addon:skill_completed",
+                                "power": "my_addon:form_allay_sp_purify_key_activation"
                             },
                             {
                                 "type": "apoli:change_resource",
@@ -483,10 +465,8 @@
                     "change": 0
                 },
                 {
-                    "type": "apoli:change_resource",
-                    "resource": "my_addon:form_allay_sp_purify_cooldown_timer",
-                    "operation": "set",
-                    "change": 80
+                    "type": "my_addon:skill_failed",
+                    "power": "my_addon:form_allay_sp_purify_key_activation"
                 },
                 {
                     "type": "apoli:clear_effect",
@@ -505,6 +485,20 @@
             "resource": "my_addon:form_allay_sp_purify_charging_state",
             "comparison": "==",
             "compare_to": 1
+        }
+    },
+    "cast_guard": {
+        "type": "apoli:action_over_time",
+        "interval": 20,
+        "condition": {
+            "type": "apoli:resource",
+            "resource": "my_addon:form_allay_sp_purify_charging_state",
+            "comparison": "==",
+            "compare_to": 0
+        },
+        "entity_action": {
+            "type": "my_addon:skill_cancelled",
+            "power": "my_addon:form_allay_sp_purify_key_activation"
         }
     },
     "name": "Purification",

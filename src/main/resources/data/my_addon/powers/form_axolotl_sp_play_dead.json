@@ -1,28 +1,22 @@
 {
     "type": "apoli:multiple",
     "activate": {
-        "type": "apoli:active_self",
+        "type": "my_addon:fail_aware_active_self",
         "entity_action": {
             "type": "ssc_addon:trigger_play_dead"
         },
-        "cooldown": 5,
+        "cooldown": 620,
+        "fail_cooldown": 0,
+        "cooldown_start": "on_cast",
+        "extra_cooldowns": {
+            "early_end": 500
+        },
         "key": {
             "key": "key.ssc_addon.sp_secondary"
         },
         "condition": {
-            "type": "apoli:and",
-            "conditions": [
-                {
-                    "type": "apoli:resource",
-                    "resource": "my_addon:form_sp_secondary_cd",
-                    "comparison": "<=",
-                    "compare_to": 0
-                },
-                {
-                    "type": "apoli:sneaking",
-                    "inverted": true
-                }
-            ]
+            "type": "apoli:sneaking",
+            "inverted": true
         },
         "name": "Play Dead",
             "description": "Feign death to escape danger. Clears mob aggro, reduces damage by 60%, but locks you in place for 6 seconds. Press the skill key again to end early."

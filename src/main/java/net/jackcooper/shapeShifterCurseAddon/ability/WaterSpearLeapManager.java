@@ -11,9 +11,7 @@ import net.jackcooper.shapeShifterCurseAddon.entity.ThrownWaterSpearEntity;
 import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
 import java.util.Map;
 import java.util.UUID;
@@ -34,7 +32,7 @@ public final class WaterSpearLeapManager {
 
 	// 以下均为默认值；运行时从 balance 快照读取（abilities.water_spear_leap）
 	private static final int CHARGE_TICKS = 27;    // 蓄力 ~1.35 秒后投矛
-	private static final int CD_TICKS = 160;       // 8 秒
+	// CD（8 秒）由统一冷却服务 + power JSON 配置管理，原 CD_TICKS 常量已删
 	private static final int AIR_COST = 18;        // 6% 湿润度
 	private static final double LEAP_BACK = 0.80;  // 起跃向后冲量（更斜后）
 	private static final double LEAP_UP = 0.62;    // 起跃向上冲量（跳更高）
@@ -42,6 +40,8 @@ public final class WaterSpearLeapManager {
 
 	/** balance 快照读取（快照未初始化回退默认常量） */
 	private static final BalanceReader BAL = new BalanceReader("abilities.water_spear_leap");
+	/** 统一冷却服务的稳定技能 ID（网络包触发型）。 */
+	private static final String SKILL_ID = "my_addon:form_upgrade_axolotl_water_spear";
 
 	/** HUD 门槛同源：水矛空气消耗（balance 可调；HUD 展示用）。 */
 	public static int airCostForHud() { return BAL.i("air_cost", AIR_COST); }
@@ -49,6 +49,7 @@ public final class WaterSpearLeapManager {
 	private static final Map<UUID, LeapState> STATES = new ConcurrentHashMap<>();
 
 	private static final class LeapState {
+        long castId = -1;
 		int tick = 0;
 	}
 
@@ -60,13 +61,15 @@ public final class WaterSpearLeapManager {
 		if (STATES.containsKey(player.getUuid())) return; // 施法中不可重入
 		if (!FormUtils.isUpgradeAxolotl(player)) return;
 		if (!RegEvolutionComponent.EVOLUTION.get(player).isUnlocked(AxolotlTree.NODE_WATER_SPEAR)) return;
-		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return; // CD 中
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return; // CD 中
 		int airCost = BAL.i("air_cost", AIR_COST);
 		if (player.getAir() < airCost) return; // 湿润度不足
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID);
 
 		player.setAir(player.getAir() - airCost);
 
 		LeapState s = new LeapState();
+        s.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
 		STATES.put(player.getUuid(), s);
 
 		// 同步「蓄力中」→ 客户端纯渲染：手上渲染 3D 水矛模型（不往背包放任何物品）+ 举矛过肩姿势
@@ -156,17 +159,19 @@ public final class WaterSpearLeapManager {
 				SoundEvents.ENTITY_PLAYER_SPLASH, SoundCategory.PLAYERS, 1.0f, 0.9f);
 	}
 
-	/** 投矛完成：恢复重力、结束蓄力渲染、进入 CD 并清理状态。 */
+	/** 投矛完成：恢复重力、结束蓄力渲染、进入 CD（统一服务 on_release 结算）并清理状态。 */
 	private static void finish(ServerPlayerEntity player) {
-		STATES.remove(player.getUuid());
+        LeapState s = STATES.remove(player.getUuid());
+        if (s == null) return;
 		player.setNoGravity(false);
 		SscAddonNetworking.syncSpearChargeState(player, false);
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, BAL.i("cd_ticks", CD_TICKS));
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, s.castId);
 	}
 
 	/** 取消（不进 CD、不投矛）：恢复重力、结束蓄力渲染。 */
 	public static void cancel(ServerPlayerEntity player) {
 		LeapState s = STATES.remove(player.getUuid());
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, s == null ? -1 : s.castId);
 		if (s != null) {
 			player.setNoGravity(false);
 			SscAddonNetworking.syncSpearChargeState(player, false);

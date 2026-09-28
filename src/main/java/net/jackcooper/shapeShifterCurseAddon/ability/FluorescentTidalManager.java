@@ -8,7 +8,6 @@ import net.minecraft.sound.SoundEvents;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.TidalOrbEntity;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
@@ -37,17 +36,20 @@ public final class FluorescentTidalManager {
             new net.minecraft.util.Identifier("my_addon", "form_axolotl_fluorescent_tidal_state");
 
     private static final int CHARGE_TICKS = 25;       // 1.25 秒蓄力
-    private static final int CD_TICKS = 160;          // 8 秒 CD（球消失后起算）
+    // CD（8 秒，球消失后起算）已由统一冷却服务 + power JSON 配置管理，原 CD_TICKS 常量已删
     private static final double CHARGE_SPEED_PENALTY = -0.5;  // 蓄力期间移动 -50%
 
     // 阶段 5：运行时快照读取（abilities.fluorescent_tidal；快照未初始化回退默认常量）
     private static final BalanceReader BAL = new BalanceReader("abilities.fluorescent_tidal");
+    /** 统一冷却服务的稳定技能 ID（网络包触发型，用形态+技能语义 ID）。 */
+    private static final String SKILL_ID = "my_addon:form_axolotl_fluorescent_tidal";
 
     private static final UUID CHARGE_SPEED_UUID = UUID.fromString("9d2b3c4d-5e6f-7081-92a3-b4c5d6e7f819");
 
     private enum State { IDLE, CHARGING, FLYING }
 
     private static final class Session {
+        long castId = -1;
         State state = State.IDLE;
         int chargeTicks = 0;
         TidalOrbEntity orb = null;
@@ -73,8 +75,9 @@ public final class FluorescentTidalManager {
     }
 
     private static void startCharge(ServerPlayerEntity player, Session s) {
-        // CD 中不可用（潮汐现为副技能，用 SP_SECONDARY_CD）
-        if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_SECONDARY_CD) > 0) return;
+        if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return;
+        s.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
+        s.pendingCd = false;
         s.state = State.CHARGING;
         s.chargeTicks = 0;
         PowerUtils.setResourceValueAndSync(player, TIDAL_STATE, 1);
@@ -155,6 +158,7 @@ public final class FluorescentTidalManager {
         TidalOrbEntity orb = new TidalOrbEntity(sw, player);
         sw.spawnEntity(orb);
         s.orb = orb;
+        net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.released(player, SKILL_ID, s.castId);
         // 发射：清爽的水灵发射音（溺尸投掷 + 潮涌激活，两种不重叠）
         sw.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_DROWNED_SHOOT, SoundCategory.PLAYERS, 1.0f, 1.0f);
@@ -165,29 +169,30 @@ public final class FluorescentTidalManager {
     }
 
     /** 球实体消失时回调：标记 pendingCd，由 tickPendingCd 在主线程补设 CD（回调拿不到 player 引用）。 */
-    public static void onBallRemoved(UUID ownerUuid) {
+    public static void onBallRemoved(UUID ownerUuid, TidalOrbEntity removedOrb) {
         Session s = SESSIONS.get(ownerUuid);
-        if (s == null) return;
+        if (s == null || s.orb != removedOrb) return;
         s.state = State.IDLE;
         s.orb = null;
         s.chargeTicks = 0;
         s.pendingCd = true;
     }
 
-    /** 取消蓄力（被净化打断）：不发射，但进入 60% CD（返还 40%）。 */
+    /** 取消蓄力（被净化打断）：不发射，按 fail_cooldown 结算。 */
     private static void cancelCharge(ServerPlayerEntity player, Session s) {
         applyChargeSpeed(player, false);
         s.state = State.IDLE;
         s.chargeTicks = 0;
         PowerUtils.setResourceValueAndSync(player, TIDAL_STATE, 0);
-        // 被净化打断：返还 40% CD（进 60% CD = 160 × 0.6 = 96t = 4.8 秒）
-        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, (int)(BAL.i("cd_ticks", CD_TICKS) * 0.6));
+        net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.failed(player, SKILL_ID, s.castId);
         player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.5f);
     }
 
     private static void cleanup(ServerPlayerEntity player, Session s) {
         applyChargeSpeed(player, false);
+        // 蓄力中死亡/变形：无惩罚中止；飞行中的球被移除后由 onBallRemoved 正常结算
+        if (s.state == State.CHARGING) net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, s.castId);
         if (s.orb != null && s.orb.isAliveOrActive()) {
             s.orb.discard();
         }
@@ -209,13 +214,13 @@ public final class FluorescentTidalManager {
         }
     }
 
-    /** 由 SscAddon 在 END_SERVER_TICK 中调用：为待 CD 的 session 补设 CD 资源。 */
+    /** 由 SscAddon 在 END_SERVER_TICK 中调用：为待 CD 的 session 补设 CD（on_end 结算点 = 球消失）。 */
     public static void tickPendingCd(Collection<ServerPlayerEntity> players) {
         for (ServerPlayerEntity p : players) {
             Session s = SESSIONS.get(p.getUuid());
             if (s == null || !s.pendingCd) continue;
             s.pendingCd = false;
-            PowerUtils.setResourceValueAndSync(p, FormIdentifiers.SP_SECONDARY_CD, BAL.i("cd_ticks", CD_TICKS));
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(p, SKILL_ID, s.castId);
             PowerUtils.setResourceValueAndSync(p, TIDAL_STATE, 0);
         }
     }

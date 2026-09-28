@@ -1,5 +1,5 @@
 {
-    "type": "apoli:active_self",
+    "type": "my_addon:fail_aware_active_self",
     "entity_action": {
         "type": "apoli:and",
         "actions": [
@@ -58,18 +58,6 @@
                 "type": "apoli:change_resource",
                 "resource": "my_addon:form_snow_fox_sp_frost_regen_cooldown_resource",
                 "change": 100,
-                "operation": "set"
-            },
-            {
-                "type": "apoli:change_resource",
-                "resource": "my_addon:form_sp_primary_cd",
-                "change": 0,
-                "operation": "set"
-            },
-            {
-                "type": "apoli:change_resource",
-                "resource": "my_addon:form_sp_secondary_cd",
-                "change": 0,
                 "operation": "set"
             },
             {

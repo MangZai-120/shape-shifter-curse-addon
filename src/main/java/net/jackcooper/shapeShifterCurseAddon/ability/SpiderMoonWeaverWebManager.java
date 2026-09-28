@@ -18,7 +18,6 @@ import net.onixary.shapeShifterCurseFabric.mana.ManaComponent;
 import net.onixary.shapeShifterCurseFabric.mana.RegManaComponent;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
 import java.util.Map;
 import java.util.UUID;
@@ -42,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * mana 不足自动释放。
  *
  * <p>模式存于独立 CCA 组件 {@link SpiderMoonWeaverStateComponent}（0=搭路 / 1=攻击，不挂 origin、跨会话/跨形态/死亡重生保留）；蓄力档位存于
- * 本类服务端 map（瞬态）。CD 走通用 {@link FormIdentifiers#SP_PRIMARY_CD} 驱动 HUD 冷却条。
+ * 本类服务端 map（瞬态）。CD 由 power form_spider_moon_weaver_web 的 JSON 字段配置。
  */
 public final class SpiderMoonWeaverWebManager {
 
@@ -53,19 +52,22 @@ public final class SpiderMoonWeaverWebManager {
 	private static final int MAX_TICKS = 60;        // 满档蓄力 3 秒
 	private static final int TIER1_TICKS = 20;      // ≥1 秒抵 tier1
 	private static final int TIER2_TICKS = 40;      // ≥2 秒进 tier2
-	private static final int CD_TICKS_PER_TIER = 20; // 释放后 CD = tier × 本值（pin 锚点）
+	// 释放后 CD 由 power JSON 配置（见类注释），原 CD_TICKS_PER_TIER 常量已删
 	private static final double START_MANA = 6.0;   // 起手需 6 mana（沿用原版蜘蛛）
 	private static final double MANA_PER_TICK = 0.25;
 
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("abilities.moon_weaver_web");
+	/** 统一冷却服务的稳定技能 ID（网络包触发型）。 */
+	private static final String SKILL_ID = "my_addon:form_spider_moon_weaver_web";
 
 	/** HUD 门槛同源：织网起手法力（balance 可调；HUD 展示用）。 */
 	public static double startManaForHud() { return BAL.d("start_mana", START_MANA); }
 
 	/** UUID -> {已蓄力 tick 数}。服务端权威，多人一致。 */
-	private static final Map<UUID, int[]> CHARGING = new ConcurrentHashMap<>();
+	private static final Map<UUID, ChargeState> CHARGING = new ConcurrentHashMap<>();
 	/** 平铺搭桥蓄力中的玩家（双击长按 / 潜行长按触发），release 时走脚下平铺而非蛛丝弹。 */
+	private static final class ChargeState { int ticks; final long castId; ChargeState(long castId) { this.castId = castId; } }
 	private static final java.util.Set<UUID> FLAT_CHARGING = ConcurrentHashMap.newKeySet();
 
 	private SpiderMoonWeaverWebManager() {}
@@ -101,9 +103,9 @@ public final class SpiderMoonWeaverWebManager {
 	public static void start(ServerPlayerEntity player) {
 		if (CHARGING.containsKey(player.getUuid())) return;
 		if (!isSpiderMoonWeaver(player)) return;
-		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return; // CD 中
-		if (mana(player).getMana() < BAL.d("start_mana", START_MANA)) return; // mana 不足
-		CHARGING.put(player.getUuid(), new int[]{0});
+		// 统一服务门禁 + 建档（on_release：松键按档起算）
+		if (!beginCharge(player)) return;
+		CHARGING.put(player.getUuid(), new ChargeState(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID)));
 		FLAT_CHARGING.remove(player.getUuid()); // 普通蓄力 → 蛛丝弹
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -114,24 +116,30 @@ public final class SpiderMoonWeaverWebManager {
 	public static void startFlat(ServerPlayerEntity player) {
 		if (CHARGING.containsKey(player.getUuid())) return;
 		if (!isSpiderMoonWeaver(player)) return;
-		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return; // CD 中
-		if (mana(player).getMana() < BAL.d("start_mana", START_MANA)) return; // mana 不足
-		CHARGING.put(player.getUuid(), new int[]{0});
+		if (!beginCharge(player)) return;
+		CHARGING.put(player.getUuid(), new ChargeState(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID)));
 		FLAT_CHARGING.add(player.getUuid()); // 平铺蓄力 → 脚下平铺
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_WOOL_HIT, SoundCategory.PLAYERS, 0.7f, 1.0f);
 	}
 
+	/** 登记施放；power JSON cooldown = 满档（3 档）CD，松手时按档位比例折算。 */
+	private static boolean beginCharge(ServerPlayerEntity player) {
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return false;
+		if (mana(player).getMana() < BAL.d("start_mana", START_MANA)) return false;
+		return net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID);
+	}
+
 	/** 每服务端 tick 对每个在线玩家调用（挂在 SscAddonServerEvents 世界 tick 循环）。 */
 	public static void tick(ServerPlayerEntity player) {
-		int[] s = CHARGING.get(player.getUuid());
+		ChargeState s = CHARGING.get(player.getUuid());
 		if (s == null) return;
 		if (player.isDead() || !isSpiderMoonWeaver(player)) {
 			cancel(player); // 死亡 / 形态丢失 → 取消，不结算
 			return;
 		}
-		if (s[0] < BAL.i("max_ticks", MAX_TICKS)) {
+		if (s.ticks < BAL.i("max_ticks", MAX_TICKS)) {
 			double manaPerTick = BAL.d("mana_per_tick", MANA_PER_TICK);
 			ManaComponent m = mana(player);
 			if (m.getMana() < manaPerTick) {
@@ -139,9 +147,9 @@ public final class SpiderMoonWeaverWebManager {
 				return;
 			}
 			m.consumeMana(manaPerTick);
-			s[0]++;
+			s.ticks++;
 			ServerWorld sw = (ServerWorld) player.getWorld();
-			float chime = tierChimePitch(s[0]);
+			float chime = tierChimePitch(s.ticks);
 			if (chime > 0f) {
 				// 跨档瞬间：靠齐原版 SSC 蓄力完成音效（note_block hat+snare 升调）+ cloud 粒子
 				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -150,7 +158,7 @@ public final class SpiderMoonWeaverWebManager {
 						SoundEvents.BLOCK_NOTE_BLOCK_SNARE.value(), SoundCategory.PLAYERS, 0.8f, chime);
 				net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD, player.getX(), player.getY() + 1.0, player.getZ(),
 						10, 0.5, 0.5, 0.5, 0.0);
-			} else if (s[0] % 4 == 0) {
+			} else if (s.ticks % 4 == 0) {
 				net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD, player.getX(), player.getY() + 1.0, player.getZ(),
 						4, 0.4, 0.5, 0.4, 0.0);
 			}
@@ -166,15 +174,17 @@ public final class SpiderMoonWeaverWebManager {
 		return 0f;
 	}
 
-	/** 松开主键 / 自动释放：按当前档 + 模式 + 平铺标志发动。 */
+	/** 松开主键 / 自动释放：按当前档 + 模式 + 平铺标志发动（档位 CD = tier×cd_per_tier，统一服务结算）。 */
 	public static void release(ServerPlayerEntity player) {
-		int[] s = CHARGING.remove(player.getUuid());
+		ChargeState s = CHARGING.remove(player.getUuid());
 		boolean flat = FLAT_CHARGING.remove(player.getUuid());
 		if (s == null) return;
-		int ticks = s[0];
+		int ticks = s.ticks;
 		int tier = ticks >= BAL.i("max_ticks", MAX_TICKS) ? 3
 				: (ticks >= BAL.i("tier2_ticks", TIER2_TICKS) ? 2 : 1);
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, tier * BAL.i("cd_ticks_per_tier", CD_TICKS_PER_TIER));
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.retune(player, SKILL_ID, s.castId,
+				(int) Math.ceil(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cooldown(player, SKILL_ID) * tier / 3.0));
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, s.castId);
 		if (getMode(player) == MODE_ATTACK) {
 			fireAttack(player, tier);
 		} else if (flat) {
@@ -184,10 +194,11 @@ public final class SpiderMoonWeaverWebManager {
 		}
 	}
 
-	/** 取消蓄力（不结算、不进 CD）。 */
+	/** 取消蓄力（不结算、不进 CD：统一服务失败档=0 清记录）。 */
 	public static void cancel(ServerPlayerEntity player) {
-		CHARGING.remove(player.getUuid());
+		ChargeState s = CHARGING.remove(player.getUuid());
 		FLAT_CHARGING.remove(player.getUuid());
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, s == null ? -1 : s.castId);
 	}
 
 	/** 玩家掉线清理，防僵尸 UUID 残留。 */

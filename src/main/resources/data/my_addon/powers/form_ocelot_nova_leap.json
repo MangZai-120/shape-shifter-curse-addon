@@ -1,6 +1,13 @@
 {
-    "type": "apoli:active_self",
-    "cooldown": 3,
+    "type": "my_addon:fail_aware_active_self",
+    "cooldown": 200,
+    "fail_cooldown": 0,
+    "cooldown_start": "on_end",
+    "extra_cooldowns": {
+        "single_use": 120
+    },
+    "defer_release": true,
+    "repress_while_active": true,
     "hud_render": {
         "should_render": false
     },

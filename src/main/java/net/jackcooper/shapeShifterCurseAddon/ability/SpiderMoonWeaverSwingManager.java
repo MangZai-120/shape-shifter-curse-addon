@@ -19,7 +19,6 @@ import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
 import java.util.Map;
@@ -52,12 +51,8 @@ public final class SpiderMoonWeaverSwingManager {
 
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("abilities.moon_weaver_swing");
-	/** 断丝/miss CD 默认；balance break_cooldown_ticks 可覆盖（pin 锚点常量）。 */
-	private static final int BREAK_COOLDOWN_TICKS = 100;
-
-	private static int breakCooldownTicks() {
-		return BAL.i("break_cooldown_ticks", BREAK_COOLDOWN_TICKS);
-	}
+	/** 统一冷却服务的稳定技能 ID（网络包触发型）。 */
+	private static final String SKILL_ID = "my_addon:form_spider_moon_weaver_swing";
 
 	/** 服务端断丝阈值：max_rope_reach 快照值 + 3 格余量（与常量版 BREAK_OVERSTRETCH = MAX_ROPE_REACH + 3.0 等价）。 */
 	private static double breakOverstretch() {
@@ -70,6 +65,7 @@ public final class SpiderMoonWeaverSwingManager {
 	public static final int STATE_TETHER = 3; // 连接生物拖拽
 
 	private static final class SwingState {
+        long castId = -1;
 		int state = STATE_IDLE;
 		Vec3d anchor = Vec3d.ZERO;    // SWINGING 销点
 		int tetherEntityId = -1;      // TETHER 目标实体 id
@@ -155,13 +151,16 @@ public final class SpiderMoonWeaverSwingManager {
 
 	/** 发射蛛丝飞弹（抛物线投射物，碰撞后回调进入摆荡 / tether）。 */
 	private static void shootBullet(ServerPlayerEntity player) {
-		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_SECONDARY_CD) > 0) return;
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return;
 		if (BULLET_IN_FLIGHT.containsKey(player.getUuid())) return;
 		if (mana(player).getMana() < 1.0) {
 			player.sendMessage(Text.translatable("message.my_addon.spider_moon_weaver.swing.no_mana"), true);
 			return;
 		}
-		SpiderSwingBullet bullet = new SpiderSwingBullet(player);
+		// 发射即登记；CD 在断丝/miss 时才起算（cooldown_start = on_end）
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return;
+		state(player).castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
+        SpiderSwingBullet bullet = new SpiderSwingBullet(player);
 		bullet.setVelocity(player, player.getPitch(), player.getYaw(), 0.0f,
 				(float) BAL.d("bullet_speed", BULLET_SPEED), 0.0f);
 		player.getWorld().spawnEntity(bullet);
@@ -174,8 +173,8 @@ public final class SpiderMoonWeaverSwingManager {
 	// ==== 飞弹碰撞回调（由 SpiderSwingBullet 调用） ====
 
 	/** 飞弹命中方块 → 钩住进入摆荡。 */
-	public static void onBulletHitBlock(ServerPlayerEntity player, Vec3d anchor) {
-		BULLET_IN_FLIGHT.remove(player.getUuid());
+	public static void onBulletHitBlock(ServerPlayerEntity player, Vec3d anchor, SpiderSwingBullet bullet) {
+        if (!BULLET_IN_FLIGHT.remove(player.getUuid(), bullet)) return;
 		if (!isSpiderMoonWeaver(player)) return;
 		SwingState s = state(player);
 		s.state = STATE_SWINGING;
@@ -192,8 +191,8 @@ public final class SpiderMoonWeaverSwingManager {
 	}
 
 	/** 飞弹命中生物 → 连接进入 tether 拖拽。 */
-	public static void onBulletHitEntity(ServerPlayerEntity player, LivingEntity target) {
-		BULLET_IN_FLIGHT.remove(player.getUuid());
+	public static void onBulletHitEntity(ServerPlayerEntity player, LivingEntity target, SpiderSwingBullet bullet) {
+        if (!BULLET_IN_FLIGHT.remove(player.getUuid(), bullet)) return;
 		if (!isSpiderMoonWeaver(player)) return;
 		SwingState s = state(player);
 		s.state = STATE_TETHER;
@@ -207,9 +206,9 @@ public final class SpiderMoonWeaverSwingManager {
 	}
 
 	/** 飞弹 miss 落地消失 / 被移除 → 5 秒 CD（幂等：仅仍在飞未命中时生效；balance break_cooldown_ticks 可覆盖）。 */
-	public static void onBulletMiss(ServerPlayerEntity player) {
-		if (BULLET_IN_FLIGHT.remove(player.getUuid()) != null) {
-			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, breakCooldownTicks());
+	public static void onBulletMiss(ServerPlayerEntity player, SpiderSwingBullet bullet) {
+        if (BULLET_IN_FLIGHT.remove(player.getUuid(), bullet)) {
+			settleBreak(player);
 		}
 	}
 
@@ -228,10 +227,17 @@ public final class SpiderMoonWeaverSwingManager {
 			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_WOOL_BREAK, SoundCategory.PLAYERS, 0.7f, 1.1f);
 			if (giveCd) {
-				PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, breakCooldownTicks());
+				settleBreak(player);
+			} else {
+				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, s.castId);
 			}
 		}
 		broadcastState(player, s);
+	}
+
+	/** 断丝/miss：本次荡丝结束，按 power JSON cooldown 起算。 */
+	private static void settleBreak(ServerPlayerEntity player) {
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, state(player).castId);
 	}
 
 	// ==== 每服务端 tick ====

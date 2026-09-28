@@ -34,10 +34,8 @@
                 ]
             },
             {
-                "type": "apoli:resource",
-                "resource": "my_addon:form_sp_primary_cd",
-                "comparison": "<=",
-                "compare_to": 0
+                "type": "my_addon:skill_ready",
+                "power": "my_addon:form_snow_fox_frostspine_frost_spike"
             }
         ]
     }

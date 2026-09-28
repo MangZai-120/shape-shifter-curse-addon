@@ -23,7 +23,8 @@
     },
     "cooldown": 600,
     "fail_cooldown": 360,
-    "cooldown_start": "on_cast",
+    "cooldown_start": "on_end",
+    "defer_release": true,
     "hud_render": {
         "should_render": false
     },

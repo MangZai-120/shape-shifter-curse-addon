@@ -18,15 +18,6 @@
             "should_render": false
         }
     },
-    "cooldown_timer": {
-        "type": "apoli:resource",
-        "min": 0,
-        "max": 300,
-        "start_value": 0,
-        "hud_render": {
-            "should_render": false
-        }
-    },
     "heal_execute": {
         "type": "apoli:resource",
         "min": 0,
@@ -59,26 +50,17 @@
             "compare_to": 0
         }
     },
-    "cooldown_tick": {
-        "type": "apoli:action_over_time",
-        "interval": 1,
-        "entity_action": {
-            "type": "my_addon:tick_countdown",
-            "resource": "my_addon:form_allay_sp_group_heal_cooldown_timer"
-        },
-        "condition": {
-            "type": "apoli:resource",
-            "resource": "my_addon:form_allay_sp_group_heal_cooldown_timer",
-            "comparison": ">",
-            "compare_to": 0
-        }
-    },
     "key_activation": {
-        "type": "apoli:active_self",
+        "type": "my_addon:fail_aware_active_self",
         "key": {
             "key": "key.ssc_addon.sp_secondary"
         },
-        "cooldown": 15,
+        "cooldown": 300,
+        "fail_cooldown": 60,
+        "cooldown_start": "on_release",
+        "defer_release": true,
+        "repress_while_active": true,
+        "repress_delay": 15,
         "entity_action": {
             "type": "apoli:if_else",
             "condition": {
@@ -90,6 +72,10 @@
             "if_action": {
                 "type": "apoli:and",
                 "actions": [
+                    {
+                        "type": "my_addon:skill_begin",
+                        "power": "my_addon:form_allay_sp_group_heal_key_activation"
+                    },
                     {
                         "type": "apoli:change_resource",
                         "resource": "my_addon:form_allay_sp_group_heal_charging_state",
@@ -123,6 +109,10 @@
                 "type": "apoli:and",
                 "actions": [
                     {
+                        "type": "my_addon:skill_cancelled",
+                        "power": "my_addon:form_allay_sp_group_heal_key_activation"
+                    },
+                    {
                         "type": "apoli:change_resource",
                         "resource": "my_addon:form_allay_sp_group_heal_charging_state",
                         "operation": "set",
@@ -148,21 +138,10 @@
             }
         },
         "condition": {
-            "type": "apoli:and",
-            "conditions": [
-                {
-                    "type": "apoli:resource",
-                    "resource": "my_addon:form_allay_sp_group_heal_cooldown_timer",
-                    "comparison": "==",
-                    "compare_to": 0
-                },
-                {
-                    "type": "apoli:resource",
-                    "resource": "my_addon:form_allay_sp_mana_resource",
-                    "comparison": ">=",
-                    "compare_to": 100
-                }
-            ]
+            "type": "apoli:resource",
+            "resource": "my_addon:form_allay_sp_mana_resource",
+            "comparison": ">=",
+            "compare_to": 100
         }
     },
     "charging_tick": {
@@ -207,10 +186,8 @@
                                 "change": 0
                             },
                             {
-                                "type": "apoli:change_resource",
-                                "resource": "my_addon:form_allay_sp_group_heal_cooldown_timer",
-                                "operation": "set",
-                                "change": 300
+                                "type": "my_addon:skill_completed",
+                                "power": "my_addon:form_allay_sp_group_heal_key_activation"
                             },
                             {
                                 "type": "apoli:change_resource",
@@ -411,10 +388,8 @@
                     "change": 0
                 },
                 {
-                    "type": "apoli:change_resource",
-                    "resource": "my_addon:form_allay_sp_group_heal_cooldown_timer",
-                    "operation": "set",
-                    "change": 60
+                    "type": "my_addon:skill_failed",
+                    "power": "my_addon:form_allay_sp_group_heal_key_activation"
                 },
                 {
                     "type": "apoli:clear_effect",

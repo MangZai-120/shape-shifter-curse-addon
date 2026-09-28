@@ -119,6 +119,7 @@ public final class MancianimaMarkManager {
 		public final long endTick;
 		/** 1=主要技能真伤段(2s)，2=次要技能瞬移斩杀(1s) */
 		public final int type;
+        public long castId = -1;
 		public ChannelState(UUID target, long endTick, int type) {
 			this.targetUuid = target; this.endTick = endTick; this.type = type;
 		}
@@ -278,8 +279,7 @@ public final class MancianimaMarkManager {
 				marker.sendMessage(net.minecraft.text.Text.translatable("message.ssc_addon.mancianima.channel_fail"), true);
 				// 引导中断 = 联动失败：次技能引导（type=2）进入 3.5s 失败 CD；主技能引导（type=1）维持原行为不设 CD
 				if (cs.type == 2) {
-					PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_SECONDARY_CD,
-							MancianimaTeleport.redFailCdTicks());
+					net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.failed(marker, MancianimaTeleport.SKILL_ID, cs.castId);
 				}
 				continue;
 			}
@@ -319,7 +319,7 @@ public final class MancianimaMarkManager {
 				if (cs.type == 1) {
 					MancianimaPrimary.executeChannelComplete(marker, (LivingEntity) tgt);
 				} else if (cs.type == 2) {
-					MancianimaTeleport.executeRedMarkChannelComplete(marker, (LivingEntity) tgt);
+					MancianimaTeleport.executeRedMarkChannelComplete(marker, (LivingEntity) tgt, cs.castId);
 				}
 			}
 		}

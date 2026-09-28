@@ -61,6 +61,8 @@ public final class MancianimaTeleport {
 	// MANA_COST=5 与 RED_LINK_CD_TICKS=200 被 client/hud/SkillHudCatalog 引用——HUD 是展示阈值，
 	// 那两处保持常量引用不改；服务端消费一律走 BAL。
 	private static final BalanceReader BAL = new BalanceReader("abilities.mancianima_teleport");
+	/** 统一冷却服务的稳定技能 ID（= 魂跃 power 注册路径）。 */
+	public static final String SKILL_ID = "my_addon:form_familiar_fox_mancianima_soul_teleport";
 
 	/** 传送最大距离（双端一致）：客户端预览（computePlatformLanding）与服务端执行共用。
 	 *  客户端读客户端镜像快照，服务端读权威快照（同 MeteorSpell.maxRange 模式）。 */
@@ -72,17 +74,13 @@ public final class MancianimaTeleport {
 		return BAL.d("max_range", MAX_RANGE);
 	}
 
-	/** 联动失败 CD（运行时快照读取，供 MancianimaMarkManager 等服务端类共用） */
-	public static int redFailCdTicks() {
-		return BAL.i("red_fail_cd_ticks", RED_FAIL_CD_TICKS);
-	}
 	private MancianimaTeleport() {
 	}
 
 	/** 模式 0 = RAYCAST，1 = PLATFORM。客户端发送，服务端只信任模式（看向矢量自行从玩家状态读取）。 */
 	public static boolean execute(ServerPlayerEntity player, byte mode) {
 		if (!isMancianima(player)) return false;
-		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_SECONDARY_CD) > 0) return false;
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return false;
 
 		// 红标联动：如果准星在某个被本玩家红标的生物上，启动 1s 引导
 		net.minecraft.entity.LivingEntity redTarget = tryFindRedMarkedInCrosshair(player);
@@ -99,9 +97,11 @@ public final class MancianimaTeleport {
 				return false;
 			}
 			if (MancianimaMarkManager.CHANNELING.containsKey(player.getUuid())) return false;
+            if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return false;
 			long now = ((ServerWorld) player.getWorld()).getTime();
 			MancianimaMarkManager.CHANNELING.put(player.getUuid(),
 					new MancianimaMarkManager.ChannelState(redTarget.getUuid(), now + BAL.i("red_mark_channel_ticks", RED_MARK_CHANNEL_TICKS), 2));
+            MancianimaMarkManager.CHANNELING.get(player.getUuid()).castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
 			player.sendMessage(Text.translatable("message.ssc_addon.mancianima.teleport.channeling"), true);
 			return true;
 		}
@@ -165,7 +165,7 @@ public final class MancianimaTeleport {
 		if (mana != null) {
 			mana.setMana(Math.max(0.0, mana.getMana() - manaCost));
 		}
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, BAL.i("cooldown_ticks", COOLDOWN_TICKS));
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.instant(player, SKILL_ID);
 		// 传送后冻结自然回蓝 3 秒（不影响主动回蓝技能/消耗）
 		PowerUtils.setResourceValueAndSync(player, MANA_REGEN_PAUSE_RES, BAL.i("mana_regen_pause_ticks", MANA_REGEN_PAUSE_TICKS));
 		return true;
@@ -202,10 +202,11 @@ public final class MancianimaTeleport {
 	}
 
 	/** MancianimaMarkManager 引导 tick 末尾调用：执行红标瞬移斩杀。 */
-	public static void executeRedMarkChannelComplete(ServerPlayerEntity marker, net.minecraft.entity.LivingEntity target) {
+	public static void executeRedMarkChannelComplete(ServerPlayerEntity marker, net.minecraft.entity.LivingEntity target, long castId) {
+        if (net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(marker, SKILL_ID) != castId || castId < 0) return;
 		if (target == null || !target.isAlive()
 				|| net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(marker, target)) {
-			PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_SECONDARY_CD, redFailCdTicks());
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.failed(marker, SKILL_ID, castId);
 			return;
 		}
 		// 扣 mana
@@ -243,13 +244,14 @@ public final class MancianimaTeleport {
 		world.playSound(null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, SoundCategory.PLAYERS, 1.0f, 1.0f);
 		// 设置 CD + 暂停回蓝：普通闪现只进 3.5s 常规 CD；联动攻击进独立的 10s 联动 CD（期间可普通闪现、不可再联动）
-		PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_SECONDARY_CD, BAL.i("cooldown_ticks", COOLDOWN_TICKS));
-		PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.MANCIANIMA_LINK_CD, BAL.i("red_link_cd_ticks", RED_LINK_CD_TICKS));
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(marker, SKILL_ID, castId);
+		PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.MANCIANIMA_LINK_CD,
+				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.extra(marker, SKILL_ID, "link"));
 		PowerUtils.setResourceValueAndSync(marker, MANA_REGEN_PAUSE_RES, BAL.i("mana_regen_pause_ticks", MANA_REGEN_PAUSE_TICKS));
 		// 击杀奖励：刷新两个 CD + 抗伤补满
 		if (wasAlive && !target.isAlive()) {
-			PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_PRIMARY_CD, 0);
-			PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.SP_SECONDARY_CD, 0);
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.reset(marker, MancianimaPrimary.SKILL_ID);
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.reset(marker, SKILL_ID);
 			// 击杀奖励同样清空联动 CD，允许立刻再发动下一次联动攻击
 			PowerUtils.setResourceValueAndSync(marker, FormIdentifiers.MANCIANIMA_LINK_CD, 0);
 			int max = PowerUtils.getResourceMax(marker, FormIdentifiers.MANCIANIMA_RESISTANCE);

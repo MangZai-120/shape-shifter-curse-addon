@@ -555,7 +555,7 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     /** 球消失时回调技能管理器，让其开始 CD。 */
     private void notifyManagerBallEnded() {
         if (ownerUuid != null) {
-            net.jackcooper.shapeShifterCurseAddon.ability.FluorescentTidalManager.onBallRemoved(ownerUuid);
+            net.jackcooper.shapeShifterCurseAddon.ability.FluorescentTidalManager.onBallRemoved(ownerUuid, this);
         }
     }
 

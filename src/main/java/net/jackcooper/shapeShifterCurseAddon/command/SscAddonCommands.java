@@ -1066,12 +1066,4 @@ default -> {
 			SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.PLAYERS, 0.5f, 1.2f);
 		return true;
 	}
-
-	/** 冰球 CD 的 balance 读取器（与 action 侧同 scope：abilities.frost_ball）。 */
-	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader FROST_BALL_BAL =
-			new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.frost_ball");
-
-	private static net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader frostBallBalance() {
-		return FROST_BALL_BAL;
-	}
 }

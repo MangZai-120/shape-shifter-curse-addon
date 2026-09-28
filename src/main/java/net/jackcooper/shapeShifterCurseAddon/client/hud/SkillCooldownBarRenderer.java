@@ -82,6 +82,11 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 			int x = skill.primary() ? layout.primaryX() : layout.secondaryX();
 			int y = skill.primary() ? layout.primaryY() : layout.secondaryY();
 			Cooldown cooldown = readCooldown(player, skill.cooldown(), skill.cooldownTotalTicks());
+            var authoritative = net.jackcooper.shapeShifterCurseAddon.client.SkillCooldownClient.get(skill.authorityId());
+            if (authoritative != null) {
+                int remaining = authoritative.remainingNow(net.jackcooper.shapeShifterCurseAddon.client.SkillCooldownClient.now());
+                cooldown = new Cooldown(remaining, Math.min(1.0, remaining / (double)Math.max(1, authoritative.total())));
+            }
 			double internalReady = readInternalReady(player, skill);
 			// 释放条件未满足 → 半透明黑色遮罩；遮罩期间跳过 CD 渐变阴影，只保留倒计时数字
 			boolean conditionBlocked = skill.condition() != null && !skill.condition().test(player);

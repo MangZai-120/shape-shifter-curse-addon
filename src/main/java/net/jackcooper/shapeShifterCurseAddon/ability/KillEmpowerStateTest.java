@@ -55,6 +55,8 @@ public final class KillEmpowerStateTest {
 					&& activation.get("primary").getAsBoolean(), "Primary uses single server-authoritative entry");
 			check(activation.getAsJsonObject("key").get("key").getAsString().equals("key.ssc_addon.sp_primary"),
 					"Primary keeps native key routing");
+			check(activation.get("cooldown").getAsInt() == 400 && "on_end".equals(activation.get("cooldown_start").getAsString())
+					&& activation.get("repress_while_active").getAsBoolean(), "Normal ring cooldown starts when the ring ends");
 			JsonObject particles = ringPower.getAsJsonObject("particle_loop");
 			check(particles.get("interval").getAsInt() == (form.equals("red") ? 1 : 4), "Normal particle cadence preserved");
 			JsonObject empowerGate = particles.getAsJsonObject("condition").getAsJsonArray("conditions").get(1).getAsJsonObject();
@@ -71,10 +73,10 @@ public final class KillEmpowerStateTest {
 						&& amuletLoop.getAsJsonObject("condition").getAsJsonArray("conditions").get(1).getAsJsonObject()
 						.get("type").getAsString().equals("ssc_addon:has_blue_fire_amulet"),
 					"Compact empowered particles run only with the amulet");
-			JsonObject inputGate = ringPower.getAsJsonObject("key_activation").getAsJsonObject("condition").getAsJsonArray("conditions").get(2).getAsJsonObject();
+			JsonObject inputGate = ringPower.getAsJsonObject("key_activation").getAsJsonObject("condition").getAsJsonArray("conditions").get(1).getAsJsonObject();
 			check(inputGate.get("primary").getAsBoolean(), "Ring input does not fall through during empowerment");
 			JsonObject manaGate = ringPower.getAsJsonObject("key_activation").getAsJsonObject("condition")
-					.getAsJsonArray("conditions").get(3).getAsJsonObject();
+					.getAsJsonArray("conditions").get(2).getAsJsonObject();
 			check(manaGate.get("type").getAsString().equals("apoli:or"), "Low mana must not consume activation cooldown");
 			check(manaGate.getAsJsonArray("conditions").get(0).getAsJsonObject().get("resource").getAsString()
 					.equals("my_addon:form_familiar_fox_" + form + "_blue_fire_ring_toggle_state"), "Stopping normal ring ignores mana");
@@ -86,12 +88,11 @@ public final class KillEmpowerStateTest {
 					"Secondary keeps native key routing");
 			check(secondary.get("cooldown").getAsInt() == (form.equals("red") ? 100 : 20), "Normal secondary cooldown unchanged");
 			JsonObject amulet = power("form_familiar_fox_" + form + "_blue_fire_ring_amulet");
-			check(amulet.getAsJsonObject("cooldown_timer").get("max").getAsInt() == 560, "Amulet ring has its own cooldown");
+			check(!amulet.has("cooldown_timer"), "Amulet ring cooldown lives in the skill power");
 			JsonObject amuletActivation = amulet.getAsJsonObject("key_activation");
-			check(amuletActivation.get("cooldown").getAsInt() == 20, "Amulet activation cooldown stays distinct");
-			JsonObject amuletCooldown = amuletActivation.getAsJsonObject("condition").getAsJsonArray("conditions").get(0).getAsJsonObject();
-			check(amuletCooldown.get("resource").getAsString().equals("my_addon:form_familiar_fox_" + form + "_blue_fire_ring_amulet_cooldown_timer"),
-					"Amulet input uses amulet cooldown resource");
+			check(amuletActivation.get("type").getAsString().equals("my_addon:fail_aware_active_self")
+					&& amuletActivation.get("cooldown").getAsInt() == 560
+					&& "on_end".equals(amuletActivation.get("cooldown_start").getAsString()), "Amulet ring has its own cooldown");
 			boolean amuletEmpowerGate = false;
 			for (var gateEl : amuletActivation.getAsJsonObject("condition").getAsJsonArray("conditions")) {
 				JsonObject gate = gateEl.getAsJsonObject();

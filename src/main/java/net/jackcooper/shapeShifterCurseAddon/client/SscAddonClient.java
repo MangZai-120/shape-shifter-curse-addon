@@ -62,6 +62,7 @@ public class SscAddonClient implements ClientModInitializer {
 		SustainedVisualClient.init();
 		net.jackcooper.shapeShifterCurseAddon.client.particle.FirstPersonParticles.init();
 		CountdownClient.init();
+        SkillCooldownClient.init();
 		// balance 数据包数值同步（阶段 3）：客户端会话镜像 + S2C 接收器
 		net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.initClient(
 				net.jackcooper.shapeShifterCurseAddon.balance.SscBalanceSchema.create());

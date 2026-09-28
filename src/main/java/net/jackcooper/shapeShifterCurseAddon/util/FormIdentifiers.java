@@ -62,13 +62,6 @@ public class FormIdentifiers {
 	public static final Identifier BAT_PARASITIC_FRUIT_SEED_ENERGY = new Identifier("my_addon", "form_bat_parasitic_fruit_seed_energy");
 	// 吸血蝙蝠形态雾血资源
 	public static final Identifier BAT_BLOOD_RESOURCE = new Identifier("my_addon", "form_bat_desmodus_blood_resource");
-	// 堕灵形态特有的CD资源
-	public static final Identifier FALLEN_ALLAY_VEX_CD = new Identifier("my_addon", "form_fallen_allay_sp_vex_cd");
-	public static final Identifier FALLEN_ALLAY_SCREAM_CD = new Identifier("my_addon", "form_fallen_allay_sp_active_scream_cooldown_timer");
-	// 悦灵形态群体治疗CD
-	public static final Identifier ALLAY_GROUP_HEAL_CD = new Identifier("my_addon", "form_allay_sp_group_heal_cooldown_timer");
-	// 悦灵形态净化技能CD
-	public static final Identifier ALLAY_PURIFY_CD = new Identifier("my_addon", "form_allay_sp_purify_cooldown_timer");
 	// 雪狐形态切换状态
 	public static final Identifier SNOW_FOX_SWITCH_STATE = new Identifier("my_addon", "form_snow_fox_sp_switch_state");
 	// 金沙岚SP

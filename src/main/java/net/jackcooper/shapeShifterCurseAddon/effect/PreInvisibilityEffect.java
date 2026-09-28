@@ -36,6 +36,8 @@ public class PreInvisibilityEffect extends StatusEffect {
 	@Override
 	public void applyUpdateEffect(LivingEntity entity, int amplifier) {
 		if (!entity.getWorld().isClient()) {
+			// 未放出就被净化/死亡属于施放失败，不能先转成 ACTIVE。
+			if (entity.isDead() || entity.hasStatusEffect(SscAddon.PURIFIED)) return;
 			ServerWorld serverWorld = (ServerWorld) entity.getWorld();
 
 			// 1. Spawn Black Particles
@@ -58,6 +60,9 @@ public class PreInvisibilityEffect extends StatusEffect {
 			entity.addStatusEffect(new StatusEffectInstance(SscAddon.TRUE_INVISIBILITY, duration, 0, false, false, true));
 			// 同步叠加原版隐身，确保服务器把“不可见”状态同步给其他客户端。
 			entity.addStatusEffect(new StatusEffectInstance(StatusEffects.INVISIBILITY, duration, 0, false, false, false));
+			if (entity.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) {
+				for (TrueInvisibilityAbilityPower power : powers) power.onInvisibilityReleased();
+			}
 
 			// 5. Notify Player
 			// 通知逻辑已移除，保留注释占位

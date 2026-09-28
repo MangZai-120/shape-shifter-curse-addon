@@ -1,5 +1,5 @@
 {
-    "type": "apoli:active_self",
+    "type": "my_addon:fail_aware_active_self",
     "entity_action": {
         "type": "apoli:if_else",
         "condition": {
@@ -158,32 +158,9 @@
                             "z": 2.0
                         }
                     }
-                },
-                {
-                    "type": "apoli:trigger_cooldown",
-                    "power": "shape-shifter-curse:form_familiar_fox_fire_explode_cooldown"
                 }
             ]
         }
-    },
-    "entity_condition": {
-        "type": "apoli:and",
-        "conditions": [
-            {
-                "type": "ssc_addon:has_talent",
-                "talent_id": "fire_ring"
-            },
-            {
-                "type": "shape-shifter-curse:has_mana",
-                "mana": 11
-            },
-            {
-                "type": "apoli:resource",
-                "resource": "shape-shifter-curse:form_familiar_fox_fire_explode_cooldown",
-                "comparison": "<",
-                "compare_to": 1
-            }
-        ]
     },
     "cooldown": 40,
     "hud_render": {
@@ -193,5 +170,18 @@
         "key": "key.shape-shifter-curse.active_skill_1"
     },
     "name": "火环",
-    "description": "消耗11点法力，以自身为中心释放火环（半径约4格），对非白名单生物造成8点伤害并点燃10秒。需解锁火环节点；解锁后取代火花技能。"
+    "description": "消耗11点法力，以自身为中心释放火环（半径约4格），对非白名单生物造成8点伤害并点燃10秒。需解锁火环节点；解锁后取代火花技能。",
+    "condition": {
+        "type": "apoli:and",
+        "conditions": [
+            {
+                "type": "ssc_addon:has_talent",
+                "talent_id": "fire_ring"
+            },
+            {
+                "type": "shape-shifter-curse:has_mana",
+                "mana": 11
+            }
+        ]
+    }
 }

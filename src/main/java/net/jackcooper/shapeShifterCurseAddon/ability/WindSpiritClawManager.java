@@ -17,9 +17,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
@@ -67,14 +65,15 @@ public final class WindSpiritClawManager {
 
     private static final Map<UUID, ClawState> STATES = new ConcurrentHashMap<>();
 
-    // 副技能：+50% 徒手/形态伤害 buff
+    // 副技能：+50% 徒手/形态伤害 buff（CD 2 秒由 power JSON 配置，原 SECONDARY_CD_TICKS 常量已删）
     private static final int BUFF_DURATION = 10;      // 0.5 秒
-    private static final int SECONDARY_CD_TICKS = 40; // 2 秒
     private static final float BUFF_MULT = 1.5f;
     private static final Map<UUID, Integer> BUFF_TICKS = new ConcurrentHashMap<>();
 
     // 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
     private static final BalanceReader BAL = new BalanceReader("abilities.wind_spirit_claw");
+    /** 统一冷却服务的稳定技能 ID（网络包触发型）。 */
+    private static final String SKILL_ID = "my_addon:form_ocelot_wind_spirit_claw_buff";
 
     public static final class ClawState {
         boolean holding = false;
@@ -325,10 +324,9 @@ public final class WindSpiritClawManager {
     /** 副技能（sp_secondary）：0.5 秒内徒手/形态伤害 +50%，cd 2 秒。 */
     public static void activateSecondaryBuff(ServerPlayerEntity player) {
         if (!FormUtils.isOcelotSP(player)) return;
-        if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_SECONDARY_CD) > 0) return; // CD 中
+        if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return; // CD 中
+        net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.instant(player, SKILL_ID);
         BUFF_TICKS.put(player.getUuid(), BAL.i("buff_duration", BUFF_DURATION));
-        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD,
-                BAL.i("secondary_cd_ticks", SECONDARY_CD_TICKS));
         ServerWorld sw = (ServerWorld) player.getWorld();
         sw.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_PLAYER_ATTACK_STRONG, SoundCategory.PLAYERS, 0.8f, 1.6f);

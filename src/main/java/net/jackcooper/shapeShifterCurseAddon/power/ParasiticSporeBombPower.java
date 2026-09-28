@@ -13,7 +13,6 @@ import io.github.apace100.apoli.power.PowerType;
 import io.github.apace100.apoli.power.factory.PowerFactory;
 import io.github.apace100.apoli.util.HudRender;
 import io.github.apace100.calio.data.SerializableData;
-import io.github.apace100.calio.data.SerializableDataTypes;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
@@ -23,6 +22,7 @@ import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.InfectionSporeBombEntity;
+import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
@@ -31,7 +31,7 @@ import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
  * 投出一颗西瓜种子样式的孢子炸弹，落地或撞击生物时无伤害爆炸，4 格内
  * 非白名单生物被施加感染孢子状态（参见 InfectionSporeManager）。
  */
-public class ParasiticSporeBombPower extends ActiveCooldownPower {
+public class ParasiticSporeBombPower extends ActiveCooldownPower implements net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownHolder {
 
     // 以下均为默认值；运行时从 balance 快照读取（abilities.parasitic_spore_bomb）
     /** 投掷物初速度（与原版雪球速度相近） */
@@ -43,38 +43,45 @@ public class ParasiticSporeBombPower extends ActiveCooldownPower {
     /** balance 快照读取（快照未初始化回退默认常量） */
     private static final BalanceReader BAL = new BalanceReader("abilities.parasitic_spore_bomb");
 
+    private final net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec spec;
     private final int cooldownTicks;
-    /** 内部冷却结束 tick：作为父类 use() 的双重保险，确保连按完全无效 */
+    /** 内部冷却结束 tick：客户端侧门禁用 */
     private long internalCooldownEndTime = 0L;
 
-    public ParasiticSporeBombPower(PowerType<?> type, LivingEntity entity, int cooldownTicks,
+    public ParasiticSporeBombPower(PowerType<?> type, LivingEntity entity,
+                                   net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec spec,
                                    HudRender hudRender, Active.Key key) {
-        super(type, entity, cooldownTicks, hudRender, e -> {
+        super(type, entity, Math.max(1, spec.cooldown()), hudRender, e -> {
         });
-        this.cooldownTicks = cooldownTicks;
+        this.spec = spec;
+        this.cooldownTicks = spec.cooldown();
         this.setKey(key);
+    }
+
+    @Override
+    public net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec cooldownSpec() {
+        return spec;
     }
 
     public static PowerFactory<Power> createFactory() {
         return new PowerFactory<>(new Identifier("my_addon", "parasitic_spore_bomb"),
-                new SerializableData()
-                        .add("cooldown", SerializableDataTypes.INT, 400)
+                net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec.addFields(new SerializableData()
                         .add("hud_render", ApoliDataTypes.HUD_RENDER, HudRender.DONT_RENDER)
                         .add("key", ApoliDataTypes.BACKWARDS_COMPATIBLE_KEY, new Active.Key()),
-                data ->
-                        (type, player) -> new ParasiticSporeBombPower(
-                                type,
-                                player,
-                                data.getInt("cooldown"),
-                                data.get("hud_render"),
-                                data.get("key")
-                        )
+                        400, SkillCastManager.START_ON_CAST),
+                data -> {
+                    var spec = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec.read(data);
+                    return (type, player) -> new ParasiticSporeBombPower(type, player, spec, data.get("hud_render"), data.get("key"));
+                }
         ).allowCondition();
     }
 
     @Override
     public boolean canUse() {
-        return super.canUse() && entity.getWorld().getTime() >= internalCooldownEndTime;
+        if (entity instanceof ServerPlayerEntity sp) {
+            return net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(sp, powerIdentifier());
+        }
+        return entity.getWorld().getTime() >= internalCooldownEndTime;
     }
 
     @Override
@@ -84,8 +91,7 @@ public class ParasiticSporeBombPower extends ActiveCooldownPower {
         if (!(entity instanceof ServerPlayerEntity caster)) return;
         if (caster.getWorld().isClient) return;
         if (caster.hasStatusEffect(SscAddon.PURIFIED)) return;
-        // 双重保险：避免 Apoli 内部 use 状态异常时连按穿透
-        if (entity.getWorld().getTime() < internalCooldownEndTime) return;
+        if (!canUse()) return;
 
         // 能量检查：不足则播放失败音效
         int energyCost = BAL.i("energy_cost", ENERGY_COST);
@@ -113,10 +119,14 @@ public class ParasiticSporeBombPower extends ActiveCooldownPower {
         caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
                 SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.PLAYERS, 0.6f, 1.6f);
 
-        // 启动内部冷却 + 父类 ActiveCooldownPower 计时（双重保险）
         internalCooldownEndTime = entity.getWorld().getTime() + cooldownTicks;
         this.use();
-        // 同步 CD 资源，供 cd_tick power 倒计与 HUD 显示
-        PowerUtils.setResourceValueAndSync(caster, FormIdentifiers.SP_SECONDARY_CD, cooldownTicks);
+        net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.instant(caster, powerIdentifier());
+    }
+
+    /** 本 power 的稳定技能 ID（= power 注册路径）。 */
+    public String powerIdentifier() {
+        return type != null && type.getIdentifier() != null
+                ? type.getIdentifier().toString() : "my_addon:parasitic_spore_bomb";
     }
 }

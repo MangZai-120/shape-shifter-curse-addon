@@ -71,14 +71,7 @@ public class AnubisWolfSpDeathDomain {
 	 * 血量减少百分比
 	 */
 	private static final double HEALTH_REDUCTION = 0.15;
-	/**
-	 * CD时间（tick）
-	 */
-	private static final int COOLDOWN_TICKS = 1000; // 50秒
-	/**
-	 * 惩罚性CD时间（tick）
-	 */
-	private static final int PENALTY_COOLDOWN_TICKS = 200; // 10秒
+	// CD（正常/惩罚）已由统一冷却服务 SkillCooldowns + power JSON 配置管理，原常量已删
 	/**
 	 * 增强领域最大半径（格）
 	 */
@@ -111,6 +104,9 @@ public class AnubisWolfSpDeathDomain {
 	private static final UUID CHARGE_SLOW_UUID = UUID.fromString("b8c4d5e6-f7a8-4b9c-0d1e-2f3a4b5c6d7e");
 	// ==================== 状态追踪 ====================
 	private static final ConcurrentHashMap<UUID, DomainData> ACTIVE_DOMAINS = new ConcurrentHashMap<>();
+	/** 统一冷却服务的稳定技能 ID（= power 注册路径）。 */
+	private static final String SKILL_ID = "my_addon:form_anubis_wolf_sp_death_domain";
+	// COOLDOWN_PLAYERS 已由统一服务 SkillCastManager 接管（写入已移除；clearPlayer/clearCooldowns 仍引用此表作兜底清理，字段在用）
 	private static final ConcurrentHashMap<UUID, Long> COOLDOWN_PLAYERS = new ConcurrentHashMap<>();
 
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
@@ -123,23 +119,18 @@ public class AnubisWolfSpDeathDomain {
 	 * 玩家按下技能键触发
 	 */
 	public static boolean execute(ServerPlayerEntity player) {
-		// CD检查（使用服务端tick，保证多人一致性）
-		long currentTick = player.getWorld().getTime();
-		Long cdEndTick = COOLDOWN_PLAYERS.get(player.getUuid());
-		if (cdEndTick != null && currentTick < cdEndTick) {
-			return false;
-		}
-
-		// 重复释放检查
+		// 重复释放检查（CD 门禁已由 power 层 begin 统一拦截，修 P1-1：去掉内部二次 canBegin 防自锁）
 		if (ACTIVE_DOMAINS.containsKey(player.getUuid())) {
 			return false;
 		}
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return false;
 
 		// 直接开始蓄力，不做前置检查
 		// 创建领域数据
 		BlockPos center = player.getBlockPos();
 		ServerWorld serverWorld = (ServerWorld) player.getWorld();
 		DomainData data = new DomainData(serverWorld, center, (int) player.getY());
+        data.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
 
 // 检查灵魂能量是否满：满则进入增强模式并消耗能量
 		if (AnubisWolfSpSoulEnergy.isFullEnergy(player)) {
@@ -404,22 +395,15 @@ public class AnubisWolfSpDeathDomain {
 
 			// 检查脚下是否有可转化方块
 			if (!hasConvertibleBlocksBelow(player)) {
-				// 释放失败：播放失败音效，进入惩罚性CD
+				// 释放失败：播放失败音效，按 fail_cooldown 结算（统一服务，不再写 COOLDOWN_PLAYERS）
 				player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
-						SoundEvents.BLOCK_SOUL_SAND_BREAK, SoundCategory.PLAYERS, 1.0f, 1.5f);
-				int penaltyCd = BAL.i("penalty_cooldown_ticks", PENALTY_COOLDOWN_TICKS);
-				COOLDOWN_PLAYERS.put(player.getUuid(), player.getWorld().getTime() + penaltyCd);
-				PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, penaltyCd);
+					SoundEvents.BLOCK_SOUL_SAND_BREAK, SoundCategory.PLAYERS, 1.0f, 1.5f);
+				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.failed(player, SKILL_ID, data.castId);
 				ACTIVE_DOMAINS.remove(player.getUuid());
 				return;
 			}
 
-			// 释放成功：设置正常CD，进入延展阶段
-			int normalCd = BAL.i("cooldown_ticks", COOLDOWN_TICKS);
-			COOLDOWN_PLAYERS.put(player.getUuid(), player.getWorld().getTime() + normalCd);
-			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, normalCd);
-
-			// 更新领域中心为充能完成时的位置
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.released(player, SKILL_ID, data.castId);
 			data.center = player.getBlockPos();
 			data.centerY = (int) player.getY();
 			data.phase = Phase.EXPANDING;
@@ -439,8 +423,8 @@ public class AnubisWolfSpDeathDomain {
 					summonCount += 2;
 				}
 				AnubisWolfSpSummonWolves.autoSummonForEnhancedDomain(player, summonCount);
-				PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD,
-						AnubisWolfSpSummonWolves.getCooldownTicks());
+				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.force(player, AnubisWolfSpSummonWolves.SKILL_ID,
+						net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cooldown(player, AnubisWolfSpSummonWolves.SKILL_ID));
 				// 增强模式额外音效
 				player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 0.8f, 0.8f);
@@ -594,6 +578,8 @@ public class AnubisWolfSpDeathDomain {
 			}
 			cleanupDebuffs(world, data);
 			ACTIVE_DOMAINS.remove(player.getUuid());
+
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, SKILL_ID, data.castId);
 
 			// 结束音效
 			player.getWorld().playSound(null, data.center.getX() + 0.5, data.centerY, data.center.getZ() + 0.5,
@@ -1217,6 +1203,7 @@ public class AnubisWolfSpDeathDomain {
 
 	// ==================== 数据类 ====================
 	private static class DomainData {
+        long castId = -1;
 		Phase phase;
 		int ticksElapsed;
 		double currentRadius;       // 当前延展/回退的半径

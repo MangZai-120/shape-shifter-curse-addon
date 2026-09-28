@@ -1,19 +1,5 @@
 {
     "type": "apoli:multiple",
-    "vex_cd_tick": {
-        "type": "apoli:action_over_time",
-        "interval": 1,
-        "entity_action": {
-            "type": "my_addon:tick_countdown",
-            "resource": "my_addon:form_fallen_allay_sp_vex_cd"
-        },
-        "condition": {
-            "type": "apoli:resource",
-            "resource": "my_addon:form_fallen_allay_sp_vex_cd",
-            "comparison": ">",
-            "compare_to": 0
-        }
-    },
     "charging_state": {
         "type": "apoli:resource",
         "min": 0,
@@ -32,45 +18,22 @@
             "should_render": false
         }
     },
-    "interrupt_penalty_timer": {
-        "type": "apoli:resource",
-        "min": 0,
-        "max": 200,
-        "start_value": 0,
-        "hud_render": {
-            "should_render": false,
-            "bar_index": 7,
-            "condition": {
-                "type": "apoli:resource",
-                "resource": "*:*_interrupt_penalty_timer",
-                "comparison": ">",
-                "compare_to": 0
-            }
-        }
-    },
-    "interrupt_penalty_tick": {
-        "type": "apoli:action_over_time",
-        "interval": 1,
-        "condition": {
-            "type": "apoli:resource",
-            "resource": "*:*_interrupt_penalty_timer",
-            "comparison": ">",
-            "compare_to": 0
-        },
-        "entity_action": {
-            "type": "my_addon:tick_countdown",
-            "resource": "*:*_interrupt_penalty_timer"
-        }
-    },
     "key_activation": {
-        "type": "apoli:active_self",
+        "type": "my_addon:fail_aware_active_self",
         "key": {
             "key": "key.ssc_addon.sp_primary"
         },
-        "cooldown": 20,
+        "cooldown": 400,
+        "fail_cooldown": 200,
+        "cooldown_start": "on_end",
+        "defer_release": true,
         "entity_action": {
             "type": "apoli:and",
             "actions": [
+                {
+                    "type": "my_addon:skill_begin",
+                    "power": "my_addon:form_fallen_allay_sp_active_vex_key_activation"
+                },
                 {
                     "type": "apoli:change_resource",
                     "resource": "*:*_charging_state",
@@ -101,27 +64,10 @@
             ]
         },
         "condition": {
-            "type": "apoli:and",
-            "conditions": [
-                {
-                    "type": "apoli:resource",
-                    "resource": "my_addon:form_fallen_allay_sp_vex_cd",
-                    "comparison": "==",
-                    "compare_to": 0
-                },
-                {
-                    "type": "apoli:resource",
-                    "resource": "*:*_charging_state",
-                    "comparison": "==",
-                    "compare_to": 0
-                },
-                {
-                    "type": "apoli:resource",
-                    "resource": "*:*_interrupt_penalty_timer",
-                    "comparison": "==",
-                    "compare_to": 0
-                }
-            ]
+            "type": "apoli:resource",
+            "resource": "*:*_charging_state",
+            "comparison": "==",
+            "compare_to": 0
         }
     },
     "tick_charging": {
@@ -233,16 +179,8 @@
                     "change": 0
                 },
                 {
-                    "type": "apoli:change_resource",
-                    "resource": "*:*_interrupt_penalty_timer",
-                    "operation": "set",
-                    "change": 200
-                },
-                {
-                    "type": "apoli:change_resource",
-                    "resource": "my_addon:form_fallen_allay_sp_vex_cd",
-                    "operation": "set",
-                    "change": 200
+                    "type": "my_addon:skill_failed",
+                    "power": "my_addon:form_fallen_allay_sp_active_vex_key_activation"
                 },
                 {
                     "type": "apoli:clear_effect",
@@ -291,16 +229,8 @@
                     "change": 0
                 },
                 {
-                    "type": "apoli:change_resource",
-                    "resource": "*:*_interrupt_penalty_timer",
-                    "operation": "set",
-                    "change": 200
-                },
-                {
-                    "type": "apoli:change_resource",
-                    "resource": "my_addon:form_fallen_allay_sp_vex_cd",
-                    "operation": "set",
-                    "change": 200
+                    "type": "my_addon:skill_failed",
+                    "power": "my_addon:form_fallen_allay_sp_active_vex_key_activation"
                 },
                 {
                     "type": "apoli:clear_effect",
@@ -313,6 +243,13 @@
                     "pitch": 1.5
                 }
             ]
+        }
+    },
+    "vex_watchdog": {
+        "type": "apoli:action_over_time",
+        "interval": 20,
+        "entity_action": {
+            "type": "my_addon:fallen_allay_vex_watchdog"
         }
     }
 }

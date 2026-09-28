@@ -220,6 +220,13 @@ public class SscAddonConditions {
 					}
 					return false;
 				}));
+
+		// 技能就绪（未在施放且不在冷却）：仅服务端权威，客户端恒为 true
+		register(new ConditionFactory<>(new Identifier("my_addon", "skill_ready"),
+				new SerializableData()
+						.add("power", SerializableDataTypes.IDENTIFIER),
+				(data, entity) -> !(entity instanceof ServerPlayerEntity player)
+						|| net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, data.<Identifier>get("power").toString())));
 	}
 
 	private static void register(ConditionFactory<Entity> factory) {

@@ -1,5 +1,5 @@
 {
-    "type": "apoli:active_self",
+    "type": "my_addon:fail_aware_active_self",
     "entity_action": {
         "type": "apoli:and",
         "actions": [

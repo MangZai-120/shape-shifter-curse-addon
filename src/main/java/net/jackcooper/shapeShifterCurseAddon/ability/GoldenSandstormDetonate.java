@@ -5,9 +5,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
-import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
 /**
  * 金沙岚SP - 引爆标记（主动②次要技能）
@@ -23,10 +21,7 @@ import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
  */
 public class GoldenSandstormDetonate {
 
-	/** CD时间（tick）：默认 10秒；balance abilities.golden_sandstorm_counter_burst.detonate_cooldown_ticks 可覆盖 */
-	private static final int COOLDOWN_TICKS = 200; // 10秒
-	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
-			new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.golden_sandstorm_counter_burst");
+	// CD 与技能 ID 已由 power 层（form_golden_sandstorm_sp_erosion_brand）+ 统一冷却服务管理，原常量已删
 
 	private GoldenSandstormDetonate() {
 	}
@@ -35,24 +30,17 @@ public class GoldenSandstormDetonate {
 	 * 玩家按下次要技能键触发
 	 */
 	public static boolean execute(ServerPlayerEntity player) {
-		// CD检查
-		int cd = PowerUtils.getResourceValue(player, FormIdentifiers.SP_SECONDARY_CD);
-		if (cd > 0) return false;
-
 		if (!(player.getWorld() instanceof ServerWorld serverWorld)) return false;
 
-		// 调用 ErosionBrand 的引爆方法
+		// 调用 ErosionBrand 的引爆方法（CD 门禁已由 power 层 begin 统一拦截，修 P1-1）
 		int[] result = GoldenSandstormErosionBrand.detonateAll(player);
 		int targets = result[0];
 		int totalStacks = result[1];
 
 		if (targets <= 0) {
-			// 没有可引爆的目标，不进入CD
+			net.jackcooper.shapeShifterCurseAddon.power.FailAwareActiveSelfPower.markFail();
 			return false;
 		}
-
-		// 设置CD（balance detonate_cooldown_ticks 可覆盖）
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, BAL.i("detonate_cooldown_ticks", COOLDOWN_TICKS));
 
 		// 释放音效
 		serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),

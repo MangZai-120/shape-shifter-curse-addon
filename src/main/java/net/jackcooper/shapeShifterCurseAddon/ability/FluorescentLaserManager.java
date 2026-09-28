@@ -49,7 +49,8 @@ public final class FluorescentLaserManager {
 			new net.minecraft.util.Identifier("my_addon", "form_axolotl_fluorescent_shot_cd");
 	private static final int SHOT_DAMAGE_INTERVAL = 2;     // 每 2t 判定一次（共 4 次）
 	private static final float SHOT_DAMAGE = 12.0f;        // 每道 12 点物理（每目标每道只 1 次）
-	private static final int CD_PER_SHOT = 120;            // 每发累加 6 秒 CD
+	/** 技能 ID（= 荷光幼灵/阿漪挂载的激光 power）；增强版每发累加 extra_cooldowns.per_shot。 */
+	public static final String SKILL_ID = "my_addon:form_axolotl_fluorescent_laser";
 	private static final double SPEED_PENALTY = -0.5;      // 整段移速 -50%
 	// 缩型激光几何（原 32/2.5 的 30%）
 	private static final double ENH_BEAM_LENGTH = 24.0;        // 攻击距离最大 24 格（与渲染光柱一致）
@@ -98,11 +99,13 @@ public final class FluorescentLaserManager {
 			return;
 		}
 		// 普通单发：CD 中 / 已有活跃激光 → 忽略
-		if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return;
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return;
 		LaserBeamEntity existing = ACTIVE.get(player.getUuid());
 		if (existing != null && existing.isAlive()) return;
 		if (!(player.getWorld() instanceof ServerWorld sw)) return;
-		LaserBeamEntity laser = new LaserBeamEntity(sw, player);
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return;
+        LaserBeamEntity laser = new LaserBeamEntity(sw, player);
+        laser.bindCast(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID));
 		sw.spawnEntity(laser);
 		ACTIVE.put(player.getUuid(), laser);
 	}
@@ -113,7 +116,7 @@ public final class FluorescentLaserManager {
 		if (!(player.getWorld() instanceof ServerWorld sw)) return;
 		if (!s.active) {
 			// 首次：CD 中不可用
-			if (PowerUtils.getResourceValue(player, FormIdentifiers.SP_PRIMARY_CD) > 0) return;
+			if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return;
 			s.active = true;
 			s.isAling = FormUtils.isForm(player, FormIdentifiers.AXOLOTL_ALING);
 			s.arraysLeft = ARRAY_COUNT;
@@ -148,7 +151,7 @@ public final class FluorescentLaserManager {
 		PowerUtils.setResourceValueAndSync(player, SHOT_HUD, s.shotTicks);
 		s.damagedThisShot.clear();
 		s.arraysLeft--;
-		s.accumulatedCd += BAL.i("cd_per_shot", CD_PER_SHOT);
+		s.accumulatedCd += net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.extra(player, SKILL_ID, "per_shot");
 		s.windowTicks = BAL.i("window_ticks", WINDOW_TICKS);               // 重置窗口
 		// 持久待机法阵实体进入发射态（存固定锁定点），并同步剩余法阵数
 		if (s.laser != null && s.laser.isAlive()) {
@@ -302,7 +305,7 @@ public final class FluorescentLaserManager {
 		PowerUtils.setResourceValueAndSync(player, SHOT_HUD, 0);
 		applyLaserSpeed(player, false);
 		if (s.accumulatedCd > 0) {
-			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, s.accumulatedCd);
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.force(player, SKILL_ID, s.accumulatedCd);
 		}
 		// 结束音效：三发射尽 / 窗口超时失效 / 被 SP 悦灵净化打断 等所有结束路径统一播放
 		// （信标失活，与开场 BLOCK_BEACON_ACTIVATE 呼应；全员可闻）

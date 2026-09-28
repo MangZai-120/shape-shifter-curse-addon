@@ -1,5 +1,5 @@
 {
-    "type": "apoli:active_self",
+    "type": "my_addon:fail_aware_active_self",
     "entity_action": {
         "type": "ssc_addon:golden_sandstorm_wither_sand"
     },
@@ -10,7 +10,10 @@
         "type": "apoli:sneaking",
         "inverted": true
     },
-    "cooldown": 0,
+    "cooldown": 520,
+    "fail_cooldown": 140,
+    "cooldown_start": "on_release",
+    "defer_release": true,
     "hud_render": {
         "should_render": false
     }
