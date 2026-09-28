@@ -13,8 +13,11 @@ import io.github.apace100.calio.data.SerializableData;
 import io.github.apace100.calio.data.SerializableDataTypes;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager;
 
 /**
  * 可区分成功/失败冷却的主动技能 power（JSON 驱动 CD 的单一真相源）。
@@ -48,12 +51,15 @@ public class FailAwareActiveSelfPower extends ActiveCooldownPower {
 
 	/** 失败 CD（tick 绝对值）：power JSON fail_cooldown 字段。 */
 	private final int failCooldown;
+	/** 起算时机（on_cast/on_release/on_end）：power JSON cooldown_start 字段。 */
+	private final String cooldownStart;
 
 	public FailAwareActiveSelfPower(PowerType<?> type, LivingEntity entity, int cooldownDuration,
 	                                 int failCooldown, HudRender hudRender, Active.Key key,
-	                                 ActionFactory<Entity>.Instance entityAction) {
+	                                 ActionFactory<Entity>.Instance entityAction, String cooldownStart) {
 		super(type, entity, cooldownDuration, hudRender, entityAction);
 		this.failCooldown = failCooldown;
+		this.cooldownStart = cooldownStart;
 		this.setKey(key);
 	}
 
@@ -66,8 +72,36 @@ public class FailAwareActiveSelfPower extends ActiveCooldownPower {
 	public void onUse() {
 		PENDING_FAIL.set(Boolean.FALSE);
 		try {
-			// 原生序：canUse() → action（失败时 markFail()）→ use()（lastUseTime=now + 同步）
+			// 统一生命周期服务接管（计划书 §4.2：新服务是唯一施放与冷却权威）：
+			// begin 建档 → on_cast 模式立即起算；rejected（冷却/进行中）直接不执行 action。
+			long castId = -1;
+			SkillCastManager mgr = null;
+			if (entity instanceof ServerPlayerEntity sp
+					&& sp.getWorld() instanceof ServerWorld sw) {
+				mgr = SkillCastManager.get(sw);
+				castId = mgr.begin(sp, powerIdentifier(), new SkillCastManager.ResolvedConfig(
+						cooldownDuration, failCooldown, cooldownStart));
+				if (castId < 0) {
+					return; // 冷却未完 / 施放中：请求未被接受，不执行不延长（§3.3）
+				}
+			}
+
+			// 原生序：action → use()（lastUseTime=now + 同步）
 			super.onUse();
+
+			if (mgr != null && castId >= 0) {
+				if (Boolean.TRUE.equals(PENDING_FAIL.get())) {
+					mgr.fail(entity instanceof ServerPlayerEntity sp ? sp : null, castId);
+				} else {
+					// 瞬发技能：同 tick released+finish（计划书 §3.2：普通投射物默认发射后即结束）。
+					// on_end 语义由 action 内部延迟回调 mgr.finish(sp, castId) 覆盖（延迟结算型技能）。
+					if (entity instanceof ServerPlayerEntity sp) {
+						mgr.released(sp, castId);
+						mgr.finish(sp, castId);
+					}
+				}
+			}
+
 			if (Boolean.TRUE.equals(PENDING_FAIL.get())) {
 				// 手写 lastUseTime 绕开 setCooldown 的 min 钳制：
 				// canUse() 门禁 = now' >= lastUseTime + cooldownDuration = now + failCooldown，
@@ -81,8 +115,18 @@ public class FailAwareActiveSelfPower extends ActiveCooldownPower {
 		}
 	}
 
+	/** 本 power 的稳定技能 ID（= power 注册路径，SkillCastManager 存储键）。 */
+	public String powerIdentifier() {
+		return type != null && type.getIdentifier() != null
+				? type.getIdentifier().toString() : "my_addon:unknown";
+	}
+
 	public int getFailCooldown() {
 		return failCooldown;
+	}
+
+	public String getCooldownStart() {
+		return cooldownStart;
 	}
 
 	public static PowerFactory<Power> createFactory() {
@@ -93,7 +137,9 @@ public class FailAwareActiveSelfPower extends ActiveCooldownPower {
 						.add("cooldown", SerializableDataTypes.INT, 1)
 						// 失败 CD（tick 绝对值）：写多少失败后就锁多少 tick（例：cooldown=120 + fail_cooldown=72）
 						.add("fail_cooldown", SerializableDataTypes.INT, 1)
-						.add("hud_render", ApoliDataTypes.HUD_RENDER, HudRender.DONT_RENDER),
+						// 起算时机：on_cast（按键）/ on_release（蓄力完成）/ on_end（效果结束）；
+						// 默认 on_cast 保持旧语义（计划书 §3.2 兼容约定）
+						.add("cooldown_start", SerializableDataTypes.STRING, SkillCastManager.START_ON_CAST),
 				data -> (type, player) -> new FailAwareActiveSelfPower(
 						type,
 						player,
@@ -101,7 +147,8 @@ public class FailAwareActiveSelfPower extends ActiveCooldownPower {
 						data.getInt("fail_cooldown"),
 						data.get("hud_render"),
 						data.get("key"),
-						data.get("entity_action")
+						data.get("entity_action"),
+						data.getString("cooldown_start")
 				)
 		).allowCondition();
 	}

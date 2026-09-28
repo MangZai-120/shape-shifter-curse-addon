@@ -26,6 +26,7 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
+import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
@@ -48,12 +49,15 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower {
 	private static float damage() { var s = BalanceIntegration.currentSnapshot(); return s != null ? (float) s.getDouble("abilities.bat_sonic_wave", "damage") : DAMAGE; }
 	private static int debuffTicks() { var s = BalanceIntegration.currentSnapshot(); return s != null ? (int) s.getInt("abilities.bat_sonic_wave", "debuff_ticks") : DEBUFF_TICKS; }
 	private final int cooldownTicks;
+	/** 失败 CD（power JSON fail_cooldown 字段；默认 60% = 96t）。 */
+	private final int failCooldownTicks;
 	private long internalCooldownEndTime = 0L;
 
-	public BatSonicWaveAbilityPower(PowerType<?> type, LivingEntity entity, int cooldownTicks, HudRender hudRender, Active.Key key) {
+	public BatSonicWaveAbilityPower(PowerType<?> type, LivingEntity entity, int cooldownTicks, int failCooldownTicks, HudRender hudRender, Active.Key key) {
 		super(type, entity, cooldownTicks, hudRender, (e) -> {
 		});
 		this.cooldownTicks = cooldownTicks;
+		this.failCooldownTicks = failCooldownTicks;
 		this.setKey(key);
 	}
 
@@ -61,6 +65,8 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower {
 		return new PowerFactory<>(new Identifier("my_addon", "sonic_wave"),
 				new SerializableData()
 						.add("cooldown", SerializableDataTypes.INT, 160)
+						// 失败 CD 绝对值（计划书 §3.2）：默认 96 = 160×60%（雪狐同规则折算）
+						.add("fail_cooldown", SerializableDataTypes.INT, 96)
 						.add("hud_render", ApoliDataTypes.HUD_RENDER, HudRender.DONT_RENDER)
 						.add("key", ApoliDataTypes.BACKWARDS_COMPATIBLE_KEY, new Active.Key()),
 				data ->
@@ -68,6 +74,7 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower {
 								type,
 								player,
 								data.getInt("cooldown"),
+								data.getInt("fail_cooldown"),
 								data.get("hud_render"),
 								data.get("key")
 						)
@@ -75,14 +82,36 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower {
 	}
 
 	private boolean isInternalCooldownReady() {
+		// 统一服务权威（持久化；回退内存时间戳兼容）
+		if (entity instanceof ServerPlayerEntity sp
+				&& entity.getWorld() instanceof ServerWorld sw) {
+			return SkillCastManager.get(sw).canBegin(sp, powerIdentifier());
+		}
 		return entity.getWorld().getTime() >= internalCooldownEndTime;
 	}
 
 	private void applyCooldown() {
 		internalCooldownEndTime = entity.getWorld().getTime() + cooldownTicks;
-		if (entity instanceof ServerPlayerEntity sp) {
+		if (entity instanceof ServerPlayerEntity sp
+				&& entity.getWorld() instanceof ServerWorld sw) {
+			SkillCastManager mgr = SkillCastManager.get(sw);
+			// 音波 = on_cast 生命周期（旧行为：按键即起算）；失败档=60%（96t）由 JSON fail_cooldown 提供，
+			// 此处走 begin+released+finish 全链（瞬发技能同 tick 三段，§3.2）
+			SkillCastManager.ResolvedConfig cfg = new SkillCastManager.ResolvedConfig(
+					cooldownTicks, failCooldownTicks, SkillCastManager.START_ON_CAST);
+			long castId = mgr.begin(sp, powerIdentifier(), cfg);
+			if (castId >= 0) {
+				mgr.released(sp, castId);
+				mgr.finish(sp, castId);
+			}
 			PowerUtils.setResourceValueAndSync(sp, FormIdentifiers.SP_SECONDARY_CD, cooldownTicks);
 		}
+	}
+
+	/** 本 power 的稳定技能 ID（= power 注册路径）。 */
+	public String powerIdentifier() {
+		return type != null && type.getIdentifier() != null
+				? type.getIdentifier().toString() : "my_addon:sonic_wave";
 	}
 
 	@Override

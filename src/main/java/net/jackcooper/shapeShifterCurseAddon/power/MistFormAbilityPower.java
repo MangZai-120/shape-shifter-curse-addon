@@ -26,6 +26,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.onixary.shapeShifterCurseFabric.additional_power.BatBlockAttachPower;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
+import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -160,21 +161,54 @@ public class MistFormAbilityPower extends ActiveCooldownPower {
 		sp.setNoGravity(exempt);
 	}
 
-	/** 内部冷却是否就绪（服务端tick基准） */
+	/** 内部冷却是否就绪（统一服务 SkillCastManager 权威；回退内存时间戳兼容未接入场景） */
 	public boolean isInternalCooldownReady() {
+		if (entity instanceof ServerPlayerEntity sp
+				&& sp.getWorld() instanceof net.minecraft.server.world.ServerWorld sw) {
+			return SkillCastManager.get(sw).canBegin(sp, powerIdentifier());
+		}
 		return entity.getWorld().getTime() >= internalCooldownEndTime;
 	}
 
-	/** 进入冷却并同步CD条资源 */
+	/** 进入冷却并同步CD条资源（统一服务接管：幂等结束，三种结束路径均走此处） */
 	private void applyCooldown() {
 		internalCooldownEndTime = entity.getWorld().getTime() + cooldownTicks;
-		if (entity instanceof ServerPlayerEntity serverPlayer) {
+		if (entity instanceof ServerPlayerEntity serverPlayer
+				&& serverPlayer.getWorld() instanceof net.minecraft.server.world.ServerWorld sw) {
+			// 雾化 = on_end 生命周期：施放建档在 enterMist，此处为结束结算（finish）
+			SkillCastManager mgr = SkillCastManager.get(sw);
+			SkillCastManager.Cast cast = mgr.control(serverPlayer.getUuid(), powerIdentifier());
+			if (cast != null) {
+				mgr.finish(serverPlayer, cast.castId);
+			} else {
+				// 无进行中 cast（异常路径）：直接写冷却兜底
+				mgr.begin(serverPlayer, powerIdentifier(), resolvedConfig());
+				SkillCastManager.Cast c2 = mgr.control(serverPlayer.getUuid(), powerIdentifier());
+				if (c2 != null) mgr.finish(serverPlayer, c2.castId);
+			}
 			PowerUtils.setResourceValueAndSync(serverPlayer, FormIdentifiers.SP_PRIMARY_CD, cooldownTicks);
 		}
 	}
 
+	/** 本 power 的统一服务配置（JSON cooldown 字段即真相源）。 */
+	private SkillCastManager.ResolvedConfig resolvedConfig() {
+		// 雾化被打断也吃满 CD（旧行为），失败档=正常档；on_end：效果结束才起算
+		return new SkillCastManager.ResolvedConfig(cooldownTicks, cooldownTicks, SkillCastManager.START_ON_END);
+	}
+
+	/** 本 power 的稳定技能 ID（= power 注册路径）。 */
+	public String powerIdentifier() {
+		return type != null && type.getIdentifier() != null
+				? type.getIdentifier().toString() : "my_addon:mist_form";
+	}
+
 	/** 进入雾化状态：标记效果 + 原版隐身（让形态模型消失）+ 起始粒子与音效 */
 	private void enterMist() {
+		// 统一生命周期建档（on_end：雾化结束才起算 CD，§4.2 begin）
+		if (entity instanceof ServerPlayerEntity sp) {
+			SkillCastManager.get((ServerWorld) entity.getWorld())
+					.begin(sp, powerIdentifier(), resolvedConfig());
+		}
 		// 进入雾化前解除蝙蝠的右键贴墙附着，避免附着锁定与化雾飞行相互冲突
 		if (entity instanceof PlayerEntity player) {
 			PowerHolderComponent.getPowers(player, BatBlockAttachPower.class).stream()

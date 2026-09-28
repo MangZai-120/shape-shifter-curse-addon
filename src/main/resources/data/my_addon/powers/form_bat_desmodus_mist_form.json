@@ -1,6 +1,8 @@
 {
     "type": "my_addon:mist_form",
     "cooldown": 200,
+    "fail_cooldown": 200,
+    "cooldown_start": "on_end",
     "duration": 90,
     "hud_render": {
         "should_render": false

@@ -200,6 +200,10 @@ public final class SscAddonPlayerEvents {
 			net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.onPlayerDisconnect(uuid);
 			// 荧光幼灵潮汐波动：断线清 session + 法球实体，防 orb 残留
 			net.jackcooper.shapeShifterCurseAddon.ability.FluorescentTidalManager.onPlayerDisconnect(uuid);
+			// 统一冷却服务：断线保留冷却（持久化），只清进行中施放记录
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager castMgr =
+					net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager.instanceOrNull();
+			if (castMgr != null) castMgr.onPlayerRemoved(uuid);
 			// 美西螈漩涡蓄力：断线清蓄力状态
 			net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.onPlayerDisconnect(uuid);
 			// balance 数据包数值（阶段 3）：清该连接的 ACK/就绪状态

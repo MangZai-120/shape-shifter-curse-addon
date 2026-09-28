@@ -250,6 +250,10 @@ public final class SscAddonServerEvents {
 			net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.clearAll(); // 跳蛛跳杀：清蓄力/跳跃状态
 			net.jackcooper.shapeShifterCurseAddon.ability.VenomSkillManager.clearAll(); // 跳蛛毒液：清冲刺状态
 			net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.clearAll(server); // 惊吓：清幽灵苦力怕/复制品状态
+			// 统一冷却服务：清已过期冷却（持久化未到期冷却保留，按服务器时钟恢复剩余）
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager mgr =
+					net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager.instanceOrNull();
+			if (mgr != null) mgr.onServerStarted(server.getTicks());
 			System.out.println("[SSC_ADDON] SERVER_STARTING ability state cleared");
 		});
 		// 服务器关闭前还原所有死亡领域方块（在世界存档之前触发）
