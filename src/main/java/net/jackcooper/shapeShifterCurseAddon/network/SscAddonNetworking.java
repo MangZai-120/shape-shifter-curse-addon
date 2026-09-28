@@ -32,6 +32,10 @@ public class SscAddonNetworking {
 	/** 风灵「风之冲刺」：C2S 按主技能键（无 payload，服务端按阶段分支）；S2C 同步阶段(int)+targetY(double)。 */
 	public static final Identifier PACKET_WIND_DASH = new Identifier("my_addon", "wind_dash");
 	public static final Identifier PACKET_DASH_STATE = new Identifier("my_addon", "dash_state");
+	/** 朔望「灵跃闪身」：S2C 同步第 2 段窗口时长给施法者。payload: varint windowTicks（>0 开启倒数，0 关闭）。 */
+	public static final Identifier PACKET_NOVA_LEAP_WINDOW = new Identifier("my_addon", "nova_leap_window");
+	/** 堕落悦灵「召唤恼鬼」：S2C 同步召唤物存活窗口给施法者。payload: varint windowTicks（>0 开启倒数，0 关闭）。 */
+	public static final Identifier PACKET_FALLEN_ALLAY_VEX_WINDOW = new Identifier("my_addon", "fallen_allay_vex_window");
 
 	// ===== 白名单 GUI 网络包 =====/** S2C：服务端把调用者当前白名单 UUID 集合推给客户端，用于打开/刷新 GUI。payload: int n + n*UUID */
 	public static final Identifier PACKET_WHITELIST_GUI_SYNC = new Identifier("my_addon", "whitelist_gui_sync");
@@ -232,6 +236,20 @@ public class SscAddonNetworking {
 		ServerPlayNetworking.send(player, PACKET_DASH_STATE, buf);
 	}
 
+	/** 朔望「灵跃闪身」：同步第 2 段灵跃窗口给施法者（>0 = 窗口时长开启倒数，0 = 窗口关闭）。 */
+	public static void syncNovaLeapWindow(net.minecraft.server.network.ServerPlayerEntity player, int windowTicks) {
+		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+		buf.writeVarInt(windowTicks);
+		ServerPlayNetworking.send(player, PACKET_NOVA_LEAP_WINDOW, buf);
+	}
+
+	/** 堕落悦灵「召唤恼鬼」：同步召唤物存活窗口给施法者（>0 = 存活时长开启倒数，0 = 召唤物全灭/关闭）。 */
+	public static void syncFallenAllayVexWindow(net.minecraft.server.network.ServerPlayerEntity player, int windowTicks) {
+		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+		buf.writeVarInt(windowTicks);
+		ServerPlayNetworking.send(player, PACKET_FALLEN_ALLAY_VEX_WINDOW, buf);
+	}
+
 	/** 进化美西螈「投掷水矛」：向追踪该玩家的客户端 + 玩家自身广播蓄力手持水矛渲染状态。 */
 	public static void syncSpearChargeState(net.minecraft.server.network.ServerPlayerEntity player, boolean charging) {
 		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
@@ -344,14 +362,21 @@ public class SscAddonNetworking {
 				net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create());
 	}
 
-	/** S2C：跳蛛安全丝锦点状态广播给追踪者 + 本人（active=false = 断丝/结束，锦点坐标忽略）。 */
+	/** S2C：跳蛛安全丝锦点状态广播给追踪者 + 本人（active=false = 断丝/结束，锦点坐标忽略）。
+	 *  windowTicks：拉回窗口总长（HUD 辅助栏倒数分母；仅 active=true 时有意义）。 */
 	public static void syncJumpKillSilk(ServerPlayerEntity player, boolean active, double ax, double ay, double az) {
+		syncJumpKillSilk(player, active, ax, ay, az, 0);
+	}
+
+	public static void syncJumpKillSilk(ServerPlayerEntity player, boolean active, double ax, double ay, double az, int windowTicks) {
 		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
 		buf.writeUuid(player.getUuid());
 		buf.writeBoolean(active);
 		buf.writeDouble(ax);
 		buf.writeDouble(ay);
 		buf.writeDouble(az);
+		buf.writeVarInt(windowTicks);
+		buf.writeLong(player.getWorld().getTime()); // 服务端世界 tick（客户端锚点到期 = 此值 + window）
 		for (ServerPlayerEntity viewer : net.fabricmc.fabric.api.networking.v1.PlayerLookup.tracking(player)) {
 			ServerPlayNetworking.send(viewer, PACKET_JUMP_KILL_SILK_STATE,
 					net.fabricmc.fabric.api.networking.v1.PacketByteBufs.copy(buf));

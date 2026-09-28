@@ -69,6 +69,9 @@ public final class VortexChargeManager {
 	/** HUD 门槛同源：每次命中湿润度消耗（balance 可调；HUD 展示用）。 */
 	public static int airPerHitForHud() { return BAL.i("air_per_hit", AIR_PER_HIT); }
 
+	/** HUD 辅助栏同源：蓄力总时长上限（balance 可调；HUD 涨条分母，从小到大）。 */
+	public static int maxTicksForHud() { return BAL.i("max_ticks", MAX_TICKS); }
+
 	// ===== 动态粒子（青蓝/白：蓄力吸附 + 释放抛物线，全部服务端生成并广播给所有客户端） =====
 	/** 青蓝色尘埃（漂浮，吸附与扩散着色用） */
 	private static final net.minecraft.particle.DustParticleEffect CYAN_DUST =
@@ -158,6 +161,8 @@ public final class VortexChargeManager {
 				player.setAir(player.getAir() - spend);
 				s.airSpent += spend;
 				s.hits++;
+				// 蓄力进度同步（值=已蓄力 tick 数；HUD 主技能辅助栏据此从小到大涨条）
+				PowerUtils.setResourceValueAndSync(player, VORTEX_STATE, s.ticks);
 				ServerWorld sw = (ServerWorld) player.getWorld();
 				net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.BUBBLE,
 						player.getX(), player.getY() + 1, player.getZ(), 40, 0.6, 0.6, 0.6, 0.6);
@@ -168,8 +173,8 @@ public final class VortexChargeManager {
 				return;
 			}
 		}
-		// 注：不再每 tick 同步 vortex_state —— 客户端与 JSON 条件只读「>0」判断蓄力中，
-		// start(1)/release(0)/cancel(0) 三个事件级同步已足够，每 tick 重发是纯带宽浪费。
+		// 注：vortex_state 不再逐 tick 同步——JSON 条件只读「>0」；
+		// start(1)/每次蓄力跳变(进度值)/release(0)/cancel(0) 同步已足够，HUD 辅助栏读进度值从小到大涨条。
 		if (s.ticks >= maxTicks) {
 			release(player); // 满 4 秒自动释放
 		}

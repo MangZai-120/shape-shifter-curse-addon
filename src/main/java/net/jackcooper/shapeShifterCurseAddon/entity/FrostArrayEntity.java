@@ -55,6 +55,7 @@ public class FrostArrayEntity extends Entity {
 	protected void initDataTracker() {
 		this.dataTracker.startTracking(OWNER_ID, -1);
 		this.dataTracker.startTracking(LEVEL, 0);
+		this.dataTracker.startTracking(PROGRESS, 0); // 修复：此前漏登记导致 getProgress NPE 崩溃（服务端 tick + 客户端缓存双崩）
 	}
 
 	/** 施法者实体 id（客户端渲染器据此取施法者准星算法阵位置）。 */

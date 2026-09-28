@@ -561,12 +561,12 @@ public final class SscBalanceSchema {
         b.scope("abilities.venom_skill")                   // VenomSkillManager：毒雾突进
                 .doubleParam("base_damage", 4.0, 0.0, 1000.0, AB + "VenomSkillManager", "BASE_DAMAGE")
                 .intParam("base_poison_duration", 300, 20, 2400, AB + "VenomSkillManager", "BASE_POISON_DURATION")
-                .doubleParam("area_size", 2.0, 0.5, 16.0, AB + "VenomSkillManager", "AREA_SIZE")
+                .doubleParam("area_size", 3.5, 0.5, 16.0, AB + "VenomSkillManager", "AREA_SIZE")
                 .doubleParam("dash_distance", 6.0, 1.0, 32.0, AB + "VenomSkillManager", "DASH_DISTANCE")
                 .doubleParam("dash_speed", 1.2, 0.1, 4.0, AB + "VenomSkillManager", "DASH_SPEED")
                 .doubleParam("dash_hit_damage", 2.0, 0.0, 1000.0, AB + "VenomSkillManager", "DASH_HIT_DAMAGE")
                 .doubleParam("burst_damage", 6.0, 0.0, 1000.0, AB + "VenomSkillManager", "BURST_DAMAGE")
-                .doubleParam("burst_radius", 3.0, 0.5, 16.0, AB + "VenomSkillManager", "BURST_RADIUS")
+                .doubleParam("burst_radius", 4.5, 0.5, 16.0, AB + "VenomSkillManager", "BURST_RADIUS")
                 .intParam("burst_poison_duration", 300, 20, 2400, AB + "VenomSkillManager", "BURST_POISON_DURATION")
                 .intParam("dash_timeout", 20, 1, 200, AB + "VenomSkillManager", "DASH_TIMEOUT");
         b.scope("abilities.moon_weaver_moon_poison")       // SpiderMoonWeaverMoonPoisonManager

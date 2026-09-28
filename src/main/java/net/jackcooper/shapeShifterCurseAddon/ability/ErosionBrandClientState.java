@@ -33,6 +33,17 @@ public class ErosionBrandClientState {
 	}
 
 	/**
+	 * 场上是否存在可引爆烙印（黄色/橙色/红色；绿色为叠层冷却不可引爆）。
+	 * 供金沙岚次技能「引爆标记」的 HUD 黑色遮罩判定。
+	 */
+	public static boolean hasAnyDetonatable() {
+		for (String color : BRAND_COLORS.values()) {
+			if ("yellow".equals(color) || "orange".equals(color) || "red".equals(color)) return true;
+		}
+		return false;
+	}
+
+	/**
 	 * 清除所有缓存（断线/切换形态时调用）
 	 */
 	public static void clear() {

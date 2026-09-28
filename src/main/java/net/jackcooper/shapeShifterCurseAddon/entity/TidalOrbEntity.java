@@ -78,6 +78,9 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     /** 客户端同步：是否处于拴人（激活）状态，用于把潮涌核心切换为激活态渲染。 */
     private static final net.minecraft.entity.data.TrackedData<Boolean> TETHER_ACTIVE =
             net.minecraft.entity.data.DataTracker.registerData(TidalOrbEntity.class, net.minecraft.entity.data.TrackedDataHandlerRegistry.BOOLEAN);
+    /** 拴人阶段剩余 tick（服务端每 2t 刷新，客户端 HUD 辅助栏据此倒数潮汐束缚剩余）。 */
+    private static final net.minecraft.entity.data.TrackedData<Integer> TETHER_REMAIN =
+            net.minecraft.entity.data.DataTracker.registerData(TidalOrbEntity.class, net.minecraft.entity.data.TrackedDataHandlerRegistry.INTEGER);
 
     private Phase phase = Phase.FLYING;
     private int ticksAlive = 0;
@@ -133,6 +136,7 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     @Override
     protected void initDataTracker() {
         this.dataTracker.startTracking(TETHER_ACTIVE, false);
+        this.dataTracker.startTracking(TETHER_REMAIN, 0);
     }
 
     /** 飞行阶段：触发减速（玩家再次按键 / 飞满 8 秒自动）。 */
@@ -279,6 +283,8 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         // 锚点悬停粒子 + 6 格束缚环
         spawnHoverParticles(sw);
         applyTether(sw);
+        // 同步拴人剩余（dirty-check：值不变不重发；HUD 辅助栏据此倒数）
+        setTetherRemain(tetherDuration - phaseTicks);
         // 阿澪：拴人期间每秒(20t)对被拴目标造成 4 点物理伤害
         if (isAling && phaseTicks > 0 && phaseTicks % 20 == 0) {
             tickTetherDamage(sw);
@@ -633,6 +639,17 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     /** 客户端查询：是否处于拴人激活状态（潮涌核心切激活态渲染）。 */
     public boolean isTetherActive() {
         return this.dataTracker.get(TETHER_ACTIVE);
+    }
+
+    /** 客户端 HUD 辅助栏查询：拴人阶段剩余 tick（0 = 非拴人阶段）。 */
+    public int getTetherRemain() {
+        return this.dataTracker.get(TETHER_REMAIN);
+    }
+
+    /** 服务端刷新拴人剩余（dirty-check 防每 tick 重发相同值）。 */
+    private void setTetherRemain(int remain) {
+        int v = Math.max(0, remain);
+        if (getTetherRemain() != v) this.dataTracker.set(TETHER_REMAIN, v);
     }
 
     /** 客户端渲染器粒子门控：记录本实体 tick 已发过粒子（render 每帧调用，同 tick 多帧只放行一次，

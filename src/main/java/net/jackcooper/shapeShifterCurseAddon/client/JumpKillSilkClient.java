@@ -39,6 +39,10 @@ public final class JumpKillSilkClient {
 
 	/** UUID → 锚点坐标（active 镜像；断丝即移除）。 */
 	private static final Map<UUID, Vec3d> ANCHORS = new ConcurrentHashMap<>();
+	/** UUID → 锚点拉回窗口到期 tick（HUD 辅助栏倒数用；断丝即移除）。 */
+	private static final Map<UUID, Long> ANCHOR_DEADLINES = new ConcurrentHashMap<>();
+	/** UUID → 锚点拉回窗口总长（HUD 辅助栏倒数分母）。 */
+	private static final Map<UUID, Integer> ANCHOR_WINDOWS = new ConcurrentHashMap<>();
 
 	private JumpKillSilkClient() {}
 
@@ -49,16 +53,40 @@ public final class JumpKillSilkClient {
 					UUID uuid = buf.readUuid();
 					boolean active = buf.readBoolean();
 					double ax = buf.readDouble(), ay = buf.readDouble(), az = buf.readDouble();
+					int windowTicks = buf.readVarInt();
+					long serverNowTick = buf.readLong();
 					client.execute(() -> {
-						if (active) {
+						if (active && windowTicks > 0) {
 							ANCHORS.put(uuid, new Vec3d(ax, ay, az));
+							ANCHOR_DEADLINES.put(uuid, serverNowTick + windowTicks);
+							ANCHOR_WINDOWS.put(uuid, windowTicks);
 						} else {
 							ANCHORS.remove(uuid);
+							ANCHOR_DEADLINES.remove(uuid);
+							ANCHOR_WINDOWS.remove(uuid);
 						}
 					});
 				});
 		// 换世界/断线清空镜像
-		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ANCHORS.clear());
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+			ANCHORS.clear();
+			ANCHOR_DEADLINES.clear();
+			ANCHOR_WINDOWS.clear();
+		});
+	}
+
+	/** HUD 辅助栏：本地玩家安全丝拉回窗口剩余占比（自满格倒数 1→0；无丝返回 -1）。
+	 *  服务端权威到期 tick 随锚点包同步，客户端按 world.getTime() 本地倒数。 */
+	public static double recallWindowFraction() {
+		net.minecraft.client.network.ClientPlayerEntity self = MinecraftClient.getInstance().player;
+		if (self == null) return -1.0;
+		Long deadline = ANCHOR_DEADLINES.get(self.getUuid());
+		Integer window = ANCHOR_WINDOWS.get(self.getUuid());
+		if (deadline == null || window == null || window <= 0) return -1.0;
+		World world = MinecraftClient.getInstance().world;
+		if (world == null) return -1.0;
+		double remain = Math.max(0, deadline - world.getTime());
+		return Math.min(1.0, remain / window);
 	}
 
 	public static void render(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext ctx) {

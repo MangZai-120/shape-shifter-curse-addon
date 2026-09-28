@@ -48,6 +48,9 @@ import java.util.UUID;
 
 public class SscAddonActions {
 
+	/** 假死效果时长（6 秒；HUD 装死剩余倒数的分母同源）。 */
+	public static final int PLAY_DEAD_DURATION_TICKS = 120;
+
 	private SscAddonActions() {
 		// This utility class should not be instantiated
 	}
@@ -388,8 +391,8 @@ public class SscAddonActions {
 				(data, entity) -> {
 					if (entity instanceof LivingEntity living) {
 						// 1. Effects
-						// Duration 6s = 120 ticks
-						int duration = 120;
+						// Duration 6s = 120 ticks（HUD 装死剩余倒数同源读此常量）
+						int duration = PLAY_DEAD_DURATION_TICKS;
 
 						// 项链黄心改由 PlayingDeadEffect 每10tick累积，不再用 Absorption 效果
 

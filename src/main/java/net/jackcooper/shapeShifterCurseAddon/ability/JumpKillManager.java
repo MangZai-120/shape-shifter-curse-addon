@@ -78,7 +78,7 @@ public final class JumpKillManager {
 	private static final double RECALL_SPEED = 1.15; // 拉回速度（比跳跃快，快速拽回）
 	private static final double RECALL_ARRIVE = 1.6; // 拉回到达阈值（距锚点小于即停）
 	private static final int RECALL_STALL_TICKS = 5; // 拉回连续 5t 距离不拉近 → 外力过强，丝断
-	private static final double OBSCURE_BREAK_BLOCKS = 1.0; // 丝线被实心方块遮挡累计阈值（同月织蛛，超过即断）
+	private static final double OBSCURE_BREAK_BLOCKS = 1.5; // 丝线被实心方块遮挡累计阈值（采样 0.5 格/个：允许穿 1.5 格厚墙，≥2 格断）
 
 	private static final UUID SLOW_UUID = UUID.fromString("b7e2c9a4-3f81-4d6e-9a25-7c1e0f4d82ab");
 
@@ -172,12 +172,12 @@ public final class JumpKillManager {
 		Vec3d look = player.getRotationVector().normalize();
 		s.lastDir = look;
 
-		// 安全丝：锚点必须落在实地——向下检测 1.5 格内的首个实心方块顶面；空中（无地）不生成蛛丝
+		// 安全丝：锚点必须落在实地——向下检测 2 格内的首个实心方块顶面（脚离地 2 格内起跳 → 丝转移到地面；超过 2 格空中 → 不生成）
 		Vec3d anchorPos = groundAnchor(player);
 		if (anchorPos != null) {
 			SilkAnchor anchor = new SilkAnchor(anchorPos, player.getServerWorld().getTime() + RECALL_WINDOW);
 			ANCHORS.put(player.getUuid(), anchor);
-			SscAddonNetworking.syncJumpKillSilk(player, true, anchorPos.x, anchorPos.y, anchorPos.z);
+			SscAddonNetworking.syncJumpKillSilk(player, true, anchorPos.x, anchorPos.y, anchorPos.z, RECALL_WINDOW);
 		}
 
 		if (lock != null) {
@@ -327,20 +327,20 @@ public final class JumpKillManager {
 	}
 
 	/**
-	 * 落地锚点：从玩家脚部向下扫 1.5 格，返回首个「可站立方块」（有外形轮廓即可——
+	 * 落地锚点：从玩家脚部向下扫 2 格，返回首个「可站立方块」（有外形轮廓即可——
 	 * 栏杆/栅栏/半砖/台阶/门等非实心但可碰撞均可）的坐标；
-	 * 空中（脚下无地）返回 null = 不生成蛛丝。
+	 * 空中（脚下 2 格无地）返回 null = 不生成蛛丝（脚离地 2 格内 → 丝转移到地面；超过 2 格 → 消失）。
 	 */
 	private static Vec3d groundAnchor(ServerPlayerEntity player) {
 		BlockPos feet = player.getBlockPos();
-		for (int dy = 0; dy <= 1; dy++) { // 0（脚部）、-1（下一格）两档：覆盖 1.5 格检测
+		for (int dy = 0; dy <= 2; dy++) { // 0（脚部）、-1、-2 三档：覆盖 2 格检测
 			BlockPos check = feet.down(dy);
 			if (isStandable(player, check)) {
 				return new Vec3d(check.getX() + 0.5, check.getY() + 1.0, check.getZ() + 0.5); // 方块顶面中心
 			}
 		}
-		// 脚部与下一格都空：再精确检测半格（玩家可能站在方块边缘，脚部 y 偏上）
-		BlockPos half = BlockPos.ofFloored(player.getX(), player.getY() - 1.5, player.getZ());
+		// 脚部、下一格、下两格都空：再精确检测半格（玩家可能站在方块边缘，脚部 y 偏上）
+		BlockPos half = BlockPos.ofFloored(player.getX(), player.getY() - 2.5, player.getZ());
 		if (isStandable(player, half)) {
 			return new Vec3d(half.getX() + 0.5, half.getY() + 1.0, half.getZ() + 0.5);
 		}

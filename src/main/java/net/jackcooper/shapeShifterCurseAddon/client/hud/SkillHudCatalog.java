@@ -51,7 +51,8 @@ public final class SkillHudCatalog {
         }
     }
 
-    private static int balanceInt(String scope, String parameter, int fallback) {
+    /** 客户端读 balance 快照（同包 HUD 渲染器复用；快照未初始化回退默认值）。 */
+    static int balanceInt(String scope, String parameter, int fallback) {
         var snapshot = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
         return snapshot == null ? fallback : (int) snapshot.getInt(scope, parameter);
     }

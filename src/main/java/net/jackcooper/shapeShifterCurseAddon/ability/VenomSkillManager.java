@@ -38,12 +38,12 @@ public final class VenomSkillManager {
 	// 以下已登记常量均为默认值；运行时从 balance 快照读取（abilities.venom_skill）
 	private static final float BASE_DAMAGE = 4.0f;        // 基础：前方区域 4 魔法
 	private static final int BASE_POISON_DURATION = 300; // 中毒 I 15 秒
-	private static final double AREA_SIZE = 2.0;         // 前方 2×2×2 格
+	private static final double AREA_SIZE = 3.5;         // 前方 3.5×3.5×3.5 格（2026-09-29 范围 +1.5）
 	private static final double DASH_DISTANCE = 6.0;     // 丝线强化：冲刺 6 格
 	private static final double DASH_SPEED = 1.2;        // 冲刺速度
 	private static final float DASH_HIT_DAMAGE = 2.0f;   // 冲刺碰撞 2 魔法
 	private static final float BURST_DAMAGE = 6.0f;      // 冲刺后 AOE 6 魔法
-	private static final double BURST_RADIUS = 3.0;      // AOE 半径 3 格
+	private static final double BURST_RADIUS = 4.5;      // AOE 半径 4.5 格（2026-09-29 范围 +1.5）
 	private static final int BURST_POISON_DURATION = 300;// AOE 中毒 II 15 秒
 	// CD 由 power JSON 配置（见类注释），原 CD_TICKS 常量已删
 	private static final int DASH_TIMEOUT = 20;          // 冲刺超时 1 秒（6 格 / 1.2 每t ≈ 5t，余量充足）

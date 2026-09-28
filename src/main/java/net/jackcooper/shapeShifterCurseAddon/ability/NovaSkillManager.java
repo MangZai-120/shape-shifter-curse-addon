@@ -161,6 +161,11 @@ public final class NovaSkillManager {
             return;
         }
         LEAP_COUNT.put(player.getUuid(), count);
+        if (count == 1) {
+            // 第 1 段灵跃成功：推送窗口时长给客户端（次技能辅助栏自满格倒数「第 2 段过期时间」）
+            net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.syncNovaLeapWindow(player,
+                    BAL.i("leap_window", LEAP_WINDOW));
+        }
         // 向准星方向跳冲（空中可用）
         Vec3d look = player.getRotationVector();
         double leapPower = BAL.d("leap_power", LEAP_POWER);
@@ -193,6 +198,8 @@ public final class NovaSkillManager {
             LEAP_COUNT.put(player.getUuid(), 0);
             net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, LEAP_SKILL_ID, LEAP_CAST.getOrDefault(player.getUuid(), -1L));
             LEAP_CAST.remove(player.getUuid());
+            // 第 2 段用掉：窗口关闭（辅助栏消失）
+            net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.syncNovaLeapWindow(player, 0);
         }
     }
 
@@ -335,6 +342,8 @@ public final class NovaSkillManager {
                     net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.extra(player, LEAP_SKILL_ID, "single_use"));
             net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, LEAP_SKILL_ID, LEAP_CAST.getOrDefault(player.getUuid(), -1L));
             LEAP_CAST.remove(player.getUuid());
+            // 窗口过期未用第 2 段：窗口关闭（辅助栏消失）
+            net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.syncNovaLeapWindow(player, 0);
         }
         // 舍身爆炸蓄力：黑烟粒子 + 蓄满自爆（进度与半径全部读会话快照，reload 不换参）
         ChargeSession session = CHARGE_START.get(player.getUuid());

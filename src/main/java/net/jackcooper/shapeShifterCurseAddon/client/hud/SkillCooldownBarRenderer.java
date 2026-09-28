@@ -41,6 +41,8 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 	public static final int PANEL_HEIGHT = 68;
 	private static final int INTERNAL_HEIGHT = 24;
 	private final Map<Identifier, Integer> trackedMaxValues = new HashMap<>();
+	/** 朔望蓄力锚：CHARGING 资源 0→1 跳变时刻（涨条分母用会话时长 balance）。 */
+	private long novaChargeAnchor = Long.MIN_VALUE;
 	/** readInternalReady 的按 tick 缓存（skillId → 0~1；同一 tick 内帧间直读，免每帧 getPower 扫描）。 */
 	private final Map<Identifier, Double> internalReadyCache = new HashMap<>();
 	private long internalCacheTick = Long.MIN_VALUE;
@@ -63,6 +65,7 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 		if (!java.util.Objects.equals(formId, lastFormId)) {
 			trackedMaxValues.clear();
 			lastFormId = formId;
+			novaChargeAnchor = Long.MIN_VALUE; // 换形态重置朔望蓄力锚（防残留锚跨形态误算）
 		}
 		if (formId == null || !SSCA_FORM_NAMESPACE.equals(formId.getNamespace())) return;
 		SSCAddonClientConfig config = SSCAddonConfig.client();
@@ -95,6 +98,12 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 				// 无缓存值（未蓄力/已被强停）= -1，侧边条不显示
 				internalReady = net.jackcooper.shapeShifterCurseAddon.client.ClientTickCache.frostForgeProgress();
 			}
+			if (formId.equals(FormIdentifiers.SNOW_FOX_FROSTSPINE) && skill.primary()) {
+				// 寒棘狐主技能辅助栏：环绕冰锥数量（每根 +1/5，少一根少 1/5；无锥不显示）。
+				// countdown 保持默认 false（数量非时间，非倒数条）
+				int thorns = net.jackcooper.shapeShifterCurseAddon.client.ClientTickCache.hoverThornCount();
+				internalReady = thorns > 0 ? thorns / 5.0 : -1;
+			}
 			if (formId.equals(FormIdentifiers.AXOLOTL_FLUORESCENT) && skill.primary()
 					// 海晶吊坠佩戴判定走每 tick 缓存（装备不逐帧变化）
 					&& !net.jackcooper.shapeShifterCurseAddon.client.ClientTickCache.isWearing(
@@ -110,6 +119,78 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 			double cooldownShade = cooldown.fraction();
 			int cooldownSeconds = (int) Math.ceil(cooldown.remaining() / 20.0);
 			boolean countdown = false;
+			if (formId.equals(FormIdentifiers.OCELOT_SP) && skill.primary()) {
+				// 风灵主技能辅助栏：飞行期间显示悬浮剩余——RISE 满格，HOVER 自满格倒数 hover_ticks（balance 可调）
+				internalReady = net.jackcooper.shapeShifterCurseAddon.client.DashClientState.hoverRemainingFraction(
+						SkillHudCatalog.balanceInt("abilities.wind_dash", "hover_ticks", 60));
+				countdown = internalReady >= 0;
+			}
+			if (formId.equals(FormIdentifiers.SPIDER_SALTICIDAE) && skill.primary()) {
+				// 跳蛛主技能辅助栏：安全丝拉回窗口剩余倒数（丝用掉/断掉/超时即归零）
+				double silkFrac = net.jackcooper.shapeShifterCurseAddon.client.JumpKillSilkClient.recallWindowFraction();
+				if (silkFrac >= 0) {
+					internalReady = silkFrac;
+					countdown = true;
+				}
+			}
+			if (formId.equals(FormIdentifiers.OCELOT_NOVA) && !skill.primary()) {
+				// 朔望次技能辅助栏：第 1 段灵跃后自满格倒数 leap_window（服务端推送），显示第 2 段过期时间
+				internalReady = net.jackcooper.shapeShifterCurseAddon.client.NovaLeapClientState.remainingFraction(mc.world.getTime());
+				countdown = internalReady >= 0;
+			}
+			if (formId.equals(FormIdentifiers.OCELOT_NOVA) && skill.primary()) {
+				// 朔望主技能（舍身爆炸）辅助栏：蓄力期间自小到大涨条（0→1 = 蓄力进度，蓄满/中断即消）
+				double chargeFrac = novaChargeFraction(player);
+				if (chargeFrac >= 0) {
+					internalReady = chargeFrac;
+					countdown = false; // 涨条（非倒数）
+				}
+			}
+			if (formId.equals(FormIdentifiers.AXOLOTL_SP) && skill.primary()
+					&& "form_axolotl_sp_vortex_charge".equals(skill.cooldown().getPath())) {
+				// SP 美西螈主技能（涡流冲击）辅助栏：蓄力力度自小到大涨条（vortex_state=已蓄 tick / max_ticks）
+				int vortexTicks = PowerUtils.getClientResourceValue(player,
+						net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.VORTEX_STATE);
+				if (vortexTicks > 0) {
+					internalReady = Math.min(1.0, vortexTicks
+						/ (double) Math.max(1, net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.maxTicksForHud()));
+					countdown = false; // 涨条（蓄力力度）
+				}
+			}
+			if (formId.equals(FormIdentifiers.AXOLOTL_SP) && !skill.primary()
+					&& "form_axolotl_sp_play_dead_activate".equals(skill.cooldown().getPath())) {
+				// SP 美西螈次技能（假死）辅助栏：装死效果剩余时长倒数（自满格到零，6 秒）
+				var deadEffect = player.getStatusEffect(net.jackcooper.shapeShifterCurseAddon.SscAddon.PLAYING_DEAD);
+				if (deadEffect != null) {
+					internalReady = Math.min(1.0, Math.max(1, deadEffect.getDuration())
+						/ (double) net.jackcooper.shapeShifterCurseAddon.action.SscAddonActions.PLAY_DEAD_DURATION_TICKS);
+					countdown = true;
+				}
+			}
+			if ((formId.equals(FormIdentifiers.AXOLOTL_FLUORESCENT) || formId.equals(FormIdentifiers.AXOLOTL_ALING))
+					&& !skill.primary() && "form_axolotl_fluorescent_tidal".equals(skill.cooldown().getPath())) {
+				// 荧光幼灵/阿澪次技能（潮汐波动）辅助栏：拴人（潮汐束缚）阶段剩余倒数（只显拴人阶段；每 tick 缓存）
+				double tetherFrac = net.jackcooper.shapeShifterCurseAddon.client.ClientTickCache.tidalTetherFraction();
+				if (tetherFrac >= 0) {
+					internalReady = tetherFrac;
+					countdown = true;
+				}
+			}
+			if (formId.equals(FormIdentifiers.FALLEN_ALLAY_SP) && skill.primary()) {
+				// 堕落悦灵主技能（召唤恼鬼）辅助栏：召唤物存活倒数（自满格到零，提前全灭归零）
+				double vexFrac = net.jackcooper.shapeShifterCurseAddon.client.FallenAllayVexClientState
+						.remainingFraction(mc.world.getTime());
+				if (vexFrac >= 0) {
+					internalReady = vexFrac;
+					countdown = true;
+				}
+			}
+			if (formId.equals(FormIdentifiers.GOLDEN_SANDSTORM_SP) && !skill.primary()) {
+				// 金沙岚次技能（引爆标记）：场上没有任何可引爆烙印（黄/橙/红；绿色冷却不可引爆）→ 黑色遮罩
+				if (!net.jackcooper.shapeShifterCurseAddon.ability.ErosionBrandClientState.hasAnyDetonatable()) {
+					conditionBlocked = true;
+				}
+			}
 			boolean empowerForm = formId.equals(FormIdentifiers.FAMILIAR_FOX_SP) || formId.equals(FormIdentifiers.FAMILIAR_FOX_RED);
 			if (empowerForm) {
 				int empowerState = PowerUtils.getClientResourceValue(player, FormIdentifiers.EMPOWER_STATE);
@@ -151,6 +232,18 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 					internalReady, skill.primary(), config.showCdSeconds,
 					config.cdMirrorRight, conditionBlocked, countdown);
 		}
+	}
+
+	/** 朔望蓄力进度（0→1）：CHARGING 资源为 1 时，锚 = 跳变时刻，分母读会话时长 balance；未蓄力 -1。 */
+	private double novaChargeFraction(PlayerEntity player) {
+		if (PowerUtils.getClientResourceValue(player, FormIdentifiers.OCELOT_NOVA_CHARGING) <= 0) {
+			novaChargeAnchor = Long.MIN_VALUE;
+			return -1;
+		}
+		long now = mc.world.getTime();
+		if (novaChargeAnchor == Long.MIN_VALUE) novaChargeAnchor = now;
+		int chargeTime = SkillHudCatalog.balanceInt("abilities.nova", "charge_time", 100);
+		return Math.min(1.0, (now - novaChargeAnchor) / (double) Math.max(1, chargeTime));
 	}
 
 	private double readInternalReady(PlayerEntity player, SkillHudCatalog.Skill skill) {

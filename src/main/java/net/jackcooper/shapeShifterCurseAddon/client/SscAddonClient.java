@@ -406,6 +406,30 @@ public class SscAddonClient implements ClientModInitializer {
             client.execute(() -> net.jackcooper.shapeShifterCurseAddon.client.DashClientState.update(phase, targetY));
         });
 
+        // 朔望「灵跃闪身」：接收第 2 段窗口时长（>0 开启倒数锚，0 关闭），驱动次技能辅助栏
+        ClientPlayNetworking.registerGlobalReceiver(net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_NOVA_LEAP_WINDOW, (client, handler, buf, responseSender) -> {
+            int windowTicks = buf.readVarInt();
+            client.execute(() -> {
+                if (client.world != null && client.getNetworkHandler() == handler)
+                    net.jackcooper.shapeShifterCurseAddon.client.NovaLeapClientState.update(windowTicks, client.world.getTime());
+            });
+        });
+
+        // 堕落悦灵「召唤恼鬼」：接收召唤物存活窗口（>0 开启倒数锚，0 关闭），驱动主技能辅助栏
+        ClientPlayNetworking.registerGlobalReceiver(net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_FALLEN_ALLAY_VEX_WINDOW, (client, handler, buf, responseSender) -> {
+            int windowTicks = buf.readVarInt();
+            client.execute(() -> {
+                if (client.world != null && client.getNetworkHandler() == handler)
+                    net.jackcooper.shapeShifterCurseAddon.client.FallenAllayVexClientState.update(windowTicks, client.world.getTime());
+            });
+        });
+        // 断线清理风之冲刺/灵跃窗口/恼鬼窗口镜像，防换服残留旧倒数
+        ClientPlayConnectionEvents.DISCONNECT.register((h, c) -> {
+            net.jackcooper.shapeShifterCurseAddon.client.DashClientState.reset();
+            net.jackcooper.shapeShifterCurseAddon.client.NovaLeapClientState.clear();
+            net.jackcooper.shapeShifterCurseAddon.client.FallenAllayVexClientState.clear();
+        });
+
         // 进化美西螈「投掷水矛」蓄力期手持水矛渲染状态（主机 + 客机一致）
         ClientPlayNetworking.registerGlobalReceiver(net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_SPEAR_CHARGE_STATE, (client, handler, buf, responseSender) -> {
             java.util.UUID id = buf.readUuid();
