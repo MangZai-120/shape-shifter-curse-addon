@@ -239,14 +239,15 @@ public abstract class FallenAllayVexMixin extends MobEntity {
 	}
 
 	/**
-	 * While at least one vex is alive, keep vex_cd pinned at 400 so the skill can't be recast.
+	 * While at least one vex is alive, keep vex_cd pinned at the configured value so the skill can't be recast.
 	 */
     @Unique
     private void pinVexCd(PlayerEntity owner) {
         if (!(owner instanceof ServerPlayerEntity serverOwner)) return;
+        int vexCd = vexCdTicks();
         int currentCd = PowerUtils.getResourceValue(serverOwner, FormIdentifiers.FALLEN_ALLAY_VEX_CD);
-        if (currentCd < 400) {
-            PowerUtils.setResourceValueAndSync(serverOwner, FormIdentifiers.FALLEN_ALLAY_VEX_CD, 400);
+        if (currentCd < vexCd) {
+            PowerUtils.setResourceValueAndSync(serverOwner, FormIdentifiers.FALLEN_ALLAY_VEX_CD, vexCd);
         }
     }
 
@@ -261,8 +262,17 @@ public abstract class FallenAllayVexMixin extends MobEntity {
             }
         }
         if (!hasOtherVex && owner instanceof ServerPlayerEntity serverOwner) {
-            PowerUtils.setResourceValueAndSync(serverOwner, FormIdentifiers.FALLEN_ALLAY_VEX_CD, 400);
+            PowerUtils.setResourceValueAndSync(serverOwner, FormIdentifiers.FALLEN_ALLAY_VEX_CD, vexCdTicks());
         }
+    }
+
+    /** 恶翼 vex CD：balance abilities.nightmare_fear.vex_cd_ticks 可配（P4 补全，原写死 400）。 */
+    @Unique
+    private static int vexCdTicks() {
+        return net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot() != null
+                ? (int) net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot()
+                        .getInt("abilities.nightmare_fear", "vex_cd_ticks")
+                : net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager.VEX_CD_TICKS;
     }
 }
 

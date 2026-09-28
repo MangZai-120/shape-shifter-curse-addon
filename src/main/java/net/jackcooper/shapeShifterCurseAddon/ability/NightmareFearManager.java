@@ -44,6 +44,8 @@ public final class NightmareFearManager {
 	public static final float FEAR_DURATION_RING_BONUS = net.jackcooper.shapeShifterCurseAddon.item.NightmareRingItem.FEAR_DURATION_BONUS;
 	/** 技能 CD（tick，20 秒）。默认；运行时从 balance 快照读取。 */
 	public static final int FEAR_COOLDOWN_TICKS = 400;
+	/** 堕落悦灵恶翼 vex CD 默认（pin 锚点；实际写死点在 FallenAllayVexMixin，经此常量统一）。 */
+	public static final int VEX_CD_TICKS = 400;
 	/** 诅咒之月共鸣：诅咒之月当夜恐惧 CD 降为 14 秒（280t）。默认；运行时从 balance 快照读取。 */
 	public static final int FEAR_COOLDOWN_TICKS_CURSED_MOON = 280;
 	/** 恐惧结束后入梦免疫时长（tick，20 秒）。默认；运行时从 balance 快照读取。 */

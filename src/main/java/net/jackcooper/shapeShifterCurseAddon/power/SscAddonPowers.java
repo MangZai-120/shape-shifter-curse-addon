@@ -15,5 +15,6 @@ public class SscAddonPowers {
 		Registry.register(ApoliRegistries.POWER_FACTORY, FruitBatPlantGrowthPower.createFactory().getSerializerId(), FruitBatPlantGrowthPower.createFactory());
 		Registry.register(ApoliRegistries.POWER_FACTORY, SnowFoxSpFormSpeedPower.createFactory().getSerializerId(), SnowFoxSpFormSpeedPower.createFactory());
 		Registry.register(ApoliRegistries.POWER_FACTORY, EffectEfficiencyReductionPower.createFactory().getSerializerId(), EffectEfficiencyReductionPower.createFactory());
+		Registry.register(ApoliRegistries.POWER_FACTORY, FailAwareActiveSelfPower.createFactory().getSerializerId(), FailAwareActiveSelfPower.createFactory());
 	}
 }

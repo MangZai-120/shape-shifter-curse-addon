@@ -53,6 +53,7 @@ public final class SpiderMoonWeaverWebManager {
 	private static final int MAX_TICKS = 60;        // 满档蓄力 3 秒
 	private static final int TIER1_TICKS = 20;      // ≥1 秒抵 tier1
 	private static final int TIER2_TICKS = 40;      // ≥2 秒进 tier2
+	private static final int CD_TICKS_PER_TIER = 20; // 释放后 CD = tier × 本值（pin 锚点）
 	private static final double START_MANA = 6.0;   // 起手需 6 mana（沿用原版蜘蛛）
 	private static final double MANA_PER_TICK = 0.25;
 
@@ -173,7 +174,7 @@ public final class SpiderMoonWeaverWebManager {
 		int ticks = s[0];
 		int tier = ticks >= BAL.i("max_ticks", MAX_TICKS) ? 3
 				: (ticks >= BAL.i("tier2_ticks", TIER2_TICKS) ? 2 : 1);
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, tier * 20);
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, tier * BAL.i("cd_ticks_per_tier", CD_TICKS_PER_TIER));
 		if (getMode(player) == MODE_ATTACK) {
 			fireAttack(player, tier);
 		} else if (flat) {

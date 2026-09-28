@@ -23,8 +23,10 @@ import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
  */
 public class GoldenSandstormDetonate {
 
-	/** CD时间（tick） */
+	/** CD时间（tick）：默认 10秒；balance abilities.golden_sandstorm_counter_burst.detonate_cooldown_ticks 可覆盖 */
 	private static final int COOLDOWN_TICKS = 200; // 10秒
+	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
+			new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.golden_sandstorm_counter_burst");
 
 	private GoldenSandstormDetonate() {
 	}
@@ -49,8 +51,8 @@ public class GoldenSandstormDetonate {
 			return false;
 		}
 
-		// 设置CD
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, COOLDOWN_TICKS);
+		// 设置CD（balance detonate_cooldown_ticks 可覆盖）
+		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, BAL.i("detonate_cooldown_ticks", COOLDOWN_TICKS));
 
 		// 释放音效
 		serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),

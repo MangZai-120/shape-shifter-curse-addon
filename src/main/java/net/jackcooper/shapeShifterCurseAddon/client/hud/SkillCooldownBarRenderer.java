@@ -81,7 +81,7 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 		for (var skill : skills) {
 			int x = skill.primary() ? layout.primaryX() : layout.secondaryX();
 			int y = skill.primary() ? layout.primaryY() : layout.secondaryY();
-			Cooldown cooldown = readCooldown(player, skill.cooldown());
+			Cooldown cooldown = readCooldown(player, skill.cooldown(), skill.cooldownTotalTicks());
 			double internalReady = readInternalReady(player, skill);
 			// 释放条件未满足 → 半透明黑色遮罩；遮罩期间跳过 CD 渐变阴影，只保留倒计时数字
 			boolean conditionBlocked = skill.condition() != null && !skill.condition().test(player);
@@ -113,7 +113,7 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 				boolean ringActive = skill.primary() && (KillEmpowerCast.isNormalRingActive(player)
 						|| empowerRing);
 				if (skill.primary()) {
-					Cooldown activation = readCooldown(player, skill.internalCooldown());
+					Cooldown activation = readCooldown(player, skill.internalCooldown(), 0);
 					if (activation.remaining() > cooldown.remaining()) {
 						cooldownShade = activation.fraction();
 						cooldownSeconds = (int) Math.ceil(activation.remaining() / 20.0);
@@ -165,7 +165,7 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 		if (!(power instanceof CooldownPower) && !(power instanceof VariableIntPower)) {
 			value = -1;
 		} else {
-			value = 1.0 - readCooldown(player, id).remaining() / (double) skill.internalTicks();
+			value = 1.0 - readCooldown(player, id, 0).remaining() / (double) skill.internalTicks();
 		}
 		internalReadyCache.put(id, value);
 		return value;
@@ -186,7 +186,7 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 
 	private record Cooldown(int remaining, double fraction) {}
 
-	private Cooldown readCooldown(PlayerEntity player, Identifier id) {
+	private Cooldown readCooldown(PlayerEntity player, Identifier id, int authoritativeTotal) {
 		if (id == null || !PowerTypeRegistry.contains(id)) return new Cooldown(0, 0);
 		io.github.apace100.apoli.power.PowerType<?> type = PowerTypeRegistry.get(id);
 		Power power = PowerHolderComponent.KEY.get(player).getPower(type);
@@ -199,7 +199,12 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 			trackedMaxValues.remove(id);
 			return new Cooldown(0, 0);
 		}
-		int maximum = trackedMaxValues.merge(id, remaining, Math::max);
+		// 分母优先用服务端同步的配置总长（P1：CD 数据化字段）；未登记的技能回退观测最大值法。
+		// 剩余值本身由资源预测通道（CountdownSync）保持 tick 级正确，不受分母来源影响。
+		// 钳制：中途 reload 改短 CD 时旧 CD 剩余可能 > 新配置总长，取两者较大者保证分数 ≤1（与原观测法不变量一致）。
+		int maximum = authoritativeTotal > 0
+				? Math.max(authoritativeTotal, remaining)
+				: trackedMaxValues.merge(id, remaining, Math::max);
 		return new Cooldown(remaining, remaining / (double) maximum);
 	}
 

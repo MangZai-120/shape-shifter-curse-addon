@@ -26,7 +26,8 @@ import java.util.List;
 
 public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 
-	private static final int COOLDOWN_TICKS = 240; // 12 seconds
+	private static final int COOLDOWN_TICKS = 240; // 12 seconds（power JSON 未写 cooldown 时的工厂默认）
+	private final int configuredCooldownTicks; // 实际生效：power JSON cooldown 参数（表面可配必须真跟随）
 	private final int effectDuration;
 	// Internal cooldown tracking (separate from parent class)
 	private long internalCooldownEndTime = 0;
@@ -40,6 +41,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 	public TrueInvisibilityAbilityPower(PowerType<?> type, LivingEntity entity, int cooldownAfter, int effectDuration, HudRender hudRender, Active.Key key) {
 		super(type, entity, cooldownAfter, hudRender, (e) -> {
 		});
+		this.configuredCooldownTicks = cooldownAfter;
 		this.effectDuration = effectDuration;
 		this.setKey(key);
 		this.setTicking(true);
@@ -171,8 +173,8 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower {
 	 * Apply cooldown to both this power and the dash power
 	 */
 	public void applyUniversalCooldown() {
-		// Use real time for reliable cooldown
-		int cooldownTicks = COOLDOWN_TICKS;
+		// Use real time for reliable cooldown：以 power JSON 的 cooldown 参数为权威（内部计时/资源显示/冲刺联动同源）
+		int cooldownTicks = configuredCooldownTicks;
 		if (hasInvisibilityCloak()) {
 			cooldownTicks += 40; // Add 2 seconds to cooldown (from 12s to 14s)
 		}

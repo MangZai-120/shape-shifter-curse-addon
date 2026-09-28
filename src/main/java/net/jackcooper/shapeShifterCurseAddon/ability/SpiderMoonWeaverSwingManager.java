@@ -52,6 +52,12 @@ public final class SpiderMoonWeaverSwingManager {
 
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("abilities.moon_weaver_swing");
+	/** 断丝/miss CD 默认；balance break_cooldown_ticks 可覆盖（pin 锚点常量）。 */
+	private static final int BREAK_COOLDOWN_TICKS = 100;
+
+	private static int breakCooldownTicks() {
+		return BAL.i("break_cooldown_ticks", BREAK_COOLDOWN_TICKS);
+	}
 
 	/** 服务端断丝阈值：max_rope_reach 快照值 + 3 格余量（与常量版 BREAK_OVERSTRETCH = MAX_ROPE_REACH + 3.0 等价）。 */
 	private static double breakOverstretch() {
@@ -200,10 +206,10 @@ public final class SpiderMoonWeaverSwingManager {
 		broadcastState(player, s);
 	}
 
-	/** 飞弹 miss 落地消失 / 被移除 → 5 秒 CD（幂等：仅仍在飞未命中时生效）。 */
+	/** 飞弹 miss 落地消失 / 被移除 → 5 秒 CD（幂等：仅仍在飞未命中时生效；balance break_cooldown_ticks 可覆盖）。 */
 	public static void onBulletMiss(ServerPlayerEntity player) {
 		if (BULLET_IN_FLIGHT.remove(player.getUuid()) != null) {
-			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, 100);
+			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, breakCooldownTicks());
 		}
 	}
 
@@ -222,7 +228,7 @@ public final class SpiderMoonWeaverSwingManager {
 			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_WOOL_BREAK, SoundCategory.PLAYERS, 0.7f, 1.1f);
 			if (giveCd) {
-				PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, 100);
+				PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_SECONDARY_CD, breakCooldownTicks());
 			}
 		}
 		broadcastState(player, s);

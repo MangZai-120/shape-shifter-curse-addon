@@ -1,5 +1,5 @@
 {
-    "type": "apoli:active_self",
+    "type": "my_addon:fail_aware_active_self",
     "entity_action": {
         "type": "ssc_addon:snow_fox_sp_dash"
     },
@@ -22,6 +22,7 @@
         ]
     },
     "cooldown": 120,
+    "fail_cooldown": 72,
     "hud_render": {
         "should_render": false
     },

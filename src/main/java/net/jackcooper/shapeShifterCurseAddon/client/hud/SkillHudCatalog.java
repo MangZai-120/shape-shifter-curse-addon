@@ -33,6 +33,18 @@ public final class SkillHudCatalog {
             return internalTicks;
         }
 
+        /** 本轮 CD 总长（遮罩分母）：优先服务端同步的 balance 配置快照，回退静态登记值。
+         *  注：进行中 CD 中途 reload 改配置时，剩余值仍由资源预测通道保证正确，
+         *  仅分母按当前配置解析（P1 已知限制，见计划书 §5.3 CD05/CD06）。
+         *  雪狐四主动技能已改读 power JSON 原生 cooldown（fail_aware_active_self），
+         *  分母与剩余均由 Apoli CooldownPower 权威提供，本表不再登记。 */
+        public int cooldownTotalTicks() {
+            if (cooldown == null) return 0;
+            return switch (cooldown.getPath()) {
+                default -> 0; // 0 = 未登记，渲染器回退 trackedMax 观测法
+            };
+        }
+
         /** 渲染时解析实际图标（支持野猫双态等动态切换；无 override 返回静态 icon）。 */
         public Identifier resolveIcon(PlayerEntity player) {
             return iconOverride == null ? icon : iconOverride.apply(player);
@@ -77,12 +89,12 @@ public final class SkillHudCatalog {
         private static final java.util.function.Predicate<PlayerEntity> SNOW_30 =
                 p -> hasResource(p, FormIdentifiers.SNOW_FOX_RESOURCE, balanceInt("abilities.snow_fox_sp_frost_storm", "mana_cost", 30));
         private static final List<Skill> SNOW_MELEE = List.of(
-            skill("snow_teleport", "form_snow_fox_sp_melee_secondary_cd", true, SNOW_20),
-            skill("snow_dash", "form_snow_fox_sp_melee_primary_cd", false, SNOW_15),
+            skill("snow_teleport", "form_snow_fox_sp_melee_secondary", true, SNOW_20),
+            skill("snow_dash", "form_snow_fox_sp_melee_primary", false, SNOW_15),
             skill("snow_mode_melee", "form_snow_fox_sp_toggle", "form_snow_fox_sp_gain_cooldown", 300, null, false));
         private static final List<Skill> SNOW_RANGED = List.of(
-            skill("snow_storm", "form_snow_fox_sp_ranged_secondary_cd", true, SNOW_30),
-            skill("snow_ball", "form_snow_fox_sp_ranged_primary_cd", false, p -> hasResource(p, FormIdentifiers.SNOW_FOX_RESOURCE, 15)),
+            skill("snow_storm", "form_snow_fox_sp_ranged_secondary", true, SNOW_30),
+            skill("snow_ball", "form_snow_fox_sp_ranged_primary", false, p -> hasResource(p, FormIdentifiers.SNOW_FOX_RESOURCE, 15)),
             skill("snow_mode_ranged", "form_snow_fox_sp_toggle", "form_snow_fox_sp_gain_cooldown", 300, null, false));
 
     static {

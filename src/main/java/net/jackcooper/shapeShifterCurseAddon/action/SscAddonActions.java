@@ -36,9 +36,11 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpFrostStorm;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpMeleeAbility;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpTeleportAttack;
+import net.jackcooper.shapeShifterCurseAddon.ability.PlayDeadAbsorptionManager;
 import net.jackcooper.shapeShifterCurseAddon.entity.FrostBallEntity;
 import net.jackcooper.shapeShifterCurseAddon.util.SscIgnitedEntityAccessor;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
+import net.jackcooper.shapeShifterCurseAddon.power.FailAwareActiveSelfPower;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.SkillBlocker;
@@ -283,6 +285,7 @@ public class SscAddonActions {
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity player) {
 						if (SkillBlocker.isSkillBlocked(player, "snow_fox", "melee_primary")) {
+							FailAwareActiveSelfPower.markFail();
 							return;
 						}
 						SnowFoxSpMeleeAbility.execute(player);
@@ -295,6 +298,7 @@ public class SscAddonActions {
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity player) {
 						if (SkillBlocker.isSkillBlocked(player, "snow_fox", "melee_secondary")) {
+							FailAwareActiveSelfPower.markFail();
 							return;
 						}
 						SnowFoxSpTeleportAttack.execute(player);
@@ -307,28 +311,23 @@ public class SscAddonActions {
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity player) {
 						if (SkillBlocker.isSkillBlocked(player, "snow_fox", "ranged_primary")) {
-							return;
-						}
-						// 检查CD资源是否还在冷却中
-						int currentCd = PowerUtils.getResourceValue(player, FormIdentifiers.SNOW_FOX_RANGED_PRIMARY_CD);
-						if (currentCd > 0) {
+							FailAwareActiveSelfPower.markFail();
 							return;
 						}
 
-						// 检查并消耗霜寒值
+						// 检查并消耗霜寒值（CD 门禁由 power JSON fail_aware 原生管理）
 						int currentMana = PowerUtils.getResourceValue(player, FormIdentifiers.SNOW_FOX_RESOURCE);
 						int manaCost = 15;
 						if (currentMana < manaCost) {
 							player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
+							FailAwareActiveSelfPower.markFail();
 							return;
 						}
 						PowerUtils.changeResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RESOURCE, -manaCost);
-						// 设置回复冷却（5秒）
-						PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_REGEN_COOLDOWN, 100);
-						// 设置CD显示资源（5秒 = 100tick）
-						PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RANGED_PRIMARY_CD, 100);
-
-						// 创建并发射冰球
+						// 设置回复冷却（默认5秒；balance abilities.frost_ball.regen_lock_ticks 可覆盖）
+						PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_REGEN_COOLDOWN,
+								frostBallBalance().i("regen_lock_ticks", FROST_BALL_REGEN_LOCK_TICKS));
+						// 创建并发射冰球（验收修复：恢复被误删的发射代码）
 						FrostBallEntity frostBall = new FrostBallEntity(player.getWorld(), player);
 						Vec3d lookVec = player.getRotationVec(1.0F);
 						frostBall.setDirection(lookVec);
@@ -364,6 +363,7 @@ public class SscAddonActions {
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity player) {
 						if (SkillBlocker.isSkillBlocked(player, "snow_fox", "ranged_secondary")) {
+							FailAwareActiveSelfPower.markFail();
 							return;
 						}
 						SnowFoxSpFrostStorm.startCharging(player);
@@ -396,9 +396,12 @@ public class SscAddonActions {
 						// 3. Force Pose
 						living.setPose(EntityPose.SLEEPING);
 
-						// 4. 设置CD显示资源
+// 4. 设置CD显示资源（P4：balance abilities.playing_dead.cooldown_ticks 可配，原写死 620；
+						//    常量统一引用 PlayDeadAbsorptionManager，消除双份维护）
 						if (living instanceof ServerPlayerEntity sp) {
-							PowerUtils.setResourceValueAndSync(sp, FormIdentifiers.SP_SECONDARY_CD, 620);
+							PowerUtils.setResourceValueAndSync(sp, FormIdentifiers.SP_SECONDARY_CD,
+									PLAY_DEAD_BAL.i("cooldown_ticks",
+											PlayDeadAbsorptionManager.PLAY_DEAD_CD_TICKS));
 						}
 
 					}
@@ -615,5 +618,18 @@ public class SscAddonActions {
 				}
 			}
 		}
+	}
+
+	/** 冰球 CD/回能锁的 balance 读取器（与命令侧同 scope：abilities.frost_ball）。 */
+	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader FROST_BALL_BAL =
+			new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.frost_ball");
+	private static final int FROST_BALL_REGEN_LOCK_TICKS = 100; // 默认 5秒回能锁；balance regen_lock_ticks 可覆盖（pin 锚点）
+
+	/** 装死 CD 读取器（与 PlayDeadAbsorptionManager 共用同 scope 读取器，单一事实源，避免双份维护）。 */
+	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader PLAY_DEAD_BAL =
+			net.jackcooper.shapeShifterCurseAddon.ability.PlayDeadAbsorptionManager.balanceReader();
+
+	private static net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader frostBallBalance() {
+		return FROST_BALL_BAL;
 	}
 }

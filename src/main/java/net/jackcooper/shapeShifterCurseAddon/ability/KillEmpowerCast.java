@@ -44,6 +44,11 @@ public final class KillEmpowerCast {
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
 			new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.kill_empower_cast");
+	// P4 补全：关环 CD 属蓝火环域（跨 scope 读取；pin 锚点常量）
+	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader RING_BAL =
+			new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.blue_fire_ring");
+	private static final int RING_OFF_CD_TICKS = 400;        // 关普通环 CD 默认（pin 锚点）
+	private static final int RING_OFF_AMULET_CD_TICKS = 560; // 关护符环 CD 默认（pin 锚点）
 
 	/** 赋能火环伤害跳（KillEmpowerManager 每 16t 调用一次；与正常环 effects_loop 同节奏同半径）。 */
 	public static void tickEmpowerRing(ServerPlayerEntity player) {
@@ -109,7 +114,9 @@ public final class KillEmpowerCast {
 			player.removeStatusEffect(SscAddon.BLUE_FIRE_RING);
 			boolean amuletRingOn = PowerUtils.getResourceValue(player, new Identifier("my_addon",
 					(redForm ? "form_familiar_fox_red" : "form_familiar_fox_sp") + "_blue_fire_ring_amulet_toggle_state")) == 1;
-			int ringCd = amuletRingOn ? 560 : 400;	// 关哪套环就进哪套 CD
+			int ringCd = amuletRingOn
+					? RING_BAL.i("ring_off_amulet_cooldown_ticks", RING_OFF_AMULET_CD_TICKS)
+					: RING_BAL.i("ring_off_cooldown_ticks", RING_OFF_CD_TICKS); // 关哪套环就进哪套 CD（P4：balance 可配）
 			PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SP_PRIMARY_CD, ringCd);
 			if (amuletRingOn) {
 				PowerUtils.setResourceValueAndSync(player, new Identifier("my_addon",

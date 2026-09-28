@@ -12,6 +12,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.power.FailAwareActiveSelfPower;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -38,6 +39,7 @@ public class SnowFoxSpTeleportAttack {
 	private static final int MANA_COST_FAIL = 20;
 	private static final int TELEPORT_INTERVAL = 10;
 	private static final float DAMAGE_REDUCTION = 0.65f;
+	private static final int TELEPORT_REGEN_LOCK_TICKS = 100; // 回能锁默认；balance regen_lock_ticks 可覆盖
 
 	// 阶段 5：服务端权威快照读取
 	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
@@ -50,10 +52,12 @@ public class SnowFoxSpTeleportAttack {
 
 	/**
 	 * 执行瞬移攻击
-	 * 注意：冷却由Apoli apoli:active_self power的cooldown字段管理(400tick成功/100tick失败)
+	 * 门禁：power JSON（my_addon:fail_aware_active_self）原生 cooldown / fail_cooldown 字段管理，
+	 * 本方法只负责效果与失败标记：无目标/蓝不够 → markFail()（按 fail_cooldown 进 CD）。
 	 */
 	public static boolean execute(ServerPlayerEntity player) {
 		if (ATTACKING_PLAYERS.containsKey(player.getUuid())) {
+			FailAwareActiveSelfPower.markFail();
 			return false;
 		}
 
@@ -61,6 +65,7 @@ public class SnowFoxSpTeleportAttack {
 				net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX);
 		if (currentMana < BAL.i("mana_cost_fail", MANA_COST_FAIL)) {
 			player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
+			FailAwareActiveSelfPower.markFail();
 			return false;
 		}
 
@@ -70,19 +75,20 @@ public class SnowFoxSpTeleportAttack {
 			player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0f, 1.0f);
 			net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.consume(player,
 					net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX, BAL.i("mana_cost_fail", MANA_COST_FAIL));
-			setRegenCooldown(player, 100);
+			setRegenCooldown(player, BAL.i("regen_lock_ticks", TELEPORT_REGEN_LOCK_TICKS));
+			FailAwareActiveSelfPower.markFail();
 			return false;
 		}
 
 		if (currentMana < BAL.i("mana_cost_success", MANA_COST_SUCCESS)) {
 			player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
+			FailAwareActiveSelfPower.markFail();
 			return false;
 		}
 
 		net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.consume(player,
 				net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX, BAL.i("mana_cost_success", MANA_COST_SUCCESS));
-		setRegenCooldown(player, 100);
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_MELEE_SECONDARY_CD, 400);
+		setRegenCooldown(player, BAL.i("regen_lock_ticks", TELEPORT_REGEN_LOCK_TICKS));
 
 		Vec3d originalPos = player.getPos();
 		float originalYaw = player.getYaw();

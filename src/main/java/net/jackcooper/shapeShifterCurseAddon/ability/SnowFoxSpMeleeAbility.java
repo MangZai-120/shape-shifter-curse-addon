@@ -12,6 +12,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.power.FailAwareActiveSelfPower;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -35,6 +36,7 @@ public class SnowFoxSpMeleeAbility {
 	private static final float DAMAGE = 8.0f;
 	private static final int FROST_FREEZE_DURATION = 60;
 	private static final int MANA_COST = 15;
+	private static final int MELEE_REGEN_LOCK_TICKS = 100; // 回能锁默认；balance regen_lock_ticks 可覆盖
 
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
@@ -47,7 +49,8 @@ public class SnowFoxSpMeleeAbility {
 
 	/**
 	 * 执行雪刺冲刺
-	 * 注意：冷却由Apoli apoli:active_self power的cooldown字段管理
+	 * 门禁：power JSON（my_addon:fail_aware_active_self）原生 cooldown 字段管理，
+	 * 本方法只负责效果与失败标记：蓝不够/冲刺中 → markFail()（按 fail_cooldown 进 CD）。
 	 */
 	public static boolean execute(ServerPlayerEntity player) {
 		if (!net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.consume(player,
@@ -55,15 +58,16 @@ public class SnowFoxSpMeleeAbility {
 			// 法力不足提示音仅施法者自己听（player.playSound 在服务端会排除自己，故改为定向发包）
 			net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkManager.playSoundToPlayer(
 					player, SoundEvents.BLOCK_FIRE_EXTINGUISH, 0.5f, 1.0f);
+			FailAwareActiveSelfPower.markFail();
 			return false;
 		}
 
 		if (DASHING_PLAYERS.containsKey(player.getUuid())) {
+			FailAwareActiveSelfPower.markFail();
 			return false;
 		}
 
-		PowerUtils.setResourceValueAndSync(player, REGEN_COOLDOWN_ID, 100);
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_MELEE_PRIMARY_CD, 120);
+		PowerUtils.setResourceValueAndSync(player, REGEN_COOLDOWN_ID, BAL.i("regen_lock_ticks", MELEE_REGEN_LOCK_TICKS));
 
 		Vec3d lookDir = player.getRotationVector().normalize();
 

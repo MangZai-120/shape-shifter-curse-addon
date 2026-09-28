@@ -1,5 +1,5 @@
 {
-    "type": "apoli:active_self",
+    "type": "my_addon:fail_aware_active_self",
     "entity_action": {
         "type": "ssc_addon:snow_fox_sp_frost_ball"
     },
@@ -21,7 +21,8 @@
             }
         ]
     },
-    "cooldown": 0,
+    "cooldown": 100,
+    "fail_cooldown": 60,
     "hud_render": {
         "should_render": false
     },

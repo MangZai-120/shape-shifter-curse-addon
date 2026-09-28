@@ -11,6 +11,7 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.jackcooper.shapeShifterCurseAddon.entity.FrostStormEntity;
+import net.jackcooper.shapeShifterCurseAddon.power.FailAwareActiveSelfPower;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -30,16 +31,16 @@ public class SnowFoxSpFrostStorm {
     }
     
     private static final ConcurrentHashMap<UUID, ChargingData> CHARGING_PLAYERS = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<UUID, Long> COOLDOWN_PLAYERS = new ConcurrentHashMap<>(); // 自定义CD跟踪
     
     private static final int CHARGE_TICKS = 30; // 默认 1.5秒蓄力；balance 可覆盖（abilities.snow_fox_sp_frost_storm）
     private static final double MAX_RANGE = 30.0; // 默认最大释放距离
     private static final int MANA_COST = 30; // 默认霜寒值消耗
+    private static final int REGEN_LOCK_TICKS = 100; // 默认 5秒回能锁；balance regen_lock_ticks 可覆盖
 
     // 阶段 5：服务端权威快照读取
     private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
             new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.snow_fox_sp_frost_storm");
-    //未使用: private static final int COOLDOWN = 600;  30秒CD = 600tick
+    //未使用: private static final int COOLDOWN = 600;  30秒CD = 600tick（CD 已回归 power JSON 原生管理）
     
     private static final Identifier RESOURCE_ID = new Identifier("my_addon", "form_snow_fox_sp_resource");
     private static final Identifier REGEN_COOLDOWN_ID = new Identifier("my_addon", "form_snow_fox_sp_frost_regen_cooldown_resource");
@@ -50,33 +51,24 @@ public class SnowFoxSpFrostStorm {
     public static boolean startCharging(ServerPlayerEntity player) {
         // 检查是否已经在蓄力
         if (CHARGING_PLAYERS.containsKey(player.getUuid())) {
+            FailAwareActiveSelfPower.markFail();
             return false;
         }
-        
-        // 检查自定义CD是否结束（使用服务端tick，多人环境一致）
-        long currentTick = player.getWorld().getTime();
-        Long cdEndTick = COOLDOWN_PLAYERS.get(player.getUuid());
-        if (cdEndTick != null && currentTick < cdEndTick) {
-            return false;
-        }
-        
+
         // 检查霜寒值
         int currentMana = getResourceValue(player);
         if (currentMana < BAL.i("mana_cost", MANA_COST)) {
             player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
+            FailAwareActiveSelfPower.markFail();
             return false;
         }
-        
+
         // 消耗霜寒值（在蓄力开始时就消耗）
         changeResourceValue(player, -BAL.i("mana_cost", MANA_COST));
-        // 设置回复冷却（5秒）
-        setRegenCooldown(player, 100);
-        // 设置技能CD（30秒 = 600tick，使用服务端tick保证多人一致性）
-        COOLDOWN_PLAYERS.put(player.getUuid(), currentTick + 600L);
-        // 设置CD显示资源（30秒 = 600tick）
-        PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RANGED_SECONDARY_CD, 600);
-        
-        // 开始蓄力
+        // 设置回复冷却（默认5秒；balance regen_lock_ticks 可覆盖）
+        setRegenCooldown(player, BAL.i("regen_lock_ticks", REGEN_LOCK_TICKS));
+
+        // 开始蓄力（CD 门禁由 power JSON fail_aware 原生管理）
         CHARGING_PLAYERS.put(player.getUuid(), new ChargingData(0));
         
         // 播放蓄力开始音效
@@ -102,7 +94,6 @@ public class SnowFoxSpFrostStorm {
      */
     public static void clearPlayer(java.util.UUID uuid) {
         CHARGING_PLAYERS.remove(uuid);
-        COOLDOWN_PLAYERS.remove(uuid);
     }
 
     /**
@@ -113,10 +104,9 @@ public class SnowFoxSpFrostStorm {
         CHARGING_PLAYERS.clear();
     }
 
-    /** A new server has a new tick clock; discard cooldowns left by the previous world. */
+    /** A new server has a new tick clock; discard states left by the previous world. */
     public static void resetForServerStart() {
         clearAll();
-        COOLDOWN_PLAYERS.clear();
     }
     
     /**

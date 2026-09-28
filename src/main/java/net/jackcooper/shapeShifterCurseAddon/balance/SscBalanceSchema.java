@@ -198,13 +198,19 @@ public final class SscBalanceSchema {
                 .doubleParam("necklace_absorb_max", 40.0, 0.0, 1000.0, EF + "PlayingDeadEffect", "NECKLACE_ABSORB_MAX")
                 .intParam("retain_ticks", 600, 20, 4800, AB + "PlayDeadAbsorptionManager", "RETAIN_TICKS")
                 .intParam("decay_interval", 20, 1, 200, AB + "PlayDeadAbsorptionManager", "DECAY_INTERVAL")
-                .doubleParam("decay_per_sec", 2.0, 0.0, 100.0, AB + "PlayDeadAbsorptionManager", "DECAY_PER_SEC");
-        // 蓝火环（BlueFireRingEffect）
+                .doubleParam("decay_per_sec", 2.0, 0.0, 100.0, AB + "PlayDeadAbsorptionManager", "DECAY_PER_SEC")
+                // P4 补全：装死 CD 显示（此前写死 620 于 SscAddonActions）与提前结束 500（SscAddonNetworking）
+                .intParam("cooldown_ticks", 620, 0, 72000, AB + "PlayDeadAbsorptionManager", "PLAY_DEAD_CD_TICKS")
+                .intParam("early_end_cooldown_ticks", 500, 0, 72000, AB + "PlayDeadAbsorptionManager", "PLAY_DEAD_EARLY_END_CD_TICKS");
+        // 蓝火环（blueFireRingEffect）
         b.scope("abilities.blue_fire_ring")
                 .doubleParam("freeze_chance", 0.06, 0.0, 1.0, EF + "BlueFireRingEffect", "FREEZE_CHANCE")
                 .doubleParam("freeze_radius_default", 6.0, 0.5, 32.0, EF + "BlueFireRingEffect", "FREEZE_RADIUS_DEFAULT")
                 .doubleParam("freeze_radius_amulet", 3.6, 0.5, 32.0, EF + "BlueFireRingEffect", "FREEZE_RADIUS_AMULET")
-                .intParam("attack_interval", 16, 1, 100, EF + "BlueFireRingEffect", "ATTACK_INTERVAL");
+                .intParam("attack_interval", 16, 1, 100, EF + "BlueFireRingEffect", "ATTACK_INTERVAL")
+                // P4 补全：关环 CD（此前写死 400/560 于 KillEmpowerCast）
+                .intParam("ring_off_cooldown_ticks", 400, 0, 72000, AB + "KillEmpowerCast", "RING_OFF_CD_TICKS")
+                .intParam("ring_off_amulet_cooldown_ticks", 560, 0, 72000, AB + "KillEmpowerCast", "RING_OFF_AMULET_CD_TICKS");
         // 咒印效果（CurseMarkEffect）
         b.scope("abilities.curse_mark")
                 .doubleParam("taken_base", 0.2, 0.0, 2.0, EF + "CurseMarkEffect", "BASE_BONUS")
@@ -226,7 +232,9 @@ public final class SscBalanceSchema {
         b.scope("abilities.frost_ball")
                 .doubleParam("speed", 0.75, 0.05, 4.0, EN + "FrostBallEntity", "SPEED")
                 .doubleParam("max_distance", 50.0, 4.0, 256.0, EN + "FrostBallEntity", "MAX_DISTANCE")
-                .intParam("frost_fall_duration", 80, 1, 1200, EN + "FrostBallEntity", "FROST_FALL_DURATION");
+                .intParam("frost_fall_duration", 80, 1, 1200, EN + "FrostBallEntity", "FROST_FALL_DURATION")
+                // 回能锁（主 CD 已回归 power JSON fail_aware_active_self 原生管理）
+                .intParam("regen_lock_ticks", 100, 0, 1200, "action.SscAddonActions", "FROST_BALL_REGEN_LOCK_TICKS");
         b.scope("abilities.frost_storm")
                 .intParam("duration", 200, 20, 4800, EN + "FrostStormEntity", "DURATION")
                 .doubleParam("damage_radius", 3.5, 0.5, 16.0, EN + "FrostStormEntity", "DAMAGE_RADIUS")
@@ -285,7 +293,9 @@ public final class SscBalanceSchema {
                 .doubleParam("dash_speed", 1.5, 0.1, 8.0, AB + "SnowFoxSpMeleeAbility", "DASH_SPEED")
                 .doubleParam("damage", 8.0, 0.0, 1000.0, AB + "SnowFoxSpMeleeAbility", "DAMAGE")
                 .intParam("freeze_ticks", 60, 0, 1200, AB + "SnowFoxSpMeleeAbility", "FROST_FREEZE_DURATION")
-                .intParam("mana_cost", 15, 0, 100, AB + "SnowFoxSpMeleeAbility", "MANA_COST");
+                .intParam("mana_cost", 15, 0, 100, AB + "SnowFoxSpMeleeAbility", "MANA_COST")
+                // 回能锁（CD 已回归 power JSON fail_aware_active_self 原生管理）
+                .intParam("regen_lock_ticks", 100, 0, 1200, AB + "SnowFoxSpMeleeAbility", "MELEE_REGEN_LOCK_TICKS");
         b.scope("abilities.snow_fox_sp_teleport")         // SnowFoxSpTeleportAttack：瞬移攻击
                 .doubleParam("range", 10.0, 1.0, 64.0, AB + "SnowFoxSpTeleportAttack", "RANGE")
                 .intParam("max_targets", 3, 1, 16, AB + "SnowFoxSpTeleportAttack", "MAX_TARGETS")
@@ -294,11 +304,15 @@ public final class SscBalanceSchema {
                 .intParam("mana_cost_success", 30, 0, 100, AB + "SnowFoxSpTeleportAttack", "MANA_COST_SUCCESS")
                 .intParam("mana_cost_fail", 20, 0, 100, AB + "SnowFoxSpTeleportAttack", "MANA_COST_FAIL")
                 .intParam("teleport_interval", 10, 1, 100, AB + "SnowFoxSpTeleportAttack", "TELEPORT_INTERVAL")
-                .doubleParam("damage_reduction", 0.65, 0.0, 1.0, AB + "SnowFoxSpTeleportAttack", "DAMAGE_REDUCTION");
+                .doubleParam("damage_reduction", 0.65, 0.0, 1.0, AB + "SnowFoxSpTeleportAttack", "DAMAGE_REDUCTION")
+                // 回能锁（CD 已回归 power JSON fail_aware_active_self 原生管理：cooldown=成功 / fail_cooldown=失败）
+                .intParam("regen_lock_ticks", 100, 0, 1200, AB + "SnowFoxSpTeleportAttack", "TELEPORT_REGEN_LOCK_TICKS");
         b.scope("abilities.snow_fox_sp_frost_storm")      // SnowFoxSpFrostStorm：冰风暴
                 .intParam("charge_ticks", 30, 1, 200, AB + "SnowFoxSpFrostStorm", "CHARGE_TICKS")
                 .doubleParam("max_range", 30.0, 1.0, 128.0, AB + "SnowFoxSpFrostStorm", "MAX_RANGE")
-                .intParam("mana_cost", 30, 0, 100, AB + "SnowFoxSpFrostStorm", "MANA_COST");
+                .intParam("mana_cost", 30, 0, 100, AB + "SnowFoxSpFrostStorm", "MANA_COST")
+                // 回能锁（主 CD 已回归 power JSON fail_aware_active_self 原生管理）
+                .intParam("regen_lock_ticks", 100, 0, 1200, AB + "SnowFoxSpFrostStorm", "REGEN_LOCK_TICKS");
         b.scope("abilities.frost_spike_manager")          // FrostSpikeManager：寒棘狐冰刺
                 .intParam("charge_interval", 24, 1, 200, AB + "FrostSpikeManager", "CHARGE_INTERVAL")
                 .intParam("max_thorns", 5, 1, 5, AB + "FrostSpikeManager", "MAX_THORNS")
@@ -415,6 +429,8 @@ public final class SscBalanceSchema {
                 .doubleParam("slow_ratio", 0.20, 0.0, 1.0, AB + "NightmareFearManager", "FEAR_SLOW_RATIO")
                 .intParam("mob_aggro_window_ticks", 40, 1, 200, AB + "NightmareFearManager", "MOB_AGGRO_WINDOW_TICKS")
                 .doubleParam("sight_radius", 16.0, 1.0, 64.0, AB + "NightmareFearManager", "FEAR_SIGHT_RADIUS")
+                // P4 补全：堕落悦灵恶翼 vex 存续钉住/最后一个消失时的 CD（此前写死 400 于 FallenAllayVexMixin）
+                .intParam("vex_cd_ticks", 400, 0, 72000, AB + "NightmareFearManager", "VEX_CD_TICKS")
                 .intParam("reveal_on_attack_ticks", 30, 1, 200, AB + "NightmareFearManager", "REVEAL_ON_ATTACK_TICKS");
         b.scope("abilities.nightmare_spook")               // NightmareSpookManager：惊吓
                 .intParam("cooldown_ticks", 160, 20, 2400, AB + "NightmareSpookManager", "SPOOK_COOLDOWN_TICKS")
@@ -547,7 +563,9 @@ public final class SscBalanceSchema {
                 .doubleParam("knockback_strength", 0.5, 0.0, 4.0, AB + "GoldenSandstormCounterBurst", "KNOCKBACK_STRENGTH")
                 .intParam("wither_duration", 100, 1, 1200, AB + "GoldenSandstormCounterBurst", "WITHER_DURATION")
                 .intParam("wither_amplifier", 0, 0, 5, AB + "GoldenSandstormCounterBurst", "WITHER_AMPLIFIER")
-                .intParam("cooldown_ticks", 300, 20, 4800, AB + "GoldenSandstormCounterBurst", "COOLDOWN_TICKS");
+                .intParam("cooldown_ticks", 300, 20, 4800, AB + "GoldenSandstormCounterBurst", "COOLDOWN_TICKS")
+                // P4 补全：侵蚀烙印引爆 CD（此前写死 200 于 GoldenSandstormDetonate，未登记会致读取抛异常）
+                .intParam("detonate_cooldown_ticks", 200, 0, 72000, AB + "GoldenSandstormDetonate", "COOLDOWN_TICKS");
         b.scope("abilities.golden_sandstorm_regen")        // GoldenSandstormRegen
                 .doubleParam("wither_tick_heal", 1.0, 0.0, 100.0, AB + "GoldenSandstormRegen", "WITHER_TICK_HEAL")
                 .doubleParam("kill_heal", 4.0, 0.0, 100.0, AB + "GoldenSandstormRegen", "KILL_HEAL")
@@ -604,13 +622,17 @@ public final class SscBalanceSchema {
                 .doubleParam("tether_pull_gain", 0.2, 0.0, 4.0, AB + "SpiderMoonWeaverSwingManager", "TETHER_PULL_GAIN")
                 .doubleParam("tether_hard_gain", 0.8, 0.0, 4.0, AB + "SpiderMoonWeaverSwingManager", "TETHER_HARD_GAIN")
                 .doubleParam("min_rope_len", 1.5, 0.5, 8.0, AB + "SpiderMoonWeaverSwingManager", "MIN_ROPE_LEN")
-                .doubleParam("reel_speed", 0.16, 0.01, 2.0, AB + "SpiderMoonWeaverSwingManager", "REEL_SPEED");
+                .doubleParam("reel_speed", 0.16, 0.01, 2.0, AB + "SpiderMoonWeaverSwingManager", "REEL_SPEED")
+                // P3 切片：摆荡 miss/断丝 CD（此前写死 100 两处）
+                .intParam("break_cooldown_ticks", 100, 0, 72000, AB + "SpiderMoonWeaverSwingManager", "BREAK_COOLDOWN_TICKS");
         b.scope("abilities.moon_weaver_web")               // SpiderMoonWeaverWebManager：结网
                 .intParam("max_ticks", 60, 1, 600, AB + "SpiderMoonWeaverWebManager", "MAX_TICKS")
                 .intParam("tier1_ticks", 20, 1, 200, AB + "SpiderMoonWeaverWebManager", "TIER1_TICKS")
                 .intParam("tier2_ticks", 40, 1, 200, AB + "SpiderMoonWeaverWebManager", "TIER2_TICKS")
                 .doubleParam("start_mana", 6.0, 0.0, 100.0, AB + "SpiderMoonWeaverWebManager", "START_MANA")
-                .doubleParam("mana_per_tick", 0.25, 0.0, 10.0, AB + "SpiderMoonWeaverWebManager", "MANA_PER_TICK");
+                .doubleParam("mana_per_tick", 0.25, 0.0, 10.0, AB + "SpiderMoonWeaverWebManager", "MANA_PER_TICK")
+                // P3 切片：释放后 CD = tier × cd_ticks_per_tier（此前写死 tier*20）
+                .intParam("cd_ticks_per_tier", 20, 0, 2400, AB + "SpiderMoonWeaverWebManager", "CD_TICKS_PER_TIER");
 
         // —— 寄生果蝠组 ——
         b.scope("abilities.infection_spore")               // InfectionSporeManager：感染孢子

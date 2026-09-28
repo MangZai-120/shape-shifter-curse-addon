@@ -429,8 +429,9 @@ public class SscAddonNetworking {
 				player.removeStatusEffect(net.minecraft.entity.effect.StatusEffects.BLINDNESS);
 				player.removeStatusEffect(net.minecraft.entity.effect.StatusEffects.SLOWNESS);
 				player.setPose(net.minecraft.entity.EntityPose.STANDING);
-				// 提前结束：CD 从此刻起算 25 秒
-				net.jackcooper.shapeShifterCurseAddon.util.PowerUtils.setResourceValueAndSync(player, net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SP_SECONDARY_CD, 500);
+				// 提前结束：CD 从此刻起算 25 秒（balance abilities.playing_dead.early_end_cooldown_ticks 可配；正常结束走 cooldown_ticks=620）
+				net.jackcooper.shapeShifterCurseAddon.util.PowerUtils.setResourceValueAndSync(player, net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SP_SECONDARY_CD,
+						net.jackcooper.shapeShifterCurseAddon.ability.PlayDeadAbsorptionManager.earlyEndCdTicks());
 			});
 		});
 

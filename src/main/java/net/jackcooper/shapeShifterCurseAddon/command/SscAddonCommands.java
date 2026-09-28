@@ -1048,10 +1048,6 @@ default -> {
 	}
 
 	private static boolean invokeSnowFoxFrostBall(ServerPlayerEntity player) {
-		if (PowerUtils.getResourceValue(player, FormIdentifiers.SNOW_FOX_RANGED_PRIMARY_CD) > 0) {
-			return false;
-		}
-
 		int manaCost = 10;
 		int currentMana = PowerUtils.getResourceValue(player, FormIdentifiers.SNOW_FOX_RESOURCE);
 		if (currentMana >= manaCost) {
@@ -1059,7 +1055,6 @@ default -> {
 		} else {
 			return false;
 		}
-		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.SNOW_FOX_RANGED_PRIMARY_CD, 100);
 
 		FrostBallEntity frostBall = new FrostBallEntity(player.getWorld(), player);
 		Vec3d lookDir = player.getRotationVector().normalize();
@@ -1070,5 +1065,13 @@ default -> {
 		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
 			SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.PLAYERS, 0.5f, 1.2f);
 		return true;
+	}
+
+	/** 冰球 CD 的 balance 读取器（与 action 侧同 scope：abilities.frost_ball）。 */
+	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader FROST_BALL_BAL =
+			new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.frost_ball");
+
+	private static net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader frostBallBalance() {
+		return FROST_BALL_BAL;
 	}
 }

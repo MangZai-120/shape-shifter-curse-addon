@@ -25,7 +25,8 @@ import java.util.List;
 
 public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 
-	private static final int COOLDOWN_TICKS = 240; // 12 seconds
+	private static final int COOLDOWN_TICKS = 240; // 12 seconds（power JSON 未写 cooldown 时的工厂默认）
+	private final int configuredCooldownTicks; // 实际生效：power JSON cooldown 参数（与主能力共享 CD 域同源）
 	private static final int STUN_DELAY_TICKS = 20; // 1 second
 	private int ticksSinceDash = 0;
 	private boolean isWaitingForStun = false;
@@ -35,6 +36,7 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 	public TrueInvisibilityDashAbilityPower(PowerType<?> type, LivingEntity entity, int cooldownAfter, HudRender hudRender, Active.Key key) {
 		super(type, entity, cooldownAfter, hudRender, (e) -> {
 		});
+		this.configuredCooldownTicks = cooldownAfter;
 		this.setKey(key);
 		this.setTicking(true);
 	}
@@ -68,7 +70,7 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 	 * Apply internal cooldown (called from TrueInvisibilityAbilityPower)
 	 */
 	public void applyInternalCooldown() {
-		internalCooldownEndTime = entity.getWorld().getTime() + COOLDOWN_TICKS;
+		internalCooldownEndTime = entity.getWorld().getTime() + configuredCooldownTicks;
 	}
 
 	@Override
