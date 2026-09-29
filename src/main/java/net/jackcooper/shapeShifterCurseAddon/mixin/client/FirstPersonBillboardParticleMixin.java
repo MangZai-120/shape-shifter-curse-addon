@@ -1,6 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin.client;
 
 import me.shedaniel.autoconfig.AutoConfig;
+import net.jackcooper.shapeShifterCurseAddon.client.particle.AsyncParticleCompatibility;
 import net.jackcooper.shapeShifterCurseAddon.client.particle.OwnedDecoration;
 import net.jackcooper.shapeShifterCurseAddon.client.particle.ParticleAvoidance;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
@@ -46,7 +47,13 @@ public abstract class FirstPersonBillboardParticleMixin extends Particle impleme
         if (client.player == null || camera.getFocusedEntity() != client.player
                 || !client.options.getPerspective().isFirstPerson() || camera.isThirdPerson()
                 || !owner.equals(client.player.getUuid())) return 1;
-        var strength = AutoConfig.getConfigHolder(SSCAddonClientConfig.class).getConfig().firstPersonParticleAvoidance;
+        // 帧级缓存优先：渲染 pass 内由 AsyncParticleCompatibility.snapshotStrength 快照，
+        // 免逐粒子走 AutoConfig 读取链（spark 实测该项占本方法 self 时间近半）；
+        // 缓存未初始化（如 pass 窗口外的调用）回落直读，行为不变
+        ParticleAvoidance.Strength strength = AsyncParticleCompatibility.frameStrength();
+        if (strength == null) {
+            strength = AutoConfig.getConfigHolder(SSCAddonClientConfig.class).getConfig().firstPersonParticleAvoidance;
+        }
         if (strength == null || strength == ParticleAvoidance.Strength.OFF) return 1;
         var eye = camera.getPos();
         double dx = MathHelper.lerp(tickDelta, prevPosX, x) - eye.x;

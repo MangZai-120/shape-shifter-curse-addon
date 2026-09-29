@@ -48,7 +48,25 @@ public final class AsyncParticleCompatibility {
     }
 
     public static void begin(Camera currentCamera, float delta) { camera = currentCamera; tickDelta = delta; }
-    public static void end() { camera = null; }
+
+    /** 帧结束/新帧开始：相机与强度快照一并失效（OFF 配置路径不快照，残留旧值会让规避在关档后继续生效）。 */
+    public static void end() { camera = null; frameStrength = null; }
+
+    // 帧级规避强度缓存（2026-09-29 性能优化）：cameraVisibility 逐粒子调用时
+    // AutoConfig.getConfigHolder(...).getConfig() 的读取链在 spark 档案里占 self 时间近半；
+    // 一帧内配置不可能变（改配置要进 GUI，必然跨帧），begin() 时读一次、帧内直读静态字段。
+    // volatile：与 camera 同理，防 AsyncParticles 工作线程读到撕裂/过期值。
+    private static volatile ParticleAvoidance.Strength frameStrength;
+
+    /** 当前帧的规避强度（begin 窗口外或配置缺失返回 null，调用方回落直读）。 */
+    public static ParticleAvoidance.Strength frameStrength() {
+        return frameStrength;
+    }
+
+    /** 渲染帧开始时快照一次规避强度（null = 规避关闭/不可用，本帧不再查配置）。 */
+    public static void snapshotStrength(ParticleAvoidance.Strength strength) {
+        frameStrength = strength;
+    }
 
     public static Set<Particle> syncBatch(Map<ParticleTextureSheet, Set<Particle>> queues,
                                           ParticleTextureSheet sheet, Set<Particle> original) {

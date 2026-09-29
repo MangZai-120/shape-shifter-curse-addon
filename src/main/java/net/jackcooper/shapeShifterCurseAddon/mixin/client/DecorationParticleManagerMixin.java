@@ -20,6 +20,7 @@ import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -35,6 +36,30 @@ import java.util.Queue;
 public abstract class DecorationParticleManagerMixin {
     @Shadow @Final private Map<ParticleTextureSheet, Queue<Particle>> particles;
     @Unique private Map<ParticleTextureSheet, Queue<Particle>> ssca$frameParticles;
+
+    // Iris 延迟管线下 renderParticles 每帧被调两次（不透明/半透明 pass），且两次间相机与粒子
+    // 队列都不变（渲染帧内不 tick）。帧级复用：相机值 + tick + tickDelta 全等时直接复用上一次
+    // 路由结果，把第二遍全粒子扫描 + cameraVisibility 计算全省掉（spark 实测双 pass 各占 ~1.1%）。
+    // 必须比对相机「值」而非引用——vanilla 每帧复用同一 Camera 实例原地 update，identity 恒等。
+    @Unique private Camera ssca$routingCamera;
+    @Unique private Vec3d ssca$routingEye;
+    @Unique private float ssca$routingYaw, ssca$routingPitch, ssca$routingDelta;
+    @Unique private long ssca$routingTick = Long.MIN_VALUE;
+    @Unique private Map<ParticleTextureSheet, Queue<Particle>> ssca$routingResult;
+
+    /** 该次调用的相机状态与上次路由完全一致（同一渲染帧的重复 pass）时返回 true。 */
+    @Unique
+    private boolean ssca$sameFrameState(Camera camera, float tickDelta) {
+        return ssca$routingResult != null
+                && ssca$routingTick == client().world.getTime()
+                && ssca$routingDelta == tickDelta
+                && camera == ssca$routingCamera
+                && camera.getYaw() == ssca$routingYaw && camera.getPitch() == ssca$routingPitch
+                && camera.getPos().equals(ssca$routingEye);
+    }
+
+    @Unique
+    private static MinecraftClient client() { return MinecraftClient.getInstance(); }
 
     // Tag before AsyncParticles chooses a CPU/GPU queue; also covers directly created particles.
     @Inject(method = "addParticle(Lnet/minecraft/client/particle/Particle;)V", at = @At("HEAD"))
@@ -61,16 +86,31 @@ public abstract class DecorationParticleManagerMixin {
                                               CallbackInfo ci) {
         ssca$frameParticles = null;
         AsyncParticleCompatibility.end();
-        var client = MinecraftClient.getInstance();
+        var client = client();
         if (client.player == null || camera.getFocusedEntity() != client.player || camera.isThirdPerson()
                 || !client.options.getPerspective().isFirstPerson()
                 || AutoConfig.getConfigHolder(SSCAddonClientConfig.class).getConfig().firstPersonParticleAvoidance
                     == ParticleAvoidance.Strength.OFF) return;
         AsyncParticleCompatibility.begin(camera, tickDelta);
-        ssca$frameParticles = ParticleRenderRouting.forFrame(particles,
+        // OFF 检查已过：本帧快照一次强度，cameraVisibility 帧内直读（end() 会连同失效）
+        AsyncParticleCompatibility.snapshotStrength(
+                AutoConfig.getConfigHolder(SSCAddonClientConfig.class).getConfig().firstPersonParticleAvoidance);
+        // 同一渲染帧的重复 pass：相机值/队列都没变，直接复用上一 pass 的路由结果
+        if (ssca$sameFrameState(camera, tickDelta)) {
+            ssca$frameParticles = ssca$routingResult;
+            return;
+        }
+        ssca$routingResult = ParticleRenderRouting.forFrame(particles,
                 ParticleTextureSheet.PARTICLE_SHEET_OPAQUE, ParticleTextureSheet.PARTICLE_SHEET_LIT,
                 ParticleTextureSheet.PARTICLE_SHEET_TRANSLUCENT,
                 p -> p instanceof OwnedDecoration owned && owned.ssca$cameraVisibility(camera, tickDelta) < 1);
+        ssca$frameParticles = ssca$routingResult;
+        ssca$routingCamera = camera;
+        ssca$routingEye = camera.getPos();
+        ssca$routingYaw = camera.getYaw();
+        ssca$routingPitch = camera.getPitch();
+        ssca$routingDelta = tickDelta;
+        ssca$routingTick = client.world.getTime();
     }
 
     @ModifyExpressionValue(method = "renderParticles", at = @At(value = "FIELD",
@@ -102,6 +142,7 @@ public abstract class DecorationParticleManagerMixin {
                                         LightmapTextureManager lightmap, Camera camera, float tickDelta,
                                         CallbackInfo ci) {
         ssca$frameParticles = null;
+        // 复用缓存保留到下一次 HEAD：第二 pass 直接命中；下一次真正的渲染帧因相机值变化自然失效
         AsyncParticleCompatibility.end();
     }
 }

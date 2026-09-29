@@ -55,6 +55,60 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 	private static final Identifier TEX_BAR_EMPTY = new Identifier("ssc_addon", "textures/gui/spell_hud_bar_empty.png");
 	private static final Identifier TEX_BAR_FULL = new Identifier("ssc_addon", "textures/gui/spell_hud_bar_full.png");
 
+	/**
+	 * 每 tick 数据快照（2026-09-29 性能优化）：spark 档案实测本 HUD 1.96% 中近半是
+	 * 每帧 NBT 解析链（getScroll 的 NbtList 遍历 + ItemStack.fromNbt 拷贝、getMana/getMaxMana、
+	 * sumCooldownMultiplier 的法阵遍历）。这些值每 tick 至多变一次（CD 剩余本就按 tick 步进显示），
+	 * 按 (world 引用, book 引用, tick) 三元组缓存——服务端同步走 ItemStack 整体替换、引用必变；
+	 * 本地 GUI 改动（取放卷轴/换书）发生在 tick 边界且 getEquippedBook 每 tick 重扫，引用同样会变。
+	 */
+	private static final class TickSnapshot {
+		final int mana;
+		final int maxMana;
+		final int prev;
+		final int next;
+		final ItemStack selScroll;
+		final ItemStack prevScroll;
+		final ItemStack nextScroll;
+
+		TickSnapshot(int mana, int maxMana, int prev, int next,
+				ItemStack selScroll, ItemStack prevScroll, ItemStack nextScroll) {
+			this.mana = mana;
+			this.maxMana = maxMana;
+			this.prev = prev;
+			this.next = next;
+			this.selScroll = selScroll;
+			this.prevScroll = prevScroll;
+			this.nextScroll = nextScroll;
+		}
+	}
+
+	private static Object snapWorld;
+	private static ItemStack snapBook;
+	private static long snapTick = Long.MIN_VALUE;
+	private static TickSnapshot snapshot;
+
+	private static TickSnapshot snapshotOf(MinecraftClient mc, ItemStack book, int sel) {
+		if (snapWorld == mc.world && snapBook == book && snapTick == mc.world.getTime() && snapshot != null) {
+			return snapshot;
+		}
+		int prev = SpellbookData.nextFilledSlot(book, sel, -1);
+		int next = SpellbookData.nextFilledSlot(book, sel, +1);
+		// 与主流程同规则：无任何卷轴时三槽都读当前选中位（-1 只作哨兵，不参与 getScroll）
+		if (prev < 0 || next < 0) {
+			prev = sel;
+			next = sel;
+		}
+		TickSnapshot fresh = new TickSnapshot(
+				SpellbookData.getMana(book), SpellbookData.getMaxMana(book), prev, next,
+				SpellbookData.getScroll(book, sel), SpellbookData.getScroll(book, prev), SpellbookData.getScroll(book, next));
+		snapWorld = mc.world;
+		snapBook = book;
+		snapTick = mc.world.getTime();
+		snapshot = fresh;
+		return fresh;
+	}
+
 	@Override
 	public void onHudRender(DrawContext ctx, float tickDelta) {
 		MinecraftClient mc = MinecraftClient.getInstance();
@@ -74,10 +128,10 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 		if (sel >= count) {
 			sel = 0;
 		}
-		// 左右槽 = 沿非空槽推导的上一/下一技能（与 cycleSelected 同逻辑，空槽不参与循环）。
-		// 全空时不再隐藏整个 UI：改画三槽空白框 + 法力条（空槽有 filled 空白框覆盖层，与空槽设计一致）
-		int prev = SpellbookData.nextFilledSlot(book, sel, -1);
-		int next = SpellbookData.nextFilledSlot(book, sel, +1);
+		// 本 tick 数据快照：mana/前后槽/三槽卷轴全部一次读齐，帧间不再走 NBT 解析链
+		TickSnapshot snap = snapshotOf(mc, book, sel);
+		int prev = snap.prev;
+		int next = snap.next;
 		boolean allEmpty = prev < 0 || next < 0;
 		if (allEmpty) {
 			prev = next = sel; // 全空：三槽都画当前选中位（全为空白框）
@@ -95,8 +149,8 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 		RenderSystem.defaultBlendFunc();
 
 		// 法力条：空条(底,含金框与中心装饰)始终画满宽，满条按法力%从左裁剪叠上
-		int mana = SpellbookData.getMana(book);
-		int maxMana = SpellbookData.getMaxMana(book);
+		int mana = snap.mana;
+		int maxMana = snap.maxMana;
 		int barW = 76, barH = 10;
 		int barX = baseX - 7, barY = baseY - 14; // 76px 条相对三槽(中心 baseX+31)居中：left=中心-38=baseX-7
 		ctx.drawTexture(TEX_BAR_EMPTY, barX, barY, 0, 0, barW, barH, barW, barH);
@@ -106,15 +160,15 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 		}
 		ctx.drawText(mc.textRenderer, Text.literal(mana + "/" + maxMana), barX + barW + 4, barY + 1, 0xC8B0FF, true);
 
-		// 三槽：中槽(22)居中，左右小槽(16)相对中槽对称分布，间隙均为 4px
-		drawSlot(ctx, mc, book, prev, baseX, baseY + 3, 16, false);
-		drawSlot(ctx, mc, book, next, baseX + 46, baseY + 3, 16, false);
-		drawSlot(ctx, mc, book, sel, baseX + 20, baseY, 22, true);
+		// 三槽：中槽(22)居中，左右小槽(16)相对中槽对称分布，间隙均为 4px（卷轴读快照，帧间零 NBT）
+		drawSlot(ctx, mc, book, prev, baseX, baseY + 3, 16, false, snap.prevScroll);
+		drawSlot(ctx, mc, book, next, baseX + 46, baseY + 3, 16, false, snap.nextScroll);
+		drawSlot(ctx, mc, book, sel, baseX + 20, baseY, 22, true, snap.selScroll);
 
 		RenderSystem.disableBlend();
 
 		// 当前魔法名（白色普通文字，三槽正下方居中显示，可左右超出范围）+ 剩余 cd + 施放档位
-		ItemStack scroll = SpellbookData.getScroll(book, sel);
+		ItemStack scroll = snap.selScroll;
 		Spell spell = ScrollData.getSpell(scroll);
 		if (spell != null) {
 			int centerX = baseX + 31; // 选择器中心（= 中槽中心）
@@ -141,8 +195,9 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 		}
 	}
 
-	private void drawSlot(DrawContext ctx, MinecraftClient mc, ItemStack book, int slot, int x, int y, int size, boolean big) {
-		ItemStack scroll = SpellbookData.getScroll(book, slot);
+	/** 卷轴由调用方从 tick 快照传入（slot 参数仅用于日志/调试语义，不再现查 NBT）。 */
+	private void drawSlot(DrawContext ctx, MinecraftClient mc, ItemStack book, int slot, int x, int y, int size, boolean big,
+			ItemStack scroll) {
 		Spell spell = ScrollData.getSpell(scroll);
 		int fs = size + 2; // 含 1px 外框，在内容区左上外扩 1px 绘制
 		// 固定三层（底→顶）：空白 → 技能图标(有魔法才画) → 有东西
