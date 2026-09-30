@@ -47,9 +47,4 @@ public final class PocketSpaceSpell extends Spell {
 		PocketSpaceManager.enterNow(caster, scroll.getNbt().getUuid(PocketSpaceStorage.SCROLL_ID));
 	}
 
-	@Override
-	public String getInBookTooltipKey() { return "item.ssc_addon.magic_scroll.tip_in_book_pocket"; }
-
-	@Override
-	public String getSoloTooltipKey() { return "item.ssc_addon.magic_scroll.tip_solo_pocket"; }
 }

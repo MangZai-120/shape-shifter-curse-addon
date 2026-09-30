@@ -64,13 +64,4 @@ public class LunarMendSpell extends Spell {
 		}
 	}
 
-	@Override
-	public String getInBookTooltipKey() {
-		return "item.ssc_addon.magic_scroll.tip_in_book_heal";
-	}
-
-	@Override
-	public String getSoloTooltipKey() {
-		return "item.ssc_addon.magic_scroll.tip_solo_heal";
-	}
 }

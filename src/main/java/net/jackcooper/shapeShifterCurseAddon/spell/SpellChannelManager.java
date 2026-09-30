@@ -317,6 +317,7 @@ public final class SpellChannelManager {
 	}
 
 	private static void playChargeSound(Channel channel) {
+		if (channel.spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.DeathFinaleSpell) return;
 		if (channel.spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.DomainSpell) return;
 		// 蓄力嗡嗡声已迁至客户端循环音实例（SpellChargeSoundInstance，HUD STATE 沿驱动，
 		// 可截断/可淡出/可立即停）；服务端只保留起手信标激活一次性短音。

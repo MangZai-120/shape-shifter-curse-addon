@@ -683,6 +683,7 @@ public class SscAddon implements ModInitializer {
 		net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.init();
 		net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.init();
 		net.jackcooper.shapeShifterCurseAddon.spell.ExplosionManager.init(); // 爆裂魔法：锁点后 35 秒蓄力演出，完成时服务端爆炸
+		net.jackcooper.shapeShifterCurseAddon.spell.DeathFinaleManager.init();
 		net.jackcooper.shapeShifterCurseAddon.ability.LunarSpiritTargetLink.init(); // 月灵目标联动（主人打谁月灵打谁，召唤系）
 		net.jackcooper.shapeShifterCurseAddon.ability.CompanionResonanceManager.init(); // 伙伴共鸣伤害增益到期清理（召唤系）
 		SeedEnergyEatingHandler.register();

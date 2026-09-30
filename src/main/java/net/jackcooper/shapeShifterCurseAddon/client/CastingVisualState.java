@@ -49,6 +49,7 @@ public final class CastingVisualState {
 		int schoolColor;
 		int rarityColor;
 		boolean explosion;
+		boolean deathFinale;
 
 		Entry(long receivedAt, long expiresAt) {
 			this.receivedAt = receivedAt;
@@ -66,7 +67,9 @@ public final class CastingVisualState {
 			boolean armPose = active && buf.readBoolean();
 			int schoolColor = active ? buf.readInt() : 0;
 			int rarityColor = active ? buf.readInt() : 0;
-			boolean explosion = active && buf.readIdentifier().equals(new net.minecraft.util.Identifier("ssc_addon", "explosion"));
+			var spellId = active ? buf.readIdentifier() : null;
+			boolean explosion = spellId != null && spellId.equals(new net.minecraft.util.Identifier("ssc_addon", "explosion"));
+			boolean deathFinale = spellId != null && spellId.equals(new net.minecraft.util.Identifier("ssc_addon", "death_finale"));
 			client.execute(() -> {
 				checkWorld(client);
 				if (client.world == null) return;
@@ -83,6 +86,7 @@ public final class CastingVisualState {
 					old.schoolColor = schoolColor;
 					old.rarityColor = rarityColor;
 					old.explosion = explosion;
+					old.deathFinale = deathFinale;
 				} else {
 					Entry old = ACTIVE.get(uuid);
 					if (old != null && old.active) {
@@ -166,6 +170,11 @@ public final class CastingVisualState {
 	public static boolean isExplosion(UUID uuid) {
 		Entry entry = entryOf(uuid);
 		return entry != null && entry.explosion;
+	}
+
+	public static boolean isDeathFinale(UUID uuid) {
+		Entry entry = entryOf(uuid);
+		return entry != null && entry.deathFinale;
 	}
 
 	public static int circleColor(UUID uuid) {

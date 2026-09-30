@@ -674,6 +674,7 @@ public class SscAddonClient implements ClientModInitializer {
 		net.jackcooper.shapeShifterCurseAddon.client.renderer.DomainRenderer.register();
 		// SSCA 爆裂魔法 - 世界视觉渲染器（explosion_start 包驱动，本地推演演出）
 		net.jackcooper.shapeShifterCurseAddon.client.renderer.ExplosionRenderer.register();
+		DeathFinaleClient.register();
 		// SSCA 月织蜷「织网术」- 主键检测器（潜行切换 / 蓄力 / 释放）
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverWebClient.register();
 		// SSCA 寒棘狐「冰刺」- 主键检测器（长按蕠力 / 点按发射）

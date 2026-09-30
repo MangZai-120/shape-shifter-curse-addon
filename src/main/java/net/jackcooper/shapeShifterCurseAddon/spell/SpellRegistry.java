@@ -121,6 +121,7 @@ public final class SpellRegistry implements SimpleSynchronousResourceReloadListe
 		// —— 虚无系（对立召唤）——
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.VoidDevourSpell());      // 虚空吞噬
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.VoidErosionSpell());     // 虚空侵蚀
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.DeathFinaleSpell());
 		// —— 空间系（独立，位移探索向）——
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.SpaceBlinkSpell());      // 空间跳跃
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.SpaceStrideSpell());     // 空间漫步

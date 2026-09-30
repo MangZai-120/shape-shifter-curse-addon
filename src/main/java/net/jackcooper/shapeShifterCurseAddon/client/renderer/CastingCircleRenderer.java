@@ -21,7 +21,7 @@ public final class CastingCircleRenderer {
 		for (var player : client.world.getPlayers()) {
 			if (!player.isAlive() || player.isSpectator() || player.isInvisible()
 					|| !CastingVisualState.hasCircle(player.getUuid()) || DomainRenderer.isCharging(player.getUuid())
-					|| CastingVisualState.isExplosion(player.getUuid())) continue;
+					|| CastingVisualState.isExplosion(player.getUuid()) || CastingVisualState.isDeathFinale(player.getUuid())) continue;
 			Vec3d feet = player.getLerpedPos(context.tickDelta());
 			if (feet.squaredDistanceTo(camera) > 32 * 32) continue;
 			var ground = client.world.raycast(new RaycastContext(feet.add(0, 0.15, 0),

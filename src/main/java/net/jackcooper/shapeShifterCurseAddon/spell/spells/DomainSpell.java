@@ -45,6 +45,4 @@ public final class DomainSpell extends Spell {
 	}
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo) { DomainManager.activate(caster); }
-	@Override
-	public String getInBookTooltipKey() { return "item.ssc_addon.magic_scroll.tip_in_book_domain"; }
 }

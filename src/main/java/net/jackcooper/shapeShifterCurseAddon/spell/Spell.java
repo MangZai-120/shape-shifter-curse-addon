@@ -284,16 +284,6 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 		return "spell.ssc_addon." + id.getPath() + ".description";
 	}
 
-	/** 卷轴 tooltip「装书内」文案 key（默认伤害版；buff 型法术覆写为吸收版等）。 */
-	public String getInBookTooltipKey() {
-		return "item.ssc_addon.magic_scroll.tip_in_book";
-	}
-
-	/** 卷轴 tooltip「单独使用」文案 key（默认伤害版；buff 型法术覆写）。 */
-	public String getSoloTooltipKey() {
-		return "item.ssc_addon.magic_scroll.tip_solo";
-	}
-
 	/**
 	 * 魔法系别（来自 spells JSON {@code element} 字段，解析为 FormationElement）。
 	 * 2026-09 起支持 fire/ice/lunar/curse/summon/void/space 七系；无系别或非法 id 返回 null（结算安全降级）。

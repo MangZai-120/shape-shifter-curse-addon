@@ -44,7 +44,7 @@ public final class SpellBalanceTest {
 				"moonlight_arrow", "lunar_mend", "lunar_veil", "lunar_phase",
 				"curse_mark", "dread_whisper", "corrupt_mist",
 				"summon_lunar_spirit", "companion_resonance", "beep_sheep",
-				"void_devour", "void_erosion",
+				"void_devour", "void_erosion", "death_finale",
 				"space_blink", "space_stride", "space_recall", "pocket_space", "domain"
 		};
 		for (String id : ids) {
@@ -486,6 +486,27 @@ public final class SpellBalanceTest {
 					fail(id, "meteor input behavior must remain unchanged");
 				return;
 			}
+			if (id.equals("death_finale")) {
+				var spell = new net.jackcooper.shapeShifterCurseAddon.spell.spells.DeathFinaleSpell();
+				spell.ssc_addon$applyConfig(net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig.fromJson(o));
+				var profile = spell.getCastingProfile(null, 1, false);
+				if (levels.size() != 1 || spell.getMaxLevel() != 1 || spell.getBaseDamage() != 5000
+						|| spell.getElement() != FormationElement.VOID || profile.ticks() != 260
+						|| profile.speedMultiplier() != 0 || !profile.immobilized()
+						|| spell.getCastingMode() != SpellCastingRules.Mode.AUTOMATIC
+						|| spell.getConfig().spellTier != SpellCastingRules.Tier.SPECIAL) fail(id, "13-second immobile SPECIAL profile");
+				if (!DeathFinaleRules.contains(169, 13) || DeathFinaleRules.contains(169.0001, 13)
+						|| DeathFinaleRules.contains(Double.NaN, 13) || DeathFinaleRules.contains(-1, 13)
+						|| DeathFinaleRules.secondsLeft(0, 260) != 13 || DeathFinaleRules.secondsLeft(259, 260) != 1
+						|| DeathFinaleRules.secondsLeft(260, 260) != 0) fail(id, "spherical boundary/countdown");
+				var progress = new SpellCastingRules.Progress<String>(SpellCastingRules.Mode.AUTOMATIC, profile.ticks(), 13);
+				for (int t = 0; t < 259; t++) progress.tick();
+				if (progress.beginEffect()) fail(id, "must not damage before the 260th tick");
+				progress.tick();
+				if (!progress.beginEffect() || progress.beginEffect()) fail(id, "release must occur exactly once");
+				System.out.println("Death finale: VOID/SPECIAL, 260-tick immobile channel, spherical boundary and exactly-once release checks passed; live damage/visuals NOT tested.");
+				return;
+			}
 			if (id.equals("domain")) {
 				if (levels.size() != 1 || !levels.get(0).getAsJsonObject().get("rarity").getAsString().equals("red")) fail(id, "红色必须单级");
 				if (baseCd != 3600 || baseMana != 300 || !o.get("element").getAsString().equals("space")) fail(id, "领域基础数值不符");
@@ -689,7 +710,7 @@ public final class SpellBalanceTest {
 
 	private static void checkCastingRules() {
 		checkCastingLifecycle();
-		int[] durations = {0, 8, 16, 30, 50, 80, 120, 160, 240, 20};
+		int[] durations = {0, 8, 16, 30, 50, 80, 120, 160, 240, 20, 260};
 		int index = 0;
 		for (SpellCastingRules.Tier tier : SpellCastingRules.Tier.values()) {
 			if (tier.profile.ticks() != durations[index++]) fail("casting", "档位时长不匹配");
@@ -715,7 +736,7 @@ public final class SpellBalanceTest {
 		if (SpellCastingRules.cumulativeMana(30, 40, 40) != 30
 				|| SpellCastingRules.cumulativeMana(30, 20, 40) != 15
 				|| SpellCastingRules.interruptedCooldown(100) != 80) fail("casting", "扣蓝/CD边界错误");
-		System.out.println("Casting rules passed (10 tiers, 4 interruption modes, exact progressive mana, 20% cooldown refund).");
+		System.out.println("Casting rules passed (" + durations.length + " tiers, 4 interruption modes, exact progressive mana, 20% cooldown refund).");
 	}
 
 	private static void checkCastingLifecycle() {

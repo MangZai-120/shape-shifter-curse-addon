@@ -52,9 +52,6 @@ public class ExplosionSpell extends Spell {
 	@Override
 	public int getLockInTick() {
 		return ExplosionRules.SOUND_START_TICKS;
-	}	@Override
-	public String getInBookTooltipKey() {
-		return "item.ssc_addon.magic_scroll.tip_in_book_explosion";
 	}
 
 	public ExplosionSpell() {

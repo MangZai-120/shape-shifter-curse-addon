@@ -129,7 +129,7 @@ public final class SpellCastHud {
 					// 16-64 格线性归零）已覆盖施法者本人，跳过本机循环音保证施法者与
 					// 他人听到的完全一致，避免双重音源音量叠加。
 					if (packetState.spell() == null
-							|| !packetState.spell().getId().getPath().equals("domain")) {
+							|| !java.util.Set.of("domain", "death_finale").contains(packetState.spell().getId().getPath())) {
 						// 施法者定位：本人施法用本地玩家；他人施法则从玩家列表查 UUID 对应实体
 						var caster = client.player.networkHandler.getWorld().getPlayerByUuid(packetState.casterUuid());
 						if (caster == null) caster = client.player;

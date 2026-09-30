@@ -154,8 +154,13 @@ public class MagicScrollItem extends Item {
 		if (spell == null) {
 			return super.getName(stack);
 		}
-		return Text.translatable("item.ssc_addon.magic_scroll.format", Text.translatable(spell.getNameKey()))
-				.formatted(spell.getRarity(ScrollData.getLevel(stack)).color);
+		// 模板第一行：「法术名 卷轴 · 系名系」（无系别的法术回退不带系名的旧格式）
+		var element = spell.getElement();
+		net.minecraft.text.MutableText name = element == null
+				? Text.translatable("item.ssc_addon.magic_scroll.format", Text.translatable(spell.getNameKey()))
+				: Text.translatable("item.ssc_addon.magic_scroll.format_element",
+						Text.translatable(spell.getNameKey()), Text.translatable(element.getNameKey()));
+		return name.formatted(spell.getRarity(ScrollData.getLevel(stack)).color);
 	}
 
 	@Override
@@ -173,43 +178,18 @@ public class MagicScrollItem extends Item {
 			tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.tip_empty").formatted(Formatting.DARK_GRAY));
 			return;
 		}
-		// 有效品质按等级派生（冰锥：1白/2绿/3蓝/4紫/5橙）
+		// 模板第二行：品质 ｜ 档位（品质色随等级白→橙；custom 档显示「特殊」）
 		SpellRarity r = spell.getRarity(ScrollData.getLevel(stack));
-		tooltip.add(Text.translatable(r.getTranslationKey()).formatted(r.color));
-		// 魔法等级（始终显示，便于区分开箱获得的卷轴等级；固定不可升级）
-		int level = ScrollData.getLevel(stack);
-		if (spell.getMaxLevel() > 1) tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.level", level).formatted(Formatting.AQUA));
-		// 法术档位名（用户要求保留）；custom 档无统一名称且时长已写入描述，不显示
 		var tier = spell.getConfig().spellTier;
-		if (tier != SpellCastingRules.Tier.CUSTOM) {
-			tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.casting",
-					Text.translatable("spell.ssc_addon.tier." + tier.name().toLowerCase(java.util.Locale.ROOT))).formatted(Formatting.GRAY));
-		}
+		tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.rarity_tier",
+				Text.translatable(r.getTranslationKey()).formatted(r.color),
+				Text.translatable("spell.ssc_addon.tier." + tier.name().toLowerCase(java.util.Locale.ROOT)).formatted(Formatting.GRAY)));
+		// 模板第三行：主要效果 + 效果限制
 		tooltip.add(Text.translatable(spell.getDescKey()).formatted(Formatting.GRAY));
-		// 装书内数值（按等级倍率折算为实际值；buff 型法术走专用文案，如「获得 x 点吸收」）
-		// 耗蓝同样乘等级倍率（与服务端扣费同式），保证面板与实扣一致
-		String cdSec = formatSeconds(Math.round(spell.getBaseCooldownTicks() * spell.getCooldownMultiplier(level)));
-		int shownDmg = Math.round(spell.getBaseDamage() * spell.getDamageMultiplier(level));
-		int shownMana = Math.round(spell.getManaCost() * spell.getConfig().manaCostMultiplier(level));
-		tooltip.add(Text.translatable(spell.getInBookTooltipKey(),
-				shownDmg, cdSec, shownMana).formatted(Formatting.GRAY));
-		if (r.canUseSolo()) {
-			tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.tip_uses",
-					ScrollData.getUses(stack), r.soloUses).formatted(Formatting.YELLOW));
-			int soloDmg = Math.round(spell.getBaseDamage() * spell.getSoloDamageMultiplier() * spell.getDamageMultiplier(level));
-			String soloCd = formatSeconds(Math.round(spell.getBaseCooldownTicks() * spell.getSoloCooldownMultiplier() * spell.getCooldownMultiplier(level)));
-			tooltip.add(Text.translatable(spell.getSoloTooltipKey(), soloDmg, soloCd).formatted(Formatting.DARK_GRAY));
-		} else {
+		// 红色卷轴的使用限制（必要效果限制，保留红字提示）
+		if (!r.canUseSolo()) {
 			tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.tip_no_solo").formatted(Formatting.RED));
 		}
-	}
-
-	private static String formatSeconds(int ticks) {
-		float sec = ticks / 20.0f;
-		if (sec == Math.floor(sec)) {
-			return String.valueOf((int) sec);
-		}
-		return String.format("%.1f", sec);
 	}
 
 	public record SpellIconTooltipData(Identifier texture) implements TooltipData {

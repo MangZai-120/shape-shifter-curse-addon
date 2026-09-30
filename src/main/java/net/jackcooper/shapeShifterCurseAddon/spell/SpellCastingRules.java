@@ -150,7 +150,8 @@ public final class SpellCastingRules {
 		ADVANCED_2(120, 0.2, false),
 		SPECIAL_1(160, 0, true),
 		SPECIAL_2(240, 0, true),
-		CUSTOM(20, 0.8, false);
+		CUSTOM(20, 0.8, false),
+		SPECIAL(260, 0, true);
 
 		public final Profile profile;
 
