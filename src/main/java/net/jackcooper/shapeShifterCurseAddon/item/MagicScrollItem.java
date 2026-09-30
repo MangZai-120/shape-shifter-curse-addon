@@ -184,8 +184,10 @@ public class MagicScrollItem extends Item {
 		tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.rarity_tier",
 				Text.translatable(r.getTranslationKey()).formatted(r.color),
 				Text.translatable("spell.ssc_addon.tier." + tier.name().toLowerCase(java.util.Locale.ROOT)).formatted(Formatting.GRAY)));
-		// 模板第三行：主要效果 + 效果限制
-		tooltip.add(Text.translatable(spell.getDescKey()).formatted(Formatting.GRAY));
+		// 模板第三行：主要效果 + 效果限制（lang 内 \n 手动换行，中文每行 ≤20 字）
+		for (String line : Text.translatable(spell.getDescKey()).getString().split("\n")) {
+			tooltip.add(Text.literal(line).formatted(Formatting.GRAY));
+		}
 		// 红色卷轴的使用限制（必要效果限制，保留红字提示）
 		if (!r.canUseSolo()) {
 			tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.tip_no_solo").formatted(Formatting.RED));
