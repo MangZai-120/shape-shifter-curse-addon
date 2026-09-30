@@ -1276,11 +1276,7 @@
   "message.ssc_addon.scroll.atlas_recorded": "已记录法术图谱：%1",
   "message.ssc_addon.scroll.atlas_already": "已记录过 %1 的图谱",
   "message.ssc_addon.spellbook.swap_stabilizing": "书本尚在稳定（刚刚更换了魔法书）",
-  "command.ssc_addon.starter.console_only": "该指令只能由玩家执行",
-  "command.ssc_addon.starter.invalid_choice": "无效选择：%1（可选 fire_bolt / frost_spike / moonlight_arrow）",
-  "command.ssc_addon.starter.already_claimed": "你已领取过入门卷轴",
-  "command.ssc_addon.starter.inventory_full": "背包已满，请腾出空间后重试",
-  "command.ssc_addon.starter.claimed": "获得入门卷轴：%1（同时已记录其图谱）",
+
   "command.ssc_addon.reset_spell_cd.console_need_target": "控制台执行时必须指定目标玩家",
   "command.ssc_addon.reset_spell_cd.success": "已重置 %1 名玩家的全部法术冷却",
   "gui.ssc_addon.research.search": "搜索名称 / 学派",

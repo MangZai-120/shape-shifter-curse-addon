@@ -135,14 +135,6 @@ public class SscAddonCommands {
 								.executes(context -> resetSpellCd(context, EntityArgumentType.getPlayers(context, "targets")))
 						)
 				)
-				// 入门三选一（阶段 C / 计划书 §5：每玩家一次，火球/冰锥/月光箭任选一张 Lv1 卷轴；无 OP 限制）
-				.then(CommandManager.literal("starter")
-						.then(CommandManager.argument("choice", StringArgumentType.word())
-								.suggests((context, builder) -> CommandSource.suggestMatching(
-										new String[]{"fire_bolt", "frost_spike", "moonlight_arrow"}, builder))
-								.executes(SscAddonCommands::giveStarterScroll)
-						)
-				)
 				.then(CommandManager.literal("skill")
 						.requires(source -> source.hasPermissionLevel(2))
 						.then(CommandManager.argument("form", StringArgumentType.word())
@@ -773,40 +765,6 @@ public class SscAddonCommands {
 		final int cleared = count;
 		context.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.reset_spell_cd.success", cleared), true);
 		return count;
-	}
-
-	/**
-	 * 入门三选一（阶段 C / 计划书 §5）：每玩家一次，火球/冰锥/月光箭任选一张 Lv1 卷轴。
-	 * 无 OP 限制（仅作用于执行者本人，无 target 参数）；领取同时自动记录该法术图谱。
-	 */
-	private static int giveStarterScroll(CommandContext<ServerCommandSource> context) {
-		ServerPlayerEntity player = context.getSource().getPlayer();
-		if (player == null) {
-			context.getSource().sendError(Text.translatable("command.ssc_addon.starter.console_only"));
-			return 0;
-		}
-		String choice = StringArgumentType.getString(context, "choice");
-		if (!choice.equals("fire_bolt") && !choice.equals("frost_spike") && !choice.equals("moonlight_arrow")) {
-			context.getSource().sendError(Text.translatable("command.ssc_addon.starter.invalid_choice", choice));
-			return 0;
-		}
-		net.jackcooper.shapeShifterCurseAddon.spell.FormationKnowledgeComponent knowledge =
-				net.jackcooper.shapeShifterCurseAddon.spell.FormationKnowledgeComponent.get(player);
-		if (knowledge.isStarterClaimed()) {
-			context.getSource().sendError(Text.translatable("command.ssc_addon.starter.already_claimed"));
-			return 0;
-		}
-		net.minecraft.item.ItemStack scroll = net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.create(choice, 1);
-		if (!player.getInventory().insertStack(scroll)) {
-			context.getSource().sendError(Text.translatable("command.ssc_addon.starter.inventory_full"));
-			return 0;
-		}
-		knowledge.claimStarter();
-		knowledge.recordSpell(choice);
-		net.jackcooper.shapeShifterCurseAddon.spell.FormationKnowledgeComponent.sync(player);
-		player.sendMessage(Text.translatable("command.ssc_addon.starter.claimed",
-				Text.translatable("spell.ssc_addon." + choice + ".name")).formatted(net.minecraft.util.Formatting.GREEN), false);
-		return 1;
 	}
 
 	private static List<String> getSkillsForForm(String form) {

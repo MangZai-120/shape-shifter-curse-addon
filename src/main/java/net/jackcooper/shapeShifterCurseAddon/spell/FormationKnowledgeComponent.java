@@ -39,8 +39,6 @@ private final Map<String, Integer> learned = new HashMap<>();
  * 键：法术 id path（如 fire_bolt）。记录知识不能免费复制实体卷轴——定向制作仍需材料。
  */
 private final Set<String> spellAtlas = new HashSet<>();
-/** 入门三选一是否已领取（每玩家一次；阶段 C / 计划书 §5 入门阶段）。 */
-private boolean starterClaimed = false;
 
 public static FormationKnowledgeComponent get(PlayerEntity player) {
 return RegFormationKnowledgeComponent.FORMATION_KNOWLEDGE.get(player);
@@ -111,18 +109,6 @@ public int spellAtlasSize() {
 return spellAtlas.size();
 }
 
-// ---- 入门三选一（阶段 C / 计划书 §5） ----
-
-/** 入门三选一是否已领取。 */
-public boolean isStarterClaimed() {
-return starterClaimed;
-}
-
-/** 标记入门三选一已领取。 */
-public void claimStarter() {
-this.starterClaimed = true;
-}
-
 // ---- 持久化 / 同步 ----
 
 @Override
@@ -136,13 +122,13 @@ if (entry.startsWith("universal:")) {
 entry = "universal/" + FormationData.VARIANT_REGEN + ":" + entry.substring("universal:".length());
 }
 recorded.add(entry);
-}// 法术图谱 + 入门领取标记（阶段 C）
+}// 法术图谱（阶段 C）
 spellAtlas.clear();
 NbtList atlas = nbt.getList("spell_atlas", NbtElement.STRING_TYPE);
 for (int i = 0; i < atlas.size(); i++) {
 spellAtlas.add(atlas.getString(i));
 }
-starterClaimed = nbt.getBoolean("starter_claimed");learned.clear();
+learned.clear();
 for (FormationElement element : FormationElement.values()) {
 if (element == FormationElement.UNIVERSAL) {
 // 通用系三变体独立读取
@@ -187,7 +173,6 @@ for (String entry : spellAtlas) {
 atlas.add(NbtString.of(entry));
 }
 nbt.put("spell_atlas", atlas);
-nbt.putBoolean("starter_claimed", starterClaimed);
 }
 
 /** 服务端变更后同步给客户端（研究台 GUI 需要实时读）。 */
