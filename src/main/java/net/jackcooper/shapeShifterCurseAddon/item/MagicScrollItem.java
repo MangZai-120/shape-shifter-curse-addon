@@ -179,14 +179,12 @@ public class MagicScrollItem extends Item {
 		// 魔法等级（始终显示，便于区分开箱获得的卷轴等级；固定不可升级）
 		int level = ScrollData.getLevel(stack);
 		if (spell.getMaxLevel() > 1) tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.level", level).formatted(Formatting.AQUA));
+		// 法术档位名（用户要求保留）；custom 档无统一名称且时长已写入描述，不显示
 		var tier = spell.getConfig().spellTier;
-		tooltip.add((tier == SpellCastingRules.Tier.CUSTOM
-				? Text.translatable("item.ssc_addon.magic_scroll.casting_custom")
-				: Text.translatable("item.ssc_addon.magic_scroll.casting",
-						Text.translatable("spell.ssc_addon.tier." + tier.name().toLowerCase(java.util.Locale.ROOT)),
-						formatSeconds(tier.profile.ticks()))).formatted(Formatting.GRAY));
-		tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.interrupt_mode",
-				Text.translatable("spell.ssc_addon.interrupt." + spell.getConfig().interruptMode)).formatted(Formatting.DARK_GRAY));
+		if (tier != SpellCastingRules.Tier.CUSTOM) {
+			tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.casting",
+					Text.translatable("spell.ssc_addon.tier." + tier.name().toLowerCase(java.util.Locale.ROOT))).formatted(Formatting.GRAY));
+		}
 		tooltip.add(Text.translatable(spell.getDescKey()).formatted(Formatting.GRAY));
 		// 装书内数值（按等级倍率折算为实际值；buff 型法术走专用文案，如「获得 x 点吸收」）
 		// 耗蓝同样乘等级倍率（与服务端扣费同式），保证面板与实扣一致
@@ -204,7 +202,6 @@ public class MagicScrollItem extends Item {
 		} else {
 			tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.tip_no_solo").formatted(Formatting.RED));
 		}
-		tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.tip_hint").formatted(Formatting.DARK_GRAY));
 	}
 
 	private static String formatSeconds(int ticks) {

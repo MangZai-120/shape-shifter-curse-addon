@@ -3,6 +3,9 @@ package net.jackcooper.shapeShifterCurseAddon.util;
 import net.minecraft.util.Identifier;
 
 public class FormIdentifiers {
+	// 羊形态（羊了个羊法术专属，2026-09-29 用户定稿）：空壳无 power 形态——变羊=切到它（技能/被动/魔法全失效），
+	// 渲染由 SheepFormRenderMixin 画原版羊模型；仅法术触发，不进选择菜单/进化链
+	public static final Identifier SHEEP_FORM = new Identifier("my_addon", "sheep_spell_form");
 	public static final Identifier FAMILIAR_FOX_SP = new Identifier("my_addon", "familiar_fox_sp");
 	public static final Identifier UPGRADE_FAMILIAR_FOX = new Identifier("my_addon", "upgrade_familiar_fox");
 	public static final Identifier FAMILIAR_FOX_RED = new Identifier("my_addon", "familiar_fox_red");

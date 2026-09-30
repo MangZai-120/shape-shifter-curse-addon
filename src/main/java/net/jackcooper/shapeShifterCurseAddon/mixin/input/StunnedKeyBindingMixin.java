@@ -58,23 +58,39 @@ public class StunnedKeyBindingMixin {
 		if (client == null || client.player == null) {
 			return false;
 		}
-		// 原版 1.10.1（PR #508）已为 startTransform 黑屏期接入移动冻结 mixin（PlayerMovementControlMixin
-		// 的 noMoveTick 机制，getMovementSpeed 返回 0）。原版触发的变身过渡（催化剂/抑制剂/诅咒之月等）
-		// 现在服务端会自动发 sendNoMoveTick 冻结移动。
-		// 本 mixin 的 keybinding 屏蔽是另一层保险：除了移动键，还屏蔽技能/攻击/使用键，
-		// 并消除客户端预测性滑步（装死场景尤其需要）。两层互不冲突。
-		// TransformManager.transformTimer 是客户端 public 字段，黑屏过渡期间 >=0
-		// （receiveTransformState 收到 isTransforming=true 时置 0、结束置 -1），用它统一冻结所有变身（含原版触发）。
 		return client.player.hasStatusEffect(SscAddon.STUN)
 				|| client.player.hasStatusEffect(SscAddon.PLAYING_DEAD)
 				|| TransformManager.transformTimer >= 0;
 	}
 
 	@Unique
-	private boolean isMovementKey(String key) {
-		return key.equals("key.forward") || key.equals("key.back")
-				|| key.equals("key.left") || key.equals("key.right")
-				|| key.equals("key.jump") || key.equals("key.sneak") || key.equals("key.sprint");
+	private boolean isPlayerSheep() {
+		MinecraftClient client = MinecraftClient.getInstance();
+		return client != null && client.player != null
+				&& client.player.hasStatusEffect(SscAddon.SHEEP_FORM);
+	}
+
+	/** 变羊期间屏蔽的键（2026-09-29 用户定稿「羊能走但不能打/放技能」）：技能/攻击/使用/TACZ 枪械链，
+	 *  **不含移动键**——移动键屏蔽会让 movementInput 拿不到按键直接完全不能走（首轮实机踩坑：
+	 *  SHEEP_FORM 挂进 isPlayerStunned 后 isTargetKey 里的移动键全被 isPressed/setPressed 屏蔽），
+	 *  限速由服务端移速上限修饰符负责（SheepFormRestoreHandler）。 */
+	@Unique
+	private boolean isSheepBlockedKey(String key) {
+		return key.equals("key.shape-shifter-curse.active_skill_1") ||
+				key.equals("key.shape-shifter-curse.active_skill_2") ||
+				key.equals("key.ssc_addon.sp_primary") ||
+				key.equals("key.ssc_addon.sp_secondary") ||
+				key.equals("key.use") ||
+				key.equals("key.attack") ||
+				key.equals("key.tacz.shoot.desc") ||
+				key.equals("key.tacz.aim.desc") ||
+				key.equals("key.tacz.inspect.desc") ||
+				key.equals("key.tacz.reload.desc") ||
+				key.equals("key.tacz.fire_select.desc") ||
+				key.equals("key.tacz.crawl.desc") ||
+				key.equals("key.tacz.refit.desc") ||
+				key.equals("key.tacz.zoom.desc") ||
+				key.equals("key.tacz.melee.desc");
 	}
 
 	@Unique
@@ -85,8 +101,17 @@ public class StunnedKeyBindingMixin {
 	}
 
 	@Unique
+	private boolean isMovementKey(String key) {
+		return key.equals("key.forward") || key.equals("key.back")
+				|| key.equals("key.left") || key.equals("key.right")
+				|| key.equals("key.jump") || key.equals("key.sneak") || key.equals("key.sprint");
+	}
+
+	@Unique
 	private boolean shouldBlock(String key) {
-		return (isTargetKey(key) && isPlayerStunned()) || (isMovementKey(key) && isPlayerRooted());
+		return (isTargetKey(key) && isPlayerStunned())
+				|| (isMovementKey(key) && isPlayerRooted())
+				|| (isSheepBlockedKey(key) && isPlayerSheep());
 	}
 
 	@Inject(method = "wasPressed", at = @At("HEAD"), cancellable = true)
@@ -99,6 +124,9 @@ public class StunnedKeyBindingMixin {
 			this.timesPressed = 0;
 			cir.setReturnValue(false);
 		} else if (isMovementKey(key) && isPlayerRooted()) {
+			this.timesPressed = 0;
+			cir.setReturnValue(false);
+		} else if (isSheepBlockedKey(key) && isPlayerSheep()) {
 			this.timesPressed = 0;
 			cir.setReturnValue(false);
 		}

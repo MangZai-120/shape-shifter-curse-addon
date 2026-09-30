@@ -117,6 +117,7 @@ public final class SpellRegistry implements SimpleSynchronousResourceReloadListe
 		// —— 召唤系（对立虚无）——
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.SummonLunarSpiritSpell()); // 召唤月灵
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.CompanionResonanceSpell()); // 伙伴共鸣
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.BeepSheepSpell());        // 羊了个羊（鸡蛋式咩弹，命中变羊）
 		// —— 虚无系（对立召唤）——
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.VoidDevourSpell());      // 虚空吞噬
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.VoidErosionSpell());     // 虚空侵蚀

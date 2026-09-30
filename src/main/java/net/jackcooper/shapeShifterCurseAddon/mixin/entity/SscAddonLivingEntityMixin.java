@@ -99,6 +99,9 @@ public abstract class SscAddonLivingEntityMixin {
 		if (!cir.getReturnValueZ() && ((LivingEntity) (Object) this).hasStatusEffect(SscAddon.STUN)) {
 			cir.setReturnValue(true);
 		}
+		// 变羊（羊了个羊）：mob 不再走 isImmobile 冻结（2026-09-29 用户定稿改为「羊 AI」——
+		// 变羊期间 AI 暂时变成羊：清仇恨 + 受惊远离施法者，见 SheepFormAiController；
+		// 玩家侧不走此处（行为封锁走 SheepFormGuard + SheepFormInputMixin，不能清 travel 输入）。
 	}
 
 	@Inject(method = "jump", at = @At("HEAD"), cancellable = true)
@@ -164,8 +167,22 @@ public abstract class SscAddonLivingEntityMixin {
                 // 修复「能量重进游戏被重置」。路径存在性由 handler 内部自行判空，此处不重复校验。
                 if ((Object) this instanceof ServerPlayerEntity player) {
                         LoginResourceRestoreHandler.recordSnapshot(player.getUuid(), nbt);
+                        // 变羊原形态快照恢复（羊了个羊形态切换架构）：重进后 SNAPSHOTS 表重建，
+                        // 到期切回/CD 回写有据可依；无记录时 no-op（未变羊玩家零开销）
+                        net.jackcooper.shapeShifterCurseAddon.ability.BeepSheepFormManager.onReadNbt(player, nbt);
                 }
         }
+
+	/**
+	 * 变羊原形态快照持久化（羊了个羊）：writeCustomDataToNbt 末尾把原 FormID + Apoli CD 快照 +
+	 * 变羊时刻写入玩家 NBT（键 {@code SSCA.SheepForm}），断线/停服不丢；仅变羊中玩家写入。
+	 */
+	@Inject(method = "writeCustomDataToNbt", at = @At("TAIL"))
+	private void ssca$writeSheepFormSnapshot(NbtCompound nbt, CallbackInfo ci) {
+		if ((Object) this instanceof ServerPlayerEntity player) {
+			net.jackcooper.shapeShifterCurseAddon.ability.BeepSheepFormManager.onWriteNbt(player, nbt);
+		}
+	}
 
 	/**
 	 * SP 美西螈涡流蓄力：蓄力中的玩家不参与实体碰撞推挤——被涡流吸到身上的怪也挤不动玩家。

@@ -49,6 +49,7 @@ import net.jackcooper.shapeShifterCurseAddon.recipe.SpUpgradeRecipe;
 import net.jackcooper.shapeShifterCurseAddon.screen.PotionBagScreenHandler;
 import net.jackcooper.shapeShifterCurseAddon.ability.AllaySPTotem;
 import net.jackcooper.shapeShifterCurseAddon.ability.AllaySPPortableBeacon;
+import net.jackcooper.shapeShifterCurseAddon.event.SheepFormGuard;
 import net.jackcooper.shapeShifterCurseAddon.ability.AnubisWolfSpSoulEnergy;
 import net.jackcooper.shapeShifterCurseAddon.ability.GoldenSandstormRegen;
 import java.util.Map;
@@ -105,6 +106,8 @@ public class SscAddon implements ModInitializer {
 	public static final StatusEffect STUN = new StunEffect();
 	// 诅咒标记（诅咒系法术：标记期间受伤 +20%，mixin 内结算；月辉系可净化）
 	public static final StatusEffect CURSE_MARK = new net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect();
+	// 变羊（召唤系法术「羊了个羊」：实体被变成羊，暂时失去攻击/破坏/放置能力，jackcooper）
+	public static final StatusEffect SHEEP_FORM = new net.jackcooper.shapeShifterCurseAddon.effect.SheepFormEffect();
 	// 霜碎（寒霜系法术·冰霜新星附加：护甲 -50%，与缓速同步；jackcooper）
 	public static final StatusEffect FROST_SHATTER = new net.jackcooper.shapeShifterCurseAddon.effect.FrostShatterEffect();
 	public static final StatusEffect ROOTED = new RootedEffect();
@@ -176,6 +179,9 @@ public class SscAddon implements ModInitializer {
 	// 月尘魔法·诅咒标记投射物（诅咒系单体，命中挂受伤加深，jackcooper）
 	public static final EntityType<net.jackcooper.shapeShifterCurseAddon.entity.SpellCurseMarkEntity> SPELL_CURSE_MARK_ENTITY =
 			registerEntity("spell_curse_mark", SpawnGroup.MISC, net.jackcooper.shapeShifterCurseAddon.entity.SpellCurseMarkEntity::new, 0.25f, 0.25f, 64, 10);
+	// 月尘魔法·咩弹投射物（召唤系「羊了个羊」：鸡蛋式抛物线，命中活体将其变羊，jackcooper）
+	public static final EntityType<net.jackcooper.shapeShifterCurseAddon.entity.BeepSheepEntity> BEEP_SHEEP_ENTITY =
+			registerEntity("beep_sheep", SpawnGroup.MISC, net.jackcooper.shapeShifterCurseAddon.entity.BeepSheepEntity::new, 0.25f, 0.25f, 64, 10);
 	// 月灵（召唤系法术的协战飞行生物，有限寿命，jackcooper）。同步频率 1t：LivingEntity 客户端不自算位移，投射物模板的 10t 会一顿一顿
 	public static final EntityType<net.jackcooper.shapeShifterCurseAddon.entity.LunarSpiritEntity> LUNAR_SPIRIT_ENTITY =
 			registerEntity("lunar_spirit", SpawnGroup.MISC, net.jackcooper.shapeShifterCurseAddon.entity.LunarSpiritEntity::new, 0.4f, 0.6f, 64, 1);
@@ -529,6 +535,7 @@ public class SscAddon implements ModInitializer {
 		registerEffect("tidal_slow", TIDAL_SLOW);
 		registerEffect("curse_mark", CURSE_MARK);
 		registerEffect("frost_shatter", FROST_SHATTER);
+		registerEffect("sheep_form", SHEEP_FORM);
 	}
 
 	private void registerItems() {
@@ -652,6 +659,15 @@ public class SscAddon implements ModInitializer {
 		StoryBookLoot.init();
 		AllaySPTotem.init();
 		AllaySPPortableBeacon.init(); // SP 悦灵右键信标切换激活（UseItemCallback 注册，此前漏注册导致功能失效）
+		SheepFormGuard.init(); // 变羊期间行为封锁（禁放置/禁破坏/禁攻击实体，羊了个羊配套服务端兜底）
+		// 变羊换血兜底扫描（羊了个羊：效果被非正常路径清除时恢复原血量上限/移速，5t 节流）
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK
+				.register(net.jackcooper.shapeShifterCurseAddon.effect.SheepFormRestoreHandler::tickSweep);
+		// 变羊形态切换兜底扫描（羊了个羊：效果没了但还卡在羊形态 → 切回原形态；与换血扫描同节流）
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK
+				.register(net.jackcooper.shapeShifterCurseAddon.ability.BeepSheepFormManager::tickSweep);
+		// 变羊原形态记录持久化（玩家 NBT 读写 + 退出清理，断线重进不丢）
+		net.jackcooper.shapeShifterCurseAddon.ability.BeepSheepFormManager.init();
 		InfectionSporeManager.init();
 		ParasiticSeedFieldManager.init();
 		ParasiticCombatTracker.init();

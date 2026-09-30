@@ -93,6 +93,9 @@ public final class SscBalanceSchema {
         b.scope("spells.summon_lunar_spirit")
                 .intParam("base_life_ticks", 600, 100, 6000, S + "SummonLunarSpiritSpell", "BASE_LIFE_TICKS")
                 .intParam("life_per_level", 200, 0, 2400, S + "SummonLunarSpiritSpell", "LIFE_PER_LEVEL");
+        b.scope("spells.beep_sheep")
+                .intParam("base_duration_ticks", 120, 20, 1200, S + "BeepSheepSpell", "BASE_DURATION_TICKS")
+                .intParam("duration_per_level", 30, 0, 600, S + "BeepSheepSpell", "DURATION_PER_LEVEL");
         b.scope("spells.void_devour")
                 .doubleParam("base_range", 16.0, 1.0, 128.0, S + "VoidDevourSpell", "BASE_RANGE")
                 .doubleParam("impact_radius", 2.0, 0.5, 16.0, S + "VoidDevourSpell", "IMPACT_RADIUS")

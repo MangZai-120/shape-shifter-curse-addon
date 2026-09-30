@@ -23,9 +23,14 @@ public class MilkBucketWebBoundMixin {
 	@WrapOperation(method = "finishUsing", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;clearStatusEffects()Z"), require = 0)
 	private boolean ssca$keepWebBound(LivingEntity entity, Operation<Boolean> original) {
 		StatusEffectInstance web = entity.getStatusEffect(RegAddonEffects.SPIDER_WEB_BOUND);
+		// 变羊（2026-09-29 用户定稿「牛奶无法净化」）：同蛛网缠身一并保留
+		StatusEffectInstance sheep = entity.getStatusEffect(net.jackcooper.shapeShifterCurseAddon.SscAddon.SHEEP_FORM);
 		boolean result = original.call(entity);
 		if (web != null) {
 			entity.addStatusEffect(new StatusEffectInstance(web));
+		}
+		if (sheep != null) {
+			entity.addStatusEffect(new StatusEffectInstance(sheep));
 		}
 		return result;
 	}

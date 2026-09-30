@@ -212,5 +212,36 @@ public final class SscAddonForms {
 		batParasiticFruitForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.6f, 0.7f));
 		RegPlayerForms.registerPlayerForm(batParasiticFruitForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_bat_parasitic_fruit")).registerForm(1, 12, batParasiticFruitForm));
+
+		// 羊形态（羊了个羊法术专属，2026-09-29 用户定稿）——空壳 NormalForm：不挂任何 power（变羊后
+		// 技能/被动/魔法天然全失效，取代原 isActive 压制方案）；渲染由 SheepFormRenderMixin 画用户提供的
+		// 成年羊 geo 双层模型（本体+羊毛）；仅法术触发（BeepSheepFormManager 切换），
+		// 不进 origin_layers/选择菜单/进化链。
+		// 体型（2026-09-29 用户指令「这俩 scale 全改成 1」）：WIDTH/HEIGHT 参与实体渲染矩阵，
+		// 之前 1.5/0.7222 的非对称值把模型 Y 压扁、XZ 放大（「太扁」真因）——全改 1 让模型按 geo
+		// 原比例显示。眼高保留 0.7623（1.62×0.7623≈1.235=成年羊眼高，用户定稿）；
+		// 碰撞箱高保留 0.7222（1.8×0.7222≈1.3=成年羊高，不影响渲染）。
+		NormalForm sheepSpellForm = new NormalForm(FormIdentifiers.SHEEP_FORM);
+		sheepSpellForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
+		sheepSpellForm.applyScaleFunc(player -> {
+			// 宽/高：1（不干预渲染比例，模型大小由 SheepFormClientHooks 的 geo 缩放表达）
+			virtuoel.pehkui.api.ScaleData width = virtuoel.pehkui.api.ScaleTypes.WIDTH.getScaleData(player);
+			width.setScale(1.0F);
+			width.setPersistence(true);
+			virtuoel.pehkui.api.ScaleData height = virtuoel.pehkui.api.ScaleTypes.HEIGHT.getScaleData(player);
+			height.setScale(1.0F);
+			height.setPersistence(true);
+			// 眼高：玩家基准 1.62 → 羊 1.235（×0.7623；服务端视线判定/第一人称相机都走这里）
+			virtuoel.pehkui.api.ScaleData eye = virtuoel.pehkui.api.ScaleTypes.EYE_HEIGHT.getScaleData(player);
+			eye.setScale(1.235F / 1.62F);
+			eye.setPersistence(true);
+			// 碰撞箱高：目标 1.3（基准 1.8；只影响碰撞箱不影响渲染矩阵）
+			virtuoel.pehkui.api.ScaleData hitbox = virtuoel.pehkui.api.ScaleTypes.HITBOX_HEIGHT.getScaleData(player);
+			hitbox.setScale(1.3F / 1.8F);
+			hitbox.setPersistence(true);
+		});
+		RegPlayerForms.registerPlayerForm(sheepSpellForm);
+		// 不注册 NormalGroup：无组形态不进随机初始形态池（InitialFormUtils 只从配置 id 池抽，本就不受影响；
+		// 不建组可确保不出现在任何组 UI/随机池）
 	}
 }

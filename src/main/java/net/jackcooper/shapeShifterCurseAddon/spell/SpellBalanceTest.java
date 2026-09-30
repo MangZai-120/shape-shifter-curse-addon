@@ -43,7 +43,7 @@ public final class SpellBalanceTest {
 				"frost_spike", "ice_barrage", "frost_nova", "frost_armor",
 				"moonlight_arrow", "lunar_mend", "lunar_veil", "lunar_phase",
 				"curse_mark", "dread_whisper", "corrupt_mist",
-				"summon_lunar_spirit", "companion_resonance",
+				"summon_lunar_spirit", "companion_resonance", "beep_sheep",
 				"void_devour", "void_erosion",
 				"space_blink", "space_stride", "space_recall", "pocket_space", "domain"
 		};

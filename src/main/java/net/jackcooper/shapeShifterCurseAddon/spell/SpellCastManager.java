@@ -92,6 +92,9 @@ public final class SpellCastManager {
 	/** 内部统一施法：forcedLevel>0 用指定档（临时降档），否则用卷轴档位；cdPenalty 为本次 CD 惩罚倍率。 */
 	private static void castInternal(ServerPlayerEntity player, int slot, int forcedLevel, float cdPenalty, int token) {
 		if (SpellChannelManager.isCasting(player)) return;
+		// 变羊闸门（2026-09-29 用户定稿）：变成羊后禁止施法（羊蹄子翻不动魔法书）；
+		// 不给提示音/红字——与 STUN 沉默处理一致，防变羊期间刷提示
+		if (player.hasStatusEffect(SscAddon.SHEEP_FORM)) return;
 		ItemStack book = getEquippedBook(player);
 		if (book == null || book.isEmpty()) {
 			return;

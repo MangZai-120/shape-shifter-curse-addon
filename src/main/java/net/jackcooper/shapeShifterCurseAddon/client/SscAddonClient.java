@@ -542,6 +542,13 @@ public class SscAddonClient implements ClientModInitializer {
 		EntityRendererRegistry.register(SscAddon.LUNAR_SPIRIT_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.LunarSpiritRenderer::new);
 		// 月灵光弹：小发光体渲染（Lightning 层 POSITION_COLOR，Sodium 安全）
 		EntityRendererRegistry.register(SscAddon.LUNAR_SPIRIT_BOLT_ENTITY, net.jackcooper.shapeShifterCurseAddon.client.renderer.LunarSpiritBoltRenderer::new);
+		// 咩弹（羊了个羊）：白色染料精灵渲染（鸡蛋式抛物线弹道，同其它投射物渲染标准）；
+		// 工厂调用时机 = 世界渲染初始化（ModelLoader 已 bake）→ 顺手用同一 ctx 懒初始化
+		// 变羊替换渲染的原版羊/羊毛模型层（幂等，见 SheepFormRenderMixin.ssca$initModels）
+		EntityRendererRegistry.register(SscAddon.BEEP_SHEEP_ENTITY, ctx -> {
+			net.jackcooper.shapeShifterCurseAddon.client.SheepFormClientHooks.init(ctx);
+			return new net.minecraft.client.render.entity.FlyingItemEntityRenderer<net.jackcooper.shapeShifterCurseAddon.entity.BeepSheepEntity>(ctx, 0.75F, true);
+		});
 
 		// 寄生果蝠形态种子量能量条 HUD
 		SeedEnergyHudRenderer.register();
@@ -651,6 +658,10 @@ public class SscAddonClient implements ClientModInitializer {
 
 		// SSCA 美西螈装死 - 提前结束检测器
 		PlayDeadEndClient.register();
+
+		// 羊了个羊 - 变羊期间第三人称锁定（效果结束按原视角恢复；原本第三人称保持）
+		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK
+				.register(net.jackcooper.shapeShifterCurseAddon.client.SheepFormCameraController::tick);
 
 		// SSCA 美西螈漩涡蓄力 - 按键检测器
 		VortexChargeClient.register();

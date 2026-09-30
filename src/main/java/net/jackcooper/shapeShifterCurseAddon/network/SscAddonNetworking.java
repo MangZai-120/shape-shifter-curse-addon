@@ -454,10 +454,15 @@ public class SscAddonNetworking {
 				player.removeStatusEffect(net.minecraft.entity.effect.StatusEffects.BLINDNESS);
 				player.removeStatusEffect(net.minecraft.entity.effect.StatusEffects.SLOWNESS);
 				player.setPose(net.minecraft.entity.EntityPose.STANDING);
-				// 提前结束：CD 从此刻起按 power JSON extra_cooldowns.early_end 重新起算
+				// 提前结束：CD 从此刻起按 power JSON extra_cooldowns.early_end 重新起算。
+				// 防 0 覆写守卫（2026-09-29 问题2 真因）：羊形态期间（无美西螈 power）或任何
+				// spec 查不到的时刻，extra() 会返回 0，force(0) 会把正在走的装死 CD 直接清空
+				//——必须先确认身上真有该技能 power 才结算 early_end。
 				String playDead = net.jackcooper.shapeShifterCurseAddon.action.SscAddonActions.PLAY_DEAD_SKILL_ID;
-				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.force(player, playDead,
-						net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.extra(player, playDead, "early_end"));
+				int earlyEnd = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.extra(player, playDead, "early_end");
+				if (earlyEnd > 0) {
+					net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.force(player, playDead, earlyEnd);
+				}
 			});
 		});
 

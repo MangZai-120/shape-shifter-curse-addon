@@ -24,7 +24,8 @@
     "my_addon:form_spider_moon_weaver",
     "my_addon:form_spider_salticidae",
     "my_addon:form_wild_cat_nightmare",
-    "my_addon:form_snow_fox_frostspine"
+    "my_addon:form_snow_fox_frostspine",
+    "my_addon:form_sheep_spell_form"
   ],
   "allow_random": true,
   "allow_random_unchoosable": false,

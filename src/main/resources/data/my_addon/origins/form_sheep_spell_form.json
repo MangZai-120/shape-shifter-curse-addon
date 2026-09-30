@@ -1,0 +1,10 @@
+{
+    "powers": [
+    ],
+    "icon": {
+        "item": "minecraft:white_wool"
+    },
+    "order": 99,
+    "unchoosable": true,
+    "impact": 0
+}
