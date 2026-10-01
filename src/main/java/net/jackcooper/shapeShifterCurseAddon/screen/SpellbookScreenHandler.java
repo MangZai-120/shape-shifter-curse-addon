@@ -68,7 +68,7 @@ public class SpellbookScreenHandler extends ScreenHandler {
 
 			@Override
 			public boolean isValid(int slot, ItemStack stack) {
-				return ScrollData.isScroll(stack);
+				return ScrollData.isScroll(stack) && !net.jackcooper.shapeShifterCurseAddon.spell.ArcaneAnalysis.isUnanalyzed(stack);
 			}
 		};
 
@@ -82,7 +82,7 @@ public class SpellbookScreenHandler extends ScreenHandler {
 			this.addSlot(new Slot(inventory, i, startX + i * 18, 42) {
 				@Override
 				public boolean canInsert(ItemStack stack) {
-					return ScrollData.isScroll(stack);
+					return inventory.isValid(getIndex(), stack);
 				}
 
 				@Override

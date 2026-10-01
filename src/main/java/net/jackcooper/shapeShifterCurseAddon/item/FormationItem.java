@@ -1,17 +1,18 @@
 package net.jackcooper.shapeShifterCurseAddon.item;
 
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationData;
+import net.jackcooper.shapeShifterCurseAddon.spell.ArcaneAnalysis;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationElement;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationKnowledgeComponent;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.UseAction;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.UseAction;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
@@ -31,8 +32,6 @@ import java.util.List;
  */
 public class FormationItem extends Item {
 
-	/** 蓄力时长（tick），与进化石/回城卷轴一致。 */
-	private static final int CHARGE_TICKS = 32;
 
 	public FormationItem(Settings settings) {
 		super(settings);
@@ -40,25 +39,18 @@ public class FormationItem extends Item {
 
 	@Override
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
-		ItemStack stack = user.getStackInHand(hand);
-		FormationElement element = FormationData.getElement(stack);
-		// 空白法阵（无系别绑定）不响应
-		if (element == null) {
-			return TypedActionResult.pass(stack);
-		}
-		// 起手即查「已记录同级」：直接提示并拒绝，避免玩家白等 1.6 秒蓄力
-		// （FormationKnowledgeComponent 是 AutoSyncedComponent，客户端可读，研究台 GUI 同款依赖）
-		String variant = FormationData.getVariant(stack);
-		if (FormationKnowledgeComponent.get(user).hasRecorded(element, variant, FormationData.getLevel(stack))) {
-			if (world.isClient) {
-				user.sendMessage(Text.translatable("message.ssc_addon.formation.already_recorded",
-						displayName(element, variant), FormationData.getLevel(stack)).formatted(Formatting.YELLOW), true);
-			}
+		ItemStack stack=user.getStackInHand(hand);FormationElement element=FormationData.getElement(stack);
+		if(ArcaneAnalysis.isUnanalyzed(stack)){
+			if(!world.isClient)user.sendMessage(Text.translatable("message.ssc_addon.analysis.required").formatted(Formatting.RED),true);
 			return TypedActionResult.fail(stack);
 		}
-		// 进入蓄力（长按右键，进度条满 32t 后触发 finishUsing）
-		user.setCurrentHand(hand);
-		return TypedActionResult.consume(stack);
+		if(element==null)return TypedActionResult.pass(stack);
+		String variant=FormationData.getVariant(stack);int level=FormationData.getLevel(stack);
+		if(FormationKnowledgeComponent.get(user).hasRecorded(element,variant,level)){
+			if(world.isClient)user.sendMessage(Text.translatable("message.ssc_addon.formation.already_recorded",displayName(element,variant),level).formatted(Formatting.YELLOW),true);
+			return TypedActionResult.fail(stack);
+		}
+		user.setCurrentHand(hand);return TypedActionResult.consume(stack);
 	}
 
 	/** 变体感知显示名（通用系显示变体名，其它系显示系别名）。 */
@@ -70,7 +62,7 @@ public class FormationItem extends Item {
 
 	@Override
 	public int getMaxUseTime(ItemStack stack) {
-		return CHARGE_TICKS;
+		return 32;
 	}
 
 	@Override
@@ -80,33 +72,26 @@ public class FormationItem extends Item {
 
 	@Override
 	public ItemStack finishUsing(ItemStack stack, World world, LivingEntity user) {
-		// 服务端权威：蓄满后完成记录（客户端直接原样返回）
-		if (!world.isClient && user instanceof ServerPlayerEntity player) {
-			FormationElement element = FormationData.getElement(stack);
-			if (element != null) {
-				int level = FormationData.getLevel(stack);
-				String variant = FormationData.getVariant(stack);
-				FormationKnowledgeComponent knowledge = FormationKnowledgeComponent.get(player);
-				// 二次校验（蓄力期间理论上不会变化，防御性保留）
-				if (!knowledge.hasRecorded(element, variant, level)) {
-					knowledge.record(element, variant, level);
-				FormationKnowledgeComponent.sync(player);
-					if (!player.getAbilities().creativeMode) {
-						stack.decrement(1);
-					}
-					player.sendMessage(Text.translatable("message.ssc_addon.formation.recorded",
-							displayName(element, variant), level).formatted(Formatting.GREEN), true);
-					world.playSound(null, player.getX(), player.getY(), player.getZ(),
-						SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.PLAYERS, 0.4f, 1.6f);
-				} else {
-					player.sendMessage(Text.translatable("message.ssc_addon.formation.already_recorded",
-							displayName(element, variant), level).formatted(Formatting.YELLOW), true);			}
+		if(ArcaneAnalysis.isUnanalyzed(stack))return stack;
+		if(!world.isClient&&user instanceof ServerPlayerEntity player){
+			FormationElement element=FormationData.getElement(stack);
+			if(element!=null){
+				int level=FormationData.getLevel(stack);String variant=FormationData.getVariant(stack);
+				var knowledge=FormationKnowledgeComponent.get(player);
+				if(!knowledge.hasRecorded(element,variant,level)){
+					knowledge.record(element,variant,level);FormationKnowledgeComponent.sync(player);
+					if(!player.getAbilities().creativeMode)stack.decrement(1);
+					player.sendMessage(Text.translatable("message.ssc_addon.formation.recorded",displayName(element,variant),level).formatted(Formatting.GREEN),true);
+					world.playSound(null,player.getBlockPos(),SoundEvents.UI_TOAST_CHALLENGE_COMPLETE,SoundCategory.PLAYERS,.4f,1.6f);
+				}
 			}
 		}
 		return stack;
 	}
 
-	@Override	public Text getName(ItemStack stack) {
+	@Override
+	public Text getName(ItemStack stack) {
+		if(ArcaneAnalysis.isUnanalyzed(stack))return Text.translatable("item.ssc_addon.unfamiliar_spell");
 		FormationElement element = FormationData.getElement(stack);
 		if (element != null) {
 			int level = FormationData.getLevel(stack);
@@ -127,6 +112,10 @@ public class FormationItem extends Item {
 
 	@Override
 	public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+		if(ArcaneAnalysis.isUnanalyzed(stack)){
+			tooltip.add(Text.translatable("message.ssc_addon.analysis.required").formatted(Formatting.GRAY));
+			return;
+		}
 		FormationElement element = FormationData.getElement(stack);
 		if (element == null) {
 			tooltip.add(Text.translatable("item.ssc_addon.formation.tip_empty").formatted(Formatting.DARK_GRAY));

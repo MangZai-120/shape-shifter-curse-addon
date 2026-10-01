@@ -2,6 +2,11 @@ package net.jackcooper.shapeShifterCurseAddon.block;
 
 import net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem;
 import net.jackcooper.shapeShifterCurseAddon.item.BlankFormationPaperItem;
+import net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem;
+import net.jackcooper.shapeShifterCurseAddon.item.FormationItem;
+import net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem;
+import net.jackcooper.shapeShifterCurseAddon.spell.*;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.jackcooper.shapeShifterCurseAddon.screen.SpellResearchTableScreenHandler;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -34,7 +39,11 @@ public class SpellResearchTableBlockEntity extends BlockEntity implements NamedS
 	public static final int SLOT_MOONDUST = 2;
 	public static final int SLOT_OUTPUT = 3;
 	public static final int SLOT_CATALYST = 4;
-	public static final int SLOT_COUNT = 5;
+	public static final int SLOT_ANALYSIS = 5;
+	public static final int SLOT_COUNT = 6;
+	public static final int ANALYSIS_TICKS = 200;
+	private int analysisTicks;
+	private ItemStack analysisInput = ItemStack.EMPTY;
 
 	private final DefaultedList<ItemStack> items = DefaultedList.ofSize(SLOT_COUNT, ItemStack.EMPTY);
 
@@ -60,12 +69,68 @@ public class SpellResearchTableBlockEntity extends BlockEntity implements NamedS
 		super.readNbt(nbt);
 		items.clear();
 		Inventories.readNbt(nbt, items);
+		analysisTicks = Math.max(0, Math.min(ANALYSIS_TICKS, nbt.getInt("AnalysisTicks")));
+		analysisInput = ItemStack.fromNbt(nbt.getCompound("AnalysisInput"));
 	}
 
 	@Override
 	public void writeNbt(NbtCompound nbt) {
 		super.writeNbt(nbt);
 		Inventories.writeNbt(nbt, items);
+		nbt.putInt("AnalysisTicks", analysisTicks);
+		nbt.put("AnalysisInput", analysisInput.writeNbt(new NbtCompound()));
+	}
+
+	public int getAnalysisTicks() { return analysisTicks; }
+	public enum AnalysisStatus { EMPTY, UNSUPPORTED, NO_PAPER, OUTPUT_FULL, READY, COMPLETE }
+	public static boolean acceptsAnalysisInput(ItemStack stack) {
+		return stack.getItem() instanceof MagicScrollItem && ScrollData.getSpell(stack) != null
+				|| stack.getItem() instanceof FormationItem && FormationData.getElement(stack) != null && ArcaneAnalysis.isUnanalyzed(stack);
+	}
+	public static AnalysisStatus analysisStatus(net.minecraft.inventory.Inventory inventory) {
+		return analysisStatus(inventory, inventory instanceof SpellResearchTableBlockEntity table ? table.getAnalysisTicks() : 0);
+	}
+	public static AnalysisStatus analysisStatus(net.minecraft.inventory.Inventory inventory, int ticks) {
+		ItemStack input = inventory.getStack(SLOT_ANALYSIS);
+		Spell spell = ScrollData.getSpell(input);
+		if (!acceptsAnalysisInput(input)) return AnalysisStatus.EMPTY;
+		if (input.getCount() != 1) return AnalysisStatus.UNSUPPORTED;
+		if (input.getItem() instanceof MagicScrollItem && !ArcaneAnalysis.isUnanalyzed(input)
+				&& !SlottedSpellRecipes.available(SlottedSpellRecipes.get(spell.getId().getPath()), ScrollData.getLevel(input))) return AnalysisStatus.UNSUPPORTED;
+		if (!inventory.getStack(SLOT_OUTPUT).isEmpty()) return AnalysisStatus.OUTPUT_FULL;
+		if (ticks == ANALYSIS_TICKS) return AnalysisStatus.COMPLETE;
+		if (!(inventory.getStack(SLOT_PAPER).getItem() instanceof BlankFormationPaperItem)) return AnalysisStatus.NO_PAPER;
+		return AnalysisStatus.READY;
+	}
+	public void advanceAnalysis(WorldRuneState language) {
+		ItemStack input = getStack(SLOT_ANALYSIS);
+		if (analysisTicks == ANALYSIS_TICKS && ItemStack.areEqual(input, analysisInput)) return;
+		Spell spell = ScrollData.getSpell(input);
+		int level = ScrollData.getLevel(input);
+		if (analysisStatus(this) != AnalysisStatus.READY) {
+			resetAnalysis(); return;
+		}
+		if (!ItemStack.areEqual(input, analysisInput)) { analysisTicks = 0; analysisInput = input.copy(); }
+		analysisTicks++;
+		if (analysisTicks < ANALYSIS_TICKS) { if (analysisTicks % 20 == 0) markDirty(); return; }
+		ItemStack result = input.getItem() instanceof MagicScrollItem
+				? AnalyzedSpellDiagramItem.create(language, spell.getId().getPath(), level) : ItemStack.EMPTY;
+		boolean returnOriginal = result.isEmpty() && ArcaneAnalysis.isUnanalyzed(input);
+		if (returnOriginal) { result = input.copy(); ArcaneAnalysis.identify(result); }
+		if (result.isEmpty()) { resetAnalysis(); return; }
+		getStack(SLOT_PAPER).decrement(1);
+		if (returnOriginal) setStack(SLOT_ANALYSIS, ItemStack.EMPTY);
+		else ArcaneAnalysis.identify(input);
+		setStack(SLOT_OUTPUT, result);
+		if (returnOriginal) resetAnalysis();
+		else {
+			analysisTicks = ANALYSIS_TICKS;
+			analysisInput = input.copy();
+		}
+		markDirty();
+	}
+	private void resetAnalysis() {
+		if (analysisTicks != 0 || !analysisInput.isEmpty()) { analysisTicks = 0; analysisInput = ItemStack.EMPTY; markDirty(); }
 	}
 
 	// ---- Inventory ----
@@ -91,16 +156,19 @@ public class SpellResearchTableBlockEntity extends BlockEntity implements NamedS
 
 	@Override
 	public ItemStack removeStack(int slot, int amount) {
+		if (slot == SLOT_ANALYSIS) resetAnalysis();
 		return Inventories.splitStack(items, slot, amount);
 	}
 
 	@Override
 	public ItemStack removeStack(int slot) {
+		if (slot == SLOT_ANALYSIS) resetAnalysis();
 		return Inventories.removeStack(items, slot);
 	}
 
 	@Override
 	public void setStack(int slot, ItemStack stack) {
+		if (slot == SLOT_ANALYSIS) resetAnalysis();
 		items.set(slot, stack);
 		if (stack.getCount() > getMaxCountPerStack()) {
 			stack.setCount(getMaxCountPerStack());
@@ -124,6 +192,7 @@ public class SpellResearchTableBlockEntity extends BlockEntity implements NamedS
 
 	@Override
 	public void clear() {
+		resetAnalysis();
 		items.clear();
 	}
 
@@ -136,11 +205,12 @@ public class SpellResearchTableBlockEntity extends BlockEntity implements NamedS
 
 	@Override
 	public int[] getAvailableSlots(Direction side) {
-		return side == Direction.DOWN ? new int[]{SLOT_OUTPUT} : new int[]{SLOT_PAPER, SLOT_INK, SLOT_MOONDUST, SLOT_CATALYST};
+		return side == Direction.DOWN ? new int[]{SLOT_OUTPUT} : new int[]{SLOT_PAPER, SLOT_INK, SLOT_MOONDUST, SLOT_CATALYST, SLOT_ANALYSIS};
 	}
 
 	@Override
 	public boolean canInsert(int slot, ItemStack stack, @Nullable Direction dir) {
+		if (slot == SLOT_ANALYSIS) return acceptsAnalysisInput(stack);
 		if (slot == SLOT_PAPER) {
 			return stack.getItem() instanceof BlankFormationPaperItem;
 		}

@@ -145,6 +145,8 @@ public final class FormationData {
 		stack.getOrCreateNbt().putString(NBT_ELEMENT, element.id);
 		int lv = Math.max(1, Math.min(MAX_FORMATION_LEVEL, level == 0 ? 1 : level));
 		stack.getOrCreateNbt().putInt(NBT_LEVEL, lv);
+		// Newly created items provide a drawing reference; untagged saved items keep legacy recording.
+		stack.getOrCreateNbt().putInt("ResearchFormat", 1);
 		if (element == FormationElement.UNIVERSAL) {
 			String v = normalizeVariant(variant);
 			stack.getOrCreateNbt().putString(NBT_VARIANT, v != null ? v : VARIANT_REGEN);

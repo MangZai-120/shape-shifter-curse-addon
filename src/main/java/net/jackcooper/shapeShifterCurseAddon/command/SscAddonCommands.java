@@ -55,12 +55,34 @@ public class SscAddonCommands {
 	private static final Logger LOGGER = LoggerFactory.getLogger("SscAddon-Debug");
 	private static final String SKILL_BLOCKED_PREFIX = "ssc_skill_blocked:";
 
+	private static int giveUnanalyzedScroll(CommandContext<ServerCommandSource> context, int level) throws CommandSyntaxException {
+		ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+		String spellPath = StringArgumentType.getString(context, "spell");
+		var stack = net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll(spellPath, level);
+		if (stack.isEmpty()) {
+			context.getSource().sendError(Text.translatable("command.ssc_addon.unanalyzed.invalid", spellPath, level));
+			return 0;
+		}
+		if (!player.getInventory().insertStack(stack)) player.dropItem(stack, false);
+		context.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.unanalyzed.given", spellPath, level), false);
+		return 1;
+	}
+
 	private SscAddonCommands() {
 		// This utility class should not be instantiated
 	}
 
 	public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
 		dispatcher.register(CommandManager.literal("ssc_addon")
+				.then(CommandManager.literal("give_unanalyzed_scroll")
+						.requires(source -> source.hasPermissionLevel(2))
+						.then(CommandManager.argument("spell", StringArgumentType.word())
+								.suggests((context, builder) -> CommandSource.suggestMatching(
+										net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.all().stream()
+												.map(spell -> spell.getId().getPath()), builder))
+								.executes(context -> giveUnanalyzedScroll(context, 1))
+								.then(CommandManager.argument("level", IntegerArgumentType.integer(1, 5))
+										.executes(context -> giveUnanalyzedScroll(context, IntegerArgumentType.getInteger(context, "level"))))))
 				.then(CommandManager.literal("set_mana")
 						.requires(source -> source.hasPermissionLevel(2))
 						.then(CommandManager.argument("targets", EntityArgumentType.players())

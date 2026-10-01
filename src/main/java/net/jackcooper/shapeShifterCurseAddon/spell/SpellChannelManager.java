@@ -140,6 +140,10 @@ public final class SpellChannelManager {
 	public static boolean start(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level,
 			boolean solo, int token, int mana, int cooldown, BooleanSupplier sourceValid,
 			Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse) {
+		if (ArcaneAnalysis.isUnanalyzed(scroll)) {
+			player.sendMessage(Text.translatable("message.ssc_addon.analysis.required"), true);
+			return false;
+		}
         if (!net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(player)) return false;
 		if (isCasting(player) || !player.isAlive() || player.isSpectator()) return false;
 		// 所有法术在捕获目标、创建演出、禁动或渐进扣费之前重验整次消耗。

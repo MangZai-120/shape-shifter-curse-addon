@@ -2,7 +2,7 @@ package net.jackcooper.shapeShifterCurseAddon.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
+import net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot;
 import net.minecraft.block.entity.ChestBlockEntity;
 import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.inventory.Inventory;
@@ -23,7 +23,6 @@ public abstract class DomainChestLootMixin {
 		if (!((Object) this instanceof ChestBlockEntity chest) || chest.getWorld() == null) return;
 		World world = chest.getWorld();
 		// 末地 2%：领域（空间系红色）；下界 3%：爆裂魔法（烈焰系红色，2026-09-22）。
-		// ScrollData.create 单参重载钳制 level=1，红色单级 NBT 天然合法。
 		String spell = null;
 		if (world.getRegistryKey().equals(World.END) && world.random.nextFloat() < 0.02f) {
 			spell = "domain";
@@ -31,7 +30,8 @@ public abstract class DomainChestLootMixin {
 			spell = "explosion";
 		}
 		if (spell == null) return;
-		var scroll = ScrollData.create(spell);
+		var scroll = MagicScrollLoot.createNaturalScroll(spell, 1);
+		if (scroll.isEmpty()) return;
 		var empty = new java.util.ArrayList<Integer>();
 		for (int slot = 0; slot < inventory.size(); slot++) if (inventory.getStack(slot).isEmpty()) empty.add(slot);
 		if (!empty.isEmpty()) inventory.setStack(empty.get(world.random.nextInt(empty.size())), scroll);

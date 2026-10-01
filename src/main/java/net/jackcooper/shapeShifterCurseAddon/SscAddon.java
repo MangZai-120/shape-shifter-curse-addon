@@ -142,6 +142,9 @@ public class SscAddon implements ModInitializer {
 	public static final Item MOONLIGHT_ARROW_RENDER = new Item(new Item.Settings());
 	// 增强法阵（NBT 绑定系别+等级；右键记录魔法进玩家数据，jackcooper）
 	public static final Item FORMATION = new net.jackcooper.shapeShifterCurseAddon.item.FormationItem(new Item.Settings().maxCount(16));
+	public static final Item FORMATION_MANUSCRIPT = new Item(new Item.Settings().maxCount(1));
+	public static final Item SPELL_FORMATION = new net.jackcooper.shapeShifterCurseAddon.item.SpellFormationItem(new Item.Settings().maxCount(1));
+	public static final Item ANALYZED_SPELL_DIAGRAM = new net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem(new Item.Settings().maxCount(1));
 	// 空白法阵纸（研究台抄写耗材）
 	public static final Item BLANK_FORMATION_PAPER = new net.jackcooper.shapeShifterCurseAddon.item.BlankFormationPaperItem(new Item.Settings().maxCount(16));
 	// 法阵油墨三型：普通基底 / 冰系 / 火系（抄写对应系法阵耗材）
@@ -560,6 +563,9 @@ public class SscAddon implements ModInitializer {
 		registerItem("magic_scroll", MAGIC_SCROLL);
 		registerItem("moonlight_arrow_render", MOONLIGHT_ARROW_RENDER);
 		registerItem("formation", FORMATION);
+		registerItem("formation_manuscript", FORMATION_MANUSCRIPT);
+		registerItem("spell_formation", SPELL_FORMATION);
+		registerItem("analyzed_spell_diagram", ANALYZED_SPELL_DIAGRAM);
 		registerItem("blank_formation_paper", BLANK_FORMATION_PAPER);
 		registerItem("formation_ink_normal", FORMATION_INK_NORMAL);
 		registerItem("formation_ink_ice", FORMATION_INK_ICE);
@@ -656,6 +662,7 @@ public class SscAddon implements ModInitializer {
 		SscAddonConditions.register();
 		SscAddonPowers.register();
 		SscAddonNetworking.registerServerReceivers();
+		net.jackcooper.shapeShifterCurseAddon.spell.research.FormationResearchNetworking.register();
 		StoryBookLoot.init();
 		AllaySPTotem.init();
 		AllaySPPortableBeacon.init(); // SP 悦灵右键信标切换激活（UseItemCallback 注册，此前漏注册导致功能失效）

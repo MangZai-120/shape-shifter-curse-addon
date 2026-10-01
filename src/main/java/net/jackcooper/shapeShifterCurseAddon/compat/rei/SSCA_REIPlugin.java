@@ -2,6 +2,7 @@ package net.jackcooper.shapeShifterCurseAddon.compat.rei;
 
 import me.shedaniel.rei.api.client.plugins.REIClientPlugin;
 import me.shedaniel.rei.api.client.registry.display.DisplayRegistry;
+import me.shedaniel.rei.api.client.registry.screen.ScreenRegistry;
 import me.shedaniel.rei.api.client.registry.transfer.TransferHandlerRegistry;
 import me.shedaniel.rei.api.common.util.EntryIngredients;
 import me.shedaniel.rei.api.common.util.EntryStacks;
@@ -9,6 +10,7 @@ import me.shedaniel.rei.plugin.common.displays.crafting.DefaultCraftingDisplay;
 import me.shedaniel.rei.plugin.common.displays.brewing.DefaultBrewingDisplay;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.util.ActionResult;
 import net.minecraft.potion.PotionUtil;
 import net.minecraft.potion.Potions;
 import net.minecraft.util.Identifier;
@@ -35,6 +37,26 @@ public class SSCA_REIPlugin implements REIClientPlugin {
 	public void registerTransferHandlers(TransferHandlerRegistry registry) {
 		// SSCA 特殊配方的快速转移：支持带 NBT 的药水材料（REI 原生转移只按裸 item id 匹配会丢 NBT）
 		registry.register(new SscSpecialRecipeTransferHandler());
+	}
+
+	@Override
+	public void registerScreens(ScreenRegistry registry) {
+		// 绘制法阵界面（FormationResearchScreen）是全屏画布，REI 物品侧栏会盖住画布：
+		// 注册 OverlayDecider 对该屏幕返回 FAIL，REI 遍历 decider 时一票否决、不渲染 overlay
+		//（反编译核实：RoughlyEnoughItemsCoreClient._shouldReturn 遇任何非 PASS 即隐藏）。
+		// 对其它屏幕一律 PASS，行为不变。
+		registry.registerDecider(new me.shedaniel.rei.api.client.registry.screen.OverlayDecider() {
+			@Override
+			public <R extends net.minecraft.client.gui.screen.Screen> boolean isHandingScreen(Class<R> screen) {
+				return screen == net.jackcooper.shapeShifterCurseAddon.client.screen.SlottedFormationScreen.class;
+			}
+
+			@Override
+			public <R extends net.minecraft.client.gui.screen.Screen> ActionResult shouldScreenBeOverlaid(R screen) {
+				return screen instanceof net.jackcooper.shapeShifterCurseAddon.client.screen.SlottedFormationScreen
+						? ActionResult.FAIL : ActionResult.PASS;
+			}
+		});
 	}
 
 	public void registerDisplays(DisplayRegistry registry) {

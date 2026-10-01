@@ -136,8 +136,11 @@ public class SpellResearchTableBlock extends BlockWithEntity {
 	@Nullable
 	@Override
 	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
-		// 无 tick 逻辑（抄写/学习全由按钮 C2S 驱动）
-		return null;
+		if (world.isClient || !type.equals(RegAddonBlockEntities.SPELL_RESEARCH_TABLE_BE)) return null;
+		return (serverWorld, pos, blockState, entity) -> {
+					if (entity instanceof SpellResearchTableBlockEntity table && (!table.getStack(SpellResearchTableBlockEntity.SLOT_ANALYSIS).isEmpty() || table.getAnalysisTicks() > 0))
+						table.advanceAnalysis(net.jackcooper.shapeShifterCurseAddon.spell.research.WorldRuneState.get(serverWorld.getServer()));
+				};
 	}
 
 	@Override

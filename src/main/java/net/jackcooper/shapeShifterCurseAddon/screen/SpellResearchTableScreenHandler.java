@@ -12,6 +12,8 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
+import net.minecraft.screen.PropertyDelegate;
+import net.minecraft.screen.ArrayPropertyDelegate;
 import net.minecraft.screen.slot.Slot;
 import net.onixary.shapeShifterCurseFabric.items.RegCustomItem;
 
@@ -24,6 +26,14 @@ public class SpellResearchTableScreenHandler extends ScreenHandler {
 	public static final int GUI_HEIGHT = 212;
 	public static final int INVENTORY_X = 76;
 	private final Inventory inventory;
+	private final PropertyDelegate analysis;
+	private int activePage;
+	public void setActivePage(int page) { if (page >= 0 && page <= 4) activePage = page; }
+	@Override public boolean onButtonClick(PlayerEntity player, int page) {
+		if (page < 0 || page > 4 || !canUse(player)) return false;
+		activePage = page; return true;
+	}
+	public int getAnalysisTicks() { return analysis.get(0); }
 
 	/** 供 C2S 包定位研究台方块实体（服务端权威重验用）。 */
 	public Inventory getInventory() {
@@ -38,6 +48,12 @@ public class SpellResearchTableScreenHandler extends ScreenHandler {
 		super(RegAddonBlockEntities.SPELL_RESEARCH_TABLE_SH, syncId);
 		checkSize(inventory, SpellResearchTableBlockEntity.SLOT_COUNT);
 		this.inventory = inventory;
+		this.analysis = inventory instanceof SpellResearchTableBlockEntity table ? new PropertyDelegate() {
+			public int get(int index) { return table.getAnalysisTicks(); }
+			public void set(int index, int value) { }
+			public int size() { return 1; }
+		} : new ArrayPropertyDelegate(1);
+		addProperties(this.analysis);
 		inventory.onOpen(playerInventory.player);
 
 		this.addSlot(new Slot(inventory, 0, 154, 72) {
@@ -47,21 +63,23 @@ public class SpellResearchTableScreenHandler extends ScreenHandler {
 			}
 		});
 		this.addSlot(new Slot(inventory, 1, 182, 72) {
+			@Override public boolean isEnabled() { return activePage != 0; }
 			@Override
 			public boolean canInsert(ItemStack stack) {
-				return stack.getItem() instanceof FormationInkItem;
+				return isEnabled() && stack.getItem() instanceof FormationInkItem;
 			}
 		});
 		this.addSlot(new Slot(inventory, 2, 210, 72) {
+			@Override public boolean isEnabled() { return activePage != 0; }
 			@Override
 			public boolean canInsert(ItemStack stack) {
-				return stack.getItem() == RegCustomItem.UNTREATED_MOONDUST;
+				return isEnabled() && stack.getItem() == RegCustomItem.UNTREATED_MOONDUST;
 			}
 		});
 		this.addSlot(new Slot(inventory, 3, 282, 72) {
 			@Override
 			public boolean canInsert(ItemStack stack) {
-				return stack.getItem() instanceof MagicScrollItem && ScrollData.getSpell(stack) != null;
+				return activePage != 0 && stack.getItem() instanceof MagicScrollItem && ScrollData.getSpell(stack) != null;
 			}
 
 			@Override
@@ -70,12 +88,18 @@ public class SpellResearchTableScreenHandler extends ScreenHandler {
 			}
 		});
 		this.addSlot(new Slot(inventory, SpellResearchTableBlockEntity.SLOT_CATALYST, 240, 72) {
+			@Override public boolean isEnabled() { return activePage != 0; }
 			@Override
 			public boolean canInsert(ItemStack stack) {
-				return stack.isOf(RegCustomItem.MOONDUST_CRYSTAL_SHARD);
+				return isEnabled() && stack.isOf(RegCustomItem.MOONDUST_CRYSTAL_SHARD);
 			}
 		});
 
+		this.addSlot(new Slot(inventory, SpellResearchTableBlockEntity.SLOT_ANALYSIS, 32, 72) {
+			@Override public boolean isEnabled() { return activePage == 0; }
+			@Override public boolean canInsert(ItemStack stack) { return isEnabled() && SpellResearchTableBlockEntity.acceptsAnalysisInput(stack); }
+			@Override public int getMaxItemCount() { return 1; }
+		});
 		// 玩家背包
 		for (int row = 0; row < 3; ++row) {
 			for (int col = 0; col < 9; ++col) {
@@ -95,9 +119,10 @@ public class SpellResearchTableScreenHandler extends ScreenHandler {
 
 	@Override
 	public ItemStack quickMove(PlayerEntity player, int index) {
+		if (index < 0 || index >= this.slots.size()) return ItemStack.EMPTY;
 		ItemStack newStack = ItemStack.EMPTY;
 		Slot slot = this.slots.get(index);
-		if (slot != null && slot.hasStack()) {
+		if (slot != null && slot.isEnabled() && slot.hasStack()) {
 			ItemStack original = slot.getStack();
 			newStack = original.copy();
 			if (index < SpellResearchTableBlockEntity.SLOT_COUNT) {
@@ -105,8 +130,12 @@ public class SpellResearchTableScreenHandler extends ScreenHandler {
 					return ItemStack.EMPTY;
 				}
 			} else {
-				boolean routed = this.insertItem(original, 3, 4, false)
-						|| this.insertItem(original, SpellResearchTableBlockEntity.SLOT_CATALYST, SpellResearchTableBlockEntity.SLOT_COUNT, false)
+				boolean routed = activePage == 0
+						? !this.getSlot(SpellResearchTableBlockEntity.SLOT_ANALYSIS).hasStack()
+								&& this.insertItem(original, SpellResearchTableBlockEntity.SLOT_ANALYSIS, SpellResearchTableBlockEntity.SLOT_ANALYSIS + 1, false)
+								|| this.insertItem(original, 0, 1, false)
+						: this.insertItem(original, 3, 4, false)
+						|| this.insertItem(original, SpellResearchTableBlockEntity.SLOT_CATALYST, SpellResearchTableBlockEntity.SLOT_CATALYST + 1, false)
 						|| this.insertItem(original, 0, 1, false)   // 纸
 						|| this.insertItem(original, 1, 2, false)          // 墨
 						|| this.insertItem(original, 2, 3, false);         // 尘

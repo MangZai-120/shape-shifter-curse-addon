@@ -94,7 +94,7 @@ public class InfusionAltarScreenHandler extends ScreenHandler {
 					if (!SpellbookData.isFormationSlotUnlocked(book, formationSlot)) {
 						return false;
 					}
-					return FormationData.isFormation(stack);
+					return FormationData.isFormation(stack) && !net.jackcooper.shapeShifterCurseAddon.spell.ArcaneAnalysis.isUnanalyzed(stack);
 				}
 
 				@Override

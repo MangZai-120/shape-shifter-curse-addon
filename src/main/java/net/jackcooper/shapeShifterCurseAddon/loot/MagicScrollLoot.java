@@ -9,6 +9,7 @@ import net.minecraft.loot.provider.number.ConstantLootNumberProvider;
 import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
+import net.jackcooper.shapeShifterCurseAddon.spell.ArcaneAnalysis;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.item.ItemStack;
@@ -98,12 +99,7 @@ public final class MagicScrollLoot {
 	// 1.20.1 中 SetNbtLootFunction.builder(NbtCompound) 是唯一可用重载（@Deprecated 但无替代，同 StoryBookLoot）
 	@SuppressWarnings("deprecation")
 	private static net.minecraft.loot.entry.LootPoolEntry.Builder<?> scrollEntry(String spellPath, int level, int weight) {
-		NbtCompound nbt = new NbtCompound();
-		nbt.putString(ScrollData.NBT_SPELL, spellPath);
-		// 单独使用次数按等级对应品质上限（如白8/绿6/蓝4/紫2/橙1）
-		net.jackcooper.shapeShifterCurseAddon.spell.Spell spell = SpellRegistry.get(spellPath);
-		nbt.putInt(ScrollData.NBT_USES, spell == null ? 8 : spell.getRarity(level).soloUses);
-		nbt.putInt(ScrollData.NBT_LEVEL, level);
+		NbtCompound nbt = createNaturalScroll(spellPath, level).getOrCreateNbt();
 		return ItemEntry.builder(SscAddon.MAGIC_SCROLL)
 				.apply(SetNbtLootFunction.builder(nbt))
 				.weight(weight);
@@ -121,5 +117,11 @@ public final class MagicScrollLoot {
 	/** 供命令调试：生成一张指定等级的冰锥卷轴。 */
 	public static ItemStack createFrostSpikeScroll(int level) {
 		return ScrollData.create("frost_spike", level);
+	}
+
+	public static ItemStack createNaturalScroll(String spellPath, int level) {
+		var spell = SpellRegistry.get(spellPath);
+		if (spell == null || level < 1 || level > spell.getMaxLevel()) return ItemStack.EMPTY;
+		return ArcaneAnalysis.markUnanalyzed(ScrollData.create(spellPath, level));
 	}
 }

@@ -162,6 +162,10 @@ public final class ScrollWorkshopManager {
 		}
 		// 主卷轴：产出槽内同法术、等级 = 目标-1
 		ItemStack main = be.getStack(SpellResearchTableBlockEntity.SLOT_OUTPUT);
+		if (ArcaneAnalysis.isUnanalyzed(main)) {
+			player.sendMessage(Text.translatable("message.ssc_addon.analysis.required").formatted(Formatting.RED), true);
+			return;
+		}
 		if (main.isEmpty() || !(main.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem)
 				|| ScrollData.getSpell(main) != spell || ScrollData.getLevel(main) != targetLevel - 1) {
 			player.sendMessage(Text.translatable("message.ssc_addon.workshop.no_main_scroll",
@@ -208,6 +212,10 @@ public final class ScrollWorkshopManager {
 			return;
 		}
 		ItemStack scroll = be.getStack(SpellResearchTableBlockEntity.SLOT_OUTPUT);
+		if (ArcaneAnalysis.isUnanalyzed(scroll)) {
+			player.sendMessage(Text.translatable("message.ssc_addon.analysis.required").formatted(Formatting.RED), true);
+			return;
+		}
 		if (scroll.isEmpty() || ScrollData.getSpell(scroll) == null) {
 			player.sendMessage(Text.translatable("message.ssc_addon.workshop.no_scroll").formatted(Formatting.RED), true);
 			return;

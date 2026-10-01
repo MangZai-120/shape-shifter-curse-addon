@@ -52,6 +52,10 @@ public final class SpellCastManager {
 		if (scroll.isEmpty()) {
 			return;
 		}
+		if (ArcaneAnalysis.isUnanalyzed(scroll)) {
+			player.sendMessage(Text.translatable("message.ssc_addon.analysis.required"), true);
+			return;
+		}
 		Spell spell = ScrollData.getSpell(scroll);
 		if (spell == null) {
 			return;
@@ -105,6 +109,10 @@ public final class SpellCastManager {
 		}
 		ItemStack scroll = SpellbookData.getScroll(book, slot);
 		if (scroll.isEmpty()) {
+			return;
+		}
+		if (ArcaneAnalysis.isUnanalyzed(scroll)) {
+			player.sendMessage(Text.translatable("message.ssc_addon.analysis.required"), true);
 			return;
 		}
 		Spell spell = ScrollData.getSpell(scroll);

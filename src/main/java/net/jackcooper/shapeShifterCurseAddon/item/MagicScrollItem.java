@@ -1,6 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.item;
 
 import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
+import net.jackcooper.shapeShifterCurseAddon.spell.ArcaneAnalysis;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager;
@@ -10,8 +11,6 @@ import net.minecraft.client.item.TooltipData;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -39,27 +38,17 @@ public class MagicScrollItem extends Item {
 	@Override
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
 		ItemStack stack = user.getStackInHand(hand);
+		if (ArcaneAnalysis.isUnanalyzed(stack)) {
+			if (!world.isClient) user.sendMessage(Text.translatable("message.ssc_addon.analysis.required").formatted(Formatting.RED), true);
+			return TypedActionResult.fail(stack);
+		}
 		Spell spell = ScrollData.getSpell(stack);
 		if (spell == null) {
 			return TypedActionResult.pass(stack);
 		}
-		// 阶段 C（§8.1）：潜行右键 = 记录法术图谱（不消耗卷轴、幂等；解锁研究台定向制作）
 		if (user.isSneaking()) {
 			if (!world.isClient && user instanceof ServerPlayerEntity sp) {
-				net.jackcooper.shapeShifterCurseAddon.spell.FormationKnowledgeComponent knowledge =
-					net.jackcooper.shapeShifterCurseAddon.spell.FormationKnowledgeComponent.get(sp);
-				String path = spell.getId().getPath();
-				if (!knowledge.hasSpell(path)) {
-					knowledge.recordSpell(path);
-					net.jackcooper.shapeShifterCurseAddon.spell.FormationKnowledgeComponent.sync(sp);
-					sp.sendMessage(Text.translatable("message.ssc_addon.scroll.atlas_recorded",
-						Text.translatable(spell.getNameKey())).formatted(Formatting.GREEN), true);
-					sp.getWorld().playSound(null, sp.getX(), sp.getY(), sp.getZ(),
-						SoundEvents.UI_TOAST_IN, SoundCategory.PLAYERS, 0.8f, 1.4f);
-				} else {
-					sp.sendMessage(Text.translatable("message.ssc_addon.scroll.atlas_already",
-						Text.translatable(spell.getNameKey())).formatted(Formatting.YELLOW), true);
-				}
+				sp.sendMessage(Text.translatable("research.ssc_addon.slotted.analyze_scroll"), true);
 			}
 			return TypedActionResult.success(stack);
 		}
@@ -150,6 +139,7 @@ public class MagicScrollItem extends Item {
 
 	@Override
 	public Text getName(ItemStack stack) {
+		if (ArcaneAnalysis.isUnanalyzed(stack)) return Text.translatable("item.ssc_addon.unfamiliar_spell");
 		Spell spell = ScrollData.getSpell(stack);
 		if (spell == null) {
 			return super.getName(stack);
@@ -165,6 +155,7 @@ public class MagicScrollItem extends Item {
 
 	@Override
 	public Optional<TooltipData> getTooltipData(ItemStack stack) {
+		if (ArcaneAnalysis.isUnanalyzed(stack)) return Optional.empty();
 		Spell spell = ScrollData.getSpell(stack);
 		return spell == null
 				? Optional.empty()
@@ -173,6 +164,10 @@ public class MagicScrollItem extends Item {
 
 	@Override
 	public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+		if (ArcaneAnalysis.isUnanalyzed(stack)) {
+			tooltip.add(Text.translatable("message.ssc_addon.analysis.required").formatted(Formatting.GRAY));
+			return;
+		}
 		Spell spell = ScrollData.getSpell(stack);
 		if (spell == null) {
 			tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.tip_empty").formatted(Formatting.DARK_GRAY));

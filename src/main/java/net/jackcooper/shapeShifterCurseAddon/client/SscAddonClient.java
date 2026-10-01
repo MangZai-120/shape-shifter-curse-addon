@@ -59,6 +59,7 @@ public class SscAddonClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
+		FormationResearchClient.register();
 		SustainedVisualClient.init();
 		net.jackcooper.shapeShifterCurseAddon.client.particle.FirstPersonParticles.init();
 		CountdownClient.init();
@@ -494,10 +495,10 @@ public class SscAddonClient implements ClientModInitializer {
 			if (stack.getItem() == SscAddon.CORAL_BALL) {
 				addSplitTooltip(lines, "item.ssc_addon.coral_ball.tooltip");
 			}
-			if (stack.getItem() == SscAddon.MAGIC_SCROLL
-					&& net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getSpell(stack) != null
+			if (stack.getTooltipData().filter(MagicScrollItem.SpellIconTooltipData.class::isInstance).isPresent()
 					&& !lines.isEmpty()) {
-				lines.set(0, Text.literal("     ").append(lines.get(0)));
+				var client = net.minecraft.client.MinecraftClient.getInstance();
+				SpellIconTooltipComponent.formatTooltip(client.textRenderer, lines, client.getWindow().getScaledWidth());
 			}
 		});
 		TooltipComponentCallback.EVENT.register(data -> data instanceof MagicScrollItem.SpellIconTooltipData iconData

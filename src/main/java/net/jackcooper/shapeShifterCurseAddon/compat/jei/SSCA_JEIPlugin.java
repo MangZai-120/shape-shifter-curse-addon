@@ -65,6 +65,54 @@ public class SSCA_JEIPlugin implements IModPlugin {
 	}
 
 	@Override
+	public void registerGuiHandlers(mezz.jei.api.registration.IGuiHandlerRegistration registration) {
+		// 绘制法阵界面（FormationResearchScreen）是全屏画布，JEI 物品侧栏会盖住画布。
+		// JEI 机制（反编译核实）：ScreenHelper.getGuiProperties 按「类距离升序 + isInstance」取第一个
+		// 非 null 的 IScreenHandler；JEI 内部给 HandledScreen 注册了兜底（返回 GUI 框矩形），
+		// 所以这里不能返回 null（会落到兜底）——改为返回「GUI 覆盖整个屏幕」的属性，
+		// JEI 侧栏被挤到屏幕外、无空间显示，等效隐藏。数值全部合法（>0 且 <1e9），
+		// 不会触发 validateGuiProperties 的 error 日志。返回研究台界面后自动恢复。
+		registration.addGuiScreenHandler(
+				net.jackcooper.shapeShifterCurseAddon.client.screen.SlottedFormationScreen.class,
+				screen -> new mezz.jei.api.gui.handlers.IGuiProperties() {
+					@Override
+					public Class<? extends net.minecraft.client.gui.screen.Screen> getScreenClass() {
+						return net.jackcooper.shapeShifterCurseAddon.client.screen.SlottedFormationScreen.class;
+					}
+
+					@Override
+					public int getGuiLeft() {
+						return 0;
+					}
+
+					@Override
+					public int getGuiTop() {
+						return 0;
+					}
+
+					@Override
+					public int getGuiXSize() {
+						return screen.width;
+					}
+
+					@Override
+					public int getGuiYSize() {
+						return screen.height;
+					}
+
+					@Override
+					public int getScreenWidth() {
+						return screen.width;
+					}
+
+					@Override
+					public int getScreenHeight() {
+						return screen.height;
+					}
+				});
+	}
+
+	@Override
 	public void registerRecipes(mezz.jei.api.registration.IRecipeRegistration registration) {
 		registration.addRecipes(VENOM_GLAND, java.util.List.of(new VenomGlandRecipe()));
 		registration.addRecipes(INFINITE_ENERGY_POTION, java.util.List.of(new InfiniteEnergyPotionDisplay()));

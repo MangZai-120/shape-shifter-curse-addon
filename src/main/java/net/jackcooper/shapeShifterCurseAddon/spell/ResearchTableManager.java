@@ -1,9 +1,11 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
 import net.jackcooper.shapeShifterCurseAddon.block.SpellResearchTableBlockEntity;
+import net.jackcooper.shapeShifterCurseAddon.item.BlankFormationPaperItem;
 import net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem;
 import net.jackcooper.shapeShifterCurseAddon.screen.SpellResearchTableScreenHandler;
 import net.minecraft.item.ItemStack;
+import net.minecraft.inventory.Inventory;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -11,116 +13,63 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.onixary.shapeShifterCurseFabric.items.RegCustomItem;
 
-/**
- * 法术研究台服务端核心（jackcooper）。抄写/学习全部由 C2S 包触发、此处服务端权威重验：
- * <ul>
- *   <li><b>抄写</b>：已学习 + 纸×1 + 对应系油墨×等级 → 产出法阵（放产出槽）；</li>
- *   <li><b>学习</b>：已记录 + 未学习到位 + 未加工月之尘×(2×等级) → 提升学习等级。</li>
- * </ul>
- * <p>后续小游戏（完美完成省 40% 月尘）预留 {@code discount} 参数接口，当前恒 0。</p>
- */
 public final class ResearchTableManager {
-	private ResearchTableManager() {
-	}
+    private ResearchTableManager() {}
 
-	/** 抄写：产出对应系别（+变体）等级的法阵。服务端重验：已学习 + 纸 + 对应系墨×等级 + 产出槽空。 */
-	public static void scribe(ServerPlayerEntity player, String elementId, String variant, int level) {
-		if (!(player.currentScreenHandler instanceof SpellResearchTableScreenHandler sh)
-				|| !(sh.getInventory() instanceof SpellResearchTableBlockEntity be)) {
-			return;
-		}
-		FormationElement element = FormationElement.byId(elementId);
-		String v = FormationData.normalizeVariant(variant);
-		if (element == null || level < 1 || level > FormationData.MAX_FORMATION_LEVEL) {
-			return;
-		}
-		// 通用系非法变体归 regen；非通用系忽略变体
-		if (element == FormationElement.UNIVERSAL && v == null) {
-			v = FormationData.VARIANT_REGEN;
-		}
-		FormationKnowledgeComponent knowledge = FormationKnowledgeComponent.get(player);
-		if (!knowledge.hasLearned(element, v, level)) {
-			player.sendMessage(Text.translatable("message.ssc_addon.research.not_learned").formatted(Formatting.RED), true);
-			return;
-		}
-		// 材料重验：纸×1 + 油墨×level（通用系用普通墨；火/冰必须对应系墨）
-		if (!(be.getStack(SpellResearchTableBlockEntity.SLOT_PAPER).getItem()
-				instanceof net.jackcooper.shapeShifterCurseAddon.item.BlankFormationPaperItem)) {
-			player.sendMessage(Text.translatable("message.ssc_addon.research.no_paper").formatted(Formatting.RED), true);
-			return;
-		}
-		ItemStack ink = be.getStack(SpellResearchTableBlockEntity.SLOT_INK);
-		boolean inkValid;
-		if (element == FormationElement.UNIVERSAL) {
-			// 通用法阵：普通法阵油墨（Type.NORMAL），数量 ≥ level
-			inkValid = ink.getItem() instanceof FormationInkItem inkItem
-					&& inkItem.getType() == FormationInkItem.Type.NORMAL && ink.getCount() >= level;
-		} else {
-			inkValid = ink.getItem() instanceof FormationInkItem inkItem && inkItem.getType() != FormationInkItem.Type.NORMAL
-					&& inkItem.getType().element == element && ink.getCount() >= level;
-		}
-		if (!inkValid) {
-			player.sendMessage(Text.translatable("message.ssc_addon.research.no_ink",
-					Text.translatable(element.getNameKey()), level).formatted(Formatting.RED), true);
-			return;
-		}
-		// 产出槽需空（或同物品可叠——法阵 maxCount 1，故要求空）
-		if (!be.getStack(SpellResearchTableBlockEntity.SLOT_OUTPUT).isEmpty()) {
-			player.sendMessage(Text.translatable("message.ssc_addon.research.output_full").formatted(Formatting.RED), true);
-			return;
-		}
-		// 扣材料 + 产出（通用系产出带变体）
-		be.getStack(SpellResearchTableBlockEntity.SLOT_PAPER).decrement(1);
-		ink.decrement(level);
-		be.setStack(SpellResearchTableBlockEntity.SLOT_OUTPUT,
-				FormationData.create(element, level, element == FormationElement.UNIVERSAL ? v : null));
-		be.markDirty();
-		player.getWorld().playSound(null, be.getPos(), SoundEvents.ITEM_BOOK_PAGE_TURN, SoundCategory.BLOCKS, 1.0f, 1.0f);
-		player.sendMessage(Text.translatable("message.ssc_addon.research.scribed",
-				Text.translatable(element.getNameKey()), level).formatted(Formatting.GREEN), true);
-	}
+    public static void scribe(ServerPlayerEntity player,String elementId,String variant,int level){
+        execute(player,elementId,variant,level,true,0);
+    }
 
-	/**
-	 * 学习：消耗未加工月之尘提升学习等级。服务端重验：已记录 + 未学习到位 + 尘够。
-	 *
-	 * @param discount 折扣（0-40，百分号；小游戏完美完成 = 40，当前恒 0）
-	 */
-	public static void learn(ServerPlayerEntity player, String elementId, String variant, int level, int discount) {
-		if (!(player.currentScreenHandler instanceof SpellResearchTableScreenHandler sh)
-				|| !(sh.getInventory() instanceof SpellResearchTableBlockEntity be)) {
-			return;
-		}
-		FormationElement element = FormationElement.byId(elementId);
-		String v = FormationData.normalizeVariant(variant);
-		if (element == null || level < 1 || level > FormationData.MAX_FORMATION_LEVEL) {
-			return;
-		}
-		if (element == FormationElement.UNIVERSAL && v == null) {
-			v = FormationData.VARIANT_REGEN;
-		}
-		FormationKnowledgeComponent knowledge = FormationKnowledgeComponent.get(player);
-		if (!knowledge.hasRecorded(element, v, level)) {
-			player.sendMessage(Text.translatable("message.ssc_addon.research.not_recorded").formatted(Formatting.RED), true);
-			return;
-		}
-		if (knowledge.hasLearned(element, v, level)) {
-			player.sendMessage(Text.translatable("message.ssc_addon.research.already_learned").formatted(Formatting.YELLOW), true);
-			return;
-		}
-		int baseCost = level * 2;
-		int cost = Math.max(1, baseCost - baseCost * Math.max(0, Math.min(40, discount)) / 100);
-		ItemStack dust = be.getStack(SpellResearchTableBlockEntity.SLOT_MOONDUST);
-		if (dust.getItem() != RegCustomItem.UNTREATED_MOONDUST || dust.getCount() < cost) {
-			player.sendMessage(Text.translatable("message.ssc_addon.research.no_dust", cost).formatted(Formatting.RED), true);
-			return;
-		}
-		dust.decrement(cost);
-		knowledge.learn(element, v, level);
-		FormationKnowledgeComponent.sync(player);
-		be.markDirty();
-		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
-				SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.PLAYERS, 0.5f, 1.2f);
-		player.sendMessage(Text.translatable("message.ssc_addon.research.learned",
-				Text.translatable(element.getNameKey()), level).formatted(Formatting.GREEN), true);
-	}
+    public static void learn(ServerPlayerEntity player,String elementId,String variant,int level,int discount){
+        execute(player,elementId,variant,level,false,discount);
+    }
+
+    private static void execute(ServerPlayerEntity player,String elementId,String variant,int level,boolean scribing,int discount){
+        if(!(player.currentScreenHandler instanceof SpellResearchTableScreenHandler handler)||!handler.canUse(player)
+                ||!(handler.getInventory() instanceof SpellResearchTableBlockEntity table))return;
+        FormationElement element=FormationElement.byId(elementId);
+        if(element==null||level<1||level>FormationData.MAX_FORMATION_LEVEL)return;
+        String result=transact(table,FormationKnowledgeComponent.get(player),elementId,variant,level,scribing,discount);
+        if(!result.equals("ok")){
+            if(result.equals("no_ink"))error(player,result,Text.translatable(element.getNameKey()),level);
+            else if(result.equals("no_dust"))error(player,result,learningCost(level,discount));
+            else error(player,result);
+            return;
+        }
+        if(!scribing)FormationKnowledgeComponent.sync(player);
+        handler.sendContentUpdates();
+        player.getWorld().playSound(null,table.getPos(),scribing?SoundEvents.ITEM_BOOK_PAGE_TURN:SoundEvents.UI_TOAST_CHALLENGE_COMPLETE,SoundCategory.BLOCKS,.5f,1.2f);
+        player.sendMessage(Text.translatable("message.ssc_addon.research."+(scribing?"scribed":"learned"),Text.translatable(element.getNameKey()),level).formatted(Formatting.GREEN),true);
+    }
+
+    public static String transact(Inventory table,FormationKnowledgeComponent knowledge,String elementId,String variant,int level,boolean scribing,int discount){
+        FormationElement element=FormationElement.byId(elementId);
+        if(element==null||level<1||level>FormationData.MAX_FORMATION_LEVEL)return "not_recorded";
+        String normalized=FormationData.normalizeVariant(variant);
+        if(element==FormationElement.UNIVERSAL&&normalized==null)normalized=FormationData.VARIANT_REGEN;
+        if(!scribing){
+            if(!knowledge.hasRecorded(element,normalized,level))return "not_recorded";
+            if(knowledge.hasLearned(element,normalized,level))return "already_learned";
+            int cost=learningCost(level,discount);ItemStack dust=table.getStack(SpellResearchTableBlockEntity.SLOT_MOONDUST);
+            if(!dust.isOf(RegCustomItem.UNTREATED_MOONDUST)||dust.getCount()<cost)return "no_dust";
+            dust.decrement(cost);knowledge.learn(element,normalized,level);table.markDirty();return "ok";
+        }
+        if(!knowledge.hasLearned(element,normalized,level))return "not_learned";
+        if(!(table.getStack(SpellResearchTableBlockEntity.SLOT_PAPER).getItem() instanceof BlankFormationPaperItem))return "no_paper";
+        ItemStack ink=table.getStack(SpellResearchTableBlockEntity.SLOT_INK);
+        if(!(ink.getItem() instanceof FormationInkItem inkItem)||ink.getCount()<level
+                ||(element==FormationElement.UNIVERSAL?inkItem.getType()!=FormationInkItem.Type.NORMAL:inkItem.getType().element!=element)){
+            return "no_ink";
+        }
+        if(!table.getStack(SpellResearchTableBlockEntity.SLOT_OUTPUT).isEmpty())return "output_full";
+        table.getStack(SpellResearchTableBlockEntity.SLOT_PAPER).decrement(1);ink.decrement(level);
+        table.setStack(SpellResearchTableBlockEntity.SLOT_OUTPUT,FormationData.create(element,level,element==FormationElement.UNIVERSAL?normalized:null));
+        table.markDirty();return "ok";
+    }
+
+    private static int learningCost(int level,int discount){return Math.max(1,level*2-level*2*Math.max(0,Math.min(40,discount))/100);}
+
+    private static void error(ServerPlayerEntity player,String key,Object...args){
+        player.sendMessage(Text.translatable("message.ssc_addon.research."+key,args).formatted(Formatting.RED),true);
+    }
 }

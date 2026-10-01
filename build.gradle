@@ -154,8 +154,8 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 tasks.register('pocketSpaceTest', JavaExec) {
-    dependsOn classes
-    classpath = sourceSets.main.runtimeClasspath
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
     mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.pocket.PocketSpaceLayoutTest'
     workingDir = layout.buildDirectory.dir('pocket-space-test').get().asFile
     doFirst { workingDir.mkdirs() }
@@ -165,8 +165,8 @@ check.dependsOn pocketSpaceTest
 
 // 21 法术数值回归自检（阶段 B / 计划书 §20.1）：耗蓝逐级↑、CD 逐级不增且 Lv5<Lv1、floor 合法
 tasks.register('spellBalanceTest', JavaExec) {
-    dependsOn classes
-    classpath = sourceSets.main.runtimeClasspath
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
     mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.SpellBalanceTest'
     workingDir = layout.buildDirectory.dir('spell-balance-test').get().asFile
     doFirst { workingDir.mkdirs() }
@@ -175,8 +175,8 @@ tasks.register('spellBalanceTest', JavaExec) {
 check.dependsOn spellBalanceTest
 
 tasks.register('spellManaPaymentTest', JavaExec) {
-    dependsOn classes
-    classpath = sourceSets.main.runtimeClasspath
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
     mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.SpellManaPaymentTest'
     workingDir = layout.buildDirectory.dir('spell-mana-payment-test').get().asFile
     doFirst { workingDir.mkdirs() }
@@ -184,9 +184,29 @@ tasks.register('spellManaPaymentTest', JavaExec) {
 
 check.dependsOn spellManaPaymentTest
 
+tasks.register('formationResearchTest') {
+    dependsOn 'slottedFormationChecks'
+}
+check.dependsOn formationResearchTest
+
+tasks.register('slottedFormationChecks', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.research.SlottedFormationChecks'
+}
+check.dependsOn slottedFormationChecks
+
+tasks.register('generateSlottedAssets', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.client.FormationResearchAssets'
+    args file('src/main/resources/assets/ssc_addon/textures/gui/formation_research').absolutePath
+    systemProperty 'java.awt.headless', 'true'
+}
+
 tasks.register('killEmpowerTest', JavaExec) {
-    dependsOn classes
-    classpath = sourceSets.main.runtimeClasspath
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
     mainClass = 'net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerStateTest'
 }
 
@@ -260,10 +280,6 @@ java {
 }
 
 jar {
-    exclude 'net/jackcooper/shapeShifterCurseAddon/ability/KillEmpowerStateTest.class'
-    exclude 'net/jackcooper/shapeShifterCurseAddon/spell/pocket/PocketSpaceLayoutTest.class'
-    exclude 'net/jackcooper/shapeShifterCurseAddon/spell/SpellBalanceTest.class'
-    exclude 'net/jackcooper/shapeShifterCurseAddon/spell/SpellManaPaymentTest.class'
     from("LICENSE") {
         rename { "${it}_${project.base.archivesName.get()}"}
     }

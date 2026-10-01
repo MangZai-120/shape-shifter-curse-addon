@@ -39,6 +39,24 @@ private final Map<String, Integer> learned = new HashMap<>();
  * 键：法术 id path（如 fire_bolt）。记录知识不能免费复制实体卷轴——定向制作仍需材料。
  */
 private final Set<String> spellAtlas = new HashSet<>();
+private final net.jackcooper.shapeShifterCurseAddon.spell.research.ResearchProgress research =
+        new net.jackcooper.shapeShifterCurseAddon.spell.research.ResearchProgress();
+
+public net.jackcooper.shapeShifterCurseAddon.spell.research.ResearchProgress research() {
+    ensureResearchMigration();
+    return research;
+}
+
+private void ensureResearchMigration() {
+    if (research.migrated) return;
+    research.legacy.addAll(recorded);
+    for (int f = 0; f < 11; f++) {
+        String id = net.jackcooper.shapeShifterCurseAddon.spell.research.ResearchTarget.FAMILIES.get(f);
+        int level = learned.getOrDefault(id, 0);
+        if (level > 0) { research.rank = Math.max(research.rank, level); research.attuned |= 1 << f; }
+    }
+    research.migrated = true;
+}
 
 public static FormationKnowledgeComponent get(PlayerEntity player) {
 return RegFormationKnowledgeComponent.FORMATION_KNOWLEDGE.get(player);
@@ -156,6 +174,8 @@ learned.put(element.id, lv);
 }
 }
 }
+research.read(nbt.getCompound("RuneResearch"));
+ensureResearchMigration();
 }
 
 @Override
@@ -173,6 +193,7 @@ for (String entry : spellAtlas) {
 atlas.add(NbtString.of(entry));
 }
 nbt.put("spell_atlas", atlas);
+nbt.put("RuneResearch", research().write());
 }
 
 /** 服务端变更后同步给客户端（研究台 GUI 需要实时读）。 */

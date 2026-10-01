@@ -514,28 +514,14 @@ public class SscAddonNetworking {
 			});
 		});
 
-		// SSCA 法术研究台 - 抄写法阵（服务端权威重验：已学习 + 纸 + 对应系墨×等级；variant 仅通用系有效）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FORMATION_SCRIBE, (server, player, handler, buf, responseSender) -> {
-			String elementId = buf.readString(64);
-			String variant = buf.readString(16);
-			int level = buf.readVarInt();
-			server.execute(() -> {
-				if (isRateLimited(player)) return;
-				net.jackcooper.shapeShifterCurseAddon.spell.ResearchTableManager.scribe(player, elementId, variant, level);
-			});
+			String element=buf.readString(64),variant=buf.readString(64);int level=buf.readVarInt();
+			server.execute(()->{if(!isRateLimited(player))net.jackcooper.shapeShifterCurseAddon.spell.ResearchTableManager.scribe(player,element,variant,level);});
 		});
-
-		// SSCA 法术研究台 - 学习法阵（服务端权威重验：已记录 + 月尘够；discount 预留小游戏接口当前恒 0）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FORMATION_LEARN, (server, player, handler, buf, responseSender) -> {
-			String elementId = buf.readString(64);
-			String variant = buf.readString(16);
-			int level = buf.readVarInt();
-			server.execute(() -> {
-				if (isRateLimited(player)) return;
-				net.jackcooper.shapeShifterCurseAddon.spell.ResearchTableManager.learn(player, elementId, variant, level, 0);
-			});
+			String element=buf.readString(64),variant=buf.readString(64);int level=buf.readVarInt();
+			server.execute(()->{if(!isRateLimited(player))net.jackcooper.shapeShifterCurseAddon.spell.ResearchTableManager.learn(player,element,variant,level,0);});
 		});
-
 		// SSCA 卷轴工坊四包（阶段 C，服务端权威重验 ScrollWorkshopManager）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SCROLL_CRAFT, (server, player, handler, buf, responseSender) -> {
 			String spellPath = buf.readString(64);

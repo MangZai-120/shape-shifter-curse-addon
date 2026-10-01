@@ -15,7 +15,7 @@ import net.minecraft.item.ItemStack;
 
 /**
  * 增强法阵的自然宝箱生成（jackcooper）。与魔法卷轴同域注入：目标结构箱子 3% 概率触发 →
- * 在「火/冰两系 × 1-3 级法阵」中按权重抽取一张（1 级最常见；4/5 级只能靠研究台抄写已记录的高等级法阵获得）。
+ * 在各系与通用变体的一至五级法阵中按权重抽取，四、五级为稀有产出。
  */
 public final class FormationLoot {
 	private FormationLoot() {
@@ -24,8 +24,8 @@ public final class FormationLoot {
 	/** 每个箱子生成法阵的概率（比卷轴 5% 更稀有）。 */
 	private static final float CHANCE = 0.03F;
 
-	/** 各等级生成权重（index = level-1，只掉 1-3 级）。 */
-	private static final int[] LEVEL_WEIGHTS = {40, 25, 12};
+	/** 各等级生成权重（index = level-1）。 */
+	private static final int[] LEVEL_WEIGHTS = {40, 25, 12, 5, 2};
 
 	/** 目标原版结构箱子战利品表（与魔法卷轴同域）。 */
 	private static final Identifier[] TARGET_CHESTS = {
@@ -77,13 +77,7 @@ public final class FormationLoot {
 	// 1.20.1 中 SetNbtLootFunction.builder(NbtCompound) 是唯一可用重载（@Deprecated 但无替代，同 MagicScrollLoot）
 	@SuppressWarnings("deprecation")
 	private static net.minecraft.loot.entry.LootPoolEntry.Builder<?> formationEntry(FormationElement element, String variant, int level, int weight) {
-		NbtCompound nbt = new NbtCompound();
-		nbt.putString(FormationData.NBT_ELEMENT, element.id);
-		nbt.putInt(FormationData.NBT_LEVEL, level);
-		if (element == FormationElement.UNIVERSAL) {
-			String v = FormationData.normalizeVariant(variant);
-			nbt.putString(FormationData.NBT_VARIANT, v != null ? v : FormationData.VARIANT_REGEN);
-		}
+		NbtCompound nbt = createNaturalFormation(element, level, variant).getOrCreateNbt();
 		return ItemEntry.builder(SscAddon.FORMATION)
 				.apply(SetNbtLootFunction.builder(nbt))
 				.weight(weight);
@@ -101,5 +95,9 @@ public final class FormationLoot {
 	/** 供命令调试：生成一张指定系别等级的法阵。 */
 	public static ItemStack createFormation(FormationElement element, int level) {
 		return FormationData.create(element, level);
+	}
+
+	public static ItemStack createNaturalFormation(FormationElement element, int level, String variant) {
+		return net.jackcooper.shapeShifterCurseAddon.spell.ArcaneAnalysis.markUnanalyzed(FormationData.create(element, level, variant));
 	}
 }
