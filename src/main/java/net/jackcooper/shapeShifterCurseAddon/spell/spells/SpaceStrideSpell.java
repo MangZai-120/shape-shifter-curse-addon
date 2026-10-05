@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
@@ -46,7 +47,9 @@ public class SpaceStrideSpell extends Spell {
 		int jump = BAL.i("jump_ticks", JUMP_TICKS) + (level - 1) * 50;
 		int slowFall = jump + BAL.i("slow_fall_extra_ticks", SLOW_FALL_EXTRA_TICKS); // 缓降恒比跳升多 2s（随等级同步递增）
 		// 跳升每两级 +1 级：L1/L2=I、L3/L4=II、L5=III（amplifier = 级数-1）
-		int jumpAmplifier = (level - 1) / 2;
+		jump=RuneCastContext.current().duration(jump,RuneModifiers.Stat.ALLY_DURATION);
+        slowFall=RuneCastContext.current().duration(slowFall,RuneModifiers.Stat.ALLY_DURATION);
+        int jumpAmplifier = (level - 1) / 2;
 		caster.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOW_FALLING, slowFall, 0));
 		caster.addStatusEffect(new StatusEffectInstance(StatusEffects.JUMP_BOOST, jump, jumpAmplifier));
 		// 演出：脚下星尘环绕

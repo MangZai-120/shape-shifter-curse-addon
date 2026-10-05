@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.BeepSheepEntity;
@@ -48,7 +49,7 @@ public class BeepSheepSpell extends Spell {
 		int durationTicks = BAL.i("base_duration_ticks", BASE_DURATION_TICKS)
 				+ (level - 1) * BAL.i("duration_per_level", DURATION_PER_LEVEL);
 		BeepSheepEntity bullet = new BeepSheepEntity(caster.getWorld(), caster);
-		bullet.setSheepDuration(durationTicks);
+		bullet.setSheepDuration(RuneCastContext.current().duration(durationTicks,RuneModifiers.Stat.NEGATIVE));
 		bullet.setSpellLevel(level);
 		bullet.setRefundCastId(solo ? null : ssc_addon$getRefundCastId());
 		// 朝准星方向以固定初速射出（重力由 ThrownItemEntity 自带 → 鸡蛋式抛物线；
@@ -60,7 +61,7 @@ public class BeepSheepSpell extends Spell {
 		var velocity = new net.minecraft.util.math.Vec3d(
 				horiz == 0 ? 0 : cosE * (dir.x / horiz),
 				Math.sin(elev),
-				horiz == 0 ? 0 : cosE * (dir.z / horiz)).multiply(0.9);
+				horiz == 0 ? 0 : cosE * (dir.z / horiz)).multiply(RuneCastContext.current().scale(0.9,RuneModifiers.Stat.SPEED));
 		bullet.setVelocity(velocity.x, velocity.y, velocity.z);
 		caster.getWorld().spawnEntity(bullet);
 		caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),

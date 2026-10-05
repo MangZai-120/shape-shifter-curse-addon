@@ -43,7 +43,6 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 
 	private static final Identifier BACKGROUND = new Identifier("ssc_addon", "textures/gui/spell_research_background.png");
 	private static final Identifier ANALYSIS_PROGRESS = new Identifier("ssc_addon", "textures/gui/formation_research/analysis_progress.png");
-	private static final Identifier WIDGETS = new Identifier("ssc_addon", "textures/gui/spell_research_widgets.png");
 	private static final Identifier SLOT_CELL = new Identifier("ssc_addon", "textures/gui/spellbook_slot.png");
 	private static final Identifier LIST_PANEL = new Identifier("ssc_addon", "textures/gui/magic_slot_panel.png");
 	private static final Identifier FRAME = new Identifier("ssc_addon", "textures/gui/formation_frame.png");
@@ -54,9 +53,9 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 	private static final int TRACK_X = 117, THUMB_W = 8, THUMB_H = 13;
 	private static final int THUMB_Y_MIN = 6, THUMB_Y_MAX = 53;
 	private static final int DETAIL_X = 152, DETAIL_W = 152;
-	private static final String[] ACTION_KEYS = {"workshop_craft", "workshop_upgrade", "workshop_repair", "workshop_salvage"};
+	private static final String[] ACTION_KEYS = {"workshop_craft", "workshop_upgrade", "workshop_repair", "workshop_salvage", "workshop_imprint"};
 
-	private final ButtonWidget[] workshopButtons = new ButtonWidget[4];
+	private final ButtonWidget[] workshopButtons = new ButtonWidget[5];
 	private TextFieldWidget searchField;
 	private ButtonWidget levelDownButton;
 	private ButtonWidget levelUpButton;
@@ -129,11 +128,11 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 		this.levelUpButton.setTooltip(Tooltip.of(label("level_up")));
 		this.formationButton=this.addDrawableChild(ButtonWidget.builder(label("scribe"),button->onFormationAction())
 				.dimensions(this.x+DETAIL_X,this.y+94,DETAIL_W,20).build());
-		Item[] actionIcons = {SscAddon.MAGIC_SCROLL, Items.ANVIL, Items.PHANTOM_MEMBRANE, Items.GRINDSTONE};
+		Item[] actionIcons = {SscAddon.MAGIC_SCROLL, Items.ANVIL, Items.PHANTOM_MEMBRANE, Items.GRINDSTONE, Items.ENCHANTED_BOOK};
 		for (int index = 0; index < this.workshopButtons.length; index++) {
 			final int operation = index;
 			this.workshopButtons[index] = this.addDrawableChild(new IconButton(
-					this.x + DETAIL_X + index * 38, this.y + 94, 34, 20,
+					this.x + DETAIL_X + index * 30, this.y + 94, 28, 20,
 					label(ACTION_KEYS[index]), actionIcons[index], button -> onWorkshopAction(operation)));
 		}
 		refreshEntries();
@@ -290,12 +289,18 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 			case 0 -> SscAddonNetworking.PACKET_SCROLL_CRAFT;
 			case 1 -> SscAddonNetworking.PACKET_SCROLL_UPGRADE;
 			case 2 -> SscAddonNetworking.PACKET_SCROLL_REPAIR;
+            case 4 -> SscAddonNetworking.PACKET_SCROLL_IMPRINT;
 			default -> SscAddonNetworking.PACKET_SCROLL_SALVAGE;
 		}, buffer);
 	}
 
 	private Text workshopProblem(int operation) {
-		Entry selectedEntry = selectedEntry();
+		if(operation==4){ItemStack scheme=this.handler.getSlot(0).getStack(),scroll=this.handler.getSlot(3).getStack();
+            if(net.jackcooper.shapeShifterCurseAddon.spell.ArcaneAnalysis.isUnanalyzed(scroll))return Text.translatable("message.ssc_addon.analysis.required");
+            if(!scheme.isOf(SscAddon.SPELL_FORMATION)||scheme.getNbt()==null||!scheme.getNbt().contains(net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme.KEY)||ScrollData.getSpell(scroll)==null)return Text.translatable("research.ssc_addon.runes.imprint.1");
+            var n=scheme.getNbt().getCompound(net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme.KEY);
+            return ScrollData.getSpell(scroll).getId().getPath().equals(n.getString("Spell"))&&ScrollData.getLevel(scroll)==n.getInt("Level")?null:Text.translatable("research.ssc_addon.runes.imprint.3");}
+        Entry selectedEntry = selectedEntry();
 		ItemStack output = this.handler.getSlot(3).getStack();
 		Spell spell = operation < 2 ? selectedEntry == null ? null : selectedEntry.spell : ScrollData.getSpell(output);
 		if ((operation == 1 || operation == 2) && net.jackcooper.shapeShifterCurseAddon.spell.ArcaneAnalysis.isUnanalyzed(output)) {
@@ -390,7 +395,7 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 					&& (operation != 1 || ScrollData.getLevel(output) == this.workshopLevel - 1);
 			drawSlotShortfall(context, 3, 1, valid);
 		}
-		if (this.tab == 2 && (spell == null || operation == 3)) {
+		if (this.tab == 2 && (spell == null || operation == 3 || operation == 4)) {
 			return;
 		}
 		FormationElement element = this.tab == 2 ? spell.getElement() : entry.element();
@@ -446,6 +451,7 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 				case 0 -> label("craft_recipe", this.workshopLevel, elementName(spell.getElement()));
 				case 1 -> label("upgrade_recipe", this.workshopLevel, elementName(spell.getElement()), Math.max(0, this.workshopLevel - 2));
 				case 2 -> label("repair_recipe", elementName(spell.getElement()));
+                case 4 -> Text.translatable("research.ssc_addon.runes.imprint_recipe");
 				default -> label("salvage_recipe", (ScrollData.getLevel(output) + 1) / 2);
 			};
 			tooltip.append(Text.literal("\n")).append(recipe.copy().formatted(Formatting.GRAY));
@@ -608,7 +614,7 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 					status == SpellResearchTableBlockEntity.AnalysisStatus.READY ? 0x36545A : 0x885533);
 			return;
 		}
-		Item[] placeholders = {SscAddon.BLANK_FORMATION_PAPER, SscAddon.FORMATION_INK_NORMAL,
+		Item[] placeholders = {this.tab==2&&this.previewOperation==4?SscAddon.SPELL_FORMATION:SscAddon.BLANK_FORMATION_PAPER, SscAddon.FORMATION_INK_NORMAL,
 				RegCustomItem.UNTREATED_MOONDUST, SscAddon.MAGIC_SCROLL, RegCustomItem.MOONDUST_CRYSTAL_SHARD};
 		for (int index = 0; index < placeholders.length; index++) {
 			Slot slot = this.handler.getSlot(index);
@@ -716,6 +722,7 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 		}
 		context.drawText(this.textRenderer, this.playerInventoryTitle, this.playerInventoryTitleX, this.playerInventoryTitleY, 0x404040, false);
 		if (this.tab != ResearchTableTabs.ANALYSIS) drawMaterialShortfalls(context);
+        if(this.tab==2&&this.previewOperation==4)drawClipped(context,Text.translatable("research.ssc_addon.runes.scheme_slot"),this.x+149,this.y+60,26,0x404040);
 	}
 
 	@Override
@@ -753,6 +760,9 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 			context.drawTooltip(this.textRenderer, tooltip, mouseX, mouseY);
 		}
 		String[] slotLabels = {"paper_slot", "ink_slot", "dust_slot", this.tab == 2 ? "insert_scroll" : "output_slot", "catalyst_slot"};
+		if(this.tab==ResearchTableTabs.WORKSHOP&&this.previewOperation==4){
+			slotLabels[0]="scheme_slot";slotLabels[3]="imprint_scroll_slot";
+		}
 		for (int index = 0; index < slotLabels.length; index++) {
 			Slot slot = this.handler.getSlot(index);
 			if (slot.isEnabled() && !slot.hasStack() && this.isPointWithinBounds(slot.x, slot.y, 16, 16, mouseX, mouseY)) {
@@ -775,10 +785,8 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 		}
 
 		@Override
-		public void renderButton(DrawContext context, int mouseX, int mouseY, float delta) {
-			int state = !this.active ? 2 : this.isHovered() ? 1 : 0;
-			int textureY = this.isFocused() ? 20 : 0;
-			context.drawTexture(WIDGETS, getX(), getY(), state * this.width, textureY, this.width, this.height, 128, 128);
+		public void drawMessage(DrawContext context, net.minecraft.client.font.TextRenderer renderer, int color) {
+			// The inherited vanilla renderer draws the background and handles hover, focus and disabled states.
 			context.drawItem(this.icon, getX() + (this.width - 16) / 2, getY() + (this.height - 16) / 2);
 		}
 	}

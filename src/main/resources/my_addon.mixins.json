@@ -63,6 +63,7 @@
                    "WanderingTraderTradeMixin"
                ],
     "client":  [
+                   "client.CarryOnAnimationMixin",
                    "client.ParticleOwnershipMixin",
                    "client.DecorationParticleManagerMixin",
                    "client.AsyncParticleSyncBatchMixin",

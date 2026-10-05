@@ -630,7 +630,7 @@ public class SscAddonClient implements ClientModInitializer {
 							net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.byId(element);
 					return tintOf.apply(e, 0xB8B8B8); // 无系别魔法也走灰白
 				},
-				SscAddon.MAGIC_SCROLL
+				SscAddon.MAGIC_SCROLL, SscAddon.SPELL_FORMATION
 		);
 
 		// SP技能键位现在由Apoli框架自动处理，无需手动轮询

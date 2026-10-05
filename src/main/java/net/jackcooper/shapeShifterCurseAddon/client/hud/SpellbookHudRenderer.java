@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -16,6 +17,7 @@ import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
 import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme;
 import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
 
 /**
@@ -50,6 +52,15 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 			new Identifier("ssc_addon", "textures/gui/spell_hud_slot_big_rarity_purple.png"),
 			new Identifier("ssc_addon", "textures/gui/spell_hud_slot_big_rarity_orange.png"),
 			new Identifier("ssc_addon", "textures/gui/spell_hud_slot_big_rarity_red.png")
+	};
+	// Supplied 24px rune-modified frames; side previews scale the same artwork to 18px.
+	private static final Identifier[] TEX_SLOT_RARITY_MODIFIED = {
+			null,
+			new Identifier("ssc_addon", "textures/gui/spell_hud_slot_big_rarity_green_modified.png"),
+			new Identifier("ssc_addon", "textures/gui/spell_hud_slot_big_rarity_blue_modified.png"),
+			new Identifier("ssc_addon", "textures/gui/spell_hud_slot_big_rarity_purple_modified.png"),
+			new Identifier("ssc_addon", "textures/gui/spell_hud_slot_big_rarity_orange_modified.png"),
+			null
 	};
 	// 法力条双态贴图：_empty=空条(底,含金框与中心装饰)，_full=满条(按法力%从左裁剪叠上)
 	private static final Identifier TEX_BAR_EMPTY = new Identifier("ssc_addon", "textures/gui/spell_hud_bar_empty.png");
@@ -173,7 +184,10 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 		if (spell != null) {
 			int centerX = baseX + 31; // 选择器中心（= 中槽中心）
 			int nameY = baseY + 26;
-			Text name = Text.translatable(spell.getNameKey());
+			var name = Text.translatable(spell.getNameKey());
+			if (scroll.getNbt() != null && scroll.getNbt().contains(RuneScheme.KEY, NbtElement.COMPOUND_TYPE)) {
+				name.append(Text.translatable("research.ssc_addon.runes.modified_suffix"));
+			}
 			int nameW = mc.textRenderer.getWidth(name);
 			int nameX = centerX - nameW / 2; // 居中锚点，长名向左右自然溢出、不裁剪
 			ctx.drawText(mc.textRenderer, name, nameX, nameY, 0xFFFFFF, true);
@@ -237,7 +251,10 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 			int totalCd = Math.max(Math.round(levelCd * (2.0f - ratio) * formationCdMul),
 					Math.max(spell.getCooldownFloorTicks(),
 						Math.round(levelCd * net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers.RELATIVE_CD_FLOOR)));
-				float frac = totalCd > 0 ? Math.min(1f, cdRem / (float) totalCd) : 1f;
+				totalCd=net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme.modifiers(mc.player,scroll,level).cooldown(totalCd);
+                int authoritativeTotal=net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.getClientCooldownTotal(spell,net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getCooldownEnd(scroll),scroll.getNbt()==null?0:scroll.getNbt().getInt("RuneCdTotal"));
+                if(authoritativeTotal>0)totalCd=authoritativeTotal;
+                float frac = totalCd > 0 ? Math.min(1f, cdRem / (float) totalCd) : 1f;
 				int maskH = Math.round(size * frac);
 				ctx.fill(x, y + size - maskH, x + size, y + size, 0x99000000);
 			}
@@ -246,8 +263,14 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 		// 无魔法→空白框（filled，即「技能槽 空白」贴图）
 		if (hasSpell && spell != null) {
 			// 有效品质按等级派生（冰锥：1白/2绿/3蓝/4紫/5橙），HUD 边框颜色一眼看出等级
-			Identifier rarityTex = (big ? TEX_SLOT_BIG_RARITY : TEX_SLOT_RARITY)[spell.getRarity(ScrollData.getLevel(scroll)).ordinal()];
-			ctx.drawTexture(rarityTex, x - 1, y - 1, 0, 0, fs, fs, fs, fs);
+			int rarity = spell.getRarity(ScrollData.getLevel(scroll)).ordinal();
+			Identifier modifiedTex = TEX_SLOT_RARITY_MODIFIED[rarity];
+			if (modifiedTex != null && scroll.getNbt() != null && scroll.getNbt().contains(RuneScheme.KEY, NbtElement.COMPOUND_TYPE)) {
+				ctx.drawTexture(modifiedTex, x - 1, y - 1, fs, fs, 0, 0, 24, 24, 24, 24);
+			} else {
+				Identifier rarityTex = (big ? TEX_SLOT_BIG_RARITY : TEX_SLOT_RARITY)[rarity];
+				ctx.drawTexture(rarityTex, x - 1, y - 1, 0, 0, fs, fs, fs, fs);
+			}
 		} else {
 			ctx.drawTexture(big ? TEX_SLOT_BIG_FILLED : TEX_SLOT_FILLED, x - 1, y - 1, 0, 0, fs, fs, fs, fs);
 		}

@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
@@ -51,13 +52,14 @@ public class DreadWhisperSpell extends Spell {
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
-		double range = BAL.d("base_range", BASE_RANGE) * getSpeedMultiplier(level);
+		double range = RuneCastContext.current().scale(BAL.d("base_range", BASE_RANGE) * getSpeedMultiplier(level),RuneModifiers.Stat.DISTANCE);
 		// 锥形半角运行时读取（下方判定与演出共用局部变量，快照未初始化回退默认常量）
-		double halfAngleDeg = BAL.d("half_angle_deg", HALF_ANGLE_DEG);
+		double halfAngleDeg = Math.min(85,RuneCastContext.current().scale(BAL.d("half_angle_deg", HALF_ANGLE_DEG),RuneModifiers.Stat.AREA));
 		// 控场时长：每级 +1s（L1=7s … L5=11s）；L3+ 升级为虚弱 II + 缓速 III
 		int duration = BAL.i("duration_ticks", DURATION_TICKS) + (level - 1) * 20;
 		if (!solo) duration = net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, duration);
-		int weaknessAmp = level >= 3 ? 1 : 0;
+		duration=RuneCastContext.current().duration(duration,RuneModifiers.Stat.NEGATIVE);
+        int weaknessAmp = level >= 3 ? 1 : 0;
 		int slownessAmp = level >= 3 ? 2 : 1;
 		Vec3d look = caster.getRotationVec(1.0F).normalize();
 		Vec3d origin = caster.getEyePos();

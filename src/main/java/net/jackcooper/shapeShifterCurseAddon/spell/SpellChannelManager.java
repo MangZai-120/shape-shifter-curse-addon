@@ -1,6 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -140,7 +141,14 @@ public final class SpellChannelManager {
 	public static boolean start(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level,
 			boolean solo, int token, int mana, int cooldown, BooleanSupplier sourceValid,
 			Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse) {
-		if (ArcaneAnalysis.isUnanalyzed(scroll)) {
+		return start(player,spell,scroll,level,solo,token,mana,cooldown,sourceValid,effect,settleCooldown,consumeUse,
+                RuneScheme.modifiers(player,scroll,solo?level:ScrollData.getCastLevel(scroll)));
+    }
+    public static boolean start(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level,
+            boolean solo, int token, int mana, int cooldown, BooleanSupplier sourceValid,
+            Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers) {
+        if (!RuneScheme.validScroll(player,scroll,spell))return false;
+        if (ArcaneAnalysis.isUnanalyzed(scroll)) {
 			player.sendMessage(Text.translatable("message.ssc_addon.analysis.required"), true);
 			return false;
 		}
@@ -161,16 +169,16 @@ public final class SpellChannelManager {
 			return false;
 		}
 		Channel channel = new Channel(player, spell, scroll, level, solo, token, cooldown,
-				sourceValid, effect, settleCooldown, consumeUse);
+				sourceValid, effect, settleCooldown, consumeUse,modifiers);
 		if (spell.requiresTargetBeforeChannel()) {
-			Vec3d target = spell.captureCastTarget(player, level);
+			Vec3d target = RuneCastContext.with(channel.modifiers,()->spell.captureCastTarget(player, level));
 			if (target == null || !channel.progress.release(token, target)) {
 				player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_target"), true);
 				return false;
 			}
 		}
 		ACTIVE.put(player.getUuid(), channel);
-		spell.onChannelStarted(player, channel.progress.target());
+		RuneCastContext.run(channel.modifiers,()->spell.onChannelStarted(player, channel.progress.target()));
 		var speed = player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
 		if (speed != null) {
 			speed.removeModifier(SLOW_ID);
@@ -193,7 +201,7 @@ public final class SpellChannelManager {
 			stop(player, !channel.progress.started());
 			return;
 		}
-		Vec3d target = channel.spell.captureCastTarget(player, channel.level);
+		Vec3d target = RuneCastContext.with(channel.modifiers,()->channel.spell.captureCastTarget(player, channel.level));
 		if (channel.spell.getAimMaxRange() > 0 && target == null) {
 			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_target"), true);
 			stop(player, true);
@@ -219,7 +227,7 @@ public final class SpellChannelManager {
 		return player.isAlive() && !player.isRemoved() && !player.isSpectator()
 				&& player.getWorld().getRegistryKey().equals(channel.dimension) && channel.sourceValid.getAsBoolean()
 				&& (!channel.profile.immobilized() || !player.hasVehicle() && !player.hasPassengers())
-				&& channel.spell.canContinueCasting(player, channel.scroll);
+				&& RuneCastContext.with(channel.modifiers,()->channel.spell.canContinueCasting(player, channel.scroll));
 	}
 
 	private static void tick(Channel channel) {
@@ -242,7 +250,7 @@ public final class SpellChannelManager {
 			}
 		} else {
 			channel.progress.tick();
-			channel.spell.tickChannel(player, channel.level, channel.scroll, channel.progress.elapsed());
+			RuneCastContext.run(channel.modifiers,()->channel.spell.tickChannel(player, channel.level, channel.scroll, channel.progress.elapsed()));
 			advance(channel);
 		}
 		// 锁定态转换检测：进入锁定的当 tick 立即补发一次校准包（不等 20t 周期）。
@@ -266,7 +274,7 @@ public final class SpellChannelManager {
 		if (ACTIVE.get(channel.player.getUuid()) != channel) return;
 		if (!valid(channel)) { stop(channel.player, true); return; }
 		// 耗蓝已在起手一次性全额结清（castInternal）；读条期间不再扣费（渐进扣蓝已废，2026-09-23）。
-		if (!channel.spell.readyToRelease(channel.player, channel.scroll) || !channel.progress.beginEffect()) return;
+		if (!RuneCastContext.with(channel.modifiers,()->channel.spell.readyToRelease(channel.player, channel.scroll)) || !channel.progress.beginEffect()) return;
 		if (channel.mode == SpellCastingRules.Mode.CONTINUOUS) {
 			// 持续模式起手生效即视为释放生效，GCD 从此起算（持续阶段结束不再重置）
 			NEXT_CAST_OK.put(channel.player.getUuid(), channel.player.getWorld().getTime() + BAL.i("gcd_ticks", CAST_INTERVAL_TICKS));
@@ -403,6 +411,7 @@ public final class SpellChannelManager {
 	private static final class Channel {
 		final ServerPlayerEntity player;
 		final Spell spell;
+        final RuneModifiers modifiers;
 		final ItemStack scroll;
 		final int level, token, cooldown, interruptMode;
 		final boolean solo;
@@ -421,7 +430,8 @@ public final class SpellChannelManager {
 
 		Channel(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level, boolean solo, int token,
 				int cooldown, BooleanSupplier sourceValid,
-				Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse) {
+				Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers) {
+            this.modifiers=modifiers;
 			this.player = player;
 			this.spell = spell;
 			this.scroll = scroll;
@@ -430,10 +440,11 @@ public final class SpellChannelManager {
 			this.token = token;
 			this.cooldown = cooldown;
 			this.sourceValid = sourceValid;
-			this.effect = effect;
+			this.effect = target->RuneCastContext.run(modifiers,()->effect.accept(target));
 			this.settleCooldown = settleCooldown;
 			this.consumeUse = consumeUse;
-			this.profile = spell.getCastingProfile(player, level, solo);
+			var baseProfile=spell.getCastingProfile(player, level, solo);
+            this.profile = new SpellCastingRules.Profile(modifiers.time(baseProfile.ticks()),baseProfile.speedMultiplier(),baseProfile.immobilized());
 			this.mode = spell.getCastingMode();
 			this.progress = new SpellCastingRules.Progress<>(this.mode, this.profile.ticks(), token);
 			this.interruptMode = spell.getConfig().interruptMode;

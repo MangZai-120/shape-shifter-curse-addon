@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
@@ -49,9 +50,9 @@ public class LunarVeilSpell extends Spell {
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
-		double radius = BAL.d("base_radius", BASE_RADIUS) * getSpeedMultiplier(level);
+		double radius = RuneCastContext.current().scale(BAL.d("base_radius", BASE_RADIUS) * getSpeedMultiplier(level),RuneModifiers.Stat.AREA);
 		// 增益时长：每级 +1s（L1=9s … L5=13s）；L4+ 增益升 II 级（抗性 II + 缓降 II）
-		int duration = BAL.i("duration_ticks", DURATION_TICKS) + (level - 1) * 20;
+		int duration = RuneCastContext.current().duration(BAL.i("duration_ticks", DURATION_TICKS) + (level - 1) * 20,RuneModifiers.Stat.ALLY_DURATION);
 		int amplifier = level >= 4 ? 1 : 0;
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
 				caster.getBoundingBox().expand(radius), e -> e != caster && e.isAlive());

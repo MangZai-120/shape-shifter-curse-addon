@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
@@ -46,14 +47,14 @@ public class FrostNovaSpell extends Spell {
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
-		double radius = BAL.d("base_radius", BASE_RADIUS) * getSpeedMultiplier(level);
+		double radius = RuneCastContext.current().scale(BAL.d("base_radius", BASE_RADIUS) * getSpeedMultiplier(level),RuneModifiers.Stat.AREA);
 		// 稀有度为蓝/橙时，生效范围额外 +25%（独立于等级缩放，数据包改 rarity 自动跟随）
 		SpellRarity rarity = getRarity(level);
 		if (rarity == SpellRarity.BLUE || rarity == SpellRarity.ORANGE) {
 			radius *= 1.25;
 		}
 		// 缓速 II，时长 4s（L1-2）/ 5s（L3-4）/ 6s（L5）
-		int slowTicks = 80 + (level >= 3 ? 20 : 0) + (level >= 5 ? 20 : 0);
+		int slowTicks = RuneCastContext.current().duration(80 + (level >= 3 ? 20 : 0) + (level >= 5 ? 20 : 0),RuneModifiers.Stat.NEGATIVE);
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
 				caster.getBoundingBox().expand(radius), e -> e != caster && e.isAlive());
 		for (LivingEntity target : targets) {

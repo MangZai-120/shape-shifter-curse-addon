@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.entity.SpellCurseMarkEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
@@ -33,11 +34,11 @@ public class CurseMarkSpell extends Spell {
 		int durationTicks = 160 + (level - 1) * 40;
 		if (!solo) durationTicks = net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, durationTicks);
 		SpellCurseMarkEntity mark = new SpellCurseMarkEntity(caster.getWorld(), caster);
-		mark.setDuration(durationTicks);
+		mark.setDuration(RuneCastContext.current().duration(durationTicks,RuneModifiers.Stat.MARK,RuneModifiers.Stat.NEGATIVE));
 		mark.setLevel(level);
 		mark.setRefundCastId(solo ? null : ssc_addon$getRefundCastId());
 		Vec3d look = caster.getRotationVec(1.0F);
-		mark.setDirection(look, getSpeedMultiplier(level));
+		mark.setDirection(look,(float)RuneCastContext.current().scale(getSpeedMultiplier(level),RuneModifiers.Stat.SPEED));
 		caster.getWorld().spawnEntity(mark);
 		caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_EVOKER_CAST_SPELL, SoundCategory.PLAYERS, 0.8f, 0.6f);

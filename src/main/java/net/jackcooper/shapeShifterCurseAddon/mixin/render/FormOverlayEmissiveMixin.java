@@ -26,7 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /** Fixes SSC and addon forms through their shared renderer, without changing SSC itself. */
 @Mixin(value = FormRenderFeature.class, remap = false)
 public abstract class FormOverlayEmissiveMixin {
-    @Inject(method = "rM_PartB", at = @At("HEAD"))
+    @Inject(method = "rM_PartB", at = @At("HEAD"), require = 0)
     private static void ssca$bindOverlayPlayer(PlayerEntityRenderer renderer, AbstractClientPlayerEntity player,
                                                float yaw, float tickDelta, MatrixStack matrices,
                                                VertexConsumerProvider consumers, int light, CallbackInfo ci) {
@@ -40,14 +40,14 @@ public abstract class FormOverlayEmissiveMixin {
     }
 
     @WrapOperation(method = "rM_PartB", at = @At(value = "INVOKE", remap = true,
-            target = "Lnet/minecraft/client/render/RenderLayer;getEntityTranslucentEmissive(Lnet/minecraft/util/Identifier;)Lnet/minecraft/client/render/RenderLayer;"))
+            target = "Lnet/minecraft/client/render/RenderLayer;getEntityTranslucentEmissive(Lnet/minecraft/util/Identifier;)Lnet/minecraft/client/render/RenderLayer;"), require = 0)
     private static RenderLayer ssca$alignEmissiveLayer(Identifier texture, Operation<RenderLayer> original) {
         return FormOverlayRenderLayers.usesViewOffset()
                 ? FormOverlayRenderLayers.emissive(texture) : original.call(texture);
     }
 
     @WrapOperation(method = "rM_PartB", at = @At(value = "INVOKE", remap = true, ordinal = 2,
-            target = "Lnet/minecraft/client/render/entity/model/PlayerEntityModel;render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;IIFFFF)V"))
+            target = "Lnet/minecraft/client/render/entity/model/PlayerEntityModel;render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;IIFFFF)V"), require = 0)
     private static void ssca$alignEmissiveGeometry(PlayerEntityModel<?> model, MatrixStack matrices,
                                                   VertexConsumer vertices, int light, int overlay,
                                                   float red, float green, float blue, float alpha,
@@ -63,7 +63,7 @@ public abstract class FormOverlayEmissiveMixin {
         }
     }
 
-    @Inject(method = "rFPM_PartB", at = @At("TAIL"))
+    @Inject(method = "rFPM_PartB", at = @At("TAIL"), require = 0)
     private static void ssca$renderFirstPersonEmissive(PlayerEntityRenderer renderer, MatrixStack matrices,
                                                       VertexConsumerProvider consumers, int light,
                                                       AbstractClientPlayerEntity player, ModelPart arm,

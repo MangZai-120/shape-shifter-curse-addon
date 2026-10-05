@@ -63,6 +63,7 @@ public class SscAddonMixinConfigPlugin implements IMixinConfigPlugin {
         requireMod("IrisShaderPackMixin", "iris");
         requireMod("client.AsyncParticleSyncBatchMixin", "asyncparticles");
         requireMod("client.AsyncParticleGpuEligibilityMixin", "asyncparticles");
+        requireMod("client.CarryOnAnimationMixin", "carryon");
         // 饰品 Trinkets 桥接兜底（AddonTrinketBridgeMixin）：仅当 trinkets API 可用
         // （原生 Trinkets 或 tclayer 兼容层 provides "trinkets"）时应用；
         // 与主包 TrinketImpl 的互斥见 shouldApplyMixin 内专门判定（最高优先级插件非 trinkets 才应用）。

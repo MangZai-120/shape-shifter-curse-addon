@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.forms;
 
+import net.jackcooper.shapeShifterCurseAddon.compat.FormAnimationCompat;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_animation.AnimationHolder;
@@ -65,6 +66,9 @@ public class Form_Allay extends NormalForm {
 	public @Nullable AbstractAnimStateController getAnimStateController(PlayerEntity player, AnimSystem.AnimSystemData animSystemData, @NotNull Identifier animStateID) {
 		@Nullable AnimStateEnum animStateEnum = AnimStateEnum.getStateEnum(animStateID);
 		if (animStateEnum != null) {
+			if (FormAnimationCompat.shouldUseVanillaAnimation(player)) {
+				return FormAnimationCompat.VANILLA_CONTROLLER;
+			}
 			return switch (animStateEnum) {
 				case ANIM_STATE_SPRINT -> SPRINT_CONTROLLER;
 				case ANIM_STATE_IDLE -> IDLE_CONTROLLER;

@@ -16,6 +16,7 @@ import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
@@ -277,13 +278,13 @@ public final class SpellcastClient {
 			return;
 		}
 		int level = ScrollData.getCastLevel(scroll);
-		int cost = SpellNumbers.finalManaCost(spell, book, player, level);
+		int cost = SpellNumbers.finalManaCost(spell, book, player, level, scroll);
 		boolean downgraded = false;
 		// HUD 上的书能量必须独立付得起整次消耗，契灵等形态的自身能量不参与预检。
 		if (!SpellbookData.canPayMana(book, cost)) {
 			// 红色稀有度（单档，getMaxLevel()==1）法术不得降档（2026-09-24 用户定稿）：
 			// 法力不足直接红字，不进入三连击降档流程。
-			if (spell.getMaxLevel() <= 1 || SpellNumbers.highestAffordableLevel(spell, book, player, level - 1) == 0) {
+			if (spell.getMaxLevel() <= 1 || SpellNumbers.highestAffordableLevel(spell, book, player, level - 1, scroll) == 0) {
 				downgradePresses.reset();
 				player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_mana")
 						.formatted(net.minecraft.util.Formatting.RED), true);
@@ -352,7 +353,7 @@ public final class SpellcastClient {
 		lunarTarget = null;
 		if (selectingTarget && gestureKey >= 0 && keyPressed(gestureKey)
 				&& ScrollData.getSpell(targetingScroll) instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarPhaseSpell) {
-			lunarTarget = net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarPhaseSpell.raycastEntity(player);
+			lunarTarget = RuneCastContext.with(RuneScheme.modifiers(player,targetingScroll,ScrollData.getCastLevel(targetingScroll)),()->net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarPhaseSpell.raycastEntity(player));
 		}
 	}
 
@@ -383,7 +384,7 @@ public final class SpellcastClient {
 		if (book == null || book.isEmpty() || selectedSlot != gestureSlot
 				|| !ItemStack.areEqual(SpellbookData.getScroll(book, gestureSlot), targetingScroll)) return null;
 		Spell spell = ScrollData.getSpell(targetingScroll);
-		return spell == null ? null : Spell.computeAimImpact(client.player, spell.getAimMaxRange());
+		return spell == null ? null : RuneCastContext.with(RuneScheme.modifiers(client.player,targetingScroll,ScrollData.getCastLevel(targetingScroll)),()->Spell.computeAimImpact(client.player, spell.getAimMaxRange()));
 	}
 
 	/** 当前槽是否为按住瞄准型法术（getAimMaxRange>0，如陨火术）。 */
@@ -408,11 +409,12 @@ public final class SpellcastClient {
 		if (client.world == null || client.world.getTime() % 2 != 0) {
 			return;
 		}
-		double radius = spell.getAimRadius(ScrollData.getLevel(scroll));
+		var runeModifiers=RuneScheme.modifiers(player,scroll,ScrollData.getCastLevel(scroll));
+        double radius = RuneCastContext.with(runeModifiers,()->spell.getAimRadius(ScrollData.getCastLevel(scroll)));
 		if (radius <= 0) {
 			return;
 		}
-		Vec3d impact = Spell.computeAimImpact(player, spell.getAimMaxRange());
+		Vec3d impact = RuneCastContext.with(runeModifiers,()->Spell.computeAimImpact(player, spell.getAimMaxRange()));
 		if (impact == null) {
 			return;
 		}

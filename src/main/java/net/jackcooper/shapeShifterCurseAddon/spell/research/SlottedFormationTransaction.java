@@ -1,6 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.research;
 
 import net.jackcooper.shapeShifterCurseAddon.item.*;
+import net.jackcooper.shapeShifterCurseAddon.block.SpellResearchTableBlockEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationKnowledgeComponent;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
@@ -14,12 +15,20 @@ public final class SlottedFormationTransaction {
     private SlottedFormationTransaction(){}
     public static Result complete(Inventory table,Inventory backpack,FormationKnowledgeComponent knowledge,WorldRuneState world,
                                   int level,int[] slots,UUID operation){
+        return complete(table,backpack,knowledge,world,level,slots,operation,false);
+    }
+    public static Result completeEnhanced(Inventory table,Inventory backpack,FormationKnowledgeComponent knowledge,WorldRuneState world,
+                                  int level,int[] slots,UUID operation){return complete(table,backpack,knowledge,world,level,slots,operation,true);}
+    private static Result complete(Inventory table,Inventory backpack,FormationKnowledgeComponent knowledge,WorldRuneState world,
+                                  int level,int[] slots,UUID operation,boolean enhanced){
         var progress=knowledge.research();
+        if(enhanced&&!world.worldId().equals(progress.world))return new Result("invalid",-1);
         if(!progress.completionToken.equals(operation))return new Result("duplicate",-1);
-        var recipe=SlottedSpellRecipes.identify(level,slots,world.language());
+        var evaluation=enhanced?RuneBuildEvaluator.evaluate(level,slots,world.language(),SlottedSpellRecipes.all()):null;
+        var recipe=enhanced?(evaluation.valid()?evaluation.recipe():null):SlottedSpellRecipes.identify(level,slots,world.language());
         if(recipe==null)return new Result("invalid",-1);
         if(progress.rank<level)return new Result("rank",-1);
-        if(!table.getStack(3).isEmpty())return new Result("output",-1);
+        if(!table.getStack(SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT).isEmpty())return new Result("output",-1);
         List<Take> plan=new ArrayList<>();
         if(!collect(table,backpack,0,stack->stack.getItem() instanceof BlankFormationPaperItem,1,plan))return new Result("paper",-1);
         int[] inks=SlottedFormation.ink(world.language(),slots);
@@ -27,12 +36,13 @@ public final class SlottedFormationTransaction {
             final int expected=school;
             if(!collect(table,backpack,1,stack->stack.getItem() instanceof FormationInkItem ink&&school(ink)==expected,inks[school],plan))return new Result("ink",school);
         }
-        if(!collect(table,backpack,2,stack->stack.isOf(RegCustomItem.UNTREATED_MOONDUST),slots.length,plan))return new Result("dust",-1);
-        ItemStack result=SpellFormationItem.create(world,recipe.spell(),level,slots);
+        if(!collect(table,backpack,2,stack->stack.isOf(RegCustomItem.UNTREATED_MOONDUST),(int)Arrays.stream(slots).filter(g->g>=0).count(),plan))return new Result("dust",-1);
+        ItemStack result=enhanced?SpellFormationItem.createEnhanced(world,level,slots,evaluation):SpellFormationItem.create(world,recipe.spell(),level,slots);
         for(Take take:plan)take.inventory.getStack(take.slot).decrement(take.count);
-        table.setStack(3,result);table.markDirty();backpack.markDirty();
+        table.setStack(SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT,result);table.markDirty();backpack.markDirty();
         knowledge.recordSpell(recipe.spell());String key=recipe.spell()+":"+level;
-        progress.slotReferences.put(key,slots.clone());progress.slotCompleted.add(key);progress.completionToken=UUID.randomUUID();
+        if(enhanced){progress.runeReferences.put(key,slots.clone());progress.runeCompleted.add(key);}
+        else{progress.slotReferences.put(key,slots.clone());progress.slotCompleted.add(key);}progress.completionToken=UUID.randomUUID();
         return new Result("completed",recipe.family());
     }
     public static int school(FormationInkItem ink){return ink.getType().element==null?7:ResearchTarget.FAMILIES.indexOf(ink.getType().element.id);}

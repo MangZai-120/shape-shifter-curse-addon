@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
@@ -38,7 +39,7 @@ public class VoidDevourSpell extends Spell {
 	/** 按住瞄准型：最大施法距离（含等级缩放；客户端按住施法键显示落点预览圈，松开施放）。 */
 	@Override
 	public double getAimMaxRange() {
-		return BAL.d("base_range", BASE_RANGE); // 预览距离基准；等级缩放在 getBlinkRange 式调用点乘 speed_multiplier
+		return RuneCastContext.current().scale(BAL.d("base_range", BASE_RANGE),RuneModifiers.Stat.DISTANCE); // 预览距离基准；等级缩放在 getBlinkRange 式调用点乘 speed_multiplier
 	}
 
 	/** 预览圈半径 = 落点 AOE 半径（含等级缩放，与服务端实际伤害范围一致）。 */
@@ -49,13 +50,13 @@ public class VoidDevourSpell extends Spell {
 
 	/** 实际有效射程（含等级缩放）。 */
 	private double effectiveRange(int level) {
-		return BAL.d("base_range", BASE_RANGE) * getSpeedMultiplier(level);
+		return RuneCastContext.current().scale(BAL.d("base_range", BASE_RANGE) * getSpeedMultiplier(level),RuneModifiers.Stat.DISTANCE);
 	}
 
 	/** 实际 AOE 半径（含等级缩放：L1=2 → L5=5，每级 +0.75）。 */
 	private double effectiveRadius(int level) {
-		return BAL.d("impact_radius", IMPACT_RADIUS)
-				+ BAL.d("radius_per_level", RADIUS_PER_LEVEL) * (Math.max(1, Math.min(5, level)) - 1);
+		return RuneCastContext.current().scale(BAL.d("impact_radius", IMPACT_RADIUS)
+                + BAL.d("radius_per_level", RADIUS_PER_LEVEL) * (Math.max(1, Math.min(5, level)) - 1),RuneModifiers.Stat.AREA);
 	}
 
 	/** 施法前置校验：落点必须命中方块（指天/超距 → 拒绝，不耗法力/CD）。 */
@@ -103,7 +104,7 @@ public class VoidDevourSpell extends Spell {
 			}
 			target.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
 					net.minecraft.entity.effect.StatusEffects.BLINDNESS,
-					BAL.i("base_blindness_ticks", BASE_BLINDNESS_TICKS) + ((level - 1) / 2) * 20, 0));
+					RuneCastContext.current().duration(BAL.i("base_blindness_ticks", BASE_BLINDNESS_TICKS) + ((level - 1) / 2) * 20,RuneModifiers.Stat.NEGATIVE), 0));
 			hitCount++;
 			// 命中演出：虚空爆裂
 			serverWorld.spawnParticles(ParticleTypes.SMOKE,

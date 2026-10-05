@@ -49,11 +49,11 @@ public final class CorruptMistManager {
 			int basePoisonTicks = net.jackcooper.shapeShifterCurseAddon.spell.spells.CorruptMistSpell.poisonTicks(); // 运行时快照读取（spells.corrupt_mist.poison_ticks）
 			boolean venomAffinity = castId != null && net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(
 					caster, net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SPIDER_SALTICIDAE);
-			this.poisonTicks = (castId == null ? basePoisonTicks
+			this.poisonTicks = net.jackcooper.shapeShifterCurseAddon.spell.research.RuneCastContext.current().duration((castId == null ? basePoisonTicks
 					: net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, basePoisonTicks))
-					+ (venomAffinity ? 60 : 0);
-			this.slownessTicks = castId == null ? 40
-					: net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, 40);
+					+ (venomAffinity ? 60 : 0),net.jackcooper.shapeShifterCurseAddon.spell.research.RuneModifiers.Stat.NEGATIVE);
+			this.slownessTicks = net.jackcooper.shapeShifterCurseAddon.spell.research.RuneCastContext.current().duration(castId == null ? 40
+					: net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, 40),net.jackcooper.shapeShifterCurseAddon.spell.research.RuneModifiers.Stat.NEGATIVE);
 		}
 	}
 

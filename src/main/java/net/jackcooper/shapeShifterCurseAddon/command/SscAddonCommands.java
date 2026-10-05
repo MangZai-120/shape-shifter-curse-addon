@@ -58,7 +58,9 @@ public class SscAddonCommands {
 	private static int giveUnanalyzedScroll(CommandContext<ServerCommandSource> context, int level) throws CommandSyntaxException {
 		ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
 		String spellPath = StringArgumentType.getString(context, "spell");
-		var stack = net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll(spellPath, level);
+		var stack = net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll(
+				net.jackcooper.shapeShifterCurseAddon.spell.research.WorldRuneState.get(player.getServer()),
+				spellPath, level, player.getWorld().random.nextLong());
 		if (stack.isEmpty()) {
 			context.getSource().sendError(Text.translatable("command.ssc_addon.unanalyzed.invalid", spellPath, level));
 			return 0;

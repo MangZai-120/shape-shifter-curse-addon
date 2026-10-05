@@ -30,8 +30,5 @@ public final class DeathFinaleSpell extends Spell {
                 solo ? 0 : ssc_addon$takePendingExp());
     }
 
-    // Until a dedicated item illustration is supplied, use the existing void-school icon.
-    @Override public Identifier getIconTexture() {
-        return new Identifier("ssc_addon", "textures/gui/spell_icons/void_devour.png");
-    }
+    // 图标走 Spell 基类默认约定路径 textures/gui/spell_icons/death_finale.png（专属立绘已接入）。
 }

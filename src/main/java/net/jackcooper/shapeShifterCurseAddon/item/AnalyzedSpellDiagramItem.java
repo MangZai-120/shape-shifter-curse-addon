@@ -18,16 +18,39 @@ public final class AnalyzedSpellDiagramItem extends Item {
         var recipe=SlottedSpellRecipes.get(spell);
         if(!SlottedSpellRecipes.available(recipe,level))return ItemStack.EMPTY;
         ItemStack stack=new ItemStack(SscAddon.ANALYZED_SPELL_DIAGRAM);var data=stack.getOrCreateNbt();
-        data.putUuid("World",world.worldId());data.putInt("Version",SlottedFormation.VERSION);
+        data.putUuid("World",world.worldId());data.putInt("Version",RuneLayout.VERSION);
         data.putString("Spell",spell);data.putInt("Level",level);data.putInt("CustomModelData",level);
-        data.putIntArray("Slots",SlottedSpellRecipes.glyphs(recipe,level,world.language()));return stack;
+        data.putIntArray("Slots",RuneLayout.foundation(recipe,level,world.language()));return stack;
+    }
+    public static ItemStack create(WorldRuneState world,ItemStack scroll){
+        Spell spell=ScrollData.getSpell(scroll);
+        if(spell==null)return ItemStack.EMPTY;
+        var data=scroll.getNbt();
+        if(data==null||!data.contains(RuneScheme.KEY))return create(world,spell.getId().getPath(),ScrollData.getLevel(scroll));
+        var mirror=data.getCompound(RuneScheme.KEY);
+        var saved=RuneScheme.authoritativeScroll(world,scroll);
+        if(saved==null)return ItemStack.EMPTY;
+        ItemStack diagram=create(world,spell.getId().getPath(),saved.getInt("Level"));
+        if(diagram.isEmpty())return diagram;
+        diagram.getOrCreateNbt().putIntArray("Slots",saved.getIntArray("Slots"));
+        diagram.getOrCreateNbt().putInt("Version",saved.getInt("Version"));
+        diagram.getOrCreateNbt().put(RuneScheme.KEY,mirror.copy());
+        return diagram;
+    }
+    /** Legacy outer glyphs described the old grammar and must not become modifier references. */
+    public static int[] referenceSlots(NbtCompound data){
+        int[] slots=data.getIntArray("Slots");
+        int level=data.getInt("Level"),version=data.getInt("Version");
+        if(version==SlottedFormation.VERSION||!data.contains(RuneScheme.KEY))
+            for(int i=RuneLayout.baseSize(level,version==1?RuneLayout.PREVIOUS_VERSION:version);i<slots.length;i++)slots[i]=-1;
+        return RuneLayout.migrateDraft(level,slots,version);
     }
     public static boolean valid(ItemStack stack,UUID world){
         NbtCompound data=stack.getNbt();
         return stack.isOf(SscAddon.ANALYZED_SPELL_DIAGRAM)&&data!=null&&data.containsUuid("World")
-                &&data.getUuid("World").equals(world)&&data.getInt("Version")==SlottedFormation.VERSION
-                &&SlottedFormation.validDraft(data.getInt("Level"),data.getIntArray("Slots"))
-                &&Arrays.stream(data.getIntArray("Slots")).allMatch(glyph->glyph>=0)
+                &&data.getUuid("World").equals(world)
+                &&RuneLayout.validDraft(data.getInt("Level"),data.getIntArray("Slots"),data.getInt("Version"))
+                &&Arrays.stream(Arrays.copyOf(data.getIntArray("Slots"),data.getInt("Version")==1?SlottedFormation.size(data.getInt("Level")):RuneLayout.baseSize(data.getInt("Level"),data.getInt("Version")))).allMatch(glyph->glyph>=0)
                 &&SlottedSpellRecipes.available(SlottedSpellRecipes.get(data.getString("Spell")),data.getInt("Level"));
     }
     @Override public Text getName(ItemStack stack){
@@ -51,5 +74,6 @@ public final class AnalyzedSpellDiagramItem extends Item {
             for(String line:Text.translatable(spell.getDescKey()).getString().split("\n"))lines.add(Text.literal(line).formatted(Formatting.GRAY));
         }
         for(String line:Text.translatable("research.ssc_addon.slotted.diagram_tip").getString().split("\n"))lines.add(Text.literal(line).formatted(Formatting.DARK_GRAY));
+        RuneTooltips.append(stack,lines);
     }
 }

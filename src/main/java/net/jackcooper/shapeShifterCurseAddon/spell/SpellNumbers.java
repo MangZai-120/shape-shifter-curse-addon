@@ -30,6 +30,15 @@ public final class SpellNumbers {
 	}
 
 	/** JSON 基础消耗 × 当前施放等级倍率 × 书内法阵倍率 × 形态倍率；-1 表示配置尚不可用。 */
+	public static int finalManaCost(Spell spell,net.minecraft.item.ItemStack book,net.minecraft.entity.player.PlayerEntity player,int selectedLevel,net.minecraft.item.ItemStack scroll){
+        int base=finalManaCost(spell,book,player,selectedLevel);
+        return base<0?base:net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme.modifiers(player,scroll,selectedLevel).mana(base);
+    }
+    public static int highestAffordableLevel(Spell spell,net.minecraft.item.ItemStack book,net.minecraft.entity.player.PlayerEntity player,int maxLevel,net.minecraft.item.ItemStack scroll){
+        if(book==null||book.isEmpty())return 0;
+        long available=SpellbookData.getManaNbt(book.getNbt(),getMaxManaOf(book.getNbt()));
+        return SpellCastingRules.highestAffordableLevel(Math.min(spell.getMaxLevel(),maxLevel),available,l->finalManaCost(spell,book,player,l,scroll));
+    }
 	public static int manaCost(net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig config,
 	                           int level, float formationMultiplier, float affinityMultiplier) {
 		if (!config.manaCostConfigured || !Float.isFinite(formationMultiplier) || formationMultiplier <= 0

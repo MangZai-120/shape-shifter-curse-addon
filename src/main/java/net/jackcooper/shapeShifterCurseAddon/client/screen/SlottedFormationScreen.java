@@ -9,6 +9,7 @@ import net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.onixary.shapeShifterCurseFabric.items.RegCustomItem;
 import net.jackcooper.shapeShifterCurseAddon.screen.SpellResearchTableScreenHandler;
+import net.jackcooper.shapeShifterCurseAddon.block.SpellResearchTableBlockEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.*;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.minecraft.client.gui.*;
@@ -24,6 +25,7 @@ import net.minecraft.item.*;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
@@ -32,7 +34,7 @@ import java.util.*;
 public final class SlottedFormationScreen extends HandledScreen<SpellResearchTableScreenHandler> {
     private static final int PALETTE_LEFT=8,PALETTE_TOP=26,PALETTE_CELL=22,PALETTE_HEIGHT=118;
     private static final int PALETTE_TRACK_X=53,PALETTE_TRACK_WIDTH=4;
-    private static final int PALETTE_ROWS=(17+1)/2,PALETTE_MAX_SCROLL=PALETTE_ROWS*PALETTE_CELL-PALETTE_HEIGHT;
+    private static final int PALETTE_ROWS=(18+1)/2,PALETTE_MAX_SCROLL=PALETTE_ROWS*PALETTE_CELL-PALETTE_HEIGHT;
     private static final int PALETTE_THUMB_HEIGHT=PALETTE_HEIGHT*PALETTE_HEIGHT/(PALETTE_ROWS*PALETTE_CELL);
     private static final int REFERENCE_COLUMNS=4,REFERENCE_CAPACITY=15,REFERENCE_LEFT=64,REFERENCE_TOP=94;
     private final SpellResearchTableScreen parent;
@@ -44,10 +46,15 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
     private final FeedbackState feedbackState=new FeedbackState();
     private ResearchProgress progress=new ResearchProgress();
     private int level=1,selectedGlyph,revision,paletteScroll,notesScroll,referenceScroll;
-    private int[] slots=SlottedFormation.empty(1),meanings=new int[17],schools=new int[17],reference=new int[0];
+    private int[] slots=RuneLayout.empty(1),meanings=new int[18],schools=new int[18],reference=new int[0];
+    private int[] diagnosis=new int[0];
+    private int stability=100;private boolean runeValid;private int evaluatedRevision=-1;
+    private RuneModifiers modifiers=RuneModifiers.NONE;
+    private NbtCompound runeTooltipState=new NbtCompound();
+    private final BitSet problems=new BitSet(),inactive=new BitSet(),synergy=new BitSet(),suppressed=new BitSet();
     private final List<Integer> referenceInventorySlots=new ArrayList<>();
     private int selectedReferenceSlot=-1;
-    private List<FormationDiagram.Point> positions=SlottedFormation.positions(1);
+    private List<FormationDiagram.Point> positions=RuneLayout.positions(1);
     private UUID world,operation;
     private boolean notes,referenceMenu,referenceVisible,handoff,busy,dragging,erasing;
     private boolean dirty,loading,paletteDragging,paletteScrolling;
@@ -65,7 +72,7 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         super.init();y=(height-backgroundHeight-28)/2+28;handoff=false;pageButtons.clear();studyButtons.clear();dragging=false;paletteScrolling=false;paletteDragging=false;
         handler.setActivePage(ResearchTableTabs.RESEARCH);
         if(client.interactionManager!=null)client.interactionManager.clickButton(handler.syncId,ResearchTableTabs.RESEARCH);
-        positions=SlottedFormation.positions(level);
+        positions=RuneLayout.positions(level);
         for(int index=0;index<ResearchTableTabs.COUNT;index++){final int tab=index;addDrawableChild(ResearchTableTabs.create(x,y,index,()->tab==ResearchTableTabs.RESEARCH,()->{if(tab!=ResearchTableTabs.RESEARCH)back(tab);}));}
         for(int rank=1;rank<=5;rank++){final int tier=rank;pageButtons.add(button(244+(rank-1)*12,18,12,18,Text.literal(String.valueOf(rank)),()->switchLevel(tier)));}
         pageButtons.add(button(244,44,60,18,text("notes"),()->{notes=!notes;referenceMenu=false;notesScroll=0;visibility();}));
@@ -101,8 +108,8 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
     }
     private void visibility(){for(var button:studyButtons)button.visible=notes;for(int tier=0;tier<5;tier++)pageButtons.get(tier).active=tier+1!=level;}
     private void switchLevel(int next){
-        if(next==level||busy)return;save();level=next;slots=drafts.getOrDefault(level,SlottedFormation.empty(level)).clone();
-        revision++;reference=new int[0];referenceVisible=false;selectedReferenceSlot=-1;notesScroll=0;positions=SlottedFormation.positions(level);visibility();send(SlottedResearchManager.OPEN);
+        if(next==level||busy)return;save();level=next;slots=drafts.getOrDefault(level,RuneLayout.empty(level)).clone();
+        revision++;reference=new int[0];referenceVisible=false;selectedReferenceSlot=-1;notesScroll=0;positions=RuneLayout.positions(level);visibility();send(SlottedResearchManager.OPEN);
     }
     private void save(){drafts.put(level,slots.clone());send(SlottedResearchManager.SAVE);}
     private void send(int action){
@@ -110,7 +117,7 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         if(world==null)action=SlottedResearchManager.OPEN;
         if(busy&&action!=SlottedResearchManager.SAVE)return;
         NbtCompound request=new NbtCompound();request.putInt("Action",action);request.putInt("Level",level);request.putInt("Revision",revision);
-        request.putInt("Version",SlottedFormation.VERSION);request.putIntArray("Slots",slots);request.putInt("Glyph",selectedGlyph);
+        request.putInt("Version",RuneLayout.VERSION);request.putIntArray("Slots",slots);request.putInt("Glyph",selectedGlyph);
         if(world!=null)request.putUuid("World",world);if(operation!=null)request.putUuid("Operation",operation);
         if(action!=SlottedResearchManager.SAVE)request.putUuid("Request",feedbackState.begin(action));
         var packet=PacketByteBufs.create();packet.writeVarInt(handler.syncId);packet.writeNbt(request);ClientPlayNetworking.send(FormationResearchNetworking.ACTION,packet);
@@ -125,16 +132,24 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         if(action!=SlottedResearchManager.SAVE&&(!state.containsUuid("Request")||!feedbackState.finish(state.getUuid("Request"),action)))return;
         world=state.getUuid("World");progress.read(state.getCompound("Progress"));
         if(state.containsUuid("Operation"))operation=state.getUuid("Operation");
-        int[] received=state.getIntArray("Meanings");if(received.length==17)meanings=received;
-        received=state.getIntArray("Schools");if(received.length==17)schools=received;
+        int[] received=state.getIntArray("Meanings");if(received.length==18)meanings=received;
+        received=state.getIntArray("Schools");if(received.length==18)schools=received;
+        if(state.getInt("Level")==level&&state.getInt("Revision")==revision){
+            stability=state.getInt("Stability");runeValid=state.getBoolean("RuneValid");evaluatedRevision=revision;
+            modifiers=RuneModifiers.read(state.getCompound("Modifiers"));
+            runeTooltipState=state.getCompound("RuneTooltipState").copy();
+            for(var entry:Map.of("Problems",problems,"Inactive",inactive,"Synergy",synergy,"Suppressed",suppressed).entrySet()){entry.getValue().clear();for(int p:state.getIntArray(entry.getKey()))entry.getValue().set(p);}}
         if(action==SlottedResearchManager.SAVE)return;
         busy=false;
         if(state.getBoolean("Slotted")&&(state.getInt("Level")!=level||state.getInt("Revision")!=revision))return;
         feedback=message;
         if(action==SlottedResearchManager.OPEN){
             loading=false;
-            received=state.getIntArray("Slots");if(SlottedFormation.validDraft(level,received))slots=received;
+            received=state.getIntArray("Slots");if(RuneLayout.validDraft(level,received))slots=received;
         }
+        // 阶段B：接收试运行诊断；失败时用分层诊断文本替代笼统的 invalid 提示
+        diagnosis=state.getIntArray("Diagnosis");
+        if(action==SlottedResearchManager.TEST&&diagnosis.length>0)feedback=FormationDiagnosis.message(diagnosis);
         if(valid)animation=System.currentTimeMillis();
         if(action==SlottedResearchManager.TEST){
             playSound(valid?SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME:SoundEvents.BLOCK_FIRE_EXTINGUISH,valid?.4f:.18f,valid?1.25f:.8f);
@@ -145,7 +160,7 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         if(busy&&now-sentAt>8000){busy=false;loading=false;feedbackState.cancel();feedback=text("timeout");}
         if(dirty&&!busy&&world!=null&&now-editedAt>600)save();
         if(referenceVisible&&(selectedReferenceSlot<0||!AnalyzedSpellDiagramItem.valid(inventory.getStack(selectedReferenceSlot),world)
-            ||!Arrays.equals(reference,inventory.getStack(selectedReferenceSlot).getNbt().getIntArray("Slots")))){referenceVisible=false;reference=new int[0];}
+            ||!Arrays.equals(reference,foundationReference(inventory.getStack(selectedReferenceSlot).getNbt())))){referenceVisible=false;reference=new int[0];}
     }
     @Override protected void drawBackground(DrawContext context,float delta,int mouseX,int mouseY){
         context.drawTexture(image("background"),x,y,0,0,312,212,312,212);
@@ -156,10 +171,13 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         renderBackground(context);drawBackground(context,delta,mouseX,mouseY);
         context.drawText(textRenderer,text("filled",Arrays.stream(slots).filter(value->value>=0).count(),slots.length),x+65,y+6,0xff414141,false);
         context.drawText(textRenderer,text("rank_short",progress.rank),x+244,y+6,0xff414141,false);
+        if(!notes)context.drawText(textRenderer,Text.translatable("research.ssc_addon.runes.stability",stability),x+244,y+68,stability<20?0xffaa2222:0xff414141,false);
+        pageButtons.get(7).active=!busy&&!loading&&evaluatedRevision==revision&&runeValid
+                &&handler.getSlot(SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT).getStack().isEmpty();
         int hovered=-1;context.enableScissor(x+PALETTE_LEFT,y+PALETTE_TOP,x+PALETTE_LEFT+PALETTE_CELL*2,y+PALETTE_TOP+PALETTE_HEIGHT);
-        for(int glyph=0;glyph<17;glyph++){
+        for(int glyph=0;glyph<18;glyph++){
             int left=x+PALETTE_LEFT+glyph%2*PALETTE_CELL,top=y+PALETTE_TOP+glyph/2*PALETTE_CELL-paletteScroll;
-            if(glyph==selectedGlyph)context.drawTexture(image("sockets"),left,top,PALETTE_CELL,PALETTE_CELL,0,0,64,64,64,64);
+            if(glyph==selectedGlyph)context.drawTexture(image("sockets"),left,top,PALETTE_CELL,PALETTE_CELL,0,0,64,64,128,64);
             drawGlyph(context,glyph,left+2,top+2,18);
             if(mouseX>=left&&mouseX<left+PALETTE_CELL&&mouseY>=Math.max(top,y+PALETTE_TOP)&&mouseY<Math.min(top+PALETTE_CELL,y+PALETTE_TOP+PALETTE_HEIGHT))hovered=glyph;
         }
@@ -174,9 +192,27 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
                 var point=positions.get(index);float centerX=(float)(x+63+point.x()*172/512),centerY=(float)(y+19+point.y()*172/512);
                 context.getMatrices().push();context.getMatrices().translate(centerX,centerY,0);
                 if(slots[index]>=0)drawGlyph(context,slots[index],-8,-8,16);
-                else if(referenceVisible&&reference.length==slots.length){context.setShaderColor(1,1,1,.55f);drawGlyph(context,reference[index],-8,-8,16);context.setShaderColor(1,1,1,1);}
-                if(hoveredSlot==index)context.drawTexture(image("sockets"),-8,-8,16,16,0,0,64,64,64,64);
+                else if(referenceVisible&&reference.length==slots.length&&reference[index]>=0){context.setShaderColor(1,1,1,.55f);drawGlyph(context,reference[index],-8,-8,16);context.setShaderColor(1,1,1,1);}
+                if(hoveredSlot==index)context.drawTexture(image("sockets"),-8,-8,16,16,RuneLayout.enhancement(level,index)?64:0,0,64,64,128,64);
                 context.getMatrices().pop();
+            }
+            // 阶段B：问题环高亮——诊断报出问题的环，其槽位外圈染淡红（仅视觉提示，不影响判定）
+            if(diagnosis.length>=6){
+                int layers=Math.min(diagnosis[0],(diagnosis.length-2)/4);
+                int[] counts=RuneLayout.layers(level);int offset=0;
+                for(int layer=0;layer<layers;layer++){
+                    int empty=diagnosis[1+layer*4],structural=diagnosis[1+layer*4+1],semantic=diagnosis[1+layer*4+2];
+                    if(empty>0||structural>0||semantic>0){
+                        for(int p=offset;p<offset+counts[layer];p++){
+                            var point=positions.get(p);
+                            context.drawBorder(
+                                (int)(x+63+point.x()*172/512)-9,
+                                (int)(y+19+point.y()*172/512)-9,
+                                18,18,0x66ff5544);
+                        }
+                    }
+                    offset+=counts[layer];
+                }
             }
         }
         int[] costs=inkCosts();int ink=Arrays.stream(costs).sum(),dust=(int)Arrays.stream(slots).filter(value->value>=0).count();
@@ -184,6 +220,14 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
             context.drawItem(new ItemStack(SscAddon.BLANK_FORMATION_PAPER),x+246,y+89);context.drawText(textRenderer,"1",x+270,y+93,0xff414141,false);
             context.drawItem(new ItemStack(RegCustomItem.UNTREATED_MOONDUST),x+246,y+109);context.drawText(textRenderer,String.valueOf(dust),x+270,y+113,0xff414141,false);
             context.drawItem(new ItemStack(SscAddon.FORMATION_INK_NORMAL),x+246,y+129);context.drawText(textRenderer,String.valueOf(ink),x+270,y+133,0xff414141,false);
+            int left=x+SpellResearchTableScreenHandler.RESEARCH_OUTPUT_X,top=y+SpellResearchTableScreenHandler.RESEARCH_OUTPUT_Y;
+            context.drawText(textRenderer,Text.translatable("research.ssc_addon.runes.output"),left,top-12,0xff414141,false);
+            context.fill(left-1,top-1,left+17,top+17,0xff8b8b8b);
+            context.fill(left-1,top-1,left+17,top,0xff373737);context.fill(left-1,top,left,top+17,0xff373737);
+            context.fill(left,top+16,left+17,top+17,0xffffffff);context.fill(left+16,top,left+17,top+16,0xffffffff);
+            ItemStack product=handler.getSlot(SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT).getStack();
+            context.drawItem(product,left,top);context.drawItemInSlot(textRenderer,product,left,top);
+            if(overOutput(mouseX,mouseY))context.fill(left,top,left+16,top+16,0x50ffffff);
         }
         String status=textRenderer.trimToWidth(feedback.getString(),292);
         context.drawText(textRenderer,status,x+(312-textRenderer.getWidth(status))/2,y+198,0xff414141,false);
@@ -204,14 +248,26 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
             context.draw();
             if(hoveredReference>=0)context.drawItemTooltip(textRenderer,inventory.getStack(referenceInventorySlots.get(hoveredReference)),mouseX,mouseY);
             context.draw();context.getMatrices().pop();
+        }else if(overOutput(mouseX,mouseY)){
+            ItemStack product=handler.getSlot(SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT).getStack();
+            if(product.isEmpty())context.drawTooltip(textRenderer,Text.translatable("research.ssc_addon.runes.output"),mouseX,mouseY);
+            else context.drawItemTooltip(textRenderer,product,mouseX,mouseY);
         }else if(hovered>=0)context.drawTooltip(textRenderer,glyphName(hovered),mouseX,mouseY);
+        else if(!notes&&slotAt(mouseX,mouseY)>=0){
+            int at=slotAt(mouseX,mouseY);
+            List<net.minecraft.text.OrderedText> wrapped=new ArrayList<>();
+            for(Text line:RuneSlotTooltips.slot(level,at,slots,meanings,runeTooltipState,evaluatedRevision==revision))
+                wrapped.addAll(textRenderer.wrapLines(line,Math.max(1,Math.min(260,width-24))));
+            context.drawOrderedTooltip(textRenderer,wrapped,mouseX,mouseY);
+        }
+        else if(!notes&&mouseX>=x+244&&mouseX<x+305&&mouseY>=y+65&&mouseY<y+84){List<Text> lines=new ArrayList<>();lines.add(Text.translatable("research.ssc_addon.runes.stability_detail",stability));for(var stat:RuneModifiers.Stat.values())if(modifiers.get(stat)!=0)lines.add(RuneTooltips.stat(stat,modifiers.get(stat)));context.drawTooltip(textRenderer,lines,mouseX,mouseY);}
         else if(!notes&&mouseX>=x+244&&mouseX<x+305&&mouseY>=y+125&&mouseY<y+148)context.drawTooltip(textRenderer,inkLines(costs),mouseX,mouseY);
         else if(!notes&&mouseX>=x+244&&mouseX<x+305&&mouseY>=y+105&&mouseY<y+125)context.drawTooltip(textRenderer,text("dust_cost",dust,SlottedFormationTransaction.count(handler.getInventory(),inventory,2,stack->stack.isOf(RegCustomItem.UNTREATED_MOONDUST))),mouseX,mouseY);
         else if(!notes&&mouseX>=x+244&&mouseX<x+305&&mouseY>=y+85&&mouseY<y+105)context.drawTooltip(textRenderer,text("paper_cost",SlottedFormationTransaction.count(handler.getInventory(),inventory,0,stack->stack.getItem() instanceof BlankFormationPaperItem)),mouseX,mouseY);
         else if(mouseX>=x+10&&mouseX<x+302&&mouseY>=y+195&&mouseY<y+210)context.drawTooltip(textRenderer,feedback,mouseX,mouseY);
     }
     private void drawGlyph(DrawContext context,int glyph,int left,int top,int size){
-        if(glyph>=0&&glyph<17){RenderSystem.enableBlend();RenderSystem.defaultBlendFunc();context.drawTexture(image("runes"),left,top,size,size,glyph*64,0,64,64,1088,64);}
+        if(glyph>=0&&glyph<18){RenderSystem.enableBlend();RenderSystem.defaultBlendFunc();context.drawTexture(image("runes"),left,top,size,size,glyph*64,0,64,64,18*64,64);}
     }
     private Text glyphName(int glyph){return meanings[glyph]<0?text("unknown",glyph+1):text("role."+meanings[glyph]);}
     private int[] inkCosts(){int[] counts=new int[8];for(int glyph:slots)if(glyph>=0)counts[schools[glyph]]++;for(int school=0;school<8;school++)counts[school]=(counts[school]+1)/2;return counts;}
@@ -229,7 +285,8 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         paletteScroll=(int)Math.round(Math.max(0,Math.min(1,fraction))*PALETTE_MAX_SCROLL);
     }
     private void renderNotes(DrawContext context){
-        List<Text> lines=new ArrayList<>();lines.add(text("discovery_rules"));lines.add(glyphName(selectedGlyph));
+        List<Text> lines=new ArrayList<>();lines.add(text("discovery_rules"));lines.add(Text.translatable("research.ssc_addon.runes.rules"));
+        lines.add(glyphName(selectedGlyph));
         int total=0;for(Text line:lines)total+=textRenderer.wrapLines(line,158).size()*11+5;
         notesScroll=Math.max(0,Math.min(notesScroll,Math.max(0,total-160)));
         context.enableScissor(x+66,y+23,x+231,y+189);int top=y+24-notesScroll;
@@ -241,17 +298,28 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         for(int index=0;index<positions.size();index++)if(Math.hypot(mouseX-(x+63+positions.get(index).x()*172/512),mouseY-(y+19+positions.get(index).y()*172/512))<8)return index;
         return -1;
     }
+    private boolean overOutput(double mouseX,double mouseY){
+        return !notes&&!referenceMenu&&mouseX>=x+SpellResearchTableScreenHandler.RESEARCH_OUTPUT_X-1
+                &&mouseX<x+SpellResearchTableScreenHandler.RESEARCH_OUTPUT_X+17
+                &&mouseY>=y+SpellResearchTableScreenHandler.RESEARCH_OUTPUT_Y-1
+                &&mouseY<y+SpellResearchTableScreenHandler.RESEARCH_OUTPUT_Y+17;
+    }
     @Override public boolean mouseClicked(double mouseX,double mouseY,int button){
         if(referenceMenu){
             refreshReferenceList();int chosen=referenceAt(mouseX,mouseY);
             if(button==0&&chosen>=0){
                 selectedReferenceSlot=referenceInventorySlots.get(chosen);var data=inventory.getStack(selectedReferenceSlot).getNbt();
-                if(data.getInt("Level")==level){reference=data.getIntArray("Slots");referenceVisible=true;notes=false;visibility();}
+                if(data.getInt("Level")==level){reference=foundationReference(data);referenceVisible=true;notes=false;visibility();}
                 else{feedback=text("diagram_level",data.getInt("Level"));referenceVisible=false;}
             }
             referenceMenu=false;return true;
         }
         for(Element child:children())if(child.mouseClicked(mouseX,mouseY,button)){setFocused(child);return true;}
+        if(button==0&&overOutput(mouseX,mouseY)){
+            if(client!=null&&client.player!=null&&client.interactionManager!=null)
+                client.interactionManager.clickSlot(handler.syncId,SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT,0,SlotActionType.QUICK_MOVE,client.player);
+            return true;
+        }
         if(button==0&&inPalette(mouseX,mouseY)&&mouseX>=x+PALETTE_TRACK_X){
             int thumb=paletteThumbY();paletteGrabOffset=mouseY>=thumb&&mouseY<thumb+PALETTE_THUMB_HEIGHT?mouseY-thumb:PALETTE_THUMB_HEIGHT/2.0;
             paletteScrolling=true;paletteDragging=false;dragging=false;dragPaletteScroll(mouseY);return true;
@@ -259,7 +327,7 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         if(world==null||loading)return true;
         if(button==0&&mouseX>=x+PALETTE_LEFT&&mouseX<x+PALETTE_LEFT+PALETTE_CELL*2&&inPalette(mouseX,mouseY)){
             int glyph=((int)(mouseY-y-PALETTE_TOP)+paletteScroll)/PALETTE_CELL*2+(int)(mouseX-x-PALETTE_LEFT)/PALETTE_CELL;
-            if(glyph>=0&&glyph<17){selectedGlyph=glyph;paletteDragging=true;}return true;
+            if(glyph>=0&&glyph<18){selectedGlyph=glyph;paletteDragging=true;}return true;
         }
         int slot=slotAt(mouseX,mouseY);
         if(slot>=0&&(button==0||button==1)){dragging=true;erasing=button==1;touched.clear();paint(slot);return true;}
@@ -293,13 +361,14 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         if(notes&&mouseX>=x+63&&mouseX<x+236){notesScroll-=(int)(amount*22);return true;}
         if(inPalette(mouseX,mouseY)){paletteScroll=Math.max(0,Math.min(PALETTE_MAX_SCROLL,paletteScroll-(int)(amount*PALETTE_CELL)));return true;}return false;
     }
-    private void edited(){revision++;animation=0;dirty=true;editedAt=System.currentTimeMillis();feedback=text("edited");drafts.put(level,slots.clone());}
+    private void edited(){revision++;animation=0;dirty=true;editedAt=System.currentTimeMillis();feedback=text("edited");diagnosis=new int[0];drafts.put(level,slots.clone());}
     private void clearCurrent(){
         if(busy||loading||notes||Arrays.stream(slots).noneMatch(value->value>=0))return;
         dragging=false;erasing=false;paletteDragging=false;paletteScrolling=false;touched.clear();
-        referenceVisible=false;referenceMenu=false;slots=SlottedFormation.empty(level);edited();feedback=text("cleared");
+        referenceVisible=false;referenceMenu=false;slots=RuneLayout.empty(level);edited();feedback=text("cleared");
         playSound(SoundEvents.ITEM_BOOK_PAGE_TURN,.25f,.8f);
     }
+    private int[] foundationReference(NbtCompound data){return AnalyzedSpellDiagramItem.referenceSlots(data);}
     private void refreshReferenceList(){
         referenceInventorySlots.clear();if(world!=null)for(int slot=0;slot<Math.min(36,inventory.size());slot++)if(AnalyzedSpellDiagramItem.valid(inventory.getStack(slot),world))referenceInventorySlots.add(slot);
         referenceScroll=Math.max(0,Math.min(referenceScroll,maxReferenceScroll()));

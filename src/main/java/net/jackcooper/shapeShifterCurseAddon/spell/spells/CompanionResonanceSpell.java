@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.ability.CompanionResonanceManager;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
@@ -64,7 +65,8 @@ public class CompanionResonanceSpell extends Spell {
 		// 状态效果等级：迅捷每两级 +1（L1=0、L3=1、L5=2）；抗性 L3 起每两级 +1（L3=0、L5=1）
 		int speedAmplifier = (level - 1) / 2;
 		int resistanceAmplifier = level >= 3 ? (level - 3) / 2 : -1; // -1 = 不加抗性
-		double radius = BAL.d("radius", RADIUS); // 同方法多处使用，读一次局部化
+		duration=RuneCastContext.current().duration(duration,RuneModifiers.Stat.ALLY_DURATION);
+        double radius = RuneCastContext.current().scale(BAL.d("radius", RADIUS),RuneModifiers.Stat.AREA); // 同方法多处使用，读一次局部化
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
 				caster.getBoundingBox().expand(radius), e -> e != caster && e.isAlive());
 		int buffed = 0;

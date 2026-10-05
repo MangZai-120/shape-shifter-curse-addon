@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.entity.SpellMoonlightArrowEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
@@ -34,7 +35,7 @@ public class MoonlightArrowSpell extends Spell {
 		arrow.setLevel(level);
 		arrow.setRefundCastId(solo ? null : ssc_addon$getRefundCastId());
 		Vec3d look = caster.getRotationVec(1.0F);
-		arrow.setDirection(look, getSpeedMultiplier(level));
+		arrow.setDirection(look,(float)RuneCastContext.current().scale(getSpeedMultiplier(level),RuneModifiers.Stat.SPEED));
 		caster.getWorld().spawnEntity(arrow);
 		caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 1.0f, 1.8f);

@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
 
@@ -58,13 +59,13 @@ public class MeteorSpell extends Spell {
 	/** 按住瞄准型：最大施法距离 32 格（客户端按住施法键显示落点预览圈，松开施放）。 */
 	@Override
 	public double getAimMaxRange() {
-		return maxRange();
+		return RuneCastContext.current().scale(maxRange(),RuneModifiers.Stat.DISTANCE);
 	}
 
 	/** 预览圈半径 = 实际 AOE 半径（含等级缩放），与服务端预警圈一致。 */
 	@Override
 	public double getAimRadius(int level) {
-		return baseRadius() * getSpeedMultiplier(level);
+		return RuneCastContext.current().scale(baseRadius() * getSpeedMultiplier(level),RuneModifiers.Stat.AREA);
 	}
 
 	@Override
@@ -75,7 +76,7 @@ public class MeteorSpell extends Spell {
 	/** 施法前置校验：落点必须命中方块（空中拒绝施放；书本路径由 SpellCastManager 预检，不耗法力/CD）。 */
 	@Override
 	public boolean canCast(ServerPlayerEntity caster) {
-		return Spell.computeAimImpact(caster, maxRange()) != null;
+		return Spell.computeAimImpact(caster, getAimMaxRange()) != null;
 	}
 
 	@Override
@@ -90,7 +91,8 @@ public class MeteorSpell extends Spell {
 		meteor.setLevel(level);
 		meteor.setExpBountyTen(solo ? 0 : ssc_addon$takePendingExp()); // exp_mode 1/2 挂起经验随落点体走
 		meteor.setRefundCastId(solo ? null : ssc_addon$getRefundCastId());
-		meteor.setRadius(baseRadius() * getSpeedMultiplier(level));
+		meteor.setRadius(getAimRadius(level));
+        meteor.setFireTicks(RuneCastContext.current().duration(60,RuneModifiers.Stat.BURN));
 		meteor.setImpactTarget(impact.x, impact.y, impact.z);
 		caster.getWorld().spawnEntity(meteor);
 		// 施法音效（召唤感）：烈焰人低吼 + 火焰附加

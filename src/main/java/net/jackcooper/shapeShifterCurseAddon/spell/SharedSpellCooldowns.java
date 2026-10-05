@@ -29,6 +29,9 @@ public final class SharedSpellCooldowns extends PersistentState {
 	public static final net.minecraft.util.Identifier SYNC = new net.minecraft.util.Identifier("ssc_addon", "shared_spell_cooldowns");
 	// Client mirror only; never populated or cleared by server lifecycle events.
 	private static final Map<String, Long> CLIENT_ENDS = new HashMap<>();
+    private static final Map<String,Integer> CLIENT_TOTALS=new HashMap<>();
+    private final Map<UUID,Map<String,Integer>> totals=new HashMap<>();
+    private static final String TOTALS_KEY="__Durations";
 
 	public static void init() {
 		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> sync(handler.player));
@@ -39,6 +42,7 @@ public final class SharedSpellCooldowns extends PersistentState {
 		prune(player, now);
 		NbtCompound snapshot = new NbtCompound();
 		data.getOrDefault(player, Map.of()).forEach(snapshot::putLong);
+        NbtCompound duration=new NbtCompound();totals.getOrDefault(player,Map.of()).forEach(duration::putInt);if(!duration.isEmpty())snapshot.put(TOTALS_KEY,duration);
 		return snapshot;
 	}
 
@@ -51,14 +55,18 @@ public final class SharedSpellCooldowns extends PersistentState {
 	}
 
 	public static void applyClientSnapshot(NbtCompound snapshot) {
-		CLIENT_ENDS.clear();
-		if (snapshot != null) for (String spell : snapshot.getKeys()) CLIENT_ENDS.put(spell, snapshot.getLong(spell));
+		CLIENT_ENDS.clear();CLIENT_TOTALS.clear();
+        if(snapshot!=null){for(String spell:snapshot.getKeys())if(!spell.equals(TOTALS_KEY))CLIENT_ENDS.put(spell,snapshot.getLong(spell));var duration=snapshot.getCompound(TOTALS_KEY);for(String spell:duration.getKeys())CLIENT_TOTALS.put(spell,Math.max(0,duration.getInt(spell)));}
 	}
 
 	public static long getClientCooldownEnd(Spell spell, long scrollEnd) {
 		return Math.max(scrollEnd, spell == null ? 0L : CLIENT_ENDS.getOrDefault(spell.getId().getPath(), 0L));
 	}
 
+    public static int getClientCooldownTotal(Spell spell,long scrollEnd,int scrollTotal){
+        if(spell==null)return scrollTotal;String key=spell.getId().getPath();
+        return CLIENT_ENDS.getOrDefault(key,0L)>=scrollEnd&&CLIENT_TOTALS.getOrDefault(key,0)>0?CLIENT_TOTALS.get(key):scrollTotal;
+    }
 	/** Both sides use the same max of the scroll's inherited cooldown and the player's shared cooldown. */
 	public static long getEffectiveCooldownEnd(net.minecraft.entity.player.PlayerEntity player, net.minecraft.item.ItemStack scroll) {
 		Spell spell = ScrollData.getSpell(scroll);
@@ -79,9 +87,13 @@ public final class SharedSpellCooldowns extends PersistentState {
 	}
 
 	/** 写入共享冷却结束时刻（只取更大值——保留更长的既有 CD，防止旧卷轴清表）。 */
+    public void setCooldownEnd(UUID player,String spellPath,long endTick,int total){
+        if(endTick>getCooldownEnd(player,spellPath)){setCooldownEnd(player,spellPath,endTick);totals.computeIfAbsent(player,k->new HashMap<>()).put(spellPath,Math.max(0,total));}
+    }
 	public void setCooldownEnd(UUID player, String spellPath, long endTick) {
 		if (endTick > getCooldownEnd(player, spellPath)) {
 			data.computeIfAbsent(player, k -> new HashMap<>()).put(spellPath, endTick);
+            var durations=totals.get(player);if(durations!=null)durations.remove(spellPath);
 			markDirty();
 		}
 	}
@@ -114,6 +126,7 @@ public final class SharedSpellCooldowns extends PersistentState {
 			}
 		}
 		if (changed) {
+            var durations=totals.get(player);if(durations!=null)durations.keySet().retainAll(inner.keySet());
 			markDirty();
 		}
 	}
@@ -140,7 +153,8 @@ public final class SharedSpellCooldowns extends PersistentState {
 			} catch (IllegalArgumentException ignored) {
 			}
 		}
-		return state;
+		var durations=nbt.getCompound(TOTALS_KEY);for(String uuid:durations.getKeys())try{UUID player=UUID.fromString(uuid);Map<String,Integer> values=new HashMap<>();var stored=durations.getCompound(uuid);for(String path:stored.getKeys())values.put(path,Math.max(0,stored.getInt(path)));state.totals.put(player,values);}catch(IllegalArgumentException ignored){}
+        return state;
 	}
 
 	@Override
@@ -152,6 +166,7 @@ public final class SharedSpellCooldowns extends PersistentState {
 			}
 			nbt.put(e.getKey().toString(), inner);
 		}
+NbtCompound durations=new NbtCompound();totals.forEach((player,values)->{NbtCompound stored=new NbtCompound();values.forEach(stored::putInt);durations.put(player.toString(),stored);});if(!durations.isEmpty())nbt.put(TOTALS_KEY,durations);
 		return nbt;
 	}
 
@@ -178,7 +193,7 @@ public final class SharedSpellCooldowns extends PersistentState {
 		}
 		SharedSpellCooldowns state = get(player.getServer());
 		if (state != null) {
-			state.setCooldownEnd(player.getUuid(), spell.getId().getPath(), cooldownEnd);
+			state.setCooldownEnd(player.getUuid(), spell.getId().getPath(), cooldownEnd,(int)Math.min(Integer.MAX_VALUE,Math.max(0L,cooldownEnd-player.getWorld().getTime())));
 			sync(player);
 		}
 	}
@@ -193,7 +208,7 @@ public final class SharedSpellCooldowns extends PersistentState {
 		}
 		SharedSpellCooldowns state = get(player.getServer());
 		if (state != null) {
-			state.data.remove(player.getUuid());
+			state.data.remove(player.getUuid());state.totals.remove(player.getUuid());
 			state.markDirty();
 			sync(player);
 		}

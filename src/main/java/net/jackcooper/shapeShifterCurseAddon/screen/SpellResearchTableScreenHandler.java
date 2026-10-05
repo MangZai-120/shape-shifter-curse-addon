@@ -25,6 +25,7 @@ public class SpellResearchTableScreenHandler extends ScreenHandler {
 	public static final int GUI_WIDTH = 312;
 	public static final int GUI_HEIGHT = 212;
 	public static final int INVENTORY_X = 76;
+	public static final int RESEARCH_OUTPUT_X = 285, RESEARCH_OUTPUT_Y = 109;
 	private final Inventory inventory;
 	private final PropertyDelegate analysis;
 	private int activePage;
@@ -59,7 +60,7 @@ public class SpellResearchTableScreenHandler extends ScreenHandler {
 		this.addSlot(new Slot(inventory, 0, 154, 72) {
 			@Override
 			public boolean canInsert(ItemStack stack) {
-				return stack.getItem() instanceof BlankFormationPaperItem;
+				return stack.getItem() instanceof BlankFormationPaperItem || activePage==2 && stack.isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.SPELL_FORMATION);
 			}
 		});
 		this.addSlot(new Slot(inventory, 1, 182, 72) {
@@ -98,6 +99,11 @@ public class SpellResearchTableScreenHandler extends ScreenHandler {
 		this.addSlot(new Slot(inventory, SpellResearchTableBlockEntity.SLOT_ANALYSIS, 32, 72) {
 			@Override public boolean isEnabled() { return activePage == 0; }
 			@Override public boolean canInsert(ItemStack stack) { return isEnabled() && SpellResearchTableBlockEntity.acceptsAnalysisInput(stack); }
+			@Override public int getMaxItemCount() { return 1; }
+		});
+		this.addSlot(new Slot(inventory, SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT, RESEARCH_OUTPUT_X, RESEARCH_OUTPUT_Y) {
+			@Override public boolean isEnabled() { return activePage == 1; }
+			@Override public boolean canInsert(ItemStack stack) { return false; }
 			@Override public int getMaxItemCount() { return 1; }
 		});
 		// 玩家背包

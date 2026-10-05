@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.SpellFireBoltEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
@@ -43,11 +44,11 @@ public class FireBoltSpell extends Spell {
 		bolt.setExpBountyTen(solo ? 0 : ssc_addon$takePendingExp()); // exp_mode 1/2 挂起经验随弹射物走
 		bolt.setRefundCastId(solo ? null : ssc_addon$getRefundCastId());
 		// 低≤高跨字段约束由 balance schema 校验，运行时两值独立读取
-		bolt.setFireTicks(level >= 3
+		bolt.setFireTicks(RuneCastContext.current().duration(level >= 3
 				? BAL.i("fire_ticks_high", FIRE_TICKS_HIGH)
-				: BAL.i("fire_ticks_low", FIRE_TICKS_LOW));
+				: BAL.i("fire_ticks_low", FIRE_TICKS_LOW),RuneModifiers.Stat.BURN));
 		Vec3d look = caster.getRotationVec(1.0F);
-		bolt.setDirection(look, getSpeedMultiplier(level));
+		bolt.setDirection(look, (float)RuneCastContext.current().scale(getSpeedMultiplier(level),RuneModifiers.Stat.SPEED));
 		caster.getWorld().spawnEntity(bolt);
 		caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_BLAZE_SHOOT, SoundCategory.PLAYERS, 1.0f, 1.2f);

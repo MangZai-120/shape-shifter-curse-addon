@@ -71,7 +71,7 @@ public final class ScrollWorkshopManager {
 	/** 研究台上下文（打开的界面 + 方块实体；不在研究台前 = 静默失败）。 */
 	private static SpellResearchTableBlockEntity context(ServerPlayerEntity player) {
 		if (player.currentScreenHandler instanceof SpellResearchTableScreenHandler sh
-				&& sh.getInventory() instanceof SpellResearchTableBlockEntity be) {
+				&& sh.canUse(player) && sh.getInventory() instanceof SpellResearchTableBlockEntity be) {
 			return be;
 		}
 		return null;
@@ -295,4 +295,10 @@ public final class ScrollWorkshopManager {
 				Text.translatable(spell.getNameKey()), refund).formatted(Formatting.GREEN), true);
 	}
 
+    public static void imprint(ServerPlayerEntity player){
+        var table=context(player);if(table==null)return;
+        int result=net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme.imprint(table,net.jackcooper.shapeShifterCurseAddon.spell.research.WorldRuneState.get(player.getServer()));
+        player.sendMessage(Text.translatable("research.ssc_addon.runes.imprint."+result),true);
+        if(result==0){player.currentScreenHandler.sendContentUpdates();player.getWorld().playSound(null,table.getPos(),SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE,SoundCategory.BLOCKS,.8f,1.1f);}
+    }
 }

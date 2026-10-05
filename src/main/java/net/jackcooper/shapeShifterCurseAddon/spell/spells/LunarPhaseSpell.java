@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
 
@@ -117,7 +118,7 @@ public class LunarPhaseSpell extends Spell {
 	public static LivingEntity raycastEntity(PlayerEntity caster) {
 		Vec3d eye = caster.getEyePos();
 		Vec3d look = caster.getRotationVec(1.0F);
-		double aimRange = aimRange(); // 同方法多处使用，读一次局部化（双端一致几何）
+		double aimRange = RuneCastContext.current().scale(aimRange(),RuneModifiers.Stat.DISTANCE); // 同方法多处使用，读一次局部化（双端一致几何）
 		Vec3d end = eye.add(look.multiply(aimRange));
 		HitResult blockHit = caster.getWorld().raycast(new RaycastContext(eye, end,
 				RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, caster));
@@ -172,7 +173,7 @@ public class LunarPhaseSpell extends Spell {
 		Entity target = caster.getServerWorld().getEntity(targetId);
 		return target instanceof LivingEntity living && living.isAlive()
 				&& !living.isSpectator() && !DomainManager.blocksTargeting(caster, living)
-				&& caster.getPos().distanceTo(target.getPos()) <= aimRange() + 8; // 容许目标小幅移动
+				&& caster.getPos().distanceTo(target.getPos()) <= RuneCastContext.current().scale(aimRange(),RuneModifiers.Stat.DISTANCE) + 8; // 容许目标小幅移动
 	}
 
 	/** 蓄力期间演出（每 2t）：双方围浅紫+鬼魂粒子小圈 + 两人之间紫色粒子连线。 */

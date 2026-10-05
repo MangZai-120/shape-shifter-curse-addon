@@ -1,6 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.item;
 
 import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.jackcooper.shapeShifterCurseAddon.spell.ArcaneAnalysis;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
@@ -71,8 +72,10 @@ public class MagicScrollItem extends Item {
 			return TypedActionResult.fail(stack);
 		}
 		if (!world.isClient && user instanceof ServerPlayerEntity sp) {
-			if (SpellChannelManager.isCasting(sp)) return TypedActionResult.fail(stack);
-			if (spell.getCastingMode() == SpellCastingRules.Mode.AUTOMATIC && !spell.canCast(sp)) {
+			if (SpellChannelManager.isCasting(sp)||!RuneScheme.validScroll(sp,stack,spell)) return TypedActionResult.fail(stack);
+            int level = ScrollData.getLevel(stack);
+            RuneModifiers runeModifiers=RuneScheme.modifiers(sp,stack,level);
+			if (spell.getCastingMode() == SpellCastingRules.Mode.AUTOMATIC && !RuneCastContext.with(runeModifiers,()->spell.canCast(sp))) {
 				SpellChannelManager.playFailureSound(sp);
 				sp.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_target"), true);
 				return TypedActionResult.fail(stack);
@@ -81,20 +84,20 @@ public class MagicScrollItem extends Item {
 				SpellChannelManager.playFailureSound(sp);
 				return TypedActionResult.fail(stack);
 			}
-			int level = ScrollData.getLevel(stack); // 魔法等级（1-5，开箱固定）与卷轴一体，单独使用同样生效
-			float damage = spell.getBaseDamage() * spell.getSoloDamageMultiplier() * spell.getDamageMultiplier(level);
+			float damage = runeModifiers.power(spell.getBaseDamage() * spell.getSoloDamageMultiplier() * spell.getDamageMultiplier(level),RuneCapabilities.of(spell.getId().getPath()).contains(RuneModifiers.Stat.DAMAGE),RuneCapabilities.of(spell.getId().getPath()).contains(RuneModifiers.Stat.HEAL));
 			// 阶段 B（§6.2）：统一冷却公式（solo 惩罚倍率并入等级基准；双层下限与书内一致）
-			int cd = net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers.finalSoloCooldownTicks(spell, level);
+			int cd = runeModifiers.cooldown(net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers.finalSoloCooldownTicks(spell, level));
 			ItemStack snapshot = stack.copy();
 			SpellChannelManager.start(sp, spell, snapshot, level, true, hand.ordinal(), 0, cd,
 					() -> sp.getStackInHand(hand) == stack && ItemStack.areEqual(stack, snapshot),
 					target -> spell.castAtTarget(sp, damage, true, level, snapshot, target),
 					duration -> {
 						long end = sp.getWorld().getTime() + duration;
-						ScrollData.setCooldownEnd(stack, end);
+						stack.getOrCreateNbt().putInt("RuneCdTotal",duration);
+                    ScrollData.setCooldownEnd(stack, end);
 						net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.record(sp, spell, end);
 					},
-					() -> { if (ScrollData.consumeSoloUse(stack)) stack.decrement(1); });
+					() -> { if (ScrollData.consumeSoloUse(stack)) stack.decrement(1); }, runeModifiers);
 		}
 		user.setCurrentHand(hand);
 		return TypedActionResult.consume(stack);
@@ -150,6 +153,9 @@ public class MagicScrollItem extends Item {
 				? Text.translatable("item.ssc_addon.magic_scroll.format", Text.translatable(spell.getNameKey()))
 				: Text.translatable("item.ssc_addon.magic_scroll.format_element",
 						Text.translatable(spell.getNameKey()), Text.translatable(element.getNameKey()));
+		if (stack.getNbt() != null && stack.getNbt().contains(RuneScheme.KEY)) {
+			name.append(Text.translatable("research.ssc_addon.runes.modified_suffix"));
+		}
 		return name.formatted(spell.getRarity(ScrollData.getLevel(stack)).color);
 	}
 
@@ -184,7 +190,8 @@ public class MagicScrollItem extends Item {
 			tooltip.add(Text.literal(line).formatted(Formatting.GRAY));
 		}
 		// 红色卷轴的使用限制（必要效果限制，保留红字提示）
-		if (!r.canUseSolo()) {
+		RuneTooltips.append(stack,tooltip);
+        if (!r.canUseSolo()) {
 			tooltip.add(Text.translatable("item.ssc_addon.magic_scroll.tip_no_solo").formatted(Formatting.RED));
 		}
 	}

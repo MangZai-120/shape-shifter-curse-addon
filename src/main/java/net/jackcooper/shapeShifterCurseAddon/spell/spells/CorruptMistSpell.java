@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
@@ -52,7 +53,7 @@ public class CorruptMistSpell extends Spell {
 		if (caster.getWorld().isClient() || !(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
-		double radius = BAL.d("base_radius", BASE_RADIUS) * getSpeedMultiplier(level);
+		double radius = RuneCastContext.current().scale(BAL.d("base_radius", BASE_RADIUS) * getSpeedMultiplier(level),RuneModifiers.Stat.AREA);
 		// 雾持续时间：每级 +1.25s（L1=6s … L5=11s）
 		int duration = BAL.i("duration_ticks", DURATION_TICKS) + Math.round((level - 1) * 1.25f * 20);
 		if (!solo) duration = net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, duration);

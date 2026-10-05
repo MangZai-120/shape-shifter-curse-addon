@@ -122,6 +122,8 @@ dependencies {
     modCompileOnly "me.shedaniel:RoughlyEnoughItems-default-plugin-fabric:12.1.785"
     // JEI 配方查看器（可选依赖）
     modCompileOnly "curse.maven:jei-238222:8622779" // Fr 1.20.1 JEI（与主包同源同版本）
+    // Optional animation compatibility; Carry On is never bundled or required at runtime.
+    modCompileOnly "curse.maven:carry-on-274259:4882498"
     // EMI 配方查看器（可选依赖；本地 libs 手动引入——terraformersmc maven 重定向的 sleeping.town 网络不可达）
     modCompileOnly files("libs/emi-fabric-1.1.0+1.20.1.jar")
     
@@ -201,6 +203,16 @@ tasks.register('generateSlottedAssets', JavaExec) {
     classpath = sourceSets.test.runtimeClasspath
     mainClass = 'net.jackcooper.shapeShifterCurseAddon.client.FormationResearchAssets'
     args file('src/main/resources/assets/ssc_addon/textures/gui/formation_research').absolutePath
+    args '--layout-only'
+    systemProperty 'java.awt.headless', 'true'
+}
+
+tasks.register('generateRuneGlyphs', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.client.FormationResearchAssets'
+    args file('src/main/resources/assets/ssc_addon/textures/gui/formation_research').absolutePath
+    args '--runes-only'
     systemProperty 'java.awt.headless', 'true'
 }
 
@@ -277,6 +289,16 @@ java {
 
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
+}
+
+tasks.named('remapJar') {
+    // A fixed release filename must not retain deleted resources from an earlier remap.
+    doFirst {
+        def output = archiveFile.get().asFile
+        if (output.exists() && !output.delete()) {
+            throw new GradleException("Cannot replace remapped archive: ${output}")
+        }
+    }
 }
 
 jar {

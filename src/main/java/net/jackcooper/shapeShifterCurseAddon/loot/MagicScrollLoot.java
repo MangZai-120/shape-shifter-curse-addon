@@ -11,6 +11,7 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
 import net.jackcooper.shapeShifterCurseAddon.spell.ArcaneAnalysis;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.item.ItemStack;
 
@@ -79,6 +80,7 @@ public final class MagicScrollLoot {
 	};
 
 	public static void register() {
+		RandomRuneLootFunction.register();
 		LootTableEvents.MODIFY.register((resourceManager, lootManager, id, tableBuilder, source) -> {
 			if (!isTargetChest(id)) {
 				return;
@@ -123,5 +125,14 @@ public final class MagicScrollLoot {
 		var spell = SpellRegistry.get(spellPath);
 		if (spell == null || level < 1 || level > spell.getMaxLevel()) return ItemStack.EMPTY;
 		return ArcaneAnalysis.markUnanalyzed(ScrollData.create(spellPath, level));
+	}
+
+	public static ItemStack createNaturalScroll(WorldRuneState world, String spellPath, int level, long seed) {
+		return createNaturalScroll(spellPath, level);
+	}
+
+	/** Compatibility for old callers: new loot is plain, existing imprints remain untouched. */
+	public static ItemStack addRandomRunes(WorldRuneState world, ItemStack scroll, long seed) {
+		return scroll;
 	}
 }

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.forms;
 
+import net.jackcooper.shapeShifterCurseAddon.compat.FormAnimationCompat;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric;
@@ -97,6 +98,9 @@ public class Form_AxolotlFluorescent extends NormalForm {
 	public @Nullable AbstractAnimStateController getAnimStateController(PlayerEntity player, AnimSystem.AnimSystemData animSystemData, @NotNull Identifier animStateID) {
 		@Nullable AnimStateEnum animStateEnum = AnimStateEnum.getStateEnum(animStateID);
 		if (animStateEnum != null) {
+			if (FormAnimationCompat.shouldUseAxolotlVanillaAnimation(player)) {
+				return FormAnimationCompat.VANILLA_CONTROLLER;
+			}
 			return switch (animStateEnum) {
 				case ANIM_STATE_SWIM -> SWIM_CONTROLLER;
 				case ANIM_STATE_IDLE -> IDLE_CONTROLLER;
@@ -109,6 +113,7 @@ public class Form_AxolotlFluorescent extends NormalForm {
 				case ANIM_STATE_SLEEP -> SLEEP_CONTROLLER;
 				case ANIM_STATE_FLYING -> FLYING_CONTROLLER;
 				case ANIM_STATE_CRAWL -> CRAWL_CONTROLLER;
+				case ANIM_STATE_USE_ITEM, ANIM_STATE_BLOCK_SHIELD -> FormAnimationCompat.VANILLA_CONTROLLER;
 				default -> null;
 			};
 		}

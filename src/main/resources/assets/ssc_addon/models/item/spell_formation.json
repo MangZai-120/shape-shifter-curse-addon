@@ -1,11 +1,3 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": { "layer0": "ssc_addon:gui/formation_research/product" },
-  "overrides": [
-    { "predicate": { "custom_model_data": 1 }, "model": "ssc_addon:item/spell_formation_1" },
-    { "predicate": { "custom_model_data": 2 }, "model": "ssc_addon:item/spell_formation_2" },
-    { "predicate": { "custom_model_data": 3 }, "model": "ssc_addon:item/spell_formation_3" },
-    { "predicate": { "custom_model_data": 4 }, "model": "ssc_addon:item/spell_formation_4" },
-    { "predicate": { "custom_model_data": 5 }, "model": "ssc_addon:item/spell_formation_5" }
-  ]
+  "parent": "ssc_addon:item/magic_scroll"
 }

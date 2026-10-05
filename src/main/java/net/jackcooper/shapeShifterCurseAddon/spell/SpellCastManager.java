@@ -1,6 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -71,7 +72,7 @@ public final class SpellCastManager {
 		}
 		int top = ScrollData.getCastLevel(scroll);
 		// 客户端预检后可能刚好回能；原档已付得起时正常施放，不错误附加降档惩罚。
-		if (SpellbookData.canPayMana(book, SpellNumbers.finalManaCost(spell, book, player, top))) {
+		if (SpellbookData.canPayMana(book, SpellNumbers.finalManaCost(spell, book, player, top, scroll))) {
 			castInternal(player, slot, 0, 1.0f, token);
 			return;
 		}
@@ -84,7 +85,7 @@ public final class SpellCastManager {
 			return;
 		}
 		// 从高到低找付得起的最高档（与正式结算同式，含法阵/亲和/潮汐）
-		int payable = SpellNumbers.highestAffordableLevel(spell, book, player, top - 1);
+		int payable = SpellNumbers.highestAffordableLevel(spell, book, player, top - 1, scroll);
 		if (payable <= 0) {
 			SpellChannelManager.playNoManaSound(player); // 全档位都付不起：熄灭音
 			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_mana").formatted(Formatting.RED), true);
@@ -119,7 +120,8 @@ public final class SpellCastManager {
 		if (spell == null) {
 			return;
 		}
-		World world = player.getWorld();
+		if(!RuneScheme.validScroll(player,scroll,spell))return;
+        World world = player.getWorld();
 		// 换书稳定期（阶段 C §15.2，已拍板）：战斗中换书后短期内禁止施法（防多书满蓝连用）
 		if (FormCastingStyle.isSwapStabilizing(player)) {
 			SpellChannelManager.playNoManaSound(player); // 换书稳定期拒绝：火焰熄灭音
@@ -143,7 +145,8 @@ public final class SpellCastManager {
 		int level = Math.max(1, Math.min(spell.getMaxLevel(), forcedLevel > 0 ? forcedLevel : ScrollData.getCastLevel(scroll)));
 		// 法阵加成：耗蓝倍率（全魔法每级 +10%）+ 形态亲和耗蓝乘区（使魔系 ×0.85）+ 每级耗蓝倍率
 		// （耗蓝按施放档位算——低阶施放省蓝；召唤亲和 +1 只加强施法效果，不推高耗蓝）
-		int manaCost = SpellNumbers.finalManaCost(spell, book, player, level);
+		RuneModifiers runeModifiers=RuneScheme.modifiers(player,scroll,level);
+        int manaCost = SpellNumbers.finalManaCost(spell, book, player, level, scroll);
 		// 书内法术只按 HUD 书能量判定；形态能量不能把书不足的施法放行。
 		if (!SpellbookData.canPayMana(book, manaCost)) {
 			SpellChannelManager.playNoManaSound(player); // 法力不足：火焰熄灭音
@@ -152,7 +155,7 @@ public final class SpellCastManager {
 		}
 
 		// 施法前置校验（如陨火要求准星命中方块）：失败拒绝施法、不耗法力/CD（仿契灵传送失败不消耗）
-		if (spell.getCastingMode() == SpellCastingRules.Mode.AUTOMATIC && !spell.canCast(player)) {
+		if (spell.getCastingMode() == SpellCastingRules.Mode.AUTOMATIC && !RuneCastContext.with(runeModifiers,()->spell.canCast(player))) {
 			SpellChannelManager.playFailureSound(player);
 			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_target").formatted(Formatting.RED), true);
 			return;
@@ -172,7 +175,9 @@ public final class SpellCastManager {
 		// 与单独使用/客户端 HUD 共用同一实现（SpellNumbers）
 		float formationCdMul = FormationData.sumCooldownMultiplier(book, spellElement);
 		float affinityCdMul = FormAffinity.cooldownMultiplier(player, spellElement);
-		int cd = SpellNumbers.finalCooldownTicks(spell, level, ratio, formationCdMul, affinityCdMul);
+		damage=runeModifiers.power(damage,RuneCapabilities.of(spell.getId().getPath()).contains(RuneModifiers.Stat.DAMAGE),RuneCapabilities.of(spell.getId().getPath()).contains(RuneModifiers.Stat.HEAL));
+        final float runeDamage=damage;
+        int cd = runeModifiers.cooldown(SpellNumbers.finalCooldownTicks(spell, level, ratio, formationCdMul, affinityCdMul));
 		if (cdPenalty != 1.0f) {
 			cd = Math.round(cd * cdPenalty); // 三连击降档惩罚：本次 CD ×1.2（用户定稿）
 		}
@@ -191,15 +196,16 @@ public final class SpellCastManager {
 		// 立即全额结算——读条期间零扣费（渐进扣蓝已废），中断不返还已扣部分。
 		boolean started = SpellChannelManager.start(player, spell, scroll, level, false, token, manaCost, cd,
 				() -> getEquippedBook(player) == book && ItemStack.areEqual(SpellbookData.getScroll(book, slot), scroll),
-				target -> finishCast(player, book, scroll, spell, damage, castLevel, castMana, forcedLevel, target),
+				target -> finishCast(player, book, scroll, spell, runeDamage, castLevel, castMana, forcedLevel, target),
 				duration -> {
 					ItemStack current = SpellbookData.getScroll(book, slot);
 					long end = player.getWorld().getTime() + duration;
 					boolean unchanged = ItemStack.areEqual(current, scroll);
-					ScrollData.setCooldownEnd(scroll, end);
+					scroll.getOrCreateNbt().putInt("RuneCdTotal",duration);
+                    ScrollData.setCooldownEnd(scroll, end);
 					if (unchanged) SpellbookData.setScroll(book, slot, scroll);
 					SharedSpellCooldowns.record(player, spell, end);
-				});
+				}, ()->{}, runeModifiers);
 		if (started) {
 				// 通道建立后才结算（start 失败如落点失效不扣）；预检已确保付得起，此处必成
 				SpellbookData.consumeMana(book, manaCost);

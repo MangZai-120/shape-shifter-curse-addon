@@ -55,6 +55,8 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 	/** AOE 半径（格）。 */
 	private double radius = 3.0;
 	private boolean falling = false;
+    private int runeFireTicks=60;
+    public void setFireTicks(int ticks){runeFireTicks=Math.max(0,ticks);}
 
 	/** 命中发放的经验赏金（×10 整数；exp_mode 1/2 挂起部分由施法时装入，NBT 持久化跨 tick）。 */
 	private int expBountyTen = 0;
@@ -203,7 +205,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 				killedTarget = target;
 			}
 			// 点燃 3s + 轻微击退（离开爆心方向）
-			target.setFireTicks(60);
+			target.setFireTicks(runeFireTicks);
 			Vec3d knock = new Vec3d(target.getX() - ix, 0.1, target.getZ() - iz).normalize().multiply(0.6);
 			target.addVelocity(knock.x, knock.y, knock.z);
 			target.velocityModified = true;
@@ -235,6 +237,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 	@Override
 	public void readCustomDataFromNbt(NbtCompound nbt) {
 		super.readCustomDataFromNbt(nbt);
+        runeFireTicks=nbt.contains("RuneFireTicks")?Math.max(0,nbt.getInt("RuneFireTicks")):60;
 		if (nbt.contains("Damage")) {
 			this.damage = nbt.getFloat("Damage");
 		}
@@ -256,6 +259,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 	@Override
 	public void writeCustomDataToNbt(NbtCompound nbt) {
 		super.writeCustomDataToNbt(nbt);
+        nbt.putInt("RuneFireTicks",runeFireTicks);
 		nbt.putFloat("Damage", this.damage);
 		nbt.putDouble("Radius", this.radius);
 		nbt.putInt("SpellLevel", getSpellLevel());

@@ -17,10 +17,13 @@ public final class SlottedFormation {
     public static int[] empty(int level) { int[] result = new int[size(level)]; Arrays.fill(result, -1); return result; }
     public static boolean validDraft(int level, int[] slots) {
         return level >= 1 && level <= 5 && slots.length == size(level)
-                && Arrays.stream(slots).allMatch(glyph -> glyph >= -1 && glyph < 17);
+                && Arrays.stream(slots).allMatch(glyph -> glyph >= -1 && glyph < 18);
     }
     public static List<FormationDiagram.Point> positions(int level) {
-        int[] counts = layers(level); List<FormationDiagram.Point> result = new ArrayList<>();
+        return positions(level, layers(level));
+    }
+    static List<FormationDiagram.Point> positions(int level, int[] counts) {
+        List<FormationDiagram.Point> result = new ArrayList<>();
         for (int layer = 0; layer < counts.length; layer++) {
             for (int slot = 0; slot < counts[layer]; slot++) {
                 double angle = -Math.PI / 2 + slot * Math.PI * 2 / counts[layer];
@@ -35,7 +38,7 @@ public final class SlottedFormation {
     }
     public static int[] ink(RuneLanguage language, int[] slots) {
         int[] counts = new int[8];
-        for (int glyph : slots) { if (glyph == -1) continue; if (glyph < 0 || glyph > 16) throw new IllegalArgumentException("无效符文"); counts[school(language, glyph)]++; }
+        for (int glyph : slots) { if (glyph == -1) continue; if (glyph < 0 || glyph > 17) throw new IllegalArgumentException("无效符文"); counts[school(language, glyph)]++; }
         for (int index = 0; index < counts.length; index++) counts[index] = (counts[index] + 1) / 2;
         return counts;
     }

@@ -1,6 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.particle.ParticleTypes;
@@ -55,7 +56,8 @@ public class FlameNovaSpell extends Spell {
 		if (rarity == SpellRarity.BLUE || rarity == SpellRarity.ORANGE) {
 			radius *= rarityRadiusMultiplier();
 		}
-		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
+		radius=RuneCastContext.current().scale(radius,RuneModifiers.Stat.AREA);
+        List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
 				caster.getBoundingBox().expand(radius), e -> e != caster && e.isAlive());
 		LivingEntity lastHitTarget = null;
 		LivingEntity killedTarget = null;
@@ -73,7 +75,7 @@ public class FlameNovaSpell extends Spell {
 			lastHitTarget = target;
 			hitBurningTarget |= target.getFireTicks() > 0;
 			if (!target.isAlive()) killedTarget = target;
-			target.setFireTicks(fireTicks());
+			target.setFireTicks(RuneCastContext.current().duration(fireTicks(),RuneModifiers.Stat.BURN));
 			// 击退：远离施法者（强度 balance 可调）
 			Vec3d knock = new Vec3d(target.getX() - caster.getX(), 0.1, target.getZ() - caster.getZ())
 					.normalize().multiply(knockback());

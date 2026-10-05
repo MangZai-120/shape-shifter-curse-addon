@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.LunarSpiritEntity;
@@ -79,7 +80,7 @@ public class SummonLunarSpiritSpell extends Spell {
 			LunarSpiritEntity spirit = new LunarSpiritEntity(
 					net.jackcooper.shapeShifterCurseAddon.SscAddon.LUNAR_SPIRIT_ENTITY, serverWorld);
 			spirit.setOwnerUuid(caster.getUuid());
-			spirit.setLifeTicks(lifeTicks);
+			spirit.setLifeTicks(RuneCastContext.current().duration(lifeTicks,RuneModifiers.Stat.SUMMON_DURATION));
 			// 三色纯随机分配（2026-09-18 用户定稿：粉/蓝/绿随机，不再按召唤序号固定）；
 			// 多只同色属正常结果，每只独立掷骰
 			spirit.setVariant(serverWorld.getRandom().nextInt(3));

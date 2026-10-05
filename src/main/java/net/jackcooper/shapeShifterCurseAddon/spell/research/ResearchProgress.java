@@ -17,12 +17,15 @@ public final class ResearchProgress {
     public final Map<Integer,int[]> slotDrafts = new HashMap<>();
     public final Map<String,int[]> slotReferences = new TreeMap<>();
     public final Set<String> slotCompleted = new HashSet<>();
+    public final Map<Integer,int[]> runeDrafts = new HashMap<>();
+    public final Map<String,int[]> runeReferences = new TreeMap<>();
+    public final Set<String> runeCompleted = new HashSet<>();
     public UUID completionToken = UUID.randomUUID();
-    public boolean knows(int glyph) { return glyph >= 0 && glyph < 17 && (knownGlyphs & 1 << glyph) != 0; }
-    public void reveal(int glyph) { if (glyph >= 0 && glyph < 17) knownGlyphs |= 1 << glyph; }
+    public boolean knows(int glyph) { return glyph >= 0 && glyph < 18 && (knownGlyphs & 1 << glyph) != 0; }
+    public void reveal(int glyph) { if (glyph >= 0 && glyph < 18) knownGlyphs |= 1 << glyph; }
     public boolean attuned(int family) { return (attuned & 1 << family) != 0; }
     public void bind(UUID id) {
-        if(world!=null&&!world.equals(id)){slotDrafts.clear();slotReferences.clear();slotCompleted.clear();completionToken=UUID.randomUUID();}
+        if(world!=null&&!world.equals(id)){slotDrafts.clear();slotReferences.clear();slotCompleted.clear();runeDrafts.clear();runeReferences.clear();runeCompleted.clear();completionToken=UUID.randomUUID();}
         if (world != null && !world.equals(id)) { knownGlyphs = 0; knownRules = 0; references.clear(); draft = new NbtCompound(); spellDraft = new NbtCompound(); spellTarget = ""; }
         world = id;
     }
@@ -38,10 +41,14 @@ public final class ResearchProgress {
         slotDrafts.forEach((level,values)->slots.putIntArray(String.valueOf(level),values));
         slotReferences.forEach(patterns::putIntArray);n.put("SlotDrafts",slots);n.put("SlotReferences",patterns);
         NbtList done=new NbtList();slotCompleted.stream().sorted().forEach(key->done.add(NbtString.of(key)));n.put("SlotCompleted",done);
+        NbtCompound rd=new NbtCompound(),rr=new NbtCompound();
+        runeDrafts.forEach((l,v)->rd.putIntArray(String.valueOf(l),v)); runeReferences.forEach(rr::putIntArray);
+        n.putInt("RuneLayoutVersion",RuneLayout.VERSION);
+        n.put("RuneDrafts",rd);n.put("RuneReferences",rr);NbtList rc=new NbtList();runeCompleted.stream().sorted().forEach(k->rc.add(NbtString.of(k)));n.put("RuneCompleted",rc);
         n.putUuid("CompletionToken",completionToken);return n;
     }
     public void read(NbtCompound n) {
-        rank = Math.max(0, Math.min(5, n.getInt("Rank"))); knownGlyphs = n.getInt("Glyphs") & 0x1ffff;
+        rank = Math.max(0, Math.min(5, n.getInt("Rank"))); knownGlyphs = n.getInt("Glyphs") & 0x3ffff;
         attuned = n.getInt("Attuned") & 0x7ff; knownRules = n.getInt("Rules") & 0x7ff; migrated = n.getBoolean("Migrated");
         world = n.containsUuid("World") ? n.getUuid("World") : null; legacy.clear(); drawn.clear(); references.clear();
         var old = n.getList("Legacy", NbtElement.STRING_TYPE); for (int i = 0; i < Math.min(55, old.size()); i++) legacy.add(old.getString(i));
@@ -60,6 +67,11 @@ public final class ResearchProgress {
             if(SlottedFormation.validDraft(level,values))slotReferences.put(key,values);
             for(int index=0;index<Math.min(128,done.size());index++)if(done.getString(index).equals(key))slotCompleted.add(key);
         }
+        runeDrafts.clear();runeReferences.clear();runeCompleted.clear();
+        int runeVersion=n.contains("RuneLayoutVersion")?n.getInt("RuneLayoutVersion"):RuneLayout.PREVIOUS_VERSION;
+        for(int l=1;l<=5;l++){int[] v=RuneLayout.migrateDraft(l,n.getCompound("RuneDrafts").getIntArray(String.valueOf(l)),runeVersion);if(RuneLayout.validDraft(l,v))runeDrafts.put(l,v);}
+        var rr=n.getCompound("RuneReferences");var rc=n.getList("RuneCompleted",NbtElement.STRING_TYPE);
+        for(var recipe:SlottedSpellRecipes.all())for(int l=1;l<=5;l++){String k=recipe.spell()+":"+l;int[] v=RuneLayout.migrateDraft(l,rr.getIntArray(k),runeVersion);if(RuneLayout.validDraft(l,v))runeReferences.put(k,v);for(int i=0;i<Math.min(128,rc.size());i++)if(k.equals(rc.getString(i)))runeCompleted.add(k);}
         completionToken=n.containsUuid("CompletionToken")?n.getUuid("CompletionToken"):UUID.randomUUID();
     }
 }

@@ -124,6 +124,7 @@ public class SscAddonNetworking {
 	/** C2S：卷轴工坊 - 修复卷轴（阶段 C）。无 payload。重验：产出槽卷轴未满+墨×1+尘×2。 */
 	public static final Identifier PACKET_SCROLL_REPAIR = new Identifier("my_addon", "scroll_repair");
 	/** C2S：卷轴工坊 - 拆解卷轴（阶段 C）。无 payload。重验：产出槽有卷轴。 */
+	public static final Identifier PACKET_SCROLL_IMPRINT = new Identifier("my_addon", "scroll_imprint");
 	public static final Identifier PACKET_SCROLL_SALVAGE = new Identifier("my_addon", "scroll_salvage");
 
 	/** C2S：进化美西螈主技能「投掷水矛」按键。无 payload。 */
@@ -545,7 +546,8 @@ public class SscAddonNetworking {
 				net.jackcooper.shapeShifterCurseAddon.spell.ScrollWorkshopManager.repair(player);
 			});
 		});
-		ServerPlayNetworking.registerGlobalReceiver(PACKET_SCROLL_SALVAGE, (server, player, handler, buf, responseSender) -> {
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_SCROLL_IMPRINT,(server,player,handler,buf,sender)->server.execute(()->{if(!isRateLimited(player))net.jackcooper.shapeShifterCurseAddon.spell.ScrollWorkshopManager.imprint(player);}));
+        ServerPlayNetworking.registerGlobalReceiver(PACKET_SCROLL_SALVAGE, (server, player, handler, buf, responseSender) -> {
 			server.execute(() -> {
 				if (isRateLimited(player)) return;
 				net.jackcooper.shapeShifterCurseAddon.spell.ScrollWorkshopManager.salvage(player);

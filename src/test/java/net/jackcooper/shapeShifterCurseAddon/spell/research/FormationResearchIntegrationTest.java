@@ -1,6 +1,8 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.research;
 
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.block.SpellResearchTableBlockEntity;
+import net.jackcooper.shapeShifterCurseAddon.screen.SpellResearchTableScreenHandler;
 import net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem;
 import net.jackcooper.shapeShifterCurseAddon.spell.*;
 import net.minecraft.inventory.SimpleInventory;
@@ -58,6 +60,11 @@ public final class FormationResearchIntegrationTest {
             var bad=worldNbt.copy();bad.remove("World");
             try {load.newInstance(bad);throw new AssertionError("missing identity accepted");}catch(InvocationTargetException expected){check(expected.getCause() instanceof IllegalStateException,"broken definition refused");}
             checkAnalysis(world);
+            checkRandomRuneLoot(world,other,load);
+            checkRuneSchemes(world,other,inks,load);
+            checkFourthTierLayout(world,inks,load);
+            checkResearchOutput(world,inks);
+            checkRunePresentation(world);
             checkUnanalyzedItems();
             checkIdentification(world);
             checkIdentificationGates();
@@ -68,6 +75,138 @@ public final class FormationResearchIntegrationTest {
             contents.set(0,new ItemStack(SscAddon.ANALYZED_SPELL_DIAGRAM));
             check(bundle.getWidth(null)==74&&bundle.getHeight()==86,"occupied reference bundle geometry unchanged");
             System.out.println("Formation research integration passed: "+checks+" checks; 55 enhancements, 115 slotted recipes, timed analysis, exact costs, replay, rejection, old-data migration and reference bundle.");
+        }
+        private static void checkResearchOutput(WorldRuneState world,List<Item> inks){
+            var table=new SimpleInventory(SpellResearchTableBlockEntity.SLOT_COUNT);var bag=slotMaterials(inks);var knowledge=ready(world);
+            table.setStack(SpellResearchTableBlockEntity.SLOT_OUTPUT,new ItemStack(Items.STONE));
+            int[] slots=RuneLayout.foundation(SlottedSpellRecipes.get("fire_bolt"),2,world.language());
+            fillOuter(slots,2,world.language(),RuneRole.STORE,RuneRole.SOURCE,RuneRole.STABLE,RuneRole.STABLE,RuneRole.SOURCE);
+            check(SlottedFormationTransaction.completeEnhanced(table,bag,knowledge,world,2,slots,knowledge.research().completionToken).success(),"occupied workshop output does not block research");
+            ItemStack product=table.getStack(SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT).copy();
+            check(product.isOf(SscAddon.SPELL_FORMATION)&&table.getStack(3).isOf(Items.STONE),"research output is independent from workshop output");
+            var before=inventoryNbt(table);var bagBefore=inventoryNbt(bag);
+            check(SlottedFormationTransaction.completeEnhanced(table,bag,knowledge,world,2,slots,knowledge.research().completionToken).key().equals("output")
+                    &&before.equals(inventoryNbt(table))&&bagBefore.equals(inventoryNbt(bag)),"pending research product blocks repeat completion without charging materials");
+            var backpack=new net.minecraft.entity.player.PlayerInventory(null);
+            var handler=new SpellResearchTableScreenHandler(1,backpack,table);
+            for(int page=0;page<5;page++){
+                handler.setActivePage(page);
+                check(handler.getSlot(6).isEnabled()==(page==1),"research output is enabled on its own page: "+page);
+            }
+            handler.setActivePage(1);
+            check(!handler.getSlot(6).canInsert(ScrollData.create("fire_bolt",2)),"research output cannot accept scrolls or overwrite a product");
+            for(int slot=0;slot<36;slot++)backpack.setStack(slot,new ItemStack(Items.STONE,64));
+            check(handler.quickMove(null,6).isEmpty()&&ItemStack.areEqual(product,table.getStack(6)),"full backpack leaves the product in its research slot");
+            backpack.setStack(0,ItemStack.EMPTY);
+            check(ItemStack.areEqual(product,handler.quickMove(null,6))&&table.getStack(6).isEmpty()
+                    &&ItemStack.areEqual(product,backpack.getStack(0))&&table.getStack(3).isOf(Items.STONE),"click-to-collect transfers exactly one product and leaves workshop output alone");
+            var legacy=new SimpleInventory(6);legacy.setStack(3,product.copy());legacy.setStack(0,new ItemStack(SscAddon.BLANK_FORMATION_PAPER,2));
+            NbtCompound oldNbt=new NbtCompound();net.minecraft.inventory.Inventories.writeNbt(oldNbt,inventoryList(legacy));
+            var block=analysisTable();block.readNbt(oldNbt);
+            check(block.getStack(3).isEmpty()&&ItemStack.areEqual(product,block.getStack(6))&&block.getStack(0).getCount()==2,"old pending formation moves into appended slot without losing its data or paper");
+            NbtCompound savedOutput=new NbtCompound();block.writeNbt(savedOutput);
+            var restored=analysisTable();restored.readNbt(savedOutput);
+            check(ItemStack.areEqual(product,restored.getStack(6)),"new research output survives save and reload");
+            var scroll=ScrollData.create("fire_bolt",2);legacy.setStack(3,scroll.copy());
+            oldNbt=new NbtCompound();net.minecraft.inventory.Inventories.writeNbt(oldNbt,inventoryList(legacy));block.readNbt(oldNbt);
+            check(ItemStack.areEqual(scroll,block.getStack(3))&&block.getStack(6).isEmpty(),"legacy scroll output is not mistaken for a research scheme");
+            check(block.canExtract(6,product,net.minecraft.util.math.Direction.DOWN)&&!block.canInsert(6,product,net.minecraft.util.math.Direction.UP),"research output supports extraction without insertion");
+        }
+        private static net.minecraft.util.collection.DefaultedList<ItemStack> inventoryList(net.minecraft.inventory.Inventory inventory){
+            var list=net.minecraft.util.collection.DefaultedList.ofSize(inventory.size(),ItemStack.EMPTY);
+            for(int slot=0;slot<list.size();slot++)list.set(slot,inventory.getStack(slot));return list;
+        }
+        private static SpellResearchTableBlockEntity analysisTable(){
+            return new SpellResearchTableBlockEntity(net.minecraft.util.math.BlockPos.ORIGIN,net.minecraft.block.Blocks.STONE.getDefaultState());
+        }
+        private static void checkRunePresentation(WorldRuneState world)throws Exception{
+            var previous=net.minecraft.util.Language.getInstance();Map<String,String> translations=new HashMap<>();
+            try(var input=FormationResearchIntegrationTest.class.getResourceAsStream("/assets/my_addon/lang/zh_cn.json")){
+                net.minecraft.util.Language.load(input,translations::put);
+            }
+            net.minecraft.util.Language.setInstance(new net.minecraft.util.Language(){
+                public String get(String key,String fallback){return translations.getOrDefault(key,previous.get(key,fallback));}
+                public boolean hasTranslation(String key){return translations.containsKey(key)||previous.hasTranslation(key);}
+                public boolean isRightToLeft(){return false;}
+                public net.minecraft.text.OrderedText reorder(net.minecraft.text.StringVisitable text){return previous.reorder(text);}
+            });
+            try{
+                check(SlottedResearchManager.text("rune_outer_incomplete",4,0,4).getString().equals("外圈还缺4个符文。请填满整圈，或清空全部外圈符文。"),
+                        "incomplete outer ring feedback formats the actual missing count");
+                checkRuneSlotDescriptions(world);
+                for(int level=1;level<=5;level++){
+                    ItemStack product=net.jackcooper.shapeShifterCurseAddon.item.SpellFormationItem.create(world,"fire_bolt",level,RuneLayout.empty(level));
+                    var name=product.getName();
+                    check(name.getString().endsWith(" 改")&&name.getString().contains("卷轴")
+                            &&name.getStyle().getColor().getRgb()==SpellRegistry.get("fire_bolt").getRarity(level).color.getColorValue(),"research title follows rarity and ends with modified suffix: "+level);
+                    int color=SpellRegistry.get("fire_bolt").getRarity(level).color.getColorValue();
+                    product.getTooltip(null,net.minecraft.client.item.TooltipContext.Default.BASIC).get(0).visit((style,part)->{
+                        if(part.contains("卷轴")||part.contains("改"))check(style.getColor()!=null&&style.getColor().getRgb()==color,"vanilla tooltip retains research rarity color on the scroll title and suffix");
+                        return Optional.empty();
+                    },net.minecraft.text.Style.EMPTY);
+                }
+                var plain=ScrollData.create("fire_bolt",2);check(!plain.getName().getString().endsWith(" 改"),"plain scroll does not acquire modified suffix");
+                for(RuneRole role:List.of(RuneRole.STORE,RuneRole.DISABLE)){
+                    int[] slots=RuneLayout.foundation(SlottedSpellRecipes.get("fire_bolt"),2,world.language());
+                    if(role==RuneRole.STORE)fillOuter(slots,2,world.language(),RuneRole.STORE,RuneRole.SOURCE,RuneRole.STABLE,RuneRole.STABLE,RuneRole.SOURCE);
+                    else fillOuter(slots,2,world.language(),RuneRole.DISABLE,RuneRole.STABLE,RuneRole.STABLE,RuneRole.SOURCE,RuneRole.FIRE);
+                    var result=RuneBuildEvaluator.evaluate(2,slots,world.language(),SlottedSpellRecipes.all());
+                    ItemStack product=net.jackcooper.shapeShifterCurseAddon.item.SpellFormationItem.createEnhanced(world,2,slots,result);
+                    List<net.minecraft.text.Text> lines=new ArrayList<>();product.getItem().appendTooltip(product,null,lines,net.minecraft.client.item.TooltipContext.Default.BASIC);
+                    check(lines.stream().noneMatch(line->line.getString().contains("纸槽")||line.getString().contains("强化方案")),"scheme tooltip contains only its profile, no paper-slot recipe");
+                    check(lines.stream().anyMatch(line->line.getString().equals(role==RuneRole.STORE?"伤害：+20%":"威力：-12%")),"actual positive and negative scheme effects display explicit signs");
+                    check(lines.stream().anyMatch(line->line.getString().equals(role==RuneRole.STORE?"蓄力：+14 tick":"蓄力：-2 tick")),"charge-time changes use signed ticks and simplified label");
+                    plain.getOrCreateNbt().put(RuneScheme.KEY,product.getNbt().getCompound(RuneScheme.KEY).copy());
+                    check(plain.getName().getString().endsWith(" 改")&&plain.getName().getStyle().getColor().getRgb()==SpellRegistry.get("fire_bolt").getRarity(2).color.getColorValue(),"imprinted scroll keeps rarity color and modified suffix");
+                }
+            }finally{net.minecraft.util.Language.setInstance(previous);}
+        }
+        private static void checkRuneSlotDescriptions(WorldRuneState world){
+            var language=world.language();int[] meanings=language.meanings();
+            int[] slots=RuneLayout.foundation(SlottedSpellRecipes.get("flame_nova"),2,language);
+            fillOuter(slots,2,language,RuneRole.GAIN,RuneRole.MERGE,RuneRole.STABLE,RuneRole.FIRE,RuneRole.STABLE);
+            var result=RuneBuildEvaluator.evaluate(2,slots,language,SlottedSpellRecipes.all());
+            var view=RuneSlotTooltips.write(result);var packet=net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+            try{packet.writeNbt(view);view=packet.readNbt();}finally{packet.release();}
+            check(view!=null,"slot evaluation survives actual packet NBT round trip");
+            var gain=RuneSlotTooltips.slot(2,3,slots,meanings,view,true).stream().map(net.minecraft.text.Text::getString).toList();
+            check(gain.contains("威力：+13%")&&!gain.contains("威力：+10%")&&gain.contains("耗蓝：+8%，另加1点")
+                    &&gain.contains("稳定度：-12")&&gain.contains("蓄力：+2 tick"),"hovered slot shows authoritative synergy and separate costs");
+            check(gain.stream().anyMatch(line->line.contains("第5槽")&&line.contains("冷却+8%")),"slot describes the specific adjacent combination and its extra costs");
+            var stable=RuneSlotTooltips.slot(2,5,slots,meanings,view,true).stream().map(net.minecraft.text.Text::getString).toList();
+            check(stable.contains("稳定度：+10")&&!stable.contains("稳定度：-2"),"stable hover displays net restoration");
+            var foundation=RuneSlotTooltips.slot(2,0,slots,meanings,view,true).stream().map(net.minecraft.text.Text::getString).toList();
+            check(foundation.contains("用于组成法术基础，不提供外圈加成。")&&foundation.stream().noneMatch(line->line.startsWith("耗蓝：")),
+                    "foundation hover never advertises enhancement effects or costs");
+            var pending=RuneSlotTooltips.slot(2,3,slots,meanings,view,false).stream().map(net.minecraft.text.Text::getString).toList();
+            check(pending.contains("正在更新此符文的效果与搭配。")&&!pending.contains("威力：+13%"),"edited slots cannot show obsolete server contributions");
+            int[] unknown=new int[18];Arrays.fill(unknown,-1);
+            var unidentified=RuneSlotTooltips.slot(2,3,slots,unknown,view,true).stream().map(net.minecraft.text.Text::getString).toList();
+            check(unidentified.stream().noneMatch(line->line.startsWith("威力："))&&unidentified.contains("先在研究笔记中辨识这个符文，查看其效果。"),
+                    "unknown glyphs keep identification behavior");
+            slots=RuneLayout.foundation(SlottedSpellRecipes.get("flame_nova"),2,language);
+            slots[3]=language.glyph(RuneRole.GAIN);slots[4]=language.glyph(RuneRole.DISABLE);
+            result=RuneBuildEvaluator.evaluate(2,slots,language,SlottedSpellRecipes.all());view=RuneSlotTooltips.write(result);
+            var disabled=RuneSlotTooltips.slot(2,4,slots,meanings,view,true).stream().map(net.minecraft.text.Text::getString).toList();
+            check(disabled.contains("威力：-6%")&&disabled.contains("蓄力：-4 tick")&&disabled.contains("耗蓝：+1点"),
+                    "disable hover shows reduced actual effects, charge benefit and fixed mana");
+            slots=RuneLayout.foundation(SlottedSpellRecipes.get("frost_armor"),2,language);slots[3]=language.glyph(RuneRole.STORE);
+            result=RuneBuildEvaluator.evaluate(2,slots,language,SlottedSpellRecipes.all());view=RuneSlotTooltips.write(result);
+            var inactive=RuneSlotTooltips.slot(2,3,slots,meanings,view,true).stream().map(net.minecraft.text.Text::getString).toList();
+            check(inactive.contains("该法术没有对应的可增强属性；仍支付代价。")&&!inactive.contains("伤害：+20%")
+                    &&inactive.contains("蓄力：+8 tick"),"unsupported rune describes why it is inactive without displaying a false bonus");
+            slots[3]=language.glyph(RuneRole.FIRE);view=RuneSlotTooltips.write(RuneBuildEvaluator.evaluate(2,slots,language,SlottedSpellRecipes.all()));
+            check(RuneSlotTooltips.slot(2,3,slots,meanings,view,true).stream().anyMatch(line->line.getString().contains("元素与法术系别不匹配")),
+                    "element mismatch has its own explanation");
+            slots=RuneLayout.foundation(SlottedSpellRecipes.get("fire_bolt"),2,language);slots[3]=language.glyph(RuneRole.STORE);slots[4]=language.glyph(RuneRole.STABLE);
+            view=RuneSlotTooltips.write(RuneBuildEvaluator.evaluate(2,slots,language,SlottedSpellRecipes.all()));
+            check(RuneSlotTooltips.slot(2,3,slots,meanings,view,true).stream().anyMatch(line->line.getString().contains("储存和稳定不能相邻")),
+                    "hard-conflict hover gives the exact forbidden neighbors");
+            slots=RuneLayout.foundation(SlottedSpellRecipes.get("summon_lunar_spirit"),2,language);slots[3]=language.glyph(RuneRole.DISABLE);
+            view=RuneSlotTooltips.write(RuneBuildEvaluator.evaluate(2,slots,language,SlottedSpellRecipes.all()));
+            var ineffectiveDisable=RuneSlotTooltips.slot(2,3,slots,meanings,view,true).stream().map(net.minecraft.text.Text::getString).toList();
+            check(ineffectiveDisable.stream().anyMatch(line->line.startsWith("无法缩短蓄力："))
+                    &&ineffectiveDisable.stream().noneMatch(line->line.startsWith("蓄力：")),"inapplicable disable explains why charge time cannot be reduced");
         }
         private static void checkResearchFeedback(){
             var feedback=new net.jackcooper.shapeShifterCurseAddon.client.screen.SlottedFormationScreen.FeedbackState();
@@ -92,6 +231,235 @@ public final class FormationResearchIntegrationTest {
                     net.minecraft.sound.SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE,net.minecraft.sound.SoundEvents.BLOCK_FIRE_EXTINGUISH)){
                 check(Registries.SOUND_EVENT.containsId(event.getId()),"research cue registered: "+event.getId());
             }
+        }
+        private static void checkFourthTierLayout(WorldRuneState world,List<Item> inks,
+                java.lang.reflect.Constructor<WorldRuneState> load) throws Exception {
+            var language=world.language();var recipe=SlottedSpellRecipes.get("fire_bolt");
+            int[] slots=RuneLayout.foundation(recipe,4,language);
+            check(slots.length==19&&RuneLayout.baseSize(4)==11&&RuneLayout.closed(4),"fourth tier has six star vertices, five small sockets and eight closed outer modifiers");
+            fillOuter(slots,4,language,RuneRole.GAIN,RuneRole.STABLE,RuneRole.SOURCE,RuneRole.STABLE,RuneRole.SOURCE,RuneRole.STABLE,RuneRole.SOURCE,RuneRole.MERGE);
+            var evaluation=RuneBuildEvaluator.evaluate(4,slots,language,SlottedSpellRecipes.all());
+            check(evaluation.valid()&&evaluation.modifiers().get(RuneModifiers.Stat.POWER)==28
+                    &&evaluation.modifiers().get(RuneModifiers.Stat.CD)==8&&evaluation.stability()==74,"complete fourth tier outer seam applies synergy and its costs");
+            var knowledge=new FormationKnowledgeComponent();knowledge.research().bind(world.worldId());knowledge.research().rank=5;
+            var table=new SimpleInventory(net.jackcooper.shapeShifterCurseAddon.block.SpellResearchTableBlockEntity.SLOT_COUNT);var bag=slotMaterials(inks);table.setStack(0,new ItemStack(SscAddon.BLANK_FORMATION_PAPER));
+            var result=SlottedFormationTransaction.completeEnhanced(table,bag,knowledge,world,4,slots,knowledge.research().completionToken);
+            check(result.success()&&bag.getStack(8).getCount()==45,"new fourth tier completion charges eleven foundation plus eight modifier runes");
+            var scheme=table.getStack(6).copy();var profile=scheme.getNbt().getCompound(RuneScheme.KEY);
+            check(profile.getInt("Version")==3&&profile.getIntArray("Slots").length==19
+                    &&RuneScheme.authoritative(world,profile)!=null,"new fourth tier registered as current layout");
+            table.setStack(0,scheme);table.setStack(3,ScrollData.create("fire_bolt",4));
+            check(RuneScheme.imprint(table,world)==0,"new fourth tier can be imprinted");
+            var newDiagram=net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem.create(world,table.getStack(3));
+            check(net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem.valid(newDiagram,world.worldId())
+                    &&Arrays.equals(slots,net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem.referenceSlots(newDiagram.getNbt())),"new fourth tier full diagram matches current nineteen sockets");
+            int[] damaged=slots.clone();damaged[5]=language.glyph(RuneRole.DISABLE);
+            check(!RuneBuildEvaluator.evaluate(4,damaged,language,SlottedSpellRecipes.all()).valid(),"sixth star vertex is required foundation");
+            int[] oldSlots=SlottedSpellRecipes.glyphs(recipe,4,language);Arrays.fill(oldSlots,13,oldSlots.length,-1);
+            oldSlots[13]=language.glyph(RuneRole.GAIN);oldSlots[17]=language.glyph(RuneRole.MERGE);
+            int[] isolated=RuneLayout.foundation(recipe,2,language);isolated[3]=oldSlots[13];isolated[5]=oldSlots[17];
+            var oldEffect=RuneBuildEvaluator.evaluate(2,isolated,language,SlottedSpellRecipes.all());
+            var oldDefinition=new NbtCompound();oldDefinition.putUuid("World",world.worldId());oldDefinition.putInt("Version",2);
+            oldDefinition.putInt("Rules",1);oldDefinition.putString("Spell","fire_bolt");oldDefinition.putInt("Level",4);
+            oldDefinition.putIntArray("Slots",oldSlots);oldDefinition.putInt("Stability",oldEffect.stability());oldDefinition.put("Modifiers",oldEffect.modifiers().write());
+            oldDefinition.putUuid("Id",world.registerScheme(oldDefinition));
+            var oldScroll=ScrollData.create("fire_bolt",4);oldScroll.getOrCreateNbt().put(RuneScheme.KEY,oldDefinition);
+            var before=oldScroll.getNbt().copy();
+            var oldDiagram=net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem.create(world,oldScroll);
+            check(net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem.valid(oldDiagram,world.worldId())
+                    &&oldDiagram.getNbt().getInt("Version")==2&&oldDiagram.getNbt().getIntArray("Slots").length==18,"existing eighteen-slot diagram remains valid");
+            int[] normalized=net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem.referenceSlots(oldDiagram.getNbt());
+            check(normalized.length==19&&normalized[5]==oldSlots[0]&&normalized[6]==oldSlots[5]
+                    &&normalized[11]==-1&&normalized[12]==-1&&normalized[13]==-1
+                    &&normalized[14]==oldSlots[13]&&normalized[18]==oldSlots[17],"legacy reference adds sixth vertex and frees only old outer foundation, retains actual modifiers");
+            check(!RuneBuildEvaluator.evaluate(4,normalized,language,SlottedSpellRecipes.all()).valid()
+                    &&RuneScheme.modifiers(null,oldScroll,4).get(RuneModifiers.Stat.POWER)==22
+                    &&RuneScheme.modifiers(null,oldScroll,4).get(RuneModifiers.Stat.CD)==0
+                    &&before.equals(oldScroll.getNbt()),"existing partial profile keeps frozen costs; recreation requires filling the new ring");
+            check(RuneScheme.authoritativeScroll(load.newInstance(world.writeNbt(new NbtCompound())),oldScroll)!=null,"previous profile authority survives world reload");
+            var oldProgress=new ResearchProgress();oldProgress.bind(world.worldId());oldProgress.rank=4;
+            oldProgress.runeDrafts.put(4,oldSlots);oldProgress.runeReferences.put("fire_bolt:4",oldSlots);
+            oldProgress.runeCompleted.add("fire_bolt:4");oldProgress.slotDrafts.put(4,SlottedFormation.empty(4));
+            var oldNbt=oldProgress.write();oldNbt.remove("RuneLayoutVersion");
+            var migrated=new ResearchProgress();migrated.read(oldNbt);
+            check(Arrays.equals(normalized,migrated.runeDrafts.get(4))&&Arrays.equals(normalized,migrated.runeReferences.get("fire_bolt:4"))
+                    &&migrated.runeCompleted.contains("fire_bolt:4")&&migrated.slotDrafts.get(4).length==18,"enhancement progress migrates while legacy grammar data stays intact");
+            var again=new ResearchProgress();again.read(migrated.write());
+            check(again.write().equals(migrated.write()),"fourth tier progress migration is idempotent");
+        }
+        private static void checkRandomRuneLoot(WorldRuneState world,WorldRuneState other,
+                java.lang.reflect.Constructor<WorldRuneState> load) throws Exception {
+            var language=world.language();var worldBefore=world.writeNbt(new NbtCompound());
+            for(var recipe:SlottedSpellRecipes.all())for(int level=1;level<=5;level++) {
+                for(int seed=0;seed<4;seed++) {
+                    var scroll=net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll(world,recipe.spell(),level,seed);
+                    check(!scroll.isEmpty()&&ArcaneAnalysis.isUnanalyzed(scroll),"natural plain scroll keeps analysis requirement");
+                    check(!scroll.getNbt().contains(RuneScheme.KEY),"natural loot at every tier has no imprint or modified frame");
+                    var diagram=net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem.create(world,scroll);
+                    check(net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem.valid(diagram,world.worldId()),"plain natural scroll produces valid matching diagram");
+                    int[] slots=diagram.getNbt().getIntArray("Slots");
+                    var evaluation=RuneBuildEvaluator.evaluate(level,slots,language,SlottedSpellRecipes.all());
+                    check(evaluation.valid()&&evaluation.recipe().equals(recipe)&&evaluation.stability()==100
+                            &&Arrays.stream(evaluation.modifiers().values()).allMatch(v->v==0),"natural diagram is neutral and constructible");
+                    check(Arrays.equals(slots,RuneLayout.foundation(recipe,level,language))
+                            &&Arrays.equals(slots,net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem.referenceSlots(diagram.getNbt())),
+                            "natural analysis reveals only the foundation with a fully empty outer ring");
+                    check(Arrays.equals(slots,RandomRuneFormation.generate(recipe,level,language,seed)),"compatibility generator is also neutral");
+                    var before=scroll.getNbt().copy();
+                    net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.addRandomRunes(world,scroll,seed+1000);
+                    check(before.equals(scroll.getNbt())&&!ItemStack.fromNbt(scroll.writeNbt(new NbtCompound())).getNbt().contains(RuneScheme.KEY),
+                            "legacy loot hook and item reload never add enhancements");
+                    var foreignDiagram=net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem.create(other,scroll);
+                    check(Arrays.equals(foreignDiagram.getNbt().getIntArray("Slots"),RuneLayout.foundation(recipe,level,other.language())),
+                            "plain loot resolves foundation using its analysis world's language");
+                }
+            }
+            check(worldBefore.equals(world.writeNbt(new NbtCompound()))
+                    &&worldBefore.equals(load.newInstance(worldBefore).writeNbt(new NbtCompound())),"natural loot registers no schemes and leaves saved rune language unchanged");
+            check(net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll(world,"missing",2,0).isEmpty()
+                    &&net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll(world,"fire_bolt",6,0).isEmpty(),
+                    "invalid loot produces nothing");
+            var scroll=net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll(world,"fire_bolt",5,1234);
+            var table=new SpellResearchTableBlockEntity(net.minecraft.util.math.BlockPos.ORIGIN,net.minecraft.block.Blocks.STONE.getDefaultState());
+            table.setStack(0,new ItemStack(SscAddon.BLANK_FORMATION_PAPER,3));table.setStack(5,scroll);
+            for(int tick=0;tick<199;tick++)table.advanceAnalysis(world);
+            check(table.getStack(3).isEmpty()&&ArcaneAnalysis.isUnanalyzed(scroll),"plain scroll analysis respects full duration");
+            table.advanceAnalysis(world);
+            check(!ArcaneAnalysis.isUnanalyzed(scroll)&&table.getStack(0).getCount()==2
+                    &&!scroll.getNbt().contains(RuneScheme.KEY)&&!table.getStack(3).getNbt().contains(RuneScheme.KEY),
+                    "timed analysis pays once without enhancing either scroll or diagram");
+            int[] reference=table.getStack(3).getNbt().getIntArray("Slots");
+            table.removeStack(3);table.removeStack(5);table.setStack(5,scroll);
+            for(int tick=0;tick<200;tick++)table.advanceAnalysis(world);
+            check(Arrays.equals(reference,table.getStack(3).getNbt().getIntArray("Slots"))&&table.getStack(0).getCount()==1,
+                    "repeat plain analysis reproduces the foundation");
+            // Existing registered partial imprints remain authoritative; only new assembly uses the full-ring gate.
+            var partial=RuneLayout.foundation(SlottedSpellRecipes.get("fire_bolt"),2,language);partial[3]=language.glyph(RuneRole.STORE);
+            var oldEffect=RuneBuildEvaluator.evaluate(2,partial,language,SlottedSpellRecipes.all());
+            var oldProfile=new NbtCompound();oldProfile.putUuid("World",world.worldId());oldProfile.putInt("Version",RuneLayout.VERSION);
+            oldProfile.putInt("Rules",2);oldProfile.putString("Spell","fire_bolt");oldProfile.putInt("Level",2);
+            oldProfile.putIntArray("Slots",partial);oldProfile.putInt("Stability",oldEffect.stability());oldProfile.put("Modifiers",oldEffect.modifiers().write());
+            oldProfile.putUuid("Id",world.registerScheme(oldProfile));
+            var legacyScroll=ArcaneAnalysis.markUnanalyzed(ScrollData.create("fire_bolt",2));legacyScroll.getOrCreateNbt().put(RuneScheme.KEY,oldProfile);
+            var legacyBefore=legacyScroll.getNbt().copy();
+            net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.addRandomRunes(world,legacyScroll,123);
+            check(legacyBefore.equals(legacyScroll.getNbt())&&RuneScheme.authoritativeScroll(world,legacyScroll)!=null
+                    &&RuneScheme.authoritativeScroll(load.newInstance(world.writeNbt(new NbtCompound())),legacyScroll)!=null,
+                    "already generated partial imprint is preserved through loot hook and world reload");
+            table.removeStack(3);table.setStack(5,legacyScroll);table.setStack(0,new ItemStack(SscAddon.BLANK_FORMATION_PAPER,4));
+            for(int tick=0;tick<200;tick++)table.advanceAnalysis(world);
+            check(oldProfile.equals(table.getStack(3).getNbt().getCompound(RuneScheme.KEY)),"existing imprinted loot still analyzes its frozen profile");
+            for(int failure=0;failure<3;failure++) {
+                table.removeStack(3);var invalid=ArcaneAnalysis.markUnanalyzed(legacyScroll.copy());
+                if(failure==1)invalid.getNbt().getCompound(RuneScheme.KEY).putInt("Stability",1000);
+                if(failure==2)invalid.getOrCreateNbt().putString("Spell","flame_nova");
+                table.setStack(5,invalid);var before=inventoryNbt(table);
+                for(int tick=0;tick<210;tick++)table.advanceAnalysis(failure==0?other:world);
+                check(before.equals(inventoryNbt(table))&&table.getAnalysisTicks()==0,"foreign, forged or mismatched old profile fails without paying");
+            }
+            var legacy=net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem.create(world,"fire_bolt",5);
+            legacy.getOrCreateNbt().putInt("Version",1);
+            legacy.getOrCreateNbt().putIntArray("Slots",SlottedSpellRecipes.glyphs(SlottedSpellRecipes.get("fire_bolt"),5,language));
+            int[] legacyReference=net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem.referenceSlots(legacy.getNbt());
+            check(Arrays.stream(Arrays.copyOfRange(legacyReference,RuneLayout.baseSize(5),legacyReference.length)).allMatch(v->v==-1),
+                    "old grammar runes never become free enhancement references");
+            net.jackcooper.shapeShifterCurseAddon.loot.RandomRuneLootFunction.register();
+            var entryMethod=net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.class.getDeclaredMethod("scrollEntry",String.class,int.class,int.class);
+            entryMethod.setAccessible(true);
+            var entry=(net.minecraft.loot.entry.LootPoolEntry.Builder<?>)entryMethod.invoke(null,"fire_bolt",2,1);
+            var lootTable=net.minecraft.loot.LootTable.builder().pool(net.minecraft.loot.LootPool.builder()
+                    .rolls(net.minecraft.loot.provider.number.ConstantLootNumberProvider.create(1)).with(entry)).build();
+            var gson=net.minecraft.loot.LootGsons.getTableGsonBuilder().create();String json=gson.toJson(lootTable);
+            check(!json.contains("ssc_addon:random_rune_formation")&&!json.contains(RuneScheme.KEY),"new chest entries never attach random enhancements");
+            check(!gson.toJson(gson.fromJson(json,net.minecraft.loot.LootTable.class)).contains(RuneScheme.KEY),"plain chest entries remain plain after loot-table reload");
+            var oldTable=net.minecraft.loot.LootTable.builder().pool(net.minecraft.loot.LootPool.builder()
+                    .rolls(net.minecraft.loot.provider.number.ConstantLootNumberProvider.create(1))
+                    .with(net.minecraft.loot.entry.ItemEntry.builder(SscAddon.MAGIC_SCROLL)
+                            .apply(net.jackcooper.shapeShifterCurseAddon.loot.RandomRuneLootFunction.builder()))).build();
+            check(gson.toJson(gson.fromJson(gson.toJson(oldTable),net.minecraft.loot.LootTable.class)).contains("ssc_addon:random_rune_formation"),
+                    "legacy random loot function stays loadable for old datapacks");
+        }
+        private static void fillOuter(int[] slots,int level,RuneLanguage language,RuneRole... roles){
+            check(roles.length==slots.length-RuneLayout.baseSize(level),"test fixture fills exactly the enhancement ring");
+            for(int i=0;i<roles.length;i++)slots[RuneLayout.baseSize(level)+i]=language.glyph(roles[i]);
+        }
+        private static void checkRuneSchemes(WorldRuneState world,WorldRuneState other,List<Item> inks,
+                                             java.lang.reflect.Constructor<WorldRuneState> load) throws Exception {
+            RuneEnhancementChecks.run();
+            var language=world.language();var recipe=SlottedSpellRecipes.get("fire_bolt");
+            int[] slots=RuneLayout.foundation(recipe,2,language);
+            fillOuter(slots,2,language,RuneRole.STORE,RuneRole.SOURCE,RuneRole.STABLE,RuneRole.STABLE,RuneRole.SOURCE);
+            var table=new SimpleInventory(net.jackcooper.shapeShifterCurseAddon.block.SpellResearchTableBlockEntity.SLOT_COUNT);var bag=slotMaterials(inks);var knowledge=ready(world);
+            table.setStack(0,new ItemStack(SscAddon.BLANK_FORMATION_PAPER));
+            UUID token=knowledge.research().completionToken;
+            var result=SlottedFormationTransaction.completeEnhanced(table,bag,knowledge,world,2,slots,token);
+            check(result.success()&&bag.getStack(8).getCount()==56,"enhanced completion charges three foundation and five enhancement runes");
+            ItemStack scheme=table.getStack(6).copy();var mirror=scheme.getNbt().getCompound(RuneScheme.KEY);
+            check(mirror.getInt("Rules")==3&&mirror.getInt("Stability")==86&&RuneModifiers.read(mirror.getCompound("Modifiers")).get(RuneModifiers.Stat.DAMAGE)==20,"registered integer snapshot");
+            check(RuneScheme.authoritative(world,mirror)!=null&&RuneScheme.authoritative(other,mirror)==null,"world authority rejects foreign scheme");
+            var changed=mirror.copy();changed.putInt("Stability",1000);
+            check(RuneScheme.authoritative(world,changed)==null,"item mirror cannot forge server snapshot");
+            var saved=load.newInstance(world.writeNbt(new NbtCompound()));
+            check(RuneScheme.authoritative(saved,mirror)!=null,"scheme registry survives save and load");
+            var scroll=ScrollData.create("fire_bolt",2);ScrollData.setUses(scroll,2);ScrollData.setCooldownEnd(scroll,123456);
+            scroll.getOrCreateNbt().putString("PocketBinding","retained");var original=scroll.getNbt().copy();
+            table.setStack(0,scheme);table.setStack(3,scroll);
+            check(RuneScheme.imprint(table,world)==0&&table.getStack(0).isEmpty(),"one-use scheme imprinted");
+            var after=scroll.getNbt().copy();after.remove(RuneScheme.KEY);
+            check(after.equals(original),"imprint preserves uses, cooldown, selected level and unrelated binding");
+            var modifiers=RuneScheme.modifiers(null,scroll,2);
+            check(modifiers.power(10,true,false)==12&&modifiers.mana(20)==31&&modifiers.time(20)==34,"effect and costs use same profile");
+            check(RuneScheme.modifiers(null,scroll,1)==RuneModifiers.NONE,"lower selected level suspends full profile");
+            ScrollData.setLevel(scroll,3);check(RuneScheme.modifiers(null,scroll,3).get(RuneModifiers.Stat.DAMAGE)==20,"upgrade retains original scheme, no new free slots");
+            table.setStack(0,scheme.copy()); // consumed copy is empty
+            var before=inventoryNbt(table);check(RuneScheme.imprint(table,world)!=0&&before.equals(inventoryNbt(table)),"failed imprint atomic");
+            table.setStack(0,net.jackcooper.shapeShifterCurseAddon.item.SpellFormationItem.createEnhanced(world,2,slots,RuneBuildEvaluator.evaluate(2,slots,language,SlottedSpellRecipes.all())));
+            before=inventoryNbt(table);check(RuneScheme.imprint(table,world)==3&&before.equals(inventoryNbt(table)),"level mismatch atomic");
+            table.setStack(3,ScrollData.create("flame_nova",2));before=inventoryNbt(table);
+            check(RuneScheme.imprint(table,world)==3&&before.equals(inventoryNbt(table)),"spell mismatch atomic");
+            int[] invalid=slots.clone();invalid[4]=language.glyph(RuneRole.DISABLE);
+            var rejectTable=new SimpleInventory(net.jackcooper.shapeShifterCurseAddon.block.SpellResearchTableBlockEntity.SLOT_COUNT);var rejectBag=slotMaterials(inks);rejectTable.setStack(0,new ItemStack(SscAddon.BLANK_FORMATION_PAPER));
+            before=inventoryNbt(rejectBag);var progressBefore=knowledgeNbt(knowledge);
+            check(!SlottedFormationTransaction.completeEnhanced(rejectTable,rejectBag,knowledge,world,2,invalid,knowledge.research().completionToken).success()
+                    &&before.equals(inventoryNbt(rejectBag))&&progressBefore.equals(knowledgeNbt(knowledge)),"hard conflicts cost nothing and grant no knowledge");
+            for(int level=2;level<=5;level++){
+                var incomplete=RuneLayout.foundation(recipe,level,language);incomplete[RuneLayout.baseSize(level)]=language.glyph(RuneRole.STABLE);
+                var tableBefore=inventoryNbt(rejectTable);var worldBefore=world.writeNbt(new NbtCompound());
+                check(RuneLayout.validDraft(level,incomplete)&&!SlottedFormationTransaction.completeEnhanced(rejectTable,rejectBag,knowledge,world,level,incomplete,knowledge.research().completionToken).success()
+                        &&before.equals(inventoryNbt(rejectBag))&&tableBefore.equals(inventoryNbt(rejectTable))
+                        &&progressBefore.equals(knowledgeNbt(knowledge))&&worldBefore.equals(world.writeNbt(new NbtCompound())),
+                        "partial outer rings cannot charge materials, register profiles or grant progress at any tier");
+            }
+            var restoredKnowledge=new FormationKnowledgeComponent();restoredKnowledge.readFromNbt(knowledgeNbt(knowledge));
+            check(restoredKnowledge.research().runeCompleted.contains("fire_bolt:2")&&Arrays.equals(restoredKnowledge.research().runeReferences.get("fire_bolt:2"),slots),"new references persist independently of legacy references");
+            knowledge.research().reveal(17);restoredKnowledge.readFromNbt(knowledgeNbt(knowledge));check(restoredKnowledge.research().knows(17),"eighteenth discovery persists");
+            int[] oldMeanings=new int[17];for(int i=0;i<17;i++)oldMeanings[i]=i;
+            var old=world.writeNbt(new NbtCompound());old.putInt("Version",1);old.putIntArray("Meanings",oldMeanings);old.remove("RuneSchemes");
+            var migrated=load.newInstance(old);check(migrated.worldId().equals(world.worldId())&&Arrays.equals(Arrays.copyOf(migrated.language().meanings(),17),oldMeanings)
+                    &&migrated.language().meaning(17)==RuneRole.DISABLE&&Arrays.equals(migrated.language().rules(),world.language().rules()),"legacy language appends disable without rerandomizing existing glyphs or rules");
+            check(RuneCastContext.current()==RuneModifiers.NONE,"context initially clear");
+            try{RuneCastContext.with(modifiers,()->{check(RuneCastContext.current()==modifiers,"context uses immutable cast profile");throw new IllegalStateException("test");});}catch(IllegalStateException expected){}
+            check(RuneCastContext.current()==RuneModifiers.NONE,"exception cannot leak modifiers into the next cast");
+            var bridgeSlots=RuneLayout.foundation(SlottedSpellRecipes.get("space_blink"),2,language);bridgeSlots[3]=language.glyph(RuneRole.BRIDGE);
+            var bridge=RuneBuildEvaluator.evaluate(2,bridgeSlots,language,SlottedSpellRecipes.all()).modifiers();
+            var blink=(net.jackcooper.shapeShifterCurseAddon.spell.spells.SpaceBlinkSpell)SpellRegistry.get("space_blink");
+            double originalRange=blink.getBlinkRange(2);
+            check(Math.abs(RuneCastContext.with(bridge,()->blink.getBlinkRange(2))-originalRange*1.2)<.000001,"actual blink range getter consumes frozen modifier");
+            var meteor=SpellRegistry.get("meteor");double originalRadius=meteor.getAimRadius(2);
+            bridgeSlots=RuneLayout.foundation(SlottedSpellRecipes.get("meteor"),2,language);bridgeSlots[3]=language.glyph(RuneRole.SPLIT);
+            var area=RuneBuildEvaluator.evaluate(2,bridgeSlots,language,SlottedSpellRecipes.all()).modifiers();
+            check(Math.abs(RuneCastContext.with(area,()->meteor.getAimRadius(2))-originalRadius*1.2)<.000001,"actual meteor preview radius consumes effect modifier");
+            var cooldowns=new SharedSpellCooldowns();UUID player=UUID.randomUUID();
+            cooldowns.setCooldownEnd(player,"fire_bolt",600,108);
+            SharedSpellCooldowns.applyClientSnapshot(cooldowns.snapshot(player,500));
+            check(SharedSpellCooldowns.getClientCooldownTotal(SpellRegistry.get("fire_bolt"),600,100)==108,"server duration overrides stale scroll preview");
+            check(SharedSpellCooldowns.getClientCooldownTotal(SpellRegistry.get("fire_bolt"),700,200)==200,"longer inherited scroll retains its duration");
+            var cooldownSaved=cooldowns.writeNbt(new NbtCompound());var cooldownLoad=SharedSpellCooldowns.class.getDeclaredMethod("readNbt",NbtCompound.class);cooldownLoad.setAccessible(true);
+            SharedSpellCooldowns.applyClientSnapshot(((SharedSpellCooldowns)cooldownLoad.invoke(null,cooldownSaved)).snapshot(player,500));
+            check(SharedSpellCooldowns.getClientCooldownTotal(SpellRegistry.get("fire_bolt"),0,0)==108,"cooldown duration persists across reload");
+            SharedSpellCooldowns.applyClientSnapshot(cooldowns.snapshot(player,600));
+            check(SharedSpellCooldowns.getClientCooldownTotal(SpellRegistry.get("fire_bolt"),0,0)==0,"expiry clears duration mirror");
+            SharedSpellCooldowns.applyClientSnapshot(null);
         }
         private static void checkEnhancements(List<Item> inks){
             for(int family=0;family<11;family++)for(int level=1;level<=5;level++){
@@ -203,7 +571,7 @@ public final class FormationResearchIntegrationTest {
                     check(SlottedSpellRecipes.available(recipe,level),"ordinary spell supports level "+recipe.spell());
                     int[] slots=SlottedSpellRecipes.glyphs(recipe,level,world.language());
                     check(SlottedSpellRecipes.identify(level,slots,world.language()).equals(recipe),"actual recipe identifies uniquely");
-                    var knowledge=ready(world);var table=new SimpleInventory(5);var bag=slotMaterials(inks);
+                    var knowledge=ready(world);var table=new SimpleInventory(net.jackcooper.shapeShifterCurseAddon.block.SpellResearchTableBlockEntity.SLOT_COUNT);var bag=slotMaterials(inks);
                     table.setStack(0,new ItemStack(SscAddon.BLANK_FORMATION_PAPER));
                     int[] costs=SlottedFormation.ink(world.language(),slots);UUID operation=knowledge.research().completionToken;
                     var result=SlottedFormationTransaction.complete(table,bag,knowledge,world,level,slots,operation);
@@ -214,11 +582,11 @@ public final class FormationResearchIntegrationTest {
                         int school=SlottedFormationTransaction.school((FormationInkItem)inks.get(index));
                         check(bag.getStack(index).getCount()==16-costs[school],"exact per-school rounding");
                     }
-                    check(table.getStack(3).isOf(SscAddon.SPELL_FORMATION)&&knowledge.hasSpell(recipe.spell()),"product AND atlas");
-                    check(Arrays.equals(table.getStack(3).getNbt().getIntArray("Slots"),slots),"product slot data");
-                    table.setStack(3,ItemStack.EMPTY);var before=inventoryNbt(bag);
+                    check(table.getStack(6).isOf(SscAddon.SPELL_FORMATION)&&knowledge.hasSpell(recipe.spell()),"product AND atlas");
+                    check(Arrays.equals(table.getStack(6).getNbt().getIntArray("Slots"),slots),"product slot data");
+                    table.setStack(6,ItemStack.EMPTY);var before=inventoryNbt(bag);
                     check(SlottedFormationTransaction.complete(table,bag,knowledge,world,level,slots,operation).key().equals("duplicate"),"old token rejected");
-                    check(before.equals(inventoryNbt(bag))&&table.getStack(3).isEmpty(),"replay changes nothing");
+                    check(before.equals(inventoryNbt(bag))&&table.getStack(6).isEmpty(),"replay changes nothing");
                     knowledge.research().slotDrafts.put(level,slots.clone());var restored=new FormationKnowledgeComponent();restored.readFromNbt(knowledgeNbt(knowledge));
                     check(Arrays.equals(restored.research().slotDrafts.get(level),slots)&&restored.research().slotCompleted.contains(recipe.spell()+":"+level),"slot knowledge persistence");
                     check(restored.research().completionToken.equals(knowledge.research().completionToken),"idempotency token persistence");
@@ -227,13 +595,13 @@ public final class FormationResearchIntegrationTest {
             for(Spell spell:SpellRegistry.all())if(spell.getRarity()!=SpellRarity.RED)check(supported.contains(spell.getId().getPath()),"all ordinary spells have recipes");
             var recipe=SlottedSpellRecipes.get("fire_bolt");int[] slots=SlottedSpellRecipes.glyphs(recipe,5,world.language());
             for(String failure:List.of("rank","paper","ink","dust","output","invalid")){
-                var knowledge=ready(world);var table=new SimpleInventory(5);var bag=slotMaterials(inks);int[] attempted=slots.clone();
+                var knowledge=ready(world);var table=new SimpleInventory(net.jackcooper.shapeShifterCurseAddon.block.SpellResearchTableBlockEntity.SLOT_COUNT);var bag=slotMaterials(inks);int[] attempted=slots.clone();
                 switch(failure){
                     case "rank"->knowledge.research().rank=4;
                     case "paper"->bag.setStack(9,ItemStack.EMPTY);
                     case "ink"->bag.setStack(0,ItemStack.EMPTY);
                     case "dust"->bag.setStack(8,new ItemStack(RegCustomItem.UNTREATED_MOONDUST,30));
-                    case "output"->table.setStack(3,new ItemStack(Items.STONE));
+                    case "output"->table.setStack(6,new ItemStack(Items.STONE));
                     case "invalid"->attempted[0]=-1;
                 }
                 var beforeBag=inventoryNbt(bag);var beforeTable=inventoryNbt(table);var beforeKnowledge=knowledgeNbt(knowledge);
@@ -300,28 +668,28 @@ public final class FormationResearchIntegrationTest {
             var resumed=new net.jackcooper.shapeShifterCurseAddon.block.SpellResearchTableBlockEntity(net.minecraft.util.math.BlockPos.ORIGIN,net.minecraft.block.Blocks.STONE.getDefaultState());
             resumed.readNbt(saved);check(resumed.getAnalysisTicks()==199,"analysis progress persisted");resumed.advanceAnalysis(world);
             check(resumed.getStack(3).isOf(SscAddon.ANALYZED_SPELL_DIAGRAM)&&resumed.getStack(0).isEmpty()&&ItemStack.areEqual(resumed.getStack(5),scroll),"resumed analysis completes exactly once");
-            var slotInventory=new SimpleInventory(6);
+            var slotInventory=new SimpleInventory(SpellResearchTableBlockEntity.SLOT_COUNT);
             var handler=new net.jackcooper.shapeShifterCurseAddon.screen.SpellResearchTableScreenHandler(1,new net.minecraft.entity.player.PlayerInventory(null),slotInventory);
             check(handler.getSlot(0).isEnabled()&&handler.getSlot(3).isEnabled()&&handler.getSlot(5).isEnabled(),"analysis required slots visible");
             check(!handler.getSlot(1).isEnabled()&&!handler.getSlot(2).isEnabled()&&!handler.getSlot(4).isEnabled(),"analysis irrelevant slots hidden");
-            handler.getSlot(6).setStack(scroll.copy());handler.quickMove(null,6);
+            handler.getSlot(7).setStack(scroll.copy());handler.quickMove(null,7);
             check(ItemStack.areEqual(slotInventory.getStack(5),scroll)&&slotInventory.getStack(3).isEmpty(),"shift scroll enters analysis only");
-            handler.getSlot(6).setStack(scroll.copy());
-            check(handler.quickMove(null,6).isEmpty()&&slotInventory.getStack(3).isEmpty()&&handler.getSlot(6).hasStack(),"full analysis does not shift scroll into output");
-            handler.getSlot(7).setStack(new ItemStack(SscAddon.BLANK_FORMATION_PAPER,3));handler.quickMove(null,7);
+            handler.getSlot(7).setStack(scroll.copy());
+            check(handler.quickMove(null,7).isEmpty()&&slotInventory.getStack(3).isEmpty()&&handler.getSlot(7).hasStack(),"full analysis does not shift scroll into output");
+            handler.getSlot(8).setStack(new ItemStack(SscAddon.BLANK_FORMATION_PAPER,3));handler.quickMove(null,8);
             check(slotInventory.getStack(0).getCount()==3,"shift paper enters paper slot");
-            handler.getSlot(8).setStack(new ItemStack(SscAddon.FORMATION_INK_NORMAL));
-            check(handler.quickMove(null,8).isEmpty()&&slotInventory.getStack(1).isEmpty(),"analysis cannot shift into hidden ink slot");
+            handler.getSlot(9).setStack(new ItemStack(SscAddon.FORMATION_INK_NORMAL));
+            check(handler.quickMove(null,9).isEmpty()&&slotInventory.getStack(1).isEmpty(),"analysis cannot shift into hidden ink slot");
             handler.setActivePage(2);
             check(handler.getSlot(1).isEnabled()&&handler.getSlot(2).isEnabled()&&handler.getSlot(4).isEnabled()&&!handler.getSlot(5).isEnabled(),"workshop restores material slots");
-            handler.quickMove(null,8);
+            handler.quickMove(null,9);
             check(slotInventory.getStack(1).isOf(SscAddon.FORMATION_INK_NORMAL),"workshop shift ink unchanged");
             handler.setActivePage(0);
             check(handler.quickMove(null,1).isEmpty()&&slotInventory.getStack(1).isOf(SscAddon.FORMATION_INK_NORMAL),"hidden materials preserved");
         }
         private static FormationKnowledgeComponent ready(WorldRuneState world){var k=new FormationKnowledgeComponent();k.research().bind(world.worldId());k.research().rank=5;k.research().attuned=0x7ff;return k;}
         private static SimpleInventory materials(ResearchTarget t,List<Item> inks){var i=new SimpleInventory(5);i.setStack(0,new ItemStack(SscAddon.BLANK_FORMATION_PAPER,2));i.setStack(1,new ItemStack(inks.get(t.family()>=7?0:FormationInkItem.Type.valueOf(t.element().toUpperCase(Locale.ROOT)).ordinal()),8));i.setStack(2,new ItemStack(RegCustomItem.UNTREATED_MOONDUST,12));return i;}
-        private static NbtCompound inventoryNbt(SimpleInventory i){var n=new NbtCompound();for(int s=0;s<i.size();s++)n.put("Slot"+s,i.getStack(s).writeNbt(new NbtCompound()));return n;}
+        private static NbtCompound inventoryNbt(net.minecraft.inventory.Inventory i){var n=new NbtCompound();for(int s=0;s<i.size();s++)n.put("Slot"+s,i.getStack(s).writeNbt(new NbtCompound()));return n;}
         private static NbtCompound knowledgeNbt(FormationKnowledgeComponent k){var n=new NbtCompound();k.writeToNbt(n);return n;}
         private static void check(boolean condition,String message){if(!condition)throw new AssertionError(message);checks++;}
     }

@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.SpellFrostSpikeEntity;
@@ -43,10 +44,10 @@ public class IceBarrageSpell extends Spell {
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level) {
 		Vec3d look = caster.getRotationVec(1.0F);
-		float speedMul = getSpeedMultiplier(level);
+		float speedMul = (float)RuneCastContext.current().scale(getSpeedMultiplier(level),RuneModifiers.Stat.SPEED);
 		// 运行时快照读取（同方法多次使用的参数先取局部变量）
 		int count = BAL.i("count", COUNT);
-		float spreadDeg = (float) BAL.d("spread_deg", SPREAD_DEG);
+		float spreadDeg = (float)RuneCastContext.current().scale(BAL.d("spread_deg", SPREAD_DEG),RuneModifiers.Stat.AREA);
 		// exp 挂起经验均分给三枚（bounty 为绝对值，cast 时一次性取走除以枚数）
 		int bountyTen = solo ? 0 : ssc_addon$takePendingExp();
 		int eachBounty = bountyTen / count;

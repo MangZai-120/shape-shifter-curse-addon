@@ -40,7 +40,8 @@ public class SpellResearchTableBlockEntity extends BlockEntity implements NamedS
 	public static final int SLOT_OUTPUT = 3;
 	public static final int SLOT_CATALYST = 4;
 	public static final int SLOT_ANALYSIS = 5;
-	public static final int SLOT_COUNT = 6;
+	public static final int SLOT_RESEARCH_OUTPUT = 6;
+	public static final int SLOT_COUNT = 7;
 	public static final int ANALYSIS_TICKS = 200;
 	private int analysisTicks;
 	private ItemStack analysisInput = ItemStack.EMPTY;
@@ -69,6 +70,12 @@ public class SpellResearchTableBlockEntity extends BlockEntity implements NamedS
 		super.readNbt(nbt);
 		items.clear();
 		Inventories.readNbt(nbt, items);
+		// Keep the old slot indices; only move pending research products into the appended output.
+		if (items.get(SLOT_OUTPUT).isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.SPELL_FORMATION)
+				&& items.get(SLOT_RESEARCH_OUTPUT).isEmpty()) {
+			items.set(SLOT_RESEARCH_OUTPUT, items.get(SLOT_OUTPUT));
+			items.set(SLOT_OUTPUT, ItemStack.EMPTY);
+		}
 		analysisTicks = Math.max(0, Math.min(ANALYSIS_TICKS, nbt.getInt("AnalysisTicks")));
 		analysisInput = ItemStack.fromNbt(nbt.getCompound("AnalysisInput"));
 	}
@@ -104,9 +111,9 @@ public class SpellResearchTableBlockEntity extends BlockEntity implements NamedS
 	}
 	public void advanceAnalysis(WorldRuneState language) {
 		ItemStack input = getStack(SLOT_ANALYSIS);
+		if (input.getNbt() != null && input.getNbt().contains(RuneScheme.KEY)
+				&& RuneScheme.authoritativeScroll(language, input) == null) { resetAnalysis(); return; }
 		if (analysisTicks == ANALYSIS_TICKS && ItemStack.areEqual(input, analysisInput)) return;
-		Spell spell = ScrollData.getSpell(input);
-		int level = ScrollData.getLevel(input);
 		if (analysisStatus(this) != AnalysisStatus.READY) {
 			resetAnalysis(); return;
 		}
@@ -114,7 +121,7 @@ public class SpellResearchTableBlockEntity extends BlockEntity implements NamedS
 		analysisTicks++;
 		if (analysisTicks < ANALYSIS_TICKS) { if (analysisTicks % 20 == 0) markDirty(); return; }
 		ItemStack result = input.getItem() instanceof MagicScrollItem
-				? AnalyzedSpellDiagramItem.create(language, spell.getId().getPath(), level) : ItemStack.EMPTY;
+				? AnalyzedSpellDiagramItem.create(language, input) : ItemStack.EMPTY;
 		boolean returnOriginal = result.isEmpty() && ArcaneAnalysis.isUnanalyzed(input);
 		if (returnOriginal) { result = input.copy(); ArcaneAnalysis.identify(result); }
 		if (result.isEmpty()) { resetAnalysis(); return; }
@@ -205,7 +212,7 @@ public class SpellResearchTableBlockEntity extends BlockEntity implements NamedS
 
 	@Override
 	public int[] getAvailableSlots(Direction side) {
-		return side == Direction.DOWN ? new int[]{SLOT_OUTPUT} : new int[]{SLOT_PAPER, SLOT_INK, SLOT_MOONDUST, SLOT_CATALYST, SLOT_ANALYSIS};
+		return side == Direction.DOWN ? new int[]{SLOT_OUTPUT, SLOT_RESEARCH_OUTPUT} : new int[]{SLOT_PAPER, SLOT_INK, SLOT_MOONDUST, SLOT_CATALYST, SLOT_ANALYSIS};
 	}
 
 	@Override
@@ -228,6 +235,6 @@ public class SpellResearchTableBlockEntity extends BlockEntity implements NamedS
 
 	@Override
 	public boolean canExtract(int slot, ItemStack stack, Direction dir) {
-		return slot == SLOT_OUTPUT; // 只允许抽出产出
+		return slot == SLOT_OUTPUT || slot == SLOT_RESEARCH_OUTPUT; // 只允许抽出产出
 	}
 }
