@@ -22,12 +22,15 @@ public abstract class DomainChestLootMixin {
 		original.call(table, inventory, parameters, seed);
 		if (!((Object) this instanceof ChestBlockEntity chest) || chest.getWorld() == null) return;
 		World world = chest.getWorld();
-		// 末地 2%：领域（空间系红色）；下界 3%：爆裂魔法（烈焰系红色，2026-09-22）。
+		// 末地 2%：领域（空间系红色）；下界 3%：爆裂魔法（烈焰系红色，2026-09-22）；
+		// 主世界 2%：死亡是一切的终点（虚无系红色，2026-10-05 用户定稿）。
 		String spell = null;
 		if (world.getRegistryKey().equals(World.END) && world.random.nextFloat() < 0.02f) {
 			spell = "domain";
 		} else if (world.getRegistryKey().equals(World.NETHER) && world.random.nextFloat() < 0.03f) {
 			spell = "explosion";
+		} else if (world.getRegistryKey().equals(World.OVERWORLD) && world.random.nextFloat() < 0.02f) {
+			spell = "death_finale";
 		}
 		if (spell == null) return;
 		var scroll = MagicScrollLoot.createNaturalScroll(spell, 1);
