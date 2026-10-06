@@ -18,7 +18,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MinecraftClientSetScreenMixin {
 
     @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true, require = 0)
-    @SuppressWarnings("resource") 
     private void ssc_addon(Screen screen, CallbackInfo ci) {
         if (screen == null) return;
         if (screen instanceof AdvancedColorScreen) return; // 防递归
@@ -30,9 +29,11 @@ public abstract class MinecraftClientSetScreenMixin {
         //   "FormColorSelectMenu is already in use, only one instance is allowed"
         // 因此先反射把这三个静态字段还原，再 cancel + 用我们自己的界面替换。
         cleanupSscColorMenuState(screen);
-        MinecraftClient mc = (MinecraftClient) (Object) this;
-        Screen parent = mc.currentScreen;
-        mc.setScreen(new AdvancedColorScreen(parent));
+        // 不把 this 赋给局部 MinecraftClient 变量：MinecraftClient 间接实现 AutoCloseable，
+        // 局部变量会被 IDE 判为未关闭资源而告警（原先靠 @SuppressWarnings("resource") 压制）。
+        // 直接内联强转调用，资源分析没有附着点，告警自然消失。
+        Screen parent = ((MinecraftClient) (Object) this).currentScreen;
+        ((MinecraftClient) (Object) this).setScreen(new AdvancedColorScreen(parent));
         ci.cancel();
     }
     /**
