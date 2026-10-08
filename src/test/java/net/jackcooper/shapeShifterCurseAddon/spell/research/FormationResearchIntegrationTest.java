@@ -134,6 +134,7 @@ public final class FormationResearchIntegrationTest {
                 check(SlottedResearchManager.text("rune_outer_incomplete",4,0,4).getString().equals("外圈还缺4个符文。请填满整圈，或清空全部外圈符文。"),
                         "incomplete outer ring feedback formats the actual missing count");
                 checkRuneSlotDescriptions(world);
+                checkRuneSummary(world);
                 for(int level=1;level<=5;level++){
                     ItemStack product=net.jackcooper.shapeShifterCurseAddon.item.SpellFormationItem.create(world,"fire_bolt",level,RuneLayout.empty(level));
                     var name=product.getName();
@@ -154,12 +155,101 @@ public final class FormationResearchIntegrationTest {
                     ItemStack product=net.jackcooper.shapeShifterCurseAddon.item.SpellFormationItem.createEnhanced(world,2,slots,result);
                     List<net.minecraft.text.Text> lines=new ArrayList<>();product.getItem().appendTooltip(product,null,lines,net.minecraft.client.item.TooltipContext.Default.BASIC);
                     check(lines.stream().noneMatch(line->line.getString().contains("纸槽")||line.getString().contains("强化方案")),"scheme tooltip contains only its profile, no paper-slot recipe");
-                    check(lines.stream().anyMatch(line->line.getString().equals(role==RuneRole.STORE?"伤害：+20%":"威力：-12%")),"actual positive and negative scheme effects display explicit signs");
+                    check(lines.stream().anyMatch(line->line.getString().equals(role==RuneRole.STORE?"伤害：+26%":"威力：-12%")),"actual positive and negative scheme effects display explicit signs");
                     check(lines.stream().anyMatch(line->line.getString().equals(role==RuneRole.STORE?"蓄力：+14 tick":"蓄力：-2 tick")),"charge-time changes use signed ticks and simplified label");
                     plain.getOrCreateNbt().put(RuneScheme.KEY,product.getNbt().getCompound(RuneScheme.KEY).copy());
                     check(plain.getName().getString().endsWith(" 改")&&plain.getName().getStyle().getColor().getRgb()==SpellRegistry.get("fire_bolt").getRarity(2).color.getColorValue(),"imprinted scroll keeps rarity color and modified suffix");
                 }
             }finally{net.minecraft.util.Language.setInstance(previous);}
+        }
+        private static void checkRuneSummary(WorldRuneState world)throws Exception{
+            var language=world.language();
+            int[] slots=RuneLayout.foundation(SlottedSpellRecipes.get("fire_bolt"),4,language);
+            fillOuter(slots,4,language,RuneRole.GAIN,RuneRole.MERGE,RuneRole.STABLE,RuneRole.GAIN,
+                    RuneRole.STORE,RuneRole.SOURCE,RuneRole.STABLE,RuneRole.STABLE);
+            var result=RuneBuildEvaluator.evaluate(4,slots,language,SlottedSpellRecipes.all());
+            check(result.valid(),"mixed resonance comparison uses a complete legal ring");
+            var summary=RuneSummary.write(result);var packet=net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+            try{packet.writeNbt(summary);summary=packet.readNbt();}finally{packet.release();}
+            check(summary!=null,"effect comparison survives real packet serialization");
+            var damage=summary.getList("Rows",net.minecraft.nbt.NbtElement.COMPOUND_TYPE).getCompound(0);
+            check(damage.getString("Key").equals("damage_total")&&damage.getInt("Base")==52&&damage.getInt("Interaction")==24
+                    &&damage.getInt("Total")==76&&damage.getInt("Effective")==60,
+                    "comparison groups power and damage before the same cap used by casting");
+            var lines=RuneSummary.lines(summary).stream().map(net.minecraft.text.Text::getString).toList();
+            check(lines.contains("伤害合计：实际+60%")&&lines.contains("基础+52%，组合+24%，累计+76%")
+                    &&lines.contains("累计+76% → 生效+60%，溢出16个百分点；代价照常。"),
+                    "Chinese comparison exposes actual output and over-cap contributions");
+            check(lines.contains("已激活：蓄能爆发（每圈一次）")&&lines.contains("已激活：重型投射（每圈一次）"),
+                    "all active resonance families are visible without revealing a spell foundation");
+            var original=summary.copy();
+            for(var recipe:SlottedSpellRecipes.all())for(int level=1;level<=5;level++){
+                var plain=RuneBuildEvaluator.evaluate(level,RuneLayout.foundation(recipe,level,language),language,SlottedSpellRecipes.all());
+                var defaults=RuneSummary.preview(plain,level,null).getCompound("Costs");
+                check(!defaults.getBoolean("Equipped")&&defaults.getInt("BaseMana")==defaults.getInt("Mana")
+                        &&defaults.getInt("BaseTime")==defaults.getInt("Time")&&defaults.getInt("BaseCd")==defaults.getInt("Cd"),
+                        "all supported spells can quote without an equipped book or player context; neutral effects change no costs");
+            }
+            var priced=RuneSummary.withCosts(summary,true,20,0,100,true,8,200);var costs=priced.getCompound("Costs");
+            check(original.equals(summary)&&costs.getInt("Mana")==38&&costs.getInt("Time")==28&&costs.getInt("Cd")==133
+                    &&costs.getInt("SoloTime")==36&&costs.getInt("SoloCd")==266,
+                    "contextual preview uses fixed plus percentage mana, real instant preparation, book and solo cooldowns");
+            check(RuneSummary.lines(priced).stream().map(net.minecraft.text.Text::getString).toList().contains("耗蓝：20 → 38（+18）"),
+                    "cost comparison shows final numbers and their difference from an unmodified spell");
+            var pending=RuneSummary.withCosts(summary,false,-1,8,100,false,8,100);
+            check(pending.getCompound("Costs").getInt("Mana")==-1&&RuneSummary.lines(pending).stream()
+                    .anyMatch(line->line.getString().contains("耗蓝配置尚未同步")),"unavailable mana never becomes a zero-cost quote");
+            var product=net.jackcooper.shapeShifterCurseAddon.item.SpellFormationItem.createEnhanced(world,4,slots,result);
+            var profile=product.getNbt().getCompound(RuneScheme.KEY);
+            check(profile.getInt("Rules")==4&&profile.getCompound("Summary").equals(summary)
+                    &&RuneScheme.authoritative(world,profile)!=null,"new scheme freezes exactly the server comparison and modifiers");
+            var forged=profile.copy();forged.getCompound("Summary").getList("Rows",net.minecraft.nbt.NbtElement.COMPOUND_TYPE)
+                    .getCompound(0).putInt("Effective",999);
+            check(RuneScheme.authoritative(world,forged)==null,"display summary cannot forge a registered profile");
+            var load=WorldRuneState.class.getDeclaredConstructor(NbtCompound.class);load.setAccessible(true);
+            var restored=load.newInstance(world.writeNbt(new NbtCompound()));
+            check(restored.worldId().equals(world.worldId())&&restored.language().equals(language)
+                    &&RuneScheme.authoritative(restored,profile).getCompound("Summary").equals(summary),
+                    "new snapshots reload without rerandomizing language or recalculating contributions");
+            List<net.minecraft.text.Text> tooltip=new ArrayList<>();RuneTooltips.append(product,tooltip);
+            check(tooltip.stream().anyMatch(line->line.getString().equals("实际伤害合计：+60%"))
+                    &&tooltip.stream().anyMatch(line->line.getString().contains("溢出16个百分点")),"item tooltip reports the same frozen effective cap");
+            var scroll=ScrollData.create("fire_bolt",4);var table=new SimpleInventory(7);table.setStack(0,product);table.setStack(3,scroll);
+            check(RuneScheme.imprint(table,world)==0&&RuneScheme.authoritativeScroll(restored,scroll)!=null
+                    &&RuneScheme.modifiers(null,scroll,4).power(100,true,false)==160
+                    &&RuneScheme.modifiers(null,scroll,4).cooldown(100)==133,"imprint transfers the exact effects and costs into the real scroll path");
+            check(RuneScheme.modifiers(null,scroll,3)==RuneModifiers.NONE,"lower selected level suspends new resonances and their costs together");
+            int[] oldSlots=RuneLayout.foundation(SlottedSpellRecipes.get("fire_bolt"),2,language);
+            fillOuter(oldSlots,2,language,RuneRole.STORE,RuneRole.SOURCE,RuneRole.STABLE,RuneRole.STABLE,RuneRole.SOURCE);
+            int[] oldValues=new int[RuneModifiers.Stat.values().length];
+            oldValues[RuneModifiers.Stat.DAMAGE.ordinal()]=20;oldValues[RuneModifiers.Stat.SPEED.ordinal()]=30;
+            oldValues[RuneModifiers.Stat.MANA.ordinal()]=28;oldValues[RuneModifiers.Stat.TIME.ordinal()]=14;oldValues[RuneModifiers.Stat.FLAT_MANA.ordinal()]=5;
+            var legacy=new NbtCompound();legacy.putUuid("World",world.worldId());legacy.putInt("Version",3);legacy.putInt("Rules",3);
+            legacy.putString("Spell","fire_bolt");legacy.putInt("Level",2);legacy.putIntArray("Slots",oldSlots);legacy.putInt("Stability",86);
+            legacy.put("Modifiers",new RuneModifiers(oldValues).write());legacy.putUuid("Id",world.registerScheme(legacy));
+            var oldScroll=ScrollData.create("fire_bolt",2);oldScroll.getOrCreateNbt().put(RuneScheme.KEY,legacy);
+            var before=oldScroll.getNbt().copy();restored=load.newInstance(world.writeNbt(new NbtCompound()));
+            check(RuneScheme.authoritativeScroll(restored,oldScroll)!=null&&before.equals(oldScroll.getNbt())
+                    &&RuneScheme.modifiers(null,oldScroll,2).effectivePower(true,false)==20
+                    &&RuneScheme.modifiers(null,oldScroll,2).get(RuneModifiers.Stat.SPEED)==30
+                    &&RuneScheme.modifiers(null,oldScroll,2).cooldown(100)==100,
+                    "rule-three full-ring scrolls keep every original effect and cost despite new adjacency semantics");
+            slots=RuneLayout.foundation(SlottedSpellRecipes.get("flame_nova"),2,language);
+            slots[3]=language.glyph(RuneRole.SOURCE);slots[4]=language.glyph(RuneRole.STORE);
+            result=RuneBuildEvaluator.evaluate(2,slots,language,SlottedSpellRecipes.all());
+            var inactive=RuneSummary.lines(RuneSummary.write(result)).stream().map(net.minecraft.text.Text::getString).toList();
+            check(inactive.contains("未激活：重型投射（无协同额外费用）"),"unsupported resonance is visible without claiming a bonus or extra payment");
+            var view=RuneSlotTooltips.write(result);
+            check(RuneSlotTooltips.slot(2,3,slots,language.meanings(),view,true).stream().anyMatch(line->line.getString().contains("不支付协同额外费用")),
+                    "adjacent unsupported pair receives an explanatory slot hint");
+            slots=RuneLayout.foundation(SlottedSpellRecipes.get("curse_mark"),4,language);
+            fillOuter(slots,4,language,RuneRole.CURSE,RuneRole.INSIGHT,RuneRole.CONVERT,RuneRole.CURSE,
+                    RuneRole.INSIGHT,RuneRole.CONVERT,RuneRole.STABLE,RuneRole.STABLE);
+            result=RuneBuildEvaluator.evaluate(4,slots,language,SlottedSpellRecipes.all());summary=RuneSummary.write(result);
+            var mark=summary.getList("Rows",net.minecraft.nbt.NbtElement.COMPOUND_TYPE).getCompound(0);
+            check(result.valid()&&mark.getString("Key").equals("mark_total")&&mark.getInt("Total")==100&&mark.getInt("Effective")==60
+                    &&result.modifiers().duration(100,RuneModifiers.Stat.MARK,RuneModifiers.Stat.NEGATIVE)==160,
+                    "combined mark duration uses the real shared duration cap instead of two misleading separate caps");
         }
         private static void checkRuneSlotDescriptions(WorldRuneState world){
             var language=world.language();int[] meanings=language.meanings();
@@ -240,7 +330,7 @@ public final class FormationResearchIntegrationTest {
             fillOuter(slots,4,language,RuneRole.GAIN,RuneRole.STABLE,RuneRole.SOURCE,RuneRole.STABLE,RuneRole.SOURCE,RuneRole.STABLE,RuneRole.SOURCE,RuneRole.MERGE);
             var evaluation=RuneBuildEvaluator.evaluate(4,slots,language,SlottedSpellRecipes.all());
             check(evaluation.valid()&&evaluation.modifiers().get(RuneModifiers.Stat.POWER)==28
-                    &&evaluation.modifiers().get(RuneModifiers.Stat.CD)==8&&evaluation.stability()==74,"complete fourth tier outer seam applies synergy and its costs");
+                    &&evaluation.modifiers().get(RuneModifiers.Stat.CD)==8&&evaluation.stability()==76,"complete fourth tier outer seam applies synergy and local protection without reducing cooldown");
             var knowledge=new FormationKnowledgeComponent();knowledge.research().bind(world.worldId());knowledge.research().rank=5;
             var table=new SimpleInventory(net.jackcooper.shapeShifterCurseAddon.block.SpellResearchTableBlockEntity.SLOT_COUNT);var bag=slotMaterials(inks);table.setStack(0,new ItemStack(SscAddon.BLANK_FORMATION_PAPER));
             var result=SlottedFormationTransaction.completeEnhanced(table,bag,knowledge,world,4,slots,knowledge.research().completionToken);
@@ -395,7 +485,8 @@ public final class FormationResearchIntegrationTest {
             var result=SlottedFormationTransaction.completeEnhanced(table,bag,knowledge,world,2,slots,token);
             check(result.success()&&bag.getStack(8).getCount()==56,"enhanced completion charges three foundation and five enhancement runes");
             ItemStack scheme=table.getStack(6).copy();var mirror=scheme.getNbt().getCompound(RuneScheme.KEY);
-            check(mirror.getInt("Rules")==3&&mirror.getInt("Stability")==86&&RuneModifiers.read(mirror.getCompound("Modifiers")).get(RuneModifiers.Stat.DAMAGE)==20,"registered integer snapshot");
+            check(mirror.getInt("Rules")==4&&mirror.getInt("Stability")==80&&RuneModifiers.read(mirror.getCompound("Modifiers")).get(RuneModifiers.Stat.DAMAGE)==26
+                    &&mirror.contains("Summary"),"registered resonance and comparison snapshot");
             check(RuneScheme.authoritative(world,mirror)!=null&&RuneScheme.authoritative(other,mirror)==null,"world authority rejects foreign scheme");
             var changed=mirror.copy();changed.putInt("Stability",1000);
             check(RuneScheme.authoritative(world,changed)==null,"item mirror cannot forge server snapshot");
@@ -408,9 +499,9 @@ public final class FormationResearchIntegrationTest {
             var after=scroll.getNbt().copy();after.remove(RuneScheme.KEY);
             check(after.equals(original),"imprint preserves uses, cooldown, selected level and unrelated binding");
             var modifiers=RuneScheme.modifiers(null,scroll,2);
-            check(modifiers.power(10,true,false)==12&&modifiers.mana(20)==31&&modifiers.time(20)==34,"effect and costs use same profile");
+            check(modifiers.effectivePower(true,false)==26&&modifiers.mana(20)==31&&modifiers.time(20)==34&&modifiers.cooldown(100)==110,"effect and costs use same profile");
             check(RuneScheme.modifiers(null,scroll,1)==RuneModifiers.NONE,"lower selected level suspends full profile");
-            ScrollData.setLevel(scroll,3);check(RuneScheme.modifiers(null,scroll,3).get(RuneModifiers.Stat.DAMAGE)==20,"upgrade retains original scheme, no new free slots");
+            ScrollData.setLevel(scroll,3);check(RuneScheme.modifiers(null,scroll,3).get(RuneModifiers.Stat.DAMAGE)==26,"upgrade retains original scheme, no new free slots");
             table.setStack(0,scheme.copy()); // consumed copy is empty
             var before=inventoryNbt(table);check(RuneScheme.imprint(table,world)!=0&&before.equals(inventoryNbt(table)),"failed imprint atomic");
             table.setStack(0,net.jackcooper.shapeShifterCurseAddon.item.SpellFormationItem.createEnhanced(world,2,slots,RuneBuildEvaluator.evaluate(2,slots,language,SlottedSpellRecipes.all())));

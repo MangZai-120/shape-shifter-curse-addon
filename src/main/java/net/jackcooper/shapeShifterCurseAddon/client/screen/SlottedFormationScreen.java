@@ -45,20 +45,20 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
     private final BitSet touched=new BitSet();
     private final FeedbackState feedbackState=new FeedbackState();
     private ResearchProgress progress=new ResearchProgress();
-    private int level=1,selectedGlyph,revision,paletteScroll,notesScroll,referenceScroll;
+    private int level=1,selectedGlyph,revision,paletteScroll,notesScroll,referenceScroll,summaryScroll;
     private int[] slots=RuneLayout.empty(1),meanings=new int[18],schools=new int[18],reference=new int[0];
     private int[] diagnosis=new int[0];
     private int stability=100;private boolean runeValid;private int evaluatedRevision=-1;
     private int testedRevision=-1,failedRevision=-1;
     private Tooltip testTip,retestTip,finishTip,untestedTip;
-    private RuneModifiers modifiers=RuneModifiers.NONE;
     private NbtCompound runeTooltipState=new NbtCompound();
+    private NbtCompound runeSummary=new NbtCompound();
     private final BitSet problems=new BitSet(),inactive=new BitSet(),synergy=new BitSet(),suppressed=new BitSet();
     private final List<Integer> referenceInventorySlots=new ArrayList<>();
     private int selectedReferenceSlot=-1;
     private List<FormationDiagram.Point> positions=RuneLayout.positions(1);
     private UUID world,operation;
-    private boolean notes,referenceMenu,referenceVisible,handoff,busy,dragging,erasing;
+    private boolean notes,summary,referenceMenu,referenceVisible,handoff,busy,dragging,erasing;
     private boolean dirty,loading,paletteDragging,paletteScrolling;
     private double paletteGrabOffset;
     private long sentAt,animation,editedAt;
@@ -77,7 +77,10 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         positions=RuneLayout.positions(level);
         for(int index=0;index<ResearchTableTabs.COUNT;index++){final int tab=index;addDrawableChild(ResearchTableTabs.create(x,y,index,()->tab==ResearchTableTabs.RESEARCH,()->{if(tab!=ResearchTableTabs.RESEARCH)back(tab);}));}
         for(int rank=1;rank<=5;rank++){final int tier=rank;pageButtons.add(button(244+(rank-1)*12,18,12,18,Text.literal(String.valueOf(rank)),()->switchLevel(tier)));}
-        pageButtons.add(button(244,44,60,18,text("notes"),()->{notes=!notes;referenceMenu=false;notesScroll=0;visibility();}));
+        var notesButton=button(244,44,29,18,Text.translatable("research.ssc_addon.runes.summary.notes"),()->{
+            notes=!notes;summary=false;referenceMenu=false;notesScroll=0;visibility();
+        });
+        notesButton.setTooltip(Tooltip.of(text("notes")));pageButtons.add(notesButton);
         studyButtons.add(button(244,86,60,18,text("identify"),()->send(SlottedResearchManager.INSPECT)));
         studyButtons.add(button(244,108,60,18,text("train"),()->send(SlottedResearchManager.TRAIN)));
         pageButtons.add(button(244,152,60,18,text("test"),()->send(SlottedResearchManager.TEST)));
@@ -87,6 +90,10 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
             referenceMenu=!referenceMenu;referenceScroll=0;refreshReferenceList();
         }));
         pageButtons.add(icon(20,176,true,"clear",this::clearCurrent));
+        pageButtons.add(button(275,44,29,18,Text.translatable("research.ssc_addon.runes.summary.button"),()->{
+            summary=!summary;notes=false;referenceMenu=false;summaryScroll=0;visibility();
+            if(summary&&world!=null&&!loading){evaluatedRevision=-1;send(SlottedResearchManager.SAVE);}
+        }));
         visibility();
         if(world==null)send(SlottedResearchManager.OPEN);
     }
@@ -98,7 +105,7 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         return addDrawableChild(new ButtonWidget(x+left,y+top,20,20,text(key),ignored->action.run(),supplier->supplier.get()){
             @Override public void renderButton(DrawContext context,int mouseX,int mouseY,float delta){
                 if(clearButton){
-                    active=!busy&&!loading&&!notes&&Arrays.stream(slots).anyMatch(value->value>=0);
+                    active=!busy&&!loading&&!notes&&!summary&&Arrays.stream(slots).anyMatch(value->value>=0);
                     RenderSystem.enableBlend();RenderSystem.defaultBlendFunc();
                     context.setShaderColor(1,1,1,active?1:.35f);
                     context.drawTexture(image("widgets"),getX()+2,getY()+2,16,16,0,0,32,32,32,32);
@@ -111,7 +118,7 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
     private void visibility(){for(var button:studyButtons)button.visible=notes;for(int tier=0;tier<5;tier++)pageButtons.get(tier).active=tier+1!=level;}
     private void switchLevel(int next){
         if(next==level||busy)return;save();level=next;slots=drafts.getOrDefault(level,RuneLayout.empty(level)).clone();
-        revision++;reference=new int[0];referenceVisible=false;selectedReferenceSlot=-1;notesScroll=0;positions=RuneLayout.positions(level);visibility();send(SlottedResearchManager.OPEN);
+        revision++;reference=new int[0];referenceVisible=false;selectedReferenceSlot=-1;notesScroll=0;summaryScroll=0;positions=RuneLayout.positions(level);visibility();send(SlottedResearchManager.OPEN);
     }
     private void save(){drafts.put(level,slots.clone());send(SlottedResearchManager.SAVE);}
     private void send(int action){
@@ -136,10 +143,10 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         if(state.containsUuid("Operation"))operation=state.getUuid("Operation");
         int[] received=state.getIntArray("Meanings");if(received.length==18)meanings=received;
         received=state.getIntArray("Schools");if(received.length==18)schools=received;
-        if(state.getInt("Level")==level&&state.getInt("Revision")==revision){
+        if(state.getInt("Level")==level&&state.getInt("Revision")==revision&&state.contains("RuneTooltipState")){
             stability=state.getInt("Stability");runeValid=state.getBoolean("RuneValid");evaluatedRevision=revision;
-            modifiers=RuneModifiers.read(state.getCompound("Modifiers"));
             runeTooltipState=state.getCompound("RuneTooltipState").copy();
+            runeSummary=state.getCompound("RuneSummary").copy();
             for(var entry:Map.of("Problems",problems,"Inactive",inactive,"Synergy",synergy,"Suppressed",suppressed).entrySet()){entry.getValue().clear();for(int p:state.getIntArray(entry.getKey()))entry.getValue().set(p);}}
         if(action==SlottedResearchManager.SAVE)return;
         busy=false;
@@ -192,7 +199,7 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         context.disableScissor();
         context.drawTexture(image("palette_scroll"),x+PALETTE_TRACK_X,y+PALETTE_TOP,PALETTE_TRACK_WIDTH,PALETTE_HEIGHT,0,0,4,32,8,32);
         context.drawTexture(image("palette_scroll"),x+PALETTE_TRACK_X,paletteThumbY(),PALETTE_TRACK_WIDTH,PALETTE_THUMB_HEIGHT,4,0,4,32,8,32);
-        if(notes)renderNotes(context);else{
+        if(notes)renderNotes(context);else if(summary)renderSummary(context);else{
             context.drawTexture(image("tier_"+level),x+63,y+19,172,172,0,0,1024,1024,1024,1024);
             if(animation>0&&System.currentTimeMillis()-animation<1500)context.drawTexture(image("tier_"+level+"_glow"),x+63,y+19,172,172,0,0,1024,1024,1024,1024);
             int hoveredSlot=slotAt(mouseX,mouseY);
@@ -240,7 +247,7 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         String status=textRenderer.trimToWidth(feedback.getString(),292);
         context.drawText(textRenderer,status,x+(312-textRenderer.getWidth(status))/2,y+198,0xff414141,false);
         for(Element child:children())if(child instanceof Drawable drawable)drawable.render(context,mouseX,mouseY,delta);
-        if(paletteDragging&&!notes){context.setShaderColor(1,1,1,.75f);drawGlyph(context,selectedGlyph,mouseX-8,mouseY-8,16);context.setShaderColor(1,1,1,1);}
+        if(paletteDragging&&!notes&&!summary){context.setShaderColor(1,1,1,.75f);drawGlyph(context,selectedGlyph,mouseX-8,mouseY-8,16);context.setShaderColor(1,1,1,1);}
         if(referenceMenu){
             refreshReferenceList();DefaultedList<ItemStack> contents=DefaultedList.ofSize(REFERENCE_CAPACITY,ItemStack.EMPTY);
             int first=referenceScroll*REFERENCE_COLUMNS;
@@ -268,7 +275,14 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
                 wrapped.addAll(textRenderer.wrapLines(line,Math.max(1,Math.min(260,width-24))));
             context.drawOrderedTooltip(textRenderer,wrapped,mouseX,mouseY);
         }
-        else if(!notes&&mouseX>=x+244&&mouseX<x+305&&mouseY>=y+65&&mouseY<y+84){List<Text> lines=new ArrayList<>();lines.add(Text.translatable("research.ssc_addon.runes.stability_detail",stability));for(var stat:RuneModifiers.Stat.values())if(modifiers.get(stat)!=0)lines.add(RuneTooltips.stat(stat,modifiers.get(stat)));context.drawTooltip(textRenderer,lines,mouseX,mouseY);}
+        else if(!notes&&mouseX>=x+244&&mouseX<x+305&&mouseY>=y+65&&mouseY<y+84){
+            List<Text> lines=new ArrayList<>();
+            if(evaluatedRevision!=revision)lines.add(Text.translatable("research.ssc_addon.runes.slot_pending"));
+            else{lines.add(Text.translatable("research.ssc_addon.runes.stability_detail",stability));lines.addAll(RuneSummary.effects(runeSummary,false));}
+            List<net.minecraft.text.OrderedText> wrapped=new ArrayList<>();
+            for(Text line:lines)wrapped.addAll(textRenderer.wrapLines(line,Math.max(1,Math.min(260,width-24))));
+            context.drawOrderedTooltip(textRenderer,wrapped,mouseX,mouseY);
+        }
         else if(!notes&&mouseX>=x+244&&mouseX<x+305&&mouseY>=y+125&&mouseY<y+148)context.drawTooltip(textRenderer,inkLines(costs),mouseX,mouseY);
         else if(!notes&&mouseX>=x+244&&mouseX<x+305&&mouseY>=y+105&&mouseY<y+125)context.drawTooltip(textRenderer,text("dust_cost",dust,SlottedFormationTransaction.count(handler.getInventory(),inventory,2,stack->stack.isOf(RegCustomItem.UNTREATED_MOONDUST))),mouseX,mouseY);
         else if(!notes&&mouseX>=x+244&&mouseX<x+305&&mouseY>=y+85&&mouseY<y+105)context.drawTooltip(textRenderer,text("paper_cost",SlottedFormationTransaction.count(handler.getInventory(),inventory,0,stack->stack.getItem() instanceof BlankFormationPaperItem)),mouseX,mouseY);
@@ -301,8 +315,17 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         for(Text text:lines){for(var line:textRenderer.wrapLines(text,158)){context.drawText(textRenderer,line,x+69,top,0xffece0bc,false);top+=11;}top+=5;}
         context.disableScissor();
     }
+    private void renderSummary(DrawContext context){
+        List<Text> lines=evaluatedRevision==revision?RuneSummary.lines(runeSummary)
+                :List.of(Text.translatable("research.ssc_addon.runes.slot_pending"));
+        int total=0;for(Text line:lines)total+=textRenderer.wrapLines(line,158).size()*11+5;
+        summaryScroll=Math.max(0,Math.min(summaryScroll,Math.max(0,total-160)));
+        context.enableScissor(x+66,y+23,x+231,y+189);int top=y+24-summaryScroll;
+        for(Text line:lines){for(var wrapped:textRenderer.wrapLines(line,158)){context.drawText(textRenderer,wrapped,x+69,top,0xffece0bc,false);top+=11;}top+=5;}
+        context.disableScissor();
+    }
     private int slotAt(double mouseX,double mouseY){
-        if(notes||referenceMenu)return -1;
+        if(notes||summary||referenceMenu)return -1;
         for(int index=0;index<positions.size();index++)if(Math.hypot(mouseX-(x+63+positions.get(index).x()*172/512),mouseY-(y+19+positions.get(index).y()*172/512))<8)return index;
         return -1;
     }
@@ -317,7 +340,7 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
             refreshReferenceList();int chosen=referenceAt(mouseX,mouseY);
             if(button==0&&chosen>=0){
                 selectedReferenceSlot=referenceInventorySlots.get(chosen);var data=inventory.getStack(selectedReferenceSlot).getNbt();
-                if(data.getInt("Level")==level){reference=foundationReference(data);referenceVisible=true;notes=false;visibility();}
+                if(data.getInt("Level")==level){reference=foundationReference(data);referenceVisible=true;notes=false;summary=false;visibility();}
                 else{feedback=text("diagram_level",data.getInt("Level"));referenceVisible=false;}
             }
             referenceMenu=false;return true;
@@ -367,11 +390,12 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
     @Override public boolean mouseScrolled(double mouseX,double mouseY,double amount){
         if(referenceMenu){referenceScroll=Math.max(0,Math.min(maxReferenceScroll(),referenceScroll-(int)amount));return true;}
         if(notes&&mouseX>=x+63&&mouseX<x+236){notesScroll-=(int)(amount*22);return true;}
+        if(summary&&mouseX>=x+63&&mouseX<x+236){summaryScroll-=(int)(amount*22);return true;}
         if(inPalette(mouseX,mouseY)){paletteScroll=Math.max(0,Math.min(PALETTE_MAX_SCROLL,paletteScroll-(int)(amount*PALETTE_CELL)));return true;}return false;
     }
     private void edited(){revision++;animation=0;dirty=true;editedAt=System.currentTimeMillis();feedback=text("edited");diagnosis=new int[0];drafts.put(level,slots.clone());}
     private void clearCurrent(){
-        if(busy||loading||notes||Arrays.stream(slots).noneMatch(value->value>=0))return;
+        if(busy||loading||notes||summary||Arrays.stream(slots).noneMatch(value->value>=0))return;
         dragging=false;erasing=false;paletteDragging=false;paletteScrolling=false;touched.clear();
         referenceVisible=false;referenceMenu=false;slots=RuneLayout.empty(level);edited();feedback=text("cleared");
         playSound(SoundEvents.ITEM_BOOK_PAGE_TURN,.25f,.8f);
@@ -389,7 +413,7 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         return local<REFERENCE_CAPACITY&&index<referenceInventorySlots.size()?index:-1;
     }
     @Override public boolean keyPressed(int key,int scan,int modifiers){
-        if(key==GLFW.GLFW_KEY_ESCAPE){if(referenceMenu){referenceMenu=false;return true;}if(notes){notes=false;visibility();return true;}back(0);return true;}
+        if(key==GLFW.GLFW_KEY_ESCAPE){if(referenceMenu){referenceMenu=false;return true;}if(notes||summary){notes=false;summary=false;visibility();return true;}back(0);return true;}
         if(client!=null&&client.options.inventoryKey.matchesKey(key,scan)){back(0);return true;}
         return false;
     }

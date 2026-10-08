@@ -68,7 +68,7 @@ public final class RuneSlotTooltips {
             int first=problem.getInt("First"),second=problem.getInt("Second");
             if(first!=index&&second!=index)continue;
             if(problem.getBoolean("Interaction")){
-                lines.add(text("pair."+problem.getString("Rule"),(first==index?second:first)+1).copy().formatted(Formatting.YELLOW));
+                lines.add(text("pair."+problem.getString("Rule"),(first==index?second:first)+1,problem.getInt("Amount")).copy().formatted(Formatting.YELLOW));
             }else{
                 lines.add(SlottedResearchManager.text("rune_"+problem.getString("Rule"),first+1,second+1,problem.getInt("Amount")).copy().formatted(Formatting.RED));
             }

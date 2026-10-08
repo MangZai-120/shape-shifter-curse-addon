@@ -70,6 +70,7 @@ public final class SlottedResearchManager {
         if(RuneLayout.validDraft(level,slots)){var evaluated=RuneBuildEvaluator.evaluate(level,slots,world.language(),SlottedSpellRecipes.all());
             state.putInt("Stability",evaluated.stability());state.putBoolean("RuneValid",evaluated.valid());state.put("Modifiers",evaluated.modifiers().write());
             state.put("RuneTooltipState",RuneSlotTooltips.write(evaluated));
+            state.put("RuneSummary",RuneSummary.preview(evaluated,level,player));
             state.putIntArray("Inactive",evaluated.inactive().stream().toArray());state.putIntArray("Synergy",evaluated.synergy().stream().toArray());state.putIntArray("Suppressed",evaluated.suppressed().stream().toArray());
             state.putIntArray("Problems",evaluated.problems().stream().flatMapToInt(p->java.util.stream.IntStream.of(p.first(),p.second())).filter(v->v>=0).distinct().toArray());}
         state.putIntArray("Meanings",meanings);state.putIntArray("Schools",schools);

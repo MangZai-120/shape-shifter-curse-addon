@@ -84,6 +84,7 @@ public final class RuneEnhancementChecks {
             overloaded[19]=language.glyph(STABLE);overloaded[20]=-1;overloaded[30]=-1;
             check(evaluate(5,overloaded,language).stability()>-80,"stable restores net ten without removing other costs");
             checkWholeRings(language);
+            checkResonances(language);
             for(RuneRole role:RuneRole.values())checkContributions(build(language,"fire_bolt",2,role));
         }
         check(RuneModifiers.rounded(25,2)==13&&RuneModifiers.rounded(-5,2)==-3&&RuneModifiers.rounded(50,8)==6,"signed half up");
@@ -105,8 +106,8 @@ public final class RuneEnhancementChecks {
             for(var stat:RuneModifiers.Stat.values())values[stat.ordinal()]+=contribution.modifiers().get(stat);
             stability+=contribution.stability();
         }
-        long pairs=result.interactions().stream().filter(p->p.rule().equals("gain_merge")).count();
-        values[CD.ordinal()]+=Math.toIntExact(pairs*8);stability-=Math.toIntExact(pairs*6);
+        for(var stat:RuneModifiers.Stat.values())values[stat.ordinal()]+=result.interactionModifiers().get(stat);
+        stability+=result.interactionStability();
         check(Arrays.equals(values,result.modifiers().values())&&stability==result.stability(),
                 "server slot contributions and edge costs exactly reproduce actual formation totals");
     }
@@ -129,22 +130,104 @@ public final class RuneEnhancementChecks {
             check(evaluate(level,slots,language).valid()&&evaluate(level,slots,language).stability()==100,"clearing the whole ring restores neutral validity");
         }
         var burst=build(language,"flame_nova",2,GAIN,MERGE,STABLE,FIRE,STABLE);
-        check(burst.valid()&&burst.stability()==78&&burst.modifiers().get(POWER)==28
+        check(burst.valid()&&burst.stability()==80&&burst.modifiers().get(POWER)==28
                 &&burst.modifiers().get(AREA)==-8&&burst.modifiers().get(BURN)==20
                 &&burst.modifiers().get(MANA)==28&&burst.modifiers().get(FLAT_MANA)==5
                 &&burst.modifiers().get(TIME)==9&&burst.modifiers().get(CD)==8,"wiki full-ring burst example");
         var stored=build(language,"fire_bolt",2,STORE,SOURCE,STABLE,STABLE,SOURCE);
-        check(stored.valid()&&stored.stability()==86&&stored.modifiers().get(DAMAGE)==20
-                &&stored.modifiers().get(SPEED)==30&&stored.modifiers().get(MANA)==28
-                &&stored.modifiers().get(FLAT_MANA)==5&&stored.modifiers().get(TIME)==14,"wiki full-ring stored projectile example");
+        check(stored.valid()&&stored.stability()==80&&stored.modifiers().get(DAMAGE)==26
+                &&stored.modifiers().get(SPEED)==35&&stored.modifiers().get(MANA)==28
+                &&stored.modifiers().get(FLAT_MANA)==5&&stored.modifiers().get(TIME)==14&&stored.modifiers().get(CD)==10,
+                "full-ring heavy projectile grants and charges once across two edges, speed caps at cast time");
         var quick=build(language,"fire_bolt",2,DISABLE,STABLE,DISABLE,STABLE,SOURCE);
         check(quick.valid()&&quick.stability()==104&&quick.modifiers().get(POWER)==-24
                 &&quick.modifiers().get(SPEED)==15&&quick.modifiers().get(MANA)==10
                 &&quick.modifiers().get(FLAT_MANA)==5&&quick.modifiers().get(TIME)==-12,"wiki full-ring quick-cast example");
         check(build(language,"fire_bolt",2,STABLE,STABLE,SOURCE,GAIN,STABLE).valid(),"three stable runes across seam allowed");
         check(!build(language,"fire_bolt",2,STABLE,STABLE,SOURCE,STABLE,STABLE).valid(),"four stable runes across seam rejected even with full ring");
-        var exact=build(language,"fire_bolt",2,STORE,MERGE,GAIN,STORE,BRIDGE);
+        var exact=build(language,"fire_bolt",2,STORE,GAIN,MERGE,FIRE,BRIDGE);
         check(exact.valid()&&exact.stability()==20,"complete ring at exact stability threshold is allowed");
-        check(!build(language,"fire_bolt",2,STORE,MERGE,GAIN,STORE,SPLIT).valid(),"complete ring below stability threshold is blocked");
+        check(!build(language,"fire_bolt",2,STORE,GAIN,MERGE,VOID,BRIDGE).valid(),"complete ring below stability threshold is blocked");
+    }
+    private static void checkResonances(RuneLanguage language){
+        var burst=build(language,"fire_bolt",2,GAIN,STORE);
+        check(rulesValid(burst)&&burst.modifiers().get(POWER)==10&&burst.modifiers().get(DAMAGE)==32
+                &&burst.modifiers().get(TIME)==18&&burst.modifiers().get(CD)==15&&burst.stability()==62,
+                "burst adds twelve damage points, eight preparation ticks, fifteen cooldown percent and eight load");
+        var projectile=build(language,"fire_bolt",2,SOURCE,STORE);
+        check(rulesValid(projectile)&&projectile.modifiers().get(DAMAGE)==26&&projectile.modifiers().get(SPEED)==20
+                &&projectile.modifiers().get(TIME)==10&&projectile.modifiers().get(CD)==10&&projectile.stability()==68,
+                "heavy projectile retains storage preparation while adding damage, speed and cooldown");
+        var pressure=build(language,"frost_nova",2,SPLIT,CONVERT);
+        check(rulesValid(pressure)&&pressure.modifiers().get(AREA)==28&&pressure.modifiers().get(NEGATIVE)==25
+                &&pressure.modifiers().get(MANA)==28&&pressure.modifiers().get(CD)==12&&pressure.stability()==70,
+                "pressure has real area and duration consumers with extra mana and cooldown");
+        var mending=build(language,"lunar_mend",2,RECOVER,MERGE);
+        check(rulesValid(mending)&&mending.modifiers().get(POWER)==12&&mending.modifiers().get(HEAL)==24
+                &&mending.modifiers().get(TIME)==10&&mending.modifiers().get(CD)==10&&mending.stability()==70,
+                "focused mending improves healing once and pays preparation and cooldown");
+        for(var result:List.of(burst,projectile,pressure,mending))checkContributions(result);
+        var repeated=build(language,"fire_bolt",2,GAIN,STORE,GAIN,STABLE,STABLE);
+        check(repeated.valid()&&repeated.modifiers().get(DAMAGE)==32&&repeated.modifiers().get(POWER)==20
+                &&repeated.modifiers().get(TIME)==22&&repeated.modifiers().get(CD)==15&&repeated.stability()==72,
+                "repeated burst edges grant and charge once, protection discounts the package only once");
+        check(repeated.resonances().size()==1&&repeated.resonances().get(0).edges()==2
+                &&repeated.resonances().get(0).protection()==2,"all triggering edges are recorded without duplicate discounts");
+        var repeatedHeal=build(language,"lunar_mend",2,RECOVER,MERGE,RECOVER,STABLE,STABLE);
+        check(repeatedHeal.valid()&&repeatedHeal.modifiers().get(HEAL)==36&&repeatedHeal.modifiers().get(CD)==10
+                &&repeatedHeal.stability()==80,"repeated healing pays one unprotected package");
+        var repeatedPressure=build(language,"frost_nova",2,SPLIT,CONVERT,SPLIT,STABLE,STABLE);
+        check(repeatedPressure.valid()&&repeatedPressure.modifiers().get(AREA)==48&&repeatedPressure.modifiers().get(NEGATIVE)==25
+                &&repeatedPressure.modifiers().get(MANA)==42&&repeatedPressure.modifiers().get(CD)==12&&repeatedPressure.stability()==76,
+                "repeated pressure edges do not duplicate mana, load or effects");
+        var protectedBurst=build(language,"fire_bolt",2,STABLE,GAIN,STORE,INSIGHT,SOURCE);
+        var distantStable=build(language,"fire_bolt",2,GAIN,STORE,INSIGHT,STABLE,SOURCE);
+        check(protectedBurst.valid()&&distantStable.valid()&&protectedBurst.stability()==distantStable.stability()+2
+                &&Arrays.equals(protectedBurst.modifiers().values(),distantStable.modifiers().values()),
+                "stable placement only discounts local load and cannot remove any casting costs");
+        var protectedHeal=build(language,"lunar_mend",2,RECOVER,MERGE,STABLE,LUNAR,STABLE);
+        check(protectedHeal.valid()&&protectedHeal.resonances().get(0).protection()==2,"stable next to merge protects healing load");
+        var unsupported=build(language,"frost_armor",2,GAIN,STORE);
+        check(unsupported.resonances().size()==1&&!unsupported.resonances().get(0).active()
+                &&unsupported.modifiers().get(DAMAGE)==0&&unsupported.modifiers().get(CD)==0
+                &&unsupported.modifiers().get(TIME)==10&&unsupported.stability()==70,
+                "unsupported burst retains rune costs but never charges extra resonance costs");
+        check(build(language,"flame_nova",2,SOURCE,STORE).modifiers().get(CD)==0,
+                "projectile resonance requires a real speed consumer");
+        check(build(language,"fire_bolt",2,SPLIT,CONVERT).modifiers().get(MANA)==18
+                &&build(language,"fire_bolt",2,SPLIT,CONVERT).modifiers().get(CD)==0,"unsupported pressure has no extra mana or cooldown");
+        check(build(language,"fire_bolt",2,RECOVER,MERGE).modifiers().get(HEAL)==0
+                &&build(language,"fire_bolt",2,RECOVER,MERGE).modifiers().get(CD)==0,"healing synergy cannot increase damage");
+        for(var result:List.of(repeated,repeatedHeal,repeatedPressure,protectedBurst,protectedHeal,unsupported))checkContributions(result);
+        checkRingSymmetry(language,"fire_bolt",new RuneRole[]{STABLE,GAIN,STORE,INSIGHT,SOURCE});
+        checkRingSymmetry(language,"lunar_mend",new RuneRole[]{RECOVER,MERGE,STABLE,LUNAR,STABLE});
+        checkRingSymmetry(language,"frost_nova",new RuneRole[]{SPLIT,CONVERT,STABLE,ICE,STABLE});
+        var capped=build(language,"fire_bolt",4,GAIN,MERGE,STABLE,GAIN,STORE,SOURCE,STABLE,STABLE);
+        check(capped.valid()&&capped.modifiers().rawPower(true,false)==76&&capped.modifiers().effectivePower(true,false)==60
+                &&capped.modifiers().power(100,true,false)==160&&capped.modifiers().get(CD)==33&&capped.stability()==50,
+                "different resonances combine through existing consumers, caps never erase casting costs");
+        checkContributions(capped);
+        for(var recipe:SlottedSpellRecipes.all()){
+            var caps=RuneCapabilities.of(recipe.spell());
+            for(var roles:new RuneRole[][]{{GAIN,STORE},{SOURCE,STORE},{SPLIT,CONVERT},{RECOVER,MERGE}}){
+                var result=build(language,recipe.spell(),2,roles);
+                var entry=result.resonances().get(0);
+                check(entry.active()==entry.rule().supports(caps),"only registered capability consumers activate a package");
+                checkContributions(result);
+            }
+        }
+    }
+    private static void checkRingSymmetry(RuneLanguage language,String spell,RuneRole[] roles){
+        var reference=build(language,spell,2,roles);
+        for(int rotation=0;rotation<roles.length;rotation++)for(int direction:new int[]{1,-1}){
+            RuneRole[] shifted=new RuneRole[roles.length];
+            for(int i=0;i<roles.length;i++)shifted[i]=roles[Math.floorMod(rotation+direction*i,roles.length)];
+            var result=build(language,spell,2,shifted);
+            check(result.valid()==reference.valid()&&result.stability()==reference.stability()
+                    &&Arrays.equals(result.modifiers().values(),reference.modifiers().values())
+                    &&Arrays.equals(result.baseModifiers().values(),reference.baseModifiers().values()),
+                    "rotating or reversing the ring including its seam cannot change resonance benefits, costs or protection");
+            checkContributions(result);
+        }
     }
 }

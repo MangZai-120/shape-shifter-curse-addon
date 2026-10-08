@@ -18,6 +18,7 @@ public final class RuneScheme {
         n.putInt("Rules", RuneBuildEvaluator.RULE_VERSION); n.putString("Spell", result.recipe().spell());
         n.putInt("Level", level); n.putIntArray("Slots", slots); n.putInt("Stability", result.stability());
         n.put("Modifiers", result.modifiers().write());
+        n.put("Summary", RuneSummary.write(result));
         n.putUuid("Id", world.registerScheme(n)); return n;
     }
     public static NbtCompound authoritative(WorldRuneState world, NbtCompound mirror) {
