@@ -62,12 +62,27 @@ public final class FormCastingStyle {
 	public static void markManaSpend(ServerPlayerEntity player) {
 		if (player != null) {
 			LAST_SPEND_TICK.put(player.getUuid(), player.getWorld().getTime());
+			net.jackcooper.shapeShifterCurseAddon.network.SpellbookStatusSync.sync(player);
 		}
+	}
+
+	public static int naturalRegenDelayTicks() { return BAL.i("regen_delay_ticks", REGEN_DELAY_TICKS); }
+
+	/** Exact per-second settlement, including level, recovery formations and integer rounding. */
+	public static int naturalRegenPerSecond(ItemStack book) {
+		float base = (float) BAL.d("base_book_regen_per_sec", BASE_BOOK_REGEN_PER_SEC)
+				+ (SpellbookData.getLevel(book) - 1);
+		return Math.round(base * FormationData.universalRecoveryMultiplier(book));
+	}
+
+	public static long getNaturalRegenAt(ServerPlayerEntity player) {
+		Long last = LAST_SPEND_TICK.get(player.getUuid());
+		return last == null ? 0 : last + naturalRegenDelayTicks();
 	}
 
 	/** 无活动施法且距上次耗蓝已过延迟时，允许基础自然回复。 */
 	private static boolean canRegenerate(ServerPlayerEntity player) {
-		int delay = BAL.i("regen_delay_ticks", REGEN_DELAY_TICKS);
+		int delay = naturalRegenDelayTicks();
 		Long last = LAST_SPEND_TICK.get(player.getUuid());
 		return SpellCastingRules.naturalRegenAllowed(SpellChannelManager.isCasting(player),
 				last == null ? delay : player.getWorld().getTime() - last, delay);
@@ -323,8 +338,11 @@ public final class FormCastingStyle {
 
 	/** 是否处于换书稳定期（施法入口调用；true = 拒绝施法）。 */
 	public static boolean isSwapStabilizing(ServerPlayerEntity player) {
-		Long ban = CAST_BAN_UNTIL.get(player.getUuid());
-		return ban != null && player.getWorld().getTime() < ban;
+		return player.getWorld().getTime() < getSwapReadyAt(player);
+	}
+
+	public static long getSwapReadyAt(ServerPlayerEntity player) {
+		return CAST_BAN_UNTIL.getOrDefault(player.getUuid(), 0L);
 	}
 
 	// ==================== 持续回复型（每秒 tick） ====================
@@ -372,9 +390,7 @@ public final class FormCastingStyle {
 		// 全书通用自然回复：基础 3/秒 + 每书等级 +1（Lv1=3/Lv2=4/Lv3=5）× 回息法阵倍率（每级 +20% 可叠加）；
 		// 活动施法及耗蓝后 7 秒内不回复；月相、共生等流派回复不受此限。
 		if (canRegenerate(player)) {
-			float regenPerSec = (float) BAL.d("base_book_regen_per_sec", BASE_BOOK_REGEN_PER_SEC) + (SpellbookData.getLevel(book) - 1);
-			SpellbookData.addMana(book, Math.round(regenPerSec
-					* FormationData.universalRecoveryMultiplier(book)));
+			SpellbookData.addMana(book, naturalRegenPerSecond(book));
 		}
 		// 施法期间书能量不回复（2026-09-23 用户定稿，同回能法阵）：保证整次施法净消耗与报价一致
 		boolean casting = SpellChannelManager.isCasting(player);

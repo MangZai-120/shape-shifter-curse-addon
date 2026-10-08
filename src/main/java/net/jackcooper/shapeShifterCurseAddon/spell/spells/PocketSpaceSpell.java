@@ -19,6 +19,11 @@ public final class PocketSpaceSpell extends Spell {
 	}
 
 	@Override
+	public net.minecraft.text.Text getCastFailureMessage(ServerPlayerEntity caster) {
+		return net.minecraft.text.Text.translatable("message.ssc_addon.pocket_space.unavailable");
+	}
+
+	@Override
 	public boolean prepareScroll(ServerPlayerEntity caster, ItemStack scroll) {
 		if (!canCast(caster) || PocketSpaceStorage.bind(caster.getServer(), scroll) == null) {
 			PocketSpaceManager.message(caster, "unavailable");

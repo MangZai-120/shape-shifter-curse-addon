@@ -186,6 +186,13 @@ tasks.register('spellManaPaymentTest', JavaExec) {
 
 check.dependsOn spellManaPaymentTest
 
+tasks.register('spellbookStatusTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.SpellbookStatusTest'
+}
+check.dependsOn spellbookStatusTest
+
 tasks.register('formationResearchTest') {
     dependsOn 'slottedFormationChecks'
 }

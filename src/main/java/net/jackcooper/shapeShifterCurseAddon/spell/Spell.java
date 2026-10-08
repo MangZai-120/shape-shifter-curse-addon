@@ -247,6 +247,11 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 		return true;
 	}
 
+	/** Explains the same condition checked by canCast/captureCastTarget without changing casting rules. */
+	public net.minecraft.text.Text getCastFailureMessage(ServerPlayerEntity caster) {
+		return net.minecraft.text.Text.translatable("message.ssc_addon.spellbook.no_target");
+	}
+
 	public boolean prepareScroll(ServerPlayerEntity caster, net.minecraft.item.ItemStack scroll) {
 		return true;
 	}

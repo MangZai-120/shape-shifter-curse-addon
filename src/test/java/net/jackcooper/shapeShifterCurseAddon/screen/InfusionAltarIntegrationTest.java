@@ -5,6 +5,8 @@ import net.jackcooper.shapeShifterCurseAddon.item.MoonDustSpellbookItem;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationData;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationElement;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
+import net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.SimpleInventory;
@@ -35,6 +37,7 @@ public final class InfusionAltarIntegrationTest {
 			Item bookItem = Registry.register(Registries.ITEM, new Identifier("altar_test", "book"),
 					new MoonDustSpellbookItem(new Item.Settings().maxCount(1)));
 			ItemStack book = new ItemStack(bookItem);
+			checkPreviews(bookItem);
 			for (int level = 1; level <= 3; level++) {
 				SpellbookData.setLevel(book, level);
 				int expected = new int[]{1, 3, 6}[level - 1];
@@ -97,6 +100,56 @@ public final class InfusionAltarIntegrationTest {
 			reloaded.readNbt(oldSave);
 			check(reloaded.getStack(8).isEmpty() && !reloaded.getStack(7).isEmpty(), "old save retains original five formations");
 			System.out.println("Infusion altar: 1/3/6 unlocks, legacy and six-slot NBT, sixth-slot modifiers, both shift-click directions, 45 slot bounds and separation passed.");
+		}
+
+		private static void checkPreviews(Item bookItem) {
+			ItemStack book = new ItemStack(bookItem);
+			SpellbookData.setLevel(book, 3);
+			SpellbookData.setMana(book, 120);
+			book.getOrCreateNbt().putUuid("ID", java.util.UUID.randomUUID());
+			ItemStack scroll = new ItemStack(Items.PAPER);
+			scroll.getOrCreateNbt().putString("Spell", "domain");
+			scroll.getOrCreateNbt().putString("CustomData", "keep");
+			SpellbookData.setScroll(book, 0, scroll);
+			ItemStack held = formation(5);
+			held.setCount(3);
+			NbtCompound bookBefore = book.writeNbt(new NbtCompound());
+			NbtCompound heldBefore = held.writeNbt(new NbtCompound());
+			ItemStack preview = SpellbookData.previewFormation(book, 0, held);
+			check(bookBefore.equals(book.writeNbt(new NbtCompound())), "hover preview cannot mutate the real book");
+			check(heldBefore.equals(held.writeNbt(new NbtCompound())), "hover preview cannot consume the cursor stack");
+			check(SpellbookData.getFormation(preview, 0).getCount() == 1, "preview inserts exactly one formation");
+			check(ItemStack.areEqual(SpellbookData.getScroll(preview, 0), scroll), "preview preserves scroll custom data");
+			check(preview.getNbt().getUuid("ID").equals(book.getNbt().getUuid("ID")), "preview retains book identity");
+			check(SpellbookData.getMana(preview) == 120 && SpellbookData.getMaxMana(preview) == 300, "preview preserves available mana and capacity");
+			var config = net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig.fromJson(
+					com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(
+							InfusionAltarIntegrationTest.class.getResourceAsStream("/data/ssc_addon/spells/explosion.json"),
+							java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject());
+			check(SpellNumbers.manaCost(config, 1, FormationData.sumManaCostMultiplier(book,
+					FormationElement.FIRE), 1) == 300, "actual book quote before insertion");
+			check(SpellNumbers.manaCost(config, 1, FormationData.sumManaCostMultiplier(preview,
+					FormationElement.FIRE), 1) == 450, "actual book quote previews 300 to 450");
+			ItemStack removed = SpellbookData.previewFormation(preview, 0, ItemStack.EMPTY);
+			check(SpellbookData.getFormation(removed, 0).isEmpty() && !SpellbookData.getFormation(preview, 0).isEmpty(),
+					"removal preview is detached from its source");
+			check(FormCastingStyle.naturalRegenPerSecond(book) == 5, "base level-three recovery");
+			ItemStack recovery = new ItemStack(Items.PAPER);
+			recovery.getOrCreateNbt().putString(FormationData.NBT_ELEMENT, FormationElement.UNIVERSAL.id);
+			recovery.getOrCreateNbt().putInt(FormationData.NBT_LEVEL, 5);
+			recovery.getOrCreateNbt().putString(FormationData.NBT_VARIANT, FormationData.VARIANT_RECOVERY);
+			check(FormCastingStyle.naturalRegenPerSecond(SpellbookData.previewFormation(book, 0, recovery)) == 10,
+					"recovery preview uses the actual rounded settlement");
+			recovery.getOrCreateNbt().putString(FormationData.NBT_VARIANT, FormationData.VARIANT_MANA);
+			ItemStack capacityPreview = SpellbookData.previewFormation(book, 0, recovery);
+			check(SpellbookData.getMaxMana(capacityPreview) == 480 && SpellbookData.getMana(capacityPreview) == 120,
+					"serialized mana formation previews +180 capacity without granting mana");
+			check(SpellbookData.getMaxMana(book) == 300, "capacity preview leaves the real book unchanged");
+			SpellbookData.setLevel(book, 1);
+			try {
+				SpellbookData.previewFormation(book, 1, held);
+				throw new AssertionError("locked slot cannot accept a preview insertion");
+			} catch (IllegalArgumentException expected) { }
 		}
 
 		private static ItemStack formation(int level) {

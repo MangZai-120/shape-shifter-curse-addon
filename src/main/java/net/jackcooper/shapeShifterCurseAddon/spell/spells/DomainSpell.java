@@ -18,6 +18,10 @@ public final class DomainSpell extends Spell {
 	@Override
 	public boolean canCast(ServerPlayerEntity caster) { return DomainManager.canStart(caster); }
 	@Override
+	public net.minecraft.text.Text getCastFailureMessage(ServerPlayerEntity caster) {
+		return net.minecraft.text.Text.translatable("message.ssc_addon.spellbook.domain_conflict");
+	}
+	@Override
 	public void onChannelStarted(ServerPlayerEntity caster) { DomainManager.begin(caster); }
 	@Override
 	public boolean canContinueCasting(ServerPlayerEntity caster, ItemStack scroll) { return DomainManager.canContinue(caster); }

@@ -33,6 +33,11 @@ public class SpaceRecallSpell extends Spell {
 	}
 
 	@Override
+	public net.minecraft.text.Text getCastFailureMessage(ServerPlayerEntity caster) {
+		return net.minecraft.text.Text.translatable("message.ssc_addon.spellbook.no_spawn");
+	}
+
+	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo) {
 		cast(caster, power, solo, 1);
 	}

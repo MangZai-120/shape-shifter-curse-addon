@@ -25,6 +25,7 @@ public final class SpellManaPaymentTest {
 		}
 		checkInterruptedPayment();
 		checkDowngrade();
+		checkFormationNbtFormats();
 		System.out.println("Book mana payment passed: full-cost gate at start; red costs 300/255 and 450/383; "
 				+ "insufficient mana rejected without charge; downgrade picks only payable levels; "
 				+ "red single-level spells never downgrade.");
@@ -107,6 +108,39 @@ public final class SpellManaPaymentTest {
 	}
 
 	// ---- 测试夹具 ----
+
+	private static void checkFormationNbtFormats() {
+		NbtCompound legacy = book();
+		attachFormation(legacy, FormationElement.FIRE.id, 5);
+		NbtCompound actual = book();
+		NbtList serialized = new NbtList();
+		NbtCompound wrapper = new NbtCompound();
+		wrapper.putString("id", "ssc_addon:spell_formation");
+		wrapper.putByte("Count", (byte) 1);
+		wrapper.putByte("Slot", (byte) 0);
+		wrapper.put("tag", legacy.getList(SpellbookData.NBT_FORMATIONS, 10).getCompound(0).copy());
+		serialized.add(wrapper);
+		actual.put(SpellbookData.NBT_FORMATIONS, serialized);
+		for (NbtCompound value : new NbtCompound[]{legacy, actual}) {
+			NbtCompound before = value.copy();
+			require(Math.abs(FormationData.sumManaCostMultiplierNbt(value, FormationElement.FIRE) - 1.5f) < 1.0e-6,
+					"actual ItemStack tag and legacy flat properties must apply the same mana cost");
+			require(value.equals(before), "normalizing formation properties must not rewrite the save");
+		}
+		NbtCompound manaProperties = new NbtCompound();
+		manaProperties.putString(FormationData.NBT_ELEMENT, FormationElement.UNIVERSAL.id);
+		manaProperties.putInt(FormationData.NBT_LEVEL, 5);
+		manaProperties.putString(FormationData.NBT_VARIANT, FormationData.VARIANT_MANA);
+		NbtCompound manaWrapper = new NbtCompound();
+		manaWrapper.putString("id", "ssc_addon:spell_formation");
+		manaWrapper.putByte("Count", (byte) 1);
+		manaWrapper.putByte("Slot", (byte) 1);
+		manaWrapper.put("tag", manaProperties);
+		serialized.add(manaWrapper);
+		require(SpellbookData.getMaxManaNbt(actual) == 1080, "serialized mana formation must add 180 to the mastered book");
+		serialized.add(manaProperties.copy());
+		require(SpellbookData.getMaxManaNbt(actual) == 1080, "mixed legacy and serialized mana formations use the highest level without stacking");
+	}
 
 	private static NbtCompound book() {
 		NbtCompound book = new NbtCompound();

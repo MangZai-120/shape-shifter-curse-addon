@@ -116,9 +116,14 @@ public final class SpellChannelManager {
 		return ACTIVE.containsKey(player.getUuid());
 	}
 
+	public static long getNextCastAt(ServerPlayerEntity player) {
+		return NEXT_CAST_OK.getOrDefault(player.getUuid(), 0L);
+	}
+
 	/** 清掉玩家的施法 GCD 门（/ssc_addon reset_spell_cd 用；不影响正在进行的读条）。 */
 	public static void clearCastGate(ServerPlayerEntity player) {
 		NEXT_CAST_OK.remove(player.getUuid());
+		net.jackcooper.shapeShifterCurseAddon.network.SpellbookStatusSync.sync(player);
 	}
 
 	public static void setClientImmobile(UUID player) {
@@ -152,20 +157,29 @@ public final class SpellChannelManager {
 			player.sendMessage(Text.translatable("message.ssc_addon.analysis.required"), true);
 			return false;
 		}
-        if (!net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(player)) return false;
+		if (!net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(player)) {
+			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.data_syncing"), true);
+			return false;
+		}
 		if (isCasting(player) || !player.isAlive() || player.isSpectator()) return false;
 		// 所有法术在捕获目标、创建演出、禁动或渐进扣费之前重验整次消耗。
 		// solo 卷轴按次数结算；书内施法必须有有效 JSON 消耗与足够的实际能量。
-		if (!spell.getConfig().manaCostConfigured || !solo && !SpellbookData.canPayMana(
+		if (!spell.getConfig().manaCostConfigured) {
+			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.cost_unavailable"), true);
+			return false;
+		}
+		if (!solo && !SpellbookData.canPayMana(
 				SpellCastManager.getEquippedBook(player), mana)) {
 			playNoManaSound(player);
-			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_mana"), true);
+			player.sendMessage(SpellCastFeedback.noMana(SpellCastManager.getEquippedBook(player), mana), true);
 			return false;
 		}
 		// GCD：释放生效后 0.8s 内不能开始下一次施法（被打断的可立刻重试）
 		long gate = NEXT_CAST_OK.getOrDefault(player.getUuid(), 0L);
 		if (player.getWorld().getTime() < gate) {
 			playNoManaSound(player); // GCD 间隔内（释放后 0.8s）：火焰熄灭音（与 CD 拒绝同语义）
+			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.cast_interval",
+					SpellCastFeedback.seconds(gate - player.getWorld().getTime())), true);
 			return false;
 		}
 		Channel channel = new Channel(player, spell, scroll, level, solo, token, cooldown,
@@ -173,7 +187,7 @@ public final class SpellChannelManager {
 		if (spell.requiresTargetBeforeChannel()) {
 			Vec3d target = RuneCastContext.with(channel.modifiers,()->spell.captureCastTarget(player, level));
 			if (target == null || !channel.progress.release(token, target)) {
-				player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_target"), true);
+				player.sendMessage(spell.getCastFailureMessage(player), true);
 				return false;
 			}
 		}
@@ -189,6 +203,7 @@ public final class SpellChannelManager {
 		broadcastVisual(channel, true);
 		playChargeSound(channel);
 		if (channel.profile.ticks() == 0) advance(channel);
+		if (solo) net.jackcooper.shapeShifterCurseAddon.network.SpellbookStatusSync.sync(player);
 		return true;
 	}
 
@@ -203,8 +218,7 @@ public final class SpellChannelManager {
 		}
 		Vec3d target = RuneCastContext.with(channel.modifiers,()->channel.spell.captureCastTarget(player, channel.level));
 		if (channel.spell.getAimMaxRange() > 0 && target == null) {
-			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_target"), true);
-			stop(player, true);
+			stop(player, true, channel.spell.getCastFailureMessage(player));
 			return;
 		}
 		if (channel.progress.release(token, target)) advance(channel);
@@ -213,13 +227,13 @@ public final class SpellChannelManager {
 	public static void cancelSelf(ServerPlayerEntity player) {
 		Channel channel = ACTIVE.get(player.getUuid());
 		if (channel != null && !channel.spell.isLockedIn(player)
-				&& SpellCastingRules.allowsSelf(channel.interruptMode)) stop(player, true);
+				&& SpellCastingRules.allowsSelf(channel.interruptMode)) stop(player, true, "message.ssc_addon.spell.cast_interrupted_action");
 	}
 
 	public static void onDamaged(ServerPlayerEntity player) {
 		Channel channel = ACTIVE.get(player.getUuid());
 		if (channel != null && (!player.isAlive()
-				|| !channel.spell.isLockedIn(player) && SpellCastingRules.allowsExternal(channel.interruptMode))) stop(player, true);
+				|| !channel.spell.isLockedIn(player) && SpellCastingRules.allowsExternal(channel.interruptMode))) stop(player, true, "message.ssc_addon.spell.cast_interrupted_damage");
 	}
 
 	private static boolean valid(Channel channel) {
@@ -240,7 +254,7 @@ public final class SpellChannelManager {
 		if (channel.cancelHeld && ++channel.cancelTicks >= BAL.i("cancel_hold_ticks", 20)
 				&& !channel.spell.isLockedIn(player)
 				&& SpellCastingRules.allowsSelf(channel.interruptMode)) {
-			stop(player, true);
+			stop(player, true, "message.ssc_addon.spell.cast_cancelled");
 			return;
 		}
 		if (channel.progress.started()) {
@@ -293,6 +307,14 @@ public final class SpellChannelManager {
 	}
 
 	private static void stop(ServerPlayerEntity player, boolean interrupted) {
+		stop(player, interrupted, "message.ssc_addon.spell.cast_interrupted");
+	}
+
+	private static void stop(ServerPlayerEntity player, boolean interrupted, String reason) {
+		stop(player, interrupted, Text.translatable(reason));
+	}
+
+	private static void stop(ServerPlayerEntity player, boolean interrupted, Text reason) {
 		Channel channel = ACTIVE.remove(player.getUuid());
 		if (channel == null) return;
 		clearSlow(player);
@@ -311,7 +333,12 @@ public final class SpellChannelManager {
 		}
 		if (interrupted) {
 			playFailureSound(player);
-			player.sendMessage(Text.translatable("message.ssc_addon.spell.cast_interrupted"), true);
+			var message = reason.copy();
+			if (!channel.solo) message.append(Text.translatable("message.ssc_addon.spell.interrupted_mana"));
+			player.sendMessage(message, true);
+		}
+		if (interrupted || channel.solo || channel.mode == SpellCastingRules.Mode.CONTINUOUS) {
+			net.jackcooper.shapeShifterCurseAddon.network.SpellbookStatusSync.sync(player);
 		}
 	}
 

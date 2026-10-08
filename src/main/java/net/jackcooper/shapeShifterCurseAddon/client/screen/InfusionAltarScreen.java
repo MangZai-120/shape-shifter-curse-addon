@@ -8,6 +8,11 @@ import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.screen.InfusionAltarScreenHandler;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationData;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationElement;
+import net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle;
+import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
+import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellCastFeedback;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
@@ -265,6 +270,60 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 		return lines;
 	}
 
+	/** Before/after quotes come from the same formula as the HUD and server payment gate. */
+	private boolean drawFormationPreview(DrawContext ctx, int mouseX, int mouseY) {
+		if (!hasBook() || this.focusedSlot == null || this.focusedSlot.id < 3
+				|| this.focusedSlot.id >= InfusionAltarScreenHandler.ALTAR_SLOT_COUNT) return false;
+		ItemStack cursor = this.handler.getCursorStack();
+		boolean removal = cursor.isEmpty();
+		if (removal && !this.focusedSlot.hasStack()
+				|| !removal && !this.focusedSlot.canInsert(cursor)) return false;
+		ItemStack before = book();
+		ItemStack after = SpellbookData.previewFormation(before, this.focusedSlot.id - 3, cursor);
+		List<Text> lines = new ArrayList<>();
+		lines.add((removal ? this.focusedSlot.getStack() : cursor).getName());
+		lines.add(label(removal ? "preview_remove" : "preview_insert").copy().formatted(Formatting.LIGHT_PURPLE));
+		lines.add(label("preview_mana", SpellbookData.getMaxMana(before), SpellbookData.getMaxMana(after)));
+		lines.add(label("preview_recovery", FormCastingStyle.naturalRegenPerSecond(before),
+				FormCastingStyle.naturalRegenPerSecond(after)));
+		lines.add(label("preview_delay", SpellCastFeedback.seconds(FormCastingStyle.naturalRegenDelayTicks())));
+		boolean hasSpell = false;
+		for (int slot = 0; slot < SpellbookData.getSlotCount(before); slot++) {
+			ItemStack scroll = SpellbookData.getScroll(before, slot);
+			Spell spell = ScrollData.getSpell(scroll);
+			if (spell == null) continue;
+			hasSpell = true;
+			int level = ScrollData.getCastLevel(scroll);
+			int oldCost = SpellNumbers.finalManaCost(spell, before, this.client.player, level, scroll);
+			int cost = SpellNumbers.finalManaCost(spell, after, this.client.player, level, scroll);
+			Text name = SpellCastFeedback.spellName(spell, scroll);
+			if (oldCost < 0 || cost < 0) {
+				lines.add(label("preview_cost_unavailable", name).copy().formatted(Formatting.GRAY));
+				continue;
+			}
+			var line = label("preview_spell", name, level, oldCost, cost).copy();
+			if (cost > SpellbookData.getMaxMana(after)) {
+				line.append(label("preview_capacity", cost - SpellbookData.getMaxMana(after)));
+				line.formatted(Formatting.RED);
+			} else if (cost > SpellbookData.getMana(after)) {
+				line.append(label("preview_missing", cost - SpellbookData.getMana(after)));
+				line.formatted(Formatting.GOLD);
+			}
+			lines.add(line);
+		}
+		if (!hasSpell) lines.add(label("preview_no_spells"));
+		lines.add(label("preview_current_form").copy().formatted(Formatting.GRAY));
+		drawWrappedTooltip(ctx, lines, mouseX, mouseY);
+		return true;
+	}
+
+	private void drawWrappedTooltip(DrawContext ctx, List<Text> lines, int mouseX, int mouseY) {
+		List<net.minecraft.text.OrderedText> wrapped = new ArrayList<>();
+		int maxWidth = Math.min(270, this.width - 24);
+		for (Text line : lines) wrapped.addAll(this.textRenderer.wrapLines(line, maxWidth));
+		ctx.drawOrderedTooltip(this.textRenderer, wrapped, mouseX, mouseY);
+	}
+
 	private List<Text> upgradeTooltip() {
 		List<Text> lines = new ArrayList<>();
 		if (!hasBook()) {
@@ -321,10 +380,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 			}
 		}
 		if (lines != null && this.handler.getCursorStack().isEmpty()) {
-			List<net.minecraft.text.OrderedText> wrapped = new ArrayList<>();
-			int maxWidth = Math.min(270, this.width - 24);
-			for (Text line : lines) wrapped.addAll(this.textRenderer.wrapLines(line, maxWidth));
-			ctx.drawOrderedTooltip(this.textRenderer, wrapped, mouseX, mouseY);
+			drawWrappedTooltip(ctx, lines, mouseX, mouseY);
 		}
 	}
 
@@ -333,7 +389,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 		this.renderBackground(ctx);
 		refreshControls();
 		super.render(ctx, mouseX, mouseY, delta);
-		this.drawMouseoverTooltip(ctx, mouseX, mouseY);
+		if (!drawFormationPreview(ctx, mouseX, mouseY)) this.drawMouseoverTooltip(ctx, mouseX, mouseY);
 		drawHelp(ctx, mouseX, mouseY);
 	}
 }

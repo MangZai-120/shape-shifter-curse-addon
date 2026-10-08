@@ -57,3 +57,7 @@ replay_pid*.log
 *.bbmodel
 # 设计图过程素材（贴图副本/预览图，不入版本库；README.txt 与技能树 json 仍保留跟踪）
 /设计图/pocket_portal/
+# 已停用的旧教程与本地归档备份（文件保留在磁盘，不入版本库）
+/TUTORIAL.disable
+# 美术模型本地工具链（生成脚本/预览图/过程素材，不入版本库；游戏用 JSON 与贴图在 src 内另行跟踪）
+/art/

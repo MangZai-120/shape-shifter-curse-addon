@@ -77,7 +77,7 @@ public class MagicScrollItem extends Item {
             RuneModifiers runeModifiers=RuneScheme.modifiers(sp,stack,level);
 			if (spell.getCastingMode() == SpellCastingRules.Mode.AUTOMATIC && !RuneCastContext.with(runeModifiers,()->spell.canCast(sp))) {
 				SpellChannelManager.playFailureSound(sp);
-				sp.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_target"), true);
+				sp.sendMessage(spell.getCastFailureMessage(sp), true);
 				return TypedActionResult.fail(stack);
 			}
 			if (!spell.prepareScroll(sp, stack)) {

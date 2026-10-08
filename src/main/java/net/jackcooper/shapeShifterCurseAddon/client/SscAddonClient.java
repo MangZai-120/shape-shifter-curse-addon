@@ -669,6 +669,7 @@ public class SscAddonClient implements ClientModInitializer {
 		// SSCA 月尘魔法书 - 键位注册 + 施法检测器（切换/施法/7直达键）
 		net.jackcooper.shapeShifterCurseAddon.client.SpellcastKeybindings.register();
 		net.jackcooper.shapeShifterCurseAddon.client.SpellcastClient.register();
+		SpellbookStatusClient.init();
 		net.jackcooper.shapeShifterCurseAddon.client.ClientTickCache.register(); // HUD 重查询每 tick 缓存（取书/饰品/寒棘狐扫描）
 		// SSCA 施法视觉状态接收器（人形态举手 + 特殊档身体朝向跟随，S2C 广播驱动）
 		net.jackcooper.shapeShifterCurseAddon.client.CastingVisualState.register();

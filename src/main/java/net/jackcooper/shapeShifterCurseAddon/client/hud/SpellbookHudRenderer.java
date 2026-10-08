@@ -12,11 +12,15 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.jackcooper.shapeShifterCurseAddon.client.SpellcastClient;
+import net.jackcooper.shapeShifterCurseAddon.client.SpellbookStatusClient;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
 import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellCastFeedback;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers;
+import net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme;
 import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
 
@@ -76,16 +80,20 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 	private static final class TickSnapshot {
 		final int mana;
 		final int maxMana;
+		final int manaCost;
+		final int regenPerSecond;
 		final int prev;
 		final int next;
 		final ItemStack selScroll;
 		final ItemStack prevScroll;
 		final ItemStack nextScroll;
 
-		TickSnapshot(int mana, int maxMana, int prev, int next,
+		TickSnapshot(int mana, int maxMana, int manaCost, int regenPerSecond, int prev, int next,
 				ItemStack selScroll, ItemStack prevScroll, ItemStack nextScroll) {
 			this.mana = mana;
 			this.maxMana = maxMana;
+			this.manaCost = manaCost;
+			this.regenPerSecond = regenPerSecond;
 			this.prev = prev;
 			this.next = next;
 			this.selScroll = selScroll;
@@ -97,10 +105,12 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 	private static Object snapWorld;
 	private static ItemStack snapBook;
 	private static long snapTick = Long.MIN_VALUE;
+	private static int snapSlot = -1;
 	private static TickSnapshot snapshot;
 
 	private static TickSnapshot snapshotOf(MinecraftClient mc, ItemStack book, int sel) {
-		if (snapWorld == mc.world && snapBook == book && snapTick == mc.world.getTime() && snapshot != null) {
+		if (snapWorld == mc.world && snapBook == book && snapSlot == sel
+				&& snapTick == mc.world.getTime() && snapshot != null) {
 			return snapshot;
 		}
 		int prev = SpellbookData.nextFilledSlot(book, sel, -1);
@@ -110,12 +120,18 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 			prev = sel;
 			next = sel;
 		}
+		ItemStack selected = SpellbookData.getScroll(book, sel);
+		Spell spell = ScrollData.getSpell(selected);
+		int cost = spell == null ? -1 : SpellNumbers.finalManaCost(spell, book, mc.player,
+				ScrollData.getCastLevel(selected), selected);
 		TickSnapshot fresh = new TickSnapshot(
-				SpellbookData.getMana(book), SpellbookData.getMaxMana(book), prev, next,
-				SpellbookData.getScroll(book, sel), SpellbookData.getScroll(book, prev), SpellbookData.getScroll(book, next));
+				SpellbookData.getMana(book), SpellbookData.getMaxMana(book), cost,
+				FormCastingStyle.naturalRegenPerSecond(book), prev, next,
+				selected, SpellbookData.getScroll(book, prev), SpellbookData.getScroll(book, next));
 		snapWorld = mc.world;
 		snapBook = book;
 		snapTick = mc.world.getTime();
+		snapSlot = sel;
 		snapshot = fresh;
 		return fresh;
 	}
@@ -154,7 +170,7 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 		net.minecraft.util.Pair<Integer, Integer> sbAnchor = UIPositionUtils.getCorrectPosition(
 				cfg.spellbookHudPosType, cfg.spellbookHudPosOffsetX, cfg.spellbookHudPosOffsetY);
 		int baseX = sbAnchor.getLeft();
-		int baseY = sbAnchor.getRight();
+		int baseY = Math.max(26, Math.min(sbAnchor.getRight(), mc.getWindow().getScaledHeight() - 48));
 
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
@@ -170,6 +186,7 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 			ctx.drawTexture(TEX_BAR_FULL, barX, barY, 0, 0, fillW, barH, barW, barH);
 		}
 		ctx.drawText(mc.textRenderer, Text.literal(mana + "/" + maxMana), barX + barW + 4, barY + 1, 0xC8B0FF, true);
+		drawRecovery(ctx, mc, barX, barY - 11, mana < maxMana, snap.regenPerSecond);
 
 		// 三槽：中槽(22)居中，左右小槽(16)相对中槽对称分布，间隙均为 4px（卷轴读快照，帧间零 NBT）
 		drawSlot(ctx, mc, book, prev, baseX, baseY + 3, 16, false, snap.prevScroll);
@@ -184,12 +201,9 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 		if (spell != null) {
 			int centerX = baseX + 31; // 选择器中心（= 中槽中心）
 			int nameY = baseY + 26;
-			var name = Text.translatable(spell.getNameKey());
-			if (scroll.getNbt() != null && scroll.getNbt().contains(RuneScheme.KEY, NbtElement.COMPOUND_TYPE)) {
-				name.append(Text.translatable("research.ssc_addon.runes.modified_suffix"));
-			}
+			Text name = SpellCastFeedback.spellName(spell, scroll);
 			int nameW = mc.textRenderer.getWidth(name);
-			int nameX = centerX - nameW / 2; // 居中锚点，长名向左右自然溢出、不裁剪
+			int nameX = clampTextX(mc, centerX - nameW / 2, nameW);
 			ctx.drawText(mc.textRenderer, name, nameX, nameY, 0xFFFFFF, true);
 			int textEndX = nameX + nameW + 4;
 			// 降档时名字后追加蓝色「Lv档/级」角标（低阶施放可见性，阶段 C §6.4）
@@ -202,11 +216,42 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 			}
 			long cdRem = net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.getEffectiveCooldownEnd(mc.player, scroll) - mc.world.getTime();
 			if (cdRem > 0) {
-				String cdStr = String.format("%.1fs", cdRem / 20.0);
+				String cdStr = SpellCastFeedback.seconds(cdRem) + "s";
 				ctx.drawText(mc.textRenderer, Text.literal(cdStr).formatted(Formatting.RED),
 						textEndX, nameY, 0xFFFFFF, true);
 			}
+			Text cost = SpellCastFeedback.cost(snap.manaCost, mana, maxMana);
+			int costW = mc.textRenderer.getWidth(cost);
+			ctx.drawText(mc.textRenderer, cost, clampTextX(mc, centerX - costW / 2, costW),
+					nameY + 12, snap.manaCost < 0 || snap.manaCost > mana ? 0xFF7777 : 0xC8B0FF, true);
 		}
+	}
+
+	private static int clampTextX(MinecraftClient mc, int x, int width) {
+		return Math.max(2, Math.min(x, mc.getWindow().getScaledWidth() - width - 2));
+	}
+
+	private static void drawRecovery(DrawContext ctx, MinecraftClient mc, int x, int y, boolean needsMana, int regenPerSecond) {
+		var status = SpellbookStatusClient.get();
+		long now = SpellbookStatusClient.now();
+		Text line;
+		if (status != null && status.swapWait(now) > 0) {
+			line = Text.translatable("hud.ssc_addon.spellbook.swap_wait", SpellCastFeedback.seconds(status.swapWait(now)));
+		} else if (status != null && !status.casting() && status.castWait(now) > 0) {
+			line = Text.translatable("hud.ssc_addon.spellbook.cast_interval", SpellCastFeedback.seconds(status.castWait(now)));
+		} else if (!needsMana) {
+			return;
+		} else if (status == null) {
+			line = Text.translatable("hud.ssc_addon.spellbook.recovery_syncing");
+		} else if (status.casting()) {
+			line = Text.translatable("hud.ssc_addon.spellbook.recovery_paused");
+		} else if (status.naturalRegenWait(now) > 0) {
+			line = Text.translatable("hud.ssc_addon.spellbook.recovery_wait", SpellCastFeedback.seconds(status.naturalRegenWait(now)));
+		} else {
+			// Timers belong to the player; rate belongs to the currently synchronized book, including immediately after a swap.
+			line = Text.translatable("hud.ssc_addon.spellbook.recovery_rate", regenPerSecond);
+		}
+		ctx.drawText(mc.textRenderer, line, clampTextX(mc, x, mc.textRenderer.getWidth(line)), y, 0xC8B0FF, true);
 	}
 
 	/** 卷轴由调用方从 tick 快照传入（slot 参数仅用于日志/调试语义，不再现查 NBT）。 */

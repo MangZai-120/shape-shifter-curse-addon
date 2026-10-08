@@ -153,7 +153,7 @@ public final class SpellbookData {
 		return Math.round(LEVEL_MAX_MANA[getLevelNbt(nbt) - 1] * FormationData.universalManaBonusPct(best));
 	}
 
-	/** NBT 版：读取书内全部法阵条目（纯 NBT，不反序列化 ItemStack——测试环境无注册表）。 */
+	/** Reads formation properties from serialized ItemStack tags, with legacy flat entries still accepted. */
 	public static java.util.List<NbtCompound> getFormationEntriesNbt(NbtCompound nbt) {
 		java.util.List<NbtCompound> result = new java.util.ArrayList<>();
 		if (nbt == null || !nbt.contains(NBT_FORMATIONS, 9)) {
@@ -161,7 +161,9 @@ public final class SpellbookData {
 		}
 		NbtList list = nbt.getList(NBT_FORMATIONS, 10);
 		for (int i = 0; i < list.size(); ++i) {
-			result.add(list.getCompound(i));
+			NbtCompound entry = list.getCompound(i);
+			NbtCompound properties = entry.getCompound("tag");
+			result.add(properties.contains(FormationData.NBT_ELEMENT) ? properties : entry);
 		}
 		return result;
 	}
@@ -445,6 +447,19 @@ public final class SpellbookData {
 	}
 
 	/** 写入指定法阵槽（空 stack = 移除该槽）。 */
+	/** A detached preview; hovering a slot must never alter the real book or cursor item. */
+	public static ItemStack previewFormation(ItemStack book, int slot, ItemStack formation) {
+		if (slot < 0 || slot >= MAX_FORMATION_SLOTS
+				|| !formation.isEmpty() && !isFormationSlotUnlocked(book, slot)) {
+			throw new IllegalArgumentException("Formation slot is unavailable: " + slot);
+		}
+		ItemStack preview = book.copy();
+		ItemStack replacement = formation.copy();
+		if (!replacement.isEmpty()) replacement.setCount(1);
+		setFormation(preview, slot, replacement);
+		return preview;
+	}
+
 	public static void setFormation(ItemStack book, int slot, ItemStack formation) {
 		NbtCompound nbt = book.getOrCreateNbt();
 		NbtList list = nbt.contains(NBT_FORMATIONS, 9) ? nbt.getList(NBT_FORMATIONS, 10) : new NbtList();

@@ -111,6 +111,11 @@ public class LunarPhaseSpell extends Spell {
 		return raycastEntity(caster) != null;
 	}
 
+	@Override
+	public net.minecraft.text.Text getCastFailureMessage(ServerPlayerEntity caster) {
+		return net.minecraft.text.Text.translatable("message.ssc_addon.spellbook.no_entity_target");
+	}
+
 	/** 实体射线（双端一致几何）：眼位出发沿视向，命中最近活体实体；未命中/被墙挡返回 null。
 	 *  手动迭代（Box.raycast 逐实体求交，2026-09-24 重写）：不再依赖 ProjectileUtil 重载的
 	 *  maxDistance/命中位语义——旧实现把 AIM_RANGE² 传给 float 参数且用 getPos() 判墙距，

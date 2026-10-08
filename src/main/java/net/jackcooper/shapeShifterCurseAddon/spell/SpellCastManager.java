@@ -63,16 +63,19 @@ public final class SpellCastManager {
 		}
 		if (FormCastingStyle.isSwapStabilizing(player)) {
 			SpellChannelManager.playNoManaSound(player); // 换书稳定期/CD 类拒绝：火焰熄灭音（2026-09-19 用户定稿）
+			player.sendMessage(SpellCastFeedback.stabilizing(FormCastingStyle.getSwapReadyAt(player) - player.getWorld().getTime()), true);
 			return;
 		}
 		if (ScrollData.isOnCooldown(scroll, player.getWorld())
 				|| SharedSpellCooldowns.isOnSharedCooldown(player, spell)) {
 			SpellChannelManager.playNoManaSound(player); // CD 中施放：火焰熄灭音
+			player.sendMessage(SpellCastFeedback.cooldown(SharedSpellCooldowns.getEffectiveCooldownEnd(player, scroll) - player.getWorld().getTime()), true);
 			return;
 		}
 		int top = ScrollData.getCastLevel(scroll);
+		int topCost = SpellNumbers.finalManaCost(spell, book, player, top, scroll);
 		// 客户端预检后可能刚好回能；原档已付得起时正常施放，不错误附加降档惩罚。
-		if (SpellbookData.canPayMana(book, SpellNumbers.finalManaCost(spell, book, player, top, scroll))) {
+		if (SpellbookData.canPayMana(book, topCost)) {
 			castInternal(player, slot, 0, 1.0f, token);
 			return;
 		}
@@ -81,14 +84,14 @@ public final class SpellCastManager {
 		if (top <= 1 || spell.getMaxLevel() <= 1) {
 			SpellChannelManager.playNoManaSound(player); // 法力不足：火焰熄灭音
 			// 已是最低档仍不足：与正常施放同样提示（保持行为一致）
-			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_mana").formatted(Formatting.RED), true);
+			player.sendMessage(SpellCastFeedback.noMana(book, topCost).copy().formatted(Formatting.RED), true);
 			return;
 		}
 		// 从高到低找付得起的最高档（与正式结算同式，含法阵/亲和/潮汐）
 		int payable = SpellNumbers.highestAffordableLevel(spell, book, player, top - 1, scroll);
 		if (payable <= 0) {
 			SpellChannelManager.playNoManaSound(player); // 全档位都付不起：熄灭音
-			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_mana").formatted(Formatting.RED), true);
+			player.sendMessage(SpellCastFeedback.noMana(book, topCost).copy().formatted(Formatting.RED), true);
 			return;
 		}
 		castInternal(player, slot, payable, 1.2f, token);
@@ -125,6 +128,7 @@ public final class SpellCastManager {
 		// 换书稳定期（阶段 C §15.2，已拍板）：战斗中换书后短期内禁止施法（防多书满蓝连用）
 		if (FormCastingStyle.isSwapStabilizing(player)) {
 			SpellChannelManager.playNoManaSound(player); // 换书稳定期拒绝：火焰熄灭音
+			player.sendMessage(SpellCastFeedback.stabilizing(FormCastingStyle.getSwapReadyAt(player) - world.getTime()), true);
 			return;
 		}
 		// 阶段 B（§15.2）：卷轴 NBT 与玩家共享表双源判定——换槽/换书/同法术第二张卷轴均不能绕 CD。
@@ -132,6 +136,7 @@ public final class SpellCastManager {
 		if (ScrollData.isOnCooldown(scroll, world)
 				|| SharedSpellCooldowns.isOnSharedCooldown(player, spell)) {
 			SpellChannelManager.playNoManaSound(player); // CD 中施放：火焰熄灭音
+			player.sendMessage(SpellCastFeedback.cooldown(SharedSpellCooldowns.getEffectiveCooldownEnd(player, scroll) - world.getTime()), true);
 			if (!ScrollData.isOnCooldown(scroll, world)) {
 				long sharedEnd = SharedSpellCooldowns.getCooldownEndOf(player, spell);
 				if (sharedEnd > ScrollData.getCooldownEnd(scroll)) {
@@ -150,14 +155,14 @@ public final class SpellCastManager {
 		// 书内法术只按 HUD 书能量判定；形态能量不能把书不足的施法放行。
 		if (!SpellbookData.canPayMana(book, manaCost)) {
 			SpellChannelManager.playNoManaSound(player); // 法力不足：火焰熄灭音
-			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_mana").formatted(Formatting.RED), true);
+			player.sendMessage(SpellCastFeedback.noMana(book, manaCost).copy().formatted(Formatting.RED), true);
 			return;
 		}
 
 		// 施法前置校验（如陨火要求准星命中方块）：失败拒绝施法、不耗法力/CD（仿契灵传送失败不消耗）
 		if (spell.getCastingMode() == SpellCastingRules.Mode.AUTOMATIC && !RuneCastContext.with(runeModifiers,()->spell.canCast(player))) {
 			SpellChannelManager.playFailureSound(player);
-			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.no_target").formatted(Formatting.RED), true);
+			player.sendMessage(spell.getCastFailureMessage(player).copy().formatted(Formatting.RED), true);
 			return;
 		}
 
