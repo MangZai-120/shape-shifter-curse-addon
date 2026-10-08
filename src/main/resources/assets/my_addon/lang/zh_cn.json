@@ -1723,5 +1723,7 @@
   "research.ssc_addon.runes.pair.bridge_split": "与第%s槽相邻：跨越与分流的正向加成都削弱25%%。",
   "research.ssc_addon.runes.pair.disable_gain": "与第%s槽相邻：失能与增幅的效果都减半，包括减蓄力。",
   "gui.ssc_addon.research.scheme_slot": "符文方案（刻印消耗1份）",
-  "gui.ssc_addon.research.imprint_scroll_slot": "待刻印卷轴（需已解析，法术与等级须匹配）"
+  "gui.ssc_addon.research.imprint_scroll_slot": "待刻印卷轴（需已解析，法术与等级须匹配）",
+  "research.ssc_addon.slotted.untested": "需先试运行通过后才能完成法阵",
+  "research.ssc_addon.slotted.retest_blocked": "试运行失败：请先修改符文后再试"
 }

@@ -49,6 +49,8 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
     private int[] slots=RuneLayout.empty(1),meanings=new int[18],schools=new int[18],reference=new int[0];
     private int[] diagnosis=new int[0];
     private int stability=100;private boolean runeValid;private int evaluatedRevision=-1;
+    private int testedRevision=-1,failedRevision=-1;
+    private Tooltip testTip,retestTip,finishTip,untestedTip;
     private RuneModifiers modifiers=RuneModifiers.NONE;
     private NbtCompound runeTooltipState=new NbtCompound();
     private final BitSet problems=new BitSet(),inactive=new BitSet(),synergy=new BitSet(),suppressed=new BitSet();
@@ -152,6 +154,8 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         if(action==SlottedResearchManager.TEST&&diagnosis.length>0)feedback=FormationDiagnosis.message(diagnosis);
         if(valid)animation=System.currentTimeMillis();
         if(action==SlottedResearchManager.TEST){
+            // 完成门禁（2026-10-08）：最近一次试运行的裁决生效——通过才允许完成；失败则锁定试运行，直到修改符文（revision 变化）才能再测
+            if(valid){testedRevision=revision;failedRevision=-1;}else{failedRevision=revision;testedRevision=-1;}
             playSound(valid?SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME:SoundEvents.BLOCK_FIRE_EXTINGUISH,valid?.4f:.18f,valid?1.25f:.8f);
         }else if(action==SlottedResearchManager.COMPLETE&&!valid)playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH,.18f,.8f);
     }
@@ -172,8 +176,12 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         context.drawText(textRenderer,text("filled",Arrays.stream(slots).filter(value->value>=0).count(),slots.length),x+65,y+6,0xff414141,false);
         context.drawText(textRenderer,text("rank_short",progress.rank),x+244,y+6,0xff414141,false);
         if(!notes)context.drawText(textRenderer,Text.translatable("research.ssc_addon.runes.stability",stability),x+244,y+68,stability<20?0xffaa2222:0xff414141,false);
-        pageButtons.get(7).active=!busy&&!loading&&evaluatedRevision==revision&&runeValid
+        if(testTip==null){testTip=Tooltip.of(text("test"));retestTip=Tooltip.of(text("retest_blocked"));finishTip=Tooltip.of(text("finish"));untestedTip=Tooltip.of(text("untested"));}
+        pageButtons.get(6).active=!busy&&!loading&&failedRevision!=revision;
+        pageButtons.get(6).setTooltip(failedRevision==revision?retestTip:testTip);
+        pageButtons.get(7).active=!busy&&!loading&&evaluatedRevision==revision&&testedRevision==revision&&runeValid
                 &&handler.getSlot(SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT).getStack().isEmpty();
+        pageButtons.get(7).setTooltip(testedRevision==revision?finishTip:untestedTip);
         int hovered=-1;context.enableScissor(x+PALETTE_LEFT,y+PALETTE_TOP,x+PALETTE_LEFT+PALETTE_CELL*2,y+PALETTE_TOP+PALETTE_HEIGHT);
         for(int glyph=0;glyph<18;glyph++){
             int left=x+PALETTE_LEFT+glyph%2*PALETTE_CELL,top=y+PALETTE_TOP+glyph/2*PALETTE_CELL-paletteScroll;

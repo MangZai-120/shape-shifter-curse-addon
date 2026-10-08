@@ -1723,5 +1723,7 @@
   "research.ssc_addon.runes.pair.bridge_split": "Neighboring slot %s: Bridge and Split positive bonuses are reduced by 25%%.",
   "research.ssc_addon.runes.pair.disable_gain": "Neighboring slot %s: Disable and Gain effects are halved, including charge-time reduction.",
   "gui.ssc_addon.research.scheme_slot": "Rune scheme (one consumed per imprint)",
-  "gui.ssc_addon.research.imprint_scroll_slot": "Scroll to imprint (analyzed; matching spell and level)"
+  "gui.ssc_addon.research.imprint_scroll_slot": "Scroll to imprint (analyzed; matching spell and level)",
+  "research.ssc_addon.slotted.untested": "A successful test run is required before completing the formation",
+  "research.ssc_addon.slotted.retest_blocked": "Test failed: modify the runes before testing again"
 }
