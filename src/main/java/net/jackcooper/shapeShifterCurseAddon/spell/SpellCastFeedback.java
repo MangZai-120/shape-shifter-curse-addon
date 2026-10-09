@@ -7,7 +7,7 @@ import net.minecraft.text.Text;
 
 import java.util.Locale;
 
-/** Shared wording for the book HUD, local preflight and authoritative rejection. */
+/** Shared spell names and wording for local preflight and authoritative rejection. */
 public final class SpellCastFeedback {
     private SpellCastFeedback() {}
 
@@ -40,12 +40,5 @@ public final class SpellCastFeedback {
 
     public static Text stabilizing(long remaining) {
         return Text.translatable("message.ssc_addon.spellbook.swap_wait", seconds(remaining));
-    }
-
-    public static Text cost(int cost, int available, int capacity) {
-        if (cost < 0) return Text.translatable("hud.ssc_addon.spellbook.cost_unavailable");
-        if (cost > capacity) return Text.translatable("hud.ssc_addon.spellbook.cost_capacity", cost, cost - capacity);
-        if (cost > available) return Text.translatable("hud.ssc_addon.spellbook.cost_missing", cost, cost - available);
-        return Text.translatable("hud.ssc_addon.spellbook.cost", cost);
     }
 }

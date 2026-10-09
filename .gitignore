@@ -61,3 +61,4 @@ replay_pid*.log
 /TUTORIAL.disable
 # 美术模型本地工具链（生成脚本/预览图/过程素材，不入版本库；游戏用 JSON 与贴图在 src 内另行跟踪）
 /art/
+/output/

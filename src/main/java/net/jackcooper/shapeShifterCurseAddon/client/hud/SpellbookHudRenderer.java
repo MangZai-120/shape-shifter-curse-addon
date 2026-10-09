@@ -12,7 +12,6 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.jackcooper.shapeShifterCurseAddon.client.SpellcastClient;
-import net.jackcooper.shapeShifterCurseAddon.client.SpellbookStatusClient;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
 import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
@@ -20,7 +19,6 @@ import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellCastFeedback;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers;
-import net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme;
 import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
 
@@ -69,6 +67,7 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 	// 法力条双态贴图：_empty=空条(底,含金框与中心装饰)，_full=满条(按法力%从左裁剪叠上)
 	private static final Identifier TEX_BAR_EMPTY = new Identifier("ssc_addon", "textures/gui/spell_hud_bar_empty.png");
 	private static final Identifier TEX_BAR_FULL = new Identifier("ssc_addon", "textures/gui/spell_hud_bar_full.png");
+	private static final float MANA_COST_TEXT_SCALE = 0.75f;
 
 	/**
 	 * 每 tick 数据快照（2026-09-29 性能优化）：spark 档案实测本 HUD 1.96% 中近半是
@@ -81,19 +80,17 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 		final int mana;
 		final int maxMana;
 		final int manaCost;
-		final int regenPerSecond;
 		final int prev;
 		final int next;
 		final ItemStack selScroll;
 		final ItemStack prevScroll;
 		final ItemStack nextScroll;
 
-		TickSnapshot(int mana, int maxMana, int manaCost, int regenPerSecond, int prev, int next,
+		TickSnapshot(int mana, int maxMana, int manaCost, int prev, int next,
 				ItemStack selScroll, ItemStack prevScroll, ItemStack nextScroll) {
 			this.mana = mana;
 			this.maxMana = maxMana;
 			this.manaCost = manaCost;
-			this.regenPerSecond = regenPerSecond;
 			this.prev = prev;
 			this.next = next;
 			this.selScroll = selScroll;
@@ -126,7 +123,7 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 				ScrollData.getCastLevel(selected), selected);
 		TickSnapshot fresh = new TickSnapshot(
 				SpellbookData.getMana(book), SpellbookData.getMaxMana(book), cost,
-				FormCastingStyle.naturalRegenPerSecond(book), prev, next,
+				prev, next,
 				selected, SpellbookData.getScroll(book, prev), SpellbookData.getScroll(book, next));
 		snapWorld = mc.world;
 		snapBook = book;
@@ -185,8 +182,18 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 		if (fillW > 0) {
 			ctx.drawTexture(TEX_BAR_FULL, barX, barY, 0, 0, fillW, barH, barW, barH);
 		}
-		ctx.drawText(mc.textRenderer, Text.literal(mana + "/" + maxMana), barX + barW + 4, barY + 1, 0xC8B0FF, true);
-		drawRecovery(ctx, mc, barX, barY - 11, mana < maxMana, snap.regenPerSecond);
+		int manaTextX = barX + barW + 4;
+		int manaTextY = barY + 1;
+		ctx.drawText(mc.textRenderer, Text.literal(mana + "/" + maxMana), manaTextX, manaTextY, 0xC8B0FF, true);
+		// 当前法术耗蓝以小字号 (-N) 显示在蓝量数字下方，共用左边缘。
+		if (snap.manaCost >= 0) {
+			ctx.getMatrices().push();
+			ctx.getMatrices().translate(manaTextX, manaTextY + mc.textRenderer.fontHeight + 2, 0);
+			ctx.getMatrices().scale(MANA_COST_TEXT_SCALE, MANA_COST_TEXT_SCALE, 1.0f);
+			ctx.drawText(mc.textRenderer, Text.literal("(-" + snap.manaCost + ")"), 0, 0,
+					snap.manaCost > mana ? 0xFF7777 : 0xC8B0FF, true);
+			ctx.getMatrices().pop();
+		}
 
 		// 三槽：中槽(22)居中，左右小槽(16)相对中槽对称分布，间隙均为 4px（卷轴读快照，帧间零 NBT）
 		drawSlot(ctx, mc, book, prev, baseX, baseY + 3, 16, false, snap.prevScroll);
@@ -220,38 +227,11 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 				ctx.drawText(mc.textRenderer, Text.literal(cdStr).formatted(Formatting.RED),
 						textEndX, nameY, 0xFFFFFF, true);
 			}
-			Text cost = SpellCastFeedback.cost(snap.manaCost, mana, maxMana);
-			int costW = mc.textRenderer.getWidth(cost);
-			ctx.drawText(mc.textRenderer, cost, clampTextX(mc, centerX - costW / 2, costW),
-					nameY + 12, snap.manaCost < 0 || snap.manaCost > mana ? 0xFF7777 : 0xC8B0FF, true);
 		}
 	}
 
 	private static int clampTextX(MinecraftClient mc, int x, int width) {
 		return Math.max(2, Math.min(x, mc.getWindow().getScaledWidth() - width - 2));
-	}
-
-	private static void drawRecovery(DrawContext ctx, MinecraftClient mc, int x, int y, boolean needsMana, int regenPerSecond) {
-		var status = SpellbookStatusClient.get();
-		long now = SpellbookStatusClient.now();
-		Text line;
-		if (status != null && status.swapWait(now) > 0) {
-			line = Text.translatable("hud.ssc_addon.spellbook.swap_wait", SpellCastFeedback.seconds(status.swapWait(now)));
-		} else if (status != null && !status.casting() && status.castWait(now) > 0) {
-			line = Text.translatable("hud.ssc_addon.spellbook.cast_interval", SpellCastFeedback.seconds(status.castWait(now)));
-		} else if (!needsMana) {
-			return;
-		} else if (status == null) {
-			line = Text.translatable("hud.ssc_addon.spellbook.recovery_syncing");
-		} else if (status.casting()) {
-			line = Text.translatable("hud.ssc_addon.spellbook.recovery_paused");
-		} else if (status.naturalRegenWait(now) > 0) {
-			line = Text.translatable("hud.ssc_addon.spellbook.recovery_wait", SpellCastFeedback.seconds(status.naturalRegenWait(now)));
-		} else {
-			// Timers belong to the player; rate belongs to the currently synchronized book, including immediately after a swap.
-			line = Text.translatable("hud.ssc_addon.spellbook.recovery_rate", regenPerSecond);
-		}
-		ctx.drawText(mc.textRenderer, line, clampTextX(mc, x, mc.textRenderer.getWidth(line)), y, 0xC8B0FF, true);
 	}
 
 	/** 卷轴由调用方从 tick 快照传入（slot 参数仅用于日志/调试语义，不再现查 NBT）。 */
