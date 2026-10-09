@@ -40,7 +40,7 @@ public class ExplosionSpell extends Spell {
 		return ExplosionManager.isWithinChargeAnchor(caster);
 	}
 	/** 锁定点（2026-09-24 用户定稿二次调整）：主题音频起播（蓄力 540t / 第 27 秒 T-8s）后
-	 * 不可打断，必须释放——伤害/主动取消/长按取消/位移均不再断（原为 682t 红白球生成）。 */
+	 * 伤害/主动取消/长按取消/位移均不再断（原为 682t 红白球生成）；净化仍可强制打断。 */
 	@Override
 	public boolean isLockedIn(ServerPlayerEntity caster) {
 		return ExplosionManager.isBallCharging(caster);

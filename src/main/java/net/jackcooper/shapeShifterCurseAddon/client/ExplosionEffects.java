@@ -17,7 +17,7 @@ import org.joml.Vector3f;
 /** Bounded local particles and the 21-second theme audio for one server-authorized sequence.
  * 2026-09-22 rework: the theme track (3s fade-in, blast at its 8th second) is the sole audio —
  * vanilla TNT blast overlay and pre-blast warning beeps are removed. Volume follows the agreed
- * distance curve (full within 64, linear to zero at 164) times the 3-second fade-in. */
+ * distance curve (full within 128, linear to zero at 328) times the 3-second fade-in. */
 @Environment(EnvType.CLIENT)
 public final class ExplosionEffects {
 	private static final DustParticleEffect RED = new DustParticleEffect(new Vector3f(1, 0.12f, 0.08f), 2.5f);
@@ -34,6 +34,17 @@ public final class ExplosionEffects {
 	}
 
 	public void tick(ClientWorld world, Vec3d center, int elapsed, boolean detonated, Double packetCoreRadius, Double packetOuterRadius) {
+		// The enlarged audience receives audio; geometry/particles retain the original 200-block range.
+		if (!detonated && elapsed >= ExplosionRules.SOUND_START_TICKS && theme == null) {
+			theme = new ThemeSound(world, center);
+			MinecraftClient.getInstance().getSoundManager().play(theme);
+		}
+		var listener = MinecraftClient.getInstance().player;
+		if (listener == null || !ExplosionRules.visualsInRange(listener.squaredDistanceTo(center))) {
+			if (detonated) exploded = true;
+			pendingBlastBatches = 0;
+			return;
+		}
 		if (detonated) {
 			if (!exploded) {
 				exploded = true;
@@ -61,11 +72,6 @@ public final class ExplosionEffects {
 			particle(ParticleTypes.CAMPFIRE_COSY_SMOKE, hidden, Vec3d.ZERO, 1);
 			particle(ParticleTypes.FLAME, hidden, Vec3d.ZERO, 1);
 			particle(ParticleTypes.LARGE_SMOKE, hidden, Vec3d.ZERO, 1);
-		}
-		// 主题音频：T-8s（540t）起播，音量 = 渐入 × 距离曲线（随听者移动逐 tick 重算）。
-		if (elapsed >= ExplosionRules.SOUND_START_TICKS && theme == null) {
-			theme = new ThemeSound(world, center);
-			MinecraftClient.getInstance().getSoundManager().play(theme);
 		}
 		// 400 伤警示圈（2026-09-22 用户需求）：爆炸前 8 秒起，红/黑/紫三色粒子圈标出 400 伤范围
 		// （32 格处伤害恰为 400，即 CORE_RADIUS；与音频起播、光柱启动同时刻）。

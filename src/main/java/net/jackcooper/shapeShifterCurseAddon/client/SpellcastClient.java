@@ -271,6 +271,11 @@ public final class SpellcastClient {
 	}
 
 	private static void startGesture(ClientPlayerEntity player, ItemStack book, int slot, int key) {
+		if (player.hasStatusEffect(net.jackcooper.shapeShifterCurseAddon.SscAddon.PURIFIED)) {
+			downgradePresses.reset();
+			player.sendMessage(net.minecraft.text.Text.translatable("message.ssc_addon.spell.purified_blocked"), true);
+			return;
+		}
 		ItemStack scroll = SpellbookData.getScroll(book, slot);
 		Spell spell = ScrollData.getSpell(scroll);
 		// 临时诊断（2026-09-24 月相锁不到人排查）：定位 startGesture 到底卡在哪道门

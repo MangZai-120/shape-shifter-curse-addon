@@ -52,6 +52,7 @@ public final class SkillCooldownTest {
                 }
             }
         }
+        checkPurifiedFullCooldown();
         checkFireRings();
         var tuned = new SkillCastManager(); UUID tunedOwner = UUID.randomUUID();
         long tunedCast = tuned.begin(tunedOwner, "test:skill", new SkillCastManager.ResolvedConfig(100, 0, "on_cast"), 1000);
@@ -67,6 +68,30 @@ public final class SkillCooldownTest {
         check(remaining(tuned, tunedOwner, 1200) == 0 && tuned.control(tunedOwner, "test:skill") == null, "cancel frees without cooldown");
         check(new SkillCastManager.ResolvedConfig(-5, -1, "typo").cooldown == 0, "invalid runtime values do not throw");
         System.out.println("Skill cooldown: modes, callbacks, failures, interruption/disconnect, fire-ring resources, retune/force/reset/cancel PASS; live multiplayer NOT tested.");
+    }
+
+    private static void checkPurifiedFullCooldown() {
+        for (String mode : new String[]{"on_cast", "on_release", "on_end"}) {
+            for (int failure : new int[]{0, 60}) {
+                for (boolean released : new boolean[]{false, true}) {
+                    var manager = new SkillCastManager();
+                    UUID owner = UUID.randomUUID();
+                    long cast = manager.begin(owner, "test:skill", new SkillCastManager.ResolvedConfig(300, failure, mode), 1000);
+                    if (released) manager.released(cast, 1020);
+                    manager.interruptFull(cast, 1040);
+                    check(remaining(manager, owner, 1040) == 300, "purification always charges full 15s from interruption");
+                    check(manager.control(owner, "test:skill") == null, "purification frees the cast gate");
+                    manager.interruptFull(cast, 1050);
+                    manager.fail(cast, 1050);
+                    manager.finish(cast, 1050);
+                    check(remaining(manager, owner, 1050) == 290, "duplicate/stale callbacks cannot shorten or restart purification CD");
+                    long next = manager.begin(owner, "test:skill", new SkillCastManager.ResolvedConfig(300, failure, mode), 1400);
+                    manager.interruptFull(cast, 1410);
+                    check(manager.control(owner, "test:skill").castId == next, "old purification cannot end a newer cast");
+                }
+            }
+        }
+        System.out.println("Purification full skill cooldown: charging/active, all start modes, duplicate callbacks and stale casts PASS.");
     }
 
     private static void checkFireRings() throws Exception {

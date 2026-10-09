@@ -236,7 +236,7 @@ public final class ExplosionManager {
 		for (ServerPlayerEntity viewer : server.getPlayerManager().getPlayerList()) {
 			if (!ServerPlayNetworking.canSend(viewer, START)) continue;
 			var visible = SEQUENCES.values().stream().filter(sequence -> sequence.world == viewer.getWorld()
-					&& viewer.squaredDistanceTo(sequence.center) < ExplosionRules.VIEW_RANGE * ExplosionRules.VIEW_RANGE).toList();
+					&& viewer.squaredDistanceTo(sequence.center) < ExplosionRules.audienceRange() * ExplosionRules.audienceRange()).toList();
 			var buf = PacketByteBufs.create();
 			buf.writeIdentifier(viewer.getWorld().getRegistryKey().getValue());
 			buf.writeVarInt(visible.size());

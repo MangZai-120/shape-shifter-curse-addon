@@ -189,6 +189,10 @@ public final class SpellCastingRules {
 		return Math.max(0, fullCooldown) - Math.round(Math.max(0, fullCooldown) * (float) BAL.d("interrupt_cd_refund", 0.2));
 	}
 
+	public static int cooldownAfterStop(Spell spell, int fullCooldown, boolean interrupted, boolean purified) {
+		return interrupted && !purified ? spell.getInterruptedCooldown(fullCooldown) : fullCooldown;
+	}
+
 	public static int summonManaLevel(int selectedLevel, boolean affinity) {
 		int cap = affinity ? BAL.i("summon_affinity_cap", 4) : BAL.i("summon_normal_cap", 5);
 		return Math.max(1, Math.min(cap, selectedLevel));

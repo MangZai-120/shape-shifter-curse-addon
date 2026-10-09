@@ -219,8 +219,7 @@ public final class SpellbookData {
 	/** 尝试消耗法力，够则扣除返回 true；非法负数不能变成回能。 */
 	public static boolean consumeMana(ItemStack book, int cost) {
 		if (!canPayMana(book, cost)) return false;
-		setMana(book, getMana(book) - cost);
-		return true;
+		return consumeManaNbt(book.getOrCreateNbt(), getMaxMana(book), cost);
 	}
 
 	// ---- 书能量 NBT 级核心（与 ItemStack 版同式；测试环境无注册表时直接验这条链） ----
@@ -242,6 +241,13 @@ public final class SpellbookData {
 	/** NBT 版：全额支付能力判定。 */
 	public static boolean canPayManaNbt(NbtCompound nbt, int maxMana, int cost) {
 		return SpellCastingRules.canAfford(cost, getManaNbt(nbt, maxMana));
+	}
+
+	/** NBT 核心支付：不足或非法报价不改动数据，生产 ItemStack 支付也走同一入口。 */
+	public static boolean consumeManaNbt(NbtCompound nbt, int maxMana, int cost) {
+		if (nbt == null || !canPayManaNbt(nbt, maxMana, cost)) return false;
+		setManaNbt(nbt, getManaNbt(nbt, maxMana) - cost, maxMana);
+		return true;
 	}
 
 	/** 充能（不超过上限）。返回实际增加量。 */

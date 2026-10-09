@@ -5,7 +5,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 
-/** 死亡是一切的终点：虚无系 SPECIAL，固定位置蓄力，完成后一次性结算。 */
+/** 死亡是一切的终点：虚无系 SPECIAL，统一禁动蓄力，完成后一次性结算。 */
 public final class DeathFinaleSpell extends Spell {
     public DeathFinaleSpell() { super(new Identifier("ssc_addon", "death_finale"), SpellRarity.RED); }
 
@@ -19,6 +19,10 @@ public final class DeathFinaleSpell extends Spell {
 
     @Override public void tickChannel(ServerPlayerEntity caster, int level, ItemStack scroll, int ticks) {
         DeathFinaleManager.advance(caster, ticks);
+    }
+
+    @Override public boolean canContinueCasting(ServerPlayerEntity caster, ItemStack scroll) {
+        return DeathFinaleManager.canContinue(caster);
     }
 
     @Override public void onChannelEnded(ServerPlayerEntity caster, boolean interrupted) {

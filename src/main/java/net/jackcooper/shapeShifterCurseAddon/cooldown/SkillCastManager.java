@@ -265,6 +265,16 @@ public class SkillCastManager extends PersistentState {
         markDirty();
     }
 
+    /** 净化等强制中断：从中断时刻起结算完整 CD，不执行释放效果，也不沿用失败 CD。 */
+    public void interruptFull(long castId, long now) {
+        Cast cast = findCast(castId);
+        if (cast == null || cast.settled) return;
+        startCooldown(cast.playerId, cast.skillId, cast.config.cooldown, castId, now);
+        cast.settled = true;
+        activeCasts.remove(key(cast.playerId, cast.skillId), cast);
+        markDirty();
+    }
+
     /** 中断时按实际阶段结算；重复清理与旧回调均不重置冷却。 */
     public void interrupt(long castId, long now) {
         Cast cast = findCast(castId);

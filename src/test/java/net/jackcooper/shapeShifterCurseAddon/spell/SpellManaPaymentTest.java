@@ -9,8 +9,8 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 /**
- * 书能量支付链回归（起手全额闸门，2026-09-23 用户定稿）：书蓝不足整次消耗时必须拒绝起手，
- * 不再允许「读条中一点点扣、扣到耗尽才中止」。纯 NBT 驱动——JavaExec 测试环境没有 loom
+ * 书能量支付链回归：起手仍要求付得起完整消耗，施法期间每 2 tick 线性扣费。
+ * 纯 NBT 驱动——JavaExec 测试环境没有 loom
  * 访问扩宽器，ItemStack/注册表初始化会撞 IllegalAccessError，因此全部走 NBT 级核心
  * （getManaNbt/canPayManaNbt/consumeManaNbt/sumManaCostMultiplierNbt 等，
  * 与生产 ItemStack API 同式）。构建期运行。
@@ -24,9 +24,10 @@ public final class SpellManaPaymentTest {
 			checkFullCostGate(spell);
 		}
 		checkInterruptedPayment();
+		checkPaymentCadenceAndRemainders();
 		checkDowngrade();
 		checkFormationNbtFormats();
-		System.out.println("Book mana payment passed: full-cost gate at start; red costs 300/255 and 450/383; "
+		System.out.println("Book mana payment passed: full-cost gate at start; 2-tick progressive deduction and exact remainders; red costs 300/255 and 450/383; "
 				+ "insufficient mana rejected without charge; downgrade picks only payable levels; "
 				+ "red single-level spells never downgrade.");
 	}
@@ -53,32 +54,65 @@ public final class SpellManaPaymentTest {
 					require(!consumeManaNbt(book, cost, maxMana), "不足起手必须拒绝扣费");
 					require(SpellbookData.getManaNbt(book, maxMana) == insufficient, "拒绝起手不得扣能量");
 				}
-				// 正好够 → 放行；起手一次结清：通道建立即全额扣，读条期间零扣费
+				// 正好够 → 放行；报价锁定，扣费随施法进度推进，完成时精确结清。
 				SpellbookData.setManaNbt(book, cost, maxMana);
 				require(SpellbookData.canPayManaNbt(book, maxMana, cost), "恰好够整次报价必须放行");
 				SpellbookData.setManaNbt(book, cost + 120, maxMana);
-				require(consumeManaNbt(book, cost, maxMana), "起手必须一次性全额扣成功");
-				require(SpellbookData.getManaNbt(book, maxMana) == 120, "起手结算后书蓝恰减报价");
 				int duration = spell.getCastingProfile(null, 1, false).ticks();
+				SpellManaPayment payment = new SpellManaPayment(cost, duration);
 				for (int tick = 0; tick <= duration; tick++) {
-					require(SpellbookData.getManaNbt(book, maxMana) == 120, "读条期间书蓝不得再变动（零扣费零回能）");
+					require(payment.advance(tick, due -> consumeManaNbt(book, due, maxMana)), "分段支付不得失败");
+					int billedTick = tick == duration ? duration : tick / 2 * 2;
+					int expectedPaid = SpellCastingRules.cumulativeMana(cost, billedTick, duration);
+					require(SpellbookData.getManaNbt(book, maxMana) == cost + 120 - expectedPaid,
+							"施法只能每 2 tick 按进度扣费，不能起手全扣或重复扣费");
 				}
+				require(payment.paid() == cost && SpellbookData.getManaNbt(book, maxMana) == 120, "完成时恰好扣完整报价");
 				require(!consumeManaNbt(book, -1, maxMana) && SpellbookData.getManaNbt(book, maxMana) == 120, "负数扣费不能回能");
 			}
 		}
 	}
 
-	/** 起手已全额扣：中断不返还已扣部分；书蓝不足不得放行新施法。 */
+	/** 中断只保留已经支付的部分；未施放部分不继续扣，报价不足仍不能起手。 */
 	private static void checkInterruptedPayment() {
 		final int maxMana = SpellbookData.getMaxManaNbt(book());
 		NbtCompound book = book();
 		SpellbookData.setManaNbt(book, 300, maxMana);
-		require(consumeManaNbt(book, 300, maxMana), "起手全额扣");
-		require(SpellbookData.getManaNbt(book, maxMana) == 0, "全额扣后书空");
-		// 读条中被打断：已扣部分不返还（与中断不返还规则一致）
-		SpellbookData.setManaNbt(book, 200, maxMana);
-		require(!consumeManaNbt(book, 300, maxMana), "中断后书蓝不足不得再放行新施法");
-		require(SpellbookData.getManaNbt(book, maxMana) == 200, "拒绝不得改动书能量");
+		SpellManaPayment payment = new SpellManaPayment(300, 100);
+		for (int tick = 0; tick <= 40; tick++) {
+			require(payment.advance(tick, due -> consumeManaNbt(book, due, maxMana)), "中断前分段支付成功");
+		}
+		require(payment.paid() == 120 && SpellbookData.getManaNbt(book, maxMana) == 180, "40% 进度只扣 40% 报价");
+		require(!SpellbookData.canPayManaNbt(book, maxMana, 300), "中断后书蓝不足不得放行新施法");
+		require(SpellbookData.getManaNbt(book, maxMana) == 180, "检查新施法不得改动剩余蓝量");
+	}
+
+	private static void checkPaymentCadenceAndRemainders() {
+		for (int cost : new int[]{0, 1, 7, 100, 383, 450}) {
+			for (int duration : new int[]{0, 1, 3, 8, 30, 100, 101, 260, 700}) {
+				NbtCompound book = book();
+				int maxMana = SpellbookData.getMaxManaNbt(book);
+				SpellbookData.setManaNbt(book, cost, maxMana);
+				SpellManaPayment payment = new SpellManaPayment(cost, duration);
+				for (int tick = 0; tick <= duration + 4; tick++) {
+					int before = SpellbookData.getManaNbt(book, maxMana);
+					require(payment.advance(tick, due -> consumeManaNbt(book, due, maxMana)), "所有取整组合都应付清");
+					int after = SpellbookData.getManaNbt(book, maxMana);
+					if (tick < duration && tick % 2 != 0) require(after == before, "奇数 tick 不扣费");
+					require(payment.advance(tick, due -> { throw new AssertionError("同 tick 重入重复扣费"); }), "同 tick 支付幂等");
+					if (cost == 100 && duration == 100) require(after == 100 - Math.min(tick / 2 * 2, 100), "5秒100蓝：每2tick恰扣2蓝");
+				}
+				require(payment.paid() == cost && SpellbookData.getManaNbt(book, maxMana) == 0, "完成与松手等待都不多扣或少扣");
+			}
+		}
+		SpellManaPayment failed = new SpellManaPayment(100, 100);
+		require(!failed.advance(2, due -> false) && failed.paid() == 0, "外部耗蓝导致支付失败时不能记成已支付");
+		require(failed.advance(2, due -> due == 2) && failed.paid() == 2, "同一步重新成功支付只扣一次");
+		NbtCompound insufficient = book();
+		int maxMana = SpellbookData.getMaxManaNbt(insufficient);
+		SpellbookData.setManaNbt(insufficient, 60, maxMana);
+		require(!SpellbookData.canPayManaNbt(insufficient, maxMana, 100)
+				&& SpellbookData.getManaNbt(insufficient, maxMana) == 60, "60蓝不得起手100蓝法术，拒绝不扣费");
 	}
 
 	/** 临时降档：只按当前书能量选付得起的最高档，不改卷轴 NBT；红色稀有度（单档）永不降档。 */
@@ -161,12 +195,9 @@ public final class SpellManaPaymentTest {
 		book.put(SpellbookData.NBT_FORMATIONS, list);
 	}
 
-	/** 与生产 consumeMana 同式的 NBT 版（测试夹具用）。 */
+	/** 使用生产支付核心，不在测试中复制支付规则。 */
 	private static boolean consumeManaNbt(NbtCompound book, int cost, int maxMana) {
-		int mana = SpellbookData.getManaNbt(book, maxMana);
-		if (!SpellCastingRules.canAfford(cost, mana)) return false;
-		SpellbookData.setManaNbt(book, mana - cost, maxMana);
-		return true;
+		return SpellbookData.consumeManaNbt(book, maxMana, cost);
 	}
 
 	private static SpellConfig config(String id) throws Exception {

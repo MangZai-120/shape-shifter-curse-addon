@@ -179,22 +179,6 @@
                                             },
                                             {
                                                 "type": "apoli:execute_command",
-                                                "command": "power resource set @s my_addon:form_axolotl_sp_vortex_impact vortex_state 0"
-                                            },
-                                            {
-                                                "type": "apoli:execute_command",
-                                                "command": "power resource set @s my_addon:form_familiar_fox_red_blue_fire_ring toggle_state 0"
-                                            },
-                                            {
-                                                "type": "apoli:execute_command",
-                                                "command": "power resource set @s my_addon:form_allay_sp_purify charging_state 0"
-                                            },
-                                            {
-                                                "type": "apoli:execute_command",
-                                                "command": "power resource set @s my_addon:form_allay_sp_purify charge_timer 0"
-                                            },
-                                            {
-                                                "type": "apoli:execute_command",
                                                 "command": "effect give @s ssc_addon:purified 1 0 true"
                                             },
                                             {
@@ -502,5 +486,5 @@
         }
     },
     "name": "Purification",
-    "description": "Charge for 2.5 seconds to purify all entities in a 20 block radius, clearing all potion effects and interrupting other SP form abilities. Taking damage during charging will interrupt the charge and trigger a 5s cooldown."
+    "description": "Charge for 1.5 seconds to clear all status effects from yourself and unprotected living entities within 20 blocks. Interrupt their spell casts with full cooldowns and interrupt skills such as Vortex Impact and Group Heal. Other Allays' Purification charges continue."
 }

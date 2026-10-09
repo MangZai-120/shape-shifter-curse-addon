@@ -32,6 +32,12 @@ import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
  */
 @Environment(EnvType.CLIENT)
 public class SpellbookHudRenderer implements HudRenderCallback {
+	private static final SpellbookHudRenderer BEFORE_CHAT = new SpellbookHudRenderer();
+
+	/** Called once by InGameHud, immediately before vanilla chat. */
+	public static void renderBeforeChat(DrawContext context, float tickDelta) {
+		BEFORE_CHAT.onHudRender(context, tickDelta);
+	}
 
 	// 槽位双状态贴图：_empty=空槽（无魔法时显示），_filled=「空白框」覆盖层（无魔法时叠在最上层）
 	private static final Identifier TEX_SLOT_EMPTY = new Identifier("ssc_addon", "textures/gui/spell_hud_slot_empty.png");
@@ -169,63 +175,82 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 		int baseX = sbAnchor.getLeft();
 		int baseY = Math.max(26, Math.min(sbAnchor.getRight(), mc.getWindow().getScaledHeight() - 48));
 
-		RenderSystem.enableBlend();
-		RenderSystem.defaultBlendFunc();
+		// Finish earlier HUD batches, then keep all widget layers beneath chat without changing x/y.
+		ctx.draw();
+		float[] previousColor = RenderSystem.getShaderColor().clone();
+		SpellbookHudLayer.push(ctx.getMatrices());
+		try {
+			RenderSystem.setShaderColor(1, 1, 1, 1);
 
-		// 法力条：空条(底,含金框与中心装饰)始终画满宽，满条按法力%从左裁剪叠上
-		int mana = snap.mana;
-		int maxMana = snap.maxMana;
-		int barW = 76, barH = 10;
-		int barX = baseX - 7, barY = baseY - 14; // 76px 条相对三槽(中心 baseX+31)居中：left=中心-38=baseX-7
-		ctx.drawTexture(TEX_BAR_EMPTY, barX, barY, 0, 0, barW, barH, barW, barH);
-		int fillW = maxMana > 0 ? (int) ((long) barW * mana / maxMana) : 0;
-		if (fillW > 0) {
-			ctx.drawTexture(TEX_BAR_FULL, barX, barY, 0, 0, fillW, barH, barW, barH);
-		}
-		int manaTextX = barX + barW + 4;
-		int manaTextY = barY + 1;
-		ctx.drawText(mc.textRenderer, Text.literal(mana + "/" + maxMana), manaTextX, manaTextY, 0xC8B0FF, true);
-		// 当前法术耗蓝以小字号 (-N) 显示在蓝量数字下方，共用左边缘。
-		if (snap.manaCost >= 0) {
-			ctx.getMatrices().push();
-			ctx.getMatrices().translate(manaTextX, manaTextY + mc.textRenderer.fontHeight + 2, 0);
-			ctx.getMatrices().scale(MANA_COST_TEXT_SCALE, MANA_COST_TEXT_SCALE, 1.0f);
-			ctx.drawText(mc.textRenderer, Text.literal("(-" + snap.manaCost + ")"), 0, 0,
-					snap.manaCost > mana ? 0xFF7777 : 0xC8B0FF, true);
-			ctx.getMatrices().pop();
-		}
+			RenderSystem.enableBlend();
+			RenderSystem.defaultBlendFunc();
 
-		// 三槽：中槽(22)居中，左右小槽(16)相对中槽对称分布，间隙均为 4px（卷轴读快照，帧间零 NBT）
-		drawSlot(ctx, mc, book, prev, baseX, baseY + 3, 16, false, snap.prevScroll);
-		drawSlot(ctx, mc, book, next, baseX + 46, baseY + 3, 16, false, snap.nextScroll);
-		drawSlot(ctx, mc, book, sel, baseX + 20, baseY, 22, true, snap.selScroll);
-
-		RenderSystem.disableBlend();
-
-		// 当前魔法名（白色普通文字，三槽正下方居中显示，可左右超出范围）+ 剩余 cd + 施放档位
-		ItemStack scroll = snap.selScroll;
-		Spell spell = ScrollData.getSpell(scroll);
-		if (spell != null) {
-			int centerX = baseX + 31; // 选择器中心（= 中槽中心）
-			int nameY = baseY + 26;
-			Text name = SpellCastFeedback.spellName(spell, scroll);
-			int nameW = mc.textRenderer.getWidth(name);
-			int nameX = clampTextX(mc, centerX - nameW / 2, nameW);
-			ctx.drawText(mc.textRenderer, name, nameX, nameY, 0xFFFFFF, true);
-			int textEndX = nameX + nameW + 4;
-			// 降档时名字后追加蓝色「Lv档/级」角标（低阶施放可见性，阶段 C §6.4）
-			int castLevel = net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getCastLevel(scroll);
-			int scrollLevel = net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getLevel(scroll);
-			if (castLevel < scrollLevel) {
-				String tag = "Lv" + castLevel + "/" + scrollLevel;
-				ctx.drawText(mc.textRenderer, tag, textEndX, nameY, 0x2A7DFF, true);
-				textEndX += mc.textRenderer.getWidth(tag) + 4;
+			// 法力条：空条(底,含金框与中心装饰)始终画满宽，满条按法力%从左裁剪叠上
+			int mana = snap.mana;
+			int maxMana = snap.maxMana;
+			int barW = 76, barH = 10;
+			int barX = baseX - 7, barY = baseY - 14; // 76px 条相对三槽(中心 baseX+31)居中：left=中心-38=baseX-7
+			ctx.drawTexture(TEX_BAR_EMPTY, barX, barY, 0, 0, barW, barH, barW, barH);
+			int fillW = maxMana > 0 ? (int) ((long) barW * mana / maxMana) : 0;
+			if (fillW > 0) {
+				ctx.drawTexture(TEX_BAR_FULL, barX, barY, 0, 0, fillW, barH, barW, barH);
 			}
-			long cdRem = net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.getEffectiveCooldownEnd(mc.player, scroll) - mc.world.getTime();
-			if (cdRem > 0) {
-				String cdStr = SpellCastFeedback.seconds(cdRem) + "s";
-				ctx.drawText(mc.textRenderer, Text.literal(cdStr).formatted(Formatting.RED),
-						textEndX, nameY, 0xFFFFFF, true);
+			int manaTextX = barX + barW + 4;
+			int manaTextY = barY + 1;
+			ctx.drawText(mc.textRenderer, Text.literal(mana + "/" + maxMana), manaTextX, manaTextY, 0xC8B0FF, true);
+			// 当前法术耗蓝以小字号 (-N) 显示在蓝量数字下方，共用左边缘。
+			if (snap.manaCost >= 0) {
+				ctx.getMatrices().push();
+				ctx.getMatrices().translate(manaTextX, manaTextY + mc.textRenderer.fontHeight + 2, 0);
+				ctx.getMatrices().scale(MANA_COST_TEXT_SCALE, MANA_COST_TEXT_SCALE, 1.0f);
+				ctx.drawText(mc.textRenderer, Text.literal("(-" + snap.manaCost + ")"), 0, 0,
+						snap.manaCost > mana ? 0xFF7777 : 0xC8B0FF, true);
+				ctx.getMatrices().pop();
+			}
+
+			// 三槽：中槽(22)居中，左右小槽(16)相对中槽对称分布，间隙均为 4px（卷轴读快照，帧间零 NBT）
+			drawSlot(ctx, mc, book, prev, baseX, baseY + 3, 16, false, snap.prevScroll);
+			drawSlot(ctx, mc, book, next, baseX + 46, baseY + 3, 16, false, snap.nextScroll);
+			drawSlot(ctx, mc, book, sel, baseX + 20, baseY, 22, true, snap.selScroll);
+
+			RenderSystem.disableBlend();
+
+			// 当前魔法名（白色普通文字，三槽正下方居中显示，可左右超出范围）+ 剩余 cd + 施放档位
+			ItemStack scroll = snap.selScroll;
+			Spell spell = ScrollData.getSpell(scroll);
+			if (spell != null) {
+				int centerX = baseX + 31; // 选择器中心（= 中槽中心）
+				int nameY = baseY + 26;
+				Text name = SpellCastFeedback.spellName(spell, scroll);
+				int nameW = mc.textRenderer.getWidth(name);
+				int nameX = clampTextX(mc, centerX - nameW / 2, nameW);
+				ctx.drawText(mc.textRenderer, name, nameX, nameY, 0xFFFFFF, true);
+				int textEndX = nameX + nameW + 4;
+				// 降档时名字后追加蓝色「Lv档/级」角标（低阶施放可见性，阶段 C §6.4）
+				int castLevel = net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getCastLevel(scroll);
+				int scrollLevel = net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getLevel(scroll);
+				if (castLevel < scrollLevel) {
+					String tag = "Lv" + castLevel + "/" + scrollLevel;
+					ctx.drawText(mc.textRenderer, tag, textEndX, nameY, 0x2A7DFF, true);
+					textEndX += mc.textRenderer.getWidth(tag) + 4;
+				}
+				long cdRem = net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.getEffectiveCooldownEnd(mc.player, scroll) - mc.world.getTime();
+				if (cdRem > 0) {
+					String cdStr = SpellCastFeedback.seconds(cdRem) + "s";
+					ctx.drawText(mc.textRenderer, Text.literal(cdStr).formatted(Formatting.RED),
+							textEndX, nameY, 0xFFFFFF, true);
+				}
+			}
+		} finally {
+			try {
+				// Flush widget text/masks before chat can add its own vertices.
+				ctx.draw();
+			} finally {
+				ctx.getMatrices().pop();
+				RenderSystem.setShaderColor(previousColor[0], previousColor[1], previousColor[2], previousColor[3]);
+				// Vanilla InGameHud enables blending immediately before its ChatHud.render call.
+				RenderSystem.enableBlend();
+				RenderSystem.defaultBlendFunc();
 			}
 		}
 	}

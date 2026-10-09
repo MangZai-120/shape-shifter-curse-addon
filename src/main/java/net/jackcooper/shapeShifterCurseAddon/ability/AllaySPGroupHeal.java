@@ -11,6 +11,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.util.SkillBlocker;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -32,6 +33,9 @@ public class AllaySPGroupHeal {
 
 	public static final String WHITELIST_TAG_PREFIX = "ssc_allay_wl:";
 	private static final Identifier HEAL_EXECUTE_ID = FormIdentifiers.ALLAY_GROUP_HEAL_EXECUTE;
+	private static final Identifier CHARGING_STATE_ID = new Identifier("my_addon", "form_allay_sp_group_heal_charging_state");
+	private static final Identifier CHARGE_TIMER_ID = new Identifier("my_addon", "form_allay_sp_group_heal_charge_timer");
+	private static final String SKILL_ID = "my_addon:form_allay_sp_group_heal_key_activation";
 	private static final Identifier SOLO_DAMAGE_TIMER_ID = FormIdentifiers.ALLAY_GROUP_HEAL_SOLO_DAMAGE_TIMER;
 	// 群疗参数：默认与注释一致；运行时从 balance 快照读取（abilities.allay_sp_group_heal）
 	private static final double HEAL_RADIUS = 20.0;
@@ -62,6 +66,10 @@ public class AllaySPGroupHeal {
 		if (SkillBlocker.isSkillBlocked(player, "allay", "group_heal")) {
 			return;
 		}
+		if (player.hasStatusEffect(SscAddon.PURIFIED)) {
+			onPurified(player);
+			return;
+		}
 		int healExecute = getResourceValue(player, HEAL_EXECUTE_ID);
 		if (healExecute != 1) return;
 
@@ -70,6 +78,20 @@ public class AllaySPGroupHeal {
 
 		// 执行白名单过滤治疗
 		executeWhitelistHeal(player);
+	}
+
+	/** 净化只中断群体治疗；不改变其它悦灵群体净化的蓄力资源。 */
+	public static void onPurified(ServerPlayerEntity player) {
+		if (!net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(player, FormIdentifiers.ALLAY_SP)) return;
+		if (getResourceValue(player, CHARGING_STATE_ID) <= 0 && getResourceValue(player, HEAL_EXECUTE_ID) <= 0) return;
+		long castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
+		PowerUtils.setResourceValueAndSync(player, CHARGING_STATE_ID, 0);
+		PowerUtils.setResourceValueAndSync(player, CHARGE_TIMER_ID, 0);
+		PowerUtils.setResourceValueAndSync(player, HEAL_EXECUTE_ID, 0);
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.interruptedFull(player, SKILL_ID, castId);
+		player.removeStatusEffect(StatusEffects.SLOWNESS);
+		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+				SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.5f);
 	}
 
 	/**

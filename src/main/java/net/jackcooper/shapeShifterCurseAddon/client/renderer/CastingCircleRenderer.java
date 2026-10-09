@@ -71,6 +71,7 @@ public final class CastingCircleRenderer {
 		matrices.scale((float) radius, 1, (float) radius);
 		matrices.multiply(net.minecraft.util.math.RotationAxis.POSITIVE_Y.rotation((float) rotation));
 		Matrix4f matrix = matrices.peek().getPositionMatrix();
+		MagicCircleGeometry.Mesh mesh = MagicCircleGeometry.mesh(strokes);
 		// 频闪修复（2026-09-23）：getDebugQuads 是 translucent 层（反编译确认 buffer.setSorter 逐帧按相机
 		// 距离排序四边形），发光层与主线同平面且到相机距离大量相等（排序平局），相机微动即翻转混合顺序
 		// → 亮度逐帧交替。两层保险：① 发光层下移 0.002 格打破共面（确定的主线在上关系，排序稳定）；
@@ -82,16 +83,43 @@ public final class CastingCircleRenderer {
 			matrices.push();
 			matrices.translate(0, -0.002 / radius, 0);
 			Matrix4f glowMatrix = matrices.peek().getPositionMatrix();
-			for (var stroke : strokes) {
-				drawStroke(vertices, glowMatrix, stroke, stroke.width() * MagicCircleGeometry.GLOW_WIDTH,
-						glowColor, alpha * stroke.alpha() * MagicCircleGeometry.GLOW_ALPHA);
-			}
+			drawStrokes(vertices, glowMatrix, strokes, mesh, true, glowColor, alpha);
 			matrices.pop();
 		}
-		for (var stroke : strokes) {
-			drawStroke(vertices, matrix, stroke, stroke.width(), stroke.color(), alpha * stroke.alpha());
-		}
+		drawStrokes(vertices, matrix, strokes, mesh, false, glowColor, alpha);
 		matrices.pop();
+	}
+
+	private static void drawStrokes(VertexConsumer vertices, Matrix4f matrix,
+	                                java.util.List<MagicCircleGeometry.Stroke> strokes,
+	                                MagicCircleGeometry.Mesh mesh, boolean glow, int glowColor, float alpha) {
+		if (mesh == null) {
+			for (var stroke : strokes) {
+				float opacity = alpha * stroke.alpha();
+				if (glow) opacity *= MagicCircleGeometry.GLOW_ALPHA;
+				drawStroke(vertices, matrix, stroke, glow ? stroke.width() * MagicCircleGeometry.GLOW_WIDTH : stroke.width(),
+						glow ? glowColor : stroke.color(), opacity);
+			}
+			return;
+		}
+		for (int i = 0; i < mesh.size(); i++) {
+			var quad = mesh.quad(i, glow);
+			float opacity = alpha * quad.alpha();
+			if (glow) opacity *= MagicCircleGeometry.GLOW_ALPHA;
+			int color = glow ? glowColor : quad.color();
+			float red = ((color >> 16) & 255) / 255F;
+			float green = ((color >> 8) & 255) / 255F;
+			float blue = (color & 255) / 255F;
+			vertex(vertices, matrix, quad.x1(), quad.z1(), red, green, blue, opacity);
+			vertex(vertices, matrix, quad.x2(), quad.z2(), red, green, blue, opacity);
+			vertex(vertices, matrix, quad.x3(), quad.z3(), red, green, blue, opacity);
+			vertex(vertices, matrix, quad.x4(), quad.z4(), red, green, blue, opacity);
+		}
+	}
+
+	private static void vertex(VertexConsumer vertices, Matrix4f matrix, float x, float z,
+	                           float red, float green, float blue, float alpha) {
+		vertices.vertex(matrix, x, 0, z).color(red, green, blue, alpha).next();
 	}
 
 	private static void drawStroke(VertexConsumer vertices, Matrix4f matrix,

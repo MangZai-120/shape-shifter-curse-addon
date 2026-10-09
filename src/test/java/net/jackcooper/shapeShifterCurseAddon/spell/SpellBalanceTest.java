@@ -165,23 +165,28 @@ public final class SpellBalanceTest {
 				fail("explosion", "layer reveal timing");
 		}
 		// 主题音量曲线：起播前 0；3 秒渐入 × 距离衰减 × 增益 1.0（2026-09-23：音频文件本身已提升 15.1dB，
-		// 增益还原 1.0——引擎钳制 1.0 使大于 1 的系数从不生效）。soundVolume(100)=0.64，570t@100格 = 0.32。
+		// 增益保持 1.0，距离乘 2：soundVolume(200)=0.64，570t@200格 = 0.32。
 		if (ExplosionRules.themeVolume(539, 0) != 0 || ExplosionRules.themeVolume(540, 0) != 0
 				|| Math.abs(ExplosionRules.themeVolume(570, 0) - 0.5f) > 1e-6
-				|| Math.abs(ExplosionRules.themeVolume(570, 100) - 0.32f) > 1e-6
+				|| Math.abs(ExplosionRules.themeVolume(570, 200) - 0.32f) > 1e-6
 				|| Math.abs(ExplosionRules.themeVolume(600, 0) - 1.0f) > 1e-6
-				|| ExplosionRules.themeVolume(600, 164) != 0)
+				|| ExplosionRules.themeVolume(600, 328) != 0)
 			fail("explosion", "theme fade-in must combine with distance curve");
-		if (ExplosionRules.soundVolume(0) != 1 || ExplosionRules.soundVolume(64) != 1
-				|| ExplosionRules.soundVolume(114) != 0.5f || ExplosionRules.soundVolume(164) != 0
+		if (ExplosionRules.soundVolume(0) != 1 || ExplosionRules.soundVolume(128) != 1
+				|| ExplosionRules.soundVolume(228) != 0.5f || ExplosionRules.soundVolume(328) != 0
 				|| ExplosionRules.soundVolume(Double.NaN) != 0 || ExplosionRules.soundVolume(Double.POSITIVE_INFINITY) != 0)
 			fail("explosion", "sound range/invalid distance");
 		double previous = 1;
-		for (double distance = 0; distance <= 200; distance += 0.125) {
+		for (double distance = 0; distance <= 400; distance += 0.125) {
 			double volume = ExplosionRules.soundVolume(distance);
 			if (volume < 0 || volume > previous) fail("explosion", "sound must decrease monotonically");
 			previous = volume;
 		}
+		// 局部变量阻断常量折叠，保留对 VIEW_RANGE 精确值的守卫（避免“比较相同表达式”告警）。
+		double viewRange = ExplosionRules.VIEW_RANGE;
+		if (ExplosionRules.audienceRange() < 328 || viewRange != 200
+				|| !ExplosionRules.visualsInRange(199 * 199) || ExplosionRules.visualsInRange(201 * 201))
+			fail("explosion", "doubled sound audience must retain original visual range");
 		var progress = new SpellCastingRules.Progress<String>(SpellCastingRules.Mode.RELEASE, ExplosionRules.CHARGE_TICKS, 9);
 		progress.release(9, "locked");
 		// 用 EXPLODE_TICKS 驱动推进：引爆前 1t 不可释放、恰到 EXPLODE_TICKS 可释放 →
@@ -196,7 +201,7 @@ public final class SpellBalanceTest {
 	}
 
 	private static void checkDomainSound() {
-		double[] distances = {0, 8, 16, 16.5, 17, 40.5, 64, 80};
+		double[] distances = {0, 16, 32, 33, 34, 81, 128, 160};
 		float[] volumes = {1, 0.9f, 0.8f, 0.8f, 0.8f, 0.4f, 0, 0};
 		for (int index = 0; index < distances.length; index++) {
 			if (Math.abs(DomainRules.soundVolume(distances[index]) - volumes[index]) > 1.0e-6f) {
@@ -204,19 +209,19 @@ public final class SpellBalanceTest {
 			}
 		}
 		float previous = 1;
-		for (double distance = 0; distance <= 80; distance += 0.125) {
+		for (double distance = 0; distance <= 160; distance += 0.125) {
 			float volume = DomainRules.soundVolume(distance);
 			if (volume < 0 || volume > previous || volume > 1) fail("domain", "音量必须在 0～1 内随距离单调递减");
 			previous = volume;
 		}
-		for (double boundary : new double[]{16, 17, 64}) {
+		for (double boundary : new double[]{32, 34, 128}) {
 			if (Math.abs(DomainRules.soundVolume(boundary - 0.0001)
 					- DomainRules.soundVolume(boundary + 0.0001)) > 0.00001f) fail("domain", "音量在分段边界不连续");
 		}
 		if (DomainRules.soundVolume(Double.NaN) != 0 || DomainRules.soundVolume(Double.POSITIVE_INFINITY) != 0) {
 			fail("domain", "无效距离不得产生无效音量");
 		}
-		System.out.println("Domain sound checks passed (100%-80% within 16, 80% through 17, fade to zero at 64, continuous and monotonic).");
+		System.out.println("Domain sound checks passed (unchanged levels, 100%-80% within 32, 80% through 34, fade to zero at 128, continuous and monotonic).");
 	}
 
 	private static void checkAttachedEffectScope() throws Exception {
@@ -499,12 +504,51 @@ public final class SpellBalanceTest {
 						|| DeathFinaleRules.contains(Double.NaN, 13) || DeathFinaleRules.contains(-1, 13)
 						|| DeathFinaleRules.secondsLeft(0, 260) != 13 || DeathFinaleRules.secondsLeft(259, 260) != 1
 						|| DeathFinaleRules.secondsLeft(260, 260) != 0) fail(id, "spherical boundary/countdown");
+				if (!SpellCastingRules.allowsSelf(spell.getConfig().interruptMode)
+						|| !SpellCastingRules.allowsExternal(spell.getConfig().interruptMode)
+						|| spell.getInterruptedCooldown(3600) != 2880)
+					fail(id, "shared damage/self interruption and 80% cooldown settlement");
+				// 局部变量阻断常量折叠，保留“终焉与领域共享同一 3 格位移上限”的跨类守卫。
+				double finaleDisplacement = DeathFinaleRules.MAX_CAST_DISPLACEMENT;
+				double domainDisplacement = DomainRules.MAX_CAST_DISPLACEMENT;
+				if (finaleDisplacement != domainDisplacement
+						|| !DeathFinaleRules.contains(9, DeathFinaleRules.MAX_CAST_DISPLACEMENT)
+						|| DeathFinaleRules.contains(9.000001, DeathFinaleRules.MAX_CAST_DISPLACEMENT)
+						|| DeathFinaleRules.contains(Double.POSITIVE_INFINITY, DeathFinaleRules.MAX_CAST_DISPLACEMENT))
+					fail(id, "three-dimensional 3-block charge displacement boundary");
+				Vec3d chargeStart = new Vec3d(10, 80, 20);
+				var following = new DeathFinaleRules.ChargePosition(chargeStart);
+				for (int step = 1; step <= 6; step++) {
+					Vec3d moved = chargeStart.add(step * 0.5, 0, 0);
+					if (!following.follow(moved) || !following.center().equals(moved))
+						fail(id, "charge center must follow cumulative movement up to 3 blocks");
+				}
+				if (following.follow(chargeStart.add(3.01, 0, 0))
+						|| following.canContinue(chargeStart.add(3.01, 0, 0))
+						|| !following.center().equals(chargeStart.add(3, 0, 0)))
+					fail(id, "following center must never reset the start anchor");
+				var falling = new DeathFinaleRules.ChargePosition(chargeStart);
+				double fall = 0, velocity = 0;
+				boolean interrupted = false;
+				for (int tick = 0; tick < 20; tick++) {
+					velocity = (velocity - 0.08) * 0.98;
+					fall -= velocity;
+					Vec3d current = chargeStart.add(0, -fall, 0);
+					if (!falling.follow(current)) {
+						if (fall <= 3 || falling.canContinue(current)) fail(id, "fall must interrupt past 3 blocks");
+						interrupted = true;
+						break;
+					}
+					if (!falling.center().equals(current)) fail(id, "airborne charge center must follow falling caster");
+				}
+				if (!interrupted || falling.follow(new Vec3d(Double.NaN, 80, 20)))
+					fail(id, "fall/invalid movement must not leave a continuing charge");
 				var progress = new SpellCastingRules.Progress<String>(SpellCastingRules.Mode.AUTOMATIC, profile.ticks(), 13);
 				for (int t = 0; t < 259; t++) progress.tick();
 				if (progress.beginEffect()) fail(id, "must not damage before the 260th tick");
 				progress.tick();
 				if (!progress.beginEffect() || progress.beginEffect()) fail(id, "release must occur exactly once");
-				System.out.println("Death finale: VOID/SPECIAL, 260-tick immobile channel, spherical boundary and exactly-once release checks passed; live damage/visuals NOT tested.");
+				System.out.println("Death finale: VOID/SPECIAL, following charge center, fixed start anchor, falling/cumulative 3-block interruption, shared interruption, spherical boundary and exactly-once release checks passed; live movement/damage/visuals NOT tested.");
 				return;
 			}
 			if (id.equals("domain")) {

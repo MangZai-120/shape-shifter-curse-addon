@@ -17,8 +17,8 @@ public final class DomainRules {
 	public static final double OUTER_RADIUS = 17;
 	/** 默认蓄力期最大位移（格）；运行时从 balance 快照读取（systems.domain.max_cast_displacement）。 */
 	public static final double MAX_CAST_DISPLACEMENT = 3;
-	/** 音效广播范围（格）：schema 未登记 domain 的 sound_range，保持纯常量不迁移。 */
-	public static final double SOUND_RANGE = 64;
+	/** 音效广播范围：原 64 格的两倍；只扩大声音，不改变领域几何。 */
+	public static final double SOUND_RANGE = 128;
 	/** 扩张起点：默认蓄力第 200t（10s）球壳开始从极小半径生长；运行时从 balance 快照读取（systems.domain.expand_start_tick）。 */
 	public static final int EXPAND_START_TICK = 200;
 	/** 扩张时长：默认 200t→300t（10s→15s）共 100t，300t 时恰好到完整半径；运行时从 balance 快照读取（systems.domain.expand_duration_ticks）。 */
@@ -79,6 +79,8 @@ public final class DomainRules {
 	/** 起手快照版：半径由 Field 快照/网络包传入（2026-09-27，双端几何同源）。 */
 	public static float soundVolume(double distance, double inner, double outer) {
 		if (!Double.isFinite(distance) || distance >= SOUND_RANGE) return 0;
+		inner = net.jackcooper.shapeShifterCurseAddon.sound.SoundRangeRules.distance(inner);
+		outer = net.jackcooper.shapeShifterCurseAddon.sound.SoundRangeRules.distance(outer);
 		if (distance <= inner) return (float) (1.0 - 0.2 * Math.max(0, distance) / inner);
 		if (distance <= outer) return 0.8f;
 		return (float) (0.8 * (SOUND_RANGE - distance) / (SOUND_RANGE - outer));

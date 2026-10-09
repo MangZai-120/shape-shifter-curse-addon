@@ -22,7 +22,8 @@ import net.minecraft.util.math.random.Random;
  *
  * <p>实现：标准 {@link MovingSoundInstance}（循环 + LINEAR 空间衰减），每 tick 跟随施法者坐标
  * （声音从玩家位置发出、随移动同步）；音调随蓄力进度 0.65→0.90 上升；基准音量 1.2、
- * 传播最远 24 格（12 格内近满音量、向外线性衰减、24 格外听不到）。驱动：{@link SpellCastHud}
+ * 本人播放，保持原始调用音量 0.9；导管短低鸣的原版衰减半径 8 格由声音系统统一乘 2，
+ * 当前空间衰减半径 16 格。周围玩家没有循环声启动包。驱动：{@link SpellCastHud}
  * STATE 沿调用 {@link #onChannelStart}。</p>
  */
 public class SpellChargeSoundInstance extends MovingSoundInstance {
@@ -35,8 +36,7 @@ public class SpellChargeSoundInstance extends MovingSoundInstance {
 	private static final float SHORT_FADE_FROM = 0.5F;
 	/** 基准音量（施法者本人处响度）。 */
 	private static final float BASE_VOLUME = 1.2F;
-	/** 空间衰减补偿：原版 LINEAR 衰减为 volume×16/dist，丏0.75 后满音段约 12 格、
-	 * 24 格处恰好归零（用户定稿最远 24 格）。 */
+	/** 保留历史响度系数；传播范围由独立距离倍率处理，不再通过音量调整距离。 */
 	private static final float RANGE_COMPENSATION = 0.75F;
 	/** 音调包络：起点 0.65、随进度升到 0.90（与旧服务端公式一致）。 */
 	private static final float PITCH_FROM = 0.65F;
@@ -52,7 +52,7 @@ public class SpellChargeSoundInstance extends MovingSoundInstance {
 		this.caster = caster;
 		this.durationSeconds = durationSeconds;
 		this.repeat = true;           // 循环续播覆盖整个蓄力期
-		this.relative = false;        // 空间音：从施法者位置广播，带距离衰减与立体声定位
+		this.relative = false;        // 本地空间音：跟随施法者，带距离衰减与立体声定位
 		this.volume = BASE_VOLUME * RANGE_COMPENSATION;
 		this.x = caster.getX();
 		this.y = caster.getY();

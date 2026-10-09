@@ -164,6 +164,8 @@ public final class ExplosionRenderer {
 			matrices.pop();
 		}
 		if (world == context.world()) for (View view : SEQUENCES.values()) {
+			var listener = net.minecraft.client.MinecraftClient.getInstance().player;
+			if (listener == null || !ExplosionRules.visualsInRange(listener.squaredDistanceTo(view.center))) continue;
 			float age = view.age(context.tickDelta());
 			var matrices = context.matrixStack();
 			matrices.push();

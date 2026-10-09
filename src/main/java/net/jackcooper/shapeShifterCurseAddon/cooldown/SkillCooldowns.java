@@ -75,6 +75,9 @@ public final class SkillCooldowns {
     public static void failed(ServerPlayerEntity player, String skillId, long castId) {
         if (matches(player, skillId, castId)) manager(player).fail(player, castId);
     }
+    public static void interruptedFull(ServerPlayerEntity player, String skillId, long castId) {
+        if (matches(player, skillId, castId)) manager(player).interruptFull(castId, SkillCastManager.now(player));
+    }
     public static void cancelled(ServerPlayerEntity player, String skillId, long castId) {
         if (matches(player, skillId, castId)) manager(player).interrupt(castId, SkillCastManager.now(player));
     }

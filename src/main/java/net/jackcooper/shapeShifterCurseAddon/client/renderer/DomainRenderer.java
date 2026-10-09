@@ -316,22 +316,9 @@ public final class DomainRenderer {
 	}
 
 	private static void sphere(VertexConsumer vertices, Matrix4f matrix, double radius) {
-		for (int latitude = 0; latitude < 32; latitude++) {
-			double lower = -Math.PI / 2 + latitude * Math.PI / 32;
-			double upper = lower + Math.PI / 32;
-			for (int longitude = 0; longitude < 64; longitude++) {
-				double start = longitude * Math.PI / 32, end = start + Math.PI / 32;
-				sphereVertex(vertices, matrix, radius, lower, start);
-				sphereVertex(vertices, matrix, radius, upper, start);
-				sphereVertex(vertices, matrix, radius, upper, end);
-				sphereVertex(vertices, matrix, radius, lower, end);
-			}
+		for (int vertex = 0; vertex < DomainSphereGeometry.vertexCount(); vertex++) {
+			vertices.vertex(matrix, DomainSphereGeometry.x(vertex, radius), DomainSphereGeometry.y(vertex, radius),
+					DomainSphereGeometry.z(vertex, radius)).color(0, 0, 0, 255).next();
 		}
-	}
-
-	private static void sphereVertex(VertexConsumer vertices, Matrix4f matrix, double radius, double latitude, double longitude) {
-		vertices.vertex(matrix, (float) (Math.cos(latitude) * Math.cos(longitude) * radius),
-				(float) (Math.sin(latitude) * radius), (float) (Math.cos(latitude) * Math.sin(longitude) * radius))
-				.color(0, 0, 0, 255).next();
 	}
 }

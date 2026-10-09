@@ -640,8 +640,7 @@ public class SscAddonClient implements ClientModInitializer {
 		HudRenderCallback.EVENT.register(new AllaySPManaBar());
 		HudRenderCallback.EVENT.register(new AnubisWolfSPSoulBar());
 		HudRenderCallback.EVENT.register(new SkillCooldownBarRenderer());
-		// SSCA 月尘魔法书 - 左下角魔法选择器 + 法力条 HUD
-		HudRenderCallback.EVENT.register(new net.jackcooper.shapeShifterCurseAddon.client.hud.SpellbookHudRenderer());
+		// 月尘魔法书 HUD 由 SpellbookHudLayerMixin 在原版聊天框之前绘制。
 		HudRenderCallback.EVENT.register(new MancianimaResistanceBar());
 		HudRenderCallback.EVENT.register(new net.jackcooper.shapeShifterCurseAddon.client.mana.BatDesmodusBloodBar());
 

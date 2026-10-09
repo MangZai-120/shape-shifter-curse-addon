@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.IdentityHashMap;
 
 /** Cached normalized line geometry, shared by the world renderer and the offline preview.
  * A ground design plus seven distinct aerial designs, ordered from lowest to highest.
@@ -13,6 +14,24 @@ public final class MagicCircleGeometry {
 	/** Endpoint normals share exact radial edges on circles, avoiding cracks in wide rings. */
 	public record Stroke(double x1, double z1, double x2, double z2, double width, int color, float alpha,
 	                     double nx1, double nz1, double nx2, double nz2) {}
+	/** The exact float coordinates formerly expanded from each stroke every frame. */
+	public record Quad(float x1, float z1, float x2, float z2, float x3, float z3, float x4, float z4,
+	                   int color, float alpha) {}
+	public static final class Mesh {
+		private final Quad[] main;
+		private final Quad[] glow;
+		private Mesh(List<Stroke> strokes) {
+			main = new Quad[strokes.size()];
+			glow = new Quad[strokes.size()];
+			for (int i = 0; i < strokes.size(); i++) {
+				Stroke stroke = strokes.get(i);
+				main[i] = expand(stroke, stroke.width());
+				glow[i] = expand(stroke, stroke.width() * GLOW_WIDTH);
+			}
+		}
+		public int size() { return main.length; }
+		public Quad quad(int index, boolean glowLayer) { return glowLayer ? glow[index] : main[index]; }
+	}
 	public static final int GLOW_COLOR = 0xFF233F;
 	public static final double GLOW_WIDTH = 3.4;
 	public static final float GLOW_ALPHA = 0.12f;
@@ -27,18 +46,38 @@ public final class MagicCircleGeometry {
 			triangles(), squares(), STROKES, hexagon(), octagon(), petals(), radialRings());
 	private static final List<Stroke> GROUND = createGround();
 	private static final Map<Integer, List<Stroke>> GROUND_BY_COLOR = new HashMap<>();
+	// Only canonical immutable lists enter this cache; caller-provided mutable patterns use the old path.
+	private static final Map<List<Stroke>, Mesh> MESHES = new IdentityHashMap<>();
+	static {
+		for (List<Stroke> layer : LAYERS) MESHES.put(layer, new Mesh(layer));
+		MESHES.put(GROUND, new Mesh(GROUND));
+	}
 
 	private MagicCircleGeometry() {}
 	public static List<Stroke> strokes() { return STROKES; }
 	public static int layerCount() { return LAYERS.size(); }
 	public static List<Stroke> layerStrokes(int layer) { return LAYERS.get(layer); }
+	public static Mesh mesh(List<Stroke> strokes) { return MESHES.get(strokes); }
+
+	private static Quad expand(Stroke stroke, double width) {
+		double half = width / 2;
+		return new Quad((float) (stroke.x1() + stroke.nx1() * half), (float) (stroke.z1() + stroke.nz1() * half),
+				(float) (stroke.x2() + stroke.nx2() * half), (float) (stroke.z2() + stroke.nz2() * half),
+				(float) (stroke.x2() - stroke.nx2() * half), (float) (stroke.z2() - stroke.nz2() * half),
+				(float) (stroke.x1() - stroke.nx1() * half), (float) (stroke.z1() - stroke.nz1() * half),
+				stroke.color(), stroke.alpha());
+	}
 
 	/** One ground drawing for all spells: only the primary color varies; purple remains fixed. */
 	public static List<Stroke> groundStrokes(int primaryColor) {
-		return GROUND_BY_COLOR.computeIfAbsent(primaryColor & 0xFFFFFF, color -> GROUND.stream()
+		return GROUND_BY_COLOR.computeIfAbsent(primaryColor & 0xFFFFFF, color -> {
+			List<Stroke> strokes = GROUND.stream()
 				.map(s -> new Stroke(s.x1(), s.z1(), s.x2(), s.z2(), s.width(),
 						s.color() == 0xFFFFFF ? color : s.color(), s.alpha(), s.nx1(), s.nz1(), s.nx2(), s.nz2()))
-				.toList());
+				.toList();
+			MESHES.put(strokes, new Mesh(strokes));
+			return strokes;
+		});
 	}
 
 	private static List<Stroke> createGround() {

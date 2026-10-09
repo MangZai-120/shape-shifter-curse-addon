@@ -33,6 +33,10 @@ public final class DeathFinaleClient {
     private record View(UUID owner, Vec3d center, double radius, int duration, int elapsed,
                         boolean released, boolean danger, long received) {
         float age(float delta) { return elapsed + Math.max(0, world.getTime() - received) + delta; }
+        Vec3d displayCenter(float delta) {
+            var caster = world.getPlayerByUuid(owner);
+            return !released && caster != null ? caster.getLerpedPos(delta) : center;
+        }
     }
     private DeathFinaleClient() {}
 
@@ -75,8 +79,9 @@ public final class DeathFinaleClient {
             float progress = Math.min(1, age / v.duration);
             float alpha = v.released ? Math.max(0, 1 - (age - v.duration) / DeathFinaleRules.AFTERGLOW_TICKS) : 1;
             if (alpha <= 0) continue;
+            Vec3d center = v.displayCenter(context.tickDelta());
             matrices.push();
-            matrices.translate(v.center.x - camera.x, v.center.y + .035 - camera.y, v.center.z - camera.z);
+            matrices.translate(center.x - camera.x, center.y + .035 - camera.y, center.z - camera.z);
             CastingCircleRenderer.drawPattern(vertices, matrices, 2.8, 0, age * .008, alpha,
                     DeathFinaleGeometry.STROKES, DeathFinaleGeometry.OCHRE);
             // True-radius horizontal boundary plus two upright great circles show vertical reach too.

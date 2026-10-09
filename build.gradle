@@ -94,6 +94,8 @@ dependencies {
 
     // Shape Shifter Curse Main Mod（原版源码目录：幻型者诅咒原版_official，onixary 官方 clone 干净版）
     modImplementation files("../幻型者诅咒原版_official/build/libs/shape-shifter-curse-fabric-${project.ssc_version}.jar")
+    // 本地 SSC jar 不传递 Maven 依赖；开发启动和 Fabric 集成测试仍需其 Satin 依赖。
+    modRuntimeOnly("org.ladysnake:satin:1.14.0") { transitive = false }
     
     // Team Reborn Energy API（TechReborn 等工业模组通用能量 API；3.0.0 适用 MC 1.19.4~1.20.4）
     // JiJ 打包进附属 jar：未安装任何工业模组时也能安全加载，能量转变器仅在检测到相邻能量方块时工作
@@ -186,6 +188,23 @@ tasks.register('spellManaPaymentTest', JavaExec) {
 
 check.dependsOn spellManaPaymentTest
 
+tasks.register('purificationCastingIntegrationTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.PurificationCastingIntegrationTest'
+    workingDir = layout.buildDirectory.dir('purification-casting-test').get().asFile
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def classpathFile = new File(workingDir, 'classpath.txt')
+        classpathFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'casting.testClasspathFile', classpathFile.absolutePath
+    }
+}
+check.dependsOn purificationCastingIntegrationTest
+
 tasks.register('spellbookStatusTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
@@ -247,6 +266,27 @@ tasks.register('particleAvoidanceTest', JavaExec) {
 
 check.dependsOn particleAvoidanceTest
 
+tasks.register('soundRangeTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.sound.SoundRangeTest'
+}
+check.dependsOn soundRangeTest
+
+tasks.register('renderGeometryCacheTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.client.renderer.RenderGeometryCacheTest'
+}
+check.dependsOn renderGeometryCacheTest
+
+tasks.register('spellbookHudLayerTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.client.hud.SpellbookHudLayerTest'
+}
+check.dependsOn spellbookHudLayerTest
+
 // balance 数据包框架自检（阶段 2 · 制作流程 §10.1：解析/合并/校验/hash 确定性）
 tasks.register('balanceFrameworkTest', JavaExec) {
     dependsOn testClasses
@@ -303,7 +343,7 @@ tasks.named('remapJar') {
     doFirst {
         def output = archiveFile.get().asFile
         if (output.exists() && !output.delete()) {
-            throw new GradleException("Cannot replace remapped archive: ${output}")
+            throw new IllegalStateException("Cannot replace remapped archive: ${output}")
         }
     }
 }

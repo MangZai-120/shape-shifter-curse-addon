@@ -1,11 +1,16 @@
 package net.jackcooper.shapeShifterCurseAddon.effect;
 
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.attribute.AttributeContainer;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.jackcooper.shapeShifterCurseAddon.ability.InfectionSporeManager;
+import net.jackcooper.shapeShifterCurseAddon.ability.AllaySPGroupHeal;
+import net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +28,20 @@ public class PurifiedEffect extends StatusEffect {
 	}
 
 	@Override
+	public void onApplied(LivingEntity entity, AttributeContainer attributes, int amplifier) {
+		super.onApplied(entity, attributes, amplifier);
+		// Interrupt immediately, before a last-tick release or its cooldown can win the tick order.
+		interruptCasting(entity);
+	}
+
+	private static void interruptCasting(LivingEntity entity) {
+		if (entity.getWorld().isClient || !(entity instanceof ServerPlayerEntity player)) return;
+		SpellChannelManager.onPurified(player);
+		VortexChargeManager.onPurified(player);
+		AllaySPGroupHeal.onPurified(player);
+	}
+
+	@Override
 	public boolean canApplyUpdateEffect(int duration, int amplifier) {
 		return true;
 	}
@@ -30,6 +49,7 @@ public class PurifiedEffect extends StatusEffect {
 	@Override
 	public void applyUpdateEffect(LivingEntity entity, int amplifier) {
 		if (entity.getWorld().isClient) return;
+		interruptCasting(entity);
 
 		// Clear all harmful effects (or all effects except this one)
 		// Since we are iterating while modifying, we need a copy

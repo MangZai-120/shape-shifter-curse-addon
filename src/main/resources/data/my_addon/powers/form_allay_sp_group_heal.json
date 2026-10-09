@@ -138,20 +138,40 @@
             }
         },
         "condition": {
-            "type": "apoli:resource",
-            "resource": "my_addon:form_allay_sp_mana_resource",
-            "comparison": ">=",
-            "compare_to": 100
+            "type": "apoli:and",
+            "conditions": [
+                {
+                    "type": "apoli:resource",
+                    "resource": "my_addon:form_allay_sp_mana_resource",
+                    "comparison": ">=",
+                    "compare_to": 100
+                },
+                {
+                    "type": "apoli:status_effect",
+                    "effect": "ssc_addon:purified",
+                    "inverted": true
+                }
+            ]
         }
     },
     "charging_tick": {
         "type": "apoli:action_over_time",
         "interval": 1,
         "condition": {
-            "type": "apoli:resource",
-            "resource": "my_addon:form_allay_sp_group_heal_charging_state",
-            "comparison": "==",
-            "compare_to": 1
+            "type": "apoli:and",
+            "conditions": [
+                {
+                    "type": "apoli:resource",
+                    "resource": "my_addon:form_allay_sp_group_heal_charging_state",
+                    "comparison": "==",
+                    "compare_to": 1
+                },
+                {
+                    "type": "apoli:status_effect",
+                    "effect": "ssc_addon:purified",
+                    "inverted": true
+                }
+            ]
         },
         "entity_action": {
             "type": "apoli:and",

@@ -1,6 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -162,6 +163,10 @@ public final class SpellChannelManager {
 			return false;
 		}
 		if (isCasting(player) || !player.isAlive() || player.isSpectator()) return false;
+		if (player.hasStatusEffect(SscAddon.PURIFIED)) {
+			player.sendMessage(Text.translatable("message.ssc_addon.spell.purified_blocked"), true);
+			return false;
+		}
 		// 所有法术在捕获目标、创建演出、禁动或渐进扣费之前重验整次消耗。
 		// solo 卷轴按次数结算；书内施法必须有有效 JSON 消耗与足够的实际能量。
 		if (!spell.getConfig().manaCostConfigured) {
@@ -182,7 +187,7 @@ public final class SpellChannelManager {
 					SpellCastFeedback.seconds(gate - player.getWorld().getTime())), true);
 			return false;
 		}
-		Channel channel = new Channel(player, spell, scroll, level, solo, token, cooldown,
+		Channel channel = new Channel(player, spell, scroll, level, solo, token, mana, cooldown,
 				sourceValid, effect, settleCooldown, consumeUse,modifiers);
 		if (spell.requiresTargetBeforeChannel()) {
 			Vec3d target = RuneCastContext.with(channel.modifiers,()->spell.captureCastTarget(player, level));
@@ -210,7 +215,7 @@ public final class SpellChannelManager {
 	public static void release(ServerPlayerEntity player, int token, boolean solo) {
 		Channel channel = ACTIVE.get(player.getUuid());
 		if (channel == null || channel.solo != solo || channel.token != token || channel.progress.released()) return;
-		if (!valid(channel)) { stop(player, true); return; }
+		if (!ensureValid(channel)) return;
 		if (channel.mode == SpellCastingRules.Mode.AUTOMATIC) return;
 		if (channel.mode == SpellCastingRules.Mode.CONTINUOUS) {
 			stop(player, !channel.progress.started());
@@ -236,6 +241,23 @@ public final class SpellChannelManager {
 				|| !channel.spell.isLockedIn(player) && SpellCastingRules.allowsExternal(channel.interruptMode))) stop(player, true, "message.ssc_addon.spell.cast_interrupted_damage");
 	}
 
+	/** Purification overrides normal interrupt bits and release locks, with the full quoted CD. */
+	public static void onPurified(ServerPlayerEntity player) {
+		stop(player, true, Text.translatable("message.ssc_addon.spell.cast_interrupted_purified"), true);
+	}
+
+	private static boolean ensureValid(Channel channel) {
+		if (channel.player.hasStatusEffect(SscAddon.PURIFIED)) {
+			onPurified(channel.player);
+			return false;
+		}
+		if (!valid(channel)) {
+			stop(channel.player, true);
+			return false;
+		}
+		return true;
+	}
+
 	private static boolean valid(Channel channel) {
 		ServerPlayerEntity player = channel.player;
 		return player.isAlive() && !player.isRemoved() && !player.isSpectator()
@@ -247,10 +269,7 @@ public final class SpellChannelManager {
 	private static void tick(Channel channel) {
 		ServerPlayerEntity player = channel.player;
 		if (ACTIVE.get(player.getUuid()) != channel) return;
-		if (!valid(channel)) {
-			stop(player, true);
-			return;
-		}
+		if (!ensureValid(channel)) return;
 		if (channel.cancelHeld && ++channel.cancelTicks >= BAL.i("cancel_hold_ticks", 20)
 				&& !channel.spell.isLockedIn(player)
 				&& SpellCastingRules.allowsSelf(channel.interruptMode)) {
@@ -286,8 +305,15 @@ public final class SpellChannelManager {
 
 	private static void advance(Channel channel) {
 		if (ACTIVE.get(channel.player.getUuid()) != channel) return;
-		if (!valid(channel)) { stop(channel.player, true); return; }
-		// 耗蓝已在起手一次性全额结清（castInternal）；读条期间不再扣费（渐进扣蓝已废，2026-09-23）。
+		if (!ensureValid(channel)) return;
+		if (!channel.manaPayment.advance(channel.progress.elapsed(), cost -> {
+			if (!SpellbookData.consumeMana(channel.manaBook, cost)) return false;
+			FormCastingStyle.markManaSpend(channel.player);
+			return true;
+		})) {
+			stop(channel.player, true, "message.ssc_addon.spell.cast_interrupted_mana");
+			return;
+		}
 		if (!RuneCastContext.with(channel.modifiers,()->channel.spell.readyToRelease(channel.player, channel.scroll)) || !channel.progress.beginEffect()) return;
 		if (channel.mode == SpellCastingRules.Mode.CONTINUOUS) {
 			// 持续模式起手生效即视为释放生效，GCD 从此起算（持续阶段结束不再重置）
@@ -315,13 +341,17 @@ public final class SpellChannelManager {
 	}
 
 	private static void stop(ServerPlayerEntity player, boolean interrupted, Text reason) {
+		stop(player, interrupted, reason, false);
+	}
+
+	private static void stop(ServerPlayerEntity player, boolean interrupted, Text reason, boolean fullCooldown) {
 		Channel channel = ACTIVE.remove(player.getUuid());
 		if (channel == null) return;
 		clearSlow(player);
 		broadcastVisual(channel, false);
 		channel.spell.onChannelEnded(player, interrupted);
-		channel.settleCooldown.accept(interrupted
-				? channel.spell.getInterruptedCooldown(channel.cooldown) : channel.cooldown);
+		channel.settleCooldown.accept(SpellCastingRules.cooldownAfterStop(
+				channel.spell, channel.cooldown, interrupted, fullCooldown));
 		if (!interrupted || channel.progress.started()) channel.consumeUse.run();
 		if (channel.progress.started() && channel.mode == SpellCastingRules.Mode.CONTINUOUS) {
 			channel.spell.endContinuousCast(player, channel.level, interrupted);
@@ -450,13 +480,15 @@ public final class SpellChannelManager {
 		final IntConsumer settleCooldown;
 		final Runnable consumeUse;
 		final SpellCastingRules.Progress<Vec3d> progress;
+		final ItemStack manaBook;
+		final SpellManaPayment manaPayment;
 		int cancelTicks, continuousTicks, visualTicks;
 		boolean cancelHeld;
 		/** 锁定态已广播标志（进入锁定的当 tick 补发一次校准包，防周期网格漏档）。 */
 		boolean lockedAnnounced;
 
 		Channel(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level, boolean solo, int token,
-				int cooldown, BooleanSupplier sourceValid,
+				int mana, int cooldown, BooleanSupplier sourceValid,
 				Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers) {
             this.modifiers=modifiers;
 			this.player = player;
@@ -474,6 +506,8 @@ public final class SpellChannelManager {
             this.profile = new SpellCastingRules.Profile(modifiers.time(baseProfile.ticks()),baseProfile.speedMultiplier(),baseProfile.immobilized());
 			this.mode = spell.getCastingMode();
 			this.progress = new SpellCastingRules.Progress<>(this.mode, this.profile.ticks(), token);
+			this.manaBook = solo ? ItemStack.EMPTY : SpellCastManager.getEquippedBook(player);
+			this.manaPayment = new SpellManaPayment(solo ? 0 : mana, this.profile.ticks());
 			this.interruptMode = spell.getConfig().interruptMode;
 			this.dimension = player.getWorld().getRegistryKey();
 		}

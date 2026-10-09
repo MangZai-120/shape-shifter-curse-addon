@@ -26,7 +26,7 @@ public final class DomainSpell extends Spell {
 	@Override
 	public boolean canContinueCasting(ServerPlayerEntity caster, ItemStack scroll) { return DomainManager.canContinue(caster); }
 	/** 锁定点（2026-09-23 用户定稿）：黑色壳开始扩张（蓄力 200t / 第 10 秒）后不可打断，
-	 * 必须释放——伤害/主动取消/长按取消/位移走超 3 格均不再断。 */
+	 * 伤害/主动取消/长按取消/位移走超 3 格均不再断；净化仍通过统一入口强制打断。 */
 	@Override
 	public boolean isLockedIn(ServerPlayerEntity caster) {
 		return DomainManager.isExpanding(caster);

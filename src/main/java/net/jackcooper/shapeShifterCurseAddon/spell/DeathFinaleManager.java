@@ -30,15 +30,17 @@ public final class DeathFinaleManager {
         final UUID id = UUID.randomUUID();
         final UUID owner;
         final ServerWorld world;
-        final Vec3d center;
+        final DeathFinaleRules.ChargePosition position;
         final int duration;
         final double radius = DeathFinaleRules.RADIUS;
         int elapsed;
         long releasedAt = -1;
         Sequence(ServerPlayerEntity player, int duration) {
-            owner = player.getUuid(); world = player.getServerWorld(); center = player.getPos();
+            owner = player.getUuid(); world = player.getServerWorld();
+            position = new DeathFinaleRules.ChargePosition(player.getPos());
             this.duration = duration;
         }
+        Vec3d center() { return position.center(); }
     }
 
     private DeathFinaleManager() {}
@@ -63,20 +65,23 @@ public final class DeathFinaleManager {
 
     public static void advance(ServerPlayerEntity caster, int ticks) {
         Sequence s = ACTIVE.get(caster.getUuid());
-        if (s == null || s.releasedAt >= 0 || caster.getWorld() != s.world) return;
+        if (s == null || s.releasedAt >= 0 || caster.getWorld() != s.world
+                || !s.position.follow(caster.getPos())) return;
         s.elapsed = ticks;
-        // Preserve view angles while enforcing the original anchor, including knockback/gravity.
-        caster.setVelocity(Vec3d.ZERO);
-        caster.fallDistance = 0;
-        if (caster.squaredDistanceTo(s.center) > 0.000001)
-            caster.networkHandler.requestTeleport(s.center.x, s.center.y, s.center.z, caster.getYaw(), caster.getPitch());
+        // Movement and jumping use the shared channel lock; gravity/knockback remain vanilla.
         int remaining = s.duration - ticks;
         if (remaining > 0 && ticks % (remaining <= 60 ? 10 : 20) == 0) {
-            s.world.playSound(null, s.center.x, s.center.y, s.center.z, SoundEvents.ENTITY_WARDEN_HEARTBEAT,
+            s.world.playSound(null, s.center().x, s.center().y, s.center().z, SoundEvents.ENTITY_WARDEN_HEARTBEAT,
                     SoundCategory.PLAYERS, 1.3f, 0.65f + 0.45f * ticks / s.duration);
-            if (ticks % 20 == 0) s.world.playSound(null, s.center.x, s.center.y, s.center.z,
+            if (ticks % 20 == 0) s.world.playSound(null, s.center().x, s.center().y, s.center().z,
                     SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.PLAYERS, 0.65f, 0.55f);
         }
+    }
+
+    public static boolean canContinue(ServerPlayerEntity caster) {
+        Sequence s = ACTIVE.get(caster.getUuid());
+        return s != null && s.releasedAt < 0 && caster.getWorld() == s.world
+                && s.position.canContinue(caster.getPos());
     }
 
     public static void cancel(ServerPlayerEntity caster) {
@@ -86,26 +91,27 @@ public final class DeathFinaleManager {
     private static boolean eligible(Sequence s, ServerPlayerEntity owner, LivingEntity target) {
         if (owner == null || target.getWorld() != s.world || !target.isAlive() || target.isRemoved()
                 || target.isSpectator() || target instanceof ArmorStandEntity
-                || !DeathFinaleRules.contains(target.squaredDistanceTo(s.center), s.radius)
+                || !DeathFinaleRules.contains(target.squaredDistanceTo(s.center()), s.radius)
                 || WhitelistUtils.isProtected(owner, target)
-                || DomainManager.blocksPath(s.world, s.center, target.getPos(), 0)) return false;
+                || DomainManager.blocksPath(s.world, s.center(), target.getPos(), 0)) return false;
         if (target instanceof ServerPlayerEntity player && !owner.shouldDamagePlayer(player)) return false;
         return !target.isInvulnerableTo(SpellDamageSource.of(s.world.getDamageSources(), owner));
     }
 
     public static void release(ServerPlayerEntity caster, float power, UUID refundId, int exp) {
         Sequence s = ACTIVE.get(caster.getUuid());
-        if (s == null || s.releasedAt >= 0 || s.elapsed < s.duration || caster.getWorld() != s.world) return;
+        if (s == null || s.releasedAt >= 0 || s.elapsed < s.duration || caster.getWorld() != s.world
+                || !s.position.follow(caster.getPos())) return;
         s.releasedAt = s.world.getTime();
         // No falloff and no block explosion. Re-evaluate targets at completion, not at the start.
         for (LivingEntity target : s.world.getEntitiesByClass(LivingEntity.class,
-                Box.of(s.center, s.radius * 2, s.radius * 2, s.radius * 2), e -> eligible(s, caster, e))) {
+                Box.of(s.center(), s.radius * 2, s.radius * 2, s.radius * 2), e -> eligible(s, caster, e))) {
             if (SpellHitHelper.projectileHit(caster, target, power, FormationElement.VOID, refundId, exp)
                     == SpellHitHelper.HitResult.HIT) exp = 0;
         }
-        s.world.playSound(null, s.center.x, s.center.y, s.center.z, SoundEvents.ENTITY_WARDEN_SONIC_BOOM,
+        s.world.playSound(null, s.center().x, s.center().y, s.center().z, SoundEvents.ENTITY_WARDEN_SONIC_BOOM,
                 SoundCategory.PLAYERS, 2f, 0.65f);
-        s.world.playSound(null, s.center.x, s.center.y, s.center.z, SoundEvents.BLOCK_RESPAWN_ANCHOR_DEPLETE.value(),
+        s.world.playSound(null, s.center().x, s.center().y, s.center().z, SoundEvents.BLOCK_RESPAWN_ANCHOR_DEPLETE.value(),
                 SoundCategory.PLAYERS, 1.5f, 0.6f);
         sync(caster.getServer(), true);
     }
@@ -124,7 +130,7 @@ public final class DeathFinaleManager {
         for (var viewer : server.getPlayerManager().getPlayerList()) {
             if (!ServerPlayNetworking.canSend(viewer, SNAPSHOT)) continue;
             var visible = ACTIVE.values().stream().filter(s -> s.world == viewer.getWorld()
-                    && viewer.squaredDistanceTo(s.center) <= 64 * 64).toList();
+                    && viewer.squaredDistanceTo(s.center()) <= 64 * 64).toList();
             Set<UUID> danger = new HashSet<>();
             for (var s : visible) if (s.releasedAt < 0 && eligible(s, server.getPlayerManager().getPlayer(s.owner), viewer))
                 danger.add(s.id);
@@ -137,7 +143,7 @@ public final class DeathFinaleManager {
             out.writeVarInt(visible.size());
             for (var s : visible) {
                 out.writeUuid(s.id); out.writeUuid(s.owner);
-                out.writeDouble(s.center.x); out.writeDouble(s.center.y); out.writeDouble(s.center.z);
+                out.writeDouble(s.center().x); out.writeDouble(s.center().y); out.writeDouble(s.center().z);
                 out.writeDouble(s.radius); out.writeVarInt(s.duration);
                 out.writeVarInt(s.releasedAt < 0 ? s.elapsed : s.duration + (int) (s.world.getTime() - s.releasedAt));
                 out.writeBoolean(s.releasedAt >= 0); out.writeBoolean(danger.contains(s.id));

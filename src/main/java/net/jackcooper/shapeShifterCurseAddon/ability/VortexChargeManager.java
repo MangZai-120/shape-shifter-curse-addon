@@ -16,6 +16,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -116,6 +117,7 @@ public final class VortexChargeManager {
 	/** 客户端发「开始蓄力」包时调用。 */
 	public static void start(ServerPlayerEntity player) {
 		if (CHARGING.containsKey(player.getUuid())) return;
+		if (player.hasStatusEffect(SscAddon.PURIFIED)) return;
 		if (!FormUtils.isAxolotlSP(player)) return;
 		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return;
 		if (player.getAir() < BAL.i("air_per_hit", AIR_PER_HIT)) return; // 至少够扣一次
@@ -139,6 +141,10 @@ public final class VortexChargeManager {
 	public static void tick(ServerPlayerEntity player) {
 		ChargeState s = CHARGING.get(player.getUuid());
 		if (s == null) return;
+		if (player.hasStatusEffect(SscAddon.PURIFIED)) {
+			onPurified(player);
+			return;
+		}
 		if (player.isDead() || !FormUtils.isAxolotlSP(player)) {
 			cancel(player); // 形态丢失/死亡 → 取消，不结算
 			return;
@@ -182,6 +188,10 @@ public final class VortexChargeManager {
 
 	/** 客户端发「释放」包 或 自动释放时调用。 */
 	public static void release(ServerPlayerEntity player) {
+		if (player.hasStatusEffect(SscAddon.PURIFIED)) {
+			onPurified(player);
+			return;
+		}
 		ChargeState s = CHARGING.remove(player.getUuid());
 		PowerUtils.setResourceValueAndSync(player, VORTEX_STATE, 0);
 		if (s == null) return;
@@ -225,6 +235,16 @@ public final class VortexChargeManager {
 			living.setVelocity(push.x, 0.6 * scale, push.z);
 			living.velocityModified = true;
 		}
+	}
+
+	/** 净化立即撤销蓄力，不产生冲击，并从当前时刻起进入完整技能 CD。 */
+	public static void onPurified(ServerPlayerEntity player) {
+		ChargeState s = CHARGING.remove(player.getUuid());
+		if (s == null) return;
+		PowerUtils.setResourceValueAndSync(player, VORTEX_STATE, 0);
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.interruptedFull(player, SKILL_ID, s.castId);
+		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+				SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.5f);
 	}
 
 	/** 取消蓄力（不结算伤害、不进 CD）。 */

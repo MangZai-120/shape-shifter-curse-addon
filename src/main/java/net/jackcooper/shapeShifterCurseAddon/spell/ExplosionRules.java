@@ -14,8 +14,8 @@ package net.jackcooper.shapeShifterCurseAddon.spell;
  * 点燃：32-42 格 10 秒、42-50 格 5 秒。击退：全范围从爆心向外，近强远弱。</p>
  *
  * <p>音效（2026-09-22 用户定稿）：完全由 explosion_theme（21 秒）接管——T-8s 起播、
- * 3 秒渐入、第 8 秒爆炸音；不再叠原版 TNT 爆炸音与预警 beep。距离衰减 64 格内满音量、
- * 64-164 格线性递减至 0。</p>
+ * 3 秒渐入、第 8 秒爆炸音；不再叠原版 TNT 爆炸音与预警 beep。距离统一乘 2 后，128 格内满音量、
+ * 128-328 格线性递减至 0。</p>
  */
 public final class ExplosionRules {
 	private ExplosionRules() {}
@@ -91,9 +91,13 @@ public final class ExplosionRules {
 	/** 当前生效的外圈点燃时长（balance 可调）。 */
 	public static int fireTicksFar() { return balEInt("fire_ticks_far", FIRE_TICKS_FAR); }
 	/** 当前生效的满音量半径（balance 可调）。 */
-	public static double soundFull() { return balE("sound_full", SOUND_FULL); }
+	public static double soundFull() { return net.jackcooper.shapeShifterCurseAddon.sound.SoundRangeRules.distance(balE("sound_full", SOUND_FULL)); }
 	/** 当前生效的音效外沿（balance 可调）。 */
-	public static double soundRange() { return balE("sound_range", SOUND_RANGE); }
+	public static double soundRange() { return net.jackcooper.shapeShifterCurseAddon.sound.SoundRangeRules.distance(balE("sound_range", SOUND_RANGE)); }
+
+	/** Sound listeners beyond the original visual range must receive the sequence as well. */
+	public static double audienceRange() { return Math.max(VIEW_RANGE, soundRange()); }
+	public static boolean visualsInRange(double distanceSquared) { return distanceSquared < VIEW_RANGE * VIEW_RANGE; }
 
 	// ---- 视觉序列 ----
 	/** 主题音频起播 + 光柱启动时刻：蓄力第 27 秒（T-8s，伤害前 8 秒）。 */
@@ -166,9 +170,9 @@ public final class ExplosionRules {
 	}
 
 	// ---- 音效与可见范围 ----
-	/** 满音量半径：64 格内音量恒 1.0。默认值；运行时从 balance 快照读取。 */
+	/** 倍增前的满音量半径基准；保留 balance/save 数值，soundFull() 统一乘 2，默认实际 128。 */
 	public static final double SOUND_FULL = 64.0;
-	/** 音效外沿：64-164 格线性递减至 0。默认值；运行时从 balance 快照读取。 */
+	/** 倍增前的外沿基准；保留 balance/save 数值，soundRange() 统一乘 2，默认实际 328。 */
 	public static final double SOUND_RANGE = 164.0;
 	/** 视觉（法阵/光柱/球）同步范围：音效外沿 + 余量。 */
 	public static final double VIEW_RANGE = 200.0;
@@ -177,7 +181,7 @@ public final class ExplosionRules {
 	 * 想加大音量必须提升源文件响度（2026-09-23 已将 ogg 峰值 -16.1dB → -1.1dB，增益还原 1.0）。 */
 	public static final float THEME_VOLUME_GAIN = 1.0f;
 
-	/** 主题音频当前播放音量（渐入 × 距离衰减 × 增益）：T-8s 前 0；3 秒线性渐入 × 64 内满/64-164 递减。 */
+	/** 主题音频当前播放音量：渐入与增益不变，默认距离为 128 内满/128-328 递减。 */
 	public static float themeVolume(int elapsed, double distance) {
 		if (elapsed < SOUND_START_TICKS) return 0f;
 		float fade = Math.min(1f, (elapsed - SOUND_START_TICKS) / (float) SOUND_FADE_TICKS);
@@ -215,7 +219,7 @@ public final class ExplosionRules {
 		return 1.6 * (1.0 - t) + 0.2;
 	}
 
-	/** 音效音量曲线：64 格内恒 1.0，64-164 格线性递减至 0（与领域曲线形状不同，用户定稿）。边界运行时从 balance 读取。 */
+	/** 音效音量曲线：增益不变，balance 的距离基准统一乘 2，默认 128 内满/128-328 递减。 */
 	public static float soundVolume(double distance) {
 		if (!Double.isFinite(distance)) return 0f;
 		double full = soundFull();

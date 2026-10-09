@@ -197,9 +197,8 @@ public final class SpellCastManager {
 		}
 		final int castLevel = level;
 		final int castMana = manaCost;
-		// 起手一次性全额扣除（2026-09-23 用户定稿）：预检通过即锁定报价，通道建立成功后
-		// 立即全额结算——读条期间零扣费（渐进扣蓝已废），中断不返还已扣部分。
-		boolean started = SpellChannelManager.start(player, spell, scroll, level, false, token, manaCost, cd,
+		// 起手必须付得起整次报价；实际扣费由统一施法流程每 2 tick 按进度结算。
+		SpellChannelManager.start(player, spell, scroll, level, false, token, manaCost, cd,
 				() -> getEquippedBook(player) == book && ItemStack.areEqual(SpellbookData.getScroll(book, slot), scroll),
 				target -> finishCast(player, book, scroll, spell, runeDamage, castLevel, castMana, forcedLevel, target),
 				duration -> {
@@ -211,11 +210,6 @@ public final class SpellCastManager {
 					if (unchanged) SpellbookData.setScroll(book, slot, scroll);
 					SharedSpellCooldowns.record(player, spell, end);
 				}, ()->{}, runeModifiers);
-		if (started) {
-				// 通道建立后才结算（start 失败如落点失效不扣）；预检已确保付得起，此处必成
-				SpellbookData.consumeMana(book, manaCost);
-				FormCastingStyle.markManaSpend(player);
-			}
 	}
 
 	private static void finishCast(ServerPlayerEntity player, ItemStack book, ItemStack scroll, Spell spell,
