@@ -266,9 +266,10 @@ public final class SpellbookData {
 		// 旧档迁移：旧 Exp 为 int（每次施法 +1），×10 折算成新精度并移除旧键
 		if (nbt != null && nbt.contains("Exp")) {
 			int legacy = Math.max(0, nbt.getInt("Exp"));
+			int migrated = (int) Math.min(Integer.MAX_VALUE, legacy * 10L);
 			nbt.remove("Exp");
-			nbt.putInt(NBT_EXP, legacy * 10);
-			return legacy * 10;
+			nbt.putInt(NBT_EXP, migrated);
+			return migrated;
 		}
 		return 0;
 	}
@@ -287,7 +288,8 @@ public final class SpellbookData {
 
 	/** 累积经验（×10 整数增量，如 6.0 exp 传 60）。 */
 	public static void addExpTen(ItemStack book, int amountTen) {
-		setExpTen(book, getExpTen(book) + amountTen);
+		long total = (long) getExpTen(book) + amountTen;
+		setExpTen(book, (int) Math.max(0L, Math.min(Integer.MAX_VALUE, total)));
 	}
 
 	/** 升到下一级所需经验（×10 整数）；满级返回 -1。 */

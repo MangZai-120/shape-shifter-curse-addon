@@ -9,6 +9,7 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -20,6 +21,8 @@ import net.minecraft.sound.SoundEvents;
 import net.onixary.shapeShifterCurseFabric.mana.ManaComponent;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.jackcooper.shapeShifterCurseAddon.config.ConfigChangeManager;
+import net.jackcooper.shapeShifterCurseAddon.item.MoonDustSpellbookItem;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
@@ -49,6 +52,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 public class SscAddonCommands {
@@ -76,6 +80,17 @@ public class SscAddonCommands {
 
 	public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
 		dispatcher.register(CommandManager.literal("ssc_addon")
+				.then(CommandManager.literal("moon_dust_spellbook")
+						.requires(source -> source.hasPermissionLevel(2))
+						.then(CommandManager.literal("exp")
+								.then(CommandManager.literal("addon")
+										.then(CommandManager.argument("amount", IntegerArgumentType.integer(1))
+												.executes(SscAddonCommands::addSpellbookExp))))
+						.then(CommandManager.literal("cd")
+								.then(CommandManager.literal("reset")
+										.executes(SscAddonCommands::resetSpellCdOnSelf)
+										.then(CommandManager.argument("targets", EntityArgumentType.players())
+												.executes(context -> resetSpellCd(context, EntityArgumentType.getPlayers(context, "targets")))))))
 				.then(CommandManager.literal("give_unanalyzed_scroll")
 						.requires(source -> source.hasPermissionLevel(2))
 						.then(CommandManager.argument("spell", StringArgumentType.word())
@@ -151,10 +166,7 @@ public class SscAddonCommands {
 				// 重置法术 CD（OP）：清目标玩家全部法术冷却（共享表 + 书内卷轴 NBT + 施法 GCD）
 				.then(CommandManager.literal("reset_spell_cd")
 						.requires(source -> source.hasPermissionLevel(2))
-						.executes(context -> resetSpellCd(context,
-								context.getSource().getPlayer() == null
-										? Collections.emptyList()
-										: Collections.singletonList(context.getSource().getPlayer())))
+						.executes(SscAddonCommands::resetSpellCdOnSelf)
 						.then(CommandManager.argument("targets", EntityArgumentType.players())
 								.executes(context -> resetSpellCd(context, EntityArgumentType.getPlayers(context, "targets")))
 						)
@@ -757,8 +769,43 @@ public class SscAddonCommands {
 		return 1;
 	}
 
+	private static int addSpellbookExp(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+		ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+		ItemStack book = player.getMainHandStack();
+		if (!(book.getItem() instanceof MoonDustSpellbookItem)) {
+			book = player.getOffHandStack();
+		}
+		if (!(book.getItem() instanceof MoonDustSpellbookItem)) {
+			context.getSource().sendError(Text.translatable("command.ssc_addon.moon_dust_spellbook.exp.not_held"));
+			return 0;
+		}
+		int amount = IntegerArgumentType.getInteger(context, "amount");
+		// Read a copy so a rejected addition cannot migrate or mutate the held book's NBT.
+		int before = SpellbookData.getExpTen(book.copy());
+		long after = before + amount * 10L;
+		if (after > Integer.MAX_VALUE) {
+			context.getSource().sendError(Text.translatable("command.ssc_addon.moon_dust_spellbook.exp.too_large",
+					(Integer.MAX_VALUE - before) / 10));
+			return 0;
+		}
+		SpellbookData.setExpTen(book, (int) after);
+		player.getInventory().markDirty();
+		player.currentScreenHandler.sendContentUpdates();
+		if (player.currentScreenHandler != player.playerScreenHandler) {
+			player.playerScreenHandler.sendContentUpdates();
+		}
+		String total = String.format(Locale.ROOT, "%.1f", after / 10.0);
+		context.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.moon_dust_spellbook.exp.added", amount, total), true);
+		return 1;
+	}
+
+	private static int resetSpellCdOnSelf(CommandContext<ServerCommandSource> context) {
+		ServerPlayerEntity player = context.getSource().getPlayer();
+		return resetSpellCd(context, player == null ? Collections.emptyList() : Collections.singletonList(player));
+	}
+
 	/**
-	 * 重置目标玩家的全部法术 CD（/ssc_addon reset_spell_cd，OP）。
+	 * 重置目标玩家的全部法术 CD（/ssc_addon moon_dust_spellbook cd reset，OP；保留 reset_spell_cd）。
 	 * 清理三处：① 共享 CD 表（施法判定权威）；② 装备书内所有卷轴的 NBT Cd；
 	 * ③ 施法 GCD 门（释放后 0.8s 间隔）。正在读条的会话不强制中断（CD 重置只影响下一次起手）。
 	 */
