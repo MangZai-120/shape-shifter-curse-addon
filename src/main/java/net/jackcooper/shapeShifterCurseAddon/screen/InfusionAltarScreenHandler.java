@@ -73,11 +73,11 @@ public class InfusionAltarScreenHandler extends ScreenHandler {
 						|| stack.getItem() == RegCustomItem.MOONDUST_CRYSTAL_SHARD;
 			}
 		});
-		// 催化槽：超级塑形核心。
+		// 催化槽：塑形核心。
 		this.addSlot(new Slot(inventory, 2, CATALYST_X, MATERIAL_Y) {
 			@Override
 			public boolean canInsert(ItemStack stack) {
-				return stack.getItem() == RegCustomItem.SUPER_MORPHSCALE_CORE;
+				return stack.getItem() == RegCustomItem.MORPHSCALE_CORE;
 			}
 		});
 		// 六芒星法阵角槽 3-8
