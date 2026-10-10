@@ -105,7 +105,7 @@ public class SscAddonActions {
 							}
 							// 统一白名单判定：受服务端总开关控制
 							if (WhitelistUtils.isProtected(player, e)) continue;
-						e.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, 160, 0), player); // 8s；source=施法者供入梦高光拦截
+						net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatEnhancements.applyFallenScream(player, e, 160);
 						}
 
 						// Kill projectiles
@@ -258,6 +258,12 @@ public class SscAddonActions {
 					player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
 							net.minecraft.sound.SoundEvents.ENTITY_SPIDER_AMBIENT,
 							net.minecraft.sound.SoundCategory.PLAYERS, 0.4f, 1.6f);
+				}));
+
+		registerBiEntity(new ActionFactory<>(new Identifier("my_addon", "npc_purification_debuffs"),
+				new SerializableData(), (data, pair) -> {
+					if (pair.getRight() instanceof LivingEntity target)
+						net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatEnhancements.applyPurification(pair.getLeft(), target);
 				}));
 
 		registerBiEntity(new ActionFactory<>(new Identifier("my_addon", "damage_target_from_actor"),

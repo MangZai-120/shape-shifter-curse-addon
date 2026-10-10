@@ -762,6 +762,36 @@ public final class SscBalanceSchema {
         // —— 咬合红技/北极狐雷（RedFormTickManager 等）函数内字面量：见 §5 必查项，未在本批登记，
         //    与 SscAddonLivingEntityMixin/FormAffinity 一起留待阶段 5 逐函数定性 ——
 
+        // NPC-only combat additions; caster whitelist and player behavior remain authoritative.
+        b.scope("abilities.npc_combat")
+                .doubleParam("upgrade_axolotl_primary_damage", 1.5, 0.0, 10.0)
+                .doubleParam("fluorescent_damage", 1.5, 0.0, 10.0)
+                .doubleParam("snow_fox_damage", 1.5, 0.0, 10.0)
+                .doubleParam("fallen_damage", 1.5, 0.0, 10.0)
+                .doubleParam("fallen_glow_duration_mul", 2.0, 0.0, 10.0)
+                .doubleParam("fallen_mark_dealt", 1.25, 0.0, 10.0)
+                .doubleParam("fallen_mark_taken", 0.75, 0.0, 10.0)
+                .doubleParam("wild_cat_stun_duration_mul", 2.0, 0.0, 10.0)
+                .doubleParam("wild_cat_stun_taken", 2.0, 0.0, 10.0)
+                .doubleParam("wind_secondary_mul", 2.0, 0.0, 10.0)
+                .doubleParam("wind_primary_mul", 1.5, 0.0, 10.0)
+                .doubleParam("nova_taken", 0.75, 0.0, 10.0)
+                .doubleParam("nova_explosion", 100.0, 0.0, 10000.0)
+                .doubleParam("mancianima_primary_cap", 40.0, 0.0, 10000.0)
+                .doubleParam("mancianima_link_cap_mul", 2.0, 0.0, 10.0)
+                .doubleParam("mancianima_fixed_mul", 2.0, 0.0, 10.0)
+                .doubleParam("anubis_domain_dealt", 1.2, 0.0, 10.0)
+                .doubleParam("anubis_taken", 0.5, 0.0, 10.0)
+                .doubleParam("moon_cocoon_dealt", 1.25, 0.0, 10.0)
+                .doubleParam("moon_tether_dealt", 1.15, 0.0, 10.0)
+                .doubleParam("moon_tether_taken", 0.6, 0.0, 10.0)
+                .doubleParam("salticidae_primary_damage", 2.0, 0.0, 10.0)
+                .doubleParam("salticidae_primary_duration", 2.0, 0.0, 10.0)
+                .doubleParam("salticidae_secondary_damage", 1.5, 0.0, 10.0)
+                .doubleParam("desmodus_skill_damage", 2.0, 0.0, 10.0)
+                .intParam("fruit_debuff_level_bonus", 1, 0, 10)
+                .intParam("allay_purify_duration", 300, 1, 12000);
+
         return b.build();
     }
 }

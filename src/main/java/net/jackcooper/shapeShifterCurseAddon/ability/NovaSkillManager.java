@@ -88,7 +88,7 @@ public final class NovaSkillManager {
     private static final Map<UUID, ChargeSession> CHARGE_START = new ConcurrentHashMap<>();
 
     /** 单次蓄力的起手参数快照（构造后不变）。 */
-    private record ChargeSession(long castId, long startTick, int chargeTime, int lethalRadius, int maxRadius, float maxDamage) {
+    private record ChargeSession(long castId, long startTick, int chargeTime, int lethalRadius, int maxRadius, float maxDamage, float npcMaxDamage) {
     }
 
     private NovaSkillManager() {
@@ -216,7 +216,7 @@ public final class NovaSkillManager {
                 BAL.i("charge_time", CHARGE_TIME),
                 BAL.i("lethal_radius", LETHAL_RADIUS),
                 BAL.i("max_radius", MAX_RADIUS),
-                (float) BAL.d("max_damage", MAX_DAMAGE));
+                (float) BAL.d("max_damage", MAX_DAMAGE), NpcCombatEnhancements.novaMaxDamage());
         CHARGE_START.put(player.getUuid(), session);
         // 代码减速 70%（属性修改器 MULTIPLY_TOTAL -0.70，精确非药水缓慢）+ 抗性 III
         applyChargeSlow(player);
@@ -270,10 +270,11 @@ public final class NovaSkillManager {
             double dist = e.distanceTo(player);
             if (dist > maxRadius) continue;
             float dmg;
+            float targetMaxDamage = NpcCombatEnhancements.isEnemyNpc(player, e) ? session.npcMaxDamage() : maxDamage;
             if (dist <= lethalRadius) {
-                dmg = maxDamage;
+                dmg = targetMaxDamage;
             } else {
-                dmg = maxDamage * (1.0f - (float) ((dist - lethalRadius) / (maxRadius - lethalRadius)));
+                dmg = targetMaxDamage * (1.0f - (float) ((dist - lethalRadius) / (maxRadius - lethalRadius)));
             }
             if (dmg <= 0) continue;
             e.damage(sw.getDamageSources().explosion(player, player), dmg); // 归属玩家、无破坏方块

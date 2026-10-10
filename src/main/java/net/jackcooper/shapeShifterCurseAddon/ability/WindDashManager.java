@@ -345,7 +345,7 @@ public final class WindDashManager {
                 // 视线检查：墙后目标不命中（仿原版 PR #523 豹猫冲刺穿墙修复）
                 if (!net.jackcooper.shapeShifterCurseAddon.util.LineOfSightUtils.hasLineOfSight(sw, player, living)) continue;
                 living.damage(player.getDamageSources().playerAttack(player),
-                        (float) BAL.d("landing_damage", LANDING_DAMAGE));
+                        NpcCombatEnhancements.scale(player, living, (float) BAL.d("landing_damage", LANDING_DAMAGE), "wind_primary_mul", 1.5));
                 Vec3d push = living.getPos().subtract(land);
                 if (push.lengthSquared() < 1.0e-4) push = new Vec3d(0, 1, 0);
                 push = push.normalize();

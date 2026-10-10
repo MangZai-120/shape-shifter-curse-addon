@@ -27,6 +27,9 @@ import net.jackcooper.shapeShifterCurseAddon.ability.NineLivesManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpTeleportAttack;
 import net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.WindSpiritClawManager;
+import net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatEnhancements;
+import net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatState;
+import net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatStateAccess;
 import net.jackcooper.shapeShifterCurseAddon.item.BindingAnkletItem;
 import net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager;
 import net.jackcooper.shapeShifterCurseAddon.event.LoginHealthRestoreHandler;
@@ -52,7 +55,48 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(LivingEntity.class)
-public abstract class SscAddonLivingEntityMixin {
+public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess {
+	@org.spongepowered.asm.mixin.Unique
+	private NpcCombatState ssca$npcCombatState;
+
+	@Override
+	public NpcCombatState ssca$getNpcCombatState() {
+		if (ssca$npcCombatState == null) ssca$npcCombatState = new NpcCombatState();
+		return ssca$npcCombatState;
+	}
+
+	@Inject(method = "writeCustomDataToNbt", at = @At("TAIL"))
+	private void ssca$saveNpcCombat(NbtCompound nbt, CallbackInfo ci) {
+		LivingEntity self = (LivingEntity) (Object) this;
+		if (!(self instanceof PlayerEntity) && ssca$npcCombatState != null) {
+			NbtCompound state = ssca$npcCombatState.write(self.getWorld().getTime());
+			if (!state.getCompound("Fallen").isEmpty() || !state.getCompound("WildCat").isEmpty()) nbt.put("SSCA.NpcCombat", state);
+			else nbt.remove("SSCA.NpcCombat");
+		}
+	}
+
+	@Inject(method = "readCustomDataFromNbt", at = @At("TAIL"))
+	private void ssca$loadNpcCombat(NbtCompound nbt, CallbackInfo ci) {
+		if (nbt.contains("SSCA.NpcCombat", NbtElement.COMPOUND_TYPE)) ssca$getNpcCombatState().read(nbt.getCompound("SSCA.NpcCombat"));
+		else ssca$npcCombatState = null;
+	}
+
+	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+	private float ssca$npcCombatDamage(float amount, DamageSource source) {
+		return NpcCombatEnhancements.modifyDamage((LivingEntity) (Object) this, source, amount);
+	}
+
+	@Inject(method = "onStatusEffectRemoved", at = @At("TAIL"))
+	private void ssca$clearNpcCombatEffect(StatusEffectInstance effect, CallbackInfo ci) {
+		if (ssca$npcCombatState == null) return;
+		if (effect.getEffectType() == StatusEffects.GLOWING) ssca$npcCombatState.clearFallen();
+		if (effect.getEffectType() == SscAddon.STUN) ssca$npcCombatState.clearWildCat();
+	}
+
+	@ModifyVariable(method = "addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;Lnet/minecraft/entity/Entity;)Z", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+	private StatusEffectInstance ssca$npcFruitDebuff(StatusEffectInstance effect, StatusEffectInstance original, Entity source) {
+		return NpcCombatEnhancements.enhanceFruitDebuff((LivingEntity) (Object) this, effect, source);
+	}
 	// ==== 平衡快照读取器：本 mixin 函数内字面量改运行时快照读取（注入点均在服务端 damage/heal 路径，安全）====
 	@org.spongepowered.asm.mixin.Unique
 	private static final BalanceReader BAL_MOON_TETHER = new BalanceReader("abilities.moon_tether");
@@ -371,16 +415,18 @@ public abstract class SscAddonLivingEntityMixin {
 				}
 				return amount * (float) BAL_MOON_TETHER.d("ally_taken_share", 0.5);
 			} else if (attacker == owner) {
-				// 拴住敌人 && 拴主攻击它 → 伤害 +25%
-				return amount * (float) BAL_MOON_TETHER.d("owner_vs_enemy_mul", 1.25);
+				// 拴主攻击敌人：NPC +15%，玩家沿用 +25%。
+				return amount * (self instanceof PlayerEntity ? (float) BAL_MOON_TETHER.d("owner_vs_enemy_mul", 1.25)
+						: (float) NpcCombatEnhancements.value("moon_tether_dealt", 1.15));
 			}
 		}
 
-		// B. self 是玩家，被自己拴住的敌人攻击 → 受伤 -25%
+		// B. 被自己拴住的敌人攻击：NPC -40%，玩家沿用 -25%。
 		if (self instanceof ServerPlayerEntity vp && attacker instanceof LivingEntity la
 				&& SpiderMoonWeaverSwingManager.isTethering(vp, la)
 				&& !WhitelistUtils.isProtected(vp, la)) {
-			return amount * (float) BAL_MOON_TETHER.d("enemy_vs_owner_mul", 0.75);
+			return amount * (la instanceof PlayerEntity ? (float) BAL_MOON_TETHER.d("enemy_vs_owner_mul", 0.75)
+					: (float) NpcCombatEnhancements.value("moon_tether_taken", 0.6));
 		}
 
 		return amount;
@@ -418,7 +464,7 @@ public abstract class SscAddonLivingEntityMixin {
 				&& source.isOf(DamageTypes.PLAYER_ATTACK)
 				&& FormUtils.isOcelotSP(p)
 				&& !WindSpiritClawManager.isHoldingWeapon(p)) {
-			float mult = WindSpiritClawManager.getNormalMeleeMultiplier(p);
+			float mult = WindSpiritClawManager.getNormalMeleeMultiplier(p, (LivingEntity) (Object) this);
 			if (mult != 1.0f) {
 				return value * mult;
 			}

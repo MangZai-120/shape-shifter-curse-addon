@@ -4,18 +4,16 @@
         "type": "apoli:and",
         "actions": [
             {
+                "type": "my_addon:damage_target_from_actor",
+                "amount": 3.0,
+                "damage_type": "minecraft:indirect_magic",
+                "non_player_multiplier": 2.0
+            },
+            {
                 "type": "apoli:target_action",
                 "action": {
                     "type": "apoli:and",
                     "actions": [
-                        {
-                            "type": "apoli:damage",
-                            "amount": 3.0,
-                            "source": {
-                                "name": "magic",
-                                "magic": true
-                            }
-                        },
                         {
                             "type": "apoli:execute_command",
                             "command": "particle soul_fire_flame ~ ~0.5 ~ 0.3 0.3 0.3 0.009 15 normal @a"
@@ -87,6 +85,9 @@
                     "comparison": "<=",
                     "compare_to": 0
                 }
+            },
+            {
+                "type": "my_addon:not_actor_whitelisted"
             }
         ]
     },

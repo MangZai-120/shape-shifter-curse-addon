@@ -266,7 +266,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 			if (entity instanceof ServerPlayerEntity serverPlayer && WhitelistUtils.isProtected(serverPlayer, target)) {
 				continue;
 			}
-			target.damage(source, aoeDamage());
+			target.damage(source, net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatEnhancements.scale(entity, target, aoeDamage(), "desmodus_skill_damage", 2.0));
 			// 从玩家位置向外击退
 			target.takeKnockback(aoeKnockback(), entity.getX() - target.getX(), entity.getZ() - target.getZ());
 			hitTargets.add(target);
@@ -410,7 +410,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 						net.jackcooper.shapeShifterCurseAddon.ability.BatDesmodusBloodThirst.SUPPRESS_OUTGOING_BUFF.set(true);
 						boolean dealt;
 						try {
-							dealt = t.damage(auraSrc, 2.0f);
+							dealt = t.damage(auraSrc, net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatEnhancements.scale(entity, t, 2.0f, "desmodus_skill_damage", 2.0));
 						} finally {
 							net.jackcooper.shapeShifterCurseAddon.ability.BatDesmodusBloodThirst.SUPPRESS_OUTGOING_BUFF.set(false);
 						}

@@ -5,6 +5,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.NineLivesManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.NovaSkillManager;
+import net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 
@@ -30,6 +31,9 @@ public final class SscaDamageVetoHandler {
 
 	public static void register() {
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+			if (entity instanceof ServerPlayerEntity caster && VortexChargeManager.suppressesNpcAttack(caster, source.getAttacker())) {
+				return false;
+			}
 			// 跳蛛跳杀腾空期免疫（仅服务端玩家、仅锁定目标来源）
 			if (entity instanceof ServerPlayerEntity sp
 					&& JumpKillManager.isLeapingAgainst(sp, source.getAttacker())) {

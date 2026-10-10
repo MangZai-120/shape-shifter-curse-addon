@@ -146,7 +146,7 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower implements net
 			// 默认白名单：玩家/宠物/召唤物豁免
 			if (entity instanceof ServerPlayerEntity sp && WhitelistUtils.isProtected(sp, target)) continue;
 
-			target.damage(source, damage());
+			target.damage(source, net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatEnhancements.scale(entity, target, damage(), "desmodus_skill_damage", 2.0));
 			// 反胃（统一）；带施法者 source 供入梦拦截归因
 			target.addStatusEffect(new StatusEffectInstance(StatusEffects.NAUSEA, debuffTicks(), 0, false, true, true), entity);
 			// 失聪：玩家用自定义 DEAFEN（客户端静音）；非玩家附加短暂失明模拟听觉抽离

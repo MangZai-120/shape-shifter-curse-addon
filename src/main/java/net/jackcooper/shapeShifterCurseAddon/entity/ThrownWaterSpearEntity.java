@@ -23,6 +23,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatEnhancements;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
@@ -30,7 +31,8 @@ import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
  * 进化美西螈「投掷水矛」的直线水矛投射物。
  *
  * <p>无重力、匀速直线飞行（仿 {@link FrostBallEntity}）；直击目标 12 点物理伤害，
- * 命中点 2 格半径内额外 5 点范围伤害。默认白名单：豁免玩家 / 宠物 / 白名单个体。
+ * 命中点 2 格半径内额外 5 点范围伤害；对敌方 NPC 的两种伤害均提高 50%。
+ * 默认白名单：豁免玩家 / 宠物 / 白名单个体。
  * 所有判定在服务端。</p>
  */
 public class ThrownWaterSpearEntity extends ProjectileEntity {
@@ -151,7 +153,8 @@ public class ThrownWaterSpearEntity extends ProjectileEntity {
 			if (!(this.getOwner() instanceof net.minecraft.server.network.ServerPlayerEntity ownerP)
 					|| !WhitelistUtils.isProtected(ownerP, living)) {
 				living.damage(this.getDamageSources().mobAttack(this.getOwner() instanceof LivingEntity l ? l : null),
-						(float) BAL.d("direct_damage", DIRECT_DAMAGE));
+						NpcCombatEnhancements.scale(this.getOwner(), living,
+								(float) BAL.d("direct_damage", DIRECT_DAMAGE), "upgrade_axolotl_primary_damage", 1.5));
 			}
 		}
 		// 命中点范围伤害
@@ -184,7 +187,9 @@ public class ThrownWaterSpearEntity extends ProjectileEntity {
 			if (e == directTarget) continue; // 直击目标不重复受 AOE
 			if (e instanceof LivingEntity living) {
 				if (ownerP != null && WhitelistUtils.isProtected(ownerP, living)) continue;
-				living.damage(this.getDamageSources().mobAttack(ownerLiving), (float) BAL.d("aoe_damage", AOE_DAMAGE));
+				living.damage(this.getDamageSources().mobAttack(ownerLiving),
+						NpcCombatEnhancements.scale(ownerP, living,
+								(float) BAL.d("aoe_damage", AOE_DAMAGE), "upgrade_axolotl_primary_damage", 1.5));
 			}
 		}
 		this.discard();

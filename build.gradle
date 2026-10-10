@@ -250,6 +250,23 @@ tasks.register('killEmpowerTest', JavaExec) {
 
 check.dependsOn killEmpowerTest
 
+tasks.register('npcCombatIntegrationTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatIntegrationTest'
+    workingDir = layout.buildDirectory.dir('npc-combat-integration').get().asFile
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def cpFile = new File(workingDir, 'test-classpath.txt')
+        cpFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'npc.testClasspathFile', cpFile.absolutePath
+    }
+}
+check.dependsOn npcCombatIntegrationTest
+
 tasks.register('networkPredictionTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath

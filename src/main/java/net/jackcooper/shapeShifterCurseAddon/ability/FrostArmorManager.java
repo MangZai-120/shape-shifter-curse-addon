@@ -114,10 +114,10 @@ public final class FrostArmorManager {
 			final float burstDamage = (float) BAL.d("burst_damage", BURST_DAMAGE);
 			final LivingEntity fAttacker = attacker;
 			sw.getServer().execute(() -> {
-				if (!fAttacker.isAlive() || fAttacker.isRemoved()) return;
+				if (!fAttacker.isAlive() || fAttacker.isRemoved() || WhitelistUtils.isProtected(victim, fAttacker)) return;
 				fAttacker.addStatusEffect(new StatusEffectInstance(
 						SscAddon.FROST_FREEZE, freezeTicks, 0, false, true, true), victim);
-				// 反伤走独立 magic 源（无 attacker=寒棘狐本人）→ 不会在攻击者身上再触发反刺链
+				// 独立 thorn_burst 源保留寒棘狐归属，供 NPC 伤害加成读取；专属类型阻止反刺递归。
 				fAttacker.damage(fAttacker.getDamageSources().create(
 						net.minecraft.registry.RegistryKey.of(
 							net.minecraft.registry.RegistryKeys.DAMAGE_TYPE,
