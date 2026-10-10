@@ -286,9 +286,17 @@ public class AnubisWolfSpDeathDomain {
 		return dx * dx + dz * dz <= radius * radius;
 	}
 
-	/**
-	 * 检查玩家的死亡领域是否为增强模式
-	 */
+	/** PvE combat follows the existing domain's world, actual expansion/retraction radius and height. */
+	public static boolean containsForNpcCombat(ServerPlayerEntity player, LivingEntity target) {
+		DomainData data = ACTIVE_DOMAINS.get(player.getUuid());
+		if (data == null || data.world != target.getWorld() || data.currentRadius <= 0
+				|| data.phase == Phase.CHARGING || data.phase == Phase.CLEANUP) return false;
+		double dx = target.getX() - data.center.getX(), dz = target.getZ() - data.center.getZ();
+		return dx * dx + dz * dz <= data.currentRadius * data.currentRadius
+				&& Math.abs(target.getY() - data.centerY) <= BAL.i("domain_height", DOMAIN_HEIGHT);
+	}
+
+	/** 检查玩家的死亡领域是否为增强模式。 */
 	public static boolean isEnhancedDomain(UUID playerUuid) {
 		DomainData data = ACTIVE_DOMAINS.get(playerUuid);
 		return data != null && data.enhanced;

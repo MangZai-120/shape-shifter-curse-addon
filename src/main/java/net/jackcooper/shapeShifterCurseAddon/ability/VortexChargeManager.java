@@ -97,6 +97,14 @@ public final class VortexChargeManager {
 		return CHARGING.containsKey(player.getUuid());
 	}
 
+	/** Only an enemy NPC currently inside the actual pull area loses its damage against this caster. */
+	public static boolean suppressesNpcAttack(ServerPlayerEntity player, Entity attacker) {
+		return isCharging(player) && player.isAlive() && FormUtils.isAxolotlSP(player)
+				&& !player.hasStatusEffect(SscAddon.PURIFIED) && attacker instanceof LivingEntity npc
+				&& NpcCombatEnhancements.isEnemyNpc(player, npc) && getMovementForceScale(npc) > 0.0
+				&& player.getBoundingBox().expand(BAL.d("pull_radius", PULL_RADIUS)).intersects(npc.getBoundingBox());
+	}
+
 	/**
 	 * 客户端本地玩家「涡流蓄力中」缓存标记：由 VortexChargeClient 每客户端 tick 更新一次，
 	 * 供碰撞推挤 mixin（SscAddonLivingEntityMixin.pushAwayFrom）快速读取，避免每次实体碰撞都读 Apoli 资源。

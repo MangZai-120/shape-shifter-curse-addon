@@ -459,13 +459,15 @@ public final class JumpKillManager {
 	private static void onHit(ServerPlayerEntity player, ServerWorld sw, LivingEntity target) {
 		if (WhitelistUtils.isProtected(player, target)) return;
 		DamageSource src = player.getDamageSources().playerAttack(player);
-		target.damage(src, (float) BAL.d("damage", DAMAGE));
+		target.damage(src, NpcCombatEnhancements.scale(player, target, (float) BAL.d("damage", DAMAGE), "salticidae_primary_damage", 2.0));
 		boolean gland = net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.isWearingBy(player);
 		int amp = BAL.i("poison_amplifier", POISON_AMPLIFIER) + (gland ? 1 : 0);
 		int baseDur = BAL.i("poison_duration", POISON_DURATION);
 		int dur = gland ? Math.round(baseDur * net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.DURATION_SCALE) : baseDur;
+		dur = NpcCombatEnhancements.duration(player, target, dur, "salticidae_primary_duration", 2.0);
 		target.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, dur, amp, false, true, true), player);
-		target.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, BAL.i("stun_duration", STUN_DURATION), 0, false, false, false), player);
+		int stunTicks = NpcCombatEnhancements.duration(player, target, BAL.i("stun_duration", STUN_DURATION), "salticidae_primary_duration", 2.0);
+		target.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, stunTicks, 0, false, false, false), player);
 		sw.playSound(null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, SoundCategory.PLAYERS, 1.0f, 0.9f);
 		sw.playSound(null, target.getX(), target.getY(), target.getZ(),

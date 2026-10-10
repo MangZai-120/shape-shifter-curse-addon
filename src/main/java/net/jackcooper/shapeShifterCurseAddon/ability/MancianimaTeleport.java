@@ -24,6 +24,7 @@ import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
@@ -205,6 +206,7 @@ public final class MancianimaTeleport {
 	public static void executeRedMarkChannelComplete(ServerPlayerEntity marker, net.minecraft.entity.LivingEntity target, long castId) {
         if (net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(marker, SKILL_ID) != castId || castId < 0) return;
 		if (target == null || !target.isAlive()
+				|| WhitelistUtils.isProtected(marker, target)
 				|| net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(marker, target)) {
 			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.failed(marker, SKILL_ID, castId);
 			return;
@@ -235,9 +237,10 @@ public final class MancianimaTeleport {
 		ParticleUtils.spawnParticles(world, ParticleTypes.PORTAL,
 				landing.x, landing.y + 1.0, landing.z,
 				40, 0.3, 0.8, 0.3, 0.6);
-		// 50% 缺失血伤害（上限35），无视护甲（用 OUT_OF_WORLD）
+		// 50% 缺失血伤害：原上限默认 37，NPC 上限翻倍；沿用原有 playerAttack 伤害源。
 		float missing = target.getMaxHealth() - target.getHealth();
-		float dmg = (float) Math.max(BAL.d("red_mark_damage_min", RED_MARK_DAMAGE_MIN), Math.min(BAL.d("red_mark_damage_cap", RED_MARK_DAMAGE_CAP), missing * BAL.d("red_mark_damage_percent", RED_MARK_DAMAGE_PERCENT)));
+		float cap = NpcCombatEnhancements.scale(marker, target, (float) BAL.d("red_mark_damage_cap", RED_MARK_DAMAGE_CAP), "mancianima_link_cap_mul", 2.0);
+		float dmg = (float) Math.max(BAL.d("red_mark_damage_min", RED_MARK_DAMAGE_MIN), Math.min(cap, missing * BAL.d("red_mark_damage_percent", RED_MARK_DAMAGE_PERCENT)));
 		boolean wasAlive = target.isAlive();
 		target.damage(world.getDamageSources().playerAttack(marker), dmg);
 		// 广播暴击音效

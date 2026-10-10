@@ -296,6 +296,10 @@ public final class WindSpiritClawManager {
 
     /** 徒手/非武器近战伤害倍率 = 过热回复缩放(0-0.9) × 副技能 buff(1.5)。给 ClawDamageBoostMixin 用。 */
     public static float getNormalMeleeMultiplier(ServerPlayerEntity player) {
+        return getNormalMeleeMultiplier(player, null);
+    }
+
+    public static float getNormalMeleeMultiplier(ServerPlayerEntity player, LivingEntity target) {
         float recovery = 1.0f;
         ClawState s = STATES.get(player.getUuid());
         if (s != null && s.phase == PHASE_OVERHEAT) {
@@ -303,6 +307,8 @@ public final class WindSpiritClawManager {
         }
         float buff = BUFF_TICKS.containsKey(player.getUuid())
                 ? (float) BAL.d("buff_mult", BUFF_MULT) : 1.0f;
+        if (BUFF_TICKS.containsKey(player.getUuid()) && target != null && NpcCombatEnhancements.isEnemyNpc(player, target))
+            buff *= (float) NpcCombatEnhancements.value("wind_secondary_mul", 2.0);
         return recovery * buff;
     }
 

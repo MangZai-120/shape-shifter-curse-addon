@@ -84,7 +84,7 @@ public abstract class SscPlayerMixin {
 		boolean result;
 		if (bareHand) {
 			DamageSource bypassSrc = self.getDamageSources().indirectMagic(self, self);
-			result = original.call(target, bypassSrc, 2.0F);
+			result = original.call(target, bypassSrc, net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatEnhancements.fixedDamage(self, target, 2.0F));
 		} else {
 			result = original.call(target, source, amount * 0.8F);
 		}

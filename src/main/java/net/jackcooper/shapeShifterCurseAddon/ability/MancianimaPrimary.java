@@ -45,6 +45,11 @@ public final class MancianimaPrimary {
 
 	private MancianimaPrimary() {}
 
+	private static float channelDamage(ServerPlayerEntity caster, LivingEntity target, float remainingHealth) {
+		float cap = NpcCombatEnhancements.primaryCap(caster, target, (float) BAL.d("damage_cap", DAMAGE_CAP));
+		return (float) Math.max(BAL.d("damage_min", DAMAGE_MIN), Math.min(cap, remainingHealth * BAL.d("damage_percent", DAMAGE_PERCENT)));
+	}
+
 	public static final int MARK_MANA_COST = 15;
 	public static final int FIZZLE_MANA_COST = 5;
 	public static final String SKILL_ID = "my_addon:form_familiar_fox_mancianima_contract_mark";
@@ -192,16 +197,16 @@ public final class MancianimaPrimary {
 
 	/** 由 MancianimaMarkManager 引导 tick 末尾调用：执行真伤与爆炸特效。 */
 	public static void executeChannelComplete(ServerPlayerEntity marker, LivingEntity target) {
-		if (target == null || !target.isAlive() || DomainManager.blocksTargeting(marker, target)) return;
+		if (target == null || !target.isAlive() || WhitelistUtils.isProtected(marker, target) || DomainManager.blocksTargeting(marker, target)) return;
 		ServerWorld world = (ServerWorld) marker.getWorld();
 		// 真伤计算
-		float dmg = (float) Math.max(BAL.d("damage_min", DAMAGE_MIN), Math.min(BAL.d("damage_cap", DAMAGE_CAP), target.getHealth() * BAL.d("damage_percent", DAMAGE_PERCENT)));
+		float remainingHealth = target.getHealth();
+		float dmg = channelDamage(marker, target, remainingHealth);
 		// 伤害归属：使用 indirectMagic 以 marker 为攻击者（生物会什7并带 tag bypasses_armor不被护甲减免）
 		DamageSource src = world.getDamageSources().indirectMagic(marker, marker);
 		target.damage(src, dmg);
 
 		// AOE：以 target 为中心 3 格半径内的其他生物受到 50% 伤害（跳过 marker 自己 + 主目标 + 白名单）
-		float aoeDmg = dmg * 0.5f;
 		double aoeRadius = 3.0;
 		Box aoeBox = new Box(
 				target.getX() - aoeRadius, target.getY() - aoeRadius, target.getZ() - aoeRadius,
@@ -211,7 +216,8 @@ public final class MancianimaPrimary {
 			if (le == target || le == marker) continue;
 			if (e.squaredDistanceTo(target) > aoeRadius * aoeRadius) continue;
 			if (WhitelistUtils.isProtected(marker, le)) continue;
-			le.damage(src, aoeDmg);
+			// Per-recipient cap: an NPC primary target never increases the player splash.
+			le.damage(src, channelDamage(marker, le, remainingHealth) * 0.5f);
 		}
 
 		// 爆炸视觉（不造成实际伤害）

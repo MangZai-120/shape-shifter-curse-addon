@@ -165,7 +165,7 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 						return;
 					}
 				// Apply Stun: 5s = 100 ticks
-				target.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, 100, 0, false, false, true), entity);
+					net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatEnhancements.applyWildCatStun(entity, target, 100);
 				});
 
 		// Particle effect

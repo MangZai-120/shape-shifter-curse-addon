@@ -153,7 +153,10 @@ public class FrostStormEntity extends Entity {
 				DamageSource source = owner != null
 						? target.getDamageSources().playerAttack(owner)
 						: target.getDamageSources().magic();
-				target.damage(source, (float) stormDamage);
+				// Online caster damage is scaled centrally. The surviving offline storm has no attacker attribution.
+				float damage = (float) stormDamage;
+				if (owner == null && !(target instanceof PlayerEntity)) damage *= (float) net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatEnhancements.value("snow_fox_damage", 1.5);
+				target.damage(source, damage);
 			}
 		}
 	}

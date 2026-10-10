@@ -103,7 +103,7 @@ public final class VenomSkillManager {
 		int baseDur = BAL.i("base_poison_duration", BASE_POISON_DURATION);
 		int dur = gland ? Math.round(baseDur * net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.DURATION_SCALE) : baseDur;
 		for (LivingEntity t : targets) {
-			t.damage(t.getDamageSources().indirectMagic(player, player), (float) BAL.d("base_damage", BASE_DAMAGE));
+			t.damage(t.getDamageSources().indirectMagic(player, player), NpcCombatEnhancements.scale(player, t, (float) BAL.d("base_damage", BASE_DAMAGE), "salticidae_secondary_damage", 1.5));
 			t.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, dur, amp, false, true, true), player);
 		}
 		// 反馈：毒液喷溅粒子（区域中心）+ 喷吐音效
@@ -170,7 +170,7 @@ public final class VenomSkillManager {
 		if (!hits.isEmpty()) {
 			for (LivingEntity t : hits) {
 				t.damage(t.getDamageSources().indirectMagic(player, player),
-						(float) BAL.d("dash_hit_damage", DASH_HIT_DAMAGE));
+						NpcCombatEnhancements.scale(player, t, (float) BAL.d("dash_hit_damage", DASH_HIT_DAMAGE), "salticidae_secondary_damage", 1.5));
 			}
 			d.hitDone = true; // 本 tick 结束后停下
 		}
@@ -198,7 +198,7 @@ public final class VenomSkillManager {
 		int baseDur = BAL.i("burst_poison_duration", BURST_POISON_DURATION);
 		int dur = gland ? Math.round(baseDur * net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.DURATION_SCALE) : baseDur;
 		for (LivingEntity t : targets) {
-			t.damage(t.getDamageSources().indirectMagic(player, player), (float) BAL.d("burst_damage", BURST_DAMAGE));
+			t.damage(t.getDamageSources().indirectMagic(player, player), NpcCombatEnhancements.scale(player, t, (float) BAL.d("burst_damage", BURST_DAMAGE), "salticidae_secondary_damage", 1.5));
 			t.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, dur, amp, false, true, true), player);
 		}
 		// AOE 反馈：毒爆粒子环 + 女巫泼溅

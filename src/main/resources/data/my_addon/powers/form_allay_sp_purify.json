@@ -169,24 +169,32 @@
                                 "type": "apoli:area_of_effect",
                                 "radius": 20.0,
                                 "bientity_action": {
-                                    "type": "apoli:target_action",
-                                    "action": {
-                                        "type": "apoli:and",
-                                        "actions": [
-                                            {
-                                                "type": "apoli:execute_command",
-                                                "command": "effect clear @s"
-                                            },
-                                            {
-                                                "type": "apoli:execute_command",
-                                                "command": "effect give @s ssc_addon:purified 1 0 true"
-                                            },
-                                            {
-                                                "type": "apoli:execute_command",
-                                                "command": "particle minecraft:dust 0.6 0.85 1.0 1.0 ~ ~1 ~ 0.5 0.8 0.5 1.0 15 force @a"
+                                    "type": "apoli:and",
+                                    "actions": [
+                                        {
+                                            "type": "apoli:target_action",
+                                            "action": {
+                                                "type": "apoli:and",
+                                                "actions": [
+                                                    {
+                                                        "type": "apoli:execute_command",
+                                                        "command": "effect clear @s"
+                                                    },
+                                                    {
+                                                        "type": "apoli:execute_command",
+                                                        "command": "effect give @s ssc_addon:purified 1 0 true"
+                                                    },
+                                                    {
+                                                        "type": "apoli:execute_command",
+                                                        "command": "particle minecraft:dust 0.6 0.85 1.0 1.0 ~ ~1 ~ 0.5 0.8 0.5 1.0 15 force @a"
+                                                    }
+                                                ]
                                             }
-                                        ]
-                                    }
+                                        },
+                                        {
+                                            "type": "my_addon:npc_purification_debuffs"
+                                        }
+                                    ]
                                 },
                                 "bientity_condition": {
                                     "type": "apoli:and",
