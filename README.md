@@ -1,5 +1,7 @@
 # 幻形者诅咒附属模组
 
+## 此仓库为ssca v8.0.0 正式版待定。如无其它特殊情况，此仓库内容将作为正式版发布。
+
 > **📖 玩法指南 / Gameplay Guide**  
 > **THIS MOD IS FREE FOR ALL,DON'T TRUST ANYONE WHO CLAIMS TO SELL THIS MOD.**
 > 
