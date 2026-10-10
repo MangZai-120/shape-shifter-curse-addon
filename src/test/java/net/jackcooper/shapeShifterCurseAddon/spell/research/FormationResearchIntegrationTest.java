@@ -61,6 +61,7 @@ public final class FormationResearchIntegrationTest {
             try {load.newInstance(bad);throw new AssertionError("missing identity accepted");}catch(InvocationTargetException expected){check(expected.getCause() instanceof IllegalStateException,"broken definition refused");}
             checkAnalysis(world);
             checkRandomRuneLoot(world,other,load);
+            checkPlainRuneScrolls(world,other,inks,load);
             checkRuneSchemes(world,other,inks,load);
             checkFourthTierLayout(world,inks,load);
             checkResearchOutput(world,inks);
@@ -138,8 +139,11 @@ public final class FormationResearchIntegrationTest {
                 for(int level=1;level<=5;level++){
                     ItemStack product=net.jackcooper.shapeShifterCurseAddon.item.SpellFormationItem.create(world,"fire_bolt",level,RuneLayout.empty(level));
                     var name=product.getName();
-                    check(name.getString().endsWith(" 改")&&name.getString().contains("卷轴")
-                            &&name.getStyle().getColor().getRgb()==SpellRegistry.get("fire_bolt").getRarity(level).color.getColorValue(),"research title follows rarity and ends with modified suffix: "+level);
+                    ItemStack ordinary=ScrollData.create("fire_bolt",level);
+                    check(name.equals(ordinary.getName())&&!name.getString().endsWith(" 改")
+                            &&name.getStyle().getColor().getRgb()==SpellRegistry.get("fire_bolt").getRarity(level).color.getColorValue(),"foundation-only research title matches an ordinary scroll: "+level);
+                    check(product.getTooltip(null,net.minecraft.client.item.TooltipContext.Default.BASIC)
+                            .equals(ordinary.getTooltip(null,net.minecraft.client.item.TooltipContext.Default.BASIC)),"foundation-only research tooltip matches an ordinary scroll: "+level);
                     int color=SpellRegistry.get("fire_bolt").getRarity(level).color.getColorValue();
                     product.getTooltip(null,net.minecraft.client.item.TooltipContext.Default.BASIC).get(0).visit((style,part)->{
                         if(part.contains("卷轴")||part.contains("改"))check(style.getColor()!=null&&style.getColor().getRgb()==color,"vanilla tooltip retains research rarity color on the scroll title and suffix");
@@ -153,6 +157,7 @@ public final class FormationResearchIntegrationTest {
                     else fillOuter(slots,2,world.language(),RuneRole.DISABLE,RuneRole.STABLE,RuneRole.STABLE,RuneRole.SOURCE,RuneRole.FIRE);
                     var result=RuneBuildEvaluator.evaluate(2,slots,world.language(),SlottedSpellRecipes.all());
                     ItemStack product=net.jackcooper.shapeShifterCurseAddon.item.SpellFormationItem.createEnhanced(world,2,slots,result);
+                    check(product.getName().getString().endsWith(" 改")&&RuneScheme.isModified(product),"actual outer enhancements retain the modified product name");
                     List<net.minecraft.text.Text> lines=new ArrayList<>();product.getItem().appendTooltip(product,null,lines,net.minecraft.client.item.TooltipContext.Default.BASIC);
                     check(lines.stream().noneMatch(line->line.getString().contains("纸槽")||line.getString().contains("强化方案")),"scheme tooltip contains only its profile, no paper-slot recipe");
                     check(lines.stream().anyMatch(line->line.getString().equals(role==RuneRole.STORE?"伤害：+26%":"威力：-12%")),"actual positive and negative scheme effects display explicit signs");
@@ -160,6 +165,16 @@ public final class FormationResearchIntegrationTest {
                     plain.getOrCreateNbt().put(RuneScheme.KEY,product.getNbt().getCompound(RuneScheme.KEY).copy());
                     check(plain.getName().getString().endsWith(" 改")&&plain.getName().getStyle().getColor().getRgb()==SpellRegistry.get("fire_bolt").getRarity(2).color.getColorValue(),"imprinted scroll keeps rarity color and modified suffix");
                 }
+                int[] foundation=RuneLayout.foundation(SlottedSpellRecipes.get("fire_bolt"),2,world.language());
+                var neutral=ScrollData.create("fire_bolt",2);
+                neutral.getOrCreateNbt().put(RuneScheme.KEY,RuneScheme.create(world,2,foundation,
+                        RuneBuildEvaluator.evaluate(2,foundation,world.language(),SlottedSpellRecipes.all())));
+                var ordinary=ScrollData.create("fire_bolt",2);
+                check(neutral.getName().equals(ordinary.getName())
+                        &&neutral.getTooltip(null,net.minecraft.client.item.TooltipContext.Default.BASIC)
+                        .equals(ordinary.getTooltip(null,net.minecraft.client.item.TooltipContext.Default.BASIC)),"legacy empty scheme uses the complete ordinary scroll presentation");
+                check(net.jackcooper.shapeShifterCurseAddon.spell.SpellCastFeedback.spellName(SpellRegistry.get("fire_bolt"),neutral)
+                        .equals(net.jackcooper.shapeShifterCurseAddon.spell.SpellCastFeedback.spellName(SpellRegistry.get("fire_bolt"),ordinary)),"HUD and altar names also ignore legacy empty schemes");
             }finally{net.minecraft.util.Language.setInstance(previous);}
         }
         private static void checkRuneSummary(WorldRuneState world)throws Exception{
@@ -472,6 +487,53 @@ public final class FormationResearchIntegrationTest {
         private static void fillOuter(int[] slots,int level,RuneLanguage language,RuneRole... roles){
             check(roles.length==slots.length-RuneLayout.baseSize(level),"test fixture fills exactly the enhancement ring");
             for(int i=0;i<roles.length;i++)slots[RuneLayout.baseSize(level)+i]=language.glyph(roles[i]);
+        }
+        private static void checkPlainRuneScrolls(WorldRuneState world,WorldRuneState other,List<Item> inks,
+                                                java.lang.reflect.Constructor<WorldRuneState> load) throws Exception {
+            var beforeWorld=world.writeNbt(new NbtCompound());
+            for(var recipe:SlottedSpellRecipes.all())for(int level=1;level<=5;level++){
+                int[] slots=RuneLayout.foundation(recipe,level,world.language());
+                var table=new SimpleInventory(SpellResearchTableBlockEntity.SLOT_COUNT);var bag=slotMaterials(inks);var knowledge=ready(world);
+                table.setStack(0,new ItemStack(SscAddon.BLANK_FORMATION_PAPER));
+                UUID operation=knowledge.research().completionToken;
+                var completed=SlottedFormationTransaction.completeEnhanced(table,bag,knowledge,world,level,slots,operation);
+                ItemStack scroll=table.getStack(SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT);
+                check(completed.success()&&ItemStack.areEqual(scroll,ScrollData.create(recipe.spell(),level)),"empty outer ring directly produces a full-use ordinary scroll: "+recipe.spell()+" / "+level);
+                check(!RuneScheme.isModified(scroll)&&RuneScheme.modifiers(null,scroll,level)==RuneModifiers.NONE
+                        &&RuneScheme.validScroll(null,scroll,ScrollData.getSpell(scroll)),"ordinary crafted scroll has no modifier profile or world restriction");
+                check(bag.getStack(8).getCount()==64-RuneLayout.baseSize(level),"ordinary completion charges only actual foundation runes");
+                check(knowledge.hasSpell(recipe.spell())&&knowledge.research().runeCompleted.contains(recipe.spell()+":"+level),"ordinary completion retains atlas and research progression");
+                check(ItemStack.areEqual(scroll,ItemStack.fromNbt(scroll.writeNbt(new NbtCompound()))),"ordinary research output survives item serialization");
+                var foreignDiagram=net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem.create(other,scroll);
+                check(net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem.valid(foreignDiagram,other.worldId())
+                        &&!foreignDiagram.getNbt().contains(RuneScheme.KEY),"ordinary crafted scroll analyzes normally in another world");
+                table.setStack(SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT,ItemStack.EMPTY);var beforeBag=inventoryNbt(bag);
+                check(SlottedFormationTransaction.completeEnhanced(table,bag,knowledge,world,level,slots,operation).key().equals("duplicate")
+                        &&beforeBag.equals(inventoryNbt(bag)),"replay of ordinary completion cannot charge or create another scroll");
+            }
+            check(beforeWorld.equals(world.writeNbt(new NbtCompound())),"foundation-only crafting does not register empty rune schemes");
+            for(int level=1;level<=5;level++){
+                int[] slots=RuneLayout.foundation(SlottedSpellRecipes.get("fire_bolt"),level,world.language());
+                var mirror=RuneScheme.create(world,level,slots,RuneBuildEvaluator.evaluate(level,slots,world.language(),SlottedSpellRecipes.all()));
+                var scroll=ScrollData.create("fire_bolt",level);ScrollData.setUses(scroll,1);ScrollData.setCooldownEnd(scroll,123456);
+                scroll.getOrCreateNbt().putString("PocketBinding","retained");var ordinary=scroll.getNbt().copy();
+                scroll.getOrCreateNbt().put(RuneScheme.KEY,mirror.copy());var before=scroll.getNbt().copy();
+                check(!RuneScheme.isModified(scroll)&&RuneScheme.modifiers(null,scroll,level)==RuneModifiers.NONE,"legacy empty scheme is ordinary at every tier");
+                check(!RuneScheme.normalizeUnmodified(other,scroll)&&before.equals(scroll.getNbt()),"foreign empty profile is never silently accepted or rewritten");
+                check(RuneScheme.normalizeUnmodified(load.newInstance(world.writeNbt(new NbtCompound())),scroll)
+                        &&ordinary.equals(scroll.getNbt()),"authorized saved empty profile becomes ordinary without losing uses, cooldown or bindings");
+                var oldScheme=net.jackcooper.shapeShifterCurseAddon.item.SpellFormationItem.create(world,"fire_bolt",level,slots);
+                oldScheme.getOrCreateNbt().put(RuneScheme.KEY,mirror.copy());
+                var table=new SimpleInventory(SpellResearchTableBlockEntity.SLOT_COUNT);table.setStack(0,oldScheme);table.setStack(3,scroll);
+                check(RuneScheme.imprint(table,world)==0&&table.getStack(0).isEmpty()&&ordinary.equals(scroll.getNbt()),"legacy empty scheme imprint preserves an ordinary scroll");
+                scroll.getOrCreateNbt().put(RuneScheme.KEY,mirror.copy());scroll.getNbt().getCompound(RuneScheme.KEY).putInt("Stability",1000);before=scroll.getNbt().copy();
+                check(!RuneScheme.normalizeUnmodified(world,scroll)&&before.equals(scroll.getNbt()),"forged empty profile cannot bypass authority through normalization");
+            }
+            var oldSlots=SlottedSpellRecipes.glyphs(SlottedSpellRecipes.get("fire_bolt"),4,world.language());
+            Arrays.fill(oldSlots,RuneLayout.baseSize(4,RuneLayout.PREVIOUS_VERSION),oldSlots.length,-1);
+            check(!RuneLayout.hasEnhancements(4,oldSlots,RuneLayout.PREVIOUS_VERSION),"previous fourth-tier foundation sockets do not count as enhancement runes");
+            oldSlots[oldSlots.length-1]=world.language().glyph(RuneRole.GAIN);
+            check(RuneLayout.hasEnhancements(4,oldSlots,RuneLayout.PREVIOUS_VERSION),"previous fourth-tier outer enhancements remain modified");
         }
         private static void checkRuneSchemes(WorldRuneState world,WorldRuneState other,List<Item> inks,
                                              java.lang.reflect.Constructor<WorldRuneState> load) throws Exception {

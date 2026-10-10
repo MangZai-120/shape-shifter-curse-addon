@@ -29,6 +29,12 @@ public final class RuneLayout {
     public static boolean enhancement(int level, int slot) {
         return slot >= baseSize(level) && slot < size(level);
     }
+    public static boolean hasEnhancements(int level, int[] slots, int version) {
+        if (!validDraft(level, slots, version)) return false;
+        for (int i = baseSize(level, version); i < slots.length; i++)
+            if (slots[i] >= 0) return true;
+        return false;
+    }
     public static boolean closed(int level) { return level >= 2 && level <= 5; }
     public static List<int[]> edges(int level) {
         List<int[]> edges = new ArrayList<>();

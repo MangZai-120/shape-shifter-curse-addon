@@ -30,6 +30,7 @@ public final class AnalyzedSpellDiagramItem extends Item {
         var mirror=data.getCompound(RuneScheme.KEY);
         var saved=RuneScheme.authoritativeScroll(world,scroll);
         if(saved==null)return ItemStack.EMPTY;
+        if (!RuneScheme.hasEnhancements(saved)) return create(world, spell.getId().getPath(), ScrollData.getLevel(scroll));
         ItemStack diagram=create(world,spell.getId().getPath(),saved.getInt("Level"));
         if(diagram.isEmpty())return diagram;
         diagram.getOrCreateNbt().putIntArray("Slots",saved.getIntArray("Slots"));

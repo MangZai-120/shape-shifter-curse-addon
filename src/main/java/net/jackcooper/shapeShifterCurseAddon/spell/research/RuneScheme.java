@@ -4,6 +4,7 @@ import net.jackcooper.shapeShifterCurseAddon.spell.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
@@ -11,6 +12,14 @@ import net.minecraft.text.Text;
 public final class RuneScheme {
     public static final String KEY = "RuneScheme";
     private RuneScheme() {}
+    public static boolean hasEnhancements(NbtCompound scheme) {
+        return scheme != null && RuneLayout.hasEnhancements(scheme.getInt("Level"),
+                scheme.getIntArray("Slots"), scheme.getInt("Version"));
+    }
+    public static boolean isModified(ItemStack stack) {
+        return stack != null && stack.getNbt() != null && stack.getNbt().contains(KEY, NbtElement.COMPOUND_TYPE)
+                && hasEnhancements(stack.getNbt().getCompound(KEY));
+    }
     public static NbtCompound create(WorldRuneState world, int level, int[] slots, RuneBuildEvaluator.Result result) {
         if (!result.valid()) throw new IllegalArgumentException("Invalid rune scheme");
         NbtCompound n = new NbtCompound();
@@ -34,6 +43,7 @@ public final class RuneScheme {
         NbtCompound saved = authoritative(WorldRuneState.get(player.getServer()), scroll.getNbt().getCompound(KEY));
         boolean valid = saved != null && saved.getString("Spell").equals(spell.getId().getPath())
                 && saved.getInt("Level") >= 1 && saved.getInt("Level") <= ScrollData.getLevel(scroll);
+        if (valid) normalizeUnmodified(scroll, saved);
         if (!valid) player.sendMessage(Text.translatable("research.ssc_addon.runes.invalid_scheme"), true);
         return valid;
     }
@@ -44,6 +54,16 @@ public final class RuneScheme {
         return saved != null && spell != null && saved.getString("Spell").equals(spell.getId().getPath())
                 && saved.getInt("Level") >= 1 && saved.getInt("Level") <= ScrollData.getLevel(scroll) ? saved : null;
     }
+    /** Strip only an authorized legacy foundation-only profile, preserving every ordinary scroll field. */
+    public static boolean normalizeUnmodified(WorldRuneState world, ItemStack scroll) {
+        if (scroll.getNbt() == null || !scroll.getNbt().contains(KEY) || isModified(scroll)) return false;
+        return normalizeUnmodified(scroll, authoritativeScroll(world, scroll));
+    }
+    private static boolean normalizeUnmodified(ItemStack scroll, NbtCompound saved) {
+        if (saved == null || hasEnhancements(saved)) return false;
+        scroll.getNbt().remove(KEY);
+        return true;
+    }
     public static RuneModifiers modifiers(PlayerEntity player, ItemStack scroll, int selectedLevel) {
         if (scroll == null || scroll.getNbt() == null || !scroll.getNbt().contains(KEY)) return RuneModifiers.NONE;
         NbtCompound n = scroll.getNbt().getCompound(KEY);
@@ -51,6 +71,7 @@ public final class RuneScheme {
             n = authoritative(WorldRuneState.get(serverPlayer.getServer()), n);
             if (n == null) return RuneModifiers.NONE;
         }
+        if (!hasEnhancements(n)) return RuneModifiers.NONE;
         if (selectedLevel <= 1 || selectedLevel < n.getInt("Level")) return RuneModifiers.NONE;
         return RuneModifiers.read(n.getCompound("Modifiers"));
     }
@@ -64,6 +85,8 @@ public final class RuneScheme {
         if (saved == null || spell == null) return 2;
         if (!spell.getId().getPath().equals(saved.getString("Spell")) || ScrollData.getLevel(scroll) != saved.getInt("Level")) return 3;
         // All checks precede both mutations. Keep uses, selected level, cooldown and spatial bindings intact.
-        scroll.getOrCreateNbt().put(KEY, mirror.copy()); scheme.decrement(1); table.markDirty(); return 0;
+        if (hasEnhancements(saved)) scroll.getOrCreateNbt().put(KEY, mirror.copy());
+        else scroll.getOrCreateNbt().remove(KEY);
+        scheme.decrement(1); table.markDirty(); return 0;
     }
 }
