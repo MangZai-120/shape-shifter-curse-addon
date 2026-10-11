@@ -9,6 +9,7 @@
 
   "model": "my_addon:geo/form_axolotl_aling.geo.json",
   "texture": "my_addon:textures/form_axolotl_aling/form_axolotl_aling.png",
+  "fullbright_texture": "my_addon:textures/form_axolotl_aling/form_axolotl_aling_overlay.png",
 
   "hidden": [
     "leftLeg",
