@@ -1,15 +1,12 @@
 {
   "load_priority": 0,
-
   "name": "my_addon.form_familiar_fox_mancianima.model_name",
   "layer": "origins:origin",
   "form": "my_addon:form_familiar_fox_mancianima",
-
   "wide_only": true,
-
-  "model": "my_addon:geo/form_familiar_fox_3.geo.json",
-  "texture": "my_addon:textures/form_familiar_fox_mancianima/form_familiar_fox_mancianima.png",
-  "texture_mask": "my_addon:textures/form_familiar_fox_mancianima/form_familiar_fox_mancianima_colormask.png",
+  "model": "my_addon:geo/form_familiar_fox_mancianima_contract.geo.json",
+  "texture": "my_addon:textures/form_familiar_fox_mancianima_contract/form_familiar_fox_mancianima_contract.png",
+  "texture_mask": "my_addon:textures/form_familiar_fox_mancianima_contract/form_familiar_fox_mancianima_contract_colormask.png",
   "hidden": [
     "leftLeg",
     "rightLeg",
@@ -24,35 +21,65 @@
     "head",
     "hat"
   ],
-
   "builtin_controller_data": {
     "tail_chain": {
-      "tail_l": [0, 1, 2, 3, 4],
-      "tail_r": [0, 1, 2, 3, 4]
+      "tail_l": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "tail_r": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
     },
     "tail_chain_head": {
-      "ear_a": [0],
-      "ear_b": [0]
+      "ear_a": [
+        0
+      ],
+      "ear_b": [
+        0
+      ]
     }
   },
-
   "animation_system": "shape-shifter-curse:default",
   "animation_system_config": {
     "tail": {
       "chain": {
-        "tail_l": [0, 1, 2, 3, 4],
-        "tail_r": [0, 1, 2, 3, 4]
+        "tail_l": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "tail_r": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
       }
     },
     "head_tail": {
       "chain": {
-        "ear_a": [0],
-        "ear_b": [0]
+        "ear_a": [
+          0
+        ],
+        "ear_b": [
+          0
+        ]
       }
     },
     "eye_blink": {
       "eye": "eyeRoot",
-      "open_scale": 1.0,
+      "open_scale": 1,
       "close_scale": 0.01
     }
   }
