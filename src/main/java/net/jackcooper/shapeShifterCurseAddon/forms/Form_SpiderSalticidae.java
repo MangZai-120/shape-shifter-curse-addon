@@ -1,6 +1,11 @@
 package net.jackcooper.shapeShifterCurseAddon.forms;
 
 import net.minecraft.util.Identifier;
+import net.minecraft.entity.player.PlayerEntity;
+import net.jackcooper.shapeShifterCurseAddon.compat.SpiderJumpAnimController;
+import net.onixary.shapeShifterCurseFabric.player_animation.v3.AbstractAnimStateController;
+import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimRegistries;
+import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimSystem;
 import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_Spider3;
 
 /**
@@ -11,7 +16,16 @@ import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_Spider3;
  * 定位：弹跳捕猎型——现实跳蛛不结网、主动扑猎、视力极佳、弹跳力惊人（专属技能后续设计）。
  */
 public class Form_SpiderSalticidae extends Form_Spider3 {
+	private static final AbstractAnimStateController JUMP_CONTROLLER = new SpiderJumpAnimController();
+
 	public Form_SpiderSalticidae(Identifier formID) {
 		super(formID);
+	}
+
+	@Override
+	public AbstractAnimStateController getAnimStateController(PlayerEntity player,
+			AnimSystem.AnimSystemData data, Identifier state) {
+		return AnimRegistries.ANIM_STATE_JUMP.equals(state) ? JUMP_CONTROLLER
+				: super.getAnimStateController(player, data, state);
 	}
 }

@@ -1,6 +1,11 @@
 package net.jackcooper.shapeShifterCurseAddon.forms;
 
 import net.minecraft.util.Identifier;
+import net.minecraft.entity.player.PlayerEntity;
+import net.jackcooper.shapeShifterCurseAddon.compat.SpiderJumpAnimController;
+import net.onixary.shapeShifterCurseFabric.player_animation.v3.AbstractAnimStateController;
+import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimRegistries;
+import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimSystem;
 import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_Spider3;
 
 /**
@@ -10,7 +15,16 @@ import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_Spider3;
  * 进化途径：玩家处于 shape-shifter-curse:spider_3 时，于诅咒之月夜晚使用月髓环进化获得。
  */
 public class Form_SpiderMoonWeaver extends Form_Spider3 {
+	private static final AbstractAnimStateController JUMP_CONTROLLER = new SpiderJumpAnimController();
+
 	public Form_SpiderMoonWeaver(Identifier formID) {
 		super(formID);
+	}
+
+	@Override
+	public AbstractAnimStateController getAnimStateController(PlayerEntity player,
+			AnimSystem.AnimSystemData data, Identifier state) {
+		return AnimRegistries.ANIM_STATE_JUMP.equals(state) ? JUMP_CONTROLLER
+				: super.getAnimStateController(player, data, state);
 	}
 }
