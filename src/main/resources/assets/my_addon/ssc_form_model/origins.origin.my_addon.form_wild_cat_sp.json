@@ -1,17 +1,14 @@
 {
   "load_priority": 0,
-
   "name": "my_addon.form_wild_cat_sp.model_name",
   "layer": "origins:origin",
   "form": "my_addon:form_wild_cat_sp",
-
   "wide_only": true,
-
   "model": "my_addon:geo/form_wild_cat_sp.geo.json",
-  "texture": "my_addon:textures/form_wild_cat_sp/form_wild_cat_sp.png",
-  "texture_mask": "my_addon:textures/form_wild_cat_sp/form_wild_cat_sp_colormask.png",
-  "fullbright_texture": "my_addon:textures/form_wild_cat_sp/form_wild_cat_sp_emission.png",
-  "fullbright_texture_mask": "my_addon:textures/form_wild_cat_sp/form_wild_cat_sp_emission_colormask.png",
+  "texture": "my_addon:textures/form_wild_cat_sp_moonblue/form_wild_cat_sp_moonblue.png",
+  "texture_mask": "my_addon:textures/form_wild_cat_sp_moonblue/form_wild_cat_sp_moonblue_colormask.png",
+  "fullbright_texture": "my_addon:textures/form_wild_cat_sp_moonblue/form_wild_cat_sp_moonblue_emission.png",
+  "fullbright_texture_mask": "my_addon:textures/form_wild_cat_sp_moonblue/form_wild_cat_sp_moonblue_emission_colormask.png",
   "hidden": [
     "leftLeg",
     "rightLeg",
@@ -26,33 +23,49 @@
     "head",
     "hat"
   ],
-
   "builtin_controller_data": {
     "tail_chain": {
-      "tail": [0, 1, 2, 3]
+      "tail": [
+        0,
+        1,
+        2,
+        3
+      ]
     },
     "tail_chain_head": {
-      "ear_a": [0],
-      "ear_b": [0]
+      "ear_a": [
+        0
+      ],
+      "ear_b": [
+        0
+      ]
     }
   },
-
   "animation_system": "shape-shifter-curse:default",
   "animation_system_config": {
     "tail": {
       "chain": {
-        "tail": [0, 1, 2, 3]
+        "tail": [
+          0,
+          1,
+          2,
+          3
+        ]
       }
     },
     "head_tail": {
       "chain": {
-        "ear_a": [0],
-        "ear_b": [0]
+        "ear_a": [
+          0
+        ],
+        "ear_b": [
+          0
+        ]
       }
     },
     "eye_blink": {
       "eye": "eyeRoot",
-      "open_scale": 1.0,
+      "open_scale": 1,
       "close_scale": 0.01
     }
   }
