@@ -8,38 +8,27 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
-import net.jackcooper.shapeShifterCurseAddon.util.SscIgnitedEntityAccessor;
-
-import java.util.UUID;
 
 public class FoxFireBurnEffect extends StatusEffect {
 	public FoxFireBurnEffect() {
 		super(StatusEffectCategory.HARMFUL, 0x3366FF); // Blue color
 	}
 
-	private PlayerEntity getOwnerFromTags(LivingEntity entity) {
-		for (String tag : entity.getCommandTags()) {
-			// ssc_burn: 为狐火归因前缀（新版）；ssc_owner: 为旧存档兼容（老目标身上可能残留）
-			String uuidStr = null;
-			if (tag.startsWith("ssc_burn:")) {
-				uuidStr = tag.substring("ssc_burn:".length());
-			} else if (tag.startsWith("ssc_owner:")) {
-				uuidStr = tag.substring("ssc_owner:".length());
-			}
-			if (uuidStr == null) continue;
-			try {
-				UUID uuid = UUID.fromString(uuidStr);
-				return entity.getWorld().getPlayerByUuid(uuid);
-			} catch (Exception e) {
-				// Ignore invalid tags
-			}
-		}
-		return null;
-	}
-
 	@Override
 	public boolean canApplyUpdateEffect(int duration, int amplifier) {
 		return true;
+	}
+
+	private static DamageSource damageSource(LivingEntity entity) {
+		FoxFireBurnOwnership origin = FoxFireBurnOwnership.resolve(entity);
+		if (origin.recorded()) {
+			PlayerEntity owner = origin.uuid() == null ? null : entity.getWorld().getPlayerByUuid(origin.uuid());
+			// 已知归属离线或旧记录有歧义时，保留火焰伤害，不转嫁给旧施法者或最近攻击者。
+			return owner == null ? entity.getDamageSources().inFire() : entity.getDamageSources().playerAttack(owner);
+		}
+		if (entity.getLastAttacker() instanceof PlayerEntity player) return entity.getDamageSources().playerAttack(player);
+		if (entity.getAttacker() instanceof PlayerEntity player) return entity.getDamageSources().playerAttack(player);
+		return entity.getDamageSources().inFire();
 	}
 
 	@Override
@@ -64,38 +53,7 @@ public class FoxFireBurnEffect extends StatusEffect {
 			// Server side logic
 			// Damage every second (20 ticks) like vanilla fire
 			if (entity.age % 20 == 0) {
-				DamageSource source = entity.getDamageSources().inFire();
-
-				PlayerEntity owner = null;
-				if (entity instanceof SscIgnitedEntityAccessor accessor) {
-					UUID igniterUuid = accessor.sscAddon$getIgniterUuid();
-					if (igniterUuid != null) {
-						owner = entity.getWorld().getPlayerByUuid(igniterUuid);
-					}
-				}
-
-				// Priority 1: Explicit owner from NBT tag or Accessor
-				if (owner == null) {
-					owner = getOwnerFromTags(entity);
-				}
-
-				if (owner != null) {
-					// We use onFire damage source logic but with player attribution
-					// Vanilla doesn't have a direct "fire from player" source helper that's standard for DoT
-					// So we construct a generic override or simulate player attack but keeping it fire related if possible
-					// Or just use playerAttack for simplicity to ensure drops.
-					// A better way is creating a source that is "onFire" but has an attacker.
-					// But getDamageSources().inFire() doesn't take attacker.
-					// We can use create(DamageTypes.IN_FIRE, null, owner) if we want.
-					// But typically 'playerAttack' is safest for credit.
-					source = entity.getDamageSources().playerAttack(owner);
-				}
-				// Priority 2: Standard vanilla attribution fallback
-				else if (entity.getLastAttacker() instanceof PlayerEntity player) {
-					source = entity.getDamageSources().playerAttack(player);
-				} else if (entity.getAttacker() instanceof PlayerEntity player) {
-					source = entity.getDamageSources().playerAttack(player);
-				}
+				DamageSource source = damageSource(entity);
 
 				net.minecraft.util.math.Vec3d oldVelocity = entity.getVelocity();
 				DamageSource burnSource = source;

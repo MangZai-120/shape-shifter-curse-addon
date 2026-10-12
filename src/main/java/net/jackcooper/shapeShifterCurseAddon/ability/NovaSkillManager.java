@@ -77,9 +77,7 @@ public final class NovaSkillManager {
 
     private static final Map<UUID, Float> DODGE = new ConcurrentHashMap<>();
     private static final Map<UUID, Long> DODGE_EXPIRE = new ConcurrentHashMap<>();
-    private static final Map<UUID, Integer> LEAP_COUNT = new ConcurrentHashMap<>();
-    private static final Map<UUID, Long> LEAP_CAST = new ConcurrentHashMap<>();
-    private static final Map<UUID, Long> LEAP_FIRST = new ConcurrentHashMap<>();
+    private static final Map<UUID, LeapSession> LEAPS = new ConcurrentHashMap<>();
     /** 灵跃最近一次「收到触发」的 tick：用于抑制 active_self 电平触发在一次按键内的多 tick 重复。 */
     private static final Map<UUID, Long> LEAP_LAST_INPUT = new ConcurrentHashMap<>();
     /** 舍身爆炸蓄力会话（2026-09-27 审计修复）：起手把 chargeTime/lethalRadius/maxRadius/maxDamage
@@ -91,6 +89,10 @@ public final class NovaSkillManager {
     private record ChargeSession(long castId, long startTick, int chargeTime, int lethalRadius, int maxRadius, float maxDamage, float npcMaxDamage) {
     }
 
+    /** 第一段已使用的窗口；冷却配置随本轮冻结，丢失 power / reload 不改本轮 CD。 */
+    private record LeapSession(long castId, long firstTick, int singleUseCooldown) {
+    }
+
     private NovaSkillManager() {
     }
 
@@ -100,14 +102,12 @@ public final class NovaSkillManager {
                 tickPlayer(p);
             }
         });
-        // 断线清理八张状态表：防离线条目残留泄漏，也避免重连后残留旧 CD/蓄力起点误触发
+        // 断线清理状态表，避免重连后残留旧窗口和蓄力起点。
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             UUID id = handler.player.getUuid();
             DODGE.remove(id);
             DODGE_EXPIRE.remove(id);
-            LEAP_COUNT.remove(id);
-            LEAP_FIRST.remove(id);
-            LEAP_CAST.remove(id);
+            LEAPS.remove(id);
             LEAP_LAST_INPUT.remove(id);
             CHARGE_START.remove(id);
         });
@@ -147,20 +147,21 @@ public final class NovaSkillManager {
         if (lastInput != null && now - lastInput < LEAP_INPUT_GAP) {
             return;
         }
-        int count = LEAP_COUNT.getOrDefault(player.getUuid(), 0);
-        long first = LEAP_FIRST.getOrDefault(player.getUuid(), 0L);
-        if (count == 0 || now - first > BAL.i("leap_window", LEAP_WINDOW)) {
-            // 新的一轮：登记施放（两段同属一次施放，CD 在第 2 段或超窗时才起算）
-            if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, LEAP_SKILL_ID)) return;
-            count = 1;
-            LEAP_FIRST.put(player.getUuid(), now);
-            LEAP_CAST.put(player.getUuid(), net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, LEAP_SKILL_ID));
-        } else if (count == 1) {
-            count = 2;
-        } else {
-            return;
+        LeapSession leap = LEAPS.get(player.getUuid());
+        if (leap != null && net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, LEAP_SKILL_ID) != leap.castId()) {
+            LEAPS.remove(player.getUuid());
+            leap = null;
         }
-        LEAP_COUNT.put(player.getUuid(), count);
+        int count;
+        if (leap == null || now - leap.firstTick() > BAL.i("leap_window", LEAP_WINDOW)) {
+            // 新的一轮：登记施放（两段同属一次施放，CD 在第 2 段或超窗时才起算）
+            leap = beginLeap(player, now);
+            if (leap == null) return;
+            count = 1;
+            LEAPS.put(player.getUuid(), leap);
+        } else {
+            count = 2;
+        }
         if (count == 1) {
             // 第 1 段灵跃成功：推送窗口时长给客户端（次技能辅助栏自满格倒数「第 2 段过期时间」）
             net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.syncNovaLeapWindow(player,
@@ -195,9 +196,8 @@ public final class NovaSkillManager {
         player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 0.5F, 1.8F);
         if (count >= 2) {
-            LEAP_COUNT.put(player.getUuid(), 0);
-            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, LEAP_SKILL_ID, LEAP_CAST.getOrDefault(player.getUuid(), -1L));
-            LEAP_CAST.remove(player.getUuid());
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, LEAP_SKILL_ID, leap.castId());
+            LEAPS.remove(player.getUuid());
             // 第 2 段用掉：窗口关闭（辅助栏消失）
             net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.syncNovaLeapWindow(player, 0);
         }
@@ -318,10 +318,28 @@ public final class NovaSkillManager {
         }
     }
 
+    private static LeapSession beginLeap(ServerPlayerEntity player, long now) {
+        var spec = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.spec(player, LEAP_SKILL_ID);
+        if (spec == null || !net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, LEAP_SKILL_ID)) return null;
+        return new LeapSession(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, LEAP_SKILL_ID),
+                now, spec.extra("single_use"));
+    }
+
+    private static void finishSingleLeap(ServerPlayerEntity player, LeapSession leap) {
+        net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.retune(player, LEAP_SKILL_ID, leap.castId(), leap.singleUseCooldown());
+        net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, LEAP_SKILL_ID, leap.castId());
+    }
+
     // ==== tick ====
 
     private static void tickPlayer(ServerPlayerEntity player) {
-        if (!FormUtils.isForm(player, FormIdentifiers.OCELOT_NOVA)) {
+        if (!player.isAlive() || !FormUtils.isForm(player, FormIdentifiers.OCELOT_NOVA)) {
+            LeapSession leap = LEAPS.remove(player.getUuid());
+            if (leap != null) {
+                net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, LEAP_SKILL_ID, leap.castId());
+                net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.syncNovaLeapWindow(player, 0);
+            }
+            LEAP_LAST_INPUT.remove(player.getUuid());
             // 蓄力中途切换形态：属性修改器不随 apoli power 消失，须手动解除减速与禁疾跑标记
             if (CHARGE_START.containsKey(player.getUuid())) {
                 endCharge(player);
@@ -336,13 +354,10 @@ public final class NovaSkillManager {
             DODGE_EXPIRE.remove(player.getUuid());
         }
         // 灵跃：只用 1 次且超过窗口 → 本轮结束，CD 改用 extra_cooldowns.single_use
-        if (LEAP_COUNT.getOrDefault(player.getUuid(), 0) == 1
-                && now - LEAP_FIRST.getOrDefault(player.getUuid(), 0L) > BAL.i("leap_window", LEAP_WINDOW)) {
-            LEAP_COUNT.put(player.getUuid(), 0);
-            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.retune(player, LEAP_SKILL_ID, LEAP_CAST.getOrDefault(player.getUuid(), -1L),
-                    net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.extra(player, LEAP_SKILL_ID, "single_use"));
-            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, LEAP_SKILL_ID, LEAP_CAST.getOrDefault(player.getUuid(), -1L));
-            LEAP_CAST.remove(player.getUuid());
+        LeapSession leap = LEAPS.get(player.getUuid());
+        if (leap != null && now - leap.firstTick() > BAL.i("leap_window", LEAP_WINDOW)) {
+            LEAPS.remove(player.getUuid());
+            finishSingleLeap(player, leap);
             // 窗口过期未用第 2 段：窗口关闭（辅助栏消失）
             net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.syncNovaLeapWindow(player, 0);
         }
