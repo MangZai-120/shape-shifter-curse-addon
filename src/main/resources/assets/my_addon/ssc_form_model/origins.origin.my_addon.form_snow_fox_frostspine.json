@@ -5,8 +5,8 @@
   "form": "my_addon:form_snow_fox_frostspine",
   "wide_only": true,
   "model": "shape-shifter-curse:geo/form/form_snow_fox_3.geo.json",
-  "texture": "my_addon:textures/form_snow_fox_frostspine_ice/form_snow_fox_frostspine_ice.png",
-  "texture_mask": "my_addon:textures/form_snow_fox_frostspine_ice/form_snow_fox_frostspine_ice_colormask.png",
+  "texture": "my_addon:textures/form_snow_fox_frostspine/form_snow_fox_frostspine.png",
+  "texture_mask": "my_addon:textures/form_snow_fox_frostspine/form_snow_fox_frostspine_colormask.png",
   "hidden": [
     "leftLeg",
     "rightLeg",
@@ -69,6 +69,6 @@
       "close_scale": 0.01
     }
   },
-  "fullbright_texture": "my_addon:textures/form_snow_fox_frostspine_ice/form_snow_fox_frostspine_ice_overlay.png",
-  "fullbright_texture_mask": "my_addon:textures/form_snow_fox_frostspine_ice/form_snow_fox_frostspine_ice_overlay_colormask.png"
+  "fullbright_texture": "my_addon:textures/form_snow_fox_frostspine/form_snow_fox_frostspine_overlay.png",
+  "fullbright_texture_mask": "my_addon:textures/form_snow_fox_frostspine/form_snow_fox_frostspine_overlay_colormask.png"
 }

@@ -22,7 +22,7 @@ import software.bernie.geckolib.cache.object.BakedGeoModel;
  * 拆分 geo——本体（{@code form_sheep_spell_form.geo.json}，无 inflate）+ 羊毛外层
  * （{@code form_sheep_spell_form_wool.geo.json}，body inflate 1.75 / head 0.6 / 腿 0.5，
  * inflate 已烘进 geo 无需运行时放大）。两份 geo 骨骼同名（body/rotation/head/leg1~4），
- * 姿势用同一组公式分别驱动。贴图：本体 {@code sheep.png} + 羊毛 {@code sheep_wool.png}
+ * 姿势用同一组公式分别驱动。贴图：本体 {@code form_sheep_spell_form.png} + 羊毛 {@code form_sheep_spell_form_wool.png}
  *（{@code sheep_wool_undercoat.png} 是 1.20.2+ 剪毛绒层贴图，1.20.1 不用）。</p>
  *
  * <p><b>实现方式</b>：复用 SSC 原版 {@link FormRenderer}（GeoObjectRenderer 子类）双实例
@@ -42,8 +42,8 @@ public final class SheepFormClientHooks {
 	// ===== 资源常量（my_addon 命名空间）=====
 	private static final Identifier GEO_BODY = new Identifier("my_addon", "geo/form_sheep_spell_form.geo.json");
 	private static final Identifier GEO_WOOL = new Identifier("my_addon", "geo/form_sheep_spell_form_wool.geo.json");
-	private static final Identifier TEX_BODY = new Identifier("my_addon", "textures/form_sheep_spell_form/sheep.png");
-	private static final Identifier TEX_WOOL = new Identifier("my_addon", "textures/form_sheep_spell_form/sheep_wool.png");
+	private static final Identifier TEX_BODY = new Identifier("my_addon", "textures/form_sheep_spell_form/form_sheep_spell_form.png");
+	private static final Identifier TEX_WOOL = new Identifier("my_addon", "textures/form_sheep_spell_form/form_sheep_spell_form_wool.png");
 
 	/** 双层渲染器（初始化一次静态复用；渲染线程只读）。 */
 	private static FormRenderer bodyRenderer;

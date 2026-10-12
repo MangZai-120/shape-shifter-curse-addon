@@ -1,7 +1,7 @@
 {
   "model": "my_addon:geo/form_anubis_wolf_sp.geo.json",
-  "texture": "my_addon:textures/form_anubis_wolf_sp/form_anubis_wolf_sp.png",
-  "texture_mask": "my_addon:textures/form_anubis_wolf_sp/form_anubis_wolf_sp_colormask.png",
+  "texture": "my_addon:textures/form_golden_sandstorm_sp/form_golden_sandstorm_sp.png",
+  "texture_mask": "my_addon:textures/form_golden_sandstorm_sp/form_golden_sandstorm_sp_colormask.png",
   "hidden": [
     "leftLeg",
     "rightLeg",

@@ -1,7 +1,7 @@
 {
   "model": "shape-shifter-curse:geo/form/form_axolotl_3.geo.json",
-  "texture": "shape-shifter-curse:textures/form/form_axolotl_3/form_axolotl_3.png",
-  "texture_mask": "shape-shifter-curse:textures/form/form_axolotl_3/form_axolotl_3_colormask.png",
+  "texture": "my_addon:textures/form_axolotl_fluorescent/form_axolotl_fluorescent.png",
+  "texture_mask": "my_addon:textures/form_axolotl_fluorescent/form_axolotl_fluorescent_colormask.png",
   "hidden": [
     "leftLeg",
     "rightLeg",

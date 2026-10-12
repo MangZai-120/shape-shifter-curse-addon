@@ -5,8 +5,8 @@
   "form": "my_addon:form_familiar_fox_mancianima",
   "wide_only": true,
   "model": "my_addon:geo/form_familiar_fox_mancianima_contract.geo.json",
-  "texture": "my_addon:textures/form_familiar_fox_mancianima_contract/form_familiar_fox_mancianima_contract.png",
-  "texture_mask": "my_addon:textures/form_familiar_fox_mancianima_contract/form_familiar_fox_mancianima_contract_colormask.png",
+  "texture": "my_addon:textures/form_familiar_fox_mancianima/form_familiar_fox_mancianima.png",
+  "texture_mask": "my_addon:textures/form_familiar_fox_mancianima/form_familiar_fox_mancianima_colormask.png",
   "hidden": [
     "leftLeg",
     "rightLeg",

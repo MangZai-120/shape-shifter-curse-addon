@@ -8,10 +8,10 @@
   "wide_only": true,
 
   "model": "my_addon:geo/form_bat_desmodus.geo.json",
-  "texture": "my_addon:textures/form_bat_parasitic_fruit/form_bat_desmodus.png",
-  "texture_mask": "my_addon:textures/form_bat_parasitic_fruit/form_bat_desmodus_colormask.png",
-  "fullbright_texture": "my_addon:textures/form_bat_parasitic_fruit/form_bat_desmodus_emission.png",
-  "fullbright_texture_mask": "my_addon:textures/form_bat_parasitic_fruit/form_bat_desmodus_emission_colormask.png",
+  "texture": "my_addon:textures/form_bat_parasitic_fruit/form_bat_parasitic_fruit.png",
+  "texture_mask": "my_addon:textures/form_bat_parasitic_fruit/form_bat_parasitic_fruit_colormask.png",
+  "fullbright_texture": "my_addon:textures/form_bat_parasitic_fruit/form_bat_parasitic_fruit_emission.png",
+  "fullbright_texture_mask": "my_addon:textures/form_bat_parasitic_fruit/form_bat_parasitic_fruit_emission_colormask.png",
   "hidden": [
     "leftArm",
     "rightArm",
