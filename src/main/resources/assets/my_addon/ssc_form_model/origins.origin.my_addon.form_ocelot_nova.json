@@ -8,10 +8,10 @@
   "wide_only": true,
 
   "model": "my_addon:geo/form_ocelot_nova.geo.json",
-  "texture": "my_addon:textures/form_ocelot_nova/form_ocelot_nova.png",
-  "texture_mask": "my_addon:textures/form_ocelot_nova/form_ocelot_nova_colormask.png",
-  "fullbright_texture": "my_addon:textures/form_ocelot_nova/form_ocelot_nova_emission.png",
-  "fullbright_texture_mask": "my_addon:textures/form_ocelot_nova/form_ocelot_nova_emission_colormask.png",
+  "texture": "my_addon:textures/form_ocelot_nova_markings/form_ocelot_nova_markings.png",
+  "texture_mask": "my_addon:textures/form_ocelot_nova_markings/form_ocelot_nova_markings_colormask.png",
+  "fullbright_texture": "my_addon:textures/form_ocelot_nova_markings/form_ocelot_nova_markings_overlay.png",
+  "fullbright_texture_mask": "my_addon:textures/form_ocelot_nova_markings/form_ocelot_nova_markings_overlay_colormask.png",
   "hidden": [
     "leftLeg",
     "rightLeg",
