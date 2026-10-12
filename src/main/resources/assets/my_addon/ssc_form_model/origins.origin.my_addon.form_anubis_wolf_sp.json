@@ -8,8 +8,9 @@
   "wide_only": true,
 
   "model": "my_addon:geo/form_anubis_wolf_sp.geo.json",
-  "texture": "my_addon:textures/form_anubis_wolf_sp/form_anubis_wolf_sp.png",
-  "texture_mask": "my_addon:textures/form_anubis_wolf_sp/form_anubis_wolf_sp_colormask.png",
+  "texture": "my_addon:textures/form_anubis_wolf_sp_soul/form_anubis_wolf_sp_soul.png",
+  "texture_mask": "my_addon:textures/form_anubis_wolf_sp_soul/form_anubis_wolf_sp_soul_colormask.png",
+  "fullbright_texture": "my_addon:textures/form_anubis_wolf_sp_soul/form_anubis_wolf_sp_soul_overlay.png",
   "hidden": [
     "leftLeg",
     "rightLeg",
