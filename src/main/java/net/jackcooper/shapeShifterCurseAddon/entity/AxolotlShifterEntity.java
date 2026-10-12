@@ -10,13 +10,15 @@ import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.CaveVinesHeadBlock;
+import net.minecraft.block.CaveVines;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityGroup;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.ai.FuzzyTargeting;
+import net.minecraft.entity.ai.control.AquaticMoveControl;
+import net.minecraft.entity.ai.control.MoveControl;
 import net.minecraft.entity.ai.goal.ActiveTargetGoal;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.ai.goal.LookAroundGoal;
@@ -26,7 +28,10 @@ import net.minecraft.entity.ai.goal.RevengeGoal;
 import net.minecraft.entity.ai.goal.SwimAroundGoal;
 import net.minecraft.entity.ai.goal.WanderAroundFarGoal;
 import net.minecraft.entity.ai.pathing.AmphibiousSwimNavigation;
+import net.minecraft.entity.ai.pathing.AmphibiousPathNodeMaker;
 import net.minecraft.entity.ai.pathing.EntityNavigation;
+import net.minecraft.entity.ai.pathing.Path;
+import net.minecraft.entity.ai.pathing.PathNodeNavigator;
 import net.minecraft.entity.ai.pathing.PathNodeType;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
@@ -35,6 +40,7 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageType;
 import net.minecraft.entity.mob.HostileEntity;
+import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
@@ -56,7 +62,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.ChunkCache;
 import net.minecraft.world.event.GameEvent;
 import net.minecraft.world.explosion.Explosion;
 import net.minecraft.enchantment.ProtectionEnchantment;
@@ -65,7 +74,9 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -156,17 +167,19 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 	private int eatCooldown = 0;
 	/** 当前是否已施加战斗爆发提速 modifier（避免重复增删） */
 	private boolean combatSpeedApplied = false;
+	/** 补润期间不追击或释放爆破；由当前持有移动控制权的寻水目标管理。 */
+	private boolean recoveringMoisture;
 
 	public AxolotlShifterEntity(EntityType<? extends PathAwareEntity> type, World world) {
 		super(type, world);
-		// 允许地面寻路器在水中寻路（对齐原版美西螈的做法）
+		this.moveControl = new ShifterMoveControl(this);
 		this.setPathfindingPenalty(PathNodeType.WATER, 0.0f);
 	}
 
 	/** 水陆两栖寻路（对齐原版 AxolotlEntity.createNavigation） */
 	@Override
 	protected EntityNavigation createNavigation(World world) {
-		return new AmphibiousSwimNavigation(this, world);
+		return new ShifterNavigation(this, world);
 	}
 
 	public static DefaultAttributeContainer.Builder createAxolotlShifterAttributes() {
@@ -206,20 +219,35 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 		return null;
 	}
 
+	/** 一次寻路在多处水源中选择可到达的落脚点，避免盯住墙后或水浸方块里的水。 */
+	@Nullable
+	private Path findWaterPath(int rangeH, int rangeV, Set<BlockPos> rejected) {
+		Set<BlockPos> candidates = new HashSet<>();
+		for (BlockPos pos : BlockPos.iterateOutwards(this.getBlockPos(), rangeH, rangeV, rangeH)) {
+			if (!this.getWorld().getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4) || rejected.contains(pos)
+					|| !this.getWorld().getFluidState(pos).isIn(FluidTags.WATER)) continue;
+			Vec3d feet = Vec3d.ofBottomCenter(pos);
+			if (this.getWorld().isSpaceEmpty(this, this.getBoundingBox().offset(feet.subtract(this.getPos())))) {
+				candidates.add(pos.toImmutable());
+			}
+		}
+		Path path = this.getNavigation().findPathTo(candidates, 0);
+		return path != null && path.reachesTarget() ? path : null;
+	}
+
 	/**
 	 * 朝指定 yaw 方向前方选点漫游一步（找不到水时的定向探索 / 逃离，确保会移动而非原地呆着）。
 	 * @return 是否成功发起寻路
 	 */
 	private boolean wanderTowardYaw(float yaw, double speed) {
 		double rad = Math.toRadians(yaw);
-		// 朝 yaw 方向远处取偏好点，交 FuzzyTargeting 找一个「保证可寻路到达」的地面点
-		// （避免手算点悬空/埋地导致寻路失败反复转向、走两步转一圈）
+		// FuzzyTargeting 只选落脚点，仍须确认完整路径，不能把部分路径当成可到达。
 		Vec3d prefer = this.getPos().add(-Math.sin(rad) * 12.0, 0.0, Math.cos(rad) * 12.0);
 		Vec3d target = FuzzyTargeting.findTo(this, 12, 7, prefer);
 		if (target == null) target = FuzzyTargeting.find(this, 10, 5);  // 兜底：方向找不到就取任意可达点，确保会移动
 		if (target == null) return false;
-		this.getLookControl().lookAt(target.x, target.y, target.z);
-		return this.getNavigation().startMovingTo(target.x, target.y, target.z, speed);
+		Path path = this.getNavigation().findPathTo(BlockPos.ofFloored(target), 0);
+		return path != null && path.reachesTarget() && this.getNavigation().startMovingAlong(path, speed);
 	}
 
 	/** 战斗爆发提速：进入战斗临时提速，脱离战斗恢复（固定 UUID，先移后加防叠加） */
@@ -238,8 +266,7 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 	/** 吃掉一处成熟发光浆果（清除浆果状态 + 采摘音效 + 回润回血 + 粒子） */
 	private void eatGlowBerryAt(BlockPos pos) {
 		BlockState state = this.getWorld().getBlockState(pos);
-		if (!(state.getBlock() instanceof CaveVinesHeadBlock)) return;
-		if (!state.contains(Properties.BERRIES) || !state.get(Properties.BERRIES)) return;
+		if (!CaveVines.hasBerries(state)) return;
 		this.getWorld().setBlockState(pos, state.with(Properties.BERRIES, false), Block.NOTIFY_LISTENERS);
 		this.getWorld().playSound(null, pos, SoundEvents.BLOCK_CAVE_VINES_PICK_BERRIES,
 				SoundCategory.NEUTRAL, 1.0f, 0.8f + this.getRandom().nextFloat() * 0.4f);
@@ -259,8 +286,22 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 		this.goalSelector.add(2, new MeleeAttackGoal(this, 1.0, true));  // 近战猛攻（贴脸；水流爆破由 mobTick 触发）
 		this.goalSelector.add(3, new SeekWaterGoal(this));              // 非战斗：缺水去水 / 附近没水则定向漫游找水
 		this.goalSelector.add(4, new EatGlowBerriesGoal(this));          // 偶尔上岸摘繁茂洞穴发光浆果吃
-		this.goalSelector.add(5, new SwimAroundGoal(this, 1.0, 10));     // 在水里自然游荡
-		this.goalSelector.add(6, new WanderAroundFarGoal(this, 0.8));    // 岸上/水边游荡（湿润度高时可在岸上活动）
+		this.goalSelector.add(5, new SwimAroundGoal(this, 1.0, 10) {
+			@Override public boolean canStart() {
+				return isTouchingWater() && getTarget() == null && !recoveringMoisture && super.canStart();
+			}
+			@Override public boolean shouldContinue() {
+				return isTouchingWater() && getTarget() == null && !recoveringMoisture && super.shouldContinue();
+			}
+		});
+		this.goalSelector.add(6, new WanderAroundFarGoal(this, 0.8) {
+			@Override public boolean canStart() {
+				return !isTouchingWater() && getTarget() == null && !recoveringMoisture && super.canStart();
+			}
+			@Override public boolean shouldContinue() {
+				return !isTouchingWater() && getTarget() == null && !recoveringMoisture && super.shouldContinue();
+			}
+		});
 		this.goalSelector.add(7, new LookAtEntityGoal(this, PlayerEntity.class, 8.0f));
 		this.goalSelector.add(8, new LookAroundGoal(this));
 
@@ -268,7 +309,7 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 		// 不主动攻击玩家（保持对玩家中立，仅被玩家攻击时反击）
 		this.targetSelector.add(1, new ActiveTargetGoal<>(this, HostileEntity.class, 10, true, false, this::shouldHuntTarget));
 		// 中立反击：被任何生物攻击都反击（不限于同类）；同类之间不互相报复
-		this.targetSelector.add(2, new RevengeGoal(this).setGroupRevenge(AxolotlShifterEntity.class));
+		this.targetSelector.add(2, new RevengeGoal(this, AxolotlShifterEntity.class).setGroupRevenge(AxolotlShifterEntity.class));
 	}
 
 	/**
@@ -296,6 +337,9 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 		if (this.isPanicking()) {
 			// 惊慌：陆地不减速全力逃，但不叠战斗提速，避免速度过快
 			this.setSprinting(true);
+			setCombatSpeedBoost(false);
+		} else if (this.recoveringMoisture) {
+			this.setSprinting(target0 != null && !this.isTouchingWater());
 			setCombatSpeedBoost(false);
 		} else if (target0 == null) {
 			this.setSprinting(false);
@@ -358,7 +402,8 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 		}
 
 		// ===== 水流爆破：有攻击目标、贴近（≤4格）且非惊慌时释放（开场 AOE，之后进入近战） =====
-		if (this.burstCooldown <= 0 && this.panicTicks <= 0 && this.getTarget() != null
+		if (this.burstCooldown <= 0 && this.panicTicks <= 0 && !this.recoveringMoisture && this.getTarget() != null
+				&& this.canSee(this.getTarget())
 				&& this.squaredDistanceTo(this.getTarget()) <= BURST_RADIUS * BURST_RADIUS) {
 			useWaterBurst();
 			this.burstCooldown = BURST_COOLDOWN_MAX;
@@ -522,17 +567,11 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 	@Override
 	public void travel(Vec3d movementInput) {
 		if (this.isLogicalSideForUpdatingMovement() && this.isTouchingWater()) {
-			this.updateVelocity(0.05f, movementInput);
+			this.updateVelocity(this.getMovementSpeed(), movementInput);
 			this.move(net.minecraft.entity.MovementType.SELF, this.getVelocity());
 			// water_flex 0.93：水平保留 93% 速度（原版水中阻力为 ×0.8）
 			this.setVelocity(this.getVelocity().multiply(0.93, 0.85, 0.93));
-			if (!this.hasNoGravity()) {
-				this.setVelocity(this.getVelocity().add(0.0, -0.02, 0.0));
-			}
-			// 水中撞到岸壁 → 给向上冲量帮助跳出水面爬上岸（解决「从水里不易跳出来」）
-			if (this.horizontalCollision) {
-				this.setVelocity(this.getVelocity().x, 0.4, this.getVelocity().z);
-			}
+			// 上下游动与上岸由移动控制器按路径处理，撞墙本身不再触发无条件顶跳。
 			this.updateLimbs(false);
 		} else {
 			if (!this.isSprinting()) {
@@ -603,13 +642,14 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 	@Override
 	public void readCustomDataFromNbt(NbtCompound nbt) {
 		super.readCustomDataFromNbt(nbt);
-		this.moisture = MathHelper.clamp(nbt.getInt("Moisture"), 0, MAX_MOISTURE);
+		this.moisture = nbt.contains("Moisture") ? MathHelper.clamp(nbt.getInt("Moisture"), 0, MAX_MOISTURE) : MAX_MOISTURE;
 		this.burstCooldown = nbt.getInt("BurstCooldown");
 		// attribute modifier 不随 NBT 持久化，读档后置哨兵值强制首个 tick 重算湿润度生命档
 		this.moistureBonus = Integer.MIN_VALUE;
 		// 临时状态不持久化：读档后清零（惊慌/战斗提速 modifier 均不随存档）
 		this.panicTicks = 0;
 		this.combatSpeedApplied = false;
+		this.recoveringMoisture = false;
 	}
 
 	// ========== 音效（美西螈音效，对应 form_axolotl_sound 系列） ==========
@@ -657,337 +697,259 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 		return cache;
 	}
 
-	// ========== 自定义 AI 目标 ==========
+	// ========== 水陆移动与自定义 AI 目标 ==========
 
-	/**
-	 * 寻水：非战斗、非惊慌时——附近有水且缺水则去补润；附近没水则朝一个方向慢慢漫游探索，
-	 * 边走边扫水，发现就前往（体现「范围内没水就往一个方向慢慢走直到找到」，湿润度高也会未雨绞缪找水）。
-	 */
-	static class SeekWaterGoal extends Goal {
-		private final AxolotlShifterEntity shifter;
-		@Nullable
-		private BlockPos waterPos;
+	static class ShifterNavigation extends AmphibiousSwimNavigation {
+		ShifterNavigation(MobEntity entity, World world) { super(entity, world); }
+
+		@Override
+		protected PathNodeNavigator createPathNodeNavigator(int range) {
+			this.nodeMaker = new AmphibiousPathNodeMaker(false) {
+				@Override public void init(ChunkCache cache, MobEntity entity) {
+					super.init(cache, entity);
+					// 水栖倾向由行为目标决定，战斗路径不能因原版的陆地代价绕着岸边打转。
+					entity.setPathfindingPenalty(PathNodeType.WALKABLE, 0.0f);
+					entity.setPathfindingPenalty(PathNodeType.WATER_BORDER, 0.0f);
+				}
+			};
+			this.nodeMaker.setCanEnterOpenDoors(true);
+			return new PathNodeNavigator(this.nodeMaker, range);
+		}
+
+		@Override protected Vec3d getPos() { return this.entity.getPos(); }
+		@Override protected boolean canPathDirectlyThrough(Vec3d from, Vec3d to) {
+			// 保留逐节点的台阶/岸边路线，避免水中的直线捷径跨过实际不能攀上的岸壁。
+			return false;
+		}
+	}
+
+	static class ShifterMoveControl extends MoveControl {
+		private final AquaticMoveControl swimming;
+
+		ShifterMoveControl(MobEntity entity) {
+			super(entity);
+			this.swimming = new AquaticMoveControl(entity, 85, 45, 0.2f, 1.0f, false);
+		}
+
+		@Override public void moveTo(double x, double y, double z, double speed) {
+			super.moveTo(x, y, z, speed);
+			this.swimming.moveTo(x, y, z, speed);
+		}
+
+		@Override public void tick() {
+			if (this.entity.isTouchingWater()) {
+				this.swimming.tick();
+				// 只有路径下一步确实上岸、且头顶有空间时才跃上去；不会对着水下墙壁连跳。
+				if (this.state == State.MOVE_TO && !this.entity.getNavigation().isIdle()
+						&& this.entity.horizontalCollision && this.targetY > this.entity.getY() + 0.1
+						&& this.targetY <= this.entity.getY() + 1.25
+						&& !this.entity.getWorld().getFluidState(BlockPos.ofFloored(this.targetX, this.targetY, this.targetZ)).isIn(FluidTags.WATER)
+						&& this.entity.getWorld().isSpaceEmpty(this.entity, this.entity.getBoundingBox().offset(0.0, 0.6, 0.0))) {
+					Vec3d velocity = this.entity.getVelocity();
+					this.entity.setVelocity(velocity.x, Math.max(velocity.y, 0.42), velocity.z);
+				}
+			} else {
+				this.entity.setUpwardSpeed(0.0f);
+				this.entity.setPitch(this.wrapDegrees(this.entity.getPitch(), 0.0f, 10.0f));
+				super.tick(); // 陆地继续使用原版步行、转向和台阶跳跃。
+			}
+		}
+	}
+
+	/** 寻水、撤退和灭火共用路径生命周期：走完或连续卡住后再重算，不在行进中不断换点。 */
+	static abstract class WaterSeekingGoal extends Goal {
+		protected final AxolotlShifterEntity shifter;
+		private final int range;
+		private final double speed;
+		private final boolean recovery;
+		@Nullable private BlockPos waterPos;
+		private final Set<BlockPos> rejected = new HashSet<>();
+		private int nextSearchAge;
+		private int rejectedUntil;
+		private int lastProgressAge;
+		private Vec3d lastProgressPos = Vec3d.ZERO;
 		private float exploreYaw;
-		private int repathCountdown;
-		private int scanCooldown;
-		private Vec3d lastPos = Vec3d.ZERO;
-		private int stuckTicks;
 
-		SeekWaterGoal(AxolotlShifterEntity shifter) {
+		WaterSeekingGoal(AxolotlShifterEntity shifter, int range, double speed, boolean recovery) {
 			this.shifter = shifter;
+			this.range = range;
+			this.speed = speed;
+			this.recovery = recovery;
 			this.setControls(EnumSet.of(Control.MOVE, Control.LOOK));
 		}
 
-		@Override
-		public boolean canStart() {
-			if (this.shifter.getTarget() != null) return false;   // 战斗缺水交 CombatRetreatToWaterGoal
-			if (this.shifter.isPanicking()) return false;          // 惊慌交 PanicToWaterGoal
-			if (this.shifter.isTouchingWater()) return false;
-			if (--this.scanCooldown > 0) return false;
-			this.scanCooldown = 20;
-			boolean dry = this.shifter.getMoisture() < FIND_WATER_THRESHOLD;
-			boolean atWaterside = this.shifter.findNearestWater(NEAR_WATER_RADIUS, 4) != null;  // 6 格内有水 = 已在水边
-			// 已在水边且湿润充足 → 交游荡（岸边活动）；否则（离水较远 / 缺水 / 附近没水）主动去水或探索
-			if (atWaterside && !dry) return false;
-			this.waterPos = this.shifter.findNearestWater(SEEK_WATER_RANGE, 8);
-			return true;
-		}
+		@Override public boolean shouldRunEveryTick() { return true; }
 
-		@Override
-		public boolean shouldContinue() {
-			if (this.shifter.getTarget() != null || this.shifter.isPanicking()) return false;
-			if (this.shifter.isTouchingWater()) {
-				return this.shifter.getMoisture() < RETREAT_RECOVER_MOISTURE;   // 到水里：补够 ≥240 才停
-			}
-			boolean dry = this.shifter.getMoisture() < FIND_WATER_THRESHOLD;
-			// 到水边（6 格内有水）且湿润充足 → 停，交岸边游荡；否则继续去水 / 探索
-			return dry || this.shifter.findNearestWater(NEAR_WATER_RADIUS, 4) == null;
-		}
-
-		@Override
-		public void start() {
+		@Override public void start() {
+			this.shifter.recoveringMoisture = this.recovery;
+			this.nextSearchAge = this.shifter.age;
+			this.lastProgressAge = this.shifter.age;
+			this.lastProgressPos = this.shifter.getPos();
 			this.exploreYaw = this.shifter.getYaw();
-			this.repathCountdown = 0;
-			this.stuckTicks = 0;
-			this.lastPos = this.shifter.getPos();
+			this.waterPos = null;
+			this.rejected.clear();
 		}
 
-		@Override
-		public void tick() {
+		@Override public void tick() {
 			if (this.shifter.isTouchingWater()) {
-				this.shifter.getNavigation().stop();   // 到水里待着回润
+				this.shifter.getNavigation().stop();
+				// 到水里停稳补润，避免惯性又把它带回岸上。
+				this.shifter.setVelocity(this.shifter.getVelocity().multiply(0.6));
 				return;
 			}
-			// 卡住检测：连续几乎没位移就换探索方向
-			if (this.shifter.getPos().squaredDistanceTo(this.lastPos) < 0.02) {
-				this.stuckTicks++;
-			} else {
-				this.stuckTicks = 0;
-				this.lastPos = this.shifter.getPos();
+			boolean moving = !this.shifter.getNavigation().isIdle();
+			if (this.shifter.getPos().squaredDistanceTo(this.lastProgressPos) >= 0.0625) {
+				this.lastProgressPos = this.shifter.getPos();
+				this.lastProgressAge = this.shifter.age;
 			}
-			if (--this.repathCountdown > 0) return;
-			this.repathCountdown = 20;
-
-			boolean dry = this.shifter.getMoisture() < FIND_WATER_THRESHOLD;
-			if (this.waterPos == null || this.shifter.getWorld().getFluidState(this.waterPos).isEmpty()) {
-				this.waterPos = this.shifter.findNearestWater(SEEK_WATER_RANGE, 8);
+			boolean stuck = moving && this.shifter.age - this.lastProgressAge >= 40;
+			boolean waterGone = this.waterPos != null
+					&& !this.shifter.getWorld().getFluidState(this.waterPos).isIn(FluidTags.WATER);
+			if (stuck || waterGone || (!moving && this.waterPos != null)) {
+				if (this.waterPos != null) {
+					for (BlockPos pos : BlockPos.iterateOutwards(this.waterPos, 1, 1, 1)) this.rejected.add(pos.toImmutable());
+					this.rejectedUntil = this.shifter.age + 200;
+				}
+				this.waterPos = null;
+				this.shifter.getNavigation().stop();
+				this.exploreYaw += 90 + this.shifter.getRandom().nextInt(90);
+				this.lastProgressAge = this.shifter.age;
+				moving = false;
 			}
-			if (this.waterPos != null) {
-				// 有水：去水（缺水快 1.1，否则常速 1.0）
-				this.shifter.getNavigation().startMovingTo(
-						this.waterPos.getX() + 0.5, this.waterPos.getY() + 0.5, this.waterPos.getZ() + 0.5, dry ? 1.1 : 1.0);
-				return;
-			}
-			// 附近没水：朝 exploreYaw 方向慢慢走探索；卡住 / 走不通就换方向
-			if (this.stuckTicks > 3) {
-				this.exploreYaw += 70 + this.shifter.getRandom().nextInt(140);
-				this.stuckTicks = 0;
-			}
-			if (!this.shifter.wanderTowardYaw(this.exploreYaw, dry ? 1.0 : 0.8)) {
-				this.exploreYaw += 90;
+			if (this.waterPos != null || this.shifter.age < this.nextSearchAge) return;
+			this.nextSearchAge = this.shifter.age + 40;
+			if (this.shifter.age >= this.rejectedUntil) this.rejected.clear();
+			Path path = this.shifter.findWaterPath(this.range, 8, this.rejected);
+			if (path != null && this.shifter.getNavigation().startMovingAlong(path, this.speed)) {
+				this.waterPos = path.getTarget();
+				this.lastProgressAge = this.shifter.age;
+			} else if (!moving) {
+				if (!this.shifter.wanderTowardYaw(this.exploreYaw, this.recovery ? 0.8 : this.speed)) this.exploreYaw += 90;
+				this.lastProgressAge = this.shifter.age;
 			}
 		}
 
-		@Override
-		public void stop() {
+		@Override public void stop() {
+			if (this.recovery) this.shifter.recoveringMoisture = false;
 			this.waterPos = null;
 			this.shifter.getNavigation().stop();
 		}
 	}
 
-	/**
-	 * 摘发光浆果吃：无战斗、进食冷却结束时，低频扫描附近繁茂洞穴成熟发光浆果，
-	 * 前往采摘吃掉（回润 + 回血）。体现「偶尔出来摘取繁茂洞穴内的发光浆果吃」。
-	 */
+	/** 非战斗缺水时入水，补到 240 再恢复活动；湿润充足时允许在岸边生活。 */
+	static class SeekWaterGoal extends WaterSeekingGoal {
+		private int nextScanAge;
+		SeekWaterGoal(AxolotlShifterEntity shifter) { super(shifter, SEEK_WATER_RANGE, 1.1, true); }
+
+		@Override public boolean canStart() {
+			if (this.shifter.getTarget() != null || this.shifter.isPanicking() || this.shifter.age < this.nextScanAge) return false;
+			this.nextScanAge = this.shifter.age + 20;
+			if (this.shifter.getMoisture() < FIND_WATER_THRESHOLD) return true;
+			return !this.shifter.isTouchingWater() && this.shifter.findNearestWater(NEAR_WATER_RADIUS, 4) == null;
+		}
+
+		@Override public boolean shouldContinue() {
+			if (this.shifter.getTarget() != null || this.shifter.isPanicking()) return false;
+			if (this.shifter.isTouchingWater()) return this.shifter.getMoisture() < RETREAT_RECOVER_MOISTURE;
+			// 已经开始补水后，不会因为途中刚好接近水边就提前交还控制权。
+			return this.shifter.getMoisture() < RETREAT_RECOVER_MOISTURE
+					|| this.shifter.findNearestWater(NEAR_WATER_RADIUS, 4) == null;
+		}
+	}
+
+	/** 战斗低于 90 时撤退；失去攻击目标也会把这一轮补水完成，避免往返抖动。 */
+	static class CombatRetreatToWaterGoal extends WaterSeekingGoal {
+		CombatRetreatToWaterGoal(AxolotlShifterEntity shifter) { super(shifter, 12, 1.15, true); }
+		@Override public boolean canStart() {
+			return this.shifter.getTarget() != null && !this.shifter.isPanicking()
+					&& this.shifter.getMoisture() < RETREAT_MOISTURE_THRESHOLD
+					&& (this.shifter.isTouchingWater() || this.shifter.findNearestWater(12, 4) != null);
+		}
+		@Override public boolean shouldContinue() {
+			return !this.shifter.isPanicking() && this.shifter.getMoisture() < RETREAT_RECOVER_MOISTURE;
+		}
+	}
+
+	/** 环境惊慌先找可达水源；无水且正在战斗时按已有规则继续反击。 */
+	static class PanicToWaterGoal extends WaterSeekingGoal {
+		private int nextWaterScanAge;
+		private boolean noWaterNearby;
+		PanicToWaterGoal(AxolotlShifterEntity shifter) { super(shifter, SEEK_WATER_RANGE, 1.05, false); }
+		private boolean shouldYieldToCombat() {
+			if (this.shifter.getTarget() == null) return false;
+			if (this.shifter.age >= this.nextWaterScanAge) {
+				this.nextWaterScanAge = this.shifter.age + 40;
+				this.noWaterNearby = this.shifter.findWaterPath(SEEK_WATER_RANGE, 8, Set.of()) == null;
+			}
+			return this.noWaterNearby;
+		}
+		@Override public boolean canStart() {
+			return this.shifter.isPanicking() && !this.shifter.isTouchingWater() && !shouldYieldToCombat();
+		}
+		@Override public boolean shouldContinue() { return canStart(); }
+	}
+
+	/** 偶尔采摘成熟浆果；只启动完整可达的路径，失败或超时后让出移动控制权。 */
 	static class EatGlowBerriesGoal extends Goal {
 		private final AxolotlShifterEntity shifter;
-		@Nullable
-		private BlockPos berryPos;
-		private int scanCooldown;
+		@Nullable private BlockPos berryPos;
+		@Nullable private Path berryPath;
+		private int nextScanAge;
+		private int finishAge;
 
 		EatGlowBerriesGoal(AxolotlShifterEntity shifter) {
 			this.shifter = shifter;
 			this.setControls(EnumSet.of(Control.MOVE, Control.LOOK));
 		}
-
-		@Override
-		public boolean canStart() {
-			if (this.shifter.getTarget() != null) return false;   // 战斗中不摘浆果
-			if (this.shifter.isPanicking()) return false;
-			if (this.shifter.eatCooldown > 0) return false;
-			if (--this.scanCooldown > 0) return false;            // 限频扫描
-			this.scanCooldown = 30;
-			this.berryPos = findRipeBerry();
-			return this.berryPos != null;
+		@Override public boolean canStart() {
+			if (this.shifter.getTarget() != null || this.shifter.isPanicking() || this.shifter.eatCooldown > 0
+					|| this.shifter.age < this.nextScanAge) return false;
+			this.nextScanAge = this.shifter.age + 30;
+			for (BlockPos pos : BlockPos.iterateOutwards(this.shifter.getBlockPos(), EAT_SCAN_RANGE, 6, EAT_SCAN_RANGE)) {
+				if (!CaveVines.hasBerries(this.shifter.getWorld().getBlockState(pos))) continue;
+				// 藤蔓可以悬在头顶，落脚点不必与浆果处于同一高度。
+				for (int below = 0; below <= 2; below++) {
+					Path path = this.shifter.getNavigation().findPathTo(pos.down(below), 0);
+					if (path != null && path.reachesTarget()) {
+						this.berryPos = pos.toImmutable();
+						this.berryPath = path;
+						return true;
+					}
+				}
+			}
+			return false;
 		}
-
-		@Override
-		public boolean shouldContinue() {
-			return this.berryPos != null && this.shifter.getTarget() == null
-					&& !this.shifter.isPanicking() && isRipeBerry(this.berryPos);
+		@Override public boolean shouldContinue() {
+			return this.berryPos != null && this.shifter.getTarget() == null && !this.shifter.isPanicking()
+					&& this.shifter.age < this.finishAge && (!this.shifter.getNavigation().isIdle() || canReachBerry())
+					&& CaveVines.hasBerries(this.shifter.getWorld().getBlockState(this.berryPos));
 		}
-
-		@Override
-		public void start() {
-			navigateToBerry();
+		@Override public void start() {
+			this.finishAge = this.shifter.age + 200;
+			this.shifter.getNavigation().startMovingAlong(this.berryPath, 1.0);
 		}
-
-		@Override
-		public void tick() {
+		@Override public void tick() {
 			if (this.berryPos == null) return;
-			this.shifter.getLookControl().lookAt(
-					this.berryPos.getX() + 0.5, this.berryPos.getY() + 0.5, this.berryPos.getZ() + 0.5);
-			double distSq = this.shifter.squaredDistanceTo(
-					this.berryPos.getX() + 0.5, this.berryPos.getY() + 0.5, this.berryPos.getZ() + 0.5);
-			if (distSq <= 4.0) {
+			Vec3d berry = Vec3d.ofCenter(this.berryPos);
+			this.shifter.getLookControl().lookAt(berry.x, berry.y, berry.z);
+			if (canReachBerry()) {
 				this.shifter.eatGlowBerryAt(this.berryPos);
-				this.berryPos = null;                              // 吃完 → shouldContinue 结束 → stop 上进食冷却
-			} else if (this.shifter.getNavigation().isIdle()) {
-				navigateToBerry();
+				this.berryPos = null;
 			}
 		}
-
-		@Override
-		public void stop() {
+		private boolean canReachBerry() {
+			if (this.berryPos == null) return false;
+			Vec3d berry = Vec3d.ofCenter(this.berryPos);
+			return this.shifter.getEyePos().squaredDistanceTo(berry) <= 4.0
+					&& this.shifter.getWorld().raycast(new RaycastContext(this.shifter.getEyePos(), berry,
+							RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, this.shifter)).getType() == HitResult.Type.MISS;
+		}
+		@Override public void stop() {
 			this.berryPos = null;
+			this.berryPath = null;
 			this.shifter.getNavigation().stop();
-			// 吃完 / 放弃后进入较长进食冷却，避免频繁上岸
 			this.shifter.eatCooldown = EAT_COOLDOWN_MIN
 					+ this.shifter.getRandom().nextInt(EAT_COOLDOWN_MAX - EAT_COOLDOWN_MIN + 1);
-		}
-
-		private void navigateToBerry() {
-			if (this.berryPos == null) return;
-			this.shifter.getNavigation().startMovingTo(
-					this.berryPos.getX() + 0.5, this.berryPos.getY() + 0.5, this.berryPos.getZ() + 0.5, 1.0);
-		}
-
-		private boolean isRipeBerry(BlockPos pos) {
-			BlockState state = this.shifter.getWorld().getBlockState(pos);
-			return state.getBlock() instanceof CaveVinesHeadBlock
-					&& state.contains(Properties.BERRIES) && state.get(Properties.BERRIES);
-		}
-
-		@Nullable
-		private BlockPos findRipeBerry() {
-			BlockPos center = this.shifter.getBlockPos();
-			for (BlockPos pos : BlockPos.iterateOutwards(center, EAT_SCAN_RANGE, 6, EAT_SCAN_RANGE)) {
-				if (isRipeBerry(pos)) return pos.toImmutable();
-			}
-			return null;
-		}
-	}
-
-	/**
-	 * 战斗缺水撤退：战斗中湿润度过低（< 90）时脱离目标、钻进最近水源补润，
-	 * 补到 ≥240 才结束（滞回窗口防抖）。体现「攻击时湿润度过低就远离目标进水」。
-	 */
-	static class CombatRetreatToWaterGoal extends Goal {
-		private final AxolotlShifterEntity shifter;
-		@Nullable
-		private BlockPos waterPos;
-		private int repathCountdown;
-
-		CombatRetreatToWaterGoal(AxolotlShifterEntity shifter) {
-			this.shifter = shifter;
-			this.setControls(EnumSet.of(Control.MOVE));
-		}
-
-		@Override
-		public boolean canStart() {
-			if (this.shifter.getTarget() == null) return false;
-			if (this.shifter.getMoisture() >= RETREAT_MOISTURE_THRESHOLD) return false;
-			if (this.shifter.isTouchingWater()) return false;     // 已在水里无需撤退
-			this.waterPos = this.shifter.findNearestWater(12, 4);
-			return this.waterPos != null;
-		}
-
-		@Override
-		public boolean shouldContinue() {
-			// 有目标 且 湿润未补够：持续撤退 / 待水（到水里后待着回润，不再冲出来打）
-			return this.shifter.getTarget() != null
-					&& this.shifter.getMoisture() < RETREAT_RECOVER_MOISTURE;
-		}
-
-		@Override
-		public void start() {
-			this.repathCountdown = 0;
-		}
-
-		@Override
-		public void tick() {
-			if (this.shifter.isTouchingWater()) {
-				this.shifter.getNavigation().stop();               // 已入水：待在水里回润，不追击
-				return;
-			}
-			if (--this.repathCountdown <= 0) {
-				this.repathCountdown = 20;
-				if (this.waterPos == null || this.shifter.getWorld().getFluidState(this.waterPos).isEmpty()) {
-					this.waterPos = this.shifter.findNearestWater(12, 4);
-				}
-				if (this.waterPos != null) {
-					this.shifter.getNavigation().startMovingTo(
-							this.waterPos.getX() + 0.5, this.waterPos.getY() + 0.5, this.waterPos.getZ() + 0.5, 1.15);
-				}
-			}
-		}
-
-		@Override
-		public void stop() {
-			this.waterPos = null;
-			this.shifter.getNavigation().stop();
-		}
-	}
-
-	/**
-	 * 环境伤害惊慌：受火 / 浆果丛等环境伤害后 panicTicks>0，最高优先级钻进最近水源躲避；
-	 * 附近没水时朝一个方向持续逃离（定向漫游，确保会动）。到水里或惊慌结束则停止。
-	 * <p>用户需求（2026-08-18）：着火且周围没水但正在战斗 → 不惊慌逃跑，优先继续攻击目标
-	 * （交还控制权给 MeleeAttackGoal；有水仍钻水灭火，无水无目标仍逃离火）。</p>
-	 */
-	static class PanicToWaterGoal extends Goal {
-		private final AxolotlShifterEntity shifter;
-		@Nullable
-		private BlockPos waterPos;
-		private float fleeYaw;
-		private int repathCountdown;
-		private Vec3d lastPos = Vec3d.ZERO;
-		private int stuckTicks;
-		/** 「周围没水」扫描结果缓存（canStart 每 tick 被调，全量扫描 24 格代价高，节流到 2s 重扫一次） */
-		private int waterScanCooldown;
-		private boolean noWaterNearby;
-
-		PanicToWaterGoal(AxolotlShifterEntity shifter) {
-			this.shifter = shifter;
-			this.setControls(EnumSet.of(Control.MOVE, Control.LOOK));
-		}
-
-		/** 惊慌中但周围没水且正在战斗 → 不抢占控制权，优先继续攻击目标（带 2s 节流缓存的水源判定） */
-		private boolean shouldYieldToCombat() {
-			if (this.shifter.getTarget() == null) return false;
-			if (--this.waterScanCooldown <= 0) {
-				this.waterScanCooldown = 40; // 每 2 秒重扫一次（canStart/shouldContinue 高频调用，避免每 tick 全量扫描）
-				this.noWaterNearby = this.shifter.findNearestWater(SEEK_WATER_RANGE, 8) == null;
-			}
-			return this.noWaterNearby;
-		}
-
-		@Override
-		public boolean canStart() {
-			// 惊慌且不在水里就启动（有水冲向水，没水也要逃离火，不再要求一定找到水）；
-			// 但没水且在战斗中 → 让位给近战（用户需求：着火无水优先攻击）
-			if (!this.shifter.isPanicking() || this.shifter.isTouchingWater()) return false;
-			return !shouldYieldToCombat();
-		}
-
-		@Override
-		public boolean shouldContinue() {
-			if (!this.shifter.isPanicking() || this.shifter.isTouchingWater()) return false;
-			return !shouldYieldToCombat(); // 战斗中出现无水情况同样立即让位（含缓存过期重判）
-		}
-
-		@Override
-		public void start() {
-			this.repathCountdown = 0;
-			this.fleeYaw = this.shifter.getYaw();
-			this.stuckTicks = 0;
-			this.lastPos = this.shifter.getPos();
-		}
-
-		@Override
-		public void tick() {
-			// 卡住检测：连续几乎没位移就换逃离方向
-			if (this.shifter.getPos().squaredDistanceTo(this.lastPos) < 0.02) {
-				this.stuckTicks++;
-			} else {
-				this.stuckTicks = 0;
-				this.lastPos = this.shifter.getPos();
-			}
-			if (--this.repathCountdown > 0) return;
-			this.repathCountdown = 10;
-			// 优先冲向最近水源（钻水灭火 + 补润）
-			if (this.waterPos == null || this.shifter.getWorld().getFluidState(this.waterPos).isEmpty()) {
-				this.waterPos = this.shifter.findNearestWater(SEEK_WATER_RANGE, 8);
-			}
-			if (this.waterPos != null) {
-				this.shifter.getNavigation().startMovingTo(
-						this.waterPos.getX() + 0.5, this.waterPos.getY() + 0.5, this.waterPos.getZ() + 0.5, 1.05);
-				return;
-			}
-			// 附近没水：朝一个方向持续逃离火（定向漫游确保会动，卡住换向）
-			if (this.stuckTicks > 2) {
-				this.fleeYaw += 70 + this.shifter.getRandom().nextInt(140);
-				this.stuckTicks = 0;
-			}
-			if (!this.shifter.wanderTowardYaw(this.fleeYaw, 1.05)) {
-				this.fleeYaw += 90;
-			}
-		}
-
-		@Override
-		public void stop() {
-			this.waterPos = null;
-			this.shifter.getNavigation().stop();
 		}
 	}
 }

@@ -12,5 +12,7 @@ public final class NpcCombatIntegrationTest {
         Class.forName("net.minecraft.Bootstrap", true, loader).getMethod("initialize").invoke(null);
         Class.forName("net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatIntegrationProbe", true, loader)
                 .getMethod("run").invoke(null);
+        Class.forName("net.jackcooper.shapeShifterCurseAddon.entity.AxolotlShifterAiProbe", true, loader)
+                .getMethod("run").invoke(null);
     }
 }
