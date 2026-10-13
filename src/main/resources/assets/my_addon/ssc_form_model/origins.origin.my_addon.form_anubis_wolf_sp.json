@@ -10,6 +10,7 @@
   "model": "my_addon:geo/form_anubis_wolf_sp.geo.json",
   "texture": "my_addon:textures/form_anubis_wolf_sp/form_anubis_wolf_sp.png",
   "texture_mask": "my_addon:textures/form_anubis_wolf_sp/form_anubis_wolf_sp_colormask.png",
+  "fullbright_texture": "my_addon:textures/form_anubis_wolf_sp/form_anubis_wolf_sp_overlay.png",
   "hidden": [
     "leftLeg",
     "rightLeg",

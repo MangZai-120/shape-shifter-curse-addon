@@ -9,7 +9,7 @@
 
   "model": "my_addon:geo/form_axolotl_sp.geo.json",
   "texture": "my_addon:textures/form_axolotl_sp/form_axolotl_sp.png",
-  "texture_mask": "my_addon:textures/form_axolotl_sp/axolotl_sp_colormask.png",
+  "texture_mask": "my_addon:textures/form_axolotl_sp/form_axolotl_sp_colormask.png",
   "hidden": [
     "leftLeg",
     "rightLeg",

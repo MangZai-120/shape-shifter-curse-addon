@@ -26,7 +26,7 @@ import net.onixary.shapeShifterCurseFabric.items.RegCustomItem;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 注魔台方块实体（jackcooper）。九槽：0=魔法书、1=燃料（月尘粉/月尘纯晶）、2=催化（超级塑形核心）、
+ * 注魔台方块实体（jackcooper）。九槽：0=魔法书、1=燃料（月尘粉/月尘纯晶）、2=催化（塑形核心）、
  * 3-8=六芒星法阵槽（书放入中心时动态显示书内已装备法阵）。
  *
  * <p>充能/升级逻辑同前：每秒结算一次充能；材料齐备可升级时暂停充能等玩家点「升级」按钮。</p>
@@ -46,14 +46,14 @@ public class InfusionAltarBlockEntity extends BlockEntity implements NamedScreen
 		super(RegAddonBlockEntities.INFUSION_ALTAR_BE, pos, state);
 	}
 
-	/** 升级条件是否齐备（经验够 + 催化槽超核 + 燃料槽纯晶）。 */
+	/** 升级条件是否齐备（经验够 + 催化槽塑形核心 + 燃料槽纯晶）。 */
 	private boolean upgradeReady() {
 		ItemStack book = items.get(0);
 		ItemStack fuel = items.get(1);
 		ItemStack catalyst = items.get(2);
 		return book.getItem() instanceof MoonDustSpellbookItem
 				&& SpellbookData.canLevelUp(book)
-				&& catalyst.getItem() == RegCustomItem.SUPER_MORPHSCALE_CORE && !catalyst.isEmpty()
+				&& catalyst.getItem() == RegCustomItem.MORPHSCALE_CORE && !catalyst.isEmpty()
 				&& fuel.getItem() == RegCustomItem.MOONDUST_CRYSTAL_SHARD && !fuel.isEmpty();
 	}
 
@@ -66,7 +66,7 @@ public class InfusionAltarBlockEntity extends BlockEntity implements NamedScreen
 		if (world == null || world.isClient || !upgradeReady()) {
 			return;
 		}
-		items.get(2).decrement(1); // 催化槽超核
+		items.get(2).decrement(1); // 催化槽塑形核心
 		items.get(1).decrement(1); // 燃料槽月尘纯晶
 		ItemStack book = items.get(0);
 		SpellbookData.setLevel(book, SpellbookData.getLevel(book) + 1);

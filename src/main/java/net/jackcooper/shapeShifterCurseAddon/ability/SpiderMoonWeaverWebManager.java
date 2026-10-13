@@ -67,7 +67,12 @@ public final class SpiderMoonWeaverWebManager {
 	/** UUID -> {已蓄力 tick 数}。服务端权威，多人一致。 */
 	private static final Map<UUID, ChargeState> CHARGING = new ConcurrentHashMap<>();
 	/** 平铺搭桥蓄力中的玩家（双击长按 / 潜行长按触发），release 时走脚下平铺而非蛛丝弹。 */
-	private static final class ChargeState { int ticks; final long castId; ChargeState(long castId) { this.castId = castId; } }
+	private static final class ChargeState {
+		int ticks;
+		final long castId;
+		final int cooldownTicks;
+		ChargeState(long castId, int cooldownTicks) { this.castId = castId; this.cooldownTicks = cooldownTicks; }
+	}
 	private static final java.util.Set<UUID> FLAT_CHARGING = ConcurrentHashMap.newKeySet();
 
 	private SpiderMoonWeaverWebManager() {}
@@ -105,7 +110,8 @@ public final class SpiderMoonWeaverWebManager {
 		if (!isSpiderMoonWeaver(player)) return;
 		// 统一服务门禁 + 建档（on_release：松键按档起算）
 		if (!beginCharge(player)) return;
-		CHARGING.put(player.getUuid(), new ChargeState(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID)));
+		CHARGING.put(player.getUuid(), new ChargeState(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID),
+				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cooldown(player, SKILL_ID)));
 		FLAT_CHARGING.remove(player.getUuid()); // 普通蓄力 → 蛛丝弹
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -117,7 +123,8 @@ public final class SpiderMoonWeaverWebManager {
 		if (CHARGING.containsKey(player.getUuid())) return;
 		if (!isSpiderMoonWeaver(player)) return;
 		if (!beginCharge(player)) return;
-		CHARGING.put(player.getUuid(), new ChargeState(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID)));
+		CHARGING.put(player.getUuid(), new ChargeState(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID),
+				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cooldown(player, SKILL_ID)));
 		FLAT_CHARGING.add(player.getUuid()); // 平铺蓄力 → 脚下平铺
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -179,12 +186,16 @@ public final class SpiderMoonWeaverWebManager {
 		ChargeState s = CHARGING.remove(player.getUuid());
 		boolean flat = FLAT_CHARGING.remove(player.getUuid());
 		if (s == null) return;
+		if (!player.isAlive() || !isSpiderMoonWeaver(player)
+				|| net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID) != s.castId
+				|| net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.spec(player, SKILL_ID) == null) {
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, s.castId);
+			return;
+		}
 		int ticks = s.ticks;
 		int tier = ticks >= BAL.i("max_ticks", MAX_TICKS) ? 3
 				: (ticks >= BAL.i("tier2_ticks", TIER2_TICKS) ? 2 : 1);
-		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.retune(player, SKILL_ID, s.castId,
-				(int) Math.ceil(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cooldown(player, SKILL_ID) * tier / 3.0));
-		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, s.castId);
+		completeCharge(player, s, tier);
 		if (getMode(player) == MODE_ATTACK) {
 			fireAttack(player, tier);
 		} else if (flat) {
@@ -192,6 +203,12 @@ public final class SpiderMoonWeaverWebManager {
 		} else {
 			fireBridgeShoot(player, tier); // 单击长按 → 发射蛛丝弹
 		}
+	}
+
+	private static void completeCharge(ServerPlayerEntity player, ChargeState state, int tier) {
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.retune(player, SKILL_ID, state.castId,
+				(int) Math.ceil((double) state.cooldownTicks * tier / 3.0));
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, state.castId);
 	}
 
 	/** 取消蓄力（不结算、不进 CD：统一服务失败档=0 清记录）。 */

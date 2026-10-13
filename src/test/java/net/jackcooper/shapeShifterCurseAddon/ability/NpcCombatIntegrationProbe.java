@@ -10,6 +10,16 @@ import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceSnapshot;
 import net.jackcooper.shapeShifterCurseAddon.balance.SscBalanceSchema;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonServerConfig;
+import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownHolder;
+import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec;
+import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns;
+import net.jackcooper.shapeShifterCurseAddon.effect.FoxFireBurnEffect;
+import net.jackcooper.shapeShifterCurseAddon.effect.FoxFireBurnOwnership;
+import net.jackcooper.shapeShifterCurseAddon.util.SscIgnitedEntityAccessor;
+import io.github.apace100.apoli.component.PowerHolderComponent;
+import io.github.apace100.apoli.power.Power;
+import io.github.apace100.apoli.power.PowerType;
+import io.github.apace100.apoli.power.PowerTypeRegistry;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.minecraft.entity.Entity;
@@ -19,12 +29,14 @@ import net.minecraft.entity.attribute.AttributeContainer;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.damage.DamageSources;
 import net.minecraft.entity.damage.DamageType;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.VexEntity;
 import net.minecraft.entity.passive.WolfEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.entry.RegistryEntry;
@@ -37,6 +49,8 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import net.minecraft.world.PersistentState;
+import net.minecraft.world.PersistentStateManager;
 import net.onixary.shapeShifterCurseFabric.player_form.NormalForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
@@ -70,6 +84,9 @@ public final class NpcCombatIntegrationProbe {
         var server = alloc(MinecraftDedicatedServer.class);
         var pm = MinecraftServer.class.getDeclaredField("playerManager"); pm.setAccessible(true); pm.set(server, players);
         world = alloc(TestWorld.class); world.server = server; world.now = 100;
+        world.states = new TestStates();
+        var worlds = MinecraftServer.class.getDeclaredField("worlds"); worlds.setAccessible(true);
+        worlds.set(server, new HashMap<>(Map.of(World.OVERWORLD, world)));
         damageHook = hook("ssca$npcCombatDamage");
         TestNpc npc = npc();
         TestPlayer playerTarget = player(FormIdentifiers.SHEEP_FORM);
@@ -185,7 +202,9 @@ public final class NpcCombatIntegrationProbe {
         checkDomain(anubis, npc);
         checkVortex(npc);
         checkUpgradeAxolotl();
-        System.out.println("NPC combat integration: " + checks + " transformed hook/rule, whitelist, owner, stacking, duration and NBT checks passed. Live world/AI/multiplayer NOT tested.");
+        checkSkillCooldownSnapshots();
+        checkFoxFireOwnership();
+        System.out.println("NPC combat integration: " + checks + " transformed hook/rule, whitelist, owner, stacking, duration, NBT and skill-risk checks passed. Live world/AI/multiplayer NOT tested.");
     }
 
     private static void checkUpgradeAxolotl() throws Exception {
@@ -311,6 +330,151 @@ public final class NpcCombatIntegrationProbe {
         putMap(VortexChargeManager.class, "CHARGING", caster.id, null);
         check(!VortexChargeManager.suppressesNpcAttack(caster, npc), "release/cancel removes suppression immediately");
     }
+
+    private static void checkSkillCooldownSnapshots() throws Exception {
+        String leapId = "my_addon:form_ocelot_nova_leap";
+        var leapClass = Class.forName(NovaSkillManager.class.getName() + "$LeapSession");
+        Method beginLeap = method(NovaSkillManager.class, "beginLeap", ServerPlayerEntity.class, long.class);
+        Method finishLeap = method(NovaSkillManager.class, "finishSingleLeap", ServerPlayerEntity.class, leapClass);
+        for (int single : new int[]{0, 120}) {
+            TestPlayer caster = player(FormIdentifiers.OCELOT_NOVA);
+            attach(caster, leapId, new SkillCooldownSpec(200, 0, "on_end", Map.of("single_use", single)));
+            Object leap = beginLeap.invoke(null, caster, world.now);
+            check(leap != null, "Nova accepts configured first leap");
+            caster.powerMap.clear();
+            check(SkillCooldowns.extra(caster, leapId, "single_use") == 0, "removed Nova power reproduces missing-spec sentinel");
+            finishLeap.invoke(null, caster, leap);
+            check(SkillCooldowns.remaining(caster, leapId) == single, "Nova retains captured single-use CD including explicit zero");
+        }
+        TestPlayer reloaded = player(FormIdentifiers.OCELOT_NOVA);
+        attach(reloaded, leapId, new SkillCooldownSpec(200, 0, "on_end", Map.of("single_use", 120)));
+        Object previous = beginLeap.invoke(null, reloaded, world.now);
+        attach(reloaded, leapId, new SkillCooldownSpec(900, 0, "on_end", Map.of("single_use", 0)));
+        finishLeap.invoke(null, reloaded, previous);
+        check(SkillCooldowns.remaining(reloaded, leapId) == 120, "reload changes next Nova cast, not current window");
+        world.now += 121;
+        Object next = beginLeap.invoke(null, reloaded, world.now);
+        long nextId = SkillCooldowns.currentCastId(reloaded, leapId);
+        finishLeap.invoke(null, reloaded, previous);
+        check(next != null && SkillCooldowns.currentCastId(reloaded, leapId) == nextId, "stale Nova window cannot settle a newer cast");
+        finishLeap.invoke(null, reloaded, next);
+        check(SkillCooldowns.remaining(reloaded, leapId) == 0, "next Nova cast uses reloaded explicit zero");
+        TestPlayer missing = player(FormIdentifiers.OCELOT_NOVA);
+        check(beginLeap.invoke(null, missing, world.now) == null, "missing Nova config cannot create a cast");
+
+        String summonId = AnubisWolfSpSummonWolves.SKILL_ID;
+        var domainClass = Class.forName(AnubisWolfSpDeathDomain.class.getName() + "$DomainData");
+        var domainCtor = domainClass.getDeclaredConstructor(ServerWorld.class, net.minecraft.util.math.BlockPos.class, int.class);
+        domainCtor.setAccessible(true);
+        Method capture = method(AnubisWolfSpDeathDomain.class, "captureSummonCooldown", ServerPlayerEntity.class);
+        Method apply = method(AnubisWolfSpDeathDomain.class, "applySummonCooldown", ServerPlayerEntity.class, domainClass);
+        for (Integer configured : new Integer[]{null, 0, 600}) {
+            TestPlayer caster = player(FormIdentifiers.ANUBIS_WOLF_SP);
+            if (configured != null) attach(caster, summonId, new SkillCooldownSpec(configured, 100, "on_release", Map.of()));
+            Object data = domainCtor.newInstance(world, net.minecraft.util.math.BlockPos.ORIGIN, 0);
+            set(data, "summonCooldownTicks", capture.invoke(null, caster));
+            SkillCooldowns.force(caster, summonId, 333);
+            caster.powerMap.clear();
+            apply.invoke(null, caster, data);
+            check(SkillCooldowns.remaining(caster, summonId) == (configured == null ? 333 : configured),
+                    "enhanced domain distinguishes missing summon config, explicit zero and captured positive CD");
+        }
+        TestPlayer interrupted = player(FormIdentifiers.ANUBIS_WOLF_SP);
+        String domainId = "my_addon:form_anubis_wolf_sp_death_domain";
+        attach(interrupted, domainId, new SkillCooldownSpec(400, 70, "on_end", Map.of()));
+        check(SkillCooldowns.begin(interrupted, domainId), "domain charge accepted");
+        Object data = domainCtor.newInstance(world, net.minecraft.util.math.BlockPos.ORIGIN, 0);
+        set(data, "castId", SkillCooldowns.currentCastId(interrupted, domainId));
+        set(data, "enhanced", true);
+        set(data, "ticksElapsed", 19);
+        putMap(AnubisWolfSpDeathDomain.class, "ACTIVE_DOMAINS", interrupted.id, data);
+        interrupted.powerMap.clear(); interrupted.form.nowForm = new NormalForm(FormIdentifiers.SHEEP_FORM);
+        SkillCooldowns.force(interrupted, summonId, 333);
+        AnubisWolfSpDeathDomain.tick(interrupted);
+        var phase = domainClass.getDeclaredField("phase"); phase.setAccessible(true);
+        check(phase.get(data).toString().equals("CLEANUP"), "lost domain power stops charging before release");
+        check(SkillCooldowns.remaining(interrupted, summonId) == 333, "interrupted enhanced domain preserves existing summon cooldown");
+        check(SkillCooldowns.remaining(interrupted, domainId) == 70, "domain interruption settles captured failure cooldown");
+        check(SkillCooldowns.currentCastId(interrupted, domainId) < 0, "interrupted domain frees cast gate");
+        putMap(AnubisWolfSpDeathDomain.class, "ACTIVE_DOMAINS", interrupted.id, null);
+
+        String webId = "my_addon:form_spider_moon_weaver_web";
+        var chargeClass = Class.forName(SpiderMoonWeaverWebManager.class.getName() + "$ChargeState");
+        var chargeCtor = chargeClass.getDeclaredConstructor(long.class, int.class); chargeCtor.setAccessible(true);
+        Method complete = method(SpiderMoonWeaverWebManager.class, "completeCharge", ServerPlayerEntity.class, chargeClass, int.class);
+        for (int full : new int[]{0, 601}) for (int tier = 1; tier <= 3; tier++) {
+            TestPlayer caster = player(FormIdentifiers.SPIDER_MOON_WEAVER);
+            attach(caster, webId, new SkillCooldownSpec(full, 0, "on_release", Map.of()));
+            check(SkillCooldowns.begin(caster, webId), "web charge accepted");
+            Object charge = chargeCtor.newInstance(SkillCooldowns.currentCastId(caster, webId), full);
+            attach(caster, webId, new SkillCooldownSpec(900, 0, "on_release", Map.of()));
+            complete.invoke(null, caster, charge, tier);
+            check(SkillCooldowns.remaining(caster, webId) == (int) Math.ceil((double) full * tier / 3),
+                    "web tier uses captured cooldown, rounds up and honors explicit zero");
+        }
+        TestPlayer revokedWeb = player(FormIdentifiers.SPIDER_MOON_WEAVER);
+        attach(revokedWeb, webId, new SkillCooldownSpec(600, 55, "on_release", Map.of()));
+        check(SkillCooldowns.begin(revokedWeb, webId), "revoked web charge accepted");
+        putMap(SpiderMoonWeaverWebManager.class, "CHARGING", revokedWeb.id,
+                chargeCtor.newInstance(SkillCooldowns.currentCastId(revokedWeb, webId), 600));
+        revokedWeb.powerMap.clear();
+        SpiderMoonWeaverWebManager.release(revokedWeb);
+        check(SkillCooldowns.remaining(revokedWeb, webId) == 55, "revoked web release uses failure cooldown without firing");
+        System.out.println("Skill risk integration: removed powers, reload snapshots, zero cooldowns, stale callbacks and domain/web interruption PASS.");
+    }
+
+    private static void checkFoxFireOwnership() throws Exception {
+        TestPlayer oldOwner = player(FormIdentifiers.FAMILIAR_FOX_SP);
+        TestPlayer latestOwner = player(FormIdentifiers.FAMILIAR_FOX_SP);
+        TestNpc target = npc();
+        Method damageSource = method(FoxFireBurnEffect.class, "damageSource", LivingEntity.class);
+        target.lastAttacker = oldOwner;
+        target.tags.add("ssc_burn:" + oldOwner.id);
+        target.tags.add("ssc_owner:" + oldOwner.id);
+        FoxFireBurnOwnership.record(target, latestOwner.id);
+        check(!target.tags.contains("ssc_burn:" + oldOwner.id) && target.tags.contains("ssc_burn:" + latestOwner.id),
+                "new burn replaces old attribution tags");
+        check(target.tags.contains("ssc_owner:" + oldOwner.id), "recording burn preserves summon ownership tags");
+        check(((DamageSource) damageSource.invoke(null, target)).getAttacker() == latestOwner, "latest online burn owner receives attribution");
+        target.tags.add("ssc_burn:" + oldOwner.id); // Legacy saves may still contain historical tags.
+        players.online.remove(latestOwner.id);
+        check(((DamageSource) damageSource.invoke(null, target)).getAttacker() == null,
+                "latest owner disconnecting never credits old tags or recent attackers");
+        players.online.put(latestOwner.id, latestOwner);
+        NbtCompound saved = new NbtCompound();
+        entityHook("injectWriteNbt").invoke(target, saved, new org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<NbtCompound>("writeNbt", false));
+        TestNpc restored = npc();
+        entityHook("injectReadNbt").invoke(restored, saved, new CallbackInfo("readNbt", false));
+        check(FoxFireBurnOwnership.resolve(restored).uuid().equals(latestOwner.id), "latest burn owner survives actual ignition NBT hooks");
+
+        ((SscIgnitedEntityAccessor) (Entity) target).sscAddon$setIgniterUuid(null);
+        target.tags.clear(); target.tags.add("ssc_burn:" + latestOwner.id); target.tags.add("ssc_owner:" + oldOwner.id);
+        check(((DamageSource) damageSource.invoke(null, target)).getAttacker() == latestOwner, "legacy burn prefix takes priority over summon prefix");
+        target.tags.add("ssc_burn:" + oldOwner.id);
+        check(((DamageSource) damageSource.invoke(null, target)).getAttacker() == null, "ambiguous old burn tags never guess a caster");
+        target.tags.clear(); target.tags.add("ssc_owner:" + oldOwner.id);
+        check(((DamageSource) damageSource.invoke(null, target)).getAttacker() == oldOwner, "single legacy owner tag remains compatible");
+        FoxFireBurnOwnership.record(target, null);
+        check(((DamageSource) damageSource.invoke(null, target)).getAttacker() == null, "new unowned burn never inherits summon owner or recent attacker");
+        check(target.tags.contains("ssc_owner:" + oldOwner.id), "unowned burn still preserves actual summon ownership");
+        target.tags.clear(); target.tags.add("ssc_burn:invalid-uuid");
+        check(((DamageSource) damageSource.invoke(null, target)).getAttacker() == oldOwner, "without valid recorded ownership, vanilla recent-attacker fallback remains");
+        System.out.println("Fox-fire ownership integration: latest/offline caster, stale and ambiguous tags, summon-tag preservation and NBT round trip PASS.");
+    }
+
+    private static Method method(Class<?> type, String name, Class<?>... args) throws Exception {
+        Method method = type.getDeclaredMethod(name, args); method.setAccessible(true); return method;
+    }
+    private static Method entityHook(String name) {
+        for (Method m : Entity.class.getDeclaredMethods()) if (m.getName().endsWith(name)) { m.setAccessible(true); return m; }
+        throw new AssertionError("missing applied Entity Mixin hook " + name);
+    }
+    private static void attach(TestPlayer player, String id, SkillCooldownSpec spec) {
+        Identifier key = new Identifier(id);
+        if (!PowerTypeRegistry.contains(key)) PowerTypeRegistry.register(key, new PowerType<>(key, null));
+        PowerType<?> type = PowerTypeRegistry.get(key);
+        player.powerMap.put(type, new TestCooldownPower(type, player, spec));
+    }
     private static float damage(LivingEntity victim, Entity attacker, float amount) throws Exception {
         return (float) damageHook.invoke(victim, amount, source(attacker));
     }
@@ -321,13 +485,23 @@ public final class NpcCombatIntegrationProbe {
     }
     private static TestPlayer player(Identifier id) throws Exception {
         TestPlayer p = alloc(TestPlayer.class); p.id = UUID.randomUUID(); p.tags = new HashSet<>(); p.effects = new HashMap<>();
+        p.powerMap = new HashMap<>();
+        p.powers = (PowerHolderComponent) java.lang.reflect.Proxy.newProxyInstance(PowerHolderComponent.class.getClassLoader(),
+                new Class<?>[]{PowerHolderComponent.class}, (proxy, method, args) -> switch (method.getName()) {
+                    case "getPower" -> p.powerMap.get(args[0]);
+                    case "getPowers" -> List.copyOf(p.powerMap.values());
+                    case "hasPower" -> p.powerMap.containsKey(args[0]);
+                    default -> null;
+                });
         p.setId(nextEntityId++);
         p.form = alloc(PlayerFormComponent.class); p.form.nowForm = new NormalForm(id);
-        p.components = ComponentContainer.Factory.builder(TestPlayer.class).component(RegPlayerFormComponent.PLAYER_FORM, x -> x.form).build().createContainer(p);
+        p.components = ComponentContainer.Factory.builder(TestPlayer.class).component(RegPlayerFormComponent.PLAYER_FORM, x -> x.form)
+                .component(PowerHolderComponent.KEY, x -> x.powers).build().createContainer(p);
         position(p, Vec3d.ZERO); players.online.put(p.id, p); return p;
     }
     private static TestNpc npc() throws Exception {
         TestNpc npc = alloc(TestNpc.class); npc.id = UUID.randomUUID(); npc.effects = new HashMap<>(); npc.attributes = attributes(0);
+        npc.tags = new HashSet<>(); npc.damageSources = alloc(TestDamageSources.class);
         npc.setId(nextEntityId++);
         position(npc, Vec3d.ZERO); return npc;
     }
@@ -350,10 +524,30 @@ public final class NpcCombatIntegrationProbe {
 
     public static final class TestWorld extends ServerWorld {
         MinecraftServer server; long now;
+        PersistentStateManager states;
         private TestWorld() { super(null, null, null, null, World.OVERWORLD, null, null, false, 0, List.of(), false, null); }
         @Override public MinecraftServer getServer() { return server; }
         @Override public long getTime() { return now; }
         @Override public ServerPlayerEntity getPlayerByUuid(UUID id) { return players.online.get(id); }
+        @Override public PersistentStateManager getPersistentStateManager() { return states; }
+    }
+    public static final class TestStates extends PersistentStateManager {
+        private final Map<String, PersistentState> states = new HashMap<>();
+        TestStates() { super(null, null); }
+        @Override @SuppressWarnings("unchecked") public <T extends PersistentState> T getOrCreate(
+                java.util.function.Function<NbtCompound, T> read, java.util.function.Supplier<T> create, String id) {
+            return (T) states.computeIfAbsent(id, ignored -> create.get());
+        }
+    }
+    public static final class TestCooldownPower extends Power implements SkillCooldownHolder {
+        private final SkillCooldownSpec spec;
+        TestCooldownPower(PowerType<?> type, LivingEntity owner, SkillCooldownSpec spec) { super(type, owner); this.spec = spec; }
+        @Override public SkillCooldownSpec cooldownSpec() { return spec; }
+    }
+    public static final class TestDamageSources extends DamageSources {
+        private TestDamageSources() { super(null); }
+        @Override public DamageSource inFire() { return source(null); }
+        @Override public DamageSource playerAttack(PlayerEntity player) { return source(player); }
     }
     public static final class TestPlayers extends DedicatedPlayerManager {
         Map<UUID, ServerPlayerEntity> online;
@@ -362,11 +556,14 @@ public final class NpcCombatIntegrationProbe {
     }
     public static final class TestPlayer extends ServerPlayerEntity implements ComponentProvider {
         UUID id; Set<String> tags; Map<StatusEffect, StatusEffectInstance> effects; PlayerFormComponent form; ComponentContainer components;
+        Map<PowerType<?>, Power> powerMap; PowerHolderComponent powers;
         private TestPlayer() { super(null, null, new GameProfile(UUID.randomUUID(), "test")); }
         @Override public ComponentContainer getComponentContainer() { return components; }
         @Override public World getWorld() { return world; }
         @Override public ServerWorld getServerWorld() { return world; }
         @Override public UUID getUuid() { return id; }
+        @Override public net.minecraft.text.Text getName() { return net.minecraft.text.Text.literal("test-" + id); }
+        @Override public net.minecraft.entity.attribute.EntityAttributeInstance getAttributeInstance(net.minecraft.entity.attribute.EntityAttribute attribute) { return null; }
         @Override public Set<String> getCommandTags() { return tags; }
         @Override public boolean isAlive() { return true; }
         @Override public boolean hasStatusEffect(StatusEffect effect) { return effects.containsKey(effect); }
@@ -376,11 +573,16 @@ public final class NpcCombatIntegrationProbe {
     }
     public static final class TestNpc extends LivingEntity {
         UUID id; Map<StatusEffect, StatusEffectInstance> effects; AttributeContainer attributes; boolean retainLongerEffects;
+        Set<String> tags; DamageSources damageSources; LivingEntity lastAttacker;
         private TestNpc() { super(EntityType.ZOMBIE, null); }
         @Override public World getWorld() { return world; }
         @Override public UUID getUuid() { return id; }
         @Override public EntityType<?> getType() { return EntityType.ZOMBIE; }
-        @Override public Set<String> getCommandTags() { return Set.of(); }
+        @Override public Set<String> getCommandTags() { return tags; }
+        @Override public boolean addCommandTag(String tag) { return tags.add(tag); }
+        @Override public DamageSources getDamageSources() { return damageSources; }
+        @Override public LivingEntity getLastAttacker() { return lastAttacker; }
+        @Override public LivingEntity getAttacker() { return lastAttacker; }
         @Override public MinecraftServer getServer() { return world.server; }
         @Override public boolean canHaveStatusEffect(StatusEffectInstance effect) { return true; }
         @Override public boolean hasStatusEffect(StatusEffect effect) { return effects.containsKey(effect); }

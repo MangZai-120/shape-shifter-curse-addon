@@ -153,7 +153,7 @@ public class MagicScrollItem extends Item {
 				? Text.translatable("item.ssc_addon.magic_scroll.format", Text.translatable(spell.getNameKey()))
 				: Text.translatable("item.ssc_addon.magic_scroll.format_element",
 						Text.translatable(spell.getNameKey()), Text.translatable(element.getNameKey()));
-		if (stack.getNbt() != null && stack.getNbt().contains(RuneScheme.KEY)) {
+		if (RuneScheme.isModified(stack)) {
 			name.append(Text.translatable("research.ssc_addon.runes.modified_suffix"));
 		}
 		return name.formatted(spell.getRarity(ScrollData.getLevel(stack)).color);

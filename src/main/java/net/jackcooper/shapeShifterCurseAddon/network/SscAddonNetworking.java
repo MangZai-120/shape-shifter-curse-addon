@@ -505,7 +505,7 @@ public class SscAddonNetworking {
 			});
 		});
 
-		// SSCA 注魔台 - 点击「升级」按钮（服务端权威重验：书可升级 + 催化超核 + 燃料纯晶）
+		// SSCA 注魔台 - 点击「升级」按钮（服务端权威重验：书可升级 + 催化塑形核心 + 燃料纯晶）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_INFUSION_ALTAR_UPGRADE, (server, player, handler, buf, responseSender) -> {
 			server.execute(() -> {
 				if (player.currentScreenHandler instanceof InfusionAltarScreenHandler sh

@@ -85,7 +85,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 	}
 
 	private boolean hasCore() {
-		return this.handler.getSlot(2).getStack().isOf(RegCustomItem.SUPER_MORPHSCALE_CORE);
+		return this.handler.getSlot(2).getStack().isOf(RegCustomItem.MORPHSCALE_CORE);
 	}
 
 	/** 此处只控制按钮；升级扣费仍由现有 C2S 接收器在服务端重验。 */
@@ -337,7 +337,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 		lines.add(label("upgrade_to", SpellbookData.getLevel(book()) + 1));
 		lines.add(condition(label("exp_required", decimal(SpellbookData.getExpTen(book())), decimal(SpellbookData.getExpToNext(book()))), SpellbookData.canLevelUp(book())));
 		lines.add(condition(label("item_required", RegCustomItem.MOONDUST_CRYSTAL_SHARD.getName()), hasCrystal()));
-		lines.add(condition(label("item_required", RegCustomItem.SUPER_MORPHSCALE_CORE.getName()), hasCore()));
+		lines.add(condition(label("item_required", RegCustomItem.MORPHSCALE_CORE.getName()), hasCore()));
 		lines.add(label("upgrade_effect"));
 		return lines;
 	}
@@ -362,7 +362,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 		} else if (inside(mouseX, mouseY, 194, 130, 60, 12)) {
 			lines = List.of(label("fuel_help"), label("fuel_consumption"), label("fuel_reservation"));
 		} else if (inside(mouseX, mouseY, 264, 130, 38, 12)) {
-			lines = List.of(RegCustomItem.SUPER_MORPHSCALE_CORE.getName(), label("core_help"));
+			lines = List.of(RegCustomItem.MORPHSCALE_CORE.getName(), label("core_help"));
 		} else if (inside(mouseX, mouseY, 198, 66, 100, 21)) {
 			lines = hasBook() && SpellbookData.getLevel(book()) == SpellbookData.MAX_LEVEL
 					? List.of(label("mastery_tier", SpellbookData.getMasteryTier(book()), SpellbookData.masteryMaxBonus() / SpellbookData.masteryManaPerTier()),
@@ -372,7 +372,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 			int index = this.focusedSlot.id;
 			if (index == 0) lines = List.of(label("insert_book"), label("formation_help"));
 			else if (index == 1) lines = List.of(label("fuel_help"), label("fuel_consumption"), label("fuel_reservation"));
-			else if (index == 2) lines = List.of(RegCustomItem.SUPER_MORPHSCALE_CORE.getName(), label("core_help"));
+			else if (index == 2) lines = List.of(RegCustomItem.MORPHSCALE_CORE.getName(), label("core_help"));
 			else if (index >= 3 && index < InfusionAltarScreenHandler.ALTAR_SLOT_COUNT) {
 				int slot = index - 3;
 				lines = List.of(!hasBook() ? label("insert_book") : SpellbookData.isFormationSlotUnlocked(book(), slot)

@@ -113,6 +113,7 @@ public class SpellResearchTableBlockEntity extends BlockEntity implements NamedS
 		ItemStack input = getStack(SLOT_ANALYSIS);
 		if (input.getNbt() != null && input.getNbt().contains(RuneScheme.KEY)
 				&& RuneScheme.authoritativeScroll(language, input) == null) { resetAnalysis(); return; }
+		RuneScheme.normalizeUnmodified(language, input);
 		if (analysisTicks == ANALYSIS_TICKS && ItemStack.areEqual(input, analysisInput)) return;
 		if (analysisStatus(this) != AnalysisStatus.READY) {
 			resetAnalysis(); return;

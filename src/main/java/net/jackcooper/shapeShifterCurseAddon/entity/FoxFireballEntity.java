@@ -405,15 +405,8 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
         if (this.getOwner() instanceof ServerPlayerEntity player) {
             KillEmpowerManager.trackBurn(player, target, 100, !empowered);
         }
-        if (this.getOwner() != null) {
-            // 归因必须用专属前缀 ssc_burn: + igniter UUID，绝不能用 ssc_owner:——
-            // 白名单 hasOwnerTag 会把 ssc_owner: 当"召唤物归属"凭证，导致被火球打过的目标
-            // 从此被当成施法者自己的召唤物而受保护，后续火球对该目标全部零伤害。
-            target.addCommandTag("ssc_burn:" + this.getOwner().getUuid());
-            if (target instanceof net.jackcooper.shapeShifterCurseAddon.util.SscIgnitedEntityAccessor acc) {
-                acc.sscAddon$setIgniterUuid(this.getOwner().getUuid());
-            }
-        }
+        net.jackcooper.shapeShifterCurseAddon.effect.FoxFireBurnOwnership.record(target,
+                this.getOwner() == null ? null : this.getOwner().getUuid());
     }
 
     /** 推进并绘制所有活跃火环（穿透/爆炸触发），播完移除。 */

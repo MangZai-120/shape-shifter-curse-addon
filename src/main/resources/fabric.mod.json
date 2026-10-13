@@ -44,6 +44,9 @@
     "jei_mod_plugin": [
       "net.jackcooper.shapeShifterCurseAddon.compat.jei.SSCA_JEIPlugin"
     ],
+    "emi": [
+      "net.jackcooper.shapeShifterCurseAddon.compat.emi.SSCA_EMIPlugin"
+    ],
     "cardinal-components-entity": [
       "net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent",
       "net.jackcooper.shapeShifterCurseAddon.state.RegSpiderMoonWeaverStateComponent",

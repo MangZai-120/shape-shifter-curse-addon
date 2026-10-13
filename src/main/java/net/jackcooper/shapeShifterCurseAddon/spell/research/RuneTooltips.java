@@ -12,7 +12,7 @@ public final class RuneTooltips {
         return Text.translatable("research.ssc_addon.runes.stat."+stat.name().toLowerCase(Locale.ROOT),signed);
     }
     public static void append(ItemStack stack,List<Text> lines){
-        if(stack.getNbt()==null||!stack.getNbt().contains(RuneScheme.KEY))return;
+        if(!RuneScheme.isModified(stack))return;
         var n=stack.getNbt().getCompound(RuneScheme.KEY);
         lines.add(Text.translatable("research.ssc_addon.runes.profile_level",n.getInt("Level")).formatted(Formatting.GOLD));
         lines.add(Text.translatable("research.ssc_addon.runes.stability",n.getInt("Stability")).formatted(Formatting.GRAY));

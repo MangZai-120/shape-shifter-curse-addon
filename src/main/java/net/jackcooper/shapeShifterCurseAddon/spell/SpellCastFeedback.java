@@ -2,7 +2,6 @@ package net.jackcooper.shapeShifterCurseAddon.spell;
 
 import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtElement;
 import net.minecraft.text.Text;
 
 import java.util.Locale;
@@ -17,7 +16,7 @@ public final class SpellCastFeedback {
 
     public static Text spellName(Spell spell, ItemStack scroll) {
         var name = Text.translatable(spell.getNameKey());
-        if (scroll.getNbt() != null && scroll.getNbt().contains(RuneScheme.KEY, NbtElement.COMPOUND_TYPE)) {
+        if (RuneScheme.isModified(scroll)) {
             name.append(Text.translatable("research.ssc_addon.runes.modified_suffix"));
         }
         return name;

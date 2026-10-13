@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * 注魔台（jackcooper）。右键打开界面，往书槽放月尘魔法书 + 燃料槽放月尘粉/纯晶充法力，
- * 达经验阈值后配合超级塑形核心升级魔法书。破坏时散落内含物品。
+ * 达经验阈值后配合塑形核心升级魔法书。破坏时散落内含物品。
  * <p>1.20.1 中 onUse/onStateReplaced/rotate/mirror 的覆写只存在于 deprecated 父类方法，
  * 这是原版 BlockWithEntity 的标准写法，IDE 警告属误报，类级抑制。</p>
  */

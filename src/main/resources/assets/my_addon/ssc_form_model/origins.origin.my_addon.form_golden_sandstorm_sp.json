@@ -8,8 +8,9 @@
   "wide_only": true,
 
   "model": "my_addon:geo/form_anubis_wolf_3.geo.json",
-  "texture": "shape-shifter-curse:textures/form/form_anubis_wolf_3/form_anubis_wolf_3.png",
-  "texture_mask": "shape-shifter-curse:textures/form/form_anubis_wolf_3/form_anubis_wolf_3_colormask.png",
+  "texture": "my_addon:textures/form_golden_sandstorm_sp/form_golden_sandstorm_sp.png",
+  "texture_mask": "my_addon:textures/form_golden_sandstorm_sp/form_golden_sandstorm_sp_colormask.png",
+  "fullbright_texture": "my_addon:textures/form_golden_sandstorm_sp/form_golden_sandstorm_sp_overlay.png",
   "hidden": [
     "leftLeg",
     "rightLeg",

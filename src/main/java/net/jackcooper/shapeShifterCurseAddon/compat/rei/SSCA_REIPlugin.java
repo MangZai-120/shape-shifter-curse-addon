@@ -2,43 +2,25 @@ package net.jackcooper.shapeShifterCurseAddon.compat.rei;
 
 import me.shedaniel.rei.api.client.plugins.REIClientPlugin;
 import me.shedaniel.rei.api.client.registry.display.DisplayRegistry;
+import me.shedaniel.rei.api.client.registry.category.CategoryRegistry;
 import me.shedaniel.rei.api.client.registry.screen.ScreenRegistry;
 import me.shedaniel.rei.api.client.registry.transfer.TransferHandlerRegistry;
-import me.shedaniel.rei.api.common.util.EntryIngredients;
-import me.shedaniel.rei.api.common.util.EntryStacks;
-import me.shedaniel.rei.plugin.common.displays.crafting.DefaultCraftingDisplay;
+import me.shedaniel.rei.api.common.util.*;
 import me.shedaniel.rei.plugin.common.displays.brewing.DefaultBrewingDisplay;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import me.shedaniel.rei.plugin.common.displays.DefaultInformationDisplay;
+import net.jackcooper.shapeShifterCurseAddon.compat.recipeviewer.SscViewerRecipes;
 import net.minecraft.util.ActionResult;
-import net.minecraft.potion.PotionUtil;
-import net.minecraft.potion.Potions;
 import net.minecraft.util.Identifier;
-import net.jackcooper.shapeShifterCurseAddon.SscAddon;
-import net.jackcooper.shapeShifterCurseAddon.recipe.InfiniteEnergyPotionRecipe;
-import net.jackcooper.shapeShifterCurseAddon.recipe.VenomGlandRecipe;
-import net.onixary.shapeShifterCurseFabric.items.RegCustomPotions;
 
-/**
- * SSCA 的 REI 客户端插件（vanilla 工作台风格显示）。
- * <p>
- * 毒液腺体是 SpecialCraftingRecipe（按药水 NBT 匹配），REI 默认插件无法自动解析；
- * 这里手工构造一个 {@link DefaultCraftingDisplay} 子类挂到 vanilla 工作台分类
- * （BuiltinPlugin.CRAFTING）——布局、渲染、搜索全部复用 REI 原版合成表的那套，
- * 与其它合成配方同页展示。仅在装有 REI 时加载（fabric.mod.json 的 rei_client 入口）。
- */
 public class SSCA_REIPlugin implements REIClientPlugin {
-
-	public Identifier getIdentifier() {
-		return new Identifier("ssc_addon", "rei_plugin");
-	}
-
-	@Override
-	public void registerTransferHandlers(TransferHandlerRegistry registry) {
-		// SSCA 特殊配方的快速转移：支持带 NBT 的药水材料（REI 原生转移只按裸 item id 匹配会丢 NBT）
-		registry.register(new SscSpecialRecipeTransferHandler());
-	}
-
+    public Identifier getIdentifier() { return new Identifier("ssc_addon", "rei_plugin"); }
+    @Override public void registerTransferHandlers(TransferHandlerRegistry registry) {
+        registry.register(new SscSpecialRecipeTransferHandler());
+    }
+    @Override public void registerCategories(CategoryRegistry registry) {
+        registry.add(new SscProcessingDisplay.Category());
+        registry.addWorkstations(SscProcessingDisplay.ID, EntryStacks.of(net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks.ENERGY_BOTTLER));
+    }
 	@Override
 	public void registerScreens(ScreenRegistry registry) {
 		// 绘制法阵界面（FormationResearchScreen）是全屏画布，REI 物品侧栏会盖住画布：
@@ -59,93 +41,15 @@ public class SSCA_REIPlugin implements REIClientPlugin {
 		});
 	}
 
-	public void registerDisplays(DisplayRegistry registry) {
-		registry.add(venomGlandDisplay());
-		registry.add(infiniteEnergyPotionDisplay());		// 酿造转换（mixin 实现，REI 无法自动发现）：饮用型+火药→喷溅型；喷溅型+龙息→滞留型。
-		// DefaultBrewingDisplay 自带酿造分类标识，自动归入 REI 的酿造页。
-		registry.add(new DefaultBrewingDisplay(
-				EntryIngredients.of(SscAddon.INFINITE_ENERGY_POTION),
-				EntryIngredients.of(Items.GUNPOWDER),
-				EntryStacks.of(SscAddon.INFINITE_ENERGY_POTION_SPLASH)));
-		registry.add(new DefaultBrewingDisplay(
-				EntryIngredients.of(SscAddon.INFINITE_ENERGY_POTION_SPLASH),
-				EntryIngredients.of(Items.DRAGON_BREATH),
-				EntryStacks.of(SscAddon.INFINITE_ENERGY_POTION_LINGERING)));
-		// 通用能量药水（mixin 实现，同样无法被 REI 自动发现）：饮用+火药→喷溅；喷溅+龙息→滞留
-		registry.add(new DefaultBrewingDisplay(
-				EntryIngredients.of(SscAddon.UNIVERSAL_ENERGY_POTION),
-				EntryIngredients.of(Items.GUNPOWDER),
-				EntryStacks.of(SscAddon.UNIVERSAL_ENERGY_POTION_SPLASH)));
-		registry.add(new DefaultBrewingDisplay(
-				EntryIngredients.of(SscAddon.UNIVERSAL_ENERGY_POTION_SPLASH),
-				EntryIngredients.of(Items.DRAGON_BREATH),
-				EntryStacks.of(SscAddon.UNIVERSAL_ENERGY_POTION_LINGERING)));
-	}
-
-	/**
-	 * 毒液腺体配方卡片：8 蜘蛛眼环绕 + 中心剧毒药水（三种瓶型可切换）。
-	 * 使用 SscSpecialCraftingDisplay 以获得支持 NBT 药水的快速转移。
-	 */
-	/** 毒液腺体配方网格：8 蜘蛛眼环绕 + 中心剧毒药水（三种瓶型）。 */
-	static ItemStack[][] venomGlandGrid() {
-		ItemStack[] poisonAlts = new ItemStack[]{
-				PotionUtil.setPotion(new ItemStack(Items.POTION), Potions.POISON),
-				PotionUtil.setPotion(new ItemStack(Items.SPLASH_POTION), Potions.POISON),
-				PotionUtil.setPotion(new ItemStack(Items.LINGERING_POTION), Potions.POISON)};
-		ItemStack[][] grid = new ItemStack[9][];
-		for (int i = 0; i < 9; i++) {
-			grid[i] = (i == 4) ? poisonAlts : new ItemStack[]{new ItemStack(Items.SPIDER_EYE)};
-		}
-		return grid;
-	}
-
-	private static SscSpecialCraftingDisplay venomGlandDisplay() {
-		return SscSpecialCraftingDisplay.of(venomGlandGrid(), new ItemStack(SscAddon.VENOM_GLAND));
-	}
-
-	/** REI 自动生成卡片（DefaultCraftingDisplay）识别用：是否 SSCA 特殊配方。 */
-	public static boolean isSscSpecialRecipe(net.minecraft.recipe.Recipe<?> recipe) {
-		return recipe instanceof InfiniteEnergyPotionRecipe
-				|| recipe instanceof VenomGlandRecipe;
-	}
-
-	/** 取特殊配方的 3×3 材料网格（转移复用）；非特殊配方返回 null。 */
-	public static ItemStack[][] gridFor(net.minecraft.recipe.Recipe<?> recipe) {
-		if (recipe instanceof InfiniteEnergyPotionRecipe) {
-			return infiniteEnergyPotionGrid();
-		}
-		if (recipe instanceof VenomGlandRecipe) {
-			return venomGlandGrid();
-		}
-		return null;
-	}
-
-	/**
-	 * 无限压缩能量药水配方卡片：上中月髓环 + 中间行 附魔金苹果/压缩能量药水（三种瓶型）/附魔金苹果。
-	 * 使用 SscSpecialCraftingDisplay 以获得支持 NBT 药水的快速转移。
-	 */
-	/** 无限压缩能量药水配方网格：上中月髓环 + 中间行 附魔金苹果/压缩能量药水（三种瓶型）/附魔金苹果。 */
-	static ItemStack[][] infiniteEnergyPotionGrid() {
-		ItemStack[] feedAlts = new ItemStack[]{
-				PotionUtil.setPotion(new ItemStack(Items.POTION), RegCustomPotions.FEED_POTION),
-				PotionUtil.setPotion(new ItemStack(Items.SPLASH_POTION), RegCustomPotions.FEED_POTION),
-				PotionUtil.setPotion(new ItemStack(Items.LINGERING_POTION), RegCustomPotions.FEED_POTION)};
-		ItemStack[] moonRing = new ItemStack[]{new ItemStack(SscAddon.SP_UPGRADE_THING)};
-		ItemStack[] apple = new ItemStack[]{new ItemStack(Items.ENCHANTED_GOLDEN_APPLE)};
-		ItemStack[][] grid = new ItemStack[9][];
-		grid[0] = new ItemStack[0];
-		grid[1] = moonRing;
-		grid[2] = new ItemStack[0];
-		grid[3] = apple;
-		grid[4] = feedAlts;
-		grid[5] = apple;
-		grid[6] = new ItemStack[0];
-		grid[7] = new ItemStack[0];
-		grid[8] = new ItemStack[0];
-		return grid;
-	}
-
-	private static SscSpecialCraftingDisplay infiniteEnergyPotionDisplay() {
-		return SscSpecialCraftingDisplay.of(infiniteEnergyPotionGrid(), new ItemStack(SscAddon.INFINITE_ENERGY_POTION));
-	}
+    @Override public void registerDisplays(DisplayRegistry registry) {
+        for (var recipe : SscViewerRecipes.crafting(registry.getRecipeManager())) {
+            registry.add(new SscSpecialCraftingDisplay(recipe));
+            registry.add(DefaultInformationDisplay.createFromEntry(EntryStacks.of(recipe.output()), recipe.output().getName()).line(recipe.description()));
+        }
+        for (var recipe : SscViewerRecipes.brewing()) registry.add(new DefaultBrewingDisplay(
+            EntryIngredients.of(recipe.input()), EntryIngredients.of(recipe.ingredient()), EntryStacks.of(recipe.output())));
+        for (var recipe : SscViewerRecipes.processes()) registry.add(new SscProcessingDisplay(recipe));
+        for (var info : SscViewerRecipes.information()) registry.add(DefaultInformationDisplay.createFromEntries(
+            EntryIngredients.ofItemStacks(info.stacks()), info.stacks().get(0).getName()).line(info.description()));
+    }
 }

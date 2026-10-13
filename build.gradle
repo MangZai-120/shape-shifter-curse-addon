@@ -267,6 +267,23 @@ tasks.register('npcCombatIntegrationTest', JavaExec) {
 }
 check.dependsOn npcCombatIntegrationTest
 
+tasks.register('spiderJumpAnimationTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.compat.SpiderJumpAnimationTest'
+    workingDir = layout.buildDirectory.dir('spider-jump-animation').get().asFile
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def cpFile = new File(workingDir, 'test-classpath.txt')
+        cpFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'spiderAnimation.testClasspathFile', cpFile.absolutePath
+    }
+}
+check.dependsOn spiderJumpAnimationTest
+
 tasks.register('networkPredictionTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
@@ -344,6 +361,23 @@ tasks.register('skillCooldownTest', JavaExec) {
     mainClass = 'net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownTest'
 }
 check.dependsOn skillCooldownTest
+
+tasks.register('recipeViewerIntegrationTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.compat.RecipeViewerIntegrationTest'
+    workingDir = layout.buildDirectory.dir('recipe-viewer-integration').get().asFile
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def classpathFile = new File(workingDir, 'test-classpath.txt')
+        classpathFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'viewer.testClasspathFile', classpathFile.absolutePath
+    }
+}
+check.dependsOn recipeViewerIntegrationTest
 
 java {
     // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task

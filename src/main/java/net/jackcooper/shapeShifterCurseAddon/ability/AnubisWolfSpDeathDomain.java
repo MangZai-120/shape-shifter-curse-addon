@@ -135,6 +135,7 @@ public class AnubisWolfSpDeathDomain {
 // 检查灵魂能量是否满：满则进入增强模式并消耗能量
 		if (AnubisWolfSpSoulEnergy.isFullEnergy(player)) {
 			data.enhanced = true;
+			data.summonCooldownTicks = captureSummonCooldown(player);
 			AnubisWolfSpSoulEnergy.consumeEnergy(player);
 			LOGGER.info("[DeathDomain] ENHANCED mode activated for player={}", player.getName().getString());
 		}
@@ -162,6 +163,13 @@ public class AnubisWolfSpDeathDomain {
 	public static void tick(ServerPlayerEntity player) {
 		DomainData data = ACTIVE_DOMAINS.get(player.getUuid());
 		if (data == null) return;
+		if (data.phase == Phase.CHARGING && (!player.isAlive()
+				|| net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID) != data.castId
+				|| net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.spec(player, SKILL_ID) == null)) {
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, data.castId);
+			clearPlayer(player);
+			return;
+		}
 
 		if (!(player.getWorld() instanceof ServerWorld serverWorld)) return;
 
@@ -431,12 +439,24 @@ public class AnubisWolfSpDeathDomain {
 					summonCount += 2;
 				}
 				AnubisWolfSpSummonWolves.autoSummonForEnhancedDomain(player, summonCount);
-				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.force(player, AnubisWolfSpSummonWolves.SKILL_ID,
-						net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cooldown(player, AnubisWolfSpSummonWolves.SKILL_ID));
+				applySummonCooldown(player, data);
 				// 增强模式额外音效
 				player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 0.8f, 0.8f);
 			}
+		}
+	}
+
+	private static Integer captureSummonCooldown(ServerPlayerEntity player) {
+		var spec = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.spec(player, AnubisWolfSpSummonWolves.SKILL_ID);
+		return spec == null ? null : spec.cooldown();
+	}
+
+	private static void applySummonCooldown(ServerPlayerEntity player, DomainData data) {
+		// 使用起手配置；缺配置时保留已有 CD，显式配置 0 仍按 0 结算。
+		if (data.summonCooldownTicks != null) {
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.force(player, AnubisWolfSpSummonWolves.SKILL_ID,
+					data.summonCooldownTicks);
 		}
 	}
 
@@ -1226,6 +1246,7 @@ public class AnubisWolfSpDeathDomain {
 		Map<UUID, Integer> witherHitCount = new HashMap<>();
 		// 增强模式标记（灵魂能量满时施放）
 		boolean enhanced;
+		Integer summonCooldownTicks; // null = 起手无召狼配置；0 = 数据包明确设置免费
 		// 发光高亮：被施加发光的实体UUID集合
 		Set<UUID> glownEntities = new HashSet<>();
 		// 发光team名称（null=尚未创建）

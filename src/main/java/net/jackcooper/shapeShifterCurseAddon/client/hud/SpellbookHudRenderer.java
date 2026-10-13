@@ -6,7 +6,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtElement;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -315,7 +314,7 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 			// 有效品质按等级派生（冰锥：1白/2绿/3蓝/4紫/5橙），HUD 边框颜色一眼看出等级
 			int rarity = spell.getRarity(ScrollData.getLevel(scroll)).ordinal();
 			Identifier modifiedTex = TEX_SLOT_RARITY_MODIFIED[rarity];
-			if (modifiedTex != null && scroll.getNbt() != null && scroll.getNbt().contains(RuneScheme.KEY, NbtElement.COMPOUND_TYPE)) {
+			if (modifiedTex != null && RuneScheme.isModified(scroll)) {
 				ctx.drawTexture(modifiedTex, x - 1, y - 1, fs, fs, 0, 0, 24, 24, 24, 24);
 			} else {
 				Identifier rarityTex = (big ? TEX_SLOT_BIG_RARITY : TEX_SLOT_RARITY)[rarity];
