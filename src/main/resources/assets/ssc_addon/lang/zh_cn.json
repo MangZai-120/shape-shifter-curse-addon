@@ -1,0 +1,21 @@
+{
+  "gui.ssc_addon.category.processing": "SSCA 加工",
+  "emi.category.ssc_addon.processing": "SSCA 加工",
+  "emi.category.ssc_addon.special_crafting": "SSCA 特殊合成",
+  "error.ssc_addon.transfer.not_enough_materials": "材料不足（已计入合成格内材料）",
+  "recipe.ssc_addon.loot_frost_spine_collar": "寒棘项圈没有合成配方。可从雪屋宝箱（15% 概率）或地牢/怪物房宝箱（10% 概率）获得，每次产出 1 个。属于项链槽饰品，寒棘狐形态专属。",
+  "recipe.ssc_addon.loot_ankh_stone": "安卡纹石没有合成配方。可从沙漠神殿宝箱获得：15% 概率产出 1～2 个。属于戒指槽饰品，SP 阿努比斯之狼形态专属；触发复活强化后消耗。",
+  "recipe.ssc_addon.venom": "中心可用普通、延长或强化剧毒药水，饮用、喷溅、滞留瓶均可。周围需 8 个蜘蛛眼。",
+  "recipe.ssc_addon.infinite": "压缩能量药水可用饮用、喷溅或滞留瓶。图案可整体向下移动一格。",
+  "recipe.ssc_addon.moon_ring": "四角为金锭，中心为塑形核心。四边的绿宝石、红石、月尘纯晶和下界合金锭可互换位置，每种各 1 个。",
+  "recipe.ssc_addon.refill": "无序合成：美西螈桶将当前等级的加湿器充满。保留等级、名称和其他数据；图中以空加湿器为例。",
+  "recipe.ssc_addon.upgrade_moisturizer": "中心必须是图示等级的加湿器。升级保留已有充能、名称和其他数据；图中以空加湿器为例。",
+  "recipe.ssc_addon.reload": "无序合成：每格雪球或雪层 +1 发，每格雪块 +8 发，上限 20 发。可放多格弹药；图中以空发射器为例，保留已有弹药及其他数据。",
+  "recipe.ssc_addon.recharge": "无序合成：每格雪块补充 8 点，上限 64 点。可放多格雪块；已满的暴雪罐不能补充。图中以空罐为例，保留其他数据。",
+  "recipe.ssc_addon.bottling": "每瓶消耗 1 个玻璃瓶和 %s 点网络能量，耗时 %s 秒，产出通用能量药水。连接上方或侧面的能量网络，选择手动或自动模式；三条装瓶线独立工作。",
+  "recipe.ssc_addon.infusion": "在注魔台放入魔法书：每份月尘粉补充 10 点法力，每份月尘纯晶补充 80 点。经验达到当前等级要求后，消耗月尘纯晶和塑形核心各 1 个并点击升级；升级补满法力，保留已装备卷轴和法阵。",
+  "recipe.ssc_addon.formation": "法阵需先记录并学习，然后在研究台用空白法阵纸 1 张和对应系油墨制作；油墨数量等于等级。通用法阵使用普通油墨。",
+  "recipe.ssc_addon.scroll_workshop": "在研究台的卷轴工坊操作。定向制作需已记录图谱，仅开放低阶且非红档法术；使用空白法阵纸、对应系油墨和月尘粉。升级需已鉴定的主卷轴及图谱，消耗对应系油墨与高阶所需纯晶；修复和拆解也在工坊中完成。材料数量按当前界面及服务器配置为准。",
+  "recipe.ssc_addon.rune_research": "在研究台辨识符文并验证自己的布局。完成时消耗空白法阵纸 1 张，以及每个已填符文对应的油墨和月尘粉各 1 份。空外环直接产出普通卷轴；加入外环增强后产出法阵方案，再在卷轴工坊将方案压印到同法术同等级的已鉴定卷轴。符文含义随存档变化。",
+  "recipe.ssc_addon.analysis": "拾获的未鉴定卷轴或法阵需先在研究台完成鉴定，再记录或用于升级、研究及压印。鉴定图示不包含法术的符文答案。"
+}

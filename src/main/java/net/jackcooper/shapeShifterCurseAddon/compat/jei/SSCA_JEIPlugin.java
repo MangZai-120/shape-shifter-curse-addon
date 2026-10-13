@@ -1,69 +1,43 @@
 package net.jackcooper.shapeShifterCurseAddon.compat.jei;
 
-import mezz.jei.api.IModPlugin;
-import mezz.jei.api.constants.VanillaTypes;
+import mezz.jei.api.*;
+import mezz.jei.api.constants.*;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
-import mezz.jei.api.recipe.IFocusGroup;
-import mezz.jei.api.recipe.RecipeIngredientRole;
-import mezz.jei.api.recipe.RecipeType;
+import mezz.jei.api.recipe.*;
 import mezz.jei.api.recipe.category.IRecipeCategory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.potion.PotionUtil;
-import net.minecraft.potion.Potions;
+import mezz.jei.api.registration.*;
+import net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks;
+import net.jackcooper.shapeShifterCurseAddon.compat.recipeviewer.SscViewerRecipes;
+import net.jackcooper.shapeShifterCurseAddon.compat.recipeviewer.SscViewerRecipes.*;
+import net.jackcooper.shapeShifterCurseAddon.compat.recipeviewer.SscViewerRecipes.Process;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.item.*;
+import net.minecraft.screen.*;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.jackcooper.shapeShifterCurseAddon.SscAddon;
-import net.onixary.shapeShifterCurseFabric.items.RegCustomPotions;
-import org.jetbrains.annotations.NotNull;
+import java.util.List;
 
-/**
- * SSCA 的 JEI 插件：注册「SSCA 特殊合成」分类展示毒液腺体配方
- * （8 蜘蛛眼环绕 + 中心剧毒药水×3 瓶型任一）。仅装 JEI 时加载（jei_plugins 入口 / @JeiPlugin）。
- */
-@mezz.jei.api.JeiPlugin
+@JeiPlugin
 public class SSCA_JEIPlugin implements IModPlugin {
-
-	/** 展示用静态配方记录（3×3 布局的毒液腺体合成）。 */
-	public record VenomGlandRecipe() {}
-
-	public static final RecipeType<VenomGlandRecipe> VENOM_GLAND =
-			RecipeType.create("ssc_addon", "venom_gland", VenomGlandRecipe.class);
-
-	/** 展示用静态配方记录（无限压缩能量药水合成）。 */
-	public record InfiniteEnergyPotionDisplay() {}
-
-	public static final RecipeType<InfiniteEnergyPotionDisplay> INFINITE_ENERGY_POTION =
-			RecipeType.create("ssc_addon", "infinite_energy_potion", InfiniteEnergyPotionDisplay.class);
-
-	@Override
-	public @NotNull Identifier getPluginUid() {
-		return new Identifier("ssc_addon", "jei_plugin");
-	}
-
-	@Override
-	public void registerCategories(mezz.jei.api.registration.IRecipeCategoryRegistration registration) {
-		registration.addRecipeCategories(
-				new VenomGlandCategory(registration.getJeiHelpers().getGuiHelper()),
-				new InfinitePotionCategory(registration.getJeiHelpers().getGuiHelper()));
-	}
-
-	@Override
-	public void registerRecipeTransferHandlers(mezz.jei.api.registration.IRecipeTransferRegistration registration) {
-		// SSCA 特殊配方的快速转移：点击模拟支持带 NBT 的药水材料（JEI 原生转移只按裸 Ingredient 匹配会丢 NBT）
-		registration.addRecipeTransferHandler(
-				new SscClickTransferHandler<>(SSCA_JEIPlugin.INFINITE_ENERGY_POTION, SscGridClickTransfer.GridSpec.infinitePotion(),
-						registration.getTransferHelper()),
-				SSCA_JEIPlugin.INFINITE_ENERGY_POTION);
-		registration.addRecipeTransferHandler(
-				new SscClickTransferHandler<>(SSCA_JEIPlugin.VENOM_GLAND, SscGridClickTransfer.GridSpec.venomGland(),
-						registration.getTransferHelper()),
-				SSCA_JEIPlugin.VENOM_GLAND);
-	}
-
+    public static final RecipeType<Crafting> SPECIAL_CRAFTING = RecipeType.create("ssc_addon", "special_crafting", Crafting.class);
+    public static final RecipeType<Process> PROCESSING = RecipeType.create("ssc_addon", "processing", Process.class);
+    @Override public Identifier getPluginUid() { return new Identifier("ssc_addon", "jei_plugin"); }
+    @Override public void registerCategories(IRecipeCategoryRegistration registration) {
+        var gui = registration.getJeiHelpers().getGuiHelper();
+        registration.addRecipeCategories(new CraftingCategory(gui), new ProcessingCategory(gui));
+    }
+    @Override public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
+        registration.addRecipeTransferHandler(new SscClickTransferHandler<>(CraftingScreenHandler.class, registration.getTransferHelper()), SPECIAL_CRAFTING);
+        registration.addRecipeTransferHandler(new SscClickTransferHandler<>(PlayerScreenHandler.class, registration.getTransferHelper()), SPECIAL_CRAFTING);
+    }
+    @Override public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
+        registration.addRecipeCatalyst(Items.CRAFTING_TABLE, SPECIAL_CRAFTING);
+        registration.addRecipeCatalyst(RegAddonBlocks.ENERGY_BOTTLER, PROCESSING);
+    }
 	@Override
 	public void registerGuiHandlers(mezz.jei.api.registration.IGuiHandlerRegistration registration) {
 		// 绘制法阵界面（FormationResearchScreen）是全屏画布，JEI 物品侧栏会盖住画布。
@@ -112,170 +86,66 @@ public class SSCA_JEIPlugin implements IModPlugin {
 				});
 	}
 
-	@Override
-	public void registerRecipes(mezz.jei.api.registration.IRecipeRegistration registration) {
-		registration.addRecipes(VENOM_GLAND, java.util.List.of(new VenomGlandRecipe()));
-		registration.addRecipes(INFINITE_ENERGY_POTION, java.util.List.of(new InfiniteEnergyPotionDisplay()));
-		// 酿造转换（mixin 实现，JEI 无法自动发现）：饮用型+火药→喷溅型；喷溅型+龙息→滞留型
-		mezz.jei.api.recipe.vanilla.IVanillaRecipeFactory factory =
-				registration.getJeiHelpers().getVanillaRecipeFactory();
-		registration.addRecipes(mezz.jei.api.constants.RecipeTypes.BREWING, java.util.List.of(
-				factory.createBrewingRecipe(
-						java.util.List.of(new ItemStack(SscAddon.INFINITE_ENERGY_POTION)),
-						new ItemStack(Items.GUNPOWDER),
-						new ItemStack(SscAddon.INFINITE_ENERGY_POTION_SPLASH),
-						new Identifier("ssc_addon", "infinite_energy_potion_brewing_splash")),
-				factory.createBrewingRecipe(
-						java.util.List.of(new ItemStack(SscAddon.INFINITE_ENERGY_POTION_SPLASH)),
-						new ItemStack(Items.DRAGON_BREATH),
-						new ItemStack(SscAddon.INFINITE_ENERGY_POTION_LINGERING),
-						new Identifier("ssc_addon", "infinite_energy_potion_brewing_lingering")),
-				// 通用能量药水（mixin 实现，同样无法被 JEI 自动发现）：饮用+火药→喷溅；喷溅+龙息→滞留
-				factory.createBrewingRecipe(
-						java.util.List.of(new ItemStack(SscAddon.UNIVERSAL_ENERGY_POTION)),
-						new ItemStack(Items.GUNPOWDER),
-						new ItemStack(SscAddon.UNIVERSAL_ENERGY_POTION_SPLASH),
-						new Identifier("ssc_addon", "universal_energy_potion_brewing_splash")),
-				factory.createBrewingRecipe(
-						java.util.List.of(new ItemStack(SscAddon.UNIVERSAL_ENERGY_POTION_SPLASH)),
-						new ItemStack(Items.DRAGON_BREATH),
-						new ItemStack(SscAddon.UNIVERSAL_ENERGY_POTION_LINGERING),
-						new Identifier("ssc_addon", "universal_energy_potion_brewing_lingering"))));
-	}
-
-	/** 分类：3×3 槽位布局 + 箭头 + 输出。 */
-	public static class VenomGlandCategory implements IRecipeCategory<VenomGlandRecipe> {
-		private final IDrawable background;
-		private final IDrawable icon;
-
-		public VenomGlandCategory(IGuiHelper guiHelper) {
-			this.background = guiHelper.createBlankDrawable(120, 66);
-			this.icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(SscAddon.VENOM_GLAND));
-		}
-
-		@Override
-		public @NotNull RecipeType<VenomGlandRecipe> getRecipeType() {
-			return VENOM_GLAND;
-		}
-
-		@Override
-		public @NotNull Text getTitle() {
-			return Text.translatable("gui.ssc_addon.category.special_crafting");
-		}
-
-		@Override
-		public @NotNull IDrawable getBackground() {
-			return background;
-		}
-
-		@Override
-		public IDrawable getIcon() {
-			return icon;
-		}
-
-		@Override
-		public void setRecipe(@NotNull IRecipeLayoutBuilder builder, @NotNull VenomGlandRecipe recipe, @NotNull IFocusGroup focuses) {
-			// 3×3：8 蜘蛛眼 + 中心三种剧毒瓶型（作为可循环选项）
-			ItemStack eye = new ItemStack(Items.SPIDER_EYE);
-			ItemStack poisonDrink = PotionUtil.setPotion(new ItemStack(Items.POTION), Potions.POISON);
-			ItemStack poisonSplash = PotionUtil.setPotion(new ItemStack(Items.SPLASH_POTION), Potions.POISON);
-			ItemStack poisonLingering = PotionUtil.setPotion(new ItemStack(Items.LINGERING_POTION), Potions.POISON);
-			for (int row = 0; row < 3; row++) {
-				for (int col = 0; col < 3; col++) {
-					int idx = row * 3 + col;
-					if (idx == 4) {
-						builder.addSlot(RecipeIngredientRole.INPUT, 1 + col * 18, 1 + row * 18)
-								.addItemStack(poisonDrink).addItemStack(poisonSplash).addItemStack(poisonLingering);
-					} else {
-						builder.addSlot(RecipeIngredientRole.INPUT, 1 + col * 18, 1 + row * 18)
-								.addItemStack(eye);
-					}
-				}
-			}
-			builder.addSlot(RecipeIngredientRole.OUTPUT, 95, 19)
-					.addItemStack(new ItemStack(SscAddon.VENOM_GLAND));
-		}
-
-		@Override
-		public void draw(@NotNull VenomGlandRecipe recipe, @NotNull IRecipeSlotsView recipeSlotsView,
-						 net.minecraft.client.gui.DrawContext context, double mouseX, double mouseY) {
-			// 画箭头（vanilla 图标）
-			context.drawTexture(net.minecraft.util.Identifier.of("minecraft", "textures/gui/container/crafting_table.png"),
-					60, 24, 90, 40, 22, 15, 256, 256);
-		}
-	}
-
-	/** 分类：无限压缩能量药水合成（月髓环 + 2 附魔金苹果 + 压缩能量药水，上对齐摆放）。 */
-	public static class InfinitePotionCategory implements IRecipeCategory<InfiniteEnergyPotionDisplay> {
-		private final IDrawable background;
-		private final IDrawable icon;
-
-		public InfinitePotionCategory(IGuiHelper guiHelper) {
-			this.background = guiHelper.createBlankDrawable(120, 66);
-			this.icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(SscAddon.INFINITE_ENERGY_POTION));
-		}
-
-		@Override
-		public @NotNull RecipeType<InfiniteEnergyPotionDisplay> getRecipeType() {
-			return INFINITE_ENERGY_POTION;
-		}
-
-		@Override
-		public @NotNull Text getTitle() {
-			return Text.translatable("gui.ssc_addon.category.special_crafting");
-		}
-
-		@Override
-		public @NotNull IDrawable getBackground() {
-			return background;
-		}
-
-		@Override
-		public @NotNull IDrawable getIcon() {
-			return icon;
-		}
-
-		@Override
-		public void setRecipe(@NotNull IRecipeLayoutBuilder builder, @NotNull InfiniteEnergyPotionDisplay recipe, @NotNull IFocusGroup focuses) {
-			// 3×3：上中=月髓环，中间行=附魔金苹果 / 压缩能量药水（三种瓶型可循环）/ 附魔金苹果，其余为空槽
-			ItemStack moonRing = new ItemStack(SscAddon.SP_UPGRADE_THING);
-			ItemStack apple = new ItemStack(Items.ENCHANTED_GOLDEN_APPLE);
-			ItemStack feedDrink = PotionUtil.setPotion(new ItemStack(Items.POTION), RegCustomPotions.FEED_POTION);
-			ItemStack feedSplash = PotionUtil.setPotion(new ItemStack(Items.SPLASH_POTION), RegCustomPotions.FEED_POTION);
-			ItemStack feedLingering = PotionUtil.setPotion(new ItemStack(Items.LINGERING_POTION), RegCustomPotions.FEED_POTION);
-			for (int row = 0; row < 3; row++) {
-				for (int col = 0; col < 3; col++) {
-					int idx = row * 3 + col;
-					ItemStack stack = null;
-					if (idx == 1) {
-						stack = moonRing;
-					} else if (idx == 3 || idx == 5) {
-						stack = apple;
-					} else if (idx == 4) {
-						stack = feedDrink;
-					}
-					mezz.jei.api.gui.builder.IRecipeSlotBuilder slot =
-							builder.addSlot(RecipeIngredientRole.INPUT, 1 + col * 18, 1 + row * 18);
-					if (stack != null) {
-						if (idx == 4) {
-							// 中间槽：三种瓶型作为可循环选项
-							slot.addItemStack(feedDrink).addItemStack(feedSplash).addItemStack(feedLingering);
-						} else {
-							slot.addItemStack(stack);
-						}
-					}
-				}
-			}
-			builder.addSlot(RecipeIngredientRole.OUTPUT, 95, 19)
-					.addItemStack(new ItemStack(SscAddon.INFINITE_ENERGY_POTION));
-		}
-
-		@Override
-		public void draw(@NotNull InfiniteEnergyPotionDisplay recipe, @NotNull IRecipeSlotsView recipeSlotsView,
-						 net.minecraft.client.gui.DrawContext context, double mouseX, double mouseY) {
-			// 画箭头（vanilla 图标，与毒液腺体分类一致）
-			context.drawTexture(net.minecraft.util.Identifier.of("minecraft", "textures/gui/container/crafting_table.png"),
-					60, 24, 90, 40, 22, 15, 256, 256);
-		}
-	}
+    @Override public void registerRecipes(IRecipeRegistration registration) {
+        var world = MinecraftClient.getInstance().world;
+        registration.addRecipes(SPECIAL_CRAFTING, world == null ? List.of() : SscViewerRecipes.crafting(world.getRecipeManager()));
+        registration.addRecipes(PROCESSING, SscViewerRecipes.processes());
+        var factory = registration.getJeiHelpers().getVanillaRecipeFactory();
+        registration.addRecipes(RecipeTypes.BREWING, SscViewerRecipes.brewing().stream().map(r ->
+            factory.createBrewingRecipe(List.of(r.input()), r.ingredient(), r.output(), r.id())).toList());
+        for (var info : SscViewerRecipes.information()) registration.addItemStackInfo(info.stacks(), info.description());
+    }
+    private static void description(DrawContext context, Text text, int y, int width) {
+        var renderer = MinecraftClient.getInstance().textRenderer;
+        for (var line : renderer.wrapLines(text, width)) {
+            context.drawText(renderer, line, 1, y, 0xFF555555, false); y += 10;
+        }
+    }
+    public static final class CraftingCategory implements IRecipeCategory<Crafting> {
+        private final IDrawable background, icon, slotBackground;
+        public CraftingCategory(IGuiHelper gui) {
+            background = gui.createBlankDrawable(144, 166);
+            icon = gui.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.CRAFTING_TABLE));
+            slotBackground = gui.getSlotDrawable();
+        }
+        @Override public RecipeType<Crafting> getRecipeType() { return SPECIAL_CRAFTING; }
+        @Override public Text getTitle() { return Text.translatable("gui.ssc_addon.category.special_crafting"); }
+        @Override public IDrawable getBackground() { return background; }
+        @Override public IDrawable getIcon() { return icon; }
+        @Override public Identifier getRegistryName(Crafting recipe) { return recipe.id(); }
+        @Override public void setRecipe(IRecipeLayoutBuilder builder, Crafting recipe, IFocusGroup focuses) {
+            for (int i = 0; i < recipe.grid().size(); i++) {
+                var slot = builder.addSlot(RecipeIngredientRole.INPUT, 1 + i % 3 * 18, 1 + i / 3 * 18);
+                slot.setBackground(slotBackground, -1, -1);
+                slot.addItemStacks(recipe.grid().get(i));
+            }
+            builder.addSlot(RecipeIngredientRole.OUTPUT, 95, 19).setBackground(slotBackground, -1, -1).addItemStack(recipe.output());
+        }
+        @Override public void draw(Crafting recipe, IRecipeSlotsView slots, DrawContext context, double x, double y) {
+            context.drawTexture(new Identifier("minecraft", "textures/gui/container/crafting_table.png"), 60, 24, 90, 40, 22, 15, 256, 256);
+            description(context, recipe.description(), 60, 140);
+        }
+    }
+    public static final class ProcessingCategory implements IRecipeCategory<Process> {
+        private final IDrawable background, icon, slotBackground;
+        public ProcessingCategory(IGuiHelper gui) {
+            background = gui.createBlankDrawable(160, 140);
+            icon = gui.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(RegAddonBlocks.ENERGY_BOTTLER));
+            slotBackground = gui.getSlotDrawable();
+        }
+        @Override public RecipeType<Process> getRecipeType() { return PROCESSING; }
+        @Override public Text getTitle() { return Text.translatable("gui.ssc_addon.category.processing"); }
+        @Override public IDrawable getBackground() { return background; }
+        @Override public IDrawable getIcon() { return icon; }
+        @Override public Identifier getRegistryName(Process recipe) { return recipe.id(); }
+        @Override public void setRecipe(IRecipeLayoutBuilder builder, Process recipe, IFocusGroup focuses) {
+            builder.addSlot(RecipeIngredientRole.CATALYST, 1, 1).setBackground(slotBackground, -1, -1).addItemStack(recipe.workstation());
+            builder.addSlot(RecipeIngredientRole.INPUT, 37, 1).setBackground(slotBackground, -1, -1).addItemStacks(recipe.inputs());
+            builder.addSlot(RecipeIngredientRole.OUTPUT, 111, 1).setBackground(slotBackground, -1, -1).addItemStack(recipe.output());
+        }
+        @Override public void draw(Process recipe, IRecipeSlotsView slots, DrawContext context, double x, double y) {
+            context.drawTexture(new Identifier("minecraft", "textures/gui/container/crafting_table.png"), 72, 2, 90, 40, 22, 15, 256, 256);
+            description(context, recipe.description(), 28, 156);
+        }
+    }
 }
