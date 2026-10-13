@@ -292,6 +292,7 @@ public final class AxolotlShifterAiProbe {
         private TestChunks() { super(null, null, null, null, null, null, 0, 0, false, null, null, null); }
         @Override public WorldChunk getWorldChunk(int x, int z) { return chunk; }
         @Override public Chunk getChunk(int x, int z, ChunkStatus status, boolean create) { return chunk; }
+        @Override public boolean isChunkLoaded(int x, int z) { return true; }
     }
 
     public static final class TestChunk extends WorldChunk {
