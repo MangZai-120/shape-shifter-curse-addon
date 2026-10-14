@@ -104,7 +104,8 @@ public final class WindSpiritWindPressureManager {
     /** 每 20t 重建各维度风灵在线集合（无风灵维度移除键）。 */
     private static void refreshWindSpirits(ServerWorld world) {
         long now = world.getTime();
-        if (now == lastRefreshTick || now - lastRefreshTick < 20) return;
+        // 哨兵判断：首次刷新必须执行，防止 now - Long.MIN_VALUE 下溢为负导致缓存永远为空、风压减速从不生效
+        if (lastRefreshTick != Long.MIN_VALUE && now - lastRefreshTick < 20) return;
         lastRefreshTick = now;
         java.util.Set<java.util.UUID> spirits = new java.util.HashSet<>();
         for (PlayerEntity p : world.getPlayers()) {

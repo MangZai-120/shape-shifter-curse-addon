@@ -101,8 +101,9 @@ public final class FrostArmorManager {
 		long now = sw.getTime();
 
 		Layers l = LAYERS.computeIfAbsent(attacker.getUuid(), k -> new Layers());
-		// 防连击门：同一攻击者 10t 内重复命中不叠层
-		if (now - l.lastHitGameTime < BAL.i("re_layer_gap_ticks", RE_LAYER_GAP_TICKS)) return;
+		// 防连击门：同一攻击者 10t 内重复命中不叠层；
+		// 哨兵判断：首击必须放行，防止 now - Long.MIN_VALUE 下溢为负导致反刺永远无法叠层
+		if (l.lastHitGameTime != Long.MIN_VALUE && now - l.lastHitGameTime < BAL.i("re_layer_gap_ticks", RE_LAYER_GAP_TICKS)) return;
 		l.lastHitGameTime = now;
 		l.count++;
 		l.lastLayerGameTime = now;
@@ -147,11 +148,13 @@ public final class FrostArmorManager {
 		Iterator<Map.Entry<UUID, Layers>> it = LAYERS.entrySet().iterator();
 		while (it.hasNext()) {
 			Layers l = it.next().getValue();
-			if (l.count > 0 && now - l.lastLayerGameTime > BAL.i("layer_expire_ticks", LAYER_EXPIRE_TICKS)) {
+			// 哨兵判断与 count>0 共同成立才比较，防止下溢为负使清层/移除永不触发
+			if (l.count > 0 && l.lastLayerGameTime != Long.MIN_VALUE
+					&& now - l.lastLayerGameTime > BAL.i("layer_expire_ticks", LAYER_EXPIRE_TICKS)) {
 				l.count = 0;
 			}
-			// 全冷层且长期无命中 → 直接移除防 map 膨胀
-			if (l.count == 0 && now - l.lastHitGameTime > 1200) {
+			// 全冷层且长期无命中 → 直接移除防 map 膨胀（同理先排除哨兵：从未命中过的条目按已过期处理）
+			if (l.count == 0 && (l.lastHitGameTime == Long.MIN_VALUE || now - l.lastHitGameTime > 1200)) {
 				it.remove();
 			}
 		}

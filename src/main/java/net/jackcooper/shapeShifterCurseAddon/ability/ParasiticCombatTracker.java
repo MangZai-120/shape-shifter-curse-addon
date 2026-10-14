@@ -78,8 +78,9 @@ public final class ParasiticCombatTracker {
         if (d == null) return false;
         long now = player.getWorld().getTime();
         int combatTicks = BAL.i("combat_ticks", COMBAT_TICKS);
-        if (now - d.lastDamageDealt < combatTicks) return true;
-        if (now - d.lastHurt < combatTicks) return true;
+        // 哨兵判断：未记录的一侧不参与判定，防止 now - Long.MIN_VALUE 下溢为负导致永久交战
+        if (d.lastDamageDealt != Long.MIN_VALUE && now - d.lastDamageDealt < combatTicks) return true;
+        if (d.lastHurt != Long.MIN_VALUE && now - d.lastHurt < combatTicks) return true;
         // 10s 后：对其造成伤害的来源仍存活且在 10 格内 → 仍交战
         if (d.lastHurtSource != null && player.getWorld() instanceof ServerWorld sw) {
             Entity src = sw.getEntity(d.lastHurtSource);

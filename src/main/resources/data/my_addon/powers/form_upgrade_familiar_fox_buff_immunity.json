@@ -96,7 +96,7 @@
         }
     },
     "max_mana_boost": {
-        "type": "shape-shifter-curse:mana_attribute",
+        "type": "ssc_addon:conditional_mana_attribute",
         "modifierID": "my_addon:upgrade_familiar_fox_buff_mana_boost",
         "max_mana_modifier": {
             "add": 0.0,

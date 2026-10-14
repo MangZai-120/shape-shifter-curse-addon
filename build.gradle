@@ -267,6 +267,23 @@ tasks.register('npcCombatIntegrationTest', JavaExec) {
 }
 check.dependsOn npcCombatIntegrationTest
 
+tasks.register('evolutionManaIntegrationTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionManaIntegrationTest'
+    workingDir = layout.buildDirectory.dir('evolution-mana-integration').get().asFile
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def cpFile = new File(workingDir, 'test-classpath.txt')
+        cpFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'evolutionMana.testClasspathFile', cpFile.absolutePath
+    }
+}
+check.dependsOn evolutionManaIntegrationTest
+
 tasks.register('spiderJumpAnimationTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
