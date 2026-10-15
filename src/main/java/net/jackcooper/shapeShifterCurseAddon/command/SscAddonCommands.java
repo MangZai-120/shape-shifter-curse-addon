@@ -21,8 +21,6 @@ import net.minecraft.sound.SoundEvents;
 import net.onixary.shapeShifterCurseFabric.mana.ManaComponent;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.jackcooper.shapeShifterCurseAddon.config.ConfigChangeManager;
-import net.jackcooper.shapeShifterCurseAddon.item.MoonDustSpellbookItem;
-import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
