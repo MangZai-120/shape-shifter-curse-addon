@@ -85,7 +85,9 @@ public class SscAddonCommands {
 						.then(CommandManager.literal("exp")
 								.then(CommandManager.literal("addon")
 										.then(CommandManager.argument("amount", IntegerArgumentType.integer(1))
-												.executes(SscAddonCommands::addSpellbookExp))))
+												.executes(SscAddonCommands::addSpellbookExp)
+												.then(CommandManager.literal("equipped")
+														.executes(context -> addSpellbookExp(context, true))))))
 						.then(CommandManager.literal("cd")
 								.then(CommandManager.literal("reset")
 										.executes(SscAddonCommands::resetSpellCdOnSelf)
@@ -770,32 +772,33 @@ public class SscAddonCommands {
 	}
 
 	private static int addSpellbookExp(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+		return addSpellbookExp(context, false);
+	}
+
+	private static int addSpellbookExp(CommandContext<ServerCommandSource> context, boolean equipped) throws CommandSyntaxException {
 		ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-		ItemStack book = player.getMainHandStack();
-		if (!(book.getItem() instanceof MoonDustSpellbookItem)) {
-			book = player.getOffHandStack();
-		}
-		if (!(book.getItem() instanceof MoonDustSpellbookItem)) {
-			context.getSource().sendError(Text.translatable("command.ssc_addon.moon_dust_spellbook.exp.not_held"));
+		ItemStack book = SpellbookExperience.select(equipped, player.getMainHandStack(), player.getOffHandStack(),
+				() -> net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.getEquippedBook(player));
+		if (book == null || book.isEmpty()) {
+			context.getSource().sendError(Text.translatable("command.ssc_addon.moon_dust_spellbook.exp."
+					+ (equipped ? "not_equipped" : "not_held")));
 			return 0;
 		}
 		int amount = IntegerArgumentType.getInteger(context, "amount");
-		// Read a copy so a rejected addition cannot migrate or mutate the held book's NBT.
-		int before = SpellbookData.getExpTen(book.copy());
-		long after = before + amount * 10L;
-		if (after > Integer.MAX_VALUE) {
+		var result = SpellbookExperience.add(book, amount);
+		if (!result.success()) {
 			context.getSource().sendError(Text.translatable("command.ssc_addon.moon_dust_spellbook.exp.too_large",
-					(Integer.MAX_VALUE - before) / 10));
+					result.maximumAdditional()));
 			return 0;
 		}
-		SpellbookData.setExpTen(book, (int) after);
 		player.getInventory().markDirty();
 		player.currentScreenHandler.sendContentUpdates();
 		if (player.currentScreenHandler != player.playerScreenHandler) {
 			player.playerScreenHandler.sendContentUpdates();
 		}
-		String total = String.format(Locale.ROOT, "%.1f", after / 10.0);
-		context.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.moon_dust_spellbook.exp.added", amount, total), true);
+		String total = String.format(Locale.ROOT, "%.1f", result.totalTen() / 10.0);
+		context.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.moon_dust_spellbook.exp."
+				+ (equipped ? "added_equipped" : "added"), amount, total), true);
 		return 1;
 	}
 

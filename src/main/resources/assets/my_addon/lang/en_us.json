@@ -1306,6 +1306,8 @@
   "command.ssc_addon.reset_spell_cd.console_need_target": "Console execution requires a target player",
   "command.ssc_addon.reset_spell_cd.success": "Reset all spell cooldowns for %s player(s)",
   "command.ssc_addon.moon_dust_spellbook.exp.not_held": "Hold a Moon Dust Spellbook in your main hand or offhand first.",
+  "command.ssc_addon.moon_dust_spellbook.exp.not_equipped": "Equip a Moon Dust Spellbook first; the equipped command only modifies the worn book.",
+  "command.ssc_addon.moon_dust_spellbook.exp.added_equipped": "Added %1$s experience points to the equipped Moon Dust Spellbook. Current experience: %2$s.",
   "command.ssc_addon.moon_dust_spellbook.exp.too_large": "Experience amount is too large. This spellbook can receive at most %s more experience points.",
   "command.ssc_addon.moon_dust_spellbook.exp.added": "Added %1$s experience points to the held Moon Dust Spellbook. Current experience: %2$s.",
   "gui.ssc_addon.research.search": "Name / school",

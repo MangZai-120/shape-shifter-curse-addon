@@ -396,6 +396,23 @@ tasks.register('recipeViewerIntegrationTest', JavaExec) {
 }
 check.dependsOn recipeViewerIntegrationTest
 
+tasks.register('spellbookExpIntegrationTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.command.SpellbookExperienceIntegrationTest'
+    workingDir = layout.buildDirectory.dir('spellbook-exp-integration').get().asFile
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def cpFile = new File(workingDir, 'test-classpath.txt')
+        cpFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'spellbookExp.testClasspath', cpFile.absolutePath
+    }
+}
+check.dependsOn spellbookExpIntegrationTest
+
 java {
     // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
     // if it is present.
