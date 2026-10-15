@@ -1,0 +1,29 @@
+{
+  "shape-shifter-curse:charm_of_hollow_fang_plus": {
+    "accessory_powers": [],
+    "all_form": {
+      "add": [],
+      "remove": []
+    },
+    "forms": {
+      "my_addon:bat_desmodus": {
+        "add": [
+          "shape-shifter-curse:form_bat_charm_of_hollow_fang_trinket_plus"
+        ],
+        "remove": [
+          "shape-shifter-curse:form_vegetarian",
+          "shape-shifter-curse:form_vegetarian_food_up"
+        ]
+      },
+      "my_addon:bat_parasitic_fruit": {
+        "add": [
+          "shape-shifter-curse:form_bat_charm_of_hollow_fang_trinket_plus"
+        ],
+        "remove": [
+          "shape-shifter-curse:form_vegetarian",
+          "shape-shifter-curse:form_vegetarian_food_up"
+        ]
+      }
+    }
+  }
+}

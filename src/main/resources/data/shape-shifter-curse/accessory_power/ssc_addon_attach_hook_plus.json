@@ -1,0 +1,20 @@
+{
+  "shape-shifter-curse:attach_hook_plus": {
+    "accessory_powers": [],
+    "all_form": {
+      "add": [],
+      "remove": []
+    },
+    "forms": {
+      "my_addon:bat_parasitic_fruit": {
+        "add": [
+          "shape-shifter-curse:form_bat_attach_hook_trinket_plus"
+        ],
+        "remove": [
+          "shape-shifter-curse:drop_tool_after_digging",
+          "shape-shifter-curse:drop_weapon_after_hit"
+        ]
+      }
+    }
+  }
+}

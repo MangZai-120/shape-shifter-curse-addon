@@ -1,0 +1,19 @@
+{
+  "shape-shifter-curse:withered_bandage_plus": {
+    "accessory_powers": [],
+    "all_form": {
+      "add": [],
+      "remove": []
+    },
+    "forms": {
+      "my_addon:anubis_wolf_sp": {
+        "add": [
+          "my_addon:form_anubis_wolf_sp_withered_bandage_plus"
+        ],
+        "remove": [
+          "my_addon:form_anubis_wolf_sp_wither_on_hit"
+        ]
+      }
+    }
+  }
+}

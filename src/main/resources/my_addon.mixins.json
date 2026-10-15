@@ -38,6 +38,7 @@
                    "item.MilkBucketWebBoundMixin",
                    "item.AmuletBraceletTrinketMixin",
                    "item.CharmOfNightCrystalTrinketMixin",
+                   "item.SscEnhancedAccessoryRestrictionMixin",
                    "item.AddonTrinketBridgeMixin",
                    "item.AddonAccessoryIoFallbackMixin",
                    "item.ItemEntityMixin",

@@ -1,0 +1,23 @@
+{
+  "shape-shifter-curse:digestion_fiber_ball_plus": {
+    "accessory_powers": [],
+    "all_form": {
+      "add": [],
+      "remove": []
+    },
+    "forms": {
+      "my_addon:ocelot_wind_spirit": {
+        "add": [
+          "my_addon:form_ocelot_fiber_ball_plus_trinket"
+        ],
+        "remove": []
+      },
+      "my_addon:ocelot_nova": {
+        "add": [
+          "my_addon:form_ocelot_fiber_ball_plus_trinket"
+        ],
+        "remove": []
+      }
+    }
+  }
+}

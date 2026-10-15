@@ -37,6 +37,11 @@ public class WebMembraneBullet extends WebBullet {
 		this.setPosition(owner.getX(), owner.getEyeY() - 0.10000000149011612, owner.getZ());
 	}
 
+	// 归属说明：原版 WebBullet.owner 字段不写入 NBT（弹体存档恢复后恒为 null），
+	// 而 ProjectileEntity.getOwner() 走 owner UUID 恢复链路、飞行期内也有缓存引用。
+	// 因此本类所有命中结算、铺网归属、白名单判断一律用 this.getOwner()，
+	// 禁止读 this.owner（2026-10-15 实测修复：NBT 恢复弹丢纺锤加成/铺网归属）。
+
 	/** 蛛网弹落地爆炸的蜘网缠身范围半径（格）：与蓄力档无关，固定 8 格。 */
 	private static final double AURA_RADIUS = 8.0;
 	/** 蛛网缠身范围施加持续时长（tick）：5 秒（与踩网施加一致）。 */
@@ -56,7 +61,7 @@ public class WebMembraneBullet extends WebBullet {
 	public void onBlockHit(BlockHitResult blockHitResult) {
 		if (this.getWorld() instanceof ServerWorld world) {
 			BlockPos hit = blockHitResult.getBlockPos();
-			WebMembraneBlock.coatArea(world, hit, radiusForTier(this.Tier), this.owner != null ? this.owner.getUuid() : null);
+			WebMembraneBlock.coatArea(world, hit, radiusForTier(this.Tier), this.getOwner() != null ? this.getOwner().getUuid() : null);
 			applyBoundAura(world, hit); // 爆炸范围直接施加蜘网缠身
 			playHit(world);
 		}
@@ -68,16 +73,64 @@ public class WebMembraneBullet extends WebBullet {
 		Entity entity = entityHitResult.getEntity();
 		if (this.getWorld() instanceof ServerWorld world) {
 			BlockPos hit = entity.getBlockPos();
-			WebMembraneBlock.coatArea(world, hit, radiusForTier(this.Tier), this.owner != null ? this.owner.getUuid() : null);
+			WebMembraneBlock.coatArea(world, hit, radiusForTier(this.Tier), this.getOwner() != null ? this.getOwner().getUuid() : null);
 			applyBoundAura(world, hit); // 爆炸范围裹茧 / 施加蜘网缠身
 			// 直接命中：结茧走原版逻辑——确定性叠加缠身时长（200/400/600t），累积满 500t 转茧（与原版 SSC 一致）
 			if (entity instanceof LivingEntity living && !isProtected(living)) {
 				int buffTime = this.Tier >= 3 ? 600 : (this.Tier >= 2 ? 400 : 200);
-				net.onixary.shapeShifterCurseFabric.status_effects.EntangledEffectUtils.applyEntangledEffect(this.owner, living, buffTime);
+				net.onixary.shapeShifterCurseFabric.status_effects.EntangledEffectUtils.applyEntangledEffect(this.getOwner(), living, buffTime);
+				// 箭毒纺锤检测（与原版 WebBullet 一致）：副手槽装纺锤时，命中追加投掷伤害+虚弱+中毒Ⅲ；
+				// plus 版额外施加缠身（Tier1/2/3BuffTime = 200/400/600t）
+				applyVenomSpindleBonus(living);
 			}
 			playHit(world);
 		}
 		this.discard();
+	}
+
+	/** 箭毒纺锤命中加成（数值照抄原版 WebBullet#onEntityHit 三档）。 */
+	private void applyVenomSpindleBonus(LivingEntity target) {
+		if (!(this.getOwner() instanceof net.minecraft.entity.player.PlayerEntity player)) return;
+		if (!this.EnableVenomSpindle) return;
+		boolean upgraded = isExtraHandVenomSpindleEquipped(player,
+				net.onixary.shapeShifterCurseFabric.items.RegCustomItem.VENOM_SPINDLE_PLUS);
+		if (!upgraded && !isExtraHandVenomSpindleEquipped(player,
+				net.onixary.shapeShifterCurseFabric.items.RegCustomItem.VENOM_SPINDLE)) return;
+		switch (this.Tier) {
+			case 2 -> {
+				target.addStatusEffect(new StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.WEAKNESS, 120, 2));
+				target.addStatusEffect(new StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.POISON, 60, 2));
+				target.damage(this.getDamageSources().thrown(this, this.getOwner()), 6.0F);
+			}
+			case 3 -> {
+				target.addStatusEffect(new StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.WEAKNESS, 160, 3));
+				target.addStatusEffect(new StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.POISON, 100, 2));
+				target.damage(this.getDamageSources().thrown(this, this.getOwner()), 8.0F);
+			}
+			default -> {
+				target.addStatusEffect(new StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.WEAKNESS, 80, 1));
+				target.addStatusEffect(new StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.POISON, 20, 2));
+				target.damage(this.getDamageSources().thrown(this, this.getOwner()), 5.0F);
+			}
+		}
+		if (upgraded) {
+			int duration = switch (this.Tier) {
+				case 2 -> Tier2BuffTime;
+				case 3 -> Tier3BuffTime;
+				default -> Tier1BuffTime;
+			};
+			net.onixary.shapeShifterCurseFabric.status_effects.EntangledEffectUtils.applyEntangledEffect(this.getOwner(), target, duration);
+		}
+	}
+
+	/** 复刻原版 WebBullet 的副手纺锤检测（原方法 private，子类不可见）。 */
+	private boolean isExtraHandVenomSpindleEquipped(net.minecraft.entity.player.PlayerEntity player,
+													net.minecraft.item.Item item) {
+		return net.onixary.shapeShifterCurseFabric.additional_power.TrinketsConditionAction.CheckEquipped(
+				player, "auto", "hand", "extra_hand", 0,
+				stack -> stack.isOf(item),
+				false
+		);
 	}
 
 	/**
@@ -109,13 +162,13 @@ public class WebMembraneBullet extends WebBullet {
 			prob += Math.min(0.30, (boundLeft / 20.0) * 0.05);
 			if (world.getRandom().nextDouble() < prob) {
 				// 走原版缠身一次叠满转茧逻辑（500t = 5×100，达 ENTANGLED_DURATION_PER_LEVEL×(MAX_LEVEL+1) 阈值）
-				net.onixary.shapeShifterCurseFabric.status_effects.EntangledEffectUtils.applyEntangledEffect(this.owner, living, 500);
+				net.onixary.shapeShifterCurseFabric.status_effects.EntangledEffectUtils.applyEntangledEffect(this.getOwner(), living, 500);
 			} else {
 			// 未裹茧：施加蜘网缠身（减速+挖掘疲劳+虚弱），为后续踩网/再次命中累积裹茧概率
 				// 带施法者 source，供食梦魔「入梦」debuff 拦截归因
 				living.addStatusEffect(new StatusEffectInstance(
 						net.jackcooper.shapeShifterCurseAddon.effect.RegAddonEffects.SPIDER_WEB_BOUND,
-						BAL.i("aura_duration", AURA_DURATION), 0, false, false, true), this.owner);
+						BAL.i("aura_duration", AURA_DURATION), 0, false, false, true), this.getOwner());
 			}
 		}
 	}
@@ -133,7 +186,7 @@ public class WebMembraneBullet extends WebBullet {
 	}
 
 	private boolean isProtected(LivingEntity target) {
-		return this.owner instanceof ServerPlayerEntity sp && WhitelistUtils.isProtected(sp, target);
+		return this.getOwner() instanceof ServerPlayerEntity sp && WhitelistUtils.isProtected(sp, target);
 	}
 
 	private void playHit(ServerWorld world) {

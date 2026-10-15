@@ -1,0 +1,29 @@
+{
+  "shape-shifter-curse:charm_of_reverse_thermometer_plus": {
+    "accessory_powers": [],
+    "all_form": {
+      "add": [],
+      "remove": []
+    },
+    "forms": {
+      "my_addon:snow_fox_sp": {
+        "add": [
+          "shape-shifter-curse:form_snow_fox_3_charm_of_reverse_thermometer_trinket_plus"
+        ],
+        "remove": [
+          "my_addon:form_snow_fox_sp_hot_weakness",
+          "my_addon:form_snow_fox_sp_cold_strength"
+        ]
+      },
+      "my_addon:snow_fox_frostspine": {
+        "add": [
+          "shape-shifter-curse:form_snow_fox_3_charm_of_reverse_thermometer_trinket_plus"
+        ],
+        "remove": [
+          "shape-shifter-curse:form_snow_fox_3_desert_health",
+          "shape-shifter-curse:form_snow_fox_3_plain_health"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "shape-shifter-curse:amulet_bracelet_plus": {
+    "accessory_powers": [],
+    "all_form": {
+      "add": [],
+      "remove": []
+    },
+    "forms": {
+      "my_addon:familiar_fox_sp": {
+        "add": [
+          "shape-shifter-curse:form_familiar_fox_amulet_bracelet_trinket_plus"
+        ],
+        "remove": []
+      },
+      "my_addon:upgrade_familiar_fox": {
+        "add": [
+          "shape-shifter-curse:witch_friendly_neutral",
+          "shape-shifter-curse:pillager_friendly_neutral",
+          "my_addon:form_upgrade_familiar_fox_amulet_bracelet_plus_trinket"
+        ],
+        "remove": [
+          "shape-shifter-curse:witch_friendly",
+          "shape-shifter-curse:pillager_friendly",
+          "shape-shifter-curse:form_familiar_fox_3_no_attack_witch",
+          "shape-shifter-curse:form_familiar_fox_3_attract_to_witch2",
+          "shape-shifter-curse:form_familiar_fox_3_hurt_when_attack_witch"
+        ]
+      },
+      "my_addon:familiar_fox_red": {
+        "add": [
+          "shape-shifter-curse:form_familiar_fox_amulet_bracelet_trinket_plus"
+        ],
+        "remove": []
+      }
+    }
+  }
+}

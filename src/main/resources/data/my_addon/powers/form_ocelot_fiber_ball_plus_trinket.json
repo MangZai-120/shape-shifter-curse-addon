@@ -1,0 +1,40 @@
+{
+    "type": "apoli:multiple",
+    "raw_meat_half_digest": {
+        "type": "apoli:modify_food",
+        "item_condition": {
+            "type": "apoli:ingredient",
+            "ingredient": {
+                "tag": "shape-shifter-curse:raw_meat"
+            }
+        },
+        "food_modifier": {
+            "name": "Fiber ball plus raw meat half food",
+            "operation": "multiply_total_multiplicative",
+            "value": -0.5
+        },
+        "saturation_modifier": {
+            "name": "Fiber ball plus raw meat half saturation",
+            "operation": "multiply_total_multiplicative",
+            "value": -0.5
+        }
+    },
+    "raw_meat_absorption": {
+        "type": "apoli:action_on_item_use",
+        "trigger": "finish",
+        "item_condition": {
+            "type": "apoli:ingredient",
+            "ingredient": {
+                "tag": "shape-shifter-curse:raw_meat"
+            }
+        },
+        "entity_action": {
+            "type": "apoli:apply_effect",
+            "effect": {
+                "effect": "minecraft:absorption",
+                "duration": 600,
+                "amplifier": 0
+            }
+        }
+    }
+}

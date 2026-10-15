@@ -1,0 +1,19 @@
+{
+  "shape-shifter-curse:collar_of_whiskers_plus": {
+    "accessory_powers": [],
+    "all_form": {
+      "add": [],
+      "remove": []
+    },
+    "forms": {
+      "my_addon:ocelot_wind_spirit": {
+        "add": [
+          "shape-shifter-curse:form_ocelot_collar_of_whiskers_trinket_plus"
+        ],
+        "remove": [
+          "shape-shifter-curse:form_ocelot_2_arrow_dodge"
+        ]
+      }
+    }
+  }
+}
