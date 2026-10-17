@@ -14,5 +14,7 @@ public final class NpcCombatIntegrationTest {
                 .getMethod("run").invoke(null);
         Class.forName("net.jackcooper.shapeShifterCurseAddon.entity.AxolotlShifterAiProbe", true, loader)
                 .getMethod("run").invoke(null);
+        Class.forName("net.jackcooper.shapeShifterCurseAddon.event.AxolotlShifterSpawnProbe", true, loader)
+                .getMethod("run").invoke(null);
     }
 }
