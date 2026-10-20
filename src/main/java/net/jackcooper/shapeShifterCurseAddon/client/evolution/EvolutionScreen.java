@@ -44,7 +44,7 @@ public class EvolutionScreen extends Screen {
     /** 进化树布局基础参数（逻辑像素，再乘 zoom）。 */
     private static final int COL_SPACING = 120, ROW_SPACING = 84, NODE_SIZE = 42;
     /** 顶部 / 底部信息条高度。 */
-    private static final int TOP_BAR = 44, BOT_BAR = 38;
+    private static final int TOP_BAR = 56, BOT_BAR = 38;
     /** 树区域相对屏幕的边距。 */
     private static final int TREE_MARGIN_X = 10, TREE_MARGIN_TOP = 4, TREE_MARGIN_BOT = 4;
     /** 配色：面板与边框。 */
@@ -533,9 +533,13 @@ public class EvolutionScreen extends Screen {
         drawPanelBorder(ctx, 0, 0, this.width, TOP_BAR, GOLD_BOR);
         // 左：标题
         ctx.drawTextWithShadow(this.textRenderer, this.title, 12, 8, TITLE_GOLD);
+        // 副标题：路线名 + 实验性标注（2026-10-20 用户要求：游戏内点进 SSCA 加点时的介绍内写明「实验性」）
         ctx.drawTextWithShadow(this.textRenderer,
                 Text.translatable("evolution.my_addon.screen.route_active").formatted(Formatting.DARK_GRAY),
                 12, 26, TXT_GRAY);
+        ctx.drawTextWithShadow(this.textRenderer,
+                Text.translatable("evolution.my_addon.screen.experimental").formatted(Formatting.GOLD),
+                12, 36, TXT_GOLD);
 
         if (comp != null) {
             int level = comp.getEvoLevel();

@@ -37,6 +37,7 @@ public class SnowFoxSpMeleeAbility {
 	private static final int FROST_FREEZE_DURATION = 60;
 	private static final int MANA_COST = 15;
 	private static final int MELEE_REGEN_LOCK_TICKS = 100; // 回能锁默认；balance regen_lock_ticks 可覆盖
+	private static final float DAMAGE_REDUCTION = 1.0f;    // 冲刺期间免伤（100%）；balance damage_reduction 可覆盖
 
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
@@ -170,6 +171,23 @@ public class SnowFoxSpMeleeAbility {
 	 */
 	public static void clearAll() {
 		DASHING_PLAYERS.clear();
+	}
+
+	/**
+	 * 检查玩家是否正在雪刺冲刺（供 mixin 免伤查询）。
+	 */
+	public static boolean isDashing(ServerPlayerEntity player) {
+		return DASHING_PLAYERS.containsKey(player.getUuid());
+	}
+
+	/**
+	 * 雪刺冲刺期间的伤害减免系数（供 mixin；默认 1.0 = 100% 免伤，balance damage_reduction 可调）。
+	 */
+	public static float getDashDamageReduction(ServerPlayerEntity player) {
+		if (isDashing(player)) {
+			return (float) BAL.d("damage_reduction", DAMAGE_REDUCTION);
+		}
+		return 0.0f;
 	}
 
 	/**

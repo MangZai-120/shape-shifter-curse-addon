@@ -35,6 +35,12 @@ public abstract class ItemEntityMixin extends Entity {
 				net.jackcooper.shapeShifterCurseAddon.ability.AllaySPPortableBeacon.clearStack(stack);
 				((ItemEntity) (Object) this).setStack(stack);
 			}
+			// 激活的不死图腾掉落在地即失去激活（R3：离开 SP 悦灵本人即失效）
+			if (net.jackcooper.shapeShifterCurseAddon.ability.AllaySPTotem.isMarkedActiveTotem(stack)) {
+				stack = stack.copy();
+				net.jackcooper.shapeShifterCurseAddon.ability.AllaySPTotem.clearTotemMark(stack);
+				((ItemEntity) (Object) this).setStack(stack);
+			}
 			if (stack.getItem() instanceof WaterSpearItem && this.getItemAge() >= 20) {
 				this.discard();
 			}

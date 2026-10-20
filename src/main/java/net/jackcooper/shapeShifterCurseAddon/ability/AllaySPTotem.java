@@ -29,10 +29,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AllaySPTotem {
 
 	private static final String ACTIVE_TAG = "ssc_totem_active";
+	// 激活图腾归属标记（2026-10-20：离身失效规则 R3；离开 SP 悦灵本人背包即清除激活）
+	private static final String OWNER_TAG = "ssc_totem_owner";
+	// 激活冷却（R1）：默认 20 秒；balance 可覆盖（abilities.allay_sp_totem.activate_cooldown_ticks）
+	private static final int ACTIVATE_COOLDOWN_TICKS = 400;
 	// 图腾救援范围：默认 20 格；运行时从 balance 快照读取（abilities.allay_sp_totem）
 	private static final double RANGE = 20.0;
 	// 使用UUID追踪持有激活图腾的玩家，避免存储实体引用导致跨维度/重连后引用过期
 	private static final Set<UUID> playersWithActiveTotems = ConcurrentHashMap.newKeySet();
+	// 激活冷却记录（R1：uuid -> 最近一次激活的世界时间；会话级，断线/重启清零仅损失最长20秒冷却）
+	private static final java.util.Map<UUID, Long> ACTIVATE_COOLDOWNS = new ConcurrentHashMap<>();
 
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader BAL =
@@ -67,11 +73,11 @@ public class AllaySPTotem {
 				continue;
 			}
 
-			// 检查是否仍持有激活的图腾
+			// 检查是否仍持有激活的图腾（R3：必须仍在本人的背包/手上）
 			boolean stillHasActiveTotem = false;
 
 			for (ItemStack stack : player.getInventory().main) {
-				if (isActiveTotem(stack)) {
+				if (isOwnedActiveTotem(stack, player)) {
 					stillHasActiveTotem = true;
 					break;
 				}
@@ -79,7 +85,7 @@ public class AllaySPTotem {
 
 			if (!stillHasActiveTotem) {
 				for (ItemStack stack : player.getInventory().offHand) {
-					if (isActiveTotem(stack)) {
+					if (isOwnedActiveTotem(stack, player)) {
 						stillHasActiveTotem = true;
 						break;
 					}
@@ -125,9 +131,33 @@ public class AllaySPTotem {
 		}
 	}
 
+	/**
+	 * R2：玩家整个背包（主背包+副手）内是否已有任一激活图腾（不看归属——别人的激活图腾也会在本 tick 被清）。
+	 */
+	private static boolean hasAnyActiveTotem(PlayerEntity player) {
+		for (ItemStack stack : player.getInventory().main) {
+			if (isActiveTotem(stack)) return true;
+		}
+		for (ItemStack stack : player.getInventory().offHand) {
+			if (isActiveTotem(stack)) return true;
+		}
+		return false;
+	}
+
+	/** 旧档兼容：清掉背包内「有 ACTIVE 无 OWNER」的旧格式标记（改动前激活的图腾自然降级为普通图腾）。 */
+	private static void purgeLegacyMarks(PlayerEntity player) {
+		for (ItemStack stack : player.getInventory().main) {
+			if (isActiveTotem(stack) && !stack.getNbt().containsUuid(OWNER_TAG)) deactivateTotem(stack);
+		}
+		for (ItemStack stack : player.getInventory().offHand) {
+			if (isActiveTotem(stack) && !stack.getNbt().containsUuid(OWNER_TAG)) deactivateTotem(stack);
+		}
+	}
+
 	private static void deactivateTotem(ItemStack stack) {
 		NbtCompound nbt = stack.getOrCreateNbt();
 		nbt.remove(ACTIVE_TAG);
+		nbt.remove(OWNER_TAG);
 		if (nbt.contains("Enchantments")) {
 			nbt.remove("Enchantments");
 		}
@@ -155,6 +185,9 @@ public class AllaySPTotem {
 		NbtCompound nbt = stack.getOrCreateNbt();
 		boolean isActive = nbt.getBoolean(ACTIVE_TAG);
 
+		// 旧档兼容：清除背包内遗留的旧格式激活标记（无 OWNER_TAG 的 ACTIVE 标记不再有效）
+		purgeLegacyMarks(player);
+
 		if (isActive) {
 			// Deactivate
 			nbt.remove(ACTIVE_TAG);
@@ -174,8 +207,29 @@ public class AllaySPTotem {
 				updateActiveTotemTracking(serverPlayer, false);
 			}
 		} else {
-			// Activate
+			// 激活：三条新规则（2026-10-20）
+			//   R1 激活冷却 20 秒（会话级静态 Map，按服务器世界时间计时）
+			//   R2 背包全局唯一：已持有任一激活图腾则拒绝激活第二个
+			//   R3 离身失效：激活时打 owner 标记；掉落物/存容器经 mixin 清除；tick 校验归属
+			long now = player.getWorld().getTime();
+			long cooldownTicks = BAL.i("activate_cooldown_ticks", ACTIVATE_COOLDOWN_TICKS);
+			Long lastActivate = ACTIVATE_COOLDOWNS.get(player.getUuid());
+			if (lastActivate != null && now - lastActivate < cooldownTicks) {
+				player.sendMessage(Text.translatable("message.ssc_addon.totem.cooldown"), true);
+				player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
+				return TypedActionResult.fail(stack);
+			}
+
+			// R2 背包全局唯一：已持有任一激活图腾则拒绝激活第二个
+			if (hasAnyActiveTotem(player)) {
+				player.sendMessage(Text.translatable("message.ssc_addon.totem.already_active"), true);
+				player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
+				return TypedActionResult.fail(stack);
+			}
+
+			// 激活
 			nbt.putBoolean(ACTIVE_TAG, true);
+			nbt.putUuid(OWNER_TAG, player.getUuid());
 
 			// Add Glint
 			if (!nbt.contains("Enchantments")) {
@@ -187,6 +241,9 @@ public class AllaySPTotem {
 				nbt.put("Enchantments", enchantments);
 				nbt.putInt("HideFlags", 1); // Hide enchantments
 			}
+
+			// R1 冷却写入
+			ACTIVATE_COOLDOWNS.put(player.getUuid(), now);
 
 			player.sendMessage(Text.translatable("message.ssc_addon.totem.activated"), true);
 			player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 2.0f);
@@ -255,13 +312,13 @@ public class AllaySPTotem {
 	}
 
 	private static ItemStack findActiveTotem(ServerPlayerEntity player) {
-		// Check hands
-		if (isActiveTotem(player.getMainHandStack())) return player.getMainHandStack();
-		if (isActiveTotem(player.getOffHandStack())) return player.getOffHandStack();
+		// R3：只认「本人激活」的图腾（捡到/转来的别人激活图腾不会给救援效果）
+		if (isOwnedActiveTotem(player.getMainHandStack(), player)) return player.getMainHandStack();
+		if (isOwnedActiveTotem(player.getOffHandStack(), player)) return player.getOffHandStack();
 
 		// Check inventory main
 		for (ItemStack stack : player.getInventory().main) {
-			if (isActiveTotem(stack)) return stack;
+			if (isOwnedActiveTotem(stack, player)) return stack;
 		}
 
 		return ItemStack.EMPTY;
@@ -273,6 +330,27 @@ public class AllaySPTotem {
 			return !stack.isEmpty() && stack.isOf(Items.TOTEM_OF_UNDYING) && stack.hasNbt() && stack.getNbt().getBoolean(ACTIVE_TAG);
 		}
 		return false;
+	}
+
+	/** R3：激活图腾 + 归属校验（owner 标记必须等于该玩家 uuid）。 */
+	private static boolean isOwnedActiveTotem(ItemStack stack, PlayerEntity player) {
+		return isActiveTotem(stack)
+				&& stack.getNbt().containsUuid(OWNER_TAG)
+				&& stack.getNbt().getUuid(OWNER_TAG).equals(player.getUuid());
+	}
+
+	// ---- R3 静态清除入口（mixin 调用：掉落物 tick / 容器 setStack）----
+
+	/** 是否为激活图腾（mixin 用；只看标记，不看归属——离身场景一律清除）。 */
+	public static boolean isMarkedActiveTotem(ItemStack stack) {
+		return isActiveTotem(stack);
+	}
+
+	/** 清除图腾激活标记（mixin 用；同步清 owner 与光效 NBT）。 */
+	public static void clearTotemMark(ItemStack stack) {
+		if (stack.isOf(Items.TOTEM_OF_UNDYING) && stack.hasNbt()) {
+			deactivateTotem(stack);
+		}
 	}
 
 	private static boolean isSpAllay(PlayerEntity player) {
@@ -289,9 +367,11 @@ public class AllaySPTotem {
 
 	public static void clearPlayer(ServerPlayerEntity player) {
 		playersWithActiveTotems.remove(player.getUuid());
+		ACTIVATE_COOLDOWNS.remove(player.getUuid());
 	}
 
 	public static void clearAll() {
 		playersWithActiveTotems.clear();
+		ACTIVATE_COOLDOWNS.clear();
 	}
 }

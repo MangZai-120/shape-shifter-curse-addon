@@ -68,7 +68,7 @@ public class WitchFamiliarEntity extends HostileEntity implements GeoEntity {
 private static final Identifier FIRE_RING_DAMAGE_TYPE =
 		new Identifier("ssc_addon", "witch_familiar_fire_ring");
 private static final float FIRE_RING_DAMAGE = 6.0f;     // 瞬间伤害（受护甲减伤；原 on_fire 为 8，现降为 6）
-	private static final int FIRE_RING_IGNITE_SECONDS = 10; // 着火10秒
+	private static final int FIRE_RING_IGNITE_SECONDS = 3; // 着火3秒（2026-10-20 由10秒砍短，减少穿甲灼烧总量）
 	private static final float PARTICLE_OUTER_RADIUS = 4.0f; // 粒子外圈半径4格
 	private static final float PARTICLE_INNER_RADIUS = 1.5f; // 粒子内圈半径1.5格
 	// 原版使魔形态ID（用于友军判定）

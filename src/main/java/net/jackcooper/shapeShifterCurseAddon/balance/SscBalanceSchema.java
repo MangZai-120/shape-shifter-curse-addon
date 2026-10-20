@@ -281,6 +281,7 @@ public final class SscBalanceSchema {
                 .doubleParam("dash_distance", 8.0, 1.0, 48.0, AB + "SnowFoxSpMeleeAbility", "DASH_DISTANCE")
                 .doubleParam("dash_speed", 1.5, 0.1, 8.0, AB + "SnowFoxSpMeleeAbility", "DASH_SPEED")
                 .doubleParam("damage", 8.0, 0.0, 1000.0, AB + "SnowFoxSpMeleeAbility", "DAMAGE")
+                .doubleParam("damage_reduction", 1.0, 0.0, 1.0, AB + "SnowFoxSpMeleeAbility", "DAMAGE_REDUCTION")
                 .intParam("freeze_ticks", 60, 0, 1200, AB + "SnowFoxSpMeleeAbility", "FROST_FREEZE_DURATION")
                 .intParam("mana_cost", 15, 0, 100, AB + "SnowFoxSpMeleeAbility", "MANA_COST")
                 // 回能锁（CD 已回归 power JSON fail_aware_active_self 原生管理）
@@ -293,7 +294,7 @@ public final class SscBalanceSchema {
                 .intParam("mana_cost_success", 30, 0, 100, AB + "SnowFoxSpTeleportAttack", "MANA_COST_SUCCESS")
                 .intParam("mana_cost_fail", 20, 0, 100, AB + "SnowFoxSpTeleportAttack", "MANA_COST_FAIL")
                 .intParam("teleport_interval", 10, 1, 100, AB + "SnowFoxSpTeleportAttack", "TELEPORT_INTERVAL")
-                .doubleParam("damage_reduction", 0.65, 0.0, 1.0, AB + "SnowFoxSpTeleportAttack", "DAMAGE_REDUCTION")
+                .doubleParam("damage_reduction", 1.0, 0.0, 1.0, AB + "SnowFoxSpTeleportAttack", "DAMAGE_REDUCTION")
                 // 回能锁（CD 已回归 power JSON fail_aware_active_self 原生管理：cooldown=成功 / fail_cooldown=失败）
                 .intParam("regen_lock_ticks", 100, 0, 1200, AB + "SnowFoxSpTeleportAttack", "TELEPORT_REGEN_LOCK_TICKS");
         b.scope("abilities.snow_fox_sp_frost_storm")      // SnowFoxSpFrostStorm：冰风暴
@@ -388,7 +389,9 @@ public final class SscBalanceSchema {
                 .doubleParam("speed_bonus", 0.10, -2.0, 2.0, AB + "AllaySPJukebox", "SPEED_BONUS")
                 .intParam("buff_refresh_duration", 20, 1, 200, AB + "AllaySPJukebox", "BUFF_REFRESH_DURATION");
         b.scope("abilities.allay_sp_totem")               // AllaySPTotem
-                .doubleParam("range", 20.0, 1.0, 64.0, AB + "AllaySPTotem", "RANGE");
+                .doubleParam("range", 20.0, 1.0, 64.0, AB + "AllaySPTotem", "RANGE")
+                // 激活冷却（R1）：默认 20 秒；每 20 秒最多激活一个
+                .intParam("activate_cooldown_ticks", 400, 0, 1200, AB + "AllaySPTotem", "ACTIVATE_COOLDOWN_TICKS");
         b.scope("abilities.allay_sp_ranged_hit")          // AllaySPRangedHitPassive
                 .intParam("cooldown_ticks", 70, 1, 1200, AB + "AllaySPRangedHitPassive", "COOLDOWN_TICKS")
                 .doubleParam("heal_amount", 1.0, 0.0, 100.0, AB + "AllaySPRangedHitPassive", "HEAL_AMOUNT")
@@ -664,7 +667,9 @@ public final class SscBalanceSchema {
         b.scope("systems.spellbook_mastery")
                 .intParam("mastery_exp_per_tier", 600 * 10, 100, 60000, "spell.SpellbookData", "MASTERY_EXP_PER_TIER")
                 .intParam("mastery_mana_per_tier", 50, 1, 1000, "spell.SpellbookData", "MASTERY_MANA_PER_TIER")
-                .intParam("mastery_max_bonus", 600, 0, 10000, "spell.SpellbookData", "MASTERY_MAX_BONUS");
+                .intParam("mastery_max_bonus", 600, 0, 10000, "spell.SpellbookData", "MASTERY_MAX_BONUS")
+                // 经验获取倍率（2026-10-20 新增：施法/命中经验统一 ×1.5 即 +50%；1.0=还原旧行为）
+                .doubleParam("exp_gain_multiplier", 1.5, 0.1, 10.0);
 
         // —— 法阵（FormationData）：MAX_FORMATION_LEVEL 结构不开放；逐系倍率与加成可开放 ——
         b.scope("systems.formation")

@@ -286,10 +286,32 @@ public final class SpellbookData {
 		nbt.putInt(NBT_EXP, Math.max(0, expTen));
 	}
 
-	/** 累积经验（×10 整数增量，如 6.0 exp 传 60）。 */
+	/** 累积经验（×10 整数增量，如 6.0 exp 传 60）。
+	 * 2026-10-20 起统一乘经验获取倍率（默认 ×1.5，即 +50%；balance systems.spellbook_mastery.exp_gain_multiplier 可调）。
+	 * 只作用于游戏内获取（施法/命中的两个调用方）；OP 命令与迁移逻辑走 setExpTen 直写，不受影响。 */
 	public static void addExpTen(ItemStack book, int amountTen) {
-		long total = (long) getExpTen(book) + amountTen;
+		if (amountTen <= 0) {
+			return;
+		}
+		int boosted = Math.round(amountTen * balF("exp_gain_multiplier", 1.5f));
+		long total = (long) getExpTen(book) + boosted;
 		setExpTen(book, (int) Math.max(0L, Math.min(Integer.MAX_VALUE, total)));
+	}
+
+	/** balance float 读取辅助（exp_gain_multiplier 用 float 精度，避免 int 截断）。 */
+	private static float balF(String param, float def) {
+		boolean physicalClient = false;
+		try {
+			physicalClient = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isClientThread();
+		} catch (Throwable ignored) {
+			// 无 Fabric 环境 → 按非客户端处理
+		}
+		if (physicalClient) {
+			var cs = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
+			if (cs != null) return (float) cs.getDouble("systems.spellbook_mastery", param);
+		}
+		var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot();
+		return s == null ? def : (float) s.getDouble("systems.spellbook_mastery", param);
 	}
 
 	/** 升到下一级所需经验（×10 整数）；满级返回 -1。 */

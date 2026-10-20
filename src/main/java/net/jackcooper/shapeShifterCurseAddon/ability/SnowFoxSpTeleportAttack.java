@@ -38,7 +38,7 @@ public class SnowFoxSpTeleportAttack {
 	private static final int MANA_COST_SUCCESS = 30;
 	private static final int MANA_COST_FAIL = 20;
 	private static final int TELEPORT_INTERVAL = 10;
-	private static final float DAMAGE_REDUCTION = 0.65f;
+	private static final float DAMAGE_REDUCTION = 1.0f;    // 攻击期间免伤（100%，2026-10-20 由 0.65 上调）；balance damage_reduction 可覆盖
 	private static final int TELEPORT_REGEN_LOCK_TICKS = 100; // 回能锁默认；balance regen_lock_ticks 可覆盖
 
 	// 阶段 5：服务端权威快照读取

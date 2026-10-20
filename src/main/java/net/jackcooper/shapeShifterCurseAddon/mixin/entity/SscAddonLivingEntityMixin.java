@@ -25,6 +25,7 @@ import net.jackcooper.shapeShifterCurseAddon.ability.BatDesmodusBloodThirst;
 import net.jackcooper.shapeShifterCurseAddon.ability.InfectionSporeManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.NineLivesManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpTeleportAttack;
+import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpMeleeAbility;
 import net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.WindSpiritClawManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatEnhancements;
@@ -439,11 +440,18 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 	private float ssc_addon$modifyDamageForFrostEffects(float amount, DamageSource source) {
 		LivingEntity self = (LivingEntity) (Object) this;
 		float modifiedAmount = amount;
-		// 1. 传送攻击期间减伤 65%
+		// 1. 传送攻击期间减伤 65%（2026-10-20 起默认 100%）
 		if (self instanceof ServerPlayerEntity serverPlayer) {
 			float reduction = SnowFoxSpTeleportAttack.getDamageReduction(serverPlayer);
 			if (reduction > 0) {
 				modifiedAmount = modifiedAmount * (1.0f - reduction);
+			}
+		}
+		// 1b. 雪刺冲刺期间免伤（2026-10-20 新增，默认 100%；与瞬移攻击同一免伤管线）
+		if (self instanceof ServerPlayerEntity dashingPlayer) {
+			float dashReduction = SnowFoxSpMeleeAbility.getDashDamageReduction(dashingPlayer);
+			if (dashReduction > 0) {
+				modifiedAmount = modifiedAmount * (1.0f - dashReduction);
 			}
 		}
 		// 2. 冰霜冻结效果（物理/魔法伤害）+35%

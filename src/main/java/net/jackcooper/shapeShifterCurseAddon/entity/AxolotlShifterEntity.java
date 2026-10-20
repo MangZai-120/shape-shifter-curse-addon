@@ -90,7 +90,7 @@ import java.util.UUID;
  *       基础 20HP，满润 26HP）</li>
  *   <li>水流爆破（原版冲刺+潜行「水花四溅」power=2 爆炸）：贴近目标释放，
  *       完整复刻 ExplosionDamageEntityAction（爆炸伤害+击退+雨/深蓝尘埃粒子），冷却 8 秒</li>
- *   <li>近战 4 点无视护甲伤害（用户指定）+ 冲刺猛扑击飞（原版 sprinting_attack：4 格冲量）</li>
+ *   <li>近战 4 点伤害（受护甲与保护附魔格挡，2026-10-20 起）+ 冲刺猛扑击飞（原版 sprinting_attack：4 格冲量）</li>
  *   <li>水中高机动（water_flexibility 0.93 阻力系数）+ 陆地减速 30%（ground_speed_down）</li>
  *   <li>摔落保护 6 格（falling_protection）</li>
  *   <li>疾跑滑溜（slipperiness 0.35）+ 疾跑跳增强 10%（jump_high）</li>
@@ -143,7 +143,7 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 	// ===== 湿润度→生命联动（原版 oxygen_health 0~9 分档合并） =====
 	private static final UUID MOISTURE_HEALTH_UUID = UUID.fromString("8e6e6b3a-1c2d-4e5f-9a8b-7c6d5e4f3a2b");
 
-	// ===== 自定义伤害类型（4 点无物理近战 / 脱水真实伤害） =====
+	// ===== 自定义伤害类型（近战已改为受护甲格挡 / 脱水真实伤害保留穿甲） =====
 	private static final RegistryKey<DamageType> ATTACK_DAMAGE_KEY =
 			RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("ssc_addon", "axolotl_shifter_attack"));
 	private static final RegistryKey<DamageType> THIRST_DAMAGE_KEY =
@@ -188,7 +188,7 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 				.add(EntityAttributes.GENERIC_ARMOR, 5.0)            // 自带 5 点护甲（用户指定）
 				.add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.22)  // 平时移速慢（陆地笨拙），战斗时由 setCombatSpeedBoost 临时提速
 				.add(EntityAttributes.GENERIC_FOLLOW_RANGE, 20.0)
-				.add(EntityAttributes.GENERIC_ATTACK_DAMAGE, 4.0)    // 近战 4 点（实际造成走自定义无视护甲伤害源）
+				.add(EntityAttributes.GENERIC_ATTACK_DAMAGE, 4.0)    // 近战 4 点（实际造成走自定义伤害源，受护甲格挡）
 				.add(EntityAttributes.GENERIC_ATTACK_KNOCKBACK, 0.0);
 	}
 
@@ -537,7 +537,8 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 	}
 
 	/**
-	 * 近战攻击：4 点无物理（无视护甲）伤害（用户指定；击退增强已按需求移除）。
+	 * 近战攻击：4 点物理伤害（伤害类型 effects=hurt，正常受护甲与保护附魔格挡；
+	 * 2026-10-20 已从 minecraft:bypasses_armor 标签移除，死亡消息保留）。
 	 * 疾跑状态下命中时播放原版冲刺攻击的水花粒子/音效并耗 10 湿润。
 	 */
 	@Override

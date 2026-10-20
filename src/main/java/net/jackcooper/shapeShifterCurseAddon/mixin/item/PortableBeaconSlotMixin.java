@@ -23,5 +23,11 @@ public abstract class PortableBeaconSlotMixin {
                 || !stack.getNbt().getUuid("ssca_beacon_owner").equals(playerInventory.player.getUuid()))) {
             AllaySPPortableBeacon.clearStack(stack);
         }
+        // 激活的不死图腾存入非玩家背包容器（箱子/发射器等）即失去激活（R3 离身失效）；
+        // 存回玩家自己的背包槽则保留（Slot.inventory 为 PlayerInventory 时不清）
+        if (net.jackcooper.shapeShifterCurseAddon.ability.AllaySPTotem.isMarkedActiveTotem(stack)
+                && !(inventory instanceof PlayerInventory)) {
+            net.jackcooper.shapeShifterCurseAddon.ability.AllaySPTotem.clearTotemMark(stack);
+        }
     }
 }
