@@ -30,6 +30,11 @@ public abstract class ItemEntityMixin extends Entity {
 	private void onTick(CallbackInfo ci) {
 		if (!this.getWorld().isClient) {
 			ItemStack stack = this.getStack();
+			if (net.jackcooper.shapeShifterCurseAddon.ability.AllaySPPortableBeacon.isActiveStack(stack)) {
+				stack = stack.copy();
+				net.jackcooper.shapeShifterCurseAddon.ability.AllaySPPortableBeacon.clearStack(stack);
+				((ItemEntity) (Object) this).setStack(stack);
+			}
 			if (stack.getItem() instanceof WaterSpearItem && this.getItemAge() >= 20) {
 				this.discard();
 			}

@@ -70,6 +70,7 @@ public class MoonDustSpellbookItem extends AccessoryItem {
 					buf.writeInt(SpellbookData.getExpTen(stack));
 					buf.writeInt(SpellbookData.getMana(stack));
 					buf.writeInt(SpellbookData.getMaxMana(stack));
+					buf.writeInt(SpellbookScreenHandler.findBookSlot(player.getInventory(), stack));
 				}
 			});
 		}

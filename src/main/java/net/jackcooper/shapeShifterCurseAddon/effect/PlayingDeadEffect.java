@@ -53,7 +53,9 @@ public class PlayingDeadEffect extends StatusEffect {
 		if (hasNecklace) {
 			entity.heal((float) BAL.d("necklace_heal_per_tick", NECKLACE_HEAL_PER_TICK));
 			float cur = entity.getAbsorptionAmount();
-			float next = Math.min((float) BAL.d("necklace_absorb_max", NECKLACE_ABSORB_MAX), cur + (float) BAL.d("necklace_absorb_per_tick", NECKLACE_ABSORB_PER_TICK));
+			// Never remove absorption from another source when it already exceeds our cap.
+			float room = Math.max(0f, (float) BAL.d("necklace_absorb_max", NECKLACE_ABSORB_MAX) - cur);
+			float next = cur + Math.min(room, (float) BAL.d("necklace_absorb_per_tick", NECKLACE_ABSORB_PER_TICK));
 			entity.setAbsorptionAmount(next);
 			// 记录「装死给的黄心」增量，供 30s 存留后衰减（仅这部分会衰减，其它来源不动）
 			if (entity instanceof PlayerEntity p) {

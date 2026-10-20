@@ -46,6 +46,6 @@
     },
     "order": 14,
     "impact": 0,
-    "name": "金沙岚(SP)",
-    "description": "胡狼的特殊变体形态。凋零的本质在金色沙暴的力量下得到了极致的升华。"
+    "name": "origin.my_addon.form_golden_sandstorm_sp.name",
+    "description": "origin.my_addon.form_golden_sandstorm_sp.description"
 }

@@ -42,6 +42,8 @@
                    "item.AddonTrinketBridgeMixin",
                    "item.AddonAccessoryIoFallbackMixin",
                    "item.ItemEntityMixin",
+                   "item.PortableBeaconGlintMixin",
+                   "item.PortableBeaconSlotMixin",
                    "entity.MobEntityMixin",
                    "entity.MobEntityGoalAccessor",
                    "entity.GoalSelectorGoalsAccessor",

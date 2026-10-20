@@ -25,6 +25,7 @@ public class ActiveCoralNecklaceItem extends AccessoryItem {
 	@Override
 	public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
 		tooltip.add(Text.translatable("item.ssc_addon.active_coral_necklace.desc").formatted(Formatting.BLUE));
+		tooltip.add(Text.translatable("item.ssc_addon.active_coral_necklace.tooltip_decay").formatted(Formatting.GRAY));
 		tooltip.add(Text.translatable("item.ssc_addon.active_coral_necklace.tooltip.exclusive").formatted(Formatting.LIGHT_PURPLE));
 		super.appendTooltip(stack, world, tooltip, context);
 	}

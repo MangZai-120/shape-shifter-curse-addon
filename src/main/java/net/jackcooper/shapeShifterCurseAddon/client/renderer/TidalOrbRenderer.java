@@ -113,6 +113,20 @@ public class TidalOrbRenderer extends FlyingItemEntityRenderer<TidalOrbEntity> {
         int t = entity.age; // 客户端实体年龄，每 tick +1，与服务端 ticksAlive 同速率
         double x = entity.getX(), y = entity.getY(), z = entity.getZ();
 
+        // Splash and falling-water particles vanish underwater. Use actual submerged current
+        // particles there so the active tether keeps a visible vortex in water as well.
+        if (entity.getWorld().getFluidState(entity.getBlockPos()).isIn(net.minecraft.registry.tag.FluidTags.WATER)) {
+            for (int arm = 0; arm < 3; arm++) {
+                double angle = t * 0.16 + arm * Math.PI * 2 / 3;
+                double vx = x + Math.cos(angle) * 0.9;
+                double vz = z + Math.sin(angle) * 0.9;
+                var pos = net.minecraft.util.math.BlockPos.ofFloored(vx, y, vz);
+                if (entity.getWorld().getFluidState(pos).isIn(net.minecraft.registry.tag.FluidTags.WATER)) {
+                    pm.addParticle(net.minecraft.particle.ParticleTypes.CURRENT_DOWN, vx, y, vz, 0, -0.02, 0);
+                }
+            }
+        }
+
         // —— 以下逐行照抄服务端 spawnHoverParticles ——
         // 三个小粒子球绕锚点旋转（120° 均布，各用一种水系配色）
         double rot = t * 0.12;

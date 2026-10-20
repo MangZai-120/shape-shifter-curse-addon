@@ -26,6 +26,7 @@ public class BlueFireAmuletItem extends AccessoryItem {
 	public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
 		tooltip.add(Text.translatable("item.ssc_addon.blue_fire_amulet.tooltip_1").formatted(Formatting.LIGHT_PURPLE));
 		tooltip.add(Text.translatable("item.ssc_addon.blue_fire_amulet.tooltip_2").formatted(Formatting.GRAY));
+		tooltip.add(Text.translatable("item.ssc_addon.blue_fire_amulet.tooltip_cost").formatted(Formatting.YELLOW));
 		super.appendTooltip(stack, world, tooltip, context);
 	}
 }

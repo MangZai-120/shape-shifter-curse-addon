@@ -6,5 +6,7 @@
     "hud_render": {
         "should_render": false
     },
-    "hidden": true
+    "name": "power.my_addon.form_snow_fox_frostspine_frost_spike.name",
+    "description": "power.my_addon.form_snow_fox_frostspine_frost_spike.description",
+    "hidden": false
 }

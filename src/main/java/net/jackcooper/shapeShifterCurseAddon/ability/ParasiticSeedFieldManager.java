@@ -130,13 +130,20 @@ public final class ParasiticSeedFieldManager {
                     f.pos.add(fieldRadius, fieldRadius, fieldRadius));
             double sqRadius = fieldRadius * fieldRadius;
             List<LivingEntity> nearby = world.getEntitiesByClass(LivingEntity.class, box,
-                    e -> e.isAlive() && !e.getUuid().equals(f.standUuid) && !e.isSpectator()
+                    e -> ParasiticFruitSeedPower.isValidSeedHost(caster, e)
                             && (casterArmed || e != caster)
                             && e.squaredDistanceTo(f.pos) <= sqRadius);
             if (!nearby.isEmpty()) {
-                for (LivingEntity picker : nearby) {
-                    // 触发后按生物交战状态定寿命（非交战 15s / 交战 5s，同命中）；双生种荷时扩散额外 1 人/无人叠 2 层
-                    ParasiticFruitSeedPower.plantSeedSpread(caster, picker, f.twinPod);
+                if (f.twinPod) {
+                    // Spread once: overlapping pickups must not plant the same twin pair twice.
+                    LivingEntity picker = nearby.stream().min(java.util.Comparator.comparingDouble(
+                            e -> e.squaredDistanceTo(f.pos))).orElseThrow();
+                    ParasiticFruitSeedPower.plantSeedSpread(caster, picker, true);
+                } else {
+                    // Preserve the ordinary field's simultaneous-pickup behavior.
+                    for (LivingEntity picker : nearby) {
+                        ParasiticFruitSeedPower.plantSeedSpread(caster, picker, false);
+                    }
                 }
                 spawnPickupParticles(world, f.pos);
                 killStand(world, f);

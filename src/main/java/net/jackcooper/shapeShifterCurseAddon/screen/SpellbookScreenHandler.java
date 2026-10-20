@@ -13,6 +13,7 @@ import net.minecraft.nbt.NbtList;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.screen.slot.SlotActionType;
 
 /**
  * 月尘魔法书配置界面容器（jackcooper）。卷轴槽数随书等级动态（3/5/7），
@@ -22,6 +23,10 @@ import net.minecraft.screen.slot.Slot;
 public class SpellbookScreenHandler extends ScreenHandler {
 	private final Inventory inventory;
 	private final ItemStack bookStack;
+	private final PlayerInventory ownerInventory;
+	public final int bookInventorySlot;
+	private boolean loading;
+	private final boolean clientView;
 	public final int slotCount;
 	public final int bookLevel;
 	public final int bookExp;
@@ -35,19 +40,22 @@ public class SpellbookScreenHandler extends ScreenHandler {
 				SpellbookData.getLevel(bookStack),
 				SpellbookData.getExpTen(bookStack),
 				SpellbookData.getMana(bookStack),
-				SpellbookData.getMaxMana(bookStack));
+				SpellbookData.getMaxMana(bookStack), findBookSlot(playerInv, bookStack), false);
 	}
 
 	/** 客户端构造：从开屏数据包读取槽数与等级/法力快照。 */
 	public SpellbookScreenHandler(int syncId, PlayerInventory playerInv, PacketByteBuf buf) {
 		this(syncId, playerInv, ItemStack.EMPTY,
-				buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt());
+				buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), true);
 	}
 
 	private SpellbookScreenHandler(int syncId, PlayerInventory playerInv, ItemStack bookStack,
-			int slotCount, int level, int exp, int mana, int maxMana) {
+			int slotCount, int level, int exp, int mana, int maxMana, int bookInventorySlot, boolean clientView) {
 		super(SscAddon.SPELLBOOK_SCREEN_HANDLER, syncId);
 		this.bookStack = bookStack;
+		this.ownerInventory = playerInv;
+		this.bookInventorySlot = bookInventorySlot;
+		this.clientView = clientView;
 		this.slotCount = Math.max(1, Math.min(SpellbookData.MAX_SLOTS, slotCount));
 		this.bookLevel = level;
 		this.bookExp = exp;
@@ -72,7 +80,10 @@ public class SpellbookScreenHandler extends ScreenHandler {
 			}
 		};
 
+		// Loading is a read: do not write a partial inventory back after each setStack.
+		loading = true;
 		loadFromNbt(bookStack.getNbt());
+		loading = false;
 		inventory.onOpen(playerInv.player);
 
 		// 卷轴槽横排居中（GUI 宽 176）
@@ -104,15 +115,37 @@ public class SpellbookScreenHandler extends ScreenHandler {
 		}
 	}
 
+	public static int findBookSlot(PlayerInventory inventory, ItemStack book) {
+		for (int i = 0; i < inventory.size(); i++) {
+			if (!book.isEmpty() && inventory.getStack(i) == book) return i;
+		}
+		return -1;
+	}
+
+	@Override
+	public void onSlotClick(int slotIndex, int button, SlotActionType action, PlayerEntity player) {
+		if (!canUse(player)) return;
+		if (slotIndex >= 0 && slotIndex < slots.size()) {
+			Slot slot = slots.get(slotIndex);
+			if (slot.inventory == ownerInventory && slot.getIndex() == bookInventorySlot) return;
+		}
+		// Number keys and F can otherwise move the open book from a different clicked slot.
+		if (action == SlotActionType.SWAP && button == bookInventorySlot) return;
+		super.onSlotClick(slotIndex, button, action, player);
+	}
+
 	@Override
 	public boolean canUse(PlayerEntity player) {
-		return true;
+		return player.getInventory() == ownerInventory && bookInventorySlot >= 0
+				&& (clientView || (!bookStack.isEmpty() && ownerInventory.getStack(bookInventorySlot) == bookStack));
 	}
 
 	@Override
 	public ItemStack quickMove(PlayerEntity player, int index) {
+		if (!canUse(player) || index < 0 || index >= slots.size()) return ItemStack.EMPTY;
 		ItemStack newStack = ItemStack.EMPTY;
 		Slot slot = this.slots.get(index);
+		if (slot.inventory == ownerInventory && slot.getIndex() == bookInventorySlot) return ItemStack.EMPTY;
 		if (slot != null && slot.hasStack()) {
 			ItemStack originalStack = slot.getStack();
 			newStack = originalStack.copy();
@@ -146,7 +179,8 @@ public class SpellbookScreenHandler extends ScreenHandler {
 	}
 
 	private void saveToNbt() {
-		if (!bookStack.isEmpty()) {
+		if (!loading && !bookStack.isEmpty() && bookInventorySlot >= 0
+				&& ownerInventory.getStack(bookInventorySlot) == bookStack) {
 			NbtList list = new NbtList();
 			for (int i = 0; i < inventory.size(); ++i) {
 				ItemStack stack = inventory.getStack(i);

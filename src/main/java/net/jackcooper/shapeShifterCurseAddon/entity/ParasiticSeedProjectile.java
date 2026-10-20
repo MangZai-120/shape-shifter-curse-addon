@@ -85,7 +85,7 @@ public class ParasiticSeedProjectile extends ThrownItemEntity {
                 && this.getWorld() instanceof ServerWorld sw && caster != null) {
             // 落地：生成灵果种子圈（绿色治疗环 + 核心图标，进圈生物触发；双生种荷时核心为双生种荷）
             net.jackcooper.shapeShifterCurseAddon.ability.ParasiticSeedFieldManager
-                    .spawnField(caster, sw, this.getPos(), BAL.i("default_field_life", DEFAULT_FIELD_LIFE), twinPod);
+                    .spawnField(caster, sw, hitResult.getPos().add(0, 0.05, 0), BAL.i("default_field_life", DEFAULT_FIELD_LIFE), twinPod);
         }
         this.discard();
     }
@@ -93,6 +93,7 @@ public class ParasiticSeedProjectile extends ThrownItemEntity {
     /** 通用碰撞预过滤：忽略发射者本人。 */
     @Override
     protected boolean canHit(Entity entity) {
-        return super.canHit(entity) && entity != this.getOwner();
+        return super.canHit(entity) && entity != this.getOwner()
+                && !entity.isSpectator() && !(entity instanceof net.minecraft.entity.decoration.ArmorStandEntity);
     }
 }

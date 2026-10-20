@@ -1,5 +1,7 @@
 {
     "type": "my_addon:fail_aware_active_self",
+    "name": "power.my_addon.form_golden_sandstorm_sp_wither_sand.name",
+    "description": "power.my_addon.form_golden_sandstorm_sp_wither_sand.description",
     "entity_action": {
         "type": "ssc_addon:golden_sandstorm_wither_sand"
     },

@@ -1,16 +1,4 @@
 {
-  "type": "apoli:action_over_time",
-  "interval": 60,
-  "entity_action": {
-    "type": "apoli:change_resource",
-    "resource": "my_addon:form_allay_sp_mana_resource",
-    "change": -1,
-    "operation": "add"
-  },
-  "condition": {
-    "type": "apoli:resource",
-    "resource": "my_addon:form_allay_sp_beacon_active",
-    "comparison": "==",
-    "compare_to": 1
-  }
+  "type": "apoli:simple",
+  "hidden": true
 }

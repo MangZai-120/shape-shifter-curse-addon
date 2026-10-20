@@ -1,5 +1,7 @@
 {
     "type": "apoli:action_when_damage_taken",
+    "name": "power.my_addon.form_golden_sandstorm_sp_counter_burst.name",
+    "description": "power.my_addon.form_golden_sandstorm_sp_counter_burst.description",
     "entity_action": {
         "type": "ssc_addon:golden_sandstorm_counter_burst"
     },

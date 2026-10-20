@@ -1,5 +1,7 @@
 {
     "type": "apoli:action_on_hit",
+    "name": "power.my_addon.form_golden_sandstorm_sp_erosion_brand_hit.name",
+    "description": "power.my_addon.form_golden_sandstorm_sp_erosion_brand_hit.description",
     "bientity_action": {
         "type": "ssc_addon:golden_sandstorm_erosion_brand_hit"
     },

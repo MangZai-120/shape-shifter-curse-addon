@@ -1,5 +1,7 @@
 {
     "type": "apoli:multiple",
+    "name": "power.my_addon.form_golden_sandstorm_sp_brand_glow.name",
+    "description": "power.my_addon.form_golden_sandstorm_sp_brand_glow.description",
     "glow_yellow": {
         "type": "apoli:entity_glow",
         "bientity_condition": {

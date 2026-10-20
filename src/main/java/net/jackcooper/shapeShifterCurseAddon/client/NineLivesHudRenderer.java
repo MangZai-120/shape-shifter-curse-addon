@@ -8,21 +8,19 @@ package net.jackcooper.shapeShifterCurseAddon.client;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Pair;
 import net.jackcooper.shapeShifterCurseAddon.client.mana.SimpleResourceBarRenderer;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 
 /**
  * 朔望「九命」剩余命数 HUD 渲染（9 格圆点条，仿寄生果蝠种子条分层贴图）。
- * 素材由种子条裁剪得到（86px/10 格 → 77px/9 格）。Y 复用主模组魔力条配置与其它能量条同高，X 水平居中屏幕。
+ * 素材由种子条裁剪得到。横纵坐标均复用主模组魔力条布局，支持锚点和 X/Y 偏移。
  */
 @Environment(EnvType.CLIENT)
 public final class NineLivesHudRenderer extends SimpleResourceBarRenderer {
     private static final Identifier TEX_EMPTY = new Identifier("my_addon", "textures/gui/form_ocelot_nova_nine_lives_empty.png");
     private static final Identifier TEX_FULL = new Identifier("my_addon", "textures/gui/form_ocelot_nova_nine_lives_full.png");
-    /** 命数条尺寸：76 像素宽 × 5 像素高（与实际贴图一致，居中按此宽度计算）。 */
+    /** 命数条尺寸：76 像素宽 × 5 像素高，与实际贴图一致。 */
     private static final int TEX_WIDTH = 76;
 
     public static void register() {
@@ -55,9 +53,4 @@ public final class NineLivesHudRenderer extends SimpleResourceBarRenderer {
         return true;
     }
 
-    /** Y 沿用魔力条布局；X 水平居中屏幕（修正左右不对称）。 */
-    @Override
-    protected int barX(Pair<Integer, Integer> pos) {
-        return (MinecraftClient.getInstance().getWindow().getScaledWidth() - TEX_WIDTH) / 2;
-    }
 }

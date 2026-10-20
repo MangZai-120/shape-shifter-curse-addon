@@ -51,6 +51,12 @@
                 },
                 {
                     "type": "apoli:resource",
+                    "resource": "my_addon:form_allay_sp_beacon_active",
+                    "comparison": "==",
+                    "compare_to": 0
+                },
+                {
+                    "type": "apoli:resource",
                     "resource": "my_addon:form_allay_sp_mana_resource",
                     "comparison": "<",
                     "compare_to": 200
@@ -68,31 +74,8 @@
         }
     },
     "beacon_consume": {
-        "type": "apoli:action_over_time",
-        "interval": 1,
-        "entity_action": {
-            "type": "apoli:change_resource",
-            "resource": "my_addon:form_allay_sp_mana_resource",
-            "change": -1,
-            "operation": "add"
-        },
-        "condition": {
-            "type": "apoli:and",
-            "conditions": [
-                {
-                    "type": "apoli:resource",
-                    "resource": "my_addon:form_allay_sp_beacon_active",
-                    "comparison": "==",
-                    "compare_to": 1
-                },
-                {
-                    "type": "apoli:resource",
-                    "resource": "my_addon:form_allay_sp_mana_resource",
-                    "comparison": ">=",
-                    "compare_to": 1
-                }
-            ]
-        }
+        "type": "apoli:simple",
+        "hidden": true
     },
     "name": "Mana",
     "description": "Custom mana resource for Allay SP form."

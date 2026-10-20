@@ -278,6 +278,7 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower implements net.
 
     /** 带自定义基础时长的种植（种子圈拾取传固定时长）。 */
     public void plantSeed(ServerPlayerEntity caster, LivingEntity host, int baseLife) {
+        if (!isValidSeedHost(caster, host)) return;
         if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(caster, host)) return;
         long now = caster.getWorld().getTime();
         int adjustedLife = baseLife;
@@ -331,7 +332,7 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower implements net.
      * 若附近无其它可寄生目标，则给命中宿主叠 2 层。非双生种荷时退化为普通单层寄生。
      */
     public static void plantSeedSpread(ServerPlayerEntity caster, LivingEntity host, boolean twinPod) {
-        if (caster == null || host == null || !host.isAlive()) return;
+        if (!isValidSeedHost(caster, host)) return;
         if (!twinPod) {
             plantSeedFrom(caster, host);
             return;
@@ -353,15 +354,22 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower implements net.
         LivingEntity best = null;
         double bestDistSq = Double.MAX_VALUE;
         for (LivingEntity e : caster.getWorld().getEntitiesByClass(LivingEntity.class, box,
-                living -> living.isAlive() && living != caster && living != primary)) {
-            if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(caster, e)) continue;
+                living -> living != caster && living != primary && isValidSeedHost(caster, living))) {
             double d = e.squaredDistanceTo(primary);
-            if (d < bestDistSq) {
+            if (d <= 16.0 && d < bestDistSq) {
                 bestDistSq = d;
                 best = e;
             }
         }
         return best;
+    }
+
+    /** Visual marker stands, spectators and targets in another world/domain cannot consume a seed. */
+    public static boolean isValidSeedHost(ServerPlayerEntity caster, LivingEntity host) {
+        return caster != null && host != null && host.isAlive() && !host.isSpectator()
+                && !(host instanceof net.minecraft.entity.decoration.ArmorStandEntity)
+                && caster.getWorld() == host.getWorld()
+                && !net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(caster, host);
     }
 
     /** 带自定义时长的静态回调（种子圈拾取用，时长 = 剩余）。 */

@@ -6,6 +6,9 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.sound.PositionedSoundInstance;
+import net.minecraft.entity.effect.StatusEffect;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 
 import java.util.Map;
@@ -43,6 +46,9 @@ public final class NightmareFearClient {
 	private static final Map<UUID, Long> REVEALED = new ConcurrentHashMap<>();
 	/** 本地心跳节拍计数（用客户端世界时间取模）。 */
 	private static long lastHeartbeat = -1L;
+	/** Only the exact local carrier inserted by fear may be removed when fear ends. */
+	private static Map<StatusEffect, StatusEffectInstance> blindnessEffects;
+	private static StatusEffectInstance fearBlindness;
 
 	private NightmareFearClient() {
 	}
@@ -88,6 +94,7 @@ public final class NightmareFearClient {
 				});
 		// 断线清理
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+			clearFearBlindness();
 			endWorldTime = -1L;
 			startWorldTime = -1L;
 			HIDDEN.clear();
@@ -133,7 +140,10 @@ public final class NightmareFearClient {
 	/** 每客户端 tick 推进（CLIENT_TICK 事件里调）：过期隐匿/显形清理 + 兜底心跳。
 	 * 视野限制视觉由 FearSphereWallRenderer（粉球壳）与 FearFogMixin（无光影雾）承担。 */
 	public static void tick(MinecraftClient client) {
-		if (client.world == null) return;
+		if (client.world == null) {
+			clearFearBlindness();
+			return;
+		}
 		long now = client.world.getTime();
 		if (!HIDDEN.isEmpty()) {
 			HIDDEN.values().removeIf(until -> until <= now);
@@ -146,21 +156,12 @@ public final class NightmareFearClient {
 		// 光影下失明雾的黑色问题由 IrisShaderPackMixin 解决（内存替换光影失明雾为粉色 12→16 格版）；
 		// 无光影时由 FearFogMixin 覆盖雾距/雾色。粉球壳 FearSphereWallRenderer 增强界限感。
 		if (client.player != null) {
-			java.util.Map<net.minecraft.entity.effect.StatusEffect, net.minecraft.entity.effect.StatusEffectInstance> effects =
+			Map<StatusEffect, StatusEffectInstance> effects =
 					((net.jackcooper.shapeShifterCurseAddon.mixin.client.LivingEntityStatusEffectsAccessor) client.player)
 							.sscAddon$getActiveStatusEffects();
-			if (feared) {
-				net.minecraft.entity.effect.StatusEffectInstance cur =
-						effects.get(net.minecraft.entity.effect.StatusEffects.BLINDNESS);
-				if (cur == null || cur.getDuration() < 30) {
-					effects.put(net.minecraft.entity.effect.StatusEffects.BLINDNESS,
-							new net.minecraft.entity.effect.StatusEffectInstance(
-									net.minecraft.entity.effect.StatusEffects.BLINDNESS, 40, 0,
-									false, false, false));
-				}
-			} else {
-				effects.remove(net.minecraft.entity.effect.StatusEffects.BLINDNESS);
-			}
+			updateBlindness(effects, feared);
+		} else {
+			clearFearBlindness();
 		}
 		// 兜底心跳：恐惧激活时按节拍本地低音量播（服务端为主；丢了也不至于无声）。
 		// 音量按最近食梦魔距离动态：范围外极小固定音量，16 格内越近越响（与服务端公式一致）。
@@ -182,5 +183,34 @@ public final class NightmareFearClient {
 			client.getSoundManager().play(PositionedSoundInstance.master(
 					net.minecraft.sound.SoundEvents.ENTITY_WARDEN_HEARTBEAT, vol, 0.9f));
 		}
+	}
+
+	private static void updateBlindness(Map<StatusEffect, StatusEffectInstance> effects, boolean feared) {
+		if (effects != blindnessEffects) {
+			clearFearBlindness();
+			blindnessEffects = effects;
+		}
+		if (!feared) {
+			clearFearBlindness();
+			return;
+		}
+		StatusEffectInstance current = effects.get(StatusEffects.BLINDNESS);
+		if (current == null || (current == fearBlindness && current.getDuration() < 30)) {
+			fearBlindness = new StatusEffectInstance(StatusEffects.BLINDNESS, 40, 0, false, false, false);
+			effects.put(StatusEffects.BLINDNESS, fearBlindness);
+		} else if (current != fearBlindness) {
+			// Play Dead, potions and server updates own their duration. Never replace them,
+			// even when they have less than 30 ticks remaining.
+			fearBlindness = null;
+		}
+	}
+
+	private static void clearFearBlindness() {
+		if (blindnessEffects != null && fearBlindness != null
+				&& blindnessEffects.get(StatusEffects.BLINDNESS) == fearBlindness) {
+			blindnessEffects.remove(StatusEffects.BLINDNESS);
+		}
+		fearBlindness = null;
+		blindnessEffects = null;
 	}
 }
