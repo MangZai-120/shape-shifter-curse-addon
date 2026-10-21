@@ -1380,7 +1380,7 @@
   "origin.my_addon.form_sheep_spell_form.description": "被羊了个羊法术变成的羊。",
   "spell.ssc_addon.tier.special": "特殊蓄力",
   "spell.ssc_addon.death_finale.name": "死亡是一切的终点",
-  "spell.ssc_addon.death_finale.description": "原地蓄力13秒，可转动视角；\n完成时对13格球形范围内非白名单\n生物造成法术伤害。\n危险玩家会看到红色屏幕边缘预警。",
+  "spell.ssc_addon.death_finale.description": "原地蓄力19.5秒，可转动视角；\n完成时对13格球形范围内非白名单\n生物造成法术伤害。\n危险玩家会看到红色屏幕边缘预警。",
   "hud.ssc_addon.death_finale.warning": "死亡是一切的终点 · %s 秒",
   "item.ssc_addon.formation_manuscript": "法阵手稿",
   "research.ssc_addon.manuscript.0": "%1$s · %2$s级符文笔记",
@@ -1780,5 +1780,6 @@
   "power.my_addon.form_snow_fox_frostspine_frost_spike.name": "冰刺",
   "power.my_addon.form_snow_fox_frostspine_frost_spike.description": "长按主要技能键，每1.2秒凝聚1根环绕冰锥，最多5根，每根存在60秒；满额时替换最旧的一根。点按主要技能键依次发射冰锥，发射间隔0.2秒。",
   "power.my_addon.form_snow_fox_frostspine_frost_forge.name": "凝棘",
-  "power.my_addon.form_snow_fox_frostspine_frost_forge.description": "需先用主要技能凝聚环绕冰锥。长按次要技能键，每1秒消耗1根冰锥强化头顶冰锥，松开后发射。蓄力时移速降至10%，不能同时凝聚普通冰锥；未消耗冰锥就松开会取消。"
+  "power.my_addon.form_snow_fox_frostspine_frost_forge.description": "需先用主要技能凝聚环绕冰锥。长按次要技能键，每1秒消耗1根冰锥强化头顶冰锥，松开后发射。蓄力时移速降至10%，不能同时凝聚普通冰锥；未消耗冰锥就松开会取消。",
+  "message.ssc_addon.spellbook.domain_forbidden_red": "领域之内，禁用其它红色魔法"
 }

@@ -9,6 +9,11 @@ import net.minecraft.util.Identifier;
 public final class DeathFinaleSpell extends Spell {
     public DeathFinaleSpell() { super(new Identifier("ssc_addon", "death_finale"), SpellRarity.RED); }
 
+    /** 领域内禁放死亡终点（2026-10-21 用户定稿，逐法术开关之一）。 */
+    @Override public boolean isForbiddenInsideDomain() {
+        return true;
+    }
+
     @Override public SpellCastingRules.Profile getCastingProfile(ServerPlayerEntity caster, int level, boolean solo) {
         return new SpellCastingRules.Profile(Math.max(1, getBaseCastTimeTicks()), 0, true);
     }

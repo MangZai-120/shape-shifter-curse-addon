@@ -94,10 +94,11 @@ public final class DeathFinaleClient {
                         DeathFinaleGeometry.OCHRE, alpha * .32f);
                 matrices.pop();
             }
-            // Thirteen large dial marks count down while the inner sand ring contracts.
-            int remaining = (int) Math.ceil(13 * (1 - progress));
+            // 大刻度按蓄力秒数动态生成（19.5s=20格），随进度逐格熄灭；内圈沙环同步收缩。
+            int marks = Math.max(1, Math.round(v.duration / 20f));
+            int remaining = (int) Math.ceil(marks * (1 - progress));
             for (int i = 0; i < remaining; i++) {
-                double angle = -Math.PI / 2 + i * Math.PI * 2 / 13;
+                double angle = -Math.PI / 2 + i * Math.PI * 2 / marks;
                 CastingCircleRenderer.line(vertices, matrices.peek().getPositionMatrix(),
                         Math.cos(angle) * v.radius * .92, Math.sin(angle) * v.radius * .92,
                         Math.cos(angle) * v.radius, Math.sin(angle) * v.radius, .10,

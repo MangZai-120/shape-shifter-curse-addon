@@ -134,9 +134,9 @@ public final class SpellBalanceTest {
 
 	private static void checkExplosionRules() {
 		double[] distances = {0, 16, 32, 32.000001, 48, 64, 65};
-		double[] damages = {1000, 700, 400, 100, 50, 0, 0};
+		double[] damages = {250, 175, 100, 25, 12.5, 0, 0};
 		for (int i = 0; i < distances.length; i++) {
-			if (Math.abs(1000 * ExplosionRules.damageFactor(distances[i]) - damages[i]) > 0.00001)
+			if (Math.abs(250 * ExplosionRules.damageFactor(distances[i]) - damages[i]) > 0.00001)
 				fail("explosion", "damage band boundary: " + distances[i]);
 		}
 		double[] fireDistances = {0, 32, 32.000001, 42, 42.000001, 50, 50.000001, 64};
@@ -477,7 +477,7 @@ public final class SpellBalanceTest {
 			if (id.equals("explosion")) {
 				if (levels.size() != 1 || !levels.get(0).getAsJsonObject().get("rarity").getAsString().equals("red")) fail(id, "red spell must have one level");
 				if (baseCd != ExplosionRules.CD_TICKS || baseMana != ExplosionRules.MANA_COST
-						|| o.get("base_damage").getAsFloat() != 1000 || !o.get("element").getAsString().equals("fire")) fail(id, "base stats mismatch");
+						|| o.get("base_damage").getAsFloat() != 250 || !o.get("element").getAsString().equals("fire")) fail(id, "base stats mismatch");
 				if (o.get("base_cast_time_ticks").getAsInt() != ExplosionRules.CHARGE_TICKS
 						|| o.get("interrupt_mode").getAsInt() != 3 || !o.get("spell_tier").getAsString().equals("custom")) fail(id, "casting config mismatch");
 				var spell = new net.jackcooper.shapeShifterCurseAddon.spell.spells.ExplosionSpell();
@@ -496,14 +496,14 @@ public final class SpellBalanceTest {
 				spell.ssc_addon$applyConfig(net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig.fromJson(o));
 				var profile = spell.getCastingProfile(null, 1, false);
 				if (levels.size() != 1 || spell.getMaxLevel() != 1 || spell.getBaseDamage() != 5000
-						|| spell.getElement() != FormationElement.VOID || profile.ticks() != 260
+							|| spell.getElement() != FormationElement.VOID || profile.ticks() != 390
 						|| profile.speedMultiplier() != 0 || !profile.immobilized()
 						|| spell.getCastingMode() != SpellCastingRules.Mode.AUTOMATIC
-						|| spell.getConfig().spellTier != SpellCastingRules.Tier.SPECIAL) fail(id, "13-second immobile SPECIAL profile");
+							|| spell.getConfig().spellTier != SpellCastingRules.Tier.SPECIAL) fail(id, "19.5-second immobile SPECIAL profile");
 				if (!DeathFinaleRules.contains(169, 13) || DeathFinaleRules.contains(169.0001, 13)
 						|| DeathFinaleRules.contains(Double.NaN, 13) || DeathFinaleRules.contains(-1, 13)
-						|| DeathFinaleRules.secondsLeft(0, 260) != 13 || DeathFinaleRules.secondsLeft(259, 260) != 1
-						|| DeathFinaleRules.secondsLeft(260, 260) != 0) fail(id, "spherical boundary/countdown");
+							|| DeathFinaleRules.secondsLeft(0, 390) != 20 || DeathFinaleRules.secondsLeft(389, 390) != 1
+							|| DeathFinaleRules.secondsLeft(390, 390) != 0) fail(id, "spherical boundary/countdown");
 				if (!SpellCastingRules.allowsSelf(spell.getConfig().interruptMode)
 						|| !SpellCastingRules.allowsExternal(spell.getConfig().interruptMode)
 						|| spell.getInterruptedCooldown(3600) != 2880)
@@ -544,8 +544,8 @@ public final class SpellBalanceTest {
 				if (!interrupted || falling.follow(new Vec3d(Double.NaN, 80, 20)))
 					fail(id, "fall/invalid movement must not leave a continuing charge");
 				var progress = new SpellCastingRules.Progress<String>(SpellCastingRules.Mode.AUTOMATIC, profile.ticks(), 13);
-				for (int t = 0; t < 259; t++) progress.tick();
-				if (progress.beginEffect()) fail(id, "must not damage before the 260th tick");
+				for (int t = 0; t < 389; t++) progress.tick();
+				if (progress.beginEffect()) fail(id, "must not damage before the 390th tick");
 				progress.tick();
 				if (!progress.beginEffect() || progress.beginEffect()) fail(id, "release must occur exactly once");
 				System.out.println("Death finale: VOID/SPECIAL, following charge center, fixed start anchor, falling/cumulative 3-block interruption, shared interruption, spherical boundary and exactly-once release checks passed; live movement/damage/visuals NOT tested.");

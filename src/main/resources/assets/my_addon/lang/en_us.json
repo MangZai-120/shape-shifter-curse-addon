@@ -1380,7 +1380,7 @@
   "origin.my_addon.form_sheep_spell_form.description": "A player polymorphed by the Beep Sheep spell.",
   "spell.ssc_addon.tier.special": "Special Charge",
   "spell.ssc_addon.death_finale.name": "Death Is the End of Everything",
-  "spell.ssc_addon.death_finale.description": "Channel in place for 13 seconds while\nretaining camera control, then deal spell\ndamage in a 13-block sphere. Respects the\nally whitelist; threatened players see a\nred screen-edge warning.",
+  "spell.ssc_addon.death_finale.description": "Channel in place for 19.5 seconds while\nretaining camera control, then deal spell\ndamage in a 13-block sphere. Respects the\nally whitelist; threatened players see a\nred screen-edge warning.",
   "hud.ssc_addon.death_finale.warning": "Death Is the End of Everything · %ss",
   "item.ssc_addon.formation_manuscript": "Formation Manuscript",
   "research.ssc_addon.manuscript.0": "%1$s · Level %2$s Rune Notes",
@@ -1780,5 +1780,6 @@
   "power.my_addon.form_snow_fox_frostspine_frost_spike.name": "Ice Spike",
   "power.my_addon.form_snow_fox_frostspine_frost_spike.description": "Hold the primary skill key to form one orbiting thorn every 1.2 seconds, up to 5. Each lasts 60 seconds; forming another at the cap replaces the oldest. Tap primary to fire thorns in order, with a 0.2-second firing interval.",
   "power.my_addon.form_snow_fox_frostspine_frost_forge.name": "Frost Forge",
-  "power.my_addon.form_snow_fox_frostspine_frost_forge.description": "Requires orbiting thorns from your primary skill. Hold secondary to consume one thorn each second, strengthening the overhead thorn; release to fire. Movement is reduced to 10% while charging, and primary charging is disabled. Releasing before consuming a thorn cancels the cast."
+  "power.my_addon.form_snow_fox_frostspine_frost_forge.description": "Requires orbiting thorns from your primary skill. Hold secondary to consume one thorn each second, strengthening the overhead thorn; release to fire. Movement is reduced to 10% while charging, and primary charging is disabled. Releasing before consuming a thorn cancels the cast.",
+  "message.ssc_addon.spellbook.domain_forbidden_red": "Within a domain, other red spells are sealed"
 }

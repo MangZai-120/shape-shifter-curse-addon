@@ -167,6 +167,14 @@ public final class SpellChannelManager {
 			player.sendMessage(Text.translatable("message.ssc_addon.spell.purified_blocked"), true);
 			return false;
 		}
+		// 领域内禁放指定红色法术（2026-10-21 用户定稿：逐法术开关；判定与「防领域叠加」
+		// 同口径 enclosedTrapping——完全体外沿内+扩张壳内，含自己的领域。付费前拦截：零消耗）。
+		if (spell.isForbiddenInsideDomain()
+				&& DomainManager.enclosedTrapping(player.getServerWorld(), player.getPos())) {
+			playFailureSound(player);
+			player.sendMessage(spell.getDomainForbiddenMessage(), true);
+			return false;
+		}
 		// 所有法术在捕获目标、创建演出、禁动或渐进扣费之前重验整次消耗。
 		// solo 卷轴按次数结算；书内施法必须有有效 JSON 消耗与足够的实际能量。
 		if (!spell.getConfig().manaCostConfigured) {

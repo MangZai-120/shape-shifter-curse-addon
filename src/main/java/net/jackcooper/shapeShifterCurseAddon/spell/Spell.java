@@ -247,6 +247,20 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 		return true;
 	}
 
+	/**
+	 * 是否禁止在领域（完全体外沿内或扩张期壳内，含自己的领域）施放本红色法术。
+	 * 默认 false：未来新红色法术不受领域限制，需要禁时在法术子类覆写为 true
+	 * （2026-10-21 用户定稿：逐法术开关，不一刀切全红禁）。
+	 */
+	public boolean isForbiddenInsideDomain() {
+		return false;
+	}
+
+	/** 领域内禁放本红色法术的提示 key（覆写 isForbiddenInsideDomain 时配套使用）。 */
+	public net.minecraft.text.Text getDomainForbiddenMessage() {
+		return net.minecraft.text.Text.translatable("message.ssc_addon.spellbook.domain_forbidden_red");
+	}
+
 	/** Explains the same condition checked by canCast/captureCastTarget without changing casting rules. */
 	public net.minecraft.text.Text getCastFailureMessage(ServerPlayerEntity caster) {
 		return net.minecraft.text.Text.translatable("message.ssc_addon.spellbook.no_target");

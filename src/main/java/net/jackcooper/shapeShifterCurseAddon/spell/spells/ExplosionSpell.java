@@ -76,6 +76,12 @@ public class ExplosionSpell extends Spell {
 		return new SpellCastingRules.Profile(ExplosionRules.CHARGE_TICKS, 0, true);
 	}
 
+	/** 领域内禁放爆裂魔法（2026-10-21 用户定稿，逐法术开关之一）。 */
+	@Override
+	public boolean isForbiddenInsideDomain() {
+		return true;
+	}
+
 	/** 施法前置校验：落点必须命中方块（指天/超距无方块 → 拒绝施放，不耗法力/CD）。 */
 	@Override
 	public boolean canCast(ServerPlayerEntity caster) {

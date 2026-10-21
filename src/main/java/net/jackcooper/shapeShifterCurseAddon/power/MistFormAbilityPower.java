@@ -253,7 +253,14 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 	/** 凝聚爆破：在原地引爆一团雾，对范围内非白名单生物造成伤害与击退 */
 	private void detonate() {
 		ServerWorld serverWorld = (ServerWorld) entity.getWorld();
-		DamageSource source = entity.getDamageSources().magic();
+		// 2026-10-21 用户定稿：伤害来源改为带攻击者的 playerAttack/mobAttack 物理伤
+		// （原 magic() 无 getAttacker → 怪物无法判定伤害归属、命中后不拉仇恨）。
+		DamageSource source;
+		if (entity instanceof PlayerEntity player) {
+			source = entity.getDamageSources().playerAttack(player);
+		} else {
+			source = entity.getDamageSources().mobAttack(entity);
+		}
 		Box box = entity.getBoundingBox().expand(aoeRadius());
 		double radiusSq = aoeRadius() * aoeRadius();
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class, box,
