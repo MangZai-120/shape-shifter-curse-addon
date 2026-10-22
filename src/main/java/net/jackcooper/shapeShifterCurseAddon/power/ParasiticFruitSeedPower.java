@@ -552,7 +552,7 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower implements net.
         ParticleUtils.spawnParticles(world, SEED_DUST, host.getX(), y, host.getZ(),
                 8 + extra / 2, 0.25, 0.35, 0.25, 0.01);
         world.playSound(null, host.getX(), host.getY(), host.getZ(),
-                SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.35f, 1.8f);
+                SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.175f, 1.8f);
     }
 
     private void playFailFeedback(ServerPlayerEntity caster) {
