@@ -47,6 +47,7 @@ public final class SpellcastClient {
 	private static net.minecraft.entity.LivingEntity lunarTarget;
 	private static boolean targetingDowngraded;
 	private static ItemStack targetingScroll = ItemStack.EMPTY;
+	private static int targetingLevel = 1;
 	private static net.minecraft.client.world.ClientWorld targetingWorld;
 	private static final net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules.InputGuard inputGuard =
 			new net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules.InputGuard();
@@ -247,8 +248,6 @@ public final class SpellcastClient {
 			gestureKey = -1;
 		}
 		if (!handled && castPressed && !wasCastPressed) {
-			System.out.println("[SSCA gesture] 施法键按下沿：active=" + (active != null) + " gestureKey=" + gestureKey
-					+ " selectedSlot=" + selectedSlot + " guard=" + inputGuard.getClass().getSimpleName());
 			if (active != null) {
 				// 锁定态（领域壳扩张后/爆裂红白球生成后，2026-09-23）：不可取消，不发取消包、
 				// 不打本地取消标（避免「取消中」红字永驻），HUD 倒计时保持红显。
@@ -278,10 +277,6 @@ public final class SpellcastClient {
 		}
 		ItemStack scroll = SpellbookData.getScroll(book, slot);
 		Spell spell = ScrollData.getSpell(scroll);
-		// 临时诊断（2026-09-24 月相锁不到人排查）：定位 startGesture 到底卡在哪道门
-		System.out.println("[SSCA gesture] startGesture slot=" + slot + " spell="
-				+ (spell == null ? "NULL(nbt=" + (scroll.getNbt() == null ? "无" : scroll.getNbt().getString("Spell")) + ")"
-				: spell.getId()) + " cd=" + ScrollData.isOnCooldown(scroll, player.getWorld()));
 		if (spell == null) {
 			downgradePresses.reset();
 			return;
@@ -311,6 +306,7 @@ public final class SpellcastClient {
 			}
 			if (!handleTriplePressDowngrade(player, book, slot, level, cost, spell, scroll, payable)) return;
 			downgraded = true;
+			level = payable;
 		} else {
 			downgradePresses.reset();
 		}
@@ -322,6 +318,7 @@ public final class SpellcastClient {
 			selectingTarget = true;
 			targetingDowngraded = downgraded;
 			targetingScroll = scroll.copy();
+			targetingLevel = level;
 			targetingWorld = MinecraftClient.getInstance().world;
 			updateLunarTarget(player);
 			return;
@@ -390,6 +387,7 @@ public final class SpellcastClient {
 		selectingTarget = false;
 		targetingDowngraded = false;
 		targetingScroll = ItemStack.EMPTY;
+		targetingLevel = 1;
 		targetingWorld = null;
 	}
 
@@ -402,7 +400,7 @@ public final class SpellcastClient {
 		if (book == null || book.isEmpty() || selectedSlot != gestureSlot
 				|| !ItemStack.areEqual(SpellbookData.getScroll(book, gestureSlot), targetingScroll)) return null;
 		Spell spell = ScrollData.getSpell(targetingScroll);
-		return spell == null ? null : RuneCastContext.with(RuneScheme.modifiers(client.player,targetingScroll,ScrollData.getCastLevel(targetingScroll)),()->Spell.computeAimImpact(client.player, spell.getAimMaxRange()));
+		return spell == null ? null : RuneCastContext.with(RuneScheme.modifiers(client.player,targetingScroll,targetingLevel),()->Spell.computeAimImpact(client.player, spell.getAimMaxRange(targetingLevel)));
 	}
 
 	/** 当前槽是否为按住瞄准型法术（getAimMaxRange>0，如陨火术）。 */
@@ -427,12 +425,14 @@ public final class SpellcastClient {
 		if (client.world == null || client.world.getTime() % 2 != 0) {
 			return;
 		}
-		var runeModifiers=RuneScheme.modifiers(player,scroll,ScrollData.getCastLevel(scroll));
-        double radius = RuneCastContext.with(runeModifiers,()->spell.getAimRadius(ScrollData.getCastLevel(scroll)));
+		var active = net.jackcooper.shapeShifterCurseAddon.client.hud.SpellCastHud.getState();
+		int level = active != null && active.spell() == spell ? active.level() : ScrollData.getCastLevel(scroll);
+		var runeModifiers=RuneScheme.modifiers(player,scroll,level);
+        double radius = RuneCastContext.with(runeModifiers,()->spell.getAimRadius(level));
 		if (radius <= 0) {
 			return;
 		}
-		Vec3d impact = RuneCastContext.with(runeModifiers,()->Spell.computeAimImpact(player, spell.getAimMaxRange()));
+		Vec3d impact = RuneCastContext.with(runeModifiers,()->Spell.computeAimImpact(player, spell.getAimMaxRange(level)));
 		if (impact == null) {
 			return;
 		}

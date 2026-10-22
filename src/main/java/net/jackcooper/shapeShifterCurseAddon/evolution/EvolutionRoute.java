@@ -17,6 +17,7 @@ import java.util.Map;
  * 全部数据化，加 / 改一个形态的进化树只需写一个 route JSON。</p>
  */
 public class EvolutionRoute {
+    private static final int[] DEFAULT_MILESTONES = {5, 10, 15, 20, 30, 40, 45};
     /** 路线 id（= 文件名）。 */
     public final String routeId;
     /** 是否开放（false 则开书 / 入口不显示）。 */
@@ -81,6 +82,17 @@ public class EvolutionRoute {
     /** 初始节点 id（route JSON 的 {@code base_node}，或首个 autoUnlock 主线节点）。 */
     public String getBaseNodeId() {
         return baseNodeId;
+    }
+
+    public int[] getLevelMilestones() {
+        return levelMilestones.length == 0 ? DEFAULT_MILESTONES.clone() : levelMilestones.clone();
+    }
+
+    public int nextMilestone(int level) {
+        for (int milestone : getLevelMilestones()) {
+            if (milestone > level) return milestone;
+        }
+        return -1;
     }
 
     /** 所有分支节点 id（{@code branch} 非空的节点）。 */

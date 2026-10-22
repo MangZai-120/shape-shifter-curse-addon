@@ -205,6 +205,23 @@ tasks.register('purificationCastingIntegrationTest', JavaExec) {
 }
 check.dependsOn purificationCastingIntegrationTest
 
+tasks.register('spellAuditIntegrationTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.SpellAuditIntegrationTest'
+    workingDir = layout.buildDirectory.dir('spell-audit-test').get().asFile
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def classpathFile = new File(workingDir, 'classpath.txt')
+        classpathFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'spellAudit.testClasspathFile', classpathFile.absolutePath
+    }
+}
+check.dependsOn spellAuditIntegrationTest
+
 tasks.register('spellbookStatusTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
@@ -283,6 +300,23 @@ tasks.register('evolutionManaIntegrationTest', JavaExec) {
     }
 }
 check.dependsOn evolutionManaIntegrationTest
+
+tasks.register('evolutionSystemIntegrationTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionSystemIntegrationTest'
+    workingDir = layout.buildDirectory.dir('evolution-system-integration').get().asFile
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def cpFile = new File(workingDir, 'test-classpath.txt')
+        cpFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'evolutionSystem.testClasspathFile', cpFile.absolutePath
+    }
+}
+check.dependsOn evolutionSystemIntegrationTest
 
 tasks.register('spiderJumpAnimationTest', JavaExec) {
     dependsOn testClasses

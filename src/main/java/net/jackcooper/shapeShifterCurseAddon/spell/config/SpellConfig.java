@@ -164,6 +164,9 @@ public final class SpellConfig {
 			cd = new float[n];
 			speed = new float[n];
 			manaMul = new float[n];
+			java.util.Arrays.fill(dmg, 1.0f);
+			java.util.Arrays.fill(cd, 1.0f);
+			java.util.Arrays.fill(speed, 1.0f);
 			java.util.Arrays.fill(manaMul, 1.0f);
 			rarity = new String[n];
 			for (int i = 0; i < n; i++) {

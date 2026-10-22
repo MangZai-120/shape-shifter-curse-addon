@@ -88,7 +88,7 @@ public class MagicScrollItem extends Item {
 			// 阶段 B（§6.2）：统一冷却公式（solo 惩罚倍率并入等级基准；双层下限与书内一致）
 			int cd = runeModifiers.cooldown(net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers.finalSoloCooldownTicks(spell, level));
 			ItemStack snapshot = stack.copy();
-			SpellChannelManager.start(sp, spell, snapshot, level, true, hand.ordinal(), 0, cd,
+			boolean started = SpellChannelManager.start(sp, spell, snapshot, level, true, hand.ordinal(), 0, cd,
 					() -> sp.getStackInHand(hand) == stack && ItemStack.areEqual(stack, snapshot),
 					target -> spell.castAtTarget(sp, damage, true, level, snapshot, target),
 					duration -> {
@@ -98,6 +98,7 @@ public class MagicScrollItem extends Item {
 						net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.record(sp, spell, end);
 					},
 					() -> { if (ScrollData.consumeSoloUse(stack)) stack.decrement(1); }, runeModifiers);
+			if (!started) return TypedActionResult.fail(stack);
 		}
 		user.setCurrentHand(hand);
 		return TypedActionResult.consume(stack);

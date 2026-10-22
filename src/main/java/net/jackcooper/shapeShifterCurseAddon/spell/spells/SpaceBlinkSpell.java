@@ -62,7 +62,12 @@ public class SpaceBlinkSpell extends Spell {
 	/** 按住瞄准型：最大施法距离（客户端按住显示落点预览，松开施放）。 */
 	@Override
 	public double getAimMaxRange() {
-		return RuneCastContext.current().scale(baseRange(),RuneModifiers.Stat.DISTANCE); // 预览基准；等级缩放由 effectiveRange 乘 speed_multiplier
+		return getAimMaxRange(1);
+	}
+
+	@Override
+	public double getAimMaxRange(int level) {
+		return getBlinkRange(level);
 	}
 
 	/** 预览圈半径：小圈标记落点（0.5 格落地标记，同契灵平台传送视觉语言）。 */

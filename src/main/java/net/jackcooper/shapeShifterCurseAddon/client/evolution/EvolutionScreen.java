@@ -17,6 +17,7 @@ import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionNode;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRoute;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionSelection;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 
@@ -76,9 +77,6 @@ public class EvolutionScreen extends Screen {
     /** 进化树尺寸（节点 col 0~5、row 0~2）。 */
     private static final int TREE_COLS = 5, TREE_ROWS = 2;
     private static final int TREE_W = TREE_COLS * COL_SPACING, TREE_H = TREE_ROWS * ROW_SPACING;
-    /** 经验等级里程碑（与 EvolutionManager 一致，仅用于界面提示）。 */
-    private static final int[] LEVEL_MILESTONES = {5, 10, 15, 20, 30, 40, 45};
-
     private final Screen parent;
     /** 返回按钮矩形（逻辑坐标）。 */
     private int[] btnRect = new int[4];
@@ -228,16 +226,12 @@ public class EvolutionScreen extends Screen {
     // ---------------- 状态判定 ----------------
 
     private boolean preMet(EvolutionComponent c, EvolutionNode n) {
-        if (n.prereqs.isEmpty()) return true;
-        for (String p : n.prereqs) if (effUnlocked(c, p)) return true;
-        return false;
+        return EvolutionSelection.prerequisitesMet(c, n, pending);
     }
 
     /** 前置全部满足（用于 tooltip 与连线判断）。 */
     private boolean preMetAll(EvolutionComponent c, EvolutionNode n) {
-        if (n.prereqs.isEmpty()) return true;
-        for (String p : n.prereqs) if (!effUnlocked(c, p)) return false;
-        return true;
+        return preMet(c, n);
     }
 
     /** 节点在“已解锁或已加入本次暂存”下视为生效。 */
@@ -262,7 +256,7 @@ public class EvolutionScreen extends Screen {
 
     /** 是否可加入暂存（走路线、非自动、未解锁且未暂存、前置满足、模拟点数足）。 */
     private boolean canUn(EvolutionComponent c, EvolutionNode n) {
-        return c.isOnSscaRoute() && !n.autoUnlock && !c.isUnlocked(n.id) && !pending.contains(n.id)
+        return c.isOnSscaRoute() && !c.isJobChanging() && !n.autoUnlock && !c.isUnlocked(n.id) && !pending.contains(n.id)
                 && preMet(c, n) && simPoints(c) >= n.cost;
     }
 
@@ -603,10 +597,7 @@ public class EvolutionScreen extends Screen {
                 right = Text.translatable("evolution.my_addon.screen.branch_ready");
                 rightColor = TITLE_GOLD;
             } else {
-                int nextMs = -1;
-                for (int m : LEVEL_MILESTONES) {
-                    if (level < m) { nextMs = m; break; }
-                }
+                int nextMs = br == null ? -1 : br.nextMilestone(level);
                 if (nextMs < 0) {
                     right = Text.translatable("evolution.my_addon.screen.no_milestone");
                     rightColor = TXT_GRAY;
@@ -693,7 +684,7 @@ public class EvolutionScreen extends Screen {
             } else if (!preMetAll(comp, node)) {
                 List<String> names = new ArrayList<>();
                 for (String pid : node.prereqs) {
-                    if (!comp.isUnlocked(pid)) {
+                    if (!effUnlocked(comp, pid)) {
                         EvolutionNode pn = node(pid);
                         if (pn != null) names.add(Text.translatable(pn.nameKey).getString());
                     }
@@ -704,7 +695,7 @@ public class EvolutionScreen extends Screen {
                 } else {
                     lines.add(Text.translatable("evolution.my_addon.screen.state.locked").formatted(Formatting.RED));
                 }
-            } else if (comp.getPoints() < node.cost) {
+            } else if (simPoints(comp) < node.cost) {
                 lines.add(Text.translatable("evolution.my_addon.screen.state.no_points").formatted(Formatting.RED));
             } else {
                 lines.add(Text.translatable("evolution.my_addon.screen.state.click_unlock").formatted(Formatting.GREEN));
@@ -738,6 +729,7 @@ public class EvolutionScreen extends Screen {
                     // 已暂存：再次点击取消（退还点数）
                     if (pending.contains(node.id)) {
                         pending.remove(node.id);
+                        pending.retainAll(EvolutionSelection.resolve(clickRoute, comp, pending));
                         playClick(0.7F);
                         return true;
                     }
@@ -798,14 +790,17 @@ public class EvolutionScreen extends Screen {
 
     /** 提交全部待确认节点：一次性批量发送（服务端限频一次、按序逐个解锁），播放获得经验“叮”声，再清空暂存。 */
     private void commitPending() {
-        if (pending.isEmpty()) return;
+        EvolutionComponent comp = getComp();
+        if (pending.isEmpty() || comp == null || comp.isJobChanging()) return;
+        List<String> ordered = EvolutionSelection.resolve(route(), comp, pending);
+        pending.clear();
+        if (ordered.isEmpty()) return;
         PacketByteBuf buf = PacketByteBufs.create();
-        buf.writeInt(pending.size());
-        for (String id : pending) {
+        buf.writeInt(ordered.size());
+        for (String id : ordered) {
             buf.writeString(id);
         }
         ClientPlayNetworking.send(SscAddonNetworking.PACKET_EVO_UNLOCK_BATCH, buf);
-        pending.clear();
         PlayerEntity p = MinecraftClient.getInstance().player;
         if (p != null) {
             p.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);

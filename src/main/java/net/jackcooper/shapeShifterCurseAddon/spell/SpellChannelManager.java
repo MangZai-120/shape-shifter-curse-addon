@@ -455,6 +455,10 @@ public final class SpellChannelManager {
 	 * 后续每 20t 只发轻量校准包（token+elapsed+标志位），elapsed 由客户端本地推进。 */
 	private static void syncFull(Channel channel) {
 		if (!ServerPlayNetworking.canSend(channel.player, STATE)) return;
+		ServerPlayNetworking.send(channel.player, STATE, fullStatePacket(channel));
+	}
+
+	private static PacketByteBuf fullStatePacket(Channel channel) {
 		PacketByteBuf buf = PacketByteBufs.create();
 		buf.writeBoolean(true);
 		buf.writeBoolean(true); // full=true：全量包（full=false 为轻量校准）
@@ -470,7 +474,8 @@ public final class SpellChannelManager {
 		buf.writeBoolean(channel.progress.started());
 		buf.writeVarInt(channel.cancelTicks);
 		buf.writeBoolean(channel.spell.isLockedIn(channel.player)); // 锁定态（进入后客户端红显且忽略取消）
-		ServerPlayNetworking.send(channel.player, STATE, buf);
+		buf.writeVarInt(channel.level); // 本次有效等级，含临时降档；供客户端射程/半径预览
+		return buf;
 	}
 
 	private static final class Channel {

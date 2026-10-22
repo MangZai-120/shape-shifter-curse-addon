@@ -1,6 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.evolution;
 
 import dev.onyxstudios.cca.api.v3.component.sync.AutoSyncedComponent;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
@@ -8,6 +9,7 @@ import net.minecraft.nbt.NbtString;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * SSCA 进化加点系统 - 玩家进化数据组件（服务端权威，自动同步到客户端）。
@@ -34,14 +36,17 @@ public class EvolutionComponent implements AutoSyncedComponent {
     private final Set<Integer> grantedLevels = new HashSet<>();
     /** 是否已真正变身进入过进化形态（用于「进入后再离开则重置进度」判定，避免变身动画期间误重置）。 */
     private boolean started = false;
-    /**
-     * 转职（灵能宝珠）进行中标志：瞬态（不写 NBT、不同步），转职变身演出期间置 true，
-     * 让 {@code EvolutionManager.tickPlayer} 豁免「离开起点形态即重置」逻辑，避免动画期间清空进度。
-     * 断线后自动为 false（瞬态），此时走原重置逻辑，玩家白赚不扣点（对玩家有利，非死档）。
-     */
+    /** 转职事务跨存档保留；演出回调和超时计数只属于当前玩家实体。 */
+    private String jobChangeId = "";
+    private String jobChangeRoute = "";
+    private int jobChangeLevel = 0;
+    private ItemStack jobChangePayment = ItemStack.EMPTY;
     private transient boolean jobChanging = false;
+    private transient int jobChangeTicks = 0;
     /** 是否已迁移到内置 exp 机制（旧存档首次打开加点界面时按点数定级并置 true，防重复迁移）。 */
     private boolean migrated = false;
+    /** 旧版 migrated=true 也可能跳过恢复，升级后按新版本再核对一次。 */
+    private int expMigrationVersion = 0;
     /** 上次记录的原版总经验（按正增量累积进化 exp，只算获得、排除花费/死亡）。-1 = 未初始化。 */
     private int lastTotalExp = -1;
 
@@ -196,19 +201,50 @@ public class EvolutionComponent implements AutoSyncedComponent {
     // ---------------- 转职 / 迁移状态 ----------------
 
     public boolean isJobChanging() {
-        return jobChanging;
+        return !jobChangeRoute.isEmpty();
     }
 
-    public void setJobChanging(boolean jobChanging) {
-        this.jobChanging = jobChanging;
+    public String getJobChangeId() { return jobChangeId; }
+    public String getJobChangeRoute() { return jobChangeRoute; }
+    public int getJobChangeLevel() { return jobChangeLevel; }
+    public ItemStack getJobChangePayment() { return jobChangePayment.copy(); }
+    public boolean isJobAnimationActive() { return jobChanging; }
+
+    public void beginJobChange(String targetRoute, int targetLevel, ItemStack payment) {
+        jobChangeId = UUID.randomUUID().toString();
+        jobChangeRoute = targetRoute;
+        jobChangeLevel = Math.max(0, Math.min(EVO_LEVEL_CAP, targetLevel));
+        jobChangePayment = payment.copy();
+        jobChanging = false;
+        jobChangeTicks = 0;
+    }
+
+    public void startJobAnimation(int duration) {
+        jobChanging = true;
+        jobChangeTicks = duration;
+    }
+
+    /** 回调被其他变身替换时也不能永久卡在转职状态。 */
+    public boolean tickJobAnimation() {
+        return jobChanging && --jobChangeTicks > 0;
+    }
+
+    public void clearJobChange() {
+        jobChangeId = "";
+        jobChangeRoute = "";
+        jobChangeLevel = 0;
+        jobChangePayment = ItemStack.EMPTY;
+        jobChanging = false;
+        jobChangeTicks = 0;
     }
 
     public boolean hasMigrated() {
-        return migrated;
+        return migrated && expMigrationVersion >= 1;
     }
 
     public void markMigrated() {
         this.migrated = true;
+        this.expMigrationVersion = 1;
     }
 
     public int getLastTotalExp() {
@@ -229,7 +265,7 @@ public class EvolutionComponent implements AutoSyncedComponent {
         this.points = 0;
         this.grantedLevels.clear();
         this.started = false;
-        this.jobChanging = false;
+        clearJobChange();
         this.lastTotalExp = -1;
         // migrated 保持：重置后仍是内置 exp 机制，无需再次迁移
     }
@@ -254,7 +290,15 @@ public class EvolutionComponent implements AutoSyncedComponent {
         }
         this.started = nbt.getBoolean("started");
         this.migrated = nbt.getBoolean("migrated");
+        this.expMigrationVersion = nbt.getInt("expMigrationVersion");
         this.lastTotalExp = nbt.contains("lastTotalExp") ? nbt.getInt("lastTotalExp") : -1;
+        this.jobChangeId = nbt.getString("jobChangeId");
+        this.jobChangeRoute = nbt.getString("jobChangeRoute");
+        this.jobChangeLevel = Math.max(0, Math.min(EVO_LEVEL_CAP, nbt.getInt("jobChangeLevel")));
+        this.jobChangePayment = nbt.contains("jobChangePayment", NbtElement.COMPOUND_TYPE)
+                ? ItemStack.fromNbt(nbt.getCompound("jobChangePayment")) : ItemStack.EMPTY;
+        this.jobChanging = false;
+        this.jobChangeTicks = 0;
     }
 
     @Override
@@ -277,6 +321,22 @@ public class EvolutionComponent implements AutoSyncedComponent {
         nbt.putIntArray("grantedLevels", granted);
         nbt.putBoolean("started", this.started);
         nbt.putBoolean("migrated", this.migrated);
+        nbt.putInt("expMigrationVersion", this.expMigrationVersion);
         nbt.putInt("lastTotalExp", this.lastTotalExp);
+        if (isJobChanging()) {
+            nbt.putString("jobChangeId", this.jobChangeId);
+            nbt.putString("jobChangeRoute", this.jobChangeRoute);
+            nbt.putInt("jobChangeLevel", this.jobChangeLevel);
+            if (!jobChangePayment.isEmpty()) {
+                nbt.put("jobChangePayment", jobChangePayment.writeNbt(new NbtCompound()));
+            } else {
+                nbt.remove("jobChangePayment");
+            }
+        } else {
+            nbt.remove("jobChangeId");
+            nbt.remove("jobChangeRoute");
+            nbt.remove("jobChangeLevel");
+            nbt.remove("jobChangePayment");
+        }
     }
 }

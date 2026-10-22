@@ -39,7 +39,12 @@ public class VoidDevourSpell extends Spell {
 	/** 按住瞄准型：最大施法距离（含等级缩放；客户端按住施法键显示落点预览圈，松开施放）。 */
 	@Override
 	public double getAimMaxRange() {
-		return RuneCastContext.current().scale(BAL.d("base_range", BASE_RANGE),RuneModifiers.Stat.DISTANCE); // 预览距离基准；等级缩放在 getBlinkRange 式调用点乘 speed_multiplier
+		return getAimMaxRange(1);
+	}
+
+	@Override
+	public double getAimMaxRange(int level) {
+		return effectiveRange(level);
 	}
 
 	/** 预览圈半径 = 落点 AOE 半径（含等级缩放，与服务端实际伤害范围一致）。 */

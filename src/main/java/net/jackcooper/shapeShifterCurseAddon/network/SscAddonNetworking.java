@@ -386,6 +386,7 @@ public class SscAddonNetworking {
 	}
 
 	public static void registerServerReceivers() {
+        registerEvolutionRouteSync();
 		// 施法打断网关（2026-09-22 需求）：玩家正在施法读条时按下任何 SP 技能键 → 立即按
 		// 自身打断位取消当前施法（领域等读条法术会被打断），技能本身继续正常生效。
 		// 各技能 receiver 的 server.execute 体统一经 runSkillAction 包装。
@@ -681,7 +682,7 @@ public class SscAddonNetworking {
 			for (int i = 0; i < count; i++) ids.add(buf.readString(256));
 			server.execute(() -> {
 				if (isRateLimited(player)) return;
-				for (String id : ids) EvolutionManager.tryUnlock(player, id);
+				EvolutionManager.tryUnlockBatch(player, ids);
 			});
 		});
 
@@ -744,15 +745,7 @@ public class SscAddonNetworking {
 					ServerPlayNetworking.send(recipient, PACKET_BROADCAST_FORMS, out);
 				}
 				// 同步 SSCA 进化路线定义给请求者（客户端进化树 UI 渲染需要，多人环境客户端无 datapack 数据）
-				net.minecraft.network.PacketByteBuf routesOut = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
-				java.util.Map<String, String> rawRoutes =
-						net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.INSTANCE.getRawJson();
-				routesOut.writeInt(rawRoutes.size());
-				for (java.util.Map.Entry<String, String> e : rawRoutes.entrySet()) {
-					routesOut.writeString(e.getKey(), 256);
-					routesOut.writeString(e.getValue(), 2000000);
-				}
-				ServerPlayNetworking.send(player, PACKET_EVO_ROUTES_SYNC, routesOut);
+                sendEvolutionRoutes(player);
 				// 同步法术数值配置（卷轴 tooltip / HUD 显示的数值须与服务端施法判定一致）
 				net.minecraft.network.PacketByteBuf spellsOut = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
 				java.util.Map<String, String> rawSpells =
@@ -767,7 +760,25 @@ public class SscAddonNetworking {
 		});
 	}
 
-	/** 服务端：通知客户端打开灵能宝珠「转职选择形态」界面（无 payload）。 */
+    /** 加入和成功重载数据包都发送最新路线，在线客机无需重连。 */
+    public static void registerEvolutionRouteSync() {
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.register(
+                (player, joined) -> sendEvolutionRoutes(player));
+    }
+
+    public static void sendEvolutionRoutes(ServerPlayerEntity player) {
+        net.minecraft.network.PacketByteBuf routesOut = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+        java.util.Map<String, String> rawRoutes =
+                net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.INSTANCE.getRawJson();
+        routesOut.writeInt(rawRoutes.size());
+        for (java.util.Map.Entry<String, String> entry : rawRoutes.entrySet()) {
+            routesOut.writeString(entry.getKey(), 256);
+            routesOut.writeString(entry.getValue(), 2000000);
+        }
+        ServerPlayNetworking.send(player, PACKET_EVO_ROUTES_SYNC, routesOut);
+    }
+
+    /** 服务端：通知客户端打开灵能宝珠「转职选择形态」界面（无 payload）。 */
 	public static void sendOpenJobChange(ServerPlayerEntity player) {
 		ServerPlayNetworking.send(player, PACKET_OPEN_JOB_CHANGE, net.fabricmc.fabric.api.networking.v1.PacketByteBufs.empty());
 	}

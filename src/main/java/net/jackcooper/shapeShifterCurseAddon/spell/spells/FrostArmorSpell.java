@@ -5,7 +5,8 @@ import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.spell.FrostArmorAccess;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -17,10 +18,9 @@ import net.minecraft.util.Identifier;
  * 霜甲术（冰系，蓝色基底，jackcooper）：给自己施加「伤害吸收」（黄心）——
  * 无伤害魔法，power 语义 = 期望吸收点数。
  *
- * <p>实现：先加原版 {@code AbsorptionStatusEffect}（取不超过目标量的档位，供图标/到期语义），
- * 再直接 {@code setAbsorptionAmount(max(current, power))} 精确写入黄心量（原版档位只有 4×2ⁿ，
- * 无法表达 20/24 等任意值）；用 max 防止低级刷新把已有更高黄心覆盖拉低。
- * 吸收量到期后残留至受击扣光是原版金苹果同款行为。</p>
+ * <p>独立霜甲效果计时，吸收池补至 {@code max(current, power)}，重复施放不叠加。
+ * 精确记录本法术补入的份额，受伤先消耗霜甲；到期或效果被移除时只移除霜甲剩余的份额。
+ * 不改写金苹果等其他吸收效果的等级和持续时间。</p>
  *
  * <p>数值外置 {@code data/ssc_addon/spells/frost_armor.json}：
  * 基准 8 吸收（4 黄心）/ 持续 20s / cd 25s 每级 -2.5s / 耗蓝 25 每级 ×1.2（复利，与月辉诅咒系 buff 类一致）；
@@ -31,11 +31,9 @@ public class FrostArmorSpell extends Spell {
 
 	/** 吸收持续时间（tick）：20s。默认值；运行时从 balance 快照读取。 */
 	private static final int DURATION_TICKS = 400;
-	/** amplifier 上限（防数据包写飞）。 */
-	private static final int MAX_ABSORPTION_AMPLIFIER = 4;
 
 	// 阶段 5：运行时快照读取（spells.frost_armor；快照未初始化回退上方默认常量。
-	// MAX_ABSORPTION_AMPLIFIER 为结构 clamp，不参与快照迁移）
+	// 持续时间和吸收量均不借用原版吸收效果的整数档位）
 	private static final BalanceReader BAL = new BalanceReader("spells.frost_armor");
 
 	public FrostArmorSpell() {
@@ -44,12 +42,9 @@ public class FrostArmorSpell extends Spell {
 
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo) {
-		// 档位 = 不超过目标量的最大 2 幂档（onApplied 提到 4<<amp，不会超过 power）；
-		// power<4 时 log 为负 → clamp 0。随后精确直写吸收量（max 防低级拉低已有高黄心）。
-		int amplifier = Math.max(0, Math.min(MAX_ABSORPTION_AMPLIFIER,
-				(int) Math.floor(Math.log(power / 4.0f) / Math.log(2.0))));
-		caster.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, RuneCastContext.current().duration(BAL.i("duration_ticks", DURATION_TICKS),RuneModifiers.Stat.SHIELD_DURATION), amplifier));
-		caster.setAbsorptionAmount(Math.max(caster.getAbsorptionAmount(), power));
+		caster.addStatusEffect(new StatusEffectInstance(SscAddon.FROST_ARMOR,
+				RuneCastContext.current().duration(BAL.i("duration_ticks", DURATION_TICKS),RuneModifiers.Stat.SHIELD_DURATION), 0));
+		if (caster.hasStatusEffect(SscAddon.FROST_ARMOR)) ((FrostArmorAccess) caster).ssca$frostArmor().grant(caster, power);
 		// 演出：寒气缠绕 + 冰晶盾碎裂音效
 		if (caster.getWorld() instanceof ServerWorld serverWorld) {
 			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, caster, ParticleTypes.SNOWFLAKE,

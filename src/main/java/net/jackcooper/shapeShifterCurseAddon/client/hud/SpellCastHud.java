@@ -53,7 +53,7 @@ public final class SpellCastHud {
 	public record State(java.util.UUID casterUuid, Spell spell, int token, int elapsed, int duration, SpellCastingRules.Mode mode,
 			boolean released, boolean immobilized, boolean solo, boolean continuous, int cancelTicks,
 			/** 锁定态（服务端 isLockedIn：领域壳扩张后/爆裂红白球生成后不可打断）：倒计时红显且忽略取消显示。 */
-			boolean locked) {}
+			boolean locked, int level) {}
 
 	private SpellCastHud() {}
 
@@ -85,6 +85,21 @@ public final class SpellCastHud {
 		SpellChannelManager.setClientImmobile(null);
 	}
 
+	/** 解码活动会话；校准包沿用首包的有效等级，不从当前卷轴等级重新推算。 */
+	public static State readActiveState(net.minecraft.network.PacketByteBuf buf, State old) {
+		if (buf.readBoolean()) {
+			Spell spell = SpellRegistry.get(buf.readIdentifier().getPath());
+			java.util.UUID casterUuid = buf.readUuid();
+			return new State(casterUuid, spell, buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
+					buf.readEnumConstant(SpellCastingRules.Mode.class), buf.readBoolean(), buf.readBoolean(),
+					buf.readBoolean(), buf.readBoolean(), buf.readVarInt(), buf.readBoolean(), buf.readVarInt());
+		}
+		if (old == null) return null;
+		return new State(old.casterUuid(), old.spell(), buf.readVarInt(), buf.readVarInt(),
+				old.duration(), old.mode(), buf.readBoolean(), old.immobilized(), old.solo(),
+				old.continuous(), buf.readVarInt(), buf.readBoolean(), old.level());
+	}
+
 	public static void register() {
 		ClientPlayNetworking.registerGlobalReceiver(SpellChannelManager.STATE, (client, handler, buf, sender) -> {
 			if (!buf.readBoolean()) {
@@ -92,22 +107,9 @@ public final class SpellCastHud {
 				return;
 			}
 			// 双格式：full=true 全量首包（起手一次）/ false 轻量校准包（每 20t，仅 token+elapsed+标志位）
-			boolean full = buf.readBoolean();
-			State incoming;
-			if (full) {
-				Spell spell = SpellRegistry.get(buf.readIdentifier().getPath());
-				java.util.UUID casterUuid = buf.readUuid();
-				incoming = new State(casterUuid, spell, buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
-						buf.readEnumConstant(SpellCastingRules.Mode.class), buf.readBoolean(), buf.readBoolean(),
-						buf.readBoolean(), buf.readBoolean(), buf.readVarInt(), buf.readBoolean());
-			} else {
-				// 轻量校准：只更新 elapsed/已释放/取消计数/锁定态，静态字段沿用上一状态
-				State old = state;
-				if (old == null) return; // 全量首包丢了：无法恢复静态字段，丢弃（看门狗会兜底清场）
-				incoming = new State(old.casterUuid(), old.spell(), buf.readVarInt(), buf.readVarInt(),
-						old.duration(), old.mode(), buf.readBoolean(), old.immobilized(), old.solo(),
-						old.continuous(), buf.readVarInt(), buf.readBoolean());
-			}
+			boolean full = buf.getBoolean(buf.readerIndex());
+			State incoming = readActiveState(buf, state);
+			if (incoming == null) return;
 			final boolean fullPacket = full;
 			final State packetState = incoming;
 			client.execute(() -> {

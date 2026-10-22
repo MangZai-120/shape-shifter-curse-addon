@@ -14,7 +14,8 @@ public final class DeathFinaleSpell extends Spell {
         return true;
     }
 
-    @Override public SpellCastingRules.Profile getCastingProfile(ServerPlayerEntity caster, int level, boolean solo) {
+	/** SPECIAL 提供分类；蓄力与管理器均以 JSON 时长为准（默认 390t），不采用档位的 260t。 */
+	@Override public SpellCastingRules.Profile getCastingProfile(ServerPlayerEntity caster, int level, boolean solo) {
         return new SpellCastingRules.Profile(Math.max(1, getBaseCastTimeTicks()), 0, true);
     }
 

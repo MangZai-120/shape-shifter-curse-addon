@@ -118,6 +118,7 @@ public class SscAddon implements ModInitializer {
 	public static final StatusEffect BAT_REGEN = new BatRegenEffect();
 	public static final StatusEffect BAT_POISON = new BatPoisonEffect();
 	public static final StatusEffect BAT_ABSORPTION = new BatAbsorptionEffect();
+	public static final StatusEffect FROST_ARMOR = new net.jackcooper.shapeShifterCurseAddon.effect.FrostArmorEffect();
 	// 幽雾化形 - 雾化状态标记效果
 	public static final StatusEffect MIST_FORM = new MistFormEffect();
 	// 幽雾化形 - 凝聚爆破蓄力标记效果（客户端据此减速 50%）
@@ -528,6 +529,7 @@ public class SscAddon implements ModInitializer {
 		registerEffect("bat_regen", BAT_REGEN);
 		registerEffect("bat_poison", BAT_POISON);
 		registerEffect("bat_absorption", BAT_ABSORPTION);
+		registerEffect("frost_armor", FROST_ARMOR);
 		registerEffect("mist_form", MIST_FORM);
 		registerEffect("mist_charging", MIST_CHARGING);
 		registerEffect("sand_blind", SAND_BLIND);

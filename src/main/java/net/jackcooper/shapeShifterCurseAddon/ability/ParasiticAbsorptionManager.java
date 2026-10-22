@@ -56,7 +56,7 @@ public final class ParasiticAbsorptionManager {
             float granted = d.granted;
             server.execute(() -> {
                 if (player.isAlive()) {
-                    player.setAbsorptionAmount(Math.max(0.0f, player.getAbsorptionAmount() - granted));
+                    net.jackcooper.shapeShifterCurseAddon.spell.FrostArmorState.removeOther(player, granted);
                 }
             });
         });
@@ -92,7 +92,7 @@ public final class ParasiticAbsorptionManager {
             // 到期：在目标所在世界清除本机制提供的 absorption
             Entity entity = world.getEntity(e.getKey());
             if (entity instanceof LivingEntity living) {
-                living.setAbsorptionAmount(Math.max(0.0f, living.getAbsorptionAmount() - d.granted));
+                net.jackcooper.shapeShifterCurseAddon.spell.FrostArmorState.removeOther(living, d.granted);
                 it.remove();
             }
             // 本世界找不到目标（跨维度/离线）：保留，等其所在世界 tick 时清除

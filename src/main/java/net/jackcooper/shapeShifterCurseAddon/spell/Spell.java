@@ -99,7 +99,7 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	public boolean requiresTargetBeforeChannel() { return false; }
 
 	public Vec3d captureCastTarget(ServerPlayerEntity caster, int level) {
-		return getAimMaxRange() > 0 ? computeAimImpact(caster, getAimMaxRange()) : null;
+		return getAimMaxRange(level) > 0 ? computeAimImpact(caster, getAimMaxRange(level)) : null;
 	}
 
 	private Vec3d lockedCastTarget;
@@ -210,6 +210,11 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	 */
 	public double getAimMaxRange() {
 		return 0.0;
+	}
+
+	/** 本次有效等级的瞄准射程；旧法术沿用无参覆写，等级缩放法术单独覆写此方法。 */
+	public double getAimMaxRange(int level) {
+		return getAimMaxRange();
 	}
 
 	/**

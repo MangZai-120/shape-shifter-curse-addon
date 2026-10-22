@@ -80,7 +80,7 @@ public class PlayDeadAbsorptionManager {
 		// 到点后每秒减 2 HP（代码直接扣，无受击特效）
 		if (now >= decayStart && (now - decayStart) % BAL.i("decay_interval", DECAY_INTERVAL) == 0) {
 			float reduce = Math.min(budget, (float) BAL.d("decay_per_sec", DECAY_PER_SEC));
-			player.setAbsorptionAmount(Math.max(0f, actual - reduce));
+			net.jackcooper.shapeShifterCurseAddon.spell.FrostArmorState.removeOther(player, reduce);
 			budget -= reduce;
 		}
 

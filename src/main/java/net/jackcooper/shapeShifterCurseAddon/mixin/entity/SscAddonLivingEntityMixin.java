@@ -89,6 +89,10 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 
 	@Inject(method = "onStatusEffectRemoved", at = @At("TAIL"))
 	private void ssca$clearNpcCombatEffect(StatusEffectInstance effect, CallbackInfo ci) {
+		// 实际到期/清除才结算霜甲；效果刷新走 onStatusEffectUpgraded，不能在效果 onRemoved 中结算。
+		if (effect.getEffectType() == SscAddon.FROST_ARMOR) {
+			net.jackcooper.shapeShifterCurseAddon.spell.FrostArmorState.removeFrom((LivingEntity) (Object) this);
+		}
 		if (ssca$npcCombatState == null) return;
 		if (effect.getEffectType() == StatusEffects.GLOWING) ssca$npcCombatState.clearFallen();
 		if (effect.getEffectType() == SscAddon.STUN) ssca$npcCombatState.clearWildCat();
