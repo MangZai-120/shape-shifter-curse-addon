@@ -176,6 +176,13 @@ public final class FrostSpikeManager {
 	}
 
 	/** 结束凝棘蓄力：移除减速 + 清蓄力态。所有结束路径统一走此方法，防减速泄漏。 */
+	public static void interruptControl(ServerPlayerEntity player) {
+		State s = STATES.get(player.getUuid());
+		if (s == null) return;
+		stopCharge(player);
+		if (s.secondaryCharging) endSecondaryCharge(player, s);
+	}
+
 	private static void endSecondaryCharge(ServerPlayerEntity player, State s) {
 		EntityAttributeInstance speed = player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
 		if (speed != null) speed.removeModifier(SECONDARY_SLOW_UUID);

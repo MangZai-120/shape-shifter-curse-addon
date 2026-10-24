@@ -160,6 +160,15 @@ public final class SpellcastClient {
 		boolean castPressed = SpellcastKeybindings.KEY_CAST != null && SpellcastKeybindings.KEY_CAST.isPressed();
 		boolean anyPressed = castPressed;
 		for (KeyBinding key : SpellcastKeybindings.KEY_DIRECT) anyPressed |= key != null && key.isPressed();
+		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) {
+			downgradePresses.reset();
+			clearTargetSelection();
+			gestureKey = -1;
+			cancelToken = -1;
+			inputGuard.block();
+			updatePressedKeys(castPressed);
+			return;
+		}
 		if (client.currentScreen != null) {
 			downgradePresses.reset();
 			if (gestureKey >= 0 && !selectingTarget) sendRelease(gestureToken);

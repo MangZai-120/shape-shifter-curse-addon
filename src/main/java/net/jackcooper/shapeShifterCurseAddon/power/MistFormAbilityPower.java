@@ -443,6 +443,16 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 		}
 	}
 
+	/** End the current form/charge without releasing its charged explosion. */
+	public void interruptControl() {
+		if (entity == null || entity.getWorld().isClient || (!charging && !isMist() && !wasMist)) return;
+		charging = false;
+		entity.removeStatusEffect(SscAddon.MIST_CHARGING);
+		exitMist(false);
+		refreshMistScale(false);
+		applyCooldown();
+	}
+
 	@Override
 	public boolean canUse() {
 		// 始终允许触发，冷却逻辑在 onUse 内部处理

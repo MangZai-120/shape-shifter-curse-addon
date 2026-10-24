@@ -535,6 +535,10 @@ public final class JumpKillManager {
 		}
 	}
 
+	public static void interruptControl(ServerPlayerEntity player) {
+		if (STATES.containsKey(player.getUuid())) cancel(player);
+	}
+
 	/** 断线/停服清理：锦点一并清。 */
 	public static void clearPlayer(UUID uuid) {
 		STATES.remove(uuid);

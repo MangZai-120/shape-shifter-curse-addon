@@ -131,7 +131,103 @@ public final class AxolotlSpPerkIntegrationProbe {
         TestPlayer fresh = player();
         select(fresh, sp);
         check(!has(fresh, AxolotlSpPerks.WATER_MAGIC), "unlearned Perks are not granted by evolution");
+        checkFamiliarForms();
         System.out.println("Axolotl SP Perk integration: " + checks + " checks passed; live gameplay NOT tested.");
+    }
+
+    private static void checkFamiliarForms() throws Exception {
+        Identifier tree = RegPerks.T_FamiliarFox3PerkTree;
+        var all = RegPerks.getPerkTree(tree).getAllPerks();
+        check(all.size() == 9, "exactly nine registered familiar Perks");
+        for (Identifier id : all) {
+            var perk = (NormalPerk) RegPerks.getPerk(id);
+            for (Identifier power : perk.powerAdd) register(power, json("shape-shifter-curse", power.getPath()));
+            for (Identifier power : perk.powerRemove) if (!PowerTypeRegistry.contains(power)) register(power, null);
+        }
+        for (Identifier id : List.of(FamiliarFoxSpPerks.SIPHON_1, FamiliarFoxSpPerks.SIPHON_2,
+                FamiliarFoxSpPerks.FIELD_1, FamiliarFoxSpPerks.FIELD_2)) register(id, json("my_addon", id.getPath()));
+        for (Identifier familiarForm : List.of(FormIdentifiers.FAMILIAR_FOX_SP, FormIdentifiers.FAMILIAR_FOX_RED,
+                FormIdentifiers.FAMILIAR_FOX_MANCIANIMA)) {
+            IForm sp = RegPlayerForms.getPlayerForm(familiarForm);
+            IForm vanilla = RegPlayerForms.getPlayerForm(original("familiar_fox_3"));
+            check(sp.getPerkTreeID().equals(tree), "SP familiar is registered with the original tree");
+            TestPlayer player = player(); player.totalExperience = 1234;
+            player.form.formPerkMap.put(tree, new ArrayList<>(all));
+            select(player, vanilla);
+            check(has(player, original("perks/familiar_fox_siphon_2")), "SSC familiar retains original siphon");
+            check(!has(player, FamiliarFoxSpPerks.SIPHON_2), "SSC familiar has no SP damage hook marker");
+            select(player, sp);
+            check(player.totalExperience == 1234 && player.form.formPerkMap.get(tree).equals(all), "all nine purchases survive evolution without an extra payment");
+            check(FamiliarFoxSpPerks.siphonAmount(player) == 4 && !has(player, FamiliarFoxSpPerks.SIPHON_1), "siphon II replaces I and returns four, never six");
+            check(!has(player, original("perks/familiar_fox_siphon_1")) && !has(player, original("perks/familiar_fox_siphon_2")), "original on-hit refunds are not duplicated");
+            check(has(player, FamiliarFoxSpPerks.FIELD_2) && !has(player, FamiliarFoxSpPerks.FIELD_1)
+                    && !has(player, FamiliarFoxSpPerks.baseImmunity(sp)), "field II removes the current form's base immunity and rank I");
+            if (familiarForm.equals(FormIdentifiers.FAMILIAR_FOX_MANCIANIMA)) {
+                check(!has(player, original("form_familiar_fox_3_no_buff_effect")), "Mancianima also removes its redundant original immunity");
+            }
+            for (String suffix : List.of("deflection", "return_shield", "mana_capacity_2", "potion_charms"))
+                check(has(player, original("perks/familiar_fox_" + suffix)), "unaltered familiar Perk is inherited: " + suffix);
+            check(!has(player, original("perks/familiar_fox_mana_capacity_1")), "capacity II replaces I");
+            var firstEffects = List.of(net.minecraft.entity.effect.StatusEffects.SPEED,
+                    net.minecraft.entity.effect.StatusEffects.HASTE, net.minecraft.entity.effect.StatusEffects.INVISIBILITY);
+            var secondEffects = List.of(net.minecraft.entity.effect.StatusEffects.STRENGTH,
+                    net.minecraft.entity.effect.StatusEffects.WATER_BREATHING, net.minecraft.entity.effect.StatusEffects.NIGHT_VISION);
+            for (var effect : firstEffects) check(FamiliarFoxSpPerks.preservesEffectDuration(player, effect), "field II preserves rank-I buff duration");
+            for (var effect : secondEffects) check(FamiliarFoxSpPerks.preservesEffectDuration(player, effect), "field II preserves its additional buff duration");
+            check(!FamiliarFoxSpPerks.preservesEffectDuration(player, net.minecraft.entity.effect.StatusEffects.REGENERATION), "unapproved buffs do not bypass the existing rules");
+            for (int amplifier : new int[]{0, 1, 2, 3, 10}) for (int duration : new int[]{-1, 1, 20, 2400}) {
+                var effect = new net.minecraft.entity.effect.StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.SPEED, duration, amplifier, true, false, false);
+                var adjusted = FamiliarFoxSpPerks.levelOneWithOriginalDuration(effect);
+                check(adjusted.getAmplifier() == 0 && adjusted.getDuration() == duration, "full duration and level I: " + amplifier + "/" + duration);
+                check(adjusted.isAmbient() && !adjusted.shouldShowParticles() && !adjusted.shouldShowIcon(), "effect display flags survive adjustment");
+            }
+            NbtCompound saved = new NbtCompound(); player.form.writeToNbt(saved);
+            TestPlayer restored = player(); restored.form.readFromNbt(saved);
+            check(restored.form.formPerkMap.get(tree).equals(all), "CCA NBT preserves the familiar purchase records");
+            NbtCompound powers = new NbtCompound(); player.powers.writeToNbt(powers); player.powers.readFromNbt(powers);
+            check(FamiliarFoxSpPerks.siphonAmount(player) == 4 && has(player, FamiliarFoxSpPerks.FIELD_2), "mapped powers survive Apoli NBT");
+
+            var baseImmunity = new java.util.HashSet<String>();
+            for (var effect : json("my_addon", FamiliarFoxSpPerks.baseImmunity(sp).getPath()).getAsJsonArray("effects")) baseImmunity.add(effect.getAsString());
+            for (int rank : new int[]{1, 2}) {
+                var expected = new java.util.HashSet<>(baseImmunity);
+                expected.removeAll(List.of("minecraft:speed", "minecraft:haste", "minecraft:invisibility"));
+                if (rank == 2) expected.removeAll(List.of("minecraft:strength", "minecraft:water_breathing", "minecraft:night_vision"));
+                var actual = new java.util.HashSet<String>();
+                for (var effect : json("my_addon", "perk_familiar_fox_sp_permeable_field_" + rank).getAsJsonArray("effects")) actual.add(effect.getAsString());
+                check(actual.equals(expected), "field rank " + rank + " preserves every other SP immunity");
+            }
+            player.form.formPerkMap.put(tree, new ArrayList<>(List.of(RegPerks.P_FamiliarFoxSiphon_1, RegPerks.P_FamiliarFoxManaCapacity_1, RegPerks.P_FamiliarFoxPermeableField_1)));
+            select(player, sp);
+            check(FamiliarFoxSpPerks.siphonAmount(player) == 2, "rank I alone restores two mana");
+            for (var effect : firstEffects) check(FamiliarFoxSpPerks.preservesEffectDuration(player, effect), "field I preserves exactly its first three durations");
+            for (var effect : secondEffects) check(!FamiliarFoxSpPerks.preservesEffectDuration(player, effect), "rank I does not unlock rank-II buffs");
+            select(player, vanilla);
+            check(has(player, original("perks/familiar_fox_siphon_1")) && FamiliarFoxSpPerks.siphonAmount(player) == 0, "switching back restores SSC siphon without the SP hook");
+            for (Identifier excluded : List.of(FormIdentifiers.UPGRADE_FAMILIAR_FOX)) {
+                IForm form = RegPlayerForms.getPlayerForm(excluded);
+                check(form.getPerkTreeID().equals(RegPerks.EMPTY_PERK_TREE), "other familiar forms remain unbound: " + excluded);
+                select(player, form);
+                check(FamiliarFoxSpPerks.siphonAmount(player) == 0, "SP siphon does not leak to " + excluded);
+                check(!FamiliarFoxSpPerks.canUsePotionCharm(excluded), "potion charm eligibility stays unchanged for " + excluded);
+            }
+            check(FamiliarFoxSpPerks.canUsePotionCharm(FormIdentifiers.FAMILIAR_FOX_SP), "SP charm use extends the original form eligibility branch");
+            check(FamiliarFoxSpPerks.canUsePotionCharm(FormIdentifiers.FAMILIAR_FOX_RED), "Red shares SP charm eligibility");
+            check(FamiliarFoxSpPerks.canUsePotionCharm(FormIdentifiers.FAMILIAR_FOX_MANCIANIMA), "Mancianima can use original potion charms");
+            check(FamiliarFoxSpPerks.canUsePotionCharm(original("familiar_fox_3")), "original charm users remain allowed");
+            TestPlayer fresh = player(); select(fresh, sp);
+            check(FamiliarFoxSpPerks.siphonAmount(fresh) == 0 && has(fresh, FamiliarFoxSpPerks.baseImmunity(sp)), "unlearned familiar gains no Perks and retains its own immunity");
+        }
+        TestPlayer switching = player();
+        switching.form.formPerkMap.put(tree, new ArrayList<>(all));
+        for (Identifier id : List.of(FormIdentifiers.FAMILIAR_FOX_SP, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA, FormIdentifiers.FAMILIAR_FOX_RED,
+                FormIdentifiers.FAMILIAR_FOX_SP, FormIdentifiers.FAMILIAR_FOX_RED, original("familiar_fox_3"), FormIdentifiers.FAMILIAR_FOX_SP)) {
+            select(switching, RegPlayerForms.getPlayerForm(id));
+            check(switching.form.formPerkMap.get(tree).equals(all), "familiar round trip retains all purchases: " + id);
+            boolean supported = !id.equals(original("familiar_fox_3"));
+            check(FamiliarFoxSpPerks.siphonAmount(switching) == (supported ? 4 : 0), "familiar round trip has the correct siphon: " + id);
+            check(has(switching, FamiliarFoxSpPerks.FIELD_2) == supported && !has(switching, FamiliarFoxSpPerks.FIELD_1), "familiar round trip has no duplicate field: " + id);
+        }
     }
 
     private static void checkFluorescentForms(TestPlayer player, List<Identifier> all) {
@@ -291,12 +387,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         if (player.form.nowForm != null) player.powers.removeAllPowersFromSource(player.form.nowForm.getFormLayer().getRight());
         player.form.setForm(form);
         player.form.nowPerkTree = form.getPerkTreeID();
-        var base = form.getFormID().equals(FormIdentifiers.AXOLOTL_SP)
-                ? resource("my_addon", "origins/form_axolotl_sp")
-                : FluorescentAxolotlPerks.isFluorescent(form)
-                ? resource("my_addon", form.getFormID().equals(FormIdentifiers.AXOLOTL_ALING)
-                        ? "origins/form_axolotl_aling" : "origins/form_axolotl_fluorescent")
-                : resource("shape-shifter-curse", "origins/form_axolotl_3");
+        var base = resource(form.getFormID().getNamespace(), "origins/form_" + form.getFormID().getPath());
         for (var id : base.getAsJsonArray("powers")) {
             Identifier key = new Identifier(id.getAsString());
             if (!PowerTypeRegistry.contains(key)) register(key, null);

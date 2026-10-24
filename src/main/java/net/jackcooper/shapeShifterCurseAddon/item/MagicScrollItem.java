@@ -39,6 +39,7 @@ public class MagicScrollItem extends Item {
 	@Override
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
 		ItemStack stack = user.getStackInHand(hand);
+		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(user)) return TypedActionResult.fail(stack);
 		if (ArcaneAnalysis.isUnanalyzed(stack)) {
 			if (!world.isClient) user.sendMessage(Text.translatable("message.ssc_addon.analysis.required").formatted(Formatting.RED), true);
 			return TypedActionResult.fail(stack);

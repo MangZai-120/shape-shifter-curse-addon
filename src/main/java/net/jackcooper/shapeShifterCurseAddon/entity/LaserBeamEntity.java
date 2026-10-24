@@ -434,6 +434,11 @@ public class LaserBeamEntity extends Entity {
 	}
 
 	// ==================== 取消/清理 ====================
+	public void interruptControl(ServerPlayerEntity owner) {
+		cancelNoCd(owner);
+		discard();
+	}
+
 	private void cancelNoCd(ServerPlayerEntity owner) {
 		if (owner != null) {
             net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(owner, net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.SKILL_ID, cooldownCastId);

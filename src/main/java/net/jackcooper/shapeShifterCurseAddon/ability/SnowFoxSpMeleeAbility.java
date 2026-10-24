@@ -56,6 +56,7 @@ public class SnowFoxSpMeleeAbility {
 	private static final String SKILL_ID = "my_addon:form_snow_fox_sp_melee_primary";
 
 	public static boolean execute(ServerPlayerEntity player) {
+		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return false;
 		if (!net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.consume(player,
 				net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX, BAL.i("mana_cost", MANA_COST))) {
 			// 法力不足提示音仅施法者自己听（player.playSound 在服务端会排除自己，故改为定向发包）

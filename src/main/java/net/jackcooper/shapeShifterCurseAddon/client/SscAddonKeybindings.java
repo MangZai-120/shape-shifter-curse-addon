@@ -4,6 +4,8 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.onixary.shapeShifterCurseFabric.client.ShapeShifterCurseFabricClient;
+import net.onixary.shapeShifterCurseFabric.magic.MagicUtils;
+import net.onixary.shapeShifterCurseFabric.magic.PressKeyMagic;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
@@ -127,6 +129,15 @@ public class SscAddonKeybindings {
 		// 自定义键用裸 GLFW 检测，不像原版键位会在开界面时被 unpress，
 		// 故必须在此显式拦截，否则在「特殊键位设置」等界面内按绑定键会误放技能。
 		if (MinecraftClient.getInstance().currentScreen != null) {
+			if (!primary) AxolotlSecondaryInput.reset();
+			return false;
+		}
+		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(MinecraftClient.getInstance().player)) {
+			if (!primary) AxolotlSecondaryInput.reset();
+			return false;
+		}
+		if (PlayDeadEndClient.blocksSkillInput(primary)) {
+			if (!primary) AxolotlSecondaryInput.reset();
 			return false;
 		}
 		String formPath = getCurrentFormPath();
@@ -135,12 +146,19 @@ public class SscAddonKeybindings {
 			SSCAddonClientConfig.FormKeybind entry = cfg.formKeybinds.get(formPath);
 			if (entry != null && entry.enabled) {
 				// 启用自定义：只认自定义键（G 在此形态被自动屏蔽）
-				return isPhysicalKeyDown(primary ? entry.primaryKey : entry.secondaryKey);
+				return settleSecondary(primary, formPath, isPhysicalKeyDown(primary ? entry.primaryKey : entry.secondaryKey));
 			}
 		}
 		// 同步 SSC：跟随原版主动技能键（active_skill_1/2）
 		KeyBinding sscKey = getSscSkillKey(primary);
-		return sscKey != null && sscKey.isPressed();
+		return settleSecondary(primary, formPath, sscKey != null && sscKey.isPressed());
+	}
+
+	private static boolean settleSecondary(boolean primary, String form, boolean pressed) {
+		if (primary) return pressed;
+		if ("axolotl_sp".equals(form)) return AxolotlSecondaryInput.filter(pressed);
+		AxolotlSecondaryInput.reset();
+		return pressed;
 	}
 
 	/** 判断给定 InputUtil 翻译键（键盘/鼠标）当前是否被物理按住。 */
@@ -185,7 +203,16 @@ public class SscAddonKeybindings {
 			}
 		}
 		KeyBinding ssc = getSscSkillKey(false);
-		return ssc != null && isPhysicalKeyDown(ssc.getBoundKeyTranslationKey());
+		if (ssc == null) return false;
+		if (isPhysicalKeyDown(ssc.getBoundKeyTranslationKey())) return true;
+		// SSC can invoke an unbound skill through the selected spell-bar slot (normally G).
+		var player = MinecraftClient.getInstance().player;
+		if (player != null && MagicUtils.getNowSelectMagic(player) instanceof PressKeyMagic magic
+				&& ssc.getTranslationKey().equals(magic.getKeyBindID())) {
+			KeyBinding toolbar = ShapeShifterCurseFabricClient.activeSkillKeybind;
+			return toolbar != null && isPhysicalKeyDown(toolbar.getBoundKeyTranslationKey());
+		}
+		return false;
 	}
 
 	/** 虚拟键位：不绑定任何物理键，isPressed 动态计算。 */

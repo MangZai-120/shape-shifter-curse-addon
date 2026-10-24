@@ -60,6 +60,13 @@ public final class SscAddonServerEvents {
 	private SscAddonServerEvents() {}
 
 	public static void registerTickHandlers() {
+		ServerTickEvents.START_SERVER_TICK.register(server -> {
+			for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+				if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.fullyControlled(player)) {
+					net.jackcooper.shapeShifterCurseAddon.ability.ControlledAbilityInterruption.interrupt(player);
+				}
+			}
+		});
 		ServerTickEvents.START_WORLD_TICK.register(world -> {
 			// 在服务器线程上处理断线玩家的领域方块还原
 			if (world.getRegistryKey() == World.OVERWORLD) {

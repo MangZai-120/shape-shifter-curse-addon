@@ -58,6 +58,7 @@ public class SnowFoxSpTeleportAttack {
 	private static final String SKILL_ID = "my_addon:form_snow_fox_sp_melee_secondary";
 
 	public static boolean execute(ServerPlayerEntity player) {
+		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return false;
 		if (ATTACKING_PLAYERS.containsKey(player.getUuid())) {
 			FailAwareActiveSelfPower.markFail();
 			return false;

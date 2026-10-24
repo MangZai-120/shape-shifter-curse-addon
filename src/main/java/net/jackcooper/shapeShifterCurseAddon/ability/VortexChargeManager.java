@@ -134,7 +134,7 @@ public final class VortexChargeManager {
 		if (!FormUtils.isAxolotlSP(player)) return;
 		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return;
 		if (player.getAir() < airPerHitForHud(player)) return; // 与HUD使用同一实际起手费用
-		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID);
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return;
 		ChargeState s = new ChargeState();
 		s.discounted = AxolotlSpPerks.hasWaterMagicEfficiency(player);
         s.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);

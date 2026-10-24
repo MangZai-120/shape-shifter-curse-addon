@@ -22,6 +22,7 @@ import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 public final class PlayDeadEndClient {
 	private static boolean wasKeyPressed = false;
 	private static boolean wasPlayingDead = false;
+	private static boolean secondaryNeedsRelease = false;
 	private static long playDeadStartTime = 0L;
 	/**
 	 * 装死开始后的宽限期（tick）：此期间不响应“再按副技能键提前结束”。
@@ -37,11 +38,19 @@ public final class PlayDeadEndClient {
 		ClientTickEvents.END_CLIENT_TICK.register(PlayDeadEndClient::onClientTick);
 	}
 
+	/** The cancellation press belongs to Play Dead until it is released. */
+	public static boolean blocksSkillInput(boolean primary) {
+		var player = MinecraftClient.getInstance().player;
+		return player != null && (player.hasStatusEffect(SscAddon.PLAYING_DEAD)
+				|| !primary && secondaryNeedsRelease && SscAddonKeybindings.isSecondaryRawPressed());
+	}
+
 	private static void onClientTick(MinecraftClient client) {
 		ClientPlayerEntity player = client.player;
 		if (player == null || client.world == null) {
 			wasKeyPressed = false;
 			wasPlayingDead = false;
+			secondaryNeedsRelease = false;
 			return;
 		}
 		boolean isPlayingDead = player.hasStatusEffect(SscAddon.PLAYING_DEAD);
@@ -51,6 +60,8 @@ public final class PlayDeadEndClient {
 		}
 		// 用裸 GLFW 物理检测（绕过 StunnedKeyBindingMixin 在装死期对 sp_secondary 的屏蔽）
 		boolean pressed = SscAddonKeybindings.isSecondaryRawPressed();
+		if (!pressed) secondaryNeedsRelease = false;
+		else if (isPlayingDead) secondaryNeedsRelease = true;
 		// 仅在装死已持续超过宽限期后，才允许“再按副技能键提前结束”，避免触发那一下被误判
 		if (isPlayingDead && pressed && !wasKeyPressed
 				&& (client.world.getTime() - playDeadStartTime) >= END_GRACE_TICKS) {

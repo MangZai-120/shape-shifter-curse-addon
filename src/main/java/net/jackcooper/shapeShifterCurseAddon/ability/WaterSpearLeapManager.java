@@ -58,6 +58,7 @@ public final class WaterSpearLeapManager {
 
 	/** 客户端按主技能键（无 payload）。服务端校验、换水矛并起跃悬浮。 */
 	public static void onKeyPress(ServerPlayerEntity player) {
+		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return;
 		if (STATES.containsKey(player.getUuid())) return; // 施法中不可重入
 		if (!FormUtils.isUpgradeAxolotl(player)) return;
 		if (!RegEvolutionComponent.EVOLUTION.get(player).isUnlocked(AxolotlTree.NODE_WATER_SPEAR)) return;

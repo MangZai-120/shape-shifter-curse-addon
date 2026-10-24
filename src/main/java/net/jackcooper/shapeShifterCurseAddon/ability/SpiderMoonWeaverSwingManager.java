@@ -175,6 +175,10 @@ public final class SpiderMoonWeaverSwingManager {
 	/** 飞弹命中方块 → 钩住进入摆荡。 */
 	public static void onBulletHitBlock(ServerPlayerEntity player, Vec3d anchor, SpiderSwingBullet bullet) {
         if (!BULLET_IN_FLIGHT.remove(player.getUuid(), bullet)) return;
+		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.fullyControlled(player)) {
+			settleBreak(player);
+			return;
+		}
 		if (!isSpiderMoonWeaver(player)) return;
 		SwingState s = state(player);
 		s.state = STATE_SWINGING;
@@ -193,6 +197,10 @@ public final class SpiderMoonWeaverSwingManager {
 	/** 飞弹命中生物 → 连接进入 tether 拖拽。 */
 	public static void onBulletHitEntity(ServerPlayerEntity player, LivingEntity target, SpiderSwingBullet bullet) {
         if (!BULLET_IN_FLIGHT.remove(player.getUuid(), bullet)) return;
+		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.fullyControlled(player)) {
+			settleBreak(player);
+			return;
+		}
 		if (!isSpiderMoonWeaver(player)) return;
 		SwingState s = state(player);
 		s.state = STATE_TETHER;
@@ -411,5 +419,10 @@ public final class SpiderMoonWeaverSwingManager {
 	public static void onDisconnect(UUID uuid) {
 		STATES.remove(uuid);
 		BULLET_IN_FLIGHT.remove(uuid);
+	}
+
+	public static void interruptControl(ServerPlayerEntity player) {
+		SwingState s = STATES.get(player.getUuid());
+		if (s != null && s.state != STATE_IDLE) breakWeb(player, s, false);
 	}
 }

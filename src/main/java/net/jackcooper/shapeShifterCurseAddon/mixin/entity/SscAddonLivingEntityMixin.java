@@ -811,6 +811,11 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 
 	@ModifyVariable(method = "addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;Lnet/minecraft/entity/Entity;)Z", at = @At("HEAD"), argsOnly = true)
 	private StatusEffectInstance modifyStatusEffect(StatusEffectInstance effect) {
+		if (!effect.getEffectType().isInstant()
+				&& net.jackcooper.shapeShifterCurseAddon.compat.FamiliarFoxSpPerks.preservesEffectDuration(
+					(LivingEntity) (Object) this, effect.getEffectType())) {
+			return net.jackcooper.shapeShifterCurseAddon.compat.FamiliarFoxSpPerks.levelOneWithOriginalDuration(effect);
+		}
 		if (!effect.getEffectType().isInstant() && PowerHolderComponent.hasPower((LivingEntity) (Object) this, EffectEfficiencyReductionPower.class)) {
 			int originalAmp = effect.getAmplifier();
 			int newDuration;

@@ -114,6 +114,11 @@
                 "type": "apoli:on_block"
             },
             {
+                "type": "apoli:status_effect",
+                "effect": "ssc_addon:playing_dead",
+                "inverted": true
+            },
+            {
                 "type": "apoli:sneaking"
             },
             {

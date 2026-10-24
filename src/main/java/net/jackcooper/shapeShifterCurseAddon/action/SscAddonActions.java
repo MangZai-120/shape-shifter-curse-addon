@@ -403,7 +403,10 @@ public class SscAddonActions {
 						// 项链黄心改由 PlayingDeadEffect 每10tick累积，不再用 Absorption 效果
 
 						// visible=false to hide icon（回血改由 PlayingDeadEffect 每10tick结算）
-						living.addStatusEffect(new StatusEffectInstance(SscAddon.PLAYING_DEAD, duration, 0, false, false, false));
+						if (!living.addStatusEffect(new StatusEffectInstance(SscAddon.PLAYING_DEAD, duration, 0, false, false, false))) {
+							FailAwareActiveSelfPower.markFail();
+							return;
+						}
 						living.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, duration, 0, false, false));
 						living.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, duration, 10, false, false));
 
@@ -416,7 +419,8 @@ public class SscAddonActions {
 						});
 
 						// 3. Force Pose
-						living.setPose(EntityPose.SLEEPING);
+						living.setPose(EntityPose.SWIMMING);
+						living.setSwimming(true);
 					}
 				}));
 

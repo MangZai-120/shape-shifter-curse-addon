@@ -61,6 +61,7 @@ public final class SscAddonForms {
 		familiarFoxForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 四足形态变身后重置玩家缩放到本形态大小（原版体型上调后，使魔SP 同步放大到 0.6）
 		familiarFoxForm.applyScale(0.6f, 0.6f);
+		familiarFoxForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_FamiliarFox3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(familiarFoxForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_familiar_fox_sp")).registerForm(1, 5, familiarFoxForm));
@@ -81,6 +82,7 @@ public final class SscAddonForms {
 		mancianimaForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 四足形态变身后重置玩家缩放到本形态大小（对齐原版 FAMILIAR_FOX_3 新体型 0.55）
 		mancianimaForm.applyScale(0.55f, 0.6f);
+		mancianimaForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_FamiliarFox3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(mancianimaForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_familiar_fox_mancianima")).registerForm(1, 5, mancianimaForm));
@@ -89,6 +91,7 @@ public final class SscAddonForms {
 		familiarFoxRedForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 四足形态变身后重置玩家缩放到本形态大小（原本就比基准大，等倍率放大后到 0.65）
 		familiarFoxRedForm.applyScale(0.65f, 0.6f);
+		familiarFoxRedForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_FamiliarFox3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(familiarFoxRedForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_familiar_fox_red")).registerForm(1, 5, familiarFoxRedForm));

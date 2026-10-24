@@ -321,6 +321,13 @@ public final class FluorescentLaserManager {
 		}
 	}
 
+	public static void interruptControl(ServerPlayerEntity player) {
+		LaserBeamEntity beam = ACTIVE.remove(player.getUuid());
+		if (beam != null && beam.isAlive()) beam.interruptControl(player);
+		ComboSession combo = COMBOS.get(player.getUuid());
+		if (combo != null && combo.active) endCombo(player, combo);
+	}
+
 	private static void endCombo(ServerPlayerEntity player, ComboSession s) {
 		PowerUtils.setResourceValueAndSync(player, SHOT_HUD, 0);
 		applyLaserSpeed(player, false);

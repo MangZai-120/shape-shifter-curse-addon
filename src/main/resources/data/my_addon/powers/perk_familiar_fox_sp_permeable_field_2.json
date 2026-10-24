@@ -1,0 +1,15 @@
+{
+  "type": "apoli:effect_immunity",
+  "hidden": true,
+  "name": "power.my_addon.perk_familiar_fox_sp_permeable_field_2.name",
+  "description": "perk.ssc_addon.familiar_fox_sp.familiar_fox_permeable_field_2.description",
+  "effects": [
+    "minecraft:poison", "minecraft:hunger", "minecraft:regeneration", "minecraft:fire_resistance",
+    "minecraft:resistance", "minecraft:health_boost", "minecraft:jump_boost", "minecraft:wither",
+    "minecraft:absorption", "minecraft:slowness", "minecraft:weakness", "minecraft:mining_fatigue",
+    "minecraft:nausea", "minecraft:blindness", "minecraft:saturation", "minecraft:slow_falling",
+    "minecraft:levitation", "ssc_addon:fox_fire_burn", "ssc_addon:frost_freeze", "ssc_addon:frost_fall",
+    "ssc_addon:sand_blind", "ssc_addon:deafen", "ssc_addon:bat_regen", "ssc_addon:bat_poison",
+    "ssc_addon:bat_absorption"
+  ]
+}

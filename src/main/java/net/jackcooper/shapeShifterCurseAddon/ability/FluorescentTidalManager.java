@@ -179,6 +179,11 @@ public final class FluorescentTidalManager {
     }
 
     /** 取消蓄力（被净化打断）：不发射，按 fail_cooldown 结算。 */
+    public static void interruptControl(ServerPlayerEntity player) {
+        Session s = SESSIONS.get(player.getUuid());
+        if (s != null && s.state == State.CHARGING) cancelCharge(player, s);
+    }
+
     private static void cancelCharge(ServerPlayerEntity player, Session s) {
         applyChargeSpeed(player, false);
         s.state = State.IDLE;

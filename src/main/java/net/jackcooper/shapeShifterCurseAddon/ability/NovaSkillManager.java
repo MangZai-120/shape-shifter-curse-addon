@@ -243,6 +243,16 @@ public final class NovaSkillManager {
     }
 
     /** 结束蓄力：移除减速修改器 + 清蓄力标记（解除禁疾跑）+ 清蓄力计时。所有结束路径统一走此方法，防减速泄漏。 */
+    public static void interruptControl(ServerPlayerEntity player) {
+        if (CHARGE_START.containsKey(player.getUuid())) endCharge(player);
+        LeapSession leap = LEAPS.remove(player.getUuid());
+        if (leap != null) {
+            finishSingleLeap(player, leap);
+            net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.syncNovaLeapWindow(player, 0);
+        }
+        LEAP_LAST_INPUT.remove(player.getUuid());
+    }
+
     private static void endCharge(ServerPlayerEntity player) {
         EntityAttributeInstance speed = player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
         if (speed != null) {

@@ -141,6 +141,12 @@ public class SkillCastManager extends PersistentState {
                 || cast.skillId.equals("my_addon:form_snow_fox_sp_ranged_secondary"));
     }
 
+    public static boolean isAutonomousEffect(Cast cast) {
+        return persistentEffect(cast) || cast.phase == PHASE_ACTIVE
+                && (cast.skillId.equals("my_addon:form_axolotl_fluorescent_tidal")
+                || cast.skillId.equals("my_addon:form_fallen_allay_sp_active_vex_key_activation"));
+    }
+
     public void bindEntity(long castId, UUID entityId) {
         Cast cast = findCast(castId);
         if (cast != null) { cast.persistentEntity = entityId; markDirty(); }
@@ -171,6 +177,7 @@ public class SkillCastManager extends PersistentState {
      * 冷却未完 / 已在施放中 → 返回 -1（rejected）。
      */
     public long begin(ServerPlayerEntity player, String skillId, ResolvedConfig config) {
+        if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return -1;
         return begin(player.getUuid(), skillId, config, now(player));
     }
 
@@ -354,6 +361,7 @@ public class SkillCastManager extends PersistentState {
 
     /** 是否允许开始新施放（门禁统一入口）。 */
     public boolean canBegin(ServerPlayerEntity player, String skillId) {
+        if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return false;
         long now = now(player);
         CooldownState cd = cooldowns.get(key(player.getUuid(), skillId));
         return !activeCasts.containsKey(key(player.getUuid(), skillId))

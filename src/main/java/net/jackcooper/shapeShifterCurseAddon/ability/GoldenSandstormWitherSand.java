@@ -66,6 +66,7 @@ public class GoldenSandstormWitherSand {
 	 * 玩家按下技能键 - 开始蓄力
 	 */
 	public static boolean execute(ServerPlayerEntity player) {
+		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return false;
 		// 已经在蓄力中则忽略（CD 门禁已由 power 层 begin 统一拦截，修 P1-1）
 		if (CHARGING_PLAYERS.containsKey(player.getUuid())) return false;
 

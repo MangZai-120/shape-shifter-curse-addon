@@ -153,6 +153,7 @@ public final class SpellChannelManager {
     public static boolean start(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level,
             boolean solo, int token, int mana, int cooldown, BooleanSupplier sourceValid,
             Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers) {
+        if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return false;
         if (!RuneScheme.validScroll(player,scroll,spell))return false;
         if (ArcaneAnalysis.isUnanalyzed(scroll)) {
 			player.sendMessage(Text.translatable("message.ssc_addon.analysis.required"), true);
@@ -254,7 +255,15 @@ public final class SpellChannelManager {
 		stop(player, true, Text.translatable("message.ssc_addon.spell.cast_interrupted_purified"), true);
 	}
 
+	public static void onFullyControlled(ServerPlayerEntity player) {
+		stop(player, true, "message.ssc_addon.spell.cast_interrupted_action");
+	}
+
 	private static boolean ensureValid(Channel channel) {
+		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(channel.player)) {
+			onFullyControlled(channel.player);
+			return false;
+		}
 		if (channel.player.hasStatusEffect(SscAddon.PURIFIED)) {
 			onPurified(channel.player);
 			return false;

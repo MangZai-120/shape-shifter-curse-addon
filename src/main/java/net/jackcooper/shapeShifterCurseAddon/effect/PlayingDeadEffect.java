@@ -2,6 +2,7 @@ package net.jackcooper.shapeShifterCurseAddon.effect;
 
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.attribute.AttributeContainer;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.entity.player.PlayerEntity;
@@ -28,6 +29,16 @@ public class PlayingDeadEffect extends StatusEffect {
 	@Override
 	public boolean canApplyUpdateEffect(int duration, int amplifier) {
 		return true;
+	}
+
+	@Override
+	public void onRemoved(LivingEntity entity, AttributeContainer attributes, int amplifier) {
+		super.onRemoved(entity, attributes, amplifier);
+		entity.setSwimming(false);
+		if (entity.getSleepingPosition().isEmpty()
+				&& (entity.getPose() == EntityPose.SWIMMING || entity.getPose() == EntityPose.SLEEPING)) {
+			entity.setPose(EntityPose.STANDING);
+		}
 	}
 
 	@Override

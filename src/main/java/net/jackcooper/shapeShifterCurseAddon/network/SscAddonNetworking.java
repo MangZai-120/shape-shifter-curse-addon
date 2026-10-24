@@ -193,11 +193,16 @@ public class SscAddonNetworking {
 	 * 仅包技能触发类包；施法系统自身的 cast/select/release 包不走此处（防自咬尾巴）。
 	 */
 	private static void runSkillAction(ServerPlayerEntity player, Runnable action) {
+        if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return;
         if (!net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(player)) return;
         runSkillCleanup(player, action);
     }
 
     private static void runSkillCleanup(ServerPlayerEntity player, Runnable action) {
+		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) {
+			net.jackcooper.shapeShifterCurseAddon.ability.ControlledAbilityInterruption.interrupt(player);
+			return;
+		}
 		net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.cancelSelf(player);
 		action.run();
 	}

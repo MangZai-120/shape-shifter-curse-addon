@@ -82,16 +82,26 @@ public class AllaySPGroupHeal {
 
 	/** 净化只中断群体治疗；不改变其它悦灵群体净化的蓄力资源。 */
 	public static void onPurified(ServerPlayerEntity player) {
-		if (!net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(player, FormIdentifiers.ALLAY_SP)) return;
-		if (getResourceValue(player, CHARGING_STATE_ID) <= 0 && getResourceValue(player, HEAL_EXECUTE_ID) <= 0) return;
+		long castId = stopCharge(player);
+		if (castId >= 0) net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.interruptedFull(player, SKILL_ID, castId);
+	}
+
+	public static void interruptControl(ServerPlayerEntity player) {
+		long castId = stopCharge(player);
+		if (castId >= 0) net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, castId);
+	}
+
+	private static long stopCharge(ServerPlayerEntity player) {
+		if (!net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(player, FormIdentifiers.ALLAY_SP)) return -1;
+		if (getResourceValue(player, CHARGING_STATE_ID) <= 0 && getResourceValue(player, HEAL_EXECUTE_ID) <= 0) return -1;
 		long castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
 		PowerUtils.setResourceValueAndSync(player, CHARGING_STATE_ID, 0);
 		PowerUtils.setResourceValueAndSync(player, CHARGE_TIMER_ID, 0);
 		PowerUtils.setResourceValueAndSync(player, HEAL_EXECUTE_ID, 0);
-		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.interruptedFull(player, SKILL_ID, castId);
 		player.removeStatusEffect(StatusEffects.SLOWNESS);
 		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.5f);
+		return castId;
 	}
 
 	/**

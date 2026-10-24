@@ -200,6 +200,15 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower implements
 		internalCooldownEndTime = entity.getWorld().getTime() + SkillCooldowns.remaining(player, powerIdentifier());
 	}
 
+	public void interruptControl() {
+		if (entity == null || entity.getWorld().isClient) return;
+		if (entity.hasStatusEffect(SscAddon.PRE_INVISIBILITY)) {
+			entity.removeStatusEffect(SscAddon.PRE_INVISIBILITY);
+			interruptCast();
+		}
+		breakInvisibility(false);
+	}
+
 	/** 隐身结束：只结算本次施放，重复破隐不能重置已起算的 CD。 */
 	public void applyUniversalCooldown() {
 		if (!(entity instanceof ServerPlayerEntity serverPlayer) || activeCastId < 0) return;
