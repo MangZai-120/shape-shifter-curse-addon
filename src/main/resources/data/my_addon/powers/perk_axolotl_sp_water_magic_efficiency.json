@@ -1,0 +1,105 @@
+{
+    "type": "apoli:multiple",
+    "attack": {
+        "type": "apoli:action_on_hit",
+        "bientity_action": {
+            "type": "apoli:and",
+            "actions": [
+                {
+                    "type": "apoli:add_velocity",
+                    "z": 4.0
+                },
+                {
+                    "type": "apoli:target_action",
+                    "action": {
+                        "type": "apoli:and",
+                        "actions": [
+                            {
+                                "type": "apoli:play_sound",
+                                "sound": "minecraft:entity.axolotl.splash",
+                                "volume": 0.5,
+                                "pitch": 0.8
+                            },
+                            {
+                                "type": "apoli:spawn_particles",
+                                "particle": "minecraft:rain",
+                                "count": 8,
+                                "speed": 0.0,
+                                "force": true,
+                                "spread": {
+                                    "x": 0.5,
+                                    "y": 0.5,
+                                    "z": 0.5
+                                }
+                            },
+                            {
+                                "type": "apoli:spawn_particles",
+                                "particle": {
+                                    "type": "minecraft:dust",
+                                    "params": "0.11 0.18 0.69 2"
+                                },
+                                "count": 8,
+                                "speed": 0.0,
+                                "force": true,
+                                "spread": {
+                                    "x": 0.5,
+                                    "y": 0.5,
+                                    "z": 0.5
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "apoli:actor_action",
+                    "action": {
+                        "type": "apoli:gain_air",
+                        "value": -6
+                    }
+                }
+            ]
+        },
+        "bientity_condition": {
+            "type": "apoli:actor_condition",
+            "condition": {
+                "type": "apoli:and",
+                "conditions": [
+                    {
+                        "type": "apoli:sprinting"
+                    },
+                    {
+                        "type": "apoli:fluid_height",
+                        "fluid": "minecraft:water",
+                        "comparison": "<=",
+                        "compare_to": 0
+                    },
+                    {
+                        "type": "apoli:on_block"
+                    },
+                    {
+                        "type": "apoli:air",
+                        "comparison": ">",
+                        "compare_to": 0
+                    }
+                ]
+            }
+        },
+        "damage_condition": {
+            "type": "apoli:or",
+            "conditions": [
+                {
+                    "type": "apoli:in_tag",
+                    "tag": "minecraft:is_explosion"
+                },
+                {
+                    "type": "apoli:in_tag",
+                    "tag": "shape-shifter-curse:is_thorns"
+                }
+            ],
+            "inverted": true
+        }
+    },
+    "hidden": true,
+    "name": "power.my_addon.perk_axolotl_sp_water_magic_efficiency.name",
+    "description": "perk.ssc_addon.axolotl_sp.axolotl_water_magic_efficiency.description"
+}

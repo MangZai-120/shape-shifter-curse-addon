@@ -6,6 +6,7 @@
     "plugin":  "net.jackcooper.shapeShifterCurseAddon.mixin.plugin.SscAddonMixinConfigPlugin",
     "refmap":  "ssc-addon.refmap.json",
     "mixins":  [
+                   "AxolotlSpPerkMixin",
                    "PowerCooldownValidationMixin",
                    "SoundRangeWorldMixin",
                    "SoundRangePacketMixin",
@@ -73,6 +74,7 @@
                    "WanderingTraderTradeMixin"
                ],
     "client":  [
+                   "client.AxolotlSpPerkDescriptionMixin",
                    "client.CarryOnAnimationMixin",
                    "client.ParticleOwnershipMixin",
                    "client.DecorationParticleManagerMixin",
@@ -120,6 +122,8 @@
                    "client.CreativePotionStackMixin",
                    "client.CreativeTabNeighborMixin",
                    "client.FamiliarFoxManaBarGateMixin",
+                   "client.SscMagicHudVisibilityMixin",
+                   "client.SscManaHudVisibilityMixin",
                    "client.UpgradeAxolotlSpearChargeArmMixin",
                    "client.ClawCrosshairMixin",
                    "client.NovaSprintLockMixin",

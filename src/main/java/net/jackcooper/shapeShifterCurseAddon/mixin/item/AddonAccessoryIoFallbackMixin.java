@@ -1,7 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin.item;
 
 import net.onixary.shapeShifterCurseFabric.util.Accessory.AccessoryUtils;
-import net.onixary.shapeShifterCurseFabric.util.Accessory.AccessoryUtils.AccessoryIO;
+import net.jackcooper.shapeShifterCurseAddon.compat.AccessoryIoFallback;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -29,18 +29,35 @@ public class AddonAccessoryIoFallbackMixin {
 
 	@Inject(method = "reCalcAccessoryMod", at = @At("RETURN"), require = 0)
 	private static void ssca$demoteStubCurios(CallbackInfo ci) {
-		// 未激活 / 已是 trinkets：无需处理
+		// 未激活 / 当前权威不是 curios：无需处理
 		if (AccessoryUtils.nowAccessoryMod == null
-				|| "trinkets".equals(AccessoryUtils.nowAccessoryModID)) return;
-		// 仅处理主包空壳 curios（实现类是主包 DefaultAccessory 的匿名内部类）
-		Class<?> implClass = AccessoryUtils.nowAccessoryMod.getClass();
-		if (!implClass.getName().contains("DefaultAccessory")) return;
-		// trinkets IO 已注册且可加载 → 切回 trinkets（原生 Trinkets 或 tclayer 兼容层）
-		AccessoryIO trinketsIo = AccessoryUtils.activeAccessoryModInterfaces.get("trinkets");
-		if (trinketsIo == null) return;
-		AccessoryUtils.nowAccessoryMod = trinketsIo;
-		AccessoryUtils.nowAccessoryModID = "trinkets";
+				|| !"curios".equals(AccessoryUtils.nowAccessoryModID)) return;
+		// 关键：curios 的 IO 实现类无论是空壳还是真实实现，都是主包 DefaultAccessory 的匿名内部类，
+		// 不能靠类名判断。改用主包自家能力位 CurioUtils.isLoaded()（空壳返回 false，
+		// 被 CurioUtilsImpl mixin 覆盖成真实实现后返回 true）。
+		// 真实实现时绝不能降级：onPlayerEquip 会按 nowAccessoryModID 与 pluginID 比对，
+		// 降级成 trinkets 后 curios 侧回调（pluginID="curios"）会被门槛直接 return，
+		// 结果是「装在 Curios 槽的饰品全部不挂 power」（2026-10-23 实机 Bug）。
+		// 第三方注册的真实 IO 也不能因 SSC 自带的 CurioUtils 仍为空壳而被降级。
+		if (!AccessoryIoFallback.restoreTrinketsForStubCurios(curiosImplementationIsReal())) return;
 		org.slf4j.LoggerFactory.getLogger("ssc-addon").info(
 				"[SSCA] Demoted stub curios Accessory IO back to trinkets (Kilt/Connector environment)");
+	}
+
+	/**
+	 * 主包的 curios 实现是否为<b>真实</b>实现（而非空壳 stub）。
+	 *
+	 * <p>用反射读 {@code CurioUtils.isLoaded()}：反编译确认空壳返回 {@code false}，
+	 * 被 {@code mixin.forge.CurioUtilsImpl} 覆盖后返回 {@code true}。反射失败（旧版主包
+	 * 没有该方法）时按<b>真实实现</b>处理——宁可回退主包原行为，也不误降级打断 Curios 槽。</p>
+	 */
+	private static boolean curiosImplementationIsReal() {
+		try {
+			Class<?> curioUtils = Class.forName("net.onixary.shapeShifterCurseFabric.util.Accessory.CurioUtils");
+			Object loaded = curioUtils.getMethod("isLoaded").invoke(null);
+			return !Boolean.FALSE.equals(loaded);
+		} catch (Throwable t) {
+			return true;
+		}
 	}
 }

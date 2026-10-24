@@ -1,0 +1,16 @@
+{
+    "type": "apoli:multiple",
+    "hidden": true,
+    "laser": {
+        "type": "apoli:cooldown",
+        "cooldown": 20,
+        "hud_render": { "should_render": false },
+        "hidden": true
+    },
+    "tidal": {
+        "type": "apoli:cooldown",
+        "cooldown": 20,
+        "hud_render": { "should_render": false },
+        "hidden": true
+    }
+}

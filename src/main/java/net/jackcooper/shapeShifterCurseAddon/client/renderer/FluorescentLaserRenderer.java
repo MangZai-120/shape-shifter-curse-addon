@@ -96,7 +96,8 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 
 		// === 蓄力期四条白线（客户端绘制，无粒子残留）===
 		if (phaseId == 0) {
-			drawChargeLines(buf, matrices.peek().getPositionMatrix(), matrices.peek().getNormalMatrix(), pt, entity.beamLength());
+			drawChargeLines(buf, matrices.peek().getPositionMatrix(), matrices.peek().getNormalMatrix(),
+					pt * 140f / entity.getChargeTicks(), entity.beamLength());
 			// 法阵核心发光粒子（END_ROD）：仅在非第一人称视角下生成
 			// 第一人称下法阵紧贴相机，中央粒子会遮挡视线；第三人称（含自己按 F5 切换）可见
 			spawnArrayCoreParticleIfThirdPerson(ox + ax * d, oy + ay * d, oz + az * d);

@@ -22,6 +22,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.compat.FluorescentAxolotlPerks;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
@@ -130,6 +131,8 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         if (this.isEnhanced) {
             this.flySpeed = this.flySpeed * 1.55;
         }
+        this.flySpeed = FluorescentAxolotlPerks.tidalFlightSpeed(this.flySpeed,
+                FluorescentAxolotlPerks.hasWaterMagicEfficiency(owner));
         this.currentSpeed = this.flySpeed;
     }
 
@@ -261,6 +264,7 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
             if (t.getUuid().equals(ownerUuid)) continue;                          // 主人自己不被拴
             tetheredTargets.add(t.getUuid());
         }
+        if (owner != null && !tetheredTargets.isEmpty()) FluorescentAxolotlPerks.onTidalHit(owner);
         // 落点「潮汐降临」：一次清晰潮涌音（球位置 + 主人位置，不重叠）
         sw.playSound(null, cx, cy, cz,
                 SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 1.0f, 1.1f);
@@ -283,6 +287,18 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         // 锚点悬停粒子 + 6 格束缚环
         spawnHoverParticles(sw);
         applyTether(sw);
+        // Control-only tides also count as hits while a valid target remains tethered.
+        ServerPlayerEntity owner = getOwner(sw);
+        if (owner != null) {
+            for (UUID id : tetheredTargets) {
+                Entity target = sw.getEntity(id);
+                if (target instanceof LivingEntity living && living.isAlive() && !living.isSpectator()
+                        && !WhitelistUtils.isProtected(ownerUuid, sw, living)) {
+                    FluorescentAxolotlPerks.onTidalHit(owner);
+                    break;
+                }
+            }
+        }
         // 同步拴人剩余（dirty-check：值不变不重发；HUD 辅助栏据此倒数）
         setTetherRemain(tetherDuration - phaseTicks);
         // 阿澪：拴人期间每秒(20t)对被拴目标造成 4 点物理伤害
@@ -575,6 +591,11 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         nbt.putDouble("DirY", flyDir.y);
         nbt.putDouble("DirZ", flyDir.z);
         nbt.putDouble("Speed", currentSpeed);
+        nbt.putDouble("FlySpeed", flySpeed);
+        nbt.putBoolean("Aling", isAling);
+        nbt.putBoolean("Enhanced", isEnhanced);
+        nbt.putInt("MaxFlyTicks", maxFlyTicks);
+        nbt.putInt("TetherDuration", tetherDuration);
         if (tetherCenter != null) {
             nbt.putDouble("TetherX", tetherCenter.x);
             nbt.putDouble("TetherY", tetherCenter.y);
@@ -597,6 +618,11 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         double dz = nbt.contains("DirZ") ? nbt.getDouble("DirZ") : 1;
         flyDir = new Vec3d(dx, dy, dz).normalize();
         currentSpeed = nbt.contains("Speed") ? nbt.getDouble("Speed") : BAL.d("fly_speed", FLY_SPEED);
+        if (nbt.contains("FlySpeed")) flySpeed = Math.max(0.0, nbt.getDouble("FlySpeed"));
+        if (nbt.contains("Aling")) isAling = nbt.getBoolean("Aling");
+        if (nbt.contains("Enhanced")) isEnhanced = nbt.getBoolean("Enhanced");
+        if (nbt.contains("MaxFlyTicks")) maxFlyTicks = Math.max(1, nbt.getInt("MaxFlyTicks"));
+        if (nbt.contains("TetherDuration")) tetherDuration = Math.max(1, nbt.getInt("TetherDuration"));
         if (nbt.contains("TetherX")) {
             tetherCenter = new Vec3d(nbt.getDouble("TetherX"), nbt.getDouble("TetherY"), nbt.getDouble("TetherZ"));
         }

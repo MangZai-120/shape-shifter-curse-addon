@@ -28,6 +28,8 @@ public final class SscAddonForms {
 		axolotlForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 美西螈SP为人形不缩放(scale=1.0)，但仍需 RESET 兜底清除变身前残留的缩放值
 		axolotlForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(1.0f, 1.0f));
+		// 与原版共用解锁记录，形态专属的效果替换由 AxolotlSpPerks 处理。
+		axolotlForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Axolotl3PerkTree);
 		RegPlayerForms.registerPlayerForm(axolotlForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_axolotl_sp")).registerForm(1, 5, axolotlForm));
 
@@ -43,12 +45,14 @@ public final class SscAddonForms {
 		fluorescentForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 体型等比缩小到 0.75（宽高/眼高/碰撞箱一致），兜底清除变身前残留缩放
 		fluorescentForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.75f, 0.75f));
+		fluorescentForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Axolotl3PerkTree);
 		RegPlayerForms.registerPlayerForm(fluorescentForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_axolotl_fluorescent")).registerForm(1, 5, fluorescentForm));
 
 		// 阿澪（Aling）- 特殊形态，基于荧光幼灵（技能完全一致），专属模型/贴图，颜色不可改。复用 Form_AxolotlFluorescent 类。
 		Form_AxolotlFluorescent alingForm = new Form_AxolotlFluorescent(FormIdentifiers.AXOLOTL_ALING);
 		alingForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
+		alingForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Axolotl3PerkTree);
 		alingForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.75f, 0.75f));
 		RegPlayerForms.registerPlayerForm(alingForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_axolotl_aling")).registerForm(1, 5, alingForm));

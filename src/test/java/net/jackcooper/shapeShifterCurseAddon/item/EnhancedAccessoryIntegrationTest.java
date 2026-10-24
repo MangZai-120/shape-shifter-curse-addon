@@ -41,6 +41,7 @@ public final class EnhancedAccessoryIntegrationTest {
                 new Identifier("trinket", "chest/necklace"), 0);
 
         public static void run() throws Exception {
+            net.jackcooper.shapeShifterCurseAddon.compat.FountainBeltCompatibilityChecks.run();
             var unsafeField = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
             unsafeField.setAccessible(true);
             var unsafe = (sun.misc.Unsafe) unsafeField.get(null);

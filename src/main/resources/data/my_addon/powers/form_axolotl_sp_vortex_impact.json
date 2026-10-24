@@ -138,6 +138,6 @@
             }
         }
     },
-    "name": "Vortex Impact",
-    "description": "Hold the skill key to start charging: every 0.5s drains 8 wetness and adds damage, up to 4s. Press the skill key again to release early; releases automatically at max charge. Deals AoE physical damage scaling with charge. 50% damage reduction + brief invulnerability while charging. CD 15s after release."
+    "name": "power.my_addon.form_axolotl_sp_vortex_impact.name",
+    "description": "power.my_addon.form_axolotl_sp_vortex_impact.description"
 }

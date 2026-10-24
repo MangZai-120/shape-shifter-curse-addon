@@ -75,6 +75,21 @@ public class SSCAddonClientConfig implements ConfigData {
 	public boolean showCdBar = true;
 
 	@ConfigEntry.Gui.Tooltip
+	public boolean showInstinctBar = true;
+
+	@ConfigEntry.Gui.Tooltip
+	public boolean showManaBar = true;
+
+	@ConfigEntry.Gui.Tooltip
+	public boolean showSscMagicHud = true;
+
+	@ConfigEntry.Gui.Tooltip
+	public boolean showSpellbookHud = true;
+
+	@ConfigEntry.Gui.Tooltip
+	public boolean showChargeBar = true;
+
+	@ConfigEntry.Gui.Tooltip
 	public boolean showCdSeconds = true;
 
 	// ===== 技能 CD 条位置（与原版本能/能量条一致的 1-9 九宫格锚点 + X/Y 偏移）=====

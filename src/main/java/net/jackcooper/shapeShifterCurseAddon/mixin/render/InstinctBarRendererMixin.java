@@ -26,6 +26,10 @@ public class InstinctBarRendererMixin {
 
 	@Inject(method = "render", at = @At("HEAD"), cancellable = true, require = 0)
 	private void ssc_addon$hideInstinctBarForSP(DrawContext context, float tickDelta, CallbackInfo ci) {
+		if (!net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig.client().showInstinctBar) {
+			ci.cancel();
+			return;
+		}
 		MinecraftClient mc = MinecraftClient.getInstance();
 		if (mc.player == null) {
 			return;

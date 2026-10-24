@@ -22,10 +22,11 @@ import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
 import net.jackcooper.shapeShifterCurseAddon.client.hud.SkillCooldownBarRenderer;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.Arrays;
 import java.util.function.IntConsumer;
 
 /**
- * 能量条 / 本能条 位置的可视化编辑界面。
+ * HUD 位置与显隐的可视化编辑界面。
  * <p>
  * 特性：
  * <ul>
@@ -34,7 +35,7 @@ import java.util.function.IntConsumer;
  *   <li>可直接用鼠标拖拽预览色条，滑条 / 数值框同步变动；</li>
  *   <li>退出时若有未保存改动，弹确认框（放弃 / 继续编辑）。</li>
  * </ul>
- * 编辑时用工作副本，仅在「保存」时写回原版 {@link ClientConfig} 并持久化，取消不影响真实配置。
+ * 编辑时实时预览工作副本，「保存」持久化；取消并放弃时将 {@link ClientConfig} 与附属配置还原到进入时的快照。
  * 纯客户端本地显示配置，不涉及服务端同步。
  */
 public class BarPositionEditorScreen extends Screen {
@@ -67,6 +68,11 @@ public class BarPositionEditorScreen extends Screen {
     private static final int DEF_CH_Y = SSCAddonClientConfig.DEFAULT_CHARGE_Y;
     private static final int CH_W = 14, CH_H = 68; // 贴图尺寸
 
+    private static final int DEF_MG_TYPE = 8, DEF_MG_X = -200, DEF_MG_Y = -35;
+    // Actual SSC slot bounds relative to its layout origin.
+    private static final int MG_W = 52, MG_H = 24, MG_ORIGIN_DX = 6;
+
+    private static final int DRAG_MAGIC = 7;
     private static final int DRAG_NONE = 0, DRAG_INSTINCT = 1, DRAG_MANA = 2, DRAG_CD = 3, DRAG_SPELLBOOK = 5, DRAG_CHARGE = 6;
 
     private final Screen parent;
@@ -86,13 +92,21 @@ public class BarPositionEditorScreen extends Screen {
     private int sbType0, sbX0, sbY0;
     private int chType0, chX0, chY0;
     private boolean chRight0;
+    private int mgType, mgX, mgY, mgType0, mgX0, mgY0;
+    // Section order: instinct, mana, cooldowns, spellbook, charge, SSC magic.
+    private final boolean[] shown = new boolean[6];
+    private final boolean[] shown0 = new boolean[6];
+    private final ButtonWidget[] visibilityButtons = new ButtonWidget[6];
+    private ButtonWidget mgTypeBtn;
+    private OffsetSlider mgXSlider, mgYSlider;
+    private TextFieldWidget mgXField, mgYField;
     private boolean snapshotTaken = false;
 
     // 防止联动回填时循环触发回调
     private boolean suppressCallbacks = false;
 
     // ===== 滚动状态：同屏最多 3 个区块，滚轮上下切换（0..SECTION_COUNT-VISIBLE_SECTIONS） =====
-    private static final int SECTION_COUNT = 5;   // 0=本能 1=能量 2=CD 3=魔法书 4=蓄力条
+    private static final int SECTION_COUNT = 6;   // 0=本能 1=能量 2=CD 3=魔法书 4=蓄力条 5=SSC法术栏
     private static final int VISIBLE_SECTIONS = 3;
     private int scrollOffset = 0;
 
@@ -137,6 +151,9 @@ public class BarPositionEditorScreen extends Screen {
             maType = maType0 = cfg.manaBarPosType;
             maX = maX0 = cfg.manaBarPosOffsetX;
             maY = maY0 = cfg.manaBarPosOffsetY;
+            mgType = mgType0 = cfg.magicGUIPosType;
+            mgX = mgX0 = cfg.magicGUIPosOffsetX;
+            mgY = mgY0 = cfg.magicGUIPosOffsetY;
             // SSCA CD 条从附属自己的 client config 读取
             SSCAddonClientConfig sscCfg;
             try {
@@ -170,20 +187,31 @@ public class BarPositionEditorScreen extends Screen {
                 chY = chY0 = DEF_CH_Y;
                 chRight = chRight0 = true;
             }
+            if (sscCfg != null) {
+                shown[0] = sscCfg.showInstinctBar;
+                shown[1] = sscCfg.showManaBar;
+                shown[2] = sscCfg.showCdBar;
+                shown[3] = sscCfg.showSpellbookHud;
+                shown[4] = sscCfg.showChargeBar;
+                shown[5] = sscCfg.showSscMagicHud;
+            } else {
+                Arrays.fill(shown, true);
+            }
+            System.arraycopy(shown, 0, shown0, 0, shown.length);
             snapshotTaken = true;
         }
 
         // ====== 控制面板（屏幕中间，紧凑；区块可滚动：最多同屏 3 个区块，滚轮切换）======
-        final int panelW = 208;
+        final int panelW = 200;
         final int panelX = (width - panelW) / 2;
         final int sliderW = 116;
         final int fieldW = 36;
         final int rowH = 13;
         final int ctrlH = 11;
         final int typeBtnW = 100, typeBtnH = 13;
-        final int contentRight = panelX + sliderW + 4 + fieldW;
+        final int contentRight = panelX + panelW;
 
-        // 滚动可视区块：0=本能 1=能量 2=CD 3=魔法书 4=蓄力条（scrollOffset 由滚轮控制）
+        // 滚动可视区块：0=本能 1=能量 2=CD 3=魔法书 4=蓄力条 5=SSC法术栏（scrollOffset 由滚轮控制）
         int sectionTop = Math.max(8, height / 2 - 110);
         for (int s = 0; s < VISIBLE_SECTIONS; s++) {
             buildSection(scrollOffset + s, sectionTop + s * (rowH * 3 + 6),
@@ -229,32 +257,49 @@ public class BarPositionEditorScreen extends Screen {
         syncAllControls();
     }
 
-    /** 区块索引 → 名称 lang 键参（0=本能 1=能量 2=CD 3=魔法书 4=蓄力条）。 */
+    /** 区块索引 → 名称 lang 键参（0=本能 1=能量 2=CD 3=魔法书 4=蓄力条 5=SSC法术栏）。 */
     private String sectionName(int section) {
         return switch (section) {
             case 0 -> Text.translatable("text.ssc_addon.bar_editor.instinct").getString();
             case 1 -> Text.translatable("text.ssc_addon.bar_editor.mana").getString();
             case 2 -> Text.translatable("text.ssc_addon.bar_editor.cd").getString();
             case 3 -> Text.translatable("text.ssc_addon.bar_editor.spellbook").getString();
-            default -> Text.translatable("text.ssc_addon.bar_editor.charge").getString();
+            case 4 -> Text.translatable("text.ssc_addon.bar_editor.charge").getString();
+            default -> Text.translatable("text.ssc_addon.bar_editor.ssc_magic").getString();
         };
     }
 
     /** 重置指定区块（独立重置按钮回调）。 */
     private void doResetSection(int section) {
+        shown[section] = true;
         switch (section) {
             case 0 -> doResetInstinct();
             case 1 -> doResetMana();
             case 2 -> doResetCd();
             case 3 -> doResetSpellbook();
-            default -> doResetCharge();
+            case 4 -> doResetCharge();
+            default -> { mgType = DEF_MG_TYPE; mgX = DEF_MG_X; mgY = DEF_MG_Y; onWorkingChanged(); }
         }
     }
 
     /** 按索引构建一个区块的控件（滚动窗口内调用；不在窗口的区块控件不创建）。 */
     private void buildSection(int section, int top, int panelX, int sliderW, int fieldW,
             int rowH, int ctrlH, int typeBtnW, int typeBtnH, int contentRight) {
+        visibilityButtons[section] = addDrawableChild(ButtonWidget.builder(visibilityText(section), b -> {
+            shown[section] = !shown[section];
+            onWorkingChanged();
+        }).dimensions(panelX + 160, top, 40, typeBtnH).build());
         switch (section) {
+            case 5 -> {
+                mgTypeBtn = addDrawableChild(ButtonWidget.builder(anchorBtnText("ssc_magic", mgType), b -> {
+                    mgType = mgType % 9 + 1;
+                    onWorkingChanged();
+                }).dimensions(panelX, top, typeBtnW, typeBtnH).build());
+                mgXSlider = addDrawableChild(new OffsetSlider(panelX, top + rowH, sliderW, ctrlH, "offset_x", mgX, v -> { mgX = v; onWorkingChanged(); }));
+                mgXField = addDrawableChild(makeNumField(panelX + sliderW + 4, top + rowH, fieldW, ctrlH, v -> { mgX = v; onWorkingChanged(); }));
+                mgYSlider = addDrawableChild(new OffsetSlider(panelX, top + rowH * 2, sliderW, ctrlH, "offset_y", mgY, v -> { mgY = v; onWorkingChanged(); }));
+                mgYField = addDrawableChild(makeNumField(panelX + sliderW + 4, top + rowH * 2, fieldW, ctrlH, v -> { mgY = v; onWorkingChanged(); }));
+            }
             case 0 -> {
                 inTypeBtn = ButtonWidget.builder(anchorBtnText("instinct", inType), b -> cycleType(true))
                         .dimensions(panelX, top, typeBtnW, typeBtnH).build();
@@ -286,7 +331,7 @@ public class BarPositionEditorScreen extends Screen {
                         .dimensions(panelX, top, typeBtnW, typeBtnH).build();
                 addDrawableChild(cdTypeBtn);
                 cdSideBtn = ButtonWidget.builder(cdSideText(), b -> toggleCdSide())
-                        .dimensions(panelX + typeBtnW + 4, top, Math.max(40, contentRight - (panelX + typeBtnW + 4)), typeBtnH).build();
+                        .dimensions(panelX + typeBtnW + 4, top, 52, typeBtnH).build();
                 addDrawableChild(cdSideBtn);
                 cdXSlider = new OffsetSlider(panelX, top + rowH, sliderW, ctrlH, "offset_x", cdX, v -> { cdX = v; onWorkingChanged(); });
                 addDrawableChild(cdXSlider);
@@ -315,7 +360,7 @@ public class BarPositionEditorScreen extends Screen {
                         .dimensions(panelX, top, typeBtnW, typeBtnH).build();
                 addDrawableChild(chTypeBtn);
                 chSideBtn = ButtonWidget.builder(chSideText(), b -> toggleChSide())
-                        .dimensions(panelX + typeBtnW + 4, top, Math.max(40, contentRight - (panelX + typeBtnW + 4)), typeBtnH).build();
+                        .dimensions(panelX + typeBtnW + 4, top, 52, typeBtnH).build();
                 addDrawableChild(chSideBtn);
                 chXSlider = new OffsetSlider(panelX, top + rowH, sliderW, ctrlH, "offset_x", chX, v -> { chX = v; onWorkingChanged(); });
                 addDrawableChild(chXSlider);
@@ -327,6 +372,10 @@ public class BarPositionEditorScreen extends Screen {
                 addDrawableChild(chYField);
             }
         }
+    }
+
+    private Text visibilityText(int section) {
+        return Text.translatable("text.ssc_addon.bar_editor." + (shown[section] ? "shown" : "hidden"));
     }
 
     // ====== 锚点循环 ======
@@ -403,8 +452,17 @@ public class BarPositionEditorScreen extends Screen {
         cfg.manaBarPosType = maType;
         cfg.manaBarPosOffsetX = maX;
         cfg.manaBarPosOffsetY = maY;
+        cfg.magicGUIPosType = mgType;
+        cfg.magicGUIPosOffsetX = mgX;
+        cfg.magicGUIPosOffsetY = mgY;
         try {
             SSCAddonClientConfig sscCfg = SSCAddonConfig.client();
+            sscCfg.showInstinctBar = shown[0];
+            sscCfg.showManaBar = shown[1];
+            sscCfg.showCdBar = shown[2];
+            sscCfg.showSpellbookHud = shown[3];
+            sscCfg.showChargeBar = shown[4];
+            sscCfg.showSscMagicHud = shown[5];
             sscCfg.cdBarPosType = cdType;
             sscCfg.cdBarPosOffsetX = cdX;
             sscCfg.cdBarPosOffsetY = cdY;
@@ -422,6 +480,14 @@ public class BarPositionEditorScreen extends Screen {
     private void syncAllControls() {
         suppressCallbacks = true;
         try {
+            for (int i = 0; i < shown.length; i++) {
+                if (visibilityButtons[i] != null) visibilityButtons[i].setMessage(visibilityText(i));
+            }
+            if (mgTypeBtn != null) mgTypeBtn.setMessage(anchorBtnText("ssc_magic", mgType));
+            if (mgXSlider != null) mgXSlider.setIntValue(mgX);
+            if (mgYSlider != null) mgYSlider.setIntValue(mgY);
+            if (mgXField != null) mgXField.setText(String.valueOf(mgX));
+            if (mgYField != null) mgYField.setText(String.valueOf(mgY));
             if (inTypeBtn != null) inTypeBtn.setMessage(anchorBtnText("instinct", inType));
             if (maTypeBtn != null) maTypeBtn.setMessage(anchorBtnText("mana", maType));
             if (inXSlider != null) inXSlider.setIntValue(inX);
@@ -473,7 +539,8 @@ public class BarPositionEditorScreen extends Screen {
 
     // ====== 保存 / 取消 / 重置 ======
     private boolean isEdited() {
-        return inType != inType0 || inX != inX0 || inY != inY0
+        return !Arrays.equals(shown, shown0) || mgType != mgType0 || mgX != mgX0 || mgY != mgY0
+                || inType != inType0 || inX != inX0 || inY != inY0
                 || maType != maType0 || maX != maX0 || maY != maY0
                 || cdType != cdType0 || cdX != cdX0 || cdY != cdY0 || cdRight != cdRight0
                 || sbType != sbType0 || sbX != sbX0 || sbY != sbY0
@@ -489,6 +556,8 @@ public class BarPositionEditorScreen extends Screen {
         try {
             AutoConfig.getConfigHolder(SSCAddonClientConfig.class).save();
         } catch (Exception ignored) {}
+        System.arraycopy(shown, 0, shown0, 0, shown.length);
+        mgType0 = mgType; mgX0 = mgX; mgY0 = mgY;
         // 更新快照，避免 close 时又弹确认
         inType0 = inType; inX0 = inX; inY0 = inY;
         maType0 = maType; maX0 = maX; maY0 = maY;
@@ -499,6 +568,8 @@ public class BarPositionEditorScreen extends Screen {
     }
 
     private void doReset() {
+        Arrays.fill(shown, true);
+        mgType = DEF_MG_TYPE; mgX = DEF_MG_X; mgY = DEF_MG_Y;
         inType = DEF_IN_TYPE; inX = DEF_IN_X; inY = DEF_IN_Y;
         maType = DEF_MA_TYPE; maX = DEF_MA_X; maY = DEF_MA_Y;
         cdType = DEF_CD_TYPE; cdX = DEF_CD_X; cdY = DEF_CD_Y; cdRight = false;
@@ -566,6 +637,8 @@ public class BarPositionEditorScreen extends Screen {
 
     /** 取消时把工作值与配置都还原到进入编辑器时的快照。 */
     private void restoreConfigToSnapshot() {
+        System.arraycopy(shown0, 0, shown, 0, shown.length);
+        mgType = mgType0; mgX = mgX0; mgY = mgY0;
         inType = inType0; inX = inX0; inY = inY0;
         maType = maType0; maX = maX0; maY = maY0;
         cdType = cdType0; cdX = cdX0; cdY = cdY0; cdRight = cdRight0;
@@ -582,7 +655,16 @@ public class BarPositionEditorScreen extends Screen {
     // ====== 拖拽 / 选中预览条 ======
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // Controls take priority over any preview covered by the panel.
+        if (mouseX >= panelLeft && mouseX <= panelRight && mouseY >= panelTop && mouseY <= panelBottom) {
+            return super.mouseClicked(mouseX, mouseY, button);
+        }
         if (button == 0) {
+            if (hitMagic(mouseX, mouseY)) {
+                selected = dragging = DRAG_MAGIC;
+                beginDrag(mouseX, mouseY, mgX, mgY);
+                return true;
+            }
             // 本能条在上层，三条重叠时优先命中本能条 → 能量条 → CD 条
             if (hitBar(mouseX, mouseY, false)) {
                 selected = dragging = DRAG_INSTINCT;
@@ -639,6 +721,21 @@ public class BarPositionEditorScreen extends Screen {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         if (dragging != DRAG_NONE) {
+            if (dragging == DRAG_MAGIC) {
+                var a = UIPositionUtils.getCorrectPosition(mgType, 0, 0);
+                int x = a.getLeft() + dragStartOffX + (int) Math.round(mouseX - dragStartMouseX);
+                int y = a.getRight() + dragStartOffY + (int) Math.round(mouseY - dragStartMouseY);
+                if (!hasShiftDown()) {
+                    x = Math.round(x / (float) GRID) * GRID;
+                    y = Math.round(y / (float) GRID) * GRID;
+                }
+                x = Math.max(0, Math.min(Math.max(0, width - MG_W), x + MG_ORIGIN_DX)) - MG_ORIGIN_DX;
+                y = Math.max(0, Math.min(Math.max(0, height - MG_H), y));
+                mgX = clampOffset(x - a.getLeft());
+                mgY = clampOffset(y - a.getRight());
+                onWorkingChanged();
+                return true;
+            }
             if (dragging == DRAG_SPELLBOOK || dragging == DRAG_CHARGE) {
                 boolean charge = dragging == DRAG_CHARGE;
                 int curType = charge ? chType : sbType;
@@ -742,7 +839,8 @@ public class BarPositionEditorScreen extends Screen {
                 case GLFW.GLFW_KEY_DOWN -> dy = step;
                 default -> { return super.keyPressed(keyCode, scanCode, modifiers); }
             }
-            if (selected == DRAG_SPELLBOOK) { sbX = clampOffset(sbX + dx); sbY = clampOffset(sbY + dy); }
+            if (selected == DRAG_MAGIC) { mgX = clampOffset(mgX + dx); mgY = clampOffset(mgY + dy); }
+            else if (selected == DRAG_SPELLBOOK) { sbX = clampOffset(sbX + dx); sbY = clampOffset(sbY + dy); }
             else if (selected == DRAG_CHARGE) { chX = clampOffset(chX + (chRight ? -dx : dx)); chY = clampOffset(chY + dy); }
             else if (selected == DRAG_CD) { cdX = clampOffset(cdX + (cdRight ? -dx : dx)); cdY = clampOffset(cdY + dy); }
             else if (selected == DRAG_MANA) { maX = clampOffset(maX + dx); maY = clampOffset(maY + dy); }
@@ -886,6 +984,15 @@ public class BarPositionEditorScreen extends Screen {
             drawHudReference(ctx);
         }
 
+        // 能量 / 本能条 / CD 条可拖拽手柄（半透明示意 + 边框 + 标签），确保任何形态都能看到并拖拽
+        drawBarHandle(ctx, mouseX, mouseY, false);
+        drawBarHandle(ctx, mouseX, mouseY, true);
+        drawCdBarHandle(ctx, mouseX, mouseY);
+        drawSpellbookHandle(ctx, mouseX, mouseY);
+        drawChargeBarHandle(ctx, mouseX, mouseY);
+
+        drawMagicHandle(ctx, mouseX, mouseY);
+
         // 控制面板半透明底（够暗以保证控件可读）
         drawControlPanelBackground(ctx);
 
@@ -897,13 +1004,6 @@ public class BarPositionEditorScreen extends Screen {
             if (guideVX != null) ctx.fill(guideVX, 0, guideVX + 1, this.height, 0x88FFEE00);
             if (guideHY != null) ctx.fill(0, guideHY, this.width, guideHY + 1, 0x88FFEE00);
         }
-
-        // 能量 / 本能条 / CD 条可拖拽手柄（半透明示意 + 边框 + 标签），确保任何形态都能看到并拖拽
-        drawBarHandle(ctx, mouseX, mouseY, false);
-        drawBarHandle(ctx, mouseX, mouseY, true);
-        drawCdBarHandle(ctx, mouseX, mouseY);
-        drawSpellbookHandle(ctx, mouseX, mouseY);
-        drawChargeBarHandle(ctx, mouseX, mouseY);
 
         // 标题 + 提示
         ctx.drawCenteredTextWithShadow(this.textRenderer, this.title, width / 2, 12, 0xFFFFFF);
@@ -919,6 +1019,31 @@ public class BarPositionEditorScreen extends Screen {
             int thumbY = trackTop + travel * scrollOffset / Math.max(1, scrollHintMax);
             ctx.fill(panelRight - 4, thumbY, panelRight - 2, thumbY + thumbH, 0xFFAAAAAA);
         }
+    }
+
+    private Pair<Integer, Integer> magicPos() {
+        return UIPositionUtils.getCorrectPosition(mgType, mgX, mgY);
+    }
+
+    private boolean hitMagic(double mx, double my) {
+        var p = magicPos();
+        return mx >= p.getLeft() + MG_ORIGIN_DX - 2 && mx <= p.getLeft() + MG_ORIGIN_DX + MG_W + 2
+                && my >= p.getRight() - 2 && my <= p.getRight() + MG_H + 2;
+    }
+
+    private void drawMagicHandle(DrawContext ctx, int mouseX, int mouseY) {
+        var p = magicPos();
+        int ax = p.getLeft(), y = p.getRight(), x = ax + MG_ORIGIN_DX;
+        ctx.fill(ax + 6, y + 4, ax + 22, y + 20, 0x8050C8EF);
+        ctx.fill(ax + 42, y + 4, ax + 58, y + 20, 0x8050C8EF);
+        ctx.fill(ax + 20, y, ax + 44, y + 24, 0xA050C8EF);
+        int color = dragging == DRAG_MAGIC ? 0xFFFFEE00 : selected == DRAG_MAGIC ? 0xFF00FF88
+                : hitMagic(mouseX, mouseY) ? 0xFFFFFFAA : 0xFF000000;
+        ctx.drawBorder(x - 1, y - 1, MG_W + 2, MG_H + 2, color);
+        Text label = Text.translatable("text.ssc_addon.bar_editor.ssc_magic");
+        if (!shown[5]) label = label.copy().append(" (").append(visibilityText(5)).append(")");
+        ctx.drawTextWithShadow(textRenderer, label, x, y - 11, 0xFF50C8EF);
+        if (selected == DRAG_MAGIC) ctx.drawTextWithShadow(textRenderer, Text.literal("(" + mgX + ", " + mgY + ")"), x, y + MG_H + 2, 0xFFFFFFFF);
     }
 
     private void drawControlPanelBackground(DrawContext ctx) {

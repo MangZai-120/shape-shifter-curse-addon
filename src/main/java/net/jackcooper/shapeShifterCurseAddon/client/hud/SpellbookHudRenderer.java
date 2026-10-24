@@ -141,7 +141,8 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 	@Override
 	public void onHudRender(DrawContext ctx, float tickDelta) {
 		MinecraftClient mc = MinecraftClient.getInstance();
-		if (mc.player == null || mc.world == null || mc.options.hudHidden) {
+		if (mc.player == null || mc.world == null || mc.options.hudHidden
+				|| !SSCAddonConfig.client().showSpellbookHud) {
 			return;
 		}
 		// 每帧全饰品扫描已收敛到 ClientTickCache 每 tick 一次（SpellcastClient.getEquippedBook 同源）

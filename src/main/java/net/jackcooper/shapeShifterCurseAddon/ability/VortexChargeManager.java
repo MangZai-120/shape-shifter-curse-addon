@@ -16,6 +16,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.compat.AxolotlSpPerks;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -68,7 +69,9 @@ public final class VortexChargeManager {
 	private static final String SKILL_ID = "my_addon:form_axolotl_sp_vortex_charge";
 
 	/** HUD 门槛同源：每次命中湿润度消耗（balance 可调；HUD 展示用）。 */
-	public static int airPerHitForHud() { return BAL.i("air_per_hit", AIR_PER_HIT); }
+	public static int airPerHitForHud(net.minecraft.entity.player.PlayerEntity player) {
+		return AxolotlSpPerks.vortexAirCost(BAL.i("air_per_hit", AIR_PER_HIT), AxolotlSpPerks.hasWaterMagicEfficiency(player));
+	}
 
 	/** HUD 辅助栏同源：蓄力总时长上限（balance 可调；HUD 涨条分母，从小到大）。 */
 	public static int maxTicksForHud() { return BAL.i("max_ticks", MAX_TICKS); }
@@ -88,6 +91,8 @@ public final class VortexChargeManager {
 		int ticks = 0;
 		int hits = 0;
 		int airSpent = 0;
+		int baseAirSpent = 0;
+		boolean discounted;
 	}
 
 	private VortexChargeManager() {
@@ -128,9 +133,10 @@ public final class VortexChargeManager {
 		if (player.hasStatusEffect(SscAddon.PURIFIED)) return;
 		if (!FormUtils.isAxolotlSP(player)) return;
 		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return;
-		if (player.getAir() < BAL.i("air_per_hit", AIR_PER_HIT)) return; // 至少够扣一次
+		if (player.getAir() < airPerHitForHud(player)) return; // 与HUD使用同一实际起手费用
 		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID);
 		ChargeState s = new ChargeState();
+		s.discounted = AxolotlSpPerks.hasWaterMagicEfficiency(player);
         s.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
         CHARGING.put(player.getUuid(), s);
 		PowerUtils.setResourceValueAndSync(player, VORTEX_STATE, 1); // 标记蓄力中（客户端读 >0）
@@ -170,10 +176,14 @@ public final class VortexChargeManager {
 		if (s.ticks % hitInterval == 0) {
 			int airPerHit = BAL.i("air_per_hit", AIR_PER_HIT);
 			int maxAirSpent = BAL.i("max_air_spent", MAX_AIR_SPENT);
-			if (s.airSpent < maxAirSpent && player.getAir() >= airPerHit) {
-				int spend = Math.min(airPerHit, maxAirSpent - s.airSpent);
+			int baseSpend = Math.min(airPerHit, Math.max(0, maxAirSpent - s.baseAirSpent));
+			int spend = AxolotlSpPerks.vortexAirCost(s.baseAirSpent + baseSpend, s.discounted) - s.airSpent;
+			// 未加Perk时保留原门槛；加Perk时以本次累计账单的实际增量校验。
+			int required = s.discounted ? spend : airPerHit;
+			if (s.baseAirSpent < maxAirSpent && player.getAir() >= required) {
 				player.setAir(player.getAir() - spend);
 				s.airSpent += spend;
+				s.baseAirSpent += baseSpend;
 				s.hits++;
 				// 蓄力进度同步（值=已蓄力 tick 数；HUD 主技能辅助栏据此从小到大涨条）
 				PowerUtils.setResourceValueAndSync(player, VORTEX_STATE, s.ticks);

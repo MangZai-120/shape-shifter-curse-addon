@@ -13,6 +13,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.compat.FluorescentAxolotlPerks;
 import net.jackcooper.shapeShifterCurseAddon.entity.LaserBeamEntity;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -73,6 +74,7 @@ public final class FluorescentLaserManager {
 	private static final class ComboSession {
 		boolean active = false;
 		boolean isAling = false;        // 阿澪：伤害/射程/判定半径 ×1.2
+		boolean efficient;
 		int arraysLeft = ARRAY_COUNT;
 		int windowTicks = 0;
 		int accumulatedCd = 0;
@@ -91,6 +93,19 @@ public final class FluorescentLaserManager {
 	/** 客户端「按下主要技能键」时调用。 */
 	public static void onKeyPress(ServerPlayerEntity player) {
 		if (!FormUtils.isAxolotlFluorescent(player)) return;
+		// Keep the active cast's variant. Changing equipment cannot start a second variant over it.
+		LaserBeamEntity activeBeam = ACTIVE.get(player.getUuid());
+		if (activeBeam != null && activeBeam.isAlive()) return;
+		ComboSession activeCombo = COMBOS.get(player.getUuid());
+		if (activeCombo != null && activeCombo.active) {
+			if (activeCombo.isAling != FormUtils.isForm(player, FormIdentifiers.AXOLOTL_ALING)
+					|| !(activeCombo.isAling || TrinketUtils.isWearing(player, SscAddon.SEA_CRYSTAL_PENDANT))) {
+				endCombo(player, activeCombo);
+				return;
+			}
+			onKeyPressEnhanced(player);
+			return;
+		}
 		// 阿澪天生使用三连发（无需饰品）；荧光幼灵需装备海晶荧光坠才进三连发
 		boolean useEnhanced = FormUtils.isForm(player, FormIdentifiers.AXOLOTL_ALING)
 				|| TrinketUtils.isWearing(player, SscAddon.SEA_CRYSTAL_PENDANT);
@@ -119,6 +134,8 @@ public final class FluorescentLaserManager {
 			if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return;
 			s.active = true;
 			s.isAling = FormUtils.isForm(player, FormIdentifiers.AXOLOTL_ALING);
+			// Once this is a three-shot session, the Perk bonus has no equipment requirement.
+			s.efficient = FluorescentAxolotlPerks.hasWaterMagicEfficiency(player);
 			s.arraysLeft = ARRAY_COUNT;
 			s.windowTicks = BAL.i("window_ticks", WINDOW_TICKS);
 			s.accumulatedCd = 0;
@@ -238,6 +255,7 @@ public final class FluorescentLaserManager {
 			return;
 		}
 		if (player.isDead() || !FormUtils.isAxolotlFluorescent(player)
+				|| s.isAling != FormUtils.isForm(player, FormIdentifiers.AXOLOTL_ALING)
 				|| !(s.isAling || TrinketUtils.isWearing(player, SscAddon.SEA_CRYSTAL_PENDANT))
 				|| !(player.getWorld() instanceof ServerWorld sw)) {
 			endCombo(player, s);
@@ -283,6 +301,7 @@ public final class FluorescentLaserManager {
 		double radius = s.isAling ? enhBeamRadius * 1.2 : enhBeamRadius;
 		float shotDamageBase = (float) BAL.d("shot_damage", SHOT_DAMAGE);
 		float dmg = s.isAling ? shotDamageBase * 1.2f : shotDamageBase;   // 阿澪伤害 ×1.2（12→14.4）
+		dmg = FluorescentAxolotlPerks.enhancedLaserDamage(dmg, s.efficient);
 		Box box = new Box(origin, end).expand(radius);
 		List<LivingEntity> targets = sw.getEntitiesByClass(LivingEntity.class, box,
 				e -> e.isAlive() && !e.isSpectator() && !e.getUuid().equals(player.getUuid()));
@@ -295,6 +314,7 @@ public final class FluorescentLaserManager {
 			Vec3d closest = origin.add(dir.multiply(proj));
 			if (center.squaredDistanceTo(closest) > radius * radius) continue;
 			if (t.damage(t.getDamageSources().playerAttack(player), dmg)) {   // 12 点物理（阿澪 14.4）
+				FluorescentAxolotlPerks.onLaserHit(player);
 				t.timeUntilRegen = 10;   // 主要技能：受击无敌 20→10 减半，令目标更快可再次受击
 			}
 			s.damagedThisShot.add(t.getUuid());

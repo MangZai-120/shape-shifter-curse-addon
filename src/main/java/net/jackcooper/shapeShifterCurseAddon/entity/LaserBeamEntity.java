@@ -24,6 +24,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.compat.FluorescentAxolotlPerks;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -78,6 +79,7 @@ public class LaserBeamEntity extends Entity {
 	// ===== 同步数据（供渲染器）=====
 	private static final TrackedData<Integer> PHASE = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);       // 0 CHARGE / 1 RELEASE / 2 FADE
 	private static final TrackedData<Integer> PHASE_TICK = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);  // 当前阶段已用 tick
+	private static final TrackedData<Integer> CHARGE_DURATION = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);
 	private static final TrackedData<Integer> OWNER_ID = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);
 	// 海晶荧光坠增强：单道视觉标记 + 发射方向（Vec3d 拆 3 个 float 同步给渲染器）
 	private static final TrackedData<Boolean> ENHANCED = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
@@ -97,6 +99,7 @@ public class LaserBeamEntity extends Entity {
 	private Phase phase = Phase.CHARGE;
 	private int phaseTicks = 0;
 	private UUID ownerUuid;
+	private Identifier casterForm;
 	private float damage = (float) BAL.d("damage", DAMAGE);
 	private int releaseTicks = BAL.i("release_ticks", RELEASE_TICKS);
 	private int enhFiringTicks = 0;   // 增强发射态剩余 tick
@@ -113,8 +116,11 @@ public class LaserBeamEntity extends Entity {
 	public LaserBeamEntity(World world, ServerPlayerEntity owner) {
 		super(SscAddon.LASER_BEAM_ENTITY, world);
 		this.ownerUuid = owner.getUuid();
+		this.casterForm = net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils.getPlayerForm(owner).getFormID();
 		this.setPosition(owner.getX(), owner.getEyeY(), owner.getZ());
 		this.dataTracker.set(OWNER_ID, owner.getId());
+		this.dataTracker.set(CHARGE_DURATION, FluorescentAxolotlPerks.laserChargeTicks(
+				BAL.i("charge_ticks", CHARGE_TICKS), FluorescentAxolotlPerks.hasWaterMagicEfficiency(owner)));
 		this.noClip = true;
 	}
 
@@ -178,6 +184,7 @@ public class LaserBeamEntity extends Entity {
 	protected void initDataTracker() {
 		this.dataTracker.startTracking(PHASE, 0);
 		this.dataTracker.startTracking(PHASE_TICK, 0);
+		this.dataTracker.startTracking(CHARGE_DURATION, CHARGE_TICKS);
 		this.dataTracker.startTracking(OWNER_ID, 0);
 		this.dataTracker.startTracking(ENHANCED, false);
 		this.dataTracker.startTracking(DIR_X, 0f);
@@ -198,6 +205,11 @@ public class LaserBeamEntity extends Entity {
 
 	public int getPhaseTick() {
 		return this.dataTracker.get(PHASE_TICK);
+	}
+
+	/** Per-cast duration, synchronized to clients and retained through entity NBT. */
+	public int getChargeTicks() {
+		return this.dataTracker.get(CHARGE_DURATION);
 	}
 
 	public int getTrackedOwnerId() {
@@ -280,7 +292,9 @@ public class LaserBeamEntity extends Entity {
 
 		ServerPlayerEntity owner = getOwner(sw);
 		if (owner == null || owner.isRemoved() || owner.isDead()
-				|| !FormUtils.isAxolotlFluorescent(owner)) {
+				|| !FormUtils.isAxolotlFluorescent(owner)
+				|| (casterForm != null && !casterForm.equals(
+					net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils.getPlayerForm(owner).getFormID()))) {
 			cancelNoCd(owner);
 			this.discard();
 			return;
@@ -325,7 +339,7 @@ public class LaserBeamEntity extends Entity {
 			return;
 		}
 		syncLaserStateDedup(owner, 1);
-		int chargeTicks = BAL.i("charge_ticks", CHARGE_TICKS);   // 同函数多次读 → 局部变量
+		int chargeTicks = getChargeTicks();
 
 		// 蓄力音效（volume=3.0：反编译实证客户端 clamp 到 1，近处响度不变不震耳；
 		// 可闻半径 16×3=48 格=光柱射程 32 格+16 格富余，OpenAL 距离线性衰减到 48 格归零）
@@ -413,7 +427,9 @@ public class LaserBeamEntity extends Entity {
 			Vec3d closest = arrayPos.add(aim.multiply(proj));
 			double distSq = t.getPos().add(0, t.getHeight() * 0.5, 0).squaredDistanceTo(closest);
 			if (distSq > radius * radius) continue;
-			t.damage(t.getDamageSources().create(key, owner, owner), damage);
+			if (t.damage(t.getDamageSources().create(key, owner, owner), damage)) {
+				FluorescentAxolotlPerks.onLaserHit(owner);
+			}
 		}
 	}
 
@@ -439,7 +455,9 @@ public class LaserBeamEntity extends Entity {
 	private ServerPlayerEntity getOwner(ServerWorld sw) {
 		if (ownerUuid == null) return null;
 		var server = sw.getServer();
-		return server == null ? null : server.getPlayerManager().getPlayer(ownerUuid);
+		ServerPlayerEntity owner = server == null ? null : server.getPlayerManager().getPlayer(ownerUuid);
+		if (owner != null && this.dataTracker.get(OWNER_ID) != owner.getId()) this.dataTracker.set(OWNER_ID, owner.getId());
+		return owner;
 	}
 
 	/** laser_state 资源 id（0 空闲 /1 蓄力 /2 释放 /3 消退）。 */
@@ -462,6 +480,9 @@ public class LaserBeamEntity extends Entity {
 	public void writeCustomDataToNbt(NbtCompound nbt) {
 		nbt.putInt("Phase", phase.ordinal());
 		nbt.putInt("PhaseTicks", phaseTicks);
+		nbt.putInt("ChargeTicks", getChargeTicks());
+		nbt.putLong("CooldownCastId", cooldownCastId);
+		if (casterForm != null) nbt.putString("CasterForm", casterForm.toString());
 		if (ownerUuid != null) nbt.putUuid("Owner", ownerUuid);
 	}
 
@@ -470,6 +491,10 @@ public class LaserBeamEntity extends Entity {
 		int p = nbt.contains("Phase") ? nbt.getInt("Phase") : 0;
 		phase = Phase.values()[MathHelper.clamp(p, 0, Phase.values().length - 1)];
 		phaseTicks = nbt.contains("PhaseTicks") ? nbt.getInt("PhaseTicks") : 0;
+		this.dataTracker.set(CHARGE_DURATION, Math.max(1, nbt.contains("ChargeTicks")
+				? nbt.getInt("ChargeTicks") : BAL.i("charge_ticks", CHARGE_TICKS)));
+		if (nbt.contains("CooldownCastId")) cooldownCastId = nbt.getLong("CooldownCastId");
+		if (nbt.contains("CasterForm")) casterForm = Identifier.tryParse(nbt.getString("CasterForm"));
 		if (nbt.containsUuid("Owner")) ownerUuid = nbt.getUuid("Owner");
 	}
 

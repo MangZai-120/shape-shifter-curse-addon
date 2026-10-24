@@ -173,7 +173,7 @@ public final class SkillHudCatalog {
                 skill("frost_forge", null, false, SkillHudCatalog::hasHoverThorn)));
         FORMS.put("axolotl_sp", List.of(
                 // 涡流冲击：湿润度（air）≥每发消耗（balance 可调，服务端同源）
-                skill("vortex_impact", "form_axolotl_sp_vortex_charge", true, p -> p.getAir() >= net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.airPerHitForHud()),
+                skill("vortex_impact", "form_axolotl_sp_vortex_charge", true, p -> p.getAir() >= net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.airPerHitForHud(p)),
                 skill("play_dead", "form_axolotl_sp_play_dead_activate", false),
                 skill("water_burst", "form_axolotl_sp_water_ball", false),
                 skill("water_spear_craft", "form_axolotl_sp_water_spear_craft_spear", false),

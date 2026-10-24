@@ -2,8 +2,19 @@
     "type": "apoli:action_over_time",
     "interval": 20,
     "entity_action": {
-        "type": "apoli:gain_air",
-        "value": -3
+        "type": "apoli:if_else",
+        "condition": {
+            "type": "apoli:power",
+            "power": "shape-shifter-curse:perks/axolotl_vegetation"
+        },
+        "if_action": {
+            "type": "apoli:gain_air",
+            "value": -1
+        },
+        "else_action": {
+            "type": "apoli:gain_air",
+            "value": -3
+        }
     },
     "condition": {
         "type": "apoli:and",
@@ -13,6 +24,6 @@
             { "type": "apoli:in_rain", "inverted": true }
         ]
     },
-    "name": "Moisture Drain",
-    "description": "On the ground, lose 1% moisture (air) per second. Moisture drops cause dehydration damage."
+    "name": "power.my_addon.form_axolotl_fluorescent_moisture_drain.name",
+    "description": "power.my_addon.form_axolotl_fluorescent_moisture_drain.description"
 }

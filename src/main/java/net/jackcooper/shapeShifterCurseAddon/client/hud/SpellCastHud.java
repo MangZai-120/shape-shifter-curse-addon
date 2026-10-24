@@ -228,7 +228,8 @@ public final class SpellCastHud {
 			}
 		}
 		if (current == null || current.spell() == null || client.player == null || client.world == null
-				|| client.options.hudHidden || client.currentScreen != null) return;
+				|| client.options.hudHidden || client.currentScreen != null
+				|| !SSCAddonConfig.client().showChargeBar) return;
 		// 零读条不绘制（instant 从未滑入；但退场计时已在上方推进）
 		if (current.duration() <= 0) return;
 		long t = now();

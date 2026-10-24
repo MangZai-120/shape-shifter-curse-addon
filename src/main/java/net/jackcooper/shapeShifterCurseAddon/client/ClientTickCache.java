@@ -57,7 +57,7 @@ public final class ClientTickCache {
 		ItemStack book = TrinketUtils.findFirstEquipped(client.player,
 				stack -> stack.getItem() == net.jackcooper.shapeShifterCurseAddon.SscAddon.MOON_DUST_SPELLBOOK);
 		equippedBook = book == null || book.isEmpty() ? null : book;
-		// 荧光幼灵海晶吊坠 / 使魔蓝火护符（固定两项，避免动态增删）
+		// 荧光幼灵海晶吊坠 / 使魔蓝火护符（固定几项，避免动态增删）
 		WEARING.clear();
 		WEARING.put(net.jackcooper.shapeShifterCurseAddon.SscAddon.SEA_CRYSTAL_PENDANT,
 				TrinketUtils.isWearing(client.player, net.jackcooper.shapeShifterCurseAddon.SscAddon.SEA_CRYSTAL_PENDANT));

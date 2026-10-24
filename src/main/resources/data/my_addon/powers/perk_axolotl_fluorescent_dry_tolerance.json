@@ -1,0 +1,12 @@
+{
+    "type": "apoli:attribute",
+    "modifier": {
+        "name": "Fluorescent dry tolerance",
+        "attribute": "minecraft:generic.max_health",
+        "operation": "addition",
+        "value": 6
+    },
+    "hidden": true,
+    "name": "power.my_addon.perk_axolotl_fluorescent_dry_tolerance.name",
+    "description": "perk.ssc_addon.axolotl_fluorescent.axolotl_dry_tolerance.description"
+}
