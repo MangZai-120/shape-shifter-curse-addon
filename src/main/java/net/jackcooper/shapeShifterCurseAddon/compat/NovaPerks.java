@@ -37,7 +37,7 @@ public final class NovaPerks {
         Identifier id = perk.getID();
         if (!(RegPerks.P_OcelotArmor_1.equals(id) || RegPerks.P_OcelotArmor_2.equals(id)
                 || RegPerks.P_OcelotMetabolism_1.equals(id) || RegPerks.P_OcelotMetabolism_2.equals(id)
-                || RegPerks.P_OcelotMetabolicOverload.equals(id) || RegPerks.P_OcelotLongPounce.equals(id))) return false;
+                || RegPerks.P_OcelotMetabolicOverload.equals(id) || SscPerkIds.OCELOT_LONG_POUNCE.equals(id))) return false;
         var purchased = RegPlayerFormComponent.PLAYER_FORM.get(player).formPerkMap.get(RegPerks.T_Ocelot3PerkTree);
         if (purchased != null && (RegPerks.P_OcelotArmor_1.equals(id) && purchased.contains(RegPerks.P_OcelotArmor_2)
                 || RegPerks.P_OcelotMetabolism_1.equals(id) && purchased.contains(RegPerks.P_OcelotMetabolism_2))) return true;

@@ -137,6 +137,7 @@
         "client.FamiliarFoxManaBarGateMixin",
         "client.SscMagicHudVisibilityMixin",
         "client.SscManaHudVisibilityMixin",
+        "client.MoistureHudVisibilityMixin",
         "client.UpgradeAxolotlSpearChargeArmMixin",
         "client.ClawCrosshairMixin",
         "client.NovaSprintLockMixin",
