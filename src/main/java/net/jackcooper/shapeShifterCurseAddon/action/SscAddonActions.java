@@ -495,6 +495,18 @@ public class SscAddonActions {
 					}
 				}));
 
+		// ==== 冥狼Perk - 被动召唤与技能3回收 ====
+		registerBiEntity(new ActionFactory<>(new Identifier("ssc_addon", "anubis_wolf_sp_passive_summon"),
+				new SerializableData().add("reverse", SerializableDataTypes.BOOLEAN, false),
+				(data, pair) -> net.jackcooper.shapeShifterCurseAddon.compat.AnubisWolfSpPerks
+						.summonPassive(pair, data.getBoolean("reverse"))));
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "anubis_wolf_sp_soul_recall"),
+				new SerializableData(), (data, entity) -> {
+			if (entity instanceof ServerPlayerEntity player) {
+				net.jackcooper.shapeShifterCurseAddon.compat.AnubisWolfSpPerks.recall(player);
+			}
+		}));
+
 		// ==== 金沙岚SP - 侵蚀烙印命中处理 ====
 		registerBiEntity(new ActionFactory<>(new Identifier("ssc_addon", "golden_sandstorm_erosion_brand_hit"),
 				new SerializableData(),

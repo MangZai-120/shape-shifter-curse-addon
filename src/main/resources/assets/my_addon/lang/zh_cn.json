@@ -1,4 +1,12 @@
 {
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_pack_response_1.description": "被动召唤狼灵的冷却缩短至21秒。狼灵死亡时为你回复2点生命值，佩戴晶石的额外召唤数量保留。冥狼裁庭的冷却仍为30秒。",
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_pack_response_2.description": "升级被动召唤：攻击时召3只、受击时召2只，上限3只；佩戴晶石时分别为4只、3只，上限4只。冷却21秒，保留狼群响应Ⅰ的死亡回血。魂体激发可另外提高1只上限。",
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_pack_amplification.description": "通过被动、冥狼裁庭或死亡领域召唤的狼灵获得30秒力量Ⅰ。",
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_soul_excitation.description": "被动：场上狼灵数量上限常驻增加1只，作用于被动召唤、冥狼裁庭和领域召唤。单次召唤数量不变，不自动补狼。主动召狼上限由6只提高至7只，佩戴晶石时由8只提高至9只。",
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_wither_tolerance_1.description": "凋零对你造成伤害的间隔变为1.5倍：凋零Ⅰ每3秒、凋零Ⅱ每1.5秒结算一次。",
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_wither_tolerance_2.description": "替换凋零耐受Ⅰ：凋零扣血间隔变为2倍，凋零Ⅰ每4秒、凋零Ⅱ每2秒结算一次。",
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_soul_recall.description": "技能键3：清除自身凋零并回收全部狼灵，同时停止尚未完成的召唤。冷却10秒。已学习狼群响应Ⅰ时，每回收一只存活狼灵回复2点生命值。",
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_undead_discernment.description": "移除你对亡灵生物的伤害削弱：单次伤害达到4点时，不再减少3点基础伤害。",
   "key.categories.ssc_addon": "幻形者诅咒附属",
   "ssc_addon.warning.frost_pawglove_incompatible": "魔力构造不兼容，结霜护爪无法在此形态下生效。",
   "item.ssc_addon.active_coral_necklace": "活性珊瑚项链",

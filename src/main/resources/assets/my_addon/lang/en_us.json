@@ -1,4 +1,12 @@
 {
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_pack_response_1.description": "Reduce passive wolf summoning cooldown to 21 seconds. A wolf's death restores 2 health to you. Keep the crystal's additional summon count. Netherwolf Court retains its 30-second cooldown.",
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_pack_response_2.description": "Upgrade passive summons: summon 3 wolves when attacking or 2 when hit, with a cap of 3. With the crystal, these become 4, 3 and a cap of 4. Keep the 21-second cooldown and rank I death healing. Soul Excitation adds one further slot.",
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_pack_amplification.description": "Wolves from passive summons, Netherwolf Court and Death Domain gain Strength I for 30 seconds.",
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_soul_excitation.description": "Passive: increase the simultaneous wolf cap by 1 for passive, Court and domain summons. Summons per activation stay unchanged; this does not automatically spawn wolves. The active cap rises from 6 to 7, or from 8 to 9 with the crystal.",
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_wither_tolerance_1.description": "Wither damage intervals become 1.5 times longer: every 3 seconds for Wither I and 1.5 seconds for Wither II.",
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_wither_tolerance_2.description": "Replaces Wither Tolerance I: double Wither damage intervals to 4 seconds for Wither I and 2 seconds for Wither II.",
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_soul_recall.description": "Skill key 3: remove your Wither and recall all wolves, stopping any pending summons. Cooldown: 10 seconds. With Pack Response I learned, each recalled living wolf restores 2 health.",
+  "perk.ssc_addon.anubis_wolf_sp.anubis_wolf_undead_discernment.description": "Remove your damage penalty against undead: hits of at least 4 damage no longer lose 3 base damage.",
   "key.categories.ssc_addon": "Shape Shifter Curse Addon",
   "ssc_addon.warning.frost_pawglove_incompatible": "Incompatible mana structure, Frost Pawglove cannot function in this form.",
   "effect.ssc_addon.frost_freeze": "Frost Freeze",

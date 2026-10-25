@@ -17,6 +17,8 @@ import net.onixary.shapeShifterCurseFabric.minion.MinionRegister;
 import net.onixary.shapeShifterCurseFabric.minion.mobs.AnubisWolfMinionEntity;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.compat.AnubisWolfSpPerks;
+import net.onixary.shapeShifterCurseFabric.additional_power.WolfMinionPower;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
@@ -129,7 +131,7 @@ public class AnubisWolfSpSummonWolves {
 
 		// 检查饰品加成
 		boolean hasCrystal = hasTrinketEquipped(player);
-		int maxWolves = hasCrystal ? BAL.i("max_wolves", MAX_WOLVES) + 2 : BAL.i("max_wolves", MAX_WOLVES);
+		int maxWolves = maximumWolves(player);
 
 		// 通过IPlayerEntityMinion系统检查当前冥狼数量
 		int aliveCount = getMinionCount(player);
@@ -206,6 +208,34 @@ public class AnubisWolfSpSummonWolves {
 		ACTIVE_SUMMONS.clear();
 	}
 
+	/** Stop pending summons before killing owned wolves, so recall cannot spawn replacements. */
+	public static void recallAll(ServerPlayerEntity player) {
+		SummonData data = ACTIVE_SUMMONS.remove(player.getUuid());
+		removeHowlSlow(player);
+		if (data != null && data.phase != Phase.ACTIVE && data.castId >= 0) {
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, data.castId);
+		}
+		player.removeStatusEffect(StatusEffects.WITHER);
+		if (!(player instanceof IPlayerEntityMinion owner)) return;
+		var minions = owner.shape_shifter_curse$getMinionsByMinionID(AnubisWolfMinionEntity.MinionID);
+		if (minions == null) return;
+		for (UUID uuid : List.copyOf(minions)) {
+			for (ServerWorld world : player.getServer().getWorlds()) {
+				if (world.getEntity(uuid) instanceof AnubisWolfMinionEntity wolf && wolf.isAlive()
+						&& player.getUuid().equals(wolf.getOwnerUuid())) {
+					// Keep SSC's onDeath/death-heal path; discard would lose the recall heal.
+					wolf.kill();
+				}
+			}
+		}
+		owner.shape_shifter_curse$clearMinions(AnubisWolfMinionEntity.MinionID);
+	}
+
+	public static int maximumWolves(ServerPlayerEntity player) {
+		return AnubisWolfSpPerks.capacity(player,
+				BAL.i("max_wolves", MAX_WOLVES) + (hasTrinketEquipped(player) ? 2 : 0));
+	}
+
 	/**
 	 * 增强死亡领域自动召唤冥狼（跳过嚎叫阶段，直接生成）
 	 * 实际召唤数量 = min(requestCount, MAX_WOLVES - 已有数量)
@@ -220,7 +250,7 @@ public class AnubisWolfSpSummonWolves {
 		dissipateAllMinions(player);
 
 		// 创建一个领域增强的SummonData，直接进入SUMMONING阶段
-		SummonData data = new SummonData(requestCount, true);
+		SummonData data = new SummonData(Math.min(requestCount, maximumWolves(player)), true);
 		data.enhancedDomain = true;
 		data.phase = Phase.SUMMONING;
 		data.ticksElapsed = 0;
@@ -292,13 +322,10 @@ public class AnubisWolfSpSummonWolves {
 
 	private static void spawnMinionWolf(ServerPlayerEntity player, SummonData data) {
 		ServerWorld world = player.getServerWorld();
+		// Passive summons and accessory changes can fill the slots during the howl.
+		if (getMinionCount(player) >= maximumWolves(player)) return;
 
-		// 使用MinionRegister寻找合适的生成位置（与原版胡狼召唤逻辑一致）
-		BlockPos spawnPos = MinionRegister.getNearbyEmptySpace(
-				world, player.getRandom(), player.getBlockPos(), 3, 1, 1, 4);
-		if (spawnPos == null) {
-			spawnPos = player.getBlockPos();
-		}
+		BlockPos spawnPos = summonPosition(world, player, player);
 
 		// 使用MinionRegister.SpawnMinion生成（自动调用InitMinion注册到IPlayerEntityMinion系统）
 		AnubisWolfMinionEntity wolf = MinionRegister.SpawnMinion(
@@ -310,6 +337,7 @@ public class AnubisWolfSpSummonWolves {
 
 		// 设置等级（level 3: HP=20, Attack=4, 治愈主人2HP/hit）
 		wolf.setMinionLevel(BAL.i("minion_level", MINION_LEVEL));
+		WolfMinionPower.onSpawn(player, wolf);
 
 		// 死亡领域联动增强
 		if (data.domainActive) {
@@ -436,6 +464,16 @@ public class AnubisWolfSpSummonWolves {
 	 */
 	public static boolean hasTrinketEquipped(ServerPlayerEntity player) {
 		return TrinketUtils.isWearing(player, SscAddon.ANUBIS_CRYSTAL);
+	}
+
+	/** Soul sand lowers the anchor into its block; do not choose air below a thin floor. */
+	public static BlockPos summonPosition(ServerWorld world, ServerPlayerEntity owner, Entity anchor) {
+		BlockPos candidate = MinionRegister.getNearbyEmptySpace(world, owner.getRandom(), anchor.getBlockPos(), 3, 1, 1, 4);
+		if (candidate != null && (world.getFluidState(candidate).isIn(net.minecraft.registry.tag.FluidTags.WATER)
+				|| !world.getBlockState(candidate.down()).getCollisionShape(world, candidate.down()).isEmpty())) {
+			return candidate;
+		}
+		return BlockPos.ofFloored(anchor.getX(), Math.ceil(anchor.getY()), anchor.getZ());
 	}
 
 	// ==================== 辅助方法 ====================

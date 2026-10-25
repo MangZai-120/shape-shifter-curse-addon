@@ -6,6 +6,7 @@ import net.jackcooper.shapeShifterCurseAddon.compat.FamiliarFoxSpPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.SnowFoxSpPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.WindSpiritPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.NovaPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.AnubisWolfSpPerks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -21,6 +22,11 @@ public abstract class AxolotlSpPerkDescriptionMixin {
     @Inject(method = "getPerkDescription", at = @At("HEAD"), cancellable = true, remap = false)
     private static void ssca$describeSpPerk(Identifier perk, CallbackInfoReturnable<Text> cir) {
         var player = MinecraftClient.getInstance().player;
+        if (player != null && AnubisWolfSpPerks.isSupported(FormUtils.getPlayerForm(player))
+                && RegPerks.getPerkTree(RegPerks.T_AnubisWolf3PerkTree).getAllPerks().contains(perk)) {
+            cir.setReturnValue(Text.translatable("perk.ssc_addon.anubis_wolf_sp." + perk.getPath() + ".description"));
+            return;
+        }
         if (player != null && NovaPerks.isNova(FormUtils.getPlayerForm(player))
                 && RegPerks.getPerkTree(RegPerks.T_Ocelot3PerkTree).getAllPerks().contains(perk)) {
             cir.setReturnValue(Text.translatable("perk.ssc_addon.ocelot_nova." + perk.getPath() + ".description"));

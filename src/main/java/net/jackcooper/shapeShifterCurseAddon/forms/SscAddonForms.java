@@ -177,6 +177,7 @@ public final class SscAddonForms {
 		anubisWolfForm.canSneakRush = true;
 		// 四足形态变身后重置玩家缩放到本形态大小（值与 origin power form_anubis_wolf_3_scale 一致）
 		anubisWolfForm.applyScale(0.8f, 0.6f);
+		anubisWolfForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_AnubisWolf3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(anubisWolfForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_anubis_wolf_sp")).registerForm(1, 12, anubisWolfForm));

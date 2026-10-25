@@ -6,6 +6,7 @@ import net.jackcooper.shapeShifterCurseAddon.compat.FamiliarFoxSpPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.SnowFoxSpPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.WindSpiritPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.NovaPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.AnubisWolfSpPerks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.onixary.shapeShifterCurseFabric.perk.NormalPerk;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
@@ -23,6 +24,7 @@ public abstract class AxolotlSpPerkMixin {
                 || FamiliarFoxSpPerks.loadMapped((NormalPerk) (Object) this, player, form)
                 || SnowFoxSpPerks.loadMapped((NormalPerk) (Object) this, player, form)
                 || WindSpiritPerks.loadMapped((NormalPerk) (Object) this, player, form)
-                || NovaPerks.loadMapped((NormalPerk) (Object) this, player, form)) ci.cancel();
+                || NovaPerks.loadMapped((NormalPerk) (Object) this, player, form)
+                || AnubisWolfSpPerks.loadMapped((NormalPerk) (Object) this, player, form)) ci.cancel();
     }
 }

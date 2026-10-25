@@ -48,8 +48,8 @@ import java.util.UUID;
 
 /** Real CCA, Apoli source ownership, SSC unlock loading, applied Mixin and JSON cost actions. */
 public final class AxolotlSpPerkIntegrationProbe {
-    private static sun.misc.Unsafe unsafe;
-    private static TestWorld world;
+    static sun.misc.Unsafe unsafe;
+    static TestWorld world;
     private static int checks;
     private static final Identifier TREE = RegPerks.T_Axolotl3PerkTree;
     private static final PowerFactory<Power> DUMMY = new PowerFactory<>(new Identifier("my_addon", "perk_test"),
@@ -63,6 +63,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         field.setAccessible(true);
         unsafe = (sun.misc.Unsafe) field.get(null);
         world = allocate(TestWorld.class);
+        world.entities = new java.util.HashMap<>();
         world.clock = 100000;
         ShapeShifterCurseFabric.commonConfig = new CommonConfig();
         ShapeShifterCurseFabric.commonConfig.enableInitialForm = false;
@@ -135,6 +136,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         checkSnowFoxForm();
         checkNovaForm();
         checkWindSpiritForm();
+        checks += AnubisWolfSpPerkChecks.run();
         System.out.println("Axolotl SP Perk integration: " + checks + " checks passed; live gameplay NOT tested.");
     }
 
@@ -625,7 +627,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         }
     }
 
-    private static void select(TestPlayer player, IForm form) {
+    static void select(TestPlayer player, IForm form) {
         if (player.form.nowForm != null) player.powers.removeAllPowersFromSource(player.form.nowForm.getFormLayer().getRight());
         player.form.setForm(form);
         player.form.nowPerkTree = form.getPerkTreeID();
@@ -638,11 +640,13 @@ public final class AxolotlSpPerkIntegrationProbe {
         PerkUtils.loadAllPerk(player, form.getPerkTreeID());
     }
 
-    private static TestPlayer player() throws Exception {
+    static TestPlayer player() throws Exception {
         TestPlayer player = allocate(TestPlayer.class);
         player.hunger = new net.minecraft.entity.player.HungerManager();
         player.id = UUID.randomUUID(); player.air = 300; player.abilities = new PlayerAbilities();
         player.form = new TestFormComponent(player);
+        player.effects = new java.util.HashMap<>();
+        player.minions = new java.util.concurrent.ConcurrentHashMap<>();
         player.powers = new PowerHolderComponentImpl(player);
         player.components = ComponentContainer.Factory.builder(TestPlayer.class)
                 .component(RegPlayerFormComponent.PLAYER_FORM, p -> p.form)
@@ -650,10 +654,15 @@ public final class AxolotlSpPerkIntegrationProbe {
         return player;
     }
 
-    private static void register(Identifier id, JsonObject json) {
+    static void register(Identifier id, JsonObject json) {
         if (PowerTypeRegistry.contains(id)) return;
         var factory = DUMMY.read(new JsonObject());
         if (json != null && "apoli:cooldown".equals(json.get("type").getAsString())) factory = REFUND_TIMER.read(json);
+        if (json != null && "shape-shifter-curse:wolf_minion_bonus".equals(json.get("type").getAsString())) {
+            PowerTypeRegistry.register(id, new PowerType<>(id,
+                    net.onixary.shapeShifterCurseFabric.additional_power.WolfMinionPower.createFactory().read(json)));
+            return;
+        }
         if (json != null && "apoli:multiple".equals(json.get("type").getAsString())) {
             var children = new ArrayList<Identifier>();
             for (var entry : json.entrySet()) if (entry.getValue().isJsonObject() && entry.getValue().getAsJsonObject().has("type")) {
@@ -665,18 +674,18 @@ public final class AxolotlSpPerkIntegrationProbe {
         } else PowerTypeRegistry.register(id, new PowerType<>(id, factory));
     }
 
-    private static boolean has(TestPlayer player, Identifier id) {
+    static boolean has(TestPlayer player, Identifier id) {
         return PowerTypeRegistry.contains(id) && player.powers.hasPower(PowerTypeRegistry.get(id));
     }
     private static Identifier original(String path) { return new Identifier("shape-shifter-curse", path); }
-    private static JsonObject json(String namespace, String path) { return resource(namespace, "powers/" + path); }
+    static JsonObject json(String namespace, String path) { return resource(namespace, "powers/" + path); }
     private static JsonObject resource(String namespace, String path) {
         try (var in = AxolotlSpPerkIntegrationProbe.class.getResourceAsStream("/data/" + namespace + "/" + path + ".json")) {
             if (in == null) throw new AssertionError(path);
             return JsonParser.parseString(new String(in.readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
         } catch (java.io.IOException e) { throw new RuntimeException(e); }
     }
-    @SuppressWarnings("unchecked") private static <T> T allocate(Class<T> type) throws Exception { return (T) unsafe.allocateInstance(type); }
+    @SuppressWarnings("unchecked") static <T> T allocate(Class<T> type) throws Exception { return (T) unsafe.allocateInstance(type); }
     private static void check(boolean ok, String message) { checks++; if (!ok) throw new AssertionError(message); }
 
     public static final class TestFormComponent extends PlayerFormComponent {
@@ -685,8 +694,14 @@ public final class AxolotlSpPerkIntegrationProbe {
     }
     public static final class TestWorld extends ServerWorld {
         long clock;
+        net.minecraft.server.MinecraftServer server;
+        java.util.Map<UUID, net.minecraft.entity.Entity> entities;
+        net.minecraft.world.PersistentStateManager states;
         private TestWorld() { super(null, null, null, null, World.OVERWORLD, null, null, false, 0, List.of(), false, null); }
         @Override public long getTime() { return clock; }
+        @Override public net.minecraft.server.MinecraftServer getServer() { return server; }
+        @Override public net.minecraft.entity.Entity getEntity(UUID id) { return entities.get(id); }
+        @Override public net.minecraft.world.PersistentStateManager getPersistentStateManager() { return states; }
     }
     /** Keeps real CooldownPower timing/NBT; suppresses its network send in this no-connection fixture. */
     public static final class TestCooldown extends CooldownPower {
@@ -697,10 +712,22 @@ public final class AxolotlSpPerkIntegrationProbe {
         UUID id; int air; PlayerAbilities abilities; TestFormComponent form;
         ComponentContainer components; PowerHolderComponentImpl powers;
         net.minecraft.entity.player.HungerManager hunger;
+        java.util.Map<net.minecraft.entity.effect.StatusEffect, net.minecraft.entity.effect.StatusEffectInstance> effects;
+        java.util.concurrent.ConcurrentHashMap<Identifier, ArrayList<UUID>> minions;
+        float healed;
         @Override public net.minecraft.entity.player.HungerManager getHungerManager() { return hunger; }
         private TestPlayer() { super(null, null, new GameProfile(UUID.randomUUID(), "perk-test")); }
         @Override public World getWorld() { return world; }
         @Override public ServerWorld getServerWorld() { return world; }
+        @Override public net.minecraft.server.MinecraftServer getServer() { return world.server; }
+        @Override public net.minecraft.entity.attribute.EntityAttributeInstance getAttributeInstance(net.minecraft.entity.attribute.EntityAttribute attribute) { return null; }
+        @Override public boolean hasStatusEffect(net.minecraft.entity.effect.StatusEffect effect) { return effects.containsKey(effect); }
+        @Override public boolean removeStatusEffect(net.minecraft.entity.effect.StatusEffect effect) { return effects.remove(effect) != null; }
+        @Override public void heal(float amount) { healed += amount; }
+        // The real minion interface is mixed into PlayerEntity; suppress its network sync in this fixture.
+        public java.util.concurrent.ConcurrentHashMap<Identifier, ArrayList<UUID>> shape_shifter_curse$getAllMinions() { return minions; }
+        public void shape_shifter_curse$clearMinions(Identifier id) { minions.remove(id); }
+        public boolean shape_shifter_curse$removeMinion(Identifier id, UUID uuid) { return minions.getOrDefault(id, new ArrayList<>()).remove(uuid); }
         @Override public ComponentContainer getComponentContainer() { return components; }
         @Override public UUID getUuid() { return id; }
         @Override public Text getName() { return Text.literal("perk-test"); }
