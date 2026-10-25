@@ -32,8 +32,6 @@ import org.joml.Vector3f;
 public final class WindDashClient {
 
     private static final Vector3f GREEN = new Vector3f(0.3f, 0.95f, 0.4f);
-    private static final double MAX_RANGE = 16.0;
-    private static final double RADIUS = 3.0;
     private static final int PREVIEW_INTERVAL = 2; // 每 2 tick 刷一次预览粒子
 
     private static boolean lastPressed = false;
@@ -87,7 +85,8 @@ public final class WindDashClient {
         Vec3d look = player.getRotationVector().normalize();
         Vec3d flatLook = new Vec3d(look.x, 0, look.z);
         double flatLen = flatLook.length();
-        double max3D = flatLen > 1.0e-4 ? MAX_RANGE / flatLen : MAX_RANGE;
+        double range = DashClientState.previewRange;
+        double max3D = flatLen > 1.0e-4 ? range / flatLen : range;
         Vec3d end3D = eye.add(look.multiply(max3D));
         BlockHitResult bhr = world.raycast(new RaycastContext(eye, end3D,
                 RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, player));
@@ -103,8 +102,8 @@ public final class WindDashClient {
             float yaw = player.getYaw();
             flatDir = new Vec3d(-MathHelper.sin(yaw * 0.017453292f), 0, MathHelper.cos(yaw * 0.017453292f));
         }
-        double hx = player.getX() + flatDir.x * MAX_RANGE;
-        double hz = player.getZ() + flatDir.z * MAX_RANGE;
+        double hx = player.getX() + flatDir.x * range;
+        double hz = player.getZ() + flatDir.z * range;
         double gy = findGroundYClient(world, hx, hz, player.getY());
         return new Vec3d(hx, gy, hz);
     }
@@ -134,7 +133,7 @@ public final class WindDashClient {
         int ringPoints = 24;
         for (int i = 0; i < ringPoints; i++) {
             double ang = (Math.PI * 2.0 / ringPoints) * i;
-            world.addParticle(dust, cx + Math.cos(ang) * RADIUS, cy, cz + Math.sin(ang) * RADIUS, 0, 0, 0);
+            world.addParticle(dust, cx + Math.cos(ang) * DashClientState.previewRadius, cy, cz + Math.sin(ang) * DashClientState.previewRadius, 0, 0, 0);
         }
         // 向上细柱方便远处可见
         for (int i = 1; i <= 4; i++) {

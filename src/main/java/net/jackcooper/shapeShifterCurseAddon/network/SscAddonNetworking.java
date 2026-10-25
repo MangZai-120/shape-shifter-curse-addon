@@ -236,9 +236,15 @@ public class SscAddonNetworking {
 
 	/** 风灵「风之冲刺」：同步阶段(phase)与目标悬浮 Y 给客户端（驱动落点预览）。 */
 	public static void syncDashState(net.minecraft.server.network.ServerPlayerEntity player, int phase, double targetY) {
+		syncDashState(player, phase, targetY, 16.0, 3.0);
+	}
+
+	public static void syncDashState(net.minecraft.server.network.ServerPlayerEntity player, int phase, double targetY, double range, double radius) {
 		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
 		buf.writeInt(phase);
 		buf.writeDouble(targetY);
+		buf.writeDouble(range);
+		buf.writeDouble(radius);
 		ServerPlayNetworking.send(player, PACKET_DASH_STATE, buf);
 	}
 

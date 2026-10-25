@@ -100,6 +100,7 @@ public final class SscAddonForms {
 		snowFoxForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 四足形态变身后重置玩家缩放到本形态大小（对齐原版 SNOW_FOX_3 新体型 0.55，eye_scale 保持 0.6 以支持潜行过半格）
 		snowFoxForm.applyScale(0.55f, 0.6f);
+		snowFoxForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_SnowFox3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(snowFoxForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_snow_fox_sp")).registerForm(1, 7, snowFoxForm));
@@ -109,6 +110,7 @@ public final class SscAddonForms {
 		frostspineForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 缩放与雪狐SP一致（对齐原版 SNOW_FOX_3 体型 0.55，eye_scale 0.6 支持潜行过半格）
 		frostspineForm.applyScale(0.55f, 0.6f);
+		frostspineForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_SnowFox3PerkTree);
 		RegPlayerForms.registerPlayerForm(frostspineForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_snow_fox_frostspine")).registerForm(1, 7, frostspineForm));
 
@@ -146,6 +148,7 @@ public final class SscAddonForms {
 		ocelotSpForm.bodyType(PlayerFormBodyType.FERAL);
 		// 缩放与原版豹猫 ocelot_3 一致（RegPlayerForms 里 OCELOT_3 用 0.75f/0.6f）
 		ocelotSpForm.applyScale(0.75f, 0.6f);
+		ocelotSpForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Ocelot3PerkTree);
 		RegPlayerForms.registerPlayerForm(ocelotSpForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_ocelot_wind_spirit")).registerForm(1, 5, ocelotSpForm));
 
@@ -156,6 +159,7 @@ public final class SscAddonForms {
 		ocelotNovaForm.bodyType(PlayerFormBodyType.FERAL);
 		// 缩放与原版豹猫 ocelot_3 一致（与风灵相同 0.75f/0.6f）
 		ocelotNovaForm.applyScale(0.75f, 0.6f);
+		ocelotNovaForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Ocelot3PerkTree);
 		RegPlayerForms.registerPlayerForm(ocelotNovaForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_ocelot_nova")).registerForm(1, 5, ocelotNovaForm));
 

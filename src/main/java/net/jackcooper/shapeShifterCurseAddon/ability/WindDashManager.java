@@ -16,6 +16,9 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.compat.WindSpiritPerks;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -78,6 +81,9 @@ public final class WindDashManager {
     private static final Map<UUID, DashState> STATES = new ConcurrentHashMap<>();
 
     public static final class DashState {
+        boolean enhanced;
+        double maxRange, landingRadius;
+        float landingDamage;
         long castId = -1;
         int phase = PHASE_NONE;
         double startY;          // 起飞前脚部 Y
@@ -117,6 +123,10 @@ public final class WindDashManager {
     private static void startRise(ServerPlayerEntity player) {
         DashState s = new DashState();
         s.castId = SkillCooldowns.currentCastId(player, SKILL_ID);
+        s.enhanced = WindSpiritPerks.hasLongPounce(player);
+        s.maxRange = WindSpiritPerks.dashRange(BAL.d("max_dash_range", MAX_DASH_RANGE), s.enhanced);
+        s.landingRadius = WindSpiritPerks.landingRadius(BAL.d("landing_radius", LANDING_RADIUS), s.enhanced);
+        s.landingDamage = WindSpiritPerks.landingDamage((float) BAL.d("landing_damage", LANDING_DAMAGE), s.enhanced);
         s.phase = PHASE_RISE;
         double targetHeight = BAL.d("target_height", TARGET_HEIGHT);
         s.startY = player.getY();
@@ -135,7 +145,7 @@ public final class WindDashManager {
         sw.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ITEM_TRIDENT_THROW, SoundCategory.PLAYERS, 0.5f, 1.8f);
         // 同步阶段给客户端（驱动落点预览/音效）
-        SscAddonNetworking.syncDashState(player, s.phase, s.targetY);
+        SscAddonNetworking.syncDashState(player, s.phase, s.targetY, s.maxRange, s.landingRadius);
     }
 
     /** 悬浮中触发冲刺：3D 准星射线找落点（瞄近处地面=近落点，瞄远处=远落点，看天空退到16格）。 */
@@ -144,7 +154,7 @@ public final class WindDashManager {
         Vec3d look = player.getRotationVector().normalize();
         ServerWorld sw = (ServerWorld) player.getWorld();
         // 3D 准星射线找落点（与客户端预览 computeHorizontalLanding 完全一致，保证所见即所得）
-        s.dashTarget = computeDashLanding(sw, eye, look, player);
+        s.dashTarget = computeDashLanding(sw, eye, look, player, s.maxRange);
         s.dashStart = new Vec3d(player.getX(), player.getY(), player.getZ());
         s.dashDir = s.dashTarget.subtract(s.dashStart).normalize();
         s.dashTotal = Math.max(1.0, s.dashStart.distanceTo(s.dashTarget));
@@ -167,7 +177,7 @@ public final class WindDashManager {
                 SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 1.0f, 1.8f);
         sw.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_FIREWORK_ROCKET_BLAST, SoundCategory.PLAYERS, 0.6f, 1.4f);
-        SscAddonNetworking.syncDashState(player, s.phase, 0);
+        SscAddonNetworking.syncDashState(player, s.phase, 0, s.maxRange, s.landingRadius);
     }
 
     /** 每服务端 tick 对每个在线玩家调用。 */
@@ -237,7 +247,7 @@ public final class WindDashManager {
         player.velocityModified = true;
         s.phase = PHASE_HOVER;
         s.hoverTick = 0;
-        SscAddonNetworking.syncDashState(player, s.phase, s.targetY);
+        SscAddonNetworking.syncDashState(player, s.phase, s.targetY, s.maxRange, s.landingRadius);
     }
 
     private static void tickHover(ServerPlayerEntity player, DashState s) {
@@ -254,7 +264,7 @@ public final class WindDashManager {
         if (s.hoverTick >= BAL.i("hover_ticks", HOVER_TICKS)) {
             // 超时 → 缓慢落下
             s.phase = PHASE_FALL;
-            SscAddonNetworking.syncDashState(player, s.phase, 0);
+            SscAddonNetworking.syncDashState(player, s.phase, 0, s.maxRange, s.landingRadius);
         }
     }
 
@@ -336,7 +346,7 @@ public final class WindDashManager {
 
         if (withDamage) {
             // AOE 伤害（默认白名单）
-            double landingRadius = BAL.d("landing_radius", LANDING_RADIUS);
+            double landingRadius = s.landingRadius;
             Box box = new Box(land.subtract(landingRadius, landingRadius, landingRadius),
                     land.add(landingRadius, landingRadius, landingRadius));
             for (Entity e : sw.getOtherEntities(player, box)) {
@@ -344,8 +354,9 @@ public final class WindDashManager {
                 if (WhitelistUtils.isProtected(player, living)) continue; // 默认白名单
                 // 视线检查：墙后目标不命中（仿原版 PR #523 豹猫冲刺穿墙修复）
                 if (!net.jackcooper.shapeShifterCurseAddon.util.LineOfSightUtils.hasLineOfSight(sw, player, living)) continue;
-                living.damage(player.getDamageSources().playerAttack(player),
-                        NpcCombatEnhancements.scale(player, living, (float) BAL.d("landing_damage", LANDING_DAMAGE), "wind_primary_mul", 1.5));
+                boolean hit = living.damage(player.getDamageSources().playerAttack(player),
+                        NpcCombatEnhancements.scale(player, living, s.landingDamage, "wind_primary_mul", 1.5));
+                if (hit && s.enhanced) living.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 100, 0), player);
                 Vec3d push = living.getPos().subtract(land);
                 if (push.lengthSquared() < 1.0e-4) push = new Vec3d(0, 1, 0);
                 push = push.normalize();
@@ -430,8 +441,7 @@ public final class WindDashManager {
      * 计算冲刺落点：用完整 3D 准星射线（含俯仰角），命中方块则取该处地面（水平距离≤MAX_DASH_RANGE）；
      * 打空（看天空）才退到水平方向最远 MAX_DASH_RANGE 处的地面。这样玩家瞄近处地面=近落点，瞄远处=远落点。
      */
-    private static Vec3d computeDashLanding(ServerWorld world, Vec3d eye, Vec3d look, ServerPlayerEntity player) {
-        double maxDashRange = BAL.d("max_dash_range", MAX_DASH_RANGE);
+    private static Vec3d computeDashLanding(ServerWorld world, Vec3d eye, Vec3d look, ServerPlayerEntity player, double maxDashRange) {
         Vec3d flatLook = new Vec3d(look.x, 0, look.z);
         double flatLen = flatLook.length();
         // 3D 射线长度上限：保证水平投影不超过 max_dash_range

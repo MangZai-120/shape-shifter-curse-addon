@@ -12,15 +12,15 @@ import net.minecraft.util.Identifier;
  *
  * <p>用途：把 9 处法术伤害调用点从原版「间接魔法 indirectMagic」迁移到独立类型，实现：</p>
  * <ul>
- *   <li><b>法术抗性附魔</b>（spell_resistance，每级 −15%）能精确识别并只减免法术伤害，
+ *   <li><b>法术抗性附魔</b>（spell_resistance，每级 −13%，合计最高 −65%）能精确识别并只减免法术伤害，
  *       不误伤女巫药水等其它魔法伤害；</li>
  *   <li>死亡消息独立（death.attack.ssc_addon.spell_damage）。</li>
  * </ul>
  *
- * <p>tag 对齐原版 magic 行为（data/minecraft/tags/damage_type/ 下 replace:false 追加本类型）：
- * <b>is_magic</b>（吃抗性/药水等 magic 类判定）与 <b>witch_resistant_to</b>（保持女巫对法术的
- * 原有抗性）。伤害类型本体 effects=hurt（红字受击）、bypasses_armor 不追加——法术伤害
- * 与原版 magic 一致<b>不无视护甲</b>（原版 magic 也不在 bypasses_armor 内，走魔咒减伤通道）。</p>
+ * <p>data/minecraft/tags/damage_type/ 下以 replace:false 追加本类型：
+ * <b>is_magic</b>、<b>witch_resistant_to</b> 保持魔法分类与女巫抗性；
+ * <b>bypasses_armor</b> 和 <b>bypasses_enchantments</b> 分别穿透护甲与原版保护附魔。
+ * 法术抗性走独立的 LivingEntity.damage 入口，不依赖原版附魔保护系数，仍可减伤。</p>
  *
  * <p>用法（与原 indirectMagic(owner, owner) 语义一一对应）：</p>
  * <ul>

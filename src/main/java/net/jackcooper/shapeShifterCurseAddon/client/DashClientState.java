@@ -17,6 +17,8 @@ public final class DashClientState {
 
     public static volatile int phase = PHASE_NONE;
     public static volatile double targetY = 0.0;
+    public static volatile double previewRange = 16.0;
+    public static volatile double previewRadius = 3.0;
     /** 进入 HOVER 的客户端 tick 锚（驱动辅助栏悬浮倒数；非 HOVER 阶段无意义）。 */
     private static volatile long hoverStartTick = Long.MIN_VALUE;
 
@@ -24,6 +26,10 @@ public final class DashClientState {
     }
 
     public static void update(int p, double y) {
+        update(p, y, 16.0, 3.0);
+    }
+
+    public static void update(int p, double y, double range, double radius) {
         net.minecraft.client.world.ClientWorld world =
                 net.minecraft.client.MinecraftClient.getInstance().world;
         // 刚进入 HOVER：记录客户端 tick 锚（辅助栏自此倒数 hover_ticks）
@@ -32,11 +38,15 @@ public final class DashClientState {
         }
         phase = p;
         targetY = y;
+        previewRange = range;
+        previewRadius = radius;
     }
 
     public static void reset() {
         phase = PHASE_NONE;
         targetY = 0.0;
+        previewRange = 16.0;
+        previewRadius = 3.0;
         hoverStartTick = Long.MIN_VALUE;
     }
 

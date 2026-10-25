@@ -5,7 +5,7 @@ import net.minecraft.enchantment.EnchantmentTarget;
 import net.minecraft.entity.EquipmentSlot;
 
 /**
- * 法术抗性附魔（jackcooper）：最高 5 纪级，每级 −15% 法术伤害（合计最高 −75%）。
+ * 法术抗性附魔（jackcooper）：最高 5 级，每级 −13% 法术伤害（合计最高 −65%）。
  *
  * <p>数值语义：本类只负责「定义与注册」（名字/稀有度/可附魔装备槽/等级上限/兼容性），
  * 减伤倍率与判定在 {@code SscAddonLivingEntityMixin#ssca$spellResistanceReduce}（服务端
@@ -21,6 +21,8 @@ import net.minecraft.entity.EquipmentSlot;
  * </ul>
  */
 public class SpellResistanceEnchantment extends Enchantment {
+	public static final int MAX_LEVEL = 5;
+	public static final float REDUCTION_PER_LEVEL = 0.13F;
 
 	public SpellResistanceEnchantment(Rarity rarity, EnchantmentTarget target, EquipmentSlot[] slots) {
 		super(rarity, target, slots);
@@ -29,7 +31,7 @@ public class SpellResistanceEnchantment extends Enchantment {
 	/** 最高 5 级。 */
 	@Override
 	public int getMaxLevel() {
-		return 5;
+		return MAX_LEVEL;
 	}
 
 	/** 最小消耗（附魔台出现门槛）：稀有度自带 + 每级 ×10。 */
@@ -46,8 +48,8 @@ public class SpellResistanceEnchantment extends Enchantment {
 
 	/**
 	 * 兼容性：与原版保护系列（保护/火焰保护/爆炸保护/弹射物保护）互斥。
-	 * 原版保护系互为互斥组（exclusiveSet），本附魔加入同组需改原版类不可行，
-	 * 故在此单向拒绝（铁砧时原版侧的 exclusiveSet 也会拒绝与保护系共存）。
+	 * Enchantment.canCombine 会同时检查双方的 canAccept，
+	 * 因此这里拒绝后，铁砧的两种放置顺序都不能把它们合并到同一件护甲。
 	 */
 	@Override
 	public boolean canAccept(Enchantment other) {

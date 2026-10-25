@@ -306,8 +306,9 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 
 	/**
 	 * 法术抗性附魔（ssc_addon:spell_resistance，最高 5 级，jackcooper）：受到「法术伤害」
-	 * （ssc_addon:spell_damage，魔法体系伤害专用类型）时按总等级每级 -15% 缩放
-	 * （合计最高 -75%）。多件护甲等级求和、上限 5；服务端判定、多人一致；
+	 * （ssc_addon:spell_damage，魔法体系伤害专用类型）时按总等级每级 -13% 缩放
+	 * （合计最高 -65%）。多件护甲等级求和、上限 5；服务端判定、多人一致；
+	 * 此独立结算在原版保护附魔通道之外，法术穿透原版附魔后仍然有效。
 	 * 与原版保护系附魔互斥（铁砧侧限制，见 SpellResistanceEnchantment#canAccept）。
 	 */
 	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
@@ -322,8 +323,9 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 					self.getEquippedStack(slot));
 		}
 		if (totalLevel <= 0) return amount;
-		totalLevel = Math.min(totalLevel, 5);
-		return amount * (1.0F - 0.15F * totalLevel);
+		totalLevel = Math.min(totalLevel,
+				net.jackcooper.shapeShifterCurseAddon.enchantment.SpellResistanceEnchantment.MAX_LEVEL);
+		return amount * (1.0F - net.jackcooper.shapeShifterCurseAddon.enchantment.SpellResistanceEnchantment.REDUCTION_PER_LEVEL * totalLevel);
 	}
 
 	/** 法术抗性结算的四个护甲槽。 */

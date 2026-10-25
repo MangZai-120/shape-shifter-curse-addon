@@ -9,6 +9,8 @@
         "player.SscForceSneakSyncMixin",
         "SscForceSneakPacketMixin",
         "AxolotlSpPerkMixin",
+        "SnowFoxSpReachMixin",
+        "entity.WindSpiritHungerMixin",
         "ControlledActivePowerMixin",
         "entity.ControlledEffectInterruptionMixin",
         "ControlledApoliUseMixin",

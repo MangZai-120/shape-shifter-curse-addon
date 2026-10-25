@@ -3,6 +3,9 @@ package net.jackcooper.shapeShifterCurseAddon.mixin;
 import net.jackcooper.shapeShifterCurseAddon.compat.AxolotlSpPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.FluorescentAxolotlPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.FamiliarFoxSpPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.SnowFoxSpPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.WindSpiritPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.NovaPerks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.onixary.shapeShifterCurseFabric.perk.NormalPerk;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
@@ -17,6 +20,9 @@ public abstract class AxolotlSpPerkMixin {
     private void ssca$mapAxolotlSpPerk(PlayerEntity player, IForm form, CallbackInfo ci) {
         if (AxolotlSpPerks.loadMapped((NormalPerk) (Object) this, player, form)
                 || FluorescentAxolotlPerks.loadMapped((NormalPerk) (Object) this, player, form)
-                || FamiliarFoxSpPerks.loadMapped((NormalPerk) (Object) this, player, form)) ci.cancel();
+                || FamiliarFoxSpPerks.loadMapped((NormalPerk) (Object) this, player, form)
+                || SnowFoxSpPerks.loadMapped((NormalPerk) (Object) this, player, form)
+                || WindSpiritPerks.loadMapped((NormalPerk) (Object) this, player, form)
+                || NovaPerks.loadMapped((NormalPerk) (Object) this, player, form)) ci.cancel();
     }
 }

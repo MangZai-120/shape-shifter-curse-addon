@@ -405,7 +405,9 @@ public class SscAddonClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_DASH_STATE, (client, handler, buf, responseSender) -> {
             int phase = buf.readInt();
             double targetY = buf.readDouble();
-            client.execute(() -> net.jackcooper.shapeShifterCurseAddon.client.DashClientState.update(phase, targetY));
+            double range = buf.readableBytes() >= 16 ? buf.readDouble() : 16.0;
+            double radius = buf.readableBytes() >= 8 ? buf.readDouble() : 3.0;
+            client.execute(() -> net.jackcooper.shapeShifterCurseAddon.client.DashClientState.update(phase, targetY, range, radius));
         });
 
         // 朔望「灵跃闪身」：接收第 2 段窗口时长（>0 开启倒数锚，0 关闭），驱动次技能辅助栏

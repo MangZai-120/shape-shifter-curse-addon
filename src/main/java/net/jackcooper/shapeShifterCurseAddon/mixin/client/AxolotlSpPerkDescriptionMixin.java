@@ -3,6 +3,9 @@ package net.jackcooper.shapeShifterCurseAddon.mixin.client;
 import net.jackcooper.shapeShifterCurseAddon.compat.AxolotlSpPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.FluorescentAxolotlPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.FamiliarFoxSpPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.SnowFoxSpPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.WindSpiritPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.NovaPerks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -18,6 +21,21 @@ public abstract class AxolotlSpPerkDescriptionMixin {
     @Inject(method = "getPerkDescription", at = @At("HEAD"), cancellable = true, remap = false)
     private static void ssca$describeSpPerk(Identifier perk, CallbackInfoReturnable<Text> cir) {
         var player = MinecraftClient.getInstance().player;
+        if (player != null && NovaPerks.isNova(FormUtils.getPlayerForm(player))
+                && RegPerks.getPerkTree(RegPerks.T_Ocelot3PerkTree).getAllPerks().contains(perk)) {
+            cir.setReturnValue(Text.translatable("perk.ssc_addon.ocelot_nova." + perk.getPath() + ".description"));
+            return;
+        }
+        if (player != null && WindSpiritPerks.isWindSpirit(FormUtils.getPlayerForm(player))
+                && RegPerks.getPerkTree(RegPerks.T_Ocelot3PerkTree).getAllPerks().contains(perk)) {
+            cir.setReturnValue(Text.translatable("perk.ssc_addon.wind_spirit." + perk.getPath() + ".description"));
+            return;
+        }
+        if (player != null && SnowFoxSpPerks.isSupported(FormUtils.getPlayerForm(player))
+                && RegPerks.P_SnowFoxFrostDive.equals(perk)) {
+            cir.setReturnValue(Text.translatable("perk.ssc_addon.snow_fox_sp.snow_fox_frost_dive.description"));
+            return;
+        }
         if (player != null && FamiliarFoxSpPerks.isSupported(FormUtils.getPlayerForm(player))
                 && "shape-shifter-curse".equals(perk.getNamespace())
                 && RegPerks.getPerkTree(RegPerks.T_FamiliarFox3PerkTree).getAllPerks().contains(perk)) {

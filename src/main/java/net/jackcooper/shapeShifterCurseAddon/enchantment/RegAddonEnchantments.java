@@ -12,7 +12,7 @@ import net.minecraft.util.Identifier;
  *
  * <p>当前注册：</p>
  * <ul>
- *   <li><b>法术抗性 spell_resistance</b>（最高 5 级，每级 −15% 法术伤害，合计最高 −75%）：
+ *   <li><b>法术抗性 spell_resistance</b>（最高 5 级，每级 −13% 法术伤害，合计最高 −65%）：
  *       只对 {@code ssc_addon:spell_damage} 伤害类型生效；减伤结算在
  *       {@code SscAddonLivingEntityMixin#ssca$spellResistanceReduce}（LivingEntity.damage HEAD，
  *       与绑定脚环/诅咒标记同一注入模式）。附魔书本身无效果，需经铁砧附到护甲上生效；
@@ -21,7 +21,7 @@ import net.minecraft.util.Identifier;
  */
 public final class RegAddonEnchantments {
 
-	/** 法术抗性：每级 −15% 法术伤害。 */
+	/** 法术抗性：每级 −13% 法术伤害。 */
 	public static final Enchantment SPELL_RESISTANCE = new SpellResistanceEnchantment(
 			Enchantment.Rarity.VERY_RARE, EnchantmentTarget.ARMOR,
 			new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET});

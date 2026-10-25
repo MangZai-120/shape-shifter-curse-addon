@@ -132,7 +132,249 @@ public final class AxolotlSpPerkIntegrationProbe {
         select(fresh, sp);
         check(!has(fresh, AxolotlSpPerks.WATER_MAGIC), "unlearned Perks are not granted by evolution");
         checkFamiliarForms();
+        checkSnowFoxForm();
+        checkNovaForm();
+        checkWindSpiritForm();
         System.out.println("Axolotl SP Perk integration: " + checks + " checks passed; live gameplay NOT tested.");
+    }
+
+    private static void checkWindSpiritForm() throws Exception {
+        Identifier tree = RegPerks.T_Ocelot3PerkTree;
+        var all = RegPerks.getPerkTree(tree).getAllPerks();
+        check(all.size() == 8, "eight original ocelot purchases");
+        for (Identifier id : all) {
+            var perk = (NormalPerk) RegPerks.getPerk(id);
+            for (Identifier power : perk.powerAdd) register(power, json("shape-shifter-curse", power.getPath()));
+            for (Identifier power : perk.powerRemove) if (!PowerTypeRegistry.contains(power)) register(power, null);
+        }
+        for (Identifier id : List.of(WindSpiritPerks.METABOLISM_1, WindSpiritPerks.METABOLISM_2, WindSpiritPerks.OVERLOAD, WindSpiritPerks.LONG_POUNCE))
+            register(id, json("my_addon", id.getPath()));
+        TestPlayer player = player();
+        IForm form = RegPlayerForms.getPlayerForm(FormIdentifiers.OCELOT_SP);
+        check(form.getPerkTreeID().equals(tree), "Wind Spirit shares the ocelot tree");
+        player.form.formPerkMap.put(tree, new ArrayList<>(all)); player.totalExperience = 1234;
+        select(player, RegPlayerForms.getPlayerForm(original("ocelot_3")));
+        check(has(player, original("perks/ocelot_metabolism_1")), "SSC metabolism remains original");
+        select(player, form);
+        check(player.form.formPerkMap.get(tree).equals(all) && player.totalExperience == 1234, "Wind Spirit inherits all eight without another payment");
+        check(WindSpiritPerks.hungerDiscount(player) == 25 && !has(player, WindSpiritPerks.METABOLISM_1), "rank II replaces rank I, total reduction 25 percent");
+        check(!has(player, original("perks/ocelot_armor_1")) && has(player, original("perks/ocelot_armor_2")), "armor totals eight, not twelve");
+        check(has(player, WindSpiritPerks.LONG_POUNCE) && !has(player, original("perks/ocelot_long_pounce_flight")), "long pounce enhances dash without another active flight");
+        for (String suffix : List.of("metabolism_1", "metabolism_2", "metabolic_overload", "long_pounce"))
+            check(!has(player, original("perks/ocelot_" + suffix)), "native conflicting effect is absent: " + suffix);
+        check(has(player, original("perks/ocelot_ambush")) && has(player, original("perks/ocelot_hungry_pounce")), "unmodified native combat Perks remain");
+        var expected = json("shape-shifter-curse", "perks/ocelot_metabolic_overload").deepCopy();
+        expected.getAsJsonObject("key").addProperty("key", "key.shape-shifter-curse.active_skill_3");
+        expected.addProperty("description", "perk.ssc_addon.wind_spirit.ocelot_metabolic_overload.description");
+        check(expected.equals(json("my_addon", WindSpiritPerks.OVERLOAD.getPath())), "overload changes only key and description");
+        for (int rank : new int[]{1, 2}) {
+            player.form.formPerkMap.put(tree, new ArrayList<>(rank == 1 ? List.of(RegPerks.P_OcelotMetabolism_1)
+                    : List.of(RegPerks.P_OcelotMetabolism_1, RegPerks.P_OcelotMetabolism_2)));
+            select(player, form);
+            int discount = rank == 1 ? 15 : 25;
+            player.hunger = new net.minecraft.entity.player.HungerManager();
+            ((WindSpiritHungerState) player.hunger).ssca$setOwner(player);
+            player.hunger.addExhaustion(10);
+            check(Math.abs(player.hunger.getExhaustion() - (rank == 1 ? 8.5 : 7.5)) < 0.0001, "real HungerManager exhaustion discount rank " + rank);
+            int paid = 0;
+            for (int i = 0; i < 20; i++) {
+                player.hunger.setFoodLevel(20); player.hunger.setFoodLevel(19); paid += 20 - player.hunger.getFoodLevel();
+                if (i == 0) check(player.hunger.getFoodLevel() == 19, "first one-point bill is never rounded down to free");
+            }
+            check(paid == 20 * (100 - discount) / 100, "one-point bills retain the full cumulative reduction");
+            player.hunger = new net.minecraft.entity.player.HungerManager(); ((WindSpiritHungerState) player.hunger).ssca$setOwner(player);
+            paid = 0;
+            for (int i = 0; i < 5; i++) {
+                player.hunger.setFoodLevel(20); player.hunger.setFoodLevel(12); paid += 20 - player.hunger.getFoodLevel();
+                var nbt = new NbtCompound(); player.hunger.writeNbt(nbt);
+                player.hunger = new net.minecraft.entity.player.HungerManager(); player.hunger.readNbt(nbt);
+                ((WindSpiritHungerState) player.hunger).ssca$setOwner(player);
+            }
+            check(paid == 40 * (100 - discount) / 100, "fractional eight-point bills survive real HungerManager NBT reloads");
+            paid = 0;
+            for (int i = 0; i < 20; i++) { player.hunger.setFoodLevel(20); player.hunger.add(-1, 0); paid += 20 - player.hunger.getFoodLevel(); }
+            check(paid == 20 * (100 - discount) / 100, "negative food additions use the same consumption discount");
+        }
+        var reversed = new ArrayList<>(all); java.util.Collections.reverse(reversed); player.form.formPerkMap.put(tree, reversed);
+        select(player, form);
+        check(WindSpiritPerks.hungerDiscount(player) == 25 && !has(player, WindSpiritPerks.METABOLISM_1)
+                && !has(player, original("perks/ocelot_armor_1")), "reversed save ordering cannot reintroduce replaced ranks");
+        check(WindSpiritPerks.dashRange(16, true) == 24 && WindSpiritPerks.landingRadius(3, true) == 4
+                && WindSpiritPerks.landingDamage(12, true) == 16, "enhanced dash default values 24 / 4 / 16");
+        NbtCompound saved = new NbtCompound(); player.form.writeToNbt(saved); player.form.readFromNbt(saved);
+        check(player.form.formPerkMap.get(tree).equals(reversed), "all eight Wind Spirit purchases survive CCA NBT");
+        for (Identifier id : List.of(FormIdentifiers.OCELOT_NOVA, original("ocelot_3"), FormIdentifiers.OCELOT_SP, FormIdentifiers.AXOLOTL_SP)) {
+            select(player, RegPlayerForms.getPlayerForm(id));
+            check(WindSpiritPerks.hungerDiscount(player) == (id.equals(FormIdentifiers.OCELOT_SP) ? 25 : 0), "hunger reduction is isolated: " + id);
+            check(WindSpiritPerks.hasLongPounce(player) == id.equals(FormIdentifiers.OCELOT_SP), "dash enhancement is isolated: " + id);
+        }
+        TestPlayer fresh = player(); select(fresh, form);
+        check(WindSpiritPerks.hungerDiscount(fresh) == 0 && !WindSpiritPerks.hasLongPounce(fresh), "unlearned Wind Spirit receives no free effects");
+        check(RegPlayerForms.getPlayerForm(FormIdentifiers.OCELOT_NOVA).getPerkTreeID().equals(tree), "Nova shares purchases with distinct mapped effects");
+    }
+
+    private static void checkNovaForm() throws Exception {
+        Identifier tree = RegPerks.T_Ocelot3PerkTree;
+        var all = RegPerks.getPerkTree(tree).getAllPerks();
+        for (Identifier id : all) {
+            var perk = (NormalPerk) RegPerks.getPerk(id);
+            for (Identifier power : perk.powerAdd) register(power, json("shape-shifter-curse", power.getPath()));
+            for (Identifier power : perk.powerRemove) if (!PowerTypeRegistry.contains(power)) register(power, null);
+        }
+        for (Identifier id : List.of(NovaPerks.METABOLISM_1, NovaPerks.METABOLISM_2, NovaPerks.OVERLOAD, NovaPerks.LONG_POUNCE,
+                WindSpiritPerks.METABOLISM_1, WindSpiritPerks.METABOLISM_2, WindSpiritPerks.OVERLOAD, WindSpiritPerks.LONG_POUNCE))
+            register(id, json("my_addon", id.getPath()));
+        TestPlayer player = player();
+        IForm form = RegPlayerForms.getPlayerForm(FormIdentifiers.OCELOT_NOVA);
+        check(form.getPerkTreeID().equals(tree), "Nova shares original ocelot purchase tree");
+        player.form.formPerkMap.put(tree, new ArrayList<>(all)); player.totalExperience = 1234;
+        select(player, RegPlayerForms.getPlayerForm(original("ocelot_3")));
+        check(has(player, original("perks/ocelot_long_pounce_flight")), "original ocelot retains independent pounce");
+        select(player, form);
+        check(player.form.formPerkMap.get(tree).equals(all) && player.totalExperience == 1234, "Nova inherits all eight purchases without another payment");
+        check(has(player, original("perks/ocelot_armor_2")) && !has(player, original("perks/ocelot_armor_1")), "Nova armor II replaces I");
+        check(NovaPerks.hungerDiscount(player) == 25 && !has(player, NovaPerks.METABOLISM_1), "Nova metabolism II replaces I");
+        check(NovaPerks.hasLongPounce(player) && !has(player, original("perks/ocelot_long_pounce_flight")), "Nova passive replaces independent pounce");
+        check(has(player, original("perks/ocelot_ambush")) && has(player, original("perks/ocelot_hungry_pounce")), "Nova keeps native combat Perks");
+        check(!WindSpiritPerks.hasLongPounce(player) && WindSpiritPerks.hungerDiscount(player) == 0, "Nova does not use Wind Spirit effects");
+        var expected = json("shape-shifter-curse", "perks/ocelot_metabolic_overload").deepCopy();
+        expected.getAsJsonObject("key").addProperty("key", "key.shape-shifter-curse.active_skill_3");
+        expected.addProperty("description", "perk.ssc_addon.ocelot_nova.ocelot_metabolic_overload.description");
+        check(expected.equals(json("my_addon", NovaPerks.OVERLOAD.getPath())), "Nova overload changes only key and description");
+        for (int rank : new int[]{0, 1, 2}) {
+            var learned = new ArrayList<Identifier>();
+            if (rank > 0) learned.add(RegPerks.P_OcelotMetabolism_1);
+            if (rank == 2) learned.add(RegPerks.P_OcelotMetabolism_2);
+            player.form.formPerkMap.put(tree, learned); select(player, form);
+            int discount = rank == 0 ? 0 : rank == 1 ? 15 : 25;
+            player.hunger = new net.minecraft.entity.player.HungerManager(); ((WindSpiritHungerState) player.hunger).ssca$setOwner(player);
+            player.hunger.addExhaustion(10);
+            check(Math.abs(player.hunger.getExhaustion() - 10 * (100 - discount) / 100f) < 0.0001, "Nova exhaustion route rank " + rank);
+            int paid = 0;
+            for (int i = 0; i < 20; i++) {
+                player.hunger.setFoodLevel(20); player.hunger.setFoodLevel(19); paid += 20 - player.hunger.getFoodLevel();
+                var nbt = new NbtCompound(); player.hunger.writeNbt(nbt);
+                player.hunger = new net.minecraft.entity.player.HungerManager(); player.hunger.readNbt(nbt);
+                ((WindSpiritHungerState) player.hunger).ssca$setOwner(player);
+            }
+            check(paid == 20 * (100 - discount) / 100, "Nova one-point costs retain discount across real NBT");
+            paid = 0;
+            for (int i = 0; i < 20; i++) { player.hunger.setFoodLevel(20); player.hunger.add(-1, 0); paid += 20 - player.hunger.getFoodLevel(); }
+            check(paid == 20 * (100 - discount) / 100, "Nova negative additions use same discount");
+            player.hunger.setFoodLevel(10); int before = player.hunger.getFoodLevel(); player.hunger.add(2, 0);
+            check(player.hunger.getFoodLevel() == Math.min(20, before + 2), "Nova positive food is not discounted");
+        }
+        check(NovaPerks.horizontalSpeed(1.2, true) == 1.5 && NovaPerks.fullCooldown(200, true) == 160
+                && NovaPerks.singleCooldown(120, true) == 100, "Nova enhanced defaults are 1.5 horizontal / 8s / 5s");
+        check(NovaPerks.horizontalSpeed(2, true) == 2.5 && NovaPerks.fullCooldown(400, true) == 320
+                && NovaPerks.singleCooldown(240, true) == 200, "Nova enhancement respects configured bases");
+        check(NovaPerks.horizontalSpeed(1.2, false) == 1.2 && NovaPerks.fullCooldown(200, false) == 200
+                && NovaPerks.singleCooldown(120, false) == 120, "unlearned Nova keeps baseline leap parameters");
+        var reversed = new ArrayList<>(all); java.util.Collections.reverse(reversed); player.form.formPerkMap.put(tree, reversed);
+        select(player, form); PerkUtils.loadAllPerk(player, tree);
+        check(NovaPerks.hungerDiscount(player) == 25 && !has(player, NovaPerks.METABOLISM_1)
+                && !has(player, original("perks/ocelot_armor_1")), "reversed/repeated Nova loading cannot stack replaced ranks");
+        NbtCompound saved = new NbtCompound(); player.form.writeToNbt(saved); player.form.readFromNbt(saved);
+        check(player.form.formPerkMap.get(tree).equals(reversed), "Nova eight purchases survive real CCA NBT");
+        for (Identifier id : List.of(FormIdentifiers.OCELOT_SP, original("ocelot_3"), FormIdentifiers.OCELOT_NOVA, FormIdentifiers.AXOLOTL_SP)) {
+            select(player, RegPlayerForms.getPlayerForm(id));
+            check(NovaPerks.hungerDiscount(player) == (id.equals(FormIdentifiers.OCELOT_NOVA) ? 25 : 0), "Nova hunger effects isolated: " + id);
+            check(NovaPerks.hasLongPounce(player) == id.equals(FormIdentifiers.OCELOT_NOVA), "Nova leap enhancement isolated: " + id);
+            check(player.form.formPerkMap.get(tree).equals(reversed), "shared ocelot purchases preserved: " + id);
+        }
+        TestPlayer fresh = player(); select(fresh, form);
+        check(NovaPerks.hungerDiscount(fresh) == 0 && !NovaPerks.hasLongPounce(fresh), "unlearned Nova receives no free effects");
+    }
+
+    private static void checkSnowFoxForm() throws Exception {
+        Identifier tree = RegPerks.T_SnowFox3PerkTree;
+        Identifier nativeDive = original("perks/snow_fox_frost_dive");
+        var all = RegPerks.getPerkTree(tree).getAllPerks();
+        check(all.size() == 8, "exactly eight registered snow fox Perks");
+        for (Identifier id : all) {
+            var perk = (NormalPerk) RegPerks.getPerk(id);
+            for (Identifier power : perk.powerAdd) register(power, json("shape-shifter-curse", power.getPath()));
+            for (Identifier power : perk.powerRemove) if (!PowerTypeRegistry.contains(power)) register(power, null);
+        }
+        register(SnowFoxSpPerks.FROST_DIVE, json("my_addon", SnowFoxSpPerks.FROST_DIVE.getPath()));
+        register(SnowFoxSpPerks.ELUSIVE_PAWS, json("my_addon", SnowFoxSpPerks.ELUSIVE_PAWS.getPath()));
+        JsonObject nativeJson = json("shape-shifter-curse", nativeDive.getPath());
+        JsonObject mappedJson = json("my_addon", SnowFoxSpPerks.FROST_DIVE.getPath());
+        check(nativeJson.getAsJsonObject("key").get("key").getAsString().equals("key.shape-shifter-curse.active_skill_2"),
+                "SSC dive retains its original key 2");
+        check(mappedJson.getAsJsonObject("key").get("key").getAsString().equals("key.shape-shifter-curse.active_skill_3"),
+                "SP dive uses key 3 rather than either SP combat key");
+        JsonObject expected = nativeJson.deepCopy();
+        expected.getAsJsonObject("key").addProperty("key", "key.shape-shifter-curse.active_skill_3");
+        expected.addProperty("description", "perk.ssc_addon.snow_fox_sp.snow_fox_frost_dive.description");
+        check(expected.equals(mappedJson), "only the dive key and localized description differ; all effects and costs remain original");
+
+        for (Identifier formId : List.of(FormIdentifiers.SNOW_FOX_SP, FormIdentifiers.SNOW_FOX_FROSTSPINE)) {
+            IForm sp = RegPlayerForms.getPlayerForm(formId);
+            IForm vanilla = RegPlayerForms.getPlayerForm(original("snow_fox_3"));
+            check(sp.getPerkTreeID().equals(tree), "SP snow fox shares SSC's saved tree");
+            TestPlayer player = player(); player.totalExperience = 1234;
+            player.form.formPerkMap.put(tree, new ArrayList<>(all));
+            select(player, vanilla);
+            check(has(player, nativeDive) && !has(player, SnowFoxSpPerks.FROST_DIVE), "SSC uses only the native dive");
+            select(player, sp);
+            check(player.form.formPerkMap.get(tree).equals(all) && player.totalExperience == 1234,
+                    "all eight purchases survive evolution without payment or deletion");
+            check(has(player, SnowFoxSpPerks.FROST_DIVE) && !has(player, nativeDive), "onLoad Mixin installs only the SP key-3 dive");
+            check(SnowFoxSpPerks.hasElusivePaws(player) && !has(player, original("perks/snow_fox_elusive_paws")),
+                    "SP reach uses a passive marker without duplicating SSC's bonus-only multiplier");
+            for (Identifier id : all) {
+                var perk = (NormalPerk) RegPerks.getPerk(id);
+                check(perk.getID().equals(id), "original Perk identity remains intact: " + id);
+                for (Identifier power : perk.powerAdd) check(has(player, power.equals(nativeDive) ? SnowFoxSpPerks.FROST_DIVE
+                        : power.equals(original("perks/snow_fox_elusive_paws")) ? SnowFoxSpPerks.ELUSIVE_PAWS : power),
+                        "learned snow fox effect is present: " + power);
+                for (Identifier power : perk.powerRemove) check(!has(player, power), "fire training removes its original weakness: " + power);
+            }
+            var unchanged = new ArrayList<>(List.of(original("form_snow_fox_3_keep_burn"), original("form_snow_fox_3_triple_jump")));
+            if (formId.equals(FormIdentifiers.SNOW_FOX_SP)) {
+                unchanged.add(new Identifier("my_addon", "form_snow_fox_sp_hot_weakness"));
+                unchanged.add(new Identifier("my_addon", "form_snow_fox_sp_cold_strength"));
+            } else {
+                for (String path : List.of("form_snow_fox_frostspine_cold_metabolism", "form_snow_fox_frostspine_snow_stride",
+                        "form_snow_fox_frostspine_frost_spike", "form_snow_fox_frostspine_frost_forge")) unchanged.add(new Identifier("my_addon", path));
+                unchanged.add(original("form_snow_fox_3_desert_health"));
+                unchanged.add(original("form_snow_fox_3_plain_health"));
+            }
+            for (Identifier power : unchanged) {
+                check(has(player, power), "unmodified base mechanic stays present: " + power);
+            }
+            check(has(player, original("perks/snow_fox_cold_recovery_1")) && has(player, original("perks/snow_fox_cold_recovery_2")),
+                    "cold recovery II retains rank I as an independent effect");
+            int count = player.powers.getPowers().size();
+            PerkUtils.loadAllPerk(player, tree);
+            check(player.powers.getPowers().size() == count, "snow fox Perk reload does not duplicate powers");
+            NbtCompound saved = new NbtCompound(); player.form.writeToNbt(saved);
+            TestPlayer restored = player(); restored.form.readFromNbt(saved);
+            check(restored.form.formPerkMap.get(tree).equals(all), "CCA NBT preserves all eight snow fox purchases");
+            select(restored, sp);
+            check(has(restored, SnowFoxSpPerks.FROST_DIVE) && !has(restored, nativeDive), "restoring purchases reloads the mapped dive");
+            NbtCompound powers = new NbtCompound(); player.powers.writeToNbt(powers); player.powers.readFromNbt(powers);
+            check(has(player, SnowFoxSpPerks.FROST_DIVE) && !has(player, nativeDive), "Apoli NBT preserves only the mapped dive");
+            for (IForm form : List.of(vanilla, RegPlayerForms.getPlayerForm(FormIdentifiers.SNOW_FOX_FROSTSPINE),
+                    RegPlayerForms.getPlayerForm(FormIdentifiers.AXOLOTL_SP), sp, vanilla, sp)) {
+                select(player, form);
+                check(has(player, SnowFoxSpPerks.FROST_DIVE) == SnowFoxSpPerks.isSupported(form), "dive mapping is isolated across form changes: " + form.getFormID());
+                check(SnowFoxSpPerks.hasElusivePaws(player) == SnowFoxSpPerks.isSupported(form), "reach mapping is isolated across form changes: " + form.getFormID());
+                check(player.form.formPerkMap.get(tree).equals(all), "snow fox purchases persist across form changes");
+                if (form == vanilla) check(has(player, nativeDive), "switching back restores SSC's native dive");
+            }
+            check(RegPlayerForms.getPlayerForm(FormIdentifiers.UPGRADE_AXOLOTL).getPerkTreeID().equals(RegPerks.EMPTY_PERK_TREE),
+                    "special evolution stays unbound");
+            TestPlayer fresh = player(); select(fresh, sp);
+            check(!has(fresh, SnowFoxSpPerks.FROST_DIVE) && !has(fresh, original("perks/snow_fox_air_jump")),
+                    "unlearned snow fox gains no Perks automatically");
+            check(!SnowFoxSpPerks.hasElusivePaws(fresh), "unlearned snow fox has no reach multiplier");
+            for (String suffix : List.of("near_lava_damage", "near_fire_damage", "burn_damage_up"))
+                check(has(fresh, original("form_snow_fox_3_" + suffix)), "unlearned fire training leaves the weakness intact: " + suffix);
+            RegPerks.getPerk(RegPerks.P_SnowFoxFrostDive).onGain(fresh, sp);
+            check(has(fresh, SnowFoxSpPerks.FROST_DIVE) && !has(fresh, nativeDive), "buying dive directly as SP uses the same mapping as inheritance");
+        }
     }
 
     private static void checkFamiliarForms() throws Exception {
@@ -398,6 +640,7 @@ public final class AxolotlSpPerkIntegrationProbe {
 
     private static TestPlayer player() throws Exception {
         TestPlayer player = allocate(TestPlayer.class);
+        player.hunger = new net.minecraft.entity.player.HungerManager();
         player.id = UUID.randomUUID(); player.air = 300; player.abilities = new PlayerAbilities();
         player.form = new TestFormComponent(player);
         player.powers = new PowerHolderComponentImpl(player);
@@ -453,6 +696,8 @@ public final class AxolotlSpPerkIntegrationProbe {
     public static final class TestPlayer extends ServerPlayerEntity implements ComponentProvider {
         UUID id; int air; PlayerAbilities abilities; TestFormComponent form;
         ComponentContainer components; PowerHolderComponentImpl powers;
+        net.minecraft.entity.player.HungerManager hunger;
+        @Override public net.minecraft.entity.player.HungerManager getHungerManager() { return hunger; }
         private TestPlayer() { super(null, null, new GameProfile(UUID.randomUUID(), "perk-test")); }
         @Override public World getWorld() { return world; }
         @Override public ServerWorld getServerWorld() { return world; }

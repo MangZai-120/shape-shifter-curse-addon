@@ -16,16 +16,30 @@ import net.jackcooper.shapeShifterCurseAddon.spell.spells.FrostArmorSpell;
 import net.jackcooper.shapeShifterCurseAddon.spell.spells.SpaceBlinkSpell;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.damage.DamageType;
+import net.minecraft.entity.damage.DamageTypes;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.SimpleRegistry;
+import net.minecraft.registry.tag.DamageTypeTags;
+import net.minecraft.registry.tag.TagKey;
+import net.minecraft.util.Identifier;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -54,9 +68,88 @@ public final class SpellAuditIntegrationProbe {
         rangesAndProfile();
         scrollRejection();
         frostArmor();
+        spellProtection();
         statePackets();
         previewWiring();
-        System.out.println("Spell audit integration: " + checks + " checks passed (real parser/item/effect/absorption mixins and packet roundtrip). No live UI/network acceptance.");
+        System.out.println("Spell audit integration: " + checks + " checks passed (real parser/item/effect/absorption/protection mixins and packet roundtrip). No live UI/network acceptance.");
+    }
+
+    private static void spellProtection() throws Exception {
+        var resistance = net.jackcooper.shapeShifterCurseAddon.enchantment.RegAddonEnchantments.SPELL_RESISTANCE;
+        if (!Registries.ENCHANTMENT.containsId(new Identifier("ssc_addon", "spell_resistance"))) {
+            net.jackcooper.shapeShifterCurseAddon.enchantment.RegAddonEnchantments.init();
+        }
+        check(resistance.getMaxLevel() == 5, "spell protection maximum level remains five");
+        for (var protection : List.of(Enchantments.PROTECTION, Enchantments.FIRE_PROTECTION,
+                Enchantments.BLAST_PROTECTION, Enchantments.PROJECTILE_PROTECTION)) {
+            check(!resistance.canCombine(protection), "magic/protection anvil conflict forward " + protection);
+            check(!protection.canCombine(resistance), "magic/protection anvil conflict reverse " + protection);
+        }
+        check(resistance.canCombine(Enchantments.UNBREAKING) && Enchantments.UNBREAKING.canCombine(resistance),
+                "unbreaking compatibility is preserved");
+        check(resistance.canCombine(Enchantments.FEATHER_FALLING), "feather falling remains compatible");
+
+        var registry = new SimpleRegistry<DamageType>(RegistryKeys.DAMAGE_TYPE, com.mojang.serialization.Lifecycle.stable());
+        Registry.register(registry, SpellDamageSource.SPELL_DAMAGE, new DamageType("ssc_addon.spell_damage", 0));
+        Registry.register(registry, DamageTypes.MAGIC, new DamageType("magic", 0));
+        Registry.register(registry, DamageTypes.PLAYER_ATTACK, new DamageType("player", 0));
+        var spellEntry = registry.getEntry(SpellDamageSource.SPELL_DAMAGE).orElseThrow();
+        java.util.Map<TagKey<DamageType>, List<net.minecraft.registry.entry.RegistryEntry<DamageType>>> tags = new HashMap<>();
+        for (var tag : List.of(DamageTypeTags.BYPASSES_ARMOR, DamageTypeTags.BYPASSES_ENCHANTMENTS)) {
+            String path = "data/" + tag.id().getNamespace() + "/tags/damage_type/" + tag.id().getPath() + ".json";
+            var urls = SpellAuditIntegrationProbe.class.getClassLoader().getResources(path);
+            boolean found = false;
+            while (urls.hasMoreElements()) {
+                try (var input = urls.nextElement().openStream()) {
+                    var data = JsonParser.parseString(new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+                    if (data.getAsJsonArray("values").contains(new com.google.gson.JsonPrimitive("ssc_addon:spell_damage"))) {
+                        check(!data.get("replace").getAsBoolean(), "spell tag appends without replacing vanilla " + tag.id());
+                        found = true;
+                    }
+                }
+            }
+            check(found, "actual packaged tag contains SSCA spell damage " + tag.id());
+            tags.put(tag, List.of(spellEntry));
+        }
+        registry.populateTags(tags);
+        DamageSource spell = new DamageSource(spellEntry);
+        DamageSource vanillaMagic = new DamageSource(registry.getEntry(DamageTypes.MAGIC).orElseThrow());
+        DamageSource physical = new DamageSource(registry.getEntry(DamageTypes.PLAYER_ATTACK).orElseThrow());
+        var reducer = java.util.Arrays.stream(LivingEntity.class.getDeclaredMethods())
+                .filter(m -> m.getName().contains("spellResistanceReduce")).findFirst().orElseThrow();
+        reducer.setAccessible(true);
+        TestPlayer target = player();
+        for (var slot : List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET)) {
+            ItemStack armor = new ItemStack(Items.DIAMOND_CHESTPLATE);
+            armor.addEnchantment(Enchantments.PROTECTION, 4);
+            target.equipment.put(slot, armor);
+        }
+        near(EnchantmentHelper.getProtectionAmount(target.getArmorItems(), vanillaMagic), 16, "fixture has real four-piece Protection IV");
+        near(target.afterProtection(spell, 100), 100, "Protection IV cannot reduce SSCA spell damage");
+        near(target.afterProtection(vanillaMagic, 100), 36, "vanilla magic still receives ordinary protection");
+        near(target.afterProtection(physical, 100), 36, "physical damage protection remains unchanged");
+        target.equipment.clear();
+        for (int level = 0; level <= 5; level++) {
+            ItemStack armor = new ItemStack(Items.DIAMOND_CHESTPLATE);
+            if (level > 0) armor.addEnchantment(resistance, level);
+            target.equipment.put(EquipmentSlot.CHEST, armor);
+            float reduced = (float) reducer.invoke(target, 100F, spell);
+            near(reduced, new float[]{100, 87, 74, 61, 48, 35}[level], "actual injected spell reducer level " + level);
+            near(target.afterProtection(spell, reduced), reduced, "spell bypass does not disable custom protection " + level);
+            near((float) reducer.invoke(target, 100F, vanillaMagic), 100, "custom protection excludes vanilla/form magic " + level);
+            near((float) reducer.invoke(target, 100F, physical), 100, "custom protection excludes physical damage " + level);
+        }
+        ItemStack helm = new ItemStack(Items.DIAMOND_HELMET);
+        helm.addEnchantment(resistance, 2);
+        target.equipment.put(EquipmentSlot.HEAD, helm);
+        target.equipment.get(EquipmentSlot.CHEST).addEnchantment(Enchantments.PROTECTION, 4);
+        float capped = (float) reducer.invoke(target, 100F, spell);
+        near(capped, 35, "multiple armor pieces cannot exceed 65 percent reduction");
+        near(target.afterProtection(spell, capped), 35, "forced incompatible protection does not stack on magic protection");
+        target.equipment.clear();
+        target.stack = new ItemStack(Items.ENCHANTED_BOOK);
+        target.stack.addEnchantment(resistance, 5);
+        near((float) reducer.invoke(target, 100F, spell), 100, "held enchanted book provides no armor protection");
     }
 
     private static void malformedLevels() {
@@ -281,6 +374,7 @@ public final class SpellAuditIntegrationProbe {
     private static TestPlayer player() throws Exception {
         TestPlayer player = (TestPlayer) unsafe.allocateInstance(TestPlayer.class);
         player.id = UUID.randomUUID();
+        player.equipment = new HashMap<>();
         var powers = (PowerHolderComponent) java.lang.reflect.Proxy.newProxyInstance(PowerHolderComponent.class.getClassLoader(),
                 new Class<?>[]{PowerHolderComponent.class}, (proxy, method, args) -> switch (method.getName()) {
                     case "getPowers" -> List.of();
@@ -292,6 +386,8 @@ public final class SpellAuditIntegrationProbe {
         player.testWorld = (TestWorld) unsafe.allocateInstance(TestWorld.class);
         player.nonVisualWorld = (World) unsafe.allocateInstance(net.minecraft.client.world.ClientWorld.class);
         set(Entity.class, player, "dataTracker", new DataTracker(player));
+        set(LivingEntity.class, player, "attributes", new net.minecraft.entity.attribute.AttributeContainer(
+                net.minecraft.entity.player.PlayerEntity.createPlayerAttributes().build()));
         set(LivingEntity.class, player, "activeStatusEffects", new HashMap<>());
         player.initializeTracker();
         return player;
@@ -308,6 +404,7 @@ public final class SpellAuditIntegrationProbe {
     }
     public static final class TestPlayer extends ServerPlayerEntity implements dev.onyxstudios.cca.api.v3.component.ComponentProvider {
         UUID id; World testWorld, nonVisualWorld; ItemStack stack; boolean purified; ComponentContainer components;
+        java.util.Map<EquipmentSlot, ItemStack> equipment;
         private TestPlayer() { super(null, null, new GameProfile(UUID.randomUUID(), "spell-audit")); }
         @Override public World getWorld() { return testWorld; }
         @Override public ComponentContainer getComponentContainer() { return components; }
@@ -327,6 +424,9 @@ public final class SpellAuditIntegrationProbe {
         @Override public boolean isAlive() { return true; }
         @Override public boolean isSpectator() { return false; }
         @Override public ItemStack getStackInHand(Hand hand) { return stack; }
+        @Override public ItemStack getEquippedStack(EquipmentSlot slot) { return equipment.getOrDefault(slot, ItemStack.EMPTY); }
+        @Override public Iterable<ItemStack> getArmorItems() { return equipment.values(); }
+        float afterProtection(DamageSource source, float amount) { return super.modifyAppliedDamage(source, amount); }
         void initializeTracker() { super.initDataTracker(); }
         @Override public void onTrackedDataSet(net.minecraft.entity.data.TrackedData<?> data) {}
         @Override public void emitGameEvent(GameEvent event) {}

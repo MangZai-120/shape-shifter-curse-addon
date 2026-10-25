@@ -23,6 +23,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.compat.NovaPerks;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -90,7 +91,7 @@ public final class NovaSkillManager {
     }
 
     /** 第一段已使用的窗口；冷却配置随本轮冻结，丢失 power / reload 不改本轮 CD。 */
-    private record LeapSession(long castId, long firstTick, int singleUseCooldown) {
+    private record LeapSession(long castId, long firstTick, int singleUseCooldown, boolean enhanced) {
     }
 
     private NovaSkillManager() {
@@ -170,7 +171,8 @@ public final class NovaSkillManager {
         // 向准星方向跳冲（空中可用）
         Vec3d look = player.getRotationVector();
         double leapPower = BAL.d("leap_power", LEAP_POWER);
-        player.setVelocity(look.x * leapPower, Math.max(0.42, look.y * leapPower + 0.25), look.z * leapPower);
+        double horizontalPower = NovaPerks.horizontalSpeed(leapPower, leap.enhanced());
+        player.setVelocity(look.x * horizontalPower, Math.max(0.42, look.y * leapPower + 0.25), look.z * horizontalPower);
         player.velocityModified = true;
         addDodge(player); // +20% 闪避
         // 灵跃粒子：脚下蹬地烟环 + 沿跳冲方向破空拖尾 + 锐气暴击（敏捷灵动）
@@ -331,8 +333,11 @@ public final class NovaSkillManager {
     private static LeapSession beginLeap(ServerPlayerEntity player, long now) {
         var spec = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.spec(player, LEAP_SKILL_ID);
         if (spec == null || !net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, LEAP_SKILL_ID)) return null;
-        return new LeapSession(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, LEAP_SKILL_ID),
-                now, spec.extra("single_use"));
+        boolean enhanced = NovaPerks.hasLongPounce(player);
+        long castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, LEAP_SKILL_ID);
+        if (enhanced) net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.retune(player, LEAP_SKILL_ID, castId,
+                NovaPerks.fullCooldown(spec.cooldown(), true));
+        return new LeapSession(castId, now, NovaPerks.singleCooldown(spec.extra("single_use"), enhanced), enhanced);
     }
 
     private static void finishSingleLeap(ServerPlayerEntity player, LeapSession leap) {
