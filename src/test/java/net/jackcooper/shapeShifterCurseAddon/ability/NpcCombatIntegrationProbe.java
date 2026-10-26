@@ -400,13 +400,14 @@ public final class NpcCombatIntegrationProbe {
 
         String webId = "my_addon:form_spider_moon_weaver_web";
         var chargeClass = Class.forName(SpiderMoonWeaverWebManager.class.getName() + "$ChargeState");
-        var chargeCtor = chargeClass.getDeclaredConstructor(long.class, int.class); chargeCtor.setAccessible(true);
         Method complete = method(SpiderMoonWeaverWebManager.class, "completeCharge", ServerPlayerEntity.class, chargeClass, int.class);
         for (int full : new int[]{0, 601}) for (int tier = 1; tier <= 3; tier++) {
             TestPlayer caster = player(FormIdentifiers.SPIDER_MOON_WEAVER);
             attach(caster, webId, new SkillCooldownSpec(full, 0, "on_release", Map.of()));
             check(SkillCooldowns.begin(caster, webId), "web charge accepted");
-            Object charge = chargeCtor.newInstance(SkillCooldowns.currentCastId(caster, webId), full);
+            Object charge = alloc(chargeClass);
+            set(charge, "castId", SkillCooldowns.currentCastId(caster, webId));
+            set(charge, "cooldownTicks", full);
             attach(caster, webId, new SkillCooldownSpec(900, 0, "on_release", Map.of()));
             complete.invoke(null, caster, charge, tier);
             check(SkillCooldowns.remaining(caster, webId) == (int) Math.ceil((double) full * tier / 3),
@@ -415,8 +416,10 @@ public final class NpcCombatIntegrationProbe {
         TestPlayer revokedWeb = player(FormIdentifiers.SPIDER_MOON_WEAVER);
         attach(revokedWeb, webId, new SkillCooldownSpec(600, 55, "on_release", Map.of()));
         check(SkillCooldowns.begin(revokedWeb, webId), "revoked web charge accepted");
-        putMap(SpiderMoonWeaverWebManager.class, "CHARGING", revokedWeb.id,
-                chargeCtor.newInstance(SkillCooldowns.currentCastId(revokedWeb, webId), 600));
+        Object revokedCharge = alloc(chargeClass);
+        set(revokedCharge, "castId", SkillCooldowns.currentCastId(revokedWeb, webId));
+        set(revokedCharge, "cooldownTicks", 600);
+        putMap(SpiderMoonWeaverWebManager.class, "CHARGING", revokedWeb.id, revokedCharge);
         revokedWeb.powerMap.clear();
         SpiderMoonWeaverWebManager.release(revokedWeb);
         check(SkillCooldowns.remaining(revokedWeb, webId) == 55, "revoked web release uses failure cooldown without firing");

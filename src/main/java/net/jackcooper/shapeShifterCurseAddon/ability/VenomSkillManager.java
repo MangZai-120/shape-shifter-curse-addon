@@ -12,6 +12,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.compat.SpiderSalticidaePerks;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -57,6 +58,7 @@ public final class VenomSkillManager {
 
 	private static final class DashState {
         long castId = -1;
+		double damageMultiplier = 1.0;
 		double traveled = 0.0;
 		int ticks = 0;
 		Vec3d dir;
@@ -78,7 +80,7 @@ public final class VenomSkillManager {
 
 		// 丝线强化判定：安全丝锚点存在且在有效窗口内 = 「有丝线连着自己」
 		boolean silkActive = JumpKillManager.hasActiveSilk(player);
-		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return;
+		if (!SpiderSalticidaePerks.beginSkill(player, SKILL_ID, true)) return;
 		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.released(player, SKILL_ID);
 		if (silkActive) {
 			startDash(player, sw);
@@ -103,7 +105,7 @@ public final class VenomSkillManager {
 		int baseDur = BAL.i("base_poison_duration", BASE_POISON_DURATION);
 		int dur = gland ? Math.round(baseDur * net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.DURATION_SCALE) : baseDur;
 		for (LivingEntity t : targets) {
-			t.damage(t.getDamageSources().indirectMagic(player, player), NpcCombatEnhancements.scale(player, t, (float) BAL.d("base_damage", BASE_DAMAGE), "salticidae_secondary_damage", 1.5));
+			t.damage(t.getDamageSources().indirectMagic(player, player), NpcCombatEnhancements.scale(player, t, (float) (BAL.d("base_damage", BASE_DAMAGE) * SpiderSalticidaePerks.venomMultiplier(player)), "salticidae_secondary_damage", 1.5));
 			t.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, dur, amp, false, true, true), player);
 		}
 		// 反馈：毒液喷溅粒子（区域中心）+ 喷吐音效
@@ -118,6 +120,7 @@ public final class VenomSkillManager {
 	/** 丝线强化：6 格冲刺（撞敌 2 魔法停下 → 结束后 3 格 AOE 6 魔法 + 中毒 II 15s）。 */
 	private static void startDash(ServerPlayerEntity player, ServerWorld sw) {
 		DashState d = new DashState();
+		d.damageMultiplier = SpiderSalticidaePerks.venomMultiplier(player);
         d.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
 		Vec3d look = player.getRotationVector().normalize();
 		d.dir = look;
@@ -170,7 +173,7 @@ public final class VenomSkillManager {
 		if (!hits.isEmpty()) {
 			for (LivingEntity t : hits) {
 				t.damage(t.getDamageSources().indirectMagic(player, player),
-						NpcCombatEnhancements.scale(player, t, (float) BAL.d("dash_hit_damage", DASH_HIT_DAMAGE), "salticidae_secondary_damage", 1.5));
+						NpcCombatEnhancements.scale(player, t, (float) (BAL.d("dash_hit_damage", DASH_HIT_DAMAGE) * d.damageMultiplier), "salticidae_secondary_damage", 1.5));
 			}
 			d.hitDone = true; // 本 tick 结束后停下
 		}
@@ -198,7 +201,7 @@ public final class VenomSkillManager {
 		int baseDur = BAL.i("burst_poison_duration", BURST_POISON_DURATION);
 		int dur = gland ? Math.round(baseDur * net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.DURATION_SCALE) : baseDur;
 		for (LivingEntity t : targets) {
-			t.damage(t.getDamageSources().indirectMagic(player, player), NpcCombatEnhancements.scale(player, t, (float) BAL.d("burst_damage", BURST_DAMAGE), "salticidae_secondary_damage", 1.5));
+			t.damage(t.getDamageSources().indirectMagic(player, player), NpcCombatEnhancements.scale(player, t, (float) (BAL.d("burst_damage", BURST_DAMAGE) * d.damageMultiplier), "salticidae_secondary_damage", 1.5));
 			t.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, dur, amp, false, true, true), player);
 		}
 		// AOE 反馈：毒爆粒子环 + 女巫泼溅

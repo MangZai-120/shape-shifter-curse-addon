@@ -1,0 +1,72 @@
+{
+  "type": "apoli:multiple",
+  "glow": {
+    "type": "apoli:entity_glow",
+    "red": 1,
+    "green": 1,
+    "blue": 1,
+    "use_teams": false,
+    "entity_condition": {
+      "type": "apoli:health",
+      "comparison": ">",
+      "compare_to": 0
+    },
+    "bientity_condition": {
+      "type": "apoli:distance",
+      "comparison": "<=",
+      "compare_to": 32
+    },
+    "condition": {
+      "type": "apoli:or",
+      "conditions": [
+        {
+          "type": "apoli:in_block_anywhere",
+          "block_condition": {
+            "type": "apoli:in_tag",
+            "tag": "my_addon:perk_moon_weaver_webs"
+          }
+        },
+        {
+          "type": "apoli:on_block",
+          "block_condition": {
+            "type": "apoli:in_tag",
+            "tag": "my_addon:perk_moon_weaver_webs"
+          }
+        }
+      ]
+    }
+  },
+  "strength": {
+    "type": "apoli:action_over_time",
+    "interval": 10,
+    "entity_action": {
+      "type": "apoli:apply_effect",
+      "effect": {
+        "effect": "minecraft:strength",
+        "duration": 20,
+        "amplifier": 1
+      }
+    },
+    "condition": {
+      "type": "apoli:or",
+      "conditions": [
+        {
+          "type": "apoli:in_block_anywhere",
+          "block_condition": {
+            "type": "apoli:in_tag",
+            "tag": "my_addon:perk_moon_weaver_webs"
+          }
+        },
+        {
+          "type": "apoli:on_block",
+          "block_condition": {
+            "type": "apoli:in_tag",
+            "tag": "my_addon:perk_moon_weaver_webs"
+          }
+        }
+      ]
+    }
+  },
+  "name": "ssc_perk.shape-shifter-curse.spider_perceptual_web.name",
+  "description": "perk.ssc_addon.spider_moon_weaver.spider_perceptual_web.description"
+}

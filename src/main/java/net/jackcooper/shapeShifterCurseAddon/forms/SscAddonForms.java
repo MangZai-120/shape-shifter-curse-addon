@@ -207,6 +207,7 @@ public final class SscAddonForms {
 		SpiderMoonWeaverForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 蜘蛛缩放：原版 spider_3（0.9）的 90% → 0.81；眼睛/碰撞箱保持 1.0（NORMAL 体型第一人称不变）
 		SpiderMoonWeaverForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.81f, 1.0f));
+		SpiderMoonWeaverForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Spider3PerkTree);
 		RegPlayerForms.registerPlayerForm(SpiderMoonWeaverForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_spider_moon_weaver")).registerForm(1, 12, SpiderMoonWeaverForm));
 
@@ -216,6 +217,7 @@ public final class SscAddonForms {
 		SpiderSalticidaeForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 跳蛛体格：正常（玩家 1.0）的 60% → 0.6（现实中跳蛛体型小巧）；眼睛/碰撞箱保持 1.0
 		SpiderSalticidaeForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.6f, 1.0f));
+		SpiderSalticidaeForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Spider3PerkTree);
 		RegPlayerForms.registerPlayerForm(SpiderSalticidaeForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_spider_salticidae")).registerForm(1, 12, SpiderSalticidaeForm));
 

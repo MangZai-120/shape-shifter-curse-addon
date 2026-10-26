@@ -10,6 +10,8 @@ import net.jackcooper.shapeShifterCurseAddon.compat.AnubisWolfSpPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.GoldenSandstormPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.BatDesmodusPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.BatParasiticFruitPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.SpiderMoonWeaverPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.SpiderSalticidaePerks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -25,6 +27,16 @@ public abstract class AxolotlSpPerkDescriptionMixin {
     @Inject(method = "getPerkDescription", at = @At("HEAD"), cancellable = true, remap = false)
     private static void ssca$describeSpPerk(Identifier perk, CallbackInfoReturnable<Text> cir) {
         var player = MinecraftClient.getInstance().player;
+        if (player != null && SpiderSalticidaePerks.isSupported(FormUtils.getPlayerForm(player))
+                && RegPerks.getPerkTree(RegPerks.T_Spider3PerkTree).getAllPerks().contains(perk)) {
+            cir.setReturnValue(Text.translatable("perk.ssc_addon.spider_salticidae." + perk.getPath() + ".description"));
+            return;
+        }
+        if (player != null && SpiderMoonWeaverPerks.isSupported(FormUtils.getPlayerForm(player))
+                && RegPerks.getPerkTree(RegPerks.T_Spider3PerkTree).getAllPerks().contains(perk)) {
+            cir.setReturnValue(Text.translatable("perk.ssc_addon.spider_moon_weaver." + perk.getPath() + ".description"));
+            return;
+        }
         if (player != null && BatParasiticFruitPerks.isSupported(FormUtils.getPlayerForm(player))
                 && RegPerks.getPerkTree(RegPerks.T_Bat3PerkTree).getAllPerks().contains(perk)) {
             cir.setReturnValue(Text.translatable("perk.ssc_addon.bat_parasitic_fruit." + perk.getPath() + ".description"));

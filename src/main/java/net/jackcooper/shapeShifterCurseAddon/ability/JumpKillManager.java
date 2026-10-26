@@ -20,6 +20,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.compat.SpiderSalticidaePerks;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -100,6 +101,9 @@ public final class JumpKillManager {
 
 	private static final class State {
         long castId = -1;
+		int chargeMax = CHARGE_MAX;
+		float killHealing;
+		int strengthTicks;
 		int phase = 0;        // 0=蓄力 1=跳跃 2=拉回
 		int chargeTick = 0;
 		// 跳跃期
@@ -137,10 +141,14 @@ public final class JumpKillManager {
 		}
 		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return; // CD 中
 		if (STATES.containsKey(player.getUuid())) return; // 施法中不可重入
-		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return;
+		if (!SpiderSalticidaePerks.beginSkill(player, SKILL_ID, false)) return;
         State s = new State();
         s.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
+		s.chargeMax = SpiderSalticidaePerks.chargeTicks(player, BAL.i("charge_max", CHARGE_MAX));
+		s.killHealing = SpiderSalticidaePerks.killHealing(player);
+		s.strengthTicks = SpiderSalticidaePerks.strengthTicks(player);
 		STATES.put(player.getUuid(), s);
+		SpiderSalticidaePerks.setSensing(player, s.strengthTicks > 0);
 		applyChargeSlow(player);
 		if (player.getWorld() instanceof ServerWorld sw) {
 			// 蓄力起手：低沉蜘蛛嘶鸣（蓄势）
@@ -153,10 +161,11 @@ public final class JumpKillManager {
 	public static void release(ServerPlayerEntity player) {
 		State s = STATES.get(player.getUuid());
 		if (s == null || s.phase != 0) return;
+		SpiderSalticidaePerks.setSensing(player, false);
 		removeChargeSlow(player);
 		if (!(player.getWorld() instanceof ServerWorld sw)) { STATES.remove(player.getUuid()); return; }
 
-		int chargeMax = BAL.i("charge_max", CHARGE_MAX);
+		int chargeMax = s.chargeMax;
 		double baseDist = BAL.d("base_dist", BASE_DIST);
 		double maxDist = BAL.d("max_dist", MAX_DIST);
 		double leapSpeed = BAL.d("leap_speed", LEAP_SPEED);
@@ -217,6 +226,7 @@ public final class JumpKillManager {
 	/** 每服务端 tick 对每个在线玩家调用。 */
 	public static void tick(ServerPlayerEntity player) {
 		State s = STATES.get(player.getUuid());
+		SpiderSalticidaePerks.setSensing(player, s != null && s.phase == 0 && s.strengthTicks > 0);
 		if (s == null) return;
 		if (player.isDead() || !isSalticidae(player)) { cancel(player); return; }
 		if (!(player.getWorld() instanceof ServerWorld sw)) return;
@@ -246,6 +256,7 @@ public final class JumpKillManager {
 
 	/** 开始安全丝拉回：锚点从窗口表转入活动状态，phase=2。 */
 	private static void startRecall(ServerPlayerEntity player, SilkAnchor anchor) {
+		SpiderSalticidaePerks.setSensing(player, false);
         State s = new State();
         State previous = STATES.get(player.getUuid());
         if (previous != null) net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, previous.castId);
@@ -370,7 +381,7 @@ public final class JumpKillManager {
 	}
 
 	private static void tickCharge(ServerPlayerEntity player, ServerWorld sw, State s) {
-		int chargeMax = BAL.i("charge_max", CHARGE_MAX);
+		int chargeMax = s.chargeMax;
 		boolean justReachedMax = s.chargeTick == chargeMax - 1; // 下一行递增后恰好满蓄（一次性边沿，防满蓄后每 tick 重响）
 		if (s.chargeTick < chargeMax) s.chargeTick++;
 		double ratio = Math.min(1.0, (double) s.chargeTick / chargeMax);
@@ -386,7 +397,7 @@ public final class JumpKillManager {
 		}
 
 		// 蓄力音效：全程共 5 声上升嘶鸣（仅自己听），间隔均分；满蓄瞬间额外一声经验叮声（边沿触发，防满蓄后循环响）
-		int interval = chargeMax / CHARGE_CRY_COUNT;
+		int interval = Math.max(1, chargeMax / CHARGE_CRY_COUNT);
 		boolean cryNow = s.chargeTick < chargeMax && s.chargeTick % interval == 0 && s.chargeTick > 0;
 		if (cryNow) {
 			float pitch = 0.6f + (float) ratio * 0.8f;
@@ -401,9 +412,8 @@ public final class JumpKillManager {
 
 	private static void tickLeap(ServerPlayerEntity player, ServerWorld sw, State s) {
 		s.leapTick++;
-		// 结束条件：超预计飞行时间 / 硬上限 / 落地扑空 / 撞墙
+		// 超时和撞墙立即结束；落地前先核对命中，避免同 tick 的有效接触被判成扑空。
 		if (s.leapTick > s.flightTime + 15 || s.leapTick > BAL.i("max_leap_ticks", MAX_LEAP_TICKS)
-				|| (s.leapTick > 5 && player.isOnGround())
 				|| (s.leapTick > 3 && player.horizontalCollision)) {
 			finish(player, false);
 			return;
@@ -434,6 +444,12 @@ public final class JumpKillManager {
 			targetPoint = playerPos.add(s.lastDir.multiply(10));
 		}
 
+		// 只有未命中目标的落地才结算扑空；不延长落地后的追击时间。
+		if (s.leapTick > 5 && player.isOnGround()) {
+			finish(player, false);
+			return;
+		}
+
 		// 施力：水平方向平滑插值转向（防接近目标时左右摆动）+ 协调抛物竖直（流畅曲线）
 		Vec3d desired = new Vec3d(targetPoint.x - playerPos.x, 0, targetPoint.z - playerPos.z);
 		if (desired.lengthSquared() > 1.0e-4) {
@@ -459,7 +475,10 @@ public final class JumpKillManager {
 	private static void onHit(ServerPlayerEntity player, ServerWorld sw, LivingEntity target) {
 		if (WhitelistUtils.isProtected(player, target)) return;
 		DamageSource src = player.getDamageSources().playerAttack(player);
-		target.damage(src, NpcCombatEnhancements.scale(player, target, (float) BAL.d("damage", DAMAGE), "salticidae_primary_damage", 2.0));
+		float before = target.getHealth();
+		boolean damaged = target.damage(src, NpcCombatEnhancements.scale(player, target, (float) BAL.d("damage", DAMAGE), "salticidae_primary_damage", 2.0));
+		State cast = STATES.get(player.getUuid());
+		if (damaged && cast != null) SpiderSalticidaePerks.rewardDirectHit(player, target, before - target.getHealth(), cast.killHealing, cast.strengthTicks);
 		boolean gland = net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.isWearingBy(player);
 		int amp = BAL.i("poison_amplifier", POISON_AMPLIFIER) + (gland ? 1 : 0);
 		int baseDur = BAL.i("poison_duration", POISON_DURATION);
@@ -522,6 +541,7 @@ public final class JumpKillManager {
 
 	/** 取消（死亡/丢形态/断线）：移除减速、恢复重力、清状态与锦点（带断丝特效），不进 CD。 */
 	public static void cancel(ServerPlayerEntity player) {
+		SpiderSalticidaePerks.setSensing(player, false);
 		State s = STATES.remove(player.getUuid());
         if (s != null) net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, s.castId);
 		if (s != null) {

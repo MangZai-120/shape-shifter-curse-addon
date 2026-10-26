@@ -1,0 +1,33 @@
+{
+  "type": "apoli:multiple",
+  "hidden": true,
+  "charging": {
+    "type": "apoli:resource",
+    "min": 0,
+    "max": 1,
+    "start_value": 0,
+    "hud_render": {
+      "should_render": false
+    }
+  },
+  "glow": {
+    "type": "apoli:entity_glow",
+    "use_teams": true,
+    "entity_condition": {
+      "type": "apoli:living"
+    },
+    "bientity_condition": {
+      "type": "apoli:distance",
+      "comparison": "<=",
+      "compare_to": 32
+    },
+    "condition": {
+      "type": "apoli:resource",
+      "resource": "my_addon:perk_spider_salticidae_sense_charging",
+      "comparison": "==",
+      "compare_to": 1
+    }
+  },
+  "name": "ssc_perk.shape-shifter-curse.spider_perceptual_web.name",
+  "description": "perk.ssc_addon.spider_salticidae.spider_perceptual_web.description"
+}

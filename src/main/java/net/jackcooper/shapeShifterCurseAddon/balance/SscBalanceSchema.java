@@ -564,6 +564,15 @@ public final class SscBalanceSchema {
                 .doubleParam("leap_speed", 0.85, 0.1, 4.0, AB + "JumpKillManager", "LEAP_SPEED")
                 .intParam("max_leap_ticks", 40, 1, 200, AB + "JumpKillManager", "MAX_LEAP_TICKS")
                 .doubleParam("hit_radius", 1.3, 0.5, 8.0, AB + "JumpKillManager", "HIT_RADIUS");
+        b.scope("abilities.salticidae_perks")
+                .doubleParam("kill_heal_1", 2.0, 0.0, 100.0, "compat.SpiderSalticidaePerks", "KILL_HEAL_1")
+                .doubleParam("kill_heal_2", 4.0, 0.0, 100.0, "compat.SpiderSalticidaePerks", "KILL_HEAL_2")
+                .doubleParam("charge_time_multiplier", 0.7, 0.05, 1.0, "compat.SpiderSalticidaePerks", "CHARGE_TIME_MULTIPLIER")
+                .doubleParam("jump_cooldown_multiplier_1", 0.85, 0.0, 1.0, "compat.SpiderSalticidaePerks", "JUMP_COOLDOWN_MULTIPLIER_1")
+                .doubleParam("jump_cooldown_multiplier_2", 0.75, 0.0, 1.0, "compat.SpiderSalticidaePerks", "JUMP_COOLDOWN_MULTIPLIER_2")
+                .doubleParam("venom_cooldown_multiplier", 0.7, 0.0, 1.0, "compat.SpiderSalticidaePerks", "VENOM_COOLDOWN_MULTIPLIER")
+                .doubleParam("venom_damage_multiplier", 1.25, 0.0, 10.0, "compat.SpiderSalticidaePerks", "VENOM_DAMAGE_MULTIPLIER")
+                .intParam("strength_ticks", 60, 1, 1200, "compat.SpiderSalticidaePerks", "STRENGTH_TICKS");
         b.scope("abilities.venom_skill")                   // VenomSkillManager：毒雾突进
                 .doubleParam("base_damage", 4.0, 0.0, 1000.0, AB + "VenomSkillManager", "BASE_DAMAGE")
                 .intParam("base_poison_duration", 300, 20, 2400, AB + "VenomSkillManager", "BASE_POISON_DURATION")
@@ -595,7 +604,8 @@ public final class SscBalanceSchema {
                 .intParam("tier1_ticks", 20, 1, 200, AB + "SpiderMoonWeaverWebManager", "TIER1_TICKS")
                 .intParam("tier2_ticks", 40, 1, 200, AB + "SpiderMoonWeaverWebManager", "TIER2_TICKS")
                 .doubleParam("start_mana", 6.0, 0.0, 100.0, AB + "SpiderMoonWeaverWebManager", "START_MANA")
-                .doubleParam("mana_per_tick", 0.25, 0.0, 10.0, AB + "SpiderMoonWeaverWebManager", "MANA_PER_TICK");
+                .doubleParam("mana_per_tick", 0.25, 0.0, 10.0, AB + "SpiderMoonWeaverWebManager", "MANA_PER_TICK")
+                .doubleParam("perk_charge_time_multiplier", 0.7, 0.05, 1.0, AB + "SpiderMoonWeaverWebManager", "PERK_CHARGE_TIME_MULTIPLIER");
 
         // —— 寄生果蝠组 ——
         b.scope("abilities.infection_spore")               // InfectionSporeManager：感染孢子

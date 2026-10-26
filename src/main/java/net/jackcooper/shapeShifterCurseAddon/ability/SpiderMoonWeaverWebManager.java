@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.ability;
 import net.jackcooper.shapeShifterCurseAddon.entity.BridgeWebBullet;
 import net.jackcooper.shapeShifterCurseAddon.entity.WebMembraneBullet;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.compat.SpiderMoonWeaverPerks;
 import net.jackcooper.shapeShifterCurseAddon.state.RegSpiderMoonWeaverStateComponent;
 import net.jackcooper.shapeShifterCurseAddon.state.SpiderMoonWeaverStateComponent;
 import net.minecraft.particle.ParticleTypes;
@@ -55,6 +56,7 @@ public final class SpiderMoonWeaverWebManager {
 	// 释放后 CD 由 power JSON 配置（见类注释），原 CD_TICKS_PER_TIER 常量已删
 	private static final double START_MANA = 6.0;   // 起手需 6 mana（沿用原版蜘蛛）
 	private static final double MANA_PER_TICK = 0.25;
+	private static final double PERK_CHARGE_TIME_MULTIPLIER = 0.7;
 
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("abilities.moon_weaver_web");
@@ -69,9 +71,37 @@ public final class SpiderMoonWeaverWebManager {
 	/** 平铺搭桥蓄力中的玩家（双击长按 / 潜行长按触发），release 时走脚下平铺而非蛛丝弹。 */
 	private static final class ChargeState {
 		int ticks;
+		double paidMana;
 		final long castId;
 		final int cooldownTicks;
-		ChargeState(long castId, int cooldownTicks) { this.castId = castId; this.cooldownTicks = cooldownTicks; }
+		final int mode, tier1Ticks, tier2Ticks, maxTicks;
+		final double tier1Mana, tier2Mana, totalMana;
+
+		ChargeState(ServerPlayerEntity player) {
+			castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
+			cooldownTicks = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cooldown(player, SKILL_ID);
+			mode = getMode(player);
+			int originalMax = BAL.i("max_ticks", MAX_TICKS);
+			int originalTier1 = Math.min(originalMax, BAL.i("tier1_ticks", TIER1_TICKS));
+			int originalTier2 = Math.max(originalTier1, Math.min(originalMax, BAL.i("tier2_ticks", TIER2_TICKS)));
+			double scale = SpiderMoonWeaverPerks.acceleratesCharge(player, mode)
+					? BAL.d("perk_charge_time_multiplier", PERK_CHARGE_TIME_MULTIPLIER) : 1.0;
+			tier1Ticks = Math.max(1, (int) Math.ceil(originalTier1 * scale));
+			tier2Ticks = Math.max(1, (int) Math.ceil(originalTier2 * scale));
+			maxTicks = Math.max(1, (int) Math.ceil(originalMax * scale));
+			double rate = BAL.d("mana_per_tick", MANA_PER_TICK);
+			tier1Mana = originalTier1 * rate;
+			tier2Mana = originalTier2 * rate;
+			totalMana = originalMax * rate;
+		}
+
+		/** 按本次蓄力进度结算累计费用，缩短时间不降低各档总耗法。 */
+		double manaDue(int progress) {
+			if (progress >= maxTicks) return totalMana;
+			if (progress <= tier1Ticks) return tier1Mana * progress / tier1Ticks;
+			if (progress <= tier2Ticks) return tier1Mana + (tier2Mana - tier1Mana) * (progress - tier1Ticks) / (tier2Ticks - tier1Ticks);
+			return tier2Mana + (totalMana - tier2Mana) * (progress - tier2Ticks) / (maxTicks - tier2Ticks);
+		}
 	}
 	private static final java.util.Set<UUID> FLAT_CHARGING = ConcurrentHashMap.newKeySet();
 
@@ -110,8 +140,7 @@ public final class SpiderMoonWeaverWebManager {
 		if (!isSpiderMoonWeaver(player)) return;
 		// 统一服务门禁 + 建档（on_release：松键按档起算）
 		if (!beginCharge(player)) return;
-		CHARGING.put(player.getUuid(), new ChargeState(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID),
-				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cooldown(player, SKILL_ID)));
+		CHARGING.put(player.getUuid(), new ChargeState(player));
 		FLAT_CHARGING.remove(player.getUuid()); // 普通蓄力 → 蛛丝弹
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -123,8 +152,7 @@ public final class SpiderMoonWeaverWebManager {
 		if (CHARGING.containsKey(player.getUuid())) return;
 		if (!isSpiderMoonWeaver(player)) return;
 		if (!beginCharge(player)) return;
-		CHARGING.put(player.getUuid(), new ChargeState(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID),
-				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cooldown(player, SKILL_ID)));
+		CHARGING.put(player.getUuid(), new ChargeState(player));
 		FLAT_CHARGING.add(player.getUuid()); // 平铺蓄力 → 脚下平铺
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -146,17 +174,19 @@ public final class SpiderMoonWeaverWebManager {
 			cancel(player); // 死亡 / 形态丢失 → 取消，不结算
 			return;
 		}
-		if (s.ticks < BAL.i("max_ticks", MAX_TICKS)) {
-			double manaPerTick = BAL.d("mana_per_tick", MANA_PER_TICK);
+		if (s.ticks < s.maxTicks) {
+			double due = s.manaDue(s.ticks + 1);
+			double manaPerTick = Math.max(0.0, due - s.paidMana);
 			ManaComponent m = mana(player);
-			if (m.getMana() < manaPerTick) {
+			if (m.getMana() + 1.0E-9 < manaPerTick) {
 				release(player); // mana 耗尽 → 自动释放当前档
 				return;
 			}
 			m.consumeMana(manaPerTick);
+			s.paidMana = due;
 			s.ticks++;
 			ServerWorld sw = (ServerWorld) player.getWorld();
-			float chime = tierChimePitch(s.ticks);
+			float chime = tierChimePitch(s);
 			if (chime > 0f) {
 				// 跨档瞬间：靠齐原版 SSC 蓄力完成音效（note_block hat+snare 升调）+ cloud 粒子
 				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -173,11 +203,11 @@ public final class SpiderMoonWeaverWebManager {
 		// 达到满档后保持 tier3、不再耗 mana，直到松键释放
 	}
 
-	/** 蓄力跨档（20/40/60t）的报音音高（靠齐 SSC：1.0 / 1.19 / 1.414）；非跨档点返回 0。 */
-	private static float tierChimePitch(int ticks) {
-		if (ticks == BAL.i("tier1_ticks", TIER1_TICKS)) return 1.0f;
-		if (ticks == BAL.i("tier2_ticks", TIER2_TICKS)) return 1.19f;
-		if (ticks == BAL.i("max_ticks", MAX_TICKS)) return 1.414f;
+	/** 使用本次施放保存的阈值报音，默认20/40/60t、对应Perk为14/28/42t。 */
+	private static float tierChimePitch(ChargeState state) {
+		if (state.ticks == state.tier1Ticks) return 1.0f;
+		if (state.ticks == state.tier2Ticks) return 1.19f;
+		if (state.ticks == state.maxTicks) return 1.414f;
 		return 0f;
 	}
 
@@ -193,10 +223,9 @@ public final class SpiderMoonWeaverWebManager {
 			return;
 		}
 		int ticks = s.ticks;
-		int tier = ticks >= BAL.i("max_ticks", MAX_TICKS) ? 3
-				: (ticks >= BAL.i("tier2_ticks", TIER2_TICKS) ? 2 : 1);
+		int tier = ticks >= s.maxTicks ? 3 : (ticks >= s.tier2Ticks ? 2 : 1);
 		completeCharge(player, s, tier);
-		if (getMode(player) == MODE_ATTACK) {
+		if (s.mode == MODE_ATTACK) {
 			fireAttack(player, tier);
 		} else if (flat) {
 			fireBridgeFlat(player, tier); // 双击长按 / 潜行长按 → 脚下平铺
