@@ -1,5 +1,7 @@
 # 幻形者诅咒附属模组
 
+> **neomagic：新法术系统试验分支。** 本分支基于完整SSCA副本进行实验开发，工作目录为`SSCA新法术系统试验田`，与原项目的`main`分开维护。见[试验田说明](新法术试验田说明.md)与[新法术设计](new-spell-system/docs/SSCA新法术系统设计方案.md)。
+
 > **📖 玩法指南 / Gameplay Guide**  
 > **THIS MOD IS FREE FOR ALL,DON'T TRUST ANYONE WHO CLAIMS TO SELL THIS MOD.**
 > 
