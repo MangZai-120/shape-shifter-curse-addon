@@ -188,6 +188,7 @@ public final class SscAddonForms {
 		goldenSandstormForm.canSneakRush = true;
 		// 金沙岚复用阿努比斯之狼四足模型，缩放与原版 ANUBIS_WOLF_3 一致(scale=0.8, eye_scale=0.6)
 		goldenSandstormForm.applyScale(0.8f, 0.6f);
+		goldenSandstormForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_AnubisWolf3PerkTree);
 		RegPlayerForms.registerPlayerForm(goldenSandstormForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_golden_sandstorm_sp")).registerForm(1, 12, goldenSandstormForm));
 
@@ -196,6 +197,7 @@ public final class SscAddonForms {
 		batDesmodusForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune, HasSlowFall);
 		// 蝙蝠缩放需与原版 bat_3 一致（宽度/高度0.6、眼睛/碰撞箱0.7），否则保持上个形态大小不缩放
 		batDesmodusForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.6f, 0.7f));
+		batDesmodusForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Bat3PerkTree);
 		RegPlayerForms.registerPlayerForm(batDesmodusForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_bat_desmodus")).registerForm(1, 12, batDesmodusForm));
 
@@ -222,6 +224,7 @@ public final class SscAddonForms {
 		batParasiticFruitForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune, HasSlowFall);
 		// 蝙蝠缩放需与原版 bat_3 一致（宽度/高度0.6、眼睛/碰撞箱0.7），否则保持上个形态大小不缩放
 		batParasiticFruitForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.6f, 0.7f));
+		batParasiticFruitForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Bat3PerkTree);
 		RegPlayerForms.registerPlayerForm(batParasiticFruitForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_bat_parasitic_fruit")).registerForm(1, 12, batParasiticFruitForm));
 

@@ -1,0 +1,101 @@
+{
+  "type": "apoli:action_over_time",
+  "interval": 60,
+  "hud_render": {
+    "should_render": false
+  },
+  "entity_action": {
+    "type": "apoli:and",
+    "actions": [
+      {
+        "type": "apoli:area_of_effect",
+        "radius": 16,
+        "shape": "sphere",
+        "bientity_action": {
+          "type": "apoli:target_action",
+          "action": {
+            "type": "apoli:apply_effect",
+            "effect": {
+              "effect": "minecraft:glowing",
+              "duration": 60,
+              "amplifier": 0,
+              "is_ambient": true,
+              "show_particles": false,
+              "show_icon": false
+            }
+          }
+        },
+        "bientity_condition": {
+          "type": "apoli:and",
+          "conditions": [
+            {
+              "type": "apoli:target_condition",
+              "condition": {
+                "type": "apoli:living"
+              }
+            },
+            {
+              "type": "my_addon:not_dream_blocked"
+            }
+          ]
+        }
+      },
+      {
+        "type": "apoli:area_of_effect",
+        "radius": 16,
+        "shape": "sphere",
+        "bientity_action": {
+          "type": "apoli:target_action",
+          "action": {
+            "type": "apoli:apply_effect",
+            "effect": {
+              "effect": "minecraft:weakness",
+              "duration": 60,
+              "amplifier": 0,
+              "is_ambient": true,
+              "show_particles": false,
+              "show_icon": false
+            }
+          }
+        },
+        "bientity_condition": {
+          "type": "apoli:and",
+          "conditions": [
+            {
+              "type": "apoli:target_condition",
+              "condition": {
+                "type": "apoli:living"
+              }
+            },
+            {
+              "type": "my_addon:not_dream_blocked"
+            },
+            {
+              "type": "shape-shifter-curse:enemy"
+            },
+            {
+              "type": "my_addon:not_actor_whitelisted"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "condition": {
+    "type": "apoli:and",
+    "conditions": [
+      {
+        "type": "apoli:time_of_day",
+        "comparison": ">=",
+        "compare_to": 13000
+      },
+      {
+        "type": "apoli:time_of_day",
+        "comparison": "<=",
+        "compare_to": 23000
+      }
+    ]
+  },
+  "name": "power.my_addon.form_bat_desmodus_echolocation.name",
+  "description": "perk.ssc_addon.bat_desmodus.bat_echolocation.description"
+}

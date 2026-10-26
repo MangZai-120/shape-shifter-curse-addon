@@ -15,6 +15,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Box;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.compat.GoldenSandstormPerks;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -66,6 +67,7 @@ public class GoldenSandstormWitherSand {
 	 * 玩家按下技能键 - 开始蓄力
 	 */
 	public static boolean execute(ServerPlayerEntity player) {
+		if (!FormUtils.isGoldenSandstormSP(player)) return false;
 		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return false;
 		// 已经在蓄力中则忽略（CD 门禁已由 power 层 begin 统一拦截，修 P1-1）
 		if (CHARGING_PLAYERS.containsKey(player.getUuid())) return false;
@@ -79,6 +81,9 @@ public class GoldenSandstormWitherSand {
 		CHARGING_PLAYERS.put(player.getUuid(), state);
 		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID);
         state.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
+		state.brandStacks = GoldenSandstormPerks.sandstormStacks(player);
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.retune(player, SKILL_ID, state.castId,
+				GoldenSandstormPerks.normalCooldown(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cooldown(player, SKILL_ID), GoldenSandstormPerks.responseRank(player)));
 
 		// 施加减速50%
 		applyChargeSlow(player);
@@ -135,14 +140,14 @@ public class GoldenSandstormWitherSand {
 		if (elapsed >= BAL.i("charge_ticks", CHARGE_TICKS)) {
 			removeChargeSlow(player);
 			CHARGING_PLAYERS.remove(player.getUuid());
-			releaseSkill(player, serverWorld, state.castId);
+			releaseSkill(player, serverWorld, state.castId, state.brandStacks);
 		}
 	}
 
 	/**
 	 * 释放技能 - 15格AoE
 	 */
-	private static void releaseSkill(ServerPlayerEntity player, ServerWorld serverWorld, long castId) {
+	private static void releaseSkill(ServerPlayerEntity player, ServerWorld serverWorld, long castId, int brandStacks) {
 		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, castId);
 		double radius = BAL.d("radius", RADIUS);
 
@@ -180,7 +185,7 @@ public class GoldenSandstormWitherSand {
 			target.addStatusEffect(new StatusEffectInstance(SscAddon.SAND_BLIND, BAL.i("blind_duration", BLIND_DURATION), 0, false, true), player);
 
 			// 叠加1层侵蚀烙印
-			GoldenSandstormErosionBrand.onPlayerAttack(player, target);
+			GoldenSandstormErosionBrand.onSandstormHit(player, target, brandStacks);
 
 			// 命中粒子
 			ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SOUL,
@@ -261,6 +266,7 @@ public class GoldenSandstormWitherSand {
 	// ==================== 内部数据类 ====================
 	private static class ChargeState {
         long castId = -1;
+		int brandStacks = 1;
 		long startTick;
 		float healthAtStart;
 	}

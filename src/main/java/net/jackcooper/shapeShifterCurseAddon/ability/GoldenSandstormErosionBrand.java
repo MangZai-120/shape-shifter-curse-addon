@@ -20,6 +20,7 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.compat.GoldenSandstormPerks;
 import net.jackcooper.shapeShifterCurseAddon.item.ErosionSandPrismItem;
 import net.jackcooper.shapeShifterCurseAddon.item.WitheredSandRingItem;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -131,6 +132,16 @@ public class GoldenSandstormErosionBrand {
 	 * 该方法由 SscAddonActions 的 erosion_brand_hit biEntity action 触发
 	 */
 	public static void onPlayerAttack(ServerPlayerEntity player, LivingEntity target) {
+		applyBrand(player, target, 1);
+	}
+
+	/** A sandstorm adds its captured layer bonus in one operation, not two attacks. */
+	public static void onSandstormHit(ServerPlayerEntity player, LivingEntity target, int layers) {
+		applyBrand(player, target, Math.max(1, layers));
+	}
+
+	private static void applyBrand(ServerPlayerEntity player, LivingEntity target, int layers) {
+		if (!FormUtils.isGoldenSandstormSP(player) || !target.isAlive()) return;
 		if (!(player.getWorld() instanceof ServerWorld serverWorld)) return;
 		if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(player, target)) return;
 		// 近战攻击不检查白名单（允许对白名单目标叠标记）
@@ -172,8 +183,7 @@ public class GoldenSandstormErosionBrand {
 
 			// 蚀沙棱晶：被动爆发也触发扩散（白名单目标不触发扩散）
 			if (hasErosionPrism(player) && !WhitelistUtils.isProtected(player, target)) {
-				float burstDmg = Math.min(target.getHealth() * (float) BAL.d("burst_hp_percent", BURST_HP_PERCENT),
-						hasWitheredRing(player) ? BURST_DAMAGE_CAP_WITH_RING : (float) BAL.d("burst_damage_cap", BURST_DAMAGE_CAP));
+				float burstDmg = Math.min(target.getHealth() * damagePercent(player), damageCap(player, hasWitheredRing(player)));
 				if (burstDmg < 1.0f) burstDmg = 1.0f;
 				float splashDmg = burstDmg * PRISM_SPLASH_PERCENT;
 				splashDamageToNearby(player, serverWorld, target.getPos(), splashDmg, target);
@@ -206,7 +216,7 @@ public class GoldenSandstormErosionBrand {
 			return;
 		}
 
-		state.stacks = Math.min(state.stacks + 1, BAL.i("max_stacks", MAX_STACKS));
+		state.stacks = Math.min(state.stacks + layers, BAL.i("max_stacks", MAX_STACKS));
 		state.lastStackTick = currentTick;
 		state.expiryTick = currentTick + BAL.i("brand_duration", BRAND_DURATION);
 
@@ -229,8 +239,8 @@ public class GoldenSandstormErosionBrand {
 	private static void triggerPassiveBurst(ServerPlayerEntity player, LivingEntity target, ServerWorld serverWorld) {
 		// 计算伤害：目标当前生命值的20%（枯沙指环：上限26，默认：上限20）
 		boolean hasRing = hasWitheredRing(player);
-		float cap = hasRing ? BURST_DAMAGE_CAP_WITH_RING : (float) BAL.d("burst_damage_cap", BURST_DAMAGE_CAP);
-		float rawDamage = target.getHealth() * (float) BAL.d("burst_hp_percent", BURST_HP_PERCENT);
+		float cap = damageCap(player, hasRing);
+		float rawDamage = target.getHealth() * damagePercent(player);
 		float damage = Math.min(rawDamage, cap);
 		if (damage < 1.0f) damage = 1.0f;
 
@@ -253,6 +263,7 @@ public class GoldenSandstormErosionBrand {
 	 * @return 引爆信息：[引爆目标数, 总层数]
 	 */
 	public static int[] detonateAll(ServerPlayerEntity player) {
+		if (!FormUtils.isGoldenSandstormSP(player)) return new int[]{0, 0};
 		Map<UUID, BrandState> playerBrands = ACTIVE_BRANDS.get(player.getUuid());
 		if (playerBrands == null || playerBrands.isEmpty()) return new int[]{0, 0};
 
@@ -261,13 +272,13 @@ public class GoldenSandstormErosionBrand {
 		// 预先检查饰品状态（避免循环内重复检查）
 		boolean hasRing = hasWitheredRing(player);
 		boolean hasPrism = hasErosionPrism(player);
-		float cap = hasRing ? BURST_DAMAGE_CAP_WITH_RING : (float) BAL.d("burst_damage_cap", BURST_DAMAGE_CAP);
+		float cap = damageCap(player, hasRing);
 		int totalTargets = 0;
 		int totalStacks = 0;
 
-		Iterator<Map.Entry<UUID, BrandState>> it = playerBrands.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry<UUID, BrandState> entry = it.next();
+		// Prism splash can create more entries. Only detonate the accepted target snapshot.
+		for (Map.Entry<UUID, BrandState> entry : new ArrayList<>(playerBrands.entrySet())) {
+			if (playerBrands.get(entry.getKey()) != entry.getValue()) continue;
 			BrandState state = entry.getValue();
 
 			// 绿色状态的目标不参与引爆
@@ -277,7 +288,7 @@ public class GoldenSandstormErosionBrand {
 
 			LivingEntity target = findEntity(serverWorld, entry.getKey());
 			if (target == null || !target.isAlive()) {
-				it.remove();
+				playerBrands.remove(entry.getKey(), state);
 				continue;
 			}
 			if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(player, target)) continue;
@@ -295,7 +306,7 @@ public class GoldenSandstormErosionBrand {
 			totalStacks += state.stacks;
 
 			// 引爆伤害 = 目标当前生命值20%（上限20/26）
-			float rawDetonateDmg = target.getHealth() * (float) BAL.d("burst_hp_percent", BURST_HP_PERCENT);
+			float rawDetonateDmg = target.getHealth() * damagePercent(player);
 			float detonateDamage = Math.min(rawDetonateDmg, cap);
 			if (detonateDamage < 1.0f) detonateDamage = 1.0f;
 
@@ -343,6 +354,70 @@ public class GoldenSandstormErosionBrand {
 		}
 
 		return new int[]{totalTargets, totalStacks};
+	}
+
+	private static float damagePercent(ServerPlayerEntity player) {
+		return GoldenSandstormPerks.damagePercent(player, (float) BAL.d("burst_hp_percent", BURST_HP_PERCENT));
+	}
+
+	private static float damageCap(ServerPlayerEntity player, boolean ring) {
+		return GoldenSandstormPerks.damageCap(player, ring ? BURST_DAMAGE_CAP_WITH_RING : (float) BAL.d("burst_damage_cap", BURST_DAMAGE_CAP));
+	}
+
+	/** Consume this player's valid, loaded, non-green layers without running any damage path. */
+	public static int recallAll(ServerPlayerEntity player) {
+		if (!FormUtils.isGoldenSandstormSP(player) || net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return 0;
+		var brands = ACTIVE_BRANDS.get(player.getUuid());
+		if (brands == null || brands.isEmpty()) return 0;
+		var world = player.getServerWorld();
+		long now = world.getTime();
+		int layers = 0;
+		boolean changed = false;
+		for (var entry : new ArrayList<>(brands.entrySet())) {
+			var state = entry.getValue();
+			if (state.greenState || state.stacks <= 0) continue;
+			var target = findEntity(world, entry.getKey());
+			// An unloaded target or a target in another dimension cannot fund healing.
+			if (target == null) continue;
+			if (state.expiryTick <= now || !target.isAlive()) {
+				if (brands.remove(entry.getKey(), state)) {
+					refreshOtherMarkers(target, player.getUuid());
+					changed = true;
+				}
+				continue;
+			}
+			if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(player, target)) continue;
+			if (brands.remove(entry.getKey(), state)) {
+				layers += state.stacks;
+				refreshOtherMarkers(target, player.getUuid());
+				changed = true;
+			}
+		}
+		if (changed) {
+			if (brands.isEmpty()) ACTIVE_BRANDS.remove(player.getUuid(), brands);
+			markDirty(player.getUuid());
+			syncIfDirty(player);
+		}
+		if (layers > 0) player.heal(GoldenSandstormPerks.recallHealing(player.getMaxHealth(), layers));
+		return layers;
+	}
+
+	/** Shared status icons must not disappear when another owner's layers are removed. */
+	private static void refreshOtherMarkers(LivingEntity target, UUID removedOwner) {
+		if (!(target.getWorld() instanceof ServerWorld world)) return;
+		BrandState selected = null;
+		ServerPlayerEntity owner = null;
+		long now = world.getTime();
+		for (var entry : ACTIVE_BRANDS.entrySet()) {
+			if (entry.getKey().equals(removedOwner)) continue;
+			var candidate = entry.getValue().get(target.getUuid());
+			if (candidate == null || candidate.greenState || candidate.stacks <= 0 || candidate.expiryTick <= now) continue;
+			var other = world.getPlayerByUuid(entry.getKey());
+			if (!(other instanceof ServerPlayerEntity player) || !FormUtils.isGoldenSandstormSP(player)) continue;
+			if (selected == null || candidate.lastStackTick > selected.lastStackTick) { selected = candidate; owner = player; }
+		}
+		if (selected == null) removeAllBrandMarkers(target);
+		else updateTargetMarker(target, selected, now, owner);
 	}
 
 	/**
@@ -491,7 +566,7 @@ public class GoldenSandstormErosionBrand {
 			if (player.getWorld() instanceof ServerWorld serverWorld) {
 				for (UUID targetUuid : playerBrands.keySet()) {
 					LivingEntity target = findEntity(serverWorld, targetUuid);
-					if (target != null) removeAllBrandMarkers(target);
+					if (target != null) refreshOtherMarkers(target, player.getUuid());
 				}
 			}
 			ACTIVE_BRANDS.remove(player.getUuid());
@@ -521,7 +596,7 @@ public class GoldenSandstormErosionBrand {
 				hadExpiry[0] = true;
 				// 移除目标的标记效果
 				LivingEntity target = findEntity(serverWorld, entry.getKey());
-				if (target != null) removeAllBrandMarkers(target);
+				if (target != null) refreshOtherMarkers(target, player.getUuid());
 			}
 			return expired;
 		});
@@ -546,7 +621,7 @@ public class GoldenSandstormErosionBrand {
 		if (playerBrands != null && player.getWorld() instanceof ServerWorld serverWorld) {
 			for (UUID targetUuid : playerBrands.keySet()) {
 				LivingEntity target = findEntity(serverWorld, targetUuid);
-				if (target != null) removeAllBrandMarkers(target);
+				if (target != null) refreshOtherMarkers(target, player.getUuid());
 			}
 		}
 		DIRTY_PLAYERS.remove(player.getUuid());

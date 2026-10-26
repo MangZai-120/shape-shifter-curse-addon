@@ -1,0 +1,19 @@
+{
+  "type": "my_addon:fail_aware_active_self",
+  "hidden": true,
+  "name": "perk.ssc_addon.golden_sandstorm_sp.anubis_wolf_soul_recall.name",
+  "description": "perk.ssc_addon.golden_sandstorm_sp.anubis_wolf_soul_recall.description",
+  "cooldown": 300,
+  "fail_cooldown": 0,
+  "cooldown_start": "on_cast",
+  "key": {
+    "key": "key.shape-shifter-curse.active_skill_3",
+    "continuous": false
+  },
+  "hud_render": {
+    "should_render": false
+  },
+  "entity_action": {
+    "type": "ssc_addon:golden_sandstorm_brand_recall"
+  }
+}

@@ -507,6 +507,14 @@ public class SscAddonActions {
 			}
 		}));
 
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "golden_sandstorm_brand_recall"),
+				new SerializableData(), (data, entity) -> {
+			if (entity instanceof ServerPlayerEntity player
+					&& !net.jackcooper.shapeShifterCurseAddon.compat.GoldenSandstormPerks.recall(player)) {
+				net.jackcooper.shapeShifterCurseAddon.power.FailAwareActiveSelfPower.markFail();
+			}
+		}));
+
 		// ==== 金沙岚SP - 侵蚀烙印命中处理 ====
 		registerBiEntity(new ActionFactory<>(new Identifier("ssc_addon", "golden_sandstorm_erosion_brand_hit"),
 				new SerializableData(),

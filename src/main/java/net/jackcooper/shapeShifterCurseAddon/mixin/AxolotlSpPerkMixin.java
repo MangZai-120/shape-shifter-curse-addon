@@ -7,6 +7,9 @@ import net.jackcooper.shapeShifterCurseAddon.compat.SnowFoxSpPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.WindSpiritPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.NovaPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.AnubisWolfSpPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.GoldenSandstormPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.BatDesmodusPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.BatParasiticFruitPerks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.onixary.shapeShifterCurseFabric.perk.NormalPerk;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
@@ -25,6 +28,9 @@ public abstract class AxolotlSpPerkMixin {
                 || SnowFoxSpPerks.loadMapped((NormalPerk) (Object) this, player, form)
                 || WindSpiritPerks.loadMapped((NormalPerk) (Object) this, player, form)
                 || NovaPerks.loadMapped((NormalPerk) (Object) this, player, form)
-                || AnubisWolfSpPerks.loadMapped((NormalPerk) (Object) this, player, form)) ci.cancel();
+                || AnubisWolfSpPerks.loadMapped((NormalPerk) (Object) this, player, form)
+                || GoldenSandstormPerks.loadMapped((NormalPerk) (Object) this, player, form)
+                || BatDesmodusPerks.loadMapped((NormalPerk) (Object) this, player, form)
+                || BatParasiticFruitPerks.loadMapped((NormalPerk) (Object) this, player, form)) ci.cancel();
     }
 }

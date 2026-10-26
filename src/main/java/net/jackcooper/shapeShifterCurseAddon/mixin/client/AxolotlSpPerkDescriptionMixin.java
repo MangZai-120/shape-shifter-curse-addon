@@ -7,6 +7,9 @@ import net.jackcooper.shapeShifterCurseAddon.compat.SnowFoxSpPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.WindSpiritPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.NovaPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.AnubisWolfSpPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.GoldenSandstormPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.BatDesmodusPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.BatParasiticFruitPerks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -22,6 +25,21 @@ public abstract class AxolotlSpPerkDescriptionMixin {
     @Inject(method = "getPerkDescription", at = @At("HEAD"), cancellable = true, remap = false)
     private static void ssca$describeSpPerk(Identifier perk, CallbackInfoReturnable<Text> cir) {
         var player = MinecraftClient.getInstance().player;
+        if (player != null && BatParasiticFruitPerks.isSupported(FormUtils.getPlayerForm(player))
+                && RegPerks.getPerkTree(RegPerks.T_Bat3PerkTree).getAllPerks().contains(perk)) {
+            cir.setReturnValue(Text.translatable("perk.ssc_addon.bat_parasitic_fruit." + perk.getPath() + ".description"));
+            return;
+        }
+        if (player != null && BatDesmodusPerks.isSupported(FormUtils.getPlayerForm(player))
+                && RegPerks.getPerkTree(RegPerks.T_Bat3PerkTree).getAllPerks().contains(perk)) {
+            cir.setReturnValue(Text.translatable("perk.ssc_addon.bat_desmodus." + perk.getPath() + ".description"));
+            return;
+        }
+        if (player != null && GoldenSandstormPerks.isSupported(FormUtils.getPlayerForm(player))
+                && RegPerks.getPerkTree(RegPerks.T_AnubisWolf3PerkTree).getAllPerks().contains(perk)) {
+            cir.setReturnValue(Text.translatable("perk.ssc_addon.golden_sandstorm_sp." + perk.getPath() + ".description"));
+            return;
+        }
         if (player != null && AnubisWolfSpPerks.isSupported(FormUtils.getPlayerForm(player))
                 && RegPerks.getPerkTree(RegPerks.T_AnubisWolf3PerkTree).getAllPerks().contains(perk)) {
             cir.setReturnValue(Text.translatable("perk.ssc_addon.anubis_wolf_sp." + perk.getPath() + ".description"));
@@ -55,6 +73,15 @@ public abstract class AxolotlSpPerkDescriptionMixin {
                 && RegPerks.getPerkTree(RegPerks.T_Axolotl3PerkTree).getAllPerks().contains(perk)) {
             String formKey = AxolotlSpPerks.isSp(FormUtils.getPlayerForm(player)) ? "axolotl_sp" : "axolotl_fluorescent";
             cir.setReturnValue(Text.translatable("perk.ssc_addon." + formKey + "." + perk.getPath() + ".description"));
+        }
+    }
+
+    @Inject(method = "getPerkName", at = @At("HEAD"), cancellable = true, remap = false)
+    private static void ssca$nameGoldenPerk(Identifier perk, CallbackInfoReturnable<Text> cir) {
+        var player = MinecraftClient.getInstance().player;
+        if (player != null && GoldenSandstormPerks.isSupported(FormUtils.getPlayerForm(player))
+                && RegPerks.getPerkTree(RegPerks.T_AnubisWolf3PerkTree).getAllPerks().contains(perk)) {
+            cir.setReturnValue(Text.translatable("perk.ssc_addon.golden_sandstorm_sp." + perk.getPath() + ".name"));
         }
     }
 }
