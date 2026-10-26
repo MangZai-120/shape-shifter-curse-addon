@@ -1,0 +1,10 @@
+{
+  "type": "apoli:simple",
+  "hidden": true,
+  "condition": {
+    "type": "ssc_addon:has_talent",
+    "talent_id": "mana_system"
+  },
+  "name": "power.shape-shifter-curse.perks.familiar_fox_siphon_1.name",
+  "description": "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_siphon_1.description"
+}

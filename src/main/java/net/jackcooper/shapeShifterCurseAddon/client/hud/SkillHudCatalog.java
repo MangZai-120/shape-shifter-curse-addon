@@ -182,10 +182,11 @@ public final class SkillHudCatalog {
         FORMS.put("upgrade_axolotl", List.of(
                 // 投掷水矛：湿润度（air）≥空气消耗（balance 可调，服务端同源）
                 skill("water_spear", "form_upgrade_axolotl_water_spear", null, 0, AxolotlTree.NODE_WATER_SPEAR, true,
-                        p -> p.getAir() >= net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager.airCostForHud()),
+                        p -> p.getAir() >= net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager.airCostForHud(p)),
                 skill("vortex_guide", "form_upgrade_axolotl_vortex_guide", null, 0, AxolotlTree.NODE_VORTEX_GUIDE, false),
                 skill("water_dash", "form_upgrade_axolotl_dash_hud_water", null, 0, AxolotlTree.NODE_WATER_SPURT, false),
-                skill("land_dash", "form_upgrade_axolotl_dash_hud_land", null, 0, AxolotlTree.NODE_WATER_SPURT, false),
+                skill("land_dash", "form_upgrade_axolotl_dash_hud_land", null, 0, AxolotlTree.NODE_WATER_SPURT, false,
+                        p -> p.getAir() >= net.jackcooper.shapeShifterCurseAddon.ability.AxolotlWaterSpurtHandler.landAirCostForHud(p)),
                 skill("water_jump", "form_upgrade_axolotl_jump_out_water", null, 0, "aquatic_adapt", false)));
         FORMS.put("upgrade_familiar_fox", List.of(
                 // 火花/火环：has_mana 11；火箭：has_mana 2.5（副手持箭的 stick_fireball）

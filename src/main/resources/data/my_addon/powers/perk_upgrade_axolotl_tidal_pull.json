@@ -1,0 +1,225 @@
+{
+  "name": "ssc_perk.shape-shifter-curse.axolotl_tidal_pull.name",
+  "description": "perk.ssc_addon.upgrade_axolotl.axolotl_tidal_pull.description",
+  "hidden": true,
+  "type": "apoli:multiple",
+  "charge": {
+    "type": "shape-shifter-curse:charge_action",
+    "key": {
+      "key": "key.shape-shifter-curse.active_skill_3",
+      "continuous": true
+    },
+    "start_condition": {
+      "type": "apoli:and",
+      "conditions": [
+        {
+          "type": "apoli:air",
+          "comparison": ">=",
+          "compare_to": 20
+        },
+        {
+          "type": "ssc_addon:has_talent",
+          "talent_id": "vortex_guide"
+        }
+      ]
+    },
+    "start_action": {
+      "type": "apoli:gain_air",
+      "value": -20
+    },
+    "tier0_enable": true,
+    "tier0_charge_time": 0,
+    "tier0_tick_action": {
+      "type": "apoli:and",
+      "actions": [
+        {
+          "type": "apoli:spawn_particles",
+          "particle": "minecraft:splash",
+          "count": 8,
+          "force": true,
+          "spread": {
+            "x": 0.5,
+            "y": 0.6,
+            "z": 0.5
+          },
+          "speed": 0.02
+        }
+      ]
+    },
+    "tier0_use_action": {
+      "type": "apoli:if_else",
+      "condition": {
+        "type": "ssc_addon:has_talent",
+        "talent_id": "vortex_guide"
+      },
+      "if_action": {
+        "type": "apoli:raycast",
+        "distance": 20,
+        "block": true,
+        "entity": true,
+        "shape_type": "collider",
+        "fluid_handling": "none",
+        "bientity_condition": {
+          "type": "apoli:target_condition",
+          "condition": {
+            "type": "apoli:health",
+            "comparison": ">",
+            "compare_to": 0
+          }
+        },
+        "bientity_action": {
+          "type": "apoli:and",
+          "actions": [
+            {
+              "type": "apoli:add_velocity",
+              "z": -1.5,
+              "y": 0.9
+            },
+            {
+              "type": "apoli:target_action",
+              "action": {
+                "type": "apoli:and",
+                "actions": [
+                  {
+                    "type": "apoli:apply_effect",
+                    "effect": {
+                      "effect": "minecraft:slow_falling",
+                      "duration": 100,
+                      "amplifier": 0
+                    }
+                  },
+                  {
+                    "type": "apoli:spawn_particles",
+                    "particle": "minecraft:splash",
+                    "count": 8,
+                    "force": true,
+                    "spread": {
+                      "x": 0.5,
+                      "y": 0.6,
+                      "z": 0.5
+                    },
+                    "speed": 0.02
+                  }
+                ]
+              }
+            },
+            {
+              "type": "apoli:actor_action",
+              "action": {
+                "type": "apoli:and",
+                "actions": [
+                  {
+                    "type": "apoli:play_sound",
+                    "sound": "minecraft:entity.squid.squirt",
+                    "volume": 0.5,
+                    "pitch": 0.8
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "else_action": {
+        "type": "apoli:nothing"
+      }
+    },
+    "tier0_cooldown": 20,
+    "tier1_enable": false
+  },
+  "glow": {
+    "type": "apoli:entity_glow",
+    "use_teams": false,
+    "red": 0.1,
+    "green": 0.4,
+    "blue": 1.0,
+    "condition": {
+      "type": "apoli:and",
+      "conditions": [
+        {
+          "type": "shape-shifter-curse:charging",
+          "power": "my_addon:perk_upgrade_axolotl_tidal_pull_charge"
+        },
+        {
+          "type": "ssc_addon:has_talent",
+          "talent_id": "vortex_guide"
+        }
+      ]
+    },
+    "bientity_condition": {
+      "type": "shape-shifter-curse:raycast_target",
+      "distance": 20.0
+    }
+  },
+  "charging_effects": {
+    "type": "apoli:action_over_time",
+    "interval": 4,
+    "condition": {
+      "type": "apoli:and",
+      "conditions": [
+        {
+          "type": "shape-shifter-curse:charging",
+          "power": "my_addon:perk_upgrade_axolotl_tidal_pull_charge"
+        },
+        {
+          "type": "ssc_addon:has_talent",
+          "talent_id": "vortex_guide"
+        }
+      ]
+    },
+    "entity_action": {
+      "type": "apoli:raycast",
+      "distance": 20,
+      "block": true,
+      "entity": true,
+      "shape_type": "collider",
+      "fluid_handling": "none",
+      "bientity_condition": {
+        "type": "apoli:target_condition",
+        "condition": {
+          "type": "apoli:health",
+          "comparison": ">",
+          "compare_to": 0
+        }
+      },
+      "bientity_action": {
+        "type": "apoli:and",
+        "actions": [
+          {
+            "type": "shape-shifter-curse:directed_particles",
+            "particle": "minecraft:electric_spark",
+            "direction": "target_to_actor",
+            "actor_offset": {
+              "x": 0,
+              "y": 0.5,
+              "z": 0
+            },
+            "target_offset": {
+              "x": 0,
+              "y": 0.5,
+              "z": 0
+            },
+            "speed": 1.2,
+            "count": 4,
+            "force": true
+          },
+          {
+            "type": "apoli:target_action",
+            "action": {
+              "type": "apoli:spawn_particles",
+              "particle": "minecraft:splash",
+              "count": 8,
+              "force": true,
+              "spread": {
+                "x": 0.5,
+                "y": 0.6,
+                "z": 0.5
+              },
+              "speed": 0.02
+            }
+          }
+        ]
+      }
+    }
+  }
+}

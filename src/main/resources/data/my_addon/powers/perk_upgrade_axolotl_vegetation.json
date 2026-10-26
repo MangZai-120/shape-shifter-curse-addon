@@ -1,0 +1,42 @@
+{
+  "type": "apoli:action_over_time",
+  "interval": 20,
+  "entity_action": {
+    "type": "apoli:if_else",
+    "condition": {
+      "type": "apoli:on_block",
+      "block_condition": {
+        "type": "apoli:in_tag",
+        "tag": "shape-shifter-curse:perk_vegetation"
+      }
+    },
+    "if_action": {
+      "type": "apoli:gain_air",
+      "value": -1
+    },
+    "else_action": {
+      "type": "apoli:gain_air",
+      "value": -3
+    }
+  },
+  "condition": {
+    "type": "apoli:and",
+    "conditions": [
+      {
+        "type": "apoli:on_block"
+      },
+      {
+        "type": "apoli:submerged_in",
+        "fluid": "water",
+        "inverted": true
+      },
+      {
+        "type": "apoli:in_rain",
+        "inverted": true
+      }
+    ]
+  },
+  "name": "ssc_perk.shape-shifter-curse.axolotl_vegetation.name",
+  "description": "perk.ssc_addon.upgrade_axolotl.axolotl_vegetation.description",
+  "hidden": true
+}

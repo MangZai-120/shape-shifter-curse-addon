@@ -1925,5 +1925,22 @@
   "perk.ssc_addon.spider_salticidae.spider_rapid_spinner.description": "毒液次技能冷却由10秒降至7秒，普通喷毒和安全丝强化冲刺共用此冷却。以上为默认配置数值。",
   "perk.ssc_addon.spider_salticidae.spider_stabilized_projectile.description": "毒液三种直接伤害提高25%：喷毒4→5、冲刺碰撞2→2.5、毒爆6→7.5。不提高中毒每跳伤害，保留毒液腺体与非玩家生物倍率。以上伤害为默认基础值。",
   "perk.ssc_addon.spider_salticidae.spider_silk_secretion_1.description": "跳杀成功及扑空冷却减少15%：扑中12→10.2秒，扑空8→6.8秒。以上为默认配置数值。",
-  "perk.ssc_addon.spider_salticidae.spider_silk_secretion_2.description": "替换Ⅰ级：跳杀成功及扑空冷却减少25%，两级不叠加。扑中12→9秒，扑空8→6秒。以上为默认配置数值。"
+  "perk.ssc_addon.spider_salticidae.spider_silk_secretion_2.description": "替换Ⅰ级：跳杀成功及扑空冷却减少25%，两级不叠加。扑中12→9秒，扑空8→6秒。以上为默认配置数值。",
+  "perk.ssc_addon.upgrade_axolotl.axolotl_vegetation.description": "在植被地面时，基础耗湿由每秒3点降至1点。“成为水”解锁前每2秒额外流失3点的规则保留，不改变行走速度。",
+  "perk.ssc_addon.upgrade_axolotl.axolotl_dry_tolerance.description": "常驻增加6点最大生命，不受湿润度影响。无其他加成时，生命上限由22增至28。",
+  "perk.ssc_addon.upgrade_axolotl.axolotl_moisture_return_1.description": "对敌方暴击造成超过7点实际伤害时，回复15点湿润度。保留原触发条件。",
+  "perk.ssc_addon.upgrade_axolotl.axolotl_moisture_return_2.description": "替换Ⅰ级：对敌方暴击造成超过7点实际伤害时，湿润度低于150则回复30点，否则回复15点。两级不叠加。",
+  "perk.ssc_addon.upgrade_axolotl.axolotl_propulsion_efficiency.description": "解锁“水流推进”天赋后，陆地疾跑跳跃的推进耗湿由3点降至1点，保留原推进效果。",
+  "perk.ssc_addon.upgrade_axolotl.axolotl_wave_efficiency.description": "解锁“水流喷射”天赋后，陆地冲刺耗湿由12点降至6点。水下冲刺免费，原触发方式及5秒冷却保留。以上为默认配置数值。",
+  "perk.ssc_addon.upgrade_axolotl.axolotl_water_magic_efficiency.description": "解锁“投掷水矛”天赋后，水矛耗湿由18点降至10点。涡流引导仍为免费治疗，保留原效果。以上为默认配置数值。",
+  "perk.ssc_addon.upgrade_axolotl.axolotl_tidal_pull.description": "需解锁“技能：涡流引导”。按住技能键3消耗20点湿润度，标记20格内准星指向的生物；松开将其拉近并向上击飞，施加5秒缓降，冷却1秒。",
+  "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_deflection.description": "解锁魔力系统后生效。未举盾且魔力大于5点时，受到的弹射物伤害减少50%，每次消耗5点魔力。",
+  "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_return_shield.description": "解锁魔力系统后生效。潜行举盾成功挡住弹射物且魔力至少5点时，消耗5点魔力，向攻击者反击火球。",
+  "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_siphon_1.description": "解锁魔力系统后生效。每次对敌人造成大于0.1点的实际生命伤害，回复2点魔力，无额外冷却。完全被盾牌、吸收生命或护盾挡住时不回复。",
+  "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_siphon_2.description": "解锁魔力系统后生效。每次对敌人造成大于0.1点的实际生命伤害，回复4点魔力，无额外冷却。完全被盾牌、吸收生命或护盾挡住时不回复，替代Ⅰ级。",
+  "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_mana_capacity_1.description": "解锁魔力系统后生效。最终魔力上限增加25点，不受进化使魔的基础容量倍率影响。魔力护幕仍在魔力达到上限的50%时生效。",
+  "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_mana_capacity_2.description": "解锁魔力系统后生效。最终魔力上限增加50点，替代Ⅰ级，不受进化使魔的基础容量倍率影响。魔力护幕仍在魔力达到上限的50%时生效。",
+  "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_permeable_field_1.description": "解锁Buff免疫后生效。允许速度、急迫和隐身通过免疫，效果等级统一为Ⅰ级，持续时间保留正常药水时长。其余免疫和火焰免疫保留。",
+  "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_permeable_field_2.description": "解锁Buff免疫后生效。在Ⅰ级基础上额外允许力量、水下呼吸和夜视，效果等级统一为Ⅰ级，持续时间保留正常药水时长。替代Ⅰ级，其余免疫和火焰免疫保留。",
+  "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_potion_charms.description": "解锁炼药能力后，可以用纸分别与闪烁的西瓜片、发酵蛛眼、蜘蛛眼制作治疗、伤害、剧毒符纸，每次消耗5点魔力。使用符纸也需要炼药能力，使用冷却1秒。"
 }

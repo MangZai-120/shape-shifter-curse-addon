@@ -37,6 +37,7 @@ public final class SscAddonForms {
 		Form_Axolotl3 upgradeAxolotlForm = new Form_Axolotl3(FormIdentifiers.UPGRADE_AXOLOTL);
 		upgradeAxolotlForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		upgradeAxolotlForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(1.0f, 1.0f));
+		upgradeAxolotlForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Axolotl3PerkTree);
 		RegPlayerForms.registerPlayerForm(upgradeAxolotlForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_upgrade_axolotl")).registerForm(1, 5, upgradeAxolotlForm));
 
@@ -71,6 +72,7 @@ public final class SscAddonForms {
 		upgradeFamiliarFoxForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 进化使魔为四足形态，变身后重置玩家缩放到本形态大小（对齐原版 FAMILIAR_FOX_3 新体型 0.55）
 		upgradeFamiliarFoxForm.applyScale(0.55f, 0.6f);
+		upgradeFamiliarFoxForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_FamiliarFox3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(upgradeFamiliarFoxForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_upgrade_familiar_fox")).registerForm(1, 5, upgradeFamiliarFoxForm));

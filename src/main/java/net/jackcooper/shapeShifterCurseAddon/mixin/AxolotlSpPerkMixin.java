@@ -1,8 +1,10 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin;
 
 import net.jackcooper.shapeShifterCurseAddon.compat.AxolotlSpPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.UpgradeAxolotlPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.FluorescentAxolotlPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.FamiliarFoxSpPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.UpgradeFamiliarFoxPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.SnowFoxSpPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.WindSpiritPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.NovaPerks;
@@ -25,8 +27,10 @@ public abstract class AxolotlSpPerkMixin {
     @Inject(method = "onLoad", at = @At("HEAD"), cancellable = true, remap = false)
     private void ssca$mapAxolotlSpPerk(PlayerEntity player, IForm form, CallbackInfo ci) {
         if (AxolotlSpPerks.loadMapped((NormalPerk) (Object) this, player, form)
+                || UpgradeAxolotlPerks.loadMapped((NormalPerk) (Object) this, player, form)
                 || FluorescentAxolotlPerks.loadMapped((NormalPerk) (Object) this, player, form)
                 || FamiliarFoxSpPerks.loadMapped((NormalPerk) (Object) this, player, form)
+                || UpgradeFamiliarFoxPerks.loadMapped((NormalPerk) (Object) this, player, form)
                 || SnowFoxSpPerks.loadMapped((NormalPerk) (Object) this, player, form)
                 || WindSpiritPerks.loadMapped((NormalPerk) (Object) this, player, form)
                 || NovaPerks.loadMapped((NormalPerk) (Object) this, player, form)

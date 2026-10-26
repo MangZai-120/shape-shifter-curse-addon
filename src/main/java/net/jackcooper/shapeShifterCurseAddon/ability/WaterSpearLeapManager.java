@@ -7,6 +7,8 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.compat.UpgradeAxolotlPerks;
+import net.minecraft.entity.player.PlayerEntity;
 import net.jackcooper.shapeShifterCurseAddon.entity.ThrownWaterSpearEntity;
 import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
@@ -45,6 +47,7 @@ public final class WaterSpearLeapManager {
 
 	/** HUD 门槛同源：水矛空气消耗（balance 可调；HUD 展示用）。 */
 	public static int airCostForHud() { return BAL.i("air_cost", AIR_COST); }
+	public static int airCostForHud(PlayerEntity player) { return UpgradeAxolotlPerks.spearAirCost(player, airCostForHud()); }
 
 	private static final Map<UUID, LeapState> STATES = new ConcurrentHashMap<>();
 
@@ -63,9 +66,9 @@ public final class WaterSpearLeapManager {
 		if (!FormUtils.isUpgradeAxolotl(player)) return;
 		if (!RegEvolutionComponent.EVOLUTION.get(player).isUnlocked(AxolotlTree.NODE_WATER_SPEAR)) return;
 		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return; // CD 中
-		int airCost = BAL.i("air_cost", AIR_COST);
+		int airCost = airCostForHud(player);
 		if (player.getAir() < airCost) return; // 湿润度不足
-		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID);
+		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return;
 
 		player.setAir(player.getAir() - airCost);
 

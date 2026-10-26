@@ -1,0 +1,12 @@
+{
+  "type": "apoli:attribute",
+  "modifier": {
+    "name": "Upgrade axolotl dry tolerance",
+    "attribute": "minecraft:generic.max_health",
+    "operation": "addition",
+    "value": 6
+  },
+  "hidden": true,
+  "name": "ssc_perk.shape-shifter-curse.axolotl_dry_tolerance.name",
+  "description": "perk.ssc_addon.upgrade_axolotl.axolotl_dry_tolerance.description"
+}

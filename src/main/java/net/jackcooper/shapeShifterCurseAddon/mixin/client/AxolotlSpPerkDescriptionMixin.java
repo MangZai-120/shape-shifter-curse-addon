@@ -1,8 +1,10 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin.client;
 
 import net.jackcooper.shapeShifterCurseAddon.compat.AxolotlSpPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.UpgradeAxolotlPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.FluorescentAxolotlPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.FamiliarFoxSpPerks;
+import net.jackcooper.shapeShifterCurseAddon.compat.UpgradeFamiliarFoxPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.SnowFoxSpPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.WindSpiritPerks;
 import net.jackcooper.shapeShifterCurseAddon.compat.NovaPerks;
@@ -27,6 +29,16 @@ public abstract class AxolotlSpPerkDescriptionMixin {
     @Inject(method = "getPerkDescription", at = @At("HEAD"), cancellable = true, remap = false)
     private static void ssca$describeSpPerk(Identifier perk, CallbackInfoReturnable<Text> cir) {
         var player = MinecraftClient.getInstance().player;
+        if (player != null && UpgradeFamiliarFoxPerks.isSupported(FormUtils.getPlayerForm(player))
+                && RegPerks.getPerkTree(RegPerks.T_FamiliarFox3PerkTree).getAllPerks().contains(perk)) {
+            cir.setReturnValue(Text.translatable("perk.ssc_addon.upgrade_familiar_fox." + perk.getPath() + ".description"));
+            return;
+        }
+        if (player != null && UpgradeAxolotlPerks.isSupported(FormUtils.getPlayerForm(player))
+                && RegPerks.getPerkTree(RegPerks.T_Axolotl3PerkTree).getAllPerks().contains(perk)) {
+            cir.setReturnValue(Text.translatable("perk.ssc_addon.upgrade_axolotl." + perk.getPath() + ".description"));
+            return;
+        }
         if (player != null && SpiderSalticidaePerks.isSupported(FormUtils.getPlayerForm(player))
                 && RegPerks.getPerkTree(RegPerks.T_Spider3PerkTree).getAllPerks().contains(perk)) {
             cir.setReturnValue(Text.translatable("perk.ssc_addon.spider_salticidae." + perk.getPath() + ".description"));

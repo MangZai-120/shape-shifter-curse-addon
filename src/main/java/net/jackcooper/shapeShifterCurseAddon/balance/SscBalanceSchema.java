@@ -350,6 +350,9 @@ public final class SscBalanceSchema {
                 .doubleParam("leap_back", 0.80, 0.0, 4.0, AB + "WaterSpearLeapManager", "LEAP_BACK")
                 .doubleParam("leap_up", 0.62, 0.0, 4.0, AB + "WaterSpearLeapManager", "LEAP_UP")
                 .doubleParam("decay", 0.80, 0.0, 1.0, AB + "WaterSpearLeapManager", "DECAY");
+        b.scope("abilities.upgrade_axolotl_perks")
+                .intParam("spear_air_reduction", 8, 0, 100, "compat.UpgradeAxolotlPerks", "SPEAR_AIR_REDUCTION")
+                .doubleParam("land_air_multiplier", 0.5, 0.0, 1.0, "compat.UpgradeAxolotlPerks", "LAND_AIR_MULTIPLIER");
         b.scope("abilities.vortex_charge")                // VortexChargeManager：漩涡蓄力
                 .intParam("air_per_hit", 8, 0, 100, AB + "VortexChargeManager", "AIR_PER_HIT")
                 .intParam("max_air_spent", 60, 0, 300, AB + "VortexChargeManager", "MAX_AIR_SPENT")

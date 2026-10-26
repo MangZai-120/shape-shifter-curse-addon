@@ -1,0 +1,17 @@
+{
+  "type": "ssc_addon:conditional_mana_attribute",
+  "hidden": true,
+  "modifierID": "my_addon:upgrade_familiar_fox_perk_capacity",
+  "max_mana_modifier": {
+    "add": 0,
+    "multiply": 1,
+    "add_total": 25
+  },
+  "player_side": true,
+  "condition": {
+    "type": "ssc_addon:has_talent",
+    "talent_id": "mana_system"
+  },
+  "name": "power.shape-shifter-curse.perks.familiar_fox_mana_capacity_1.name",
+  "description": "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_mana_capacity_1.description"
+}

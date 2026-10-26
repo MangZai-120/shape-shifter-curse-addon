@@ -78,6 +78,10 @@ public final class FamiliarFoxSpPerks {
     }
 
     public static int siphonAmount(PlayerEntity player) {
+        if (player != null && UpgradeFamiliarFoxPerks.isSupported(FormUtils.getPlayerForm(player))) {
+            return UpgradeFamiliarFoxPerks.enabled(player, UpgradeFamiliarFoxPerks.SIPHON_2) ? 4
+                    : UpgradeFamiliarFoxPerks.enabled(player, UpgradeFamiliarFoxPerks.SIPHON_1) ? 2 : 0;
+        }
         if (player == null || !isSupported(FormUtils.getPlayerForm(player))) return 0;
         return hasPower(player, SIPHON_2) ? 4 : hasPower(player, SIPHON_1) ? 2 : 0;
     }
@@ -93,6 +97,9 @@ public final class FamiliarFoxSpPerks {
 
     public static boolean preservesEffectDuration(LivingEntity entity, StatusEffect effect) {
         if (!(entity instanceof PlayerEntity player)) return false;
+        if (hasPower(player, UpgradeFamiliarFoxPerks.FIELD_1) || hasPower(player, UpgradeFamiliarFoxPerks.FIELD_2)) {
+            return UpgradeFamiliarFoxPerks.preservesEffectDuration(player, effect);
+        }
         boolean second = hasPower(player, FIELD_2);
         if (!second && !hasPower(player, FIELD_1)) return false;
         if (!isSupported(FormUtils.getPlayerForm(player))) return false;

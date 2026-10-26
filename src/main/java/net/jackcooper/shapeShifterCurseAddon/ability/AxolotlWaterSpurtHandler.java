@@ -29,6 +29,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class AxolotlWaterSpurtHandler {
 
+	/** 陆地冲刺的服务端扣费和客户端资源门槛共用同一数值。 */
+	public static int landAirCostForHud(net.minecraft.entity.player.PlayerEntity player) {
+		return net.jackcooper.shapeShifterCurseAddon.compat.UpgradeAxolotlPerks.landDashAirCost(player, BAL.i("land_moisture_cost", LAND_MOISTURE_COST));
+	}
+
 	// 以下均为默认值；运行时从 balance 快照读取（abilities.axolotl_water_spurt）
 	private static final int CD_TICKS = 100;   // 5 秒
 	private static final Identifier WATER_HUD = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_water");
@@ -117,7 +122,7 @@ public final class AxolotlWaterSpurtHandler {
 
 		// ===== 陆地冲刺：陆地 + 按住真正疾跑键时按潜行（sneak 上升沿）→ 前冲，消耗湿润度 =====
 		if (sneaking && !wasSneaking && sprintKey && LAND_CD.getOrDefault(id, 0) <= 0) {
-			int landCost = BAL.i("land_moisture_cost", LAND_MOISTURE_COST);
+			int landCost = landAirCostForHud(player);
 			if (player.getAir() < landCost) {
 				return; // 湿润度不足，不触发
 			}
