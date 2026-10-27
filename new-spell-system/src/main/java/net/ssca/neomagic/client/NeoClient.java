@@ -38,16 +38,7 @@ public final class NeoClient implements ClientModInitializer {
     @Override public void onInitializeClient() {
         ClientPlayNetworking.registerGlobalReceiver(NeoNetwork.STATE,(client,handler,buf,sender)->{
             NbtCompound n=buf.readNbt();if(n==null)return;
-            client.execute(()->{
-                data=NeoState.JSON.fromJson(new String(n.getByteArray("DataJson"),java.nio.charset.StandardCharsets.UTF_8),NeoState.PlayerData.class);
-                profile=NeoState.JSON.fromJson(n.getString("Profile"),Profile.class);token=n.getUuid("Token");table=n.getBoolean("Table");rules=n.getString("Rules");
-                var object=com.google.gson.JsonParser.parseString(n.getString("Costs")).getAsJsonObject();
-                for(Core c:Core.values())COSTS.put(c,NeoState.JSON.fromJson(object.get(c.name()),Coefficients.class));
-                TUNINGS.clear();var tunings=com.google.gson.JsonParser.parseString(new String(n.getByteArray("Tunings"),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
-                tunings.entrySet().forEach(e->TUNINGS.put(e.getKey(),NeoState.JSON.fromJson(e.getValue(),Tuning.class)));
-                if(n.getBoolean("Open"))client.setScreen(new NeoScreen());
-                else if(client.currentScreen instanceof NeoScreen screen)screen.updated();
-            });
+            client.execute(()->acceptSnapshot(client,n));
         });
         ClientPlayNetworking.registerGlobalReceiver(NeoNetwork.HUD,(client,handler,buf,sender)->{var n=buf.readNbt();client.execute(()->{
             hud=n==null?new NbtCompound():n;
@@ -55,6 +46,23 @@ public final class NeoClient implements ClientModInitializer {
         });});
         ClientPlayConnectionEvents.DISCONNECT.register((handler,client)->{hud=new NbtCompound();token=null;data=new NeoState.PlayerData();COSTS.clear();TUNINGS.clear();});
         HudRenderCallback.EVENT.register(NeoClient::renderHud);
+    }
+    public static void acceptSnapshot(MinecraftClient client,NbtCompound n) {
+                try {
+                var nextData=NeoState.JSON.fromJson(new String(NeoPayload.unpack(n.getByteArray("DataJson")),java.nio.charset.StandardCharsets.UTF_8),NeoState.PlayerData.class);
+                NeoState.validate(nextData);
+                var nextProfile=NeoState.JSON.fromJson(n.getString("Profile"),Profile.class);var nextToken=n.getUuid("Token");
+                var nextCosts=new EnumMap<Core,Coefficients>(Core.class);var nextTunings=new HashMap<String,Tuning>();
+                var object=com.google.gson.JsonParser.parseString(n.getString("Costs")).getAsJsonObject();
+                for(Core c:Core.values())nextCosts.put(c,NeoState.JSON.fromJson(object.get(c.name()),Coefficients.class));
+                var tunings=com.google.gson.JsonParser.parseString(new String(NeoPayload.unpack(n.getByteArray("Tunings")),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+                tunings.entrySet().forEach(e->nextTunings.put(e.getKey(),NeoState.JSON.fromJson(e.getValue(),Tuning.class)));
+                if(nextProfile==null||nextCosts.values().stream().anyMatch(java.util.Objects::isNull))throw new IllegalArgumentException("Missing snapshot rules");
+                data=nextData;profile=nextProfile;token=nextToken;table=n.getBoolean("Table");rules=n.getString("Rules");
+                COSTS.clear();COSTS.putAll(nextCosts);TUNINGS.clear();TUNINGS.putAll(nextTunings);
+                if(n.getBoolean("Open"))client.setScreen(new NeoScreen());
+                else if(client.currentScreen instanceof NeoScreen screen)screen.updated();
+                }catch(RuntimeException malformed){NeoMagic.LOG.warn("Ignoring invalid neomagic research snapshot",malformed);}
     }
     private static void renderHud(DrawContext c,float delta) {
         var mc=MinecraftClient.getInstance();if(mc.player==null||mc.options.hudHidden||!hud.getBoolean("Visible"))return;

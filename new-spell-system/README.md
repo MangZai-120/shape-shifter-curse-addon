@@ -4,6 +4,8 @@
 
 本目录保存新体系的设计、生产源码、数据、资源及验证材料。新体系已接入试验田Minecraft构建，使用独立的`ssca_neomagic`命名空间、施法入口与存档。先看[实现与验收记录](docs/实现与验收记录.md)，其中包含游玩入口、默认参数和验证范围。
 
+当前测试包为`8.0.0-neomagic.2`。本轮[稳定性测试与修复记录](docs/稳定性测试记录.md)包含压力数据、实际服务端持续测试和已修复的边界问题；客户端与服务端需要使用相同测试包。
+
 ## 文档入口
 
 - [完整系统设计V2](docs/SSCA新法术系统完整设计V2.md)：包含术式语法、研究循环、身体承载与成长的整套设计。
@@ -28,4 +30,4 @@
 
 Java代码位于`src/main/java/net/ssca/neomagic/`，生产资源位于`src/main/resources/`，测试位于`src/test/java/`。根项目增加source set接入、Fabric入口及必要依赖对齐，新功能实现均保存在本目录。
 
-开发检查可运行`tools/build-neomagic.ps1`。当前Loom使用Java 17和Gradle 8.11.1；辅助脚本不修改此前调整的wrapper版本。实际世界测试为`neoMagicWorldTest`，客户端界面检查为`neoMagicVisualTest`，均使用`build/neomagic/`下的独立目录。
+开发检查可运行`tools/build-neomagic.ps1`。当前Loom使用Java 17和Gradle 8.11.1；辅助脚本不修改此前调整的wrapper版本。实际世界测试为`neoMagicWorldTest`，长跑稳定性为`neoMagicStabilityTest`，客户端界面检查为`neoMagicVisualTest`，均使用`build/neomagic/`下的独立目录。

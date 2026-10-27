@@ -13,7 +13,7 @@ import java.util.*;
 import static net.ssca.neomagic.NeoModel.*;
 
 public final class NeoNetwork {
-    public static final Identifier ACTION=NeoMagic.id("action"),STATE=NeoMagic.id("state"),HUD=NeoMagic.id("hud");
+    public static final Identifier ACTION=NeoMagic.id("action"),STATE=NeoMagic.id("state_v2"),HUD=NeoMagic.id("hud");
     private record Context(UUID token,BlockPos table,String dimension) {}
     private static final Map<UUID,Context> OPEN=new HashMap<>();
     private static final Map<UUID,Integer> LAST=new HashMap<>();
@@ -60,13 +60,16 @@ public final class NeoNetwork {
     public static void send(ServerPlayerEntity p,boolean open) {
         Context c=OPEN.get(p.getUuid());if(c==null||!ServerPlayNetworking.canSend(p,STATE))return;
         NbtCompound n=new NbtCompound();n.putBoolean("Open",open);n.putUuid("Token",c.token);n.putBoolean("Table",tableContext(p,c));
-        n.putByteArray("DataJson",NeoState.JSON.toJson(NeoRuntime.data(p)).getBytes(java.nio.charset.StandardCharsets.UTF_8));n.putString("Rules",NeoRules.version());
+        n.putByteArray("DataJson",encodeData(NeoRuntime.data(p)));n.putString("Rules",NeoRules.version());
         n.putString("Profile",NeoState.JSON.toJson(NeoRules.profile(NeoRuntime.data(p).form)));
         var costs=new EnumMap<Core,Coefficients>(Core.class);for(Core core:Core.values())costs.put(core,NeoRules.cost(core));
         n.putString("Costs",NeoState.JSON.toJson(costs));
-        n.putByteArray("Tunings",NeoState.JSON.toJson(NeoRules.tunings()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        var packet=PacketByteBufs.create();packet.writeNbt(n);ServerPlayNetworking.send(p,STATE,packet);
+        n.putByteArray("Tunings",NeoPayload.pack(NeoState.JSON.toJson(NeoRules.tunings()).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        var packet=PacketByteBufs.create();packet.writeNbt(n);
+        if(packet.readableBytes()>1_000_000){NeoMagic.LOG.error("Research snapshot too large for {}: {} bytes",p.getUuid(),packet.readableBytes());packet.release();return;}
+        ServerPlayNetworking.send(p,STATE,packet);
     }
+    static byte[] encodeData(NeoState.PlayerData data) {return NeoPayload.pack(NeoState.JSON.toJson(data).getBytes(java.nio.charset.StandardCharsets.UTF_8));}
     public static void hud(ServerPlayerEntity p) {
         if(!ServerPlayNetworking.canSend(p,HUD))return;
         var d=NeoRuntime.data(p);var a=NeoRuntime.ACTIVE.get(p.getUuid());
@@ -98,16 +101,17 @@ public final class NeoNetwork {
     private static void handle(ServerPlayerEntity p,NbtCompound request) {
         if(!p.isAlive()||p.isSpectator()){close(p);return;}
         Context c=OPEN.get(p.getUuid());if(c==null||!request.containsUuid("Token")||!c.token.equals(request.getUuid("Token")))return;
-        int now=p.getServer().getTicks();if(now-LAST.getOrDefault(p.getUuid(),-100)<2)return;LAST.put(p.getUuid(),now);
-        String action=request.getString("Action");var d=NeoRuntime.data(p);
+        String action=request.getString("Action");
         if(action.equals("close")){close(p);return;}
+        int now=p.getServer().getTicks();if(now-LAST.getOrDefault(p.getUuid(),-100)<2)return;LAST.put(p.getUuid(),now);
+        var d=NeoRuntime.data(p);
         if(action.equals("notes")) {
             String h=request.getString("Hypothesis"),con=request.getString("Conclusion");
             if(h.length()>1000||con.length()>1000)return;
-            d.hypothesis=h;d.conclusion=con;
             String ids=request.getString("Citations");if(ids.length()>256)return;
             var valid=d.records.stream().map(e->e.id).toList();
-            d.citations=Arrays.stream(ids.split(",")).filter(valid::contains).distinct().limit(4).toList();
+            var citations=Arrays.stream(ids.split(",")).filter(valid::contains).distinct().limit(4).toList();
+            d.hypothesis=h;d.conclusion=con;d.citations=citations;
         } else {
             if(!tableContext(p,c)){NeoRuntime.message(p,"need_table");send(p,false);return;}
             Blueprint b=decode(request.getString("Blueprint"));
@@ -140,9 +144,7 @@ public final class NeoNetwork {
     }
     public static void register() {
         ServerPlayNetworking.registerGlobalReceiver(ACTION,(server,p,handler,buf,sender)->{
-            if(buf.readableBytes()>16384)return;
-            final NbtCompound request;
-            try {request=buf.readNbt();if(request==null||buf.isReadable())return;}catch(RuntimeException bad){return;}
+            final NbtCompound request=readRequest(buf);if(request==null)return;
             server.execute(()->{try{handle(p,request);}catch(RuntimeException malformed){NeoRuntime.message(p,"invalid");}});
         });
         CommandRegistrationCallback.EVENT.register((dispatcher,access,environment)->dispatcher.register(CommandManager.literal("neomagic")
@@ -154,5 +156,33 @@ public final class NeoNetwork {
                 }))
                 .then(CommandManager.literal("reset_burden").executes(context->{NeoRuntime.relieve(context.getSource().getPlayerOrThrow(),Double.MAX_VALUE);return 1;}))
                 .then(CommandManager.literal("research_all").executes(context->{var p=context.getSource().getPlayerOrThrow();NeoMagic.SAMPLES.keySet().forEach(key->discover(p,key));return 1;}))));
+    }
+    static NbtCompound readRequest(net.minecraft.network.PacketByteBuf buf) {
+        if(buf.readableBytes()>16384)return null;
+        // This protocol is a flat compound of strings plus a UUID. Reject other NBT shapes
+        // before Minecraft's generic reader can construct expensive crash/hardware reports.
+        byte[] bytes=new byte[buf.readableBytes()];buf.readBytes(bytes);
+        try(var input=new java.io.DataInputStream(new java.io.ByteArrayInputStream(bytes))) {
+            if(input.readUnsignedByte()!=10||!requestString(input,0).isEmpty())return null;
+            var request=new NbtCompound();var seen=new HashSet<String>();
+            while(true) {
+                int type=input.readUnsignedByte();if(type==0)break;
+                String key=requestString(input,32);if(!seen.add(key))return null;
+                if(key.equals("Token")) {
+                    if(type!=11||input.readInt()!=4)return null;
+                    int[] uuid=new int[4];for(int i=0;i<4;i++)uuid[i]=input.readInt();request.putIntArray(key,uuid);
+                } else {
+                    int limit=switch(key){case "Action"->16;case "Blueprint"->4096;case "Hypothesis","Conclusion"->1000;case "Citations"->256;default->-1;};
+                    if(type!=8||limit<0)return null;
+                    String value=requestString(input,limit*3);if(value.length()>limit)return null;request.putString(key,value);
+                }
+            }
+            return input.available()!=0||!request.containsUuid("Token")||!request.contains("Action",8)?null:request;
+        }catch(java.io.IOException|RuntimeException malformed){return null;}
+    }
+    private static String requestString(java.io.DataInputStream input,int maxBytes)throws java.io.IOException {
+        input.mark(2);int length=input.readUnsignedShort();input.reset();
+        if(length>maxBytes||length>input.available()-2)throw new java.io.IOException("Invalid request string length");
+        return input.readUTF();
     }
 }

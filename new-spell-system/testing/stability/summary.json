@@ -1,0 +1,71 @@
+{
+  "version": "8.0.0-neomagic.2",
+  "sha256": "d967d451a746ae81a3434cef6d431ca128878b7d9a592126ee160d601b6d46f3",
+  "model": {
+    "seed": 20261027,
+    "sessions": 200000,
+    "valid_blueprints": 3043,
+    "simulated_ticks": 6180924,
+    "relief_events": 498710,
+    "completed": 124974,
+    "failed": 75026,
+    "invariant_checks": 20242056,
+    "seconds": 0.34
+  },
+  "data": {
+    "passed": true,
+    "legitimate_spell_identities": 12000,
+    "snapshot_raw_bytes": 1317695,
+    "snapshot_wire_bytes": 59079,
+    "players": 32,
+    "history_insertions": 64000,
+    "disk_roundtrips": 32,
+    "malformed_requests": 20000,
+    "checks": 21072
+  },
+  "world": {
+    "passed": true,
+    "simulated_players": 8,
+    "server_ticks": 72320,
+    "casts_attempted": 1895,
+    "checks": 578907,
+    "peak_active": 5,
+    "peak_bolts": 6,
+    "peak_summons": 13,
+    "reloads": 2,
+    "reconnects": 1,
+    "respawns": 1,
+    "form_switches": 1,
+    "wall_seconds": 297.3497701,
+    "failures": []
+  },
+  "restart": {
+    "passed": true,
+    "players": 8,
+    "checks": 16
+  },
+  "ui_close_short_regression": {
+    "passed": true,
+    "simulated_players": 8,
+    "server_ticks": 2720,
+    "casts_attempted": 137,
+    "checks": 19323,
+    "peak_active": 5,
+    "peak_bolts": 6,
+    "peak_summons": 13,
+    "reloads": 2,
+    "reconnects": 1,
+    "respawns": 1,
+    "form_switches": 1,
+    "wall_seconds": 14.3342031,
+    "failures": []
+  },
+  "artifact_bytes": 12843088,
+  "source_logs": [
+    "build/neomagic/stability-final-long.log",
+    "build/neomagic/stability-final-restart.log",
+    "build/neomagic/stability-final-regression.log",
+    "build/neomagic/stability-ui-close-final.log"
+  ],
+  "scope": "Eight simulated server-side players, accelerated GameTest; not real human multiplayer or hours of wall-clock uptime."
+}

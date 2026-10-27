@@ -24,12 +24,17 @@ public final class NeoWorldProbe {
     private static void check(boolean value,String message){checks++;if(!value)throw new AssertionError(message);}
     public static void run() throws Exception {
         for(ModInitializer mod:FabricLoader.getInstance().getEntrypoints("main",ModInitializer.class))mod.onInitialize();
-        var storage=LevelStorage.create(Path.of("saves"));var save=storage.createSession("neo-"+System.currentTimeMillis());
+        boolean stability=Boolean.getBoolean("neomagic.stability"),resume=Boolean.getBoolean("neomagic.resume");
+        Path marker=Path.of("last-world.txt");
+        String name=stability&&resume?Files.readString(marker).trim():"neo-"+System.currentTimeMillis();
+        if(stability&&!resume)Files.writeString(marker,name);
+        var storage=LevelStorage.create(Path.of("saves"));var save=storage.createSession(name);
         var directory=save.getDirectory(WorldSavePath.GENERATED).resolve("ssca_neomagic/structures");Files.createDirectories(directory);
         NbtCompound empty=new NbtCompound();empty.putInt("DataVersion",3465);NbtList size=new NbtList();for(int i=0;i<3;i++)size.add(NbtInt.of(12));empty.put("size",size);
         empty.put("entities",new NbtList());empty.put("blocks",new NbtList());NbtList palette=new NbtList();NbtCompound air=new NbtCompound();air.putString("Name","minecraft:air");palette.add(air);empty.put("palette",palette);
         NbtIo.writeCompressed(empty,directory.resolve("empty.nbt").toFile());
-        var test=new TestFunction("neomagic","world_lifecycle","ssca_neomagic:empty",300,0,true,NeoWorldProbe::test);
+        var test=stability?new TestFunction("neomagic","stability_soak","ssca_neomagic:empty",Integer.getInteger("neomagic.soakTicks",2400)*3+3000,0,true,NeoStabilityWorldProbe::start)
+                :new TestFunction("neomagic","world_lifecycle","ssca_neomagic:empty",300,0,true,NeoWorldProbe::test);
         var batch=new GameTestBatch("neomagic",List.of(test),world->{},world->{});
         MinecraftServer.startServer(thread->TestServer.create(thread,save,VanillaDataPackProvider.createManager(save),List.of(batch),new BlockPos(0,64,0)));
     }

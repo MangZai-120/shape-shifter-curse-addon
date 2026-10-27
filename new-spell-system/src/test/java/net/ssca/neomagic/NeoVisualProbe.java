@@ -27,6 +27,7 @@ public final class NeoVisualProbe {
                     }
                     mc.options.language="zh_cn";mc.options.getGuiScale().setValue(2);mc.onResolutionChanged();
                     mc.setScreen(new NeoScreen());
+                    snapshotRegression(mc);
                 } else if(step<=8) {
                     var screen=(NeoScreen)mc.currentScreen;
                     if(step%2==1) {
@@ -48,6 +49,18 @@ public final class NeoVisualProbe {
                 step++;
             } catch(Throwable error){error.printStackTrace();System.exit(2);}
         });
+    }
+    private static void snapshotRegression(net.minecraft.client.MinecraftClient mc) {
+        var n=new net.minecraft.nbt.NbtCompound();n.putUuid("Token",UUID.randomUUID());n.putBoolean("Table",true);
+        n.putByteArray("DataJson",NeoPayload.pack(NeoState.JSON.toJson(NeoClient.data).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        n.putString("Profile",NeoState.JSON.toJson(NeoClient.profile));n.putString("Rules","UI-test-fixture");
+        Map<Core,Coefficients> costs=new EnumMap<>(Core.class);for(Core core:Core.values())costs.put(core,coefficients(core));
+        n.putString("Costs",NeoState.JSON.toJson(costs));n.putByteArray("Tunings",NeoPayload.pack("{}".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        NeoClient.acceptSnapshot(mc,n);
+        if(NeoClient.data.known.size()!=18||NeoClient.COSTS.size()!=7||NeoClient.data.burden!=95)throw new AssertionError("Compressed snapshot did not reach the real client receiver");
+        var before=NeoClient.data;var token=NeoClient.token;var broken=n.copy();broken.putByteArray("DataJson",new byte[]{1,2,3});NeoClient.acceptSnapshot(mc,broken);
+        if(NeoClient.data!=before||!NeoClient.token.equals(token))throw new AssertionError("Malformed snapshot partially changed client state");
+        System.out.println("Neomagic native client snapshot: valid compressed data applied; malformed data rejected atomically.");
     }
     private static void checkLayout(NeoScreen screen) {
         var widgets=screen.children().stream().filter(e->e instanceof ClickableWidget).map(e->(ClickableWidget)e).toList();

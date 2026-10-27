@@ -17,7 +17,8 @@ public final class NeoRules implements SimpleSynchronousResourceReloadListener {
     private static String version = "v2-default";
     public static int recoveryDelay = 60;
     public static double recoveryRate = .25;
-    public static String version() { return version; }
+    private static final String ENGINE=net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("ssc_addon").map(mod->mod.getMetadata().getVersion().getFriendlyString()).orElse("test");
+    public static String version() { return ENGINE+":"+version; }
     public static Profile profile(String id) { return forms.getOrDefault(id,new Profile(100,1,1,1,1,true)); }
     public static Coefficients cost(Core c) { return costs.getOrDefault(c,coefficients(c)); }
     public static Map<String,Tuning> tunings(){return spells;}

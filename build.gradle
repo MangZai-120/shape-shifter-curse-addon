@@ -23,6 +23,53 @@ tasks.register('neoMagicTest', JavaExec) {
 }
 check.dependsOn neoMagicTest
 
+tasks.register('neoMagicStressModelTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.ssca.neomagic.NeoStressModelTest'
+    workingDir = layout.buildDirectory.dir('neomagic/stability').get().asFile
+    maxHeapSize = '768M'
+    doFirst { workingDir.mkdirs() }
+}
+
+tasks.register('neoMagicDataStabilityTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.ssca.neomagic.NeoIntegrationTest'
+    workingDir = layout.buildDirectory.dir('neomagic/stability-data').get().asFile
+    maxHeapSize = '2G'
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'neomagic.probe', 'net.ssca.neomagic.NeoDataStabilityProbe'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def classpathFile = new File(workingDir, 'classpath.txt')
+        classpathFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', classpathFile.absolutePath
+    }
+}
+
+tasks.register('neoMagicStabilityTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.ssca.neomagic.NeoWorldTest'
+    workingDir = layout.buildDirectory.dir('neomagic/stability').get().asFile
+    maxHeapSize = '2G'
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'neomagic.stability', 'true'
+    systemProperty 'neomagic.soakTicks', project.findProperty('neoSoakTicks') ?: '2400'
+    systemProperty 'neomagic.resume', project.findProperty('neoResume') ?: 'false'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def classpathFile = new File(workingDir, 'classpath.txt')
+        classpathFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', classpathFile.absolutePath
+    }
+}
+
 tasks.register('neoMagicIntegrationTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath

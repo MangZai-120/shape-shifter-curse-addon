@@ -9,6 +9,6 @@ public final class NeoIntegrationTest {
         Thread.currentThread().setContextClassLoader(loader);
         Class.forName("net.minecraft.SharedConstants",true,loader).getMethod("createGameVersion").invoke(null);
         Class.forName("net.minecraft.Bootstrap",true,loader).getMethod("initialize").invoke(null);
-        Class.forName("net.ssca.neomagic.NeoIntegrationProbe",true,loader).getMethod("run").invoke(null);
+        Class.forName(System.getProperty("neomagic.probe","net.ssca.neomagic.NeoIntegrationProbe"),true,loader).getMethod("run").invoke(null);
     }
 }

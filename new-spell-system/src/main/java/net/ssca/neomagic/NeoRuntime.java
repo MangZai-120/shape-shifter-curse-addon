@@ -23,7 +23,8 @@ public final class NeoRuntime {
         public final Hand hand;
         public final NeoEffects.Anchor anchor;
         public final int fullCooldown;
-        public int age;
+        public int age, beganTick;
+        public boolean settled;
         Active(Session s,NeoState.Experiment r,ItemStack wand,Hand hand,NeoEffects.Anchor anchor) {
             session=s;record=r;this.wand=wand;this.hand=hand;this.anchor=anchor;fullCooldown=NeoRules.cooldown(s.blueprint);
         }
@@ -59,12 +60,13 @@ public final class NeoRuntime {
         e.normal=quote.normal();e.actual=quote.actual();e.dimension=p.getWorld().getRegistryKey().getValue().toString();
         e.target=anchor.target()==null?anchor.position().toString():anchor.target().toString();
         d.add(e);var active=new Active(new Session(b,quote),e,p.getStackInHand(hand),hand,anchor);
-        ACTIVE.put(p.getUuid(),active);advance(p,active);NeoNetwork.send(p,false);
+        active.beganTick=p.getServer().getTicks();ACTIVE.put(p.getUuid(),active);advance(p,active);NeoNetwork.send(p,false);
     }
     private static void advance(ServerPlayerEntity p,Active a) {
+        if(a.settled)return;
         var d=data(p);var s=a.session;
         double delta=s.advance(a.age,d.burden,NeoRules.profile(d.form),new Random(p.getRandom().nextLong()));
-        d.burden+=delta;if(delta>0)d.recovery=NeoRules.recoveryDelay;
+        d.burden+=delta;if(delta>0){d.recovery=NeoRules.recoveryDelay;d.lastPaymentTick=p.getServer().getTicks();}
         a.record.paid=s.paid;a.record.checks=new ArrayList<>(s.checkpoints);a.record.yaw=s.yaw;a.record.pitch=s.pitch;a.record.reversed=s.reversed;
         if(s.failed) fail(p,a);
         else if(s.complete) {
@@ -72,12 +74,12 @@ public final class NeoRuntime {
             // Effects receive one immutable outcome; no later collapse checks run on it.
             if(NeoEffects.release(p,a)) {
                 a.record.result=s.quote.plan().stored()?"stored":"released";
-                d.cooldowns.put(s.blueprint.identity(),a.fullCooldown);
+                setCooldown(p,s.blueprint.identity(),a.fullCooldown);a.settled=true;
                 if(!s.quote.plan().stored())d.successful(s.blueprint);
             } else if(s.checkpoints.stream().anyMatch(Checkpoint::shifted)) fail(p,a);
             else {
                 a.record.result="target_lost";
-                d.cooldowns.put(s.blueprint.identity(),Math.max(10,a.fullCooldown/2));
+                setCooldown(p,s.blueprint.identity(),Math.max(10,a.fullCooldown/2));a.settled=true;
                 message(p,"target_invalid");
             }
             NeoNetwork.send(p,false);
@@ -85,8 +87,9 @@ public final class NeoRuntime {
         dirty(p);
     }
     public static void fail(ServerPlayerEntity p,Active a) {
+        if(a.settled)return;a.settled=true;
         ACTIVE.remove(p.getUuid());a.record.result="failed";
-        var d=data(p);d.cooldowns.put(a.session.blueprint.identity(),a.fullCooldown);
+        var d=data(p);setCooldown(p,a.session.blueprint.identity(),a.fullCooldown);
         double excess=Math.max(0,d.burden-NeoRules.profile(d.form).safety());
         if(excess>0) {
             p.damage(p.getDamageSources().magic(),(float)(1.5+.05*excess+.02*a.session.quote.actual()));
@@ -105,7 +108,7 @@ public final class NeoRuntime {
     }
     public static void cancel(ServerPlayerEntity p,String reason) {
         Active a=ACTIVE.remove(p.getUuid());if(a==null)return;
-        a.record.result=reason;data(p).cooldowns.put(a.session.blueprint.identity(),Math.max(10,a.fullCooldown/2));
+        a.record.result=reason;a.settled=true;setCooldown(p,a.session.blueprint.identity(),Math.max(10,a.fullCooldown/2));
         dirty(p);
     }
     public static void releaseOrCancel(ServerPlayerEntity p) {
@@ -117,15 +120,19 @@ public final class NeoRuntime {
     }
     public static void dirty(ServerPlayerEntity p) { NeoState.get(p.getServer()).markDirty(); }
     public static void message(ServerPlayerEntity p,String message) { p.sendMessage(NeoMagic.text(message),true); }
+    private static void setCooldown(ServerPlayerEntity p,String identity,int ticks) {
+        var d=data(p);d.cooldowns.put(identity,ticks);d.cooldownStarted.put(identity,p.getServer().getTicks());
+    }
     private static void tick(MinecraftServer server) {
         for(ServerPlayerEntity p:server.getPlayerManager().getPlayerList()) {
             refreshForm(p);var d=data(p);double prior=d.burden;int priorRecovery=d.recovery;boolean hadCooldowns=!d.cooldowns.isEmpty();var a=ACTIVE.get(p.getUuid());
-            d.cooldowns.replaceAll((key,ticks)->Math.max(0,ticks-1));d.cooldowns.values().removeIf(ticks->ticks==0);
+            d.cooldowns.replaceAll((key,ticks)->d.cooldownStarted.getOrDefault(key,Integer.MIN_VALUE)==server.getTicks()?ticks:Math.max(0,ticks-1));
+            d.cooldowns.values().removeIf(ticks->ticks==0);d.cooldownStarted.keySet().retainAll(d.cooldowns.keySet());
             if(a!=null) {
                 if(blocked(p)||p.getStackInHand(a.hand)!=a.wand||!a.record.dimension.equals(p.getWorld().getRegistryKey().getValue().toString()))cancel(p,"interrupted");
-                else {a.age++;advance(p,a);}
+                else if(server.getTicks()>a.beganTick){a.age++;advance(p,a);}
             } else if(p.isAlive()) {
-                if(d.recovery>0)d.recovery--;else if(d.burden>0)d.burden=Math.max(0,d.burden-NeoRules.recoveryRate);
+                if(server.getTicks()>d.lastPaymentTick){if(d.recovery>0)d.recovery--;else if(d.burden>0)d.burden=Math.max(0,d.burden-NeoRules.recoveryRate);}
             }
             if(server.getTicks()%5==0)NeoNetwork.hud(p);
             if(prior!=d.burden||priorRecovery!=d.recovery||hadCooldowns)dirty(p);
