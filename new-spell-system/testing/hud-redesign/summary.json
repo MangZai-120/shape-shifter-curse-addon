@@ -1,0 +1,30 @@
+{
+  "version": "8.0.0-neomagic.5",
+  "scope": "Client stability HUD and compact book gauge; gameplay logic unchanged",
+  "jar": "build/libs/shape-shifter-curse-addon-8.0.0-neomagic.5.jar",
+  "sha256": "c511d196627618b599b0ace3136664715bbc53716ca068f55fba2aaaf57287b3",
+  "native_ui_screenshots": 8,
+  "hud_states": [
+    "stable",
+    "forecast_overload",
+    "casting_overload",
+    "critical_disrupted"
+  ],
+  "native_viewports": [
+    [
+      640,
+      480
+    ],
+    [
+      320,
+      240
+    ]
+  ],
+  "native_hud_bounds": "passed",
+  "fabric_integration_checks": 299,
+  "book_hud_transform_checks": 42,
+  "render_geometry_checks": 642022,
+  "resources_json": 60,
+  "bilingual_keys": 238,
+  "manual_live_gameplay_acceptance": false
+}

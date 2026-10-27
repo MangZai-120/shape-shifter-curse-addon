@@ -185,16 +185,8 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 			RenderSystem.enableBlend();
 			RenderSystem.defaultBlendFunc();
 
-            var neo = net.ssca.neomagic.client.NeoClient.hud;
-            double collapse = neo.getDouble("C"), safety = neo.getDouble("S");
-            int barW=76, barH=10, barX=baseX-7, barY=baseY-14;
-            double extent=Math.max(safety+60,collapse*1.1);
-            ctx.fill(barX,barY,barX+barW,barY+barH,0xFF394657);
-            ctx.fill(barX,barY,barX+(int)(barW*Math.min(collapse,safety)/extent),barY+barH,0xFF72B4A5);
-            if(collapse>safety)ctx.fill(barX+(int)(barW*safety/extent),barY,barX+(int)(barW*collapse/extent),barY+barH,0xFFD57462);
-            int safeX=barX+(int)(barW*safety/extent);ctx.fill(safeX,barY-1,safeX+1,barY+barH+1,0xFFFFD57B);
-            ctx.drawText(mc.textRenderer,net.ssca.neomagic.NeoMagic.text("book_bar",net.ssca.neomagic.client.NeoClient.f(collapse),net.ssca.neomagic.client.NeoClient.f(safety)),barX+barW+4,barY,0xE5D7B6,true);
-            ctx.drawText(mc.textRenderer,Text.literal("+"+net.ssca.neomagic.client.NeoClient.f(neo.getDouble("Q"))),barX+barW+4,barY+10,collapse>safety?0xFF7777:0x72B4A5,true);
+            net.ssca.neomagic.client.NeoStabilityHud.drawBookGauge(ctx,mc.textRenderer,
+                    net.ssca.neomagic.client.NeoClient.hud,baseX-7,baseY-14,76,System.nanoTime()/50_000_000.0);
 
 			// 三槽：中槽(22)居中，左右小槽(16)相对中槽对称分布，间隙均为 4px（卷轴读快照，帧间零 NBT）
 			drawSlot(ctx, mc, book, prev, baseX, baseY + 3, 16, false, snap.prevScroll);

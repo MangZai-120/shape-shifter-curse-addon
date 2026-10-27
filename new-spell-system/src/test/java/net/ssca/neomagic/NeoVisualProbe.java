@@ -43,7 +43,15 @@ public final class NeoVisualProbe {
                 } else if(step==11)click((NeoScreen)mc.currentScreen,"panel.0");
                 else if(step==12) {
                     save(mc,"06-narrow-components.png");checkLayout((NeoScreen)mc.currentScreen);
-                    System.out.println("Neomagic native Minecraft UI: 6 screenshots; 320x240 layout checked for bounds and overlapping controls. Fixture data, not live network acceptance.");
+                } else if(step==13) {
+                    mc.options.getGuiScale().setValue(2);mc.onResolutionChanged();mc.setScreen(new NeoHudPreviewScreen());
+                } else if(step==14) {
+                    save(mc,"07-stability-hud.png");((NeoHudPreviewScreen)mc.currentScreen).verify();
+                } else if(step==15) {
+                    mc.options.getGuiScale().setValue(4);mc.onResolutionChanged();
+                } else if(step==16) {
+                    save(mc,"08-stability-hud-narrow.png");((NeoHudPreviewScreen)mc.currentScreen).verify();
+                    System.out.println("Neomagic native Minecraft UI: 8 screenshots; stability HUD safe/forecast/casting/critical fixtures, book strip and 320x240 bounds checked. Fixture data, not live network acceptance.");
                     mc.scheduleStop();
                 }
                 step++;

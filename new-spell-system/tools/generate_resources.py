@@ -105,6 +105,24 @@ for key,(cn,eng) in errors.items():zh["error."+key]=cn;en["error."+key]=eng
 for key,(cn,eng) in results.items():zh["result."+key]=cn;en["result."+key]=eng
 for group,values in [("core",cores),("carrier",carriers),("control",controls)]:
     for key,value in values.items():zh[group+"."+key.lower()]=value;en[group+"."+key.lower()]=key.title()
+zh.update({"stability.title":"形态稳定度", "stability.values":"崩解值 / 安全阈值",
+    "stability.status.stable":"稳定", "stability.status.forecast_overload":"将超载", "stability.status.overload":"超载",
+    "stability.status.critical":"危险", "stability.status.blocked":"失稳", "stability.status.casting":"构式中",
+    "stability.status.stored":"已蓄存", "stability.status.recovering":"回稳中",
+    "stability.headroom":"稳定余量 %s", "stability.excess":"超载 +%s", "stability.cost":"代价 +%s",
+    "stability.failure":"失败 %s", "stability.offset":"偏移 %s", "stability.cooldown":"CD %ss",
+    "stability.recovery_wait":"恢复 %ss", "stability.recovering":"回稳中", "stability.ready":"就绪",
+    "stability.blocked_for":"失稳 · %s 秒后可施法", "stability.stored_help":"术式已蓄存 · 潜行使用以释放",
+    "stability.prepared":"准备完成 · 等待释放", "stability.channel":"施法 %s / %s 秒 · 已付 %s"})
+en.update({"stability.title":"FORM STABILITY", "stability.values":"BURDEN / SAFE LIMIT",
+    "stability.status.stable":"Stable", "stability.status.forecast_overload":"Near limit", "stability.status.overload":"Overload",
+    "stability.status.critical":"Critical", "stability.status.blocked":"Disrupted", "stability.status.casting":"Casting",
+    "stability.status.stored":"Stored", "stability.status.recovering":"Recovering",
+    "stability.headroom":"Headroom %s", "stability.excess":"Excess +%s", "stability.cost":"Cost +%s",
+    "stability.failure":"Fail %s", "stability.offset":"Drift %s", "stability.cooldown":"CD %ss",
+    "stability.recovery_wait":"Wait %ss", "stability.recovering":"Recovering", "stability.ready":"Ready",
+    "stability.blocked_for":"Disrupted / %ss remaining", "stability.stored_help":"Stored / sneak-use to release",
+    "stability.prepared":"Prepared / awaiting release", "stability.channel":"Cast %s / %ss / Paid %s"})
 zh.update({"legacy_measurements":"本条记录观察准备支付与抽卡；原法术的后续伤害／治疗未纳入此计量器。",
     "altar.mana":"安全", "altar.recovery":"崩解恢复 ×%s", "altar.no_charge":"仅升级与配阵，不自动耗料充蓝",
     "altar.next_mana":"下阶安全加成 +%s", "altar.mastery_bonus":"精通安全加成 +%s",

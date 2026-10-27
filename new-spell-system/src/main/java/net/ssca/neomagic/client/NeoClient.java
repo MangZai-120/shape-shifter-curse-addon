@@ -78,19 +78,7 @@ public final class NeoClient implements ClientModInitializer {
     }
     private static void renderHud(DrawContext c,float delta) {
         var mc=MinecraftClient.getInstance();if(mc.player==null||mc.options.hudHidden||!hud.getBoolean("Visible"))return;
-        int width=Math.min(220,mc.getWindow().getScaledWidth()-16),x=8,y=8;
-        double value=hud.getDouble("C"),safety=hud.getDouble("S"),max=Math.max(safety+60,value*1.1);
-        c.fill(x-3,y-3,x+width+3,y+58,0xC0121D2A);
-        c.fill(x,y+13,x+width,y+20,0xFF394657);
-        c.fill(x,y+13,x+(int)(width*Math.min(value,safety)/max),y+20,0xFF72B4A5);
-        if(value>safety)c.fill(x+(int)(width*safety/max),y+13,x+(int)(width*value/max),y+20,0xFFD57462);
-        int safeX=x+(int)(width*safety/max);c.fill(safeX,y+11,safeX+1,y+22,0xFFFFD57B);
-        c.drawText(mc.textRenderer,NeoMagic.text("hud_bar",f(value),f(safety),f(Math.max(0,value-safety))),x,y,0xFFE5D7B6,false);
-        c.drawText(mc.textRenderer,NeoMagic.text("hud_risk",f(hud.getDouble("Q")),pc(hud.getDouble("Failure")),pc(hud.getDouble("Offset"))),x,y+25,0xFFB2D2D8,false);
-        c.drawText(mc.textRenderer,hud.getBoolean("Stored")?NeoMagic.text("stored_hint"):hud.getInt("Age")>=0?
-                NeoMagic.text("hud_preparing",hud.getInt("Age"),hud.getInt("Prep"),f(hud.getDouble("Paid"))):
-                NeoMagic.text("hud_recovery",hud.getInt("Recovery")/20.0,hud.getInt("CD")/20.0,hud.getInt("Blocked")/20.0),x,y+37,0xFFD2CBC0,false);
-        if(hud.getInt("Age")>=0)c.drawText(mc.textRenderer,NeoMagic.text("hud_deviation",pc(hud.getDouble("Cumulative")),f(hud.getDouble("Yaw")),f(hud.getDouble("Pitch"))),x,y+49,0xFFD2CBC0,false);
+        NeoStabilityHud.draw(c,mc.textRenderer,hud,8,8,Math.min(NeoStabilityHud.WIDTH,mc.getWindow().getScaledWidth()-16),System.nanoTime()/50_000_000.0);
     }
     public static String f(double n) {return String.format(Locale.ROOT,"%.1f",n);}
     public static String pc(double n) {return String.format(Locale.ROOT,"%.1f%%",n*100);}
