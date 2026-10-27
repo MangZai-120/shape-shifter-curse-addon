@@ -40,61 +40,8 @@ public final class SpellCastManager {
 	}
 
 	public static void castDowngraded(ServerPlayerEntity player, int slot, int token) {
-		if (SpellChannelManager.isCasting(player)) return;
-		ItemStack book = getEquippedBook(player);
-		if (book == null || book.isEmpty()) {
-			return;
-		}
-		int count = SpellbookData.getSlotCount(book);
-		if (slot < 0 || slot >= count) {
-			return;
-		}
-		ItemStack scroll = SpellbookData.getScroll(book, slot);
-		if (scroll.isEmpty()) {
-			return;
-		}
-		if (ArcaneAnalysis.isUnanalyzed(scroll)) {
-			player.sendMessage(Text.translatable("message.ssc_addon.analysis.required"), true);
-			return;
-		}
-		Spell spell = ScrollData.getSpell(scroll);
-		if (spell == null) {
-			return;
-		}
-		if (FormCastingStyle.isSwapStabilizing(player)) {
-			SpellChannelManager.playNoManaSound(player); // 换书稳定期/CD 类拒绝：火焰熄灭音（2026-09-19 用户定稿）
-			player.sendMessage(SpellCastFeedback.stabilizing(FormCastingStyle.getSwapReadyAt(player) - player.getWorld().getTime()), true);
-			return;
-		}
-		if (ScrollData.isOnCooldown(scroll, player.getWorld())
-				|| SharedSpellCooldowns.isOnSharedCooldown(player, spell)) {
-			SpellChannelManager.playNoManaSound(player); // CD 中施放：火焰熄灭音
-			player.sendMessage(SpellCastFeedback.cooldown(SharedSpellCooldowns.getEffectiveCooldownEnd(player, scroll) - player.getWorld().getTime()), true);
-			return;
-		}
-		int top = ScrollData.getCastLevel(scroll);
-		int topCost = SpellNumbers.finalManaCost(spell, book, player, top, scroll);
-		// 客户端预检后可能刚好回能；原档已付得起时正常施放，不错误附加降档惩罚。
-		if (SpellbookData.canPayMana(book, topCost)) {
-			castInternal(player, slot, 0, 1.0f, token);
-			return;
-		}
-		// 红色稀有度（单档）法术不得降档（2026-09-24 用户定稿）：与已是最低档同路处理。
-		// 服务端防御：防止伪造降档包或未来红色法术配多条 levels 时绕过客户端守卫。
-		if (top <= 1 || spell.getMaxLevel() <= 1) {
-			SpellChannelManager.playNoManaSound(player); // 法力不足：火焰熄灭音
-			// 已是最低档仍不足：与正常施放同样提示（保持行为一致）
-			player.sendMessage(SpellCastFeedback.noMana(book, topCost).copy().formatted(Formatting.RED), true);
-			return;
-		}
-		// 从高到低找付得起的最高档（与正式结算同式，含法阵/亲和/潮汐）
-		int payable = SpellNumbers.highestAffordableLevel(spell, book, player, top - 1, scroll);
-		if (payable <= 0) {
-			SpellChannelManager.playNoManaSound(player); // 全档位都付不起：熄灭音
-			player.sendMessage(SpellCastFeedback.noMana(book, topCost).copy().formatted(Formatting.RED), true);
-			return;
-		}
-		castInternal(player, slot, payable, 1.2f, token);
+		// C has no affordability gate; manual level selection remains available.
+		castInternal(player, slot, 0, 1.0f, token);
 	}
 
 	/** 内部统一施法：forcedLevel>0 用指定档（临时降档），否则用卷轴档位；cdPenalty 为本次 CD 惩罚倍率。 */
@@ -153,12 +100,7 @@ public final class SpellCastManager {
 		// （耗蓝按施放档位算——低阶施放省蓝；召唤亲和 +1 只加强施法效果，不推高耗蓝）
 		RuneModifiers runeModifiers=RuneScheme.modifiers(player,scroll,level);
         int manaCost = SpellNumbers.finalManaCost(spell, book, player, level, scroll);
-		// 书内法术只按 HUD 书能量判定；形态能量不能把书不足的施法放行。
-		if (!SpellbookData.canPayMana(book, manaCost)) {
-			SpellChannelManager.playNoManaSound(player); // 法力不足：火焰熄灭音
-			player.sendMessage(SpellCastFeedback.noMana(book, manaCost).copy().formatted(Formatting.RED), true);
-			return;
-		}
+
 
 		// 施法前置校验（如陨火要求准星命中方块）：失败拒绝施法、不耗法力/CD（仿契灵传送失败不消耗）
 		if (spell.getCastingMode() == SpellCastingRules.Mode.AUTOMATIC && !RuneCastContext.with(runeModifiers,()->spell.canCast(player))) {
@@ -198,7 +140,7 @@ public final class SpellCastManager {
 		}
 		final int castLevel = level;
 		final int castMana = manaCost;
-		// 起手必须付得起整次报价；实际扣费由统一施法流程每 2 tick 按进度结算。
+		// Book bonuses quote collapse; preparation pays the player's C every 2 ticks.
 		SpellChannelManager.start(player, spell, scroll, level, false, token, manaCost, cd,
 				() -> getEquippedBook(player) == book && ItemStack.areEqual(SpellbookData.getScroll(book, slot), scroll),
 				target -> finishCast(player, book, scroll, spell, runeDamage, castLevel, castMana, forcedLevel, target),
@@ -217,7 +159,7 @@ public final class SpellCastManager {
 			float damage, int level, int manaCost, int forcedLevel, net.minecraft.util.math.Vec3d target) {
 		FormationElement spellElement = spell.getElement();
 		// 记录耗蓝时刻：自然回复 7 秒延迟从此起算（再次施法重置）
-		FormCastingStyle.markManaSpend(player);
+		manaCost = net.ssca.neomagic.NeoLegacyCasting.actualCost(manaCost);
 		// 一次施法返还预算（阶段 B §7.4）：本次耗蓝 ×50% 为上限，多弹丸/AOE 共享
 		spell.ssc_addon$setRefundCastId(FormCastingStyle.openRefundBudget(player, manaCost));
 		// 经验机制（exp_mode，2026-09-15）——基数按「法术基础成本（基础耗蓝×等级倍率）× 有效技能等级」
@@ -244,12 +186,13 @@ public final class SpellCastManager {
 		}
 		// 统一四参入口：法术内部自行决定是否按等级缩放速度/外观/范围（无 instanceof 特判）
 		try {
-			spell.castAtTarget(player, damage, false, level, scroll, target);
+			spell.castAtTarget(player, net.ssca.neomagic.NeoLegacyCasting.power(damage), false, level, scroll, target);
 		} finally {
 			spell.ssc_addon$clearPendingExp();
 			spell.ssc_addon$clearRefundCastId();
 		}
 		// 风灵「风行」等施放即返类流派（不要求命中）
+		if(net.ssca.neomagic.NeoLegacyCasting.missed())return;
 		FormCastingStyle.onSpellCast(player, spellElement, manaCost);
 		// 降档施放告知（临时档不写卷轴，玩家需要知道本次按了几档）
 		if (forcedLevel > 0) {

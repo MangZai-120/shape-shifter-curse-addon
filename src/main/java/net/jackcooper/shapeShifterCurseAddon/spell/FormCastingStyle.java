@@ -70,9 +70,13 @@ public final class FormCastingStyle {
 
 	/** Exact per-second settlement, including level, recovery formations and integer rounding. */
 	public static int naturalRegenPerSecond(ItemStack book) {
+		return Math.round((float)naturalRegenRate(book));
+	}
+	/** Continuous collapse recovery retains the formation's exact percentage before settlement. */
+	public static double naturalRegenRate(ItemStack book) {
 		float base = (float) BAL.d("base_book_regen_per_sec", BASE_BOOK_REGEN_PER_SEC)
 				+ (SpellbookData.getLevel(book) - 1);
-		return Math.round(base * FormationData.universalRecoveryMultiplier(book));
+		return base * FormationData.universalRecoveryMultiplier(book);
 	}
 
 	public static long getNaturalRegenAt(ServerPlayerEntity player) {
@@ -84,7 +88,7 @@ public final class FormCastingStyle {
 	private static boolean canRegenerate(ServerPlayerEntity player) {
 		int delay = naturalRegenDelayTicks();
 		Long last = LAST_SPEND_TICK.get(player.getUuid());
-		return SpellCastingRules.naturalRegenAllowed(SpellChannelManager.isCasting(player),
+		return SpellCastingRules.naturalRegenAllowed(net.ssca.neomagic.NeoLegacyCasting.isCasting(player),
 				last == null ? delay : player.getWorld().getTime() - last, delay);
 	}
 
@@ -186,11 +190,11 @@ public final class FormCastingStyle {
 		if (element == FormationElement.FIRE && FormUtils.isForm(caster, FormIdentifiers.GOLDEN_SANDSTORM_SP)) {
 			if (killed) {
 				if (enterWindow(caster)) {
-					SpellbookData.addMana(book, budget.grant(0.5f));
+					net.ssca.neomagic.NeoLegacyCasting.restore(caster, budget.grant(0.5f));
 				}
 			} else if (conditionBeforeHit) {
 				if (enterWindow(caster)) {
-					SpellbookData.addMana(book, budget.grant(0.2f));
+					net.ssca.neomagic.NeoLegacyCasting.restore(caster, budget.grant(0.2f));
 				}
 			}
 			return;
@@ -198,14 +202,14 @@ public final class FormCastingStyle {
 		// 堕灵「噬咒」：诅咒系命中已带负面效果的目标返 25% 耗蓝（配合诅咒标记连招；受单次预算封顶）
 		if (element == FormationElement.CURSE && FormUtils.isForm(caster, FormIdentifiers.FALLEN_ALLAY_SP)) {
 			if (conditionBeforeHit && enterWindow(caster)) {
-				SpellbookData.addMana(book, budget.grant(0.25f));
+				net.ssca.neomagic.NeoLegacyCasting.restore(caster, budget.grant(0.25f));
 			}
 			return;
 		}
 		// 食梦魔「噬梦」：虚无系命中返 50% 本次耗蓝（用户定稿；受单次预算 ≤50% 封顶，防 AOE 多目标膨胀）
 		if (element == FormationElement.VOID && FormUtils.isForm(caster, FormIdentifiers.WILD_CAT_NIGHTMARE)) {
 			if (enterWindow(caster)) {
-				SpellbookData.addMana(book, budget.grant(0.5f));
+				net.ssca.neomagic.NeoLegacyCasting.restore(caster, budget.grant(0.5f));
 			}
 		}
 	}
@@ -246,7 +250,7 @@ public final class FormCastingStyle {
 		if (!ResourceBars.consume(player, BarKeys.SEED, 1)) {
 			return false;
 		}
-		int added = SpellbookData.addMana(book, 10);
+		int added = net.ssca.neomagic.NeoLegacyCasting.restore(player, 10);
 		if (added <= 0) {
 			// 书已满：退回种子（不白耗）
 			ResourceBars.gain(player, BarKeys.SEED, 1);
@@ -279,7 +283,7 @@ public final class FormCastingStyle {
 				&& FormUtils.isForm(caster, FormIdentifiers.OCELOT_SP)) {
 			ItemStack book = SpellCastManager.getEquippedBook(caster);
 			if (book != null && !book.isEmpty()) {
-				SpellbookData.addMana(book, Math.round(manaCost * 0.15f));
+				net.ssca.neomagic.NeoLegacyCasting.restore(caster, Math.round(manaCost * 0.15f));
 			}
 		}
 	}
@@ -361,10 +365,10 @@ public final class FormCastingStyle {
 		});
 		// 血契：血值每 +1 → 书法术值 +1（BarTrigger 挂蝙蝠血条；下降不触发；施法期间暂停）
 		BarKeys.BAT_BLOOD.addTrigger((player, oldV, newV, max) -> {
-			if (newV > oldV && !SpellChannelManager.isCasting(player)) {
+			if (newV > oldV && !net.ssca.neomagic.NeoLegacyCasting.isCasting(player)) {
 				ItemStack book = SpellCastManager.getEquippedBook(player);
 				if (book != null && !book.isEmpty()) {
-					SpellbookData.addMana(book, newV - oldV);
+					net.ssca.neomagic.NeoLegacyCasting.restore(player, newV - oldV);
 				}
 			}
 		});
@@ -389,17 +393,15 @@ public final class FormCastingStyle {
 		}
 		// 全书通用自然回复：基础 3/秒 + 每书等级 +1（Lv1=3/Lv2=4/Lv3=5）× 回息法阵倍率（每级 +20% 可叠加）；
 		// 活动施法及耗蓝后 7 秒内不回复；月相、共生等流派回复不受此限。
-		if (canRegenerate(player)) {
-			SpellbookData.addMana(book, naturalRegenPerSecond(book));
-		}
+		// Natural recovery is settled once by NeoRuntime with this book multiplier.
 		// 施法期间书能量不回复（2026-09-23 用户定稿，同回能法阵）：保证整次施法净消耗与报价一致
-		boolean casting = SpellChannelManager.isCasting(player);
+		boolean casting = net.ssca.neomagic.NeoLegacyCasting.isCasting(player);
 		// 月相（朔望）：书自然回复，无能量体系的纯书流派
 		if (!casting && FormUtils.isForm(player, FormIdentifiers.OCELOT_NOVA)) {
 			if (player.getWorld().isNight()) {
-				SpellbookData.addMana(book, 1);                       // 夜间 1/s
+				net.ssca.neomagic.NeoLegacyCasting.restore(player, 1);                       // 夜间 1/s
 			} else if (serverTicks % 100 == 0) {
-				SpellbookData.addMana(book, 1);                       // 白天 0.2/s
+				net.ssca.neomagic.NeoLegacyCasting.restore(player, 1);                       // 白天 0.2/s
 			}
 			return;
 		}
@@ -420,7 +422,7 @@ public final class FormCastingStyle {
 			}
 			count = Math.min(count, 3); // 回蓝计数上限 3 只（实体上限另计：契约容量 6）
 			if (count > 0) {
-				SpellbookData.addMana(book, count);
+				net.ssca.neomagic.NeoLegacyCasting.restore(player, count);
 			}
 		}
 	}

@@ -185,28 +185,16 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 			RenderSystem.enableBlend();
 			RenderSystem.defaultBlendFunc();
 
-			// 法力条：空条(底,含金框与中心装饰)始终画满宽，满条按法力%从左裁剪叠上
-			int mana = snap.mana;
-			int maxMana = snap.maxMana;
-			int barW = 76, barH = 10;
-			int barX = baseX - 7, barY = baseY - 14; // 76px 条相对三槽(中心 baseX+31)居中：left=中心-38=baseX-7
-			ctx.drawTexture(TEX_BAR_EMPTY, barX, barY, 0, 0, barW, barH, barW, barH);
-			int fillW = maxMana > 0 ? (int) ((long) barW * mana / maxMana) : 0;
-			if (fillW > 0) {
-				ctx.drawTexture(TEX_BAR_FULL, barX, barY, 0, 0, fillW, barH, barW, barH);
-			}
-			int manaTextX = barX + barW + 4;
-			int manaTextY = barY + 1;
-			ctx.drawText(mc.textRenderer, Text.literal(mana + "/" + maxMana), manaTextX, manaTextY, 0xC8B0FF, true);
-			// 当前法术耗蓝以小字号 (-N) 显示在蓝量数字下方，共用左边缘。
-			if (snap.manaCost >= 0) {
-				ctx.getMatrices().push();
-				ctx.getMatrices().translate(manaTextX, manaTextY + mc.textRenderer.fontHeight + 2, 0);
-				ctx.getMatrices().scale(MANA_COST_TEXT_SCALE, MANA_COST_TEXT_SCALE, 1.0f);
-				ctx.drawText(mc.textRenderer, Text.literal("(-" + snap.manaCost + ")"), 0, 0,
-						snap.manaCost > mana ? 0xFF7777 : 0xC8B0FF, true);
-				ctx.getMatrices().pop();
-			}
+            var neo = net.ssca.neomagic.client.NeoClient.hud;
+            double collapse = neo.getDouble("C"), safety = neo.getDouble("S");
+            int barW=76, barH=10, barX=baseX-7, barY=baseY-14;
+            double extent=Math.max(safety+60,collapse*1.1);
+            ctx.fill(barX,barY,barX+barW,barY+barH,0xFF394657);
+            ctx.fill(barX,barY,barX+(int)(barW*Math.min(collapse,safety)/extent),barY+barH,0xFF72B4A5);
+            if(collapse>safety)ctx.fill(barX+(int)(barW*safety/extent),barY,barX+(int)(barW*collapse/extent),barY+barH,0xFFD57462);
+            int safeX=barX+(int)(barW*safety/extent);ctx.fill(safeX,barY-1,safeX+1,barY+barH+1,0xFFFFD57B);
+            ctx.drawText(mc.textRenderer,net.ssca.neomagic.NeoMagic.text("book_bar",net.ssca.neomagic.client.NeoClient.f(collapse),net.ssca.neomagic.client.NeoClient.f(safety)),barX+barW+4,barY,0xE5D7B6,true);
+            ctx.drawText(mc.textRenderer,Text.literal("+"+net.ssca.neomagic.client.NeoClient.f(neo.getDouble("Q"))),barX+barW+4,barY+10,collapse>safety?0xFF7777:0x72B4A5,true);
 
 			// 三槽：中槽(22)居中，左右小槽(16)相对中槽对称分布，间隙均为 4px（卷轴读快照，帧间零 NBT）
 			drawSlot(ctx, mc, book, prev, baseX, baseY + 3, 16, false, snap.prevScroll);

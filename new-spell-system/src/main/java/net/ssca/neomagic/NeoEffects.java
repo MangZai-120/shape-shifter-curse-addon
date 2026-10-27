@@ -88,7 +88,7 @@ public final class NeoEffects {
     }
     private static boolean apply(ServerPlayerEntity p,NeoRuntime.Active a) {
         Session s=a.session;Blueprint b=s.blueprint;Plan plan=s.quote.plan();
-        double budget=9*b.scale()*plan.retention()*s.attenuation;
+        double budget=9*b.scale()*plan.retention()*s.attenuation*a.powerMultiplier;
         if(b.carrier()==Carrier.PROJECTILE) {
             a.record.pending=plan.branches();
             for(int i=0;i<plan.branches();i++) {

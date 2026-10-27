@@ -48,7 +48,8 @@ public class MoonDustSpellbookItem extends AccessoryItem {
 		}
 		// 潜行 + 右键：播种未触发（非寄生果蝠/无种子/书满）时不回落开界面，保留潜行手势语义干净
 		if (user.isSneaking()) {
-			return TypedActionResult.pass(stack);
+			if (user instanceof ServerPlayerEntity sp) net.ssca.neomagic.NeoNetwork.open(sp,null);
+            return TypedActionResult.success(stack,world.isClient);
 		}
 		// 普通右键：打开魔法书配置界面（2026-09-17 由潜行右键改为右键，用户指定）
 		if (!world.isClient) {
@@ -84,7 +85,7 @@ public class MoonDustSpellbookItem extends AccessoryItem {
 		int mana = SpellbookData.getMana(stack);
 		int maxMana = SpellbookData.getMaxMana(stack);
 		tooltip.add(Text.translatable("item.ssc_addon.moon_dust_spellbook.tip_level", level, slots).formatted(Formatting.AQUA));
-		tooltip.add(Text.translatable("item.ssc_addon.moon_dust_spellbook.tip_mana", mana, maxMana).formatted(Formatting.BLUE));
+		tooltip.add(net.ssca.neomagic.NeoMagic.text("book_bonus",String.format(java.util.Locale.ROOT,"%.1f",net.ssca.neomagic.NeoLegacyCasting.safetyBonus(stack)),String.format(java.util.Locale.ROOT,"%.2f",net.ssca.neomagic.NeoLegacyCasting.recoveryMultiplier(stack))).formatted(Formatting.BLUE));
 		int need = SpellbookData.getExpToNext(stack);
 		if (need > 0) {
 			// 未满级：显示升级进度（1 位小数）
@@ -98,15 +99,15 @@ public class MoonDustSpellbookItem extends AccessoryItem {
 			if (masteryNeed > 0) {
 				// 当前档内进度：从 ×10 整数取模折算（避免浮点 % 精度误差）
 				float tierProgress = (SpellbookData.getExpTen(stack) % SpellbookData.masteryExpPerTier()) / 10.0f;
-				tooltip.add(Text.translatable("item.ssc_addon.moon_dust_spellbook.tip_mastery",
+				tooltip.add(Text.translatable("neomagic.book_mastery",
 						tier + 1, String.format(java.util.Locale.ROOT, "%.1f", tierProgress),
 						String.format(java.util.Locale.ROOT, "%.1f", masteryNeed / 10.0f)).formatted(Formatting.GOLD));
 			} else {
-				tooltip.add(Text.translatable("item.ssc_addon.moon_dust_spellbook.tip_mastery_max",
+				tooltip.add(Text.translatable("neomagic.book_mastery_max",
 						tier, SpellbookData.getMasteryManaBonus(stack)).formatted(Formatting.GOLD));
 			}
 		}
-		tooltip.add(Text.translatable("item.ssc_addon.moon_dust_spellbook.tip_hint").formatted(Formatting.DARK_GRAY));
+		tooltip.add(net.ssca.neomagic.NeoMagic.text("book_help").formatted(Formatting.DARK_GRAY));
 		super.appendTooltip(stack, world, tooltip, context);
 	}
 }

@@ -84,3 +84,8 @@
 - [笔记页预览](../ui/previews/04-notes.png)
 
 原型的规则检查为`node new-spell-system/ui/model-check.js`。界面操作、持久化与宽窄布局检查由`review-ui.js`使用独立无头浏览器执行，结果保存在[review.json](../ui/previews/review.json)。这些检查不代表Minecraft中的UI或法术已经实现。
+
+
+## 九、法术书接管后的游戏界面
+
+`neomagic.3` 保留原书配置、卷轴槽与三槽选择器，将原蓝条改画为崩解条、安全标记与 `+Q`。左上承载面板在装备书时直接可见，显示实时 C／S、准备支付与风险。书页和法阵提示改用安全阈值／恢复术语，潜行右键书可查看研究。详见[接管与加成映射](旧法术书接管与加成映射.md)。

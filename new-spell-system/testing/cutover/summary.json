@@ -1,0 +1,40 @@
+{
+  "version": "8.0.0-neomagic.3",
+  "jar": "build/libs/shape-shifter-curse-addon-8.0.0-neomagic.3.jar",
+  "sha256": "e0f64261f020764b568eac0d972a90342d5d1a27980a9a3d7d6eb02b56ba2b20",
+  "project_check": "passed",
+  "book_world_checks": 866,
+  "model_checks": 3789,
+  "fabric_checks": 274,
+  "native_world_checks": 30,
+  "data_stability_checks": 21072,
+  "native_ui_screenshots": 6,
+  "native_ui_viewport": [
+    320,
+    240
+  ],
+  "client_snapshot_cases": [
+    "book_cost_multiplier",
+    "zero_power_from_opposing_formations",
+    "malformed_gzip_rejected_atomically",
+    "non_finite_book_modifier_rejected_atomically"
+  ],
+  "stability": {
+    "passed": true,
+    "simulated_players": 8,
+    "server_ticks": 2720,
+    "casts_attempted": 128,
+    "checks": 19323,
+    "peak_active": 5,
+    "peak_bolts": 6,
+    "peak_summons": 13,
+    "reloads": 2,
+    "reconnects": 1,
+    "respawns": 1,
+    "form_switches": 1,
+    "wall_seconds": 5.9193857,
+    "failures": []
+  },
+  "manual_multiplayer_acceptance": false,
+  "original_main_modified": false
+}

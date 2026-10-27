@@ -61,9 +61,12 @@ public final class NeoNetwork {
         Context c=OPEN.get(p.getUuid());if(c==null||!ServerPlayNetworking.canSend(p,STATE))return;
         NbtCompound n=new NbtCompound();n.putBoolean("Open",open);n.putUuid("Token",c.token);n.putBoolean("Table",tableContext(p,c));
         n.putByteArray("DataJson",encodeData(NeoRuntime.data(p)));n.putString("Rules",NeoRules.version());
-        n.putString("Profile",NeoState.JSON.toJson(NeoRules.profile(NeoRuntime.data(p).form)));
+        n.putString("Profile",NeoState.JSON.toJson(NeoRuntime.profile(p)));
         var costs=new EnumMap<Core,Coefficients>(Core.class);for(Core core:Core.values())costs.put(core,NeoRules.cost(core));
         n.putString("Costs",NeoState.JSON.toJson(costs));
+        var bookEffects=new EnumMap<Core,double[]>(Core.class);
+        for(Core core:Core.values())bookEffects.put(core,new double[]{NeoLegacyCasting.blueprintCostMultiplier(p,core),NeoLegacyCasting.blueprintPower(p,core)});
+        n.putString("BookEffects",NeoState.JSON.toJson(bookEffects));
         n.putByteArray("Tunings",NeoPayload.pack(NeoState.JSON.toJson(NeoRules.tunings()).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
         var packet=PacketByteBufs.create();packet.writeNbt(n);
         if(packet.readableBytes()>1_000_000){NeoMagic.LOG.error("Research snapshot too large for {}: {} bytes",p.getUuid(),packet.readableBytes());packet.release();return;}
@@ -72,23 +75,51 @@ public final class NeoNetwork {
     static byte[] encodeData(NeoState.PlayerData data) {return NeoPayload.pack(NeoState.JSON.toJson(data).getBytes(java.nio.charset.StandardCharsets.UTF_8));}
     public static void hud(ServerPlayerEntity p) {
         if(!ServerPlayNetworking.canSend(p,HUD))return;
+        var packet=PacketByteBufs.create();packet.writeNbt(hudState(p));ServerPlayNetworking.send(p,HUD,packet);
+    }
+    static NbtCompound hudState(ServerPlayerEntity p) {
         var d=NeoRuntime.data(p);var a=NeoRuntime.ACTIVE.get(p.getUuid());
-        boolean holding=p.getMainHandStack().isOf(NeoMagic.WAND)||p.getOffHandStack().isOf(NeoMagic.WAND);
+        var legacy=NeoLegacyCasting.active(p);
+        ItemStack book=net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.getEquippedBook(p);
+        boolean holding=book!=null||p.getMainHandStack().isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.MOON_DUST_SPELLBOOK)||p.getOffHandStack().isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.MOON_DUST_SPELLBOOK)||p.getMainHandStack().getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem||p.getOffHandStack().getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem||p.getMainHandStack().isOf(NeoMagic.WAND)||p.getOffHandStack().isOf(NeoMagic.WAND);
         var n=new NbtCompound();n.putBoolean("Visible",holding||d.burden>0||a!=null||NeoEffects.hasStored(p.getUuid()));
-        n.putDouble("C",d.burden);n.putDouble("S",NeoRules.profile(d.form).safety());n.putInt("Recovery",d.recovery);
+        n.putDouble("C",d.burden);n.putDouble("S",NeoRuntime.profile(p).safety());n.putInt("Recovery",d.recovery);n.putInt("RecoveryDelay",NeoRules.recoveryDelay);
         Blueprint b=a==null?bound(p.getMainHandStack()):a.session.blueprint;
+        if(b==null)b=bound(p.getOffHandStack());
+        boolean loaded=b!=null;
         if(b==null)b=d.draft;
-        Quote q=a==null?NeoRules.quote(b,d.mastery(b)):a.session.quote;
-        Risk r=risk(b,d.burden,q.actual(),NeoRules.profile(d.form));
+        Quote q=a==null?NeoLegacyCasting.blueprintQuote(p,b):a.session.quote;
+        int prep=b.prep();String legacyName="";
+        if(legacy!=null){b=legacy.session.blueprint;q=legacy.session.quote;prep=legacy.duration;legacyName=legacy.record.spell;}
+        else if(a==null&&!loaded) {
+            ItemStack scroll=p.getMainHandStack().getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem?p.getMainHandStack():p.getOffHandStack().getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem?p.getOffHandStack():ItemStack.EMPTY;
+            boolean solo=!scroll.isEmpty();
+            if(!solo&&book!=null)scroll=net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.getScroll(book,net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.getSelectedSlot(book));
+            var spell=net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getSpell(scroll);
+            if(spell!=null) {
+                int level=solo?net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getLevel(scroll):net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getCastLevel(scroll);
+                var modifiers=net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme.modifiers(p,scroll,level);
+                prep=modifiers.time(spell.getCastingProfile(p,level,solo).ticks());
+                b=NeoLegacyCasting.descriptor(spell,level,prep);
+                int normal=solo?modifiers.mana(Math.round(spell.getManaCost()*spell.getConfig().manaCostMultiplier(level))):net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers.finalManaCost(spell,book,p,level,scroll);
+                q=NeoLegacyCasting.quote(p,spell,level,prep,normal);legacyName=spell.getId().toString();
+            }
+        }
+        Risk r=risk(b,d.burden,q.actual(),NeoRuntime.profile(p));
         n.putDouble("Q",q.actual());n.putDouble("Failure",r.failure());n.putDouble("Offset",r.offset());
         n.putInt("CD",d.cooldowns.getOrDefault(b.identity(),0));n.putBoolean("Stored",NeoEffects.hasStored(p.getUuid()));
-        n.putInt("Age",a==null?-1:a.age);n.putInt("Prep",b.prep());n.putDouble("Paid",a==null?0:a.session.paid);
-        n.putDouble("Yaw",a==null?0:a.session.yaw);n.putDouble("Pitch",a==null?0:a.session.pitch);
-        n.putDouble("Cumulative",a==null?0:1-a.session.survival);
+        if(!legacyName.isEmpty()) {
+            var spell=net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.get(new Identifier(legacyName));
+            if(spell!=null)n.putInt("CD",(int)Math.max(0,net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.getCooldownEndOf(p,spell)-p.getWorld().getTime()));
+        }
+        var session=legacy!=null?legacy.session:a==null?null:a.session;
+        n.putInt("Age",legacy!=null?legacy.age:a==null?-1:a.age);n.putInt("Prep",prep);n.putDouble("Paid",session==null?0:session.paid);
+        n.putDouble("Yaw",session==null?0:session.yaw);n.putDouble("Pitch",session==null?0:session.pitch);
+        n.putDouble("Cumulative",session==null?0:1-session.survival);n.putString("Spell",legacyName);
         int status=0;for(var effect:List.of(NeoMagic.DISORDER,NeoMagic.DISINTEGRATION,NeoMagic.BREAKDOWN))if(p.hasStatusEffect(effect))status=Math.max(status,p.getStatusEffect(effect).getDuration());
         n.putInt("Blocked",status);n.putString("Form",d.form);n.putBoolean("Reference",NeoRules.profile(d.form).reference());
-        n.putString("Profile",NeoState.JSON.toJson(NeoRules.profile(d.form)));
-        var packet=PacketByteBufs.create();packet.writeNbt(n);ServerPlayNetworking.send(p,HUD,packet);
+        n.putString("Profile",NeoState.JSON.toJson(NeoRuntime.profile(p)));
+        return n;
     }
     private static boolean materials(ServerPlayerEntity p,boolean consume) {
         if(p.isCreative())return true;

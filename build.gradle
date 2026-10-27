@@ -91,6 +91,7 @@ tasks.register('neoMagicWorldTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
     mainClass = 'net.ssca.neomagic.NeoWorldTest'
+    systemProperty 'neomagic.bookCutover', project.findProperty('neoBookCutover') ?: 'false'
     workingDir = layout.buildDirectory.dir('neomagic/world-test').get().asFile
     maxHeapSize = '2G'
     systemProperty 'fabric.development', 'true'

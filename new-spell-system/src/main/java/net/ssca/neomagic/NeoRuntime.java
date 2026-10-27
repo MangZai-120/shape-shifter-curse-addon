@@ -22,7 +22,8 @@ public final class NeoRuntime {
         public final ItemStack wand;
         public final Hand hand;
         public final NeoEffects.Anchor anchor;
-        public final int fullCooldown;
+        public int fullCooldown;
+        public double powerMultiplier=1;
         public int age, beganTick;
         public boolean settled;
         Active(Session s,NeoState.Experiment r,ItemStack wand,Hand hand,NeoEffects.Anchor anchor) {
@@ -30,6 +31,7 @@ public final class NeoRuntime {
         }
     }
     public static NeoState.PlayerData data(ServerPlayerEntity p) { return NeoState.get(p.getServer()).player(p.getUuid()); }
+    public static Profile profile(ServerPlayerEntity p) {return NeoLegacyCasting.profile(p);}
     public static String form(ServerPlayerEntity p) {
         var f=FormUtils.getCurrentForm(p);
         return f==null || f.getFormID()==null?"shape-shifter-curse:original_shifter":f.getFormID().toString();
@@ -50,22 +52,23 @@ public final class NeoRuntime {
     public static void start(ServerPlayerEntity p,Hand hand) {
         refreshForm(p);var d=data(p);Blueprint b=NeoNetwork.bound(p.getStackInHand(hand));
         if(b==null){message(p,"need_blueprint");return;}
-        if(!p.getStackInHand(hand).isOf(NeoMagic.WAND)||blocked(p)||ACTIVE.containsKey(p.getUuid())||NeoEffects.hasStored(p.getUuid())) {message(p,"blocked");return;}
+        if(!p.getStackInHand(hand).isOf(NeoMagic.WAND)||blocked(p)||NeoLegacyCasting.isCasting(p)||NeoEffects.hasStored(p.getUuid())) {message(p,"blocked");return;}
         if(!errors(b).isEmpty()||!d.knows(b)) {message(p,"invalid");return;}
         if(d.cooldowns.getOrDefault(b.identity(),0)>0) {message(p,"cooldown");return;}
         NeoEffects.Anchor anchor=NeoEffects.capture(p,b);
         if(!NeoEffects.preflight(p,b,anchor)) {message(p,"target_invalid");return;}
-        Quote quote=NeoRules.quote(b,d.mastery(b));
+        Quote quote=NeoLegacyCasting.blueprintQuote(p,b);
         var e=new NeoState.Experiment();e.blueprint=b;e.form=d.form;e.profile=NeoRules.profile(d.form);e.initial=d.burden;
-        e.normal=quote.normal();e.actual=quote.actual();e.dimension=p.getWorld().getRegistryKey().getValue().toString();
+        e.normal=quote.normal();e.actual=quote.actual();e.profile=profile(p);e.preparation=b.prep();e.dimension=p.getWorld().getRegistryKey().getValue().toString();
         e.target=anchor.target()==null?anchor.position().toString():anchor.target().toString();
         d.add(e);var active=new Active(new Session(b,quote),e,p.getStackInHand(hand),hand,anchor);
+        active.fullCooldown=NeoLegacyCasting.blueprintCooldown(p,b);active.powerMultiplier=NeoLegacyCasting.blueprintPower(p,b);
         active.beganTick=p.getServer().getTicks();ACTIVE.put(p.getUuid(),active);advance(p,active);NeoNetwork.send(p,false);
     }
     private static void advance(ServerPlayerEntity p,Active a) {
         if(a.settled)return;
         var d=data(p);var s=a.session;
-        double delta=s.advance(a.age,d.burden,NeoRules.profile(d.form),new Random(p.getRandom().nextLong()));
+        double delta=s.advance(a.age,d.burden,profile(p),new Random(p.getRandom().nextLong()));
         d.burden+=delta;if(delta>0){d.recovery=NeoRules.recoveryDelay;d.lastPaymentTick=p.getServer().getTicks();}
         a.record.paid=s.paid;a.record.checks=new ArrayList<>(s.checkpoints);a.record.yaw=s.yaw;a.record.pitch=s.pitch;a.record.reversed=s.reversed;
         if(s.failed) fail(p,a);
@@ -90,9 +93,13 @@ public final class NeoRuntime {
         if(a.settled)return;a.settled=true;
         ACTIVE.remove(p.getUuid());a.record.result="failed";
         var d=data(p);setCooldown(p,a.session.blueprint.identity(),a.fullCooldown);
-        double excess=Math.max(0,d.burden-NeoRules.profile(d.form).safety());
+        backlash(p,a.session.quote.actual());
+    }
+    public static void backlash(ServerPlayerEntity p,double actualCost) {
+        var d=data(p);
+        double excess=Math.max(0,d.burden-profile(p).safety());
         if(excess>0) {
-            p.damage(p.getDamageSources().magic(),(float)(1.5+.05*excess+.02*a.session.quote.actual()));
+            p.damage(p.getDamageSources().magic(),(float)(1.5+.05*excess+.02*actualCost));
             double serious=clamp((excess-20)/80,0,1);
             if(excess>60 && p.getRandom().nextDouble()<clamp((excess-60)/40,0,1)) {
                 p.removeStatusEffect(NeoMagic.DISORDER);p.removeStatusEffect(NeoMagic.DISINTEGRATION);
@@ -131,8 +138,8 @@ public final class NeoRuntime {
             if(a!=null) {
                 if(blocked(p)||p.getStackInHand(a.hand)!=a.wand||!a.record.dimension.equals(p.getWorld().getRegistryKey().getValue().toString()))cancel(p,"interrupted");
                 else if(server.getTicks()>a.beganTick){a.age++;advance(p,a);}
-            } else if(p.isAlive()) {
-                if(server.getTicks()>d.lastPaymentTick){if(d.recovery>0)d.recovery--;else if(d.burden>0)d.burden=Math.max(0,d.burden-NeoRules.recoveryRate);}
+            } else if(p.isAlive()&&!NeoLegacyCasting.isCasting(p)) {
+                if(server.getTicks()>d.lastPaymentTick){if(d.recovery>0)d.recovery--;else if(d.burden>0)d.burden=Math.max(0,d.burden-NeoRules.recoveryRate*NeoLegacyCasting.recoveryMultiplier(net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.getEquippedBook(p)));}
             }
             if(server.getTicks()%5==0)NeoNetwork.hud(p);
             if(prior!=d.burden||priorRecovery!=d.recovery||hadCooldowns)dirty(p);

@@ -300,25 +300,8 @@ public final class SpellcastClient {
 		int level = ScrollData.getCastLevel(scroll);
 		int cost = SpellNumbers.finalManaCost(spell, book, player, level, scroll);
 		boolean downgraded = false;
-		// HUD 上的书能量必须独立付得起整次消耗，契灵等形态的自身能量不参与预检。
-		if (!SpellbookData.canPayMana(book, cost)) {
-			int payable = cost < 0 || spell.getMaxLevel() <= 1 ? 0
-					: SpellNumbers.highestAffordableLevel(spell, book, player, level - 1, scroll);
-			// 红色稀有度（单档，getMaxLevel()==1）法术不得降档（2026-09-24 用户定稿）：
-			// 法力不足直接红字，不进入三连击降档流程。
-			if (payable == 0) {
-				downgradePresses.reset();
-				player.sendMessage(SpellCastFeedback.noMana(book, cost).copy()
-						.formatted(net.minecraft.util.Formatting.RED), true);
-				player.playSound(net.minecraft.sound.SoundEvents.ENTITY_GENERIC_EXTINGUISH_FIRE, 0.9f, 0.9f);
-				return;
-			}
-			if (!handleTriplePressDowngrade(player, book, slot, level, cost, spell, scroll, payable)) return;
-			downgraded = true;
-			level = payable;
-		} else {
-			downgradePresses.reset();
-		}
+		downgradePresses.reset(); // Collapse has no mana affordability gate.
+
 		// 只有获准正常起手或完成三连按才建立手势；第三次仍须保留松手/持续施法链路。
 		gestureToken = (gestureToken + 1) & Integer.MAX_VALUE;
 		gestureKey = key;

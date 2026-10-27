@@ -10,7 +10,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.Inventory;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.screen.NamedScreenHandlerFactory;
@@ -29,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
  * 注魔台方块实体（jackcooper）。九槽：0=魔法书、1=燃料（月尘粉/月尘纯晶）、2=催化（塑形核心）、
  * 3-8=六芒星法阵槽（书放入中心时动态显示书内已装备法阵）。
  *
- * <p>充能/升级逻辑同前：每秒结算一次充能；材料齐备可升级时暂停充能等玩家点「升级」按钮。</p>
+ * <p>试验田只保留升级与法阵配置，不再为旧蓝条自动消耗燃料。</p>
  *
  * <p><b>六芒星双向同步（三态快照）</b>：以「上一次同步进书的内容」为基准对比——
  * 槽变（玩家在角槽放/取法阵）→ 把槽内容写回书 NBT；书变（玩家直接换了书）→ 把新书 NBT 加载进角槽。
@@ -58,7 +57,7 @@ public class InfusionAltarBlockEntity extends BlockEntity implements NamedScreen
 	}
 
 	/**
-	 * 玩家点击界面「升级」按钮（C2S 包服务端重验后调用）：扣材料、书 +1 级、经验清零、法力补满。
+	 * 玩家点击「升级」：扣材料、书 +1 级、经验清零，容量成长改为安全阈值加成。
 	 * 升级会解锁更多六芒星角位——已有角内法阵保留（书 NBT 不动），重置快照重新加载显示。
 	 */
 	public void tryUpgrade(PlayerEntity player) {
@@ -71,7 +70,7 @@ public class InfusionAltarBlockEntity extends BlockEntity implements NamedScreen
 		ItemStack book = items.get(0);
 		SpellbookData.setLevel(book, SpellbookData.getLevel(book) + 1);
 		SpellbookData.setExpTen(book, 0); // 升级经验清零（×10 整数；满级后不再清零，经验转精通档）
-		SpellbookData.setMana(book, SpellbookData.getMaxMana(book)); // 升级补满法力
+		// Capacity growth now raises safety when equipped; upgrading never clears player C.
 		// 升级可能解锁新角位：重置快照强制重新加载（书变分支），角槽显示书内当前法阵
 		this.lastSyncedFormations = null;
 		syncFormations();
@@ -90,37 +89,9 @@ public class InfusionAltarBlockEntity extends BlockEntity implements NamedScreen
 		}
 		// 六芒星双向同步（每秒结算一次，覆盖「无 GUI 直接放书/漏斗放书」场景）
 		be.syncFormations();
-		ItemStack book = be.items.get(0);
-		if (!(book.getItem() instanceof MoonDustSpellbookItem)) {
-			return;
-		}
-		// 材料齐备可升级时暂停自动充能，避免把升级用的纯晶当普通燃料吃掉，等玩家点「升级」按钮
-		if (be.upgradeReady()) {
-			return;
-		}
-		ItemStack fuel = be.items.get(1);
-
-		Item untreated = RegCustomItem.UNTREATED_MOONDUST;
-		Item crystal = RegCustomItem.MOONDUST_CRYSTAL_SHARD;
-
-		// 充能：法力未满 + 有燃料
-		int mana = SpellbookData.getMana(book);
-		int maxMana = SpellbookData.getMaxMana(book);
-		if (mana < maxMana && !fuel.isEmpty()) {
-			int add = 0;
-			if (fuel.getItem() == untreated) {
-				add = 10;
-			} else if (fuel.getItem() == crystal) {
-				add = 80;
-			}
-			if (add > 0) {
-				fuel.decrement(1);
-				SpellbookData.addMana(book, add);
-				be.markDirty();
-				world.playSound(null, pos, SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.BLOCKS, 0.7f, 1.2f);
-			}
-		}
-	}
+        // The altar keeps upgrade and formation configuration. Detached books have no C to refill.
+        // In particular, do not consume fuel for their retired Mana field.
+    }
 
 	// ---- 六芒星三态同步 ----
 

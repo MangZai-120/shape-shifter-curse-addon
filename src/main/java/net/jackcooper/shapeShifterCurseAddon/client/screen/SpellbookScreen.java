@@ -40,8 +40,9 @@ public class SpellbookScreen extends HandledScreen<SpellbookScreenHandler> {
 	protected void drawForeground(DrawContext context, int mouseX, int mouseY) {
 		// 标题改纯黑：背景贴图为浅色书页，浅色文字看不清
 		context.drawText(this.textRenderer, this.title, this.titleX, this.titleY, 0x000000, false);
-		Text info = Text.translatable("screen.ssc_addon.spellbook.info",
-				this.handler.bookLevel, this.handler.bookMana, this.handler.bookMaxMana);
+        var neo=net.ssca.neomagic.client.NeoClient.hud;
+        Text info = net.ssca.neomagic.NeoMagic.text("book_screen",this.handler.bookLevel,
+                net.ssca.neomagic.client.NeoClient.f(neo.getDouble("C")),net.ssca.neomagic.client.NeoClient.f(neo.getDouble("S")));
 		context.drawText(this.textRenderer, info, 8, 20, 0x88A0FF, false);
 		context.drawText(this.textRenderer, this.playerInventoryTitle,
 				this.playerInventoryTitleX, this.playerInventoryTitleY, 0xC8C0B0, false);

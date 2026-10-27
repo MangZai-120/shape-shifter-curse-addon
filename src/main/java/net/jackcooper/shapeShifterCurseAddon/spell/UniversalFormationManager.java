@@ -72,7 +72,7 @@ public final class UniversalFormationManager {
 	private static void tickPlayer(ServerPlayerEntity player) {
 		// 施法期间不做形态能量→书法术值转化（2026-09-23 用户定稿）：起手已一次性全额扣蓝，
 		// 读条中回能会把净消耗吃掉（35 秒爆裂最多回 350），与一次结清语义冲突。
-		if (SpellChannelManager.isCasting(player)) {
+		if (net.ssca.neomagic.NeoLegacyCasting.isCasting(player)) {
 			return;
 		}
 		// 书未装备 → 不动作
@@ -86,10 +86,10 @@ public final class UniversalFormationManager {
 			return;
 		}
 		// 水位判定：书法术值占比低于阈值才转化（书已满则跳过，防每秒空转写 NBT）
-		int mana = SpellbookData.getMana(book);
-		int maxMana = SpellbookData.getMaxMana(book);
+		double collapse = net.ssca.neomagic.NeoRuntime.data(player).burden;
+		double maxMana = net.ssca.neomagic.NeoRuntime.profile(player).safety();
 		double threshold = FormationData.universalThreshold(bestLevel);
-		if (maxMana <= 0 || mana >= maxMana * threshold) {
+		if (maxMana <= 0 || collapse <= maxMana * (1-threshold)) {
 			return;
 		}
 		// 当前形态无能量条 → 不动作（判定与 UniversalEnergyPotionItem.canRestore 同源；朔望排除）
@@ -104,7 +104,7 @@ public final class UniversalFormationManager {
 		if (!ResourceBars.consume(player, bar, drain)) {
 			return;
 		}
-		SpellbookData.addMana(book, restore);
+		net.ssca.neomagic.NeoLegacyCasting.restore(player, restore);
 		markCharging(player);
 	}
 

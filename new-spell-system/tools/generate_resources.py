@@ -98,6 +98,36 @@ for key,(cn,eng) in errors.items():zh["error."+key]=cn;en["error."+key]=eng
 for key,(cn,eng) in results.items():zh["result."+key]=cn;en["result."+key]=eng
 for group,values in [("core",cores),("carrier",carriers),("control",controls)]:
     for key,value in values.items():zh[group+"."+key.lower()]=value;en[group+"."+key.lower()]=key.title()
+zh.update({"legacy_measurements":"本条记录观察准备支付与抽卡；原法术的后续伤害／治疗未纳入此计量器。",
+    "altar.mana":"安全", "altar.recovery":"崩解恢复 ×%s", "altar.no_charge":"仅升级与配阵，不自动耗料充蓝",
+    "altar.next_mana":"下阶安全加成 +%s", "altar.mastery_bonus":"精通安全加成 +%s",
+    "altar.universal_mana":"增能安全加成：+%s", "altar.universal_recovery":"回息恢复倍率：×%s",
+    "altar.preview_mana":"额外安全阈值：+%s → +%s", "altar.preview_recovery":"崩解恢复倍率：×%s → ×%s",
+    "altar.preview_delay":"最近支付后 %s 秒开始自然恢复", "altar.preview_spell":"%s Lv%s：基础崩解 %s → %s（适应前）",
+    "altar.element_effect":"%s：威力×%s，冷却×%s，崩解代价×%s", "altar.space_effect":"%s：距离×%s，冷却×%s，崩解代价×%s",
+    "formation_mana":"增能：将书基础容量的 %s%% 转为额外安全阈值",
+    "formation_recovery":"回息：崩解度自然恢复速度 +%s%%",
+    "formation_regen":"回能：C 高于安全阈值的 (100−%s)%% 时，每秒消耗 %s 形态能量，降低 %s 崩解度",
+    "formation_effect":"%s威力 +%s%%，%s威力 −%s%%；同系冷却 −%s%%，基础崩解代价 +%s%%",
+    "named_spell":"书内法术：%s，准备 %s tick", "omitted_checks":"长时间持握：省略中间 %s 次检查，保留起手与最近记录",
+    "book_bar":"崩解 %s / 安全 %s", "book_screen":"Lv%s  崩解 %s / 安全 %s",
+    "book_bonus":"装备加成：安全阈值 +%s，崩解恢复 ×%s", "book_help":"右键配置卷轴与法阵；潜行右键查看新法术研究",
+    "book_mastery":"书精通 %s：%s / %s（增长安全阈值）", "book_mastery_max":"书精通 %s：安全阈值 +%s"})
+en.update({"legacy_measurements":"This entry measures preparation payments and draws; subsequent legacy damage/healing is not measured here.",
+    "altar.mana":"Safety", "altar.recovery":"Collapse recovery x%s", "altar.no_charge":"Upgrade/configure; no automatic mana charging",
+    "altar.next_mana":"Next safety bonus +%s", "altar.mastery_bonus":"Mastery safety +%s",
+    "altar.universal_mana":"Capacity safety bonus: +%s", "altar.universal_recovery":"Recovery multiplier: x%s",
+    "altar.preview_mana":"Extra safety: +%s -> +%s", "altar.preview_recovery":"Recovery: x%s -> x%s",
+    "altar.preview_delay":"Natural recovery begins %ss after payment", "altar.preview_spell":"%s Lv%s: base collapse %s -> %s (before adaptation)",
+    "altar.element_effect":"%s: power x%s, cooldown x%s, collapse x%s", "altar.space_effect":"%s: range x%s, cooldown x%s, collapse x%s",
+    "formation_mana":"Capacity: add %s%% of base book capacity to safety",
+    "formation_recovery":"Recovery: natural collapse recovery +%s%%",
+    "formation_regen":"Conversion: above (100-%s)%% of safety, spend %s form energy/s to relieve %s collapse",
+    "formation_effect":"%s power +%s%%, %s power -%s%%; same-core cooldown -%s%%, base collapse cost +%s%%",
+    "named_spell":"Book spell: %s; preparation %s ticks", "omitted_checks":"Long hold: %s middle checks omitted; start and latest retained",
+    "book_bar":"Collapse %s / Safe %s", "book_screen":"Lv%s  C %s / Safe %s",
+    "book_bonus":"Equipped: safety +%s, collapse recovery x%s", "book_help":"Use: scrolls and formations; sneak-use: new spell research",
+    "book_mastery":"Book mastery %s: %s / %s (safety growth)", "book_mastery_max":"Book mastery %s: safety +%s"})
 zh={"neomagic."+key:value for key,value in zh.items()};en={"neomagic."+key:value for key,value in en.items()}
 
 items={"guiding_wand":("导引杖","Guiding Wand","blaze_rod"),"observation_notebook":("观测笔记","Observation Notebook","writable_book"),"blueprint":("术式蓝图","Spell Blueprint","paper"),"moon_dust_vial":("月尘试管","Moon Dust Vial","honey_bottle"),"moon_dust_bottle":("月尘瓶装药水","Moon Dust Bottle","potion"),"moon_dust_splash":("月尘支援药水","Moon Dust Support Flask","splash_potion")}

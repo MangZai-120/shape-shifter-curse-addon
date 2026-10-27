@@ -116,7 +116,7 @@ public final class NeoScreen extends Screen {
             } else if(panel==1) {
                 top=155;diagram(c,edit,Math.max(80,width/2),110,Math.min(60,width/4));blueprintLines(edit);
                 Quote q=preview(edit);
-                line("budget",f(9*edit.scale()*q.plan().retention()),q.plan().branches(),f(q.plan().load()));
+                line("budget",f(9*edit.scale()*q.plan().retention()*bookPower(edit)),q.plan().branches(),f(q.plan().load()));
                 line("static_valid",errors(edit).isEmpty()?t("valid").getString():t("error."+errors(edit).get(0)).getString());
             } else if(panel==2) {
                 top=183;c.drawCenteredTextWithShadow(textRenderer,t("scale_value",f(edit.scale())),width/2,109,0xFFDBC58E);
@@ -157,14 +157,17 @@ public final class NeoScreen extends Screen {
         if(y>bottom&&top<bottom)c.drawText(textRenderer,t("scroll"),width-68,height-64,0xFF92AAA9,false);
     }
     private void experimentLines(NeoState.Experiment e) {
+        if(!e.spell.isEmpty())line("named_spell",e.spell,e.preparation);
+        if(e.omittedChecks>0)line("omitted_checks",e.omittedChecks);
         blueprintLines(e.blueprint);line("record_id",e.id.substring(0,8),e.version);line("result",t("result."+e.result).getString());
-        line("record_cost",f(e.initial),f(e.actual),f(e.paid));line("measured",f(e.arrived),f(e.damage),f(e.healing),e.hits,e.summons);
-        line("absorption",f(e.absorbed));
+        line("record_cost",f(e.initial),f(e.actual),f(e.paid));
+        if(e.spell.isEmpty()){line("measured",f(e.arrived),f(e.damage),f(e.healing),e.hits,e.summons);line("absorption",f(e.absorbed));}
+        else line("legacy_measurements");
         for(Checkpoint cp:e.checks)line("checkpoint",cp.tick(),f(cp.burden()),f(cp.risk().excess()),pc(cp.risk().failure()),pc(cp.risk().offset()),cp.failed()?t("failed").getString():cp.shifted()?t("shifted").getString():t("passed").getString(),f(cp.yaw()),f(cp.pitch()));
     }
     private void statistics(NeoState.Experiment reference) {
-        var samples=data.records.stream().filter(e->e.form.equals(reference.form)&&e.version.equals(reference.version)
-                &&e.initial==reference.initial&&e.target.equals(reference.target)&&e.blueprint.identity().equals(reference.blueprint.identity())
+        var samples=data.records.stream().filter(e->e.spell.equals(reference.spell)&&e.preparation==reference.preparation&&e.form.equals(reference.form)&&e.version.equals(reference.version)
+                &&java.util.Objects.equals(e.profile,reference.profile)&&e.actual==reference.actual&&e.initial==reference.initial&&e.target.equals(reference.target)&&e.blueprint.identity().equals(reference.blueprint.identity())
                 &&e.blueprint.scale()==reference.blueprint.scale()&&e.blueprint.prep()==reference.blueprint.prep()&&e.blueprint.range()==reference.blueprint.range()
                 &&Set.of("released","resolved","failed","missed").contains(e.result)).toList();
         line("sample_summary",label(reference.blueprint.core()),samples.size(),samples.stream().filter(e->e.result.equals("failed")).count());

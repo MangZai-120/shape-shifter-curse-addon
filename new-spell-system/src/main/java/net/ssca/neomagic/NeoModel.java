@@ -124,14 +124,20 @@ public final class NeoModel {
         public double paid, yaw, pitch, attenuation = 1, survival = 1;
         public boolean failed, complete, reversed, wrongTarget;
         private int previous = -1;
-        public Session(Blueprint b, Quote q) { blueprint = b; quote = q; }
+        private final int duration;
+        public Session(Blueprint b, Quote q) { this(b,q,b.prep()); }
+        /** Existing spells may have longer preparation than the research editor's 80 tick range. */
+        public Session(Blueprint b, Quote q, int duration) { blueprint = b; quote = q; this.duration=Math.max(0,duration); }
         /** Caller adds returned delta to its sole C before consuming this checkpoint. */
         public double advance(int age, double current, Profile form, RandomGenerator rng) {
+            return advance(age,current,form,rng,true);
+        }
+        public double advance(int age, double current, Profile form, RandomGenerator rng, boolean finishAtDuration) {
             if (failed || complete || age <= previous) return 0;
             if (age != previous + 1) throw new IllegalArgumentException("Session must advance one tick at a time");
             previous = age;
-            int billed = age >= blueprint.prep ? blueprint.prep : age / 2 * 2;
-            double due = blueprint.prep == 0 ? quote.actual : quote.actual*billed/blueprint.prep;
+            int billed = age >= duration ? duration : age / 2 * 2;
+            double due = duration == 0 ? quote.actual : quote.actual*billed/duration;
             double delta = Math.max(0,due-paid); paid += delta;
             if (age % 10 == 0) {
                 Risk r = risk(blueprint,current+delta,quote.actual,form);
@@ -151,7 +157,7 @@ public final class NeoModel {
                 }
                 checkpoints.add(new Checkpoint(age,current+delta,paid,r,failed,!failed&&shiftDraw,yaw,pitch,attenuation,reversed,wrongTarget));
             }
-            complete = !failed && age >= blueprint.prep;
+            complete = !failed && finishAtDuration && age >= duration;
             return delta;
         }
     }

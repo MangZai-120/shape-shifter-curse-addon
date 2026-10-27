@@ -91,7 +91,7 @@ public class MagicScrollItem extends Item {
 			ItemStack snapshot = stack.copy();
 			boolean started = SpellChannelManager.start(sp, spell, snapshot, level, true, hand.ordinal(), 0, cd,
 					() -> sp.getStackInHand(hand) == stack && ItemStack.areEqual(stack, snapshot),
-					target -> spell.castAtTarget(sp, damage, true, level, snapshot, target),
+					target -> spell.castAtTarget(sp, net.ssca.neomagic.NeoLegacyCasting.power(damage), true, level, snapshot, target),
 					duration -> {
 						long end = sp.getWorld().getTime() + duration;
 						stack.getOrCreateNbt().putInt("RuneCdTotal",duration);

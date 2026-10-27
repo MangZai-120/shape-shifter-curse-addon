@@ -56,10 +56,18 @@ public final class NeoVisualProbe {
         n.putString("Profile",NeoState.JSON.toJson(NeoClient.profile));n.putString("Rules","UI-test-fixture");
         Map<Core,Coefficients> costs=new EnumMap<>(Core.class);for(Core core:Core.values())costs.put(core,coefficients(core));
         n.putString("Costs",NeoState.JSON.toJson(costs));n.putByteArray("Tunings",NeoPayload.pack("{}".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        var book=new EnumMap<Core,double[]>(Core.class);for(Core core:Core.values())book.put(core,new double[]{1.2,1.24});
+        book.put(Core.FROST,new double[]{1.2,0}); // Stacked opposing formations legitimately suppress power to zero.
+        n.putString("BookEffects",NeoState.JSON.toJson(book));
         NeoClient.acceptSnapshot(mc,n);
         if(NeoClient.data.known.size()!=18||NeoClient.COSTS.size()!=7||NeoClient.data.burden!=95)throw new AssertionError("Compressed snapshot did not reach the real client receiver");
+        if(NeoClient.BOOK_EFFECTS.get(Core.FROST)[1]!=0)throw new AssertionError("Valid zero-power book formation was rejected");
         var before=NeoClient.data;var token=NeoClient.token;var broken=n.copy();broken.putByteArray("DataJson",new byte[]{1,2,3});NeoClient.acceptSnapshot(mc,broken);
         if(NeoClient.data!=before||!NeoClient.token.equals(token))throw new AssertionError("Malformed snapshot partially changed client state");
+        var quote=quote(Blueprint.starter(),0,coefficients(Core.THERMAL));
+        if(Math.abs(NeoClient.preview(Blueprint.starter()).actual()-quote.actual()*1.2)>1e-8)throw new AssertionError("Book cost bonus missing from research preview");
+        var invalidBook=n.copy();invalidBook.putString("BookEffects","{\"THERMAL\":[\"NaN\",1]}");NeoClient.acceptSnapshot(mc,invalidBook);
+        if(NeoClient.data!=before||!NeoClient.token.equals(token)||NeoClient.BOOK_EFFECTS.get(Core.THERMAL)[0]!=1.2)throw new AssertionError("Invalid book modifier partially changed client state");
         System.out.println("Neomagic native client snapshot: valid compressed data applied; malformed data rejected atomically.");
     }
     private static void checkLayout(NeoScreen screen) {

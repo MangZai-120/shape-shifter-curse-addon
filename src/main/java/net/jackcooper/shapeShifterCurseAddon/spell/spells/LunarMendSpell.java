@@ -35,7 +35,11 @@ public class LunarMendSpell extends Spell {
 		// 蝙蝠「血契」配套：月华治愈效果 +25%（吸血蝙蝠主题，2026-09-17）
 		power = net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.lunarMendBonus(caster, power);
 		// 回复生命（不含再生，即时治疗语义）
-		caster.heal(power);
+		if (net.ssca.neomagic.NeoLegacyCasting.reversed()) {
+            caster.damage(caster.getDamageSources().magic(), power);
+            return;
+        }
+        caster.heal(power);
 		// 净化预算制（2026-09-17）：等级 = 预算点数（L1=1 … L5=5）；
 		// 移除一个 amplifier=n 的负面效果消耗 n+1 点（一级 debuff 消耗 1，二级消耗 2，以此类推）；
 		// 预算不足以移除下一个（如剩 1 点遇到二级）则跳过继续找可移除的，预算耗尽停止。

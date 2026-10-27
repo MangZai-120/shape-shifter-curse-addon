@@ -14,6 +14,8 @@ public final class NeoState extends PersistentState {
     public record Measurement(String target,String type,String position,double incoming,double healthBefore,double healthAfter,double absorptionBefore,double absorptionAfter) {}
     public static final class Experiment {
         public String id = UUID.randomUUID().toString(), version = NeoRules.version(), result = "preparing";
+        public String spell = "";
+        public int preparation, omittedChecks;
         public Blueprint blueprint;
         public Profile profile;
         public String form, dimension, target = "none";
@@ -91,9 +93,9 @@ public final class NeoState extends PersistentState {
                 ||Arrays.stream(entry.getValue()).anyMatch(v->!Double.isFinite(v)||v<0||v>100000))throw new IllegalStateException("Invalid adaptation ledger");
         if(d.cooldowns.entrySet().stream().anyMatch(e->e.getKey()==null||e.getValue()==null||e.getValue()<0))throw new IllegalStateException("Invalid cooldown ledger");
         for(var record:d.records)if(record==null||record.blueprint==null||!errors(record.blueprint).isEmpty()||record.id==null||record.result==null
-                ||record.id.length()<8||record.form==null||record.version==null||record.target==null
+                ||record.id.length()<8||record.form==null||record.version==null||record.target==null||record.spell==null||record.spell.length()>256||record.preparation<0||record.omittedChecks<0
                 ||!Double.isFinite(record.initial+record.actual+record.normal+record.paid+record.arrived+record.damage+record.healing+record.absorbed+record.yaw+record.pitch)
-                ||record.checks==null||record.checks.size()>9||record.checks.stream().anyMatch(c->c==null||c.risk()==null)
+                ||record.checks==null||record.checks.size()>512||record.checks.stream().anyMatch(c->c==null||c.risk()==null)
                 ||record.measurements==null||record.measurements.size()>32)
             throw new IllegalStateException("Invalid research record");
     }

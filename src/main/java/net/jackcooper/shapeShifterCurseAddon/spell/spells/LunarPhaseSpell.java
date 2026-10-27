@@ -236,6 +236,15 @@ public class LunarPhaseSpell extends Spell {
 	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level) {
 		UUID targetId = CHANNEL_TARGETS.remove(caster.getUuid());
 		Entity entity = targetId == null ? null : caster.getServerWorld().getEntity(targetId);
+		if(net.ssca.neomagic.NeoLegacyCasting.shifted()) {
+			entity=raycastEntity(caster);
+			if(net.ssca.neomagic.NeoLegacyCasting.wrongTarget()) {
+				var choices=caster.getServerWorld().getEntitiesByClass(LivingEntity.class,caster.getBoundingBox().expand(aimRange()),
+						e->e!=caster&&e.isAlive()&&!e.isSpectator()&&caster.canSee(e)&&!DomainManager.blocksAimBoundary(caster.getWorld(),caster.getPos(),e.getPos()));
+				entity=choices.isEmpty()?null:choices.get(caster.getRandom().nextInt(choices.size()));
+			}
+			if(entity==null){net.ssca.neomagic.NeoLegacyCasting.miss();return;}
+		}
 		if (!(entity instanceof LivingEntity target) || !target.isAlive()) return; // 安全终止（不产生效果）
 		// 百分比交换：各自按自身最大生命换算，单侧变动上限 ±50 点（2026-09-24 用户定稿），
 		// 保底 1 点不致死；50 = 25 颗心，防止对满血 Boss 一口吞掉大量生命

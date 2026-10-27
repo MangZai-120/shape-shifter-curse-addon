@@ -153,7 +153,7 @@ public final class SpellChannelManager {
     public static boolean start(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level,
             boolean solo, int token, int mana, int cooldown, BooleanSupplier sourceValid,
             Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers) {
-        if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return false;
+        if (net.ssca.neomagic.NeoRuntime.blocked(player)||net.ssca.neomagic.NeoLegacyCasting.isCasting(player)) return false;
         if (!RuneScheme.validScroll(player,scroll,spell))return false;
         if (ArcaneAnalysis.isUnanalyzed(scroll)) {
 			player.sendMessage(Text.translatable("message.ssc_addon.analysis.required"), true);
@@ -182,12 +182,7 @@ public final class SpellChannelManager {
 			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.cost_unavailable"), true);
 			return false;
 		}
-		if (!solo && !SpellbookData.canPayMana(
-				SpellCastManager.getEquippedBook(player), mana)) {
-			playNoManaSound(player);
-			player.sendMessage(SpellCastFeedback.noMana(SpellCastManager.getEquippedBook(player), mana), true);
-			return false;
-		}
+		net.ssca.neomagic.NeoRuntime.refreshForm(player);
 		// GCD：释放生效后 0.8s 内不能开始下一次施法（被打断的可立刻重试）
 		long gate = NEXT_CAST_OK.getOrDefault(player.getUuid(), 0L);
 		if (player.getWorld().getTime() < gate) {
@@ -201,6 +196,7 @@ public final class SpellChannelManager {
 		if (spell.requiresTargetBeforeChannel()) {
 			Vec3d target = RuneCastContext.with(channel.modifiers,()->spell.captureCastTarget(player, level));
 			if (target == null || !channel.progress.release(token, target)) {
+				channel.collapse.finish(false,"target_lost");
 				player.sendMessage(spell.getCastFailureMessage(player), true);
 				return false;
 			}
@@ -216,7 +212,7 @@ public final class SpellChannelManager {
 		syncFull(channel);
 		broadcastVisual(channel, true);
 		playChargeSound(channel);
-		if (channel.profile.ticks() == 0) advance(channel);
+		advance(channel); // Every cast draws at tick 0, before its first paid preparation interval.
 		if (solo) net.jackcooper.shapeShifterCurseAddon.network.SpellbookStatusSync.sync(player);
 		return true;
 	}
@@ -260,6 +256,12 @@ public final class SpellChannelManager {
 	}
 
 	private static boolean ensureValid(Channel channel) {
+		if (!channel.collapse.form.equals(net.ssca.neomagic.NeoRuntime.form(channel.player))
+				|| channel.player.hasStatusEffect(net.ssca.neomagic.NeoMagic.DISORDER)
+				|| channel.player.hasStatusEffect(net.ssca.neomagic.NeoMagic.DISINTEGRATION)
+				|| channel.player.hasStatusEffect(net.ssca.neomagic.NeoMagic.BREAKDOWN)) {
+			stop(channel.player,true);return false;
+		}
 		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(channel.player)) {
 			onFullyControlled(channel.player);
 			return false;
@@ -286,6 +288,7 @@ public final class SpellChannelManager {
 	private static void tick(Channel channel) {
 		ServerPlayerEntity player = channel.player;
 		if (ACTIVE.get(player.getUuid()) != channel) return;
+		if (player.getServer().getTicks() <= channel.beganTick) return;
 		if (!ensureValid(channel)) return;
 		if (channel.cancelHeld && ++channel.cancelTicks >= BAL.i("cancel_hold_ticks", 20)
 				&& !channel.spell.isLockedIn(player)
@@ -299,6 +302,7 @@ public final class SpellChannelManager {
 				return;
 			}
 		} else {
+			channel.collapseAge++;
 			channel.progress.tick();
 			RuneCastContext.run(channel.modifiers,()->channel.spell.tickChannel(player, channel.level, channel.scroll, channel.progress.elapsed()));
 			advance(channel);
@@ -323,12 +327,9 @@ public final class SpellChannelManager {
 	private static void advance(Channel channel) {
 		if (ACTIVE.get(channel.player.getUuid()) != channel) return;
 		if (!ensureValid(channel)) return;
-		if (!channel.manaPayment.advance(channel.progress.elapsed(), cost -> {
-			if (!SpellbookData.consumeMana(channel.manaBook, cost)) return false;
-			FormCastingStyle.markManaSpend(channel.player);
-			return true;
-		})) {
-			stop(channel.player, true, "message.ssc_addon.spell.cast_interrupted_mana");
+		if (!channel.collapse.advance(channel.collapseAge)) {
+			stop(channel.player, true, net.ssca.neomagic.NeoMagic.text("failed"), true);
+			net.ssca.neomagic.NeoRuntime.backlash(channel.player,channel.collapse.session.quote.actual());
 			return;
 		}
 		if (!RuneCastContext.with(channel.modifiers,()->channel.spell.readyToRelease(channel.player, channel.scroll)) || !channel.progress.beginEffect()) return;
@@ -336,7 +337,9 @@ public final class SpellChannelManager {
 			// 持续模式起手生效即视为释放生效，GCD 从此起算（持续阶段结束不再重置）
 			NEXT_CAST_OK.put(channel.player.getUuid(), channel.player.getWorld().getTime() + BAL.i("gcd_ticks", CAST_INTERVAL_TICKS));
 			try {
-				channel.effect.accept(channel.progress.target());
+				channel.collapse.effect(()->channel.effect.accept(channel.collapse.target(channel.progress.target())));
+				if(channel.collapse.effectFailed) {stop(channel.player,true,net.ssca.neomagic.NeoMagic.text("failed"),true);net.ssca.neomagic.NeoRuntime.backlash(channel.player,channel.collapse.session.quote.actual());}
+				else channel.collapse.finish(true,"released");
 			} catch (RuntimeException exception) {
 				stop(channel.player, true);
 				throw exception;
@@ -344,8 +347,13 @@ public final class SpellChannelManager {
 		} else {
 			// 释放生效（beginEffect 成功即将执行效果）：GCD 从此起算
 			NEXT_CAST_OK.put(channel.player.getUuid(), channel.player.getWorld().getTime() + BAL.i("gcd_ticks", CAST_INTERVAL_TICKS));
-			stop(channel.player, false);
-			channel.effect.accept(channel.progress.target());
+			stop(channel.player,false);
+			try {channel.collapse.effect(()->channel.effect.accept(channel.collapse.target(channel.progress.target())));}
+			catch(RuntimeException ex){channel.collapse.finish(false,"interrupted");throw ex;}
+			if(channel.collapse.effectFailed) {
+				channel.collapse.finish(false,"failed");
+				net.ssca.neomagic.NeoRuntime.backlash(channel.player,channel.collapse.session.quote.actual());
+			} else channel.collapse.finish(true,"released");
 		}
 	}
 
@@ -364,6 +372,7 @@ public final class SpellChannelManager {
 	private static void stop(ServerPlayerEntity player, boolean interrupted, Text reason, boolean fullCooldown) {
 		Channel channel = ACTIVE.remove(player.getUuid());
 		if (channel == null) return;
+		if (interrupted) channel.collapse.finish(false,"interrupted");
 		clearSlow(player);
 		broadcastVisual(channel, false);
 		channel.spell.onChannelEnded(player, interrupted);
@@ -381,7 +390,7 @@ public final class SpellChannelManager {
 		if (interrupted) {
 			playFailureSound(player);
 			var message = reason.copy();
-			if (!channel.solo) message.append(Text.translatable("message.ssc_addon.spell.interrupted_mana"));
+			// Paid collapse stays on the player; no book mana refund or deduction occurs.
 			player.sendMessage(message, true);
 		}
 		if (interrupted || channel.solo || channel.mode == SpellCastingRules.Mode.CONTINUOUS) {
@@ -502,8 +511,9 @@ public final class SpellChannelManager {
 		final IntConsumer settleCooldown;
 		final Runnable consumeUse;
 		final SpellCastingRules.Progress<Vec3d> progress;
-		final ItemStack manaBook;
-		final SpellManaPayment manaPayment;
+		final net.ssca.neomagic.NeoLegacyCasting collapse;
+		final int beganTick;
+		int collapseAge;
 		int cancelTicks, continuousTicks, visualTicks;
 		boolean cancelHeld;
 		/** 锁定态已广播标志（进入锁定的当 tick 补发一次校准包，防周期网格漏档）。 */
@@ -528,8 +538,9 @@ public final class SpellChannelManager {
             this.profile = new SpellCastingRules.Profile(modifiers.time(baseProfile.ticks()),baseProfile.speedMultiplier(),baseProfile.immobilized());
 			this.mode = spell.getCastingMode();
 			this.progress = new SpellCastingRules.Progress<>(this.mode, this.profile.ticks(), token);
-			this.manaBook = solo ? ItemStack.EMPTY : SpellCastManager.getEquippedBook(player);
-			this.manaPayment = new SpellManaPayment(solo ? 0 : mana, this.profile.ticks());
+			this.beganTick = player.getServer().getTicks();
+			int cost = solo ? modifiers.mana(Math.round(spell.getManaCost()*spell.getConfig().manaCostMultiplier(level))) : mana;
+			this.collapse = new net.ssca.neomagic.NeoLegacyCasting(player,spell,level,this.profile.ticks(),cost);
 			this.interruptMode = spell.getConfig().interruptMode;
 			this.dimension = player.getWorld().getRegistryKey();
 		}

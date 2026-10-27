@@ -55,7 +55,8 @@ public class SummonLunarSpiritSpell extends Spell {
 			return;
 		}
 		// 召唤数量：每两级 +1（L1-2=1只、L3-4=2只、L5=3只）
-		int count = 1 + (level - 1) / 2;
+		int count = net.ssca.neomagic.NeoLegacyCasting.summonCount(1 + (level - 1) / 2);
+        if (count <= 0) {net.ssca.neomagic.NeoLegacyCasting.miss();return;}
 		// 契约容量（阶段 B）：超出容量的旧月灵（最早召唤优先）被新召唤顶替——不拦截施法、
 		// 不扣费失败，满编时自动腾位（计划书 §11.2「替换预览」的服务端等价实现）。
 		// 全维度计数（修复：原先只查施法者周围 128 格，远处月灵不计入可超额存活）

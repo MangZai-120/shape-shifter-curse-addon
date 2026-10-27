@@ -58,7 +58,9 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 	}
 
 	private static Text label(String key, Object... args) {
-		return Text.translatable("gui.ssc_addon.infusion_altar." + key, args);
+		if(java.util.Set.of("mana","next_mana","mastery_bonus","universal_mana","universal_recovery","preview_mana","preview_recovery","preview_delay","preview_spell","element_effect","space_effect").contains(key))
+            return net.ssca.neomagic.NeoMagic.text("altar."+key,args);
+        return Text.translatable("gui.ssc_addon.infusion_altar." + key, args);
 	}
 
 	@Override
@@ -149,9 +151,8 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 		text(ctx, hasBook() ? label("level", SpellbookData.getLevel(book), SpellbookData.getSlotCount(book))
 				: label("waiting_book"), 198, 29, 100, INK);
 		text(ctx, label("mana"), 198, 44, 28, MUTED);
-		rightText(ctx, hasBook() ? SpellbookData.getMana(book) + "/" + SpellbookData.getMaxMana(book) : "— / —", 298, 44);
-		bar(ctx, 56, hasBook() ? SpellbookData.getMana(book) : 0,
-				hasBook() ? SpellbookData.getMaxMana(book) : 1, 0xFF647EA8);
+		rightText(ctx, hasBook() ? "+" + (int)net.ssca.neomagic.NeoLegacyCasting.safetyBonus(book) : "— / —", 298, 44);
+        text(ctx,net.ssca.neomagic.NeoMagic.text("altar.recovery",hasBook()?multiplier((float)net.ssca.neomagic.NeoLegacyCasting.recoveryMultiplier(book)):"—"),198,56,100,MUTED);
 		boolean mastery = hasBook() && SpellbookData.getLevel(book) == SpellbookData.MAX_LEVEL;
 		text(ctx, label(mastery ? "mastery" : "experience"), 198, 68, 28, MUTED);
 		int progress = 0, total = 1;
@@ -185,7 +186,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 		if (!this.nextBook.isEmpty()) {
 			text(ctx, label("next_slots", SpellbookData.getSlotCount(this.nextBook),
 					SpellbookData.getFormationSlotCount(this.nextBook)), 194, 206, 110, ACCENT);
-			text(ctx, label("next_mana", SpellbookData.getMaxMana(this.nextBook)), 194, 218, 110, MUTED);
+			text(ctx, label("next_mana", (int)net.ssca.neomagic.NeoLegacyCasting.safetyBonus(this.nextBook)), 194, 218, 110, MUTED);
 		} else if (hasBook()) {
 			text(ctx, label("mastery_tier", SpellbookData.getMasteryTier(book),
 					SpellbookData.masteryMaxBonus() / SpellbookData.masteryManaPerTier()), 194, 206, 110, ACCENT);
@@ -226,12 +227,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 
 	private Text chargingStatus() {
 		if (!hasBook()) return label("waiting_book");
-		if (canUpgradeNow()) return label("charge_paused");
-		if (SpellbookData.getMana(book()) >= SpellbookData.getMaxMana(book())) return label("mana_full");
-		ItemStack fuel = this.handler.getSlot(1).getStack();
-		if (fuel.isOf(RegCustomItem.UNTREATED_MOONDUST)) return label("charging", 10);
-		if (fuel.isOf(RegCustomItem.MOONDUST_CRYSTAL_SHARD)) return label("charging", 80);
-		return label("fuel_needed");
+        return net.ssca.neomagic.NeoMagic.text("altar.no_charge");
 	}
 
 	private int countFormations() {
@@ -283,10 +279,10 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 		List<Text> lines = new ArrayList<>();
 		lines.add((removal ? this.focusedSlot.getStack() : cursor).getName());
 		lines.add(label(removal ? "preview_remove" : "preview_insert").copy().formatted(Formatting.LIGHT_PURPLE));
-		lines.add(label("preview_mana", SpellbookData.getMaxMana(before), SpellbookData.getMaxMana(after)));
-		lines.add(label("preview_recovery", FormCastingStyle.naturalRegenPerSecond(before),
-				FormCastingStyle.naturalRegenPerSecond(after)));
-		lines.add(label("preview_delay", SpellCastFeedback.seconds(FormCastingStyle.naturalRegenDelayTicks())));
+		lines.add(label("preview_mana", (int)net.ssca.neomagic.NeoLegacyCasting.safetyBonus(before), (int)net.ssca.neomagic.NeoLegacyCasting.safetyBonus(after)));
+		lines.add(label("preview_recovery", multiplier((float)net.ssca.neomagic.NeoLegacyCasting.recoveryMultiplier(before)),
+                multiplier((float)net.ssca.neomagic.NeoLegacyCasting.recoveryMultiplier(after))));
+		lines.add(label("preview_delay", SpellCastFeedback.seconds(net.ssca.neomagic.client.NeoClient.hud.contains("RecoveryDelay")?net.ssca.neomagic.client.NeoClient.hud.getInt("RecoveryDelay"):60)));
 		boolean hasSpell = false;
 		for (int slot = 0; slot < SpellbookData.getSlotCount(before); slot++) {
 			ItemStack scroll = SpellbookData.getScroll(before, slot);
@@ -302,13 +298,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 				continue;
 			}
 			var line = label("preview_spell", name, level, oldCost, cost).copy();
-			if (cost > SpellbookData.getMaxMana(after)) {
-				line.append(label("preview_capacity", cost - SpellbookData.getMaxMana(after)));
-				line.formatted(Formatting.RED);
-			} else if (cost > SpellbookData.getMana(after)) {
-				line.append(label("preview_missing", cost - SpellbookData.getMana(after)));
-				line.formatted(Formatting.GOLD);
-			}
+
 			lines.add(line);
 		}
 		if (!hasSpell) lines.add(label("preview_no_spells"));

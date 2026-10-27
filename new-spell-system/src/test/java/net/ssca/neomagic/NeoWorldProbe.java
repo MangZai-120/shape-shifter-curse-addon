@@ -35,6 +35,7 @@ public final class NeoWorldProbe {
         NbtIo.writeCompressed(empty,directory.resolve("empty.nbt").toFile());
         var test=stability?new TestFunction("neomagic","stability_soak","ssca_neomagic:empty",Integer.getInteger("neomagic.soakTicks",2400)*3+3000,0,true,NeoStabilityWorldProbe::start)
                 :new TestFunction("neomagic","world_lifecycle","ssca_neomagic:empty",300,0,true,NeoWorldProbe::test);
+        if(Boolean.getBoolean("neomagic.bookCutover"))test=new TestFunction("neomagic","book_cutover","ssca_neomagic:empty",300,0,true,NeoBookWorldProbe::start);
         var batch=new GameTestBatch("neomagic",List.of(test),world->{},world->{});
         MinecraftServer.startServer(thread->TestServer.create(thread,save,VanillaDataPackProvider.createManager(save),List.of(batch),new BlockPos(0,64,0)));
     }
