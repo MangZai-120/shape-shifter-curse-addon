@@ -35,9 +35,13 @@ public final class NeoStressModelTest {
             int oldChecks=s.checkpoints.size();double oldPaid=s.paid;
             s.advance(b.prep()+1,c,f,random);check(oldChecks==s.checkpoints.size()&&oldPaid==s.paid,"No post-terminal charges or draws");
             for(Checkpoint cp:s.checkpoints) {
-                check(cp.tick()%10==0,"Fixed 10-tick detection schedule");
-                if(cp.burden()<=f.safety())check(cp.risk().failure()==0&&cp.risk().offset()==0&&!cp.failed()&&!cp.shifted(),"Safe region is deterministic");
+                check(cp.tick()%10==0||cp.failed(),"Drift stays on the ten-tick grid; scheduled failure may fire at any tick");
+                if(cp.burden()<=f.safety())check(cp.risk().offset()==0&&!cp.shifted(),"Live safe region guarantees no deviation");
+                check(cp.risk().failure()==s.failureProbability,"Every checkpoint retains the one initial failure probability");
             }
+            check(s.failureDraws==1,"One failure draw per cast");
+            if(s.failureBasis<=f.safety())check(!s.failed&&s.failureProbability==0,"Projected safe payment guarantees no failure");
+            if(s.failed)check(s.checkpoints.get(s.checkpoints.size()-1).tick()<Math.max(1,b.prep()),"Failure occurs before release boundary");
         }
         double seconds=(System.nanoTime()-start)/1e9;
         String json=String.format(Locale.ROOT,"{\"seed\":20261027,\"sessions\":%d,\"valid_blueprints\":%d,\"simulated_ticks\":%d,\"relief_events\":%d,\"completed\":%d,\"failed\":%d,\"invariant_checks\":%d,\"seconds\":%.3f}%n",cases,blueprints.size(),ticks,reliefs,finished,failed,checks,seconds);

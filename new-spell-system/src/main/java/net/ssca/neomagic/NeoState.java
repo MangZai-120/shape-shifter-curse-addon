@@ -16,6 +16,8 @@ public final class NeoState extends PersistentState {
         public String id = UUID.randomUUID().toString(), version = NeoRules.version(), result = "preparing";
         public String spell = "";
         public int preparation, omittedChecks;
+        public double failureBasis, failureProbability;
+        public int failureDraws, failureBoundary;
         public Blueprint blueprint;
         public Profile profile;
         public String form, dimension, target = "none";
@@ -94,6 +96,7 @@ public final class NeoState extends PersistentState {
         if(d.cooldowns.entrySet().stream().anyMatch(e->e.getKey()==null||e.getValue()==null||e.getValue()<0))throw new IllegalStateException("Invalid cooldown ledger");
         for(var record:d.records)if(record==null||record.blueprint==null||!errors(record.blueprint).isEmpty()||record.id==null||record.result==null
                 ||record.id.length()<8||record.form==null||record.version==null||record.target==null||record.spell==null||record.spell.length()>256||record.preparation<0||record.omittedChecks<0
+                ||!Double.isFinite(record.failureBasis+record.failureProbability)||record.failureBasis<0||record.failureProbability<0||record.failureProbability>1||record.failureDraws<0||record.failureDraws>1||record.failureBoundary<0
                 ||!Double.isFinite(record.initial+record.actual+record.normal+record.paid+record.arrived+record.damage+record.healing+record.absorbed+record.yaw+record.pitch)
                 ||record.checks==null||record.checks.size()>512||record.checks.stream().anyMatch(c->c==null||c.risk()==null)
                 ||record.measurements==null||record.measurements.size()>32)

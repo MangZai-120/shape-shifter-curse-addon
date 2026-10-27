@@ -25,8 +25,11 @@ assert.equal(immediate.status, 'failed');
 assert.equal(immediate.paid, immediate.quote.actual);
 const initialFailure = M.simulate({ ...base, burden: 500 }, 1);
 assert.equal(initialFailure.status, 'failed');
-assert.equal(initialFailure.paid, 0);
-assert.equal(initialFailure.endTick, 0);
+assert.ok(initialFailure.endTick >= 0 && initialFailure.endTick < base.prep);
+assert.ok(Math.abs(initialFailure.paid - initialFailure.quote.actual * (Math.floor(initialFailure.endTick / 2) * 2) / base.prep) < 1e-8);
+assert.equal(initialFailure.failureDraws, 1);
+assert.equal(initialFailure.checkpoints.at(-1).failed, true);
+assert.equal(M.plan(base).cumulative, M.risk(base, base.burden + q.actual).failure);
 const safe = M.simulate({ ...base, burden: 0 }, 1);
 assert.equal(safe.status, 'complete');
 assert.equal(safe.paid, safe.quote.actual);
@@ -45,5 +48,11 @@ for (let seed = 1; seed < 1000; seed++) {
 }
 assert.ok(partialFailure);
 assert.ok(partialFailure.paid > 0 && partialFailure.paid < partialFailure.quote.actual);
+for (let seed = 1; seed <= 4000; seed++) {
+  const attempt = M.simulate({ ...base, burden: 500 }, seed);
+  assert.equal(attempt.failureDraws, 1);
+  assert.ok(attempt.endTick < base.prep);
+  assert.ok(attempt.checkpoints.every(point => point.failed || point.tick % 10 === 0));
+}
 console.log('Design model checks passed: budget conservation, typed structures, live form risks, timeline boundaries, partial payment, adaptation and safe-area guarantees.');
 console.log('This verifies the design calculator only; Minecraft gameplay is not implemented by this prototype.');

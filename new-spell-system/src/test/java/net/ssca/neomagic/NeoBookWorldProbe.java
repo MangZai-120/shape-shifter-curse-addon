@@ -70,8 +70,12 @@ public final class NeoBookWorldProbe {
                 var wand=new ItemStack(NeoMagic.WAND);wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(NeoModel.Blueprint.starter()));p.setStackInHand(Hand.OFF_HAND,wand);
                 NeoRuntime.start(p,Hand.OFF_HAND);check(!NeoRuntime.ACTIVE.containsKey(p.getUuid()),"Book and loaded wand cannot prepare in parallel");
                 var bad=player(t);var badBook=book(bad);SpellbookData.setScroll(badBook,0,ScrollData.create("lunar_mend",1));
+                NeoRuntime.data(bad).burden=10000;
                 SpellCastManager.cast(bad,0,321);var interrupted=NeoLegacyCasting.active(bad);
-                check(interrupted!=null,"Second player starts independently");NeoRuntime.data(bad).burden=10000;
+                var badRecord=NeoRuntime.data(bad).records.get(0);
+                var changing=player(t);var changingBook=book(changing);SpellbookData.setScroll(changingBook,0,ScrollData.create("lunar_mend",1));
+                SpellCastManager.cast(changing,0,322);var changingCast=NeoLegacyCasting.active(changing);
+                check(changingCast!=null&&changingCast.session.failureProbability==0,"Projected safe cast passes its one initial failure draw");NeoRuntime.data(changing).burden=10000;
                 var solo=player(t);solo.setHealth(5);var soloScroll=ScrollData.create("lunar_mend",1);solo.setStackInHand(Hand.MAIN_HAND,soloScroll);
                 int uses=ScrollData.getUses(soloScroll);soloScroll.use(t.getWorld(),solo,Hand.MAIN_HAND);var soloCast=NeoLegacyCasting.active(solo);
                 check(soloCast!=null&&soloCast.session.quote.actual()>0,"Standalone scroll pays collapse");
@@ -86,15 +90,33 @@ public final class NeoBookWorldProbe {
                 check(failure.paid==15&&failure.checks.size()==1&&failure.checks.get(0).tick()==0,"Instant failure pays full at zero exactly once");
                 check(effect[0]==0&&cd[0]==100&&!SpellChannelManager.isCasting(instant),"Guaranteed failure interrupts effect with full cooldown");
                 check(!NeoRuntime.data(instant).progress.containsKey("spell:"+real.getId()),"Failure grants no adaptation");
-                t.waitAndRun(3,()->{check(cast.session.paid>0&&cast.session.paid<cast.session.quote.actual(),"Preparation adds C progressively");check(SpellbookData.getMana(book)==0,"Payment never touches old mana");});
-                t.waitAndRun(14,()->{
-                    check(!SpellChannelManager.isCasting(bad)&&interrupted.session.failed,"Rising LIVE C fails next checkpoint");
-                    check(interrupted.session.checkpoints.stream().map(NeoModel.Checkpoint::tick).toList().equals(List.of(0,10)),"Checks run at 0 and 10 exactly once");
-                    check(interrupted.session.paid>0&&interrupted.session.paid<interrupted.session.quote.actual(),"Failure retains paid part without charging remainder");
-                    long remaining=SharedSpellCooldowns.getCooldownEndOf(bad,SpellRegistry.get("lunar_mend"))-bad.getWorld().getTime();
-                    check(remaining>220,"Live failure receives full 240 tick cooldown");
+                t.waitAndRun(3,()->{
+                    check(cast.session.paid>0&&cast.session.paid<cast.session.quote.actual(),"Preparation adds C progressively");check(SpellbookData.getMana(book)==0,"Payment never touches old mana");
+                    var hud=NeoNetwork.hudState(changing);
+                    check(hud.getDouble("Failure")==0&&hud.getDouble("Offset")>0,"HUD keeps initial whole-cast failure chance while deviation follows live C");
+                    check(hud.getDouble("FailureBasis")==changingCast.session.quote.actual(),"HUD retains the initial projected payment basis");
+                });
+                var early=player(t);NeoRuntime.data(early).burden=10000;int[] lockedEffect={0},lockedCd={0};long began=early.getWorld().getTime();
+                var lockingSpell=new Spell(real.getId(),SpellRarity.WHITE) {
+                    @Override public SpellCastingRules.Profile getCastingProfile(ServerPlayerEntity c,int l,boolean s){return new SpellCastingRules.Profile(30,1,false);}
+                    @Override public int getLockInTick(){return 5;}
+                    @Override public boolean isLockedIn(ServerPlayerEntity c){return c.getWorld().getTime()-began>=5;}
+                    @Override public void cast(ServerPlayerEntity c,float power,boolean s){}
+                };
+                check(SpellChannelManager.start(early,lockingSpell,ScrollData.create("fire_bolt"),1,false,323,15,100,()->true,v->lockedEffect[0]++,c->lockedCd[0]=c,()->{}),"Pre-lock failure fixture starts");
+                var lockRecord=NeoRuntime.data(early).records.get(0);
+                t.waitAndRun(8,()->{
+                    check(!SpellChannelManager.isCasting(early)&&lockRecord.result.equals("failed"),"Failure fires before the spell becomes locked");
+                    check(lockRecord.checks.get(lockRecord.checks.size()-1).tick()<5&&lockedEffect[0]==0&&lockedCd[0]==100,"No effect or lock bypass; full cooldown settles once");
+                    check(!NeoState.JSON.toJson(NeoRuntime.data(early)).contains("failureAt"),"Research snapshots never reveal the scheduled failure tick");
                 });
                 t.waitAndRun(34,()->{
+                    check(!SpellChannelManager.isCasting(bad)&&badRecord.result.equals("failed")&&badRecord.failureDraws==1,"One initial failure result eventually interrupts preparation");
+                    check(badRecord.checks.get(badRecord.checks.size()-1).tick()<30,"Normal spell fails strictly before completion");
+                    check(badRecord.paid>=0&&badRecord.paid<badRecord.actual,"Failure retains paid C without charging remainder");
+                    long remaining=SharedSpellCooldowns.getCooldownEndOf(bad,SpellRegistry.get("lunar_mend"))-bad.getWorld().getTime();
+                    check(remaining>200,"Scheduled failure receives full quoted cooldown");
+                    check(!changingCast.session.failed&&changingCast.session.failureDraws==1,"Rising live C never rerolls the initial failure result");
                     check(!SpellChannelManager.isCasting(p)&&p.getHealth()>5,"Existing book healing effect releases");
                     check(Math.abs(NeoRuntime.data(p).burden-cast.session.quote.actual())<1e-7,"Book payment equals final quote");
                     check(cast.session.checkpoints.stream().map(NeoModel.Checkpoint::tick).toList().equals(List.of(0,10,20,30)),"30 tick cast includes start and endpoint");

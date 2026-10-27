@@ -106,13 +106,15 @@ public final class NeoNetwork {
             }
         }
         Risk r=risk(b,d.burden,q.actual(),NeoRuntime.profile(p));
-        n.putDouble("Q",q.actual());n.putDouble("Failure",r.failure());n.putDouble("Offset",r.offset());
+        var session=legacy!=null?legacy.session:a==null?null:a.session;
+        double failure=session==null?risk(b,d.burden+q.actual(),q.actual(),NeoRuntime.profile(p)).failure():session.failureProbability;
+        n.putDouble("Q",q.actual());n.putDouble("Failure",failure);n.putDouble("Offset",r.offset());
+        n.putDouble("FailureBasis",session==null?d.burden+q.actual():session.failureBasis);
         n.putInt("CD",d.cooldowns.getOrDefault(b.identity(),0));n.putBoolean("Stored",NeoEffects.hasStored(p.getUuid()));
         if(!legacyName.isEmpty()) {
             var spell=net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.get(new Identifier(legacyName));
             if(spell!=null)n.putInt("CD",(int)Math.max(0,net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.getCooldownEndOf(p,spell)-p.getWorld().getTime()));
         }
-        var session=legacy!=null?legacy.session:a==null?null:a.session;
         n.putInt("Age",legacy!=null?legacy.age:a==null?-1:a.age);n.putInt("Prep",prep);n.putDouble("Paid",session==null?0:session.paid);
         n.putDouble("Yaw",session==null?0:session.yaw);n.putDouble("Pitch",session==null?0:session.pitch);
         n.putDouble("Cumulative",session==null?0:1-session.survival);n.putString("Spell",legacyName);

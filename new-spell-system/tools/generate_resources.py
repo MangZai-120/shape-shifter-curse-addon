@@ -91,7 +91,14 @@ results["missed"]=("效果结束，未命中测量目标","Effect finished; no m
 results["effect_lost"]=("效果被外部生命周期清理","Effect removed by external lifecycle")
 zh["absorption"]="实际消耗吸收量：%s";en["absorption"]="Absorption actually consumed: %s"
 zh["shared_evidence"]="共享证据 %s 条（不计入个人实测或适应）";en["shared_evidence"]="%s shared evidence records (no personal adaptation or observations)"
-zh["hud_deviation"]="已历风险 %s · 偏移 %s°/%s°";en["hud_deviation"]="Past risk %s / Drift %s/%s"
+zh.update({"hud_risk":"代价 %s · 整次失败 %s · 当前偏移 %s", "hud_deviation":"起手失败率 %s · 偏角 %s°/%s°",
+    "current_risk":"起手抽签失败率 %s · 当前偏移率 %s", "forecast":"预计完整支付后 C=%s（只抽一次失败）",
+    "safe_guarantee":"完整支付后仍在安全阈值内，失败抽签必过。偏移只看每次检查时的实际 C。",
+    "failure_draw":"一次失败抽签：预计 C=%s，概率 %s，界限 tick %s（瞬发在0 tick判定）"})
+en.update({"hud_risk":"Cost %s / Cast fail %s / Live drift %s", "hud_deviation":"Initial fail chance %s / Drift %s/%s",
+    "current_risk":"One cast-failure draw %s / Live drift %s", "forecast":"Projected final C=%s (one failure draw)",
+    "safe_guarantee":"Projected payment within safety guarantees the failure draw passes. Drift uses live C at each check.",
+    "failure_draw":"One failure draw: projected C=%s, chance %s, boundary tick %s (instant: tick 0)"})
 zh["evidence_summary"]="%s：起始%s / 负担%s / 到达%s";en["evidence_summary"]="%s: initial %s / cost %s / arrived %s"
 errors={"name":("名称不能超过32字","Name exceeds 32 characters"),"scale":("作用规模必须在0.5至4之间","Scale must be 0.5 to 4"),"prep":("准备必须在0至80 tick之间","Preparation must be 0 to 80 ticks"),"range":("路径超限；超过32格需要跨越控制","Path exceeds capacity; bridge required beyond 32 blocks"),"carrier":("作用核不支持此载形","Core does not support this carrier"),"capacity":("最多6个控制节点","At most 6 control nodes"),"repeat":("储存、跨越、转化各最多1次","Store, bridge and convert are each limited to one"),"constraints":("约束最多2层","At most 2 constraint layers"),"conversion":("没有此作用核的转换适配","No conversion adapter for this core"),"branches":("终端超过6路","More than 6 terminals"),"self_split":("自体没有多路目标通路","Self carrier has no multiple target paths"),"summon_merge":("构成尚无集中对象适配","No concentrated summon adapter")}
 for key,(cn,eng) in errors.items():zh["error."+key]=cn;en["error."+key]=eng

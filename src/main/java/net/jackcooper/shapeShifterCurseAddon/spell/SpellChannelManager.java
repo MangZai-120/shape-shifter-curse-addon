@@ -212,7 +212,7 @@ public final class SpellChannelManager {
 		syncFull(channel);
 		broadcastVisual(channel, true);
 		playChargeSound(channel);
-		advance(channel); // Every cast draws at tick 0, before its first paid preparation interval.
+		advance(channel); // Draw failure once at tick 0; a failed draw interrupts at its scheduled pre-lock tick.
 		if (solo) net.jackcooper.shapeShifterCurseAddon.network.SpellbookStatusSync.sync(player);
 		return true;
 	}

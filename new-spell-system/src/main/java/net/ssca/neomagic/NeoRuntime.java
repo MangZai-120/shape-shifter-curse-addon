@@ -71,6 +71,7 @@ public final class NeoRuntime {
         double delta=s.advance(a.age,d.burden,profile(p),new Random(p.getRandom().nextLong()));
         d.burden+=delta;if(delta>0){d.recovery=NeoRules.recoveryDelay;d.lastPaymentTick=p.getServer().getTicks();}
         a.record.paid=s.paid;a.record.checks=new ArrayList<>(s.checkpoints);a.record.yaw=s.yaw;a.record.pitch=s.pitch;a.record.reversed=s.reversed;
+        a.record.failureBasis=s.failureBasis;a.record.failureProbability=s.failureProbability;a.record.failureDraws=s.failureDraws;a.record.failureBoundary=s.failureBoundary;
         if(s.failed) fail(p,a);
         else if(s.complete) {
             ACTIVE.remove(p.getUuid());

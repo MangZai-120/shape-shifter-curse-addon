@@ -74,11 +74,12 @@
   }
   function plan(input) {
     const s = normalise(input), q = quote(s), checkpoints = [];
+    const failure = risk(s, s.burden + q.actual).failure;
     for (let t = 0; t <= s.prep; t += 10) {
       const paid = q.actual * (s.prep === 0 ? 1 : t / s.prep);
-      checkpoints.push({ tick: t, paid, burden: s.burden + paid, ...risk(s, s.burden + paid) });
+      checkpoints.push({ tick: t, paid, burden: s.burden + paid, ...risk(s, s.burden + paid), failure });
     }
-    return { checkpoints, cumulative: 1 - checkpoints.reduce((value, p) => value * (1 - p.failure), 1) };
+    return { checkpoints, cumulative: failure, failureBasis: s.burden + q.actual, failureDraws: 1 };
   }
   function rng(seed) {
     let n = seed >>> 0;
@@ -88,20 +89,22 @@
     const s = normalise(input), errors = validate(s);
     if (errors.length) return { invalid: true, errors };
     const q = quote(s), next = rng(seed), checkpoints = [];
+    const probability = risk(s, s.burden + q.actual).failure;
+    const failureAt = next() < probability ? Math.floor(next() * Math.max(1, s.prep)) : -1;
     let paid = 0, yaw = 0, pitch = 0, failed = false, endTick = s.prep;
     for (let tick = 0; tick <= s.prep; tick++) {
       const billed = tick === s.prep ? tick : Math.floor(tick / 2) * 2;
       paid = q.actual * (s.prep === 0 ? 1 : billed / s.prep);
-      if (tick % 10 !== 0) continue;
+      failed = tick === failureAt;
+      if (tick % 10 !== 0 && !failed) continue;
       const r = risk(s, s.burden + paid);
-      failed = r.failure > 0 && next() < r.failure;
-      const shifted = !failed && r.offset > 0 && next() < r.offset;
+      const shifted = !failed && tick % 10 === 0 && r.offset > 0 && next() < r.offset;
       if (shifted) { yaw += (next() * 2 - 1) * r.angle; pitch += (next() * 2 - 1) * r.angle; }
-      checkpoints.push({ tick, paid, burden: s.burden + paid, ...r, failed, shifted, yaw, pitch });
+      checkpoints.push({ tick, paid, burden: s.burden + paid, ...r, failure: probability, failed, shifted, yaw, pitch });
       if (failed) { endTick = tick; break; }
     }
     return { id: String(Date.now()) + '-' + seed, seed, scheme: s, quote: q, checkpoints,
-      status: failed ? 'failed' : 'complete', paid, endBurden: s.burden + paid, endTick,
+      status: failed ? 'failed' : 'complete', paid, endBurden: s.burden + paid, endTick, failureDraws: 1, failureProbability: probability, failureBasis: s.burden + q.actual,
       yaw, pitch, outputBudget: failed ? 0 : q.budget, created: new Date().toLocaleTimeString('zh-CN', { hour12: false }) };
   }
   const api = { cores, carriers, structures, forms, normalise, validate, quote, risk, plan, simulate };

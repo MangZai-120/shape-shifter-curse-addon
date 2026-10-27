@@ -122,12 +122,21 @@ public final class NeoModel {
         public final Quote quote;
         public final List<Checkpoint> checkpoints = new ArrayList<>();
         public double paid, yaw, pitch, attenuation = 1, survival = 1;
+        public double failureProbability, failureBasis;
+        public int failureDraws;
+        /** Exclusive end of the window in which a scheduled failure may fire. */
+        public final int failureBoundary;
         public boolean failed, complete, reversed, wrongTarget;
         private int previous = -1;
+        private int failureAt = -1;
         private final int duration;
         public Session(Blueprint b, Quote q) { this(b,q,b.prep()); }
         /** Existing spells may have longer preparation than the research editor's 80 tick range. */
-        public Session(Blueprint b, Quote q, int duration) { blueprint = b; quote = q; this.duration=Math.max(0,duration); }
+        public Session(Blueprint b, Quote q, int duration) { this(b,q,duration,duration); }
+        public Session(Blueprint b, Quote q, int duration, int lockInTick) {
+            blueprint=b;quote=q;this.duration=Math.max(0,duration);
+            failureBoundary=lockInTick<0?this.duration:Math.min(this.duration,lockInTick);
+        }
         /** Caller adds returned delta to its sole C before consuming this checkpoint. */
         public double advance(int age, double current, Profile form, RandomGenerator rng) {
             return advance(age,current,form,rng,true);
@@ -136,15 +145,22 @@ public final class NeoModel {
             if (failed || complete || age <= previous) return 0;
             if (age != previous + 1) throw new IllegalArgumentException("Session must advance one tick at a time");
             previous = age;
+            if(failureDraws==0) {
+                // One whole-cast draw, using the initial C plus this cast's actual locked quote.
+                // Keep the result and scheduled time on the server; later C changes never redraw it.
+                failureBasis=current+quote.actual;
+                failureProbability=risk(blueprint,failureBasis,quote.actual,form).failure;
+                failureDraws=1;survival=1-failureProbability;
+                if(rng.nextDouble()<failureProbability)failureAt=rng.nextInt(Math.max(1,failureBoundary));
+            }
             int billed = age >= duration ? duration : age / 2 * 2;
             double due = duration == 0 ? quote.actual : quote.actual*billed/duration;
             double delta = Math.max(0,due-paid); paid += delta;
-            if (age % 10 == 0) {
-                Risk r = risk(blueprint,current+delta,quote.actual,form);
-                survival*=1-r.failure;
-                boolean failDraw = r.failure > 0 && rng.nextDouble() < r.failure;
-                boolean shiftDraw = r.offset > 0 && rng.nextDouble() < r.offset;
-                failed = failDraw;
+            failed=age==failureAt;
+            if (age % 10 == 0 || failed) {
+                Risk live=risk(blueprint,current+delta,quote.actual,form);
+                Risk r=new Risk(live.excess,failureProbability,live.offset,live.angle);
+                boolean shiftDraw=!failed&&age%10==0&&r.offset>0&&rng.nextDouble()<r.offset;
                 if (!failed && shiftDraw) {
                     yaw += (rng.nextDouble()*2-1)*r.angle;
                     pitch += (rng.nextDouble()*2-1)*r.angle;

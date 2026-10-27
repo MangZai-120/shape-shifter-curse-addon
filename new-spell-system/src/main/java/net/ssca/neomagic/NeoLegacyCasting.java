@@ -78,7 +78,7 @@ public final class NeoLegacyCasting {
         player=p;this.duration=duration;form=NeoRuntime.form(p);key="spell:"+spell.getId();
         var d=NeoRuntime.data(p);var b=descriptor(spell,level,duration);band=b.band();
         Quote quote=quote(p,spell,level,duration,normalCost);double normal=quote.normal();
-        session=new Session(b,quote,duration);
+        session=new Session(b,quote,duration,spell.getLockInTick());
         record=new NeoState.Experiment();record.blueprint=b;record.spell=spell.getId().toString();record.preparation=duration;
         record.form=form;record.profile=profile(p);record.initial=d.burden;record.normal=normal;record.actual=session.quote.actual();
         record.dimension=p.getWorld().getRegistryKey().getValue().toString();d.add(record);
@@ -104,6 +104,7 @@ public final class NeoLegacyCasting {
         // Keep start plus the latest checkpoints for an indefinitely held legacy key.
         while(session.checkpoints.size()>512){session.checkpoints.remove(1);record.omittedChecks++;}
         record.paid=session.paid;record.checks=new ArrayList<>(session.checkpoints);
+        record.failureBasis=session.failureBasis;record.failureProbability=session.failureProbability;record.failureDraws=session.failureDraws;record.failureBoundary=session.failureBoundary;
         record.yaw=session.yaw;record.pitch=session.pitch;record.reversed=session.reversed;
         NeoRuntime.dirty(player);
         if(session.failed){finish(false,"failed");return false;}

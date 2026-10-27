@@ -83,8 +83,8 @@
     $('safety-line').style.left = `${profile.safety / (profile.safety + 150) * 100}%`;
     $('risk-stage').textContent = now.excess === 0 ? '安全范围内' : `超出安全线 ${fmt(now.excess)} 点`;
     $('risk-stage').style.color = now.excess > 0 ? 'var(--red)' : 'var(--cyan)';
-    $('risk-now').textContent = `本次检测 ${pct(now.failure)}`;
-    $('projected').textContent = `完整支付后预计 ${fmt(state.burden + q.actual)}。条件不再变化时，整次预估 ${pct(plan.cumulative)}。`;
+    $('risk-now').textContent = `起手失败抽签 ${pct(plan.cumulative)}`;
+    $('projected').textContent = `完整支付后预计 ${fmt(state.burden + q.actual)}。失败只抽一次，整次概率 ${pct(plan.cumulative)}。`;
     $('load-baseline').disabled = !baseline;
     diagram();
   }
@@ -111,7 +111,7 @@
     if (comparisonBase.carrier !== s.carrier) differences.push('载形');
     const detail = scheme => `${safe(M.forms[scheme.form].name)} · 起始负担 ${fmt(scheme.burden)}<br>${fmt(scheme.intensity, 2)} U · ${fmt(scheme.prep / 20)} 秒 · ${scheme.range} 格`;
     $('comparison').innerHTML = `<div class="comparison-grid"><div><small>基准方案</small><h3>${safe(M.structures[comparisonBase.structure].name)}</h3><p>${detail(comparisonBase)}<br>实际报价 ${fmt(qb.actual)} · 作用预算 ${fmt(qb.budget)}</p></div><div><small>选中的演算记录</small><h3>${safe(M.structures[s.structure].name)} · ${record.status === 'failed' ? '释放失败' : '演算完成'}</h3><p>${detail(s)}<br>已支付 ${fmt(record.paid)} · 演算输出预算 ${fmt(record.outputBudget)}<br>累计偏移 ${fmt(Math.hypot(record.yaw, record.pitch), 2)}°</p></div></div><div class="condition-note ${differences.length ? 'warning' : ''}">${!baseline ? '尚未保存基准；当前仅展示这份记录。' : differences.length ? `比较条件有差异：${differences.join('、')}。先保留疑问，不能只把结果归因于组织方式。` : '形态、起始负担和主要参数一致，可用于比较组织方式；一次抽卡结果仍不构成确定结论。'}</div>`;
-    $('timeline').innerHTML = `<table class="timeline"><thead><tr><th>时点</th><th>已支付</th><th>累计／超额</th><th>本次失败率</th><th>本次偏移率</th><th>观察</th></tr></thead><tbody>${record.checkpoints.map(point => `<tr class="${point.failed ? 'failed' : point.shifted ? 'shifted' : ''}"><td>${fmt(point.tick / 20)} 秒</td><td>${fmt(point.paid)}</td><td>${fmt(point.burden)} / +${fmt(point.excess)}</td><td>${pct(point.failure)}</td><td>${pct(point.offset)}</td><td>${point.failed ? '中断 · 完整CD' : point.shifted ? `偏移累计 ${fmt(Math.hypot(point.yaw, point.pitch), 2)}°` : point.excess === 0 ? '安全通过' : '本次通过'}</td></tr>`).join('')}</tbody></table>`;
+    $('timeline').innerHTML = `<table class="timeline"><thead><tr><th>时点</th><th>已支付</th><th>累计／超额</th><th>起手抽签率</th><th>本次偏移率</th><th>观察</th></tr></thead><tbody>${record.checkpoints.map(point => `<tr class="${point.failed ? 'failed' : point.shifted ? 'shifted' : ''}"><td>${fmt(point.tick / 20)} 秒</td><td>${fmt(point.paid)}</td><td>${fmt(point.burden)} / +${fmt(point.excess)}</td><td>${pct(point.failure)}</td><td>${pct(point.offset)}</td><td>${point.failed ? '中断 · 完整CD' : point.shifted ? `偏移累计 ${fmt(Math.hypot(point.yaw, point.pitch), 2)}°` : point.excess === 0 ? '安全通过' : '本次通过'}</td></tr>`).join('')}</tbody></table>`;
   }
   function renderNotes() {
     const last = records[0];

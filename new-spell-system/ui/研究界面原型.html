@@ -60,7 +60,7 @@
               <div class="body-values"><span>当前累计 <b id="burden-value">70.0</b></span><span>安全阈值 <b id="safety-value">100</b></span></div>
               <div class="burden-bar"><div id="burden-fill"></div><i id="safety-line"></i></div>
               <input type="range" id="burden" min="0" max="300" step="1" value="70" aria-label="调整演示初始负担">
-              <div class="risk-line"><span id="risk-stage">安全范围内</span><b id="risk-now">本次检测 0%</b></div><p class="muted" id="projected"></p>
+              <div class="risk-line"><span id="risk-stage">安全范围内</span><b id="risk-now">起手失败抽签 0%</b></div><p class="muted" id="projected"></p>
               <button id="recover" class="reset-button">调整演示条件：负担归零</button>
             </div>
           </aside>
@@ -69,7 +69,7 @@
       <section class="page" id="page-experiment" hidden>
         <div class="section-title"><div><small>EXPERIMENT</small><h2>对照条件，再解释结果</h2></div><button class="subtle-button" data-go="craft">← 返回构式</button></div>
         <div class="experiment-layout"><aside class="panel history-panel"><div class="panel-title">演算记录 <span id="record-count">0</span></div><div id="history"></div><p class="muted">这里保存界面原型的规则演算，不是游戏实体测量。</p></aside>
-          <div class="experiment-main"><div id="comparison" class="panel comparison"></div><div class="panel timeline-panel"><div class="panel-title">施法检测时间线 <small>从 0 tick 起，每 10 tick</small></div><div id="timeline"></div></div><div class="sample-caution">观察次数与未来概率分别解释。一次随机结果不能单独证明因果。</div></div></div>
+          <div class="experiment-main"><div id="comparison" class="panel comparison"></div><div class="panel timeline-panel"><div class="panel-title">施法检测时间线 <small>失败只抽一次；偏移从 0 tick 起每 10 tick</small></div><div id="timeline"></div></div><div class="sample-caution">观察次数与未来概率分别解释。一次随机结果不能单独证明因果。</div></div></div>
       </section>
       <section class="page" id="page-notes" hidden>
         <div class="section-title"><div><small>RESEARCH NOTES</small><h2>将观察、假说和结论分开保存</h2></div><span class="tag">笔记不增加身体适应</span></div>

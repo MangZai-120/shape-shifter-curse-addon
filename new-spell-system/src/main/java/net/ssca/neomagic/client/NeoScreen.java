@@ -128,7 +128,8 @@ public final class NeoScreen extends Screen {
                 Risk risk=risk(edit,data.burden,q.actual(),profile);
                 line("quote",f(q.normal()),f(q.actual()),pc(bodyMastery(edit)));
                 line("body",f(data.burden),f(profile.safety()),f(risk.excess()));
-                line("current_risk",pc(risk.failure()),pc(risk.offset()));line("form",formName(data.form));
+                double probability=risk(edit,data.burden+q.actual(),q.actual(),profile).failure();
+                line("current_risk",pc(probability),pc(risk.offset()));line("forecast",f(data.burden+q.actual()));line("form",formName(data.form));
                 line("safe_guarantee");if(profile.reference())line("reference_profile");
             }
             if(!table)line("need_table");
@@ -159,6 +160,7 @@ public final class NeoScreen extends Screen {
     private void experimentLines(NeoState.Experiment e) {
         if(!e.spell.isEmpty())line("named_spell",e.spell,e.preparation);
         if(e.omittedChecks>0)line("omitted_checks",e.omittedChecks);
+        if(e.failureDraws==1)line("failure_draw",f(e.failureBasis),pc(e.failureProbability),e.failureBoundary);
         blueprintLines(e.blueprint);line("record_id",e.id.substring(0,8),e.version);line("result",t("result."+e.result).getString());
         line("record_cost",f(e.initial),f(e.actual),f(e.paid));
         if(e.spell.isEmpty()){line("measured",f(e.arrived),f(e.damage),f(e.healing),e.hits,e.summons);line("absorption",f(e.absorbed));}
