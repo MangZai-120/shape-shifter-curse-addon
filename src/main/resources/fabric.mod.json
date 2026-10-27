@@ -30,10 +30,12 @@
       "net.jackcooper.shapeShifterCurseAddon.SscAddonPreLaunch"
     ],
     "main": [
-      "net.jackcooper.shapeShifterCurseAddon.SscAddon"
+      "net.jackcooper.shapeShifterCurseAddon.SscAddon",
+      "net.ssca.neomagic.NeoMagic"
     ],
     "client": [
-      "net.jackcooper.shapeShifterCurseAddon.client.SscAddonClient"
+      "net.jackcooper.shapeShifterCurseAddon.client.SscAddonClient",
+      "net.ssca.neomagic.client.NeoClient"
     ],
     "modmenu": [
       "net.jackcooper.shapeShifterCurseAddon.compat.ModMenuIntegration"

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "minecraft:paper"
+    },
+    {
+      "item": "minecraft:amethyst_shard"
+    },
+    {
+      "item": "minecraft:ender_pearl"
+    }
+  ],
+  "result": {
+    "item": "ssca_neomagic:control_bridge",
+    "count": 1
+  }
+}

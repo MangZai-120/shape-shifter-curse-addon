@@ -1,0 +1,437 @@
+{
+  "version": "v2-playtest-1",
+  "recovery_delay": 60,
+  "recovery_per_tick": 0.25,
+  "costs": {
+    "THERMAL": {
+      "a": 6,
+      "b": 18
+    },
+    "FROST": {
+      "a": 5,
+      "b": 15
+    },
+    "LUNAR": {
+      "a": 8,
+      "b": 20
+    },
+    "CURSE": {
+      "a": 4,
+      "b": 12
+    },
+    "SUMMON": {
+      "a": 10,
+      "b": 30
+    },
+    "VOID": {
+      "a": 12,
+      "b": 36
+    },
+    "SPACE": {
+      "a": 14,
+      "b": 42
+    }
+  },
+  "spells": {},
+  "forms": {
+    "my_addon:allay_sp": {
+      "safety": 70,
+      "failure": 0.9,
+      "offset": 1.1,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:anubis_wolf_sp": {
+      "safety": 120,
+      "failure": 1.12,
+      "offset": 1.05,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:axolotl_aling": {
+      "safety": 80,
+      "failure": 1.15,
+      "offset": 0.85,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:axolotl_fluorescent": {
+      "safety": 80,
+      "failure": 1.15,
+      "offset": 0.85,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:axolotl_sp": {
+      "safety": 80,
+      "failure": 1.15,
+      "offset": 0.85,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:bat_desmodus": {
+      "safety": 85,
+      "failure": 1.08,
+      "offset": 0.9,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:bat_parasitic_fruit": {
+      "safety": 85,
+      "failure": 1.08,
+      "offset": 0.9,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:fallen_allay_sp": {
+      "safety": 70,
+      "failure": 0.9,
+      "offset": 1.1,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:familiar_fox_mancianima": {
+      "safety": 240,
+      "failure": 0.7,
+      "offset": 0.8,
+      "merge": 0.8,
+      "split": 1.1
+    },
+    "my_addon:familiar_fox_red": {
+      "safety": 185,
+      "failure": 0.86,
+      "offset": 0.94,
+      "merge": 0.8,
+      "split": 1.1
+    },
+    "my_addon:familiar_fox_sp": {
+      "safety": 200,
+      "failure": 0.8,
+      "offset": 0.9,
+      "merge": 0.8,
+      "split": 1.1
+    },
+    "my_addon:golden_sandstorm_sp": {
+      "safety": 120,
+      "failure": 1.12,
+      "offset": 1.05,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:ocelot_nova": {
+      "safety": 95,
+      "failure": 1.02,
+      "offset": 0.95,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:ocelot_wind_spirit": {
+      "safety": 95,
+      "failure": 1.02,
+      "offset": 0.95,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:sheep_spell_form": {
+      "safety": 95,
+      "failure": 1.02,
+      "offset": 0.95,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:snow_fox_frostspine": {
+      "safety": 95,
+      "failure": 1.02,
+      "offset": 0.95,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:snow_fox_sp": {
+      "safety": 95,
+      "failure": 1.02,
+      "offset": 0.95,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:spider_moon_weaver": {
+      "safety": 90,
+      "failure": 1.05,
+      "offset": 0.8,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:spider_salticidae": {
+      "safety": 90,
+      "failure": 1.05,
+      "offset": 0.8,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:upgrade_axolotl": {
+      "safety": 90,
+      "failure": 1.1,
+      "offset": 0.88,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:upgrade_familiar_fox": {
+      "safety": 220,
+      "failure": 0.74,
+      "offset": 0.86,
+      "merge": 0.8,
+      "split": 1.1
+    },
+    "my_addon:wild_cat_nightmare": {
+      "safety": 95,
+      "failure": 1.02,
+      "offset": 0.95,
+      "merge": 1,
+      "split": 1
+    },
+    "my_addon:wild_cat_sp": {
+      "safety": 95,
+      "failure": 1.02,
+      "offset": 0.95,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:allay_sp": {
+      "safety": 70,
+      "failure": 0.9,
+      "offset": 1.1,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:anubis_wolf_0": {
+      "safety": 105,
+      "failure": 1.195,
+      "offset": 1.11,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:anubis_wolf_1": {
+      "safety": 110,
+      "failure": 1.1700000000000002,
+      "offset": 1.09,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:anubis_wolf_2": {
+      "safety": 115,
+      "failure": 1.145,
+      "offset": 1.07,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:anubis_wolf_3": {
+      "safety": 120,
+      "failure": 1.12,
+      "offset": 1.05,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:axolotl_0": {
+      "safety": 65,
+      "failure": 1.2249999999999999,
+      "offset": 0.9099999999999999,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:axolotl_1": {
+      "safety": 70,
+      "failure": 1.2,
+      "offset": 0.89,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:axolotl_2": {
+      "safety": 75,
+      "failure": 1.1749999999999998,
+      "offset": 0.87,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:axolotl_3": {
+      "safety": 80,
+      "failure": 1.15,
+      "offset": 0.85,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:bat_0": {
+      "safety": 70,
+      "failure": 1.155,
+      "offset": 0.96,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:bat_1": {
+      "safety": 75,
+      "failure": 1.1300000000000001,
+      "offset": 0.9400000000000001,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:bat_2": {
+      "safety": 80,
+      "failure": 1.105,
+      "offset": 0.92,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:bat_3": {
+      "safety": 85,
+      "failure": 1.08,
+      "offset": 0.9,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:bat_3_sub_avali": {
+      "safety": 85,
+      "failure": 1.08,
+      "offset": 0.9,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:familiar_fox_0": {
+      "safety": 140,
+      "failure": 0.875,
+      "offset": 0.96,
+      "merge": 0.8,
+      "split": 1.1
+    },
+    "shape-shifter-curse:familiar_fox_1": {
+      "safety": 160,
+      "failure": 0.8500000000000001,
+      "offset": 0.9400000000000001,
+      "merge": 0.8,
+      "split": 1.1
+    },
+    "shape-shifter-curse:familiar_fox_2": {
+      "safety": 180,
+      "failure": 0.8250000000000001,
+      "offset": 0.92,
+      "merge": 0.8,
+      "split": 1.1
+    },
+    "shape-shifter-curse:familiar_fox_3": {
+      "safety": 200,
+      "failure": 0.8,
+      "offset": 0.9,
+      "merge": 0.8,
+      "split": 1.1
+    },
+    "shape-shifter-curse:feral_cat_sp": {
+      "safety": 95,
+      "failure": 1.02,
+      "offset": 0.95,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:ocelot_0": {
+      "safety": 80,
+      "failure": 1.095,
+      "offset": 1.01,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:ocelot_1": {
+      "safety": 85,
+      "failure": 1.07,
+      "offset": 0.99,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:ocelot_2": {
+      "safety": 90,
+      "failure": 1.045,
+      "offset": 0.97,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:ocelot_3": {
+      "safety": 95,
+      "failure": 1.02,
+      "offset": 0.95,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:original_before_enable": {
+      "safety": 100,
+      "failure": 1,
+      "offset": 1,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:original_shifter": {
+      "safety": 100,
+      "failure": 1,
+      "offset": 1,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:snow_fox_0": {
+      "safety": 80,
+      "failure": 1.095,
+      "offset": 1.01,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:snow_fox_1": {
+      "safety": 85,
+      "failure": 1.07,
+      "offset": 0.99,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:snow_fox_2": {
+      "safety": 90,
+      "failure": 1.045,
+      "offset": 0.97,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:snow_fox_3": {
+      "safety": 95,
+      "failure": 1.02,
+      "offset": 0.95,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:snow_fox_3_sub_marbled_polecat": {
+      "safety": 95,
+      "failure": 1.02,
+      "offset": 0.95,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:spider_0": {
+      "safety": 75,
+      "failure": 1.125,
+      "offset": 0.8600000000000001,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:spider_1": {
+      "safety": 80,
+      "failure": 1.1,
+      "offset": 0.8400000000000001,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:spider_2": {
+      "safety": 85,
+      "failure": 1.075,
+      "offset": 0.8200000000000001,
+      "merge": 1,
+      "split": 1
+    },
+    "shape-shifter-curse:spider_3": {
+      "safety": 90,
+      "failure": 1.05,
+      "offset": 0.8,
+      "merge": 1,
+      "split": 1
+    }
+  }
+}

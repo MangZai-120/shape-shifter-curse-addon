@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-27",
+  "version": "8.0.0-neomagic.1",
+  "branch": "neomagic",
+  "artifact": "build/libs/shape-shifter-curse-addon-8.0.0-neomagic.1.jar",
+  "sha256": "382876e7222ef522847a904a053d29e44cd82d06ee9e120c565559c629aa4906",
+  "artifact_bytes": 12836985,
+  "new_namespace_entries": 116,
+  "checks": {
+    "model": 3789,
+    "fabric_integration": 248,
+    "real_server_world": 30,
+    "native_ui_screenshots": 6,
+    "logical_minimum": [
+      320,
+      240
+    ],
+    "resource_json": 60,
+    "bilingual_keys": 187,
+    "full_build": "passed",
+    "final_effect_build": "passed",
+    "final_ui_build": "passed"
+  },
+  "scope_notes": [
+    "Native UI screenshots use test fixtures, not live network combat.",
+    "GameTest uses a disposable real ServerWorld.",
+    "Human multiplayer, third-party protection matrix and long-term balance acceptance remain open."
+  ],
+  "logs": [
+    "build/neomagic/release-check.log",
+    "build/neomagic/delivery-check.log",
+    "build/neomagic/ui-final-check.log",
+    "build/neomagic/effect-final-check.log"
+  ]
+}

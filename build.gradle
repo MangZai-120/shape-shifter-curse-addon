@@ -10,6 +10,71 @@ base {
     archivesName = project.archives_base_name
 }
 
+// neomagic is deliberately kept in its own source/resource/test tree.
+sourceSets {
+    main.java.srcDir 'new-spell-system/src/main/java'
+    main.resources.srcDir 'new-spell-system/src/main/resources'
+    test.java.srcDir 'new-spell-system/src/test/java'
+}
+tasks.register('neoMagicTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.ssca.neomagic.NeoModelTest'
+}
+check.dependsOn neoMagicTest
+
+tasks.register('neoMagicIntegrationTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.ssca.neomagic.NeoIntegrationTest'
+    workingDir = layout.buildDirectory.dir('neomagic/integration').get().asFile
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def classpathFile = new File(workingDir, 'classpath.txt')
+        classpathFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', classpathFile.absolutePath
+    }
+}
+check.dependsOn neoMagicIntegrationTest
+
+tasks.register('neoMagicWorldTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.ssca.neomagic.NeoWorldTest'
+    workingDir = layout.buildDirectory.dir('neomagic/world-test').get().asFile
+    maxHeapSize = '2G'
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def classpathFile = new File(workingDir, 'classpath.txt')
+        classpathFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', classpathFile.absolutePath
+    }
+}
+
+tasks.register('neoMagicVisualTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.ssca.neomagic.NeoVisualTest'
+    workingDir = layout.buildDirectory.dir('neomagic/visual-test').get().asFile
+    maxHeapSize = '2G'
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    systemProperty 'neomagic.assets', new File(System.getProperty('user.home'), '.gradle/caches/fabric-loom/assets').absolutePath
+    doFirst {
+        workingDir.mkdirs()
+        def classpathFile = new File(workingDir, 'classpath.txt')
+        classpathFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', classpathFile.absolutePath
+    }
+}
+
 loom {
     mixin {
         defaultRefmapName = "ssc-addon.refmap.json"
@@ -105,7 +170,7 @@ dependencies {
     modImplementation "dev.kosmx.player-anim:player-animation-lib-fabric:${project.player_anim}"
 
     // Apoli & Dependencies
-    modImplementation "com.github.apace100:apoli:${project.apoli_version}"
+    modImplementation "io.github.apace100:apoli:${project.apoli_version}"
     modImplementation "software.bernie.geckolib:geckolib-fabric-${project.minecraft_version}:${project.geckolib_version}"
     modImplementation "dev.emi:trinkets:${project.trinkets_version}"
 

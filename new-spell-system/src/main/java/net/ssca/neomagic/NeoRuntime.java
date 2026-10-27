@@ -1,0 +1,145 @@
+package net.ssca.neomagic;
+
+import net.fabricmc.fabric.api.event.lifecycle.v1.*;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard;
+import net.minecraft.entity.effect.*;
+import net.minecraft.item.ItemStack;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.Hand;
+import java.util.*;
+import static net.ssca.neomagic.NeoModel.*;
+
+public final class NeoRuntime {
+    public static final Map<UUID,Active> ACTIVE = new HashMap<>();
+    public static final class Active {
+        public final Session session;
+        public final NeoState.Experiment record;
+        public final ItemStack wand;
+        public final Hand hand;
+        public final NeoEffects.Anchor anchor;
+        public final int fullCooldown;
+        public int age;
+        Active(Session s,NeoState.Experiment r,ItemStack wand,Hand hand,NeoEffects.Anchor anchor) {
+            session=s;record=r;this.wand=wand;this.hand=hand;this.anchor=anchor;fullCooldown=NeoRules.cooldown(s.blueprint);
+        }
+    }
+    public static NeoState.PlayerData data(ServerPlayerEntity p) { return NeoState.get(p.getServer()).player(p.getUuid()); }
+    public static String form(ServerPlayerEntity p) {
+        var f=FormUtils.getCurrentForm(p);
+        return f==null || f.getFormID()==null?"shape-shifter-curse:original_shifter":f.getFormID().toString();
+    }
+    public static void refreshForm(ServerPlayerEntity p) {
+        var d=data(p);String current=form(p);
+        if(!current.equals(d.form)) {
+            if(ACTIVE.containsKey(p.getUuid())) cancel(p,"form_changed");
+            NeoEffects.clearStored(p.getUuid());
+            d.burden=0;d.recovery=0;d.form=current;dirty(p);
+        }
+    }
+    public static boolean blocked(ServerPlayerEntity p) {
+        return p.hasStatusEffect(NeoMagic.DISORDER)||p.hasStatusEffect(NeoMagic.DISINTEGRATION)||p.hasStatusEffect(NeoMagic.BREAKDOWN)
+                ||p.hasStatusEffect(SscAddon.PURIFIED)||AbilityUseGuard.blocked(p)
+                ||p.isSpectator()||!p.isAlive();
+    }
+    public static void start(ServerPlayerEntity p,Hand hand) {
+        refreshForm(p);var d=data(p);Blueprint b=NeoNetwork.bound(p.getStackInHand(hand));
+        if(b==null){message(p,"need_blueprint");return;}
+        if(!p.getStackInHand(hand).isOf(NeoMagic.WAND)||blocked(p)||ACTIVE.containsKey(p.getUuid())||NeoEffects.hasStored(p.getUuid())) {message(p,"blocked");return;}
+        if(!errors(b).isEmpty()||!d.knows(b)) {message(p,"invalid");return;}
+        if(d.cooldowns.getOrDefault(b.identity(),0)>0) {message(p,"cooldown");return;}
+        NeoEffects.Anchor anchor=NeoEffects.capture(p,b);
+        if(!NeoEffects.preflight(p,b,anchor)) {message(p,"target_invalid");return;}
+        Quote quote=NeoRules.quote(b,d.mastery(b));
+        var e=new NeoState.Experiment();e.blueprint=b;e.form=d.form;e.profile=NeoRules.profile(d.form);e.initial=d.burden;
+        e.normal=quote.normal();e.actual=quote.actual();e.dimension=p.getWorld().getRegistryKey().getValue().toString();
+        e.target=anchor.target()==null?anchor.position().toString():anchor.target().toString();
+        d.add(e);var active=new Active(new Session(b,quote),e,p.getStackInHand(hand),hand,anchor);
+        ACTIVE.put(p.getUuid(),active);advance(p,active);NeoNetwork.send(p,false);
+    }
+    private static void advance(ServerPlayerEntity p,Active a) {
+        var d=data(p);var s=a.session;
+        double delta=s.advance(a.age,d.burden,NeoRules.profile(d.form),new Random(p.getRandom().nextLong()));
+        d.burden+=delta;if(delta>0)d.recovery=NeoRules.recoveryDelay;
+        a.record.paid=s.paid;a.record.checks=new ArrayList<>(s.checkpoints);a.record.yaw=s.yaw;a.record.pitch=s.pitch;a.record.reversed=s.reversed;
+        if(s.failed) fail(p,a);
+        else if(s.complete) {
+            ACTIVE.remove(p.getUuid());
+            // Effects receive one immutable outcome; no later collapse checks run on it.
+            if(NeoEffects.release(p,a)) {
+                a.record.result=s.quote.plan().stored()?"stored":"released";
+                d.cooldowns.put(s.blueprint.identity(),a.fullCooldown);
+                if(!s.quote.plan().stored())d.successful(s.blueprint);
+            } else if(s.checkpoints.stream().anyMatch(Checkpoint::shifted)) fail(p,a);
+            else {
+                a.record.result="target_lost";
+                d.cooldowns.put(s.blueprint.identity(),Math.max(10,a.fullCooldown/2));
+                message(p,"target_invalid");
+            }
+            NeoNetwork.send(p,false);
+        }
+        dirty(p);
+    }
+    public static void fail(ServerPlayerEntity p,Active a) {
+        ACTIVE.remove(p.getUuid());a.record.result="failed";
+        var d=data(p);d.cooldowns.put(a.session.blueprint.identity(),a.fullCooldown);
+        double excess=Math.max(0,d.burden-NeoRules.profile(d.form).safety());
+        if(excess>0) {
+            p.damage(p.getDamageSources().magic(),(float)(1.5+.05*excess+.02*a.session.quote.actual()));
+            double serious=clamp((excess-20)/80,0,1);
+            if(excess>60 && p.getRandom().nextDouble()<clamp((excess-60)/40,0,1)) {
+                p.removeStatusEffect(NeoMagic.DISORDER);p.removeStatusEffect(NeoMagic.DISINTEGRATION);
+                p.addStatusEffect(new StatusEffectInstance(NeoMagic.BREAKDOWN,300,(int)Math.min(4,(excess-60)/40)));
+                p.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS,300));
+            } else if(!p.hasStatusEffect(NeoMagic.BREAKDOWN)&&p.getRandom().nextDouble()<serious) {
+                p.removeStatusEffect(NeoMagic.DISORDER);
+                p.addStatusEffect(new StatusEffectInstance(NeoMagic.DISINTEGRATION,300));
+                p.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS,300));
+            } else if(!p.hasStatusEffect(NeoMagic.BREAKDOWN)&&!p.hasStatusEffect(NeoMagic.DISINTEGRATION)&&p.getRandom().nextDouble()<.45) p.addStatusEffect(new StatusEffectInstance(NeoMagic.DISORDER,100));
+        }
+        message(p,"failed");dirty(p);
+    }
+    public static void cancel(ServerPlayerEntity p,String reason) {
+        Active a=ACTIVE.remove(p.getUuid());if(a==null)return;
+        a.record.result=reason;data(p).cooldowns.put(a.session.blueprint.identity(),Math.max(10,a.fullCooldown/2));
+        dirty(p);
+    }
+    public static void releaseOrCancel(ServerPlayerEntity p) {
+        if(NeoEffects.hasStored(p.getUuid()))NeoEffects.trigger(p);else cancel(p,"cancelled");
+        NeoNetwork.send(p,false);
+    }
+    public static void relieve(ServerPlayerEntity p,double amount) {
+        refreshForm(p);data(p).burden=Math.max(0,data(p).burden-amount);dirty(p);NeoNetwork.send(p,false);
+    }
+    public static void dirty(ServerPlayerEntity p) { NeoState.get(p.getServer()).markDirty(); }
+    public static void message(ServerPlayerEntity p,String message) { p.sendMessage(NeoMagic.text(message),true); }
+    private static void tick(MinecraftServer server) {
+        for(ServerPlayerEntity p:server.getPlayerManager().getPlayerList()) {
+            refreshForm(p);var d=data(p);double prior=d.burden;int priorRecovery=d.recovery;boolean hadCooldowns=!d.cooldowns.isEmpty();var a=ACTIVE.get(p.getUuid());
+            d.cooldowns.replaceAll((key,ticks)->Math.max(0,ticks-1));d.cooldowns.values().removeIf(ticks->ticks==0);
+            if(a!=null) {
+                if(blocked(p)||p.getStackInHand(a.hand)!=a.wand||!a.record.dimension.equals(p.getWorld().getRegistryKey().getValue().toString()))cancel(p,"interrupted");
+                else {a.age++;advance(p,a);}
+            } else if(p.isAlive()) {
+                if(d.recovery>0)d.recovery--;else if(d.burden>0)d.burden=Math.max(0,d.burden-NeoRules.recoveryRate);
+            }
+            if(server.getTicks()%5==0)NeoNetwork.hud(p);
+            if(prior!=d.burden||priorRecovery!=d.recovery||hadCooldowns)dirty(p);
+        }
+        NeoEffects.tick(server);
+    }
+    public static void register() {
+        ServerTickEvents.END_SERVER_TICK.register(NeoRuntime::tick);
+        ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server,resources,success)->{if(success)server.getPlayerManager().getPlayerList().forEach(p->NeoNetwork.send(p,false));});
+        ServerPlayConnectionEvents.DISCONNECT.register((handler,server)->{cancel(handler.player,"disconnected");NeoEffects.clearStored(handler.player.getUuid());dirty(handler.player);NeoNetwork.close(handler.player);});
+        ServerPlayerEvents.AFTER_RESPAWN.register((old,p,alive)->{cancel(old,"death");var d=data(p);d.burden=0;d.recovery=0;NeoEffects.clearStored(p.getUuid());dirty(p);});
+        ServerLifecycleEvents.SERVER_STOPPING.register(server->{
+            for(var p:server.getPlayerManager().getPlayerList())cancel(p,"server_stopped");
+            NeoEffects.clear();for(var p:server.getPlayerManager().getPlayerList())dirty(p);NeoNetwork.clear();ACTIVE.clear();
+        });
+    }
+}
