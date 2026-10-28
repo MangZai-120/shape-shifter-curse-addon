@@ -74,7 +74,17 @@ public final class ParasiticSeedFieldManager {
 
     public static void init() {
         ServerTickEvents.END_WORLD_TICK.register(ParasiticSeedFieldManager::onWorldTick);
-        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> FIELDS.clear());
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+            for (SeedField field : FIELDS) {
+                ServerWorld world = server.getWorld(field.worldKey);
+                if (world != null) killStand(world, field);
+            }
+            FIELDS.clear();
+        });
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
+            if (entity.getCommandTags().contains("ssca_seed_field")
+                    && FIELDS.stream().noneMatch(field -> field.standUuid.equals(entity.getUuid()))) entity.discard();
+        });
     }
 
     /** 投掷物落地时调用：在落点生成一个灵果种子圈，寿命 = lifeTicks。双生种荷时核心图标为双生种荷。 */
@@ -95,9 +105,11 @@ public final class ParasiticSeedFieldManager {
         stand.equipStack(EquipmentSlot.HEAD, new ItemStack(twinPod
                 ? net.jackcooper.shapeShifterCurseAddon.SscAddon.TWIN_POD
                 : Items.TORCHFLOWER_SEEDS));
-        world.spawnEntity(stand);
-
-        FIELDS.add(new SeedField(caster.getUuid(), world.getRegistryKey(), pos, now, now + Math.max(20, lifeTicks), stand.getUuid(), twinPod));
+        stand.addCommandTag("ssca_seed_field");
+        SeedField field = new SeedField(caster.getUuid(), world.getRegistryKey(), pos, now,
+                now + Math.max(20, lifeTicks), stand.getUuid(), twinPod);
+        FIELDS.add(field);
+        if (!world.spawnEntity(stand)) { FIELDS.remove(field); return; }
         world.playSound(null, pos.x, pos.y, pos.z, SoundEvents.BLOCK_GRASS_PLACE, SoundCategory.PLAYERS, 0.8f, 1.2f);
         world.spawnParticles(ParticleTypes.WARPED_SPORE, pos.x, pos.y + 0.2, pos.z, 30, 0.5, 0.3, 0.5, 0.02);
     }

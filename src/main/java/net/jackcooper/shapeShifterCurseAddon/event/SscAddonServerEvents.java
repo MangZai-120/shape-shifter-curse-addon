@@ -60,6 +60,7 @@ public final class SscAddonServerEvents {
 	private SscAddonServerEvents() {}
 
 	public static void registerTickHandlers() {
+        SkillStateMaintenance.init();
 		ServerTickEvents.START_SERVER_TICK.register(server -> {
 			for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
 				if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.fullyControlled(player)) {
@@ -141,10 +142,10 @@ public final class SscAddonServerEvents {
 
 
 		// 月织蛛「织网术」/「蛛丝荡漾」/ 食梦魔「惊吓」：玩家掉线清理状态，防僵尸 UUID 残留
-		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((netHandler, server) -> {
-			net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.onDisconnect(netHandler.player.getUuid());
-			net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.onDisconnect(netHandler.player.getUuid());
-			net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.onDisconnect(netHandler.player.getUuid());
+		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((netHandler, server) -> {
+			net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.onDisconnect(netHandler.player);
+			net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.onDisconnect(netHandler.player);
+			net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.onDisconnect(netHandler.player);
 			// 寒棘狐冰刺：退出时环绕冰锥随玩家消失（存档保留各槽存在时间，重进由 JOIN 恢复）
 			net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.onDisconnect(netHandler.player);
 		});
@@ -257,10 +258,6 @@ public final class SscAddonServerEvents {
 			net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.clearAll(); // 跳蛛跳杀：清蓄力/跳跃状态
 			net.jackcooper.shapeShifterCurseAddon.ability.VenomSkillManager.clearAll(); // 跳蛛毒液：清冲刺状态
 			net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.clearAll(server); // 惊吓：清幽灵苦力怕/复制品状态
-			// 统一冷却服务：清已过期冷却（持久化未到期冷却保留，按服务器时钟恢复剩余）
-			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager mgr =
-					net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager.instanceOrNull();
-			if (mgr != null) mgr.onServerStarted(server.getTicks());
 			System.out.println("[SSC_ADDON] SERVER_STARTING ability state cleared");
 		});
 		// 服务器关闭前还原所有死亡领域方块（在世界存档之前触发）
@@ -276,6 +273,9 @@ public final class SscAddonServerEvents {
 				return;
 			}
 			System.out.println("[SSC_ADDON] END_DATA_PACK_RELOAD: reload successful, clearing all ability static state");
+            for (var player : server.getPlayerManager().getPlayerList()) {
+                net.jackcooper.shapeShifterCurseAddon.ability.ControlledAbilityInterruption.cancelTransient(player);
+            }
 			SnowFoxSpMeleeAbility.clearAll();
 			SnowFoxSpTeleportAttack.clearAll();
 			SnowFoxSpFrostStorm.clearAll();
@@ -285,12 +285,14 @@ public final class SscAddonServerEvents {
 			AllaySPTotem.clearAll();
 			GoldenSandstormErosionBrand.clearAll();
 			GoldenSandstormWitherSand.clearAll(server);
-			GoldenSandstormRegen.clearAll();
+            GoldenSandstormRegen.pruneSources(server.getOverworld().getTime());
 			BatDesmodusBloodThirst.clearAll();
 			UndeadNeutralState.clearAll();
 			MancianimaPassive.clearAll();
 			SscAddonActions.clearAll();
-			FluorescentLaserManager.clearAll();   // 海晶荧光坠增强激光：清残留待机法阵实体
+            FluorescentLaserManager.clearAll();
+            net.jackcooper.shapeShifterCurseAddon.ability.FluorescentTidalManager.clearAll();
+            net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.clearAll();
 			net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.clearAll(server); // 惊吓：清幽灵苦力怕/复制品状态
 			System.out.println("[SSC_ADDON] END_DATA_PACK_RELOAD ability state cleared");
 

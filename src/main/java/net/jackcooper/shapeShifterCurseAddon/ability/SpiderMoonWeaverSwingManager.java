@@ -416,9 +416,10 @@ public final class SpiderMoonWeaverSwingManager {
 		return obscured;
 	}
 
-	public static void onDisconnect(UUID uuid) {
-		STATES.remove(uuid);
-		BULLET_IN_FLIGHT.remove(uuid);
+	public static void onDisconnect(ServerPlayerEntity player) {
+        interruptControl(player);
+        STATES.remove(player.getUuid());
+        BULLET_IN_FLIGHT.remove(player.getUuid());
 	}
 
 	public static void interruptControl(ServerPlayerEntity player) {

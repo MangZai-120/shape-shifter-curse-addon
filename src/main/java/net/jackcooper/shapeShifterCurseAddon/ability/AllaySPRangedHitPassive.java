@@ -49,4 +49,9 @@ public final class AllaySPRangedHitPassive {
 		}
 		player.heal((float) BAL.d("heal_amount", HEAL_AMOUNT));
 	}
+    public static void prune(long now) {
+        LAST_TRIGGER_TICK.values().removeIf(t -> now - t >= BAL.i("cooldown_ticks", COOLDOWN_TICKS));
+    }
+    public static void clearAll() { LAST_TRIGGER_TICK.clear(); }
+
 }

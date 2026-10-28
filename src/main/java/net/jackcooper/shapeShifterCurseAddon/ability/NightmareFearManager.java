@@ -408,4 +408,11 @@ public final class NightmareFearManager {
 	public static int size() {
 		return FEARING.size();
 	}
+    public static void pruneImmunity(long now) {
+        DREAM_IMMUNE.values().removeIf(expiry -> expiry <= now);
+    }
+    public static void clearAll() {
+        FEARING.clear(); DREAM_IMMUNE.clear(); PAIRS.clear();
+    }
+
 }

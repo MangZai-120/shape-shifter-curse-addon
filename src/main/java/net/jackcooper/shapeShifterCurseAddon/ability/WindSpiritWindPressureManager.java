@@ -39,7 +39,7 @@ public final class WindSpiritWindPressureManager {
     //  弹射物前 5 tick 的玩家扫描直接短路（箭矢农场场景免白跑）。形态切换最多 20t 后生效，
     //  减速判定仅影响新发射弹射物，短暂误差可接受。 */
     private static final java.util.Map<RegistryKey<World>, java.util.Set<java.util.UUID>> WIND_SPIRITS = new java.util.concurrent.ConcurrentHashMap<>();
-    private static long lastRefreshTick = Long.MIN_VALUE;
+    private static final java.util.Map<ServerWorld, Long> REFRESH_TICKS = new java.util.WeakHashMap<>();
 
     private WindSpiritWindPressureManager() {
     }
@@ -105,8 +105,9 @@ public final class WindSpiritWindPressureManager {
     private static void refreshWindSpirits(ServerWorld world) {
         long now = world.getTime();
         // 哨兵判断：首次刷新必须执行，防止 now - Long.MIN_VALUE 下溢为负导致缓存永远为空、风压减速从不生效
-        if (lastRefreshTick != Long.MIN_VALUE && now - lastRefreshTick < 20) return;
-        lastRefreshTick = now;
+        Long previous = REFRESH_TICKS.get(world);
+        if (previous != null && now >= previous && now - previous < 20) return;
+        REFRESH_TICKS.put(world, now);
         java.util.Set<java.util.UUID> spirits = new java.util.HashSet<>();
         for (PlayerEntity p : world.getPlayers()) {
             if (p instanceof ServerPlayerEntity sp && FormUtils.isOcelotSP(sp)) {
@@ -116,5 +117,7 @@ public final class WindSpiritWindPressureManager {
         if (spirits.isEmpty()) WIND_SPIRITS.remove(world.getRegistryKey());
         else WIND_SPIRITS.put(world.getRegistryKey(), spirits);
     }
+    public static void clearAll() { WIND_SPIRITS.clear(); REFRESH_TICKS.clear(); }
+
 }
 

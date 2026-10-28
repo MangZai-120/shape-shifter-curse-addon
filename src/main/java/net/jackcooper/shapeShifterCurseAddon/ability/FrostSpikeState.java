@@ -39,7 +39,7 @@ public final class FrostSpikeState extends PersistentState {
 				for (int i = 0; i < 5; i++) {
 					ticks[i] = p.contains("t" + i) ? p.getInt("t" + i) : -1;
 				}
-				s.thorns.put(uuid, ticks);
+                if (java.util.Arrays.stream(ticks).anyMatch(t -> t >= 0)) s.thorns.put(uuid, ticks);
 			} catch (IllegalArgumentException ignored) {
 				// 跳过非法 UUID，避免存档损坏导致加载失败
 			}

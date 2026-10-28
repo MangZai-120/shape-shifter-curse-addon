@@ -118,18 +118,20 @@ public final class GoldenSandstormRegen {
 			sp.heal((float) BAL.d("wither_tick_heal", WITHER_TICK_HEAL));
 			markCombat(sp);
 		}
+        if (!victim.isAlive()) WITHER_SOURCES.remove(victim.getUuid());
 	}
 
 	// ==================== 被动回血 tick ====================
 
-	/** 每 tick 处理金沙岚的被动回血（周期均为 20 的倍数，%20 门控零行为差异） */
-	public static void tick(ServerPlayerEntity player) {
-		if (player == null) return;
-		// 周期门控前置：结算周期 IC=120 / OOC=200 均为 20 的倍数，差值单调递增不会漏结算；
-		// 满血刷新计时器同样每秒刷一次即可（原每 tick 刷，值不变，纯冗余）。
-		// 非金沙岚玩家每 tick 只花一次取余（原每 tick 都过一次 CCA 形态查询）
-		if (player.age % 20 != 0) return;
-		if (!FormUtils.isForm(player, FormIdentifiers.GOLDEN_SANDSTORM_SP)) return;
+    /** Use the configured tick interval exactly; only players without a timer use the cheap form probe. */
+    public static void tick(ServerPlayerEntity player) {
+        if (player == null || !player.isAlive()) return;
+        UUID owner = player.getUuid();
+        if (player.age % 20 != 0 && !LAST_PASSIVE_TICK.containsKey(owner)) return;
+        if (!FormUtils.isForm(player, FormIdentifiers.GOLDEN_SANDSTORM_SP)) {
+            LAST_PASSIVE_TICK.remove(owner);
+            return;
+        }
 		// 满血时仅刷新计时器，避免一进战斗就立即结算累积时间
 		long now = player.getWorld().getTime();
 		if (player.getHealth() >= player.getMaxHealth()) {
@@ -176,8 +178,8 @@ public final class GoldenSandstormRegen {
 				}
 			}
 		}
-		// 受害者死亡，清理对应凋零源记录
-		WITHER_SOURCES.remove(entity.getUuid());
+        // Successful lethal wither is credited by damage RETURN, after AFTER_DEATH has run.
+        if (!source.isOf(net.minecraft.entity.damage.DamageTypes.WITHER)) WITHER_SOURCES.remove(entity.getUuid());
 	}
 
 	// ==================== 状态清理 ====================
@@ -196,4 +198,10 @@ public final class GoldenSandstormRegen {
 		LAST_PASSIVE_TICK.remove(playerUuid);
 		WITHER_SOURCES.values().forEach(m -> m.remove(playerUuid));
 	}
+    public static void pruneSources(long now) {
+        WITHER_SOURCES.values().removeIf(sources -> {
+            sources.values().removeIf(expiry -> expiry < now);
+            return sources.isEmpty();
+        });
+    }
 }

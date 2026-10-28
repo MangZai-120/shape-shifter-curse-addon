@@ -171,8 +171,13 @@ public class AllaySPGroupHeal {
 	private static void healTarget(LivingEntity entity) {
 		float maxHp = entity.getMaxHealth();
 		entity.heal(maxHp * (float) BAL.d("heal_percent", HEAL_PERCENT));
-		int amplifier = Math.max(0, Math.round(maxHp * (float) BAL.d("absorption_percent", ABSORPTION_PERCENT) / 2.0f) - 1);
-		entity.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, BAL.i("heal_absorption_ticks", HEAL_ABSORPTION_TICKS), amplifier, false, true, true));
+        float absorption = maxHp * (float) BAL.d("absorption_percent", ABSORPTION_PERCENT);
+        if (absorption > 0) {
+            // Vanilla absorption grants 4 HP per amplifier level; round to its available granularity.
+            int amplifier = Math.max(0, Math.round(absorption / 4.0f) - 1);
+            entity.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION,
+                    BAL.i("heal_absorption_ticks", HEAL_ABSORPTION_TICKS), amplifier, false, true, true));
+        }
 	}
 
 	/**

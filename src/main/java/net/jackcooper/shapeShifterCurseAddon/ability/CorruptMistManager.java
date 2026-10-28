@@ -103,7 +103,7 @@ public final class CorruptMistManager {
 				}
 			}
 		});
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) ->
 				MISTS.removeIf(m -> m.casterId.equals(handler.player.getUuid())));
 	}
 

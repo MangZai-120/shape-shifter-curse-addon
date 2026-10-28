@@ -14,14 +14,22 @@ public final class SkillCooldownSync {
     private static final Map<UUID, List<Stamp>> SENT = new HashMap<>();
     private record Stamp(String skill, int phase, long end, int total) {}
     public static void init() {
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> SENT.remove(handler.player.getUuid()));
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> SENT.clear());
+        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> server.execute(() -> {
+            var online = server.getPlayerManager().getPlayer(handler.player.getUuid());
+            if (online == null || online.networkHandler == handler) SENT.remove(handler.player.getUuid());
+        }));
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            SENT.clear();
+            SkillCastManager.clearServerInstance();
+        });
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             if (server.getOverworld() == null) return;
             if (server.getTicks() % 20 == 0) SkillCooldowns.sweep(server);
             var mgr = SkillCastManager.get(server.getOverworld());
             long now = server.getOverworld().getTime();
             for (var player : server.getPlayerManager().getPlayerList()) {
+                // An already connected player must not retain a paused clock, even before pressing a key.
+                if (server.getTicks() % 20 == 0) recoverOnlineClock(mgr, player, now);
                 if (!ServerPlayNetworking.canSend(player, ID)) continue;
                 var views = mgr.snapshot(player.getUuid(), now);
                 var stamps = views.stream().map(v -> new Stamp(v.skill(), v.phase(),
@@ -33,5 +41,12 @@ public final class SkillCooldownSync {
                 ServerPlayNetworking.send(player, ID, buf);
             }
         });
+    }
+    private static void recoverOnlineClock(SkillCastManager manager,
+                                            net.minecraft.server.network.ServerPlayerEntity player, long now) {
+        if (player.networkHandler != null && player.networkHandler.isConnectionOpen()
+                && player.getServer().getPlayerManager().getPlayer(player.getUuid()) == player) {
+            manager.onPlayerJoined(player.getUuid(), now);
+        }
     }
 }

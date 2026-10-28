@@ -47,7 +47,7 @@ public class SkillCastManager extends PersistentState {
         public final UUID playerId;
         public final String skillId;
         public ResolvedConfig config; // 档位型释放前可 retune 改写
-        public final long beginTick;    // 建档时刻（超时兜底用）
+        public final long beginTick;    // 建档时刻（诊断用）
         public int phase = PHASE_CHARGING;
         public boolean settled = false;
         /** on_cast 模式下已先行起算的冷却标记（失败改写用）。 */
@@ -127,6 +127,8 @@ public class SkillCastManager extends PersistentState {
         return ow != null ? ow.getTime() : player.getServer().getTicks();
     }
 
+    public static void clearServerInstance() { instance = null; }
+
     public static SkillCastManager instanceOrNull() {
         return instance;
     }
@@ -154,15 +156,17 @@ public class SkillCastManager extends PersistentState {
 
     public void onPlayerJoined(UUID player, long now) {
         lastWorldTick = now;
-        offline.remove(player);
+        boolean changed = offline.remove(player);
         String prefix = player + "\u0000";
-        cooldowns.forEach((k, cd) -> {
-            if (k.startsWith(prefix) && cd.pausedRemaining >= 0) {
+        for (var entry : cooldowns.entrySet()) {
+            var cd = entry.getValue();
+            if (entry.getKey().startsWith(prefix) && cd.pausedRemaining >= 0) {
                 cd.endTick = now + cd.pausedRemaining;
                 cd.pausedRemaining = -1;
+                changed = true;
             }
-        });
-        markDirty();
+        }
+        if (changed) markDirty();
     }
 
     private static String key(UUID player, String skillId) {
@@ -178,7 +182,9 @@ public class SkillCastManager extends PersistentState {
      */
     public long begin(ServerPlayerEntity player, String skillId, ResolvedConfig config) {
         if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return -1;
-        return begin(player.getUuid(), skillId, config, now(player));
+        long now = now(player);
+        restoreOnlineClock(player, skillId, now);
+        return begin(player.getUuid(), skillId, config, now);
     }
 
     public long begin(UUID player, String skillId, ResolvedConfig config, long now) {
@@ -363,9 +369,20 @@ public class SkillCastManager extends PersistentState {
     public boolean canBegin(ServerPlayerEntity player, String skillId) {
         if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return false;
         long now = now(player);
+        restoreOnlineClock(player, skillId, now);
         CooldownState cd = cooldowns.get(key(player.getUuid(), skillId));
         return !activeCasts.containsKey(key(player.getUuid(), skillId))
                 && (cd == null || !cd.isActive(now));
+    }
+
+    /** Repair a legacy frozen clock only for the currently connected player, preserving its remaining CD. */
+    private void restoreOnlineClock(ServerPlayerEntity player, String skillId, long now) {
+        CooldownState cd = cooldowns.get(key(player.getUuid(), skillId));
+        if (!offline.contains(player.getUuid()) && (cd == null || cd.pausedRemaining < 0)) return;
+        if (player.networkHandler != null && player.networkHandler.isConnectionOpen()
+                && player.getServer().getPlayerManager().getPlayer(player.getUuid()) == player) {
+            onPlayerJoined(player.getUuid(), now);
+        }
     }
 
     /** 玩家断线（修审查#4：不再免费绕过）：

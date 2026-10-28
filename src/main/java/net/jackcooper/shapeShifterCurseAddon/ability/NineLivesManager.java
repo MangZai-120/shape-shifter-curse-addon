@@ -67,7 +67,7 @@ public final class NineLivesManager {
             }
         });
         // 断线清理状态表：防止离线玩家条目残留（缓慢泄漏），也避免重连后残留旧 CD/蓄力起点
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> {
             UUID id = handler.player.getUuid();
             LAST_COMBAT.remove(id);
             REVIVE_TICK.remove(id);

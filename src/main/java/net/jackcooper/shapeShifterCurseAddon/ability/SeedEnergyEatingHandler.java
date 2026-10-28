@@ -169,4 +169,19 @@ public final class SeedEnergyEatingHandler {
             return false;
         }
     }
+    /** Keep unexpired quotas across reconnects; discard only entries whose window has elapsed. */
+    public static void pruneAll(long now) {
+        for (UUID uuid : java.util.List.copyOf(RECENT_EATS.keySet())) {
+            pruneQuota(uuid, now);
+            Deque<Long> recent = RECENT_EATS.get(uuid);
+            if (recent != null && recent.isEmpty()) RECENT_EATS.remove(uuid);
+        }
+        LAST_OVER_QUOTA_HINT_TICK.values().removeIf(t -> now - t >= OVER_QUOTA_HINT_COOLDOWN_TICKS);
+    }
+
+    public static void clearAll() {
+        RECENT_EATS.clear();
+        LAST_OVER_QUOTA_HINT_TICK.clear();
+    }
+
 }

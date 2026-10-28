@@ -17,6 +17,16 @@ public final class ControlledAbilityInterruption {
 
     public static void interrupt(ServerPlayerEntity player) {
         if (!AbilityUseGuard.fullyControlled(player)) return;
+        cancelTransient(player);
+        // SSC charge/grapple/dive powers expose their normal cleanup through onRemoved().
+        for (var power : PowerHolderComponent.KEY.get(player).getPowers()) {
+            if (power instanceof Active && power.getClass().getName().startsWith(
+                    "net.onixary.shapeShifterCurseFabric.additional_power.")) power.onRemoved();
+        }
+    }
+
+    /** Cancel owned controls before reload/death, preserving autonomous released effects. */
+    public static void cancelTransient(ServerPlayerEntity player) {
         var manager = SkillCastManager.get(player.getServerWorld());
         var casts = manager.activeCasts().stream().filter(c -> c.playerId.equals(player.getUuid())
                 && !SkillCastManager.isAutonomousEffect(c)
@@ -48,11 +58,7 @@ public final class ControlledAbilityInterruption {
             clearCastResources(player, cast.skillId);
             manager.interrupt(cast.castId, SkillCastManager.now(player));
         }
-        // SSC charge/grapple/dive powers expose their normal cleanup through onRemoved().
-        for (var power : PowerHolderComponent.KEY.get(player).getPowers()) {
-            if (power instanceof Active && power.getClass().getName().startsWith(
-                    "net.onixary.shapeShifterCurseFabric.additional_power.")) power.onRemoved();
-        }
+
     }
 
     private static void clearCastResources(ServerPlayerEntity player, String skill) {

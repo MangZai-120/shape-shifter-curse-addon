@@ -80,7 +80,7 @@ public final class WaterSpearLeapManager {
 		SscAddonNetworking.syncSpearChargeState(player, true);
 
 		// 无重力 + 一次性冲量斜后上跃（视线反方向 + 上），随后衰减到空中悬浮
-		player.setNoGravity(true);
+		PlayerGravityLease.acquire(player, SKILL_ID);
 		Vec3d look = player.getRotationVector();
 		double leapBack = BAL.d("leap_back", LEAP_BACK);
 		double leapUp = BAL.d("leap_up", LEAP_UP);
@@ -167,7 +167,7 @@ public final class WaterSpearLeapManager {
 	private static void finish(ServerPlayerEntity player) {
         LeapState s = STATES.remove(player.getUuid());
         if (s == null) return;
-		player.setNoGravity(false);
+		PlayerGravityLease.release(player, SKILL_ID);
 		SscAddonNetworking.syncSpearChargeState(player, false);
 		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, s.castId);
 	}
@@ -177,7 +177,7 @@ public final class WaterSpearLeapManager {
 		LeapState s = STATES.remove(player.getUuid());
 		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, s == null ? -1 : s.castId);
 		if (s != null) {
-			player.setNoGravity(false);
+			PlayerGravityLease.release(player, SKILL_ID);
 			SscAddonNetworking.syncSpearChargeState(player, false);
 		}
 	}
@@ -189,9 +189,6 @@ public final class WaterSpearLeapManager {
 
 	/** 断线：恢复重力并清理。 */
 	public static void onPlayerDisconnect(ServerPlayerEntity player) {
-		LeapState s = STATES.remove(player.getUuid());
-		if (s != null) {
-			player.setNoGravity(false);
-		}
+        cancel(player);
 	}
 }

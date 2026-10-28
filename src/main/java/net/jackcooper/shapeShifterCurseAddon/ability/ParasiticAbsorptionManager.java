@@ -47,7 +47,7 @@ public final class ParasiticAbsorptionManager {
         // 玩家断开连接时清除本机制提供的 absorption（黄心由 setAbsorptionAmount 写入会被存档保存，
         // 而内存 DATA 在断连后丢失，若不清会导致重连后黄心永久残留）。
         // DISCONNECT 在 Netty IO 线程触发，setAbsorptionAmount 改实体属性需调度回主线程。
-        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> {
             net.minecraft.server.network.ServerPlayerEntity player = handler.player;
             if (player == null) return;
             java.util.UUID uuid = player.getUuid();

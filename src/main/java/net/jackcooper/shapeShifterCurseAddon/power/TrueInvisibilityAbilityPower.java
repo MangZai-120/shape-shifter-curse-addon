@@ -266,6 +266,18 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower implements
 		}
 	}
 
+    @Override
+    public void onLost() {
+        if (entity != null && !entity.getWorld().isClient && activeCastId >= 0) {
+            entity.removeStatusEffect(SscAddon.PRE_INVISIBILITY);
+            entity.removeStatusEffect(SscAddon.TRUE_INVISIBILITY);
+            entity.removeStatusEffect(StatusEffects.INVISIBILITY);
+            wasInvisible = false;
+            applyUniversalCooldown();
+        }
+        super.onLost();
+    }
+
 	@Override
 	public boolean canUse() {
 		// Always allow use - we handle cooldown logic in onUse

@@ -46,7 +46,7 @@ public final class DeathFinaleManager {
     private DeathFinaleManager() {}
     public static void init() {
         ServerTickEvents.END_SERVER_TICK.register(DeathFinaleManager::tick);
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> {
             ACTIVE.remove(handler.player.getUuid());
             VIEWERS.remove(handler.player.getUuid()); DANGER.remove(handler.player.getUuid());
             sync(server, true);

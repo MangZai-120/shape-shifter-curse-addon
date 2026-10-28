@@ -154,7 +154,7 @@ public final class LoginResourceRestoreHandler {
 		});
 
 		// 断线清理
-		ServerPlayConnectionEvents.DISCONNECT.register((netHandler, server) ->
+		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((netHandler, server) ->
 				PENDING.remove(netHandler.player.getUuid()));
 	}
 }

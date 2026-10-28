@@ -248,9 +248,8 @@ public final class SpiderMoonWeaverWebManager {
 	}
 
 	/** 玩家掉线清理，防僵尸 UUID 残留。 */
-	public static void onDisconnect(UUID uuid) {
-		CHARGING.remove(uuid);
-		FLAT_CHARGING.remove(uuid);
+	public static void onDisconnect(ServerPlayerEntity player) {
+        cancel(player);
 	}
 
 	// 攻击模式：发射蛛丝弹（命中铺减速网）

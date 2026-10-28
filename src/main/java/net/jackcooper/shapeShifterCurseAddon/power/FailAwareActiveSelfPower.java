@@ -105,6 +105,12 @@ public class FailAwareActiveSelfPower extends ActiveCooldownPower implements Ski
             else if (SkillCooldowns.isCasting(player, id)) SkillCooldowns.failed(player, id, SkillCooldowns.currentCastId(player, id));
             else SkillCooldowns.penalizeAttempt(player, id);
 			return true;
+        } catch (RuntimeException | Error failure) {
+            // An action may throw after begin (including a nested control/effect callback).
+            // Release the exact accepted cast, while preserving the exception in the server log.
+            long failedCast = castId >= 0 ? castId : SkillCooldowns.currentCastId(player, id);
+            if (failedCast >= 0) SkillCooldowns.failed(player, id, failedCast);
+            throw failure;
 		} finally {
 			PENDING_FAIL.remove();
 		}

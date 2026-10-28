@@ -236,6 +236,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 		if (entity.hasStatusEffect(StatusEffects.INVISIBILITY)) {
 			entity.removeStatusEffect(StatusEffects.INVISIBILITY);
 		}
+        refreshMistScale(false);
 		entity.calculateDimensions();
 		wasMist = false;
 		// 退出雾化：复位飞行豁免
@@ -482,6 +483,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 	}
 	@Override
 	public void onLost() {
+        interruptControl();
 		super.onLost();
 		if (entity == null || entity.getWorld().isClient) return;
 		// 形态切换/能力移除时兜底：解除雾化、蓄力与飞行豁免，避免残留作弊飞行

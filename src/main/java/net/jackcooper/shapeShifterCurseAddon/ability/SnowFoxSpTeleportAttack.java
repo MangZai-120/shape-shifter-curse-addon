@@ -89,10 +89,10 @@ public class SnowFoxSpTeleportAttack {
 			return false;
 		}
 
+        if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return false;
 		net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.consume(player,
 				net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX, BAL.i("mana_cost_success", MANA_COST_SUCCESS));
 		setRegenCooldown(player, BAL.i("regen_lock_ticks", TELEPORT_REGEN_LOCK_TICKS));
-		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID);
 		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.released(player, SKILL_ID);
 
 		Vec3d originalPos = player.getPos();
@@ -117,6 +117,11 @@ public class SnowFoxSpTeleportAttack {
 	public static void tick(ServerPlayerEntity player) {
 		TeleportAttackData data = ATTACKING_PLAYERS.get(player.getUuid());
 		if (data == null) return;
+        if (!player.isAlive()) {
+            ATTACKING_PLAYERS.remove(player.getUuid());
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, data.castId);
+            return;
+        }
 
 		if (player.hasStatusEffect(SscAddon.PURIFIED)) {
 			returnToOrigin(player, data);

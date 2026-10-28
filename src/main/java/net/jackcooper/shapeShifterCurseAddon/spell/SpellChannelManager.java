@@ -82,7 +82,7 @@ public final class SpellChannelManager {
 				}
 			});
 		});
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> {
 			stop(handler.player, true);
 			NEXT_CAST_OK.remove(handler.player.getUuid()); // GCD 表断线清理防泄漏
 		});

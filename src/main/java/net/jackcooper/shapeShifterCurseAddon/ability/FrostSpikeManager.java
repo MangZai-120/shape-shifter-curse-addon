@@ -285,7 +285,8 @@ public final class FrostSpikeManager {
 				}
 			}
 		}
-		state.thorns.put(player.getUuid(), ticks);
+        if (java.util.Arrays.stream(ticks).anyMatch(t -> t >= 0)) state.thorns.put(player.getUuid(), ticks);
+        else state.thorns.remove(player.getUuid());
 		state.markDirty();
 		// 飞行中的冰锥：同主人的全部清空（速度/起点不持久化，留着会冻在空中）
 				if (player.getWorld() instanceof ServerWorld sw) {

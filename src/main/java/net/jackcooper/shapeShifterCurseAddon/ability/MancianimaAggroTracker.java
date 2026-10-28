@@ -30,4 +30,6 @@ public final class MancianimaAggroTracker {
 		if (mobUuid == null) return;
 		ANGERED.remove(mobUuid);
 	}
+    public static void clearAll() { ANGERED.clear(); }
+
 }

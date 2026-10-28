@@ -396,6 +396,7 @@ public class SscAddonActions {
 				new SerializableData(),
 				(data, entity) -> {
 					if (entity instanceof LivingEntity living) {
+                        repairPlayDeadPowers(living);
 						// 1. Effects
 						// Duration 6s = 120 ticks（HUD 装死剩余倒数同源读此常量）
 						int duration = PLAY_DEAD_DURATION_TICKS;
@@ -674,6 +675,33 @@ public class SscAddonActions {
 	/** 装死 CD 读取器（与 PlayDeadAbsorptionManager 共用同 scope 读取器，单一事实源，避免双份维护）。 */
 	/** 装死的技能 ID（= 按键子 power 注册 ID）。 */
 	public static final String PLAY_DEAD_SKILL_ID = "my_addon:form_axolotl_sp_play_dead_activate";
+
+    /** Restore missing declared subpowers, never duplicate modifiers or add powers from another form. */
+    private static void repairPlayDeadPowers(LivingEntity entity) {
+        if (!(entity instanceof ServerPlayerEntity player)) return;
+        var parentId = new Identifier("my_addon", "form_axolotl_sp_play_dead");
+        if (!io.github.apace100.apoli.power.PowerTypeRegistry.contains(parentId)) return;
+        var parent = io.github.apace100.apoli.power.PowerTypeRegistry.get(parentId);
+        if (!(parent instanceof io.github.apace100.apoli.power.MultiplePowerType<?> multiple)) return;
+        var holder = io.github.apace100.apoli.component.PowerHolderComponent.KEY.get(player);
+        var sources = holder.getSources(parent);
+        if (sources.isEmpty()) return;
+        int restored = 0;
+        for (var childId : multiple.getSubPowers()) {
+            if (!io.github.apace100.apoli.power.PowerTypeRegistry.contains(childId)
+                    || io.github.apace100.apoli.power.PowerTypeRegistry.isDisabled(childId)) continue;
+            var child = io.github.apace100.apoli.power.PowerTypeRegistry.get(childId);
+            // Existing instances (and their configured conditions) remain authoritative.
+            if (holder.hasPower(child)) continue;
+            for (var source : sources) if (holder.addPower(child, source)) restored++;
+        }
+        if (restored > 0) {
+            io.github.apace100.apoli.component.PowerHolderComponent.sync(player);
+            org.slf4j.LoggerFactory.getLogger("ssc_addon").warn(
+                    "[PlayDead] Restored {} missing power sources for player {}", restored, player.getUuid());
+        }
+    }
+
 
 	private static net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader frostBallBalance() {
 		return FROST_BALL_BAL;
