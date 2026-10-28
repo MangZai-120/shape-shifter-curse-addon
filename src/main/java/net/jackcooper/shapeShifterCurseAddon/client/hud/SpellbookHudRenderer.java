@@ -211,8 +211,18 @@ public class SpellbookHudRenderer implements HudRenderCallback {
                 int maskHeight = (int) Math.ceil(ICON_SIZE * data.cooldownFraction());
                 context.fill(iconX, iconY + ICON_SIZE - maskHeight, iconX + ICON_SIZE, iconY + ICON_SIZE, 0xAA000000);
                 var mc = MinecraftClient.getInstance();
-                drawOutlined(context, Text.literal(data.cooldownText()), x + (SLOT_SIZE - mc.textRenderer.getWidth(data.cooldownText())) / 2,
-                        y + (SLOT_SIZE - mc.textRenderer.fontHeight) / 2, 0xFFF3F7F1);
+                int textWidth = mc.textRenderer.getWidth(data.cooldownText());
+                // 冷却数字缩为原来的 75%，长数字继续按图标内宽收敛，保留描边余量。
+                float textScale = Math.min(0.75f, (ICON_SIZE - 2f) / Math.max(1, textWidth));
+                context.getMatrices().push();
+                try {
+                    context.getMatrices().translate(x + (SLOT_SIZE - textWidth * textScale) / 2f,
+                            y + (SLOT_SIZE - mc.textRenderer.fontHeight * textScale) / 2f, 0);
+                    context.getMatrices().scale(textScale, textScale, 1);
+                    drawOutlined(context, Text.literal(data.cooldownText()), 0, 0, 0xFFF3F7F1);
+                } finally {
+                    context.getMatrices().pop();
+                }
             }
             if (data.spell() != null) {
                 // Keep the requested +1 right / +2 down GUI-pixel offsets independent of row scaling.
