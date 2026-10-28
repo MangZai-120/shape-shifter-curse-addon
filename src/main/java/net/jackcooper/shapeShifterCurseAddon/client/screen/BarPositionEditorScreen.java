@@ -21,6 +21,7 @@ import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
 import net.jackcooper.shapeShifterCurseAddon.client.hud.SkillCooldownBarRenderer;
 import net.jackcooper.shapeShifterCurseAddon.client.hud.NeoStabilityBar;
+import net.jackcooper.shapeShifterCurseAddon.client.hud.SpellbookHudRenderer;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Arrays;
@@ -59,10 +60,11 @@ public class BarPositionEditorScreen extends Screen {
     private static final int DEF_CD_X = SSCAddonClientConfig.DEFAULT_CD_X;
     private static final int DEF_CD_Y = SSCAddonClientConfig.DEFAULT_CD_Y;
     private static final int CD_W = SkillCooldownBarRenderer.SLOT_WIDTH;
-    // 月尘魔法书 HUD 整体：默认锚点 7(左下)+偏移(16,-52)（与 SSCAddonClientConfig 默认一致）
-    private static final int DEF_SB_TYPE = 7, DEF_SB_X = 16, DEF_SB_Y = -52;
+    // 新默认位置居于独立玻璃条下方；已有配置保留，重置才应用新默认值。
+    private static final int DEF_SB_TYPE = 7, DEF_SB_X = SpellbookHudRenderer.DEFAULT_X, DEF_SB_Y = SpellbookHudRenderer.DEFAULT_Y;
     // 书栏只包括三槽和魔法名，稳定度条使用自己的独立包围盒。
-    private static final int SB_W = 64, SB_H = 36, SB_ORIGIN_DX = -1, SB_ORIGIN_DY = -1;
+    private static final int SB_W = SpellbookHudRenderer.WIDTH, SB_H = SpellbookHudRenderer.HEIGHT,
+            SB_ORIGIN_DX = SpellbookHudRenderer.ORIGIN_X, SB_ORIGIN_DY = 0;
     // 法术蓄力条：默认锚点 4(左中)+偏移(0,-34)+贴右侧（与 SSCAddonClientConfig 默认一致，CD 条对侧同高）
     private static final int DEF_CH_TYPE = SSCAddonClientConfig.DEFAULT_CHARGE_TYPE;
     private static final int DEF_CH_X = SSCAddonClientConfig.DEFAULT_CHARGE_X;
@@ -766,10 +768,7 @@ public class BarPositionEditorScreen extends Screen {
                     scrX = clampScreenX(scrX, barW);
                     scrY = clampScreenY(scrY, barH);
                 } else {
-                    // 魔法书：scrX/scrY 是布局逻辑原点(baseX/baseY)，包围盒左上实际在
-                    // (baseX−7, baseY−14)——必须先把包围盒左上换算出来再 clamp 后换回，
-                    // 否则 baseY 被钳到 height−49 而 HUD 内容延伸到 baseY+35，
-                    // 屏幕底部永远留 14px 死区放不进去（顶部同理越界切掉法力条）
+                    // 三个等大槽与下方名称使用与正式 HUD 相同的完整包围盒。
                     scrX = clampScreenX(scrX + SB_ORIGIN_DX, barW) - SB_ORIGIN_DX;
                     scrY = clampScreenY(scrY + SB_ORIGIN_DY, barH) - SB_ORIGIN_DY;
                 }
@@ -1161,7 +1160,9 @@ public class BarPositionEditorScreen extends Screen {
 
     /** 月尘魔法书 HUD 整体锚点屏幕坐标（= 单元逻辑原点 baseX/baseY）。 */
     private Pair<Integer, Integer> spellbookPos() {
-        return UIPositionUtils.getCorrectPosition(sbType, sbX, sbY);
+        Pair<Integer, Integer> pos = UIPositionUtils.getCorrectPosition(sbType, sbX, sbY);
+        return new Pair<>(SpellbookHudRenderer.clampX(pos.getLeft(), width),
+                SpellbookHudRenderer.clampY(pos.getRight(), height));
     }
 
     /** 判断鼠标是否落在月尘魔法书 HUD 预览包围盒热区。 */
@@ -1172,16 +1173,12 @@ public class BarPositionEditorScreen extends Screen {
         return mouseX >= x - 2 && mouseX <= x + SB_W + 2 && mouseY >= y - 3 && mouseY <= y + SB_H + 3;
     }
 
-    /** 月尘魔法书 HUD 整体可拖拽手柄：包围盒 + 内部法力条/三槽示意 + 边框 + 标签。 */
+    /** 三槽实图与名称共用拖动区域，稳定度条单独调整。 */
     private void drawSpellbookHandle(DrawContext ctx, int mouseX, int mouseY) {
         Pair<Integer, Integer> pos = spellbookPos();
         int ax = pos.getLeft(), ay = pos.getRight();       // 锚点(baseX,baseY)
         int x = ax + SB_ORIGIN_DX, y = ay + SB_ORIGIN_DY;  // 包围盒左上
-        ctx.fill(x, y, x + SB_W, y + SB_H, 0x6060308A);
-        // 书栏只保留三槽与名称区域；稳定度条有自己的手柄和配置。
-        ctx.fill(ax - 1, ay + 2, ax - 1 + 18, ay + 2 + 18, 0x80CDAAFF);
-        ctx.fill(ax + 19, ay - 1, ax + 19 + 24, ay - 1 + 24, 0x80CDAAFF);
-        ctx.fill(ax + 45, ay + 2, ax + 45 + 18, ay + 2 + 18, 0x80CDAAFF);
+        SpellbookHudRenderer.drawPreview(ctx, ax, ay);
         boolean hovered = hitSpellbook(mouseX, mouseY);
         boolean active = (dragging == DRAG_SPELLBOOK);
         boolean sel = (selected == DRAG_SPELLBOOK);

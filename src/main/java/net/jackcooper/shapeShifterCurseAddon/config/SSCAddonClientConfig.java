@@ -150,10 +150,10 @@ public class SSCAddonClientConfig implements ConfigData {
 	public int spellbookHudPosType = 7;
 	/** 月尘魔法书 HUD X 偏移：相对锚点的额外平移。 */
 	@ConfigEntry.Gui.Excluded
-	public int spellbookHudPosOffsetX = 16;
+	public int spellbookHudPosOffsetX = net.jackcooper.shapeShifterCurseAddon.client.hud.SpellbookHudRenderer.DEFAULT_X;
 	/** 月尘魔法书 HUD Y 偏移：相对锚点的额外平移。 */
 	@ConfigEntry.Gui.Excluded
-	public int spellbookHudPosOffsetY = -52;
+	public int spellbookHudPosOffsetY = net.jackcooper.shapeShifterCurseAddon.client.hud.SpellbookHudRenderer.DEFAULT_Y;
 
 	/**
 	 * 契灵 - 次要技能瞬移模式
