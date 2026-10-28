@@ -420,11 +420,11 @@ public final class SpellcastClient {
 		var active = net.jackcooper.shapeShifterCurseAddon.client.hud.SpellCastHud.getState();
 		int level = active != null && active.spell() == spell ? active.level() : ScrollData.getCastLevel(scroll);
 		var runeModifiers=RuneScheme.modifiers(player,scroll,level);
-        double radius = RuneCastContext.with(runeModifiers,()->spell.getAimRadius(level));
+        double radius = RuneCastContext.with(runeModifiers,net.jackcooper.shapeShifterCurseAddon.spell.FormationData.sumSpaceRangeMultiplier(book,spell.getElement()),()->spell.getAimRadius(level));
 		if (radius <= 0) {
 			return;
 		}
-		Vec3d impact = RuneCastContext.with(runeModifiers,()->Spell.computeAimImpact(player, spell.getAimMaxRange(level)));
+		Vec3d impact = RuneCastContext.with(runeModifiers,net.jackcooper.shapeShifterCurseAddon.spell.FormationData.sumSpaceRangeMultiplier(book,spell.getElement()),()->Spell.computeAimImpact(player, spell.getAimMaxRange(level)));
 		if (impact == null) {
 			return;
 		}

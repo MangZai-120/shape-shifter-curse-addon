@@ -32,7 +32,7 @@ public final class NeoModelTest {
         for(int tick=0;tick<=40;tick++)current+=s.advance(tick,current,new Profile(80,.000001,1,1,1,false),new Random(7));
         double[] expected={70,76.25,82.5,88.75,95};
         for(int i=0;i<5;i++)near(s.checkpoints.get(i).burden(),expected[i],"Live burden at checkpoint");
-        for(var point:s.checkpoints)near(point.risk().failure(),risk(b,95,25,new Profile(80,.000001,1,1,1,false)).failure(),"One locked probability uses initial C plus actual Q");
+        for(var point:s.checkpoints)near(point.risk().failure(),point.burden()<=80?0:s.failureProbability,"Safe checkpoints have zero active failure risk; unsafe ones retain the single draw");
         Risk low=risk(b,90,25,neutral), high=risk(b,90,45,neutral);
         require(high.failure()>low.failure()&&high.offset()>low.offset()&&high.angle()>low.angle(),"Actual spell cost affects all risks");
         require(risk(b,90,25,new Profile(80,.8,.9,1,1,false)).failure()!=low.failure(),"Same excess different form roll modifier");
@@ -46,8 +46,8 @@ public final class NeoModelTest {
         for(int tick=0;tick<=10;tick++)paid+=failure.advance(tick,10000+paid,neutral,new Draw(.5,0));
         require(failure.failed&&!failure.complete,"Failure interrupts");near(failure.paid,0,"0-tick non-instant failure does not precharge");
         Session partial=new Session(b,q);double c=70;var draw=new Draw(.5,17);
-        for(int tick=0;tick<=20;tick++)c+=partial.advance(tick,c,tick==0?new Profile(1,100,0,1,1,false):safe,draw);
-        require(partial.failed,"Previously drawn failure fires even after safety improves");near(partial.paid,10,"Odd-tick failure retains only the last two-tick payment");
+        for(int tick=0;tick<=20;tick++)c+=partial.advance(tick,c,new Profile(1,100,0,1,1,false),draw);
+        require(partial.failed,"Previously drawn failure fires while still outside safety");near(partial.paid,10,"Odd-tick failure retains only the last two-tick payment");
         require(partial.checkpoints.get(partial.checkpoints.size()-1).tick()==17,"Failure may fire off the ten-tick drift grid");
         require(draw.draws==1&&draw.times==1&&partial.failureDraws==1,"Failure and its time are sampled exactly once");
         var scheduled=new Session(b,q);var scheduledDraw=new Draw(.5,17);int riskReads=0;double scheduledC=10000;
@@ -63,7 +63,7 @@ public final class NeoModelTest {
                 "An indefinitely held safe spell never redraws failure or samples a failure time");
         near(held.paid,q.actual(),"Long holds keep exact payment after the single initial draw");
         var shifted=new Session(b,q);var shiftDraw=new Draw(.5,0);
-        shifted.advance(0,10000,new Profile(1,0,1000,1,1,false),shiftDraw);
+        shifted.advance(0,10000,new Profile(8000,0,1000,1,1,false),shiftDraw);
         require(shifted.hasShifted&&shifted.checkpoints.get(0).shifted(),"Deviation is latched when it actually happens");
         for(int tick=1;tick<=40;tick++)shifted.advance(tick,0,shifted.needsRisk(tick)?safe:null,NO_DRAW);
         require(shifted.hasShifted,"An earlier deviation remains recorded when later live C is safe");
@@ -121,6 +121,40 @@ public final class NeoModelTest {
             var spell=new Blueprint("",core,carrier,List.of(),Core.FROST,1,40,16);
             require(errors(spell).isEmpty()==supports(core,carrier),"Carrier capability matrix");
         }
+        verifySafetyWindows();
         System.out.println("Neomagic: "+checks+" behavioral checks passed.");
+    }
+    private static void verifySafetyWindows() {
+        var body=new Profile(100,1,0,1,1,false);var spell=b(List.of(),40);
+        var cost=new Quote(300,300,.5,plan(spell));
+        require(failureChance(spell,200.001,.01,body)==1,"Any actual quote exceeding 2N is guaranteed to draw failure");
+        require(failureChance(spell,200,.01,body)<1,"Exactly 2N retains the continuous risk formula");
+        for(int chosen:new int[]{0,1,7,999}) {
+            var session=new Session(spell,cost);var random=new Draw(0,chosen);double c=0;
+            for(int age=0;age<=40&&!session.failed;age++) {
+                c+=session.advance(age,c,body,random);
+                if(c<=body.safety())require(!session.failed,"Every preparation tick within safety remains successful");
+            }
+            require(session.failed&&c>100&&session.failureDraws==1&&random.times==1,"Guaranteed failure only fires outside safety, using one time draw");
+        }
+        var protectedCast=new Session(spell,cost,40,10);double c=0;var protectedRandom=new Draw(0,0);
+        for(int age=0;age<=40;age++)c+=protectedCast.advance(age,c,body,protectedRandom);
+        require(protectedCast.complete&&!protectedCast.failed&&c==300,"Locking while still safe protects later payment past 2N");
+        require(protectedRandom.draws==1&&protectedRandom.times==0,"An empty pre-lock danger window never invents an early failure time");
+        var relief=new Session(spell,cost);var reliefRandom=new Draw(0,0);c=0;
+        for(int age=0;age<=40&&!relief.failed;age++) {
+            if(age==13)c=0;
+            c+=relief.advance(age,c,body,reliefRandom);
+            if(c<=100)require(!relief.failed,"Relief before the scheduled failure guarantees protection while safe");
+        }
+        require(relief.failed&&c>100&&reliefRandom.draws==1&&reliefRandom.times==1,"Relief defers failure without rerolling its chance or time");
+        var risingSafety=new Session(spell,cost);c=0;
+        for(int age=0;age<=40;age++)c+=risingSafety.advance(age,c,age<10?body:new Profile(500,1,0,1,1,false),new Draw(0,0));
+        require(risingSafety.complete&&!risingSafety.failed,"A raised live safety threshold protects the entire remaining preparation");
+        var finalPayment=new Session(b(List.of(),1),cost);c=0;
+        for(int age=0;age<=1;age++)c+=finalPayment.advance(age,c,body,new Draw(0,0));
+        require(finalPayment.failed&&c==300&&!finalPayment.complete,"A final-tick payment can fail before its effect releases");
+        var instant=new Session(b(List.of(),0),cost);instant.advance(0,0,body,new Draw(0,0));
+        require(instant.failed&&instant.paid==300,"Instant spells check safety after their actual immediate payment");
     }
 }

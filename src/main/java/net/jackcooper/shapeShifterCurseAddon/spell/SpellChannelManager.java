@@ -194,7 +194,7 @@ public final class SpellChannelManager {
 		Channel channel = new Channel(player, spell, scroll, level, solo, token, mana, cooldown,
 				sourceValid, effect, settleCooldown, consumeUse,modifiers);
 		if (spell.requiresTargetBeforeChannel()) {
-			Vec3d target = RuneCastContext.with(channel.modifiers,()->spell.captureCastTarget(player, level));
+			Vec3d target = RuneCastContext.with(channel.modifiers,channel.formationRange,()->spell.captureCastTarget(player, level));
 			if (target == null || !channel.progress.release(token, target)) {
 				channel.collapse.finish(false,"target_lost");
 				player.sendMessage(spell.getCastFailureMessage(player), true);
@@ -202,7 +202,7 @@ public final class SpellChannelManager {
 			}
 		}
 		ACTIVE.put(player.getUuid(), channel);
-		RuneCastContext.run(channel.modifiers,()->spell.onChannelStarted(player, channel.progress.target()));
+		RuneCastContext.run(channel.modifiers,channel.formationRange,()->spell.onChannelStarted(player, channel.progress.target()));
 		var speed = player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
 		if (speed != null) {
 			speed.removeModifier(SLOW_ID);
@@ -226,7 +226,7 @@ public final class SpellChannelManager {
 			stop(player, !channel.progress.started());
 			return;
 		}
-		Vec3d target = RuneCastContext.with(channel.modifiers,()->channel.spell.captureCastTarget(player, channel.level));
+		Vec3d target = RuneCastContext.with(channel.modifiers,channel.formationRange,()->channel.spell.captureCastTarget(player, channel.level));
 		if (channel.spell.getAimMaxRange() > 0 && target == null) {
 			stop(player, true, channel.spell.getCastFailureMessage(player));
 			return;
@@ -282,7 +282,7 @@ public final class SpellChannelManager {
 		return player.isAlive() && !player.isRemoved() && !player.isSpectator()
 				&& player.getWorld().getRegistryKey().equals(channel.dimension) && channel.sourceValid.getAsBoolean()
 				&& (!channel.profile.immobilized() || !player.hasVehicle() && !player.hasPassengers())
-				&& RuneCastContext.with(channel.modifiers,()->channel.spell.canContinueCasting(player, channel.scroll));
+				&& RuneCastContext.with(channel.modifiers,channel.formationRange,()->channel.spell.canContinueCasting(player, channel.scroll));
 	}
 
 	private static void tick(Channel channel) {
@@ -304,7 +304,7 @@ public final class SpellChannelManager {
 		} else {
 			channel.collapseAge++;
 			channel.progress.tick();
-			RuneCastContext.run(channel.modifiers,()->channel.spell.tickChannel(player, channel.level, channel.scroll, channel.progress.elapsed()));
+			RuneCastContext.run(channel.modifiers,channel.formationRange,()->channel.spell.tickChannel(player, channel.level, channel.scroll, channel.progress.elapsed()));
 			advance(channel);
 		}
 		// 锁定态转换检测：进入锁定的当 tick 立即补发一次校准包（不等 20t 周期）。
@@ -332,7 +332,7 @@ public final class SpellChannelManager {
 			net.ssca.neomagic.NeoRuntime.backlash(channel.player,channel.collapse.session.quote.actual());
 			return;
 		}
-		if (!RuneCastContext.with(channel.modifiers,()->channel.spell.readyToRelease(channel.player, channel.scroll)) || !channel.progress.beginEffect()) return;
+		if (!RuneCastContext.with(channel.modifiers,channel.formationRange,()->channel.spell.readyToRelease(channel.player, channel.scroll)) || !channel.progress.beginEffect()) return;
 		if (channel.mode == SpellCastingRules.Mode.CONTINUOUS) {
 			// 持续模式起手生效即视为释放生效，GCD 从此起算（持续阶段结束不再重置）
 			NEXT_CAST_OK.put(channel.player.getUuid(), channel.player.getWorld().getTime() + BAL.i("gcd_ticks", CAST_INTERVAL_TICKS));
@@ -500,6 +500,7 @@ public final class SpellChannelManager {
 		final ServerPlayerEntity player;
 		final Spell spell;
         final RuneModifiers modifiers;
+        final double formationRange;
 		final ItemStack scroll;
 		final int level, token, cooldown, interruptMode;
 		final boolean solo;
@@ -523,6 +524,8 @@ public final class SpellChannelManager {
 				int mana, int cooldown, BooleanSupplier sourceValid,
 				Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers) {
             this.modifiers=modifiers;
+            ItemStack equipped=solo?null:SpellCastManager.getEquippedBook(player);
+            this.formationRange=equipped==null||equipped.isEmpty()?1:FormationData.sumSpaceRangeMultiplier(equipped,spell.getElement());
 			this.player = player;
 			this.spell = spell;
 			this.scroll = scroll;
@@ -531,7 +534,7 @@ public final class SpellChannelManager {
 			this.token = token;
 			this.cooldown = cooldown;
 			this.sourceValid = sourceValid;
-			this.effect = target->RuneCastContext.run(modifiers,()->effect.accept(target));
+			this.effect = target->RuneCastContext.run(modifiers,this.formationRange,()->effect.accept(target));
 			this.settleCooldown = settleCooldown;
 			this.consumeUse = consumeUse;
 			var baseProfile=spell.getCastingProfile(player, level, solo);

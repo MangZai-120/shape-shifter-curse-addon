@@ -113,8 +113,11 @@ public final class NeoNetwork {
         }
         Risk r=offsetRisk(b,d.burden,q.actual(),profile);
         var session=legacy!=null?legacy.session:a==null?null:a.session;
-        double failure=session==null?failureChance(b,d.burden+q.actual(),q.actual(),profile):session.failureProbability;
-        n.putDouble("Q",q.actual());n.putDouble("Failure",failure);n.putDouble("Offset",r.offset());
+        double forecast=session==null?failureChance(b,d.burden+q.actual(),q.actual(),profile):session.failureProbability;
+        int age=legacy!=null?legacy.age:a==null?-1:a.age;
+        boolean protectedByLock=session!=null&&prep>0&&session.failureBoundary<prep&&age>=session.failureBoundary;
+        double failure=d.burden<=profile.safety()||protectedByLock?0:forecast;
+        n.putDouble("Q",q.actual());n.putDouble("Failure",failure);n.putDouble("ForecastFailure",forecast);n.putDouble("Offset",r.offset());
         n.putBoolean("HasSpell",hasSpell);
         n.putInt("LockBoundary",session==null?prep:session.failureBoundary);
         if(!d.records.isEmpty()){var last=d.records.get(0);n.putString("ResultId",last.id);n.putString("Result",last.result);}

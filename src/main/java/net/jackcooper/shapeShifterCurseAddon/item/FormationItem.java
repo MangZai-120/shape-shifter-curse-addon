@@ -127,7 +127,7 @@ public class FormationItem extends Item {
 			String variant = FormationData.getVariant(stack);
 			switch (variant == null ? FormationData.VARIANT_REGEN : variant) {
 				case FormationData.VARIANT_MANA -> {
-					int manaPct = Math.round(FormationData.universalManaBonusPct(level) * 100);
+                    int manaPct = net.ssca.neomagic.NeoLegacyCasting.formationSafetyBonus(level);
 					tooltip.add(net.ssca.neomagic.NeoMagic.text("formation_mana",
 							manaPct).formatted(Formatting.GRAY));
 				}
@@ -153,7 +153,16 @@ public class FormationItem extends Item {
 			tooltip.add(Text.translatable("item.ssc_addon.formation.tip_hint").formatted(Formatting.DARK_GRAY));
 			return;
 		}
-		int pct = Math.round(FormationData.damageBonusPerLevel() * level * 100);
+        if(element==FormationElement.SPACE){
+            tooltip.add(net.ssca.neomagic.NeoMagic.text("formation_space",
+                    Math.round(FormationData.spaceRangeBonusPerLevel()*level*100),
+                    Math.round(FormationData.cooldownReductionPerLevel()*level*100),
+                    Math.round(FormationData.manaCostPerLevel()*level*100)).formatted(Formatting.GRAY));
+            tooltip.add(Text.translatable("item.ssc_addon.formation.tip_use").formatted(Formatting.DARK_GRAY));
+            tooltip.add(Text.translatable("item.ssc_addon.formation.tip_hint").formatted(Formatting.DARK_GRAY));
+            return;
+        }
+        int pct = Math.round(FormationData.damageBonusPerLevel() * level * 100);
 		int cdPct = Math.round(FormationData.cooldownReductionPerLevel() * level * 100);
 		int manaPct = Math.round(FormationData.manaCostPerLevel() * level * 100);
 		tooltip.add(net.ssca.neomagic.NeoMagic.text("formation_effect",

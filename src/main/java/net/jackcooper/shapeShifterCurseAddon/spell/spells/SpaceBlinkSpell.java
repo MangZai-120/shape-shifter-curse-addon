@@ -56,7 +56,8 @@ public class SpaceBlinkSpell extends Spell {
 
 	/** 当前有效瞬移距离（客户端预览/服务端结算共用）。 */
 	public double getBlinkRange(int level) {
-		return RuneCastContext.current().scale(baseRange() * getSpeedMultiplier(level),RuneModifiers.Stat.DISTANCE);
+        return RuneCastContext.current().scale(baseRange() * getSpeedMultiplier(level),RuneModifiers.Stat.DISTANCE)
+                * RuneCastContext.formationRange();
 	}
 
 	/** 按住瞄准型：最大施法距离（客户端按住显示落点预览，松开施放）。 */

@@ -265,7 +265,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 		}
 		int expLevel = FormationData.getBestUniversalVariantLevel(book(), FormationData.VARIANT_EXP);
 		lines.add(label("universal_exp", multiplier(expLevel == 0 ? 1f : FormationData.universalExpMultiplier(expLevel))));
-		lines.add(label("universal_mana", SpellbookData.getUniversalFormationManaBonus(book())));
+		lines.add(label("universal_mana", (int)net.ssca.neomagic.NeoLegacyCasting.safetyBonus(book())));
 		lines.add(label("universal_recovery", multiplier(FormationData.universalRecoveryMultiplier(book()))));
 		return lines;
 	}

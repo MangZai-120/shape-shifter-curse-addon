@@ -154,9 +154,9 @@ public final class NeoVisualProbe {
                     mc.options.getGuiScale().setValue(2);mc.onResolutionChanged();openBookPreview(mc,100,100,0);
                 } else if(step==36){
                     save(mc,"22-book-player-information.png");checkBookBounds(mc);
-                    openBookPreview(mc,150,100,5000);
+                    openBookPreview(mc,150,100,6000);
                 } else if(step==37){
-                    save(mc,"23-book-human-level-one.png");openBookPreview(mc,250,200,5000);
+                    save(mc,"23-book-human-level-one.png");openBookPreview(mc,250,200,6000);
                     NeoClient.hud.putDouble("C",275);
                 } else if(step==38){
                     save(mc,"24-book-familiar-danger.png");

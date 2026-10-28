@@ -113,6 +113,7 @@ public final class NeoModel {
     public static double failureChance(Blueprint b, double current, double q, Profile f) {
         double excess = Math.max(0, current - f.safety);
         if (excess == 0) return 0;
+        if (current > 2 * f.safety) return 1;
         double scaled=excess/Math.max(1,f.safety)*60;
         return clamp(.03*Math.pow(scaled/10,1.3)*Math.pow(q/20,.7)*f.failureFor(b),0,1);
     }
@@ -122,7 +123,7 @@ public final class NeoModel {
     }
     private static Risk riskWithFailure(Blueprint b, double current, double q, Profile f, double failure) {
         double excess = Math.max(0, current - f.safety);
-        if (excess == 0) return new Risk(0,failure,0,0);
+        if (excess == 0) return new Risk(0,0,0,0);
         // 危险范围为 N～2N：按当前有效 N 归一化，保留连续风险曲线与形态修正。
         double scaled=excess/Math.max(1,f.safety)*60;
         double constraint = Math.pow(.65, b.count(Control.CONSTRAIN));
@@ -140,28 +141,46 @@ public final class NeoModel {
         public double paid, yaw, pitch, attenuation = 1, survival = 1;
         public double failureProbability, failureBasis;
         public int failureDraws;
-        /** Exclusive end of the window in which a scheduled failure may fire. */
+        /** Special lock is exclusive; ordinary completion checks its final payment before releasing. */
         public final int failureBoundary;
         public boolean failed, complete, reversed, wrongTarget, hasShifted;
         private int previous = -1;
         private int failureAt = -1;
         private final int duration;
+        private final int latestFailureTick;
         public Session(Blueprint b, Quote q) { this(b,q,b.prep()); }
         /** Existing spells may have longer preparation than the research editor's 80 tick range. */
         public Session(Blueprint b, Quote q, int duration) { this(b,q,duration,duration); }
         public Session(Blueprint b, Quote q, int duration, int lockInTick) {
             blueprint=b;quote=q;this.duration=Math.max(0,duration);
             failureBoundary=lockInTick<0?this.duration:Math.min(this.duration,lockInTick);
+            // Ordinary completion checks payment before releasing its effect. An earlier
+            // special lock protects every tick at/after that lock, including held casts.
+            latestFailureTick=this.duration==0?0:failureBoundary<this.duration?failureBoundary-1:this.duration;
         }
         /** Only risk events need the current form; ordinary payment ticks need no profile allocation. */
         public boolean needsRisk(int age) {
-            return !failed&&!complete&&age>previous&&(failureDraws==0||age%10==0||age==failureAt);
+            return !failed&&!complete&&age>previous&&(failureDraws==0||age%10==0
+                    ||failureAt>=0&&age>=failureAt&&age<=latestFailureTick);
         }
         private void drawFailure(double current, Profile form, RandomGenerator rng) {
             failureBasis=current+quote.actual;
             failureProbability=failureChance(blueprint,failureBasis,quote.actual,form);
             failureDraws=1;survival=1-failureProbability;
-            if(rng.nextDouble()<failureProbability)failureAt=rng.nextInt(Math.max(1,failureBoundary));
+            if(rng.nextDouble()<failureProbability) {
+                int earliest=firstUnsafeTick(current,form.safety);
+                if(earliest<=latestFailureTick)
+                    failureAt=earliest+rng.nextInt(latestFailureTick-earliest+1);
+            }
+        }
+        private int firstUnsafeTick(double initial,double safety) {
+            if(initial>safety||duration==0)return 0;
+            if(quote.actual<=0||initial+quote.actual<=safety)return Integer.MAX_VALUE;
+            double crossing=(safety-initial)*duration/quote.actual;
+            int first=(int)Math.min(duration,(Math.floor(crossing/2)+1)*2);
+            // Correct floating point equality at an exact two-tick payment boundary.
+            while(first<duration&&initial+quote.actual*first/duration<=safety)first=Math.min(duration,first+2);
+            return first;
         }
         /** Caller adds returned delta to its sole C before consuming this checkpoint. */
         public double advance(int age, double current, Profile form, RandomGenerator rng) {
@@ -179,7 +198,10 @@ public final class NeoModel {
             int billed = age >= duration ? duration : age / 2 * 2;
             double due = duration == 0 ? quote.actual : quote.actual*billed/duration;
             double delta = Math.max(0,due-paid); paid += delta;
-            failed=age==failureAt;
+            // One frozen draw and one scheduled time. Recovery can defer the failure,
+            // but it can never fire while the live body is within its safety threshold.
+            failed=failureAt>=0&&age>=failureAt&&age<=latestFailureTick
+                    &&form!=null&&current+delta>form.safety;
             if (age % 10 == 0 || failed) {
                 Risk r=riskWithFailure(blueprint,current+delta,quote.actual,form,failureProbability);
                 boolean shiftDraw=!failed&&age%10==0&&r.offset>0&&rng.nextDouble()<r.offset;

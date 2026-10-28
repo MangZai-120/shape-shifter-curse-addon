@@ -29,11 +29,21 @@ public final class NeoLegacyCasting {
     public static Profile profile(ServerPlayerEntity p) {
         Profile base=NeoRules.profile(NeoRuntime.form(p));ItemStack book=SpellCastManager.getEquippedBook(p);
         PlayerSpellMastery.migrate(p,book);
-        double bonus=PlayerSpellMastery.bonus(NeoRuntime.data(p));
+        double bonus=PlayerSpellMastery.bonus(NeoRuntime.data(p))+safetyBonus(book);
         return new Profile(base.safety()+bonus,base.failure(),base.offset(),base.merge(),base.split(),base.reference());
     }
     public static double safetyBonus(ItemStack book) {
-        return 0;
+        return book==null||book.isEmpty()?0:formationSafetyBonus(FormationData.getBestUniversalVariantLevel(book,FormationData.VARIANT_MANA));
+    }
+    public static int formationSafetyBonus(int level) {return Math.max(0,Math.min(5,level))*10;}
+    public static float blueprintExperienceMultiplier(ServerPlayerEntity p) {
+        ItemStack book=SpellCastManager.getEquippedBook(p);
+        int level=book==null||book.isEmpty()?0:FormationData.getBestUniversalVariantLevel(book,FormationData.VARIANT_EXP);
+        return level==0?1:FormationData.universalExpMultiplier(level);
+    }
+    public static double blueprintRangeMultiplier(ServerPlayerEntity p,Blueprint blueprint) {
+        ItemStack book=SpellCastManager.getEquippedBook(p);
+        return book==null||book.isEmpty()?1:FormationData.sumSpaceRangeMultiplier(book,element(blueprint.output()));
     }
     public static FormationElement element(Core core) {return switch(core){case THERMAL->FormationElement.FIRE;case FROST->FormationElement.ICE;case LUNAR->FormationElement.LUNAR;case CURSE->FormationElement.CURSE;case SUMMON->FormationElement.SUMMON;case VOID->FormationElement.VOID;case SPACE->FormationElement.SPACE;};}
     public static Quote blueprintQuote(ServerPlayerEntity p,Blueprint b) {

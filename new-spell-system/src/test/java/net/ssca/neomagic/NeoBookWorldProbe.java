@@ -32,11 +32,13 @@ public final class NeoBookWorldProbe {
     public static void start(TestContext t) {
         t.waitAndRun(70,()->{
             try {
+                var audit=player(t);NeoFormationAudit.run(t,audit,book(audit));
+                NeoFailureWindowAudit.start(t,player(t),player(t));
                 var p=player(t);var book=book(p);var scroll=ScrollData.create("lunar_mend",1);
                 SpellbookData.setScroll(book,0,scroll);p.setHealth(5);
                 double safe=NeoRuntime.profile(p).safety();SpellbookData.setLevel(book,3);
                 check(NeoRuntime.profile(p).safety()==safe,"Book upgrades retain slots and recovery without raising player safety");
-                int unit=SpellbookData.masteryExpPerTier(),perTier=SpellbookData.masteryManaPerTier();
+                int unit=PlayerSpellMastery.EXPERIENCE_PER_LEVEL_TEN,perTier=50;
                 SpellbookData.setExpTen(book,unit+100);var oldCopy=book.copy();
                 check(NeoRuntime.profile(p).safety()==safe+perTier,"Old mastery migrates into player casting levels");
                 check(SpellbookData.getExpTen(book)==0&&NeoRuntime.data(p).spellbookMasteryExpTen==unit+100,"Migration consumes the old book ledger");
@@ -73,7 +75,7 @@ public final class NeoBookWorldProbe {
                 SpellbookData.setFormation(book,0,FormationData.create(FormationElement.UNIVERSAL,1,FormationData.VARIANT_RECOVERY));
                 check(Math.abs(NeoLegacyCasting.recoveryMultiplier(book)/plain-1.2)<1e-6,"Recovery formation retains exact 20 percent bonus");
                 SpellbookData.setFormation(book,0,FormationData.create(FormationElement.UNIVERSAL,2,FormationData.VARIANT_MANA));
-                check(NeoRuntime.profile(p).safety()==safe,"Capacity formations no longer raise player safety");
+                check(NeoRuntime.profile(p).safety()==safe+20,"Level two capacity formation adds twenty safety independently of book level");
                 var built=NeoModel.Blueprint.starter();var unmodified=NeoRules.quote(built,0);
                 SpellbookData.setFormation(book,0,FormationData.create(FormationElement.FIRE,2));
                 check(NeoLegacyCasting.blueprintPower(p,built)>1,"Existing damage formation applies to authored spells");

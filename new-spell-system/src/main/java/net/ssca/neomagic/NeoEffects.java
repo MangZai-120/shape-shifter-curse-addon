@@ -29,17 +29,17 @@ public final class NeoEffects {
         final ServerPlayerEntity caster; final ServerWorld world; final NeoRuntime.Active active;
         Vec3d pos;final Vec3d velocity;final double budget;double remaining;
         Bolt(ServerPlayerEntity p,NeoRuntime.Active a,Vec3d dir,double budget) {
-            caster=p;world=p.getServerWorld();active=a;pos=p.getEyePos();velocity=dir;this.budget=budget;remaining=a.session.blueprint.range();
+            caster=p;world=p.getServerWorld();active=a;pos=p.getEyePos();velocity=dir;this.budget=budget;remaining=a.session.blueprint.range()*a.rangeMultiplier;
         }
     }
     public static Vec3d aim(ServerPlayerEntity p,double range) {
         return p.getWorld().raycast(new RaycastContext(p.getEyePos(),p.getEyePos().add(p.getRotationVec(1).multiply(range)),RaycastContext.ShapeType.COLLIDER,RaycastContext.FluidHandling.NONE,p)).getPos();
     }
     public static Anchor capture(ServerPlayerEntity p,Blueprint b) {
-        return capture(p,b,0,0);
+        return capture(p,b,0,0,NeoLegacyCasting.blueprintRangeMultiplier(p,b));
     }
-    private static Anchor capture(ServerPlayerEntity p,Blueprint b,double yaw,double pitch) {
-        double range=b.carrier()==Carrier.CONTACT?Math.min(4,b.range()):b.range();
+    private static Anchor capture(ServerPlayerEntity p,Blueprint b,double yaw,double pitch,double multiplier) {
+        double range=(b.carrier()==Carrier.CONTACT?Math.min(4,b.range()):b.range())*multiplier;
         Vec3d direction=Vec3d.fromPolar((float)(p.getPitch()+pitch),(float)(p.getYaw()+yaw));
         Vec3d end=p.getWorld().raycast(new RaycastContext(p.getEyePos(),p.getEyePos().add(direction.multiply(range)),RaycastContext.ShapeType.COLLIDER,RaycastContext.FluidHandling.NONE,p)).getPos();
         LivingEntity entity=along(p,p.getEyePos(),end,b.carrier()==Carrier.LOCK?.8:.4);
@@ -83,7 +83,7 @@ public final class NeoEffects {
         Stored s=STORED.remove(p.getUuid());if(s==null)return;
         if(!NeoRuntime.blocked(p)&&s.active.record.dimension.equals(p.getWorld().getRegistryKey().getValue().toString())&&apply(p,s.active)) {
             s.active.record.result="released";NeoRuntime.data(p).successful(s.active.session.blueprint);
-            net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.grant(p,null,(int)Math.min(Integer.MAX_VALUE,Math.round(s.active.session.quote.normal()*s.active.session.blueprint.tier())));
+            NeoRuntime.grantExperience(p,s.active);
         } else s.active.record.result="storage_lost";
         NeoRuntime.dirty(p);NeoNetwork.send(p,false);
     }
@@ -99,10 +99,11 @@ public final class NeoEffects {
             }
             return true;
         }
-        Vec3d endpoint=aim(p,b.range());LivingEntity target=null;
+        double range=b.range()*a.rangeMultiplier;
+        Vec3d endpoint=aim(p,range);LivingEntity target=null;
         if(b.carrier()==Carrier.LOCK) {
             Entity found=a.anchor.target==null?null:p.getServerWorld().getEntity(a.anchor.target);
-            if(!(found instanceof LivingEntity living)||p.squaredDistanceTo(living)>b.range()*b.range()||!p.canSee(living))return false;
+            if(!(found instanceof LivingEntity living)||p.squaredDistanceTo(living)>range*range||!p.canSee(living))return false;
             target=living;endpoint=target.getPos();
             if(s.wrongTarget) {
                 var candidates=p.getWorld().getEntitiesByClass(LivingEntity.class,target.getBoundingBox().expand(5),e->e!=p&&e!=found&&e.isAlive()&&p.canSee(e));
@@ -112,9 +113,9 @@ public final class NeoEffects {
             endpoint=endpoint.add(Math.tan(Math.toRadians(s.yaw))*p.distanceTo(target),0,Math.tan(Math.toRadians(s.pitch))*p.distanceTo(target));
         } else if(b.carrier()==Carrier.SELF) {target=p;endpoint=p.getPos();}
         else if(b.carrier()==Carrier.CONTACT) {
-            Anchor hit=capture(p,b,s.yaw,s.pitch);endpoint=hit.position;
+            Anchor hit=capture(p,b,s.yaw,s.pitch,a.rangeMultiplier);endpoint=hit.position;
             Entity found=hit.target==null?null:p.getServerWorld().getEntity(hit.target);if(found instanceof LivingEntity living)target=living;
-        } else endpoint=p.getEyePos().add(Vec3d.fromPolar((float)(p.getPitch()+s.pitch),(float)(p.getYaw()+s.yaw)).multiply(Math.min(b.range(),p.getEyePos().distanceTo(endpoint))));
+        } else endpoint=p.getEyePos().add(Vec3d.fromPolar((float)(p.getPitch()+s.pitch),(float)(p.getYaw()+s.yaw)).multiply(Math.min(range,p.getEyePos().distanceTo(endpoint))));
         if(b.output()==Core.SPACE) {
             LivingEntity moved=b.carrier()==Carrier.SELF?p:target;if(moved==null)return false;
             var movedTargets=new ArrayList<LivingEntity>();movedTargets.add(moved);
@@ -126,7 +127,7 @@ public final class NeoEffects {
             for(LivingEntity traveler:movedTargets) {
             // Unsafe endpoints are intentional: no snapping to solid ground or safe air pockets.
             Vec3d direction=Vec3d.fromPolar((float)(p.getPitch()+s.pitch),(float)(p.getYaw()+s.yaw));
-            Vec3d to=traveler.getPos().add(direction.multiply(Math.min(b.range(),4*b.scale())*s.attenuation*plan.retention()/plan.branches()));
+            Vec3d to=traveler.getPos().add(direction.multiply(Math.min(b.range(),4*b.scale())*a.rangeMultiplier*s.attenuation*plan.retention()/plan.branches()));
             BlockPos pos=BlockPos.ofFloored(to);
             if(!p.getWorld().getWorldBorder().contains(pos)||!p.getWorld().isInBuildLimit(pos)||!p.getWorld().getChunkManager().isChunkLoaded(pos.getX()>>4,pos.getZ()>>4)||!p.getWorld().canPlayerModifyAt(p,pos))continue;
             if(traveler!=p&&!allowed(p,traveler,true))continue;

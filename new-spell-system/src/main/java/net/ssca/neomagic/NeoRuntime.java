@@ -25,6 +25,8 @@ public final class NeoRuntime {
         private final Random random;
         public int fullCooldown;
         public double powerMultiplier=1;
+        public double experienceMultiplier=1;
+        public double rangeMultiplier=1;
         public int age, beganTick;
         public boolean settled;
         Active(Session s,NeoState.Experiment r,ItemStack wand,Hand hand,NeoEffects.Anchor anchor,Random random) {
@@ -65,6 +67,8 @@ public final class NeoRuntime {
         e.target=anchor.target()==null?anchor.position().toString():anchor.target().toString();
         d.add(e);var active=new Active(new Session(b,quote),e,p.getStackInHand(hand),hand,anchor,new Random(p.getRandom().nextLong()));
         active.fullCooldown=NeoLegacyCasting.blueprintCooldown(p,b);active.powerMultiplier=NeoLegacyCasting.blueprintPower(p,b);
+        active.experienceMultiplier=NeoLegacyCasting.blueprintExperienceMultiplier(p);
+        active.rangeMultiplier=NeoLegacyCasting.blueprintRangeMultiplier(p,b);
         active.beganTick=p.getServer().getTicks();ACTIVE.put(p.getUuid(),active);advance(p,active);NeoNetwork.send(p,false);
     }
     private static void advance(ServerPlayerEntity p,Active a) {
@@ -84,7 +88,7 @@ public final class NeoRuntime {
                 setCooldown(p,s.blueprint.identity(),a.fullCooldown);a.settled=true;
                 if(!s.quote.plan().stored()){
                     d.successful(s.blueprint);
-                    net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.grant(p,null,(int)Math.min(Integer.MAX_VALUE,Math.round(s.quote.normal()*s.blueprint.tier())));
+                    grantExperience(p,a);
                 }
             } else if(s.hasShifted) fail(p,a);
             else {
@@ -101,6 +105,10 @@ public final class NeoRuntime {
         ACTIVE.remove(p.getUuid());a.record.result="failed";
         var d=data(p);setCooldown(p,a.session.blueprint.identity(),a.fullCooldown);
         backlash(p,a.session.quote.actual());
+    }
+    static void grantExperience(ServerPlayerEntity p,Active a) {
+        double amount=a.session.quote.normal()*a.session.blueprint.tier()*a.experienceMultiplier;
+        net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.grant(p,null,(int)Math.min(Integer.MAX_VALUE,Math.round(amount)));
     }
     public static void backlash(ServerPlayerEntity p,double actualCost) {
         var d=data(p);

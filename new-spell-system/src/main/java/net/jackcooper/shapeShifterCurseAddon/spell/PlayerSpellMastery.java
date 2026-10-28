@@ -7,6 +7,8 @@ import net.ssca.neomagic.NeoState;
 
 /** 玩家施法成长存 UUID 档案；书等级与升级经验独立保留，不提供承载上限。 */
 public final class PlayerSpellMastery {
+    /** Experience is stored in tenths; every 600 XP grants another 50 safety. */
+    public static final int EXPERIENCE_PER_LEVEL_TEN = 6000;
     private static int clientExpTen;
     private PlayerSpellMastery() {}
     public static int clientExpTen(){return clientExpTen;}
@@ -17,12 +19,12 @@ public final class PlayerSpellMastery {
     }
     public static int tier(int experience) {
         experience=Math.max(0,experience);
-        return experience<5000?0:experience<15000?1:experience<30000?2:3+(experience-30000)/7200;
+        return experience / EXPERIENCE_PER_LEVEL_TEN;
     }
-    public static int thresholdTen(int level){return level<=0?5000:level==1?10000:level==2?15000:7200;}
+    public static int thresholdTen(int level){return EXPERIENCE_PER_LEVEL_TEN;}
     public static int progressTen(int experience){
         experience=Math.max(0,experience);
-        return experience<5000?experience:experience<15000?experience-5000:experience<30000?experience-15000:(experience-30000)%7200;
+        return experience % EXPERIENCE_PER_LEVEL_TEN;
     }
     public static int bonus(NeoState.PlayerData data) {
         return bonus(data.spellbookMasteryExpTen);

@@ -14,13 +14,14 @@ public final class NeoIntegrationProbe {
     private static void check(boolean test,String reason){checks++;if(!test)throw new AssertionError(reason);}
     public static void run() throws Exception {
         new NeoMagic().onInitialize();
-        int[][] levels={{0,0},{4999,0},{5000,1},{14999,1},{15000,2},{29999,2},{30000,3},{37199,3},{37200,4},{44400,5}};
+        int[][] levels={{-1,0},{0,0},{5999,0},{6000,1},{11999,1},{12000,2},{17999,2},{18000,3},{24000,4},{30000,5},{Integer.MAX_VALUE,Integer.MAX_VALUE/6000}};
         for(int[] point:levels){
             check(net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.tier(point[0])==point[1],"Player level boundary: "+point[0]);
             check(net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.bonus(point[0])==point[1]*50,"Each player level grants exactly fifty safety");
         }
-        check(net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.progressTen(37200)==0,"Level-up resets within-level progress while retaining total XP");
-        check(net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.thresholdTen(0)==5000&&net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.thresholdTen(1)==10000&&net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.thresholdTen(2)==15000&&net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.thresholdTen(3)==7200,"Exact 500/1000/1500/720 experience sequence");
+        check(net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.progressTen(12000)==0,"Level-up resets within-level progress while retaining total XP");
+        for(int level:new int[]{0,1,2,3,100})check(net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.thresholdTen(level)==6000,"Every level costs exactly 600 experience");
+        check(net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.progressTen(12678)==678,"Fractional experience carries into the next 600-XP level");
         check(Registries.ITEM.get(NeoMagic.id("guiding_wand"))==NeoMagic.WAND,"Wand registered");
         check(Registries.BLOCK.get(NeoMagic.id("research_table"))==NeoMagic.TABLE,"Independent workbench registered");
         check(NeoMagic.SAMPLES.size()==18,"Seven cores, five carriers, six controls");

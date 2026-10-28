@@ -186,7 +186,7 @@
   "neomagic.altar.mana": "安全",
   "neomagic.altar.recovery": "崩解恢复 ×%s",
   "neomagic.altar.no_charge": "仅升级与配阵，不自动耗料充蓝",
-  "neomagic.altar.next_mana": "下阶安全加成 +%s",
+  "neomagic.altar.next_mana": "升级后法阵安全加成 +%s",
   "neomagic.altar.mastery_bonus": "精通安全加成 +%s",
   "neomagic.altar.universal_mana": "增能安全加成：+%s",
   "neomagic.altar.universal_recovery": "回息恢复倍率：×%s",
@@ -196,7 +196,7 @@
   "neomagic.altar.preview_spell": "%s Lv%s：基础崩解 %s → %s（适应前）",
   "neomagic.altar.element_effect": "%s：威力×%s，冷却×%s，崩解代价×%s",
   "neomagic.altar.space_effect": "%s：距离×%s，冷却×%s，崩解代价×%s",
-  "neomagic.formation_mana": "增能：将书基础容量的 %s%% 转为额外安全阈值",
+  "neomagic.formation_mana": "增能：额外安全阈值 +%s（同类取最高，不叠加）",
   "neomagic.formation_recovery": "回息：崩解度自然恢复速度 +%s%%",
   "neomagic.formation_regen": "回能：C 高于安全阈值的 (100−%s)%% 时，每秒消耗 %s 形态能量，降低 %s 崩解度",
   "neomagic.formation_effect": "%s威力 +%s%%，%s威力 −%s%%；同系冷却 −%s%%，基础崩解代价 +%s%%",
@@ -204,7 +204,7 @@
   "neomagic.omitted_checks": "长时间持握：省略中间 %s 次检查，保留起手与最近记录",
   "neomagic.book_bar": "崩解 %s / 安全 %s",
   "neomagic.book_screen": "Lv%s  崩解 %s / 安全 %s",
-  "neomagic.book_bonus": "法术书：崩解恢复 ×%2$s；承载上限由玩家决定",
+  "neomagic.book_bonus": "法术书：法阵安全加成 +%1$s；崩解恢复 ×%2$s",
   "neomagic.book_help": "右键配置卷轴与法阵；潜行右键查看新法术研究",
   "neomagic.book_mastery": "书精通 %s：%s / %s（增长安全阈值）",
   "neomagic.book_mastery_max": "书精通 %s：安全阈值 +%s",
@@ -236,5 +236,6 @@
   "block.ssca_neomagic.observation_target": "术式观测靶",
   "effect.ssca_neomagic.disorder": "魔力失调",
   "effect.ssca_neomagic.disintegration": "散解崩除",
-  "effect.ssca_neomagic.breakdown": "身体崩解"
+  "effect.ssca_neomagic.breakdown": "身体崩解",
+  "neomagic.formation_space": "空间距离 +%s%%，空间冷却 −%s%%，空间法术基础崩解代价 +%s%%"
 }

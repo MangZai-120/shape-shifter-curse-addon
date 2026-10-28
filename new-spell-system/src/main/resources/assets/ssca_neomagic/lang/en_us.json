@@ -186,7 +186,7 @@
   "neomagic.altar.mana": "Safety",
   "neomagic.altar.recovery": "Collapse recovery x%s",
   "neomagic.altar.no_charge": "Upgrade/configure; no automatic mana charging",
-  "neomagic.altar.next_mana": "Next safety bonus +%s",
+  "neomagic.altar.next_mana": "Formation safety after upgrade +%s",
   "neomagic.altar.mastery_bonus": "Mastery safety +%s",
   "neomagic.altar.universal_mana": "Capacity safety bonus: +%s",
   "neomagic.altar.universal_recovery": "Recovery multiplier: x%s",
@@ -196,7 +196,7 @@
   "neomagic.altar.preview_spell": "%s Lv%s: base collapse %s -> %s (before adaptation)",
   "neomagic.altar.element_effect": "%s: power x%s, cooldown x%s, collapse x%s",
   "neomagic.altar.space_effect": "%s: range x%s, cooldown x%s, collapse x%s",
-  "neomagic.formation_mana": "Capacity: add %s%% of base book capacity to safety",
+  "neomagic.formation_mana": "Capacity: safety +%s (highest tier applies; does not stack)",
   "neomagic.formation_recovery": "Recovery: natural collapse recovery +%s%%",
   "neomagic.formation_regen": "Conversion: above (100-%s)%% of safety, spend %s form energy/s to relieve %s collapse",
   "neomagic.formation_effect": "%s power +%s%%, %s power -%s%%; same-core cooldown -%s%%, base collapse cost +%s%%",
@@ -204,7 +204,7 @@
   "neomagic.omitted_checks": "Long hold: %s middle checks omitted; start and latest retained",
   "neomagic.book_bar": "Collapse %s / Safe %s",
   "neomagic.book_screen": "Lv%s  C %s / Safe %s",
-  "neomagic.book_bonus": "Spellbook: burden recovery x%2$s; capacity belongs to the player",
+  "neomagic.book_bonus": "Spellbook: formation safety +%1$s; burden recovery x%2$s",
   "neomagic.book_help": "Use: scrolls and formations; sneak-use: new spell research",
   "neomagic.book_mastery": "Book mastery %s: %s / %s (safety growth)",
   "neomagic.book_mastery_max": "Book mastery %s: safety +%s",
@@ -236,5 +236,6 @@
   "block.ssca_neomagic.observation_target": "Spell Observation Target",
   "effect.ssca_neomagic.disorder": "Magic Disorder",
   "effect.ssca_neomagic.disintegration": "Disintegration",
-  "effect.ssca_neomagic.breakdown": "Bodily Breakdown"
+  "effect.ssca_neomagic.breakdown": "Bodily Breakdown",
+  "neomagic.formation_space": "Space range +%s%%, space cooldown -%s%%, space base burden +%s%%"
 }
