@@ -1,6 +1,6 @@
 {
   "version": "v2-playtest-1",
-  "recovery_delay": 60,
+  "recovery_delay": 120,
   "recovery_per_tick": 0.25,
   "costs": {
     "THERMAL": {

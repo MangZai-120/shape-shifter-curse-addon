@@ -185,9 +185,6 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 			RenderSystem.enableBlend();
 			RenderSystem.defaultBlendFunc();
 
-            net.ssca.neomagic.client.NeoStabilityHud.drawBookGauge(ctx,mc.textRenderer,
-                    net.ssca.neomagic.client.NeoClient.hud,baseX-7,baseY-14,76,System.nanoTime()/50_000_000.0);
-
 			// 三槽：中槽(22)居中，左右小槽(16)相对中槽对称分布，间隙均为 4px（卷轴读快照，帧间零 NBT）
 			drawSlot(ctx, mc, book, prev, baseX, baseY + 3, 16, false, snap.prevScroll);
 			drawSlot(ctx, mc, book, next, baseX + 46, baseY + 3, 16, false, snap.nextScroll);

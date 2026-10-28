@@ -156,9 +156,17 @@ public final class SscAddonPlayerEvents {
 
 
 		// 玩家断线时清理所有静态状态Map，防止内存泄漏和重连后状态错乱
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+                server.execute(() -> cleanupDisconnectedPlayer(handler, server)));
+    }
 
-			java.util.UUID uuid = handler.player.getUuid();
+    /** Fabric can fire channelInactive on Netty; never clean world/UUID state from that thread. */
+    private static void cleanupDisconnectedPlayer(net.minecraft.server.network.ServerPlayNetworkHandler handler,
+                                                  net.minecraft.server.MinecraftServer server) {
+            java.util.UUID uuid = handler.player.getUuid();
+            var online = server.getPlayerManager().getPlayer(uuid);
+            // A respawn may replace the entity while retaining the handler. A reconnect replaces the handler.
+            if (online != null && online.networkHandler != handler) return;
 			System.out.println("[SSC_ADDON] DISCONNECT event fired for player: " + handler.player.getName().getString());
 			// 食梦魔「恐惧」：梦魔断线结束其恐惧；目标断线清恐惧/免疫表
 			net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager.onCasterRemoved(handler.player);
@@ -217,6 +225,5 @@ public final class SscAddonPlayerEvents {
 			// balance 数据包数值（阶段 3）：清该连接的 ACK/就绪状态
 			net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.onPlayerLeft(handler.player);
 			System.out.println("[SSC_ADDON] DISCONNECT cleanup completed");
-		});
 	}
 }

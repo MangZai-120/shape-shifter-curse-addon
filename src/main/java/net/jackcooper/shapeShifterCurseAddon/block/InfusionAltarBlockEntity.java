@@ -15,11 +15,11 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.items.RegCustomItem;
 import org.jetbrains.annotations.Nullable;
@@ -45,41 +45,27 @@ public class InfusionAltarBlockEntity extends BlockEntity implements NamedScreen
 		super(RegAddonBlockEntities.INFUSION_ALTAR_BE, pos, state);
 	}
 
-	/** 升级条件是否齐备（经验够 + 催化槽塑形核心 + 燃料槽纯晶）。 */
+	/** 书升级仍按原经验和材料解锁槽位，不改变玩家承载范围。 */
 	private boolean upgradeReady() {
-		ItemStack book = items.get(0);
-		ItemStack fuel = items.get(1);
-		ItemStack catalyst = items.get(2);
-		return book.getItem() instanceof MoonDustSpellbookItem
-				&& SpellbookData.canLevelUp(book)
-				&& catalyst.getItem() == RegCustomItem.MORPHSCALE_CORE && !catalyst.isEmpty()
-				&& fuel.getItem() == RegCustomItem.MOONDUST_CRYSTAL_SHARD && !fuel.isEmpty();
+		ItemStack book=items.get(0),fuel=items.get(1),catalyst=items.get(2);
+		return book.getItem() instanceof MoonDustSpellbookItem && SpellbookData.canLevelUp(book)
+				&& catalyst.isOf(RegCustomItem.MORPHSCALE_CORE) && !catalyst.isEmpty()
+				&& fuel.isOf(RegCustomItem.MOONDUST_CRYSTAL_SHARD) && !fuel.isEmpty();
 	}
 
-	/**
-	 * 玩家点击「升级」：扣材料、书 +1 级、经验清零，容量成长改为安全阈值加成。
-	 * 升级会解锁更多六芒星角位——已有角内法阵保留（书 NBT 不动），重置快照重新加载显示。
-	 */
 	public void tryUpgrade(PlayerEntity player) {
-		World world = getWorld();
-		if (world == null || world.isClient || !upgradeReady()) {
-			return;
-		}
-		items.get(2).decrement(1); // 催化槽塑形核心
-		items.get(1).decrement(1); // 燃料槽月尘纯晶
-		ItemStack book = items.get(0);
-		SpellbookData.setLevel(book, SpellbookData.getLevel(book) + 1);
-		SpellbookData.setExpTen(book, 0); // 升级经验清零（×10 整数；满级后不再清零，经验转精通档）
-		// Capacity growth now raises safety when equipped; upgrading never clears player C.
-		// 升级可能解锁新角位：重置快照强制重新加载（书变分支），角槽显示书内当前法阵
-		this.lastSyncedFormations = null;
-		syncFormations();
-		markDirty();
-		world.playSound(null, pos, SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.BLOCKS, 0.8f, 1.4f);
-		// 强制把书的新 NBT 同步给开着界面的玩家（书物品不变、仅 NBT 变化，默认增量同步不会重发）
-		if (player instanceof ServerPlayerEntity sp && sp.currentScreenHandler != null) {
-			sp.currentScreenHandler.sendContentUpdates();
-			sp.currentScreenHandler.updateToClient();
+		World world=getWorld();
+		if(world==null||world.isClient||!upgradeReady())return;
+		items.get(2).decrement(1);
+		items.get(1).decrement(1);
+		ItemStack book=items.get(0);
+		SpellbookData.setLevel(book,SpellbookData.getLevel(book)+1);
+		SpellbookData.setExpTen(book,0);
+		this.lastSyncedFormations=null;
+		syncFormations();markDirty();
+		world.playSound(null,pos,SoundEvents.BLOCK_BEACON_ACTIVATE,SoundCategory.BLOCKS,0.8f,1.4f);
+		if(player instanceof ServerPlayerEntity sp&&sp.currentScreenHandler!=null){
+			sp.currentScreenHandler.sendContentUpdates();sp.currentScreenHandler.updateToClient();
 		}
 	}
 

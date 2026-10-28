@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * 月尘魔法书（jackcooper）。装入自建 Trinkets 饰品槽 {@code moonlit/spellbook} 后可用快捷键释放书内魔法。
  *
- * <p>手持<b>潜行右键</b>打开配置界面（放入 / 取出魔法卷轴）。数据（等级/经验/法力/卷轴/冷却）全部存书自身 NBT，
+ * <p>书等级、升级经验、卷轴、法阵及冷却存书 NBT；满级后的精通存玩家档案。
  * 见 {@link SpellbookData}。任何形态均可佩戴（继承 {@link AccessoryItem}，canEquip 默认放行）。</p>
  */
 public class MoonDustSpellbookItem extends AccessoryItem {
@@ -72,6 +72,7 @@ public class MoonDustSpellbookItem extends AccessoryItem {
 					buf.writeInt(SpellbookData.getMana(stack));
 					buf.writeInt(SpellbookData.getMaxMana(stack));
 					buf.writeInt(SpellbookScreenHandler.findBookSlot(player.getInventory(), stack));
+					buf.writeNbt(net.ssca.neomagic.NeoNetwork.hudState(player));
 				}
 			});
 		}
@@ -92,21 +93,18 @@ public class MoonDustSpellbookItem extends AccessoryItem {
 			tooltip.add(Text.translatable("item.ssc_addon.moon_dust_spellbook.tip_exp",
 					String.format(java.util.Locale.ROOT, "%.1f", SpellbookData.getExpFloat(stack)),
 					String.format(java.util.Locale.ROOT, "%.1f", need / 10.0f)).formatted(Formatting.GRAY));
-		} else {
-			// 满级：显示精通档（法力上限成长）进度
-			int masteryNeed = SpellbookData.getMasteryExpToNextTier(stack);
-			int tier = SpellbookData.getMasteryTier(stack);
-			if (masteryNeed > 0) {
-				// 当前档内进度：从 ×10 整数取模折算（避免浮点 % 精度误差）
-				float tierProgress = (SpellbookData.getExpTen(stack) % SpellbookData.masteryExpPerTier()) / 10.0f;
-				tooltip.add(Text.translatable("neomagic.book_mastery",
-						tier + 1, String.format(java.util.Locale.ROOT, "%.1f", tierProgress),
-						String.format(java.util.Locale.ROOT, "%.1f", masteryNeed / 10.0f)).formatted(Formatting.GOLD));
-			} else {
-				tooltip.add(Text.translatable("neomagic.book_mastery_max",
-						tier, SpellbookData.getMasteryManaBonus(stack)).formatted(Formatting.GOLD));
-			}
 		}
+		// 从服务端同步的玩家档案展示精通，查看任何一本书都显示同一玩家进度。
+		int mastery=net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.clientExpTen();
+		int tier=net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.tier(mastery);
+		int bonus=net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.bonus(mastery);
+		{
+			int unit=net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.thresholdTen(tier);
+			tooltip.add(Text.translatable("text.ssc_addon.player_mastery.progress",tier,
+					String.format(java.util.Locale.ROOT,"%.1f",net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.progressTen(mastery)/10.0),
+					String.format(java.util.Locale.ROOT,"%.1f",unit/10.0),bonus).formatted(Formatting.GOLD));
+		}
+		tooltip.add(Text.translatable("text.ssc_addon.player_mastery.tip").formatted(Formatting.DARK_GRAY));
 		tooltip.add(net.ssca.neomagic.NeoMagic.text("book_help").formatted(Formatting.DARK_GRAY));
 		super.appendTooltip(stack, world, tooltip, context);
 	}

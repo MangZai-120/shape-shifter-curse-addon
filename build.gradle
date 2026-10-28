@@ -15,6 +15,7 @@ sourceSets {
     main.java.srcDir 'new-spell-system/src/main/java'
     main.resources.srcDir 'new-spell-system/src/main/resources'
     test.java.srcDir 'new-spell-system/src/test/java'
+    test.resources.srcDir 'new-spell-system/src/test/resources'
 }
 tasks.register('neoMagicTest', JavaExec) {
     dependsOn testClasses
@@ -97,6 +98,25 @@ tasks.register('neoMagicWorldTest', JavaExec) {
     systemProperty 'fabric.development', 'true'
     systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
     systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def classpathFile = new File(workingDir, 'classpath.txt')
+        classpathFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', classpathFile.absolutePath
+    }
+}
+
+tasks.register('neoMagicPerformanceTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.ssca.neomagic.NeoVisualTest'
+    workingDir = layout.buildDirectory.dir('neomagic/performance-test').get().asFile
+    maxHeapSize = '3G'
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    systemProperty 'neomagic.assets', new File(System.getProperty('user.home'), '.gradle/caches/fabric-loom/assets').absolutePath
+    systemProperty 'neomagic.performance', project.findProperty('neoPerfLabel') ?: 'baseline'
     doFirst {
         workingDir.mkdirs()
         def classpathFile = new File(workingDir, 'classpath.txt')

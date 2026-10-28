@@ -14,7 +14,10 @@ public final class SkillCooldownSync {
     private static final Map<UUID, List<Stamp>> SENT = new HashMap<>();
     private record Stamp(String skill, int phase, long end, int total) {}
     public static void init() {
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> SENT.remove(handler.player.getUuid()));
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> server.execute(() -> {
+            var online = server.getPlayerManager().getPlayer(handler.player.getUuid());
+            if (online == null || online.networkHandler == handler) SENT.remove(handler.player.getUuid());
+        }));
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> SENT.clear());
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             if (server.getOverworld() == null) return;

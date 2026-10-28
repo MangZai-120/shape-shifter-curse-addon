@@ -14,5 +14,6 @@ public abstract class SpellbookHudLayerMixin {
             target = "Lnet/minecraft/client/gui/hud/ChatHud;render(Lnet/minecraft/client/gui/DrawContext;III)V"))
     private void ssca$spellbookBeforeChat(DrawContext context, float tickDelta, CallbackInfo ci) {
         SpellbookHudRenderer.renderBeforeChat(context, tickDelta);
+        net.ssca.neomagic.client.NeoClient.renderPixelBarBeforeChat(context,tickDelta);
     }
 }

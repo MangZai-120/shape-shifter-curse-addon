@@ -168,22 +168,7 @@ public final class SpellCastManager {
 		//   0 = 释放即得全额；1 = 命中才得（释放时 0，全额挂起）；2 = 释放得 20%、命中补 80%。
 		// 挂起部分经 Spell 桥在 cast 调用前装入：弹射物法术在 cast 内取走存进实体（NBT 持久化，
 		// 命中结算时发放）；AOE 法术在 damage 成功后取走发放（首目标取全额、后续取 0，天然幂等）。
-		int expMode = spell.getExpMode();
-		int baseExpTen = Math.round(spell.getManaCost()
-				* spell.getConfig().manaCostMultiplier(level)) * level;
-		int bestExpFormation = FormationData.getBestUniversalVariantLevel(book, FormationData.VARIANT_EXP);
-		if (bestExpFormation > 0) {
-			baseExpTen = Math.round(baseExpTen * FormationData.universalExpMultiplier(bestExpFormation));
-		}
-		int pendingTen;
-		switch (expMode) {
-			case 1 -> pendingTen = baseExpTen;                // 命中才得：释放时全额挂起
-			case 2 -> pendingTen = baseExpTen * 8 / 10;       // 释放 20% + 命中补 80%（整数截断）
-			default -> pendingTen = 0;                        // 释放即得：无挂起
-		}
-		if (pendingTen > 0) {
-			spell.ssc_addon$setPendingExp(pendingTen);
-		}
+		int immediateTen = prepareExperience(spell, level, book);
 		// 统一四参入口：法术内部自行决定是否按等级缩放速度/外观/范围（无 instanceof 特判）
 		try {
 			spell.castAtTarget(player, net.ssca.neomagic.NeoLegacyCasting.power(damage), false, level, scroll, target);
@@ -199,12 +184,41 @@ public final class SpellCastManager {
 			player.sendMessage(Text.translatable("message.ssc_addon.spell.downgrade_cast",
 					Text.translatable(spell.getNameKey()), forcedLevel), true);
 		}
-		SpellbookData.addExpTen(book, baseExpTen - pendingTen);
+		PlayerSpellMastery.grant(player, book, immediateTen);
 		if (SpellNumbers.isAtFloor(spell, level, ScrollData.getDurabilityRatio(scroll),
 				FormationData.sumCooldownMultiplier(book, spellElement), FormAffinity.cooldownMultiplier(player, spellElement))) {
 			player.sendMessage(Text.translatable("message.ssc_addon.spell.cd_floor")
 					.formatted(Formatting.GRAY), true);
 		}
+	}
+
+	/** 独立卷轴和书内法术共用经验预算；命中经验仍由原实体桥一次性结算。 */
+	public static void castSoloEffect(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level,
+			float damage, net.minecraft.util.math.Vec3d target) {
+		int immediateTen=prepareExperience(spell,level,null);
+		try { spell.castAtTarget(player,net.ssca.neomagic.NeoLegacyCasting.power(damage),true,level,scroll,target); }
+		finally { spell.ssc_addon$clearPendingExp(); }
+		if(!net.ssca.neomagic.NeoLegacyCasting.missed())PlayerSpellMastery.grant(player,null,immediateTen);
+	}
+
+	private static int prepareExperience(Spell spell,int level,ItemStack book) {
+		int expMode = spell.getExpMode();
+		int baseExpTen = Math.round(spell.getManaCost()
+				* spell.getConfig().manaCostMultiplier(level)) * level;
+		int bestExpFormation = book == null ? 0 : FormationData.getBestUniversalVariantLevel(book, FormationData.VARIANT_EXP);
+		if (bestExpFormation > 0) {
+			baseExpTen = Math.round(baseExpTen * FormationData.universalExpMultiplier(bestExpFormation));
+		}
+		int pendingTen;
+		switch (expMode) {
+			case 1 -> pendingTen = baseExpTen;                // 命中才得：释放时全额挂起
+			case 2 -> pendingTen = baseExpTen * 8 / 10;       // 释放 20% + 命中补 80%（整数截断）
+			default -> pendingTen = 0;                        // 释放即得：无挂起
+		}
+		if (pendingTen > 0) {
+			spell.ssc_addon$setPendingExp(pendingTen);
+		}
+		return baseExpTen-pendingTen;
 	}
 
 	/** 更新当前选中槽（存书 NBT，持久化 + 服务端一致）。 */

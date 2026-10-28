@@ -8,6 +8,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.nbt.NbtCompound;
 import net.ssca.neomagic.*;
+import net.jackcooper.shapeShifterCurseAddon.client.hud.NeoStabilityBar;
 import java.util.*;
 import static net.ssca.neomagic.NeoModel.*;
 
@@ -25,6 +26,7 @@ public final class NeoClient implements ClientModInitializer {
     public static double bookPower(Blueprint b){return BOOK_EFFECTS.getOrDefault(b.output(),new double[]{1,1})[1];}
     public static Quote preview(Blueprint b){var q=quote(b,bodyMastery(b),COSTS.getOrDefault(b.core(),coefficients(b.core())),tuning(b));double m=BOOK_EFFECTS.getOrDefault(b.core(),new double[]{1,1})[0];return new Quote(q.normal()*m,q.actual()*m,q.floor(),q.plan());}
     public static NbtCompound hud=new NbtCompound();
+    private static int failureFlash,resetFlash;
     public static UUID token;
     public static boolean table;
     public static String rules="";
@@ -43,10 +45,20 @@ public final class NeoClient implements ClientModInitializer {
             client.execute(()->acceptSnapshot(client,n));
         });
         ClientPlayNetworking.registerGlobalReceiver(NeoNetwork.HUD,(client,handler,buf,sender)->{var n=buf.readNbt();client.execute(()->{
+            if(n!=null&&hud.contains("Form")){
+                boolean newResult=!n.getString("ResultId").equals(hud.getString("ResultId"))||!n.getString("Result").equals(hud.getString("Result"));
+                if(newResult&&n.getString("Result").equals("failed"))failureFlash=20;
+                if(!n.getString("Form").equals(hud.getString("Form"))&&n.getDouble("C")==0)resetFlash=20;
+            }
             hud=n==null?new NbtCompound():n;
-            if(n!=null){data.burden=n.getDouble("C");data.recovery=n.getInt("Recovery");data.form=n.getString("Form");profile=NeoState.JSON.fromJson(n.getString("Profile"),Profile.class);}
+            if(n!=null){data.burden=n.getDouble("C");data.recovery=n.getInt("Recovery");data.spellbookMasteryExpTen=n.getInt("MasteryExpTen");net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(data.spellbookMasteryExpTen);data.form=n.getString("Form");profile=NeoState.JSON.fromJson(n.getString("Profile"),Profile.class);}
         });});
-        ClientPlayConnectionEvents.DISCONNECT.register((handler,client)->{hud=new NbtCompound();token=null;data=new NeoState.PlayerData();COSTS.clear();TUNINGS.clear();BOOK_EFFECTS.clear();});
+        ClientPlayConnectionEvents.DISCONNECT.register((handler,client)->{hud=new NbtCompound();failureFlash=resetFlash=0;token=null;data=new NeoState.PlayerData();net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(0);COSTS.clear();TUNINGS.clear();BOOK_EFFECTS.clear();});
+        NeoStabilityBar.registerResources();
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client->{
+            hud.putBoolean("RecentFailure",failureFlash>0);hud.putBoolean("RecentReset",resetFlash>0);
+            if(failureFlash>0)failureFlash--;if(resetFlash>0)resetFlash--;
+        });
         HudRenderCallback.EVENT.register(NeoClient::renderHud);
     }
     public static void acceptSnapshot(MinecraftClient client,NbtCompound n) {
@@ -70,6 +82,7 @@ public final class NeoClient implements ClientModInitializer {
                 tunings.entrySet().forEach(e->nextTunings.put(e.getKey(),NeoState.JSON.fromJson(e.getValue(),Tuning.class)));
                 if(nextProfile==null||nextCosts.values().stream().anyMatch(java.util.Objects::isNull))throw new IllegalArgumentException("Missing snapshot rules");
                 data=nextData;profile=nextProfile;token=nextToken;table=n.getBoolean("Table");rules=n.getString("Rules");
+                net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(data.spellbookMasteryExpTen);
                 COSTS.clear();COSTS.putAll(nextCosts);TUNINGS.clear();TUNINGS.putAll(nextTunings);
                 BOOK_EFFECTS.clear();BOOK_EFFECTS.putAll(nextBook);
                 if(n.getBoolean("Open"))client.setScreen(new NeoScreen());
@@ -78,7 +91,13 @@ public final class NeoClient implements ClientModInitializer {
     }
     private static void renderHud(DrawContext c,float delta) {
         var mc=MinecraftClient.getInstance();if(mc.player==null||mc.options.hudHidden||!hud.getBoolean("Visible"))return;
-        NeoStabilityHud.draw(c,mc.textRenderer,hud,8,8,Math.min(NeoStabilityHud.WIDTH,mc.getWindow().getScaledWidth()-16),System.nanoTime()/50_000_000.0);
+        var cfg=net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig.client();
+        if(cfg.showDisintegrationDebugBar)NeoStabilityHud.draw(c,mc.textRenderer,hud,8,8,Math.min(NeoStabilityHud.WIDTH,mc.getWindow().getScaledWidth()-16),System.nanoTime()/50_000_000.0);
+    }
+    public static void renderPixelBarBeforeChat(DrawContext c,float delta){
+        var mc=MinecraftClient.getInstance();if(mc.player==null||mc.world==null||mc.options.hudHidden||!hud.getBoolean("Visible"))return;
+        var cfg=net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig.client();if(!cfg.showNeoStabilityBar)return;
+        int[] pos=NeoStabilityBar.position(cfg.neoStabilityBarPosType,cfg.neoStabilityBarPosOffsetX,cfg.neoStabilityBarPosOffsetY,mc.getWindow().getScaledWidth(),mc.getWindow().getScaledHeight());NeoStabilityBar.draw(c,hud,pos[0],pos[1]);
     }
     public static String f(double n) {return String.format(Locale.ROOT,"%.1f",n);}
     public static String pc(double n) {return String.format(Locale.ROOT,"%.1f%%",n*100);}

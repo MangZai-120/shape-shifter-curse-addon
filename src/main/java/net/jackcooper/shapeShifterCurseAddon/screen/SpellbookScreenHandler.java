@@ -32,6 +32,7 @@ public class SpellbookScreenHandler extends ScreenHandler {
 	public final int bookExp;
 	public final int bookMana;
 	public final int bookMaxMana;
+	public final NbtCompound playerState;
 
 	/** 服务端构造：拿到真实魔法书 stack。 */
 	public SpellbookScreenHandler(int syncId, PlayerInventory playerInv, ItemStack bookStack) {
@@ -40,22 +41,24 @@ public class SpellbookScreenHandler extends ScreenHandler {
 				SpellbookData.getLevel(bookStack),
 				SpellbookData.getExpTen(bookStack),
 				SpellbookData.getMana(bookStack),
-				SpellbookData.getMaxMana(bookStack), findBookSlot(playerInv, bookStack), false);
+				SpellbookData.getMaxMana(bookStack), findBookSlot(playerInv, bookStack), false,
+				playerInv.player instanceof net.minecraft.server.network.ServerPlayerEntity p ? net.ssca.neomagic.NeoNetwork.hudState(p) : new NbtCompound());
 	}
 
 	/** 客户端构造：从开屏数据包读取槽数与等级/法力快照。 */
 	public SpellbookScreenHandler(int syncId, PlayerInventory playerInv, PacketByteBuf buf) {
 		this(syncId, playerInv, ItemStack.EMPTY,
-				buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), true);
+				buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), true, buf.isReadable()?buf.readNbt():new NbtCompound());
 	}
 
 	private SpellbookScreenHandler(int syncId, PlayerInventory playerInv, ItemStack bookStack,
-			int slotCount, int level, int exp, int mana, int maxMana, int bookInventorySlot, boolean clientView) {
+			int slotCount, int level, int exp, int mana, int maxMana, int bookInventorySlot, boolean clientView, NbtCompound playerState) {
 		super(SscAddon.SPELLBOOK_SCREEN_HANDLER, syncId);
 		this.bookStack = bookStack;
 		this.ownerInventory = playerInv;
 		this.bookInventorySlot = bookInventorySlot;
 		this.clientView = clientView;
+		this.playerState = playerState == null ? new NbtCompound() : playerState.copy();
 		this.slotCount = Math.max(1, Math.min(SpellbookData.MAX_SLOTS, slotCount));
 		this.bookLevel = level;
 		this.bookExp = exp;

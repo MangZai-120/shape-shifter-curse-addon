@@ -1,36 +1,44 @@
-# 独立新法术系统
+﻿# 独立新法术系统
 
-本份资料位于完整SSCA试验副本的`neomagic`分支中。后续新体系开发在`SSCA新法术系统试验田`进行，见[试验田说明](../新法术试验田说明.md)；原项目及其`main`分开维护。
+本目录属于 SSCA 的 `neomagic` 试验田，原项目 `main` 独立维护。当前版本为 `8.0.0-neomagic.13`。
 
-本目录保存新体系的设计、生产源码、数据、资源及验证材料。新体系已接入试验田Minecraft构建，使用独立的`ssca_neomagic`命名空间与身体状态存档，原书与卷轴入口已接入同一崩解系统。先看[实现与验收记录](docs/实现与验收记录.md)，其中包含游玩入口、默认参数和验证范围。
+游戏中的书、卷轴、导引杖统一使用崩解度 C。形态稳定度 S 表示安全阈值，法术书原容量和回蓝加成分别转换成额外 S 和崩解度恢复加成；原伤害、冷却、符文、法阵、书经验和三槽选择保留。
 
-当前测试包为`8.0.0-neomagic.5`。本轮[稳定性测试与修复记录](docs/稳定性测试记录.md)包含压力数据、实际服务端持续测试和已修复的边界问题；客户端与服务端需要使用相同测试包。
+失败按起手 `C＋实际Q` 抽一次，抽中后在不可打断界限前随机一刻失败；偏移仍每10 tick实时检查。逐步支付和成功施法熟练度沿用已确认机制。
 
-当前失败机制为起手按 `C＋实际Q` 抽一次失败，抽中后在不可打断界限前随机一刻失败；偏移仍每10 tick实时检查。
+## 游戏界面
 
-稳定度HUD已重画为月纹金边样式，见[四状态原生预览](testing/screenshots/07-stability-hud.png)及[窄屏预览](testing/screenshots/08-stability-hud-narrow.png)。
+稳定度条使用玩家确认的玻璃外框与修改后的左侧 PNG，独立于形态蓝条和法术书定位。Mod Menu 中打开“HUD位置与显示”，点击稳定度条或其它 HUD 后，只显示该目标的锚点、X/Y与显隐设置；点击空白处收起调整框。
 
-## 文档入口
+左上详细面板名为“崩解度debug条”，在客户端配置页单独开关。
 
-- [完整系统设计V2](docs/SSCA新法术系统完整设计V2.md)：包含术式语法、研究循环、身体承载与成长的整套设计。
-- [新UI设计说明](docs/UI设计说明V2.md)及[可操作界面原型](ui/研究界面原型.html)：用于评审流程、布局和规则演算。
-- [前期规则确认归档](docs/SSCA新法术系统设计方案.md)：保留确认过程与历史问题，当前实现以V2及验收记录为准。
-- [原始讨论记录](docs/SSCA崩解度法术系统设计方案.md)：保留历史讨论及否决标注，其中的旧接入建议不作为当前实施要求。
+## 保留在版本库中的内容
 
-## 试验田接管边界
+- `src/main/`：运行代码、数据和最终游戏素材。
+- `src/test/`：有效回归测试及测试专用原图夹具。
+- `docs/`：现行完整系统设计、UI说明和书加成映射。
+- `tools/check_resources.py`：资源与文档链接校验。
 
-最新授权为直接替换试验田的旧施法资源，同时保留法术书及其加成。详见[旧法术书接管与加成映射](docs/旧法术书接管与加成映射.md)。
+新增 HUD 代码位于 `net.jackcooper.shapeShifterCurseAddon.client.hud`；原有新法术核心仍在 `net.ssca.neomagic`，数据命名空间保持 `ssca_neomagic`。
 
-| 内容 | 当前行为 |
-| --- | --- |
-| 原项目 main | 不修改 |
-| 书、卷轴、法阵、符文与书经验 | 保留原内容与结算，施法入口改用崩解 |
-| 容量与回蓝加成 | 分别转为额外安全阈值与崩解恢复加成 |
-| 原生形态技能 | 保留原资源与行为 |
-| 身体状态 | 所有法术共用玩家 C，换书不清零 |
-| 冷却与适应 | 具名原法术保留共享 CD；新蓝图保留结构 CD；身体适应分别记录 |
-| 界面 | 原书配置与三槽选择保留，蓝条改为崩解，潜行右键可查看新研究 |
+## 现行设计
 
-Java代码位于`src/main/java/net/ssca/neomagic/`，生产资源位于`src/main/resources/`，测试位于`src/test/java/`。根项目增加source set接入、Fabric入口及必要依赖对齐，规则实现保存在本目录；原书、卷轴、HUD 与旧施法管理器保留必要接管代码。
+- [完整系统设计V2](docs/SSCA新法术系统完整设计V2.md)
+- [研究界面与HUD](docs/UI设计说明V2.md)
+- [法术书接管与加成映射](docs/旧法术书接管与加成映射.md)
 
-开发检查可运行`tools/build-neomagic.ps1`。当前Loom使用Java 17和Gradle 8.11.1；辅助脚本不修改此前调整的wrapper版本。实际世界测试为`neoMagicWorldTest`，长跑稳定性为`neoMagicStabilityTest`，客户端界面检查为`neoMagicVisualTest`，均使用`build/neomagic/`下的独立目录。
+## 本地材料与构建
+
+历史方案、美术过程文件、HTML原型、截图、测试报告和停用代码分类保存在仓库根 `.local-dev/`，目录内及根忽略规则均阻止它们进入提交。分类索引为 `.local-dev/分类索引.json`。这些材料保留在本机，不作为模组资源打包。
+
+使用 Java 17 和仓库 wrapper（Gradle 8.11.1）：
+
+```powershell
+.\gradlew.bat --offline build
+.\gradlew.bat --offline neoMagicVisualTest
+.\gradlew.bat --offline neoMagicWorldTest -PneoBookCutover=true
+```
+
+客户端原生检查和临时测试世界位于 `build/neomagic/`；需保留的证据归档到 `.local-dev/verification/`。自动化、引擎夹具和真人多人验收分别记录，不混称。
+
+Git 提交和 push 由用户手动执行。

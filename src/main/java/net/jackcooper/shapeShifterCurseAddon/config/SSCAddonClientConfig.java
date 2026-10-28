@@ -86,6 +86,21 @@ public class SSCAddonClientConfig implements ConfigData {
 	@ConfigEntry.Gui.Tooltip
 	public boolean showSpellbookHud = true;
 
+	/** 新稳定度条使用独立位置，不读取形态蓝条或法术书位置。 */
+	@ConfigEntry.Gui.Tooltip
+	public boolean showNeoStabilityBar = true;
+
+	/** 可独立关闭的左上详细面板。 */
+	@ConfigEntry.Gui.Tooltip
+	public boolean showDisintegrationDebugBar = true;
+
+	@ConfigEntry.Gui.Excluded
+	public int neoStabilityBarPosType = 7;
+	@ConfigEntry.Gui.Excluded
+	public int neoStabilityBarPosOffsetX = 16;
+	@ConfigEntry.Gui.Excluded
+	public int neoStabilityBarPosOffsetY = -88;
+
 	@ConfigEntry.Gui.Tooltip
 	public boolean showChargeBar = true;
 

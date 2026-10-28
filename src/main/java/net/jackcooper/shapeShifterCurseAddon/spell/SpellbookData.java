@@ -112,6 +112,11 @@ public final class SpellbookData {
 		return getMaxManaNbt(book.getNbt());
 	}
 
+	/** 书本装备提供的容量；玩家精通由新法术系统另外结算。 */
+	public static int getEquipmentCapacity(ItemStack book) {
+		return LEVEL_MAX_MANA[getLevel(book) - 1] + getUniversalFormationManaBonus(book);
+	}
+
 	/** NBT 版法力上限（等级基础 + 精通档 + 增能法阵，与 ItemStack 版同式）。 */
 	public static int getMaxManaNbt(NbtCompound nbt) {
 		int base = LEVEL_MAX_MANA[getLevelNbt(nbt) - 1];
@@ -293,9 +298,14 @@ public final class SpellbookData {
 		if (amountTen <= 0) {
 			return;
 		}
-		int boosted = Math.round(amountTen * balF("exp_gain_multiplier", 1.5f));
+		int boosted = boostedExpTen(amountTen);
 		long total = (long) getExpTen(book) + boosted;
 		setExpTen(book, (int) Math.max(0L, Math.min(Integer.MAX_VALUE, total)));
+	}
+
+	/** 升级经验与玩家精通沿用同一获取倍率，避免重复乘算。 */
+	public static int boostedExpTen(int amountTen) {
+		return Math.max(0, Math.round(amountTen * balF("exp_gain_multiplier", 1.5f)));
 	}
 
 	/** balance float 读取辅助（exp_gain_multiplier 用 float 精度，避免 int 截断）。 */

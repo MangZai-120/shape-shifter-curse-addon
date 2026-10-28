@@ -83,6 +83,7 @@ public final class NeoEffects {
         Stored s=STORED.remove(p.getUuid());if(s==null)return;
         if(!NeoRuntime.blocked(p)&&s.active.record.dimension.equals(p.getWorld().getRegistryKey().getValue().toString())&&apply(p,s.active)) {
             s.active.record.result="released";NeoRuntime.data(p).successful(s.active.session.blueprint);
+            net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.grant(p,null,(int)Math.min(Integer.MAX_VALUE,Math.round(s.active.session.quote.normal()*s.active.session.blueprint.tier())));
         } else s.active.record.result="storage_lost";
         NeoRuntime.dirty(p);NeoNetwork.send(p,false);
     }

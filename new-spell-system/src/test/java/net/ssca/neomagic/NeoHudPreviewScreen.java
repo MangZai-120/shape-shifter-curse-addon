@@ -25,7 +25,7 @@ public final class NeoHudPreviewScreen extends Screen {
         for(int x=0;x<width;x+=24)c.fill(x,0,x+1,height,0x0A97B4BC);
         for(int y=0;y<height;y+=24)c.fill(0,y,width,y+1,0x0A97B4BC);
         c.drawText(textRenderer,title,24,18,0xFFE8D4A5,false);
-        c.drawText(textRenderer,Text.literal("青绿为安全空间 · 金线为阈值 · 虚影为本次预计负荷"),24,35,0xFF9FB4BE,false);
+        c.drawText(textRenderer,Text.literal("崩解度debug条可独立关闭；下方为独立稳定度条"),24,35,0xFF9FB4BE,false);
         bounds.clear();boolean wide=width>=520;int cardWidth=Math.min(NeoStabilityHud.WIDTH,width-48);
         int start=(width-(wide?cardWidth*2+28:cardWidth))/2;
         if(wide) {
@@ -36,13 +36,13 @@ public final class NeoHudPreviewScreen extends Screen {
                 NeoStabilityHud.draw(c,textRenderer,examples.get(i),x,y,cardWidth,120);
                 bounds.add(new int[]{x,y,cardWidth,NeoStabilityHud.height(examples.get(i))});
             }
-            c.drawText(textRenderer,Text.literal("书旁的小条沿用同一月尘金线样式"),start,369,0xFFBCCBD1,false);
-            NeoStabilityHud.drawBookGauge(c,textRenderer,examples.get(1),start,391,76,120);
+            c.drawText(textRenderer,Text.literal("独立像素条使用玩家修改的左侧 PNG"),start,369,0xFFBCCBD1,false);
+            net.jackcooper.shapeShifterCurseAddon.client.hud.NeoStabilityBar.draw(c,examples.get(1),start,391);
             c.drawText(textRenderer,Text.literal("预览数据为夹具；主面板与书旁小条均调用游戏实际渲染器。"),24,height-26,0xFF6F8C9C,false);
         } else {
             var sample=examples.get(2);int y=65;
             NeoStabilityHud.draw(c,textRenderer,sample,start,y,cardWidth,120);bounds.add(new int[]{start,y,cardWidth,NeoStabilityHud.height(sample)});
-            NeoStabilityHud.drawBookGauge(c,textRenderer,sample,start,y+124,76,120);
+            net.jackcooper.shapeShifterCurseAddon.client.hud.NeoStabilityBar.draw(c,sample,start,y+124);
         }
     }
     public void verify() {

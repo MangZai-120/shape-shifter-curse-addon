@@ -10,7 +10,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
  * 法术实体（弹射物/延迟落地体）在 cast 内取走存 NBT（跨 tick 存活），命中结算时调用本类发放；
  * AOE 法术在 damage 成功后直接从桥取走（首目标取全额、后续取 0，天然幂等）。</p>
  *
- * <p>发放 = 给施法者当前装备的魔法书加经验（找不到书/玩家离线 → 静默丢弃，不补发）。</p>
+ * <p>未满级书继续获得升级经验；满级书及卸书后的延迟命中经验归玩家精通，离线则不补发。</p>
  */
 public final class SpellExpGrant {
 	private SpellExpGrant() {
@@ -27,9 +27,6 @@ public final class SpellExpGrant {
 			return;
 		}
 		ItemStack book = SpellCastManager.getEquippedBook(caster);
-		if (book == null || book.isEmpty()) {
-			return;
-		}
-		SpellbookData.addExpTen(book, expTen);
+		PlayerSpellMastery.grant(caster, book, expTen);
 	}
 }

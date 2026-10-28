@@ -18,8 +18,9 @@ public final class NeoLegacyCasting {
     public final String key,form;
     public final int duration;
     private final ServerPlayerEntity player;
+    private final Random random;
     private final int band;
-    private boolean settled, hadShift;
+    private boolean settled;
     public boolean effectFailed;
     public int age;
 
@@ -27,11 +28,12 @@ public final class NeoLegacyCasting {
     public static boolean isCasting(ServerPlayerEntity p){return SpellChannelManager.isCasting(p)||active(p)!=null||NeoRuntime.ACTIVE.containsKey(p.getUuid());}
     public static Profile profile(ServerPlayerEntity p) {
         Profile base=NeoRules.profile(NeoRuntime.form(p));ItemStack book=SpellCastManager.getEquippedBook(p);
-        double bonus=book==null?0:safetyBonus(book);
+        PlayerSpellMastery.migrate(p,book);
+        double bonus=PlayerSpellMastery.bonus(NeoRuntime.data(p));
         return new Profile(base.safety()+bonus,base.failure(),base.offset(),base.merge(),base.split(),base.reference());
     }
     public static double safetyBonus(ItemStack book) {
-        return Math.max(0,SpellbookData.getMaxMana(book)-SpellbookData.getMaxMana(new ItemStack(SscAddon.MOON_DUST_SPELLBOOK)));
+        return 0;
     }
     public static FormationElement element(Core core) {return switch(core){case THERMAL->FormationElement.FIRE;case FROST->FormationElement.ICE;case LUNAR->FormationElement.LUNAR;case CURSE->FormationElement.CURSE;case SUMMON->FormationElement.SUMMON;case VOID->FormationElement.VOID;case SPACE->FormationElement.SPACE;};}
     public static Quote blueprintQuote(ServerPlayerEntity p,Blueprint b) {
@@ -75,11 +77,12 @@ public final class NeoLegacyCasting {
                 Math.max(.5,Math.min(4,level)),Math.min(80,Math.max(0,duration)),Math.max(1,Math.min(32,spell.getAimMaxRange(level)>0?spell.getAimMaxRange(level):32)));
     }
     public NeoLegacyCasting(ServerPlayerEntity p,Spell spell,int level,int duration,int normalCost) {
-        player=p;this.duration=duration;form=NeoRuntime.form(p);key="spell:"+spell.getId();
+        player=p;random=new Random(p.getRandom().nextLong());this.duration=duration;form=NeoRuntime.form(p);key="spell:"+spell.getId();
         var d=NeoRuntime.data(p);var b=descriptor(spell,level,duration);band=b.band();
         Quote quote=quote(p,spell,level,duration,normalCost);double normal=quote.normal();
         session=new Session(b,quote,duration,spell.getLockInTick());
         record=new NeoState.Experiment();record.blueprint=b;record.spell=spell.getId().toString();record.preparation=duration;
+        record.checks=session.checkpoints; // One owner per cast; the saved record shares its bounded event list.
         record.form=form;record.profile=profile(p);record.initial=d.burden;record.normal=normal;record.actual=session.quote.actual();
         record.dimension=p.getWorld().getRegistryKey().getValue().toString();d.add(record);
         ACTIVE.put(p.getUuid(),this);NeoRuntime.dirty(p);
@@ -94,16 +97,16 @@ public final class NeoLegacyCasting {
         double normal=Math.max(0,normalCost)*t.cost();
         return new Quote(normal,normal*(1-(1-floor)*mastery),floor,plan(b));
     }
-    /** One call per actual server tick; holding a prepared spell keeps rolling but never repays. */
+    /** Payment advances per tick; failure is drawn once, while only deviation samples repeat. */
     public boolean advance(int elapsed) {
         if(settled)return false;
         age=elapsed;var d=NeoRuntime.data(player);
-        double paid=session.advance(elapsed,d.burden,profile(player),new Random(player.getRandom().nextLong()),false);
+        Profile live=session.needsRisk(elapsed)?profile(player):null;
+        double paid=session.advance(elapsed,d.burden,live,random,false);
         d.burden+=paid;if(paid>0){d.recovery=NeoRules.recoveryDelay;d.lastPaymentTick=player.getServer().getTicks();}
-        hadShift|=session.checkpoints.stream().anyMatch(Checkpoint::shifted);
         // Keep start plus the latest checkpoints for an indefinitely held legacy key.
         while(session.checkpoints.size()>512){session.checkpoints.remove(1);record.omittedChecks++;}
-        record.paid=session.paid;record.checks=new ArrayList<>(session.checkpoints);
+        record.paid=session.paid;
         record.failureBasis=session.failureBasis;record.failureProbability=session.failureProbability;record.failureDraws=session.failureDraws;record.failureBoundary=session.failureBoundary;
         record.yaw=session.yaw;record.pitch=session.pitch;record.reversed=session.reversed;
         NeoRuntime.dirty(player);
@@ -126,7 +129,7 @@ public final class NeoLegacyCasting {
     /** Rotation is scoped to constructing the released effect; it never moves the client's camera. */
     public void effect(Runnable action) {
         // Anchor/dimension spells cannot safely reuse their original guaranteed destination after a bad lock.
-        if(hadShift&&(record.spell.endsWith(":space_recall")||record.spell.endsWith(":pocket_space"))){effectFailed=true;return;}
+        if(session.hasShifted&&(record.spell.endsWith(":space_recall")||record.spell.endsWith(":pocket_space"))){effectFailed=true;return;}
         float yaw=player.getYaw(),pitch=player.getPitch();var previous=EFFECT.get();
         EFFECT.set(this);
         // Teleport packets include the current camera angles. Position deviation is already in target().
@@ -137,7 +140,7 @@ public final class NeoLegacyCasting {
     public static int actualCost(int fallback) {var a=EFFECT.get();return a==null?fallback:(int)Math.ceil(a.session.quote.actual());}
     public static boolean reversed() {var a=EFFECT.get();return a!=null&&a.session.reversed;}
     public static int summonCount(int count) {var a=EFFECT.get();return a==null?count:(int)Math.floor(count*a.session.attenuation+1e-9);}
-    public static boolean shifted() {var a=EFFECT.get();return a!=null&&a.hadShift;}
+    public static boolean shifted() {var a=EFFECT.get();return a!=null&&a.session.hasShifted;}
     public static boolean wrongTarget(){var a=EFFECT.get();return a!=null&&a.session.wrongTarget;}
     public static void miss(){var a=EFFECT.get();if(a!=null)a.effectFailed=true;}
     public static boolean missed(){var a=EFFECT.get();return a!=null&&a.effectFailed;}

@@ -59,11 +59,15 @@ public final class NeoStabilityHud {
         }
         if(critical){pixelLine(c,x-3,y-6,x+1,y-1,0xFF482B47);pixelLine(c,x+1,y-1,x-2,y+4,0xFF482B47);}
     }
-    /** The scale is fixed at S+60. Beyond the rail, the numeric excess keeps increasing. */
+    /** 显示范围为0～2N；白线依据形态基础阈值定位，超出范围仍显示真实数值。 */
     public static void gauge(DrawContext c,int x,int y,int w,int h,double value,double safety,double forecast,boolean preview,double time) {
-        value=positive(value);safety=Math.max(1,positive(safety));double extent=safety+60;
-        int inner=w-2,threshold=(int)Math.round(inner*safety/extent),filled=(int)Math.round(inner*Math.min(1,value/extent));
-        int future=(int)Math.round(inner*Math.min(1,Math.max(value,forecast)/extent));
+        gauge(c,x,y,w,h,value,safety,forecast,preview,time,safety);
+    }
+    private static void gauge(DrawContext c,int x,int y,int w,int h,double value,double safety,double forecast,boolean preview,double time,double bodySafety) {
+        value=positive(value);safety=Math.max(1,positive(safety));double extent=safety*2;
+        double fraction=Math.max(.2,Math.min(.9,.2+.003*bodySafety));
+        int inner=w-2,threshold=(int)Math.round(inner*fraction),filled=(int)Math.round(inner*net.jackcooper.shapeShifterCurseAddon.client.hud.NeoStabilityBar.coordinate(value,safety,fraction));
+        int future=(int)Math.round(inner*net.jackcooper.shapeShifterCurseAddon.client.hud.NeoStabilityBar.coordinate(Math.max(value,forecast),safety,fraction));
         c.fill(x+1,y,x+w-1,y+h,0xFF6D674F);c.fill(x,y+1,x+w,y+h-1,0xFF6D674F);
         c.fill(x+1,y+1,x+w-1,y+h-1,0xFF152A32);
         c.fill(x+1+threshold,y+1,x+w-1,y+h-1,0xFF382933);
@@ -76,7 +80,7 @@ public final class NeoStabilityHud {
         int safeFill=Math.min(filled,threshold);
         if(safeFill>0)c.fillGradient(x+1,y+1,x+1+safeFill,y+h-1,0xFF9BDCCA,0xFF397D80);
         if(filled>threshold) {
-            int top=mix(AMBER,ROSE,(value-safety)/60),bottom=mix(0xFFA37654,0xFF8D3C67,(value-safety)/60);
+            int top=mix(AMBER,ROSE,(value-safety)/safety),bottom=mix(0xFFA37654,0xFF8D3C67,(value-safety)/safety);
             c.fillGradient(x+1+threshold,y+1,x+1+filled,y+h-1,top,bottom);
         }
         for(int i=inner/8;i<inner;i+=Math.max(1,inner/8))c.fill(x+1+i,y+h-2,x+2+i,y+h-1,0x5E0B1823);
@@ -84,17 +88,21 @@ public final class NeoStabilityHud {
         int marker=x+1+threshold;
         c.fill(marker,y-1,marker+1,y+h+1,0xFFF3D9A1);
         c.fill(marker-2,y-3,marker+3,y-2,GOLD);c.fill(marker-1,y-2,marker+2,y-1,GOLD);
-        if(value>safety+60){int alpha=(int)(125+55*Math.sin(time*.1));c.fill(x+w-3,y+1,x+w-1,y+h-1,alpha<<24|0xFFBEBC);}
+        if(value>safety*2){int alpha=(int)(125+55*Math.sin(time*.1));c.fill(x+w-3,y+1,x+w-1,y+h-1,alpha<<24|0xFFBEBC);}
     }
     public static void draw(DrawContext c,TextRenderer font,NbtCompound state,int x,int y,int width,double time) {
+        // 保持绘制顺序，将同层矩形与文字批量提交，减少调试面板逐帧分配。
+        c.draw(()->paint(c,font,state,x,y,width,time));
+    }
+    private static void paint(DrawContext c,TextRenderer font,NbtCompound state,int x,int y,int width,double time) {
         int w=Math.max(180,Math.min(WIDTH,width)),h=height(state);
         double value=positive(state.getDouble("C")),safety=Math.max(1,positive(state.getDouble("S"))),excess=Math.max(0,value-safety),q=positive(state.getDouble("Q"));
         int age=state.getInt("Age"),blocked=state.getInt("Blocked");boolean stored=state.getBoolean("Stored"),casting=age>=0;
         double forecast=state.contains("FailureBasis")?state.getDouble("FailureBasis"):value+q;
-        int accent=blocked>0||excess>60?ROSE:excess>0||!casting&&forecast>safety?AMBER:JADE;
-        frame(c,x,y,w,h);crest(c,x+22,y+27,accent,time,casting,excess>60||blocked>0);
+        int accent=blocked>0||excess>safety?ROSE:excess>0||!casting&&forecast>safety?AMBER:JADE;
+        frame(c,x,y,w,h);crest(c,x+22,y+27,accent,time,casting,excess>safety||blocked>0);
         c.drawText(font,t("title"),x+44,y+7,GOLD,false);
-        String status=blocked>0?"blocked":stored?"stored":excess>60?"critical":excess>0?"overload":casting?"casting":forecast>safety?"forecast_overload":value>0&&state.getInt("Recovery")==0?"recovering":"stable";
+        String status=blocked>0?"blocked":stored?"stored":excess>safety?"critical":excess>0?"overload":casting?"casting":forecast>safety?"forecast_overload":value>0&&state.getInt("Recovery")==0?"recovering":"stable";
         Text badge=t("status."+status);int badgeW=font.getWidth(badge)+10,badgeX=x+w-10-badgeW;
         c.fill(badgeX,y+6,badgeX+badgeW,y+18,0xFF25303B);c.fill(badgeX,y+6,badgeX+2,y+18,accent);
         right(c,font,badge,x+w-14,y+8,accent);
@@ -104,7 +112,7 @@ public final class NeoStabilityHud {
         c.drawText(font,amount,0,0,PALE,false);c.getMatrices().pop();
         c.drawText(font,Text.literal(denominator),x+46+(int)(font.getWidth(amount)*scale),y+26,MUTED,false);
         c.drawText(font,t("values"),x+44,y+36,0xFF859CA8,false);
-        gauge(c,x+12,y+49,w-24,8,value,safety,forecast,!casting&&!stored&&blocked==0,time);
+        gauge(c,x+12,y+49,w-24,8,value,safety,forecast,!casting&&!stored&&blocked==0,time,state.contains("BodyS")?state.getDouble("BodyS"):safety);
         c.drawText(font,excess>0?t("excess",number(excess)):t("headroom",number(safety-value)),x+12,y+59,excess>0?accent:JADE,false);
         right(c,font,t("cost",number(q)),x+w-12,y+59,MUTED);
         c.fill(x+12,y+71,x+w-12,y+72,0xFF30414A);
@@ -121,7 +129,7 @@ public final class NeoStabilityHud {
     }
     public static void drawBookGauge(DrawContext c,TextRenderer font,NbtCompound state,int x,int y,int width,double time) {
         double value=state.getDouble("C"),safety=state.getDouble("S");
-        gauge(c,x,y,width,8,value,safety,state.getDouble("FailureBasis"),state.getInt("Age")<0&&state.getInt("Blocked")<=0&&!state.getBoolean("Stored"),time);
+        gauge(c,x,y,width,8,value,safety,state.getDouble("FailureBasis"),state.getInt("Age")<0&&state.getInt("Blocked")<=0&&!state.getBoolean("Stored"),time,state.contains("BodyS")?state.getDouble("BodyS"):safety);
         c.drawText(font,Text.literal(number(value)+" / "+number(safety)),x+width+5,y,value>safety?AMBER:JADE,true);
         c.drawText(font,t("cost",number(state.getDouble("Q"))),x+width+5,y+10,MUTED,true);
     }

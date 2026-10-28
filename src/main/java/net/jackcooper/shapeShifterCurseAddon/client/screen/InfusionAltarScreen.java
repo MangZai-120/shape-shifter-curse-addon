@@ -14,6 +14,7 @@ import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellCastFeedback;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
+import net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -58,7 +59,11 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 	}
 
 	private static Text label(String key, Object... args) {
-		if(java.util.Set.of("mana","next_mana","mastery_bonus","universal_mana","universal_recovery","preview_mana","preview_recovery","preview_delay","preview_spell","element_effect","space_effect").contains(key))
+		if(key.equals("next_mana")||key.equals("upgrade_effect"))return Text.translatable("text.ssc_addon.book.upgrade_effect");
+        if(key.equals("mastery"))return Text.translatable("text.ssc_addon.book.player.exp_label");
+        if(key.equals("mastery_tier"))return Text.translatable("text.ssc_addon.book.player.short",args[0]);
+        if(key.equals("mastery_help"))return Text.translatable("neomagic.altar.mastery_help");
+        if(java.util.Set.of("mana","next_mana","mastery_bonus","universal_mana","universal_recovery","preview_mana","preview_recovery","preview_delay","preview_spell","element_effect","space_effect").contains(key))
             return net.ssca.neomagic.NeoMagic.text("altar."+key,args);
         return Text.translatable("gui.ssc_addon.infusion_altar." + key, args);
 	}
@@ -151,7 +156,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 		text(ctx, hasBook() ? label("level", SpellbookData.getLevel(book), SpellbookData.getSlotCount(book))
 				: label("waiting_book"), 198, 29, 100, INK);
 		text(ctx, label("mana"), 198, 44, 28, MUTED);
-		rightText(ctx, hasBook() ? "+" + (int)net.ssca.neomagic.NeoLegacyCasting.safetyBonus(book) : "— / —", 298, 44);
+		rightText(ctx, hasBook() ? net.ssca.neomagic.client.NeoClient.f(net.ssca.neomagic.client.NeoClient.hud.getDouble("S")) : "— / —", 298, 44);
         text(ctx,net.ssca.neomagic.NeoMagic.text("altar.recovery",hasBook()?multiplier((float)net.ssca.neomagic.NeoLegacyCasting.recoveryMultiplier(book)):"—"),198,56,100,MUTED);
 		boolean mastery = hasBook() && SpellbookData.getLevel(book) == SpellbookData.MAX_LEVEL;
 		text(ctx, label(mastery ? "mastery" : "experience"), 198, 68, 28, MUTED);
@@ -159,14 +164,13 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 		String progressText = "— / —";
 		if (hasBook()) {
 			if (mastery) {
-				total = SpellbookData.masteryExpPerTier();
-				progress = SpellbookData.getMasteryExpToNextTier(book) == 0 ? total : SpellbookData.getExpTen(book) % total;
+				total = PlayerSpellMastery.thresholdTen(PlayerSpellMastery.tier(PlayerSpellMastery.clientExpTen()));
+				progress = PlayerSpellMastery.progressTen(PlayerSpellMastery.clientExpTen());
 			} else {
 				total = SpellbookData.getExpToNext(book);
 				progress = SpellbookData.getExpTen(book);
 			}
-			progressText = mastery && SpellbookData.getMasteryExpToNextTier(book) == 0
-					? label("complete").getString() : decimal(progress) + "/" + decimal(total);
+			progressText = decimal(progress) + "/" + decimal(total);
 		}
 		rightText(ctx, progressText, 298, 68);
 		bar(ctx, 80, progress, total, 0xFF8A70A4);
@@ -188,9 +192,9 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 					SpellbookData.getFormationSlotCount(this.nextBook)), 194, 206, 110, ACCENT);
 			text(ctx, label("next_mana", (int)net.ssca.neomagic.NeoLegacyCasting.safetyBonus(this.nextBook)), 194, 218, 110, MUTED);
 		} else if (hasBook()) {
-			text(ctx, label("mastery_tier", SpellbookData.getMasteryTier(book),
+			text(ctx, label("mastery_tier", PlayerSpellMastery.tier(PlayerSpellMastery.clientExpTen()),
 					SpellbookData.masteryMaxBonus() / SpellbookData.masteryManaPerTier()), 194, 206, 110, ACCENT);
-			text(ctx, label("mastery_bonus", SpellbookData.getMasteryManaBonus(book)), 194, 218, 110, MUTED);
+			text(ctx, label("mastery_bonus", PlayerSpellMastery.bonus(PlayerSpellMastery.clientExpTen())), 194, 218, 110, MUTED);
 		} else {
 			text(ctx, label("gain_exp"), 194, 206, 110, MUTED);
 			text(ctx, label("unlock_hint"), 194, 218, 110, MUTED);
@@ -355,7 +359,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 			lines = List.of(RegCustomItem.MORPHSCALE_CORE.getName(), label("core_help"));
 		} else if (inside(mouseX, mouseY, 198, 66, 100, 21)) {
 			lines = hasBook() && SpellbookData.getLevel(book()) == SpellbookData.MAX_LEVEL
-					? List.of(label("mastery_tier", SpellbookData.getMasteryTier(book()), SpellbookData.masteryMaxBonus() / SpellbookData.masteryManaPerTier()),
+					? List.of(label("mastery_tier", PlayerSpellMastery.tier(PlayerSpellMastery.clientExpTen()), SpellbookData.masteryMaxBonus() / SpellbookData.masteryManaPerTier()),
 					label("mastery_help", decimal(SpellbookData.masteryExpPerTier()), SpellbookData.masteryManaPerTier()))
 					: List.of(label("experience_help"));
 		} else if (this.focusedSlot != null && !this.focusedSlot.hasStack()) {

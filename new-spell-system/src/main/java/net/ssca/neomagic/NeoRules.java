@@ -15,7 +15,7 @@ public final class NeoRules implements SimpleSynchronousResourceReloadListener {
     private static Map<Core,Coefficients> costs = Map.of();
     private static Map<String,Tuning> spells=Map.of();
     private static String version = "v2-default";
-    public static int recoveryDelay = 60;
+    public static int recoveryDelay = 120;
     public static double recoveryRate = .25;
     private static final String ENGINE=net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("ssc_addon").map(mod->mod.getMetadata().getVersion().getFriendlyString()).orElse("test");
     public static String version() { return ENGINE+":"+version; }

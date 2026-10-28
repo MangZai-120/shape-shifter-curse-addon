@@ -15,6 +15,9 @@ public final class NeoModelTest {
         @Override public double nextDouble(){draws++;return value;}
         @Override public int nextInt(int bound){times++;return Math.floorMod(time,bound);}
     }
+    private static final Random NO_DRAW=new Random(0) {
+        @Override protected int next(int bits){throw new AssertionError("Payment or a completed failure draw consumed more randomness");}
+    };
     public static void main(String[] args) {
         var safe=new Profile(100000,1,1,1,1,false);var neutral=new Profile(80,1,1,1,1,false);
         for(int prep=0;prep<=80;prep++) {
@@ -34,6 +37,11 @@ public final class NeoModelTest {
         require(high.failure()>low.failure()&&high.offset()>low.offset()&&high.angle()>low.angle(),"Actual spell cost affects all risks");
         require(risk(b,90,25,new Profile(80,.8,.9,1,1,false)).failure()!=low.failure(),"Same excess different form roll modifier");
         require(risk(b,10000,25,neutral).failure()==1,"Unbounded burden can reach 100% failure");
+        var smallRisk=risk(b,150,25,new Profile(100,1,1,1,1,false));
+        var largeRisk=risk(b,300,25,new Profile(200,1,1,1,1,false));
+        near(smallRisk.failure(),largeRisk.failure(),"Equal relative overload has equal failure risk when form modifiers match");
+        near(smallRisk.offset(),largeRisk.offset(),"Deviation uses the dynamic N-to-2N danger range");
+        require(risk(b,150,25,new Profile(200,1,1,1,1,false)).failure()==0,"Growing safety can move the same C back into the guaranteed-safe range");
         Session failure=new Session(b,q);double paid=0;
         for(int tick=0;tick<=10;tick++)paid+=failure.advance(tick,10000+paid,neutral,new Draw(.5,0));
         require(failure.failed&&!failure.complete,"Failure interrupts");near(failure.paid,0,"0-tick non-instant failure does not precharge");
@@ -42,6 +50,27 @@ public final class NeoModelTest {
         require(partial.failed,"Previously drawn failure fires even after safety improves");near(partial.paid,10,"Odd-tick failure retains only the last two-tick payment");
         require(partial.checkpoints.get(partial.checkpoints.size()-1).tick()==17,"Failure may fire off the ten-tick drift grid");
         require(draw.draws==1&&draw.times==1&&partial.failureDraws==1,"Failure and its time are sampled exactly once");
+        var scheduled=new Session(b,q);var scheduledDraw=new Draw(.5,17);int riskReads=0;double scheduledC=10000;
+        for(int tick=0;tick<=20;tick++) {
+            boolean sample=scheduled.needsRisk(tick);if(sample)riskReads++;
+            scheduledC+=scheduled.advance(tick,scheduledC,sample?new Profile(1,100,0,1,1,false):null,tick==0?scheduledDraw:NO_DRAW);
+        }
+        require(scheduled.failed&&scheduledDraw.draws==1&&scheduledDraw.times==1&&riskReads==3,
+                "Scheduled tick 17 failure needs no additional RNG; only start, tick 10 and failure read live risk");
+        var held=new Session(b,q);var heldDraw=new Draw(.99,0);double heldC=0;
+        for(int tick=0;tick<=5200;tick++)heldC+=held.advance(tick,heldC,held.needsRisk(tick)?safe:null,tick==0?heldDraw:NO_DRAW,false);
+        require(!held.failed&&heldDraw.draws==1&&heldDraw.times==0&&held.failureDraws==1,
+                "An indefinitely held safe spell never redraws failure or samples a failure time");
+        near(held.paid,q.actual(),"Long holds keep exact payment after the single initial draw");
+        var shifted=new Session(b,q);var shiftDraw=new Draw(.5,0);
+        shifted.advance(0,10000,new Profile(1,0,1000,1,1,false),shiftDraw);
+        require(shifted.hasShifted&&shifted.checkpoints.get(0).shifted(),"Deviation is latched when it actually happens");
+        for(int tick=1;tick<=40;tick++)shifted.advance(tick,0,shifted.needsRisk(tick)?safe:null,NO_DRAW);
+        require(shifted.hasShifted,"An earlier deviation remains recorded when later live C is safe");
+        var deviation=offsetRisk(b,90,25,neutral);
+        near(deviation.offset(),low.offset(),"Live-only deviation preserves its original probability");
+        near(deviation.angle(),low.angle(),"Live-only deviation preserves its original angle");
+        near(deviation.failure(),0,"Live deviation never recomputes a whole-cast failure chance");
         Session passed=new Session(b,q);var passingDraw=new Draw(.5,0);double passingC=0;
         for(int tick=0;tick<=40;tick++)passingC+=passed.advance(tick,tick==0?0:10000,new Profile(tick==0?1000:1,100,0,1,1,false),passingDraw);
         require(passed.complete&&!passed.failed&&passingDraw.draws==1&&passingDraw.times==0,"Later C spikes do not reroll a successful initial draw");
@@ -66,7 +95,8 @@ public final class NeoModelTest {
         for(int duration:new int[]{20,80}) {
             int failures=0;var spell=b(List.of(),duration);var fixed=new Quote(20,20,.5,plan(spell));
             for(int run=0;run<10000;run++) {
-                var attempt=new Session(spell,fixed);double value=90;
+                // 预计完整支付后位于危险区的1/6处，保持整次10%基准，不依赖固定点数。
+                var attempt=new Session(spell,fixed);double value=100+100.0/6-20;
                 for(int tick=0;tick<=duration&&!attempt.failed;tick++)value+=attempt.advance(tick,value,new Profile(100,10.0/3,0,1,1,false),rng);
                 if(attempt.failed)failures++;
                 require(attempt.failureDraws==1,"Failure draw count is independent of preparation length");

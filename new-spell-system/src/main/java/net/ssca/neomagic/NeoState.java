@@ -29,6 +29,8 @@ public final class NeoState extends PersistentState {
     }
     public static final class PlayerData {
         public double burden;
+        /** 玩家精通经验（十分之一点）；独立于每个法术的减耗熟练度。 */
+        public int spellbookMasteryExpTen;
         public int recovery;
         public String form = "", hypothesis = "", conclusion = "";
         public List<String> citations = new ArrayList<>();
@@ -85,7 +87,7 @@ public final class NeoState extends PersistentState {
         return s;
     }
     public static void validate(PlayerData d) {
-        if(d==null||!Double.isFinite(d.burden)||d.burden<0||d.recovery<0||d.draft==null||d.baseline==null
+        if(d==null||!Double.isFinite(d.burden)||d.burden<0||d.recovery<0||d.spellbookMasteryExpTen<0||d.draft==null||d.baseline==null
                 ||!errors(d.draft).isEmpty()||!errors(d.baseline).isEmpty()||d.form==null||d.known==null
                 ||d.hypothesis==null||d.conclusion==null||d.hypothesis.length()>1000||d.conclusion.length()>1000
                 ||d.citations==null||d.citations.size()>4||d.records==null||d.records.size()>32||d.progress==null||d.cooldowns==null)

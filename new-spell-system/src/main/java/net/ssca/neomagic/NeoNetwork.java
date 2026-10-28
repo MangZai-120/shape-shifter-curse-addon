@@ -77,16 +77,21 @@ public final class NeoNetwork {
         if(!ServerPlayNetworking.canSend(p,HUD))return;
         var packet=PacketByteBufs.create();packet.writeNbt(hudState(p));ServerPlayNetworking.send(p,HUD,packet);
     }
-    static NbtCompound hudState(ServerPlayerEntity p) {
+    public static NbtCompound hudState(ServerPlayerEntity p) {
         var d=NeoRuntime.data(p);var a=NeoRuntime.ACTIVE.get(p.getUuid());
         var legacy=NeoLegacyCasting.active(p);
         ItemStack book=net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.getEquippedBook(p);
         boolean holding=book!=null||p.getMainHandStack().isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.MOON_DUST_SPELLBOOK)||p.getOffHandStack().isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.MOON_DUST_SPELLBOOK)||p.getMainHandStack().getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem||p.getOffHandStack().getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem||p.getMainHandStack().isOf(NeoMagic.WAND)||p.getOffHandStack().isOf(NeoMagic.WAND);
         var n=new NbtCompound();n.putBoolean("Visible",holding||d.burden>0||a!=null||NeoEffects.hasStored(p.getUuid()));
-        n.putDouble("C",d.burden);n.putDouble("S",NeoRuntime.profile(p).safety());n.putInt("Recovery",d.recovery);n.putInt("RecoveryDelay",NeoRules.recoveryDelay);
+        var profile=NeoRuntime.profile(p);
+        n.putInt("MasteryExpTen",d.spellbookMasteryExpTen);
+        n.putInt("CastingLevel",net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.tier(d));
+        n.putDouble("DangerMax",profile.safety()*2);
+        n.putDouble("C",d.burden);n.putDouble("S",profile.safety());n.putDouble("BodyS",NeoRules.profile(d.form).safety());n.putInt("Recovery",d.recovery);n.putInt("RecoveryDelay",NeoRules.recoveryDelay);
         Blueprint b=a==null?bound(p.getMainHandStack()):a.session.blueprint;
         if(b==null)b=bound(p.getOffHandStack());
         boolean loaded=b!=null;
+        boolean hasSpell=loaded||a!=null||legacy!=null;
         if(b==null)b=d.draft;
         Quote q=a==null?NeoLegacyCasting.blueprintQuote(p,b):a.session.quote;
         int prep=b.prep();String legacyName="";
@@ -97,6 +102,7 @@ public final class NeoNetwork {
             if(!solo&&book!=null)scroll=net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.getScroll(book,net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.getSelectedSlot(book));
             var spell=net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getSpell(scroll);
             if(spell!=null) {
+                hasSpell=true;
                 int level=solo?net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getLevel(scroll):net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getCastLevel(scroll);
                 var modifiers=net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme.modifiers(p,scroll,level);
                 prep=modifiers.time(spell.getCastingProfile(p,level,solo).ticks());
@@ -105,10 +111,13 @@ public final class NeoNetwork {
                 q=NeoLegacyCasting.quote(p,spell,level,prep,normal);legacyName=spell.getId().toString();
             }
         }
-        Risk r=risk(b,d.burden,q.actual(),NeoRuntime.profile(p));
+        Risk r=offsetRisk(b,d.burden,q.actual(),profile);
         var session=legacy!=null?legacy.session:a==null?null:a.session;
-        double failure=session==null?risk(b,d.burden+q.actual(),q.actual(),NeoRuntime.profile(p)).failure():session.failureProbability;
+        double failure=session==null?failureChance(b,d.burden+q.actual(),q.actual(),profile):session.failureProbability;
         n.putDouble("Q",q.actual());n.putDouble("Failure",failure);n.putDouble("Offset",r.offset());
+        n.putBoolean("HasSpell",hasSpell);
+        n.putInt("LockBoundary",session==null?prep:session.failureBoundary);
+        if(!d.records.isEmpty()){var last=d.records.get(0);n.putString("ResultId",last.id);n.putString("Result",last.result);}
         n.putDouble("FailureBasis",session==null?d.burden+q.actual():session.failureBasis);
         n.putInt("CD",d.cooldowns.getOrDefault(b.identity(),0));n.putBoolean("Stored",NeoEffects.hasStored(p.getUuid()));
         if(!legacyName.isEmpty()) {
@@ -120,7 +129,7 @@ public final class NeoNetwork {
         n.putDouble("Cumulative",session==null?0:1-session.survival);n.putString("Spell",legacyName);
         int status=0;for(var effect:List.of(NeoMagic.DISORDER,NeoMagic.DISINTEGRATION,NeoMagic.BREAKDOWN))if(p.hasStatusEffect(effect))status=Math.max(status,p.getStatusEffect(effect).getDuration());
         n.putInt("Blocked",status);n.putString("Form",d.form);n.putBoolean("Reference",NeoRules.profile(d.form).reference());
-        n.putString("Profile",NeoState.JSON.toJson(NeoRuntime.profile(p)));
+        n.putString("Profile",NeoState.JSON.toJson(profile));
         return n;
     }
     private static boolean materials(ServerPlayerEntity p,boolean consume) {

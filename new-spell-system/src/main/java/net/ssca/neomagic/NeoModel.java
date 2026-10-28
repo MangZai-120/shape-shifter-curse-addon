@@ -107,12 +107,28 @@ public final class NeoModel {
         return new Quote(normal, normal * (1 - (1-floor)*clamp(mastery,0,1)), floor, p);
     }
     public static Risk risk(Blueprint b, double current, double q, Profile f) {
+        return riskWithFailure(b,current,q,f,failureChance(b,current,q,f));
+    }
+    /** Pure forecast; actual failure randomness is consumed only by Session.drawFailure. */
+    public static double failureChance(Blueprint b, double current, double q, Profile f) {
         double excess = Math.max(0, current - f.safety);
-        if (excess == 0) return new Risk(0,0,0,0);
+        if (excess == 0) return 0;
+        double scaled=excess/Math.max(1,f.safety)*60;
+        return clamp(.03*Math.pow(scaled/10,1.3)*Math.pow(q/20,.7)*f.failureFor(b),0,1);
+    }
+    /** Live deviation never recalculates or redraws the frozen whole-cast failure chance. */
+    public static Risk offsetRisk(Blueprint b, double current, double q, Profile f) {
+        return riskWithFailure(b,current,q,f,0);
+    }
+    private static Risk riskWithFailure(Blueprint b, double current, double q, Profile f, double failure) {
+        double excess = Math.max(0, current - f.safety);
+        if (excess == 0) return new Risk(0,failure,0,0);
+        // 危险范围为 N～2N：按当前有效 N 归一化，保留连续风险曲线与形态修正。
+        double scaled=excess/Math.max(1,f.safety)*60;
         double constraint = Math.pow(.65, b.count(Control.CONSTRAIN));
-        return new Risk(excess, clamp(.03*Math.pow(excess/10,1.3)*Math.pow(q/20,.7)*f.failureFor(b),0,1),
-                clamp(.08*(excess/10)*Math.sqrt(q/20)*f.offset*constraint,0,1),
-                Math.min(12,.18*Math.pow(excess,.7)*Math.pow(q/20,.35))*constraint);
+        return new Risk(excess, failure,
+                clamp(.08*(scaled/10)*Math.sqrt(q/20)*f.offset*constraint,0,1),
+                Math.min(12,.18*Math.pow(scaled,.7)*Math.pow(q/20,.35))*constraint);
     }
     public static double clamp(double n, double low, double high) { return Math.max(low, Math.min(high,n)); }
     public static int cooldown(Blueprint b) { return 60 + 20*b.tier(); }
@@ -126,7 +142,7 @@ public final class NeoModel {
         public int failureDraws;
         /** Exclusive end of the window in which a scheduled failure may fire. */
         public final int failureBoundary;
-        public boolean failed, complete, reversed, wrongTarget;
+        public boolean failed, complete, reversed, wrongTarget, hasShifted;
         private int previous = -1;
         private int failureAt = -1;
         private final int duration;
@@ -136,6 +152,16 @@ public final class NeoModel {
         public Session(Blueprint b, Quote q, int duration, int lockInTick) {
             blueprint=b;quote=q;this.duration=Math.max(0,duration);
             failureBoundary=lockInTick<0?this.duration:Math.min(this.duration,lockInTick);
+        }
+        /** Only risk events need the current form; ordinary payment ticks need no profile allocation. */
+        public boolean needsRisk(int age) {
+            return !failed&&!complete&&age>previous&&(failureDraws==0||age%10==0||age==failureAt);
+        }
+        private void drawFailure(double current, Profile form, RandomGenerator rng) {
+            failureBasis=current+quote.actual;
+            failureProbability=failureChance(blueprint,failureBasis,quote.actual,form);
+            failureDraws=1;survival=1-failureProbability;
+            if(rng.nextDouble()<failureProbability)failureAt=rng.nextInt(Math.max(1,failureBoundary));
         }
         /** Caller adds returned delta to its sole C before consuming this checkpoint. */
         public double advance(int age, double current, Profile form, RandomGenerator rng) {
@@ -148,24 +174,21 @@ public final class NeoModel {
             if(failureDraws==0) {
                 // One whole-cast draw, using the initial C plus this cast's actual locked quote.
                 // Keep the result and scheduled time on the server; later C changes never redraw it.
-                failureBasis=current+quote.actual;
-                failureProbability=risk(blueprint,failureBasis,quote.actual,form).failure;
-                failureDraws=1;survival=1-failureProbability;
-                if(rng.nextDouble()<failureProbability)failureAt=rng.nextInt(Math.max(1,failureBoundary));
+                drawFailure(current,form,rng);
             }
             int billed = age >= duration ? duration : age / 2 * 2;
             double due = duration == 0 ? quote.actual : quote.actual*billed/duration;
             double delta = Math.max(0,due-paid); paid += delta;
             failed=age==failureAt;
             if (age % 10 == 0 || failed) {
-                Risk live=risk(blueprint,current+delta,quote.actual,form);
-                Risk r=new Risk(live.excess,failureProbability,live.offset,live.angle);
+                Risk r=riskWithFailure(blueprint,current+delta,quote.actual,form,failureProbability);
                 boolean shiftDraw=!failed&&age%10==0&&r.offset>0&&rng.nextDouble()<r.offset;
                 if (!failed && shiftDraw) {
+                    hasShifted=true;
                     yaw += (rng.nextDouble()*2-1)*r.angle;
                     pitch += (rng.nextDouble()*2-1)*r.angle;
                     switch(blueprint.output()) {
-                        case LUNAR -> { attenuation *= .75; if (rng.nextDouble() < Math.min(.8,r.excess/80)) reversed = true; }
+                        case LUNAR -> { attenuation *= .75; if (rng.nextDouble() < Math.min(.8,60*r.excess/Math.max(1,form.safety)/80)) reversed = true; }
                         case SUMMON, SPACE -> attenuation *= .7;
                         default -> { }
                     }

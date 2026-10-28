@@ -125,10 +125,10 @@ public final class NeoScreen extends Screen {
             } else {
                 top=80;
                 Quote q=preview(edit);
-                Risk risk=risk(edit,data.burden,q.actual(),profile);
+                Risk risk=offsetRisk(edit,data.burden,q.actual(),profile);
                 line("quote",f(q.normal()),f(q.actual()),pc(bodyMastery(edit)));
                 line("body",f(data.burden),f(profile.safety()),f(risk.excess()));
-                double probability=risk(edit,data.burden+q.actual(),q.actual(),profile).failure();
+                double probability=failureChance(edit,data.burden+q.actual(),q.actual(),profile);
                 line("current_risk",pc(probability),pc(risk.offset()));line("forecast",f(data.burden+q.actual()));line("form",formName(data.form));
                 line("safe_guarantee");if(profile.reference())line("reference_profile");
             }

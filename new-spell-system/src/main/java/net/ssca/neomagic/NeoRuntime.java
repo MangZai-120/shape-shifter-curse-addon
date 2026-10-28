@@ -22,12 +22,14 @@ public final class NeoRuntime {
         public final ItemStack wand;
         public final Hand hand;
         public final NeoEffects.Anchor anchor;
+        private final Random random;
         public int fullCooldown;
         public double powerMultiplier=1;
         public int age, beganTick;
         public boolean settled;
-        Active(Session s,NeoState.Experiment r,ItemStack wand,Hand hand,NeoEffects.Anchor anchor) {
+        Active(Session s,NeoState.Experiment r,ItemStack wand,Hand hand,NeoEffects.Anchor anchor,Random random) {
             session=s;record=r;this.wand=wand;this.hand=hand;this.anchor=anchor;fullCooldown=NeoRules.cooldown(s.blueprint);
+            this.random=random;record.checks=session.checkpoints;
         }
     }
     public static NeoState.PlayerData data(ServerPlayerEntity p) { return NeoState.get(p.getServer()).player(p.getUuid()); }
@@ -61,16 +63,17 @@ public final class NeoRuntime {
         var e=new NeoState.Experiment();e.blueprint=b;e.form=d.form;e.profile=NeoRules.profile(d.form);e.initial=d.burden;
         e.normal=quote.normal();e.actual=quote.actual();e.profile=profile(p);e.preparation=b.prep();e.dimension=p.getWorld().getRegistryKey().getValue().toString();
         e.target=anchor.target()==null?anchor.position().toString():anchor.target().toString();
-        d.add(e);var active=new Active(new Session(b,quote),e,p.getStackInHand(hand),hand,anchor);
+        d.add(e);var active=new Active(new Session(b,quote),e,p.getStackInHand(hand),hand,anchor,new Random(p.getRandom().nextLong()));
         active.fullCooldown=NeoLegacyCasting.blueprintCooldown(p,b);active.powerMultiplier=NeoLegacyCasting.blueprintPower(p,b);
         active.beganTick=p.getServer().getTicks();ACTIVE.put(p.getUuid(),active);advance(p,active);NeoNetwork.send(p,false);
     }
     private static void advance(ServerPlayerEntity p,Active a) {
         if(a.settled)return;
         var d=data(p);var s=a.session;
-        double delta=s.advance(a.age,d.burden,profile(p),new Random(p.getRandom().nextLong()));
+        Profile live=s.needsRisk(a.age)?profile(p):null;
+        double delta=s.advance(a.age,d.burden,live,a.random);
         d.burden+=delta;if(delta>0){d.recovery=NeoRules.recoveryDelay;d.lastPaymentTick=p.getServer().getTicks();}
-        a.record.paid=s.paid;a.record.checks=new ArrayList<>(s.checkpoints);a.record.yaw=s.yaw;a.record.pitch=s.pitch;a.record.reversed=s.reversed;
+        a.record.paid=s.paid;a.record.yaw=s.yaw;a.record.pitch=s.pitch;a.record.reversed=s.reversed;
         a.record.failureBasis=s.failureBasis;a.record.failureProbability=s.failureProbability;a.record.failureDraws=s.failureDraws;a.record.failureBoundary=s.failureBoundary;
         if(s.failed) fail(p,a);
         else if(s.complete) {
@@ -79,8 +82,11 @@ public final class NeoRuntime {
             if(NeoEffects.release(p,a)) {
                 a.record.result=s.quote.plan().stored()?"stored":"released";
                 setCooldown(p,s.blueprint.identity(),a.fullCooldown);a.settled=true;
-                if(!s.quote.plan().stored())d.successful(s.blueprint);
-            } else if(s.checkpoints.stream().anyMatch(Checkpoint::shifted)) fail(p,a);
+                if(!s.quote.plan().stored()){
+                    d.successful(s.blueprint);
+                    net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.grant(p,null,(int)Math.min(Integer.MAX_VALUE,Math.round(s.quote.normal()*s.blueprint.tier())));
+                }
+            } else if(s.hasShifted) fail(p,a);
             else {
                 a.record.result="target_lost";
                 setCooldown(p,s.blueprint.identity(),Math.max(10,a.fullCooldown/2));a.settled=true;
@@ -98,7 +104,8 @@ public final class NeoRuntime {
     }
     public static void backlash(ServerPlayerEntity p,double actualCost) {
         var d=data(p);
-        double excess=Math.max(0,d.burden-profile(p).safety());
+        double n=profile(p).safety();
+        double excess=60*Math.max(0,d.burden-n)/Math.max(1,n);
         if(excess>0) {
             p.damage(p.getDamageSources().magic(),(float)(1.5+.05*excess+.02*actualCost));
             double serious=clamp((excess-20)/80,0,1);
@@ -150,7 +157,11 @@ public final class NeoRuntime {
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(NeoRuntime::tick);
         ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server,resources,success)->{if(success)server.getPlayerManager().getPlayerList().forEach(p->NeoNetwork.send(p,false));});
-        ServerPlayConnectionEvents.DISCONNECT.register((handler,server)->{cancel(handler.player,"disconnected");NeoEffects.clearStored(handler.player.getUuid());dirty(handler.player);NeoNetwork.close(handler.player);});
+        ServerPlayConnectionEvents.DISCONNECT.register((handler,server)->server.execute(()->{
+            var online=server.getPlayerManager().getPlayer(handler.player.getUuid());
+            if(online!=null&&online.networkHandler!=handler)return;
+            cancel(handler.player,"disconnected");NeoEffects.clearStored(handler.player.getUuid());dirty(handler.player);NeoNetwork.close(handler.player);
+        }));
         ServerPlayerEvents.AFTER_RESPAWN.register((old,p,alive)->{cancel(old,"death");var d=data(p);d.burden=0;d.recovery=0;NeoEffects.clearStored(p.getUuid());dirty(p);});
         ServerLifecycleEvents.SERVER_STOPPING.register(server->{
             for(var p:server.getPlayerManager().getPlayerList())cancel(p,"server_stopped");

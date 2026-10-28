@@ -16,6 +16,18 @@ final class SpellbookExperience {
         return isBook(main) ? main : isBook(off) ? off : null;
     }
     record Result(boolean success, int totalTen, int maximumAdditional) {}
+    static Result add(net.minecraft.server.network.ServerPlayerEntity player, ItemStack book, int amount) {
+        if (SpellbookData.getLevel(book) < SpellbookData.MAX_LEVEL) return add(book, amount);
+        if (!isBook(book) || amount < 1) throw new IllegalArgumentException("Expected a spellbook and positive experience");
+        var data=net.ssca.neomagic.NeoRuntime.data(player);
+        int before=Math.max(data.spellbookMasteryExpTen,SpellbookData.getExpTen(book.copy()));
+        int maximum=(Integer.MAX_VALUE-before)/10;
+        long after=before+amount*10L;
+        if(after>Integer.MAX_VALUE)return new Result(false,before,maximum);
+        net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.migrate(player,book);
+        data.spellbookMasteryExpTen=(int)after;net.ssca.neomagic.NeoRuntime.dirty(player);
+        return new Result(true,(int)after,maximum);
+    }
     static Result add(ItemStack book, int amount) {
         if (!isBook(book) || amount < 1) throw new IllegalArgumentException("Expected a spellbook and positive experience");
         // A rejected request must not migrate legacy Exp or mutate any other NBT.

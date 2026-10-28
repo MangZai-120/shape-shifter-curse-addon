@@ -10,6 +10,7 @@ import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -783,7 +784,7 @@ public class SscAddonCommands {
 			return 0;
 		}
 		int amount = IntegerArgumentType.getInteger(context, "amount");
-		var result = SpellbookExperience.add(book, amount);
+		var result = SpellbookExperience.add(player, book, amount);
 		if (!result.success()) {
 			context.getSource().sendError(Text.translatable("command.ssc_addon.moon_dust_spellbook.exp.too_large",
 					result.maximumAdditional()));
@@ -795,6 +796,10 @@ public class SscAddonCommands {
 			player.playerScreenHandler.sendContentUpdates();
 		}
 		String total = String.format(Locale.ROOT, "%.1f", result.totalTen() / 10.0);
+		if(SpellbookData.getLevel(book)>=SpellbookData.MAX_LEVEL) {
+			context.getSource().sendFeedback(()->Text.translatable("text.ssc_addon.player_mastery.command",amount,total),true);
+			return 1;
+		}
 		context.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.moon_dust_spellbook.exp."
 				+ (equipped ? "added_equipped" : "added"), amount, total), true);
 		return 1;

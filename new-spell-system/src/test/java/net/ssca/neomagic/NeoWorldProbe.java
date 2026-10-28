@@ -42,7 +42,7 @@ public final class NeoWorldProbe {
     private static NeoRuntime.Active active(ServerPlayerEntity p,Blueprint b,Vec3d point,Entity target) {
         var q=quote(b,0,NeoRules.cost(b.core()));var s=new Session(b,q);s.complete=true;s.paid=q.actual();
         var r=new NeoState.Experiment();r.blueprint=b;r.actual=q.actual();r.normal=q.normal();r.form=NeoRuntime.form(p);r.dimension=p.getWorld().getRegistryKey().getValue().toString();
-        return new NeoRuntime.Active(s,r,new ItemStack(NeoMagic.WAND),Hand.MAIN_HAND,new NeoEffects.Anchor(point,target==null?null:target.getUuid()));
+        return new NeoRuntime.Active(s,r,new ItemStack(NeoMagic.WAND),Hand.MAIN_HAND,new NeoEffects.Anchor(point,target==null?null:target.getUuid()),new java.util.Random(0));
     }
     private static void test(TestContext test) {
         ServerPlayerEntity p=test.createMockCreativeServerPlayerInWorld();p.changeGameMode(net.minecraft.world.GameMode.SURVIVAL);
