@@ -63,6 +63,7 @@ public final class SscAddonServerEvents {
         SkillStateMaintenance.init();
 		ServerTickEvents.START_SERVER_TICK.register(server -> {
 			for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+				net.jackcooper.shapeShifterCurseAddon.compat.MoistureWaterRecovery.capture(player);
 				if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.fullyControlled(player)) {
 					net.jackcooper.shapeShifterCurseAddon.ability.ControlledAbilityInterruption.interrupt(player);
 				}
@@ -138,6 +139,9 @@ public final class SscAddonServerEvents {
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			Collection<ServerPlayerEntity> players = server.getPlayerManager().getPlayerList();
 			FluorescentTidalManager.tickPendingCd(players);
+			for (ServerPlayerEntity player : players) {
+				net.jackcooper.shapeShifterCurseAddon.compat.MoistureWaterRecovery.restore(player);
+			}
 		});
 
 
@@ -168,8 +172,10 @@ public final class SscAddonServerEvents {
 		net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.registerEvents();
 
 		// 减速蜘网施法者表：服务器停止时清空，防跨存档/重启残留
-		ServerLifecycleEvents.SERVER_STOPPED.register(server ->
-				net.jackcooper.shapeShifterCurseAddon.block.WebMembraneOwners.clear());
+		ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+			net.jackcooper.shapeShifterCurseAddon.block.WebMembraneOwners.clear();
+			net.jackcooper.shapeShifterCurseAddon.compat.MoistureWaterRecovery.clear();
+		});
 	}
 
 	/**

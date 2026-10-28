@@ -60,6 +60,7 @@ public class SscAddonClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		SscForceSneakClient.register();
+		MoistureWaterRecoveryClient.register();
 		FormationResearchClient.register();
 		SustainedVisualClient.init();
 		net.jackcooper.shapeShifterCurseAddon.client.particle.FirstPersonParticles.init();
