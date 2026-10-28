@@ -1,1 +1,0 @@
-{"passed":false,"simulated_players":8,"server_ticks":0,"casts_attempted":0,"checks":9,"peak_active":0,"peak_bolts":0,"peak_summons":0,"reloads":0,"reconnects":0,"respawns":0,"form_switches":0,"wall_seconds":1.8881498,"failures":["UI close is not dropped by the same-tick request throttle"]}

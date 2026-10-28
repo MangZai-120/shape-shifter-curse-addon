@@ -1,1 +1,0 @@
-{"passed":false,"simulated_players":8,"server_ticks":0,"casts_attempted":0,"checks":6,"peak_active":0,"peak_bolts":0,"peak_summons":0,"reloads":0,"wall_seconds":1.0895621,"failures":["Starting tick must not advance preparation by one extra tick","Rejected notes request must not partially mutate saved text","20-tick cast must survive until its real final tick"]}
