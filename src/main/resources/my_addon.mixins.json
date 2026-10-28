@@ -86,6 +86,10 @@
         "WanderingTraderTradeMixin"
     ],
     "client": [
+        "client.SscHudScaleMixin",
+        "client.SscMagicScaleMixin",
+    "client.SscItemStoreScaleMixin",
+    "client.SscItemStoreLayoutAccessor",
         "input.SscForceSneakInputMixin",
         "client.SscForceSneakReceiveMixin",
         "client.ControlledApoliClientMixin",

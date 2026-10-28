@@ -1942,5 +1942,7 @@
   "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_mana_capacity_2.description": "Requires Mana System. Adds 50 to final maximum mana, unaffected by the progression form's base capacity multiplier. Replaces rank I. Mana Shield still activates at 50% of maximum mana.",
   "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_permeable_field_1.description": "Requires Buff Immunity. Allows Speed, Haste and Invisibility at level I with their normal potion duration. All other immunities, including fire immunity, remain.",
   "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_permeable_field_2.description": "Requires Buff Immunity. Also allows Strength, Water Breathing and Night Vision at level I with their normal potion duration. Replaces rank I. All other immunities, including fire immunity, remain.",
-  "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_potion_charms.description": "Requires Alchemy to craft and use potion charms. Combine paper with a Glistering Melon Slice, Fermented Spider Eye or Spider Eye to craft a Healing, Harming or Poison Charm for 5 mana. Using a charm has a 1-second cooldown."
+  "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_potion_charms.description": "Requires Alchemy to craft and use potion charms. Combine paper with a Glistering Melon Slice, Fermented Spider Eye or Spider Eye to craft a Healing, Harming or Poison Charm for 5 mana. Using a charm has a 1-second cooldown.",
+  "text.ssc_addon.bar_editor.scale": "Scale: %s%%",
+  "text.ssc_addon.bar_editor.item_store": "SSC stored items"
 }

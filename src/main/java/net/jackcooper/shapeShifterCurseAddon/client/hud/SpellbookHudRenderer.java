@@ -31,6 +31,32 @@ import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
  */
 @Environment(EnvType.CLIENT)
 public class SpellbookHudRenderer implements HudRenderCallback {
+    /** Includes text that extends past the frame, so every zoom level remains draggable and visible. */
+    public static int[] hudAnchor() {
+        var mc=MinecraftClient.getInstance();var cfg=SSCAddonConfig.client();
+        var p=UIPositionUtils.getCorrectPosition(cfg.spellbookHudPosType,cfg.spellbookHudPosOffsetX,cfg.spellbookHudPosOffsetY);
+        return new int[]{p.getLeft(),Math.max(26,Math.min(p.getRight(),mc.getWindow().getScaledHeight()-48))};
+    }
+    public static HudScaleGeometry.Box scaleBounds() {
+        var mc=MinecraftClient.getInstance();int[] a=hudAnchor();
+        int left=a[0]+(-7),right=left+76;
+        var book=mc.player==null?ItemStack.EMPTY:SpellcastClient.getEquippedBook();
+        if(mc.world!=null && book!=null && !book.isEmpty() && SpellbookData.getSlotCount(book)>0){
+            int selected=Math.max(0,Math.min(SpellcastClient.getSelectedSlot(),SpellbookData.getSlotCount(book)-1));
+            var snap=snapshotOf(mc,book,selected);
+            right=Math.max(right,a[0]+73+mc.textRenderer.getWidth(snap.mana+"/"+snap.maxMana)+1);
+            var scroll=snap.selScroll;var spell=ScrollData.getSpell(scroll);
+            if(spell!=null){var name=SpellCastFeedback.spellName(spell,scroll);int n=mc.textRenderer.getWidth(name);
+                int x=clampTextX(mc,a[0]+31-n/2,n);left=Math.min(left,x-1);int end=x+n+4;
+                int cast=ScrollData.getCastLevel(scroll),level=ScrollData.getLevel(scroll);
+                if(cast<level)end+=mc.textRenderer.getWidth("Lv"+cast+"/"+level)+4;
+                long cd=net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.getEffectiveCooldownEnd(mc.player,scroll)-mc.world.getTime();
+                if(cd>0)end+=mc.textRenderer.getWidth(SpellCastFeedback.seconds(cd)+"s");
+                right=Math.max(right,end+1);
+            }
+        }
+        return new HudScaleGeometry.Box(left,a[1]+(-14),right-left,50);
+    }
 	private static final SpellbookHudRenderer BEFORE_CHAT = new SpellbookHudRenderer();
 
 	/** Called once by InGameHud, immediately before vanilla chat. */
@@ -140,6 +166,10 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 
 	@Override
 	public void onHudRender(DrawContext ctx, float tickDelta) {
+        net.jackcooper.shapeShifterCurseAddon.client.hud.HudScaling.render(ctx, 3, () -> renderUnscaled(ctx, tickDelta));
+    }
+
+    private void renderUnscaled(DrawContext ctx, float tickDelta) {
 		MinecraftClient mc = MinecraftClient.getInstance();
 		if (mc.player == null || mc.world == null || mc.options.hudHidden
 				|| !SSCAddonConfig.client().showSpellbookHud) {

@@ -4,6 +4,12 @@ plugins {
 }
 
 version = project.mod_version
+tasks.register('hudScaleTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.client.hud.HudScaleGeometryTest'
+}
+check.dependsOn hudScaleTest
 group = project.maven_group
 
 base {

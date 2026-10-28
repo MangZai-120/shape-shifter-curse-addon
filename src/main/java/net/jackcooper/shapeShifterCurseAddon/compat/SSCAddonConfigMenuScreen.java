@@ -33,7 +33,7 @@ public class SSCAddonConfigMenuScreen extends Screen {
 		final int gap = 10;
 		// 颜色编辑器入口仅在开关 ON 时显示；预设界面通过编辑器内部跳转按钮访问
 		final boolean showColorBtn = AutoConfig.getConfigHolder(SSCAddonClientConfig.class).getConfig().enableColorEditor;
-		final int totalRows = showColorBtn ? 5 : 4;
+		final int totalRows = showColorBtn ? 6 : 5;
 		final int xPos = (width - btnW) / 2;
 		int yPos = (height - btnH * totalRows - gap * (totalRows - 1)) / 2;
 
@@ -41,6 +41,10 @@ public class SSCAddonConfigMenuScreen extends Screen {
 		addBtn(xPos, yPos, btnW, btnH,
 				Text.translatable("text.autoconfig.ssc_addon_client.title"),
 				() -> AutoConfig.getConfigScreen(SSCAddonClientConfig.class, this).get());
+		yPos += btnH + gap;
+
+		addBtn(xPos,yPos,btnW,btnH,Text.translatable("text.ssc_addon.bar_editor.open"),
+				() -> new net.jackcooper.shapeShifterCurseAddon.client.screen.BarPositionEditorScreen(this));
 		yPos += btnH + gap;
 
 		// 服务端配置按钮

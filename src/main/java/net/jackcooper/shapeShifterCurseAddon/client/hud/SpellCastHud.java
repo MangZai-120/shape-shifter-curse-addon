@@ -209,6 +209,10 @@ public final class SpellCastHud {
 	}
 
 	private static void render(DrawContext context, float tickDelta) {
+        net.jackcooper.shapeShifterCurseAddon.client.hud.HudScaling.render(context, 4, () -> renderUnscaled(context, tickDelta));
+    }
+
+    private static void renderUnscaled(DrawContext context, float tickDelta) {
 		MinecraftClient client = MinecraftClient.getInstance();
 		State current = state;
 		// ===== 掉包看门狗：校准包每 20t 一发，静默超 45t（且不在退场动画中）→ 会话已死，直接清 =====

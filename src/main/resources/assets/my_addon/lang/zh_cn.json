@@ -1942,5 +1942,7 @@
   "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_mana_capacity_2.description": "解锁魔力系统后生效。最终魔力上限增加50点，替代Ⅰ级，不受进化使魔的基础容量倍率影响。魔力护幕仍在魔力达到上限的50%时生效。",
   "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_permeable_field_1.description": "解锁Buff免疫后生效。允许速度、急迫和隐身通过免疫，效果等级统一为Ⅰ级，持续时间保留正常药水时长。其余免疫和火焰免疫保留。",
   "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_permeable_field_2.description": "解锁Buff免疫后生效。在Ⅰ级基础上额外允许力量、水下呼吸和夜视，效果等级统一为Ⅰ级，持续时间保留正常药水时长。替代Ⅰ级，其余免疫和火焰免疫保留。",
-  "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_potion_charms.description": "解锁炼药能力后，可以用纸分别与闪烁的西瓜片、发酵蛛眼、蜘蛛眼制作治疗、伤害、剧毒符纸，每次消耗5点魔力。使用符纸也需要炼药能力，使用冷却1秒。"
+  "perk.ssc_addon.upgrade_familiar_fox.familiar_fox_potion_charms.description": "解锁炼药能力后，可以用纸分别与闪烁的西瓜片、发酵蛛眼、蜘蛛眼制作治疗、伤害、剧毒符纸，每次消耗5点魔力。使用符纸也需要炼药能力，使用冷却1秒。",
+  "text.ssc_addon.bar_editor.scale": "缩放：%s%%",
+  "text.ssc_addon.bar_editor.item_store": "SSC储物槽"
 }
