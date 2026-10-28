@@ -1974,5 +1974,7 @@
   "text.ssc_addon.book.player.ownership": "承载能力随玩家成长",
   "text.ssc_addon.book.upgrade_effect": "升级解锁槽位与恢复",
   "text.ssc_addon.book.player.short": "玩家施法 %s级",
-  "text.ssc_addon.book.player.exp_label": "施法经验"
+  "text.ssc_addon.book.player.exp_label": "施法经验",
+  "text.ssc_addon.bar_editor.scale": "缩放：%s%%",
+  "text.ssc_addon.bar_editor.item_store": "SSC储物槽"
 }

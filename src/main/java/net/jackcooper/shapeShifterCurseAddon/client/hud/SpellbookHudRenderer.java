@@ -19,6 +19,23 @@ import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
 /** Three equal vanilla iron slots. The independent stability bar owns all cost/risk information. */
 @Environment(EnvType.CLIENT)
 public class SpellbookHudRenderer implements HudRenderCallback {
+    /** Includes text that extends past the frame, so every zoom level remains draggable and visible. */
+    public static int[] hudAnchor() {
+        var mc=MinecraftClient.getInstance();var cfg=SSCAddonConfig.client();
+        var p=UIPositionUtils.getCorrectPosition(cfg.spellbookHudPosType,cfg.spellbookHudPosOffsetX,cfg.spellbookHudPosOffsetY);
+        return new int[]{clampX(p.getLeft(),mc.getWindow().getScaledWidth()),clampY(p.getRight(),mc.getWindow().getScaledHeight())};
+    }
+    public static HudScaleGeometry.Box scaleBounds() {
+        var mc=MinecraftClient.getInstance();int[] a=hudAnchor();
+        int left=a[0]+ORIGIN_X,right=left+WIDTH;
+        var book=mc.player==null?ItemStack.EMPTY:SpellcastClient.getEquippedBook();
+        if(mc.world!=null && book!=null && !book.isEmpty() && SpellbookData.getSlotCount(book)>0){
+            int selected=Math.max(0,Math.min(SpellcastClient.getSelectedSlot(),SpellbookData.getSlotCount(book)-1));
+            var snap=snapshotOf(mc,book,selected);int nameW=mc.textRenderer.getWidth(snap.label());
+            if(nameW>0){int x=Math.max(3,Math.min(a[0]+CENTER_X-nameW/2,mc.getWindow().getScaledWidth()-nameW-3));left=Math.min(left,x-3);right=Math.max(right,x+nameW+3);}
+        }
+        return new HudScaleGeometry.Box(left,a[1]+0,right-left,HEIGHT);
+    }
     public static final int DEFAULT_X = 26;
     public static final int DEFAULT_Y = -60;
     public static final int SLOT_SIZE = 24;
@@ -119,6 +136,10 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 
     @Override
     public void onHudRender(DrawContext context, float tickDelta) {
+        net.jackcooper.shapeShifterCurseAddon.client.hud.HudScaling.render(context, 3, () -> renderUnscaled(context, tickDelta));
+    }
+
+    private void renderUnscaled(DrawContext context, float tickDelta) {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null || mc.world == null || mc.options.hudHidden
                 || !SSCAddonConfig.client().showSpellbookHud) return;

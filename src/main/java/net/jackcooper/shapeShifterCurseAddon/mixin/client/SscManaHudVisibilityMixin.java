@@ -14,6 +14,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class SscManaHudVisibilityMixin {
     @Inject(method = "render", at = @At("HEAD"), cancellable = true, remap = false)
     private void ssca$hideManaHud(DrawContext context, float tickDelta, CallbackInfo ci) {
-        if (!SSCAddonConfig.client().showManaBar) ci.cancel();
+        var config=SSCAddonConfig.client();
+        boolean visible=((Object)this) instanceof InstinctBarLikeManaBar
+                ? config.showInstinctBar : config.showManaBar;
+        if (!visible) ci.cancel();
     }
 }

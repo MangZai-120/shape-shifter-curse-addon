@@ -1974,5 +1974,7 @@
   "text.ssc_addon.book.player.ownership": "Capacity grows with you",
   "text.ssc_addon.book.upgrade_effect": "Unlock slots and recovery",
   "text.ssc_addon.book.player.short": "Casting level %s",
-  "text.ssc_addon.book.player.exp_label": "Casting XP"
+  "text.ssc_addon.book.player.exp_label": "Casting XP",
+  "text.ssc_addon.bar_editor.scale": "Scale: %s%%",
+  "text.ssc_addon.bar_editor.item_store": "SSC stored items"
 }

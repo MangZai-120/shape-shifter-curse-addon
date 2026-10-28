@@ -52,6 +52,10 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 
 	@Override
 	public void onHudRender(DrawContext context, float tickDelta) {
+        net.jackcooper.shapeShifterCurseAddon.client.hud.HudScaling.render(context, 2, () -> renderUnscaled(context, tickDelta));
+    }
+
+    private void renderUnscaled(DrawContext context, float tickDelta) {
 		PlayerEntity player = mc.player;
 		if (player != lastPlayer || mc.world != lastWorld) {
 			trackedMaxValues.clear();

@@ -95,6 +95,9 @@ public final class NeoClient implements ClientModInitializer {
         if(cfg.showDisintegrationDebugBar)NeoStabilityHud.draw(c,mc.textRenderer,hud,8,8,Math.min(NeoStabilityHud.WIDTH,mc.getWindow().getScaledWidth()-16),System.nanoTime()/50_000_000.0);
     }
     public static void renderPixelBarBeforeChat(DrawContext c,float delta){
+        net.jackcooper.shapeShifterCurseAddon.client.hud.HudScaling.render(c,6,()->renderPixelBarUnscaled(c,delta));
+    }
+    private static void renderPixelBarUnscaled(DrawContext c,float delta){
         var mc=MinecraftClient.getInstance();if(mc.player==null||mc.world==null||mc.options.hudHidden||!hud.getBoolean("Visible"))return;
         var cfg=net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig.client();if(!cfg.showNeoStabilityBar)return;
         int[] pos=NeoStabilityBar.position(cfg.neoStabilityBarPosType,cfg.neoStabilityBarPosOffsetX,cfg.neoStabilityBarPosOffsetY,mc.getWindow().getScaledWidth(),mc.getWindow().getScaledHeight());NeoStabilityBar.draw(c,hud,pos[0],pos[1]);

@@ -76,6 +76,10 @@ public abstract class SimpleResourceBarRenderer implements net.fabricmc.fabric.a
 
 	@Override
 	public void onHudRender(DrawContext context, float tickDelta) {
+        net.jackcooper.shapeShifterCurseAddon.client.hud.HudScaling.render(context, 1, () -> renderUnscaled(context, tickDelta));
+    }
+
+    private void renderUnscaled(DrawContext context, float tickDelta) {
 		if (MC.options.hudHidden || MC.player == null) return;
 		PlayerEntity player = MC.player;
 

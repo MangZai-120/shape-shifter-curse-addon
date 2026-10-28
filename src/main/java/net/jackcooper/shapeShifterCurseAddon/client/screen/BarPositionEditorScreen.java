@@ -25,6 +25,7 @@ import net.jackcooper.shapeShifterCurseAddon.client.hud.SpellbookHudRenderer;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Arrays;
+import net.jackcooper.shapeShifterCurseAddon.client.hud.HudScaling;
 import java.util.function.IntConsumer;
 
 /**
@@ -76,6 +77,7 @@ public class BarPositionEditorScreen extends Screen {
     private static final int MG_W = 52, MG_H = 24, MG_ORIGIN_DX = 6;
 
     private static final int DRAG_MAGIC = 7;
+    private static final int DRAG_ITEM_STORE = 9;
     private static final int DRAG_STABILITY = 8;
     private static final int DRAG_NONE = 0, DRAG_INSTINCT = 1, DRAG_MANA = 2, DRAG_CD = 3, DRAG_SPELLBOOK = 5, DRAG_CHARGE = 6;
 
@@ -97,18 +99,24 @@ public class BarPositionEditorScreen extends Screen {
     private int sbType0, sbX0, sbY0;
     private int chType0, chX0, chY0;
     private boolean chRight0;
+    private int itType, itX, itY, itType0, itX0, itY0;
+    private ButtonWidget itTypeBtn;
+    private OffsetSlider itXSlider, itYSlider;
+    private TextFieldWidget itXField, itYField;
     private int mgType, mgX, mgY, mgType0, mgX0, mgY0;
     private int stType, stX, stY, stType0, stX0, stY0;
     private ButtonWidget stTypeBtn;
     private OffsetSlider stXSlider, stYSlider;
     private TextFieldWidget stXField, stYField;
     // 本能、能量、CD、书栏、蓄力、SSC法术栏、独立稳定度条。
-    private final boolean[] shown = new boolean[7];
-    private final boolean[] shown0 = new boolean[7];
-    private final ButtonWidget[] visibilityButtons = new ButtonWidget[7];
+    private final boolean[] shown = new boolean[8];
+    private final boolean[] shown0 = new boolean[8];
+    private final ButtonWidget[] visibilityButtons = new ButtonWidget[8];
     private ButtonWidget mgTypeBtn;
     private OffsetSlider mgXSlider, mgYSlider;
     private TextFieldWidget mgXField, mgYField;
+    private final int[] scales = new int[shown.length], scales0 = new int[shown.length];
+    private final ScaleSlider[] scaleSliders = new ScaleSlider[shown.length];
     private boolean snapshotTaken = false;
 
     // 防止联动回填时循环触发回调
@@ -154,6 +162,9 @@ public class BarPositionEditorScreen extends Screen {
             maType = maType0 = cfg.manaBarPosType;
             maX = maX0 = cfg.manaBarPosOffsetX;
             maY = maY0 = cfg.manaBarPosOffsetY;
+            itType = itType0 = cfg.itemStorePowerPosType;
+            itX = itX0 = cfg.itemStorePowerPosOffsetX;
+            itY = itY0 = cfg.itemStorePowerPosOffsetY;
             mgType = mgType0 = cfg.magicGUIPosType;
             mgX = mgX0 = cfg.magicGUIPosOffsetX;
             mgY = mgY0 = cfg.magicGUIPosOffsetY;
@@ -203,19 +214,23 @@ public class BarPositionEditorScreen extends Screen {
                 shown[3] = sscCfg.showSpellbookHud;
                 shown[4] = sscCfg.showChargeBar;
                 shown[5] = sscCfg.showSscMagicHud;
+                shown[7] = sscCfg.showSscItemStoreHud;
                 shown[6] = sscCfg.showNeoStabilityBar;
             } else {
                 Arrays.fill(shown, true);
             }
-            System.arraycopy(shown, 0, shown0, 0, shown.length);
+            for(int i=0;i<scales.length;i++)scales[i]=sscCfg==null?100:HudScaling.get(sscCfg,i);
+            System.arraycopy(scales,0,scales0,0,scales.length);
+        System.arraycopy(shown, 0, shown0, 0, shown.length);
             snapshotTaken = true;
         }
 
         // 每次重建只保留当前目标的控件，避免旧输入框继续接收焦点或回调。
+        Arrays.fill(scaleSliders,null);
         Arrays.fill(visibilityButtons, null);
-        inTypeBtn = maTypeBtn = cdTypeBtn = cdSideBtn = sbTypeBtn = chTypeBtn = chSideBtn = mgTypeBtn = stTypeBtn = null;
-        inXSlider = inYSlider = maXSlider = maYSlider = cdXSlider = cdYSlider = sbXSlider = sbYSlider = chXSlider = chYSlider = mgXSlider = mgYSlider = stXSlider = stYSlider = null;
-        inXField = inYField = maXField = maYField = cdXField = cdYField = sbXField = sbYField = chXField = chYField = mgXField = mgYField = stXField = stYField = null;
+        inTypeBtn = maTypeBtn = cdTypeBtn = cdSideBtn = sbTypeBtn = chTypeBtn = chSideBtn = mgTypeBtn = itTypeBtn = stTypeBtn = null;
+        inXSlider = inYSlider = maXSlider = maYSlider = cdXSlider = cdYSlider = sbXSlider = sbYSlider = chXSlider = chYSlider = mgXSlider = mgYSlider = itXSlider = itYSlider = stXSlider = stYSlider = null;
+        inXField = inYField = maXField = maYField = cdXField = cdYField = sbXField = sbYField = chXField = chYField = mgXField = mgYField = itXField = itYField = stXField = stYField = null;
         if (exitMenuOpen) {
             buildExitMenu();
             return;
@@ -228,24 +243,25 @@ public class BarPositionEditorScreen extends Screen {
         final int ctrlH = 11;
         final int typeBtnW = selectedSection() == 2 || selectedSection() == 4 ? 100 : 156, typeBtnH = 13;
         int section = selectedSection();
-        int sectionTop = Math.max(48, height / 2 - 25);
+        int minimumTop = 38 + textRenderer.wrapLines(Text.translatable("text.ssc_addon.bar_editor.select_hint"), width - 56).size() * 10;
+        int sectionTop = Math.max(minimumTop, height / 2 - 25);
         int[] target = selectedBounds();
         if (target != null && panelX - 8 < target[0] + target[2] && panelX + panelW + 8 > target[0]
-                && sectionTop - 8 < target[1] + target[3] && sectionTop + 63 > target[1]) {
-            int above = target[1] - 80, below = target[1] + target[3] + 22;
-            if (above >= 8) sectionTop = above;
-            else if (below + 63 < height - 25) sectionTop = below;
+                && sectionTop - 8 < target[1] + target[3] && sectionTop + 76 > target[1]) {
+            int above = target[1] - 93, below = target[1] + target[3] + 22;
+            if (above >= minimumTop) sectionTop = above;
+            else if (below + 76 <= height - 4) sectionTop = below;
             else panelX = target[0] > width / 2 ? 8 : width - panelW - 8;
         }
         final int contentRight = panelX + panelW;
         panelLeft = panelX - 8;
         panelRight = contentRight + 8;
         panelTop = sectionTop - 8;
-        panelBottom = sectionTop + 63;
+        panelBottom = sectionTop + 76;
         if (section >= 0) {
             buildSection(section, sectionTop, panelX, sliderW, fieldW, rowH, ctrlH, typeBtnW, typeBtnH, contentRight);
             addDrawableChild(ButtonWidget.builder(Text.translatable("text.ssc_addon.bar_editor.reset_current", sectionName(section)), b -> doResetSection(section))
-                    .dimensions(panelX, sectionTop + 43, panelW, 14).build());
+                    .dimensions(panelX, sectionTop + 56, panelW, 14).build());
         }
 
         // 公共操作只占右上角，避免覆盖快捷栏及底部 HUD。
@@ -264,6 +280,7 @@ public class BarPositionEditorScreen extends Screen {
             case DRAG_SPELLBOOK -> 3;
             case DRAG_CHARGE -> 4;
             case DRAG_MAGIC -> 5;
+            case DRAG_ITEM_STORE -> 7;
             case DRAG_STABILITY -> 6;
             default -> -1;
         };
@@ -278,12 +295,14 @@ public class BarPositionEditorScreen extends Screen {
             case 3 -> Text.translatable("text.ssc_addon.bar_editor.spellbook").getString();
             case 4 -> Text.translatable("text.ssc_addon.bar_editor.charge").getString();
             case 6 -> Text.translatable("text.ssc_addon.bar_editor.stability").getString();
+            case 7 -> Text.translatable("text.ssc_addon.bar_editor.item_store").getString();
             default -> Text.translatable("text.ssc_addon.bar_editor.ssc_magic").getString();
         };
     }
 
     /** 重置指定区块（独立重置按钮回调）。 */
     private void doResetSection(int section) {
+        scales[section]=100;
         shown[section] = true;
         switch (section) {
             case 0 -> doResetInstinct();
@@ -292,6 +311,7 @@ public class BarPositionEditorScreen extends Screen {
             case 3 -> doResetSpellbook();
             case 4 -> doResetCharge();
             case 6 -> { stType = 7; stX = 16; stY = -88; onWorkingChanged(); }
+            case 7 -> { itType = 8; itX = -120; itY = 1; onWorkingChanged(); }
             default -> { mgType = DEF_MG_TYPE; mgX = DEF_MG_X; mgY = DEF_MG_Y; onWorkingChanged(); }
         }
     }
@@ -310,6 +330,16 @@ public class BarPositionEditorScreen extends Screen {
                 stXField = addDrawableChild(makeNumField(panelX + sliderW + 4, top + rowH, fieldW, ctrlH, v -> { stX = v; onWorkingChanged(); }));
                 stYSlider = addDrawableChild(new OffsetSlider(panelX, top + rowH * 2, sliderW, ctrlH, "offset_y", stY, v -> { stY = v; onWorkingChanged(); }));
                 stYField = addDrawableChild(makeNumField(panelX + sliderW + 4, top + rowH * 2, fieldW, ctrlH, v -> { stY = v; onWorkingChanged(); }));
+            }
+            case 7 -> {
+                itTypeBtn = addDrawableChild(ButtonWidget.builder(anchorBtnText("item_store", itType), b -> {
+                    itType = itType % 9 + 1;
+                    onWorkingChanged();
+                }).dimensions(panelX, top, typeBtnW, typeBtnH).build());
+                itXSlider = addDrawableChild(new OffsetSlider(panelX, top + rowH, sliderW, ctrlH, "offset_x", itX, v -> { itX = v; onWorkingChanged(); }));
+                itXField = addDrawableChild(makeNumField(panelX + sliderW + 4, top + rowH, fieldW, ctrlH, v -> { itX = v; onWorkingChanged(); }));
+                itYSlider = addDrawableChild(new OffsetSlider(panelX, top + rowH * 2, sliderW, ctrlH, "offset_y", itY, v -> { itY = v; onWorkingChanged(); }));
+                itYField = addDrawableChild(makeNumField(panelX + sliderW + 4, top + rowH * 2, fieldW, ctrlH, v -> { itY = v; onWorkingChanged(); }));
             }
             case 5 -> {
                 mgTypeBtn = addDrawableChild(ButtonWidget.builder(anchorBtnText("ssc_magic", mgType), b -> {
@@ -393,6 +423,7 @@ public class BarPositionEditorScreen extends Screen {
                 addDrawableChild(chYField);
             }
         }
+        scaleSliders[section]=addDrawableChild(new ScaleSlider(panelX,top+rowH*3,200,ctrlH,section));
     }
 
     private Text visibilityText(int section) {
@@ -460,17 +491,22 @@ public class BarPositionEditorScreen extends Screen {
         cfg.manaBarPosType = maType;
         cfg.manaBarPosOffsetX = maX;
         cfg.manaBarPosOffsetY = maY;
+        cfg.itemStorePowerPosType = itType;
+        cfg.itemStorePowerPosOffsetX = itX;
+        cfg.itemStorePowerPosOffsetY = itY;
         cfg.magicGUIPosType = mgType;
         cfg.magicGUIPosOffsetX = mgX;
         cfg.magicGUIPosOffsetY = mgY;
         try {
             SSCAddonClientConfig sscCfg = SSCAddonConfig.client();
+            for(int i=0;i<scales.length;i++)HudScaling.set(sscCfg,i,scales[i]);
             sscCfg.showInstinctBar = shown[0];
             sscCfg.showManaBar = shown[1];
             sscCfg.showCdBar = shown[2];
             sscCfg.showSpellbookHud = shown[3];
             sscCfg.showChargeBar = shown[4];
             sscCfg.showSscMagicHud = shown[5];
+            sscCfg.showSscItemStoreHud = shown[7];
             sscCfg.showNeoStabilityBar = shown[6];
             sscCfg.neoStabilityBarPosType = stType;
             sscCfg.neoStabilityBarPosOffsetX = stX;
@@ -492,9 +528,15 @@ public class BarPositionEditorScreen extends Screen {
     private void syncAllControls() {
         suppressCallbacks = true;
         try {
+            for(int i=0;i<scales.length;i++)if(scaleSliders[i]!=null)scaleSliders[i].setPercent(scales[i]);
             for (int i = 0; i < shown.length; i++) {
                 if (visibilityButtons[i] != null) visibilityButtons[i].setMessage(visibilityText(i));
             }
+            if (itTypeBtn != null) itTypeBtn.setMessage(anchorBtnText("item_store", itType));
+            if (itXSlider != null) itXSlider.setIntValue(itX);
+            if (itYSlider != null) itYSlider.setIntValue(itY);
+            if (itXField != null) itXField.setText(String.valueOf(itX));
+            if (itYField != null) itYField.setText(String.valueOf(itY));
             if (mgTypeBtn != null) mgTypeBtn.setMessage(anchorBtnText("ssc_magic", mgType));
             if (mgXSlider != null) mgXSlider.setIntValue(mgX);
             if (mgYSlider != null) mgYSlider.setIntValue(mgY);
@@ -564,7 +606,9 @@ public class BarPositionEditorScreen extends Screen {
         try {
             AutoConfig.getConfigHolder(SSCAddonClientConfig.class).save();
         } catch (Exception ignored) {}
+        System.arraycopy(scales,0,scales0,0,scales.length);
         System.arraycopy(shown, 0, shown0, 0, shown.length);
+        itType0 = itType; itX0 = itX; itY0 = itY;
         mgType0 = mgType; mgX0 = mgX; mgY0 = mgY;
         stType0 = stType; stX0 = stX; stY0 = stY;
         // 更新快照，避免 close 时又弹确认
@@ -599,6 +643,7 @@ public class BarPositionEditorScreen extends Screen {
 
     /** 仅重置月尘魔法书 HUD（不影响其它条）。 */
     private void doResetSpellbook() {
+        scales[3]=100;
         sbType = DEF_SB_TYPE; sbX = DEF_SB_X; sbY = DEF_SB_Y;
         syncAllControls();
         applyToConfig();
@@ -641,7 +686,9 @@ public class BarPositionEditorScreen extends Screen {
 
     /** 取消时把工作值与配置都还原到进入编辑器时的快照。 */
     private void restoreConfigToSnapshot() {
+        System.arraycopy(scales0,0,scales,0,scales.length);
         System.arraycopy(shown0, 0, shown, 0, shown.length);
+        itType = itType0; itX = itX0; itY = itY0;
         mgType = mgType0; mgX = mgX0; mgY = mgY0;
         stType = stType0; stX = stX0; stY = stY0;
         inType = inType0; inX = inX0; inY = inY0;
@@ -671,6 +718,7 @@ public class BarPositionEditorScreen extends Screen {
         if (selected != DRAG_NONE && mouseX >= panelLeft && mouseX <= panelRight && mouseY >= panelTop && mouseY <= panelBottom) return true;
         if (button == 0) {
             int hit = hitStability(mouseX, mouseY) ? DRAG_STABILITY
+                    : HudScaling.hit(7,mouseX,mouseY) ? DRAG_ITEM_STORE
                     : hitMagic(mouseX, mouseY) ? DRAG_MAGIC
                     : hitChargeBar(mouseX, mouseY) ? DRAG_CHARGE
                     : hitSpellbook(mouseX, mouseY) ? DRAG_SPELLBOOK
@@ -679,8 +727,8 @@ public class BarPositionEditorScreen extends Screen {
                     : hitBar(mouseX, mouseY, false) ? DRAG_INSTINCT : DRAG_NONE;
             if (hit != DRAG_NONE) {
                 selected = dragging = hit;
-                int x = switch (hit) { case DRAG_STABILITY -> stX; case DRAG_MAGIC -> mgX; case DRAG_CHARGE -> chX; case DRAG_SPELLBOOK -> sbX; case DRAG_CD -> cdX; case DRAG_MANA -> maX; default -> inX; };
-                int y = switch (hit) { case DRAG_STABILITY -> stY; case DRAG_MAGIC -> mgY; case DRAG_CHARGE -> chY; case DRAG_SPELLBOOK -> sbY; case DRAG_CD -> cdY; case DRAG_MANA -> maY; default -> inY; };
+                int x = switch (hit) { case DRAG_STABILITY -> stX; case DRAG_ITEM_STORE -> itX; case DRAG_MAGIC -> mgX; case DRAG_CHARGE -> chX; case DRAG_SPELLBOOK -> sbX; case DRAG_CD -> cdX; case DRAG_MANA -> maX; default -> inX; };
+                int y = switch (hit) { case DRAG_STABILITY -> stY; case DRAG_ITEM_STORE -> itY; case DRAG_MAGIC -> mgY; case DRAG_CHARGE -> chY; case DRAG_SPELLBOOK -> sbY; case DRAG_CD -> cdY; case DRAG_MANA -> maY; default -> inY; };
                 beginDrag(mouseX, mouseY, x, y);
                 clearAndInit();
                 return true;
@@ -697,130 +745,22 @@ public class BarPositionEditorScreen extends Screen {
     }
 
     private void beginDrag(double mx, double my, int offX, int offY) {
-        if (dragging == DRAG_STABILITY) {
-            var position = stabilityPos();
-            var anchor = UIPositionUtils.getCorrectPosition(stType, 0, 0);
-            offX = position.getLeft() - anchor.getLeft();
-            offY = position.getRight() - anchor.getRight();
-        } else if (dragging == DRAG_CD) {
-            var position = cdBarPos();
-            var anchor = UIPositionUtils.getCorrectPosition(cdType, 0, 0);
-            offX = position.getLeft() - anchor.getLeft();
-            offY = position.getRight() - anchor.getRight();
-        } else if (dragging == DRAG_CHARGE) {
-            var position = chargeBarPos();
-            var anchor = UIPositionUtils.getCorrectPosition(chType, 0, 0);
-            offX = position.getLeft() - anchor.getLeft();
-            offY = position.getRight() - anchor.getRight();
-        }
-        dragStartMouseX = mx;
-        dragStartMouseY = my;
-        dragStartOffX = offX;
-        dragStartOffY = offY;
+        dragStartMouseX=mx;dragStartMouseY=my;
+        var b=HudScaling.bounds(dragSection());dragBoxX=b.x();dragBoxY=b.y();
+        dragStartOffX=offX;dragStartOffY=offY;
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (dragging != DRAG_NONE) {
-            if (dragging == DRAG_STABILITY) {
-                var a = UIPositionUtils.getCorrectPosition(stType, 0, 0);
-                int x = a.getLeft() + dragStartOffX + (int) Math.round(mouseX - dragStartMouseX);
-                int y = a.getRight() + dragStartOffY + (int) Math.round(mouseY - dragStartMouseY);
-                if (!hasShiftDown()) { x = Math.round(x / (float) GRID) * GRID; y = Math.round(y / (float) GRID) * GRID; }
-                x = Math.max(0, Math.min(Math.max(0, width - NeoStabilityBar.WIDTH), x));
-                y = Math.max(0, Math.min(Math.max(0, height - NeoStabilityBar.HEIGHT), y));
-                stX = clampOffset(x - a.getLeft()); stY = clampOffset(y - a.getRight());
-                onWorkingChanged(); return true;
-            }
-            if (dragging == DRAG_MAGIC) {
-                var a = UIPositionUtils.getCorrectPosition(mgType, 0, 0);
-                int x = a.getLeft() + dragStartOffX + (int) Math.round(mouseX - dragStartMouseX);
-                int y = a.getRight() + dragStartOffY + (int) Math.round(mouseY - dragStartMouseY);
-                if (!hasShiftDown()) {
-                    x = Math.round(x / (float) GRID) * GRID;
-                    y = Math.round(y / (float) GRID) * GRID;
-                }
-                x = Math.max(0, Math.min(Math.max(0, width - MG_W), x + MG_ORIGIN_DX)) - MG_ORIGIN_DX;
-                y = Math.max(0, Math.min(Math.max(0, height - MG_H), y));
-                mgX = clampOffset(x - a.getLeft());
-                mgY = clampOffset(y - a.getRight());
-                onWorkingChanged();
-                return true;
-            }
-            if (dragging == DRAG_SPELLBOOK || dragging == DRAG_CHARGE) {
-                boolean charge = dragging == DRAG_CHARGE;
-                int curType = charge ? chType : sbType;
-                int dx = (int) Math.round(mouseX - dragStartMouseX);
-                int dy = (int) Math.round(mouseY - dragStartMouseY);
-                Pair<Integer, Integer> a = UIPositionUtils.getCorrectPosition(curType, 0, 0);
-                int scrX = a.getLeft() + dragStartOffX + dx;
-                int scrY = a.getRight() + dragStartOffY + dy;
-                guideVX = null;
-                guideHY = null;
-                if (!hasShiftDown()) {
-                    scrX = Math.round(scrX / (float) GRID) * GRID;
-                    scrY = Math.round(scrY / (float) GRID) * GRID;
-                }
-                int barW = charge ? CH_W : SB_W;
-                int barH = charge ? CH_H : SB_H;
-                if (charge) {
-                    // 蓄力条 pos 即贴图左上，直接 clamp 即可
-                    scrX = clampScreenX(scrX, barW);
-                    scrY = clampScreenY(scrY, barH);
-                } else {
-                    // 三个等大槽与下方名称使用与正式 HUD 相同的完整包围盒。
-                    scrX = clampScreenX(scrX + SB_ORIGIN_DX, barW) - SB_ORIGIN_DX;
-                    scrY = clampScreenY(scrY + SB_ORIGIN_DY, barH) - SB_ORIGIN_DY;
-                }
-                if (charge) {
-                    // 偏移语义与渲染器一致（CD 条同式）：左缘贴锚点；贴右侧时镜像换算（拖拽 x 即面板左上角 x）
-                    chX = chRight ? clampOffset(width - scrX - CH_W - a.getLeft())
-                            : clampOffset(scrX - a.getLeft());
-                    chY = clampOffset(scrY - a.getRight());
-                } else {
-                    sbX = clampOffset(scrX - a.getLeft());
-                    sbY = clampOffset(scrY - a.getRight());
-                }
-                syncAllControls();
-                applyToConfig();
-                return true;
-            }
-            boolean mana = dragging == DRAG_MANA;
-            boolean cd = dragging == DRAG_CD;
-            boolean cdLike = cd;
-            int curType = cdLike ? cdType : (mana ? maType : inType);
-            int dx = (int) Math.round(mouseX - dragStartMouseX);
-            int dy = (int) Math.round(mouseY - dragStartMouseY);
-            // 锚点屏幕坐标（offset=0 时）
-            Pair<Integer, Integer> anchor = UIPositionUtils.getCorrectPosition(curType, 0, 0);
-            int scrX = anchor.getLeft() + dragStartOffX + dx;
-            int scrY = anchor.getRight() + dragStartOffY + dy;
-            guideVX = null;
-            guideHY = null;
-            if (!hasShiftDown()) {
-                // 默认：对齐吸附（屏幕中线 / 边缘 / 另一条），失败则轻微网格吸附；按住 Shift 则完全自由
-                int[] sx = snapAxis(scrX, mana, cdLike, true);
-                scrX = sx[0];
-                if (sx[1] != Integer.MIN_VALUE) guideVX = sx[1];
-                int[] sy = snapAxis(scrY, mana, cdLike, false);
-                scrY = sy[0];
-                if (sy[1] != Integer.MIN_VALUE) guideHY = sy[1];
-            }
-            // 安全边界：条至少有一部分留在屏幕内
-            int barW = cdLike ? CD_W : BAR_W;
-            int barH = cdLike ? SkillCooldownBarRenderer.PANEL_HEIGHT : BAR_H;
-            scrX = cdLike ? Math.max(0, Math.min(Math.max(0, width - barW), scrX)) : clampScreenX(scrX, barW);
-            scrY = clampScreenY(scrY, barH);
-            int nx = clampOffset(scrX - anchor.getLeft());
-            int ny = clampOffset(scrY - anchor.getRight());
-            if (cd) { cdX = cdRight ? clampOffset(width - scrX - CD_W - anchor.getLeft()) : nx; cdY = ny; }
-            else if (mana) { maX = nx; maY = ny; }
-            else { inX = nx; inY = ny; }
-            syncAllControls();
-            applyToConfig();
-            return true;
-        }
-        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        if(dragging==DRAG_NONE)return super.mouseDragged(mouseX,mouseY,button,deltaX,deltaY);
+        int section=dragSection();var bounds=HudScaling.bounds(section);
+        int x=dragBoxX+(int)Math.round(mouseX-dragStartMouseX),y=dragBoxY+(int)Math.round(mouseY-dragStartMouseY);
+        guideVX=guideHY=null;
+        if(!hasShiftDown()){x=snapScaled(x,bounds.width(),width,true,section);y=snapScaled(y,bounds.height(),height,false,section);}
+        x=Math.max(0,Math.min(x,width-bounds.width()));y=Math.max(0,Math.min(y,height-bounds.height()));
+        int[] offsets=HudScaling.offsets(section,x,y);int nx=clampOffset(offsets[0]),ny=clampOffset(offsets[1]);
+        switch(section){case 0->{inX=nx;inY=ny;}case 1->{maX=nx;maY=ny;}case 2->{cdX=nx;cdY=ny;}case 3->{sbX=nx;sbY=ny;}case 4->{chX=nx;chY=ny;}case 5->{mgX=nx;mgY=ny;}case 7->{itX=nx;itY=ny;}case 6->{stX=nx;stY=ny;}}
+        onWorkingChanged();return true;
     }
 
     @Override
@@ -850,6 +790,7 @@ public class BarPositionEditorScreen extends Screen {
                 default -> { return super.keyPressed(keyCode, scanCode, modifiers); }
             }
             if (selected == DRAG_STABILITY) { stX = clampOffset(stX + dx); stY = clampOffset(stY + dy); }
+            else if (selected == DRAG_ITEM_STORE) { itX = clampOffset(itX + dx); itY = clampOffset(itY + dy); }
             else if (selected == DRAG_MAGIC) { mgX = clampOffset(mgX + dx); mgY = clampOffset(mgY + dy); }
             else if (selected == DRAG_SPELLBOOK) { sbX = clampOffset(sbX + dx); sbY = clampOffset(sbY + dy); }
             else if (selected == DRAG_CHARGE) { chX = clampOffset(chX + (chRight ? -dx : dx)); chY = clampOffset(chY + dy); }
@@ -924,19 +865,12 @@ public class BarPositionEditorScreen extends Screen {
 
     /** 判断鼠标是否落在本能/能量条预览的热区（比条本体略大，便于点选）。 */
     private boolean hitBar(double mouseX, double mouseY, boolean mana) {
-        Pair<Integer, Integer> pos = barPos(mana);
-        int x = pos.getLeft();
-        int y = pos.getRight();
-        return mouseX >= x - 2 && mouseX <= x + BAR_W + 2 && mouseY >= y - 3 && mouseY <= y + BAR_H + 3;
+        return HudScaling.hit(mana?1:0,mouseX,mouseY);
     }
 
     /** 判断鼠标是否落在 CD 条预览的热区。 */
     private boolean hitCdBar(double mouseX, double mouseY) {
-        Pair<Integer, Integer> pos = cdBarPos();
-        int x = pos.getLeft();
-        int y = pos.getRight();
-        return mouseX >= x - 2 && mouseX <= x + CD_W + 2
-            && mouseY >= y - 2 && mouseY <= y + SkillCooldownBarRenderer.PANEL_HEIGHT + 2;
+        return HudScaling.hit(2,mouseX,mouseY);
     }
 
     /** 蓄力条屏幕坐标（与 SpellCastHud 同式：左缘贴锚点 + clamp 防出屏；贴右侧时镜像换算）。 */
@@ -950,11 +884,7 @@ public class BarPositionEditorScreen extends Screen {
 
     /** 判断鼠标是否落在蓄力条预览的热区。 */
     private boolean hitChargeBar(double mouseX, double mouseY) {
-        Pair<Integer, Integer> pos = chargeBarPos();
-        int x = pos.getLeft();
-        int y = pos.getRight();
-        return mouseX >= x - 2 && mouseX <= x + CH_W + 2
-            && mouseY >= y - 2 && mouseY <= y + CH_H + 2;
+        return HudScaling.hit(4,mouseX,mouseY);
     }
 
     private Pair<Integer, Integer> barPos(boolean mana) {
@@ -1003,6 +933,7 @@ public class BarPositionEditorScreen extends Screen {
         drawChargeBarHandle(ctx, mouseX, mouseY);
 
         drawMagicHandle(ctx, mouseX, mouseY);
+        drawItemStoreHandle(ctx, mouseX, mouseY);
         drawStabilityHandle(ctx, mouseX, mouseY);
 
         if (exitMenuOpen) {
@@ -1030,8 +961,11 @@ public class BarPositionEditorScreen extends Screen {
 
         // 标题 + 提示
         ctx.drawCenteredTextWithShadow(this.textRenderer, this.title, width / 2, 12, 0xFFFFFF);
-        ctx.drawCenteredTextWithShadow(this.textRenderer,
-                Text.translatable("text.ssc_addon.bar_editor.select_hint"), width / 2, 26, 0xFFAAAAAA);
+        int hintY = 26;
+        for (var line : textRenderer.wrapLines(Text.translatable("text.ssc_addon.bar_editor.select_hint"), width - 56)) {
+            ctx.drawTextWithShadow(textRenderer, line, (width - textRenderer.getWidth(line)) / 2, hintY, 0xFFAAAAAA);
+            hintY += 10;
+        }
     }
 
     private Pair<Integer, Integer> stabilityPos() {
@@ -1040,25 +974,15 @@ public class BarPositionEditorScreen extends Screen {
     }
 
     private boolean hitStability(double x, double y) {
-        var p = stabilityPos();
-        return x >= p.getLeft() - 2 && x <= p.getLeft() + NeoStabilityBar.WIDTH + 2
-                && y >= p.getRight() - 2 && y <= p.getRight() + NeoStabilityBar.HEIGHT + 2;
+        return HudScaling.hit(6,x,y);
     }
 
     private int[] selectedBounds() {
-        Pair<Integer, Integer> p;
-        return switch (selected) {
-            case DRAG_INSTINCT, DRAG_MANA -> { p = barPos(selected == DRAG_MANA); yield new int[]{p.getLeft(), p.getRight(), BAR_W, BAR_H}; }
-            case DRAG_CD -> { p = cdBarPos(); yield new int[]{p.getLeft(), p.getRight(), CD_W, SkillCooldownBarRenderer.PANEL_HEIGHT}; }
-            case DRAG_SPELLBOOK -> { p = spellbookPos(); yield new int[]{p.getLeft() + SB_ORIGIN_DX, p.getRight() + SB_ORIGIN_DY, SB_W, SB_H}; }
-            case DRAG_CHARGE -> { p = chargeBarPos(); yield new int[]{p.getLeft(), p.getRight(), CH_W, CH_H}; }
-            case DRAG_MAGIC -> { p = magicPos(); yield new int[]{p.getLeft() + MG_ORIGIN_DX, p.getRight(), MG_W, MG_H}; }
-            case DRAG_STABILITY -> { p = stabilityPos(); yield new int[]{p.getLeft(), p.getRight(), NeoStabilityBar.WIDTH, NeoStabilityBar.HEIGHT}; }
-            default -> null;
-        };
+        int section=selectedSection();if(section<0)return null;var b=HudScaling.bounds(section);
+        return new int[]{b.x(),b.y(),b.width(),b.height()};
     }
 
-    private void drawStabilityHandle(DrawContext ctx, int mouseX, int mouseY) {
+    private void drawStabilityHandleUnscaled(DrawContext ctx, int mouseX, int mouseY) {
         var p = stabilityPos(); int x = p.getLeft(), y = p.getRight();
         var n = net.ssca.neomagic.client.NeoClient.hud;
         if (!n.contains("S")) {
@@ -1077,12 +1001,10 @@ public class BarPositionEditorScreen extends Screen {
     }
 
     private boolean hitMagic(double mx, double my) {
-        var p = magicPos();
-        return mx >= p.getLeft() + MG_ORIGIN_DX - 2 && mx <= p.getLeft() + MG_ORIGIN_DX + MG_W + 2
-                && my >= p.getRight() - 2 && my <= p.getRight() + MG_H + 2;
+        return HudScaling.hit(5,mx,my);
     }
 
-    private void drawMagicHandle(DrawContext ctx, int mouseX, int mouseY) {
+    private void drawMagicHandleUnscaled(DrawContext ctx, int mouseX, int mouseY) {
         var p = magicPos();
         int ax = p.getLeft(), y = p.getRight(), x = ax + MG_ORIGIN_DX;
         ctx.fill(ax + 6, y + 4, ax + 22, y + 20, 0x8050C8EF);
@@ -1106,7 +1028,7 @@ public class BarPositionEditorScreen extends Screen {
      * 能量 / 本能条的可拖拽手柄：半透明示意填充 + 边框 + 标签。
      * 真实 HUD 已把当前形态有的条画出；手柄叠在其上作为拖拽锚点，即便当前形态不显示某条也能看到位置。
      */
-    private void drawBarHandle(DrawContext ctx, int mouseX, int mouseY, boolean mana) {
+    private void drawBarHandleUnscaled(DrawContext ctx, int mouseX, int mouseY, boolean mana) {
         Pair<Integer, Integer> pos = barPos(mana);
         int x = pos.getLeft();
         int y = pos.getRight();
@@ -1134,7 +1056,7 @@ public class BarPositionEditorScreen extends Screen {
         }
     }
 
-    private void drawCdBarHandle(DrawContext ctx, int mouseX, int mouseY) {
+    private void drawCdBarHandleUnscaled(DrawContext ctx, int mouseX, int mouseY) {
         Pair<Integer, Integer> pos = cdBarPos();
         int x = pos.getLeft();
         int y = pos.getRight();
@@ -1150,7 +1072,7 @@ public class BarPositionEditorScreen extends Screen {
         int border = active ? 0xFFFFEE00 : (sel ? 0xFF00FF88 : (hovered ? 0xFFFFFFAA : 0xFF000000));
         ctx.drawBorder(x - 1, y - 1, CD_W + 2, columnHeight + 2, border);
         Text label = Text.translatable("text.ssc_addon.bar_editor.cd_panel");
-        if (hovered && !active) ctx.drawTooltip(this.textRenderer, label, mouseX, mouseY);
+        if (hovered && !active) HudScaling.tooltip(ctx,this.textRenderer, label, mouseX, mouseY);
         // 选中/拖拽时显示主条偏移坐标
         if (sel || active) {
             ctx.drawTextWithShadow(this.textRenderer, Text.literal("(" + cdX + ", " + cdY + ")"),
@@ -1167,14 +1089,11 @@ public class BarPositionEditorScreen extends Screen {
 
     /** 判断鼠标是否落在月尘魔法书 HUD 预览包围盒热区。 */
     private boolean hitSpellbook(double mouseX, double mouseY) {
-        Pair<Integer, Integer> pos = spellbookPos();
-        int x = pos.getLeft() + SB_ORIGIN_DX;
-        int y = pos.getRight() + SB_ORIGIN_DY;
-        return mouseX >= x - 2 && mouseX <= x + SB_W + 2 && mouseY >= y - 3 && mouseY <= y + SB_H + 3;
+        return HudScaling.hit(3,mouseX,mouseY);
     }
 
     /** 三槽实图与名称共用拖动区域，稳定度条单独调整。 */
-    private void drawSpellbookHandle(DrawContext ctx, int mouseX, int mouseY) {
+    private void drawSpellbookHandleUnscaled(DrawContext ctx, int mouseX, int mouseY) {
         Pair<Integer, Integer> pos = spellbookPos();
         int ax = pos.getLeft(), ay = pos.getRight();       // 锚点(baseX,baseY)
         int x = ax + SB_ORIGIN_DX, y = ay + SB_ORIGIN_DY;  // 包围盒左上
@@ -1193,7 +1112,7 @@ public class BarPositionEditorScreen extends Screen {
     }
 
     /** 法术蓄力条可拖拽手柄：真实贴图示意 + 边框 + 标签（施法时才会弹出，编辑器常驻显示位置）。 */
-    private void drawChargeBarHandle(DrawContext ctx, int mouseX, int mouseY) {
+    private void drawChargeBarHandleUnscaled(DrawContext ctx, int mouseX, int mouseY) {
         Pair<Integer, Integer> pos = chargeBarPos();
         int x = pos.getLeft();
         int y = pos.getRight();
@@ -1205,7 +1124,7 @@ public class BarPositionEditorScreen extends Screen {
         int border = active ? 0xFFFFEE00 : (sel ? 0xFF00FF88 : (hovered ? 0xFFFFFFAA : 0xFF000000));
         ctx.drawBorder(x - 1, y - 1, CH_W + 2, CH_H + 2, border);
         Text label = Text.translatable("text.ssc_addon.bar_editor.charge");
-        if (hovered && !active) ctx.drawTooltip(this.textRenderer, label, mouseX, mouseY);
+        if (hovered && !active) HudScaling.tooltip(ctx,this.textRenderer, label, mouseX, mouseY);
         if (sel || active) {
             ctx.drawTextWithShadow(this.textRenderer, Text.literal("(" + chX + ", " + chY + ")"),
                     x, y + CH_H + 2, 0xFFFFFFFF);
@@ -1293,5 +1212,70 @@ public class BarPositionEditorScreen extends Screen {
             if (suppressCallbacks) return;
             onChange.accept(getIntValue());
         }
+    }
+    private void drawHudPreview(DrawContext ctx,int section,Runnable preview) {
+        if(shown[section]) {
+            HudScaling.render(ctx,section,preview);
+            return;
+        }
+        var box=HudScaling.bounds(section);
+        ctx.drawBorder(box.x(),box.y(),box.width(),box.height(),0x66718088);
+        Text label=Text.literal(sectionName(section)).append(" (").append(visibilityText(section)).append(")");
+        ctx.drawTextWithShadow(textRenderer,label,box.x(),Math.max(0,box.y()-11),0xFF86959D);
+    }
+
+    private void drawBarHandle(DrawContext ctx,int mouseX,int mouseY, boolean mana) {
+        drawHudPreview(ctx,mana?1:0,()->drawBarHandleUnscaled(ctx,mouseX,mouseY,mana));
+    }
+    private void drawCdBarHandle(DrawContext ctx,int mouseX,int mouseY) {
+        drawHudPreview(ctx,2,()->drawCdBarHandleUnscaled(ctx,mouseX,mouseY));
+    }
+    private void drawSpellbookHandle(DrawContext ctx,int mouseX,int mouseY) {
+        drawHudPreview(ctx,3,()->drawSpellbookHandleUnscaled(ctx,mouseX,mouseY));
+    }
+    private void drawChargeBarHandle(DrawContext ctx,int mouseX,int mouseY) {
+        drawHudPreview(ctx,4,()->drawChargeBarHandleUnscaled(ctx,mouseX,mouseY));
+    }
+    private void drawMagicHandle(DrawContext ctx,int mouseX,int mouseY) {
+        drawHudPreview(ctx,5,()->drawMagicHandleUnscaled(ctx,mouseX,mouseY));
+    }
+    private void drawStabilityHandle(DrawContext ctx,int mouseX,int mouseY) {
+        drawHudPreview(ctx,6,()->drawStabilityHandleUnscaled(ctx,mouseX,mouseY));
+    }
+
+
+    private void drawItemStoreHandle(DrawContext ctx,int mouseX,int mouseY) {
+        drawHudPreview(ctx,7,()->{
+            var b=HudScaling.raw(7);
+            for(int y=0;y<b.height()/20;y++)for(int x=0;x<b.width()/20;x++)
+                ctx.drawTexture(VANILLA_WIDGETS,b.x()+x*20,b.y()+y*20,24,22,29,24);
+            int color=selected==DRAG_ITEM_STORE?0xFF00FF88:HudScaling.hit(7,mouseX,mouseY)?0xFFFFFFAA:0xFF536169;
+            ctx.drawBorder(b.x()-1,b.y()-1,b.width()+2,b.height()+2,color);
+            Text label=Text.translatable("text.ssc_addon.bar_editor.item_store");
+            if(!shown[7])label=label.copy().append(" (").append(visibilityText(7)).append(")");
+            ctx.drawTextWithShadow(textRenderer,label,b.x(),b.y()-11,0xFF50C8EF);
+        });
+    }
+
+    private class ScaleSlider extends SliderWidget {
+        private final int section;
+        ScaleSlider(int x,int y,int w,int h,int section) {
+            super(x,y,w,h,Text.empty(),(scales[section]-50)/150.0);this.section=section;updateMessage();
+        }
+        int percent(){return (int)Math.round(50+value*150);}
+        void setPercent(int p){value=(p-50)/150.0;updateMessage();}
+        @Override protected void updateMessage(){setMessage(Text.translatable("text.ssc_addon.bar_editor.scale",percent()));}
+        @Override protected void applyValue(){if(!suppressCallbacks){scales[section]=percent();onWorkingChanged();}}
+    }
+    private int dragBoxX,dragBoxY;
+    private int dragSection(){return switch(dragging){case DRAG_INSTINCT->0;case DRAG_MANA->1;case DRAG_CD->2;case DRAG_SPELLBOOK->3;case DRAG_CHARGE->4;case DRAG_MAGIC->5;case DRAG_ITEM_STORE->7;case DRAG_STABILITY->6; default->-1;};}
+    private int snapScaled(int value,int extent,int screen,boolean xAxis,int section){
+        int best=value,distance=SNAP_DIST+1,guide=Integer.MIN_VALUE;
+        java.util.List<int[]> candidates=new java.util.ArrayList<>();
+        candidates.add(new int[]{0,0});candidates.add(new int[]{screen-extent,screen});candidates.add(new int[]{(screen-extent)/2,screen/2});
+        for(int i=0;i<scales.length;i++)if(i!=section){var b=HudScaling.bounds(i);int p=xAxis?b.x():b.y(),n=xAxis?b.width():b.height();candidates.add(new int[]{p,p});candidates.add(new int[]{p+n-extent,p+n});candidates.add(new int[]{p+(n-extent)/2,p+n/2});}
+        for(int[] c:candidates)if(Math.abs(value-c[0])<distance){distance=Math.abs(value-c[0]);best=c[0];guide=c[1];}
+        if(distance<=SNAP_DIST){if(xAxis)guideVX=guide;else guideHY=guide;return best;}
+        return Math.round(value/(float)GRID)*GRID;
     }
 }

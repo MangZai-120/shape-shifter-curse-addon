@@ -11,6 +11,13 @@ import me.shedaniel.autoconfig.annotation.ConfigEntry;
 @Config(name = "ssc_addon_client")
 public class SSCAddonClientConfig implements ConfigData {
 
+	@ConfigEntry.Gui.Excluded
+	public boolean showSscItemStoreHud = true;
+
+	/** Stable HUD IDs -> local percentage; missing old-config entries keep the current 100% design. */
+	@ConfigEntry.Gui.Excluded
+	public java.util.Map<String, Integer> hudScalePercent = new java.util.HashMap<>();
+
 	@ConfigEntry.Gui.Tooltip
 	@ConfigEntry.Gui.EnumHandler(option = ConfigEntry.Gui.EnumHandler.EnumDisplayOption.BUTTON)
 	public net.jackcooper.shapeShifterCurseAddon.client.particle.ParticleAvoidance.Strength firstPersonParticleAvoidance =
