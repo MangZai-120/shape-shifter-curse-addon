@@ -53,7 +53,7 @@ public final class DomainManager {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(DomainManager::tick);
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> remove(handler.player));
+		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> remove(handler.player));
 		ServerLifecycleEvents.SERVER_STOPPED.register(server -> FIELDS.clear());
 		// 方块跨界隔离（2026-09-21 需求）：领域内无法干涉外界方块（破坏/放置/右键/攻击），
 		// 外界同样无法干涉领域内方块。玩家眼睛坐标 ↔ 目标方块中心分属壳内外即拒绝。

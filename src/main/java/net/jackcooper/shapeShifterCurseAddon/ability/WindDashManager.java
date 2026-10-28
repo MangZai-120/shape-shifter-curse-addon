@@ -510,6 +510,6 @@ public final class WindDashManager {
     }
 
     public static void onPlayerDisconnect(ServerPlayerEntity player) {
-        STATES.remove(player.getUuid());
+        clear(player);
     }
 }

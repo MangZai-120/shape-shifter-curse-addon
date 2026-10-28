@@ -433,6 +433,27 @@ public class LaserBeamEntity extends Entity {
 		}
 	}
 
+    @Override
+    public void remove(RemovalReason reason) {
+        if (!isRemoved() && getWorld() instanceof ServerWorld world) {
+            ServerPlayerEntity owner = getOwner(world);
+            var manager = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager.get(world);
+            var cast = ownerUuid == null ? null : manager.control(ownerUuid,
+                    net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.SKILL_ID);
+            if (!isEnhanced() && cast != null && cast.castId == cooldownCastId) {
+                manager.interrupt(cooldownCastId, world.getServer().getOverworld().getTime());
+                if (owner != null) {
+                    owner.removeStatusEffect(SscAddon.ROOTED);
+                    syncLaserStateDedup(owner, 0);
+                }
+            }
+            super.remove(reason);
+            net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.onBeamRemoved(this, owner);
+            return;
+        }
+        super.remove(reason);
+    }
+
 	// ==================== 取消/清理 ====================
 	public void interruptControl(ServerPlayerEntity owner) {
 		cancelNoCd(owner);

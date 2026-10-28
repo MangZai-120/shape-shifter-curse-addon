@@ -55,7 +55,7 @@ public final class AllaySPPortableBeacon {
             for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) tick(player);
         });
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> clearPlayer(handler.player));
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> clearPlayer(handler.player));
+        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> clearPlayer(handler.player));
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) clearPlayer(player);
             SESSIONS.clear();

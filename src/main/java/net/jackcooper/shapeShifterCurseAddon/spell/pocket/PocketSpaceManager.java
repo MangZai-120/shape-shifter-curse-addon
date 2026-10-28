@@ -99,7 +99,7 @@ public final class PocketSpaceManager {
 			if (amount > 0 && entity instanceof ServerPlayerEntity player) interrupt(player);
 			return true;
 		});
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> {
 			CHANNELS.remove(handler.player.getUuid());
 			clearSlow(handler.player);
 			GATES.remove(handler.player.getUuid());

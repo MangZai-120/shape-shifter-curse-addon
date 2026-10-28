@@ -187,7 +187,10 @@ public class AnubisWolfSpSoulEnergy {
 	 * 注册击杀事件监听器（在SscAddon.onInitialize中调用）
 	 */
 	public static void registerEvents() {
-		ServerLivingEntityEvents.AFTER_DEATH.register(AnubisWolfSpSoulEnergy::onEntityDeath);
+		ServerLivingEntityEvents.AFTER_DEATH.register((victim, source) -> {
+            try { onEntityDeath(victim, source); }
+            finally { WITHER_SOURCES.remove(victim.getUuid()); }
+        });
 	}
 
 	/**
@@ -245,4 +248,12 @@ public class AnubisWolfSpSoulEnergy {
 			}
 		}
 	}
+    public static void pruneSources(long now) {
+        WITHER_SOURCES.values().removeIf(sources -> {
+            sources.values().removeIf(expiry -> expiry < now);
+            return sources.isEmpty();
+        });
+    }
+    public static void clearSources() { WITHER_SOURCES.clear(); }
+
 }

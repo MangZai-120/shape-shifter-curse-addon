@@ -174,8 +174,8 @@ public final class NightmareSpookManager {
 		creeper.setNoGravity(true);
 		creeper.setPersistent();
 		creeper.addCommandTag("ssca_ghost_creeper");
-		if (!world.spawnEntity(creeper)) return false;
-		CREEPERS.put(creeper.getUuid(), sp.getUuid());
+        CREEPERS.put(creeper.getUuid(), sp.getUuid());
+        if (!world.spawnEntity(creeper)) { CREEPERS.remove(creeper.getUuid()); return false; }
 		// 幽灵标记包（仅目标）：客户端对该实体局部取消 invisible
 		SscAddonNetworking.sendSpookGhost(sp, creeper.getUuid(), BAL.i("creeper_life_ticks", CREEPER_LIFE_TICKS));
 		// 引信嘶嘶声（定向，仅目标听到，从幽灵方向传来）
@@ -215,9 +215,9 @@ public final class NightmareSpookManager {
 		cat.setInvisible(true);
 		cat.setPersistent();
 		cat.addCommandTag("ssca_ghost_cat");
-		if (!world.spawnEntity(cat)) return;
-		long now = world.getTime();
-		CATS.put(cat.getUuid(), new CatState(target, target.getUuid(), now));
+        long now = world.getTime();
+        CATS.put(cat.getUuid(), new CatState(target, target.getUuid(), now));
+        if (!world.spawnEntity(cat)) { CATS.remove(cat.getUuid()); return; }
 		// 显形标记包（仅目标）
 		SscAddonNetworking.sendSpookGhost(target, cat.getUuid(), BAL.i("cat_life_ticks", CAT_LIFE_TICKS));
 		// 猫哈气音效（定向，仅目标听到）
@@ -401,14 +401,27 @@ public final class NightmareSpookManager {
 	}
 
 	/** 目标断线/出梦清理：清其名下幽灵登记。 */
-	public static void clearFor(UUID targetUuid) {
-		CREEPERS.values().removeIf(targetUuid::equals);
-		CATS.values().removeIf(cs -> cs.target.getUuid().equals(targetUuid));
-	}
+    public static void clearFor(UUID targetUuid, MinecraftServer server) {
+        java.util.Set<UUID> ghosts = new java.util.HashSet<>();
+        CREEPERS.forEach((id, target) -> { if (targetUuid.equals(target)) ghosts.add(id); });
+        CATS.forEach((id, state) -> { if (targetUuid.equals(state.target.getUuid())) ghosts.add(id); });
+        for (UUID id : ghosts) {
+            for (ServerWorld world : server.getWorlds()) {
+                Entity ghost = world.getEntity(id);
+                if (ghost != null) ghost.discard();
+            }
+            CREEPERS.remove(id);
+            CATS.remove(id);
+        }
+    }
+
+    public static boolean ownsGhost(UUID id) {
+        return CREEPERS.containsKey(id) || CATS.containsKey(id);
+    }
 
 	/** 玩家掉线：清状态（实体由 tick 查不到时自然移除；clearAll 兜底扫 tag）。 */
-	public static void onDisconnect(UUID playerUuid) {
-		clearFor(playerUuid);
+	public static void onDisconnect(ServerPlayerEntity player) {
+        clearFor(player.getUuid(), player.getServer());
 	}
 
 	/** 服务器启动/数据包重载：清空全部状态并击杀残留的幽灵实体。 */

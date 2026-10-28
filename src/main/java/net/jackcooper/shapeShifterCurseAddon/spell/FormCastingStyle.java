@@ -373,8 +373,7 @@ public final class FormCastingStyle {
 			}
 		});
 		// 玩家退出：清防重窗残留
-		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT
-				.register((handler, server) -> clearPlayer(handler.player));
+		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> clearPlayer(handler.player));
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED
 				.register(server -> REFUND_BUDGET.clear());
 	}

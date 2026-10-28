@@ -72,6 +72,9 @@ public final class FluorescentLaserManager {
 	private static final UUID LASER_SPEED_UUID = UUID.fromString("b7e1c2d3-4f50-6172-8394-a5b6c7d8e9f0");
 
 	private static final class ComboSession {
+        ServerPlayerEntity owner;
+        long castId = -1;
+        int perShotCooldown;
 		boolean active = false;
 		boolean isAling = false;        // 阿澪：伤害/射程/判定半径 ×1.2
 		boolean efficient;
@@ -131,7 +134,13 @@ public final class FluorescentLaserManager {
 		if (!(player.getWorld() instanceof ServerWorld sw)) return;
 		if (!s.active) {
 			// 首次：CD 中不可用
-			if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return;
+            var spec = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.spec(player, SKILL_ID);
+            if (spec == null || !net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return;
+            s.owner = player;
+            s.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
+            s.perShotCooldown = spec.extra("per_shot");
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.retune(player, SKILL_ID, s.castId, 0);
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.released(player, SKILL_ID, s.castId);
 			s.active = true;
 			s.isAling = FormUtils.isForm(player, FormIdentifiers.AXOLOTL_ALING);
 			// Once this is a three-shot session, the Perk bonus has no equipment requirement.
@@ -168,7 +177,8 @@ public final class FluorescentLaserManager {
 		PowerUtils.setResourceValueAndSync(player, SHOT_HUD, s.shotTicks);
 		s.damagedThisShot.clear();
 		s.arraysLeft--;
-		s.accumulatedCd += net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.extra(player, SKILL_ID, "per_shot");
+        s.accumulatedCd += s.perShotCooldown;
+        net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.retune(player, SKILL_ID, s.castId, s.accumulatedCd);
 		s.windowTicks = BAL.i("window_ticks", WINDOW_TICKS);               // 重置窗口
 		// 持久待机法阵实体进入发射态（存固定锁定点），并同步剩余法阵数
 		if (s.laser != null && s.laser.isAlive()) {
@@ -329,11 +339,12 @@ public final class FluorescentLaserManager {
 	}
 
 	private static void endCombo(ServerPlayerEntity player, ComboSession s) {
+        if (!s.active) return;
+        s.active = false;
+        COMBOS.remove(player.getUuid(), s);
 		PowerUtils.setResourceValueAndSync(player, SHOT_HUD, 0);
 		applyLaserSpeed(player, false);
-		if (s.accumulatedCd > 0) {
-			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.force(player, SKILL_ID, s.accumulatedCd);
-		}
+        net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, SKILL_ID, s.castId);
 		// 结束音效：三发射尽 / 窗口超时失效 / 被 SP 悦灵净化打断 等所有结束路径统一播放
 		// （信标失活，与开场 BLOCK_BEACON_ACTIVATE 呼应；全员可闻）
 		if (player.getWorld() instanceof ServerWorld sw) {
@@ -359,17 +370,24 @@ public final class FluorescentLaserManager {
 		}
 	}
 
-	public static void onPlayerDisconnect(UUID uuid) {
-		LaserBeamEntity e = ACTIVE.remove(uuid);
-		if (e != null) e.discard();
-		ComboSession s = COMBOS.remove(uuid);
-		if (s != null && s.laser != null) s.laser.discard();
-	}
+    public static void onPlayerDisconnect(ServerPlayerEntity player) {
+        interruptControl(player);
+        COMBOS.remove(player.getUuid());
+    }
 
-	public static void clearAll() {
-		for (LaserBeamEntity e : ACTIVE.values()) e.discard();
-		ACTIVE.clear();
-		for (ComboSession s : COMBOS.values()) if (s.laser != null) s.laser.discard();
-		COMBOS.clear();
-	}
+    public static void onBeamRemoved(LaserBeamEntity beam, ServerPlayerEntity owner) {
+        if (owner == null) return;
+        ACTIVE.remove(owner.getUuid(), beam);
+        ComboSession session = COMBOS.get(owner.getUuid());
+        if (session != null && session.laser == beam && session.active) endCombo(owner, session);
+    }
+
+    public static void clearAll() {
+        for (ComboSession session : List.copyOf(COMBOS.values())) {
+            if (session.owner != null && session.active) endCombo(session.owner, session);
+        }
+        for (LaserBeamEntity beam : List.copyOf(ACTIVE.values())) beam.discard();
+        ACTIVE.clear();
+        COMBOS.clear();
+    }
 }

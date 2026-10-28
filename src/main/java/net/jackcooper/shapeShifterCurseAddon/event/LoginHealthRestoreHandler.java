@@ -76,7 +76,7 @@ public final class LoginHealthRestoreHandler {
 		});
 
 		// 断线清理，避免 UUID 残留
-		ServerPlayConnectionEvents.DISCONNECT.register((netHandler, server) ->
+		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((netHandler, server) ->
 				PENDING.remove(netHandler.player.getUuid()));
 	}
 }

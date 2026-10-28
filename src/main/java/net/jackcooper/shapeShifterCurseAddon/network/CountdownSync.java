@@ -56,7 +56,7 @@ public final class CountdownSync {
 
     public static void init() {
         ServerTickEvents.END_SERVER_TICK.register(CountdownSync::flush);
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> AUDIENCES.remove(handler.player.getUuid()));
+        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> AUDIENCES.remove(handler.player.getUuid()));
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> { ACTIVE.clear(); AUDIENCES.clear(); });
     }
 

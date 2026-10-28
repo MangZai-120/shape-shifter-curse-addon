@@ -117,6 +117,10 @@ public class SnowFoxSpFrostStorm {
     public static void tick(ServerPlayerEntity player) {
         ChargingData data = CHARGING_PLAYERS.get(player.getUuid());
         if (data == null) return;
+        if (!player.isAlive()) {
+            cancelCharging(player);
+            return;
+        }
         
         // 检查是否被净化 - 如果有purified效果则取消蓄力
         if (player.hasStatusEffect(net.jackcooper.shapeShifterCurseAddon.SscAddon.PURIFIED)) {

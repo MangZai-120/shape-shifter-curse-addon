@@ -49,6 +49,7 @@ public final class FluorescentTidalManager {
     private enum State { IDLE, CHARGING, FLYING }
 
     private static final class Session {
+        ServerPlayerEntity owner;
         long castId = -1;
         State state = State.IDLE;
         int chargeTicks = 0;
@@ -64,6 +65,7 @@ public final class FluorescentTidalManager {
     /** 客户端「按下主要技能键」时调用（由网络包触发）。 */
     public static void onKeyPress(ServerPlayerEntity player) {
         Session s = SESSIONS.computeIfAbsent(player.getUuid(), k -> new Session());
+        s.owner = player;
         if (!FormUtils.isAxolotlFluorescent(player)) {
             return;
         }
@@ -231,14 +233,15 @@ public final class FluorescentTidalManager {
     }
 
     public static void onPlayerDisconnect(UUID uuid) {
-        Session s = SESSIONS.remove(uuid);
-        if (s != null && s.orb != null) s.orb.discard();
+        Session session = SESSIONS.remove(uuid);
+        if (session == null) return;
+        if (session.owner != null) {
+            cleanup(session.owner, session);
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(session.owner, SKILL_ID, session.castId);
+        } else if (session.orb != null) session.orb.discard();
     }
 
     public static void clearAll() {
-        for (Session s : SESSIONS.values()) {
-            if (s.orb != null) s.orb.discard();
-        }
-        SESSIONS.clear();
+        for (UUID uuid : java.util.List.copyOf(SESSIONS.keySet())) onPlayerDisconnect(uuid);
     }
 }

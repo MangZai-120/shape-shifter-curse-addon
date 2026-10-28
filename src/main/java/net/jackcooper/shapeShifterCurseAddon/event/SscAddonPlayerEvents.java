@@ -156,7 +156,7 @@ public final class SscAddonPlayerEvents {
 
 
 		// 玩家断线时清理所有静态状态Map，防止内存泄漏和重连后状态错乱
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) ->
                 server.execute(() -> cleanupDisconnectedPlayer(handler, server)));
     }
 
@@ -177,7 +177,7 @@ public final class SscAddonPlayerEvents {
 			// 寒棘狐「寒棘护体」：攻击者断线清反刺层
 			net.jackcooper.shapeShifterCurseAddon.ability.FrostArmorManager.clearPlayer(uuid);
 			// 跳蛛「跳杀」：断线清蓄力/跳跃状态
-			net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.clearPlayer(uuid);
+			net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.cancel(handler.player);
 			// 跳蛛「毒液」：断线清冲刺状态
 			net.jackcooper.shapeShifterCurseAddon.ability.VenomSkillManager.clearPlayer(uuid);
 			net.jackcooper.shapeShifterCurseAddon.ability.WindSpiritClawManager.onPlayerDisconnect(handler.player);
@@ -207,7 +207,7 @@ public final class SscAddonPlayerEvents {
 			// 野猫昼夜移速：断线摘修饰符（重连由 tick 重挂）
 			net.jackcooper.shapeShifterCurseAddon.ability.WildCatPaceManager.clearPlayer(handler.player);
 			// 海晶荧光坠增强激光：combo 中途断线时清理待机法阵实体 + 移速 modifier，防止残留
-			net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.onPlayerDisconnect(uuid);
+			net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.onPlayerDisconnect(handler.player);
 			// 荧光幼灵潮汐波动：断线清 session + 法球实体，防 orb 残留
 			net.jackcooper.shapeShifterCurseAddon.ability.FluorescentTidalManager.onPlayerDisconnect(uuid);
 			// 统一冷却服务：断线结算（on_end 未起算的效果立即结算 CD；蓄力中按 fail；修审查#4 防绕过）

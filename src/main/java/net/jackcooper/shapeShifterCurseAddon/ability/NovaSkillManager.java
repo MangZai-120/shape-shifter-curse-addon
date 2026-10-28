@@ -104,7 +104,8 @@ public final class NovaSkillManager {
             }
         });
         // 断线清理状态表，避免重连后残留旧窗口和蓄力起点。
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> {
+            interruptControl(handler.player);
             UUID id = handler.player.getUuid();
             DODGE.remove(id);
             DODGE_EXPIRE.remove(id);

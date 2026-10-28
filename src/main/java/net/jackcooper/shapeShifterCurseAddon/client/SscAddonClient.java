@@ -98,6 +98,7 @@ public class SscAddonClient implements ClientModInitializer {
 
 		// 客户端断线时清理侵蚀烙印缓存，防止重连后残留旧发光数据
 		ClientPlayConnectionEvents.DISCONNECT.register((handler2, client2) -> {
+            client2.execute(() -> net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.setClientImmobile(null));
 			ErosionBrandClientState.clear();
 			MancianimaMarkClientState.clear();
 			net.jackcooper.shapeShifterCurseAddon.client.renderer.TidalTetherBeamRenderer.clear();				net.jackcooper.shapeShifterCurseAddon.client.renderer.CurseMarkIconRenderer.clear();			UpgradeAxolotlSpearRenderState.clear();

@@ -50,7 +50,7 @@ public final class KillEmpowerManager {
 
 	public static void register() {
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(KillEmpowerManager::onTick);
-		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> {
 			if (ACTIVE_RINGS.remove(handler.player.getUuid())) handler.player.removeStatusEffect(SscAddon.BLUE_FIRE_RING);
 			if (isEmpowerForm(handler.player)) writeState(handler.player, new KillEmpowerState(0, 0));
 			BURNS.values().removeIf(burn -> burn.owner().equals(handler.player.getUuid()));

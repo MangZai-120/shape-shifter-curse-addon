@@ -74,16 +74,17 @@ public class GoldenSandstormWitherSand {
 
 		if (!(player.getWorld() instanceof ServerWorld serverWorld)) return false;
 
+        var spec = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.spec(player, SKILL_ID);
+        if (spec == null || !net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return false;
 		// 开始蓄力
 		ChargeState state = new ChargeState();
 		state.startTick = serverWorld.getTime();
 		state.healthAtStart = player.getHealth();
 		CHARGING_PLAYERS.put(player.getUuid(), state);
-		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID);
         state.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
 		state.brandStacks = GoldenSandstormPerks.sandstormStacks(player);
 		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.retune(player, SKILL_ID, state.castId,
-				GoldenSandstormPerks.normalCooldown(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cooldown(player, SKILL_ID), GoldenSandstormPerks.responseRank(player)));
+				GoldenSandstormPerks.normalCooldown(spec.cooldown(), GoldenSandstormPerks.responseRank(player)));
 
 		// 施加减速50%
 		applyChargeSlow(player);
@@ -237,10 +238,11 @@ public class GoldenSandstormWitherSand {
 	 * 玩家断线/变形时清理
 	 */
 	public static void clearPlayer(ServerPlayerEntity player) {
-		if (CHARGING_PLAYERS.containsKey(player.getUuid())) {
-			removeChargeSlow(player);
-			CHARGING_PLAYERS.remove(player.getUuid());
-		}
+        ChargeState state = CHARGING_PLAYERS.remove(player.getUuid());
+        if (state != null) {
+            removeChargeSlow(player);
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, state.castId);
+        }
 	}
 
 	/**
@@ -255,7 +257,7 @@ public class GoldenSandstormWitherSand {
 			if (pm != null) {
 				for (ServerPlayerEntity player : pm.getPlayerList()) {
 					if (CHARGING_PLAYERS.containsKey(player.getUuid())) {
-						removeChargeSlow(player);
+                        clearPlayer(player);
 					}
 				}
 			}

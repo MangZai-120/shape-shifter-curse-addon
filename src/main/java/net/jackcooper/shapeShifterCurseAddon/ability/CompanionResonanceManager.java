@@ -65,7 +65,7 @@ public final class CompanionResonanceManager {
 		if (attr == null) {
 			return; // 无攻击伤害属性的实体（部分被动生物）跳过
 		}
-		attr.addPersistentModifier(new EntityAttributeModifier(DAMAGE_BONUS_UUID,
+		attr.addTemporaryModifier(new EntityAttributeModifier(DAMAGE_BONUS_UUID,
 				"ssc_addon.companion_resonance_damage", amount,
 				EntityAttributeModifier.Operation.ADDITION));
 		ACTIVE.add(new Entry(target, durationTicks));
@@ -77,4 +77,12 @@ public final class CompanionResonanceManager {
 			attr.removeModifier(DAMAGE_BONUS_UUID);
 		}
 	}
+    public static void removeLegacyModifier(LivingEntity target) {
+        if (ACTIVE.stream().noneMatch(entry -> entry.target == target)) removeModifier(target);
+    }
+    public static void clearAll() {
+        for (Entry entry : ACTIVE) removeModifier(entry.target);
+        ACTIVE.clear();
+    }
+
 }

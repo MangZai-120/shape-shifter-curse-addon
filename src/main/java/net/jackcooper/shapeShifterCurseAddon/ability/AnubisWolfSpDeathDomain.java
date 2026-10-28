@@ -171,7 +171,12 @@ public class AnubisWolfSpDeathDomain {
 			return;
 		}
 
-		if (!(player.getWorld() instanceof ServerWorld serverWorld)) return;
+        if (player.getWorld() != data.world || !player.isAlive()) {
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, data.castId);
+            clearPlayer(player);
+            return;
+        }
+        ServerWorld serverWorld = data.world;
 
 		data.ticksElapsed++;
 
@@ -201,6 +206,7 @@ public class AnubisWolfSpDeathDomain {
 				player.getName().getString(), uuid, ACTIVE_DOMAINS.size(), ACTIVE_DOMAINS.containsKey(uuid));
 		DomainData data = ACTIVE_DOMAINS.get(uuid);
 		if (data != null) {
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, data.castId);
 			// 只清理玩家特有状态，不移除ACTIVE_DOMAINS中的数据
 			if (data.phase == Phase.CHARGING) {
 				removeChargeSlow(player);
@@ -328,11 +334,16 @@ public class AnubisWolfSpDeathDomain {
 			LOGGER.info("[DeathDomain] forceRestoreAll: uuid={}, phase={}, world={}, totalBlocks={}",
 					entry.getKey(), data.phase, data.world != null ? data.world.getRegistryKey().getValue() : "NULL", totalBlocks);
 			if (data.world != null) {
+                var manager = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager.get(data.world);
+                var cast = manager.control(entry.getKey(), SKILL_ID);
+                if (cast != null && cast.castId == data.castId) {
+                    manager.interrupt(data.castId, data.world.getServer().getOverworld().getTime());
+                }
 				restoreAllBlocks(data.world, data);
 				cleanupDebuffs(data.world, data);
 				// 修复：移除在线玩家的 CHARGE_SLOW 修饰符，避免 reload 后 70% 减速永久挂着
 				if (data.phase == Phase.CHARGING) {
-					net.minecraft.entity.player.PlayerEntity playerEntity = data.world.getPlayerByUuid(entry.getKey());
+					net.minecraft.entity.player.PlayerEntity playerEntity = data.world.getServer().getPlayerManager().getPlayer(entry.getKey());
 					if (playerEntity instanceof ServerPlayerEntity sp) {
 						removeChargeSlow(sp);
 					}
@@ -906,7 +917,9 @@ public class AnubisWolfSpDeathDomain {
 			}
 
 			// 首次进入领域灵魂沙区域时施加血量削减
-			if (!data.debuffedEntities.contains(entity.getUuid())) {
+            var health = entity.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH);
+            if (!data.debuffedEntities.contains(entity.getUuid())
+                    || (health != null && health.getModifier(HEALTH_MODIFIER_UUID) == null)) {
 				data.debuffedEntities.add(entity.getUuid());
 				applyHealthReduction(entity);
 			}
@@ -930,11 +943,9 @@ public class AnubisWolfSpDeathDomain {
 		while (it.hasNext()) {
 			UUID uuid = it.next();
 			if (!currentlyAffected.contains(uuid)) {
-				// 在更大范围内查找该实体并移除血量修饰符
-				for (LivingEntity entity : world.getEntitiesByClass(LivingEntity.class,
-						box.expand(32), e -> e.getUuid().equals(uuid))) {
-					removeHealthReduction(entity);
-				}
+                for (ServerWorld loadedWorld : world.getServer().getWorlds()) {
+                    if (loadedWorld.getEntity(uuid) instanceof LivingEntity entity) removeHealthReduction(entity);
+                }
 				it.remove();
 			}
 		}
@@ -1112,7 +1123,7 @@ public class AnubisWolfSpDeathDomain {
 				reduction,
 				EntityAttributeModifier.Operation.ADDITION
 		);
-		healthAttr.addPersistentModifier(modifier);
+		healthAttr.addTemporaryModifier(modifier);
 
 		// 如果当前血量超过新的上限，降至上限
 		double newMax = entity.getMaxHealth();
@@ -1137,19 +1148,11 @@ public class AnubisWolfSpDeathDomain {
 	private static void cleanupDebuffs(ServerWorld world, DomainData data) {
 		// 清理发光状态
 		cleanupGlowing(world, data);
-		int domainRadius = data.enhanced ? BAL.i("enhanced_domain_radius", ENHANCED_DOMAIN_RADIUS) : BAL.i("domain_radius", DOMAIN_RADIUS);
-		int domainHeight = BAL.i("domain_height", DOMAIN_HEIGHT);
-		for (UUID entityUuid : data.debuffedEntities) {
-			// 尝试找到实体并移除血量修饰符
-			for (LivingEntity entity : world.getEntitiesByClass(LivingEntity.class,
-					new Box(data.center.getX() - domainRadius - 32, data.centerY - domainHeight - 32,
-							data.center.getZ() - domainRadius - 32,
-							data.center.getX() + domainRadius + 32, data.centerY + domainHeight + 32,
-							data.center.getZ() + domainRadius + 32),
-					e -> e.getUuid().equals(entityUuid))) {
-				removeHealthReduction(entity);
-			}
-		}
+        for (UUID entityUuid : data.debuffedEntities) {
+            for (ServerWorld loadedWorld : world.getServer().getWorlds()) {
+                if (loadedWorld.getEntity(entityUuid) instanceof LivingEntity entity) removeHealthReduction(entity);
+            }
+        }
 		data.debuffedEntities.clear();
 	}
 
@@ -1261,4 +1264,7 @@ public class AnubisWolfSpDeathDomain {
 			this.centerY = centerY;
 		}
 	}
+    /** Repair this skill's legacy persisted modifier only; live domains refresh their temporary debuff. */
+    public static void removeLegacyHealthReduction(LivingEntity entity) { removeHealthReduction(entity); }
+
 }

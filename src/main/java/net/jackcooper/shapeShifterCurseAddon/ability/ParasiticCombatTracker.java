@@ -90,4 +90,7 @@ public final class ParasiticCombatTracker {
         }
         return false;
     }
+    public static void clearPlayer(UUID uuid) { DATA.remove(uuid); }
+    public static void clearAll() { DATA.clear(); }
+
 }

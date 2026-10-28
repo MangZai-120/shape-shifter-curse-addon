@@ -63,6 +63,8 @@ public class AllaySPJukebox {
     public static void onPlayerDisconnect(ServerPlayerEntity player) {
         Integer currentState = playerMusicState.remove(player.getUuid());
         if (currentState != null && currentState != -1) {
+            stopAllMusic(player);
+            playerMusicState.remove(player.getUuid());
             removeSpeedFromAll(player);
         }
     }

@@ -30,7 +30,7 @@ public final class FormationResearchNetworking {
                 SlottedResearchManager.handle(player, syncId, request);
             });
         });
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> LAST.remove(handler.player.getUuid()));
+        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> LAST.remove(handler.player.getUuid()));
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> LAST.clear());
     }
     private static void send(ServerPlayerEntity p, int syncId, NbtCompound request, Text message) {

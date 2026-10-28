@@ -199,7 +199,7 @@ public final class JumpKillManager {
 			s.jumpDist = scanDist;
 		}
 
-		player.setNoGravity(true);
+		PlayerGravityLease.acquire(player, SKILL_ID);
 		player.fallDistance = 0.0f;
 		// 协调抛物线起跳：计算使抛物线 flightTime 后水平+竖直同时抵达落点（轨迹流畅，距离越远抛物越高）
 		Vec3d aim = (lock != null) ? bodyCenter(lock) : player.getEyePos().add(look.multiply(s.jumpDist));
@@ -262,7 +262,7 @@ public final class JumpKillManager {
         if (previous != null) net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, previous.castId);
 		s.phase = 2;
 		STATES.put(player.getUuid(), s);
-		player.setNoGravity(true);
+		PlayerGravityLease.acquire(player, SKILL_ID);
 		player.fallDistance = 0.0f;
 		if (player.getWorld() instanceof ServerWorld sw) {
 			// 拉回起手：蛛鸣 + 三叉戟拖拽声
@@ -366,7 +366,7 @@ public final class JumpKillManager {
 
 	/** 拉回结束：恢复重力、清锦点（无论成败，拉回机会只用一次；丝线耗尽也播断丝特效）。 */
 	private static void finishRecall(ServerPlayerEntity player, boolean arrived) {
-		player.setNoGravity(false);
+		PlayerGravityLease.release(player, SKILL_ID);
 		SilkAnchor anchor = ANCHORS.get(player.getUuid());
 		if (player.getWorld() instanceof ServerWorld sw) {
 			if (anchor != null) snapSilk(player, sw, anchor); // 丝线拉完耗尽：同样断裂反馈
@@ -499,7 +499,7 @@ public final class JumpKillManager {
 	private static void finish(ServerPlayerEntity player, boolean hit) {
         State finishing = STATES.get(player.getUuid());
         if (finishing == null) return;
-		player.setNoGravity(false);
+		PlayerGravityLease.release(player, SKILL_ID);
 		// 扑中 = 成功 CD（cooldown），扑空 = 失败 CD（fail_cooldown）
 		if (hit) net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, finishing.castId);
 		else net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.failed(player, SKILL_ID, finishing.castId);
@@ -546,7 +546,7 @@ public final class JumpKillManager {
         if (s != null) net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, s.castId);
 		if (s != null) {
 			removeChargeSlow(player);
-			player.setNoGravity(false);
+			PlayerGravityLease.release(player, SKILL_ID);
 		}
 		SilkAnchor anchor = ANCHORS.remove(player.getUuid());
 		if (anchor != null) {

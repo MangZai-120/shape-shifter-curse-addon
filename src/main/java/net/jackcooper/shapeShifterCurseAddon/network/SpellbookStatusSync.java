@@ -63,7 +63,7 @@ public final class SpellbookStatusSync {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> sync(handler.player));
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, player, alive) -> sync(player));
         ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> sync(player));
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> AUDIENCES.remove(handler.player.getUuid()));
+        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> AUDIENCES.remove(handler.player.getUuid()));
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> AUDIENCES.clear());
     }
 

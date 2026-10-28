@@ -60,7 +60,7 @@ public final class SustainedVisuals {
     public static void init() {
         // Registered after Nova's END_SERVER_TICK producer; entity and world ticks have also finished.
         ServerTickEvents.END_SERVER_TICK.register(SustainedVisuals::flush);
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> AUDIENCES.remove(handler.player.getUuid()));
+        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> AUDIENCES.remove(handler.player.getUuid()));
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> { ACTIVE.clear(); AUDIENCES.clear(); });
     }
 

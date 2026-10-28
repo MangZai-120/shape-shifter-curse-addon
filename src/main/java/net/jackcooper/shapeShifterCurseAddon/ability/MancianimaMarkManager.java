@@ -132,7 +132,7 @@ public final class MancianimaMarkManager {
 			LAST_COMBAT.clear(); LAST_REGEN.clear(); LAST_MANA_REGEN.clear();
 		});
 		ServerTickEvents.END_SERVER_TICK.register(MancianimaMarkManager::onTick);
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> {
 			UUID id = handler.player.getUuid();
 			clearMark(server, id);
 			CHANNELING.remove(id);

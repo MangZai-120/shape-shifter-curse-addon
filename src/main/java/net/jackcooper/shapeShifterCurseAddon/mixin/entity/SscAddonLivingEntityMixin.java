@@ -532,10 +532,6 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 
 		// ==== 金沙岚回血系统 ====
 		if (!self.getWorld().isClient()) {
-			// 凋零 tick 伤害 → 为已注册的金沙岚来源回血
-			if (source.isOf(DamageTypes.WITHER)) {
-				GoldenSandstormRegen.onWitherTickDamage(self);
-			}
 			// 金沙岚玩家亲手造成伤害 → 标记战斗状态
 			if (source.getAttacker() instanceof ServerPlayerEntity attacker
 					&& FormUtils.isForm(attacker, FormIdentifiers.GOLDEN_SANDSTORM_SP)) {
@@ -556,11 +552,21 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 		}
 	}
 
+    /** Rejected damage must never generate healing; include successful lethal wither damage. */
+    @Inject(method = "damage", at = @At("RETURN"))
+    private void ssc_addon$healAfterSuccessfulWither(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+        LivingEntity self = (LivingEntity) (Object) this;
+        if (!self.getWorld().isClient() && Boolean.TRUE.equals(cir.getReturnValue()) && source.isOf(DamageTypes.WITHER)) {
+            GoldenSandstormRegen.onWitherTickDamage(self);
+        }
+    }
+
 	/**
 	 * 拦截带源的 addStatusEffect：当金沙岚玩家给受害者施加凋零时，注册凋零来源用于回血。
 	 */
-	@Inject(method = "addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;Lnet/minecraft/entity/Entity;)Z", at = @At("HEAD"))
+	@Inject(method = "addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;Lnet/minecraft/entity/Entity;)Z", at = @At("RETURN"))
 	private void ssc_addon$registerGoldenSandstormWitherSource(StatusEffectInstance effect, Entity source, CallbackInfoReturnable<Boolean> cir) {
+        if (!Boolean.TRUE.equals(cir.getReturnValue())) return;
 		if (effect.getEffectType() != StatusEffects.WITHER) return;
 		LivingEntity self = (LivingEntity) (Object) this;
 		if (source instanceof ServerPlayerEntity sp) {
@@ -589,8 +595,9 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 	 * 单参 addStatusEffect（冥狼攻击等不带 source 的施加点）：凋零时无归因信息，
 	 * 通过「24 格内最近且正在战斗的阿努比斯玩家」近似归属（服务端，保守判定）。
 	 */
-	@Inject(method = "addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;)Z", at = @At("HEAD"))
+	@Inject(method = "addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;)Z", at = @At("RETURN"))
 	private void ssc_addon$registerAnubisWitherSourceNoSource(StatusEffectInstance effect, CallbackInfoReturnable<Boolean> cir) {
+        if (!Boolean.TRUE.equals(cir.getReturnValue())) return;
 		if (effect.getEffectType() != StatusEffects.WITHER) return;
 		LivingEntity self = (LivingEntity) (Object) this;
 		if (self.getWorld().isClient()) return;

@@ -57,8 +57,8 @@ public class SnowFoxSpMeleeAbility {
 
 	public static boolean execute(ServerPlayerEntity player) {
 		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return false;
-		if (!net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.consume(player,
-				net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX, BAL.i("mana_cost", MANA_COST))) {
+		if (net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.get(player,
+                net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX) < BAL.i("mana_cost", MANA_COST)) {
 			// 法力不足提示音仅施法者自己听（player.playSound 在服务端会排除自己，故改为定向发包）
 			net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkManager.playSoundToPlayer(
 					player, SoundEvents.BLOCK_FIRE_EXTINGUISH, 0.5f, 1.0f);
@@ -71,9 +71,11 @@ public class SnowFoxSpMeleeAbility {
 			return false;
 		}
 
+        if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return false;
+        net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.consume(player,
+                net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX, BAL.i("mana_cost", MANA_COST));
 		PowerUtils.setResourceValueAndSync(player, REGEN_COOLDOWN_ID, BAL.i("regen_lock_ticks", MELEE_REGEN_LOCK_TICKS));
 
-		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID);
 		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.released(player, SKILL_ID);
 
 		Vec3d lookDir = player.getRotationVector().normalize();
@@ -94,6 +96,11 @@ public class SnowFoxSpMeleeAbility {
 	public static void tick(ServerPlayerEntity player) {
 		DashingPlayerData data = DASHING_PLAYERS.get(player.getUuid());
 		if (data == null) return;
+        if (!player.isAlive()) {
+            DASHING_PLAYERS.remove(player.getUuid());
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, data.castId);
+            return;
+        }
 
 		double distanceMoved = data.ticksElapsed * BAL.d("dash_speed", DASH_SPEED);
 

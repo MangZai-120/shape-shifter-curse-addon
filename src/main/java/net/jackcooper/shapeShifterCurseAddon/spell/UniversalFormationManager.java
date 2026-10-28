@@ -52,7 +52,7 @@ public final class UniversalFormationManager {
 				tickPlayer(player);
 			}
 		});
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> clearCharging(handler.player));
+		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> clearCharging(handler.player));
 	}
 
 	public static boolean isCharging(PlayerEntity player) {

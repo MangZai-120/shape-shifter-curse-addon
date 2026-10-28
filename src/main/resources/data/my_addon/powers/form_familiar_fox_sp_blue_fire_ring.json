@@ -18,6 +18,20 @@
             "should_render": false
         }
     },
+    "cast_guard": {
+        "type": "apoli:action_over_time",
+        "interval": 20,
+        "condition": {
+            "type": "apoli:resource",
+            "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_toggle_state",
+            "comparison": "==",
+            "compare_to": 0
+        },
+        "entity_action": {
+            "type": "my_addon:skill_cancelled",
+            "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
+        }
+    },
     "key_activation": {
         "type": "ssc_addon:familiar_skill",
         "primary": true,
