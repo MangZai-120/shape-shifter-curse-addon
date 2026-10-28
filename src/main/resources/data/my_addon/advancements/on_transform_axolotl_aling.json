@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "minecraft:axolotl_bucket"
+      "item": "ssc_addon:sea_crystal_pendant"
     },
     "title": {
       "translate": "advancements.my_addon.on_transform_axolotl_aling.title"

@@ -1,7 +1,7 @@
-﻿{
+{
   "display": {
     "icon": {
-      "item": "minecraft:phantom_membrane"
+      "item": "ssc_addon:blood_garnet"
     },
     "title": {
       "translate": "advancements.my_addon.on_transform_bat_desmodus.title"

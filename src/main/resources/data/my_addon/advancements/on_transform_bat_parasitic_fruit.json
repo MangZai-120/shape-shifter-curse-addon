@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "minecraft:sweet_berries"
+      "item": "ssc_addon:humus_ring"
     },
     "title": {
       "translate": "advancements.my_addon.on_transform_bat_parasitic_fruit.title"
