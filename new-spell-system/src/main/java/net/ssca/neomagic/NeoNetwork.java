@@ -17,8 +17,10 @@ public final class NeoNetwork {
     private record Context(UUID token,BlockPos table,String dimension) {}
     private static final Map<UUID,Context> OPEN=new HashMap<>();
     private static final Map<UUID,Integer> LAST=new HashMap<>();
-    public static void close(ServerPlayerEntity p) {OPEN.remove(p.getUuid());LAST.remove(p.getUuid());}
-    public static void clear() {OPEN.clear();LAST.clear();}
+    private record HudSnapshot(ServerPlayerEntity player,Object world,NbtCompound state,int sentTick) {}
+    private static final Map<UUID,HudSnapshot> HUD_SENT=new HashMap<>();
+    public static void close(ServerPlayerEntity p) {OPEN.remove(p.getUuid());LAST.remove(p.getUuid());HUD_SENT.remove(p.getUuid());}
+    public static void clear() {OPEN.clear();LAST.clear();HUD_SENT.clear();}
     public static boolean nearTable(ServerPlayerEntity p) {
         for(BlockPos pos:BlockPos.iterateOutwards(p.getBlockPos(),4,3,4))if(p.getWorld().getBlockState(pos).isOf(NeoMagic.TABLE))return true;
         return false;
@@ -75,7 +77,14 @@ public final class NeoNetwork {
     static byte[] encodeData(NeoState.PlayerData data) {return NeoPayload.pack(NeoState.JSON.toJson(data).getBytes(java.nio.charset.StandardCharsets.UTF_8));}
     public static void hud(ServerPlayerEntity p) {
         if(!ServerPlayNetworking.canSend(p,HUD))return;
-        var packet=PacketByteBufs.create();packet.writeNbt(hudState(p));ServerPlayNetworking.send(p,HUD,packet);
+        NbtCompound state=hudState(p);int now=p.getServer().getTicks();
+        HudSnapshot previous=HUD_SENT.get(p.getUuid());
+        // 活动状态仍按原来的频率同步；仅省略完全相同的快照，每 5 秒保底重发。
+        // 实体或世界变化强制重发，避免重连、重生或切维度后客户端保留空状态。
+        if(previous!=null&&previous.player==p&&previous.world==p.getWorld()
+                &&now-previous.sentTick>=0&&now-previous.sentTick<100&&previous.state.equals(state))return;
+        var packet=PacketByteBufs.create();packet.writeNbt(state);ServerPlayNetworking.send(p,HUD,packet);
+        HUD_SENT.put(p.getUuid(),new HudSnapshot(p,p.getWorld(),state,now));
     }
     public static NbtCompound hudState(ServerPlayerEntity p) {
         var d=NeoRuntime.data(p);var a=NeoRuntime.ACTIVE.get(p.getUuid());
@@ -83,7 +92,7 @@ public final class NeoNetwork {
         ItemStack book=net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.getEquippedBook(p);
         boolean holding=book!=null||p.getMainHandStack().isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.MOON_DUST_SPELLBOOK)||p.getOffHandStack().isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.MOON_DUST_SPELLBOOK)||p.getMainHandStack().getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem||p.getOffHandStack().getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem||p.getMainHandStack().isOf(NeoMagic.WAND)||p.getOffHandStack().isOf(NeoMagic.WAND);
         var n=new NbtCompound();n.putBoolean("Visible",holding||d.burden>0||a!=null||NeoEffects.hasStored(p.getUuid()));
-        var profile=NeoRuntime.profile(p);
+        var profile=NeoLegacyCasting.profile(p,book);
         n.putInt("MasteryExpTen",d.spellbookMasteryExpTen);
         n.putInt("CastingLevel",net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.tier(d));
         n.putDouble("DangerMax",profile.safety()*2);
@@ -93,7 +102,7 @@ public final class NeoNetwork {
         boolean loaded=b!=null;
         boolean hasSpell=loaded||a!=null||legacy!=null;
         if(b==null)b=d.draft;
-        Quote q=a==null?NeoLegacyCasting.blueprintQuote(p,b):a.session.quote;
+        Quote q=a==null?NeoLegacyCasting.blueprintQuote(p,b,book):a.session.quote;
         int prep=b.prep();String legacyName="";
         if(legacy!=null){b=legacy.session.blueprint;q=legacy.session.quote;prep=legacy.duration;legacyName=legacy.record.spell;}
         else if(a==null&&!loaded) {

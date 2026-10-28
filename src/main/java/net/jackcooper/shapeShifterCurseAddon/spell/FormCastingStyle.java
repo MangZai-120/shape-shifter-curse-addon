@@ -74,9 +74,14 @@ public final class FormCastingStyle {
 	}
 	/** Continuous collapse recovery retains the formation's exact percentage before settlement. */
 	public static double naturalRegenRate(ItemStack book) {
-		float base = (float) BAL.d("base_book_regen_per_sec", BASE_BOOK_REGEN_PER_SEC)
+		float base = baseNaturalRegenRate()
 				+ (SpellbookData.getLevel(book) - 1);
 		return base * FormationData.universalRecoveryMultiplier(book);
+	}
+
+	/** 无等级、法阵加成的基准值，仍实时读取平衡快照。 */
+	public static float baseNaturalRegenRate() {
+		return (float) BAL.d("base_book_regen_per_sec", BASE_BOOK_REGEN_PER_SEC);
 	}
 
 	public static long getNaturalRegenAt(ServerPlayerEntity player) {

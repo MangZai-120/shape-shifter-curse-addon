@@ -102,6 +102,7 @@ public final class CastingCircleRenderer {
 			}
 			return;
 		}
+		if (CircleVertexBatch.draw(vertices, matrix, mesh, glow, glowColor, alpha)) return;
 		for (int i = 0; i < mesh.size(); i++) {
 			var quad = mesh.quad(i, glow);
 			float opacity = alpha * quad.alpha();

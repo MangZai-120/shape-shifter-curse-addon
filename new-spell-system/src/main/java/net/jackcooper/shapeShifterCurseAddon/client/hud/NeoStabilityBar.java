@@ -17,6 +17,13 @@ public final class NeoStabilityBar {
     private static final Identifier FILL=texture("fill-full"),FORECAST=texture("forecast-full"),MASK=texture("interior-mask");
     private static volatile int[] columns=new int[WIDTH];
     private static final String[] DIGITS={"111101101101111","010110010010111","111001111100111","111001111001111","101101111001001","111100111001111","111100111101111","111001010010010","111101111101111","111101111001111"};
+    // 只缓存显示文本；数值和状态仍读取当前服务端快照，编辑器预览同样即时更新。
+    private static final double[] numberValues={Double.NaN,Double.NaN,Double.NaN};
+    private static final String[] numberLabels=new String[3];
+    private static final int[][] OVERFLOW_ARROW={{0,0},{1,1},{2,2},{1,3},{0,4}};
+    private static final String[] WAITING={"111","101","010","101","111"},RECOVERING={"00100","00100","11111","01110","00100"},
+            CASTING={"000","000","101","000","000"},LOCKED={"01110","01010","11111","11011","11111"},
+            FAILED={"101","101","010","101","101"},BLOCKED={"010","010","010","000","010"},RESET={"01110","10001","10000","10011","01101"};
     private NeoStabilityBar(){}
     private static Identifier texture(String name){return NeoMagic.id("textures/gui/stability/"+name+".png");}
     public static double positive(double v){return Double.isFinite(v)?Math.max(0,v):0;}
@@ -67,7 +74,8 @@ public final class NeoStabilityBar {
         int start=x;
         for(int pass=0;pass<2;pass++){
             x=start;
-            for(char ch:text.toCharArray()){
+            for(int character=0;character<text.length();character++){
+                char ch=text.charAt(character);
                 String bits=glyph(ch);
                 for(int i=0;i<15;i++)if(bits.charAt(i)=='1'){
                     int px=x+i%3,py=y+i/3;
@@ -83,6 +91,11 @@ public final class NeoStabilityBar {
     }
     private static String number(double n){n=positive(n);if(n>=1e9)return String.format(java.util.Locale.ROOT,"%.0e",n).replace("e+0","e").replace("e+","e");if(n>=1e6)return shortNumber(n/1e6)+"m";if(n>=1000)return shortNumber(n/1000)+"k";return shortNumber(n);}
     private static String shortNumber(double n){String value=String.format(java.util.Locale.ROOT,"%.1f",n);return value.endsWith(".0")?value.substring(0,value.length()-2):value;}
+    private static String number(int field,double value){
+        value=positive(value);
+        if(numberLabels[field]==null||numberValues[field]!=value){numberValues[field]=value;numberLabels[field]=number(value);}
+        return numberLabels[field];
+    }
     public static void draw(DrawContext c,NbtCompound state,int x,int y){
         c.draw();float[] color=com.mojang.blaze3d.systems.RenderSystem.getShaderColor().clone();
         com.mojang.blaze3d.systems.RenderSystem.enableBlend();com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1,1,1,1);
@@ -98,19 +111,19 @@ public final class NeoStabilityBar {
         for(int yy=3;yy<=13;yy++)pixel(c,x,y,v.marker(),yy,0xFFE9F5F2);
         if(v.overflow()||v.projected()>v.extent()){
             int color=v.overflow()?0xFFFFE0D2:0x73FFE0D2;
-            int[][] arrow={{0,0},{1,1},{2,2},{1,3},{0,4}};for(int[] p:arrow)pixel(c,x,y,90+p[0],6+p[1],color);
+            for(int[] p:OVERFLOW_ARROW)pixel(c,x,y,90+p[0],6+p[1],color);
         }
-        int tx=tiny(c,number(v.current()),x+12,y+1,v.current()>v.safety()?0xFFF29D81:0xFFE5E9E7);
-        tx=tiny(c,"/",tx,y+1,0xFFB7C2CA);tiny(c,number(v.safety()),tx,y+1,0xFF90CCD5);
-        String cost=v.selected()?"+"+number(v.remaining()):"-";tiny(c,cost,x+96-(cost.length()*4-1),y+1,!v.selected()?0xFF87979C:v.safe()?0xFF7CD4E5:0xFFF07D75);
+        int tx=tiny(c,number(0,v.current()),x+12,y+1,v.current()>v.safety()?0xFFF29D81:0xFFE5E9E7);
+        tx=tiny(c,"/",tx,y+1,0xFFB7C2CA);tiny(c,number(1,v.safety()),tx,y+1,0xFF90CCD5);
+        String cost=v.selected()?"+"+number(2,v.remaining()):"-";tiny(c,cost,x+96-(cost.length()*4-1),y+1,!v.selected()?0xFF87979C:v.safe()?0xFF7CD4E5:0xFFF07D75);
         String[] icon=switch(v.phase()){
-            case "waiting"->new String[]{"111","101","010","101","111"};
-            case "recovering"->new String[]{"00100","00100","11111","01110","00100"};
-            case "casting"->new String[]{"000","000","101","000","000"};
-            case "locked"->new String[]{"01110","01010","11111","11011","11111"};
-            case "failed"->new String[]{"101","101","010","101","101"};
-            case "blocked"->new String[]{"010","010","010","000","010"};
-            case "reset"->new String[]{"01110","10001","10000","10011","01101"};
+            case "waiting"->WAITING;
+            case "recovering"->RECOVERING;
+            case "casting"->CASTING;
+            case "locked"->LOCKED;
+            case "failed"->FAILED;
+            case "blocked"->BLOCKED;
+            case "reset"->RESET;
             default->null;
         };
         if(icon!=null)pattern(c,icon,x+2,y,v.phase().equals("failed")||v.phase().equals("blocked")?0xFFF17D73:v.phase().equals("recovering")?0xFF7CD4E5:0xFFC4CECE);

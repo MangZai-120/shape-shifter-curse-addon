@@ -41,6 +41,32 @@ public final class TrinketUtils {
     /** Curios 反射链各阶段 WARN 的去重键集合（HUD 每帧轮询饰品检测，同一原因只打一次，防刷日志）。 */
     private static final java.util.Set<String> CURIOS_WARNED_ONCE = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
+    // 只缓存类的方法元数据，不缓存饰品栈；同一 tick 换书、卸书、修改 NBT 仍立即可见。
+    private enum CuriosMethod {
+        INVENTORY("getCuriosInventory", LivingEntity.class), RESOLVE("resolve"), CURIOS("getCurios"),
+        STACKS("getStacks"), COSMETIC("getCosmeticStacks"), SLOTS("getSlots"),
+        STACK("getStackInSlot", int.class), EQUIPPED("isEquipped", Item.class),
+        EMPTY("isEmpty"), ITEM("getItem");
+        final String name;
+        final Class<?>[] parameters;
+        CuriosMethod(String name, Class<?>... parameters) { this.name=name; this.parameters=parameters; }
+    }
+    private static final CuriosMethod[] STACK_GETTERS={CuriosMethod.STACKS,CuriosMethod.COSMETIC};
+    private static final ClassValue<Map<CuriosMethod,java.lang.reflect.Method>> CURIOS_METHODS=new ClassValue<>() {
+        @Override protected Map<CuriosMethod,java.lang.reflect.Method> computeValue(Class<?> type) {
+            var methods=new java.util.EnumMap<CuriosMethod,java.lang.reflect.Method>(CuriosMethod.class);
+            for(CuriosMethod key:CuriosMethod.values())try {
+                methods.put(key,type.getMethod(key.name,key.parameters));
+            }catch(NoSuchMethodException ignored) {}
+            return methods;
+        }
+    };
+    private static java.lang.reflect.Method method(Class<?> type,CuriosMethod key)throws NoSuchMethodException {
+        var method=CURIOS_METHODS.get(type).get(key);
+        if(method==null)throw new NoSuchMethodException(type.getName()+"."+key.name);
+        return method;
+    }
+
     private TrinketUtils() {
     }
 
@@ -121,17 +147,17 @@ public final class TrinketUtils {
         try {
             Class<?> api = probeCuriosApi();
             if (api == null) return false; // 未装 Curios：短路，不重复探测
-            Object invHolder = api.getMethod("getCuriosInventory", LivingEntity.class).invoke(null, entity);
+            Object invHolder = method(api,CuriosMethod.INVENTORY).invoke(null, entity);
             if (invHolder == null) return false;
             // 1.20.1 Forge 返回 LazyOptional（需 resolve() 解包）；
             // 1.20.4+/1.21 Curios 移除 capability 后直接返回 Optional，盲调 resolve() 会抛
             // NoSuchMethodException（1.21.1 移植版日志里的警告即此因），故先判类型再解包。
             Object resolved = (invHolder instanceof java.util.Optional<?>)
                     ? invHolder
-                    : invHolder.getClass().getMethod("resolve").invoke(invHolder);
+                    : method(invHolder.getClass(),CuriosMethod.RESOLVE).invoke(invHolder);
             if (!(resolved instanceof java.util.Optional<?> opt) || opt.isEmpty()) return false;
             Object handler = opt.get();
-            Object equipped = handler.getClass().getMethod("isEquipped", Item.class).invoke(handler, item);
+            Object equipped = method(handler.getClass(),CuriosMethod.EQUIPPED).invoke(handler, item);
             return Boolean.TRUE.equals(equipped);
         } catch (Throwable ignored) {
             return false;
@@ -177,7 +203,7 @@ public final class TrinketUtils {
             if (api == null) {
                 return null; // 未装 Curios 或类不可见：已短路（首次失败时已打过唯一一条 WARN）
             }
-            Object invHolder = api.getMethod("getCuriosInventory", LivingEntity.class).invoke(null, entity);
+            Object invHolder = method(api,CuriosMethod.INVENTORY).invoke(null, entity);
             if (invHolder == null) {
                 warnOnce("curios-inv-null", "[SSCA] Curios fallback: getCuriosInventory 返回 null");
                 return null;
@@ -187,13 +213,13 @@ public final class TrinketUtils {
             // NoSuchMethodException（1.21.1 移植版日志里的警告即此因），故先判类型再解包。
             Object resolved = (invHolder instanceof java.util.Optional<?>)
                     ? invHolder
-                    : invHolder.getClass().getMethod("resolve").invoke(invHolder);
+                    : method(invHolder.getClass(),CuriosMethod.RESOLVE).invoke(invHolder);
             if (!(resolved instanceof java.util.Optional<?> opt) || opt.isEmpty()) {
                 warnOnce("curios-cap-unresolved", "[SSCA] Curios fallback: capability 未解析（{}）", resolved);
                 return null;
             }
             Object handler = opt.get(); // ICuriosItemHandler
-            Object curiosHandlerMap = handler.getClass().getMethod("getCurios").invoke(handler);
+            Object curiosHandlerMap = method(handler.getClass(),CuriosMethod.CURIOS).invoke(handler);
             if (!(curiosHandlerMap instanceof Map<?, ?> curiosMap)) {
                 warnOnce("curios-not-map", "[SSCA] Curios fallback: getCurios() 非 Map（{}）", curiosHandlerMap);
                 return null;
@@ -204,18 +230,18 @@ public final class TrinketUtils {
             // 类名相同但类加载器不同的极端情况，用注册名等价比对做最后兜底。
             for (Object stacksHandler : curiosMap.values()) {
                 if (stacksHandler == null) continue;
-                for (String getter : new String[]{"getStacks", "getCosmeticStacks"}) {
+                for (CuriosMethod getter : STACK_GETTERS) {
                     try {
-                        Object stacks = stacksHandler.getClass().getMethod(getter).invoke(stacksHandler);
+                        Object stacks = method(stacksHandler.getClass(),getter).invoke(stacksHandler);
                         if (stacks == null) continue;
                         int slotCount;
                         try {
-                            slotCount = (int) stacks.getClass().getMethod("getSlots").invoke(stacks);
+                            slotCount = (int) method(stacks.getClass(),CuriosMethod.SLOTS).invoke(stacks);
                         } catch (NoSuchMethodException e) {
                             continue; // 非 handler 类型，跳过
                         }
                         for (int i = 0; i < slotCount; i++) {
-                            Object o = stacks.getClass().getMethod("getStackInSlot", int.class).invoke(stacks, i);
+                            Object o = method(stacks.getClass(),CuriosMethod.STACK).invoke(stacks, i);
                             if (o == null) continue;
                             if (o instanceof ItemStack s && !s.isEmpty() && predicate.test(s)) {
                                 return s;
@@ -223,9 +249,9 @@ public final class TrinketUtils {
                             // 双映射兜底：类名一致但加载器不同 → 反射取注册名等价判定
                             if (!o.getClass().getName().equals("net.minecraft.item.ItemStack")) continue;
                             try {
-                                Object isEmpty = o.getClass().getMethod("isEmpty").invoke(o);
+                                Object isEmpty = method(o.getClass(),CuriosMethod.EMPTY).invoke(o);
                                 if (Boolean.TRUE.equals(isEmpty)) continue;
-                                Object item = o.getClass().getMethod("getItem").invoke(o);
+                                Object item = method(o.getClass(),CuriosMethod.ITEM).invoke(o);
                                 Object yarnItem = net.minecraft.registry.Registries.ITEM.get(
                                         net.minecraft.util.Identifier.tryParse("ssc_addon:moon_dust_spellbook"));
                                 if (item == yarnItem) {

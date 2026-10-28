@@ -27,7 +27,10 @@ public final class NeoLegacyCasting {
     public static NeoLegacyCasting active(ServerPlayerEntity p){return ACTIVE.get(p.getUuid());}
     public static boolean isCasting(ServerPlayerEntity p){return SpellChannelManager.isCasting(p)||active(p)!=null||NeoRuntime.ACTIVE.containsKey(p.getUuid());}
     public static Profile profile(ServerPlayerEntity p) {
-        Profile base=NeoRules.profile(NeoRuntime.form(p));ItemStack book=SpellCastManager.getEquippedBook(p);
+        return profile(p,SpellCastManager.getEquippedBook(p));
+    }
+    static Profile profile(ServerPlayerEntity p,ItemStack book) {
+        Profile base=NeoRules.profile(NeoRuntime.form(p));
         PlayerSpellMastery.migrate(p,book);
         double bonus=PlayerSpellMastery.bonus(NeoRuntime.data(p))+safetyBonus(book);
         return new Profile(base.safety()+bonus,base.failure(),base.offset(),base.merge(),base.split(),base.reference());
@@ -47,12 +50,18 @@ public final class NeoLegacyCasting {
     }
     public static FormationElement element(Core core) {return switch(core){case THERMAL->FormationElement.FIRE;case FROST->FormationElement.ICE;case LUNAR->FormationElement.LUNAR;case CURSE->FormationElement.CURSE;case SUMMON->FormationElement.SUMMON;case VOID->FormationElement.VOID;case SPACE->FormationElement.SPACE;};}
     public static Quote blueprintQuote(ServerPlayerEntity p,Blueprint b) {
+        return blueprintQuote(p,b,SpellCastManager.getEquippedBook(p));
+    }
+    static Quote blueprintQuote(ServerPlayerEntity p,Blueprint b,ItemStack book) {
         Quote q=NeoRules.quote(b,NeoRuntime.data(p).mastery(b));
-        double multiplier=blueprintCostMultiplier(p,b.core());
+        double multiplier=blueprintCostMultiplier(p,b.core(),book);
         return new Quote(q.normal()*multiplier,q.actual()*multiplier,q.floor(),q.plan());
     }
     public static double blueprintCostMultiplier(ServerPlayerEntity p,Core core) {
-        ItemStack book=SpellCastManager.getEquippedBook(p);return book==null?1:FormationData.sumManaCostMultiplier(book,element(core))*FormAffinity.manaCostMultiplier(p);
+        return blueprintCostMultiplier(p,core,SpellCastManager.getEquippedBook(p));
+    }
+    private static double blueprintCostMultiplier(ServerPlayerEntity p,Core core,ItemStack book) {
+        return book==null?1:FormationData.sumManaCostMultiplier(book,element(core))*FormAffinity.manaCostMultiplier(p);
     }
     public static double blueprintPower(ServerPlayerEntity p,Blueprint b) {
         return blueprintPower(p,b.output());
@@ -64,7 +73,7 @@ public final class NeoLegacyCasting {
     }
     public static double recoveryMultiplier(ItemStack book) {
         if(book==null||book.isEmpty())return 1;
-        double base=FormCastingStyle.naturalRegenRate(new ItemStack(SscAddon.MOON_DUST_SPELLBOOK));
+        double base=FormCastingStyle.baseNaturalRegenRate();
         return Math.max(0,FormCastingStyle.naturalRegenRate(book)/Math.max(1,base));
     }
     /** Old refund/energy-conversion effects now relieve C, retaining their original trigger and cap. */

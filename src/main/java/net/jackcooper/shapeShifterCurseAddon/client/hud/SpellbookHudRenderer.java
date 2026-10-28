@@ -262,10 +262,13 @@ public class SpellbookHudRenderer implements HudRenderCallback {
         var font = MinecraftClient.getInstance().textRenderer;
         // The outline is plain so formatted text retains a dark contour, including the blue level tag.
         String plain = text.getString();
-        context.drawText(font, plain, x - 1, y, OUTLINE, false);
-        context.drawText(font, plain, x + 1, y, OUTLINE, false);
-        context.drawText(font, plain, x, y - 1, OUTLINE, false);
-        context.drawText(font, plain, x, y + 1, OUTLINE, false);
-        context.drawText(font, text, x, y, color, false);
+        // 同一段描边和字面一起提交，仍保持四个描边在前、字面在后的顺序。
+        context.draw(() -> {
+            context.drawText(font, plain, x - 1, y, OUTLINE, false);
+            context.drawText(font, plain, x + 1, y, OUTLINE, false);
+            context.drawText(font, plain, x, y - 1, OUTLINE, false);
+            context.drawText(font, plain, x, y + 1, OUTLINE, false);
+            context.drawText(font, text, x, y, color, false);
+        });
     }
 }
