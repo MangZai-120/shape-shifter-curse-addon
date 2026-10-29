@@ -65,7 +65,7 @@ public final class NeoOcelotSpellLinkProbe {
     public static void start(TestContext t){t.waitAndRun(70,()->{try{run(t);}catch(Exception e){throw new RuntimeException(e);}});}
     private static void run(TestContext t)throws Exception {
         var wind=player(t,FormIdentifiers.OCELOT_SP);double walking=wind.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED);
-        channel(wind,"domain",false,1);near(wind.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED),walking*.8,"Wind has exactly eighty percent walking attribute");
+        channel(wind,"domain",false,1);near(wind.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED),walking*.3,"Wind has exactly thirty percent walking attribute");
         check(!SpellChannelManager.isImmobile(wind),"Special spell no longer forbids wind movement or jump");
         wind.requestTeleport(wind.getX()+6,wind.getY(),wind.getZ());check(DomainManager.canContinue(wind)&&validate(wind),"Wind domain tolerates more than three blocks of movement");
         check(SpellChannelManager.onSkillAction(wind)&&!SpellChannelManager.isCasting(wind),"Skill action interrupts unlocked wind channel");
@@ -81,7 +81,7 @@ public final class NeoOcelotSpellLinkProbe {
         var skill=SkillCastManager.get(locked.getServerWorld());var cfg=new SkillCastManager.ResolvedConfig(100,0,SkillCastManager.START_ON_CAST);
         check(skill.begin(locked,"ssc_addon:probe_wind_skill",cfg)<0,"Direct skill service cannot bypass protected wind phase");
         locked.setSprinting(true);check(validate(locked)&&!locked.isSprinting()&&SpellChannelManager.isCasting(locked),"Protected phase disables sprint on server and retains channel");
-        near(locked.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED),walking*.8,"Protected phase still permits eighty-percent walking");
+        near(locked.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED),walking*.3,"Protected phase still permits thirty-percent walking");
         SpellChannelManager.onFullyControlled(locked);
 
         var finaleWind=player(t,FormIdentifiers.OCELOT_SP);channel(finaleWind,"death_finale",false,4);
@@ -93,7 +93,7 @@ public final class NeoOcelotSpellLinkProbe {
         check(!DeathFinaleManager.canContinue(ordinary),"Other forms retain death-finale anchor restriction");SpellChannelManager.onFullyControlled(ordinary);
 
         var blueWind=player(t,FormIdentifiers.OCELOT_SP);var blueRecord=blueprint(blueWind,20);
-        near(blueWind.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED),walking*.8,"Blueprint applies the same wind walking multiplier");
+        near(blueWind.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED),walking*.3,"Blueprint applies the same wind walking multiplier");
         check(SpellChannelManager.onSkillAction(blueWind)&&!NeoRuntime.ACTIVE.containsKey(blueWind.getUuid()),"Skill action interrupts wind blueprint too");
         check(blueRecord.result.equals("interrupted"),"Blueprint interruption is recorded");near(blueWind.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED),walking,"Blueprint cancellation clears movement modifier");
         var blueSprint=player(t,FormIdentifiers.OCELOT_SP);blueprint(blueSprint,20);blueSprint.setSprinting(true);

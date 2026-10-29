@@ -185,9 +185,11 @@ public final class ExplosionEffects {
 		interrupted = true;
 		pendingBlastBatches = 0;
 		stop();
-		var client = MinecraftClient.getInstance();
-		if (!playCue || client.player == null) return;
-		for (var sound : suppressionCues(Math.sqrt(client.player.squaredDistanceTo(center)))) client.getSoundManager().play(sound);
+		if(playCue)playSuppressionCues(center);
+	}
+	public static void playSuppressionCues(Vec3d center) {
+		var client=MinecraftClient.getInstance();if(client.player==null)return;
+		for(var sound:suppressionCues(Math.sqrt(client.player.squaredDistanceTo(center))))client.getSoundManager().play(sound);
 	}
 
 	private static java.util.List<net.minecraft.client.sound.SoundInstance> suppressionCues(double distance) {

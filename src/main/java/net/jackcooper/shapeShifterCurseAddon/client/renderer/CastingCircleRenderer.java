@@ -42,6 +42,22 @@ public final class CastingCircleRenderer {
 			drawGround(vertices, matrices, 0.72, 0, age * 0.02, alpha, color);
 			matrices.pop();
 		}
+		for(var cancelled:CastingVisualState.cancellations()) {
+			Vec3d position=cancelled.position();if(position.squaredDistanceTo(camera)>32*32)continue;
+			var matrices=context.matrixStack();matrices.push();
+			matrices.translate(position.x-camera.x,position.y+.025-camera.y,position.z-camera.z);
+			drawCancellation(context.consumers().getBuffer(RenderLayer.getDebugQuads()),matrices,
+					client.world.getTime()-cancelled.started()+context.tickDelta(),cancelled.color());
+			matrices.pop();
+		}
+	}
+
+	/** Existing small circles use the same hold, upward acceleration and fade as the explosion finale. */
+	public static void drawCancellation(VertexConsumer vertices,MatrixStack matrices,float age,int color) {
+		float since=Math.max(0,age-net.jackcooper.shapeShifterCurseAddon.spell.ExplosionRules.FINALE_HOLD_TICKS);
+		float progress=since/net.jackcooper.shapeShifterCurseAddon.spell.ExplosionRules.FINALE_RISE_TICKS;
+		if(age<0||progress>=1)return;
+		drawGround(vertices,matrices,.72,net.jackcooper.shapeShifterCurseAddon.spell.ExplosionRules.finaleLift(0,since),age*.02,1-progress,color);
 	}
 
 	public static void ring(VertexConsumer vertices, Matrix4f matrix, double radius, double width,

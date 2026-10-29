@@ -31,6 +31,7 @@ public final class SpellChannelManager {
 	public static final Identifier STATE = new Identifier("ssc_addon", "spell_channel_state");
 	public static final Identifier RELEASE = new Identifier("ssc_addon", "spell_channel_release");
 	public static final Identifier CANCEL_HOLD = new Identifier("ssc_addon", "spell_channel_cancel_hold");
+	public static final Identifier SUPPRESSION = new Identifier("ssc_addon", "spell_channel_suppression");
 	/** S2C 施法视觉状态广播（jackcooper）：UUID、活动态、抬手标志、系别色与稀有度色，受众 = 追踪者 + 本人。
 	 * 客户端据此做人形态举手动画（FERAL 兽形不举手）；转身/视角不受限，用原版机制。
 	 * 活动期每 20t 重播，客户端 45t 过期兑底。 */
@@ -219,12 +220,14 @@ public final class SpellChannelManager {
 		var baseProfile=spell.getCastingProfile(player,level,solo);
 		var style=RuneCastContext.with(modifiers,formationRange,()->FormSpellStyle.plan(player,spell,level,
 				baseProfile.ticks(),modifiers.time(baseProfile.ticks())));
+		double lockRange=RuneCastContext.with(modifiers,formationRange,()->spell.getCastingLockRange(player,level));
 		if(!style.pay())return false;
 		Channel channel = new Channel(player, spell, scroll, level, solo, token, mana, cooldown,
-				sourceValid, effect, settleCooldown, consumeUse,modifiers,style);
+				sourceValid, effect, settleCooldown, consumeUse,modifiers,style,lockRange);
 		if(spell.requiresTargetBeforeChannel())channel.progress.release(token,initialTarget);
 		ACTIVE.put(player.getUuid(), channel);
 		RuneCastContext.run(channel.modifiers,channel.formationRange,()->spell.onChannelStarted(player, channel.progress.target()));
+		channel.bindLock(initialTarget);
 		// Jump the effect manager's logical clock too: e.g. instant DeathFinale still needs its completion state.
 		if(style.novaQuickCast)RuneCastContext.run(channel.modifiers,channel.formationRange,
 				()->spell.tickChannel(player,level,scroll,style.timing.logical(0)));
@@ -251,7 +254,7 @@ public final class SpellChannelManager {
 			stop(player, true, channel.spell.getCastFailureMessage(player));
 			return;
 		}
-		if (channel.progress.release(token, target)) advance(channel);
+		if (channel.progress.release(token, target)){channel.bindLock(target);advance(channel);}
 	}
 
 	public static void cancelSelf(ServerPlayerEntity player) {
@@ -276,9 +279,14 @@ public final class SpellChannelManager {
 	}
 
 	private static boolean ensureValid(Channel channel) {
-		if(OcelotSpellLink.wind(channel.player)&&channel.player.isSprinting()) {
-			if(channel.spell.isLockedIn(channel.player))channel.player.setSprinting(false);
-			else {stop(channel.player,true,"message.ssc_addon.spell.cast_interrupted_action");return false;}
+		if(!channel.progress.started()&&channel.player.isAlive()&&channel.player.getWorld().getRegistryKey().equals(channel.dimension)
+				&&(channel.targetLock!=null&&channel.targetLock.exceeded(channel.player)
+				||channel.guidanceLock!=null&&channel.guidanceLock.exceeded(channel.player))) {
+			rangeFailed(channel);return false;
+		}
+		if(OcelotSpellLink.wind(channel.player)&&(channel.player.isSprinting()||channel.player.isSneaking())) {
+			if(channel.spell.isLockedIn(channel.player)){channel.player.setSprinting(false);channel.player.setSneaking(false);}
+			else if(OcelotSpellLink.rushing(channel.player)){stop(channel.player,true,"message.ssc_addon.spell.cast_interrupted_action");return false;}
 		}
 		if (channel.spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.ExplosionSpell
 				&& ExplosionManager.suppressIfDomainCovered(channel.player)) {
@@ -305,6 +313,30 @@ public final class SpellChannelManager {
 			return false;
 		}
 		return true;
+	}
+
+	private static void rangeFailed(Channel channel) {
+		ServerPlayerEntity player=channel.player;
+		UUID sequence=channel.spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.ExplosionSpell
+				?ExplosionManager.chargingSequence(player):null;
+		sendSuppression(player,channel.spell.getRarity(channel.level).color.getColorValue(),sequence);
+		if(sequence!=null)ExplosionManager.suppressCharge(player);
+		channel.domainSuppressed=true; // Shared quiet termination: only the glass/extinguish cue plays.
+		channel.collapse.record.failureReason="range_exceeded";
+		channel.collapse.session.failed=true;
+		stop(player,true,"message.ssc_addon.spell.range_exceeded");
+	}
+
+	/** One event at failure, shared by books, standalone scrolls and blueprint preparation. */
+	public static void sendSuppression(ServerPlayerEntity player,int color,UUID explosionSequence) {
+		var audience=new java.util.HashSet<>(net.fabricmc.fabric.api.networking.v1.PlayerLookup.tracking(player));audience.add(player);
+		for(ServerPlayerEntity viewer:audience)if(ServerPlayNetworking.canSend(viewer,SUPPRESSION))
+			ServerPlayNetworking.send(viewer,SUPPRESSION,suppressionPacket(player,color,explosionSequence));
+	}
+	public static PacketByteBuf suppressionPacket(ServerPlayerEntity player,int color,UUID explosionSequence) {
+		PacketByteBuf buf=PacketByteBufs.create();buf.writeIdentifier(player.getWorld().getRegistryKey().getValue());
+		buf.writeUuid(player.getUuid());buf.writeDouble(player.getX());buf.writeDouble(player.getY());buf.writeDouble(player.getZ());
+		buf.writeInt(color);buf.writeBoolean(explosionSequence!=null);if(explosionSequence!=null)buf.writeUuid(explosionSequence);return buf;
 	}
 
 	private static boolean valid(Channel channel) {
@@ -402,10 +434,10 @@ public final class SpellChannelManager {
 	private static void stop(ServerPlayerEntity player, boolean interrupted, Text reason, boolean fullCooldown) {
 		Channel channel = ACTIVE.remove(player.getUuid());
 		if (channel == null) return;
-		if (interrupted) channel.collapse.finish(false,"interrupted");
+		if (interrupted) channel.collapse.finish(false,"range_exceeded".equals(channel.collapse.record.failureReason)?"failed":"interrupted");
 		clearSlow(player);
 		broadcastVisual(channel, false);
-		channel.spell.onChannelEnded(player, interrupted);
+		channel.spell.onChannelEnded(player, interrupted,channel.domainSuppressed);
 		channel.settleCooldown.accept(SpellCastingRules.cooldownAfterStop(
 				channel.spell, channel.cooldown, interrupted, fullCooldown));
 		if (!interrupted || channel.progress.started()) channel.consumeUse.run();
@@ -550,6 +582,8 @@ public final class SpellChannelManager {
         final FormSpellStyle style;
         final RuneModifiers modifiers;
         final double formationRange;
+		final double lockRange;
+		CastRangeGuard.Lock targetLock,guidanceLock;
 		final ItemStack scroll;
 		final int level, token, cooldown, interruptMode;
 		final boolean solo;
@@ -572,8 +606,10 @@ public final class SpellChannelManager {
 
 		Channel(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level, boolean solo, int token,
 				int mana, int cooldown, BooleanSupplier sourceValid,
-				Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers,FormSpellStyle style) {
+				Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers,FormSpellStyle style,double lockRange) {
             this.style=style;
+            this.lockRange=lockRange;
+            this.guidanceLock=CastRangeGuard.entity(style.target,style.range);
             this.modifiers=modifiers;
             ItemStack equipped=solo?null:SpellCastManager.getEquippedBook(player);
             this.formationRange=equipped==null||equipped.isEmpty()?1:FormationData.sumSpaceRangeMultiplier(equipped,spell.getElement());
@@ -604,6 +640,10 @@ public final class SpellChannelManager {
             if(style.healing!=null)style.healing.onPayment(amount->this.collapse.record.moistureSpent+=amount);
 			this.interruptMode = spell.getConfig().interruptMode;
 			this.dimension = player.getWorld().getRegistryKey();
+		}
+		void bindLock(Vec3d target) {
+			var entity=spell.getCastingLockEntity(player);
+			targetLock=entity==null?CastRangeGuard.point(target,lockRange):CastRangeGuard.entity(entity,lockRange);
 		}
 	}
 }

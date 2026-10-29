@@ -36,6 +36,15 @@ public final class CastingVisualState {
 
 	/** 施法视觉条目：receivedAt 用客户端世界时间（连续不回退，dimension 无关）。 */
 	private static final Map<UUID, Entry> ACTIVE = new HashMap<>();
+	private static final Map<UUID,Cancellation> CANCELLATIONS=new HashMap<>();
+	public record Cancellation(net.minecraft.util.math.Vec3d position,int color,long started) {}
+	public record Suppression(net.minecraft.util.Identifier dimension,UUID caster,net.minecraft.util.math.Vec3d position,int color,UUID explosionSequence) {}
+	public static java.util.Collection<Cancellation> cancellations(){return CANCELLATIONS.values();}
+	public static Suppression readSuppression(net.minecraft.network.PacketByteBuf buf) {
+		var dimension=buf.readIdentifier();var caster=buf.readUuid();
+		var position=new net.minecraft.util.math.Vec3d(buf.readDouble(),buf.readDouble(),buf.readDouble());
+		int color=buf.readInt();return new Suppression(dimension,caster,position,color,buf.readBoolean()?buf.readUuid():null);
+	}
 	private static ClientWorld visualWorld;
 
 	private CastingVisualState() {}
@@ -61,6 +70,20 @@ public final class CastingVisualState {
 		net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(
 				net.jackcooper.shapeShifterCurseAddon.client.renderer.CastingCircleRenderer::render);
 		ClientTickEvents.END_CLIENT_TICK.register(CastingVisualState::tick);
+		ClientPlayNetworking.registerGlobalReceiver(SpellChannelManager.SUPPRESSION,(client,handler,buf,sender)->{
+			Suppression failure=readSuppression(buf);
+			client.execute(()->{
+				if(client.world==null||!client.world.getRegistryKey().getValue().equals(failure.dimension()))return;
+				checkWorld(client);long now=client.world.getTime();
+				Entry old=ACTIVE.remove(failure.caster());
+				if(old!=null&&!old.explosion&&!old.deathFinale)
+					CANCELLATIONS.put(failure.caster(),new Cancellation(failure.position(),failure.color(),now));
+				if(failure.explosionSequence()!=null)
+					net.jackcooper.shapeShifterCurseAddon.client.renderer.ExplosionRenderer.interruptForRange(failure.explosionSequence(),client.world,now);
+				net.jackcooper.shapeShifterCurseAddon.client.sound.SpellChargeSoundInstance.stopFor(failure.caster());
+				ExplosionEffects.playSuppressionCues(failure.position());
+			});
+		});
 		ClientPlayNetworking.registerGlobalReceiver(SpellChannelManager.CAST_VISUAL, (client, handler, buf, sender) -> {
 			UUID uuid = buf.readUuid();
 			boolean active = buf.readBoolean();
@@ -98,6 +121,7 @@ public final class CastingVisualState {
 		});
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
 			ACTIVE.clear();
+			CANCELLATIONS.clear();
 			visualWorld = null;
 		});
 	}
@@ -105,6 +129,7 @@ public final class CastingVisualState {
 	private static void checkWorld(MinecraftClient client) {
 		if (visualWorld != client.world) {
 			ACTIVE.clear();
+			CANCELLATIONS.clear();
 			visualWorld = client.world;
 		}
 	}
@@ -114,6 +139,7 @@ public final class CastingVisualState {
 		if (client.world == null) return;
 		long now = client.world.getTime();
 		ACTIVE.values().removeIf(entry -> now > entry.expiresAt);
+		if(!CANCELLATIONS.isEmpty())CANCELLATIONS.values().removeIf(entry->now-entry.started()>net.jackcooper.shapeShifterCurseAddon.spell.ExplosionRules.AFTER_GLOW_TICKS);
 		if (now % 2 != 0) return;
 		for (var player : client.world.getPlayers()) {
 			Entry entry = ACTIVE.get(player.getUuid());

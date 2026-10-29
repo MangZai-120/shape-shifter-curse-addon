@@ -25,7 +25,13 @@ public final class OcelotSpellLink {
     public static boolean wind(PlayerEntity player) {
         return player!=null&&FormUtils.isForm(player,FormIdentifiers.OCELOT_SP);
     }
-    public static double walkingMultiplier(){return BAL.d("wind_cast_walking_multiplier",.8);}
+    public static double walkingMultiplier(){return BAL.d("wind_cast_walking_multiplier",.3);}
+    /** Match SSC's actual dry, fed sneak-rush condition rather than treating every crouch as running. */
+    public static boolean sneakRush(PlayerEntity player) {
+        return wind(player)&&player.isSneaking()&&player.getFluidHeight(net.minecraft.registry.tag.FluidTags.WATER)<=0
+                &&player.getHungerManager().getFoodLevel()>=6;
+    }
+    public static boolean rushing(PlayerEntity player){return wind(player)&&(player.isSprinting()||sneakRush(player));}
     public static boolean windLocked(PlayerEntity player) {
         return wind(player)&&(player instanceof ServerPlayerEntity server
                 ?SpellChannelManager.releaseLocked(server):clientReleaseLocked.test(player));

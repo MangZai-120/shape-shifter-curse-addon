@@ -40,6 +40,7 @@ import java.util.UUID;
 @Environment(EnvType.CLIENT)
 public final class ExplosionRenderer {
 	private static final Map<UUID, View> SEQUENCES = new HashMap<>();
+	private static final Map<UUID,Long> RANGE_SUPPRESSED = new HashMap<>();
 	private static ClientWorld world;
 	private static final BufferBuilder BUFFER = new BufferBuilder(65536);
 
@@ -66,6 +67,13 @@ public final class ExplosionRenderer {
 	}
 
 	private ExplosionRenderer() {}
+
+	/** The failure event can arrive before the sequence snapshot; both orders stop audio exactly once. */
+	public static void interruptForRange(UUID id,ClientWorld currentWorld,long now) {
+		if(world!=currentWorld){clearSequences();world=currentWorld;}
+		RANGE_SUPPRESSED.put(id,now+ExplosionRules.AFTER_GLOW_TICKS);
+		View view=SEQUENCES.get(id);if(view!=null)view.effects.interrupt(view.center,false);
+	}
 
 	private static Map<UUID, View> readSequences(net.minecraft.network.PacketByteBuf buf) {
 			int count = buf.readVarInt();
@@ -108,7 +116,7 @@ public final class ExplosionRenderer {
                     view.originalPre=incoming.originalPre;view.preparation=incoming.preparation;
 					view.detonated = incoming.detonated;
 					view.suppressedAt = incoming.suppressedAt;
-					if (view.suppressedAt >= 0) view.effects.interrupt(view.center, incoming.elapsed == view.suppressedAt);
+					if (view.suppressedAt >= 0) view.effects.interrupt(view.center, incoming.elapsed == view.suppressedAt&&!RANGE_SUPPRESSED.containsKey(id));
 					view.receivedAt = world.getTime();				// 快照半径同样随包刷新（服务端 reload 后新起手序列会带新值；旧包 0 走回退）
 				if (incoming.coreRadius > 0) view.coreRadius = incoming.coreRadius;
 				if (incoming.outerRadius > 0) view.outerRadius = incoming.outerRadius;				});
@@ -120,6 +128,7 @@ public final class ExplosionRenderer {
 		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.world != world) { clearSequences(); world = client.world; }
 			if (world == null) return;
+			if(!RANGE_SUPPRESSED.isEmpty())RANGE_SUPPRESSED.values().removeIf(until->world.getTime()>until);
 			SEQUENCES.values().removeIf(view -> {
 				if (world.getTime() - view.receivedAt <= 45) return false;
 				view.effects.stop();
@@ -133,6 +142,7 @@ public final class ExplosionRenderer {
 	private static void clearSequences() {
 		SEQUENCES.values().forEach(view -> view.effects.stop());
 		SEQUENCES.clear();
+		RANGE_SUPPRESSED.clear();
 	}
 
 	/** 在世界渲染末阶段绘制；保留深度测试使法阵/光柱/球被地形与实体正常遮挡。 */

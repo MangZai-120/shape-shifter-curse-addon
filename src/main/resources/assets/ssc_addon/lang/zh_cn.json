@@ -21,7 +21,8 @@
   "message.ssc_addon.spell.homing_mana": "契灵追踪需要%s点mana，当前法力不足",
   "message.ssc_addon.spell.explosion_domain_suppressed": "爆裂魔法的法阵中心被领域覆盖，施法已被强制打断",
   "power.my_addon.form_ocelot_wind_spirit_mobile_casting.name": "风行施法",
-  "power.my_addon.form_ocelot_wind_spirit_mobile_casting.description": "蓄力时可以按正常步行速度的80%移动，不受法术原有禁动和蓄力位移限制。进入不可打断阶段前，疾跑或使用形态技能会中断施法；进入后禁用疾跑和形态技能，仍可步行。原有消耗、冷却和空间亲和保留。",
+  "power.my_addon.form_ocelot_wind_spirit_mobile_casting.description": "蓄力时可以按正常步行速度的30%移动，不受法术原有禁动和蓄力位移限制。进入不可打断阶段前，普通疾跑、潜行键触发的奔跑或使用形态技能会中断施法；进入后禁用这些奔跑和形态技能，仍可步行。有锁定目标或落点的法术超过有效射程的1.5倍时仍会强制失败。原有消耗、冷却和空间亲和保留。",
   "power.my_addon.form_ocelot_nova_quick_casting.name": "九命余响",
-  "power.my_addon.form_ocelot_nova_quick_casting.description": "九命成功复活后的5秒内，法术跳过前置蓄力；有不可打断阶段的法术从该阶段开始，演出保持原速。增益期间起手的法术保留本次时长；普通死亡重生不触发，法术消耗、冷却和失败规则不变。"
+  "power.my_addon.form_ocelot_nova_quick_casting.description": "九命成功复活后的5秒内，法术跳过前置蓄力；有不可打断阶段的法术从该阶段开始，演出保持原速。增益期间起手的法术保留本次时长；普通死亡重生不触发，法术消耗、冷却和失败规则不变。",
+  "message.ssc_addon.spell.range_exceeded": "已超出法术锁定距离的1.5倍，施法失败。"
 }

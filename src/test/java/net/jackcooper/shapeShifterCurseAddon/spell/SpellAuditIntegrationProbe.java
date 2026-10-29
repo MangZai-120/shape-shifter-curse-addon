@@ -389,6 +389,35 @@ public final class SpellAuditIntegrationProbe {
         var effects=new net.jackcooper.shapeShifterCurseAddon.client.ExplosionEffects();effects.interrupt(net.minecraft.util.math.Vec3d.ZERO,false);
         effects.tick(null,net.minecraft.util.math.Vec3d.ZERO,700,true,32d,64d); // Must return before touching world/audio/particles.
         check(true,"Interrupted effects cannot restart theme or emit blast particles even after a late detonation tick");
+        var caster=player();set(World.class,caster.testWorld,"registryKey",World.OVERWORLD);
+        set(Entity.class,caster,"pos",new net.minecraft.util.math.Vec3d(12,64,30));
+        for(UUID sequence:java.util.Arrays.asList(ids[0],null)) {
+            var event=SpellChannelManager.suppressionPacket(caster,0x55AAFF,sequence);int bytes=event.readableBytes();
+            var decoded=net.jackcooper.shapeShifterCurseAddon.client.CastingVisualState.readSuppression(event);
+            check(decoded.caster().equals(caster.getUuid())&&decoded.dimension().equals(World.OVERWORLD.getValue()),"Failure event preserves owner and dimension");
+            check(decoded.position().equals(caster.getPos())&&decoded.color()==0x55AAFF,"Failure event preserves actual circle position and color");
+            check(java.util.Objects.equals(decoded.explosionSequence(),sequence)&&event.readableBytes()==0&&bytes<100,"General and native-explosion failure events decode exactly within one small packet");event.release();
+        }
+        var sequences=renderer.getDeclaredField("SEQUENCES");sequences.setAccessible(true);var activeViews=(java.util.Map<UUID,Object>)sequences.get(null);
+        var markers=renderer.getDeclaredField("RANGE_SUPPRESSED");markers.setAccessible(true);var pending=(java.util.Map<UUID,Long>)markers.get(null);
+        UUID early=UUID.randomUUID();net.jackcooper.shapeShifterCurseAddon.client.renderer.ExplosionRenderer.interruptForRange(early,null,100);
+        check(pending.containsKey(early),"Failure before the explosion snapshot retains a sequence-specific silence marker");
+        activeViews.put(early,parsed.get(ids[1]));net.jackcooper.shapeShifterCurseAddon.client.renderer.ExplosionRenderer.interruptForRange(early,null,101);
+        var effectField=parsed.get(ids[1]).getClass().getDeclaredField("effects");effectField.setAccessible(true);
+        Object stopped=effectField.get(parsed.get(ids[1]));var interrupted=stopped.getClass().getDeclaredField("interrupted");interrupted.setAccessible(true);
+        check(interrupted.getBoolean(stopped),"Existing native sequence stops audio before shared failure cues and cannot replay them");
+        var clear=renderer.getDeclaredMethod("clearSequences");clear.setAccessible(true);clear.invoke(null);
+        check(pending.isEmpty()&&activeViews.isEmpty(),"Disconnect/world cleanup clears pending failures and existing sequences");
+        double[] smallHeld=cancelCircleVertices(0),smallRise=cancelCircleVertices(20);
+        check(smallHeld[0]>0&&smallRise[1]>smallHeld[1],"Ordinary casting circle uses actual upward finale geometry");
+        check(smallRise[2]<smallHeld[2]&&cancelCircleVertices(24)[0]==0,"Ordinary cancellation fades while rising and emits no vertices after completion");
+    }
+
+    private static double[] cancelCircleVertices(float age) {
+        var buffer=new net.minecraft.client.render.BufferBuilder(65536);buffer.begin(net.minecraft.client.render.VertexFormat.DrawMode.QUADS,net.minecraft.client.render.VertexFormats.POSITION_COLOR);
+        net.jackcooper.shapeShifterCurseAddon.client.renderer.CastingCircleRenderer.drawCancellation(buffer,new net.minecraft.client.util.math.MatrixStack(),age,0x55AAFF);
+        var built=buffer.end();int count=built.getParameters().vertexCount();var bytes=built.getVertexBuffer();int stride=net.minecraft.client.render.VertexFormats.POSITION_COLOR.getVertexSizeByte();
+        double height=0,alpha=0;for(int i=0;i<count;i++){height=Math.max(height,bytes.getFloat(i*stride+4));alpha=Math.max(alpha,bytes.get(i*stride+15)&255);}built.release();return new double[]{count,height,alpha};
     }
 
     private record FinaleVertices(int count,float height) {}

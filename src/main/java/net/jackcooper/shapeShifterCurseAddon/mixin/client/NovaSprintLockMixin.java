@@ -53,6 +53,9 @@ public abstract class NovaSprintLockMixin {
             player.input.movementForward *= 5.0F;
             player.input.movementSideways *= 5.0F;
         }
+        if(net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.windLocked(player)) {
+            player.input.sneaking=false;player.setSneaking(false);player.setSprinting(false);
+        }
         if (!net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.isImmobile(player)) return;
         // 特殊档（归途/口袋）：完全禁止移动与跳跃（0% 移速由服务端属性压死，用户 2026-09-18 定稿）；
         // 相机/转身从不受限。保留移动输入不清零——避免 prediction 拉扯，速度属性已为 0 无实际位移。

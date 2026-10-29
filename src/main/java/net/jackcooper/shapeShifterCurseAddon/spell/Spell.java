@@ -102,6 +102,11 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 		return getAimMaxRange(caster,level) > 0 ? computeAimImpact(caster, getAimMaxRange(caster,level)) : null;
 	}
 
+	/** Called once in the accepted rune/formation context, before optional resources are spent. */
+	public double getCastingLockRange(ServerPlayerEntity caster,int level){return getAimMaxRange(caster,level);}
+	/** Native entity-target spells expose their already accepted lock without another search. */
+	public net.minecraft.entity.LivingEntity getCastingLockEntity(ServerPlayerEntity caster){return null;}
+
 	private Vec3d lockedCastTarget;
 
 	protected Vec3d getCastTarget(ServerPlayerEntity caster, int level) {
@@ -135,6 +140,8 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	public void onChannelStarted(ServerPlayerEntity caster, Vec3d target) { onChannelStarted(caster); }
 
 	public void onChannelEnded(ServerPlayerEntity caster, boolean interrupted) {}
+	/** Suppression retains cleanup while allowing spell-specific interruption sounds to stay quiet. */
+	public void onChannelEnded(ServerPlayerEntity caster,boolean interrupted,boolean suppressed){onChannelEnded(caster,interrupted);}
 
 	/** Called during preparation, before the effect starts (including release-mode spells). */
 	public void tickChannel(ServerPlayerEntity caster, int level, net.minecraft.item.ItemStack scroll, int ticks) {}

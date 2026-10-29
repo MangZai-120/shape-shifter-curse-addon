@@ -15,6 +15,7 @@ public final class NeoState extends PersistentState {
     public static final class Experiment {
         public String id = UUID.randomUUID().toString(), version = NeoRules.version(), result = "preparing";
         public String spell = "";
+        public String failureReason="";
         public int preparation, omittedChecks, moistureSpent;
         public boolean snowReadyUsed,novaQuickCast;
         public int frostThornsSpent,frostLifetimeTicksSpent;
@@ -99,7 +100,7 @@ public final class NeoState extends PersistentState {
                 ||Arrays.stream(entry.getValue()).anyMatch(v->!Double.isFinite(v)||v<0||v>100000))throw new IllegalStateException("Invalid adaptation ledger");
         if(d.cooldowns.entrySet().stream().anyMatch(e->e.getKey()==null||e.getValue()==null||e.getValue()<0))throw new IllegalStateException("Invalid cooldown ledger");
         for(var record:d.records)if(record==null||record.blueprint==null||!errors(record.blueprint).isEmpty()||record.id==null||record.result==null
-                ||record.id.length()<8||record.form==null||record.version==null||record.target==null||record.spell==null||record.spell.length()>256||record.preparation<0||record.omittedChecks<0||record.moistureSpent<0||record.frostThornsSpent<0||record.frostLifetimeTicksSpent<0
+                ||record.id.length()<8||record.form==null||record.version==null||record.target==null||record.spell==null||record.spell.length()>256||record.failureReason==null||record.failureReason.length()>64||record.preparation<0||record.omittedChecks<0||record.moistureSpent<0||record.frostThornsSpent<0||record.frostLifetimeTicksSpent<0
                 ||!Double.isFinite(record.failureBasis+record.failureProbability)||record.failureBasis<0||record.failureProbability<0||record.failureProbability>1||record.failureDraws<0||record.failureDraws>1||record.failureBoundary<0
                 ||!Double.isFinite(record.initial+record.actual+record.normal+record.paid+record.arrived+record.damage+record.healing+record.absorbed+record.yaw+record.pitch)
                 ||record.checks==null||record.checks.size()>512||record.checks.stream().anyMatch(c->c==null||c.risk()==null)

@@ -104,6 +104,14 @@ public class LunarPhaseSpell extends Spell {
 		LivingEntity target = raycastEntity(caster);
 		return target == null ? null : target.getPos();
 	}
+	@Override public double getCastingLockRange(ServerPlayerEntity caster,int level) {
+		return RuneCastContext.current().scale(aimRange(),RuneModifiers.Stat.DISTANCE);
+	}
+	@Override public LivingEntity getCastingLockEntity(ServerPlayerEntity caster) {
+		UUID id=CHANNEL_TARGETS.get(caster.getUuid());
+		Entity target=id==null?null:caster.getServerWorld().getEntity(id);
+		return target instanceof LivingEntity living?living:null;
+	}
 
 	/** 施法前置校验：按住松手时准星必须命中活体实体（无目标拒绝施放，不耗蓝不进 CD）。 */
 	@Override
@@ -177,8 +185,7 @@ public class LunarPhaseSpell extends Spell {
 		if (targetId == null) return false;
 		Entity target = caster.getServerWorld().getEntity(targetId);
 		return target instanceof LivingEntity living && living.isAlive()
-				&& !living.isSpectator() && !DomainManager.blocksTargeting(caster, living)
-				&& caster.getPos().distanceTo(target.getPos()) <= RuneCastContext.current().scale(aimRange(),RuneModifiers.Stat.DISTANCE) + 8; // 容许目标小幅移动
+				&& !living.isSpectator() && !DomainManager.blocksTargeting(caster, living); // Distance is owned by the unified accepted-lock guard.
 	}
 
 	/** 蓄力期间演出（每 2t）：双方围浅紫+鬼魂粒子小圈 + 两人之间紫色粒子连线。 */
@@ -218,10 +225,14 @@ public class LunarPhaseSpell extends Spell {
 	/** 中断立即清理；正常结束由 cast 消费并清理目标。 */
 	@Override
 	public void onChannelEnded(ServerPlayerEntity caster, boolean interrupted) {
+		onChannelEnded(caster,interrupted,false);
+	}
+	@Override
+	public void onChannelEnded(ServerPlayerEntity caster,boolean interrupted,boolean suppressed) {
 		// Normal completion calls this BEFORE cast(); retain the target until settlement.
 		if (interrupted) {
 			CHANNEL_TARGETS.remove(caster.getUuid());
-			caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+			if(!suppressed)caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 					SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.7f);
 		}
 	}

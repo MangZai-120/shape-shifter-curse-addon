@@ -30,6 +30,7 @@ public final class NeoRuntime {
         public boolean legacyBook,legacyReleased;
         public UUID refundCastId;
         public float curseDurationMultiplier=1;
+        public net.jackcooper.shapeShifterCurseAddon.spell.CastRangeGuard.Lock targetLock,guidanceLock;
         public net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle style;
         public int age, beganTick;
         public boolean settled;
@@ -84,6 +85,12 @@ public final class NeoRuntime {
         NeoLegacyCasting.snapshotBlueprintAffinity(p,active);
         active.experienceMultiplier=NeoLegacyCasting.blueprintExperienceMultiplier(p);
         active.rangeMultiplier=NeoLegacyCasting.blueprintRangeMultiplier(p,b)*style.projectileRange;
+        if(b.carrier()==Carrier.LOCK&&anchor.target()!=null) {
+            var target=p.getServerWorld().getEntity(anchor.target());
+            if(target instanceof net.minecraft.entity.LivingEntity living)
+                active.targetLock=net.jackcooper.shapeShifterCurseAddon.spell.CastRangeGuard.entity(living,b.range()*active.rangeMultiplier);
+        }
+        active.guidanceLock=net.jackcooper.shapeShifterCurseAddon.spell.CastRangeGuard.entity(style.target,style.range);
         active.beganTick=p.getServer().getTicks();ACTIVE.put(p.getUuid(),active);
         if(net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.wind(p))
             net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.applyMovement(p,net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.walkingMultiplier());
@@ -91,6 +98,9 @@ public final class NeoRuntime {
     }
     private static void advance(ServerPlayerEntity p,Active a) {
         if(a.settled)return;
+        if((a.targetLock!=null&&a.targetLock.exceeded(p))||(a.guidanceLock!=null&&a.guidanceLock.exceeded(p))) {
+            failRange(p,a);return;
+        }
         var d=data(p);var s=a.session;
         Profile live=s.needsRisk(a.age)?profile(p):null;
         double delta=s.advance(a.age,d.burden,live,a.random);
@@ -125,6 +135,15 @@ public final class NeoRuntime {
         net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.clearSlow(p);
         var d=data(p);setCooldown(p,a.session.blueprint.identity(),a.fullCooldown);
         backlash(p,a.session.quote.actual());
+    }
+    private static void failRange(ServerPlayerEntity p,Active a) {
+        if(a.settled)return;a.settled=true;a.session.failed=true;ACTIVE.remove(p.getUuid(),a);
+        a.record.result="failed";a.record.failureReason="range_exceeded";
+        net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.clearSlow(p);
+        setCooldown(p,a.session.blueprint.identity(),net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules.interruptedCooldown(a.fullCooldown));
+        net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.sendSuppression(p,NeoLegacyCasting.element(a.session.blueprint.output()).color,null);
+        p.sendMessage(net.minecraft.text.Text.translatable("message.ssc_addon.spell.range_exceeded"),true);
+        dirty(p);NeoNetwork.hud(p);NeoNetwork.send(p,false);
     }
     static void grantExperience(ServerPlayerEntity p,Active a) {
         double amount=a.session.quote.normal()*a.session.blueprint.tier()*a.experienceMultiplier;
@@ -173,7 +192,7 @@ public final class NeoRuntime {
             d.cooldowns.replaceAll((key,ticks)->d.cooldownStarted.getOrDefault(key,Integer.MIN_VALUE)==server.getTicks()?ticks:Math.max(0,ticks-1));
             d.cooldowns.values().removeIf(ticks->ticks==0);d.cooldownStarted.keySet().retainAll(d.cooldowns.keySet());
             if(a!=null) {
-                if(blocked(p)||net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.wind(p)&&p.isSprinting()
+                if(blocked(p)||net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.rushing(p)
                         ||p.getStackInHand(a.hand)!=a.wand||!a.record.dimension.equals(p.getWorld().getRegistryKey().getValue().toString()))cancel(p,"interrupted");
                 else if(server.getTicks()>a.beganTick){a.age++;advance(p,a);}
             } else if(p.isAlive()&&!NeoLegacyCasting.isCasting(p)) {

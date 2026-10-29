@@ -125,10 +125,19 @@ public final class ExplosionManager {
 
 	/** Target-center coverage overrides the channel's ordinary interrupt lock, including expanding domains. */
 	public static boolean suppressIfDomainCovered(ServerPlayerEntity owner) {
+		return suppress(owner,true);
+	}
+	/** Same inert circle finale as domain suppression, with no damage or theme restart. */
+	public static boolean suppressCharge(ServerPlayerEntity owner){return suppress(owner,false);}
+	public static UUID chargingSequence(ServerPlayerEntity owner) {
+		return SEQUENCES.values().stream().filter(s->!s.exploded&&s.suppressedAt<0&&s.owner.equals(owner.getUuid())&&s.world==owner.getWorld())
+				.map(s->s.id).findFirst().orElse(null);
+	}
+	private static boolean suppress(ServerPlayerEntity owner,boolean requireDomain) {
 		boolean suppressed = false;
 		for (Sequence sequence : SEQUENCES.values()) {
 			if (sequence.exploded || sequence.suppressedAt >= 0 || !sequence.owner.equals(owner.getUuid())
-					|| sequence.world != owner.getWorld() || !DomainManager.enclosedTrapping(sequence.world, sequence.center)) continue;
+					|| sequence.world != owner.getWorld() || requireDomain&&!DomainManager.enclosedTrapping(sequence.world, sequence.center)) continue;
 			sequence.suppressedAt = sequence.realElapsed();
 			sequence.pendingTargets = java.util.List.of();
 			suppressed = true;

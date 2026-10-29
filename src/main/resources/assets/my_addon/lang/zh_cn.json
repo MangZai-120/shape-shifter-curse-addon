@@ -1982,7 +1982,8 @@
   "power.my_addon.form_snow_fox_frostspine_ice_catalysis.name": "寒棘供能",
   "power.my_addon.form_snow_fox_frostspine_ice_catalysis.description": "施放冰系法术时消耗身上环绕冰锥的寿命，降低本次崩解度增长。默认每根消耗18秒寿命、减耗5%，5根合计25%。剩余寿命不足18秒也提供完整减耗，随后碎裂并使周围结冰；中断不返还已消耗的寿命。",
   "power.my_addon.form_ocelot_wind_spirit_mobile_casting.name": "风行施法",
-  "power.my_addon.form_ocelot_wind_spirit_mobile_casting.description": "蓄力时可以按正常步行速度的80%移动，不受法术原有禁动和蓄力位移限制。进入不可打断阶段前，疾跑或使用形态技能会中断施法；进入后禁用疾跑和形态技能，仍可步行。原有消耗、冷却和空间亲和保留。",
+  "power.my_addon.form_ocelot_wind_spirit_mobile_casting.description": "蓄力时可以按正常步行速度的30%移动，不受法术原有禁动和蓄力位移限制。进入不可打断阶段前，普通疾跑、潜行键触发的奔跑或使用形态技能会中断施法；进入后禁用这些奔跑和形态技能，仍可步行。有锁定目标或落点的法术超过有效射程的1.5倍时仍会强制失败。原有消耗、冷却和空间亲和保留。",
   "power.my_addon.form_ocelot_nova_quick_casting.name": "九命余响",
-  "power.my_addon.form_ocelot_nova_quick_casting.description": "九命成功复活后的5秒内，法术跳过前置蓄力；有不可打断阶段的法术从该阶段开始，演出保持原速。增益期间起手的法术保留本次时长；普通死亡重生不触发，法术消耗、冷却和失败规则不变。"
+  "power.my_addon.form_ocelot_nova_quick_casting.description": "九命成功复活后的5秒内，法术跳过前置蓄力；有不可打断阶段的法术从该阶段开始，演出保持原速。增益期间起手的法术保留本次时长；普通死亡重生不触发，法术消耗、冷却和失败规则不变。",
+  "message.ssc_addon.spell.range_exceeded": "已超出法术锁定距离的1.5倍，施法失败。"
 }
