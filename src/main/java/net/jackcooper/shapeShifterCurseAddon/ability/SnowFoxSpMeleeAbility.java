@@ -138,9 +138,9 @@ public class SnowFoxSpMeleeAbility {
 				data.hitEntities.add(entity.getUuid());
 
 				DamageSource source = player.getDamageSources().playerAttack(player);
-				target.damage(source, (float) BAL.d("damage", DAMAGE));
+				boolean damaged=target.damage(source, (float) BAL.d("damage", DAMAGE));
 
-				target.addStatusEffect(new StatusEffectInstance(
+				boolean frozen=target.addStatusEffect(new StatusEffectInstance(
 						SscAddon.FROST_FREEZE,
 						BAL.i("freeze_ticks", FROST_FREEZE_DURATION),
 						0,
@@ -148,6 +148,7 @@ public class SnowFoxSpMeleeAbility {
 						true,
 						true
 				), player);
+				if(damaged||frozen)net.jackcooper.shapeShifterCurseAddon.spell.FrostSpellLink.onNativeHit(player,target);
 
 				// 使用ParticleUtils
 				if (player.getWorld() instanceof ServerWorld serverWorld) {

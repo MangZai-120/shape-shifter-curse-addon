@@ -71,6 +71,7 @@ public class FailAwareActiveSelfPower extends ActiveCooldownPower implements Ski
 
 	@Override
 	public boolean canUse() {
+		if(entity instanceof net.minecraft.entity.player.PlayerEntity player&&net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.windLocked(player))return false;
 		if (entity instanceof ServerPlayerEntity player) {
 			return isActive() && SkillCooldowns.ready(player, powerIdentifier());
 		}
@@ -81,6 +82,8 @@ public class FailAwareActiveSelfPower extends ActiveCooldownPower implements Ski
 	public void onUse() {
 		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(entity)) return;
 		if (!(entity instanceof ServerPlayerEntity player) || !isActive() || entityActionRef == null) return;
+		if(net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.wind(player)
+				&&!net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.onSkillAction(player))return;
 		String id = powerIdentifier();
 		SkillCastManager.Cast active = SkillCastManager.get(player.getServerWorld()).control(player.getUuid(), id);
 		if (active != null) {

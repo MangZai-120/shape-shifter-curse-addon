@@ -99,7 +99,7 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	public boolean requiresTargetBeforeChannel() { return false; }
 
 	public Vec3d captureCastTarget(ServerPlayerEntity caster, int level) {
-		return getAimMaxRange(level) > 0 ? computeAimImpact(caster, getAimMaxRange(level)) : null;
+		return getAimMaxRange(caster,level) > 0 ? computeAimImpact(caster, getAimMaxRange(caster,level)) : null;
 	}
 
 	private Vec3d lockedCastTarget;
@@ -156,6 +156,9 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	public int getLockInTick() {
 		return -1;
 	}
+
+	/** 投射体实际最大射程；各投射法术复用其原有权威范围来源。 */
+	public double getProjectileRange(int level) { return getAimMaxRange(level); }
 
 	public boolean tickContinuousCast(ServerPlayerEntity caster, int level, net.minecraft.item.ItemStack scroll, int ticks) {
 		return false;
@@ -215,6 +218,10 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	/** 本次有效等级的瞄准射程；旧法术沿用无参覆写，等级缩放法术单独覆写此方法。 */
 	public double getAimMaxRange(int level) {
 		return getAimMaxRange();
+	}
+	/** 形态投射射程与符文射程相乘，预览和服务端目标捕获共用。 */
+	public double getAimMaxRange(net.minecraft.entity.player.PlayerEntity caster,int level) {
+		return getAimMaxRange(level)*(getConfig().projectile?FormSpellStyle.projectileRangeMultiplier(caster):1);
 	}
 
 	/**

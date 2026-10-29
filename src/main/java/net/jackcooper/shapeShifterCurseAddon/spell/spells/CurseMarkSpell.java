@@ -19,6 +19,8 @@ import net.minecraft.util.math.Vec3d;
  */
 public class CurseMarkSpell extends Spell {
 
+	@Override public double getProjectileRange(int level) { return SpellCurseMarkEntity.maxDistance(); }
+
 	public CurseMarkSpell() {
 		super(new Identifier("ssc_addon", "curse_mark"), SpellRarity.GREEN);
 	}

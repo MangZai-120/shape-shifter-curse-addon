@@ -120,13 +120,14 @@ public final class DomainManager {
 		return !enclosedTrapping(player.getServerWorld(), player.getPos());
 	}
 	public static void begin(ServerPlayerEntity player) {
+		var timing=SpellChannelManager.animationTiming(player);
 		CHARGE_ANCHORS.put(player.getUuid(), player.getPos());
 		// 起手捕获快照：本次领域会话全程沿用这组参数（reload 改 balance 不影响已展开领域）。
 		Field field = new Field(player, player.getServerWorld(), player.getPos(),
 				player.getHeight() + 0.8, player.getServer().getTicks(), false,
 				DomainRules.innerRadius(), DomainRules.outerRadius(),
-				DomainRules.chargeTicks(), DomainRules.durationTicks(),
-				DomainRules.expandStartTick(), DomainRules.expandDurationTicks(),
+				timing==null?DomainRules.chargeTicks():timing.duration(), DomainRules.durationTicks(),
+				timing==null?DomainRules.expandStartTick():timing.preparation(), DomainRules.expandDurationTicks(),
 				DomainRules.maxCastDisplacement());
 		FIELDS.put(player.getUuid(), field);
 		broadcast(field, SoundEvents.BLOCK_BEACON_ACTIVATE, 0.65f, 1.0f);
@@ -139,8 +140,8 @@ public final class DomainManager {
 		// 壳开始扩张后进入锁定态（2026-09-23）：位移不再打断，必须释放。
 		if (isExpanding(player)) return true;
 		return field != null && anchor != null && !field.active && player.getWorld() == field.world
-				&& player.getPos().squaredDistanceTo(anchor)
-				<= field.maxCastDisplacement * field.maxCastDisplacement;
+				&& (OcelotSpellLink.wind(player)||player.getPos().squaredDistanceTo(anchor)
+				<= field.maxCastDisplacement * field.maxCastDisplacement);
 	}
 
 	/** 壳是否已开始扩张（蓄力 ≥200t，含完全体）：扩张后施法锁定不可打断（2026-09-23 用户定稿）。 */

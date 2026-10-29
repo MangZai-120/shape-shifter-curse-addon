@@ -1,6 +1,5 @@
 package net.ssca.neomagic;
 
-import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.spell.*;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -54,14 +53,16 @@ public final class NeoLegacyCasting {
     }
     static Quote blueprintQuote(ServerPlayerEntity p,Blueprint b,ItemStack book) {
         Quote q=NeoRules.quote(b,NeoRuntime.data(p).mastery(b));
-        double multiplier=blueprintCostMultiplier(p,b.core(),book);
+        double multiplier=blueprintCostMultiplier(p,b.core(),book)
+                *(book==null||book.isEmpty()?1:FormCastingStyle.tidalCostMultiplier(p))
+                *FormSpellStyle.collapseMultiplier(p,b.carrier()==Carrier.PROJECTILE,b.output()==Core.FROST);
         return new Quote(q.normal()*multiplier,q.actual()*multiplier,q.floor(),q.plan());
     }
     public static double blueprintCostMultiplier(ServerPlayerEntity p,Core core) {
         return blueprintCostMultiplier(p,core,SpellCastManager.getEquippedBook(p));
     }
     private static double blueprintCostMultiplier(ServerPlayerEntity p,Core core,ItemStack book) {
-        return book==null?1:FormationData.sumManaCostMultiplier(book,element(core))*FormAffinity.manaCostMultiplier(p);
+        return book==null||book.isEmpty()?1:FormationData.sumManaCostMultiplier(book,element(core))*FormAffinity.manaCostMultiplier(p);
     }
     public static double blueprintPower(ServerPlayerEntity p,Blueprint b) {
         return blueprintPower(p,b.output());
@@ -69,7 +70,30 @@ public final class NeoLegacyCasting {
     public static double blueprintPower(ServerPlayerEntity p,Core core) {ItemStack book=SpellCastManager.getEquippedBook(p);return book==null?1:FormationData.sumDamageMultiplier(book,element(core))*FormAffinity.damageMultiplier(p,element(core));}
     public static int blueprintCooldown(ServerPlayerEntity p,Blueprint b) {
         int base=NeoRules.cooldown(b);ItemStack book=SpellCastManager.getEquippedBook(p);
-        return book==null?base:Math.max(Math.max(10,(int)Math.ceil(base*.2)),Math.round(base*FormationData.sumCooldownMultiplier(book,element(b.core()))*FormAffinity.cooldownMultiplier(p,element(b.core()))));
+        return book==null||book.isEmpty()?base:Math.max(Math.max(10,(int)Math.ceil(base*.2)),Math.round(base*FormationData.sumCooldownMultiplier(book,element(b.core()))*FormAffinity.cooldownMultiplier(p,element(b.output()))));
+    }
+    /** Effect affinity follows the final output; cost formations still follow the input core. */
+    public static void snapshotBlueprintAffinity(ServerPlayerEntity p,NeoRuntime.Active active) {
+        ItemStack book=SpellCastManager.getEquippedBook(p);
+        active.legacyBook=book!=null&&!book.isEmpty();
+        active.curseDurationMultiplier=active.legacyBook?FormAffinity.curseDurationTicks(p,100)/100f:1;
+    }
+    /** One ledger for all branches/delayed hits. Stored spells open it when actually triggered. */
+    public static void beginBlueprintEffect(ServerPlayerEntity p,NeoRuntime.Active active) {
+        if(active.legacyBook&&active.refundCastId==null)
+            active.refundCastId=FormCastingStyle.openRefundBudget(p,blueprintPaid(active));
+    }
+    public static void blueprintReleased(ServerPlayerEntity p,NeoRuntime.Active active) {
+        if(active.legacyReleased)return;
+        active.legacyReleased=true;
+        if(active.legacyBook)FormCastingStyle.onSpellCast(p,element(active.session.blueprint.output()),blueprintPaid(active));
+    }
+    private static int blueprintPaid(NeoRuntime.Active active) {
+        return (int)Math.min(Integer.MAX_VALUE,Math.ceil(Math.max(0,active.session.paid)));
+    }
+    public static void blueprintHit(ServerPlayerEntity p,NeoRuntime.Active active,net.minecraft.entity.LivingEntity target,boolean conditionBeforeHit) {
+        if(active.legacyBook&&active.refundCastId!=null)
+            FormCastingStyle.onSpellHit(p,target,element(active.session.blueprint.output()),active.refundCastId,conditionBeforeHit);
     }
     public static double recoveryMultiplier(ItemStack book) {
         if(book==null||book.isEmpty())return 1;
@@ -96,10 +120,13 @@ public final class NeoLegacyCasting {
                 Math.max(.5,Math.min(4,level)),Math.min(80,Math.max(0,duration)),Math.max(1,Math.min(32,spell.getAimMaxRange(level)>0?spell.getAimMaxRange(level):32)));
     }
     public NeoLegacyCasting(ServerPlayerEntity p,Spell spell,int level,int duration,int normalCost) {
+        this(p,spell,level,duration,normalCost,spell.getLockInTick(),FormSpellStyle.collapseMultiplier(p,spell.getConfig().projectile,spell.getElement()==FormationElement.ICE));
+    }
+    public NeoLegacyCasting(ServerPlayerEntity p,Spell spell,int level,int duration,int normalCost,int lockTick,double growthMultiplier) {
         player=p;random=new Random(p.getRandom().nextLong());this.duration=duration;form=NeoRuntime.form(p);key="spell:"+spell.getId();
         var d=NeoRuntime.data(p);var b=descriptor(spell,level,duration);band=b.band();
-        Quote quote=quote(p,spell,level,duration,normalCost);double normal=quote.normal();
-        session=new Session(b,quote,duration,spell.getLockInTick());
+        Quote quote=quote(p,spell,level,duration,normalCost,growthMultiplier);double normal=quote.normal();
+        session=new Session(b,quote,duration,lockTick);
         record=new NeoState.Experiment();record.blueprint=b;record.spell=spell.getId().toString();record.preparation=duration;
         record.checks=session.checkpoints; // One owner per cast; the saved record shares its bounded event list.
         record.form=form;record.profile=profile(p);record.initial=d.burden;record.normal=normal;record.actual=session.quote.actual();
@@ -107,13 +134,16 @@ public final class NeoLegacyCasting {
         ACTIVE.put(p.getUuid(),this);NeoRuntime.dirty(p);
     }
     public static Quote quote(ServerPlayerEntity p,Spell spell,int level,int duration,int normalCost) {
+        return quote(p,spell,level,duration,normalCost,FormSpellStyle.collapseMultiplier(p,spell.getConfig().projectile,spell.getElement()==FormationElement.ICE));
+    }
+    private static Quote quote(ServerPlayerEntity p,Spell spell,int level,int duration,int normalCost,double growthMultiplier) {
         var b=descriptor(spell,level,duration);String key="spell:"+spell.getId();
         int tier=Math.max(1,spell.getRarity(level).ordinal()+1);
         Tuning t=NeoRules.tunings().getOrDefault(key,Tuning.defaults());
         double needed=t.mastery()>0?t.mastery():20.0*tier*tier;
         var progress=NeoRuntime.data(p).progress.get(key);double mastery=progress==null?0:clamp(progress[b.band()]/needed,0,1);
         double floor=t.floor()>0?t.floor():tier<=2?.5:tier<=4?.4:.35;
-        double normal=Math.max(0,normalCost)*t.cost();
+        double normal=Math.max(0,normalCost)*t.cost()*growthMultiplier;
         return new Quote(normal,normal*(1-(1-floor)*mastery),floor,plan(b));
     }
     /** Payment advances per tick; failure is drawn once, while only deviation samples repeat. */
@@ -163,5 +193,4 @@ public final class NeoLegacyCasting {
     public static boolean wrongTarget(){var a=EFFECT.get();return a!=null&&a.session.wrongTarget;}
     public static void miss(){var a=EFFECT.get();if(a!=null)a.effectFailed=true;}
     public static boolean missed(){var a=EFFECT.get();return a!=null&&a.effectFailed;}
-    private NeoLegacyCasting(){throw new AssertionError();}
 }

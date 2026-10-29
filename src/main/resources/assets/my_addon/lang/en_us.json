@@ -1976,5 +1976,13 @@
   "text.ssc_addon.book.player.short": "Casting level %s",
   "text.ssc_addon.book.player.exp_label": "Casting XP",
   "text.ssc_addon.bar_editor.scale": "Scale: %s%%",
-  "text.ssc_addon.bar_editor.item_store": "SSC stored items"
+  "text.ssc_addon.bar_editor.item_store": "SSC stored items",
+  "power.my_addon.form_snow_fox_sp_ice_preparation.name": "Frost Preparation",
+  "power.my_addon.form_snow_fox_sp_ice_preparation.description": "A successful native frost skill hit briefly reduces collapse growth for your next ice spell. Defaults: 15% reduction within 3 seconds. Further hits refresh the window without stacking. Consumed when ice casting starts; interruption does not refund it.",
+  "power.my_addon.form_snow_fox_frostspine_ice_catalysis.name": "Thorn Catalysis",
+  "power.my_addon.form_snow_fox_frostspine_ice_catalysis.description": "Ice spells spend your hovering thorns' lifespan to reduce collapse growth. Defaults: each thorn spends 18 seconds and reduces cost by 5%, adding to 25% with five thorns. A thorn with less lifespan still gives the full reduction, then shatters and freezes its surroundings. Spent lifespan is not refunded on interruption.",
+  "power.my_addon.form_ocelot_wind_spirit_mobile_casting.name": "Windborne Casting",
+  "power.my_addon.form_ocelot_wind_spirit_mobile_casting.description": "Move at 80% of normal walking speed while charging any spell, bypassing its casting immobility and displacement limit. Sprinting or using a form skill interrupts preparation. During a protected release stage, sprinting and form skills are disabled while walking remains available. Existing costs, cooldowns and space affinities remain.",
+  "power.my_addon.form_ocelot_nova_quick_casting.name": "Nine Lives Echo",
+  "power.my_addon.form_ocelot_nova_quick_casting.description": "For 5 seconds after a successful Nine Lives revival, skip spell preparation. Spells with a protected release stage start at that stage and keep its original animation speed. Accepted casts retain their duration after the window expires. Normal respawns do not trigger this effect. Spell costs, cooldowns and failure rules still apply."
 }

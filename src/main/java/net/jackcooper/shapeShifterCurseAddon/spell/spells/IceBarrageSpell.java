@@ -22,6 +22,8 @@ import net.minecraft.util.math.Vec3d;
  */
 public class IceBarrageSpell extends Spell {
 
+	@Override public double getProjectileRange(int level) { return SpellFrostSpikeEntity.maxDistance(); }
+
 	/** 散射枚数。默认值；运行时从 balance 快照读取。 */
 	private static final int COUNT = 3;
 	/** 扇形半角（度）：三枚 = 中心 1 枚 + 两侧各 1 枚偏转此角度。默认值；运行时从 balance 快照读取。 */

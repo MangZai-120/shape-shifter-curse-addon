@@ -27,6 +27,10 @@ public final class NeoRuntime {
         public double powerMultiplier=1;
         public double experienceMultiplier=1;
         public double rangeMultiplier=1;
+        public boolean legacyBook,legacyReleased;
+        public UUID refundCastId;
+        public float curseDurationMultiplier=1;
+        public net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle style;
         public int age, beganTick;
         public boolean settled;
         Active(Session s,NeoState.Experiment r,ItemStack wand,Hand hand,NeoEffects.Anchor anchor,Random random) {
@@ -43,6 +47,8 @@ public final class NeoRuntime {
     public static void refreshForm(ServerPlayerEntity p) {
         var d=data(p);String current=form(p);
         if(!current.equals(d.form)) {
+            net.jackcooper.shapeShifterCurseAddon.spell.FrostSpellLink.clear(p);
+            net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.clear(p);
             if(ACTIVE.containsKey(p.getUuid())) cancel(p,"form_changed");
             NeoEffects.clearStored(p.getUuid());
             d.burden=0;d.recovery=0;d.form=current;dirty(p);
@@ -62,14 +68,26 @@ public final class NeoRuntime {
         NeoEffects.Anchor anchor=NeoEffects.capture(p,b);
         if(!NeoEffects.preflight(p,b,anchor)) {message(p,"target_invalid");return;}
         Quote quote=NeoLegacyCasting.blueprintQuote(p,b);
+        var style=net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.plan(p,b.carrier()==Carrier.PROJECTILE,
+                b.range()*NeoLegacyCasting.blueprintRangeMultiplier(p,b),b.prep(),b.prep(),-1,b.output()==Core.FROST);
+        if(!style.pay())return;
         var e=new NeoState.Experiment();e.blueprint=b;e.form=d.form;e.profile=NeoRules.profile(d.form);e.initial=d.burden;
-        e.normal=quote.normal();e.actual=quote.actual();e.profile=profile(p);e.preparation=b.prep();e.dimension=p.getWorld().getRegistryKey().getValue().toString();
+        e.normal=quote.normal();e.actual=quote.actual();e.profile=profile(p);e.preparation=style.timing.duration();e.dimension=p.getWorld().getRegistryKey().getValue().toString();
         e.target=anchor.target()==null?anchor.position().toString():anchor.target().toString();
-        d.add(e);var active=new Active(new Session(b,quote),e,p.getStackInHand(hand),hand,anchor,new Random(p.getRandom().nextLong()));
+        d.add(e);var active=new Active(new Session(b,quote,style.timing.duration()),e,p.getStackInHand(hand),hand,anchor,new Random(p.getRandom().nextLong()));
+        active.style=style;
+        active.record.novaQuickCast=style.novaQuickCast;
+        active.record.moistureSpent=style.paidMoisture();
+        if(style.frost!=null)style.frost.record(active.record);
+        if(style.healing!=null)style.healing.onPayment(amount->active.record.moistureSpent+=amount);
         active.fullCooldown=NeoLegacyCasting.blueprintCooldown(p,b);active.powerMultiplier=NeoLegacyCasting.blueprintPower(p,b);
+        NeoLegacyCasting.snapshotBlueprintAffinity(p,active);
         active.experienceMultiplier=NeoLegacyCasting.blueprintExperienceMultiplier(p);
-        active.rangeMultiplier=NeoLegacyCasting.blueprintRangeMultiplier(p,b);
-        active.beganTick=p.getServer().getTicks();ACTIVE.put(p.getUuid(),active);advance(p,active);NeoNetwork.send(p,false);
+        active.rangeMultiplier=NeoLegacyCasting.blueprintRangeMultiplier(p,b)*style.projectileRange;
+        active.beganTick=p.getServer().getTicks();ACTIVE.put(p.getUuid(),active);
+        if(net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.wind(p))
+            net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.applyMovement(p,net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.walkingMultiplier());
+        advance(p,active);NeoNetwork.send(p,false);
     }
     private static void advance(ServerPlayerEntity p,Active a) {
         if(a.settled)return;
@@ -82,6 +100,7 @@ public final class NeoRuntime {
         if(s.failed) fail(p,a);
         else if(s.complete) {
             ACTIVE.remove(p.getUuid());
+            net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.clearSlow(p);
             // Effects receive one immutable outcome; no later collapse checks run on it.
             if(NeoEffects.release(p,a)) {
                 a.record.result=s.quote.plan().stored()?"stored":"released";
@@ -103,6 +122,7 @@ public final class NeoRuntime {
     public static void fail(ServerPlayerEntity p,Active a) {
         if(a.settled)return;a.settled=true;
         ACTIVE.remove(p.getUuid());a.record.result="failed";
+        net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.clearSlow(p);
         var d=data(p);setCooldown(p,a.session.blueprint.identity(),a.fullCooldown);
         backlash(p,a.session.quote.actual());
     }
@@ -131,6 +151,7 @@ public final class NeoRuntime {
     }
     public static void cancel(ServerPlayerEntity p,String reason) {
         Active a=ACTIVE.remove(p.getUuid());if(a==null)return;
+        net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.clearSlow(p);
         a.record.result=reason;a.settled=true;setCooldown(p,a.session.blueprint.identity(),Math.max(10,a.fullCooldown/2));
         dirty(p);
     }
@@ -152,7 +173,8 @@ public final class NeoRuntime {
             d.cooldowns.replaceAll((key,ticks)->d.cooldownStarted.getOrDefault(key,Integer.MIN_VALUE)==server.getTicks()?ticks:Math.max(0,ticks-1));
             d.cooldowns.values().removeIf(ticks->ticks==0);d.cooldownStarted.keySet().retainAll(d.cooldowns.keySet());
             if(a!=null) {
-                if(blocked(p)||p.getStackInHand(a.hand)!=a.wand||!a.record.dimension.equals(p.getWorld().getRegistryKey().getValue().toString()))cancel(p,"interrupted");
+                if(blocked(p)||net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.wind(p)&&p.isSprinting()
+                        ||p.getStackInHand(a.hand)!=a.wand||!a.record.dimension.equals(p.getWorld().getRegistryKey().getValue().toString()))cancel(p,"interrupted");
                 else if(server.getTicks()>a.beganTick){a.age++;advance(p,a);}
             } else if(p.isAlive()&&!NeoLegacyCasting.isCasting(p)) {
                 if(server.getTicks()>d.lastPaymentTick){if(d.recovery>0)d.recovery--;else if(d.burden>0)d.burden=Math.max(0,d.burden-NeoRules.recoveryRate*NeoLegacyCasting.recoveryMultiplier(net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.getEquippedBook(p)));}

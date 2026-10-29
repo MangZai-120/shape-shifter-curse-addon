@@ -68,6 +68,7 @@ public class BeepSheepEntity extends ThrownItemEntity {
 	@Override
 	public void tick() {
 		super.tick();
+        if(this.isRemoved())return;
 		// 飞行拖尾（服务端撒，天然多人同步）：白色羊毛絮 + 轻微咩概率音不刷（弹道安静，命中才叫）
 		if (this.getWorld() instanceof ServerWorld serverWorld && this.age % 2 == 0) {
 			serverWorld.spawnParticles(ParticleTypes.WHITE_ASH,

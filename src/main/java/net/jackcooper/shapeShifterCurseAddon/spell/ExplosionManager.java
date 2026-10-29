@@ -25,6 +25,7 @@ public final class ExplosionManager {
 	private static final Map<UUID, Sequence> SEQUENCES = new LinkedHashMap<>();
 
 	private static final class Sequence {
+        final FormSpellStyle.Timing timing;
 		final UUID id = UUID.randomUUID();
 		final ServerWorld world;
 		final Vec3d center;
@@ -44,6 +45,8 @@ public final class ExplosionManager {
 		final int fireTicksNear;
 		final int fireTicksFar;
 		boolean exploded;
+		/** Physical elapsed tick of domain suppression; retained only for the non-damaging circle finale. */
+		int suppressedAt = -1;
 		/** 待结算目标队列（2026-09-24 伤害分批）：引爆时快照全部目标，每 tick 只结一批，
 		 * 避免密集场景百余实体同帧过 damage/死亡掉落造成服务端尖峰（「造成伤害后卡一下」）。 */
 		java.util.List<LivingEntity> pendingTargets = java.util.List.of();
@@ -53,6 +56,8 @@ public final class ExplosionManager {
 			this.owner = owner.getUuid();
 			this.center = center;
 			this.chargeAnchor = owner.getPos();
+            var castTiming=SpellChannelManager.animationTiming(owner);
+            this.timing=castTiming==null?FormSpellStyle.Timing.of(ExplosionRules.CHARGE_TICKS,ExplosionRules.CHARGE_TICKS,ExplosionRules.SOUND_START_TICKS,1):castTiming;
 			this.power = power;
 			this.refundCastId = refundCastId;
 			this.startTime = world.getTime();
@@ -65,7 +70,8 @@ public final class ExplosionManager {
 			this.fireTicksFar = ExplosionRules.fireTicksFar();
 		}
 
-		int elapsed() { return (int) Math.max(0, world.getTime() - startTime); }
+		int realElapsed() { return (int)Math.max(0,world.getTime()-startTime); }
+		int elapsed() { return timing.logical(realElapsed()); }
 
 		/** 是否已进入红白球阶段（≥ BALL_START_TICKS）：此后施法锁定不可打断。 */
 		/** 锁定阈值（2026-09-24 用户定稿）：主题音频起播（T-8s / 540t）即锁定不可打断——
@@ -89,7 +95,7 @@ public final class ExplosionManager {
 	}
 
 	public static void detonate(ServerPlayerEntity owner, Vec3d center, float power, UUID refundCastId) {
-		Sequence sequence = SEQUENCES.values().stream().filter(value -> !value.exploded
+		Sequence sequence = SEQUENCES.values().stream().filter(value -> !value.exploded && value.suppressedAt < 0
 				&& value.owner.equals(owner.getUuid()) && value.world == owner.getWorld()
 				&& value.center.equals(center)).findFirst().orElse(null);
 		if (sequence == null) return;
@@ -113,23 +119,37 @@ public final class ExplosionManager {
 	}
 
 	public static void cancelCharge(ServerPlayerEntity owner) {
-		if (SEQUENCES.values().removeIf(value -> !value.exploded && value.owner.equals(owner.getUuid())))
+		if (SEQUENCES.values().removeIf(value -> !value.exploded && value.suppressedAt < 0 && value.owner.equals(owner.getUuid())))
 			syncNow(owner.getServer());
+	}
+
+	/** Target-center coverage overrides the channel's ordinary interrupt lock, including expanding domains. */
+	public static boolean suppressIfDomainCovered(ServerPlayerEntity owner) {
+		boolean suppressed = false;
+		for (Sequence sequence : SEQUENCES.values()) {
+			if (sequence.exploded || sequence.suppressedAt >= 0 || !sequence.owner.equals(owner.getUuid())
+					|| sequence.world != owner.getWorld() || !DomainManager.enclosedTrapping(sequence.world, sequence.center)) continue;
+			sequence.suppressedAt = sequence.realElapsed();
+			sequence.pendingTargets = java.util.List.of();
+			suppressed = true;
+		}
+		if (suppressed) syncNow(owner.getServer());
+		return suppressed;
 	}
 
 /** 施法者是否仍在蓄力锚点 3 格内（无进行中序列时规约为 true，不阻断其它校验）。
 	 * 红白球开始生成后进入锁定态（2026-09-23 用户定稿）：位移不再打断，必须释放。 */
 	public static boolean isWithinChargeAnchor(ServerPlayerEntity owner) {
 		return SEQUENCES.values().stream()
-				.filter(value -> !value.exploded && value.owner.equals(owner.getUuid()))
-				.allMatch(value -> value.ballCharging() || value.ownerWithinAnchor(owner.getServer()));
+				.filter(value -> !value.exploded && value.suppressedAt < 0 && value.owner.equals(owner.getUuid()))
+				.allMatch(value -> value.ballCharging() || OcelotSpellLink.wind(owner) || value.ownerWithinAnchor(owner.getServer()));
 	}
 
 	/** 施法者的进行中序列是否已进入红白球阶段（≥682t / 第 34.1 秒）：
 	 * 锁定不可打断（同领域壳扩张锁定，2026-09-23 用户定稿）。 */
 	public static boolean isBallCharging(ServerPlayerEntity owner) {
 		return SEQUENCES.values().stream()
-				.anyMatch(value -> !value.exploded && value.owner.equals(owner.getUuid())
+				.anyMatch(value -> !value.exploded && value.suppressedAt < 0 && value.owner.equals(owner.getUuid())
 						&& value.ballCharging());
 	}
 
@@ -139,6 +159,13 @@ public final class ExplosionManager {
 		var iterator = SEQUENCES.values().iterator();
 		while (iterator.hasNext()) {
 			Sequence sequence = iterator.next();
+			if (sequence.suppressedAt >= 0) {
+				if (sequence.realElapsed() - sequence.suppressedAt > ExplosionRules.AFTER_GLOW_TICKS) {
+					iterator.remove();
+					removed = true;
+				}
+				continue;
+			}
 			int elapsed = sequence.elapsed();
 			// 分批伤害推进：每 tick ≤ DAMAGE_BATCH 个目标（每目标结算时验 isAlive，跳过批间死亡/卸载）。
 			if (!sequence.pendingTargets.isEmpty()) damageBatch(sequence);
@@ -240,20 +267,22 @@ public final class ExplosionManager {
 			var buf = PacketByteBufs.create();
 			buf.writeIdentifier(viewer.getWorld().getRegistryKey().getValue());
 			buf.writeVarInt(visible.size());
-			for (Sequence sequence : visible) {
-				buf.writeUuid(sequence.id);
-				buf.writeDouble(sequence.center.x);
-				buf.writeDouble(sequence.center.y);
-				buf.writeDouble(sequence.center.z);
-				// Duration, never server uptime: old saves and late joins use the same timeline.
-				buf.writeVarInt(sequence.elapsed());
-				buf.writeBoolean(sequence.exploded);
-				// 协议扩展（2026-09-27，本模组双端同装直接扩）：随包下发起手快照半径，
-				// 客户端警示圈/冲击波球读包值，reload 后与服务端结算保持同源。
-				buf.writeDouble(sequence.coreRadius);
-				buf.writeDouble(sequence.outerRadius);
-			}
+			for (Sequence sequence : visible) writeSequence(buf, sequence, sequence.realElapsed());
 			ServerPlayNetworking.send(viewer, START, buf);
 		}
+	}
+
+	private static void writeSequence(net.minecraft.network.PacketByteBuf buf, Sequence sequence, int elapsed) {
+		buf.writeUuid(sequence.id);
+		buf.writeDouble(sequence.center.x);
+		buf.writeDouble(sequence.center.y);
+		buf.writeDouble(sequence.center.z);
+		buf.writeVarInt(elapsed); // Duration rather than server uptime, including late joins.
+		buf.writeBoolean(sequence.exploded);
+		buf.writeDouble(sequence.coreRadius);
+		buf.writeDouble(sequence.outerRadius);
+		buf.writeVarInt(sequence.timing.originalPre());
+		buf.writeVarInt(sequence.timing.preparation());
+		buf.writeVarInt(sequence.suppressedAt);
 	}
 }

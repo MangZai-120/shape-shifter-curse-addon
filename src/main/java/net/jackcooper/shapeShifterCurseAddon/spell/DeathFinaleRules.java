@@ -21,7 +21,10 @@ public final class DeathFinaleRules {
             return contains(current.squaredDistanceTo(anchor), MAX_CAST_DISPLACEMENT);
         }
         public boolean follow(Vec3d current) {
-            if (!canContinue(current)) return false;
+            return follow(current,false);
+        }
+        public boolean follow(Vec3d current,boolean unrestricted) {
+            if (!unrestricted&&!canContinue(current)) return false;
             center = current;
             return true;
         }

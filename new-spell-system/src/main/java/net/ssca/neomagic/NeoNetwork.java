@@ -69,6 +69,8 @@ public final class NeoNetwork {
         var bookEffects=new EnumMap<Core,double[]>(Core.class);
         for(Core core:Core.values())bookEffects.put(core,new double[]{NeoLegacyCasting.blueprintCostMultiplier(p,core),NeoLegacyCasting.blueprintPower(p,core)});
         n.putString("BookEffects",NeoState.JSON.toJson(bookEffects));
+        ItemStack equipped=net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.getEquippedBook(p);
+        n.putBoolean("BookEquipped",equipped!=null&&!equipped.isEmpty());
         n.putByteArray("Tunings",NeoPayload.pack(NeoState.JSON.toJson(NeoRules.tunings()).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
         var packet=PacketByteBufs.create();packet.writeNbt(n);
         if(packet.readableBytes()>1_000_000){NeoMagic.LOG.error("Research snapshot too large for {}: {} bytes",p.getUuid(),packet.readableBytes());packet.release();return;}
@@ -94,16 +96,20 @@ public final class NeoNetwork {
         var n=new NbtCompound();n.putBoolean("Visible",holding||d.burden>0||a!=null||NeoEffects.hasStored(p.getUuid()));
         var profile=NeoLegacyCasting.profile(p,book);
         n.putInt("MasteryExpTen",d.spellbookMasteryExpTen);
+        n.putBoolean("BookEquipped",book!=null&&!book.isEmpty());
         n.putInt("CastingLevel",net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.tier(d));
         n.putDouble("DangerMax",profile.safety()*2);
         n.putDouble("C",d.burden);n.putDouble("S",profile.safety());n.putDouble("BodyS",NeoRules.profile(d.form).safety());n.putInt("Recovery",d.recovery);n.putInt("RecoveryDelay",NeoRules.recoveryDelay);
+        n.putDouble("FrostSpellMultiplier",net.jackcooper.shapeShifterCurseAddon.spell.FrostSpellLink.multiplier(p,true));
+        n.putLong("FrostReadyUntil",net.jackcooper.shapeShifterCurseAddon.spell.FrostSpellLink.readyUntil(p));
+        n.putLong("NovaQuickCastUntil",net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.quickUntil(p));
         Blueprint b=a==null?bound(p.getMainHandStack()):a.session.blueprint;
         if(b==null)b=bound(p.getOffHandStack());
         boolean loaded=b!=null;
         boolean hasSpell=loaded||a!=null||legacy!=null;
         if(b==null)b=d.draft;
         Quote q=a==null?NeoLegacyCasting.blueprintQuote(p,b,book):a.session.quote;
-        int prep=b.prep();String legacyName="";
+        int prep=a==null?net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.timing(p,b.prep(),b.prep(),-1).duration():a.record.preparation;String legacyName="";
         if(legacy!=null){b=legacy.session.blueprint;q=legacy.session.quote;prep=legacy.duration;legacyName=legacy.record.spell;}
         else if(a==null&&!loaded) {
             ItemStack scroll=p.getMainHandStack().getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem?p.getMainHandStack():p.getOffHandStack().getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem?p.getOffHandStack():ItemStack.EMPTY;
@@ -114,7 +120,8 @@ public final class NeoNetwork {
                 hasSpell=true;
                 int level=solo?net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getLevel(scroll):net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.getCastLevel(scroll);
                 var modifiers=net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme.modifiers(p,scroll,level);
-                prep=modifiers.time(spell.getCastingProfile(p,level,solo).ticks());
+                int original=spell.getCastingProfile(p,level,solo).ticks();
+                prep=net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.timing(p,original,modifiers.time(original),spell.getLockInTick()).duration();
                 b=NeoLegacyCasting.descriptor(spell,level,prep);
                 int normal=solo?modifiers.mana(Math.round(spell.getManaCost()*spell.getConfig().manaCostMultiplier(level))):net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers.finalManaCost(spell,book,p,level,scroll);
                 q=NeoLegacyCasting.quote(p,spell,level,prep,normal);legacyName=spell.getId().toString();

@@ -392,7 +392,7 @@ public final class SpellcastClient {
 		if (book == null || book.isEmpty() || selectedSlot != gestureSlot
 				|| !ItemStack.areEqual(SpellbookData.getScroll(book, gestureSlot), targetingScroll)) return null;
 		Spell spell = ScrollData.getSpell(targetingScroll);
-		return spell == null ? null : RuneCastContext.with(RuneScheme.modifiers(client.player,targetingScroll,targetingLevel),()->Spell.computeAimImpact(client.player, spell.getAimMaxRange(targetingLevel)));
+		return spell == null ? null : RuneCastContext.with(RuneScheme.modifiers(client.player,targetingScroll,targetingLevel),()->Spell.computeAimImpact(client.player, spell.getAimMaxRange(client.player,targetingLevel)));
 	}
 
 	/** 当前槽是否为按住瞄准型法术（getAimMaxRange>0，如陨火术）。 */
@@ -424,7 +424,7 @@ public final class SpellcastClient {
 		if (radius <= 0) {
 			return;
 		}
-		Vec3d impact = RuneCastContext.with(runeModifiers,net.jackcooper.shapeShifterCurseAddon.spell.FormationData.sumSpaceRangeMultiplier(book,spell.getElement()),()->Spell.computeAimImpact(player, spell.getAimMaxRange(level)));
+		Vec3d impact = RuneCastContext.with(runeModifiers,net.jackcooper.shapeShifterCurseAddon.spell.FormationData.sumSpaceRangeMultiplier(book,spell.getElement()),()->Spell.computeAimImpact(player, spell.getAimMaxRange(player,level)));
 		if (impact == null) {
 			return;
 		}

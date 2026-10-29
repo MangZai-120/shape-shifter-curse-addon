@@ -203,7 +203,7 @@ public class SscAddonNetworking {
 			net.jackcooper.shapeShifterCurseAddon.ability.ControlledAbilityInterruption.interrupt(player);
 			return;
 		}
-		net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.cancelSelf(player);
+		if(!net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.onSkillAction(player))return;
 		action.run();
 	}
 
@@ -639,8 +639,10 @@ public class SscAddonNetworking {
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_CLAW_HOLD, (server, player, handler, buf, responseSender) -> {
 			boolean hold = buf.readBoolean();
 			server.execute(() -> {
-                if (!hold || net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(player))
+                if (!hold || net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(player)) {
+                    if(hold&&!net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.onSkillAction(player))return;
                     net.jackcooper.shapeShifterCurseAddon.ability.WindSpiritClawManager.setHolding(player, hold);
+                }
             });
 		});
 

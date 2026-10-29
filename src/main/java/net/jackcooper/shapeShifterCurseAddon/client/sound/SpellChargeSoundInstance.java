@@ -27,6 +27,7 @@ import net.minecraft.util.math.random.Random;
  * STATE 沿调用 {@link #onChannelStart}。</p>
  */
 public class SpellChargeSoundInstance extends MovingSoundInstance {
+	private static SpellChargeSoundInstance current;
 
 	/** 短蓄力判定阈值（秒）。 */
 	private static final float SHORT_CAST_SECONDS = 1.0F;
@@ -63,7 +64,16 @@ public class SpellChargeSoundInstance extends MovingSoundInstance {
 	public static void onChannelStart(net.minecraft.entity.Entity caster, float durationTicks) {
 		MinecraftClient client = MinecraftClient.getInstance();
 		if (client.getSoundManager() == null) return;
-		client.getSoundManager().play(new SpellChargeSoundInstance(caster, durationTicks / 20.0F));
+		if (current != null) client.getSoundManager().stop(current);
+		current = new SpellChargeSoundInstance(caster, durationTicks / 20.0F);
+		client.getSoundManager().play(current);
+	}
+
+	/** Audio ends at the authoritative end packet, independently of the HUD's exit animation. */
+	public static void stopFor(java.util.UUID caster) {
+		if (current == null || !current.caster.getUuid().equals(caster)) return;
+		MinecraftClient.getInstance().getSoundManager().stop(current);
+		current = null;
 	}
 
 	@Override

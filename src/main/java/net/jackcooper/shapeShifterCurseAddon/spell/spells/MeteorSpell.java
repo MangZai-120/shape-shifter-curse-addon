@@ -76,7 +76,7 @@ public class MeteorSpell extends Spell {
 	/** 施法前置校验：落点必须命中方块（空中拒绝施放；书本路径由 SpellCastManager 预检，不耗法力/CD）。 */
 	@Override
 	public boolean canCast(ServerPlayerEntity caster) {
-		return Spell.computeAimImpact(caster, getAimMaxRange()) != null;
+		return Spell.computeAimImpact(caster, getAimMaxRange(caster,1)) != null;
 	}
 
 	@Override

@@ -39,7 +39,7 @@ public class LunarMendSpell extends Spell {
             caster.damage(caster.getDamageSources().magic(), power);
             return;
         }
-        caster.heal(power);
+        net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.heal(caster,caster,power);
 		// 净化预算制（2026-09-17）：等级 = 预算点数（L1=1 … L5=5）；
 		// 移除一个 amplifier=n 的负面效果消耗 n+1 点（一级 debuff 消耗 1，二级消耗 2，以此类推）；
 		// 预算不足以移除下一个（如剩 1 点遇到二级）则跳过继续找可移除的，预算耗尽停止。

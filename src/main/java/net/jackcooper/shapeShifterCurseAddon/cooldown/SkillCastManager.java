@@ -182,6 +182,8 @@ public class SkillCastManager extends PersistentState {
      */
     public long begin(ServerPlayerEntity player, String skillId, ResolvedConfig config) {
         if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return -1;
+        if(net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.wind(player)
+                &&!net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.onSkillAction(player))return -1;
         long now = now(player);
         restoreOnlineClock(player, skillId, now);
         return begin(player.getUuid(), skillId, config, now);

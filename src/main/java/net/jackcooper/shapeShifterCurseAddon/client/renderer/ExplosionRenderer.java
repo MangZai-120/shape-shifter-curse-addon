@@ -46,7 +46,9 @@ public final class ExplosionRenderer {
 	private static final class View {
 		final Vec3d center;
 		int elapsed;
+        int originalPre,preparation;
 		boolean detonated;
+		int suppressedAt = -1;
 		long receivedAt;
 		/** 包内快照半径（2026-09-27）：服务端起手捕获随 START 包下发；
 		 * 预设 0 = 旧包无此字段，渲染时回退 ExplosionRules 当前值。 */
@@ -54,7 +56,9 @@ public final class ExplosionRenderer {
 		double outerRadius;
 		final ExplosionEffects effects = new ExplosionEffects();
 		View(Vec3d center, int elapsed, boolean detonated) { this.center = center; this.elapsed = elapsed; this.detonated = detonated; }
-		float age(float delta) { return elapsed + Math.max(0, world.getTime() - receivedAt) + delta; }
+		float realAge(float delta) { return elapsed + Math.max(0, world.getTime() - receivedAt) + delta; }
+		float age(float delta) { return (float)net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.Timing.logical(
+                realAge(delta),originalPre,preparation); }
 		/** 生效核心半径：包值优先，无包值（旧版本包/异常）回退 ExplosionRules.coreRadius()。 */
 		double coreRadius() { return coreRadius > 0 ? coreRadius : ExplosionRules.coreRadius(); }
 		/** 生效外沿半径：包值优先，无包值回退 ExplosionRules.outerRadius()。 */
@@ -63,9 +67,7 @@ public final class ExplosionRenderer {
 
 	private ExplosionRenderer() {}
 
-	public static void register() {
-		ClientPlayNetworking.registerGlobalReceiver(ExplosionManager.START, (client, handler, buf, sender) -> {
-			var dimension = buf.readIdentifier();
+	private static Map<UUID, View> readSequences(net.minecraft.network.PacketByteBuf buf) {
 			int count = buf.readVarInt();
 			Map<UUID, View> parsed = new HashMap<>();
 			for (int i = 0; i < count; i++) {
@@ -79,8 +81,18 @@ public final class ExplosionRenderer {
 				View incoming = new View(center, elapsed, detonated);
 				incoming.coreRadius = coreRadius;
 				incoming.outerRadius = outerRadius;
+                incoming.originalPre=buf.readVarInt();
+                incoming.preparation=buf.readVarInt();
+				incoming.suppressedAt=buf.readVarInt();
 				parsed.put(owner, incoming);
 			}
+		return parsed;
+	}
+
+	public static void register() {
+		ClientPlayNetworking.registerGlobalReceiver(ExplosionManager.START, (client, handler, buf, sender) -> {
+			var dimension = buf.readIdentifier();
+			Map<UUID, View> parsed = readSequences(buf);
 			client.execute(() -> {
 				if (client.world == null || !client.world.getRegistryKey().getValue().equals(dimension)) return;
 				if (world != client.world) clearSequences();
@@ -93,7 +105,10 @@ public final class ExplosionRenderer {
 				parsed.forEach((id, incoming) -> {
 					View view = SEQUENCES.computeIfAbsent(id, key -> incoming);
 					view.elapsed = incoming.elapsed;
+                    view.originalPre=incoming.originalPre;view.preparation=incoming.preparation;
 					view.detonated = incoming.detonated;
+					view.suppressedAt = incoming.suppressedAt;
+					if (view.suppressedAt >= 0) view.effects.interrupt(view.center, incoming.elapsed == view.suppressedAt);
 					view.receivedAt = world.getTime();				// 快照半径同样随包刷新（服务端 reload 后新起手序列会带新值；旧包 0 走回退）
 				if (incoming.coreRadius > 0) view.coreRadius = incoming.coreRadius;
 				if (incoming.outerRadius > 0) view.outerRadius = incoming.outerRadius;				});
@@ -110,7 +125,8 @@ public final class ExplosionRenderer {
 				view.effects.stop();
 				return true;
 			});
-			for (View view : SEQUENCES.values()) view.effects.tick(world, view.center, (int) view.age(0), view.detonated, view.coreRadius(), view.outerRadius());
+			for (View view : SEQUENCES.values()) if (view.suppressedAt < 0)
+				view.effects.tick(world, view.center, (int) view.age(0), view.detonated, view.coreRadius(), view.outerRadius());
 		});
 	}
 
@@ -170,7 +186,9 @@ public final class ExplosionRenderer {
 			var matrices = context.matrixStack();
 			matrices.push();
 			matrices.translate(view.center.x - camera.x, view.center.y - camera.y, view.center.z - camera.z);
-			if (!view.detonated) {
+			if (view.suppressedAt >= 0) {
+				renderFinale(matrices, vertices, view.realAge(context.tickDelta()) - view.suppressedAt, view);
+			} else if (!view.detonated) {
 				float elapsed = Math.min(ExplosionRules.EXPLODE_TICKS, age);
 				renderGroundCircle(matrices, vertices, elapsed);
 				renderBeam(matrices, vertices, elapsed);
@@ -274,32 +292,40 @@ public final class ExplosionRenderer {
 		if (sinceBlast < 0) return;
 		// 冲击波球（2026-09-22 用户需求）：爆炸瞬间白色半透明球从爆心 0 半径扩张到 64 格，
 		// 0.3s 内完成，透明度 10% 随扩张线性降到 0（与终章保持期重叠，先行消散）。
-		if (sinceBlast < ExplosionRules.SHOCKWAVE_TICKS) {
+		if (view.suppressedAt < 0 && sinceBlast < ExplosionRules.SHOCKWAVE_TICKS) {
 			float progress = sinceBlast / (float) ExplosionRules.SHOCKWAVE_TICKS;
 			// 冲击波球扩张到直伤外沿：读包内快照半径（outerRadius()，包值优先回退 Rules）
 			renderShockwaveSphere(matrices, vertices, view.outerRadius() * progress,
 					ExplosionRules.SHOCKWAVE_ALPHA * (1f - progress));
 		}
-		for (int layer = 0; layer < ExplosionRules.CIRCLE_HEIGHTS.length; layer++) {
+		float frozenAge = view.suppressedAt < 0 ? ExplosionRules.EXPLODE_TICKS
+				: (float)net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.Timing.logical(view.suppressedAt, view.originalPre, view.preparation);
+		double visibleHeight = ExplosionRules.beamHeight(frozenAge);
+		int highest = ExplosionRules.CIRCLE_HEIGHTS.length - 1;
+		while (highest >= 0 && visibleHeight < ExplosionRules.CIRCLE_HEIGHTS[highest]) highest--;
+		for (int layer = 0; layer <= highest; layer++) {
+			float appeared = frozenAge - (ExplosionRules.SOUND_START_TICKS
+					+ (float)(ExplosionRules.CIRCLE_HEIGHTS[layer] / ExplosionRules.BEAM_BLOCKS_PER_TICK));
+			float grow = Math.max(0f, Math.min(1f, appeared / 8f));
 			// 启动时刻：保持期结束（14t）后，自最上层（index 大）向下逐个延迟 0.12s（2.4t）
-			int fromTop = ExplosionRules.CIRCLE_HEIGHTS.length - 1 - layer;
+			int fromTop = highest - layer;
 			float start = ExplosionRules.FINALE_HOLD_TICKS + fromTop * ExplosionRules.FINALE_STAGGER_TICKS;
 			float since = sinceBlast - start;
 			if (since < 0) {
 				// 保持期：原地满透明度继续旋转
 				drawMagicCircle(matrices, vertices, ExplosionRules.CIRCLE_HEIGHTS[layer],
-						ExplosionRules.CIRCLE_RADII[layer], sinceBlast * (layer % 2 == 0 ? 0.015 : -0.012), 1f, false,
+						ExplosionRules.CIRCLE_RADII[layer] * grow, sinceBlast * (layer % 2 == 0 ? 0.015 : -0.012), grow, false,
 						MagicCircleGeometry.layerStrokes(layer));
 				continue;
 			}
 			float progress = since / (float) ExplosionRules.FINALE_RISE_TICKS;
 			if (progress >= 1f) continue; // 该层已飞完消失
 			// 淡出：上升全程线性降到 0（末尾叠加快淡，避免尾拖影）
-			float alpha = 1f - progress;
+			float alpha = (1f - progress) * grow;
 			double lift = ExplosionRules.finaleLift(fromTop, since);
 			double rotation = (ExplosionRules.EXPLODE_TICKS + since) * (layer % 2 == 0 ? 0.015 : -0.012);
 			drawMagicCircle(matrices, vertices, ExplosionRules.CIRCLE_HEIGHTS[layer] + lift,
-					ExplosionRules.CIRCLE_RADII[layer], rotation, alpha, false, MagicCircleGeometry.layerStrokes(layer));
+					ExplosionRules.CIRCLE_RADII[layer] * grow, rotation, alpha, false, MagicCircleGeometry.layerStrokes(layer));
 		}
 	}
 

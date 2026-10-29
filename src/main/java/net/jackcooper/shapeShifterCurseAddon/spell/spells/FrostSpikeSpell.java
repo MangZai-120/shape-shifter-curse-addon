@@ -23,6 +23,8 @@ import net.minecraft.util.math.Vec3d;
  */
 public class FrostSpikeSpell extends Spell {
 
+	@Override public double getProjectileRange(int level) { return SpellFrostSpikeEntity.maxDistance(); }
+
 	public FrostSpikeSpell() {
 		super(new Identifier("ssc_addon", "frost_spike"), SpellRarity.WHITE);
 	}

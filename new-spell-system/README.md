@@ -1,8 +1,8 @@
 ﻿# 独立新法术系统
 
-本目录属于 SSCA 的 `neomagic` 试验田，原项目 `main` 独立维护。当前版本为 `8.0.0-neomagic.13`。
+本目录属于 SSCA 的 `neomagic` 试验田，原项目 `main` 独立维护。当前版本为 `8.0.0-neomagic.31`。
 
-游戏中的书、卷轴、导引杖统一使用崩解度 C。形态稳定度 S 表示安全阈值，法术书原容量和回蓝加成分别转换成额外 S 和崩解度恢复加成；原伤害、冷却、符文、法阵、书经验和三槽选择保留。
+游戏中的书、卷轴、导引杖统一使用崩解度 C。形态稳定度 S 表示安全阈值，玩家每600经验升级增加50点安全阈值，增能法阵按品质提供额外10～50点；危险范围随安全阈值变化为S～2S，停止支付6秒后自然恢复。原伤害、冷却、符文、法阵、书经验和三槽选择保留，书等级本身不增加安全阈值。
 
 失败按起手 `C＋实际Q` 抽一次，抽中后在不可打断界限前随机一刻失败；偏移仍每10 tick实时检查。逐步支付和成功施法熟练度沿用已确认机制。
 
@@ -23,6 +23,9 @@
 
 ## 现行设计
 
+- [旧形态增强接轨与保留规则](docs/旧形态增强接轨与保留规则.md)：后续新增形态机制时保留原增强及触发范围；蓝图只补齐佩戴书时可对应的效果，必须核对新旧叠加与返还预算。
+- [崩解度与形态法术联动设计](docs/崩解度与形态法术联动设计草案.md)：开头已确认规则优先，其余内容为候选设计。
+- [豹猫系施法联动与验收](docs/豹猫系施法联动与验收.md)：风灵80%步行施法与朔望九命后5秒跳过前置蓄力。
 - [完整系统设计V2](docs/SSCA新法术系统完整设计V2.md)
 - [研究界面与HUD](docs/UI设计说明V2.md)
 - [法术书接管与加成映射](docs/旧法术书接管与加成映射.md)
@@ -37,6 +40,8 @@
 .\gradlew.bat --offline build
 .\gradlew.bat --offline neoMagicVisualTest
 .\gradlew.bat --offline neoMagicWorldTest -PneoBookCutover=true
+.\gradlew.bat --offline neoMagicWorldTest -PneoLegacyAffinity=true
+.\gradlew.bat --offline neoMagicWorldTest -PneoOcelotLink=true
 ```
 
 客户端原生检查和临时测试世界位于 `build/neomagic/`；需保留的证据归档到 `.local-dev/verification/`。自动化、引擎夹具和真人多人验收分别记录，不混称。

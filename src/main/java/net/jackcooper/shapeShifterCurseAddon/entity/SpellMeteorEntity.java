@@ -115,6 +115,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 	@Override
 	public void tick() {
 		super.tick();
+        if(this.isRemoved())return;
 		ticksAlive++;
 
 		if (!falling) {
@@ -151,8 +152,28 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		}
 
 		// 下落阶段：双端同步下坠（客户端按速度插值即可看到火球砸下）
-		Vec3d velocity = new Vec3d(0, -BAL.d("fall_speed", FALL_SPEED), 0);
-		this.setPosition(this.getX(), this.getY() + velocity.y, this.getZ());
+        var homing=(net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.HomingProjectile)this;
+        boolean guided=homing.ssca$isHoming();
+        double speedFactor=homing.ssca$flightSpeedMultiplier();
+        double fallSpeed=BAL.d("fall_speed",FALL_SPEED)*speedFactor;
+        if(!guided&&speedFactor!=1) {
+            int fallAge=Math.max(0,ticksAlive-BAL.i("delay_ticks",DELAY_TICKS)-1);
+            fallSpeed=Math.min(fallSpeed,Math.max(0,BAL.d("fall_height",FALL_HEIGHT)-fallAge*fallSpeed));
+        }
+		Vec3d velocity = new Vec3d(0,-fallSpeed,0);
+        velocity=homing.ssca$guidedVelocity(velocity);
+        if(guided&&!this.getWorld().isClient&&this.getWorld() instanceof ServerWorld impactWorld) {
+            Vec3d end=this.getPos().add(velocity);
+            var wall=this.getWorld().raycast(new net.minecraft.world.RaycastContext(this.getPos(),end,
+                    net.minecraft.world.RaycastContext.ShapeType.COLLIDER,net.minecraft.world.RaycastContext.FluidHandling.NONE,this));
+            if(wall.getType()==net.minecraft.util.hit.HitResult.Type.BLOCK) {
+                this.setPosition(wall.getPos());explode(impactWorld);return;
+            }
+            var hit=net.minecraft.entity.projectile.ProjectileUtil.getEntityCollision(this.getWorld(),this,this.getPos(),end,
+                    this.getBoundingBox().stretch(velocity).expand(1),e->e!=this.getOwner()&&e instanceof LivingEntity&&e.isAlive());
+            if(hit!=null){this.setPosition(hit.getPos());explode(impactWorld);return;}
+        }
+		this.setPosition(this.getPos().add(velocity));
 		if (this.getWorld() instanceof ServerWorld serverWorld) {
 			ParticleUtils.spawnParticles(serverWorld, ParticleTypes.FLAME,
 					this.getX(), this.getY(), this.getZ(), 4, 0.2, 0.2, 0.2, 0.02);
@@ -162,11 +183,12 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		if (!this.getWorld().isClient && this.getWorld() instanceof ServerWorld impactWorld) {
 			// 阶段 5：同函数多次读取局部变量化（与标记阶段、下落速度保持同一 tick 快照一致性）
 			double fallHeight2 = BAL.d("fall_height", FALL_HEIGHT);
-			double fallSpeed2 = BAL.d("fall_speed", FALL_SPEED);
+			double fallSpeed2 = BAL.d("fall_speed", FALL_SPEED)*speedFactor;
 			int delayTicks2 = BAL.i("delay_ticks", DELAY_TICKS);
-			if (ticksAlive >= delayTicks2 + Math.ceil(fallHeight2 / fallSpeed2)) {
+			if (!guided&&ticksAlive >= delayTicks2 + Math.ceil(fallHeight2 / fallSpeed2)) {
 				explode(impactWorld);
 			}
+            if(guided&&ticksAlive>160)this.discard();
 		}
 	}
 

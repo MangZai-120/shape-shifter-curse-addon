@@ -27,9 +27,9 @@ public final class NeoEffects {
     private static final String SUMMON_TAG="ssca_neomagic_summon";
     private static final class Bolt {
         final ServerPlayerEntity caster; final ServerWorld world; final NeoRuntime.Active active;
-        Vec3d pos;final Vec3d velocity;final double budget;double remaining;
+        Vec3d pos;Vec3d velocity;final double budget;double remaining;
         Bolt(ServerPlayerEntity p,NeoRuntime.Active a,Vec3d dir,double budget) {
-            caster=p;world=p.getServerWorld();active=a;pos=p.getEyePos();velocity=dir;this.budget=budget;remaining=a.session.blueprint.range()*a.rangeMultiplier;
+            caster=p;world=p.getServerWorld();active=a;pos=p.getEyePos();velocity=dir.multiply(a.style==null?1:a.style.projectileSpeed);this.budget=budget;remaining=a.session.blueprint.range()*a.rangeMultiplier;
         }
     }
     public static Vec3d aim(ServerPlayerEntity p,double range) {
@@ -88,6 +88,19 @@ public final class NeoEffects {
         NeoRuntime.dirty(p);NeoNetwork.send(p,false);
     }
     private static boolean apply(ServerPlayerEntity p,NeoRuntime.Active a) {
+        NeoLegacyCasting.beginBlueprintEffect(p,a);
+        boolean released=healingBatch(a,()->applyNow(p,a));
+        if(released)NeoLegacyCasting.blueprintReleased(p,a);
+        return released;
+    }
+    private static <T> T healingBatch(NeoRuntime.Active active,java.util.function.Supplier<T> action) {
+        var healing=active.style==null?null:active.style.healing;
+        if(healing==null)return action.get();
+        healing.begin();
+        try{T result=action.get();healing.end();return result;}
+        catch(RuntimeException|Error failure){healing.abort();throw failure;}
+    }
+    private static boolean applyNow(ServerPlayerEntity p,NeoRuntime.Active a) {
         Session s=a.session;Blueprint b=s.blueprint;Plan plan=s.quote.plan();
         double budget=9*b.scale()*plan.retention()*s.attenuation*a.powerMultiplier;
         if(b.carrier()==Carrier.PROJECTILE) {
@@ -190,19 +203,29 @@ public final class NeoEffects {
         double per=budget/targets.size();targets.forEach(e->affect(p,a,e,per));
     }
     private static void affect(ServerPlayerEntity p,NeoRuntime.Active a,LivingEntity target,double budget) {
+        if(a.session.blueprint.output()==Core.LUNAR&&!a.session.reversed&&a.style!=null&&a.style.healing!=null) {
+            a.style.healing.heal(target,budget,value->affectNow(p,a,target,value));
+        } else affectNow(p,a,target,budget);
+    }
+    private static void affectNow(ServerPlayerEntity p,NeoRuntime.Active a,LivingEntity target,double budget) {
         Core core=a.session.blueprint.output();boolean healing=core==Core.LUNAR&&!a.session.reversed;
         boolean invertedSelf=target==p&&core==Core.LUNAR&&a.session.reversed;
         if(!invertedSelf&&!allowed(p,target,!healing))return;
         a.record.arrived+=budget;a.record.hits++;
         float before=target.getHealth(),absorption=target.getAbsorptionAmount();
+        boolean conditionBeforeHit=core==Core.THERMAL?target.getFireTicks()>0
+                :net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.hasHarmfulEffect(target);
+        boolean effective=false;
         switch(core) {
-            case LUNAR -> {if(healing)target.heal((float)budget);else target.damage(invertedSelf?p.getDamageSources().magic():p.getDamageSources().indirectMagic(p,p),(float)budget);}
-            case THERMAL -> target.damage(p.getDamageSources().indirectMagic(p,p),(float)budget);
-            case FROST -> {if(target.damage(p.getDamageSources().indirectMagic(p,p),(float)(budget*.5)))target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS,(int)(budget*12),Math.min(3,(int)(budget/6))),p);}
-            case CURSE -> {if(target.damage(p.getDamageSources().indirectMagic(p,p),(float)(budget*.4)))target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS,(int)(budget*20),0),p);}
-            case VOID -> {if(target.damage(p.getDamageSources().indirectMagic(p,p),(float)(budget*.8)))target.setAbsorptionAmount(Math.max(0,target.getAbsorptionAmount()-(float)(budget*.2)));}
+            case LUNAR -> {if(healing)target.heal((float)budget);else effective=target.damage(invertedSelf?p.getDamageSources().magic():p.getDamageSources().indirectMagic(p,p),(float)budget);}
+            case THERMAL -> effective=target.damage(p.getDamageSources().indirectMagic(p,p),(float)budget);
+            case FROST -> {if(effective=target.damage(p.getDamageSources().indirectMagic(p,p),(float)(budget*.5)))target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS,(int)(budget*12),Math.min(3,(int)(budget/6))),p);}
+            case CURSE -> {if(effective=target.damage(p.getDamageSources().indirectMagic(p,p),(float)(budget*.4)))target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS,Math.round((int)(budget*20)*a.curseDurationMultiplier),0),p);}
+            case VOID -> {if(effective=target.damage(p.getDamageSources().indirectMagic(p,p),(float)(budget*.8)))target.setAbsorptionAmount(Math.max(0,target.getAbsorptionAmount()-(float)(budget*.2)));}
             default -> { }
         }
+        // Positive healing and collapse-inverted lunar damage never farm offensive resource refunds.
+        if(effective&&!healing&&!a.session.reversed&&target!=p)NeoLegacyCasting.blueprintHit(p,a,target,conditionBeforeHit);
         a.record.damage+=Math.max(0,before-target.getHealth());a.record.absorbed+=Math.max(0,absorption-target.getAbsorptionAmount());a.record.healing+=Math.max(0,target.getHealth()-before);
         if(a.record.measurements.size()<32)a.record.measurements.add(new NeoState.Measurement(target.getUuidAsString(),net.minecraft.registry.Registries.ENTITY_TYPE.getId(target.getType()).toString(),target.getPos().toString(),budget,before,target.getHealth(),absorption,target.getAbsorptionAmount()));
         NeoRuntime.dirty(p);
@@ -225,11 +248,18 @@ public final class NeoEffects {
         for(var it=BOLTS.iterator();it.hasNext();) {
             Bolt bolt=it.next();
             if(!bolt.caster.isAlive()||bolt.caster.isDisconnected()||bolt.caster.getWorld()!=bolt.world||bolt.remaining<=0){finishBolt(bolt);it.remove();continue;}
-            Vec3d end=bolt.pos.add(bolt.velocity.multiply(Math.min(1,bolt.remaining)));
+            var style=bolt.active.style;
+            if(style!=null&&style.target!=null&&net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.legalTarget(bolt.caster,style.target)) {
+                Vec3d delta=style.target.getBoundingBox().getCenter().subtract(bolt.pos);
+                if(delta.lengthSquared()>1e-8)bolt.velocity=delta.normalize().multiply(bolt.velocity.length());
+            }
+            double step=Math.min(bolt.velocity.length(),bolt.remaining);
+            Vec3d end=bolt.pos.add(bolt.velocity.normalize().multiply(step));
             BlockHitResult wall=bolt.world.raycast(new RaycastContext(bolt.pos,end,RaycastContext.ShapeType.COLLIDER,RaycastContext.FluidHandling.NONE,bolt.caster));
             Vec3d clipped=wall.getType()==HitResult.Type.BLOCK?wall.getPos():end;
             LivingEntity hit=along(bolt.caster,bolt.pos,clipped,bolt.active.session.quote.plan().focused()?.08:.3);
             if(hit!=null||wall.getType()==HitResult.Type.BLOCK) {
+                healingBatch(bolt.active,()->{
                 Plan plan=bolt.active.session.quote.plan();boolean plain=plan.branches()==1&&!plan.focused();
                 if(hit!=null)affect(bolt.caster,bolt.active,hit,plain?bolt.budget*2/3:bolt.budget);
                 if(plain) {
@@ -237,8 +267,10 @@ public final class NeoEffects {
                     nearby.remove(hit);distribute(bolt.caster,bolt.active,nearby,bolt.budget/3);
                 }
                 if(hit==null)measureBlock(bolt.caster,bolt.active,clipped,plain?bolt.budget*2/3:bolt.budget);
+                return null;
+                });
                 finishBolt(bolt);it.remove();
-            } else {bolt.pos=end;bolt.remaining-=1;bolt.world.spawnParticles(ParticleTypes.END_ROD,end.x,end.y,end.z,1,0,0,0,0);}
+            } else {bolt.pos=end;bolt.remaining-=step;bolt.world.spawnParticles(ParticleTypes.END_ROD,end.x,end.y,end.z,1,0,0,0,0);}
         }
     }
     private static void finishBolt(Bolt bolt) {

@@ -165,6 +165,7 @@ public final class NeoMagic implements ModInitializer {
             }
         });
         NeoNetwork.register(); NeoRuntime.register(); NeoEffects.register();
+        net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.register();
     }
     private static void sample(String key,String name) {
         Item sample=new Item(new Item.Settings().maxCount(16)) {

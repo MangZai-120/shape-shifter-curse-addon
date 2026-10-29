@@ -23,8 +23,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 形态施法流派系统（jackcooper，2026-09-17）：把「形态能量条 ↔ 书法术值」从割裂的两套资源
  * 打通为按形态差异化的施法流派。所有结算均在服务端，多人天然一致。
  *
- * <p>书内施法的起手与扣费只使用书能量（见 {@link SpellbookData}）；形态能量须经
- * 回能法阵先实际充入书中，才能参与施法。</p>
+ * <p>neomagic 试验田保留历史方法名：书法术成本接入玩家崩解度，回书蓝类反馈改为减少C；
+ * 形态原生资源保留原用途，新增身体施法机制由 {@link FormSpellStyle} 独立结算。</p>
  *
  * <p>命中与回复流派：</p>
  * <ul>
@@ -102,12 +102,18 @@ public final class FormCastingStyle {
 		if (manaCost <= 0) {
 			return manaCost;
 		}
-		if ((FormUtils.isForm(player, FormIdentifiers.AXOLOTL_SP)
+		float multiplier = tidalCostMultiplier(player);
+		return multiplier == 1f ? manaCost : Math.max(1, Math.round(manaCost * multiplier));
+	}
+
+	/** Shared by named-spell integer costs and blueprint fractional C quotes; previews never pay. */
+	public static float tidalCostMultiplier(net.minecraft.entity.player.PlayerEntity player) {
+		if (player != null && (FormUtils.isForm(player, FormIdentifiers.AXOLOTL_SP)
 				|| FormUtils.isForm(player, FormIdentifiers.UPGRADE_AXOLOTL))
 			&& (player.isSubmergedInWater() || player.getWorld().hasRain(player.getBlockPos()))) {
-			return Math.max(1, Math.round(manaCost * 0.85f));
+			return 0.85f;
 		}
-		return manaCost;
+		return 1f;
 	}
 
 	/** 蝙蝠「血契」配套：月华治愈效果 +25%（吸血蝙蝠主题；由 LunarMendSpell 调用）。 */

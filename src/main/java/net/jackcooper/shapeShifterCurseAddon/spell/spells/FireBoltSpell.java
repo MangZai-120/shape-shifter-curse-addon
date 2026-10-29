@@ -20,6 +20,8 @@ import net.minecraft.util.math.Vec3d;
  */
 public class FireBoltSpell extends Spell {
 
+	@Override public double getProjectileRange(int level) { return SpellFireBoltEntity.maxDistance(); }
+
 	/** L1-2 点燃 3s；L3+ 点燃 5s。默认值；运行时从 balance 快照读取。 */
 	private static final int FIRE_TICKS_LOW = 60;
 	private static final int FIRE_TICKS_HIGH = 100;

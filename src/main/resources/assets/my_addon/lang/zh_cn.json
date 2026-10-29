@@ -1976,5 +1976,13 @@
   "text.ssc_addon.book.player.short": "玩家施法 %s级",
   "text.ssc_addon.book.player.exp_label": "施法经验",
   "text.ssc_addon.bar_editor.scale": "缩放：%s%%",
-  "text.ssc_addon.bar_editor.item_store": "SSC储物槽"
+  "text.ssc_addon.bar_editor.item_store": "SSC储物槽",
+  "power.my_addon.form_snow_fox_sp_ice_preparation.name": "冰系预构",
+  "power.my_addon.form_snow_fox_sp_ice_preparation.description": "原生寒霜技能成功命中后，短时间内下一次冰系法术减少崩解度增长。默认3秒内减耗15%；重复命中刷新时限，不叠层。正式开始冰系施法时消费，中断不返还。",
+  "power.my_addon.form_snow_fox_frostspine_ice_catalysis.name": "寒棘供能",
+  "power.my_addon.form_snow_fox_frostspine_ice_catalysis.description": "施放冰系法术时消耗身上环绕冰锥的寿命，降低本次崩解度增长。默认每根消耗18秒寿命、减耗5%，5根合计25%。剩余寿命不足18秒也提供完整减耗，随后碎裂并使周围结冰；中断不返还已消耗的寿命。",
+  "power.my_addon.form_ocelot_wind_spirit_mobile_casting.name": "风行施法",
+  "power.my_addon.form_ocelot_wind_spirit_mobile_casting.description": "蓄力时可以按正常步行速度的80%移动，不受法术原有禁动和蓄力位移限制。进入不可打断阶段前，疾跑或使用形态技能会中断施法；进入后禁用疾跑和形态技能，仍可步行。原有消耗、冷却和空间亲和保留。",
+  "power.my_addon.form_ocelot_nova_quick_casting.name": "九命余响",
+  "power.my_addon.form_ocelot_nova_quick_casting.description": "九命成功复活后的5秒内，法术跳过前置蓄力；有不可打断阶段的法术从该阶段开始，演出保持原速。增益期间起手的法术保留本次时长；普通死亡重生不触发，法术消耗、冷却和失败规则不变。"
 }

@@ -1,4 +1,5 @@
 {
+  "projectile": false,
   "element": "void",
   "base_damage": 5000,
   "base_cooldown_ticks": 3600,

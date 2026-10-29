@@ -36,6 +36,11 @@ public final class NeoWorldProbe {
         var test=stability?new TestFunction("neomagic","stability_soak","ssca_neomagic:empty",Integer.getInteger("neomagic.soakTicks",2400)*3+3000,0,true,NeoStabilityWorldProbe::start)
                 :new TestFunction("neomagic","world_lifecycle","ssca_neomagic:empty",300,0,true,NeoWorldProbe::test);
         if(Boolean.getBoolean("neomagic.bookCutover"))test=new TestFunction("neomagic","book_cutover","ssca_neomagic:empty",300,0,true,NeoBookWorldProbe::start);
+        if(Boolean.getBoolean("neomagic.formCasting"))test=new TestFunction("neomagic","form_casting","ssca_neomagic:empty",900,0,true,NeoFormCastingProbe::start);
+        if(Boolean.getBoolean("neomagic.domainSuppression"))test=new TestFunction("neomagic","domain_suppression","ssca_neomagic:empty",160,0,true,NeoDomainSuppressionProbe::start);
+        if(Boolean.getBoolean("neomagic.frostLink"))test=new TestFunction("neomagic","frost_link","ssca_neomagic:empty",250,0,true,NeoFrostSpellLinkProbe::start);
+        if(Boolean.getBoolean("neomagic.legacyAffinity"))test=new TestFunction("neomagic","legacy_affinity","ssca_neomagic:empty",220,0,true,NeoLegacyAffinityProbe::start);
+        if(Boolean.getBoolean("neomagic.ocelotLink"))test=new TestFunction("neomagic","ocelot_link","ssca_neomagic:empty",400,0,true,NeoOcelotSpellLinkProbe::start);
         var batch=new GameTestBatch("neomagic",List.of(test),world->{},world->{});
         MinecraftServer.startServer(thread->TestServer.create(thread,save,VanillaDataPackProvider.createManager(save),List.of(batch),new BlockPos(0,64,0)));
     }

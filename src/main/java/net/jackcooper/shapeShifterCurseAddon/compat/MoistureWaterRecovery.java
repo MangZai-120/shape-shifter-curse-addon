@@ -26,6 +26,15 @@ public final class MoistureWaterRecovery {
         if (player != null) AIR_BEFORE_TICK.put(player.getUuid(), player.getAir());
     }
 
+    /** 显式支付湿润度，同时校正浅水恢复的tick起点，避免恢复逻辑退回这笔消耗。 */
+    public static boolean consume(PlayerEntity player,int amount) {
+        if(player==null||player.getWorld().isClient||amount<0||player.getAir()<amount)return false;
+        if(amount==0)return true;
+        player.setAir(player.getAir()-amount);
+        AIR_BEFORE_TICK.computeIfPresent(player.getUuid(),(id,before)->Math.max(0,before-amount));
+        return true;
+    }
+
     public static void restore(PlayerEntity player) {
         if (player == null) return;
         Integer before = AIR_BEFORE_TICK.remove(player.getUuid());

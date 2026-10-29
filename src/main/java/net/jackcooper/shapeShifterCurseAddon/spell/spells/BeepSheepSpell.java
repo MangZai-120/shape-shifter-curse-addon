@@ -25,6 +25,8 @@ import net.minecraft.util.Identifier;
  */
 public class BeepSheepSpell extends Spell {
 
+	@Override public double getProjectileRange(int level) { return net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.sheepProjectileRange(); }
+
 	/** 基础变羊时长（tick，L1=6 秒）默认；运行时从 balance 快照读取。 */
 	public static final int BASE_DURATION_TICKS = 120;
 	/** 每级增加的时长（tick，+1.5 秒/级，L5=12 秒）默认；运行时从 balance 快照读取。 */

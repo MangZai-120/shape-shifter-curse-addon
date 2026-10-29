@@ -36,6 +36,8 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 	private static final double SPEED = 1.0;         // 20 格/秒（比火球快，箭矢感）
 	private static final double MAX_DISTANCE = 50.0; // 最大飞行距离
 
+	public static double maxDistance() { return BAL.d("max_distance", MAX_DISTANCE); }
+
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("spells.moonlight_arrow_entity");
 
@@ -115,14 +117,17 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 	@Override
 	public void tick() {
 		super.tick();
+        if(this.isRemoved())return;
 		ticksAlive++;
 
 		// 无重力匀速移动
 		Vec3d velocity = this.getVelocity();
-		this.setPosition(this.getX() + velocity.x, this.getY() + velocity.y, this.getZ() + velocity.z);
+		boolean limited=((net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.HomingProjectile)this).ssca$hasRangeLimit();
+        if(!limited)this.setPosition(this.getPos().add(velocity));
 
 		// 碰撞检测
 		HitResult hitResult = ProjectileUtil.getCollision(this, this::canHit);
+		if(limited)this.setPosition(this.getPos().add(velocity));
 		if (hitResult.getType() != HitResult.Type.MISS) {
 			this.onCollision(hitResult);
 		}
@@ -132,8 +137,8 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 
 		// 超距 / 超时自毁（仅服务端权威，理由同冰锥：客户端实体 startPos 恒原点，双端判会误删）
 		if (!this.getWorld().isClient) {
-			double maxDistance = BAL.d("max_distance", MAX_DISTANCE);
-			if (startPos != null && this.squaredDistanceTo(startPos) > maxDistance * maxDistance) {
+			double maxDistance = maxDistance();
+			if (!limited && startPos != null && this.squaredDistanceTo(startPos) > maxDistance * maxDistance) {
 				this.discard();
 				return;
 			}

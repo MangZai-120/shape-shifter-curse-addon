@@ -700,6 +700,27 @@ public final class SscBalanceSchema {
                 .doubleParam("base_book_regen_per_sec", 3.0, 0.0, 100.0, "spell.FormCastingStyle", "BASE_BOOK_REGEN_PER_SEC")
                 .intParam("regen_delay_ticks", 140, 0, 1200, "spell.FormCastingStyle", "REGEN_DELAY_TICKS");
 
+        b.scope("systems.form_casting")
+                .intParam("acceleration_mana", 10, 1, 1000)
+                .doubleParam("preparation_multiplier", 0.75, 0.1, 1.0)
+                .doubleParam("acceleration_collapse_multiplier", 1.05, 1.0, 5.0)
+                .intParam("homing_mana", 10, 1, 1000)
+                .doubleParam("homing_cone_degrees", 15.0, 0.0, 90.0)
+                .doubleParam("sheep_projectile_range", 40.0, 1.0, 256.0)
+                .intParam("healing_moisture", 10, 1, 1000)
+                .intParam("healing_other_moisture", 5, 0, 1000)
+                .doubleParam("healing_multiplier", 1.5, 1.0, 5.0)
+                .doubleParam("fluorescent_projectile_speed", 1.5, 1.0, 5.0)
+                .doubleParam("fluorescent_projectile_range", 1.5, 1.0, 5.0)
+                .intParam("fluorescent_projectile_moisture", 10, 0, 1000)
+                .doubleParam("fluorescent_projectile_collapse_multiplier", 1.05, 1.0, 5.0)
+                .doubleParam("snow_fox_collapse_reduction", 0.15, 0.0, 1.0)
+                .intParam("snow_fox_ready_ticks", 60, 1, 1200)
+                .doubleParam("frostspine_reduction_per_thorn", 0.05, 0.0, 1.0)
+                .intParam("frostspine_lifetime_cost_ticks", 360, 1, 12000)
+                .doubleParam("wind_cast_walking_multiplier", 0.8, 0.0, 1.0)
+                .intParam("nova_quick_cast_ticks", 100, 1, 1200);
+
         // ==== 盘点批次 #6/#7（台账-盘点批次.md；来源注解指向真实常量或 null=函数内字面量）====
 
         // 形态亲和（FormAffinity if 链；来源多为函数内字面量故部分无注解）

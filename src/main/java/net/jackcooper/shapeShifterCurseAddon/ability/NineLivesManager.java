@@ -145,6 +145,7 @@ public final class NineLivesManager {
                 BAL.i("absorb_duration", ABSORB_DURATION), BAL.i("absorb_amplifier", ABSORB_AMPLIFIER), false, false, true));
         REVIVE_TICK.put(player.getUuid(), now);
         INVULN_END.put(player.getUuid(), now + invuln);
+        net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.onNineLivesRevive(player);
         markCombat(player);
         // 复活音效：全员可闻（第一参 null），音量适中（0.6）避免过响
         player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),

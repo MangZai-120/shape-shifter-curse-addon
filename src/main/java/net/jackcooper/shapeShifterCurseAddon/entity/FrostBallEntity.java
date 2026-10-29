@@ -167,7 +167,7 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
 				return;
 			}
 			// 施加霜降效果（带主人 source 供入梦拦截归因）
-			livingTarget.addStatusEffect(new StatusEffectInstance(
+			boolean applied=livingTarget.addStatusEffect(new StatusEffectInstance(
 					SscAddon.FROST_FALL,
 					BAL.i("frost_fall_duration", FROST_FALL_DURATION),
 					0,
@@ -175,6 +175,8 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
 					true,
 					true
 			), this.getOwner());
+			if(applied&&getOwner() instanceof net.minecraft.server.network.ServerPlayerEntity caster)
+				net.jackcooper.shapeShifterCurseAddon.spell.FrostSpellLink.onNativeHit(caster,livingTarget);
 
 			// 播放击中音效
 			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),

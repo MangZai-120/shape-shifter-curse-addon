@@ -19,6 +19,8 @@ import net.minecraft.util.math.Vec3d;
  */
 public class MoonlightArrowSpell extends Spell {
 
+	@Override public double getProjectileRange(int level) { return SpellMoonlightArrowEntity.maxDistance(); }
+
 	public MoonlightArrowSpell() {
 		super(new Identifier("ssc_addon", "moonlight_arrow"), SpellRarity.GREEN);
 	}

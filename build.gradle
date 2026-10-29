@@ -99,6 +99,11 @@ tasks.register('neoMagicWorldTest', JavaExec) {
     classpath = sourceSets.test.runtimeClasspath
     mainClass = 'net.ssca.neomagic.NeoWorldTest'
     systemProperty 'neomagic.bookCutover', project.findProperty('neoBookCutover') ?: 'false'
+    systemProperty 'neomagic.formCasting', project.findProperty('neoFormCasting') ?: 'false'
+    systemProperty 'neomagic.domainSuppression', project.findProperty('neoDomainSuppression') ?: 'false'
+    systemProperty 'neomagic.frostLink', project.findProperty('neoFrostLink') ?: 'false'
+    systemProperty 'neomagic.legacyAffinity', project.findProperty('neoLegacyAffinity') ?: 'false'
+    systemProperty 'neomagic.ocelotLink', project.findProperty('neoOcelotLink') ?: 'false'
     workingDir = layout.buildDirectory.dir('neomagic/world-test').get().asFile
     maxHeapSize = '2G'
     systemProperty 'fabric.development', 'true'

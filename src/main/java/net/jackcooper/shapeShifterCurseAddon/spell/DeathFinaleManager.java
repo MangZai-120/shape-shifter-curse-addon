@@ -66,7 +66,7 @@ public final class DeathFinaleManager {
     public static void advance(ServerPlayerEntity caster, int ticks) {
         Sequence s = ACTIVE.get(caster.getUuid());
         if (s == null || s.releasedAt >= 0 || caster.getWorld() != s.world
-                || !s.position.follow(caster.getPos())) return;
+                || !s.position.follow(caster.getPos(),OcelotSpellLink.wind(caster))) return;
         s.elapsed = ticks;
         // Movement and jumping use the shared channel lock; gravity/knockback remain vanilla.
         int remaining = s.duration - ticks;
@@ -81,7 +81,7 @@ public final class DeathFinaleManager {
     public static boolean canContinue(ServerPlayerEntity caster) {
         Sequence s = ACTIVE.get(caster.getUuid());
         return s != null && s.releasedAt < 0 && caster.getWorld() == s.world
-                && s.position.canContinue(caster.getPos());
+                && (OcelotSpellLink.wind(caster)||s.position.canContinue(caster.getPos()));
     }
 
     public static void cancel(ServerPlayerEntity caster) {
@@ -101,7 +101,7 @@ public final class DeathFinaleManager {
     public static void release(ServerPlayerEntity caster, float power, UUID refundId, int exp) {
         Sequence s = ACTIVE.get(caster.getUuid());
         if (s == null || s.releasedAt >= 0 || s.elapsed < s.duration || caster.getWorld() != s.world
-                || !s.position.follow(caster.getPos())) return;
+                || !s.position.follow(caster.getPos(),OcelotSpellLink.wind(caster))) return;
         s.releasedAt = s.world.getTime();
         // No falloff and no block explosion. Re-evaluate targets at completion, not at the start.
         for (LivingEntity target : s.world.getEntitiesByClass(LivingEntity.class,

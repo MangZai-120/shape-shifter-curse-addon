@@ -117,6 +117,21 @@ public final class SpellChannelManager {
 		return ACTIVE.containsKey(player.getUuid());
 	}
 
+	public static boolean releaseLocked(ServerPlayerEntity player) {
+		Channel channel=ACTIVE.get(player.getUuid());
+		return channel!=null&&channel.spell.isLockedIn(player);
+	}
+
+	/** Skills interrupt wind preparation; the protected release stage rejects the skill itself. */
+	public static boolean onSkillAction(ServerPlayerEntity player) {
+		if(OcelotSpellLink.windLocked(player))return false;
+		if(OcelotSpellLink.wind(player)) {
+			stop(player,true,"message.ssc_addon.spell.cast_interrupted_action");
+			net.ssca.neomagic.NeoRuntime.cancel(player,"interrupted");
+		} else cancelSelf(player);
+		return true;
+	}
+
 	public static long getNextCastAt(ServerPlayerEntity player) {
 		return NEXT_CAST_OK.getOrDefault(player.getUuid(), 0L);
 	}
@@ -191,24 +206,29 @@ public final class SpellChannelManager {
 					SpellCastFeedback.seconds(gate - player.getWorld().getTime())), true);
 			return false;
 		}
-		Channel channel = new Channel(player, spell, scroll, level, solo, token, mana, cooldown,
-				sourceValid, effect, settleCooldown, consumeUse,modifiers);
+		ItemStack equipped=solo?null:SpellCastManager.getEquippedBook(player);
+		double formationRange=equipped==null||equipped.isEmpty()?1:FormationData.sumSpaceRangeMultiplier(equipped,spell.getElement());
+		Vec3d initialTarget=null;
 		if (spell.requiresTargetBeforeChannel()) {
-			Vec3d target = RuneCastContext.with(channel.modifiers,channel.formationRange,()->spell.captureCastTarget(player, level));
-			if (target == null || !channel.progress.release(token, target)) {
-				channel.collapse.finish(false,"target_lost");
+			initialTarget=RuneCastContext.with(modifiers,formationRange,()->spell.captureCastTarget(player,level));
+			if(initialTarget==null||spell.getCastingMode()!=SpellCastingRules.Mode.RELEASE) {
 				player.sendMessage(spell.getCastFailureMessage(player), true);
 				return false;
 			}
 		}
+		var baseProfile=spell.getCastingProfile(player,level,solo);
+		var style=RuneCastContext.with(modifiers,formationRange,()->FormSpellStyle.plan(player,spell,level,
+				baseProfile.ticks(),modifiers.time(baseProfile.ticks())));
+		if(!style.pay())return false;
+		Channel channel = new Channel(player, spell, scroll, level, solo, token, mana, cooldown,
+				sourceValid, effect, settleCooldown, consumeUse,modifiers,style);
+		if(spell.requiresTargetBeforeChannel())channel.progress.release(token,initialTarget);
 		ACTIVE.put(player.getUuid(), channel);
 		RuneCastContext.run(channel.modifiers,channel.formationRange,()->spell.onChannelStarted(player, channel.progress.target()));
-		var speed = player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
-		if (speed != null) {
-			speed.removeModifier(SLOW_ID);
-			speed.addTemporaryModifier(new EntityAttributeModifier(SLOW_ID, "Spell casting",
-					channel.profile.speedMultiplier() - 1, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
-		}
+		// Jump the effect manager's logical clock too: e.g. instant DeathFinale still needs its completion state.
+		if(style.novaQuickCast)RuneCastContext.run(channel.modifiers,channel.formationRange,
+				()->spell.tickChannel(player,level,scroll,style.timing.logical(0)));
+		applyMovement(player,channel.profile.speedMultiplier());
 		syncFull(channel);
 		broadcastVisual(channel, true);
 		playChargeSound(channel);
@@ -256,6 +276,16 @@ public final class SpellChannelManager {
 	}
 
 	private static boolean ensureValid(Channel channel) {
+		if(OcelotSpellLink.wind(channel.player)&&channel.player.isSprinting()) {
+			if(channel.spell.isLockedIn(channel.player))channel.player.setSprinting(false);
+			else {stop(channel.player,true,"message.ssc_addon.spell.cast_interrupted_action");return false;}
+		}
+		if (channel.spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.ExplosionSpell
+				&& ExplosionManager.suppressIfDomainCovered(channel.player)) {
+			channel.domainSuppressed = true;
+			stop(channel.player, true, "message.ssc_addon.spell.explosion_domain_suppressed");
+			return false;
+		}
 		if (!channel.collapse.form.equals(net.ssca.neomagic.NeoRuntime.form(channel.player))
 				|| channel.player.hasStatusEffect(net.ssca.neomagic.NeoMagic.DISORDER)
 				|| channel.player.hasStatusEffect(net.ssca.neomagic.NeoMagic.DISINTEGRATION)
@@ -304,7 +334,7 @@ public final class SpellChannelManager {
 		} else {
 			channel.collapseAge++;
 			channel.progress.tick();
-			RuneCastContext.run(channel.modifiers,channel.formationRange,()->channel.spell.tickChannel(player, channel.level, channel.scroll, channel.progress.elapsed()));
+			RuneCastContext.run(channel.modifiers,channel.formationRange,()->channel.spell.tickChannel(player, channel.level, channel.scroll, channel.style.timing.logical(channel.progress.elapsed())));
 			advance(channel);
 		}
 		// 锁定态转换检测：进入锁定的当 tick 立即补发一次校准包（不等 20t 周期）。
@@ -388,7 +418,7 @@ public final class SpellChannelManager {
 			ServerPlayNetworking.send(player, STATE, buf);
 		}
 		if (interrupted) {
-			playFailureSound(player);
+			if (!channel.domainSuppressed) playFailureSound(player);
 			var message = reason.copy();
 			// Paid collapse stays on the player; no book mana refund or deduction occurs.
 			player.sendMessage(message, true);
@@ -423,7 +453,12 @@ public final class SpellChannelManager {
 		}
 	}
 
-	private static void clearSlow(ServerPlayerEntity player) {
+	public static void applyMovement(ServerPlayerEntity player,double multiplier) {
+		var speed=player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
+		if(speed!=null){speed.removeModifier(SLOW_ID);speed.addTemporaryModifier(new EntityAttributeModifier(SLOW_ID,"Spell casting",multiplier-1,EntityAttributeModifier.Operation.MULTIPLY_TOTAL));}
+	}
+
+	public static void clearSlow(ServerPlayerEntity player) {
 		var speed = player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
 		if (speed != null) speed.removeModifier(SLOW_ID);
 	}
@@ -493,12 +528,26 @@ public final class SpellChannelManager {
 		buf.writeVarInt(channel.cancelTicks);
 		buf.writeBoolean(channel.spell.isLockedIn(channel.player)); // 锁定态（进入后客户端红显且忽略取消）
 		buf.writeVarInt(channel.level); // 本次有效等级，含临时降档；供客户端射程/半径预览
+		buf.writeVarInt(channel.style.timing.lockTick());
+		buf.writeFloat((float)channel.style.projectileRange);
 		return buf;
 	}
+
+	/** 演出管理器在onChannelStarted内读取本次时间快照。 */
+	public static FormSpellStyle.Timing animationTiming(ServerPlayerEntity player) {
+		var channel=ACTIVE.get(player.getUuid());
+		return channel==null?null:channel.style.timing;
+	}
+
+    public static double projectileRangeSnapshot(ServerPlayerEntity player) {
+        var channel=ACTIVE.get(player.getUuid());
+        return channel==null?Double.NaN:channel.style.projectileRange;
+    }
 
 	private static final class Channel {
 		final ServerPlayerEntity player;
 		final Spell spell;
+        final FormSpellStyle style;
         final RuneModifiers modifiers;
         final double formationRange;
 		final ItemStack scroll;
@@ -519,10 +568,12 @@ public final class SpellChannelManager {
 		boolean cancelHeld;
 		/** 锁定态已广播标志（进入锁定的当 tick 补发一次校准包，防周期网格漏档）。 */
 		boolean lockedAnnounced;
+		boolean domainSuppressed;
 
 		Channel(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level, boolean solo, int token,
 				int mana, int cooldown, BooleanSupplier sourceValid,
-				Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers) {
+				Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers,FormSpellStyle style) {
+            this.style=style;
             this.modifiers=modifiers;
             ItemStack equipped=solo?null:SpellCastManager.getEquippedBook(player);
             this.formationRange=equipped==null||equipped.isEmpty()?1:FormationData.sumSpaceRangeMultiplier(equipped,spell.getElement());
@@ -534,16 +585,23 @@ public final class SpellChannelManager {
 			this.token = token;
 			this.cooldown = cooldown;
 			this.sourceValid = sourceValid;
-			this.effect = target->RuneCastContext.run(modifiers,this.formationRange,()->effect.accept(target));
+			this.effect = target->style.effect(()->RuneCastContext.run(modifiers,this.formationRange,()->effect.accept(target)));
 			this.settleCooldown = settleCooldown;
 			this.consumeUse = consumeUse;
 			var baseProfile=spell.getCastingProfile(player, level, solo);
-            this.profile = new SpellCastingRules.Profile(modifiers.time(baseProfile.ticks()),baseProfile.speedMultiplier(),baseProfile.immobilized());
+            this.profile = new SpellCastingRules.Profile(style.timing.duration(),
+                    OcelotSpellLink.wind(player)?OcelotSpellLink.walkingMultiplier():baseProfile.speedMultiplier(),
+                    !OcelotSpellLink.wind(player)&&baseProfile.immobilized());
 			this.mode = spell.getCastingMode();
 			this.progress = new SpellCastingRules.Progress<>(this.mode, this.profile.ticks(), token);
 			this.beganTick = player.getServer().getTicks();
 			int cost = solo ? modifiers.mana(Math.round(spell.getManaCost()*spell.getConfig().manaCostMultiplier(level))) : mana;
-			this.collapse = new net.ssca.neomagic.NeoLegacyCasting(player,spell,level,this.profile.ticks(),cost);
+			this.collapse = new net.ssca.neomagic.NeoLegacyCasting(player,spell,level,this.profile.ticks(),cost,
+					style.timing.lockTick(),style.collapseMultiplier);
+            this.collapse.record.moistureSpent=style.paidMoisture();
+            this.collapse.record.novaQuickCast=style.novaQuickCast;
+            if(style.frost!=null)style.frost.record(this.collapse.record);
+            if(style.healing!=null)style.healing.onPayment(amount->this.collapse.record.moistureSpent+=amount);
 			this.interruptMode = spell.getConfig().interruptMode;
 			this.dimension = player.getWorld().getRegistryKey();
 		}

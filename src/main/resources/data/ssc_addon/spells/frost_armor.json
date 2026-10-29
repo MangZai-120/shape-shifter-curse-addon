@@ -1,4 +1,5 @@
 {
+  "projectile": false,
   "spell_tier": "basic_2",
   "interrupt_mode": 0,
   "base_damage": 8.0,

@@ -435,6 +435,15 @@ public final class FrostSpikeManager {
 		return c;
 	}
 
+	/** Current same-world hovering contributors, without consuming or including already fired thorns. */
+	public static java.util.List<FrostThornEntity> hoveringThorns(ServerPlayerEntity player) {
+		State s=STATES.get(player.getUuid());
+		if(s==null)return java.util.List.of();
+		cleanupDead(s);
+		return java.util.Arrays.stream(s.slots).filter(java.util.Objects::nonNull)
+				.filter(t->t.getWorld()==player.getWorld()&&player.getUuid().equals(t.getOwnerUuid().orElse(null))).toList();
+	}
+
 	/** 寒棘护体（棘甲）用：指定玩家当前环绕冰锥数（服务端权威；清死槽后计数）。 */
 	public static int getHoverCount(ServerPlayerEntity player) {
 		State s = STATES.get(player.getUuid());

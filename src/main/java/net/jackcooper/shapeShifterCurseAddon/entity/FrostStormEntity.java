@@ -156,7 +156,8 @@ public class FrostStormEntity extends Entity {
 				// Online caster damage is scaled centrally. The surviving offline storm has no attacker attribution.
 				float damage = (float) stormDamage;
 				if (owner == null && !(target instanceof PlayerEntity)) damage *= (float) net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatEnhancements.value("snow_fox_damage", 1.5);
-				target.damage(source, damage);
+				if(target.damage(source, damage)&&owner instanceof net.minecraft.server.network.ServerPlayerEntity caster)
+					net.jackcooper.shapeShifterCurseAddon.spell.FrostSpellLink.onNativeHit(caster,target);
 			}
 		}
 	}

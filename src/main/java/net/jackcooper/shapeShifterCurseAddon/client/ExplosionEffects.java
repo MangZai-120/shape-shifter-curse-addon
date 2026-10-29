@@ -24,6 +24,7 @@ public final class ExplosionEffects {
 	private static final DustParticleEffect WHITE = new DustParticleEffect(new Vector3f(1, 0.95f, 0.9f), 2.5f);
 	private static final DustParticleEffect PURPLE = new DustParticleEffect(new Vector3f(0.55f, 0.12f, 0.85f), 2.5f);
 	private boolean exploded;
+	private boolean interrupted;
 	private ThemeSound theme;
 	/** 分帧计数器（2026-09-24）：爆炸粒子分帧摊平用，正数=尚待发放的剩余批次数。 */
 	private int pendingBlastBatches;
@@ -34,6 +35,7 @@ public final class ExplosionEffects {
 	}
 
 	public void tick(ClientWorld world, Vec3d center, int elapsed, boolean detonated, Double packetCoreRadius, Double packetOuterRadius) {
+		if (interrupted) return;
 		// The enlarged audience receives audio; geometry/particles retain the original 200-block range.
 		if (!detonated && elapsed >= ExplosionRules.SOUND_START_TICKS && theme == null) {
 			theme = new ThemeSound(world, center);
@@ -175,6 +177,28 @@ public final class ExplosionEffects {
 	public void stop() {
 		if (theme != null) MinecraftClient.getInstance().getSoundManager().stop(theme);
 		theme = null;
+	}
+
+	/** Stop the theme before playing one pair of local cancellation cues. No blast particles are emitted. */
+	public void interrupt(Vec3d center, boolean playCue) {
+		if (interrupted) return;
+		interrupted = true;
+		pendingBlastBatches = 0;
+		stop();
+		var client = MinecraftClient.getInstance();
+		if (!playCue || client.player == null) return;
+		for (var sound : suppressionCues(Math.sqrt(client.player.squaredDistanceTo(center)))) client.getSoundManager().play(sound);
+	}
+
+	private static java.util.List<net.minecraft.client.sound.SoundInstance> suppressionCues(double distance) {
+		float volume = ExplosionRules.soundVolume(distance);
+		if (volume <= 0) return java.util.List.of();
+		// Listener-relative feedback retains the explosion audience curve and PLAYERS volume,
+		// while the domain's world-sound barrier cannot swallow the cancellation notification.
+		return java.util.stream.Stream.of(net.minecraft.sound.SoundEvents.BLOCK_GLASS_BREAK, net.minecraft.sound.SoundEvents.BLOCK_FIRE_EXTINGUISH)
+				.<net.minecraft.client.sound.SoundInstance>map(sound -> new net.minecraft.client.sound.PositionedSoundInstance(
+						sound.getId(), SoundCategory.PLAYERS, volume, 1f, Random.create(), false, 0,
+						net.minecraft.client.sound.SoundInstance.AttenuationType.NONE, 0, 0, 0, true)).toList();
 	}
 
 	/** 主题音频实例：AttenuationType.NONE 绕开原版二次衰减，音量逐 tick 按渐入×距离曲线重算。 */

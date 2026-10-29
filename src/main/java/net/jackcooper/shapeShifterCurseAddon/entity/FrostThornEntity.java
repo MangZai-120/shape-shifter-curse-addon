@@ -139,6 +139,15 @@ public class FrostThornEntity extends ProjectileEntity {
 	/** 强化等级：0=普通冰刺，>=1=凝棘强化冰锥（渲染放大 + 命中伤害用）。 */
 	public int getLevel() { return this.dataTracker.get(LEVEL); }
 	public int getHoverTicks() { return hoverTicks; }
+	/** One accepted ice spell spends lifespan once, including a final full discount from a nearly expired thorn. */
+	public int spendHoverLifetime(int ticks) {
+		if(getWorld().isClient||isRemoved()||!isHover()||ticks<=0)return 0;
+		int maximum=BAL.i("max_hover_ticks",MAX_HOVER_TICKS);
+		int spent=Math.min(ticks,Math.max(0,maximum-hoverTicks));
+		hoverTicks=(int)Math.min(maximum,(long)hoverTicks+ticks);
+		if(hoverTicks>=maximum)shatter();else updateStage();
+		return spent;
+	}
 	public boolean isHover() { return getState() == STATE_HOVER; }
 	public void setSlot(int slot) { this.dataTracker.set(SLOT, slot); }
 	public int getSlot() { return this.dataTracker.get(SLOT); }
@@ -544,6 +553,7 @@ public class FrostThornEntity extends ProjectileEntity {
 		super.readCustomDataFromNbt(nbt);
 		this.dataTracker.set(STATE, nbt.getInt("State"));
 		this.hoverTicks = nbt.getInt("HoverTicks");
+		updateStage();
 		this.dataTracker.set(SLOT, nbt.getInt("Slot"));
 		if (nbt.containsUuid("OwnerUuid")) {
 			this.dataTracker.set(OWNER_UUID, Optional.of(nbt.getUuid("OwnerUuid")));

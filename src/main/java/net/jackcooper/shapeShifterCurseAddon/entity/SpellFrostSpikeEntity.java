@@ -40,6 +40,8 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 	private static final double SPEED = 0.75;        // 15 格/秒
 	private static final double MAX_DISTANCE = 50.0; // 最大飞行距离
 
+	public static double maxDistance() { return BAL.d("max_distance", MAX_DISTANCE); }
+
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("spells.frost_spike_entity");
 
@@ -133,14 +135,17 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 	@Override
 	public void tick() {
 		super.tick();
+        if(this.isRemoved())return;
 		ticksAlive++;
 
 		// 无重力匀速移动
 		Vec3d velocity = this.getVelocity();
-		this.setPosition(this.getX() + velocity.x, this.getY() + velocity.y, this.getZ() + velocity.z);
+		boolean limited=((net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.HomingProjectile)this).ssca$hasRangeLimit();
+        if(!limited)this.setPosition(this.getPos().add(velocity));
 
 		// 碰撞检测
 		HitResult hitResult = ProjectileUtil.getCollision(this, this::canHit);
+		if(limited)this.setPosition(this.getPos().add(velocity));
 		if (hitResult.getType() != HitResult.Type.MISS) {
 			this.onCollision(hitResult);
 		}
@@ -152,8 +157,8 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 		// 若双端执行会在离原点 50 格外第一 tick 就误删客户端实体 → 模型永不显示（只剩服务端粒子）。
 		// 客户端实体的消失由服务端 discard 后的 tracker 移除包驱动，天然多人同步。
 		if (!this.getWorld().isClient) {
-			double maxDistance = BAL.d("max_distance", MAX_DISTANCE);
-			if (startPos != null && this.squaredDistanceTo(startPos) > maxDistance * maxDistance) {
+			double maxDistance = maxDistance();
+			if (!limited && startPos != null && this.squaredDistanceTo(startPos) > maxDistance * maxDistance) {
 				this.discard();
 				return;
 			}

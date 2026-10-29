@@ -70,6 +70,8 @@ public final class SpellAuditIntegrationProbe {
         frostArmor();
         spellProtection();
         statePackets();
+        domainSuppressionPacketsAndSounds();
+        frostQuoteSynchronization();
         previewWiring();
         System.out.println("Spell audit integration: " + checks + " checks passed (real parser/item/effect/absorption/protection mixins and packet roundtrip). No live UI/network acceptance.");
     }
@@ -173,6 +175,8 @@ public final class SpellAuditIntegrationProbe {
         near(blink.getAimMaxRange(5), 19.52, "L5 blink preview scales");
         near(devour.getAimMaxRange(1), 16, "L1 devour preview remains L1");
         near(devour.getAimMaxRange(5), 22.4, "L5 devour preview scales");
+        near(blink.getAimMaxRange(null,5),19.52,"Caster-aware accessor preserves nonprojectile level scaling");
+        near(devour.getAimMaxRange(null,5),22.4,"Caster-aware accessor preserves targeted nonprojectile range");
         int[] modifiers = new int[RuneModifiers.Stat.values().length];
         modifiers[RuneModifiers.Stat.DISTANCE.ordinal()] = 25;
         RuneCastContext.run(new RuneModifiers(modifiers), () -> {
@@ -319,12 +323,17 @@ public final class SpellAuditIntegrationProbe {
         set(type, channel, "profile", new SpellCastingRules.Profile(80, .35, false));
         set(type, channel, "mode", SpellCastingRules.Mode.RELEASE);
         set(type, channel, "progress", new SpellCastingRules.Progress<>(SpellCastingRules.Mode.RELEASE, 80, 37));
+        Object style=unsafe.allocateInstance(FormSpellStyle.class);
+        set(FormSpellStyle.class,style,"timing",FormSpellStyle.Timing.of(80,80,-1,1));
+        set(FormSpellStyle.class,style,"projectileRange",1.5);
+        set(type,channel,"style",style);
         var writer = SpellChannelManager.class.getDeclaredMethod("fullStatePacket", type);
         writer.setAccessible(true);
         PacketByteBuf full = (PacketByteBuf) writer.invoke(null, channel);
         check(full.readBoolean(), "server full packet marks active state");
         SpellCastHud.State decoded = SpellCastHud.readActiveState(full, null);
         check(decoded.level() == 2 && decoded.spell() == spell && decoded.token() == 37, "real server/client full packet carries effective level");
+        near(decoded.projectileRange(),1.5,"Full packet carries paid projectile range snapshot");
         check(full.readableBytes() == 0, "full packet consumed exactly");
         full.release();
         PacketByteBuf calibration = PacketByteBufs.create();
@@ -336,8 +345,88 @@ public final class SpellAuditIntegrationProbe {
         calibration.writeBoolean(false);
         SpellCastHud.State updated = SpellCastHud.readActiveState(calibration, decoded);
         check(updated.level() == 2 && updated.elapsed() == 20, "calibration preserves effective downgrade level");
+        near(updated.projectileRange(),1.5,"Calibration retains paid projectile range snapshot");
         check(calibration.readableBytes() == 0, "calibration layout remains unchanged");
         calibration.release();
+    }
+
+    private static void domainSuppressionPacketsAndSounds() throws Exception {
+        Class<?> sequenceType=Class.forName(ExplosionManager.class.getName()+"$Sequence");
+        var write=ExplosionManager.class.getDeclaredMethod("writeSequence",PacketByteBuf.class,sequenceType,int.class);write.setAccessible(true);
+        Class<?> renderer=net.jackcooper.shapeShifterCurseAddon.client.renderer.ExplosionRenderer.class;
+        var read=renderer.getDeclaredMethod("readSequences",PacketByteBuf.class);read.setAccessible(true);
+        PacketByteBuf packet=PacketByteBufs.create();packet.writeVarInt(2);UUID[] ids={UUID.randomUUID(),UUID.randomUUID()};
+        for(int i=0;i<2;i++){
+            Object sequence=unsafe.allocateInstance(sequenceType);
+            set(sequenceType,sequence,"id",ids[i]);set(sequenceType,sequence,"center",new net.minecraft.util.math.Vec3d(10,64,30));
+            set(sequenceType,sequence,"timing",FormSpellStyle.Timing.of(700,700,540,.75));
+            set(sequenceType,sequence,"coreRadius",32d);set(sequenceType,sequence,"outerRadius",64d);
+            set(sequenceType,sequence,"suppressedAt",i==0?485:-1);write.invoke(null,packet,sequence,490);
+        }
+        var parsed=(java.util.Map<?,?>)read.invoke(null,packet);
+        check(packet.readableBytes()==0&&parsed.size()==2,"Actual explosion writer/client decoder consumes multiple normal and suppressed sequences exactly");packet.release();
+        for(int i=0;i<2;i++){
+            Object view=parsed.get(ids[i]);var suppressed=view.getClass().getDeclaredField("suppressedAt");suppressed.setAccessible(true);
+            check(suppressed.getInt(view)==(i==0?485:-1),"Suppression timestamp is synchronized per sequence");
+            var preparation=view.getClass().getDeclaredField("preparation");preparation.setAccessible(true);
+            check(preparation.getInt(view)==405,"Accelerated timing survives suppression packet");
+        }
+        Object cancelled=parsed.get(ids[0]),normal=parsed.get(ids[1]);
+        var held=finaleVertices(cancelled,0);var rising=finaleVertices(cancelled,20);
+        check(held.count()>0&&rising.height()>held.height(),"Real cancellation geometry retains existing circles and raises them during finale");
+        check(finaleVertices(normal,3).count()>finaleVertices(cancelled,3).count(),"Normal blast shockwave is absent from actual cancellation geometry");
+        check(finaleVertices(cancelled,40).count()==0,"All cancelled circle vertices disappear after staggered finale");
+        set(cancelled.getClass(),cancelled,"suppressedAt",405); // Logical 540: beam has not reached any layer.
+        check(finaleVertices(cancelled,0).count()==0,"Cancelling before layer creation does not conjure seven full circles");
+        set(cancelled.getClass(),cancelled,"suppressedAt",415); // Logical 550: only the first layers have appeared.
+        int partial=finaleVertices(cancelled,0).count();check(partial>0&&partial<held.count(),"Early cancellation retains only layers that actually appeared");
+        var cues=net.jackcooper.shapeShifterCurseAddon.client.ExplosionEffects.class.getDeclaredMethod("suppressionCues",double.class);cues.setAccessible(true);
+        var sounds=(List<?>)cues.invoke(null,0d);check(sounds.size()==2,"Exactly two suppression cues");
+        check(((net.minecraft.client.sound.SoundInstance)sounds.get(0)).getId().equals(net.minecraft.sound.SoundEvents.BLOCK_GLASS_BREAK.getId()),"First cue is glass break");
+        check(((net.minecraft.client.sound.SoundInstance)sounds.get(1)).getId().equals(net.minecraft.sound.SoundEvents.BLOCK_FIRE_EXTINGUISH.getId()),"Second cue is fire extinguish");
+        for(Object sound:sounds){var cue=(net.minecraft.client.sound.SoundInstance)sound;check(cue.isRelative()&&cue.getCategory()==net.minecraft.sound.SoundCategory.PLAYERS&&!cue.isRepeatable(),"Single-play player cue bypasses domain world-sound isolation");}
+        check(((List<?>)cues.invoke(null,ExplosionRules.audienceRange()+1)).isEmpty(),"Suppression cues retain the existing audio audience limit");
+        var effects=new net.jackcooper.shapeShifterCurseAddon.client.ExplosionEffects();effects.interrupt(net.minecraft.util.math.Vec3d.ZERO,false);
+        effects.tick(null,net.minecraft.util.math.Vec3d.ZERO,700,true,32d,64d); // Must return before touching world/audio/particles.
+        check(true,"Interrupted effects cannot restart theme or emit blast particles even after a late detonation tick");
+    }
+
+    private record FinaleVertices(int count,float height) {}
+    private static FinaleVertices finaleVertices(Object view,float elapsed)throws Exception {
+        var buffer=new net.minecraft.client.render.BufferBuilder(65536);
+        buffer.begin(net.minecraft.client.render.VertexFormat.DrawMode.QUADS,net.minecraft.client.render.VertexFormats.POSITION_COLOR);
+        var render=net.jackcooper.shapeShifterCurseAddon.client.renderer.ExplosionRenderer.class.getDeclaredMethod("renderFinale",
+                net.minecraft.client.util.math.MatrixStack.class,net.minecraft.client.render.VertexConsumer.class,float.class,view.getClass());render.setAccessible(true);
+        render.invoke(null,new net.minecraft.client.util.math.MatrixStack(),buffer,elapsed,view);
+        var built=buffer.end();int count=built.getParameters().vertexCount();float highest=Float.NEGATIVE_INFINITY;
+        var bytes=built.getVertexBuffer().order(java.nio.ByteOrder.nativeOrder());
+        int stride=net.minecraft.client.render.VertexFormats.POSITION_COLOR.getVertexSizeByte();
+        for(int i=0;i<count;i++)highest=Math.max(highest,bytes.getFloat(i*stride+4));
+        built.release();return new FinaleVertices(count,highest);
+    }
+
+    private static void frostQuoteSynchronization()throws Exception {
+        var method=net.ssca.neomagic.client.NeoClient.class.getDeclaredMethod("frostMultiplier",NbtCompound.class,Identifier.class,long.class);method.setAccessible(true);
+        var state=new NbtCompound();state.putDouble("FrostSpellMultiplier",.85);state.putLong("FrostReadyUntil",60);
+        var snow=net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SNOW_FOX_SP;
+        var spine=net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SNOW_FOX_FROSTSPINE;
+        state.putString("Form",snow.toString());
+        near((double)method.invoke(null,state,snow,59L),.85,"Actual client ice preview uses authoritative preparation multiplier");
+        near((double)method.invoke(null,state,snow,60L),1,"Client preparation expires at the same boundary as server");
+        state.putDouble("FrostSpellMultiplier",.75);state.putString("Form",spine.toString());near((double)method.invoke(null,state,spine,120L),.75,"Thorn discount is independent of SP preparation expiry");
+        near((double)method.invoke(null,state,new Identifier("my_addon","familiar_fox_sp"),0L),1,"Stale frost HUD cannot grant another form the bonus");
+        near((double)method.invoke(null,state,snow,0L),1,"A form packet arriving before its HUD cannot reuse the other snow form's multiplier");
+        state.putDouble("FrostSpellMultiplier",Double.NaN);near((double)method.invoke(null,state,spine,0L),1,"Malformed nonfinite multiplier is ignored");
+        state.putDouble("FrostSpellMultiplier",-1);near((double)method.invoke(null,state,spine,0L),1,"Negative multiplier is ignored");
+        near((double)method.invoke(null,new NbtCompound(),spine,0L),1,"Missing old snapshot fields retain ordinary preview");
+        var novaMethod=net.ssca.neomagic.client.NeoClient.class.getDeclaredMethod("novaQuickUntil",NbtCompound.class,Identifier.class,long.class);novaMethod.setAccessible(true);
+        var nova=net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.OCELOT_NOVA;
+        var echo=new NbtCompound();echo.putString("Form",nova.toString());echo.putLong("NovaQuickCastUntil",100);
+        check((long)novaMethod.invoke(null,echo,nova,99L)==100,"Client revival shortcut keeps authoritative absolute expiry");
+        check((long)novaMethod.invoke(null,echo,nova,100L)==0,"Client revival shortcut expires at server boundary");
+        check((long)novaMethod.invoke(null,echo,snow,0L)==0,"Stale revival HUD cannot grant another form instantaneous casting");
+        echo.putString("Form",snow.toString());check((long)novaMethod.invoke(null,echo,nova,0L)==0,"Form arriving before matching revival HUD cannot reuse a stale window");
+        check((long)novaMethod.invoke(null,new NbtCompound(),nova,0L)==0,"Older HUD without revival expiry retains ordinary casting");
     }
 
     private static void previewWiring() throws Exception {
@@ -347,8 +436,9 @@ public final class SpellAuditIntegrationProbe {
         }
         int calls = 0;
         for (MethodNode method : node.methods) for (var insn : method.instructions)
-            if (insn instanceof MethodInsnNode call && call.name.equals("getAimMaxRange") && call.desc.equals("(I)D")) calls++;
-        check(calls == 2, "both client preview paths call level-aware production accessor");
+            if (insn instanceof MethodInsnNode call && call.name.equals("getAimMaxRange")
+                    && call.desc.equals("(Lnet/minecraft/entity/player/PlayerEntity;I)D")) calls++;
+        check(calls == 2, "both client preview paths call caster- and level-aware production accessor");
         ClassNode mixin = new ClassNode();
         try (var in = SpellAuditIntegrationProbe.class.getResourceAsStream("/net/jackcooper/shapeShifterCurseAddon/mixin/entity/SscAddonLivingEntityMixin.class")) {
             new ClassReader(in).accept(mixin, 0);

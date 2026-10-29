@@ -17,5 +17,11 @@
   "recipe.ssc_addon.formation": "法阵需先记录并学习，然后在研究台用空白法阵纸 1 张和对应系油墨制作；油墨数量等于等级。通用法阵使用普通油墨。",
   "recipe.ssc_addon.scroll_workshop": "在研究台的卷轴工坊操作。定向制作需已记录图谱，仅开放低阶且非红档法术；使用空白法阵纸、对应系油墨和月尘粉。升级需已鉴定的主卷轴及图谱，消耗对应系油墨与高阶所需纯晶；修复和拆解也在工坊中完成。材料数量按当前界面及服务器配置为准。",
   "recipe.ssc_addon.rune_research": "在研究台辨识符文并验证自己的布局。完成时消耗空白法阵纸 1 张，以及每个已填符文对应的油墨和月尘粉各 1 份。空外环直接产出普通卷轴；加入外环增强后产出法阵方案，再在卷轴工坊将方案压印到同法术同等级的已鉴定卷轴。符文含义随存档变化。",
-  "recipe.ssc_addon.analysis": "拾获的未鉴定卷轴或法阵需先在研究台完成鉴定，再记录或用于升级、研究及压印。鉴定图示不包含法术的符文答案。"
+  "recipe.ssc_addon.analysis": "拾获的未鉴定卷轴或法阵需先在研究台完成鉴定，再记录或用于升级、研究及压印。鉴定图示不包含法术的符文答案。",
+  "message.ssc_addon.spell.homing_mana": "契灵追踪需要%s点mana，当前法力不足",
+  "message.ssc_addon.spell.explosion_domain_suppressed": "爆裂魔法的法阵中心被领域覆盖，施法已被强制打断",
+  "power.my_addon.form_ocelot_wind_spirit_mobile_casting.name": "风行施法",
+  "power.my_addon.form_ocelot_wind_spirit_mobile_casting.description": "蓄力时可以按正常步行速度的80%移动，不受法术原有禁动和蓄力位移限制。进入不可打断阶段前，疾跑或使用形态技能会中断施法；进入后禁用疾跑和形态技能，仍可步行。原有消耗、冷却和空间亲和保留。",
+  "power.my_addon.form_ocelot_nova_quick_casting.name": "九命余响",
+  "power.my_addon.form_ocelot_nova_quick_casting.description": "九命成功复活后的5秒内，法术跳过前置蓄力；有不可打断阶段的法术从该阶段开始，演出保持原速。增益期间起手的法术保留本次时长；普通死亡重生不触发，法术消耗、冷却和失败规则不变。"
 }

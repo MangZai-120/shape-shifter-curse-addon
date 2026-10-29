@@ -18,18 +18,40 @@ public final class NeoClient implements ClientModInitializer {
     public static final Map<Core,Coefficients> COSTS=new EnumMap<>(Core.class);
     public static final Map<String,Tuning> TUNINGS=new HashMap<>();
     public static final Map<Core,double[]> BOOK_EFFECTS=new EnumMap<>(Core.class);
+    private static boolean bookEquipped;
     public static Tuning tuning(Blueprint b){return TUNINGS.getOrDefault(b.identity()+"#"+b.band(),TUNINGS.getOrDefault(b.identity(),Tuning.defaults()));}
     public static double bodyMastery(Blueprint b) {
         var values=data.progress.get(b.identity());double needed=tuning(b).mastery()>0?tuning(b).mastery():masteryNeeded(b);
         return values==null?0:clamp(values[b.band()]/needed,0,1);
     }
     public static double bookPower(Blueprint b){return BOOK_EFFECTS.getOrDefault(b.output(),new double[]{1,1})[1];}
-    public static Quote preview(Blueprint b){var q=quote(b,bodyMastery(b),COSTS.getOrDefault(b.core(),coefficients(b.core())),tuning(b));double m=BOOK_EFFECTS.getOrDefault(b.core(),new double[]{1,1})[0];return new Quote(q.normal()*m,q.actual()*m,q.floor(),q.plan());}
+    public static Quote preview(Blueprint b){
+        var q=quote(b,bodyMastery(b),COSTS.getOrDefault(b.core(),coefficients(b.core())),tuning(b));
+        var player=MinecraftClient.getInstance().player;
+        double m=BOOK_EFFECTS.getOrDefault(b.core(),new double[]{1,1})[0];
+        if(hud.contains("BookEquipped")?hud.getBoolean("BookEquipped"):bookEquipped)
+            m*=net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.tidalCostMultiplier(player);
+        m*=net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.collapseMultiplier(player,b.carrier()==Carrier.PROJECTILE,b.output()==Core.FROST);
+        return new Quote(q.normal()*m,q.actual()*m,q.floor(),q.plan());
+    }
     public static NbtCompound hud=new NbtCompound();
     private static int failureFlash,resetFlash;
     public static UUID token;
     public static boolean table;
     public static String rules="";
+    private static double frostMultiplier(NbtCompound state,net.minecraft.util.Identifier form,long time) {
+        if(form==null||!form.toString().equals(state.getString("Form")))return 1;
+        double multiplier=state.contains("FrostSpellMultiplier")?state.getDouble("FrostSpellMultiplier"):1;
+        if(!Double.isFinite(multiplier)||multiplier<0||multiplier>1)return 1;
+        if(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SNOW_FOX_FROSTSPINE.equals(form))return multiplier;
+        if(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SNOW_FOX_SP.equals(form)&&time<state.getLong("FrostReadyUntil"))return multiplier;
+        return 1;
+    }
+    private static long novaQuickUntil(NbtCompound state,net.minecraft.util.Identifier form,long time) {
+        if(!net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.OCELOT_NOVA.equals(form)
+                ||!form.toString().equals(state.getString("Form")))return 0;
+        long until=state.getLong("NovaQuickCastUntil");return time<until?until:0;
+    }
     public static void action(String action,Blueprint b,String hypothesis,String conclusion,String citations) {
         if(token==null)return;
         var n=new NbtCompound();n.putUuid("Token",token);n.putString("Action",action);
@@ -40,6 +62,14 @@ public final class NeoClient implements ClientModInitializer {
         var packet=PacketByteBufs.create();packet.writeNbt(n);ClientPlayNetworking.send(NeoNetwork.ACTION,packet);
     }
     @Override public void onInitializeClient() {
+        net.jackcooper.shapeShifterCurseAddon.spell.FrostSpellLink.clientMultiplier=player->{
+            var form=net.jackcooper.shapeShifterCurseAddon.util.FormUtils.getCurrentForm(player);
+            return frostMultiplier(hud,form==null?null:form.getFormID(),player.getWorld().getTime());
+        };
+        net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.clientQuickUntil=player->{
+            var form=net.jackcooper.shapeShifterCurseAddon.util.FormUtils.getCurrentForm(player);
+            return novaQuickUntil(hud,form==null?null:form.getFormID(),player.getWorld().getTime());
+        };
         ClientPlayNetworking.registerGlobalReceiver(NeoNetwork.STATE,(client,handler,buf,sender)->{
             NbtCompound n=buf.readNbt();if(n==null)return;
             client.execute(()->acceptSnapshot(client,n));
@@ -53,7 +83,7 @@ public final class NeoClient implements ClientModInitializer {
             hud=n==null?new NbtCompound():n;
             if(n!=null){data.burden=n.getDouble("C");data.recovery=n.getInt("Recovery");data.spellbookMasteryExpTen=n.getInt("MasteryExpTen");net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(data.spellbookMasteryExpTen);data.form=n.getString("Form");profile=NeoState.JSON.fromJson(n.getString("Profile"),Profile.class);}
         });});
-        ClientPlayConnectionEvents.DISCONNECT.register((handler,client)->{hud=new NbtCompound();failureFlash=resetFlash=0;token=null;data=new NeoState.PlayerData();net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(0);COSTS.clear();TUNINGS.clear();BOOK_EFFECTS.clear();});
+        ClientPlayConnectionEvents.DISCONNECT.register((handler,client)->{hud=new NbtCompound();bookEquipped=false;failureFlash=resetFlash=0;token=null;data=new NeoState.PlayerData();net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(0);COSTS.clear();TUNINGS.clear();BOOK_EFFECTS.clear();});
         NeoStabilityBar.registerResources();
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client->{
             hud.putBoolean("RecentFailure",failureFlash>0);hud.putBoolean("RecentReset",resetFlash>0);
@@ -85,6 +115,7 @@ public final class NeoClient implements ClientModInitializer {
                 net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(data.spellbookMasteryExpTen);
                 COSTS.clear();COSTS.putAll(nextCosts);TUNINGS.clear();TUNINGS.putAll(nextTunings);
                 BOOK_EFFECTS.clear();BOOK_EFFECTS.putAll(nextBook);
+                bookEquipped=n.getBoolean("BookEquipped");
                 if(n.getBoolean("Open"))client.setScreen(new NeoScreen());
                 else if(client.currentScreen instanceof NeoScreen screen)screen.updated();
                 }catch(RuntimeException malformed){NeoMagic.LOG.warn("Ignoring invalid neomagic research snapshot",malformed);}

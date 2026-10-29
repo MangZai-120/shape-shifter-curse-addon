@@ -53,7 +53,7 @@ public final class SpellCastHud {
 	public record State(java.util.UUID casterUuid, Spell spell, int token, int elapsed, int duration, SpellCastingRules.Mode mode,
 			boolean released, boolean immobilized, boolean solo, boolean continuous, int cancelTicks,
 			/** 锁定态（服务端 isLockedIn：领域壳扩张后/爆裂红白球生成后不可打断）：倒计时红显且忽略取消显示。 */
-			boolean locked, int level) {}
+			boolean locked, int level, int lockTick, float projectileRange) {}
 
 	private SpellCastHud() {}
 
@@ -74,6 +74,7 @@ public final class SpellCastHud {
 	private static boolean localCancelling;
 
 	public static void clear() {
+		if (state != null) net.jackcooper.shapeShifterCurseAddon.client.sound.SpellChargeSoundInstance.stopFor(state.casterUuid());
 		state = null;
 		slideInAt = null;
 		endAt = null;
@@ -92,15 +93,20 @@ public final class SpellCastHud {
 			java.util.UUID casterUuid = buf.readUuid();
 			return new State(casterUuid, spell, buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
 					buf.readEnumConstant(SpellCastingRules.Mode.class), buf.readBoolean(), buf.readBoolean(),
-					buf.readBoolean(), buf.readBoolean(), buf.readVarInt(), buf.readBoolean(), buf.readVarInt());
+					buf.readBoolean(), buf.readBoolean(), buf.readVarInt(), buf.readBoolean(), buf.readVarInt(),buf.readVarInt(),buf.readFloat());
 		}
 		if (old == null) return null;
 		return new State(old.casterUuid(), old.spell(), buf.readVarInt(), buf.readVarInt(),
 				old.duration(), old.mode(), buf.readBoolean(), old.immobilized(), old.solo(),
-				old.continuous(), buf.readVarInt(), buf.readBoolean(), old.level());
+				old.continuous(), buf.readVarInt(), buf.readBoolean(), old.level(),old.lockTick(),old.projectileRange());
 	}
 
 	public static void register() {
+        net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.clientReleaseLocked=player->
+                state!=null&&endAt==null&&state.casterUuid().equals(player.getUuid())
+                &&(state.locked()||state.lockTick()>=0&&effectiveElapsed(state)>=state.lockTick());
+        net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.clientRangeSnapshot=player ->
+                state!=null&&endAt==null&&state.casterUuid().equals(player.getUuid())?state.projectileRange():Double.NaN;
 		ClientPlayNetworking.registerGlobalReceiver(SpellChannelManager.STATE, (client, handler, buf, sender) -> {
 			if (!buf.readBoolean()) {
 				client.execute(SpellCastHud::onChannelEnd);
@@ -169,6 +175,7 @@ public final class SpellCastHud {
 	private static void onChannelEnd() {
 		State current = state;
 		if (current != null) {
+			net.jackcooper.shapeShifterCurseAddon.client.sound.SpellChargeSoundInstance.stopFor(current.casterUuid());
 			// 打断时进度必然未满（elapsed<duration）；正常结束/蓄满释放 elapsed≥duration
 			// （用本地推进的有效值判定，而非可能滞后 ≤20t 的包内值）
 			endedByInterrupt = effectiveElapsed(current) < current.duration();
@@ -290,7 +297,7 @@ public final class SpellCastHud {
 		// 爆裂锁定窗口 682-700t 不在 20t 校准网格上，只靠服务端单点补发一次（时滞/丢包即整窗不红，
 		// 领域 200t 恰在网格上由周期包天然冗余携带故从未出问题）——本地预测不依赖网络，红显零时滞。
 		// 一致性：预测基于同一 elapsed 推进链，最多早/晚 1 个校准周期；服务端位到达后即权威覆盖。
-		int lockTick = current.spell().getLockInTick();
+		int lockTick = current.lockTick();
 		boolean locked = current.locked() || lockTick >= 0 && elapsed >= lockTick;
 		boolean cancelling = !locked && (localCancelling || current.cancelTicks() > 0);
 		// ===== 绘制：空框 → 满图自下而上裁切（左/右双贴图选图）→ 条旁倒计时 =====

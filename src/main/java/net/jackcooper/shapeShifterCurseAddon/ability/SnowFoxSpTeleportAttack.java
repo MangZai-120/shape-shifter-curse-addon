@@ -194,6 +194,7 @@ public class SnowFoxSpTeleportAttack {
 		Vec3d oldVelocity = target.getVelocity();
 		if (target.damage(source, damage)) {
 			target.setVelocity(oldVelocity);
+			net.jackcooper.shapeShifterCurseAddon.spell.FrostSpellLink.onNativeHit(player,target);
 		}
 
 		if (player.getWorld() instanceof ServerWorld serverWorld) {
