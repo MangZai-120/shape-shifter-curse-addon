@@ -16,7 +16,6 @@ import net.minecraft.util.*;
 import net.minecraft.util.math.BlockPos;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
-import java.lang.reflect.*;
 import java.util.*;
 import static net.ssca.neomagic.NeoModel.*;
 
@@ -50,8 +49,9 @@ public final class NeoOcelotSpellLinkProbe {
         var f=SpellChannelManager.class.getDeclaredField("ACTIVE");f.setAccessible(true);Object c=((Map<?,?>)f.get(null)).get(p.getUuid());
         var m=SpellChannelManager.class.getDeclaredMethod("ensureValid",c.getClass());m.setAccessible(true);return (boolean)m.invoke(null,c);
     }
+    @SuppressWarnings("unchecked")
     private static void lockDomain(ServerPlayerEntity p)throws Exception {
-        var f=DomainManager.class.getDeclaredField("FIELDS");f.setAccessible(true);var fields=(Map)f.get(null);Object old=fields.get(p.getUuid());
+        var f=DomainManager.class.getDeclaredField("FIELDS");f.setAccessible(true);var fields=(Map<Object,Object>)f.get(null);Object old=fields.get(p.getUuid());
         var type=old.getClass();var components=type.getRecordComponents();Object[] args=new Object[components.length];Class<?>[] types=new Class<?>[components.length];
         for(int i=0;i<args.length;i++){types[i]=components[i].getType();var getter=components[i].getAccessor();getter.setAccessible(true);args[i]=components[i].getName().equals("startTick")?p.getServer().getTicks()-DomainRules.expandStartTick():getter.invoke(old);}
         var ctor=type.getDeclaredConstructor(types);ctor.setAccessible(true);fields.put(p.getUuid(),ctor.newInstance(args));

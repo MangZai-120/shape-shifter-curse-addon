@@ -133,7 +133,7 @@ public final class NeoRuntime {
         if(a.settled)return;a.settled=true;
         ACTIVE.remove(p.getUuid());a.record.result="failed";
         net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.clearSlow(p);
-        var d=data(p);setCooldown(p,a.session.blueprint.identity(),a.fullCooldown);
+        setCooldown(p,a.session.blueprint.identity(),a.fullCooldown);
         backlash(p,a.session.quote.actual());
     }
     private static void failRange(ServerPlayerEntity p,Active a) {

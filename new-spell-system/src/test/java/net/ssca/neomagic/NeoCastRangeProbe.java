@@ -22,7 +22,8 @@ public final class NeoCastRangeProbe {
     private static ServerPlayerEntity player(TestContext t)throws Exception {
         var p=NeoFormCastingProbe.player(t,FormIdentifiers.OCELOT_SP,0);NeoRuntime.data(p).spellbookMasteryExpTen=120000;return p;
     }
-    private static Map map(Class<?> type,String name)throws Exception {var f=type.getDeclaredField(name);f.setAccessible(true);return (Map)f.get(null);}
+    @SuppressWarnings("unchecked")
+    private static Map<Object,Object> map(Class<?> type,String name)throws Exception {var f=type.getDeclaredField(name);f.setAccessible(true);return (Map<Object,Object>)f.get(null);}
     private static Object channel(ServerPlayerEntity p)throws Exception{return map(SpellChannelManager.class,"ACTIVE").get(p.getUuid());}
     private static Object field(Object object,String name)throws Exception{var f=object.getClass().getDeclaredField(name);f.setAccessible(true);return f.get(object);}
     private static boolean validate(ServerPlayerEntity p)throws Exception {
@@ -46,7 +47,7 @@ public final class NeoCastRangeProbe {
         @Override public void cast(ServerPlayerEntity p,float power,boolean solo){}
     }
     private static void phaseDomain(ServerPlayerEntity p)throws Exception {
-        Map fields=map(DomainManager.class,"FIELDS");Object old=fields.get(p.getUuid());var type=old.getClass();var components=type.getRecordComponents();Object[] values=new Object[components.length];Class<?>[] types=new Class<?>[components.length];
+        Map<Object,Object> fields=map(DomainManager.class,"FIELDS");Object old=fields.get(p.getUuid());var type=old.getClass();var components=type.getRecordComponents();Object[] values=new Object[components.length];Class<?>[] types=new Class<?>[components.length];
         for(int i=0;i<values.length;i++){types[i]=components[i].getType();var get=components[i].getAccessor();get.setAccessible(true);values[i]=components[i].getName().equals("startTick")?p.getServer().getTicks()-DomainRules.expandStartTick():get.invoke(old);}
         var constructor=type.getDeclaredConstructor(types);constructor.setAccessible(true);fields.put(p.getUuid(),constructor.newInstance(values));
     }

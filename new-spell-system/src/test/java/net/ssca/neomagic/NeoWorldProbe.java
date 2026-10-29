@@ -4,7 +4,6 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.*;
-import net.minecraft.entity.passive.*;
 import net.minecraft.item.*;
 import net.minecraft.nbt.*;
 import net.minecraft.resource.VanillaDataPackProvider;
