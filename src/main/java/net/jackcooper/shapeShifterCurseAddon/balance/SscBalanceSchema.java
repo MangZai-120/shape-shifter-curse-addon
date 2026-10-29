@@ -719,7 +719,16 @@ public final class SscBalanceSchema {
                 .doubleParam("frostspine_reduction_per_thorn", 0.05, 0.0, 1.0)
                 .intParam("frostspine_lifetime_cost_ticks", 360, 1, 12000)
                 .doubleParam("wind_cast_walking_multiplier", 0.3, 0.0, 1.0)
-                .intParam("nova_quick_cast_ticks", 100, 1, 1200);
+                .intParam("nova_quick_cast_ticks", 100, 1, 1200)
+                .intParam("moon_weaver_projectile_mana",8,0,1000)
+                .doubleParam("moon_weaver_cocoon_chance",0.15,0.0,1.0)
+                .doubleParam("salticidae_curse_collapse_multiplier",0.2,0.0,1.0)
+                .doubleParam("salticidae_curse_cooldown_multiplier",0.1,0.0,1.0)
+                .doubleParam("allay_spell_extra_collapse",.15,0.0,1.0)
+                .doubleParam("allay_damage_heal_ratio",.25,0.0,1.0)
+                .doubleParam("allay_damage_heal_minimum",.25,0.0,20.0)
+                .doubleParam("allay_damage_heal_range",16,0.0,128.0)
+                .doubleParam("fallen_curse_chain_range",5,0.0,128.0);
 
         // ==== 盘点批次 #6/#7（台账-盘点批次.md；来源注解指向真实常量或 null=函数内字面量）====
 

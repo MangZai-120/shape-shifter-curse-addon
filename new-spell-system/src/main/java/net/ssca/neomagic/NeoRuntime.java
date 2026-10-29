@@ -32,6 +32,7 @@ public final class NeoRuntime {
         public float curseDurationMultiplier=1;
         public net.jackcooper.shapeShifterCurseAddon.spell.CastRangeGuard.Lock targetLock,guidanceLock;
         public net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle style;
+        public Set<UUID> chainPrimaries=Set.of();
         public int age, beganTick;
         public boolean settled;
         Active(Session s,NeoState.Experiment r,ItemStack wand,Hand hand,NeoEffects.Anchor anchor,Random random) {
@@ -77,6 +78,7 @@ public final class NeoRuntime {
         e.target=anchor.target()==null?anchor.position().toString():anchor.target().toString();
         d.add(e);var active=new Active(new Session(b,quote,style.timing.duration()),e,p.getStackInHand(hand),hand,anchor,new Random(p.getRandom().nextLong()));
         active.style=style;
+        style.bindAllay(quote.actual(),active.record,b.output()==Core.CURSE&&Set.of(Carrier.PROJECTILE,Carrier.CONTACT,Carrier.LOCK).contains(b.carrier()));
         active.record.novaQuickCast=style.novaQuickCast;
         active.record.moistureSpent=style.paidMoisture();
         if(style.frost!=null)style.frost.record(active.record);

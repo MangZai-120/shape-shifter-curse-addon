@@ -42,7 +42,8 @@
         "my_addon:form_sp_secondary_cd_tick",
         "my_addon:form_spider_moon_weaver_web_affinity",
         "my_addon:form_spider_moon_weaver_moon_poison",
-        "my_addon:form_spider_moon_weaver_cocooned_prey"
+        "my_addon:form_spider_moon_weaver_cocooned_prey",
+        "my_addon:form_spider_moon_weaver_spell_weave"
     ],
     "icon": { "item": "minecraft:player_head" },
     "order": 0,

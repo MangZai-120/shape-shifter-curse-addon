@@ -169,6 +169,18 @@ public final class SpellChannelManager {
     public static boolean start(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level,
             boolean solo, int token, int mana, int cooldown, BooleanSupplier sourceValid,
             Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers) {
+        return startInternal(player,spell,scroll,level,solo,token,mana,cooldown,sourceValid,effect,settleCooldown,consumeUse,modifiers,null);
+    }
+    /** Native jump-hit proc shares payment, failure, effect, experience and CD settlement with normal casts. */
+    public static boolean startTriggered(ServerPlayerEntity player,Spell spell,ItemStack scroll,int level,boolean solo,
+            int mana,int cooldown,BooleanSupplier sourceValid,Consumer<Vec3d> effect,IntConsumer settleCooldown,
+            RuneModifiers modifiers,SpiderSpellLink.Trigger trigger) {
+        return startInternal(player,spell,scroll,level,solo,-1,mana,trigger.cooldown(cooldown),sourceValid,
+                target->trigger.effect(player,()->effect.accept(target)),settleCooldown,()->{},modifiers,trigger);
+    }
+    private static boolean startInternal(ServerPlayerEntity player,Spell spell,ItemStack scroll,int level,
+            boolean solo,int token,int mana,int cooldown,BooleanSupplier sourceValid,Consumer<Vec3d> effect,
+            IntConsumer settleCooldown,Runnable consumeUse,RuneModifiers modifiers,SpiderSpellLink.Trigger trigger) {
         if (net.ssca.neomagic.NeoRuntime.blocked(player)||net.ssca.neomagic.NeoLegacyCasting.isCasting(player)) return false;
         if (!RuneScheme.validScroll(player,scroll,spell))return false;
         if (ArcaneAnalysis.isUnanalyzed(scroll)) {
@@ -201,7 +213,7 @@ public final class SpellChannelManager {
 		net.ssca.neomagic.NeoRuntime.refreshForm(player);
 		// GCD：释放生效后 0.8s 内不能开始下一次施法（被打断的可立刻重试）
 		long gate = NEXT_CAST_OK.getOrDefault(player.getUuid(), 0L);
-		if (player.getWorld().getTime() < gate) {
+        if (trigger==null && player.getWorld().getTime() < gate) {
 			playNoManaSound(player); // GCD 间隔内（释放后 0.8s）：火焰熄灭音（与 CD 拒绝同语义）
 			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.cast_interval",
 					SpellCastFeedback.seconds(gate - player.getWorld().getTime())), true);
@@ -218,12 +230,13 @@ public final class SpellChannelManager {
 			}
 		}
 		var baseProfile=spell.getCastingProfile(player,level,solo);
-		var style=RuneCastContext.with(modifiers,formationRange,()->FormSpellStyle.plan(player,spell,level,
-				baseProfile.ticks(),modifiers.time(baseProfile.ticks())));
+        var style=RuneCastContext.with(modifiers,formationRange,()->trigger==null?FormSpellStyle.plan(player,spell,level,
+                baseProfile.ticks(),modifiers.time(baseProfile.ticks())):FormSpellStyle.planTriggered(player,spell,level,
+                baseProfile.ticks(),modifiers.time(baseProfile.ticks())));
 		double lockRange=RuneCastContext.with(modifiers,formationRange,()->spell.getCastingLockRange(player,level));
 		if(!style.pay())return false;
 		Channel channel = new Channel(player, spell, scroll, level, solo, token, mana, cooldown,
-				sourceValid, effect, settleCooldown, consumeUse,modifiers,style,lockRange);
+                sourceValid, effect, settleCooldown, consumeUse,modifiers,style,lockRange,trigger==null?1:trigger.growth());
 		if(spell.requiresTargetBeforeChannel())channel.progress.release(token,initialTarget);
 		ACTIVE.put(player.getUuid(), channel);
 		RuneCastContext.run(channel.modifiers,channel.formationRange,()->spell.onChannelStarted(player, channel.progress.target()));
@@ -232,9 +245,11 @@ public final class SpellChannelManager {
 		if(style.novaQuickCast)RuneCastContext.run(channel.modifiers,channel.formationRange,
 				()->spell.tickChannel(player,level,scroll,style.timing.logical(0)));
 		applyMovement(player,channel.profile.speedMultiplier());
-		syncFull(channel);
-		broadcastVisual(channel, true);
-		playChargeSound(channel);
+        if(trigger==null||style.timing.duration()>0) {
+		    syncFull(channel);
+		    broadcastVisual(channel, true);
+		    playChargeSound(channel);
+        }
 		advance(channel); // Draw failure once at tick 0; a failed draw interrupts at its scheduled pre-lock tick.
 		if (solo) net.jackcooper.shapeShifterCurseAddon.network.SpellbookStatusSync.sync(player);
 		return true;
@@ -606,7 +621,7 @@ public final class SpellChannelManager {
 
 		Channel(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level, boolean solo, int token,
 				int mana, int cooldown, BooleanSupplier sourceValid,
-				Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers,FormSpellStyle style,double lockRange) {
+                Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers,FormSpellStyle style,double lockRange,double growthMultiplier) {
             this.style=style;
             this.lockRange=lockRange;
             this.guidanceLock=CastRangeGuard.entity(style.target,style.range);
@@ -633,8 +648,9 @@ public final class SpellChannelManager {
 			this.beganTick = player.getServer().getTicks();
 			int cost = solo ? modifiers.mana(Math.round(spell.getManaCost()*spell.getConfig().manaCostMultiplier(level))) : mana;
 			this.collapse = new net.ssca.neomagic.NeoLegacyCasting(player,spell,level,this.profile.ticks(),cost,
-					style.timing.lockTick(),style.collapseMultiplier);
+                    style.timing.lockTick(),style.collapseMultiplier*growthMultiplier);
             this.collapse.record.moistureSpent=style.paidMoisture();
+            style.bindAllay(this.collapse.session.quote.actual(),this.collapse.record,spell.getElement()==FormationElement.CURSE&&spell.supportsCurseChain());
             this.collapse.record.novaQuickCast=style.novaQuickCast;
             if(style.frost!=null)style.frost.record(this.collapse.record);
             if(style.healing!=null)style.healing.onPayment(amount->this.collapse.record.moistureSpent+=amount);

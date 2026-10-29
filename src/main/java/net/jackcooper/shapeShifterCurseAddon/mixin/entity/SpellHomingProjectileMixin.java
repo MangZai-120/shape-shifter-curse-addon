@@ -1,6 +1,8 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin.entity;
 
 import net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink;
+import net.jackcooper.shapeShifterCurseAddon.spell.AllaySpellLink;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.data.DataTracker;
@@ -22,7 +24,12 @@ import java.util.UUID;
 
 /** 目标ID由原版DataTracker同步；双端转向，不额外每tick发包、不扫描实体。 */
 @Mixin(ProjectileEntity.class)
-public abstract class SpellHomingProjectileMixin implements FormSpellStyle.HomingProjectile {
+public abstract class SpellHomingProjectileMixin implements FormSpellStyle.HomingProjectile, SpiderSpellLink.WebProjectile, AllaySpellLink.ProjectileData {
+    @Unique private AllaySpellLink.Cast ssca$allay;
+    @Override public AllaySpellLink.Cast ssca$allay(){return ssca$allay;}
+    @Override public void ssca$allay(AllaySpellLink.Cast cast){ssca$allay=cast;}
+    @Unique private final SpiderSpellLink.Impact ssca$weave=new SpiderSpellLink.Impact();
+    @Override public SpiderSpellLink.Impact ssca$weave(){return ssca$weave;}
     @Unique private static final TrackedData<Integer> SSCA_TARGET=
             DataTracker.registerData(ProjectileEntity.class,TrackedDataHandlerRegistry.INTEGER);
     @Unique private static final TrackedData<Float> SSCA_FLIGHT_SPEED=
@@ -101,6 +108,8 @@ public abstract class SpellHomingProjectileMixin implements FormSpellStyle.Homin
     }
     @Inject(method="writeCustomDataToNbt",at=@At("TAIL"))
     private void ssca$write(NbtCompound nbt,CallbackInfo ci) {
+        ssca$weave.write(nbt);
+        if(ssca$allay!=null)nbt.put("SscaAllayLink",ssca$allay.write());
         if(ssca$previous==null)return;
         var self=(ProjectileEntity)(Object)this;
         // 本tick移动在super.tick之后发生，存档时也要结清，防反复卸载区块延长射程。
@@ -112,13 +121,21 @@ public abstract class SpellHomingProjectileMixin implements FormSpellStyle.Homin
     @Inject(method="onEntityHit",at=@At("HEAD"))
     private void ssca$hit(EntityHitResult hit,CallbackInfo ci) {
         var self=(ProjectileEntity)(Object)this;
+        if(!self.getWorld().isClient)ssca$weave.direct();
         if(!self.getWorld().isClient&&hit.getEntity().getUuid().equals(ssca$target)) {
             // 穿刺弹命中锁定目标后继续向前，不能回头追逐已命中的同一个目标。
             ssca$target=null;self.getDataTracker().set(SSCA_TARGET,-1);
         }
     }
+    @Inject(method="onBlockHit",at=@At("HEAD"))
+    private void ssca$ground(net.minecraft.util.hit.BlockHitResult hit,CallbackInfo ci) {
+        var self=(ProjectileEntity)(Object)this;
+        if(self.getOwner() instanceof ServerPlayerEntity caster&&caster.getWorld()==self.getWorld())ssca$weave.ground(caster,hit);
+    }
     @Inject(method="readCustomDataFromNbt",at=@At("TAIL"))
     private void ssca$read(NbtCompound nbt,CallbackInfo ci) {
+        ssca$weave.read(nbt);
+        ssca$allay=nbt.contains("SscaAllayLink")?AllaySpellLink.Cast.read(nbt.getCompound("SscaAllayLink")):null;
         if(!nbt.contains("SscaHomingRemaining"))return;
         var self=(ProjectileEntity)(Object)this;
         double remaining=nbt.getDouble("SscaHomingRemaining");

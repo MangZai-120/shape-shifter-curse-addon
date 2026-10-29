@@ -206,9 +206,10 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 			// 公共命中结算（白名单豁免 → 法术伤害 → 经验补发 → 流派钩子）：见 SpellHitHelper
 			net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult hit =
 					net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.projectileHit(
-							this.getOwner(), livingTarget, damage,
+							this, livingTarget, damage,
 							net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.ICE, refundCastId, expBountyTen);
 			if (hit == net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.HIT) {
+				net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.directHit(this,livingTarget);
 				expBountyTen = 0; // 经验已发放，清零防重复
 			}
 			if (hit == net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.PROTECTED) {

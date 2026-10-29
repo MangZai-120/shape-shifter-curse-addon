@@ -163,6 +163,8 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	public int getLockInTick() {
 		return -1;
 	}
+    /** Direct curse delivery may chain; self auras opt out and directional waves override explicitly. */
+    public boolean supportsCurseChain(){return getConfig().projectile;}
 
 	/** 投射体实际最大射程；各投射法术复用其原有权威范围来源。 */
 	public double getProjectileRange(int level) { return getAimMaxRange(level); }

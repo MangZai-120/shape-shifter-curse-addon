@@ -41,6 +41,8 @@ public final class NeoWorldProbe {
         if(Boolean.getBoolean("neomagic.legacyAffinity"))test=new TestFunction("neomagic","legacy_affinity","ssca_neomagic:empty",220,0,true,NeoLegacyAffinityProbe::start);
         if(Boolean.getBoolean("neomagic.ocelotLink"))test=new TestFunction("neomagic","ocelot_link","ssca_neomagic:empty",400,0,true,NeoOcelotSpellLinkProbe::start);
         if(Boolean.getBoolean("neomagic.rangeGuard"))test=new TestFunction("neomagic","range_guard","ssca_neomagic:empty",220,0,true,NeoCastRangeProbe::start);
+        if(Boolean.getBoolean("neomagic.spiderLink"))test=new TestFunction("neomagic","spider_link","ssca_neomagic:empty",260,0,true,NeoSpiderSpellLinkProbe::start);
+        if(Boolean.getBoolean("neomagic.allayLink"))test=new TestFunction("neomagic","allay_link","ssca_neomagic:empty",300,0,true,NeoAllaySpellLinkProbe::start);
         var batch=new GameTestBatch("neomagic",List.of(test),world->{},world->{});
         MinecraftServer.startServer(thread->TestServer.create(thread,save,VanillaDataPackProvider.createManager(save),List.of(batch),new BlockPos(0,64,0)));
     }

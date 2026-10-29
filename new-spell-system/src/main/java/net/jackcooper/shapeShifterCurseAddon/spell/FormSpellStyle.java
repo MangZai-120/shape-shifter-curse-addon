@@ -20,12 +20,17 @@ import net.minecraft.util.math.Vec3d;
 public final class FormSpellStyle {
     private static final BalanceReader BAL = new BalanceReader("systems.form_casting");
     private static final ThreadLocal<FormSpellStyle> EFFECT = new ThreadLocal<>();
+    public AllaySpellLink.Cast allay;
+    public static AllaySpellLink.Cast currentAllay(){var style=EFFECT.get();return style==null?null:style.allay;}
+    public void bindAllay(double actual,net.ssca.neomagic.NeoState.Experiment record,boolean directCurse){allay=AllaySpellLink.create(player,actual,record,directCurse);}
     /** Client wiring supplies the server-authoritative active-cast snapshot without loading client classes here. */
     public static java.util.function.ToDoubleFunction<PlayerEntity> clientRangeSnapshot = player -> Double.NaN;
     private final ServerPlayerEntity player;
     public final Timing timing;
     public final boolean accelerated;
     public final boolean novaQuickCast;
+    public final boolean moonWeaver;
+    public final SpiderSpellLink.RollGroup weave;
     public final double collapseMultiplier, range;
     public final double projectileSpeed,projectileRange;
     public final LivingEntity target;
@@ -63,7 +68,9 @@ public final class FormSpellStyle {
         this.frost=FrostSpellLink.plan(player,ice);
         this.collapseMultiplier=collapseMultiplier*(enhanced?BAL.d("fluorescent_projectile_collapse_multiplier",1.05):1)
                 *(frost==null?1:frost.multiplier);
-        this.target=target;this.range=range*this.projectileRange;this.mana=mana;
+        this.moonWeaver=projectile&&SpiderSpellLink.canWeave(player);
+        this.weave=moonWeaver?new SpiderSpellLink.RollGroup():null;
+        this.target=target;this.range=range*this.projectileRange;this.mana=mana+(moonWeaver?SpiderSpellLink.webCost():0);
         this.healing=MoistureHealing.create(player);
     }
     public static boolean canAccelerate(PlayerEntity player) {
@@ -105,6 +112,10 @@ public final class FormSpellStyle {
     }
     public static FormSpellStyle plan(ServerPlayerEntity player, Spell spell, int level, int original, int adjusted) {
         return plan(player,spell.getConfig().projectile,spell.getProjectileRange(level),original,adjusted,spell.getLockInTick(),spell.getElement()==FormationElement.ICE);
+    }
+    public static FormSpellStyle planTriggered(ServerPlayerEntity player,Spell spell,int level,int original,int adjusted) {
+        return new FormSpellStyle(player,Timing.of(original,adjusted,spell.getLockInTick(),0),false,1,null,
+                spell.getProjectileRange(level),0,spell.getConfig().projectile,spell.getElement()==FormationElement.ICE);
     }
     public static FormSpellStyle plan(ServerPlayerEntity player,boolean projectile,double range,int original,int adjusted,int lock) {
         return plan(player,projectile,range,original,adjusted,lock,false);
@@ -169,13 +180,17 @@ public final class FormSpellStyle {
     public static void register() {
         FrostSpellLink.register();
         OcelotSpellLink.register();
+        SpiderSpellLink.register();
+        AllaySpellLink.register();
         ServerEntityEvents.ENTITY_LOAD.register((entity,world)->{
             var cast=EFFECT.get();
             if(cast!=null&&entity instanceof ProjectileEntity projectile
                     &&projectile.getOwner()==cast.player&&entity instanceof HomingProjectile homing) {
+                if(cast.moonWeaver)((SpiderSpellLink.WebProjectile)projectile).ssca$weave().enable(cast.weave.id);
                 if(cast.projectileSpeed!=1||cast.projectileRange!=1)homing.ssca$flight(cast.projectileSpeed,cast.range);
                 if(cast.target!=null)homing.ssca$home(cast.target,cast.range);
             }
+            if(entity instanceof SpiderSpellLink.WebProjectile projectile)projectile.ssca$weave().loaded(world,entity.getUuid());
         });
     }
     /** 由原版投射体混入提供；只给本次带标签的法术实例启用。 */

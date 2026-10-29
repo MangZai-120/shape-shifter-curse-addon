@@ -487,6 +487,7 @@ public final class JumpKillManager {
 		target.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, dur, amp, false, true, true), player);
 		int stunTicks = NpcCombatEnhancements.duration(player, target, BAL.i("stun_duration", STUN_DURATION), "salticidae_primary_duration", 2.0);
 		target.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, stunTicks, 0, false, false, false), player);
+        if(damaged)net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.onJumpHit(player,target);
 		sw.playSound(null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, SoundCategory.PLAYERS, 1.0f, 0.9f);
 		sw.playSound(null, target.getX(), target.getY(), target.getZ(),

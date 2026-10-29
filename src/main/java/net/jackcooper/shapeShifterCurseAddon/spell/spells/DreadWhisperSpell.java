@@ -41,6 +41,7 @@ public class DreadWhisperSpell extends Spell {
 	public DreadWhisperSpell() {
 		super(new Identifier("ssc_addon", "dread_whisper"), SpellRarity.GREEN);
 	}
+    @Override public boolean supportsCurseChain(){return true;}
 
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo) {
@@ -65,6 +66,14 @@ public class DreadWhisperSpell extends Spell {
 		Vec3d origin = caster.getEyePos();
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
 				caster.getBoundingBox().expand(range), e -> e != caster && e.isAlive());
+        var link=net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.currentAllay();
+        java.util.Set<java.util.UUID> originals=new java.util.HashSet<>();
+        if(link!=null&&link.kind==2)for(var candidate:targets){
+            Vec3d to=candidate.getBoundingBox().getCenter().subtract(origin);
+            if(to.length()<=range&&look.dotProduct(to.normalize())>=Math.cos(Math.toRadians(halfAngleDeg))
+                    &&!WhitelistUtils.isProtected(caster,candidate)&&!net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(caster,candidate))originals.add(candidate.getUuid());
+        }
+        final int chainDuration=duration;
 		for (LivingEntity target : targets) {
 			// 锥形判定：距离 + 与视线夹角 ≤ 半角
 			Vec3d toTarget = target.getPos().add(0, target.getHeight() / 2, 0).subtract(origin);
@@ -91,6 +100,18 @@ public class DreadWhisperSpell extends Spell {
 						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.CURSE,
 						solo ? null : ssc_addon$getRefundCastId(), hadHarmfulEffect);
 			}
+            if(link!=null)link.chain(caster,target,originals,other->{
+                boolean before=net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.hasHarmfulEffect(other);
+                boolean changed=other.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS,chainDuration,weaknessAmp),caster);
+                changed|=other.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS,chainDuration,slownessAmp),caster);
+                if(changed){
+                    Vec3d push=new Vec3d(other.getX()-caster.getX(),.1,other.getZ()-caster.getZ()).normalize().multiply(.6);
+                    other.addVelocity(push.x,push.y,push.z);other.velocityModified=true;
+                    net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(caster,other,
+                            net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.CURSE,solo?null:ssc_addon$getRefundCastId(),before);
+                }
+                return changed;
+            });
 			// 击退：远离施法者
 			Vec3d knock = new Vec3d(target.getX() - caster.getX(), 0.1, target.getZ() - caster.getZ())
 					.normalize().multiply(0.6);

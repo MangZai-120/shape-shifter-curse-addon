@@ -162,16 +162,20 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
         }
 		Vec3d velocity = new Vec3d(0,-fallSpeed,0);
         velocity=homing.ssca$guidedVelocity(velocity);
-        if(guided&&!this.getWorld().isClient&&this.getWorld() instanceof ServerWorld impactWorld) {
+        boolean weaving=((net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.WebProjectile)this).ssca$weave().enabled();
+        if((guided||weaving)&&!this.getWorld().isClient&&this.getWorld() instanceof ServerWorld impactWorld) {
             Vec3d end=this.getPos().add(velocity);
             var wall=this.getWorld().raycast(new net.minecraft.world.RaycastContext(this.getPos(),end,
                     net.minecraft.world.RaycastContext.ShapeType.COLLIDER,net.minecraft.world.RaycastContext.FluidHandling.NONE,this));
-            if(wall.getType()==net.minecraft.util.hit.HitResult.Type.BLOCK) {
-                this.setPosition(wall.getPos());explode(impactWorld);return;
-            }
+            Vec3d clipped=wall.getType()==net.minecraft.util.hit.HitResult.Type.BLOCK?wall.getPos():end;
             var hit=net.minecraft.entity.projectile.ProjectileUtil.getEntityCollision(this.getWorld(),this,this.getPos(),end,
                     this.getBoundingBox().stretch(velocity).expand(1),e->e!=this.getOwner()&&e instanceof LivingEntity&&e.isAlive());
-            if(hit!=null){this.setPosition(hit.getPos());explode(impactWorld);return;}
+            if(hit!=null&&hit.getPos().squaredDistanceTo(this.getPos())<=clipped.squaredDistanceTo(this.getPos())){
+                this.setPosition(hit.getPos());explode(impactWorld,(LivingEntity)hit.getEntity(),null);return;
+            }
+            if(wall.getType()==net.minecraft.util.hit.HitResult.Type.BLOCK){
+                this.setPosition(wall.getPos());explode(impactWorld,null,wall);return;
+            }
         }
 		this.setPosition(this.getPos().add(velocity));
 		if (this.getWorld() instanceof ServerWorld serverWorld) {
@@ -186,7 +190,11 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 			double fallSpeed2 = BAL.d("fall_speed", FALL_SPEED)*speedFactor;
 			int delayTicks2 = BAL.i("delay_ticks", DELAY_TICKS);
 			if (!guided&&ticksAlive >= delayTicks2 + Math.ceil(fallHeight2 / fallSpeed2)) {
-				explode(impactWorld);
+                // 20/2.5等整除落点恰好落在方块上表面，射线终点可能不进入方块；只探测脚下薄层。
+                var floor=weaving?impactWorld.raycast(new net.minecraft.world.RaycastContext(
+                        this.getPos().add(0,.01,0),this.getPos().add(0,-.05,0),
+                        net.minecraft.world.RaycastContext.ShapeType.COLLIDER,net.minecraft.world.RaycastContext.FluidHandling.NONE,this)):null;
+                explode(impactWorld,null,floor!=null&&floor.getType()==net.minecraft.util.hit.HitResult.Type.BLOCK?floor:null);
 			}
             if(guided&&ticksAlive>160)this.discard();
 		}
@@ -194,6 +202,11 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 
 	/** 引爆：AOE 伤害 + 点燃 3s + 击退，白名单保护、不含施法者；火光爆炸演出后自毁。 */
 	private void explode(ServerWorld serverWorld) {
+        explode(serverWorld,null,null);
+    }
+    private void explode(ServerWorld serverWorld,LivingEntity direct,net.minecraft.util.hit.BlockHitResult ground) {
+        var weave=((net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.WebProjectile)this).ssca$weave();
+        if(direct!=null)weave.direct();
 		double ix = this.getX();
 		double iy = this.getY();
 		double iz = this.getZ();
@@ -215,11 +228,12 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 			}
 			// 公共命中结算（白名单豁免 → 法术伤害 → 经验补发；流派钩子为聚合语义，循环外调）：见 SpellHitHelper
 			var hit = net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.hitRaw(
-					this.getOwner(), target, dmg, hitAnyTarget ? 0 : expBountyTen);
+					this, target, dmg, hitAnyTarget ? 0 : expBountyTen);
 			if (hit != net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.HIT) {
 				continue;
 			}
 			hitBurningTarget |= target.getFireTicks() > 0;
+            if(target==direct)net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.directHit(this,target);
 			hitAnyTarget = true;
 			lastHitTarget = target;
 			// 击杀判定快照（damage 后立即查——修复：原先传给钩子的目标先 filter(isAlive) 导致击杀分支永不可达）
@@ -248,6 +262,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 				SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 1.2f, 1.1f);
 		this.getWorld().playSound(null, ix, iy, iz,
 				SoundEvents.ENTITY_BLAZE_SHOOT, SoundCategory.PLAYERS, 1.0f, 0.5f);
+        if(ground!=null&&this.getOwner() instanceof ServerPlayerEntity caster&&caster.getWorld()==serverWorld)weave.ground(caster,ground);
 		this.discard();
 	}
 

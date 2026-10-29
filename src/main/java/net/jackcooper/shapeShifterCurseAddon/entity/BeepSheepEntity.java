@@ -113,6 +113,7 @@ public class BeepSheepEntity extends ThrownItemEntity {
 					livingTarget.getUuid(), this.getOwner() != null ? this.getOwner().getUuid() : null);
 		}
 		if (applied && this.getOwner() instanceof ServerPlayerEntity caster) {
+			net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.directHit(this,livingTarget);
 			net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(caster, livingTarget,
 					net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.SUMMON, refundCastId, hadHarmfulEffect);
 		}

@@ -105,6 +105,8 @@ tasks.register('neoMagicWorldTest', JavaExec) {
     systemProperty 'neomagic.legacyAffinity', project.findProperty('neoLegacyAffinity') ?: 'false'
     systemProperty 'neomagic.ocelotLink', project.findProperty('neoOcelotLink') ?: 'false'
     systemProperty 'neomagic.rangeGuard', project.findProperty('neoRangeGuard') ?: 'false'
+    systemProperty 'neomagic.spiderLink', project.findProperty('neoSpiderLink') ?: 'false'
+    systemProperty 'neomagic.allayLink', project.findProperty('neoAllayLink') ?: 'false'
     workingDir = layout.buildDirectory.dir('neomagic/world-test').get().asFile
     maxHeapSize = '2G'
     systemProperty 'fabric.development', 'true'

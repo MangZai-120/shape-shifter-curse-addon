@@ -58,7 +58,7 @@ public final class NeoIntegrationProbe {
         check(NbtIo.readCompressed(saved).equals(large),"Large history writes and reloads as byte arrays, without 64KiB string corruption");
         var largePacket=net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();largePacket.writeNbt(large);
         check(largePacket.readNbt().equals(large),"Large history packet roundtrip");
-        var zh=json("assets/ssca_neomagic/lang/zh_cn.json");var en=json("assets/ssca_neomagic/lang/en_us.json");
+        var zh=json("assets/my_addon/lang/zh_cn.json");var en=json("assets/my_addon/lang/en_us.json");
         check(zh.keySet().equals(en.keySet()),"Locale keys match");
         for(var entry:zh.entrySet())check(!entry.getValue().getAsString().contains("�"),"UTF8 localization: "+entry.getKey());
         for(var sample:NeoMagic.SAMPLES.entrySet()) {

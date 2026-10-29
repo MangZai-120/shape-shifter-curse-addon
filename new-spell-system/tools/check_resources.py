@@ -5,11 +5,15 @@ import re
 import zipfile
 
 root=Path(__file__).resolve().parents[1]
+project=root.parent
 resources=root/'src/main/resources'
 files=list(resources.rglob('*.json'))
 for file in files:json.loads(file.read_text(encoding='utf-8'))
-zh=json.loads((resources/'assets/ssca_neomagic/lang/zh_cn.json').read_text(encoding='utf-8'))
-en=json.loads((resources/'assets/ssca_neomagic/lang/en_us.json').read_text(encoding='utf-8'))
+language_dir=project/'src/main/resources/assets/my_addon/lang'
+zh=json.loads((language_dir/'zh_cn.json').read_text(encoding='utf-8'))
+en=json.loads((language_dir/'en_us.json').read_text(encoding='utf-8'))
+language_files=set((project/'src/main/resources/assets').glob('*/lang/*.json'))|set((resources/'assets').glob('*/lang/*.json'))
+assert language_files=={language_dir/'zh_cn.json',language_dir/'en_us.json'},language_files
 assert zh.keys()==en.keys()
 for key in zh:
     assert zh[key].count('%s')==en[key].count('%s'),key
@@ -27,3 +31,17 @@ for file in (root/'docs').glob('*.md'):
         if target.startswith(('http','C:','#')) or label.startswith('0,'):continue
         assert (file.parent/target.split('#')[0]).exists(),(file,target)
 print(f'Resource review passed: {len(files)} JSON files, {len(zh)} bilingual keys, item textures and document links.')
+
+# Check the actual registered forms, including temporary spell transformations.
+java=project/'src/main/java/net/jackcooper/shapeShifterCurseAddon'
+identifiers=dict(re.findall(r'Identifier\s+(\w+)\s*=\s*new Identifier\("my_addon",\s*"([^"]+)"\)',(java/'util/FormIdentifiers.java').read_text(encoding='utf-8')))
+registered=set(re.findall(r'new\s+\w+\(FormIdentifiers\.(\w+)\)',(java/'forms/SscAddonForms.java').read_text(encoding='utf-8')))
+assert registered
+for language in ('zh_cn','en_us'):
+    native=json.loads((project/f'src/main/resources/assets/my_addon/lang/{language}.json').read_text(encoding='utf-8'))
+    for constant in registered:
+        for section in ('name','title','appearance','equip','pros','cons','instincts'):
+            key=f'codex.form.my_addon.{identifiers[constant]}.{section}'
+            assert key in native and native[key].strip(),(language,key)
+            assert '\ufffd' not in native[key],(language,key)
+print(f'Codex review passed: {len(registered)} registered forms, 7 sections, 2 languages; all translations use assets/my_addon/lang.')

@@ -26,10 +26,12 @@ public final class NeoEffects {
     private static final Map<WolfEntity,Integer> SUMMONS=new HashMap<>();
     private static final String SUMMON_TAG="ssca_neomagic_summon";
     private static final class Bolt {
+        final net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.Impact weave=new net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.Impact();
         final ServerPlayerEntity caster; final ServerWorld world; final NeoRuntime.Active active;
         Vec3d pos;Vec3d velocity;final double budget;double remaining;
         Bolt(ServerPlayerEntity p,NeoRuntime.Active a,Vec3d dir,double budget) {
             caster=p;world=p.getServerWorld();active=a;pos=p.getEyePos();velocity=dir.multiply(a.style==null?1:a.style.projectileSpeed);this.budget=budget;remaining=a.session.blueprint.range()*a.rangeMultiplier;
+            if(a.style!=null&&a.style.moonWeaver)weave.enable(a.style.weave.targets);
         }
     }
     public static Vec3d aim(ServerPlayerEntity p,double range) {
@@ -161,6 +163,12 @@ public final class NeoEffects {
         }
         if(target!=null) {
             if(b.carrier()==Carrier.LOCK&&target.getPos().distanceTo(endpoint)>1.25) {measureBlock(p,a,endpoint,budget);return true;}
+            if(a.style!=null&&a.style.allay!=null&&a.style.allay.kind==2){
+                var primaries=new ArrayList<LivingEntity>();primaries.add(target);
+                if(plan.branches()>1){var extra=effectTargets(p,a,target.getPos(),b.carrier()==Carrier.CONTACT?2:5);extra.remove(target);extra.stream().limit(plan.branches()-1).forEach(primaries::add);}
+                a.chainPrimaries=new HashSet<>();primaries.forEach(e->a.chainPrimaries.add(e.getUuid()));
+                primaries.forEach(e->affect(p,a,e,budget/plan.branches()));return true;
+            }
             affect(p,a,target,budget/plan.branches());
             if(plan.branches()>1) {
                 var extra=effectTargets(p,a,target.getPos(),b.carrier()==Carrier.CONTACT?2:5);extra.remove(target);
@@ -203,14 +211,19 @@ public final class NeoEffects {
         double per=budget/targets.size();targets.forEach(e->affect(p,a,e,per));
     }
     private static void affect(ServerPlayerEntity p,NeoRuntime.Active a,LivingEntity target,double budget) {
-        if(a.session.blueprint.output()==Core.LUNAR&&!a.session.reversed&&a.style!=null&&a.style.healing!=null) {
-            a.style.healing.heal(target,budget,value->affectNow(p,a,target,value));
-        } else affectNow(p,a,target,budget);
+        affect(p,a,target,budget,null);
     }
-    private static void affectNow(ServerPlayerEntity p,NeoRuntime.Active a,LivingEntity target,double budget) {
+    private static void affect(ServerPlayerEntity p,NeoRuntime.Active a,LivingEntity target,double budget,
+            net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.Impact weave) {
+        if(a.session.blueprint.output()==Core.LUNAR&&!a.session.reversed&&a.style!=null&&a.style.healing!=null) {
+            a.style.healing.heal(target,budget,value->affectNow(p,a,target,value,weave));
+        } else affectNow(p,a,target,budget,weave);
+    }
+    private static boolean affectNow(ServerPlayerEntity p,NeoRuntime.Active a,LivingEntity target,double budget,
+            net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.Impact weave) {
         Core core=a.session.blueprint.output();boolean healing=core==Core.LUNAR&&!a.session.reversed;
         boolean invertedSelf=target==p&&core==Core.LUNAR&&a.session.reversed;
-        if(!invertedSelf&&!allowed(p,target,!healing))return;
+        if(!invertedSelf&&!allowed(p,target,!healing))return false;
         a.record.arrived+=budget;a.record.hits++;
         float before=target.getHealth(),absorption=target.getAbsorptionAmount();
         boolean conditionBeforeHit=core==Core.THERMAL?target.getFireTicks()>0
@@ -226,9 +239,18 @@ public final class NeoEffects {
         }
         // Positive healing and collapse-inverted lunar damage never farm offensive resource refunds.
         if(effective&&!healing&&!a.session.reversed&&target!=p)NeoLegacyCasting.blueprintHit(p,a,target,conditionBeforeHit);
+        if(effective&&weave!=null)weave.hit(p,target);
+        var link=a.style==null?null:a.style.allay;
+        if(effective&&!healing&&!a.session.reversed&&link!=null){
+            link.damage(p,target,Math.max(0,before-target.getHealth()));
+            if(core==Core.CURSE&&Set.of(Carrier.CONTACT,Carrier.LOCK,Carrier.PROJECTILE).contains(a.session.blueprint.carrier())
+                    &&(a.session.blueprint.carrier()!=Carrier.PROJECTILE||weave!=null))
+                link.chain(p,target,a.chainPrimaries,other->affectNow(p,a,other,budget,null));
+        }
         a.record.damage+=Math.max(0,before-target.getHealth());a.record.absorbed+=Math.max(0,absorption-target.getAbsorptionAmount());a.record.healing+=Math.max(0,target.getHealth()-before);
         if(a.record.measurements.size()<32)a.record.measurements.add(new NeoState.Measurement(target.getUuidAsString(),net.minecraft.registry.Registries.ENTITY_TYPE.getId(target.getType()).toString(),target.getPos().toString(),budget,before,target.getHealth(),absorption,target.getAbsorptionAmount()));
         NeoRuntime.dirty(p);
+        return effective;
     }
     private static boolean measureBlock(ServerPlayerEntity p,NeoRuntime.Active a,Vec3d pos,double budget) {
         BlockPos block=BlockPos.ofFloored(pos);
@@ -261,12 +283,12 @@ public final class NeoEffects {
             if(hit!=null||wall.getType()==HitResult.Type.BLOCK) {
                 healingBatch(bolt.active,()->{
                 Plan plan=bolt.active.session.quote.plan();boolean plain=plan.branches()==1&&!plan.focused();
-                if(hit!=null)affect(bolt.caster,bolt.active,hit,plain?bolt.budget*2/3:bolt.budget);
+                if(hit!=null){bolt.weave.direct();affect(bolt.caster,bolt.active,hit,plain?bolt.budget*2/3:bolt.budget,bolt.weave);}
                 if(plain) {
                     var nearby=effectTargets(bolt.caster,bolt.active,hit==null?clipped:hit.getPos(),2);
                     nearby.remove(hit);distribute(bolt.caster,bolt.active,nearby,bolt.budget/3);
                 }
-                if(hit==null)measureBlock(bolt.caster,bolt.active,clipped,plain?bolt.budget*2/3:bolt.budget);
+                if(hit==null){measureBlock(bolt.caster,bolt.active,clipped,plain?bolt.budget*2/3:bolt.budget);bolt.weave.ground(bolt.caster,wall);}
                 return null;
                 });
                 finishBolt(bolt);it.remove();

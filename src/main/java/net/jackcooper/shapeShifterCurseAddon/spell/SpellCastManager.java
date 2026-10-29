@@ -192,6 +192,44 @@ public final class SpellCastManager {
 		}
 	}
 
+    /** 跳杀被动：书内原加成保留；白色兜底用虚拟卷轴，不生成/消耗物品，也不清除已有CD。 */
+    public static boolean triggerSpiderCurse(ServerPlayerEntity player,int slot,Spell fallback,net.minecraft.entity.LivingEntity victim) {
+        if(net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player))return false;
+        ItemStack equipped=getEquippedBook(player);
+        final ItemStack book=equipped==null?ItemStack.EMPTY:equipped;
+        boolean free=fallback!=null,hasBook=!book.isEmpty();
+        if(!free&&(!hasBook||slot<0||slot>=SpellbookData.getSlotCount(book)))return false;
+        ItemStack scroll=free?ScrollData.create(fallback.getId().getPath(),1):SpellbookData.getScroll(book,slot);
+        Spell spell=ScrollData.getSpell(scroll);
+        int level=free?1:ScrollData.getCastLevel(scroll);
+        if(spell==null||spell.getElement()!=FormationElement.CURSE||spell.getRarity(level)==SpellRarity.RED
+                ||free&&spell.getRarity(level)!=SpellRarity.WHITE||ArcaneAnalysis.isUnanalyzed(scroll))return false;
+        if(!free&&SharedSpellCooldowns.getEffectiveCooldownEnd(player,scroll)>player.getWorld().getTime())return false;
+        RuneModifiers modifiers=RuneScheme.modifiers(player,scroll,level);
+        if(!RuneScheme.validScroll(player,scroll,spell)||!RuneCastContext.with(modifiers,()->spell.canCast(player)))return false;
+        if(!spell.prepareScroll(player,scroll))return false;
+        float ratio=ScrollData.getDurabilityRatio(scroll);
+        float damage=spell.getBaseDamage()*ratio*spell.getDamageMultiplier(level)
+                *(hasBook?FormationData.sumDamageMultiplier(book,FormationElement.CURSE)*FormAffinity.damageMultiplier(player,FormationElement.CURSE):1);
+        damage=modifiers.power(damage,RuneCapabilities.of(spell.getId().getPath()).contains(RuneModifiers.Stat.DAMAGE),false);
+        final float power=damage;
+        int normalCost=hasBook?SpellNumbers.finalManaCost(spell,book,player,level,scroll)
+                :modifiers.mana(Math.round(spell.getManaCost()*spell.getConfig().manaCostMultiplier(level)));
+        int cooldown=modifiers.cooldown(SpellNumbers.finalCooldownTicks(spell,level,ratio,
+                hasBook?FormationData.sumCooldownMultiplier(book,FormationElement.CURSE):1,
+                hasBook?FormAffinity.cooldownMultiplier(player,FormationElement.CURSE):1));
+        var trigger=new SpiderSpellLink.Trigger(victim.getBoundingBox().getCenter(),free);
+        return SpellChannelManager.startTriggered(player,spell,scroll,level,!hasBook,normalCost,cooldown,
+                ()->free||getEquippedBook(player)==book&&ItemStack.areEqual(SpellbookData.getScroll(book,slot),scroll),
+                target->{if(hasBook)finishCast(player,book,scroll,spell,power,level,normalCost,0,target);
+                    else castSoloEffect(player,spell,scroll,level,power,target);},
+                duration->{
+                    long end=player.getWorld().getTime()+duration;
+                    if(!free){scroll.getOrCreateNbt().putInt("RuneCdTotal",duration);ScrollData.setCooldownEnd(scroll,end);SpellbookData.setScroll(book,slot,scroll);}
+                    SharedSpellCooldowns.record(player,spell,end);
+                },modifiers,trigger);
+    }
+
 	/** 独立卷轴和书内法术共用经验预算；命中经验仍由原实体桥一次性结算。 */
 	public static void castSoloEffect(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level,
 			float damage, net.minecraft.util.math.Vec3d target) {

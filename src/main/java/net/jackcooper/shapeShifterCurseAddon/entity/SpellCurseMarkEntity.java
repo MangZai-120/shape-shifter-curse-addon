@@ -169,10 +169,19 @@ public class SpellCurseMarkEntity extends ProjectileEntity implements FlyingItem
 			boolean hadHarmfulEffect = net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.hasHarmfulEffect(livingTarget);
 			boolean applied = livingTarget.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
 					SscAddon.CURSE_MARK, getDuration(), getSpellLevel() - 1));
+			net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.directHit(this,livingTarget);
 			if (applied && this.getOwner() instanceof ServerPlayerEntity caster) {
 				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(caster, livingTarget,
 						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.CURSE, refundCastId, hadHarmfulEffect);
 			}
+            var link=net.jackcooper.shapeShifterCurseAddon.spell.AllaySpellLink.context(this);
+            if(link!=null&&this.getOwner() instanceof ServerPlayerEntity caster)link.chain(caster,livingTarget,java.util.Set.of(livingTarget.getUuid()),other->{
+                boolean before=net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.hasHarmfulEffect(other);
+                boolean changed=other.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(SscAddon.CURSE_MARK,getDuration(),getSpellLevel()-1),caster);
+                if(changed)net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(caster,other,
+                        net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.CURSE,refundCastId,before);
+                return changed;
+            });
 			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.ENTITY_EVOKER_PREPARE_SUMMON, SoundCategory.PLAYERS, 1.0f, 1.2f);
 		}

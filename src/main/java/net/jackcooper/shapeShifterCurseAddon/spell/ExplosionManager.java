@@ -33,6 +33,7 @@ public final class ExplosionManager {
 		/** 蓄力锚点：施法开始时玩家位置，位移超 3 格打断（2026-09-22 用户定稿，同领域）。 */
 		final Vec3d chargeAnchor;
 		UUID refundCastId;
+        AllaySpellLink.Cast allay;
 		final long startTime;
 		float power;
 		// 起手快照（2026-09-27 审计修复）：700t 蓄力可能跨数据包 reload，结算期若即时读
@@ -100,6 +101,7 @@ public final class ExplosionManager {
 				&& value.center.equals(center)).findFirst().orElse(null);
 		if (sequence == null) return;
 		sequence.power = power;
+        sequence.allay=FormSpellStyle.currentAllay();
 		sequence.refundCastId = refundCastId;
 		sequence.exploded = true;
 		// 伤害分批（2026-09-24 修卡顿）：引爆时只快照目标列表 + 标记已爆（视觉/音频立即生效），
@@ -220,7 +222,9 @@ public final class ExplosionManager {
 			if (factor <= 0) continue;
 			boolean burning = target.getFireTicks() > 0;
 			// Deliberately no ally whitelist or caster exclusion (confirmed friendly fire).
+            float healthBefore=target.getHealth();
 			if (!target.damage(source, (float) (sequence.power * factor))) continue;
+            if(owner!=null&&sequence.allay!=null)sequence.allay.damage(owner,target,Math.max(0,healthBefore-target.getHealth()));
 			if (target != owner && !(target instanceof net.minecraft.entity.decoration.ArmorStandEntity)) {
 				lastHit = target;
 				hitBurning |= burning;

@@ -186,6 +186,7 @@ public final class NeoLegacyCasting {
         try{action.run();}finally{player.setYaw(yaw);player.setPitch(pitch);if(previous==null)EFFECT.remove();else EFFECT.set(previous);}
     }
     public static float power(float power) {var a=EFFECT.get();return a==null?power:(float)(power*a.session.attenuation);}
+    public static Vec3d effectTarget(Vec3d target) {var a=EFFECT.get();return a==null?target:a.target(target);}
     public static int actualCost(int fallback) {var a=EFFECT.get();return a==null?fallback:(int)Math.ceil(a.session.quote.actual());}
     public static boolean reversed() {var a=EFFECT.get();return a!=null&&a.session.reversed;}
     public static int summonCount(int count) {var a=EFFECT.get();return a==null?count:(int)Math.floor(count*a.session.attenuation+1e-9);}

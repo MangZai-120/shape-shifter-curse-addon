@@ -46,6 +46,7 @@ public final class SpellHitHelper {
 	                                      FormationElement element, UUID refundCastId, int expBounty) {
 		HitResult result = hitRaw(owner, target, damage, expBounty);
 		if (result != HitResult.HIT) return result;
+		owner=AllaySpellLink.owner(owner);
 		// 流派命中钩子（2026-09-17）：燎原/噬咒/噬梦按本次耗蓝返还；固定值类（审魂等）不依赖耗蓝
 		if (owner instanceof ServerPlayerEntity styleOwner) {
 			FormCastingStyle.onSpellHit(styleOwner, target, element, refundCastId);
@@ -58,11 +59,14 @@ public final class SpellHitHelper {
 	 * 供需要聚合钩子的场合（FIRE 系击杀/燃烧判定）在循环内使用，钩子由调用方循环外聚合调用。
 	 */
 	public static HitResult hitRaw(Entity owner, LivingEntity target, float damage, int expBounty) {
+        var link=AllaySpellLink.context(owner);
+        owner=AllaySpellLink.owner(owner);
 		// 默认白名单：主人在线且目标受保护 → 不造成伤害、不产经验/返还
 		if (owner instanceof ServerPlayerEntity ownerPlayer && WhitelistUtils.isProtected(ownerPlayer, target)) {
 			return HitResult.PROTECTED;
 		}
 		boolean damaged;
+        float healthBefore=target.getHealth();
 		if (owner instanceof LivingEntity livingOwner) {
 			// 法术伤害专用类型（ssc_addon:spell_damage）：供法术抗性附魔精确识别（jackcooper）
 			damaged = target.damage(SpellDamageSource.of(target.getWorld().getDamageSources(), livingOwner), damage);
@@ -72,6 +76,7 @@ public final class SpellHitHelper {
 		// exp_mode 1/2 命中补发：damage 成功才发放（幂等：AOE 循环内 takePendingExp 后续为 0）
 		if (damaged && owner instanceof ServerPlayerEntity ownerPlayer) {
 			SpellExpGrant.grant(ownerPlayer, expBounty);
+            if(link!=null)link.damage(ownerPlayer,target,Math.max(0,healthBefore-target.getHealth()));
 		}
 		return damaged ? HitResult.HIT : HitResult.IMMUNE;
 	}
