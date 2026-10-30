@@ -1,4 +1,5 @@
 {
+  "debuff": false,
   "projectile": false,
   "spell_tier": "special_2",
   "interrupt_mode": 3,

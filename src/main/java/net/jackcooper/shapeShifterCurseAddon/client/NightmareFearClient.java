@@ -5,7 +5,6 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
@@ -21,9 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * <ul>
  *   <li>粉雾（16 格视野限制）：{@code FearFogMixin} 每帧查询 {@link #getFogStrength()}，
  *       以「剩余时长」驱动渐进淡入（约 2 秒从 0 → 1），恐惧结束淡出；</li>
- *   <li>心跳声：入雾后按固定节拍本地播放 WARDEN_HEARTBEAT（与服务端心跳互为补充：
- *       服务端按世界时间播、本地按包内节拍播，二者节拍一致不会叠加爆音——本地仅在
- *       服务端包丢失时兜底，故音量调低）；</li>
+ *   <li>心跳声：服务端按最近食梦魔的距离计算音量，使用原版声音包定向发送给恐惧目标；
+ *       客户端不另播一份心跳，避免重复声音和旁人听到目标的心跳。</li>
  *   <li>「1 秒看不见梦魔」：{@code FearHideRendererMixin} 查询 {@link #isHidden(UUID)}，
  *       窗口内对该梦魔的实体渲染整体跳过（第一/第三人称均不可见，仅本地）。</li>
  * </ul>
@@ -33,8 +31,6 @@ public final class NightmareFearClient {
 
 	/** 粉雾完全淡入耗时（tick，约 2 秒「慢慢出现」）。 */
 	private static final int FADE_IN_TICKS = 40;
-	/** 心跳节拍（tick，与服务端 HEARTBEAT_INTERVAL 一致）。 */
-	private static final int HEARTBEAT_INTERVAL = 32;
 
 	/** 恐惧到期客户端时间（-1 = 未恐惧）。 */
 	private static long endWorldTime = -1L;
@@ -44,8 +40,6 @@ public final class NightmareFearClient {
 	private static final Map<UUID, Long> HIDDEN = new ConcurrentHashMap<>();
 	/** 显形窗口：梦魔 UUID -> 显形到期客户端时间（梦魔攻击恐惧目标时显形 1s，期间不隐匿）。 */
 	private static final Map<UUID, Long> REVEALED = new ConcurrentHashMap<>();
-	/** 本地心跳节拍计数（用客户端世界时间取模）。 */
-	private static long lastHeartbeat = -1L;
 	/** Only the exact local carrier inserted by fear may be removed when fear ends. */
 	private static Map<StatusEffect, StatusEffectInstance> blindnessEffects;
 	private static StatusEffectInstance fearBlindness;
@@ -163,26 +157,7 @@ public final class NightmareFearClient {
 		} else {
 			clearFearBlindness();
 		}
-		// 兜底心跳：恐惧激活时按节拍本地低音量播（服务端为主；丢了也不至于无声）。
-		// 音量按最近食梦魔距离动态：范围外极小固定音量，16 格内越近越响（与服务端公式一致）。
-		if (feared && now % HEARTBEAT_INTERVAL == 0 && now != lastHeartbeat && client.player != null) {
-			lastHeartbeat = now;
-			double nearest = Double.MAX_VALUE;
-			// 性能：只扫玩家列表（原全实体扫描找玩家形态；食梦魔必为玩家，getPlayers 更省）
-			for (net.minecraft.entity.player.PlayerEntity p : client.world.getPlayers()) {
-				if (p == client.player) continue;
-				if (!net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(
-						p, net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.WILD_CAT_NIGHTMARE)) continue;
-				nearest = Math.min(nearest, p.squaredDistanceTo(client.player));
-			}
-			float vol = 0.06f;
-			if (nearest != Double.MAX_VALUE && nearest <= 16.0 * 16.0) {
-				double dist = Math.sqrt(nearest);
-				vol = 0.06f + (float) ((1.0 - dist / 16.0) * 0.24f);
-			}
-			client.getSoundManager().play(PositionedSoundInstance.master(
-					net.minecraft.sound.SoundEvents.ENTITY_WARDEN_HEARTBEAT, vol, 0.9f));
-		}
+		// Heartbeat timing and distance volume arrive through the server's ordinary targeted sound packets.
 	}
 
 	private static void updateBlindness(Map<StatusEffect, StatusEffectInstance> effects, boolean feared) {

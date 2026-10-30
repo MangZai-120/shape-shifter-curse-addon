@@ -197,9 +197,7 @@ public final class NightmareFearManager {
 				net.minecraft.sound.SoundEvents.BLOCK_AMETHYST_BLOCK_RESONATE,
 				net.minecraft.sound.SoundCategory.PLAYERS, 1.4f, 0.45f);
 		if (target instanceof ServerPlayerEntity sp) {
-			world.playSound(sp, target.getX(), target.getY(), target.getZ(),
-					net.minecraft.sound.SoundEvents.ENTITY_WARDEN_SONIC_CHARGE,
-					net.minecraft.sound.SoundCategory.PLAYERS, 0.7f, 1.6f);
+            MancianimaMarkManager.playSoundToPlayer(sp,net.minecraft.sound.SoundEvents.ENTITY_WARDEN_SONIC_CHARGE,0.7f,1.6f);
 		}
 		// 爆发粒子：粉紫梦境尘环绕目标一圈（他人可见的视觉信号）
 		world.spawnParticles(net.minecraft.particle.ParticleTypes.WITCH,
@@ -241,7 +239,7 @@ public final class NightmareFearManager {
 			NightmareDreamManager.lockDream(v.casterUuid, tid, now);
 			// 心跳声（规格⑤）：按最近的食梦魔距离动态音量——范围外极小固定音量，
 			// 16 格内越近越响（音量 = 基础 + (1-距离/16)×(最大-基础)）
-			if (now % HEARTBEAT_INTERVAL == 0 && target instanceof ServerPlayerEntity sp) {
+			if (tid.equals(player.getUuid()) && now % HEARTBEAT_INTERVAL == 0 && target instanceof ServerPlayerEntity sp) {
 				double sightRadius = BAL.d("sight_radius", FEAR_SIGHT_RADIUS);
 				double nearest = Double.MAX_VALUE;
 				for (ServerPlayerEntity p : world.getPlayers()) {
@@ -253,9 +251,7 @@ public final class NightmareFearManager {
 					double dist = Math.sqrt(nearest);
 					vol = HEARTBEAT_BASE_VOL + (float) ((1.0 - dist / sightRadius) * (HEARTBEAT_MAX_VOL - HEARTBEAT_BASE_VOL));
 				}
-				world.playSound(sp, sp.getX(), sp.getY(), sp.getZ(),
-						net.minecraft.sound.SoundEvents.ENTITY_WARDEN_HEARTBEAT,
-						net.minecraft.sound.SoundCategory.PLAYERS, vol, 0.9f);
+                MancianimaMarkManager.playSoundToPlayer(sp,net.minecraft.sound.SoundEvents.ENTITY_WARDEN_HEARTBEAT,vol,0.9f);
 			}
 			// 可见性状态机（目标本人的 tick 推进，另一重去重；多人多梦魔各自独立）
 			if (tid.equals(player.getUuid()) && target instanceof ServerPlayerEntity sp) {

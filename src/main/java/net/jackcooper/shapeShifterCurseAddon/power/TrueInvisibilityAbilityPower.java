@@ -33,6 +33,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower implements
 	// Internal cooldown tracking (separate from parent class)
 	private long internalCooldownEndTime = 0;
 	private long activeCastId = -1;
+	private long coveredSpellCastId = -1;
 	private int gracePeriodTicks = 0;
 	private int lastAmplifier = 0;
 
@@ -133,6 +134,14 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower implements
 		if (currentEffect != null) {
 			lastAmplifier = currentEffect.getAmplifier();
 		}
+		boolean coveringSpell = coveredSpellCastId >= 0 && coveredSpellCastId == activeCastId && lastAmplifier == 0;
+		if (coveringSpell) {
+			// Long preparation may exceed the original five seconds. Refresh only near expiry,
+			// through vanilla status synchronization; removal by purification is never reversed.
+			if (currentEffect.getDuration() < 8) entity.addStatusEffect(new StatusEffectInstance(SscAddon.TRUE_INVISIBILITY, 40, 0, false, false, true));
+			StatusEffectInstance vanilla = entity.getStatusEffect(StatusEffects.INVISIBILITY);
+			if (vanilla != null && vanilla.getDuration() < 8) entity.addStatusEffect(new StatusEffectInstance(StatusEffects.INVISIBILITY, 40, 0, false, false, false));
+		}
 
 		// Decrease grace period if > 0
 		if (gracePeriodTicks > 0) {
@@ -165,12 +174,27 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower implements
 		if (isHandSwinging && !wasHandSwinging) shouldBreak = true;
 		wasHandSwinging = isHandSwinging;
 
-		if (shouldBreak) {
+		if (shouldBreak && !coveringSpell) {
 			breakInvisibility(false); // false = action break (glass break sound)
 			return;
 		}
 
 		wasInvisible = isInvisible;
+	}
+
+	/** One accepted spell may retain this specific primary-skill invisibility cast. */
+	public long beginSpellCover() {
+		StatusEffectInstance effect = entity.getStatusEffect(SscAddon.TRUE_INVISIBILITY);
+		if (!(entity instanceof ServerPlayerEntity) || activeCastId < 0 || effect == null || effect.getAmplifier() != 0
+				|| !net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(entity, net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.WILD_CAT_SP)) return -1;
+		coveredSpellCastId = activeCastId;
+		return activeCastId;
+	}
+
+	public void endSpellCover(long castId) {
+		if (castId < 0 || coveredSpellCastId != castId) return;
+		coveredSpellCastId = -1;
+		if (activeCastId == castId) breakInvisibility(false);
 	}
 
 	/**
@@ -212,6 +236,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower implements
 	/** 隐身结束：只结算本次施放，重复破隐不能重置已起算的 CD。 */
 	public void applyUniversalCooldown() {
 		if (!(entity instanceof ServerPlayerEntity serverPlayer) || activeCastId < 0) return;
+		coveredSpellCastId = -1;
 		SkillCastManager.get(serverPlayer.getServerWorld()).interrupt(activeCastId, SkillCastManager.now(serverPlayer));
 		activeCastId = -1;
 		internalCooldownEndTime = entity.getWorld().getTime() + SkillCooldowns.remaining(serverPlayer, powerIdentifier());
@@ -230,6 +255,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower implements
 	 */
 	public void breakInvisibility(boolean byKey) {
 		if (entity == null || entity.getWorld().isClient) return;
+		coveredSpellCastId = -1;
 
 		if (!entity.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)) return;
 

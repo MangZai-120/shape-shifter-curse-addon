@@ -49,6 +49,8 @@ public final class SpellConfig {
 	public final int expMode;
 	/** 是否实际发射法术投射体；供形态协同识别，服务端随配置同步。 */
 	public final boolean projectile;
+	/** Spell-owned harmful status effects; excludes burning and instantaneous damage. */
+	public final boolean debuff;
 
 	/** 每级倍率与品质（index = level-1；长度可不足 5，读取时越界回退默认）：每级
 	 * {@code damage_multiplier} / {@code cooldown_multiplier} / {@code speed_multiplier} /
@@ -62,7 +64,7 @@ public final class SpellConfig {
 	private SpellConfig(float baseDamage, int baseCooldownTicks, int baseCastTimeTicks, int manaCost,
 						SpellCastingRules.Tier spellTier, int interruptMode,
 						float soloDamageMultiplier, float soloCooldownMultiplier, float soloCastTimeMultiplier,
-					int cooldownFloorTicks, String element, int expMode, boolean projectile, float[] damageMultipliers, float[] cooldownMultipliers,
+					int cooldownFloorTicks, String element, int expMode, boolean projectile, boolean debuff, float[] damageMultipliers, float[] cooldownMultipliers,
 					float[] speedMultipliers, float[] manaCostMultipliers, String[] rarities) {
 		this.baseDamage = baseDamage;
 		this.baseCooldownTicks = baseCooldownTicks;
@@ -78,6 +80,7 @@ public final class SpellConfig {
 		this.element = element;
 		this.expMode = expMode;
 		this.projectile = projectile;
+		this.debuff = debuff;
 		this.damageMultipliers = damageMultipliers;
 		this.cooldownMultipliers = cooldownMultipliers;
 		this.speedMultipliers = speedMultipliers;
@@ -128,7 +131,7 @@ public final class SpellConfig {
 
 	/** 未加载配置的展示兜底；manaCostConfigured=false，不能用于起手施法。 */
 	public static SpellConfig fallback() {
-		return new SpellConfig(0f, 20, 0, -1, SpellCastingRules.Tier.BASIC_1, 0, 0.5f, 2.0f, 2.0f, 0, null, 0, false,
+		return new SpellConfig(0f, 20, 0, -1, SpellCastingRules.Tier.BASIC_1, 0, 0.5f, 2.0f, 2.0f, 0, null, 0, false, false,
 				new float[0], new float[0], new float[0], new float[0], new String[0]);
 	}
 
@@ -189,7 +192,7 @@ public final class SpellConfig {
 		}
 		return new SpellConfig(baseDamage, baseCooldown, baseCastTime, manaCost,
 				spellTier, interruptMode, soloDmg, soloCd, soloCast, cooldownFloorTicks, element, expMode,
-				JsonHelper.getBoolean(o,"projectile",false), dmg, cd, speed, manaMul, rarity);
+				JsonHelper.getBoolean(o,"projectile",false), JsonHelper.getBoolean(o,"debuff",false), dmg, cd, speed, manaMul, rarity);
 	}
 
 	/** element 只认七个合法系别 id，其它归 null（与 FormationElement 枚举对齐）。 */

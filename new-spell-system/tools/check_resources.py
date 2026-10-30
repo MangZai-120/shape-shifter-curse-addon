@@ -15,6 +15,10 @@ en=json.loads((language_dir/'en_us.json').read_text(encoding='utf-8'))
 language_files=set((project/'src/main/resources/assets').glob('*/lang/*.json'))|set((resources/'assets').glob('*/lang/*.json'))
 assert language_files=={language_dir/'zh_cn.json',language_dir/'en_us.json'},language_files
 assert zh.keys()==en.keys()
+for file in (project/'src/main/resources/data/ssc_addon/spells').glob('*.json'):
+    spell=json.loads(file.read_text(encoding='utf-8'))
+    assert type(spell.get('debuff')) is bool,(file,'explicit debuff metadata required')
+    if any(level.get('rarity')=='red' for level in spell.get('levels',[])):assert not spell['debuff'],file
 for key in zh:
     assert zh[key].count('%s')==en[key].count('%s'),key
     assert '\ufffd' not in zh[key] and '\ufffd' not in en[key],key

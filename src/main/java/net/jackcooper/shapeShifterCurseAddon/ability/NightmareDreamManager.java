@@ -260,6 +260,12 @@ public final class NightmareDreamManager {
 	}
 
 	// ===== 「恐惧」技能支撑（由 NightmareFearManager 调用，仅服务端） =====
+	/** O(1) lookup for effects landing now; another nightmare's ledger does not qualify. */
+	public static boolean isDreaming(ServerPlayerEntity nightmare, LivingEntity target) {
+		Map<UUID, Long> dreams = DREAMING.get(nightmare.getUuid());
+		Long until = dreams == null ? null : dreams.get(target.getUuid());
+		return until != null && until > target.getWorld().getTime();
+	}
 
 	/** 收集某食梦魔当前已入梦的全部存活目标实体（跨实体查找，找不到的跳过）。 */
 	public static List<LivingEntity> collectDreamTargets(ServerPlayerEntity nightmare, long now) {

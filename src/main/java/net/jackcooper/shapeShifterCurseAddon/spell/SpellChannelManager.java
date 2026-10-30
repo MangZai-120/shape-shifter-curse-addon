@@ -449,6 +449,7 @@ public final class SpellChannelManager {
 	private static void stop(ServerPlayerEntity player, boolean interrupted, Text reason, boolean fullCooldown) {
 		Channel channel = ACTIVE.remove(player.getUuid());
 		if (channel == null) return;
+		channel.style.endCloak();
 		if (interrupted) channel.collapse.finish(false,"range_exceeded".equals(channel.collapse.record.failureReason)?"failed":"interrupted");
 		clearSlow(player);
 		broadcastVisual(channel, false);
@@ -651,6 +652,7 @@ public final class SpellChannelManager {
                     style.timing.lockTick(),style.collapseMultiplier*growthMultiplier);
             this.collapse.record.moistureSpent=style.paidMoisture();
             style.bindAllay(this.collapse.session.quote.actual(),this.collapse.record,spell.getElement()==FormationElement.CURSE&&spell.supportsCurseChain());
+            style.bindBat(this.collapse.record);
             this.collapse.record.novaQuickCast=style.novaQuickCast;
             if(style.frost!=null)style.frost.record(this.collapse.record);
             if(style.healing!=null)style.healing.onPayment(amount->this.collapse.record.moistureSpent+=amount);

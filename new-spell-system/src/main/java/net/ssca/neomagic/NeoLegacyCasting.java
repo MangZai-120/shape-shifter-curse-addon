@@ -55,7 +55,7 @@ public final class NeoLegacyCasting {
         Quote q=NeoRules.quote(b,NeoRuntime.data(p).mastery(b));
         double multiplier=blueprintCostMultiplier(p,b.core(),book)
                 *(book==null||book.isEmpty()?1:FormCastingStyle.tidalCostMultiplier(p))
-                *FormSpellStyle.collapseMultiplier(p,b.carrier()==Carrier.PROJECTILE,b.output()==Core.FROST);
+                *FormSpellStyle.collapseMultiplier(p,b.carrier()==Carrier.PROJECTILE,b.output()==Core.FROST,b.output()==Core.FROST||b.output()==Core.CURSE);
         return new Quote(q.normal()*multiplier,q.actual()*multiplier,q.floor(),q.plan());
     }
     public static double blueprintCostMultiplier(ServerPlayerEntity p,Core core) {
@@ -120,7 +120,7 @@ public final class NeoLegacyCasting {
                 Math.max(.5,Math.min(4,level)),Math.min(80,Math.max(0,duration)),Math.max(1,Math.min(32,spell.getAimMaxRange(level)>0?spell.getAimMaxRange(level):32)));
     }
     public NeoLegacyCasting(ServerPlayerEntity p,Spell spell,int level,int duration,int normalCost) {
-        this(p,spell,level,duration,normalCost,spell.getLockInTick(),FormSpellStyle.collapseMultiplier(p,spell.getConfig().projectile,spell.getElement()==FormationElement.ICE));
+        this(p,spell,level,duration,normalCost,spell.getLockInTick(),FormSpellStyle.collapseMultiplier(p,spell.getConfig().projectile,spell.getElement()==FormationElement.ICE,spell.getConfig().debuff&&spell.getRarity(level)!=SpellRarity.RED));
     }
     public NeoLegacyCasting(ServerPlayerEntity p,Spell spell,int level,int duration,int normalCost,int lockTick,double growthMultiplier) {
         player=p;random=new Random(p.getRandom().nextLong());this.duration=duration;form=NeoRuntime.form(p);key="spell:"+spell.getId();
@@ -134,7 +134,7 @@ public final class NeoLegacyCasting {
         ACTIVE.put(p.getUuid(),this);NeoRuntime.dirty(p);
     }
     public static Quote quote(ServerPlayerEntity p,Spell spell,int level,int duration,int normalCost) {
-        return quote(p,spell,level,duration,normalCost,FormSpellStyle.collapseMultiplier(p,spell.getConfig().projectile,spell.getElement()==FormationElement.ICE));
+        return quote(p,spell,level,duration,normalCost,FormSpellStyle.collapseMultiplier(p,spell.getConfig().projectile,spell.getElement()==FormationElement.ICE,spell.getConfig().debuff&&spell.getRarity(level)!=SpellRarity.RED));
     }
     private static Quote quote(ServerPlayerEntity p,Spell spell,int level,int duration,int normalCost,double growthMultiplier) {
         var b=descriptor(spell,level,duration);String key="spell:"+spell.getId();

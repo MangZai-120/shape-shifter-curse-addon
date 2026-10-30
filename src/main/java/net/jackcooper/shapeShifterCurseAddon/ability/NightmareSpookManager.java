@@ -67,7 +67,8 @@ public final class NightmareSpookManager {
 	private static final BalanceReader BAL = new BalanceReader("abilities.nightmare_spook");
 
 	/** 活跃幽灵苦力怕：实体 UUID -> 目标玩家 UUID。 */
-	private static final Map<UUID, UUID> CREEPERS = new ConcurrentHashMap<>();
+	private record CreeperState(UUID target, UUID caster) {}
+	private static final Map<UUID, CreeperState> CREEPERS = new ConcurrentHashMap<>();
 	/** 活跃幽灵野猫：实体 UUID -> CatState。 */
 	private static final Map<UUID, CatState> CATS = new ConcurrentHashMap<>();
 
@@ -174,7 +175,7 @@ public final class NightmareSpookManager {
 		creeper.setNoGravity(true);
 		creeper.setPersistent();
 		creeper.addCommandTag("ssca_ghost_creeper");
-        CREEPERS.put(creeper.getUuid(), sp.getUuid());
+        CREEPERS.put(creeper.getUuid(), new CreeperState(sp.getUuid(),caster.getUuid()));
         if (!world.spawnEntity(creeper)) { CREEPERS.remove(creeper.getUuid()); return false; }
 		// 幽灵标记包（仅目标）：客户端对该实体局部取消 invisible
 		SscAddonNetworking.sendSpookGhost(sp, creeper.getUuid(), BAL.i("creeper_life_ticks", CREEPER_LIFE_TICKS));
@@ -185,9 +186,9 @@ public final class NightmareSpookManager {
 
 	/** 目标攻击幽灵苦力怕（服务端 AttackEntityCallback）：击杀苦力怕 + 召出幽灵野猫。 */
 	public static void onGhostCreeperAttacked(ServerPlayerEntity attacker, CreeperEntity creeper) {
-		UUID targetUuid = CREEPERS.get(creeper.getUuid());
-		if (targetUuid == null) return;
-		if (!attacker.getUuid().equals(targetUuid)) return; // 只有目标本人的攻击有效
+		CreeperState ghostState = CREEPERS.get(creeper.getUuid());
+		if (ghostState == null) return;
+		if (!attacker.getUuid().equals(ghostState.target())) return; // 只有目标本人的攻击有效
 		CREEPERS.remove(creeper.getUuid());
 		ServerWorld world = (ServerWorld) attacker.getWorld();
 		// 击杀音效/烟雾（定向，仅目标）
@@ -195,13 +196,13 @@ public final class NightmareSpookManager {
 		spawnParticlesAt(attacker, ParticleTypes.CLOUD, creeper.getX(), creeper.getBodyY(0.5), creeper.getZ(), 8, 0.3, 0.3, 0.3);
 		Vec3d creeperPos = creeper.getPos();
 		creeper.discard();
-		spawnGhostCat(world, attacker, creeperPos);
+		spawnGhostCat(world, attacker, creeperPos,ghostState.caster());
 	}
 
 	// ==================== 幽灵野猫 ====================
 
 	/** 从苦力怕消散处生成幽灵野猫（野猫形态模型真实体，仅目标可见）→ 奔跑 → 跳脸攻击。 */
-	private static void spawnGhostCat(ServerWorld world, ServerPlayerEntity target, Vec3d nearPos) {
+	private static void spawnGhostCat(ServerWorld world, ServerPlayerEntity target, Vec3d nearPos,UUID casterId) {
 		// 生成点：优先苦力怕原位置附近（野猫「从苦力怕消散处扑出」），失败退目标身后
 		Vec3d pos = findAirPosNear(world, nearPos, 1.5, 8, 0.9, 1.0);
 		if (pos == null) pos = findAirPosBehind(world, target, 2.0, 3.0, 12, 0.9, 1.0);
@@ -216,7 +217,7 @@ public final class NightmareSpookManager {
 		cat.setPersistent();
 		cat.addCommandTag("ssca_ghost_cat");
         long now = world.getTime();
-        CATS.put(cat.getUuid(), new CatState(target, target.getUuid(), now));
+        CATS.put(cat.getUuid(), new CatState(target, casterId, now));
         if (!world.spawnEntity(cat)) { CATS.remove(cat.getUuid()); return; }
 		// 显形标记包（仅目标）
 		SscAddonNetworking.sendSpookGhost(target, cat.getUuid(), BAL.i("cat_life_ticks", CAT_LIFE_TICKS));
@@ -289,7 +290,8 @@ public final class NightmareSpookManager {
 		if (st.phase == 2) return;
 		st.phase = 2;
 		ServerPlayerEntity caster = world.getServer().getPlayerManager().getPlayer(st.casterUuid);
-		if (caster != null && target.isAlive() && target.getWorld() == world) {
+		if (caster != null && target.isAlive() && target.getWorld() == world
+                &&!net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils.isProtected(caster,target)) {
 			target.damage(caster.getDamageSources().indirectMagic(caster, caster), (float) BAL.d("clone_damage", CLONE_DAMAGE));
 			// 命中音效：哈气 + 挥击（定向，仅目标）
 			playSoundAt(target, SoundEvents.ENTITY_CAT_HISS, target.getX(), target.getY(), target.getZ(), 1.2f, 0.9f);
@@ -362,10 +364,10 @@ public final class NightmareSpookManager {
 
 		// 幽灵苦力怕：只由目标本人的 tick 推进（去重）
 		int creeperLife = BAL.i("creeper_life_ticks", CREEPER_LIFE_TICKS);
-		Iterator<Map.Entry<UUID, UUID>> cit = CREEPERS.entrySet().iterator();
+		Iterator<Map.Entry<UUID, CreeperState>> cit = CREEPERS.entrySet().iterator();
 		while (cit.hasNext()) {
-			Map.Entry<UUID, UUID> e = cit.next();
-			if (!e.getValue().equals(player.getUuid())) continue;
+			Map.Entry<UUID, CreeperState> e = cit.next();
+			if (!e.getValue().target().equals(player.getUuid())) continue;
 			Entity creeper = world.getEntity(e.getKey());
 			if (!(creeper instanceof CreeperEntity gc)) {
 				cit.remove();
@@ -403,7 +405,7 @@ public final class NightmareSpookManager {
 	/** 目标断线/出梦清理：清其名下幽灵登记。 */
     public static void clearFor(UUID targetUuid, MinecraftServer server) {
         java.util.Set<UUID> ghosts = new java.util.HashSet<>();
-        CREEPERS.forEach((id, target) -> { if (targetUuid.equals(target)) ghosts.add(id); });
+        CREEPERS.forEach((id, state) -> { if (targetUuid.equals(state.target())) ghosts.add(id); });
         CATS.forEach((id, state) -> { if (targetUuid.equals(state.target.getUuid())) ghosts.add(id); });
         for (UUID id : ghosts) {
             for (ServerWorld world : server.getWorlds()) {

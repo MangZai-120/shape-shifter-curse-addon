@@ -43,6 +43,10 @@ public final class NeoWorldProbe {
         if(Boolean.getBoolean("neomagic.rangeGuard"))test=new TestFunction("neomagic","range_guard","ssca_neomagic:empty",220,0,true,NeoCastRangeProbe::start);
         if(Boolean.getBoolean("neomagic.spiderLink"))test=new TestFunction("neomagic","spider_link","ssca_neomagic:empty",260,0,true,NeoSpiderSpellLinkProbe::start);
         if(Boolean.getBoolean("neomagic.allayLink"))test=new TestFunction("neomagic","allay_link","ssca_neomagic:empty",300,0,true,NeoAllaySpellLinkProbe::start);
+        if(Boolean.getBoolean("neomagic.batLink"))test=new TestFunction("neomagic","bat_link","ssca_neomagic:empty",400,0,true,NeoBatSpellLinkProbe::start);
+        if(Boolean.getBoolean("neomagic.wildCatLink"))test=new TestFunction("neomagic","wild_cat_link","ssca_neomagic:empty",400,0,true,NeoWildCatSpellLinkProbe::start);
+        if(Boolean.getBoolean("neomagic.nightmareLink"))test=new TestFunction("neomagic","nightmare_link","ssca_neomagic:empty",400,0,true,NeoNightmareSpellLinkProbe::start);
+        if(Boolean.getBoolean("neomagic.batStress"))test=new TestFunction("neomagic","bat_stress","ssca_neomagic:empty",500,0,true,NeoBatStressProbe::start);
         var batch=new GameTestBatch("neomagic",List.of(test),world->{},world->{});
         MinecraftServer.startServer(thread->TestServer.create(thread,save,VanillaDataPackProvider.createManager(save),List.of(batch),new BlockPos(0,64,0)));
     }

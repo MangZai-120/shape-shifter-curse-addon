@@ -728,7 +728,15 @@ public final class SscBalanceSchema {
                 .doubleParam("allay_damage_heal_ratio",.25,0.0,1.0)
                 .doubleParam("allay_damage_heal_minimum",.25,0.0,20.0)
                 .doubleParam("allay_damage_heal_range",16,0.0,128.0)
-                .doubleParam("fallen_curse_chain_range",5,0.0,128.0);
+                .doubleParam("fallen_curse_chain_range",5,0.0,128.0)
+                .intParam("bat_blood_cost",15,1,1000)
+                .doubleParam("nightmare_spell_multiplier",1.35,1.0,4.0)
+                .doubleParam("bat_blood_reduction",.35,0.0,1.0)
+                .doubleParam("fruit_debuff_extra_collapse",.25,0.0,1.0)
+                .doubleParam("fruit_debuff_radius",3,0.1,16.0)
+                .intParam("fruit_debuff_dwell_ticks",50,1,1200)
+                .intParam("fruit_debuff_children",2,1,2)
+                .intParam("fruit_debuff_generations",3,1,3);
 
         // ==== 盘点批次 #6/#7（台账-盘点批次.md；来源注解指向真实常量或 null=函数内字面量）====
 

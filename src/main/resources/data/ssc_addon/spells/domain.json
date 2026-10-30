@@ -1,4 +1,5 @@
 {
+  "debuff": false,
   "projectile": false,
   "element": "space",
   "base_damage": 0,

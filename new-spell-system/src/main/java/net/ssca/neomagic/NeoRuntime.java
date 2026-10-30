@@ -71,7 +71,7 @@ public final class NeoRuntime {
         if(!NeoEffects.preflight(p,b,anchor)) {message(p,"target_invalid");return;}
         Quote quote=NeoLegacyCasting.blueprintQuote(p,b);
         var style=net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.plan(p,b.carrier()==Carrier.PROJECTILE,
-                b.range()*NeoLegacyCasting.blueprintRangeMultiplier(p,b),b.prep(),b.prep(),-1,b.output()==Core.FROST);
+                b.range()*NeoLegacyCasting.blueprintRangeMultiplier(p,b),b.prep(),b.prep(),-1,b.output()==Core.FROST,b.output()==Core.FROST||b.output()==Core.CURSE);
         if(!style.pay())return;
         var e=new NeoState.Experiment();e.blueprint=b;e.form=d.form;e.profile=NeoRules.profile(d.form);e.initial=d.burden;
         e.normal=quote.normal();e.actual=quote.actual();e.profile=profile(p);e.preparation=style.timing.duration();e.dimension=p.getWorld().getRegistryKey().getValue().toString();
@@ -79,6 +79,7 @@ public final class NeoRuntime {
         d.add(e);var active=new Active(new Session(b,quote,style.timing.duration()),e,p.getStackInHand(hand),hand,anchor,new Random(p.getRandom().nextLong()));
         active.style=style;
         style.bindAllay(quote.actual(),active.record,b.output()==Core.CURSE&&Set.of(Carrier.PROJECTILE,Carrier.CONTACT,Carrier.LOCK).contains(b.carrier()));
+        style.bindBat(active.record);
         active.record.novaQuickCast=style.novaQuickCast;
         active.record.moistureSpent=style.paidMoisture();
         if(style.frost!=null)style.frost.record(active.record);
@@ -112,6 +113,7 @@ public final class NeoRuntime {
         if(s.failed) fail(p,a);
         else if(s.complete) {
             ACTIVE.remove(p.getUuid());
+            if(a.style!=null)a.style.endCloak();
             net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.clearSlow(p);
             // Effects receive one immutable outcome; no later collapse checks run on it.
             if(NeoEffects.release(p,a)) {
@@ -133,6 +135,7 @@ public final class NeoRuntime {
     }
     public static void fail(ServerPlayerEntity p,Active a) {
         if(a.settled)return;a.settled=true;
+        if(a.style!=null)a.style.endCloak();
         ACTIVE.remove(p.getUuid());a.record.result="failed";
         net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.clearSlow(p);
         setCooldown(p,a.session.blueprint.identity(),a.fullCooldown);
@@ -140,6 +143,7 @@ public final class NeoRuntime {
     }
     private static void failRange(ServerPlayerEntity p,Active a) {
         if(a.settled)return;a.settled=true;a.session.failed=true;ACTIVE.remove(p.getUuid(),a);
+        if(a.style!=null)a.style.endCloak();
         a.record.result="failed";a.record.failureReason="range_exceeded";
         net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.clearSlow(p);
         setCooldown(p,a.session.blueprint.identity(),net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules.interruptedCooldown(a.fullCooldown));
@@ -172,6 +176,7 @@ public final class NeoRuntime {
     }
     public static void cancel(ServerPlayerEntity p,String reason) {
         Active a=ACTIVE.remove(p.getUuid());if(a==null)return;
+        if(a.style!=null)a.style.endCloak();
         net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.clearSlow(p);
         a.record.result=reason;a.settled=true;setCooldown(p,a.session.blueprint.identity(),Math.max(10,a.fullCooldown/2));
         dirty(p);

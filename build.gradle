@@ -107,6 +107,11 @@ tasks.register('neoMagicWorldTest', JavaExec) {
     systemProperty 'neomagic.rangeGuard', project.findProperty('neoRangeGuard') ?: 'false'
     systemProperty 'neomagic.spiderLink', project.findProperty('neoSpiderLink') ?: 'false'
     systemProperty 'neomagic.allayLink', project.findProperty('neoAllayLink') ?: 'false'
+    systemProperty 'neomagic.batLink', project.findProperty('neoBatLink') ?: 'false'
+    systemProperty 'neomagic.wildCatLink', project.findProperty('neoWildCatLink') ?: 'false'
+    systemProperty 'neomagic.nightmareLink', project.findProperty('neoNightmareLink') ?: 'false'
+    systemProperty 'neomagic.batStress', project.findProperty('neoBatStress') ?: 'false'
+    systemProperty 'neomagic.batProfile', project.findProperty('neoBatStress') ?: 'false'
     workingDir = layout.buildDirectory.dir('neomagic/world-test').get().asFile
     maxHeapSize = '2G'
     systemProperty 'fabric.development', 'true'
@@ -140,6 +145,7 @@ tasks.register('neoMagicPerformanceTest', JavaExec) {
 }
 
 tasks.register('neoMagicVisualTest', JavaExec) {
+    systemProperty 'neomagic.nightmareLive', project.findProperty('neoNightmareLive') ?: 'false'
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
     mainClass = 'net.ssca.neomagic.NeoVisualTest'
@@ -150,10 +156,14 @@ tasks.register('neoMagicVisualTest', JavaExec) {
     systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
     systemProperty 'neomagic.assets', new File(System.getProperty('user.home'), '.gradle/caches/fabric-loom/assets').absolutePath
     doFirst {
+        if ((project.findProperty('neoNightmareLive') ?: 'false').toString().toBoolean()) delete new File(workingDir,'nightmare-result.json')
         workingDir.mkdirs()
         def classpathFile = new File(workingDir, 'classpath.txt')
         classpathFile.setText(classpath.asPath, 'UTF-8')
         systemProperty 'neomagic.testClasspathFile', classpathFile.absolutePath
+    }
+    doLast {
+        if ((project.findProperty('neoNightmareLive') ?: 'false').toString().toBoolean() && !new File(workingDir,'nightmare-result.json').isFile()) throw new GradleException('Nightmare client acceptance did not finish; inspect the live log.')
     }
 }
 

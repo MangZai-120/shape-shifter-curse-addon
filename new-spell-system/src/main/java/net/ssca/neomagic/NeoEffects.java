@@ -216,8 +216,8 @@ public final class NeoEffects {
     private static void affect(ServerPlayerEntity p,NeoRuntime.Active a,LivingEntity target,double budget,
             net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.Impact weave) {
         if(a.session.blueprint.output()==Core.LUNAR&&!a.session.reversed&&a.style!=null&&a.style.healing!=null) {
-            a.style.healing.heal(target,budget,value->affectNow(p,a,target,value,weave));
-        } else affectNow(p,a,target,budget,weave);
+            a.style.healing.heal(target,budget,value->net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(p,()->affectNow(p,a,target,value,weave)));
+        } else net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(p,()->affectNow(p,a,target,budget,weave));
     }
     private static boolean affectNow(ServerPlayerEntity p,NeoRuntime.Active a,LivingEntity target,double budget,
             net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.Impact weave) {
@@ -232,8 +232,8 @@ public final class NeoEffects {
         switch(core) {
             case LUNAR -> {if(healing)target.heal((float)budget);else effective=target.damage(invertedSelf?p.getDamageSources().magic():p.getDamageSources().indirectMagic(p,p),(float)budget);}
             case THERMAL -> effective=target.damage(p.getDamageSources().indirectMagic(p,p),(float)budget);
-            case FROST -> {if(effective=target.damage(p.getDamageSources().indirectMagic(p,p),(float)(budget*.5)))target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS,(int)(budget*12),Math.min(3,(int)(budget/6))),p);}
-            case CURSE -> {if(effective=target.damage(p.getDamageSources().indirectMagic(p,p),(float)(budget*.4)))target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS,Math.round((int)(budget*20)*a.curseDurationMultiplier),0),p);}
+            case FROST -> {if(effective=target.damage(p.getDamageSources().indirectMagic(p,p),(float)(budget*.5)))net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(a.style==null?null:a.style.bat,()->target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS,(int)(budget*12),Math.min(3,(int)(budget/6))),p));}
+            case CURSE -> {if(effective=target.damage(p.getDamageSources().indirectMagic(p,p),(float)(budget*.4)))net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(a.style==null?null:a.style.bat,()->target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS,Math.round((int)(budget*20)*a.curseDurationMultiplier),0),p));}
             case VOID -> {if(effective=target.damage(p.getDamageSources().indirectMagic(p,p),(float)(budget*.8)))target.setAbsorptionAmount(Math.max(0,target.getAbsorptionAmount()-(float)(budget*.2)));}
             default -> { }
         }

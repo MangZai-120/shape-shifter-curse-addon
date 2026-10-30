@@ -6,6 +6,8 @@
     "plugin": "net.jackcooper.shapeShifterCurseAddon.mixin.plugin.SscAddonMixinConfigPlugin",
     "refmap": "ssc-addon.refmap.json",
     "mixins": [
+        "entity.BatSpellDebuffMixin",
+    "entity.NightmareSpellEffectMixin",
         "entity.SpellHomingProjectileMixin",
         "player.SscForceSneakSyncMixin",
         "player.PlayerDisconnectCleanupMixin",

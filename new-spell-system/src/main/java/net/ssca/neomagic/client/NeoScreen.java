@@ -164,6 +164,7 @@ public final class NeoScreen extends Screen {
         blueprintLines(e.blueprint);line("record_id",e.id.substring(0,8),e.version);line("result",t("result."+e.result).getString());
         line("record_cost",f(e.initial),f(e.actual),f(e.paid));
         if(e.allaySurcharge>0||e.allayHealing>0||e.fallenChains>0)line("allay_link_record",f(e.allaySurcharge),f(e.allayHealing),e.fallenChains);
+        if(e.bloodSpent>0||e.sporeInfections>0)line("bat_link_record",e.bloodSpent,e.sporeInfections);
         if(e.spell.isEmpty()){line("measured",f(e.arrived),f(e.damage),f(e.healing),e.hits,e.summons);line("absorption",f(e.absorbed));}
         else line("legacy_measurements");
         for(Checkpoint cp:e.checks)line("checkpoint",cp.tick(),f(cp.burden()),f(cp.risk().excess()),pc(cp.risk().failure()),pc(cp.risk().offset()),cp.failed()?t("failed").getString():cp.shifted()?t("shifted").getString():t("passed").getString(),f(cp.yaw()),f(cp.pitch()));

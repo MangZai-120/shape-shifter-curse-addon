@@ -21,6 +21,10 @@ public final class FormSpellStyle {
     private static final BalanceReader BAL = new BalanceReader("systems.form_casting");
     private static final ThreadLocal<FormSpellStyle> EFFECT = new ThreadLocal<>();
     public AllaySpellLink.Cast allay;
+    public BatSpellLink.Cast bat;
+    public static BatSpellLink.Cast currentBat(){var style=EFFECT.get();return style==null?null:style.bat;}
+    public static ServerPlayerEntity currentCaster(){var style=EFFECT.get();return style==null?null:style.player;}
+    public void bindBat(net.ssca.neomagic.NeoState.Experiment record){if(spreading)bat=new BatSpellLink.Cast(player,record);record.bloodSpent=blood.spent();}
     public static AllaySpellLink.Cast currentAllay(){var style=EFFECT.get();return style==null?null:style.allay;}
     public void bindAllay(double actual,net.ssca.neomagic.NeoState.Experiment record,boolean directCurse){allay=AllaySpellLink.create(player,actual,record,directCurse);}
     /** Client wiring supplies the server-authoritative active-cast snapshot without loading client classes here. */
@@ -36,9 +40,13 @@ public final class FormSpellStyle {
     public final LivingEntity target;
     public final MoistureHealing healing;
     public final FrostSpellLink.Payment frost;
+    public final BatSpellLink.Blood blood;
+    public final boolean spreading;
     private final int mana;
     private final int moisture;
     private boolean paid;
+    private net.jackcooper.shapeShifterCurseAddon.power.TrueInvisibilityAbilityPower cloak;
+    private long cloakCast=-1;
 
     /** originalPre之前按比例推进演出，之后严格每真实tick推进一tick。 */
     public record Timing(int originalDuration, int originalPre, int preparation, int duration, int lockTick) {
@@ -58,7 +66,7 @@ public final class FormSpellStyle {
     }
 
     private FormSpellStyle(ServerPlayerEntity player, Timing timing, boolean accelerated,
-                           double collapseMultiplier, LivingEntity target, double range, int mana,boolean projectile,boolean ice) {
+                           double collapseMultiplier, LivingEntity target, double range, int mana,boolean projectile,boolean ice,boolean debuff) {
         this.player=player;this.timing=timing;this.accelerated=accelerated;
         this.novaQuickCast=OcelotSpellLink.quickCast(player);
         boolean enhanced=projectile&&canEnhanceProjectiles(player);
@@ -66,8 +74,10 @@ public final class FormSpellStyle {
         this.projectileRange=enhanced?BAL.d("fluorescent_projectile_range",1.5):1;
         this.moisture=enhanced?BAL.i("fluorescent_projectile_moisture",10):0;
         this.frost=FrostSpellLink.plan(player,ice);
+        this.blood=BatSpellLink.planBlood(player);
+        this.spreading=BatSpellLink.spreading(player,debuff);
         this.collapseMultiplier=collapseMultiplier*(enhanced?BAL.d("fluorescent_projectile_collapse_multiplier",1.05):1)
-                *(frost==null?1:frost.multiplier);
+                *(frost==null?1:frost.multiplier)*blood.multiplier*BatSpellLink.spreadMultiplier(player,debuff);
         this.moonWeaver=projectile&&SpiderSpellLink.canWeave(player);
         this.weave=moonWeaver?new SpiderSpellLink.RollGroup():null;
         this.target=target;this.range=range*this.projectileRange;this.mana=mana+(moonWeaver?SpiderSpellLink.webCost():0);
@@ -78,13 +88,16 @@ public final class FormSpellStyle {
                 && ResourceBars.get(player,BarKeys.VANILLA_MANA)>=BAL.i("acceleration_mana",10);
     }
     public static double collapseMultiplier(PlayerEntity player) {
-        return canAccelerate(player)?BAL.d("acceleration_collapse_multiplier",1.05):1;
+        return (canAccelerate(player)?BAL.d("acceleration_collapse_multiplier",1.05):1)*BatSpellLink.bloodMultiplier(player);
     }
     public static double collapseMultiplier(PlayerEntity player,boolean projectile) {
         return collapseMultiplier(player)*(projectile?projectileCollapseMultiplier(player):1);
     }
     public static double collapseMultiplier(PlayerEntity player,boolean projectile,boolean ice) {
         return collapseMultiplier(player,projectile)*FrostSpellLink.multiplier(player,ice);
+    }
+    public static double collapseMultiplier(PlayerEntity player,boolean projectile,boolean ice,boolean debuff) {
+        return collapseMultiplier(player,projectile,ice)*BatSpellLink.spreadMultiplier(player,debuff);
     }
     public static double sheepProjectileRange() {return BAL.d("sheep_projectile_range",40);}
     private static boolean fluorescent(PlayerEntity player) {
@@ -111,22 +124,25 @@ public final class FormSpellStyle {
         return Timing.of(original,adjusted,lock,OcelotSpellLink.quickCast(player)?0:canAccelerate(player)?BAL.d("preparation_multiplier",.75):1);
     }
     public static FormSpellStyle plan(ServerPlayerEntity player, Spell spell, int level, int original, int adjusted) {
-        return plan(player,spell.getConfig().projectile,spell.getProjectileRange(level),original,adjusted,spell.getLockInTick(),spell.getElement()==FormationElement.ICE);
+        return plan(player,spell.getConfig().projectile,spell.getProjectileRange(level),original,adjusted,spell.getLockInTick(),spell.getElement()==FormationElement.ICE,spell.getConfig().debuff&&spell.getRarity(level)!=SpellRarity.RED);
     }
     public static FormSpellStyle planTriggered(ServerPlayerEntity player,Spell spell,int level,int original,int adjusted) {
         return new FormSpellStyle(player,Timing.of(original,adjusted,spell.getLockInTick(),0),false,1,null,
-                spell.getProjectileRange(level),0,spell.getConfig().projectile,spell.getElement()==FormationElement.ICE);
+                spell.getProjectileRange(level),0,spell.getConfig().projectile,spell.getElement()==FormationElement.ICE,spell.getConfig().debuff&&spell.getRarity(level)!=SpellRarity.RED);
     }
     public static FormSpellStyle plan(ServerPlayerEntity player,boolean projectile,double range,int original,int adjusted,int lock) {
         return plan(player,projectile,range,original,adjusted,lock,false);
     }
     public static FormSpellStyle plan(ServerPlayerEntity player,boolean projectile,double range,int original,int adjusted,int lock,boolean ice) {
+        return plan(player,projectile,range,original,adjusted,lock,ice,false);
+    }
+    public static FormSpellStyle plan(ServerPlayerEntity player,boolean projectile,double range,int original,int adjusted,int lock,boolean ice,boolean debuff) {
         boolean quick=canAccelerate(player);
         LivingEntity target=projectile&&FormUtils.isForm(player,FormIdentifiers.FAMILIAR_FOX_MANCIANIMA)
                 ?findTarget(player,range):null;
         return new FormSpellStyle(player,timing(player,original,adjusted,lock),
                 quick,quick?BAL.d("acceleration_collapse_multiplier",1.05):1,target,range,
-                quick?BAL.i("acceleration_mana",10):target==null?0:BAL.i("homing_mana",10),projectile,ice);
+                quick?BAL.i("acceleration_mana",10):target==null?0:BAL.i("homing_mana",10),projectile,ice,debuff);
     }
     /** 所有起手预检成功后调用一次，不足不扣，不生成施法/崩解记录。 */
     public boolean pay() {
@@ -139,10 +155,16 @@ public final class FormSpellStyle {
         }
         if(moisture>0&&!MoistureWaterRecovery.consume(player,moisture))return false;
         if(frost!=null&&!frost.pay())return false;
+        if(!blood.pay())return false;
+        for(var power:io.github.apace100.apoli.component.PowerHolderComponent.getPowers(player,net.jackcooper.shapeShifterCurseAddon.power.TrueInvisibilityAbilityPower.class)) {
+            long id=power.beginSpellCover();if(id>=0){cloak=power;cloakCast=id;break;}
+        }
         paid=true;return true;
     }
     public int paidMoisture(){return paid?moisture:0;}
+    public void endCloak(){if(cloak!=null){var power=cloak;cloak=null;power.endSpellCover(cloakCast);}}
     public void effect(Runnable action) {
+        endCloak();
         var previous=EFFECT.get();EFFECT.set(this);
         try{action.run();}finally{if(previous==null)EFFECT.remove();else EFFECT.set(previous);}
     }
@@ -182,6 +204,7 @@ public final class FormSpellStyle {
         OcelotSpellLink.register();
         SpiderSpellLink.register();
         AllaySpellLink.register();
+        BatSpellLink.register();
         ServerEntityEvents.ENTITY_LOAD.register((entity,world)->{
             var cast=EFFECT.get();
             if(cast!=null&&entity instanceof ProjectileEntity projectile

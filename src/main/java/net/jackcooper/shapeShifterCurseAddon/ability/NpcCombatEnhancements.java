@@ -79,12 +79,17 @@ public final class NpcCombatEnhancements {
                 && !DomainManager.blocksEffect(target, caster);
     }
     public static StatusEffectInstance enhanceFruitDebuff(LivingEntity target, StatusEffectInstance effect, Entity source) {
+        // The transmitted payload already includes the original cast's NPC enhancement.
+        if (net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.transmitting()) return effect;
         if (!isEnemyNpc(source, target) || !FormUtils.isForm((LivingEntity) source, FormIdentifiers.BAT_PARASITIC_FRUIT)
                 || effect.getEffectType().getCategory() != StatusEffectCategory.HARMFUL) return effect;
+        var cast=net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.current();
         return new StatusEffectInstance(effect.getEffectType(), effect.getDuration(),
-                effect.getAmplifier() + BAL.i("fruit_debuff_level_bonus", 1), effect.isAmbient(),
+                effect.getAmplifier() + (cast==null?fruitDebuffLevelBonus():cast.npcBonus), effect.isAmbient(),
                 effect.shouldShowParticles(), effect.shouldShowIcon(), null, effect.getFactorCalculationData());
     }
+
+    public static int fruitDebuffLevelBonus(){return BAL.i("fruit_debuff_level_bonus",1);}
 
     public static NpcCombatState state(LivingEntity target) {
         return ((NpcCombatStateAccess) target).ssca$getNpcCombatState();
