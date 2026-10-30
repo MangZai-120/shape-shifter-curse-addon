@@ -136,9 +136,16 @@ public final class AllaySPPortableBeacon {
 
     private static ItemStack findCarried(ServerPlayerEntity player, Session session) {
         PlayerInventory inventory = player.getInventory();
-        for (int slot = 0; slot < inventory.size(); slot++) {
-            ItemStack stack = inventory.getStack(slot);
-            if (isActiveStack(stack) && stack.getNbt().getUuid(OWNER_TAG).equals(player.getUuid())
+        ItemStack stack = findCarried(inventory.main, player.getUuid(), session);
+        if (!stack.isEmpty()) return stack;
+        stack = findCarried(inventory.armor, player.getUuid(), session);
+        return !stack.isEmpty() ? stack : findCarried(inventory.offHand, player.getUuid(), session);
+    }
+
+    private static ItemStack findCarried(java.util.List<ItemStack> stacks, UUID owner, Session session) {
+        for (int slot = 0; slot < stacks.size(); slot++) {
+            ItemStack stack = stacks.get(slot);
+            if (isActiveStack(stack) && stack.getNbt().getUuid(OWNER_TAG).equals(owner)
                     && stack.getNbt().getUuid(SESSION_TAG).equals(session.id)) return stack;
         }
         return ItemStack.EMPTY;
@@ -177,12 +184,22 @@ public final class AllaySPPortableBeacon {
     }
 
     private static void clearMarkers(ServerPlayerEntity player) {
+        PlayerInventory inventory = player.getInventory();
+        // Keep all 41 slots and their main -> armor -> offhand ordering, without
+        // allocating the combinedInventory iterator for every getStack call.
+        boolean changed = clearMarkers(inventory.main);
+        changed |= clearMarkers(inventory.armor);
+        changed |= clearMarkers(inventory.offHand);
+        if (changed) inventory.markDirty();
+    }
+
+    private static boolean clearMarkers(java.util.List<ItemStack> stacks) {
         boolean changed = false;
-        for (int slot = 0; slot < player.getInventory().size(); slot++) {
-            ItemStack stack = player.getInventory().getStack(slot);
+        for (int slot = 0; slot < stacks.size(); slot++) {
+            ItemStack stack = stacks.get(slot);
             if (isActiveStack(stack)) { clearStack(stack); changed = true; }
         }
-        if (changed) player.getInventory().markDirty();
+        return changed;
     }
 
     public static boolean isActiveStack(ItemStack stack) {

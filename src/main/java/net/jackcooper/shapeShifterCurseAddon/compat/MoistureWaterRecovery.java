@@ -5,10 +5,6 @@ import io.github.apace100.apoli.power.Power;
 import net.minecraft.entity.player.PlayerEntity;
 import net.onixary.shapeShifterCurseFabric.additional_power.CustomWaterBreathingPower;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
  * SSC's moisture drain treats only fully submerged players as "in water".
  * A player standing or crawling in shallow water is touching water but not
@@ -18,12 +14,14 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class MoistureWaterRecovery {
     private static final int WATER_RECOVERY = 4;
-    private static final Map<UUID, Integer> AIR_BEFORE_TICK = new ConcurrentHashMap<>();
+    // The integrated server and local client share a UUID but are different entities.
+    // Per-entity storage also avoids boxed values and map-node allocation every tick.
+    private static volatile long epoch;
 
     private MoistureWaterRecovery() { }
 
     public static void capture(PlayerEntity player) {
-        if (player != null) AIR_BEFORE_TICK.put(player.getUuid(), player.getAir());
+        if (player != null) ((MoistureTickSnapshot) player).ssca$moistureBefore(epoch, player.getAir());
     }
 
     /** 显式支付湿润度，同时校正浅水恢复的tick起点，避免恢复逻辑退回这笔消耗。 */
@@ -31,14 +29,18 @@ public final class MoistureWaterRecovery {
         if(player==null||player.getWorld().isClient||amount<0||player.getAir()<amount)return false;
         if(amount==0)return true;
         player.setAir(player.getAir()-amount);
-        AIR_BEFORE_TICK.computeIfPresent(player.getUuid(),(id,before)->Math.max(0,before-amount));
+        var snapshot = (MoistureTickSnapshot) player;
+        int before = snapshot.ssca$moistureBefore(epoch);
+        if (before != Integer.MIN_VALUE) snapshot.ssca$moistureBefore(epoch, Math.max(0, before - amount));
         return true;
     }
 
     public static void restore(PlayerEntity player) {
         if (player == null) return;
-        Integer before = AIR_BEFORE_TICK.remove(player.getUuid());
-        if (before == null || player.getAir() >= player.getMaxAir()) return;
+        var snapshot = (MoistureTickSnapshot) player;
+        int before = snapshot.ssca$moistureBefore(epoch);
+        snapshot.ssca$moistureBefore(epoch, Integer.MIN_VALUE);
+        if (before == Integer.MIN_VALUE || player.getAir() >= player.getMaxAir()) return;
         if (!player.isTouchingWater() && !player.isInsideWaterOrBubbleColumn()) return;
         // Fully submerged players already take SSC's water branch.
         if (player.isSubmergedInWater()) return;
@@ -48,7 +50,7 @@ public final class MoistureWaterRecovery {
     }
 
     public static void clear() {
-        AIR_BEFORE_TICK.clear();
+        epoch++;
     }
 
     private static boolean hasActiveWaterBreathing(PlayerEntity player) {

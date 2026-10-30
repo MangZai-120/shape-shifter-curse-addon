@@ -77,15 +77,14 @@ public final class CountdownSync {
             PowerHolderComponent.syncPower(entity, type);
             return;
         }
-        // Older clients retain the original authoritative path, including tracking observers.
-        boolean legacy = !ServerPlayNetworking.canSend(owner, STATE)
-                || PlayerLookup.tracking(owner).stream().anyMatch(p -> !ServerPlayNetworking.canSend(p, STATE));
-        if (legacy) PowerHolderComponent.syncPower(owner, resource.getType());
-        // Already at the floor and never announced: nothing to show, still sync once for non-player owners.
-        if (before == resource.getValue() && before <= resource.getMin() && !ACTIVE.containsKey(key(owner, resource))) {
-            PowerHolderComponent.syncPower(entity, type);
+        // setValue above still runs native min/max actions. An unannounced, unchanged
+        // floor has no client delta; full CCA tracking/join sync already includes it.
+        if (before == resource.getValue() && before <= resource.getMin()
+                && (ACTIVE.isEmpty() || !ACTIVE.containsKey(key(owner, resource)))) {
             return;
         }
+        // markInternal alone performs the legacy send. Sending here as well used to
+        // broadcast the same changing countdown twice to every tracking client.
         markInternal(owner, resource);
     }
 

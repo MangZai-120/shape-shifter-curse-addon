@@ -120,7 +120,7 @@ public final class NeoFormCastingProbe {
         t.waitAndRun(249,()->check(SpellChannelManager.isCasting(domain),"Expansion retains full original duration"));
         t.waitAndRun(252,()->{check(!SpellChannelManager.isCasting(domain),"Domain finishes at new total duration");DomainManager.remove(domain);});
         t.waitAndRun(280,()->{
-            try{NeoMoistureHealingProbe.run(t);}catch(Exception failure){throw new RuntimeException(failure);}
+            try{NeoMoistureHealingProbe.run(t);NeoPortableBeaconProbe.run(t);NeoTransformCleanupProbe.run(t);NeoCountdownSyncProbe.run(t);NeoScaleWriteProbe.run(t);}catch(Exception failure){throw new RuntimeException(failure);}
         });
         t.waitAndRun(370,()->{
             try{NeoProjectileAffinityProbe.run(t);}catch(Exception failure){throw new RuntimeException(failure);}

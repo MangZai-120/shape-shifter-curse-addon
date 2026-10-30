@@ -61,6 +61,7 @@ public final class SscAddonServerEvents {
 
 	public static void registerTickHandlers() {
         SkillStateMaintenance.init();
+        net.jackcooper.shapeShifterCurseAddon.compat.TransformSessionCleanup.init();
 		ServerTickEvents.START_SERVER_TICK.register(server -> {
 			for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
 				net.jackcooper.shapeShifterCurseAddon.compat.MoistureWaterRecovery.capture(player);

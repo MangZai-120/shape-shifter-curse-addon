@@ -93,8 +93,19 @@ public final class NeoMoistureHealingProbe {
         powers.addPower(io.github.apace100.apoli.power.PowerTypeRegistry.get(new Identifier("shape-shifter-curse","form_axolotl_3_water_breathing")),source);
         var touching=net.minecraft.entity.Entity.class.getDeclaredField("touchingWater");touching.setAccessible(true);touching.setBoolean(caster,true);
         caster.setAir(100);caster.setHealth(1);MoistureWaterRecovery.capture(caster);
+        var sameUuid = new net.minecraft.entity.player.PlayerEntity(caster.getServerWorld(),caster.getBlockPos(),0,
+                new com.mojang.authlib.GameProfile(caster.getUuid(),"moisture_copy")) {
+            @Override public boolean isSpectator(){return false;}
+            @Override public boolean isCreative(){return false;}
+        };
+        sameUuid.setAir(200);MoistureWaterRecovery.capture(sameUuid);
         heal(style(caster).healing,caster,2);check(caster.getAir()==90,"Spell debits inside captured tick");
         MoistureWaterRecovery.restore(caster);check(caster.getAir()==94,"Shallow recovery restores four without refunding the ten-point spell fee");
+        check(sameUuid.getAir()==200,"A second entity with the same UUID does not overwrite the caster snapshot");
+        MoistureWaterRecovery.restore(sameUuid);
+        check(sameUuid.getAir()==200,"Restoring the caster does not consume another entity's snapshot");
+        caster.setAir(100);MoistureWaterRecovery.capture(caster);caster.setAir(70);MoistureWaterRecovery.clear();
+        MoistureWaterRecovery.restore(caster);check(caster.getAir()==70,"World cleanup invalidates earlier snapshots without retaining players");
         touching.setBoolean(caster,false);powers.removeAllPowersFromSource(source);
         allies.forEach(Entity::discard);
 

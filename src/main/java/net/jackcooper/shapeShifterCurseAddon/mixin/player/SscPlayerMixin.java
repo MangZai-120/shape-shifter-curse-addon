@@ -18,6 +18,8 @@ import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaAggroTracker;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
+import net.jackcooper.shapeShifterCurseAddon.compat.MoistureTickSnapshot;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
@@ -27,7 +29,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PlayerEntity.class)
-public abstract class SscPlayerMixin {
+public abstract class SscPlayerMixin implements MoistureTickSnapshot {
+
+    @Unique private long ssca$moistureEpoch = Long.MIN_VALUE;
+    @Unique private int ssca$moistureBefore = Integer.MIN_VALUE;
+
+    @Override public int ssca$moistureBefore(long epoch) {
+        return ssca$moistureEpoch == epoch ? ssca$moistureBefore : Integer.MIN_VALUE;
+    }
+
+    @Override public void ssca$moistureBefore(long epoch, int air) {
+        ssca$moistureEpoch = epoch;
+        ssca$moistureBefore = air;
+    }
 
 	/**
 	 * 「月痕之力」剧情真睡：sp 使魔上床真正睡眠期间，顶住 SSC {@code CursedMoonWorldMixin} 每 tick
