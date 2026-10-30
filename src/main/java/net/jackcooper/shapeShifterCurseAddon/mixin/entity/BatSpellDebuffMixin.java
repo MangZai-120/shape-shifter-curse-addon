@@ -12,7 +12,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class BatSpellDebuffMixin {
     @Inject(method="addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;Lnet/minecraft/entity/Entity;)Z",at=@At("RETURN"))
     private void ssca$spellDebuff(StatusEffectInstance effect,Entity source,CallbackInfoReturnable<Boolean> cir){
-        if(cir.getReturnValueZ())BatSpellLink.applied(BatSpellLink.current(),(LivingEntity)(Object)this,effect,source);
+        if(cir.getReturnValueZ()){
+            BatSpellLink.applied(BatSpellLink.current(),(LivingEntity)(Object)this,effect,source);
+            net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.status(net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.current(),(LivingEntity)(Object)this,effect);
+        }
     }
     @Inject(method="removeStatusEffectInternal",at=@At("RETURN"))
     private void ssca$cleansed(StatusEffect effect,CallbackInfoReturnable<StatusEffectInstance> cir){

@@ -326,12 +326,20 @@ public class AnubisWolfSpSummonWolves {
 		if (getMinionCount(player) >= maximumWolves(player)) return;
 
 		BlockPos spawnPos = summonPosition(world, player, player);
+		AnubisWolfMinionEntity wolf = spawnSpellWolf(player, spawnPos, data.domainActive, data.enhancedDomain);
+		if (wolf != null) data.summonedWolfUuids.add(wolf.getUuid());
+	}
+
+	/** Shared construction keeps native minion registration, level, domain and accessories identical. */
+	public static AnubisWolfMinionEntity spawnSpellWolf(ServerPlayerEntity player, BlockPos spawnPos, boolean domainActive, boolean enhancedDomain) {
+		ServerWorld world = player.getServerWorld();
+		if (getMinionCount(player) >= maximumWolves(player)) return null;
 
 		// 使用MinionRegister.SpawnMinion生成（自动调用InitMinion注册到IPlayerEntityMinion系统）
 		AnubisWolfMinionEntity wolf = MinionRegister.SpawnMinion(
 				MinionRegister.ANUBIS_WOLF_MINION, world, spawnPos, player);
 
-		if (wolf == null) return;
+		if (wolf == null) return null;
 
 		int wolfDuration = BAL.i("wolf_duration", WOLF_DURATION);
 
@@ -340,7 +348,7 @@ public class AnubisWolfSpSummonWolves {
 		WolfMinionPower.onSpawn(player, wolf);
 
 		// 死亡领域联动增强
-		if (data.domainActive) {
+		if (domainActive) {
 			// 额外生命值
 			EntityAttributeInstance healthAttr = wolf.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH);
 			if (healthAttr != null) {
@@ -379,11 +387,8 @@ public class AnubisWolfSpSummonWolves {
 			}
 		}
 
-		// 追踪此批次的狼UUID（用于定时消散）
-		data.summonedWolfUuids.add(wolf.getUuid());
-
 		// 生成粒子效果（增强领域召唤的狼不显示灵魂冒出粒子）
-		if (!data.enhancedDomain) {
+		if (!enhancedDomain) {
 			ParticleUtils.spawnParticles(world, ParticleTypes.SOUL_FIRE_FLAME,
 					wolf.getX(), wolf.getY() + 0.5, wolf.getZ(), 15, 0.5, 0.5, 0.5, 0.05);
 			ParticleUtils.spawnParticles(world, ParticleTypes.SOUL,
@@ -393,7 +398,9 @@ public class AnubisWolfSpSummonWolves {
 		// 播放出现音效
 		world.playSound(null, wolf.getX(), wolf.getY(), wolf.getZ(),
 				SoundEvents.ENTITY_WOLF_GROWL, SoundCategory.NEUTRAL, 1.0f, 0.7f);
+		return wolf;
 	}
+	public static int spellWolfDuration() { return BAL.i("wolf_duration", WOLF_DURATION); }
 
 	private static void refreshWolfBuffs(ServerWorld world, SummonData data) {
 		for (UUID wolfUuid : data.summonedWolfUuids) {

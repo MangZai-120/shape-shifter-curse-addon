@@ -167,7 +167,7 @@ public class SpellCurseMarkEntity extends ProjectileEntity implements FlyingItem
 			}
 			// amplifier = 等级-1（L1=0 … L5=4）：mixin 按其计算受伤加深 1.2+0.1×amp
 			boolean hadHarmfulEffect = net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.hasHarmfulEffect(livingTarget);
-            boolean applied=net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(this.getOwner(),()->net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.of(this),()->livingTarget.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(SscAddon.CURSE_MARK,getDuration(),getSpellLevel()-1))));
+            boolean applied=net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.with(net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.of(this),()->net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(this.getOwner(),()->net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.of(this),()->livingTarget.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(SscAddon.CURSE_MARK,getDuration(),getSpellLevel()-1)))));
 			net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.directHit(this,livingTarget);
 			if (applied && this.getOwner() instanceof ServerPlayerEntity caster) {
 				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(caster, livingTarget,

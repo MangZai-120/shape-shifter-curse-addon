@@ -490,6 +490,7 @@ public final class SpellChannelManager {
 	}
 
 	private static void playChargeSound(Channel channel) {
+		if (!SpellCastingRules.playsChargeSound(channel.profile.ticks())) return;
 		if (channel.spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.DeathFinaleSpell) return;
 		if (channel.spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.DomainSpell) return;
 		// 蓄力嗡嗡声已迁至客户端循环音实例（SpellChargeSoundInstance，HUD STATE 沿驱动，

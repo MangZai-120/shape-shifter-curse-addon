@@ -24,12 +24,17 @@ import java.util.UUID;
 
 /** 目标ID由原版DataTracker同步；双端转向，不额外每tick发包、不扫描实体。 */
 @Mixin(ProjectileEntity.class)
-public abstract class SpellHomingProjectileMixin implements FormSpellStyle.HomingProjectile, SpiderSpellLink.WebProjectile, AllaySpellLink.ProjectileData, net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.ProjectileData {
+public abstract class SpellHomingProjectileMixin implements FormSpellStyle.HomingProjectile, SpiderSpellLink.WebProjectile, AllaySpellLink.ProjectileData, net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.ProjectileData, net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.ProjectileData {
+    @Unique private net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.Cast ssca$court;
+    @Override public net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.Cast ssca$court(){return ssca$court;}
+    @Override public void ssca$court(net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.Cast cast){ssca$court=cast;}
     @Unique private net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.Cast ssca$bat;
     @Override public net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.Cast ssca$bat(){return ssca$bat;}
     @Override public void ssca$bat(net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.Cast cast){ssca$bat=cast;}
     @Inject(method="setOwner",at=@At("TAIL"))
     private void ssca$bindBat(net.minecraft.entity.Entity owner,CallbackInfo ci){
+        var court=net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.current();
+        if(owner!=null&&court!=null&&owner.getUuid().equals(court.owner))ssca$court=court;
         var cast=net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.current();
         if(owner!=null&&cast!=null&&owner.getUuid().equals(cast.owner))ssca$bat=cast;
     }
@@ -119,6 +124,7 @@ public abstract class SpellHomingProjectileMixin implements FormSpellStyle.Homin
         ssca$weave.write(nbt);
         if(ssca$allay!=null)nbt.put("SscaAllayLink",ssca$allay.write());
         if(ssca$bat!=null)nbt.put("SscaBatLink",ssca$bat.write());
+        if(ssca$court!=null)nbt.put("SscaCourtLink",ssca$court.write());
         if(ssca$previous==null)return;
         var self=(ProjectileEntity)(Object)this;
         // 本tick移动在super.tick之后发生，存档时也要结清，防反复卸载区块延长射程。
@@ -146,6 +152,7 @@ public abstract class SpellHomingProjectileMixin implements FormSpellStyle.Homin
         ssca$weave.read(nbt);
         ssca$allay=nbt.contains("SscaAllayLink")?AllaySpellLink.Cast.read(nbt.getCompound("SscaAllayLink")):null;
         ssca$bat=nbt.contains("SscaBatLink")?net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.Cast.read(nbt.getCompound("SscaBatLink")):null;
+        ssca$court=nbt.contains("SscaCourtLink")?net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.Cast.read(nbt.getCompound("SscaCourtLink")):null;
         if(!nbt.contains("SscaHomingRemaining"))return;
         var self=(ProjectileEntity)(Object)this;
         double remaining=nbt.getDouble("SscaHomingRemaining");

@@ -130,7 +130,7 @@ public final class DomainManager {
 				timing==null?DomainRules.expandStartTick():timing.preparation(), DomainRules.expandDurationTicks(),
 				DomainRules.maxCastDisplacement());
 		FIELDS.put(player.getUuid(), field);
-		broadcast(field, SoundEvents.BLOCK_BEACON_ACTIVATE, 0.65f, 1.0f);
+		if (SpellCastingRules.playsChargeSound(field.chargeTicks)) broadcast(field, SoundEvents.BLOCK_BEACON_ACTIVATE, 0.65f, 1.0f);
 		sync(player.getServer());
 	}
 	public static boolean canContinue(ServerPlayerEntity player) {
@@ -221,7 +221,7 @@ public final class DomainManager {
 			}
 		}
 		for (Field field : FIELDS.values()) {
-			if (field.active || field.elapsed() <= 0 || field.elapsed() % 40 != 0) continue;
+			if (field.active || !SpellCastingRules.playsChargeSound(field.chargeTicks) || field.elapsed() <= 0 || field.elapsed() % 40 != 0) continue;
 			float pitch = 0.65f + Math.min(1f, (float) field.elapsed() / field.chargeTicks) * 0.25f;
 			broadcast(field, SoundEvents.BLOCK_CONDUIT_AMBIENT_SHORT, pitch, 1.0f);
 		}

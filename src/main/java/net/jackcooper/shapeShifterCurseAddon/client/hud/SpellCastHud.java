@@ -130,7 +130,7 @@ public final class SpellCastHud {
 				endAt = null;
 				endedByInterrupt = false;
 				if (old == null && packetState != null && packetState.duration() > 0) slideInAt = now();
-				// 蓄力音：新施法开始沿起播（短蓄力自动截断；CD 中无 STATE 不响）。
+				// 蓄力音：新施法开始沿起播；实际蓄力小于3秒时入口保持静音。
 				// 空间广播：跟随施法者坐标、24 格衰减——本人/旁观者各自听到对应响度。
 				if (old == null && packetState != null && packetState.duration() > 0 && client.player != null) {
 					// 领域蓄力除外（2026-09-22 定稿）：领域的服务端广播音（0-16 格零衰减、

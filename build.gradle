@@ -110,6 +110,7 @@ tasks.register('neoMagicWorldTest', JavaExec) {
     systemProperty 'neomagic.batLink', project.findProperty('neoBatLink') ?: 'false'
     systemProperty 'neomagic.wildCatLink', project.findProperty('neoWildCatLink') ?: 'false'
     systemProperty 'neomagic.nightmareLink', project.findProperty('neoNightmareLink') ?: 'false'
+    systemProperty 'neomagic.courtLink', project.findProperty('neoCourtLink') ?: 'false'
     systemProperty 'neomagic.batStress', project.findProperty('neoBatStress') ?: 'false'
     systemProperty 'neomagic.batProfile', project.findProperty('neoBatStress') ?: 'false'
     workingDir = layout.buildDirectory.dir('neomagic/world-test').get().asFile
@@ -145,6 +146,8 @@ tasks.register('neoMagicPerformanceTest', JavaExec) {
 }
 
 tasks.register('neoMagicVisualTest', JavaExec) {
+    systemProperty 'neomagic.chargeSoundLive', project.findProperty('neoChargeSoundLive') ?: 'false'
+    systemProperty 'neomagic.courtLive', project.findProperty('neoCourtLive') ?: 'false'
     systemProperty 'neomagic.nightmareLive', project.findProperty('neoNightmareLive') ?: 'false'
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
@@ -157,6 +160,8 @@ tasks.register('neoMagicVisualTest', JavaExec) {
     systemProperty 'neomagic.assets', new File(System.getProperty('user.home'), '.gradle/caches/fabric-loom/assets').absolutePath
     doFirst {
         if ((project.findProperty('neoNightmareLive') ?: 'false').toString().toBoolean()) delete new File(workingDir,'nightmare-result.json')
+        if ((project.findProperty('neoCourtLive') ?: 'false').toString().toBoolean()) delete new File(workingDir,'court-result.json')
+        if ((project.findProperty('neoChargeSoundLive') ?: 'false').toString().toBoolean()) delete new File(workingDir,'charge-sound-result.json')
         workingDir.mkdirs()
         def classpathFile = new File(workingDir, 'classpath.txt')
         classpathFile.setText(classpath.asPath, 'UTF-8')
@@ -164,6 +169,8 @@ tasks.register('neoMagicVisualTest', JavaExec) {
     }
     doLast {
         if ((project.findProperty('neoNightmareLive') ?: 'false').toString().toBoolean() && !new File(workingDir,'nightmare-result.json').isFile()) throw new GradleException('Nightmare client acceptance did not finish; inspect the live log.')
+        if ((project.findProperty('neoCourtLive') ?: 'false').toString().toBoolean() && !new File(workingDir,'court-result.json').isFile()) throw new GradleException('Court client acceptance did not finish; inspect the live log.')
+        if ((project.findProperty('neoChargeSoundLive') ?: 'false').toString().toBoolean() && !new File(workingDir,'charge-sound-result.json').isFile()) throw new GradleException('Charge sound acceptance did not finish; inspect the live log.')
     }
 }
 

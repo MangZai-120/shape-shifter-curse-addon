@@ -60,6 +60,7 @@ public final class SpellHitHelper {
 	 */
 	public static HitResult hitRaw(Entity owner, LivingEntity target, float damage, int expBounty) {
         var link=AllaySpellLink.context(owner);
+        var court=CourtSpellLink.of(owner);
         owner=AllaySpellLink.owner(owner);
 		// 默认白名单：主人在线且目标受保护 → 不造成伤害、不产经验/返还
 		if (owner instanceof ServerPlayerEntity ownerPlayer && WhitelistUtils.isProtected(ownerPlayer, target)) {
@@ -69,7 +70,7 @@ public final class SpellHitHelper {
         float healthBefore=target.getHealth();
 		if (owner instanceof LivingEntity livingOwner) {
 			// 法术伤害专用类型（ssc_addon:spell_damage）：供法术抗性附魔精确识别（jackcooper）
-			damaged = target.damage(SpellDamageSource.of(target.getWorld().getDamageSources(), livingOwner), damage);
+			damaged = CourtSpellLink.damage(court,owner,target,()->target.damage(SpellDamageSource.of(target.getWorld().getDamageSources(), livingOwner), damage));
 		} else {
 			damaged = target.damage(SpellDamageSource.of(target.getWorld().getDamageSources()), damage);
 		}

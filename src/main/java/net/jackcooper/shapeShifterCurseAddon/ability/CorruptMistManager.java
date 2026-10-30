@@ -37,10 +37,12 @@ public final class CorruptMistManager {
 		final int poisonTicks;
 		final int slownessTicks;
         final net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.Cast bat;
+        final net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.Cast court;
 
 		Mist(ServerPlayerEntity caster, double radius, int durationTicks, int intervalTicks, int level, UUID castId) {
 			this.casterId = caster.getUuid();
             this.bat=net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.current();
+            this.court=net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.current();
 			this.caster = caster;
 			this.radius = radius;
 			this.ticksRemaining = durationTicks;
@@ -139,8 +141,8 @@ public final class CorruptMistManager {
 				continue;
 			}
 			boolean hadHarmfulEffect = net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.hasHarmfulEffect(target);
-            boolean applied=net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(mist.caster,()->net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(mist.bat,()->target.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON,mist.poisonTicks,poisonAmplifier))));
-            boolean slowed=net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(mist.caster,()->net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(mist.bat,()->target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS,mist.slownessTicks,slownessAmplifier))));
+            boolean applied=net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.with(mist.court,()->net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(mist.caster,()->net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(mist.bat,()->target.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON,mist.poisonTicks,poisonAmplifier)))));
+            boolean slowed=net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.with(mist.court,()->net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(mist.caster,()->net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(mist.bat,()->target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS,mist.slownessTicks,slownessAmplifier)))));
             applied|=slowed;
 			if (applied) {
 				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(mist.caster, target,

@@ -22,9 +22,11 @@ public final class FormSpellStyle {
     private static final ThreadLocal<FormSpellStyle> EFFECT = new ThreadLocal<>();
     public AllaySpellLink.Cast allay;
     public BatSpellLink.Cast bat;
+    public CourtSpellLink.Cast court;
+    public static CourtSpellLink.Cast currentCourt(){var style=EFFECT.get();return style==null?null:style.court;}
     public static BatSpellLink.Cast currentBat(){var style=EFFECT.get();return style==null?null:style.bat;}
     public static ServerPlayerEntity currentCaster(){var style=EFFECT.get();return style==null?null:style.player;}
-    public void bindBat(net.ssca.neomagic.NeoState.Experiment record){if(spreading)bat=new BatSpellLink.Cast(player,record);record.bloodSpent=blood.spent();}
+    public void bindBat(net.ssca.neomagic.NeoState.Experiment record){if(spreading)bat=new BatSpellLink.Cast(player,record);record.bloodSpent=blood.spent();court=CourtSpellLink.create(player,record);}
     public static AllaySpellLink.Cast currentAllay(){var style=EFFECT.get();return style==null?null:style.allay;}
     public void bindAllay(double actual,net.ssca.neomagic.NeoState.Experiment record,boolean directCurse){allay=AllaySpellLink.create(player,actual,record,directCurse);}
     /** Client wiring supplies the server-authoritative active-cast snapshot without loading client classes here. */
@@ -205,6 +207,7 @@ public final class FormSpellStyle {
         SpiderSpellLink.register();
         AllaySpellLink.register();
         BatSpellLink.register();
+        CourtSpellLink.register();
         ServerEntityEvents.ENTITY_LOAD.register((entity,world)->{
             var cast=EFFECT.get();
             if(cast!=null&&entity instanceof ProjectileEntity projectile

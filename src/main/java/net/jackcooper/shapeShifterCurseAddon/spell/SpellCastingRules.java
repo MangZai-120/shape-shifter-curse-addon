@@ -14,6 +14,10 @@ public final class SpellCastingRules {
 	private static final BalanceReader BAL = new BalanceReader("systems.casting");
 
 	public enum Mode { AUTOMATIC, RELEASE, CONTINUOUS }
+	/** Actual channel duration, after form/rune timing; exactly three seconds remains audible. */
+	public static boolean playsChargeSound(double durationTicks) {
+		return Double.isFinite(durationTicks) && durationTicks >= 60;
+	}
 
 	public static boolean canAfford(int cost, long available) {
 		return cost >= 0 && available >= cost;

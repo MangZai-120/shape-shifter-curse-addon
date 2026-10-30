@@ -105,6 +105,7 @@ public class GoldenSandstormErosionBrand {
 
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("abilities.golden_sandstorm_erosion_brand");
+	private static final BalanceReader CAST_BAL = new BalanceReader("systems.form_casting");
 
 	private GoldenSandstormErosionBrand() {
 	}
@@ -132,7 +133,12 @@ public class GoldenSandstormErosionBrand {
 	 * 该方法由 SscAddonActions 的 erosion_brand_hit biEntity action 触发
 	 */
 	public static void onPlayerAttack(ServerPlayerEntity player, LivingEntity target) {
+		if (net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.suppressLegacy()) return;
 		applyBrand(player, target, 1);
+	}
+	public static void onSpellHit(ServerPlayerEntity player, LivingEntity target) {
+		if (WhitelistUtils.isProtected(player,target)) return;
+		applyBrand(player,target,1);
 	}
 
 	/** A sandstorm adds its captured layer bonus in one operation, not two attacks. */
@@ -153,6 +159,13 @@ public class GoldenSandstormErosionBrand {
 
 		Map<UUID, BrandState> playerBrands = ACTIVE_BRANDS.computeIfAbsent(playerUuid, k -> new HashMap<>());
 		BrandState state = playerBrands.get(targetUuid);
+		if (state != null && currentTick >= state.expiryTick) {playerBrands.remove(targetUuid);state=null;}
+		long effectiveCooldown = (hasErosionPrism(player) ? STACK_COOLDOWN_WITH_PRISM : STACK_COOLDOWN)
+				* CAST_BAL.i("sandstorm_stack_cooldown_multiplier",2);
+		// One shared gate includes the hit that bursts a full stack; no rapid fourth-hit bypass.
+		if (state != null && !state.greenState && currentTick-state.lastStackTick<effectiveCooldown) {
+			state.expiryTick=currentTick+BAL.i("brand_duration",BRAND_DURATION);markDirty(playerUuid);updateTargetMarker(target,state,currentTick,player);return;
+		}
 
 		if (state != null && state.greenState) {
 			// 叠层冷却期间（前5秒）：不叠层，不触发被动爆发
@@ -208,7 +221,6 @@ public class GoldenSandstormErosionBrand {
 		}
 
 		// 检查叠层冷却（蚀沙棱晶：1.3秒，默认：1秒）
-		long effectiveCooldown = hasErosionPrism(player) ? STACK_COOLDOWN_WITH_PRISM : STACK_COOLDOWN;
 		if (currentTick - state.lastStackTick < effectiveCooldown) {
 			// 冷却中，刷新持续时间但不叠层
 			state.expiryTick = currentTick + BAL.i("brand_duration", BRAND_DURATION);

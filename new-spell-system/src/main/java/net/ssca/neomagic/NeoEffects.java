@@ -217,7 +217,7 @@ public final class NeoEffects {
             net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.Impact weave) {
         if(a.session.blueprint.output()==Core.LUNAR&&!a.session.reversed&&a.style!=null&&a.style.healing!=null) {
             a.style.healing.heal(target,budget,value->net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(p,()->affectNow(p,a,target,value,weave)));
-        } else net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(p,()->affectNow(p,a,target,budget,weave));
+        } else net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.with(a.style==null?null:a.style.court,()->net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(p,()->affectNow(p,a,target,budget,weave)));
     }
     private static boolean affectNow(ServerPlayerEntity p,NeoRuntime.Active a,LivingEntity target,double budget,
             net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.Impact weave) {
@@ -240,6 +240,7 @@ public final class NeoEffects {
         // Positive healing and collapse-inverted lunar damage never farm offensive resource refunds.
         if(effective&&!healing&&!a.session.reversed&&target!=p)NeoLegacyCasting.blueprintHit(p,a,target,conditionBeforeHit);
         if(effective&&weave!=null)weave.hit(p,target);
+        if(effective&&!healing&&!a.session.reversed&&a.style!=null)net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.hit(a.style.court,p,target);
         var link=a.style==null?null:a.style.allay;
         if(effective&&!healing&&!a.session.reversed&&link!=null){
             link.damage(p,target,Math.max(0,before-target.getHealth()));
