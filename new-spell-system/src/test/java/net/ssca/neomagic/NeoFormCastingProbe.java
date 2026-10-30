@@ -6,7 +6,6 @@ import net.jackcooper.shapeShifterCurseAddon.spell.*;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.PigEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.test.TestContext;
