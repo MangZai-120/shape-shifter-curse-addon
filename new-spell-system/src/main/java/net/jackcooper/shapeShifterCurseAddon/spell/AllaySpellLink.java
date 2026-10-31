@@ -66,7 +66,7 @@ public final class AllaySpellLink {
             double extra=cost*extraRate;
             if(extra>0){var data=NeoRuntime.data(p);data.burden+=extra;data.recovery=NeoRules.recoveryDelay;data.lastPaymentTick=p.getServer().getTicks();}
             var record=record(p);if(record!=null)record.allaySurcharge+=extra;
-            changed(p);NeoNetwork.hud(p);NeoNetwork.send(p,false);
+            changed(p);NeoNetwork.hud(p);
         }
         public void damage(ServerPlayerEntity p,LivingEntity target,double actualHealthLost) {
             if(kind!=1||processing||!actor(p)||actualHealthLost<=0||!Double.isFinite(actualHealthLost)||!hostile(p,target))return;

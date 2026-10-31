@@ -1,0 +1,15 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_inhibitor": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [{ "items": ["shape-shifter-curse:inhibitor"] }] }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": { "recipe": "ssc_addon:instinct_release" }
+    }
+  },
+  "requirements": [["has_inhibitor", "has_the_recipe"]],
+  "rewards": { "recipes": ["ssc_addon:instinct_release"] }
+}

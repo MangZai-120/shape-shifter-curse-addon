@@ -9,8 +9,9 @@ public final class NeoVisualTest {
         var knot=new net.fabricmc.loader.impl.launch.knot.Knot(net.fabricmc.api.EnvType.CLIENT);var loader=knot.init(options);
         Thread.currentThread().setContextClassLoader(loader);
         String probe=Boolean.getBoolean("neomagic.chargeSoundLive")?"net.ssca.neomagic.NeoChargeSoundLiveProbe":Boolean.getBoolean("neomagic.courtLive")?"net.ssca.neomagic.NeoCourtLiveProbe":Boolean.getBoolean("neomagic.nightmareLive")?"net.ssca.neomagic.NeoNightmareLiveProbe":System.getProperty("neomagic.performance")!=null?"net.jackcooper.shapeShifterCurseAddon.client.perf.NeoCastingPerformanceProbe":"net.ssca.neomagic.NeoVisualProbe";
+        probe=System.getProperty("neomagic.clientProbe",probe);
         Class.forName(probe,true,loader).getMethod("install").invoke(null);
         Class.forName("net.minecraft.client.main.Main",true,loader).getMethod("main",String[].class).invoke(null,(Object)options);
-        if(Boolean.getBoolean("neomagic.nightmareLive")||Boolean.getBoolean("neomagic.courtLive")||Boolean.getBoolean("neomagic.chargeSoundLive"))Class.forName(probe,true,loader).getMethod("verifyResult").invoke(null);
+        if(System.getProperty("neomagic.clientProbe")!=null||Boolean.getBoolean("neomagic.nightmareLive")||Boolean.getBoolean("neomagic.courtLive")||Boolean.getBoolean("neomagic.chargeSoundLive"))Class.forName(probe,true,loader).getMethod("verifyResult").invoke(null);
     }
 }

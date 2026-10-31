@@ -32,6 +32,10 @@ public final class NeoBookWorldProbe {
     public static void start(TestContext t) {
         t.waitAndRun(70,()->{
             try {
+                check(!net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.getGlobalReceivers().contains(NeoMagic.id("action")),"Retired research action channel is not registered");
+                var root=t.getWorld().getServer().getCommandManager().getDispatcher().getRoot().getChild("neomagic");
+                check(root!=null&&root.getChild("reset_burden")!=null&&root.getChild("kit")==null&&root.getChild("research_all")==null,"Retired kit/research commands are absent; live collapse debug command remains");
+                check(t.getWorld().getServer().getRecipeManager().get(new net.minecraft.util.Identifier("ssc_addon","test_tube")).isPresent()&&t.getWorld().getServer().getRecipeManager().get(new net.minecraft.util.Identifier("ssc_addon","test_tube_filling")).isPresent(),"Tube crafting and potion dividing use the main addon namespace");
                 var audit=player(t);NeoFormationAudit.run(t,audit,book(audit));
                 NeoFailureWindowAudit.start(t,player(t),player(t));
                 var p=player(t);var book=book(p);var scroll=ScrollData.create("lunar_mend",1);
@@ -99,9 +103,9 @@ public final class NeoBookWorldProbe {
                 altar.setStack(0,detached);altar.setStack(1,new ItemStack(net.onixary.shapeShifterCurseFabric.items.RegCustomItem.UNTREATED_MOONDUST,3));
                 t.waitAndRun(22,()->check(altar.getStack(1).getCount()==3&&SpellbookData.getMana(detached)==0,"Altar no longer burns fuel charging retired book mana"));
                 SpellbookData.setLevel(book,1);
-                var previewWand=new ItemStack(NeoMagic.WAND);previewWand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(NeoModel.Blueprint.starter()));p.setStackInHand(Hand.OFF_HAND,previewWand);
+                var previewWand=new ItemStack(net.ssca.neomagic.NeoTestFixtures.WAND);previewWand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(NeoModel.Blueprint.starter()));p.setStackInHand(Hand.OFF_HAND,previewWand);
                 var wandHud=NeoNetwork.hudState(p);
-                check(wandHud.getBoolean("Visible")&&wandHud.getString("Spell").isEmpty()&&Math.abs(wandHud.getDouble("Q")-NeoLegacyCasting.blueprintQuote(p,NeoModel.Blueprint.starter()).actual())<1e-9,"HUD previews offhand loaded wand before equipped book");
+                check(wandHud.getBoolean("Visible")&&wandHud.getString("Spell").equals("ssc_addon:lunar_mend"),"Retired blueprint NBT on an ordinary item cannot override the equipped book preview");
                 p.setStackInHand(Hand.OFF_HAND,ItemStack.EMPTY);p.setStackInHand(Hand.MAIN_HAND,ScrollData.create("fire_bolt"));
                 check(NeoNetwork.hudState(p).getString("Spell").equals("ssc_addon:fire_bolt"),"HUD previews held solo scroll before book selection");
                 p.setStackInHand(Hand.MAIN_HAND,ItemStack.EMPTY);
@@ -110,8 +114,8 @@ public final class NeoBookWorldProbe {
                 check(cast!=null,"Normal book/key entry starts with EMPTY old mana");
                 check(cast.session.checkpoints.size()==1&&cast.session.checkpoints.get(0).tick()==0,"Preparation rolls at tick zero");
                 check(cast.session.paid==0&&NeoRuntime.data(p).burden==0,"Noninstant start does not prepay");
-                var wand=new ItemStack(NeoMagic.WAND);wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(NeoModel.Blueprint.starter()));p.setStackInHand(Hand.OFF_HAND,wand);
-                NeoRuntime.start(p,Hand.OFF_HAND);check(!NeoRuntime.ACTIVE.containsKey(p.getUuid()),"Book and loaded wand cannot prepare in parallel");
+                var wand=new ItemStack(net.ssca.neomagic.NeoTestFixtures.WAND);wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(NeoModel.Blueprint.starter()));p.setStackInHand(Hand.OFF_HAND,wand);
+                net.ssca.neomagic.NeoTestFixtures.start(p,Hand.OFF_HAND);check(!NeoRuntime.ACTIVE.containsKey(p.getUuid()),"Book and loaded wand cannot prepare in parallel");
                 var bad=player(t);var badBook=book(bad);SpellbookData.setScroll(badBook,0,ScrollData.create("lunar_mend",1));
                 NeoRuntime.data(bad).burden=10000;
                 SpellCastManager.cast(bad,0,321);var interrupted=NeoLegacyCasting.active(bad);
@@ -186,7 +190,7 @@ public final class NeoBookWorldProbe {
                     probe.effect(()->check(p.getYaw()==cameraYaw+12,"Directional spell constructs with final accumulated deviation"));
                     check(p.getYaw()==cameraYaw&&p.getPitch()==cameraPitch,"Direction deviation restores camera angles after release");
                     probe.finish(false,"cancelled");NeoState.validate(NeoRuntime.data(p));
-                    NeoRuntime.start(p,Hand.OFF_HAND);
+                    net.ssca.neomagic.NeoTestFixtures.start(p,Hand.OFF_HAND);
                     check(NeoRuntime.ACTIVE.containsKey(p.getUuid()),"Loaded wand starts after book settlement");
                     check(!SpellChannelManager.start(p,spell,ScrollData.create("fire_bolt"),1,false,1,15,100,()->true,v->{},c->{},()->{}),"Wand preparation blocks legacy channel creation");
                     NeoRuntime.cancel(p,"test_end");

@@ -25,10 +25,13 @@ for key in zh:
 client=Path.home()/'.gradle/caches/fabric-loom/1.20.1/minecraft-client.jar'
 with zipfile.ZipFile(client) as jar:
     names=set(jar.namelist())
-    for file in (resources/'assets/ssca_neomagic/models/item').glob('*.json'):
+    for file in list((resources/'assets/ssca_neomagic/models/item').glob('*.json')) + list((project/'src/main/resources/assets/ssc_addon/models/item').glob('test_tube*.json')) + list((project/'src/main/resources/assets/ssc_addon/models/item').glob('moon_dust_*.json')):
         for texture in json.loads(file.read_text(encoding='utf-8')).get('textures',{}).values():
+            if texture.startswith('#'):continue
             namespace,path=texture.split(':')
-            assert f'assets/{namespace}/textures/{path}.png' in names,(file,texture)
+            # 自定义贴图在附属资源目录；仅原版贴图从 Minecraft jar 读取。
+            relative=f'assets/{namespace}/textures/{path}.png'
+            assert any((folder/relative).is_file() for folder in (resources,project/'src/main/resources')) or relative in names,(file,texture)
 for file in (root/'docs').glob('*.md'):
     text=re.sub(r'```.*?```','',file.read_text(encoding='utf-8'),flags=re.S)
     for label,target in re.findall(r'\[([^\]]+)\]\(([^)]+)\)',text):

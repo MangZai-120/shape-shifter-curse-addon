@@ -809,6 +809,12 @@ public final class SscBalanceSchema {
                 .intParam("cancel_hold_ticks", 20, 5, 100)
                 .intParam("summon_affinity_cap", 4, 1, 5)
                 .intParam("summon_normal_cap", 5, 1, 5);
+        // 月尘药水：恢复量单位为崩解度点，饮用/投掷冷却单位为 tick。
+        b.scope("systems.moon_dust_potions")
+                .doubleParam("bottle_relief", 60.0, 0.0, 10000.0)
+                .doubleParam("splash_relief", 35.0, 0.0, 10000.0)
+                .intParam("bottle_drink_ticks", 40, 1, 1200)
+                .intParam("throw_cooldown_ticks", 10, 0, 1200);
         // 卷轴工坊（ScrollWorkshopManager 字面量）
         b.scope("systems.workshop")
                 .intParam("craft_max_level", 2, 1, 5)

@@ -5,20 +5,19 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.LingeringPotionItem;
-import net.minecraft.item.PotionItem;
-import net.minecraft.item.SplashPotionItem;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.item.InfiniteEnergyPotionItem;
+import net.jackcooper.shapeShifterCurseAddon.item.PotionBagItem;
 
 public class PotionBagScreenHandler extends ScreenHandler {
 	private final Inventory inventory;
 	private final ItemStack bagStack;
 	private final PlayerEntity player;
+	private boolean loading;
 
 	public PotionBagScreenHandler(int syncId, PlayerInventory playerInventory, ItemStack bagStack) {
 		super(SscAddon.POTION_BAG_SCREEN_HANDLER, syncId);
@@ -29,27 +28,31 @@ public class PotionBagScreenHandler extends ScreenHandler {
 			@Override
 			public void markDirty() {
 				super.markDirty();
-				PotionBagScreenHandler.this.saveToNbt();
+				if (!PotionBagScreenHandler.this.loading) PotionBagScreenHandler.this.saveToNbt();
 			}
 
 			@Override
 			public int getMaxCountPerStack() {
-				return 8; // Max stack size: 8
+				// 保留已有16管存档；玩家权限和物品种类的插入上限由槽位统一控制。
+				return 64;
 			}
 
 			@Override
 			public boolean isValid(int slot, ItemStack stack) {
-				return stack.getItem() instanceof PotionItem ||
-						stack.getItem() instanceof SplashPotionItem ||
-						stack.getItem() instanceof LingeringPotionItem ||
-						stack.getItem() instanceof InfiniteEnergyPotionItem;
+				return PotionBagItem.isStorable(stack);
 			}
 		};
 
 		// Load NBT
-		loadFromNbt(bagStack.getNbt());
+		loading = true;
+		try {
+			loadFromNbt(bagStack.hasNbt() ? bagStack.getNbt().copy() : null);
+		} finally {
+			loading = false;
+		}
 		// 清理已充满的无限药水空瓶标记，使打开时袋内显示正常名称
 		cleanRechargedInfinitePotions();
+		saveToNbt();
 
 		inventory.onOpen(playerInventory.player);
 
@@ -59,23 +62,12 @@ public class PotionBagScreenHandler extends ScreenHandler {
 			this.addSlot(new Slot(inventory, col, 8 + col * 18, 18) {
 				@Override
 				public boolean canInsert(ItemStack stack) {
-					return stack.getItem() instanceof PotionItem ||
-							stack.getItem() instanceof SplashPotionItem ||
-							stack.getItem() instanceof LingeringPotionItem ||
-							stack.getItem() instanceof InfiniteEnergyPotionItem;
+					return PotionBagItem.isStorable(stack);
 				}
 
 				@Override
 				public int getMaxItemCount(ItemStack stack) {
-					// 无限压缩能量药水每瓶独立自充能，不可叠加（每格仅 1 个）
-					if (stack.getItem() instanceof InfiniteEnergyPotionItem) {
-						return 1;
-					}
-					if (stack.getItem() instanceof PotionItem ||
-							stack.getItem() instanceof SplashPotionItem ||
-							stack.getItem() instanceof LingeringPotionItem) {
-						return 8;
-					}
+					if (PotionBagItem.isStorable(stack)) return PotionBagItem.maxPerSlot(stack, PotionBagScreenHandler.this.player);
 					return super.getMaxItemCount(stack);
 				}
 			});
@@ -106,7 +98,14 @@ public class PotionBagScreenHandler extends ScreenHandler {
 
 	@Override
 	public boolean canUse(PlayerEntity player) {
-		return this.inventory.canPlayerUse(player); // Simple close if too far
+		if (player.getWorld().isClient) return this.inventory.canPlayerUse(player);
+		if (player != this.player || !bagStack.isOf(SscAddon.POTION_BAG)) return false;
+		// 形态回收会倒出袋内物品；旧界面的独立库存不能再被取出一次。
+		// 必须核对原物品引用，另一只相同NBT的袋子不能继承这个界面。
+		for (int i = 0; i < player.getInventory().size(); i++) {
+			if (player.getInventory().getStack(i) == bagStack) return true;
+		}
+		return false;
 	}
 
 	@Override
@@ -120,7 +119,7 @@ public class PotionBagScreenHandler extends ScreenHandler {
 				if (!this.insertItem(originalStack, this.inventory.size(), this.slots.size(), true)) {
 					return ItemStack.EMPTY;
 				}
-			} else if (!this.insertItem(originalStack, 0, this.inventory.size(), false)) {
+			} else if (!this.insertIntoBagInventory(originalStack)) {
 				return ItemStack.EMPTY;
 			}
 
@@ -131,6 +130,27 @@ public class PotionBagScreenHandler extends ScreenHandler {
 			}
 		}
 		return newStack;
+	}
+
+	/** Shift入袋按带物品参数的上限合并，避免原版空槽路径误用背后inventory的64上限。 */
+	private boolean insertIntoBagInventory(ItemStack source) {
+		if (!PotionBagItem.isStorable(source)) return false;
+		int before = source.getCount();
+		for (int i = 0; i < inventory.size() && !source.isEmpty(); i++) {
+			Slot slot = getSlot(i);
+			ItemStack target = slot.getStack();
+			if (target.isEmpty() || !ItemStack.canCombine(target, source)) continue;
+			int amount = Math.min(source.getCount(), Math.max(0, slot.getMaxItemCount(source) - target.getCount()));
+			if (amount > 0) { target.increment(amount); source.decrement(amount); slot.markDirty(); }
+		}
+		for (int i = 0; i < inventory.size() && !source.isEmpty(); i++) {
+			Slot slot = getSlot(i);
+			if (!slot.hasStack() && slot.canInsert(source)) {
+				int amount = Math.min(source.getCount(), slot.getMaxItemCount(source));
+				slot.setStack(source.copyWithCount(amount)); source.decrement(amount);
+			}
+		}
+		return source.getCount() != before;
 	}
 
 	private void loadFromNbt(NbtCompound nbt) {

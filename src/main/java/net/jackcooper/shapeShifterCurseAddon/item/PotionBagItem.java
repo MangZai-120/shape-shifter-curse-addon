@@ -29,6 +29,7 @@ import net.jackcooper.shapeShifterCurseAddon.screen.PotionBagScreenHandler;
 import net.onixary.shapeShifterCurseFabric.status_effects.RegOtherStatusEffects;
 
 import java.util.List;
+import org.jetbrains.annotations.Nullable;
 
 public class PotionBagItem extends Item {
 
@@ -68,6 +69,7 @@ public class PotionBagItem extends Item {
 
 	/** 饮用型（普通药水或无限药水的饮用形态，排除溅射/滞留）。 */
 	private static boolean isDrinkable(ItemStack stack) {
+		if (PotionTestTubes.isFilledTube(stack)) return true;
 		if (stack.getItem() instanceof InfiniteEnergyPotionItem inf) {
 			return inf.getType() == InfiniteEnergyPotionItem.Type.DRINK;
 		}
@@ -130,6 +132,7 @@ public class PotionBagItem extends Item {
 		if (isInfinite(potion) && InfiniteEnergyPotionItem.isRecharging(potion, world)) {
 			return TypedActionResult.fail(stack);
 		}
+		if (!isDrinkable(potion)) return TypedActionResult.pass(stack);
 		// 开始饮用读条（DRINK 动作 + getMaxUseTime），无冷却
 		user.setCurrentHand(hand);
 		return TypedActionResult.consume(stack);
@@ -151,6 +154,15 @@ public class PotionBagItem extends Item {
 					inf.markUsed(potion, world);
 					PotionBagScreenHandler.setStoredStack(stack, QUICK_SLOT, potion);
 				}
+			} else if (PotionTestTubes.isFilledTube(potion)) {
+				// 单管副本走物品自己的真实入口，不能把试管当作全剂量原版药水施效。
+				ItemStack one = potion.copyWithCount(1);
+				ItemStack remainder = one.finishUsing(world, player);
+				if (!player.getAbilities().creativeMode) {
+					potion.decrement(1);
+					PotionBagScreenHandler.setStoredStack(stack, QUICK_SLOT, potion);
+					if (!remainder.isEmpty()) player.getInventory().offerOrDrop(remainder);
+				}
 			} else if (isDrinkable(potion)) {
 				// 施加药水效果（瞬时效果立即结算，持续效果加为状态）
 				for (StatusEffectInstance effect : PotionUtil.getPotionEffects(potion)) {
@@ -166,10 +178,10 @@ public class PotionBagItem extends Item {
 					if (!player.getInventory().insertStack(bottle)) {
 						player.dropItem(bottle, false);
 					}
+					// 创造模式不消耗袋内药水，也不生成额外容器。
+					potion.decrement(1);
+					PotionBagScreenHandler.setStoredStack(stack, QUICK_SLOT, potion);
 				}
-				// 消耗 1 瓶并写回药水包存储
-				potion.decrement(1);
-				PotionBagScreenHandler.setStoredStack(stack, QUICK_SLOT, potion);
 			}
 		}
 		return stack; // 药水袋本身不被消耗
@@ -178,7 +190,9 @@ public class PotionBagItem extends Item {
 	/** 饮用读条时长：仅当快捷栏为饮用型药水时返回 {@link #DRINK_TIME}，否则 0（投掷型/空为即时/无动作）。 */
 	@Override
 	public int getMaxUseTime(ItemStack stack) {
-		return isDrinkable(PotionBagScreenHandler.getStoredStack(stack, QUICK_SLOT)) ? DRINK_TIME : 0;
+		ItemStack potion = PotionBagScreenHandler.getStoredStack(stack, QUICK_SLOT);
+		if (PotionTestTubes.isFilledTube(potion)) return (int) Math.ceil(potion.getMaxUseTime() * 1.15);
+		return isDrinkable(potion) ? DRINK_TIME : 0;
 	}
 
 	/** 饮用型药水显示喝药动作（含原版饮用粒子与音效），否则无动作。 */
@@ -258,6 +272,7 @@ public class PotionBagItem extends Item {
 	@Override
 	public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
 		tooltip.add(Text.translatable("item.ssc_addon.potion_bag.tooltip").formatted(Formatting.GRAY));
+		tooltip.add(Text.translatable("tooltip.ssc_addon.test_tube_stack").formatted(Formatting.GRAY));
 		tooltip.add(Text.translatable("item.ssc_addon.potion_bag.tooltip.controls").formatted(Formatting.DARK_GRAY));
 		super.appendTooltip(stack, world, tooltip, context);
 	}
@@ -282,15 +297,17 @@ public class PotionBagItem extends Item {
 
 	/** 是否为可放入药水袋的药水类物品（与药水包 GUI 的可放入规则一致）。 */
 	public static boolean isStorable(ItemStack stack) {
-		return stack.getItem() instanceof PotionItem
+		return PotionTestTubes.isFilledTube(stack) || stack.getItem() instanceof PotionItem
 				|| stack.getItem() instanceof SplashPotionItem
 				|| stack.getItem() instanceof LingeringPotionItem
 				|| stack.getItem() instanceof InfiniteEnergyPotionItem;
 	}
 
-	/** 单格最大堆叠：无限能量药水每格 1，其余药水每格 8（与药水包 GUI 槽位规则一致）。 */
-	private static int maxPerSlot(ItemStack stack) {
-		return stack.getItem() instanceof InfiniteEnergyPotionItem ? 1 : 8;
+	/** 所有入袋路径共用容量：无限1，试管按玩家3/16，普通药水8。 */
+	public static int maxPerSlot(ItemStack stack, @Nullable PlayerEntity player) {
+		if (stack.getItem() instanceof InfiniteEnergyPotionItem) return 1;
+		if (PotionTestTubes.isFilledTube(stack)) return PotionTestTubes.stackLimit(stack, player);
+		return 8;
 	}
 
 	/**
@@ -299,10 +316,14 @@ public class PotionBagItem extends Item {
 	 * 各区间内均先合并到同类未满堆叠，再占用空槽位。堆叠规则与药水包 GUI 一致（普通药水每格 8、无限能量药水每格 1）。
 	 */
 	public static int insertIntoBag(ItemStack bag, ItemStack source) {
+		return insertIntoBag(bag, source, null);
+	}
+
+	public static int insertIntoBag(ItemStack bag, ItemStack source, @Nullable PlayerEntity player) {
 		if (source.isEmpty() || !isStorable(source)) {
 			return 0;
 		}
-		int perSlot = maxPerSlot(source);
+		int perSlot = maxPerSlot(source, player);
 		ItemStack[] slots = new ItemStack[BAG_SLOTS];
 		for (int i = 0; i < BAG_SLOTS; ++i) {
 			slots[i] = PotionBagScreenHandler.getStoredStack(bag, i);

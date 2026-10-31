@@ -49,7 +49,7 @@ public final class NeoEffects {
     }
     public static boolean preflight(ServerPlayerEntity p,Blueprint b,Anchor anchor) {
         if(b.carrier()==Carrier.LOCK && anchor.target==null)return false;
-        if(b.carrier()==Carrier.CONTACT && anchor.target==null && !p.getWorld().getBlockState(BlockPos.ofFloored(anchor.position)).isOf(NeoMagic.TARGET))return false;
+        if(b.carrier()==Carrier.CONTACT && anchor.target==null)return false;
         if(b.core()==Core.SPACE||b.core()==Core.SUMMON)
             return p.getWorld().getWorldBorder().contains(BlockPos.ofFloored(anchor.position))&&p.getWorld().canPlayerModifyAt(p,BlockPos.ofFloored(anchor.position));
         return true;
@@ -87,7 +87,7 @@ public final class NeoEffects {
             s.active.record.result="released";NeoRuntime.data(p).successful(s.active.session.blueprint);
             NeoRuntime.grantExperience(p,s.active);
         } else s.active.record.result="storage_lost";
-        NeoRuntime.dirty(p);NeoNetwork.send(p,false);
+        NeoRuntime.dirty(p);
     }
     private static boolean apply(ServerPlayerEntity p,NeoRuntime.Active a) {
         NeoLegacyCasting.beginBlueprintEffect(p,a);
@@ -254,16 +254,11 @@ public final class NeoEffects {
         return effective;
     }
     private static boolean measureBlock(ServerPlayerEntity p,NeoRuntime.Active a,Vec3d pos,double budget) {
-        BlockPos block=BlockPos.ofFloored(pos);
-        for(BlockPos test:List.of(block,block.down(),block.north(),block.south(),block.east(),block.west()))if(p.getWorld().getBlockState(test).isOf(NeoMagic.TARGET)) {
-            a.record.arrived+=budget;a.record.target="target@"+test.toShortString();
-            NeoNetwork.discover(p,"carrier:AREA");NeoRuntime.dirty(p);return true;
-        }
-        return false;
+        return false; // 原独立观测靶已移除；正式法术的命中结算沿用各自实现。
     }
     public static void tick(MinecraftServer server) {
         for(var it=STORED.entrySet().iterator();it.hasNext();) {
-            var entry=it.next();if(server.getTicks()>=entry.getValue().expires){entry.getValue().active.record.result="storage_expired";var p=server.getPlayerManager().getPlayer(entry.getKey());if(p!=null){NeoRuntime.dirty(p);NeoNetwork.send(p,false);}it.remove();}
+            var entry=it.next();if(server.getTicks()>=entry.getValue().expires){entry.getValue().active.record.result="storage_expired";var p=server.getPlayerManager().getPlayer(entry.getKey());if(p!=null){NeoRuntime.dirty(p);}it.remove();}
         }
         for(var it=SUMMONS.entrySet().iterator();it.hasNext();) {
             var entry=it.next();if(!entry.getKey().isAlive()||server.getTicks()>=entry.getValue()){entry.getKey().discard();it.remove();}
@@ -299,7 +294,7 @@ public final class NeoEffects {
     private static void finishBolt(Bolt bolt) {
         var record=bolt.active.record;record.pending=Math.max(0,record.pending-1);
         if(record.pending==0)record.result=record.arrived>0?"resolved":"missed";
-        NeoRuntime.dirty(bolt.caster);NeoNetwork.send(bolt.caster,false);
+        NeoRuntime.dirty(bolt.caster);
     }
     public static void register() {
         ServerEntityEvents.ENTITY_LOAD.register((entity,world)->{if(entity.getCommandTags().contains(SUMMON_TAG)&&!SUMMONS.containsKey(entity))entity.discard();});

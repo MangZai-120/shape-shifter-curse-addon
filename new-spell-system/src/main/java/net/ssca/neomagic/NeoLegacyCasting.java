@@ -166,7 +166,7 @@ public final class NeoLegacyCasting {
         if(settled)return;settled=true;ACTIVE.remove(player.getUuid(),this);record.result=result;
         if(success){var values=NeoRuntime.data(player).progress.computeIfAbsent(key,k->new double[4]);
             for(int i=0;i<=band;i++)values[i]=Math.min(100000,values[i]+1);}
-        NeoRuntime.dirty(player);NeoNetwork.hud(player);NeoNetwork.send(player,false);
+        NeoRuntime.dirty(player);NeoNetwork.hud(player);
     }
     public Vec3d target(Vec3d target) {
         if(target==null)return null;

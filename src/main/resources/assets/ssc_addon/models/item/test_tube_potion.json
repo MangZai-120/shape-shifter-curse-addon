@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "ssc_addon:item/test_tube_overlay",
+    "layer1": "ssc_addon:item/test_tube"
+  }
+}

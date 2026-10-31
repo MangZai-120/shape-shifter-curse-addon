@@ -13,6 +13,7 @@ import net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks;
 import net.jackcooper.shapeShifterCurseAddon.compat.recipeviewer.SscViewerRecipes;
 import net.jackcooper.shapeShifterCurseAddon.compat.recipeviewer.SscViewerRecipes.*;
 import net.jackcooper.shapeShifterCurseAddon.compat.recipeviewer.SscViewerRecipes.Process;
+import net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.item.*;
@@ -26,6 +27,19 @@ public class SSCA_JEIPlugin implements IModPlugin {
     public static final RecipeType<Crafting> SPECIAL_CRAFTING = RecipeType.create("ssc_addon", "special_crafting", Crafting.class);
     public static final RecipeType<Process> PROCESSING = RecipeType.create("ssc_addon", "processing", Process.class);
     @Override public Identifier getPluginUid() { return new Identifier("ssc_addon", "jei_plugin"); }
+    @Override public void registerItemSubtypes(ISubtypeRegistration registration) {
+        registration.registerSubtypeInterpreter(PotionTestTubes.FILLED, new mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter<ItemStack>() {
+            @Override public Object getSubtypeData(ItemStack stack, mezz.jei.api.ingredients.subtypes.UidContext context) {
+                return PotionTestTubes.subtypeData(stack);
+            }
+            @Override public String getLegacyStringSubtypeInfo(ItemStack stack, mezz.jei.api.ingredients.subtypes.UidContext context) {
+                return PotionTestTubes.subtypeData(stack).toString();
+            }
+        });
+    }
+    @Override public void registerExtraIngredients(IExtraIngredientRegistration registration) {
+        registration.addExtraItemStacks(PotionTestTubes.viewerStacks());
+    }
     @Override public void registerCategories(IRecipeCategoryRegistration registration) {
         var gui = registration.getJeiHelpers().getGuiHelper();
         registration.addRecipeCategories(new CraftingCategory(gui), new ProcessingCategory(gui));

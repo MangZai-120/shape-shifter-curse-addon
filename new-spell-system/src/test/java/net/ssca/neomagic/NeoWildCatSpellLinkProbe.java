@@ -51,7 +51,7 @@ public final class NeoWildCatSpellLinkProbe {
             for(var p:List.of(book,solo,interrupted,blue))invisible(p);
             check(cast(book,false,bookEffects),"Book channel accepted");check(cast(solo,true,soloEffects),"Solo channel accepted");check(cast(interrupted,false,new int[]{0}),"Interrupt fixture accepted");
             var b=new Blueprint("cloak",Core.THERMAL,Carrier.PROJECTILE,List.of(),Core.THERMAL,1,80,20);
-            NeoRuntime.data(blue).known.addAll(NeoMagic.SAMPLES.keySet());var wand=new ItemStack(NeoMagic.WAND);wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(b));blue.setStackInHand(Hand.MAIN_HAND,wand);NeoRuntime.start(blue,Hand.MAIN_HAND);check(NeoRuntime.ACTIVE.containsKey(blue.getUuid()),"Actual blueprint channel accepted");
+            NeoRuntime.data(blue).known.addAll(net.ssca.neomagic.NeoTestFixtures.SAMPLES.keySet());var wand=new ItemStack(net.ssca.neomagic.NeoTestFixtures.WAND);wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(b));blue.setStackInHand(Hand.MAIN_HAND,wand);net.ssca.neomagic.NeoTestFixtures.start(blue,Hand.MAIN_HAND);check(NeoRuntime.ACTIVE.containsKey(blue.getUuid()),"Actual blueprint channel accepted");
             ordinary.addStatusEffect(new StatusEffectInstance(SscAddon.TRUE_INVISIBILITY,200,1));check(cast(ordinary,false,new int[]{0}),"Non-primary invisibility may cast normally");
             var invalid=new Spell(new Identifier("ssc_addon","missing_test_spell"),SpellRarity.WHITE){@Override public void cast(ServerPlayerEntity p,float value,boolean alone){}};
             check(!SpellChannelManager.start(rejected,invalid,ScrollData.create("missing_test_spell"),1,false,442,10,80,()->true,at->{},cd->{}),"Rejected preflight never reserves invisibility");

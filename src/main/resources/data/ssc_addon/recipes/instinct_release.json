@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "shape-shifter-curse:inhibitor" },
+    { "item": "minecraft:amethyst_shard" },
+    { "item": "minecraft:iron_nugget" }
+  ],
+  "result": { "item": "ssc_addon:instinct_release", "count": 1 }
+}

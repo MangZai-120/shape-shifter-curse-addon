@@ -12,18 +12,28 @@
         "radius": 16,
         "shape": "sphere",
         "bientity_action": {
-          "type": "apoli:target_action",
-          "action": {
-            "type": "apoli:apply_effect",
-            "effect": {
-              "effect": "minecraft:glowing",
-              "duration": 60,
-              "amplifier": 0,
-              "is_ambient": true,
-              "show_particles": false,
-              "show_icon": false
+          "type": "apoli:and",
+          "actions": [
+            {
+              "type": "apoli:target_action",
+              "action": {
+                "type": "apoli:apply_effect",
+                "effect": {
+                  "effect": "minecraft:glowing",
+                  "duration": 60,
+                  "amplifier": 0,
+                  "is_ambient": true,
+                  "show_particles": false,
+                  "show_icon": false
+                }
+              }
+            },
+            {
+              "type": "ssc_addon:bat_echo_feedback",
+              "max_targets": 8,
+              "volume": 0.35
             }
-          }
+          ]
         },
         "bientity_condition": {
           "type": "apoli:and",

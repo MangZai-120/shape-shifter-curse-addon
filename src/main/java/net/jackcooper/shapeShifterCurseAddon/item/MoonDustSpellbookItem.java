@@ -48,7 +48,6 @@ public class MoonDustSpellbookItem extends AccessoryItem {
 		}
 		// 潜行 + 右键：播种未触发（非寄生果蝠/无种子/书满）时不回落开界面，保留潜行手势语义干净
 		if (user.isSneaking()) {
-			if (user instanceof ServerPlayerEntity sp) net.ssca.neomagic.NeoNetwork.open(sp,null);
             return TypedActionResult.success(stack,world.isClient);
 		}
 		// 普通右键：打开魔法书配置界面（2026-09-17 由潜行右键改为右键，用户指定）

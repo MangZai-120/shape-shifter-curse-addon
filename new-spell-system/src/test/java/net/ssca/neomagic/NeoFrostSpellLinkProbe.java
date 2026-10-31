@@ -47,9 +47,9 @@ public final class NeoFrostSpellLinkProbe {
     }
     private static void form(ServerPlayerEntity p,Identifier form){RegPlayerFormComponent.PLAYER_FORM.get(p).nowForm=RegPlayerForms.playerForms.get(form);NeoRuntime.refreshForm(p);}
     private static NeoState.Experiment blueprint(ServerPlayerEntity p,Blueprint b){
-        var d=NeoRuntime.data(p);d.known.addAll(NeoMagic.SAMPLES.keySet());
-        var wand=new ItemStack(NeoMagic.WAND);wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(b));p.setStackInHand(Hand.MAIN_HAND,wand);
-        NeoRuntime.start(p,Hand.MAIN_HAND);return d.records.get(0);
+        var d=NeoRuntime.data(p);d.known.addAll(net.ssca.neomagic.NeoTestFixtures.SAMPLES.keySet());
+        var wand=new ItemStack(net.ssca.neomagic.NeoTestFixtures.WAND);wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(b));p.setStackInHand(Hand.MAIN_HAND,wand);
+        net.ssca.neomagic.NeoTestFixtures.start(p,Hand.MAIN_HAND);return d.records.get(0);
     }
     public static void start(TestContext t){t.waitAndRun(70,()->{try{run(t);}catch(Exception e){throw new RuntimeException(e);}});}
     private static void run(TestContext t)throws Exception {

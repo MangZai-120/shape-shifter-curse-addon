@@ -161,7 +161,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         check(player.form.formPerkMap.get(tree).equals(all) && player.totalExperience == 1234, "Wind Spirit inherits all eight without another payment");
         check(WindSpiritPerks.hungerDiscount(player) == 25 && !has(player, WindSpiritPerks.METABOLISM_1), "rank II replaces rank I, total reduction 25 percent");
         check(!has(player, original("perks/ocelot_armor_1")) && has(player, original("perks/ocelot_armor_2")), "armor totals eight, not twelve");
-        check(has(player, WindSpiritPerks.LONG_POUNCE) && !has(player, original("perks/ocelot_long_pounce_flight")), "long pounce enhances dash without another active flight");
+        check(!has(player, WindSpiritPerks.LONG_POUNCE) && !has(player, original("perks/ocelot_long_pounce_flight")), "long pounce enhances dash without another active flight");
         for (String suffix : List.of("metabolism_1", "metabolism_2", "metabolic_overload", "long_pounce"))
             check(!has(player, original("perks/ocelot_" + suffix)), "native conflicting effect is absent: " + suffix);
         check(has(player, original("perks/ocelot_ambush")) && has(player, original("perks/ocelot_hungry_pounce")), "unmodified native combat Perks remain");
@@ -208,7 +208,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         for (Identifier id : List.of(FormIdentifiers.OCELOT_NOVA, original("ocelot_3"), FormIdentifiers.OCELOT_SP, FormIdentifiers.AXOLOTL_SP)) {
             select(player, RegPlayerForms.getPlayerForm(id));
             check(WindSpiritPerks.hungerDiscount(player) == (id.equals(FormIdentifiers.OCELOT_SP) ? 25 : 0), "hunger reduction is isolated: " + id);
-            check(WindSpiritPerks.hasLongPounce(player) == id.equals(FormIdentifiers.OCELOT_SP), "dash enhancement is isolated: " + id);
+            check(!WindSpiritPerks.hasLongPounce(player), "dash enhancement is isolated: " + id);
         }
         TestPlayer fresh = player(); select(fresh, form);
         check(WindSpiritPerks.hungerDiscount(fresh) == 0 && !WindSpiritPerks.hasLongPounce(fresh), "unlearned Wind Spirit receives no free effects");
@@ -236,7 +236,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         check(player.form.formPerkMap.get(tree).equals(all) && player.totalExperience == 1234, "Nova inherits all eight purchases without another payment");
         check(has(player, original("perks/ocelot_armor_2")) && !has(player, original("perks/ocelot_armor_1")), "Nova armor II replaces I");
         check(NovaPerks.hungerDiscount(player) == 25 && !has(player, NovaPerks.METABOLISM_1), "Nova metabolism II replaces I");
-        check(NovaPerks.hasLongPounce(player) && !has(player, original("perks/ocelot_long_pounce_flight")), "Nova passive replaces independent pounce");
+        check(!NovaPerks.hasLongPounce(player) && !has(player, original("perks/ocelot_long_pounce_flight")), "Nova passive replaces independent pounce");
         check(has(player, original("perks/ocelot_ambush")) && has(player, original("perks/ocelot_hungry_pounce")), "Nova keeps native combat Perks");
         check(!WindSpiritPerks.hasLongPounce(player) && WindSpiritPerks.hungerDiscount(player) == 0, "Nova does not use Wind Spirit effects");
         var expected = json("shape-shifter-curse", "perks/ocelot_metabolic_overload").deepCopy();
@@ -281,7 +281,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         for (Identifier id : List.of(FormIdentifiers.OCELOT_SP, original("ocelot_3"), FormIdentifiers.OCELOT_NOVA, FormIdentifiers.AXOLOTL_SP)) {
             select(player, RegPlayerForms.getPlayerForm(id));
             check(NovaPerks.hungerDiscount(player) == (id.equals(FormIdentifiers.OCELOT_NOVA) ? 25 : 0), "Nova hunger effects isolated: " + id);
-            check(NovaPerks.hasLongPounce(player) == id.equals(FormIdentifiers.OCELOT_NOVA), "Nova leap enhancement isolated: " + id);
+            check(!NovaPerks.hasLongPounce(player), "Nova leap enhancement isolated: " + id);
             check(player.form.formPerkMap.get(tree).equals(reversed), "shared ocelot purchases preserved: " + id);
         }
         TestPlayer fresh = player(); select(fresh, form);
@@ -302,8 +302,8 @@ public final class AxolotlSpPerkIntegrationProbe {
         register(SnowFoxSpPerks.ELUSIVE_PAWS, json("my_addon", SnowFoxSpPerks.ELUSIVE_PAWS.getPath()));
         JsonObject nativeJson = json("shape-shifter-curse", nativeDive.getPath());
         JsonObject mappedJson = json("my_addon", SnowFoxSpPerks.FROST_DIVE.getPath());
-        check(nativeJson.getAsJsonObject("key").get("key").getAsString().equals("key.shape-shifter-curse.active_skill_2"),
-                "SSC dive retains its original key 2");
+        check(nativeJson.getAsJsonObject("key").get("key").getAsString().equals("key.shape-shifter-curse.active_skill_1"),
+                "SSC dive now uses key 1");
         check(mappedJson.getAsJsonObject("key").get("key").getAsString().equals("key.shape-shifter-curse.active_skill_3"),
                 "SP dive uses key 3 rather than either SP combat key");
         JsonObject expected = nativeJson.deepCopy();
@@ -612,7 +612,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         JsonObject root = json("my_addon", AxolotlSpPerks.TIDAL_PULL.getPath());
         JsonObject charge = root.getAsJsonObject("charge");
         check(charge.getAsJsonObject("key").get("key").getAsString().equals("key.shape-shifter-curse.active_skill_3"), "tidal pull is key 3");
-        check(charge.getAsJsonObject("start_action").get("value").getAsInt() == -20, "tidal pull prepays 20");
+        check(charge.getAsJsonObject("start_action").get("value").getAsInt() == -5, "tidal pull prepays five while requiring twenty");
         check(charge.getAsJsonObject("start_condition").get("compare_to").getAsInt() == 20, "tidal pull requires 20");
         check(charge.getAsJsonObject("tier0_use_action").get("distance").getAsInt() == 20
                 && charge.get("tier0_cooldown").getAsInt() == 20, "tidal pull is 20 blocks / 1 second");

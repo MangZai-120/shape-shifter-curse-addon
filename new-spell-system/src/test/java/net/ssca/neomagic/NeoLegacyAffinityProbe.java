@@ -44,7 +44,7 @@ public final class NeoLegacyAffinityProbe {
     private static NeoRuntime.Active active(ServerPlayerEntity p,Blueprint b,LivingEntity target){
         var q=NeoLegacyCasting.blueprintQuote(p,b);var s=new Session(b,q);s.complete=true;s.paid=q.actual();
         var r=new NeoState.Experiment();r.blueprint=b;r.paid=s.paid;r.dimension=p.getWorld().getRegistryKey().getValue().toString();
-        var a=new NeoRuntime.Active(s,r,new ItemStack(NeoMagic.WAND),Hand.MAIN_HAND,
+        var a=new NeoRuntime.Active(s,r,new ItemStack(net.ssca.neomagic.NeoTestFixtures.WAND),Hand.MAIN_HAND,
                 new NeoEffects.Anchor(target==null?p.getPos():target.getPos(),target==null?null:target.getUuid()),new Random(0));
         a.powerMultiplier=NeoLegacyCasting.blueprintPower(p,b);NeoLegacyCasting.snapshotBlueprintAffinity(p,a);return a;
     }
@@ -57,9 +57,9 @@ public final class NeoLegacyAffinityProbe {
         book(familiar,false);
         near(NeoLegacyCasting.blueprintQuote(familiar,fire).actual(),NeoRules.quote(fire,0).actual()*1.05,"Body style remains; book-only affinity stops without book");
         book(familiar,true);
-        var wand=new ItemStack(NeoMagic.WAND);wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(new Blueprint("real",Core.THERMAL,Carrier.PROJECTILE,List.of(),Core.FROST,1,20,16)));
-        familiar.setStackInHand(Hand.MAIN_HAND,wand);NeoRuntime.data(familiar).known.addAll(NeoMagic.SAMPLES.keySet());NeoRuntime.data(familiar).burden=0;
-        NeoRuntime.start(familiar,Hand.MAIN_HAND);var started=NeoRuntime.ACTIVE.get(familiar.getUuid());
+        var wand=new ItemStack(net.ssca.neomagic.NeoTestFixtures.WAND);wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(new Blueprint("real",Core.THERMAL,Carrier.PROJECTILE,List.of(),Core.FROST,1,20,16)));
+        familiar.setStackInHand(Hand.MAIN_HAND,wand);NeoRuntime.data(familiar).known.addAll(net.ssca.neomagic.NeoTestFixtures.SAMPLES.keySet());NeoRuntime.data(familiar).burden=0;
+        net.ssca.neomagic.NeoTestFixtures.start(familiar,Hand.MAIN_HAND);var started=NeoRuntime.ACTIVE.get(familiar.getUuid());
         check(started!=null&&started.legacyBook,"Production start snapshots equipped-book eligibility");
         near(started.session.quote.actual(),NeoRules.quote(started.session.blueprint,0).actual()*.85*1.05,"Production quote retains both layers after native mana payment");
         NeoRuntime.cancel(familiar,"probe_cancel");check(started.refundCastId==null&&!started.legacyReleased,"Cancelled preparation never opens refund budget or grants release bonus");

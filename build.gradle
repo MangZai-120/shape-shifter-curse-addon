@@ -99,6 +99,10 @@ tasks.register('neoMagicWorldTest', JavaExec) {
     classpath = sourceSets.test.runtimeClasspath
     mainClass = 'net.ssca.neomagic.NeoWorldTest'
     systemProperty 'neomagic.bookCutover', project.findProperty('neoBookCutover') ?: 'false'
+    systemProperty 'neomagic.instinctAnchor', project.findProperty('neoInstinctAnchor') ?: 'false'
+    systemProperty 'neomagic.moonDustPotions', project.findProperty('neoMoonDustPotions') ?: 'false'
+    systemProperty 'neomagic.formScale', project.findProperty('neoFormScale') ?: 'false'
+    systemProperty 'neomagic.upstreamCompatibility', project.findProperty('neoUpstreamCompatibility') ?: 'false'
     systemProperty 'neomagic.formCasting', project.findProperty('neoFormCasting') ?: 'false'
     systemProperty 'neomagic.domainSuppression', project.findProperty('neoDomainSuppression') ?: 'false'
     systemProperty 'neomagic.frostLink', project.findProperty('neoFrostLink') ?: 'false'
@@ -171,6 +175,34 @@ tasks.register('neoMagicVisualTest', JavaExec) {
         if ((project.findProperty('neoNightmareLive') ?: 'false').toString().toBoolean() && !new File(workingDir,'nightmare-result.json').isFile()) throw new GradleException('Nightmare client acceptance did not finish; inspect the live log.')
         if ((project.findProperty('neoCourtLive') ?: 'false').toString().toBoolean() && !new File(workingDir,'court-result.json').isFile()) throw new GradleException('Court client acceptance did not finish; inspect the live log.')
         if ((project.findProperty('neoChargeSoundLive') ?: 'false').toString().toBoolean() && !new File(workingDir,'charge-sound-result.json').isFile()) throw new GradleException('Charge sound acceptance did not finish; inspect the live log.')
+    }
+}
+
+tasks.register('instinctAnchorClientTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.ssca.neomagic.NeoVisualTest'
+    workingDir = layout.buildDirectory.dir('instinct-anchor/client-test').get().asFile
+    maxHeapSize = '2G'
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'neomagic.clientProbe', project.findProperty('neoClientProbe') ?: 'net.jackcooper.shapeShifterCurseAddon.client.InstinctAnchorClientProbe'
+    systemProperty 'neomagic.assets', new File(System.getProperty('user.home'), '.gradle/caches/fabric-loom/assets').absolutePath
+    systemProperty 'fabric.remapClasspathFile', new File(project.projectDir, '.gradle/loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        if (systemProperties['neomagic.clientProbe'] == 'net.jackcooper.shapeShifterCurseAddon.client.PotionTubeViewerClientProbe') {
+            new File(workingDir, 'tube-viewer-result.json').delete()
+        }
+        def cpFile = new File(workingDir, 'classpath.txt')
+        cpFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', cpFile.absolutePath
+    }
+    doLast {
+        if (systemProperties['neomagic.clientProbe'] == 'net.jackcooper.shapeShifterCurseAddon.client.PotionTubeViewerClientProbe') {
+            def result = new File(workingDir, 'tube-viewer-result.json')
+            if (!result.isFile()) throw new GradleException('Viewer client stopped before completing recipe-index checks')
+        }
     }
 }
 
@@ -288,6 +320,10 @@ dependencies {
     modCompileOnly "me.shedaniel:RoughlyEnoughItems-default-plugin-fabric:12.1.785"
     // JEI 配方查看器（可选依赖）
     modCompileOnly "curse.maven:jei-238222:8622779" // Fr 1.20.1 JEI（与主包同源同版本）
+    // 独立实机回归可指定本地查看器目录；默认构建不附带或强制安装任何查看器。
+    if (project.hasProperty('neoViewerMods')) {
+        modLocalRuntime fileTree(dir: project.property('neoViewerMods'), include: '*.jar')
+    }
     // Optional animation compatibility; Carry On is never bundled or required at runtime.
     modCompileOnly "curse.maven:carry-on-274259:4882498"
     // EMI 配方查看器（可选依赖；本地 libs 手动引入——terraformersmc maven 重定向的 sleeping.town 网络不可达）

@@ -61,7 +61,7 @@ public final class SscAddonForms {
 		Form_FamiliarFox3 familiarFoxForm = new Form_FamiliarFox3(FormIdentifiers.FAMILIAR_FOX_SP);
 		familiarFoxForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 四足形态变身后重置玩家缩放到本形态大小（原版体型上调后，使魔SP 同步放大到 0.6）
-		familiarFoxForm.applyScale(0.6f, 0.6f);
+		familiarFoxForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.6f, 0.6f)).OverwriteEyeScale(0.6f);
 		familiarFoxForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_FamiliarFox3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(familiarFoxForm);
@@ -71,7 +71,7 @@ public final class SscAddonForms {
 		Form_FamiliarFox3 upgradeFamiliarFoxForm = new Form_FamiliarFox3(FormIdentifiers.UPGRADE_FAMILIAR_FOX);
 		upgradeFamiliarFoxForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 进化使魔为四足形态，变身后重置玩家缩放到本形态大小（对齐原版 FAMILIAR_FOX_3 新体型 0.55）
-		upgradeFamiliarFoxForm.applyScale(0.55f, 0.6f);
+		upgradeFamiliarFoxForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.55f, 0.6f)).OverwriteEyeScale(0.6f);
 		upgradeFamiliarFoxForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_FamiliarFox3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(upgradeFamiliarFoxForm);
@@ -83,7 +83,7 @@ public final class SscAddonForms {
 		Form_FamiliarFox3 mancianimaForm = new Form_FamiliarFox3(FormIdentifiers.FAMILIAR_FOX_MANCIANIMA);
 		mancianimaForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 四足形态变身后重置玩家缩放到本形态大小（对齐原版 FAMILIAR_FOX_3 新体型 0.55）
-		mancianimaForm.applyScale(0.55f, 0.6f);
+		mancianimaForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.55f, 0.6f)).OverwriteEyeScale(0.6f);
 		mancianimaForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_FamiliarFox3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(mancianimaForm);
@@ -92,7 +92,7 @@ public final class SscAddonForms {
 		Form_FamiliarFoxRed familiarFoxRedForm = new Form_FamiliarFoxRed(FormIdentifiers.FAMILIAR_FOX_RED);
 		familiarFoxRedForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 四足形态变身后重置玩家缩放到本形态大小（原本就比基准大，等倍率放大后到 0.65）
-		familiarFoxRedForm.applyScale(0.65f, 0.6f);
+		familiarFoxRedForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.65f, 0.6f)).OverwriteEyeScale(0.6f);
 		familiarFoxRedForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_FamiliarFox3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(familiarFoxRedForm);
@@ -101,7 +101,7 @@ public final class SscAddonForms {
 		Form_SnowFoxSP snowFoxForm = new Form_SnowFoxSP(FormIdentifiers.SNOW_FOX_SP);
 		snowFoxForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 四足形态变身后重置玩家缩放到本形态大小（对齐原版 SNOW_FOX_3 新体型 0.55，eye_scale 保持 0.6 以支持潜行过半格）
-		snowFoxForm.applyScale(0.55f, 0.6f);
+		snowFoxForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.55f, 0.6f)).OverwriteEyeScale(0.6f);
 		snowFoxForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_SnowFox3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(snowFoxForm);
@@ -111,7 +111,7 @@ public final class SscAddonForms {
 		Form_SnowFoxSP frostspineForm = new Form_SnowFoxSP(FormIdentifiers.SNOW_FOX_FROSTSPINE);
 		frostspineForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 缩放与雪狐SP一致（对齐原版 SNOW_FOX_3 体型 0.55，eye_scale 0.6 支持潜行过半格）
-		frostspineForm.applyScale(0.55f, 0.6f);
+		frostspineForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.55f, 0.6f)).OverwriteEyeScale(0.6f);
 		frostspineForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_SnowFox3PerkTree);
 		RegPlayerForms.registerPlayerForm(frostspineForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_snow_fox_frostspine")).registerForm(1, 7, frostspineForm));
@@ -127,7 +127,7 @@ public final class SscAddonForms {
 		wildCatForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		wildCatForm.canSneakRush = true;
 		// 四足形态变身后重置玩家缩放到本形态大小（值与原版野猫 form_feral_cat_sp_scale 一致）
-		wildCatForm.applyScale(0.55f, 0.6f);
+		wildCatForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.55f, 0.6f)).OverwriteEyeScale(0.6f);
 
 		RegPlayerForms.registerPlayerForm(wildCatForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_wild_cat_sp")).registerForm(1, 5, wildCatForm));
@@ -139,7 +139,7 @@ public final class SscAddonForms {
 		nightmareForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		nightmareForm.canSneakRush = true;
 		// 缩放与月光魅影一致（原版野猫 form_feral_cat_sp_scale 同值）
-		nightmareForm.applyScale(0.55f, 0.6f);
+		nightmareForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.55f, 0.6f)).OverwriteEyeScale(0.6f);
 		RegPlayerForms.registerPlayerForm(nightmareForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_wild_cat_nightmare")).registerForm(1, 5, nightmareForm));
 
@@ -149,7 +149,7 @@ public final class SscAddonForms {
 		// 标记为 FERAL 四足兽体——原版 AdjustItemHoldFeatureRendererMixin/MouthItemFeature 依此把副手物品渲染到背上而非手臂
 		ocelotSpForm.bodyType(PlayerFormBodyType.FERAL);
 		// 缩放与原版豹猫 ocelot_3 一致（RegPlayerForms 里 OCELOT_3 用 0.75f/0.6f）
-		ocelotSpForm.applyScale(0.75f, 0.6f);
+		ocelotSpForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.75f, 0.6f)).OverwriteEyeScale(0.6f);
 		ocelotSpForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Ocelot3PerkTree);
 		RegPlayerForms.registerPlayerForm(ocelotSpForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_ocelot_wind_spirit")).registerForm(1, 5, ocelotSpForm));
@@ -160,7 +160,7 @@ public final class SscAddonForms {
 		// 标记为 FERAL 四足兽体——与风灵同理，触发原版副手→背渲染
 		ocelotNovaForm.bodyType(PlayerFormBodyType.FERAL);
 		// 缩放与原版豹猫 ocelot_3 一致（与风灵相同 0.75f/0.6f）
-		ocelotNovaForm.applyScale(0.75f, 0.6f);
+		ocelotNovaForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.75f, 0.6f)).OverwriteEyeScale(0.6f);
 		ocelotNovaForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Ocelot3PerkTree);
 		RegPlayerForms.registerPlayerForm(ocelotNovaForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_ocelot_nova")).registerForm(1, 5, ocelotNovaForm));
@@ -178,7 +178,7 @@ public final class SscAddonForms {
 		anubisWolfForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		anubisWolfForm.canSneakRush = true;
 		// 四足形态变身后重置玩家缩放到本形态大小（值与 origin power form_anubis_wolf_3_scale 一致）
-		anubisWolfForm.applyScale(0.8f, 0.6f);
+		anubisWolfForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.8f, 0.6f)).OverwriteEyeScale(0.6f);
 		anubisWolfForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_AnubisWolf3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(anubisWolfForm);
@@ -189,7 +189,7 @@ public final class SscAddonForms {
 		goldenSandstormForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		goldenSandstormForm.canSneakRush = true;
 		// 金沙岚复用阿努比斯之狼四足模型，缩放与原版 ANUBIS_WOLF_3 一致(scale=0.8, eye_scale=0.6)
-		goldenSandstormForm.applyScale(0.8f, 0.6f);
+		goldenSandstormForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.8f, 0.6f)).OverwriteEyeScale(0.6f);
 		goldenSandstormForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_AnubisWolf3PerkTree);
 		RegPlayerForms.registerPlayerForm(goldenSandstormForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_golden_sandstorm_sp")).registerForm(1, 12, goldenSandstormForm));

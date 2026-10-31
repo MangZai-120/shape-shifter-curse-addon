@@ -25,7 +25,7 @@
     },
     "start_action": {
       "type": "apoli:gain_air",
-      "value": -20
+      "value": -5
     },
     "tier0_enable": true,
     "tier0_charge_time": 0,

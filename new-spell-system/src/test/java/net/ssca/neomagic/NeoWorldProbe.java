@@ -23,6 +23,7 @@ public final class NeoWorldProbe {
     private static void check(boolean value,String message){checks++;if(!value)throw new AssertionError(message);}
     public static void run() throws Exception {
         for(ModInitializer mod:FabricLoader.getInstance().getEntrypoints("main",ModInitializer.class))mod.onInitialize();
+        if(Boolean.getBoolean("neomagic.formScale"))NeoFormScaleProbe.capture();
         boolean stability=Boolean.getBoolean("neomagic.stability"),resume=Boolean.getBoolean("neomagic.resume");
         Path marker=Path.of("last-world.txt");
         String name=stability&&resume?Files.readString(marker).trim():"neo-"+System.currentTimeMillis();
@@ -35,6 +36,10 @@ public final class NeoWorldProbe {
         var test=stability?new TestFunction("neomagic","stability_soak","ssca_neomagic:empty",Integer.getInteger("neomagic.soakTicks",2400)*3+3000,0,true,NeoStabilityWorldProbe::start)
                 :new TestFunction("neomagic","world_lifecycle","ssca_neomagic:empty",300,0,true,NeoWorldProbe::test);
         if(Boolean.getBoolean("neomagic.bookCutover"))test=new TestFunction("neomagic","book_cutover","ssca_neomagic:empty",300,0,true,NeoBookWorldProbe::start);
+        if(Boolean.getBoolean("neomagic.instinctAnchor"))test=new TestFunction("neomagic","instinct_anchor","ssca_neomagic:empty",300,0,true,net.jackcooper.shapeShifterCurseAddon.item.InstinctAnchorWorldProbe::start);
+        if(Boolean.getBoolean("neomagic.moonDustPotions"))test=new TestFunction("neomagic","moon_dust_potions","ssca_neomagic:empty",300,0,true,net.jackcooper.shapeShifterCurseAddon.item.MoonDustPotionWorldProbe::start);
+        if(Boolean.getBoolean("neomagic.formScale"))test=new TestFunction("neomagic","form_scale","ssca_neomagic:empty",300,0,true,NeoFormScaleProbe::start);
+        if(Boolean.getBoolean("neomagic.upstreamCompatibility"))test=new TestFunction("neomagic","upstream_compatibility","ssca_neomagic:empty",400,0,true,net.jackcooper.shapeShifterCurseAddon.compat.UpstreamCompatibilityWorldProbe::start);
         if(Boolean.getBoolean("neomagic.formCasting"))test=new TestFunction("neomagic","form_casting","ssca_neomagic:empty",900,0,true,NeoFormCastingProbe::start);
         if(Boolean.getBoolean("neomagic.domainSuppression"))test=new TestFunction("neomagic","domain_suppression","ssca_neomagic:empty",160,0,true,NeoDomainSuppressionProbe::start);
         if(Boolean.getBoolean("neomagic.frostLink"))test=new TestFunction("neomagic","frost_link","ssca_neomagic:empty",250,0,true,NeoFrostSpellLinkProbe::start);
@@ -54,7 +59,7 @@ public final class NeoWorldProbe {
     private static NeoRuntime.Active active(ServerPlayerEntity p,Blueprint b,Vec3d point,Entity target) {
         var q=quote(b,0,NeoRules.cost(b.core()));var s=new Session(b,q);s.complete=true;s.paid=q.actual();
         var r=new NeoState.Experiment();r.blueprint=b;r.actual=q.actual();r.normal=q.normal();r.form=NeoRuntime.form(p);r.dimension=p.getWorld().getRegistryKey().getValue().toString();
-        return new NeoRuntime.Active(s,r,new ItemStack(NeoMagic.WAND),Hand.MAIN_HAND,new NeoEffects.Anchor(point,target==null?null:target.getUuid()),new java.util.Random(0));
+        return new NeoRuntime.Active(s,r,new ItemStack(net.ssca.neomagic.NeoTestFixtures.WAND),Hand.MAIN_HAND,new NeoEffects.Anchor(point,target==null?null:target.getUuid()),new java.util.Random(0));
     }
     private static void test(TestContext test) {
         ServerPlayerEntity p=test.createMockCreativeServerPlayerInWorld();p.changeGameMode(net.minecraft.world.GameMode.SURVIVAL);
@@ -65,7 +70,7 @@ public final class NeoWorldProbe {
             var world=test.getWorld();
             Vec3d origin=test.getAbsolutePos(new BlockPos(3,2,3)).toCenterPos();p.refreshPositionAndAngles(origin.x,origin.y,origin.z,0,0);
             for(BlockPos pos:BlockPos.iterate(BlockPos.ofFloored(origin).add(-6,-1,-6),BlockPos.ofFloored(origin).add(6,-1,6)))world.setBlockState(pos,Blocks.STONE.getDefaultState());
-            NeoRuntime.refreshForm(p);var d=NeoRuntime.data(p);d.known.addAll(NeoMagic.SAMPLES.keySet());
+            NeoRuntime.refreshForm(p);var d=NeoRuntime.data(p);d.known.addAll(net.ssca.neomagic.NeoTestFixtures.SAMPLES.keySet());
             d.burden=150;NeoRuntime.relieve(p,20);check(d.burden==130,"Potion relief consumes the same C");
             var b=new Blueprint("heal",Core.LUNAR,Carrier.SELF,List.of(),Core.VOID,1,0,4);
             p.setHealth(5);var heal=active(p,b,origin,p);check(NeoEffects.release(p,heal),"Self heal releases");check(p.getHealth()>5&&heal.record.healing>0,"Actual healing and measurement");
@@ -116,9 +121,9 @@ public final class NeoWorldProbe {
             check(NeoEffects.release(p,teleport)&&p.getPos().distanceTo(prior)>0,"Actual space relocation");
             prior=p.getPos();var deviated=active(p,space,origin,p);deviated.session.attenuation=.5;deviated.session.yaw=20;
             check(NeoEffects.release(p,deviated)&&p.getPos().distanceTo(prior)<4,"Teleport attenuation and deviation consumed");
-            d.burden=0;var wand=new ItemStack(NeoMagic.WAND);var timed=new Blueprint("timed",Core.LUNAR,Carrier.SELF,List.of(),Core.VOID,1,40,4);
+            d.burden=0;var wand=new ItemStack(net.ssca.neomagic.NeoTestFixtures.WAND);var timed=new Blueprint("timed",Core.LUNAR,Carrier.SELF,List.of(),Core.VOID,1,40,4);
             wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(timed));p.setStackInHand(Hand.MAIN_HAND,wand);
-            NeoRuntime.start(p,Hand.MAIN_HAND);check(NeoRuntime.ACTIVE.containsKey(p.getUuid()),"Real runtime creates isolated cast");
+            net.ssca.neomagic.NeoTestFixtures.start(p,Hand.MAIN_HAND);check(NeoRuntime.ACTIVE.containsKey(p.getUuid()),"Real runtime creates isolated cast");
             NeoRuntime.cancel(p,"cancelled");check(!NeoRuntime.ACTIVE.containsKey(p.getUuid())&&d.cooldowns.containsKey(timed.identity()),"Cancel ends cast and creates CD");
             craftAuthority(p);
             NeoState.get(p.getServer()).markDirty();world.getPersistentStateManager().save();
@@ -127,19 +132,19 @@ public final class NeoWorldProbe {
         } catch(Throwable failure){failure.printStackTrace();throw new RuntimeException(failure);}
     }
     private static void craftAuthority(ServerPlayerEntity p)throws Exception {
-        BlockPos table=p.getBlockPos().add(-2,0,0);p.getWorld().setBlockState(table,NeoMagic.TABLE.getDefaultState());NeoNetwork.open(p,table);
-        var field=NeoNetwork.class.getDeclaredField("OPEN");field.setAccessible(true);Object context=((Map<?,?>)field.get(null)).get(p.getUuid());
+        BlockPos table=p.getBlockPos().add(-2,0,0);p.getWorld().setBlockState(table,net.ssca.neomagic.NeoTestFixtures.TABLE.getDefaultState());net.ssca.neomagic.NeoResearchFixtures.open(p,table);
+        var field=net.ssca.neomagic.NeoResearchFixtures.class.getDeclaredField("OPEN");field.setAccessible(true);Object context=((Map<?,?>)field.get(null)).get(p.getUuid());
         var tokenMethod=context.getClass().getDeclaredMethod("token");tokenMethod.setAccessible(true);UUID token=(UUID)tokenMethod.invoke(context);
-        var dispatch=NeoNetwork.class.getDeclaredMethod("handle",ServerPlayerEntity.class,NbtCompound.class);dispatch.setAccessible(true);
+        var dispatch=net.ssca.neomagic.NeoResearchFixtures.class.getDeclaredMethod("handle",ServerPlayerEntity.class,NbtCompound.class);dispatch.setAccessible(true);
         var blueprint=new Blueprint("authority",Core.THERMAL,Carrier.PROJECTILE,List.of(),Core.FROST,1,40,8);
         p.getInventory().offerOrDrop(new ItemStack(Items.PAPER));p.getInventory().offerOrDrop(new ItemStack(Items.AMETHYST_SHARD));
         NbtCompound request=new NbtCompound();request.putString("Action","craft");request.putString("Blueprint",NeoState.JSON.toJson(blueprint));request.putUuid("Token",UUID.randomUUID());
-        dispatch.invoke(null,p,request);check(count(p,NeoMagic.BLUEPRINT)==0&&count(p,Items.PAPER)==1,"Wrong session token cannot craft or consume materials");
+        dispatch.invoke(null,p,request);check(count(p,net.ssca.neomagic.NeoTestFixtures.BLUEPRINT)==0&&count(p,Items.PAPER)==1,"Wrong session token cannot craft or consume materials");
         request.putUuid("Token",token);dispatch.invoke(null,p,request);
-        check(count(p,NeoMagic.BLUEPRINT)==1,"Production server action creates real blueprint");
+        check(count(p,net.ssca.neomagic.NeoTestFixtures.BLUEPRINT)==1,"Production server action creates real blueprint");
         int expected=p.isCreative()?1:0;
         check(count(p,Items.PAPER)==expected&&count(p,Items.AMETHYST_SHARD)==expected,"Crafting respects exact survival cost and the GameTest creative player's exemption");
-        dispatch.invoke(null,p,request);check(count(p,NeoMagic.BLUEPRINT)==1,"Repeated action cannot duplicate blueprint");NeoNetwork.close(p);
+        dispatch.invoke(null,p,request);check(count(p,net.ssca.neomagic.NeoTestFixtures.BLUEPRINT)==1,"Repeated action cannot duplicate blueprint");net.ssca.neomagic.NeoResearchFixtures.close(p);
     }
     private static int count(ServerPlayerEntity p,Item item) {
         int total=0;for(int i=0;i<p.getInventory().size();i++)if(p.getInventory().getStack(i).isOf(item))total+=p.getInventory().getStack(i).getCount();return total;

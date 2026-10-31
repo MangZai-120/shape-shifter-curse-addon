@@ -21,7 +21,7 @@ public final class NeoVisualProbe {
                 if(mc.getOverlay()!=null)return;
                 if(tick++%15!=0)return;
                 if(step==0) {
-                    NeoClient.data=new NeoState.PlayerData();NeoClient.data.known.addAll(NeoMagic.SAMPLES.keySet());NeoClient.table=true;
+                    NeoClient.data=new NeoState.PlayerData();NeoClient.data.known.addAll(net.ssca.neomagic.NeoTestFixtures.SAMPLES.keySet());NeoClient.table=true;
                     NeoClient.profile=new Profile(80,1.15,.85,1,1,false);NeoClient.data.form="my_addon:axolotl_fluorescent";
                     NeoClient.data.burden=95;NeoClient.data.hypothesis="分流分配已有作用量；保持其他条件不变。";
                     for(int i=0;i<2;i++) {

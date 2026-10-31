@@ -1,5 +1,9 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin.player;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
+import net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
@@ -28,6 +32,42 @@ public abstract class PlayerInventoryMixin {
 
 	@Shadow
 	public abstract boolean insertStack(ItemStack stack);
+
+	/** 捡拾合并与界面插入共用玩家的试管上限。 */
+	@WrapOperation(method = "canStackAddMore(Lnet/minecraft/item/ItemStack;Lnet/minecraft/item/ItemStack;)Z",
+			at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;getMaxCount()I"))
+	private int ssc_addon$tubePickupMergeLimit(ItemStack existingStack, Operation<Integer> original) {
+		return PotionTestTubes.isFilledTube(existingStack)
+				? PotionTestTubes.stackLimit(existingStack, this.player) : original.call(existingStack);
+	}
+
+	/** 新建接收栈数量为零、物品暂为AIR，必须检查传入试管来决定上限。 */
+	@WrapOperation(method = "addStack(ILnet/minecraft/item/ItemStack;)I",
+			at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;getMaxCount()I"))
+	private int ssc_addon$tubePickupInsertLimit(ItemStack destination, Operation<Integer> original,
+			@Local(argsOnly = true) ItemStack incomingStack) {
+		return PotionTestTubes.isFilledTube(incomingStack)
+				? PotionTestTubes.stackLimit(incomingStack, this.player) : original.call(destination);
+	}
+
+	/** 容器返还走offer，它在调用insertStack前就会按上限拆分。 */
+	@WrapOperation(method = "offer(Lnet/minecraft/item/ItemStack;Z)V",
+			at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;getMaxCount()I"))
+	private int ssc_addon$tubeOfferedStackLimit(ItemStack stack, Operation<Integer> original) {
+		return PotionTestTubes.isFilledTube(stack)
+				? PotionTestTubes.stackLimit(stack, this.player) : original.call(stack);
+	}
+
+	/** 失去power后保留旧超量栈，防止负剩余空间导致物品复制或倒扣。 */
+	@Inject(method = "addStack(ILnet/minecraft/item/ItemStack;)I", at = @At("HEAD"), cancellable = true)
+	private void ssc_addon$guardTubeInsertion(int slot, ItemStack incomingStack, CallbackInfoReturnable<Integer> cir) {
+		if (!PotionTestTubes.isFilledTube(incomingStack)) return;
+		ItemStack existingStack = this.getStack(slot);
+		if (!existingStack.isEmpty() && (!ItemStack.canCombine(existingStack, incomingStack)
+				|| existingStack.getCount() >= PotionTestTubes.stackLimit(incomingStack, this.player))) {
+			cir.setReturnValue(incomingStack.getCount());
+		}
+	}
 
 	/**
 	 * Helper to check if an item is a locked form-exclusive item in a specific slot

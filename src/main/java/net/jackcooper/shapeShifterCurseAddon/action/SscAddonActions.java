@@ -68,6 +68,8 @@ public class SscAddonActions {
 	}
 
 	public static void register() {
+		registerBiEntity(net.jackcooper.shapeShifterCurseAddon.compat.BatEchoFeedback.factory());
+		net.jackcooper.shapeShifterCurseAddon.compat.BatEchoFeedback.registerLifecycle();
 		registerSkillLifecycle("skill_begin", net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns::begin);
 		registerSkillLifecycle("skill_released", net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns::released);
 		registerSkillLifecycle("skill_completed", net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns::completed);

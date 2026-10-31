@@ -3,7 +3,6 @@ package net.ssca.neomagic.client;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.*;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.nbt.NbtCompound;
@@ -52,16 +51,16 @@ public final class NeoClient implements ClientModInitializer {
                 ||!form.toString().equals(state.getString("Form")))return 0;
         long until=state.getLong("NovaQuickCastUntil");return time<until?until:0;
     }
-    public static void action(String action,Blueprint b,String hypothesis,String conclusion,String citations) {
-        if(token==null)return;
-        var n=new NbtCompound();n.putUuid("Token",token);n.putString("Action",action);
-        if(b!=null)n.putString("Blueprint",NeoState.JSON.toJson(b));
-        if(hypothesis!=null)n.putString("Hypothesis",hypothesis);
-        if(conclusion!=null)n.putString("Conclusion",conclusion);
-        if(citations!=null)n.putString("Citations",citations);
-        var packet=PacketByteBufs.create();packet.writeNbt(n);ClientPlayNetworking.send(NeoNetwork.ACTION,packet);
-    }
     @Override public void onInitializeClient() {
+        net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry.ITEM.register(
+                (stack, tint) -> tint != 0 ? -1 : stack.hasNbt() && stack.getNbt().contains("CustomPotionColor")
+                        ? net.minecraft.potion.PotionUtil.getColor(stack) : net.jackcooper.shapeShifterCurseAddon.item.MoonDustReliefItem.COLOR,
+                net.jackcooper.shapeShifterCurseAddon.item.MoonDustReliefItem.VIAL,
+                net.jackcooper.shapeShifterCurseAddon.item.MoonDustReliefItem.BOTTLE,
+                net.jackcooper.shapeShifterCurseAddon.item.MoonDustReliefItem.SPLASH);
+        net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry.ITEM.register(
+                (stack, tint) -> tint == 0 ? net.minecraft.potion.PotionUtil.getColor(stack) : -1,
+                net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes.FILLED);
         net.jackcooper.shapeShifterCurseAddon.spell.FrostSpellLink.clientMultiplier=player->{
             var form=net.jackcooper.shapeShifterCurseAddon.util.FormUtils.getCurrentForm(player);
             return frostMultiplier(hud,form==null?null:form.getFormID(),player.getWorld().getTime());
@@ -70,10 +69,6 @@ public final class NeoClient implements ClientModInitializer {
             var form=net.jackcooper.shapeShifterCurseAddon.util.FormUtils.getCurrentForm(player);
             return novaQuickUntil(hud,form==null?null:form.getFormID(),player.getWorld().getTime());
         };
-        ClientPlayNetworking.registerGlobalReceiver(NeoNetwork.STATE,(client,handler,buf,sender)->{
-            NbtCompound n=buf.readNbt();if(n==null)return;
-            client.execute(()->acceptSnapshot(client,n));
-        });
         ClientPlayNetworking.registerGlobalReceiver(NeoNetwork.HUD,(client,handler,buf,sender)->{var n=buf.readNbt();client.execute(()->{
             if(n!=null&&hud.contains("Form")){
                 boolean newResult=!n.getString("ResultId").equals(hud.getString("ResultId"))||!n.getString("Result").equals(hud.getString("Result"));
@@ -116,8 +111,7 @@ public final class NeoClient implements ClientModInitializer {
                 COSTS.clear();COSTS.putAll(nextCosts);TUNINGS.clear();TUNINGS.putAll(nextTunings);
                 BOOK_EFFECTS.clear();BOOK_EFFECTS.putAll(nextBook);
                 bookEquipped=n.getBoolean("BookEquipped");
-                if(n.getBoolean("Open"))client.setScreen(new NeoScreen());
-                else if(client.currentScreen instanceof NeoScreen screen)screen.updated();
+
                 }catch(RuntimeException malformed){NeoMagic.LOG.warn("Ignoring invalid neomagic research snapshot",malformed);}
     }
     private static void renderHud(DrawContext c,float delta) {

@@ -19,8 +19,8 @@ public final class NeoFormationAudit {
     }
     private static void clear(ItemStack book){for(int i=0;i<6;i++)SpellbookData.setFormation(book,i,ItemStack.EMPTY);}
     private static void prepare(ServerPlayerEntity p,Blueprint b){
-        var d=NeoRuntime.data(p);d.burden=0;d.cooldowns.clear();d.cooldownStarted.clear();d.known.addAll(NeoMagic.SAMPLES.keySet());
-        var wand=new ItemStack(NeoMagic.WAND);wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(b));p.setStackInHand(Hand.MAIN_HAND,wand);
+        var d=NeoRuntime.data(p);d.burden=0;d.cooldowns.clear();d.cooldownStarted.clear();d.known.addAll(net.ssca.neomagic.NeoTestFixtures.SAMPLES.keySet());
+        var wand=new ItemStack(net.ssca.neomagic.NeoTestFixtures.WAND);wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(b));p.setStackInHand(Hand.MAIN_HAND,wand);
     }
     public static void run(TestContext t,ServerPlayerEntity p,ItemStack book)throws Exception {
         SpellbookData.setLevel(book,3);clear(book);var data=NeoRuntime.data(p);double base=NeoRuntime.profile(p).safety();
@@ -56,16 +56,16 @@ public final class NeoFormationAudit {
         data.spellbookMasteryExpTen=60000; // Keep actual effect tests safely below their live N.
         var heal=blueprint(Core.LUNAR);prepare(p,heal);p.setHealth(1);
         SpellbookData.setFormation(book,0,FormationData.create(FormationElement.LUNAR,3));
-        NeoRuntime.start(p,Hand.MAIN_HAND);
+        net.ssca.neomagic.NeoTestFixtures.start(p,Hand.MAIN_HAND);
         near(p.getHealth(),1+9*(1+FormationData.damageBonusPerLevel()*3),"Actual authored healing receives its elemental formation power");
         clear(book);prepare(p,heal);p.setHealth(1);int before=data.spellbookMasteryExpTen;
         double normal=NeoLegacyCasting.blueprintQuote(p,heal).normal();
         SpellbookData.setFormation(book,0,FormationData.create(FormationElement.UNIVERSAL,5,FormationData.VARIANT_EXP));
-        NeoRuntime.start(p,Hand.MAIN_HAND);
+        net.ssca.neomagic.NeoTestFixtures.start(p,Hand.MAIN_HAND);
         int reward=SpellbookData.boostedExpTen((int)Math.round(normal*heal.tier()*FormationData.universalExpMultiplier(5)));
         check(data.spellbookMasteryExpTen-before==reward,"Actual authored release receives the experience formation exactly once");
         var stored=new Blueprint("stored audit",Core.LUNAR,Carrier.SELF,java.util.List.of(Control.STORE),Core.FROST,1,0,8);
-        prepare(p,stored);before=data.spellbookMasteryExpTen;normal=NeoLegacyCasting.blueprintQuote(p,stored).normal();NeoRuntime.start(p,Hand.MAIN_HAND);
+        prepare(p,stored);before=data.spellbookMasteryExpTen;normal=NeoLegacyCasting.blueprintQuote(p,stored).normal();net.ssca.neomagic.NeoTestFixtures.start(p,Hand.MAIN_HAND);
         check(NeoEffects.hasStored(p.getUuid())&&data.spellbookMasteryExpTen==before,"Stored effects defer XP until actual release");
         clear(book);NeoEffects.trigger(p);
         reward=SpellbookData.boostedExpTen((int)Math.round(normal*stored.tier()*FormationData.universalExpMultiplier(5)));
@@ -79,7 +79,7 @@ public final class NeoFormationAudit {
         near(RuneCastContext.with(RuneModifiers.NONE,multiplier,()->blink.getBlinkRange(1)),defaultRange*multiplier,"Named blink range includes formation independently of rune limits");
         near(blink.getBlinkRange(1),defaultRange,"Range context restores after a cast");
         var origin=t.getAbsolutePos(new net.minecraft.util.math.BlockPos(4,3,4)).toCenterPos();p.refreshPositionAndAngles(origin.x,origin.y,origin.z,0,0);
-        NeoRuntime.start(p,Hand.MAIN_HAND);
+        net.ssca.neomagic.NeoTestFixtures.start(p,Hand.MAIN_HAND);
         near(p.getZ()-origin.z,4*multiplier,"Authored spatial release actually travels the enhanced distance");
         clear(book);prepare(p,space);
         net.onixary.shapeShifterCurseFabric.mana.ManaUtils.setManaTypeID(p,net.onixary.shapeShifterCurseFabric.mana.ManaRegistries.FAMILIAR_FOX_MANA);

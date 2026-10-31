@@ -6,10 +6,13 @@ import net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks;
 import net.jackcooper.shapeShifterCurseAddon.item.PortableFridgeItem;
 import net.jackcooper.shapeShifterCurseAddon.item.PortableMoisturizerItem;
 import net.jackcooper.shapeShifterCurseAddon.item.SnowballLauncherItem;
+import net.jackcooper.shapeShifterCurseAddon.item.MoonDustReliefItem;
+import net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes;
 import net.jackcooper.shapeShifterCurseAddon.recipe.*;
 import net.minecraft.item.*;
 import net.minecraft.potion.*;
 import net.minecraft.recipe.Recipe;
+import net.minecraft.registry.Registries;
 import net.minecraft.recipe.RecipeManager;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -25,7 +28,7 @@ public final class SscViewerRecipes {
     public record Crafting(Identifier id, List<List<ItemStack>> grid, ItemStack output,
                            boolean shapeless, boolean dynamic, String note) {
         public int width() { return shapeless ? 2 : 3; }
-        public int height() { return shapeless ? 1 : 3; }
+        public int height() { return shapeless ? Math.max(1, (int)(grid.stream().filter(s -> !s.isEmpty()).count() + 1) / 2) : 3; }
         public List<List<ItemStack>> gridFor(int width) {
             if (!shapeless) return grid;
             var result = emptyGrid(width * width);
@@ -49,7 +52,16 @@ public final class SscViewerRecipes {
 
     public static List<Crafting> examples(Recipe<?> recipe) {
         List<Crafting> result = new ArrayList<>();
-        if (recipe instanceof VenomGlandRecipe) {
+        if (recipe instanceof TestTubeFillingRecipe) {
+            for (ItemStack bottle : PotionTestTubes.fillingBottles()) {
+                var grid = emptyGrid(9);
+                grid.set(0, List.of(bottle));
+                for (int i = 1; i <= 3; i++) grid.set(i, List.of(new ItemStack(PotionTestTubes.EMPTY)));
+                var potionId = Registries.POTION.getId(PotionUtil.getPotion(bottle));
+                result.add(example(recipe, bottle.isOf(MoonDustReliefItem.BOTTLE) ? "moon_dust" : potionId.getNamespace() + "/" + potionId.getPath(),
+                        grid, PotionTestTubes.divide(bottle), true, true, "test_tube_filling"));
+            }
+        } else if (recipe instanceof VenomGlandRecipe) {
             var grid = emptyGrid(9);
             for (int i = 0; i < 9; i++) grid.set(i, List.of(new ItemStack(Items.SPIDER_EYE)));
             grid.set(4, potions(Potions.POISON, Potions.LONG_POISON, Potions.STRONG_POISON));
@@ -152,7 +164,10 @@ public final class SscViewerRecipes {
             brew("infinite_splash", SscAddon.INFINITE_ENERGY_POTION, Items.GUNPOWDER, SscAddon.INFINITE_ENERGY_POTION_SPLASH),
             brew("infinite_lingering", SscAddon.INFINITE_ENERGY_POTION_SPLASH, Items.DRAGON_BREATH, SscAddon.INFINITE_ENERGY_POTION_LINGERING),
             brew("universal_splash", SscAddon.UNIVERSAL_ENERGY_POTION, Items.GUNPOWDER, SscAddon.UNIVERSAL_ENERGY_POTION_SPLASH),
-            brew("universal_lingering", SscAddon.UNIVERSAL_ENERGY_POTION_SPLASH, Items.DRAGON_BREATH, SscAddon.UNIVERSAL_ENERGY_POTION_LINGERING));
+            brew("universal_lingering", SscAddon.UNIVERSAL_ENERGY_POTION_SPLASH, Items.DRAGON_BREATH, SscAddon.UNIVERSAL_ENERGY_POTION_LINGERING),
+            new Brewing(new Identifier("ssc_addon", "moon_dust_bottle"), PotionUtil.setPotion(new ItemStack(Items.POTION), Potions.AWKWARD),
+                    new ItemStack(RegCustomItem.UNTREATED_MOONDUST), new ItemStack(MoonDustReliefItem.BOTTLE)),
+            brew("moon_dust_splash", MoonDustReliefItem.BOTTLE, Items.GUNPOWDER, MoonDustReliefItem.SPLASH));
     }
 
     private static Brewing brew(String path, Item input, Item ingredient, Item output) {

@@ -11,6 +11,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import net.jackcooper.shapeShifterCurseAddon.item.UniversalEnergyPotionItem;
+import net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes;
 import net.jackcooper.shapeShifterCurseAddon.item.WitherPotionItem;
 import net.onixary.shapeShifterCurseFabric.additional_power.ModifyPotionStackPower;
 import org.spongepowered.asm.mixin.Final;
@@ -28,7 +29,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 在 {@code Slot.getMaxItemCount(ItemStack)} 的 RETURN 处根据槽位所属玩家抬升堆叠上限。
  * 仅影响 GUI 槽位堆叠（含双击合并 / shift 移动）；地面捡拾/箱子同原版药水仍为 1/格。
  */
-@Mixin(Slot.class)
+@Mixin(value = Slot.class, priority = 900)
 public abstract class WitherPotionStackMixin {
 
 	@Shadow
@@ -38,6 +39,11 @@ public abstract class WitherPotionStackMixin {
 	@Inject(method = "getMaxItemCount(Lnet/minecraft/item/ItemStack;)I", at = @At("RETURN"), cancellable = true)
 	private void ssc_addon$addonPotionStack(ItemStack stack, CallbackInfoReturnable<Integer> cir) {
 		if (!(this.inventory instanceof PlayerInventory playerInventory)) {
+			return;
+		}
+		if (PotionTestTubes.isFilledTube(stack)) {
+			// 在原版 SSC 的药水上限之后统一收口，月尘与普通药液采用相同资格。
+			cir.setReturnValue(PotionTestTubes.stackLimit(stack, playerInventory.player));
 			return;
 		}
 		if (stack.getItem() instanceof WitherPotionItem) {

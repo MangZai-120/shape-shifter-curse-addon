@@ -97,15 +97,15 @@ public final class NeoProjectileAffinityProbe {
             near(falling.getY(),origin.y,"Faster meteor still lands at original target height");
 
             var b=new Blueprint("fast bolt",Core.THERMAL,Carrier.PROJECTILE,List.of(),Core.FROST,1,0,20);
-            var data=NeoRuntime.data(player);data.known.addAll(NeoMagic.SAMPLES.keySet());
+            var data=NeoRuntime.data(player);data.known.addAll(net.ssca.neomagic.NeoTestFixtures.SAMPLES.keySet());
             player.setAir(10);var baseQuote=NeoRules.quote(b,data.mastery(b));
             near(NeoLegacyCasting.blueprintQuote(player,b).actual(),baseQuote.actual()*1.05,"Blueprint preview includes surcharge");
-            var wand=new ItemStack(NeoMagic.WAND);wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(b));player.setStackInHand(Hand.MAIN_HAND,wand);
+            var wand=new ItemStack(net.ssca.neomagic.NeoTestFixtures.WAND);wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(b));player.setStackInHand(Hand.MAIN_HAND,wand);
             Vec3d direction=Vec3d.fromPolar(player.getPitch(),player.getYaw());
             var victim=EntityType.PIG.create(player.getServerWorld());victim.setAiDisabled(true);victim.setNoGravity(true);
             Vec3d at=player.getEyePos().add(direction.multiply(25)).add(0,-victim.getHeight()*.5,0);
             victim.refreshPositionAndAngles(at.x,at.y,at.z,0,0);player.getServerWorld().spawnEntity(victim);
-            NeoRuntime.start(player,Hand.MAIN_HAND);var record=data.records.get(0);
+            net.ssca.neomagic.NeoTestFixtures.start(player,Hand.MAIN_HAND);var record=data.records.get(0);
             check(player.getAir()==0&&record.moistureSpent==10,"Production blueprint debits and records ten wetness once");
             near(record.actual,baseQuote.actual()*1.05,"Production blueprint retains surcharge after payment");
             for(int i=0;i<18;i++)NeoEffects.tick(player.getServer());

@@ -6,6 +6,7 @@ import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.PotionItem;
+import net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes;
 import net.onixary.shapeShifterCurseFabric.additional_power.ModifyPotionStackPower;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
@@ -30,6 +31,9 @@ public class CreativePotionStackMixin {
 			require = 0
 	)
 	private int ssc_addon$potionCreativeStackLimit(ItemStack stack, Operation<Integer> original) {
+		if (PotionTestTubes.isFilledTube(stack)) {
+			return PotionTestTubes.stackLimit(stack, MinecraftClient.getInstance().player);
+		}
 		if (stack.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.WitherPotionItem) {
 			return Math.max(net.jackcooper.shapeShifterCurseAddon.item.WitherPotionItem
 					.getStackLimitFor(MinecraftClient.getInstance().player), original.call(stack));

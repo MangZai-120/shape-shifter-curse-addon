@@ -35,6 +35,10 @@ public final class NovaPerks {
     public static boolean loadMapped(NormalPerk perk, PlayerEntity player, IForm form) {
         if (!isNova(form)) return false;
         Identifier id = perk.getID();
+        if (SscPerkIds.OCELOT_LONG_POUNCE.equals(id)) {
+            FormUtils.removePower(player, LONG_POUNCE, form.getFormLayer().getRight());
+            return true;
+        }
         if (!(RegPerks.P_OcelotArmor_1.equals(id) || RegPerks.P_OcelotArmor_2.equals(id)
                 || RegPerks.P_OcelotMetabolism_1.equals(id) || RegPerks.P_OcelotMetabolism_2.equals(id)
                 || RegPerks.P_OcelotMetabolicOverload.equals(id) || SscPerkIds.OCELOT_LONG_POUNCE.equals(id))) return false;
@@ -56,7 +60,8 @@ public final class NovaPerks {
     }
 
     public static boolean hasLongPounce(PlayerEntity player) {
-        return player != null && isNova(FormUtils.getPlayerForm(player)) && has(player, LONG_POUNCE);
+        // 上游节点已移除，用户确认暂时停用；旧存档残留也不能继续提供强化。
+        return false;
     }
 
     private static boolean has(PlayerEntity player, Identifier id) {

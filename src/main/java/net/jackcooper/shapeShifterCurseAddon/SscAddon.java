@@ -226,6 +226,8 @@ public class SscAddon implements ModInitializer {
 	public static final EntityType<LaserBeamEntity> LASER_BEAM_ENTITY =
 			registerEntity("laser_beam", SpawnGroup.MISC, LaserBeamEntity::new, 0.5f, 0.5f, 96, 1);
 	public static final Item SP_UPGRADE_THING = new SpUpgradeItem(new Item.Settings().maxCount(1));
+	public static final Item INSTINCT_ANCHOR = new InstinctAnchorItem(new Item.Settings().maxCount(16).rarity(Rarity.UNCOMMON), true);
+	public static final Item INSTINCT_RELEASE = new InstinctAnchorItem(new Item.Settings().maxCount(16).rarity(Rarity.UNCOMMON), false);
 	public static final Item PORTABLE_MOISTURIZER = new PortableMoisturizerItem(new Item.Settings().maxCount(1));
 	public static final EntityType<WaterSpearEntity> WATER_SPEAR_ENTITY =
 			registerEntity("water_spear", SpawnGroup.MISC, WaterSpearEntity::new, 0.5f, 0.5f, 4, 20);
@@ -344,6 +346,8 @@ public class SscAddon implements ModInitializer {
 					.icon(() -> new ItemStack(SP_UPGRADE_THING))
 					.entries((displayContext, entries) -> {
 						entries.add(SP_UPGRADE_THING);
+						entries.add(INSTINCT_ANCHOR);
+						entries.add(INSTINCT_RELEASE);
 						entries.add(MOON_DUST_SPELLBOOK);
 					// 魔法卷轴/增强法阵已迁往专属页 SSC_SPELL_GROUP（法术页，图标空白法阵纸）
 					entries.add(FORMATION_INK_NORMAL);
@@ -406,6 +410,12 @@ public class SscAddon implements ModInitializer {
 					.icon(() -> new ItemStack(BLANK_FORMATION_PAPER))
 					.entries((displayContext, entries) -> {
 						// 每个已注册魔法生成全套等级卷轴（1-5 级对应白/绿/蓝/紫/橙品质）
+						entries.add(net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes.EMPTY);
+						var moonTube = net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes.divide(new ItemStack(net.jackcooper.shapeShifterCurseAddon.item.MoonDustReliefItem.BOTTLE));
+						moonTube.setCount(1);
+						entries.add(moonTube);
+						entries.add(net.jackcooper.shapeShifterCurseAddon.item.MoonDustReliefItem.BOTTLE);
+						entries.add(net.jackcooper.shapeShifterCurseAddon.item.MoonDustReliefItem.SPLASH);
 						for (net.jackcooper.shapeShifterCurseAddon.spell.Spell spell :
 								net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.all()) {
 							for (int lv = 1; lv <= spell.getMaxLevel(); lv++) {
@@ -445,6 +455,7 @@ public class SscAddon implements ModInitializer {
 		registerConfig();
 		registerStatusEffects();
 		registerItems();
+		net.jackcooper.shapeShifterCurseAddon.util.InstinctAnchors.init();
 		// 月尘魔法系统：注册所有内置魔法
 		net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.init();
 		// 通用增强法阵：形态能量 → 书法术值转化 tick（jackcooper）
@@ -462,6 +473,7 @@ public class SscAddon implements ModInitializer {
 		registerEntityAttributes();
 		registerApoliSystems();
 		SscAddonForms.register();
+		net.jackcooper.shapeShifterCurseAddon.compat.OriginPowerCompatibility.register();
 		registerCommands();
 		SscAddonServerEvents.registerTickHandlers();
 		WitchFamiliarSpawnHandler.register();
@@ -545,6 +557,8 @@ public class SscAddon implements ModInitializer {
 
 	private void registerItems() {
 		registerItem("sp_upgrade_thing", SP_UPGRADE_THING);
+		registerItem("instinct_anchor", INSTINCT_ANCHOR);
+		registerItem("instinct_release", INSTINCT_RELEASE);
 		registerItem("portable_moisturizer", PORTABLE_MOISTURIZER);
 		registerItem("snowball_launcher", SNOWBALL_LAUNCHER);
 		registerItem("portable_fridge", PORTABLE_FRIDGE);

@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "bottle_relief": 60.0,
+  "splash_relief": 35.0,
+  "bottle_drink_ticks": 40,
+  "throw_cooldown_ticks": 10
+}

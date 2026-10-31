@@ -18,6 +18,7 @@ import net.onixary.shapeShifterCurseFabric.additional_power.ModifyPotionStackPow
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.item.AllayJukeboxItem;
 import net.jackcooper.shapeShifterCurseAddon.item.PotionBagItem;
+import net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes;
 import net.jackcooper.shapeShifterCurseAddon.item.UniversalEnergyPotionItem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -80,7 +81,7 @@ public abstract class ScreenHandlerMixin {
 					if (actionType == SlotActionType.PICKUP) {
 						ItemStack cursorStack = this.getCursorStack();
 						if (!cursorStack.isEmpty() && PotionBagItem.isStorable(cursorStack)
-								&& PotionBagItem.insertIntoBag(stack, cursorStack) > 0) {
+								&& PotionBagItem.insertIntoBag(stack, cursorStack, player) > 0) {
 							player.playSound(SoundEvents.ITEM_BUNDLE_INSERT, 0.8F,
 									0.8F + player.getWorld().getRandom().nextFloat() * 0.4F);
 							slot.markDirty();
@@ -131,7 +132,9 @@ public abstract class ScreenHandlerMixin {
 			return false;
 		}
 		int maxStack;
-		if (cursor.getItem() instanceof PotionItem) {
+		if (PotionTestTubes.isFilledTube(cursor)) {
+			maxStack = PotionTestTubes.stackLimit(cursor, player);
+		} else if (cursor.getItem() instanceof PotionItem) {
 			int n = PowerHolderComponent.getPowers(player, ModifyPotionStackPower.class)
 					.stream().mapToInt(ModifyPotionStackPower::getCount).max().orElse(0);
 			if (n <= 0) {
@@ -196,6 +199,9 @@ public abstract class ScreenHandlerMixin {
 			require = 0
 	)
 	private int ssc_addon$potionStackLimit(ItemStack stack, Operation<Integer> original, @Local(argsOnly = true) PlayerEntity player) {
+		if (PotionTestTubes.isFilledTube(stack)) {
+			return PotionTestTubes.stackLimit(stack, player);
+		}
 		if (stack.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.WitherPotionItem) {
 			return Math.max(net.jackcooper.shapeShifterCurseAddon.item.WitherPotionItem.getStackLimitFor(player), original.call(stack));
 		}
@@ -232,6 +238,9 @@ public abstract class ScreenHandlerMixin {
 	 */
 	@Unique
 	private int ssc_addon$potionInsertLimit(ItemStack stack, PlayerEntity player) {
+		if (PotionTestTubes.isFilledTube(stack)) {
+			return PotionTestTubes.stackLimit(stack, player);
+		}
 		if (stack.getItem() instanceof UniversalEnergyPotionItem) {
 			return Math.max(1, PowerHolderComponent.getPowers(player, ModifyPotionStackPower.class)
 					.stream()
@@ -271,9 +280,12 @@ public abstract class ScreenHandlerMixin {
 	private int ssc_addon$insertItemEmptySlotCap(Slot slot, Operation<Integer> original,
 			@Local(argsOnly = true) ItemStack movingStack) {
 		PlayerEntity player = this.ssc_addon$clickPlayer;
-		if (player != null && slot.inventory instanceof PlayerInventory) {
+		if (player != null && (slot.inventory instanceof PlayerInventory || PotionTestTubes.isFilledTube(movingStack))) {
 			int limit = ssc_addon$potionInsertLimit(movingStack, player);
 			if (limit > 0) {
+				if (PotionTestTubes.isFilledTube(movingStack)) {
+					return Math.min(Math.min(limit, slot.getMaxItemCount(movingStack)), original.call(slot));
+				}
 				return Math.min(limit, original.call(slot));
 			}
 		}

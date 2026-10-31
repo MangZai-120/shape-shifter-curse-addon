@@ -9,11 +9,22 @@ import me.shedaniel.rei.api.common.util.*;
 import me.shedaniel.rei.plugin.common.displays.brewing.DefaultBrewingDisplay;
 import me.shedaniel.rei.plugin.common.displays.DefaultInformationDisplay;
 import net.jackcooper.shapeShifterCurseAddon.compat.recipeviewer.SscViewerRecipes;
+import net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes;
+import me.shedaniel.rei.api.common.entry.comparison.EntryComparator;
+import me.shedaniel.rei.api.common.entry.comparison.ItemComparatorRegistry;
+import me.shedaniel.rei.api.client.registry.entry.EntryRegistry;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Identifier;
 
 public class SSCA_REIPlugin implements REIClientPlugin {
     public Identifier getIdentifier() { return new Identifier("ssc_addon", "rei_plugin"); }
+    @Override public void registerItemComparators(ItemComparatorRegistry registry) {
+        var nbt = EntryComparator.nbt();
+        registry.register((context, stack) -> nbt.hash(context, PotionTestTubes.subtypeData(stack)), PotionTestTubes.FILLED);
+    }
+    @Override public void registerEntries(EntryRegistry registry) {
+        registry.addEntries(PotionTestTubes.viewerStacks().stream().map(EntryStacks::of).toList());
+    }
     @Override public void registerTransferHandlers(TransferHandlerRegistry registry) {
         registry.register(new SscSpecialRecipeTransferHandler());
     }

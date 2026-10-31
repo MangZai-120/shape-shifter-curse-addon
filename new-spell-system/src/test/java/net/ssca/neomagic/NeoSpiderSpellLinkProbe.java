@@ -153,9 +153,9 @@ public final class NeoSpiderSpellLinkProbe {
         check(meteor.isRemoved()&&webs(moon,impactFloor)==9,"Real meteor descent distinguishes ground impact and leaves one patch: "+meteor.getPos()+"; webs="+webs(moon,impactFloor));
         var blueprintCaster=player(t,true,8);var blueprintFloor=floor(blueprintCaster,0);
         var bp=new NeoModel.Blueprint("web bolt",NeoModel.Core.THERMAL,NeoModel.Carrier.PROJECTILE,List.of(),NeoModel.Core.FROST,1,0,8);
-        NeoRuntime.data(blueprintCaster).known.addAll(NeoMagic.SAMPLES.keySet());var wand=new ItemStack(NeoMagic.WAND);
+        NeoRuntime.data(blueprintCaster).known.addAll(net.ssca.neomagic.NeoTestFixtures.SAMPLES.keySet());var wand=new ItemStack(net.ssca.neomagic.NeoTestFixtures.WAND);
         wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(bp));blueprintCaster.setStackInHand(net.minecraft.util.Hand.MAIN_HAND,wand);blueprintCaster.setPitch(90);
-        NeoRuntime.start(blueprintCaster,net.minecraft.util.Hand.MAIN_HAND);
+        net.ssca.neomagic.NeoTestFixtures.start(blueprintCaster,net.minecraft.util.Hand.MAIN_HAND);
         near(ManaUtils.getPlayerMana(blueprintCaster),0,"Actual blueprint runtime pays eight native web energy");
         for(int i=0;i<12;i++)NeoEffects.tick(blueprintCaster.getServer());
         check(webs(blueprintCaster,blueprintFloor)==9,"Actual research projectile ground collision creates membrane");

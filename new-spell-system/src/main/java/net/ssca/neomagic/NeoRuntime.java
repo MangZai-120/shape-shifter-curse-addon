@@ -61,10 +61,10 @@ public final class NeoRuntime {
                 ||p.hasStatusEffect(SscAddon.PURIFIED)||AbilityUseGuard.blocked(p)
                 ||p.isSpectator()||!p.isAlive();
     }
-    public static void start(ServerPlayerEntity p,Hand hand) {
-        refreshForm(p);var d=data(p);Blueprint b=NeoNetwork.bound(p.getStackInHand(hand));
+    static void start(ServerPlayerEntity p,Hand hand,Blueprint b) {
+        refreshForm(p);var d=data(p);
         if(b==null){message(p,"need_blueprint");return;}
-        if(!p.getStackInHand(hand).isOf(NeoMagic.WAND)||blocked(p)||NeoLegacyCasting.isCasting(p)||NeoEffects.hasStored(p.getUuid())) {message(p,"blocked");return;}
+        if(blocked(p)||NeoLegacyCasting.isCasting(p)||NeoEffects.hasStored(p.getUuid())) {message(p,"blocked");return;}
         if(!errors(b).isEmpty()||!d.knows(b)) {message(p,"invalid");return;}
         if(d.cooldowns.getOrDefault(b.identity(),0)>0) {message(p,"cooldown");return;}
         NeoEffects.Anchor anchor=NeoEffects.capture(p,b);
@@ -97,7 +97,7 @@ public final class NeoRuntime {
         active.beganTick=p.getServer().getTicks();ACTIVE.put(p.getUuid(),active);
         if(net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.wind(p))
             net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.applyMovement(p,net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.walkingMultiplier());
-        advance(p,active);NeoNetwork.send(p,false);
+        advance(p,active);
     }
     private static void advance(ServerPlayerEntity p,Active a) {
         if(a.settled)return;
@@ -129,7 +129,7 @@ public final class NeoRuntime {
                 setCooldown(p,s.blueprint.identity(),Math.max(10,a.fullCooldown/2));a.settled=true;
                 message(p,"target_invalid");
             }
-            NeoNetwork.send(p,false);
+
         }
         dirty(p);
     }
@@ -149,7 +149,7 @@ public final class NeoRuntime {
         setCooldown(p,a.session.blueprint.identity(),net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules.interruptedCooldown(a.fullCooldown));
         net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.sendSuppression(p,NeoLegacyCasting.element(a.session.blueprint.output()).color,null);
         p.sendMessage(net.minecraft.text.Text.translatable("message.ssc_addon.spell.range_exceeded"),true);
-        dirty(p);NeoNetwork.hud(p);NeoNetwork.send(p,false);
+        dirty(p);NeoNetwork.hud(p);
     }
     static void grantExperience(ServerPlayerEntity p,Active a) {
         double amount=a.session.quote.normal()*a.session.blueprint.tier()*a.experienceMultiplier;
@@ -183,10 +183,10 @@ public final class NeoRuntime {
     }
     public static void releaseOrCancel(ServerPlayerEntity p) {
         if(NeoEffects.hasStored(p.getUuid()))NeoEffects.trigger(p);else cancel(p,"cancelled");
-        NeoNetwork.send(p,false);
+
     }
     public static void relieve(ServerPlayerEntity p,double amount) {
-        refreshForm(p);data(p).burden=Math.max(0,data(p).burden-amount);dirty(p);NeoNetwork.send(p,false);
+        refreshForm(p);data(p).burden=Math.max(0,data(p).burden-amount);dirty(p);
     }
     public static void dirty(ServerPlayerEntity p) { NeoState.get(p.getServer()).markDirty(); }
     public static void message(ServerPlayerEntity p,String message) { p.sendMessage(NeoMagic.text(message),true); }
@@ -212,7 +212,7 @@ public final class NeoRuntime {
     }
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(NeoRuntime::tick);
-        ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server,resources,success)->{if(success)server.getPlayerManager().getPlayerList().forEach(p->NeoNetwork.send(p,false));});
+
         ServerPlayConnectionEvents.DISCONNECT.register((handler,server)->server.execute(()->{
             var online=server.getPlayerManager().getPlayer(handler.player.getUuid());
             if(online!=null&&online.networkHandler!=handler)return;

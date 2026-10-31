@@ -34,24 +34,24 @@ public final class NeoStabilityWorldProbe {
             try {
                 if(initialized)return;initialized=true;
                 begun=System.nanoTime();
-                dispatch=NeoNetwork.class.getDeclaredMethod("handle",ServerPlayerEntity.class,NbtCompound.class);dispatch.setAccessible(true);
-                open=NeoNetwork.class.getDeclaredField("OPEN");open.setAccessible(true);last=NeoNetwork.class.getDeclaredField("LAST");last.setAccessible(true);
+                dispatch=net.ssca.neomagic.NeoResearchFixtures.class.getDeclaredMethod("handle",ServerPlayerEntity.class,NbtCompound.class);dispatch.setAccessible(true);
+                open=net.ssca.neomagic.NeoResearchFixtures.class.getDeclaredField("OPEN");open.setAccessible(true);last=net.ssca.neomagic.NeoResearchFixtures.class.getDeclaredField("LAST");last.setAccessible(true);
                 Vec3d base=test.getAbsolutePos(new BlockPos(3,2,3)).toCenterPos();
                 for(BlockPos pos:BlockPos.iterate(BlockPos.ofFloored(base).add(-10,-1,-10),BlockPos.ofFloored(base).add(32,-1,18)))test.getWorld().setBlockState(pos,Blocks.STONE.getDefaultState());
                 for(int i=0;i<8;i++) {
                     var p=test.createMockCreativeServerPlayerInWorld();Vec3d at=base.add((i%4)*6,0,(i/4)*8);
                     p.refreshPositionAndAngles(at.x,at.y,at.z,0,-20);p.setNoGravity(true);p.getAbilities().invulnerable=true;
-                    players.add(p);positions.add(at);NeoRuntime.refreshForm(p);NeoRuntime.data(p).known.addAll(NeoMagic.SAMPLES.keySet());
+                    players.add(p);positions.add(at);NeoRuntime.refreshForm(p);NeoRuntime.data(p).known.addAll(net.ssca.neomagic.NeoTestFixtures.SAMPLES.keySet());
                 }
                 check(players.stream().map(ServerPlayerEntity::getUuid).distinct().count()==8,"Eight independent player identities");
                 var p=players.get(0);bind(p,new Blueprint("clock",Core.LUNAR,Carrier.SELF,List.of(),Core.VOID,.5,20,4));
-                clockStart=p.getServer().getTicks();NeoRuntime.start(p,Hand.MAIN_HAND);clock=NeoRuntime.ACTIVE.get(p.getUuid());check(clock!=null,"Clock cast begins");
+                clockStart=p.getServer().getTicks();net.ssca.neomagic.NeoTestFixtures.start(p,Hand.MAIN_HAND);clock=NeoRuntime.ACTIVE.get(p.getUuid());check(clock!=null,"Clock cast begins");
                 frame=0;test.runAtEveryTick(()->step(test));
             }catch(Exception error){throw new RuntimeException(error);}
         });
     }
     private static void bind(ServerPlayerEntity p,Blueprint b) {
-        ItemStack wand=new ItemStack(NeoMagic.WAND);wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(b));p.setStackInHand(Hand.MAIN_HAND,wand);
+        ItemStack wand=new ItemStack(net.ssca.neomagic.NeoTestFixtures.WAND);wand.getOrCreateNbt().putString("NeoBlueprint",NeoState.JSON.toJson(b));p.setStackInHand(Hand.MAIN_HAND,wand);
     }
     private static void step(TestContext test) {
         if(complete)return;
@@ -63,8 +63,8 @@ public final class NeoStabilityWorldProbe {
             if(elapsed==2)invalidNotes(first);
             if(elapsed==20)check(NeoRuntime.ACTIVE.containsKey(first.getUuid()),"20-tick cast must survive until its real final tick");
             if(elapsed==21)check(!NeoRuntime.ACTIVE.containsKey(first.getUuid())&&clock.record.checks.size()==3,"0/10/20 checks finish exactly once");
-            if(elapsed==22){var p=players.get(1);bind(p,new Blueprint("instant clock",Core.LUNAR,Carrier.SELF,List.of(),Core.VOID,.5,0,4));NeoRuntime.start(p,Hand.MAIN_HAND);}
-            if(elapsed==23){var p=players.get(1);var d=NeoRuntime.data(p);check(d.cooldowns.getOrDefault(NeoNetwork.bound(p.getMainHandStack()).identity(),0)==80,"Instant cast keeps its full cooldown during starting tick");check(d.recovery==NeoRules.recoveryDelay,"Instant cast keeps its full recovery delay during starting tick");}
+            if(elapsed==22){var p=players.get(1);bind(p,new Blueprint("instant clock",Core.LUNAR,Carrier.SELF,List.of(),Core.VOID,.5,0,4));net.ssca.neomagic.NeoTestFixtures.start(p,Hand.MAIN_HAND);}
+            if(elapsed==23){var p=players.get(1);var d=NeoRuntime.data(p);check(d.cooldowns.getOrDefault(net.ssca.neomagic.NeoResearchFixtures.bound(p.getMainHandStack()).identity(),0)==80,"Instant cast keeps its full cooldown during starting tick");check(d.recovery==NeoRules.recoveryDelay,"Instant cast keeps its full recovery delay during starting tick");}
             if(elapsed==30&&!failures.isEmpty())throw new AssertionError(String.join("; ",failures));
             if(elapsed<30)return;
             frame=elapsed-30;int duration=Integer.getInteger("neomagic.soakTicks",2400);
@@ -76,7 +76,7 @@ public final class NeoStabilityWorldProbe {
                         if(NeoEffects.hasStored(p.getUuid()))NeoEffects.trigger(p);
                         if(!NeoRuntime.ACTIVE.containsKey(p.getUuid())&&!NeoEffects.hasStored(p.getUuid())) {
                             Blueprint b=spell(i,(frame/20)%3);bind(p,b);
-                            if(d.cooldowns.getOrDefault(b.identity(),0)==0&&!NeoRuntime.blocked(p)){NeoRuntime.start(p,Hand.MAIN_HAND);casts++;}
+                            if(d.cooldowns.getOrDefault(b.identity(),0)==0&&!NeoRuntime.blocked(p)){net.ssca.neomagic.NeoTestFixtures.start(p,Hand.MAIN_HAND);casts++;}
                         }
                     }
                     check(Double.isFinite(d.burden)&&d.burden>=0&&d.records.size()<=32,"Finite burden and bounded history for player "+i);
@@ -97,10 +97,10 @@ public final class NeoStabilityWorldProbe {
         }catch(Throwable error){complete=true;write(false);error.printStackTrace();throw new RuntimeException(error);}
     }
     private static void crossPlayerToken()throws Exception {
-        var a=players.get(0);var b=players.get(1);BlockPos table=a.getBlockPos().add(2,0,0);a.getWorld().setBlockState(table,NeoMagic.TABLE.getDefaultState());NeoNetwork.open(a,table);NeoNetwork.open(b,null);
+        var a=players.get(0);var b=players.get(1);BlockPos table=a.getBlockPos().add(2,0,0);a.getWorld().setBlockState(table,net.ssca.neomagic.NeoTestFixtures.TABLE.getDefaultState());net.ssca.neomagic.NeoResearchFixtures.open(a,table);net.ssca.neomagic.NeoResearchFixtures.open(b,null);
         Object context=((Map<?,?>)open.get(null)).get(a.getUuid());Method method=context.getClass().getDeclaredMethod("token");method.setAccessible(true);
         String before=NeoRuntime.data(b).hypothesis;var n=new NbtCompound();n.putUuid("Token",(UUID)method.invoke(context));n.putString("Action","notes");n.putString("Hypothesis","other-player-token");dispatch.invoke(null,b,n);
-        check(NeoRuntime.data(b).hypothesis.equals(before),"Another player's UI token cannot mutate progress");NeoNetwork.close(a);NeoNetwork.close(b);
+        check(NeoRuntime.data(b).hypothesis.equals(before),"Another player's UI token cannot mutate progress");net.ssca.neomagic.NeoResearchFixtures.close(a);net.ssca.neomagic.NeoResearchFixtures.close(b);
     }
     private static void place(ServerPlayerEntity p,int index) {
         var at=positions.get(index);p.refreshPositionAndAngles(at.x,at.y,at.z,0,-20);p.setNoGravity(true);p.getAbilities().invulnerable=true;
@@ -124,7 +124,7 @@ public final class NeoStabilityWorldProbe {
     private static void switchForm() {
         var p=players.get(4);var d=NeoRuntime.data(p);d.burden=15;
         for(var effect:List.of(NeoMagic.DISORDER,NeoMagic.DISINTEGRATION,NeoMagic.BREAKDOWN))p.removeStatusEffect(effect);
-        Blueprint spell=new Blueprint("form transition",Core.LUNAR,Carrier.SELF,List.of(Control.CONSTRAIN),Core.VOID,.5,40,4);d.cooldowns.remove(spell.identity());bind(p,spell);NeoRuntime.start(p,Hand.MAIN_HAND);
+        Blueprint spell=new Blueprint("form transition",Core.LUNAR,Carrier.SELF,List.of(Control.CONSTRAIN),Core.VOID,.5,40,4);d.cooldowns.remove(spell.identity());bind(p,spell);net.ssca.neomagic.NeoTestFixtures.start(p,Hand.MAIN_HAND);
         var cast=NeoRuntime.ACTIVE.get(p.getUuid());check(cast!=null,"Prepare a cast across a form change");
         var component=net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM.get(p);var original=component.nowForm;String progress=NeoState.JSON.toJson(d.progress);
         component.nowForm=net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms.AXOLOTL_3;NeoRuntime.refreshForm(p);
@@ -140,7 +140,7 @@ public final class NeoStabilityWorldProbe {
         };
     }
     private static void invalidNotes(ServerPlayerEntity p)throws Exception {
-        BlockPos pos=p.getBlockPos().add(-2,0,0);p.getWorld().setBlockState(pos,NeoMagic.TABLE.getDefaultState());NeoNetwork.open(p,pos);
+        BlockPos pos=p.getBlockPos().add(-2,0,0);p.getWorld().setBlockState(pos,net.ssca.neomagic.NeoTestFixtures.TABLE.getDefaultState());net.ssca.neomagic.NeoResearchFixtures.open(p,pos);
         Object context=((Map<?,?>)open.get(null)).get(p.getUuid());Method method=context.getClass().getDeclaredMethod("token");method.setAccessible(true);
         var d=NeoRuntime.data(p);d.hypothesis="original-h";d.conclusion="original-c";
         NbtCompound request=new NbtCompound();request.putUuid("Token",(UUID)method.invoke(context));request.putString("Action","notes");request.putString("Hypothesis","must-not-save");request.putString("Conclusion","must-not-save");request.putString("Citations","x".repeat(257));
@@ -149,7 +149,7 @@ public final class NeoStabilityWorldProbe {
         var valid=request.copy();valid.putString("Hypothesis","original-h");valid.putString("Conclusion","original-c");valid.putString("Citations","");dispatch.invoke(null,p,valid);
         var close=new NbtCompound();close.putUuid("Token",request.getUuid("Token"));close.putString("Action","close");dispatch.invoke(null,p,close);
         check(!((Map<?,?>)open.get(null)).containsKey(p.getUuid()),"UI close is not dropped by the same-tick request throttle");
-        d.hypothesis="original-h";d.conclusion="original-c";NeoNetwork.close(p);
+        d.hypothesis="original-h";d.conclusion="original-c";net.ssca.neomagic.NeoResearchFixtures.close(p);
     }
     private static int size(Class<?> type,String name)throws Exception {
         Field field=type.getDeclaredField(name);field.setAccessible(true);Object collection=field.get(null);return collection instanceof Map<?,?> m?m.size():((Collection<?>)collection).size();
@@ -157,8 +157,8 @@ public final class NeoStabilityWorldProbe {
     private static void finish(TestContext test)throws Exception {
         complete=true;check(NeoRuntime.ACTIVE.isEmpty(),"No live casts after drain");check(size(NeoEffects.class,"BOLTS")==0,"No leaked projectiles after drain");check(size(NeoEffects.class,"SUMMONS")==0,"No leaked summons after drain");check(size(NeoEffects.class,"STORED")==0,"No leaked stored structures after drain");check(reloads==2,"Two asynchronous datapack reloads complete");
         var state=NeoState.get(test.getWorld().getServer());
-        for(var p:players){NeoNetwork.close(p);var d=NeoRuntime.data(p);d.hypothesis="restart:"+p.getUuid();}
-        check(size(NeoNetwork.class,"OPEN")==0&&size(NeoNetwork.class,"LAST")==0,"UI contexts and throttle entries are released");state.markDirty();test.getWorld().getPersistentStateManager().save();
+        for(var p:players){net.ssca.neomagic.NeoResearchFixtures.close(p);var d=NeoRuntime.data(p);d.hypothesis="restart:"+p.getUuid();}
+        check(size(net.ssca.neomagic.NeoResearchFixtures.class,"OPEN")==0&&size(net.ssca.neomagic.NeoResearchFixtures.class,"LAST")==0,"UI contexts and throttle entries are released");state.markDirty();test.getWorld().getPersistentStateManager().save();
             Files.writeString(Path.of("saved-players.json"),NeoState.JSON.toJson(players.stream().map(p->p.getUuid().toString()).toList()));
         write(failures.isEmpty());if(!failures.isEmpty())throw new AssertionError(String.join("; ",failures));
         System.out.println("Neomagic stability passed: players=8 ticks="+frame+" casts="+casts+" checks="+checks);test.complete();

@@ -23,6 +23,9 @@ public final class SSCA_EMIPlugin implements EmiPlugin {
     public static final EmiRecipeCategory SPECIAL_CRAFTING = new EmiRecipeCategory(new Identifier("ssc_addon", "special_crafting"), EmiStack.of(net.minecraft.item.Items.CRAFTING_TABLE));
     public static final EmiRecipeCategory PROCESSING = new EmiRecipeCategory(new Identifier("ssc_addon", "processing"), EmiStack.of(RegAddonBlocks.ENERGY_BOTTLER));
     @Override public void register(EmiRegistry registry) {
+        registry.setDefaultComparison(net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes.FILLED,
+            Comparison.compareData(s -> net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes.subtypeData(s.getItemStack())));
+        for (var stack : net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes.viewerStacks()) registry.addEmiStack(EmiStack.of(stack));
         registry.addCategory(SPECIAL_CRAFTING);
         registry.addWorkstation(SPECIAL_CRAFTING, EmiStack.of(net.minecraft.item.Items.CRAFTING_TABLE));
         registry.addCategory(PROCESSING);

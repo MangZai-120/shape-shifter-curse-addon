@@ -35,6 +35,8 @@ public final class RecipeViewerIntegrationTest {
         private static int checks;
         private static final DynamicRegistryManager REGISTRY = DynamicRegistryManager.EMPTY;
         public static void run() throws Exception {
+            if (Registries.ITEM.getRawId(MoonDustReliefItem.BOTTLE) < 0) MoonDustReliefItem.register();
+            if (Registries.ITEM.getRawId(PotionTestTubes.FILLED) < 0) PotionTestTubes.register();
             Item[] items = {SscAddon.VENOM_GLAND, SscAddon.INFINITE_ENERGY_POTION, SscAddon.SP_UPGRADE_THING,
                 SscAddon.PORTABLE_MOISTURIZER, SscAddon.SNOWBALL_LAUNCHER, SscAddon.PORTABLE_FRIDGE,
                 RegCustomItem.MORPHSCALE_CORE, RegCustomItem.MOONDUST_CRYSTAL_SHARD};
@@ -49,9 +51,10 @@ public final class RecipeViewerIntegrationTest {
                 new RefillMoisturizerRecipe(id("refill"), CraftingRecipeCategory.MISC),
                 new UpgradeMoisturizerRecipe(id("upgrade"), CraftingRecipeCategory.MISC),
                 new ReloadSnowballLauncherRecipe(id("reload"), CraftingRecipeCategory.MISC),
-                new BlizzardTankRechargeRecipe(id("recharge"), CraftingRecipeCategory.MISC));
+                new BlizzardTankRechargeRecipe(id("recharge"), CraftingRecipeCategory.MISC),
+                new TestTubeFillingRecipe(id("test_tubes"), CraftingRecipeCategory.MISC));
             var manager = new RecipeManager(); manager.setRecipes(new ArrayList<Recipe<?>>(recipes));
-            check(SscViewerRecipes.crafting(manager).size() == 12, "seven actual recipe types produce twelve valid examples");
+            check(SscViewerRecipes.crafting(manager).size() == 12 + PotionTestTubes.fillingBottles().size(), "all ordinary potion types have exact tube examples");
             Set<Identifier> ids = new HashSet<>();
             for (var recipe : recipes) for (var display : SscViewerRecipes.examples(recipe)) {
                 check(ids.add(display.id()), "unique display location");
@@ -69,6 +72,16 @@ public final class RecipeViewerIntegrationTest {
             stateful((UpgradeMoisturizerRecipe) recipes.get(4), (RefillMoisturizerRecipe) recipes.get(3),
                 (ReloadSnowballLauncherRecipe) recipes.get(5), (BlizzardTankRechargeRecipe) recipes.get(6));
             transferEdges((VenomGlandRecipe) recipes.get(0));
+            var waterTube = PotionTestTubes.divide(PotionUtil.setPotion(new ItemStack(Items.POTION), Potions.WATER));
+            var tooltip = new ArrayList<Text>();
+            var tooltipContext = net.minecraft.client.item.TooltipContext.Default.BASIC;
+            PotionTestTubes.FILLED.appendTooltip(waterTube, null, tooltip, tooltipContext);
+            check(tooltip.stream().anyMatch(text -> text.getContent() instanceof net.minecraft.text.TranslatableTextContent content
+                    && content.getKey().equals("tooltip.ssc_addon.test_tube_water")), "plain water tube explains its lack of effects");
+            PotionUtil.setCustomPotionEffects(waterTube, List.of(new net.minecraft.entity.effect.StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.SPEED, 600)));
+            tooltip.clear(); PotionTestTubes.FILLED.appendTooltip(waterTube, null, tooltip, tooltipContext);
+            check(tooltip.stream().noneMatch(text -> text.getContent() instanceof net.minecraft.text.TranslatableTextContent content
+                    && content.getKey().equals("tooltip.ssc_addon.test_tube_water")), "water-based custom potions must not claim to have no effects");
             System.out.println("Recipe viewer integration passed: " + checks + " checks; actual recipe outputs, nine poison variants, NBT, 2x2/3x3 planning, shortages, full inventory and reload.");
         }
         private static void checkPlan(SpecialCraftingRecipe recipe, SscViewerRecipes.Crafting display, int width) {

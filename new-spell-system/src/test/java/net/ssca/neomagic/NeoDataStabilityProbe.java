@@ -24,8 +24,8 @@ public final class NeoDataStabilityProbe {
         System.out.println("Stability data: enumerated "+ids.size()+" valid identities");
         var state=new NeoState();var data=state.player(UUID.randomUUID());
         for(String id:ids.stream().limit(12000).toList())data.progress.put(id,new double[]{100000,100000,100000,100000});
-        byte[] wire=NeoNetwork.encodeData(data);var message=new NbtCompound();message.putByteArray("DataJson",wire);var buffer=PacketByteBufs.create();
-        try {buffer.writeNbt(message);new CustomPayloadS2CPacket(NeoNetwork.STATE,buffer);check(true,"Large legitimate research snapshot fits Minecraft custom payload limit");}
+        byte[] wire=net.ssca.neomagic.NeoResearchFixtures.encodeData(data);var message=new NbtCompound();message.putByteArray("DataJson",wire);var buffer=PacketByteBufs.create();
+        try {buffer.writeNbt(message);new CustomPayloadS2CPacket(net.ssca.neomagic.NeoResearchFixtures.STATE,buffer);check(true,"Large legitimate research snapshot fits Minecraft custom payload limit");}
         finally {buffer.release();}
         check(new String(NeoPayload.unpack(wire),java.nio.charset.StandardCharsets.UTF_8).equals(NeoState.JSON.toJson(data)),"Compressed snapshot is lossless");
         boolean rejected=false;try{NeoPayload.unpack(wire,1024);}catch(IllegalArgumentException expected){rejected=true;}check(rejected,"Decompression expansion is bounded");
@@ -34,17 +34,17 @@ public final class NeoDataStabilityProbe {
         long fuzzStarted=System.nanoTime();
         for(int i=0;i<20000;i++) {
             var input=PacketByteBufs.create();
-            try {byte[] bytes=new byte[random.nextInt(256)];random.nextBytes(bytes);input.writeBytes(bytes);check(NeoNetwork.readRequest(input)==null,"Malformed requests do not escape the parser");}
+            try {byte[] bytes=new byte[random.nextInt(256)];random.nextBytes(bytes);input.writeBytes(bytes);check(net.ssca.neomagic.NeoResearchFixtures.readRequest(input)==null,"Malformed requests do not escape the parser");}
             finally{input.release();}
         }
         System.out.println("Stability data: 20000 malformed request parses completed in "+(System.nanoTime()-fuzzStarted)/1e9+" seconds");
         for(String action:List.of("notes","draft","baseline","equip","craft","close")) {
             var valid=new NbtCompound();valid.putUuid("Token",UUID.randomUUID());valid.putString("Action",action);valid.putString("Blueprint",NeoState.JSON.toJson(Blueprint.starter()));
             valid.putString("Hypothesis","中文😀\u0000");var input=PacketByteBufs.create();
-            try{input.writeNbt(valid);check(valid.equals(NeoNetwork.readRequest(input)),"Valid Unicode and modified UTF-8 request survives parsing");}finally{input.release();}
+            try{input.writeNbt(valid);check(valid.equals(net.ssca.neomagic.NeoResearchFixtures.readRequest(input)),"Valid Unicode and modified UTF-8 request survives parsing");}finally{input.release();}
         }
-        var oversized=PacketByteBufs.create();try{oversized.writeZero(16385);check(NeoNetwork.readRequest(oversized)==null,"Oversized request rejected before NBT parse");}finally{oversized.release();}
-        var trailing=PacketByteBufs.create();try{trailing.writeNbt(new NbtCompound());trailing.writeByte(1);check(NeoNetwork.readRequest(trailing)==null,"Trailing request data rejected");}finally{trailing.release();}
+        var oversized=PacketByteBufs.create();try{oversized.writeZero(16385);check(net.ssca.neomagic.NeoResearchFixtures.readRequest(oversized)==null,"Oversized request rejected before NBT parse");}finally{oversized.release();}
+        var trailing=PacketByteBufs.create();try{trailing.writeNbt(new NbtCompound());trailing.writeByte(1);check(net.ssca.neomagic.NeoResearchFixtures.readRequest(trailing)==null,"Trailing request data rejected");}finally{trailing.release();}
         for(int player=0;player<32;player++) {
             var d=state.player(new UUID(42,player));d.burden=player+.25;d.recovery=player;
             for(int j=0;j<2000;j++) {

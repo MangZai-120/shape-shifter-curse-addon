@@ -50,6 +50,7 @@
       "net.jackcooper.shapeShifterCurseAddon.compat.emi.SSCA_EMIPlugin"
     ],
     "cardinal-components-entity": [
+      "net.jackcooper.shapeShifterCurseAddon.state.RegInstinctAnchorComponent",
       "net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent",
       "net.jackcooper.shapeShifterCurseAddon.state.RegSpiderMoonWeaverStateComponent",
       "net.jackcooper.shapeShifterCurseAddon.spell.RegFormationKnowledgeComponent"
@@ -82,6 +83,7 @@
   ],
   "custom": {
     "cardinal-components": [
+      "ssc_addon:instinct_anchor",
       "ssc_addon:evolution",
       "ssc_addon:spider_moon_weaver_state",
       "ssc_addon:formation_knowledge"

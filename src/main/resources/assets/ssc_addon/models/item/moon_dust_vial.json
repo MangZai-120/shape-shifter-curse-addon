@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "ssc_addon:item/moon_dust_vial_overlay",
+    "layer1": "ssc_addon:item/moon_dust_vial"
+  }
+}

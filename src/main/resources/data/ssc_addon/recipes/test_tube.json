@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "G G",
+    " G "
+  ],
+  "key": {
+    "G": {
+      "item": "minecraft:glass_pane"
+    }
+  },
+  "result": {
+    "item": "ssc_addon:test_tube",
+    "count": 3
+  }
+}
