@@ -8,7 +8,6 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.server.world.ServerWorld;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
@@ -97,6 +96,16 @@ public final class SheepFormRestoreHandler {
 		restore(entity);
 	}
 
+	/** 登录或异常清效果后，恢复记录可能已丢失；只移除无效果对应的变羊攻击修正。 */
+	public static void clearOrphanedAttackModifier(LivingEntity entity) {
+		if (!entity.hasStatusEffect(SscAddon.SHEEP_FORM)) removeAttackModifier(entity);
+	}
+
+	private static void removeAttackModifier(LivingEntity entity) {
+		EntityAttributeInstance attack = entity.getAttributeInstance(EntityAttributes.GENERIC_ATTACK_DAMAGE);
+		if (attack != null) attack.removeModifier(SheepFormEffect.ATTACK_MODIFIER_UUID);
+	}
+
 	/**
 	 * 重追踪/重进后的修饰符重挂（sweep 的实例已换分支调用；2026-09-30 伴生修复）：
 	 * 临时修饰符不进 NBT，同 JVM 重进（退出到标题再进存档）后效果还在但修饰符已随实体
@@ -151,6 +160,7 @@ public final class SheepFormRestoreHandler {
 		if (healthAttr != null) healthAttr.removeModifier(HEALTH_MODIFIER_UUID);
 		EntityAttributeInstance speedAttr = entity.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
 		if (speedAttr != null) speedAttr.removeModifier(SPEED_MODIFIER_UUID);
+		removeAttackModifier(entity); // sweep 不经过 StatusEffect.onRemoved，也必须恢复攻击力
 		if (originalMax == null) return; // 没换过血（理论不可达）只清修饰符
 
 		if (entity.isAlive()) {
@@ -170,12 +180,12 @@ public final class SheepFormRestoreHandler {
 	 * 重进存档原版 clamp 回原属性，无残留。
 	 */
 	public static void tickSweep(net.minecraft.server.MinecraftServer server) {
+		if (ORIGINAL_MAX_HEALTH.isEmpty()) return;
 		long now = server.getOverworld() != null ? server.getOverworld().getTime() : 0;
 		if (now == lastSweep || Math.floorMod(now, 5) != 0) return;
 		lastSweep = now;
-		Iterator<Map.Entry<UUID, Double>> it = ORIGINAL_MAX_HEALTH.entrySet().iterator();
-		while (it.hasNext()) {
-			UUID id = it.next().getKey();
+		// restore 会删除恢复记录；快照遍历保证多个目标同时异常结束时仍能全部恢复。
+		for (UUID id : java.util.List.copyOf(ORIGINAL_MAX_HEALTH.keySet())) {
 			LivingEntity found = null;
 			for (ServerWorld world : server.getWorlds()) {
 				var e = world.getEntity(id);
@@ -185,7 +195,7 @@ public final class SheepFormRestoreHandler {
 				}
 			}
 			if (found == null) {
-				it.remove(); // 不在线：修饰符不进 NBT，重进自动回原属性
+				ORIGINAL_MAX_HEALTH.remove(id); // 不在线：修饰符不进 NBT，重进自动回原属性
 				// 同步清 AI 备份（2026-09-29「部分生物 AI 消失」根因之一）：mob 卸载时
 				// Goal 集随实体消亡（Goal 不进 NBT），残留 BACKUPS 会让重载后（效果还在但
 				// Goal 已是构造器新注册的原生集）被误判「已替换」跳过 swap / 或错误回放旧实例。

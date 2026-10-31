@@ -130,6 +130,24 @@ tasks.register('neoMagicWorldTest', JavaExec) {
     }
 }
 
+tasks.register('interactionRecoveryWorldTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.ssca.neomagic.NeoWorldTest'
+    workingDir = layout.buildDirectory.dir('interaction-recovery-world').get().asFile
+    maxHeapSize = '2G'
+    systemProperty 'neomagic.interactionRecovery', 'true'
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def classpathFile = new File(workingDir, 'classpath.txt')
+        classpathFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', classpathFile.absolutePath
+    }
+}
+
 tasks.register('neoMagicPerformanceTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath

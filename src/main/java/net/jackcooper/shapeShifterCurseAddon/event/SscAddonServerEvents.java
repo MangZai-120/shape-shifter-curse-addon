@@ -228,6 +228,9 @@ public final class SscAddonServerEvents {
 				// 性能：STUN 孤儿校正降频到每 10 tick——孤儿修正多残留 0.5s 无感知，
 				// 省掉每 tick 每玩家 hasStatusEffect + 2×getAttributeInstance + 2×getModifier
 				if (server.getTicks() % 10 == 0) {
+					// 不依赖变羊恢复快照；即使仍有 STUN，也先独立清除已结束的变羊修正。
+					net.jackcooper.shapeShifterCurseAddon.effect.SheepFormRestoreHandler
+							.clearOrphanedAttackModifier(player);
 					if (player.hasStatusEffect(SscAddon.STUN)) continue;
 					EntityAttributeInstance atk =
 							player.getAttributeInstance(EntityAttributes.GENERIC_ATTACK_DAMAGE);

@@ -4,7 +4,7 @@
         "type": "apoli:creative_flying"
     },
     "modifier": {
-        "operation": "multiply_base",
+        "operation": "multiply_total",
         "value": -0.8
     }
 }

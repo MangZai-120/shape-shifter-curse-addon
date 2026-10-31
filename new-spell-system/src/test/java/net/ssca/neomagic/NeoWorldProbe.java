@@ -2,6 +2,7 @@ package net.ssca.neomagic;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
+import net.jackcooper.shapeShifterCurseAddon.event.InteractionRecoveryWorldProbe;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.*;
 import net.minecraft.item.*;
@@ -53,6 +54,7 @@ public final class NeoWorldProbe {
         if(Boolean.getBoolean("neomagic.nightmareLink"))test=new TestFunction("neomagic","nightmare_link","ssca_neomagic:empty",400,0,true,NeoNightmareSpellLinkProbe::start);
         if(Boolean.getBoolean("neomagic.courtLink"))test=new TestFunction("neomagic","court_link","ssca_neomagic:empty",750,0,true,NeoCourtSpellLinkProbe::start);
         if(Boolean.getBoolean("neomagic.batStress"))test=new TestFunction("neomagic","bat_stress","ssca_neomagic:empty",500,0,true,NeoBatStressProbe::start);
+        if(Boolean.getBoolean("neomagic.interactionRecovery"))test=new TestFunction("neomagic","interaction_recovery","ssca_neomagic:empty",300,0,true,InteractionRecoveryWorldProbe::start);
         var batch=new GameTestBatch("neomagic",List.of(test),world->{},world->{});
         MinecraftServer.startServer(thread->TestServer.create(thread,save,VanillaDataPackProvider.createManager(save),List.of(batch),new BlockPos(0,64,0)));
     }
