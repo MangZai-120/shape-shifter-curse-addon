@@ -33,11 +33,19 @@ public abstract class PlayerInventoryMixin {
 	@Shadow
 	public abstract boolean insertStack(ItemStack stack);
 
-	/** 捡拾合并与界面插入共用玩家的试管上限。 */
+	/** 月尘瓶装基础为1，有power时才允许进入原版捡拾合并流程。 */
+	@WrapOperation(method = "canStackAddMore(Lnet/minecraft/item/ItemStack;Lnet/minecraft/item/ItemStack;)Z",
+			at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;isStackable()Z"))
+	private boolean ssc_addon$addonPotionPickupStackable(ItemStack stack, Operation<Boolean> original) {
+		return PotionTestTubes.hasCustomStackLimit(stack)
+				? PotionTestTubes.stackLimit(stack, this.player) > 1 : original.call(stack);
+	}
+
+	/** 捡拾合并与界面插入共用玩家的药水上限。 */
 	@WrapOperation(method = "canStackAddMore(Lnet/minecraft/item/ItemStack;Lnet/minecraft/item/ItemStack;)Z",
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;getMaxCount()I"))
 	private int ssc_addon$tubePickupMergeLimit(ItemStack existingStack, Operation<Integer> original) {
-		return PotionTestTubes.isFilledTube(existingStack)
+		return PotionTestTubes.hasCustomStackLimit(existingStack)
 				? PotionTestTubes.stackLimit(existingStack, this.player) : original.call(existingStack);
 	}
 
@@ -46,7 +54,7 @@ public abstract class PlayerInventoryMixin {
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;getMaxCount()I"))
 	private int ssc_addon$tubePickupInsertLimit(ItemStack destination, Operation<Integer> original,
 			@Local(argsOnly = true) ItemStack incomingStack) {
-		return PotionTestTubes.isFilledTube(incomingStack)
+		return PotionTestTubes.hasCustomStackLimit(incomingStack)
 				? PotionTestTubes.stackLimit(incomingStack, this.player) : original.call(destination);
 	}
 
@@ -54,14 +62,14 @@ public abstract class PlayerInventoryMixin {
 	@WrapOperation(method = "offer(Lnet/minecraft/item/ItemStack;Z)V",
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;getMaxCount()I"))
 	private int ssc_addon$tubeOfferedStackLimit(ItemStack stack, Operation<Integer> original) {
-		return PotionTestTubes.isFilledTube(stack)
+		return PotionTestTubes.hasCustomStackLimit(stack)
 				? PotionTestTubes.stackLimit(stack, this.player) : original.call(stack);
 	}
 
 	/** 失去power后保留旧超量栈，防止负剩余空间导致物品复制或倒扣。 */
 	@Inject(method = "addStack(ILnet/minecraft/item/ItemStack;)I", at = @At("HEAD"), cancellable = true)
 	private void ssc_addon$guardTubeInsertion(int slot, ItemStack incomingStack, CallbackInfoReturnable<Integer> cir) {
-		if (!PotionTestTubes.isFilledTube(incomingStack)) return;
+		if (!PotionTestTubes.hasCustomStackLimit(incomingStack)) return;
 		ItemStack existingStack = this.getStack(slot);
 		if (!existingStack.isEmpty() && (!ItemStack.canCombine(existingStack, incomingStack)
 				|| existingStack.getCount() >= PotionTestTubes.stackLimit(incomingStack, this.player))) {

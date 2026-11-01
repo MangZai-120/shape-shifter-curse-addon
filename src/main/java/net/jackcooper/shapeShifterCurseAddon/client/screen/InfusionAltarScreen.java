@@ -8,13 +8,15 @@ import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.screen.InfusionAltarScreenHandler;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationData;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationElement;
-import net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle;
 import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellCastFeedback;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
 import net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery;
+import net.jackcooper.shapeShifterCurseAddon.spell.ScrollWorkshopManager;
+import net.jackcooper.shapeShifterCurseAddon.spell.ArcaneAnalysis;
+import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -41,6 +43,9 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 	private static final int INK = 0x393240, MUTED = 0x615B68, ACCENT = 0x65508A;
 	private static final int GOOD = 0x306540, MISSING = 0x8E432E;
 	private ButtonWidget upgradeButton;
+    private final List<ButtonWidget> maintenanceButtons=new ArrayList<>();
+    private int salvageConfirmTicks;
+    private ItemStack salvageTarget=ItemStack.EMPTY;
 	private ItemStack observedBook = ItemStack.EMPTY;
 	private ItemStack nextBook = ItemStack.EMPTY;
 
@@ -76,8 +81,43 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 				ClientPlayNetworking.send(SscAddonNetworking.PACKET_INFUSION_ALTAR_UPGRADE, PacketByteBufs.empty());
 			}
 		}).dimensions(this.x + 194, this.y + 180, 110, 20).build());
+        addDrawableChild(ButtonWidget.builder(label("configure"),b->switchMode(false)).dimensions(x+8,y-24,82,20).build());
+        addDrawableChild(ButtonWidget.builder(label("maintenance"),b->switchMode(true)).dimensions(x+94,y-24,90,20).build());
+        maintenanceButtons.clear();
+        String[] actions={"repair","salvage","imprint"};
+        for(int i=0;i<actions.length;i++){
+            final int action=i;
+            var button=addDrawableChild(ButtonWidget.builder(label(actions[i]),b->maintenanceAction(action))
+                    .dimensions(x+194,y+32+i*24,110,20).build());
+            maintenanceButtons.add(button);
+        }
 		refreshControls();
 	}
+    private void switchMode(boolean maintenance){
+        handler.setMaintenance(maintenance);salvageConfirmTicks=0;
+        if(client.interactionManager!=null)client.interactionManager.clickButton(handler.syncId,
+                maintenance?InfusionAltarScreenHandler.MAINTENANCE:InfusionAltarScreenHandler.CONFIGURE);
+        refreshControls();
+    }
+    private ItemStack maintenanceScroll(){return handler.getSlot(InfusionAltarScreenHandler.MAINTENANCE_SCROLL).getStack();}
+    private void maintenanceAction(int action){
+        if(!handler.isMaintenance()||!maintenanceButtons.get(action).active)return;
+        if(action==1&&(salvageConfirmTicks<=0||!ItemStack.areEqual(salvageTarget,maintenanceScroll()))){
+            salvageTarget=maintenanceScroll().copy();salvageConfirmTicks=60;return;
+        }
+        salvageConfirmTicks=0;
+        ClientPlayNetworking.send(action==0?SscAddonNetworking.PACKET_SCROLL_REPAIR
+                :action==1?SscAddonNetworking.PACKET_SCROLL_SALVAGE:SscAddonNetworking.PACKET_SCROLL_IMPRINT,PacketByteBufs.empty());
+    }
+    @Override protected void handledScreenTick(){
+        super.handledScreenTick();
+        if(salvageConfirmTicks>0)--salvageConfirmTicks;
+        if(!ItemStack.areEqual(salvageTarget,maintenanceScroll()))salvageConfirmTicks=0;
+    }
+    @Override protected boolean isClickOutsideBounds(double mouseX,double mouseY,int left,int top,int button){
+        return !(mouseX>=x+8&&mouseX<x+184&&mouseY>=y-24&&mouseY<y-4)
+                &&super.isClickOutsideBounds(mouseX,mouseY,left,top,button);
+    }
 
 	private ItemStack book() {
 		return this.handler.getSlot(0).getStack();
@@ -102,6 +142,16 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 
 	private void refreshControls() {
 		ItemStack book = book();
+		this.upgradeButton.visible=!handler.isMaintenance();
+        ItemStack scroll=maintenanceScroll();boolean valid=ScrollData.getSpell(scroll)!=null&&!ArcaneAnalysis.isUnanalyzed(scroll);
+        for(int i=0;i<maintenanceButtons.size();i++){
+            var button=maintenanceButtons.get(i);button.visible=handler.isMaintenance();
+            button.active=valid&&(i!=0||ScrollData.getMaxUses(scroll)>0&&ScrollData.getUses(scroll)<ScrollData.getMaxUses(scroll))
+                    &&(i!=2||handler.getSlot(InfusionAltarScreenHandler.MAINTENANCE_SCHEME).getStack().isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.SPELL_FORMATION));
+            button.setMessage(label(i==0?"repair":i==1?(salvageConfirmTicks>0?"salvage_confirm":"salvage"):"imprint"));
+            button.setTooltip(Tooltip.of(label(i==0?"repair_help":i==1?"salvage_help":"imprint_help",
+                    ScrollWorkshopManager.repairInkCost(),ScrollWorkshopManager.repairDustCost())));
+        }
 		this.upgradeButton.active = canUpgradeNow();
 		this.upgradeButton.setMessage(!hasBook() ? label("upgrade")
 				: SpellbookData.getLevel(book) == SpellbookData.MAX_LEVEL ? label("max_level")
@@ -126,15 +176,16 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 				this.backgroundWidth, this.backgroundHeight, this.backgroundWidth, this.backgroundHeight);
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
-		ctx.drawTexture(HEXAGRAM, this.x + 56, this.y + 31, 0, 0, 80, 80, 80, 80);
+		if(!handler.isMaintenance())ctx.drawTexture(HEXAGRAM, this.x + 56, this.y + 31, 0, 0, 80, 80, 80, 80);
 		for (Slot slot : this.handler.slots) {
+			if(!slot.isEnabled())continue;
 			ctx.drawTexture(SLOT_CELL, this.x + slot.x - 1, this.y + slot.y - 1, 0, 0, 18, 18, 18, 18);
 		}
-		if (!hasBook()) {
+		if (!handler.isMaintenance()&&!hasBook()) {
 			ctx.drawTexture(BOOK_ICON, this.x + InfusionAltarScreenHandler.BOOK_X,
 					this.y + InfusionAltarScreenHandler.BOOK_Y, 0, 0, 16, 16, 16, 16);
 		}
-		for (int i = 0; i < SpellbookData.MAX_FORMATION_SLOTS; i++) {
+		for (int i = 0; !handler.isMaintenance()&&i < SpellbookData.MAX_FORMATION_SLOTS; i++) {
 			if (!hasBook() || !SpellbookData.isFormationSlotUnlocked(book(), i)) {
 				Slot slot = this.handler.getSlot(3 + i);
 				ctx.drawTexture(SLOT_LOCK, this.x + slot.x - 1, this.y + slot.y - 1, 0, 0, 18, 18, 18, 18);
@@ -145,6 +196,17 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 
 	@Override
 	protected void drawForeground(DrawContext ctx, int mouseX, int mouseY) {
+        if(handler.isMaintenance()){
+            text(ctx,this.title,21,8,160,INK);
+            text(ctx,label("maintenance"),198,8,105,INK);
+            text(ctx,label("scheme_slot"),43,30,60,MUTED);
+            text(ctx,label("ink_slot"),115,30,55,MUTED);
+            text(ctx,label("scroll_slot"),77,85,65,MUTED);
+            text(ctx,label("dust_slot"),233,114,70,MUTED);
+            text(ctx,label("manual_help"),14,105,160,MUTED);
+            text(ctx,this.playerInventoryTitle,this.playerInventoryTitleX,this.playerInventoryTitleY,162,INK);
+            return;
+        }
 		// 标题右移 13px（一个字位+余量），避免贴住左侧面板边框
 		text(ctx, this.title, 21, 8, 160, INK);
 		// 书籍状态右移 8px，避开右面板框线
@@ -272,8 +334,8 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 
 	/** Before/after quotes come from the same formula as the HUD and server payment gate. */
 	private boolean drawFormationPreview(DrawContext ctx, int mouseX, int mouseY) {
-		if (!hasBook() || this.focusedSlot == null || this.focusedSlot.id < 3
-				|| this.focusedSlot.id >= InfusionAltarScreenHandler.ALTAR_SLOT_COUNT) return false;
+		if (handler.isMaintenance()||!hasBook() || this.focusedSlot == null || this.focusedSlot.id < 3
+				|| this.focusedSlot.id >= InfusionAltarScreenHandler.FORMATION_END) return false;
 		ItemStack cursor = this.handler.getCursorStack();
 		boolean removal = cursor.isEmpty();
 		if (removal && !this.focusedSlot.hasStack()
@@ -346,6 +408,15 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 	}
 
 	private void drawHelp(DrawContext ctx, int mouseX, int mouseY) {
+        if(handler.isMaintenance()){
+            if(focusedSlot!=null&&!focusedSlot.hasStack()){
+                String key=switch(focusedSlot.id){case InfusionAltarScreenHandler.MAINTENANCE_INK->"ink_slot";
+                    case InfusionAltarScreenHandler.MAINTENANCE_SCHEME->"scheme_slot";
+                    case InfusionAltarScreenHandler.MAINTENANCE_SCROLL->"scroll_slot";case 1->"dust_slot";default->null;};
+                if(key!=null)ctx.drawTooltip(textRenderer,label(key),mouseX,mouseY);
+            }
+            return;
+        }
 		List<Text> lines = null;
 		if (inside(mouseX, mouseY, 12, 122, 160, 13)) {
 			lines = formationTooltip();
@@ -367,7 +438,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 			if (index == 0) lines = List.of(label("insert_book"), label("formation_help"));
 			else if (index == 1) lines = List.of(label("fuel_help"), label("fuel_consumption"), label("fuel_reservation"));
 			else if (index == 2) lines = List.of(RegCustomItem.MORPHSCALE_CORE.getName(), label("core_help"));
-			else if (index >= 3 && index < InfusionAltarScreenHandler.ALTAR_SLOT_COUNT) {
+			else if (index >= 3 && index < InfusionAltarScreenHandler.FORMATION_END) {
 				int slot = index - 3;
 				lines = List.of(!hasBook() ? label("insert_book") : SpellbookData.isFormationSlotUnlocked(book(), slot)
 						? label("formation_insert") : label("formation_locked", slot == 0 ? 1 : slot < 3 ? 2 : 3));

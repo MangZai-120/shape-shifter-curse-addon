@@ -76,7 +76,10 @@ public final class RuneScheme {
         return RuneModifiers.read(n.getCompound("Modifiers"));
     }
     public static int imprint(net.minecraft.inventory.Inventory table, WorldRuneState world) {
-        ItemStack scheme = table.getStack(0), scroll = table.getStack(3);
+        return imprint(table, world, 0, 3);
+    }
+    public static int imprint(net.minecraft.inventory.Inventory table, WorldRuneState world, int schemeSlot, int scrollSlot) {
+        ItemStack scheme = table.getStack(schemeSlot), scroll = table.getStack(scrollSlot);
         if (!scheme.isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.SPELL_FORMATION)
                 || scheme.getNbt() == null || !(scroll.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem)
                 || ArcaneAnalysis.isUnanalyzed(scroll)) return 1;

@@ -37,6 +37,7 @@ public final class NeoIntegrationProbe {
         check(net.ssca.neomagic.NeoResearchFixtures.bound(new ItemStack(Items.BLAZE_ROD))==null,"Old items do not become new casting carriers");
         var state=new NeoState();UUID playerA=UUID.randomUUID(),playerB=UUID.randomUUID();var a=state.player(playerA);var b=state.player(playerB);
         a.burden=123.25;a.recovery=31;a.spellbookMasteryExpTen=7312;a.hypothesis="hypothesis";a.draft=blueprint;
+        state.tutorialPolicyInitialized=true;state.tutorialAutoEnabled=true;a.spellTutorialSeen=true;
         a.known.add("core:FROST");a.successful(blueprint);a.cooldowns.put(blueprint.identity(),80);
         check(b.burden==0&&!b.known.contains("core:FROST")&&b.progress.isEmpty(),"Player states do not leak");
         check(a.mastery(blueprint)>0,"Success grows only this spell");
@@ -48,6 +49,16 @@ public final class NeoIntegrationProbe {
         check(encoded.getInt("Version")==2&&encoded.getCompound("Players").getKeys().size()==2,"Versioned persistent save");
         var method=NeoState.class.getDeclaredMethod("read",NbtCompound.class);method.setAccessible(true);
         var restored=(NeoState)method.invoke(null,encoded);
+        check(restored.tutorialPolicyInitialized&&restored.tutorialAutoEnabled,"New-world tutorial policy survives reload");
+        check(restored.player(playerA).spellTutorialSeen&&!restored.player(playerB).spellTutorialSeen,"Tutorial viewing is isolated per player and persists");
+        check(!new NeoState().player(playerA).spellTutorialSeen,"Another world does not inherit tutorial completion");
+        var legacy=encoded.copy();legacy.remove("TutorialPolicyInitialized");legacy.remove("TutorialAutoEnabled");
+        var oldPlayer=JsonParser.parseString(new String(legacy.getCompound("Players").getByteArray(playerA.toString()),StandardCharsets.UTF_8)).getAsJsonObject();
+        oldPlayer.remove("spellTutorialSeen");legacy.getCompound("Players").putByteArray(playerA.toString(),oldPlayer.toString().getBytes(StandardCharsets.UTF_8));
+        var legacyState=(NeoState)method.invoke(null,legacy);
+        check(!legacyState.tutorialPolicyInitialized&&!legacyState.tutorialAutoEnabled&&!legacyState.player(playerA).spellTutorialSeen,
+                "Old save fields default safely without enabling automatic tutorial");
+        check(legacyState.player(playerA).burden==123.25&&legacyState.player(playerA).spellbookMasteryExpTen==7312,"Tutorial migration preserves existing spell data");
         check(restored.player(playerA).burden==123.25&&restored.player(playerA).recovery==31,"Burden and waiting time survive reload");
         check(restored.player(playerA).spellbookMasteryExpTen==7312&&restored.player(playerB).spellbookMasteryExpTen==0,"Player mastery survives save/reload without leaking between UUIDs");
         check(restored.player(playerA).draft.equals(blueprint)&&restored.player(playerA).cooldowns.get(blueprint.identity())==80,"Blueprint and CD survive reload");

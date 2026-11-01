@@ -29,8 +29,15 @@ public class SpellResearchTableScreenHandler extends ScreenHandler {
 	private final Inventory inventory;
 	private final PropertyDelegate analysis;
 	private int activePage;
+	public static final int UPGRADE_ON = 5, UPGRADE_OFF = 6;
+	private boolean runeUpgrade;
+	public boolean isRuneUpgrade() { return runeUpgrade; }
+	public void setRuneUpgrade(boolean value) { runeUpgrade = value; }
 	public void setActivePage(int page) { if (page >= 0 && page <= 4) activePage = page; }
 	@Override public boolean onButtonClick(PlayerEntity player, int page) {
+		if ((page == UPGRADE_ON || page == UPGRADE_OFF) && canUse(player)) {
+			runeUpgrade = page == UPGRADE_ON; return true;
+		}
 		if (page < 0 || page > 4 || !canUse(player)) return false;
 		activePage = page; return true;
 	}
@@ -58,29 +65,31 @@ public class SpellResearchTableScreenHandler extends ScreenHandler {
 		inventory.onOpen(playerInventory.player);
 
 		this.addSlot(new Slot(inventory, 0, 154, 72) {
+			@Override public boolean isEnabled() { return activePage != 2; }
 			@Override
 			public boolean canInsert(ItemStack stack) {
-				return stack.getItem() instanceof BlankFormationPaperItem || activePage==2 && stack.isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.SPELL_FORMATION);
+				return isEnabled() && stack.getItem() instanceof BlankFormationPaperItem;
 			}
 		});
 		this.addSlot(new Slot(inventory, 1, 182, 72) {
-			@Override public boolean isEnabled() { return activePage != 0; }
+			@Override public boolean isEnabled() { return activePage != 0 && activePage != 2; }
 			@Override
 			public boolean canInsert(ItemStack stack) {
 				return isEnabled() && stack.getItem() instanceof FormationInkItem;
 			}
 		});
 		this.addSlot(new Slot(inventory, 2, 210, 72) {
-			@Override public boolean isEnabled() { return activePage != 0; }
+			@Override public boolean isEnabled() { return activePage != 0 && activePage != 2; }
 			@Override
 			public boolean canInsert(ItemStack stack) {
 				return isEnabled() && stack.getItem() == RegCustomItem.UNTREATED_MOONDUST;
 			}
 		});
 		this.addSlot(new Slot(inventory, 3, 282, 72) {
+			@Override public boolean isEnabled() { return activePage != 2; }
 			@Override
 			public boolean canInsert(ItemStack stack) {
-				return activePage != 0 && stack.getItem() instanceof MagicScrollItem && ScrollData.getSpell(stack) != null;
+				return false;
 			}
 
 			@Override
@@ -89,7 +98,7 @@ public class SpellResearchTableScreenHandler extends ScreenHandler {
 			}
 		});
 		this.addSlot(new Slot(inventory, SpellResearchTableBlockEntity.SLOT_CATALYST, 240, 72) {
-			@Override public boolean isEnabled() { return activePage != 0; }
+			@Override public boolean isEnabled() { return activePage != 0 && activePage != 2; }
 			@Override
 			public boolean canInsert(ItemStack stack) {
 				return isEnabled() && stack.isOf(RegCustomItem.MOONDUST_CRYSTAL_SHARD);
@@ -104,6 +113,15 @@ public class SpellResearchTableScreenHandler extends ScreenHandler {
 		this.addSlot(new Slot(inventory, SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT, RESEARCH_OUTPUT_X, RESEARCH_OUTPUT_Y) {
 			@Override public boolean isEnabled() { return activePage == 1; }
 			@Override public boolean canInsert(ItemStack stack) { return false; }
+			@Override public int getMaxItemCount() { return 1; }
+		});
+		// Appended after existing IDs so old table inventories retain every item.
+		this.addSlot(new Slot(inventory, SpellResearchTableBlockEntity.SLOT_UPGRADE_SCROLL, 249, 90) {
+			@Override public boolean isEnabled() { return activePage == 1 && runeUpgrade; }
+			@Override public boolean canInsert(ItemStack stack) {
+				return isEnabled() && stack.getItem() instanceof MagicScrollItem
+						&& ScrollData.getSpell(stack) != null;
+			}
 			@Override public int getMaxItemCount() { return 1; }
 		});
 		// 玩家背包
@@ -136,7 +154,9 @@ public class SpellResearchTableScreenHandler extends ScreenHandler {
 					return ItemStack.EMPTY;
 				}
 			} else {
-				boolean routed = activePage == 0
+				boolean routed = activePage == 1 && runeUpgrade && original.getItem() instanceof MagicScrollItem
+						? this.insertItem(original, SpellResearchTableBlockEntity.SLOT_UPGRADE_SCROLL, SpellResearchTableBlockEntity.SLOT_UPGRADE_SCROLL + 1, false)
+						: activePage == 0
 						? !this.getSlot(SpellResearchTableBlockEntity.SLOT_ANALYSIS).hasStack()
 								&& this.insertItem(original, SpellResearchTableBlockEntity.SLOT_ANALYSIS, SpellResearchTableBlockEntity.SLOT_ANALYSIS + 1, false)
 								|| this.insertItem(original, 0, 1, false)

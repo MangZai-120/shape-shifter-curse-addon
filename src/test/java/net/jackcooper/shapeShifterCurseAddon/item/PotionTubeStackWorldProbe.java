@@ -41,8 +41,14 @@ public final class PotionTubeStackWorldProbe {
         var moon = new ItemStack(MoonDustReliefItem.VIAL);
         check(ordinary.getMaxCount() == 3 && moon.getMaxCount() == 3, "两类装药试管的物品基础上限都是三管");
         check(new ItemStack(PotionTestTubes.EMPTY).getMaxCount() == 64, "空管保持六十四个材料堆叠");
-        check(MoonDustReliefItem.BOTTLE.getMaxCount() == 16 && MoonDustReliefItem.SPLASH.getMaxCount() == 16,
-                "不改变瓶装与支援月尘药水原有上限");
+        var bottles = new ItemStack[]{new ItemStack(MoonDustReliefItem.BOTTLE), new ItemStack(MoonDustReliefItem.SPLASH)};
+        check(MoonDustReliefItem.BOTTLE.getMaxCount() == 1 && MoonDustReliefItem.SPLASH.getMaxCount() == 1,
+                "瓶装与支援月尘药水基础上限一瓶");
+        for (var bottle : bottles) {
+            check(p.playerScreenHandler.getSlot(36).getMaxItemCount(bottle) == 1, "没有power的玩家槽位只允许一瓶");
+            clickChecks(p, bottle, 1);
+            shiftChecks(p, bottle, 1);
+        }
         for (var tube : new ItemStack[]{ordinary, moon}) {
             clickChecks(p, tube, 3);
             shiftChecks(p, tube, 3);
@@ -55,12 +61,31 @@ public final class PotionTubeStackWorldProbe {
         }
         check(p.playerScreenHandler.getSlot(36).getMaxItemCount(new ItemStack(Items.POTION)) == 8,
                 "普通药水仍遵循原power的八瓶规则");
+        for (var bottle : bottles) {
+            check(p.playerScreenHandler.getSlot(36).getMaxItemCount(bottle) == 8, "月尘瓶装使用同一power的八瓶上限");
+            clickChecks(p, bottle, 8);
+            shiftChecks(p, bottle, 8);
+            clear(p);
+            p.getInventory().setStack(0, bottle.copyWithCount(7));
+            var chest = GenericContainerScreenHandler.createGeneric9x1(92, p.getInventory());
+            chest.getInventory().setStack(0, bottle.copyWithCount(2));
+            chest.onSlotClick(0, 0, SlotActionType.QUICK_MOVE, p);
+            check(p.getInventory().getStack(0).getCount() == 8 && p.getInventory().count(bottle.getItem()) == 9,
+                    "Shift优先合并已有七瓶到八瓶，不绕过isStackable门控");
+            chest.onSlotClick(36, 0, SlotActionType.QUICK_MOVE, p);
+            check(chest.getInventory().count(bottle.getItem()) == 8, "Shift存回箱子保留全部八瓶");
+            for (int slot = 0; slot < 9; slot++) check(chest.getInventory().getStack(slot).getCount() <= 1,
+                    "形态堆叠能力不把普通箱子扩大到八瓶");
+            chest.onClosed(p);
+        }
         holder.removePower(familiar, SOURCE);
         holder.addPower(water, SOURCE);
         var waterTube = PotionTestTubes.divide(PotionUtil.setPotion(new ItemStack(Items.POTION), Potions.WATER));
         check(PotionTestTubes.stackLimit(waterTube, p) == 16, "水瓶限定power仅给装水试管资格");
         check(PotionTestTubes.stackLimit(ordinary, p) == 3 && PotionTestTubes.stackLimit(moon, p) == 3,
                 "水瓶限定power不提高治疗或月尘试管容量");
+        for (var bottle : bottles) check(PotionTestTubes.stackLimit(bottle, p) == 1,
+                "水瓶限定power不提高月尘瓶装与支援药水容量");
         holder.removePower(water, SOURCE);
         var id = new Identifier("ssc_addon", "tube_stack_probe_sixty_four");
         PowerFactory<ModifyPotionStackPower> factory = new PowerFactory<>(id, new SerializableData(),
@@ -70,6 +95,8 @@ public final class PotionTubeStackWorldProbe {
         holder.addPower(large, SOURCE);
         check(p.playerScreenHandler.getSlot(36).getMaxItemCount(ordinary) == 16,
                 "即使其它数据包power的瓶数更高，试管仍固定最多十六管");
+        for (var bottle : bottles) check(p.playerScreenHandler.getSlot(36).getMaxItemCount(bottle) == 64,
+                "月尘瓶装直接遵循数据包power的数量，而非写死为八瓶");
         holder.removePower(large, SOURCE);
         shiftChecks(p, ordinary, 3);
         check(p.playerScreenHandler.getSlot(36).getMaxItemCount(ordinary) == 3,

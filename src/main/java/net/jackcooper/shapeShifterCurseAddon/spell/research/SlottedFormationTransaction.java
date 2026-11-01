@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.spell.research;
 import net.jackcooper.shapeShifterCurseAddon.item.*;
 import net.jackcooper.shapeShifterCurseAddon.block.SpellResearchTableBlockEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationKnowledgeComponent;
+import net.jackcooper.shapeShifterCurseAddon.spell.*;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.onixary.shapeShifterCurseFabric.items.RegCustomItem;
@@ -46,6 +47,45 @@ public final class SlottedFormationTransaction {
         return new Result("completed",recipe.family());
     }
     public static int school(FormationInkItem ink){return ink.getType().element==null?7:ResearchTarget.FAMILIES.indexOf(ink.getType().element.id);}
+    /** Manual foundation validation retains the existing main-scroll and upgrade-material costs. */
+    public static Result upgradeEnhanced(Inventory table,Inventory backpack,FormationKnowledgeComponent knowledge,WorldRuneState world,
+                                         int level,int[] slots,UUID operation) {
+        ResearchProgress progress=knowledge.research();
+        if(!world.worldId().equals(progress.world))return new Result("invalid",-1);
+        if(!progress.completionToken.equals(operation))return new Result("duplicate",-1);
+        var evaluation=RuneBuildEvaluator.evaluate(level,slots,world.language(),SlottedSpellRecipes.all());
+        if(!evaluation.valid())return new Result("invalid",-1);
+        var recipe=evaluation.recipe();
+        if(progress.rank<level)return new Result("rank",-1);
+        if(!knowledge.hasSpell(recipe.spell()))return new Result("upgrade_unknown",-1);
+        if(RuneLayout.hasEnhancements(level,slots,RuneLayout.VERSION))return new Result("upgrade_foundation",-1);
+        if(!table.getStack(SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT).isEmpty())return new Result("output",-1);
+        ItemStack main=table.getStack(SpellResearchTableBlockEntity.SLOT_UPGRADE_SCROLL);
+        Spell spell=ScrollData.getSpell(main);
+        if(level<2||spell==null||!spell.getId().getPath().equals(recipe.spell())
+                ||ScrollData.getLevel(main)!=level-1||main.getCount()!=1||ArcaneAnalysis.isUnanalyzed(main))
+            return new Result("upgrade_input",-1);
+        if(main.getNbt()!=null&&main.getNbt().contains(RuneScheme.KEY)&&RuneScheme.authoritativeScroll(world,main)==null)
+            return new Result("invalid",-1);
+        List<Take> plan=new ArrayList<>();
+        if(!collect(table,backpack,SpellResearchTableBlockEntity.SLOT_INK,
+                stack->stack.getItem() instanceof FormationInkItem ink&&school(ink)==recipe.family(),
+                ScrollWorkshopManager.upgradeInkCost(level),plan))return new Result("ink",recipe.family());
+        if(!collect(table,backpack,SpellResearchTableBlockEntity.SLOT_CATALYST,
+                stack->stack.isOf(RegCustomItem.MOONDUST_CRYSTAL_SHARD),
+                ScrollWorkshopManager.upgradeCatalystCost(level),plan))return new Result("upgrade_catalyst",-1);
+        ItemStack result=main.copy();
+        ScrollData.setLevel(result,level);
+        ScrollData.setCastLevel(result,0);
+        for(Take take:plan)take.inventory.getStack(take.slot).decrement(take.count);
+        table.setStack(SpellResearchTableBlockEntity.SLOT_UPGRADE_SCROLL,ItemStack.EMPTY);
+        table.setStack(SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT,result);
+        progress.runeReferences.put(recipe.spell()+":"+level,slots.clone());
+        progress.runeCompleted.add(recipe.spell()+":"+level);
+        progress.completionToken=UUID.randomUUID();
+        table.markDirty();backpack.markDirty();
+        return new Result("completed",recipe.family());
+    }
     public static int count(Inventory table,Inventory backpack,int tableSlot,Predicate<ItemStack> predicate){
         int total=predicate.test(table.getStack(tableSlot))?table.getStack(tableSlot).getCount():0;
         for(int slot=0;slot<Math.min(36,backpack.size());slot++)if(predicate.test(backpack.getStack(slot)))total+=backpack.getStack(slot).getCount();

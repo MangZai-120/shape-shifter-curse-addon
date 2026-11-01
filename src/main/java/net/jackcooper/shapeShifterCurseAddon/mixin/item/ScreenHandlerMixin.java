@@ -132,7 +132,7 @@ public abstract class ScreenHandlerMixin {
 			return false;
 		}
 		int maxStack;
-		if (PotionTestTubes.isFilledTube(cursor)) {
+		if (PotionTestTubes.hasCustomStackLimit(cursor)) {
 			maxStack = PotionTestTubes.stackLimit(cursor, player);
 		} else if (cursor.getItem() instanceof PotionItem) {
 			int n = PowerHolderComponent.getPowers(player, ModifyPotionStackPower.class)
@@ -199,7 +199,7 @@ public abstract class ScreenHandlerMixin {
 			require = 0
 	)
 	private int ssc_addon$potionStackLimit(ItemStack stack, Operation<Integer> original, @Local(argsOnly = true) PlayerEntity player) {
-		if (PotionTestTubes.isFilledTube(stack)) {
+		if (PotionTestTubes.hasCustomStackLimit(stack)) {
 			return PotionTestTubes.stackLimit(stack, player);
 		}
 		if (stack.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.WitherPotionItem) {
@@ -238,7 +238,7 @@ public abstract class ScreenHandlerMixin {
 	 */
 	@Unique
 	private int ssc_addon$potionInsertLimit(ItemStack stack, PlayerEntity player) {
-		if (PotionTestTubes.isFilledTube(stack)) {
+		if (PotionTestTubes.hasCustomStackLimit(stack)) {
 			return PotionTestTubes.stackLimit(stack, player);
 		}
 		if (stack.getItem() instanceof UniversalEnergyPotionItem) {
@@ -280,10 +280,10 @@ public abstract class ScreenHandlerMixin {
 	private int ssc_addon$insertItemEmptySlotCap(Slot slot, Operation<Integer> original,
 			@Local(argsOnly = true) ItemStack movingStack) {
 		PlayerEntity player = this.ssc_addon$clickPlayer;
-		if (player != null && (slot.inventory instanceof PlayerInventory || PotionTestTubes.isFilledTube(movingStack))) {
+		if (player != null && (slot.inventory instanceof PlayerInventory || PotionTestTubes.hasCustomStackLimit(movingStack))) {
 			int limit = ssc_addon$potionInsertLimit(movingStack, player);
 			if (limit > 0) {
-				if (PotionTestTubes.isFilledTube(movingStack)) {
+				if (PotionTestTubes.hasCustomStackLimit(movingStack)) {
 					return Math.min(Math.min(limit, slot.getMaxItemCount(movingStack)), original.call(slot));
 				}
 				return Math.min(limit, original.call(slot));
@@ -292,15 +292,25 @@ public abstract class ScreenHandlerMixin {
 		return original.call(slot);
 	}
 
+	/** 基础不叠放的月尘瓶装仅在玩家具备power时进入Shift合并流程。 */
+	@WrapOperation(method = "insertItem",
+			at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;isStackable()Z"))
+	private boolean ssc_addon$addonPotionShiftStackable(ItemStack stack, Operation<Boolean> original) {
+		PlayerEntity player = this.ssc_addon$clickPlayer;
+		return player != null && PotionTestTubes.hasCustomStackLimit(stack)
+				? PotionTestTubes.stackLimit(stack, player) > 1 : original.call(stack);
+	}
+
 	@WrapOperation(
 			method = "insertItem",
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;getMaxCount()I"),
 			require = 0
 	)
-	private int ssc_addon$insertItemAddonPotionLimit(ItemStack stack, Operation<Integer> original) {
+	private int ssc_addon$insertItemAddonPotionLimit(ItemStack stack, Operation<Integer> original, @Local Slot target) {
 		PlayerEntity player = this.ssc_addon$clickPlayer;
 		if (player != null) {
 			int limit = ssc_addon$potionInsertLimit(stack, player);
+			if (PotionTestTubes.hasCustomStackLimit(stack)) return Math.min(limit, target.getMaxItemCount(stack));
 			if (limit > 1) {
 				return Math.max(limit, original.call(stack));
 			}

@@ -42,6 +42,17 @@ public final class NeoRuntime {
     }
     public static NeoState.PlayerData data(ServerPlayerEntity p) { return NeoState.get(p.getServer()).player(p.getUuid()); }
     public static Profile profile(ServerPlayerEntity p) {return NeoLegacyCasting.profile(p);}
+    /** Temporary sheep inherits body capacity only; casting traits still use its actual sheep form. */
+    public static Profile bodyProfile(ServerPlayerEntity p) {
+        String id=form(p);
+        Profile actual=NeoRules.profile(id);
+        if(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SHEEP_FORM.toString().equals(id)) {
+            String original=net.jackcooper.shapeShifterCurseAddon.ability.BeepSheepFormManager.originalFormId(p);
+            if(original!=null&&!original.equals(id))return new Profile(NeoRules.profile(original).safety(),
+                    actual.failure(),actual.offset(),actual.merge(),actual.split(),actual.reference());
+        }
+        return actual;
+    }
     public static String form(ServerPlayerEntity p) {
         var f=FormUtils.getCurrentForm(p);
         return f==null || f.getFormID()==null?"shape-shifter-curse:original_shifter":f.getFormID().toString();
@@ -53,12 +64,12 @@ public final class NeoRuntime {
             net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.clear(p);
             if(ACTIVE.containsKey(p.getUuid())) cancel(p,"form_changed");
             NeoEffects.clearStored(p.getUuid());
+            net.jackcooper.shapeShifterCurseAddon.spell.CollapsePenalties.clear(p);
             d.burden=0;d.recovery=0;d.form=current;dirty(p);
         }
     }
     public static boolean blocked(ServerPlayerEntity p) {
-        return p.hasStatusEffect(NeoMagic.DISORDER)||p.hasStatusEffect(NeoMagic.DISINTEGRATION)||p.hasStatusEffect(NeoMagic.BREAKDOWN)
-                ||p.hasStatusEffect(SscAddon.PURIFIED)||AbilityUseGuard.blocked(p)
+        return p.hasStatusEffect(SscAddon.PURIFIED)||AbilityUseGuard.blocked(p)
                 ||p.isSpectator()||!p.isAlive();
     }
     static void start(ServerPlayerEntity p,Hand hand,Blueprint b) {
@@ -156,22 +167,7 @@ public final class NeoRuntime {
         net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.grant(p,null,(int)Math.min(Integer.MAX_VALUE,Math.round(amount)));
     }
     public static void backlash(ServerPlayerEntity p,double actualCost) {
-        var d=data(p);
-        double n=profile(p).safety();
-        double excess=60*Math.max(0,d.burden-n)/Math.max(1,n);
-        if(excess>0) {
-            p.damage(p.getDamageSources().magic(),(float)(1.5+.05*excess+.02*actualCost));
-            double serious=clamp((excess-20)/80,0,1);
-            if(excess>60 && p.getRandom().nextDouble()<clamp((excess-60)/40,0,1)) {
-                p.removeStatusEffect(NeoMagic.DISORDER);p.removeStatusEffect(NeoMagic.DISINTEGRATION);
-                p.addStatusEffect(new StatusEffectInstance(NeoMagic.BREAKDOWN,300,(int)Math.min(4,(excess-60)/40)));
-                p.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS,300));
-            } else if(!p.hasStatusEffect(NeoMagic.BREAKDOWN)&&p.getRandom().nextDouble()<serious) {
-                p.removeStatusEffect(NeoMagic.DISORDER);
-                p.addStatusEffect(new StatusEffectInstance(NeoMagic.DISINTEGRATION,300));
-                p.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS,300));
-            } else if(!p.hasStatusEffect(NeoMagic.BREAKDOWN)&&!p.hasStatusEffect(NeoMagic.DISINTEGRATION)&&p.getRandom().nextDouble()<.45) p.addStatusEffect(new StatusEffectInstance(NeoMagic.DISORDER,100));
-        }
+        // Continuous penalties are settled once per server tick, rather than stacked on failed casts.
         message(p,"failed");dirty(p);
     }
     public static void cancel(ServerPlayerEntity p,String reason) {
@@ -205,6 +201,7 @@ public final class NeoRuntime {
             } else if(p.isAlive()&&!NeoLegacyCasting.isCasting(p)) {
                 if(server.getTicks()>d.lastPaymentTick){if(d.recovery>0)d.recovery--;else if(d.burden>0)d.burden=Math.max(0,d.burden-NeoRules.recoveryRate*NeoLegacyCasting.recoveryMultiplier(net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.getEquippedBook(p)));}
             }
+            net.jackcooper.shapeShifterCurseAddon.spell.CollapsePenalties.tick(p);
             if(server.getTicks()%5==0)NeoNetwork.hud(p);
             if(prior!=d.burden||priorRecovery!=d.recovery||hadCooldowns)dirty(p);
         }
@@ -216,11 +213,11 @@ public final class NeoRuntime {
         ServerPlayConnectionEvents.DISCONNECT.register((handler,server)->server.execute(()->{
             var online=server.getPlayerManager().getPlayer(handler.player.getUuid());
             if(online!=null&&online.networkHandler!=handler)return;
-            cancel(handler.player,"disconnected");NeoEffects.clearStored(handler.player.getUuid());dirty(handler.player);NeoNetwork.close(handler.player);
+            cancel(handler.player,"disconnected");net.jackcooper.shapeShifterCurseAddon.spell.CollapsePenalties.clear(handler.player);NeoEffects.clearStored(handler.player.getUuid());dirty(handler.player);NeoNetwork.close(handler.player);
         }));
-        ServerPlayerEvents.AFTER_RESPAWN.register((old,p,alive)->{cancel(old,"death");var d=data(p);d.burden=0;d.recovery=0;NeoEffects.clearStored(p.getUuid());dirty(p);});
+        ServerPlayerEvents.AFTER_RESPAWN.register((old,p,alive)->{cancel(old,"death");net.jackcooper.shapeShifterCurseAddon.spell.CollapsePenalties.clear(old);var d=data(p);d.burden=0;d.recovery=0;NeoEffects.clearStored(p.getUuid());dirty(p);});
         ServerLifecycleEvents.SERVER_STOPPING.register(server->{
-            for(var p:server.getPlayerManager().getPlayerList())cancel(p,"server_stopped");
+            for(var p:server.getPlayerManager().getPlayerList()){cancel(p,"server_stopped");net.jackcooper.shapeShifterCurseAddon.spell.CollapsePenalties.clear(p);}
             NeoEffects.clear();for(var p:server.getPlayerManager().getPlayerList())dirty(p);NeoNetwork.clear();ACTIVE.clear();
         });
     }

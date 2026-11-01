@@ -50,14 +50,21 @@ public final class PotionTestTubes {
         return stack.isOf(FILLED) || stack.isOf(MoonDustReliefItem.VIAL);
     }
 
-    /** 使魔原有的八瓶 power 在试管上对应十六管，水瓶限定 power 不扩大到其它药液。 */
+    /** 月尘瓶装与装药试管共用玩家资格，但各自保留不同的基础和提升上限。 */
+    public static boolean hasCustomStackLimit(ItemStack stack) {
+        return isFilledTube(stack) || MoonDustReliefItem.isBottled(stack);
+    }
+
+    /** 瓶装按power的数量，试管按3/16；水瓶限定power不扩大到其它药液。 */
     public static int stackLimit(ItemStack stack, @Nullable PlayerEntity player) {
-        if (!isFilledTube(stack)) return stack.getMaxCount();
-        if (player == null) return DEFAULT_STACK_LIMIT;
+        if (!hasCustomStackLimit(stack)) return stack.getMaxCount();
+        boolean tube = isFilledTube(stack);
+        if (player == null) return tube ? DEFAULT_STACK_LIMIT : 1;
         boolean water = stack.isOf(FILLED) && PotionUtil.getPotion(stack) == Potions.WATER;
-        boolean qualified = PowerHolderComponent.getPowers(player, ModifyPotionStackPower.class).stream()
-                .anyMatch(power -> power.isActive() && power.getCount() > 1 && (!power.isOnlyWaterPotion() || water));
-        return qualified ? POWER_STACK_LIMIT : DEFAULT_STACK_LIMIT;
+        int count = PowerHolderComponent.getPowers(player, ModifyPotionStackPower.class).stream()
+                .filter(power -> power.isActive() && (!power.isOnlyWaterPotion() || water))
+                .mapToInt(ModifyPotionStackPower::getCount).max().orElse(1);
+        return tube ? count > 1 ? POWER_STACK_LIMIT : DEFAULT_STACK_LIMIT : Math.max(1, count);
     }
 
     public static void register() {

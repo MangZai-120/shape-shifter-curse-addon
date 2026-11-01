@@ -42,6 +42,12 @@ public final class BeepSheepFormManager {
 
 	private record SheepSnapshot(String originalFormId, Map<String, Integer> cooldowns, long sheepStartTime) {}
 
+	/** Existing persisted transformation snapshot; callers must not treat it as an active form/power. */
+	public static String originalFormId(ServerPlayerEntity player) {
+		SheepSnapshot snapshot = SNAPSHOTS.get(player.getUuid());
+		return snapshot == null ? null : snapshot.originalFormId();
+	}
+
 	/** 当前是否处于羊形态（按 FormID 判定，双端可用）。 */
 	public static boolean isSheepForm(IForm form) {
 		return form != null && FormIdentifiers.SHEEP_FORM.equals(form.getFormID());

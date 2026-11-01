@@ -41,7 +41,8 @@ public class SpellResearchTableBlockEntity extends BlockEntity implements NamedS
 	public static final int SLOT_CATALYST = 4;
 	public static final int SLOT_ANALYSIS = 5;
 	public static final int SLOT_RESEARCH_OUTPUT = 6;
-	public static final int SLOT_COUNT = 7;
+	public static final int SLOT_UPGRADE_SCROLL = 7;
+	public static final int SLOT_COUNT = 8;
 	public static final int ANALYSIS_TICKS = 200;
 	private int analysisTicks;
 	private ItemStack analysisInput = ItemStack.EMPTY;

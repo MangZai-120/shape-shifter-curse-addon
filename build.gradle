@@ -99,6 +99,8 @@ tasks.register('neoMagicWorldTest', JavaExec) {
     classpath = sourceSets.test.runtimeClasspath
     mainClass = 'net.ssca.neomagic.NeoWorldTest'
     systemProperty 'neomagic.bookCutover', project.findProperty('neoBookCutover') ?: 'false'
+    systemProperty 'neomagic.collapsePenalties', project.findProperty('neoCollapsePenalties') ?: 'false'
+    systemProperty 'neomagic.safetyBalanceAudit', project.findProperty('neoSafetyBalanceAudit') ?: 'false'
     systemProperty 'neomagic.instinctAnchor', project.findProperty('neoInstinctAnchor') ?: 'false'
     systemProperty 'neomagic.moonDustPotions', project.findProperty('neoMoonDustPotions') ?: 'false'
     systemProperty 'neomagic.formScale', project.findProperty('neoFormScale') ?: 'false'
@@ -168,6 +170,7 @@ tasks.register('neoMagicPerformanceTest', JavaExec) {
 }
 
 tasks.register('neoMagicVisualTest', JavaExec) {
+    if (project.hasProperty('neoClientProbe')) systemProperty 'neomagic.clientProbe', project.property('neoClientProbe')
     systemProperty 'neomagic.chargeSoundLive', project.findProperty('neoChargeSoundLive') ?: 'false'
     systemProperty 'neomagic.courtLive', project.findProperty('neoCourtLive') ?: 'false'
     systemProperty 'neomagic.nightmareLive', project.findProperty('neoNightmareLive') ?: 'false'
@@ -451,6 +454,28 @@ tasks.register('formationResearchTest') {
     dependsOn 'slottedFormationChecks'
 }
 check.dependsOn formationResearchTest
+
+[
+    [name: 'formationResearchIntegrationTest', main: 'net.jackcooper.shapeShifterCurseAddon.spell.research.FormationResearchIntegrationTest', property: 'research.testClasspathFile'],
+    [name: 'infusionAltarIntegrationTest', main: 'net.jackcooper.shapeShifterCurseAddon.screen.InfusionAltarIntegrationTest', property: 'altar.testClasspathFile']
+].each { spec ->
+    def integrationTask = tasks.register(spec.name, JavaExec) {
+        dependsOn testClasses
+        classpath = sourceSets.test.runtimeClasspath
+        mainClass = spec.main
+        workingDir = layout.buildDirectory.dir(spec.name).get().asFile
+        systemProperty 'fabric.development', 'true'
+        systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+        systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+        doFirst {
+            workingDir.mkdirs()
+            def cpFile = new File(workingDir, 'classpath.txt')
+            cpFile.setText(classpath.asPath, 'UTF-8')
+            systemProperty spec.property, cpFile.absolutePath
+        }
+    }
+    check.dependsOn integrationTask
+}
 
 tasks.register('slottedFormationChecks', JavaExec) {
     dependsOn testClasses

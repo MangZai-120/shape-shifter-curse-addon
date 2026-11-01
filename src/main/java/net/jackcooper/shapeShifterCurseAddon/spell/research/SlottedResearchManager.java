@@ -48,7 +48,9 @@ public final class SlottedResearchManager {
                 }
                 case COMPLETE -> {
                     if(!request.containsUuid("Operation"))return;
-                    var result=SlottedFormationTransaction.completeEnhanced(table,player.getInventory(),knowledge,world,level,slots,request.getUuid("Operation"));
+                    var result=request.getBoolean("Upgrade")
+                            ?SlottedFormationTransaction.upgradeEnhanced(table,player.getInventory(),knowledge,world,level,slots,request.getUuid("Operation"))
+                            :SlottedFormationTransaction.completeEnhanced(table,player.getInventory(),knowledge,world,level,slots,request.getUuid("Operation"));
                     key=result.key();
                     if(result.success()){
                         player.currentScreenHandler.sendContentUpdates();
@@ -74,6 +76,7 @@ public final class SlottedResearchManager {
             state.putIntArray("Inactive",evaluated.inactive().stream().toArray());state.putIntArray("Synergy",evaluated.synergy().stream().toArray());state.putIntArray("Suppressed",evaluated.suppressed().stream().toArray());
             state.putIntArray("Problems",evaluated.problems().stream().flatMapToInt(p->java.util.stream.IntStream.of(p.first(),p.second())).filter(v->v>=0).distinct().toArray());}
         state.putIntArray("Meanings",meanings);state.putIntArray("Schools",schools);
+        if(action==OPEN||action==COMPLETE)state.put("UnlockedReferences",UnlockedSpellReferences.write(knowledge,world,level));
         var packet=PacketByteBufs.create();packet.writeVarInt(syncId);packet.writeNbt(state);packet.writeText(text(key,arguments));
         packet.writeBoolean(key.equals("valid")||key.equals("completed"));packet.writeVarInt(-1);packet.writeVarInt(-1);packet.writeVarInt(0);
         ServerPlayNetworking.send(player,FormationResearchNetworking.STATE,packet);

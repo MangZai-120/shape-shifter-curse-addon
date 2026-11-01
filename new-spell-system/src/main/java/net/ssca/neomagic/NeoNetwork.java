@@ -34,12 +34,13 @@ public final class NeoNetwork {
         ItemStack book=net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.getEquippedBook(p);
         boolean holding=book!=null||p.getMainHandStack().isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.MOON_DUST_SPELLBOOK)||p.getOffHandStack().isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.MOON_DUST_SPELLBOOK)||p.getMainHandStack().getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem||p.getOffHandStack().getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem;
         var n=new NbtCompound();n.putBoolean("Visible",holding||d.burden>0||a!=null||NeoEffects.hasStored(p.getUuid()));
+        n.putInt("PlayerId",p.getId());n.putString("Dimension",p.getWorld().getRegistryKey().getValue().toString());
         var profile=NeoLegacyCasting.profile(p,book);
         n.putInt("MasteryExpTen",d.spellbookMasteryExpTen);
         n.putBoolean("BookEquipped",book!=null&&!book.isEmpty());
         n.putInt("CastingLevel",net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.tier(d));
         n.putDouble("DangerMax",profile.safety()*2);
-        n.putDouble("C",d.burden);n.putDouble("S",profile.safety());n.putDouble("BodyS",NeoRules.profile(d.form).safety());n.putInt("Recovery",d.recovery);n.putInt("RecoveryDelay",NeoRules.recoveryDelay);
+        n.putDouble("C",d.burden);n.putDouble("S",profile.safety());n.putDouble("BodyS",NeoRuntime.bodyProfile(p).safety());n.putInt("Recovery",d.recovery);n.putInt("RecoveryDelay",NeoRules.recoveryDelay);
         n.putDouble("FrostSpellMultiplier",net.jackcooper.shapeShifterCurseAddon.spell.FrostSpellLink.multiplier(p,true));
         n.putLong("FrostReadyUntil",net.jackcooper.shapeShifterCurseAddon.spell.FrostSpellLink.readyUntil(p));
         n.putLong("NovaQuickCastUntil",net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.quickUntil(p));
@@ -92,8 +93,8 @@ public final class NeoNetwork {
         n.putInt("Age",legacy!=null?legacy.age:a==null?-1:a.age);n.putInt("Prep",prep);n.putDouble("Paid",session==null?0:session.paid);
         n.putDouble("Yaw",session==null?0:session.yaw);n.putDouble("Pitch",session==null?0:session.pitch);
         n.putDouble("Cumulative",session==null?0:1-session.survival);n.putString("Spell",legacyName);
-        int status=0;for(var effect:List.of(NeoMagic.DISORDER,NeoMagic.DISINTEGRATION,NeoMagic.BREAKDOWN))if(p.hasStatusEffect(effect))status=Math.max(status,p.getStatusEffect(effect).getDuration());
-        n.putInt("Blocked",status);n.putString("Form",d.form);n.putBoolean("Reference",NeoRules.profile(d.form).reference());
+        n.putInt("CollapseStage",p.isAlive()&&!p.isSpectator()?net.jackcooper.shapeShifterCurseAddon.spell.CollapsePenalties.stage(d.burden,profile.safety()):0);
+        n.putInt("Blocked",0);n.putString("Form",d.form);n.putBoolean("Reference",NeoRuntime.bodyProfile(p).reference());
         n.putString("Profile",NeoState.JSON.toJson(profile));
         return n;
     }

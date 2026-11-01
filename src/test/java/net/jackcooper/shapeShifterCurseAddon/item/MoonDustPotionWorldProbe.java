@@ -53,7 +53,7 @@ public final class MoonDustPotionWorldProbe {
             for(var item:List.of(MoonDustReliefItem.VIAL,MoonDustReliefItem.BOTTLE,MoonDustReliefItem.SPLASH)) {
                 check(Registries.ITEM.getId(item).getNamespace().equals("ssc_addon"),"药水使用附属命名空间");
                 check(world.getServer().getRecipeManager().get(Registries.ITEM.getId(item)).isEmpty(),"旧工作台药水配方已移除");
-                check(item.getMaxCount()==(item==MoonDustReliefItem.VIAL?3:16),"试管默认三管，其余月尘药水维持十六个堆叠");
+                check(item.getMaxCount()==(item==MoonDustReliefItem.VIAL?3:1),"试管默认三管，瓶装与支援月尘药水默认一瓶");
             }
             check(MoonDustReliefItem.VIAL.getMaxUseTime(new ItemStack(MoonDustReliefItem.VIAL))==16,"试管饮用十六tick");
             check(MoonDustReliefItem.BOTTLE.getMaxUseTime(new ItemStack(MoonDustReliefItem.BOTTLE))==40,"瓶装饮用四十tick");

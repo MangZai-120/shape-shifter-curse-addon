@@ -52,6 +52,7 @@ public final class NeoClient implements ClientModInitializer {
         long until=state.getLong("NovaQuickCastUntil");return time<until?until:0;
     }
     @Override public void onInitializeClient() {
+        net.jackcooper.shapeShifterCurseAddon.client.tutorial.SpellTutorialClient.register();
         net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry.ITEM.register(
                 (stack, tint) -> tint != 0 ? -1 : stack.hasNbt() && stack.getNbt().contains("CustomPotionColor")
                         ? net.minecraft.potion.PotionUtil.getColor(stack) : net.jackcooper.shapeShifterCurseAddon.item.MoonDustReliefItem.COLOR,
@@ -78,9 +79,10 @@ public final class NeoClient implements ClientModInitializer {
             hud=n==null?new NbtCompound():n;
             if(n!=null){data.burden=n.getDouble("C");data.recovery=n.getInt("Recovery");data.spellbookMasteryExpTen=n.getInt("MasteryExpTen");net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(data.spellbookMasteryExpTen);data.form=n.getString("Form");profile=NeoState.JSON.fromJson(n.getString("Profile"),Profile.class);}
         });});
-        ClientPlayConnectionEvents.DISCONNECT.register((handler,client)->{hud=new NbtCompound();bookEquipped=false;failureFlash=resetFlash=0;token=null;data=new NeoState.PlayerData();net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(0);COSTS.clear();TUNINGS.clear();BOOK_EFFECTS.clear();});
+        ClientPlayConnectionEvents.DISCONNECT.register((handler,client)->{net.jackcooper.shapeShifterCurseAddon.client.hud.CollapsePenaltyClient.clear();hud=new NbtCompound();bookEquipped=false;failureFlash=resetFlash=0;token=null;data=new NeoState.PlayerData();net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(0);COSTS.clear();TUNINGS.clear();BOOK_EFFECTS.clear();});
         NeoStabilityBar.registerResources();
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client->{
+            net.jackcooper.shapeShifterCurseAddon.client.hud.CollapsePenaltyClient.tick(client);
             hud.putBoolean("RecentFailure",failureFlash>0);hud.putBoolean("RecentReset",resetFlash>0);
             if(failureFlash>0)failureFlash--;if(resetFlash>0)resetFlash--;
         });

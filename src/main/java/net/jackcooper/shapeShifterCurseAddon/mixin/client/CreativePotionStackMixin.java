@@ -31,7 +31,7 @@ public class CreativePotionStackMixin {
 			require = 0
 	)
 	private int ssc_addon$potionCreativeStackLimit(ItemStack stack, Operation<Integer> original) {
-		if (PotionTestTubes.isFilledTube(stack)) {
+		if (PotionTestTubes.hasCustomStackLimit(stack)) {
 			return PotionTestTubes.stackLimit(stack, MinecraftClient.getInstance().player);
 		}
 		if (stack.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.WitherPotionItem) {

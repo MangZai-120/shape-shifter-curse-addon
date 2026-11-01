@@ -6,6 +6,8 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.*;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.jackcooper.shapeShifterCurseAddon.item.MoonDustReliefItem;
 import net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes;
+import net.jackcooper.shapeShifterCurseAddon.item.PotionBagItem;
+import net.jackcooper.shapeShifterCurseAddon.screen.PotionBagScreenHandler;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.effect.UniversalEnergyEffect;
 import net.minecraft.client.MinecraftClient;
@@ -15,6 +17,7 @@ import net.minecraft.item.*;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.resource.*;
 import net.minecraft.util.Hand;
+import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.world.*;
 import net.minecraft.world.gen.*;
 import net.minecraft.world.level.LevelInfo;
@@ -33,7 +36,7 @@ public final class MoonDustPotionClientProbe {
         ClientLifecycleEvents.CLIENT_STARTED.register(mc->org.lwjgl.glfw.GLFW.glfwHideWindow(mc.getWindow().getHandle()));
         ServerTickEvents.END_SERVER_TICK.register(server->{try{
             if(finished||server.getPlayerManager().getPlayerList().isEmpty())return;
-            if(++ticks==60){
+            if(++ticks==60&&!ready){
                 var p=server.getPlayerManager().getPlayerList().get(0);
                 server.getOverworld().setTimeOfDay(6000);
                 server.getGameRules().get(GameRules.DO_DAYLIGHT_CYCLE).set(false,server);
@@ -69,6 +72,10 @@ public final class MoonDustPotionClientProbe {
             if(phase<5&&mc.currentScreen!=null)mc.setScreen(null);
             double burden=NeoClient.hud.getDouble("C");
             if(phase==0&&burden==100&&mc.player.getInventory().getStack(0).isOf(MoonDustReliefItem.VIAL)){
+                check(MoonDustReliefItem.BOTTLE.getMaxCount()==1&&MoonDustReliefItem.SPLASH.getMaxCount()==1,
+                    "实际客户端瓶装、支援药水基础上限均为一瓶");
+                check(mc.player.playerScreenHandler.getSlot(36).getMaxItemCount(new ItemStack(MoonDustReliefItem.BOTTLE))==1,
+                    "无堆叠power时实际客户端玩家槽位仅允许一瓶");
                 for(var item:List.of(MoonDustReliefItem.VIAL,MoonDustReliefItem.BOTTLE,MoonDustReliefItem.SPLASH,PotionTestTubes.EMPTY,PotionTestTubes.FILLED)){
                     var stack=item.getDefaultStack();
                     check(!mc.getItemRenderer().getModel(stack,mc.world,mc.player,0).getParticleSprite().getContents().getId().getPath().equals("missingno"),"客户端加载药水模型");
@@ -112,7 +119,56 @@ public final class MoonDustPotionClientProbe {
                 mc.setScreen(new TubePreview());phase=5;ticks=0;
             }else if(phase==5&&ticks>20){
                 save(mc,"test-tubes-rendered.png");
-                Files.writeString(Path.of("moon-dust-client-result.json"),NeoState.JSON.toJson(Map.of("checks",checks,"real_client",true,"actual_use_packets",true,"splash_final_c",burden)));
+                mc.setScreen(null);mc.player.getInventory().selectedSlot=8;
+                mc.getServer().execute(()->{
+                    try{
+                        var p=mc.getServer().getPlayerManager().getPlayerList().get(0);
+                        net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils._setForm(p,
+                            net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms.getPlayerForm(
+                                net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED));
+                        NeoRuntime.refreshForm(p);p.getInventory().clear();p.getInventory().selectedSlot=8;
+                        p.getInventory().setStack(8,new ItemStack(SscAddon.POTION_BAG));
+                        p.getInventory().setStack(9,new ItemStack(MoonDustReliefItem.BOTTLE,9));
+                        NeoRuntime.data(p).burden=100;NeoRuntime.data(p).recovery=10000;NeoNetwork.hud(p);
+                        p.setSneaking(true);SscAddon.POTION_BAG.use(p.getWorld(),p,Hand.MAIN_HAND);p.setSneaking(false);
+                    }catch(Throwable error){fail(error);}
+                });phase=6;
+            }else if(phase==6&&mc.player.currentScreenHandler instanceof PotionBagScreenHandler bagHandler){
+                var input=bagHandler.getSlot(9).getStack();
+                if(!input.isOf(MoonDustReliefItem.BOTTLE))return;
+                check(bagHandler.getSlot(0).getMaxItemCount(input)==8
+                    &&mc.player.playerScreenHandler.getSlot(36).getMaxItemCount(input)==8,
+                    "Red真实形态power同步后，玩家和袋内月尘瓶装上限均为八瓶");
+                mc.interactionManager.clickSlot(bagHandler.syncId,9,0,SlotActionType.QUICK_MOVE,mc.player);phase=7;
+            }else if(phase==7&&mc.player.currentScreenHandler instanceof PotionBagScreenHandler bagHandler
+                    &&bagHandler.getSlot(0).getStack().getCount()==8&&bagHandler.getSlot(1).getStack().getCount()==1){
+                if(!bagHandler.getSlot(9).getStack().isEmpty())return;
+                check(true,"真实Shift网络包将九瓶按八加一存入药水袋，客户端槽位已同步");
+                save(mc,"moon-bottle-bag-in-game.png");mc.player.closeHandledScreen();
+                mc.player.getInventory().selectedSlot=8;use(mc);phase=8;
+            }else if(phase==8&&burden==40){
+                mc.options.useKey.setPressed(false);mc.player.stopUsingItem();
+                var bag=mc.player.getInventory().getStack(8);
+                if(PotionBagScreenHandler.getStoredStack(bag,0).getCount()!=7||mc.player.getInventory().count(Items.GLASS_BOTTLE)!=1)return;
+                check(true,"药水袋真实饮用网络包同步恢复六十崩解度、消耗一瓶并返还一个玻璃瓶");
+                mc.getServer().execute(()->{
+                    try{
+                        var p=mc.getServer().getPlayerManager().getPlayerList().get(0);
+                        check(NeoRuntime.data(p).burden==40&&PotionBagScreenHandler.getStoredStack(p.getInventory().getStack(8),0).getCount()==7,
+                            "服务端与客户端的月尘恢复量、袋内余量一致");
+                        PotionBagScreenHandler.setStoredStack(p.getInventory().getStack(8),0,new ItemStack(MoonDustReliefItem.SPLASH,2));
+                        NeoRuntime.data(p).burden=100;NeoRuntime.data(p).recovery=10000;NeoNetwork.hud(p);
+                    }catch(Throwable error){fail(error);}
+                });phase=9;
+            }else if(phase==9&&burden==100&&PotionBagScreenHandler.getStoredStack(mc.player.getInventory().getStack(8),0).isOf(MoonDustReliefItem.SPLASH)){
+                mc.player.getInventory().selectedSlot=8;mc.player.setPitch(90);
+                mc.interactionManager.interactItem(mc.player,Hand.MAIN_HAND);phase=10;
+            }else if(phase==10&&burden>=65&&burden<100
+                    &&PotionBagScreenHandler.getStoredStack(mc.player.getInventory().getStack(8),0).getCount()==1){
+                check(true,"药水袋真实投掷支援药水，碰撞后恢复量与余量已同步到客户端");
+                check(mc.player.getInventory().getStack(8).getItem() instanceof PotionBagItem,"使用后药水袋本体仍然保留");
+                Files.writeString(Path.of("moon-dust-client-result.json"),NeoState.JSON.toJson(Map.of("checks",checks,"real_client",true,
+                    "actual_use_packets",true,"bag_use_packets",true,"splash_final_c",burden)));
                 finished=true;System.out.println("MOON_DUST_POTION_CLIENT_PASS checks="+checks);mc.scheduleStop();
             }
         }catch(Throwable e){fail(e);}});

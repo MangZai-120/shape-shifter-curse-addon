@@ -57,7 +57,7 @@ public final class MoonDustReliefItem extends Item {
     private final boolean splash;
 
     private MoonDustReliefItem(String kind, double relief, int ticks, boolean splash) {
-        super(new Item.Settings().maxCount("vial".equals(kind) ? PotionTestTubes.DEFAULT_STACK_LIMIT : 16));
+        super(new Item.Settings().maxCount("vial".equals(kind) ? PotionTestTubes.DEFAULT_STACK_LIMIT : 1));
         this.kind = kind;
         this.defaultRelief = relief;
         this.defaultTicks = ticks;
@@ -65,6 +65,7 @@ public final class MoonDustReliefItem extends Item {
     }
 
     public double relief() { return this == VIAL ? BOTTLE.relief() / PotionTestTubes.PORTIONS : BAL.d(kind + "_relief", defaultRelief); }
+    public static boolean isBottled(ItemStack stack) { return stack.isOf(BOTTLE) || stack.isOf(SPLASH); }
     @Override public UseAction getUseAction(ItemStack stack) { return splash ? UseAction.NONE : UseAction.DRINK; }
     @Override public int getMaxUseTime(ItemStack stack) {
         return splash ? 0 : this == VIAL ? PotionTestTubes.drinkTicks(BOTTLE.getMaxUseTime(new ItemStack(BOTTLE))) : BAL.i(kind + "_drink_ticks", defaultTicks);
@@ -74,25 +75,31 @@ public final class MoonDustReliefItem extends Item {
         if (!splash) return ItemUsage.consumeHeldItem(world, player, hand);
         ItemStack held = player.getStackInHand(hand);
         if (!world.isClient) {
-            var potion = new PotionEntity(world, player);
-            ItemStack dose = held.copy();
-            dose.setCount(1);
-            dose.getOrCreateNbt().remove("Potion");
-            dose.getNbt().remove("CustomPotionEffects");
-            PotionUtil.setCustomPotionEffects(dose, List.of(new StatusEffectInstance(RELIEF, 1)));
-            if (!dose.getOrCreateNbt().contains("CustomPotionColor")) dose.getNbt().putInt("CustomPotionColor", COLOR);
-            dose.getOrCreateNbt().putDouble(DOSE_KEY, relief());
-            potion.setItem(dose);
-            potion.setVelocity(player, player.getPitch(), player.getYaw(), -20, .5f, 1);
-            if (!world.spawnEntity(potion)) return TypedActionResult.fail(held);
-            world.playSound(null, player.getX(), player.getY(), player.getZ(),
-                    SoundEvents.ENTITY_SPLASH_POTION_THROW, SoundCategory.PLAYERS, .5f,
-                    .4f / (world.getRandom().nextFloat() * .4f + .8f));
+            if (!spawnThrownPotion(world, player, held)) return TypedActionResult.fail(held);
             if (!player.getAbilities().creativeMode) held.decrement(1);
             player.getItemCooldownManager().set(this, BAL.i("throw_cooldown_ticks", 10));
             player.incrementStat(Stats.USED.getOrCreateStat(this));
         }
         return TypedActionResult.success(held, world.isClient);
+    }
+
+    /** 手持与药水袋共用同一次剂量快照和原版弹体；扣物品、冷却由调用入口处理。 */
+    public boolean spawnThrownPotion(World world, PlayerEntity player, ItemStack source) {
+        if (world.isClient || !splash || source.isEmpty() || !source.isOf(this)) return false;
+        var potion = new PotionEntity(world, player);
+        ItemStack dose = source.copyWithCount(1);
+        dose.getOrCreateNbt().remove("Potion");
+        dose.getNbt().remove("CustomPotionEffects");
+        PotionUtil.setCustomPotionEffects(dose, List.of(new StatusEffectInstance(RELIEF, 1)));
+        if (!dose.getNbt().contains("CustomPotionColor")) dose.getNbt().putInt("CustomPotionColor", COLOR);
+        dose.getNbt().putDouble(DOSE_KEY, relief());
+        potion.setItem(dose);
+        potion.setVelocity(player, player.getPitch(), player.getYaw(), -20, .5f, 1);
+        if (!world.spawnEntity(potion)) return false;
+        world.playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.ENTITY_SPLASH_POTION_THROW, SoundCategory.PLAYERS, .5f,
+                .4f / (world.getRandom().nextFloat() * .4f + .8f));
+        return true;
     }
 
     @Override public ItemStack finishUsing(ItemStack stack, World world, LivingEntity user) {

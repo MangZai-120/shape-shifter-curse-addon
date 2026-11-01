@@ -62,7 +62,7 @@ public final class InfusionAltarIntegrationTest {
 			SimpleInventory inventory = new SimpleInventory(InfusionAltarScreenHandler.ALTAR_SLOT_COUNT);
 			PlayerInventory player = new PlayerInventory(null);
 			InfusionAltarScreenHandler handler = new InfusionAltarScreenHandler(1, player, inventory);
-			check(handler.slots.size() == 45, "nine altar slots and 36 inventory slots");
+			check(handler.slots.size() == 48, "twelve preparation slots and 36 inventory slots");
 			check(!handler.getSlot(8).canInsert(formation(1)), "sixth slot locked without book");
 			inventory.setStack(0, restored);
 			SpellbookData.setLevel(restored, 2);
@@ -71,7 +71,7 @@ public final class InfusionAltarIntegrationTest {
 			check(handler.getSlot(8).canInsert(formation(1)), "sixth slot enabled at level three");
 			for (int i = 3; i < 8; i++) inventory.setStack(i, formation(1));
 			player.setStack(9, formation(2));
-			check(!handler.quickMove(null, 9).isEmpty(), "shift-click from first inventory slot");
+			check(!handler.quickMove(null, InfusionAltarScreenHandler.ALTAR_SLOT_COUNT).isEmpty(), "shift-click from first inventory slot");
 			check(FormationData.getLevel(inventory.getStack(8)) == 2, "shift-click reaches sixth slot");
 			check(player.getStack(9).isEmpty(), "shift-click moves rather than copies");
 			check(!handler.quickMove(null, 8).isEmpty(), "shift-click from sixth altar slot");
@@ -82,7 +82,7 @@ public final class InfusionAltarIntegrationTest {
 				check(slot.x >= 1 && slot.y >= 1 && slot.x + 17 < 312 && slot.y + 17 < 232, "slot inside GUI");
 				for (int j = i + 1; j < handler.slots.size(); j++) {
 					var other = handler.getSlot(j);
-					check(Math.abs(slot.x - other.x) >= 18 || Math.abs(slot.y - other.y) >= 18, "slots never overlap");
+					if(slot.isEnabled()&&other.isEnabled())check(Math.abs(slot.x - other.x) >= 18 || Math.abs(slot.y - other.y) >= 18, "visible configuration slots never overlap");
 				}
 			}
 			// Block-entity NBT includes the appended ninth inventory entry; old eight-entry saves still load.
@@ -93,13 +93,25 @@ public final class InfusionAltarIntegrationTest {
 			altar.writeNbt(save);
 			InfusionAltarBlockEntity reloaded = new InfusionAltarBlockEntity(BlockPos.ORIGIN, Blocks.STONE.getDefaultState());
 			reloaded.readNbt(save);
-			check(reloaded.size() == 9 && !reloaded.getStack(8).isEmpty(), "ninth inventory entry survives save/load");
+			check(reloaded.size() == 12 && !reloaded.getStack(8).isEmpty(), "formation IDs survive appended maintenance slots");
 			altar.removeStack(8);
 			NbtCompound oldSave = new NbtCompound();
 			altar.writeNbt(oldSave);
 			reloaded.readNbt(oldSave);
 			check(reloaded.getStack(8).isEmpty() && !reloaded.getStack(7).isEmpty(), "old save retains original five formations");
-			System.out.println("Infusion altar: 1/3/6 unlocks, legacy and six-slot NBT, sixth-slot modifiers, both shift-click directions, 45 slot bounds and separation passed.");
+            handler.setMaintenance(true);
+            check(!handler.getSlot(0).isEnabled()&&!handler.getSlot(8).isEnabled()&&handler.getSlot(InfusionAltarScreenHandler.MAINTENANCE_SCROLL).isEnabled(),"maintenance hides book configuration and exposes dedicated scroll input");
+            for(var slot:handler.slots)for(var other:handler.slots)
+                if(slot!=other&&slot.isEnabled()&&other.isEnabled())
+                    check(Math.abs(slot.x-other.x)>=18||Math.abs(slot.y-other.y)>=18,"visible maintenance slots never overlap");
+            altar.setStack(InfusionAltarScreenHandler.MAINTENANCE_INK,new ItemStack(Items.DIAMOND,3));
+            altar.setStack(InfusionAltarScreenHandler.MAINTENANCE_SCROLL,new ItemStack(Items.PAPER,1));
+            NbtCompound maintenanceSave=new NbtCompound();altar.writeNbt(maintenanceSave);reloaded.readNbt(maintenanceSave);
+            check(reloaded.getStack(InfusionAltarScreenHandler.MAINTENANCE_INK).getCount()==3&&reloaded.getStack(InfusionAltarScreenHandler.MAINTENANCE_SCROLL).isOf(Items.PAPER),"maintenance inventory survives NBT separately from book formations");
+            var drops=altar.getItems();
+            check(drops.get(InfusionAltarScreenHandler.MAINTENANCE_INK).getCount()==3&&drops.get(0).getItem() instanceof MoonDustSpellbookItem,"breaking table keeps book and maintenance contents");
+            for(int slot=3;slot<InfusionAltarScreenHandler.FORMATION_END;slot++)check(drops.get(slot).isEmpty(),"breaking table does not duplicate book's mirrored formations");
+			System.out.println("Preparation table: 1/3/6 unlocks, legacy NBT, maintenance persistence, 48 slots, visible separation, shift-click and safe drops passed.");
 		}
 
 		private static void checkPreviews(Item bookItem) {

@@ -6,14 +6,12 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.block.SpellResearchTableBlockEntity;
 import net.jackcooper.shapeShifterCurseAddon.item.BlankFormationPaperItem;
 import net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem;
-import net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.screen.SpellResearchTableScreenHandler;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationData;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationElement;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationKnowledgeComponent;
 import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
-import net.jackcooper.shapeShifterCurseAddon.spell.ScrollWorkshopManager;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry;
 import net.minecraft.client.gui.DrawContext;
@@ -25,12 +23,10 @@ import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.items.RegCustomItem;
 import org.lwjgl.glfw.GLFW;
@@ -53,9 +49,8 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 	private static final int TRACK_X = 117, THUMB_W = 8, THUMB_H = 13;
 	private static final int THUMB_Y_MIN = 6, THUMB_Y_MAX = 53;
 	private static final int DETAIL_X = 152, DETAIL_W = 152;
-	private static final String[] ACTION_KEYS = {"workshop_craft", "workshop_upgrade", "workshop_repair", "workshop_salvage", "workshop_imprint"};
 
-	private final ButtonWidget[] workshopButtons = new ButtonWidget[5];
+	private ButtonWidget projectionButton;
 	private TextFieldWidget searchField;
 	private ButtonWidget levelDownButton;
 	private ButtonWidget levelUpButton;
@@ -64,19 +59,15 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 	private int tab;
 	private int scroll;
 	private int selected = -1;
-	private int workshopLevel = 1;
-	private int previewOperation;
+	private int referenceLevel = 1;
 	private int thumbY = THUMB_Y_MIN;
 	private boolean draggingThumb;
 	private boolean researchHandoff;
-	private ItemStack observedOutput = ItemStack.EMPTY;
-	private ItemStack salvageTarget = ItemStack.EMPTY;
-	private int salvageConfirmTicks;
 
 	private record Entry(String id, String variant, int level, Spell spell) {
-		ItemStack stack(int workshopLevel) {
+		ItemStack stack(int referenceLevel) {
 			return spell == null ? FormationData.create(FormationElement.byId(id), level, variant)
-					: ScrollData.create(id, workshopLevel);
+					: ScrollData.create(id, referenceLevel);
 		}
 
 		FormationElement element() {
@@ -110,6 +101,8 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 			this.addDrawableChild(ResearchTableTabs.create(this.x, this.y, index, () -> this.tab == targetTab,
 					() -> selectTab(targetTab)));
 		}
+		this.addDrawableChild(ResearchTableTabs.tutorial(this.x,this.y,
+                net.jackcooper.shapeShifterCurseAddon.client.tutorial.SpellTutorialClient::replay));
 		this.searchField = this.addDrawableChild(new TextFieldWidget(this.textRenderer,
 				this.x + PANEL_X, this.y + 23, PANEL_W, 16, label("search")));
 		this.searchField.setMaxLength(64);
@@ -117,8 +110,7 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 		this.searchField.setText(query);
 		this.searchField.setChangedListener(value -> {
 			this.scroll = 0;
-			cancelSalvage();
-			refreshEntries();
+				refreshEntries();
 		});
 		this.levelDownButton = this.addDrawableChild(ButtonWidget.builder(Text.literal("-"), button -> adjustLevel(-1))
 				.dimensions(this.x + 270, this.y + 36, 16, 14).build());
@@ -128,13 +120,8 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 		this.levelUpButton.setTooltip(Tooltip.of(label("level_up")));
 		this.formationButton=this.addDrawableChild(ButtonWidget.builder(label("scribe"),button->onFormationAction())
 				.dimensions(this.x+DETAIL_X,this.y+94,DETAIL_W,20).build());
-		Item[] actionIcons = {SscAddon.MAGIC_SCROLL, Items.ANVIL, Items.PHANTOM_MEMBRANE, Items.GRINDSTONE, Items.ENCHANTED_BOOK};
-		for (int index = 0; index < this.workshopButtons.length; index++) {
-			final int operation = index;
-			this.workshopButtons[index] = this.addDrawableChild(new IconButton(
-					this.x + DETAIL_X + index * 30, this.y + 94, 28, 20,
-					label(ACTION_KEYS[index]), actionIcons[index], button -> onWorkshopAction(operation)));
-		}
+        this.projectionButton=this.addDrawableChild(ButtonWidget.builder(label("project_spell"),button->projectSelected())
+                .dimensions(this.x+DETAIL_X,this.y+94,DETAIL_W,20).build());
 		refreshEntries();
 		refreshWidgets();
 	}
@@ -169,8 +156,6 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 		this.selected = -1;
 		this.scroll = 0;
 		this.draggingThumb = false;
-		this.observedOutput = ItemStack.EMPTY;
-		cancelSalvage();
 		this.searchField.setText("");
 		this.searchField.setFocused(false);
 		refreshEntries();
@@ -178,8 +163,7 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 	}
 
 	private void adjustLevel(int delta) {
-		this.workshopLevel = Math.max(1, Math.min(ScrollData.MAX_SPELL_LEVEL, this.workshopLevel + delta));
-		cancelSalvage();
+		this.referenceLevel = Math.max(1, Math.min(ScrollData.MAX_SPELL_LEVEL, this.referenceLevel + delta));
 		refreshWidgets();
 	}
 
@@ -194,7 +178,7 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 			FormationKnowledgeComponent knowledge = FormationKnowledgeComponent.get(this.client.player);
 			if (this.tab == 2) {
 				for (Spell spell : SpellRegistry.all()) {
-					if (spell.getMaxLevel() > 1 && knowledge.hasSpell(spell.getId().getPath())) {
+					if (net.jackcooper.shapeShifterCurseAddon.spell.research.SlottedSpellRecipes.get(spell.getId().getPath()) != null && knowledge.hasSpell(spell.getId().getPath())) {
 						next.add(new Entry(spell.getId().getPath(), null, 0, spell));
 					}
 				}
@@ -216,21 +200,6 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 		this.entries = next;
 		this.selected = previous == null ? -1 : this.entries.indexOf(previous);
 		this.scroll = Math.max(0, Math.min(maxScroll(), this.scroll));
-		ItemStack output = this.handler.getSlot(3).getStack();
-		if (!ItemStack.areEqual(this.observedOutput, output)) {
-			this.observedOutput = output.copy();
-			cancelSalvage();
-			if (this.tab == 2 && ScrollData.getSpell(output) != null) {
-				for (int index = 0; index < this.entries.size(); index++) {
-					if (this.entries.get(index).spell == ScrollData.getSpell(output)) {
-						this.selected = index;
-						this.workshopLevel = Math.min(ScrollData.MAX_SPELL_LEVEL, ScrollData.getLevel(output) + 1);
-						this.scroll = Math.min(maxScroll(), index / COLUMNS);
-						break;
-					}
-				}
-			}
-		}
 		if (!this.draggingThumb) {
 			syncThumbFromScroll();
 		}
@@ -244,18 +213,14 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 		this.formationButton.setMessage(label(this.tab==ResearchTableTabs.LEARN?"learn":"scribe"));
 		this.levelDownButton.visible = workshop;
 		this.levelUpButton.visible = workshop;
-		this.levelDownButton.active = this.workshopLevel > 1;
-		this.levelUpButton.active = this.workshopLevel < ScrollData.MAX_SPELL_LEVEL;
-		for (int operation = 0; operation < this.workshopButtons.length; operation++) {
-			ButtonWidget button = this.workshopButtons[operation];
-			button.visible = workshop;
-			if (workshop) {
-				Text problem = workshopProblem(operation);
-				button.active = problem == null;
-				button.setTooltip(Tooltip.of(workshopTooltip(operation, problem)));
-				button.setMessage(operation == 3 && this.salvageConfirmTicks > 0 ? label("salvage_confirm") : label(ACTION_KEYS[operation]));
-			}
-		}
+		this.levelDownButton.active = this.referenceLevel > 1;
+		this.levelUpButton.active = this.referenceLevel < ScrollData.MAX_SPELL_LEVEL;
+        this.projectionButton.visible=workshop;
+        Entry selected=selectedEntry();
+        int rank=this.client.player==null?0:FormationKnowledgeComponent.get(this.client.player).research().rank;
+        this.projectionButton.active=workshop&&selected!=null&&this.referenceLevel<=rank&&this.referenceLevel<=selected.spell.getMaxLevel();
+        this.projectionButton.setTooltip(Tooltip.of(label(this.projectionButton.active?"projection_help":"projection_rank")));
+
 	}
 
 	private void onFormationAction(){
@@ -265,158 +230,25 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 		ClientPlayNetworking.send(this.tab==ResearchTableTabs.LEARN?SscAddonNetworking.PACKET_FORMATION_LEARN:SscAddonNetworking.PACKET_FORMATION_SCRIBE,buffer);
 	}
 
-	private void onWorkshopAction(int operation) {
-		refreshEntries();
-		if (this.tab != 2 || workshopProblem(operation) != null) {
-			return;
-		}
-		if (operation == 3) {
-			ItemStack output = this.handler.getSlot(3).getStack();
-			if (this.salvageConfirmTicks <= 0 || !ItemStack.areEqual(this.salvageTarget, output)) {
-				this.salvageTarget = output.copy();
-				this.salvageConfirmTicks = 60;
-				refreshWidgets();
-				return;
-			}
-		}
-		cancelSalvage();
-		PacketByteBuf buffer = PacketByteBufs.create();
-		if (operation < 2) {
-			buffer.writeString(selectedEntry().id);
-			buffer.writeVarInt(this.workshopLevel);
-		}
-		ClientPlayNetworking.send(switch (operation) {
-			case 0 -> SscAddonNetworking.PACKET_SCROLL_CRAFT;
-			case 1 -> SscAddonNetworking.PACKET_SCROLL_UPGRADE;
-			case 2 -> SscAddonNetworking.PACKET_SCROLL_REPAIR;
-            case 4 -> SscAddonNetworking.PACKET_SCROLL_IMPRINT;
-			default -> SscAddonNetworking.PACKET_SCROLL_SALVAGE;
-		}, buffer);
-	}
+    private void projectSelected(){
+        Entry entry=selectedEntry();if(entry==null||!projectionButton.active)return;
+        this.researchHandoff=true;
+        var screen=new SlottedFormationScreen(this.handler,this.client.player.getInventory(),this);
+        screen.projectUnlocked(entry.id,this.referenceLevel);
+        this.client.setScreen(screen);
+    }
 
-	private Text workshopProblem(int operation) {
-		if(operation==4){ItemStack scheme=this.handler.getSlot(0).getStack(),scroll=this.handler.getSlot(3).getStack();
-            if(net.jackcooper.shapeShifterCurseAddon.spell.ArcaneAnalysis.isUnanalyzed(scroll))return Text.translatable("message.ssc_addon.analysis.required");
-            if(!scheme.isOf(SscAddon.SPELL_FORMATION)||scheme.getNbt()==null||!scheme.getNbt().contains(net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme.KEY)||ScrollData.getSpell(scroll)==null)return Text.translatable("research.ssc_addon.runes.imprint.1");
-            var n=scheme.getNbt().getCompound(net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme.KEY);
-            return ScrollData.getSpell(scroll).getId().getPath().equals(n.getString("Spell"))&&ScrollData.getLevel(scroll)==n.getInt("Level")?null:Text.translatable("research.ssc_addon.runes.imprint.3");}
-        Entry selectedEntry = selectedEntry();
-		ItemStack output = this.handler.getSlot(3).getStack();
-		Spell spell = operation < 2 ? selectedEntry == null ? null : selectedEntry.spell : ScrollData.getSpell(output);
-		if ((operation == 1 || operation == 2) && net.jackcooper.shapeShifterCurseAddon.spell.ArcaneAnalysis.isUnanalyzed(output)) {
-			return Text.translatable("message.ssc_addon.analysis.required");
-		}
-		if (spell == null || operation >= 2 && !(output.getItem() instanceof MagicScrollItem)) {
-			return label(operation < 2 ? "select_spell" : "insert_scroll");
-		}
-		if (operation == 0) {
-			if (this.workshopLevel > ScrollWorkshopManager.CRAFT_MAX_LEVEL) {
-				return label("craft_limit", ScrollWorkshopManager.CRAFT_MAX_LEVEL);
-			}
-			if (!output.isEmpty()) {
-				return Text.translatable("message.ssc_addon.research.output_full");
-			}
-			if (!(this.handler.getSlot(0).getStack().getItem() instanceof BlankFormationPaperItem)) {
-				return Text.translatable("message.ssc_addon.research.no_paper");
-			}
-		} else if (operation == 1) {
-			if (!(output.getItem() instanceof MagicScrollItem) || ScrollData.getSpell(output) != spell
-					|| this.workshopLevel < 2 || ScrollData.getLevel(output) != this.workshopLevel - 1) {
-				return label("upgrade_input", Text.translatable(spell.getNameKey()), Math.max(1, this.workshopLevel - 1));
-			}
-		} else if (operation == 2) {
-			if (ScrollData.getMaxUses(output) <= 0) {
-				return Text.translatable("message.ssc_addon.workshop.cannot_repair");
-			}
-			if (ScrollData.getUses(output) >= ScrollData.getMaxUses(output)) {
-				return Text.translatable("message.ssc_addon.workshop.already_full");
-			}
-		} else {
-			return null;
-		}
-		int inkCount = operation == 2 ? 1 : this.workshopLevel;
-		ItemStack ink = this.handler.getSlot(1).getStack();
-		FormationElement element = spell.getElement();
-		if (!(ink.getItem() instanceof FormationInkItem inkItem) || ink.getCount() < inkCount
-				|| inkItem.getType().element != (element == FormationElement.UNIVERSAL ? null : element)) {
-			return label("ink_required", elementName(element), inkCount);
-		}
-		if (operation == 1) {
-			int catalystCount = Math.max(0, this.workshopLevel - 2);
-			return countCatalysts() < catalystCount ? label("catalyst_required", catalystCount) : null;
-		}
-		int dustCount = operation == 2 ? 2 : this.workshopLevel;
-		ItemStack dust = this.handler.getSlot(2).getStack();
-		return !dust.isOf(RegCustomItem.UNTREATED_MOONDUST) || dust.getCount() < dustCount
-				? label("dust_required", dustCount) : null;
-	}
-
-	private int countCatalysts() {
-		ItemStack stack = this.handler.getSlot(SpellResearchTableBlockEntity.SLOT_CATALYST).getStack();
-		return stack.isOf(RegCustomItem.MOONDUST_CRYSTAL_SHARD) ? stack.getCount() : 0;
-	}
-
-	private int previewOperation(int mouseX, int mouseY) {
-		for (int operation = 0; operation < this.workshopButtons.length; operation++) {
-			ButtonWidget button = this.workshopButtons[operation];
-			if (button.visible && mouseX >= button.getX() && mouseX < button.getX() + button.getWidth()
-					&& mouseY >= button.getY() && mouseY < button.getY() + button.getHeight()) {
-				return operation;
-			}
-		}
-		if (this.salvageConfirmTicks > 0) {
-			return 3;
-		}
-		Entry entry = selectedEntry();
-		ItemStack output = this.handler.getSlot(3).getStack();
-		if (entry != null && entry.spell != null && output.getItem() instanceof MagicScrollItem
-				&& ScrollData.getSpell(output) == entry.spell) {
-			return ScrollData.getLevel(output) == ScrollData.MAX_SPELL_LEVEL ? 2 : 1;
-		}
-		return this.workshopLevel > ScrollWorkshopManager.CRAFT_MAX_LEVEL ? 1 : 0;
-	}
-
-	private void drawMaterialShortfalls(DrawContext context) {
-		Entry entry = selectedEntry();
-		if (this.tab != 2 && entry == null) {
-			return;
-		}
-		if (this.tab == ResearchTableTabs.LEARN) {
-			drawSlotShortfall(context, 2, learnDustCost(entry.level),
-					this.handler.getSlot(2).getStack().isOf(RegCustomItem.UNTREATED_MOONDUST));
-			return;
-		}
-		int operation = this.tab == 2 ? this.previewOperation : 0;
-		ItemStack output = this.handler.getSlot(3).getStack();
-		Spell spell = operation < 2 ? entry == null ? null : entry.spell : ScrollData.getSpell(output);
-		if (this.tab == 2 && operation > 0) {
-			boolean valid = output.getItem() instanceof MagicScrollItem && spell != null
-					&& ScrollData.getSpell(output) == spell
-					&& (operation != 1 || ScrollData.getLevel(output) == this.workshopLevel - 1);
-			drawSlotShortfall(context, 3, 1, valid);
-		}
-		if (this.tab == 2 && (spell == null || operation == 3 || operation == 4)) {
-			return;
-		}
-		FormationElement element = this.tab == 2 ? spell.getElement() : entry.element();
-		int level = this.tab == 2 ? this.workshopLevel : entry.level;
-		if (operation == 0) {
-			drawSlotShortfall(context, 0, 1, this.handler.getSlot(0).getStack().getItem() instanceof BlankFormationPaperItem);
-		}
-		ItemStack ink = this.handler.getSlot(1).getStack();
-		drawSlotShortfall(context, 1, operation == 2 ? 1 : level,
-				ink.getItem() instanceof FormationInkItem inkItem
-						&& inkItem.getType().element == (element == FormationElement.UNIVERSAL ? null : element));
-		if (this.tab == 2) {
-			if (operation == 1) {
-				drawSlotShortfall(context, SpellResearchTableBlockEntity.SLOT_CATALYST, Math.max(0, level - 2),
-						this.handler.getSlot(SpellResearchTableBlockEntity.SLOT_CATALYST).getStack().isOf(RegCustomItem.MOONDUST_CRYSTAL_SHARD));
-			} else {
-				drawSlotShortfall(context, 2, operation == 2 ? 2 : level,
-						this.handler.getSlot(2).getStack().isOf(RegCustomItem.UNTREATED_MOONDUST));
-			}
-		}
-	}
+    private void drawMaterialShortfalls(DrawContext context) {
+        if(this.tab==ResearchTableTabs.WORKSHOP)return;
+        Entry entry=selectedEntry();if(entry==null)return;
+        if(this.tab==ResearchTableTabs.LEARN){
+            drawSlotShortfall(context,2,learnDustCost(entry.level),this.handler.getSlot(2).getStack().isOf(RegCustomItem.UNTREATED_MOONDUST));return;
+        }
+        drawSlotShortfall(context,0,1,this.handler.getSlot(0).getStack().getItem() instanceof BlankFormationPaperItem);
+        ItemStack ink=this.handler.getSlot(1).getStack();
+        drawSlotShortfall(context,1,entry.level,ink.getItem() instanceof FormationInkItem inkItem
+                &&inkItem.getType().element==(entry.element()==FormationElement.UNIVERSAL?null:entry.element()));
+    }
 
 	private void drawSlotShortfall(DrawContext context, int index, int required, boolean valid) {
 		Slot slot = this.handler.getSlot(index);
@@ -439,48 +271,14 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 		context.getMatrices().pop();
 	}
 
-	private Text workshopTooltip(int operation, Text problem) {
-		ItemStack output = this.handler.getSlot(3).getStack();
-		Entry entry = selectedEntry();
-		Spell spell = operation < 2 ? entry == null ? null : entry.spell : ScrollData.getSpell(output);
-		Text heading = label(operation == 3 && this.salvageConfirmTicks > 0 ? "salvage_confirm" : ACTION_KEYS[operation]);
-		var tooltip = heading.copy().formatted(Formatting.WHITE);
-		if (spell != null) {
-			tooltip.append(Text.literal("\n")).append(Text.translatable(spell.getNameKey()).formatted(Formatting.AQUA));
-			Text recipe = switch (operation) {
-				case 0 -> label("craft_recipe", this.workshopLevel, elementName(spell.getElement()));
-				case 1 -> label("upgrade_recipe", this.workshopLevel, elementName(spell.getElement()), Math.max(0, this.workshopLevel - 2));
-				case 2 -> label("repair_recipe", elementName(spell.getElement()));
-                case 4 -> Text.translatable("research.ssc_addon.runes.imprint_recipe");
-				default -> label("salvage_recipe", (ScrollData.getLevel(output) + 1) / 2);
-			};
-			tooltip.append(Text.literal("\n")).append(recipe.copy().formatted(Formatting.GRAY));
-			if (operation == 3 && spell.getId().getPath().equals("pocket_space")) {
-				tooltip.append(Text.literal("\n")).append(Text.translatable("message.ssc_addon.workshop.salvage_pocket_hint").formatted(Formatting.YELLOW));
-			}
-		}
-		if (problem != null) {
-			tooltip.append(Text.literal("\n")).append(problem.copy().formatted(Formatting.RED));
-		}
-		return tooltip;
-	}
-
 	private static Text elementName(FormationElement element) {
 		return Text.translatable(element == null ? "element.ssc_addon.universal" : element.getNameKey());
-	}
-
-	private void cancelSalvage() {
-		this.salvageConfirmTicks = 0;
-		this.salvageTarget = ItemStack.EMPTY;
 	}
 
 	@Override
 	protected void handledScreenTick() {
 		super.handledScreenTick();
 		this.searchField.tick();
-		if (this.salvageConfirmTicks > 0 && --this.salvageConfirmTicks == 0) {
-			cancelSalvage();
-		}
 		refreshEntries();
 		refreshWidgets();
 	}
@@ -515,7 +313,6 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 			if (button == 0) {
 				this.selected = hoveredEntryIndex(mouseX, mouseY);
 				this.searchField.setFocused(false);
-				cancelSalvage();
 				refreshWidgets();
 			}
 			return true;
@@ -614,11 +411,11 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 					status == SpellResearchTableBlockEntity.AnalysisStatus.READY ? 0x36545A : 0x885533);
 			return;
 		}
-		Item[] placeholders = {this.tab==2&&this.previewOperation==4?SscAddon.SPELL_FORMATION:SscAddon.BLANK_FORMATION_PAPER, SscAddon.FORMATION_INK_NORMAL,
+		Item[] placeholders = {SscAddon.BLANK_FORMATION_PAPER, SscAddon.FORMATION_INK_NORMAL,
 				RegCustomItem.UNTREATED_MOONDUST, SscAddon.MAGIC_SCROLL, RegCustomItem.MOONDUST_CRYSTAL_SHARD};
 		for (int index = 0; index < placeholders.length; index++) {
 			Slot slot = this.handler.getSlot(index);
-			if (!slot.hasStack() && (index != 3 || this.tab == 2)) {
+			if (slot.isEnabled() && !slot.hasStack() && index != 3) {
 				context.drawItem(new ItemStack(placeholders[index]), this.x + slot.x, this.y + slot.y);
 				context.getMatrices().push();
 				context.getMatrices().translate(0, 0, 200);
@@ -664,7 +461,7 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 			context.getMatrices().push();
 			context.getMatrices().translate(0, 0, 200);
 			int rarityColor = (entry.spell == null ? FormationData.getRarity(entry.level)
-					: entry.spell.getRarity(this.workshopLevel)).color.getColorValue();
+					: entry.spell.getRarity(this.referenceLevel)).color.getColorValue();
 			context.drawBorder(cellX + 1, cellY + 1, 18, 18, 0xFF000000 | rarityColor);
 			if (entry.spell == null) {
 				context.drawText(this.textRenderer, Integer.toString(entry.level), cellX + 13, cellY + 11,
@@ -686,7 +483,7 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 		Text heading = entry == null ? label(this.tab == 2 ? "select_spell" : "select_formation") : entry.name();
 		drawClipped(context, heading, this.x + DETAIL_X, this.y + 24, DETAIL_W, 0x252525);
 		if (this.tab == 2) {
-			drawClipped(context, label("workshop_level", this.workshopLevel), this.x + DETAIL_X, this.y + 39, 114, 0x404040);
+			drawClipped(context, label("workshop_level", this.referenceLevel), this.x + DETAIL_X, this.y + 39, 114, 0x404040);
 		} else if (entry != null) {
 			drawClipped(context, label("workshop_level", entry.level), this.x + DETAIL_X, this.y + 39, DETAIL_W, 0x404040);
 		}
@@ -696,13 +493,15 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 					: label("scribe_cost", elementName(entry.element()), entry.level);
 			drawClipped(context, detail, this.x + DETAIL_X, this.y + 51, DETAIL_W, 0x36545A);
 		}
-		drawClipped(context, label(this.tab == 2 ? ACTION_KEYS[this.previewOperation] : "materials"),
-				this.x + DETAIL_X, this.y + 62, 92, 0x555555);
-		drawClipped(context, label(this.tab == 2 ? "scroll_slot" : "output_slot"), this.x + 250, this.y + 62, 54, 0x555555);
-		context.drawText(this.textRenderer, ">", this.x + 263, this.y + 75, 0x666666, false);
-		if (this.salvageConfirmTicks > 0) {
-			context.drawBorder(this.x + DETAIL_X + 3 * 38 - 1, this.y + 93, 36, 22, 0xFFFF8844);
-		}
+        if(this.tab==ResearchTableTabs.WORKSHOP){
+            var lines=this.textRenderer.wrapLines(label("projection_help"),DETAIL_W);
+            int top=this.y+61;for(var line:lines){context.drawText(this.textRenderer,line,this.x+DETAIL_X,top,0x555555,false);top+=10;}
+        }else{
+            drawClipped(context,label("materials"),this.x+DETAIL_X,this.y+62,92,0x555555);
+            drawClipped(context,label("output_slot"),this.x+250,this.y+62,54,0x555555);
+            context.drawText(this.textRenderer,">",this.x+263,this.y+75,0x666666,false);
+        }
+
 	}
 
 	private void drawClipped(DrawContext context, Text text, int left, int top, int maxWidth, int color) {
@@ -722,12 +521,10 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 		}
 		context.drawText(this.textRenderer, this.playerInventoryTitle, this.playerInventoryTitleX, this.playerInventoryTitleY, 0x404040, false);
 		if (this.tab != ResearchTableTabs.ANALYSIS) drawMaterialShortfalls(context);
-        if(this.tab==2&&this.previewOperation==4)drawClipped(context,Text.translatable("research.ssc_addon.runes.scheme_slot"),this.x+149,this.y+60,26,0x404040);
 	}
 
 	@Override
 	public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-		this.previewOperation = previewOperation(mouseX, mouseY);
 		this.renderBackground(context);
 		super.render(context, mouseX, mouseY, delta);
 		this.drawMouseoverTooltip(context, mouseX, mouseY);
@@ -751,7 +548,7 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 				&& mouseY >= this.y + 23 && mouseY < this.y + 34;
 		if (entry != null && (hover >= 0 || overDetails) && this.client != null && this.client.player != null) {
 			TooltipContext tooltipContext = this.client.options.advancedItemTooltips ? TooltipContext.ADVANCED : TooltipContext.BASIC;
-			List<Text> tooltip = new ArrayList<>(entry.stack(this.workshopLevel).getTooltip(this.client.player, tooltipContext));
+			List<Text> tooltip = new ArrayList<>(entry.stack(this.referenceLevel).getTooltip(this.client.player, tooltipContext));
 			if (this.tab == ResearchTableTabs.SCRIBE) {
 				tooltip.add(label("scribe_cost", elementName(entry.element()), entry.level));
 			} else if (this.tab == ResearchTableTabs.LEARN) {
@@ -760,9 +557,6 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 			context.drawTooltip(this.textRenderer, tooltip, mouseX, mouseY);
 		}
 		String[] slotLabels = {"paper_slot", "ink_slot", "dust_slot", this.tab == 2 ? "insert_scroll" : "output_slot", "catalyst_slot"};
-		if(this.tab==ResearchTableTabs.WORKSHOP&&this.previewOperation==4){
-			slotLabels[0]="scheme_slot";slotLabels[3]="imprint_scroll_slot";
-		}
 		for (int index = 0; index < slotLabels.length; index++) {
 			Slot slot = this.handler.getSlot(index);
 			if (slot.isEnabled() && !slot.hasStack() && this.isPointWithinBounds(slot.x, slot.y, 16, 16, mouseX, mouseY)) {
@@ -775,19 +569,4 @@ public class SpellResearchTableScreen extends HandledScreen<SpellResearchTableSc
 		return level * 2;
 	}
 
-	private final class IconButton extends ButtonWidget {
-		private final ItemStack icon;
-
-		private IconButton(int left, int top, int width, int height, Text message, Item icon, PressAction action) {
-			super(left, top, width, height, message, action, DEFAULT_NARRATION_SUPPLIER);
-			this.icon = new ItemStack(icon);
-			this.setTooltip(Tooltip.of(message));
-		}
-
-		@Override
-		public void drawMessage(DrawContext context, net.minecraft.client.font.TextRenderer renderer, int color) {
-			// The inherited vanilla renderer draws the background and handles hover, focus and disabled states.
-			context.drawItem(this.icon, getX() + (this.width - 16) / 2, getY() + (this.height - 16) / 2);
-		}
-	}
 }

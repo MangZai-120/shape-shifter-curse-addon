@@ -42,6 +42,10 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
     private final List<ButtonWidget> pageButtons=new ArrayList<>();
     private final List<ButtonWidget> studyButtons=new ArrayList<>();
     private final Map<Integer,int[]> drafts=new HashMap<>();
+    private final Map<String,int[]> unlockedReferences=new HashMap<>();
+    private String requestedProjection,projectedSpell;
+    private boolean upgrading;
+    private ButtonWidget modeButton;
     private final BitSet touched=new BitSet();
     private final FeedbackState feedbackState=new FeedbackState();
     private ResearchProgress progress=new ResearchProgress();
@@ -68,14 +72,20 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         super(handler,inventory,text("title"));this.parent=parent;this.inventory=inventory;
         backgroundWidth=312;backgroundHeight=212;Arrays.fill(meanings,-1);Arrays.fill(schools,7);
     }
+    public void projectUnlocked(String spell,int selectedLevel){
+        requestedProjection=spell;level=Math.max(1,Math.min(5,selectedLevel));slots=RuneLayout.empty(level);
+    }
     private static Identifier image(String name){return new Identifier("ssc_addon","textures/gui/formation_research/"+name+".png");}
     private static Text text(String key,Object...args){return SlottedResearchManager.text(key,args);}
     @Override protected void init(){
         super.init();y=(height-backgroundHeight-28)/2+28;handoff=false;pageButtons.clear();studyButtons.clear();dragging=false;paletteScrolling=false;paletteDragging=false;
         handler.setActivePage(ResearchTableTabs.RESEARCH);
+        handler.setRuneUpgrade(upgrading);
         if(client.interactionManager!=null)client.interactionManager.clickButton(handler.syncId,ResearchTableTabs.RESEARCH);
+        syncMode();
         positions=RuneLayout.positions(level);
         for(int index=0;index<ResearchTableTabs.COUNT;index++){final int tab=index;addDrawableChild(ResearchTableTabs.create(x,y,index,()->tab==ResearchTableTabs.RESEARCH,()->{if(tab!=ResearchTableTabs.RESEARCH)back(tab);}));}
+        addDrawableChild(ResearchTableTabs.tutorial(x,y,()->{save();handoff=true;net.jackcooper.shapeShifterCurseAddon.client.tutorial.SpellTutorialClient.replay();}));
         for(int rank=1;rank<=5;rank++){final int tier=rank;pageButtons.add(button(244+(rank-1)*12,18,12,18,Text.literal(String.valueOf(rank)),()->switchLevel(tier)));}
         var notesButton=button(244,44,29,18,Text.translatable("research.ssc_addon.runes.summary.notes"),()->{
             notes=!notes;summary=false;referenceMenu=false;notesScroll=0;visibility();
@@ -94,8 +104,21 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
             summary=!summary;notes=false;referenceMenu=false;summaryScroll=0;visibility();
             if(summary&&world!=null&&!loading){evaluatedRevision=-1;send(SlottedResearchManager.SAVE);}
         }));
+        modeButton=button(244,2,60,14,text("make_mode"),()->{
+            upgrading=!upgrading;syncMode();refreshMode();
+        });
+        refreshMode();
         visibility();
         if(world==null)send(SlottedResearchManager.OPEN);
+    }
+    private void syncMode(){
+        handler.setRuneUpgrade(upgrading);
+        if(client.interactionManager!=null)client.interactionManager.clickButton(handler.syncId,
+                upgrading?SpellResearchTableScreenHandler.UPGRADE_ON:SpellResearchTableScreenHandler.UPGRADE_OFF);
+    }
+    private void refreshMode(){
+        if(modeButton!=null){modeButton.setMessage(text(upgrading?"upgrade_mode":"make_mode"));
+            modeButton.setTooltip(Tooltip.of(text(upgrading?"upgrade_help":"make_help")));}
     }
     private ButtonWidget button(int left,int top,int width,int height,Text title,Runnable action){
         var button=addDrawableChild(ButtonWidget.builder(Text.literal(textRenderer.trimToWidth(title.getString(),Math.max(1,width-4))),ignored->action.run()).dimensions(x+left,y+top,width,height).build());
@@ -118,7 +141,7 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
     private void visibility(){for(var button:studyButtons)button.visible=notes;for(int tier=0;tier<5;tier++)pageButtons.get(tier).active=tier+1!=level;}
     private void switchLevel(int next){
         if(next==level||busy)return;save();level=next;slots=drafts.getOrDefault(level,RuneLayout.empty(level)).clone();
-        revision++;reference=new int[0];referenceVisible=false;selectedReferenceSlot=-1;notesScroll=0;summaryScroll=0;positions=RuneLayout.positions(level);visibility();send(SlottedResearchManager.OPEN);
+        revision++;reference=new int[0];referenceVisible=false;selectedReferenceSlot=-1;projectedSpell=null;unlockedReferences.clear();notesScroll=0;summaryScroll=0;positions=RuneLayout.positions(level);visibility();send(SlottedResearchManager.OPEN);
     }
     private void save(){drafts.put(level,slots.clone());send(SlottedResearchManager.SAVE);}
     private void send(int action){
@@ -127,6 +150,7 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         if(busy&&action!=SlottedResearchManager.SAVE)return;
         NbtCompound request=new NbtCompound();request.putInt("Action",action);request.putInt("Level",level);request.putInt("Revision",revision);
         request.putInt("Version",RuneLayout.VERSION);request.putIntArray("Slots",slots);request.putInt("Glyph",selectedGlyph);
+        request.putBoolean("Upgrade",upgrading);
         if(world!=null)request.putUuid("World",world);if(operation!=null)request.putUuid("Operation",operation);
         if(action!=SlottedResearchManager.SAVE)request.putUuid("Request",feedbackState.begin(action));
         var packet=PacketByteBufs.create();packet.writeVarInt(handler.syncId);packet.writeNbt(request);ClientPlayNetworking.send(FormationResearchNetworking.ACTION,packet);
@@ -156,6 +180,22 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
             loading=false;
             received=state.getIntArray("Slots");if(RuneLayout.validDraft(level,received))slots=received;
         }
+        if(state.getInt("Level")==level&&state.contains("UnlockedReferences")){
+            unlockedReferences.clear();
+            var entries=state.getList("UnlockedReferences",10);
+            for(int i=0;i<Math.min(23,entries.size());i++){
+                var entry=entries.getCompound(i);int[] projected=entry.getIntArray("Slots");
+                if(entry.getInt("Level")==level&&SlottedSpellRecipes.get(entry.getString("Spell"))!=null&&RuneLayout.validDraft(level,projected))
+                    unlockedReferences.put(entry.getString("Spell"),projected);
+            }
+            if(requestedProjection!=null){
+                int[] projected=unlockedReferences.get(requestedProjection);
+                if(projected!=null){reference=projected.clone();referenceVisible=true;projectedSpell=requestedProjection;selectedReferenceSlot=-1;
+                    feedback=text("projected",Text.translatable(SpellRegistry.get(projectedSpell).getNameKey()),level);}
+                else feedback=text("reference_locked");
+                requestedProjection=null;
+            }
+        }
         // 阶段B：接收试运行诊断；失败时用分层诊断文本替代笼统的 invalid 提示
         diagnosis=state.getIntArray("Diagnosis");
         if(action==SlottedResearchManager.TEST&&diagnosis.length>0)feedback=FormationDiagnosis.message(diagnosis);
@@ -170,7 +210,8 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         long now=System.currentTimeMillis();
         if(busy&&now-sentAt>8000){busy=false;loading=false;feedbackState.cancel();feedback=text("timeout");}
         if(dirty&&!busy&&world!=null&&now-editedAt>600)save();
-        if(referenceVisible&&(selectedReferenceSlot<0||!AnalyzedSpellDiagramItem.valid(inventory.getStack(selectedReferenceSlot),world)
+        if(referenceVisible&&projectedSpell!=null&&!unlockedReferences.containsKey(projectedSpell)){referenceVisible=false;reference=new int[0];}
+        if(referenceVisible&&projectedSpell==null&&(selectedReferenceSlot<0||!AnalyzedSpellDiagramItem.valid(inventory.getStack(selectedReferenceSlot),world)
             ||!Arrays.equals(reference,foundationReference(inventory.getStack(selectedReferenceSlot).getNbt())))){referenceVisible=false;reference=new int[0];}
     }
     @Override protected void drawBackground(DrawContext context,float delta,int mouseX,int mouseY){
@@ -181,13 +222,17 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         RenderSystem.enableBlend();RenderSystem.defaultBlendFunc();context.setShaderColor(1,1,1,1);
         renderBackground(context);drawBackground(context,delta,mouseX,mouseY);
         context.drawText(textRenderer,text("filled",Arrays.stream(slots).filter(value->value>=0).count(),slots.length),x+65,y+6,0xff414141,false);
-        context.drawText(textRenderer,text("rank_short",progress.rank),x+244,y+6,0xff414141,false);
+        Text rank=text("rank_short",progress.rank);
+        context.drawText(textRenderer,rank,x+236-textRenderer.getWidth(rank),y+6,0xff414141,false);
         if(!notes)context.drawText(textRenderer,Text.translatable("research.ssc_addon.runes.stability",stability),x+244,y+68,stability<20?0xffaa2222:0xff414141,false);
         if(testTip==null){testTip=Tooltip.of(text("test"));retestTip=Tooltip.of(text("retest_blocked"));finishTip=Tooltip.of(text("finish"));untestedTip=Tooltip.of(text("untested"));}
         pageButtons.get(6).active=!busy&&!loading&&failedRevision!=revision;
         pageButtons.get(6).setTooltip(failedRevision==revision?retestTip:testTip);
         pageButtons.get(7).active=!busy&&!loading&&evaluatedRevision==revision&&testedRevision==revision&&runeValid
+                &&(!upgrading||level>=2&&!handler.getSlot(SpellResearchTableBlockEntity.SLOT_UPGRADE_SCROLL).getStack().isEmpty()
+                    &&ScrollData.getLevel(handler.getSlot(SpellResearchTableBlockEntity.SLOT_UPGRADE_SCROLL).getStack())==level-1)
                 &&handler.getSlot(SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT).getStack().isEmpty();
+        modeButton.active=!busy&&!loading;
         pageButtons.get(7).setTooltip(testedRevision==revision?finishTip:untestedTip);
         int hovered=-1;context.enableScissor(x+PALETTE_LEFT,y+PALETTE_TOP,x+PALETTE_LEFT+PALETTE_CELL*2,y+PALETTE_TOP+PALETTE_HEIGHT);
         for(int glyph=0;glyph<18;glyph++){
@@ -232,8 +277,14 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         }
         int[] costs=inkCosts();int ink=Arrays.stream(costs).sum(),dust=(int)Arrays.stream(slots).filter(value->value>=0).count();
         if(!notes){
-            context.drawItem(new ItemStack(SscAddon.BLANK_FORMATION_PAPER),x+246,y+89);context.drawText(textRenderer,"1",x+270,y+93,0xff414141,false);
-            context.drawItem(new ItemStack(RegCustomItem.UNTREATED_MOONDUST),x+246,y+109);context.drawText(textRenderer,String.valueOf(dust),x+270,y+113,0xff414141,false);
+            if(upgrading){
+                context.drawText(textRenderer,text("upgrade_scroll"),x+244,y+78,0xff414141,false);
+                var main=handler.getSlot(SpellResearchTableBlockEntity.SLOT_UPGRADE_SCROLL);
+                drawInputSlot(context,main.x,main.y,main.getStack());
+            }else{context.drawItem(new ItemStack(SscAddon.BLANK_FORMATION_PAPER),x+246,y+89);context.drawText(textRenderer,"1",x+270,y+93,0xff414141,false);}
+            context.drawItem(new ItemStack(upgrading?RegCustomItem.MOONDUST_CRYSTAL_SHARD:RegCustomItem.UNTREATED_MOONDUST),x+246,y+109);
+            context.drawText(textRenderer,String.valueOf(upgrading?ScrollWorkshopManager.upgradeCatalystCost(level):dust),x+270,y+113,0xff414141,false);
+            if(upgrading)ink=ScrollWorkshopManager.upgradeInkCost(level);
             context.drawItem(new ItemStack(SscAddon.FORMATION_INK_NORMAL),x+246,y+129);context.drawText(textRenderer,String.valueOf(ink),x+270,y+133,0xff414141,false);
             int left=x+SpellResearchTableScreenHandler.RESEARCH_OUTPUT_X,top=y+SpellResearchTableScreenHandler.RESEARCH_OUTPUT_Y;
             context.drawText(textRenderer,Text.translatable("research.ssc_addon.runes.output"),left,top-12,0xff414141,false);
@@ -248,7 +299,11 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         context.drawText(textRenderer,status,x+(312-textRenderer.getWidth(status))/2,y+198,0xff414141,false);
         for(Element child:children())if(child instanceof Drawable drawable)drawable.render(context,mouseX,mouseY,delta);
         if(paletteDragging&&!notes&&!summary){context.setShaderColor(1,1,1,.75f);drawGlyph(context,selectedGlyph,mouseX-8,mouseY-8,16);context.setShaderColor(1,1,1,1);}
-        if(referenceMenu){
+        if(overUpgradeInput(mouseX,mouseY)){
+            ItemStack main=handler.getSlot(SpellResearchTableBlockEntity.SLOT_UPGRADE_SCROLL).getStack();
+            if(!main.isEmpty())context.drawItemTooltip(textRenderer,main,mouseX,mouseY);
+            else context.drawTooltip(textRenderer,text("upgrade_input"),mouseX,mouseY);
+        }else if(referenceMenu){
             refreshReferenceList();DefaultedList<ItemStack> contents=DefaultedList.ofSize(REFERENCE_CAPACITY,ItemStack.EMPTY);
             int first=referenceScroll*REFERENCE_COLUMNS;
             for(int index=0;index<REFERENCE_CAPACITY&&first+index<referenceInventorySlots.size();index++)contents.set(index,inventory.getStack(referenceInventorySlots.get(first+index)));
@@ -283,10 +338,29 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
             for(Text line:lines)wrapped.addAll(textRenderer.wrapLines(line,Math.max(1,Math.min(260,width-24))));
             context.drawOrderedTooltip(textRenderer,wrapped,mouseX,mouseY);
         }
-        else if(!notes&&mouseX>=x+244&&mouseX<x+305&&mouseY>=y+125&&mouseY<y+148)context.drawTooltip(textRenderer,inkLines(costs),mouseX,mouseY);
-        else if(!notes&&mouseX>=x+244&&mouseX<x+305&&mouseY>=y+105&&mouseY<y+125)context.drawTooltip(textRenderer,text("dust_cost",dust,SlottedFormationTransaction.count(handler.getInventory(),inventory,2,stack->stack.isOf(RegCustomItem.UNTREATED_MOONDUST))),mouseX,mouseY);
+        else if(!notes&&mouseX>=x+244&&mouseX<x+305&&mouseY>=y+125&&mouseY<y+148)context.drawTooltip(textRenderer,upgrading?upgradeCosts():inkLines(costs),mouseX,mouseY);
+        else if(!notes&&mouseX>=x+244&&mouseX<x+305&&mouseY>=y+105&&mouseY<y+125){
+            if(upgrading)context.drawTooltip(textRenderer,upgradeCosts(),mouseX,mouseY);
+            else context.drawTooltip(textRenderer,text("dust_cost",dust,SlottedFormationTransaction.count(handler.getInventory(),inventory,2,stack->stack.isOf(RegCustomItem.UNTREATED_MOONDUST))),mouseX,mouseY);
+        }
         else if(!notes&&mouseX>=x+244&&mouseX<x+305&&mouseY>=y+85&&mouseY<y+105)context.drawTooltip(textRenderer,text("paper_cost",SlottedFormationTransaction.count(handler.getInventory(),inventory,0,stack->stack.getItem() instanceof BlankFormationPaperItem)),mouseX,mouseY);
         else if(mouseX>=x+10&&mouseX<x+302&&mouseY>=y+195&&mouseY<y+210)context.drawTooltip(textRenderer,feedback,mouseX,mouseY);
+    }
+    private void drawInputSlot(DrawContext context,int left,int top,ItemStack stack){
+        context.fill(x+left-1,y+top-1,x+left+17,y+top+17,0xff8b8b8b);
+        context.drawBorder(x+left-1,y+top-1,18,18,0xff373737);
+        context.fill(x+left,y+top+16,x+left+17,y+top+17,0xffffffff);
+        context.fill(x+left+16,y+top,x+left+17,y+top+16,0xffffffff);
+        context.drawItem(stack,x+left,y+top);context.drawItemInSlot(textRenderer,stack,x+left,y+top);
+    }
+    private List<Text> upgradeCosts(){
+        Spell spell=ScrollData.getSpell(handler.getSlot(SpellResearchTableBlockEntity.SLOT_UPGRADE_SCROLL).getStack());
+        return List.of(text("upgrade_costs",spell==null||spell.getElement()==null?text("upgrade_scroll"):Text.translatable(spell.getElement().getNameKey()),
+                ScrollWorkshopManager.upgradeInkCost(level),ScrollWorkshopManager.upgradeCatalystCost(level)));
+    }
+    private boolean overUpgradeInput(double mouseX,double mouseY){
+        var slot=handler.getSlot(SpellResearchTableBlockEntity.SLOT_UPGRADE_SCROLL);
+        return upgrading&&!notes&&!summary&&!referenceMenu&&mouseX>=x+slot.x-1&&mouseX<x+slot.x+17&&mouseY>=y+slot.y-1&&mouseY<y+slot.y+17;
     }
     private void drawGlyph(DrawContext context,int glyph,int left,int top,int size){
         if(glyph>=0&&glyph<18){RenderSystem.enableBlend();RenderSystem.defaultBlendFunc();context.drawTexture(image("runes"),left,top,size,size,glyph*64,0,64,64,18*64,64);}
@@ -339,13 +413,17 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         if(referenceMenu){
             refreshReferenceList();int chosen=referenceAt(mouseX,mouseY);
             if(button==0&&chosen>=0){
-                selectedReferenceSlot=referenceInventorySlots.get(chosen);var data=inventory.getStack(selectedReferenceSlot).getNbt();
+                projectedSpell=null;selectedReferenceSlot=referenceInventorySlots.get(chosen);var data=inventory.getStack(selectedReferenceSlot).getNbt();
                 if(data.getInt("Level")==level){reference=foundationReference(data);referenceVisible=true;notes=false;summary=false;visibility();}
                 else{feedback=text("diagram_level",data.getInt("Level"));referenceVisible=false;}
             }
             referenceMenu=false;return true;
         }
         for(Element child:children())if(child.mouseClicked(mouseX,mouseY,button)){setFocused(child);return true;}
+        if(overUpgradeInput(mouseX,mouseY)&&(button==0||button==1)){
+            client.interactionManager.clickSlot(handler.syncId,SpellResearchTableBlockEntity.SLOT_UPGRADE_SCROLL,button,
+                    hasShiftDown()?SlotActionType.QUICK_MOVE:SlotActionType.PICKUP,client.player);return true;
+        }
         if(button==0&&overOutput(mouseX,mouseY)){
             if(client!=null&&client.player!=null&&client.interactionManager!=null)
                 client.interactionManager.clickSlot(handler.syncId,SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT,0,SlotActionType.QUICK_MOVE,client.player);

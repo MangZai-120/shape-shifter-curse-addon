@@ -35,55 +35,58 @@ public final class PotionTubeInventoryWorldProbe {
         try {
             for (var template : new ItemStack[]{
                     PotionTestTubes.divide(PotionUtil.setPotion(new ItemStack(Items.POTION), Potions.HEALING)),
-                    new ItemStack(MoonDustReliefItem.VIAL)}) {
+                    new ItemStack(MoonDustReliefItem.VIAL), new ItemStack(MoonDustReliefItem.BOTTLE),
+                    new ItemStack(MoonDustReliefItem.SPLASH)}) {
+                int base = PotionTestTubes.isFilledTube(template) ? 3 : 1;
+                int boosted = PotionTestTubes.isFilledTube(template) ? 16 : 8;
                 inventory.clear();
-                check(PotionTestTubes.stackLimit(template, player) == 3, "无power试管上限为三");
-                var ordinary = template.copyWithCount(7);
-                check(inventory.insertStack(ordinary) && ordinary.isEmpty(), "真实insertStack容纳七管");
-                check(inventory.getStack(0).getCount() == 3 && inventory.getStack(1).getCount() == 3
-                        && inventory.getStack(2).getCount() == 1, "普通玩家按三、三、一拆入空槽");
-                check(maxMatching(inventory, template) == 3, "普通玩家没有超过三管的新堆栈");
+                check(PotionTestTubes.stackLimit(template, player) == base, "无power时保持对应剂型基础上限");
+                var ordinary = template.copyWithCount(base * 2 + 1);
+                check(inventory.insertStack(ordinary) && ordinary.isEmpty(), "真实insertStack容纳全部剂量");
+                check(inventory.getStack(0).getCount() == base && inventory.getStack(1).getCount() == base
+                        && inventory.getStack(2).getCount() == 1, "普通玩家按基础上限拆入空槽");
+                check(maxMatching(inventory, template) == base, "普通玩家没有超过基础上限的新堆栈");
 
                 inventory.clear();
                 holder.addPower(power, source);
-                check(PotionTestTubes.stackLimit(template, player) == 16, "原count8能力在试管上对应十六");
-                var powered = template.copyWithCount(17);
-                check(inventory.insertStack(powered) && powered.isEmpty(), "能力玩家真实insertStack容纳十七管");
-                check(inventory.getStack(0).getCount() == 16 && inventory.getStack(1).getCount() == 1,
-                        "空槽插入正确识别零数量接收栈，形成十六加一");
+                check(PotionTestTubes.stackLimit(template, player) == boosted, "同一power按剂型提升到八瓶或十六管");
+                var powered = template.copyWithCount(boosted + 1);
+                check(inventory.insertStack(powered) && powered.isEmpty(), "能力玩家真实insertStack容纳全部剂量");
+                check(inventory.getStack(0).getCount() == boosted && inventory.getStack(1).getCount() == 1,
+                        "空槽插入正确识别零数量接收栈，并按能力上限拆分");
 
                 inventory.clear();
-                inventory.setStack(0, template.copyWithCount(3));
-                var merge = template.copyWithCount(12);
-                check(inventory.getOccupiedSlotWithRoomForStack(merge) == 0, "能力玩家可找到三管以上的合并槽");
-                check(inventory.insertStack(merge) && inventory.getStack(0).getCount() == 15,
-                        "真实插入可将已有三管合并到十五管");
+                inventory.setStack(0, template.copyWithCount(base));
+                var merge = template.copyWithCount(boosted - base - 1);
+                check(inventory.getOccupiedSlotWithRoomForStack(merge) == 0, "能力玩家能找到可继续合并的槽位");
+                check(inventory.insertStack(merge) && inventory.getStack(0).getCount() == boosted - 1,
+                        "真实插入优先合并到已有剂量");
                 var dropped = new ItemEntity(context.getWorld(), player.getX(), player.getY(), player.getZ(), template.copyWithCount(1));
                 dropped.setPickupDelay(0);
                 try {
                     dropped.onPlayerCollision(player);
-                    check(inventory.getStack(0).getCount() == 16 && dropped.isRemoved(),
-                            "真实掉落物碰撞拾取可合并到十六管");
+                    check(inventory.getStack(0).getCount() == boosted && dropped.isRemoved(),
+                            "真实掉落物碰撞拾取可合并到形态上限");
                 } finally {
                     dropped.discard();
                 }
 
                 inventory.clear();
-                inventory.setStack(0, template.copyWithCount(15));
+                inventory.setStack(0, template.copyWithCount(boosted - 1));
                 var offered = template.copyWithCount(1);
                 inventory.offer(offered, false);
-                check(offered.isEmpty() && inventory.getStack(0).getCount() == 16,
+                check(offered.isEmpty() && inventory.getStack(0).getCount() == boosted,
                         "offer返还路径按能力上限分割并合并，不产生负分割量");
 
                 holder.removePower(power, source);
                 var intoOld = template.copyWithCount(1);
                 check(!inventory.insertStack(0, intoOld) && intoOld.getCount() == 1
-                        && inventory.getStack(0).getCount() == 16,
+                        && inventory.getStack(0).getCount() == boosted,
                         "失去power后的旧十六管栈保留，显式插槽不会复制物品或倒扣");
-                var afterLoss = template.copyWithCount(4);
+                var afterLoss = template.copyWithCount(base + 1);
                 inventory.offer(afterLoss, false);
-                check(afterLoss.isEmpty() && inventory.getStack(0).getCount() == 16
-                        && inventory.getStack(1).getCount() == 3 && inventory.getStack(2).getCount() == 1,
+                check(afterLoss.isEmpty() && inventory.getStack(0).getCount() == boosted
+                        && inventory.getStack(1).getCount() == base && inventory.getStack(2).getCount() == 1,
                         "失去power后返还物跳过旧超量栈，按三管放入新槽");
 
                 inventory.clear();

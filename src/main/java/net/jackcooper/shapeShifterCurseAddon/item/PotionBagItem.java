@@ -60,6 +60,7 @@ public class PotionBagItem extends Item {
 
 	/** 投掷型（溅射/滞留），含无限药水的喷溅/滞留形态。 */
 	private static boolean isThrowable(ItemStack stack) {
+		if (stack.isOf(MoonDustReliefItem.SPLASH)) return true;
 		if (stack.getItem() instanceof SplashPotionItem || stack.getItem() instanceof LingeringPotionItem) {
 			return true;
 		}
@@ -69,7 +70,7 @@ public class PotionBagItem extends Item {
 
 	/** 饮用型（普通药水或无限药水的饮用形态，排除溅射/滞留）。 */
 	private static boolean isDrinkable(ItemStack stack) {
-		if (PotionTestTubes.isFilledTube(stack)) return true;
+		if (PotionTestTubes.isFilledTube(stack) || stack.isOf(MoonDustReliefItem.BOTTLE)) return true;
 		if (stack.getItem() instanceof InfiniteEnergyPotionItem inf) {
 			return inf.getType() == InfiniteEnergyPotionItem.Type.DRINK;
 		}
@@ -112,7 +113,7 @@ public class PotionBagItem extends Item {
 					return TypedActionResult.fail(stack);
 				}
 				if (!world.isClient) {
-					throwPotion(world, user, stack, potion); // 内部 markUsed → 写 FullAtTime
+					if (!throwPotion(world, user, stack, potion)) return TypedActionResult.fail(stack);
 				}
 				return TypedActionResult.success(stack);
 			}
@@ -121,7 +122,7 @@ public class PotionBagItem extends Item {
 				return TypedActionResult.fail(stack);
 			}
 			if (!world.isClient) {
-				throwPotion(world, user, stack, potion);
+				if (!throwPotion(world, user, stack, potion)) return TypedActionResult.fail(stack);
 			}
 			// 双端记录投掷冷却结束时间（world.getTime 双端同步）；白色遮罩由 inventoryTick 同步
 			stack.getOrCreateNbt().putLong(NBT_THROW_END, world.getTime() + THROW_COOLDOWN);
@@ -154,8 +155,8 @@ public class PotionBagItem extends Item {
 					inf.markUsed(potion, world);
 					PotionBagScreenHandler.setStoredStack(stack, QUICK_SLOT, potion);
 				}
-			} else if (PotionTestTubes.isFilledTube(potion)) {
-				// 单管副本走物品自己的真实入口，不能把试管当作全剂量原版药水施效。
+			} else if (PotionTestTubes.isFilledTube(potion) || potion.isOf(MoonDustReliefItem.BOTTLE)) {
+				// 单剂副本走物品自身入口：试管按1/3药效，月尘瓶装按完整恢复量。
 				ItemStack one = potion.copyWithCount(1);
 				ItemStack remainder = one.finishUsing(world, player);
 				if (!player.getAbilities().creativeMode) {
@@ -191,7 +192,7 @@ public class PotionBagItem extends Item {
 	@Override
 	public int getMaxUseTime(ItemStack stack) {
 		ItemStack potion = PotionBagScreenHandler.getStoredStack(stack, QUICK_SLOT);
-		if (PotionTestTubes.isFilledTube(potion)) return (int) Math.ceil(potion.getMaxUseTime() * 1.15);
+		if (PotionTestTubes.isFilledTube(potion) || potion.isOf(MoonDustReliefItem.BOTTLE)) return (int) Math.ceil(potion.getMaxUseTime() * 1.15);
 		return isDrinkable(potion) ? DRINK_TIME : 0;
 	}
 
@@ -205,14 +206,21 @@ public class PotionBagItem extends Item {
 	 * 投掷一瓶药水：生成投掷药水弹射物（setItem 让弹射物渲染使用对应药水的纹理），
 	 * 并消耗 1 瓶写回药水包存储。仅服务端调用。
 	 */
-	private void throwPotion(World world, PlayerEntity user, ItemStack bagStack, ItemStack potion) {
+	private boolean throwPotion(World world, PlayerEntity user, ItemStack bagStack, ItemStack potion) {
+		if (potion.isOf(MoonDustReliefItem.SPLASH)) {
+			if (!MoonDustReliefItem.SPLASH.spawnThrownPotion(world, user, potion)) return false;
+			if (!user.getAbilities().creativeMode) potion.decrement(1);
+			PotionBagScreenHandler.setStoredStack(bagStack, QUICK_SLOT, potion);
+			user.incrementStat(net.minecraft.stat.Stats.USED.getOrCreateStat(MoonDustReliefItem.SPLASH));
+			return true;
+		}
 		// 无限压缩能量药水（喷溅/滞留型）：复用其自身投掷逻辑，标记空瓶充能而非消耗数量
 		if (potion.getItem() instanceof InfiniteEnergyPotionItem inf) {
 			InfiniteEnergyPotionItem.playThrowSound(world, user);
 			inf.spawnThrownPotion(world, user);
 			inf.markUsed(potion, world);
 			PotionBagScreenHandler.setStoredStack(bagStack, QUICK_SLOT, potion);
-			return;
+			return true;
 		}
 		world.playSound(null, user.getX(), user.getY(), user.getZ(),
 				SoundEvents.ENTITY_SPLASH_POTION_THROW, SoundCategory.PLAYERS,
@@ -223,6 +231,7 @@ public class PotionBagItem extends Item {
 		world.spawnEntity(potionEntity);
 		potion.decrement(1);
 		PotionBagScreenHandler.setStoredStack(bagStack, QUICK_SLOT, potion);
+		return true;
 	}
 
 	/** 普通投掷药水是否仍在投掷间隔冷却中（基于药水袋 NBT 记录的结束世界时间）。 */
@@ -297,16 +306,16 @@ public class PotionBagItem extends Item {
 
 	/** 是否为可放入药水袋的药水类物品（与药水包 GUI 的可放入规则一致）。 */
 	public static boolean isStorable(ItemStack stack) {
-		return PotionTestTubes.isFilledTube(stack) || stack.getItem() instanceof PotionItem
+		return PotionTestTubes.hasCustomStackLimit(stack) || stack.getItem() instanceof PotionItem
 				|| stack.getItem() instanceof SplashPotionItem
 				|| stack.getItem() instanceof LingeringPotionItem
 				|| stack.getItem() instanceof InfiniteEnergyPotionItem;
 	}
 
-	/** 所有入袋路径共用容量：无限1，试管按玩家3/16，普通药水8。 */
+	/** 所有入袋路径共用容量：无限1，试管3/16，月尘瓶装1/power，普通药水8。 */
 	public static int maxPerSlot(ItemStack stack, @Nullable PlayerEntity player) {
 		if (stack.getItem() instanceof InfiniteEnergyPotionItem) return 1;
-		if (PotionTestTubes.isFilledTube(stack)) return PotionTestTubes.stackLimit(stack, player);
+		if (PotionTestTubes.hasCustomStackLimit(stack)) return PotionTestTubes.stackLimit(stack, player);
 		return 8;
 	}
 

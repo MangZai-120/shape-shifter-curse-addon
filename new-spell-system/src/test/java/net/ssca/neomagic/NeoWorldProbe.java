@@ -37,6 +37,8 @@ public final class NeoWorldProbe {
         var test=stability?new TestFunction("neomagic","stability_soak","ssca_neomagic:empty",Integer.getInteger("neomagic.soakTicks",2400)*3+3000,0,true,NeoStabilityWorldProbe::start)
                 :new TestFunction("neomagic","world_lifecycle","ssca_neomagic:empty",300,0,true,NeoWorldProbe::test);
         if(Boolean.getBoolean("neomagic.bookCutover"))test=new TestFunction("neomagic","book_cutover","ssca_neomagic:empty",300,0,true,NeoBookWorldProbe::start);
+        if(Boolean.getBoolean("neomagic.collapsePenalties"))test=new TestFunction("neomagic","collapse_penalties","ssca_neomagic:empty",300,0,true,NeoCollapsePenaltyProbe::start);
+        if(Boolean.getBoolean("neomagic.safetyBalanceAudit"))test=new TestFunction("neomagic","safety_balance_audit","ssca_neomagic:empty",300,0,true,NeoSafetyBalanceAudit::start);
         if(Boolean.getBoolean("neomagic.instinctAnchor"))test=new TestFunction("neomagic","instinct_anchor","ssca_neomagic:empty",300,0,true,net.jackcooper.shapeShifterCurseAddon.item.InstinctAnchorWorldProbe::start);
         if(Boolean.getBoolean("neomagic.moonDustPotions"))test=new TestFunction("neomagic","moon_dust_potions","ssca_neomagic:empty",300,0,true,net.jackcooper.shapeShifterCurseAddon.item.MoonDustPotionWorldProbe::start);
         if(Boolean.getBoolean("neomagic.formScale"))test=new TestFunction("neomagic","form_scale","ssca_neomagic:empty",300,0,true,NeoFormScaleProbe::start);

@@ -5,6 +5,7 @@ import io.github.apace100.apoli.power.PowerTypeRegistry;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.screen.PotionBagScreenHandler;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.projectile.thrown.PotionEntity;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.item.*;
 import net.minecraft.nbt.NbtCompound;
@@ -13,7 +14,9 @@ import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.test.TestContext;
 import net.minecraft.util.*;
+import net.minecraft.util.hit.*;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.GameMode;
 import net.ssca.neomagic.NeoRuntime;
 
@@ -30,6 +33,7 @@ public final class PotionTubeBagWorldProbe {
         var pos = t.getAbsolutePos(new BlockPos(10, 3, 10)).toCenterPos(); p.refreshPositionAndAngles(pos.x, pos.y, pos.z, 0, 0);
         var normal = PotionTestTubes.divide(PotionUtil.setPotion(new ItemStack(Items.POTION), Potions.REGENERATION));
         var moon = new ItemStack(MoonDustReliefItem.VIAL);
+        var bottles = new ItemStack[]{new ItemStack(MoonDustReliefItem.BOTTLE), new ItemStack(MoonDustReliefItem.SPLASH)};
         check(PotionBagItem.isStorable(normal) && PotionBagItem.isStorable(moon), "普通与月尘试管均可入袋");
         check(!PotionBagItem.isStorable(new ItemStack(PotionTestTubes.EMPTY)), "空管不能当药水存入药水袋");
         check(PotionBagItem.maxPerSlot(normal, p) == 3 && PotionBagItem.maxPerSlot(moon, p) == 3, "无power时袋内两类试管上限三管");
@@ -37,6 +41,12 @@ public final class PotionTubeBagWorldProbe {
         check(PotionBagItem.maxPerSlot(new ItemStack(SscAddon.INFINITE_ENERGY_POTION), p) == 1, "无限药水仍每格一瓶");
         shiftIntoBag(p, normal, 3);
         shiftIntoBag(p, moon, 3);
+        for (var bottle : bottles) {
+            check(PotionBagItem.isStorable(bottle) && PotionBagItem.maxPerSlot(bottle, p) == 1,
+                    "瓶装与支援月尘药水可入袋，无power时一格一瓶");
+            shiftIntoBag(p, bottle, 1);
+            clickIntoBag(p, bottle, 1);
+        }
 
         var type = PowerTypeRegistry.get(new Identifier("shape-shifter-curse", "modify_potion_stack_8"));
         check(type != null, "使用真实原版药水堆叠power");
@@ -44,6 +54,11 @@ public final class PotionTubeBagWorldProbe {
         check(PotionBagItem.maxPerSlot(normal, p) == 16 && PotionBagItem.maxPerSlot(moon, p) == 16, "符合power时袋内两类试管上限十六");
         shiftIntoBag(p, normal, 16);
         shiftIntoBag(p, moon, 16);
+        for (var bottle : bottles) {
+            check(PotionBagItem.maxPerSlot(bottle, p) == 8, "月尘瓶装在袋内沿用实际八瓶power");
+            shiftIntoBag(p, bottle, 8);
+            clickIntoBag(p, bottle, 8);
+        }
         var quickBag = new ItemStack(SscAddon.POTION_BAG); var source = normal.copyWithCount(32);
         check(PotionBagItem.insertIntoBag(quickBag, source, p) == 32 && source.isEmpty(), "玩家感知快捷存入支持每格十六管");
         check(PotionBagScreenHandler.getStoredStack(quickBag, 1).getCount() == 16
@@ -62,6 +77,17 @@ public final class PotionTubeBagWorldProbe {
         check(PotionBagScreenHandler.getStoredStack(saved, 0).getCount() == 16
                 && PotionBagScreenHandler.getStoredStack(saved, 7).getCount() == 16
                 && PotionBagScreenHandler.getStoredStack(saved, 7).getName().getString().equals("saved tube"), "袋子存盘完整保留数量和自定义NBT");
+        for (var bottle : bottles) {
+            var legacyBottleBag = new ItemStack(SscAddon.POTION_BAG);
+            var namedBottle = bottle.copyWithCount(16); namedBottle.setCustomName(net.minecraft.text.Text.literal("saved bottle"));
+            PotionBagScreenHandler.setStoredStack(legacyBottleBag, 4, namedBottle);
+            var legacyScreen = new PotionBagScreenHandler(83, p.getInventory(), legacyBottleBag);
+            check(legacyScreen.getSlot(4).getStack().getCount() == 16 && legacyScreen.getSlot(4).getMaxItemCount(bottle) == 1,
+                    "旧月尘十六瓶完整保留，新插入容量仍为一瓶");
+            legacyScreen.onClosed(p);
+            check(PotionBagScreenHandler.getStoredStack(ItemStack.fromNbt(legacyBottleBag.writeNbt(new NbtCompound())), 4)
+                    .getName().getString().equals("saved bottle"), "月尘瓶装嵌套NBT存盘保留自定义名称");
+        }
 
         var oldCall = new ItemStack(SscAddon.POTION_BAG); source = normal.copyWithCount(6);
         check(PotionBagItem.insertIntoBag(oldCall, source) == 6
@@ -85,11 +111,51 @@ public final class PotionTubeBagWorldProbe {
         check(PotionBagScreenHandler.getStoredStack(bag, 0).isEmpty() && p.getInventory().count(PotionTestTubes.EMPTY) == 1,
                 "最后一管清空袋内槽位并将空管返还玩家");
 
+        bag = equippedBag(p, new ItemStack(MoonDustReliefItem.BOTTLE, 2)); NeoRuntime.data(p).burden = 100;
+        check(item.getMaxUseTime(bag) == 46 && item.getUseAction(bag) == UseAction.DRINK,
+                "月尘瓶装按自身四十tick加药水袋15%开销饮用");
+        check(item.use(t.getWorld(), p, Hand.MAIN_HAND).getResult().isAccepted(), "瓶装月尘药水可通过真实袋子右键开始饮用");
+        p.stopUsingItem(); item.finishUsing(bag, t.getWorld(), p);
+        near(NeoRuntime.data(p).burden, 40, "袋内月尘瓶装实际降低六十崩解度");
+        check(PotionBagScreenHandler.getStoredStack(bag, 0).getCount() == 1 && p.getInventory().count(Items.GLASS_BOTTLE) == 1,
+                "袋内饮用只扣一瓶并只返还一个玻璃瓶");
+        item.finishUsing(bag, t.getWorld(), p);
+        check(PotionBagScreenHandler.getStoredStack(bag, 0).isEmpty() && p.getInventory().count(Items.GLASS_BOTTLE) == 2,
+                "最后一瓶清空快捷槽，不吞掉额外容器");
+
+        bag = equippedBag(p, new ItemStack(MoonDustReliefItem.SPLASH, 2)); NeoRuntime.data(p).burden = 100;
+        check(item.getMaxUseTime(bag) == 0 && item.getUseAction(bag) == UseAction.NONE, "支援药水在袋内保持投掷型，无饮用动作");
+        check(item.use(t.getWorld(), p, Hand.MAIN_HAND).getResult().isAccepted(), "袋内支援药水实际生成投掷弹体");
+        var thrown = t.getWorld().getEntitiesByClass(PotionEntity.class, p.getBoundingBox().expand(4),
+                e -> e.getStack().isOf(MoonDustReliefItem.SPLASH) && e.getOwner() == p);
+        check(thrown.size() == 1 && PotionBagScreenHandler.getStoredStack(bag, 0).getCount() == 1,
+                "袋内投掷仅生成一枚支援药水并扣一瓶");
+        check(thrown.get(0).getStack().getNbt().getDouble("MoonDustReliefAmount") == 35,
+                "药水袋复用月尘投掷入口，保留真实恢复量快照");
+        check(item.use(t.getWorld(), p, Hand.MAIN_HAND).getResult() == ActionResult.FAIL
+                && PotionBagScreenHandler.getStoredStack(bag, 0).getCount() == 1, "投掷遵守药水袋五秒冷却，不重复扣瓶");
+        try {
+            var projectile = thrown.get(0); projectile.setPosition(p.getPos());
+            var collision = PotionEntity.class.getDeclaredMethod("onCollision", HitResult.class); collision.setAccessible(true);
+            collision.invoke(projectile, new BlockHitResult(p.getPos(), Direction.UP, p.getBlockPos(), false));
+        } catch (ReflectiveOperationException error) { throw new AssertionError(error); }
+        near(NeoRuntime.data(p).burden, 65, "袋内支援药水碰撞后真实恢复三十五崩解度");
+        check(p.getInventory().count(Items.GLASS_BOTTLE) == 0, "投掷支援药水不返还玻璃瓶");
+
         p.changeGameMode(GameMode.CREATIVE); bag = equippedBag(p, moon.copyWithCount(2)); NeoRuntime.data(p).burden = 100;
         item.finishUsing(bag, t.getWorld(), p);
         near(NeoRuntime.data(p).burden, 80, "创造饮用仍正常产生药效");
         check(PotionBagScreenHandler.getStoredStack(bag, 0).getCount() == 2 && p.getInventory().count(PotionTestTubes.EMPTY) == 0,
                 "创造饮用不消耗袋内试管也不生成空管");
+        bag = equippedBag(p, new ItemStack(MoonDustReliefItem.BOTTLE)); NeoRuntime.data(p).burden = 100;
+        item.finishUsing(bag, t.getWorld(), p);
+        near(NeoRuntime.data(p).burden, 40, "创造模式袋内月尘瓶装保留实际药效");
+        check(PotionBagScreenHandler.getStoredStack(bag, 0).getCount() == 1 && p.getInventory().count(Items.GLASS_BOTTLE) == 0,
+                "创造模式月尘瓶装不消耗、不返瓶");
+        bag = equippedBag(p, new ItemStack(MoonDustReliefItem.SPLASH));
+        check(item.use(t.getWorld(), p, Hand.MAIN_HAND).getResult().isAccepted()
+                && PotionBagScreenHandler.getStoredStack(bag, 0).getCount() == 1, "创造模式袋内支援药水也不消耗数量");
+        for (var projectile : t.getWorld().getEntitiesByClass(PotionEntity.class, p.getBoundingBox().expand(4), e -> e.getOwner() == p)) projectile.discard();
         bag = equippedBag(p, PotionUtil.setPotion(new ItemStack(Items.POTION, 2), Potions.HEALING));
         check(item.getMaxUseTime(bag) == 37, "原普通药水袋饮用时长仍为三十七tick");
         item.finishUsing(bag, t.getWorld(), p);
@@ -127,7 +193,8 @@ public final class PotionTubeBagWorldProbe {
 
     private static void shiftIntoBag(ServerPlayerEntity p, ItemStack tube, int cap) {
         var bag = equippedBag(p, ItemStack.EMPTY);
-        p.getInventory().setStack(9, tube.copyWithCount(20));
+        int incoming = Math.min(20, cap * 9);
+        p.getInventory().setStack(9, tube.copyWithCount(incoming));
         var handler = new PotionBagScreenHandler(80, p.getInventory(), bag); p.currentScreenHandler = handler;
         handler.onSlotClick(9, 0, SlotActionType.QUICK_MOVE, p);
         int count = 0;
@@ -135,7 +202,18 @@ public final class PotionTubeBagWorldProbe {
             var stored = handler.getSlot(i).getStack(); count += stored.getCount();
             check(stored.isEmpty() || stored.getCount() <= cap, "shift进袋每个槽位遵守试管容量" + cap);
         }
-        check(count == 20 && p.getInventory().getStack(9).isEmpty(), "shift进袋不吞管且不漏管");
+        check(count == incoming && p.getInventory().getStack(9).isEmpty(), "shift进袋不吞剂量且不漏剂量");
         handler.onClosed(p); p.currentScreenHandler = p.playerScreenHandler;
+    }
+
+    private static void clickIntoBag(ServerPlayerEntity p, ItemStack potion, int cap) {
+        var bag = equippedBag(p, ItemStack.EMPTY);
+        p.playerScreenHandler.setCursorStack(potion.copyWithCount(cap * 2 + 1));
+        p.playerScreenHandler.onSlotClick(44, 0, SlotActionType.PICKUP, p);
+        check(p.playerScreenHandler.getCursorStack().isEmpty()
+                && PotionBagScreenHandler.getStoredStack(bag, 1).getCount() == cap
+                && PotionBagScreenHandler.getStoredStack(bag, 2).getCount() == cap
+                && PotionBagScreenHandler.getStoredStack(bag, 3).getCount() == 1
+                && PotionBagScreenHandler.getStoredStack(bag, 0).isEmpty(), "光标点击药水袋正确按剂型与power分配，并优先非快捷槽");
     }
 }

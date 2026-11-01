@@ -32,6 +32,7 @@ public final class FormationResearchIntegrationTest {
         public static void run() throws Exception {
             register("formation",SscAddon.FORMATION); register("paper",SscAddon.BLANK_FORMATION_PAPER);
             register("manuscript",SscAddon.FORMATION_MANUSCRIPT); register("dust",RegCustomItem.UNTREATED_MOONDUST);
+            register("crystal",RegCustomItem.MOONDUST_CRYSTAL_SHARD);
             List<Item> inks=new ArrayList<>();
             for(var type:FormationInkItem.Type.values()) inks.add(register("ink_"+type.id,new FormationInkItem(new Item.Settings(),type)));
             var fresh=WorldRuneState.class.getDeclaredConstructor();fresh.setAccessible(true);
@@ -69,6 +70,8 @@ public final class FormationResearchIntegrationTest {
             checkUnanalyzedItems();
             checkIdentification(world);
             checkIdentificationGates();
+            checkUnlockedReferences(world,other);
+            checkManualUpgrades(world,other,inks);
             checkResearchFeedback();
             var contents=net.minecraft.util.collection.DefaultedList.ofSize(15,ItemStack.EMPTY);
             var bundle=new net.minecraft.client.gui.tooltip.BundleTooltipComponent(new net.minecraft.client.item.BundleTooltipData(contents,0));
@@ -825,20 +828,89 @@ public final class FormationResearchIntegrationTest {
             var handler=new net.jackcooper.shapeShifterCurseAddon.screen.SpellResearchTableScreenHandler(1,new net.minecraft.entity.player.PlayerInventory(null),slotInventory);
             check(handler.getSlot(0).isEnabled()&&handler.getSlot(3).isEnabled()&&handler.getSlot(5).isEnabled(),"analysis required slots visible");
             check(!handler.getSlot(1).isEnabled()&&!handler.getSlot(2).isEnabled()&&!handler.getSlot(4).isEnabled(),"analysis irrelevant slots hidden");
-            handler.getSlot(7).setStack(scroll.copy());handler.quickMove(null,7);
+            int first=SpellResearchTableBlockEntity.SLOT_COUNT;
+            handler.getSlot(first).setStack(scroll.copy());handler.quickMove(null,first);
             check(ItemStack.areEqual(slotInventory.getStack(5),scroll)&&slotInventory.getStack(3).isEmpty(),"shift scroll enters analysis only");
-            handler.getSlot(7).setStack(scroll.copy());
-            check(handler.quickMove(null,7).isEmpty()&&slotInventory.getStack(3).isEmpty()&&handler.getSlot(7).hasStack(),"full analysis does not shift scroll into output");
-            handler.getSlot(8).setStack(new ItemStack(SscAddon.BLANK_FORMATION_PAPER,3));handler.quickMove(null,8);
+            handler.getSlot(first).setStack(scroll.copy());
+            check(handler.quickMove(null,first).isEmpty()&&slotInventory.getStack(3).isEmpty()&&handler.getSlot(first).hasStack(),"full analysis does not shift scroll into output");
+            handler.getSlot(first+1).setStack(new ItemStack(SscAddon.BLANK_FORMATION_PAPER,3));handler.quickMove(null,first+1);
             check(slotInventory.getStack(0).getCount()==3,"shift paper enters paper slot");
-            handler.getSlot(9).setStack(new ItemStack(SscAddon.FORMATION_INK_NORMAL));
-            check(handler.quickMove(null,9).isEmpty()&&slotInventory.getStack(1).isEmpty(),"analysis cannot shift into hidden ink slot");
+            handler.getSlot(first+2).setStack(new ItemStack(SscAddon.FORMATION_INK_NORMAL));
+            check(handler.quickMove(null,first+2).isEmpty()&&slotInventory.getStack(1).isEmpty(),"analysis cannot shift into hidden ink slot");
             handler.setActivePage(2);
-            check(handler.getSlot(1).isEnabled()&&handler.getSlot(2).isEnabled()&&handler.getSlot(4).isEnabled()&&!handler.getSlot(5).isEnabled(),"workshop restores material slots");
-            handler.quickMove(null,9);
-            check(slotInventory.getStack(1).isOf(SscAddon.FORMATION_INK_NORMAL),"workshop shift ink unchanged");
+            check(!handler.getSlot(0).isEnabled()&&!handler.getSlot(1).isEnabled()&&!handler.getSlot(2).isEnabled()
+                    &&!handler.getSlot(3).isEnabled()&&!handler.getSlot(4).isEnabled(),"atlas has no crafting or material slots");
+            handler.setActivePage(3);
+            handler.quickMove(null,first+2);
+            check(slotInventory.getStack(1).isOf(SscAddon.FORMATION_INK_NORMAL),"scribe material routing retained");
             handler.setActivePage(0);
             check(handler.quickMove(null,1).isEmpty()&&slotInventory.getStack(1).isOf(SscAddon.FORMATION_INK_NORMAL),"hidden materials preserved");
+        }
+        private static void checkUnlockedReferences(WorldRuneState world,WorldRuneState other){
+            var knowledge=ready(world);
+            check(UnlockedSpellReferences.write(knowledge,world,1).isEmpty(),"unknown spell compositions are not sent");
+            knowledge.recordSpell("fire_bolt");knowledge.recordSpell("explosion");
+            for(int level=1;level<=5;level++){
+                var entries=UnlockedSpellReferences.write(knowledge,world,level);
+                check(entries.size()==1&&entries.getCompound(0).getString("Spell").equals("fire_bolt"),"only unlocked supported spell projected");
+                int[] pattern=entries.getCompound(0).getIntArray("Slots");
+                check(Arrays.equals(pattern,RuneLayout.foundation(SlottedSpellRecipes.get("fire_bolt"),level,world.language()))
+                        &&!RuneLayout.hasEnhancements(level,pattern,RuneLayout.VERSION),"projection uses current save language and no automatic enhancements");
+                check(knowledge.research().runeDrafts.isEmpty(),"viewing references never fills a saved draft");
+            }
+            knowledge.research().rank=1;
+            check(UnlockedSpellReferences.write(knowledge,world,2).isEmpty(),"rank-locked compositions are not sent");
+            check(UnlockedSpellReferences.write(knowledge,other,1).isEmpty(),"foreign world cannot reuse reference permission");
+            check(UnlockedSpellReferences.write(knowledge,world,0).isEmpty(),"invalid reference tier refused");
+        }
+        private static void checkManualUpgrades(WorldRuneState world,WorldRuneState other,List<Item> inks){
+            for(var recipe:SlottedSpellRecipes.all())for(int level=2;level<=5;level++){
+                if(!SlottedSpellRecipes.available(recipe,level))continue;
+                var knowledge=ready(world);knowledge.recordSpell(recipe.spell());
+                var table=new SimpleInventory(SpellResearchTableBlockEntity.SLOT_COUNT);var bag=slotMaterials(inks);
+                bag.setStack(10,new ItemStack(RegCustomItem.MOONDUST_CRYSTAL_SHARD,8));
+                ItemStack main=ScrollData.create(recipe.spell(),level-1);ScrollData.setUses(main,1);
+                main.getOrCreateNbt().putLong("CooldownEnd",1234567);main.getOrCreateNbt().putString("SpaceBinding","retain");
+                ScrollData.setCastLevel(main,1);var before=main.getNbt().copy();before.remove("Level");before.remove("CastLevel");
+                table.setStack(SpellResearchTableBlockEntity.SLOT_UPGRADE_SCROLL,main);
+                int[] pattern=RuneLayout.foundation(recipe,level,world.language());UUID token=knowledge.research().completionToken;
+                check(SlottedFormationTransaction.upgradeEnhanced(table,bag,knowledge,world,level,pattern,token).success(),"manual upgrade works for supported spell and tier");
+                var result=table.getStack(SpellResearchTableBlockEntity.SLOT_RESEARCH_OUTPUT);
+                var after=result.getNbt().copy();after.remove("Level");after.remove("CastLevel");
+                check(ScrollData.getLevel(result)==level&&before.equals(after),"upgrade preserves uses cooldown bindings and all unrelated NBT");
+                check(table.getStack(SpellResearchTableBlockEntity.SLOT_UPGRADE_SCROLL).isEmpty(),"upgrade consumes exactly the original scroll");
+                int remainingInk=0;for(int i=0;i<8;i++)remainingInk+=bag.getStack(i).getCount();
+                check(remainingInk==128-level&&bag.getStack(10).getCount()==8-Math.max(0,level-2),"manual upgrade retains old ink and crystal fees");
+                check(bag.getStack(8).getCount()==64&&bag.getStack(9).getCount()==2,"upgrade does not add full crafting paper or dust charges");
+                var paid=inventoryNbt(bag);
+                check(SlottedFormationTransaction.upgradeEnhanced(table,bag,knowledge,world,level,pattern,token).key().equals("duplicate")
+                        &&paid.equals(inventoryNbt(bag)),"repeated completion packet cannot duplicate upgraded scroll");
+            }
+            var knowledge=ready(world);knowledge.recordSpell("fire_bolt");var table=new SimpleInventory(SpellResearchTableBlockEntity.SLOT_COUNT);
+            var bag=slotMaterials(inks);table.setStack(7,ScrollData.create("fire_bolt",2));
+            int[] pattern=RuneLayout.foundation(SlottedSpellRecipes.get("fire_bolt"),3,world.language());
+            var oldTable=inventoryNbt(table);var oldBag=inventoryNbt(bag);UUID token=knowledge.research().completionToken;
+            check(SlottedFormationTransaction.upgradeEnhanced(table,bag,knowledge,world,3,pattern,token).key().equals("upgrade_catalyst")
+                    &&oldTable.equals(inventoryNbt(table))&&oldBag.equals(inventoryNbt(bag)),"missing crystal rolls back every ingredient and base scroll");
+            check(SlottedFormationTransaction.upgradeEnhanced(table,bag,knowledge,other,3,pattern,token).key().equals("invalid"),"foreign-world manual upgrade refused");
+            bag.setStack(10,new ItemStack(RegCustomItem.MOONDUST_CRYSTAL_SHARD,8));table.setStack(7,ArcaneAnalysis.markUnanalyzed(ScrollData.create("fire_bolt",2)));
+            check(SlottedFormationTransaction.upgradeEnhanced(table,bag,knowledge,world,3,pattern,token).key().equals("upgrade_input"),"unidentified main scroll cannot upgrade");
+            table.setStack(7,ScrollData.create("frost_spike",2));
+            check(SlottedFormationTransaction.upgradeEnhanced(table,bag,knowledge,world,3,pattern,token).key().equals("upgrade_input"),"wrong spell main cannot upgrade");
+            table.setStack(7,ScrollData.create("fire_bolt",2));int[] wrong=pattern.clone();wrong[0]=-1;
+            check(SlottedFormationTransaction.upgradeEnhanced(table,bag,knowledge,world,3,wrong,token).key().equals("invalid"),"materials and atlas alone do not bypass manual runes");
+            table.setStack(6,new ItemStack(Items.STONE));
+            check(SlottedFormationTransaction.upgradeEnhanced(table,bag,knowledge,world,3,pattern,token).key().equals("output"),"occupied research output blocks upgrade");
+            table.setStack(6,ItemStack.EMPTY);knowledge.research().rank=2;
+            check(SlottedFormationTransaction.upgradeEnhanced(table,bag,knowledge,world,3,pattern,token).key().equals("rank"),"upgrade respects research tier");
+            knowledge.research().rank=5;
+            var modified=RuneLayout.foundation(SlottedSpellRecipes.get("fire_bolt"),2,world.language());
+            fillOuter(modified,2,world.language(),RuneRole.STORE,RuneRole.SOURCE,RuneRole.STABLE,RuneRole.STABLE,RuneRole.SOURCE);
+            var evaluated=RuneBuildEvaluator.evaluate(2,modified,world.language(),SlottedSpellRecipes.all());
+            var profile=RuneScheme.create(world,2,modified,evaluated);var main=ScrollData.create("fire_bolt",2);main.getOrCreateNbt().put(RuneScheme.KEY,profile.copy());table.setStack(7,main);
+            check(SlottedFormationTransaction.upgradeEnhanced(table,bag,knowledge,world,3,pattern,token).success(),"existing modified scroll can upgrade with plain next-level foundation");
+            var upgraded=table.getStack(6);
+            check(upgraded.getNbt().getCompound(RuneScheme.KEY).equals(profile)&&RuneScheme.authoritativeScroll(world,upgraded)!=null,"existing authoritative modification remains intact and usable");
         }
         private static FormationKnowledgeComponent ready(WorldRuneState world){var k=new FormationKnowledgeComponent();k.research().bind(world.worldId());k.research().rank=5;k.research().attuned=0x7ff;return k;}
         private static SimpleInventory materials(ResearchTarget t,List<Item> inks){var i=new SimpleInventory(5);i.setStack(0,new ItemStack(SscAddon.BLANK_FORMATION_PAPER,2));i.setStack(1,new ItemStack(inks.get(t.family()>=7?0:FormationInkItem.Type.valueOf(t.element().toUpperCase(Locale.ROOT)).ordinal()),8));i.setStack(2,new ItemStack(RegCustomItem.UNTREATED_MOONDUST,12));return i;}

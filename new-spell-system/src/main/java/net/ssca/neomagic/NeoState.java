@@ -11,6 +11,7 @@ import static net.ssca.neomagic.NeoModel.*;
 public final class NeoState extends PersistentState {
     public static final Gson JSON = new Gson();
     public final Map<UUID, PlayerData> players = new HashMap<>();
+    public boolean tutorialPolicyInitialized, tutorialAutoEnabled;
     public record Measurement(String target,String type,String position,double incoming,double healthBefore,double healthAfter,double absorptionBefore,double absorptionAfter) {}
     public static final class Experiment {
         public String id = UUID.randomUUID().toString(), version = NeoRules.version(), result = "preparing";
@@ -34,6 +35,7 @@ public final class NeoState extends PersistentState {
         public List<Measurement> measurements = new ArrayList<>();
     }
     public static final class PlayerData {
+        public boolean spellTutorialSeen;
         public double burden;
         /** 玩家精通经验（十分之一点）；独立于每个法术的减耗熟练度。 */
         public int spellbookMasteryExpTen;
@@ -83,6 +85,8 @@ public final class NeoState extends PersistentState {
     private static NeoState read(NbtCompound n) {
         if(n.getInt("Version") != VERSION) throw new IllegalStateException("Unknown neomagic save version");
         NeoState s = new NeoState();
+        s.tutorialPolicyInitialized=n.getBoolean("TutorialPolicyInitialized");
+        s.tutorialAutoEnabled=n.getBoolean("TutorialAutoEnabled");
         NbtCompound entries = n.getCompound("Players");
         for(String id : entries.getKeys()) {
             String json=entries.contains(id,NbtElement.BYTE_ARRAY_TYPE)?new String(entries.getByteArray(id),java.nio.charset.StandardCharsets.UTF_8):entries.getString(id);
@@ -112,7 +116,10 @@ public final class NeoState extends PersistentState {
     }
     public PlayerData player(UUID uuid) { return players.computeIfAbsent(uuid,k -> new PlayerData()); }
     @Override public NbtCompound writeNbt(NbtCompound n) {
-        n.putInt("Version",VERSION); NbtCompound entries = new NbtCompound();
+        n.putInt("Version",VERSION);
+        n.putBoolean("TutorialPolicyInitialized",tutorialPolicyInitialized);
+        n.putBoolean("TutorialAutoEnabled",tutorialAutoEnabled);
+        NbtCompound entries = new NbtCompound();
         players.forEach((id,data) -> entries.putByteArray(id.toString(),JSON.toJson(data).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
         n.put("Players",entries); return n;
     }

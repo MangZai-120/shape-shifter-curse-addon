@@ -22,7 +22,17 @@ import net.onixary.shapeShifterCurseFabric.items.RegCustomItem;
  */
 public class InfusionAltarScreenHandler extends ScreenHandler {
 	public static final int GUI_WIDTH = 312, GUI_HEIGHT = 232;
-	public static final int ALTAR_SLOT_COUNT = 3 + SpellbookData.MAX_FORMATION_SLOTS;
+	public static final int FORMATION_END = 3 + SpellbookData.MAX_FORMATION_SLOTS;
+	public static final int MAINTENANCE_INK = FORMATION_END, MAINTENANCE_SCHEME = FORMATION_END + 1, MAINTENANCE_SCROLL = FORMATION_END + 2;
+	public static final int ALTAR_SLOT_COUNT = FORMATION_END + 3;
+	public static final int CONFIGURE = 20, MAINTENANCE = 21;
+	private boolean maintenance;
+	public boolean isMaintenance() { return maintenance; }
+	public void setMaintenance(boolean value) { maintenance = value; }
+	@Override public boolean onButtonClick(PlayerEntity player, int action) {
+		if ((action != CONFIGURE && action != MAINTENANCE) || !canUse(player)) return false;
+		maintenance = action == MAINTENANCE; return true;
+	}
 	public static final int INVENTORY_X = 12, INVENTORY_Y = 148, HOTBAR_Y = 206;
 	public static final int BOOK_X = 88, BOOK_Y = 63;
 	public static final int FUEL_X = 212, CATALYST_X = 264, MATERIAL_Y = 110;
@@ -55,9 +65,10 @@ public class InfusionAltarScreenHandler extends ScreenHandler {
 
 		// 书槽（六芒星中心）
 		this.addSlot(new Slot(inventory, 0, BOOK_X, BOOK_Y) {
+			@Override public boolean isEnabled() { return !maintenance; }
 			@Override
 			public boolean canInsert(ItemStack stack) {
-				return stack.getItem() instanceof MoonDustSpellbookItem;
+				return isEnabled() && stack.getItem() instanceof MoonDustSpellbookItem;
 			}
 
 			@Override
@@ -75,20 +86,22 @@ public class InfusionAltarScreenHandler extends ScreenHandler {
 		});
 		// 催化槽：塑形核心。
 		this.addSlot(new Slot(inventory, 2, CATALYST_X, MATERIAL_Y) {
+			@Override public boolean isEnabled() { return !maintenance; }
 			@Override
 			public boolean canInsert(ItemStack stack) {
-				return stack.getItem() == RegCustomItem.MORPHSCALE_CORE;
+				return isEnabled() && stack.getItem() == RegCustomItem.MORPHSCALE_CORE;
 			}
 		});
 		// 六芒星法阵角槽 3-8
 		for (int i = 0; i < SpellbookData.MAX_FORMATION_SLOTS; i++) {
 			final int formationSlot = i;
 			this.addSlot(new Slot(inventory, 3 + i, HEXAGRAM_SLOT_POS[i][0], HEXAGRAM_SLOT_POS[i][1]) {
+				@Override public boolean isEnabled() { return !maintenance; }
 				@Override
 				public boolean canInsert(ItemStack stack) {
 					// 无书或角位未解锁 → 锁定；有书且解锁 → 只收法阵
 					ItemStack book = inventory.getStack(0);
-					if (!(book.getItem() instanceof MoonDustSpellbookItem) || book.isEmpty()) {
+					if (!isEnabled() || !(book.getItem() instanceof MoonDustSpellbookItem) || book.isEmpty()) {
 						return false;
 					}
 					if (!SpellbookData.isFormationSlotUnlocked(book, formationSlot)) {
@@ -103,6 +116,20 @@ public class InfusionAltarScreenHandler extends ScreenHandler {
 				}
 			});
 		}
+		this.addSlot(new Slot(inventory, MAINTENANCE_INK, 117, 46) {
+			@Override public boolean isEnabled() { return maintenance; }
+			@Override public boolean canInsert(ItemStack stack) { return isEnabled() && stack.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem; }
+		});
+		this.addSlot(new Slot(inventory, MAINTENANCE_SCHEME, 59, 46) {
+			@Override public boolean isEnabled() { return maintenance; }
+			@Override public boolean canInsert(ItemStack stack) { return isEnabled() && stack.isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.SPELL_FORMATION); }
+			@Override public int getMaxItemCount() { return 1; }
+		});
+		this.addSlot(new Slot(inventory, MAINTENANCE_SCROLL, BOOK_X, BOOK_Y) {
+			@Override public boolean isEnabled() { return maintenance; }
+			@Override public boolean canInsert(ItemStack stack) { return isEnabled() && stack.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem; }
+			@Override public int getMaxItemCount() { return 1; }
+		});
 
 		// 玩家背包
 		for (int row = 0; row < 3; ++row) {
@@ -125,13 +152,18 @@ public class InfusionAltarScreenHandler extends ScreenHandler {
 	public ItemStack quickMove(PlayerEntity player, int index) {
 		ItemStack newStack = ItemStack.EMPTY;
 		Slot slot = this.slots.get(index);
-		if (slot != null && slot.hasStack()) {
+		if (slot != null && slot.isEnabled() && slot.hasStack()) {
 			ItemStack original = slot.getStack();
 			newStack = original.copy();
 			if (index < ALTAR_SLOT_COUNT) {
 				if (!this.insertItem(original, ALTAR_SLOT_COUNT, this.slots.size(), true)) {
 					return ItemStack.EMPTY;
 				}
+			} else if (maintenance) {
+				int target = original.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem ? MAINTENANCE_SCROLL
+						: original.isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.SPELL_FORMATION) ? MAINTENANCE_SCHEME
+						: original.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem ? MAINTENANCE_INK : 1;
+				if (!this.insertItem(original, target, target + 1, false)) return ItemStack.EMPTY;
 			} else if (original.getItem() instanceof MoonDustSpellbookItem) {
 				// 优先书槽
 				if (!this.insertItem(original, 0, 1, false)) {
@@ -139,7 +171,7 @@ public class InfusionAltarScreenHandler extends ScreenHandler {
 				}
 			} else if (FormationData.isFormation(original)) {
 				// shift 法阵 → 尝试六芒星角槽
-				if (!this.insertItem(original, 3, ALTAR_SLOT_COUNT, false)) {
+				if (!this.insertItem(original, 3, FORMATION_END, false)) {
 					return ItemStack.EMPTY;
 				}
 			} else {

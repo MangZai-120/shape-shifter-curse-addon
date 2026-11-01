@@ -29,7 +29,7 @@ public final class NeoLegacyCasting {
         return profile(p,SpellCastManager.getEquippedBook(p));
     }
     static Profile profile(ServerPlayerEntity p,ItemStack book) {
-        Profile base=NeoRules.profile(NeoRuntime.form(p));
+        Profile base=NeoRuntime.bodyProfile(p);
         PlayerSpellMastery.migrate(p,book);
         double bonus=PlayerSpellMastery.bonus(NeoRuntime.data(p))+safetyBonus(book);
         return new Profile(base.safety()+bonus,base.failure(),base.offset(),base.merge(),base.split(),base.reference());

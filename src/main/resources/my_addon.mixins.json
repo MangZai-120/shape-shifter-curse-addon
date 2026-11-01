@@ -51,6 +51,7 @@
         "PocketSpaceChunkFilterMixin",
         "ItemGroupPositionAccessor",
         "effect.AllaySPTotemMixin",
+        "entity.LivingEntityTotemInvoker",
         "effect.FrostArmorVanillaAbsorptionMixin",
         "effect.EntangledFullStunMixin",
         "AnkhStoneTotemMixin",

@@ -99,7 +99,7 @@ public class InfusionAltarBlockEntity extends BlockEntity implements NamedScreen
 		if (!(book.getItem() instanceof MoonDustSpellbookItem) || book.isEmpty()) {
 			// 无书：清快照 + 清空角槽显示
 			this.lastSyncedFormations = null;
-			for (int i = 3; i < items.size(); i++) {
+			for (int i = 3; i < InfusionAltarScreenHandler.FORMATION_END; i++) {
 				items.set(i, ItemStack.EMPTY);
 			}
 			return;
@@ -266,6 +266,10 @@ public class InfusionAltarBlockEntity extends BlockEntity implements NamedScreen
 
 	/** 供方块破坏时散落物品。 */
 	public DefaultedList<ItemStack> getItems() {
-		return items;
+		DefaultedList<ItemStack> drops=DefaultedList.ofSize(items.size(),ItemStack.EMPTY);
+		boolean book=items.get(0).getItem() instanceof MoonDustSpellbookItem;
+		for(int i=0;i<items.size();i++)
+			if(!book||i<3||i>=InfusionAltarScreenHandler.FORMATION_END)drops.set(i,items.get(i).copy());
+		return drops;
 	}
 }

@@ -521,7 +521,7 @@ public class SscAddonNetworking {
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_INFUSION_ALTAR_UPGRADE, (server, player, handler, buf, responseSender) -> {
 			server.execute(() -> {
 				if (player.currentScreenHandler instanceof InfusionAltarScreenHandler sh
-						&& sh.getInventory() instanceof InfusionAltarBlockEntity be) {
+						&& !sh.isMaintenance() && sh.canUse(player) && sh.getInventory() instanceof InfusionAltarBlockEntity be) {
 					be.tryUpgrade(player);
 				}
 			});

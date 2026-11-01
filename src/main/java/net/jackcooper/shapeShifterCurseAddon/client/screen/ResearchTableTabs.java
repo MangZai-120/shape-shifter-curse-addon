@@ -14,8 +14,12 @@ import java.util.function.BooleanSupplier;
 public final class ResearchTableTabs {
     public static final int ANALYSIS=0, RESEARCH=1, WORKSHOP=2, SCRIBE=3, LEARN=4, COUNT=5;
     private static final Identifier TABS=new Identifier("minecraft","textures/gui/container/creative_inventory/tabs.png");
-    private static final Item[] ICONS={Items.WRITABLE_BOOK,Items.ENCHANTED_BOOK,Items.CRAFTING_TABLE,Items.PAPER,Items.BOOK};
+    private static final Item[] ICONS={Items.WRITABLE_BOOK,Items.ENCHANTED_BOOK,Items.MAP,Items.PAPER,Items.BOOK};
     private ResearchTableTabs(){}
+    public static ButtonWidget tutorial(int left,int top,Runnable action){
+        return ButtonWidget.builder(Text.translatable("tutorial.ssc_addon.replay"),ignored->action.run())
+                .dimensions(left+244,top-24,60,20).build();
+    }
     public static ButtonWidget create(int left,int top,int index,BooleanSupplier selected,Runnable action){
         Text title=Text.translatable("research.ssc_addon.slotted.tab."+index);
         var button=new ButtonWidget(left+index*27,top-28,26,28,title,ignored->action.run(),supplier->supplier.get()){

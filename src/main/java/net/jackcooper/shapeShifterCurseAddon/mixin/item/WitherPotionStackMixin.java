@@ -41,8 +41,8 @@ public abstract class WitherPotionStackMixin {
 		if (!(this.inventory instanceof PlayerInventory playerInventory)) {
 			return;
 		}
-		if (PotionTestTubes.isFilledTube(stack)) {
-			// 在原版 SSC 的药水上限之后统一收口，月尘与普通药液采用相同资格。
+		if (PotionTestTubes.hasCustomStackLimit(stack)) {
+			// 在原版SSC上限之后收口：瓶装按power，试管按3/16。
 			cir.setReturnValue(PotionTestTubes.stackLimit(stack, playerInventory.player));
 			return;
 		}
