@@ -39,10 +39,14 @@ public class FrostArrayRenderer extends EntityRenderer<FrostArrayEntity> {
 	private static final float[] ICE_WHITE = {0.85f, 0.95f, 1.00f, 0.90f};
 
 	private final ItemRenderer itemRenderer;
+	/** 只读渲染栈在注册完成后的渲染器构造期创建，不触发物品的提前静态初始化。 */
+	private final ItemStack previewThorn;
 
 	public FrostArrayRenderer(EntityRendererFactory.Context ctx) {
 		super(ctx);
 		this.itemRenderer = ctx.getItemRenderer();
+		this.previewThorn = new ItemStack(SscAddon.FROST_THORN);
+		this.previewThorn.getOrCreateNbt().putInt("CustomModelData", 1);
 	}
 
 	@Override
@@ -89,9 +93,7 @@ public class FrostArrayRenderer extends EntityRenderer<FrostArrayEntity> {
 		matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-flyPitch));
 		// 模型中心补偿（同 FrostThornEntityRenderer：模型中心在网格 (1.5,0.5,3)）
 		matrices.translate((8.0 - 1.5) / 16.0, (8.0 - 0.5) / 16.0, (8.0 - 3.0) / 16.0);
-		ItemStack stack = new ItemStack(SscAddon.FROST_THORN);
-		stack.getOrCreateNbt().putInt("CustomModelData", 1);
-		this.itemRenderer.renderItem(stack, ModelTransformationMode.GROUND, 0xF000F0, OverlayTexture.DEFAULT_UV,
+		this.itemRenderer.renderItem(this.previewThorn, ModelTransformationMode.GROUND, 0xF000F0, OverlayTexture.DEFAULT_UV,
 				matrices, vcp, entity.getWorld(), entity.getId());
 		matrices.pop();
 

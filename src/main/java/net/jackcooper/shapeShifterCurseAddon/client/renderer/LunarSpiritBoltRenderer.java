@@ -21,6 +21,13 @@ public class LunarSpiritBoltRenderer extends EntityRenderer<LunarSpiritBoltEntit
 	private static final Identifier TEXTURE = new Identifier("my_addon", "textures/entity/moon_spirit_green.png");
 	/** 光弹尺寸（格）。 */
 	private static final float BOLT_SIZE = 0.18f;
+	// 固定顶点只读复用，避免每枚光弹每帧重复创建六个向量。
+	private static final Vec3d TOP = new Vec3d(0, 1, 0);
+	private static final Vec3d BOTTOM = new Vec3d(0, -1, 0);
+	private static final Vec3d EQ0 = new Vec3d(0.71, 0, 0.71);
+	private static final Vec3d EQ1 = new Vec3d(-0.71, 0, 0.71);
+	private static final Vec3d EQ2 = new Vec3d(-0.71, 0, -0.71);
+	private static final Vec3d EQ3 = new Vec3d(0.71, 0, -0.71);
 
 	public LunarSpiritBoltRenderer(EntityRendererFactory.Context ctx) {
 		super(ctx);
@@ -55,20 +62,14 @@ public class LunarSpiritBoltRenderer extends EntityRenderer<LunarSpiritBoltEntit
 	/** 程序化八面体（上下双锥）。POSITION_COLOR 格式：每顶点位置 + 颜色即可。 */
 	private static void renderOctahedron(VertexConsumer consumer, MatrixStack.Entry entry,
 	                                     float r, float g, float b) {
-		var top = new Vec3d(0, 1, 0);
-		var bottom = new Vec3d(0, -1, 0);
-		var eq0 = new Vec3d(0.71, 0, 0.71);
-		var eq1 = new Vec3d(-0.71, 0, 0.71);
-		var eq2 = new Vec3d(-0.71, 0, -0.71);
-		var eq3 = new Vec3d(0.71, 0, -0.71);
-		tri(consumer, entry, top, eq0, eq1, r, g, b);
-		tri(consumer, entry, top, eq1, eq2, r, g, b);
-		tri(consumer, entry, top, eq2, eq3, r, g, b);
-		tri(consumer, entry, top, eq3, eq0, r, g, b);
-		tri(consumer, entry, bottom, eq1, eq0, r, g, b);
-		tri(consumer, entry, bottom, eq2, eq1, r, g, b);
-		tri(consumer, entry, bottom, eq3, eq2, r, g, b);
-		tri(consumer, entry, bottom, eq0, eq3, r, g, b);
+		tri(consumer, entry, TOP, EQ0, EQ1, r, g, b);
+		tri(consumer, entry, TOP, EQ1, EQ2, r, g, b);
+		tri(consumer, entry, TOP, EQ2, EQ3, r, g, b);
+		tri(consumer, entry, TOP, EQ3, EQ0, r, g, b);
+		tri(consumer, entry, BOTTOM, EQ1, EQ0, r, g, b);
+		tri(consumer, entry, BOTTOM, EQ2, EQ1, r, g, b);
+		tri(consumer, entry, BOTTOM, EQ3, EQ2, r, g, b);
+		tri(consumer, entry, BOTTOM, EQ0, EQ3, r, g, b);
 	}
 
 	private static void tri(VertexConsumer consumer, MatrixStack.Entry entry,

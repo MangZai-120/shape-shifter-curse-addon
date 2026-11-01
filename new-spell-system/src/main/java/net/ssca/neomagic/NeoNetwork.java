@@ -43,14 +43,17 @@ public final class NeoNetwork {
         n.putDouble("FrostSpellMultiplier",net.jackcooper.shapeShifterCurseAddon.spell.FrostSpellLink.multiplier(p,true));
         n.putLong("FrostReadyUntil",net.jackcooper.shapeShifterCurseAddon.spell.FrostSpellLink.readyUntil(p));
         n.putLong("NovaQuickCastUntil",net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.quickUntil(p));
-        Blueprint b=a==null?null:a.session.blueprint;
-        boolean loaded=false;
-        boolean hasSpell=loaded||a!=null||legacy!=null;
-        if(b==null)b=d.draft;
-        Quote q=a==null?NeoLegacyCasting.blueprintQuote(p,b,book):a.session.quote;
-        int prep=a==null?net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.timing(p,b.prep(),b.prep(),-1).duration():a.record.preparation;String legacyName="";
-        if(legacy!=null){b=legacy.session.blueprint;q=legacy.session.quote;prep=legacy.duration;legacyName=legacy.record.spell;}
-        else if(a==null&&!loaded) {
+        Blueprint b;
+        Quote q;
+        int prep;
+        String legacyName="";
+        boolean hasSpell=a!=null||legacy!=null;
+        // 每次只计算最终采用的预览；活动施法直接复用起手快照，不先计算随后会被覆盖的草稿。
+        if(legacy!=null) {
+            b=legacy.session.blueprint;q=legacy.session.quote;prep=legacy.duration;legacyName=legacy.record.spell;
+        } else if(a!=null) {
+            b=a.session.blueprint;q=a.session.quote;prep=a.record.preparation;
+        } else {
             ItemStack scroll=p.getMainHandStack().getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem?p.getMainHandStack():p.getOffHandStack().getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem?p.getOffHandStack():ItemStack.EMPTY;
             boolean solo=!scroll.isEmpty();
             if(!solo&&book!=null)scroll=net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.getScroll(book,net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.getSelectedSlot(book));
@@ -64,6 +67,10 @@ public final class NeoNetwork {
                 b=NeoLegacyCasting.descriptor(spell,level,prep);
                 int normal=solo?modifiers.mana(Math.round(spell.getManaCost()*spell.getConfig().manaCostMultiplier(level))):net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers.finalManaCost(spell,book,p,level,scroll);
                 q=NeoLegacyCasting.quote(p,spell,level,prep,normal);legacyName=spell.getId().toString();
+            } else {
+                b=d.draft;
+                q=NeoLegacyCasting.blueprintQuote(p,b,book);
+                prep=net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.timing(p,b.prep(),b.prep(),-1).duration();
             }
         }
         Risk r=offsetRisk(b,d.burden,q.actual(),profile);

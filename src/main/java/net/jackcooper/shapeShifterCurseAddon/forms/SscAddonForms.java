@@ -198,7 +198,7 @@ public final class SscAddonForms {
 		Form_BatDesmodus batDesmodusForm = new Form_BatDesmodus(FormIdentifiers.BAT_DESMODUS);
 		batDesmodusForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune, HasSlowFall);
 		// 蝙蝠缩放需与原版 bat_3 一致（宽度/高度0.6、眼睛/碰撞箱0.7），否则保持上个形态大小不缩放
-		batDesmodusForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.6f, 0.7f));
+		batDesmodusForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.6f, 0.7f)).OverwriteEyeScale(0.7f);
 		batDesmodusForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Bat3PerkTree);
 		RegPlayerForms.registerPlayerForm(batDesmodusForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_bat_desmodus")).registerForm(1, 12, batDesmodusForm));
@@ -227,7 +227,7 @@ public final class SscAddonForms {
 		Form_BatParasiticFruit batParasiticFruitForm = new Form_BatParasiticFruit(FormIdentifiers.BAT_PARASITIC_FRUIT);
 		batParasiticFruitForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune, HasSlowFall);
 		// 蝙蝠缩放需与原版 bat_3 一致（宽度/高度0.6、眼睛/碰撞箱0.7），否则保持上个形态大小不缩放
-		batParasiticFruitForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.6f, 0.7f));
+		batParasiticFruitForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.6f, 0.7f)).OverwriteEyeScale(0.7f);
 		batParasiticFruitForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Bat3PerkTree);
 		RegPlayerForms.registerPlayerForm(batParasiticFruitForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_bat_parasitic_fruit")).registerForm(1, 12, batParasiticFruitForm));

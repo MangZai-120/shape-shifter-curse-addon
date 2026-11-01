@@ -14,6 +14,22 @@ import org.joml.Matrix4f;
 public final class CastingCircleRenderer {
 	private CastingCircleRenderer() {}
 
+	/** 零旋转圆环的角度恒定，独立初始化便于脱离渲染环境核对原公式。 */
+	static final class RingTrig {
+		private static final double[] COS = new double[65];
+		private static final double[] SIN = new double[65];
+		static {
+			for (int point = 0; point <= 64; point++) {
+				double angle = 0 + point * Math.PI / 32;
+				COS[point] = Math.cos(angle);
+				SIN[point] = Math.sin(angle);
+			}
+		}
+		private RingTrig() {}
+		static double cos(int point) { return COS[point]; }
+		static double sin(int point) { return SIN[point]; }
+	}
+
 	public static void render(WorldRenderContext context) {
 		var client = MinecraftClient.getInstance();
 		if (client.world == null || context.consumers() == null) return;
@@ -62,6 +78,13 @@ public final class CastingCircleRenderer {
 
 	public static void ring(VertexConsumer vertices, Matrix4f matrix, double radius, double width,
 	                         double rotation, int color, float alpha) {
+		if (rotation == 0) {
+			for (int segment = 0; segment < 64; segment++) {
+				line(vertices, matrix, RingTrig.cos(segment) * radius, RingTrig.sin(segment) * radius,
+						RingTrig.cos(segment + 1) * radius, RingTrig.sin(segment + 1) * radius, width, color, alpha);
+			}
+			return;
+		}
 		for (int segment = 0; segment < 64; segment++) {
 			double start = rotation + segment * Math.PI / 32;
 			double end = rotation + (segment + 1) * Math.PI / 32;

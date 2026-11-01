@@ -11,6 +11,7 @@ import static net.ssca.neomagic.NeoModel.*;
 
 /** A reload is atomic; active sessions finish with their locked quote and version. */
 public final class NeoRules implements SimpleSynchronousResourceReloadListener {
+    private static final Profile DEFAULT_PROFILE = new Profile(100,1,1,1,1,true);
     private static Map<String, Profile> forms = Map.of();
     private static Map<Core,Coefficients> costs = Map.of();
     private static Map<String,Tuning> spells=Map.of();
@@ -19,8 +20,11 @@ public final class NeoRules implements SimpleSynchronousResourceReloadListener {
     public static double recoveryRate = .25;
     private static final String ENGINE=net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("ssc_addon").map(mod->mod.getMetadata().getVersion().getFriendlyString()).orElse("test");
     public static String version() { return ENGINE+":"+version; }
-    public static Profile profile(String id) { return forms.getOrDefault(id,new Profile(100,1,1,1,1,true)); }
-    public static Coefficients cost(Core c) { return costs.getOrDefault(c,coefficients(c)); }
+    public static Profile profile(String id) { return forms.getOrDefault(id,DEFAULT_PROFILE); }
+    public static Coefficients cost(Core c) {
+        var configured=costs.get(c);
+        return configured!=null?configured:coefficients(c);
+    }
     public static Map<String,Tuning> tunings(){return spells;}
     public static Tuning tuning(Blueprint b){return spells.getOrDefault(b.identity()+"#"+b.band(),spells.getOrDefault(b.identity(),Tuning.defaults()));}
     public static Quote quote(Blueprint b,double mastery){return NeoModel.quote(b,mastery,cost(b.core()),tuning(b));}

@@ -44,6 +44,51 @@ public final class ExplosionRenderer {
 	private static ClientWorld world;
 	private static final BufferBuilder BUFFER = new BufferBuilder(65536);
 
+	/** 只缓存固定单位方向；半径、透明度与顶点提交顺序仍由原渲染流程决定。 */
+	static final class Geometry {
+		static final Sphere SHOCKWAVE = new Sphere(12, 24);
+		static final Sphere BALL = new Sphere(8, 24);
+		static final double[] BEAM_COS = new double[17];
+		static final double[] BEAM_SIN = new double[17];
+		static {
+			for (int i = 0; i <= 16; i++) {
+				double angle = 2 * Math.PI * i / 16;
+				BEAM_COS[i] = Math.cos(angle);
+				BEAM_SIN[i] = Math.sin(angle);
+			}
+		}
+		private Geometry() {}
+	}
+
+	/** 爆裂球采用原有的极角坐标，与领域球的纬度坐标独立，避免改变接缝与面片朝向。 */
+	static final class Sphere {
+		private final double[] x, y, z;
+		Sphere(int latitudes, int longitudes) {
+			x = new double[latitudes * longitudes * 4];
+			y = new double[x.length];
+			z = new double[x.length];
+			int vertex = 0;
+			for (int lat = 0; lat < latitudes; lat++) {
+				double phi0 = Math.PI * lat / latitudes, phi1 = Math.PI * (lat + 1) / latitudes;
+				for (int lon = 0; lon < longitudes; lon++) {
+					double theta0 = 2 * Math.PI * lon / longitudes, theta1 = 2 * Math.PI * (lon + 1) / longitudes;
+					double s0 = Math.sin(phi0), c0 = Math.cos(phi0), s1 = Math.sin(phi1), c1 = Math.cos(phi1);
+					put(vertex++, Math.cos(theta0) * s0, c0, Math.sin(theta0) * s0);
+					put(vertex++, Math.cos(theta1) * s0, c0, Math.sin(theta1) * s0);
+					put(vertex++, Math.cos(theta1) * s1, c1, Math.sin(theta1) * s1);
+					put(vertex++, Math.cos(theta0) * s1, c1, Math.sin(theta0) * s1);
+				}
+			}
+		}
+		private void put(int vertex, double px, double py, double pz) {
+			x[vertex] = px; y[vertex] = py; z[vertex] = pz;
+		}
+		int vertexCount() { return x.length; }
+		double x(int vertex) { return x[vertex]; }
+		double y(int vertex) { return y[vertex]; }
+		double z(int vertex) { return z[vertex]; }
+	}
+
 	private static final class View {
 		final Vec3d center;
 		int elapsed;
@@ -269,13 +314,12 @@ public final class ExplosionRenderer {
 		// 16 棱圆柱侧面：相邻棱点连线成四边形，亮红→深红交替增强柱体立体感
 		int sides = 16;
 		for (int i = 0; i < sides; i++) {
-			double a0 = 2 * Math.PI * i / sides, a1 = 2 * Math.PI * (i + 1) / sides;
 			int color = i % 2 == 0 ? 0xFF5040 : 0xD03020;
 			quad(vertices, matrix,
-					Math.cos(a0) * radius, 0, Math.sin(a0) * radius,
-					Math.cos(a1) * radius, 0, Math.sin(a1) * radius,
-					Math.cos(a1) * radius, height, Math.sin(a1) * radius,
-					Math.cos(a0) * radius, height, Math.sin(a0) * radius, color, alpha);
+					Geometry.BEAM_COS[i] * radius, 0, Geometry.BEAM_SIN[i] * radius,
+					Geometry.BEAM_COS[i + 1] * radius, 0, Geometry.BEAM_SIN[i + 1] * radius,
+					Geometry.BEAM_COS[i + 1] * radius, height, Geometry.BEAM_SIN[i + 1] * radius,
+					Geometry.BEAM_COS[i] * radius, height, Geometry.BEAM_SIN[i] * radius, color, alpha);
 		}
 	}
 
@@ -344,18 +388,13 @@ public final class ExplosionRenderer {
 	                                          VertexConsumer vertices, double radius, float alpha) {
 		if (radius <= 0.05 || alpha <= 0f) return;
 		Matrix4f matrix = matrices.peek().getPositionMatrix();
-		int lats = 12, lons = 24;
-		for (int lat = 0; lat < lats; lat++) {
-			double phi0 = Math.PI * lat / lats, phi1 = Math.PI * (lat + 1) / lats;
-			for (int lon = 0; lon < lons; lon++) {
-				double theta0 = 2 * Math.PI * lon / lons, theta1 = 2 * Math.PI * (lon + 1) / lons;
-				double s0 = Math.sin(phi0), c0 = Math.cos(phi0), s1 = Math.sin(phi1), c1 = Math.cos(phi1);
-				sphereQuad(vertices, matrix, radius,
-						Math.cos(theta0) * s0, c0, Math.sin(theta0) * s0,
-						Math.cos(theta1) * s0, c0, Math.sin(theta1) * s0,
-						Math.cos(theta1) * s1, c1, Math.sin(theta1) * s1,
-						Math.cos(theta0) * s1, c1, Math.sin(theta0) * s1, 0xFFFFFF, alpha);
-			}
+		Sphere sphere = Geometry.SHOCKWAVE;
+		for (int vertex = 0; vertex < sphere.vertexCount(); vertex += 4) {
+			sphereQuad(vertices, matrix, radius,
+					sphere.x(vertex), sphere.y(vertex), sphere.z(vertex),
+					sphere.x(vertex + 1), sphere.y(vertex + 1), sphere.z(vertex + 1),
+					sphere.x(vertex + 2), sphere.y(vertex + 2), sphere.z(vertex + 2),
+					sphere.x(vertex + 3), sphere.y(vertex + 3), sphere.z(vertex + 3), 0xFFFFFF, alpha);
 		}
 	}
 
@@ -368,20 +407,15 @@ public final class ExplosionRenderer {
 		double radius = ExplosionRules.BALL_RADIUS * grow;
 		Matrix4f matrix = matrices.peek().getPositionMatrix();
 		// 纬度条带：红白交替（8 纬度 × 24 经度四边形条带）
-		int lats = 8, lons = 24;
-		for (int lat = 0; lat < lats; lat++) {
-			double phi0 = Math.PI * lat / lats, phi1 = Math.PI * (lat + 1) / lats;
-			int color = lat % 2 == 0 ? 0xFF5040 : 0xFFFFFF;
-			float alpha = 0.5f + 0.3f * grow;
-			for (int lon = 0; lon < lons; lon++) {
-				double theta0 = 2 * Math.PI * lon / lons, theta1 = 2 * Math.PI * (lon + 1) / lons;
-				double s0 = Math.sin(phi0), c0 = Math.cos(phi0), s1 = Math.sin(phi1), c1 = Math.cos(phi1);
-				sphereQuad(vertices, matrix, radius,
-						Math.cos(theta0) * s0, c0, Math.sin(theta0) * s0,
-						Math.cos(theta1) * s0, c0, Math.sin(theta1) * s0,
-						Math.cos(theta1) * s1, c1, Math.sin(theta1) * s1,
-						Math.cos(theta0) * s1, c1, Math.sin(theta0) * s1, color, alpha);
-			}
+		Sphere sphere = Geometry.BALL;
+		float alpha = 0.5f + 0.3f * grow;
+		for (int vertex = 0; vertex < sphere.vertexCount(); vertex += 4) {
+			int color = vertex / (24 * 4) % 2 == 0 ? 0xFF5040 : 0xFFFFFF;
+			sphereQuad(vertices, matrix, radius,
+					sphere.x(vertex), sphere.y(vertex), sphere.z(vertex),
+					sphere.x(vertex + 1), sphere.y(vertex + 1), sphere.z(vertex + 1),
+					sphere.x(vertex + 2), sphere.y(vertex + 2), sphere.z(vertex + 2),
+					sphere.x(vertex + 3), sphere.y(vertex + 3), sphere.z(vertex + 3), color, alpha);
 		}
 	}
 

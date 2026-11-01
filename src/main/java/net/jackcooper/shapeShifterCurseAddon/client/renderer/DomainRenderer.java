@@ -316,6 +316,7 @@ public final class DomainRenderer {
 	}
 
 	private static void sphere(VertexConsumer vertices, Matrix4f matrix, double radius) {
+		if (CircleVertexBatch.drawDomainSphere(vertices, matrix, radius)) return;
 		for (int vertex = 0; vertex < DomainSphereGeometry.vertexCount(); vertex++) {
 			vertices.vertex(matrix, DomainSphereGeometry.x(vertex, radius), DomainSphereGeometry.y(vertex, radius),
 					DomainSphereGeometry.z(vertex, radius)).color(0, 0, 0, 255).next();

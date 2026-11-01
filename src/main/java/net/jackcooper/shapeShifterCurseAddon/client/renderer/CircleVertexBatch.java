@@ -18,6 +18,7 @@ final class CircleVertexBatch {
     private static final class Scratch {
         ByteBuffer buffer;
         final Vector4f position=new Vector4f();
+        final SpherePosition spherePosition=new SpherePosition();
         boolean busy;
         long reserve(int bytes) {
             if(buffer==null||buffer.capacity()<bytes) {
@@ -26,6 +27,26 @@ final class CircleVertexBatch {
                 buffer=org.lwjgl.BufferUtils.createByteBuffer(capacity);
             }
             return MemoryUtil.memAddress(buffer);
+        }
+    }
+    /** 继承实际运行时的矩阵顶点默认方法，保留 Sodium 开关与其它兼容修改的计算顺序。 */
+    private static final class SpherePosition implements VertexConsumer {
+        long pointer;
+        @Override public VertexConsumer vertex(double x,double y,double z) {
+            MemoryUtil.memPutFloat(pointer,(float)x);MemoryUtil.memPutFloat(pointer+4,(float)y);
+            MemoryUtil.memPutFloat(pointer+8,(float)z);MemoryUtil.memPutInt(pointer+12,0xFF000000);
+            pointer+=16;return this;
+        }
+        @Override public VertexConsumer color(int r,int g,int b,int a) {throw unsupported();}
+        @Override public VertexConsumer texture(float u,float v) {throw unsupported();}
+        @Override public VertexConsumer overlay(int u,int v) {throw unsupported();}
+        @Override public VertexConsumer light(int u,int v) {throw unsupported();}
+        @Override public VertexConsumer normal(float x,float y,float z) {throw unsupported();}
+        @Override public void next() {throw unsupported();}
+        @Override public void fixedColor(int r,int g,int b,int a) {throw unsupported();}
+        @Override public void unfixColor() {throw unsupported();}
+        private static UnsupportedOperationException unsupported() {
+            return new UnsupportedOperationException("领域球位置接收器只接受位置变换");
         }
     }
     private static final class Sodium {
@@ -47,6 +68,28 @@ final class CircleVertexBatch {
             }
             TRY=find;PUSH=push;FORMAT=format;
         }
+    }
+    /** 领域双球壳保留全部顶点和最终透明排序，只批量提交固定黑色的位置数据。 */
+    static boolean drawDomainSphere(VertexConsumer consumer,Matrix4f matrix,double radius) {
+        int count=DomainSphereGeometry.vertexCount();
+        if(Sodium.TRY==null||count==0||count>MAX_BYTES/16)return false;
+        Scratch scratch=SCRATCH.get();if(scratch.busy)return false;
+        try {
+            Object writer=(Object)Sodium.TRY.invokeExact(consumer);if(writer==null)return false;
+            scratch.busy=true;
+            long base=scratch.reserve(count*16);
+            SpherePosition position=scratch.spherePosition;position.pointer=base;
+            for(int vertex=0;vertex<count;vertex++) {
+                position.vertex(matrix,DomainSphereGeometry.x(vertex,radius),DomainSphereGeometry.y(vertex,radius),
+                        DomainSphereGeometry.z(vertex,radius));
+            }
+            try(MemoryStack stack=MemoryStack.stackPush()) {
+                Sodium.PUSH.invokeExact(writer,stack,base,count,Sodium.FORMAT);
+            }
+            return true;
+        }catch(RuntimeException|Error error) {throw error;}
+        catch(Throwable error) {throw new IllegalStateException("Cannot submit domain sphere vertices",error);}
+        finally {scratch.spherePosition.pointer=0;scratch.busy=false;}
     }
     static boolean draw(VertexConsumer consumer,Matrix4f matrix,MagicCircleGeometry.Mesh mesh,
                         boolean glow,int glowColor,float alpha) {
