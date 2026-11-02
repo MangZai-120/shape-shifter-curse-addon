@@ -3,7 +3,10 @@ package net.jackcooper.shapeShifterCurseAddon.client.hud;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.texture.NativeImage;
+import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
@@ -15,6 +18,9 @@ public final class NeoStabilityBar {
     public static final int WIDTH=97, HEIGHT=24, FRAME_HEIGHT=16, FRAME_Y=8;
     private static final Identifier SAFE=texture("frame-safe"),OVER=texture("frame-over"),NEUTRAL=texture("frame-neutral");
     private static final Identifier FILL=texture("fill-full"),FORECAST=texture("forecast-full"),MASK=texture("interior-mask");
+    private static final Identifier MAPPED_FILL=NeoMagic.id("stability_bar_fill");
+    private static final int FILL_START=12,FILL_END=96,ORANGE_COLUMN=64;
+    private static final int ATLAS_HEIGHT=(FILL_END-FILL_START)*FRAME_HEIGHT*2;
     private static volatile int[] columns=new int[WIDTH];
     private static final String[] DIGITS={"111101101101111","010110010010111","111001111100111","111001111001111","101101111001001","111100111001111","111100111101111","111001010010010","111101111101111","111101111001111"};
     // 只缓存显示文本；数值和状态仍读取当前服务端快照，编辑器预览同样即时更新。
@@ -30,10 +36,15 @@ public final class NeoStabilityBar {
     public record View(double current,double safety,double quote,double remaining,double projected,double bodySafety,boolean selected,String phase) {
         public boolean safe(){return projected<=safety;}
         public double extent(){return Math.min(Double.MAX_VALUE,safety*2);}
-        public double fraction(){return safety<=0?0:Math.max(.2,Math.min(.9,.2+.003*bodySafety));}
-        public int edge(double n){return 12+(int)Math.round(84*coordinate(n,safety,fraction()));}
-        public int marker(){return Math.min(95,edge(safety));}
+        public double fraction(){return (marker()-FILL_START)/(double)(FILL_END-FILL_START);}
+        public int edge(double n){return FILL_START+(int)Math.round((FILL_END-FILL_START)*coordinate(n,safety,fraction()));}
+        public int marker(){return FILL_START+markerOffset(FILL_END-FILL_START,bodySafety);}
         public boolean overflow(){return current>extent();}
+    }
+    /** 白线限定在轨道的 35%～65%，像素取整后也不会越界；玩家成长只改变数值比例。 */
+    public static int markerOffset(int width,double bodySafety){
+        double fraction=Math.max(.35,Math.min(.65,.2+.003*positive(bodySafety)));
+        return Math.max((int)Math.ceil(width*.35),Math.min((int)Math.floor(width*.65),(int)Math.round(width*fraction)));
     }
     /** 安全段与危险段分别缩放，白线按形态基础值固定，玩家成长不会推动白线。 */
     public static double coordinate(double value,double safety,double fraction){
@@ -59,15 +70,58 @@ public final class NeoStabilityBar {
         @Override public Identifier getFabricId(){return NeoMagic.id("stability_bar_mask");}
         @Override public void reload(ResourceManager manager){
             int[] next=new int[WIDTH];
-            try(var input=manager.getResource(MASK).orElseThrow().getInputStream();var image=NativeImage.read(input)){
+            try(var input=manager.getResource(MASK).orElseThrow().getInputStream();var image=NativeImage.read(input);
+                var fillInput=manager.getResource(FILL).orElseThrow().getInputStream();var fill=NativeImage.read(fillInput);
+                var forecastInput=manager.getResource(FORECAST).orElseThrow().getInputStream();var forecast=NativeImage.read(forecastInput)){
                 if(image.getWidth()!=WIDTH||image.getHeight()!=FRAME_HEIGHT)throw new java.io.IOException("Expected 97x16 stability mask");
+                if(fill.getWidth()!=WIDTH||fill.getHeight()!=FRAME_HEIGHT||forecast.getWidth()!=WIDTH||forecast.getHeight()!=FRAME_HEIGHT)throw new java.io.IOException("Expected 97x16 stability fills");
                 for(int x=0;x<WIDTH;x++)for(int y=0;y<FRAME_HEIGHT;y++)if((image.getColor(x,y)>>>24)!=0)next[x]|=1<<y;
+                int[] fillPixels=new int[WIDTH*FRAME_HEIGHT],forecastPixels=new int[WIDTH*FRAME_HEIGHT];
+                for(int y=0;y<FRAME_HEIGHT;y++)for(int x=0;x<WIDTH;x++){
+                    fillPixels[y*WIDTH+x]=fill.getColor(x,y);forecastPixels[y*WIDTH+x]=forecast.getColor(x,y);
+                }
+                // 一次资源加载生成所有白线位置，逐帧仍只裁剪两张贴图，不缩放外框或额外上传纹理。
+                var atlas=new NativeImage(WIDTH,ATLAS_HEIGHT,true);
+                for(int marker=FILL_START;marker<FILL_END;marker++)for(int layer=0;layer<2;layer++){
+                    int[] pixels=remapFill(layer==0?fillPixels:forecastPixels,next,marker);
+                    int top=((marker-FILL_START)*2+layer)*FRAME_HEIGHT;
+                    for(int y=0;y<FRAME_HEIGHT;y++)for(int x=0;x<WIDTH;x++)atlas.setColor(x,top+y,pixels[y*WIDTH+x]);
+                }
+                MinecraftClient.getInstance().getTextureManager().registerTexture(MAPPED_FILL,new NativeImageBackedTexture(atlas));
                 columns=next;
             }catch(Exception error){NeoMagic.LOG.error("Unable to load stability bar mask",error);}
         }
     });}
-    private static void pixel(DrawContext c,int originX,int originY,int x,int y,int color){if(x>=0&&x<WIDTH&&y>=0&&y<FRAME_HEIGHT&&(columns[x]&(1<<y))!=0)c.fill(originX+x,originY+FRAME_Y+y,originX+x+1,originY+FRAME_Y+y+1,color);}
-    private static void pattern(DrawContext c,String[] rows,int x,int y,int color){for(int yy=0;yy<rows.length;yy++)for(int xx=0;xx<rows[yy].length();xx++)if(rows[yy].charAt(xx)=='1')c.fill(x+xx,y+yy,x+xx+1,y+yy+1,color);}
+    /** 原图蓝至橙色压入白线左侧，橙至红色铺满右侧；轮廓始终使用目标位置的遮罩。 */
+    static int[] remapFill(int[] source,int[] mask,int marker){
+        int[] result=new int[WIDTH*FRAME_HEIGHT];
+        for(int x=FILL_START;x<FILL_END;x++){
+            int sample=x<marker?FILL_START+(x-FILL_START)*(ORANGE_COLUMN-FILL_START-1)/Math.max(1,marker-FILL_START-1)
+                    :ORANGE_COLUMN+(x-marker)*(FILL_END-ORANGE_COLUMN-1)/Math.max(1,FILL_END-marker-1);
+            for(int y=0;y<FRAME_HEIGHT;y++)if((mask[x]&(1<<y))!=0){
+                // 原图两端及高光有镂空：只取同一行最近的有效颜色，避免缩放后在条内产生空洞。
+                int sx=sample;
+                for(int distance=0;distance<WIDTH;distance++){
+                    int left=sample-distance,right=sample+distance;
+                    if(left>=FILL_START&&(source[y*WIDTH+left]>>>24)!=0){sx=left;break;}
+                    if(right<FILL_END&&(source[y*WIDTH+right]>>>24)!=0){sx=right;break;}
+                }
+                result[y*WIDTH+x]=source[y*WIDTH+sx];
+            }
+        }
+        return result;
+    }
+    /** 像素四边形共用原生 GUI 顶点缓冲，由 draw 末尾统一提交。 */
+    private static void fill(DrawContext c,int x1,int y1,int x2,int y2,int color){
+        var matrix=c.getMatrices().peek().getPositionMatrix();
+        var buffer=c.getVertexConsumers().getBuffer(RenderLayer.getGui());
+        buffer.vertex(matrix,x2,y2,0).color(color).next();
+        buffer.vertex(matrix,x2,y1,0).color(color).next();
+        buffer.vertex(matrix,x1,y1,0).color(color).next();
+        buffer.vertex(matrix,x1,y2,0).color(color).next();
+    }
+    private static void pixel(DrawContext c,int originX,int originY,int x,int y,int color){if(x>=0&&x<WIDTH&&y>=0&&y<FRAME_HEIGHT&&(columns[x]&(1<<y))!=0)fill(c,originX+x,originY+FRAME_Y+y,originX+x+1,originY+FRAME_Y+y+1,color);}
+    private static void pattern(DrawContext c,String[] rows,int x,int y,int color){for(int yy=0;yy<rows.length;yy++)for(int xx=0;xx<rows[yy].length();xx++)if(rows[yy].charAt(xx)=='1')fill(c,x+xx,y+yy,x+xx+1,y+yy+1,color);}
     private static String glyph(char ch){if(ch>='0'&&ch<='9')return DIGITS[ch-'0'];return switch(ch){case '/'->"001001010100100";case '+'->"000010111010000";case '-'->"000000111000000";case '.'->"000000000000010";case 'k'->"100101110101101";case 'm'->"000111111101101";case 'e'->"111100110100111";default->"111001010000010";};}
     private static int tiny(DrawContext c,String text,int x,int y,int color){
         // 先画一像素深色描边再画字面，高亮草地、天空和发光粒子下仍保持像素字形清晰。
@@ -80,9 +134,9 @@ public final class NeoStabilityBar {
                 for(int i=0;i<15;i++)if(bits.charAt(i)=='1'){
                     int px=x+i%3,py=y+i/3;
                     if(pass==0){
-                        c.fill(px-1,py,px+2,py+1,0xF010151B);
-                        c.fill(px,py-1,px+1,py+2,0xF010151B);
-                    }else c.fill(px,py,px+1,py+1,color);
+                        fill(c,px-1,py,px+2,py+1,0xF010151B);
+                        fill(c,px,py-1,px+1,py+2,0xF010151B);
+                    }else fill(c,px,py,px+1,py+1,color);
                 }
                 x+=4;
             }
@@ -99,15 +153,15 @@ public final class NeoStabilityBar {
     public static void draw(DrawContext c,NbtCompound state,int x,int y){
         c.draw();float[] color=com.mojang.blaze3d.systems.RenderSystem.getShaderColor().clone();
         com.mojang.blaze3d.systems.RenderSystem.enableBlend();com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1,1,1,1);
-        // 原生批量绘制回调避免每个数字像素单独提交并分配缓冲区。
-        try{c.draw(()->paint(c,state,x,y));}finally{c.draw();com.mojang.blaze3d.systems.RenderSystem.setShaderColor(color[0],color[1],color[2],color[3]);}
+        try{paint(c,state,x,y);}finally{c.draw();com.mojang.blaze3d.systems.RenderSystem.setShaderColor(color[0],color[1],color[2],color[3]);}
     }
     private static void paint(DrawContext c,NbtCompound state,int x,int y){
         View v=view(state);Identifier frame=!v.selected()?NEUTRAL:v.safe()?SAFE:OVER;
         c.drawTexture(frame,x,y+FRAME_Y,0,0,WIDTH,FRAME_HEIGHT,WIDTH,FRAME_HEIGHT);
         int paid=v.edge(v.current()),future=v.edge(v.projected());
-        if(paid>12)c.drawTexture(FILL,x+12,y+FRAME_Y,12,0,paid-12,FRAME_HEIGHT,WIDTH,FRAME_HEIGHT);
-        if(v.selected()&&future>paid)c.drawTexture(FORECAST,x+paid,y+FRAME_Y,paid,0,future-paid,FRAME_HEIGHT,WIDTH,FRAME_HEIGHT);
+        int fillRow=(v.marker()-FILL_START)*FRAME_HEIGHT*2;
+        if(paid>12)c.drawTexture(MAPPED_FILL,x+12,y+FRAME_Y,12,fillRow,paid-12,FRAME_HEIGHT,WIDTH,ATLAS_HEIGHT);
+        if(v.selected()&&future>paid)c.drawTexture(MAPPED_FILL,x+paid,y+FRAME_Y,paid,fillRow+FRAME_HEIGHT,future-paid,FRAME_HEIGHT,WIDTH,ATLAS_HEIGHT);
         for(int yy=3;yy<=13;yy++)pixel(c,x,y,v.marker(),yy,0xFFE9F5F2);
         if(v.overflow()||v.projected()>v.extent()){
             int color=v.overflow()?0xFFFFE0D2:0x73FFE0D2;

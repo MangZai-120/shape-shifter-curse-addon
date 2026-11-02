@@ -18,6 +18,7 @@
         "StepHeightScaleWritesMixin",
         "CrawlingScaleWritesMixin",
         "entity.BatSpellDebuffMixin",
+        "entity.CollapseBodyYawMixin",
     "entity.NightmareSpellEffectMixin",
         "entity.SpellHomingProjectileMixin",
         "player.SscForceSneakSyncMixin",

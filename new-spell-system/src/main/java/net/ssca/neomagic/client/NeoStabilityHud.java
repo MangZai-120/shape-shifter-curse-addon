@@ -65,8 +65,9 @@ public final class NeoStabilityHud {
     }
     private static void gauge(DrawContext c,int x,int y,int w,int h,double value,double safety,double forecast,boolean preview,double time,double bodySafety) {
         value=positive(value);safety=Math.max(1,positive(safety));double extent=safety*2;
-        double fraction=Math.max(.2,Math.min(.9,.2+.003*bodySafety));
-        int inner=w-2,threshold=(int)Math.round(inner*fraction),filled=(int)Math.round(inner*net.jackcooper.shapeShifterCurseAddon.client.hud.NeoStabilityBar.coordinate(value,safety,fraction));
+        int inner=w-2,threshold=net.jackcooper.shapeShifterCurseAddon.client.hud.NeoStabilityBar.markerOffset(inner,bodySafety);
+        double fraction=threshold/(double)inner;
+        int filled=(int)Math.round(inner*net.jackcooper.shapeShifterCurseAddon.client.hud.NeoStabilityBar.coordinate(value,safety,fraction));
         int future=(int)Math.round(inner*net.jackcooper.shapeShifterCurseAddon.client.hud.NeoStabilityBar.coordinate(Math.max(value,forecast),safety,fraction));
         c.fill(x+1,y,x+w-1,y+h,0xFF6D674F);c.fill(x,y+1,x+w,y+h-1,0xFF6D674F);
         c.fill(x+1,y+1,x+w-1,y+h-1,0xFF152A32);

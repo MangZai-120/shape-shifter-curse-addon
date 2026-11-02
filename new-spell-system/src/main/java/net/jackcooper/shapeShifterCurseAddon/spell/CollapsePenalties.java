@@ -7,9 +7,11 @@ import net.jackcooper.shapeShifterCurseAddon.ability.NineLivesManager;
 import net.jackcooper.shapeShifterCurseAddon.mixin.entity.LivingEntityTotemInvoker;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageType;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -39,6 +41,16 @@ public final class CollapsePenalties {
         return 5;
     }
     public static double slow(int stage) { return SLOWS[Math.max(0, Math.min(5, stage))]; }
+
+    /** The vanilla squared-distance threshold must follow our synchronized slowdown on both sides. */
+    public static float bodyYawMovementThreshold(LivingEntity entity,float threshold) {
+        if (!(entity instanceof PlayerEntity)) return threshold;
+        var speed=entity.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
+        var modifier=speed==null?null:speed.getModifier(SLOW);
+        if (modifier==null||modifier.getOperation()!=EntityAttributeModifier.Operation.MULTIPLY_TOTAL) return threshold;
+        double remaining=1+modifier.getValue();
+        return remaining>0&&remaining<1?(float)(threshold*remaining*remaining):threshold;
+    }
 
     public static void tick(ServerPlayerEntity player) {
         State state = PLAYERS.get(player.getUuid());

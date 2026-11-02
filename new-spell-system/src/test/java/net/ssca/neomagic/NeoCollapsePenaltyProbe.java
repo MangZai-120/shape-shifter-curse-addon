@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Map;
 import net.jackcooper.shapeShifterCurseAddon.spell.CollapsePenalties;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
@@ -57,9 +59,22 @@ public final class NeoCollapsePenaltyProbe {
             CollapsePenalties.clear(p);p.setHealth(20);burden(p,stage==0?1:1+(stage-.5)*.2);ticks(p,1);
             near(speed.getValue(),.1*(1-CollapsePenalties.slow(stage)),"Actual movement attribute band "+stage);
             ticks(p,1);near(speed.getValue(),.1*(1-CollapsePenalties.slow(stage)),"Slow never stacks");
+            float threshold=CollapsePenalties.bodyYawMovementThreshold(p,0.0025000002F);
+            check(threshold>0,"Body turning retains a positive stationary-noise threshold");
+            if(stage==0)near(threshold,0.0025000002F,"Healthy player keeps vanilla body threshold");
+            if(stage==5)check(.02*.02>threshold&&.02*.02<0.0025000002F,"Slow walking below the vanilla threshold still turns the body");
             var hud=NeoNetwork.hudState(p);check(hud.getInt("CollapseStage")==stage,"HUD mirrors server band");
             check(hud.getInt("PlayerId")==p.getId(),"Packet identifies current player entity");
         }
+        var collapseSlow=speed.getModifiers().stream().filter(m->m.getName().equals("SSCA collapse slowdown")).findFirst().orElseThrow();
+        var mob=EntityType.ZOMBIE.create(t.getWorld());
+        mob.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED).addTemporaryModifier(collapseSlow);
+        near(CollapsePenalties.bodyYawMovementThreshold(mob,0.0025000002F),0.0025000002F,"Non-player movement keeps vanilla body threshold");
+        CollapsePenalties.clear(p);
+        var unrelatedSlow=new EntityAttributeModifier(java.util.UUID.randomUUID(),"other mod slow",-.8,EntityAttributeModifier.Operation.MULTIPLY_TOTAL);
+        speed.addTemporaryModifier(unrelatedSlow);
+        near(CollapsePenalties.bodyYawMovementThreshold(p,0.0025000002F),0.0025000002F,"Unrelated slowdown does not opt into collapse body handling");
+        speed.removeModifier(unrelatedSlow);
         for(int stage=3;stage<=5;stage++) {
             CollapsePenalties.clear(p);p.setHealth(20);p.setAbsorptionAmount(20);
             p.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE,200,4));
@@ -71,6 +86,7 @@ public final class NeoCollapsePenaltyProbe {
             check(!p.hasStatusEffect(StatusEffects.WITHER)&&!p.hasStatusEffect(StatusEffects.BLINDNESS)
                     &&!p.hasStatusEffect(StatusEffects.NAUSEA),"No convertible server potion carriers");
             burden(p,1);ticks(p,20);near(p.getHealth(),20-2*loss,"Damage stops upon recovery");near(speed.getValue(),.1,"Slow clears upon recovery");
+            near(CollapsePenalties.bodyYawMovementThreshold(p,0.0025000002F),0.0025000002F,"Recovery restores vanilla body turning threshold");
         }
         p.removeStatusEffect(StatusEffects.RESISTANCE);p.setAbsorptionAmount(0);
         CollapsePenalties.clear(p);p.setHealth(20);burden(p,1.5);ticks(p,9);burden(p,1.7);ticks(p,1);
