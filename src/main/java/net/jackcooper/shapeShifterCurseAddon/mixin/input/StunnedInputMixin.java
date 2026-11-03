@@ -17,21 +17,24 @@ public class StunnedInputMixin {
 
 	@Inject(method = "doAttack", at = @At("HEAD"), cancellable = true)
 	private void onDoAttack(CallbackInfoReturnable<Boolean> cir) {
-		if (player != null && player.hasStatusEffect(SscAddon.STUN)) {
+		if (player != null && (player.hasStatusEffect(SscAddon.STUN)
+				|| net.jackcooper.shapeShifterCurseAddon.anomaly.FrozenControl.blocked(player))) {
 			cir.setReturnValue(false);
 		}
 	}
 
 	@Inject(method = "doItemUse", at = @At("HEAD"), cancellable = true)
 	private void onDoItemUse(CallbackInfo ci) {
-		if (player != null && player.hasStatusEffect(SscAddon.STUN)) {
+		if (player != null && (player.hasStatusEffect(SscAddon.STUN)
+				|| net.jackcooper.shapeShifterCurseAddon.anomaly.FrozenControl.blocked(player))) {
 			ci.cancel();
 		}
 	}
 
 	@Inject(method = "handleBlockBreaking", at = @At("HEAD"), cancellable = true)
 	private void onHandleBlockBreaking(boolean breaking, CallbackInfo ci) {
-		if (player != null && player.hasStatusEffect(SscAddon.STUN) && breaking) {
+		if (player != null && (player.hasStatusEffect(SscAddon.STUN)
+				|| net.jackcooper.shapeShifterCurseAddon.anomaly.FrozenControl.blocked(player)) && breaking) {
 			ci.cancel();
 		}
 	}

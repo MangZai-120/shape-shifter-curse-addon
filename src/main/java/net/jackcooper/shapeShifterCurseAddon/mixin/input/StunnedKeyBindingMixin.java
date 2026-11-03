@@ -109,6 +109,11 @@ public class StunnedKeyBindingMixin {
 
 	@Unique
 	private boolean shouldBlock(String key) {
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client != null && net.jackcooper.shapeShifterCurseAddon.anomaly.FrozenControl.blocked(client.player)) {
+			return !java.util.Set.of("key.chat", "key.command", "key.screenshot", "key.fullscreen",
+					"key.togglePerspective", "key.playerlist").contains(key);
+		}
 		return (isTargetKey(key) && isPlayerStunned())
 				|| (isMovementKey(key) && isPlayerRooted())
 				|| (isSheepBlockedKey(key) && isPlayerSheep());
@@ -119,14 +124,8 @@ public class StunnedKeyBindingMixin {
 		KeyBinding binding = (KeyBinding) (Object) this;
 		String key = binding.getTranslationKey();
 
-		if (isTargetKey(key) && isPlayerStunned()) {
+		if (shouldBlock(key)) {
 			// Clear any buffered input so it doesn't trigger later
-			this.timesPressed = 0;
-			cir.setReturnValue(false);
-		} else if (isMovementKey(key) && isPlayerRooted()) {
-			this.timesPressed = 0;
-			cir.setReturnValue(false);
-		} else if (isSheepBlockedKey(key) && isPlayerSheep()) {
 			this.timesPressed = 0;
 			cir.setReturnValue(false);
 		}

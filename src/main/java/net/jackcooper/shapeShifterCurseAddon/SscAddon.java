@@ -104,6 +104,8 @@ public class SscAddon implements ModInitializer {
 	public static final StatusEffect TRUE_INVISIBILITY = new TrueInvisibilityEffect();
 	public static final StatusEffect PRE_INVISIBILITY = new PreInvisibilityEffect();
 	public static final StatusEffect STUN = new StunEffect();
+	public static final StatusEffect FROZEN = new net.jackcooper.shapeShifterCurseAddon.effect.FrozenEffect();
+	public static final StatusEffect FROZEN_RECOVERY = new net.jackcooper.shapeShifterCurseAddon.effect.FrozenRecoveryEffect();
 	// 诅咒标记（诅咒系法术：标记期间受伤 +20%，mixin 内结算；月辉系可净化）
 	public static final StatusEffect CURSE_MARK = new net.jackcooper.shapeShifterCurseAddon.effect.CurseMarkEffect();
 	// 变羊（召唤系法术「羊了个羊」：实体被变成羊，暂时失去攻击/破坏/放置能力，jackcooper）
@@ -533,6 +535,8 @@ public class SscAddon implements ModInitializer {
 		registerEffect("true_invisibility", TRUE_INVISIBILITY);
 		registerEffect("pre_invisibility", PRE_INVISIBILITY);
 		registerEffect("stun", STUN);
+		registerEffect("frozen", FROZEN);
+		registerEffect("frozen_recovery", FROZEN_RECOVERY);
 		registerEffect("rooted", ROOTED);
 		registerEffect("guaranteed_crit", GUARANTEED_CRIT);
 		registerEffect("frost_freeze", FROST_FREEZE);
@@ -703,6 +707,8 @@ public class SscAddon implements ModInitializer {
 		net.jackcooper.shapeShifterCurseAddon.ability.CorruptMistManager.init(); // 腐蚀之雾持续区域结算（诅咒系法术；归途传送结算 SpaceRecallManager 已无 tick，不需 init）
 		net.jackcooper.shapeShifterCurseAddon.spell.pocket.PocketSpaceManager.init();
 		net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.init();
+		net.jackcooper.shapeShifterCurseAddon.anomaly.FrozenControl.init();
+		net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyEffects.init();
 		net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.init();
 		net.jackcooper.shapeShifterCurseAddon.network.SpellbookStatusSync.init();
 		net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.init();

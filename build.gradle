@@ -30,6 +30,13 @@ tasks.register('neoMagicTest', JavaExec) {
 }
 check.dependsOn neoMagicTest
 
+tasks.register('anomalyLedgerTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyLedgerTest'
+}
+check.dependsOn anomalyLedgerTest
+
 tasks.register('neoMagicStressModelTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
@@ -98,6 +105,10 @@ tasks.register('neoMagicWorldTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
     mainClass = 'net.ssca.neomagic.NeoWorldTest'
+    systemProperty 'neomagic.worldProbe', project.findProperty('neoWorldProbe') ?: ''
+    systemProperty 'ssca.anomaly.performance.amounts', project.findProperty('neoAnomalyPerfAmounts') ?: 'stress250'
+    systemProperty 'ssca.anomaly.performance.level', project.findProperty('neoAnomalyPerfLevel') ?: '1'
+    systemProperty 'ssca.anomaly.performance.jfr', project.findProperty('neoAnomalyPerfJfr') ?: 'true'
     systemProperty 'neomagic.bookCutover', project.findProperty('neoBookCutover') ?: 'false'
     systemProperty 'neomagic.collapsePenalties', project.findProperty('neoCollapsePenalties') ?: 'false'
     systemProperty 'neomagic.safetyBalanceAudit', project.findProperty('neoSafetyBalanceAudit') ?: 'false'

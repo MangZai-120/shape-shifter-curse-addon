@@ -48,6 +48,7 @@ public final class NeoEffects {
         return new Anchor(entity==null?end:entity.getPos(),entity==null?null:entity.getUuid());
     }
     public static boolean preflight(ServerPlayerEntity p,Blueprint b,Anchor anchor) {
+        if (b.output()==Core.SPACE && net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyEffects.teleportBlocked(p)) return false;
         if(b.carrier()==Carrier.LOCK && anchor.target==null)return false;
         if(b.carrier()==Carrier.CONTACT && anchor.target==null)return false;
         if(b.core()==Core.SPACE||b.core()==Core.SUMMON)
@@ -90,10 +91,20 @@ public final class NeoEffects {
         NeoRuntime.dirty(p);
     }
     private static boolean apply(ServerPlayerEntity p,NeoRuntime.Active a) {
+        if(a.anomaly==null)a.anomaly=anomaly(p,a);
         NeoLegacyCasting.beginBlueprintEffect(p,a);
         boolean released=healingBatch(a,()->applyNow(p,a));
         if(released)NeoLegacyCasting.blueprintReleased(p,a);
         return released;
+    }
+    /** Blueprint amounts remain unconfigured; their successful hostile hits can refresh expiry. */
+    static net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext anomaly(ServerPlayerEntity p,NeoRuntime.Active a) {
+        Blueprint b=a.session.blueprint;
+        String controls=b.controls().isEmpty()?"direct":String.join("_",b.controls().stream().map(c->c.name().toLowerCase(Locale.ROOT)).toList());
+        String identity="blueprint/"+b.core().name().toLowerCase(Locale.ROOT)+"/"+b.carrier().name().toLowerCase(Locale.ROOT)
+                +"/"+controls+"/"+b.output().name().toLowerCase(Locale.ROOT);
+        return new net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext(new Identifier("ssca_neomagic",identity),
+                NeoLegacyCasting.element(b.output()).id,b.band()+1,0,p.getUuid(),UUID.fromString(a.record.id));
     }
     private static <T> T healingBatch(NeoRuntime.Active active,java.util.function.Supplier<T> action) {
         var healing=active.style==null?null:active.style.healing;
@@ -132,6 +143,7 @@ public final class NeoEffects {
             Entity found=hit.target==null?null:p.getServerWorld().getEntity(hit.target);if(found instanceof LivingEntity living)target=living;
         } else endpoint=p.getEyePos().add(Vec3d.fromPolar((float)(p.getPitch()+s.pitch),(float)(p.getYaw()+s.yaw)).multiply(Math.min(range,p.getEyePos().distanceTo(endpoint))));
         if(b.output()==Core.SPACE) {
+            if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(p)) return false;
             LivingEntity moved=b.carrier()==Carrier.SELF?p:target;if(moved==null)return false;
             var movedTargets=new ArrayList<LivingEntity>();movedTargets.add(moved);
             if(plan.branches()>1) {
@@ -186,6 +198,10 @@ public final class NeoEffects {
             if(!p.getWorld().getChunkManager().isChunkLoaded(block.getX()>>4,block.getZ()>>4)||!p.getWorld().getWorldBorder().contains(block)||!p.getWorld().canPlayerModifyAt(p,block))continue;
             WolfEntity wolf=EntityType.WOLF.create(p.getServerWorld());if(wolf==null)continue;
             wolf.refreshPositionAndAngles(at.x,at.y,at.z,0,0);wolf.setTamed(true);wolf.setOwnerUuid(p.getUuid());
+            var identity = a.anomaly == null ? anomaly(p,a) : a.anomaly;
+            ((net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.SummonedData)wolf).ssca$summonAnomaly(
+                    new net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext(identity.spellId(), "summon",
+                            identity.level(), 0, identity.casterUUID(), identity.castUUID()));
             double share=budget/count;
             wolf.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH).setBaseValue(Math.max(1,share));wolf.setHealth((float)share);
             wolf.getAttributeInstance(EntityAttributes.GENERIC_ATTACK_DAMAGE).setBaseValue(Math.max(.01,share/3));
@@ -250,6 +266,8 @@ public final class NeoEffects {
         }
         a.record.damage+=Math.max(0,before-target.getHealth());a.record.absorbed+=Math.max(0,absorption-target.getAbsorptionAmount());a.record.healing+=Math.max(0,target.getHealth()-before);
         if(a.record.measurements.size()<32)a.record.measurements.add(new NeoState.Measurement(target.getUuidAsString(),net.minecraft.registry.Registries.ENTITY_TYPE.getId(target.getType()).toString(),target.getPos().toString(),budget,before,target.getHealth(),absorption,target.getAbsorptionAmount()));
+        if(effective&&!healing&&!a.session.reversed&&target!=p)
+            net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.hit(a.anomaly,target);
         NeoRuntime.dirty(p);
         return effective;
     }

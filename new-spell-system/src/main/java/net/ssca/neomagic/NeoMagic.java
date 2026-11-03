@@ -38,8 +38,11 @@ public final class NeoMagic implements ModInitializer {
         Registry.register(Registries.STATUS_EFFECT,id("disintegration"),DISINTEGRATION);
         Registry.register(Registries.STATUS_EFFECT,id("breakdown"),BREAKDOWN);
         ResourceManagerHelper.get(ResourceType.SERVER_DATA).registerReloadListener(new NeoRules());
+        ResourceManagerHelper.get(ResourceType.SERVER_DATA).registerReloadListener(new net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyRules());
         NeoNetwork.register(); NeoRuntime.register(); NeoEffects.register();
         net.jackcooper.shapeShifterCurseAddon.tutorial.SpellTutorialManager.register();
         net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.register();
+        net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyNetwork.init();
+        net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyManager.init();
     }
 }

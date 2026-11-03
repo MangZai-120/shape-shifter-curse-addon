@@ -26,6 +26,7 @@ public final class SpaceRecallManager {
 	 *  含床占位时的周围安全位回退——同床同朝向落点固定，周围堵时顺位下移；2026-09-19 用户定稿）。
 	 *  找不到合法落点（床被完全围死且无回退位）时回退床中心，绝不传送失败。 */
 	public static void completeNow(ServerPlayerEntity player) {
+		if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(player)) return;
 		if (!(player.getWorld() instanceof ServerWorld world)) {
 			return;
 		}

@@ -120,7 +120,9 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 		var previousSource = DomainManager.setEffectSource(caster);
 		this.lockedCastTarget = target;
 		try {
-			cast(caster, power, solo, level, scroll);
+			net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.with(
+					net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.create(caster, this, level),
+					() -> cast(caster, power, solo, level, scroll));
 		} finally {
 			this.lockedCastTarget = previousTarget;
 			DomainManager.setEffectSource(previousSource);

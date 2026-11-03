@@ -58,6 +58,7 @@ public class SnowFoxSpTeleportAttack {
 	private static final String SKILL_ID = "my_addon:form_snow_fox_sp_melee_secondary";
 
 	public static boolean execute(ServerPlayerEntity player) {
+		if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(player)) return false;
 		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return false;
 		if (ATTACKING_PLAYERS.containsKey(player.getUuid())) {
 			FailAwareActiveSelfPower.markFail();
@@ -122,6 +123,13 @@ public class SnowFoxSpTeleportAttack {
             net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, data.castId);
             return;
         }
+        if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(player)) {
+            // Cancelling a committed sequence still performs its safety return to the original position.
+            returnToOrigin(player, data);
+            ATTACKING_PLAYERS.remove(player.getUuid());
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, SKILL_ID, data.castId);
+            return;
+        }
 
 		if (player.hasStatusEffect(SscAddon.PURIFIED)) {
 			returnToOrigin(player, data);
@@ -153,6 +161,7 @@ public class SnowFoxSpTeleportAttack {
 	 * 瞬移到目标身后并攻击
 	 */
 	private static void teleportToTarget(ServerPlayerEntity player, TeleportAttackData data) {
+		if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyEffects.teleportBlocked(player)) return;
 		if (data.currentTargetIndex >= data.targets.size()) return;
 
 		LivingEntity target = data.targets.get(data.currentTargetIndex);

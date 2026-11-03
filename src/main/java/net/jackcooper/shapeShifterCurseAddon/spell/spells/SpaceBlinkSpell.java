@@ -84,9 +84,15 @@ public class SpaceBlinkSpell extends Spell {
 
 	@Override
 	public boolean canCast(ServerPlayerEntity caster) {
-		// 空间跳跃永远可施放（无合法落点会回退到表面/尽头，不再拒绝）
-		return true;
+		return !net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyEffects.teleportBlocked(caster);
 	}
+
+    @Override public net.minecraft.text.Text getCastFailureMessage(ServerPlayerEntity caster) {
+        return net.minecraft.text.Text.translatable("message.ssc_addon.anomaly.teleport_blocked");
+    }
+    @Override public boolean canContinueCasting(ServerPlayerEntity caster, net.minecraft.item.ItemStack scroll) {
+        return canCast(caster);
+    }
 
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo) {
@@ -95,6 +101,9 @@ public class SpaceBlinkSpell extends Spell {
 
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level) {
+		if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(caster)) {
+            net.ssca.neomagic.NeoLegacyCasting.miss(); return;
+        }
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}

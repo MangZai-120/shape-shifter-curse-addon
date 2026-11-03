@@ -35,6 +35,7 @@ public final class ExplosionManager {
 		UUID refundCastId;
         AllaySpellLink.Cast allay;
         CourtSpellLink.Cast court;
+        net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext anomaly;
 		final long startTime;
 		float power;
 		// 起手快照（2026-09-27 审计修复）：700t 蓄力可能跨数据包 reload，结算期若即时读
@@ -104,6 +105,7 @@ public final class ExplosionManager {
 		sequence.power = power;
         sequence.allay=FormSpellStyle.currentAllay();
         sequence.court=FormSpellStyle.currentCourt();
+        sequence.anomaly=net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.current();
 		sequence.refundCastId = refundCastId;
 		sequence.exploded = true;
 		// 伤害分批（2026-09-24 修卡顿）：引爆时只快照目标列表 + 标记已爆（视觉/音频立即生效），
@@ -227,6 +229,7 @@ public final class ExplosionManager {
             float healthBefore=target.getHealth();
 			if (!CourtSpellLink.damage(sequence.court,owner,target,()->target.damage(source, (float) (sequence.power * factor)))) continue;
             if(owner!=null&&sequence.allay!=null)sequence.allay.damage(owner,target,Math.max(0,healthBefore-target.getHealth()));
+            net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.hit(sequence.anomaly,target);
 			if (target != owner && !(target instanceof net.minecraft.entity.decoration.ArmorStandEntity)) {
 				lastHit = target;
 				hitBurning |= burning;

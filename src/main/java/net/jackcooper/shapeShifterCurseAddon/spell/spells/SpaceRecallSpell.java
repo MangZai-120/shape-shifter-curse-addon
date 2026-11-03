@@ -29,11 +29,13 @@ public class SpaceRecallSpell extends Spell {
 	public boolean canCast(ServerPlayerEntity caster) {
 		// 必须有绑定重生点（床/重生锚）
 		BlockPos spawnPos = caster.getSpawnPointPosition();
-		return spawnPos != null;
+		return spawnPos != null && !net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyEffects.teleportBlocked(caster);
 	}
 
 	@Override
 	public net.minecraft.text.Text getCastFailureMessage(ServerPlayerEntity caster) {
+		if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyEffects.teleportBlocked(caster))
+            return net.minecraft.text.Text.translatable("message.ssc_addon.anomaly.teleport_blocked");
 		return net.minecraft.text.Text.translatable("message.ssc_addon.spellbook.no_spawn");
 	}
 
@@ -44,6 +46,9 @@ public class SpaceRecallSpell extends Spell {
 
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level) {
+		if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(caster)) {
+            net.ssca.neomagic.NeoLegacyCasting.miss(); return;
+        }
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;
 		}
@@ -58,4 +63,8 @@ public class SpaceRecallSpell extends Spell {
 		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 0.6f, 1.6f);
 	}
+
+    @Override public boolean canContinueCasting(ServerPlayerEntity caster, net.minecraft.item.ItemStack scroll) {
+        return canCast(caster);
+    }
 }

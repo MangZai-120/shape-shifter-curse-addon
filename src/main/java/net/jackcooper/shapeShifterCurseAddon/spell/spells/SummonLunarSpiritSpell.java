@@ -77,10 +77,16 @@ public class SummonLunarSpiritSpell extends Spell {
 		}
 		int lifeTicks = BAL.i("base_life_ticks", BASE_LIFE_TICKS)
 				+ (level - 1) * BAL.i("life_per_level", LIFE_PER_LEVEL);
+        var creatingCast = net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.current();
+        var boltAnomaly = creatingCast == null ? null : new net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext(
+                new Identifier("ssc_addon", "summon_lunar_spirit_bolt"), "summon", level,
+                net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyRules.syntheticAmount("summon_lunar_spirit_bolt", level),
+                creatingCast.casterUUID(), creatingCast.castUUID());
 		for (int i = 0; i < count; i++) {
 			LunarSpiritEntity spirit = new LunarSpiritEntity(
 					net.jackcooper.shapeShifterCurseAddon.SscAddon.LUNAR_SPIRIT_ENTITY, serverWorld);
 			spirit.setOwnerUuid(caster.getUuid());
+			spirit.ssca$summonAnomaly(boltAnomaly);
 			spirit.setLifeTicks(RuneCastContext.current().duration(lifeTicks,RuneModifiers.Stat.SUMMON_DURATION));
 			// 三色纯随机分配（2026-09-18 用户定稿：粉/蓝/绿随机，不再按召唤序号固定）；
 			// 多只同色属正常结果，每只独立掷骰

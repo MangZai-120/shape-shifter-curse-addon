@@ -80,6 +80,7 @@ public final class MancianimaTeleport {
 
 	/** 模式 0 = RAYCAST，1 = PLATFORM。客户端发送，服务端只信任模式（看向矢量自行从玩家状态读取）。 */
 	public static boolean execute(ServerPlayerEntity player, byte mode) {
+		if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(player)) return false;
 		if (!isMancianima(player)) return false;
 		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return false;
 
@@ -205,6 +206,10 @@ public final class MancianimaTeleport {
 	/** MancianimaMarkManager 引导 tick 末尾调用：执行红标瞬移斩杀。 */
 	public static void executeRedMarkChannelComplete(ServerPlayerEntity marker, net.minecraft.entity.LivingEntity target, long castId) {
         if (net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(marker, SKILL_ID) != castId || castId < 0) return;
+        if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(marker)) {
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.failed(marker, SKILL_ID, castId);
+            return;
+        }
 		if (target == null || !target.isAlive()
 				|| WhitelistUtils.isProtected(marker, target)
 				|| net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(marker, target)) {

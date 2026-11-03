@@ -95,6 +95,9 @@ public class DreadWhisperSpell extends Spell {
 			boolean hadHarmfulEffect = net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.hasHarmfulEffect(target);
 			boolean applied = target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, duration, weaknessAmp));
 			applied |= target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, duration, slownessAmp));
+            if (applied || net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.acceptedStatus(target,StatusEffects.WEAKNESS,duration,weaknessAmp,false)
+                    || net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.acceptedStatus(target,StatusEffects.SLOWNESS,duration,slownessAmp,false))
+                net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.hit(caster,target);
 			if (applied) {
 				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(caster, target,
 						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.CURSE,
@@ -104,6 +107,9 @@ public class DreadWhisperSpell extends Spell {
                 boolean before=net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.hasHarmfulEffect(other);
                 boolean changed=other.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS,chainDuration,weaknessAmp),caster);
                 changed|=other.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS,chainDuration,slownessAmp),caster);
+                if(changed || net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.acceptedStatus(other,StatusEffects.WEAKNESS,chainDuration,weaknessAmp,false)
+                        || net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.acceptedStatus(other,StatusEffects.SLOWNESS,chainDuration,slownessAmp,false))
+                    net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.hit(caster,other);
                 if(changed){
                     Vec3d push=new Vec3d(other.getX()-caster.getX(),.1,other.getZ()-caster.getZ()).normalize().multiply(.6);
                     other.addVelocity(push.x,push.y,push.z);other.velocityModified=true;

@@ -17,6 +17,9 @@ public abstract class ControlledEffectInterruptionMixin {
     @Inject(method = "addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;Lnet/minecraft/entity/Entity;)Z",
             at = @At("RETURN"))
     private void ssca$interruptOnControl(StatusEffectInstance effect, Entity source, CallbackInfoReturnable<Boolean> cir) {
+        if (cir.getReturnValueZ() && effect.getEffectType() == SscAddon.FROZEN) {
+            net.jackcooper.shapeShifterCurseAddon.anomaly.FrozenControl.applied((LivingEntity)(Object)this);
+        }
         if (cir.getReturnValueZ() && (effect.getEffectType() == SscAddon.STUN
                 || effect.getEffectType() == SscAddon.PLAYING_DEAD
                 || effect.getEffectType() == RegOtherStatusEffects.ENTANGLED_FULL_EFFECT)

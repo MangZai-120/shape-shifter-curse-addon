@@ -61,6 +61,11 @@ public abstract class ViewRateLimitMixin {
 		MinecraftClient mc = MinecraftClient.getInstance();
 		if (mc == null || self != mc.player) return;
 		ClientPlayerEntity player = mc.player;
+		if (net.jackcooper.shapeShifterCurseAddon.anomaly.FrozenControl.blocked(player)) {
+			ssca$lastNanos = 0L;
+			ci.cancel();
+			return;
+		}
 		LaserBeamEntity laser = LaserBeamEntity.getActiveForClient(player);
 		// 寒棘狐凝棘（次技能）蓄力期同样平滑限速（角速度 ×2）
 		boolean frostForge = laser == null && FrostSpikeClient.isSecondaryCharging()

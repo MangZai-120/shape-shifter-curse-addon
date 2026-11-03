@@ -63,6 +63,9 @@ public class SscAddonClient implements ClientModInitializer {
 		MoistureWaterRecoveryClient.register();
 		FormationResearchClient.register();
 		SustainedVisualClient.init();
+		net.jackcooper.shapeShifterCurseAddon.client.renderer.FrozenShellRenderer.init();
+		FrozenAnimationState.init();
+		AnomalyClient.init();
 		net.jackcooper.shapeShifterCurseAddon.client.particle.FirstPersonParticles.init();
 		CountdownClient.init();
         SkillCooldownClient.init();

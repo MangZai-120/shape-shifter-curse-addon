@@ -125,6 +125,7 @@ public final class SpellChannelManager {
 
 	/** Skills interrupt wind preparation; the protected release stage rejects the skill itself. */
 	public static boolean onSkillAction(ServerPlayerEntity player) {
+		if (net.jackcooper.shapeShifterCurseAddon.anomaly.FrozenControl.blocked(player)) return false;
 		if(OcelotSpellLink.windLocked(player))return false;
 		if(OcelotSpellLink.wind(player)) {
 			stop(player,true,"message.ssc_addon.spell.cast_interrupted_action");
@@ -182,6 +183,8 @@ public final class SpellChannelManager {
             boolean solo,int token,int mana,int cooldown,BooleanSupplier sourceValid,Consumer<Vec3d> effect,
             IntConsumer settleCooldown,Runnable consumeUse,RuneModifiers modifiers,SpiderSpellLink.Trigger trigger) {
         if (net.ssca.neomagic.NeoRuntime.blocked(player)||net.ssca.neomagic.NeoLegacyCasting.isCasting(player)) return false;
+        if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.isTeleportSpell(spell)
+                && net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(player)) return false;
         if (!RuneScheme.validScroll(player,scroll,spell))return false;
         if (ArcaneAnalysis.isUnanalyzed(scroll)) {
 			player.sendMessage(Text.translatable("message.ssc_addon.analysis.required"), true);
@@ -291,6 +294,12 @@ public final class SpellChannelManager {
 
 	public static void onFullyControlled(ServerPlayerEntity player) {
 		stop(player, true, "message.ssc_addon.spell.cast_interrupted_action");
+	}
+
+	/** Ice enclosure is full control even after a spell's protected release lock. */
+	public static void onFrozen(ServerPlayerEntity player) {
+		stop(player, true, Text.translatable("message.ssc_addon.spell.cast_interrupted_frozen"), true);
+		net.ssca.neomagic.NeoRuntime.cancel(player, "frozen");
 	}
 
 	private static boolean ensureValid(Channel channel) {

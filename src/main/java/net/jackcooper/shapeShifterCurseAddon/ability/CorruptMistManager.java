@@ -38,11 +38,13 @@ public final class CorruptMistManager {
 		final int slownessTicks;
         final net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.Cast bat;
         final net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.Cast court;
+        final net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext anomaly;
 
 		Mist(ServerPlayerEntity caster, double radius, int durationTicks, int intervalTicks, int level, UUID castId) {
 			this.casterId = caster.getUuid();
             this.bat=net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.current();
             this.court=net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.current();
+            this.anomaly=net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.current();
 			this.caster = caster;
 			this.radius = radius;
 			this.ticksRemaining = durationTicks;
@@ -144,6 +146,9 @@ public final class CorruptMistManager {
             boolean applied=net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.with(mist.court,()->net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(mist.caster,()->net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(mist.bat,()->target.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON,mist.poisonTicks,poisonAmplifier)))));
             boolean slowed=net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.with(mist.court,()->net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(mist.caster,()->net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(mist.bat,()->target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS,mist.slownessTicks,slownessAmplifier)))));
             applied|=slowed;
+            if (applied || net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.acceptedStatus(target,StatusEffects.POISON,mist.poisonTicks,poisonAmplifier,false)
+                    || net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.acceptedStatus(target,StatusEffects.SLOWNESS,mist.slownessTicks,slownessAmplifier,false))
+                net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.hit(mist.anomaly,target);
 			if (applied) {
 				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(mist.caster, target,
 						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.CURSE, mist.castId, hadHarmfulEffect);

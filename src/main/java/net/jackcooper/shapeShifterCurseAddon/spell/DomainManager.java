@@ -25,6 +25,8 @@ public final class DomainManager {
 	public static final Identifier STATE = new Identifier("ssc_addon", "domain_state");
 	public static final Identifier SOUND = new Identifier("ssc_addon", "domain_sound");
 	private static final Map<UUID, Field> FIELDS = new LinkedHashMap<>();
+    private record Pressure(net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext pulse, int intervalTicks) {}
+    private static final Map<UUID, Pressure> PRESSURES = new LinkedHashMap<>();
 	private static final ThreadLocal<Entity> EFFECT_SOURCE = new ThreadLocal<>();
 	private static final ThreadLocal<AttachedEffect> ATTACHED_EFFECT = new ThreadLocal<>();
 	private record AttachedEffect(Entity source, LivingEntity target) {}
@@ -54,7 +56,7 @@ public final class DomainManager {
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(DomainManager::tick);
 		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> remove(handler.player));
-		ServerLifecycleEvents.SERVER_STOPPED.register(server -> FIELDS.clear());
+		ServerLifecycleEvents.SERVER_STOPPED.register(server -> { FIELDS.clear(); PRESSURES.clear(); });
 		// 方块跨界隔离（2026-09-21 需求）：领域内无法干涉外界方块（破坏/放置/右键/攻击），
 		// 外界同样无法干涉领域内方块。玩家眼睛坐标 ↔ 目标方块中心分属壳内外即拒绝。
 		net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
@@ -158,11 +160,24 @@ public final class DomainManager {
 				player.getServer().getTicks(), true,
 				field.innerRadius, field.outerRadius, field.chargeTicks, field.durationTicks,
 				field.expandStartTick, field.expandDurationTicks, field.maxCastDisplacement));
+        var origin = net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.current();
+        UUID cast = origin == null ? UUID.randomUUID() : origin.castUUID();
+        int level = origin == null ? 1 : origin.level();
+        var initial = new net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext(
+                new Identifier("ssc_addon", "domain"), "space", level,
+                net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyRules.domainInitial(), player.getUuid(), cast);
+        var pulse = new net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext(
+                initial.spellId(), initial.element(), initial.level(),
+                net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyRules.domainPulse(), initial.casterUUID(), cast);
+        PRESSURES.put(player.getUuid(), new Pressure(pulse,
+                net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyRules.domainPulseTicks()));
+        pressure(FIELDS.get(player.getUuid()), initial);
 		// 2026-09-23 用户两轮反馈：完全展开的轰鸣仍偏响，音量倍率 0.7 → 0.5（其余领域音效维持 1.0）
 		broadcast(field, SoundEvents.ENTITY_WITHER_SPAWN, 0.55f, 0.5f);
 		sync(player.getServer());
 	}
 	public static void remove(ServerPlayerEntity player) {
+		PRESSURES.remove(player.getUuid());
 		CHARGE_ANCHORS.remove(player.getUuid());
 		Field field = FIELDS.remove(player.getUuid());
 		if (field == null) return;
@@ -221,12 +236,30 @@ public final class DomainManager {
 			}
 		}
 		for (Field field : FIELDS.values()) {
+            if (field.active) {
+                Pressure pressure = PRESSURES.get(field.owner.getUuid());
+                if (pressure != null && field.elapsed() > 0 && field.elapsed() % pressure.intervalTicks() == 0)
+                    pressure(field, pressure.pulse());
+                continue;
+            }
 			if (field.active || !SpellCastingRules.playsChargeSound(field.chargeTicks) || field.elapsed() <= 0 || field.elapsed() % 40 != 0) continue;
 			float pitch = 0.65f + Math.min(1f, (float) field.elapsed() / field.chargeTicks) * 0.25f;
 			broadcast(field, SoundEvents.BLOCK_CONDUIT_AMBIENT_SHORT, pitch, 1.0f);
 		}
 		if (!FIELDS.isEmpty() && server.getTicks() % 10 == 0) sync(server);
 	}
+    /** Only activation and one pulse per forty ticks perform a local query; no world entity scan. */
+    private static void pressure(Field field, net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext context) {
+        if (context.amount() <= 0) return;
+        double squared = field.innerRadius * field.innerRadius;
+        var bounds = new net.minecraft.util.math.Box(field.center, field.center).expand(field.innerRadius);
+        for (LivingEntity target : field.world.getEntitiesByClass(LivingEntity.class, bounds,
+                candidate -> FormSpellStyle.legalTarget(field.owner, candidate)
+                        && (!(candidate instanceof net.minecraft.entity.player.PlayerEntity player) || !player.isCreative()))) {
+            if (target.squaredDistanceTo(field.center) <= squared)
+                net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.hit(context, target);
+        }
+    }
 	private static void sync(MinecraftServer server) {
 		if (server == null) return;
 		for (ServerPlayerEntity viewer : server.getPlayerManager().getPlayerList()) {

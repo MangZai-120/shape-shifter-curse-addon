@@ -57,6 +57,11 @@ public final class NeoWorldProbe {
         if(Boolean.getBoolean("neomagic.courtLink"))test=new TestFunction("neomagic","court_link","ssca_neomagic:empty",750,0,true,NeoCourtSpellLinkProbe::start);
         if(Boolean.getBoolean("neomagic.batStress"))test=new TestFunction("neomagic","bat_stress","ssca_neomagic:empty",500,0,true,NeoBatStressProbe::start);
         if(Boolean.getBoolean("neomagic.interactionRecovery"))test=new TestFunction("neomagic","interaction_recovery","ssca_neomagic:empty",300,0,true,InteractionRecoveryWorldProbe::start);
+        String worldProbe=System.getProperty("neomagic.worldProbe","");
+        if(!worldProbe.isBlank())test=new TestFunction("neomagic","custom_world_probe","ssca_neomagic:empty",1200,0,true,context->{
+            try { Class.forName(worldProbe).getMethod("start",TestContext.class).invoke(null,context); }
+            catch(ReflectiveOperationException error) { throw new IllegalStateException("Cannot start world probe "+worldProbe,error); }
+        });
         var batch=new GameTestBatch("neomagic",List.of(test),world->{},world->{});
         MinecraftServer.startServer(thread->TestServer.create(thread,save,VanillaDataPackProvider.createManager(save),List.of(batch),new BlockPos(0,64,0)));
     }

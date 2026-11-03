@@ -51,7 +51,12 @@ import java.util.UUID;
  * <p><b>三色变体</b>（DataTracker VARIANT 同步，多人一致）：0 粉×1.5 伤+点燃 3s /
  * 1 蓝×0.7 伤+缓速 I 3s / 2 绿正常伤+中毒 I 3s。寿命到期粒子消散。</p>
  */
-public class LunarSpiritEntity extends PathAwareEntity implements GeoEntity {
+public class LunarSpiritEntity extends PathAwareEntity implements GeoEntity,
+        net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.SummonedData {
+
+    private net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext summonAnomaly;
+    @Override public net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext ssca$summonAnomaly() { return summonAnomaly; }
+    @Override public void ssca$summonAnomaly(net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext context) { summonAnomaly = context; }
 
 	/** GeoEntity 动画缓存（GeckoLib 标准）。 */
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -144,6 +149,7 @@ public class LunarSpiritEntity extends PathAwareEntity implements GeoEntity {
 			return;
 		}
 		LunarSpiritBoltEntity bolt = new LunarSpiritBoltEntity(this.getWorld(), this);
+		((net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.ProjectileData)bolt).ssca$anomaly(summonAnomaly);
 		bolt.setVariant(getVariant());
 		bolt.setTargetEntity(target);
 		// 发射方向：朝目标方向随机水平偏 ±45°（曲线起点，光弹飞行中自己收拢）
@@ -220,6 +226,7 @@ public class LunarSpiritEntity extends PathAwareEntity implements GeoEntity {
 
 	public void setOwnerUuid(UUID uuid) {
 		this.ownerUuid = uuid;
+        if (summonAnomaly != null && !summonAnomaly.casterUUID().equals(uuid)) summonAnomaly = null;
 		// 召唤物归属标签：纳入白名单系统的「玩家召唤物」保护（与堕落悦灵恕魔的 owner 标签同机制）
 		this.getCommandTags().removeIf(tag -> tag.startsWith("ssc_owner:"));
 		if (uuid != null) {
@@ -670,11 +677,14 @@ public class LunarSpiritEntity extends PathAwareEntity implements GeoEntity {
 		nbt.putInt("LifeTicks", this.lifeTicks);
 		nbt.putInt("Variant", getVariant());
 		nbt.putInt("FormationSlot", this.formationSlot);
+        if (summonAnomaly != null) nbt.put("SscaSummonAnomaly", summonAnomaly.write());
 	}
 
 	@Override
 	public void readCustomDataFromNbt(NbtCompound nbt) {
 		super.readCustomDataFromNbt(nbt);
+        summonAnomaly = nbt.contains("SscaSummonAnomaly", net.minecraft.nbt.NbtElement.COMPOUND_TYPE)
+                ? net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext.read(nbt.getCompound("SscaSummonAnomaly")) : null;
 		if (nbt.containsUuid("Owner")) {
 			this.ownerUuid = nbt.getUuid("Owner");
 		}
@@ -686,6 +696,7 @@ public class LunarSpiritEntity extends PathAwareEntity implements GeoEntity {
 		if (this.lifeTicks <= 0) {
 			this.lifeTicks = 100; // 兜底：NBT 缺失时给 5s 缓冲消散
 		}
+        if (summonAnomaly != null && !summonAnomaly.casterUUID().equals(this.ownerUuid)) summonAnomaly = null;
 		if (nbt.contains("Variant")) {
 			setVariant(nbt.getInt("Variant"));
 		}

@@ -168,6 +168,9 @@ public class SpellCurseMarkEntity extends ProjectileEntity implements FlyingItem
 			// amplifier = 等级-1（L1=0 … L5=4）：mixin 按其计算受伤加深 1.2+0.1×amp
 			boolean hadHarmfulEffect = net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.hasHarmfulEffect(livingTarget);
             boolean applied=net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.with(net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.of(this),()->net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(this.getOwner(),()->net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.of(this),()->livingTarget.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(SscAddon.CURSE_MARK,getDuration(),getSpellLevel()-1)))));
+			if (net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.acceptedStatus(
+                    livingTarget, SscAddon.CURSE_MARK, getDuration(), getSpellLevel()-1, applied))
+                net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.hit(this,livingTarget);
 			net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.directHit(this,livingTarget);
 			if (applied && this.getOwner() instanceof ServerPlayerEntity caster) {
 				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(caster, livingTarget,
@@ -177,6 +180,9 @@ public class SpellCurseMarkEntity extends ProjectileEntity implements FlyingItem
             if(link!=null&&this.getOwner() instanceof ServerPlayerEntity caster)link.chain(caster,livingTarget,java.util.Set.of(livingTarget.getUuid()),other->{
                 boolean before=net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.hasHarmfulEffect(other);
                 boolean changed=other.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(SscAddon.CURSE_MARK,getDuration(),getSpellLevel()-1),caster);
+                if(net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.acceptedStatus(
+                        other,SscAddon.CURSE_MARK,getDuration(),getSpellLevel()-1,changed))
+                    net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.hit(this,other);
                 if(changed)net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(caster,other,
                         net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.CURSE,refundCastId,before);
                 return changed;

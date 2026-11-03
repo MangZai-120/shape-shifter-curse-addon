@@ -20,6 +20,8 @@ public final class PocketSpaceSpell extends Spell {
 
 	@Override
 	public net.minecraft.text.Text getCastFailureMessage(ServerPlayerEntity caster) {
+		if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyEffects.teleportBlocked(caster))
+            return net.minecraft.text.Text.translatable("message.ssc_addon.anomaly.teleport_blocked");
 		return net.minecraft.text.Text.translatable("message.ssc_addon.pocket_space.unavailable");
 	}
 

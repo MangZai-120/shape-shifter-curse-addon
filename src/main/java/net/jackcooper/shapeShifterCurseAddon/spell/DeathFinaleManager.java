@@ -35,6 +35,7 @@ public final class DeathFinaleManager {
         final double radius = DeathFinaleRules.RADIUS;
         int elapsed;
         long releasedAt = -1;
+        net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext anomaly;
         Sequence(ServerPlayerEntity player, int duration) {
             owner = player.getUuid(); world = player.getServerWorld();
             position = new DeathFinaleRules.ChargePosition(player.getPos());
@@ -103,10 +104,11 @@ public final class DeathFinaleManager {
         if (s == null || s.releasedAt >= 0 || s.elapsed < s.duration || caster.getWorld() != s.world
                 || !s.position.follow(caster.getPos(),OcelotSpellLink.wind(caster))) return;
         s.releasedAt = s.world.getTime();
+        s.anomaly=net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.current();
         // No falloff and no block explosion. Re-evaluate targets at completion, not at the start.
         for (LivingEntity target : s.world.getEntitiesByClass(LivingEntity.class,
                 Box.of(s.center(), s.radius * 2, s.radius * 2, s.radius * 2), e -> eligible(s, caster, e))) {
-            if (SpellHitHelper.projectileHit(caster, target, power, FormationElement.VOID, refundId, exp)
+            if (SpellHitHelper.projectileHit(caster, target, power, FormationElement.VOID, refundId, exp,s.anomaly)
                     == SpellHitHelper.HitResult.HIT) exp = 0;
         }
         s.world.playSound(null, s.center().x, s.center().y, s.center().z, SoundEvents.ENTITY_WARDEN_SONIC_BOOM,

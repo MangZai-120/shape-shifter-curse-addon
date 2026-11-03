@@ -44,7 +44,15 @@ public final class SpellHitHelper {
 	 */
 	public static HitResult projectileHit(Entity owner, LivingEntity target, float damage,
 	                                      FormationElement element, UUID refundCastId, int expBounty) {
-		HitResult result = hitRaw(owner, target, damage, expBounty);
+		return projectileHit(owner,target,damage,element,refundCastId,expBounty,
+                net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.context(owner));
+    }
+
+    /** Explicit snapshot for effects whose damage is resolved after their cast scope exits. */
+    public static HitResult projectileHit(Entity owner, LivingEntity target, float damage,
+            FormationElement element, UUID refundCastId, int expBounty,
+            net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext anomaly) {
+		HitResult result = hitRaw(owner, target, damage, expBounty,anomaly);
 		if (result != HitResult.HIT) return result;
 		owner=AllaySpellLink.owner(owner);
 		// 流派命中钩子（2026-09-17）：燎原/噬咒/噬梦按本次耗蓝返还；固定值类（审魂等）不依赖耗蓝
@@ -59,6 +67,12 @@ public final class SpellHitHelper {
 	 * 供需要聚合钩子的场合（FIRE 系击杀/燃烧判定）在循环内使用，钩子由调用方循环外聚合调用。
 	 */
 	public static HitResult hitRaw(Entity owner, LivingEntity target, float damage, int expBounty) {
+        return hitRaw(owner,target,damage,expBounty,
+                net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.context(owner));
+    }
+
+    public static HitResult hitRaw(Entity owner, LivingEntity target, float damage, int expBounty,
+            net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext anomaly) {
         var link=AllaySpellLink.context(owner);
         var court=CourtSpellLink.of(owner);
         owner=AllaySpellLink.owner(owner);
@@ -79,6 +93,7 @@ public final class SpellHitHelper {
 			SpellExpGrant.grant(ownerPlayer, expBounty);
             if(link!=null)link.damage(ownerPlayer,target,Math.max(0,healthBefore-target.getHealth()));
 		}
+		if(damaged)net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.hit(anomaly,target);
 		return damaged ? HitResult.HIT : HitResult.IMMUNE;
 	}
 }

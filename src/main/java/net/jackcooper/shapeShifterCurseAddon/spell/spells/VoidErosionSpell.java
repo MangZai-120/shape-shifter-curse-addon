@@ -69,6 +69,9 @@ public class VoidErosionSpell extends Spell {
 			int debuffAmplifier = (level - 1) / 2;
 			boolean applied = target.addStatusEffect(new StatusEffectInstance(StatusEffects.MINING_FATIGUE, durationTicks, debuffAmplifier));
 			applied |= target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, durationTicks, 1 + debuffAmplifier));
+            if (applied || net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.acceptedStatus(target,StatusEffects.MINING_FATIGUE,durationTicks,debuffAmplifier,false)
+                    || net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.acceptedStatus(target,StatusEffects.WEAKNESS,durationTicks,1+debuffAmplifier,false))
+                net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.hit(caster,target);
 			if (applied) {
 				net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.onSpellHit(caster, target,
 						net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.VOID,

@@ -154,12 +154,13 @@ public class LunarSpiritBoltEntity extends ProjectileEntity {
 			} else if (variant == 1) {
 				damage *= 0.7f;
 			}
+			boolean damaged;
 			if (ownerPlayer != null) {
 				// 法术伤害专用类型；source 保持光弹本体（供 LunarSpiritTargetLink 区分玩家亲手攻击），attacker 归因主人
-				livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+				damaged = livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
 						.of(this.getDamageSources(), this, ownerPlayer), damage);
 			} else {
-				livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
+				damaged = livingTarget.damage(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource
 						.of(this.getDamageSources()), damage);
 			}
 			// 变体 debuff：粉=点燃 3s / 蓝=缓速 I 3s / 绿=中毒 I 3s
@@ -174,6 +175,7 @@ public class LunarSpiritBoltEntity extends ProjectileEntity {
 			}
 			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 0.7f, 1.6f);
+            if (damaged) net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.hit(this, livingTarget);
 		}
 	}
 
@@ -192,6 +194,11 @@ public class LunarSpiritBoltEntity extends ProjectileEntity {
 
 	/** 归因链：光弹主人（月灵）的玩家主人。 */
 	private ServerPlayerEntity resolveOwnerPlayer() {
+        var snapshot = ((net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.ProjectileData)this).ssca$anomaly();
+        if (snapshot != null && this.getWorld() instanceof ServerWorld world) {
+            var acceptedOwner = world.getEntity(snapshot.casterUUID());
+            return acceptedOwner instanceof ServerPlayerEntity player ? player : null;
+        }
 		if (this.getOwner() instanceof LunarSpiritEntity spirit) {
 			return spirit.getOwnerPlayer() instanceof ServerPlayerEntity sp ? sp : null;
 		}

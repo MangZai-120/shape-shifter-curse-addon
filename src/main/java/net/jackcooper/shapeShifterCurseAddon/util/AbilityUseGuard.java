@@ -14,6 +14,7 @@ public final class AbilityUseGuard {
 
     public static boolean fullyControlled(LivingEntity entity) {
         return entity != null && (entity.hasStatusEffect(SscAddon.STUN)
+                || entity.hasStatusEffect(SscAddon.FROZEN)
                 || entity.hasStatusEffect(SscAddon.PLAYING_DEAD)
                 || entity.hasStatusEffect(RegOtherStatusEffects.ENTANGLED_FULL_EFFECT));
     }

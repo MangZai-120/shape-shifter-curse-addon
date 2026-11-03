@@ -107,6 +107,9 @@ public class BeepSheepEntity extends ThrownItemEntity {
 		boolean hadHarmfulEffect = net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.hasHarmfulEffect(livingTarget);
 		boolean applied = livingTarget.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
 				SscAddon.SHEEP_FORM, sheepDuration, spellLevel - 1, false, true, true), this.getOwner());
+        if (net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.acceptedStatus(
+                livingTarget,SscAddon.SHEEP_FORM,sheepDuration,spellLevel-1,applied))
+            net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.hit(this,livingTarget);
 		if (applied) {
 			// 登记「受惊逃离源」（2026-09-29 用户定稿：变羊 NPC 的羊 AI 默认受惊远离施法者）
 			net.jackcooper.shapeShifterCurseAddon.effect.SheepFormAiController.setFleeFrom(

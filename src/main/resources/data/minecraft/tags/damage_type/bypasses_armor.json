@@ -2,6 +2,8 @@
   "replace": false,
   "values": [
     "ssc_addon:axolotl_shifter_thirst",
-    "ssc_addon:spell_damage"
+    "ssc_addon:spell_damage",
+    "ssc_addon:anomaly_fire",
+    "ssc_addon:anomaly_magic"
   ]
 }

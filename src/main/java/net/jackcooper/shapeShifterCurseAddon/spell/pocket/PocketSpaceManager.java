@@ -59,11 +59,13 @@ public final class PocketSpaceManager {
 
 	public static boolean canEnter(ServerPlayerEntity player) {
 		return player.isAlive() && !player.isSpectator() && !player.hasVehicle() && !player.hasPassengers()
+				&& !net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyEffects.teleportBlocked(player)
 				&& !isPocket(player.getWorld()) && !CHANNELS.containsKey(player.getUuid())
 				&& player.getServer().getWorld(WORLD_KEY) != null;
 	}
 
 	public static void start(ServerPlayerEntity player, UUID scrollId, int ticks) {
+		if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(player)) return;
 		PocketSpaceStorage.Room room = PocketSpaceStorage.findRoom(player.getServer(), scrollId);
 		if (room == null) return;
 		CHANNELS.put(player.getUuid(), new Channel(player, scrollId, Math.max(1, ticks)));
@@ -178,6 +180,7 @@ public final class PocketSpaceManager {
 			PocketSpaceStorage.Room room = PocketSpaceStorage.findRoom(server, channel.scrollId);
 			if (player == null || !player.isAlive() || player.hasVehicle() || player.hasPassengers()
 					|| player.isSpectator()
+					|| net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyEffects.teleportBlocked(player)
 					|| !player.getWorld().getRegistryKey().equals(channel.dimension)
 					|| room == null) {
 				if (player != null) {
@@ -238,6 +241,12 @@ public final class PocketSpaceManager {
 			boolean onPortal = insidePortal && Math.abs(player.getY()
 					- (PocketSpaceLayout.FLOOR_Y + 1 + PocketSpaceLayout.PORTAL_TOP_HEIGHT)) < 0.08
 					&& player.isOnGround();
+            if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyEffects.teleportBlocked(player)) {
+                gate.tick(insidePortal, false); // Voluntary exit waits; eviction/safety-return paths above remain available.
+                if (onPortal && player.age % 20 == 0)
+                    net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(player);
+                continue;
+            }
 			if (gate.tick(insidePortal, onPortal)) {
 				leave(player, visit);
 				GATES.put(player.getUuid(), new PocketPortalGate());
@@ -379,6 +388,7 @@ public final class PocketSpaceManager {
 	}
 
 	private static void enter(ServerPlayerEntity player, Channel channel, ServerWorld pocket, PocketSpaceStorage.Room room) {
+		if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(player)) return;
 		PocketSpaceStorage.Visit visit = PocketSpaceStorage.visit(player);
 		visit.begin(channel.scrollId, channel.dimension, channel.position, channel.yaw, channel.pitch);
 		PocketSpaceStorage.save(player.getServer());

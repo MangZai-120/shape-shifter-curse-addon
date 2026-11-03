@@ -84,7 +84,9 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 
 	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
 	private float ssca$npcCombatDamage(float amount, DamageSource source) {
-		return NpcCombatEnhancements.modifyDamage((LivingEntity) (Object) this, source, amount);
+		LivingEntity target = (LivingEntity) (Object) this;
+		return net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyEffects.modifyDamage(target, source,
+				NpcCombatEnhancements.modifyDamage(target, source, amount));
 	}
 
 	@Inject(method = "onStatusEffectRemoved", at = @At("TAIL"))
@@ -145,7 +147,8 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 	 */
 	@Inject(method = "isImmobile", at = @At("RETURN"), cancellable = true)
 	private void ssca$stunImmobile(CallbackInfoReturnable<Boolean> cir) {
-		if (!cir.getReturnValueZ() && ((LivingEntity) (Object) this).hasStatusEffect(SscAddon.STUN)) {
+		if (!cir.getReturnValueZ() && (((LivingEntity) (Object) this).hasStatusEffect(SscAddon.STUN)
+				|| net.jackcooper.shapeShifterCurseAddon.anomaly.FrozenControl.blocked((LivingEntity)(Object)this))) {
 			cir.setReturnValue(true);
 		}
 		// 变羊（羊了个羊）：mob 不再走 isImmobile 冻结（2026-09-29 用户定稿改为「羊 AI」——
@@ -155,7 +158,8 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 
 	@Inject(method = "jump", at = @At("HEAD"), cancellable = true)
 	private void ssca$spellCastingBlockJump(CallbackInfo ci) {
-		if (net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.isImmobile((LivingEntity) (Object) this)) ci.cancel();
+		if (net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.isImmobile((LivingEntity) (Object) this)
+				|| net.jackcooper.shapeShifterCurseAddon.anomaly.FrozenControl.blocked((LivingEntity)(Object)this)) ci.cancel();
 	}
 
 	// 跳蛛「跳杀」腾空期免疫（纯否决）已迁至 SscaDamageVetoHandler（ServerLivingEntityEvents.ALLOW_DAMAGE）。
@@ -314,7 +318,8 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
 	private float ssca$spellResistanceReduce(float amount, DamageSource source) {
 		if (amount <= 0.0F || source == null) return amount;
-		if (!source.isOf(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource.SPELL_DAMAGE)) return amount;
+		if (!source.isOf(net.jackcooper.shapeShifterCurseAddon.spell.SpellDamageSource.SPELL_DAMAGE)
+				&& !net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyEffects.isReaction(source)) return amount;
 		LivingEntity self = (LivingEntity) (Object) this;
 		int totalLevel = 0;
 		for (net.minecraft.entity.EquipmentSlot slot : ssca$ARMOR_SLOTS) {
