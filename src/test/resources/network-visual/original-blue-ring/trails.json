@@ -1,0 +1,14 @@
+{
+  "source_commit": "cd8aa83a6bbf08e003b6c6befa28179d3ed85d50",
+  "ssc_jar_sha256": "8fe4edd4613677326db28f5c24bf918ee5c4725d35765df065e3bfd461fe2cf7",
+  "web_source": "net/onixary/shapeShifterCurseFabric/entity/projectile/WebBullet.java:103-118",
+  "cases": [
+    { "kind": "SSC_WEB_TRAIL", "tier": 1, "particle": "minecraft:ash", "count": 3, "spread": 0.05, "speed": 0.01, "force": false },
+    { "kind": "SSC_WEB_TRAIL", "tier": 2, "particle": "minecraft:spit", "count": 1, "spread": 0.05, "speed": 0.01, "force": false },
+    { "kind": "SSC_WEB_TRAIL", "tier": 3, "particle": "minecraft:cloud", "count": 2, "spread": 0.05, "speed": 0.01, "force": false },
+    { "kind": "FIRE_BOLT_TRAIL", "particle": "minecraft:flame", "count": 2, "spread": 0.1, "speed": 0.01, "force": true,
+      "source": "src/main/java/net/jackcooper/shapeShifterCurseAddon/entity/SpellFireBoltEntity.java" },
+    { "kind": "LUNAR_BOLT_TRAIL", "particle": "minecraft:end_rod", "count": 1, "spread": 0.02, "speed": 0.002, "force": false,
+      "source": "src/main/java/net/jackcooper/shapeShifterCurseAddon/entity/LunarSpiritBoltEntity.java" }
+  ]
+}

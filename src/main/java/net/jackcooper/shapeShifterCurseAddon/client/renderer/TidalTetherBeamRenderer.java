@@ -11,6 +11,7 @@ import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
+import net.jackcooper.shapeShifterCurseAddon.entity.TidalOrbEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RotationAxis;
@@ -26,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 荧光幼灵「潮汐束缚（拴人）」守卫者激光渲染器（纯客户端）。
  *
- * <p>服务端每 10 tick 通过 {@code PACKET_TIDAL_TETHER} 把「水球 entityId + 被拴目标 entityId 列表」
+ * <p>服务端在列表变化、开始追踪和每 40 tick 校准时，通过 {@code PACKET_TIDAL_TETHER} 把「水球 entityId + 被拴目标 entityId 列表」
  * 同步过来，存进 {@link #ACTIVE}；这里在 {@code WorldRenderEvents.AFTER_ENTITIES} 逐帧从水球向每个
  * 被拴目标画一条守卫者风格光束。条目在超过 expireTime 未刷新（或水球消失）后自动清除。
  */
@@ -38,6 +39,7 @@ public final class TidalTetherBeamRenderer {
 
     /** key = 水球 entityId，value = 被拴目标列表 + 过期时刻。 */
     private static final Map<Integer, Entry> ACTIVE = new ConcurrentHashMap<>();
+    private static World activeWorld;
 
     private TidalTetherBeamRenderer() {
     }
@@ -45,29 +47,40 @@ public final class TidalTetherBeamRenderer {
     private static final class Entry {
         final int[] targetIds;
         final long expireTime;
+        final TidalOrbEntity source;
 
-        Entry(int[] targetIds, long expireTime) {
+        Entry(int[] targetIds, long expireTime, TidalOrbEntity source) {
             this.targetIds = targetIds;
             this.expireTime = expireTime;
+            this.source = source;
         }
     }
 
     /** 收到服务端同步：更新某水球的被拴目标列表与过期时刻。 */
     public static void update(int orbId, int[] targetIds, long expireTime) {
-        ACTIVE.put(orbId, new Entry(targetIds, expireTime));
+        World world = MinecraftClient.getInstance().world;
+        if (world != activeWorld) {clear();activeWorld=world;}
+        if (world == null) return;
+        if (targetIds.length == 0) {ACTIVE.remove(orbId);return;}
+        // The server sends this after the spawn bundle. Bind object identity so reused IDs cannot inherit beams.
+        Entity source = world.getEntityById(orbId);
+        if (!(source instanceof TidalOrbEntity orb)) return;
+        ACTIVE.put(orbId, new Entry(targetIds, expireTime, orb));
     }
 
     /** 断线 / 切世界时清空，避免残留。 */
     public static void clear() {
         ACTIVE.clear();
+        activeWorld = null;
     }
 
     /** {@code WorldRenderEvents.AFTER_ENTITIES} 回调：逐帧画所有活跃的拴人光束。 */
     public static void render(WorldRenderContext ctx) {
+        World world = MinecraftClient.getInstance().world;
+        if (world != activeWorld) {clear();activeWorld=world;}
         if (ACTIVE.isEmpty()) return;
         VertexConsumerProvider vcp = ctx.consumers();
         if (vcp == null) return;
-        World world = MinecraftClient.getInstance().world;
         if (world == null) return;
 
         long now = world.getTime();
@@ -87,7 +100,11 @@ public final class TidalTetherBeamRenderer {
                 continue;
             }
             Entity orb = world.getEntityById(me.getKey());
-            if (orb == null) continue;   // 水球已消失 → 本帧不画（下帧过期清除）
+            if (orb != en.source || orb.isRemoved()) {
+                it.remove(); continue;
+            }
+            // An immediate target change can precede the same tick's tracked ACTIVE flag by one packet.
+            if (!en.source.isTetherActive()) continue;
             Vec3d op = orb.getLerpedPos(tickDelta).add(0.0, orb.getHeight() * 0.5, 0.0);
             for (int tid : en.targetIds) {
                 Entity tgt = world.getEntityById(tid);

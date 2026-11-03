@@ -14,6 +14,7 @@ public final class SkillCooldownClient {
     public static State get(String skill) { return states.get(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager.domain(skill)); }
     public static long now() { return MinecraftClient.getInstance().world == null ? 0 : MinecraftClient.getInstance().world.getTime(); }
     public static void init() {
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> states = Map.of());
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> states = Map.of());
         ClientPlayNetworking.registerGlobalReceiver(SkillCooldownSync.ID, (client, handler, buf, response) -> {
             Map<String, State> received = new HashMap<>();

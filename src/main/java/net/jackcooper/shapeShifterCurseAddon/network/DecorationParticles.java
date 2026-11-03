@@ -18,6 +18,14 @@ public final class DecorationParticles {
 
     private DecorationParticles() {}
 
+    /** Compatibility for clients without the scene protocol, after the caller's original range checks. */
+    public static void sendVisualFallback(ServerWorld world, ServerPlayerEntity viewer, ParticleS2CPacket packet,
+                                          java.util.UUID owner, boolean projectile) {
+        if (viewer.getUuid().equals(owner) && ServerPlayNetworking.canSend(viewer, ID))
+            sendEnvelope(world, viewer, packet, projectile);
+        else viewer.networkHandler.sendPacket(packet);
+    }
+
     public static void spawn(ServerWorld world, Entity owner, ParticleEffect effect,
                              double x, double y, double z, int count,
                              double dx, double dy, double dz, double speed) {

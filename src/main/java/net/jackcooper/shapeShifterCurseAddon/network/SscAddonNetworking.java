@@ -158,6 +158,8 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_SSCA_START_ROUTE = new Identifier("my_addon", "ssca_start_route");
 	/** C2S：客机加入后请求服务端把所有在场玩家的形态+皮肤同步过来（修复客机看其它玩家默认白模型）。无 payload */
 	public static final Identifier PACKET_REQUEST_ALL_FORM_SYNC = new Identifier("my_addon", "request_all_form_sync");
+	/** C2S: join repair for this observer; other peers receive only this player's appearance. */
+	public static final Identifier PACKET_REQUEST_FORM_SYNC_V2 = new Identifier("my_addon", "request_form_sync_v2");
 	/** S2C：服务端广播所有在场玩家的形态 ID。payload: int count + count*(UUID + String formId) */
 	public static final Identifier PACKET_BROADCAST_FORMS = new Identifier("my_addon", "broadcast_forms");
 	/** S2C：把所有 SSCA 进化路线定义（JSON）同步给客户端，供进化树 UI 渲染。payload: int count + count*(routeId + rawJson) */
@@ -728,67 +730,66 @@ public class SscAddonNetworking {
 		// 客机加入后请求：把所有在场玩家的形态 ID + 皮肤数据广播给「所有在线玩家」（含请求者与已在线客机），
 		// 绕过 CCA 同步的不确定性，修复刚进游戏 / 新玩家加入时看其它玩家是默认白模型。
 		// 形态模型由客机据 formId 重建 origin 决定，颜色据皮肤数据上色。
-		ServerPlayNetworking.registerGlobalReceiver(PACKET_REQUEST_ALL_FORM_SYNC, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> {
-				java.util.List<net.minecraft.server.network.ServerPlayerEntity> players = server.getPlayerManager().getPlayerList();
-				for (net.minecraft.server.network.ServerPlayerEntity recipient : players) {
-					net.minecraft.network.PacketByteBuf out = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
-					out.writeInt(players.size());
-					for (net.minecraft.server.network.ServerPlayerEntity p : players) {
-						out.writeUuid(p.getUuid());
-						net.minecraft.util.Identifier fid =
-								net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM.get(p).nowFormID;
-						out.writeString(fid == null ? "" : fid.toString());
-						// 皮肤数据：保留原皮 / 是否启用形态颜色 / 五种颜色(ABGR) / 灰度反转 / 随机音效
-						net.onixary.shapeShifterCurseFabric.player_form.skin.PlayerSkinComponent skin =
-								net.onixary.shapeShifterCurseFabric.player_form.skin.RegPlayerSkinComponent.SKIN_SETTINGS.get(p);
-						out.writeBoolean(skin.shouldKeepOriginalSkin());
-						out.writeBoolean(skin.isEnableFormColor());
-						net.onixary.shapeShifterCurseFabric.util.FormTextureUtils.ColorSetting c = skin.getFormColor();
-						out.writeInt(c.getPrimaryColor());
-						out.writeInt(c.getAccentColor1());
-						out.writeInt(c.getAccentColor2());
-						out.writeInt(c.getEyeColorA());
-						out.writeInt(c.getEyeColorB());
-						out.writeBoolean(c.getPrimaryGreyReverse());
-						out.writeBoolean(c.getAccent1GreyReverse());
-						out.writeBoolean(c.getAccent2GreyReverse());
-						out.writeBoolean(skin.isEnableFormRandomSound());
-					}
-					ServerPlayNetworking.send(recipient, PACKET_BROADCAST_FORMS, out);
-				}
-				// 同步 SSCA 进化路线定义给请求者（客户端进化树 UI 渲染需要，多人环境客户端无 datapack 数据）
-                sendEvolutionRoutes(player);
-				// 同步法术数值配置（卷轴 tooltip / HUD 显示的数值须与服务端施法判定一致）
-				net.minecraft.network.PacketByteBuf spellsOut = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
-				java.util.Map<String, String> rawSpells =
-						net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.getRawJson();
-				spellsOut.writeInt(rawSpells.size());
-				for (java.util.Map.Entry<String, String> e : rawSpells.entrySet()) {
-					spellsOut.writeString(e.getKey(), 256);
-					spellsOut.writeString(e.getValue(), 2000000);
-				}
-				ServerPlayNetworking.send(player, PACKET_SPELL_CONFIG_SYNC, spellsOut);
-			});
-		});
+		// Keep the legacy channel as an explicit full repair, including old clients.
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_REQUEST_ALL_FORM_SYNC, (server, player, handler, buf, responseSender) ->
+				server.execute(() -> { if (player.networkHandler == handler && !player.isRemoved()) repairForms(player, true); }));
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_REQUEST_FORM_SYNC_V2, (server, player, handler, buf, responseSender) ->
+				server.execute(() -> { if (player.networkHandler == handler && !player.isRemoved()) repairForms(player, false); }));
+	}
+
+	private static void repairForms(ServerPlayerEntity player, boolean repairAllPeers) {
+		var players = player.getServer().getPlayerManager().getPlayerList();
+		PacketByteBuf full = formSnapshot(players);
+		PacketByteBuf single = repairAllPeers ? null : formSnapshot(List.of(player));
+		try {
+			for (ServerPlayerEntity recipient : players) {
+				if (!ServerPlayNetworking.canSend(recipient, PACKET_BROADCAST_FORMS)) continue;
+				PacketByteBuf source = repairAllPeers || recipient == player ? full : single;
+				ServerPlayNetworking.send(recipient, PACKET_BROADCAST_FORMS,
+						net.fabricmc.fabric.api.networking.v1.PacketByteBufs.copy(source));
+			}
+		} finally { full.release(); if (single != null) single.release(); }
+		sendEvolutionRoutes(player, repairAllPeers);
+		net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.sendTo(player, repairAllPeers);
+	}
+
+	private static PacketByteBuf formSnapshot(List<ServerPlayerEntity> players) {
+		PacketByteBuf out = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+		out.writeInt(players.size());
+		for (ServerPlayerEntity p : players) {
+			out.writeUuid(p.getUuid());
+			Identifier fid = net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM.get(p).nowFormID;
+			out.writeString(fid == null ? "" : fid.toString());
+			var skin = net.onixary.shapeShifterCurseFabric.player_form.skin.RegPlayerSkinComponent.SKIN_SETTINGS.get(p);
+			out.writeBoolean(skin.shouldKeepOriginalSkin());out.writeBoolean(skin.isEnableFormColor());
+			var c = skin.getFormColor();
+			out.writeInt(c.getPrimaryColor());out.writeInt(c.getAccentColor1());out.writeInt(c.getAccentColor2());
+			out.writeInt(c.getEyeColorA());out.writeInt(c.getEyeColorB());
+			out.writeBoolean(c.getPrimaryGreyReverse());out.writeBoolean(c.getAccent1GreyReverse());out.writeBoolean(c.getAccent2GreyReverse());
+			out.writeBoolean(skin.isEnableFormRandomSound());
+		}
+		return out;
 	}
 
     /** 加入和成功重载数据包都发送最新路线，在线客机无需重连。 */
     public static void registerEvolutionRouteSync() {
+        JsonSnapshotSync.register();
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.register(
-                (player, joined) -> sendEvolutionRoutes(player));
+                (player, joined) -> sendEvolutionRoutes(player, !joined));
+        // A newly tracked entity may appear long after login. Send its current skin as well as form.
+        net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents.START_TRACKING.register((entity, observer) -> {
+            if (entity instanceof ServerPlayerEntity tracked && ServerPlayNetworking.canSend(observer, PACKET_BROADCAST_FORMS))
+                ServerPlayNetworking.send(observer, PACKET_BROADCAST_FORMS, formSnapshot(List.of(tracked)));
+        });
     }
 
     public static void sendEvolutionRoutes(ServerPlayerEntity player) {
-        net.minecraft.network.PacketByteBuf routesOut = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
-        java.util.Map<String, String> rawRoutes =
-                net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.INSTANCE.getRawJson();
-        routesOut.writeInt(rawRoutes.size());
-        for (java.util.Map.Entry<String, String> entry : rawRoutes.entrySet()) {
-            routesOut.writeString(entry.getKey(), 256);
-            routesOut.writeString(entry.getValue(), 2000000);
-        }
-        ServerPlayNetworking.send(player, PACKET_EVO_ROUTES_SYNC, routesOut);
+        sendEvolutionRoutes(player, false);
+    }
+
+    private static void sendEvolutionRoutes(ServerPlayerEntity player, boolean force) {
+        JsonSnapshotSync.send(player, PACKET_EVO_ROUTES_SYNC,
+                net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.INSTANCE.getRawJson(), force);
     }
 
     /** 服务端：通知客户端打开灵能宝珠「转职选择形态」界面（无 payload）。 */

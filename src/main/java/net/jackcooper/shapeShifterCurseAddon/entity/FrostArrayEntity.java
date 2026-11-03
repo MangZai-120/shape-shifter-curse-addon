@@ -18,6 +18,7 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.EntityDisplayClock;
 
 /**
  * 寒棘狐「凝棘」蓄力法阵实体（纯视觉，无碰撞无伤害）。
@@ -34,7 +35,11 @@ public class FrostArrayEntity extends Entity {
 	private static final TrackedData<Integer> OWNER_ID = DataTracker.registerData(FrostArrayEntity.class, TrackedDataHandlerRegistry.INTEGER);
 	private static final TrackedData<Integer> LEVEL = DataTracker.registerData(FrostArrayEntity.class, TrackedDataHandlerRegistry.INTEGER);
 	/** 凝棘蓄力总进度（0-100 tick = 等级×20 + 级内 ticks）：HUD 副槽侧边内置条从 0 涨到满的数据源。 */
-	private static final TrackedData<Integer> PROGRESS = DataTracker.registerData(FrostArrayEntity.class, TrackedDataHandlerRegistry.INTEGER);
+	private static final TrackedData<Integer> PROGRESS_BASE = DataTracker.registerData(FrostArrayEntity.class, TrackedDataHandlerRegistry.INTEGER);
+	private static final TrackedData<Long> PROGRESS_EPOCH = DataTracker.registerData(FrostArrayEntity.class, TrackedDataHandlerRegistry.LONG);
+	private static final TrackedData<Integer> PROGRESS_CYCLE = DataTracker.registerData(FrostArrayEntity.class, TrackedDataHandlerRegistry.INTEGER);
+	private int authoritativeProgress;
+	private int progressBase, progressCycleTick, progressCycleLength;
 	private static final int MAX_TICKS = 400; // 20s 超时双保险（正常由管理器 discard）
 
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
@@ -55,7 +60,9 @@ public class FrostArrayEntity extends Entity {
 	protected void initDataTracker() {
 		this.dataTracker.startTracking(OWNER_ID, -1);
 		this.dataTracker.startTracking(LEVEL, 0);
-		this.dataTracker.startTracking(PROGRESS, 0); // 修复：此前漏登记导致 getProgress NPE 崩溃（服务端 tick + 客户端缓存双崩）
+		this.dataTracker.startTracking(PROGRESS_BASE, 0);
+		this.dataTracker.startTracking(PROGRESS_EPOCH, EntityDisplayClock.UNSET);
+		this.dataTracker.startTracking(PROGRESS_CYCLE, 0);
 	}
 
 	/** 施法者实体 id（客户端渲染器据此取施法者准星算法阵位置）。 */
@@ -65,10 +72,29 @@ public class FrostArrayEntity extends Entity {
 
 	public void setLevel(int level) { if (getLevel() != level) this.dataTracker.set(LEVEL, level); }
 
-	/** 凝棘蓄力总进度（0-100）。dirty-check 防每 tick 重发相同值。 */
-	public int getProgress() { return this.dataTracker.get(PROGRESS); }
+	/** 凝棘总进度：服务端读真实进度，客户端从同步的周期起点与世界时间计算。 */
+	public int getProgress() {
+		return this.getWorld().isClient ? EntityDisplayClock.cyclicProgress(this.dataTracker.get(PROGRESS_BASE),
+				this.dataTracker.get(PROGRESS_EPOCH), this.dataTracker.get(PROGRESS_CYCLE), this.getWorld().getTime())
+				: authoritativeProgress;
+	}
 
-	public void setProgress(int progress) { if (getProgress() != progress) this.dataTracker.set(PROGRESS, progress); }
+	public void setProgress(int progress) { setProgressCycle(progress, 0, 0); }
+
+	/** A cycle resets even if no thorn was consumed, so it cannot be represented by one linear counter. */
+	public void setProgressCycle(int base, int cycleTick, int cycleLength) {
+		authoritativeProgress = base + cycleTick;
+		progressBase = base; progressCycleTick = cycleTick; progressCycleLength = cycleLength;
+	}
+
+	private void syncProgressClock() {
+		// The manager runs at START_WORLD_TICK, before world time advances. Publish after that advance.
+		long epoch = progressCycleLength > 0 ? this.getWorld().getTime() - progressCycleTick : EntityDisplayClock.UNSET;
+		int base = progressCycleLength > 0 ? progressBase : authoritativeProgress;
+		if (this.dataTracker.get(PROGRESS_BASE) != base) this.dataTracker.set(PROGRESS_BASE, base);
+		if (this.dataTracker.get(PROGRESS_EPOCH) != epoch) this.dataTracker.set(PROGRESS_EPOCH, epoch);
+		if (this.dataTracker.get(PROGRESS_CYCLE) != progressCycleLength) this.dataTracker.set(PROGRESS_CYCLE, progressCycleLength);
+	}
 
 	/** 上一次读到的等级（客户端检测 LEVEL 跳变 = 服务端刚消耗一根冰锥 → 播 burst 密集汇聚）。 */
 	private int clientPrevLevel = -1;
@@ -102,6 +128,7 @@ public class FrostArrayEntity extends Entity {
 			return;
 		}
 		// 跟随施法者眼部（法阵前方位置由渲染器按准星实时算）
+		syncProgressClock();
 		this.setPosition(p.getX(), p.getEyeY(), p.getZ());
 		if (this.age > BAL.i("max_ticks", MAX_TICKS)) this.discard(); // 双保险超时
 	}

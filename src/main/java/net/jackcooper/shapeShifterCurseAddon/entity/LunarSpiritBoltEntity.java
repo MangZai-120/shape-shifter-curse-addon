@@ -127,10 +127,11 @@ public class LunarSpiritBoltEntity extends ProjectileEntity {
 			return;
 		}
 
-		// 末地烛粒子拖尾（服务端撒，天然多人同步；数量按变体微调配色不可行——END_ROD 固定白色，加染色核心粒子）
+		// 末地烛拖尾的参数和时间线同步一次，由客户端按原数量每 tick 生成。
 		if (this.getWorld() instanceof ServerWorld serverWorld) {
-			serverWorld.spawnParticles(ParticleTypes.END_ROD,
-					this.getX(), this.getY(), this.getZ(), 1, 0.02, 0.02, 0.02, 0.002);
+			net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals.touch(
+					this, getUuid(), net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals.Kind.LUNAR_BOLT_TRAIL,
+					null, getPos(), true, serverWorld.getTime() - age, 0, 0);
 		}
 	}
 

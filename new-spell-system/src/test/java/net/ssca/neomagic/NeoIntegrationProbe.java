@@ -82,6 +82,7 @@ public final class NeoIntegrationProbe {
         check(rules.getAsJsonObject("forms").size()>=57,"Explicit form defaults included");
         for(Core core:Core.values())check(rules.getAsJsonObject("costs").has(core.name()),"Independent core cost: "+core);
         checks+=net.jackcooper.shapeShifterCurseAddon.client.hud.NeoHudChecks.run();
+        checks+=NeoHudNetworkChecks.run();
         System.out.println("Neomagic Fabric integration: "+checks+" checks passed (registries, real ItemStack/NBT/packets, persistence, isolation, research and resources). No live multiplayer acceptance.");
     }
     private static JsonObject json(String path) throws IOException {

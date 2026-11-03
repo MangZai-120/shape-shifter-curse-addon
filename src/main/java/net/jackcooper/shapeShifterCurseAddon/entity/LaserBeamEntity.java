@@ -26,6 +26,7 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.compat.FluorescentAxolotlPerks;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.EntityDisplayClock;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
@@ -78,7 +79,7 @@ public class LaserBeamEntity extends Entity {
 
 	// ===== 同步数据（供渲染器）=====
 	private static final TrackedData<Integer> PHASE = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);       // 0 CHARGE / 1 RELEASE / 2 FADE
-	private static final TrackedData<Integer> PHASE_TICK = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);  // 当前阶段已用 tick
+	private static final TrackedData<Long> PHASE_EPOCH = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.LONG);
 	private static final TrackedData<Integer> CHARGE_DURATION = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);
 	private static final TrackedData<Integer> OWNER_ID = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.INTEGER);
 	// 海晶荧光坠增强：单道视觉标记 + 发射方向（Vec3d 拆 3 个 float 同步给渲染器）
@@ -121,6 +122,7 @@ public class LaserBeamEntity extends Entity {
 		this.dataTracker.set(OWNER_ID, owner.getId());
 		this.dataTracker.set(CHARGE_DURATION, FluorescentAxolotlPerks.laserChargeTicks(
 				BAL.i("charge_ticks", CHARGE_TICKS), FluorescentAxolotlPerks.hasWaterMagicEfficiency(owner)));
+		syncPhaseClock();
 		this.noClip = true;
 	}
 
@@ -133,6 +135,7 @@ public class LaserBeamEntity extends Entity {
 		this.dataTracker.set(OWNER_ID, owner.getId());
 		this.dataTracker.set(ENHANCED, true);
 		this.dataTracker.set(PHASE, 1);
+		syncPhaseClock();
 		this.noClip = true;
 	}
 
@@ -183,7 +186,7 @@ public class LaserBeamEntity extends Entity {
 	@Override
 	protected void initDataTracker() {
 		this.dataTracker.startTracking(PHASE, 0);
-		this.dataTracker.startTracking(PHASE_TICK, 0);
+		this.dataTracker.startTracking(PHASE_EPOCH, EntityDisplayClock.UNSET);
 		this.dataTracker.startTracking(CHARGE_DURATION, CHARGE_TICKS);
 		this.dataTracker.startTracking(OWNER_ID, 0);
 		this.dataTracker.startTracking(ENHANCED, false);
@@ -204,7 +207,15 @@ public class LaserBeamEntity extends Entity {
 	}
 
 	public int getPhaseTick() {
-		return this.dataTracker.get(PHASE_TICK);
+		return this.getWorld().isClient
+				? EntityDisplayClock.elapsed(this.getWorld().getTime(), this.dataTracker.get(PHASE_EPOCH))
+				: phaseTicks;
+	}
+
+	/** The server counter remains authoritative; a stable phase only needs its start marker. */
+	private void syncPhaseClock() {
+		long epoch = this.getWorld().getTime() - phaseTicks;
+		if (this.dataTracker.get(PHASE_EPOCH) != epoch) this.dataTracker.set(PHASE_EPOCH, epoch);
 	}
 
 	/** Per-cast duration, synchronized to clients and retained through entity NBT. */
@@ -278,7 +289,7 @@ public class LaserBeamEntity extends Entity {
 			}
 			this.setPosition(ownerE.getX(), ownerE.getEyeY(), ownerE.getZ());   // 跟随玩家
 			phaseTicks++;
-			this.dataTracker.set(PHASE_TICK, phaseTicks);
+			syncPhaseClock();
 			if (this.dataTracker.get(FIRING)) {
 				enhFiringTicks--;
 				if (enhFiringTicks <= 0) this.dataTracker.set(FIRING, false);
@@ -315,7 +326,7 @@ public class LaserBeamEntity extends Entity {
 			case RELEASE -> tickRelease(sw, owner, aim, arrayPos);
 			case FADE -> tickFade(sw, owner, aim, arrayPos);
 		}
-		this.dataTracker.set(PHASE_TICK, phaseTicks);
+		syncPhaseClock();
 	}
 
 	// ==================== LASER_STATE 去重同步 ====================
@@ -517,6 +528,8 @@ public class LaserBeamEntity extends Entity {
 		int p = nbt.contains("Phase") ? nbt.getInt("Phase") : 0;
 		phase = Phase.values()[MathHelper.clamp(p, 0, Phase.values().length - 1)];
 		phaseTicks = nbt.contains("PhaseTicks") ? nbt.getInt("PhaseTicks") : 0;
+		this.dataTracker.set(PHASE, phase.ordinal());
+		syncPhaseClock();
 		this.dataTracker.set(CHARGE_DURATION, Math.max(1, nbt.contains("ChargeTicks")
 				? nbt.getInt("ChargeTicks") : BAL.i("charge_ticks", CHARGE_TICKS)));
 		if (nbt.contains("CooldownCastId")) cooldownCastId = nbt.getLong("CooldownCastId");

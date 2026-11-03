@@ -6,6 +6,8 @@
     "plugin": "net.jackcooper.shapeShifterCurseAddon.mixin.plugin.SscAddonMixinConfigPlugin",
     "refmap": "ssc-addon.refmap.json",
     "mixins": [
+        "SscCircleVisualMixin",
+        "entity.SscWebBulletTrailMixin",
         "FrozenNetworkMixin",
         "FrozenEntityMixin",
         "AnomalyEffectMixin",
@@ -198,7 +200,8 @@
         "client.SpellCastPoseMixin",
         "client.SpellCastGeoPoseMixin",
         "client.SpellCastFirstPersonMixin",
-        "client.SwingPhysicsMixin"
+        "client.SwingPhysicsMixin",
+        "client.NetworkCompatibilityMixin"
     ],
     "injectors": {
         "defaultRequire": 1

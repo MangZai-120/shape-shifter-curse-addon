@@ -1,0 +1,552 @@
+{
+    "type": "apoli:multiple",
+    "toggle_state": {
+        "type": "apoli:resource",
+        "min": 0,
+        "max": 1,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "internal_timer": {
+        "type": "apoli:resource",
+        "min": 0,
+        "max": 10,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "cast_guard": {
+        "type": "apoli:action_over_time",
+        "interval": 20,
+        "condition": {
+            "type": "apoli:resource",
+            "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_toggle_state",
+            "comparison": "==",
+            "compare_to": 0
+        },
+        "entity_action": {
+            "type": "my_addon:skill_cancelled",
+            "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
+        }
+    },
+    "key_activation": {
+        "type": "ssc_addon:familiar_skill",
+        "primary": true,
+        "key": {
+            "key": "key.ssc_addon.sp_primary"
+        },
+        "cooldown": 400,
+        "cooldown_start": "on_end",
+        "defer_release": true,
+        "repress_while_active": true,
+        "repress_delay": 20,
+        "entity_action": {
+            "type": "apoli:and",
+            "actions": [
+                {
+                    "type": "apoli:if_else",
+                    "condition": {
+                        "type": "apoli:resource",
+                        "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_toggle_state",
+                        "comparison": "==",
+                        "compare_to": 1
+                    },
+                    "if_action": {
+                        "type": "apoli:and",
+                        "actions": [
+                            {
+                                "type": "apoli:change_resource",
+                                "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_toggle_state",
+                                "operation": "set",
+                                "change": 0
+                            },
+                            {
+                                "type": "apoli:clear_effect",
+                                "effect": "ssc_addon:blue_fire_ring"
+                            },
+                            {
+                                "type": "my_addon:skill_completed",
+                                "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
+                            },
+                            {
+                                "type": "apoli:change_resource",
+                                "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_internal_timer",
+                                "operation": "set",
+                                "change": 0
+                            },
+                            {
+                                "type": "apoli:play_sound",
+                                "sound": "minecraft:block.fire.extinguish",
+                                "volume": 0.5,
+                                "pitch": 1.0
+                            }
+                        ]
+                    },
+                    "else_action": {
+                        "type": "apoli:if_else",
+                        "condition": {
+                            "type": "shape-shifter-curse:has_mana",
+                            "mana": 99.0
+                        },
+                        "if_action": {
+                            "type": "apoli:and",
+                            "actions": [
+                                {
+                                    "type": "apoli:change_resource",
+                                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_toggle_state",
+                                    "operation": "set",
+                                    "change": 1
+                                },
+                                {
+                                    "type": "my_addon:skill_begin",
+                                    "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
+                                },
+                                {
+                                    "type": "apoli:change_resource",
+                                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_internal_timer",
+                                    "operation": "set",
+                                    "change": 0
+                                },
+                                {
+                                    "type": "apoli:apply_effect",
+                                    "effect": {
+                                        "effect": "ssc_addon:blue_fire_ring",
+                                        "duration": 200000,
+                                        "amplifier": 0,
+                                        "is_ambient": true,
+                                        "show_particles": false,
+                                        "show_icon": true
+                                    }
+                                },
+                                {
+                                    "type": "my_addon:skill_released",
+                                    "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
+                                },
+                                {
+                                    "type": "apoli:play_sound",
+                                    "sound": "minecraft:item.firecharge.use",
+                                    "volume": 0.5,
+                                    "pitch": 1.0
+                                },
+                                {
+                                    "type": "apoli:change_resource",
+                                    "resource": "my_addon:form_familiar_fox_sp_mana_regen_regen_pause_timer",
+                                    "operation": "set",
+                                    "change": 120
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        "condition": {
+            "type": "apoli:and",
+            "conditions": [
+                {
+                    "type": "ssc_addon:has_blue_fire_amulet",
+                    "inverted": true
+                },
+                {
+                    "type": "ssc_addon:not_empowered",
+                    "primary": true
+                },
+                {
+                    "type": "apoli:or",
+                    "conditions": [
+                        {
+                            "type": "apoli:resource",
+                            "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_toggle_state",
+                            "comparison": "==",
+                            "compare_to": 1
+                        },
+                        {
+                            "type": "shape-shifter-curse:has_mana",
+                            "mana": 99.0
+                        }
+                    ]
+                }
+            ]
+        },
+        "name": "Blue Fire Ring (Normal)",
+        "description": "Create a ring of blue fire."
+    },
+    "state_sync_check": {
+        "type": "apoli:action_over_time",
+        "interval": 20,
+        "condition": {
+            "type": "apoli:and",
+            "conditions": [
+                {
+                    "type": "apoli:resource",
+                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_toggle_state",
+                    "comparison": "==",
+                    "compare_to": 1
+                },
+                {
+                    "type": "apoli:status_effect",
+                    "effect": "ssc_addon:blue_fire_ring",
+                    "inverted": true
+                }
+            ]
+        },
+        "entity_action": {
+            "type": "apoli:and",
+            "actions": [
+                {
+                    "type": "apoli:change_resource",
+                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_toggle_state",
+                    "operation": "set",
+                    "change": 0
+                },
+                {
+                    "type": "my_addon:skill_completed",
+                    "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
+                }
+            ]
+        }
+    },
+    "interrupt_on_purified": {
+        "type": "apoli:action_over_time",
+        "interval": 1,
+        "entity_action": {
+            "type": "apoli:and",
+            "actions": [
+                {
+                    "type": "apoli:change_resource",
+                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_toggle_state",
+                    "operation": "set",
+                    "change": 0
+                },
+                {
+                    "type": "apoli:clear_effect",
+                    "effect": "ssc_addon:blue_fire_ring"
+                },
+                {
+                    "type": "my_addon:skill_completed",
+                    "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
+                },
+                {
+                    "type": "apoli:play_sound",
+                    "sound": "minecraft:block.fire.extinguish",
+                    "volume": 0.5,
+                    "pitch": 1.0
+                }
+            ]
+        },
+        "condition": {
+            "type": "apoli:and",
+            "conditions": [
+                {
+                    "type": "apoli:resource",
+                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_toggle_state",
+                    "comparison": "==",
+                    "compare_to": 1
+                },
+                {
+                    "type": "apoli:status_effect",
+                    "effect": "ssc_addon:purified"
+                }
+            ]
+        }
+    },
+    "validate_amulet_state": {
+        "type": "apoli:action_over_time",
+        "interval": 20,
+        "condition": {
+            "type": "apoli:and",
+            "conditions": [
+                {
+                    "type": "apoli:resource",
+                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_toggle_state",
+                    "comparison": "==",
+                    "compare_to": 1
+                },
+                {
+                    "type": "ssc_addon:has_blue_fire_amulet"
+                }
+            ]
+        },
+        "entity_action": {
+            "type": "apoli:and",
+            "actions": [
+                {
+                    "type": "apoli:change_resource",
+                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_toggle_state",
+                    "operation": "set",
+                    "change": 0
+                },
+                {
+                    "type": "apoli:clear_effect",
+                    "effect": "ssc_addon:blue_fire_ring"
+                },
+                {
+                    "type": "my_addon:skill_completed",
+                    "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
+                },
+                {
+                    "type": "apoli:play_sound",
+                    "sound": "minecraft:block.fire.extinguish",
+                    "volume": 0.5,
+                    "pitch": 1.0
+                }
+            ]
+        }
+    },
+    "effects_loop": {
+        "type": "apoli:action_over_time",
+        "interval": 4,
+        "condition": {
+            "type": "apoli:and",
+            "conditions": [
+                {
+                    "type": "apoli:resource",
+                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_toggle_state",
+                    "comparison": "==",
+                    "compare_to": 1
+                },
+                {
+                    "type": "ssc_addon:has_blue_fire_amulet",
+                    "inverted": true
+                }
+            ]
+        },
+        "entity_action": {
+            "type": "apoli:and",
+            "actions": [
+                {
+                    "type": "apoli:change_resource",
+                    "resource": "my_addon:form_familiar_fox_sp_mana_regen_regen_pause_timer",
+                    "operation": "set",
+                    "change": 124
+                },
+                {
+                    "type": "apoli:if_else",
+                    "condition": {
+                        "type": "shape-shifter-curse:has_mana",
+                        "mana": 16.0
+                    },
+                    "if_action": {
+                        "type": "shape-shifter-curse:consume_mana",
+                        "mana": 1.7
+                    },
+                    "else_action": {
+                        "type": "apoli:and",
+                        "actions": [
+                            {
+                                "type": "apoli:change_resource",
+                                "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_toggle_state",
+                                "operation": "set",
+                                "change": 0
+                            },
+                            {
+                                "type": "apoli:clear_effect",
+                                "effect": "ssc_addon:blue_fire_ring"
+                            },
+                            {
+                                "type": "my_addon:skill_completed",
+                                "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation"
+                            },
+                            {
+                                "type": "apoli:play_sound",
+                                "sound": "minecraft:block.fire.extinguish",
+                                "volume": 0.5,
+                                "pitch": 1.0
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "apoli:change_resource",
+                    "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_internal_timer",
+                    "operation": "add",
+                    "change": 1
+                },
+                {
+                    "type": "apoli:if_else",
+                    "condition": {
+                        "type": "apoli:resource",
+                        "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_internal_timer",
+                        "comparison": ">=",
+                        "compare_to": 4
+                    },
+                    "if_action": {
+                        "type": "apoli:and",
+                        "actions": [
+                            {
+                                "type": "apoli:change_resource",
+                                "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_internal_timer",
+                                "operation": "set",
+                                "change": 0
+                            },
+                            {
+                                "type": "apoli:area_of_effect",
+                                "radius": 6.0,
+                                "bientity_action": {
+                                    "type": "apoli:and",
+                                    "actions": [
+                                        {
+                                            "type": "my_addon:damage_target_from_actor",
+                                            "amount": 4.0,
+                                            "damage_type": "minecraft:generic",
+                                            "grants_empower": true,
+                                            "empower_burn_ticks": 60,
+                                            "non_player_multiplier": 2.0,
+                                            "bypass_iframes": true
+                                        },
+                                        {
+                                            "type": "apoli:target_action",
+                                            "action": {
+                                                "type": "apoli:apply_effect",
+                                                "effect": {
+                                                    "effect": "ssc_addon:fox_fire_burn",
+                                                    "duration": 60,
+                                                    "amplifier": 0,
+                                                    "is_ambient": false,
+                                                    "show_particles": true,
+                                                    "show_icon": true
+                                                }
+                                            }
+                                        }
+                                    ]
+                                },
+                                "bientity_condition": {
+                                    "type": "apoli:and",
+                                    "conditions": [
+                                        {
+                                            "type": "apoli:target_condition",
+                                            "condition": {
+                                                "type": "apoli:living"
+                                            }
+                                        },
+                                        {
+                                            "type": "my_addon:not_actor_whitelisted"
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "particle_loop": {
+        "type": "apoli:action_over_time",
+        "interval": 4,
+        "condition": {
+            "type": "apoli:or",
+            "conditions": [
+                {
+                    "type": "apoli:and",
+                    "conditions": [
+                        {
+                            "type": "apoli:resource",
+                            "resource": "my_addon:form_familiar_fox_sp_blue_fire_ring_toggle_state",
+                            "comparison": "==",
+                            "compare_to": 1
+                        },
+                        {
+                            "type": "ssc_addon:has_blue_fire_amulet",
+                            "inverted": true
+                        }
+                    ]
+                },
+                {
+                    "type": "apoli:and",
+                    "conditions": [
+                        {
+                            "type": "apoli:resource",
+                            "resource": "my_addon:form_empower_state_ring_ticks",
+                            "comparison": ">",
+                            "compare_to": 0
+                        },
+                        {
+                            "type": "ssc_addon:has_blue_fire_amulet",
+                            "inverted": true
+                        }
+                    ]
+                }
+            ]
+        },
+        "entity_action": {
+            "type": "apoli:and",
+            "actions": [
+                {
+                    "type": "my_addon:self_decoration",
+                    "entity_action": {
+                        "type": "apoli:execute_command",
+                        "command": "particle minecraft:soul_fire_flame ~ ~0.5 ~ 3.0 0.1 3.0 0.02 10 force @a"
+                    }
+                },
+                {
+                    "type": "my_addon:self_decoration",
+                    "entity_action": {
+                        "type": "shape-shifter-curse:spawn_particles_in_circle",
+                        "particle": "minecraft:soul_fire_flame",
+                        "count": 1,
+                        "speed": 0.02,
+                        "force": true,
+                        "spread": {
+                            "x": 0.1,
+                            "y": 0.1,
+                            "z": 0.1
+                        },
+                        "radius": 6.0,
+                        "sample_count": 64
+                    }
+                }
+            ]
+        }
+    },
+    "particle_loop_amulet": {
+        "type": "apoli:action_over_time",
+        "interval": 4,
+        "condition": {
+            "type": "apoli:and",
+            "conditions": [
+                {
+                    "type": "apoli:resource",
+                    "resource": "my_addon:form_empower_state_ring_ticks",
+                    "comparison": ">",
+                    "compare_to": 0
+                },
+                {
+                    "type": "ssc_addon:has_blue_fire_amulet"
+                }
+            ]
+        },
+        "entity_action": {
+            "type": "apoli:and",
+            "actions": [
+                {
+                    "type": "my_addon:self_decoration",
+                    "entity_action": {
+                        "type": "apoli:execute_command",
+                        "command": "particle minecraft:soul_fire_flame ~ ~0.5 ~ 3.0 0.1 3.0 0.02 10 force @a"
+                    }
+                },
+                {
+                    "type": "my_addon:self_decoration",
+                    "entity_action": {
+                        "type": "shape-shifter-curse:spawn_particles_in_circle",
+                        "particle": "minecraft:soul_fire_flame",
+                        "count": 1,
+                        "speed": 0.02,
+                        "force": true,
+                        "spread": {
+                            "x": 0.1,
+                            "y": 0.1,
+                            "z": 0.1
+                        },
+                        "radius": 3.6,
+                        "sample_count": 64
+                    }
+                }
+            ]
+        }
+    }
+}

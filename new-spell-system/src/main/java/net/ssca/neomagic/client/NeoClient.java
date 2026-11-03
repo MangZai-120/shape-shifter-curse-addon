@@ -34,6 +34,9 @@ public final class NeoClient implements ClientModInitializer {
         return new Quote(q.normal()*m,q.actual()*m,q.floor(),q.plan());
     }
     public static NbtCompound hud=new NbtCompound();
+    private static final NeoHudPacket.Receiver HUD_RECEIVER=new NeoHudPacket.Receiver();
+    private static Object hudWorld,hudPlayer;
+    private static long lastHudResync=Long.MIN_VALUE;
     private static int failureFlash,resetFlash;
     public static UUID token;
     public static boolean table;
@@ -71,22 +74,55 @@ public final class NeoClient implements ClientModInitializer {
             return novaQuickUntil(hud,form==null?null:form.getFormID(),player.getWorld().getTime());
         };
         ClientPlayNetworking.registerGlobalReceiver(NeoNetwork.HUD,(client,handler,buf,sender)->{var n=buf.readNbt();client.execute(()->{
-            if(n!=null&&hud.contains("Form")){
-                boolean newResult=!n.getString("ResultId").equals(hud.getString("ResultId"))||!n.getString("Result").equals(hud.getString("Result"));
-                if(newResult&&n.getString("Result").equals("failed"))failureFlash=20;
-                if(!n.getString("Form").equals(hud.getString("Form"))&&n.getDouble("C")==0)resetFlash=20;
-            }
-            hud=n==null?new NbtCompound():n;
-            if(n!=null){data.burden=n.getDouble("C");data.recovery=n.getInt("Recovery");data.spellbookMasteryExpTen=n.getInt("MasteryExpTen");net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(data.spellbookMasteryExpTen);data.form=n.getString("Form");profile=NeoState.JSON.fromJson(n.getString("Profile"),Profile.class);}
+            if(client.getNetworkHandler()!=handler)return;
+            ensureHudWorld(client);acceptHud(n);
         });});
-        ClientPlayConnectionEvents.DISCONNECT.register((handler,client)->{net.jackcooper.shapeShifterCurseAddon.client.hud.CollapsePenaltyClient.clear();hud=new NbtCompound();bookEquipped=false;failureFlash=resetFlash=0;token=null;data=new NeoState.PlayerData();net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(0);COSTS.clear();TUNINGS.clear();BOOK_EFFECTS.clear();});
+        ClientPlayNetworking.registerGlobalReceiver(NeoNetwork.HUD_V2,(client,handler,buf,sender)->{
+            var update=NeoHudPacket.read(buf);
+            client.execute(()->{
+                if(client.getNetworkHandler()!=handler)return;
+                ensureHudWorld(client);
+                if(update.full()&&client.world!=null&&client.player!=null
+                        &&(!client.world.getRegistryKey().getValue().toString().equals(update.values().getString("Dimension"))
+                        ||client.player.getId()!=update.values().getInt("PlayerId")))return;
+                var result=HUD_RECEIVER.accept(update);
+                if(result==NeoHudPacket.Receiver.Result.APPLIED)acceptHud(HUD_RECEIVER.state());
+                else if(result==NeoHudPacket.Receiver.Result.MISSING_BASE){
+                    long now=System.nanoTime();
+                    if((lastHudResync==Long.MIN_VALUE||now-lastHudResync>=1_000_000_000L)
+                            &&ClientPlayNetworking.canSend(NeoNetwork.HUD_RESYNC_V2)){
+                        lastHudResync=now;ClientPlayNetworking.send(NeoNetwork.HUD_RESYNC_V2,net.fabricmc.fabric.api.networking.v1.PacketByteBufs.empty());
+                    }
+                }
+            });
+        });
+        ClientPlayConnectionEvents.DISCONNECT.register((handler,client)->{net.jackcooper.shapeShifterCurseAddon.client.hud.CollapsePenaltyClient.clear();HUD_RECEIVER.clear();hudWorld=hudPlayer=null;lastHudResync=Long.MIN_VALUE;hud=new NbtCompound();bookEquipped=false;failureFlash=resetFlash=0;token=null;data=new NeoState.PlayerData();net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(0);COSTS.clear();TUNINGS.clear();BOOK_EFFECTS.clear();});
         NeoStabilityBar.registerResources();
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client->{
+            ensureHudWorld(client);
             net.jackcooper.shapeShifterCurseAddon.client.hud.CollapsePenaltyClient.tick(client);
             hud.putBoolean("RecentFailure",failureFlash>0);hud.putBoolean("RecentReset",resetFlash>0);
             if(failureFlash>0)failureFlash--;if(resetFlash>0)resetFlash--;
         });
         HudRenderCallback.EVENT.register(NeoClient::renderHud);
+    }
+    private static void ensureHudWorld(MinecraftClient client){
+        if(hudWorld==client.world&&hudPlayer==client.player)return;
+        hudWorld=client.world;hudPlayer=client.player;HUD_RECEIVER.clear();hud=new NbtCompound();
+        failureFlash=resetFlash=0;lastHudResync=Long.MIN_VALUE;
+    }
+    private static void acceptHud(NbtCompound n){
+        if(n!=null&&hud.contains("Form")){
+            boolean newResult=!n.getString("ResultId").equals(hud.getString("ResultId"))||!n.getString("Result").equals(hud.getString("Result"));
+            if(newResult&&n.getString("Result").equals("failed"))failureFlash=20;
+            if(!n.getString("Form").equals(hud.getString("Form"))&&n.getDouble("C")==0)resetFlash=20;
+        }
+        if(n!=null){
+            data.burden=n.getDouble("C");data.recovery=n.getInt("Recovery");data.spellbookMasteryExpTen=n.getInt("MasteryExpTen");
+            net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(data.spellbookMasteryExpTen);data.form=n.getString("Form");
+            if(!Objects.equals(hud.get("Profile"),n.get("Profile")))profile=NeoState.JSON.fromJson(n.getString("Profile"),Profile.class);
+        }
+        hud=n==null?new NbtCompound():n;
     }
     public static void acceptSnapshot(MinecraftClient client,NbtCompound n) {
                 try {

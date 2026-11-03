@@ -44,5 +44,6 @@ public final class NeoMagic implements ModInitializer {
         net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.register();
         net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyNetwork.init();
         net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyManager.init();
+        net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals.init();
     }
 }

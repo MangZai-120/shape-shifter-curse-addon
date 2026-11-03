@@ -454,6 +454,7 @@ public class SscAddon implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		net.jackcooper.shapeShifterCurseAddon.network.NetworkCompatibility.init();
 		registerConfig();
 		registerStatusEffects();
 		registerItems();

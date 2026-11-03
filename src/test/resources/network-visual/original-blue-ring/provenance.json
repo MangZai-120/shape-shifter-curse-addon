@@ -1,0 +1,13 @@
+{
+  "source_commit": "cd8aa83a6bbf08e003b6c6befa28179d3ed85d50",
+  "files": {
+    "base.json": {
+      "source_path": "src/main/resources/data/my_addon/powers/form_familiar_fox_sp_blue_fire_ring.json",
+      "sha256": "2761af58e1f12294b44f26417a3806adf3638f4de65dedeab517f96a04651cae"
+    },
+    "amulet.json": {
+      "source_path": "src/main/resources/data/my_addon/powers/form_familiar_fox_sp_blue_fire_ring_amulet.json",
+      "sha256": "2090e1fa76b2ff6e885aea11185ab88f0c0d5d85f94d65584aa4c1a3449a8f4c"
+    }
+  }
+}

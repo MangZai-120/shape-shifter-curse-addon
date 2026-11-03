@@ -27,6 +27,9 @@ import net.onixary.shapeShifterCurseFabric.additional_power.BatBlockAttachPower;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
 import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager;
+import net.jackcooper.shapeShifterCurseAddon.network.DecorationParticleScope;
+import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals;
+import net.jackcooper.shapeShifterCurseAddon.network.visual.recipes.MistFormRecipes;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -36,6 +39,8 @@ import virtuoel.pehkui.api.ScaleData;
 import virtuoel.pehkui.api.ScaleTypes;
 
 import java.util.List;
+import java.util.UUID;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 幽雾化形 - 吸血蝙蝠形态核心主动技能。
@@ -73,8 +78,12 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 	private long mistStartTime = 0L;  // 本次化雾起始时间
 	private boolean charging = false;      // 凝聚爆破蓄力中
 	private long chargeStartTime = 0L;     // 蓄力起始时间
+	private UUID visualId;
+	private long ambientVisualEpoch = Long.MIN_VALUE;
+	private int chargeVisualFirstAge = -1;
+	private double[] ambientVisualParameters, chargeVisualParameters;
 	// 血雾红色尘埃粒子（体现“血”雾）
-	private static final DustParticleEffect BLOOD_DUST = new DustParticleEffect(new org.joml.Vector3f(0.78f, 0.06f, 0.06f), 1.2f);
+	private static final DustParticleEffect BLOOD_DUST = MistFormRecipes.BLOOD_DUST;
 	// 雾血资源相关（0~100）
 	private static final int BLOOD_ENTER_COST = 0;     // 进入雾化起手消耗（无消耗）
 	@SuppressWarnings("unused") // 预留可调参数：后续若要恢复雾化期间的每秒持续消耗，把值改回正数并恢复 tick() 内对应分支
@@ -206,6 +215,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 		entity.calculateDimensions();
 		wasMist = true;
 		mistStartTime = entity.getWorld().getTime();
+		ambientVisualEpoch = Long.MIN_VALUE;
 		lastBloodDrainTime = entity.getWorld().getTime();
 		// 进入雾化起手扣血
 		setBlood(getBlood() - BLOOD_ENTER_COST);
@@ -230,6 +240,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 
 	/** 退出雾化状态：清除雾化与隐身效果，可选播放收束粒子与音效 */
 	private void exitMist(boolean withEffect) {
+		stopMistVisuals();
 		if (entity.hasStatusEffect(SscAddon.MIST_FORM)) {
 			entity.removeStatusEffect(SscAddon.MIST_FORM);
 		}
@@ -302,6 +313,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 	private void startCharge(long now) {
 		charging = true;
 		chargeStartTime = now;
+		chargeVisualFirstAge = -1;
 		setBlood(getBlood() - BLOOD_BURST_COST);
 		// 蓄力标记：客户端据此将化雾飞行减速 50%
 		entity.addStatusEffect(new StatusEffectInstance(SscAddon.MIST_CHARGING, chargeDuration() + 5, 0, false, false, false));
@@ -317,26 +329,66 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 		}
 	}
 
-	/** 蓄力期间的向内聚集粒子：外圈红色血雾以 count=0 定向粒子朝中心收束，半径随蓄力缩小。
-	 *  网络优化：隔 tick 发送（原每 tick 10 个单粒包 ≈200包/秒；血尘寿命长靠存活衔接，视觉不变包率 -50%）。 */
+	/** 蓄力仍按偶数 elapsed 生成十颗定向血尘；只迁移采样位置，释放和伤害继续由服务端结算。 */
 	private void spawnChargeConvergence(long elapsed) {
-		if (elapsed % 2 != 0) return;
 		if (!(entity.getWorld() instanceof ServerWorld sw)) return;
-		double px = entity.getX();
-		double py = entity.getY() + entity.getHeight() * 0.5;
-		double pz = entity.getZ();
-		double progress = Math.min(1.0, elapsed / (double) chargeDuration());
-		double radius = 2.6 * (1.0 - progress) + 0.4; // 半径随蓄力缩小，营造向内聚集
-		int n = 10;
-		for (int i = 0; i < n; i++) {
-			double ang = 2 * Math.PI * i / n + elapsed * 0.35;
-			double ox = Math.cos(ang) * radius;
-			double oz = Math.sin(ang) * radius;
-			double oy = (entity.getRandom().nextDouble() - 0.5) * entity.getHeight();
-			// count=0 定向粒子：初速度 = (offset)*speed，方向指向中心 → 向内聚集
-			ParticleUtils.spawnParticles(sw, BLOOD_DUST, px + ox, py + oy, pz + oz,
-					0, -ox, -oy, -oz, 0.3);
+		int duration = chargeDuration();
+		double height = entity.getHeight();
+		UUID id = mistVisualId();
+		ParametricVisuals.stop(id, ParametricVisuals.Kind.MIST_FORM_AMBIENT);
+		// 完成帧随后会立即移除效果/可能移除实体。保留该帧原有一次性服务端粒子，
+		// 持续 lease 到 duration 前一帧结束，避免清理先于采样而吞掉最后十颗血尘。
+		if (elapsed >= duration || duration < 1 || duration > 1_000_000 || !Double.isFinite(height) || height < 0 || height > 65532) {
+			ParametricVisuals.stop(id, ParametricVisuals.Kind.MIST_FORM_CHARGE);
+			var origin = entity.getPos();
+			MistFormRecipes.charge(elapsed,duration,height,0,entity.getRandom()::nextDouble,
+					(particle,x,y,z,count,dx,dy,dz,speed,decoration,projectile) ->
+							ParticleUtils.spawnParticles(sw,particle,origin.x+x,origin.y+y,origin.z+z,count,dx,dy,dz,speed));
+			return;
 		}
+		if (chargeVisualFirstAge < 0) chargeVisualFirstAge = (int)(elapsed + (elapsed & 1));
+		UUID owner = scopedVisualOwner(); int flags = scopeFlags(owner);
+		if (chargeVisualParameters == null || chargeVisualParameters[0] != duration
+				|| chargeVisualParameters[1] != height || chargeVisualParameters[2] != flags
+				|| chargeVisualParameters[3] != chargeVisualFirstAge)
+			chargeVisualParameters = new double[]{duration,height,flags,chargeVisualFirstAge};
+		ParametricVisuals.touch(entity,id,ParametricVisuals.Kind.MIST_FORM_CHARGE,owner,entity.getPos(),true,
+				chargeStartTime,duration,Math.hypot(3,height),chargeVisualParameters);
+	}
+
+	private UUID mistVisualId() {
+		if (visualId == null) visualId = UUID.nameUUIDFromBytes((entity.getUuid()+"/"+powerIdentifier()).getBytes(StandardCharsets.UTF_8));
+		return visualId;
+	}
+	private UUID scopedVisualOwner() {
+		var owner = DecorationParticleScope.isProtected() ? null : DecorationParticleScope.owner();
+		return owner == null ? null : owner.getUuid();
+	}
+	private static int scopeFlags(UUID owner) {
+		return owner == null ? 0 : 1 | (DecorationParticleScope.isProjectileScope() ? 2 : 0);
+	}
+	private void stopMistVisuals() {
+		if (entity != null && !entity.getWorld().isClient && visualId != null) {
+			ParametricVisuals.stop(visualId,ParametricVisuals.Kind.MIST_FORM_AMBIENT);
+			ParametricVisuals.stop(visualId,ParametricVisuals.Kind.MIST_FORM_CHARGE);
+		}
+		ambientVisualEpoch = Long.MIN_VALUE;
+	}
+	private void touchMistAmbient(ServerWorld world) {
+		double height = entity.getHeight();
+		if (!Double.isFinite(height) || height < 0 || height > 65532) {
+			var origin = entity.getPos();
+			MistFormRecipes.ambient(height,0,(particle,x,y,z,count,dx,dy,dz,speed,decoration,projectile) ->
+					ParticleUtils.spawnParticles(world,particle,origin.x+x,origin.y+y,origin.z+z,count,dx,dy,dz,speed));
+			return;
+		}
+		UUID id = mistVisualId(), owner = scopedVisualOwner(); int flags = scopeFlags(owner);
+		ParametricVisuals.stop(id,ParametricVisuals.Kind.MIST_FORM_CHARGE);
+		if (ambientVisualEpoch == Long.MIN_VALUE) ambientVisualEpoch = world.getTime();
+		if (ambientVisualParameters == null || ambientVisualParameters[0] != height || ambientVisualParameters[1] != flags)
+			ambientVisualParameters = new double[]{height,flags};
+		ParametricVisuals.touch(entity,id,ParametricVisuals.Kind.MIST_FORM_AMBIENT,owner,entity.getPos(),true,
+				ambientVisualEpoch,0,height*.5,ambientVisualParameters);
 	}
 
 	@Override
@@ -347,6 +399,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 
 		// 被 sp悦灵净化：立即中断雾化（含蓄力）并进入冷却
 		if (entity.hasStatusEffect(SscAddon.PURIFIED)) {
+			stopMistVisuals();
 			if (isMist()) {
 				exitMist(true);
 				applyCooldown();
@@ -384,6 +437,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 
 		// 自然结束检测：上一tick仍在雾化、本tick效果到期消失 -> 进入冷却
 		if (wasMist && !mist) {
+			stopMistVisuals();
 			if (entity.hasStatusEffect(StatusEffects.INVISIBILITY)) {
 				entity.removeStatusEffect(StatusEffects.INVISIBILITY);
 			}
@@ -428,18 +482,9 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 					}
 				}
 			}
-			// 持续雾化：每 tick 生成浓雾团包裹全身，明显可见
+			// 保留每 tick 三批、共十一颗雾粒子，支持的新客户端在本地采样。
 			ServerWorld serverWorld = (ServerWorld) entity.getWorld();
-			double px = entity.getX();
-			double py = entity.getY() + entity.getHeight() * 0.5;
-			double pz = entity.getZ();
-			ParticleUtils.spawnParticles(serverWorld, ParticleTypes.CLOUD,
-					px, py, pz, 6, 0.4, 0.6, 0.4, 0.01);
-			ParticleUtils.spawnParticles(serverWorld, ParticleTypes.CAMPFIRE_COSY_SMOKE,
-					px, py - entity.getHeight() * 0.05, pz, 3, 0.35, 0.5, 0.35, 0.01);
-			// 红色血雾点缀：少量红色尘埃掺杂在雾中，体现“血”雾
-			ParticleUtils.spawnParticles(serverWorld, BLOOD_DUST,
-					px, py, pz, 2, 0.4, 0.6, 0.4, 0.0);
+			touchMistAmbient(serverWorld);
 			wasMist = true;
 		}
 	}
@@ -483,6 +528,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 	}
 	@Override
 	public void onLost() {
+        stopMistVisuals();
         interruptControl();
 		super.onLost();
 		if (entity == null || entity.getWorld().isClient) return;

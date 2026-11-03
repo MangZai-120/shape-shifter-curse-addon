@@ -1,4 +1,6 @@
 {
+  "message.ssc_addon.network.update_client": "Incompatible SSCA client. Update the client to %s or a compatible newer build (entity protocol %s).",
+  "message.ssc_addon.network.update_server": "Incompatible SSCA server. Update the server to %s or a compatible newer build (entity protocol %s).",
   "power.my_addon.form_spider_moon_weaver_spell_weave.name": "Spellweaving",
   "power.my_addon.form_spider_moon_weaver_spell_weave.description": "Projectile spells spend 8 web energy per cast: ground impacts leave a roughly 3x3 membrane patch lasting 60–90s; direct effective hits leave no web and have a 15% chance to fully cocoon the target (15s for mobs, 5s for players). Each cast rolls once per target; an unrefreshed curse mark still rolls. Piercing direct hits prevent later web placement. Protected targets are exempt. Insufficient energy casts normally without the bonus or fee. Existing lunar, venom, cocoon, Perk and accessory bonuses remain.",
   "power.my_addon.form_spider_salticidae_spell_curse.name": "Leaping Hex",

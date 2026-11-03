@@ -25,6 +25,8 @@ public final class DomainManager {
 	public static final Identifier STATE = new Identifier("ssc_addon", "domain_state");
 	public static final Identifier SOUND = new Identifier("ssc_addon", "domain_sound");
 	private static final Map<UUID, Field> FIELDS = new LinkedHashMap<>();
+    private static final net.jackcooper.shapeShifterCurseAddon.network.SnapshotAudience AUDIENCE =
+            new net.jackcooper.shapeShifterCurseAddon.network.SnapshotAudience();
     private record Pressure(net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext pulse, int intervalTicks) {}
     private static final Map<UUID, Pressure> PRESSURES = new LinkedHashMap<>();
 	private static final ThreadLocal<Entity> EFFECT_SOURCE = new ThreadLocal<>();
@@ -55,8 +57,11 @@ public final class DomainManager {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(DomainManager::tick);
-		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> remove(handler.player));
-		ServerLifecycleEvents.SERVER_STOPPED.register(server -> { FIELDS.clear(); PRESSURES.clear(); });
+		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> {
+            try { remove(handler.player); }
+            finally { AUDIENCE.disconnect(handler.player.getUuid(), handler); }
+        });
+		ServerLifecycleEvents.SERVER_STOPPED.register(server -> { FIELDS.clear(); PRESSURES.clear(); CHARGE_ANCHORS.clear(); AUDIENCE.clear(); });
 		// 方块跨界隔离（2026-09-21 需求）：领域内无法干涉外界方块（破坏/放置/右键/攻击），
 		// 外界同样无法干涉领域内方块。玩家眼睛坐标 ↔ 目标方块中心分属壳内外即拒绝。
 		net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
@@ -266,6 +271,7 @@ public final class DomainManager {
 			if (!ServerPlayNetworking.canSend(viewer, STATE)) continue;
 			var visible = FIELDS.values().stream().filter(field -> field.world == viewer.getWorld()
 					&& viewer.getPos().squaredDistanceTo(field.center) < 256 * 256).toList();
+            if (!AUDIENCE.shouldSend(viewer.getUuid(), viewer.networkHandler, !visible.isEmpty())) continue;
 			var buf = PacketByteBufs.create();
 			buf.writeIdentifier(viewer.getWorld().getRegistryKey().getValue());
 			buf.writeVarInt(visible.size());
@@ -284,6 +290,7 @@ public final class DomainManager {
 				buf.writeDouble(field.outerRadius);
 			}
 			ServerPlayNetworking.send(viewer, STATE, buf);
+            AUDIENCE.sent(viewer.getUuid(), viewer.networkHandler, !visible.isEmpty());
 		}
 	}
 	public static boolean blocksPath(World world, Vec3d from, Vec3d to, double padding) {

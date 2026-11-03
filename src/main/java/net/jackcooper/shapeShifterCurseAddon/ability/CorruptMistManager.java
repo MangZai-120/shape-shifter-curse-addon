@@ -1,12 +1,11 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 
@@ -29,6 +28,10 @@ public final class CorruptMistManager {
 		final UUID casterId;
 		final ServerPlayerEntity caster;
 		final double radius;
+		final UUID visualId = UUID.randomUUID();
+		final int durationTicks;
+		final double visualExtent;
+		final double[] visualParams;
 		int ticksRemaining;
 		final int intervalTicks;
 		int ticksToNextPulse;
@@ -47,6 +50,9 @@ public final class CorruptMistManager {
             this.anomaly=net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.current();
 			this.caster = caster;
 			this.radius = radius;
+			this.durationTicks = durationTicks;
+			this.visualExtent = Math.hypot(radius, 1);
+			this.visualParams = new double[]{radius, durationTicks};
 			this.ticksRemaining = durationTicks;
 			this.intervalTicks = intervalTicks;
 			this.ticksToNextPulse = intervalTicks;
@@ -73,35 +79,20 @@ public final class CorruptMistManager {
 				Mist mist = it.next();
 				// 施法者离线/被移除 → 雾消散（DISCONNECT 已兜底，这里防意外引用）
 				if (mist.caster.isRemoved() || !mist.caster.isAlive()) {
+					ParametricVisuals.stop(mist.visualId, ParametricVisuals.Kind.CORRUPT_MIST);
 					it.remove();
 					continue;
 				}
 				if (--mist.ticksRemaining <= 0) {
+					ParametricVisuals.stop(mist.visualId, ParametricVisuals.Kind.CORRUPT_MIST);
 					it.remove();
 					continue;
 				}
-				// 雾粒子（每 5 tick 一轮，滞留药水风格：圆盘内均匀密度覆盖，范围轮廓大致可见）
-				if (mist.ticksRemaining % 5 == 0 && mist.caster.getWorld() instanceof ServerWorld serverWorld) {
-					double r = mist.radius;
-					// 按面积撒点：密度恒定，半径越大数量越多 → 边界轮廓可辨（仿滞留药水云）
-					int count = (int) Math.max(10, r * r * 4);
-					for (int i = 0; i < count; i++) {
-						// 均匀圆盘采样：随机角度 + sqrt 均匀半径（避免中心聚堆）
-						double angle = serverWorld.getRandom().nextDouble() * 2 * Math.PI;
-						double dist = Math.sqrt(serverWorld.getRandom().nextDouble()) * r;
-						double px = mist.caster.getX() + Math.cos(angle) * dist;
-						double pz = mist.caster.getZ() + Math.sin(angle) * dist;
-						double py = mist.caster.getY() + 0.1 + serverWorld.getRandom().nextDouble() * 0.9;
-							// 紫（主）+ 绿（辅，约 1/4）混搭（owner 打标：本人第一人称避让，他人原样）
-							if (serverWorld.getRandom().nextInt(4) == 0) {
-								net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, mist.caster, ParticleTypes.HAPPY_VILLAGER,
-										px, py, pz, 1, 0.15, 0.1, 0.15, 0.0);
-							} else {
-								net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, mist.caster, ParticleTypes.DRAGON_BREATH,
-									px, py, pz, 1, 0.15, 0.1, 0.15, 0.002);
-						}
-					}
-				}
+				// Send the disk recipe once; every viewer samples the same event/tick on its client.
+				ParametricVisuals.touch(mist.caster, mist.visualId, ParametricVisuals.Kind.CORRUPT_MIST,
+						mist.casterId, mist.caster.getPos(), true,
+						mist.caster.getWorld().getTime() - (mist.durationTicks - mist.ticksRemaining),
+						mist.durationTicks, mist.visualExtent, mist.visualParams);
 				// 每跳结算
 				if (--mist.ticksToNextPulse <= 0) {
 					mist.ticksToNextPulse = mist.intervalTicks;
@@ -110,14 +101,22 @@ public final class CorruptMistManager {
 			}
 		});
 		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) ->
-				MISTS.removeIf(m -> m.casterId.equals(handler.player.getUuid())));
+				removeMist(handler.player.getUuid()));
 	}
 
 	/** 施放/刷新一团雾（同施法者旧雾被覆盖）。 */
 	public static void start(ServerPlayerEntity caster, double radius, int durationTicks,
 	                         int intervalTicks, int level, UUID castId) {
-		MISTS.removeIf(m -> m.casterId.equals(caster.getUuid()));
+		removeMist(caster.getUuid());
 		MISTS.add(new Mist(caster, radius, durationTicks, intervalTicks, level, castId));
+	}
+
+	private static void removeMist(UUID casterId) {
+		MISTS.removeIf(mist -> {
+			if (!mist.casterId.equals(casterId)) return false;
+			ParametricVisuals.stop(mist.visualId, ParametricVisuals.Kind.CORRUPT_MIST);
+			return true;
+		});
 	}
 
 	/** 单跳结算：雾内敌人中毒 + 缓速（白名单免受；L4+ 中毒 II）。 */

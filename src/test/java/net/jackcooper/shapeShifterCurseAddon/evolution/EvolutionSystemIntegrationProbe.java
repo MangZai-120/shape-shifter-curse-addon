@@ -4,9 +4,13 @@ import com.mojang.authlib.GameProfile;
 import dev.onyxstudios.cca.api.v3.component.ComponentContainer;
 import dev.onyxstudios.cca.api.v3.component.ComponentProvider;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.impl.networking.AbstractChanneledNetworkAddon;
+import net.fabricmc.fabric.impl.networking.NetworkHandlerExtensions;
+import net.fabricmc.fabric.impl.networking.server.ServerPlayNetworkAddon;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.client.evolution.EvolutionScreen;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
+import net.jackcooper.shapeShifterCurseAddon.network.JsonSnapshotSync;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.player.PlayerAbilities;
@@ -73,6 +77,7 @@ public final class EvolutionSystemIntegrationProbe {
         ShapeShifterCurseFabric.commonConfig.immediatelyTransform = false;
         TransformManager.onServerInit();
         normalProgression();
+        batchSynchronization();
         prerequisitesAndSelections();
         migration();
         routeValidation();
@@ -110,6 +115,30 @@ public final class EvolutionSystemIntegrationProbe {
         check(axolotl.nextMilestone(39) == 40, "axolotl last point is at level 40");
         check(axolotl.nextMilestone(40) == -1 && axolotl.nextMilestone(44) == -1, "axolotl does not advertise a level-45 point");
         check(EvolutionRegistry.INSTANCE.getRoute("familiar_fox").nextMilestone(40) == 45, "familiar fox retains level-45 point");
+    }
+
+    private static void batchSynchronization() throws Exception {
+        for (EvolutionRoute route : EvolutionRegistry.INSTANCE.all().values()) {
+            TestPlayer player = player(route);
+            EvolutionManager.tickPlayer(player);
+            player.totalExperience = EvolutionComponent.levelToTotalExp(50) * 2;
+            EvolutionManager.tickPlayer(player);
+            var requested = route.nodes.stream().filter(node -> !node.autoUnlock).map(node -> node.id).toList();
+            var order = EvolutionSelection.resolve(route, player.evolution, requested);
+            check(order.size() > 1, "Fixture includes a real dependent batch");
+            int before = player.syncLookups;
+            check(EvolutionManager.tryUnlock(player, order.get(0)), "A standalone unlock still succeeds");
+            check(player.syncLookups - before == 1, "A standalone unlock still synchronizes immediately");
+            before = player.syncLookups;
+            check(EvolutionManager.tryUnlockBatch(player, requested) == requested.size() - 1,
+                    "Batch retains prerequisite order, point budget and already-unlocked filtering");
+            check(player.syncLookups - before == 1, "A multi-node batch publishes exactly one final component snapshot");
+            check(player.evolution.getPoints() == 0 && requested.stream().allMatch(player.evolution::isUnlocked),
+                    "One published final state contains every accepted unlock and exact point cost");
+            before = player.syncLookups;
+            check(EvolutionManager.tryUnlockBatch(player, requested) == 0 && player.syncLookups == before,
+                    "A duplicate batch has no state change or redundant synchronization");
+        }
     }
 
     private static void prerequisitesAndSelections() throws Exception {
@@ -295,6 +324,11 @@ public final class EvolutionSystemIntegrationProbe {
         ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.invoker().onSyncDataPackContents(player, true);
         Map<String,String> joined = receiveRoutes(player);
         check(joined.equals(rawRoutes), "join lifecycle event sends full production routes");
+        int sent = ((TestNetworkHandler)player.networkHandler).packets.size();
+        SscAddonNetworking.sendEvolutionRoutes(player);
+        SscAddonNetworking.sendEvolutionRoutes(player);
+        check(((TestNetworkHandler)player.networkHandler).packets.size() == sent,
+                "duplicate join paths send identical JSON only once per connection");
         Map<Identifier, Resource> resources = new LinkedHashMap<>();
         for (var entry : rawRoutes.entrySet()) {
             String content = entry.getKey().equals("axolotl") ? entry.getValue().replace("\"cost\": 1", "\"cost\": 2") : entry.getValue();
@@ -309,6 +343,17 @@ public final class EvolutionSystemIntegrationProbe {
         check(!reloaded.get("axolotl").equals(joined.get("axolotl")), "reload lifecycle sends changed route to already connected player");
         EvolutionRegistry.INSTANCE.applyClientSync(reloaded);
         check(EvolutionRegistry.INSTANCE.getNode("axolotl", "aquatic_adapt").cost == 2, "client rebuild uses reloaded cost without reconnecting");
+        ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.invoker().onSyncDataPackContents(player, false);
+        check(receiveRoutes(player).equals(reloaded), "explicit reload repairs unchanged JSON as well");
+        JsonSnapshotSync.send(player, SscAddonNetworking.PACKET_EVO_ROUTES_SYNC,
+                EvolutionRegistry.INSTANCE.getRawJson(), true);
+        check(receiveRoutes(player).equals(reloaded), "forced repair bypasses the content baseline");
+        TestNetworkHandler oldConnection = (TestNetworkHandler)player.networkHandler;
+        int oldPacketCount = oldConnection.packets.size();
+        player.networkHandler = network();
+        SscAddonNetworking.sendEvolutionRoutes(player);
+        check(receiveRoutes(player).equals(reloaded) && oldConnection.packets.size() == oldPacketCount,
+                "a new connection for the same player receives a fresh JSON baseline");
         EvolutionRegistry.INSTANCE.applyClientSync(rawRoutes);
     }
 
@@ -387,11 +432,22 @@ public final class EvolutionSystemIntegrationProbe {
         var pos = Entity.class.getDeclaredField("pos");
         pos.setAccessible(true);
         pos.set(player, Vec3d.ZERO);
-        TestNetworkHandler network = allocate(TestNetworkHandler.class);
-        network.packets = new ArrayList<>();
-        player.networkHandler = network;
+        player.networkHandler = network();
         container(player);
         return player;
+    }
+
+    private static TestNetworkHandler network() throws Exception {
+        TestNetworkHandler network = allocate(TestNetworkHandler.class);
+        network.packets = new ArrayList<>();
+        network.addon = allocate(ServerPlayNetworkAddon.class);
+        // Unsafe deliberately bypasses Fabric's constructor hook. Supply its negotiated channels
+        // explicitly rather than weakening production canSend checks to accommodate a fake handler.
+        var channels = AbstractChanneledNetworkAddon.class.getDeclaredField("sendableChannelsView");
+        channels.setAccessible(true);
+        channels.set(network.addon, Set.of(SscAddonNetworking.PACKET_EVO_ROUTES_SYNC,
+                SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC));
+        return network;
     }
 
     private static void container(TestPlayer player) {
@@ -419,6 +475,7 @@ public final class EvolutionSystemIntegrationProbe {
         EvolutionComponent evolution;
         PlayerFormComponent form;
         ComponentContainer components;
+        int syncLookups;
         private TestPlayer() { super(null, null, new GameProfile(UUID.randomUUID(), "evolution-system")); }
         @Override public World getWorld() { return world; }
         @Override public ServerWorld getServerWorld() { return world; }
@@ -429,7 +486,7 @@ public final class EvolutionSystemIntegrationProbe {
         @Override public ItemStack getMainHandStack() { return inv.getMainHandStack(); }
         @Override public ItemStack getOffHandStack() { return inv.getStack(40); }
         @Override public ComponentContainer getComponentContainer() { return components; }
-        @Override public Iterable<ServerPlayerEntity> getRecipientsForComponentSync() { return List.of(); }
+        @Override public Iterable<ServerPlayerEntity> getRecipientsForComponentSync() { syncLookups++; return List.of(); }
         @Override public void sendMessage(Text message, boolean overlay) { }
         @Override public void playSound(SoundEvent sound, SoundCategory category, float volume, float pitch) { }
         @Override public boolean addStatusEffect(StatusEffectInstance effect, Entity source) { return true; }
@@ -440,9 +497,11 @@ public final class EvolutionSystemIntegrationProbe {
         @Override public void playSound(PlayerEntity player, double x, double y, double z, SoundEvent sound, SoundCategory category, float volume, float pitch) { }
     }
 
-    public static final class TestNetworkHandler extends ServerPlayNetworkHandler {
+    public static final class TestNetworkHandler extends ServerPlayNetworkHandler implements NetworkHandlerExtensions {
         List<Packet<?>> packets;
+        ServerPlayNetworkAddon addon;
         private TestNetworkHandler() { super(null, null, null); }
+        @Override public ServerPlayNetworkAddon getAddon() { return addon; }
         @Override public void sendPacket(Packet<?> packet) { packets.add(packet); }
     }
 }

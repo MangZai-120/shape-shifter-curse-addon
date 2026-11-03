@@ -19,6 +19,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals;
+import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -206,6 +208,7 @@ public class AnubisWolfSpDeathDomain {
 				player.getName().getString(), uuid, ACTIVE_DOMAINS.size(), ACTIVE_DOMAINS.containsKey(uuid));
 		DomainData data = ACTIVE_DOMAINS.get(uuid);
 		if (data != null) {
+            stopDomainVisuals(data);
             net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, data.castId);
 			// 只清理玩家特有状态，不移除ACTIVE_DOMAINS中的数据
 			if (data.phase == Phase.CHARGING) {
@@ -245,6 +248,7 @@ public class AnubisWolfSpDeathDomain {
 	public static void clearAll() {
 		// 先清 CD（clearCooldowns 内部已同步在线玩家资源条并清表；须在 ACTIVE_DOMAINS 清空前取 server）
 		clearCooldowns(findServer());
+		ACTIVE_DOMAINS.values().forEach(AnubisWolfSpDeathDomain::stopDomainVisuals);
 		ACTIVE_DOMAINS.clear();
 	}
 
@@ -258,6 +262,7 @@ public class AnubisWolfSpDeathDomain {
 			Map.Entry<UUID, DomainData> entry = it.next();
 			DomainData data = entry.getValue();
 			if (data.phase == Phase.CLEANUP && data.world != null) {
+				stopDomainVisuals(data);
 				int totalBlocks = data.changedBlocksByDistance.values().stream().mapToInt(Map::size).sum();
 				LOGGER.info("[DeathDomain] tickCleanup: restoring uuid={}, totalBlocks={}, world={}",
 						entry.getKey(), totalBlocks, data.world.getRegistryKey().getValue());
@@ -327,6 +332,7 @@ public class AnubisWolfSpDeathDomain {
 		LOGGER.info("[DeathDomain] forceRestoreAll called, ACTIVE_DOMAINS size={}", ACTIVE_DOMAINS.size());
 		for (Map.Entry<UUID, DomainData> entry : ACTIVE_DOMAINS.entrySet()) {
 			DomainData data = entry.getValue();
+			stopDomainVisuals(data);
 			int totalBlocks = 0;
 			for (Map<BlockPos, BlockState> m : data.changedBlocksByDistance.values()) {
 				totalBlocks += m.size();
@@ -496,7 +502,7 @@ public class AnubisWolfSpDeathDomain {
 		tickAreaDebuffs(player, world, data);
 
 		// 延展粒子效果：边缘灵魂粒子环
-		spawnEdgeParticles(world, data);
+		touchEdgeVisual(player, world, data);
 
 		// 延展音效（每5tick一次沙砾滑动声）
 		if (data.ticksElapsed % 5 == 0) {
@@ -528,10 +534,8 @@ public class AnubisWolfSpDeathDomain {
 			tickAreaDebuffs(player, world, data);
 		}
 
-		// 环境粒子效果（每5tick）
-		if (data.ticksElapsed % 5 == 0) {
-			spawnAmbientParticles(world, player, data);
-		}
+		// Keep this scene alive between waves so late observers receive the current phase.
+		touchAmbientVisual(player, world, data, maxRadius, duration);
 
 		// 幽灵低语音效（每60tick / 3秒一次）
 		if (data.ticksElapsed % 60 == 0) {
@@ -596,7 +600,7 @@ public class AnubisWolfSpDeathDomain {
 		}
 
 		// 回退粒子效果
-		spawnEdgeParticles(world, data);
+		touchEdgeVisual(player, world, data);
 
 		// 回退音效
 		if (data.ticksElapsed % 5 == 0) {
@@ -608,6 +612,7 @@ public class AnubisWolfSpDeathDomain {
 		tickGlowUpdate(player, world, data);
 
 		if (data.currentRadius <= 0) {
+			stopDomainVisuals(data);
 			// 回退完成，还原所有剩余方块（包括距离0的中心点）
 			restoreAllBlocks(world, data);
 			// 还原完成后修正施法者位置，防止被埋在还原的方块内
@@ -1178,47 +1183,46 @@ public class AnubisWolfSpDeathDomain {
 
 	// ==================== 充能减速 ====================
 
-	/**
-	 * 在领域边缘生成灵魂粒子
-	 */
-	private static void spawnEdgeParticles(ServerWorld world, DomainData data) {
-		double r = data.currentRadius;
-		if (r < 1) return;
-		// 蓝火粒子（减少）
-		int flameCount = Math.min((int) (r * 2), 32);
-		for (int i = 0; i < flameCount; i++) {
-			double angle = (Math.PI * 2 * i) / flameCount;
-			double px = data.center.getX() + 0.5 + Math.cos(angle) * r;
-			double pz = data.center.getZ() + 0.5 + Math.sin(angle) * r;
-			ParticleUtils.spawnParticles(world, ParticleTypes.SOUL_FIRE_FLAME,
-					px, data.centerY + 1, pz, 1, 0, 0.3, 0, 0.01);
-		}
-		// 鬼魂粒子
-		int soulCount = Math.min((int) (r * 1.5), 24);
-		for (int i = 0; i < soulCount; i++) {
-			double angle = (Math.PI * 2 * i) / soulCount;
-			double px = data.center.getX() + 0.5 + Math.cos(angle) * r;
-			double pz = data.center.getZ() + 0.5 + Math.sin(angle) * r;
-			ParticleUtils.spawnParticles(world, ParticleTypes.SOUL,
-					px, data.centerY + 0.5, pz, 1, 0.2, 0.4, 0.2, 0.02);
+	/** Expansion/retraction are linear, so only their first radius and signed speed need syncing. */
+	private static void touchEdgeVisual(ServerPlayerEntity player, ServerWorld world, DomainData data) {
+		double maxRadius = data.enhanced ? BAL.i("enhanced_domain_radius", ENHANCED_DOMAIN_RADIUS) : BAL.i("domain_radius", DOMAIN_RADIUS);
+		prepareDomainVisual(world, data, maxRadius, 0);
+		ParametricVisuals.touch(player, data.visualId, ParametricVisuals.Kind.DOMAIN_EDGE, null,
+				data.visualOrigin, false, data.visualEpoch, data.visualDuration, data.visualExtent, data.visualParams);
+	}
+
+	private static void touchAmbientVisual(ServerPlayerEntity player, ServerWorld world, DomainData data,
+	                                      double maxRadius, int phaseLimit) {
+		prepareDomainVisual(world, data, maxRadius, phaseLimit);
+		ParametricVisuals.touch(player, data.visualId, ParametricVisuals.Kind.DOMAIN_AMBIENT, player.getUuid(),
+				data.visualOrigin, false, data.visualEpoch, data.visualDuration, data.visualExtent, data.visualParams);
+	}
+
+	private static void prepareDomainVisual(ServerWorld world, DomainData data, double maxRadius, int phaseLimit) {
+		if (data.visualPhase == data.phase && data.visualMaxRadius == maxRadius && data.visualPhaseLimit == phaseLimit) return;
+		stopDomainVisuals(data);
+		data.visualPhase = data.phase;
+		data.visualEpoch = world.getTime();
+		data.visualMaxRadius = maxRadius;
+		data.visualPhaseLimit = phaseLimit;
+		data.visualOrigin = new Vec3d(data.center.getX() + 0.5, data.centerY, data.center.getZ() + 0.5);
+		if (data.phase == Phase.SUSTAINING) {
+			// Preserve the existing counter's two increments per world tick, including odd limit overshoot.
+			data.visualDuration = Math.max(1, (int) Math.ceil((phaseLimit - data.ticksElapsed) / 2.0) + 1);
+			data.visualExtent = Math.hypot(maxRadius, 3);
+			data.visualParams = new double[]{maxRadius, data.ticksElapsed, 2,
+					data.ticksElapsed + 2.0 * (data.visualDuration - 1)};
+		} else {
+			double step = data.phase == Phase.EXPANDING ? EXPAND_SPEED : -EXPAND_SPEED;
+			data.visualDuration = Math.max(1, (int) Math.ceil((step > 0 ? maxRadius - data.currentRadius : data.currentRadius) / EXPAND_SPEED) + 1);
+			data.visualExtent = Math.hypot(maxRadius, 1);
+			data.visualParams = new double[]{data.currentRadius, step, maxRadius};
 		}
 	}
 
-	/**
-	 * 领域维持时的环境粒子
-	 */
-	private static void spawnAmbientParticles(ServerWorld world, ServerPlayerEntity player, DomainData data) {
-		Random random = new Random();
-		int domainRadius = data.enhanced ? BAL.i("enhanced_domain_radius", ENHANCED_DOMAIN_RADIUS) : BAL.i("domain_radius", DOMAIN_RADIUS);
-		for (int i = 0; i < 8; i++) {
-			double angle = random.nextDouble() * Math.PI * 2;
-			double dist = random.nextDouble() * domainRadius;
-			double px = data.center.getX() + 0.5 + Math.cos(angle) * dist;
-			double pz = data.center.getZ() + 0.5 + Math.sin(angle) * dist;
-			double py = data.centerY + random.nextDouble() * 3;
-			ParticleUtils.spawnDecorationParticles(world, player, ParticleTypes.SOUL,
-					px, py, pz, 1, 0.5, 0.5, 0.5, 0.02);
-		}
+	private static void stopDomainVisuals(DomainData data) {
+		ParametricVisuals.stop(data.visualId, ParametricVisuals.Kind.DOMAIN_EDGE);
+		ParametricVisuals.stop(data.visualId, ParametricVisuals.Kind.DOMAIN_AMBIENT);
 	}
 
 	// ==================== 粒子效果 ====================
@@ -1235,6 +1239,15 @@ public class AnubisWolfSpDeathDomain {
 	// ==================== 数据类 ====================
 	private static class DomainData {
         long castId = -1;
+		final UUID visualId = UUID.randomUUID();
+		Phase visualPhase;
+		long visualEpoch;
+		double visualMaxRadius;
+		int visualPhaseLimit;
+		Vec3d visualOrigin;
+		int visualDuration;
+		double visualExtent;
+		double[] visualParams;
 		Phase phase;
 		int ticksElapsed;
 		double currentRadius;       // 当前延展/回退的半径

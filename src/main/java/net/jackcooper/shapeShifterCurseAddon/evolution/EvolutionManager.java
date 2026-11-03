@@ -152,6 +152,10 @@ public final class EvolutionManager {
      * 通过则扣点并解锁。节点取自玩家当前路线（数据驱动）。
      */
     public static boolean tryUnlock(ServerPlayerEntity player, String nodeId) {
+        return tryUnlock(player, nodeId, true);
+    }
+
+    private static boolean tryUnlock(ServerPlayerEntity player, String nodeId, boolean synchronize) {
         if (nodeId == null || nodeId.isEmpty()) {
             return false;
         }
@@ -171,7 +175,7 @@ public final class EvolutionManager {
             return false;
         }
         comp.unlock(nodeId);
-        sync(player);
+        if (synchronize) sync(player);
         return true;
     }
 
@@ -309,10 +313,15 @@ public final class EvolutionManager {
         EvolutionComponent comp = get(player);
         if (comp.isJobChanging()) return 0;
         int unlocked = 0;
-        for (String id : EvolutionSelection.resolve(currentRoute(player), comp, requested)) {
-            if (tryUnlock(player, id)) unlocked++;
+        try {
+            for (String id : EvolutionSelection.resolve(currentRoute(player), comp, requested)) {
+                if (tryUnlock(player, id, false)) unlocked++;
+            }
+            return unlocked;
+        } finally {
+            // Preserve the successfully applied state even if a later validation fails unexpectedly.
+            if (unlocked > 0) sync(player);
         }
-        return unlocked;
     }
 
     /**

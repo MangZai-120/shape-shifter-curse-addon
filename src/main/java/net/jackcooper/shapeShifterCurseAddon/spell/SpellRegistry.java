@@ -54,12 +54,11 @@ public final class SpellRegistry implements SimpleSynchronousResourceReloadListe
     public synchronized void clearServer() { discardPending(); serverConfigs = Map.of(); rawJson = Map.of(); }
     public void clearClient() { clientConfigs = Map.of(); }
     public void sendTo(net.minecraft.server.network.ServerPlayerEntity player) {
-        var out = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
-        var raw = getRawJson();
-        out.writeInt(raw.size());
-        raw.forEach((id, json) -> { out.writeString(id, 256); out.writeString(json, 2000000); });
-        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
-                net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC, out);
+        sendTo(player, false);
+    }
+    public void sendTo(net.minecraft.server.network.ServerPlayerEntity player, boolean force) {
+        net.jackcooper.shapeShifterCurseAddon.network.JsonSnapshotSync.send(player,
+                net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC, getRawJson(), force);
     }
 
 	public static final SpellRegistry INSTANCE = new SpellRegistry();

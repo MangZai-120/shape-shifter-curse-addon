@@ -24,6 +24,7 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.compat.FluorescentAxolotlPerks;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.util.EntityDisplayClock;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -80,8 +81,8 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     private static final net.minecraft.entity.data.TrackedData<Boolean> TETHER_ACTIVE =
             net.minecraft.entity.data.DataTracker.registerData(TidalOrbEntity.class, net.minecraft.entity.data.TrackedDataHandlerRegistry.BOOLEAN);
     /** 拴人阶段剩余 tick（服务端每 2t 刷新，客户端 HUD 辅助栏据此倒数潮汐束缚剩余）。 */
-    private static final net.minecraft.entity.data.TrackedData<Integer> TETHER_REMAIN =
-            net.minecraft.entity.data.DataTracker.registerData(TidalOrbEntity.class, net.minecraft.entity.data.TrackedDataHandlerRegistry.INTEGER);
+    private static final net.minecraft.entity.data.TrackedData<Long> TETHER_END =
+            net.minecraft.entity.data.DataTracker.registerData(TidalOrbEntity.class, net.minecraft.entity.data.TrackedDataHandlerRegistry.LONG);
 
     private Phase phase = Phase.FLYING;
     private int ticksAlive = 0;
@@ -98,6 +99,14 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     private double currentSpeed = flySpeed;      // DECEL 时衰减
     private Vec3d tetherCenter = null;           // 落点锚点（拴人中心）
     private final Set<UUID> tetheredTargets = new HashSet<>(); // 落点瞬间捕获、被拴住的目标 UUID
+    private static final int TETHER_REPAIR_TICKS = 40;
+    private int[] tetherSnapshot = new int[0];
+    private boolean tetherSnapshotDirty = true;
+    private long tetherSnapshotRevision;
+    private int nextTetherRepairAt;
+    private final java.util.Map<UUID, Integer> snapshotEntityIds = new java.util.HashMap<>();
+    private final java.util.Map<UUID, TetherAudience> tetherAudiences = new java.util.HashMap<>();
+    private record TetherAudience(ServerPlayerEntity player, long revision, int sentAt) {}
 
     // ===== 粒子配色（青/蓝/淡蓝/白：水 + 荧光） =====
     private static final DustParticleEffect CYAN_DUST =
@@ -139,7 +148,7 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     @Override
     protected void initDataTracker() {
         this.dataTracker.startTracking(TETHER_ACTIVE, false);
-        this.dataTracker.startTracking(TETHER_REMAIN, 0);
+        this.dataTracker.startTracking(TETHER_END, EntityDisplayClock.UNSET);
     }
 
     /** 飞行阶段：触发减速（玩家再次按键 / 飞满 8 秒自动）。 */
@@ -280,6 +289,8 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         if (isEnhanced) {
             explodeEnhanced(sw);
         }
+        tetherSnapshotDirty = true;
+        syncTetherToClients(sw);
     }
 
     // ==================== ATTRACTING（潮汐束缚 / 拴人）====================
@@ -299,20 +310,19 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
                 }
             }
         }
-        // 同步拴人剩余（dirty-check：值不变不重发；HUD 辅助栏据此倒数）
+        // 同步稳定的结束时刻；HUD 用世界时间倒数，服务器仍按 phaseTicks 结算。
         setTetherRemain(tetherDuration - phaseTicks);
         // 阿澪：拴人期间每秒(20t)对被拴目标造成 4 点物理伤害
         if (isAling && phaseTicks > 0 && phaseTicks % 20 == 0) {
             tickTetherDamage(sw);
         }
-        // 每 10 tick 把被拴目标同步给客机，用于渲染守卫者激光
-        if (phaseTicks % 10 == 1) {
-            syncTetherToClients(sw);
-        }
+        // 目标变化立即同步；稳定列表每 40 tick 校准，晚追踪另发完整列表。
         if (phaseTicks >= tetherDuration) {
             phase = Phase.DELAY;
             phaseTicks = 0;
+            tetherSnapshotDirty = true;
         }
+        syncTetherToClients(sw);
     }
 
     /** 阿澪专属：对被拴目标造成物理伤害（走默认白名单豁免，服务端判定）。 */
@@ -375,8 +385,11 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
             Entity e = sw.getEntity(id);
             if (!(e instanceof LivingEntity t) || !t.isAlive() || t.isSpectator()) {
                 it.remove(); // 死亡 / 离线 / 无效 → 移除，不再处理
+                tetherSnapshotDirty = true;
                 continue;
             }
+            Integer publishedId = snapshotEntityIds.get(id);
+            if (publishedId == null || publishedId != t.getId()) tetherSnapshotDirty = true;
             if (WhitelistUtils.isProtected(ownerUuid, sw, t)) continue; // 白名单豁免（owner 离线也保守保护玩家/宠物）
             double tx = t.getX(), ty = t.getY() + t.getHeight() * 0.5, tz = t.getZ();
             double dx = tx - cx, dy = ty - cy, dz = tz - cz;
@@ -406,21 +419,66 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
 
     /** 把当前被拴目标的 entityId 打包发给所有正在追踪本球的客户端（守卫者激光渲染用）。 */
     private void syncTetherToClients(ServerWorld sw) {
-        java.util.List<Integer> ids = new java.util.ArrayList<>();
-        for (UUID id : tetheredTargets) {
-            Entity e = sw.getEntity(id);
-            if (e != null && e.isAlive()) ids.add(e.getId());
-        }
+        int tick = sw.getServer().getTicks();
+        if (!tetherSnapshotDirty && tick - nextTetherRepairAt < 0) return;
+        refreshTetherSnapshot(sw);
         var tracking = net.fabricmc.fabric.api.networking.v1.PlayerLookup.tracking(this);
-        if (tracking.isEmpty()) return;
+        nextTetherRepairAt = tick + TETHER_REPAIR_TICKS;
         for (ServerPlayerEntity p : tracking) {
-            net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
-            buf.writeVarInt(this.getId());
-            buf.writeVarInt(ids.size());
-            for (int i : ids) buf.writeVarInt(i);
-            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(
-                    p, net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_TIDAL_TETHER, buf);
+            TetherAudience previous = tetherAudiences.get(p.getUuid());
+            boolean changed = previous != null && (previous.player != p || previous.revision != tetherSnapshotRevision);
+            if (tetherSnapshot.length == 0 ? changed : previous == null || changed || tick - previous.sentAt >= TETHER_REPAIR_TICKS)
+                sendTetherSnapshot(p, tick);
+            TetherAudience current = tetherAudiences.get(p.getUuid());
+            if (tetherSnapshot.length > 0 && current != null)
+                nextTetherRepairAt = Math.min(nextTetherRepairAt,current.sentAt + TETHER_REPAIR_TICKS);
         }
+    }
+
+    private void refreshTetherSnapshot(ServerWorld sw) {
+        if (!tetherSnapshotDirty) return;
+        tetherSnapshotDirty = false;
+        java.util.List<Integer> ids = new java.util.ArrayList<>();
+        snapshotEntityIds.clear();
+        // Keep the original non-enhanced visual tail during DELAY; this does not apply tether physics.
+        if (phase == Phase.ATTRACTING || phase == Phase.DELAY && !isEnhanced) for (UUID id : tetheredTargets) {
+            Entity target = sw.getEntity(id);
+            if (target != null && target.isAlive()) {
+                ids.add(target.getId()); snapshotEntityIds.put(id, target.getId());
+            }
+        }
+        ids.sort(Integer::compare);
+        int[] next = new int[ids.size()];
+        for (int i=0; i<next.length; i++) next[i]=ids.get(i);
+        if (!java.util.Arrays.equals(next,tetherSnapshot)) {tetherSnapshot=next;tetherSnapshotRevision++;}
+    }
+
+    private void sendTetherSnapshot(ServerPlayerEntity player, int tick) {
+        net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+        buf.writeVarInt(this.getId()); buf.writeVarInt(tetherSnapshot.length);
+        for (int id : tetherSnapshot) buf.writeVarInt(id);
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+                net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_TIDAL_TETHER,buf);
+        tetherAudiences.put(player.getUuid(),new TetherAudience(player,tetherSnapshotRevision,tick));
+    }
+
+    @Override
+    public void onStartedTrackingBy(ServerPlayerEntity player) {
+        super.onStartedTrackingBy(player);
+        if (this.getWorld() instanceof ServerWorld sw) {
+            // EntityTrackerEntry sends the spawn/metadata bundle before invoking this callback.
+            tetherSnapshotDirty = true;
+            refreshTetherSnapshot(sw);
+            int tick = sw.getServer().getTicks();
+            if (tetherSnapshot.length > 0) sendTetherSnapshot(player,tick);
+            nextTetherRepairAt = tick;
+        }
+    }
+
+    @Override
+    public void onStoppedTrackingBy(ServerPlayerEntity player) {
+        super.onStoppedTrackingBy(player);
+        tetherAudiences.remove(player.getUuid());
     }
 
     // ==================== DELAY ====================
@@ -436,6 +494,10 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
 
     // ==================== 破裂消失 ====================
     private void pop(ServerWorld sw) {
+        // End the visual lease explicitly, including purification and the end of the original tail.
+        tetheredTargets.clear();
+        tetherSnapshotDirty = true;
+        syncTetherToClients(sw);
         double x = getX(), y = getY(), z = getZ();
         // 泡泡破裂：大量水/气泡/淡蓝 dust 向外迸射
         for (int i = 0; i < 80; i++) {
@@ -634,6 +696,10 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
             }
         }
         if (nbt.containsUuid("Owner")) ownerUuid = nbt.getUuid("Owner");
+        this.dataTracker.set(TETHER_ACTIVE, phase == Phase.ATTRACTING || phase == Phase.DELAY && !isEnhanced);
+        if (phase == Phase.ATTRACTING) setTetherRemain(tetherDuration - phaseTicks);
+        else this.dataTracker.set(TETHER_END, EntityDisplayClock.UNSET);
+        tetherSnapshotDirty = true;
     }
 
     @Override
@@ -669,13 +735,17 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
 
     /** 客户端 HUD 辅助栏查询：拴人阶段剩余 tick（0 = 非拴人阶段）。 */
     public int getTetherRemain() {
-        return this.dataTracker.get(TETHER_REMAIN);
+        if (this.getWorld().isClient) {
+            return EntityDisplayClock.remaining(this.getWorld().getTime(), this.dataTracker.get(TETHER_END));
+        }
+        return phase == Phase.ATTRACTING && phaseTicks > 0 ? Math.max(0, tetherDuration - phaseTicks) : 0;
     }
 
-    /** 服务端刷新拴人剩余（dirty-check 防每 tick 重发相同值）。 */
+    /** 从服务器剩余时间更新稳定的截止时刻，正常倒数期间不会产生 dirty 字段。 */
     private void setTetherRemain(int remain) {
         int v = Math.max(0, remain);
-        if (getTetherRemain() != v) this.dataTracker.set(TETHER_REMAIN, v);
+        long end = this.getWorld().getTime() + v;
+        if (this.dataTracker.get(TETHER_END) != end) this.dataTracker.set(TETHER_END, end);
     }
 
     /** 客户端渲染器粒子门控：记录本实体 tick 已发过粒子（render 每帧调用，同 tick 多帧只放行一次，

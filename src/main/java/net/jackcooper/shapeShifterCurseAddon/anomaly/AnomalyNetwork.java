@@ -62,8 +62,26 @@ public final class AnomalyNetwork {
         ServerPlayerEntity self = target instanceof ServerPlayerEntity player ? player : null;
         if (viewers.isEmpty() && (self == null || !ServerPlayNetworking.canSend(self, STATE))) return;
         AnomalySnapshot snapshot = supplied == null ? AnomalyManager.snapshot(target) : supplied;
-        for (var viewer : viewers) send(target, viewer, snapshot);
-        if (self != null && !viewers.contains(self)) send(target, self, snapshot);
+        // The common owner-only/single-observer case needs no intermediate copy.
+        if (viewers.isEmpty()) { send(target, self, snapshot); return; }
+        if (viewers.size() == 1 && (self == null || viewers.contains(self))) {
+            send(target, viewers.iterator().next(), snapshot);
+            return;
+        }
+        // Every observer receives the same authoritative bytes. Encode once, while each
+        // connection retains its own buffer so asynchronous packet encoding cannot share indices.
+        var encoded = PacketByteBufs.create();
+        try {
+            write(encoded, new Message(target.getWorld().getRegistryKey().getValue(), target.getId(), target.getUuid(), snapshot));
+            for (var viewer : viewers) sendEncoded(viewer, encoded);
+            if (self != null && !viewers.contains(self)) sendEncoded(self, encoded);
+        } finally { encoded.release(); }
+    }
+
+    private static void sendEncoded(ServerPlayerEntity player, PacketByteBuf encoded) {
+        if (!ServerPlayNetworking.canSend(player, STATE)) return;
+        ServerPlayNetworking.send(player, STATE, PacketByteBufs.copy(encoded));
+        AnomalyManager.recordPacket();
     }
 
     private static void send(LivingEntity target, ServerPlayerEntity player, AnomalySnapshot snapshot) {

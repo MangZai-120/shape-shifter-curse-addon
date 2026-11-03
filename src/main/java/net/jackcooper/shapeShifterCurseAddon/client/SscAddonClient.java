@@ -59,10 +59,12 @@ public class SscAddonClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
+		NetworkCompatibilityClient.init();
 		SscForceSneakClient.register();
 		MoistureWaterRecoveryClient.register();
 		FormationResearchClient.register();
 		SustainedVisualClient.init();
+		ParametricVisualClient.init();
 		net.jackcooper.shapeShifterCurseAddon.client.renderer.FrozenShellRenderer.init();
 		FrozenAnimationState.init();
 		AnomalyClient.init();
@@ -154,9 +156,9 @@ public class SscAddonClient implements ClientModInitializer {
 					int[] ids = new int[count];
 					for (int i = 0; i < count; i++) ids[i] = buf.readVarInt();
 					client.execute(() -> {
-						if (client.world == null) return;
+						if (client.getNetworkHandler() != handler || client.world == null) return;
 						net.jackcooper.shapeShifterCurseAddon.client.renderer.TidalTetherBeamRenderer
-								.update(orbId, ids, client.world.getTime() + 20);
+								.update(orbId, ids, client.world.getTime() + 60);
 					});
 				});
 		// 逐帧渲染潮汐束缚光束（守卫者激光样式）
@@ -216,7 +218,10 @@ public class SscAddonClient implements ClientModInitializer {
 						new net.minecraft.util.Identifier(net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric.MOD_ID, "update_custom_color"), cbuf);
 				// 请求服务端把所有在场玩家的形态+皮肤同步过来（修复客机看其它玩家是默认白模型）。
 				net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
-						net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_REQUEST_ALL_FORM_SYNC,
+						net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.canSend(
+								net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_REQUEST_FORM_SYNC_V2)
+								? net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_REQUEST_FORM_SYNC_V2
+								: net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_REQUEST_ALL_FORM_SYNC,
 						net.fabricmc.fabric.api.networking.v1.PacketByteBufs.empty());
 			} catch (Throwable t) {
 				LOGGER.error("[SSC_ADDON] 跨存档颜色重同步失败", t);
@@ -261,98 +266,7 @@ public class SscAddonClient implements ClientModInitializer {
 		// 注册「广播所有玩家形态」接收器：服务端把在场玩家的 formID + 皮肤数据直接广播过来，
 		// 客机按 UUID 直接写入其它玩家的 nowForm/nowFormID 与 PlayerSkinComponent（颜色/是否启用形态颜色等），
 		// 绕过 CCA 同步的不确定性，修复刚进游戏看其它玩家是「白色人类模型」（enableFormColor 未同步=渲染原版人类模型）。
-		ClientPlayNetworking.registerGlobalReceiver(
-				net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_BROADCAST_FORMS,
-				(client, handler, buf, responseSender) -> {
-					int count = buf.readInt();
-					if (count < 0 || count > 1000) return; // 防恶意服务端 OOM
-					java.util.List<java.util.UUID> uuids = new java.util.ArrayList<>(count);
-					java.util.List<String> formIds = new java.util.ArrayList<>(count);
-					java.util.List<boolean[]> boolData = new java.util.ArrayList<>(count); // [keepOrig, enableColor, pGrey, a1Grey, a2Grey, enableSound]
-					java.util.List<int[]> colorData = new java.util.ArrayList<>(count);    // [primary, accent1, accent2, eyeA, eyeB] (ABGR)
-					for (int i = 0; i < count; i++) {
-						uuids.add(buf.readUuid());
-						formIds.add(buf.readString());
-						boolean keepOrig = buf.readBoolean();
-						boolean enableColor = buf.readBoolean();
-						int primary = buf.readInt();
-						int accent1 = buf.readInt();
-						int accent2 = buf.readInt();
-						int eyeA = buf.readInt();
-						int eyeB = buf.readInt();
-						boolean pGrey = buf.readBoolean();
-						boolean a1Grey = buf.readBoolean();
-						boolean a2Grey = buf.readBoolean();
-						boolean enableSound = buf.readBoolean();
-						boolData.add(new boolean[]{keepOrig, enableColor, pGrey, a1Grey, a2Grey, enableSound});
-						colorData.add(new int[]{primary, accent1, accent2, eyeA, eyeB});
-					}
-					client.execute(() -> {
-						if (client.world == null) return;
-						for (int i = 0; i < uuids.size(); i++) {
-							net.minecraft.entity.player.PlayerEntity p = client.world.getPlayerByUuid(uuids.get(i));
-							if (p == null) continue;
-							// 【特判】必须跳过本地玩家：本段是为「其它玩家」在客机重建 origin 以正确渲染模型，
-							// 而 PlayerOriginComponent.setOrigin 内部会 removeAllPowersFromSource —— 对自己调用
-							// 可能会把服务端刚同步来的 power 全部清空（客户端 origin 的 power 类型列表为空，加不回来）。
-							// 1.20.1 目前靠「OriginRegistry 返回同一实例 + 引用相等早退」碰巧未触发，
-							// 但时序/注册表实例一旦不一致（reload、版本变动）就会翻车，故防御性跳过。
-							// 本地玩家自身的 form/origin/scale/皮肤均有 CCA 同步的权威路径，跳过无功能损失。
-							if (p == client.player) continue;
-							// 形态
-							String fidStr = formIds.get(i);
-							if (!fidStr.isEmpty()) {
-								net.minecraft.util.Identifier fid = net.minecraft.util.Identifier.tryParse(fidStr);
-								if (fid != null) {
-									net.onixary.shapeShifterCurseFabric.player_form.IForm form =
-											net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms.getPlayerForm(fid);
-									if (form != null) {
-										net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent comp =
-												net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent.COMPONENT.get(p);
-										comp.nowForm = form;
-										comp.nowFormID = fid;
-										// 关键：模型渲染读的是 origin 组件（PlayerOriginComponent）而非 nowForm。
-										// 用形态的 layer 信息在客机重建 origin，渲染才会显示形态模型（否则只同步了 scale/动画 = 白色人类模型）。
-										try {
-											net.minecraft.util.Pair<net.minecraft.util.Identifier, net.minecraft.util.Identifier> layerData = form.getFormLayer();
-											net.onixary.shapeShifterCurseFabric.integration.origins.origin.OriginLayer layer =
-													net.onixary.shapeShifterCurseFabric.integration.origins.origin.OriginLayers.getLayer(layerData.getLeft());
-											if (layer != null && layerData.getRight() != null) {
-												net.onixary.shapeShifterCurseFabric.integration.origins.origin.Origin origin =
-														net.onixary.shapeShifterCurseFabric.integration.origins.origin.OriginRegistry.get(layerData.getRight());
-												if (origin != null) {
-													net.onixary.shapeShifterCurseFabric.integration.origins.component.OriginComponent oc =
-															(net.onixary.shapeShifterCurseFabric.integration.origins.component.OriginComponent)
-																	net.onixary.shapeShifterCurseFabric.integration.origins.registry.ModComponents.ORIGIN.get(p);
-													oc.setOrigin(layer, origin);
-												}
-											}
-										} catch (Throwable ignored) {
-											// power 客户端不全等极端情况，忽略；渲染只需 origins map 写入成功
-										}
-										// 同步形态缩放（Pehkui）：广播原先漏了 scale，导致客机看其它玩家模型偏大/站立、超出判定框。
-										// 对该玩家应用其形态的 applyScale（缩放形态缩小、人类形态复位 1.0），与 nowForm/origin/skin 一致由客机本地重建。
-										try {
-											form.applyScale(p);
-										} catch (Throwable ignored) {
-											// Pehkui 未加载或异常时忽略，不影响其它同步
-										}
-									}
-								}
-							}
-							// 皮肤（颜色 / 是否启用形态颜色等）
-							boolean[] b = boolData.get(i);
-							int[] cc = colorData.get(i);
-							net.onixary.shapeShifterCurseFabric.player_form.skin.PlayerSkinComponent skin =
-									net.onixary.shapeShifterCurseFabric.player_form.skin.RegPlayerSkinComponent.SKIN_SETTINGS.get(p);
-							skin.setKeepOriginalSkin(b[0]);
-							skin.setEnableFormColor(b[1]);
-							skin.setFormColor(new net.onixary.shapeShifterCurseFabric.util.FormTextureUtils.ColorSetting(
-									cc[0], cc[1], cc[2], cc[3], cc[4], b[2], b[3], b[4]));
-							skin.setEnableFormRandomSound(b[5]);
-						}
-					});
-				});
+		PlayerAppearanceSync.register();
 
 		// 注册侵蚀烙印 S2C 同步包接收器
 		ClientPlayNetworking.registerGlobalReceiver(GoldenSandstormErosionBrand.PACKET_BRAND_SYNC, (client, handler, buf, responseSender) -> {

@@ -23,6 +23,8 @@ import java.util.UUID;
 public final class ExplosionManager {
 	public static final Identifier START = new Identifier("ssc_addon", "explosion_start");
 	private static final Map<UUID, Sequence> SEQUENCES = new LinkedHashMap<>();
+    private static final net.jackcooper.shapeShifterCurseAddon.network.SnapshotAudience AUDIENCE =
+            new net.jackcooper.shapeShifterCurseAddon.network.SnapshotAudience();
 
 	private static final class Sequence {
         final FormSpellStyle.Timing timing;
@@ -94,7 +96,9 @@ public final class ExplosionManager {
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(ExplosionManager::tick);
-		ServerLifecycleEvents.SERVER_STOPPED.register(server -> SEQUENCES.clear());
+        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) ->
+                AUDIENCE.disconnect(handler.player.getUuid(), handler));
+		ServerLifecycleEvents.SERVER_STOPPED.register(server -> { SEQUENCES.clear(); AUDIENCE.clear(); });
 	}
 
 	public static void detonate(ServerPlayerEntity owner, Vec3d center, float power, UUID refundCastId) {
@@ -282,11 +286,13 @@ public final class ExplosionManager {
 			if (!ServerPlayNetworking.canSend(viewer, START)) continue;
 			var visible = SEQUENCES.values().stream().filter(sequence -> sequence.world == viewer.getWorld()
 					&& viewer.squaredDistanceTo(sequence.center) < ExplosionRules.audienceRange() * ExplosionRules.audienceRange()).toList();
+            if (!AUDIENCE.shouldSend(viewer.getUuid(), viewer.networkHandler, !visible.isEmpty())) continue;
 			var buf = PacketByteBufs.create();
 			buf.writeIdentifier(viewer.getWorld().getRegistryKey().getValue());
 			buf.writeVarInt(visible.size());
 			for (Sequence sequence : visible) writeSequence(buf, sequence, sequence.realElapsed());
 			ServerPlayNetworking.send(viewer, START, buf);
+            AUDIENCE.sent(viewer.getUuid(), viewer.networkHandler, !visible.isEmpty());
 		}
 	}
 

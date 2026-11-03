@@ -1,4 +1,6 @@
 {
+  "message.ssc_addon.network.update_client": "SSCA 客户端版本不兼容。请将客户端更新到 %s 或兼容的新版本（实体协议 %s）。",
+  "message.ssc_addon.network.update_server": "SSCA 服务器版本不兼容。请将服务器更新到 %s 或兼容的新版本（实体协议 %s）。",
   "power.my_addon.form_spider_moon_weaver_spell_weave.name": "咒丝织法",
   "power.my_addon.form_spider_moon_weaver_spell_weave.description": "投射物法术整次消耗8点蛛丝能量：落地留下约3×3蛛网膜，60～90秒消失；直接有效命中不铺网，有15%概率完整裹茧（生物15秒、玩家5秒）。同次施法对同一目标只抽一次；诅咒标记未刷新也照抽。穿刺直击后不再铺网，白名单免疫。能量不足时普通施法，不扣能量、不附加效果。原有月辉、月毒、裹茧增伤与饰品增强保留。",
   "power.my_addon.form_spider_salticidae_spell_curse.name": "跃袭咒印",

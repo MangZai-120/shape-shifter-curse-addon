@@ -20,6 +20,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals;
 import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 
 import java.util.List;
@@ -27,8 +28,8 @@ import java.util.List;
 /**
  * 月尘魔法·陨火实体（jackcooper）。两阶段：
  * <ol>
- *   <li><b>落点标记阶段</b>（前 {@link #DELAY_TICKS} tick）：悬停在目标落点上空，服务端持续撒
- *       火焰/烟圈粒子提示落点范围，客户端天然同步看到预警圈；</li>
+	 *   <li><b>落点标记阶段</b>（前 {@link #DELAY_TICKS} tick）：悬停在目标落点上空，服务端同步
+	 *       预警参数，客户端按同一时间线生成火焰/烟圈粒子，提示落点范围；</li>
  *   <li><b>落下阶段</b>：从落点上空 20 格急速坠落到落点，撞击后 AOE 结算
  *       （伤害 + 点燃 3s + 击退，白名单保护、不含施法者），火光/爆炸音效/粒子，随即消失。</li>
  * </ol>
@@ -55,6 +56,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 	/** AOE 半径（格）。 */
 	private double radius = 3.0;
 	private boolean falling = false;
+	private double[] warningVisualParams;
     private int runeFireTicks=60;
     public void setFireTicks(int ticks){runeFireTicks=Math.max(0,ticks);}
 
@@ -121,24 +123,15 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		if (!falling) {
 			// 阶段 5：同函数多次读取局部变量化
 			double fallHeight = BAL.d("fall_height", FALL_HEIGHT);
-			// 标记阶段：服务端撒落点预警粒子（火焰圈 + 上升火星），客户端经粒子包同步
+			// The fixed impact warning uses one shared timeline instead of one packet per ring point.
 			if (!this.getWorld().isClient && this.getWorld() instanceof ServerWorld serverWorld) {
-				// 落点 = 当前悬停位置正下方 FALL_HEIGHT 处
-				double ix = this.getX();
-				double iy = this.getY() - fallHeight;
-				double iz = this.getZ();
-				// 预警圈：沿半径撒火焰粒子勾勒 AOE 范围
-				int ringCount = (int) Math.max(12, radius * 10);
-				for (int i = 0; i < ringCount; i++) {
-					double angle = (i * 2 * Math.PI / ringCount) + (this.age * 0.15);
-					double r = radius * 0.95;
-					serverWorld.spawnParticles(ParticleTypes.FLAME,
-							ix + Math.cos(angle) * r, iy + 0.1, iz + Math.sin(angle) * r,
-							1, 0.02, 0.02, 0.02, 0.005);
-				}
-				// 中心上升烟柱提示
-				serverWorld.spawnParticles(ParticleTypes.LARGE_SMOKE,
-						ix, iy + 0.5, iz, 3, 0.3, 0.5, 0.3, 0.02);
+				int visualAgeOffset = this.age - ticksAlive;
+				if (warningVisualParams == null || warningVisualParams[0] != radius || warningVisualParams[1] != visualAgeOffset)
+					warningVisualParams = new double[]{radius, visualAgeOffset};
+				ParametricVisuals.touch(this, this.getUuid(), ParametricVisuals.Kind.METEOR_WARNING,
+						null, this.getPos().add(0, -fallHeight, 0), false,
+						serverWorld.getTime() - ticksAlive, BAL.i("delay_ticks", DELAY_TICKS),
+						Math.hypot(radius, 0.5), warningVisualParams);
 			}
 			// 延迟期满：切入下落阶段（双端都切，客户端实体也要开始下落动画）
 			if (ticksAlive >= BAL.i("delay_ticks", DELAY_TICKS)) {
@@ -179,6 +172,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
         }
 		this.setPosition(this.getPos().add(velocity));
 		if (this.getWorld() instanceof ServerWorld serverWorld) {
+			ParametricVisuals.stop(this.getUuid(), ParametricVisuals.Kind.METEOR_WARNING);
 			ParticleUtils.spawnParticles(serverWorld, ParticleTypes.FLAME,
 					this.getX(), this.getY(), this.getZ(), 4, 0.2, 0.2, 0.2, 0.02);
 		}

@@ -37,6 +37,57 @@ tasks.register('anomalyLedgerTest', JavaExec) {
 }
 check.dependsOn anomalyLedgerTest
 
+tasks.register('entityDisplayClockTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.entity.EntityDisplayClockTest'
+}
+tasks.register('snapshotAudienceTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.network.SnapshotAudienceTest'
+}
+tasks.register('networkCompatibilityTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.network.NetworkCompatibilityTest'
+}
+check.dependsOn entityDisplayClockTest, snapshotAudienceTest, networkCompatibilityTest
+
+tasks.register('parametricVisualTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.network.visual.VisualRecipeTestBootstrap'
+    args 'net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisualTest'
+}
+tasks.register('mistMeteorDomainRecipeTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.network.visual.VisualRecipeTestBootstrap'
+    args 'net.jackcooper.shapeShifterCurseAddon.network.visual.MistMeteorDomainRecipeTest'
+}
+tasks.register('blueTrailRecipeTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.network.visual.VisualRecipeTestBootstrap'
+    args 'net.jackcooper.shapeShifterCurseAddon.network.visual.BlueTrailRecipeTest'
+}
+['parametricVisualTest', 'mistMeteorDomainRecipeTest', 'blueTrailRecipeTest'].each { name ->
+    tasks.named(name, JavaExec) {
+        workingDir = layout.buildDirectory.dir('network-sync/' + name).get().asFile
+        systemProperty 'fabric.development', 'true'
+        systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+        systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+        doFirst {
+            workingDir.mkdirs()
+            def cpFile = new File(workingDir, 'classpath.txt')
+            cpFile.setText(classpath.asPath, 'UTF-8')
+            systemProperty 'visual.testClasspathFile', cpFile.absolutePath
+        }
+    }
+}
+check.dependsOn parametricVisualTest, mistMeteorDomainRecipeTest, blueTrailRecipeTest
+
 tasks.register('neoMagicStressModelTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath

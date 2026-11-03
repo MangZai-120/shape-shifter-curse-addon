@@ -13,20 +13,30 @@ import static net.ssca.neomagic.NeoModel.*;
 /** 只保留正式法术的 HUD 同步与崩解度调试指令，不接收旧实验研究协议。 */
 public final class NeoNetwork {
     public static final Identifier HUD=NeoMagic.id("hud");
-    private record HudSnapshot(ServerPlayerEntity player,Object world,NbtCompound state,int sentTick) {}
+    public static final Identifier HUD_V2=NeoMagic.id("hud_v2");
+    public static final Identifier HUD_RESYNC_V2=NeoMagic.id("hud_resync_v2");
+    private record HudSnapshot(ServerPlayerEntity player,Object world,Object connection,NbtCompound state,int sentTick,int fullTick,long revision,boolean compact) {}
     private static final Map<UUID,HudSnapshot> HUD_SENT=new HashMap<>();
-    public static void close(ServerPlayerEntity p){HUD_SENT.remove(p.getUuid());}
-    public static void clear(){HUD_SENT.clear();}
+    private static final Map<UUID,Integer> HUD_RESYNC_REQUESTED=new HashMap<>();
+    private static final Map<Profile,String> PROFILE_JSON=new LinkedHashMap<>(32,.75f,true) {
+        @Override protected boolean removeEldestEntry(Map.Entry<Profile,String> entry){return size()>128;}
+    };
+    public static void close(ServerPlayerEntity p){HUD_SENT.remove(p.getUuid());HUD_RESYNC_REQUESTED.remove(p.getUuid());}
+    public static void clear(){HUD_SENT.clear();HUD_RESYNC_REQUESTED.clear();PROFILE_JSON.clear();}
     public static void hud(ServerPlayerEntity p) {
-        if(!ServerPlayNetworking.canSend(p,HUD))return;
+        boolean compact=ServerPlayNetworking.canSend(p,HUD_V2);
+        if(!compact&&!ServerPlayNetworking.canSend(p,HUD))return;
         NbtCompound state=hudState(p);int now=p.getServer().getTicks();
         HudSnapshot previous=HUD_SENT.get(p.getUuid());
-        // 活动状态仍按原来的频率同步；仅省略完全相同的快照，每 5 秒保底重发。
-        // 实体或世界变化强制重发，避免重连、重生或切维度后客户端保留空状态。
-        if(previous!=null&&previous.player==p&&previous.world==p.getWorld()
-                &&now-previous.sentTick>=0&&now-previous.sentTick<100&&previous.state.equals(state))return;
-        var packet=PacketByteBufs.create();packet.writeNbt(state);ServerPlayNetworking.send(p,HUD,packet);
-        HUD_SENT.put(p.getUuid(),new HudSnapshot(p,p.getWorld(),state,now));
+        boolean sameSession=previous!=null&&previous.player==p&&previous.world==p.getWorld()&&previous.connection==p.networkHandler&&previous.compact==compact;
+        boolean full=!sameSession||now-previous.fullTick<0||now-previous.fullTick>=100;
+        if(!full&&previous.state.equals(state))return;
+        long revision=previous==null?1:previous.revision+1;
+        var packet=PacketByteBufs.create();
+        if(compact)NeoHudPacket.write(packet,NeoHudPacket.between(full?new NbtCompound():previous.state,state,revision,full?0:previous.revision,full));
+        else packet.writeNbt(state); // Older peers keep the original complete-NBT protocol.
+        ServerPlayNetworking.send(p,compact?HUD_V2:HUD,packet);
+        HUD_SENT.put(p.getUuid(),new HudSnapshot(p,p.getWorld(),p.networkHandler,state,now,full?now:previous.fullTick,revision,compact));
     }
     public static NbtCompound hudState(ServerPlayerEntity p) {
         var d=NeoRuntime.data(p);var a=NeoRuntime.ACTIVE.get(p.getUuid());
@@ -95,10 +105,24 @@ public final class NeoNetwork {
         n.putDouble("Cumulative",session==null?0:1-session.survival);n.putString("Spell",legacyName);
         n.putInt("CollapseStage",p.isAlive()&&!p.isSpectator()?net.jackcooper.shapeShifterCurseAddon.spell.CollapsePenalties.stage(d.burden,profile.safety()):0);
         n.putInt("Blocked",0);n.putString("Form",d.form);n.putBoolean("Reference",NeoRuntime.bodyProfile(p).reference());
-        n.putString("Profile",NeoState.JSON.toJson(profile));
+        n.putString("Profile",PROFILE_JSON.computeIfAbsent(profile,NeoState.JSON::toJson));
         return n;
     }
     public static void register() {
+        ServerPlayNetworking.registerGlobalReceiver(HUD_RESYNC_V2,(server,p,handler,buf,sender)->server.execute(()->{
+            if(p.networkHandler!=handler||p.isRemoved())return;
+            int now=server.getTicks();Integer last=HUD_RESYNC_REQUESTED.get(p.getUuid());
+            if(last!=null&&now-last>=0&&now-last<20)return;
+            HUD_RESYNC_REQUESTED.put(p.getUuid(),now);
+            // Retain the revision even when forcing a full snapshot, so queued older deltas stay stale.
+            HudSnapshot old=HUD_SENT.get(p.getUuid());
+            if(old!=null)HUD_SENT.put(p.getUuid(),new HudSnapshot(old.player,old.world,old.connection,old.state,old.sentTick,now-100,old.revision,old.compact));
+            hud(p);
+        }));
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.register((p,joined)->{
+            HudSnapshot old=HUD_SENT.get(p.getUuid());
+            if(old!=null)HUD_SENT.put(p.getUuid(),new HudSnapshot(old.player,old.world,old.connection,old.state,old.sentTick,p.getServer().getTicks()-100,old.revision,old.compact));
+        });
         CommandRegistrationCallback.EVENT.register((dispatcher,access,environment)->dispatcher.register(CommandManager.literal("neomagic")
                 .requires(source->source.hasPermissionLevel(2))
                 .then(CommandManager.literal("reset_burden").executes(context->{NeoRuntime.relieve(context.getSource().getPlayerOrThrow(),Double.MAX_VALUE);return 1;}))));

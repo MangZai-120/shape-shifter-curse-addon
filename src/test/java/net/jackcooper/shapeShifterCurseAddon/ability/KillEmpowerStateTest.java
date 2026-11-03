@@ -58,7 +58,15 @@ public final class KillEmpowerStateTest {
 			check(activation.get("cooldown").getAsInt() == 400 && "on_end".equals(activation.get("cooldown_start").getAsString())
 					&& activation.get("repress_while_active").getAsBoolean(), "Normal ring cooldown starts when the ring ends");
 			JsonObject particles = ringPower.getAsJsonObject("particle_loop");
-			check(particles.get("interval").getAsInt() == (form.equals("red") ? 1 : 4), "Normal particle cadence preserved");
+			if (form.equals("red")) {
+				check(particles.get("interval").getAsInt() == 1, "RED normal particle cadence preserved");
+			} else {
+				// The original four-tick phase and geometry are checked against fixed source fixtures by BlueTrailRecipeTest.
+				check(particles.get("type").getAsString().equals("ssc_addon:blue_fire_ring_visual")
+						&& particles.get("radius").getAsDouble() == 6.0
+						&& particles.get("layer").getAsInt() == 0
+						&& !particles.get("flame_layer").getAsBoolean(), "SP particles use the original four-tick blue-ring visual power");
+			}
 			JsonObject empowerGate = particles.getAsJsonObject("condition").getAsJsonArray("conditions").get(1).getAsJsonObject();
 			check(empowerGate.get("type").getAsString().equals("apoli:and"), "Empowered particle branch is amulet-gated");
 			JsonObject particleGate = empowerGate.getAsJsonArray("conditions").get(0).getAsJsonObject();

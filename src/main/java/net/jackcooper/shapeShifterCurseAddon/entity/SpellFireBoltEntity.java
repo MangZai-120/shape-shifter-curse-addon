@@ -158,10 +158,11 @@ public class SpellFireBoltEntity extends ProjectileEntity implements FlyingItemE
 			}
 		}
 
-		// 飞行拖尾粒子（服务端撒，天然多人同步）
+		// 服务端只公布弹道视觉状态；各客户端按同一时间线生成原密度拖尾。
 		if (this.getWorld() instanceof ServerWorld serverWorld) {
-			ParticleUtils.spawnParticles(serverWorld, ParticleTypes.FLAME,
-					this.getX(), this.getY(), this.getZ(), 2, 0.1, 0.1, 0.1, 0.01);
+			net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals.touch(
+					this, getUuid(), net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals.Kind.FIRE_BOLT_TRAIL,
+					null, getPos(), true, serverWorld.getTime() - age, 0, 0);
 		}
 	}
 
