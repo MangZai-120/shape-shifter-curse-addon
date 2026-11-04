@@ -19,6 +19,7 @@ import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals.Ke
 import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals.Kind;
 import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals.View;
 import net.jackcooper.shapeShifterCurseAddon.network.visual.SceneRecipes;
+import net.jackcooper.shapeShifterCurseAddon.network.visual.VisualSampleHistory;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
@@ -31,6 +32,7 @@ import net.minecraft.util.math.Vec3d;
 public final class ParametricVisualClient {
     private static final int CIRCLE_BUDGET = 4096, MAX_QUEUED_PARTICLES = 262144, MAX_QUEUED_CIRCLES = 4096;
     private static final Map<Key, Runtime> scenes = new LinkedHashMap<>();
+    private static final VisualSampleHistory<Key> expiredSamples = new VisualSampleHistory<>(ParametricVisuals.MAX_SCENES);
     private static final ArrayDeque<CircleJob> circles = new ArrayDeque<>();
     private static ClientWorld world;
     private static Pending pending;
@@ -83,7 +85,10 @@ public final class ParametricVisualClient {
         long motionTime;
         int lastSample = -1;
         final Random recipeRandom = new Random(), jitterRandom = new Random();
-        Runtime(View view, long time) { update(view, time); }
+        Runtime(View view, long time) {
+            update(view, time);
+            lastSample = expiredSamples.resume(view.key(), view.anchorUuid(), view.entityId(), view.epoch());
+        }
         void update(View next, long time) {
             boolean sameSource=view!=null && view.epoch()==next.epoch()
                     && view.entityId()==next.entityId() && view.anchorUuid().equals(next.anchorUuid());
@@ -204,6 +209,7 @@ public final class ParametricVisualClient {
     }
     private static void clear() {
         scenes.clear(); circles.clear(); pendingMotions.clear(); queuedParticles = 0; world = null; pending = null; pendingDelta=null;
+        expiredSamples.clear();
         hasSequence = false; ticks = receivedAt = 0; lastWorldTick = Long.MIN_VALUE;
         referenceServer = referenceLocal = 0; budget = CIRCLE_BUDGET;
     }
@@ -271,7 +277,15 @@ public final class ParametricVisualClient {
         if (pending != null && ticks - pending.createdAt > 40) pending = null;
         if(pendingDelta!=null && ticks-pendingDelta.createdAt>40) pendingDelta=null;
         pendingMotions.values().removeIf(motion -> ticks-motion.receivedAt>40);
-        if (ticks - receivedAt > 60) {scenes.clear();hasSequence=false;pendingDelta=null;}
+        if (ticks - receivedAt > 60) {
+            // Stop drawing an expired lease, but do not replay its already sampled ages after a
+            // stalled server resumes with a clock behind the client's former projection.
+            for (Runtime runtime : scenes.values()) {
+                View view = runtime.view;
+                expiredSamples.retain(view.key(), view.anchorUuid(), view.entityId(), view.epoch(), runtime.lastSample);
+            }
+            scenes.clear();hasSequence=false;pendingDelta=null;
+        }
         long now = referenceServer + Math.max(0, local - referenceLocal);
         for (Runtime runtime : scenes.values()) {
             View view = runtime.view;

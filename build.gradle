@@ -54,6 +54,13 @@ tasks.register('networkCompatibilityTest', JavaExec) {
 }
 check.dependsOn entityDisplayClockTest, snapshotAudienceTest, networkCompatibilityTest
 
+tasks.register('visualSampleHistoryTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.network.visual.VisualSampleHistoryTest'
+}
+check.dependsOn visualSampleHistoryTest
+
 tasks.register('parametricVisualTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
