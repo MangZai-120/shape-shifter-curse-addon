@@ -29,6 +29,8 @@
 
 ### TODO已移除，请查看[Roadmap](https://github.com/users/MangZai-120/projects/2)
 
+###你可以在[Actions](https://github.com/users/MangZai-120/projects/2/actions)内下载ssc和ssca开发版
+
 ## 添加模组
 
 - 将下载后的.jar文件放入游戏的 `mods` 文件夹，并确保你下载的是.jar格式的模组文件，而不是源代码。下载请到Releases(发行作品)或Actions(操作)里去找。
