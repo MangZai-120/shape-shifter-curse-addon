@@ -19,7 +19,7 @@ import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals.Ke
 import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals.Kind;
 import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals.View;
 import net.jackcooper.shapeShifterCurseAddon.network.visual.SceneRecipes;
-import net.jackcooper.shapeShifterCurseAddon.network.visual.VisualSampleHistory;
+ import net.jackcooper.shapeShifterCurseAddon.network.visual.VisualSampleHistory;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;

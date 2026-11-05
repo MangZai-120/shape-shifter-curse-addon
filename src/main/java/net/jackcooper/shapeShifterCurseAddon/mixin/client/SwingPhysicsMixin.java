@@ -2,6 +2,7 @@ package net.jackcooper.shapeShifterCurseAddon.mixin.client;
 
 import net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverSwingClient;
 import net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverSwingClient.LocalSwing;
+import net.jackcooper.shapeShifterCurseAddon.ability.SwingMotion;
 import net.minecraft.client.input.Input;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.util.math.MathHelper;
@@ -19,16 +20,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * <p>Minecraft 移动是客户端权威的，所以摆锤物理必须在客户端改 velocity/position 才能丝滑无卡顿，
  * 且不干扰玩家破坏方块。本 mixin 注入 {@code ClientPlayerEntity.tickMovement}：
  * <ul>
- *   <li><b>HEAD</b>：摆荡中缓存本 tick 的空格/潜行/WASD 输入，并清零 {@code input.jumping}（空格改作「收绳」，不跳跃）。</li>
- *   <li><b>TAIL</b>：本 tick 原版移动（含重力、WASD air-control）完成后，施加：
+ *   <li><b>Input.tick 后</b>：缓存本 tick 的空格/潜行/WASD，空格改作收绳。</li>
+ *   <li><b>原版移动前</b>：施加本 tick 的绳索速度，仍由原版处理移动与方块碰撞：
  *     ① 收放绳（空格收 / 空中潜行放，受服务端 canExtend 限制，改本地 ropeLen）；
  *     ② WASD 世界方向增强推力（增强空中方向控制）；
  *     ③ 绳约束（距销点超绳长时拉回球面 + 去径向远离速度 → 单摆）。
  *   </li>
  * </ul>
  *
- * <p><b>地面松弛</b>：脚踩地且距销点 ≤ 24 格时不施加牵引（自由移动/破坏方块），绳长跟随玩家距离增长；
- * 仅主动按空格收绳时给朝销点水平拉力。走到 24 格外才进入张紧摆荡。
+ * <p><b>地面松弛</b>：不收绳时自由移动；按空格可从地面开始收绳，
+ * 高处锚点允许直接牵引离地，低角度锚点先沿地面接近，始终保留原版碰撞。
  */
 @Mixin(ClientPlayerEntity.class)
 public abstract class SwingPhysicsMixin {
@@ -45,7 +46,8 @@ public abstract class SwingPhysicsMixin {
 	@Unique
 	private float ssca$moveSideways;
 
-	@Inject(method = "tickMovement", at = @At("HEAD"))
+	@Inject(method = "tickMovement", at = @At(value = "INVOKE",
+			target = "Lnet/minecraft/client/input/Input;tick(ZF)V", shift = At.Shift.AFTER))
 	private void ssca$swingHead(CallbackInfo ci) {
 		// 蛛丝挂着全程（FIRING + SWINGING）都屏蔽空格跳跃，空格改作收绳
 		if (!SpiderMoonWeaverSwingClient.isLocalActive() || this.input == null) {
@@ -61,7 +63,15 @@ public abstract class SwingPhysicsMixin {
 		this.input.jumping = false;
 	}
 
-	@Inject(method = "tickMovement", at = @At("TAIL"))
+	@Inject(method = "tickMovement", at = @At(value = "INVOKE",
+			target = "Lnet/minecraft/client/network/AbstractClientPlayerEntity;tickMovement()V"))
+	private void ssca$blockSwingAutoJump(CallbackInfo ci) {
+		// Auto-jump is processed after Input.tick; it must not turn reel input into a second jump.
+		if (SpiderMoonWeaverSwingClient.isLocalActive() && this.input != null) this.input.jumping = false;
+	}
+
+	@Inject(method = "tickMovement", at = @At(value = "INVOKE",
+			target = "Lnet/minecraft/client/network/AbstractClientPlayerEntity;tickMovement()V"))
 	private void ssca$swingTail(CallbackInfo ci) {
 		LocalSwing sw = SpiderMoonWeaverSwingClient.getLocalSwing();
 		if (sw == null || !sw.active) {
@@ -73,12 +83,10 @@ public abstract class SwingPhysicsMixin {
 
 		ClientPlayerEntity self = (ClientPlayerEntity) (Object) this;
 		if (sw.state == SpiderMoonWeaverSwingClient.STATE_TETHER) {
-			ssca$tetherPhysics(self, sw);
 			return;
 		}
 		if (sw.state != SpiderMoonWeaverSwingClient.STATE_SWINGING) return;
 
-		final double MIN = net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.MIN_ROPE_LEN;
 		final double MAX = net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.MAX_ROPE_REACH;
 
 		Vec3d anchor = new Vec3d(sw.anchorX, sw.anchorY, sw.anchorZ);
@@ -100,20 +108,11 @@ public abstract class SwingPhysicsMixin {
 		sw.reelIntent = reelIntent;
 
 		if (onGround && dist <= MAX) {
-			// ---- 地面松弛期 ----
-			if (ssca$jumpHeld && sw.ropeLen < dist - 0.1) {
-				// 主动收绳：给朝销点的水平拉力
-				Vec3d horiz = new Vec3d(anchor.x - torso.x, 0, anchor.z - torso.z);
-				double hl = horiz.length();
-				if (hl > 0.01) {
-					double strength = Math.min((dist - sw.ropeLen) * 0.18, 0.55);
-					vel = vel.add(horiz.multiply(strength / hl));
-					self.setVelocity(vel);
-				}
-			} else if (dist > sw.ropeLen) {
-				// 被动松弛：绳长跟随，无牵引
-				sw.ropeLen = dist;
-			}
+			Vec3d direction = dist > 1.0e-6 ? anchor.subtract(torso).multiply(1.0 / dist) : new Vec3d(0, 1, 0);
+			SwingMotion.Step step = SwingMotion.groundStep(vel, direction, dist, sw.ropeLen, ssca$jumpHeld);
+			sw.ropeLen = step.ropeLength();
+			sw.reelIntent = step.reelIntent();
+			self.setVelocity(step.velocity());
 			sw.physicsStarted = false; // 离地时重新用玩家速度初始化摆锤
 			return;
 		}
@@ -139,30 +138,8 @@ public abstract class SwingPhysicsMixin {
 		Vec3d toAnchor = anchor.subtract(torso);
 		double anchorDist = toAnchor.length();
 		Vec3d dir = anchorDist > 0.001 ? toAnchor.multiply(1.0 / anchorDist) : new Vec3d(0, 1, 0); // 玩家→销点
-		double radialVel = v.dotProduct(dir); // 朝销点>0 / 远离<0
-
-		// 绳子偏离「正下方」的摆角（dir 指向销点，dir.y=1 即玩家在销点正下方→摆角0°）
-		double swingAngle = Math.acos(MathHelper.clamp(dir.y, -1.0, 1.0));
-		boolean canClimb = swingAngle <= Math.toRadians(70.0);
-
-		if (ssca$jumpHeld && canClimb) {
-			// 收绳线性上升：径向速度设为恒定 CLIMB（切向保留）→ 匀速上升；绳长跟随缩短
-			// 摆角 > 70°时不收绳（玩家已荡到接近销点水平面，再拉不自然；牵生物走独立 tether 方法不受此限）
-			double CLIMB = 0.169;
-			v = v.add(dir.multiply(CLIMB - radialVel));
-			sw.ropeLen = MathHelper.clamp(anchorDist - CLIMB, MIN, MAX);
-		} else if (ssca$sneakHeld) {
-			// 放绳线性下降：径向速度设为恒定 -DESCEND（远离销点，切向保留）→ 匀速下降；
-			// 绳长实时跟随增长（ropeLen 始终 ≥ anchorDist）→ 绳约束永不触发 → 不卡顿
-			if (sw.canExtend) {
-				double DESCEND = 0.15;
-				v = v.add(dir.multiply(-DESCEND - radialVel));
-				sw.ropeLen = MathHelper.clamp(anchorDist + DESCEND, MIN, MAX);
-			}
-		}
-		// 松手：ropeLen 固定不变，下面绳约束消除径向远离 → 重力被绳吊住悬停（重力仍在，切向可摆）
-
 		// WASD 世界方向增强推力（增强空中方向控制，小量叠加原版水平移动，不破坏流畅）
+		double pushX = 0, pushZ = 0;
 		if (ssca$moveForward != 0f || ssca$moveSideways != 0f) {
 			float yaw = self.getYaw();
 			Vec3d forward = Vec3d.fromPolar(0f, yaw);
@@ -170,26 +147,16 @@ public abstract class SwingPhysicsMixin {
 			Vec3d push = forward.multiply(ssca$moveForward).add(right.multiply(-ssca$moveSideways));
 			double pl = Math.sqrt(push.x * push.x + push.z * push.z);
 			if (pl > 0.01) {
-				v = v.add(push.x / pl * 0.004, 0, push.z / pl * 0.004);
+				pushX = push.x / pl * 0.004;
+				pushZ = push.z / pl * 0.004;
 			}
 		}
 
-		// 绳约束（核心）：超过绳长 → 消除「径向远离」速度 + 柔性回拉超出部分（纯 velocity，不 setPosition）
-		// 摆角 > 70°（丝线挂高角度方块）时放宽限位至丝线最大长度 MAX：玩家自由移动/下落，直到拉满 MAX 才被拽住
-		double ropeLen = Math.max(sw.ropeLen, MIN);
-		double effectiveRopeLen = canClimb ? ropeLen : MAX;
-		if (anchorDist > effectiveRopeLen) {
-			double rv = v.dotProduct(dir);
-			if (rv < 0) {
-				v = v.subtract(dir.multiply(rv)); // 消除全部径向远离 → 绳绷紧吊住（重力径向被抵消）
-			}
-			double over = anchorDist - effectiveRopeLen;
-			v = v.add(dir.multiply(Math.min(over * 0.2, 0.3))); // 柔性回拉超出部分（速度非位置，防伸长）
-		}
-
-		// 速度上限（防失控/穿墙；封顶惯性摆动最高速）
-		double sp = v.length();
-		if (sp > 0.72) v = v.multiply(0.72 / sp);
+		SwingMotion.Step step = SwingMotion.step(v, dir, anchorDist, sw.ropeLen,
+				ssca$jumpHeld, ssca$sneakHeld, sw.canExtend, pushX, pushZ);
+		v = step.velocity();
+		sw.ropeLen = step.ropeLength();
+		sw.reelIntent = step.reelIntent();
 
 		self.setVelocity(v);
 		sw.swingVel = v; // 记录惯性供下 tick 自积分承接（不被原版空气阻力衰减）
@@ -197,6 +164,13 @@ public abstract class SwingPhysicsMixin {
 
 	@Unique
 	private double ssca$prevTetherDist = -1;
+
+	@Inject(method = "tickMovement", at = @At("TAIL"))
+	private void ssca$tetherAfterMovement(CallbackInfo ci) {
+		LocalSwing sw = SpiderMoonWeaverSwingClient.getLocalSwing();
+		if (sw != null && sw.active && sw.state == SpiderMoonWeaverSwingClient.STATE_TETHER)
+			ssca$tetherPhysics((ClientPlayerEntity)(Object)this, sw);
+	}
 
 	/** TETHER：拉玩家向目标（按抗性缩放实现「拉不动大型生物就拉自己过去」）+ 变速收放绳。 */
 	@Unique

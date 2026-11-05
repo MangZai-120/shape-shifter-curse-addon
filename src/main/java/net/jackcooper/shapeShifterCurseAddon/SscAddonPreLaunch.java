@@ -56,6 +56,7 @@ public class SscAddonPreLaunch implements PreLaunchEntrypoint {
 			throw new RuntimeException(msg);
 		}
 
+		net.jackcooper.shapeShifterCurseAddon.compat.SscSnapshotCompatibility.requireSupportedSnapshot(sscOpt.get());
 		checkGeckolibVersion();
 	}
 

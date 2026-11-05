@@ -14,6 +14,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.RotationAxis;
+import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 
 /**
@@ -21,9 +22,9 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
  * <ul>
  *   <li><b>L1-3</b>：维持现状 —— 委托 {@link FlyingItemEntityRenderer} 渲染雪球物品精灵；</li>
  *   <li><b>L4+</b>：寒棘狐「冰刺」同款 3D 冰锥模型（{@code frost_thorn_model}，CustomModelData=1 的
- *       stage0 材质）与同款大小（0.48 缩放），朝向/中心补偿逻辑照抄 {@link FrostThornEntityRenderer}。</li>
+ *       stage0 材质），保持 0.9 缩放与原有中心补偿，尖端朝当前飞行方向。</li>
  * </ul>
- * 等级经 DataTracker 同步，多人客机自动一致；实体 tick 已按速度自算 yaw/pitch（尖朝速度方向）。
+ * 等级经 DataTracker 同步，多人客机自动一致；3D 模型直接按客机当前飞行速度对正尖端。
  */
 @Environment(EnvType.CLIENT)
 public class SpellFrostSpikeRenderer extends EntityRenderer<SpellFrostSpikeEntity> {
@@ -54,9 +55,7 @@ public class SpellFrostSpikeRenderer extends EntityRenderer<SpellFrostSpikeEntit
 		// L4+：寒棘狐同款 3D 冰锥
 		matrices.push();
 		matrices.scale(SCALE, SCALE, SCALE);
-		// 模型尖朝 -Z（长腰尖在 z=-2 端）：绕 Y 转 -yaw+180 对准水平朝向；180° 翻转使局部 X 轴镜像，pitch 取反
-		matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-entity.getYaw() + 180.0F));
-		matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-entity.getPitch()));
+		applyFlightRotation(matrices, entity.getVelocity(), entity.getYaw(), entity.getPitch());
 		// 模型中心补偿：frost_thorn 模型几何中心在网格 (1.5, 0.5, 3) 而非标准 (8,8,8)，
 		// 在旋转后的局部空间里平移，把模型中心对回实体锚点（与旋转无关，始终居中）
 		matrices.translate((8.0 - 1.5) / 16.0, (8.0 - 0.5) / 16.0, (8.0 - 3.0) / 16.0);
@@ -68,6 +67,19 @@ public class SpellFrostSpikeRenderer extends EntityRenderer<SpellFrostSpikeEntit
 				matrices, vertexConsumers, entity.getWorld(), entity.getId());
 		matrices.pop();
 		super.render(entity, yaw, tickDelta, matrices, vertexConsumers, light);
+	}
+
+	/** Use flight data rather than stale spawn/tracker angles, including guided and spread projectiles. */
+	static void applyFlightRotation(MatrixStack matrices, Vec3d velocity, float fallbackYaw, float fallbackPitch) {
+		float yaw = fallbackYaw;
+		float pitch = fallbackPitch;
+		if (velocity.lengthSquared() > 1.0e-12) {
+			yaw = (float) Math.toDegrees(Math.atan2(-velocity.x, velocity.z));
+			pitch = (float) Math.toDegrees(Math.atan2(-velocity.y, velocity.horizontalLength()));
+		}
+		// The actual model's narrow tip is -Z. Yaw turns it horizontally; pitch lifts that tip.
+		matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-yaw + 180.0F));
+		matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-pitch));
 	}
 
 	@Override

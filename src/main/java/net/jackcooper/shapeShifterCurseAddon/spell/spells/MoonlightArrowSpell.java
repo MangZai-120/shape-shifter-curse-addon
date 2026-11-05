@@ -40,6 +40,11 @@ public class MoonlightArrowSpell extends Spell {
 		arrow.setDirection(look,(float)RuneCastContext.current().scale(getSpeedMultiplier(level),RuneModifiers.Stat.SPEED));
 		caster.getWorld().spawnEntity(arrow);
 		caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+				SoundEvents.BLOCK_DISPENSER_LAUNCH, SoundCategory.PLAYERS, 1.0f, 1.0f);
+		// Amethyst shimmer has a quiet material gain; give release a clear crystal attack.
+		caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+				SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), SoundCategory.PLAYERS, 0.8f, 1.6f);
+		caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 1.0f, 1.8f);
 	}
 }

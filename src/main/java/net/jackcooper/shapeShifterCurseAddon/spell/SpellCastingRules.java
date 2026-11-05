@@ -14,6 +14,10 @@ public final class SpellCastingRules {
 	private static final BalanceReader BAL = new BalanceReader("systems.casting");
 
 	public enum Mode { AUTOMATIC, RELEASE, CONTINUOUS }
+	/** Every real preparation has one audible start cue, including short channels. */
+	public static boolean playsChargeStartSound(double durationTicks) {
+		return Double.isFinite(durationTicks) && durationTicks > 0;
+	}
 	/** Actual channel duration, after form/rune timing; exactly three seconds remains audible. */
 	public static boolean playsChargeSound(double durationTicks) {
 		return Double.isFinite(durationTicks) && durationTicks >= 60;

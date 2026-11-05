@@ -403,7 +403,6 @@ public final class SpellChannelManager {
 			// 转换 tick 恰在 20t 网格上时（如领域 200t）周期包已携带 true，不重复补发
 			if (lockBegun && channel.progress.elapsed() % CALIBRATE_INTERVAL != 0) sendCalibration(channel);
 			syncCalibration(channel);
-			if (channel.progress.elapsed() % 20 == 0) playChargeSound(channel);
 		}
 		if (ACTIVE.get(player.getUuid()) == channel && ++channel.visualTicks % 20 == 0) {
 			broadcastVisual(channel, true); // 周期重播：覆盖新进视野的观察者（客户端过期兜底 45t）
@@ -499,16 +498,19 @@ public final class SpellChannelManager {
 	}
 
 	private static void playChargeSound(Channel channel) {
+		if (channel.progress.elapsed() != 0
+				|| !SpellCastingRules.playsChargeStartSound(channel.profile.ticks())) return;
+		ServerPlayerEntity player = channel.player;
+		// One authoritative start cue reaches the caster and nearby listeners alike.
+		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+				SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), SoundCategory.PLAYERS, 0.75f, 1.2f);
 		if (!SpellCastingRules.playsChargeSound(channel.profile.ticks())) return;
 		if (channel.spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.DeathFinaleSpell) return;
 		if (channel.spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.DomainSpell) return;
 		// 蓄力嗡嗡声已迁至客户端循环音实例（SpellChargeSoundInstance，HUD STATE 沿驱动，
-		// 可截断/可淡出/可立即停）；服务端只保留起手信标激活一次性短音。
-		if (channel.progress.elapsed() == 0) {
-			ServerPlayerEntity player = channel.player;
-			player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
-					SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 0.7f, 0.65f);
-		}
+		// 可截断/可淡出/可立即停）；长蓄力另外保留起手信标激活短音。
+		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+				SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 0.7f, 0.65f);
 	}
 
 	public static void applyMovement(ServerPlayerEntity player,double multiplier) {

@@ -709,7 +709,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         @Override public void use() { lastUseTime = entity.getWorld().getTime(); }
     }
     public static final class TestPlayer extends ServerPlayerEntity implements ComponentProvider {
-        UUID id; int air; PlayerAbilities abilities; TestFormComponent form;
+        UUID id; int air; int syncQueries; PlayerAbilities abilities; TestFormComponent form;
         ComponentContainer components; PowerHolderComponentImpl powers;
         net.minecraft.entity.player.HungerManager hunger;
         java.util.Map<net.minecraft.entity.effect.StatusEffect, net.minecraft.entity.effect.StatusEffectInstance> effects;
@@ -729,6 +729,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         public void shape_shifter_curse$clearMinions(Identifier id) { minions.remove(id); }
         public boolean shape_shifter_curse$removeMinion(Identifier id, UUID uuid) { return minions.getOrDefault(id, new ArrayList<>()).remove(uuid); }
         @Override public ComponentContainer getComponentContainer() { return components; }
+        @Override public Iterable<ServerPlayerEntity> getRecipientsForComponentSync() { syncQueries++; return List.of(); }
         @Override public UUID getUuid() { return id; }
         @Override public Text getName() { return Text.literal("perk-test"); }
         @Override public PlayerAbilities getAbilities() { return abilities; }

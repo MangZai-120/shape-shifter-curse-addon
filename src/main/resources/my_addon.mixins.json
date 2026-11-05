@@ -14,6 +14,9 @@
         "FrozenProjectileKnockbackMixin",
         "FrozenExplosionKnockbackMixin",
         "OriginPowerCompatibilityMixin",
+        "OriginFormReloadMixin",
+        "OriginRemovedPowerMixin",
+        "OriginPowerDeclarationMixin",
         "WolfInstantDamageCompatibilityMixin",
         "InstinctAnchorMixin",
         "AnchoredFormMixin",
@@ -201,6 +204,7 @@
         "client.SpellCastGeoPoseMixin",
         "client.SpellCastFirstPersonMixin",
         "client.SwingPhysicsMixin",
+        "client.SwingClimbingMixin",
         "client.NetworkCompatibilityMixin"
     ],
     "injectors": {

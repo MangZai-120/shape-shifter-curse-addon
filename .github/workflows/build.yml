@@ -1,8 +1,3 @@
-# 附属构建 | Build SSCA Addon
-# 推送/PR 时自动构建，也可在 Actions 页面手动触发。
-# 注意：附属 build.gradle 硬依赖原版 SSC 的 jar（../幻型者诅咒原版_official/build/libs/...），
-# 而原版目录不在附属仓库内，因此 CI 需先 clone 并构建原版作为依赖。
-
 name: 构建 | Build Addon
 
 on:
@@ -11,18 +6,21 @@ on:
   pull_request:
   workflow_dispatch:
 
-# 原版 SSC 依赖固定点：本地 幻型者诅咒原版_official 也停在同一个 commit，
-# 否则两边编译/打包所依据的原版 API 不一致（上游删改 perk、API 时会直接编译失败）。
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   SSC_REPOSITORY: https://github.com/onixary/shape-shifter-curse-fabric.git
-  SSC_REF: 7f533bd610570092605c3a9efb78017317f64b8f
+  SSC_DIRECTORY: .ssc-upstream
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    # 防止 Gradle 卡住（网络拉依赖超时、remap 卡死等）烧光 Actions 配额
     timeout-minutes: 30
-
     steps:
       - name: 检出附属代码
         uses: actions/checkout@v4
@@ -32,7 +30,7 @@ jobs:
         uses: christian-draeger/read-properties@1.1.1
         with:
           path: gradle.properties
-          properties: 'mod_version archives_base_name ssc_version'
+          properties: 'mod_version archives_base_name'
 
       - name: 配置 Java 17
         uses: actions/setup-java@v4
@@ -40,88 +38,86 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 优化①：Gradle 依赖缓存前置到原版构建之前（原本在原版构建之后才初始化，导致原版每次零缓存全量
-      # 下载依赖 + 重新 remap Minecraft）。前置后原版与附属构建共用 ~/.gradle 缓存，第二次起大幅提速。
-      - name: 初始化 Gradle（依赖缓存）
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 检查构建辅助工具
+        run: python -m unittest discover -s .github/ci -p 'test_*.py' -v
+
+      - name: 初始化 Gradle 缓存
         uses: gradle/actions/setup-gradle@v4
 
-      # 优化②：缓存原版 SSC jar；ssc_version 与固定 commit 都没变就直接复用上次构建的原版 jar，
-      # 跳过整个原版构建（构建慢那次里最大的一块）。改了 gradle.properties 的 ssc_version
-      # 或改了上面的 SSC_REF 都会重新构建原版。
-      - name: 缓存原版 SSC jar
-        id: cache-ssc-jar
+      - name: 解析官方 SSC 默认分支当前提交
+        id: ssc
+        run: python .github/ci/upstream_ssc.py resolve --repository "$SSC_REPOSITORY" --github-output "$GITHUB_OUTPUT"
+
+      - name: 缓存 SSC 当前提交产物
         uses: actions/cache@v4
         with:
-          path: ../幻型者诅咒原版_official/build/libs
-          key: ssc-jar-${{ steps.addon_props.outputs.ssc_version }}-${{ env.SSC_REF }}
+          path: .ssc-upstream/build/libs
+          key: ssc-${{ runner.os }}-snapshot-v2-${{ steps.ssc.outputs.commit }}
 
-      # 关键：附属依赖原版 jar；仅当上面的原版 jar 缓存未命中时，才 clone 并构建原版 SSC。
-      - name: 检出并构建原版 SSC（附属依赖）
-        if: steps.cache-ssc-jar.outputs.cache-hit != 'true'
+      - name: 校验缓存的提交与 JAR
+        id: cached_ssc
+        env:
+          SSC_COMMIT: ${{ steps.ssc.outputs.commit }}
+        run: python .github/ci/upstream_ssc.py verify --directory "$SSC_DIRECTORY/build/libs" --commit "$SSC_COMMIT" --allow-missing --github-output "$GITHUB_OUTPUT"
+
+      - name: 构建当前 SSC 快照
+        if: steps.cached_ssc.outputs.valid != 'true'
+        env:
+          SSC_COMMIT: ${{ steps.ssc.outputs.commit }}
         run: |
-          echo "::group::Clone 原版 SSC"
-          cd "$GITHUB_WORKSPACE/.."
-          git clone --depth 1 "$SSC_REPOSITORY" 幻型者诅咒原版_official
-          cd 幻型者诅咒原版_official
-          git fetch --depth 1 origin "$SSC_REF"
-          git checkout --detach FETCH_HEAD
-          echo "原版固定 commit：$(git rev-parse HEAD)"
+          git init "$SSC_DIRECTORY"
+          git -C "$SSC_DIRECTORY" remote add origin "$SSC_REPOSITORY"
+          git -C "$SSC_DIRECTORY" fetch --depth 1 origin "$SSC_COMMIT"
+          git -C "$SSC_DIRECTORY" checkout --detach FETCH_HEAD
+          test "$(git -C "$SSC_DIRECTORY" rev-parse HEAD)" = "$SSC_COMMIT"
+          chmod +x "$SSC_DIRECTORY/gradlew"
+          "$SSC_DIRECTORY/gradlew" --project-dir "$SSC_DIRECTORY" --console=plain clean build
+          python .github/ci/upstream_ssc.py record --directory "$SSC_DIRECTORY/build/libs" --commit "$SSC_COMMIT" --repository "$SSC_REPOSITORY"
+
+      - name: 确认附属将使用的 SSC 产物
+        id: ssc_jar
+        env:
+          SSC_COMMIT: ${{ steps.ssc.outputs.commit }}
+        run: python .github/ci/upstream_ssc.py verify --directory "$SSC_DIRECTORY/build/libs" --commit "$SSC_COMMIT" --github-output "$GITHUB_OUTPUT"
+
+      - name: 构建与检查 SSCA
+        env:
+          SSC_JAR_PATH: ${{ steps.ssc_jar.outputs.jar_path }}
+        run: |
           chmod +x ./gradlew
-          echo "::endgroup::"
+          ./gradlew --console=plain build "-Pssc_jar_path=$SSC_JAR_PATH"
 
-          echo "::group::Build 原版 SSC"
-          ./gradlew build
-          echo "::endgroup::"
-
-          echo "::group::原版产物列表"
-          ls -la build/libs/
-          echo "::endgroup::"
-
-      - name: 赋予附属 gradlew 可执行权限
-        run: chmod +x ./gradlew
-
-      - name: 构建附属
-        run: ./gradlew build
-
-      - name: 列出附属构建产物
-        run: ls -la build/libs/
-
-      # 整理构建产物：附属 jar 与原版 SSC jar 分别放进各自目录，上传为两个独立的 artifact（两个独立下载入口）
-      - name: 整理构建产物（附属 / 原版 SSC 分开）
+      - name: 整理分别下载的产物与构建记录
+        env:
+          SSC_JAR_PATH: ${{ steps.ssc_jar.outputs.jar_path }}
         run: |
           mkdir -p artifacts/ssca artifacts/ssc
+          find build/libs -maxdepth 1 -name '*.jar' ! -name '*-sources.jar' ! -name '*-dev.jar' -exec cp {} artifacts/ssca/ \;
+          cp "$SSC_JAR_PATH" artifacts/ssc/
+          cp "$SSC_DIRECTORY/build/libs/ssc-build.json" artifacts/ssc/
+          cp "$SSC_DIRECTORY/build/libs/ssc-build.json" artifacts/ssca/ssc-dependency.json
+          sha256sum artifacts/ssca/*.jar artifacts/ssc/*.jar > artifacts/checksums.txt
+          cp artifacts/checksums.txt artifacts/ssca/
+          cp artifacts/checksums.txt artifacts/ssc/
+          cat artifacts/checksums.txt >> "$GITHUB_STEP_SUMMARY"
 
-          echo "::group::附属 jar"
-          find build/libs -name '*.jar' ! -name '*-sources.jar' -exec cp {} artifacts/ssca/ \;
-          echo "附属产物："
-          ls -la artifacts/ssca/
-          echo "::endgroup::"
-
-          echo "::group::原版 SSC jar（从父级原版目录取）"
-          SSC_DIR="../幻型者诅咒原版_official/build/libs"
-          if [ ! -d "$SSC_DIR" ]; then
-            echo "::error::原版 SSC 构建目录不存在: $SSC_DIR"
-            exit 1
-          fi
-          find "$SSC_DIR" -name '*.jar' ! -name '*-sources.jar' -exec cp {} artifacts/ssc/ \;
-          echo "原版产物："
-          ls -la artifacts/ssc/
-          echo "::endgroup::"
-
-      # 上传为两个独立的 artifact：SSCA 与 SSC 各自一个下载入口
-      - name: 上传附属 SSCA 构建产物
+      - name: 上传附属 SSCA
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.addon_props.outputs.archives_base_name }}-${{ steps.addon_props.outputs.mod_version }}
-          path: artifacts/ssca/*.jar
+          path: artifacts/ssca/*
           if-no-files-found: error
-          # 模组 jar 不需要长期保留，14 天足够测试与回溯
           retention-days: 14
 
-      - name: 上传原版 SSC 构建产物
+      - name: 上传对应的 SSC 快照
         uses: actions/upload-artifact@v4
         with:
-          name: shape-shifter-curse-fabric-${{ steps.addon_props.outputs.ssc_version }}
-          path: artifacts/ssc/*.jar
+          name: shape-shifter-curse-fabric-${{ steps.ssc_jar.outputs.version }}-${{ steps.ssc.outputs.commit }}
+          path: artifacts/ssc/*
           if-no-files-found: error
           retention-days: 14
