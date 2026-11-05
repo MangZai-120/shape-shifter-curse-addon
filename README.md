@@ -29,7 +29,7 @@
 
 ### TODO已移除，请查看[Roadmap](https://github.com/users/MangZai-120/projects/2)
 
-###你可以在[Actions](https://github.com/users/MangZai-120/projects/2/actions)内下载ssc和ssca开发版
+###你可以在[Actions](https://github.com/MangZai-120/shape-shifter-curse-addon/actions)内下载ssc和ssca开发版
 
 ## 添加模组
 
