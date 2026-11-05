@@ -9,6 +9,7 @@ import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaTeleport;
 import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
 import java.util.HashMap;
@@ -242,18 +243,20 @@ public final class SkillHudCatalog {
     }
 
     public static List<Skill> forForm(Identifier form, PlayerEntity player) {
-        if (!"my_addon".equals(form.getNamespace())) return List.of();
+        if (form == null || !"my_addon".equals(form.getNamespace())) return List.of();
+        form = FormIdMigration.canonical(form);
+        String resourcePath = FormIdMigration.legacy(form).getPath();
                 // 护符佩戴判定走每 tick 缓存（原每帧全饰品扫描 + Curios 反射链，只为选一张静态技能表）
                 if ((FormIdentifiers.FAMILIAR_FOX_SP.equals(form) || FormIdentifiers.FAMILIAR_FOX_RED.equals(form))
                                 && net.jackcooper.shapeShifterCurseAddon.client.ClientTickCache.isWearing(
                                                 net.jackcooper.shapeShifterCurseAddon.SscAddon.BLUE_FIRE_AMULET)) {
-                        return FORMS.get(form.getPath() + "_amulet");
+                        return FORMS.getOrDefault(resourcePath + "_amulet", List.of());
                 }
         if (FormIdentifiers.SNOW_FOX_SP.equals(form)) {
             return PowerUtils.getClientResourceValue(player, FormIdentifiers.SNOW_FOX_SWITCH_STATE) == 1
                     ? SNOW_RANGED : SNOW_MELEE;
         }
-        return FORMS.getOrDefault(form.getPath(), List.of());
+        return FORMS.getOrDefault(resourcePath, List.of());
     }
 
     public static boolean isUnlocked(Skill skill, PlayerEntity player) {

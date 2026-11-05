@@ -6,7 +6,7 @@
       "remove": []
     },
     "forms": {
-      "my_addon:anubis_wolf_sp": {
+      "my_addon:anubis_wolf_netherjudge": {
         "add": [
           "my_addon:form_anubis_wolf_sp_withered_bandage_plus"
         ],

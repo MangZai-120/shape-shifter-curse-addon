@@ -87,7 +87,8 @@ public abstract class AxolotlSpPerkDescriptionMixin {
         if (player != null && FamiliarFoxSpPerks.isSupported(FormUtils.getPlayerForm(player))
                 && "shape-shifter-curse".equals(perk.getNamespace())
                 && RegPerks.getPerkTree(RegPerks.T_FamiliarFox3PerkTree).getAllPerks().contains(perk)) {
-            String formKey = FormUtils.getPlayerForm(player).getFormID().getPath();
+            String formKey = net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration
+                    .legacy(FormUtils.getPlayerForm(player).getFormID()).getPath();
             cir.setReturnValue(Text.translatable("perk.ssc_addon." + formKey + "." + perk.getPath() + ".description"));
             return;
         }

@@ -6,15 +6,15 @@ public class FormIdentifiers {
 	// 羊形态（羊了个羊法术专属，2026-09-29 用户定稿）：空壳无 power 形态——变羊=切到它（技能/被动/魔法全失效），
 	// 渲染由 SheepFormRenderMixin 画原版羊模型；仅法术触发，不进选择菜单/进化链
 	public static final Identifier SHEEP_FORM = new Identifier("my_addon", "sheep_spell_form");
-	public static final Identifier FAMILIAR_FOX_SP = new Identifier("my_addon", "familiar_fox_sp");
-	public static final Identifier UPGRADE_FAMILIAR_FOX = new Identifier("my_addon", "upgrade_familiar_fox");
+	public static final Identifier FAMILIAR_FOX_SP = new Identifier("my_addon", "familiar_fox_spirit_realm_lord");
+	public static final Identifier UPGRADE_FAMILIAR_FOX = new Identifier("my_addon", "familiar_fox_upgrade");
 	public static final Identifier FAMILIAR_FOX_RED = new Identifier("my_addon", "familiar_fox_red");
 	public static final Identifier FAMILIAR_FOX_MANCIANIMA = new Identifier("my_addon", "familiar_fox_mancianima");
-	public static final Identifier SNOW_FOX_SP = new Identifier("my_addon", "snow_fox_sp");
+	public static final Identifier SNOW_FOX_SP = new Identifier("my_addon", "snow_fox_frost_spirit");
 	// 寒棘狐（Frostspine）——雪狐线月髓环进化形态（原版雪狐 snow_fox_3 经月髓环进化）；复用原版雪狐模型/贴图，能力完全等同原版雪狐
 	public static final Identifier SNOW_FOX_FROSTSPINE = new Identifier("my_addon", "snow_fox_frostspine");
-	public static final Identifier ALLAY_SP = new Identifier("my_addon", "allay_sp");
-	public static final Identifier WILD_CAT_SP = new Identifier("my_addon", "wild_cat_sp");
+	public static final Identifier ALLAY_SP = new Identifier("my_addon", "allay_crystal_sound");
+	public static final Identifier WILD_CAT_SP = new Identifier("my_addon", "wild_cat_moonlight_phantom");
 	// 食梦魔（Nightmare）——野猫线月髓环进化形态；入梦机制（累计伤害触发 debuff 免疫 + 粉红描边）
 	public static final Identifier WILD_CAT_NIGHTMARE = new Identifier("my_addon", "wild_cat_nightmare");
 	// 风灵（月髓环豹猫）——原版豹猫永久形态 ocelot_3 经月髓环进化获得；注册名 ocelot_wind_spirit
@@ -25,15 +25,15 @@ public class FormIdentifiers {
 	public static final Identifier OCELOT_NOVA_NINE_LIVES = new Identifier("my_addon", "form_ocelot_nova_nine_lives");
 	// 朔望舍身爆炸蓄力标记资源（0/1，同步客户端；蓄力期门控 sneaking_speed_up，禁 shift 潜行加速）
 	public static final Identifier OCELOT_NOVA_CHARGING = new Identifier("my_addon", "form_ocelot_nova_charging");
-	public static final Identifier AXOLOTL_SP = new Identifier("my_addon", "axolotl_sp");
+	public static final Identifier AXOLOTL_SP = new Identifier("my_addon", "axolotl_abyssal_overlord");
 	// 进化美西螈（Upgrade Axolotl）- SSCA 进化加点路线起点形态，基于原版美西螈 axolotl_3，能力按进化树解锁
-	public static final Identifier UPGRADE_AXOLOTL = new Identifier("my_addon", "upgrade_axolotl");
+	public static final Identifier UPGRADE_AXOLOTL = new Identifier("my_addon", "axolotl_upgrade");
 	// 荧光幼灵（Axolotl Fluorescent）- SP美西螈经进化石进化获得
 	public static final Identifier AXOLOTL_FLUORESCENT = new Identifier("my_addon", "axolotl_fluorescent");
 	// 阿澪（Aling）- 特殊形态，基于荧光幼灵，技能一致，专属模型/贴图，颜色不可改
 	public static final Identifier AXOLOTL_ALING = new Identifier("my_addon", "axolotl_aling");
-	public static final Identifier FALLEN_ALLAY_SP = new Identifier("my_addon", "fallen_allay_sp");
-	public static final Identifier ANUBIS_WOLF_SP = new Identifier("my_addon", "anubis_wolf_sp");
+	public static final Identifier FALLEN_ALLAY_SP = new Identifier("my_addon", "allay_spirit_of_the_fallen");
+	public static final Identifier ANUBIS_WOLF_SP = new Identifier("my_addon", "anubis_wolf_netherjudge");
 	public static final Identifier SNOW_FOX_RESOURCE = new Identifier("my_addon", "form_snow_fox_sp_resource");
 	public static final Identifier SNOW_FOX_REGEN_COOLDOWN = new Identifier("my_addon", "form_snow_fox_sp_frost_regen_cooldown_resource");
 	public static final Identifier SNOW_FOX_MELEE_PRIMARY = new Identifier("my_addon", "form_snow_fox_sp_melee_primary");
@@ -68,7 +68,7 @@ public class FormIdentifiers {
 	// 雪狐形态切换状态
 	public static final Identifier SNOW_FOX_SWITCH_STATE = new Identifier("my_addon", "form_snow_fox_sp_switch_state");
 	// 金沙岚SP
-	public static final Identifier GOLDEN_SANDSTORM_SP = new Identifier("my_addon", "golden_sandstorm_sp");
+	public static final Identifier GOLDEN_SANDSTORM_SP = new Identifier("my_addon", "anubis_wolf_golden_sandstorm");
 	public static final Identifier GOLDEN_SANDSTORM_COUNTER_BURST_CD = new Identifier("my_addon", "form_golden_sandstorm_sp_counter_burst_cd");
 	// 契灵 - 抗伤栏与无敌帧资源
 	public static final Identifier MANCIANIMA_RESISTANCE = new Identifier("my_addon", "form_mancianima_resistance");

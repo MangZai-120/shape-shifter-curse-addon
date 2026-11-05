@@ -37,6 +37,14 @@ tasks.register('anomalyLedgerTest', JavaExec) {
 }
 check.dependsOn anomalyLedgerTest
 
+tasks.register('anomalyBadgeRendererTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.client.renderer.AnomalyBadgeRendererTest'
+    systemProperty 'java.awt.headless', 'true'
+}
+check.dependsOn anomalyBadgeRendererTest
+
 tasks.register('entityDisplayClockTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
@@ -79,7 +87,14 @@ tasks.register('blueTrailRecipeTest', JavaExec) {
     mainClass = 'net.jackcooper.shapeShifterCurseAddon.network.visual.VisualRecipeTestBootstrap'
     args 'net.jackcooper.shapeShifterCurseAddon.network.visual.BlueTrailRecipeTest'
 }
-['parametricVisualTest', 'mistMeteorDomainRecipeTest', 'blueTrailRecipeTest'].each { name ->
+tasks.register('clientFormSettingsMigrationTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.network.visual.VisualRecipeTestBootstrap'
+    args 'net.jackcooper.shapeShifterCurseAddon.config.ClientFormSettingsMigrationTest'
+    systemProperty 'ssca.testMixinHooks', 'true'
+}
+['parametricVisualTest', 'mistMeteorDomainRecipeTest', 'blueTrailRecipeTest', 'clientFormSettingsMigrationTest'].each { name ->
     tasks.named(name, JavaExec) {
         workingDir = layout.buildDirectory.dir('network-sync/' + name).get().asFile
         systemProperty 'fabric.development', 'true'
@@ -93,7 +108,7 @@ tasks.register('blueTrailRecipeTest', JavaExec) {
         }
     }
 }
-check.dependsOn parametricVisualTest, mistMeteorDomainRecipeTest, blueTrailRecipeTest
+check.dependsOn parametricVisualTest, mistMeteorDomainRecipeTest, blueTrailRecipeTest, clientFormSettingsMigrationTest
 
 tasks.register('neoMagicStressModelTest', JavaExec) {
     dependsOn testClasses
@@ -366,6 +381,13 @@ repositories {
     maven { url "https://maven.terraformersmc.com" }
 }
 
+// CI supplies its verified upstream snapshot; local development keeps the sibling checkout default.
+def sscJar = file(providers.gradleProperty('ssc_jar_path').getOrElse(
+        "../幻型者诅咒原版_official/build/libs/shape-shifter-curse-fabric-${project.ssc_version}.jar"))
+if (!sscJar.isFile()) {
+    throw new GradleException("SSC JAR not found: ${sscJar}. Build SSC first or pass -Pssc_jar_path=/path/to/ssc.jar.")
+}
+
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -379,7 +401,7 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     // Shape Shifter Curse Main Mod（原版源码目录：幻型者诅咒原版_official，onixary 官方 clone 干净版）
-    modImplementation files("../幻型者诅咒原版_official/build/libs/shape-shifter-curse-fabric-${project.ssc_version}.jar")
+    modImplementation files(sscJar)
     // 本地 SSC jar 不传递 Maven 依赖；开发启动和 Fabric 集成测试仍需其 Satin 依赖。
     modRuntimeOnly("org.ladysnake:satin:1.14.0") { transitive = false }
     

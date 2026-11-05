@@ -68,6 +68,8 @@ public class SscAddonClient implements ClientModInitializer {
 		net.jackcooper.shapeShifterCurseAddon.client.renderer.FrozenShellRenderer.init();
 		FrozenAnimationState.init();
 		AnomalyClient.init();
+		net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(
+				net.jackcooper.shapeShifterCurseAddon.client.renderer.AnomalyBadgeRenderer::render);
 		net.jackcooper.shapeShifterCurseAddon.client.particle.FirstPersonParticles.init();
 		CountdownClient.init();
         SkillCooldownClient.init();

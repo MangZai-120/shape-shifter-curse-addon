@@ -1,4 +1,5 @@
 {
+    "name": "codex.form.my_addon.allay_crystal_sound.name",
     "powers": [
         "my_addon:form_allay_sp_scale",
         "my_addon:form_allay_sp_fly_hunger",

@@ -78,8 +78,9 @@ public class JobChangeSelectScreen extends Screen {
 
         for (EvolutionRoute route : ordered) {
             Identifier fid = route.startForm;
-            String ns = fid.getNamespace();
-            String path = fid.getPath();
+            Identifier resourceId = net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.legacy(fid);
+            String ns = resourceId.getNamespace();
+            String path = resourceId.getPath();
             Item icon = Items.NETHER_STAR;
             String baseId = route.getBaseNodeId();
             if (baseId != null) {

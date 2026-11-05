@@ -44,6 +44,6 @@
     },
     "order": 2,
     "impact": 0,
-    "name": "进化美西螈",
+    "name": "codex.form.my_addon.axolotl_upgrade.name",
     "description": "以原版美西螈为基础的独立进化形态，能力按进化等级解锁。"
 }

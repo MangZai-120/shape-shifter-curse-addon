@@ -3,7 +3,7 @@
 
   "enabled": true,
   "display_name": "evolution.my_addon.axolotl.name",
-  "start_form": "my_addon:upgrade_axolotl",
+  "start_form": "my_addon:axolotl_upgrade",
   "base_node": "axolotl_base",
   "level_milestones": [5, 10, 15, 20, 30, 40],
   "auto_branch_level": 50,
@@ -21,7 +21,7 @@
   ],
 
   "branches": {
-    "moon_ring":       { "sp_form": "my_addon:axolotl_sp",          "requires_nodes": ["become_water"] },
+    "moon_ring":       { "sp_form": "my_addon:axolotl_abyssal_overlord",          "requires_nodes": ["become_water"] },
     "evolution_stone": { "sp_form": "my_addon:axolotl_fluorescent", "requires_nodes": ["become_water"] }
   }
 }

@@ -4,6 +4,7 @@ import com.google.gson.*;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -20,7 +21,7 @@ public final class NeoRules implements SimpleSynchronousResourceReloadListener {
     public static double recoveryRate = .25;
     private static final String ENGINE=net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("ssc_addon").map(mod->mod.getMetadata().getVersion().getFriendlyString()).orElse("test");
     public static String version() { return ENGINE+":"+version; }
-    public static Profile profile(String id) { return forms.getOrDefault(id,DEFAULT_PROFILE); }
+    public static Profile profile(String id) { return forms.getOrDefault(FormIdMigration.canonical(id),DEFAULT_PROFILE); }
     public static Coefficients cost(Core c) {
         var configured=costs.get(c);
         return configured!=null?configured:coefficients(c);
@@ -40,7 +41,10 @@ public final class NeoRules implements SimpleSynchronousResourceReloadListener {
                 double s=p.get("safety").getAsDouble(), f=p.get("failure").getAsDouble(), j=p.get("offset").getAsDouble();
                 double m=p.has("merge")?p.get("merge").getAsDouble():1, split=p.has("split")?p.get("split").getAsDouble():1;
                 if(!Double.isFinite(s+f+j+m+split) || s<=0 || f<=0 || j<=0 || m<=0 || split<=0) throw new IllegalArgumentException("Invalid form: "+e.getKey());
-                next.put(e.getKey(),new Profile(s,f,j,m,split,false));
+                String id=FormIdMigration.canonical(e.getKey());
+                Profile profile=new Profile(s,f,j,m,split,false);
+                if(id.equals(e.getKey())) next.put(id,profile);
+                else next.putIfAbsent(id,profile);
             });
             Map<Core,Coefficients> nextCosts=new EnumMap<>(Core.class);
             for(Core c:Core.values()) {

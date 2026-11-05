@@ -187,12 +187,46 @@ public class SSCAddonClientConfig implements ConfigData {
 	public java.util.List<String> colorTutorialSeenSaves = new java.util.ArrayList<>();
 
 	/**
-	 * 按形态的「特殊键位」配置（key = 形态 ID 的 path，如 "snow_fox_sp"）。
+	 * 按形态的「特殊键位」配置（key = 形态 ID 的 path，如 "snow_fox_frost_spirit"）。
 	 * 由 SSCA 自定义的「特殊键位设置」二级菜单维护，不在 AutoConfig GUI 中展示。
 	 * 某形态启用后，其主/副技能触发键从「同步 SSC 的 G 键」改为自定义按键。
 	 */
 	@ConfigEntry.Gui.Excluded
 	public java.util.Map<String, FormKeybind> formKeybinds = new java.util.HashMap<>();
+
+	private transient java.util.Map<String, FormKeybind> migratedFormKeybinds;
+
+	@Override
+	public void validatePostLoad() {
+		migrateFormKeybinds();
+	}
+
+	/** 旧版形态键位沿用到新 ID；已有新键位优先，第三方配置原样保留。 */
+	public void migrateFormKeybinds() {
+		if (formKeybinds == null) {
+			formKeybinds = new java.util.HashMap<>();
+		}
+		for (String oldPath : new java.util.ArrayList<>(formKeybinds.keySet())) {
+			String newPath = net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.canonicalPath(oldPath);
+			if (!java.util.Objects.equals(oldPath, newPath)) {
+				formKeybinds.putIfAbsent(newPath, formKeybinds.get(oldPath));
+				formKeybinds.remove(oldPath);
+			}
+		}
+		migratedFormKeybinds = formKeybinds;
+	}
+
+	public FormKeybind getFormKeybind(String formPath) {
+		if (migratedFormKeybinds != formKeybinds || formKeybinds == null) migrateFormKeybinds();
+		return formKeybinds.get(net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.canonicalPath(formPath));
+	}
+
+	public FormKeybind getOrCreateFormKeybind(String formPath) {
+		if (migratedFormKeybinds != formKeybinds || formKeybinds == null) migrateFormKeybinds();
+		return formKeybinds.computeIfAbsent(
+				net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.canonicalPath(formPath),
+				k -> new FormKeybind());
+	}
 
 	public enum MancianimaTeleportMode {
 		RAYCAST,

@@ -6,6 +6,12 @@
     "plugin": "net.jackcooper.shapeShifterCurseAddon.mixin.plugin.SscAddonMixinConfigPlugin",
     "refmap": "ssc-addon.refmap.json",
     "mixins": [
+        "FormRegistryAliasMixin",
+        "FormComponentMigrationMixin",
+        "FormOriginIdentityMixin",
+        "FormArgumentAliasMixin",
+        "TransformActionAliasMixin",
+        "FormPotionAliasMixin",
         "SscCircleVisualMixin",
         "entity.SscWebBulletTrailMixin",
         "FrozenNetworkMixin",
@@ -119,6 +125,7 @@
         "WanderingTraderTradeMixin"
     ],
     "client": [
+        "client.FormColorDataMigrationMixin",
         "client.FrozenAnimationRenderMixin",
         "client.FrozenPlayerAnimationTickMixin",
         "client.FrozenPlayerAnimationStackMixin",

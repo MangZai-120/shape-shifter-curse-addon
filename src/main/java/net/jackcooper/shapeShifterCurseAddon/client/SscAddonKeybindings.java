@@ -10,6 +10,8 @@ import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import org.lwjgl.glfw.GLFW;
 
 import java.lang.reflect.Field;
@@ -113,7 +115,9 @@ public class SscAddonKeybindings {
 			if (form == null || form.getFormID() == null) {
 				return null;
 			}
-			return form.getFormID().getPath();
+			// These path-keyed settings belong to SSCA; another addon may reuse the same path.
+			if (!"my_addon".equals(form.getFormID().getNamespace())) return null;
+			return FormIdMigration.canonical(form.getFormID()).getPath();
 		} catch (Throwable t) {
 			return null;
 		}
@@ -143,7 +147,7 @@ public class SscAddonKeybindings {
 		String formPath = getCurrentFormPath();
 		if (formPath != null) {
 			SSCAddonClientConfig cfg = SSCAddonConfig.client();
-			SSCAddonClientConfig.FormKeybind entry = cfg.formKeybinds.get(formPath);
+			SSCAddonClientConfig.FormKeybind entry = cfg.getFormKeybind(formPath);
 			if (entry != null && entry.enabled) {
 				// 启用自定义：只认自定义键（G 在此形态被自动屏蔽）
 				return settleSecondary(primary, formPath, isPhysicalKeyDown(primary ? entry.primaryKey : entry.secondaryKey));
@@ -156,7 +160,9 @@ public class SscAddonKeybindings {
 
 	private static boolean settleSecondary(boolean primary, String form, boolean pressed) {
 		if (primary) return pressed;
-		if ("axolotl_sp".equals(form)) return AxolotlSecondaryInput.filter(pressed);
+		if (FormIdentifiers.AXOLOTL_SP.getPath().equals(form)) {
+			return AxolotlSecondaryInput.filter(pressed);
+		}
 		AxolotlSecondaryInput.reset();
 		return pressed;
 	}
@@ -197,7 +203,7 @@ public class SscAddonKeybindings {
 		String formPath = getCurrentFormPath();
 		if (formPath != null) {
 			SSCAddonClientConfig cfg = SSCAddonConfig.client();
-			SSCAddonClientConfig.FormKeybind entry = cfg.formKeybinds.get(formPath);
+			SSCAddonClientConfig.FormKeybind entry = cfg.getFormKeybind(formPath);
 			if (entry != null && entry.enabled) {
 				return isPhysicalKeyDown(entry.secondaryKey);
 			}

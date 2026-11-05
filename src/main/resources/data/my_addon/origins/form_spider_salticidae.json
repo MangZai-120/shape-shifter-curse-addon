@@ -1,4 +1,5 @@
 {
+    "name": "codex.form.my_addon.spider_salticidae.name",
     "powers": [
         "shape-shifter-curse:form_spider_web_no_slow",
         "my_addon:form_spider_salticidae_web_sense_off",

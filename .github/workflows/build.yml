@@ -15,7 +15,7 @@ concurrency:
 
 env:
   SSC_REPOSITORY: https://github.com/onixary/shape-shifter-curse-fabric.git
-  SSC_DIRECTORY: .ssc-upstream
+  SSC_DIRECTORY: ssc-upstream
 
 jobs:
   build:
@@ -56,7 +56,7 @@ jobs:
       - name: 缓存 SSC 当前提交产物
         uses: actions/cache@v4
         with:
-          path: .ssc-upstream/build/libs
+          path: ${{ env.SSC_DIRECTORY }}/build/libs
           key: ssc-${{ runner.os }}-snapshot-v2-${{ steps.ssc.outputs.commit }}
 
       - name: 校验缓存的提交与 JAR

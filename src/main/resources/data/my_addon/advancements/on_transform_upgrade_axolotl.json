@@ -19,7 +19,7 @@
     "on_transform_upgrade_axolotl": {
       "trigger": "my_addon:on_transform_addon_form",
       "conditions": {
-        "form_id": "my_addon:upgrade_axolotl"
+        "form_id": "my_addon:axolotl_upgrade"
       }
     }
   },

@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import net.minecraft.nbt.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.PersistentState;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 import java.util.*;
 import static net.ssca.neomagic.NeoModel.*;
 
@@ -92,6 +93,15 @@ public final class NeoState extends PersistentState {
             String json=entries.contains(id,NbtElement.BYTE_ARRAY_TYPE)?new String(entries.getByteArray(id),java.nio.charset.StandardCharsets.UTF_8):entries.getString(id);
             PlayerData data = JSON.fromJson(json,PlayerData.class);
             validate(data);
+            String form=FormIdMigration.canonical(data.form);
+            boolean migrated=!form.equals(data.form);
+            data.form=form;
+            for(var record:data.records) {
+                String recordForm=FormIdMigration.canonical(record.form);
+                migrated|=!recordForm.equals(record.form);
+                record.form=recordForm;
+            }
+            if(migrated) s.markDirty();
             s.players.put(UUID.fromString(id),data);
         }
         return s;

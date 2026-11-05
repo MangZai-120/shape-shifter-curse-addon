@@ -69,6 +69,6 @@
     "order": 1,
     "unchoosable": true,
     "impact": 3,
-    "name": "SP Axolotl",
+    "name": "codex.form.my_addon.axolotl_abyssal_overlord.name",
     "description": "The evolved spirit form of the axolotl."
 }

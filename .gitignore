@@ -14,6 +14,7 @@ bin/
 !.github/ci/**
 .github/ci/__pycache__/
 /.ssc-upstream/
+/ssc-upstream/
 # GitHub 赞助按钮配置（Sponsor button）
 !.github/FUNDING.yml
 # 本地工具（不入版本库，各自从官方下载）

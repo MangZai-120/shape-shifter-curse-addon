@@ -73,7 +73,7 @@ public class SscAddonKeybindFormListScreen extends Screen {
 			int x = startX + col * (BTN_W + COL_GAP);
 			int baseY = TOP_Y + row * (BTN_H + ROW_GAP);
 
-			SSCAddonClientConfig.FormKeybind entry = cfg.formKeybinds.get(formPath);
+			SSCAddonClientConfig.FormKeybind entry = cfg.getFormKeybind(formPath);
 			boolean custom = entry != null && entry.enabled;
 			Text status = custom
 					? Text.translatable("text.ssc_addon.keybind.status.custom").formatted(Formatting.GREEN)

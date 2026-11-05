@@ -6,13 +6,13 @@
       "remove": []
     },
     "forms": {
-      "my_addon:familiar_fox_sp": {
+      "my_addon:familiar_fox_spirit_realm_lord": {
         "add": [
           "shape-shifter-curse:form_familiar_fox_amulet_bracelet_trinket_plus"
         ],
         "remove": []
       },
-      "my_addon:upgrade_familiar_fox": {
+      "my_addon:familiar_fox_upgrade": {
         "add": [
           "shape-shifter-curse:witch_friendly_neutral",
           "shape-shifter-curse:pillager_friendly_neutral",

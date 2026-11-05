@@ -4,6 +4,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -14,7 +15,7 @@ import java.util.List;
  * <p>
  * 来源 = {@link RegPlayerForms#playerForms} 中所有命名空间为 {@code my_addon} 的已注册形态
  * （SSCA 注册的形态全部如此），按注册顺序排列；如此新增/数据包形态会自动出现。
- * 显示名走 lang 键 {@code origin.my_addon.form_<path>.name}（与游戏内形态名一致）。
+ * 显示名走 SSC 图鉴使用的形态名称，与形态改变卷轴一致。
  */
 public final class SscAddonSkillForms {
 
@@ -51,6 +52,6 @@ public final class SscAddonSkillForms {
 
 	/** 形态显示名（复用游戏内形态名 lang 键）。 */
 	public static Text displayName(String formPath) {
-		return Text.translatable("origin.my_addon.form_" + formPath + ".name");
+		return Text.translatable("codex.form.my_addon." + FormIdMigration.canonicalPath(formPath) + ".name");
 	}
 }

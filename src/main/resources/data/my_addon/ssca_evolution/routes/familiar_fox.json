@@ -3,7 +3,7 @@
 
   "enabled": true,
   "display_name": "evolution.my_addon.familiar_fox.name",
-  "start_form": "my_addon:upgrade_familiar_fox",
+  "start_form": "my_addon:familiar_fox_upgrade",
   "base_node": "familiar_fox_base",
   "level_milestones": [5, 10, 15, 20, 30, 40, 45],
   "auto_branch_level": 50,
@@ -22,7 +22,7 @@
   ],
 
   "branches": {
-    "spirit_lord": { "sp_form": "my_addon:familiar_fox_sp",          "requires_nodes": ["fire_ring"] },
+    "spirit_lord": { "sp_form": "my_addon:familiar_fox_spirit_realm_lord",          "requires_nodes": ["fire_ring"] },
     "mancianima":  { "sp_form": "my_addon:familiar_fox_mancianima",  "requires_nodes": ["fire_ring"] }
   }
 }

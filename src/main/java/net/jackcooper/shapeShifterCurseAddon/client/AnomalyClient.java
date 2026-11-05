@@ -1,6 +1,9 @@
 package net.jackcooper.shapeShifterCurseAddon.client;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -15,7 +18,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.LivingEntity;
 
-/** Read-only mirror for future HUD/target bars. No rendering or combat decisions live here. */
+/** Read-only mirror for world badges and target HUDs. No rendering or combat decisions live here. */
 public final class AnomalyClient {
     private static final class View {
         final int entityId;
@@ -33,6 +36,9 @@ public final class AnomalyClient {
         long expiresAt() { return expiresAt; }
     }
     private static final Map<UUID, View> STATES = new HashMap<>();
+    private static final List<LivingEntity> TARGETS = new ArrayList<>();
+    private static final List<LivingEntity> READ_ONLY_TARGETS = Collections.unmodifiableList(TARGETS);
+    private static long targetsTick = Long.MIN_VALUE;
     private static ClientWorld world;
     private static long ticks;
     private static boolean initialized;
@@ -53,6 +59,7 @@ public final class AnomalyClient {
                     for (var effect : message.snapshot().effects()) duration = Math.max(duration, effect.ticks());
                     STATES.put(message.entityUuid(), new View(message.entityId(), message.snapshot(), ticks, ticks + duration));
                 }
+                invalidateTargets();
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(AnomalyNetwork.CONFIG, (client, handler, buffer, sender) -> {
@@ -68,7 +75,10 @@ public final class AnomalyClient {
         ClientEntityEvents.ENTITY_UNLOAD.register((entity, unloadedWorld) -> {
             if (world != unloadedWorld || STATES.isEmpty()) return;
             View view = STATES.get(entity.getUuid());
-            if (view != null && view.entityId() == entity.getId()) STATES.remove(entity.getUuid());
+            if (view != null && view.entityId() == entity.getId()) {
+                STATES.remove(entity.getUuid());
+                invalidateTargets();
+            }
         });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             ensureWorld(client.world);
@@ -107,8 +117,43 @@ public final class AnomalyClient {
     }
 
     public static int trackedCount() { return STATES.size(); }
+
+    /** Resolve only synchronized accumulating targets, once per tick; includes NPCs and creatures. */
+    public static List<LivingEntity> accumulationTargets() {
+        if (world == null || MinecraftClient.getInstance().world != world) return List.of();
+        if (targetsTick != ticks) {
+            TARGETS.clear();
+            for (var entry : STATES.entrySet()) {
+                View view = entry.getValue();
+                if (view.snapshot().values().isEmpty()
+                        || ticks - view.received() >= view.snapshot().remainingTicks()) continue;
+                var entity = world.getEntityById(view.entityId());
+                if (entity instanceof LivingEntity living && living.isAlive() && !living.isRemoved()
+                        && living.getUuid().equals(entry.getKey())) TARGETS.add(living);
+            }
+            targetsTick = ticks;
+        }
+        return READ_ONLY_TARGETS;
+    }
+
+    private static void invalidateTargets() {
+        TARGETS.clear();
+        targetsTick = Long.MIN_VALUE;
+    }
+
+    /** Allocation-free view for world badges; time/effects projection stays in snapshot(). */
+    public static Map<String, Double> accumulation(LivingEntity entity) {
+        var client = MinecraftClient.getInstance();
+        if (!entity.isAlive() || entity.isRemoved() || client.world != world || entity.getWorld() != world)
+            return Map.of();
+        View view = STATES.get(entity.getUuid());
+        if (view == null || view.entityId() != entity.getId()
+                || ticks - view.received() >= view.snapshot().remainingTicks()) return Map.of();
+        return view.snapshot().values();
+    }
+
     private static void ensureWorld(ClientWorld current) {
         if (world != current) { clear(); world = current; }
     }
-    private static void clear() { STATES.clear(); world = null; ticks = 0; }
+    private static void clear() { STATES.clear(); invalidateTargets(); world = null; ticks = 0; }
 }

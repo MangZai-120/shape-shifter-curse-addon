@@ -97,6 +97,7 @@ public final class EvolutionRegistry implements SimpleSynchronousResourceReloadL
         if (formId == null) {
             return null;
         }
+        formId = net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.canonical(formId);
         for (EvolutionRoute r : routes.values()) {
             if (formId.equals(r.startForm)) {
                 return r;

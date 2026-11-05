@@ -34,13 +34,13 @@ public class SscAddonKeybindConfigScreen extends Screen {
 	public SscAddonKeybindConfigScreen(Screen parent, String formPath) {
 		super(SscAddonSkillForms.displayName(formPath));
 		this.parent = parent;
-		this.formPath = formPath;
+		this.formPath = net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.canonicalPath(formPath);
 	}
 
 	@Override
 	protected void init() {
 		SSCAddonClientConfig cfg = AutoConfig.getConfigHolder(SSCAddonClientConfig.class).getConfig();
-		entry = cfg.formKeybinds.computeIfAbsent(formPath, k -> new SSCAddonClientConfig.FormKeybind());
+		entry = cfg.getOrCreateFormKeybind(formPath);
 
 		final int w = 220;
 		final int h = 20;

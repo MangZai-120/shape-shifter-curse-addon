@@ -25,6 +25,7 @@ import net.jackcooper.shapeShifterCurseAddon.story.MoonScarStoryManager;
 import net.jackcooper.shapeShifterCurseAddon.story.TideSpiritStoryManager;
 import net.jackcooper.shapeShifterCurseAddon.util.AdvancementUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionManager;
 import net.jackcooper.shapeShifterCurseAddon.util.MoonMarrowFormAdvancements;
 import org.jetbrains.annotations.Nullable;
@@ -72,7 +73,8 @@ public class SpUpgradeItem extends Item {
 	}
 
 	public static void registerUpgrade(String fromNamespace, String fromPath, String toNamespace, String toPath) {
-		UPGRADE_MAP.put(new Identifier(fromNamespace, fromPath), new Identifier(toNamespace, toPath));
+		UPGRADE_MAP.put(FormIdMigration.canonical(new Identifier(fromNamespace, fromPath)),
+				FormIdMigration.canonical(new Identifier(toNamespace, toPath)));
 	}
 
 	@Override

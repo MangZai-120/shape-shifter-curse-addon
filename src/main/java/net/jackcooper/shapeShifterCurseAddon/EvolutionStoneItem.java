@@ -19,6 +19,7 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionManager;
 import net.jackcooper.shapeShifterCurseAddon.util.AdvancementUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 
 public class EvolutionStoneItem extends Item {
 
@@ -53,22 +54,22 @@ public class EvolutionStoneItem extends Item {
 			if (playerFormID != null) {
 				// Allow Wild Cat (Feral Cat SP) to evolve to Wild Cat SP
 				if (playerFormID.equals(new Identifier("shape-shifter-curse", "feral_cat_sp"))) {
-					targetFormId = new Identifier("my_addon", "wild_cat_sp");
+					targetFormId = FormIdentifiers.WILD_CAT_SP;
 					canEvolve = true;
 				}
 				// Allow Snow Fox 3 (permanent phase) to evolve to Snow Fox SP
 				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "snow_fox_3"))) {
-					targetFormId = new Identifier("my_addon", "snow_fox_sp");
+					targetFormId = FormIdentifiers.SNOW_FOX_SP;
 					canEvolve = true;
 				}
 				// Allow Allay to evolve to SP Allay
 				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "allay_sp"))) {
-					targetFormId = net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.ALLAY_SP;
+					targetFormId = FormIdentifiers.ALLAY_SP;
 					canEvolve = true;
 				}
 				// 允许原版三阶段胡狼使用进化石进化为金沙岚
 				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "anubis_wolf_3"))) {
-					targetFormId = new Identifier("my_addon", "golden_sandstorm_sp");
+					targetFormId = FormIdentifiers.GOLDEN_SANDSTORM_SP;
 					canEvolve = true;
 				}
 				// 允许原版三阶段使魔使用进化石进化为契灵（与月髓环→灵界之主的路径并行存在）
@@ -77,7 +78,7 @@ public class EvolutionStoneItem extends Item {
 					canEvolve = true;
 				}
 				// 允许进化使魔（SSCA 路线）使用进化石进化为契灵：需 50 级解锁两分支后才允许（门控在下方）
-				else if (playerFormID.equals(new Identifier("my_addon", "upgrade_familiar_fox"))) {
+				else if (playerFormID.equals(FormIdentifiers.UPGRADE_FAMILIAR_FOX)) {
 					targetFormId = new Identifier("my_addon", "familiar_fox_mancianima");
 					canEvolve = true;
 				}
@@ -91,7 +92,7 @@ public class EvolutionStoneItem extends Item {
 					targetFormId = new Identifier("my_addon", "axolotl_fluorescent");
 					canEvolve = true;				}
 				// 允许进化美西螈（SSCA 路线）使用进化石进化为荧光幼灵：需 50 级解锁两分支后才允许（门控在下方）
-				else if (playerFormID.equals(new Identifier("my_addon", "upgrade_axolotl"))) {
+				else if (playerFormID.equals(FormIdentifiers.UPGRADE_AXOLOTL)) {
 					targetFormId = new Identifier("my_addon", "axolotl_fluorescent");
 					canEvolve = true;				}				// 允许原版豹猫永久形态 ocelot_3 使用进化石进化为朔望（与月髓环→风灵并行存在，不同道具不冲突）
 				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "ocelot_3"))) {

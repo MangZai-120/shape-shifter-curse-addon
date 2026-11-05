@@ -110,7 +110,8 @@ public class EvolutionRoute {
         boolean enabled = !o.has("enabled") || o.get("enabled").getAsBoolean();
         String displayNameKey = o.has("display_name") ? o.get("display_name").getAsString()
                 : "evolution.my_addon." + routeId + ".name";
-        Identifier startForm = o.has("start_form") ? Identifier.tryParse(o.get("start_form").getAsString()) : null;
+        Identifier startForm = o.has("start_form") ? net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration
+                .canonical(Identifier.tryParse(o.get("start_form").getAsString())) : null;
         int autoBranchLevel = o.has("auto_branch_level") ? o.get("auto_branch_level").getAsInt() : -1;
         int[] milestones = parseIntArray(o, "level_milestones");
 
@@ -140,7 +141,8 @@ public class EvolutionRoute {
                 JsonObject b = en.getValue().getAsJsonObject();
                 String bName = b.has("display_name") ? b.get("display_name").getAsString()
                         : "evolution.my_addon." + routeId + ".branch." + bid;
-                Identifier spForm = b.has("sp_form") ? Identifier.tryParse(b.get("sp_form").getAsString()) : null;
+                Identifier spForm = b.has("sp_form") ? net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration
+                        .canonical(Identifier.tryParse(b.get("sp_form").getAsString())) : null;
                 List<String> req = new ArrayList<>();
                 if (b.has("requires_nodes") && b.get("requires_nodes").isJsonArray()) {
                     for (JsonElement e : b.getAsJsonArray("requires_nodes")) {

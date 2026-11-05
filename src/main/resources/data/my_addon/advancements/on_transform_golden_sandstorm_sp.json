@@ -19,7 +19,7 @@
     "on_transform_golden_sandstorm_sp": {
       "trigger": "my_addon:on_transform_addon_form",
       "conditions": {
-        "form_id": "my_addon:golden_sandstorm_sp"
+        "form_id": "my_addon:anubis_wolf_golden_sandstorm"
       }
     }
   },

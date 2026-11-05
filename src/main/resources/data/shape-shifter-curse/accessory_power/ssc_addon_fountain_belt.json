@@ -6,7 +6,7 @@
       "remove": []
     },
     "forms": {
-      "my_addon:axolotl_sp": {
+      "my_addon:axolotl_abyssal_overlord": {
         "add": [
           "my_addon:form_axolotl_sp_fountain_belt_trinket"
         ],

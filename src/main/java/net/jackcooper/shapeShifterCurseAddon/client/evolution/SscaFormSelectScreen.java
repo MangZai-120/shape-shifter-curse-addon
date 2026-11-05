@@ -87,8 +87,9 @@ public class SscaFormSelectScreen extends Screen {
 
         for (EvolutionRoute route : ordered) {
             Identifier fid = route.startForm;
-            String ns = fid.getNamespace();
-            String path = fid.getPath();
+            Identifier resourceId = net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.legacy(fid);
+            String ns = resourceId.getNamespace();
+            String path = resourceId.getPath();
             // 图标取初始节点图标；名称 / 描述按形态 id 推导对应 lang key
             Item icon = Items.NETHER_STAR;
             String baseId = route.getBaseNodeId();

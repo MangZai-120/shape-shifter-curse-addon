@@ -27,7 +27,8 @@ public class FormUtils {
 
 	public static boolean isForm(LivingEntity entity, Identifier formId) {
 		IForm currentForm = getCurrentForm(entity);
-		return currentForm != null && currentForm.getFormID() != null && currentForm.getFormID().equals(formId);
+		return currentForm != null && currentForm.getFormID() != null
+				&& currentForm.getFormID().equals(FormIdMigration.canonical(formId));
 	}
 
 	public static boolean isAnyForm(LivingEntity entity, Identifier... formIds) {
@@ -36,7 +37,7 @@ public class FormUtils {
 			return false;
 		}
 		for (Identifier formId : formIds) {
-			if (currentForm.getFormID().equals(formId)) {
+			if (currentForm.getFormID().equals(FormIdMigration.canonical(formId))) {
 				return true;
 			}
 		}

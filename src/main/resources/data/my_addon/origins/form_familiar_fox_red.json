@@ -70,6 +70,6 @@
     },
     "order": 10,
     "impact": 0,
-    "name": "使魔(Red)",
+    "name": "codex.form.my_addon.familiar_fox_red.name",
     "description": "使魔的Red变体形态。"
 }

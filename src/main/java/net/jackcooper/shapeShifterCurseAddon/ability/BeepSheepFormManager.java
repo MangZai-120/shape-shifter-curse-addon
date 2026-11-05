@@ -165,7 +165,8 @@ public final class BeepSheepFormManager {
 		NbtCompound cdTag = tag.getCompound("Cooldowns");
 		for (String key : cdTag.getKeys()) cds.put(key, cdTag.getInt(key));
 		SNAPSHOTS.put(player.getUuid(), new SheepSnapshot(
-				tag.getString("OriginalForm"), cds, tag.getLong("SheepStart")));
+				net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.canonical(tag.getString("OriginalForm")),
+				cds, tag.getLong("SheepStart")));
 	}
 
 	/** 玩家彻底退出（不留尸体数据）：清内存记录。 */

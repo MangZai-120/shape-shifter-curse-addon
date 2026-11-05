@@ -34,14 +34,14 @@
   },
   "spells": {},
   "forms": {
-    "my_addon:allay_sp": {
+    "my_addon:allay_crystal_sound": {
       "safety": 155,
       "failure": 0.9,
       "offset": 1.1,
       "merge": 1,
       "split": 1
     },
-    "my_addon:anubis_wolf_sp": {
+    "my_addon:anubis_wolf_netherjudge": {
       "safety": 155,
       "failure": 1.12,
       "offset": 1.05,
@@ -62,7 +62,7 @@
       "merge": 1,
       "split": 1
     },
-    "my_addon:axolotl_sp": {
+    "my_addon:axolotl_abyssal_overlord": {
       "safety": 120,
       "failure": 1.15,
       "offset": 0.85,
@@ -83,7 +83,7 @@
       "merge": 1,
       "split": 1
     },
-    "my_addon:fallen_allay_sp": {
+    "my_addon:allay_spirit_of_the_fallen": {
       "safety": 155,
       "failure": 0.9,
       "offset": 1.1,
@@ -104,14 +104,14 @@
       "merge": 0.8,
       "split": 1.1
     },
-    "my_addon:familiar_fox_sp": {
+    "my_addon:familiar_fox_spirit_realm_lord": {
       "safety": 200,
       "failure": 0.8,
       "offset": 0.9,
       "merge": 0.8,
       "split": 1.1
     },
-    "my_addon:golden_sandstorm_sp": {
+    "my_addon:anubis_wolf_golden_sandstorm": {
       "safety": 155,
       "failure": 1.12,
       "offset": 1.05,
@@ -146,7 +146,7 @@
       "merge": 1,
       "split": 1
     },
-    "my_addon:snow_fox_sp": {
+    "my_addon:snow_fox_frost_spirit": {
       "safety": 90,
       "failure": 1.02,
       "offset": 0.95,
@@ -167,14 +167,14 @@
       "merge": 1,
       "split": 1
     },
-    "my_addon:upgrade_axolotl": {
+    "my_addon:axolotl_upgrade": {
       "safety": 80,
       "failure": 1.1,
       "offset": 0.88,
       "merge": 1,
       "split": 1
     },
-    "my_addon:upgrade_familiar_fox": {
+    "my_addon:familiar_fox_upgrade": {
       "safety": 145,
       "failure": 0.74,
       "offset": 0.86,
@@ -188,7 +188,7 @@
       "merge": 1,
       "split": 1
     },
-    "my_addon:wild_cat_sp": {
+    "my_addon:wild_cat_moonlight_phantom": {
       "safety": 180,
       "failure": 1.02,
       "offset": 0.95,
