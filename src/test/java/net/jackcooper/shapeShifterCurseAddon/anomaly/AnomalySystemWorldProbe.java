@@ -96,6 +96,7 @@ public final class AnomalySystemWorldProbe {
             networkCodec();
             baseEffects();
             reactionEffects();
+            integratedReactions();
             meterAndOrdering();
             timedBoundaries();
         } catch (Throwable failure) {
@@ -357,6 +358,133 @@ public final class AnomalySystemWorldProbe {
         }
     }
 
+    /** Every pair also traverses actual accepted spell damage, accumulation and threshold dispatch. */
+    private static void integratedReactions() {
+        for (String[] pair : PAIRS) for (boolean reverse : new boolean[]{false, true}) {
+            var target = pig(center);
+            var peer = pig(center.add(2, 0, 0));
+            var protectedTarget = pig(center.add(-2, 0, 0));
+            var outside = pig(center.add(6, 0, 0));
+            String protectedTag = WhitelistUtils.WHITELIST_MOB_TAG_PREFIX + protectedTarget.getUuid();
+            caster.addCommandTag(protectedTag);
+            String first = reverse ? pair[1] : pair[0];
+            String second = reverse ? pair[0] : pair[1];
+            String label = first + " -> " + second;
+            AnomalyManager.resetMetrics();
+
+            actualHit(target, first, 250);
+            CHECK.near(value(target, first), 250, label + ": first actual hit retains a partial meter");
+            CHECK.that(AnomalyManager.metrics().triggers() == 0, label + ": partial meter has no base effect");
+            float beforeBase = actualHit(target, first, 250);
+            CHECK.near(value(target, first), 0, label + ": first threshold consumes its own meter");
+            CHECK.that(AnomalyManager.metrics().triggers() == 1 && AnomalyManager.metrics().reactions() == 0,
+                    label + ": the first real threshold activates one base without a reaction");
+            if (first.equals("fire")) {
+                CHECK.near(target.getHealth(), beforeBase - 8, label + ": first fire base deals eight damage");
+            } else if (first.equals("ice")) {
+                status(target, SscAddon.FROZEN, 0, 100, label + ": first ice base freezes for five seconds");
+            } else {
+                CHECK.that(target.hasStatusEffect(baseMarker(first)), label + ": first base marker is actually active");
+            }
+
+            actualHit(target, second, 250);
+            CHECK.near(value(target, second), 250, label + ": another element still needs its own full meter");
+            CHECK.that(AnomalyManager.metrics().triggers() == 1 && AnomalyManager.metrics().reactions() == 0,
+                    label + ": a partial second element cannot react early");
+            float beforeSecondBase = actualHit(target, second, 250);
+            var metrics = AnomalyManager.metrics();
+            CHECK.that(metrics.enqueued() == 4 && metrics.processed() == 4 && metrics.pending() == 0,
+                    label + ": four original hits settle once without recursive accumulation");
+            CHECK.that(metrics.triggers() == 2 && metrics.reactions() == 1,
+                    label + ": the second base and exactly one unordered reaction both activate");
+            CHECK.that(AnomalyManager.snapshot(target).values().isEmpty(),
+                    label + ": both full meters are consumed without overflow");
+            if (!second.equals("fire") && !second.equals("ice")) {
+                CHECK.that(target.hasStatusEffect(baseMarker(second)),
+                        label + ": the second single-element effect remains alongside its reaction");
+            }
+            double additional = second.equals("fire") ? (first.equals("void") ? 9.2 : 8) : 0;
+            additional += switch (pair[0] + "/" + pair[1]) {
+                case "fire/ice" -> 8;
+                case "fire/void" -> 4.6; // The real void base also amplifies reaction damage by fifteen percent.
+                case "ice/void" -> 6.9;
+                default -> 0;
+            };
+            CHECK.near(target.getHealth(), beforeSecondBase - additional,
+                    label + ": second-base damage and reaction damage settle in the declared order");
+            integratedSignature(pair, target, peer, label);
+            CHECK.near(peer.getHealth(), pair[0].equals("fire") && pair[1].equals("ice") ? 192 : 200,
+                    label + ": only frostfire deals immediate area damage");
+            CHECK.near(protectedTarget.getHealth(), 200, label + ": the complete chain respects protected health");
+            CHECK.that(protectedTarget.getStatusEffects().isEmpty(), label + ": the complete chain respects protected statuses");
+            CHECK.near(outside.getHealth(), 200, label + ": the complete chain cannot damage outside its area");
+            CHECK.that(outside.getStatusEffects().isEmpty(), label + ": the complete chain cannot mark outside its area");
+            caster.removeScoreboardTag(protectedTag);
+            resetFixtures();
+        }
+    }
+
+    /** Returns health after the original hit but before the deferred base/reaction effects. */
+    private static float actualHit(PigEntity target, String element, double contribution) {
+        target.timeUntilRegen = 0;
+        CHECK.that(SpellHitHelper.hitRaw(caster, target, 1, 0, context(element, contribution)) == SpellHitHelper.HitResult.HIT,
+                "An actual " + element + " spell hit is accepted");
+        float beforeEffects = target.getHealth();
+        AnomalyManager.drain(test.getWorld().getServer());
+        return beforeEffects;
+    }
+
+    private static StatusEffect baseMarker(String element) {
+        return switch (element) {
+            case "lunar" -> AnomalyEffects.LUNAR_ECLIPSE;
+            case "curse" -> AnomalyEffects.CURSE_WEAKNESS;
+            case "summon" -> AnomalyEffects.SUMMON_MARK;
+            case "void" -> AnomalyEffects.VOID_EROSION;
+            case "space" -> AnomalyEffects.SPACE_BIND;
+            default -> throw new AssertionError("This base has no persistent marker: " + element);
+        };
+    }
+
+    private static void integratedSignature(String[] pair, PigEntity target, PigEntity peer, String label) {
+        switch (pair[0] + "/" + pair[1]) {
+            case "fire/ice" -> status(peer, AnomalyEffects.FROST_SLOW, 0, 100, label + ": frostfire area slow");
+            case "fire/lunar" -> status(target, AnomalyEffects.LUNAR_ECLIPSE, 1, 120, label + ": scorched moon");
+            case "fire/curse" -> status(peer, AnomalyEffects.CURSE_WEAKNESS, 0, 100, label + ": burning curse spreads");
+            case "fire/summon" -> CHECK.that(AnomalyEffects.budgetSnapshot(target).fireHits() == 3,
+                    label + ": flame spirit has its exact three-hit budget");
+            case "fire/void", "ice/void" -> status(target, AnomalyEffects.VOID_EROSION, 0, 120,
+                    label + ": void base remains after the additional reaction damage");
+            case "fire/space" -> CHECK.that(AnomalyEffects.diagnostics().zones() == 1,
+                    label + ": exactly one finite fire zone is created");
+            case "ice/lunar" -> status(target, AnomalyEffects.LUNAR_ECLIPSE, 0, 180, label + ": cold moon extends lunar");
+            case "ice/curse" -> status(target, AnomalyEffects.CURSE_WEAKNESS, 2, 120, label + ": cold curse strengthens weakness");
+            case "ice/summon" -> CHECK.that(AnomalyEffects.budgetSnapshot(target).frostHits() == 1,
+                    label + ": frost hunt has one follow-up");
+            case "ice/space" -> status(target, AnomalyEffects.NO_SPRINT, 0, 100, label + ": ice lock prevents sprinting");
+            case "lunar/curse" -> {
+                status(target, AnomalyEffects.LUNAR_ECLIPSE, 0, 180, label + ": dark moon lunar extension");
+                status(target, AnomalyEffects.CURSE_WEAKNESS, 0, 180, label + ": dark moon curse extension");
+            }
+            case "lunar/summon" -> CHECK.near(AnomalyEffects.budgetSnapshot(target).healingRemaining(), 4,
+                    label + ": spirit moon starts with four healing points");
+            case "lunar/void" -> status(target, AnomalyEffects.VOID_EROSION, 1, 120, label + ": eclipsed moon strengthens erosion");
+            case "lunar/space" -> status(peer, AnomalyEffects.LUNAR_ECLIPSE, 0, 100, label + ": moon field reaches peers");
+            case "curse/summon" -> status(target, AnomalyEffects.SUMMON_WEAKNESS, 0, 120, label + ": doomed spirit");
+            case "curse/void" -> {
+                status(target, AnomalyEffects.CURSE_WEAKNESS, 1, 120, label + ": withering weakness");
+                status(target, AnomalyEffects.VOID_EROSION, 1, 120, label + ": withering vulnerability");
+            }
+            case "curse/space" -> {
+                status(peer, AnomalyEffects.CURSE_WEAKNESS, 0, 100, label + ": forbidden field weakness");
+                status(peer, AnomalyEffects.NO_SPRINT, 0, 100, label + ": forbidden field sprint denial");
+            }
+            case "summon/void" -> status(target, AnomalyEffects.SUMMON_MARK, 1, 160, label + ": devouring spirit");
+            case "summon/space" -> status(peer, AnomalyEffects.SUMMON_MARK, 0, 160, label + ": spirit net reaches peers");
+            case "void/space" -> status(peer, AnomalyEffects.VOID_EROSION, 0, 100, label + ": rift reaches peers");
+            default -> throw new AssertionError("Missing integrated reaction assertion: " + label);
+        }
+    }
+
     private static void meterAndOrdering() {
         var target = pig(center);
         AnomalyManager.resetMetrics();
@@ -532,7 +660,44 @@ public final class AnomalySystemWorldProbe {
         var empty = pig(center.add(0, 84, 0));
         add(empty, "space", 0);
         CHECK.that(AnomalyManager.metrics().tracked() == beforeEmpty, "A zero-contribution hit without previous state allocates no target meter");
+
+        // Use actual hits for the radius/duration acceptance, instead of calling the executor directly.
+        var frostOrigin = pig(center.add(0, 108, 0));
+        var frostBoundary = pig(frostOrigin.getPos().add(5, 0, 0));
+        var frostInside = pig(frostOrigin.getPos().add(4.99, 0, 0));
+        var frostVertical = pig(frostOrigin.getPos().add(0, 4.99, 0));
+        var frostOutside = pig(frostOrigin.getPos().add(5.01, 0, 0));
+        var frostCorner = pig(frostOrigin.getPos().add(4, 4, 0));
+        actualHit(frostOrigin, "ice", 500);
+        actualHit(frostOrigin, "fire", 500);
+        List<PigEntity> frostVictims = List.of(frostBoundary, frostInside, frostVertical);
+        for (PigEntity victim : frostVictims) {
+            CHECK.near(victim.getHealth(), 192, "Actual frostfire reaches the inclusive five-block sphere once");
+            status(victim, AnomalyEffects.FROST_SLOW, 0, 100, "Actual frostfire has a five-second slow");
+            CHECK.near(victim.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED), .125,
+                    "Actual frostfire halves speed independently of vanilla slowness rounding");
+        }
+        CHECK.near(frostOutside.getHealth(), 200, "Actual frostfire excludes a point just outside five blocks");
+        CHECK.near(frostCorner.getHealth(), 200, "Actual frostfire excludes an in-box point outside the five-block sphere");
+        CHECK.that(frostOutside.getStatusEffects().isEmpty() && frostCorner.getStatusEffects().isEmpty(),
+                "Outside targets receive neither damage nor slow");
         long queriesBefore = AnomalyEffects.diagnostics().localQueries();
+        AnomalyProbeSupport.later(test, 98, () -> {
+            for (PigEntity victim : frostVictims) {
+                CHECK.near(victim.getHealth(), 192, "Frostfire's five-second slow never repeats its damage");
+                CHECK.that(victim.hasStatusEffect(AnomalyEffects.FROST_SLOW), "Frostfire slow remains before five seconds");
+                CHECK.near(victim.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED), .125,
+                        "Frostfire retains the exact fifty-percent slow until expiry");
+            }
+        });
+        AnomalyProbeSupport.later(test, 102, () -> {
+            for (PigEntity victim : frostVictims) {
+                CHECK.near(victim.getHealth(), 192, "Frostfire causes exactly one eight-point hit over its full lifetime");
+                CHECK.that(!victim.hasStatusEffect(AnomalyEffects.FROST_SLOW), "Frostfire slow expires after five seconds");
+                CHECK.near(victim.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED), .25,
+                        "Frostfire expiry restores the original movement speed");
+            }
+        });
 
         AnomalyProbeSupport.later(test, 2, () -> {
             CHECK.that(!purified.hasStatusEffect(AnomalyEffects.FLAME_SPIRIT)
@@ -613,9 +778,10 @@ public final class AnomalySystemWorldProbe {
             AnomalyManager.setEnabledForTesting(previousEnabled);
             AnomalyProbeSupport.report("anomaly-system-world-result.json", Map.of("checks", CHECK.count,
                     "real_server_world", true, "base_effects", 7, "unordered_reactions", 21,
-                    "reaction_orders_tested", 42, "client_rendering_or_network_multiplayer_tested", false));
+                    "reaction_orders_tested", 42, "real_hit_reaction_orders_tested", 42,
+                    "frostfire_radius_duration_verified", true, "client_rendering_or_network_multiplayer_tested", false));
             System.out.println("ANOMALY_SYSTEM_WORLD_PASS checks=" + CHECK.count
-                    + " (seven base effects, forty-two reaction orders, exact timers, shared target state and cleanup; client/network multiplayer NOT tested)");
+                    + " (seven base effects, forty-two executor and real-hit reaction orders, exact five-block/five-second frostfire, exact timers, shared target state and cleanup; client/network multiplayer NOT tested)");
             test.complete();
         });
     }

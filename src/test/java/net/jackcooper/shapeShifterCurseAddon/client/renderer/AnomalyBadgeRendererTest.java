@@ -17,6 +17,7 @@ public final class AnomalyBadgeRendererTest {
 
     public static void main(String[] args) throws Exception {
         atlas();
+        progressGeometry();
         combinations();
         orientations();
         healthScaling();
@@ -26,100 +27,225 @@ public final class AnomalyBadgeRendererTest {
     private static void atlas() throws Exception {
         BufferedImage image;
         try (var stream = AnomalyBadgeRendererTest.class.getResourceAsStream(
-                "/assets/ssc_addon/textures/gui/anomaly/badges.png")) {
+                "/assets/ssc_addon/textures/gui/anomaly/badges64.png")) {
             if (stream == null) throw new AssertionError("Actual production atlas missing");
             image = ImageIO.read(stream);
         }
-        check(image.getWidth() == 1024 && image.getHeight() == 512, "Atlas holds exact 32 by 32 tiles");
-        check(pixel(image, 501, 16, 16) == 0xFF3E3E3E, "Centre keeps the reference charcoal grey");
-        check(pixel(image, 501, 16, 2) == 0xFF282828, "Unfilled ring keeps the reference darker grey");
-        check(pixel(image, 501, 16, 1) == 0xFF090909, "Black outer outline inside the transparent one-pixel margin");
-        check(pixel(image, 501, 0, 0) == 0, "Transparent square corners");
-        for (int tile : new int[]{500, 501}) {
-            for (int y = 0; y < 32; y++) for (int x = 0; x < 32; x++) {
-                int color = pixel(image, tile, x, y);
-                check(color == pixel(image, tile, 31-x, 31-y), "Outer frame and full ring share the exact pixel centre");
-                check(color == pixel(image, tile, 31-x, y) && color == pixel(image, tile, x, 31-y),
-                        "Circular frame is mirrored horizontally and vertically without skew");
-            }
-        }
-        int total = coverage(image, 500);
-        check(total == 200 && coverage(image, 0) == 0, "Empty and full rings cover only the annulus");
-        int previous = 0;
-        for (int step = 0; step <= 500; step++) {
-            int filled = coverage(image, step);
-            check(filled >= previous, "Increasing accumulation never erases a ring pixel");
-            check(Math.abs(filled / (double)total - step / 500.0) <= .015,
-                    "Ring area follows the 500 maximum within its pixel resolution");
-            previous = filled;
-        }
-        for (int y = 0; y < 32; y++) for (int x = 0; x < 32; x++) {
-            if (pixel(image, 125, x, y) != 0) check(x >= 16 && y < 16, "Quarter ring starts at top and runs clockwise");
-            if (pixel(image, 250, x, y) != 0) check(x >= 16, "Half ring occupies the right half");
-            if (pixel(image, 500, x, y) != 0) {
-                double radius = Math.hypot(x + .5 - 16, y + .5 - 16);
-                check(radius > 12 && radius <= 14.5, "Progress cannot recolour the grey centre or black outlines");
-            }
-        }
-        var silhouettes = new HashSet<List<Integer>>();
+        check(AnomalyBadgeLayout.PIXELS == 64 && image.getWidth() == 1024 && image.getHeight() == 128,
+                "The compact atlas stores native 64px layered art without hundreds of animation frames");
+        var faces = new HashSet<List<Integer>>();
+        int index = 0;
         for (var element : AnomalyBadgeLayout.ELEMENTS) {
             var pixels = new ArrayList<Integer>();
-            int visible = 0;
-            int minX = 32, minY = 32, maxX = -1, maxY = -1;
-            boolean mirrorHorizontal = !element.id().equals("lunar");
-            boolean mirrorVertical = List.of("ice", "void", "space").contains(element.id());
-            for (int y = 0; y < 32; y++) for (int x = 0; x < 32; x++) {
-                int value = pixel(image, element.glyphTile(), x, y);
-                if (value != 0) {
-                    check(value == 0xFFFFFFFF, "Glyph can be tinted without altering the background");
-                    check(Math.hypot(x+.5-16, y+.5-16) <= 11, "Glyph never touches the ring or crosses its inner border");
-                    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
-                    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
-                    visible++;
+            var faceColours = new HashSet<Integer>();
+            var ringColours = new HashSet<Integer>();
+            check(element.baseTile() == index++ * 2 && element.progressTile() == element.baseTile() + 1,
+                    "Every element addresses its own neighbouring face and progress layers");
+            int ringPixels = 0;
+            for (int y = 0; y < 64; y++) for (int x = 0; x < 64; x++) {
+                int face = pixel(image, element.baseTile(), x, y);
+                int ring = pixel(image, element.progressTile(), x, y);
+                check((face >>> 24) == 0 || (face >>> 24) == 255, "Face uses crisp transparent or opaque pixels");
+                check((ring >>> 24) == 0 || (ring >>> 24) == 255, "Progress uses crisp transparent or opaque pixels");
+                if (face != 0) faceColours.add(face);
+                if (ring != 0) {
+                    ringPixels++; ringColours.add(ring);
+                    check(Math.hypot(x + .5 - 32, y + .5 - 32) > 20,
+                            "Dynamic progress leaves the central element symbol untouched");
                 }
-                if (mirrorHorizontal) check(value == pixel(image, element.glyphTile(), 31-x, y),
-                        "Symmetric glyph has identical left/right pixels: " + element.id());
-                if (mirrorVertical) check(value == pixel(image, element.glyphTile(), x, 31-y),
-                        "Symmetric glyph has identical top/bottom pixels: " + element.id());
-                pixels.add(value);
+                if (x == 0 || y == 0 || x == 63 || y == 63)
+                    check((face >>> 24) == 0 && (ring >>> 24) == 0, "Transparent margin prevents neighbouring tile bleed");
+                pixels.add(face);
             }
-            check(visible >= 35, "Small glyph retains a visible silhouette");
-            if (element.id().equals("lunar"))
-                check(minX == 8 && maxX == 22 && minY == 7 && maxY == 24,
-                        "Original tilted crescent retains its authored position");
-            else check(minX + maxX == 31 && minY + maxY == 31, "Glyph bounds have equal margins to the centred frame");
-            if (element.id().equals("ice") || element.id().equals("void") || element.id().equals("space"))
-                check(maxX - minX == maxY - minY, "Radial glyph keeps a square aspect ratio");
-            check(silhouettes.add(pixels), "Every element has a different silhouette");
+            check(faceColours.size() > 30 && ringColours.size() > 16,
+                    "Authored metallic shading and element colour are stored in the texture, not a white tint mask");
+            check(ringPixels > 150 && ringPixels < 1800, "The progress layer contains a narrow ring");
+            check((pixel(image, element.baseTile(), 32, 32) >>> 24) == 255,
+                    "The recessed face remains opaque behind hollow elemental symbols");
+            check(faces.add(pixels), "All seven selected element faces remain distinct");
+            symmetricFrameAndCleanInnerEdge(image, element);
+            neutralTrackAndHighlights(image, element);
+            uniformRingMaterial(image, element);
         }
-        check(connectedParts(image, 504) == 1, "Lunar glyph is one crescent without a detached plus sign");
-        var lunarHash = java.security.MessageDigest.getInstance("SHA-256");
-        for (int y = 0; y < 32; y++) for (int x = 0; x < 32; x++)
-            lunarHash.update((byte)(pixel(image, 504, x, y) >>> 24));
-        check(java.util.HexFormat.of().formatHex(lunarHash.digest())
-                        .equals("60b15d40d8a1a16760df0720d6f7c4755b318fdb18912d3d9b34f382809e75ac"),
-                "Approved original crescent is pixel-identical after removing only the nine plus-sign pixels");
-        check(pixel(image, 505, 11, 14) == 0 && pixel(image, 505, 20, 14) == 0
-                        && pixel(image, 505, 15, 10) == 0xFFFFFFFF,
-                "Curse skull has two centred eye sockets and an intact cranium");
-        check(pixel(image, 505, 15, 17) == 0 && pixel(image, 505, 16, 17) == 0,
-                "Skull nose is centred between the eye sockets");
-        check(pixel(image, 505, 12, 21) == 0xFFFFFFFF && pixel(image, 505, 15, 21) == 0xFFFFFFFF
-                        && pixel(image, 505, 18, 21) == 0xFFFFFFFF
-                        && pixel(image, 505, 14, 21) == 0 && pixel(image, 505, 17, 21) == 0,
-                "Skull teeth and gaps have matching spacing");
         check(AnomalyBadgeLayout.ELEMENTS.get(0).color() == 0xBD1641, "Fire uses the reference red");
         check(AnomalyBadgeLayout.ELEMENTS.get(1).color() == 0x55DAEA, "Ice uses cyan blue");
         for (int amount = 0; amount <= 500; amount++)
-            check(AnomalyBadgeLayout.ringTile(amount, 500) == amount, "Every integer accumulation selects its actual atlas frame");
-        check(AnomalyBadgeLayout.ringTile(900, 500) == 500, "Overfull input cannot run into glyph tiles");
-        check(AnomalyBadgeLayout.ringTile(-1, 500) == 0 && AnomalyBadgeLayout.ringTile(Double.NaN, 500) == 0,
-                "Invalid display values remain within the ring atlas");
+            check(Math.abs(AnomalyBadgeLayout.fraction(amount, 500) - amount / 500.0) < 1e-12,
+                    "Every accumulation retains its continuous progress fraction");
+        check(AnomalyBadgeLayout.fraction(900, 500) == 1, "Overfull input clips to the complete ring");
+        check(AnomalyBadgeLayout.fraction(-1, 500) == 0 && AnomalyBadgeLayout.fraction(Double.NaN, 500) == 0
+                        && AnomalyBadgeLayout.fraction(Double.POSITIVE_INFINITY, 500) == 0
+                        && AnomalyBadgeLayout.fraction(200, 0) == 0,
+                "Invalid display values cannot create invalid geometry");
         try (var stream = AnomalyBadgeRendererTest.class.getResourceAsStream(
-                "/assets/ssc_addon/textures/gui/anomaly/badges.png.mcmeta")) {
+                "/assets/ssc_addon/textures/gui/anomaly/badges64.png.mcmeta")) {
             check(stream != null && new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
                     .contains("\"blur\":false"), "Pixel art disables filtered enlargement");
         }
+    }
+
+    private static void symmetricFrameAndCleanInnerEdge(BufferedImage image, AnomalyBadgeLayout.Element element) {
+        var reference = AnomalyBadgeLayout.ELEMENTS.get(0);
+        for (int y = 0; y < 64; y++) for (int x = 0; x < 64; x++) {
+            double radius = Math.hypot(x - 31.5, y - 31.5);
+            int face = pixel(image, element.baseTile(), x, y), alpha = face >>> 24;
+            check(alpha == (radius <= 30 ? 255 : 0),
+                    "Every face uses the same analytic 30px circular silhouette rather than inherited cutout fragments");
+            check(alpha == (pixel(image, element.baseTile(), 63 - x, y) >>> 24)
+                            && alpha == (pixel(image, element.baseTile(), x, 63 - y) >>> 24)
+                            && alpha == (pixel(image, element.baseTile(), 63 - x, 63 - y) >>> 24),
+                    "The complete circular frame is mirror-symmetric and centrally symmetric independently of glyph colour");
+            check(alpha == (pixel(image, reference.baseTile(), x, y) >>> 24),
+                    "All seven elements have a pixel-identical circular outline");
+            if (radius >= 20 && radius < 22)
+                check((face & 0xFFFFFF) == 0x141414,
+                        "The inner-edge guard disc is clean neutral grey, including the old coloured residue at radius 21");
+            if (radius >= 22 && radius < 23)
+                check((face & 0xFFFFFF) == 0x080808,
+                        "The inner bevel is rebuilt with a neutral black outline");
+            if (radius > 29 && radius <= 30)
+                check((face & 0xFFFFFF) == 0x090909,
+                        "The outer black outline follows the same circular mask in every direction");
+        }
+    }
+
+    private static void neutralTrackAndHighlights(BufferedImage image, AnomalyBadgeLayout.Element element) {
+        int[][] origins = {{30, 4}, {48, 12}, {56, 30}, {48, 48}, {30, 56}, {12, 48}, {4, 30}, {12, 12}};
+        double[][] shades = {{0, .58, .53, 0}, {.50, .68, .62, .45}, {.42, .57, .48, .36}, {0, .40, .30, 0}};
+        var markers = new boolean[64 * 64];
+        for (int y = 0; y < 64; y++) for (int x = 0; x < 64; x++) {
+            if (Math.hypot(x - 31.5, y - 31.5) < 20) continue;
+            int face = pixel(image, element.baseTile(), x, y);
+            if ((face >>> 24) == 0) continue;
+            int r = face >> 16 & 255, g = face >> 8 & 255, b = face & 255;
+            double shade = 0;
+            for (int[] origin : origins) {
+                int xx = x - origin[0], yy = y - origin[1];
+                if (xx >= 0 && xx < 4 && yy >= 0 && yy < 4) shade = shades[yy][xx];
+            }
+            if (shade == 0) {
+                check(r == g && g == b,
+                        "The entire empty frame outside the glyph and marker masks is neutral, including the inner guard edge");
+                continue;
+            }
+            int red = element.color() >> 16 & 255, green = element.color() >> 8 & 255, blue = element.color() & 255;
+            check(r == (int) Math.floor(red * shade) && g == (int) Math.floor(green * shade)
+                            && b == (int) Math.floor(blue * shade),
+                    "Each marker is a darker shade of its own element rather than a shared cyan highlight");
+            check(Math.max(r, Math.max(g, b)) <= Math.max(red, Math.max(green, blue)) * .68,
+                    "Even the brightest marker pixel remains darker than the elemental accent");
+            markers[y * 64 + x] = true;
+            check((pixel(image, element.progressTile(), x, y) >>> 24) == 0,
+                    "Dynamic elemental fill cannot cover the eight fixed dark elemental markers");
+        }
+        var visited = new boolean[markers.length];
+        var angles = new ArrayList<Double>();
+        double minimumRadius = Double.POSITIVE_INFINITY, maximumRadius = 0;
+        var pending = new int[markers.length];
+        for (int start = 0; start < markers.length; start++) {
+            if (!markers[start] || visited[start]) continue;
+            int head = 0, tail = 0, count = 0, sumX = 0, sumY = 0;
+            pending[tail++] = start; visited[start] = true;
+            while (head < tail) {
+                int point = pending[head++], x = point % 64, y = point / 64;
+                count++; sumX += x; sumY += y;
+                for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) {
+                    int xx = x + dx, yy = y + dy;
+                    if (xx < 0 || xx >= 64 || yy < 0 || yy >= 64) continue;
+                    int next = yy * 64 + xx;
+                    if (markers[next] && !visited[next]) { visited[next] = true; pending[tail++] = next; }
+                }
+            }
+            check(count == 12, "Each elemental marker retains the complete twelve-pixel clipped-corner shape");
+            double x = sumX / (double) count - 31.5, y = sumY / (double) count - 31.5;
+            double radius = Math.hypot(x, y), angle = Math.atan2(x, -y);
+            if (angle < 0) angle += Math.PI * 2;
+            check(radius >= 24.5 && radius <= 28.5, "Every elemental marker lies inside the same narrow ring");
+            minimumRadius = Math.min(minimumRadius, radius); maximumRadius = Math.max(maximumRadius, radius);
+            angles.add(angle);
+        }
+        check(angles.size() == 8, "Each empty ring contains exactly eight separate dark elemental markers");
+        check(maximumRadius - minimumRadius <= 1.5, "Elemental markers share one radius after pixel rounding");
+        angles.sort(Double::compareTo);
+        for (int i = 0; i < angles.size(); i++) {
+            double next = i + 1 == angles.size() ? angles.get(0) + Math.PI * 2 : angles.get(i + 1);
+            check(Math.abs(next - angles.get(i) - Math.PI / 4) <= .08,
+                    "The eight elemental markers are evenly spaced at 45-degree intervals");
+        }
+    }
+
+    private static void uniformRingMaterial(BufferedImage image, AnomalyBadgeLayout.Element element) {
+        // Pixel-grid rotations and reflections compare the actual material, not only its average
+        // brightness: a separately reconstructed final third cannot pass with a different palette.
+        for (int y = 0; y < 64; y++) for (int x = 0; x < 64; x++) {
+            int ring = pixel(image, element.progressTile(), x, y);
+            check(ring == pixel(image, element.progressTile(), 63 - x, y)
+                            && ring == pixel(image, element.progressTile(), x, 63 - y)
+                            && ring == pixel(image, element.progressTile(), y, x),
+                    "Every octant uses the same approved ring material, including colour, shading and transparent marker gaps");
+            double radius = Math.hypot(x - 31.5, y - 31.5);
+            if (radius < 23 || radius > 29)
+                check((ring >>> 24) == 0, "Dynamic fill stays strictly inside its symmetric 23-to-29px annulus");
+        }
+    }
+
+    private static void progressGeometry() {
+        int tile = AnomalyBadgeLayout.ELEMENTS.get(0).progressTile();
+        for (int amount = 0; amount <= 500; amount++) {
+            var consumer = new RecordingConsumer();
+            AnomalyBadgeRenderer.progress(consumer, new Matrix4f(), tile, 0, 0, amount / 500.0);
+            check(consumer.vertices.size() % 4 == 0 && consumer.vertices.size() <= 20,
+                    "A partial circle needs at most five quads regardless of pixel resolution");
+            check(amount > 0 || consumer.vertices.isEmpty(), "Zero accumulation has no coloured progress geometry");
+            for (var vertex : consumer.vertices) {
+                check(vertex.rgb == 0xFFFFFF && close(vertex.z, .001),
+                        "Progress preserves texture colours and stays in front of the face");
+                double u = (vertex.u - AnomalyBadgeLayout.u(tile)) * AnomalyBadgeLayout.ATLAS_COLUMNS;
+                double v = (vertex.v - AnomalyBadgeLayout.v(tile)) * AnomalyBadgeLayout.ATLAS_ROWS;
+                check(Math.abs(u - (vertex.x / .2 + .5)) < 1e-5
+                                && Math.abs(v - (.5 - vertex.y / .2)) < 1e-5,
+                        "Sector clipping keeps texels fixed instead of stretching the ring");
+            }
+            for (int offset = 0; offset < consumer.vertices.size(); offset += 4) {
+                var a = consumer.vertices.get(offset); var b = consumer.vertices.get(offset + 1);
+                var c = consumer.vertices.get(offset + 2);
+                check(cross(a.x, a.y, b.x, b.y, c.x, c.y) > 0,
+                        "Every visible sector triangle faces the camera");
+            }
+            for (int sample = 0; sample < 64; sample++) {
+                double turn = (sample + .37) / 64.0, angle = turn * Math.PI * 2;
+                double x = Math.sin(angle) * .08, y = Math.cos(angle) * .08;
+                check(covered(consumer.vertices, x, y) == (turn < amount / 500.0),
+                        "Rendered sectors fill clockwise from twelve o'clock for every value from 0 to 500");
+            }
+        }
+        var full = new RecordingConsumer();
+        AnomalyBadgeRenderer.progress(full, new Matrix4f(), tile, 0, 0, 1);
+        check(full.vertices.size() == 4, "A full ring uses a single quad");
+        var invalid = new RecordingConsumer();
+        AnomalyBadgeRenderer.progress(invalid, new Matrix4f(), tile, 0, 0, Double.NaN);
+        AnomalyBadgeRenderer.progress(invalid, new Matrix4f(), tile, 0, 0, -1);
+        check(invalid.vertices.isEmpty(), "Invalid progress cannot leak malformed vertices");
+    }
+
+    private static boolean covered(List<Vertex> vertices, double x, double y) {
+        for (int i = 0; i < vertices.size(); i += 4) {
+            var a = vertices.get(i); var b = vertices.get(i + 1);
+            var c = vertices.get(i + 2); var d = vertices.get(i + 3);
+            if (inside(a, b, c, x, y) || inside(a, c, d, x, y)) return true;
+        }
+        return false;
+    }
+
+    private static boolean inside(Vertex a, Vertex b, Vertex c, double x, double y) {
+        if (cross(a.x, a.y, b.x, b.y, c.x, c.y) <= 1e-12) return false;
+        return cross(a.x, a.y, b.x, b.y, x, y) >= -1e-10
+                && cross(b.x, b.y, c.x, c.y, x, y) >= -1e-10
+                && cross(c.x, c.y, a.x, a.y, x, y) >= -1e-10;
+    }
+
+    private static double cross(double ax, double ay, double bx, double by, double cx, double cy) {
+        return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
     }
 
     private static void combinations() {
@@ -140,28 +266,32 @@ public final class AnomalyBadgeRendererTest {
             var consumer = new RecordingConsumer();
             int count = AnomalyBadgeRenderer.badges(consumer, new Matrix4f(), amounts, .6f);
             check(count == Integer.bitCount(mask), "Only populated supported elements occupy slots");
-            check(consumer.vertices.size() == count * 12, "Exactly three quads per active badge");
-            int slot = 0;
+            check(consumer.vertices.size() <= count * 24, "Geometry stays bounded for every active-element combination");
+            int slot = 0, offset = 0;
             for (int i = 0; i < 7; i++) {
                 if ((mask & (1 << i)) == 0) continue;
                 var style = AnomalyBadgeLayout.ELEMENTS.get(i);
-                Vertex base = consumer.vertices.get(slot * 12);
-                Vertex ring = consumer.vertices.get(slot * 12 + 4);
-                Vertex glyph = consumer.vertices.get(slot * 12 + 8);
+                var single = new RecordingConsumer();
+                AnomalyBadgeRenderer.progress(single, new Matrix4f(), style.progressTile(), 0, 0,
+                        (125 + i * 25) / 500.0);
+                Vertex base = consumer.vertices.get(offset);
+                Vertex ring = consumer.vertices.get(offset + 4);
                 check(close(base.x, .6f + slot / 4 * .23f - .1f)
                                 && close(base.y, -(slot % 4) * .23f + .1f),
                         "Fill down four rows, then start the column to the right, without empty gaps");
-                check(base.rgb == 0xFFFFFF && glyph.rgb == style.color() && ring.rgb == style.color(),
-                        "Only glyph and ring receive the elemental colour");
-                check(base.z < ring.z && ring.z < glyph.z, "Layer depth prevents the background covering coloured details");
-                check(close(glyph.u, AnomalyBadgeLayout.u(style.glyphTile()))
-                                && close(glyph.v, AnomalyBadgeLayout.v(style.glyphTile())),
-                        "Element order and atlas glyph agree");
-                check(close(ring.u, AnomalyBadgeLayout.u(125 + i * 25))
-                                && close(ring.v, AnomalyBadgeLayout.v(125 + i * 25)),
-                        "Actual emitted UVs select that element's own accumulation");
+                check(base.rgb == 0xFFFFFF && ring.rgb == 0xFFFFFF,
+                        "The selected 64px art retains its original colours rather than multiplying by a flat tint");
+                check(base.z < ring.z, "Layer depth prevents the face covering coloured progress");
+                check(close(base.u, AnomalyBadgeLayout.u(style.baseTile()))
+                                && close(base.v, AnomalyBadgeLayout.v(style.baseTile())),
+                        "Stable element order selects its matching face tile");
+                check(close(ring.u, AnomalyBadgeLayout.u(style.progressTile()) + .5f / AnomalyBadgeLayout.ATLAS_COLUMNS)
+                                && close(ring.v, AnomalyBadgeLayout.v(style.progressTile()) + .5f / AnomalyBadgeLayout.ATLAS_ROWS),
+                        "The progress sector samples its element's own coloured ring");
+                offset += 4 + single.vertices.size();
                 slot++;
             }
+            check(offset == consumer.vertices.size(), "All emitted vertices belong to the expected compact element slots");
         }
     }
 
@@ -176,7 +306,7 @@ public final class AnomalyBadgeRendererTest {
             var matrix = new Matrix4f(view).translate(point);
             AnomalyBadgeRenderer.faceCamera(matrix,rotation);
             var consumer = new RecordingConsumer();
-            AnomalyBadgeRenderer.tile(consumer, matrix, 125, .6f, -.23f, 0x55DAEA);
+            AnomalyBadgeRenderer.tile(consumer, matrix, 0, .6f, -.23f, 0);
             var a = consumer.vertices.get(0); var b = consumer.vertices.get(1);
             var c = consumer.vertices.get(2); var d = consumer.vertices.get(3);
             var right = difference(d, a).normalize();
@@ -235,9 +365,10 @@ public final class AnomalyBadgeRendererTest {
                     var right = new Vector3f(1,0,0);
                     var up = new Vector3f(0,1,0);
                     for (int slot = 0; slot < 7; slot++) {
-                        var a = consumer.vertices.get(slot*12);
-                        var b = consumer.vertices.get(slot*12+1);
-                        var d = consumer.vertices.get(slot*12+3);
+                        // At half progress the face and three sector quads occupy sixteen vertices.
+                        var a = consumer.vertices.get(slot*16);
+                        var b = consumer.vertices.get(slot*16+1);
+                        var d = consumer.vertices.get(slot*16+3);
                         float screenX = new Vector3f((float)a.x,(float)a.y,(float)a.z).dot(right);
                         float screenY = new Vector3f((float)a.x,(float)a.y,(float)a.z).dot(up);
                         check(close(difference(d,a).length(),.2f*scale)
@@ -254,35 +385,9 @@ public final class AnomalyBadgeRendererTest {
 
     private static Vector3f difference(Vertex a, Vertex b) { return new Vector3f((float)(a.x-b.x), (float)(a.y-b.y), (float)(a.z-b.z)); }
     private static boolean close(double a, double b) { return Math.abs(a - b) < 1e-5; }
-    private static int pixel(BufferedImage image, int tile, int x, int y) { return image.getRGB(tile % 32 * 32 + x, tile / 32 * 32 + y); }
-    private static int coverage(BufferedImage image, int tile) {
-        int count = 0;
-        for (int y = 0; y < 32; y++) for (int x = 0; x < 32; x++) if (pixel(image, tile, x, y) != 0) count++;
-        return count;
-    }
-
-    private static int connectedParts(BufferedImage image, int tile) {
-        boolean[] visited = new boolean[1024];
-        int[] pending = new int[1024];
-        int parts = 0;
-        for (int start = 0; start < 1024; start++) {
-            if (visited[start] || pixel(image, tile, start%32, start/32) == 0) continue;
-            parts++;
-            int head = 0, tail = 0;
-            pending[tail++] = start; visited[start] = true;
-            while (head < tail) {
-                int point = pending[head++], x = point%32, y = point/32;
-                for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) {
-                    int nx = x+dx, ny = y+dy;
-                    if (nx < 0 || nx >= 32 || ny < 0 || ny >= 32) continue;
-                    int next = ny*32+nx;
-                    if (!visited[next] && pixel(image, tile, nx, ny) != 0) {
-                        visited[next] = true; pending[tail++] = next;
-                    }
-                }
-            }
-        }
-        return parts;
+    private static int pixel(BufferedImage image, int tile, int x, int y) {
+        return image.getRGB(tile % AnomalyBadgeLayout.ATLAS_COLUMNS * AnomalyBadgeLayout.PIXELS + x,
+                tile / AnomalyBadgeLayout.ATLAS_COLUMNS * AnomalyBadgeLayout.PIXELS + y);
     }
     private static void check(boolean condition, String message) { checks++; if (!condition) throw new AssertionError(message); }
 

@@ -4,34 +4,34 @@ import java.util.List;
 
 /** Shared pixel-atlas and column-first layout; independent of combat and rendering state. */
 public final class AnomalyBadgeLayout {
-    public static final int PIXELS = 32;
+    public static final int PIXELS = 64;
     public static final int ROWS = 4;
-    public static final int RING_STEPS = 500;
-    public static final int ATLAS_COLUMNS = 32;
-    public static final int ATLAS_ROWS = 16;
-    public static final int BACKGROUND_TILE = 501;
+    public static final int ATLAS_COLUMNS = 16;
+    public static final int ATLAS_ROWS = 2;
     public static final float SIZE = .20f;
     public static final float STEP = .23f;
     public static final float MODEL_GAP = .12f;
     public static final double MAX_DISTANCE_SQUARED = 32 * 32;
 
-    public record Element(String id, int color, int glyphTile) {}
+    public record Element(String id, int color, int baseTile) {
+        public int progressTile() { return baseTile + 1; }
+    }
 
     // Fixed order prevents the badges from changing places when their amounts change.
     public static final List<Element> ELEMENTS = List.of(
-            new Element("fire", 0xBD1641, 502),
-            new Element("ice", 0x55DAEA, 503),
-            new Element("lunar", 0xE6DAA5, 504),
-            new Element("curse", 0xB570D6, 505),
-            new Element("summon", 0x76CBA4, 506),
-            new Element("void", 0x7E78CF, 507),
-            new Element("space", 0x83ACF6, 508));
+            new Element("fire", 0xBD1641, 0),
+            new Element("ice", 0x55DAEA, 2),
+            new Element("lunar", 0xE6DAA5, 4),
+            new Element("curse", 0xB570D6, 6),
+            new Element("summon", 0x76CBA4, 8),
+            new Element("void", 0x7E78CF, 10),
+            new Element("space", 0x83ACF6, 12));
 
     private AnomalyBadgeLayout() {}
 
-    public static int ringTile(double amount, double maximum) {
+    public static double fraction(double amount, double maximum) {
         if (!Double.isFinite(amount) || !Double.isFinite(maximum) || amount <= 0 || maximum <= 0) return 0;
-        return (int) Math.round(Math.min(1, amount / maximum) * RING_STEPS);
+        return Math.min(1, amount / maximum);
     }
 
     public static float x(int slot) { return slot / ROWS * STEP; }

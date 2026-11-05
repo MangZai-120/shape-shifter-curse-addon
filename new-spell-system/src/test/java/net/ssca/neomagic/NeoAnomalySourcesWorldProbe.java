@@ -212,6 +212,60 @@ public final class NeoAnomalySourcesWorldProbe {
         }
     }
 
+    /** Use the live resolver and real named-spell projectiles, rather than a synthetic hit context. */
+    private static void configuredHitCases(ServerPlayerEntity owner) throws Exception {
+        owner.setYaw(0);owner.setPitch(0);
+        String[] spells={"fire_bolt","frost_spike","ice_barrage","moonlight_arrow","curse_mark","beep_sheep"};
+        String[] elements={"fire","ice","ice","lunar","curse","summon"};
+        for (int index=0;index<spells.length;index++) for (int level : new int[]{1,5}) {
+            String spell=spells[index], element=elements[index];
+            var target=pig(owner,0,2);
+            if (spell.equals("beep_sheep")) {
+                // This spell intentionally rejects high-health boss-like targets.
+                target.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH).setBaseValue(20);target.setHealth(20);
+            }
+            SpellRegistry.get(spell).castAtTarget(owner,4,true,level,ItemStack.EMPTY,null);
+            check(SpellAnomalyHits.current()==null,"Configured projectile cast restores its scope: "+spell);
+            var projectiles=owner.getServerWorld().getEntitiesByClass(ProjectileEntity.class,owner.getBoundingBox().expand(8),entity->{
+                var snapshot=((SpellAnomalyHits.ProjectileData)entity).ssca$anomaly();
+                return entity.getOwner()==owner && snapshot!=null && snapshot.spellId().getPath().equals(spell);
+            });
+            ENTITIES.addAll(projectiles);
+            int expectedProjectiles=spell.equals("ice_barrage")?3:1;
+            check(projectiles.size()==expectedProjectiles,"Actual configured cast creates its expected projectiles: "+spell+" L"+level);
+            UUID cast=((SpellAnomalyHits.ProjectileData)projectiles.get(0)).ssca$anomaly().castUUID();
+            double expected=AnomalyRules.amount(spell,level);
+            for (ProjectileEntity projectile : projectiles) {
+                var snapshot=((SpellAnomalyHits.ProjectileData)projectile).ssca$anomaly();
+                check(snapshot.level()==level && snapshot.element().equals(element) && snapshot.castUUID().equals(cast),
+                        "Actual cast snapshots the configured level, element and one cast UUID: "+spell);
+                near(expected,snapshot.amount(),"Actual launch captures live configured contribution: "+spell+" L"+level);
+                target.timeUntilRegen=0;
+                collide(projectile,target);
+            }
+            AnomalyManager.drain(owner.getServer());
+            check(count(target,spell)==expectedProjectiles,"One event per successful projectile impact: "+spell+" L"+level);
+            near(expected*expectedProjectiles,meter(target,element),"Real configured impacts reach the authoritative meter: "+spell+" L"+level);
+            if (spell.equals("curse_mark"))check(target.hasStatusEffect(SscAddon.CURSE_MARK),"Configured curse mark really applies its status");
+            else if (spell.equals("beep_sheep"))check(target.hasStatusEffect(SscAddon.SHEEP_FORM),"Configured sheep spell really transforms its target");
+            else check(target.getHealth()<200,"Configured damage projectile really damages its target: "+spell);
+            clearTargets();
+        }
+
+        // The ordinary damage AOE path also resolves one configured amount per victim.
+        for (String spell : List.of("flame_nova","frost_nova")) {
+            var left=pig(owner,-1,2);var right=pig(owner,1,2);
+            SpellRegistry.get(spell).castAtTarget(owner,4,true,1,ItemStack.EMPTY,null);
+            AnomalyManager.drain(owner.getServer());
+            String element=SpellRegistry.get(spell).getElement().id;
+            check(count(left,spell)==1 && count(right,spell)==1,"Real configured AOE counts each victim once: "+spell);
+            near(AnomalyRules.amount(spell,1),meter(left,element),"AOE left victim receives configured amount: "+spell);
+            near(AnomalyRules.amount(spell,1),meter(right,element),"AOE right victim receives configured amount: "+spell);
+            check(left.getHealth()<200 && right.getHealth()<200,"AOE damage actually settles on both victims: "+spell);
+            clearTargets();
+        }
+    }
+
     private static void summonCases(TestContext test, ServerPlayerEntity owner) throws Exception {
         var target=pig(owner,0,4);
         cast(owner,"summon_lunar_spirit",5);
@@ -435,8 +489,9 @@ public final class NeoAnomalySourcesWorldProbe {
         var owner=player(test);
         SpellAnomalyHits.amountResolver(AnomalyRules::amount);
         try (var listener=SpellAnomalyHits.register((target,context)->HITS.add(new Hit(target.getUuid(),context)))) {
-            configCases();summonCases(test,owner);domainCases(test,owner);spaceCases(test,owner);statusCases(owner);
+            configCases();configuredHitCases(owner);summonCases(test,owner);domainCases(test,owner);spaceCases(test,owner);statusCases(owner);
             var report=Map.of("checks",checks,"sources",List.of("config_atomic_reload","moon_spirit_and_projectile_nbt","neo_wolf_nbt",
+                    "configured_named_projectile_impacts","configured_multi_target_aoe",
                     "domain_activation_and_pulses","space_preflight_execution_safety","zero_damage_status_acceptance"),"runtime","isolated Minecraft server world");
             Path output=Path.of("build","reports","anomaly-sources-world.json");Files.createDirectories(output.getParent());Files.writeString(output,NeoState.JSON.toJson(report));
             System.out.println("ANOMALY_SOURCES_WORLD_PASS checks="+checks);
