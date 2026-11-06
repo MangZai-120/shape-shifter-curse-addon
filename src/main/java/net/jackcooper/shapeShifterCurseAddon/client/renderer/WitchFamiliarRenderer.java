@@ -13,8 +13,6 @@ import net.jackcooper.shapeShifterCurseAddon.client.model.WitchFamiliarModel;
 import net.jackcooper.shapeShifterCurseAddon.client.renderer.layer.WitchFamiliarEyesLayer;
 import net.jackcooper.shapeShifterCurseAddon.entity.WitchFamiliarEntity;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -45,7 +43,7 @@ public class WitchFamiliarRenderer extends GeoEntityRenderer<WitchFamiliarEntity
 	// [0]tailDragAmount [1]tailDragAmountO
 	// [2]tailDragAmountVertical [3]tailDragAmountVerticalO
 	// [4]currentTailDragAmount(平滑后) [5]currentTailDragAmountVertical(平滑后)
-	private static final Map<Integer, float[]> TAIL_STATES = new HashMap<>();
+	private static final WeakEntityStateMap<WitchFamiliarEntity, float[]> TAIL_STATES = new WeakEntityStateMap<>();
 	// ==================== 每帧缓存 ====================
 	private float cachedLimbAngle;
 	private float cachedLimbDistance;
@@ -66,7 +64,7 @@ public class WitchFamiliarRenderer extends GeoEntityRenderer<WitchFamiliarEntity
 	                   MatrixStack poseStack, VertexConsumerProvider bufferSource, int packedLight) {
 		// 清理已移除实体的尾巴状态（防止内存泄漏）
 		if (entity.isRemoved()) {
-			TAIL_STATES.remove(entity.getId());
+			TAIL_STATES.remove(entity);
 			return;
 		}
 
@@ -83,7 +81,7 @@ public class WitchFamiliarRenderer extends GeoEntityRenderer<WitchFamiliarEntity
 		cachedAge = entity.age + partialTick;
 
 		// 插值并平滑尾巴拖拽量（在ProcessModel之前，与SSC render()一致）
-		float[] state = TAIL_STATES.computeIfAbsent(entity.getId(), k -> new float[6]);
+		float[] state = TAIL_STATES.computeIfAbsent(entity, k -> new float[6]);
 		float targetDrag = MathHelper.lerp(partialTick, state[1], state[0]);
 		state[4] = MathHelper.lerp(0.04f, state[4], targetDrag);
 		float targetVerticalDrag = MathHelper.lerp(partialTick, state[3], state[2]);
@@ -189,7 +187,7 @@ public class WitchFamiliarRenderer extends GeoEntityRenderer<WitchFamiliarEntity
 		getGeoModel().getBone("bipedLeftLeg").ifPresent(bone -> bone.setPosZ(-16f));
 
 		// ===== 6. 尾巴动态旋转（等效 SSC setRotationForTailBones 非Feral模式） =====
-		float[] state = TAIL_STATES.getOrDefault(entity.getId(), new float[6]);
+		float[] state = TAIL_STATES.getOrDefault(entity, new float[6]);
 		setTailRotations(cachedLimbAngle, cachedLimbDistance, cachedAge,
 				state[4], state[2]);
 

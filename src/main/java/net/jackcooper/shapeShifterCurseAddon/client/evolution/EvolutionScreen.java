@@ -1,6 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.client.evolution;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.client.MinecraftClient;
@@ -296,7 +295,7 @@ public class EvolutionScreen extends Screen {
         drawPanelBorder(ctx, treeLeft, treeTop, treeW, treeH, GOLD_BOR);
 
         // 裁剪进化树内容：缩放后连线/节点可能溢出，用 scissors 限制在区域内
-        enableScissor(treeLeft + 1, treeTop + 1, treeLeft + treeW - 1, treeTop + treeH - 1);
+        ctx.enableScissor(treeLeft + 1, treeTop + 1, treeLeft + treeW - 1, treeTop + treeH - 1);
 
         // 连线（前置 → 节点），在节点边缘外停止
         drawConnections(ctx, comp);
@@ -315,7 +314,7 @@ public class EvolutionScreen extends Screen {
             }
         }
 
-        disableScissor();
+        ctx.disableScissor();
 
         // 顶部 / 底部信息面板
         drawTopBar(ctx, comp);
@@ -334,21 +333,6 @@ public class EvolutionScreen extends Screen {
         if (hovered != null && comp != null) {
             drawNodeTooltip(ctx, hovered, mouseX, mouseY, comp);
         }
-    }
-
-    /** scissors：逻辑坐标 → framebuffer 物理坐标（左下原点翻转）。 */
-    private void enableScissor(int x1, int y1, int x2, int y2) {
-        double gs = MinecraftClient.getInstance().getWindow().getScaleFactor();
-        int ph = MinecraftClient.getInstance().getWindow().getHeight();
-        int px1 = (int) Math.floor(x1 * gs);
-        int px2 = (int) Math.ceil(x2 * gs);
-        int pbottom = (int) Math.floor(y1 * gs);
-        int ptop = (int) Math.ceil(y2 * gs);
-        RenderSystem.enableScissor(px1, ph - ptop, px2, ph - pbottom);
-    }
-
-    private void disableScissor() {
-        RenderSystem.disableScissor();
     }
 
     /** 绘制矩形边框（4 条 fill）。 */

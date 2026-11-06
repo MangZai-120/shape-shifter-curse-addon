@@ -8,7 +8,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
  *
  * <p>exp_mode 1/2 的挂起经验由施法管理器经 {@link Spell#ssc_addon$setPendingExp} 装入桥、
  * 法术实体（弹射物/延迟落地体）在 cast 内取走存 NBT（跨 tick 存活），命中结算时调用本类发放；
- * AOE 法术在 damage 成功后直接从桥取走（首目标取全额、后续取 0，天然幂等）。</p>
+ * AOE 法术将预算保存在本次调用内，只在首个成功伤害后清零；保护或免疫不消耗预算。</p>
  *
  * <p>未满级书继续获得升级经验；满级书及卸书后的延迟命中经验归玩家精通，离线则不补发。</p>
  */

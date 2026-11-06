@@ -132,11 +132,8 @@ return MAX_E_PER_TICK;
 };
 
 /** 相邻能量网络缓存（消费者：事件驱动失效 + 邻居更新标脏）。 */
-private List<EnergyNetworkMember> networkCache;
+private EnergyNetwork.Cache networkCache;
 private boolean networkDirty = true;
-
-/** 6 面 TB EnergyStorage 缓存（可接收 E 的推送目标；与网络缓存一同失效）。 */
-private List<DirectionalStorage> storageCache;
 
 /** 每 tick 输出预算记账（推+拉共享；按 world time 惰性重置）。 */
 private long lastTickTime = -1;
@@ -244,21 +241,19 @@ world.playSound(null, pos, SoundEvents.BLOCK_BEACON_AMBIENT, SoundCategory.BLOCK
 
 // ==================== 相邻定位与缓存 ====================
 
-/** 解析 6 面可接收 E 的 TB EnergyStorage（缓存；只含 supportsInsertion 的目标）。 */
+/** Resolve six loaded neighbors afresh: an API storage can belong to an unloaded/replaced BE. */
 private List<DirectionalStorage> resolveTargets() {
-if (storageCache == null) {
 List<DirectionalStorage> list = new ArrayList<>();
 if (world != null) {
 for (Direction dir : Direction.values()) {
+if (!world.isChunkLoaded(pos.offset(dir))) continue;
 EnergyStorage es = EnergyStorage.SIDED.find(world, pos.offset(dir), dir.getOpposite());
 if (es != null && es.supportsInsertion()) {
 list.add(new DirectionalStorage(dir, es));
 }
 }
 }
-storageCache = list;
-}
-return storageCache;
+return list;
 }
 
 // ==================== 能量网络消费者 ====================
@@ -266,24 +261,25 @@ return storageCache;
 @Override
 public void markNetworkDirty() {
 networkDirty = true;
-storageCache = null;
 }
 
 /** 定位并缓存相邻能量网络（任一面相邻的能量源，含正下方；取其整个共享网络）。 */
 public List<EnergyNetworkMember> getEnergyNetwork() {
-if (networkDirty || networkCache == null) {
-networkCache = findAdjacentNetwork();
-networkDirty = false;
-}
-return networkCache;
-}
+        List<EnergyNetworkMember> members = networkCache == null ? null : networkCache.resolve(world);
+        if (networkDirty || members == null) {
+            members = findAdjacentNetwork();
+            networkCache = new EnergyNetwork.Cache(world, members);
+            networkDirty = false;
+        }
+        return members;
+    }
 
 private List<EnergyNetworkMember> findAdjacentNetwork() {
 if (world == null) {
 return Collections.emptyList();
 }
 for (Direction dir : Direction.values()) {
-BlockEntity be = world.getBlockEntity(pos.offset(dir));
+BlockEntity be = EnergyNetwork.getLoadedBlockEntity(world, pos.offset(dir));
 if (be instanceof EnergyNetworkMember) {
 return EnergyNetwork.collect(world, pos.offset(dir));
 }

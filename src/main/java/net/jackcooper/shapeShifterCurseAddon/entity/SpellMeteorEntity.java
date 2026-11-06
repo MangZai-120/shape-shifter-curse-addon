@@ -50,12 +50,15 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 	/** 魔法等级（1-5），DataTracker 同步。 */
 	private static final TrackedData<Integer> LEVEL =
 			DataTracker.registerData(SpellMeteorEntity.class, TrackedDataHandlerRegistry.INTEGER);
+	private static final TrackedData<Integer> RESUME_TICKS =
+			DataTracker.registerData(SpellMeteorEntity.class, TrackedDataHandlerRegistry.INTEGER);
 
 	private int ticksAlive = 0;
 	private float damage = 8.0f;
 	/** AOE 半径（格）。 */
 	private double radius = 3.0;
 	private boolean falling = false;
+	private boolean legacyFallingResume;
 	private double[] warningVisualParams;
     private int runeFireTicks=60;
     public void setFireTicks(int ticks){runeFireTicks=Math.max(0,ticks);}
@@ -87,6 +90,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 	protected void initDataTracker() {
 		// 不调 super（同冰锥写法：dataTracker 由 Entity 构造器初始化）
 		this.dataTracker.startTracking(LEVEL, 1);
+		this.dataTracker.startTracking(RESUME_TICKS, 0);
 	}
 
 	/** 设置陨火 AOE 伤害。 */
@@ -118,6 +122,17 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 	public void tick() {
 		super.tick();
         if(this.isRemoved())return;
+		if (getWorld().isClient && ticksAlive == 0) {
+			ticksAlive = dataTracker.get(RESUME_TICKS);
+			falling = ticksAlive >= BAL.i("delay_ticks", DELAY_TICKS);
+		}
+		// Old saves lack the remaining fall time. Resolve at the saved position rather than
+		// replaying a complete descent through the original impact point.
+		if (legacyFallingResume && getWorld() instanceof ServerWorld serverWorld) {
+			legacyFallingResume = false;
+			explode(serverWorld);
+			return;
+		}
 		ticksAlive++;
 
 		if (!falling) {
@@ -281,6 +296,10 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		if (nbt.contains("Falling")) {
 			this.falling = nbt.getBoolean("Falling");
 		}
+		legacyFallingResume = this.falling && !nbt.contains("TicksAlive");
+		this.ticksAlive = Math.max(0, nbt.contains("TicksAlive") ? nbt.getInt("TicksAlive")
+				: this.falling ? BAL.i("delay_ticks", DELAY_TICKS) : 0);
+		this.dataTracker.set(RESUME_TICKS, ticksAlive);
 		if (nbt.contains("ExpBountyTen")) {
 			this.expBountyTen = Math.max(0, nbt.getInt("ExpBountyTen"));
 		}
@@ -295,6 +314,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		nbt.putDouble("Radius", this.radius);
 		nbt.putInt("SpellLevel", getSpellLevel());
 		nbt.putBoolean("Falling", this.falling);
+		nbt.putInt("TicksAlive", this.ticksAlive);
 		nbt.putInt("ExpBountyTen", this.expBountyTen);
 		if (refundCastId != null) nbt.putUuid("RefundCastId", refundCastId);
 	}

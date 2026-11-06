@@ -43,7 +43,7 @@ public class FireBoltSpell extends Spell {
 		SpellFireBoltEntity bolt = new SpellFireBoltEntity(caster.getWorld(), caster);
 		bolt.setDamage(power);
 		bolt.setLevel(level);
-		bolt.setExpBountyTen(solo ? 0 : ssc_addon$takePendingExp()); // exp_mode 1/2 挂起经验随弹射物走
+		bolt.setExpBountyTen(ssc_addon$takePendingExp()); // exp_mode 1/2 挂起经验随弹射物走
 		bolt.setRefundCastId(solo ? null : ssc_addon$getRefundCastId());
 		// 低≤高跨字段约束由 balance schema 校验，运行时两值独立读取
 		bolt.setFireTicks(RuneCastContext.current().duration(level >= 3

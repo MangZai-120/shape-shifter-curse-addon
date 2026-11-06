@@ -178,6 +178,7 @@ public class SscAddonNetworking {
 	private static final Map<UUID, Long> LAST_WHITELIST_PACKET_TICK = new ConcurrentHashMap<>();
 	/** 同一玩家两次白名单操作的最小间隔，单位：millis。 */
 	private static final long WHITELIST_PACKET_MIN_INTERVAL_MS = 100L;
+	private static final FormRepairBudget FORM_REPAIR_BUDGET = new FormRepairBudget();
 
 	/**
 	 * 检查玩家是否在限频阈值内 spam。返回 true 表示该包应被丢弃。
@@ -400,6 +401,14 @@ public class SscAddonNetworking {
 
 	public static void registerServerReceivers() {
         registerEvolutionRouteSync();
+        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> {
+            FORM_REPAIR_BUDGET.remove(handler);
+            LAST_WHITELIST_PACKET_TICK.remove(handler.player.getUuid());
+        });
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            FORM_REPAIR_BUDGET.clear();
+            LAST_WHITELIST_PACKET_TICK.clear();
+        });
 		// 施法打断网关（2026-09-22 需求）：玩家正在施法读条时按下任何 SP 技能键 → 立即按
 		// 自身打断位取消当前施法（领域等读条法术会被打断），技能本身继续正常生效。
 		// 各技能 receiver 的 server.execute 体统一经 runSkillAction 包装。
@@ -727,30 +736,30 @@ public class SscAddonNetworking {
 			});
 		});
 
-		// 客机加入后请求：把所有在场玩家的形态 ID + 皮肤数据广播给「所有在线玩家」（含请求者与已在线客机），
-		// 绕过 CCA 同步的不确定性，修复刚进游戏 / 新玩家加入时看其它玩家是默认白模型。
-		// 形态模型由客机据 formId 重建 origin 决定，颜色据皮肤数据上色。
-		// Keep the legacy channel as an explicit full repair, including old clients.
+		// Both protocol generations share one per-connection budget. A repair sends all
+		// forms to the requester and only that player's form to peers (linear payload).
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_REQUEST_ALL_FORM_SYNC, (server, player, handler, buf, responseSender) ->
-				server.execute(() -> { if (player.networkHandler == handler && !player.isRemoved()) repairForms(player, true); }));
+				server.execute(() -> { if (player.networkHandler == handler && !player.isRemoved()
+						&& FORM_REPAIR_BUDGET.accept(handler, server.getTicks())) repairForms(player); }));
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_REQUEST_FORM_SYNC_V2, (server, player, handler, buf, responseSender) ->
-				server.execute(() -> { if (player.networkHandler == handler && !player.isRemoved()) repairForms(player, false); }));
+				server.execute(() -> { if (player.networkHandler == handler && !player.isRemoved()
+						&& FORM_REPAIR_BUDGET.accept(handler, server.getTicks())) repairForms(player); }));
 	}
 
-	private static void repairForms(ServerPlayerEntity player, boolean repairAllPeers) {
+	private static void repairForms(ServerPlayerEntity player) {
 		var players = player.getServer().getPlayerManager().getPlayerList();
 		PacketByteBuf full = formSnapshot(players);
-		PacketByteBuf single = repairAllPeers ? null : formSnapshot(List.of(player));
+		PacketByteBuf single = formSnapshot(List.of(player));
 		try {
 			for (ServerPlayerEntity recipient : players) {
 				if (!ServerPlayNetworking.canSend(recipient, PACKET_BROADCAST_FORMS)) continue;
-				PacketByteBuf source = repairAllPeers || recipient == player ? full : single;
+				PacketByteBuf source = recipient == player ? full : single;
 				ServerPlayNetworking.send(recipient, PACKET_BROADCAST_FORMS,
 						net.fabricmc.fabric.api.networking.v1.PacketByteBufs.copy(source));
 			}
 		} finally { full.release(); if (single != null) single.release(); }
-		sendEvolutionRoutes(player, repairAllPeers);
-		net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.sendTo(player, repairAllPeers);
+		sendEvolutionRoutes(player, false);
+		net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.sendTo(player, false);
 	}
 
 	private static PacketByteBuf formSnapshot(List<ServerPlayerEntity> players) {

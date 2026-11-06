@@ -46,6 +46,16 @@ public final class RedFormTickManager {
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认值）
 	private static final BalanceReader BAL = new BalanceReader("abilities.red_form");
 
+	public static void init() {
+		net.onixary.shapeShifterCurseFabric.event.SSCEvent.FORM_CHANGE_END.register((player, previous, current) -> {
+			if (!player.getWorld().isClient && previous != null && current != null
+					&& previous.getFormID().equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED)
+					&& !current.getFormID().equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED)) {
+				player.getCommandTags().removeIf(tag -> tag.startsWith("ssc_addon_red_expire:"));
+			}
+		});
+	}
+
 	public static void tick(ServerPlayerEntity player) {
 		// 一秒门控（与原 per-player tick 注入一致）
 		if (player.age % 20 != 0) {
@@ -129,6 +139,13 @@ public final class RedFormTickManager {
 
 		for (String tag : player.getCommandTags()) {
 			if (tag.startsWith("ssc_addon_red_expire:")) {
+				var formState = net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM.get(player);
+				boolean pendingRed = formState.transformTargetForm != null
+						&& formState.transformTargetForm.getFormID().equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED);
+				if (!isRedForm) {
+					if (!pendingRed) tagsToRemove.add(tag);
+					continue;
+				}
 				try {
 					long expireTime = Long.parseLong(tag.split(":")[1]);
 					if (currentTime >= expireTime) {

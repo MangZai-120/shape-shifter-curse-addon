@@ -499,6 +499,7 @@
   "text.ssc_addon.palette.btn.export_all": "Export All",
   "text.ssc_addon.palette.status.auto_saved": "Auto-saved",
   "text.ssc_addon.palette.status.no_player": "Player not found",
+  "text.ssc_addon.palette.status.save_failed": "Save failed. Your edits are retained; check the palette folder permissions and retry.",
   "text.ssc_addon.palette.status.empty_slot": "Slot is empty",
   "text.ssc_addon.palette.status.invalid_code": "Invalid color code",
   "text.ssc_addon.palette.status.apply_sent": "Applied and synced",

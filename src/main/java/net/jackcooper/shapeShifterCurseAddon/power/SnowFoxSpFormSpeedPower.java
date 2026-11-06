@@ -57,6 +57,15 @@ public class SnowFoxSpFormSpeedPower extends Power {
 	@Override
 	public void tick() {
 		if (entity.getWorld().isClient()) return;
+		if (!isActive()) {
+			EntityAttributeInstance speed = entity.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
+			if (speed != null) {
+				speed.removeModifier(MELEE_SPEED_UUID);
+				speed.removeModifier(RANGED_SPEED_UUID);
+			}
+			lastSwitchState = Integer.MIN_VALUE;
+			return;
+		}
 
 		int currentState = getSwitchState();
 		long balanceRevision = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.serverRevision();

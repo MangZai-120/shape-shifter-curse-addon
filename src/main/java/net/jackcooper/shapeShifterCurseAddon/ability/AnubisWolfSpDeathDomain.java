@@ -640,34 +640,31 @@ public class AnubisWolfSpDeathDomain {
 		BlockPos center = data.center;
 		int halfHeight = BAL.i("domain_height", DOMAIN_HEIGHT);
 		int domainRadius = data.enhanced ? BAL.i("enhanced_domain_radius", ENHANCED_DOMAIN_RADIUS) : BAL.i("domain_radius", DOMAIN_RADIUS);
-
+		Map<BlockPos, DeathDomainRecovery.Change> changes = new LinkedHashMap<>();
 		for (int dx = -outerR; dx <= outerR; dx++) {
 			for (int dz = -outerR; dz <= outerR; dz++) {
-				double distSq = dx * dx + dz * dz;
-				int dist = (int) Math.ceil(Math.sqrt(distSq));
-
-				// 只处理这一环的方块
+				int dist = (int) Math.ceil(Math.sqrt(dx * dx + dz * dz));
 				if (dist < innerR || dist > outerR || dist > domainRadius) continue;
-
 				for (int dy = -halfHeight; dy <= halfHeight; dy++) {
 					BlockPos pos = center.add(dx, dy, dz);
-					BlockState state = world.getBlockState(pos);
-
-					if (shouldConvert(state)) {
-						// 用dist作为距离键
-						data.changedBlocksByDistance
-								.computeIfAbsent(dist, k -> new LinkedHashMap<>())
-								.putIfAbsent(pos, state);
-						world.setBlockState(pos, Blocks.SOUL_SAND.getDefaultState(), Block.NOTIFY_ALL);
-					} else if (shouldRemoveTemporarily(state)) {
-						// 非完整方块暂时消除
-						data.changedBlocksByDistance
-								.computeIfAbsent(dist, k -> new LinkedHashMap<>())
-								.putIfAbsent(pos, state);
-						world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
-					}
+					BlockState original = world.getBlockState(pos);
+					BlockState replacement = shouldConvert(original) ? Blocks.SOUL_SAND.getDefaultState()
+							: shouldRemoveTemporarily(original) ? Blocks.AIR.getDefaultState() : null;
+					if (replacement != null) changes.put(pos, new DeathDomainRecovery.Change(original, replacement));
 				}
 			}
+		}
+		// Commit the write-ahead ring before applying any changes, including neighbour updates.
+		if (!DeathDomainRecovery.record(world, data.visualId, changes)) return;
+		for (var entry : changes.entrySet()) {
+			BlockPos pos = entry.getKey();
+			var change = entry.getValue();
+			if (!world.getBlockState(pos).equals(change.original())) continue;
+			int dx = pos.getX() - center.getX(), dz = pos.getZ() - center.getZ();
+			int dist = (int) Math.ceil(Math.sqrt(dx * dx + dz * dz));
+			data.changedBlocksByDistance.computeIfAbsent(dist, ignored -> new LinkedHashMap<>())
+					.putIfAbsent(pos, change.original());
+			world.setBlockState(pos, change.expected(), Block.NOTIFY_ALL);
 		}
 	}
 
@@ -688,6 +685,7 @@ public class AnubisWolfSpDeathDomain {
 					world.setBlockState(entry.getKey(), entry.getValue(), Block.NOTIFY_ALL);
 				}
 			}
+			DeathDomainRecovery.resolved(world, data.visualId, blocks.keySet());
 			data.changedBlocksByDistance.remove(dist);
 		}
 	}
@@ -707,10 +705,12 @@ public class AnubisWolfSpDeathDomain {
 					skipped++;
 				}
 			}
+			DeathDomainRecovery.resolved(world, data.visualId, blocks.keySet());
 		}
 		LOGGER.info("[DeathDomain] restoreAllBlocks: restored={}, skipped={}, world={}",
 				restored, skipped, world.getRegistryKey().getValue());
 		data.changedBlocksByDistance.clear();
+		DeathDomainRecovery.finished(world, data.visualId);
 	}
 
 	/**

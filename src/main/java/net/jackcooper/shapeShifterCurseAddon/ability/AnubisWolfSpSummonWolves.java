@@ -183,7 +183,22 @@ public class AnubisWolfSpSummonWolves {
 
 		UUID uuid = player.getUuid();
 		SummonData data = ACTIVE_SUMMONS.get(uuid);
-		if (data == null) return;
+		if (data == null) {
+			if (player.age % 20 == 0) removeHowlSlow(player);
+			return;
+		}
+		if (!player.isAlive() || !FormUtils.isAnubisWolfSP(player)) {
+			ACTIVE_SUMMONS.remove(uuid);
+			removeHowlSlow(player);
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, data.castId);
+			return;
+		}
+		if (data.phase != Phase.ACTIVE && !data.enhancedDomain
+				&& (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.fullyControlled(player)
+				|| net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID) != data.castId)) {
+			interruptControl(player);
+			return;
+		}
 
 		data.ticksElapsed++;
 
@@ -206,6 +221,24 @@ public class AnubisWolfSpSummonWolves {
 	 */
 	public static void clearAll() {
 		ACTIVE_SUMMONS.clear();
+	}
+
+	/** Stop the pending action while keeping wolves which have already become autonomous. */
+	public static void interruptControl(ServerPlayerEntity player) {
+		SummonData data = ACTIVE_SUMMONS.get(player.getUuid());
+		removeHowlSlow(player);
+		if (data == null || data.phase == Phase.ACTIVE || data.enhancedDomain) return;
+		if (data.summonedWolfUuids.isEmpty()) ACTIVE_SUMMONS.remove(player.getUuid());
+		data.wolvesToSummon = data.wolvesSummoned;
+		data.phase = Phase.ACTIVE;
+		data.ticksElapsed = 0;
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, data.castId);
+	}
+
+	public static void clearAll(net.minecraft.server.MinecraftServer server) {
+		if (server.getPlayerManager() != null)
+			for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) removeHowlSlow(player);
+		clearAll();
 	}
 
 	/** Stop pending summons before killing owned wolves, so recall cannot spawn replacements. */
@@ -241,6 +274,7 @@ public class AnubisWolfSpSummonWolves {
 	 * 实际召唤数量 = min(requestCount, MAX_WOLVES - 已有数量)
 	 */
 	public static void autoSummonForEnhancedDomain(ServerPlayerEntity player, int requestCount) {
+		removeHowlSlow(player);
 		// 增强领域：先消散现有冥狼和召唤流程，确保能召满6只
 		SummonData oldData = ACTIVE_SUMMONS.remove(player.getUuid());
 		if (oldData != null) {

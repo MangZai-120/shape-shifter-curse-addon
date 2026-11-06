@@ -81,7 +81,7 @@ public class PhantomBellTeleportAction {
 								BlockPos pos = startBlockPos.add(x, y, z);
 
 								// 检查基本有效性
-								if (isValidSpot(world, pos)) {
+								if (isValidSpot(world, pos, player)) {
 									candidates.add(pos);
 								}
 							}
@@ -154,7 +154,12 @@ public class PhantomBellTeleportAction {
 	/**
 	 * 检查候选点是否有效（简化版）
 	 */
-	private static boolean isValidSpot(World world, BlockPos pos) {
+	private static boolean isValidSpot(World world, BlockPos pos, LivingEntity player) {
+		var destination = new net.minecraft.util.math.Vec3d(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
+		var box = player.getBoundingBox().offset(destination.subtract(player.getPos()));
+		if (box.minY < world.getBottomY() || box.maxY > world.getTopY()
+				|| !world.getWorldBorder().contains(box) || !world.isSpaceEmpty(player, box)
+				|| world.containsFluid(box)) return false;
 		BlockState floorState = world.getBlockState(pos.down());
 
 		// 1. 脚下必须是实体方块

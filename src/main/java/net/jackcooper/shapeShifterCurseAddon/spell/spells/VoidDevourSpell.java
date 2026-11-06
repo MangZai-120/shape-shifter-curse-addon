@@ -96,6 +96,7 @@ public class VoidDevourSpell extends Spell {
 				new net.minecraft.util.math.Box(impact, impact).expand(radius + 2),
 				e -> e != caster && e.isAlive());
 		int hitCount = 0;
+		int hitExpTen = ssc_addon$takePendingExp();
 		for (var target : entities) {
 			if (target.getPos().add(0, target.getHeight() / 2, 0).distanceTo(impact) > radius) {
 				continue;
@@ -103,10 +104,11 @@ public class VoidDevourSpell extends Spell {
 			// 公共命中结算（白名单豁免 → 法术伤害 → 经验补发 → 流派钩子逐目标；VOID 系无击杀分支）：见 SpellHitHelper
 			var hit = net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.projectileHit(
 					caster, target, power, net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.VOID,
-					solo ? null : ssc_addon$getRefundCastId(), solo ? 0 : ssc_addon$takePendingExp());
+					solo ? null : ssc_addon$getRefundCastId(), hitExpTen);
 			if (hit != net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.HIT) {
 				continue;
 			}
+			hitExpTen = 0; // Only the first successful hit consumes the cast budget.
 			target.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
 					net.minecraft.entity.effect.StatusEffects.BLINDNESS,
 					RuneCastContext.current().duration(BAL.i("base_blindness_ticks", BASE_BLINDNESS_TICKS) + ((level - 1) / 2) * 20,RuneModifiers.Stat.NEGATIVE), 0));

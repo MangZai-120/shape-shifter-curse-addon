@@ -28,7 +28,7 @@ public class OnTransformAddonForm extends AbstractCriterion<OnTransformAddonForm
         if (obj.has("form_id")) {
             formId = new Identifier(obj.get("form_id").getAsString());
         }
-        return new Condition(formId);
+        return new Condition(formId, playerPredicate);
     }
 
     public static class Condition extends AbstractCriterionConditions {
@@ -36,7 +36,11 @@ public class OnTransformAddonForm extends AbstractCriterion<OnTransformAddonForm
         private final Identifier formId;
 
         public Condition(@Nullable Identifier formId) {
-            super(ID, LootContextPredicate.EMPTY);
+            this(formId, LootContextPredicate.EMPTY);
+        }
+
+        public Condition(@Nullable Identifier formId, LootContextPredicate playerPredicate) {
+            super(ID, playerPredicate);
             this.formId = formId;
         }
 

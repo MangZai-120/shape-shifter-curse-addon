@@ -84,6 +84,11 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     private static final net.minecraft.entity.data.TrackedData<Long> TETHER_END =
             net.minecraft.entity.data.DataTracker.registerData(TidalOrbEntity.class, net.minecraft.entity.data.TrackedDataHandlerRegistry.LONG);
 
+    private static final net.minecraft.entity.data.TrackedData<java.util.Optional<UUID>> TRACKED_OWNER =
+            net.minecraft.entity.data.DataTracker.registerData(TidalOrbEntity.class, net.minecraft.entity.data.TrackedDataHandlerRegistry.OPTIONAL_UUID);
+    private static final net.minecraft.entity.data.TrackedData<Integer> TETHER_TOTAL =
+            net.minecraft.entity.data.DataTracker.registerData(TidalOrbEntity.class, net.minecraft.entity.data.TrackedDataHandlerRegistry.INTEGER);
+
     private Phase phase = Phase.FLYING;
     private int ticksAlive = 0;
     private int phaseTicks = 0;
@@ -124,6 +129,7 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     public TidalOrbEntity(World world, ServerPlayerEntity owner) {
         super(SscAddon.TIDAL_ORB_ENTITY, world);
         this.ownerUuid = owner.getUuid();
+        this.dataTracker.set(TRACKED_OWNER, java.util.Optional.of(this.ownerUuid));
         // 从玩家眼部前方生成，方向取准星
         Vec3d look = owner.getRotationVec(1.0f);
         this.flyDir = look.normalize();
@@ -143,11 +149,14 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         this.flySpeed = FluorescentAxolotlPerks.tidalFlightSpeed(this.flySpeed,
                 FluorescentAxolotlPerks.hasWaterMagicEfficiency(owner));
         this.currentSpeed = this.flySpeed;
+        this.dataTracker.set(TETHER_TOTAL, this.tetherDuration);
     }
 
     @Override
     protected void initDataTracker() {
         this.dataTracker.startTracking(TETHER_ACTIVE, false);
+        this.dataTracker.startTracking(TRACKED_OWNER, java.util.Optional.empty());
+        this.dataTracker.startTracking(TETHER_TOTAL, TETHER_DURATION_TICKS);
         this.dataTracker.startTracking(TETHER_END, EntityDisplayClock.UNSET);
     }
 
@@ -696,6 +705,8 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
             }
         }
         if (nbt.containsUuid("Owner")) ownerUuid = nbt.getUuid("Owner");
+        this.dataTracker.set(TRACKED_OWNER, java.util.Optional.ofNullable(ownerUuid));
+        this.dataTracker.set(TETHER_TOTAL, tetherDuration);
         this.dataTracker.set(TETHER_ACTIVE, phase == Phase.ATTRACTING || phase == Phase.DELAY && !isEnhanced);
         if (phase == Phase.ATTRACTING) setTetherRemain(tetherDuration - phaseTicks);
         else this.dataTracker.set(TETHER_END, EntityDisplayClock.UNSET);
@@ -726,6 +737,15 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
     /** 主人是否仍持有该球（供管理器查询）。 */
     public boolean isAliveOrActive() {
         return !this.isRemoved();
+    }
+
+    /** Synchronized owner identity for the local player's HUD. */
+    public java.util.Optional<UUID> getTrackedOwnerUuid() {
+        return this.dataTracker.get(TRACKED_OWNER);
+    }
+
+    public int getTetherTotal() {
+        return Math.max(1, this.dataTracker.get(TETHER_TOTAL));
     }
 
     /** 客户端查询：是否处于拴人激活状态（潮涌核心切激活态渲染）。 */

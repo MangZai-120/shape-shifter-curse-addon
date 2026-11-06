@@ -14,5 +14,7 @@ public abstract class OriginFormReloadMixin {
     private static void ssca$preserveDeclaredPowerInstances(PlayerEntity player, IForm form, boolean forced,
                                                            Operation<Void> original) {
         OriginPowerReloadGuard.duringReload(player, form, forced, () -> original.call(player, form, forced));
+        if (player instanceof net.minecraft.server.network.ServerPlayerEntity serverPlayer)
+            net.jackcooper.shapeShifterCurseAddon.event.LoginResourceRestoreHandler.restore(serverPlayer);
     }
 }

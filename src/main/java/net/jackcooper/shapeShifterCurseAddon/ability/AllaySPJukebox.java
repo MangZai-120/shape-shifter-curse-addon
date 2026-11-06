@@ -56,11 +56,29 @@ public class AllaySPJukebox {
 
     // Track per-player: -1 = not playing, 0 = speed music, 1 = heal music
     private static final java.util.concurrent.ConcurrentHashMap<UUID, Integer> playerMusicState = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.Map<net.minecraft.server.MinecraftServer, SourceLeaseBook<LivingEntity, UUID>> SPEED_LEASES = new java.util.IdentityHashMap<>();
+
+    public static void init() {
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> {
+            var leases = SPEED_LEASES.get(server);
+            if (leases != null) leases.expire(server.getOverworld().getTime()).forEach(AllaySPJukebox::removeSpeedModifier);
+        });
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            var leases = SPEED_LEASES.remove(server);
+            if (leases != null) leases.clear().forEach(AllaySPJukebox::removeSpeedModifier);
+            playerMusicState.clear();
+        });
+    }
+
+    private static SourceLeaseBook<LivingEntity, UUID> leases(ServerPlayerEntity player) {
+        return SPEED_LEASES.computeIfAbsent(player.getServer(), ignored -> new SourceLeaseBook<>());
+    }
 
     /**
      * 玩家断线时清理音乐状态并移除速度加成，防止内存泄漏和其他玩家永久保留速度buff
      */
     public static void onPlayerDisconnect(ServerPlayerEntity player) {
+        removeSpeedFromAll(player);
         Integer currentState = playerMusicState.remove(player.getUuid());
         if (currentState != null && currentState != -1) {
             stopAllMusic(player);
@@ -88,8 +106,6 @@ public class AllaySPJukebox {
         for (ServerPlayerEntity audience : getAudience(player)) {
             audience.networkHandler.sendPacket(new StopSoundS2CPacket(SscAddon.ALLAY_HEAL_MUSIC_ID, SoundCategory.RECORDS));
             audience.networkHandler.sendPacket(new StopSoundS2CPacket(SscAddon.ALLAY_SPEED_MUSIC_ID, SoundCategory.RECORDS));
-            // 兜底：客机端按 ID 停止偶发不生效（流式音乐 SoundInstance 注册时序问题），再停整个 RECORDS 类别确保彻底停止（#1 关不掉）
-            audience.networkHandler.sendPacket(new StopSoundS2CPacket((Identifier) null, SoundCategory.RECORDS));
         }
         playerMusicState.put(player.getUuid(), -1);
     }
@@ -102,11 +118,10 @@ public class AllaySPJukebox {
         RegistryEntry<SoundEvent> entry = Registries.SOUND_EVENT.getEntry(newSound);
         // 所有听众用同一随机种子，保证范围内玩家听到的音乐起播一致
         long seed = player.getRandom().nextLong();
-        // 向持有者 + 附近所有玩家广播：先停旧音乐（含 RECORDS 兜底防叠加/关不掉 #1），再以持有者位置播放新音乐（带距离衰减）
+        // 向持有者和追踪者广播：只停止本功能两个明确的音乐 ID，再播放新模式。
         for (ServerPlayerEntity audience : getAudience(player)) {
             audience.networkHandler.sendPacket(new StopSoundS2CPacket(SscAddon.ALLAY_HEAL_MUSIC_ID, SoundCategory.RECORDS));
             audience.networkHandler.sendPacket(new StopSoundS2CPacket(SscAddon.ALLAY_SPEED_MUSIC_ID, SoundCategory.RECORDS));
-            audience.networkHandler.sendPacket(new StopSoundS2CPacket((Identifier) null, SoundCategory.RECORDS));
             // 音量 0.12（原 0.06 的 2 倍）；用实体跟踪音效包，让音乐声源跟随持有者移动（而非钉在释放位置）
             audience.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(entry, SoundCategory.RECORDS,
                     player, 0.25f, 1.0f, seed));
@@ -211,6 +226,7 @@ public class AllaySPJukebox {
                 // Speed mode: apply 10% speed modifier
                 int buffRefreshDuration = BAL.i("buff_refresh_duration", BUFF_REFRESH_DURATION);
                 for (LivingEntity entity : nearbyEntities) {
+                    leases(player).renew(entity, player.getUuid(), player.getServer().getOverworld().getTime() + 20);
                     applySpeedModifier(entity);
                     // 额外增益：急迫 I（短时刷新，每 5 tick 补挂）
                     entity.addStatusEffect(new StatusEffectInstance(StatusEffects.HASTE, buffRefreshDuration, 0, false, false, true));
@@ -257,31 +273,12 @@ public class AllaySPJukebox {
     }
 
     private static void removeSpeedFromAll(ServerPlayerEntity player) {
-        double range = BAL.d("range", RANGE);
-        Box box = new Box(
-                player.getX() - range - 10, player.getY() - range - 10, player.getZ() - range - 10,
-                player.getX() + range + 10, player.getY() + range + 10, player.getZ() + range + 10
-        );
-        List<LivingEntity> all = player.getServerWorld().getEntitiesByClass(LivingEntity.class, box, e -> true);
-        for (LivingEntity entity : all) {
-            removeSpeedModifier(entity);
-        }
+        var book = SPEED_LEASES.get(player.getServer());
+        if (book != null) book.release(player.getUuid()).forEach(AllaySPJukebox::removeSpeedModifier);
     }
 
     private static void cleanupOutOfRangeEntities(ServerPlayerEntity player, List<LivingEntity> inRange) {
-        // Every 2 seconds, clean up speed modifiers from entities that left range
-        if (player.age % 40 != 0) return;
-
-        double range = BAL.d("range", RANGE);
-        Box bigBox = new Box(
-                player.getX() - range - 20, player.getY() - range - 20, player.getZ() - range - 20,
-                player.getX() + range + 20, player.getY() + range + 20, player.getZ() + range + 20
-        );
-        List<LivingEntity> allNearby = player.getServerWorld().getEntitiesByClass(LivingEntity.class, bigBox, e -> true);
-        for (LivingEntity entity : allNearby) {
-            if (!inRange.contains(entity)) {
-                removeSpeedModifier(entity);
-            }
-        }
+        leases(player).retain(player.getUuid(), new java.util.HashSet<>(inRange))
+                .forEach(AllaySPJukebox::removeSpeedModifier);
     }
 }

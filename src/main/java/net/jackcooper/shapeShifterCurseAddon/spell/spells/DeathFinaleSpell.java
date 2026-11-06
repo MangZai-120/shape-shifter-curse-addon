@@ -37,7 +37,7 @@ public final class DeathFinaleSpell extends Spell {
 
     @Override public void cast(ServerPlayerEntity caster, float power, boolean solo) {
         DeathFinaleManager.release(caster, power, solo ? null : ssc_addon$getRefundCastId(),
-                solo ? 0 : ssc_addon$takePendingExp());
+                ssc_addon$takePendingExp());
     }
 
     // 图标走 Spell 基类默认约定路径 textures/gui/spell_icons/death_finale.png（专属立绘已接入）。

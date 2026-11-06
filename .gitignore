@@ -21,7 +21,8 @@ bin/
 /tools/cfr.jar
 /tools/_*.jq
 # 开发辅助工具目录：不影响游戏内效果，不入版本库
-/tools/
+/tools/*
+!/tools/check_resources.py
 /story/
 /.settings/org.eclipse.buildship.core.prefs
 /.settings/org.eclipse.jdt.core.prefs
@@ -33,7 +34,6 @@ bin/
 /备忘录
 /unused_backup
 /计划
-/new-spell-system/docs
 # AI agent tooling
 /.opencode/
 /.sisyphus/
@@ -42,7 +42,13 @@ AGENTS.md
 /记忆/
 
 # 本地测试/调参文档（测试证据与记录，不入版本库）
-/docs/
+/docs/*
+!/docs/new-spell-system/
+/docs/new-spell-system/*
+!/docs/new-spell-system/README.md
+!/docs/new-spell-system/SSCA新法术系统完整设计V2.md
+!/docs/new-spell-system/UI设计说明V2.md
+!/docs/new-spell-system/旧法术书接管与加成映射.md
 
 # JVM crash dumps
 hs_err_pid*.log

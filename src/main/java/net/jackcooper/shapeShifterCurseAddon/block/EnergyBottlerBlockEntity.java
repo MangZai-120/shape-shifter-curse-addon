@@ -65,7 +65,7 @@ public class EnergyBottlerBlockEntity extends BlockEntity
 	private boolean autoMode = false;
 
 	/** 相邻能量网络缓存（消费者：事件驱动失效，非每 tick 洪泛）。 */
-	private List<EnergyNetworkMember> networkCache;
+	private EnergyNetwork.Cache networkCache;
 	private boolean networkDirty = true;
 
 	/** 客户端槽位镜像（仅渲染用）：索引 0~5 对应输入 0~2 / 输出 0~2。 */
@@ -213,12 +213,14 @@ public class EnergyBottlerBlockEntity extends BlockEntity
 
 	/** 定位并缓存相邻能量网络（除正下方外任一面相邻的能量源，取其整个共享网络）。 */
 	public List<EnergyNetworkMember> getEnergyNetwork() {
-		if (networkDirty || networkCache == null) {
-			networkCache = findAdjacentNetwork();
-			networkDirty = false;
-		}
-		return networkCache;
-	}
+        List<EnergyNetworkMember> members = networkCache == null ? null : networkCache.resolve(world);
+        if (networkDirty || members == null) {
+            members = findAdjacentNetwork();
+            networkCache = new EnergyNetwork.Cache(world, members);
+            networkDirty = false;
+        }
+        return members;
+    }
 
 	private List<EnergyNetworkMember> findAdjacentNetwork() {
 		if (world == null) {
@@ -228,7 +230,7 @@ public class EnergyBottlerBlockEntity extends BlockEntity
 			if (dir == Direction.DOWN) {
 				continue; // 除正下方外任一面相邻
 			}
-			BlockEntity be = world.getBlockEntity(pos.offset(dir));
+			BlockEntity be = EnergyNetwork.getLoadedBlockEntity(world, pos.offset(dir));
 			if (be instanceof EnergyNetworkMember) {
 				return EnergyNetwork.collect(world, pos.offset(dir));
 			}

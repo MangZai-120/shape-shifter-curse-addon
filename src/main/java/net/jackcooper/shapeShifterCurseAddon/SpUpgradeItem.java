@@ -130,30 +130,30 @@ public class SpUpgradeItem extends Item {
 			} else if (isValidForm && isCursedMoon) {
 				// Success: Base Form + Cursed Moon
 
-				// 5% Chance for Red Form (when upgrading to SP Fox)
-				if (targetFormId != null && targetFormId.equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_SP)
+				// Choose one final target before starting the transformation animation.
+				IForm formBase = RegPlayerForms.getPlayerForm(targetFormId);
+				boolean temporaryRed = false;
+				if (targetFormId.equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_SP)
 						&& new Identifier("shape-shifter-curse", "familiar_fox_3").equals(getPlayerFormID(player))
 						&& world.random.nextFloat() < 0.05f) {
-					Identifier redFormId = net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED;
-					IForm redForm = RegPlayerForms.getPlayerForm(redFormId);
+					IForm redForm = RegPlayerForms.getPlayerForm(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.FAMILIAR_FOX_RED);
 					if (redForm != null) {
-						// 带黑屏淡入淡出动画变身（原版 1.10.1 把 handleDirectTransform 拆为 startTransform/immediatelyTransform，
-						// 此处对应原 handleDirectTransform(...,false) 的动画变身，应用 startTransform 而非 immediatelyTransform）
-						TransformManager.startTransform(player, redForm, null);
-
-						// 10 Minutes = 12000 ticks
-						long expireTime = world.getTime() + 12000;
-						player.addCommandTag("ssc_addon_red_expire:" + expireTime);
-
-						player.sendMessage(Text.translatable("message.ssc_addon.red_transformation_special").formatted(Formatting.GREEN), false);
+						formBase = redForm;
+						temporaryRed = true;
 					}
 				}
 
-
-				IForm formBase = RegPlayerForms.getPlayerForm(targetFormId);
 				if (formBase != null) {
 					// 带黑屏淡入淡出动画变身（startTransform），STUN 在动画期间定身
-					TransformManager.startTransform(player, formBase, null);
+					if (!TransformManager.startTransform(player, formBase, null)) return stack;
+					if (temporaryRed) {
+						for (String tag : new java.util.HashSet<>(player.getCommandTags())) {
+							if (tag.startsWith("ssc_addon_red_expire:")) player.removeScoreboardTag(tag);
+						}
+						player.addCommandTag("ssc_addon_red_expire:" + (world.getTime() + 12000));
+						player.sendMessage(Text.translatable("message.ssc_addon.red_transformation_special").formatted(Formatting.GREEN), false);
+					}
+
 					// 变身演出（黑屏淡入 IN + 淡出 OUT，共 160 tick）期间定身玩家，避免演出过程中走动
 					player.addStatusEffect(new StatusEffectInstance(SscAddon.STUN,
 							StaticParams.TRANSFORM_FX_DURATION_IN + StaticParams.TRANSFORM_FX_DURATION_OUT, 0, false, false, false));

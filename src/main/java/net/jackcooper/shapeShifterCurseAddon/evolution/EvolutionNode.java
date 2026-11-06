@@ -99,6 +99,7 @@ public class EvolutionNode {
 
     private static List<String> parseStringList(JsonObject o, String key) {
         List<String> list = new ArrayList<>();
+        if (o.has(key) && !o.get(key).isJsonArray()) throw new IllegalArgumentException(key + " must be an array");
         if (o.has(key) && o.get(key).isJsonArray()) {
             JsonArray arr = o.getAsJsonArray(key);
             for (JsonElement e : arr) {

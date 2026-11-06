@@ -38,7 +38,7 @@ public class EnergyExtractorBlockEntity extends BlockEntity implements EnergyNet
 	private int energy = 0;
 
 	/** 所在网络成员缓存（事件驱动失效，避免每 tick 洪泛扫描）。 */
-	private List<EnergyNetworkMember> networkCache;
+	private EnergyNetwork.Cache networkCache;
 	private boolean networkDirty = true;
 
 	public EnergyExtractorBlockEntity(BlockPos pos, BlockState state) {
@@ -106,12 +106,14 @@ public class EnergyExtractorBlockEntity extends BlockEntity implements EnergyNet
 
 	/** 获取所在网络成员（缓存，脏时重建）。 */
 	public List<EnergyNetworkMember> getNetwork() {
-		if (networkDirty || networkCache == null) {
-			networkCache = EnergyNetwork.collect(this.world, this.pos);
-			networkDirty = false;
-		}
-		return networkCache;
-	}
+        List<EnergyNetworkMember> members = networkCache == null ? null : networkCache.resolve(world);
+        if (networkDirty || members == null) {
+            members = EnergyNetwork.collect(this.world, this.pos);
+            networkCache = new EnergyNetwork.Cache(world, members);
+            networkDirty = false;
+        }
+        return members;
+    }
 
 	// ==================== NBT 持久化 ====================
 

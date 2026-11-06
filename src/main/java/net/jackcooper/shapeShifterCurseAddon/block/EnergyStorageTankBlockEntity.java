@@ -32,7 +32,7 @@ public class EnergyStorageTankBlockEntity extends BlockEntity implements EnergyN
 	/** 液面比例同步节流阈值：变化小于该值不发包（避免汲取器每 tick 注入时高频刷包）。 */
 	private static final float RATIO_SYNC_EPSILON = 0.004f;
 
-	private List<EnergyNetworkMember> networkCache;
+	private EnergyNetwork.Cache networkCache;
 	private boolean networkDirty = true;
 
 	public EnergyStorageTankBlockEntity(BlockPos pos, BlockState state) {
@@ -86,12 +86,14 @@ public class EnergyStorageTankBlockEntity extends BlockEntity implements EnergyN
 
 	/** 获取所在网络成员（缓存，脏时重建）。 */
 	public List<EnergyNetworkMember> getNetwork() {
-		if (networkDirty || networkCache == null) {
-			networkCache = EnergyNetwork.collect(this.world, this.pos);
-			networkDirty = false;
-		}
-		return networkCache;
-	}
+        List<EnergyNetworkMember> members = networkCache == null ? null : networkCache.resolve(world);
+        if (networkDirty || members == null) {
+            members = EnergyNetwork.collect(this.world, this.pos);
+            networkCache = new EnergyNetwork.Cache(world, members);
+            networkDirty = false;
+        }
+        return members;
+    }
 
 	// ==================== NBT 持久化 + 客户端同步 ====================
 

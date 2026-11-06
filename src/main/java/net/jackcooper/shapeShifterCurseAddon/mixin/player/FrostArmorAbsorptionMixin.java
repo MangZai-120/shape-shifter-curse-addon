@@ -23,6 +23,9 @@ public abstract class FrostArmorAbsorptionMixin implements FrostArmorAccess {
 
     @Inject(method = "setAbsorptionAmount", at = @At("HEAD"))
     private void ssca$consumeFrostArmor(float amount, CallbackInfo ci) {
+        PlayerEntity self = (PlayerEntity) (Object) this;
+        if (self instanceof net.jackcooper.shapeShifterCurseAddon.ability.ParasiticAbsorptionAccess access)
+            access.ssca$parasiticAbsorption().onChanged(self, self.getAbsorptionAmount(), Math.max(0, amount));
         if (ssca$frostArmorState != null) ssca$frostArmorState.onAbsorptionChanged(
                 ((PlayerEntity) (Object) this).getAbsorptionAmount(), Math.max(0, amount));
     }
@@ -36,5 +39,7 @@ public abstract class FrostArmorAbsorptionMixin implements FrostArmorAccess {
     private void ssca$loadFrostArmor(NbtCompound nbt, CallbackInfo ci) {
         PlayerEntity self = (PlayerEntity) (Object) this;
         ssca$frostArmor().read(nbt, self, self.hasStatusEffect(SscAddon.FROST_ARMOR));
+        if (self instanceof net.jackcooper.shapeShifterCurseAddon.ability.ParasiticAbsorptionAccess access)
+            access.ssca$parasiticAbsorption().read(nbt, self);
     }
 }

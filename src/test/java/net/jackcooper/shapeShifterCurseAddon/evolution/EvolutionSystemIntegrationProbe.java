@@ -85,6 +85,8 @@ public final class EvolutionSystemIntegrationProbe {
         rejectedAndInterruptedAnimations();
         entryAndPaymentValidation();
         synchronization();
+        failedReloadPreservesProgress();
+        net.jackcooper.shapeShifterCurseAddon.AuditServerRegressionProbe.run();
         System.out.println("Evolution system integration: " + checks + " checks passed. Live gameplay NOT tested.");
     }
 
@@ -386,6 +388,68 @@ public final class EvolutionSystemIntegrationProbe {
         creative.inv.setStack(0, ItemStack.EMPTY);
         EvolutionManager.startJobChange(creative, target.startForm.toString());
         check(creative.evolution.isJobChanging() && creative.evolution.getJobChangePayment().isEmpty(), "creative mode reserves no payment");
+    }
+
+    private static void failedReloadPreservesProgress() throws Exception {
+        EvolutionRegistry registry = EvolutionRegistry.INSTANCE;
+        EvolutionRoute route = registry.getRoute("familiar_fox");
+        TestPlayer player = player(route);
+        EvolutionManager.tickPlayer(player);
+        player.evolution.setExp(4000);
+        EvolutionManager.tickPlayer(player); // Settle legitimate milestone grants before comparing NBT.
+        player.evolution.setPoints(3);
+        player.evolution.unlock("mana_system");
+        NbtCompound before = save(player);
+        var original = com.google.gson.JsonParser.parseString(rawRoutes.get("familiar_fox")).getAsJsonObject();
+        List<String> invalid = new ArrayList<>();
+        invalid.add("{");
+        var missing = original.deepCopy();
+        missing.getAsJsonArray("nodes").get(0).getAsJsonObject().remove("id");
+        invalid.add(missing.toString());
+        var duplicate = original.deepCopy();
+        duplicate.getAsJsonArray("nodes").add(duplicate.getAsJsonArray("nodes").get(0).deepCopy());
+        invalid.add(duplicate.toString());
+        var prerequisite = original.deepCopy();
+        prerequisite.getAsJsonArray("nodes").get(1).getAsJsonObject().getAsJsonArray("prereqs").add("missing_node");
+        invalid.add(prerequisite.toString());
+        var cycle = original.deepCopy();
+        cycle.getAsJsonArray("nodes").get(0).getAsJsonObject().getAsJsonArray("prereqs").add("mana_system");
+        invalid.add(cycle.toString());
+        var missingStart = original.deepCopy();
+        missingStart.remove("start_form");
+        invalid.add(missingStart.toString());
+        for (String json : invalid) {
+            var resources = Map.of(new Identifier("my_addon", "ssca_evolution/routes/familiar_fox.json"),
+                    new Resource(null, () -> new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8))));
+            ResourceManager manager = (ResourceManager) Proxy.newProxyInstance(ResourceManager.class.getClassLoader(), new Class[]{ResourceManager.class},
+                    (proxy, method, args) -> method.getName().equals("findResources") ? resources : null);
+            boolean rejected = false;
+            try { registry.reload(manager); } catch (IllegalArgumentException expected) { rejected = true; }
+            check(rejected && registry.getRawJson().equals(rawRoutes), "failed reload retains the whole previous route registry");
+            EvolutionManager.tickPlayer(player);
+            check(before.equals(save(player)), "failed reload preserves experience, points, nodes and migration NBT");
+        }
+        registry.applyClientSync(Map.of("familiar_fox", invalid.get(1)));
+        check(registry.getRawJson().equals(rawRoutes), "bad client snapshot preserves complete previous mirror");
+        registry.applyClientSync(Map.of());
+        EvolutionManager.tickPlayer(player);
+        check(before.equals(save(player)), "temporarily missing route does not reset saved progress");
+        check(!EvolutionManager.canUpgradeFoxEvolve(player), "missing route cannot bypass evolution requirements");
+        registry.applyClientSync(rawRoutes);
+        EvolutionManager.tickPlayer(player);
+        check(before.equals(save(player)), "restoring route resumes existing progression without reset");
+        var changedStart = original.deepCopy();
+        changedStart.addProperty("start_form", "audit:changed_start_form");
+        var changed = new LinkedHashMap<>(rawRoutes);
+        changed.put("familiar_fox", changedStart.toString());
+        registry.applyClientSync(changed);
+        EvolutionManager.tickPlayer(player);
+        check(before.equals(save(player)), "editing start_form cannot impersonate a real form departure");
+        registry.applyClientSync(Map.of());
+        player.form.nowForm = new NormalForm(new Identifier("audit", "different_form"));
+        EvolutionManager.tickPlayer(player);
+        check(!player.evolution.isOnSscaRoute(), "actual form departure still resets progress while config is missing");
+        registry.applyClientSync(rawRoutes);
     }
 
     private static Map<String,String> receiveRoutes(TestPlayer player) {

@@ -13,6 +13,8 @@ import java.util.UUID;
 /** 口袋空间自检（pocketSpaceTest 任务运行；不打进发行 jar）。 */
 public final class PocketSpaceLayoutTest {
 	public static void main(String[] args) throws Exception {
+		net.minecraft.SharedConstants.createGameVersion();
+		net.minecraft.Bootstrap.initialize();
 		for (int level = 1; level <= 5; level++) {
 			PocketSpaceLayout layout = new PocketSpaceLayout(7, level);
 			int interiorCount = 0;
@@ -125,6 +127,26 @@ public final class PocketSpaceLayoutTest {
 		check(first.lastSeen() == 1234L); // 心跳只前进不后退
 		first.touch(5000L);
 		check(first.lastSeen() == 5000L);
+		// An interrupted wipe keeps its reservation in this save, without claiming another
+		// save's matching slot. Eviction intent and the room UUID survive reload as well.
+		first.collapsing = true;
+		UUID removedRoom = UUID.randomUUID();
+		restored.pendingWipes.put(2, removedRoom);
+		PocketSpaceStorage.Registry recovered = PocketSpaceStorage.Registry.read(restored.writeNbt(new NbtCompound()));
+		check(recovered.bySlot.get(0).collapsing);
+		check(recovered.pendingWipes.get(2).equals(removedRoom));
+		check(!recovered.bySlot.containsKey(2));
+		PocketSpaceStorage.Registry otherSave = PocketSpaceStorage.Registry.read(saved);
+		check(otherSave.pendingWipes.isEmpty());
+		check(!otherSave.bySlot.get(0).collapsing);
+		// Corrupt/conflicting journals must never authorize wiping an occupied room.
+		NbtCompound conflicted = recovered.writeNbt(new NbtCompound());
+		var badWipe = new NbtCompound();
+		badWipe.putInt("Slot", 0);
+		badWipe.putUuid("Scroll", UUID.randomUUID());
+		conflicted.getList("PendingWipes", 10).add(badWipe);
+		check(!PocketSpaceStorage.Registry.read(conflicted).pendingWipes.containsKey(0));
+		taskIsolation(recovered, removedRoom);
 		try (InputStreamReader reader = new InputStreamReader(PocketSpaceLayoutTest.class.getResourceAsStream(
 				"/data/ssc_addon/dimension_type/pocket_space.json"), StandardCharsets.UTF_8)) {
 			var dimension = JsonParser.parseReader(reader).getAsJsonObject();
@@ -240,6 +262,34 @@ public final class PocketSpaceLayoutTest {
 		check(PocketSpaceLayout.PORTAL_TOP_HEIGHT > 0.08);
 		System.out.println("Portal assembly checks passed (4 inward corners, rotational symmetry, two-level landing heights).");
 		System.out.println("Portal material checks passed (4 rotated variants, opaque stone, transparent purple emission).");
+	}
+
+	private static void taskIsolation(PocketSpaceStorage.Registry registry, UUID room) throws Exception {
+		var field = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+		field.setAccessible(true);
+		var unsafe = (sun.misc.Unsafe) field.get(null);
+		var serverA = unsafe.allocateInstance(net.minecraft.server.dedicated.MinecraftDedicatedServer.class);
+		var serverB = unsafe.allocateInstance(net.minecraft.server.dedicated.MinecraftDedicatedServer.class);
+		var ensure = PocketSpaceManager.class.getDeclaredMethod("ensureServer", net.minecraft.server.MinecraftServer.class);
+		ensure.setAccessible(true);
+		ensure.invoke(null, serverA);
+		var wipesField = PocketSpaceManager.class.getDeclaredField("WIPES");
+		wipesField.setAccessible(true);
+		@SuppressWarnings("unchecked") var wipes = (java.util.Map<Integer, Object>) wipesField.get(null);
+		Class<?> wipeType = Class.forName(PocketSpaceManager.class.getName() + "$Wipe");
+		var constructor = wipeType.getDeclaredConstructor(net.minecraft.server.MinecraftServer.class, int.class, UUID.class);
+		constructor.setAccessible(true);
+		Object wipe = constructor.newInstance(serverA, 2, room);
+		wipes.put(2, wipe);
+		var belongs = wipeType.getDeclaredMethod("belongsTo", net.minecraft.server.MinecraftServer.class, PocketSpaceStorage.Registry.class);
+		belongs.setAccessible(true);
+		check((boolean) belongs.invoke(wipe, serverA, registry));
+		check(!(boolean) belongs.invoke(wipe, serverB, registry));
+		ensure.invoke(null, serverB);
+		check(wipes.isEmpty());
+		check(registry.pendingWipes.get(2).equals(room)); // clearing runtime never discards save recovery
+		ensure.invoke(null, new Object[]{null});
+		System.out.println("Pocket task recovery passed (save journal, slot identity, server switch, interrupted eviction).");
 	}
 
 	private static int bytes(NbtCompound nbt) throws Exception {

@@ -43,7 +43,7 @@ public class EnergyBottlerScreenHandler extends ScreenHandler {
 		this.inventory = inventory;
 		this.propertyDelegate = propertyDelegate;
 		inventory.onOpen(playerInventory.player);
-		this.addProperties(propertyDelegate);
+		this.addProperties(new SplitIntPropertyDelegate(propertyDelegate, 2));
 
 		int lines = EnergyBottlerBlockEntity.LINES;
 		// 三条线：输入槽（空玻璃瓶）与输出槽（能量瓶）；Y 上移 1px 对齐背景贴图槽位（用户校准）

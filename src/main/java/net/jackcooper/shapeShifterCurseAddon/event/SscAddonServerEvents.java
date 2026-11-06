@@ -60,6 +60,10 @@ public final class SscAddonServerEvents {
 	private SscAddonServerEvents() {}
 
 	public static void registerTickHandlers() {
+        net.jackcooper.shapeShifterCurseAddon.energy.EnergyNetwork.init();
+        AllaySPJukebox.init();
+        net.jackcooper.shapeShifterCurseAddon.ability.DeathDomainRecovery.init();
+        net.jackcooper.shapeShifterCurseAddon.ability.RedFormTickManager.init();
         SkillStateMaintenance.init();
         net.jackcooper.shapeShifterCurseAddon.compat.TransformSessionCleanup.init();
 		ServerTickEvents.START_SERVER_TICK.register(server -> {
@@ -254,7 +258,7 @@ public final class SscAddonServerEvents {
 			SnowFoxSpMeleeAbility.clearAll();
 			SnowFoxSpTeleportAttack.clearAll();
 			SnowFoxSpFrostStorm.resetForServerStart();				net.jackcooper.shapeShifterCurseAddon.ability.FrostArmorManager.clearAll();			AnubisWolfSpDeathDomain.clearAll();
-			AnubisWolfSpSummonWolves.clearAll();
+			AnubisWolfSpSummonWolves.clearAll(server);
 			AllaySPTotem.clearAll();
 			GoldenSandstormErosionBrand.clearAll();
 			GoldenSandstormWitherSand.clearAll(server);
@@ -291,7 +295,7 @@ public final class SscAddonServerEvents {
 			SnowFoxSpFrostStorm.clearAll();
 			// reload 可能遇到玩家正在释放领域，必须先强制还原方块再清状态，避免世界里残留灵魂沙
 			AnubisWolfSpDeathDomain.forceRestoreAll(true);
-			AnubisWolfSpSummonWolves.clearAll();
+			AnubisWolfSpSummonWolves.clearAll(server);
 			AllaySPTotem.clearAll();
 			GoldenSandstormErosionBrand.clearAll();
 			GoldenSandstormWitherSand.clearAll(server);

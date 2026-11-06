@@ -35,6 +35,7 @@ public class MoonlightArrowSpell extends Spell {
 		SpellMoonlightArrowEntity arrow = new SpellMoonlightArrowEntity(caster.getWorld(), caster);
 		arrow.setDamage(power);
 		arrow.setLevel(level);
+		arrow.setExpBountyTen(ssc_addon$takePendingExp());
 		arrow.setRefundCastId(solo ? null : ssc_addon$getRefundCastId());
 		Vec3d look = caster.getRotationVec(1.0F);
 		arrow.setDirection(look,(float)RuneCastContext.current().scale(getSpeedMultiplier(level),RuneModifiers.Stat.SPEED));

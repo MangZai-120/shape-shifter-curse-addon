@@ -210,9 +210,6 @@ public final class SheepFormAiController {
 			return; // 未替换过（玩家目标/重复恢复），no-op
 		}
 		BACKUPS.remove(mob.getUuid());
-		MobEntityGoalAccessor acc = (MobEntityGoalAccessor) mob;
-		stopAndClear(acc.ssca$getGoalSelector());
-		stopAndClear(acc.ssca$getTargetSelector());
 		// 实例已换（重载/换维度）：旧备份的 Goal 绑死旧实体，不回放死引用——新实例构造器
 		// 已重建原生集，直接保持即可。
 		if (backup.mobRef() != mob) {
@@ -221,6 +218,9 @@ public final class SheepFormAiController {
 					mob.getType().toString());
 			return;
 		}
+		MobEntityGoalAccessor acc = (MobEntityGoalAccessor) mob;
+		stopAndClear(acc.ssca$getGoalSelector());
+		stopAndClear(acc.ssca$getTargetSelector());
 		for (GoalEntry entry : backup.goals()) {
 			acc.ssca$getGoalSelector().add(entry.priority(), entry.goal());
 		}

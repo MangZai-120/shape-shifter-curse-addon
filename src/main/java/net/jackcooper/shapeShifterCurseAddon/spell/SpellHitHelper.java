@@ -39,7 +39,7 @@ public final class SpellHitHelper {
 	 * @param damage       伤害值
 	 * @param element      法术系别（流派钩子用）
 	 * @param refundCastId 书内施法编号（solo 为 null）
-	 * @param expBounty    待补发经验（×10）；AOE 循环内传 {@code ssc_addon$takePendingExp()}（幂等清零），
+	 * @param expBounty    待补发经验（×10）；AOE 保留本次预算，只有返回 HIT 后才在循环内清零，
 	 *                     弹射物传字段值并在返回 HIT 后清零字段防重复
 	 */
 	public static HitResult projectileHit(Entity owner, LivingEntity target, float damage,
@@ -88,7 +88,7 @@ public final class SpellHitHelper {
 		} else {
 			damaged = target.damage(SpellDamageSource.of(target.getWorld().getDamageSources()), damage);
 		}
-		// exp_mode 1/2 命中补发：damage 成功才发放（幂等：AOE 循环内 takePendingExp 后续为 0）
+		// exp_mode 1/2 命中补发：damage 成功才发放（调用方在 HIT 后清零，避免保护/免疫吞掉预算）
 		if (damaged && owner instanceof ServerPlayerEntity ownerPlayer) {
 			SpellExpGrant.grant(ownerPlayer, expBounty);
             if(link!=null)link.damage(ownerPlayer,target,Math.max(0,healthBefore-target.getHealth()));

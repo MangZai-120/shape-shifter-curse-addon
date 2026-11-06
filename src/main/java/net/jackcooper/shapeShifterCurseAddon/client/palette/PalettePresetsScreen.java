@@ -42,6 +42,7 @@ public class PalettePresetsScreen extends Screen {
 
     // 槽位输入 debounce 保存：每次编辑只打标记，tick/关屏时再写盘
     private boolean slotsDirty = false;
+    private boolean dataLoaded;
     private long lastDirtyMs = 0L;
     private static final long SAVE_DEBOUNCE_MS = 500L;
 
@@ -79,13 +80,21 @@ public class PalettePresetsScreen extends Screen {
 
     @Override
     protected void init() {
-        PalettePresetStore.get().reloadForCurrentScope();
+        // A resize rebuilds widgets, while the current scope's draft remains authoritative.
+        if (!dataLoaded) {
+            PalettePresetStore.get().reloadForCurrentScope();
+            dataLoaded = true;
+        }
         slotRows.clear();
 
         // 顶部右侧：同步开关 + 复制当前
         addDrawableChild(ButtonWidget.builder(getSyncBtnText(), btn -> {
             PalettePresetStore store = PalettePresetStore.get();
-            store.setGlobalSync(!store.isGlobalSync());
+            if (!flushSlotsIfDirty()) return;
+            if (!store.setGlobalSync(!store.isGlobalSync())) {
+                setStatus("text.ssc_addon.palette.status.save_failed");
+                return;
+            }
             MinecraftClient.getInstance().setScreen(new PalettePresetsScreen(parent));
         }).size(160, 20).position(width - 330, 22).build());
 
@@ -272,13 +281,19 @@ public class PalettePresetsScreen extends Screen {
     /** 槽位列表打脏：tick 内 debounce 时间到 / 关屏时统一 flush，避免每按一键就全量写盘。 */
     private void markSlotsDirty() {
         slotsDirty = true;
+        PalettePresetStore.get().markDirty();
         lastDirtyMs = System.currentTimeMillis();
     }
 
-    private void flushSlotsIfDirty() {
-        if (!slotsDirty) return;
-        slotsDirty = false;
-        PalettePresetStore.get().save();
+    private boolean flushSlotsIfDirty() {
+        if (!slotsDirty) return true;
+        if (PalettePresetStore.get().save()) {
+            slotsDirty = false;
+            return true;
+        }
+        lastDirtyMs = System.currentTimeMillis();
+        setStatus("text.ssc_addon.palette.status.save_failed");
+        return false;
     }
 
     @Override
@@ -411,7 +426,9 @@ public class PalettePresetsScreen extends Screen {
     }
 
     @Override
-    public void close() { MinecraftClient.getInstance().setScreen(parent); }
+    public void close() {
+        if (flushSlotsIfDirty()) MinecraftClient.getInstance().setScreen(parent);
+    }
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {

@@ -22,6 +22,8 @@ import java.util.UUID;
 public class EvolutionComponent implements AutoSyncedComponent {
     /** 玩家选择的进化路线 id（空字符串 = 未选择 / 走原版 SSC 路线）。 */
     private String route = "";
+    /** Remember the entered form independently of later datapack edits. */
+    private String routeStartForm = "";
     /** 已选择的 SP 分支 id（空字符串 = 未选择）。 */
     private String branch = "";
     /** 累积的原版经验值（玩家在进化路线上获得经验时累加；进化 exp = 该值 / 2，见 {@link #getEvoLevel()}）。 */
@@ -64,8 +66,13 @@ public class EvolutionComponent implements AutoSyncedComponent {
     }
 
     public void setRoute(String route) {
-        this.route = route == null ? "" : route;
+        String next = route == null ? "" : route;
+        if (!next.equals(getRoute())) routeStartForm = "";
+        this.route = next;
     }
+
+    public String getRouteStartForm() { return routeStartForm; }
+    public void setRouteStartForm(String id) { routeStartForm = id; }
 
     public String getBranch() {
         return branch == null ? "" : branch;
@@ -258,6 +265,7 @@ public class EvolutionComponent implements AutoSyncedComponent {
     /** 重置全部进化数据（/ssc_addon evolution reset）。 */
     public void reset() {
         this.route = "";
+        this.routeStartForm = "";
         this.branch = "";
         this.exp = 0;
         this.unlockAll = false;
@@ -275,6 +283,8 @@ public class EvolutionComponent implements AutoSyncedComponent {
     @Override
     public void readFromNbt(NbtCompound nbt) {
         this.route = nbt.getString("route");
+        this.routeStartForm = net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration
+                .canonical(nbt.getString("routeStartForm"));
         this.branch = nbt.getString("branch");
         this.exp = nbt.getInt("exp");
         this.unlockAll = nbt.getBoolean("unlockAll");
@@ -304,6 +314,7 @@ public class EvolutionComponent implements AutoSyncedComponent {
     @Override
     public void writeToNbt(NbtCompound nbt) {
         nbt.putString("route", getRoute());
+        nbt.putString("routeStartForm", routeStartForm);
         nbt.putString("branch", getBranch());
         nbt.putInt("exp", this.exp);
         nbt.putBoolean("unlockAll", this.unlockAll);

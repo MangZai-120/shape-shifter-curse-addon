@@ -253,9 +253,7 @@ public final class SpellCastManager {
 			case 2 -> pendingTen = baseExpTen * 8 / 10;       // 释放 20% + 命中补 80%（整数截断）
 			default -> pendingTen = 0;                        // 释放即得：无挂起
 		}
-		if (pendingTen > 0) {
-			spell.ssc_addon$setPendingExp(pendingTen);
-		}
+		spell.ssc_addon$setPendingExp(pendingTen);
 		return baseExpTen-pendingTen;
 	}
 

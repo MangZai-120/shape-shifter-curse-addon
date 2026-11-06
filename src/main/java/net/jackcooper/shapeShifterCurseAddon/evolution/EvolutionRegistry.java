@@ -28,8 +28,8 @@ public final class EvolutionRegistry implements SimpleSynchronousResourceReloadL
     private static final Identifier ID = new Identifier("ssc_addon", "ssca_evolution_routes");
     private static final String DIR = "ssca_evolution/routes";
 
-    private Map<String, EvolutionRoute> routes = new LinkedHashMap<>();
-    private Map<String, String> rawJson = new LinkedHashMap<>();
+    private record Snapshot(Map<String, EvolutionRoute> routes, Map<String, String> rawJson) {}
+    private volatile Snapshot snapshot = new Snapshot(Map.of(), Map.of());
 
     private EvolutionRegistry() {
     }
@@ -54,14 +54,17 @@ public final class EvolutionRegistry implements SimpleSynchronousResourceReloadL
             try (InputStream is = entry.getValue().getInputStream()) {
                 String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
                 JsonObject o = JsonHelper.deserialize(content);
-                loaded.put(fileName, EvolutionRoute.fromJson(fileName, o));
+                if (loaded.putIfAbsent(fileName, EvolutionRoute.fromJson(fileName, o)) != null) {
+                    throw new IllegalArgumentException("Duplicate evolution route id: " + fileName);
+                }
                 loadedRaw.put(fileName, content);
             } catch (Exception e) {
-                System.err.println("[ssc_addon] Failed to load evolution route: " + fileId + " - " + e);
+                // Do not publish a partial registry or report a successful reload.
+                throw new IllegalArgumentException("Failed to load evolution route: " + fileId
+                        + "; retaining the previous registry", e);
             }
         }
-        this.routes = loaded;
-        this.rawJson = loadedRaw;
+        snapshot = new Snapshot(Collections.unmodifiableMap(loaded), Collections.unmodifiableMap(loadedRaw));
     }
 
     /** 客户端收到 S2C 同步后重建路线镜像（多人环境下客户端无 datapack 数据）。 */
@@ -73,23 +76,23 @@ public final class EvolutionRegistry implements SimpleSynchronousResourceReloadL
                 rebuilt.put(e.getKey(), EvolutionRoute.fromJson(e.getKey(), o));
             } catch (Exception ex) {
                 System.err.println("[ssc_addon] Failed to apply synced evolution route: " + e.getKey() + " - " + ex);
+                return; // Preserve the complete previous mirror on malformed snapshots.
             }
         }
-        this.routes = rebuilt;
-        this.rawJson = new LinkedHashMap<>(raw);
+        snapshot = new Snapshot(Collections.unmodifiableMap(rebuilt), Collections.unmodifiableMap(new LinkedHashMap<>(raw)));
     }
 
     public EvolutionRoute getRoute(String routeId) {
-        return routeId == null ? null : routes.get(routeId);
+        return routeId == null ? null : snapshot.routes.get(routeId);
     }
 
     public Map<String, EvolutionRoute> all() {
-        return Collections.unmodifiableMap(routes);
+        return snapshot.routes;
     }
 
     /** 各路线的原始 JSON 文本（用于 S2C 同步转发）。 */
     public Map<String, String> getRawJson() {
-        return Collections.unmodifiableMap(rawJson);
+        return snapshot.rawJson;
     }
 
     /** 按 {@code start_form} 反查路线（判断「当前形态属于哪条进化路线」）。 */
@@ -98,7 +101,7 @@ public final class EvolutionRegistry implements SimpleSynchronousResourceReloadL
             return null;
         }
         formId = net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.canonical(formId);
-        for (EvolutionRoute r : routes.values()) {
+        for (EvolutionRoute r : snapshot.routes.values()) {
             if (formId.equals(r.startForm)) {
                 return r;
             }

@@ -42,7 +42,10 @@ public final class EvolutionManager {
         Identifier nowFormId = (nowForm == null) ? null : nowForm.getFormID();
         EvolutionRoute route = EvolutionRegistry.INSTANCE.getRouteByStartForm(nowFormId);
         if (route == null) {
-            return true; // 非任何进化路线的起点形态 → 不限制
+            // Missing configuration must not turn an existing evolution gate into a free upgrade.
+            return !get(player).isOnSscaRoute()
+                    && !net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(nowFormId)
+                    && !net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.UPGRADE_AXOLOTL.equals(nowFormId);
         }
         EvolutionComponent comp = get(player);
         if (!route.routeId.equals(comp.getRoute()) || comp.isJobChanging()) {
@@ -202,7 +205,7 @@ public final class EvolutionManager {
         // 成为「某进化路线的起点形态」即自动进入该 SSCA 路线并解锁初始节点
         //（覆盖开局之书 / 指令等所有途径）；放在 isOnSscaRoute 早退之前以便首次自动设路线。
         EvolutionRoute enterRoute = EvolutionRegistry.INSTANCE.getRouteByStartForm(nowFormId);
-        if (enterRoute != null) {
+        if (enterRoute != null && (!comp.isOnSscaRoute() || enterRoute.routeId.equals(comp.getRoute()))) {
             boolean autoChanged = false;
             if (!comp.isOnSscaRoute()) {
                 comp.setRoute(enterRoute.routeId);
@@ -227,16 +230,26 @@ public final class EvolutionManager {
         }
 
         EvolutionRoute route = EvolutionRegistry.INSTANCE.getRoute(comp.getRoute());
+        // Only a real form change can reset progress, never a missing or edited route.
+        String rememberedForm = comp.getRouteStartForm();
+        if (rememberedForm.isEmpty() && route != null && route.startForm != null
+                && route.startForm.equals(nowFormId)) {
+            comp.setRouteStartForm(route.startForm.toString());
+            rememberedForm = comp.getRouteStartForm();
+        }
+        if (comp.hasStarted() && nowFormId != null && !rememberedForm.isEmpty()
+                && !rememberedForm.equals(nowFormId.toString())) {
+            comp.reset();
+            sync(player);
+            return;
+        }
+        if (route == null || route.startForm == null) return;
         boolean onOwnStartForm = route != null && route.startForm != null
                 && route.startForm.equals(nowFormId);
 
         // 离开自己路线的起点形态（变成其它形态）→ 重置进度。
         // 用 started 标志避免变身动画期间（route 已设但尚未变成起点形态）误重置。
-        if (!onOwnStartForm && comp.hasStarted()) {
-            comp.reset();
-            sync(player);
-            return;
-        }
+        if (!onOwnStartForm) return; // A changed start_form requires an explicit migration.
 
         // 迁移必须先于首次新经验累计，而不能依赖玩家何时打开界面。
         if (onOwnStartForm) checkAndMigrate(player);

@@ -39,6 +39,8 @@ public final class ControlledAbilityInterruption {
         WaterSpearLeapManager.cancel(player);
         VortexGuideManager.cancel(player);
         JumpKillManager.interruptControl(player);
+        VenomSkillManager.interruptControl(player);
+        AnubisWolfSpSummonWolves.interruptControl(player);
         WindDashManager.clear(player);
         WindSpiritClawManager.clear(player);
         SnowFoxSpFrostStorm.cancelCharging(player);

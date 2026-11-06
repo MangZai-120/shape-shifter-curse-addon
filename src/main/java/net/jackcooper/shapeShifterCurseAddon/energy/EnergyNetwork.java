@@ -25,6 +25,46 @@ public final class EnergyNetwork {
 
 	/** 单个网络最多遍历的成员数上限，防止超大网络造成卡顿。 */
 	public static final int MAX_NETWORK = 256;
+	private static final java.util.Map<World, Long> TOPOLOGY = new java.util.WeakHashMap<>();
+
+	public static void init() {
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents.CHUNK_LOAD.register((world, chunk) -> invalidateWorld(world));
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents.CHUNK_UNLOAD.register((world, chunk) -> invalidateWorld(world));
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> TOPOLOGY.clear());
+	}
+
+	private static void invalidateWorld(World world) {
+		TOPOLOGY.merge(world, 1L, Long::sum);
+	}
+
+	/** Cache coordinates, never unloaded block-entity objects. */
+	public static final class Cache {
+		private final java.lang.ref.WeakReference<World> owner;
+		private final long version;
+		private final List<BlockPos> positions;
+
+		public Cache(World world, List<EnergyNetworkMember> members) {
+			owner = new java.lang.ref.WeakReference<>(world);
+			version = TOPOLOGY.getOrDefault(world, 0L);
+			positions = members.stream().map(member -> ((BlockEntity) member).getPos().toImmutable()).toList();
+		}
+
+		/** null requests a topology rebuild, including newly loaded neighboring chunks. */
+		public List<EnergyNetworkMember> resolve(World world) {
+			if (owner.get() != world || version != TOPOLOGY.getOrDefault(world, 0L)) return null;
+			List<EnergyNetworkMember> members = new ArrayList<>(positions.size());
+			for (BlockPos position : positions) {
+				BlockEntity be = getLoadedBlockEntity(world, position);
+				if (!(be instanceof EnergyNetworkMember member) || be.isRemoved()) return null;
+				members.add(member);
+			}
+			return members;
+		}
+	}
+
+	public static BlockEntity getLoadedBlockEntity(World world, BlockPos pos) {
+		return world != null && world.isChunkLoaded(pos) ? world.getBlockEntity(pos) : null;
+	}
 
 	/**
 	 * 从 {@code start} 起经 6 邻接方向洪泛收集同一连通网络内的全部能量成员。
@@ -32,14 +72,15 @@ public final class EnergyNetwork {
 	 */
 	public static List<EnergyNetworkMember> collect(World world, BlockPos start) {
 		List<EnergyNetworkMember> members = new ArrayList<>();
+		if (world == null) return members;
 		Set<BlockPos> visited = new HashSet<>();
 		Deque<BlockPos> queue = new ArrayDeque<>();
 		queue.add(start.toImmutable());
 		visited.add(start.toImmutable());
 		while (!queue.isEmpty() && members.size() < MAX_NETWORK) {
 			BlockPos p = queue.poll();
-			BlockEntity be = world.getBlockEntity(p);
-			if (be instanceof EnergyNetworkMember member) {
+			BlockEntity be = getLoadedBlockEntity(world, p);
+			if (be instanceof EnergyNetworkMember member && !be.isRemoved()) {
 				members.add(member);
 				for (Direction dir : Direction.values()) {
 					BlockPos np = p.offset(dir);
@@ -119,6 +160,7 @@ public final class EnergyNetwork {
 		if (world.isClient) {
 			return;
 		}
+		invalidateWorld(world);
 		Set<BlockPos> visited = new HashSet<>();
 		Deque<BlockPos> queue = new ArrayDeque<>();
 		// origin 自身也入队（放置成员时 origin 是成员，破坏时 origin 已空会被跳过）
@@ -130,7 +172,7 @@ public final class EnergyNetwork {
 				queue.add(np);
 			}
 			// 显式标脏 origin 邻接的消费者：覆盖「消费者唯一相邻能量源被放置/移除」的场景
-			BlockEntity nbe = world.getBlockEntity(np);
+			BlockEntity nbe = getLoadedBlockEntity(world, np);
 			if (nbe instanceof EnergyNetworkConsumer consumer) {
 				consumer.markNetworkDirty();
 			}
@@ -140,7 +182,7 @@ public final class EnergyNetwork {
 		int limit = MAX_NETWORK * 7;
 		while (!queue.isEmpty() && guard++ < limit) {
 			BlockPos p = queue.poll();
-			BlockEntity be = world.getBlockEntity(p);
+			BlockEntity be = getLoadedBlockEntity(world, p);
 			if (be instanceof EnergyNetworkMember member) {
 				if (firstMember == null) {
 					firstMember = p;
@@ -149,7 +191,7 @@ public final class EnergyNetwork {
 				// 顺带标脏与该成员相邻的消费者（装瓶器）
 				for (Direction dir : Direction.values()) {
 					BlockPos np = p.offset(dir);
-					BlockEntity nbe = world.getBlockEntity(np);
+					BlockEntity nbe = getLoadedBlockEntity(world, np);
 					if (nbe instanceof EnergyNetworkConsumer consumer) {
 						consumer.markNetworkDirty();
 					}
@@ -161,7 +203,7 @@ public final class EnergyNetwork {
 		}
 		// 拓扑变化后：重建幸存网络并均分储罐能量、刷新档位显示（放置/破坏任一成员都会走到这里）
 		if (firstMember != null) {
-			BlockEntity fbe = world.getBlockEntity(firstMember);
+			BlockEntity fbe = getLoadedBlockEntity(world, firstMember);
 			List<EnergyNetworkMember> net = null;
 			if (fbe instanceof EnergyStorageTankBlockEntity tank) {
 				net = tank.getNetwork();
@@ -231,7 +273,7 @@ public final class EnergyNetwork {
 			return false;
 		}
 		for (Direction dir : Direction.values()) {
-			BlockEntity be = world.getBlockEntity(origin.offset(dir));
+			BlockEntity be = getLoadedBlockEntity(world, origin.offset(dir));
 			if (be instanceof EnergyStorageTankBlockEntity tank) {
 				List<EnergyNetworkMember> net = tank.getNetwork();
 				donateBrokenTankEnergy(net, amount);

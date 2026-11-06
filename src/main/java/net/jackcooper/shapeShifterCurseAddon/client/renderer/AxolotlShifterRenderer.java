@@ -12,8 +12,6 @@ import net.minecraft.util.math.RotationAxis;
 import net.jackcooper.shapeShifterCurseAddon.client.model.AxolotlShifterModel;
 import net.jackcooper.shapeShifterCurseAddon.entity.AxolotlShifterEntity;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 
@@ -46,7 +44,7 @@ public class AxolotlShifterRenderer extends GeoEntityRenderer<AxolotlShifterEnti
 	// [0]tailDragAmount [1]tailDragAmountO
 	// [2]tailDragAmountVertical [3]tailDragAmountVerticalO
 	// [4]currentTailDragAmount(平滑后) [5]currentTailDragAmountVertical(平滑后)
-	private static final Map<Integer, float[]> TAIL_STATES = new HashMap<>();
+	private static final WeakEntityStateMap<AxolotlShifterEntity, float[]> TAIL_STATES = new WeakEntityStateMap<>();
 	// ==================== 每实体的眨眼状态（复刻原版 FormEyeBlinkController） ====================
 	private static final String EYE_ROOT_BONE = "eyeRoot";
 	private static final float EYE_OPEN_SCALE = 1.0f;
@@ -54,7 +52,7 @@ public class AxolotlShifterRenderer extends GeoEntityRenderer<AxolotlShifterEnti
 	private static final int BLINK_MIN_INTERVAL = 60;   // 原版默认 60~140 tick 随机间隔
 	private static final int BLINK_MAX_INTERVAL = 140;
 	private static final int BLINK_TICKS = 4;           // 原版默认 4 tick 眨眼时长
-	private static final Map<Integer, int[]> BLINK_STATES = new HashMap<>();
+	private static final WeakEntityStateMap<AxolotlShifterEntity, int[]> BLINK_STATES = new WeakEntityStateMap<>();
 	// [0]waitTicksRemaining [1]blinkTicksElapsed [2]blinking(1/0) [3]lastAge
 	// ==================== 每帧缓存 ====================
 	private float cachedLimbAngle;
@@ -74,8 +72,8 @@ public class AxolotlShifterRenderer extends GeoEntityRenderer<AxolotlShifterEnti
 	                   MatrixStack poseStack, VertexConsumerProvider bufferSource, int packedLight) {
 		// 清理已移除实体的尾巴/眨眼状态（防止内存泄漏）
 		if (entity.isRemoved()) {
-			TAIL_STATES.remove(entity.getId());
-			BLINK_STATES.remove(entity.getId());
+			TAIL_STATES.remove(entity);
+			BLINK_STATES.remove(entity);
 			return;
 		}
 
@@ -92,7 +90,7 @@ public class AxolotlShifterRenderer extends GeoEntityRenderer<AxolotlShifterEnti
 		cachedAge = entity.age + partialTick;
 
 		// 插值并平滑尾巴拖拽量（在ProcessModel之前，与SSC render()一致）
-		float[] state = TAIL_STATES.computeIfAbsent(entity.getId(), k -> new float[6]);
+		float[] state = TAIL_STATES.computeIfAbsent(entity, k -> new float[6]);
 		float targetDrag = MathHelper.lerp(partialTick, state[1], state[0]);
 		state[4] = MathHelper.lerp(0.04f, state[4], targetDrag);
 		float targetVerticalDrag = MathHelper.lerp(partialTick, state[3], state[2]);
@@ -180,7 +178,7 @@ public class AxolotlShifterRenderer extends GeoEntityRenderer<AxolotlShifterEnti
 		setRotation("bipedLeftLeg", leftLegPitch, 0, 0);
 
 		// ===== 6. 尾巴/腮链动态旋转 =====
-		float[] state = TAIL_STATES.getOrDefault(entity.getId(), new float[6]);
+		float[] state = TAIL_STATES.getOrDefault(entity, new float[6]);
 		setTailRotations(cachedLimbAngle, cachedLimbDistance, cachedAge,
 				state[4], state[5]);
 		setHeadTailRotations(cachedHeadYaw, cachedAge, state[4], state[5]);
@@ -200,7 +198,7 @@ public class AxolotlShifterRenderer extends GeoEntityRenderer<AxolotlShifterEnti
 		if (eyeRootOpt.isEmpty()) return;
 		GeoBone eyeRoot = eyeRootOpt.get();
 
-		int[] blink = BLINK_STATES.computeIfAbsent(entity.getId(), k -> {
+		int[] blink = BLINK_STATES.computeIfAbsent(entity, k -> {
 			Random r = new Random();
 			return new int[]{BLINK_MIN_INTERVAL + r.nextInt(BLINK_MAX_INTERVAL - BLINK_MIN_INTERVAL + 1), 0, 0, -1};
 		});

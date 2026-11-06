@@ -141,19 +141,30 @@ public final class AdvancedColorBridge {
         // 直接走 ClientPlayNetworking.send + update_custom_color 通道补发颜色，
         // 不依赖 SSC 主包是否暴露 sendUpdateCustomColor 方法（1.9.0 上还没暴露）。
         try {
-            net.minecraft.network.PacketByteBuf cbuf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
-            cbuf.writeInt(FormTextureUtils.ARGB2ABGR(s.colorsARGB[IDX_PRIMARY]));
-            cbuf.writeInt(FormTextureUtils.ARGB2ABGR(s.colorsARGB[IDX_ACCENT1]));
-            cbuf.writeInt(FormTextureUtils.ARGB2ABGR(s.colorsARGB[IDX_ACCENT2]));
-            cbuf.writeInt(FormTextureUtils.ARGB2ABGR(s.colorsARGB[IDX_EYE_A]));
-            cbuf.writeInt(FormTextureUtils.ARGB2ABGR(s.colorsARGB[IDX_EYE_B]));
-            cbuf.writeBoolean(s.greyReverse[GR_IDX_PRIMARY]);
-            cbuf.writeBoolean(s.greyReverse[GR_IDX_ACCENT1]);
-            cbuf.writeBoolean(s.greyReverse[GR_IDX_ACCENT2]);
-            net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
-                    new net.minecraft.util.Identifier(ShapeShifterCurseFabric.MOD_ID, "update_custom_color"), cbuf);
+            sendColors(s);
         } catch (Throwable t) {
             ShapeShifterCurseFabric.LOGGER.error("[SSC_ADDON] AdvancedColorBridge: failed to send color packet", t);
         }
     }
+
+    /** Shared encoder for explicit saves and JOIN resynchronization. */
+    public static void sendColors(WorkingState s) {
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                new net.minecraft.util.Identifier(ShapeShifterCurseFabric.MOD_ID, "update_custom_color"), encodeColors(s));
+    }
+
+    public static net.minecraft.network.PacketByteBuf encodeColors(WorkingState s) {
+        net.minecraft.network.PacketByteBuf cbuf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+        cbuf.writeBoolean(false); // SSC extraData header; colors follow in ABGR order.
+        cbuf.writeInt(FormTextureUtils.ARGB2ABGR(s.colorsARGB[IDX_PRIMARY]));
+        cbuf.writeInt(FormTextureUtils.ARGB2ABGR(s.colorsARGB[IDX_ACCENT1]));
+        cbuf.writeInt(FormTextureUtils.ARGB2ABGR(s.colorsARGB[IDX_ACCENT2]));
+        cbuf.writeInt(FormTextureUtils.ARGB2ABGR(s.colorsARGB[IDX_EYE_A]));
+        cbuf.writeInt(FormTextureUtils.ARGB2ABGR(s.colorsARGB[IDX_EYE_B]));
+        cbuf.writeBoolean(s.greyReverse[GR_IDX_PRIMARY]);
+        cbuf.writeBoolean(s.greyReverse[GR_IDX_ACCENT1]);
+        cbuf.writeBoolean(s.greyReverse[GR_IDX_ACCENT2]);
+        return cbuf;
+    }
+
 }

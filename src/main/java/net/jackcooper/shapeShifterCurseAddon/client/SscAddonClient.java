@@ -202,22 +202,8 @@ public class SscAddonClient implements ClientModInitializer {
 				net.onixary.shapeShifterCurseFabric.networking.ModPacketsS2C.sendUpdateCustomSetting(true);
 				// 同时补发颜色包：SSC 主包的 sendUpdateCustomSetting 漏调 send，
 				// 不在此处手动发，新存档/服务器的 PlayerSkinComponent 颜色不会被同步。
-				net.onixary.shapeShifterCurseFabric.config.PlayerCustomConfig cfg =
-						net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric.playerCustomConfig;
-				net.minecraft.network.PacketByteBuf cbuf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
-				// 主包 onUpdatePlayerCustomColor 首位读的是 extraData boolean，
-				// 漏写这一字节会导致服务端读越界、玩家被踢。
-				cbuf.writeBoolean(false);
-				cbuf.writeInt(net.onixary.shapeShifterCurseFabric.util.FormTextureUtils.ARGB2ABGR(cfg.primaryColor));
-				cbuf.writeInt(net.onixary.shapeShifterCurseFabric.util.FormTextureUtils.ARGB2ABGR(cfg.accentColor1Color));
-				cbuf.writeInt(net.onixary.shapeShifterCurseFabric.util.FormTextureUtils.ARGB2ABGR(cfg.accentColor2Color));
-				cbuf.writeInt(net.onixary.shapeShifterCurseFabric.util.FormTextureUtils.ARGB2ABGR(cfg.eyeColorA));
-				cbuf.writeInt(net.onixary.shapeShifterCurseFabric.util.FormTextureUtils.ARGB2ABGR(cfg.eyeColorB));
-				cbuf.writeBoolean(cfg.primaryGreyReverse);
-				cbuf.writeBoolean(cfg.accent1GreyReverse);
-				cbuf.writeBoolean(cfg.accent2GreyReverse);
-				net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
-						new net.minecraft.util.Identifier(net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric.MOD_ID, "update_custom_color"), cbuf);
+				net.jackcooper.shapeShifterCurseAddon.client.colorpicker.AdvancedColorBridge.sendColors(
+						net.jackcooper.shapeShifterCurseAddon.client.colorpicker.AdvancedColorBridge.snapshotFromConfig());
 				// 请求服务端把所有在场玩家的形态+皮肤同步过来（修复客机看其它玩家是默认白模型）。
 				net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
 						net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.canSend(
@@ -244,7 +230,10 @@ public class SscAddonClient implements ClientModInitializer {
 						String json = buf.readString(2000000);
 						raw.put(routeId, json);
 					}
-					client.execute(() -> net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.INSTANCE.applyClientSync(raw));
+					client.execute(() -> {
+                        if (client.getNetworkHandler() == handler)
+                            net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.INSTANCE.applyClientSync(raw);
+                    });
 				});
 		// 注册「法术数值配置同步」接收器：服务端把 spells JSON 同步过来（多人环境客户端无 datapack），
 		// 保证卷轴 tooltip / HUD 数值与服务端施法判定一致。
@@ -281,7 +270,11 @@ public class SscAddonClient implements ClientModInitializer {
 				String color = buf.readString();
 				brands.put(uuid, color);
 			}
-			client.execute(() -> ErosionBrandClientState.update(brands));
+			var receivedWorld = client.world;
+            client.execute(() -> {
+                if (client.getNetworkHandler() == handler && client.world != null && client.world == receivedWorld)
+                    ErosionBrandClientState.update(brands);
+            });
 		});
 
 		// 注册契灵标记 S2C 同步包接收器
@@ -297,7 +290,9 @@ public class SscAddonClient implements ClientModInitializer {
 			}
 			int stageTicks = buf.readableBytes() >= Integer.BYTES
 					? Math.max(0, Math.min(MancianimaMarkManager.STAGE_GATE_TICKS, buf.readInt())) : 0;
+			var receivedWorld = client.world;
 			client.execute(() -> {
+				if (client.getNetworkHandler() != handler || client.world != receivedWorld) return;
 				if (client.world == null) {
 					MancianimaMarkClientState.clear();
 					return;
@@ -328,14 +323,19 @@ public class SscAddonClient implements ClientModInitializer {
             double targetY = buf.readDouble();
             double range = buf.readableBytes() >= 16 ? buf.readDouble() : 16.0;
             double radius = buf.readableBytes() >= 8 ? buf.readDouble() : 3.0;
-            client.execute(() -> net.jackcooper.shapeShifterCurseAddon.client.DashClientState.update(phase, targetY, range, radius));
+            var receivedWorld = client.world;
+            client.execute(() -> {
+                if (client.getNetworkHandler() == handler && client.world != null && client.world == receivedWorld)
+                    net.jackcooper.shapeShifterCurseAddon.client.DashClientState.update(phase, targetY, range, radius);
+            });
         });
 
         // 朔望「灵跃闪身」：接收第 2 段窗口时长（>0 开启倒数锚，0 关闭），驱动次技能辅助栏
         ClientPlayNetworking.registerGlobalReceiver(net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_NOVA_LEAP_WINDOW, (client, handler, buf, responseSender) -> {
             int windowTicks = buf.readVarInt();
+            var receivedWorld = client.world;
             client.execute(() -> {
-                if (client.world != null && client.getNetworkHandler() == handler)
+                if (client.world != null && client.world == receivedWorld && client.getNetworkHandler() == handler)
                     net.jackcooper.shapeShifterCurseAddon.client.NovaLeapClientState.update(windowTicks, client.world.getTime());
             });
         });
@@ -343,8 +343,9 @@ public class SscAddonClient implements ClientModInitializer {
         // 堕落悦灵「召唤恼鬼」：接收召唤物存活窗口（>0 开启倒数锚，0 关闭），驱动主技能辅助栏
         ClientPlayNetworking.registerGlobalReceiver(net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_FALLEN_ALLAY_VEX_WINDOW, (client, handler, buf, responseSender) -> {
             int windowTicks = buf.readVarInt();
+            var receivedWorld = client.world;
             client.execute(() -> {
-                if (client.world != null && client.getNetworkHandler() == handler)
+                if (client.world != null && client.world == receivedWorld && client.getNetworkHandler() == handler)
                     net.jackcooper.shapeShifterCurseAddon.client.FallenAllayVexClientState.update(windowTicks, client.world.getTime());
             });
         });
@@ -360,14 +361,22 @@ public class SscAddonClient implements ClientModInitializer {
             java.util.UUID id = buf.readUuid();
             boolean charging = buf.readBoolean();
 
-            client.execute(() -> UpgradeAxolotlSpearRenderState.set(id, charging));
+            var receivedWorld = client.world;
+            client.execute(() -> {
+                if (client.getNetworkHandler() == handler && client.world != null && client.world == receivedWorld)
+                    UpgradeAxolotlSpearRenderState.set(id, charging);
+            });
         });
 
         // 寒棘狐主技能蓄力状态（事件级）：客户端本地自算下个冰锥位汇聚流（零网络粒子包）
         ClientPlayNetworking.registerGlobalReceiver(net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_FROST_SPIKE_CHARGE_STATE, (client, handler, buf, responseSender) -> {
             java.util.UUID id = buf.readUuid();
             boolean charging = buf.readBoolean();
-            client.execute(() -> net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeClientState.setCharging(id, charging));
+            var receivedWorld = client.world;
+            client.execute(() -> {
+                if (client.getNetworkHandler() == handler && client.world != null && client.world == receivedWorld)
+                    net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeClientState.setCharging(id, charging);
+            });
         });
         net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeClientState.register();
         // 断线/换服清理蓄力镜像，防残留
@@ -389,6 +398,7 @@ public class SscAddonClient implements ClientModInitializer {
 				mobs.add(new net.jackcooper.shapeShifterCurseAddon.client.screen.WhitelistManageScreen.MobEntry(u, typeId.isEmpty() ? null : typeId));
 			}
 			client.execute(() -> {
+				if (client.getNetworkHandler() != handler) return;
 				if (client.currentScreen instanceof net.jackcooper.shapeShifterCurseAddon.client.screen.WhitelistManageScreen s) {
 					s.updateState(set, customMode, mobs);
 				} else {
@@ -399,13 +409,16 @@ public class SscAddonClient implements ClientModInitializer {
 
 		// 灵能宝珠转职：服务端通知打开「转职选择形态」界面（jackcooper 独立类，当前形态灰显不可选）
 		ClientPlayNetworking.registerGlobalReceiver(net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_OPEN_JOB_CHANGE, (client, handler, buf, responseSender) -> {
-			client.execute(() -> client.setScreen(
-					new net.jackcooper.shapeShifterCurseAddon.client.JobChangeSelectScreen()));
+			client.execute(() -> {
+				if (client.getNetworkHandler() == handler) client.setScreen(
+						new net.jackcooper.shapeShifterCurseAddon.client.JobChangeSelectScreen());
+			});
 		});
 
 		// 动画调试记录开关：/ssc_addon debug anim 指令触发，客户端切换本地日志记录
 		ClientPlayNetworking.registerGlobalReceiver(net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_ANIM_DEBUG_TOGGLE, (client, handler, buf, responseSender) -> {
 			client.execute(() -> {
+				if (client.getNetworkHandler() != handler) return;
 				boolean now = net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverAnimDebugHud.toggleRecording();
 				if (client.player != null) {
 					client.player.sendMessage(net.minecraft.text.Text.translatable(

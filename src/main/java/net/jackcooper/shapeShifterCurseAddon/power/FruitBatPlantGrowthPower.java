@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FruitBatPlantGrowthPower extends Power {
 
     // <维度Key, <packedBlockPos, 上次判定时的 server tick>>
-    private static final Map<RegistryKey<World>, Map<Long, Long>> RECENT_PROCESSED = new ConcurrentHashMap<>();
+    private static final Map<ServerWorld, Map<Long, Long>> RECENT_PROCESSED = new java.util.WeakHashMap<>();
 
     private final int tickInterval;
     private final int radius;
@@ -32,7 +32,7 @@ public class FruitBatPlantGrowthPower extends Power {
         this.tickInterval = Math.max(1, tickInterval);
         this.radius = Math.max(0, radius);
         this.chance = Math.max(0f, Math.min(1f, chance));
-        this.setTicking(true);
+        this.setTicking();
     }
 
     public static PowerFactory<Power> createFactory() {
@@ -52,13 +52,13 @@ public class FruitBatPlantGrowthPower extends Power {
     @Override
     public void tick() {
         World world = entity.getWorld();
-        if (world.isClient()) return;
+        if (world.isClient() || !isActive()) return;
         if (!(world instanceof ServerWorld serverWorld)) return;
         if (entity.age % tickInterval != 0) return;
 
         long now = serverWorld.getTime();
         Map<Long, Long> dimMap = RECENT_PROCESSED.computeIfAbsent(
-                serverWorld.getRegistryKey(), k -> new ConcurrentHashMap<>());
+                serverWorld, k -> new ConcurrentHashMap<>());
 
         // 顺手清理过老条目（5 倍周期之外）防止长期累积内存
         long expire = now - (long) tickInterval * 5L;

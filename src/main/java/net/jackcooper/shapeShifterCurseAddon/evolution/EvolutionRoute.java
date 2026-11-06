@@ -134,6 +134,7 @@ public class EvolutionRoute {
         }
 
         Map<String, Branch> branches = new LinkedHashMap<>();
+        if (o.has("branches") && !o.get("branches").isJsonObject()) throw new IllegalArgumentException("branches must be an object");
         if (o.has("branches") && o.get("branches").isJsonObject()) {
             JsonObject bo = o.getAsJsonObject("branches");
             for (Map.Entry<String, JsonElement> en : bo.entrySet()) {
@@ -144,6 +145,7 @@ public class EvolutionRoute {
                 Identifier spForm = b.has("sp_form") ? net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration
                         .canonical(Identifier.tryParse(b.get("sp_form").getAsString())) : null;
                 List<String> req = new ArrayList<>();
+                if (b.has("requires_nodes") && !b.get("requires_nodes").isJsonArray()) throw new IllegalArgumentException("requires_nodes must be an array");
                 if (b.has("requires_nodes") && b.get("requires_nodes").isJsonArray()) {
                     for (JsonElement e : b.getAsJsonArray("requires_nodes")) {
                         req.add(e.getAsString());
@@ -153,11 +155,59 @@ public class EvolutionRoute {
             }
         }
 
-        return new EvolutionRoute(routeId, enabled, displayNameKey, startForm, milestones, autoBranchLevel,
+        EvolutionRoute route = new EvolutionRoute(routeId, enabled, displayNameKey, startForm, milestones, autoBranchLevel,
                 nodes, branches, baseNodeId);
+        if ((enabled || o.has("start_form")) && startForm == null) {
+            throw new IllegalArgumentException("Invalid start_form in " + routeId);
+        }
+        route.validate();
+        return route;
+    }
+
+    private void validate() {
+        if (nodes.isEmpty()) throw new IllegalArgumentException("Route has no nodes: " + routeId);
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        for (EvolutionNode node : nodes) {
+            if (node.id.isBlank() || !ids.add(node.id) || node.cost < 0) {
+                throw new IllegalArgumentException("Invalid or duplicate node: " + node.id);
+            }
+            if (!node.branch.isEmpty() && !branches.containsKey(node.branch)) {
+                throw new IllegalArgumentException("Unknown branch: " + node.branch);
+            }
+        }
+        if (baseNodeId != null && !ids.contains(baseNodeId)) {
+            throw new IllegalArgumentException("Unknown base_node: " + baseNodeId);
+        }
+        for (EvolutionNode node : nodes) {
+            for (String prerequisite : node.prereqs) {
+                if (!ids.contains(prerequisite)) throw new IllegalArgumentException("Unknown prerequisite: " + prerequisite);
+            }
+        }
+        for (Branch branch : branches.values()) {
+            if (branch.spForm == null) throw new IllegalArgumentException("Invalid sp_form in branch: " + branch.id);
+            for (String required : branch.requiresNodes) {
+                if (!ids.contains(required)) throw new IllegalArgumentException("Unknown branch prerequisite: " + required);
+            }
+        }
+        java.util.Set<String> complete = new java.util.HashSet<>();
+        for (EvolutionNode node : nodes) validateAcyclic(node.id, new java.util.HashSet<>(), complete);
+        int previous = 0;
+        for (int milestone : levelMilestones) {
+            if (milestone <= previous) throw new IllegalArgumentException("Milestones must be positive and increasing");
+            previous = milestone;
+        }
+    }
+
+    private void validateAcyclic(String id, java.util.Set<String> visiting, java.util.Set<String> complete) {
+        if (complete.contains(id)) return;
+        if (!visiting.add(id)) throw new IllegalArgumentException("Cyclic prerequisite: " + id);
+        for (String prerequisite : getNode(id).prereqs) validateAcyclic(prerequisite, visiting, complete);
+        visiting.remove(id);
+        complete.add(id);
     }
 
     private static int[] parseIntArray(JsonObject o, String key) {
+        if (o.has(key) && !o.get(key).isJsonArray()) throw new IllegalArgumentException(key + " must be an array");
         if (o.has(key) && o.get(key).isJsonArray()) {
             JsonArray arr = o.getAsJsonArray(key);
             int[] out = new int[arr.size()];

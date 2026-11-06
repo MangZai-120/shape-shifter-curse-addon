@@ -101,7 +101,7 @@ public class SnowFoxSpTeleportAttack {
 		float originalPitch = player.getPitch();
 
 		TeleportAttackData data = new TeleportAttackData(
-				originalPos, originalYaw, originalPitch,
+				player.getServerWorld(), originalPos, originalYaw, originalPitch,
 				targets, 0, 0
 		);
 		data.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
@@ -118,6 +118,13 @@ public class SnowFoxSpTeleportAttack {
 	public static void tick(ServerPlayerEntity player) {
 		TeleportAttackData data = ATTACKING_PLAYERS.get(player.getUuid());
 		if (data == null) return;
+        if (player.getServerWorld() != data.originalWorld
+                || net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID) != data.castId
+                || net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.fullyControlled(player)) {
+            ATTACKING_PLAYERS.remove(player.getUuid());
+            net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, data.castId);
+            return;
+        }
         if (!player.isAlive()) {
             ATTACKING_PLAYERS.remove(player.getUuid());
             net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, data.castId);
@@ -166,13 +173,19 @@ public class SnowFoxSpTeleportAttack {
 
 		LivingEntity target = data.targets.get(data.currentTargetIndex);
 
-		if (target.isDead() || target.isRemoved()) {
+		if (!target.isAlive() || target.isRemoved() || target.isSpectator()
+				|| target.getWorld() != player.getWorld() || player.getServerWorld() != data.originalWorld
+				|| WhitelistUtils.isProtected(player, target)
+				|| net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(player, target)
+				|| target.getPos().squaredDistanceTo(data.originalPos) > Math.pow(BAL.d("range", RANGE), 2)) {
 			return;
 		}
 
 		Vec3d targetPos = target.getPos();
 		Vec3d targetLookDir = target.getRotationVector().normalize();
 		Vec3d behindPos = targetPos.subtract(targetLookDir.multiply(1.5));
+		behindPos = safeDestination(player, behindPos);
+		if (behindPos == null) return;
 
 		player.teleport(behindPos.x, behindPos.y, behindPos.z);
 
@@ -223,7 +236,10 @@ public class SnowFoxSpTeleportAttack {
 	 * 返回原位
 	 */
 	private static void returnToOrigin(ServerPlayerEntity player, TeleportAttackData data) {
-		player.teleport(data.originalPos.x, data.originalPos.y, data.originalPos.z);
+		if (player.getServerWorld() != data.originalWorld) return;
+		Vec3d destination = safeDestination(player, data.originalPos);
+		if (destination == null) return;
+		player.teleport(destination.x, destination.y, destination.z);
 		player.setYaw(data.originalYaw);
 		player.setPitch(data.originalPitch);
 		player.setVelocity(0, 0, 0);
@@ -237,6 +253,21 @@ public class SnowFoxSpTeleportAttack {
 					player.getX(), player.getY() + player.getHeight() / 2, player.getZ(),
 					30, 0.3, 0.5, 0.3, 0.05);
 		}
+	}
+
+	private static Vec3d safeDestination(ServerPlayerEntity player, Vec3d requested) {
+		ServerWorld world = player.getServerWorld();
+		for (int dy = 0; dy <= 2; dy++) {
+			for (int dx : new int[]{0, -1, 1}) for (int dz : new int[]{0, -1, 1}) {
+				Vec3d candidate = requested.add(dx, dy, dz);
+				Box box = player.getBoundingBox().offset(candidate.subtract(player.getPos()));
+				if (world.isChunkLoaded(net.minecraft.util.math.BlockPos.ofFloored(candidate))
+						&& box.minY >= world.getBottomY() && box.maxY <= world.getTopY()
+						&& world.getWorldBorder().contains(box) && world.isSpaceEmpty(player, box)
+						&& !world.containsFluid(box)) return candidate;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -309,6 +340,7 @@ public class SnowFoxSpTeleportAttack {
 	 */
 	private static class TeleportAttackData {
         long castId = -1;
+		final ServerWorld originalWorld;
 		final Vec3d originalPos;
 		final float originalYaw;
 		final float originalPitch;
@@ -316,10 +348,11 @@ public class SnowFoxSpTeleportAttack {
 		int currentTargetIndex;
 		int ticksSinceLastTeleport;
 
-		TeleportAttackData(Vec3d originalPos,
+		TeleportAttackData(ServerWorld originalWorld, Vec3d originalPos,
 		                   float originalYaw, float originalPitch,
 		                   List<LivingEntity> targets,
 		                   int currentTargetIndex, int ticksSinceLastTeleport) {
+			this.originalWorld = originalWorld;
 			this.originalPos = originalPos;
 			this.originalYaw = originalYaw;
 			this.originalPitch = originalPitch;

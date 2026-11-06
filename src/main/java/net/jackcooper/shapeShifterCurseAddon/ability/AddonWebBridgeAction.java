@@ -31,7 +31,7 @@ public final class AddonWebBridgeAction {
 		if (blockState.isOf(RegAddonBlocks.WEB_MEMBRANE)) {
 			// 网膜让位：拆掉后视作空气继续放置（removeBlock 不触发邻居连锁，后续 setBlockState 全量同步）
 			world.removeBlock(pos, false);
-			WebMembraneOwners.remove(pos);
+			WebMembraneOwners.remove(world, pos);
 			blockState = world.getBlockState(pos);
 		}
 		if (blockState.isAir() || blockState.isOf(webBlock)) {

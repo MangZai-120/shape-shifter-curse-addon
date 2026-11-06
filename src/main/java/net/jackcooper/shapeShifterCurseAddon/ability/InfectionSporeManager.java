@@ -77,6 +77,14 @@ public final class InfectionSporeManager {
 
     public static void init() {
         ServerTickEvents.END_WORLD_TICK.register(InfectionSporeManager::onWorldTick);
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STARTING.register(server -> clearAll());
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> clearAll());
+    }
+
+    public static void clearAll() {
+        ENTRIES.clear();
+        HEAL_ENTRIES.clear();
+        CLOUDS.clear();
     }
 
     /** 施加感染。命中已感染目标时直接重置时长（保留 caster）。 */

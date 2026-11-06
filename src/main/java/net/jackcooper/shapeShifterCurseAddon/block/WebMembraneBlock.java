@@ -71,10 +71,16 @@ public class WebMembraneBlock extends MultifaceGrowthBlock {
 	}
 
 	@Override
+	public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
+		if (!world.isClient && !newState.isOf(this)) WebMembraneOwners.remove(world, pos);
+		super.onStateReplaced(state, world, pos, newState, moved);
+	}
+
+	@Override
 	public void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
 		if (state.isOf(this)) {
 			world.setBlockState(pos, Blocks.AIR.getDefaultState());
-			WebMembraneOwners.remove(pos);
+			WebMembraneOwners.remove(world, pos);
 		}
 	}
 
@@ -121,7 +127,7 @@ public class WebMembraneBlock extends MultifaceGrowthBlock {
 					if (anchored) {
 						BlockPos placed = pos.toImmutable();
 						world.setBlockState(placed, st);
-						WebMembraneOwners.set(placed, ownerId);
+						WebMembraneOwners.set(world, placed, ownerId);
 					}
 				}
 			}
@@ -160,15 +166,15 @@ public class WebMembraneBlock extends MultifaceGrowthBlock {
 		if (!world.isClient && entity instanceof LivingEntity living) {
 			// 施加/刷新蛛网缠身（防牛奶、任何形态不免疫）；脚下蛛网粒子由效果自身逐 tick 生成
 			// 带网主（若在线）作 source，供食梦魔「入梦」debuff 拦截归因
-			UUID casterId0 = WebMembraneOwners.get(pos);
+			UUID casterId0 = WebMembraneOwners.get(world, pos);
 			ServerPlayerEntity webCaster = world instanceof ServerWorld sw0 && casterId0 != null
 					? sw0.getServer().getPlayerManager().getPlayer(casterId0) : null;
 			living.addStatusEffect(new StatusEffectInstance(RegAddonEffects.SPIDER_WEB_BOUND, WEB_BOUND_DURATION, 0, false, false, true), webCaster);
 			// 踩烂前先取施法者，用于「仅施法者可见」的蓝色高亮
-			UUID casterId = WebMembraneOwners.get(pos);
+			UUID casterId = WebMembraneOwners.get(world, pos);
 			// 踩烂脚下这块网：非免疫生物走过即毁
 			world.setBlockState(pos, Blocks.AIR.getDefaultState());
-			WebMembraneOwners.remove(pos);
+			WebMembraneOwners.remove(world, pos);
 			if (world instanceof ServerWorld sw) {
 				// 踩网音效
 				sw.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
@@ -206,7 +212,7 @@ public class WebMembraneBlock extends MultifaceGrowthBlock {
 				|| FormUtils.isForm(player, FormIdentifiers.FALLEN_ALLAY_SP))) {
 			return true;
 		}
-		UUID ownerId = WebMembraneOwners.get(pos);
+		UUID ownerId = WebMembraneOwners.get(world, pos);
 		if (ownerId != null && world instanceof ServerWorld sw) {
 			ServerPlayerEntity owner = sw.getServer().getPlayerManager().getPlayer(ownerId);
 			if (owner != null) {

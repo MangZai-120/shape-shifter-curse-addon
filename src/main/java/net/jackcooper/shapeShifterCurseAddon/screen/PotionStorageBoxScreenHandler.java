@@ -108,6 +108,7 @@ public class PotionStorageBoxScreenHandler extends ScreenHandler {
 	 * 再放入空槽。绕开原版 insertItem 的 power 门控——箱槽叠放不限制形态。
 	 */
 	private void insertIntoBoxSlots(ItemStack stack) {
+		int before = stack.getCount();
 		// 先合并进未满的同类堆
 		for (int i = 0; i < CONTAINER_SLOTS && !stack.isEmpty(); i++) {
 			ItemStack target = this.inventory.getStack(i);
@@ -127,5 +128,6 @@ public class PotionStorageBoxScreenHandler extends ScreenHandler {
 				this.inventory.setStack(i, stack.split(moved));
 			}
 		}
+		if (stack.getCount() != before) this.inventory.markDirty();
 	}
 }

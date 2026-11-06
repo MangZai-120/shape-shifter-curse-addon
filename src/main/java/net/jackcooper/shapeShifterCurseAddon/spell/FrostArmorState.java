@@ -25,9 +25,21 @@ public final class FrostArmorState {
 
     /** 已知独立来源的到期/衰减入口；未施加霜甲时保持原有减量行为。 */
     public static void removeOther(LivingEntity entity, float amount) {
-        float target = Math.max(0, entity.getAbsorptionAmount() - amount);
-        if (entity instanceof FrostArmorAccess access) access.ssca$frostArmor().removeOther(target, entity::setAbsorptionAmount);
-        else entity.setAbsorptionAmount(target);
+        removeOtherTo(entity, Math.max(0, entity.getAbsorptionAmount() - amount), entity::setAbsorptionAmount);
+    }
+
+    public static void removeOtherTo(LivingEntity entity, float requested, java.util.function.Consumer<Float> setter) {
+        var parasitic = entity instanceof net.jackcooper.shapeShifterCurseAddon.ability.ParasiticAbsorptionAccess access
+                ? access.ssca$parasiticAbsorption() : null;
+        float frost = entity instanceof FrostArmorAccess access ? access.ssca$frostArmor().remaining() : 0;
+        float protectedAmount = frost + (parasitic == null ? 0 : parasitic.remaining());
+        float target = Math.max(protectedAmount, Math.max(0, requested));
+        Runnable update = () -> {
+            if (entity instanceof FrostArmorAccess access) access.ssca$frostArmor().removeOther(target, setter);
+            else setter.accept(target);
+        };
+        if (parasitic != null) parasitic.duringOtherRemoval(update);
+        else update.run();
     }
 
     /** 补至目标值；刷新不叠加，不压低已有更高的吸收量。 */
@@ -42,7 +54,7 @@ public final class FrostArmorState {
     public void remove(LivingEntity entity) {
         float owned = remaining;
         remaining = 0; // setAbsorptionAmount 的减量钩子不能重复结算这一份额
-        if (owned > 0) entity.setAbsorptionAmount(Math.max(0, entity.getAbsorptionAmount() - owned));
+        if (owned > 0) removeOther(entity, owned);
     }
 
     public static void removeFrom(LivingEntity entity) {

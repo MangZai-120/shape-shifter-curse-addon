@@ -53,10 +53,14 @@ public final class PocketSpaceStorage {
 			UUID existing = nbt.getUuid(SCROLL_ID);
 			Room room = registry.byScroll.get(existing);
 			if (room != null) return existing;
+			// A legacy cleanup log has no room layout snapshot. Preserve its UUID and
+			// reserved terrain rather than assigning a replacement that could erase it.
+			if (registry.pendingWipes.containsValue(existing)) return null;
 			// 卷轴曾绑定但房间已被消除（如丢弃超时后又被捡回）：按新卷轴重新分配
 		}
 		int slot = 0;
-		while (slot < PocketSpaceLayout.MAX_ROOMS && registry.bySlot.containsKey(slot)) slot++;
+		while (slot < PocketSpaceLayout.MAX_ROOMS && (registry.bySlot.containsKey(slot)
+				|| registry.pendingWipes.containsKey(slot))) slot++;
 		if (slot >= PocketSpaceLayout.MAX_ROOMS) return null;
 		UUID scrollId = UUID.randomUUID();
 		Room room = new Room(scrollId, new PocketSpaceLayout(slot, ScrollData.getLevel(scroll)), server.getOverworld().getTime());
@@ -69,14 +73,38 @@ public final class PocketSpaceStorage {
 		return scrollId;
 	}
 
-	/** 消除房间登记（方块清空由 Manager 负责）；槽位释放后可被新卷轴复用。 */
-	public static void unbind(MinecraftServer server, Room room) {
+	/** 注销并持久化清空任务；槽位在方块清空且维度刷盘后才可复用。 */
+	public static boolean unbind(MinecraftServer server, Room room) {
 		Registry registry = registry(server);
+		if (registry.bySlot.get(room.layout.index()) != room || registry.byScroll.get(room.scrollId) != room
+				|| registry.pendingWipes.containsKey(room.layout.index())) return false;
+		// Reserve the slot and journal the wipe in the same saved transaction as unbinding.
+		// Recovery deliberately restarts at zero: a saved cursor can run ahead of saved chunks.
+		registry.pendingWipes.put(room.layout.index(), room.scrollId);
 		registry.bySlot.remove(room.layout.index());
 		registry.byScroll.remove(room.scrollId);
 		registry.markDirty();
-		states(server).save();
+		if (!persistRegistry(server)) {
+			registry.pendingWipes.remove(room.layout.index(), room.scrollId);
+			registry.bySlot.put(room.layout.index(), room);
+			registry.byScroll.put(room.scrollId, room);
+			registry.markDirty();
+			return false;
+		}
 		LOGGER.info("口袋空间已消除：slot={} scroll={}", room.layout.index(), room.scrollId);
+		return true;
+	}
+
+	/** Report write failures to callers before any destructive task starts. */
+	static boolean persistRegistry(MinecraftServer server) {
+		try {
+			registry(server).writeAtomic(server.getSavePath(net.minecraft.util.WorldSavePath.ROOT)
+					.resolve("data/" + REGISTRY_KEY + ".dat"));
+			return true;
+		} catch (java.io.IOException error) {
+			LOGGER.error("Cannot persist pocket-room recovery; destructive cleanup is postponed", error);
+			return false;
+		}
 	}
 
 	public static Visit visit(ServerPlayerEntity player) {
@@ -92,9 +120,28 @@ public final class PocketSpaceStorage {
 	public static final class Registry extends PersistentState {
 		final java.util.Map<Integer, Room> bySlot = new java.util.HashMap<>();
 		final java.util.Map<UUID, Room> byScroll = new java.util.HashMap<>();
+		final java.util.Map<Integer, UUID> pendingWipes = new java.util.HashMap<>();
 
 		public java.util.Collection<Room> rooms() {
 			return java.util.Collections.unmodifiableCollection(bySlot.values());
+		}
+
+		private void writeAtomic(java.nio.file.Path path) throws java.io.IOException {
+			NbtCompound root = new NbtCompound();
+			root.put("data", writeNbt(new NbtCompound()));
+			root.putInt("DataVersion", net.minecraft.SharedConstants.getGameVersion().getSaveVersion().getId());
+			net.jackcooper.shapeShifterCurseAddon.util.AtomicNbtFile.write(path, root);
+			setDirty(false);
+		}
+
+		@Override
+		public void save(java.io.File file) {
+			if (!isDirty()) return;
+			try {
+				writeAtomic(file.toPath());
+			} catch (java.io.IOException error) {
+				LOGGER.error("Cannot atomically save pocket-space registry; retaining the previous file", error);
+			}
 		}
 
 		static Registry read(NbtCompound nbt) {
@@ -107,12 +154,20 @@ public final class PocketSpaceStorage {
 					Room room = new Room(tag.getUuid("Scroll"),
 							new PocketSpaceLayout(tag.getInt("Slot"), tag.getInt("Level")), tag.getLong("LastSeen"));
 					room.built = tag.getBoolean("Built");
+					room.collapsing = tag.getBoolean("Collapsing");
 					if (registry.bySlot.containsKey(room.layout.index())) continue;
 					registry.bySlot.put(room.layout.index(), room);
 					registry.byScroll.put(room.scrollId, room);
 				} catch (IllegalArgumentException ignored) {
 					// 跳过损坏条目，避免存档加载失败
 				}
+			}
+			net.minecraft.nbt.NbtList wipes = nbt.getList("PendingWipes", net.minecraft.nbt.NbtElement.COMPOUND_TYPE);
+			for (int i = 0; i < wipes.size(); i++) {
+				NbtCompound tag = wipes.getCompound(i);
+				int slot = tag.getInt("Slot");
+				if (slot >= 0 && slot < PocketSpaceLayout.MAX_ROOMS && tag.containsUuid("Scroll")
+						&& !registry.bySlot.containsKey(slot)) registry.pendingWipes.put(slot, tag.getUuid("Scroll"));
 			}
 			return registry;
 		}
@@ -127,9 +182,18 @@ public final class PocketSpaceStorage {
 				tag.putInt("Level", room.layout.level());
 				tag.putLong("LastSeen", room.lastSeen);
 				tag.putBoolean("Built", room.built);
+				tag.putBoolean("Collapsing", room.collapsing);
 				list.add(tag);
 			}
 			nbt.put("Rooms", list);
+			net.minecraft.nbt.NbtList wipes = new net.minecraft.nbt.NbtList();
+			pendingWipes.forEach((slot, scroll) -> {
+				NbtCompound tag = new NbtCompound();
+				tag.putInt("Slot", slot);
+				tag.putUuid("Scroll", scroll);
+				wipes.add(tag);
+			});
+			nbt.put("PendingWipes", wipes);
 			return nbt;
 		}
 	}
@@ -140,6 +204,7 @@ public final class PocketSpaceStorage {
 		/** 卷轴最后一次被确认存在的世界时间（主世界 tick）。 */
 		long lastSeen;
 		boolean built;
+		boolean collapsing;
 
 		Room(UUID scrollId, PocketSpaceLayout layout, long lastSeen) {
 			this.scrollId = scrollId;

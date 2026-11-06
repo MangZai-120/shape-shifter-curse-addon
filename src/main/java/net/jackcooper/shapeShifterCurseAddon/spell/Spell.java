@@ -356,7 +356,7 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	/**
 	 * 本次施法待补发的经验（×10 整数）。服务端逻辑单线程：SpellCastManager 在调用
 	 * {@code cast()} 前设置、同一次调用栈内由法术实体/局部变量取走，调用返回后由施法管理器清零——
-	 * set→read 之间不会插入其它玩家的施法，无竞态。solo 使用不进本体系（恒 0）。
+	 * set→read 之间不会插入其它玩家的施法，无竞态。书内和独立卷轴共用这套经验预算。
 	 */
 	private int pendingExpTen = 0;
 

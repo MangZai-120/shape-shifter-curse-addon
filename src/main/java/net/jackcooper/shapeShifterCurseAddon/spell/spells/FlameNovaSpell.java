@@ -62,16 +62,18 @@ public class FlameNovaSpell extends Spell {
 		LivingEntity lastHitTarget = null;
 		LivingEntity killedTarget = null;
 		boolean hitBurningTarget = false;
+		int hitExpTen = ssc_addon$takePendingExp();
 		for (LivingEntity target : targets) {
 			if (target.distanceTo(caster) > radius) {
 				continue;
 			}
 			// 公共命中结算（白名单豁免 → 法术伤害 → 经验补发；FIRE 系钩子为聚合语义，循环外调）：见 SpellHitHelper
 			var hit = net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.hitRaw(
-					caster, target, power, solo ? 0 : ssc_addon$takePendingExp());
+					caster, target, power, hitExpTen);
 			if (hit != net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.HIT) {
 				continue;
 			}
+			hitExpTen = 0; // Protected or immune targets keep the budget for later targets.
 			lastHitTarget = target;
 			hitBurningTarget |= target.getFireTicks() > 0;
 			if (!target.isAlive()) killedTarget = target;

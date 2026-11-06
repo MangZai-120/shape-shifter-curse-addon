@@ -16,13 +16,6 @@ base {
     archivesName = project.archives_base_name
 }
 
-// neomagic is deliberately kept in its own source/resource/test tree.
-sourceSets {
-    main.java.srcDir 'new-spell-system/src/main/java'
-    main.resources.srcDir 'new-spell-system/src/main/resources'
-    test.java.srcDir 'new-spell-system/src/test/java'
-    test.resources.srcDir 'new-spell-system/src/test/resources'
-}
 tasks.register('neoMagicTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
@@ -94,7 +87,13 @@ tasks.register('clientFormSettingsMigrationTest', JavaExec) {
     args 'net.jackcooper.shapeShifterCurseAddon.config.ClientFormSettingsMigrationTest'
     systemProperty 'ssca.testMixinHooks', 'true'
 }
-['parametricVisualTest', 'mistMeteorDomainRecipeTest', 'blueTrailRecipeTest', 'clientFormSettingsMigrationTest'].each { name ->
+tasks.register('clientCodeAuditTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.network.visual.VisualRecipeTestBootstrap'
+    args 'net.jackcooper.shapeShifterCurseAddon.client.ClientCodeAuditTest'
+}
+['parametricVisualTest', 'mistMeteorDomainRecipeTest', 'blueTrailRecipeTest', 'clientFormSettingsMigrationTest', 'clientCodeAuditTest'].each { name ->
     tasks.named(name, JavaExec) {
         workingDir = layout.buildDirectory.dir('network-sync/' + name).get().asFile
         systemProperty 'fabric.development', 'true'
@@ -108,7 +107,7 @@ tasks.register('clientFormSettingsMigrationTest', JavaExec) {
         }
     }
 }
-check.dependsOn parametricVisualTest, mistMeteorDomainRecipeTest, blueTrailRecipeTest, clientFormSettingsMigrationTest
+check.dependsOn parametricVisualTest, mistMeteorDomainRecipeTest, blueTrailRecipeTest, clientFormSettingsMigrationTest, clientCodeAuditTest
 
 tasks.register('neoMagicStressModelTest', JavaExec) {
     dependsOn testClasses
@@ -472,9 +471,18 @@ tasks.withType(JavaCompile).configureEach {
 tasks.register('pocketSpaceTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.pocket.PocketSpaceLayoutTest'
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.network.visual.VisualRecipeTestBootstrap'
+    args 'net.jackcooper.shapeShifterCurseAddon.spell.pocket.PocketSpaceLayoutTest'
     workingDir = layout.buildDirectory.dir('pocket-space-test').get().asFile
-    doFirst { workingDir.mkdirs() }
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def cpFile = new File(workingDir, 'classpath.txt')
+        cpFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'visual.testClasspathFile', cpFile.absolutePath
+    }
 }
 
 check.dependsOn pocketSpaceTest

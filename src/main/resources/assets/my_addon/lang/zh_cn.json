@@ -522,6 +522,7 @@
   "text.ssc_addon.palette.btn.export_all": "全部导出",
   "text.ssc_addon.palette.status.auto_saved": "已自动保存",
   "text.ssc_addon.palette.status.no_player": "未找到玩家",
+  "text.ssc_addon.palette.status.save_failed": "保存失败，修改已保留，请检查配色文件夹权限后重试",
   "text.ssc_addon.palette.status.empty_slot": "槽位为空",
   "text.ssc_addon.palette.status.invalid_code": "颜色代码无效",
   "text.ssc_addon.palette.status.apply_sent": "已应用并同步",

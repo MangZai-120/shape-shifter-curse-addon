@@ -51,7 +51,7 @@ public class IceBarrageSpell extends Spell {
 		int count = BAL.i("count", COUNT);
 		float spreadDeg = (float)RuneCastContext.current().scale(BAL.d("spread_deg", SPREAD_DEG),RuneModifiers.Stat.AREA);
 		// exp 挂起经验均分给三枚（bounty 为绝对值，cast 时一次性取走除以枚数）
-		int bountyTen = solo ? 0 : ssc_addon$takePendingExp();
+		int bountyTen = ssc_addon$takePendingExp();
 		int eachBounty = bountyTen / count;
 		java.util.UUID castId = solo ? null : ssc_addon$getRefundCastId();
 		// 按 count 均匀铺开扇形：count=3 时即中心 1 枚 + 两侧各 1 枚偏 spreadDeg
@@ -61,7 +61,7 @@ public class IceBarrageSpell extends Spell {
 			spike.setDamage(power);
 			spike.setLevel(level); // 真实魔法等级：L4+ 渲染 3D 冰锥模型（与「冰锥」法术同款外观）
 			spike.setPierceCount(BAL.i("pierce_base", PIERCE_BASE) + (level - 1)); // 穿刺数：Lv1=2 → Lv5=6（单枚最多命中敌人数）
-			spike.setExpBountyTen(eachBounty);
+			spike.setExpBountyTen(eachBounty + (i < bountyTen % count ? 1 : 0));
 			spike.setRefundCastId(castId);
 			Vec3d dir = rotateYaw(look, yawOffset);
 			spike.setDirection(dir, speedMul);

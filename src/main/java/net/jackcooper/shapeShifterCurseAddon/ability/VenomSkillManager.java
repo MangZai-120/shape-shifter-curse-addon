@@ -139,6 +139,11 @@ public final class VenomSkillManager {
 	public static void tick(ServerPlayerEntity player) {
 		DashState d = DASHING.get(player.getUuid());
 		if (d == null) return;
+		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.fullyControlled(player)
+				|| net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID) != d.castId) {
+			interruptControl(player);
+			return;
+		}
 		if (player.isDead() || !isSalticidae(player)) {
             DASHING.remove(player.getUuid());
             net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, SKILL_ID, d.castId);
@@ -216,6 +221,14 @@ public final class VenomSkillManager {
 	}
 
 	/** 断线/停服清理。 */
+	public static void interruptControl(ServerPlayerEntity player) {
+		DashState data = DASHING.remove(player.getUuid());
+		if (data == null) return;
+		player.setVelocity(Vec3d.ZERO);
+		player.velocityModified = true;
+		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, SKILL_ID, data.castId);
+	}
+
 	public static void clearPlayer(UUID uuid) {
 		DASHING.remove(uuid);
 	}

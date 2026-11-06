@@ -211,6 +211,7 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 		if (nbt.contains("SpellLevel")) {
 			setLevel(nbt.getInt("SpellLevel"));
 		}
+		this.expBountyTen = Math.max(0, nbt.getInt("ExpBountyTen"));
 		refundCastId = nbt.containsUuid("RefundCastId") ? nbt.getUuid("RefundCastId") : null;
 	}
 
@@ -222,6 +223,7 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 			nbt.putDouble("StartY", startPos.y);
 			nbt.putDouble("StartZ", startPos.z);
 		}
+		nbt.putInt("ExpBountyTen", this.expBountyTen);
 		nbt.putFloat("Damage", this.damage);
 		nbt.putInt("SpellLevel", getSpellLevel());
 		if (refundCastId != null) nbt.putUuid("RefundCastId", refundCastId);

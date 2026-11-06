@@ -110,9 +110,19 @@ public class SscAddonKeybindFormListScreen extends Screen {
 	/** 把所有形态按钮平移到当前滚动位置（返回键不动）。 */
 	private void updatePositions() {
 		for (int i = 0; i < formButtons.size(); i++) {
-			formButtons.get(i).setY(baseYs.get(i) - (int) scrollY);
+			ButtonWidget button = formButtons.get(i);
+			button.setY(baseYs.get(i) - (int) scrollY);
+			button.visible = button.getY() + BTN_H > viewTop() && button.getY() < viewBottom();
+			button.active = button.visible;
 		}
 	}
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (backButton != null && backButton.mouseClicked(mouseX, mouseY, button)) return true;
+        if (mouseY < viewTop() || mouseY >= viewBottom()) return false;
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double amount) {

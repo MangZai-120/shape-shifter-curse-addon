@@ -57,6 +57,7 @@ public class FrostNovaSpell extends Spell {
 		int slowTicks = RuneCastContext.current().duration(80 + (level >= 3 ? 20 : 0) + (level >= 5 ? 20 : 0),RuneModifiers.Stat.NEGATIVE);
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
 				caster.getBoundingBox().expand(radius), e -> e != caster && e.isAlive());
+		int hitExpTen = ssc_addon$takePendingExp();
 		for (LivingEntity target : targets) {
 			if (target.distanceTo(caster) > radius) {
 				continue;
@@ -64,10 +65,11 @@ public class FrostNovaSpell extends Spell {
 			// 公共命中结算（白名单豁免 → 法术伤害 → 经验补发 → 流派钩子逐目标；ICE 系无击杀分支）：见 SpellHitHelper
 			var hit = net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.projectileHit(
 					caster, target, power, net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.ICE,
-					solo ? null : ssc_addon$getRefundCastId(), solo ? 0 : ssc_addon$takePendingExp());
+					solo ? null : ssc_addon$getRefundCastId(), hitExpTen);
 			if (hit != net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.HIT) {
 				continue;
 			}
+			hitExpTen = 0; // Only the first successful hit consumes the cast budget.
 			target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, slowTicks, 1));
 			// 霜碎：护甲 -50%，时长与缓速同步（L1=3s → L5=5s）
 			target.addStatusEffect(new StatusEffectInstance(

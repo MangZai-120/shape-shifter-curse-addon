@@ -158,12 +158,6 @@ public class AllaySPTotem {
 		NbtCompound nbt = stack.getOrCreateNbt();
 		nbt.remove(ACTIVE_TAG);
 		nbt.remove(OWNER_TAG);
-		if (nbt.contains("Enchantments")) {
-			nbt.remove("Enchantments");
-		}
-		if (nbt.contains("HideFlags")) {
-			nbt.remove("HideFlags");
-		}
 	}
 
 	private static TypedActionResult<ItemStack> onUseItem(PlayerEntity player, net.minecraft.world.World world, Hand hand) {
@@ -190,15 +184,7 @@ public class AllaySPTotem {
 
 		if (isActive) {
 			// Deactivate
-			nbt.remove(ACTIVE_TAG);
-
-			// Remove glint
-			if (nbt.contains("Enchantments")) {
-				nbt.remove("Enchantments");
-			}
-			if (nbt.contains("HideFlags")) {
-				nbt.remove("HideFlags");
-			}
+			deactivateTotem(stack);
 
 			player.sendMessage(Text.translatable("message.ssc_addon.totem.deactivated"), true);
 			player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 0.5f);
@@ -231,16 +217,7 @@ public class AllaySPTotem {
 			nbt.putBoolean(ACTIVE_TAG, true);
 			nbt.putUuid(OWNER_TAG, player.getUuid());
 
-			// Add Glint
-			if (!nbt.contains("Enchantments")) {
-				NbtList enchantments = new NbtList();
-				NbtCompound unbreaking = new NbtCompound();
-				unbreaking.putString("id", "minecraft:unbreaking");
-				unbreaking.putShort("lvl", (short) 1);
-				enchantments.add(unbreaking);
-				nbt.put("Enchantments", enchantments);
-				nbt.putInt("HideFlags", 1); // Hide enchantments
-			}
+			// Glint is derived from our activation marker; original enchantments and HideFlags remain owned by the item.
 
 			// R1 冷却写入
 			ACTIVATE_COOLDOWNS.put(player.getUuid(), now);

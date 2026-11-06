@@ -11,6 +11,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class PortableBeaconGlintMixin {
     @Inject(method = "hasGlint", at = @At("HEAD"), cancellable = true)
     private void ssca$activeBeaconGlint(CallbackInfoReturnable<Boolean> cir) {
-        if (AllaySPPortableBeacon.isActiveStack((ItemStack) (Object) this)) cir.setReturnValue(true);
+        ItemStack stack = (ItemStack) (Object) this;
+        if (AllaySPPortableBeacon.isActiveStack(stack)
+                || net.jackcooper.shapeShifterCurseAddon.ability.AllaySPTotem.isMarkedActiveTotem(stack)) cir.setReturnValue(true);
     }
 }

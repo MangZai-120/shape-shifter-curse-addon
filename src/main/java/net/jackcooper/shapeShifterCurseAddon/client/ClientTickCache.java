@@ -87,17 +87,13 @@ public final class ClientTickCache {
 		if (tidalForm) {
 			var orbs = client.world.getEntitiesByClass(net.jackcooper.shapeShifterCurseAddon.entity.TidalOrbEntity.class,
 					client.player.getBoundingBox().expand(64.0),
-					orb -> orb.isTetherActive() && orb.getTetherRemain() > 0);
+					orb -> orb.isTetherActive() && orb.getTetherRemain() > 0
+							&& client.player.getUuid().equals(orb.getTrackedOwnerUuid().orElse(null)));
 			if (!orbs.isEmpty()) {
-					int total = 170;
-					var snapshot = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.clientSnapshot();
-					if (snapshot != null) total = (int) snapshot.getInt("abilities.tidal_orb", "tether_duration_ticks");
-					if (net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.AXOLOTL_ALING.equals(formId)) {
-						total = (int) Math.round(total * 1.2);
-					}
-					tidalTetherFraction = Math.min(1.0, orbs.get(0).getTetherRemain() / (double) Math.max(1, total));
-				}
+				var orb = orbs.get(0);
+				tidalTetherFraction = Math.min(1.0, orb.getTetherRemain() / (double) orb.getTetherTotal());
 			}
+		}
 	}
 
 	private static void invalidate() {

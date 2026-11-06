@@ -435,7 +435,7 @@ public class SscAddonCommands {
 		int max = PowerUtils.getResourceMax(player, FormIdentifiers.MANCIANIMA_RESISTANCE);
 		if (max <= 0) { ctx.getSource().sendError(Text.translatable("command.ssc_addon.resistance.no_power")); return 0; }
 		int cur = PowerUtils.getResourceValue(player, FormIdentifiers.MANCIANIMA_RESISTANCE);
-		int next = Math.max(0, Math.min(cur + delta, max));
+		int next = (int) Math.max(0L, Math.min((long) cur + delta, max));
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.MANCIANIMA_RESISTANCE, next);
 		ctx.getSource().sendFeedback(() -> Text.translatable("command.ssc_addon.resistance.add", player.getName().getString(), cur, next, max), true);
 		return 1;

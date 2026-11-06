@@ -42,14 +42,15 @@ public final class PocketSpaceManager {
 	private static final Map<Integer, Generation> GENERATIONS = new HashMap<>();
 	private static final Map<UUID, PocketPortalGate> GATES = new HashMap<>();
 	/** 房间消除倒计时（槽位 → 剩余 tick）：房内有人时先屏幕中央提示 5 秒再送回。 */
-	private static final Map<Integer, Integer> EVICTIONS = new HashMap<>();
+	private static final Map<Integer, Eviction> EVICTIONS = new HashMap<>();
 	/** 已排队清空的槽位（逐 tick 分批清）。 */
 	private static final Map<Integer, Wipe> WIPES = new HashMap<>();
+	private static final Map<Integer, UUID> COMPLETED_WIPES = new HashMap<>();
 	private static final UUID CHANNEL_SLOW_ID = UUID.fromString("9d17b640-476a-4bdc-a396-8a729fbd5ced");
-	/** 卷轴“消失”宽限：连续 5 分钟未在任何在线玩家背包/书内/已加载掉落物中被看到。 */
-	private static final long UNSEEN_LIMIT = 6000;
 	private static final int EVICTION_TICKS = 100;
 	private static boolean generating;
+	private static MinecraftServer activeServer;
+	private static boolean recoveredTasks;
 
 	private PocketSpaceManager() {}
 
@@ -58,6 +59,7 @@ public final class PocketSpaceManager {
 	}
 
 	public static boolean canEnter(ServerPlayerEntity player) {
+		ensureServer(player.getServer());
 		return player.isAlive() && !player.isSpectator() && !player.hasVehicle() && !player.hasPassengers()
 				&& !net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyEffects.teleportBlocked(player)
 				&& !isPocket(player.getWorld()) && !CHANNELS.containsKey(player.getUuid())
@@ -65,9 +67,10 @@ public final class PocketSpaceManager {
 	}
 
 	public static void start(ServerPlayerEntity player, UUID scrollId, int ticks) {
+		ensureServer(player.getServer());
 		if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(player)) return;
 		PocketSpaceStorage.Room room = PocketSpaceStorage.findRoom(player.getServer(), scrollId);
-		if (room == null) return;
+		if (room == null || room.collapsing) return;
 		CHANNELS.put(player.getUuid(), new Channel(player, scrollId, Math.max(1, ticks)));
 		EntityAttributeInstance speed = player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
 		if (speed != null) {
@@ -81,8 +84,9 @@ public final class PocketSpaceManager {
 	}
 
 	public static boolean prepareRoom(ServerPlayerEntity player, UUID scrollId) {
+		ensureServer(player.getServer());
 		PocketSpaceStorage.Room room = PocketSpaceStorage.findRoom(player.getServer(), scrollId);
-		if (room == null) return false;
+		if (room == null || room.collapsing) return false;
 		if (!room.initialized()) GENERATIONS.computeIfAbsent(room.layout().index(), ignored -> new Generation(room));
 		return room.initialized() && !WIPES.containsKey(room.layout().index());
 	}
@@ -96,6 +100,7 @@ public final class PocketSpaceManager {
 	}
 
 	public static void init() {
+		ServerLifecycleEvents.SERVER_STARTING.register(PocketSpaceManager::ensureServer);
 		ServerTickEvents.END_SERVER_TICK.register(PocketSpaceManager::tick);
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
 			if (amount > 0 && entity instanceof ServerPlayerEntity player) interrupt(player);
@@ -116,9 +121,10 @@ public final class PocketSpaceManager {
 		ServerLifecycleEvents.SERVER_STOPPING.register(server ->
 				server.getPlayerManager().getPlayerList().forEach(PocketSpaceManager::clearSlow));
 		ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
-			CHANNELS.clear();
-			GENERATIONS.clear();
-			GATES.clear();
+			if (activeServer == server) {
+				clearTransientTasks();
+				activeServer = null;
+			}
 		});
 		EntitySleepEvents.ALLOW_SLEEPING.register((player, pos) ->
 				isPocket(player.getWorld()) ? PlayerEntity.SleepFailureReason.OTHER_PROBLEM : null);
@@ -133,12 +139,74 @@ public final class PocketSpaceManager {
 		});
 	}
 
+	private static void clearTransientTasks() {
+		CHANNELS.clear();
+		GENERATIONS.clear();
+		GATES.clear();
+		EVICTIONS.clear();
+		WIPES.clear();
+		COMPLETED_WIPES.clear();
+		generating = false;
+		recoveredTasks = false;
+	}
+
+	private static void ensureServer(MinecraftServer server) {
+		if (activeServer != server) {
+			clearTransientTasks();
+			activeServer = server;
+		}
+	}
+
+	private static void recoverTasks(MinecraftServer server) {
+		if (recoveredTasks) return;
+		PocketSpaceStorage.Registry registry = PocketSpaceStorage.registry(server);
+		// Legacy tasks were created from an incomplete "not seen" census. They are
+		// not evidence of destruction and must never resume destructive work.
+		EVICTIONS.clear();
+		WIPES.clear();
+		COMPLETED_WIPES.clear();
+		boolean changed = false;
+		for (PocketSpaceStorage.Room room : registry.rooms()) {
+			if (room.collapsing) {
+				room.collapsing = false;
+				changed = true;
+			}
+		}
+		// Keep unknown legacy wipe slots reserved: their missing layout cannot safely
+		// be reconstructed, and reusing the coordinates would destroy remaining blocks.
+		if (changed) {
+			registry.markDirty();
+			PocketSpaceStorage.persistRegistry(server);
+		}
+		recoveredTasks = true;
+	}
+
+	/** Do not release a wiped slot until the pocket dimension's cleared chunks are durable. */
+	public static void afterFlushedSave(ServerWorld world) {
+		if (!isPocket(world) || activeServer != world.getServer() || COMPLETED_WIPES.isEmpty()) return;
+		PocketSpaceStorage.Registry registry = PocketSpaceStorage.registry(world.getServer());
+		Map<Integer, UUID> removed = new HashMap<>();
+		COMPLETED_WIPES.forEach((slot, scroll) -> {
+			if (!registry.bySlot.containsKey(slot) && registry.pendingWipes.remove(slot, scroll)) removed.put(slot, scroll);
+		});
+		if (removed.isEmpty()) return;
+		registry.markDirty();
+		if (PocketSpaceStorage.persistRegistry(world.getServer())) {
+			removed.forEach((slot, scroll) -> COMPLETED_WIPES.remove(slot, scroll));
+		} else {
+			registry.pendingWipes.putAll(removed);
+			registry.markDirty();
+		}
+	}
+
 	// 分段守卫（非整体短路）：setTimeOfDay/视距/census 必须照常跑，且「有人在
 	//  口袋维度」的检测本身就需要玩家循环——整体短路不可行；改为各迭代器段包空表守卫、GATES.remove
 	//  包 !GATES.isEmpty()，行为不变，常态（四表全空）只剩每玩家一次 isPocket 判断。
 	private static void tick(MinecraftServer server) {
+		ensureServer(server);
 		ServerWorld pocket = server.getWorld(WORLD_KEY);
 		if (pocket == null) return;
+		recoverTasks(server);
 		pocket.setTimeOfDay(6000); // 口袋维度无时间概念：永远正午
 		// 口袋维度观察距离压到 3：服务器只为玩家加载周围 7×7 区块（足以覆盖任意等级房间盒），
 		// 而非全视距 441 个区块——这是“进入卡很久”的主源。周期重设防全局视距变更把它改回去。
@@ -146,8 +214,7 @@ public final class PocketSpaceManager {
 			((net.jackcooper.shapeShifterCurseAddon.mixin.ThreadedAnvilChunkStorageAccessor)
 					pocket.getChunkManager().threadedAnvilChunkStorage).sscAddon$setViewDistance(3);
 		}
-		// census 每 5s 一次（原每 1s）：驱逐宽限 UNSEEN_LIMIT=5min，5s 粒度误差 0.08% 无感，
-		// 但全服背包+全维度掉落物扫描量降 80%（空闲服 CPU 收益）
+		// Census records positive observations only. Missing observations never reclaim rooms.
 		if (server.getOverworld().getTime() % 100 == 0) census(server, pocket);
 		if (!EVICTIONS.isEmpty()) tickEvictions(server, pocket);
 		int budget = 4096;
@@ -155,8 +222,16 @@ public final class PocketSpaceManager {
 			Iterator<Wipe> wipes = WIPES.values().iterator();
 			while (wipes.hasNext() && budget > 0) {
 				Wipe wipe = wipes.next();
+				PocketSpaceStorage.Registry registry = PocketSpaceStorage.registry(server);
+				if (!wipe.belongsTo(server, registry)) {
+					wipes.remove();
+					continue;
+				}
 				budget -= wipe.advance(pocket, budget);
-				if (wipe.done()) wipes.remove();
+				if (wipe.done()) {
+					wipes.remove();
+					COMPLETED_WIPES.put(wipe.slot, wipe.scrollId);
+				}
 			}
 		}
 		if (!GENERATIONS.isEmpty()) {
@@ -261,8 +336,8 @@ public final class PocketSpaceManager {
 	}
 
 	/**
-	 * 卷轴存在普查（每秒一次）：在线玩家背包/佩戴魔法书内、以及已加载的掉落物中出现即视为存在并刷新心跳；
-	 * 连续超过宽限期未见 → 判定卷轴已物理消失 → 启动房间消除。
+	 * 刷新已观察到卷轴的心跳。箱子、离线玩家和未加载实体无法被此扫描普查；
+	 * 未被观察到不等于卷轴消失，也不会触发房间驱逐或清空。
 	 */
 	private static void census(MinecraftServer server, ServerWorld pocket) {
 		PocketSpaceStorage.Registry registry = PocketSpaceStorage.registry(server);
@@ -287,8 +362,6 @@ public final class PocketSpaceManager {
 			if (seen.contains(room.scrollId)) {
 				room.touch(now);
 				registry.markDirty();
-			} else if (now - room.lastSeen() > UNSEEN_LIMIT && !EVICTIONS.containsKey(room.layout().index())) {
-				beginEviction(server, pocket, room);
 			}
 		}
 	}
@@ -311,7 +384,14 @@ public final class PocketSpaceManager {
 			wipe(server, pocket, room);
 			return;
 		}
-		EVICTIONS.put(room.layout().index(), EVICTION_TICKS);
+		room.collapsing = true;
+		PocketSpaceStorage.registry(server).markDirty();
+		if (!PocketSpaceStorage.persistRegistry(server)) {
+			room.collapsing = false;
+			PocketSpaceStorage.registry(server).markDirty();
+			return;
+		}
+		EVICTIONS.put(room.layout().index(), new Eviction(room.scrollId, EVICTION_TICKS));
 		for (ServerPlayerEntity player : inside) {
 			player.networkHandler.sendPacket(new net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket(5, 90, 10));
 			player.networkHandler.sendPacket(new net.minecraft.network.packet.s2c.play.TitleS2CPacket(
@@ -322,21 +402,25 @@ public final class PocketSpaceManager {
 	}
 
 	private static void tickEvictions(MinecraftServer server, ServerWorld pocket) {
-		Iterator<Map.Entry<Integer, Integer>> it = EVICTIONS.entrySet().iterator();
+		Iterator<Map.Entry<Integer, Eviction>> it = EVICTIONS.entrySet().iterator();
 		while (it.hasNext()) {
-			Map.Entry<Integer, Integer> entry = it.next();
+			Map.Entry<Integer, Eviction> entry = it.next();
 			PocketSpaceStorage.Room room = PocketSpaceStorage.registry(server).bySlot.get(entry.getKey());
-			if (room == null) { it.remove(); continue; }
-			int remaining = entry.getValue() - 1;
+			if (room == null || !room.scrollId.equals(entry.getValue().scrollId)) { it.remove(); continue; }
+			int remaining = entry.getValue().ticks - 1;
 			if (remaining > 0) {
-				entry.setValue(remaining);
+				entry.setValue(new Eviction(room.scrollId, remaining));
 				continue;
 			}
 			for (ServerPlayerEntity player : playersInRoom(server, room)) {
 				leave(player, PocketSpaceStorage.visit(player));
 			}
-			it.remove();
 			wipe(server, pocket, room);
+			if (PocketSpaceStorage.findRoom(server, room.scrollId) == room) {
+				entry.setValue(new Eviction(room.scrollId, 20));
+			} else {
+				it.remove();
+			}
 		}
 	}
 
@@ -351,12 +435,12 @@ public final class PocketSpaceManager {
 		return list;
 	}
 
-	/** 消除房间：登记先注销（槽位立刻可复用）、方块分批清空、房内非玩家实体移除。 */
+	/** 消除房间：先保存注销与预留槽位，再分批清空、移除房内非玩家实体。 */
 	private static void wipe(MinecraftServer server, ServerWorld pocket, PocketSpaceStorage.Room room) {
 		int slot = room.layout().index();
+		if (!PocketSpaceStorage.unbind(server, room)) return;
 		GENERATIONS.remove(slot);
-		PocketSpaceStorage.unbind(server, room);
-		WIPES.put(slot, new Wipe(slot));
+		WIPES.put(slot, new Wipe(server, slot, room.scrollId));
 		net.minecraft.util.math.Box box = new net.minecraft.util.math.Box(
 				PocketSpaceLayout.slotBoundsMinX(slot), PocketSpaceLayout.FLOOR_Y, PocketSpaceLayout.slotBoundsMinZ(slot),
 				PocketSpaceLayout.slotBoundsMaxX(slot) + 1, PocketSpaceLayout.slotBoundsMaxY() + 1, PocketSpaceLayout.slotBoundsMaxZ(slot) + 1);
@@ -515,15 +599,26 @@ public final class PocketSpaceManager {
 
 	/** 分批清空一个槽位的全部方块（按 Lv5 最大包围盒），与生成共用 generating 开关绕过边界保护。 */
 	private static final class Wipe {
+		final MinecraftServer server;
+		final int slot;
+		final UUID scrollId;
 		final int minX, minZ, width, depth, height;
 		int cursor;
 
-		Wipe(int slot) {
+		Wipe(MinecraftServer server, int slot, UUID scrollId) {
+			this.server = server;
+			this.slot = slot;
+			this.scrollId = scrollId;
 			this.minX = PocketSpaceLayout.slotBoundsMinX(slot);
 			this.minZ = PocketSpaceLayout.slotBoundsMinZ(slot);
 			this.width = PocketSpaceLayout.slotBoundsMaxX(slot) - minX + 1;
 			this.depth = PocketSpaceLayout.slotBoundsMaxZ(slot) - minZ + 1;
 			this.height = PocketSpaceLayout.slotBoundsMaxY() - PocketSpaceLayout.FLOOR_Y + 1;
+		}
+
+		boolean belongsTo(MinecraftServer current, PocketSpaceStorage.Registry registry) {
+			return server == current && !registry.bySlot.containsKey(slot)
+					&& scrollId.equals(registry.pendingWipes.get(slot));
 		}
 
 		boolean done() { return cursor >= width * depth * height; }
@@ -550,6 +645,8 @@ public final class PocketSpaceManager {
 			return used;
 		}
 	}
+
+	private record Eviction(UUID scrollId, int ticks) {}
 
 	private static final class Generation {
 		final PocketSpaceStorage.Room room;
