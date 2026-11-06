@@ -4,6 +4,7 @@ import json
 import re
 import zipfile
 import argparse
+import os
 
 root=Path(__file__).resolve().parents[1]
 project=root
@@ -23,6 +24,8 @@ def check_document_links():
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('mode',nargs='?',choices=('resources','docs','all'),default='resources',
                     help='resources (default), local archive docs, or both')
+parser.add_argument('--minecraft-client',type=Path,
+                    help='Minecraft client JAR; overrides the GRADLE_USER_HOME cache')
 args=parser.parse_args()
 if args.mode=='docs':
     check_document_links()
@@ -42,7 +45,10 @@ for file in (project/'src/main/resources/data/ssc_addon/spells').glob('*.json'):
 for key in zh:
     assert zh[key].count('%s')==en[key].count('%s'),key
     assert '\ufffd' not in zh[key] and '\ufffd' not in en[key],key
-client=Path.home()/'.gradle/caches/fabric-loom/1.20.1/minecraft-client.jar'
+gradle_home=Path(os.environ.get('GRADLE_USER_HOME') or Path.home()/'.gradle').expanduser()
+client=(args.minecraft_client or gradle_home/'caches/fabric-loom/1.20.1/minecraft-client.jar').expanduser()
+if not client.is_file():
+    parser.error(f'Minecraft client JAR not found: {client}; build first or pass --minecraft-client PATH')
 with zipfile.ZipFile(client) as jar:
     names=set(jar.namelist())
     for file in list((resources/'assets/ssca_neomagic/models/item').glob('*.json')) + list((project/'src/main/resources/assets/ssc_addon/models/item').glob('test_tube*.json')) + list((project/'src/main/resources/assets/ssc_addon/models/item').glob('moon_dust_*.json')):
@@ -67,4 +73,10 @@ for language in ('zh_cn','en_us'):
             assert key in native and native[key].strip(),(language,key)
             assert '\ufffd' not in native[key],(language,key)
 print(f'Codex review passed: {len(registered)} registered forms, 7 sections, 2 languages; all translations use assets/my_addon/lang.')
+tutorial_forms=set(re.findall(r'FormIdentifiers\.(\w+)',(java/'tutorial/FormTutorialCatalog.java').read_text(encoding='utf-8')))
+assert tutorial_forms==registered-{'SHEEP_FORM'},(tutorial_forms,registered)
+for constant in tutorial_forms:
+    key=f'tutorial.ssc_addon.form.{identifiers[constant]}.skills'
+    assert key in zh and zh[key].strip() and key in en and en[key].strip(),key
+print(f'Form tutorial review passed: {len(tutorial_forms)} playable forms have bilingual skill lessons; temporary sheep excluded.')
 if args.mode=='all':check_document_links()

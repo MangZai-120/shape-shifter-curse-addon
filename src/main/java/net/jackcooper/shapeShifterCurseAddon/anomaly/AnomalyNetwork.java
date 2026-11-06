@@ -121,6 +121,9 @@ public final class AnomalyNetwork {
             buffer.writeVarInt(effect.ticks());
             buffer.writeDouble(effect.strength());
         }
+        buffer.writeVarInt(snapshot.fullRemainingTicks());
+        buffer.writeVarInt(snapshot.fullElements().size());
+        for (String element : snapshot.fullElements()) buffer.writeString(element, 128);
     }
 
     public static Message read(PacketByteBuf buffer) {
@@ -152,8 +155,22 @@ public final class AnomalyNetwork {
                 throw new IllegalArgumentException("Invalid anomaly effect");
             effects.add(new AnomalyEffects.EffectView(id, ticks, strength));
         }
+        int fullRemaining = 0;
+        var fullElements = new java.util.LinkedHashSet<String>();
+        // 旧服务端快照没有末尾满格字段，仍可按原协议读取。
+        if (buffer.isReadable()) {
+            fullRemaining = bounded(buffer.readVarInt(), 0, AnomalyLedger.FULL_TICKS);
+            int fullCount = bounded(buffer.readVarInt(), 0, count);
+            for (int i = 0; i < fullCount; i++) {
+                String element = buffer.readString(128);
+                if (!values.containsKey(element) || values.get(element) != maximum || !fullElements.add(element))
+                    throw new IllegalArgumentException("Invalid full anomaly meter");
+            }
+            if ((fullRemaining == 0) != fullElements.isEmpty() || buffer.isReadable())
+                throw new IllegalArgumentException("Invalid full anomaly duration");
+        }
         return new Message(dimension, entityId, uuid,
-                new AnomalySnapshot(maximum, values, remaining, last, link, effects));
+                new AnomalySnapshot(maximum, values, remaining, last, link, effects, fullRemaining, fullElements));
     }
 
     private static int bounded(int value, int minimum, int maximum) {

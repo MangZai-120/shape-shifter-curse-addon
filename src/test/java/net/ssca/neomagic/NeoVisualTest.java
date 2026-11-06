@@ -12,6 +12,6 @@ public final class NeoVisualTest {
         probe=System.getProperty("neomagic.clientProbe",probe);
         Class.forName(probe,true,loader).getMethod("install").invoke(null);
         Class.forName("net.minecraft.client.main.Main",true,loader).getMethod("main",String[].class).invoke(null,(Object)options);
-        if(System.getProperty("neomagic.clientProbe")!=null||Boolean.getBoolean("neomagic.nightmareLive")||Boolean.getBoolean("neomagic.courtLive")||Boolean.getBoolean("neomagic.chargeSoundLive"))Class.forName(probe,true,loader).getMethod("verifyResult").invoke(null);
+        if(System.getProperty("neomagic.performance")!=null||System.getProperty("neomagic.clientProbe")!=null||Boolean.getBoolean("neomagic.nightmareLive")||Boolean.getBoolean("neomagic.courtLive")||Boolean.getBoolean("neomagic.chargeSoundLive"))Class.forName(probe,true,loader).getMethod("verifyResult").invoke(null);
     }
 }

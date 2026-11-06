@@ -66,6 +66,47 @@ public final class AnomalyLedgerTest {
         try { display.values().put("ice", 0.0); }
         catch (UnsupportedOperationException expected) { immutable = true; }
         check(immutable && otherTarget.value("ice", 3005) == 135, "Display code cannot mutate combat state");
+        fullDisplay();
         System.out.println("Anomaly ledger: " + checks + " behavioral checks passed.");
+    }
+
+    private static void fullDisplay() {
+        var ledger = new AnomalyLedger();
+        ledger.hit("fire", 500, 0);
+        ledger.holdMaximum("fire", 0);
+        check(ledger.value("fire", 0) == 500 && ledger.fullRemainingTicks(0) == 100, "A triggered meter stays full for five seconds");
+        check(ledger.remainingTicks(0) == 0, "Full display does not receive the twenty-second accumulation timer");
+        ledger.hit("curse", 125, 10);
+        check(ledger.hit("fire", 9000, 50).after() == 500 && !ledger.hit("fire", 500, 50).reachedMaximum(),
+                "Locked full meters reject repeat triggers and overflow");
+        check(ledger.fullRemainingTicks(50) == 50, "Repeated hits do not refresh the full display");
+        ledger.hit("ice", 499, 60);
+        check(ledger.fullRemainingTicks(60) == 40, "Partial buildup in another element does not extend the full group");
+        ledger.hit("ice", 1, 75);
+        ledger.holdMaximum("ice", 75);
+        var display = ledger.snapshot(75);
+        check(display.fullRemainingTicks() == 100 && display.fullElements().equals(java.util.Set.of("fire", "ice")),
+                "A new trigger refreshes all visible full meters together");
+        check(ledger.value("fire", 174) == 500 && ledger.value("ice", 174) == 500 && ledger.fullRemainingTicks(174) == 1,
+                "Both full bars survive to the exact last shared tick");
+        check(ledger.value("fire", 175) == 0 && ledger.value("ice", 175) == 0 && ledger.fullRemainingTicks(175) == 0,
+                "Both full bars disappear together at the five-second boundary");
+        check(ledger.value("curse", 175) == 125, "Full expiry preserves unrelated partial buildup");
+        check(ledger.hit("fire", 250, 175).after() == 250, "Buildup resumes immediately after full expiry");
+        check(display.values().get("fire") == 500 && display.fullElements().contains("fire"), "Earlier full snapshots remain immutable");
+        check(ledger.hit("fire", 250, 176).reachedMaximum(), "A released element can trigger normally again");
+        ledger.holdMaximum("fire", 176);
+        ledger.clearElement("fire");
+        check(ledger.fullRemainingTicks(176) == 0 && ledger.value("curse", 176) == 125, "Explicit element reset also releases its full lock");
+        ledger.clear();
+        check(ledger.values(176).isEmpty() && ledger.fullRemainingTicks(176) == 0, "Target cleanup releases all full display state");
+
+        var state = new AnomalyTargetState(null, null);
+        check(state.activate("fire", 0).isEmpty(), "The first trigger opens an independent link window");
+        check(state.activate("ice", 50).equals("fire"), "The first two elements still produce their normal reaction");
+        check(state.linkRemaining(50) == 0, "Consumed reaction partners expose no second link opportunity");
+        check(state.activate("space", 60).isEmpty(), "A third element cannot reuse either locked reaction partner");
+        check(state.activate("curse", 70).equals("space"), "Two fresh elements can still react while an older pair is locked");
+        check(state.activate("fire", 200).isEmpty(), "An expired pair cannot leak into the next buildup cycle");
     }
 }

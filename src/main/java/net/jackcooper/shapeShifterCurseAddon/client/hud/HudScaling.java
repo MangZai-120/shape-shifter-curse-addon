@@ -55,7 +55,12 @@ public final class HudScaling {
         var c=SSCAddonConfig.client();return section==2?c.cdMirrorRight:section==4&&c.chargeMirrorRight;
     }
     public static View view(int section) {
-        var mc=MinecraftClient.getInstance();return place(raw(section),get(SSCAddonConfig.client(),section),mc.getWindow().getScaledWidth(),mc.getWindow().getScaledHeight(),rightAligned(section));
+        var mc=MinecraftClient.getInstance();
+        var source=raw(section);int scale=get(SSCAddonConfig.client(),section);
+        // SSC deliberately draws the storage-slot border one pixel below the viewport.
+        // At native size, preserve its coordinates instead of shifting the whole slot to fit.
+        if(section==7 && scale==DEFAULT)return new View(source,source,1);
+        return place(source,scale,mc.getWindow().getScaledWidth(),mc.getWindow().getScaledHeight(),rightAligned(section));
     }
     public static Box bounds(int section) {return view(section).bounds();}
     public static boolean hit(int section,double x,double y) {return bounds(section).contains(x,y,2);}

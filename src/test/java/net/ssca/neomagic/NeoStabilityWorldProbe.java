@@ -121,14 +121,23 @@ public final class NeoStabilityWorldProbe {
         check(restored.burden==0&&restored.recovery==0,"Respawn resets only the burden resource");check(NeoState.JSON.toJson(restored.progress).equals(progress),"Respawn retains adaptation");
         check(!NeoRuntime.ACTIVE.containsKey(fresh.getUuid())&&!NeoEffects.hasStored(fresh.getUuid()),"Respawn has no stale casting session");respawns++;
     }
-    private static void switchForm() {
+    private static void switchForm() throws Exception {
         var p=players.get(4);var d=NeoRuntime.data(p);d.burden=15;
         for(var effect:List.of(NeoMagic.DISORDER,NeoMagic.DISINTEGRATION,NeoMagic.BREAKDOWN))p.removeStatusEffect(effect);
         Blueprint spell=new Blueprint("form transition",Core.LUNAR,Carrier.SELF,List.of(Control.CONSTRAIN),Core.VOID,.5,40,4);d.cooldowns.remove(spell.identity());bind(p,spell);net.ssca.neomagic.NeoTestFixtures.start(p,Hand.MAIN_HAND);
         var cast=NeoRuntime.ACTIVE.get(p.getUuid());check(cast!=null,"Prepare a cast across a form change");
         var component=net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM.get(p);var original=component.nowForm;String progress=NeoState.JSON.toJson(d.progress);
         component.nowForm=net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms.AXOLOTL_3;NeoRuntime.refreshForm(p);
-        check(d.burden==0&&NeoRules.profile(d.form).safety()==80,"Form component change resets C and replaces safety profile");check(!NeoRuntime.ACTIVE.containsKey(p.getUuid())&&cast.record.result.equals("form_changed"),"Form change interrupts the current preparation");
+        String expectedForm=net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms.AXOLOTL_3.getFormID().toString();
+        double expectedSafety;
+        try(var input=NeoStabilityWorldProbe.class.getResourceAsStream("/data/ssca_neomagic/rules/defaults.json")){
+            if(input==null)throw new AssertionError("The default form configuration is present");
+            var defaults=com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(input,java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+            expectedSafety=defaults.getAsJsonObject("forms").getAsJsonObject(expectedForm).get("safety").getAsDouble();
+        }
+        check(d.burden==0&&d.recovery==0&&d.form.equals(expectedForm),"Form component change resets C/recovery and publishes the exact new form");
+        check(!NeoRules.profile(d.form).reference()&&NeoRules.profile(d.form).safety()==expectedSafety,"Changed form uses its configured safety instead of a stale constant or fallback");
+        check(!NeoRuntime.ACTIVE.containsKey(p.getUuid())&&cast.record.result.equals("form_changed"),"Form change interrupts the current preparation");
         check(NeoState.JSON.toJson(d.progress).equals(progress),"Form changes preserve per-spell adaptation");component.nowForm=original;NeoRuntime.refreshForm(p);formSwitches++;
     }
     private static Blueprint spell(int player,int variant) {

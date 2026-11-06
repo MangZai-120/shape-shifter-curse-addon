@@ -8,6 +8,8 @@
 - [测试与探针](../../src/test/java/net/ssca/neomagic)
 - [资源检查脚本](../../tools/check_resources.py)
 
-设计资料保留在此目录：[完整机制](SSCA新法术系统完整设计V2.md)、[UI 设计](UI设计说明V2.md)、[原书加成映射](旧法术书接管与加成映射.md)。其中历史版本号和测试记录代表文档撰写时的状态，当前行为以源码与实际验证为准。
+当前检出版本未包含完整机制、UI 设计和原书加成映射的历史设计文档；当前行为以以上源码与实际验证为准。
 
 在仓库根目录使用 Java 17 执行 `gradlew.bat build`。资源和文档可分别执行 `python tools/check_resources.py resources`、`python tools/check_resources.py docs`，或使用 `all` 同时检查。
+
+资源检查默认使用 `GRADLE_USER_HOME` 下的 Minecraft 客户端缓存；未设置时使用用户目录下的 `.gradle`。使用其它缓存或 Gradle `-g` 参数时，可通过 `--minecraft-client PATH` 显式指定客户端 JAR。

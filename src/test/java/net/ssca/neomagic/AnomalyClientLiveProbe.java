@@ -217,7 +217,7 @@ public final class AnomalyClientLiveProbe {
                     && clientPrimary.hasStatusEffect(SscAddon.FROZEN_RECOVERY);
             case 5, 7 -> view != null && !effect(view, "ice") && !effect(view, "frozen_recovery")
                     && !clientPrimary.hasStatusEffect(SscAddon.FROZEN);
-            case 8 -> view != null && effect(view, "frost_slow") && view.lastElement().equals("fire");
+            case 8 -> view != null && effect(view, "frost_slow") && view.fullElements().containsAll(Set.of("ice", "fire"));
             case 9 -> client.world.getEntityById(primaryEntityId) == null
                     && (AnomalyClient.snapshot(clientPrimary) == null || AnomalyClient.snapshot(clientPrimary).empty());
             default -> false;
@@ -238,9 +238,11 @@ public final class AnomalyClientLiveProbe {
                     "Client countdown stays within the twenty-second boundary");
             if (observed <= 2) check(view.remainingTicks() >= 360,
                     "The real cross-element packet reports a freshly reset twenty-second timer");
-            if (observed == 3 || observed == 6 || observed == 8)
+            if (observed == 3 || observed == 6)
                 check(view.linkRemaining() > 50 && view.linkRemaining() <= 100,
                         "The client receives the independent five-second link window");
+            if (observed == 8) check(view.linkRemaining() == 0 && view.fullRemainingTicks() > 50,
+                    "Reacted partners remain full while their link eligibility is consumed");
         }
         if (observed == 3) screenshot(client, "anomaly-01-frozen.png");
         if (observed == 4) screenshot(client, "anomaly-02-shattered.png");

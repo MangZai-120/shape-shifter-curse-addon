@@ -18,6 +18,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.effect.AnomalyMarkerEffect;
 import net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup;
@@ -159,6 +160,7 @@ public final class AnomalyEffects {
         ServerPlayerEvents.AFTER_RESPAWN.register((old, player, alive) -> { clear(old); clear(player); });
         PlayerSessionCleanup.register((handler, server) -> clear(handler.player));
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> clearAll());
+        ServerWorldEvents.UNLOAD.register((server, world) -> AnomalyReactionFeedback.clear(world));
     }
 
     public static void registerBase(String element, BaseExecutor executor) {
@@ -187,10 +189,13 @@ public final class AnomalyEffects {
     public static void react(String first, String second, LivingEntity target, SpellAnomalyContext context) {
         if (!live(target) || first == null || second == null || first.equals(second)) return;
         var executor = REACTIONS.get(pair(first, second));
-        if (executor != null) executor.apply(target, context);
+        if (executor != null) {
+            AnomalyReactionFeedback.show(first, second, target, context);
+            executor.apply(target, context);
+        }
     }
 
-    private static String pair(String first, String second) {
+    static String pair(String first, String second) {
         return first.compareTo(second) < 0 ? first + "+" + second : second + "+" + first;
     }
 
@@ -481,6 +486,7 @@ public final class AnomalyEffects {
             }
             if (now >= zone.next && now <= zone.until) {
                 zone.next += 20;
+                AnomalyReactionFeedback.fireZonePulse(zone.anchor, zone.center);
                 if (candidates == null) candidates = new HashMap<>();
                 List<LivingEntity> nearby = candidates.get(zone.cell);
                 if (nearby == null) {
@@ -529,6 +535,7 @@ public final class AnomalyEffects {
     public static void clearAll() {
         for (LivingEntity target : ACTIVE.keySet().toArray(LivingEntity[]::new)) clear(target);
         ACTIVE.clear(); ZONES.clear(); PROCS.clear(); REACTION_DEPTH.remove();
+        AnomalyReactionFeedback.clearAll();
     }
 
     public static List<EffectView> effectSnapshot(LivingEntity target) {

@@ -153,12 +153,14 @@ public final class AnomalyManager {
         var hit = current.ledger.hit(event.context.element(), event.context.amount(), event.tick);
         DIRTY.add(target);
         if (!hit.reachedMaximum()) return;
-        // Commit consumption/history before effects can produce nested damage callbacks.
-        current.ledger.clearElement(event.context.element());
+        // 先锁定满格条和联动记录，再允许效果产生嵌套伤害回调。
+        current.ledger.holdMaximum(event.context.element(), event.tick);
         String previous = current.activate(event.context.element(), event.tick);
         triggers++;
-        AnomalyEffects.activate(event.context.element(), target, event.context);
-        if (!previous.isEmpty() && target.isAlive() && !target.isRemoved()) {
+        if (previous.isEmpty()) {
+            AnomalyEffects.activate(event.context.element(), target, event.context);
+        } else {
+            // 联动直接替代第二系的独立效果，不再先结算第二次基础异常。
             reactions++;
             AnomalyEffects.react(previous, event.context.element(), target, event.context);
         }
@@ -178,7 +180,7 @@ public final class AnomalyManager {
                 continue;
             }
             if (current.ledger.expire(tick)) DIRTY.add(target);
-            if (current.ledger.remainingTicks(tick) == 0 && current.linkRemaining(tick) == 0) {
+            if (current.ledger.remainingTicks(tick) == 0 && current.ledger.fullRemainingTicks(tick) == 0 && current.linkRemaining(tick) == 0) {
                 iterator.remove();
                 detach(current);
                 DIRTY.add(target);
@@ -222,7 +224,8 @@ public final class AnomalyManager {
         var values = current.ledger.snapshot(tick);
         int link = current.linkRemaining(tick);
         return new AnomalySnapshot(values.maximum(), values.values(), values.remainingTicks(),
-                link == 0 ? "" : current.lastElement, link, AnomalyEffects.effectSnapshot(target));
+                link == 0 ? "" : current.lastElement, link, AnomalyEffects.effectSnapshot(target),
+                values.fullRemainingTicks(), values.fullElements());
     }
 
     public static void clear(LivingEntity target) {

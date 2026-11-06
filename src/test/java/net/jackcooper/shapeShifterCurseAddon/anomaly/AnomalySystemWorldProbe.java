@@ -138,6 +138,17 @@ public final class AnomalySystemWorldProbe {
         rejectedPacket(new AnomalySnapshot(500, Map.of(), 0, "", 0,
                         List.of(new AnomalyEffects.EffectView("invalid", 10, Double.NaN))),
                 "The packet codec rejects non-finite effect intensity");
+        var full = new AnomalySnapshot(500, Map.of("fire", 500.0, "ice", 500.0, "curse", 125.0), 350,
+                "", 0, List.of(), 99, java.util.Set.of("fire", "ice"));
+        var fullBuffer = new PacketByteBuf(Unpooled.buffer());
+        try {
+            AnomalyNetwork.write(fullBuffer, new AnomalyNetwork.Message(test.getWorld().getRegistryKey().getValue(), 1, UUID.randomUUID(), full));
+            CHECK.that(AnomalyNetwork.read(fullBuffer).snapshot().equals(full), "Full bars and their separate five-second timer survive the real codec");
+        } finally { fullBuffer.release(); }
+        rejectedPacket(new AnomalySnapshot(500, Map.of("fire", 499.0), 400, "", 0, List.of(), 100, java.util.Set.of("fire")),
+                "Only full meters can be displayed as locked");
+        rejectedPacket(new AnomalySnapshot(500, Map.of("fire", 500.0), 0, "", 0, List.of(), 101, java.util.Set.of("fire")),
+                "Full display cannot exceed five seconds");
     }
 
     private static void rejectedPacket(AnomalySnapshot snapshot, String why) {
@@ -376,7 +387,7 @@ public final class AnomalySystemWorldProbe {
             CHECK.near(value(target, first), 250, label + ": first actual hit retains a partial meter");
             CHECK.that(AnomalyManager.metrics().triggers() == 0, label + ": partial meter has no base effect");
             float beforeBase = actualHit(target, first, 250);
-            CHECK.near(value(target, first), 0, label + ": first threshold consumes its own meter");
+            CHECK.near(value(target, first), 500, label + ": first threshold retains its full meter");
             CHECK.that(AnomalyManager.metrics().triggers() == 1 && AnomalyManager.metrics().reactions() == 0,
                     label + ": the first real threshold activates one base without a reaction");
             if (first.equals("fire")) {
@@ -396,23 +407,27 @@ public final class AnomalySystemWorldProbe {
             CHECK.that(metrics.enqueued() == 4 && metrics.processed() == 4 && metrics.pending() == 0,
                     label + ": four original hits settle once without recursive accumulation");
             CHECK.that(metrics.triggers() == 2 && metrics.reactions() == 1,
-                    label + ": the second base and exactly one unordered reaction both activate");
-            CHECK.that(AnomalyManager.snapshot(target).values().isEmpty(),
-                    label + ": both full meters are consumed without overflow");
-            if (!second.equals("fire") && !second.equals("ice")) {
-                CHECK.that(target.hasStatusEffect(baseMarker(second)),
-                        label + ": the second single-element effect remains alongside its reaction");
-            }
-            double additional = second.equals("fire") ? (first.equals("void") ? 9.2 : 8) : 0;
-            additional += switch (pair[0] + "/" + pair[1]) {
+                    label + ": the second threshold directly activates exactly one reaction");
+            CHECK.that(AnomalyManager.snapshot(target).values().equals(Map.of(first, 500.0, second, 500.0))
+                            && AnomalyManager.snapshot(target).fullRemainingTicks() == 100,
+                    label + ": both full meters are locked and displayed without overflow");
+            double additional = switch (pair[0] + "/" + pair[1]) {
                 case "fire/ice" -> 8;
-                case "fire/void" -> 4.6; // The real void base also amplifies reaction damage by fifteen percent.
-                case "ice/void" -> 6.9;
+                case "fire/void" -> first.equals("void") ? 4.6 : 4;
+                case "ice/void" -> first.equals("void") ? 6.9 : 6;
                 default -> 0;
             };
             CHECK.near(target.getHealth(), beforeSecondBase - additional,
-                    label + ": second-base damage and reaction damage settle in the declared order");
-            integratedSignature(pair, target, peer, label);
+                    label + ": only reaction damage settles at the second threshold");
+            integratedSignature(pair, first, target, peer, label);
+            if (second.equals("ice")) CHECK.that(!target.hasStatusEffect(SscAddon.FROZEN), label + ": the second ice base is skipped");
+            if (second.equals("space")) CHECK.that(!target.hasStatusEffect(AnomalyEffects.SPACE_BIND), label + ": the second spatial base is skipped");
+            if (second.equals("summon") && !first.equals("void") && !first.equals("space"))
+                CHECK.that(!target.hasStatusEffect(AnomalyEffects.SUMMON_MARK), label + ": no second summon base accompanies the reaction");
+            if (second.equals("lunar") && (first.equals("summon") || first.equals("void")))
+                CHECK.that(!target.hasStatusEffect(AnomalyEffects.LUNAR_ECLIPSE), label + ": no second lunar base accompanies the reaction");
+            if (second.equals("curse") && first.equals("summon"))
+                CHECK.that(!target.hasStatusEffect(AnomalyEffects.CURSE_WEAKNESS), label + ": no second curse base accompanies the reaction");
             CHECK.near(peer.getHealth(), pair[0].equals("fire") && pair[1].equals("ice") ? 192 : 200,
                     label + ": only frostfire deals immediate area damage");
             CHECK.near(protectedTarget.getHealth(), 200, label + ": the complete chain respects protected health");
@@ -445,15 +460,18 @@ public final class AnomalySystemWorldProbe {
         };
     }
 
-    private static void integratedSignature(String[] pair, PigEntity target, PigEntity peer, String label) {
+    private static void integratedSignature(String[] pair, String first, PigEntity target, PigEntity peer, String label) {
         switch (pair[0] + "/" + pair[1]) {
             case "fire/ice" -> status(peer, AnomalyEffects.FROST_SLOW, 0, 100, label + ": frostfire area slow");
             case "fire/lunar" -> status(target, AnomalyEffects.LUNAR_ECLIPSE, 1, 120, label + ": scorched moon");
             case "fire/curse" -> status(peer, AnomalyEffects.CURSE_WEAKNESS, 0, 100, label + ": burning curse spreads");
             case "fire/summon" -> CHECK.that(AnomalyEffects.budgetSnapshot(target).fireHits() == 3,
                     label + ": flame spirit has its exact three-hit budget");
-            case "fire/void", "ice/void" -> status(target, AnomalyEffects.VOID_EROSION, 0, 120,
-                    label + ": void base remains after the additional reaction damage");
+            case "fire/void", "ice/void" -> {
+                if (first.equals("void")) status(target, AnomalyEffects.VOID_EROSION, 0, 120,
+                        label + ": the original void effect remains");
+                else CHECK.that(!target.hasStatusEffect(AnomalyEffects.VOID_EROSION), label + ": the second void base is skipped");
+            }
             case "fire/space" -> CHECK.that(AnomalyEffects.diagnostics().zones() == 1,
                     label + ": exactly one finite fire zone is created");
             case "ice/lunar" -> status(target, AnomalyEffects.LUNAR_ECLIPSE, 0, 180, label + ": cold moon extends lunar");
@@ -494,12 +512,12 @@ public final class AnomalySystemWorldProbe {
         add(target, "ice", 120);
         var display = AnomalyManager.snapshot(target);
         add(target, "curse", 1);
-        CHECK.near(value(target, "curse"), 0, "Exactly five hundred consumes only that element");
-        CHECK.near(value(target, "ice"), 120, "Trigger consumption retains another element");
+        CHECK.near(value(target, "curse"), 500, "Exactly five hundred retains that element at full display");
+        CHECK.near(value(target, "ice"), 120, "Full display preserves another element's partial buildup");
         CHECK.that(AnomalyManager.metrics().triggers() == 1, "Exactly five hundred triggers once");
         CHECK.near(display.values().get("curse"), 499, "A previously exported display snapshot cannot be mutated by a new hit");
         add(target, "void", 10000);
-        CHECK.near(value(target, "void"), 0, "Excess contribution is capped and consumed without carrying overflow");
+        CHECK.near(value(target, "void"), 500, "Excess contribution is capped at the full display without carrying overflow");
         CHECK.that(AnomalyManager.metrics().triggers() == 2, "Excess contribution cannot trigger several times");
         resetFixtures();
 
@@ -552,8 +570,8 @@ public final class AnomalySystemWorldProbe {
         CHECK.that(!target.hasStatusEffect(SscAddon.FROZEN) && target.hasStatusEffect(SscAddon.FROZEN_RECOVERY),
                 "Same-tick ordinary physical damage also shatters an earlier pending ice activation");
         CHECK.that(AnomalyManager.metrics().enqueued() == 1 && AnomalyManager.metrics().processed() == 1
-                        && AnomalyManager.snapshot(target).values().isEmpty(),
-                "Ordinary physical damage never adds an elemental hit or accumulation");
+                        && AnomalyManager.snapshot(target).values().equals(Map.of("ice", 500.0)),
+                "Ordinary physical damage adds no buildup and preserves the triggered full ice display");
         resetFixtures();
 
         target = pig(center);
@@ -569,9 +587,9 @@ public final class AnomalySystemWorldProbe {
         CHECK.near(target.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED), reactionShatterSpeed * .75,
                 "Old reaction shatter applies exact twenty-five-percent slow");
         CHECK.that(AnomalyManager.metrics().enqueued() == 1 && AnomalyManager.metrics().processed() == 1
-                        && AnomalyManager.snapshot(target).values().isEmpty()
+                        && AnomalyManager.snapshot(target).values().equals(Map.of("ice", 500.0))
                         && AnomalyManager.snapshot(target).remainingTicks() == 0,
-                "Old reaction observation never adds accumulation or creates a new meter timeout");
+                "Old reaction observation adds no buildup or ordinary timeout and preserves full ice");
         resetFixtures();
 
         target = pig(center);
@@ -596,8 +614,11 @@ public final class AnomalySystemWorldProbe {
         CHECK.that(AnomalyManager.metrics().reactions() == 0, "Repeating the same element cannot react with itself");
         add(target, "curse", 500);
         add(target, "ice", 500);
-        CHECK.that(AnomalyManager.metrics().reactions() == 2, "Every new trigger resolves at most one nearest different-element pair");
-        status(target, AnomalyEffects.CURSE_WEAKNESS, 2, 120, "The nearest curse produces cold curse rather than an older fire pair");
+        CHECK.that(AnomalyManager.metrics().triggers() == 3 && AnomalyManager.metrics().reactions() == 1,
+                "Repeated full fire is blocked and fresh ice cannot reuse the consumed fire-curse pair");
+        status(target, AnomalyEffects.CURSE_WEAKNESS, 0, 100, "Locked curse retains the fire-curse reaction without adding a curse base or cold curse");
+        add(target, "lunar", 500);
+        CHECK.that(AnomalyManager.metrics().reactions() == 2, "Two fresh elements still react while the older pair remains locked");
         CHECK.that(!target.hasStatusEffect(AnomalyEffects.FROST_SLOW), "An older fire activation does not create a second simultaneous frostfire pair");
         resetFixtures();
 
@@ -607,7 +628,7 @@ public final class AnomalySystemWorldProbe {
         AnomalyManager.enqueue(new SpellAnomalyContext(new Identifier("ssc_addon", "test_ice"), "ice", 1,
                 250, secondCaster, UUID.randomUUID()), target);
         AnomalyManager.drain(test.getWorld().getServer());
-        CHECK.that(target.hasStatusEffect(SscAddon.FROZEN) && value(target, "ice") == 0,
+        CHECK.that(target.hasStatusEffect(SscAddon.FROZEN) && value(target, "ice") == 500,
                 "Different caster identities share the same target's accumulation");
         resetFixtures();
 
@@ -630,6 +651,8 @@ public final class AnomalySystemWorldProbe {
     }
 
     private static void timedBoundaries() {
+        // 先完成旧领域的共享查询计数检查，再启动会产生新联动查询的计时场景。
+        AnomalyProbeSupport.later(test, 180, AnomalySystemWorldProbe::fullDisplayBoundaries);
         var expiry = pig(center);
         var refreshed = pig(center.add(0, 12, 0));
         var earlyLink = pig(center.add(0, 24, 0));
@@ -783,6 +806,58 @@ public final class AnomalySystemWorldProbe {
             System.out.println("ANOMALY_SYSTEM_WORLD_PASS checks=" + CHECK.count
                     + " (seven base effects, forty-two executor and real-hit reaction orders, exact five-block/five-second frostfire, exact timers, shared target state and cleanup; client/network multiplayer NOT tested)");
             test.complete();
+        });
+    }
+
+    private static void fullDisplayBoundaries() {
+        var target = pig(center.add(0, 160, 0));
+        add(target, "fire", 500);
+        add(target, "curse", 125);
+        CHECK.that(AnomalyManager.snapshot(target).fullRemainingTicks() == 100, "The server retains a new full bar for exactly one hundred ticks");
+        AnomalyProbeSupport.later(test, 50, () -> {
+            long before = AnomalyManager.metrics().reactions();
+            add(target, "ice", 500);
+            var view = AnomalyManager.snapshot(target);
+            CHECK.that(AnomalyManager.metrics().reactions() == before + 1, "The first fire-ice reaction still executes normally");
+            CHECK.that(view.fullElements().equals(java.util.Set.of("fire", "ice")) && view.fullRemainingTicks() == 100,
+                    "A second trigger restarts the visible pair's five-second display");
+            CHECK.that(view.linkRemaining() == 0, "Consumed partners cannot provide another link window");
+        });
+        AnomalyProbeSupport.later(test, 99, () -> {
+            long before = AnomalyManager.metrics().triggers();
+            add(target, "fire", 500); add(target, "ice", 500);
+            CHECK.that(AnomalyManager.metrics().triggers() == before && AnomalyManager.snapshot(target).fullRemainingTicks() == 51,
+                    "Hits during the lock cannot trigger or refresh either full element");
+        });
+        AnomalyProbeSupport.later(test, 100, () -> {
+            add(target, "space", 40);
+            CHECK.that(AnomalyManager.snapshot(target).fullRemainingTicks() == 50 && value(target, "fire") == 500,
+                    "Partial buildup does not refresh full bars, and the first bar survives its original deadline after a second trigger");
+        });
+        AnomalyProbeSupport.later(test, 149, () -> {
+            CHECK.that(AnomalyManager.snapshot(target).fullRemainingTicks() == 1, "The refreshed pair exposes its exact last tick");
+            long before = AnomalyManager.metrics().reactions();
+            add(target, "space", 460);
+            CHECK.that(AnomalyManager.metrics().reactions() == before, "A third fresh trigger does not react with the locked pair");
+            CHECK.that(AnomalyManager.snapshot(target).fullElements().equals(java.util.Set.of("fire", "ice", "space"))
+                            && AnomalyManager.snapshot(target).fullRemainingTicks() == 100,
+                    "A third trigger refreshes all remaining full bars together");
+        });
+        AnomalyProbeSupport.later(test, 248, () -> {
+            add(target, "space", 500);
+            CHECK.that(AnomalyManager.snapshot(target).fullRemainingTicks() == 1, "The last locked hit does not postpone release");
+        });
+        AnomalyProbeSupport.later(test, 249, () -> {
+            var view = AnomalyManager.snapshot(target);
+            CHECK.that(view.fullElements().isEmpty() && view.fullRemainingTicks() == 0
+                            && view.values().equals(Map.of("curse", 125.0)),
+                    "The full group expires together without clearing unrelated partial buildup");
+            add(target, "fire", 250);
+            CHECK.near(value(target, "fire"), 250, "Released elements immediately accept normal buildup again");
+            add(target, "ice", 500);
+            long before = AnomalyManager.metrics().reactions();
+            add(target, "fire", 250);
+            CHECK.that(AnomalyManager.metrics().reactions() == before + 1, "The next normal buildup cycle can react again");
         });
     }
 }

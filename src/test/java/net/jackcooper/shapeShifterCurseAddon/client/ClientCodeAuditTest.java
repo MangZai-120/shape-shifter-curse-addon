@@ -13,10 +13,21 @@ public final class ClientCodeAuditTest {
         brewingMixins();
         tidalOwnerSnapshot();
         shaderPreservation();
+        performanceCompletion();
         checks += net.jackcooper.shapeShifterCurseAddon.client.palette.PalettePresetStoreAuditTest.run();
         checks += net.jackcooper.shapeShifterCurseAddon.compat.MixinSelectionAuditTest.run();
         checks += net.jackcooper.shapeShifterCurseAddon.client.renderer.WeakEntityStateMapTest.run();
         System.out.println("Client code audit regressions PASS: " + checks + " checks");
+    }
+
+    private static void performanceCompletion() {
+        boolean rejected=false;
+        try {
+            net.jackcooper.shapeShifterCurseAddon.client.perf.NeoCastingPerformanceProbe.verifyResult();
+        } catch(AssertionError expected) {
+            rejected=expected.getMessage().contains("before producing complete measurements");
+        }
+        require(rejected,"An unfinished performance run must fail verification");
     }
 
     private static void tidalOwnerSnapshot() {

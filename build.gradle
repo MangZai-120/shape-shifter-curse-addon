@@ -10,6 +10,13 @@ tasks.register('hudScaleTest', JavaExec) {
     mainClass = 'net.jackcooper.shapeShifterCurseAddon.client.hud.HudScaleGeometryTest'
 }
 check.dependsOn hudScaleTest
+
+tasks.register('formTutorialStateTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.tutorial.FormTutorialStateTest'
+}
+check.dependsOn formTutorialStateTest
 group = project.maven_group
 
 base {
@@ -215,6 +222,25 @@ tasks.register('neoMagicWorldTest', JavaExec) {
     }
 }
 
+tasks.register('energyTransactionWorldTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.ssca.neomagic.NeoWorldTest'
+    workingDir = layout.buildDirectory.dir('energy-transaction-world').get().asFile
+    maxHeapSize = '2G'
+    systemProperty 'neomagic.worldProbe', 'net.jackcooper.shapeShifterCurseAddon.energy.EnergyTransactionWorldProbe'
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def cpFile = new File(workingDir, 'classpath.txt')
+        cpFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', cpFile.absolutePath
+    }
+}
+check.dependsOn energyTransactionWorldTest
+
 tasks.register('interactionRecoveryWorldTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
@@ -242,13 +268,41 @@ tasks.register('neoMagicPerformanceTest', JavaExec) {
     systemProperty 'fabric.development', 'true'
     systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
     systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
-    systemProperty 'neomagic.assets', new File(System.getProperty('user.home'), '.gradle/caches/fabric-loom/assets').absolutePath
+    systemProperty 'neomagic.assets', new File(gradle.gradleUserHomeDir, 'caches/fabric-loom/assets').absolutePath
     systemProperty 'neomagic.performance', project.findProperty('neoPerfLabel') ?: 'baseline'
     doFirst {
         workingDir.mkdirs()
+        def label = systemProperties['neomagic.performance'].toString()
+        if (!(label ==~ /[A-Za-z0-9][A-Za-z0-9._-]{0,79}/)) throw new GradleException('Invalid performance label.')
+        ['.json', '-raw.json', '.jfr'].each { suffix ->
+            if (new File(workingDir, label + suffix).exists()) throw new GradleException('Performance output exists; use a fresh neoPerfLabel: ' + label)
+        }
+        systemProperty 'ssca.audit.runToken', UUID.randomUUID().toString()
         def classpathFile = new File(workingDir, 'classpath.txt')
         classpathFile.setText(classpath.asPath, 'UTF-8')
         systemProperty 'neomagic.testClasspathFile', classpathFile.absolutePath
+    }
+    doLast {
+        // Minecraft can System.exit(0), bypassing verification after its Java main method.
+        def label = systemProperties['neomagic.performance'].toString()
+        def reportFile = new File(workingDir, label + '.json')
+        def rawFile = new File(workingDir, label + '-raw.json')
+        def jfrFile = new File(workingDir, label + '.jfr')
+        if (!reportFile.isFile() || !rawFile.isFile() || !jfrFile.isFile() || jfrFile.length() < 4) {
+            throw new GradleException('Performance client exited before producing complete measurements: ' + label)
+        }
+        def parser = new groovy.json.JsonSlurper()
+        def report = parser.parse(reportFile, 'UTF-8')
+        if (report.completed != true || report.label != label || report.run_token != systemProperties['ssca.audit.runToken']) {
+            throw new GradleException('Performance report does not certify this completed run: ' + label)
+        }
+        def raw = parser.parse(rawFile, 'UTF-8')
+        if (!(raw.scenes instanceof List) || raw.scenes.size() != 4) throw new GradleException('Incomplete raw performance samples: ' + label)
+        jfrFile.withInputStream { stream ->
+            if (stream.read() != 0x46 || stream.read() != 0x4c || stream.read() != 0x52 || stream.read() != 0) {
+                throw new GradleException('Invalid performance JFR: ' + label)
+            }
+        }
     }
 }
 
@@ -265,7 +319,7 @@ tasks.register('neoMagicVisualTest', JavaExec) {
     systemProperty 'fabric.development', 'true'
     systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
     systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
-    systemProperty 'neomagic.assets', new File(System.getProperty('user.home'), '.gradle/caches/fabric-loom/assets').absolutePath
+    systemProperty 'neomagic.assets', new File(gradle.gradleUserHomeDir, 'caches/fabric-loom/assets').absolutePath
     doFirst {
         if ((project.findProperty('neoNightmareLive') ?: 'false').toString().toBoolean()) delete new File(workingDir,'nightmare-result.json')
         if ((project.findProperty('neoCourtLive') ?: 'false').toString().toBoolean()) delete new File(workingDir,'court-result.json')
@@ -290,7 +344,7 @@ tasks.register('instinctAnchorClientTest', JavaExec) {
     maxHeapSize = '2G'
     systemProperty 'fabric.development', 'true'
     systemProperty 'neomagic.clientProbe', project.findProperty('neoClientProbe') ?: 'net.jackcooper.shapeShifterCurseAddon.client.InstinctAnchorClientProbe'
-    systemProperty 'neomagic.assets', new File(System.getProperty('user.home'), '.gradle/caches/fabric-loom/assets').absolutePath
+    systemProperty 'neomagic.assets', new File(gradle.gradleUserHomeDir, 'caches/fabric-loom/assets').absolutePath
     systemProperty 'fabric.remapClasspathFile', new File(project.projectDir, '.gradle/loom-cache/remapClasspath.txt').absolutePath
     systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
     doFirst {

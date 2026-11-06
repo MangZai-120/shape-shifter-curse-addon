@@ -661,6 +661,7 @@ public class SscAddonClient implements ClientModInitializer {
 
 		// SSCA 进化加点系统 - 在幻形者之书界面注入「进化加点」入口按钮（使魔形态显示）
 		net.jackcooper.shapeShifterCurseAddon.client.evolution.EvolutionBookHook.register();
+		net.jackcooper.shapeShifterCurseAddon.client.tutorial.FormTutorialClient.register();
 
 		// SSCA 进化路线 - 在「翻开幻形者之书」开局界面注入「进入 SSCA 进化路线」入口按钮
 		net.jackcooper.shapeShifterCurseAddon.client.evolution.SscaStartBookHook.register();

@@ -683,6 +683,7 @@ public class SscAddon implements ModInitializer {
 		SscAddonConditions.register();
 		SscAddonPowers.register();
 		SscAddonNetworking.registerServerReceivers();
+		net.jackcooper.shapeShifterCurseAddon.tutorial.FormTutorialManager.register();
 		net.jackcooper.shapeShifterCurseAddon.spell.research.FormationResearchNetworking.register();
 		StoryBookLoot.init();
 		AllaySPTotem.init();

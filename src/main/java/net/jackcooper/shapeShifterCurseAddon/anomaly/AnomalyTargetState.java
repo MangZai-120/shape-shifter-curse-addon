@@ -22,6 +22,7 @@ public final class AnomalyTargetState {
     }
 
     String activate(String element, long now) {
+        activations.entrySet().removeIf(entry -> !AnomalyLedger.inLinkWindow(entry.getValue().tick(), now));
         String previous = "";
         long latestOrder = -1;
         for (var entry : activations.entrySet()) {
@@ -32,9 +33,17 @@ public final class AnomalyTargetState {
                 latestOrder = activation.order();
             }
         }
-        activations.put(element, new Activation(now, ++order));
-        lastElement = element;
-        lastActivation = now;
+        if (previous.isEmpty()) {
+            activations.put(element, new Activation(now, ++order));
+            lastElement = element;
+            lastActivation = now;
+        } else {
+            // 第一次联动照常结算，参与的两系随后都不能再次作为联动来源。
+            activations.remove(previous);
+            activations.remove(element);
+            lastElement = "";
+            lastActivation = Long.MIN_VALUE;
+        }
         return previous;
     }
 

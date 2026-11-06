@@ -101,16 +101,27 @@ return 0;
 }
 final long grantedE = Math.min(supplyableE, (long) takenTotal * RATIO);
 final List<EnergyNetworkMember> net = network;
-// 事务关闭回调：中止 → 全额归还；提交 → 计数 + 刷新储罐液面显示
-transaction.addCloseCallback((tx, result) -> {
+final long reservationTick = lastTickTime;
+// 先占用预算；同一事务内的下一次抽取也必须看见这笔预留。
+outputUsedThisTick += grantedE;
+transaction.addCloseCallback(new TransactionContext.CloseCallback() {
+@Override
+public void onClose(TransactionContext tx, TransactionContext.Result result) {
 if (result == TransactionContext.Result.ABORTED) {
 for (Map.Entry<EnergyNetworkMember, Integer> e : takenFrom.entrySet()) {
 e.getKey().setStoredEnergy(e.getKey().getStoredEnergy() + e.getValue());
 }
+// 跨 tick 延迟关闭的旧事务不能释放当前 tick 中其它提取的预算。
+if (lastTickTime == reservationTick) outputUsedThisTick -= grantedE;
+} else if (tx.nestingDepth() > 0) {
+// 子提交仍可被祖先取消，逐层转交回滚责任，直到最外层真正提交。
+tx.getOpenTransaction(tx.nestingDepth() - 1).addCloseCallback(this);
 } else {
-outputUsedThisTick += grantedE;
-convertingThisTick = true;
+tx.addOuterCloseCallback(finalResult -> {
+if (world != null && world.getTime() == reservationTick) convertingThisTick = true;
 EnergyNetwork.refreshTankDisplays(net);
+});
+}
 }
 });
 return grantedE;
@@ -197,21 +208,17 @@ long tryAmt = Math.min(supplyableE, eBudget);
 try (Transaction tx = Transaction.openOuter()) {
 long inserted = target.storage().insert(tryAmt, tx);
 if (inserted > 0) {
-// 同事务内按实际插入量扣 SSCA（向上取整，多耗 ≤1 SSCA/t 封顶不超发）
-int needSSCA = (int) ((inserted + RATIO - 1) / RATIO);
-int taken = EnergyNetwork.extract(network, Math.min(needSSCA, availSSCA));
-if (taken > 0) {
+// 推、拉使用同一事务参与者；插入与源支付不一致时双方全部回滚。
+long paid = be.exposed.extract(inserted, tx);
+if (paid == inserted) {
 tx.commit();
-be.outputUsedThisTick += inserted;
-eBudget -= inserted;
-supplyableE -= inserted;
-availSSCA -= taken;
-be.convertingThisTick = true;
 }
-// taken == 0（网络刚好被拉空）：不 commit 回滚插入
 }
 // inserted == 0：不 commit 自动回滚
 }
+eBudget = MAX_E_PER_TICK - be.outputUsedThisTick;
+availSSCA = EnergyNetwork.getTotalEnergy(network);
+supplyableE = Math.min(eBudget, (long) availSSCA * RATIO);
 }
 }
 }

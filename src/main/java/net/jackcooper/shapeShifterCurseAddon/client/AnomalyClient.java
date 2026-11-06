@@ -24,16 +24,34 @@ public final class AnomalyClient {
         final int entityId;
         final AnomalySnapshot snapshot;
         final long received, expiresAt;
+        final Map<String, Double> accumulatingValues, fullValues;
         long projectedTick = Long.MIN_VALUE;
         AnomalySnapshot projected;
         View(int entityId, AnomalySnapshot snapshot, long received, long expiresAt) {
             this.entityId = entityId; this.snapshot = snapshot;
             this.received = received; this.expiresAt = expiresAt;
+            if (snapshot.fullElements().isEmpty()) {
+                accumulatingValues = snapshot.values();
+                fullValues = Map.of();
+            } else {
+                var accumulating = new HashMap<String, Double>();
+                var full = new HashMap<String, Double>();
+                snapshot.values().forEach((element, amount) -> {
+                    (snapshot.fullElements().contains(element) ? full : accumulating).put(element, amount);
+                });
+                accumulatingValues = Map.copyOf(accumulating);
+                fullValues = Map.copyOf(full);
+            }
         }
         int entityId() { return entityId; }
         AnomalySnapshot snapshot() { return snapshot; }
         long received() { return received; }
         long expiresAt() { return expiresAt; }
+        Map<String, Double> values(long elapsed) {
+            boolean accumulating = elapsed < snapshot.remainingTicks();
+            boolean full = elapsed < snapshot.fullRemainingTicks();
+            return accumulating && full ? snapshot.values() : accumulating ? accumulatingValues : full ? fullValues : Map.of();
+        }
     }
     private static final Map<UUID, View> STATES = new HashMap<>();
     private static final List<LivingEntity> TARGETS = new ArrayList<>();
@@ -55,7 +73,7 @@ public final class AnomalyClient {
                 ensureWorld(client.world);
                 if (message.snapshot().empty()) STATES.remove(message.entityUuid());
                 else {
-                    int duration = Math.max(message.snapshot().remainingTicks(), message.snapshot().linkRemaining());
+                    int duration = Math.max(message.snapshot().remainingTicks(), Math.max(message.snapshot().linkRemaining(), message.snapshot().fullRemainingTicks()));
                     for (var effect : message.snapshot().effects()) duration = Math.max(duration, effect.ticks());
                     STATES.put(message.entityUuid(), new View(message.entityId(), message.snapshot(), ticks, ticks + duration));
                 }
@@ -108,10 +126,11 @@ public final class AnomalyClient {
         var state = view.snapshot();
         int remaining = Math.max(0, state.remainingTicks() - elapsed);
         int link = Math.max(0, state.linkRemaining() - elapsed);
+        int full = Math.max(0, state.fullRemainingTicks() - elapsed);
         var effects = state.effects().stream().filter(effect -> effect.ticks() > elapsed)
                 .map(effect -> new AnomalyEffects.EffectView(effect.id(), effect.ticks() - elapsed, effect.strength())).toList();
-        view.projected = new AnomalySnapshot(state.maximum(), remaining == 0 ? Map.of() : state.values(), remaining,
-                link == 0 ? "" : state.lastElement(), link, effects);
+        view.projected = new AnomalySnapshot(state.maximum(), view.values(elapsed), remaining,
+                link == 0 ? "" : state.lastElement(), link, effects, full, full == 0 ? java.util.Set.of() : state.fullElements());
         view.projectedTick = ticks;
         return view.projected;
     }
@@ -125,8 +144,7 @@ public final class AnomalyClient {
             TARGETS.clear();
             for (var entry : STATES.entrySet()) {
                 View view = entry.getValue();
-                if (view.snapshot().values().isEmpty()
-                        || ticks - view.received() >= view.snapshot().remainingTicks()) continue;
+                if (view.values(ticks - view.received()).isEmpty()) continue;
                 var entity = world.getEntityById(view.entityId());
                 if (entity instanceof LivingEntity living && living.isAlive() && !living.isRemoved()
                         && living.getUuid().equals(entry.getKey())) TARGETS.add(living);
@@ -147,9 +165,8 @@ public final class AnomalyClient {
         if (!entity.isAlive() || entity.isRemoved() || client.world != world || entity.getWorld() != world)
             return Map.of();
         View view = STATES.get(entity.getUuid());
-        if (view == null || view.entityId() != entity.getId()
-                || ticks - view.received() >= view.snapshot().remainingTicks()) return Map.of();
-        return view.snapshot().values();
+        if (view == null || view.entityId() != entity.getId()) return Map.of();
+        return view.values(ticks - view.received());
     }
 
     private static void ensureWorld(ClientWorld current) {
