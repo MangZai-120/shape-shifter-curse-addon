@@ -21,21 +21,66 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
-/** Shared reaction cues. Crowd limits affect presentation only, never combat resolution. */
+/** Elemental trigger and reaction cues. Crowd limits affect presentation only, never combat resolution. */
 final class AnomalyReactionFeedback {
     private static final Map<ServerWorld, Budget> BUDGETS = new IdentityHashMap<>();
+    private record SoundCue(SoundEvent sound, float volume, float pitch) {
+        void play(ServerWorld world, LivingEntity target) {
+            world.playSound(null, target.getX(), target.getY(), target.getZ(), sound,
+                    SoundCategory.PLAYERS, volume, pitch);
+        }
+    }
+    private static final SoundCue DEFAULT_BASE = new SoundCue(SoundEvents.BLOCK_AMETHYST_BLOCK_HIT, .8f, 1.25f);
+    private static final SoundCue DEFAULT_REACTION = new SoundCue(SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, .65f, 1.2f);
+    private static final Map<String, SoundCue> BASE_SOUNDS = Map.of(
+            // Match FireBoltSpell's launch event, volume and pitch.
+            "fire", new SoundCue(SoundEvents.ENTITY_BLAZE_SHOOT, 1f, 1.2f),
+            "ice", new SoundCue(SoundEvents.BLOCK_GLASS_BREAK, .8f, .9f),
+            "lunar", new SoundCue(SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, .8f, 1.2f),
+            "curse", new SoundCue(SoundEvents.ENTITY_EVOKER_CAST_SPELL, .7f, .85f),
+            "summon", new SoundCue(SoundEvents.ENTITY_EVOKER_PREPARE_SUMMON, .65f, 1.3f),
+            "void", new SoundCue(SoundEvents.BLOCK_SCULK_CATALYST_BLOOM, .8f, .8f),
+            "space", new SoundCue(SoundEvents.ENTITY_ENDERMAN_TELEPORT, .8f, 1.1f));
+    // Each unordered pair has a one-shot cue distinct from either constituent's base cue.
+    private static final Map<String, SoundCue> REACTION_SOUNDS = Map.ofEntries(
+            Map.entry("fire+ice", new SoundCue(SoundEvents.BLOCK_FIRE_EXTINGUISH, .85f, 1f)), // 烈霜
+            Map.entry("fire+lunar", new SoundCue(SoundEvents.BLOCK_AMETHYST_BLOCK_RESONATE, .7f, 1.05f)), // 灼月
+            Map.entry("curse+fire", new SoundCue(SoundEvents.ENTITY_BLAZE_BURN, .75f, .85f)), // 焚咒
+            Map.entry("fire+summon", new SoundCue(SoundEvents.ENTITY_VEX_CHARGE, .65f, 1.15f)), // 炎灵
+            Map.entry("fire+void", new SoundCue(SoundEvents.BLOCK_RESPAWN_ANCHOR_DEPLETE.value(), .55f, 1.25f)), // 湮炎
+            Map.entry("fire+space", new SoundCue(SoundEvents.BLOCK_RESPAWN_ANCHOR_CHARGE, .7f, .9f)), // 炎域
+            Map.entry("ice+lunar", new SoundCue(SoundEvents.BLOCK_AMETHYST_CLUSTER_BREAK, .8f, 1.25f)), // 寒月
+            Map.entry("curse+ice", new SoundCue(SoundEvents.ENTITY_ILLUSIONER_PREPARE_BLINDNESS, .6f, 1.2f)), // 寒咒
+            Map.entry("ice+summon", new SoundCue(SoundEvents.ITEM_TRIDENT_THROW, .75f, 1.25f)), // 霜猎
+            Map.entry("ice+void", new SoundCue(SoundEvents.BLOCK_AMETHYST_BLOCK_BREAK, .85f, .75f)), // 碎霜
+            Map.entry("ice+space", new SoundCue(SoundEvents.BLOCK_CHAIN_PLACE, .85f, .8f)), // 冰锁
+            Map.entry("curse+lunar", new SoundCue(SoundEvents.BLOCK_BEACON_DEACTIVATE, .65f, .85f)), // 黯月
+            Map.entry("lunar+summon", new SoundCue(SoundEvents.ENTITY_ALLAY_ITEM_GIVEN, .8f, 1.1f)), // 灵月
+            Map.entry("lunar+void", new SoundCue(SoundEvents.BLOCK_SCULK_CHARGE, .8f, .7f)), // 蚀月
+            Map.entry("lunar+space", new SoundCue(SoundEvents.BLOCK_CONDUIT_ACTIVATE, .65f, 1.25f)), // 月域
+            Map.entry("curse+summon", new SoundCue(SoundEvents.ENTITY_EVOKER_PREPARE_ATTACK, .6f, 1.2f)), // 厄灵
+            Map.entry("curse+void", new SoundCue(SoundEvents.ENTITY_WITHER_HURT, .5f, 1.25f)), // 凋零
+            Map.entry("curse+space", new SoundCue(SoundEvents.BLOCK_END_PORTAL_FRAME_FILL, .85f, .75f)), // 禁界
+            Map.entry("summon+void", new SoundCue(SoundEvents.PARTICLE_SOUL_ESCAPE, .9f, .75f)), // 噬灵
+            Map.entry("space+summon", new SoundCue(SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE, .75f, 1.15f)), // 灵网
+            Map.entry("space+void", new SoundCue(SoundEvents.ENTITY_ILLUSIONER_MIRROR_MOVE, .85f, .75f))); // 裂隙
 
     private static final class Budget {
         long tick = Long.MIN_VALUE, window = Long.MIN_VALUE;
-        int bursts, sounds;
+        int bursts, sounds, baseBursts, baseSounds;
         final Map<BlockPos, Integer> cells = new HashMap<>();
+        final Map<BlockPos, Integer> baseCells = new HashMap<>();
         final Set<BlockPos> soundCells = new HashSet<>();
+        final Set<BlockPos> baseSoundCells = new HashSet<>();
         final Set<UUID> notified = new HashSet<>();
 
         void advance(long now) {
-            if (tick != now) { tick = now; bursts = 0; cells.clear(); }
+            if (tick != now) {
+                tick = now; bursts = 0; baseBursts = 0; cells.clear(); baseCells.clear();
+            }
             if (window != now / 10) {
-                window = now / 10; sounds = 0; soundCells.clear(); notified.clear();
+                window = now / 10; sounds = 0; baseSounds = 0;
+                soundCells.clear(); baseSoundCells.clear(); notified.clear();
             }
         }
 
@@ -45,9 +90,35 @@ final class AnomalyReactionFeedback {
             cells.merge(cell, 1, Integer::sum);
             return true;
         }
+
+        boolean baseVisual(BlockPos cell) {
+            if (baseBursts >= 16 || baseCells.getOrDefault(cell, 0) >= 2) return false;
+            baseBursts++;
+            baseCells.merge(cell, 1, Integer::sum);
+            return true;
+        }
     }
 
     private AnomalyReactionFeedback() {}
+
+    static void showBase(String element, LivingEntity target) {
+        ServerWorld world = (ServerWorld) target.getWorld();
+        Budget budget = budget(world);
+        BlockPos cell = cell(target.getPos());
+        if (budget.baseVisual(cell)) {
+            Vec3d center = target.getPos().add(0, target.getHeight() * .5, 0);
+            double spread = Math.max(.3, Math.min(1.2, target.getWidth() * .6));
+            ParticleEffect particle = particle(element);
+            ParticleUtils.spawnParticlesNearby(world, particle, center, 24, spread, .35, spread, .07);
+            ring(target, target.getPos().add(0, .12, 0), particle,
+                    Math.max(.7, Math.min(1.8, target.getWidth() * .5 + .4)));
+        }
+        // Separate budgets let an immediate reaction play even when its first element just triggered.
+        if (budget.baseSounds < 4 && budget.baseSoundCells.add(cell)) {
+            budget.baseSounds++;
+            BASE_SOUNDS.getOrDefault(element, DEFAULT_BASE).play(world, target);
+        }
+    }
 
     static void show(String first, String second, LivingEntity target, SpellAnomalyContext context) {
         ServerWorld world = (ServerWorld) target.getWorld();
@@ -69,7 +140,7 @@ final class AnomalyReactionFeedback {
         }
         if (budget.sounds < 4 && budget.soundCells.add(cell)) {
             budget.sounds++;
-            world.playSound(null, target.getX(), target.getY(), target.getZ(), sound(pair), SoundCategory.PLAYERS, .65f, 1.2f);
+            REACTION_SOUNDS.getOrDefault(pair, DEFAULT_REACTION).play(world, target);
         }
         Text cue = Text.translatable("message.ssc_addon.anomaly.reaction",
                 Text.translatable("anomaly.ssc_addon.reaction." + pair.replace('+', '_')).formatted(Formatting.GOLD),
@@ -118,13 +189,6 @@ final class AnomalyReactionFeedback {
             case "space" -> ParticleTypes.PORTAL;
             default -> ParticleTypes.ENCHANT;
         };
-    }
-
-    private static SoundEvent sound(String pair) {
-        if (pair.equals("fire+ice")) return SoundEvents.BLOCK_FIRE_EXTINGUISH;
-        if (pair.contains("void") || pair.contains("space")) return SoundEvents.ENTITY_ENDERMAN_TELEPORT;
-        if (pair.contains("ice")) return SoundEvents.BLOCK_GLASS_BREAK;
-        return SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME;
     }
 
     static void clear(ServerWorld world) { BUDGETS.remove(world); }

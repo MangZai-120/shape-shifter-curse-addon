@@ -9,7 +9,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
@@ -112,18 +111,18 @@ public final class AnomalyEffects {
         registerReaction("fire", "lunar", (target, context) -> apply(target, LUNAR_ECLIPSE, 120, 1));
         registerReaction("fire", "curse", (target, context) -> area(target, context, 3,
                 other -> apply(other, CURSE_WEAKNESS, 100, 0)));
-        registerReaction("fire", "summon", (target, context) -> budget(target, FLAME_SPIRIT, context));
+        registerReaction("fire", "summon", (target, context) -> budget(target, FLAME_SPIRIT));
         registerReaction("fire", "void", (target, context) -> reactionDamage(target, context, 4, false));
         registerReaction("fire", "space", AnomalyEffects::fireZone);
         registerReaction("ice", "lunar", (target, context) -> extend(target, LUNAR_ECLIPSE, 180, 0));
         registerReaction("ice", "curse", (target, context) -> apply(target, CURSE_WEAKNESS, 120, 2));
-        registerReaction("ice", "summon", (target, context) -> budget(target, FROST_HUNT, context));
+        registerReaction("ice", "summon", (target, context) -> budget(target, FROST_HUNT));
         registerReaction("ice", "void", (target, context) -> reactionDamage(target, context, 6, false));
         registerReaction("ice", "space", (target, context) -> apply(target, NO_SPRINT, 100, 0));
         registerReaction("lunar", "curse", (target, context) -> {
             extend(target, LUNAR_ECLIPSE, 180, 0); extend(target, CURSE_WEAKNESS, 180, 0);
         });
-        registerReaction("lunar", "summon", (target, context) -> budget(target, SPIRIT_MOON, context));
+        registerReaction("lunar", "summon", (target, context) -> budget(target, SPIRIT_MOON));
         registerReaction("lunar", "void", (target, context) -> apply(target, VOID_EROSION, 120, 1));
         registerReaction("lunar", "space", (target, context) -> area(target, context, 3,
                 other -> apply(other, LUNAR_ECLIPSE, 100, 0)));
@@ -183,7 +182,10 @@ public final class AnomalyEffects {
     public static void activate(String element, LivingEntity target, SpellAnomalyContext context) {
         if (!live(target)) return;
         var executor = BASES.get(element);
-        if (executor != null) executor.apply(target, context);
+        if (executor != null) {
+            AnomalyReactionFeedback.showBase(element, target);
+            executor.apply(target, context);
+        }
     }
 
     public static void react(String first, String second, LivingEntity target, SpellAnomalyContext context) {
@@ -206,9 +208,8 @@ public final class AnomalyEffects {
     }
 
     private static final class Budget {
-        final SpellAnomalyContext creator;
         double remaining;
-        Budget(SpellAnomalyContext creator, int remaining) { this.creator = creator; this.remaining = remaining; }
+        Budget(int remaining) { this.remaining = remaining; }
     }
 
     private static Cache cache(LivingEntity target) { return ((AnomalyEffectAccess) target).ssca$anomalyEffects(); }
@@ -377,13 +378,13 @@ public final class AnomalyEffects {
         }
     }
 
-    private static void budget(LivingEntity target, StatusEffect marker, SpellAnomalyContext context) {
+    private static void budget(LivingEntity target, StatusEffect marker) {
         apply(target, marker, 120, 0);
         if (!target.hasStatusEffect(marker)) return;
         Cache state = cache(target);
-        if (marker == FLAME_SPIRIT) state.fire = new Budget(context, 3);
-        else if (marker == FROST_HUNT) state.frost = new Budget(context, 1);
-        else if (marker == SPIRIT_MOON) state.healing = new Budget(context, 4);
+        if (marker == FLAME_SPIRIT) state.fire = new Budget(3);
+        else if (marker == FROST_HUNT) state.frost = new Budget(1);
+        else if (marker == SPIRIT_MOON) state.healing = new Budget(4);
     }
 
     private static void apply(LivingEntity target, StatusEffect type, int ticks, int amplifier) {
