@@ -17,6 +17,8 @@ extra_javascript:
   - assets/js/language-switcher.js
 
 nav:
+- 实机技能教程:
+  - 灵界之主（图文与视频）: tutorials/spirit-realm-lord/index.html
 - 首页: index.md
 - 新手上路:
   - 安装指南: getting_started/installation.md
