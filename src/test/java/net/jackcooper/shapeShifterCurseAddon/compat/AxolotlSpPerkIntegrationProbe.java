@@ -615,7 +615,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         check(charge.getAsJsonObject("start_action").get("value").getAsInt() == -5, "tidal pull prepays five while requiring twenty");
         check(charge.getAsJsonObject("start_condition").get("compare_to").getAsInt() == 20, "tidal pull requires 20");
         check(charge.getAsJsonObject("tier0_use_action").get("distance").getAsInt() == 20
-                && charge.get("tier0_cooldown").getAsInt() == 20, "tidal pull is 20 blocks / 1 second");
+                && charge.get("tier0_cooldown").getAsInt() == 100, "tidal pull is 20 blocks / 5 seconds, matching SSC");
         check(root.getAsJsonObject("glow").getAsJsonObject("condition").get("power").getAsString()
                 .equals(AxolotlSpPerks.TIDAL_PULL + "_charge"), "tidal highlighting tracks the mapped charge power");
         JsonObject water = json("my_addon", AxolotlSpPerks.WATER_MAGIC.getPath());

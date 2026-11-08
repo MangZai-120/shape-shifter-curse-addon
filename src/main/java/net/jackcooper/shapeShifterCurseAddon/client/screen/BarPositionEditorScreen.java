@@ -897,13 +897,15 @@ public class BarPositionEditorScreen extends Screen {
     /** CD 条（主技能左侧）屏幕坐标。 */
     private Pair<Integer, Integer> cdBarPos() {
         var layout = cdLayout();
-        return new Pair<>(layout.primaryX(), layout.primaryY());
+        var extent = net.jackcooper.shapeShifterCurseAddon.client.hud.SkillHudLayout.bounds(
+                SkillCooldownBarRenderer.currentExtraSkillCount(), cdRight);
+        return new Pair<>(layout.primaryX() + extent.x(), layout.primaryY() + extent.y());
     }
 
     private SkillCooldownBarRenderer.Layout cdLayout() {
         var anchor = UIPositionUtils.getCorrectPosition(cdType, 0, 0);
         return SkillCooldownBarRenderer.panelLayout(anchor.getLeft() + cdX, anchor.getRight() + cdY,
-                cdRight, width, height);
+                cdRight, width, height, SkillCooldownBarRenderer.currentExtraSkillCount());
     }
 
     // ====== 渲染 ======
@@ -1060,17 +1062,19 @@ public class BarPositionEditorScreen extends Screen {
         Pair<Integer, Integer> pos = cdBarPos();
         int x = pos.getLeft();
         int y = pos.getRight();
-        int columnHeight = SkillCooldownBarRenderer.PANEL_HEIGHT;
+        var extent = net.jackcooper.shapeShifterCurseAddon.client.hud.SkillHudLayout.bounds(
+                SkillCooldownBarRenderer.currentExtraSkillCount(), cdRight);
+        int columnHeight = extent.height(), columnWidth = extent.width();
         if (client == null || client.world == null || client.player == null) {
             SkillCooldownBarRenderer.drawPanel(ctx, x, y, cdRight);
         }
         // 主条半透明绿色示意
-        ctx.fill(x, y, x + CD_W, y + columnHeight, 0x1800FF00);
+        ctx.fill(x, y, x + columnWidth, y + columnHeight, 0x1800FF00);
         boolean hovered = hitCdBar(mouseX, mouseY);
         boolean active = (dragging == DRAG_CD);
         boolean sel = (selected == DRAG_CD);
         int border = active ? 0xFFFFEE00 : (sel ? 0xFF00FF88 : (hovered ? 0xFFFFFFAA : 0xFF000000));
-        ctx.drawBorder(x - 1, y - 1, CD_W + 2, columnHeight + 2, border);
+        ctx.drawBorder(x - 1, y - 1, columnWidth + 2, columnHeight + 2, border);
         Text label = Text.translatable("text.ssc_addon.bar_editor.cd_panel");
         if (hovered && !active) HudScaling.tooltip(ctx,this.textRenderer, label, mouseX, mouseY);
         // 选中/拖拽时显示主条偏移坐标

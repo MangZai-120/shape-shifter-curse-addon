@@ -11,6 +11,31 @@ tasks.register('hudScaleTest', JavaExec) {
 }
 check.dependsOn hudScaleTest
 
+tasks.register('skillHudLayoutTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.client.hud.SkillHudLayoutTest'
+    systemProperty 'java.awt.headless', 'true'
+}
+check.dependsOn skillHudLayoutTest
+
+tasks.register('skillHudIntegrationTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.ssca.neomagic.NeoIntegrationTest'
+    workingDir = layout.buildDirectory.dir('skill-hud/integration').get().asFile
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'neomagic.probe', 'net.jackcooper.shapeShifterCurseAddon.client.hud.SkillHudIntegrationProbe'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def cp = new File(workingDir, 'classpath.txt')
+        cp.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', cp.absolutePath
+    }
+}
+
 tasks.register('formTutorialStateTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath

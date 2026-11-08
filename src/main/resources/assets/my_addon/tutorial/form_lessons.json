@@ -7,12 +7,6 @@
       "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png",
       "focus": "SELF"
     },
-    "aquatic": {
-      "kind": "PASSIVE",
-      "diagram": "FLIGHT",
-      "icon": "my_addon:textures/gui/skill_icons/water_dash.png",
-      "focus": "SELF"
-    },
     "wet_health": {
       "kind": "PASSIVE",
       "diagram": "RESOURCE",
@@ -1227,20 +1221,44 @@
       "diagram": "STEALTH",
       "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
       "focus": "TARGET"
+    },
+    "vortex_protection": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "focus": "SELF",
+      "icon": "my_addon:textures/gui/skill_icons/vortex_impact.png"
+    },
+    "rain_wetness": {
+      "kind": "PASSIVE",
+      "diagram": "WEATHER",
+      "focus": "SELF",
+      "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png"
+    },
+    "natural_regen": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "focus": "SELF",
+      "icon": "my_addon:textures/gui/skill_icons/play_dead.png"
+    },
+    "fire_extinguish": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "focus": "SELF",
+      "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png"
     }
   },
   "forms": {
     "my_addon:axolotl_abyssal_overlord": [
       "vortex",
+      "vortex_protection",
       "play_dead",
       "water_burst",
       "spear_craft",
-      "moisture",
-      "aquatic",
-      "wet_health",
+      "rain_wetness",
+      "natural_regen",
+      "fire_extinguish",
       "water_healing",
-      "tidal_cost",
-      "no_helmet"
+      "tidal_cost"
     ],
     "my_addon:axolotl_upgrade": [
       "evolution",

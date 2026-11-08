@@ -3,9 +3,11 @@ package net.jackcooper.shapeShifterCurseAddon.client.tutorial;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import com.google.gson.JsonObject;
 import io.github.apace100.apoli.component.PowerHolderComponent;
+import io.github.apace100.apoli.power.PowerType;
 import io.github.apace100.apoli.power.PowerTypeRegistry;
 import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownHolder;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
@@ -17,17 +19,20 @@ import org.slf4j.LoggerFactory;
 
 /** The tutorial opens in the system browser; its page mirrors the native book UI. */
 public final class FormTutorialWeb {
-    private static final Identifier SPIRIT_REALM_LORD = new Identifier("my_addon", "familiar_fox_spirit_realm_lord");
-    private static final String PAGE = "https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/tutorials/spirit-realm-lord/";
+    private static final String ROOT = "https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/tutorials/";
+    private static final Map<Identifier, String> PAGES = Map.of(
+            new Identifier("my_addon", "familiar_fox_spirit_realm_lord"), "spirit-realm-lord",
+            new Identifier("my_addon", "axolotl_abyssal_overlord"), "abyssal-overlord");
     private static final String[] KEYS = {"primary", "secondary", "sneak", "attack", "use", "jump", "sprint"};
 
     private FormTutorialWeb() {}
 
-    public static boolean supports(Identifier form) { return SPIRIT_REALM_LORD.equals(form); }
+    public static boolean supports(Identifier form) { return form != null && PAGES.containsKey(form); }
 
     static URI url(MinecraftClient client, Identifier form) {
         // Local isolated acceptance runs can serve the exact same Wiki build without publishing a test URL.
-        String page = System.getProperty("ssca.audit.tutorialWebPage", PAGE);
+        if (!supports(form)) throw new IllegalArgumentException("No web tutorial for " + form);
+        String page = System.getProperty("ssca.audit.tutorialWebPage", ROOT + PAGES.get(form) + "/");
         StringBuilder url = new StringBuilder(page);
         url.append(page.contains("?") ? '&' : '?').append("lang=")
                 .append(client.options.language.startsWith("zh_") ? "zh_cn" : "en_us");
@@ -42,7 +47,8 @@ public final class FormTutorialWeb {
             } else if (!lesson.power().isEmpty()) {
                 Identifier id = Identifier.tryParse(lesson.power());
                 if (id != null && PowerTypeRegistry.contains(id)) {
-                    var power = PowerHolderComponent.KEY.get(client.player).getPower(PowerTypeRegistry.get(id));
+                    PowerType<?> type = PowerTypeRegistry.get(id);
+                    var power = PowerHolderComponent.KEY.get(client.player).getPower(type);
                     if (power instanceof SkillCooldownHolder holder && holder.cooldownSpec().cooldown() > 0)
                         state.addProperty("cooldown", holder.cooldownSpec().cooldown() / 20.0);
                 }

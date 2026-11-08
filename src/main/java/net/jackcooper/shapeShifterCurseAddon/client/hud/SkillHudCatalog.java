@@ -2,6 +2,8 @@ package net.jackcooper.shapeShifterCurseAddon.client.hud;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import io.github.apace100.apoli.component.PowerHolderComponent;
+import io.github.apace100.apoli.power.PowerTypeRegistry;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaPrimary;
@@ -11,6 +13,9 @@ import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
+import net.onixary.shapeShifterCurseFabric.perk.RegPerks;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 
 import java.util.HashMap;
 import java.util.List;
@@ -92,6 +97,51 @@ public final class SkillHudCatalog {
             new Identifier("my_addon", "textures/gui/skill_icons/weakness_spot.png");
 
     private static final Map<String, List<Skill>> FORMS = new HashMap<>();
+    /** Require the purchase record and granted power, restricted to the matching form. */
+    record PerkSkill(Skill skill, Identifier tree, Identifier perk, List<Identifier> forms) {
+        boolean isLearned(Identifier form, PlayerFormComponent component, PowerHolderComponent holder) {
+            var purchases = component.formPerkMap.get(tree);
+            return forms.contains(form) && purchases != null && purchases.contains(perk)
+                    && PowerTypeRegistry.contains(skill.cooldown())
+                    && holder.hasPower(PowerTypeRegistry.get(skill.cooldown()));
+        }
+
+        Skill forForm(Identifier form) {
+            if ((FormIdentifiers.AXOLOTL_FLUORESCENT.equals(form) || FormIdentifiers.AXOLOTL_ALING.equals(form))
+                    && powerId("perk_axolotl_sp_tidal_pull_charge").equals(skill.cooldown())) {
+                return withIcon("perk_tidal_pull_fluorescent");
+            }
+            return skill;
+        }
+
+        private Skill withIcon(String name) {
+            return new Skill(new Identifier("my_addon", "textures/gui/skill_icons/" + name + ".png"),
+                    skill.cooldown(), skill.internalCooldown(), skill.internalTicks(), skill.talent(),
+                    skill.primary(), skill.condition(), skill.iconOverride());
+        }
+    }
+    private static PerkSkill perk(String icon, String cooldown, Identifier tree, Identifier perk, Identifier... forms) {
+        return new PerkSkill(skill(icon, cooldown, false), tree, perk, List.of(forms));
+    }
+    private static final List<PerkSkill> PERK_SKILLS = List.of(
+            perk("perk_tidal_pull", "perk_axolotl_sp_tidal_pull_charge", RegPerks.T_Axolotl3PerkTree, RegPerks.P_AxolotlTidalPull,
+                    FormIdentifiers.AXOLOTL_SP, FormIdentifiers.AXOLOTL_FLUORESCENT, FormIdentifiers.AXOLOTL_ALING),
+            perk("perk_tidal_pull", "perk_upgrade_axolotl_tidal_pull_charge", RegPerks.T_Axolotl3PerkTree, RegPerks.P_AxolotlTidalPull,
+                    FormIdentifiers.UPGRADE_AXOLOTL),
+            perk("perk_frost_dive_frost_spirit", "perk_snow_fox_sp_frost_dive", RegPerks.T_SnowFox3PerkTree, RegPerks.P_SnowFoxFrostDive,
+                    FormIdentifiers.SNOW_FOX_SP, FormIdentifiers.SNOW_FOX_FROSTSPINE),
+            perk("perk_soul_recall_netherjudge", "perk_anubis_wolf_sp_soul_recall", RegPerks.T_AnubisWolf3PerkTree, RegPerks.P_AnubisWolfSoulRecall,
+                    FormIdentifiers.ANUBIS_WOLF_SP),
+            perk("perk_brand_recall_golden_sandstorm", "perk_golden_sandstorm_recall", RegPerks.T_AnubisWolf3PerkTree, RegPerks.P_AnubisWolfSoulRecall,
+                    FormIdentifiers.GOLDEN_SANDSTORM_SP),
+            perk("perk_metabolic_overload_wind_spirit", "perk_wind_spirit_metabolic_overload", RegPerks.T_Ocelot3PerkTree, RegPerks.P_OcelotMetabolicOverload,
+                    FormIdentifiers.OCELOT_SP),
+            perk("perk_metabolic_overload_ocelot_nova", "perk_ocelot_nova_metabolic_overload", RegPerks.T_Ocelot3PerkTree, RegPerks.P_OcelotMetabolicOverload,
+                    FormIdentifiers.OCELOT_NOVA),
+            perk("perk_wingbeat_bat_desmodus", "perk_bat_desmodus_wingbeat", RegPerks.T_Bat3PerkTree, RegPerks.P_BatWingbeat,
+                    FormIdentifiers.BAT_DESMODUS),
+            perk("perk_wingbeat_bat_parasitic_fruit", "perk_bat_parasitic_fruit_wingbeat", RegPerks.T_Bat3PerkTree, RegPerks.P_BatWingbeat,
+                    FormIdentifiers.BAT_PARASITIC_FRUIT));
         // SP雪狐四主动技能门槛：霜寒值（近战冲刺15 / 瞬移20 / 冰球15 / 冰风暴30）
         private static final java.util.function.Predicate<PlayerEntity> SNOW_15 =
                 p -> hasResource(p, FormIdentifiers.SNOW_FOX_RESOURCE, balanceInt("abilities.snow_fox_sp_melee", "mana_cost", 15));
@@ -267,23 +317,39 @@ public final class SkillHudCatalog {
     }
 
         // forHud 按 (formId, tick) 缓存：结果只在形态/解锁/护符变化时变，每 tick 重算一次、帧间直读。
-        private static final Map<String, List<Skill>> HUD_CACHE = new HashMap<>();
+        private static final Map<String, List<SkillHudLayout.Entry<Skill>>> HUD_CACHE = new HashMap<>();
         private static long hudCacheTick = Long.MIN_VALUE;
+        private static PlayerEntity hudCachePlayer;
 
         public static List<Skill> forHud(Identifier form, PlayerEntity player) {
-                if (player.getWorld().getTime() != hudCacheTick) {
+                return entriesForHud(form, player).stream().map(SkillHudLayout.Entry::skill).toList();
+        }
+
+        public static List<SkillHudLayout.Entry<Skill>> entriesForHud(Identifier form, PlayerEntity player) {
+                if (form == null || player == null) return List.of();
+                if (player != hudCachePlayer || player.getWorld().getTime() != hudCacheTick) {
+                        hudCachePlayer = player;
                         hudCacheTick = player.getWorld().getTime();
                         HUD_CACHE.clear();
                 }
                 String key = form.toString();
-                List<Skill> cached = HUD_CACHE.get(key);
+                var cached = HUD_CACHE.get(key);
                 if (cached != null) return cached;
                 List<Skill> unlocked = forForm(form, player).stream().filter(skill -> isUnlocked(skill, player)).toList();
-                java.util.ArrayList<Skill> result = new java.util.ArrayList<>(2);
-                unlocked.stream().filter(Skill::primary).findFirst().ifPresent(result::add);
-                unlocked.stream().filter(skill -> !skill.primary()).findFirst().ifPresent(result::add);
-                List<Skill> value = List.copyOf(result);
+                var holder = PowerHolderComponent.KEY.get(player);
+                var component = RegPlayerFormComponent.PLAYER_FORM.get(player);
+                Identifier canonicalForm = FormIdMigration.canonical(form);
+                var learned = PERK_SKILLS.stream().filter(perk -> perk.isLearned(canonicalForm, component, holder))
+                        .map(perk -> perk.forForm(canonicalForm)).toList();
+                var value = SkillHudLayout.select(unlocked, Skill::primary, SkillHudCatalog::extraEligible, learned);
                 HUD_CACHE.put(key, value);
                 return value;
+        }
+
+        private static boolean extraEligible(Skill skill) {
+                String icon = skill.icon().getPath();
+                // Crafting is explicitly excluded. Existing jump/sprint triggers keep their old HUD behavior.
+                return !icon.endsWith("/water_spear_craft.png") && !icon.endsWith("/water_jump.png")
+                        && !icon.endsWith("/water_dash.png") && !icon.endsWith("/land_dash.png");
         }
 }

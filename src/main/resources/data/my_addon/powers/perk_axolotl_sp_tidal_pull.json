@@ -105,7 +105,7 @@
         ]
       }
     },
-    "tier0_cooldown": 20,
+    "tier0_cooldown": 100,
     "tier1_enable": false
   },
   "glow": {

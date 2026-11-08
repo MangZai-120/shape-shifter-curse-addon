@@ -7,6 +7,7 @@
     "refmap": "ssc-addon.refmap.json",
     "mixins": [
         "FormRegistryAliasMixin",
+        "ChargePowerHudMixin",
         "FormComponentMigrationMixin",
         "FormOriginIdentityMixin",
         "FormArgumentAliasMixin",

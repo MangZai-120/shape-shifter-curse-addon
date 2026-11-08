@@ -11,6 +11,7 @@ import net.jackcooper.shapeShifterCurseAddon.tutorial.FormTutorialCatalog;
 import net.jackcooper.shapeShifterCurseAddon.tutorial.FormTutorialManager;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.ConfirmScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
@@ -121,7 +122,19 @@ public final class FormTutorialClient {
                 ClientPlayNetworking.send(FormTutorialManager.ACTION, packet);
             };
             if (FormTutorialWeb.supports(offer.request.form)) {
-                FormTutorialWeb.open(client, offer.request.form, acknowledge);
+                if (offer.request.manual) {
+                    FormTutorialWeb.open(client, offer.request.form, acknowledge);
+                } else {
+                    client.setScreen(new ConfirmScreen(confirmed -> {
+                        if (!validContext(client, offer.request)) {
+                            client.setScreen(null);
+                            return;
+                        }
+                        client.setScreen(offer.request.book);
+                        if (confirmed) FormTutorialWeb.open(client, offer.request.form, acknowledge);
+                    }, FormTutorialScreen.text("web.prompt.title"), FormTutorialScreen.text("web.prompt.body"),
+                            FormTutorialScreen.text("web.prompt.confirm"), FormTutorialScreen.text("web.prompt.cancel")));
+                }
             } else {
                 client.setScreen(new FormTutorialScreen(offer.request.book, offer.request.form, acknowledge));
             }
@@ -136,8 +149,12 @@ public final class FormTutorialClient {
     }
 
     private static boolean matches(MinecraftClient client, Request request) {
+        return client.currentScreen == request.book && validContext(client, request);
+    }
+
+    private static boolean validContext(MinecraftClient client, Request request) {
         return client.world != null && client.player != null && client.player.isAlive()
-                && client.getNetworkHandler() == request.connection && client.currentScreen == request.book
+                && client.getNetworkHandler() == request.connection
                 && ownBook(client, request.book) && request.form.equals(currentForm(client));
     }
 }

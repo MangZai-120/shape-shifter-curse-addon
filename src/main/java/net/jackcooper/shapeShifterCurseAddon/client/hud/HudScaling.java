@@ -42,7 +42,13 @@ public final class HudScaling {
         switch(section) {
             case 0: {var p=UIPositionUtils.getCorrectPosition(base.instinctBarPosType,base.instinctBarPosOffsetX,base.instinctBarPosOffsetY);return new Box(p.getLeft(),p.getRight()-2,80,9);}
             case 1: {var p=UIPositionUtils.getCorrectPosition(base.manaBarPosType,base.manaBarPosOffsetX,base.manaBarPosOffsetY);return new Box(p.getLeft()-6,p.getRight()-2,92,9);}
-            case 2: {var p=UIPositionUtils.getCorrectPosition(c.cdBarPosType,0,0);var b=SkillCooldownBarRenderer.panelLayout(p.getLeft()+c.cdBarPosOffsetX,p.getRight()+c.cdBarPosOffsetY,c.cdMirrorRight,w,h);return new Box(b.primaryX(),b.primaryY(),33,68);}
+            case 2: {
+                var p=UIPositionUtils.getCorrectPosition(c.cdBarPosType,0,0);
+                int extras=SkillCooldownBarRenderer.currentExtraSkillCount();
+                var b=SkillCooldownBarRenderer.panelLayout(p.getLeft()+c.cdBarPosOffsetX,p.getRight()+c.cdBarPosOffsetY,c.cdMirrorRight,w,h,extras);
+                var extent=SkillHudLayout.bounds(extras,c.cdMirrorRight);
+                return new Box(b.primaryX()+extent.x(),b.primaryY()+extent.y(),extent.width(),extent.height());
+            }
             case 3: {return SpellbookHudRenderer.scaleBounds();}
             case 4: {var p=UIPositionUtils.getCorrectPosition(c.chargeBarPosType,c.chargeBarPosOffsetX,c.chargeBarPosOffsetY);int x=clamp(p.getLeft(),w,14);if(c.chargeMirrorRight)x=w-x-14;return new Box(x,clamp(p.getRight(),h,68),14,68);}
             case 5: {var p=UIPositionUtils.getCorrectPosition(base.magicGUIPosType,base.magicGUIPosOffsetX,base.magicGUIPosOffsetY);return new Box(p.getLeft()+6,p.getRight(),52,24);}
@@ -60,6 +66,8 @@ public final class HudScaling {
         // SSC deliberately draws the storage-slot border one pixel below the viewport.
         // At native size, preserve its coordinates instead of shifting the whole slot to fit.
         if(section==7 && scale==DEFAULT)return new View(source,source,1);
+        if(section==2)return SkillHudLayout.scaledView(source,scale,mc.getWindow().getScaledWidth(),mc.getWindow().getScaledHeight(),
+                rightAligned(section),SkillCooldownBarRenderer.currentExtraSkillCount());
         return place(source,scale,mc.getWindow().getScaledWidth(),mc.getWindow().getScaledHeight(),rightAligned(section));
     }
     public static Box bounds(int section) {return view(section).bounds();}
@@ -100,6 +108,7 @@ public final class HudScaling {
     public static int[] offsets(int section,int left,int top) {
         var mc=MinecraftClient.getInstance();int w=mc.getWindow().getScaledWidth();var c=SSCAddonConfig.client();var base=ShapeShifterCurseFabric.clientConfig;
         var v=view(section);int rawX=rightAligned(section)?left+v.bounds().width()-v.source().width():left;
+        if(section==2){var extent=SkillHudLayout.bounds(SkillCooldownBarRenderer.currentExtraSkillCount(),c.cdMirrorRight);rawX-=extent.x();top-=(int)Math.floor(extent.y()*v.scale());}
         int type=switch(section){case 0->base.instinctBarPosType;case 1->base.manaBarPosType;case 2->c.cdBarPosType;case 3->c.spellbookHudPosType;case 4->c.chargeBarPosType;case 5->base.magicGUIPosType;case 7->base.itemStorePowerPosType;case 6->c.neoStabilityBarPosType; default->7;};
         var anchor=UIPositionUtils.getCorrectPosition(type,0,0);
         int x=rawX-anchor.getLeft(),y=top-anchor.getRight();

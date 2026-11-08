@@ -33,6 +33,10 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 
 	private static final Identifier TEX_PANEL = new Identifier("my_addon", "textures/gui/skill_cd_panel.png");
 	private static final Identifier TEX_PANEL_RIGHT = new Identifier("my_addon", "textures/gui/skill_cd_panel_right.png");
+	// Complete authored variants include the small frames and the user's background edge edits.
+	private static final Identifier[] PANELS = {panelTexture("skill_cd_panel_2"), panelTexture("skill_cd_panel_3"), panelTexture("skill_cd_panel_4")};
+	private static final Identifier[] PANELS_RIGHT = {panelTexture("skill_cd_panel_2_right"), panelTexture("skill_cd_panel_3_right"), panelTexture("skill_cd_panel_4_right")};
+	private static Identifier panelTexture(String name) { return new Identifier("my_addon", "textures/gui/" + name + ".png"); }
 	private static final String SSCA_FORM_NAMESPACE = "my_addon";
 	public static final int ICON_SIZE = 20;
 	public static final int SLOT_WIDTH = 33;
@@ -75,17 +79,19 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 		SSCAddonClientConfig config = SSCAddonConfig.client();
 		if (mc.options.hudHidden || !config.showCdBar) return;
 		config.migrateSkillHudLayout();
-		var skills = SkillHudCatalog.forHud(formId, player);
+		var skills = SkillHudCatalog.entriesForHud(formId, player);
 		if (skills.isEmpty()) return;
+		int extras = SkillHudLayout.extraCount(skills);
 		var anchor = net.onixary.shapeShifterCurseFabric.util.UIPositionUtils
 				.getCorrectPosition(config.cdBarPosType, 0, 0);
 		int width = mc.getWindow().getScaledWidth();
 		int height = mc.getWindow().getScaledHeight();
 		Layout layout = panelLayout(anchor.getLeft() + config.cdBarPosOffsetX,
 				anchor.getRight() + config.cdBarPosOffsetY,
-				config.cdMirrorRight, width, height);
-		drawPanel(context, layout.primaryX(), layout.primaryY(), config.cdMirrorRight);
-		for (var skill : skills) {
+				config.cdMirrorRight, width, height, extras);
+		drawPanel(context, layout.primaryX(), layout.primaryY(), config.cdMirrorRight, extras);
+		for (var entry : skills) {
+			var skill = entry.skill();
 			int x = skill.primary() ? layout.primaryX() : layout.secondaryX();
 			int y = skill.primary() ? layout.primaryY() : layout.secondaryY();
 			Cooldown cooldown = readCooldown(player, skill.cooldown(), skill.cooldownTotalTicks());
@@ -94,9 +100,16 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
                 int remaining = authoritative.remainingNow(net.jackcooper.shapeShifterCurseAddon.client.SkillCooldownClient.now());
                 cooldown = new Cooldown(remaining, Math.min(1.0, remaining / (double)Math.max(1, authoritative.total())));
             }
-			double internalReady = readInternalReady(player, skill);
 			// 释放条件未满足 → 半透明黑色遮罩；遮罩期间跳过 CD 渐变阴影，只保留倒计时数字
 			boolean conditionBlocked = skill.condition() != null && !skill.condition().test(player);
+			if (entry.slot().extra()) {
+				drawExtraSlot(context, skill.resolveIcon(player),
+						layout.primaryX() + SkillHudLayout.extraX(entry.slot(), config.cdMirrorRight),
+						layout.primaryY() + SkillHudLayout.extraY(entry.slot()), cooldown,
+						config.showCdSeconds, conditionBlocked);
+				continue;
+			}
+			double internalReady = readInternalReady(player, skill);
 			if (formId.equals(FormIdentifiers.SNOW_FOX_FROSTSPINE) && !skill.primary()) {
 				// 凝棘（次技能）蓄力进度：读每 tick 缓存的法阵实体 PROGRESS（服务端权威，0-100 tick）
 				// 无缓存值（未蓄力/已被强停）= -1，侧边条不显示
@@ -276,14 +289,19 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 	public record Layout(int primaryX, int primaryY, int secondaryX, int secondaryY) {}
 
 	public static Layout panelLayout(int x, int y, boolean mirrorRight, int width, int height) {
-		x = clampPosition(x, width, SLOT_WIDTH);
-		if (mirrorRight) x = Math.max(0, width - x - SLOT_WIDTH);
-		y = clampPosition(y, height, PANEL_HEIGHT);
-		return new Layout(x, y, x, y + SLOT_STEP);
+		return panelLayout(x, y, mirrorRight, width, height, 0);
 	}
 
-	private static int clampPosition(int position, int screenSize, int size) {
-		return Math.max(0, Math.min(Math.max(0, screenSize - size), position));
+	public static Layout panelLayout(int x, int y, boolean mirrorRight, int width, int height, int extras) {
+		var p = SkillHudLayout.place(x, y, mirrorRight, width, height, extras);
+		return new Layout(p.x(), p.y(), p.x(), p.y() + SLOT_STEP);
+	}
+
+	public static int currentExtraSkillCount() {
+		if (mc.player == null || mc.world == null) return 0;
+		IForm form = mc.player.getComponent(RegPlayerFormComponent.PLAYER_FORM).nowForm;
+		if (form == null || !SSCA_FORM_NAMESPACE.equals(form.getFormID().getNamespace())) return 0;
+		return SkillHudLayout.extraCount(SkillHudCatalog.entriesForHud(form.getFormID(), mc.player));
 	}
 
 	private record Cooldown(int remaining, double fraction) {}
@@ -295,6 +313,10 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 		if (power instanceof CooldownPower cooldown) {
 			int remaining = Math.max(0, cooldown.getRemainingTicks());
 			return new Cooldown(remaining, remaining / (double) Math.max(1, cooldown.cooldownDuration));
+		}
+		if (power instanceof ChargeCooldownHud charge) {
+			int remaining = charge.ssca$remainingCooldown();
+			return new Cooldown(remaining, remaining / (double) Math.max(1, Math.max(remaining, charge.ssca$totalCooldown())));
 		}
 		int remaining = power instanceof VariableIntPower resource ? Math.max(0, resource.getValue()) : 0;
 		if (remaining == 0) {
@@ -311,11 +333,46 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 	}
 
 	public static void drawPanel(DrawContext context, int x, int y, boolean mirrorRight) {
-		context.drawTexture(mirrorRight ? TEX_PANEL_RIGHT : TEX_PANEL, x, y, 0, 0,
-				SLOT_WIDTH, PANEL_HEIGHT, SLOT_WIDTH, PANEL_HEIGHT);
+		drawPanel(context, x, y, mirrorRight, 0);
+	}
+
+	public static void drawPanel(DrawContext context, int x, int y, boolean mirrorRight, int extras) {
+		var bounds = SkillHudLayout.bounds(extras, mirrorRight);
+		Identifier texture = (mirrorRight ? PANELS_RIGHT : PANELS)[Math.max(0, Math.min(2, extras))];
+		context.drawTexture(texture, x + bounds.x(), y + bounds.y(), 0, 0,
+				bounds.width(), bounds.height(), bounds.width(), bounds.height());
 		int barX = x + (mirrorRight ? 29 : 2);
 		context.fill(barX, y + 8, barX + 2, y + 32, 0xFF8B8B8B);
 		context.fill(barX, y + 36, barX + 2, y + 60, 0xFF8B8B8B);
+	}
+
+	private static void drawExtraSlot(DrawContext context, Identifier icon, int x, int y, Cooldown cooldown,
+	                                  boolean showSeconds, boolean blocked) {
+		int iconSize = SkillHudLayout.EXTRA_ICON_SIZE;
+		int ix = x + 2, iy = y + 2;
+		context.fill(ix, iy, ix + iconSize, iy + iconSize, 0xFF8B8B8B);
+		context.getMatrices().push();
+		context.getMatrices().translate(ix, iy, 0);
+		context.getMatrices().scale(iconSize / 32.0f, iconSize / 32.0f, 1);
+		context.drawTexture(icon, 0, 0, 0, 0, 32, 32, 32, 32);
+		context.getMatrices().pop();
+		if (blocked) context.fill(ix, iy, ix + iconSize, iy + iconSize, 0x99000000);
+		else {
+			int shade = (int) Math.ceil(iconSize * Math.max(0, Math.min(1, cooldown.fraction())));
+			if (shade > 0) context.fill(ix, iy, ix + iconSize, iy + shade, 0xB0000000);
+		}
+		int seconds = (int) Math.ceil(cooldown.remaining() / 20.0);
+		if (showSeconds && seconds > 0) {
+			String number = Integer.toString(seconds);
+			int width = mc.textRenderer.getWidth(number);
+			float scale = Math.min(1, (iconSize - 2.0f) / Math.max(1, width));
+			context.getMatrices().push();
+			context.getMatrices().translate(ix + (iconSize - width * scale) / 2,
+					iy + (iconSize - mc.textRenderer.fontHeight * scale) / 2, 0);
+			context.getMatrices().scale(scale, scale, 1);
+			context.drawText(mc.textRenderer, number, 0, 0, 0xFFFFFFFF, true);
+			context.getMatrices().pop();
+		}
 	}
 
 	public static void drawSkillSlot(DrawContext context, Identifier icon, int x, int y,
