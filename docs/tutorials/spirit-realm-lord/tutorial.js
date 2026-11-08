@@ -10,13 +10,13 @@
     zh_cn: {
       form: '灵界之主', active: '主动技能', passive: '被动与特性', how: '如何触发', note: '记住这一点',
       previous: '← 上一项', next: '下一项 →', observer: '第二名玩家摄像', self: '本人第一人称',
-      help: '点击播放，可暂停、拖动进度和重复观看。', enlarge: '放大视频', search: '查找技能或被动', play: '播放演示',
+      help: '2K 实机视频，包含游戏音效；可暂停、拖动进度和重复观看。', enlarge: '放大视频', search: '查找技能或被动', play: '播放演示',
       footer: '每页介绍一个技能或被动，只包含 SSCA 新增或改动的内容。'
     },
     en_us: {
       form: 'Spirit Realm Lord', active: 'Active skills', passive: 'Passives and traits', how: 'How to use', note: 'Remember',
       previous: '← Previous', next: 'Next →', observer: 'Recorded by the second player', self: 'First-person view',
-      help: 'Play, pause, seek or replay the demonstration.', enlarge: 'Enlarge video', search: 'Find a skill or passive', play: 'Play demonstration',
+      help: '2K gameplay with game audio. Pause, seek or replay the demonstration.', enlarge: 'Enlarge video', search: 'Find a skill or passive', play: 'Play demonstration',
       footer: 'One skill or passive per page. Only SSCA additions and changes are included.'
     }
   };

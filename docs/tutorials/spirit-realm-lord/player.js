@@ -10,9 +10,9 @@
   video.poster = 'media/' + lesson.media + '.jpg';
   video.dataset.media = lesson.media;
   play.textContent = english ? '▶ Play' : '▶ 播放';
-  play.onclick = () => {
+  function start() {
     if (!video.querySelector('source')) {
-      video.preload = 'metadata';
+      video.preload = params.get('autoplay') === '1' ? 'auto' : 'metadata';
       for (const [extension, type] of [['webm', 'video/webm'], ['mp4', 'video/mp4']]) {
         const source = document.createElement('source');
         source.src = 'media/' + lesson.media + '.' + extension;
@@ -20,13 +20,22 @@
         video.append(source);
       }
       video.controls = true;
+      video.muted = false;
+      video.volume = 1;
       video.load();
     }
     play.hidden = true;
     video.play().catch(() => { play.hidden = false; });
-  };
+  }
+  play.onclick = start;
   document.addEventListener('visibilitychange', () => { if (document.hidden) video.pause(); });
   document.documentElement.dataset.sscaPlayer = 'ready';
   // A fragment lets the native player observe readiness without a JavaScript bridge or global CEF handlers.
   history.replaceState(null, '', location.pathname + location.search + '#ssca-player-ready');
+  // The in-game surface opts into audible autoplay; a normal browser can still
+  // show the play button if its own media policy requires a user gesture.
+  if (params.get('autoplay') === '1') {
+    video.autoplay = true;
+    start();
+  }
 })();
