@@ -2,6 +2,8 @@
 
 **Axolotl SP / Abyssal Overlord（深渊霸主）**
 
+[查看深渊霸主实机教程](../tutorials/abyssal-overlord/index.html)
+
 > "深渊不是安静的水。\
 > 它会把敌人拖到你身边，再用一次爆破告诉他们，什么才叫水下的王权。"
 
