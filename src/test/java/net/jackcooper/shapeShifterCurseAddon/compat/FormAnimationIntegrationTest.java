@@ -17,6 +17,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AbstractAnimStateController;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateEnum;
+import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimRegistries;
 import net.onixary.shapeShifterCurseFabric.player_form.NormalForm;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -136,8 +137,6 @@ public final class FormAnimationIntegrationTest {
                                     boolean expected = active && (!axolotl || !sneaking);
                                     check(FormAnimationCompat.shouldUseVanillaAnimation(player) == active,
                                             "allay handoff: " + item.label());
-                                    check(FormAnimationCompat.shouldUseAxolotlVanillaAnimation(player) == (active && !sneaking),
-                                            "axolotl keeps crawling: " + item.label());
                                     assertControllers(form, player, states, originals, expected, item.label());
                                 }
                                 player.hand = new ItemStack(Items.STICK);
@@ -147,6 +146,23 @@ public final class FormAnimationIntegrationTest {
                                 player.offHand = ItemStack.EMPTY;
                             }
                         }
+                    }
+                }
+            }
+            if (!server) {
+                player.hand = new ItemStack(Items.STICK);
+                if (carryOn) setCarrying(player, false);
+                for (NormalForm form : forms.subList(0, 4)) {
+                    player.sneaking = false;
+                    var flight = form.getAnimStateController(player, null, AnimRegistries.ANIM_STATE_FLYING);
+                    flight.registerAnim(player, null);
+                    check(flight.getAnimation(player, null).animationID.equals(new Identifier("shape-shifter-curse", "axolotl_3_creative_flight")),
+                            form.getFormID() + " keeps creative flight while standing");
+                    player.sneaking = true;
+                    check(flight.getAnimation(player, null).animationID.equals(new Identifier("shape-shifter-curse", "axolotl_3_crawling_idle")),
+                            form.getFormID() + " selects the prone pose while sneaking in flight");
+                    for (Identifier state : List.of(AnimRegistries.ANIM_STATE_SWIM, AnimRegistries.ANIM_STATE_SLEEP, AnimRegistries.ANIM_STATE_CRAWL)) {
+                        check(form.getAnimStateController(player, null, state) != null, form.getFormID() + " has an explicit native special-pose controller");
                     }
                 }
             }
@@ -165,7 +181,7 @@ public final class FormAnimationIntegrationTest {
             System.out.println("Form animation integration PASS: " + checks + " checks; Carry On=" + carryOn
                     + "; environment=" + (server ? "SERVER" : "CLIENT")
                     + "; SlashBlade class fixture=" + bladeFixture
-                    + "; actual optional mixin, six forms, all states, family-specific sneaking, swimming/elytra,"
+                    + "; actual optional mixin, six forms, all states, family-specific sneaking, swimming/elytra, special-pose priority,"
                     + " pickup/drop, main/offhand, item subclasses, restoration and emissive hooks."
                     + " Live rendering and actual SlashBlade mod NOT tested.");
         }
@@ -179,9 +195,16 @@ public final class FormAnimationIntegrationTest {
         private static void assertControllers(NormalForm form, TestPlayer player, List<Identifier> states,
                                               List<AbstractAnimStateController> originals, boolean handoff, String label) {
             for (int i = 0; i < states.size(); i++) {
+                var state = AnimStateEnum.getStateEnum(states.get(i));
+                boolean axolotl = form instanceof Form_Axolotl3 || form instanceof Form_AxolotlFluorescent;
+                boolean protectedPose = axolotl && (state == AnimStateEnum.ANIM_STATE_SWIM
+                        || state == AnimStateEnum.ANIM_STATE_SLEEP || state == AnimStateEnum.ANIM_STATE_CRAWL);
+                boolean useVanilla = handoff && !protectedPose;
                 check(form.getAnimStateController(player, null, states.get(i))
-                                == (handoff ? FormAnimationCompat.VANILLA_CONTROLLER : originals.get(i)),
+                                == (useVanilla ? FormAnimationCompat.VANILLA_CONTROLLER : originals.get(i)),
                         form.getFormID() + " / " + states.get(i) + " / " + label);
+                if (axolotl) check(FormAnimationCompat.shouldUseAxolotlVanillaAnimation(player, state) == useVanilla,
+                        "axolotl special poses and sneaking retain native animation: " + label + " / " + state);
             }
         }
 

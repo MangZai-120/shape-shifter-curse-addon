@@ -100,7 +100,7 @@ public final class SkillHudIntegrationProbe {
         for (String path : List.of("shape-shifter-curse/powers/perks/axolotl_tidal_pull",
                 "my_addon/powers/perk_axolotl_sp_tidal_pull", "my_addon/powers/perk_upgrade_axolotl_tidal_pull")) {
             JsonObject charge = data(path).getAsJsonObject("charge");
-            check(charge.get("tier0_cooldown").getAsInt() == 100, "tidal pull uses five seconds in the actual packaged resource: " + path);
+            check(charge.get("tier0_cooldown").getAsInt() == 20, "tidal pull uses the intended one second in the actual packaged resource: " + path);
             // Parse the real timing fields with SSC's factory; omit actions that need a running raycast world.
             var timing = new JsonObject();
             for (String key : List.of("tier0_enable", "tier0_charge_time", "tier0_cooldown", "tier1_enable")) timing.add(key, charge.get(key));
@@ -108,21 +108,21 @@ public final class SkillHudIntegrationProbe {
             var type = new PowerType<>(new Identifier("my_addon", "tidal_timing_probe"), ChargePower.createFactory().read(timing));
             ChargePower power = (ChargePower) type.create(owner);
             power.ChargeTierList.get(0).use(power);
-            check(power.nowCooldown == 100, "actual SSC release logic starts 100 ticks: " + path);
+            check(power.nowCooldown == 20, "actual SSC release logic starts 20 ticks: " + path);
             ChargePower mirror = power(unsafe, client);
             mirror.fromTag(power.toTag());
             var hud = (ChargeCooldownHud) (Object) mirror;
-            check(hud.ssca$remainingCooldown() == 100 && hud.ssca$totalCooldown() == 100, "HUD receives the same five-second server cooldown");
-            for (int i = 0; i < 20; i++) power.tick();
-            check(power.nowCooldown == 80, "tidal pull is still on cooldown after the erroneous one-second boundary");
+            check(hud.ssca$remainingCooldown() == 20 && hud.ssca$totalCooldown() == 20, "HUD receives the same one-second server cooldown");
+            for (int i = 0; i < 10; i++) power.tick();
+            check(power.nowCooldown == 10, "tidal pull retains half its cooldown after ten ticks");
             power.onUse();
             check(!power.isCharging() && power.ChargeTime == 0, "early recast is rejected by the actual SSC power");
-            for (int i = 0; i < 79; i++) power.tick();
-            check(power.nowCooldown == 1, "one tick remains immediately before five seconds");
+            for (int i = 0; i < 9; i++) power.tick();
+            check(power.nowCooldown == 1, "one tick remains immediately before one second");
             power.onUse();
-            check(!power.isCharging(), "recast is still blocked at tick 99");
+            check(!power.isCharging(), "recast is still blocked at tick 19");
             power.tick();
-            check(power.nowCooldown == 0, "cooldown expires exactly at tick 100");
+            check(power.nowCooldown == 0, "cooldown expires exactly at tick 20");
         }
         String[][] pairs = {
                 {"snow_fox_frost_dive", "perk_snow_fox_sp_frost_dive", "160"},

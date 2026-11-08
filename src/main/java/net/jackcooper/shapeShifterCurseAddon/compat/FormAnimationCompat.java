@@ -4,6 +4,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AbstractAnimStateController;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateControllerDP.OneAnimController;
 import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimUtils;
+import net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimStateEnum;
 
 /** SSC's October 3 animation handoff, shared by the addon's humanoid forms. */
 public final class FormAnimationCompat {
@@ -17,9 +18,11 @@ public final class FormAnimationCompat {
                 || isSlashBlade(player.getMainHandStack().getItem());
     }
 
-    public static boolean shouldUseAxolotlVanillaAnimation(PlayerEntity player) {
-        // SSC keeps axolotl crawling while sneaking; allays also hand off while sneaking.
-        return !player.isSneaking() && shouldUseVanillaAnimation(player);
+    public static boolean shouldUseAxolotlVanillaAnimation(PlayerEntity player, AnimStateEnum state) {
+        // Preserve SSC's native special poses even while an optional item requests vanilla animation.
+        return state != AnimStateEnum.ANIM_STATE_SWIM && state != AnimStateEnum.ANIM_STATE_SLEEP
+                && state != AnimStateEnum.ANIM_STATE_CRAWL
+                && !player.isSneaking() && shouldUseVanillaAnimation(player);
     }
 
     private static boolean isSlashBlade(Object item) {

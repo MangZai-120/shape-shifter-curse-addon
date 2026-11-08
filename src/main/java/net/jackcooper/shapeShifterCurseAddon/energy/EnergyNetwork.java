@@ -63,7 +63,8 @@ public final class EnergyNetwork {
 	}
 
 	public static BlockEntity getLoadedBlockEntity(World world, BlockPos pos) {
-		return world != null && world.isChunkLoaded(pos) ? world.getBlockEntity(pos) : null;
+		return world != null && world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)
+				? world.getBlockEntity(pos) : null;
 	}
 
 	/**
@@ -113,42 +114,38 @@ public final class EnergyNetwork {
 
 	/** 向网络注入 {@code amount} 点能量（按成员顺序填满），返回实际接受量。 */
 	public static int insert(List<EnergyNetworkMember> members, int amount) {
-		int remaining = amount;
-		for (EnergyNetworkMember m : members) {
-			if (remaining <= 0) {
-				break;
-			}
-			int space = m.getEnergyCapacity() - m.getStoredEnergy();
-			if (space > 0) {
-				int add = Math.min(space, remaining);
-				m.setStoredEnergy(m.getStoredEnergy() + add);
-				remaining -= add;
-			}
-		}
-		// 能量变化后：先把各储罐能量均分，再刷新档位显示（事件驱动）
-		equalizeTanks(members);
-		refreshTankDisplays(members);
-		return amount - remaining;
+		return transfer(members, amount, true);
 	}
 
 	/** 从网络抽取 {@code amount} 点能量（按成员顺序排空），返回实际抽取量。 */
 	public static int extract(List<EnergyNetworkMember> members, int amount) {
+		return transfer(members, amount, false);
+	}
+
+	/** inserting 为 true 时存入，否则取出；仅实际存取后均分储罐并刷新液面。 */
+	private static int transfer(List<EnergyNetworkMember> members, int amount, boolean inserting) {
+		if (amount <= 0) {
+			return 0;
+		}
 		int remaining = amount;
 		for (EnergyNetworkMember m : members) {
-			if (remaining <= 0) {
+			if (remaining == 0) {
 				break;
 			}
-			int avail = m.getStoredEnergy();
-			if (avail > 0) {
-				int take = Math.min(avail, remaining);
-				m.setStoredEnergy(avail - take);
-				remaining -= take;
+			int stored = m.getStoredEnergy();
+			int available = inserting ? m.getEnergyCapacity() - stored : stored;
+			if (available > 0) {
+				int moved = Math.min(available, remaining);
+				m.setStoredEnergy(inserting ? stored + moved : stored - moved);
+				remaining -= moved;
 			}
 		}
-		// 能量变化后：先把各储罐能量均分，再刷新档位显示（事件驱动）
-		equalizeTanks(members);
-		refreshTankDisplays(members);
-		return amount - remaining;
+		int transferred = amount - remaining;
+		if (transferred > 0) {
+			equalizeTanks(members);
+			refreshTankDisplays(members);
+		}
+		return transferred;
 	}
 
 	/**

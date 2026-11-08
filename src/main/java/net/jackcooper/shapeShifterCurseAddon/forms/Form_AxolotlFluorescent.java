@@ -37,8 +37,8 @@ public class Form_AxolotlFluorescent extends NormalForm {
 	public static final AbstractAnimStateController MINING_CONTROLLER = new WithSneakAnimController(null, new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_crawling_tool_swing")));
 	// 睡眠控制器：复用原版美西螈三阶段睡眠动画 axolotl_3_sleep（与原版 Form_Axolotl3 一致）
 	public static final AbstractAnimStateController SLEEP_CONTROLLER = new OneAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_sleep")));
-	// 飞行控制器：复用原版美西螈三阶段创造飞行动画（创造/OP 飞行时触发，与原版 Form_Axolotl3 一致；2026-08-27 补齐）
-	public static final AbstractAnimStateController FLYING_CONTROLLER = new OneAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_creative_flight")));
+	// 与 SSC 一致：创造飞行时潜行切换为趴卧姿态。
+	public static final AbstractAnimStateController FLYING_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_creative_flight")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_crawling_idle")));
 	// 攀爬控制器：爬梯等攀爬状态复用原版（用 idle 动画兜底，与原版 Form_Axolotl3 一致；2026-08-27 补齐）
 	public static final AbstractAnimStateController CRAWL_CONTROLLER = new OneAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_idle")));
 	private static AnimationHolder anim_idle = new AnimationHolder();
@@ -98,7 +98,7 @@ public class Form_AxolotlFluorescent extends NormalForm {
 	public @Nullable AbstractAnimStateController getAnimStateController(PlayerEntity player, AnimSystem.AnimSystemData animSystemData, @NotNull Identifier animStateID) {
 		@Nullable AnimStateEnum animStateEnum = AnimStateEnum.getStateEnum(animStateID);
 		if (animStateEnum != null) {
-			if (FormAnimationCompat.shouldUseAxolotlVanillaAnimation(player)) {
+			if (FormAnimationCompat.shouldUseAxolotlVanillaAnimation(player, animStateEnum)) {
 				return FormAnimationCompat.VANILLA_CONTROLLER;
 			}
 			return switch (animStateEnum) {

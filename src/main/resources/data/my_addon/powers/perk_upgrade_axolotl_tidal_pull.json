@@ -124,7 +124,7 @@
         "type": "apoli:nothing"
       }
     },
-    "tier0_cooldown": 100,
+    "tier0_cooldown": 20,
     "tier1_enable": false
   },
   "glow": {

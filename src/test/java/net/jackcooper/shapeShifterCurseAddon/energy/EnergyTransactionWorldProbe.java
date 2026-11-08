@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.jackcooper.shapeShifterCurseAddon.block.EnergyConverterBlock;
 import net.jackcooper.shapeShifterCurseAddon.block.EnergyConverterBlockEntity;
+import net.jackcooper.shapeShifterCurseAddon.block.EnergyExtractorBlockEntity;
 import net.jackcooper.shapeShifterCurseAddon.block.EnergyStorageTankBlockEntity;
 import net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks;
 import net.minecraft.block.Blocks;
@@ -36,7 +37,8 @@ public final class EnergyTransactionWorldProbe {
 
     private static void clearFixture() {
         destination = null;
-        for (BlockPos pos : List.of(origin.east(), origin, origin.down(), origin.down(2)))
+        for (BlockPos pos : List.of(origin.east(), origin, origin.down(), origin.down(2),
+                origin.down().south(), origin.down().south(2)))
             world.setBlockState(pos, Blocks.AIR.getDefaultState());
     }
 
@@ -60,6 +62,7 @@ public final class EnergyTransactionWorldProbe {
             lookupRegistered = true;
         }
         try {
+            networkTransfers();
             nestedRollback();
             childRollback();
             deepTransactions(false);
@@ -78,6 +81,59 @@ public final class EnergyTransactionWorldProbe {
         if (!FAILURES.isEmpty()) throw new AssertionError(String.join("; ", FAILURES));
         System.out.println("ENERGY_AUDIT_COMPLETE " + checks + " checks passed");
         context.complete();
+    }
+
+    private static void networkTransfers() {
+        var f = fresh();
+        world.setBlockState(origin.down(2), RegAddonBlocks.ENERGY_STORAGE_TANK.getDefaultState());
+        world.setBlockState(origin.down().south(), RegAddonBlocks.ENERGY_EXTRACTOR.getDefaultState());
+        world.setBlockState(origin.down().south(2), RegAddonBlocks.CREATIVE_ENERGY_TANK.getDefaultState());
+        var second = (EnergyStorageTankBlockEntity) world.getBlockEntity(origin.down(2));
+        var extractor = (EnergyExtractorBlockEntity) world.getBlockEntity(origin.down().south());
+        var creative = (EnergyNetworkMember) world.getBlockEntity(origin.down().south(2));
+        List<EnergyNetworkMember> network = List.of(creative, extractor, f.tank, second);
+        check(EnergyNetwork.collect(world, origin.down().south(2)).size() == 4,
+                "creative connector, extractor and both tanks form one network");
+        check(EnergyNetwork.getTotalCapacity(network) == 2200,
+                "network includes the extractor buffer without counting creative storage");
+        f.tank.setStoredEnergy(0); second.setStoredEnergy(0); extractor.setStoredEnergy(0);
+
+        check(EnergyNetwork.insert(network, Integer.MAX_VALUE) == 2200,
+                "oversized insertion accepts only the combined storage capacity");
+        check(extractor.getStoredEnergy() == 200 && f.tank.getStoredEnergy() == 1000
+                && second.getStoredEnergy() == 1000 && creative.getStoredEnergy() == 0,
+                "insertion fills the extractor and tanks while leaving the creative connector empty");
+        check(EnergyNetwork.insert(network, 1) == 0, "full network accepts no extra energy");
+        check(EnergyNetwork.extract(network, Integer.MAX_VALUE) == 2200,
+                "oversized extraction returns exactly the stored energy");
+        check(EnergyNetwork.getTotalEnergy(network) == 0 && EnergyNetwork.extract(network, 1) == 0,
+                "empty network cannot supply energy or underflow");
+
+        check(EnergyNetwork.insert(network, 1201) == 1201, "partial insertion conserves its entire accepted amount");
+        check(extractor.getStoredEnergy() == 200 && f.tank.getStoredEnergy() == 501
+                && second.getStoredEnergy() == 500,
+                "only tanks share the odd remainder; extractor keeps its separate buffer");
+        check(EnergyNetwork.extract(network, 201) == 201, "extraction can span the buffer and a tank");
+        check(extractor.getStoredEnergy() == 0 && f.tank.getStoredEnergy() == 500
+                && second.getStoredEnergy() == 500,
+                "extraction preserves member order and equalizes the remaining tank energy");
+        check(Math.abs(f.tank.getClientFillRatio() - 1000f / 2200) < 0.000001f
+                && f.tank.getClientFillRatio() == second.getClientFillRatio(),
+                "successful transfers refresh every tank to the same network fill ratio");
+
+        // Deliberately unequal balances reveal accidental equalization during a rejected request.
+        f.tank.setStoredEnergy(17); second.setStoredEnergy(0);
+        float previousRatio = f.tank.getClientFillRatio();
+        for (int amount : new int[]{0, -1, Integer.MIN_VALUE}) {
+            check(EnergyNetwork.insert(network, amount) == 0 && EnergyNetwork.extract(network, amount) == 0,
+                    "nonpositive requests transfer no energy: " + amount);
+        }
+        check(f.tank.getStoredEnergy() == 17 && second.getStoredEnergy() == 0
+                && f.tank.getClientFillRatio() == previousRatio,
+                "nonpositive requests leave balances and liquid displays untouched");
+        check(EnergyNetwork.insert(List.of(), Integer.MAX_VALUE) == 0
+                && EnergyNetwork.extract(List.of(), Integer.MAX_VALUE) == 0,
+                "empty member lists transfer no energy");
     }
 
     private static void nestedRollback() {

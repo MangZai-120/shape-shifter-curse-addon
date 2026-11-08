@@ -31,8 +31,9 @@ public class Form_Axolotl3 extends NormalForm {
 	public static final AbstractAnimStateController MINING_CONTROLLER = new WithSneakAnimController(null, new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_2_crawling_tool_swing")));
 	// 睡眠控制器：复用原版美西螈三阶段睡眠动画 axolotl_3_sleep（与原版 Form_Axolotl3 一致）
 	public static final AbstractAnimStateController SLEEP_CONTROLLER = new OneAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_sleep")));
-	// 创造飞行控制器（与原版 Form_Axolotl3 一致，避免飞行时回到默认姿势）
-	public static final AbstractAnimStateController FLYING_CONTROLLER = new OneAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_creative_flight")));
+	// 与 SSC 一致：创造飞行时潜行切换为趴卧姿态。
+	public static final AbstractAnimStateController FLYING_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_creative_flight")), new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_crawling_idle")));
+	public static final AbstractAnimStateController CRAWL_CONTROLLER = new OneAnimController(new AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("axolotl_3_idle")));
 	private static AnimationHolder anim_idle = new AnimationHolder();
 	private static AnimationHolder anim_walking = AnimationHolder.EMPTY;
 	private static AnimationHolder anim_running = AnimationHolder.EMPTY;
@@ -92,7 +93,7 @@ public class Form_Axolotl3 extends NormalForm {
 	public @Nullable AbstractAnimStateController getAnimStateController(PlayerEntity player, AnimSystem.AnimSystemData animSystemData, @NotNull Identifier animStateID) {
 		@Nullable AnimStateEnum animStateEnum = AnimStateEnum.getStateEnum(animStateID);
 		if (animStateEnum != null) {
-			if (FormAnimationCompat.shouldUseAxolotlVanillaAnimation(player)) {
+			if (FormAnimationCompat.shouldUseAxolotlVanillaAnimation(player, animStateEnum)) {
 				return FormAnimationCompat.VANILLA_CONTROLLER;
 			}
 			return switch (animStateEnum) {
@@ -106,6 +107,7 @@ public class Form_Axolotl3 extends NormalForm {
 				case ANIM_STATE_MINING -> MINING_CONTROLLER;
 				case ANIM_STATE_FLYING -> FLYING_CONTROLLER;
 				case ANIM_STATE_SLEEP -> SLEEP_CONTROLLER;
+				case ANIM_STATE_CRAWL -> CRAWL_CONTROLLER;
 				case ANIM_STATE_USE_ITEM, ANIM_STATE_BLOCK_SHIELD -> FormAnimationCompat.VANILLA_CONTROLLER;
 				default -> null;
 			};
