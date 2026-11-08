@@ -62,6 +62,10 @@ print(f'Resource review passed: {len(files)} JSON files, {len(zh)} bilingual key
 
 # Check the actual registered forms, including temporary spell transformations.
 java=project/'src/main/java/net/jackcooper/shapeShifterCurseAddon'
+for source in java.rglob('*.java'):
+    text=source.read_text(encoding='utf-8')
+    for namespace,path in re.findall(r'RegistryKeys\.DAMAGE_TYPE[\s\S]{0,180}?new (?:net\.minecraft\.util\.)?Identifier\("([\w.-]+)",\s*"([\w/.-]+)"\)',text):
+        if namespace!='minecraft':assert (resources/'data'/namespace/'damage_type'/(path+'.json')).is_file(),(source,namespace,path)
 identifiers=dict(re.findall(r'Identifier\s+(\w+)\s*=\s*new Identifier\("my_addon",\s*"([^"]+)"\)',(java/'util/FormIdentifiers.java').read_text(encoding='utf-8')))
 registered=set(re.findall(r'new\s+\w+\(FormIdentifiers\.(\w+)\)',(java/'forms/SscAddonForms.java').read_text(encoding='utf-8')))
 assert registered
@@ -75,8 +79,28 @@ for language in ('zh_cn','en_us'):
 print(f'Codex review passed: {len(registered)} registered forms, 7 sections, 2 languages; all translations use assets/my_addon/lang.')
 tutorial_forms=set(re.findall(r'FormIdentifiers\.(\w+)',(java/'tutorial/FormTutorialCatalog.java').read_text(encoding='utf-8')))
 assert tutorial_forms==registered-{'SHEEP_FORM'},(tutorial_forms,registered)
-for constant in tutorial_forms:
-    key=f'tutorial.ssc_addon.form.{identifiers[constant]}.skills'
-    assert key in zh and zh[key].strip() and key in en and en[key].strip(),key
-print(f'Form tutorial review passed: {len(tutorial_forms)} playable forms have bilingual skill lessons; temporary sheep excluded.')
+lessons_data=json.loads((project/'src/main/resources/assets/my_addon/tutorial/form_lessons.json').read_text(encoding='utf-8'))
+assert lessons_data['schema_version']==1
+assert set(lessons_data['forms'])=={'my_addon:'+identifiers[constant] for constant in tutorial_forms}
+used_lessons=set()
+for form,pages in lessons_data['forms'].items():
+    assert pages and len(pages)==len(set(pages)),form
+    for page in pages:
+        assert page in lessons_data['lessons'],(form,page)
+        used_lessons.add(page)
+assert used_lessons==set(lessons_data['lessons']), 'Unreachable tutorial lesson'
+for page,lesson in lessons_data['lessons'].items():
+    assert lesson['kind'] in {'ACTIVE','PASSIVE','TRAIT'},page
+    assert lesson['focus'] in {'SELF','TARGET','ALLY','MINIONS'},page
+    assert lesson['diagram'] in {'PROJECTILE','AREA','DASH','HEAL','SHIELD','SUMMON','RESOURCE','STEALTH','MARK','WEB','FLIGHT','MELEE','EVOLUTION','CHAIN','WEATHER','SPELL'},page
+    namespace,path=lesson['icon'].split(':',1)
+    assert (project/'src/main/resources/assets'/namespace/path).is_file(),(page,lesson['icon'])
+    for section in ('title','trigger','effect','note'):
+        key=f'tutorial.ssc_addon.form.lesson.{page}.{section}'
+        assert key in zh and zh[key].strip() and key in en and en[key].strip(),key
+        assert set(re.findall(r'\{(\w+)\}',zh[key]))==set(re.findall(r'\{(\w+)\}',en[key])),key
+        assert set(re.findall(r'\{(\w+)\}',zh[key]))<={'primary','secondary','sneak','attack','use','jump','sprint'},key
+        assert '\n' not in zh[key] and '\n' not in en[key],key
+print(f'Form tutorial review passed: {len(tutorial_forms)} playable forms, {len(used_lessons)} illustrated lessons, bilingual operation/effect/tip text; temporary sheep excluded.')
+
 if args.mode=='all':check_document_links()

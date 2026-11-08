@@ -59,6 +59,7 @@ public class SscAddonClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
+		net.jackcooper.shapeShifterCurseAddon.client.renderer.AllaySkinColor.init();
 		NetworkCompatibilityClient.init();
 		SscForceSneakClient.register();
 		MoistureWaterRecoveryClient.register();

@@ -17,9 +17,12 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.client.tutorial.FormTutorialClient;
 import net.jackcooper.shapeShifterCurseAddon.client.tutorial.FormTutorialScreen;
+import net.jackcooper.shapeShifterCurseAddon.client.tutorial.FormTutorialLessons;
+import net.jackcooper.shapeShifterCurseAddon.client.tutorial.FormTutorialWeb;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
 import net.jackcooper.shapeShifterCurseAddon.tutorial.FormTutorialManager;
 import net.jackcooper.shapeShifterCurseAddon.tutorial.FormTutorialState;
+import net.jackcooper.shapeShifterCurseAddon.tutorial.FormTutorialCatalog;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
@@ -48,7 +51,7 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
 import net.ssca.neomagic.NeoState;
 import org.lwjgl.glfw.GLFW;
 
-/** Real book, packets and controls in a disposable integrated-server world. */
+/** Native tutorial book, packets and controls in a disposable integrated-server world. */
 public final class FormTutorialClientProbe {
     private static final Identifier ORIGINAL_FORM = new Identifier("shape-shifter-curse", "familiar_fox_1");
     private static final Identifier CLOSED_BOOK_FORM = FormIdentifiers.WILD_CAT_SP;
@@ -63,6 +66,12 @@ public final class FormTutorialClientProbe {
     private static Screen otherScreen;
     private static Object heldRequest;
     private static UUID currentRequestId;
+    private static final boolean NATIVE = Boolean.getBoolean("ssca.audit.nativeEnvironment");
+    private static final List<Identifier> ALL_FORMS = FormTutorialCatalog.forms().stream()
+            .filter(form -> !FormTutorialWeb.supports(form))
+            .sorted(java.util.Comparator.comparing(Identifier::toString)).toList();
+    private static int sweepForm, sweepLanguage, sweptPages;
+    private static boolean sweepRequested;
 
     private FormTutorialClientProbe() { }
 
@@ -116,6 +125,11 @@ public final class FormTutorialClientProbe {
                 "Every tutorial control fits the actual GUI size " + screen.width + "x" + screen.height);
     }
 
+    private static void lastLesson(Screen screen) throws ReflectiveOperationException {
+        var tutorial = (FormTutorialScreen) screen;
+        while (page(screen) < tutorial.lessonCount() - 1) screen.keyPressed(GLFW.GLFW_KEY_RIGHT, 0, 0);
+    }
+
     private static void shot(MinecraftClient client, String name) throws Exception {
         try (var image = ScreenshotRecorder.takeScreenshot(client.getFramebuffer())) { image.writeTo(Path.of(name)); }
         SHOTS.add(name);
@@ -166,11 +180,11 @@ public final class FormTutorialClientProbe {
                     server.getOverworld().setTimeOfDay(6000);
                     server.getGameRules().get(GameRules.DO_DAYLIGHT_CYCLE).set(false, server);
                     player.changeGameMode(GameMode.SURVIVAL);
-                    FormUtils._setForm(player, RegPlayerForms.getPlayerForm(FormIdentifiers.FAMILIAR_FOX_SP));
+                    FormUtils._setForm(player, RegPlayerForms.getPlayerForm(FormIdentifiers.FAMILIAR_FOX_RED));
                     serverReady = true;
                 }
                 var state = FormTutorialState.get(server);
-                firstSeen = state.hasSeen(player.getUuid(), FormIdentifiers.FAMILIAR_FOX_SP);
+                firstSeen = state.hasSeen(player.getUuid(), FormIdentifiers.FAMILIAR_FOX_RED);
                 secondSeen = state.hasSeen(player.getUuid(), FormIdentifiers.ANUBIS_WOLF_SP);
                 closedBookSeen = state.hasSeen(player.getUuid(), CLOSED_BOOK_FORM);
                 if (FormUtils.getPlayerForm(player).getFormID().equals(CLOSED_BOOK_FORM)) {
@@ -189,8 +203,10 @@ public final class FormTutorialClientProbe {
                 if (!starting && client.currentScreen instanceof TitleScreen) {
                     starting = true;
                     client.options.pauseOnLostFocus = false;
-                    client.options.getMaxFps().setValue(60);
-                    client.options.getViewDistance().setValue(4);
+                    if (!NATIVE) {
+                        client.options.getMaxFps().setValue(60);
+                        client.options.getViewDistance().setValue(4);
+                    }
                     var data = new DataConfiguration(new DataPackSettings(List.of("vanilla", "fabric"), List.of()),
                             DataConfiguration.SAFE_MODE.enabledFeatures());
                     client.createIntegratedServerLoader().createAndStart("Form-Tutorial-" + System.currentTimeMillis(),
@@ -207,9 +223,9 @@ public final class FormTutorialClientProbe {
                 }
                 switch (stage) {
                     case 0 -> {
-                        if (!serverReady || !form(client, FormIdentifiers.FAMILIAR_FOX_SP)) return;
+                        if (!serverReady || !form(client, FormIdentifiers.FAMILIAR_FOX_RED)) return;
                         check(!firstSeen, "The form is unseen before the first book opening");
-                        var custom = SSCAddonConfig.client().getOrCreateFormKeybind(FormIdentifiers.FAMILIAR_FOX_SP.getPath());
+                        var custom = SSCAddonConfig.client().getOrCreateFormKeybind(FormIdentifiers.FAMILIAR_FOX_RED.getPath());
                         custom.enabled = true;
                         custom.primaryKey = "key.keyboard.f";
                         custom.secondaryKey = "key.keyboard.j";
@@ -219,15 +235,14 @@ public final class FormTutorialClientProbe {
                     case 1 -> {
                         if (!(client.currentScreen instanceof FormTutorialScreen)) return;
                         check(page(client.currentScreen) == 0, "First book opening starts the skill tutorial");
-                        check(FormTutorialScreen.PAGE_COUNT == 2, "Tutorial contains skill and special-effect pages");
                         var tutorial = (FormTutorialScreen) client.currentScreen;
-                        check(tutorial.formId().equals(FormIdentifiers.FAMILIAR_FOX_SP), "The offer keeps the requested form identity");
-                        check(tutorial.content().getString().contains(FormTutorialScreen.text("primary",
-                                        InputUtil.fromTranslationKey("key.keyboard.f").getLocalizedText()).getString()),
+                        check(tutorial.lessonCount() >= 8, "The form has individual skill and passive lessons");
+                        check(tutorial.lessonId().equals("red_ring"), "The first page teaches one specific primary skill");
+                        check(tutorial.formId().equals(FormIdentifiers.FAMILIAR_FOX_RED), "The offer keeps the requested form identity");
+                        check(tutorial.content().getString().contains(InputUtil.fromTranslationKey("key.keyboard.f").getLocalizedText().getString()),
                                 "The skill page displays the actual custom primary key F");
-                        check(tutorial.content().getString().contains(FormTutorialScreen.text("secondary",
-                                        InputUtil.fromTranslationKey("key.keyboard.j").getLocalizedText()).getString()),
-                                "The skill page displays the actual custom secondary key J");
+                        check(!tutorial.content().getString().contains(Text.translatable("tutorial.ssc_addon.form.lesson.red_fireball.title").getString()),
+                                "A primary page does not bundle the secondary skill into its text");
                         fits(client.currentScreen);
                         next();
                     }
@@ -240,16 +255,22 @@ public final class FormTutorialClientProbe {
                     }
                     case 3 -> {
                         if (ticks < 10) return;
-                        check(page(client.currentScreen) == 1, "Next opens special effects");
+                        check(page(client.currentScreen) == 1, "Next opens the separate secondary skill");
+                        check(((FormTutorialScreen) client.currentScreen).lessonId().equals("red_fireball"), "The second page is the red fireball");
+                        check(((FormTutorialScreen) client.currentScreen).content().getString().contains(
+                                InputUtil.fromTranslationKey("key.keyboard.j").getLocalizedText().getString()), "Secondary page resolves custom J");
                         shot(client, "form-02-effects-zh.png");
+                        click(client.currentScreen, "contents");
                         for (int i = 0; i < 12; i++) client.currentScreen.mouseScrolled(client.currentScreen.width / 2.0,
                                 client.currentScreen.height / 2.0, -1);
                         next();
                     }
                     case 4 -> {
                         if (ticks < 10) return;
-                        check(intField(client.currentScreen, "bodyScroll") > 0, "The mouse wheel actually scrolls long special-effect text");
+                        check(intField(client.currentScreen, "indexScroll") > 0, "The mouse wheel scrolls the multi-lesson contents list");
                         shot(client, "form-03-effects-scrolled-zh.png");
+                        click(client.currentScreen, "read_page");
+                        lastLesson(client.currentScreen);
                         click(client.currentScreen, "finish");
                         check(client.currentScreen == book, "Finishing restores the original book instance");
                         next();
@@ -257,7 +278,7 @@ public final class FormTutorialClientProbe {
                     case 5 -> {
                         if (ticks < 35) return;
                         check(client.currentScreen == book, "Returning to the book does not auto-open the tutorial again");
-                        SSCAddonConfig.client().getOrCreateFormKeybind(FormIdentifiers.FAMILIAR_FOX_SP.getPath()).enabled = false;
+                        SSCAddonConfig.client().getOrCreateFormKeybind(FormIdentifiers.FAMILIAR_FOX_RED.getPath()).enabled = false;
                         ShapeShifterCurseFabricClient.useActiveSkill1PowerKeybind.setBoundKey(InputUtil.fromTranslationKey("key.keyboard.h"));
                         ShapeShifterCurseFabricClient.useActiveSkill2PowerKeybind.setBoundKey(InputUtil.UNKNOWN_KEY);
                         ShapeShifterCurseFabricClient.activeSkillKeybind.setBoundKey(InputUtil.fromTranslationKey("key.keyboard.b"));
@@ -280,9 +301,11 @@ public final class FormTutorialClientProbe {
                         Text toolbar = FormTutorialScreen.text("toolbar_key", InputUtil.fromTranslationKey("key.keyboard.b").getLocalizedText());
                         Text direct = FormTutorialScreen.text("bound_and_toolbar", InputUtil.fromTranslationKey("key.keyboard.h").getLocalizedText(),
                                 InputUtil.fromTranslationKey("key.keyboard.b").getLocalizedText());
-                        check(body.contains(FormTutorialScreen.text("primary", direct).getString()),
+                        check(body.contains(direct.getString()),
                                 "SSC native direct-key and toolbar-key guidance is resolved from the real H/B bindings");
-                        check(body.contains(FormTutorialScreen.text("secondary", toolbar).getString()),
+                        click(client.currentScreen, "next");
+                        body = ((FormTutorialScreen) client.currentScreen).content().getString();
+                        check(body.contains(toolbar.getString()),
                                 "An unbound SSC direct secondary key correctly shows its real toolbar fallback B");
                         click(client.currentScreen, "skip");
                         check(client.currentScreen == book, "Skipping restores the original book");
@@ -302,14 +325,17 @@ public final class FormTutorialClientProbe {
                     }
                     case 10 -> {
                         if (ticks < 35) return;
-                        client.options.getGuiScale().setValue(4);
+                        client.options.getGuiScale().setValue(NATIVE ? 6 : 4);
                         client.onResolutionChanged();
                         click(book, "replay");
                         next();
                     }
                     case 11 -> {
                         if (!(client.currentScreen instanceof FormTutorialScreen) || ticks < 8) return;
-                        check(client.currentScreen.width <= 400, "The large GUI-scale acceptance uses a narrow canvas");
+                        check(client.currentScreen.width < 550, "The large GUI-scale acceptance exercises a narrow screen");
+                        check(intField(client.currentScreen,"bodyLeft")>intField(client.currentScreen,"diagramLeft")+intField(client.currentScreen,"diagramWidth")
+                                && Math.abs(intField(client.currentScreen,"bodyWidth")-intField(client.currentScreen,"diagramWidth"))<=1,
+                                "Narrow screens retain equal-width video and text columns");
                         fits(client.currentScreen);
                         shot(client, "form-05-small-gui-skills-zh.png");
                         click(client.currentScreen, "next");
@@ -333,13 +359,14 @@ public final class FormTutorialClientProbe {
                     }
                     case 13 -> {
                         if (!languageReady || ticks < 10) return;
-                        check(!Text.translatable("tutorial.ssc_addon.form.effects").getString().contains("tutorial.ssc_addon"),
-                                "English effect title resolves after a real resource reload");
+                        check(!Text.translatable("tutorial.ssc_addon.form.how").getString().contains("tutorial.ssc_addon"),
+                                "English section title resolves after a real resource reload");
                         fits(client.currentScreen);
                         shot(client, "form-06-small-gui-effects-en.png");
+                        lastLesson(client.currentScreen);
                         click(client.currentScreen, "finish");
                         check(client.currentScreen == book, "Finishing after language reload restores the book");
-                        client.options.getGuiScale().setValue(2);
+                        client.options.getGuiScale().setValue(NATIVE ? 5 : 2);
                         client.onResolutionChanged();
                         switchForm(client, FormIdentifiers.ANUBIS_WOLF_SP);
                         next();
@@ -461,13 +488,68 @@ public final class FormTutorialClientProbe {
                         shot(client, "form-08-late-request-rejected-en.png");
                         click(client.currentScreen, "skip");
                         check(client.currentScreen == book, "The correctly matched replay returns to its book");
-                        Files.writeString(Path.of("form-tutorial-client-result.json"), new Gson().toJson(Map.of(
-                                "passed", true, "checks", checks, "real_client", true, "real_packets", true,
-                                "screenshots", SHOTS, "languages", List.of("zh_cn", "en_us"), "gui_scales", List.of(2, 4),
-                                "dynamic_bindings", true, "closed_book_offer_discarded", true, "lateRequestRejected", lateRequestRejected)));
-                        finished = true;
-                        System.out.println("FORM_TUTORIAL_CLIENT_PASS checks=" + checks);
+                        next();
+                    }
+                    case 26 -> {
+                        if (!sweepRequested) {
+                            sweepRequested = true;
+                            client.getServer().execute(() -> client.getServer().getPlayerManager().getPlayerList().get(0).changeGameMode(GameMode.CREATIVE));
+                            switchForm(client, ALL_FORMS.get(sweepForm));
+                            return;
+                        }
+                        if (!serverReady || !form(client, ALL_FORMS.get(sweepForm))) return;
+                        client.setScreen(new FormTutorialScreen(book, ALL_FORMS.get(sweepForm), () -> {}));
+                        next();
+                    }
+                    case 27 -> {
+                        if (ticks < 2) return;
+                        var tutorial = (FormTutorialScreen) client.currentScreen;
+                        check(Math.abs(intField(tutorial,"diagramWidth")-intField(tutorial,"bodyWidth"))<=1
+                                        && intField(tutorial,"diagramTop")==intField(tutorial,"bodyTop"),
+                                "Every lesson uses equal-width columns with aligned tops");
+                        fits(tutorial);
+                        check(tutorial.lessonCount() == FormTutorialLessons.forForm(tutorial.formId()).size(), "All configured lessons are reachable");
+                        check(!tutorial.content().getString().contains("tutorial.ssc_addon"), "All lesson text resolves in " + client.options.language);
+                        check(!tutorial.content().getString().matches("(?s).*\\{(primary|secondary|attack|use|sneak|jump|sprint)\\}.*"), "All operation keys are resolved");
+                        check(tutorial.content().getString().contains(FormTutorialScreen.text("how").getString())
+                                && tutorial.content().getString().contains(FormTutorialScreen.text("result").getString())
+                                && tutorial.content().getString().contains(FormTutorialScreen.text("remember").getString()), "Each lesson has three concise teaching sections");
+                        int bodyTop = intField(tutorial, "bodyTop"), bodyHeight = intField(tutorial, "bodyHeight");
+                        check(bodyTop >= 0 && bodyHeight >= 10 && bodyTop + bodyHeight <= intField(tutorial, "top") + intField(tutorial, "panelHeight") - 40,
+                                "Lesson body and navigation do not overlap");
+                        sweptPages++;
+                        if (page(tutorial) == 0 && sweepForm % 4 == 0)
+                            shot(client, "illustrated-" + sweepLanguage + "-" + tutorial.formId().getPath() + ".png");
+                        if (page(tutorial) < tutorial.lessonCount() - 1) {
+                            tutorial.keyPressed(GLFW.GLFW_KEY_RIGHT, 0, 0);
+                            ticks = 0;
+                            return;
+                        }
+                        tutorial.close();
+                        sweepForm++; sweepRequested = false;
+                        if (sweepForm < ALL_FORMS.size()) { stage = 26; ticks = 0; return; }
+                        if (sweepLanguage == 0) {
+                            sweepLanguage++; sweepForm = 0; languageReady = false;
+                            client.getLanguageManager().setLanguage("zh_cn"); client.options.language = "zh_cn";
+                            client.options.getGuiScale().setValue(NATIVE ? 4 : 2);
+                            client.reloadResources().whenComplete((unused,error) -> {
+                                if (error != null) fail(error);
+                                else client.execute(() -> { client.onResolutionChanged(); languageReady = true; });
+                            });
+                            stage = 28; ticks = 0; return;
+                        }
+                        var report = new java.util.LinkedHashMap<String,Object>();
+                        report.put("passed",true); report.put("checks",checks); report.put("real_client",true); report.put("real_packets",true);
+                        report.put("screenshots",SHOTS); report.put("languages",List.of("zh_cn","en_us"));
+                        report.put("dynamic_bindings",true); report.put("closed_book_offer_discarded",true); report.put("lateRequestRejected",lateRequestRejected);
+                        report.put("forms_swept",ALL_FORMS.size()); report.put("illustrated_pages_swept",sweptPages);
+                        report.put("native_environment",NATIVE);
+                        Files.writeString(Path.of("form-tutorial-client-result.json"),new Gson().toJson(report));
+                        finished = true; System.out.println("FORM_TUTORIAL_CLIENT_PASS checks=" + checks + " pages=" + sweptPages);
                         client.scheduleStop();
+                    }
+                    case 28 -> {
+                        if (languageReady) { stage = 26; ticks = 0; }
                     }
                     default -> throw new AssertionError("Unknown acceptance stage " + stage);
                 }

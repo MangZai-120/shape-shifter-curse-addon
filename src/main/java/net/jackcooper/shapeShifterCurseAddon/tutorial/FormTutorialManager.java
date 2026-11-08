@@ -12,7 +12,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 
-/** The client asks only when the book is open; an actual display acknowledgement records it. */
+/** The client asks only with its book open; a displayed tutorial or an OS browser handoff records it. */
 public final class FormTutorialManager {
     public static final Identifier REQUEST = new Identifier("ssc_addon", "form_tutorial_request");
     public static final Identifier OFFER = new Identifier("ssc_addon", "form_tutorial_offer");

@@ -46,6 +46,7 @@ public final class FormTutorialClient {
     public static void register() {
         if (registered) return;
         registered = true;
+        FormTutorialLessons.register();
         ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> {
             if (!ownBook(client, screen)) return;
             Identifier form = currentForm(client);
@@ -112,13 +113,18 @@ public final class FormTutorialClient {
             pending = null;
             if (!matches(client, offer.request)) return;
             requested = null;
-            client.setScreen(new FormTutorialScreen(offer.request.book, offer.request.form, () -> {
+            Runnable acknowledge = () -> {
                 if (client.getNetworkHandler() != offer.request.connection || !offer.request.form.equals(currentForm(client))
                         || !ClientPlayNetworking.canSend(FormTutorialManager.ACTION)) return;
                 var packet = PacketByteBufs.create();
                 packet.writeUuid(offer.nonce);
                 ClientPlayNetworking.send(FormTutorialManager.ACTION, packet);
-            }));
+            };
+            if (FormTutorialWeb.supports(offer.request.form)) {
+                FormTutorialWeb.open(client, offer.request.form, acknowledge);
+            } else {
+                client.setScreen(new FormTutorialScreen(offer.request.book, offer.request.form, acknowledge));
+            }
         });
     }
 

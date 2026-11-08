@@ -167,6 +167,8 @@
         "client.CountdownResourceMixin",
         "render.InstinctBarRendererMixin",
         "render.FormColorSelectMenuMixin",
+        "render.FormColorSelectMenuV2Mixin",
+        "render.AllaySkinColorMixin",
         "render.FormOverlayEmissiveMixin",
         "render.PlayerEntityModelAccessor",
         "player.SscPlayerEntityRendererMixin",

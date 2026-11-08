@@ -1,0 +1,1545 @@
+{
+  "schema_version": 1,
+  "lessons": {
+    "moisture": {
+      "kind": "TRAIT",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png",
+      "focus": "SELF"
+    },
+    "aquatic": {
+      "kind": "PASSIVE",
+      "diagram": "FLIGHT",
+      "icon": "my_addon:textures/gui/skill_icons/water_dash.png",
+      "focus": "SELF"
+    },
+    "wet_health": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/play_dead.png",
+      "focus": "SELF"
+    },
+    "no_helmet": {
+      "kind": "TRAIT",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/play_dead.png",
+      "focus": "SELF"
+    },
+    "vortex": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/vortex_impact.png",
+      "power": "my_addon:form_axolotl_sp_vortex_charge",
+      "focus": "SELF"
+    },
+    "play_dead": {
+      "kind": "ACTIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/play_dead.png",
+      "power": "my_addon:form_axolotl_sp_play_dead",
+      "focus": "SELF"
+    },
+    "water_burst": {
+      "kind": "ACTIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/water_burst.png",
+      "focus": "TARGET"
+    },
+    "spear_craft": {
+      "kind": "ACTIVE",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png",
+      "focus": "TARGET"
+    },
+    "water_healing": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/vortex_guide.png",
+      "focus": "ALLY"
+    },
+    "tidal_cost": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/water_dash.png",
+      "focus": "TARGET"
+    },
+    "evolution": {
+      "kind": "TRAIT",
+      "diagram": "EVOLUTION",
+      "icon": "my_addon:textures/gui/skill_icons/fire_spark.png",
+      "focus": "SELF"
+    },
+    "upgrade_spear": {
+      "kind": "ACTIVE",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/water_spear.png",
+      "power": "my_addon:form_upgrade_axolotl_water_spear",
+      "node": "water_spear",
+      "focus": "TARGET"
+    },
+    "vortex_guide": {
+      "kind": "ACTIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/vortex_guide.png",
+      "power": "my_addon:form_upgrade_axolotl_vortex_guide",
+      "node": "vortex_guide",
+      "focus": "SELF"
+    },
+    "upgrade_dash": {
+      "kind": "ACTIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/water_dash.png",
+      "node": "water_spurt",
+      "focus": "TARGET"
+    },
+    "aquatic_dash": {
+      "kind": "ACTIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/water_dash.png",
+      "focus": "TARGET"
+    },
+    "aquatic_unlock": {
+      "kind": "PASSIVE",
+      "diagram": "FLIGHT",
+      "icon": "my_addon:textures/gui/skill_icons/water_jump.png",
+      "node": "aquatic_adapt",
+      "focus": "SELF"
+    },
+    "water_propel": {
+      "kind": "PASSIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/land_dash.png",
+      "node": "water_propel",
+      "focus": "TARGET"
+    },
+    "water_merge": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png",
+      "node": "become_water",
+      "focus": "SELF"
+    },
+    "fluorescent_laser": {
+      "kind": "ACTIVE",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/fluorescent_laser.png",
+      "power": "my_addon:form_axolotl_fluorescent_laser",
+      "focus": "TARGET"
+    },
+    "laser_repeat": {
+      "kind": "ACTIVE",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/fluorescent_laser.png",
+      "focus": "TARGET"
+    },
+    "aling_laser": {
+      "kind": "ACTIVE",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/fluorescent_laser.png",
+      "power": "my_addon:form_axolotl_fluorescent_laser",
+      "focus": "TARGET"
+    },
+    "tidal_wave": {
+      "kind": "ACTIVE",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/tidal_wave.png",
+      "power": "my_addon:form_axolotl_fluorescent_tidal",
+      "focus": "TARGET"
+    },
+    "aling_tide": {
+      "kind": "ACTIVE",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/tidal_wave.png",
+      "power": "my_addon:form_axolotl_fluorescent_tidal",
+      "focus": "TARGET"
+    },
+    "mucus_dodge": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/play_dead.png",
+      "focus": "SELF"
+    },
+    "fall_immunity": {
+      "kind": "PASSIVE",
+      "diagram": "FLIGHT",
+      "icon": "my_addon:textures/gui/skill_icons/water_jump.png",
+      "focus": "SELF"
+    },
+    "projectile_boost": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/fluorescent_laser.png",
+      "focus": "TARGET"
+    },
+    "summon_affinity": {
+      "kind": "PASSIVE",
+      "diagram": "SUMMON",
+      "icon": "my_addon:textures/gui/skill_icons/summon_wolves.png",
+      "focus": "MINIONS"
+    },
+    "symbiosis": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/tidal_wave.png",
+      "focus": "SELF"
+    },
+    "blue_ring": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/blue_fire_ring.png",
+      "power": "my_addon:form_familiar_fox_sp_blue_fire_ring_key_activation",
+      "focus": "SELF"
+    },
+    "fox_breath": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/fox_fire_breath.png",
+      "power": "my_addon:form_familiar_fox_sp_fox_fire_breath",
+      "focus": "TARGET"
+    },
+    "red_ring": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/red_fire_ring.png",
+      "power": "my_addon:form_familiar_fox_red_blue_fire_ring_key_activation",
+      "focus": "SELF"
+    },
+    "red_fireball": {
+      "kind": "ACTIVE",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/red_fire_breath.png",
+      "power": "my_addon:form_familiar_fox_red_fox_fire_breath",
+      "focus": "TARGET"
+    },
+    "kill_empower": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/fire_spark.png",
+      "focus": "TARGET"
+    },
+    "familiar_absorb": {
+      "kind": "ACTIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/fire_spark.png",
+      "focus": "SELF"
+    },
+    "familiar_reap": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/blue_fire_ring.png",
+      "focus": "SELF"
+    },
+    "familiar_shield": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/blue_fire_ring.png",
+      "focus": "SELF"
+    },
+    "mana_starvation": {
+      "kind": "TRAIT",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/fire_spark.png",
+      "focus": "SELF"
+    },
+    "familiar_regen": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/fire_spark.png",
+      "focus": "SELF"
+    },
+    "familiar_immunity": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/blue_fire_ring.png",
+      "focus": "SELF"
+    },
+    "familiar_acceleration": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/fire_rocket.png",
+      "focus": "TARGET"
+    },
+    "familiar_affinity": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/fire_ring.png",
+      "focus": "TARGET"
+    },
+    "upgrade_mana": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/fire_spark.png",
+      "node": "mana_system",
+      "focus": "SELF"
+    },
+    "spark": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/fire_spark.png",
+      "power": "my_addon:form_upgrade_familiar_fox_spark",
+      "node": "spark",
+      "focus": "TARGET"
+    },
+    "fire_rocket": {
+      "kind": "ACTIVE",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/fire_rocket.png",
+      "node": "rocket",
+      "focus": "TARGET"
+    },
+    "upgrade_ring": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/fire_ring.png",
+      "power": "my_addon:form_upgrade_familiar_fox_fire_ring",
+      "node": "fire_ring",
+      "focus": "SELF"
+    },
+    "alchemy": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/fire_spark.png",
+      "node": "alchemy",
+      "focus": "TARGET"
+    },
+    "spirit_vision": {
+      "kind": "PASSIVE",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "node": "spirit_vision",
+      "focus": "TARGET"
+    },
+    "upgrade_immunity": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/fire_ring.png",
+      "node": "buff_immunity",
+      "focus": "SELF"
+    },
+    "contract_mark": {
+      "kind": "ACTIVE",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "power": "my_addon:form_familiar_fox_mancianima_contract_mark",
+      "focus": "TARGET"
+    },
+    "soul_teleport": {
+      "kind": "ACTIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/soul_teleport.png",
+      "power": "my_addon:form_familiar_fox_mancianima_soul_teleport",
+      "focus": "TARGET"
+    },
+    "red_execution": {
+      "kind": "ACTIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/soul_teleport.png",
+      "focus": "TARGET"
+    },
+    "contract_guard": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/play_dead.png",
+      "focus": "SELF"
+    },
+    "contract_kill": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "SELF"
+    },
+    "homing": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "TARGET"
+    },
+    "raider_relations": {
+      "kind": "TRAIT",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "TARGET"
+    },
+    "bell_raid": {
+      "kind": "ACTIVE",
+      "diagram": "SUMMON",
+      "icon": "my_addon:textures/gui/skill_icons/summon_vex.png",
+      "focus": "MINIONS"
+    },
+    "contract_melee": {
+      "kind": "TRAIT",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/wind_claws.png",
+      "focus": "TARGET"
+    },
+    "snow_mode": {
+      "kind": "ACTIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/snow_mode_melee.png",
+      "focus": "TARGET"
+    },
+    "snow_teleport": {
+      "kind": "ACTIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/snow_teleport.png",
+      "power": "my_addon:form_snow_fox_sp_melee_secondary",
+      "focus": "TARGET"
+    },
+    "snow_dash": {
+      "kind": "ACTIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/snow_dash.png",
+      "power": "my_addon:form_snow_fox_sp_melee_primary",
+      "focus": "TARGET"
+    },
+    "snow_storm": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/snow_storm.png",
+      "power": "my_addon:form_snow_fox_sp_ranged_secondary",
+      "focus": "TARGET"
+    },
+    "snow_ball": {
+      "kind": "ACTIVE",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/snow_ball.png",
+      "power": "my_addon:form_snow_fox_sp_ranged_primary",
+      "focus": "TARGET"
+    },
+    "frost_resource": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/snow_ball.png",
+      "focus": "SELF"
+    },
+    "frost_shield": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/snow_ball.png",
+      "focus": "SELF"
+    },
+    "snow_temperature": {
+      "kind": "TRAIT",
+      "diagram": "WEATHER",
+      "icon": "my_addon:textures/gui/skill_icons/snow_mode_ranged.png",
+      "focus": "SELF"
+    },
+    "frost_ready": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/snow_dash.png",
+      "focus": "TARGET"
+    },
+    "ice_affinity": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/snow_ball.png",
+      "focus": "TARGET"
+    },
+    "triple_jump": {
+      "kind": "PASSIVE",
+      "diagram": "FLIGHT",
+      "icon": "my_addon:textures/gui/skill_icons/snow_dash.png",
+      "focus": "SELF"
+    },
+    "fire_fragile": {
+      "kind": "TRAIT",
+      "diagram": "WEATHER",
+      "icon": "my_addon:textures/gui/skill_icons/snow_storm.png",
+      "focus": "SELF"
+    },
+    "thorn_grow": {
+      "kind": "ACTIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/frost_spikes.png",
+      "power": "my_addon:form_snow_fox_frostspine_frost_spike",
+      "focus": "SELF"
+    },
+    "thorn_fire": {
+      "kind": "ACTIVE",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/frost_spikes.png",
+      "focus": "TARGET"
+    },
+    "frost_forge": {
+      "kind": "ACTIVE",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/frost_forge.png",
+      "focus": "TARGET"
+    },
+    "thorn_catalysis": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/frost_spikes.png",
+      "focus": "TARGET"
+    },
+    "cold_healing": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/frost_spikes.png",
+      "focus": "SELF"
+    },
+    "thorn_armor": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/frost_spikes.png",
+      "focus": "SELF"
+    },
+    "thorn_retaliation": {
+      "kind": "PASSIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/frost_spikes.png",
+      "focus": "TARGET"
+    },
+    "snow_stride": {
+      "kind": "PASSIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/snow_dash.png",
+      "focus": "TARGET"
+    },
+    "purify": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/purify.png",
+      "power": "my_addon:form_allay_sp_purify_key_activation",
+      "focus": "SELF"
+    },
+    "group_heal": {
+      "kind": "ACTIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "power": "my_addon:form_allay_sp_group_heal_key_activation",
+      "focus": "ALLY"
+    },
+    "solo_blessing": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "SELF"
+    },
+    "allay_totem": {
+      "kind": "ACTIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "ALLY"
+    },
+    "portable_beacon": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "ALLY"
+    },
+    "allay_flight": {
+      "kind": "PASSIVE",
+      "diagram": "FLIGHT",
+      "icon": "my_addon:textures/gui/skill_icons/water_jump.png",
+      "focus": "SELF"
+    },
+    "allay_ranged": {
+      "kind": "PASSIVE",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/fluorescent_laser.png",
+      "focus": "TARGET"
+    },
+    "allay_hit_heal": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "SELF"
+    },
+    "allay_food": {
+      "kind": "TRAIT",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "SELF"
+    },
+    "allay_emergency": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "SELF"
+    },
+    "allay_relay": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "ALLY"
+    },
+    "allay_music": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "ALLY"
+    },
+    "lunar_cooldown": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "TARGET"
+    },
+    "vex": {
+      "kind": "ACTIVE",
+      "diagram": "SUMMON",
+      "icon": "my_addon:textures/gui/skill_icons/summon_vex.png",
+      "power": "my_addon:form_fallen_allay_sp_active_vex_key_activation",
+      "focus": "MINIONS"
+    },
+    "scream": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/shadow_scream.png",
+      "power": "my_addon:form_fallen_allay_sp_active_scream_key_activation",
+      "focus": "SELF"
+    },
+    "fallen_mark": {
+      "kind": "PASSIVE",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/shadow_scream.png",
+      "focus": "TARGET"
+    },
+    "fallen_melee": {
+      "kind": "PASSIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/wind_claws.png",
+      "focus": "TARGET"
+    },
+    "fallen_chain": {
+      "kind": "PASSIVE",
+      "diagram": "CHAIN",
+      "icon": "my_addon:textures/gui/skill_icons/shadow_scream.png",
+      "focus": "TARGET"
+    },
+    "curse_affinity": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/nightmare_fear.png",
+      "focus": "TARGET"
+    },
+    "fallen_food": {
+      "kind": "TRAIT",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/summon_vex.png",
+      "focus": "SELF"
+    },
+    "fallen_fire": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/red_fire_ring.png",
+      "focus": "SELF"
+    },
+    "fallen_faction": {
+      "kind": "TRAIT",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/summon_vex.png",
+      "focus": "TARGET"
+    },
+    "invisibility": {
+      "kind": "ACTIVE",
+      "diagram": "STEALTH",
+      "icon": "my_addon:textures/gui/skill_icons/invisibility.png",
+      "power": "my_addon:true_invisibility",
+      "focus": "SELF"
+    },
+    "weakness_spot": {
+      "kind": "ACTIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/weakness_spot.png",
+      "focus": "TARGET"
+    },
+    "invisible_dash": {
+      "kind": "ACTIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/intimidating_dash.png",
+      "focus": "TARGET"
+    },
+    "ink": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/ink_blind.png",
+      "focus": "TARGET"
+    },
+    "spell_cover": {
+      "kind": "PASSIVE",
+      "diagram": "STEALTH",
+      "icon": "my_addon:textures/gui/skill_icons/invisibility.png",
+      "focus": "SELF"
+    },
+    "hunter_casting": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/weakness_spot.png",
+      "focus": "TARGET"
+    },
+    "night_hunter": {
+      "kind": "PASSIVE",
+      "diagram": "WEATHER",
+      "icon": "my_addon:textures/gui/skill_icons/invisibility.png",
+      "focus": "SELF"
+    },
+    "lifesaving_tail": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/invisibility.png",
+      "focus": "SELF"
+    },
+    "climb": {
+      "kind": "PASSIVE",
+      "diagram": "FLIGHT",
+      "icon": "my_addon:textures/gui/skill_icons/web_swing.png",
+      "focus": "SELF"
+    },
+    "raw_diet": {
+      "kind": "TRAIT",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/wind_claws.png",
+      "focus": "SELF"
+    },
+    "dream": {
+      "kind": "PASSIVE",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/nightmare_fear.png",
+      "focus": "TARGET"
+    },
+    "fear": {
+      "kind": "ACTIVE",
+      "diagram": "STEALTH",
+      "icon": "my_addon:textures/gui/skill_icons/nightmare_fear.png",
+      "power": "my_addon:form_wild_cat_nightmare_fear",
+      "focus": "TARGET"
+    },
+    "spook": {
+      "kind": "ACTIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/nightmare_spook.png",
+      "power": "my_addon:form_wild_cat_nightmare_spook",
+      "focus": "TARGET"
+    },
+    "dream_devour": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/nightmare_spook.png",
+      "focus": "SELF"
+    },
+    "dream_casting": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/nightmare_fear.png",
+      "focus": "TARGET"
+    },
+    "cursed_moon_dream": {
+      "kind": "PASSIVE",
+      "diagram": "WEATHER",
+      "icon": "my_addon:textures/gui/skill_icons/nightmare_fear.png",
+      "focus": "SELF"
+    },
+    "phantom_friend": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/nightmare_spook.png",
+      "focus": "SELF"
+    },
+    "wind_claws": {
+      "kind": "ACTIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/wind_claws.png",
+      "focus": "TARGET"
+    },
+    "wind_dash": {
+      "kind": "ACTIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/wind_dash.png",
+      "power": "my_addon:form_ocelot_wind_spirit_wind_dash",
+      "focus": "TARGET"
+    },
+    "claw_boost": {
+      "kind": "ACTIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/wind_claws.png",
+      "power": "my_addon:form_ocelot_wind_spirit_claw_buff",
+      "focus": "TARGET"
+    },
+    "landing_surge": {
+      "kind": "PASSIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/wind_dash.png",
+      "focus": "SELF"
+    },
+    "wind_pressure": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/wind_dash.png",
+      "focus": "SELF"
+    },
+    "mobile_casting": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/wind_dash.png",
+      "focus": "TARGET"
+    },
+    "space_affinity": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/soul_teleport.png",
+      "focus": "TARGET"
+    },
+    "nova": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/nova_explosion.png",
+      "power": "my_addon:form_ocelot_nova_charge",
+      "focus": "SELF"
+    },
+    "spirit_leap": {
+      "kind": "ACTIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/spirit_leap.png",
+      "power": "my_addon:form_ocelot_nova_leap",
+      "focus": "TARGET"
+    },
+    "nine_lives": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/nova_explosion.png",
+      "focus": "SELF"
+    },
+    "lives_regen": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/nova_explosion.png",
+      "focus": "SELF"
+    },
+    "nova_evasion": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/spirit_leap.png",
+      "focus": "SELF"
+    },
+    "revive_cast": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/nova_explosion.png",
+      "focus": "TARGET"
+    },
+    "death_domain": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/death_domain.png",
+      "power": "my_addon:form_anubis_wolf_sp_death_domain",
+      "focus": "SELF"
+    },
+    "nether_wolves": {
+      "kind": "ACTIVE",
+      "diagram": "SUMMON",
+      "icon": "my_addon:textures/gui/skill_icons/summon_wolves.png",
+      "power": "my_addon:form_anubis_wolf_sp_summon_wolves",
+      "focus": "MINIONS"
+    },
+    "soul_energy": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/death_domain.png",
+      "focus": "SELF"
+    },
+    "court_command": {
+      "kind": "PASSIVE",
+      "diagram": "SUMMON",
+      "icon": "my_addon:textures/gui/skill_icons/summon_wolves.png",
+      "focus": "MINIONS"
+    },
+    "soul_scrutiny": {
+      "kind": "PASSIVE",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/death_domain.png",
+      "focus": "TARGET"
+    },
+    "death_sentence": {
+      "kind": "PASSIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/death_domain.png",
+      "focus": "TARGET"
+    },
+    "wither_hunt": {
+      "kind": "PASSIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/summon_wolves.png",
+      "focus": "TARGET"
+    },
+    "wither_frenzy": {
+      "kind": "PASSIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/summon_wolves.png",
+      "focus": "TARGET"
+    },
+    "soul_ground_heal": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/death_domain.png",
+      "focus": "SELF"
+    },
+    "undead_body": {
+      "kind": "TRAIT",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/death_domain.png",
+      "focus": "SELF"
+    },
+    "undead_neutral": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/summon_wolves.png",
+      "focus": "SELF"
+    },
+    "judge_npc_guard": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/death_domain.png",
+      "focus": "SELF"
+    },
+    "wither_brewing": {
+      "kind": "ACTIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/death_domain.png",
+      "focus": "TARGET"
+    },
+    "sandstorm": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/wither_sand.png",
+      "power": "my_addon:form_golden_sandstorm_sp_wither_sand",
+      "focus": "SELF"
+    },
+    "erosion_mark": {
+      "kind": "PASSIVE",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "TARGET"
+    },
+    "erosion_burst": {
+      "kind": "PASSIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/brand_detonation.png",
+      "focus": "TARGET"
+    },
+    "brand_detonate": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/brand_detonation.png",
+      "power": "my_addon:form_golden_sandstorm_sp_erosion_brand",
+      "focus": "TARGET"
+    },
+    "sand_recovery": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/wither_sand.png",
+      "focus": "SELF"
+    },
+    "sand_counter": {
+      "kind": "PASSIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/wither_sand.png",
+      "focus": "SELF"
+    },
+    "sand_immunity": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/wither_sand.png",
+      "focus": "SELF"
+    },
+    "fire_affinity": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/red_fire_breath.png",
+      "focus": "TARGET"
+    },
+    "mist": {
+      "kind": "ACTIVE",
+      "diagram": "STEALTH",
+      "icon": "my_addon:textures/gui/skill_icons/blood_mist.png",
+      "power": "my_addon:form_bat_desmodus_mist_form",
+      "focus": "SELF"
+    },
+    "mist_burst": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/blood_mist.png",
+      "focus": "SELF"
+    },
+    "sonic": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/sonic_wave.png",
+      "power": "my_addon:form_bat_desmodus_sonic_wave",
+      "focus": "TARGET"
+    },
+    "blood_resource": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/blood_mist.png",
+      "focus": "SELF"
+    },
+    "blood_stages": {
+      "kind": "PASSIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/blood_mist.png",
+      "focus": "TARGET"
+    },
+    "blood_aura": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/blood_mist.png",
+      "focus": "SELF"
+    },
+    "sun_weak": {
+      "kind": "TRAIT",
+      "diagram": "WEATHER",
+      "icon": "my_addon:textures/gui/skill_icons/blood_mist.png",
+      "focus": "SELF"
+    },
+    "moon_buff": {
+      "kind": "PASSIVE",
+      "diagram": "WEATHER",
+      "icon": "my_addon:textures/gui/skill_icons/blood_mist.png",
+      "focus": "SELF"
+    },
+    "iron_weak": {
+      "kind": "TRAIT",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/blood_mist.png",
+      "focus": "SELF"
+    },
+    "echolocation": {
+      "kind": "PASSIVE",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/sonic_wave.png",
+      "focus": "TARGET"
+    },
+    "bat_movement": {
+      "kind": "PASSIVE",
+      "diagram": "FLIGHT",
+      "icon": "my_addon:textures/gui/skill_icons/web_swing.png",
+      "focus": "SELF"
+    },
+    "blood_casting": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/blood_mist.png",
+      "focus": "TARGET"
+    },
+    "blood_mend": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/blood_mist.png",
+      "focus": "SELF"
+    },
+    "parasitic_seed": {
+      "kind": "ACTIVE",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/parasitic_seed.png",
+      "power": "my_addon:form_bat_parasitic_fruit_parasitic_seed",
+      "focus": "TARGET"
+    },
+    "spore": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/spore_bomb.png",
+      "power": "my_addon:form_bat_parasitic_fruit_spore_bomb",
+      "focus": "TARGET"
+    },
+    "seed_energy": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/parasitic_seed.png",
+      "focus": "SELF"
+    },
+    "seed_food": {
+      "kind": "ACTIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/parasitic_seed.png",
+      "focus": "SELF"
+    },
+    "crop_growth": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/parasitic_seed.png",
+      "focus": "SELF"
+    },
+    "debuff_spread": {
+      "kind": "PASSIVE",
+      "diagram": "CHAIN",
+      "icon": "my_addon:textures/gui/skill_icons/spore_bomb.png",
+      "focus": "TARGET"
+    },
+    "fruit_npc_debuff": {
+      "kind": "PASSIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/spore_bomb.png",
+      "focus": "TARGET"
+    },
+    "web_shot": {
+      "kind": "ACTIVE",
+      "diagram": "WEB",
+      "icon": "my_addon:textures/gui/skill_icons/moon_web.png",
+      "power": "my_addon:form_spider_moon_weaver_web",
+      "focus": "TARGET"
+    },
+    "web_bridge": {
+      "kind": "ACTIVE",
+      "diagram": "WEB",
+      "icon": "my_addon:textures/gui/skill_icons/moon_web.png",
+      "focus": "TARGET"
+    },
+    "web_swing": {
+      "kind": "ACTIVE",
+      "diagram": "WEB",
+      "icon": "my_addon:textures/gui/skill_icons/web_swing.png",
+      "power": "my_addon:form_spider_moon_weaver_swing",
+      "focus": "TARGET"
+    },
+    "web_affinity": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/moon_web.png",
+      "focus": "SELF"
+    },
+    "moon_poison": {
+      "kind": "PASSIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/venom_strike.png",
+      "focus": "TARGET"
+    },
+    "cocoon_hunter": {
+      "kind": "PASSIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/moon_web.png",
+      "focus": "TARGET"
+    },
+    "spell_weave": {
+      "kind": "PASSIVE",
+      "diagram": "WEB",
+      "icon": "my_addon:textures/gui/skill_icons/moon_web.png",
+      "focus": "TARGET"
+    },
+    "silk_energy": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/moon_web.png",
+      "focus": "SELF"
+    },
+    "lunar_affinity": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/moon_web.png",
+      "focus": "TARGET"
+    },
+    "spider_limbs": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/moon_web.png",
+      "focus": "SELF"
+    },
+    "spider_faction": {
+      "kind": "TRAIT",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/moon_web.png",
+      "focus": "SELF"
+    },
+    "jump_kill": {
+      "kind": "ACTIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/jump_kill.png",
+      "power": "my_addon:form_spider_salticidae_jump_kill",
+      "focus": "TARGET"
+    },
+    "safety_silk": {
+      "kind": "ACTIVE",
+      "diagram": "WEB",
+      "icon": "my_addon:textures/gui/skill_icons/web_swing.png",
+      "focus": "TARGET"
+    },
+    "venom": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/venom_strike.png",
+      "power": "my_addon:form_spider_salticidae_venom",
+      "focus": "TARGET"
+    },
+    "venom_dash": {
+      "kind": "ACTIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/venom_strike.png",
+      "focus": "TARGET"
+    },
+    "venom_fangs": {
+      "kind": "PASSIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/venom_strike.png",
+      "focus": "TARGET"
+    },
+    "predator_strength": {
+      "kind": "PASSIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/jump_kill.png",
+      "focus": "TARGET"
+    },
+    "double_jump": {
+      "kind": "PASSIVE",
+      "diagram": "FLIGHT",
+      "icon": "my_addon:textures/gui/skill_icons/jump_kill.png",
+      "focus": "SELF"
+    },
+    "leap_curse": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/venom_strike.png",
+      "focus": "TARGET"
+    },
+    "armor_legs": {
+      "kind": "TRAIT",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/play_dead.png",
+      "focus": "SELF"
+    },
+    "armor_light": {
+      "kind": "TRAIT",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/play_dead.png",
+      "focus": "SELF"
+    },
+    "bat_ranged_limit": {
+      "kind": "TRAIT",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/sonic_wave.png",
+      "focus": "TARGET"
+    },
+    "familiar_spirit_sight": {
+      "kind": "PASSIVE",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "TARGET"
+    },
+    "familiar_dark_vision": {
+      "kind": "PASSIVE",
+      "diagram": "STEALTH",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "TARGET"
+    },
+    "familiar_hidden_aura": {
+      "kind": "PASSIVE",
+      "diagram": "STEALTH",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "TARGET"
+    }
+  },
+  "forms": {
+    "my_addon:axolotl_abyssal_overlord": [
+      "vortex",
+      "play_dead",
+      "water_burst",
+      "spear_craft",
+      "moisture",
+      "aquatic",
+      "wet_health",
+      "water_healing",
+      "tidal_cost",
+      "no_helmet"
+    ],
+    "my_addon:axolotl_upgrade": [
+      "evolution",
+      "upgrade_spear",
+      "vortex_guide",
+      "upgrade_dash",
+      "aquatic_unlock",
+      "water_propel",
+      "moisture",
+      "water_merge",
+      "tidal_cost",
+      "no_helmet"
+    ],
+    "my_addon:axolotl_fluorescent": [
+      "fluorescent_laser",
+      "laser_repeat",
+      "tidal_wave",
+      "aquatic_dash",
+      "mucus_dodge",
+      "fall_immunity",
+      "moisture",
+      "wet_health",
+      "projectile_boost",
+      "summon_affinity",
+      "symbiosis",
+      "no_helmet"
+    ],
+    "my_addon:axolotl_aling": [
+      "aling_laser",
+      "aling_tide",
+      "aquatic_dash",
+      "mucus_dodge",
+      "fall_immunity",
+      "moisture",
+      "wet_health",
+      "projectile_boost",
+      "summon_affinity",
+      "symbiosis",
+      "no_helmet"
+    ],
+    "my_addon:familiar_fox_spirit_realm_lord": [
+      "blue_ring",
+      "fox_breath",
+      "kill_empower",
+      "familiar_absorb",
+      "familiar_reap",
+      "familiar_regen",
+      "familiar_shield",
+      "mana_starvation",
+      "familiar_spirit_sight",
+      "familiar_dark_vision",
+      "familiar_hidden_aura",
+      "familiar_immunity",
+      "familiar_acceleration",
+      "familiar_affinity"
+    ],
+    "my_addon:familiar_fox_red": [
+      "red_ring",
+      "red_fireball",
+      "kill_empower",
+      "familiar_absorb",
+      "familiar_reap",
+      "familiar_shield",
+      "mana_starvation",
+      "familiar_regen",
+      "familiar_immunity",
+      "familiar_acceleration",
+      "familiar_affinity",
+      "armor_legs"
+    ],
+    "my_addon:familiar_fox_upgrade": [
+      "evolution",
+      "upgrade_mana",
+      "spark",
+      "fire_rocket",
+      "upgrade_ring",
+      "familiar_absorb",
+      "upgrade_immunity",
+      "alchemy",
+      "spirit_vision",
+      "familiar_affinity",
+      "armor_legs"
+    ],
+    "my_addon:familiar_fox_mancianima": [
+      "contract_mark",
+      "soul_teleport",
+      "red_execution",
+      "contract_guard",
+      "contract_kill",
+      "homing",
+      "familiar_regen",
+      "contract_melee",
+      "raider_relations",
+      "bell_raid",
+      "familiar_affinity",
+      "armor_legs"
+    ],
+    "my_addon:snow_fox_frost_spirit": [
+      "snow_mode",
+      "snow_teleport",
+      "snow_dash",
+      "snow_storm",
+      "snow_ball",
+      "frost_resource",
+      "frost_shield",
+      "snow_temperature",
+      "frost_ready",
+      "ice_affinity",
+      "triple_jump",
+      "fire_fragile",
+      "armor_legs"
+    ],
+    "my_addon:snow_fox_frostspine": [
+      "thorn_grow",
+      "thorn_fire",
+      "frost_forge",
+      "thorn_armor",
+      "thorn_retaliation",
+      "thorn_catalysis",
+      "cold_healing",
+      "snow_stride",
+      "ice_affinity",
+      "triple_jump",
+      "fire_fragile",
+      "armor_legs"
+    ],
+    "my_addon:allay_crystal_sound": [
+      "purify",
+      "group_heal",
+      "solo_blessing",
+      "allay_totem",
+      "portable_beacon",
+      "allay_flight",
+      "allay_ranged",
+      "allay_hit_heal",
+      "allay_food",
+      "allay_emergency",
+      "allay_relay",
+      "allay_music",
+      "summon_affinity",
+      "lunar_cooldown",
+      "armor_legs"
+    ],
+    "my_addon:allay_spirit_of_the_fallen": [
+      "vex",
+      "scream",
+      "fallen_mark",
+      "fallen_melee",
+      "allay_flight",
+      "fallen_chain",
+      "curse_affinity",
+      "fallen_food",
+      "fallen_fire",
+      "fallen_faction",
+      "armor_legs"
+    ],
+    "my_addon:wild_cat_moonlight_phantom": [
+      "invisibility",
+      "weakness_spot",
+      "invisible_dash",
+      "ink",
+      "spell_cover",
+      "hunter_casting",
+      "night_hunter",
+      "lifesaving_tail",
+      "climb",
+      "raw_diet",
+      "fall_immunity",
+      "armor_legs"
+    ],
+    "my_addon:wild_cat_nightmare": [
+      "dream",
+      "fear",
+      "spook",
+      "dream_devour",
+      "dream_casting",
+      "cursed_moon_dream",
+      "phantom_friend",
+      "night_hunter",
+      "lifesaving_tail",
+      "climb",
+      "raw_diet",
+      "fall_immunity",
+      "armor_legs"
+    ],
+    "my_addon:ocelot_wind_spirit": [
+      "wind_dash",
+      "wind_claws",
+      "claw_boost",
+      "landing_surge",
+      "wind_pressure",
+      "mobile_casting",
+      "space_affinity",
+      "climb",
+      "raw_diet",
+      "fall_immunity",
+      "armor_light"
+    ],
+    "my_addon:ocelot_nova": [
+      "nova",
+      "spirit_leap",
+      "nine_lives",
+      "lives_regen",
+      "nova_evasion",
+      "revive_cast",
+      "climb",
+      "raw_diet",
+      "armor_light"
+    ],
+    "my_addon:anubis_wolf_netherjudge": [
+      "death_domain",
+      "nether_wolves",
+      "soul_energy",
+      "court_command",
+      "soul_scrutiny",
+      "death_sentence",
+      "wither_hunt",
+      "wither_frenzy",
+      "soul_ground_heal",
+      "undead_body",
+      "undead_neutral",
+      "judge_npc_guard",
+      "wither_brewing",
+      "armor_legs"
+    ],
+    "my_addon:anubis_wolf_golden_sandstorm": [
+      "sandstorm",
+      "brand_detonate",
+      "erosion_mark",
+      "erosion_burst",
+      "sand_recovery",
+      "sand_counter",
+      "sand_immunity",
+      "fire_affinity",
+      "undead_body",
+      "armor_legs"
+    ],
+    "my_addon:bat_desmodus": [
+      "mist",
+      "mist_burst",
+      "sonic",
+      "blood_resource",
+      "blood_stages",
+      "blood_aura",
+      "sun_weak",
+      "moon_buff",
+      "iron_weak",
+      "echolocation",
+      "bat_movement",
+      "blood_casting",
+      "blood_mend",
+      "armor_light",
+      "bat_ranged_limit"
+    ],
+    "my_addon:bat_parasitic_fruit": [
+      "parasitic_seed",
+      "spore",
+      "seed_energy",
+      "seed_food",
+      "crop_growth",
+      "debuff_spread",
+      "fruit_npc_debuff",
+      "summon_affinity",
+      "bat_movement",
+      "armor_light",
+      "bat_ranged_limit"
+    ],
+    "my_addon:spider_moon_weaver": [
+      "web_shot",
+      "web_bridge",
+      "web_swing",
+      "web_affinity",
+      "moon_poison",
+      "cocoon_hunter",
+      "spell_weave",
+      "silk_energy",
+      "lunar_affinity",
+      "spider_limbs",
+      "spider_faction",
+      "climb",
+      "fire_fragile",
+      "armor_light"
+    ],
+    "my_addon:spider_salticidae": [
+      "jump_kill",
+      "safety_silk",
+      "venom",
+      "venom_dash",
+      "venom_fangs",
+      "predator_strength",
+      "double_jump",
+      "leap_curse",
+      "curse_affinity",
+      "spider_limbs",
+      "spider_faction",
+      "climb",
+      "fall_immunity",
+      "fire_fragile",
+      "armor_light"
+    ]
+  }
+}

@@ -13,7 +13,7 @@ import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.integration.origins.origin.Origin;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 
-/** Preserve still-declared Perk/subform/accessory instances during SSC's same-form reconciliation. */
+/** Preserve SSCA Perk/subform/accessory instances during SSC's same-form reconciliation. */
 public final class OriginPowerReloadGuard {
     private static final ThreadLocal<Reload> CURRENT = new ThreadLocal<>();
 
@@ -24,7 +24,7 @@ public final class OriginPowerReloadGuard {
         var layer = form == null ? null : form.getFormLayer();
         Identifier source = layer == null ? null : layer.getRight();
         Reload previous = CURRENT.get();
-        if (forced || !(player instanceof ServerPlayerEntity) || source == null
+        if (forced || !(player instanceof ServerPlayerEntity) || !OriginPowerCompatibility.supportsForm(form) || source == null
                 || !(source.getNamespace().equals("my_addon") || source.getNamespace().equals("shape-shifter-curse"))) {
             if (previous == null) load.run();
             else {

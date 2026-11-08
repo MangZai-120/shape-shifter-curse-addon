@@ -11,6 +11,7 @@
   "texture": "my_addon:textures/form_golden_sandstorm_sp/form_golden_sandstorm_sp.png",
   "texture_mask": "my_addon:textures/form_golden_sandstorm_sp/form_golden_sandstorm_sp_colormask.png",
   "fullbright_texture": "my_addon:textures/form_golden_sandstorm_sp/form_golden_sandstorm_sp_overlay.png",
+  "fullbright_texture_mask": "my_addon:textures/form_golden_sandstorm_sp/form_golden_sandstorm_sp_fullbright_texture_colormask.png",
   "hidden": [
     "leftLeg",
     "rightLeg",

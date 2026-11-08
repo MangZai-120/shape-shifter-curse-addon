@@ -2,6 +2,9 @@ package net.jackcooper.shapeShifterCurseAddon.mixin.render;
 
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
+import net.jackcooper.shapeShifterCurseAddon.client.colorpicker.FormColorPreviewState;
+import net.onixary.shapeShifterCurseFabric.util.FormTextureUtils;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
@@ -43,7 +46,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  */
 @Pseudo
 @Mixin(targets = "net.onixary.shapeShifterCurseFabric.custom_ui.FormColorSelectMenu", priority = 1100)
-public abstract class FormColorSelectMenuMixin extends Screen {
+public abstract class FormColorSelectMenuMixin extends Screen implements FormColorPreviewState {
+    @Shadow(remap = false) private boolean enableFormColorSystem;
+    @Shadow(remap = false) private boolean keepOriginalSkin;
+    @Shadow(remap = false) public abstract FormTextureUtils.ColorSetting getColorSetting(boolean isABGR);
+
+    @Override public boolean ssca$colorEnabled() { return enableFormColorSystem; }
+    @Override public boolean ssca$keepOriginalSkin() { return keepOriginalSkin; }
+    @Override public FormTextureUtils.ColorSetting ssca$previewColors() { return getColorSetting(true); }
 
     protected FormColorSelectMenuMixin(Text title) {
         super(title);
