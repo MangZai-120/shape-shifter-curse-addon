@@ -5,8 +5,8 @@
   const el = id => document.getElementById(id), video = el('video');
   const params = new URLSearchParams(location.search);
   const ui = {
-    zh_cn: {form:'灵界之主',title:'形态教程：',active:'主动技能',passive:'被动与特性',how:'如何触发',effect:'会发生什么',note:'记住这一点',previous:'上一页',next:'下一页',finish:'完成教程',contents:'目录',read:'返回页面',close:'关闭教程',back:'返回教程',enlarge:'点击此处放大视频',observer:'实机演示：',self:'本人视角：',play:'播放演示',sound:'开启游戏声音',loading:'正在载入实机演示…',error:'视频加载失败，点击重试',hint:'视频可暂停和拖动进度 · 下方文字放大',scroll:'滚轮或上下键滚动文字',locked:'尚未解锁此能力；可以先了解触发方式。',cooldown:'基础冷却 {n} 秒 · ',closed:'教程已关闭',done:'教程已完成',return:'切回 Minecraft，继续你的冒险。',replay:'重新打开教程',wiki:'返回 Wiki'},
-    en_us: {form:'Spirit Realm Lord',title:'Form tutorial: ',active:'Active skill',passive:'Passive / trait',how:'How to use',effect:'What happens',note:'Remember',previous:'Previous',next:'Next',finish:'Finish',contents:'Contents',read:'Read page',close:'Close tutorial',back:'Back to tutorial',enlarge:'Click here to enlarge the video',observer:'Gameplay: ',self:'First-person: ',play:'Play demonstration',sound:'Enable game audio',loading:'Loading gameplay…',error:'Video failed to load. Retry',hint:'Pause or seek the video · Enlarge below',scroll:'Scroll or use Up / Down to read',locked:'Not unlocked yet. You can still read how it works.',cooldown:'Base cooldown {n}s · ',closed:'Tutorial closed',done:'Tutorial complete',return:'Return to Minecraft to continue your adventure.',replay:'Open tutorial again',wiki:'Back to Wiki'}
+    zh_cn: {form:'灵界之主',title:'形态教程：',active:'主动技能',passive:'被动与特性',how:'如何触发',effect:'会发生什么',note:'小提示',previous:'上一页',next:'下一页',finish:'完成教程',contents:'目录',read:'返回页面',close:'关闭教程',back:'返回教程',enlarge:'点击此处放大视频',observer:'实机演示：',self:'本人视角：',play:'播放演示',loading:'正在载入实机演示…',error:'视频加载失败，点击重试',hint:'视频可暂停和拖动进度 · 下方文字放大',scroll:'滚轮或上下键滚动文字',locked:'尚未解锁此能力；可以先了解触发方式。',cooldown:'基础冷却 {n} 秒 · ',closed:'教程已关闭',done:'教程已完成',return:'切回 Minecraft，继续你的冒险。',replay:'重新打开教程',wiki:'返回 Wiki'},
+    en_us: {form:'Spirit Realm Lord',title:'Form tutorial: ',active:'Active skill',passive:'Passive / trait',how:'How to use',effect:'What happens',note:'Tip',previous:'Previous',next:'Next',finish:'Finish',contents:'Contents',read:'Read page',close:'Close tutorial',back:'Back to tutorial',enlarge:'Click here to enlarge the video',observer:'Gameplay: ',self:'First-person: ',play:'Play demonstration',loading:'Loading gameplay…',error:'Video failed to load. Retry',hint:'Pause or seek the video · Enlarge below',scroll:'Scroll or use Up / Down to read',locked:'Not unlocked yet. You can still read how it works.',cooldown:'Base cooldown {n}s · ',closed:'Tutorial closed',done:'Tutorial complete',return:'Return to Minecraft to continue your adventure.',replay:'Open tutorial again',wiki:'Back to Wiki'}
   };
   const keys = {primary:['主技能键','primary skill key'],secondary:['副技能键','secondary skill key'],sneak:['潜行键','sneak key'],use:['使用键','use key'],attack:['攻击键','attack key'],jump:['跳跃键','jump key'],sprint:['疾跑键','sprint key']};
   const state = {page:0,mode:'lesson',locale:params.get('lang')==='en_us'?'en_us':'zh_cn',indexScroll:0,rows:1,bodyScroll:0,scale:1,line:10,bodyHeight:1,portrait:false,soundBlocked:false,userMuted:false,volume:1};
@@ -18,7 +18,7 @@
   function rect(node,x,y,w,h){Object.assign(node.style,{left:x+'px',top:y+'px',width:w+'px',height:h+'px'});}
   function set(id,value){el(id).textContent=value;}
   function gesture(action){
-    if(state.soundBlocked){state.soundBlocked=false;state.userMuted=false;video.muted=false;el('enable-sound').hidden=true;}
+    if(state.soundBlocked){state.soundBlocked=false;state.userMuted=false;video.muted=false;}
     clickSound.currentTime=0;clickSound.play().catch(()=>{});action();
   }
   function bind(id,action){el(id).onclick=()=>gesture(action);}
@@ -98,7 +98,7 @@
     video.dataset.failed='true';el('loading').hidden=true;set('play-video',words().error);el('play-video').hidden=false;
   }
   function startVideo(){
-    const lesson=current();state.soundBlocked=false;el('enable-sound').hidden=true;el('play-video').hidden=true;el('loading').hidden=false;
+    const lesson=current();state.soundBlocked=false;el('play-video').hidden=true;el('loading').hidden=false;
     clearVideo();const generation=mediaGeneration;let sourceErrors=0;video.dataset.failed='false';video.poster='media/'+lesson.media+'.jpg';video.muted=state.userMuted;video.volume=state.volume;
     for(const [extension,type] of [['webm','video/webm'],['mp4','video/mp4']]){
       const source=document.createElement('source');source.src='media/'+lesson.media+'.'+extension;source.type=type;
@@ -108,7 +108,7 @@
     video.play().catch(error=>{
       if(generation!==mediaGeneration||current()!==lesson||state.mode==='closed'||state.mode==='contents')return;
       if(error.name==='NotAllowedError'){
-        state.soundBlocked=true;video.muted=true;el('enable-sound').hidden=false;
+        state.soundBlocked=true;video.muted=true;
         video.play().catch(()=>{el('play-video').hidden=false;el('loading').hidden=true;});
       }else if(error.name!=='AbortError')mediaFailed();
     });
@@ -120,7 +120,7 @@
     set('counter',(state.page+1)+' / '+data.lessons.length);set('kind',lesson.kind==='ACTIVE'?t.active:t.passive);set('title',text.title);
     set('how-title',t.how);set('effect-title',t.effect);set('note-title',t.note);
     for(const id of ['trigger','effect','note'])copy(id,text[id]);
-    for(const [id,key] of [['previous','previous'],['next',state.page===data.lessons.length-1?'finish':'next'],['index',state.mode==='contents'?'read':'contents'],['close','close'],['back','back'],['enlarge','enlarge'],['play-video','play'],['enable-sound','sound'],['loading','loading'],['replay','replay'],['full-wiki','wiki']])set(id,t[key]);
+    for(const [id,key] of [['previous','previous'],['next',state.page===data.lessons.length-1?'finish':'next'],['index',state.mode==='contents'?'read':'contents'],['close','close'],['back','back'],['enlarge','enlarge'],['play-video','play'],['loading','loading'],['replay','replay'],['full-wiki','wiki']])set(id,t[key]);
     set('view',(lesson.view==='self'?t.self:t.observer)+t.form);set('language',state.locale==='zh_cn'?'EN':'中文');
     el('previous').disabled=state.page===0;layout();if(reload)startVideo();
   }
@@ -138,11 +138,10 @@
   bind('enlarge',()=>{state.mode='enlarged';layout();});bind('back',()=>{state.mode='lesson';layout();});bind('replay',()=>select(0));
   bind('language',()=>{state.locale=state.locale==='zh_cn'?'en_us':'zh_cn';params.set('lang',state.locale);history.replaceState(null,'',location.pathname+'?'+params+location.hash);render(true);});
   bind('play-video',()=>{el('play-video').hidden=true;if(video.dataset.failed==='true'||video.error||!video.querySelector('source'))startVideo();else video.play().catch(()=>{el('play-video').hidden=false;});});
-  bind('enable-sound',()=>{state.userMuted=false;video.muted=false;video.play().catch(()=>{el('play-video').hidden=false;});});
   video.addEventListener('playing',()=>{el('loading').hidden=true;el('play-video').hidden=true;});
   video.addEventListener('loadeddata',()=>{el('loading').hidden=true;});
   video.addEventListener('error',mediaFailed);
-  video.addEventListener('volumechange',()=>{if(!state.soundBlocked){state.userMuted=video.muted;state.volume=video.volume;}});
+  video.addEventListener('volumechange',()=>{if(state.soundBlocked&&!video.muted)state.soundBlocked=false;if(!state.soundBlocked){state.userMuted=video.muted;state.volume=video.volume;}});
   el('panel').addEventListener('wheel',event=>{if(event.target.closest('#player-box'))return;event.preventDefault();scroll(Math.sign(event.deltaY)*(state.mode==='contents'?1:3));},{passive:false});
   for(const id of ['body-scroll','contents-scroll']){
     const track=el(id);let drag;

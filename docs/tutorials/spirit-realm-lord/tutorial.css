@@ -21,8 +21,7 @@ button,a{font-family:inherit;-webkit-tap-highlight-color:transparent}button{curs
 #media-frame{color:#e0e0e0}#player-box{position:absolute;overflow:hidden;background:#101820}
 #video{display:block;width:calc(100% * var(--scale));height:calc(100% * var(--scale));transform:scale(var(--inv));transform-origin:0 0;object-fit:contain;background:#101820;image-rendering:auto}
 #loading{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;pointer-events:none}
-#play-video,#enable-sound{position:absolute;left:50%;transform:translateX(-50%);height:20px;max-width:95%;padding:0 7px}
-#play-video{top:calc(50% - 10px)}#enable-sound{top:6px;font-size:7px;height:18px}
+#play-video{position:absolute;left:50%;top:calc(50% - 10px);transform:translateX(-50%);height:20px;max-width:95%;padding:0 7px}
 #view{position:absolute;left:3px;right:3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:10px}
 #enlarge{position:absolute;left:3px;right:3px;bottom:0;height:12px;padding:0;background:none;border:0;text-align:left;color:#e0e0e0;font-size:var(--font);line-height:10px}
 #enlarge:hover,#enlarge:focus-visible{color:#fff;text-decoration:underline;outline:0}
@@ -37,7 +36,7 @@ button,a{font-family:inherit;-webkit-tap-highlight-color:transparent}button{curs
 #closed{text-align:center;inset:20px 12px 12px;display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:12px}
 #closed h2{font-weight:700}#closed .mc-button{height:20px}#closed p{line-height:12px}
 .portrait #language{font-size:10px}.portrait #kind-row{gap:8px}.portrait #kind{height:26px;line-height:20px;padding:0 6px}.portrait #view{line-height:20px}.portrait #enlarge{height:22px;line-height:20px}
-.portrait #enable-sound{font-size:12px;height:30px}.portrait #play-video{height:36px;top:calc(50% - 18px)}
+.portrait #play-video{height:36px;top:calc(50% - 18px)}
 .portrait #closed .mc-button{height:42px}.portrait #closed p{line-height:22px}
 noscript{position:fixed;left:20px;top:20px;background:#c6c6c6;padding:20px;color:#303030}
 readthedocs-flyout,.rst-versions,#readthedocs-embed-flyout{display:none!important}
