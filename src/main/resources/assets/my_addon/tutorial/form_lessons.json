@@ -1263,6 +1263,24 @@
       "diagram": "MELEE",
       "icon": "my_addon:textures/gui/skill_icons/fluorescent_laser.png",
       "focus": "TARGET"
+    },
+    "aling_moisture": {
+      "kind": "TRAIT",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png",
+      "focus": "SELF"
+    },
+    "aling_health": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/play_dead.png",
+      "focus": "SELF"
+    },
+    "aling_npc_damage": {
+      "kind": "PASSIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/fluorescent_laser.png",
+      "focus": "TARGET"
     }
   },
   "forms": {
@@ -1306,15 +1324,15 @@
     "my_addon:axolotl_aling": [
       "aling_laser",
       "aling_tide",
-      "aquatic_dash",
       "mucus_dodge",
       "fall_immunity",
-      "moisture",
-      "wet_health",
+      "aling_moisture",
+      "fire_extinguish",
+      "aling_health",
+      "aling_npc_damage",
       "projectile_boost",
       "summon_affinity",
-      "symbiosis",
-      "no_helmet"
+      "symbiosis"
     ],
     "my_addon:familiar_fox_spirit_realm_lord": [
       "blue_ring",

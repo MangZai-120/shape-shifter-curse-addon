@@ -24,7 +24,8 @@ public final class FormTutorialWeb {
     private static final Map<Identifier, String> PAGES = Map.of(
             new Identifier("my_addon", "familiar_fox_spirit_realm_lord"), "spirit-realm-lord",
             new Identifier("my_addon", "axolotl_abyssal_overlord"), "abyssal-overlord",
-            new Identifier("my_addon", "axolotl_fluorescent"), "fluorescent");
+            new Identifier("my_addon", "axolotl_fluorescent"), "fluorescent",
+            new Identifier("my_addon", "axolotl_aling"), "aling");
     private static final String[] KEYS = {"primary", "secondary", "sneak", "attack", "use", "jump", "sprint"};
 
     private FormTutorialWeb() {}
@@ -62,7 +63,9 @@ public final class FormTutorialWeb {
                 if (id != null && PowerTypeRegistry.contains(id)) {
                     PowerType<?> type = PowerTypeRegistry.get(id);
                     var power = PowerHolderComponent.KEY.get(client.player).getPower(type);
-                    if (power instanceof SkillCooldownHolder holder && holder.cooldownSpec().cooldown() > 0)
+                    // Aling's laser accumulates cooldown per shot; its page explains that variable cost.
+                    if (!lesson.id().equals("aling_laser") && power instanceof SkillCooldownHolder holder
+                            && holder.cooldownSpec().cooldown() > 0)
                         state.addProperty("cooldown", holder.cooldownSpec().cooldown() / 20.0);
                 }
             }
