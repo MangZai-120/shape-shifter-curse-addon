@@ -23,64 +23,68 @@ Nova shares its origin with Wind Spirit — both evolve from the vanilla Ocelot 
 
 ***
 
-## Core Resource: Lives
+[Watch the bilingual Nova tutorial](../../tutorials/nova/index.html?lang=en_us)
 
-* Maximum **8** lives, starting full.
-* Each Nine Lives revival consumes **1** life.
-* Regain **1 life per 20 seconds** out of combat (10s without taking/dealing damage counts as out of combat; no recovery in combat).
-* At zero lives, the next kill is real death; respawning refills lives to 8.
+## 1. Self Detonation
 
-***
+Press the primary key with at least one remaining life.
 
-## Active Skills
+Charge for five seconds with seventy percent slower movement, Resistance III and no sprinting. Within five blocks the base damage is fifty against players or one hundred against eligible enemy mobs; damage falls linearly from five to twelve blocks.
 
-### Sacrificial Explosion (Primary Skill Key)
+The thirty-second cooldown starts when detonation ends. It consumes one life, restoring six health and twelve absorption. Blocks remain intact, and whitelisted targets and protected pets are safe. Distance, observer and real player damage comparisons use no accessories.
 
-* Requires at least 1 life. Charges for **5s** with 70% slow, Resistance III, and sprint disabled.
-* On completion, self-destructs and consumes 1 life (Nine Lives catches it — a phoenix rebirth).
-* **50 lethal damage** within 5 blocks, linear falloff from 5 to 12 blocks. No block damage, no friendly fire (whitelist protected).
-* Cooldown **30s**.
+## 2. Spirit Leap
 
-### Spirit Leap (Secondary Skill Key)
+Press the secondary key toward the crosshair; a second leap is available within five seconds.
 
-* Dash toward the crosshair; usable in mid-air.
-* Can be used **2 times** consecutively, max 5s between uses.
-* Each use grants +20% dodge for 3s.
-* Full 2 uses: 10s cooldown; single use expiring the window: 6s cooldown.
+Works in midair. Each leap adds twenty percentage points of dodge for three seconds, and the second leap refreshes that duration. Two leaps normally raise fifteen percent to fifty-five percent, followed by a ten-second cooldown.
 
-***
+Using only one leap waits for the five-second window to expire, then starts a six-second cooldown. Separate clips show both sequences, distinguishing the remaining input window from the actual cooldown. No Perks add extra uses.
 
-## Passive Talents
+## 3. Nine Lives Revival
 
-### Nine Lives
+Automatically triggers on qualifying lethal damage while lives remain.
 
-On lethal damage, automatically consume 1 life and revive in place: restore **6 HP**, gain 6 golden absorption hearts (30s) and **1s** invulnerability; revival sound is heard by everyone. Being downed again within 3s of revival is real death.
+Starts with eight lives, which is also the maximum. Revival consumes one life, restores six health in place, grants twelve absorption for thirty seconds and provides one second of invulnerability.
 
-### Dodge
+Another lethal hit within three seconds of revival causes true death. Exhausted lives or void damage cannot be caught by Nine Lives. A normal respawn after true death restores eight lives. Both player and observer views show the real sequence.
 
-Chance to fully ignore one melee or ranged hit (no damage, no knockback). Base **15%**, stackable via Spirit Leap, cap **85%**.
+## 4. Recovering Lives
 
-### Health
+Stop attacking and taking damage, then wait to leave combat.
 
-Further reduced from the ocelot baseline: max health **12 (6 hearts)** — fragility in exchange for Nine Lives safety net.
+After about ten seconds without combat, recovery accumulates. Twenty accumulated seconds restore one life, up to eight; combat pauses the accumulation.
 
-### Inherited Ocelot Passives
+The clip starts with a six-life fixture, takes a real hit and waits the full duration, showing combat state and recovery progress. Zero lives do not regenerate; a normal respawn is required. Invulnerability and absorption durations are separate from recovery.
 
-All-direction climbing, high and long jumps, arrow evasion, cat night vision, velvet paws, fall damage immunity, sneak speed.
+## 5. Dodge and Mob Protection
 
-***
+Take actual attacks and compare successful hits with dodges.
 
-## Exclusive Trinket: Samsara Cat Eye
+Base dodge is fifteen percent. A successful dodge prevents that hit and its knockback. Leaps temporarily increase the chance, capped at eighty-five percent. Eligible enemy mobs also deal twenty-five percent less damage.
 
-Necklace exclusive to Nova: revival heal raised from 6 to 8, invulnerability extended from 1s to 1.8s, and knocks back + slows nearby enemies on revival.
+A temporary maximum-health fixture of one hundred and twenty allows twenty identical four-damage mob attacks: the upstream ocelot takes four per hit, while Nova takes three or dodges for zero. This short sample is not an exact probability measurement. The upstream arrow-dodge power is replaced by this system.
 
-***
+## 6. Post-revival Quick Casting
 
-## Weaknesses
+Start a spell within five seconds after an actual Nine Lives revival.
 
-| Limitation | Description |
-| --- | --- |
-| Very low health | Only 12 max HP; every hit outside revival is dangerous |
-| Life management | Zero lives = real death; no recovery in combat |
-| Sacrifice cost | Self-destruct always costs a life — calculate value first |
-| Revival gap | Downed again within 3s of revival = real death |
+The spell preparation time becomes zero during this window. Ordinary casting retains its original preparation. A Nine Lives revival caused by self detonation opens the same window.
+
+Equal-level Pocket Space compares normal twelve-second preparation with zero preparation after revival. This changes preparation only; spell duration, channeling, collapse payment and cooldown retain their own rules. It grants neither free casting nor prolonged invulnerability.
+
+## 7. Reduced Maximum Health
+
+Compare actual maximum health with a human and the upstream permanent ocelot.
+
+Nova has twelve maximum health, or six red hearts. The upstream ocelot has fourteen, while a human has twenty.
+
+This is an additional reduction from the upstream ocelot. No armour or health accessories are equipped, and temporary revival absorption is not counted as maximum health.
+
+## 8. Ocelot Restrictions and Unarmed Damage
+
+Compare matching sprint, food, shield, water movement and unarmed attack inputs.
+
+Nova can sprint, eat cooked food and use shields, and removes extra hunger, exhaustion and water slowdown. It also removes the upstream ocelot unarmed damage enhancement.
+
+Each clip compares the upstream form with Nova. Climbing, night vision, jumps, sneak acceleration, fall immunity and armour-slot limits are inherited without repeated footage. Acquisition remains text-only; Perks and accessories are excluded.

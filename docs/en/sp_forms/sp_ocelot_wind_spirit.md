@@ -4,6 +4,25 @@ Wind Spirit is a special variant of the vanilla Ocelot permanent form, evolved v
 
 *** 
 
+## Form Profile
+
+| Item | Description |
+| --- | --- |
+| Classification | Ocelot permanent form · Moon Essence Cross branch |
+| Combat role | High-speed melee combo / Aerial dash / Projectile suppression |
+| Note | A sibling branch of [Nova](sp_ocelot_nova.md) (Evolution Stone route); the two do not conflict |
+
+***
+
+## Evolution Requirements
+
+| Condition | Requirement |
+| --- | --- |
+| Base form | Vanilla Ocelot permanent form |
+| Evolution item | Moon Essence Cross |
+| Timing | Cursed Moon night |
+
+***
 
 [Watch the bilingual Wind Spirit tutorial](../../tutorials/wind-spirit/index.html?lang=en_us)
 
