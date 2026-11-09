@@ -1,5 +1,7 @@
 ﻿# Wild Cat (SP) — Moonlight Phantom
 
+[Watch the bilingual Moonlight Phantom gameplay tutorial](../../tutorials/moonlight-phantom/index.html?lang=en_us)
+
 **Wild Cat SP / Moonlight Phantom**
 
 > "Moonlight has no footsteps.\
