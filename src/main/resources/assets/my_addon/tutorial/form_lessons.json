@@ -1547,6 +1547,36 @@
       "diagram": "SHIELD",
       "icon": "my_addon:textures/gui/skill_icons/wither_sand.png",
       "focus": "TARGET"
+    },
+    "fruit_ground": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/parasitic_seed.png",
+      "focus": "TARGET"
+    },
+    "fruit_limit": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/parasitic_seed.png",
+      "focus": "TARGET"
+    },
+    "fruit_cloud": {
+      "kind": "PASSIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/parasitic_seed.png",
+      "focus": "TARGET"
+    },
+    "fruit_summon": {
+      "kind": "PASSIVE",
+      "diagram": "SUMMON",
+      "icon": "my_addon:textures/gui/skill_icons/parasitic_seed.png",
+      "focus": "TARGET"
+    },
+    "fruit_health": {
+      "kind": "TRAIT",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/parasitic_seed.png",
+      "focus": "SELF"
     }
   },
   "forms": {
@@ -1816,24 +1846,22 @@
       "moon_buff",
       "iron_weak",
       "echolocation",
-      "bat_movement",
       "blood_casting",
-      "blood_mend",
-      "armor_light",
-      "bat_ranged_limit"
+      "blood_mend"
     ],
     "my_addon:bat_parasitic_fruit": [
       "parasitic_seed",
+      "fruit_ground",
+      "fruit_limit",
       "spore",
+      "fruit_cloud",
       "seed_energy",
       "seed_food",
       "crop_growth",
       "debuff_spread",
       "fruit_npc_debuff",
-      "summon_affinity",
-      "bat_movement",
-      "armor_light",
-      "bat_ranged_limit"
+      "fruit_summon",
+      "fruit_health"
     ],
     "my_addon:spider_moon_weaver": [
       "web_shot",

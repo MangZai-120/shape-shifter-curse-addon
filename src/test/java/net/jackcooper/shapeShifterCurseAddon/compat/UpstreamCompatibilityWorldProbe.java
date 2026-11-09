@@ -123,6 +123,32 @@ public final class UpstreamCompatibilityWorldProbe {
             check(data.get("interval").getAsInt()==60,"保留三秒被动探测："+name);
             check(data.getAsJsonObject("condition").getAsJsonArray("conditions").size()==2,"保留夜间限制："+name);
             check(data.getAsJsonObject("entity_action").getAsJsonArray("actions").size()==2,"保留发光与虚弱两项结算："+name);
+            var caster=player(t,name.contains("desmodus")?FormIdentifiers.BAT_DESMODUS:FormIdentifiers.BAT_PARASITIC_FRUIT);
+            caster.setPosition(p.getPos().add(0,0,32));
+            var condition=ApoliDataTypes.ENTITY_CONDITION.read(data.get("condition"));
+            world.setTimeOfDay(6000);
+            check(!condition.test(caster),"白天仍然不触发回声："+name);
+            world.setTimeOfDay(18000);
+            check(condition.test(caster),"夜间回声不要求露天："+name);
+            var echoes=new ArrayList<net.minecraft.entity.mob.HuskEntity>();
+            for(double distance:new double[]{31,33,30}){
+                var echo=EntityType.HUSK.create(world);echo.setAiDisabled(true);echo.setNoGravity(true);
+                echo.setPosition(caster.getX()+distance,caster.getY(),caster.getZ());
+                world.getChunk(echo.getBlockPos());
+                check(world.spawnEntity(echo),"生成范围验证目标："+name+" "+distance);
+                echoes.add(echo);
+            }
+            check(world.getOtherEntities(caster,caster.getBoundingBox().expand(32)).contains(echoes.get(0)),"范围内目标已进入世界实体查询："+name);
+            caster.addCommandTag(net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils.WHITELIST_MOB_TAG_PREFIX+echoes.get(2).getUuid());
+            ApoliDataTypes.ENTITY_ACTION.read(data.get("entity_action")).accept(caster);
+            var glow=net.minecraft.entity.effect.StatusEffects.GLOWING;
+            var weakness=net.minecraft.entity.effect.StatusEffects.WEAKNESS;
+            check(echoes.get(0).hasStatusEffect(glow)&&echoes.get(0).hasStatusEffect(weakness),"原16格以外、32格以内目标获得发光和虚弱："+name);
+            check(echoes.get(0).getStatusEffect(glow).getDuration()==60
+                    &&echoes.get(0).getStatusEffect(weakness).getDuration()==60,"两种效果仍持续三秒："+name);
+            check(!echoes.get(1).hasStatusEffect(glow)&&!echoes.get(1).hasStatusEffect(weakness),"32格以外目标不受影响："+name);
+            check(echoes.get(2).hasStatusEffect(glow)&&!echoes.get(2).hasStatusEffect(weakness),"范围扩大后白名单仍只豁免虚弱："+name);
+            for(var echo:echoes)echo.discard();
         }
         Files.writeString(Path.of("upstream-compatibility-result.json"),new Gson().toJson(Map.of("checks",checks,"real_server_world",true,"old_origin_save_repaired",true,"resources_and_cooldowns_retained",true)));
         System.out.println("SSC_UPSTREAM_COMPATIBILITY_WORLD_PASS checks="+checks);t.complete();

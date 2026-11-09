@@ -9,7 +9,7 @@
     "actions": [
       {
         "type": "apoli:area_of_effect",
-        "radius": 16,
+        "radius": 32,
         "shape": "sphere",
         "bientity_action": {
           "type": "apoli:and",
@@ -52,7 +52,7 @@
       },
       {
         "type": "apoli:area_of_effect",
-        "radius": 16,
+        "radius": 32,
         "shape": "sphere",
         "bientity_action": {
           "type": "apoli:target_action",

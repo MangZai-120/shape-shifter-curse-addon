@@ -26,7 +26,9 @@ public final class NeoClient implements ClientModInitializer {
     private static boolean bookEquipped;
     public static Tuning tuning(Blueprint b){return TUNINGS.getOrDefault(b.identity()+"#"+b.band(),TUNINGS.getOrDefault(b.identity(),Tuning.defaults()));}
     public static double bodyMastery(Blueprint b) {
-        var values=data.progress.get(b.identity());double needed=tuning(b).mastery()>0?tuning(b).mastery():masteryNeeded(b);
+        double[] values = data.progress.get(b.identity());
+        double configured = tuning(b).mastery();
+        double needed = configured > 0 ? configured : masteryNeeded(b);
         return values==null?0:clamp(values[b.band()]/needed,0,1);
     }
     public static double bookPower(Blueprint b){return BOOK_EFFECTS.getOrDefault(b.output(),new double[]{1,1})[1];}

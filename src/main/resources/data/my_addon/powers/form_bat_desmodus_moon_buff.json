@@ -1,7 +1,8 @@
 {
     "type": "apoli:multiple",
     "attack_up": {
-        "type": "apoli:attribute",
+        "type": "apoli:conditioned_attribute",
+        "tick_rate": 1,
         "modifier": {
             "attribute": "minecraft:generic.attack_damage",
             "operation": "multiply_total",
@@ -18,7 +19,8 @@
         }
     },
     "speed_up": {
-        "type": "apoli:attribute",
+        "type": "apoli:conditioned_attribute",
+        "tick_rate": 1,
         "modifier": {
             "attribute": "minecraft:generic.movement_speed",
             "operation": "multiply_total",
