@@ -1499,6 +1499,24 @@
       "diagram": "MARK",
       "icon": "my_addon:textures/gui/skill_icons/nightmare_fear.png",
       "focus": "TARGET"
+    },
+    "wind_traits": {
+      "kind": "TRAIT",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/wind_dash.png",
+      "focus": "SELF"
+    },
+    "nova_health": {
+      "kind": "TRAIT",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/nova_explosion.png",
+      "focus": "SELF"
+    },
+    "nova_traits": {
+      "kind": "TRAIT",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/nova_explosion.png",
+      "focus": "SELF"
     }
   },
   "forms": {
@@ -1717,10 +1735,7 @@
       "wind_pressure",
       "mobile_casting",
       "space_affinity",
-      "climb",
-      "raw_diet",
-      "fall_immunity",
-      "armor_light"
+      "wind_traits"
     ],
     "my_addon:ocelot_nova": [
       "nova",
@@ -1729,9 +1744,8 @@
       "lives_regen",
       "nova_evasion",
       "revive_cast",
-      "climb",
-      "raw_diet",
-      "armor_light"
+      "nova_health",
+      "nova_traits"
     ],
     "my_addon:anubis_wolf_netherjudge": [
       "death_domain",

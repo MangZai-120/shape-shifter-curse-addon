@@ -33,7 +33,9 @@ public final class FormTutorialWeb {
             Map.entry(new Identifier("my_addon", "allay_crystal_sound"), "crystal-sound"),
             Map.entry(new Identifier("my_addon", "allay_spirit_of_the_fallen"), "fallen-spirit"),
             Map.entry(new Identifier("my_addon", "wild_cat_moonlight_phantom"), "moonlight-phantom"),
-            Map.entry(new Identifier("my_addon", "wild_cat_nightmare"), "nightmare"));
+            Map.entry(new Identifier("my_addon", "wild_cat_nightmare"), "nightmare"),
+            Map.entry(new Identifier("my_addon", "ocelot_wind_spirit"), "wind-spirit"),
+            Map.entry(new Identifier("my_addon", "ocelot_nova"), "nova"));
     private static final String[] KEYS = {"primary", "secondary", "sneak", "attack", "use", "jump", "sprint"};
 
     private FormTutorialWeb() {}

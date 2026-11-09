@@ -4,6 +4,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.CreeperEntity;
+import net.minecraft.entity.mob.MobEntity;
 import net.jackcooper.shapeShifterCurseAddon.entity.GhostCatEntity;
 import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
 import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
@@ -167,7 +168,8 @@ public final class NightmareSpookManager {
 		if (pos == null) return false;
 
 		CreeperEntity creeper = EntityType.CREEPER.create(world);
-		creeper.refreshPositionAndAngles(pos.x, pos.y, pos.z, target.getHeadYaw() + 180.0f, 0.0f);
+		creeper.refreshPositionAndAngles(pos.x, pos.y, pos.z, 0.0f, 0.0f);
+		faceTarget(creeper, target, true);
 		// 幽灵化数据：禁 AI（站桩）、无敌、对他人隐身、无重力、持久化
 		creeper.setAiDisabled(true);
 		creeper.setInvulnerable(true);
@@ -210,6 +212,7 @@ public final class NightmareSpookManager {
 
 		GhostCatEntity cat = net.jackcooper.shapeShifterCurseAddon.SscAddon.GHOST_CAT_ENTITY.create(world);
 		cat.refreshPositionAndAngles(pos.x, pos.y, pos.z, 0.0f, 0.0f);
+		faceTarget(cat, target, true);
 		// 幽灵化：NoAI + 无敌 + 隐身（仅目标客户端显形）；保留重力（要贴地跑/跳）
 		cat.setAiDisabled(true);
 		cat.setInvulnerable(true);
@@ -243,17 +246,12 @@ public final class NightmareSpookManager {
 		Vec3d eyePos = new Vec3d(target.getX(), target.getBodyY(0.5), target.getZ());
 		Vec3d toEye = eyePos.subtract(catPos);
 		double dist = toEye.length();
-		// 面向目标
-		float yaw = (float) Math.toDegrees(Math.atan2(toEye.x, toEye.z)) - 90.0f;
-		cat.setYaw(yaw);
-		cat.headYaw = yaw;
-		cat.bodyYaw = yaw;
-
 		if (st.phase == 0) {
 			// 追跑：朝目标移动（NoAI 下手动驱动；limbAnimator 由位置差驱动腿部动画）
 			Vec3d dir = toEye.normalize();
 			Vec3d next = catPos.add(dir.multiply(BAL.d("cat_run_speed", CAT_RUN_SPEED)));
 			cat.setPosition(next.x, next.y, next.z);
+			faceTarget(cat, target, false);
 			// 距离 4 格 → 起跳扑脸
 			if (dist <= BAL.d("cat_leap_distance", CAT_LEAP_DISTANCE)) {
 				st.phase = 1;
@@ -279,9 +277,29 @@ public final class NightmareSpookManager {
 				return;
 			}
 			cat.setPosition(nx, ny, nz);
+			faceTarget(cat, target, false);
 			if (t >= 1.0f) {
 				completeCatAttack(world, st, cat, target);
 			}
+		}
+	}
+
+	/** No-AI illusions face their actual victim, independently of the victim's viewing direction. */
+	private static void faceTarget(MobEntity ghost, LivingEntity target, boolean spawning) {
+		Vec3d direction = target.getEyePos().subtract(ghost.getEyePos());
+		double horizontal = Math.hypot(direction.x, direction.z);
+		float yaw = horizontal < 1.0e-7 ? ghost.getYaw()
+				: (float) Math.toDegrees(Math.atan2(-direction.x, direction.z));
+		float pitch = (float) -Math.toDegrees(Math.atan2(direction.y, horizontal));
+		ghost.setYaw(yaw);
+		ghost.setBodyYaw(yaw);
+		ghost.setHeadYaw(yaw);
+		ghost.setPitch(pitch);
+		if (spawning) {
+			ghost.prevYaw = yaw;
+			ghost.prevBodyYaw = yaw;
+			ghost.prevHeadYaw = yaw;
+			ghost.prevPitch = pitch;
 		}
 	}
 
@@ -373,6 +391,7 @@ public final class NightmareSpookManager {
 				cit.remove();
 				continue;
 			}
+			faceTarget(gc, player, false);
 			if (gc.age >= creeperLife) {
 				// 到期：无实伤爆除（声/粒直发目标，不广播）
 				cit.remove();
