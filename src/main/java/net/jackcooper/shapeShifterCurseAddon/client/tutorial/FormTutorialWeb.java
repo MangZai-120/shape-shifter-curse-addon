@@ -21,16 +21,19 @@ import org.slf4j.LoggerFactory;
 /** The tutorial opens in the system browser; its page mirrors the native book UI. */
 public final class FormTutorialWeb {
     private static final String ROOT = "https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/tutorials/";
-    private static final Map<Identifier, String> PAGES = Map.of(
-            new Identifier("my_addon", "familiar_fox_spirit_realm_lord"), "spirit-realm-lord",
-            new Identifier("my_addon", "axolotl_abyssal_overlord"), "abyssal-overlord",
-            new Identifier("my_addon", "axolotl_fluorescent"), "fluorescent",
-            new Identifier("my_addon", "axolotl_aling"), "aling",
-            new Identifier("my_addon", "familiar_fox_red"), "red",
-            new Identifier("my_addon", "familiar_fox_mancianima"), "mancianima",
-            new Identifier("my_addon", "snow_fox_frost_spirit"), "frost-spirit",
-            new Identifier("my_addon", "snow_fox_frostspine"), "frostspine",
-            new Identifier("my_addon", "allay_crystal_sound"), "crystal-sound");
+    private static final Map<Identifier, String> PAGES = Map.ofEntries(
+            Map.entry(new Identifier("my_addon", "familiar_fox_spirit_realm_lord"), "spirit-realm-lord"),
+            Map.entry(new Identifier("my_addon", "axolotl_abyssal_overlord"), "abyssal-overlord"),
+            Map.entry(new Identifier("my_addon", "axolotl_fluorescent"), "fluorescent"),
+            Map.entry(new Identifier("my_addon", "axolotl_aling"), "aling"),
+            Map.entry(new Identifier("my_addon", "familiar_fox_red"), "red"),
+            Map.entry(new Identifier("my_addon", "familiar_fox_mancianima"), "mancianima"),
+            Map.entry(new Identifier("my_addon", "snow_fox_frost_spirit"), "frost-spirit"),
+            Map.entry(new Identifier("my_addon", "snow_fox_frostspine"), "frostspine"),
+            Map.entry(new Identifier("my_addon", "allay_crystal_sound"), "crystal-sound"),
+            Map.entry(new Identifier("my_addon", "allay_spirit_of_the_fallen"), "fallen-spirit"),
+            Map.entry(new Identifier("my_addon", "wild_cat_moonlight_phantom"), "moonlight-phantom"),
+            Map.entry(new Identifier("my_addon", "wild_cat_nightmare"), "nightmare"));
     private static final String[] KEYS = {"primary", "secondary", "sneak", "attack", "use", "jump", "sprint"};
 
     private FormTutorialWeb() {}

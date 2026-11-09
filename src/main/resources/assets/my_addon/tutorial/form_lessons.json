@@ -1457,6 +1457,48 @@
       "diagram": "SPELL",
       "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
       "focus": "SELF"
+    },
+    "fallen_npc_damage": {
+      "kind": "PASSIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/wind_claws.png",
+      "focus": "TARGET"
+    },
+    "cat_vision": {
+      "kind": "PASSIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/invisibility.png",
+      "focus": "SELF"
+    },
+    "cat_health": {
+      "kind": "TRAIT",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/invisibility.png",
+      "focus": "SELF"
+    },
+    "cat_npc_control": {
+      "kind": "PASSIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/invisibility.png",
+      "focus": "TARGET"
+    },
+    "dream_guard": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/nightmare_fear.png",
+      "focus": "TARGET"
+    },
+    "fear_hit": {
+      "kind": "PASSIVE",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/nightmare_fear.png",
+      "focus": "TARGET"
+    },
+    "nightmare_void": {
+      "kind": "PASSIVE",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/nightmare_fear.png",
+      "focus": "TARGET"
     }
   },
   "forms": {
@@ -1631,13 +1673,12 @@
       "scream",
       "fallen_mark",
       "fallen_melee",
-      "allay_flight",
+      "fallen_npc_damage",
       "fallen_chain",
       "curse_affinity",
       "fallen_food",
       "fallen_fire",
-      "fallen_faction",
-      "armor_legs"
+      "fallen_faction"
     ],
     "my_addon:wild_cat_moonlight_phantom": [
       "invisibility",
@@ -1647,26 +1688,26 @@
       "spell_cover",
       "hunter_casting",
       "night_hunter",
-      "lifesaving_tail",
-      "climb",
       "raw_diet",
-      "fall_immunity",
-      "armor_legs"
+      "cat_vision",
+      "cat_health",
+      "cat_npc_control"
     ],
     "my_addon:wild_cat_nightmare": [
       "dream",
+      "dream_guard",
       "fear",
+      "fear_hit",
       "spook",
       "dream_devour",
       "dream_casting",
+      "nightmare_void",
       "cursed_moon_dream",
       "phantom_friend",
       "night_hunter",
-      "lifesaving_tail",
-      "climb",
       "raw_diet",
-      "fall_immunity",
-      "armor_legs"
+      "cat_vision",
+      "cat_health"
     ],
     "my_addon:ocelot_wind_spirit": [
       "wind_dash",
