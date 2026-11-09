@@ -4,80 +4,69 @@ Wind Spirit is a special variant of the vanilla Ocelot permanent form, evolved v
 
 *** 
 
-## Form Profile
 
-| Item | Description |
-| --- | --- |
-| Classification | Ocelot permanent form · Moon Essence Cross branch |
-| Combat role | High-speed melee combo / Aerial dash / Projectile suppression |
-| Note | A sibling branch of [Nova](sp_ocelot_nova.md) (Evolution Stone route); the two do not conflict |
+[Watch the bilingual Wind Spirit tutorial](../../tutorials/wind-spirit/index.html?lang=en_us)
 
-***
+## 1. Wind Dash
 
-## Evolution Requirements
+Press the primary key to rise; aim and press it again while hovering.
 
-| Condition | Requirement |
-| --- | --- |
-| Base form | Vanilla Ocelot permanent form |
-| Evolution item | Moon Essence Cross |
-| Timing | Cursed Moon night |
+Rise about five blocks and hover for up to three seconds, then dash to the aimed landing point within sixteen blocks. Landing damage has a three-block radius: twelve base damage, or eighteen against eligible enemy mobs.
 
-***
+The twelve-second cooldown starts at the end. Waiting out the hover makes you descend without the active landing hit. Observer, caster preview and affected-player footage are shown separately; whitelisted targets are protected.
 
-## Core Resource: Stamina
+## 2. Gale Claws
 
-Wind Spirit has no mana system. Its core resource is the **stamina** of Gale Claws, shown on the attack cooldown indicator near the crosshair. Stamina is full when a combo starts, drains with each swipe, and enters overheat recovery once emptied or released.
+Hold the attack key; release it to stop.
 
-***
+Sweep in front of you with a small forward lunge. The interval ramps from about twenty ticks to seven after three seconds. Base damage is eight, with ordinary attack-charge scaling and sustained-attack decay.
 
-## Active Skills
+Claws consume stamina and last up to about ten seconds. Empty stamina takes about eight seconds to recover; early release recovers from the remaining amount. Movement slows by up to forty-five percent. No stamina necklace or Perks are used.
 
-### Gale Claws (Hold Left Click)
+## 3. Gale Empowerment
 
-* Attack interval starts at ~1s and converges to ~0.34s per swipe after ~3 seconds.
-* Each swipe sweeps ~2 blocks ahead in a ~2.5-block area (base 8 damage, scaled by attack cooldown and duration), with slight forward lunge and knockback.
-* Movement speed drops gradually during combos (up to -45%).
-* Combo lasts up to ~10s; overheat recovery lasts ~8s.
+Press the secondary key immediately before a close hit.
 
-### Wind Dash (Primary Skill Key)
+For half a second, unarmed or form-melee damage is multiplied by 1.5. Eligible enemy mobs take a further multiplier of two, for three in total. Cooldown is two seconds.
 
-* First press: launch vertically to ~5 blocks and hover ~3 seconds with a landing indicator.
-* Second press during hover: high-speed straight dash toward the indicator, up to ~16 blocks.
-* Landing deals ~12 damage in a ~3-block radius.
-* If no dash within 3s, drift down slowly (no damage). Cooldown ~12s.
+Separate comparisons show a player, a mob and an iron sword. Weapons do not gain this enhancement. Activate it close to the hit; swinging does not extend the short window.
 
-### Gale Augment (Secondary Skill Key)
+## 4. Landing Surge
 
-* Next melee within 0.5s gains +50% damage (works for both Gale Claws and normal attacks). No effect while holding a weapon. Cooldown ~2s.
+Land after a significant fall without damaging a target during that airborne period.
 
-***
+A fall of at least 1.5 blocks can release a landing surge for six damage and knockback in roughly three blocks, with a five-second internal cooldown.
 
-## Passive Talents
+Compare an untouched descent with a descent that includes a real airborne hit. Unarmed, claw and projectile damage while airborne can prevent that landing surge. Whitelisted targets and targets behind walls are protected.
 
-### Inherited Ocelot Passives
+## 5. Wind Pressure
 
-All-direction climbing, higher and longer jumps, arrow evasion, cat night vision, sneaking speed, velvet paws (silent landing, no tripwires), fall damage immunity, creeper deterrence.
+A qualifying newly launched projectile is within eight blocks.
 
-### Landing Gale
+Enemy projectile speed is multiplied by 0.7 once. Your own projectiles and those from protected, whitelisted owners are unaffected.
 
-Landing from significant height without hitting an enemy during that airtime deals ~6 damage and knockback in a ~3-block radius. Cooldown ~5s.
+Eligibility is checked during the first five ticks after launch; old projectiles are not repeatedly slowed. Human and Wind Spirit footage use equal-speed real arrows with matching gravity settings, identifying enemy, self and ally speeds.
 
-### Wind Pressure Field
+## 6. Mobile Casting
 
-Projectiles fired by enemies (arrows, fireballs, tridents) within ~8 blocks slow down by 30%; the user's and whitelisted allies' projectiles are unaffected.
+Begin preparing a spell, then adjust your position by walking.
 
-***
+Preparation allows thirty percent of normal walking speed, overriding the spell's usual immobilization or preparation movement restrictions.
 
-## Exclusive Trinket: Wind Claw Bell
+Pocket Space compares a human with Wind Spirit. Before a protected release stage, sprinting, valid sneak-rushing or form skills interrupt the spell. During that stage those inputs are disabled while walking remains available. Locked targets or landing points still have the 1.5-times effective-range boundary.
 
-Necklace exclusive to Wind Spirit: stamina recovery after Gale Claws overheat is faster — refill time shortened from ~8s to ~5.5s.
+## 7. Space Affinity
 
-***
+Successfully cast a Space spell from an equipped spellbook.
 
-## Weaknesses
+Space spell cooldown is multiplied by 0.9. A successful cast also refunds fifteen percent of its cost, reducing paid collapse in the current system.
 
-| Limitation | Description |
-| --- | --- |
-| Combo slow-down | Movement speed drops up to 45% during combos |
-| Overheat window | 8s overheat after stamina empties |
-| Melee range | Output concentrated at close range; risky against burst damage |
+Equal-level Space Blink compares the actual payment, refund and cooldown as a human and as Wind Spirit. The refund happens on successful casting and needs no hit. Form dashes and claws are not book-cast Space spells.
+
+## 8. Adjusted Ocelot Restrictions
+
+Compare matching inputs and equipment against the upstream permanent ocelot form.
+
+Wind Spirit allows ordinary sprinting, cooked food and shields, and removes the upstream extra hunger, exhaustion, water slowdown and related restrictions.
+
+Separate clips compare sprinting, cooked beef, frontal shielding and walking in water. Inherited health, climbing, jumps, night vision, fall immunity and armour-slot limits are retained without repeated demonstrations. Acquisition remains text-only; Perks and accessories are skipped.
