@@ -1,0 +1,16 @@
+SSCA tutorial interface assets
+
+window.png and inset.png reuse the nine-slice pixels sampled by the mod's
+FormTutorialTextures from spell_research_background.png and magic_slot_panel.png.
+scroll-thumb.png is the mod's existing scroll_thumb.png.
+
+The button sprites, options background and UI click sound come from the locally
+installed Minecraft Java Edition 1.20.1 client. Minecraft assets belong to Mojang.
+This is an unofficial fan tutorial and is not an official Minecraft product.
+
+tutorial-pixel.woff is SSCA Tutorial Pixel, a converted subset of the GNU Unifont
+Unihex glyphs used by Minecraft 1.20.1's minecraft/font/unifont.zip provider.
+Copyright: GNU Unifont contributors.
+Font license: SIL Open Font License version 1.1; see Unifont-OFL.txt.
+The derivative font has been renamed SSCA Tutorial Pixel.
+Source and license: https://unifoundry.com/unifont/index.html

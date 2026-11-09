@@ -13,7 +13,7 @@ Golden Sandstorm is the other evolution path of the Anubis Wolf Stage 3 line. In
 
 | Item | Description |
 | --- | --- |
-| Registry name | `my_addon:form_golden_sandstorm_sp` |
+| Registry name | `my_addon:anubis_wolf_golden_sandstorm` |
 | Classification | Sandstorm branch of Anubis Wolf Stage 3 |
 | Affinity | Undead / Desert |
 | Combat role | Brand-burst melee / Percent damage / Wither sustain |
@@ -31,116 +31,86 @@ Golden Sandstorm is the other evolution path of the Anubis Wolf Stage 3 line. In
 
 ---
 
-## Active Skills
+[Watch the bilingual Golden Sandstorm tutorial](../../tutorials/golden-sandstorm/index.html?lang=en_us)
 
-### Wither Sand (Primary)
+## Addon Abilities and Changes
 
-Channel to release a golden sandstorm, applying the first stack of Erosion Brand:
+### 1. Withering Sand
 
-* Channel **1 second**.
-* Movement speed −**50%** during channel.
-* Radius **15 blocks**.
-* Applies **Sand Blindness for 3 seconds** to non-whitelisted targets.
-* Adds **1 stack of Erosion Brand** on hit.
-* Cooldown **26 seconds** on success.
-* Interrupted by damage → **7 second** short cooldown.
+Press the primary key while not sneaking and complete the charge.
 
-### Detonate Marks (Secondary)
+Charge for one second at fifty percent slower movement. Eligible unprotected targets within fifteen blocks receive three seconds of Sand Blindness and one erosion layer. Successful release starts a twenty-six-second cooldown.
 
-Detonate all Erosion-Branded targets not in green cooldown state:
+Losing health during charging interrupts the cast and starts a seven-second cooldown. Clips compare range and whitelist protection, a real affected player's view, and an actual damage interruption. No Perks add layers.
 
-* No valid targets → does not enter cooldown.
-* Success cooldown **10 seconds**.
-* Each target takes **20% of current HP** as damage, capped at **20**, minimum **1**.
-* Wearing a Withered Sand Ring raises the per-hit cap to **26**.
-* 3-stack targets first trigger the passive burst, then the detonation settles.
-* Self restores **20% of missing HP**.
-* Wearing an Erosion Sand Prism: main target takes **60%** damage; remaining **40%** splashes to surrounding targets.
+### 2. Detonate Marks
 
----
+Press the secondary key while not sneaking to settle existing non-green marks.
 
-## Passive Talents
+Each eligible target takes twenty percent of current health, capped at twenty and floored at one. A three-layer target first takes a passive burst, then detonation is calculated from remaining health. Success has a ten-second cooldown and heals twenty percent of your missing health once.
 
-### Erosion Brand
+No eligible unprotected marks means no cooldown or healing. Compare one layer, three layers, an empty attempt and a whitelisted control. Melee can still mark protected targets; manual detonation skips them and preserves their existing marks. No damage-cap ring or spreading prism is equipped.
 
-Melee attacks auto-stack Erosion Brand on the target:
+### 3. Erosion Layers and Colours
 
-* Maximum **3 stacks**.
-* Lasts **10 seconds**, restacking refreshes duration.
-* By default, the same target can only stack 1 layer per **1 second**.
-* With Erosion Sand Prism, stack interval becomes **1.3 seconds**.
-* At 3 stacks, the next attack triggers passive burst: **20% of target's current HP**, capped at **20**; Withered Sand Ring raises cap to **26**.
-* Passive burst heals self for **10% of max HP**.
-* After burst, target enters green state for **10 seconds**; the first **5 seconds** block restacking.
+Land melee hits, Withering Sand or qualifying spell hits.
 
-Erosion Sand Prism strengthens burst splash: bursts or detonations splash **40%** damage to non-whitelisted targets within **5 blocks**, and add 1 extra brand stack within **4 blocks**.
+Up to three layers last ten seconds, with repeated hits able to refresh the duration. Under the default form-casting settings, melee, sandstorm and spell layers share a roughly two-second gate per target.
 
-### Brand Awareness
+Yellow, orange and red indicate one, two and three layers. Actual hits one second apart show that not every hit adds a layer. A separate clip shows an unrefreshed layer expiring naturally. Whitelisting does not prevent direct melee layers.
 
-Branded targets display colors based on state:
+### 4. Full-layer Passive Burst
 
-| Color | Meaning |
-| --- | --- |
-| Yellow | 1 stack |
-| Orange | 2 stacks |
-| Red | 3 stacks, can trigger burst |
-| Green | Post-burst stack cooldown |
+Hit a target already carrying three layers after the shared gate allows another application.
 
-### Backlash Strike
+Trigger extra damage equal to twenty percent of current health, capped at twenty and floored at one, and heal ten percent of your maximum health. Layers clear and the target turns green.
 
-When attacked, auto-triggers a counter:
+Green lasts ten seconds; the first five seconds block new layers, after which stacking can restart. Complete observer footage shows layers, burst, healing and the end of green without damage or spreading accessories. The controlled healing scenes temporarily isolate unchanged upstream on-hit healing to show the addon recovery separately.
 
-* Radius **4 blocks**.
-* Horizontal knockback **0.5**, vertical **0.15**.
-* Applies **Wither I for 5 seconds** to non-whitelisted targets.
-* Cooldown **15 seconds**; the cooldown still triggers even on no hit.
+### 5. Dedicated Recovery and Hunger Healing
 
-### Wither Adaptation
+Recover through resting, your own attributed Wither ticks or direct kills.
 
-Immune to Wither, Blindness, Regeneration status effects, and Sand Blindness. "Regeneration" here means the vanilla Regeneration status; Golden Sandstorm can still recover HP via its dedicated mechanism.
+Hunger-based natural healing is disabled. Resting restores one health every ten seconds outside combat or six seconds in combat. Each attributed Wither damage tick heals one; direct player kills heal four and nether wolf kills can heal three.
 
-### Special Recovery
+Full hunger and saturation compare a human with Golden Sandstorm, followed by combat resting, counter-applied Wither and a direct kill. Combat includes recent attacks or damage and nearby combat counterparts; it does not use the old guide's fixed five-second exit rule. The controlled healing scenes temporarily isolate unchanged upstream on-hit healing to show the addon recovery separately.
 
-Natural hunger-based regen is disabled, replaced by dedicated recovery:
+### 6. Counter Burst
 
-| Source | Heal Amount |
-| --- | --- |
-| Self-applied Wither damage | **1 HP** per tick of Wither damage |
-| Player direct kill | **4 HP** |
-| Netherwolf kill | **3 HP** |
-| Out-of-combat meditation | **1 HP** per **10 seconds** |
-| In-combat meditation | **1 HP** per **6 seconds** |
+Automatically triggers on a qualifying incoming attack.
 
----
+Push unprotected living targets outward within four blocks, add a slight upward lift and apply Wither I for five seconds. Internal cooldown is fifteen seconds.
 
-## Weaknesses & Limits
+The cooldown starts even if nothing is hit. Two equal attacks show that another hit during cooldown does not refresh the counter. Whitelisted and out-of-range targets provide controls. Its attributed Wither ticks can also trigger dedicated recovery.
 
-| Limit | Notes |
-| --- | --- |
-| Stacking required | Percent burst depends on Erosion Brand; frequent target disengage cuts output |
-| Channel interrupt | Wither Sand needs 1 s channel; damage → short cooldown |
-| No natural regen | Cannot rely on hunger-based regen; must use Wither / kill / meditation recovery |
-| Whitelist boundary | Melee stacking itself doesn't check whitelist, but splash/detonate/backlash AOE does protect whitelisted targets |
-| Armor limits | Quadruped body unsuited to normal leggings/boots |
+### 7. Wither and Sand Adaptation
 
----
+Attempt to apply Wither, Blindness and Sand Blindness.
 
-## Combat Role
+Golden Sandstorm additionally blocks Wither, Blindness and Sand Blindness while retaining the inherited Regeneration immunity.
 
-**Brand-Burst Melee**
+Real effect attempts compare the upstream third-stage Anubis Wolf with Golden Sandstorm. Regeneration refers to the status effect; dedicated resting, burst and kill healing still work. Unchanged undead potion reversal is not filmed again.
 
-Standard loop:
+### 8. Fire Affinity and Wildfire Refund
 
-1. **Wither Sand** to apply Sand Blindness + 1 brand stack on a group.
-2. Melee continuously stack to 3, triggering **20% current HP** passive burst.
-3. **Detonate Marks** to settle all non-green branded targets and restore missing HP.
-4. Under siege, use **Backlash Strike** and Wither-based regen to stabilize HP.
+Hit with a spellbook Fire spell, including a target already burning before impact.
 
-Suited for mid-close range sustained pressure, not for empty swings or chasing scattered targets.
+Fire damage is multiplied by 1.15. Hitting an already-burning target refunds twenty percent of the cast cost; a Fire kill refunds fifty percent. Per-cast budgets and duplicate-settlement windows limit refunds.
 
----
+Equal-level Fire Bolt compares a human, Golden Sandstorm, a pre-burning target and a kill. Refunds reduce paid collapse; they do not make spells free or shorten form-skill cooldowns.
 
-## Inner Monologue
+### 9. Spell Erosion Marks
 
-> "Sand grains burrow into armor seams — and into the cracks of a soul.\
-> You don't rush to kill prey, because the storm has already written their ending on them."
+Directly hit or successfully apply a harmful effect with a spellbook spell.
+
+One cast can contribute at most one erosion application per target; targets are tracked independently. Different casts still share the target's two-second layer gate with melee and Withering Sand.
+
+A real Ice Barrage contributes one layer despite multiple hits, followed by Fire Bolt from another book slot to add a second. Spell cooldowns are not reset to create the comparison, and individual barrage projectiles are not counted as separate casts.
+
+### 10. Husk and Jackal Neutrality
+
+Remain unprovoked around husks or qualifying transformative jackals.
+
+Neutrality covers husks and qualifying jackals rather than all undead. Ordinary zombies can still naturally acquire you as a target.
+
+Real AI clips show a neutral husk, retaliation after a deliberate attack, and natural zombie aggro. Stopping provocation and leaving sight still requires a recovery period; stopping attacks does not immediately erase aggro.
