@@ -1281,6 +1281,36 @@
       "diagram": "MELEE",
       "icon": "my_addon:textures/gui/skill_icons/fluorescent_laser.png",
       "focus": "TARGET"
+    },
+    "red_mana_regen": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/fire_spark.png",
+      "focus": "SELF"
+    },
+    "red_health": {
+      "kind": "TRAIT",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/red_fire_ring.png",
+      "focus": "SELF"
+    },
+    "red_potion_bag": {
+      "kind": "ACTIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/fire_spark.png",
+      "focus": "SELF"
+    },
+    "red_potion_throw": {
+      "kind": "PASSIVE",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/red_fire_breath.png",
+      "focus": "TARGET"
+    },
+    "red_food": {
+      "kind": "TRAIT",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/fire_spark.png",
+      "focus": "SELF"
     }
   },
   "forms": {
@@ -1356,13 +1386,18 @@
       "kill_empower",
       "familiar_absorb",
       "familiar_reap",
+      "red_mana_regen",
       "familiar_shield",
       "mana_starvation",
-      "familiar_regen",
       "familiar_immunity",
+      "familiar_spirit_sight",
+      "familiar_hidden_aura",
       "familiar_acceleration",
       "familiar_affinity",
-      "armor_legs"
+      "red_health",
+      "red_potion_bag",
+      "red_potion_throw",
+      "red_food"
     ],
     "my_addon:familiar_fox_upgrade": [
       "evolution",

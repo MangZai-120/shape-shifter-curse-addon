@@ -25,7 +25,8 @@ public final class FormTutorialWeb {
             new Identifier("my_addon", "familiar_fox_spirit_realm_lord"), "spirit-realm-lord",
             new Identifier("my_addon", "axolotl_abyssal_overlord"), "abyssal-overlord",
             new Identifier("my_addon", "axolotl_fluorescent"), "fluorescent",
-            new Identifier("my_addon", "axolotl_aling"), "aling");
+            new Identifier("my_addon", "axolotl_aling"), "aling",
+            new Identifier("my_addon", "familiar_fox_red"), "red");
     private static final String[] KEYS = {"primary", "secondary", "sneak", "attack", "use", "jump", "sprint"};
 
     private FormTutorialWeb() {}
