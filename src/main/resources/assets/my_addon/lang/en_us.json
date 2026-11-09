@@ -3340,5 +3340,17 @@
   "tutorial.ssc_addon.form.lesson.fire_extinguish.title": "Moisture Extinguish",
   "tutorial.ssc_addon.form.lesson.fire_extinguish.trigger": "Catch fire while retaining at least 10 moisture.",
   "tutorial.ssc_addon.form.lesson.fire_extinguish.effect": "Automatically spend 10 moisture to extinguish yourself.",
-  "tutorial.ssc_addon.form.lesson.fire_extinguish.note": "Leave the fire block first to avoid reigniting. Insufficient moisture prevents automatic extinguishing."
+  "tutorial.ssc_addon.form.lesson.fire_extinguish.note": "Leave the fire block first to avoid reigniting. Insufficient moisture prevents automatic extinguishing.",
+  "tutorial.ssc_addon.form.lesson.fluorescent_moisture.title": "Land Moisture and Dehydration",
+  "tutorial.ssc_addon.form.lesson.fluorescent_moisture.trigger": "Stay on land, outside water and rain, and watch moisture run out.",
+  "tutorial.ssc_addon.form.lesson.fluorescent_moisture.effect": "Without the relevant Perk, land drains 3 moisture per second by default. At zero moisture, dehydration deals 2 damage per second.",
+  "tutorial.ssc_addon.form.lesson.fluorescent_moisture.note": "The video starts with low moisture to shorten the wait, showing real moisture and health. Water and rain prevent this land drain.",
+  "tutorial.ssc_addon.form.lesson.fluorescent_health.title": "Extra Maximum Health",
+  "tutorial.ssc_addon.form.lesson.fluorescent_health.trigger": "Compare Fluorescent with the upstream axolotl at the same moisture.",
+  "tutorial.ssc_addon.form.lesson.fluorescent_health.effect": "Fluorescent gains 2 extra maximum health on top of the inherited axolotl mechanics.",
+  "tutorial.ssc_addon.form.lesson.fluorescent_health.note": "Inherited moisture rules still affect total maximum health. The bonus is an extra 2, rather than a fixed total. Both panels show real first-person health.",
+  "tutorial.ssc_addon.form.lesson.fluorescent_npc_damage.title": "Damage Against Non-Player Creatures",
+  "tutorial.ssc_addon.form.lesson.fluorescent_npc_damage.trigger": "Use the same iron sword for one fully recovered attack against identically configured targets.",
+  "tutorial.ssc_addon.form.lesson.fluorescent_npc_damage.effect": "Fluorescent multiplies its own damage against enemy non-player creatures by 1.5 by default.",
+  "tutorial.ssc_addon.form.lesson.fluorescent_npc_damage.note": "The human and Fluorescent clips show actual target health loss. Whitelist protection still applies. This is not a universal player or summon damage bonus."
 }

@@ -3340,5 +3340,17 @@
   "tutorial.ssc_addon.form.lesson.fire_extinguish.title": "湿润灭火",
   "tutorial.ssc_addon.form.lesson.fire_extinguish.trigger": "身上着火时，保持至少 10 点湿润度。",
   "tutorial.ssc_addon.form.lesson.fire_extinguish.effect": "自动消耗 10 点湿润度，将自己身上的火焰熄灭。",
-  "tutorial.ssc_addon.form.lesson.fire_extinguish.note": "先离开火焰方块，避免刚熄灭又被点燃；湿润不足时无法自动灭火。"
+  "tutorial.ssc_addon.form.lesson.fire_extinguish.note": "先离开火焰方块，避免刚熄灭又被点燃；湿润不足时无法自动灭火。",
+  "tutorial.ssc_addon.form.lesson.fluorescent_moisture.title": "陆地湿润与脱水",
+  "tutorial.ssc_addon.form.lesson.fluorescent_moisture.trigger": "离开水和雨，在陆地上观察湿润度，直到资源耗尽。",
+  "tutorial.ssc_addon.form.lesson.fluorescent_moisture.effect": "未使用相关Perk时，陆地默认每秒损耗3点湿润度。湿润度为0后，每秒受到2点脱水伤害。",
+  "tutorial.ssc_addon.form.lesson.fluorescent_moisture.note": "视频从少量湿润开始，缩短等待；实际湿润度和生命变化会同步显示。水下与雨中不触发这项陆地消耗。",
+  "tutorial.ssc_addon.form.lesson.fluorescent_health.title": "额外生命上限",
+  "tutorial.ssc_addon.form.lesson.fluorescent_health.trigger": "在相同湿润条件下，对比荧光幼灵与原版美西螈的最大生命。",
+  "tutorial.ssc_addon.form.lesson.fluorescent_health.effect": "在原有美西螈机制之上，荧光幼灵额外获得2点生命上限。",
+  "tutorial.ssc_addon.form.lesson.fluorescent_health.note": "继承的湿润度机制仍会影响总生命上限；这里的加成是额外2点，不是固定的总生命值。两侧分别显示真实第一人称血量。",
+  "tutorial.ssc_addon.form.lesson.fluorescent_npc_damage.title": "对非玩家生物的伤害加成",
+  "tutorial.ssc_addon.form.lesson.fluorescent_npc_damage.trigger": "用同一把铁剑，对同配置目标各进行一次充分冷却的普通攻击。",
+  "tutorial.ssc_addon.form.lesson.fluorescent_npc_damage.effect": "荧光幼灵自身对敌方非玩家生物的伤害默认乘以1.5。",
+  "tutorial.ssc_addon.form.lesson.fluorescent_npc_damage.note": "演示依次显示人形玩家与荧光幼灵的真实目标掉血。白名单保护仍有效；这不是对玩家或所有召唤物的通用加成。"
 }

@@ -23,7 +23,8 @@ public final class FormTutorialWeb {
     private static final String ROOT = "https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/tutorials/";
     private static final Map<Identifier, String> PAGES = Map.of(
             new Identifier("my_addon", "familiar_fox_spirit_realm_lord"), "spirit-realm-lord",
-            new Identifier("my_addon", "axolotl_abyssal_overlord"), "abyssal-overlord");
+            new Identifier("my_addon", "axolotl_abyssal_overlord"), "abyssal-overlord",
+            new Identifier("my_addon", "axolotl_fluorescent"), "fluorescent");
     private static final String[] KEYS = {"primary", "secondary", "sneak", "attack", "use", "jump", "sprint"};
 
     private FormTutorialWeb() {}

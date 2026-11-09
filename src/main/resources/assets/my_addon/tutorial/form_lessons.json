@@ -1245,6 +1245,24 @@
       "diagram": "RESOURCE",
       "focus": "SELF",
       "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png"
+    },
+    "fluorescent_moisture": {
+      "kind": "TRAIT",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png",
+      "focus": "SELF"
+    },
+    "fluorescent_health": {
+      "kind": "PASSIVE",
+      "diagram": "HEAL",
+      "icon": "my_addon:textures/gui/skill_icons/play_dead.png",
+      "focus": "SELF"
+    },
+    "fluorescent_npc_damage": {
+      "kind": "PASSIVE",
+      "diagram": "MELEE",
+      "icon": "my_addon:textures/gui/skill_icons/fluorescent_laser.png",
+      "focus": "TARGET"
     }
   },
   "forms": {
@@ -1274,17 +1292,16 @@
     ],
     "my_addon:axolotl_fluorescent": [
       "fluorescent_laser",
-      "laser_repeat",
       "tidal_wave",
-      "aquatic_dash",
       "mucus_dodge",
       "fall_immunity",
-      "moisture",
-      "wet_health",
+      "fluorescent_moisture",
+      "fire_extinguish",
+      "fluorescent_health",
+      "fluorescent_npc_damage",
       "projectile_boost",
       "summon_affinity",
-      "symbiosis",
-      "no_helmet"
+      "symbiosis"
     ],
     "my_addon:axolotl_aling": [
       "aling_laser",
