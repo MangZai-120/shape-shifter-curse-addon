@@ -51,9 +51,11 @@ public class PurifiedEffect extends StatusEffect {
 		if (entity.getWorld().isClient) return;
 		interruptCasting(entity);
 
-		// Clear all harmful effects (or all effects except this one)
-		// Since we are iterating while modifying, we need a copy
-		List<StatusEffectInstance> effects = new ArrayList<>(entity.getStatusEffects());
+		// The release action already clears every existing NPC buff and debuff once.
+		// Keep subsequent NPC effects, including Purification's own weakness/slowness.
+		// Players retain continuous removal of all effects except the marker itself.
+		List<StatusEffectInstance> effects = entity instanceof ServerPlayerEntity
+				? new ArrayList<>(entity.getStatusEffects()) : List.of();
 
 		for (StatusEffectInstance instance : effects) {
 			// Don't remove self

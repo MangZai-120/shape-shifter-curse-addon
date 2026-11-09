@@ -27,7 +27,10 @@ public final class FormTutorialWeb {
             new Identifier("my_addon", "axolotl_fluorescent"), "fluorescent",
             new Identifier("my_addon", "axolotl_aling"), "aling",
             new Identifier("my_addon", "familiar_fox_red"), "red",
-            new Identifier("my_addon", "familiar_fox_mancianima"), "mancianima");
+            new Identifier("my_addon", "familiar_fox_mancianima"), "mancianima",
+            new Identifier("my_addon", "snow_fox_frost_spirit"), "frost-spirit",
+            new Identifier("my_addon", "snow_fox_frostspine"), "frostspine",
+            new Identifier("my_addon", "allay_crystal_sound"), "crystal-sound");
     private static final String[] KEYS = {"primary", "secondary", "sneak", "attack", "use", "jump", "sprint"};
 
     private FormTutorialWeb() {}

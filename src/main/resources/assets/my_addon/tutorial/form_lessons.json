@@ -370,7 +370,8 @@
       "kind": "ACTIVE",
       "diagram": "SPELL",
       "icon": "my_addon:textures/gui/skill_icons/snow_mode_melee.png",
-      "focus": "TARGET"
+      "focus": "TARGET",
+      "power": "my_addon:form_snow_fox_sp_toggle"
     },
     "snow_teleport": {
       "kind": "ACTIVE",
@@ -453,7 +454,8 @@
       "kind": "ACTIVE",
       "diagram": "PROJECTILE",
       "icon": "my_addon:textures/gui/skill_icons/frost_spikes.png",
-      "focus": "TARGET"
+      "focus": "TARGET",
+      "power": "my_addon:form_snow_fox_frostspine_frost_spike"
     },
     "frost_forge": {
       "kind": "ACTIVE",
@@ -1365,6 +1367,96 @@
       "diagram": "RESOURCE",
       "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
       "focus": "SELF"
+    },
+    "snow_skill_guard": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/snow_ball.png",
+      "focus": "SELF"
+    },
+    "snow_statuses": {
+      "kind": "TRAIT",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/snow_ball.png",
+      "focus": "SELF"
+    },
+    "snow_health": {
+      "kind": "TRAIT",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/snow_ball.png",
+      "focus": "SELF"
+    },
+    "snow_no_slip": {
+      "kind": "PASSIVE",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/snow_ball.png",
+      "focus": "SELF"
+    },
+    "snow_npc_damage": {
+      "kind": "PASSIVE",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/snow_ball.png",
+      "focus": "SELF"
+    },
+    "frostspine_npc_damage": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/frost_spikes.png",
+      "focus": "TARGET"
+    },
+    "frostspine_affinity": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/frost_spikes.png",
+      "focus": "TARGET"
+    },
+    "allay_energy": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "SELF"
+    },
+    "allay_guard": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "SELF"
+    },
+    "allay_sight": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "SELF"
+    },
+    "allay_melee": {
+      "kind": "TRAIT",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "SELF"
+    },
+    "allay_trade": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "SELF"
+    },
+    "crystal_summon_affinity": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "SELF"
+    },
+    "allay_wand": {
+      "kind": "ACTIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "SELF"
+    },
+    "allay_portable_music": {
+      "kind": "ACTIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/group_heal.png",
+      "focus": "SELF"
     }
   },
   "forms": {
@@ -1494,12 +1586,14 @@
       "snow_ball",
       "frost_resource",
       "frost_shield",
+      "snow_skill_guard",
+      "snow_statuses",
+      "snow_health",
       "snow_temperature",
-      "frost_ready",
+      "snow_no_slip",
+      "snow_npc_damage",
       "ice_affinity",
-      "triple_jump",
-      "fire_fragile",
-      "armor_legs"
+      "frost_ready"
     ],
     "my_addon:snow_fox_frostspine": [
       "thorn_grow",
@@ -1510,10 +1604,8 @@
       "thorn_catalysis",
       "cold_healing",
       "snow_stride",
-      "ice_affinity",
-      "triple_jump",
-      "fire_fragile",
-      "armor_legs"
+      "frostspine_npc_damage",
+      "frostspine_affinity"
     ],
     "my_addon:allay_crystal_sound": [
       "purify",
@@ -1521,16 +1613,18 @@
       "solo_blessing",
       "allay_totem",
       "portable_beacon",
-      "allay_flight",
-      "allay_ranged",
-      "allay_hit_heal",
-      "allay_food",
+      "allay_wand",
+      "allay_portable_music",
+      "allay_energy",
       "allay_emergency",
+      "allay_guard",
+      "allay_ranged",
+      "allay_sight",
+      "allay_melee",
+      "allay_trade",
       "allay_relay",
-      "allay_music",
-      "summon_affinity",
-      "lunar_cooldown",
-      "armor_legs"
+      "crystal_summon_affinity",
+      "lunar_cooldown"
     ],
     "my_addon:allay_spirit_of_the_fallen": [
       "vex",
