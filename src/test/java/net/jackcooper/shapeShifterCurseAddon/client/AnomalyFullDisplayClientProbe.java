@@ -33,7 +33,7 @@ import net.minecraft.world.GameRules;
 import net.minecraft.world.gen.GeneratorOptions;
 import net.minecraft.world.gen.WorldPresets;
 import net.minecraft.world.level.LevelInfo;
-import net.ssca.neomagic.NeoState;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
 
 /** Real entity tracking, packet delivery, full badges, shared expiry and post-lock accumulation. */
 public final class AnomalyFullDisplayClientProbe {

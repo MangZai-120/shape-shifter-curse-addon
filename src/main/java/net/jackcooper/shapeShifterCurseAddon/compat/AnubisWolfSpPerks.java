@@ -109,6 +109,7 @@ public final class AnubisWolfSpPerks {
         if (!isSupported(FormUtils.getPlayerForm(player)) || !has(player, SOUL_RECALL)
                 || AbilityUseGuard.blocked(player)) return;
         AnubisWolfSpSummonWolves.recallAll(player);
+        PerkRecallEffects.soulRecall(player);
     }
 
     private static boolean has(PlayerEntity player, Identifier id) {

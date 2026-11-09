@@ -22,7 +22,7 @@ import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import net.ssca.neomagic.NeoRuntime;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

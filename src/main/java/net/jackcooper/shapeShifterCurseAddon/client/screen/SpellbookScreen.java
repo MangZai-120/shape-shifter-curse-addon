@@ -54,7 +54,7 @@ public class SpellbookScreen extends HandledScreen<SpellbookScreenHandler> {
 	}
 
 	private void drawPlayerInformation(DrawContext context) {
-		var live=net.ssca.neomagic.client.NeoClient.hud;
+		var live=net.jackcooper.shapeShifterCurseAddon.client.NeoClient.hud;
 		var state=live.contains("S")&&live.getDouble("S")>0?live:this.handler.playerState;
 		int experience=Math.max(0,state.getInt("MasteryExpTen"));
 		int level=net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.tier(experience);

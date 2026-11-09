@@ -69,7 +69,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
         if(key.equals("mastery_tier"))return Text.translatable("text.ssc_addon.book.player.short",args[0]);
         if(key.equals("mastery_help"))return Text.translatable("neomagic.altar.mastery_help");
         if(java.util.Set.of("mana","next_mana","mastery_bonus","universal_mana","universal_recovery","preview_mana","preview_recovery","preview_delay","preview_spell","element_effect","space_effect").contains(key))
-            return net.ssca.neomagic.NeoMagic.text("altar."+key,args);
+            return net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.text("altar."+key,args);
         return Text.translatable("gui.ssc_addon.infusion_altar." + key, args);
 	}
 
@@ -218,8 +218,8 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 		text(ctx, hasBook() ? label("level", SpellbookData.getLevel(book), SpellbookData.getSlotCount(book))
 				: label("waiting_book"), 198, 29, 100, INK);
 		text(ctx, label("mana"), 198, 44, 28, MUTED);
-		rightText(ctx, hasBook() ? net.ssca.neomagic.client.NeoClient.f(net.ssca.neomagic.client.NeoClient.hud.getDouble("S")) : "— / —", 298, 44);
-        text(ctx,net.ssca.neomagic.NeoMagic.text("altar.recovery",hasBook()?multiplier((float)net.ssca.neomagic.NeoLegacyCasting.recoveryMultiplier(book)):"—"),198,56,100,MUTED);
+		rightText(ctx, hasBook() ? net.jackcooper.shapeShifterCurseAddon.client.NeoClient.f(net.jackcooper.shapeShifterCurseAddon.client.NeoClient.hud.getDouble("S")) : "— / —", 298, 44);
+        text(ctx,net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.text("altar.recovery",hasBook()?multiplier((float)net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.recoveryMultiplier(book)):"—"),198,56,100,MUTED);
 		boolean mastery = hasBook() && SpellbookData.getLevel(book) == SpellbookData.MAX_LEVEL;
 		text(ctx, label(mastery ? "mastery" : "experience"), 198, 68, 28, MUTED);
 		int progress = 0, total = 1;
@@ -252,7 +252,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 		if (!this.nextBook.isEmpty()) {
 			text(ctx, label("next_slots", SpellbookData.getSlotCount(this.nextBook),
 					SpellbookData.getFormationSlotCount(this.nextBook)), 194, 206, 110, ACCENT);
-			text(ctx, label("next_mana", (int)net.ssca.neomagic.NeoLegacyCasting.safetyBonus(this.nextBook)), 194, 218, 110, MUTED);
+			text(ctx, label("next_mana", (int)net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.safetyBonus(this.nextBook)), 194, 218, 110, MUTED);
 		} else if (hasBook()) {
 			text(ctx, label("mastery_tier", PlayerSpellMastery.tier(PlayerSpellMastery.clientExpTen()),
 					SpellbookData.masteryMaxBonus() / SpellbookData.masteryManaPerTier()), 194, 206, 110, ACCENT);
@@ -293,7 +293,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 
 	private Text chargingStatus() {
 		if (!hasBook()) return label("waiting_book");
-        return net.ssca.neomagic.NeoMagic.text("altar.no_charge");
+        return net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.text("altar.no_charge");
 	}
 
 	private int countFormations() {
@@ -327,7 +327,7 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 		}
 		int expLevel = FormationData.getBestUniversalVariantLevel(book(), FormationData.VARIANT_EXP);
 		lines.add(label("universal_exp", multiplier(expLevel == 0 ? 1f : FormationData.universalExpMultiplier(expLevel))));
-		lines.add(label("universal_mana", (int)net.ssca.neomagic.NeoLegacyCasting.safetyBonus(book())));
+		lines.add(label("universal_mana", (int)net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.safetyBonus(book())));
 		lines.add(label("universal_recovery", multiplier(FormationData.universalRecoveryMultiplier(book()))));
 		return lines;
 	}
@@ -345,10 +345,10 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 		List<Text> lines = new ArrayList<>();
 		lines.add((removal ? this.focusedSlot.getStack() : cursor).getName());
 		lines.add(label(removal ? "preview_remove" : "preview_insert").copy().formatted(Formatting.LIGHT_PURPLE));
-		lines.add(label("preview_mana", (int)net.ssca.neomagic.NeoLegacyCasting.safetyBonus(before), (int)net.ssca.neomagic.NeoLegacyCasting.safetyBonus(after)));
-		lines.add(label("preview_recovery", multiplier((float)net.ssca.neomagic.NeoLegacyCasting.recoveryMultiplier(before)),
-                multiplier((float)net.ssca.neomagic.NeoLegacyCasting.recoveryMultiplier(after))));
-		lines.add(label("preview_delay", SpellCastFeedback.seconds(net.ssca.neomagic.client.NeoClient.hud.contains("RecoveryDelay")?net.ssca.neomagic.client.NeoClient.hud.getInt("RecoveryDelay"):60)));
+		lines.add(label("preview_mana", (int)net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.safetyBonus(before), (int)net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.safetyBonus(after)));
+		lines.add(label("preview_recovery", multiplier((float)net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.recoveryMultiplier(before)),
+                multiplier((float)net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.recoveryMultiplier(after))));
+		lines.add(label("preview_delay", SpellCastFeedback.seconds(net.jackcooper.shapeShifterCurseAddon.client.NeoClient.hud.contains("RecoveryDelay")?net.jackcooper.shapeShifterCurseAddon.client.NeoClient.hud.getInt("RecoveryDelay"):60)));
 		boolean hasSpell = false;
 		for (int slot = 0; slot < SpellbookData.getSlotCount(before); slot++) {
 			ItemStack scroll = SpellbookData.getScroll(before, slot);

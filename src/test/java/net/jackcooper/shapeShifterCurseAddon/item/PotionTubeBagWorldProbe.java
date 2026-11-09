@@ -18,7 +18,7 @@ import net.minecraft.util.hit.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.GameMode;
-import net.ssca.neomagic.NeoRuntime;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime;
 
 /** 药水袋真实槽位、shift、嵌套NBT与饮用入口回归。 */
 public final class PotionTubeBagWorldProbe {

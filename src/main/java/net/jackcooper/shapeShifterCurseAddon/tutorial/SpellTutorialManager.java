@@ -13,7 +13,7 @@ import net.jackcooper.shapeShifterCurseAddon.spell.research.WorldRuneState;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
-import net.ssca.neomagic.NeoState;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
 
 /** 新世界按玩家播放一次；只确认真实显示，不在登录时提前消耗观看记录。 */
 public final class SpellTutorialManager {

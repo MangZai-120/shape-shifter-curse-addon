@@ -1,5 +1,8 @@
 package net.jackcooper.shapeShifterCurseAddon.item;
 
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
+
 import java.nio.file.*;
 import java.util.*;
 import net.minecraft.entity.EntityType;
@@ -22,7 +25,6 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.hit.*;
 import net.minecraft.util.math.*;
 import net.minecraft.world.GameMode;
-import net.ssca.neomagic.*;
 
 /** 在真实 ServerWorld 中验证物品入口、原版药水碰撞、衰减及实体存盘恢复。 */
 public final class MoonDustPotionWorldProbe {

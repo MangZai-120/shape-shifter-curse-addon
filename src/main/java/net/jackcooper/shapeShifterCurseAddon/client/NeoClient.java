@@ -1,0 +1,176 @@
+package net.jackcooper.shapeShifterCurseAddon.client;
+
+import net.jackcooper.shapeShifterCurseAddon.client.hud.NeoStabilityHud;
+import net.jackcooper.shapeShifterCurseAddon.network.NeoHudPacket;
+import net.jackcooper.shapeShifterCurseAddon.network.NeoNetwork;
+import net.jackcooper.shapeShifterCurseAddon.network.NeoPayload;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
+
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.networking.v1.*;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.nbt.NbtCompound;
+import net.jackcooper.shapeShifterCurseAddon.client.hud.NeoStabilityBar;
+import java.util.*;
+import static net.jackcooper.shapeShifterCurseAddon.spell.NeoModel.*;
+
+public final class NeoClient implements ClientModInitializer {
+    public static NeoState.PlayerData data=new NeoState.PlayerData();
+    public static Profile profile=new Profile(100,1,1,1,1,true);
+    public static final Map<Core,Coefficients> COSTS=new EnumMap<>(Core.class);
+    public static final Map<String,Tuning> TUNINGS=new HashMap<>();
+    public static final Map<Core,double[]> BOOK_EFFECTS=new EnumMap<>(Core.class);
+    private static boolean bookEquipped;
+    public static Tuning tuning(Blueprint b){return TUNINGS.getOrDefault(b.identity()+"#"+b.band(),TUNINGS.getOrDefault(b.identity(),Tuning.defaults()));}
+    public static double bodyMastery(Blueprint b) {
+        var values=data.progress.get(b.identity());double needed=tuning(b).mastery()>0?tuning(b).mastery():masteryNeeded(b);
+        return values==null?0:clamp(values[b.band()]/needed,0,1);
+    }
+    public static double bookPower(Blueprint b){return BOOK_EFFECTS.getOrDefault(b.output(),new double[]{1,1})[1];}
+    public static Quote preview(Blueprint b){
+        var q=quote(b,bodyMastery(b),COSTS.getOrDefault(b.core(),coefficients(b.core())),tuning(b));
+        var player=MinecraftClient.getInstance().player;
+        double m=BOOK_EFFECTS.getOrDefault(b.core(),new double[]{1,1})[0];
+        if(hud.contains("BookEquipped")?hud.getBoolean("BookEquipped"):bookEquipped)
+            m*=net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.tidalCostMultiplier(player);
+        m*=net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.collapseMultiplier(player,b.carrier()==Carrier.PROJECTILE,b.output()==Core.FROST);
+        return new Quote(q.normal()*m,q.actual()*m,q.floor(),q.plan());
+    }
+    public static NbtCompound hud=new NbtCompound();
+    private static final NeoHudPacket.Receiver HUD_RECEIVER=new NeoHudPacket.Receiver();
+    private static Object hudWorld,hudPlayer;
+    private static long lastHudResync=Long.MIN_VALUE;
+    private static int failureFlash,resetFlash;
+    public static UUID token;
+    public static boolean table;
+    public static String rules="";
+    private static double frostMultiplier(NbtCompound state,net.minecraft.util.Identifier form,long time) {
+        if(form==null||!form.toString().equals(state.getString("Form")))return 1;
+        double multiplier=state.contains("FrostSpellMultiplier")?state.getDouble("FrostSpellMultiplier"):1;
+        if(!Double.isFinite(multiplier)||multiplier<0||multiplier>1)return 1;
+        if(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SNOW_FOX_FROSTSPINE.equals(form))return multiplier;
+        if(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SNOW_FOX_SP.equals(form)&&time<state.getLong("FrostReadyUntil"))return multiplier;
+        return 1;
+    }
+    private static long novaQuickUntil(NbtCompound state,net.minecraft.util.Identifier form,long time) {
+        if(!net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.OCELOT_NOVA.equals(form)
+                ||!form.toString().equals(state.getString("Form")))return 0;
+        long until=state.getLong("NovaQuickCastUntil");return time<until?until:0;
+    }
+    @Override public void onInitializeClient() {
+        net.jackcooper.shapeShifterCurseAddon.client.tutorial.SpellTutorialClient.register();
+        net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry.ITEM.register(
+                (stack, tint) -> tint != 0 ? -1 : stack.hasNbt() && stack.getNbt().contains("CustomPotionColor")
+                        ? net.minecraft.potion.PotionUtil.getColor(stack) : net.jackcooper.shapeShifterCurseAddon.item.MoonDustReliefItem.COLOR,
+                net.jackcooper.shapeShifterCurseAddon.item.MoonDustReliefItem.VIAL,
+                net.jackcooper.shapeShifterCurseAddon.item.MoonDustReliefItem.BOTTLE,
+                net.jackcooper.shapeShifterCurseAddon.item.MoonDustReliefItem.SPLASH);
+        net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry.ITEM.register(
+                (stack, tint) -> tint == 0 ? net.minecraft.potion.PotionUtil.getColor(stack) : -1,
+                net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes.FILLED);
+        net.jackcooper.shapeShifterCurseAddon.spell.FrostSpellLink.clientMultiplier=player->{
+            var form=net.jackcooper.shapeShifterCurseAddon.util.FormUtils.getCurrentForm(player);
+            return frostMultiplier(hud,form==null?null:form.getFormID(),player.getWorld().getTime());
+        };
+        net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.clientQuickUntil=player->{
+            var form=net.jackcooper.shapeShifterCurseAddon.util.FormUtils.getCurrentForm(player);
+            return novaQuickUntil(hud,form==null?null:form.getFormID(),player.getWorld().getTime());
+        };
+        ClientPlayNetworking.registerGlobalReceiver(NeoNetwork.HUD,(client,handler,buf,sender)->{var n=buf.readNbt();client.execute(()->{
+            if(client.getNetworkHandler()!=handler)return;
+            ensureHudWorld(client);acceptHud(n);
+        });});
+        ClientPlayNetworking.registerGlobalReceiver(NeoNetwork.HUD_V2,(client,handler,buf,sender)->{
+            var update=NeoHudPacket.read(buf);
+            client.execute(()->{
+                if(client.getNetworkHandler()!=handler)return;
+                ensureHudWorld(client);
+                if(update.full()&&client.world!=null&&client.player!=null
+                        &&(!client.world.getRegistryKey().getValue().toString().equals(update.values().getString("Dimension"))
+                        ||client.player.getId()!=update.values().getInt("PlayerId")))return;
+                var result=HUD_RECEIVER.accept(update);
+                if(result==NeoHudPacket.Receiver.Result.APPLIED)acceptHud(HUD_RECEIVER.state());
+                else if(result==NeoHudPacket.Receiver.Result.MISSING_BASE){
+                    long now=System.nanoTime();
+                    if((lastHudResync==Long.MIN_VALUE||now-lastHudResync>=1_000_000_000L)
+                            &&ClientPlayNetworking.canSend(NeoNetwork.HUD_RESYNC_V2)){
+                        lastHudResync=now;ClientPlayNetworking.send(NeoNetwork.HUD_RESYNC_V2,net.fabricmc.fabric.api.networking.v1.PacketByteBufs.empty());
+                    }
+                }
+            });
+        });
+        ClientPlayConnectionEvents.DISCONNECT.register((handler,client)->{net.jackcooper.shapeShifterCurseAddon.client.hud.CollapsePenaltyClient.clear();HUD_RECEIVER.clear();hudWorld=hudPlayer=null;lastHudResync=Long.MIN_VALUE;hud=new NbtCompound();bookEquipped=false;failureFlash=resetFlash=0;token=null;data=new NeoState.PlayerData();net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(0);COSTS.clear();TUNINGS.clear();BOOK_EFFECTS.clear();});
+        NeoStabilityBar.registerResources();
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client->{
+            ensureHudWorld(client);
+            net.jackcooper.shapeShifterCurseAddon.client.hud.CollapsePenaltyClient.tick(client);
+            hud.putBoolean("RecentFailure",failureFlash>0);hud.putBoolean("RecentReset",resetFlash>0);
+            if(failureFlash>0)failureFlash--;if(resetFlash>0)resetFlash--;
+        });
+        HudRenderCallback.EVENT.register(NeoClient::renderHud);
+    }
+    private static void ensureHudWorld(MinecraftClient client){
+        if(hudWorld==client.world&&hudPlayer==client.player)return;
+        hudWorld=client.world;hudPlayer=client.player;HUD_RECEIVER.clear();hud=new NbtCompound();
+        failureFlash=resetFlash=0;lastHudResync=Long.MIN_VALUE;
+    }
+    private static void acceptHud(NbtCompound n){
+        if(n!=null&&hud.contains("Form")){
+            boolean newResult=!n.getString("ResultId").equals(hud.getString("ResultId"))||!n.getString("Result").equals(hud.getString("Result"));
+            if(newResult&&n.getString("Result").equals("failed"))failureFlash=20;
+            if(!n.getString("Form").equals(hud.getString("Form"))&&n.getDouble("C")==0)resetFlash=20;
+        }
+        if(n!=null){
+            data.burden=n.getDouble("C");data.recovery=n.getInt("Recovery");data.spellbookMasteryExpTen=n.getInt("MasteryExpTen");
+            net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(data.spellbookMasteryExpTen);data.form=n.getString("Form");
+            if(!Objects.equals(hud.get("Profile"),n.get("Profile")))profile=NeoState.JSON.fromJson(n.getString("Profile"),Profile.class);
+        }
+        hud=n==null?new NbtCompound():n;
+    }
+    public static void acceptSnapshot(MinecraftClient client,NbtCompound n) {
+                try {
+                var nextData=NeoState.JSON.fromJson(new String(NeoPayload.unpack(n.getByteArray("DataJson")),java.nio.charset.StandardCharsets.UTF_8),NeoState.PlayerData.class);
+                NeoState.validate(nextData);
+                var nextProfile=NeoState.JSON.fromJson(n.getString("Profile"),Profile.class);var nextToken=n.getUuid("Token");
+                var nextCosts=new EnumMap<Core,Coefficients>(Core.class);var nextTunings=new HashMap<String,Tuning>();
+                var object=com.google.gson.JsonParser.parseString(n.getString("Costs")).getAsJsonObject();
+                for(Core c:Core.values())nextCosts.put(c,NeoState.JSON.fromJson(object.get(c.name()),Coefficients.class));
+                var nextBook=new EnumMap<Core,double[]>(Core.class);
+                if(!n.getString("BookEffects").isEmpty()) {
+                    var effects=com.google.gson.JsonParser.parseString(n.getString("BookEffects")).getAsJsonObject();
+                    for(Core core:Core.values()) {
+                        var values=NeoState.JSON.fromJson(effects.get(core.name()),double[].class);
+                        if(values==null||values.length!=2||Arrays.stream(values).anyMatch(v->!Double.isFinite(v))||values[0]<=0||values[1]<0)throw new IllegalArgumentException("Invalid book modifiers");
+                        nextBook.put(core,values);
+                    }
+                }
+                var tunings=com.google.gson.JsonParser.parseString(new String(NeoPayload.unpack(n.getByteArray("Tunings")),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+                tunings.entrySet().forEach(e->nextTunings.put(e.getKey(),NeoState.JSON.fromJson(e.getValue(),Tuning.class)));
+                if(nextProfile==null||nextCosts.values().stream().anyMatch(java.util.Objects::isNull))throw new IllegalArgumentException("Missing snapshot rules");
+                data=nextData;profile=nextProfile;token=nextToken;table=n.getBoolean("Table");rules=n.getString("Rules");
+                net.jackcooper.shapeShifterCurseAddon.spell.PlayerSpellMastery.acceptClientExperience(data.spellbookMasteryExpTen);
+                COSTS.clear();COSTS.putAll(nextCosts);TUNINGS.clear();TUNINGS.putAll(nextTunings);
+                BOOK_EFFECTS.clear();BOOK_EFFECTS.putAll(nextBook);
+                bookEquipped=n.getBoolean("BookEquipped");
+
+                }catch(RuntimeException malformed){NeoMagic.LOG.warn("Ignoring invalid neomagic research snapshot",malformed);}
+    }
+    private static void renderHud(DrawContext c,float delta) {
+        var mc=MinecraftClient.getInstance();if(mc.player==null||mc.options.hudHidden||!hud.getBoolean("Visible"))return;
+        var cfg=net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig.client();
+        if(cfg.showDisintegrationDebugBar)NeoStabilityHud.draw(c,mc.textRenderer,hud,8,8,Math.min(NeoStabilityHud.WIDTH,mc.getWindow().getScaledWidth()-16),System.nanoTime()/50_000_000.0);
+    }
+    public static void renderPixelBarBeforeChat(DrawContext c,float delta){
+        net.jackcooper.shapeShifterCurseAddon.client.hud.HudScaling.render(c,6,()->renderPixelBarUnscaled(c,delta));
+    }
+    private static void renderPixelBarUnscaled(DrawContext c,float delta){
+        var mc=MinecraftClient.getInstance();if(mc.player==null||mc.world==null||mc.options.hudHidden||!hud.getBoolean("Visible"))return;
+        var cfg=net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig.client();if(!cfg.showNeoStabilityBar)return;
+        int[] pos=NeoStabilityBar.position(cfg.neoStabilityBarPosType,cfg.neoStabilityBarPosOffsetX,cfg.neoStabilityBarPosOffsetY,mc.getWindow().getScaledWidth(),mc.getWindow().getScaledHeight());NeoStabilityBar.draw(c,hud,pos[0],pos[1]);
+    }
+    public static String f(double n) {return String.format(Locale.ROOT,"%.1f",n);}
+    public static String pc(double n) {return String.format(Locale.ROOT,"%.1f%%",n*100);}
+}

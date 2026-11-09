@@ -523,7 +523,7 @@ public class AnubisWolfSpDeathDomain {
 	}
 
 	/**
-	 * 维持阶段：普通15秒/增强20秒
+	 * 维持阶段：普通15秒/增强25秒
 	 */
 	private static void tickSustaining(ServerPlayerEntity player, ServerWorld world, DomainData data) {
 		int duration = data.enhanced ? BAL.i("enhanced_domain_duration", ENHANCED_DOMAIN_DURATION) : BAL.i("domain_duration", DOMAIN_DURATION);
@@ -554,7 +554,7 @@ public class AnubisWolfSpDeathDomain {
 					SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 0.4f, 0.5f);
 		}
 
-		data.ticksElapsed++;
+		// tick() advances this clock once; advancing it here halves the configured sustain time.
 	}
 
 	/**

@@ -46,7 +46,7 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
 import net.onixary.shapeShifterCurseFabric.render.form_render.FormModel;
 import net.onixary.shapeShifterCurseFabric.render.form_render.FormRenderUtils;
 import net.onixary.shapeShifterCurseFabric.util.FormTextureUtils;
-import net.ssca.neomagic.NeoState;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
 import org.joml.Quaternionf;
 import software.bernie.geckolib.cache.object.GeoBone;
 

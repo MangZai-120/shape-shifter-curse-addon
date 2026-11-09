@@ -43,12 +43,7 @@ AGENTS.md
 
 # 本地测试/调参文档（测试证据与记录，不入版本库）
 /docs/*
-!/docs/new-spell-system/
-/docs/new-spell-system/*
-!/docs/new-spell-system/README.md
-!/docs/new-spell-system/SSCA新法术系统完整设计V2.md
-!/docs/new-spell-system/UI设计说明V2.md
-!/docs/new-spell-system/旧法术书接管与加成映射.md
+!/docs/spell-system.md
 
 # JVM crash dumps
 hs_err_pid*.log

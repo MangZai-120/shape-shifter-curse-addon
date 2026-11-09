@@ -10,8 +10,7 @@ import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.ssca.neomagic.NeoNetwork;
-import net.ssca.neomagic.NeoRuntime;
+import net.jackcooper.shapeShifterCurseAddon.network.NeoNetwork;
 import java.util.*;
 
 /** Wind movement and Nova's temporary post-nine-lives preparation shortcut. */

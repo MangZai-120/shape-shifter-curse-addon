@@ -48,7 +48,7 @@ import net.onixary.shapeShifterCurseFabric.custom_ui.BookOfShapeShifterScreenV2_
 import net.onixary.shapeShifterCurseFabric.client.ShapeShifterCurseFabricClient;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
-import net.ssca.neomagic.NeoState;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
 import org.lwjgl.glfw.GLFW;
 
 /** Native tutorial book, packets and controls in a disposable integrated-server world. */

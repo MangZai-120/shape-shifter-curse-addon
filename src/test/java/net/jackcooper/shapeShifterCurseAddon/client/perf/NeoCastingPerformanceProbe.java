@@ -1,5 +1,8 @@
 package net.jackcooper.shapeShifterCurseAddon.client.perf;
 
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
+
 import com.mojang.blaze3d.platform.GlDebugInfo;
 import dev.emi.trinkets.api.TrinketsApi;
 import jdk.jfr.Configuration;
@@ -21,7 +24,6 @@ import net.minecraft.util.Hand;
 import net.minecraft.world.*;
 import net.minecraft.world.gen.*;
 import net.minecraft.world.level.LevelInfo;
-import net.ssca.neomagic.*;
 import java.nio.file.*;
 import java.util.*;
 

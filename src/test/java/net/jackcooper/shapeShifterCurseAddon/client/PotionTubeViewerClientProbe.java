@@ -19,7 +19,7 @@ import net.minecraft.resource.*;
 import net.minecraft.world.*;
 import net.minecraft.world.gen.*;
 import net.minecraft.world.level.LevelInfo;
-import net.ssca.neomagic.NeoState;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
 
 /** 分别启动真实JEI/REI，使用其配方检索索引并截图实际界面；不将查看器打入正式包。 */
 public final class PotionTubeViewerClientProbe {

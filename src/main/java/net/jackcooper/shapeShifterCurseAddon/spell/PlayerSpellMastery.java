@@ -2,8 +2,6 @@ package net.jackcooper.shapeShifterCurseAddon.spell;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.ssca.neomagic.NeoRuntime;
-import net.ssca.neomagic.NeoState;
 
 /** 玩家施法成长存 UUID 档案；书等级与升级经验独立保留，不提供承载上限。 */
 public final class PlayerSpellMastery {

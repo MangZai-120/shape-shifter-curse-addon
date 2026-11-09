@@ -1517,6 +1517,36 @@
       "diagram": "RESOURCE",
       "icon": "my_addon:textures/gui/skill_icons/nova_explosion.png",
       "focus": "SELF"
+    },
+    "enhanced_domain": {
+      "kind": "ACTIVE",
+      "diagram": "AREA",
+      "icon": "my_addon:textures/gui/skill_icons/death_domain.png",
+      "focus": "SELF"
+    },
+    "judge_health": {
+      "kind": "TRAIT",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/death_domain.png",
+      "focus": "SELF"
+    },
+    "golden_fire_affinity": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/wither_sand.png",
+      "focus": "TARGET"
+    },
+    "sand_spell_brand": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/wither_sand.png",
+      "focus": "TARGET"
+    },
+    "sand_neutral": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/wither_sand.png",
+      "focus": "TARGET"
     }
   },
   "forms": {
@@ -1749,6 +1779,7 @@
     ],
     "my_addon:anubis_wolf_netherjudge": [
       "death_domain",
+      "enhanced_domain",
       "nether_wolves",
       "soul_energy",
       "court_command",
@@ -1757,11 +1788,10 @@
       "wither_hunt",
       "wither_frenzy",
       "soul_ground_heal",
-      "undead_body",
+      "judge_health",
       "undead_neutral",
       "judge_npc_guard",
-      "wither_brewing",
-      "armor_legs"
+      "wither_brewing"
     ],
     "my_addon:anubis_wolf_golden_sandstorm": [
       "sandstorm",
@@ -1771,9 +1801,9 @@
       "sand_recovery",
       "sand_counter",
       "sand_immunity",
-      "fire_affinity",
-      "undead_body",
-      "armor_legs"
+      "golden_fire_affinity",
+      "sand_spell_brand",
+      "sand_neutral"
     ],
     "my_addon:bat_desmodus": [
       "mist",

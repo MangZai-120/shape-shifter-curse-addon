@@ -159,7 +159,7 @@ public final class SpellCastManager {
 			float damage, int level, int manaCost, int forcedLevel, net.minecraft.util.math.Vec3d target) {
 		FormationElement spellElement = spell.getElement();
 		// 记录耗蓝时刻：自然回复 7 秒延迟从此起算（再次施法重置）
-		manaCost = net.ssca.neomagic.NeoLegacyCasting.actualCost(manaCost);
+		manaCost = net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.actualCost(manaCost);
 		// 一次施法返还预算（阶段 B §7.4）：本次耗蓝 ×50% 为上限，多弹丸/AOE 共享
 		spell.ssc_addon$setRefundCastId(FormCastingStyle.openRefundBudget(player, manaCost));
 		// 经验机制（exp_mode，2026-09-15）——基数按「法术基础成本（基础耗蓝×等级倍率）× 有效技能等级」
@@ -171,13 +171,13 @@ public final class SpellCastManager {
 		int immediateTen = prepareExperience(spell, level, book);
 		// 统一四参入口：法术内部自行决定是否按等级缩放速度/外观/范围（无 instanceof 特判）
 		try {
-			spell.castAtTarget(player, net.ssca.neomagic.NeoLegacyCasting.power(damage), false, level, scroll, target);
+			spell.castAtTarget(player, net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.power(damage), false, level, scroll, target);
 		} finally {
 			spell.ssc_addon$clearPendingExp();
 			spell.ssc_addon$clearRefundCastId();
 		}
 		// 风灵「风行」等施放即返类流派（不要求命中）
-		if(net.ssca.neomagic.NeoLegacyCasting.missed())return;
+		if(net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.missed())return;
 		FormCastingStyle.onSpellCast(player, spellElement, manaCost);
 		// 降档施放告知（临时档不写卷轴，玩家需要知道本次按了几档）
 		if (forcedLevel > 0) {
@@ -234,9 +234,9 @@ public final class SpellCastManager {
 	public static void castSoloEffect(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level,
 			float damage, net.minecraft.util.math.Vec3d target) {
 		int immediateTen=prepareExperience(spell,level,null);
-		try { spell.castAtTarget(player,net.ssca.neomagic.NeoLegacyCasting.power(damage),true,level,scroll,target); }
+		try { spell.castAtTarget(player,net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.power(damage),true,level,scroll,target); }
 		finally { spell.ssc_addon$clearPendingExp(); }
-		if(!net.ssca.neomagic.NeoLegacyCasting.missed())PlayerSpellMastery.grant(player,null,immediateTen);
+		if(!net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.missed())PlayerSpellMastery.grant(player,null,immediateTen);
 	}
 
 	private static int prepareExperience(Spell spell,int level,ItemStack book) {

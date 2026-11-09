@@ -22,7 +22,7 @@ import net.minecraft.world.level.LevelInfo;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
-import net.ssca.neomagic.NeoState;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
 
 /** 独立真实客户端：通过服务端物品入口验证 CCA、原版本能预测与两张贴图。 */
 public final class InstinctAnchorClientProbe {

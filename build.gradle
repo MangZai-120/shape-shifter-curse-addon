@@ -22,7 +22,7 @@ check.dependsOn skillHudLayoutTest
 tasks.register('skillHudIntegrationTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'net.ssca.neomagic.NeoIntegrationTest'
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoIntegrationTest'
     workingDir = layout.buildDirectory.dir('skill-hud/integration').get().asFile
     systemProperty 'fabric.development', 'true'
     systemProperty 'neomagic.probe', 'net.jackcooper.shapeShifterCurseAddon.client.hud.SkillHudIntegrationProbe'
@@ -51,7 +51,7 @@ base {
 tasks.register('neoMagicTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'net.ssca.neomagic.NeoModelTest'
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoModelTest'
 }
 check.dependsOn neoMagicTest
 
@@ -144,8 +144,8 @@ check.dependsOn parametricVisualTest, mistMeteorDomainRecipeTest, blueTrailRecip
 tasks.register('neoMagicStressModelTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'net.ssca.neomagic.NeoStressModelTest'
-    workingDir = layout.buildDirectory.dir('neomagic/stability').get().asFile
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoStressModelTest'
+    workingDir = layout.buildDirectory.dir('tests/spell/stability').get().asFile
     maxHeapSize = '768M'
     doFirst { workingDir.mkdirs() }
 }
@@ -153,11 +153,11 @@ tasks.register('neoMagicStressModelTest', JavaExec) {
 tasks.register('neoMagicDataStabilityTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'net.ssca.neomagic.NeoIntegrationTest'
-    workingDir = layout.buildDirectory.dir('neomagic/stability-data').get().asFile
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoIntegrationTest'
+    workingDir = layout.buildDirectory.dir('tests/spell/stability-data').get().asFile
     maxHeapSize = '2G'
     systemProperty 'fabric.development', 'true'
-    systemProperty 'neomagic.probe', 'net.ssca.neomagic.NeoDataStabilityProbe'
+    systemProperty 'neomagic.probe', 'net.jackcooper.shapeShifterCurseAddon.spell.NeoDataStabilityProbe'
     systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
     systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
     doFirst {
@@ -171,8 +171,8 @@ tasks.register('neoMagicDataStabilityTest', JavaExec) {
 tasks.register('neoMagicStabilityTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'net.ssca.neomagic.NeoWorldTest'
-    workingDir = layout.buildDirectory.dir('neomagic/stability').get().asFile
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoWorldTest'
+    workingDir = layout.buildDirectory.dir('tests/spell/stability').get().asFile
     maxHeapSize = '2G'
     systemProperty 'fabric.development', 'true'
     systemProperty 'neomagic.stability', 'true'
@@ -191,8 +191,8 @@ tasks.register('neoMagicStabilityTest', JavaExec) {
 tasks.register('neoMagicIntegrationTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'net.ssca.neomagic.NeoIntegrationTest'
-    workingDir = layout.buildDirectory.dir('neomagic/integration').get().asFile
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoIntegrationTest'
+    workingDir = layout.buildDirectory.dir('tests/spell/integration').get().asFile
     systemProperty 'fabric.development', 'true'
     systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
     systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
@@ -208,7 +208,7 @@ check.dependsOn neoMagicIntegrationTest
 tasks.register('neoMagicWorldTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'net.ssca.neomagic.NeoWorldTest'
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoWorldTest'
     systemProperty 'neomagic.worldProbe', project.findProperty('neoWorldProbe') ?: ''
     systemProperty 'ssca.anomaly.performance.amounts', project.findProperty('neoAnomalyPerfAmounts') ?: 'stress250'
     systemProperty 'ssca.anomaly.performance.level', project.findProperty('neoAnomalyPerfLevel') ?: '1'
@@ -234,7 +234,7 @@ tasks.register('neoMagicWorldTest', JavaExec) {
     systemProperty 'neomagic.courtLink', project.findProperty('neoCourtLink') ?: 'false'
     systemProperty 'neomagic.batStress', project.findProperty('neoBatStress') ?: 'false'
     systemProperty 'neomagic.batProfile', project.findProperty('neoBatStress') ?: 'false'
-    workingDir = layout.buildDirectory.dir('neomagic/world-test').get().asFile
+    workingDir = layout.buildDirectory.dir('tests/spell/world-test').get().asFile
     maxHeapSize = '2G'
     systemProperty 'fabric.development', 'true'
     systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
@@ -250,7 +250,7 @@ tasks.register('neoMagicWorldTest', JavaExec) {
 tasks.register('energyTransactionWorldTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'net.ssca.neomagic.NeoWorldTest'
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoWorldTest'
     workingDir = layout.buildDirectory.dir('energy-transaction-world').get().asFile
     maxHeapSize = '2G'
     systemProperty 'neomagic.worldProbe', 'net.jackcooper.shapeShifterCurseAddon.energy.EnergyTransactionWorldProbe'
@@ -269,7 +269,7 @@ check.dependsOn energyTransactionWorldTest
 tasks.register('subFormCompatibilityWorldTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'net.ssca.neomagic.NeoWorldTest'
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoWorldTest'
     workingDir = layout.buildDirectory.dir('subform-compatibility-world').get().asFile
     maxHeapSize = '2G'
     systemProperty 'neomagic.worldProbe', 'net.jackcooper.shapeShifterCurseAddon.compat.SubFormCompatibilityWorldProbe'
@@ -288,7 +288,7 @@ check.dependsOn subFormCompatibilityWorldTest
 tasks.register('interactionRecoveryWorldTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'net.ssca.neomagic.NeoWorldTest'
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoWorldTest'
     workingDir = layout.buildDirectory.dir('interaction-recovery-world').get().asFile
     maxHeapSize = '2G'
     systemProperty 'neomagic.interactionRecovery', 'true'
@@ -306,8 +306,8 @@ tasks.register('interactionRecoveryWorldTest', JavaExec) {
 tasks.register('neoMagicPerformanceTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'net.ssca.neomagic.NeoVisualTest'
-    workingDir = layout.buildDirectory.dir('neomagic/performance-test').get().asFile
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoVisualTest'
+    workingDir = layout.buildDirectory.dir('tests/spell/performance-test').get().asFile
     maxHeapSize = '3G'
     systemProperty 'fabric.development', 'true'
     systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
@@ -357,8 +357,8 @@ tasks.register('neoMagicVisualTest', JavaExec) {
     systemProperty 'neomagic.nightmareLive', project.findProperty('neoNightmareLive') ?: 'false'
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'net.ssca.neomagic.NeoVisualTest'
-    workingDir = layout.buildDirectory.dir('neomagic/visual-test').get().asFile
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoVisualTest'
+    workingDir = layout.buildDirectory.dir('tests/spell/visual-test').get().asFile
     maxHeapSize = '2G'
     systemProperty 'fabric.development', 'true'
     systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
@@ -383,7 +383,7 @@ tasks.register('neoMagicVisualTest', JavaExec) {
 tasks.register('instinctAnchorClientTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'net.ssca.neomagic.NeoVisualTest'
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoVisualTest'
     workingDir = layout.buildDirectory.dir('instinct-anchor/client-test').get().asFile
     maxHeapSize = '2G'
     systemProperty 'fabric.development', 'true'

@@ -20,7 +20,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.World;
 import net.minecraft.world.event.GameEvent;
-import net.ssca.neomagic.NeoRuntime;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime;
 import net.onixary.shapeShifterCurseFabric.additional_power.ModifyPotionStackPower;
 import org.jetbrains.annotations.Nullable;
 

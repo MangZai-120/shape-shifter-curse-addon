@@ -22,7 +22,7 @@
             "actions": [
                 {
                     "type": "apoli:change_resource",
-                    "resource": "my_addon:form_anubis_wolf_sp_wither_hunt/wither_detected",
+                    "resource": "my_addon:form_anubis_wolf_sp_wither_hunt_wither_detected",
                     "change": -1
                 },
                 {
@@ -50,7 +50,7 @@
                         "type": "apoli:actor_action",
                         "action": {
                             "type": "apoli:change_resource",
-                            "resource": "my_addon:form_anubis_wolf_sp_wither_hunt/wither_detected",
+                            "resource": "my_addon:form_anubis_wolf_sp_wither_hunt_wither_detected",
                             "change": 1
                         }
                     }
@@ -72,7 +72,7 @@
             "conditions": [
                 {
                     "type": "apoli:resource",
-                    "resource": "my_addon:form_anubis_wolf_sp_wither_hunt/wither_detected",
+                    "resource": "my_addon:form_anubis_wolf_sp_wither_hunt_wither_detected",
                     "comparison": ">=",
                     "compare_to": 1
                 },

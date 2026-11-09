@@ -26,9 +26,9 @@ public final class FormSpellStyle {
     public static CourtSpellLink.Cast currentCourt(){var style=EFFECT.get();return style==null?null:style.court;}
     public static BatSpellLink.Cast currentBat(){var style=EFFECT.get();return style==null?null:style.bat;}
     public static ServerPlayerEntity currentCaster(){var style=EFFECT.get();return style==null?null:style.player;}
-    public void bindBat(net.ssca.neomagic.NeoState.Experiment record){if(spreading)bat=new BatSpellLink.Cast(player,record);record.bloodSpent=blood.spent();court=CourtSpellLink.create(player,record);}
+    public void bindBat(net.jackcooper.shapeShifterCurseAddon.spell.NeoState.Experiment record){if(spreading)bat=new BatSpellLink.Cast(player,record);record.bloodSpent=blood.spent();court=CourtSpellLink.create(player,record);}
     public static AllaySpellLink.Cast currentAllay(){var style=EFFECT.get();return style==null?null:style.allay;}
-    public void bindAllay(double actual,net.ssca.neomagic.NeoState.Experiment record,boolean directCurse){allay=AllaySpellLink.create(player,actual,record,directCurse);}
+    public void bindAllay(double actual,net.jackcooper.shapeShifterCurseAddon.spell.NeoState.Experiment record,boolean directCurse){allay=AllaySpellLink.create(player,actual,record,directCurse);}
     /** Client wiring supplies the server-authoritative active-cast snapshot without loading client classes here. */
     public static java.util.function.ToDoubleFunction<PlayerEntity> clientRangeSnapshot = player -> Double.NaN;
     private final ServerPlayerEntity player;

@@ -28,9 +28,8 @@ import net.minecraft.world.Heightmap;
 import net.minecraft.world.gen.GeneratorOptions;
 import net.minecraft.world.gen.WorldPresets;
 import net.minecraft.world.level.LevelInfo;
-import net.ssca.neomagic.NeoRuntime;
-import net.ssca.neomagic.NeoState;
-import net.ssca.neomagic.client.NeoClient;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
 
 /** Real walking input, synchronized collapse attributes and vanilla body rotation. */
 public final class CollapseBodyYawClientProbe {

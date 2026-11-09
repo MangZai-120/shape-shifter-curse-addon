@@ -16,9 +16,7 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
-import net.ssca.neomagic.NeoMagic;
-import net.ssca.neomagic.NeoNetwork;
-import net.ssca.neomagic.NeoRuntime;
+import net.jackcooper.shapeShifterCurseAddon.network.NeoNetwork;
 
 /** Server-owned penalties; no potion immunity, damage conversion or random lingering cast locks. */
 public final class CollapsePenalties {

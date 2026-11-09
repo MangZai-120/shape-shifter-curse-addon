@@ -55,7 +55,7 @@ final class AnomalyProbeSupport {
 
     static void report(String filename, Map<String, ?> values) {
         try {
-            Files.writeString(Path.of(filename), net.ssca.neomagic.NeoState.JSON.toJson(values));
+            Files.writeString(Path.of(filename), net.jackcooper.shapeShifterCurseAddon.spell.NeoState.JSON.toJson(values));
         } catch (java.io.IOException failure) {
             throw new IllegalStateException("Cannot save probe result " + filename, failure);
         }

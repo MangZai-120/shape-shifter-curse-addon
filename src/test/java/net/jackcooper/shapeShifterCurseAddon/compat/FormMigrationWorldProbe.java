@@ -30,10 +30,10 @@ import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.status_effects.CTPUtils;
-import net.ssca.neomagic.NeoModel;
-import net.ssca.neomagic.NeoRules;
-import net.ssca.neomagic.NeoRuntime;
-import net.ssca.neomagic.NeoState;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoModel;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoRules;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
 
 /** Real transformed SSC registry, player components and Origins in a disposable ServerWorld. */
 public final class FormMigrationWorldProbe {

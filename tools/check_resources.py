@@ -12,7 +12,13 @@ resources=root/'src/main/resources'
 
 def check_document_links():
     failures=[]
-    for file in (root/'docs/new-spell-system').rglob('*.md'):
+    overview=root/'docs/spell-system.md'
+    assert overview.is_file(),overview
+    documents=[overview,root/'docs/plans/异常度系统建议表.md',
+               root/'docs/plans/SSCA新法术系统设计方案.md',root/'docs/plans/SSCA崩解度法术系统设计方案.md']
+    documents.extend((root/'docs/testing').glob('*法术*.md'))
+    for file in documents:
+        if not file.is_file():continue
         text=re.sub(r'```.*?```','',file.read_text(encoding='utf-8'),flags=re.S)
         for label,target in re.findall(r'\[([^\]]+)\]\(([^)]+)\)',text):
             if target.startswith(('http','C:','#')) or label.startswith('0,'):continue

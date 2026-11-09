@@ -303,10 +303,22 @@ public class GoldenSandstormErosionBrand {
 				playerBrands.remove(entry.getKey(), state);
 				continue;
 			}
+			// Recheck protection before either the full-stack burst or manual settlement.
+			if (WhitelistUtils.isProtected(player, target)) continue;
 			if (net.jackcooper.shapeShifterCurseAddon.spell.DomainManager.blocksTargeting(player, target)) continue;
 
-			// 如果目标有3层，先触发被动爆发（不消耗层数）
-			if (state.stacks >= BAL.i("max_stacks", MAX_STACKS)) {
+			// Reserve the mark before damage can reenter through Apoli's hit action.
+			int stacks = state.stacks;
+			long currentTick = serverWorld.getTime();
+			int greenDuration = BAL.i("green_duration", GREEN_DURATION);
+			state.stacks = 0;
+			state.greenState = true;
+			state.greenExpiryTick = currentTick + greenDuration;
+			state.stackCooldownExpiryTick = currentTick + BAL.i("brand_stack_cooldown", BRAND_STACK_COOLDOWN);
+			state.expiryTick = currentTick + greenDuration;
+
+			// Full layers trigger one passive burst before the manual detonation.
+			if (stacks >= BAL.i("max_stacks", MAX_STACKS)) {
 				triggerPassiveBurst(player, target, serverWorld);
 				// 被动爆发的额外粒子
 				ParticleUtils.spawnParticles(serverWorld, ParticleTypes.FLASH,
@@ -315,7 +327,7 @@ public class GoldenSandstormErosionBrand {
 			}
 
 			totalTargets++;
-			totalStacks += state.stacks;
+			totalStacks += stacks;
 
 			// 引爆伤害 = 目标当前生命值20%（上限20/26）
 			float rawDetonateDmg = target.getHealth() * damagePercent(player);
@@ -340,16 +352,7 @@ public class GoldenSandstormErosionBrand {
 			// 引爆粒子
 			ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SOUL_FIRE_FLAME,
 					target.getX(), target.getY() + target.getHeight() * 0.5, target.getZ(),
-					20 * state.stacks, 0.5, 0.5, 0.5, 0.1);
-
-			// 进入绿色状态
-			long currentTick = serverWorld.getTime();
-			int greenDuration = BAL.i("green_duration", GREEN_DURATION);
-			state.stacks = 0;
-			state.greenState = true;
-			state.greenExpiryTick = currentTick + greenDuration;
-			state.stackCooldownExpiryTick = currentTick + BAL.i("brand_stack_cooldown", BRAND_STACK_COOLDOWN);
-			state.expiryTick = currentTick + greenDuration;
+					20 * stacks, 0.5, 0.5, 0.5, 0.1);
 
 			// 同步标记效果到客户端
 			updateTargetMarker(target, state, currentTick, player);

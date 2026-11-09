@@ -1,5 +1,9 @@
 package net.jackcooper.shapeShifterCurseAddon.client;
 
+import net.jackcooper.shapeShifterCurseAddon.network.NeoNetwork;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
+
 import java.nio.file.*;
 import java.util.*;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.*;
@@ -21,8 +25,6 @@ import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.world.*;
 import net.minecraft.world.gen.*;
 import net.minecraft.world.level.LevelInfo;
-import net.ssca.neomagic.*;
-import net.ssca.neomagic.client.NeoClient;
 
 /** 独立真实客户端通过正常右键包饮用、投掷，并核对同步崩解度与模型。 */
 public final class MoonDustPotionClientProbe {

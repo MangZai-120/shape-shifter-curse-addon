@@ -73,8 +73,10 @@ public final class GoldenSandstormPerks {
         return Math.max(0, maximumHealth) * (Math.min(10, Math.max(0, layers)) * 0.02f);
     }
     public static boolean recall(ServerPlayerEntity player) {
-        return enabled(player, RECALL) && !AbilityUseGuard.blocked(player)
-                && GoldenSandstormErosionBrand.recallAll(player) > 0;
+        if (!enabled(player, RECALL) || AbilityUseGuard.blocked(player)
+                || GoldenSandstormErosionBrand.recallAll(player) <= 0) return false;
+        PerkRecallEffects.brandRecall(player);
+        return true;
     }
     private static boolean enabled(PlayerEntity player, Identifier id) {
         if (player == null || !isSupported(FormUtils.getPlayerForm(player)) || !PowerTypeRegistry.contains(id)) return false;

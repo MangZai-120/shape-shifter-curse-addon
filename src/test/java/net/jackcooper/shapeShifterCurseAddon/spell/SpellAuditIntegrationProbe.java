@@ -435,7 +435,7 @@ public final class SpellAuditIntegrationProbe {
     }
 
     private static void frostQuoteSynchronization()throws Exception {
-        var method=net.ssca.neomagic.client.NeoClient.class.getDeclaredMethod("frostMultiplier",NbtCompound.class,Identifier.class,long.class);method.setAccessible(true);
+        var method=net.jackcooper.shapeShifterCurseAddon.client.NeoClient.class.getDeclaredMethod("frostMultiplier",NbtCompound.class,Identifier.class,long.class);method.setAccessible(true);
         var state=new NbtCompound();state.putDouble("FrostSpellMultiplier",.85);state.putLong("FrostReadyUntil",60);
         var snow=net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SNOW_FOX_SP;
         var spine=net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SNOW_FOX_FROSTSPINE;
@@ -448,7 +448,7 @@ public final class SpellAuditIntegrationProbe {
         state.putDouble("FrostSpellMultiplier",Double.NaN);near((double)method.invoke(null,state,spine,0L),1,"Malformed nonfinite multiplier is ignored");
         state.putDouble("FrostSpellMultiplier",-1);near((double)method.invoke(null,state,spine,0L),1,"Negative multiplier is ignored");
         near((double)method.invoke(null,new NbtCompound(),spine,0L),1,"Missing old snapshot fields retain ordinary preview");
-        var novaMethod=net.ssca.neomagic.client.NeoClient.class.getDeclaredMethod("novaQuickUntil",NbtCompound.class,Identifier.class,long.class);novaMethod.setAccessible(true);
+        var novaMethod=net.jackcooper.shapeShifterCurseAddon.client.NeoClient.class.getDeclaredMethod("novaQuickUntil",NbtCompound.class,Identifier.class,long.class);novaMethod.setAccessible(true);
         var nova=net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.OCELOT_NOVA;
         var echo=new NbtCompound();echo.putString("Form",nova.toString());echo.putLong("NovaQuickCastUntil",100);
         check((long)novaMethod.invoke(null,echo,nova,99L)==100,"Client revival shortcut keeps authoritative absolute expiry");

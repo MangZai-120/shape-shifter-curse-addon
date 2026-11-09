@@ -42,7 +42,7 @@ public class SpellbookScreenHandler extends ScreenHandler {
 				SpellbookData.getExpTen(bookStack),
 				SpellbookData.getMana(bookStack),
 				SpellbookData.getMaxMana(bookStack), findBookSlot(playerInv, bookStack), false,
-				playerInv.player instanceof net.minecraft.server.network.ServerPlayerEntity p ? net.ssca.neomagic.NeoNetwork.hudState(p) : new NbtCompound());
+				playerInv.player instanceof net.minecraft.server.network.ServerPlayerEntity p ? net.jackcooper.shapeShifterCurseAddon.network.NeoNetwork.hudState(p) : new NbtCompound());
 	}
 
 	/** 客户端构造：从开屏数据包读取槽数与等级/法力快照。 */

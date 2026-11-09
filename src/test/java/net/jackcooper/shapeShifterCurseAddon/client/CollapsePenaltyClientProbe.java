@@ -1,5 +1,8 @@
 package net.jackcooper.shapeShifterCurseAddon.client;
 
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
+
 import java.nio.file.*;
 import java.util.*;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -15,8 +18,6 @@ import net.minecraft.world.*;
 import net.minecraft.world.level.LevelInfo;
 import net.minecraft.world.gen.GeneratorOptions;
 import net.minecraft.world.gen.WorldPresets;
-import net.ssca.neomagic.*;
-import net.ssca.neomagic.client.NeoClient;
 
 /** Native packaged client/integrated-server packet and vanilla/Iris visual acceptance. */
 public final class CollapsePenaltyClientProbe {

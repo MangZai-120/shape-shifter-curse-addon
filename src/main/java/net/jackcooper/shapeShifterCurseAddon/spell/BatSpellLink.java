@@ -13,7 +13,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.PersistentState;
-import net.ssca.neomagic.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 

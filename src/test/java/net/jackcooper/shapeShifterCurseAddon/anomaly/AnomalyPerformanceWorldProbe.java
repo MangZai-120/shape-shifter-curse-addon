@@ -307,7 +307,7 @@ public final class AnomalyPerformanceWorldProbe {
                     "The GameTest mock has no negotiated anomaly client channel; packet delivery latency and client rendering are not measured."));
             AnomalyProbeSupport.report("anomaly-performance-world-result.json", result);
             closeRecording(false);
-            System.out.println("ANOMALY_PERFORMANCE_WORLD_PASS " + net.ssca.neomagic.NeoState.JSON.toJson(result));
+            System.out.println("ANOMALY_PERFORMANCE_WORLD_PASS " + net.jackcooper.shapeShifterCurseAddon.spell.NeoState.JSON.toJson(result));
             cleanup();
             test.complete();
         } catch (Throwable failure) { fail(failure); }

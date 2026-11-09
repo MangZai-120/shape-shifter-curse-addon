@@ -129,7 +129,7 @@ public final class SpellChannelManager {
 		if(OcelotSpellLink.windLocked(player))return false;
 		if(OcelotSpellLink.wind(player)) {
 			stop(player,true,"message.ssc_addon.spell.cast_interrupted_action");
-			net.ssca.neomagic.NeoRuntime.cancel(player,"interrupted");
+			net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime.cancel(player,"interrupted");
 		} else cancelSelf(player);
 		return true;
 	}
@@ -182,7 +182,7 @@ public final class SpellChannelManager {
     private static boolean startInternal(ServerPlayerEntity player,Spell spell,ItemStack scroll,int level,
             boolean solo,int token,int mana,int cooldown,BooleanSupplier sourceValid,Consumer<Vec3d> effect,
             IntConsumer settleCooldown,Runnable consumeUse,RuneModifiers modifiers,SpiderSpellLink.Trigger trigger) {
-        if (net.ssca.neomagic.NeoRuntime.blocked(player)||net.ssca.neomagic.NeoLegacyCasting.isCasting(player)) return false;
+        if (net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime.blocked(player)||net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.isCasting(player)) return false;
         if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.isTeleportSpell(spell)
                 && net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(player)) return false;
         if (!RuneScheme.validScroll(player,scroll,spell))return false;
@@ -213,7 +213,7 @@ public final class SpellChannelManager {
 			player.sendMessage(Text.translatable("message.ssc_addon.spellbook.cost_unavailable"), true);
 			return false;
 		}
-		net.ssca.neomagic.NeoRuntime.refreshForm(player);
+		net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime.refreshForm(player);
 		// GCD：释放生效后 0.8s 内不能开始下一次施法（被打断的可立刻重试）
 		long gate = NEXT_CAST_OK.getOrDefault(player.getUuid(), 0L);
         if (trigger==null && player.getWorld().getTime() < gate) {
@@ -299,7 +299,7 @@ public final class SpellChannelManager {
 	/** Ice enclosure is full control even after a spell's protected release lock. */
 	public static void onFrozen(ServerPlayerEntity player) {
 		stop(player, true, Text.translatable("message.ssc_addon.spell.cast_interrupted_frozen"), true);
-		net.ssca.neomagic.NeoRuntime.cancel(player, "frozen");
+		net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime.cancel(player, "frozen");
 	}
 
 	private static boolean ensureValid(Channel channel) {
@@ -318,10 +318,10 @@ public final class SpellChannelManager {
 			stop(channel.player, true, "message.ssc_addon.spell.explosion_domain_suppressed");
 			return false;
 		}
-		if (!channel.collapse.form.equals(net.ssca.neomagic.NeoRuntime.form(channel.player))
-				|| channel.player.hasStatusEffect(net.ssca.neomagic.NeoMagic.DISORDER)
-				|| channel.player.hasStatusEffect(net.ssca.neomagic.NeoMagic.DISINTEGRATION)
-				|| channel.player.hasStatusEffect(net.ssca.neomagic.NeoMagic.BREAKDOWN)) {
+		if (!channel.collapse.form.equals(net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime.form(channel.player))
+				|| channel.player.hasStatusEffect(net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.DISORDER)
+				|| channel.player.hasStatusEffect(net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.DISINTEGRATION)
+				|| channel.player.hasStatusEffect(net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.BREAKDOWN)) {
 			stop(channel.player,true);return false;
 		}
 		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(channel.player)) {
@@ -413,8 +413,8 @@ public final class SpellChannelManager {
 		if (ACTIVE.get(channel.player.getUuid()) != channel) return;
 		if (!ensureValid(channel)) return;
 		if (!channel.collapse.advance(channel.collapseAge)) {
-			stop(channel.player, true, net.ssca.neomagic.NeoMagic.text("failed"), true);
-			net.ssca.neomagic.NeoRuntime.backlash(channel.player,channel.collapse.session.quote.actual());
+			stop(channel.player, true, net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.text("failed"), true);
+			net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime.backlash(channel.player,channel.collapse.session.quote.actual());
 			return;
 		}
 		if (!RuneCastContext.with(channel.modifiers,channel.formationRange,()->channel.spell.readyToRelease(channel.player, channel.scroll)) || !channel.progress.beginEffect()) return;
@@ -423,7 +423,7 @@ public final class SpellChannelManager {
 			NEXT_CAST_OK.put(channel.player.getUuid(), channel.player.getWorld().getTime() + BAL.i("gcd_ticks", CAST_INTERVAL_TICKS));
 			try {
 				channel.collapse.effect(()->channel.effect.accept(channel.collapse.target(channel.progress.target())));
-				if(channel.collapse.effectFailed) {stop(channel.player,true,net.ssca.neomagic.NeoMagic.text("failed"),true);net.ssca.neomagic.NeoRuntime.backlash(channel.player,channel.collapse.session.quote.actual());}
+				if(channel.collapse.effectFailed) {stop(channel.player,true,net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.text("failed"),true);net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime.backlash(channel.player,channel.collapse.session.quote.actual());}
 				else channel.collapse.finish(true,"released");
 			} catch (RuntimeException exception) {
 				stop(channel.player, true);
@@ -437,7 +437,7 @@ public final class SpellChannelManager {
 			catch(RuntimeException ex){channel.collapse.finish(false,"interrupted");throw ex;}
 			if(channel.collapse.effectFailed) {
 				channel.collapse.finish(false,"failed");
-				net.ssca.neomagic.NeoRuntime.backlash(channel.player,channel.collapse.session.quote.actual());
+				net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime.backlash(channel.player,channel.collapse.session.quote.actual());
 			} else channel.collapse.finish(true,"released");
 		}
 	}
@@ -623,7 +623,7 @@ public final class SpellChannelManager {
 		final IntConsumer settleCooldown;
 		final Runnable consumeUse;
 		final SpellCastingRules.Progress<Vec3d> progress;
-		final net.ssca.neomagic.NeoLegacyCasting collapse;
+		final net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting collapse;
 		final int beganTick;
 		int collapseAge;
 		int cancelTicks, continuousTicks, visualTicks;
@@ -660,7 +660,7 @@ public final class SpellChannelManager {
 			this.progress = new SpellCastingRules.Progress<>(this.mode, this.profile.ticks(), token);
 			this.beganTick = player.getServer().getTicks();
 			int cost = solo ? modifiers.mana(Math.round(spell.getManaCost()*spell.getConfig().manaCostMultiplier(level))) : mana;
-			this.collapse = new net.ssca.neomagic.NeoLegacyCasting(player,spell,level,this.profile.ticks(),cost,
+			this.collapse = new net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting(player,spell,level,this.profile.ticks(),cost,
                     style.timing.lockTick(),style.collapseMultiplier*growthMultiplier);
             this.collapse.record.moistureSpent=style.paidMoisture();
             style.bindAllay(this.collapse.session.quote.actual(),this.collapse.record,spell.getElement()==FormationElement.CURSE&&spell.supportsCurseChain());

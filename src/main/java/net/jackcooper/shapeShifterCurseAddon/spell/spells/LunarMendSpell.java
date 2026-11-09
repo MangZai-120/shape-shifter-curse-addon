@@ -35,7 +35,7 @@ public class LunarMendSpell extends Spell {
 		// 蝙蝠「血契」配套：月华治愈效果 +25%（吸血蝙蝠主题，2026-09-17）
 		power = net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.lunarMendBonus(caster, power);
 		// 回复生命（不含再生，即时治疗语义）
-		if (net.ssca.neomagic.NeoLegacyCasting.reversed()) {
+		if (net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.reversed()) {
             caster.damage(caster.getDamageSources().magic(), power);
             return;
         }

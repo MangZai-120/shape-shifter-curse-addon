@@ -42,7 +42,7 @@ public final class CourtSpellLink {
         if(cast==null||effect.getDuration()<=0||effect.getEffectType().getCategory()!=StatusEffectCategory.HARMFUL||!(target.getWorld() instanceof ServerWorld w))return;
         var p=w.getServer().getPlayerManager().getPlayer(cast.owner);if(p!=null)hit(cast,p,target);
     }
-    public static Cast create(ServerPlayerEntity p,net.ssca.neomagic.NeoState.Experiment record){
+    public static Cast create(ServerPlayerEntity p,net.jackcooper.shapeShifterCurseAddon.spell.NeoState.Experiment record){
         int kind=FormUtils.isForm(p,FormIdentifiers.ANUBIS_WOLF_SP)?1:FormUtils.isGoldenSandstormSP(p)?2:0;
         if(kind==0)return null;var c=new Cast();c.id=UUID.fromString(record.id);c.owner=p.getUuid();c.kind=kind;c.price=BAL.i("court_soul_cost",5);return c;
     }

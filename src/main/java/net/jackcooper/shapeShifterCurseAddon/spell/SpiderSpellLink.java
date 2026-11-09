@@ -147,7 +147,7 @@ public final class SpiderSpellLink {
         public double growth() {return free?0:BAL.d("salticidae_curse_collapse_multiplier",.2);}
         public int cooldown(int normal) {return Math.max(1,(int)Math.ceil(normal*BAL.d("salticidae_curse_cooldown_multiplier",.1)));}
         public void effect(ServerPlayerEntity p,Runnable action) {
-            float yaw=p.getYaw(),pitch=p.getPitch();Vec3d delta=net.ssca.neomagic.NeoLegacyCasting.effectTarget(aim).subtract(p.getEyePos());
+            float yaw=p.getYaw(),pitch=p.getPitch();Vec3d delta=net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.effectTarget(aim).subtract(p.getEyePos());
             if(delta.lengthSquared()>1e-8){p.setYaw((float)Math.toDegrees(Math.atan2(-delta.x,delta.z)));p.setPitch((float)-Math.toDegrees(Math.atan2(delta.y,Math.hypot(delta.x,delta.z))));}
             try{action.run();}finally{p.setYaw(yaw);p.setPitch(pitch);}
         }

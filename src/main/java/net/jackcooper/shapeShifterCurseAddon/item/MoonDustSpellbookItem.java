@@ -71,7 +71,7 @@ public class MoonDustSpellbookItem extends AccessoryItem {
 					buf.writeInt(SpellbookData.getMana(stack));
 					buf.writeInt(SpellbookData.getMaxMana(stack));
 					buf.writeInt(SpellbookScreenHandler.findBookSlot(player.getInventory(), stack));
-					buf.writeNbt(net.ssca.neomagic.NeoNetwork.hudState(player));
+					buf.writeNbt(net.jackcooper.shapeShifterCurseAddon.network.NeoNetwork.hudState(player));
 				}
 			});
 		}
@@ -85,7 +85,7 @@ public class MoonDustSpellbookItem extends AccessoryItem {
 		int mana = SpellbookData.getMana(stack);
 		int maxMana = SpellbookData.getMaxMana(stack);
 		tooltip.add(Text.translatable("item.ssc_addon.moon_dust_spellbook.tip_level", level, slots).formatted(Formatting.AQUA));
-		tooltip.add(net.ssca.neomagic.NeoMagic.text("book_bonus",String.format(java.util.Locale.ROOT,"%.1f",net.ssca.neomagic.NeoLegacyCasting.safetyBonus(stack)),String.format(java.util.Locale.ROOT,"%.2f",net.ssca.neomagic.NeoLegacyCasting.recoveryMultiplier(stack))).formatted(Formatting.BLUE));
+		tooltip.add(net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.text("book_bonus",String.format(java.util.Locale.ROOT,"%.1f",net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.safetyBonus(stack)),String.format(java.util.Locale.ROOT,"%.2f",net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.recoveryMultiplier(stack))).formatted(Formatting.BLUE));
 		int need = SpellbookData.getExpToNext(stack);
 		if (need > 0) {
 			// 未满级：显示升级进度（1 位小数）
@@ -104,7 +104,7 @@ public class MoonDustSpellbookItem extends AccessoryItem {
 					String.format(java.util.Locale.ROOT,"%.1f",unit/10.0),bonus).formatted(Formatting.GOLD));
 		}
 		tooltip.add(Text.translatable("text.ssc_addon.player_mastery.tip").formatted(Formatting.DARK_GRAY));
-		tooltip.add(net.ssca.neomagic.NeoMagic.text("book_help").formatted(Formatting.DARK_GRAY));
+		tooltip.add(net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.text("book_help").formatted(Formatting.DARK_GRAY));
 		super.appendTooltip(stack, world, tooltip, context);
 	}
 }

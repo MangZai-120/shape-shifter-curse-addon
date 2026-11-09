@@ -11,7 +11,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
-import net.ssca.neomagic.NeoMagic;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic;
 
 /** 保留玩家原始像素图，使用独立布局和服务端同步数值。 */
 public final class NeoStabilityBar {

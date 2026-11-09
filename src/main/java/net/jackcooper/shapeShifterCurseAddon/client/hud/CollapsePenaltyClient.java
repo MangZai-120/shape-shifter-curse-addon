@@ -6,7 +6,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
-import net.ssca.neomagic.client.NeoClient;
+import net.jackcooper.shapeShifterCurseAddon.client.NeoClient;
 
 /** Visual carriers only: health loss is exclusively authoritative on the server. */
 public final class CollapsePenaltyClient {

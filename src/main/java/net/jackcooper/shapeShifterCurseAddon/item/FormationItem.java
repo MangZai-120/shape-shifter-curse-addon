@@ -127,8 +127,8 @@ public class FormationItem extends Item {
 			String variant = FormationData.getVariant(stack);
 			switch (variant == null ? FormationData.VARIANT_REGEN : variant) {
 				case FormationData.VARIANT_MANA -> {
-                    int manaPct = net.ssca.neomagic.NeoLegacyCasting.formationSafetyBonus(level);
-					tooltip.add(net.ssca.neomagic.NeoMagic.text("formation_mana",
+                    int manaPct = net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.formationSafetyBonus(level);
+					tooltip.add(net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.text("formation_mana",
 							manaPct).formatted(Formatting.GRAY));
 				}
 				case FormationData.VARIANT_EXP -> {
@@ -138,12 +138,12 @@ public class FormationItem extends Item {
 				}
 				case FormationData.VARIANT_RECOVERY -> {
 					int recPct = Math.round(0.20f * level * 100);
-					tooltip.add(net.ssca.neomagic.NeoMagic.text("formation_recovery",
+					tooltip.add(net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.text("formation_recovery",
 							recPct).formatted(Formatting.GRAY));
 				}
 				default -> {
 					int pct = (int) Math.round(FormationData.universalThreshold(level) * 100);
-					tooltip.add(net.ssca.neomagic.NeoMagic.text("formation_regen",
+					tooltip.add(net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.text("formation_regen",
 							pct,
 							(int) FormationData.universalManaDrainPerSec(),
 							(int) FormationData.universalBookManaPerSec()).formatted(Formatting.GRAY));
@@ -154,7 +154,7 @@ public class FormationItem extends Item {
 			return;
 		}
         if(element==FormationElement.SPACE){
-            tooltip.add(net.ssca.neomagic.NeoMagic.text("formation_space",
+            tooltip.add(net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.text("formation_space",
                     Math.round(FormationData.spaceRangeBonusPerLevel()*level*100),
                     Math.round(FormationData.cooldownReductionPerLevel()*level*100),
                     Math.round(FormationData.manaCostPerLevel()*level*100)).formatted(Formatting.GRAY));
@@ -165,7 +165,7 @@ public class FormationItem extends Item {
         int pct = Math.round(FormationData.damageBonusPerLevel() * level * 100);
 		int cdPct = Math.round(FormationData.cooldownReductionPerLevel() * level * 100);
 		int manaPct = Math.round(FormationData.manaCostPerLevel() * level * 100);
-		tooltip.add(net.ssca.neomagic.NeoMagic.text("formation_effect",
+		tooltip.add(net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.text("formation_effect",
 				Text.translatable(element.getNameKey()), pct,
 				Text.translatable(element.opponent().getNameKey()), pct,
 				cdPct, manaPct).formatted(Formatting.GRAY));

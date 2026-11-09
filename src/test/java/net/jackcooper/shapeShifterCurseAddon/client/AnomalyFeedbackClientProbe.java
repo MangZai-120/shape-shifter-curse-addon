@@ -37,7 +37,7 @@ import net.minecraft.world.GameRules;
 import net.minecraft.world.gen.GeneratorOptions;
 import net.minecraft.world.gen.WorldPresets;
 import net.minecraft.world.level.LevelInfo;
-import net.ssca.neomagic.NeoState;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
 
 /** Observe real incoming packets and the real sound engine for all seven elements and 42 pair orders. */
 public final class AnomalyFeedbackClientProbe {

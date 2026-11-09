@@ -21,7 +21,7 @@ import net.minecraft.stat.Stats;
 import net.minecraft.text.Text;
 import net.minecraft.util.*;
 import net.minecraft.world.World;
-import net.ssca.neomagic.NeoRuntime;
+import net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime;
 import org.jetbrains.annotations.Nullable;
 
 /** 月尘药水只降低现有崩解度，不改变安全阈值、形态资源或精通。 */

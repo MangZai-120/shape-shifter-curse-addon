@@ -102,7 +102,7 @@ public class SpaceBlinkSpell extends Spell {
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level) {
 		if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(caster)) {
-            net.ssca.neomagic.NeoLegacyCasting.miss(); return;
+            net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.miss(); return;
         }
 		if (!(caster.getWorld() instanceof ServerWorld serverWorld)) {
 			return;

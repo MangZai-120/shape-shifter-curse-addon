@@ -986,7 +986,7 @@ public class BarPositionEditorScreen extends Screen {
 
     private void drawStabilityHandleUnscaled(DrawContext ctx, int mouseX, int mouseY) {
         var p = stabilityPos(); int x = p.getLeft(), y = p.getRight();
-        var n = net.ssca.neomagic.client.NeoClient.hud;
+        var n = net.jackcooper.shapeShifterCurseAddon.client.NeoClient.hud;
         if (!n.contains("S")) {
             n = new net.minecraft.nbt.NbtCompound(); n.putDouble("C",70); n.putDouble("S",80); n.putDouble("Q",25); n.putInt("Age",-1); n.putInt("Recovery",40); n.putBoolean("HasSpell",true);
         }

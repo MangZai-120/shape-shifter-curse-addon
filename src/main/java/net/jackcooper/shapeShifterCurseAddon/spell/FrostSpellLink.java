@@ -13,8 +13,7 @@ import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.ssca.neomagic.NeoNetwork;
-import net.ssca.neomagic.NeoRuntime;
+import net.jackcooper.shapeShifterCurseAddon.network.NeoNetwork;
 import java.util.*;
 
 /** Ice-only native-form collaboration. Quotes never consume a buff or a hovering thorn. */
@@ -85,7 +84,7 @@ public final class FrostSpellLink {
             for(var thorn:thorns)lifetimeSpent+=thorn.spendHoverLifetime(lifetimeCost);
             paid=true;return true;
         }
-        public void record(net.ssca.neomagic.NeoState.Experiment record) {
+        public void record(net.jackcooper.shapeShifterCurseAddon.spell.NeoState.Experiment record) {
             if(!paid)return;
             record.snowReadyUsed=buff!=null;record.frostThornsSpent=thorns.size();record.frostLifetimeTicksSpent=lifetimeSpent;
         }
