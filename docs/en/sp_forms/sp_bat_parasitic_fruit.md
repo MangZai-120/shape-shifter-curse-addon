@@ -11,7 +11,7 @@ The Parasitic Fruit Bat is a supportive bat variant born from the **Evolution St
 
 | Item | Description |
 | --- | --- |
-| Registry name | `my_addon:form_bat_parasitic_fruit` |
+| Registry name | `my_addon:bat_parasitic_fruit` |
 | Classification | Bat Evolution Stone variant (a separate branch from Desmodus) |
 | Affinity | Parasitic Sower / Support |
 | Combat role | Team Support / Sustained Control / Area Debuffs |
@@ -28,69 +28,105 @@ The Parasitic Fruit Bat is a supportive bat variant born from the **Evolution St
 
 ***
 
-## Core Resource: Seed Charge
+[Watch the bilingual Parasitic Fruit Bat tutorial](../../tutorials/parasitic-fruit/index.html?lang=en_us)
 
-The exclusive resource of the Parasitic Fruit Bat form, and the cost of both active skills:
+## Addon Abilities and Changes
 
-* Maximum **10**; each active skill costs **1 charge** per cast; skills cannot be cast when charges are insufficient.
-* Natural regen: **1 charge every 5 seconds**.
-* Active refill: sneak + right-click a **vanilla seed** in the main hand to start a **2-second** eating session (must keep sneaking); up to **8 seeds** per **3 minutes**, beyond which a "can't stomach any more" warning appears.
+### 1. Parasitic Seed: Friends and Enemies
 
-***
+Aim and press the primary key to hit a living target with an arcing seed.
 
-## Active Skills
+Costs one seed energy and has a one-second cooldown. Root for one second, then bear fruit every 1.25 seconds by default. Friends receive Haste, Speed, healing or absorption based on combat and health; enemies receive adaptive Slowness, Weakness, Glowing or Poison.
 
-### Parasitic Spiritfruit (Primary)
+Outside combat, friends above seventy percent health receive Haste I; otherwise they heal two health. In combat, above eighty percent gives Speed II, fifty to eighty gives Absorption I plus two health, and below fifty gives Absorption II plus four health. Fruit effects only affect the host.
 
-Launch a spiritfruit seed toward your crosshair (within **6 blocks**, cannot pass through walls). On hitting a creature it roots, then bears fruit every **2 seconds**:
+### 2. Ground Seed Fields
 
-* **Allied host**: grows Honeydew / Prickly Pear / Wind Berry / Fragrant Fruit according to its state, providing healing, absorption, protection, strength, speed, slow falling, or haste.
-* **Hostile host**: grows Vine / Bitter / Rotten / Sour Fruit, inflicting Slowness, Weakness, Glowing, Poison, and similar debuffs.
-* **Heal suppression**: while parasitized by a debuff fruit, all healing the target receives is **reduced by 50%**.
-* **Spread**: fruit effects spread from the host to nearby same-side creatures with a **halved-duration** version.
-* **Parasite limit**: maintain up to **3 spiritfruit seeds** at once; a target carries only 1 seed, hitting it again refreshes the duration.
-* **1s cooldown**, costs **1 Seed Charge**; missing a creature triggers a half cooldown without consuming a charge.
+Throw the primary seed onto the ground, then enter its green ring.
 
-### Infection Spore Bomb (Secondary)
+A seed that lands without hitting a living host creates a pickup field. Any player within one block can collect it and become a host for its remaining lifetime.
 
-Throw an exploding seed that detonates **without dealing damage** on hitting a block or creature, releasing spores:
+A miss still costs energy and starts the normal cooldown. The field disappears when collected or expired. Waiting longer before pickup leaves less parasitism time.
 
-* **Within the 4-block explosion**: whitelist-protected allies are healed for **1 HP every 3 seconds for 15 seconds**; other creatures are **infected**.
-* **Infection** (15s): take **1 magic damage** and Glow for 1 second every 3 seconds, cannot heal from food saturation, and all damage they deal is **reduced by 15%**.
-* **Contagion**: non-whitelisted creatures within **1.5 blocks** of an infected target are infected as well, inheriting the source's remaining duration.
-* **Poison fog cloud**: on landing it leaves a **4-block-diameter** cloud lasting **15 seconds**; non-whitelisted creatures entering are infected for the cloud's remaining time, while allies entering receive healing spores.
-* The Allay's **Purify** clears the infection and dissipates the cloud.
-* **1s cooldown**, costs **1 Seed Charge**.
+### 3. Stacks, Lifetime and Host Limit
 
-***
+Hit the same host again or seed several different targets.
 
-## Passive Talents
+A host can reach three stacks. Another hit adds lifetime to the remaining duration and restarts rooting. Maintain up to three independent hosts; a fourth replaces the oldest.
 
-### Seed Charge Regeneration
+Each application adds fifteen seconds outside combat or five seconds in combat, based on the host. Current lifetime does not vary with day, night or self-hosting. Full stacks gain faction-colored outlines, while infection outlines take display priority.
 
-Regenerates **1 Seed Charge every 5 seconds**, up to a maximum of **10**.
+### 4. Infection Spore Bomb
 
-### Spirit Fruit Bloom
+Press the secondary key to throw a spore bomb.
 
-Form passive: every second, each crop within a **5-block** radius has a **5%** chance to advance one growth tick.
+Costs one seed energy with a one-second cooldown. On impact, whitelisted targets within four blocks receive ten seconds of healing spores, restoring one health every three seconds. Others become infected, take periodic damage, briefly glow, lose hunger healing and deal fifteen percent less damage.
 
-### Inherited Bat Abilities
+The explosion itself deals no direct damage. Infection spreads to unprotected targets within 1.5 blocks using the source's remaining duration. Non-player enemies also receive enhanced harmful-effect levels, which can affect periodic damage. Infection poison follows poison ticks and cannot by itself reduce health below one.
 
-Retains most traits of a Stage III Bat: small body, night vision, slow falling, wall clinging, aerial acceleration, enhanced jumping, fast bare-hand digging, and fruit instinct.
+### 5. Lingering Clouds and Purification
 
-***
+Land a spore bomb on a block and let targets enter its cloud.
 
-## Weaknesses & Limitations
+A block impact also leaves a cloud two blocks in radius for ten seconds. Unprotected entrants become infected and protected entrants receive healing, using the cloud's remaining lifetime.
 
-| Limitation | Description |
-| --- | --- |
-| Must hit | Spiritfruit seeds must hit a creature to take effect; missing only triggers a half cooldown |
-| Day/night influence | Under open sky during the day, seed duration is shortened; at night or in low light it is extended |
-| Self-reduction | Positive fruits planted on yourself have reduced duration, preventing support from becoming pure self-buffing |
-| Armor restriction | A bat's small frame — cannot equip chestplates, leggings, or boots, and cannot use ranged weapons |
-| Slow on ground | Walking on the ground is slow |
+Explosion infection and cloud pulses are separate effects; entering the cloud does not itself copy explosion infection. Allay Purification can cure infection and disperse nearby clouds. A second real player demonstrates it as Crystal Sound.
 
-***
+### 6. Seed Energy and Combat Recovery
+
+Watch seed energy, or try both skills while empty.
+
+Energy is capped at ten. Both skills cost one. Restore one every five seconds outside combat or every eight seconds in combat; recovery stops at the cap.
+
+Insufficient energy produces no projectile or new skill cooldown. Recent damage dealt or taken counts as combat, and a nearby attacker can keep combat active longer.
+
+### 7. Eating Vanilla Seeds
+
+Hold vanilla seeds in the main hand, sneak and hold the use key to eat.
+
+Finishing an actual eating action restores one seed energy. Wheat, beetroot, pumpkin, melon and torchflower seeds, plus pitcher pods, qualify.
+
+At most eight seed meals may finish in a rolling three-minute window. Wait until eating completes; natural energy regeneration may happen during the same footage.
+
+### 8. Plant Growth
+
+Stand near plants that can still grow.
+
+Every second, plants within five blocks each have a five percent chance to receive an extra growth opportunity.
+
+Side-by-side crops inside and outside the radius provide a control. Vanilla random growth is disabled in the film set to isolate this passive. Growth is probabilistic.
+
+### 9. Spell Debuff Transmission
+
+Apply an eligible spellbook debuff and keep other enemies near its host.
+
+Eligible harmful spells cost twenty-five percent more collapse. An enemy continuously within three blocks of a host for 2.5 seconds can inherit its remaining debuffs. Each host creates at most two children, across at most three generations.
+
+This is a separate spellbook interaction; ordinary fruit pulses do not spread to neighbors. Whitelist protection remains active. Fire, native skills and expired effects do not enter this spell transmission chain.
+
+### 10. NPC Debuff Boost and Healing Reduction
+
+Apply harmful effects to enemy non-player living targets, or heal an enemy fruit host.
+
+Harmful effects gain one extra level against enemy non-player living targets by default. An enemy fruit host receives fifty percent less healing.
+
+Stacks further raise applicable fruit levels. An eight-health heal only restores four while fruit healing reduction is active. Transmission copies the existing boosted level without repeatedly boosting each generation.
+
+### 11. Summoning Affinity
+
+Cast a Summon-element spellbook spell.
+
+Effective spell level gains one, capped at five.
+
+The same level-two Lunar Spirit spell compares a human with Parasitic Fruit Bat, crossing a summon-count threshold. The stored scroll level is not permanently changed.
+
+### 12. Fixed Base Health
+
+Transform into Parasitic Fruit Bat and compare day with night.
+
+Base maximum health is sixteen, replacing the inherited bat sunlight-dependent health configuration.
+
+The clip switches between daylight and night. Equipment, extra attributes and other mods can still alter final maximum health.
 
 ## Exclusive Trinkets
 

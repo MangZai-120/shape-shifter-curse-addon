@@ -11,7 +11,7 @@ Desmodus is a special bat variant reforged by the power of the **Moon Essence Cr
 
 | Item | Description |
 | --- | --- |
-| Registry name | `my_addon:form_bat_desmodus` |
+| Registry name | `my_addon:bat_desmodus` |
 | Classification | Bat Moon Essence Cross variant (a separate branch from the Parasitic Fruit Bat) |
 | Affinity | Vampire / Hunter of the moonlit hours |
 | Combat role | High-mobility Melee / Blood Thirst Lifesteal / Sonic Control |
@@ -29,64 +29,105 @@ Desmodus is a special bat variant reforged by the power of the **Moon Essence Cr
 
 ***
 
-## Active Skills
+[Watch the bilingual Desmodus tutorial](../../tutorials/desmodus/index.html?lang=en_us)
 
-### Mist Form (Primary)
+## Addon Abilities and Changes
 
-The vampire's signature escape and engage tool:
+### 1. Mist Form
 
-* Press the active skill key to dissolve into a cloud of mist, your model fading away.
-* While in mist, you are **immune to all damage except the void**, lasting about **4.5 seconds**.
-* After **1 second** in mist, press the key again to charge a Burst, dealing **8 damage** and knockback to enemies within **4 blocks**.
-* Cooldown **10 seconds**.
+Press the primary key to become mist.
 
-### Sonic Burst (Secondary)
+Hide your model and ignore damage other than the void for about 4.5 seconds. The ten-second cooldown begins when mist ends. Entering and maintaining mist costs no blood.
 
-Release a fan-shaped ultrasonic wave forward for control:
+Normal right-click interactions and Sonic Wave are blocked during mist. Equal incoming damage compares mist with the period after it ends. The void remains dangerous.
 
-* Area **3.5 blocks wide, 8 blocks long**.
-* Deals **4 physical damage** to **non-whitelisted** creatures inside and inflicts **Nausea for 3s**.
-* **Player targets** are additionally **Deafened for 3s** (temporarily cannot hear any sound).
-* **Non-player targets** additionally gain **Blindness for 3s**.
-* Cooldown **8 seconds**.
+### 2. Condensed Burst
 
-***
+After one second in mist, press the primary key again.
 
-## Passive Talents
+Charge for another second, end mist and damage unprotected targets within four blocks with knockback. Base damage is twelve, doubled to twenty-four against hostile non-player living targets by default. High-blood damage bonuses apply separately.
 
-### Bloodthirst Instinct
+Movement is halved while charging. Whitelisted and distant targets provide controls. The first three hits also grant twelve, six and three blood. Mist cooldown starts when the burst ends.
 
-As a vampire, combat continuously builds your Blood Thirst — landing attacks, hitting with skills, and killing enemies all add up:
+### 3. Sonic Wave
 
-* Below **25** thirst, gain **15% damage reduction**.
-* At **50** or above, gain **20% lifesteal**.
-* At **75+**, damage is increased by **15%** and lifesteal rises to **35%**.
-* After **12 seconds** out of combat, the value begins to decay.
+Aim and press the secondary key.
 
-### Moonlit Frenzy
+Send a cylinder eight blocks long and 3.5 blocks wide along your view. Base physical damage is six, or twelve against hostile non-player living targets by default. Apply three seconds of Nausea plus Deafness to players or Blindness to other living targets. Cooldown: eight seconds.
 
-At night under open sky, moonlight awakens your predator instincts: **+15% attack damage**, **+5% movement speed**, and out-of-combat Blood Thirst decay is halved.
+Whitelisted targets are protected. Real target-player audio demonstrates a bell becoming inaudible during Deafness and returning afterward. Sonic hits also grant blood.
 
-### Echolocation
+### 4. Blood Gain and Decay
 
-Activates automatically once night falls (indoor or outdoor): every **3 seconds**, all living entities within **12 blocks** gain a **1-second Glowing** pulse on a continuous loop, letting you track every target through the dark.
+Land melee or skill hits, or kill living targets.
 
-### Inherited Bat Abilities
+Blood is capped at one hundred. Unprotected melee hits grant eight with a 0.3-second internal gate. Burst and sonic hits grant twelve, six and three for the first three targets; kills grant fifteen.
 
-Retains nearly all the abilities of an ordinary bat: gliding and slow falling, night vision, wall-clinging, aerial acceleration, jump enhancement, fast bare-hand digging, sonar hearing, and the ability to mine diamonds while holding the Mosaic Claw.
+Decay starts twelve seconds after the last combat event: four per second under cover, six in open daylight or two in open night. Simply remaining in combat does not generate blood every second. Burst and sonic damage also trigger the generic melee-type gain; a single target gives twenty total in the recorded default setup.
 
-***
+### 5. Blood Stages and Lifesteal
 
-## Weaknesses & Limitations
+Attack or take damage at different blood levels.
 
-| Limitation | Description |
-| --- | --- |
-| Sunlight Frailty | Under open sky during the day, you falter: **-20% attack damage**, **-10% movement speed**, out-of-combat Blood Thirst decay accelerated by **50%**; removed instantly in shade, underwater, or beneath a block |
-| Bloodbane Iron | When struck by an attacker wielding an iron weapon (iron sword/axe/pickaxe/shovel/hoe), incoming damage is increased by an additional **15%** |
-| Armor restriction | A bat's small frame — cannot equip chestplates, leggings, or boots, and cannot use ranged weapons |
-| Slow on ground | Walking on the ground slows you down — the sky is your true domain |
+Below twenty-five blood, take fifteen percent less damage. At twenty-five to forty-nine, neither that reduction nor stage lifesteal applies. Fifty to seventy-four gives thirty percent lifesteal. At seventy-five or more, outgoing damage rises fifteen percent and lifesteal reaches 52.5 percent.
 
-***
+Equal incoming damage and the same wooden sword provide comparisons. Hits also raise blood, so crossing a threshold can change the stage during a hit. No blood accessories are equipped.
+
+### 6. High-blood Mist Aura
+
+Enter mist with at least seventy-five blood.
+
+Each second, damage unprotected targets within two blocks for two, or four against hostile non-player living targets by default. Each successfully damaged target heals you for two health.
+
+Compare starting blood of fifty-five and eighty. The aura only operates in mist and excludes the high-blood fifteen percent outgoing bonus. Its fixed healing is separate from ordinary hit lifesteal.
+
+### 7. Daylight Weakness
+
+Stand under an unobstructed sky during daytime.
+
+Attack attribute falls twenty percent and movement speed attribute falls ten percent. Out-of-combat blood decay increases to six per second.
+
+Solid overhead cover removes these additional daylight penalties. Inherited ground movement and sun-related health behavior can still affect final attributes; this lesson covers the addon daylight modifiers.
+
+### 8. Moonlit Excitement
+
+Remain outside at night with the sky visible.
+
+Gain fifteen percent attack and five percent movement speed. Out-of-combat blood decay falls to two per second.
+
+Compare the same form under overhead cover. Both nighttime and sky visibility are required; indoor nighttime does not grant these outdoor attribute bonuses.
+
+### 9. Iron Vulnerability
+
+Take a hit from an attacker holding an iron weapon or tool.
+
+Take fifteen percent extra damage. Iron swords, axes, pickaxes, shovels and hoes qualify.
+
+The attacker holds a wooden sword or iron sword while the input damage and blood stage remain equal. Other mechanics such as low-blood reduction and armor can still affect final damage.
+
+### 10. Night Echolocation
+
+Automatically activates at night, including indoors.
+
+Every three seconds, living targets within twelve blocks glow for about one second.
+
+Indoor night footage compares targets inside and outside the radius. This is the form's native addon echo without the enhanced echolocation Perk.
+
+### 11. Blood Casting
+
+Begin a spellbook cast with at least fifteen blood.
+
+Pay fifteen blood at the start to reduce collapse growth for that cast by thirty-five percent. Insufficient blood still permits ordinary-cost casting.
+
+Equal-level Fire Bolt compares sufficient and insufficient blood. Payment happens once per cast and is not refunded on interruption. Native form skills do not inherit this blood cost.
+
+### 12. Lunar Mend Affinity
+
+Cast Lunar Mend.
+
+Lunar Mend healing is multiplied by 1.25 in Desmodus form.
+
+Compare equal-level self-healing with a human from the same starting health. This bonus belongs specifically to Lunar Mend, rather than every healing source.
 
 ## Exclusive Trinkets
 
