@@ -13,7 +13,7 @@ SP Anubis is an area-control form centered on **death domain, Netherwolf summons
 
 | Item | Description |
 | --- | --- |
-| Registry name | `my_addon:form_anubis_wolf_sp` |
+| Registry name | `my_addon:anubis_wolf_netherjudge` |
 | Classification | SP evolution of the Anubis Wolf Stage 3 line |
 | Affinity | Undead / Nether |
 | Combat role | Area reshaping / Summon control / Wither pressure |
@@ -30,97 +30,118 @@ SP Anubis is an area-control form centered on **death domain, Netherwolf summons
 
 ---
 
-## Active Skills
+[Watch the bilingual Netherjudge tutorial](../../tutorials/netherjudge/index.html?lang=en_us)
 
-### Death Domain (Primary)
+## Addon Abilities and Changes
 
-Channel to temporarily reshape the surroundings into an undead home turf:
+### 1. Death Domain
 
-* Normal channel **2 seconds**, movement speed −**70%** during channel.
-* Normal radius **24 blocks**, height range **9 blocks**.
-* Domain expands outward at about **5 blocks/second**.
-* Normal duration **15 seconds**.
-* Cooldown **50 seconds** on success.
-* If no convertible blocks exist, casting fails → **10 second** penalty cooldown.
-* Block conversion avoids bedrock, functional blocks, redstone, and direction-connected blocks; restores when the domain ends.
+Press the primary key while standing on convertible ground and not sneaking.
 
-Within the domain, non-whitelisted targets standing within ~3 blocks above soul sand or soul soil receive:
+Charge for two seconds at seventy percent slower movement. The domain expands five blocks per second to a twenty-four-block radius, sustains for fifteen seconds after expansion, then restores the ground from the outside inward. Successful release starts a fifty-second cooldown.
 
-* Slowness I refresh.
-* Wither I; in empowered domain, upgraded to Wither II.
-* Max HP −**15%**.
-* Wither strikes capped at about **10** to prevent runaway damage.
+Unprotected targets within roughly three blocks above soul sand or soul soil receive Slowness I, Wither I and a reduction equal to fifteen percent of base maximum health. Leaving removes that reduction. Functional and redstone blocks are protected. No convertible ground means failure and a ten-second cooldown.
 
-Casting at full Soul Energy becomes Empowered Death Domain:
+### 2. Full-soul Enhanced Domain
 
-* Consumes all Soul Energy.
-* Channel shortened to **1 second**.
-* Radius expanded to **32 blocks**.
-* Duration **25 seconds**.
-* Auto-summons **6 Netherwolves**; with Anubis Crystal, +2 more.
-* Also locks Netherwolf Court into **30 second** cooldown.
+Press the primary key after reaching one hundred soul energy.
 
-### Netherwolf Court (Secondary)
+Spend the full soul bar to shorten charging to one second. Radius increases to thirty-two blocks, sustaining for twenty-five seconds after expansion. Domain Wither becomes level II and six nether wolves are summoned automatically.
 
-Summon Netherwolves to fight for you:
+Automatic summoning also starts the secondary skill's thirty-second cooldown; the primary retains its fifty-second cooldown. The full expansion, sustain and retraction are shown without a crystal or Perks. Kills inside the enhanced domain do not provide its ordinary domain-kill energy.
 
-* Channel **1.5 seconds**, movement speed −**50%** during channel.
-* Base summon: **2** Netherwolves.
-* Inside Death Domain: **4** Netherwolves.
-* Netherwolves last **30 seconds**.
-* Cooldown **30 seconds** on success.
-* At summon cap → casting fails, **5 second** short cooldown.
-* Default cap: up to **6** simultaneously; with Anubis Crystal, cap +2.
+### 3. Nether Wolf Court
 
-Base Netherwolf stats: HP **20**, attack **4**. Their hits heal the owner for **2 HP**. Netherwolves summoned in Death Domain gain +**10 HP**, +**2 attack**, and Speed I. The Anubis Crystal raises the cap and per-summon count, but Netherwolf attack −**25%**, HP −**35%**.
+Press the secondary key while not sneaking.
 
----
+Howl for one and a half seconds at fifty percent slower movement. Summon two wolves normally, or four while a Death Domain is active. Basic wolves have twenty health and four attack; domain-summoned wolves gain ten health, two attack and Speed I.
 
-## Passive Talents
+Successful release starts a thirty-second cooldown. The summoned batch dissipates after about thirty seconds. The ordinary cap is six; a failed attempt at the cap has a five-second cooldown. Wolf hits heal the owner. Ordinary and domain summoning are shown separately; unchanged upstream passive summoning is excluded.
 
-### Soul Energy
+### 4. Soul Energy
 
-Soul Energy ranges **0–100**. Full Soul Energy empowers the next Death Domain, upgrading normal control into a large-area domain and Netherwolf burst window.
+Accumulate souls through direct kills, wolf kills or spellbook hits.
 
-### Soul Sight
+Maximum energy is one hundred. Direct kills outside the domain grant five, direct kills inside an ordinary domain grant twenty, and wolf kills grant ten. Qualifying kills while you have Wither add ten more.
 
-Creatures within **16 blocks** at or below **20%** HP gain Glowing and periodic soul particle hints.
+Three real clips compare ordinary kills, kills while withered and ordinary-domain kills. Spellbook hits can also grant two soul energy, subject to the duplicate-hit settlement window. An enhanced domain consumes the full current soul bar.
 
-### Death Sentence
+### 5. Court Command and Spell Souls
 
-When attacking targets at or below **30%** HP, damage +**20%**.
+Directly hit or successfully apply a harmful effect with a spellbook spell.
 
-### Wither Hunt
+Each cast can spend five soul energy once to order one eligible wolf to rush the target. With no wolves, it attempts a safe nearby summon lasting about thirty seconds. The order lasts up to five seconds and ends on a hit.
 
-When a creature with Wither exists within **24 blocks**, gain +**20% movement speed** in areas outside soul sand/soul soil.
+Equal-level Fire Bolt compares zero with ten starting souls. Insufficient souls spend nothing and summon nothing; sufficient souls pay five and gain two from the spell hit. Invalid targets, unsafe ground or unavailable wolves cause no soul charge. Existing wolves move normally rather than teleporting.
 
-### Undead Body
+### 6. Soul Scrutiny
 
-Max HP +**4**, inherits Anubis Wolf-line undead instincts and soul sand-related abilities.
+Observe living targets within sixteen blocks at no more than twenty percent health.
 
----
+Qualifying low-health targets gain a cyan outline and periodic soul particles, helping track them behind cover.
 
-## Weaknesses & Limits
+Targets with equal maximum health compare nineteen with thirty percent, including their real outlines behind a wall. This twenty-percent visibility threshold differs from Death Sentence's thirty-percent damage threshold. High-health targets do not receive the same outline.
 
-| Limit | Notes |
-| --- | --- |
-| Domain dependency | Main pressure comes from Death Domain; empty / forced out = noticeably weaker |
-| Heavy channel | Normal domain channels 2 s at −70% speed; ranged or burst interrupts rhythm |
-| Block protection | No convertible blocks → fail + short cooldown |
-| Summon cap | Netherwolves can't infinitely stack |
-| Armor limits | Quadruped body unsuited to normal leggings/boots |
+### 7. Death Sentence
 
----
+Attack a target at no more than thirty percent of maximum health.
 
-## Combat Role
+Eligible damage to that target increases by twenty percent.
 
-**Undead Domain Summoner**
+The same wooden sword and equal target maximum health compare hits at eighty and thirty percent health, showing immediate damage. Unchanged passive wolf summoning is paused in this isolated comparison so minions cannot damage the target first. No damage accessories or Perks are used.
 
-SP Anubis's strongest window is the Empowered Death Domain: bigger area, longer duration, Wither II, and auto-summoned Netherwolves push together. In normal combat, Death Domain can also restrict positioning while Netherwolf Court adds damage and lifesteal. Suited for fortress fights, boss fights, and multiplayer where restricting enemy movement matters.
+### 8. Wither Hunt
 
----
+Stand away from soul sand or soul soil while a withered living entity is within twenty-four blocks.
 
-## Inner Monologue
+Gain twenty percent movement speed. When Wither ends or the entity leaves range, speed returns after the short scan interval.
 
-> "Judgment never needs a roar.\
-> Just spread the soul sand — the order of the dead will finish your sentence for you."
+The same stone floor compares before, during and after nearby Wither. The inherited upstream soul-ground movement bonus has separate rules and is not treated as this same effect.
+
+### 9. Wither Frenzy and Transfer
+
+Gain Wither, keep it active and attack.
+
+While continuously withered, owner and wolf damage multiply by 1.1 below two seconds, 1.2 from two to four seconds and 1.3 afterwards. Each transfer consumes up to five seconds of your remaining Wither and adds the consumed duration to the target, capped at fifteen seconds.
+
+Successive hits show tiers and both Wither timers. Refreshing Wither does not reset an accumulated tier; losing it does. Your own Wither damage is reduced by twenty percent and ticks less frequently, but still costs health. Wither brewing can prepare this state.
+
+### 10. Soul-ground Healing
+
+Stand on soul sand or soul soil.
+
+Restore one health every three seconds.
+
+Matching ten-health starts compare an ordinary stone floor with soul sand. This demonstrates the addon's ground healing. Inherited soul-ground movement and Wither-based healing are separate effects.
+
+### 11. Additional Maximum Health
+
+Compare the upstream third-stage Anubis Wolf with Netherjudge.
+
+Netherjudge adds four maximum health.
+
+Both clips are recorded without Wither, armour or health accessories. Unchanged undead properties, diet, potion reversal and leg or foot armour restrictions are retained without repeated demonstrations.
+
+### 12. Undead Neutrality
+
+Remain unprovoked around undead creatures.
+
+Eligible undead do not naturally target Netherjudge. Attacking breaks this neutrality.
+
+Real husk AI compares the upstream form with Netherjudge, then shows aggro after a deliberate attack. Restoring neutrality requires stopping provocation and staying out of sight for about thirty seconds; it does not happen immediately when you stop attacking.
+
+### 13. Court Protection against Mobs
+
+Enemy non-player creatures attack you, your pets or your summons.
+
+Eligible mob damage is multiplied by 0.5. The protection also covers pets and summons attributed to the owner.
+
+Equal eight-damage hits compare the upstream form, Netherjudge and a real player attacker. Player attacks do not gain this additional reduction. Self-Wither after a hit is a separate interaction; feedback reports the immediate health lost to that hit.
+
+### 14. Wither Brewing
+
+Right-click a potion with a Wither Rose in the inventory, or reverse the two ingredients.
+
+Consume one rose and one potion to create a Wither Potion. Drinking it applies Wither II for twenty seconds.
+
+The first clip shows the real inventory interaction and resulting item; the second shows the actual drinking effect. This is not a regeneration potion, so retain enough health and recovery options. Netherjudge can stack three basic drinkable Wither Potions.

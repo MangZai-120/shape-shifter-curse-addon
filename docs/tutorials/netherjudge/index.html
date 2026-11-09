@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#292929">
+  <title>冥裁者 · 形态教程 - SSCA Wiki</title>
+  <link rel="stylesheet" href="tutorial.css?v=20261109-netherjudge-r1">
+  <script defer src="data.js?v=20261109-netherjudge-r1"></script>
+  <script defer src="tutorial.js?v=20261109-netherjudge-r1"></script>
+</head>
+<body>
+  <main id="panel" class="skin-window" aria-label="形态教程">
+    <h1 id="heading">形态教程：冥裁者</h1>
+    <span id="counter" aria-live="polite">1 / 14</span>
+    <button id="language" class="mc-button" type="button" aria-label="Switch language">EN</button>
+    <div id="kind-row"><span id="kind" class="skin-inset">主动技能</span><h2 id="title">死亡领域</h2></div>
+    <section id="media-frame" class="skin-inset" aria-label="实机演示">
+      <div id="player-box">
+        <video id="video" playsinline controls preload="metadata" controlslist="nofullscreen noremoteplayback nodownload" disablepictureinpicture aria-label="技能实机演示"></video>
+        <span id="loading">正在载入实机演示…</span>
+        <button id="play-video" class="mc-button" type="button" hidden>播放演示</button>
+      </div>
+      <p id="view"></p>
+      <button id="enlarge" type="button">点击此处放大视频</button>
+    </section>
+    <section id="body" tabindex="0" aria-label="技能说明">
+      <div id="body-content">
+        <section><h3 id="how-title">如何触发</h3><p id="trigger"></p></section>
+        <section><h3 id="effect-title">会发生什么</h3><p id="effect"></p></section>
+        <section><h3 id="note-title">小提示</h3><p id="note"></p></section>
+      </div>
+    </section>
+    <div id="body-scroll" class="scroll-track skin-inset" role="scrollbar" aria-controls="body" aria-orientation="vertical" tabindex="-1"><span class="scroll-thumb"></span></div>
+    <section id="contents" class="skin-inset" aria-label="技能目录" hidden><div id="entries"></div></section>
+    <div id="contents-scroll" class="scroll-track skin-inset" role="scrollbar" aria-controls="contents" aria-orientation="vertical" tabindex="-1" hidden><span class="scroll-thumb"></span></div>
+    <p id="status" aria-live="polite"></p>
+    <nav id="buttons" aria-label="教程翻页">
+      <button id="previous" class="mc-button" type="button">上一页</button>
+      <button id="index" class="mc-button" type="button">目录</button>
+      <button id="next" class="mc-button" type="button">下一页</button>
+      <button id="close" class="mc-button" type="button">关闭教程</button>
+    </nav>
+    <button id="back" class="mc-button" type="button" hidden>返回教程</button>
+    <section id="closed" hidden>
+      <h2 id="closed-title">教程已关闭</h2>
+      <p id="closed-message">切回 Minecraft，继续你的冒险。</p>
+      <button id="replay" class="mc-button" type="button">重新打开教程</button>
+      <a id="full-wiki" class="mc-button" href="https://shape-shifter-curse-addon.readthedocs.io/zh-cn/latest/">返回 Wiki</a>
+    </section>
+  </main>
+  <noscript>请启用 JavaScript 以使用技能翻页、目录和视频播放器。</noscript>
+</body>
+</html>
