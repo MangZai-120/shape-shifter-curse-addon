@@ -1311,6 +1311,60 @@
       "diagram": "RESOURCE",
       "icon": "my_addon:textures/gui/skill_icons/fire_spark.png",
       "focus": "SELF"
+    },
+    "contract_duel": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "SELF"
+    },
+    "mancianima_mana": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "SELF"
+    },
+    "contract_projectiles": {
+      "kind": "TRAIT",
+      "diagram": "PROJECTILE",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "SELF"
+    },
+    "contract_immunity": {
+      "kind": "PASSIVE",
+      "diagram": "SHIELD",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "SELF"
+    },
+    "contract_sight": {
+      "kind": "PASSIVE",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "SELF"
+    },
+    "contract_neutral": {
+      "kind": "PASSIVE",
+      "diagram": "MARK",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "TARGET"
+    },
+    "contract_drain": {
+      "kind": "ACTIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "SELF"
+    },
+    "contract_loot": {
+      "kind": "PASSIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "SELF"
+    },
+    "contract_evoker": {
+      "kind": "ACTIVE",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "SELF"
     }
   },
   "forms": {
@@ -1417,14 +1471,20 @@
       "soul_teleport",
       "red_execution",
       "contract_guard",
-      "contract_kill",
+      "contract_duel",
       "homing",
-      "familiar_regen",
+      "mancianima_mana",
       "contract_melee",
+      "contract_projectiles",
+      "contract_immunity",
+      "contract_sight",
+      "contract_neutral",
       "raider_relations",
+      "contract_drain",
+      "contract_loot",
+      "contract_evoker",
       "bell_raid",
-      "familiar_affinity",
-      "armor_legs"
+      "familiar_affinity"
     ],
     "my_addon:snow_fox_frost_spirit": [
       "snow_mode",

@@ -58,6 +58,16 @@ public final class SscAddonInteractionEvents {
 			}
 			// 契灵不能与村民/商人交易
 			if (entity instanceof MerchantEntity) {
+				// Fabric's interaction callback runs before Apoli's PlayerEntity.interact hook.
+				// Resolve this existing drain power before refusing ordinary merchant trading.
+				io.github.apace100.apoli.power.PowerType<?> drainType =
+						io.github.apace100.apoli.power.PowerTypeRegistry.get(
+								new net.minecraft.util.Identifier("my_addon", "form_familiar_fox_mancianima_villager_drain"));
+				var drain = io.github.apace100.apoli.component.PowerHolderComponent.KEY.get(sp).getPower(drainType);
+				if (drain instanceof io.github.apace100.apoli.power.ActionOnEntityUsePower use
+						&& use.isActive() && use.shouldExecute(entity, hand, sp.getStackInHand(hand))) {
+					return use.executeAction(entity, hand);
+				}
 				return ActionResult.FAIL;
 			}
 			if (!(entity instanceof EvokerEntity)) return ActionResult.PASS;
