@@ -1,5 +1,7 @@
 # 荧光幼灵 —— 深海荧光
 
+[查看荧光幼灵实机教程](../tutorials/fluorescent/index.html)
+
 **Fluorescent**
 
 > "深海把光揉进你的皮肤。
