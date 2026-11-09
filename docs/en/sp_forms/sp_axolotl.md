@@ -81,7 +81,7 @@ In rain, restores **60 air every 20 ticks**.
 
 ### Fast Metabolism
 
-Naturally heals **0.25 HP every 20 ticks**.
+Restore an extra **0.75 HP every 40 ticks (2 seconds)**, independently of normal natural regeneration.
 
 ### Moisture Loop
 
