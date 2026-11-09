@@ -1,5 +1,7 @@
 # SP Fallen Allay — Spirit of the Fallen
 
+[Watch the bilingual Spirit of the Fallen gameplay tutorial](../../tutorials/fallen-spirit/index.html?lang=en_us)
+
 **Fallen Allay SP / Spirit of the Fallen**
 
 > "If the Allay's song is dragged into the shadow of plunder, it is no longer healing.\
