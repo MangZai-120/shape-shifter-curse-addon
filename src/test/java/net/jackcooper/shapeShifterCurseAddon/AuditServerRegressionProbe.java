@@ -78,6 +78,8 @@ public final class AuditServerRegressionProbe {
         TestWorld world = (TestWorld) unsafe.allocateInstance(TestWorld.class);
         world.entities = new HashMap<>();
         world.loaded = new HashSet<>(Set.of(ChunkPos.toLong(0, 0), ChunkPos.toLong(1, 0)));
+        world.chunks = (TestChunks) unsafe.allocateInstance(TestChunks.class);
+        world.chunks.loaded = world.loaded;
         var a = tank(world, new BlockPos(15, 64, 0), 10);
         var oldB = tank(world, new BlockPos(16, 64, 0), 100);
         check(EnergyNetwork.getTotalEnergy(a.getNetwork()) == 110, "network spans two loaded chunks");
@@ -117,8 +119,10 @@ public final class AuditServerRegressionProbe {
     public static final class TestWorld extends ServerWorld {
         Map<BlockPos, BlockEntity> entities;
         Set<Long> loaded;
+        TestChunks chunks;
         private TestWorld() { super(null, null, null, null, World.OVERWORLD, null, null, false, 0, List.of(), false, null); }
-        @Override public boolean isChunkLoaded(BlockPos pos) { return loaded.contains(ChunkPos.toLong(pos.getX() >> 4, pos.getZ() >> 4)); }
+        @Override public net.minecraft.server.world.ServerChunkManager getChunkManager() { return chunks; }
+        @Override public boolean isChunkLoaded(BlockPos pos) { return chunks.isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4); }
         @Override public BlockEntity getBlockEntity(BlockPos pos) {
             if (!isChunkLoaded(pos)) throw new AssertionError("Network attempted to access an unloaded chunk");
             return entities.get(pos);
@@ -127,5 +131,11 @@ public final class AuditServerRegressionProbe {
         @Override public void updateListeners(BlockPos pos, net.minecraft.block.BlockState old, net.minecraft.block.BlockState next, int flags) { }
         @Override public net.minecraft.block.BlockState getBlockState(BlockPos pos) { return Blocks.STONE.getDefaultState(); }
         @Override public void updateComparators(BlockPos pos, net.minecraft.block.Block block) { }
+    }
+
+    public static final class TestChunks extends net.minecraft.server.world.ServerChunkManager {
+        Set<Long> loaded;
+        private TestChunks() { super(null, null, null, null, null, null, 0, 0, false, null, null, null); }
+        @Override public boolean isChunkLoaded(int x, int z) { return loaded.contains(ChunkPos.toLong(x, z)); }
     }
 }

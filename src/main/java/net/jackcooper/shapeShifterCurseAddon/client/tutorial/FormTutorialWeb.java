@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.client.tutorial;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import com.google.gson.JsonObject;
@@ -32,7 +33,18 @@ public final class FormTutorialWeb {
     static URI url(MinecraftClient client, Identifier form) {
         // Local isolated acceptance runs can serve the exact same Wiki build without publishing a test URL.
         if (!supports(form)) throw new IllegalArgumentException("No web tutorial for " + form);
-        String page = System.getProperty("ssca.audit.tutorialWebPage", ROOT + PAGES.get(form) + "/");
+        String page = System.getProperty("ssca.audit.tutorialWebPage");
+        if (page == null) {
+            page = ROOT + PAGES.get(form) + "/";
+            var localRoot = client.runDirectory.toPath().resolve("ssca-tutorials");
+            if (Files.isRegularFile(localRoot.resolve(PAGES.get(form)).resolve("index.html"))) {
+                try {
+                    page = FormTutorialLocalServer.page(localRoot, PAGES.get(form)).toString();
+                } catch (java.io.IOException | LinkageError | RuntimeException failure) {
+                    LoggerFactory.getLogger("SSCA-Tutorial").warn("Cannot serve the synchronized tutorial; using the online page", failure);
+                }
+            }
+        }
         StringBuilder url = new StringBuilder(page);
         url.append(page.contains("?") ? '&' : '?').append("lang=")
                 .append(client.options.language.startsWith("zh_") ? "zh_cn" : "en_us");

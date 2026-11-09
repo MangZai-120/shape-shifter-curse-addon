@@ -1,6 +1,6 @@
 {
     "type": "apoli:action_over_time",
-    "interval": 20,
+    "interval": 40,
     "entity_action": {
         "type": "apoli:heal",
         "amount": 0.75
@@ -11,5 +11,5 @@
         "skill": "natural_regen_boost"
     },
     "name": "Rapid Metabolism",
-    "description": "Natural health regeneration is 20% faster."
+    "description": "Restore an extra 0.75 health every 2 seconds, independent of natural regeneration."
 }
