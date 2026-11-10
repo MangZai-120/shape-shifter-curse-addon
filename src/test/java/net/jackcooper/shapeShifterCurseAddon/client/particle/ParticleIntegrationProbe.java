@@ -114,10 +114,46 @@ public final class ParticleIntegrationProbe {
             built.release();
             if (((OwnedDecoration) child).ssca$getRenderAlpha() != 0.8f) throw new AssertionError("Persistent alpha changed");
         }
+        checkFadedBatch(manager, child, draw, geometry);
         if (mods.isModLoaded("asyncparticles")) checkAsyncCompatibility(unsafe, owner, emitter);
         System.out.println("Particle integration passed: server packet hook, nested action scope, emitter ownership scope, billboard inheritance, real vertex alpha and restoration; iris="
                 + mods.isModLoaded("iris") + ", async=" + mods.isModLoaded("asyncparticles")
                 + ", core=" + mods.isModLoaded("particle_core") + ". No OpenGL test.");
+    }
+
+    private static void checkFadedBatch(ParticleManager manager, Sample particle,
+                                        java.lang.reflect.Method draw, Operation<Void> geometry) throws Exception {
+        var sheet = Arrays.stream(ParticleManager.class.getDeclaredFields())
+                .filter(f -> f.getName().contains("ssca$drawingSheet")).findFirst().orElseThrow();
+        var batch = Arrays.stream(ParticleManager.class.getDeclaredFields())
+                .filter(f -> f.getName().contains("ssca$fadedParticles")).findFirst().orElseThrow();
+        sheet.setAccessible(true);
+        batch.setAccessible(true);
+        sheet.set(manager, ParticleTextureSheet.PARTICLE_SHEET_TRANSLUCENT);
+        var ordinary = new BufferBuilder(256);
+        for (float visibility : new float[]{0, .25f, 1}) {
+            particle.visibility = visibility;
+            ordinary.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR_LIGHT);
+            draw.invoke(manager, particle, ordinary, new Camera(), .5f, geometry);
+            var unchanged = ordinary.end();
+            if (unchanged.isEmpty() != (visibility < 1))
+                throw new AssertionError("Faded/hidden vertices leaked into the depth-writing particle batch");
+            unchanged.release();
+            var faded = (FadedParticleBuffer) batch.get(manager);
+            var built = faded == null ? null : faded.end();
+            if (visibility == .25f) {
+                if (built == null || built.isEmpty()) throw new AssertionError("Faded particle lost its separate batch");
+                for (int i = 0; i < 4; i++) {
+                    int alpha = Byte.toUnsignedInt(built.getVertexBuffer().get(
+                            i * VertexFormats.POSITION_TEXTURE_COLOR_LIGHT.getVertexSizeByte() + 23));
+                    if (alpha != (int) (.8f * visibility * 255)) throw new AssertionError("Faded batch lost vertex alpha");
+                }
+            } else if (built != null) throw new AssertionError("Hidden/unaffected particle entered faded batch");
+            if (built != null) built.release();
+            if (((OwnedDecoration) particle).ssca$getRenderAlpha() != .8f) throw new AssertionError("Faded batch changed persistent particle alpha");
+        }
+        sheet.set(manager, null);
+        System.out.println("Faded batch passed: hidden emits nothing, faded geometry is isolated, unaffected geometry retains its original batch.");
     }
 
     /** Exercise the real skill owner and manager tagging hook, not just manually assigned metadata. */
@@ -157,7 +193,8 @@ public final class ParticleIntegrationProbe {
         try {
             singleton.set(null, client);
             for (Class<?> kind : new Class<?>[]{CloudParticle.class, CampfireSmokeParticle.class,
-                    RedDustParticle.class, ExplosionLargeParticle.class}) {
+                    RedDustParticle.class, ExplosionLargeParticle.class, FlameParticle.class,
+                    SoulParticle.class, BlockFallingDustParticle.class, SnowflakeParticle.class}) {
                 var own = (Particle) unsafe.allocateInstance(kind);
                 var foreign = (Particle) unsafe.allocateInstance(kind);
                 var ordinary = (Particle) unsafe.allocateInstance(kind);
@@ -190,7 +227,7 @@ public final class ParticleIntegrationProbe {
             AsyncParticleCompatibility.end();
             singleton.set(null, previousClient);
         }
-        System.out.println("Mist ownership passed: caster outside action scope, four real particle classes, "
+        System.out.println("Decoration ownership passed: caster outside action scope, eight real particle classes, "
                 + "manager insertion, child inheritance, all four avoidance strengths, perspective/owner isolation and exception cleanup.");
     }
 

@@ -10,12 +10,16 @@ import net.jackcooper.shapeShifterCurseAddon.client.particle.ParticleAvoidance;
 import net.jackcooper.shapeShifterCurseAddon.client.particle.ParticleOpacity;
 import net.jackcooper.shapeShifterCurseAddon.client.particle.AsyncParticleCompatibility;
 import net.jackcooper.shapeShifterCurseAddon.client.particle.ParticleRenderRouting;
+import net.jackcooper.shapeShifterCurseAddon.client.particle.FadedParticleBuffer;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleManager;
 import net.minecraft.client.particle.ParticleTextureSheet;
 import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.texture.TextureManager;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -36,6 +40,8 @@ import java.util.Queue;
 public abstract class DecorationParticleManagerMixin {
     @Shadow @Final private Map<ParticleTextureSheet, Queue<Particle>> particles;
     @Unique private Map<ParticleTextureSheet, Queue<Particle>> ssca$frameParticles;
+    @Unique private FadedParticleBuffer ssca$fadedParticles;
+    @Unique private ParticleTextureSheet ssca$drawingSheet;
 
     // Iris 延迟管线下 renderParticles 每帧被调两次（不透明/半透明 pass），且两次间相机与粒子
     // 队列都不变（渲染帧内不 tick）。帧级复用：相机值 + tick + tickDelta 全等时直接复用上一次
@@ -85,6 +91,8 @@ public abstract class DecorationParticleManagerMixin {
                                               LightmapTextureManager lightmap, Camera camera, float tickDelta,
                                               CallbackInfo ci) {
         ssca$frameParticles = null;
+        ssca$drawingSheet = null;
+        if (ssca$fadedParticles != null) ssca$fadedParticles.discard();
         AsyncParticleCompatibility.end();
         var client = client();
         if (client.player == null || camera.getFocusedEntity() != client.player || camera.isThirdPerson()
@@ -119,6 +127,28 @@ public abstract class DecorationParticleManagerMixin {
         return ssca$frameParticles == null ? original : ssca$frameParticles;
     }
 
+    @WrapOperation(method = "renderParticles", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/client/particle/ParticleTextureSheet;begin(Lnet/minecraft/client/render/BufferBuilder;Lnet/minecraft/client/texture/TextureManager;)V"))
+    private void ssca$beginSheet(ParticleTextureSheet sheet, BufferBuilder buffer, TextureManager textures,
+                                Operation<Void> original) {
+        ssca$drawingSheet = sheet;
+        original.call(sheet, buffer, textures);
+    }
+
+    @WrapOperation(method = "renderParticles", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/client/particle/ParticleTextureSheet;draw(Lnet/minecraft/client/render/Tessellator;)V"))
+    private void ssca$drawSheet(ParticleTextureSheet sheet, Tessellator tessellator, Operation<Void> original) {
+        try {
+            original.call(sheet, tessellator);
+            // Keep the vanilla sheet identity so Iris selects its translucent pass and shader.
+            // Unaffected particles stay in the original buffer with their original depth behavior.
+            if (ssca$fadedParticles != null) ssca$fadedParticles.draw();
+        } finally {
+            ssca$drawingSheet = null;
+            if (ssca$fadedParticles != null) ssca$fadedParticles.discard();
+        }
+    }
+
     // Remains outside BillboardParticle even when Sodium overwrites its entire renderer.
     // Vanilla's VertexConsumer and Sodium's packed colour path both read Particle.alpha here.
     @WrapOperation(method = "renderParticles", at = @At(value = "INVOKE",
@@ -134,7 +164,14 @@ public abstract class DecorationParticleManagerMixin {
             original.call(particle, vertices, camera, tickDelta);
             return;
         }
-        ParticleOpacity.draw(decoration, visibility, () -> original.call(particle, vertices, camera, tickDelta));
+        if (visibility <= 0) return;
+        VertexConsumer target = vertices;
+        if (ssca$drawingSheet == ParticleTextureSheet.PARTICLE_SHEET_TRANSLUCENT) {
+            if (ssca$fadedParticles == null) ssca$fadedParticles = new FadedParticleBuffer();
+            target = ssca$fadedParticles.vertices();
+        }
+        VertexConsumer fadedVertices = target;
+        ParticleOpacity.draw(decoration, visibility, () -> original.call(particle, fadedVertices, camera, tickDelta));
     }
 
     @Inject(method = "renderParticles", at = @At("RETURN"))
