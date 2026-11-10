@@ -1,5 +1,9 @@
 # Upgrade Axolotl — Standalone Evolution Line
 
+[Open the gameplay tutorial](../../tutorials/upgrade-axolotl/index.html)
+
+Evolution points come from milestones in an independent evolution level; there are no additional kill or gathering quests. Every two newly earned vanilla XP count as one evolution XP, with a level cap of 50. Open the evolution page in the Shape Shifter Book, select a node and confirm its purchase. Each main node costs one point, all listed prerequisites are required, and final branches cost no additional points.
+
 Upgrade Axolotl is a **standalone mid-state form** based on the vanilla axolotl, focused on aquatic combat. Like Upgrade Familiar, it leaves the fixed path for the SSCA evolution-tree point system.
 
 ***
@@ -38,7 +42,7 @@ Gain 1 point each at levels **5/10/15/20/30/40** (6 total):
 | Vortex Channeling | Secondary: channel 3s (slowed) to heal 6 hearts, gain 2 golden hearts (30s) at the end, no moisture cost, 8s CD | Current Dash |
 | Become Water | Removes the extra land moisture drain | Water Spear Throw + Vortex Channeling |
 
-At level **50**, the two final branches (Moon Essence Cross / Evolution Stone) unlock automatically.
+With every main talent unlocked at level **50**, the two final branches (Moon Essence Cross / Evolution Stone) unlock automatically.
 
 ***
 
