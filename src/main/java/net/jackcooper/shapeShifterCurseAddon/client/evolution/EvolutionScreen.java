@@ -2,807 +2,483 @@ package net.jackcooper.shapeShifterCurseAddon.client.evolution;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.jackcooper.shapeShifterCurseAddon.evolution.*;
+import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
-import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionComponent;
-import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionNode;
-import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry;
-import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRoute;
-import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionSelection;
-import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
-import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
+import net.minecraft.util.Util;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
+import org.lwjgl.glfw.GLFW;
+import java.util.*;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-
-/**
- * SSCA 进化加点界面：使魔（familiar_fox）进化树。
- *
- * <p>入口：幻形者之书界面内的「进化加点」按钮（见 EvolutionBookHook）。</p>
- *
- * <p><b>坐标体系</b>：直接使用 Screen 原生的 {@code this.width / this.height}（逻辑坐标，
- * 永远等于填满整个游戏窗口的尺寸）。所有布局基于这两个值动态计算，保证：
- * <ul>
- *   <li>始终全屏覆盖；</li>
- *   <li>在任意 GUI scale 下都不会裁切 / 错位 / 消失。</li>
- * </ul>
- * 鼠标坐标直接使用 {@code mouseX / mouseY}，无需任何转换。</p>
- *
- * <p><b>交互</b>：中间进化树区域支持鼠标拖动平移、滚轮缩放（带边界限制）。
- * 连接线在节点边缘外停止，绝不伸入节点框内。点击节点可解锁（消耗点数）。</p>
- */
+/** Floating parchment: independent vertical scrolling, native MC text, server-authoritative purchases. */
 public class EvolutionScreen extends Screen {
-    /** 进化树布局基础参数（逻辑像素，再乘 zoom）。 */
-    private static final int COL_SPACING = 120, ROW_SPACING = 84, NODE_SIZE = 42;
-    /** 顶部 / 底部信息条高度。 */
-    private static final int TOP_BAR = 56, BOT_BAR = 38;
-    /** 树区域相对屏幕的边距。 */
-    private static final int TREE_MARGIN_X = 10, TREE_MARGIN_TOP = 4, TREE_MARGIN_BOT = 4;
-    /** 配色：面板与边框。 */
-    private static final int PANEL_BG = 0xE0100C08, GOLD_BOR = 0xFFB8893A;
-    /** 配色：文字。 */
-    private static final int TITLE_GOLD = 0xFFE8C66A, TXT_GOLD = 0xFFD8A86A, TXT_GRAY = 0xFFAAAAAA;
-    /** 配色：节点状态。 */
-    private static final int N_UNLK_FILL = 0x40FFD700, N_UNLK_BOR = 0xFFFFD700, N_UNLK_IN = 0xFFF0E68C;
-    private static final int N_CAN_BOR = 0xFF66FF66, N_LK_FILL = 0x99000000, N_LK_BOR = 0xFF555555;
-    private static final int N_AUTO_BOR = 0xFF00CED1, N_AUTO_FILL = 0x2000FFFF;
-    /** 配色：暂存待确认节点（橙）。 */
-    private static final int N_PEND_FILL = 0x40FF9A2E, N_PEND_BOR = 0xFFFF9A2E, N_PEND_IN = 0xFFFFD08A;
-    /** 配色：连接线。 */
-    private static final int LINE_ACT = 0xFFD4AF37, LINE_GLOW = 0xFFF0E68C, LINE_INACT = 0x668B4513;
-    /** 返回按钮配色。 */
-    private static final int BW = 100, BH = 22, BBG = 0xC0100C08, BBGH = 0xD0181408;
-    private static final int BBOR = 0xFFB8893A, BTXT = 0xFFE8C66A;
-    /** 两按钮（返回 / 确认加点）水平间距。 */
-    private static final int BTN_GAP = 14;
-    /** 确认加点按钮（待确认时）高亮配色。 */
-    private static final int CONF_BG = 0xC0102A0C, CONF_BOR = 0xFF55C964, CONF_TXT = 0xFFBFFFC0;
-    private static final int CONF_DIS_TXT = 0xFF6A6A6A;
-    /** 动画周期（毫秒）。 */
-    private static final double PULSE_MS = 2000.0, RIPPLE_MS = 3000.0;
-    /** 虚线参数。 */
-    private static final int DASH = 4, DGAP = 3;
-    /** 缩放 / 平移限制。 */
-    private static final double ZOOM_MIN = 0.5, ZOOM_MAX = 2.5, ZOOM_STEP = 0.12, PAN_MARGIN = 0.15;
-    /** 进化树尺寸（节点 col 0~5、row 0~2）。 */
-    private static final int TREE_COLS = 5, TREE_ROWS = 2;
-    private static final int TREE_W = TREE_COLS * COL_SPACING, TREE_H = TREE_ROWS * ROW_SPACING;
+    private static final int INK = EvolutionInk.INK, ROW_GAP = 44;
+    private static final float LABEL_SCALE = .8f;
+    private static final int LABEL_LINE_HEIGHT = 8, LABEL_INSET = 6, SCROLLBAR_WIDTH = 7;
     private final Screen parent;
-    /** 返回按钮矩形（逻辑坐标）。 */
-    private int[] btnRect = new int[4];
-    private boolean btnHovered;
-    /** 确认加点按钮矩形（逻辑坐标）。 */
-    private int[] confBtnRect = new int[4];
-    private boolean confHovered;
-    /** 客户端暂存：本次待确认解锁的节点（按点击顺序，确认后逐个提交服务端）。 */
-    private final LinkedHashSet<String> pending = new LinkedHashSet<>();
-    /** 拖动状态。 */
-    private boolean dragging = false;
-    private double dragStartMX, dragStartMY, dragStartPX, dragStartPY;
-    /** 进化树平移 / 缩放。 */
-    private double panX = 0, panY = 0, zoom = 1.0;
-    /** 树区域几何缓存（render 时计算）。 */
-    private int treeLeft, treeTop, treeW, treeH;
+    private EvolutionRoute displayedRoute;
+    private EvolutionTreePlan plan;
+    private List<EvolutionNode> ordered = List.of();
+    private final Map<Integer, Integer> rowTops = new HashMap<>();
+    private String selectedId, waitingId;
+    private long waitingSince;
+    private boolean opened, draggingTree, draggingThumb, draggingDetailsThumb;
+    private double dragY, dragScroll, treeScroll, detailScroll, thumbGrabOffset;
+    private int minDepth, minLane, maxLane, treeContentHeight, detailContentHeight;
+    private Box paper = Box.EMPTY, tree = Box.EMPTY, details = Box.EMPTY, detailBody = Box.EMPTY;
+    private Box header = Box.EMPTY;
+    private Box confirm = Box.EMPTY, back = Box.EMPTY;
 
     public EvolutionScreen(Screen parent) {
-        super(resolveTitle());
+        super(Text.translatable("evolution.my_addon.screen.title"));
         this.parent = parent;
     }
-
-    /**
-     * 解析当前加点界面标题：随玩家所处进化路线动态显示（如「进化使魔」/「进化美西螈」）；
-     * 找不到路线时回退到通用兜底标题 evolution.my_addon.screen.title。
-     */
-    private static net.minecraft.text.Text resolveTitle() {
-        EvolutionRoute r = resolveRoute();
-        return (r != null && r.displayNameKey != null && !r.displayNameKey.isEmpty())
-                ? Text.translatable(r.displayNameKey)
-                : Text.translatable("evolution.my_addon.screen.title");
+    private record Box(int x, int y, int w, int h) {
+        static final Box EMPTY = new Box(0, 0, 0, 0);
+        int right() { return x + w; }
+        int bottom() { return y + h; }
+        boolean contains(double mx, double my) { return mx >= x && mx < right() && my >= y && my < bottom(); }
     }
-
-    /**
-     * 解析玩家当前所在的进化路线（路线解析的唯一数据源，供构造期与渲染期共用）。
-     * 优先级：玩家已选路线 {@code comp.getRoute()} → 当前形态对应的起点路线 → null。
-     * 必须是静态方法（供 {@code super()} 调用链使用）。
-     */
-    private static EvolutionRoute resolveRoute() {
-        PlayerEntity p = MinecraftClient.getInstance().player;
-        EvolutionComponent comp = (p == null) ? null : RegEvolutionComponent.EVOLUTION.get(p);
-        String rid = (comp == null) ? null : comp.getRoute();
-        if (rid != null && !rid.isEmpty()) {
-            return EvolutionRegistry.INSTANCE.getRoute(rid);
-        }
-        net.onixary.shapeShifterCurseFabric.player_form.IForm f =
-                (p == null) ? null : net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM.get(p).nowForm;
-        Identifier fid = (f == null) ? null : f.getFormID();
-        return EvolutionRegistry.INSTANCE.getRouteByStartForm(fid);
+    private EvolutionComponent component() {
+        return client == null || client.player == null ? null : RegEvolutionComponent.EVOLUTION.get(client.player);
     }
-
-    private EvolutionComponent getComp() {
-        PlayerEntity p = MinecraftClient.getInstance().player;
-        return p == null ? null : RegEvolutionComponent.EVOLUTION.get(p);
-    }
-
-    /** 当前玩家所在的进化路线（委托静态 {@link #resolveRoute()}，保留实例 API 供渲染期调用）。 */
     private EvolutionRoute route() {
-        return resolveRoute();
+        EvolutionComponent comp = component();
+        if (comp != null && comp.getRoute() != null && !comp.getRoute().isEmpty())
+            return EvolutionRegistry.INSTANCE.getRoute(comp.getRoute());
+        if (client == null || client.player == null) return null;
+        var form = RegPlayerFormComponent.PLAYER_FORM.get(client.player).nowForm;
+        return form == null ? null : EvolutionRegistry.INSTANCE.getRouteByStartForm(form.getFormID());
     }
-
-    /** 当前路线全部节点（未加载时返回空列表）。 */
-    private java.util.List<EvolutionNode> nodes() {
-        EvolutionRoute r = route();
-        return r == null ? java.util.List.of() : r.nodes;
-    }
-
-    /** 按 id 取当前路线的节点（未加载 / 不存在时为 null）。 */
-    private EvolutionNode node(String id) {
-        EvolutionRoute r = route();
-        return r == null ? null : r.getNode(id);
-    }
-
-    @Override
-    protected void init() {
-        // 标题在构造期由 resolveTitle() 按当前进化路线动态确定，此处无需再设。
-        // 不创建默认 ButtonWidget：返回按钮自绘，以便统一深色+金色风格。
-        updateBtn();
-        pending.clear();
-        panX = 0;
-        panY = 0;
-        zoom = 1.0;
-        // 通知服务端玩家打开了加点界面，触发旧存档迁移检测（机制改内置 exp 后，旧存档进化等级自动加满）
-        ClientPlayNetworking.send(SscAddonNetworking.PACKET_EVO_OPEN, PacketByteBufs.empty());
-    }
-
-    private void updateBtn() {
-        int total = BW * 2 + BTN_GAP;
-        int left = this.width / 2 - total / 2;
-        int y = this.height - BOT_BAR - BH / 2 - 2;
-        btnRect[0] = left;
-        btnRect[1] = y;
-        btnRect[2] = BW;
-        btnRect[3] = BH;
-        confBtnRect[0] = left + BW + BTN_GAP;
-        confBtnRect[1] = y;
-        confBtnRect[2] = BW;
-        confBtnRect[3] = BH;
-    }
-
-    // ---------------- 树区域几何（逻辑坐标，每帧刷新） ----------------
-
-    private void updateTreeRect() {
-        treeLeft = TREE_MARGIN_X;
-        treeTop = TOP_BAR + TREE_MARGIN_TOP;
-        treeW = this.width - TREE_MARGIN_X * 2;
-        treeH = this.height - TOP_BAR - BOT_BAR - TREE_MARGIN_TOP - TREE_MARGIN_BOT;
-    }
-
-    private double tcX() { return (double) TREE_W / 2.0; }
-    private double tcY() { return (double) TREE_H / 2.0; }
-
-    /** 树坐标 → 屏幕逻辑坐标（含 zoom + pan）。 */
-    private double toSX(double tx) { return treeLeft + treeW / 2.0 + (tx - tcX()) * zoom + panX; }
-    private double toSY(double ty) { return treeTop + treeH / 2.0 + (ty - tcY()) * zoom + panY; }
-    private double ncx(EvolutionNode n) { return toSX(n.col * COL_SPACING); }
-    private double ncy(EvolutionNode n) { return toSY(n.row * ROW_SPACING); }
-    private double sns() { return NODE_SIZE * zoom; }
-    private double hn() { return sns() / 2.0; }
-
-    // ---------------- 缩放 / 平移限制 ----------------
-
-    private double clampZ(double z) { return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z)); }
-
-    private void clampPan() {
-        double sw = treeW, sh = treeH, tw = TREE_W * zoom, th = TREE_H * zoom;
-        double mx = Math.max(0, (tw - sw) / 2.0 + sw * PAN_MARGIN);
-        double my = Math.max(0, (th - sh) / 2.0 + sh * PAN_MARGIN);
-        double nmx = -mx, nmy = -my;
-        if (tw <= sw) { double r = (sw - tw) / 2.0; nmx = -r; mx = r; }
-        if (th <= sh) { double r = (sh - th) / 2.0; nmy = -r; my = r; }
-        panX = Math.max(nmx, Math.min(mx, panX));
-        panY = Math.max(nmy, Math.min(my, panY));
-    }
-
-    /** 以鼠标位置为锚点缩放（保持鼠标下的树坐标不变）。 */
-    private void zoomAt(double mx, double my, double newZoom) {
-        newZoom = clampZ(newZoom);
-        double tx = (mx - treeLeft - treeW / 2.0 - panX) / zoom + tcX();
-        double ty = (my - treeTop - treeH / 2.0 - panY) / zoom + tcY();
-        zoom = newZoom;
-        panX = mx - treeLeft - treeW / 2.0 - (tx - tcX()) * zoom;
-        panY = my - treeTop - treeH / 2.0 - (ty - tcY()) * zoom;
-        clampPan();
-    }
-
-    // ---------------- 状态判定 ----------------
-
-    private boolean preMet(EvolutionComponent c, EvolutionNode n) {
-        return EvolutionSelection.prerequisitesMet(c, n, pending);
-    }
-
-    /** 前置全部满足（用于 tooltip 与连线判断）。 */
-    private boolean preMetAll(EvolutionComponent c, EvolutionNode n) {
-        return preMet(c, n);
-    }
-
-    /** 节点在“已解锁或已加入本次暂存”下视为生效。 */
-    private boolean effUnlocked(EvolutionComponent c, String id) {
-        return c.isUnlocked(id) || pending.contains(id);
-    }
-
-    /** 本次暂存合计消耗点数。 */
-    private int pendingCost() {
-        int sum = 0;
-        for (String id : pending) {
-            EvolutionNode n = node(id);
-            if (n != null) sum += n.cost;
+    @Override protected void init() {
+        layout();
+        if (!opened) {
+            ClientPlayNetworking.send(SscAddonNetworking.PACKET_EVO_OPEN, PacketByteBufs.empty());
+            opened = true;
         }
-        return sum;
     }
-
-    /** 扣除暂存后的模拟剩余点数。 */
-    private int simPoints(EvolutionComponent c) {
-        return c.getPoints() - pendingCost();
+    private void layout() {
+        int ph = Math.min(Math.max(100, Math.min(440, (int)(height * .88))), Math.max(1, height - 12));
+        int pw = Math.min(Math.max(180, Math.min(700, Math.min((int)(width * .91), (int)(ph * 1.5)))), Math.max(1, width - 12));
+        paper = new Box((width - pw) / 2, (height - ph) / 2, pw, ph);
+        int ix = paper.x + Math.max(8, pw * 25 / 1000), iy = paper.y + Math.max(8, ph * 3 / 100);
+        int iw = pw - 2 * (ix - paper.x), ih = ph - 2 * (iy - paper.y), split = paper.x + pw * 69 / 100;
+        int treeX = paper.x + pw * 9 / 100, treeRight = Math.min(paper.x + pw * 67 / 100 + 6, split - 2);
+        tree = new Box(treeX, iy + 72, Math.max(1, treeRight - treeX), Math.max(1, ih - 98));
+        details = new Box(split + 9, iy, Math.max(1, ix + iw - split - 9), ih);
+        detailBody = new Box(details.x, details.y + 55, details.w, Math.max(1, details.h - 130));
+        int buttonWidth = Math.max(1, Math.min(details.w - 8, Math.max(42, details.w * 43 / 100)));
+        int buttonCenter = Math.max(buttonWidth / 2 + 3, Math.min(details.w - buttonWidth / 2 - 3, details.w * 44 / 100));
+        confirm = new Box(details.x + buttonCenter - buttonWidth / 2, details.bottom() - 29, buttonWidth, 19);
+        int hx = Math.max(ix + Math.max(12, pw * 3 / 100), tree.x), hy = iy + Math.max(10, ph * 25 / 1000);
+        header = new Box(hx, hy, Math.max(1, tree.right() - hx), 51);
+        back = new Box(tree.right() - 50, hy, 47, 16);
+        refreshRoute();
+        layoutRows();
+        clampScroll();
     }
-
-    /** 是否可加入暂存（走路线、非自动、未解锁且未暂存、前置满足、模拟点数足）。 */
-    private boolean canUn(EvolutionComponent c, EvolutionNode n) {
-        return c.isOnSscaRoute() && !c.isJobChanging() && !n.autoUnlock && !c.isUnlocked(n.id) && !pending.contains(n.id)
-                && preMet(c, n) && simPoints(c) >= n.cost;
+    private void refreshRoute() {
+        EvolutionRoute current = route();
+        if (current == displayedRoute) return;
+        displayedRoute = current;
+        ordered = current == null ? List.of() : current.nodes.stream()
+                .sorted(Comparator.comparingInt((EvolutionNode n) -> n.col).thenComparingInt(n -> n.row)).toList();
+        minDepth = ordered.stream().mapToInt(n -> n.col).min().orElse(0);
+        minLane = ordered.stream().mapToInt(n -> n.row).min().orElse(0);
+        maxLane = ordered.stream().mapToInt(n -> n.row).max().orElse(0);
+        plan = new EvolutionTreePlan(ordered.stream().map(n -> new EvolutionTreePlan.Node(n.id, n.col, n.row, n.cost, n.autoUnlock, n.prereqs)).toList());
+        if (current == null || current.getNode(selectedId) == null) {
+            EvolutionComponent comp = component();
+            selectedId = ordered.stream().filter(n -> !n.autoUnlock && comp != null && !comp.isUnlocked(n.id) && preMet(comp, n))
+                    .map(n -> n.id).findFirst().orElse(ordered.isEmpty() ? null : ordered.get(0).id);
+        }
+        treeScroll = detailScroll = 0;
     }
-
-    private boolean inNode(double mx, double my, EvolutionNode n) {
-        double cx = ncx(n), cy = ncy(n), h = hn();
-        return mx >= cx - h && mx <= cx + h && my >= cy - h && my <= cy + h;
+    private void layoutRows() {
+        rowTops.clear();
+        int top = 8;
+        for (int depth : ordered.stream().mapToInt(n -> n.col).distinct().sorted().toArray()) {
+            rowTops.put(depth, top);
+            int rowHeight = 0;
+            for (EvolutionNode node : ordered) if (node.col == depth)
+                rowHeight = Math.max(rowHeight, cardHeight(node));
+            top += rowHeight + ROW_GAP;
+        }
+        treeContentHeight = ordered.isEmpty() ? 0 : top - ROW_GAP + 12;
     }
-
-    private boolean inBtn(double mx, double my) {
-        return mx >= btnRect[0] && mx <= btnRect[0] + btnRect[2]
-                && my >= btnRect[1] && my <= btnRect[1] + btnRect[3];
+    private EvolutionNode selected() { return displayedRoute == null ? null : displayedRoute.getNode(selectedId); }
+    private int cx(EvolutionNode n) { return tree.x + 6 + (tree.w - 18) * (n.row - minLane + 1) / (maxLane - minLane + 2); }
+    private int cy(EvolutionNode n) { return tree.y + rowTops.getOrDefault(n.col, 8) + nodeSize(n) / 2 + 4 - (int)treeScroll; }
+    private int cardWidthLimit(EvolutionNode node) {
+        int nearest = tree.w - 20;
+        for (EvolutionNode other : ordered) if (other.col == node.col && other != node)
+            nearest = Math.min(nearest, Math.abs(cx(other) - cx(node)));
+        int edgeRoom = 2 * Math.min(cx(node) - tree.x, tree.right() - 12 - cx(node)) - 8;
+        int compactWidth = node.branch.isEmpty() ? 46 : 64;
+        return Math.max(24, Math.min(compactWidth, Math.min(nearest - 12, edgeRoom)));
     }
-
-    private boolean inConfBtn(double mx, double my) {
-        return mx >= confBtnRect[0] && mx <= confBtnRect[0] + confBtnRect[2]
-                && my >= confBtnRect[1] && my <= confBtnRect[1] + confBtnRect[3];
+    private int nodeSize(EvolutionNode n) {
+        int desired = !n.branch.isEmpty() ? 48 : n.autoUnlock ? 26 : Math.min(40, 26 + (n.col - minDepth) * 2);
+        return Math.max(12, Math.min(desired, cardWidthLimit(n) - 8));
     }
-
-    private boolean inTreeArea(double mx, double my) {
-        return mx >= treeLeft && mx <= treeLeft + treeW && my >= treeTop && my <= treeTop + treeH;
+    private int labelWidth(EvolutionNode node) {
+        return Math.max(1, (int)((cardWidthLimit(node) - 4 - LABEL_INSET * 2) / LABEL_SCALE));
     }
-
-    // ---------------- 渲染主流程 ----------------
-
-    @Override
-    public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
-        updateTreeRect();
-        updateBtn();
-
-        renderBackground(ctx);
-
-        EvolutionComponent comp = getComp();
-
-        // 进化树区域背景（比全局更深）
-        ctx.fill(treeLeft, treeTop, treeLeft + treeW, treeTop + treeH, 0xB0060402);
-        drawAmbientGlow(ctx);
-        drawPanelBorder(ctx, treeLeft, treeTop, treeW, treeH, GOLD_BOR);
-
-        // 裁剪进化树内容：缩放后连线/节点可能溢出，用 scissors 限制在区域内
-        ctx.enableScissor(treeLeft + 1, treeTop + 1, treeLeft + treeW - 1, treeTop + treeH - 1);
-
-        // 连线（前置 → 节点），在节点边缘外停止
-        drawConnections(ctx, comp);
-
-        // 节点
-        EvolutionNode hovered = null;
-        if (comp != null) {
-            for (EvolutionNode node : nodes()) {
-                boolean unlocked = comp.isUnlocked(node.id);
-                boolean staged = pending.contains(node.id);
-                boolean canUn = canUn(comp, node);
-                drawNode(ctx, node, unlocked, staged, canUn);
-                if (inNode(mouseX, mouseY, node)) {
-                    hovered = node;
-                }
+    private List<OrderedText> labelLines(EvolutionNode node) {
+        return textRenderer.wrapLines(Text.literal(shortName(node)), labelWidth(node));
+    }
+    private int labelHeight(EvolutionNode node) { return labelLines(node).size() * LABEL_LINE_HEIGHT; }
+    private int cardHeight(EvolutionNode node) { return nodeSize(node) + labelHeight(node) + 15; }
+    private Box nodeCard(EvolutionNode n) {
+        int size = nodeSize(n);
+        int label = labelLines(n).stream().mapToInt(textRenderer::getWidth).max().orElse(0);
+        int w = Math.max(size + 8, (int)Math.ceil(label * LABEL_SCALE) + 4 + LABEL_INSET * 2);
+        return new Box(cx(n) - w / 2, cy(n) - size / 2 - 4, w, cardHeight(n));
+    }
+    private Box labelPlate(EvolutionNode node) {
+        Box card = nodeCard(node);
+        return new Box(card.x + 2, cy(node) + nodeSize(node) / 2 + 1, card.w - 4, labelHeight(node) + 8);
+    }
+    private Box labelContent(EvolutionNode node) {
+        Box plate = labelPlate(node);
+        return new Box(plate.x + LABEL_INSET, plate.y + 4, plate.w - LABEL_INSET * 2, plate.h - 8);
+    }
+    private void drawNodeLabel(DrawContext ctx, EvolutionNode node) {
+        Box plate = labelPlate(node), content = labelContent(node);
+        EvolutionInk.plaque(ctx, plate.x, plate.y, plate.w, plate.h);
+        // This intersects with the tree viewport's existing scissor and restores it afterwards.
+        ctx.enableScissor(content.x, content.y, content.right(), content.bottom());
+        try {
+            List<OrderedText> lines = labelLines(node);
+            for (int i = 0; i < lines.size(); i++) {
+                OrderedText line = lines.get(i);
+                ctx.getMatrices().push();
+                ctx.getMatrices().translate(content.x + (content.w - textRenderer.getWidth(line) * LABEL_SCALE) / 2f,
+                        content.y + i * LABEL_LINE_HEIGHT, 1);
+                ctx.getMatrices().scale(LABEL_SCALE, LABEL_SCALE, 1);
+                ctx.drawText(textRenderer, line, 0, 0, INK, false);
+                ctx.getMatrices().pop();
             }
-        }
-
-        ctx.disableScissor();
-
-        // 顶部 / 底部信息面板
-        drawTopBar(ctx, comp);
-        drawBottomBar(ctx, comp);
-
-        // 返回按钮 + 确认加点按钮（水平并排、整体居中）
-        btnHovered = inBtn(mouseX, mouseY);
-        drawBackButton(ctx, btnHovered);
-        confHovered = inConfBtn(mouseX, mouseY);
-        drawConfirmButton(ctx, confHovered, !pending.isEmpty());
-
-        // 操作提示（树区域左下角）
-        drawHints(ctx);
-
-        // tooltip
-        if (hovered != null && comp != null) {
-            drawNodeTooltip(ctx, hovered, mouseX, mouseY, comp);
+        } finally {
+            ctx.disableScissor();
         }
     }
-
-    /** 绘制矩形边框（4 条 fill）。 */
-    private void drawPanelBorder(DrawContext ctx, int x, int y, int w, int h, int color) {
-        ctx.fill(x, y, x + w, y + 1, color);
-        ctx.fill(x, y + h - 1, x + w, y + h, color);
-        ctx.fill(x, y, x + 1, y + h, color);
-        ctx.fill(x + w - 1, y, x + w, y + h, color);
+    private String shortName(EvolutionNode n) { return tr(n.nameKey).replace("技能：", ""); }
+    private static String clean(Text text) { return Objects.requireNonNullElse(Formatting.strip(text.getString()), ""); }
+    private boolean preMet(EvolutionComponent comp, EvolutionNode n) { return EvolutionSelection.prerequisitesMet(comp, n, Set.of()); }
+    private boolean selectingRoute(EvolutionComponent comp, EvolutionNode n) {
+        return comp != null && !comp.isOnSscaRoute() && !comp.isJobChanging() && displayedRoute != null && Objects.equals(displayedRoute.getBaseNodeId(), n.id);
     }
-
-    // ---------------- 连接线（不伸入节点框内） ----------------
-
-    private void drawConnections(DrawContext ctx, EvolutionComponent comp) {
-        if (comp == null) return;
-        for (EvolutionNode node : nodes()) {
-            for (String pid : node.prereqs) {
-                EvolutionNode pre = node(pid);
-                if (pre == null) continue;
-                boolean active = comp.isUnlocked(pid);
-                boolean staged = !active && pending.contains(pid);
-                drawConnection(ctx, pre, node, active, staged);
-            }
-        }
+    private boolean canBuy(EvolutionComponent comp, EvolutionNode n) {
+        return n != null && waitingId == null && comp != null && (selectingRoute(comp, n)
+                || comp.isOnSscaRoute() && !comp.isJobChanging() && !n.autoUnlock && !comp.isUnlocked(n.id) && preMet(comp, n) && comp.getPoints() >= n.cost);
     }
-
-    /**
-     * 绘制前置 pre → node 的折线连接。折线在两端节点边缘外停止（不进入节点框）。
-     * 形状：从 pre 右边出发 → 水平到中点 → 垂直到 node 行 → 水平到 node 左边。
-     */
-    private void drawConnection(DrawContext ctx, EvolutionNode pre, EvolutionNode node, boolean active, boolean staged) {
-        double half = hn();
-        double px = ncx(pre), py = ncy(pre);
-        double nx = ncx(node), ny = ncy(node);
-        // 起点贴 pre 右边缘外 1px；终点贴 node 左边缘外 1px
-        double sx = px + half + 1;
-        double sy = py;
-        double ex = nx - half - 1;
-        double ey = ny;
-
-        int color = active ? LINE_ACT : (staged ? N_PEND_BOR : LINE_INACT);
-        int glow = active ? LINE_GLOW : (staged ? N_PEND_IN : 0);
-
-        if (sy == ey) {
-            drawLineH(ctx, sx, ex, sy, color, glow);
-            return;
-        }
-        if (sx > ex) {
-            // 同列（极少见）：退化为垂直
-            drawLineV(ctx, px, sy, ey, color, glow);
-            return;
-        }
-        double midX = (sx + ex) / 2.0;
-        drawLineH(ctx, sx, midX, sy, color, glow);
-        drawLineV(ctx, midX, sy, ey, color, glow);
-        drawLineH(ctx, midX, ex, ey, color, glow);
+    @Override public void tick() {
+        EvolutionComponent comp = component();
+        if (waitingId == null || comp == null) return;
+        if (comp.isUnlocked(waitingId)) {
+            waitingId = null;
+            if (client.player != null) client.player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, .5f, 1f);
+        } else if (Util.getMeasuringTimeMs() - waitingSince > 3000) waitingId = null;
     }
-
-    private void drawLineH(DrawContext ctx, double xa, double xb, double y, int color, int glow) {
-        int x1 = (int) Math.round(Math.min(xa, xb));
-        int x2 = (int) Math.round(Math.max(xa, xb));
-        int yi = (int) Math.round(y);
-        if (glow != 0) {
-            ctx.fill(x1, yi - 2, x2, yi + 3, (glow & 0x00FFFFFF) | 0x30000000);
-        }
-        ctx.fill(x1, yi - 1, x2, yi + 2, color);
-    }
-
-    private void drawLineV(DrawContext ctx, double x, double ya, double yb, int color, int glow) {
-        int xi = (int) Math.round(x);
-        int y1 = (int) Math.round(Math.min(ya, yb));
-        int y2 = (int) Math.round(Math.max(ya, yb));
-        if (glow != 0) {
-            ctx.fill(xi - 2, y1, xi + 3, y2, (glow & 0x00FFFFFF) | 0x30000000);
-        }
-        ctx.fill(xi - 1, y1, xi + 2, y2, color);
-    }
-
-    // ---------------- 节点 ----------------
-
-    private void drawNode(DrawContext ctx, EvolutionNode node, boolean unlocked, boolean staged, boolean canUn) {
-        double cx = ncx(node), cy = ncy(node), half = hn();
-        int left = (int) Math.round(cx - half);
-        int top = (int) Math.round(cy - half);
-        int size = (int) Math.round(sns());
-        if (size < 4) return;
-
-        long now = System.currentTimeMillis();
-        int pulse = (!unlocked && (canUn || staged)) ? pulseAlpha(now, PULSE_MS, 0x55, 0xCC) : 0;
-
-        if (unlocked) {
-            ctx.fill(left, top, left + size, top + size, N_UNLK_FILL);
-            ctx.fill(left + 2, top + 2, left + size - 2, top + size - 2, 0x30FFE066);
-            drawPanelBorder(ctx, left, top, size, size, N_UNLK_BOR);
-            drawPanelBorder(ctx, left + 3, top + 3, size - 6, size - 6, N_UNLK_IN & 0x88FFFFFF);
-        } else if (staged) {
-            ctx.fill(left, top, left + size, top + size, N_PEND_FILL);
-            ctx.fill(left + 2, top + 2, left + size - 2, top + size - 2, 0x40FFB060);
-            ctx.fill(left - 2, top - 2, left + size + 2, top + size + 2,
-                    (N_PEND_BOR & 0x00FFFFFF) | ((pulse / 2) << 24));
-            drawPanelBorder(ctx, left, top, size, size, N_PEND_BOR);
-            drawPanelBorder(ctx, left + 3, top + 3, size - 6, size - 6, N_PEND_IN & 0x88FFFFFF);
-        } else if (node.autoUnlock) {
-            ctx.fill(left, top, left + size, top + size, N_AUTO_FILL);
-            int ripple = (int) ((now % (long) RIPPLE_MS) / RIPPLE_MS * size);
-            ctx.fill(left, top + ripple, left + size, top + ripple + 1, 0x6000FFFF);
-            drawDashedBorder(ctx, left, top, size, size, N_AUTO_BOR);
-        } else if (canUn) {
-            ctx.fill(left, top, left + size, top + size, 0x30106610);
-            ctx.fill(left - 2, top - 2, left + size + 2, top + size + 2,
-                    (N_CAN_BOR & 0x00FFFFFF) | ((pulse / 2) << 24));
-            drawPanelBorder(ctx, left, top, size, size,
-                    (N_CAN_BOR & 0x00FFFFFF) | (pulse << 24));
-        } else {
-            ctx.fill(left, top, left + size, top + size, N_LK_FILL);
-            drawPanelBorder(ctx, left, top, size, size, N_LK_BOR);
-            ctx.fill(left + 1, top + 1, left + size - 1, top + size - 1, 0x60000000);
-        }
-
-        // 物品图标（按 zoom 缩放绘制）
-        double iconScale = Math.max(0.5, Math.min(zoom, 1.5));
-        int iconDraw = 16;
+    @Override public void render(DrawContext ctx, int mx, int my, float delta) {
+        layout();
+        EvolutionComponent comp = component();
         ctx.getMatrices().push();
-        ctx.getMatrices().translate(cx - iconDraw * iconScale / 2.0, cy - iconDraw * iconScale / 2.0, 0);
-        if (Math.abs(iconScale - 1.0) > 0.01) {
-            ctx.getMatrices().scale((float) iconScale, (float) iconScale, 1.0f);
+        // Keep the complete parchment above depth left by form-specific HUD and first-person renderers.
+        ctx.getMatrices().translate(0, 0, 400);
+        try {
+            ctx.fill(0, 0, width, height, 0x32000000);
+            EvolutionInk.paper(ctx, paper.x, paper.y, paper.w, paper.h);
+            // Paper, transparent route ornaments, and controls occupy separate depth planes.
+            ctx.getMatrices().translate(0, 0, 1);
+            String route = displayedRoute == null ? "axolotl" : displayedRoute.routeId;
+            EvolutionArtwork.decorations(ctx, route, paper.x, paper.y, paper.w, paper.h);
+            Box treeThumb = scrollbarThumb(tree, treeScroll, treeContentHeight);
+            if (route.equals("axolotl"))
+                EvolutionArtwork.attachedCoral(ctx, paper.x, paper.y, paper.w, paper.h, treeThumb.w > 0 ? treeThumb.x + 1 : -1);
+            // Foreground and opaque paper must occupy different depth planes.
+            ctx.getMatrices().translate(0, 0, 10);
+            drawHeader(ctx, comp);
+            EvolutionInk.line(ctx, details.x - 7, details.y, details.x - 7, details.bottom());
+            drawTree(ctx, comp);
+            drawDetails(ctx, comp, mx, my);
+            button(ctx, back, tr("gui.back"), true, back.contains(mx, my));
+            int hintY = paper.bottom() - Math.max(8, paper.h * 3 / 100) - 12;
+            text(ctx, fit(tr("evolution.my_addon.paper.scroll"), tree.w - 12), tree.x, hintY);
+        } finally {
+            ctx.draw();
+            ctx.getMatrices().pop();
         }
-        ctx.drawItem(new ItemStack(node.icon), 0, 0);
+    }
+    private void drawHeader(DrawContext ctx, EvolutionComponent comp) {
+        int x = header.x, y = header.y;
+        EvolutionInk.frame(ctx, x, y, 44, 45);
+        EvolutionInk.icon(ctx, displayedRoute == null ? "" : displayedRoute.routeId, x + 5, y + 5, 34);
+        int tx = x + 51;
+        String title = displayedRoute == null ? clean(getTitle()) : tr(displayedRoute.displayNameKey);
+        int titleScale = tree.right() - tx >= 220 ? 2 : 1;
+        int titleWidth = Math.max(20, (back.x - tx - 46) / titleScale);
+        ctx.getMatrices().push();
+        ctx.getMatrices().translate(tx, y + 1, 0);
+        ctx.getMatrices().scale(titleScale, titleScale, 1);
+        text(ctx, fit(title, titleWidth), 0, 0);
         ctx.getMatrices().pop();
-
-        // 节点名称（下方，居中）
-        Text name = Text.translatable(node.nameKey);
-        int nameColor = unlocked ? 0xFFFFD700 : (staged ? 0xFFFFB060
-                : (canUn ? 0xFF99FF99 : (node.autoUnlock ? 0xFF66E0E0 : 0xFF888888)));
-        int nameW = this.textRenderer.getWidth(name);
-        ctx.drawTextWithShadow(this.textRenderer, name,
-                (int) Math.round(cx - nameW / 2.0), top + size + 3, nameColor);
-    }
-
-    /** 虚线边框：用间断 fill 模拟。 */
-    private void drawDashedBorder(DrawContext ctx, int x, int y, int w, int h, int color) {
-        dashedH(ctx, x, y, w, color);
-        dashedH(ctx, x, y + h - 1, w, color);
-        dashedV(ctx, x, y, h, color);
-        dashedV(ctx, x + w - 1, y, h, color);
-    }
-
-    private void dashedH(DrawContext ctx, int x, int y, int w, int color) {
-        int p = x;
-        while (p < x + w) {
-            int seg = Math.min(DASH, x + w - p);
-            ctx.fill(p, y, p + seg, y + 1, color);
-            p += DASH + DGAP;
+        int badgeX = tx + textRenderer.getWidth(fit(title, titleWidth)) * titleScale + 6;
+        String badge = tr("evolution.my_addon.paper.experimental_badge");
+        badge = fit(badge, Math.max(1, back.x - badgeX - 14));
+        EvolutionInk.plaque(ctx, badgeX, y + 2, textRenderer.getWidth(badge) + 8, 12);
+        text(ctx, badge, badgeX + 4, y + 4);
+        int orbY = y + 15;
+        EvolutionInk.orb(ctx, tx, orbY, 22);
+        centerText(ctx, Integer.toString(comp == null ? 0 : comp.getPoints()), tx + 11, orbY + 7);
+        int bx = tx + 26, bw = Math.max(8, Math.min(126, tree.right() - bx - 3));
+        int previous = 0, next = -1;
+        if (displayedRoute != null && comp != null) for (int milestone : displayedRoute.getLevelMilestones()) {
+            if (!comp.hasGrantedLevel(milestone)) { next = milestone; break; }
+            previous = milestone;
         }
+        int exp = comp == null ? 0 : comp.getExp();
+        int floor = EvolutionComponent.levelToTotalExp(previous) * 2;
+        int goal = next < 0 ? floor : EvolutionComponent.levelToTotalExp(next) * 2;
+        double progress = next < 0 ? 1 : Math.max(0, Math.min(1, (exp - floor) / (double)Math.max(1, goal - floor)));
+        ctx.fill(bx + 3, orbY + 6, bx + 3 + (int)((bw - 6) * progress), orbY + 9, INK);
+        EvolutionArtwork.nine(ctx, "experience_bar", bx, orbY + 3, bw, 9);
+        drawWrapped(ctx, next < 0 ? tr("evolution.my_addon.paper.points_complete") : tr("evolution.my_addon.paper.next_point", Math.max(0, goal - exp)), bx, orbY + 14, bw, 2);
+        EvolutionInk.line(ctx, tree.x, tree.y - 4, tree.right(), tree.y - 4);
     }
-
-    private void dashedV(DrawContext ctx, int x, int y, int h, int color) {
-        int p = y;
-        while (p < y + h) {
-            int seg = Math.min(DASH, y + h - p);
-            ctx.fill(x, p, x + 1, p + seg, color);
-            p += DASH + DGAP;
-        }
-    }
-
-    /** sin 脉冲映射到 [min, max] 的 alpha（0~255）。 */
-    private int pulseAlpha(long now, double periodMs, int min, int max) {
-        double t = (now % (long) periodMs) / periodMs * Math.PI * 2;
-        double v = (Math.sin(t) + 1.0) / 2.0;
-        return min + (int) (v * (max - min));
-    }
-
-    // ---------------- 顶部 / 底部信息面板 ----------------
-
-    private void drawTopBar(DrawContext ctx, EvolutionComponent comp) {
-        ctx.fill(0, 0, this.width, TOP_BAR, PANEL_BG);
-        drawPanelBorder(ctx, 0, 0, this.width, TOP_BAR, GOLD_BOR);
-        // 左：标题
-        ctx.drawTextWithShadow(this.textRenderer, this.title, 12, 8, TITLE_GOLD);
-        // 副标题：路线名 + 实验性标注（2026-10-20 用户要求：游戏内点进 SSCA 加点时的介绍内写明「实验性」）
-        ctx.drawTextWithShadow(this.textRenderer,
-                Text.translatable("evolution.my_addon.screen.route_active").formatted(Formatting.DARK_GRAY),
-                12, 26, TXT_GRAY);
-        ctx.drawTextWithShadow(this.textRenderer,
-                Text.translatable("evolution.my_addon.screen.experimental").formatted(Formatting.GOLD),
-                12, 36, TXT_GOLD);
-
-        if (comp != null) {
-            int level = comp.getEvoLevel();
-            Text levelText = Text.translatable("evolution.my_addon.screen.level", level);
-            int lw = this.textRenderer.getWidth(levelText);
-            ctx.drawTextWithShadow(this.textRenderer, levelText, this.width - 12 - lw, 8, TXT_GOLD);
-
-            if (comp.isOnSscaRoute()) {
-                // 进化经验到下一级的进度条（等级下方，右对齐窄条）
-                int ebW = 90, ebH = 3;
-                int ebX = this.width - 12 - ebW;
-                int ebY = 19;
-                int curExp = comp.getExp();
-                float eProg;
-                if (level >= EvolutionComponent.EVO_LEVEL_CAP) {
-                    eProg = 1.0f;
-                } else {
-                    int c0 = EvolutionComponent.levelToTotalExp(level) * 2;
-                    int n0 = EvolutionComponent.levelToTotalExp(level + 1) * 2;
-                    eProg = (n0 > c0) ? Math.max(0f, Math.min(1f, (float) (curExp - c0) / (n0 - c0))) : 0f;
-                }
-                ctx.fill(ebX, ebY, ebX + ebW, ebY + ebH, 0xFF201810);
-                ctx.fill(ebX, ebY, ebX + (int) (ebW * eProg), ebY + ebH, 0xFF55C964);
-
-                Text pointsText = Text.translatable("evolution.my_addon.screen.points", simPoints(comp));
-                int pw = this.textRenderer.getWidth(pointsText);
-                ctx.drawTextWithShadow(this.textRenderer, pointsText, this.width - 12 - pw, 30, TITLE_GOLD);
-            } else {
-                Text nr = Text.translatable("evolution.my_addon.screen.no_route");
-                int nw = this.textRenderer.getWidth(nr);
-                ctx.drawTextWithShadow(this.textRenderer, nr, this.width - 12 - nw, 26, TXT_GRAY);
-            }
-        }
-    }
-
-    private void drawBottomBar(DrawContext ctx, EvolutionComponent comp) {
-        int y0 = this.height - BOT_BAR;
-        ctx.fill(0, y0, this.width, this.height, PANEL_BG);
-        drawPanelBorder(ctx, 0, y0, this.width, BOT_BAR, GOLD_BOR);
-
-        if (comp != null && comp.isOnSscaRoute()) {
-            int unlocked = 0;
-            for (EvolutionNode n : nodes()) {
-                if (comp.isUnlocked(n.id)) unlocked++;
-            }
-            int total = nodes().size();
-            Text prog = Text.translatable("evolution.my_addon.screen.progress", unlocked, total);
-            ctx.drawTextWithShadow(this.textRenderer, prog, 12, y0 + 13, TXT_GOLD);
-
-            int level = comp.getEvoLevel();
-            EvolutionRoute br = route();
-            boolean allBranch = br != null && !br.getBranchNodeIds().isEmpty();
-            if (br != null) {
-                for (String bn : br.getBranchNodeIds()) {
-                    if (!comp.isUnlocked(bn)) { allBranch = false; break; }
-                }
-            }
-            Text right;
-            int rightColor;
-            if (allBranch) {
-                right = Text.translatable("evolution.my_addon.screen.branch_ready");
-                rightColor = TITLE_GOLD;
-            } else {
-                int nextMs = br == null ? -1 : br.nextMilestone(level);
-                if (nextMs < 0) {
-                    right = Text.translatable("evolution.my_addon.screen.no_milestone");
-                    rightColor = TXT_GRAY;
-                } else {
-                    right = Text.translatable("evolution.my_addon.screen.next_milestone", nextMs);
-                    rightColor = TXT_GOLD;
-                }
-            }
-            int rw = this.textRenderer.getWidth(right);
-            ctx.drawTextWithShadow(this.textRenderer, right, this.width - 12 - rw, y0 + 13, rightColor);
-        }
-    }
-
-    /** 树区域左下角操作提示。 */
-    private void drawHints(DrawContext ctx) {
-        int x = treeLeft + 6;
-        int y = treeTop + treeH - 12;
-        ctx.drawTextWithShadow(this.textRenderer,
-                Text.translatable("evolution.my_addon.screen.hint_pan"), x, y, TXT_GRAY);
-        if (!pending.isEmpty()) {
-            ctx.drawTextWithShadow(this.textRenderer,
-                    Text.translatable("evolution.my_addon.screen.pending", pending.size(), pendingCost()),
-                    x, y - 12, N_PEND_BOR);
-        }
-    }
-
-    // ---------------- 返回按钮 ----------------
-
-    private void drawBackButton(DrawContext ctx, boolean hovered) {
-        int x = btnRect[0], y = btnRect[1], w = btnRect[2], h = btnRect[3];
-        ctx.fill(x, y, x + w, y + h, hovered ? BBGH : BBG);
-        drawPanelBorder(ctx, x, y, w, h, BBOR);
-        Text t = Text.translatable("gui.back");
-        int tw = this.textRenderer.getWidth(t);
-        ctx.drawTextWithShadow(this.textRenderer, t, x + (w - tw) / 2, y + (h - 8) / 2, BTXT);
-    }
-
-    /** 确认加点按钮：仅有待确认节点时有效，启用时金绿脉冲发光。 */
-    private void drawConfirmButton(DrawContext ctx, boolean hovered, boolean enabled) {
-        int x = confBtnRect[0], y = confBtnRect[1], w = confBtnRect[2], h = confBtnRect[3];
-        ctx.fill(x, y, x + w, y + h, enabled && hovered ? 0xD01A3A12 : (enabled ? CONF_BG : BBG));
-        if (enabled) {
-            int pulse = pulseAlpha(System.currentTimeMillis(), PULSE_MS, 0x44, 0xCC);
-            ctx.fill(x - 2, y - 2, x + w + 2, y + h + 2, (CONF_BOR & 0x00FFFFFF) | (pulse << 24));
-        }
-        drawPanelBorder(ctx, x, y, w, h, enabled ? CONF_BOR : N_LK_BOR);
-        Text t = Text.translatable("evolution.my_addon.screen.confirm");
-        int tw = this.textRenderer.getWidth(t);
-        ctx.drawTextWithShadow(this.textRenderer, t, x + (w - tw) / 2, y + (h - 8) / 2,
-                enabled ? CONF_TXT : CONF_DIS_TXT);
-    }
-
-    /** 进化树区域背景横扫流光（动态装饰，不影响布局）。 */
-    private void drawAmbientGlow(DrawContext ctx) {
-        long now = System.currentTimeMillis();
-        double sweep = (now % 5200L) / 5200.0;
-        int gx = treeLeft + (int) (sweep * treeW);
-        for (int i = 0; i < 4; i++) {
-            int a = (int) (0x22 * (1.0 - i / 4.0));
-            ctx.fill(gx - i, treeTop, gx + i + 1, treeTop + treeH, (a << 24) | 0x00B8893A);
-        }
-    }
-
-    // ---------------- Tooltip ----------------
-
-    private void drawNodeTooltip(DrawContext ctx, EvolutionNode node, int mouseX, int mouseY, EvolutionComponent comp) {
-        List<Text> lines = new ArrayList<>();
-        lines.add(Text.translatable(node.nameKey).formatted(Formatting.GOLD, Formatting.BOLD));
-        lines.add(Text.literal(" "));
-        lines.add(Text.translatable(node.descKey).formatted(Formatting.GRAY));
-        lines.add(Text.literal(" "));
-
-        if (comp.isUnlocked(node.id)) {
-            lines.add(Text.translatable("evolution.my_addon.screen.state.unlocked").formatted(Formatting.GREEN));
-        } else if (pending.contains(node.id)) {
-            lines.add(Text.translatable("evolution.my_addon.screen.cost", node.cost).formatted(Formatting.YELLOW));
-            lines.add(Text.translatable("evolution.my_addon.screen.state.staged").formatted(Formatting.GOLD));
-        } else if (node.autoUnlock) {
-            lines.add(Text.translatable("evolution.my_addon.screen.state.auto").formatted(Formatting.AQUA));
+    private void drawTree(DrawContext ctx, EvolutionComponent comp) {
+        ctx.enableScissor(tree.x, tree.y, tree.right(), tree.bottom());
+        if (comp == null || displayedRoute == null) {
+            drawWrapped(ctx, tr("evolution.my_addon.paper.no_route"), tree.x + 10, tree.y + 12, tree.w - 20, 5);
         } else {
-            lines.add(Text.translatable("evolution.my_addon.screen.cost", node.cost).formatted(Formatting.YELLOW));
-            if (!comp.isOnSscaRoute()) {
-                lines.add(Text.translatable("evolution.my_addon.screen.state.need_route").formatted(Formatting.RED));
-            } else if (!preMetAll(comp, node)) {
-                List<String> names = new ArrayList<>();
-                for (String pid : node.prereqs) {
-                    if (!effUnlocked(comp, pid)) {
-                        EvolutionNode pn = node(pid);
-                        if (pn != null) names.add(Text.translatable(pn.nameKey).getString());
-                    }
-                }
-                if (!names.isEmpty()) {
-                    lines.add(Text.translatable("evolution.my_addon.screen.prereqs_need", String.join(" / ", names))
-                            .formatted(Formatting.RED));
-                } else {
-                    lines.add(Text.translatable("evolution.my_addon.screen.state.locked").formatted(Formatting.RED));
-                }
-            } else if (simPoints(comp) < node.cost) {
-                lines.add(Text.translatable("evolution.my_addon.screen.state.no_points").formatted(Formatting.RED));
-            } else {
-                lines.add(Text.translatable("evolution.my_addon.screen.state.click_unlock").formatted(Formatting.GREEN));
+            for (EvolutionNode node : ordered) for (String prerequisite : node.prereqs) {
+                EvolutionNode pre = displayedRoute.getNode(prerequisite);
+                if (pre == null) continue;
+                int sx = cx(pre), sy = nodeCard(pre).bottom() + 4;
+                int ex = cx(node), ey = nodeCard(node).y - 4, middle = (sy + ey) / 2;
+                EvolutionInk.line(ctx, sx, sy, sx, middle);
+                EvolutionInk.line(ctx, sx, middle, ex, middle);
+                EvolutionInk.line(ctx, ex, middle, ex, ey);
             }
+            for (EvolutionNode node : ordered) {
+                int size = nodeSize(node), x = cx(node) - size / 2, y = cy(node) - size / 2;
+                Box card = nodeCard(node);
+                if (card.y > tree.bottom() || card.bottom() < tree.y) continue;
+                EvolutionInk.frame(ctx, card.x, card.y, card.w, card.h);
+                EvolutionInk.icon(ctx, node.id, x, y, size);
+                if (comp.isUnlocked(node.id)) EvolutionInk.check(ctx, x, y, size);
+                drawNodeLabel(ctx, node);
+                if (node.id.equals(selectedId)) {
+                    EvolutionInk.selection(ctx, card.x - 4, card.y - 4, card.w + 8, card.h + 8);
+                }
+            }
+            Set<String> unlocked = new HashSet<>();
+            for (EvolutionNode node : ordered) if (comp.isUnlocked(node.id)) unlocked.add(node.id);
+            for (EvolutionTreePlan.Boundary boundary : plan.boundaries(unlocked)) drawBoundary(ctx, boundary);
         }
-        ctx.drawTooltip(this.textRenderer, lines, mouseX, mouseY);
+        ctx.disableScissor();
+        scrollbar(ctx, tree, treeScroll, treeContentHeight);
     }
-
-    // ---------------- 鼠标 / 滚轮事件 ----------------
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    private void drawBoundary(DrawContext ctx, EvolutionTreePlan.Boundary boundary) {
+        int left = Integer.MAX_VALUE, right = Integer.MIN_VALUE, y = Integer.MIN_VALUE;
+        for (String id : boundary.nodes()) {
+            EvolutionNode node = displayedRoute.getNode(id);
+            if (node == null) continue;
+            left = Math.min(left, nodeCard(node).x - 6);
+            right = Math.max(right, nodeCard(node).right() + 6);
+            y = Math.max(y, nodeCard(node).bottom() + 11);
+        }
+        if (left == Integer.MAX_VALUE || y < tree.y + 5 || y + 5 >= tree.bottom()) return;
+        String value = Integer.toString(boundary.cumulativeCost());
+        boolean leftSide = boundary.nodes().size() == 1 && (left + right) / 2 < tree.x + tree.w / 2;
+        left = Math.max(tree.x + 3 + (leftSide ? textRenderer.getWidth(value) + 3 : 0), left);
+        right = Math.min(tree.right() - 9 - (leftSide ? 0 : textRenderer.getWidth(value) + 3), right);
+        EvolutionInk.boundary(ctx, left, y, Math.max(1, right - left));
+        text(ctx, value, leftSide ? left - textRenderer.getWidth(value) - 3 : right + 3, y - 4);
+    }
+    private void drawDetails(DrawContext ctx, EvolutionComponent comp, int mx, int my) {
+        EvolutionNode node = selected();
+        if (node == null || comp == null) return;
+        int iconSize = Math.min(38, Math.max(24, details.w / 3));
+        EvolutionInk.icon(ctx, node.id, details.x, details.y + 2, iconSize);
+        if (comp.isUnlocked(node.id)) EvolutionInk.check(ctx, details.x, details.y + 2, iconSize);
+        int titleScale = details.w >= 140 ? 2 : 1;
+        ctx.getMatrices().push();
+        ctx.getMatrices().translate(details.x + iconSize + 5, details.y + 5, 0);
+        ctx.getMatrices().scale(titleScale, titleScale, 1);
+        drawWrapped(ctx, shortName(node), 0, 0, Math.max(10, (details.w - iconSize - 5) / titleScale), titleScale == 2 ? 2 : 4);
+        ctx.getMatrices().pop();
+        EvolutionInk.line(ctx, details.x, detailBody.y - 5, details.right(), detailBody.y - 5);
+        List<OrderedText> lines = new ArrayList<>(textRenderer.wrapLines(Text.literal(tr(node.descKey)), Math.max(1, details.w - 7)));
+        lines.add(Text.empty().asOrderedText());
+        addLines(lines, tr("evolution.my_addon.paper.requirements"));
+        if (node.prereqs.isEmpty()) addLines(lines, tr("evolution.my_addon.paper.no_prerequisites"));
+        for (String id : node.prereqs) {
+            EvolutionNode pre = displayedRoute.getNode(id);
+            if (pre != null) addLines(lines, (comp.isUnlocked(id) ? "+ " : "- ") + shortName(pre));
+        }
+        if (node.autoUnlock && !node.branch.isEmpty()) addLines(lines, tr("evolution.my_addon.paper.auto_level", displayedRoute.autoBranchLevel));
+        if (!preMet(comp, node)) addLines(lines, tr("evolution.my_addon.paper.all_prerequisites"));
+        if (comp.isJobChanging()) addLines(lines, tr("evolution.my_addon.paper.job_changing"));
+        detailContentHeight = lines.size() * 11;
+        clampScroll();
+        ctx.enableScissor(detailBody.x, detailBody.y, detailBody.right(), detailBody.bottom());
+        int ly = detailBody.y - (int)detailScroll;
+        for (OrderedText line : lines) {
+            if (ly + 10 >= detailBody.y && ly < detailBody.bottom()) ctx.drawText(textRenderer, line, detailBody.x, ly, INK, false);
+            ly += 11;
+        }
+        ctx.disableScissor();
+        scrollbar(ctx, detailBody, detailScroll, detailContentHeight);
+        EvolutionInk.line(ctx, details.x, confirm.y - 42, details.right(), confirm.y - 42);
+        int costWidth = Math.max(1, Math.min(details.w, (confirm.x + confirm.w / 2 - details.x) * 2));
+        List<OrderedText> costLabel = textRenderer.wrapLines(Text.literal(tr("evolution.my_addon.paper.point_cost")), costWidth);
+        for (int i = 0; i < Math.min(2, costLabel.size()); i++) {
+            OrderedText line = costLabel.get(i);
+            ctx.drawText(textRenderer, line, confirm.x + (confirm.w - textRenderer.getWidth(line)) / 2, confirm.y - 35 + i * 10, INK, false);
+        }
+        centerText(ctx, comp.getPoints() + " / " + node.cost, confirm.x + confirm.w / 2, confirm.y - 13);
+        String label = comp.isUnlocked(node.id) ? tr("evolution.my_addon.paper.unlocked")
+                : waitingId != null ? tr("evolution.my_addon.paper.waiting")
+                : selectingRoute(comp, node) ? tr("evolution.my_addon.paper.start_route")
+                : node.autoUnlock ? tr("evolution.my_addon.paper.automatic")
+                : !preMet(comp, node) ? tr("evolution.my_addon.paper.need_prerequisites")
+                : comp.getPoints() < node.cost ? tr("evolution.my_addon.paper.need_points") : tr("evolution.my_addon.screen.confirm");
+        button(ctx, confirm, label, canBuy(comp, node), confirm.contains(mx, my));
+    }
+    private void addLines(List<OrderedText> lines, String value) { lines.addAll(textRenderer.wrapLines(Text.literal(value), Math.max(1, details.w - 7))); }
+    private void text(DrawContext ctx, String value, int x, int y) { ctx.drawText(textRenderer, value, x, y, INK, false); }
+    private String tr(String key, Object... args) { return clean(Text.translatable(key, args)); }
+    private String fit(String value, int maxWidth) { return textRenderer.trimToWidth(value, Math.max(1, maxWidth)); }
+    private void centerText(DrawContext ctx, String value, int x, int y) { text(ctx, value, x - textRenderer.getWidth(value) / 2, y); }
+    private void drawWrapped(DrawContext ctx, String value, int x, int y, int w, int limit) {
+        List<OrderedText> lines = textRenderer.wrapLines(Text.literal(value), Math.max(1, w));
+        for (int i = 0; i < Math.min(limit, lines.size()); i++) ctx.drawText(textRenderer, lines.get(i), x, y + i * 10, INK, false);
+    }
+    private void button(DrawContext ctx, Box box, String label, boolean enabled, boolean hover) {
+        EvolutionInk.button(ctx, box.x, box.y, box.w, box.h);
+        if (enabled && hover) EvolutionInk.frame(ctx, box.x + 2, box.y + 2, box.w - 4, box.h - 4);
+        if (!enabled) for (int x = box.x + 4; x < box.right() - 3; x += 4) ctx.fill(x, box.bottom() - 3, x + 1, box.bottom() - 2, INK);
+        if (box == back) EvolutionArtwork.draw(ctx, "back_arrow", box.x + 3, box.y + 3, 10);
+        int inset = box == back ? 12 : 0;
+        centerText(ctx, fit(label, box.w - 6 - inset), box.x + (box.w + inset) / 2, box.y + (box.h - 8) / 2);
+    }
+    private Box scrollbarThumb(Box box, double scroll, int contentHeight) {
+        if (contentHeight <= box.h || box.h < 8) return Box.EMPTY;
+        int trackHeight = box.h - 4, knob = Math.min(trackHeight, Math.max(12, trackHeight * box.h / contentHeight));
+        int top = box.y + 2 + (int)((trackHeight - knob) * scroll / Math.max(1, contentHeight - box.h));
+        int offset = Math.min((SCROLLBAR_WIDTH + 1) / 2, Math.max(0, paper.right() - box.right() - 5));
+        return new Box(box.right() - SCROLLBAR_WIDTH - 1 + offset, top, SCROLLBAR_WIDTH, knob);
+    }
+    private boolean overScrollbar(Box box, Box thumb, double mx, double my) {
+        return thumb.w > 0 && new Box(thumb.x - 1, box.y, thumb.w + 2, box.h).contains(mx, my);
+    }
+    private void scrollbar(DrawContext ctx, Box box, double scroll, int contentHeight) {
+        Box thumb = scrollbarThumb(box, scroll, contentHeight);
+        if (thumb.w == 0) return;
+        ctx.fill(thumb.x + 2, box.y + 4, thumb.right() - 2, box.bottom() - 4, EvolutionInk.PAPER);
+        EvolutionArtwork.vertical(ctx, "scroll_track", thumb.x + 1, box.y + 1, 5, box.h - 2);
+        ctx.fill(thumb.x, thumb.y + 2, thumb.right(), thumb.bottom() - 2, EvolutionInk.PAPER);
+        EvolutionArtwork.vertical(ctx, "scroll_thumb", thumb.x, thumb.y, thumb.w, thumb.h);
+        EvolutionArtwork.stretch(ctx, "scroll_grip", thumb.x + 2, thumb.y + thumb.h / 2 - 2, 3, 5);
+    }
+    private void clampScroll() {
+        treeScroll = Math.max(0, Math.min(Math.max(0, treeContentHeight - tree.h), treeScroll));
+        detailScroll = Math.max(0, Math.min(Math.max(0, detailContentHeight - detailBody.h), detailScroll));
+    }
+    private void select(EvolutionNode node) {
+        if (!Objects.equals(selectedId, node.id)) { selectedId = node.id; detailScroll = 0; clickSound(); }
+    }
+    private void buySelected() {
+        EvolutionComponent comp = component();
+        EvolutionNode node = selected();
+        if (!canBuy(comp, node)) return;
+        PacketByteBuf buffer = PacketByteBufs.create();
+        boolean chooseRoute = selectingRoute(comp, node);
+        buffer.writeString(chooseRoute ? displayedRoute.routeId : node.id);
+        ClientPlayNetworking.send(chooseRoute ? SscAddonNetworking.PACKET_EVO_SELECT_ROUTE : SscAddonNetworking.PACKET_EVO_UNLOCK, buffer);
+        waitingId = node.id;
+        waitingSince = Util.getMeasuringTimeMs();
+        clickSound();
+    }
+    private void clickSound() { if (client != null && client.player != null) client.player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), .35f, 1f); }
+    @Override public boolean mouseClicked(double mx, double my, int button) {
+        layout();
         if (button == 0) {
-            if (inBtn(mouseX, mouseY)) {
-                this.close();
-                return true;
+            if (back.contains(mx, my)) { close(); return true; }
+            if (confirm.contains(mx, my)) { buySelected(); return true; }
+            Box treeThumb = scrollbarThumb(tree, treeScroll, treeContentHeight);
+            Box detailThumb = scrollbarThumb(detailBody, detailScroll, detailContentHeight);
+            if (overScrollbar(tree, treeThumb, mx, my)) {
+                startThumbDrag(treeThumb, my, false); return true;
             }
-            if (!pending.isEmpty() && inConfBtn(mouseX, mouseY)) {
-                commitPending();
-                return true;
+            if (overScrollbar(detailBody, detailThumb, mx, my)) {
+                startThumbDrag(detailThumb, my, true); return true;
             }
-            EvolutionComponent comp = getComp();
-            if (comp != null) {
-                EvolutionRoute clickRoute = route();
-                for (EvolutionNode node : nodes()) {
-                    if (!inNode(mouseX, mouseY, node)) continue;
-                    if (!comp.isOnSscaRoute() && clickRoute != null && node.id.equals(clickRoute.getBaseNodeId())) {
-                        sendString(SscAddonNetworking.PACKET_EVO_SELECT_ROUTE, clickRoute.routeId);
-                        return true;
-                    }
-                    // 已暂存：再次点击取消（退还点数）
-                    if (pending.contains(node.id)) {
-                        pending.remove(node.id);
-                        pending.retainAll(EvolutionSelection.resolve(clickRoute, comp, pending));
-                        playClick(0.7F);
-                        return true;
-                    }
-                    // 可加点：加入暂存（仅暂存，点击“确认加点”才生效）
-                    if (canUn(comp, node)) {
-                        pending.add(node.id);
-                        playClick(1.0F);
-                        return true;
-                    }
+            if (tree.contains(mx, my)) {
+                for (EvolutionNode node : ordered) {
+                    Box hit = nodeCard(node);
+                    if (hit.contains(mx, my)) { select(node); return true; }
                 }
-            }
-            if (inTreeArea(mouseX, mouseY)) {
-                dragging = true;
-                dragStartMX = mouseX;
-                dragStartMY = mouseY;
-                dragStartPX = panX;
-                dragStartPY = panY;
+                draggingTree = true; dragY = my; dragScroll = treeScroll;
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(mx, my, button);
     }
-
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dx, double dy) {
-        if (dragging && button == 0) {
-            panX = dragStartPX + (mouseX - dragStartMX);
-            panY = dragStartPY + (mouseY - dragStartMY);
-            clampPan();
-            return true;
+    private void startThumbDrag(Box thumb, double my, boolean detail) {
+        draggingThumb = !detail; draggingDetailsThumb = detail;
+        boolean onThumb = my >= thumb.y && my < thumb.bottom();
+        thumbGrabOffset = onThumb ? my - thumb.y : thumb.h / 2.0;
+        if (!onThumb) moveThumb(my, detail);
+    }
+    private void moveThumb(double my, boolean detail) {
+        Box box = detail ? detailBody : tree;
+        int contentHeight = detail ? detailContentHeight : treeContentHeight;
+        Box thumb = scrollbarThumb(box, detail ? detailScroll : treeScroll, contentHeight);
+        double scroll = (my - box.y - 2 - thumbGrabOffset) / Math.max(1, box.h - 4 - thumb.h) * Math.max(0, contentHeight - box.h);
+        if (detail) detailScroll = scroll; else treeScroll = scroll;
+        clampScroll();
+    }
+    @Override public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
+        if (button == 0 && (draggingThumb || draggingDetailsThumb)) { moveThumb(my, draggingDetailsThumb); return true; }
+        if (button == 0 && draggingTree) { treeScroll = dragScroll + dragY - my; clampScroll(); return true; }
+        return super.mouseDragged(mx, my, button, dx, dy);
+    }
+    @Override public boolean mouseReleased(double mx, double my, int button) {
+        if (button == 0 && (draggingTree || draggingThumb || draggingDetailsThumb)) {
+            draggingTree = draggingThumb = draggingDetailsThumb = false; return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dx, dy);
+        return super.mouseReleased(mx, my, button);
     }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == 0 && dragging) {
-            dragging = false;
-            return true;
+    @Override public boolean mouseScrolled(double mx, double my, double amount) {
+        if (tree.contains(mx, my) || overScrollbar(tree, scrollbarThumb(tree, treeScroll, treeContentHeight), mx, my)) {
+            treeScroll -= amount * 24; clampScroll(); return true;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
-        if (inTreeArea(mouseX, mouseY)) {
-            zoomAt(mouseX, mouseY, zoom + amount * ZOOM_STEP);
-            return true;
+        if (details.contains(mx, my) || overScrollbar(detailBody, scrollbarThumb(detailBody, detailScroll, detailContentHeight), mx, my)) {
+            detailScroll -= amount * 22; clampScroll(); return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, amount);
+        return super.mouseScrolled(mx, my, amount);
     }
-
-    private static void sendString(Identifier packet, String value) {
-        PacketByteBuf buf = PacketByteBufs.create();
-        buf.writeString(value);
-        ClientPlayNetworking.send(packet, buf);
-    }
-
-    /** 提交全部待确认节点：一次性批量发送（服务端限频一次、按序逐个解锁），播放获得经验“叮”声，再清空暂存。 */
-    private void commitPending() {
-        EvolutionComponent comp = getComp();
-        if (pending.isEmpty() || comp == null || comp.isJobChanging()) return;
-        List<String> ordered = EvolutionSelection.resolve(route(), comp, pending);
-        pending.clear();
-        if (ordered.isEmpty()) return;
-        PacketByteBuf buf = PacketByteBufs.create();
-        buf.writeInt(ordered.size());
-        for (String id : ordered) {
-            buf.writeString(id);
+    @Override public boolean keyPressed(int key, int scanCode, int modifiers) {
+        if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) { buySelected(); return true; }
+        if (key == GLFW.GLFW_KEY_HOME) { treeScroll = 0; return true; }
+        if (key == GLFW.GLFW_KEY_END) { treeScroll = treeContentHeight; clampScroll(); return true; }
+        if (key == GLFW.GLFW_KEY_TAB && !ordered.isEmpty()) {
+            int current = Math.max(0, ordered.indexOf(selected())), direction = (modifiers & GLFW.GLFW_MOD_SHIFT) != 0 ? -1 : 1;
+            EvolutionNode next = ordered.get(Math.floorMod(current + direction, ordered.size()));
+            select(next); treeScroll = rowTops.getOrDefault(next.col, 8) + nodeSize(next) / 2 + 4 - tree.h / 2.0; clampScroll(); return true;
         }
-        ClientPlayNetworking.send(SscAddonNetworking.PACKET_EVO_UNLOCK_BATCH, buf);
-        PlayerEntity p = MinecraftClient.getInstance().player;
-        if (p != null) {
-            p.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
-        }
+        return super.keyPressed(key, scanCode, modifiers);
     }
-
-    private void playClick(float pitch) {
-        PlayerEntity p = MinecraftClient.getInstance().player;
-        if (p != null) p.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.4F, pitch);
-    }
-
-    @Override
-    public void close() {
-        MinecraftClient.getInstance().setScreen(this.parent);
-    }
-
-    @Override
-    public boolean shouldPause() {
-        return false;
-    }
+    @Override public void close() { MinecraftClient.getInstance().setScreen(parent); }
+    @Override public boolean shouldPause() { return false; }
 }

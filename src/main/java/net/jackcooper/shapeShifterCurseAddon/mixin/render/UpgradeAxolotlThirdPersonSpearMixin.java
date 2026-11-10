@@ -3,12 +3,9 @@ package net.jackcooper.shapeShifterCurseAddon.mixin.render;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.feature.HeldItemFeatureRenderer;
-import net.minecraft.client.render.model.json.ModelTransformationMode;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.Arm;
-import net.minecraft.util.math.RotationAxis;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.client.UpgradeAxolotlSpearRenderState;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -24,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * <p>重定向 {@code HeldItemFeatureRenderer.render} 里的 {@code entity.getMainHandStack()}：
  * 蓄力中返回带 {@code CustomModelData=1} 的水矛（恒定 3D）。覆盖左/右利手（该调用在两种利手分支各出现一次，
  * 只有实际利手那支执行）与<b>空手</b>情况（返回非空水矛使渲染分支不被 isEmpty 跳过）。
- * 举矛过肩姿势由 {@code UpgradeAxolotlSpearArmPoseMixin}(getArmPose→THROW_SPEAR) 提供。多人下对被追踪的
+ * 举矛过肩姿势由 {@code UpgradeAxolotlSpearChargeArmMixin} 同步形态骨骼和原版手持物挂点。多人下对被追踪的
  * 蓄力玩家同样生效（蓄力状态已广播给追踪端）。</p>
  */
 @Mixin(HeldItemFeatureRenderer.class)
@@ -46,24 +43,7 @@ public class UpgradeAxolotlThirdPersonSpearMixin {
 		return original.call(entity);
 	}
 
-	// 蓄力期把主手渲染的水矛「举起过肩」（第三人称纯渲染抬矛蓄力效果；数值可实机微调）
-	@Inject(method = "renderItem", at = @At("HEAD"), require = 0)
-	private void ssc_addon$raiseTpPush(LivingEntity entity, ItemStack stack, ModelTransformationMode mode, Arm arm,
-			MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
-		if (arm == entity.getMainArm() && UpgradeAxolotlSpearRenderState.isCharging(entity.getUuid())) {
-			matrices.push();
-			// 轻微后仰增强蓄力感（举矛过肩由 THROW_SPEAR 手臂姿势负责，避免把矛推离手心）
-			matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-10.0F));
-		}
-	}
-
-	@Inject(method = "renderItem", at = @At("RETURN"), require = 0)
-	private void ssc_addon$raiseTpPop(LivingEntity entity, ItemStack stack, ModelTransformationMode mode, Arm arm,
-			MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
-		if (arm == entity.getMainArm() && UpgradeAxolotlSpearRenderState.isCharging(entity.getUuid())) {
-			matrices.pop();
-		}
-	}
+	// 物品沿已同步的手臂挂点渲染；不要在模型原点额外旋转，否则握点会偏离手心。
 
 	/**
 	 * 血雾 / 真隐身期间隐藏玩家手持物品（主手 + 副手）。（原 MistFormHeldItemMixin 合并至此；同为 HeldItemFeatureRenderer 目标，行为不变。）

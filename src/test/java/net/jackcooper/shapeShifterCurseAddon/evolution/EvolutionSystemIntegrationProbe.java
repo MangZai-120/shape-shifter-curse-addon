@@ -145,9 +145,6 @@ public final class EvolutionSystemIntegrationProbe {
 
     private static void prerequisitesAndSelections() throws Exception {
         EvolutionScreen screen = allocate(EvolutionScreen.class);
-        var pendingField = EvolutionScreen.class.getDeclaredField("pending");
-        pendingField.setAccessible(true);
-        pendingField.set(screen, new LinkedHashSet<String>());
         Method client = EvolutionScreen.class.getDeclaredMethod("preMet", EvolutionComponent.class, EvolutionNode.class);
         client.setAccessible(true);
         for (EvolutionRoute route : EvolutionRegistry.INSTANCE.all().values()) {

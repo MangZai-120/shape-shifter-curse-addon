@@ -758,6 +758,39 @@ tasks.register('evolutionSystemIntegrationTest', JavaExec) {
 }
 check.dependsOn evolutionSystemIntegrationTest
 
+tasks.register('evolutionTreePlanTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.client.evolution.EvolutionTreePlanTest'
+}
+check.dependsOn evolutionTreePlanTest
+
+tasks.register('evolutionUiClientTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoVisualTest'
+    workingDir = layout.buildDirectory.dir('evolution-ui/client').get().asFile
+    maxHeapSize = '3G'
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'neomagic.clientProbe', 'net.jackcooper.shapeShifterCurseAddon.client.evolution.EvolutionUiClientProbe'
+    systemProperty 'neomagic.assets', new File(gradle.gradleUserHomeDir, 'caches/fabric-loom/assets').absolutePath
+    systemProperty 'fabric.remapClasspathFile', new File(project.projectDir, '.gradle/loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        delete new File(workingDir, 'evolution-ui-result.json')
+        def cp = new File(workingDir, 'classpath.txt')
+        cp.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', cp.absolutePath
+    }
+    doLast {
+        def report = new File(workingDir, 'evolution-ui-result.json')
+        if (!report.isFile() || new groovy.json.JsonSlurper().parse(report).passed != true) {
+            throw new GradleException('Evolution UI client did not produce a passing result; inspect its log.')
+        }
+    }
+}
+
 tasks.register('spiderJumpAnimationTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
