@@ -86,6 +86,7 @@ public final class ParticleIntegrationProbe {
         };
         tick.invoke(manager, emitter, emitChildren);
         if (((ThreadLocal<?>) source.get(null)).get() != null) throw new AssertionError("Emitter ownership leaked beyond its tick");
+        checkMistOwnership(unsafe, manager, tick, caster, owner);
         var draw = Arrays.stream(ParticleManager.class.getDeclaredMethods())
                 .filter(m -> m.getName().contains("ssca$drawWithOpacity") && m.getParameterCount() == 5
                         && m.getParameterTypes()[4] == Operation.class).findFirst().orElseThrow();
@@ -99,7 +100,7 @@ public final class ParticleIntegrationProbe {
         child.visibility = 0.5f;
         if (child.ssca$cameraVisibility(new Camera(), 0.5f) != 0.5f)
             throw new AssertionError("Visibility override not dispatched through OwnedDecoration");
-        for (float v : new float[]{0, 0.025f, 0.1f, 0.5f, 1}) {
+        for (float v : new float[]{0, 0.025f, 0.1f, 0.2f, 0.5f, 0.8f, 1}) {
             child.visibility = v;
             buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR_LIGHT);
             draw.invoke(manager, child, buffer, new Camera(), 0.5f, geometry);
@@ -117,6 +118,121 @@ public final class ParticleIntegrationProbe {
         System.out.println("Particle integration passed: server packet hook, nested action scope, emitter ownership scope, billboard inheritance, real vertex alpha and restoration; iris="
                 + mods.isModLoaded("iris") + ", async=" + mods.isModLoaded("asyncparticles")
                 + ", core=" + mods.isModLoaded("particle_core") + ". No OpenGL test.");
+    }
+
+    /** Exercise the real skill owner and manager tagging hook, not just manually assigned metadata. */
+    private static void checkMistOwnership(sun.misc.Unsafe unsafe, ParticleManager manager,
+                                           java.lang.reflect.Method tick,
+                                           net.minecraft.server.network.ServerPlayerEntity caster,
+                                           UUID owner) throws Exception {
+        caster.setUuid(owner);
+        var power = unsafe.allocateInstance(net.jackcooper.shapeShifterCurseAddon.power.MistFormAbilityPower.class);
+        var entityField = io.github.apace100.apoli.power.Power.class.getDeclaredField("entity");
+        entityField.setAccessible(true);
+        entityField.set(power, caster);
+        var visualOwner = power.getClass().getDeclaredMethod("visualOwner");
+        visualOwner.setAccessible(true);
+        if (!owner.equals(visualOwner.invoke(power)))
+            throw new AssertionError("Mist tick lost its caster outside an Apoli decoration scope");
+
+        // A headless client supplies only the identity needed by tag(); no world/window/GL is created.
+        var clientClass = net.minecraft.client.MinecraftClient.class;
+        var singleton = Arrays.stream(clientClass.getDeclaredFields())
+                .filter(f -> f.getType() == clientClass && java.lang.reflect.Modifier.isStatic(f.getModifiers()))
+                .findFirst().orElseThrow();
+        singleton.setAccessible(true);
+        Object previousClient = singleton.get(null);
+        var client = (net.minecraft.client.MinecraftClient) unsafe.allocateInstance(clientClass);
+        client.player = (net.minecraft.client.network.ClientPlayerEntity) unsafe.allocateInstance(
+                net.minecraft.client.network.ClientPlayerEntity.class);
+        client.player.setUuid(owner);
+        var options = clientClass.getDeclaredField("options");
+        options.setAccessible(true);
+        options.set(client, unsafe.allocateInstance(net.minecraft.client.option.GameOptions.class));
+        client.options.setPerspective(net.minecraft.client.option.Perspective.FIRST_PERSON);
+        var tagHook = Arrays.stream(ParticleManager.class.getDeclaredMethods())
+                .filter(m -> m.getName().contains("ssca$tag") && m.getParameterCount() == 2
+                        && m.getParameterTypes()[0] == Particle.class).findFirst().orElseThrow();
+        tagHook.setAccessible(true);
+        try {
+            singleton.set(null, client);
+            for (Class<?> kind : new Class<?>[]{CloudParticle.class, CampfireSmokeParticle.class,
+                    RedDustParticle.class, ExplosionLargeParticle.class}) {
+                var own = (Particle) unsafe.allocateInstance(kind);
+                var foreign = (Particle) unsafe.allocateInstance(kind);
+                var ordinary = (Particle) unsafe.allocateInstance(kind);
+                FirstPersonParticles.emit(owner, () -> invokeTag(tagHook, manager, own));
+                FirstPersonParticles.emit(UUID.randomUUID(), () -> invokeTag(tagHook, manager, foreign));
+                invokeTag(tagHook, manager, ordinary);
+                var metadata = (ParticleOwnership) own;
+                if (!owner.equals(metadata.ssca$getDecorationOwner())
+                        || metadata.ssca$isProjectileDecoration())
+                    throw new AssertionError("Mist particle was not recognized at manager insertion: " + kind);
+                if (((ParticleOwnership) foreign).ssca$getDecorationOwner() != null
+                        || ((ParticleOwnership) ordinary).ssca$getDecorationOwner() != null)
+                    throw new AssertionError("Mist scope affected another player's or an unowned particle: " + kind);
+                var descendant = (Particle) unsafe.allocateInstance(kind);
+                Operation<Void> createChild = ignored -> { invokeTag(tagHook, manager, descendant); return null; };
+                tick.invoke(manager, own, createChild);
+                if (!owner.equals(((ParticleOwnership) descendant).ssca$getDecorationOwner()))
+                    throw new AssertionError("Mist child did not inherit its actual parent's metadata: " + kind);
+                checkMistVisibility(client, own, foreign);
+            }
+            try {
+                FirstPersonParticles.emit(owner, () -> { throw new IllegalStateException("expected"); });
+            } catch (IllegalStateException expected) {
+                var afterFailure = (Particle) unsafe.allocateInstance(CloudParticle.class);
+                invokeTag(tagHook, manager, afterFailure);
+                if (((ParticleOwnership) afterFailure).ssca$getDecorationOwner() != null)
+                    throw new AssertionError("Failed mist emission leaked into unrelated particles");
+            }
+        } finally {
+            AsyncParticleCompatibility.end();
+            singleton.set(null, previousClient);
+        }
+        System.out.println("Mist ownership passed: caster outside action scope, four real particle classes, "
+                + "manager insertion, child inheritance, all four avoidance strengths, perspective/owner isolation and exception cleanup.");
+    }
+
+    private static void checkMistVisibility(net.minecraft.client.MinecraftClient client,
+                                            Particle own, Particle foreign) throws Exception {
+        var camera = new Camera();
+        var focus = Camera.class.getDeclaredField("focusedEntity");
+        focus.setAccessible(true);
+        focus.set(camera, client.player);
+        own.setMaxAge(20);
+        // Off the crosshair cone so the existing STANDARD sample lottery cannot mask the distance tiers.
+        own.setPos(8, 0, 0);
+        var previousX = Particle.class.getDeclaredField("prevPosX");
+        previousX.setAccessible(true);
+        previousX.setDouble(own, 8);
+        var decoration = (OwnedDecoration) own;
+        float[] visibility = new float[4];
+        for (ParticleAvoidance.Strength strength : ParticleAvoidance.Strength.values()) {
+            AsyncParticleCompatibility.snapshotStrength(strength);
+            visibility[strength.ordinal()] = decoration.ssca$cameraVisibility(camera, .5f);
+            if (((OwnedDecoration) foreign).ssca$cameraVisibility(camera, .5f) != 1)
+                throw new AssertionError("Another player's mist was faded by " + strength);
+        }
+        if (visibility[0] != 1 || visibility[1] != 1 || visibility[2] < 0 || visibility[2] >= 1
+                || visibility[3] < 0 || visibility[3] > visibility[2])
+            throw new AssertionError("Mist does not follow the normal 0/4/10/16-block settings: "
+                    + Arrays.toString(visibility));
+        client.options.setPerspective(net.minecraft.client.option.Perspective.THIRD_PERSON_BACK);
+        if (decoration.ssca$cameraVisibility(camera, .5f) != 1)
+            throw new AssertionError("Third-person mist must stay fully visible");
+        client.options.setPerspective(net.minecraft.client.option.Perspective.FIRST_PERSON);
+        focus.set(camera, null);
+        if (decoration.ssca$cameraVisibility(camera, .5f) != 1)
+            throw new AssertionError("A camera focused on someone else must keep the mist visible");
+    }
+
+    private static void invokeTag(java.lang.reflect.Method hook, ParticleManager manager, Particle particle) {
+        try {
+            hook.invoke(manager, particle, null);
+        } catch (ReflectiveOperationException failure) {
+            throw new AssertionError("Actual particle-manager tagging hook failed", failure);
+        }
     }
 
     private static void checkAsyncCompatibility(sun.misc.Unsafe unsafe, UUID owner, Particle emitter) throws Exception {

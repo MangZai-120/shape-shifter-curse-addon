@@ -27,7 +27,6 @@ import net.onixary.shapeShifterCurseFabric.additional_power.BatBlockAttachPower;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
 import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCastManager;
-import net.jackcooper.shapeShifterCurseAddon.network.DecorationParticleScope;
 import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals;
 import net.jackcooper.shapeShifterCurseAddon.network.visual.recipes.MistFormRecipes;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
@@ -225,12 +224,12 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 		double cy = entity.getY() + entity.getHeight() * 0.5;
 		double cz = entity.getZ();
 		// 进入雾化：浓密雾团（CLOUD 主体 + 灰烟点缀），明显可见的化雾爆发
-		ParticleUtils.spawnParticles(serverWorld, ParticleTypes.CLOUD,
+		ParticleUtils.spawnDecorationParticles(serverWorld,entity, ParticleTypes.CLOUD,
 				cx, cy, cz, 80, 0.5, 0.7, 0.5, 0.04);
-		ParticleUtils.spawnParticles(serverWorld, ParticleTypes.CAMPFIRE_COSY_SMOKE,
+		ParticleUtils.spawnDecorationParticles(serverWorld,entity, ParticleTypes.CAMPFIRE_COSY_SMOKE,
 				cx, cy, cz, 50, 0.45, 0.7, 0.45, 0.02);
 		// 红色血雾点缀
-		ParticleUtils.spawnParticles(serverWorld, BLOOD_DUST,
+		ParticleUtils.spawnDecorationParticles(serverWorld,entity, BLOOD_DUST,
 				cx, cy, cz, 30, 0.5, 0.7, 0.5, 0.0);
 		serverWorld.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
 				SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0f, 0.8f);
@@ -254,7 +253,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 		setFlightExempt(false);
 
 		if (withEffect && entity.getWorld() instanceof ServerWorld serverWorld) {
-			ParticleUtils.spawnParticles(serverWorld, ParticleTypes.CAMPFIRE_COSY_SMOKE,
+			ParticleUtils.spawnDecorationParticles(serverWorld,entity, ParticleTypes.CAMPFIRE_COSY_SMOKE,
 					entity.getX(), entity.getY() + entity.getHeight() * 0.5, entity.getZ(),
 					25, 0.4, 0.6, 0.4, 0.02);
 			serverWorld.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
@@ -295,14 +294,14 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 					.onSkillHit(serverPlayer, hitTargets);
 		}
 		// 爆破粒子与音效
-		ParticleUtils.spawnParticles(serverWorld, ParticleTypes.EXPLOSION,
+		ParticleUtils.spawnDecorationParticles(serverWorld,entity, ParticleTypes.EXPLOSION,
 				entity.getX(), entity.getY() + entity.getHeight() * 0.5, entity.getZ(),
 				8, 1.0, 1.0, 1.0, 0.0);
-		ParticleUtils.spawnParticles(serverWorld, ParticleTypes.CAMPFIRE_COSY_SMOKE,
+		ParticleUtils.spawnDecorationParticles(serverWorld,entity, ParticleTypes.CAMPFIRE_COSY_SMOKE,
 				entity.getX(), entity.getY() + entity.getHeight() * 0.5, entity.getZ(),
 				60, aoeRadius() * 0.5, 0.8, aoeRadius() * 0.5, 0.05);
 		// 血雾红色尘埃：集中起爆点 + 大速度 → 突然向外快速扩散
-		ParticleUtils.spawnParticles(serverWorld, BLOOD_DUST,
+		ParticleUtils.spawnDecorationParticles(serverWorld,entity, BLOOD_DUST,
 				entity.getX(), entity.getY() + entity.getHeight() * 0.5, entity.getZ(),
 				50, 0.1, 0.1, 0.1, 0.7);
 		serverWorld.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
@@ -343,11 +342,11 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 			var origin = entity.getPos();
 			MistFormRecipes.charge(elapsed,duration,height,0,entity.getRandom()::nextDouble,
 					(particle,x,y,z,count,dx,dy,dz,speed,decoration,projectile) ->
-							ParticleUtils.spawnParticles(sw,particle,origin.x+x,origin.y+y,origin.z+z,count,dx,dy,dz,speed));
+							ParticleUtils.spawnDecorationParticles(sw,entity,particle,origin.x+x,origin.y+y,origin.z+z,count,dx,dy,dz,speed));
 			return;
 		}
 		if (chargeVisualFirstAge < 0) chargeVisualFirstAge = (int)(elapsed + (elapsed & 1));
-		UUID owner = scopedVisualOwner(); int flags = scopeFlags(owner);
+		UUID owner = visualOwner(); int flags = 1;
 		if (chargeVisualParameters == null || chargeVisualParameters[0] != duration
 				|| chargeVisualParameters[1] != height || chargeVisualParameters[2] != flags
 				|| chargeVisualParameters[3] != chargeVisualFirstAge)
@@ -360,12 +359,10 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 		if (visualId == null) visualId = UUID.nameUUIDFromBytes((entity.getUuid()+"/"+powerIdentifier()).getBytes(StandardCharsets.UTF_8));
 		return visualId;
 	}
-	private UUID scopedVisualOwner() {
-		var owner = DecorationParticleScope.isProtected() ? null : DecorationParticleScope.owner();
-		return owner == null ? null : owner.getUuid();
-	}
-	private static int scopeFlags(UUID owner) {
-		return owner == null ? 0 : 1 | (DecorationParticleScope.isProjectileScope() ? 2 : 0);
+	private UUID visualOwner() {
+		// onUse/tick do not inherit an Apoli decoration action scope. The power's
+		// entity owns every phase, including client-sampled ambient and charge particles.
+		return entity.getUuid();
 	}
 	private void stopMistVisuals() {
 		if (entity != null && !entity.getWorld().isClient && visualId != null) {
@@ -379,10 +376,10 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 		if (!Double.isFinite(height) || height < 0 || height > 65532) {
 			var origin = entity.getPos();
 			MistFormRecipes.ambient(height,0,(particle,x,y,z,count,dx,dy,dz,speed,decoration,projectile) ->
-					ParticleUtils.spawnParticles(world,particle,origin.x+x,origin.y+y,origin.z+z,count,dx,dy,dz,speed));
+					ParticleUtils.spawnDecorationParticles(world,entity,particle,origin.x+x,origin.y+y,origin.z+z,count,dx,dy,dz,speed));
 			return;
 		}
-		UUID id = mistVisualId(), owner = scopedVisualOwner(); int flags = scopeFlags(owner);
+		UUID id = mistVisualId(), owner = visualOwner(); int flags = 1;
 		ParametricVisuals.stop(id,ParametricVisuals.Kind.MIST_FORM_CHARGE);
 		if (ambientVisualEpoch == Long.MIN_VALUE) ambientVisualEpoch = world.getTime();
 		if (ambientVisualParameters == null || ambientVisualParameters[0] != height || ambientVisualParameters[1] != flags)
