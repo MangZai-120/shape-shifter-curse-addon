@@ -12,7 +12,7 @@ public final class EvolutionTreePlanTest {
         checks++;
         if (!value) throw new AssertionError(message);
     }
-    private static void boundary(EvolutionTreePlan plan, Set<String> unlocked, Set<String> row, int total) {
+    private static void boundary(EvolutionTreePlan plan, Set<String> unlocked, Set<String> row, long total) {
         var lines = plan.boundaries(unlocked);
         check(lines.size() == 1, "one shared boundary: " + lines);
         check(new HashSet<>(lines.get(0).nodes()).equals(row), "correct frontier row: " + lines);
@@ -44,6 +44,8 @@ public final class EvolutionTreePlanTest {
                 n("paid", 1, 1, 2, "base"), new EvolutionTreePlan.Node("sp", 2, 1, 0, true, List.of("paid"))));
         boundary(automatic, Set.of("base"), Set.of("paid"), 2);
         check(automatic.boundaries(Set.of("base", "paid")).isEmpty(), "level-gated automatic forms do not create point purchases");
+        var expensive = new EvolutionTreePlan(List.of(n("first", 0, 0, 1_500_000_000), n("second", 1, 0, 1_500_000_000, "first")));
+        boundary(expensive, Set.of("first"), Set.of("second"), 3_000_000_000L);
         System.out.println("EVOLUTION_TREE_PLAN_PASS checks=" + checks);
     }
 }

@@ -28,6 +28,8 @@ public class EvolutionScreen extends Screen {
     private List<EvolutionNode> ordered = List.of();
     private final Map<Integer, Integer> rowTops = new HashMap<>();
     private String selectedId, waitingId;
+    private static int nextRequest;
+    private int waitingRequest;
     private long waitingSince;
     private boolean opened, draggingTree, draggingThumb, draggingDetailsThumb;
     private double dragY, dragScroll, treeScroll, detailScroll, thumbGrabOffset;
@@ -52,10 +54,10 @@ public class EvolutionScreen extends Screen {
     private EvolutionRoute route() {
         EvolutionComponent comp = component();
         if (comp != null && comp.getRoute() != null && !comp.getRoute().isEmpty())
-            return EvolutionRegistry.INSTANCE.getRoute(comp.getRoute());
+            return EvolutionRegistry.CLIENT.getRoute(comp.getRoute());
         if (client == null || client.player == null) return null;
         var form = RegPlayerFormComponent.PLAYER_FORM.get(client.player).nowForm;
-        return form == null ? null : EvolutionRegistry.INSTANCE.getRouteByStartForm(form.getFormID());
+        return form == null ? null : EvolutionRegistry.CLIENT.getRouteByStartForm(form.getFormID());
     }
     @Override protected void init() {
         layout();
@@ -87,6 +89,7 @@ public class EvolutionScreen extends Screen {
     private void refreshRoute() {
         EvolutionRoute current = route();
         if (current == displayedRoute) return;
+        waitingId = null;
         displayedRoute = current;
         ordered = current == null ? List.of() : current.nodes.stream()
                 .sorted(Comparator.comparingInt((EvolutionNode n) -> n.col).thenComparingInt(n -> n.row)).toList();
@@ -187,6 +190,15 @@ public class EvolutionScreen extends Screen {
             waitingId = null;
             if (client.player != null) client.player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, .5f, 1f);
         } else if (Util.getMeasuringTimeMs() - waitingSince > 3000) waitingId = null;
+    }
+    public void onPurchaseResult(int request, int status) {
+        if (waitingId == null || waitingRequest != request) return;
+        waitingId = null;
+        if (client == null || client.player == null) return;
+        if (status == 0) client.player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, .5f, 1f);
+        else client.player.sendMessage(Text.translatable(status == 1
+                ? "evolution.my_addon.purchase.throttled" : status == 2
+                ? "evolution.my_addon.purchase.route_changed" : "evolution.my_addon.purchase.rejected"), true);
     }
     @Override public void render(DrawContext ctx, int mx, int my, float delta) {
         layout();
@@ -297,7 +309,7 @@ public class EvolutionScreen extends Screen {
             y = Math.max(y, nodeCard(node).bottom() + 11);
         }
         if (left == Integer.MAX_VALUE || y < tree.y + 5 || y + 5 >= tree.bottom()) return;
-        String value = Integer.toString(boundary.cumulativeCost());
+        String value = Long.toString(boundary.cumulativeCost());
         boolean leftSide = boundary.nodes().size() == 1 && (left + right) / 2 < tree.x + tree.w / 2;
         left = Math.max(tree.x + 3 + (leftSide ? textRenderer.getWidth(value) + 3 : 0), left);
         right = Math.min(tree.right() - 9 - (leftSide ? 0 : textRenderer.getWidth(value) + 3), right);
@@ -401,12 +413,21 @@ public class EvolutionScreen extends Screen {
         EvolutionComponent comp = component();
         EvolutionNode node = selected();
         if (!canBuy(comp, node)) return;
-        PacketByteBuf buffer = PacketByteBufs.create();
-        boolean chooseRoute = selectingRoute(comp, node);
-        buffer.writeString(chooseRoute ? displayedRoute.routeId : node.id);
-        ClientPlayNetworking.send(chooseRoute ? SscAddonNetworking.PACKET_EVO_SELECT_ROUTE : SscAddonNetworking.PACKET_EVO_UNLOCK, buffer);
         waitingId = node.id;
         waitingSince = Util.getMeasuringTimeMs();
+        PacketByteBuf buffer = PacketByteBufs.create();
+        if (ClientPlayNetworking.canSend(SscAddonNetworking.PACKET_EVO_PURCHASE)) {
+            waitingRequest = ++nextRequest;
+            buffer.writeVarInt(waitingRequest);
+            buffer.writeString(displayedRoute.routeId);
+            buffer.writeString(node.id);
+            buffer.writeVarInt(node.cost);
+            ClientPlayNetworking.send(SscAddonNetworking.PACKET_EVO_PURCHASE, buffer);
+        } else {
+            boolean chooseRoute = selectingRoute(comp, node);
+            buffer.writeString(chooseRoute ? displayedRoute.routeId : node.id);
+            ClientPlayNetworking.send(chooseRoute ? SscAddonNetworking.PACKET_EVO_SELECT_ROUTE : SscAddonNetworking.PACKET_EVO_UNLOCK, buffer);
+        }
         clickSound();
     }
     private void clickSound() { if (client != null && client.player != null) client.player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), .35f, 1f); }

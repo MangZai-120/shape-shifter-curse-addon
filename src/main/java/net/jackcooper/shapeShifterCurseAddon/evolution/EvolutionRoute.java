@@ -27,7 +27,7 @@ public class EvolutionRoute {
     /** 进入该路线对应的形态 id（如「进化使魔」）；可空。 */
     public final Identifier startForm;
     /** 发放升级点的经验等级里程碑（升序）。 */
-    public final int[] levelMilestones;
+    private final int[] levelMilestones;
     /** 自动解锁分支节点的经验等级（<=0 = 关闭）。 */
     public final int autoBranchLevel;
     /** 全部节点（保持 JSON 声明顺序）。 */
@@ -49,7 +49,7 @@ public class EvolutionRoute {
             this.id = id;
             this.displayNameKey = displayNameKey;
             this.spForm = spForm;
-            this.requiresNodes = requiresNodes == null ? List.of() : requiresNodes;
+            this.requiresNodes = requiresNodes == null ? List.of() : List.copyOf(requiresNodes);
         }
     }
 
@@ -60,10 +60,10 @@ public class EvolutionRoute {
         this.enabled = enabled;
         this.displayNameKey = displayNameKey;
         this.startForm = startForm;
-        this.levelMilestones = levelMilestones;
+        this.levelMilestones = levelMilestones.clone();
         this.autoBranchLevel = autoBranchLevel;
-        this.nodes = nodes;
-        this.branches = branches;
+        this.nodes = List.copyOf(nodes);
+        this.branches = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(branches));
         this.baseNodeId = baseNodeId;
         this.byId = new LinkedHashMap<>();
         for (EvolutionNode n : nodes) {
@@ -107,12 +107,15 @@ public class EvolutionRoute {
     }
 
     public static EvolutionRoute fromJson(String routeId, JsonObject o) {
+        if (routeId == null || routeId.isBlank() || routeId.length() > 256
+                || routeId.contains("/") || Identifier.tryParse("ssc_addon:" + routeId) == null)
+            throw new IllegalArgumentException("Invalid route id: " + routeId);
         boolean enabled = !o.has("enabled") || o.get("enabled").getAsBoolean();
         String displayNameKey = o.has("display_name") ? o.get("display_name").getAsString()
                 : "evolution.my_addon." + routeId + ".name";
         Identifier startForm = o.has("start_form") ? net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration
                 .canonical(Identifier.tryParse(o.get("start_form").getAsString())) : null;
-        int autoBranchLevel = o.has("auto_branch_level") ? o.get("auto_branch_level").getAsInt() : -1;
+        int autoBranchLevel = o.has("auto_branch_level") ? EvolutionNode.readInt(o.get("auto_branch_level")) : -1;
         int[] milestones = parseIntArray(o, "level_milestones");
 
         List<EvolutionNode> nodes = new ArrayList<>();
@@ -165,19 +168,27 @@ public class EvolutionRoute {
     }
 
     private void validate() {
-        if (nodes.isEmpty()) throw new IllegalArgumentException("Route has no nodes: " + routeId);
+        if (nodes.isEmpty() || nodes.size() > 256) throw new IllegalArgumentException("Route must have 1..256 nodes: " + routeId);
         java.util.Set<String> ids = new java.util.HashSet<>();
         for (EvolutionNode node : nodes) {
-            if (node.id.isBlank() || !ids.add(node.id) || node.cost < 0) {
+            if (node.id.isBlank() || node.id.length() > 256 || !ids.add(node.id) || node.cost < 0
+                    || (node.autoUnlock && node.cost != 0)) {
                 throw new IllegalArgumentException("Invalid or duplicate node: " + node.id);
             }
             if (!node.branch.isEmpty() && !branches.containsKey(node.branch)) {
                 throw new IllegalArgumentException("Unknown branch: " + node.branch);
             }
+            if (node.col < -1024 || node.col > 1024 || node.row < -1024 || node.row > 1024)
+                throw new IllegalArgumentException("Node layout coordinates out of range: " + node.id);
         }
         if (baseNodeId != null && !ids.contains(baseNodeId)) {
             throw new IllegalArgumentException("Unknown base_node: " + baseNodeId);
         }
+        EvolutionNode base = getNode(baseNodeId);
+        if (base != null && (!base.autoUnlock || base.cost != 0 || !base.prereqs.isEmpty() || !base.branch.isEmpty()))
+            throw new IllegalArgumentException("base_node must be free, automatic and without prerequisites or branch");
+        if (autoBranchLevel > EvolutionComponent.EVO_LEVEL_CAP)
+            throw new IllegalArgumentException("auto_branch_level exceeds evolution level cap");
         for (EvolutionNode node : nodes) {
             for (String prerequisite : node.prereqs) {
                 if (!ids.contains(prerequisite)) throw new IllegalArgumentException("Unknown prerequisite: " + prerequisite);
@@ -193,7 +204,8 @@ public class EvolutionRoute {
         for (EvolutionNode node : nodes) validateAcyclic(node.id, new java.util.HashSet<>(), complete);
         int previous = 0;
         for (int milestone : levelMilestones) {
-            if (milestone <= previous) throw new IllegalArgumentException("Milestones must be positive and increasing");
+            if (milestone <= previous || milestone > EvolutionComponent.EVO_LEVEL_CAP)
+                throw new IllegalArgumentException("Milestones must increase within 1.." + EvolutionComponent.EVO_LEVEL_CAP);
             previous = milestone;
         }
     }
@@ -212,7 +224,7 @@ public class EvolutionRoute {
             JsonArray arr = o.getAsJsonArray(key);
             int[] out = new int[arr.size()];
             for (int i = 0; i < arr.size(); i++) {
-                out[i] = arr.get(i).getAsInt();
+                out[i] = EvolutionNode.readInt(arr.get(i));
             }
             return out;
         }

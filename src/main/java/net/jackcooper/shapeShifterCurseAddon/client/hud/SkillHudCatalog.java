@@ -9,7 +9,7 @@ import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaPrimary;
 import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaTeleport;
 import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
-import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionTalents;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -126,8 +126,9 @@ public final class SkillHudCatalog {
     private static final List<PerkSkill> PERK_SKILLS = List.of(
             perk("perk_tidal_pull", "perk_axolotl_sp_tidal_pull_charge", RegPerks.T_Axolotl3PerkTree, RegPerks.P_AxolotlTidalPull,
                     FormIdentifiers.AXOLOTL_SP, FormIdentifiers.AXOLOTL_FLUORESCENT, FormIdentifiers.AXOLOTL_ALING),
-            perk("perk_tidal_pull", "perk_upgrade_axolotl_tidal_pull_charge", RegPerks.T_Axolotl3PerkTree, RegPerks.P_AxolotlTidalPull,
-                    FormIdentifiers.UPGRADE_AXOLOTL),
+            new PerkSkill(skill("perk_tidal_pull", "perk_upgrade_axolotl_tidal_pull_charge", null, 0,
+                    AxolotlTree.NODE_VORTEX_GUIDE, false), RegPerks.T_Axolotl3PerkTree, RegPerks.P_AxolotlTidalPull,
+                    List.of(FormIdentifiers.UPGRADE_AXOLOTL)),
             perk("perk_frost_dive_frost_spirit", "perk_snow_fox_sp_frost_dive", RegPerks.T_SnowFox3PerkTree, RegPerks.P_SnowFoxFrostDive,
                     FormIdentifiers.SNOW_FOX_SP, FormIdentifiers.SNOW_FOX_FROSTSPINE),
             perk("perk_soul_recall_netherjudge", "perk_anubis_wolf_sp_soul_recall", RegPerks.T_AnubisWolf3PerkTree, RegPerks.P_AnubisWolfSoulRecall,
@@ -309,11 +310,10 @@ public final class SkillHudCatalog {
         return FORMS.getOrDefault(resourcePath, List.of());
     }
 
-    public static boolean isUnlocked(Skill skill, PlayerEntity player) {
+    public static boolean isAvailable(Skill skill, PlayerEntity player) {
         if (skill.talent() == null) return true;
-        var evolution = RegEvolutionComponent.EVOLUTION.get(player);
-        if ("spark".equals(skill.talent()) && evolution.isUnlocked("fire_ring")) return false;
-        return evolution.isUnlocked(skill.talent());
+        if ("spark".equals(skill.talent()) && EvolutionTalents.isActive(player, "fire_ring")) return false;
+        return EvolutionTalents.isActive(player, skill.talent());
     }
 
         // forHud 按 (formId, tick) 缓存：结果只在形态/解锁/护符变化时变，每 tick 重算一次、帧间直读。
@@ -335,12 +335,12 @@ public final class SkillHudCatalog {
                 String key = form.toString();
                 var cached = HUD_CACHE.get(key);
                 if (cached != null) return cached;
-                List<Skill> unlocked = forForm(form, player).stream().filter(skill -> isUnlocked(skill, player)).toList();
+                List<Skill> unlocked = forForm(form, player).stream().filter(skill -> isAvailable(skill, player)).toList();
                 var holder = PowerHolderComponent.KEY.get(player);
                 var component = RegPlayerFormComponent.PLAYER_FORM.get(player);
                 Identifier canonicalForm = FormIdMigration.canonical(form);
                 var learned = PERK_SKILLS.stream().filter(perk -> perk.isLearned(canonicalForm, component, holder))
-                        .map(perk -> perk.forForm(canonicalForm)).toList();
+                        .map(perk -> perk.forForm(canonicalForm)).filter(skill -> isAvailable(skill, player)).toList();
                 var value = SkillHudLayout.select(unlocked, Skill::primary, SkillHudCatalog::extraEligible, learned);
                 HUD_CACHE.put(key, value);
                 return value;

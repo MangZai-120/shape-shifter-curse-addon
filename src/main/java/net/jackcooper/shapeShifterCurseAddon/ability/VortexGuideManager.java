@@ -9,7 +9,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
-import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionTalents;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 
 import java.util.Map;
@@ -48,7 +48,7 @@ public final class VortexGuideManager {
 		if (CHANNELING.containsKey(player.getUuid())) return; // 引导中不可重入
 		if (!FormUtils.isUpgradeAxolotl(player)) return;
 		// 节点门控：未解锁「涡流引导」不触发
-		if (!RegEvolutionComponent.EVOLUTION.get(player).isUnlocked(AxolotlTree.NODE_VORTEX_GUIDE)) return;
+		if (!EvolutionTalents.isActive(player, AxolotlTree.NODE_VORTEX_GUIDE)) return;
 		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.begin(player, SKILL_ID)) return; // CD 中
 
 		CHANNELING.put(player.getUuid(), new ChannelState(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID)));
@@ -63,7 +63,8 @@ public final class VortexGuideManager {
 	public static void tick(ServerPlayerEntity player) {
 		ChannelState t = CHANNELING.get(player.getUuid());
 		if (t == null) return;
-		if (player.isDead() || !FormUtils.isUpgradeAxolotl(player)) {
+		if (player.isDead() || !FormUtils.isUpgradeAxolotl(player)
+                || !EvolutionTalents.isActive(player, AxolotlTree.NODE_VORTEX_GUIDE)) {
 			cancel(player); // 死亡 / 形态丢失 → 中断，不进 CD
 			return;
 		}

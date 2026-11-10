@@ -26,8 +26,8 @@ public final class AxolotlTree {
     }
 
     /** 全部节点（数据来自 JSON；未加载时返回空列表）。 */
-    public static List<EvolutionNode> nodes() {
-        EvolutionRoute r = EvolutionRegistry.INSTANCE.getRoute(ROUTE_ID);
+    public static List<EvolutionNode> nodes(net.minecraft.world.World world) {
+        EvolutionRoute r = EvolutionRegistry.forWorld(world).getRoute(ROUTE_ID);
         return r == null ? List.of() : r.nodes;
     }
 }

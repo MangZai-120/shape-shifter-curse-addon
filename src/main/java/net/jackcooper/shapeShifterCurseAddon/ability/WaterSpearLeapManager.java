@@ -11,7 +11,7 @@ import net.jackcooper.shapeShifterCurseAddon.compat.UpgradeAxolotlPerks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.jackcooper.shapeShifterCurseAddon.entity.ThrownWaterSpearEntity;
 import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
-import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionTalents;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 
@@ -64,7 +64,7 @@ public final class WaterSpearLeapManager {
 		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return;
 		if (STATES.containsKey(player.getUuid())) return; // 施法中不可重入
 		if (!FormUtils.isUpgradeAxolotl(player)) return;
-		if (!RegEvolutionComponent.EVOLUTION.get(player).isUnlocked(AxolotlTree.NODE_WATER_SPEAR)) return;
+		if (!EvolutionTalents.isActive(player, AxolotlTree.NODE_WATER_SPEAR)) return;
 		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return; // CD 中
 		int airCost = airCostForHud(player);
 		if (player.getAir() < airCost) return; // 湿润度不足
@@ -107,7 +107,8 @@ public final class WaterSpearLeapManager {
 	public static void tick(ServerPlayerEntity player) {
 		LeapState s = STATES.get(player.getUuid());
 		if (s == null) return;
-		if (player.isDead() || !FormUtils.isUpgradeAxolotl(player)) {
+		if (player.isDead() || !FormUtils.isUpgradeAxolotl(player)
+                || !EvolutionTalents.isActive(player, AxolotlTree.NODE_WATER_SPEAR)) {
 			cancel(player); // 死亡 / 形态丢失 → 取消并归还物品、恢复重力
 			return;
 		}

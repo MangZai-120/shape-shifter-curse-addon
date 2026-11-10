@@ -37,7 +37,7 @@ public final class EvolutionBookHook {
             IForm currentForm = RegPlayerFormComponent.PLAYER_FORM.get(client.player).nowForm;
             Identifier formId = (currentForm == null) ? null : currentForm.getFormID();
             // 当前形态是某条「已开放」进化路线的起点形态时，显示进化加点入口
-            EvolutionRoute route = EvolutionRegistry.INSTANCE.getRouteByStartForm(formId);
+            EvolutionRoute route = EvolutionRegistry.CLIENT.getRouteByStartForm(formId);
             if (route == null || !route.enabled) {
                 return;
             }

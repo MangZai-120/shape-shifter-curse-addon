@@ -2,7 +2,7 @@ package net.jackcooper.shapeShifterCurseAddon.compat;
 
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import io.github.apace100.apoli.power.PowerTypeRegistry;
-import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionTalents;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffects;
@@ -63,7 +63,7 @@ public final class UpgradeFamiliarFoxPerks {
     }
 
     public static boolean canUsePotionCharm(PlayerEntity player) {
-        return isSupported(FormUtils.getPlayerForm(player)) && RegEvolutionComponent.EVOLUTION.get(player).isUnlocked("alchemy");
+        return isSupported(FormUtils.getPlayerForm(player)) && EvolutionTalents.isActive(player, "alchemy");
     }
 
     public static Identifier mapped(String nativePerkPath) {

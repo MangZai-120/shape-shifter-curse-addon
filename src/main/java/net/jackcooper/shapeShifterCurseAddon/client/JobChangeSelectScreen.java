@@ -62,7 +62,7 @@ public class JobChangeSelectScreen extends Screen {
         forms.clear();
         List<EvolutionRoute> ordered = new ArrayList<>();
         java.util.Map<String, EvolutionRoute> remain = new java.util.TreeMap<>();
-        for (EvolutionRoute route : EvolutionRegistry.INSTANCE.all().values()) {
+        for (EvolutionRoute route : EvolutionRegistry.CLIENT.all().values()) {
             if (!route.enabled || route.startForm == null) {
                 continue;
             }

@@ -152,6 +152,9 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_EVO_SELECT_BRANCH = new Identifier("my_addon", "evo_select_branch");
 	/** C2S：玩家请求解锁一个天赋节点。payload: String nodeId */
 	public static final Identifier PACKET_EVO_UNLOCK = new Identifier("my_addon", "evo_unlock");
+	/** Route-bound purchase and correlated authoritative response (request id, status). */
+	public static final Identifier PACKET_EVO_PURCHASE = new Identifier("my_addon", "evo_purchase");
+	public static final Identifier PACKET_EVO_RESULT = new Identifier("my_addon", "evo_result");
 	/** C2S：一次性提交多个待确认节点（按点击顺序），服务端限频一次后顺序逐个解锁。payload: int count + count*String */
 	public static final Identifier PACKET_EVO_UNLOCK_BATCH = new Identifier("my_addon", "evo_unlock_batch");
 	/** C2S：开局选形态界面选定一个 SSCA 进化形态、直接走 SSCA 路线进化。payload: String formId */
@@ -179,6 +182,7 @@ public class SscAddonNetworking {
 	/** 同一玩家两次白名单操作的最小间隔，单位：millis。 */
 	private static final long WHITELIST_PACKET_MIN_INTERVAL_MS = 100L;
 	private static final FormRepairBudget FORM_REPAIR_BUDGET = new FormRepairBudget();
+	private static final EvolutionRequestBudget EVOLUTION_BUDGET = new EvolutionRequestBudget();
 
 	/**
 	 * 检查玩家是否在限频阈值内 spam。返回 true 表示该包应被丢弃。
@@ -676,10 +680,18 @@ public class SscAddonNetworking {
 		});
 
 		// ===== SSCA 进化加点系统 =====
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_EVO_PURCHASE, (server, player, handler, buf, responseSender) -> {
+			int request = buf.readVarInt();
+			String route = buf.readString(256);
+			String node = buf.readString(256);
+			int expectedCost = buf.readVarInt();
+			server.execute(() -> handleEvolutionPurchase(player, handler, server.getTicks(), request, route, node, expectedCost));
+		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_EVO_SELECT_ROUTE, (server, player, handler, buf, responseSender) -> {
 			String routeId = buf.readString(256);
 			server.execute(() -> {
-				if (isRateLimited(player)) return;
+				if (player.networkHandler != handler || player.isRemoved()
+                        || !EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.SELECT, server.getTicks())) return;
 				EvolutionManager.selectRoute(player, routeId);
 			});
 		});
@@ -687,7 +699,8 @@ public class SscAddonNetworking {
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_EVO_SELECT_BRANCH, (server, player, handler, buf, responseSender) -> {
 			String branchId = buf.readString(256);
 			server.execute(() -> {
-				if (isRateLimited(player)) return;
+				if (player.networkHandler != handler || player.isRemoved()
+                        || !EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.SELECT, server.getTicks())) return;
 				EvolutionManager.selectBranch(player, branchId);
 			});
 		});
@@ -695,17 +708,20 @@ public class SscAddonNetworking {
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_EVO_UNLOCK, (server, player, handler, buf, responseSender) -> {
 			String nodeId = buf.readString(256);
 			server.execute(() -> {
-				if (isRateLimited(player)) return;
+				if (player.networkHandler != handler || player.isRemoved()
+                        || !EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.PURCHASE, server.getTicks())) return;
 				EvolutionManager.tryUnlock(player, nodeId);
 			});
 		});
 
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_EVO_UNLOCK_BATCH, (server, player, handler, buf, responseSender) -> {
-			int count = Math.max(0, Math.min(64, buf.readInt()));
+			int count = buf.readInt();
+            if (count < 0 || count > 64) return;
 			java.util.List<String> ids = new java.util.ArrayList<>(count);
 			for (int i = 0; i < count; i++) ids.add(buf.readString(256));
 			server.execute(() -> {
-				if (isRateLimited(player)) return;
+				if (player.networkHandler != handler || player.isRemoved()
+                        || !EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.PURCHASE, server.getTicks())) return;
 				EvolutionManager.tryUnlockBatch(player, ids);
 			});
 		});
@@ -714,7 +730,8 @@ public class SscAddonNetworking {
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SSCA_START_ROUTE, (server, player, handler, buf, responseSender) -> {
 			String formId = buf.readString(256);
 			server.execute(() -> {
-				if (isRateLimited(player)) return;
+				if (player.networkHandler != handler || player.isRemoved()
+                        || !EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.START, server.getTicks())) return;
 				EvolutionManager.startSscaRoute(player, formId);
 			});
 		});
@@ -723,7 +740,8 @@ public class SscAddonNetworking {
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_JOB_CHANGE_CONFIRM, (server, player, handler, buf, responseSender) -> {
 			String formId = buf.readString(256);
 			server.execute(() -> {
-				if (isRateLimited(player)) return;
+				if (player.networkHandler != handler || player.isRemoved()
+                        || !EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.START, server.getTicks())) return;
 				EvolutionManager.startJobChange(player, formId);
 			});
 		});
@@ -731,7 +749,8 @@ public class SscAddonNetworking {
 		// 打开进化加点界面：检测旧存档并迁移到内置 exp 机制
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_EVO_OPEN, (server, player, handler, buf, responseSender) -> {
 			server.execute(() -> {
-				if (isRateLimited(player)) return;
+				if (player.networkHandler != handler || player.isRemoved()
+                        || !EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.OPEN, server.getTicks())) return;
 				EvolutionManager.checkAndMigrate(player);
 			});
 		});
@@ -781,6 +800,30 @@ public class SscAddonNetworking {
 	}
 
     /** 加入和成功重载数据包都发送最新路线，在线客机无需重连。 */
+    public static void handleEvolutionPurchase(ServerPlayerEntity player,
+            net.minecraft.server.network.ServerPlayNetworkHandler handler, int tick,
+            int request, String routeId, String nodeId, int expectedCost) {
+        if (player.networkHandler != handler || player.isRemoved()) return;
+        int status;
+        var comp = net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent.EVOLUTION.get(player);
+        var route = net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.INSTANCE.getRoute(routeId);
+        var node = route == null ? null : route.getNode(nodeId);
+        if (!EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.PURCHASE, tick)) status = 1;
+        else if (route == null || comp.isOnSscaRoute() && !comp.getRoute().equals(routeId)) status = 2;
+        else if (node != null && node.cost != expectedCost) status = 2;
+        else if (!comp.isOnSscaRoute() && nodeId.equals(route.getBaseNodeId())) {
+            EvolutionManager.selectRoute(player, routeId);
+            status = comp.getRoute().equals(routeId) && comp.isUnlocked(nodeId) ? 0 : 3;
+        } else status = EvolutionManager.tryUnlock(player, nodeId) ? 0 : 3;
+        if (status > 1) net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent.EVOLUTION.sync(player);
+        if (ServerPlayNetworking.canSend(player, PACKET_EVO_RESULT)) {
+            PacketByteBuf result = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+            result.writeVarInt(request);
+            result.writeByte(status);
+            ServerPlayNetworking.send(player, PACKET_EVO_RESULT, result);
+        }
+    }
+
     public static void registerEvolutionRouteSync() {
         JsonSnapshotSync.register();
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.register(

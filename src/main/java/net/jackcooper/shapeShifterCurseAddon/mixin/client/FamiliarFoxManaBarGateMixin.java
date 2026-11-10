@@ -6,7 +6,7 @@ import net.onixary.shapeShifterCurseFabric.mana.FamiliarFoxManaBar;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.evolution.FamiliarFoxTree;
-import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionTalents;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -35,7 +35,7 @@ public class FamiliarFoxManaBarGateMixin {
         if (form == null || !FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(form.getFormID())) {
             return;
         }
-        if (!RegEvolutionComponent.EVOLUTION.get(mc.player).isUnlocked(FamiliarFoxTree.NODE_MANA)) {
+        if (!EvolutionTalents.isActive(mc.player, FamiliarFoxTree.NODE_MANA)) {
             ci.cancel();
         }
     }

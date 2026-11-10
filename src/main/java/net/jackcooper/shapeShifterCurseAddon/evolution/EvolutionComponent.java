@@ -14,8 +14,7 @@ import java.util.UUID;
 /**
  * SSCA 进化加点系统 - 玩家进化数据组件（服务端权威，自动同步到客户端）。
  *
- * 框架阶段：仅承载最小数据骨架（路线 / 分支 / EXP / 已解锁节点 / 全解锁标记），
- * 具体的天赋节点、解锁规则、EXP 消耗曲线等业务逻辑「待后续设计」，由 JSON 数据驱动填充。
+ * 保存进度、迁移版本和转职支付；规则由 EvolutionManager 与路线 JSON 解释。
  *
  * 设计依据：见 附属根目录 SSCA进化加点系统_设计文档.txt
  */
@@ -41,6 +40,7 @@ public class EvolutionComponent implements AutoSyncedComponent {
     /** 转职事务跨存档保留；演出回调和超时计数只属于当前玩家实体。 */
     private String jobChangeId = "";
     private String jobChangeRoute = "";
+    private String jobChangeForm = "";
     private int jobChangeLevel = 0;
     private ItemStack jobChangePayment = ItemStack.EMPTY;
     private transient boolean jobChanging = false;
@@ -72,7 +72,7 @@ public class EvolutionComponent implements AutoSyncedComponent {
     }
 
     public String getRouteStartForm() { return routeStartForm; }
-    public void setRouteStartForm(String id) { routeStartForm = id; }
+    public void setRouteStartForm(String id) { routeStartForm = id == null ? "" : id; }
 
     public String getBranch() {
         return branch == null ? "" : branch;
@@ -93,14 +93,14 @@ public class EvolutionComponent implements AutoSyncedComponent {
     }
 
     public void addExp(int delta) {
-        setExp(this.exp + delta);
+        setExp(saturatingAdd(this.exp, delta));
     }
 
     /**
      * 当前进化等级：由累积经验换算（每 2 点原版经验 = 1 点进化 exp，即用 exp/2 走原版经验曲线），封顶 {@link #EVO_LEVEL_CAP}。
      */
     public int getEvoLevel() {
-        return Math.min(EVO_LEVEL_CAP, expToLevel(this.exp / 2));
+        return exp >= levelToTotalExp(EVO_LEVEL_CAP) * 2 ? EVO_LEVEL_CAP : expToLevel(this.exp / 2);
     }
 
     /** 原版经验曲线：从 level 升到 level+1 需要的经验（1.20.1，与 PlayerEntity#getNextLevelExperience 一致）。 */
@@ -112,11 +112,12 @@ public class EvolutionComponent implements AutoSyncedComponent {
 
     /** 达到 level 级所需的累积经验总量（levelUpCost 前缀和）。 */
     public static int levelToTotalExp(int level) {
-        int total = 0;
+        long total = 0;
         for (int i = 0; i < level; i++) {
             total += levelUpCost(i);
+            if (total >= Integer.MAX_VALUE) return Integer.MAX_VALUE;
         }
-        return total;
+        return (int) total;
     }
 
     /** 累积经验总量换算成等级（levelToTotalExp 的反函数）。 */
@@ -141,12 +142,17 @@ public class EvolutionComponent implements AutoSyncedComponent {
     }
 
     public void addPoints(int delta) {
-        setPoints(this.points + delta);
+        setPoints(saturatingAdd(this.points, delta));
+    }
+
+    private static int saturatingAdd(int value, int delta) {
+        return (int) Math.max(0, Math.min(Integer.MAX_VALUE, (long) value + delta));
     }
 
     /** 尝试消耗点数，足够则扣除返回 true。 */
     public boolean spendPoints(int cost) {
-        if (cost <= 0) return true;
+        if (cost < 0) return false;
+        if (cost == 0) return true;
         if (this.points < cost) return false;
         this.points -= cost;
         return true;
@@ -158,7 +164,7 @@ public class EvolutionComponent implements AutoSyncedComponent {
     }
 
     public void markGrantedLevel(int level) {
-        grantedLevels.add(level);
+        if (level > 0 && level <= EVO_LEVEL_CAP) grantedLevels.add(level);
     }
 
     // ---------------- 进化形态驻留标志 ----------------
@@ -179,7 +185,7 @@ public class EvolutionComponent implements AutoSyncedComponent {
         this.unlockAll = unlockAll;
     }
 
-    /** 节点是否已解锁（全解锁标记开启时恒为 true）。 */
+    /** 解锁资格记录，含管理全解锁；实际生效请查询 {@link EvolutionTalents#isActive}。 */
     public boolean isUnlocked(String nodeId) {
         return unlockAll || (nodeId != null && unlockedNodes.contains(nodeId));
     }
@@ -213,13 +219,19 @@ public class EvolutionComponent implements AutoSyncedComponent {
 
     public String getJobChangeId() { return jobChangeId; }
     public String getJobChangeRoute() { return jobChangeRoute; }
+    public String getJobChangeForm() { return jobChangeForm; }
     public int getJobChangeLevel() { return jobChangeLevel; }
     public ItemStack getJobChangePayment() { return jobChangePayment.copy(); }
     public boolean isJobAnimationActive() { return jobChanging; }
 
     public void beginJobChange(String targetRoute, int targetLevel, ItemStack payment) {
+        beginJobChange(targetRoute, "", targetLevel, payment);
+    }
+
+    public void beginJobChange(String targetRoute, String targetForm, int targetLevel, ItemStack payment) {
         jobChangeId = UUID.randomUUID().toString();
         jobChangeRoute = targetRoute;
+        jobChangeForm = targetForm;
         jobChangeLevel = Math.max(0, Math.min(EVO_LEVEL_CAP, targetLevel));
         jobChangePayment = payment.copy();
         jobChanging = false;
@@ -231,6 +243,11 @@ public class EvolutionComponent implements AutoSyncedComponent {
         jobChangeTicks = duration;
     }
 
+    public void stopJobAnimation() {
+        jobChanging = false;
+        jobChangeTicks = 0;
+    }
+
     /** 回调被其他变身替换时也不能永久卡在转职状态。 */
     public boolean tickJobAnimation() {
         return jobChanging && --jobChangeTicks > 0;
@@ -239,6 +256,7 @@ public class EvolutionComponent implements AutoSyncedComponent {
     public void clearJobChange() {
         jobChangeId = "";
         jobChangeRoute = "";
+        jobChangeForm = "";
         jobChangeLevel = 0;
         jobChangePayment = ItemStack.EMPTY;
         jobChanging = false;
@@ -286,9 +304,9 @@ public class EvolutionComponent implements AutoSyncedComponent {
         this.routeStartForm = net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration
                 .canonical(nbt.getString("routeStartForm"));
         this.branch = nbt.getString("branch");
-        this.exp = nbt.getInt("exp");
+        setExp(nbt.getInt("exp"));
         this.unlockAll = nbt.getBoolean("unlockAll");
-        this.points = nbt.getInt("points");
+        setPoints(nbt.getInt("points"));
         this.unlockedNodes.clear();
         NbtList list = nbt.getList("unlocked", NbtElement.STRING_TYPE);
         for (int i = 0; i < list.size(); i++) {
@@ -296,14 +314,15 @@ public class EvolutionComponent implements AutoSyncedComponent {
         }
         this.grantedLevels.clear();
         for (int g : nbt.getIntArray("grantedLevels")) {
-            this.grantedLevels.add(g);
+            markGrantedLevel(g);
         }
         this.started = nbt.getBoolean("started");
         this.migrated = nbt.getBoolean("migrated");
         this.expMigrationVersion = nbt.getInt("expMigrationVersion");
-        this.lastTotalExp = nbt.contains("lastTotalExp") ? nbt.getInt("lastTotalExp") : -1;
+        this.lastTotalExp = nbt.contains("lastTotalExp") ? Math.max(-1, nbt.getInt("lastTotalExp")) : -1;
         this.jobChangeId = nbt.getString("jobChangeId");
         this.jobChangeRoute = nbt.getString("jobChangeRoute");
+        this.jobChangeForm = net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.canonical(nbt.getString("jobChangeForm"));
         this.jobChangeLevel = Math.max(0, Math.min(EVO_LEVEL_CAP, nbt.getInt("jobChangeLevel")));
         this.jobChangePayment = nbt.contains("jobChangePayment", NbtElement.COMPOUND_TYPE)
                 ? ItemStack.fromNbt(nbt.getCompound("jobChangePayment")) : ItemStack.EMPTY;
@@ -337,6 +356,7 @@ public class EvolutionComponent implements AutoSyncedComponent {
         if (isJobChanging()) {
             nbt.putString("jobChangeId", this.jobChangeId);
             nbt.putString("jobChangeRoute", this.jobChangeRoute);
+            nbt.putString("jobChangeForm", this.jobChangeForm);
             nbt.putInt("jobChangeLevel", this.jobChangeLevel);
             if (!jobChangePayment.isEmpty()) {
                 nbt.put("jobChangePayment", jobChangePayment.writeNbt(new NbtCompound()));
@@ -346,6 +366,7 @@ public class EvolutionComponent implements AutoSyncedComponent {
         } else {
             nbt.remove("jobChangeId");
             nbt.remove("jobChangeRoute");
+            nbt.remove("jobChangeForm");
             nbt.remove("jobChangeLevel");
             nbt.remove("jobChangePayment");
         }

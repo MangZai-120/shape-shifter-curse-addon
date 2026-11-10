@@ -7,7 +7,7 @@ public final class EvolutionTreePlan {
     public record Node(String id, int depth, int lane, int cost, boolean automatic, List<String> prerequisites) {
         public Node { prerequisites = List.copyOf(prerequisites); }
     }
-    public record Boundary(List<String> nodes, int cumulativeCost) { }
+    public record Boundary(List<String> nodes, long cumulativeCost) { }
     private final Map<String, Node> nodes = new LinkedHashMap<>();
 
     public EvolutionTreePlan(List<Node> source) {
@@ -45,8 +45,8 @@ public final class EvolutionTreePlan {
         if (!emitted.add(key)) return;
         Set<String> ancestors = new HashSet<>();
         for (String id : ids) collect(id, ancestors);
-        int total = ancestors.stream().map(nodes::get).filter(Objects::nonNull)
-                .filter(node -> !node.automatic()).mapToInt(Node::cost).sum();
+        long total = ancestors.stream().map(nodes::get).filter(Objects::nonNull)
+                .filter(node -> !node.automatic()).mapToLong(Node::cost).sum();
         if (total > 0) result.add(new Boundary(List.copyOf(ids), total));
     }
 

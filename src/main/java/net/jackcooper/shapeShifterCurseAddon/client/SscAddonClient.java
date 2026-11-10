@@ -193,7 +193,13 @@ public class SscAddonClient implements ClientModInitializer {
 		// 修复跨存档颜色变白：cloth-config 里的自定义颜色是全局存储，但服务端 PlayerSkinComponent 按存档独立。
 		// 进入新世界/服务器时，主动把本地 cloth-config 的颜色状态重发给当前服务端，避免新存档拿到默认白色。
 		// 用一个静态倒计时 + 单次注册的 tick 监听，避免多次 JOIN 累积监听器。
-		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+		ClientPlayConnectionEvents.INIT.register((handler, client) ->
+                net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.clearClient());
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            if (client.getNetworkHandler() == null || client.getNetworkHandler() == handler)
+                net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.clearClient();
+        });
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
 			joinResyncDelay = 20; // 约 1 秒，等待网络通道 & 玩家实体就绪
 		});
 		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(c -> {
@@ -222,6 +228,17 @@ public class SscAddonClient implements ClientModInitializer {
 		try { MancianimaCrosshairTracker.register(); } catch (Throwable t) { LOGGER.error("[SSC_ADDON] CrosshairTracker register failed", t); }
 		// 注册「SSCA 进化路线定义同步」接收器：服务端把 routes JSON 同步过来，供进化树 UI（多人）渲染。
 		ClientPlayNetworking.registerGlobalReceiver(
+                net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_EVO_RESULT,
+                (client, handler, buf, responseSender) -> {
+                    int request = buf.readVarInt();
+                    int status = buf.readUnsignedByte();
+                    client.execute(() -> {
+                        if (client.getNetworkHandler() == handler
+                                && client.currentScreen instanceof net.jackcooper.shapeShifterCurseAddon.client.evolution.EvolutionScreen screen)
+                            screen.onPurchaseResult(request, status);
+                    });
+                });
+		ClientPlayNetworking.registerGlobalReceiver(
 				net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_EVO_ROUTES_SYNC,
 				(client, handler, buf, responseSender) -> {
 					int count = buf.readInt();
@@ -234,7 +251,7 @@ public class SscAddonClient implements ClientModInitializer {
 					}
 					client.execute(() -> {
                         if (client.getNetworkHandler() == handler)
-                            net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.INSTANCE.applyClientSync(raw);
+                            net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.CLIENT.applyClientSync(raw);
                     });
 				});
 		// 注册「法术数值配置同步」接收器：服务端把 spells JSON 同步过来（多人环境客户端无 datapack），

@@ -17,6 +17,8 @@ import io.github.apace100.apoli.power.PowerTypeRegistry;
 import io.github.apace100.apoli.power.factory.PowerFactory;
 import io.github.apace100.calio.data.SerializableData;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionComponent;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionTestRoutes;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -36,6 +38,9 @@ import io.github.apace100.apoli.power.Power;
 public final class SkillHudIntegrationProbe {
     private static int checks;
     public static void run() throws Exception {
+        var routes = EvolutionTestRoutes.production();
+        EvolutionTestRoutes.loadServer(routes);
+        EvolutionRegistry.CLIENT.applyClientSync(routes);
         var f = sun.misc.Unsafe.class.getDeclaredField("theUnsafe"); f.setAccessible(true);
         var unsafe = (sun.misc.Unsafe) f.get(null);
         TestWorld server = (TestWorld) unsafe.allocateInstance(TestWorld.class);
@@ -93,7 +98,46 @@ public final class SkillHudIntegrationProbe {
         }
         dynamicCatalog(unsafe, client, registrations);
         perkCooldownParity(unsafe, server, client);
+        evolutionEligibility(unsafe, server, client, routes);
         System.out.println("Skill HUD Fabric integration: " + checks + " actual Mixin, NBT cooldown mirror, Perk unlock/revoke/form-switch and SSC/SSCA cooldown checks passed; live gameplay not tested.");
+    }
+
+    private static void evolutionEligibility(sun.misc.Unsafe unsafe, TestWorld server, TestWorld client,
+                                             Map<String, String> routes) throws Exception {
+        var form = EvolutionRegistry.CLIENT.getRoute("familiar_fox").startForm;
+        var player = player(unsafe, client, form);
+        var authority = player(unsafe, server, form);
+        player.evolution.setUnlockAll(false);
+        player.evolution.unlock("spark");
+        var skills = SkillHudCatalog.forForm(form, player);
+        var spark = skills.stream().filter(s -> "spark".equals(s.talent())).findFirst().orElseThrow();
+        var ring = skills.stream().filter(s -> "fire_ring".equals(s.talent())).findFirst().orElseThrow();
+        check(SkillHudCatalog.isAvailable(spark, player) && !SkillHudCatalog.isAvailable(ring, player), "HUD exposes acquired spark");
+        player.evolution.unlock("fire_ring");
+        check(!SkillHudCatalog.isAvailable(spark, player) && SkillHudCatalog.isAvailable(ring, player), "active fire ring replaces only the spark skill");
+        try {
+            EvolutionRegistry.CLIENT.applyClientSync(EvolutionTestRoutes.withoutNode(routes, "familiar_fox", "fire_ring"));
+            check(SkillHudCatalog.isAvailable(spark, player) && !SkillHudCatalog.isAvailable(ring, player), "paused ring restores the acquired spark skill");
+            check(SkillHudCatalog.isAvailable(ring, authority), "client mirror cannot change server talent eligibility");
+            EvolutionRegistry.clearClient();
+            check(entries(player).stream().noneMatch(e -> e.skill().talent() != null), "missing client routes hide every unavailable talent skill");
+            check(SkillHudCatalog.isAvailable(ring, authority), "disconnect mirror cleanup preserves authority");
+        } finally { EvolutionRegistry.CLIENT.applyClientSync(routes); }
+        check(entries(player).stream().anyMatch(e -> "fire_ring".equals(e.skill().talent())), "route synchronization restores the skill without new acquisition");
+        player.evolution.setUnlockAll(true);
+        player.form.nowForm = new NormalForm(new Identifier("my_addon", "axolotl_upgrade"));
+        check(!SkillHudCatalog.isAvailable(ring, player), "admin HUD follows the actual form");
+        var axolotl = player(unsafe, client, EvolutionRegistry.CLIENT.getRoute("axolotl").startForm);
+        var perkId = new Identifier("my_addon", "perk_upgrade_axolotl_tidal_pull_charge");
+        var tree = net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Axolotl3PerkTree;
+        axolotl.form.formPerkMap.put(tree, List.of(net.onixary.shapeShifterCurseFabric.perk.RegPerks.P_AxolotlTidalPull));
+        axolotl.powers.addPower(PowerTypeRegistry.get(perkId), new Identifier("test", "evolution"));
+        check(entries(axolotl).stream().anyMatch(e -> perkId.equals(e.skill().cooldown())), "purchased mapped Perk is visible while its talent is active");
+        try {
+            EvolutionRegistry.CLIENT.applyClientSync(EvolutionTestRoutes.withoutNode(routes, "axolotl", "vortex_guide"));
+            check(entries(axolotl).stream().noneMatch(e -> perkId.equals(e.skill().cooldown())), "paused talent hides its mapped Perk even with purchase and power retained");
+        } finally { EvolutionRegistry.CLIENT.applyClientSync(routes); }
+        check(entries(axolotl).stream().anyMatch(e -> perkId.equals(e.skill().cooldown())), "restoration automatically reveals the retained mapped Perk");
     }
 
     private static void perkCooldownParity(sun.misc.Unsafe unsafe, TestWorld server, TestWorld client) throws Exception {
@@ -307,6 +351,8 @@ public final class SkillHudIntegrationProbe {
         player.form.nowForm = new NormalForm(form);
         player.form.formPerkMap = new HashMap<>();
         player.evolution = new EvolutionComponent();
+        var route = EvolutionRegistry.forWorld(world).getRouteByStartForm(FormIdMigration.canonical(form));
+        if (route != null) player.evolution.setRoute(route.routeId);
         player.evolution.setUnlockAll(true);
         player.powers = new PowerHolderComponentImpl(player);
         player.components = ComponentContainer.Factory.builder(TestPlayer.class)

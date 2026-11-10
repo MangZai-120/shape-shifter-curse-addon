@@ -9,7 +9,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
-import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionTalents;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
@@ -102,7 +102,7 @@ public final class AxolotlWaterSpurtHandler {
 		WAS_SNEAKING.put(id, sneaking);
 
 		// 未解锁 water_spurt 节点：只更新状态、不触发任何冲刺
-		if (!RegEvolutionComponent.EVOLUTION.get(player).isUnlocked(AxolotlTree.NODE_WATER_SPURT)) {
+		if (!EvolutionTalents.isActive(player, AxolotlTree.NODE_WATER_SPURT)) {
 			return;
 		}
 

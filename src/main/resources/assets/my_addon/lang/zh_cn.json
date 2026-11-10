@@ -1,4 +1,9 @@
 {
+  "evolution.my_addon.purchase.throttled": "操作过快，请稍后再试。",
+  "evolution.my_addon.purchase.route_changed": "进化路线或节点价格已变化，请重新选择节点。",
+  "evolution.my_addon.purchase.rejected": "解锁条件已变化，进度已刷新，请检查点数和前置节点。",
+  "message.ssc_addon.evolution.reset.transforming": "玩家正在变身，请等演出结束后再重置进化进度。",
+  "message.ssc_addon.job_change.route_unavailable": "转职路线配置暂不可用，进度和宝珠已保留。恢复路线后会自动完成，管理员也可重置进化进度并退回宝珠。",
   "message.ssc_addon.network.update_client": "SSCA 客户端版本不兼容。请将客户端更新到 %s 或兼容的新版本（实体协议 %s）。",
   "message.ssc_addon.network.update_server": "SSCA 服务器版本不兼容。请将服务器更新到 %s 或兼容的新版本（实体协议 %s）。",
   "power.my_addon.form_spider_moon_weaver_spell_weave.name": "咒丝织法",

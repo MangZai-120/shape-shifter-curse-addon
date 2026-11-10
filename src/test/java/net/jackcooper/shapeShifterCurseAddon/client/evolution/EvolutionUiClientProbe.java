@@ -3,6 +3,16 @@ package net.jackcooper.shapeShifterCurseAddon.client.evolution;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.jackcooper.shapeShifterCurseAddon.evolution.*;
+import net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager;
+import net.jackcooper.shapeShifterCurseAddon.ability.VortexGuideManager;
+import net.jackcooper.shapeShifterCurseAddon.entity.ThrownWaterSpearEntity;
+import net.jackcooper.shapeShifterCurseAddon.power.ConditionalManaAttributePower;
+import io.github.apace100.apoli.component.PowerHolderComponent;
+import io.github.apace100.apoli.power.PowerTypeRegistry;
+import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.util.Identifier;
+import net.onixary.shapeShifterCurseFabric.additional_power.ChargePower;
+import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.util.ScreenshotRecorder;
@@ -24,6 +34,7 @@ import java.util.*;
 public final class EvolutionUiClientProbe {
     private static boolean starting, finished;
     private static volatile boolean prepared;
+    private static volatile boolean abilitiesChecked;
     private static volatile Throwable failure;
     private static int ticks, stage, wait, checks, beforePoints;
     private static EvolutionScreen screen;
@@ -77,7 +88,7 @@ public final class EvolutionUiClientProbe {
                 } else if (stage == 1) {
                     bounds(mc);
                     save(mc, "axolotl-paper-top.png");
-                    var node = EvolutionRegistry.INSTANCE.getRoute("axolotl").getNode("water_spear");
+                    var node = EvolutionRegistry.CLIENT.getRoute("axolotl").getNode("water_spear");
                     int size = coordinate("nodeSize", node), x = coordinate("cx", node);
                     Object tree = field("tree");
                     screen.mouseScrolled(box(tree, "x") + 12, box(tree, "y") + 12, -4);
@@ -85,9 +96,9 @@ public final class EvolutionUiClientProbe {
                     stage++;
                 } else if (stage == 2) {
                     save(mc, "axolotl-paper-scrolled.png");
-                    var node = EvolutionRegistry.INSTANCE.getRoute("axolotl").getNode("water_spear");
+                    var node = EvolutionRegistry.CLIENT.getRoute("axolotl").getNode("water_spear");
                     beforePoints = comp.getPoints();
-                    var other = EvolutionRegistry.INSTANCE.getRoute("axolotl").getNode("vortex_guide");
+                    var other = EvolutionRegistry.CLIENT.getRoute("axolotl").getNode("vortex_guide");
                     Object card = card(other);
                     screen.mouseClicked(box(card, "x") + box(card, "w") / 2.0, box(card, "bottom") - 4, 0);
                     check(Objects.equals(field("selectedId"), other.id), "node label inside the octagonal frame selects its ability");
@@ -155,19 +166,19 @@ public final class EvolutionUiClientProbe {
                     check(mc.getWindow().getWidth() == 2560 && mc.getWindow().getHeight() >= 1400 && mc.getWindow().getScaleFactor() == 5, "wide GUI5 scene matching supplied screenshots: " + mc.getWindow().getWidth() + "x" + mc.getWindow().getHeight() + " scale=" + mc.getWindow().getScaleFactor());
                     bounds(mc); save(mc, "familiar-paper-gui5-top.png");
                     dragShiftedScrollbar();
-                    var node = EvolutionRegistry.INSTANCE.getRoute("familiar_fox").getNode("mana_system");
+                    var node = EvolutionRegistry.CLIENT.getRoute("familiar_fox").getNode("mana_system");
                     center(node);
                     screen.mouseClicked(coordinate("cx", node), coordinate("cy", node), 0);
                     stage = 126;
                 } else if (stage == 126) {
                     bounds(mc); save(mc, "familiar-paper-gui5-mana-text.png");
-                    var node = EvolutionRegistry.INSTANCE.getRoute("familiar_fox").getNode("spark");
+                    var node = EvolutionRegistry.CLIENT.getRoute("familiar_fox").getNode("spark");
                     center(node);
                     screen.mouseClicked(coordinate("cx", node), coordinate("cy", node), 0);
                     stage = 121;
                 } else if (stage == 121) {
                     bounds(mc); save(mc, "familiar-paper-gui5-three-perks.png");
-                    var node = EvolutionRegistry.INSTANCE.getRoute("familiar_fox").getNode("buff_immunity");
+                    var node = EvolutionRegistry.CLIENT.getRoute("familiar_fox").getNode("buff_immunity");
                     screen.mouseClicked(coordinate("cx", node), coordinate("cy", node), 0);
                     stage = 127;
                 } else if (stage == 127) {
@@ -176,15 +187,67 @@ public final class EvolutionUiClientProbe {
                     stage = 122;
                 } else if (stage == 122) {
                     check(comp.getRoute().equals("axolotl"), "wide-screen axolotl fixture synced");
-                    screen = new EvolutionScreen(null); mc.setScreen(screen); stage++;
+                    screen = new EvolutionScreen(null); mc.setScreen(screen);
+                    check(net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.canSend(
+                            net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_EVO_PURCHASE), "correlated purchase protocol negotiated");
+                    beforePoints = comp.getPoints();
+                    var node = EvolutionRegistry.CLIENT.getNode("axolotl", "water_spear");
+                    center(node);
+                    screen.mouseClicked(coordinate("cx", node), coordinate("cy", node), 0);
+                    screen.keyPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER, 0, 0);
+                    stage++;
                 } else if (stage == 123) {
+                    check(comp.isUnlocked("water_spear") && comp.getPoints() == beforePoints - 1,
+                            "opening and purchasing in the same client frame both reach the server");
+                    check(field("waitingId") == null, "successful purchase clears the pending state");
                     bounds(mc); stage = 125;
                 } else if (stage == 125) {
                     save(mc, "axolotl-paper-gui5-top.png");
                     screen.keyPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_END, 0, 0); stage = 124;
-                } else {
+                } else if (stage == 124) {
                     branchVisible("axolotl", "branch_moon_ring");
                     save(mc, "axolotl-paper-gui5-branches.png");
+                    stage = 130;
+                    // Reproduce a stale client balance while using the actual purchase transport.
+                    mc.getServer().execute(() -> {
+                        var player = mc.getServer().getPlayerManager().getPlayerList().get(0);
+                        RegEvolutionComponent.EVOLUTION.get(player).setPoints(0);
+                        mc.execute(() -> {
+                            try {
+                                RegEvolutionComponent.EVOLUTION.get(mc.player).setPoints(1);
+                                var node = EvolutionRegistry.CLIENT.getNode("axolotl", "vortex_guide");
+                                center(node);
+                                screen.mouseClicked(coordinate("cx", node), coordinate("cy", node), 0);
+                                screen.keyPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER, 0, 0);
+                                check(field("waitingId") != null, "stale client sends a real purchase request");
+                                int request = (int) field("waitingRequest");
+                                screen.onPurchaseResult(request - 1, 3);
+                                check(field("waitingId") != null, "an old response cannot clear the current purchase");
+                            } catch (Throwable e) { fail(e); }
+                        });
+                    });
+                } else if (stage == 130) {
+                    check(comp.getPoints() == 0 && !comp.isUnlocked("vortex_guide") && field("waitingId") == null,
+                            "server denial refreshes balance and clears waiting before the three-second timeout");
+                    stage = 131;
+                    mc.getServer().execute(() -> {
+                        try {
+                            var player = mc.getServer().getPlayerManager().getPlayerList().get(0);
+                            abilityRevocation(player);
+                            effectiveTalentLifecycle(player);
+                            abilitiesChecked = true;
+                        }
+                        catch (Throwable e) { fail(e); }
+                    });
+                } else if (stage == 131 && abilitiesChecked) {
+                    check(EvolutionTalents.isActive(mc.player, "spark"), "actual client sees the synchronized active talent");
+                    var clientRoutes = EvolutionTestRoutes.production();
+                    try {
+                        EvolutionRegistry.clearClient();
+                        check(!EvolutionTalents.isActive(mc.player, "spark") && comp.isUnlocked("spark"),
+                                "actual client pauses eligibility without deleting synchronized acquisition");
+                    } finally { EvolutionRegistry.CLIENT.applyClientSync(clientRoutes); }
+                    check(EvolutionTalents.isActive(mc.player, "spark"), "actual client resumes after configuration returns");
                     Files.writeString(Path.of("evolution-ui-result.json"), "{\"passed\":true,\"checks\":" + checks + ",\"gui_scales\":[2,3,4,5],\"wide_resolution\":[" + mc.getWindow().getWidth() + "," + mc.getWindow().getHeight() + "],\"minimum_card_gap\":40,\"complete_labels_inside_inner_frame\":true,\"shifted_scrollbar_drag\":true,\"real_server_purchase\":true,\"png_sprites\":" + (EvolutionArtwork.ICONS.size() + EvolutionArtwork.SKIN.size()) + ",\"themed_backgrounds\":2,\"actual_icon_resolution\":64}");
                     finished = true;
                     System.out.println("EVOLUTION_UI_CLIENT_PASS checks=" + checks);
@@ -193,13 +256,133 @@ public final class EvolutionUiClientProbe {
             } catch (Throwable e) { fail(e); }
         });
     }
+    private static void effectiveTalentLifecycle(ServerPlayerEntity player) throws Exception {
+        var routes = EvolutionTestRoutes.production();
+        var comp = RegEvolutionComponent.EVOLUTION.get(player);
+        comp.unlock("water_spear");
+        comp.unlock("vortex_guide");
+        player.teleport(player.getServerWorld(), player.getX(), 80, player.getZ(), 0, -30);
+        player.setAir(player.getMaxAir());
+        WaterSpearLeapManager.onKeyPress(player);
+        check(WaterSpearLeapManager.isCharging(player.getUuid()), "spear starts before config removal");
+        int spentAir = player.getAir();
+        check(spentAir < player.getMaxAir(), "spear actually spends moisture at cast start");
+        try {
+            EvolutionTestRoutes.loadServer(Map.of());
+            WaterSpearLeapManager.tick(player);
+            check(!WaterSpearLeapManager.isCharging(player.getUuid()) && !player.hasNoGravity(), "missing route cancels charge and releases gravity without relying on a reload event");
+            check(player.getAir() == spentAir && comp.isUnlocked("water_spear"), "paused charge refunds no moisture and retains acquisition");
+            WaterSpearLeapManager.onKeyPress(player);
+            check(!WaterSpearLeapManager.isCharging(player.getUuid()) && player.getAir() == spentAir, "inactive talent cannot restart or consume resources");
+        } finally { EvolutionTestRoutes.loadServer(routes); }
+
+        VortexGuideManager.onKeyPress(player);
+        var channelField = VortexGuideManager.class.getDeclaredField("CHANNELING");
+        channelField.setAccessible(true);
+        Map<?, ?> channels = (Map<?, ?>) channelField.get(null);
+        check(channels.containsKey(player.getUuid()), "channel starts with its acquired talent");
+        try {
+            EvolutionTestRoutes.loadServer(EvolutionTestRoutes.withoutNode(routes, "axolotl", "vortex_guide"));
+            VortexGuideManager.tick(player);
+            check(!channels.containsKey(player.getUuid()) && !player.hasStatusEffect(StatusEffects.ABSORPTION), "missing node cancels the channel without a completion reward");
+        } finally { EvolutionTestRoutes.loadServer(routes); }
+        VortexGuideManager.onKeyPress(player);
+        for (int i = 0; i < 120 && channels.containsKey(player.getUuid()); i++) VortexGuideManager.tick(player);
+        var absorption = player.getStatusEffect(StatusEffects.ABSORPTION);
+        check(absorption != null, "restored talent can finish and grant timed absorption");
+        int duration = absorption.getDuration();
+
+        WaterSpearLeapManager.onKeyPress(player);
+        check(WaterSpearLeapManager.isCharging(player.getUuid()), "restored talent starts a fresh spear charge");
+        for (int i = 0; i < 100 && WaterSpearLeapManager.isCharging(player.getUuid()); i++) WaterSpearLeapManager.tick(player);
+        var spears = player.getServerWorld().getEntitiesByClass(ThrownWaterSpearEntity.class,
+                player.getBoundingBox().expand(5), spear -> spear.getOwner() == player);
+        check(spears.size() == 1, "completed charge spawned one actual spear");
+        var spear = spears.get(0);
+        try {
+            EvolutionTestRoutes.loadServer(Map.of());
+            VortexGuideManager.tick(player);
+            WaterSpearLeapManager.tick(player);
+            spear.tick();
+            check(!spear.isRemoved(), "already launched spear continues after talent pause");
+            check(player.getStatusEffect(StatusEffects.ABSORPTION) == absorption && absorption.getDuration() == duration,
+                    "already granted timed absorption remains independent of talent eligibility");
+            for (int i = 0; i < 65 && !spear.isRemoved(); i++) spear.tick();
+            check(spear.isRemoved(), "launched spear still expires by its normal distance or lifetime");
+        } finally { EvolutionTestRoutes.loadServer(routes); }
+
+        var holder = PowerHolderComponent.KEY.get(player);
+        var chargeType = PowerTypeRegistry.get(new Identifier("my_addon", "perk_upgrade_axolotl_tidal_pull_charge"));
+        var source = new Identifier("test", "effective_talent_lifecycle");
+        holder.addPower(chargeType, source);
+        // Manual fixture grants must publish the holder before SSC sends per-power charge NBT.
+        PowerHolderComponent.sync(player);
+        var charge = (ChargePower) holder.getPower(chargeType);
+        player.setAir(player.getMaxAir());
+        charge.onUse();
+        check(charge.isCharging(), "actual mapped SSC Perk begins charging");
+        int perkAir = player.getAir();
+        try {
+            EvolutionTestRoutes.loadServer(EvolutionTestRoutes.withoutNode(routes, "axolotl", "vortex_guide"));
+            charge.tick();
+            check(!charge.isCharging() && charge.ChargeTime == 0, "mapped SSC charge cancels when its talent becomes inactive");
+            check(player.getAir() == perkAir && perkAir < player.getMaxAir(), "mapped Perk cancellation preserves the spent start cost");
+        } finally { EvolutionTestRoutes.loadServer(routes); }
+        charge.onUse();
+        check(charge.isCharging(), "restored talent allows the retained mapped SSC Perk to charge again");
+        holder.removePower(chargeType, source);
+        PowerHolderComponent.sync(player);
+
+        configure(player, "familiar_fox");
+        comp.setUnlockAll(true);
+        var boosts = PowerHolderComponent.KEY.get(player).getPowers().stream()
+                .filter(power -> power instanceof ConditionalManaAttributePower).toList();
+        check(!boosts.isEmpty(), "actual evolved familiar form grants conditional mana powers");
+        boosts.forEach(io.github.apace100.apoli.power.Power::tick);
+        var mana = ManaUtils.getManaComponent(player);
+        check(Math.abs(mana.getMaxMana() - 103) < 0.001, "actual form retains all bonuses including spark with fire ring");
+        mana.setMana(103);
+        try {
+            EvolutionTestRoutes.loadServer(Map.of());
+            boosts.forEach(io.github.apace100.apoli.power.Power::tick);
+            mana.tick();
+            check(Math.abs(mana.getMaxMana() - 33) < 0.001 && Math.abs(mana.getMana() - 33) < 0.001,
+                    "pause withdraws continuous bonuses and SSC clamps excess current mana");
+        } finally { EvolutionTestRoutes.loadServer(routes); }
+        boosts.forEach(io.github.apace100.apoli.power.Power::tick);
+        check(Math.abs(mana.getMaxMana() - 103) < 0.001 && Math.abs(mana.getMana() - 33) < 0.001,
+                "restoring maximum mana does not refund truncated current mana");
+        EvolutionManager.sync(player);
+    }
+
+    private static void abilityRevocation(ServerPlayerEntity player) throws Exception {
+        var comp = RegEvolutionComponent.EVOLUTION.get(player);
+        comp.unlock("water_spear");
+        player.setAir(player.getMaxAir());
+        net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager.onKeyPress(player);
+        check(net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager.isCharging(player.getUuid()),
+                "real player starts the spear charge before talent revocation");
+        comp.clearUnlockedNodes();
+        net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager.tick(player);
+        check(!net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager.isCharging(player.getUuid()) && !player.hasNoGravity(),
+                "revoking the spear talent cancels the charge and releases gravity");
+        comp.unlock("vortex_guide");
+        net.jackcooper.shapeShifterCurseAddon.ability.VortexGuideManager.onKeyPress(player);
+        var channels = net.jackcooper.shapeShifterCurseAddon.ability.VortexGuideManager.class.getDeclaredField("CHANNELING");
+        channels.setAccessible(true);
+        Map<?, ?> states = (Map<?, ?>) channels.get(null);
+        check(states.containsKey(player.getUuid()), "real player starts the vortex channel before talent revocation");
+        comp.clearUnlockedNodes();
+        net.jackcooper.shapeShifterCurseAddon.ability.VortexGuideManager.tick(player);
+        check(!states.containsKey(player.getUuid()), "revoking the vortex talent stops healing and completion rewards");
+    }
     private static void center(EvolutionNode node) throws Exception {
         Object tree = field("tree");
         double delta = (coordinate("cy", node) - box(tree, "y") - box(tree, "h") / 2.0) / 24;
         screen.mouseScrolled(box(tree, "x") + 12, box(tree, "y") + 12, -delta);
     }
     private static void branchVisible(String routeId, String nodeId) throws Exception {
-        var node = EvolutionRegistry.INSTANCE.getRoute(routeId).getNode(nodeId);
+        var node = EvolutionRegistry.CLIENT.getRoute(routeId).getNode(nodeId);
         Object tree = field("tree"), card = card(node);
         check(box(card, "y") >= box(tree, "y") && box(card, "bottom") <= box(tree, "bottom"), "final form illustration, label and full double frame visible at scroll end: " + routeId);
     }
@@ -230,7 +413,7 @@ public final class EvolutionUiClientProbe {
     private static void artwork(MinecraftClient mc) throws Exception {
         for (String routeId : List.of("axolotl", "familiar_fox")) {
             check(EvolutionArtwork.hasSprite(routeId), "PNG portrait: " + routeId);
-            for (var node : EvolutionRegistry.INSTANCE.getRoute(routeId).nodes)
+            for (var node : EvolutionRegistry.CLIENT.getRoute(routeId).nodes)
                 check(EvolutionArtwork.hasSprite(node.id), "PNG mapped for node " + node.id);
         }
         Set<String> ids = new TreeSet<>(EvolutionArtwork.ICONS);
@@ -344,7 +527,7 @@ public final class EvolutionUiClientProbe {
         var failed = EvolutionInk.class.getDeclaredField("paperFailed"); failed.setAccessible(true);
         check(!(boolean)failed.get(null), "generated parchment texture loaded");
         check(EvolutionArtwork.loaded("node_frame") && EvolutionArtwork.loaded("scroll_track") && EvolutionArtwork.loaded("scroll_thumb") && EvolutionArtwork.loaded("scroll_grip"), "painted node frames and scrollbar with grip loaded");
-        var activeRoute = EvolutionRegistry.INSTANCE.getRoute(RegEvolutionComponent.EVOLUTION.get(mc.player).getRoute());
+        var activeRoute = EvolutionRegistry.CLIENT.getRoute(RegEvolutionComponent.EVOLUTION.get(mc.player).getRoute());
         Object activeCard = card(activeRoute.getNode((String)field("selectedId")));
         if (box(activeCard, "bottom") >= box(tree, "y") && box(activeCard, "y") <= box(tree, "bottom"))
             check(EvolutionArtwork.loaded("selected_frame"), "selection frame texture loaded when selected perk is in view");
@@ -354,7 +537,7 @@ public final class EvolutionUiClientProbe {
         spacing(mc);
     }
     private static void spacing(MinecraftClient mc) throws Exception {
-        var route = EvolutionRegistry.INSTANCE.getRoute(RegEvolutionComponent.EVOLUTION.get(mc.player).getRoute());
+        var route = EvolutionRegistry.CLIENT.getRoute(RegEvolutionComponent.EVOLUTION.get(mc.player).getRoute());
         Map<Integer, List<EvolutionNode>> rows = new TreeMap<>();
         for (var node : route.nodes) rows.computeIfAbsent(node.col, ignored -> new ArrayList<>()).add(node);
         String selected = (String)field("selectedId");

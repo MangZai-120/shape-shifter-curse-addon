@@ -66,7 +66,7 @@ public final class EvolutionSystemIntegrationProbe {
                 rawRoutes.put(route, new String(Objects.requireNonNull(input).readAllBytes(), StandardCharsets.UTF_8));
             }
         }
-        EvolutionRegistry.INSTANCE.applyClientSync(rawRoutes);
+        loadServerRoutes(rawRoutes);
         for (EvolutionRoute route : EvolutionRegistry.INSTANCE.all().values()) {
             RegPlayerForms.registerPlayerForm(new NormalForm(route.startForm));
         }
@@ -86,6 +86,10 @@ public final class EvolutionSystemIntegrationProbe {
         entryAndPaymentValidation();
         synchronization();
         failedReloadPreservesProgress();
+        auditBoundaryRegressions();
+        auditRegistryAndRequests();
+        jobReloadBoundaries();
+        EvolutionTalentsIntegrationProbe.run(rawRoutes);
         net.jackcooper.shapeShifterCurseAddon.AuditServerRegressionProbe.run();
         System.out.println("Evolution system integration: " + checks + " checks passed. Live gameplay NOT tested.");
     }
@@ -98,7 +102,7 @@ public final class EvolutionSystemIntegrationProbe {
             player.totalExperience = EvolutionComponent.levelToTotalExp(50) * 2;
             EvolutionManager.tickPlayer(player);
             check(player.evolution.getEvoLevel() == 50, route.routeId + " reaches level 50");
-            check(player.evolution.getPoints() == route.levelMilestones.length, route.routeId + " awards exact budget");
+            check(player.evolution.getPoints() == route.getLevelMilestones().length, route.routeId + " awards exact budget");
             List<String> paid = route.nodes.stream().filter(n -> !n.autoUnlock).map(n -> n.id).collect(java.util.stream.Collectors.toCollection(ArrayList::new));
             Collections.reverse(paid);
             check(EvolutionManager.tryUnlockBatch(player, paid) == paid.size(), route.routeId + " unlocks reverse-ordered complete tree");
@@ -189,7 +193,7 @@ public final class EvolutionSystemIntegrationProbe {
         player.evolution.setExp(experience);
         player.evolution.setPoints(3);
         player.evolution.unlock("mana_system");
-        for (int i = 0; i < 5; i++) player.evolution.markGrantedLevel(route.levelMilestones[i]);
+        for (int i = 0; i < 5; i++) player.evolution.markGrantedLevel(route.getLevelMilestones()[i]);
         return player;
     }
 
@@ -213,7 +217,7 @@ public final class EvolutionSystemIntegrationProbe {
         EvolutionManager.tickPlayer(skipped);
         check(skipped.evolution.getEvoLevel() == 30, "repairs old migrated=true flag that previously skipped restoration");
         TestPlayer genuine = legacy(EvolutionComponent.levelToTotalExp(46) * 2 + 7);
-        for (int milestone : EvolutionRegistry.INSTANCE.getRoute("familiar_fox").levelMilestones) genuine.evolution.markGrantedLevel(milestone);
+        for (int milestone : EvolutionRegistry.INSTANCE.getRoute("familiar_fox").getLevelMilestones()) genuine.evolution.markGrantedLevel(milestone);
         int exp = genuine.evolution.getExp();
         EvolutionManager.checkAndMigrate(genuine);
         check(genuine.evolution.getExp() == exp, "valid new-style experience is neither lowered nor promoted to level 50");
@@ -238,7 +242,7 @@ public final class EvolutionSystemIntegrationProbe {
         check(!EvolutionManager.tryUnlock(player, "mana_system") && !EvolutionManager.canUpgradeFoxEvolve(player), "mismatched stored route cannot unlock or evolve");
     }
 
-    private static TestPlayer trained(EvolutionRoute route) throws Exception {
+    static TestPlayer trained(EvolutionRoute route) throws Exception {
         TestPlayer player = player(route);
         EvolutionManager.tickPlayer(player);
         player.evolution.setExp(EvolutionComponent.levelToTotalExp(50) * 2);
@@ -340,8 +344,8 @@ public final class EvolutionSystemIntegrationProbe {
         ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.invoker().onSyncDataPackContents(player, false);
         Map<String,String> reloaded = receiveRoutes(player);
         check(!reloaded.get("axolotl").equals(joined.get("axolotl")), "reload lifecycle sends changed route to already connected player");
-        EvolutionRegistry.INSTANCE.applyClientSync(reloaded);
-        check(EvolutionRegistry.INSTANCE.getNode("axolotl", "aquatic_adapt").cost == 2, "client rebuild uses reloaded cost without reconnecting");
+        EvolutionRegistry.CLIENT.applyClientSync(reloaded);
+        check(EvolutionRegistry.CLIENT.getNode("axolotl", "aquatic_adapt").cost == 2, "client rebuild uses reloaded cost without reconnecting");
         ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.invoker().onSyncDataPackContents(player, false);
         check(receiveRoutes(player).equals(reloaded), "explicit reload repairs unchanged JSON as well");
         JsonSnapshotSync.send(player, SscAddonNetworking.PACKET_EVO_ROUTES_SYNC,
@@ -353,7 +357,7 @@ public final class EvolutionSystemIntegrationProbe {
         SscAddonNetworking.sendEvolutionRoutes(player);
         check(receiveRoutes(player).equals(reloaded) && oldConnection.packets.size() == oldPacketCount,
                 "a new connection for the same player receives a fresh JSON baseline");
-        EvolutionRegistry.INSTANCE.applyClientSync(rawRoutes);
+        loadServerRoutes(rawRoutes);
     }
 
     private static void entryAndPaymentValidation() throws Exception {
@@ -426,27 +430,238 @@ public final class EvolutionSystemIntegrationProbe {
             EvolutionManager.tickPlayer(player);
             check(before.equals(save(player)), "failed reload preserves experience, points, nodes and migration NBT");
         }
-        registry.applyClientSync(Map.of("familiar_fox", invalid.get(1)));
-        check(registry.getRawJson().equals(rawRoutes), "bad client snapshot preserves complete previous mirror");
-        registry.applyClientSync(Map.of());
+        EvolutionRegistry.CLIENT.applyClientSync(rawRoutes);
+        EvolutionRegistry.CLIENT.applyClientSync(Map.of("familiar_fox", invalid.get(1)));
+        check(EvolutionRegistry.CLIENT.getRawJson().equals(rawRoutes), "bad client snapshot preserves complete previous mirror");
+        loadServerRoutes(Map.of());
         EvolutionManager.tickPlayer(player);
         check(before.equals(save(player)), "temporarily missing route does not reset saved progress");
         check(!EvolutionManager.canUpgradeFoxEvolve(player), "missing route cannot bypass evolution requirements");
-        registry.applyClientSync(rawRoutes);
+        loadServerRoutes(rawRoutes);
         EvolutionManager.tickPlayer(player);
         check(before.equals(save(player)), "restoring route resumes existing progression without reset");
         var changedStart = original.deepCopy();
         changedStart.addProperty("start_form", "audit:changed_start_form");
         var changed = new LinkedHashMap<>(rawRoutes);
         changed.put("familiar_fox", changedStart.toString());
-        registry.applyClientSync(changed);
+        loadServerRoutes(changed);
         EvolutionManager.tickPlayer(player);
         check(before.equals(save(player)), "editing start_form cannot impersonate a real form departure");
-        registry.applyClientSync(Map.of());
+        loadServerRoutes(Map.of());
         player.form.nowForm = new NormalForm(new Identifier("audit", "different_form"));
         EvolutionManager.tickPlayer(player);
         check(!player.evolution.isOnSscaRoute(), "actual form departure still resets progress while config is missing");
-        registry.applyClientSync(rawRoutes);
+        loadServerRoutes(rawRoutes);
+    }
+
+    private static void loadServerRoutes(Map<String, String> raw) {
+        Map<Identifier, Resource> resources = new LinkedHashMap<>();
+        raw.forEach((id, json) -> resources.put(new Identifier("my_addon", "ssca_evolution/routes/" + id + ".json"),
+                new Resource(null, () -> new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)))));
+        ResourceManager manager = (ResourceManager) Proxy.newProxyInstance(ResourceManager.class.getClassLoader(), new Class[]{ResourceManager.class},
+                (proxy, method, args) -> method.getName().equals("findResources") ? resources : null);
+        EvolutionRegistry.INSTANCE.reload(manager);
+    }
+
+    private static void auditBoundaryRegressions() throws Exception {
+        List<String> failures = new ArrayList<>();
+        EvolutionComponent comp = new EvolutionComponent();
+        comp.setExp(Integer.MAX_VALUE);
+        comp.addExp(1);
+        auditCheck(failures, comp.getExp() == Integer.MAX_VALUE && comp.getEvoLevel() == 50,
+                "experience overflow cannot wipe earned progression");
+        comp.setPoints(Integer.MAX_VALUE);
+        comp.addPoints(1);
+        auditCheck(failures, comp.getPoints() == Integer.MAX_VALUE, "point overflow cannot erase the balance");
+        auditCheck(failures, !comp.spendPoints(-1), "negative purchases are rejected at the component boundary");
+        NbtCompound corrupt = new NbtCompound();
+        corrupt.putInt("exp", -50);
+        corrupt.putInt("points", -3);
+        corrupt.putIntArray("grantedLevels", new int[]{-1, 0, 5, 51});
+        comp.readFromNbt(corrupt);
+        auditCheck(failures, comp.getExp() == 0 && comp.getPoints() == 0 && comp.getGrantedLevelCount() == 1,
+                "invalid saved counters cannot create debt or fake milestone history");
+        EvolutionRoute source = EvolutionRegistry.INSTANCE.getRoute("familiar_fox");
+        EvolutionRoute target = EvolutionRegistry.INSTANCE.getRoute("axolotl");
+        TestPlayer changing = trained(source);
+        EvolutionManager.startJobChange(changing, target.startForm.toString());
+        NbtCompound reserved = save(changing);
+        EvolutionManager.reset(changing);
+        auditCheck(failures, reserved.equals(save(changing)) && changing.inv.getStack(0).getCount() == 1,
+                "reset during an active transformation preserves its transaction and reserved payment");
+        TestPlayer initial = player(source);
+        initial.form.nowForm = RegPlayerForms.ORIGINAL_BEFORE_ENABLE;
+        EvolutionManager.startSscaRoute(initial, source.startForm.toString());
+        initial.form.transformTargetForm = null;
+        TransformManager.onServerInit();
+        EvolutionManager.tickPlayer(initial);
+        auditCheck(failures, !initial.evolution.isOnSscaRoute(), "interrupted initial entry permits choosing a form again");
+        for (String failure : failures) System.out.println("AUDIT REGRESSION: " + failure);
+        check(failures.isEmpty(), "evolution boundary regressions: " + failures);
+        TestPlayer legacy = trained(source);
+        NbtCompound old = save(legacy);
+        old.remove("started");
+        old.remove("routeStartForm");
+        legacy.evolution.readFromNbt(old);
+        loadServerRoutes(Map.of());
+        EvolutionManager.tickPlayer(legacy);
+        check(legacy.evolution.getExp() == old.getInt("exp") && legacy.evolution.getRoute().equals(source.routeId),
+                "missing route and old entry fields cannot be mistaken for an interrupted initial selection");
+        loadServerRoutes(rawRoutes);
+    }
+
+    private static void auditCheck(List<String> failures, boolean passed, String description) {
+        checks++;
+        if (passed) System.out.println("PASS " + description);
+        else failures.add(description);
+    }
+
+    private static void auditRegistryAndRequests() throws Exception {
+        EvolutionRegistry.CLIENT.applyClientSync(rawRoutes);
+        var serverRoute = EvolutionRegistry.INSTANCE.getRoute("axolotl");
+        check(serverRoute != EvolutionRegistry.CLIENT.getRoute("axolotl"), "integrated client and server own separate route objects");
+        var stale = new LinkedHashMap<>(rawRoutes);
+        stale.put("axolotl", stale.get("axolotl").replace("\"cost\": 1", "\"cost\": 2"));
+        EvolutionRegistry.CLIENT.applyClientSync(stale);
+        check(EvolutionRegistry.INSTANCE.getNode("axolotl", "aquatic_adapt").cost == 1,
+                "a delayed client snapshot cannot overwrite server purchase costs");
+        EvolutionRegistry.clearClient();
+        check(EvolutionRegistry.CLIENT.all().isEmpty() && EvolutionRegistry.INSTANCE.getRoute("axolotl") == serverRoute,
+                "disconnect clears only the client mirror");
+        var duplicate = new LinkedHashMap<>(rawRoutes);
+        duplicate.put("duplicate", rawRoutes.get("axolotl"));
+        boolean rejected = false;
+        try { loadServerRoutes(duplicate); } catch (IllegalArgumentException expected) { rejected = true; }
+        check(rejected && EvolutionRegistry.INSTANCE.getRoute("axolotl") == serverRoute,
+                "ambiguous start forms reject the entire reload");
+        EvolutionRegistry.CLIENT.applyClientSync(rawRoutes);
+        EvolutionRegistry.CLIENT.applyClientSync(duplicate);
+        check(EvolutionRegistry.CLIENT.getRawJson().equals(rawRoutes), "ambiguous client snapshots retain the previous mirror");
+        try { serverRoute.nodes.clear(); throw new AssertionError("mutable node list"); }
+        catch (UnsupportedOperationException expected) { checks++; }
+        try { serverRoute.getNode("water_spurt").prereqs.clear(); throw new AssertionError("mutable dependencies"); }
+        catch (UnsupportedOperationException expected) { checks++; }
+        int[] milestones = serverRoute.getLevelMilestones();
+        milestones[0] = 49;
+        check(serverRoute.getLevelMilestones()[0] == 5, "milestone arrays cannot mutate the validated snapshot");
+        for (String field : List.of("level", "auto", "base", "fraction", "overflow", "layout")) {
+            var json = com.google.gson.JsonParser.parseString(rawRoutes.get("axolotl")).getAsJsonObject();
+            switch (field) {
+                case "level" -> json.getAsJsonArray("level_milestones").add(51);
+                case "auto" -> json.addProperty("auto_branch_level", 51);
+                case "base" -> json.addProperty("base_node", "water_spear");
+                case "fraction" -> json.getAsJsonArray("nodes").get(1).getAsJsonObject().addProperty("cost", 0.5);
+                case "overflow" -> json.getAsJsonArray("nodes").get(1).getAsJsonObject().addProperty("cost", 4294967296L);
+                case "layout" -> json.getAsJsonArray("nodes").get(1).getAsJsonObject().addProperty("row", Integer.MAX_VALUE);
+            }
+            rejected = false;
+            try { EvolutionRoute.fromJson("axolotl", json); } catch (IllegalArgumentException expected) { rejected = true; }
+            check(rejected, "invalid route " + field + " is rejected before publication");
+        }
+        var automatic = new LinkedHashMap<>(rawRoutes);
+        automatic.put("axolotl", rawRoutes.get("axolotl").replace("\"cost\": 1", "\"cost\": 0, \"auto_unlock\": true"));
+        loadServerRoutes(automatic);
+        TestPlayer free = player(EvolutionRegistry.INSTANCE.getRoute("axolotl"));
+        EvolutionManager.tickPlayer(free);
+        check(free.evolution.isUnlocked("become_water") && !free.evolution.isUnlocked("branch_stone")
+                && free.evolution.getPoints() == 0, "automatic main-line chains unlock without bypassing branch levels");
+        loadServerRoutes(rawRoutes);
+
+        var budget = new net.jackcooper.shapeShifterCurseAddon.network.EvolutionRequestBudget();
+        var open = net.jackcooper.shapeShifterCurseAddon.network.EvolutionRequestBudget.Action.OPEN;
+        var buy = net.jackcooper.shapeShifterCurseAddon.network.EvolutionRequestBudget.Action.PURCHASE;
+        Object connection = new Object();
+        check(budget.accept(connection, open, 10) && budget.accept(connection, buy, 10), "opening cannot consume the purchase budget");
+        check(!budget.accept(connection, buy, 10) && !budget.accept(connection, buy, 11)
+                && budget.accept(connection, buy, 12), "rejected repeats do not extend the purchase lockout");
+        check(budget.accept(new Object(), buy, 12), "a new connection has its own request budget");
+        TestPlayer buyer = player(EvolutionRegistry.INSTANCE.getRoute("axolotl"));
+        EvolutionManager.tickPlayer(buyer);
+        buyer.evolution.setPoints(2);
+        SscAddonNetworking.handleEvolutionPurchase(buyer, buyer.networkHandler, 10, 7, "familiar_fox", "mana_system", 1);
+        check(receivePurchase(buyer, 7) == 2 && buyer.evolution.getPoints() == 2, "stale-route request rejects with a correlated result and no charge");
+        SscAddonNetworking.handleEvolutionPurchase(buyer, buyer.networkHandler, 12, 8, "axolotl", "aquatic_adapt", 1);
+        check(receivePurchase(buyer, 8) == 0 && buyer.evolution.getPoints() == 1 && buyer.evolution.isUnlocked("aquatic_adapt"), "successful result follows the authoritative purchase");
+        SscAddonNetworking.handleEvolutionPurchase(buyer, buyer.networkHandler, 12, 9, "axolotl", "water_propel", 1);
+        check(receivePurchase(buyer, 9) == 1 && buyer.evolution.getPoints() == 1, "rate-limited request returns immediately without charging");
+        SscAddonNetworking.handleEvolutionPurchase(buyer, buyer.networkHandler, 14, 10, "axolotl", "water_spear", 1);
+        check(receivePurchase(buyer, 10) == 3 && buyer.evolution.getPoints() == 1, "missing prerequisites return a denial without charging");
+        SscAddonNetworking.handleEvolutionPurchase(buyer, network(), 16, 11, "axolotl", "water_propel", 1);
+        check(!buyer.evolution.isUnlocked("water_propel"), "stale connections cannot mutate progression");
+        SscAddonNetworking.handleEvolutionPurchase(buyer, buyer.networkHandler, 18, 12, "axolotl", "water_propel", 0);
+        check(receivePurchase(buyer, 12) == 2 && buyer.evolution.getPoints() == 1,
+                "a stale displayed price never spends a different cost");
+    }
+
+    private static int receivePurchase(TestPlayer player, int request) {
+        var packets = ((TestNetworkHandler) player.networkHandler).packets;
+        var packet = (CustomPayloadS2CPacket) packets.remove(packets.size() - 1);
+        check(packet.getChannel().equals(SscAddonNetworking.PACKET_EVO_RESULT), "purchase uses its result channel");
+        var data = packet.getData();
+        check(data.readVarInt() == request, "purchase result retains request identity");
+        int status = data.readUnsignedByte();
+        check(data.readableBytes() == 0, "purchase result has no trailing bytes");
+        return status;
+    }
+
+    private static void jobReloadBoundaries() throws Exception {
+        var source = EvolutionRegistry.INSTANCE.getRoute("familiar_fox");
+        var target = EvolutionRegistry.INSTANCE.getRoute("axolotl");
+        TestPlayer before = trained(source);
+        EvolutionManager.startJobChange(before, target.startForm.toString());
+        check(before.evolution.getJobChangeForm().equals(target.startForm.toString()), "new job pins the accepted form");
+        var withoutTarget = Map.of("familiar_fox", rawRoutes.get("familiar_fox"));
+        loadServerRoutes(withoutTarget);
+        EvolutionManager.tickPlayer(before);
+        check(!before.evolution.isJobChanging() && before.inv.getStack(0).getCount() == 2
+                && before.form.transformTargetForm == null
+                && !net.jackcooper.shapeShifterCurseAddon.mixin.TransformManagerAccessor.ssca$playerData().containsKey(before.id),
+                "reload before midpoint cancels the owned SSC animation before refunding");
+        check(before.evolution.getEvoLevel() == 50, "pre-midpoint cancellation preserves earned progression");
+        loadServerRoutes(rawRoutes);
+        TestPlayer after = trained(source);
+        EvolutionManager.startJobChange(after, target.startForm.toString());
+        after.form.nowForm = new NormalForm(target.startForm);
+        after.form.transformTargetForm = null;
+        loadServerRoutes(withoutTarget);
+        EvolutionManager.tickPlayer(after);
+        check(after.evolution.isJobChanging() && !after.evolution.isJobAnimationActive()
+                && after.evolution.getEvoLevel() == 50 && after.inv.getStack(0).getCount() == 1,
+                "reload after midpoint preserves progression and payment until the route returns");
+        reload(after);
+        EvolutionManager.tickPlayer(after);
+        check(after.evolution.isJobChanging(), "paused transaction survives restart without losing payment");
+        loadServerRoutes(rawRoutes);
+        EvolutionManager.tickPlayer(after);
+        check(!after.evolution.isJobChanging() && after.evolution.getRoute().equals("axolotl")
+                && after.evolution.getEvoLevel() == 20, "restored route settles the paused job exactly once");
+        TestPlayer redirected = trained(source);
+        EvolutionManager.startJobChange(redirected, target.startForm.toString());
+        reload(redirected);
+        var changed = new LinkedHashMap<>(rawRoutes);
+        var json = com.google.gson.JsonParser.parseString(changed.get("axolotl")).getAsJsonObject();
+        json.addProperty("start_form", "audit:redirected");
+        changed.put("axolotl", json.toString());
+        loadServerRoutes(changed);
+        EvolutionManager.tickPlayer(redirected);
+        check(!redirected.evolution.isJobChanging() && redirected.inv.getStack(0).getCount() == 2
+                && redirected.form.transformTargetForm == null, "resumed jobs cannot silently change their accepted target");
+        loadServerRoutes(rawRoutes);
+        TestPlayer reset = trained(source);
+        reset.evolution.beginJobChange(target.routeId, target.startForm.toString(), 20, reset.inv.getStack(0).split(1));
+        check(EvolutionManager.reset(reset) && !reset.evolution.isOnSscaRoute() && reset.inv.getStack(0).getCount() == 2
+                && reset.inv.getStack(0).getNbt().getString("test_payment").equals("original"),
+                "explicit reset of a paused transaction returns the exact reserved orb");
+        TestPlayer stone = trained(source);
+        EvolutionManager.tickPlayer(stone);
+        check(EvolutionManager.canUpgradeFoxEvolve(stone), "stone regression reaches its transform call");
+        Identifier sp = new Identifier("my_addon", "familiar_fox_mancianima");
+        var originalSp = RegPlayerForms.getPlayerForm(sp);
+        RegPlayerForms.registerPlayerForm(new RejectedForm(sp));
+        var stack = new ItemStack(net.minecraft.item.Items.DIAMOND, 2);
+        new net.jackcooper.shapeShifterCurseAddon.EvolutionStoneItem(new net.minecraft.item.Item.Settings()).finishUsing(stack, world, stone);
+        check(stack.getCount() == 2 && stone.form.transformTargetForm == null, "rejected evolution never consumes a stone");
+        RegPlayerForms.registerPlayerForm(originalSp == null ? new NormalForm(sp) : originalSp);
     }
 
     private static Map<String,String> receiveRoutes(TestPlayer player) {
@@ -462,13 +677,13 @@ public final class EvolutionSystemIntegrationProbe {
         return routes;
     }
 
-    private static void complete(TestPlayer player, String transaction) throws Exception {
+    static void complete(TestPlayer player, String transaction) throws Exception {
         Method method = EvolutionManager.class.getDeclaredMethod("completeJobChange", ServerPlayerEntity.class, String.class);
         method.setAccessible(true);
         method.invoke(null, player, transaction);
     }
 
-    private static NbtCompound save(TestPlayer player) {
+    static NbtCompound save(TestPlayer player) {
         NbtCompound nbt = new NbtCompound();
         player.evolution.writeToNbt(nbt);
         return nbt;
@@ -481,7 +696,7 @@ public final class EvolutionSystemIntegrationProbe {
         container(player);
     }
 
-    private static TestPlayer player(EvolutionRoute route) throws Exception {
+    static TestPlayer player(EvolutionRoute route) throws Exception {
         TestPlayer player = allocate(TestPlayer.class);
         player.id = UUID.randomUUID();
         player.inv = new PlayerInventory(player);
@@ -506,7 +721,7 @@ public final class EvolutionSystemIntegrationProbe {
         // explicitly rather than weakening production canSend checks to accommodate a fake handler.
         var channels = AbstractChanneledNetworkAddon.class.getDeclaredField("sendableChannelsView");
         channels.setAccessible(true);
-        channels.set(network.addon, Set.of(SscAddonNetworking.PACKET_EVO_ROUTES_SYNC,
+        channels.set(network.addon, Set.of(SscAddonNetworking.PACKET_EVO_ROUTES_SYNC, SscAddonNetworking.PACKET_EVO_RESULT,
                 SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC));
         return network;
     }
@@ -551,10 +766,12 @@ public final class EvolutionSystemIntegrationProbe {
         @Override public void sendMessage(Text message, boolean overlay) { }
         @Override public void playSound(SoundEvent sound, SoundCategory category, float volume, float pitch) { }
         @Override public boolean addStatusEffect(StatusEffectInstance effect, Entity source) { return true; }
+        @Override public boolean removeStatusEffect(net.minecraft.entity.effect.StatusEffect effect) { return true; }
     }
 
     public static final class TestWorld extends ServerWorld {
         private TestWorld() { super(null, null, null, null, World.OVERWORLD, null, null, false, 0, List.of(), false, null); }
+        @Override public List<ServerPlayerEntity> getPlayers() { return List.of(); }
         @Override public void playSound(PlayerEntity player, double x, double y, double z, SoundEvent sound, SoundCategory category, float volume, float pitch) { }
     }
 

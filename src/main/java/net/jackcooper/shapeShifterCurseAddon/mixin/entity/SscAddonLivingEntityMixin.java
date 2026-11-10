@@ -43,7 +43,7 @@ import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.UndeadNeutralState;
-import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionTalents;
 import net.jackcooper.shapeShifterCurseAddon.evolution.FamiliarFoxTree;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import org.spongepowered.asm.mixin.Mixin;
@@ -1061,16 +1061,12 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 		DamageSource source = args.get(0);
 		// 仅对魔法伤害（含伤害药水）生效
 		if (!source.isOf(DamageTypes.MAGIC) && !source.isOf(DamageTypes.INDIRECT_MAGIC)) return;
-		net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionComponent comp = RegEvolutionComponent.EVOLUTION.get(sp);
-		// 门控：仅当玩家已正式走上 SSCA 进化路线（route 非空 + 已真正变身进入过进化形态）才生效，
-		// 避免异常状态（如 route 未设置或尚未完成初始变身）下误判。
-		if (!comp.isOnSscaRoute() || !comp.hasStarted()) return;
-		// 两节点各提供 25% 减伤，相加（而非相乘），两者齐备时合计 50%
+		// 两个当前有效节点各提供 25% 减伤，相加，齐备时合计 50%。
 		float reduction = 0f;
-		if (comp.isUnlocked(FamiliarFoxTree.NODE_BUFF_IMMUNITY)) {
+		if (EvolutionTalents.isActive(sp, FamiliarFoxTree.NODE_BUFF_IMMUNITY)) {
 			reduction += (float) BAL_UPGRADE_FOX_NODES.d("potion_node_reduction", 0.25);
 		}
-		if (comp.isUnlocked(FamiliarFoxTree.NODE_ALCHEMY)) {
+		if (EvolutionTalents.isActive(sp, FamiliarFoxTree.NODE_ALCHEMY)) {
 			reduction += (float) BAL_UPGRADE_FOX_NODES.d("potion_node_reduction", 0.25);
 		}
 		if (reduction > 0f) {

@@ -20,11 +20,12 @@ import java.util.Map;
  * 文件名（去 {@code .json}）= 路线 id，解析为内存 {@link EvolutionRoute}。
  * 下划线开头的文件（如占位 / 注释样例）会被跳过。</p>
  *
- * <p>服务端经 reload 填充；客户端经 S2C（{@link #applyClientSync}）填充镜像，
- * 故服务端 / 客户端统一用 {@link #INSTANCE} 读取路线定义。</p>
+ * <p>服务端只读取 {@link #INSTANCE}；客户端只读取 {@link #CLIENT} 的连接镜像。
+ * 单人内置服务端与客户端也必须隔离，延迟同步包不能回写服务端配置。</p>
  */
 public final class EvolutionRegistry implements SimpleSynchronousResourceReloadListener {
     public static final EvolutionRegistry INSTANCE = new EvolutionRegistry();
+    public static final EvolutionRegistry CLIENT = new EvolutionRegistry();
     private static final Identifier ID = new Identifier("ssc_addon", "ssca_evolution_routes");
     private static final String DIR = "ssca_evolution/routes";
 
@@ -41,6 +42,7 @@ public final class EvolutionRegistry implements SimpleSynchronousResourceReloadL
 
     @Override
     public void reload(ResourceManager manager) {
+        if (this != INSTANCE) throw new IllegalStateException("Only the server registry loads datapacks");
         Map<String, EvolutionRoute> loaded = new LinkedHashMap<>();
         Map<String, String> loadedRaw = new LinkedHashMap<>();
         for (Map.Entry<Identifier, Resource> entry :
@@ -64,22 +66,41 @@ public final class EvolutionRegistry implements SimpleSynchronousResourceReloadL
                         + "; retaining the previous registry", e);
             }
         }
-        snapshot = new Snapshot(Collections.unmodifiableMap(loaded), Collections.unmodifiableMap(loadedRaw));
+        snapshot = validatedSnapshot(loaded, loadedRaw);
     }
 
     /** 客户端收到 S2C 同步后重建路线镜像（多人环境下客户端无 datapack 数据）。 */
     public void applyClientSync(Map<String, String> raw) {
+        if (this != CLIENT) throw new IllegalStateException("Client sync cannot write the server registry");
         Map<String, EvolutionRoute> rebuilt = new LinkedHashMap<>();
-        for (Map.Entry<String, String> e : raw.entrySet()) {
-            try {
+        try {
+            for (Map.Entry<String, String> e : raw.entrySet()) {
                 JsonObject o = JsonHelper.deserialize(e.getValue());
                 rebuilt.put(e.getKey(), EvolutionRoute.fromJson(e.getKey(), o));
-            } catch (Exception ex) {
-                System.err.println("[ssc_addon] Failed to apply synced evolution route: " + e.getKey() + " - " + ex);
-                return; // Preserve the complete previous mirror on malformed snapshots.
             }
+            snapshot = validatedSnapshot(rebuilt, raw);
+        } catch (Exception ex) {
+            System.err.println("[ssc_addon] Failed to apply synced evolution routes: " + ex);
+            // Preserve the complete previous mirror on malformed snapshots.
         }
-        snapshot = new Snapshot(Collections.unmodifiableMap(rebuilt), Collections.unmodifiableMap(new LinkedHashMap<>(raw)));
+    }
+
+    public static EvolutionRegistry forWorld(net.minecraft.world.World world) {
+        return world.isClient ? CLIENT : INSTANCE;
+    }
+
+    public static void clearClient() {
+        CLIENT.snapshot = new Snapshot(Map.of(), Map.of());
+    }
+
+    private static Snapshot validatedSnapshot(Map<String, EvolutionRoute> routes, Map<String, String> raw) {
+        Map<Identifier, String> forms = new LinkedHashMap<>();
+        for (EvolutionRoute route : routes.values()) {
+            if (route.startForm != null && forms.putIfAbsent(route.startForm, route.routeId) != null)
+                throw new IllegalArgumentException("Multiple evolution routes use start_form " + route.startForm);
+        }
+        return new Snapshot(Collections.unmodifiableMap(new LinkedHashMap<>(routes)),
+                Collections.unmodifiableMap(new LinkedHashMap<>(raw)));
     }
 
     public EvolutionRoute getRoute(String routeId) {

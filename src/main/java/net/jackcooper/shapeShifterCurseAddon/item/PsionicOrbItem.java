@@ -60,7 +60,7 @@ public class PsionicOrbItem extends Item {
             IForm currentForm = FormUtils.getCurrentForm(player);
             Identifier formId = currentForm != null ? currentForm.getFormID() : null;
             // 仅进化形态（某进化路线的起点形态）可用；数据驱动，未来新增进化形态自动接入
-            if (formId != null && EvolutionRegistry.INSTANCE.getRouteByStartForm(formId) != null) {
+            if (formId != null && EvolutionRegistry.forWorld(world).getRouteByStartForm(formId) != null) {
                 // 服务端发 S2C 包让客户端打开转职选择界面（此处不消耗道具，玩家确认转职成功时才消耗）
                 SscAddonNetworking.sendOpenJobChange(player);
             } else {

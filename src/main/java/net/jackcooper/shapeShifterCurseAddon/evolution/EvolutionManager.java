@@ -117,24 +117,30 @@ public final class EvolutionManager {
         // 设置进化路线并解锁初始节点（独立于变身动画）
         EvolutionComponent comp = get(player);
         comp.setRoute(route.routeId);
+        comp.setRouteStartForm(route.startForm.toString());
         if (route.getBaseNodeId() != null) {
             comp.unlock(route.getBaseNodeId());
         }
         comp.markMigrated();
         comp.setLastTotalExp(player.totalExperience);
         sync(player);
-        // 启用 mod 语义（成就 / 状态），与本体「翻开幻形者之书」一致
-        ShapeShifterCurseFabric.ON_ENABLE_MOD.trigger(player);
-        // 进化演出：黑屏淡入淡出动画期间定身，完成时升级音效
-        int fxDuration = StaticParams.TRANSFORM_FX_DURATION_IN + StaticParams.TRANSFORM_FX_DURATION_OUT;
-        player.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, fxDuration, 0, false, false, false));
-        boolean accepted = TransformManager.startTransform(player, targetForm, data ->
-                player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
-                        SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0F, 1.0F));
+        var server = player.getServer();
+        var playerId = player.getUuid();
+        boolean accepted = TransformManager.startTransform(player, targetForm, data -> {
+            ServerPlayerEntity online = server == null ? null : server.getPlayerManager().getPlayer(playerId);
+            if (online != null) online.getWorld().playSound(null, online.getX(), online.getY(), online.getZ(),
+                    SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0F, 1.0F);
+        });
         if (!accepted) {
             comp.reset();
-            player.removeStatusEffect(SscAddon.STUN);
             sync(player);
+            return;
+        }
+        ShapeShifterCurseFabric.ON_ENABLE_MOD.trigger(player);
+        // An immediate transformation has no animation to immobilize the player for.
+        if (RegPlayerFormComponent.PLAYER_FORM.get(player).transformTargetForm != null) {
+            int fxDuration = StaticParams.TRANSFORM_FX_DURATION_IN + StaticParams.TRANSFORM_FX_DURATION_OUT;
+            player.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, fxDuration, 0, false, false, false));
         }
     }
 
@@ -230,6 +236,15 @@ public final class EvolutionManager {
         }
 
         EvolutionRoute route = EvolutionRegistry.INSTANCE.getRoute(comp.getRoute());
+        if (!comp.hasStarted() && !comp.getRouteStartForm().isEmpty() && nowFormId != null
+                && !nowFormId.toString().equals(comp.getRouteStartForm())
+                && (route == null || !nowFormId.equals(route.startForm))
+                && RegPlayerFormComponent.PLAYER_FORM.get(player).transformTargetForm == null) {
+            // Initial entry was interrupted before reaching its form. Do not strand the book.
+            comp.reset();
+            sync(player);
+            return;
+        }
         // Only a real form change can reset progress, never a missing or edited route.
         String rememberedForm = comp.getRouteStartForm();
         if (rememberedForm.isEmpty() && route != null && route.startForm != null
@@ -255,16 +270,16 @@ public final class EvolutionManager {
         if (onOwnStartForm) checkAndMigrate(player);
 
         // 进化 exp 累积（不用 mixin）：用原版总经验的正增量，只算获得、天然排除花费（附魔/铁砧）与死亡掉落。
-        int curTotalExp = player.totalExperience;
+        int curTotalExp = Math.max(0, player.totalExperience);
         int lastExp = comp.getLastTotalExp();
         if (lastExp < 0) {
             comp.setLastTotalExp(curTotalExp); // 首次：以当前为基准，从此刻起算增量
         } else if (curTotalExp != lastExp) {
+            comp.setLastTotalExp(curTotalExp);
             if (curTotalExp > lastExp) {
                 comp.addExp(curTotalExp - lastExp);
                 sync(player);
             }
-            comp.setLastTotalExp(curTotalExp);
         }
 
         // 性能优化：XP 里程碑 / 自动分支解锁检查降频到每 20t（XP 变化低频，升级解锁最多晚 1s，肉眼不可察）。
@@ -275,15 +290,17 @@ public final class EvolutionManager {
         int level = comp.getEvoLevel();
         boolean changed = grantMilestonePoints(comp, route, level);
         int autoBranchLevel = (route != null) ? route.autoBranchLevel : 50;
-        if (route != null && autoBranchLevel > 0 && level >= autoBranchLevel) {
+        boolean unlocked;
+        do {
+            unlocked = false;
             for (EvolutionNode node : route.nodes) {
-                if (node.autoUnlock && !node.branch.isEmpty()
+                if (node.autoUnlock && (node.branch.isEmpty() || autoBranchLevel > 0 && level >= autoBranchLevel)
                         && !comp.isUnlocked(node.id) && prereqsMet(comp, node)) {
                     comp.unlock(node.id);
-                    changed = true;
+                    changed = unlocked = true;
                 }
             }
-        }
+        } while (unlocked);
         if (changed) {
             sync(player);
         }
@@ -296,9 +313,15 @@ public final class EvolutionManager {
     }
 
     /** 管理指令：重置目标玩家全部进化数据。 */
-    public static void reset(ServerPlayerEntity player) {
-        get(player).reset();
+    public static boolean reset(ServerPlayerEntity player) {
+        EvolutionComponent comp = get(player);
+        // SSC owns the animation callback. Never clear its payment while it can still change form.
+        if (comp.isJobAnimationActive() || RegPlayerFormComponent.PLAYER_FORM.get(player).transformTargetForm != null)
+            return false;
+        if (comp.isJobChanging()) cancelJobChange(player);
+        comp.reset();
         sync(player);
+        return true;
     }
 
     /** 按当前进化等级发放未发过的里程碑升级点，返回是否有变化。 */
@@ -382,7 +405,7 @@ public final class EvolutionManager {
         for (int milestone : milestones) if (comp.getEvoLevel() >= milestone) crossed++;
         int remaining = Math.max(0, crossed - JOB_CHANGE_COST);
         int targetLevel = remaining == 0 ? 0 : milestones[remaining - 1];
-        comp.beginJobChange(targetRoute.routeId, targetLevel, payment);
+        comp.beginJobChange(targetRoute.routeId, targetRoute.startForm.toString(), targetLevel, payment);
         sync(player);
         resumeJobChange(player);
     }
@@ -392,7 +415,16 @@ public final class EvolutionManager {
         if (comp.isJobAnimationActive()) {
             IForm requested = RegPlayerFormComponent.PLAYER_FORM.get(player).transformTargetForm;
             EvolutionRoute target = EvolutionRegistry.INSTANCE.getRoute(comp.getJobChangeRoute());
-            if (target == null || (requested != null && !requested.getFormID().equals(target.startForm))) {
+            if (requested != null && !comp.getJobChangeForm().isEmpty()
+                    && !requested.getFormID().toString().equals(comp.getJobChangeForm())) {
+                cancelJobChange(player);
+                return;
+            }
+            if (!matchesJobTarget(comp, target)) {
+                handleUnavailableJobTarget(player);
+                return;
+            }
+            if (requested != null && !requested.getFormID().equals(target.startForm)) {
                 cancelJobChange(player);
                 return;
             }
@@ -406,7 +438,11 @@ public final class EvolutionManager {
         EvolutionComponent comp = get(player);
         EvolutionRoute target = EvolutionRegistry.INSTANCE.getRoute(comp.getJobChangeRoute());
         IForm current = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
-        if (target == null || target.startForm == null || current == null) {
+        if (!matchesJobTarget(comp, target)) {
+            handleUnavailableJobTarget(player);
+            return;
+        }
+        if (current == null) {
             cancelJobChange(player);
             return;
         }
@@ -438,16 +474,38 @@ public final class EvolutionManager {
         }
     }
 
+    private static boolean matchesJobTarget(EvolutionComponent comp, EvolutionRoute target) {
+        return target != null && target.startForm != null && (comp.getJobChangeForm().isEmpty()
+                || comp.getJobChangeForm().equals(target.startForm.toString()));
+    }
+
+    private static void handleUnavailableJobTarget(ServerPlayerEntity player) {
+        EvolutionComponent comp = get(player);
+        IForm current = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
+        if (current != null && current.getFormID().toString().equals(comp.getJobChangeForm())) {
+            // Already crossed the animation midpoint: preserve the paid transaction until the route
+            // returns, or an administrator explicitly resets it. Never erase the old progression.
+            net.jackcooper.shapeShifterCurseAddon.compat.TransformSessionCleanup.cancelExpected(player,
+                    Identifier.tryParse(comp.getJobChangeForm()));
+            if (comp.isJobAnimationActive()) {
+                comp.stopJobAnimation();
+                sync(player);
+                player.sendMessage(Text.translatable("message.ssc_addon.job_change.route_unavailable"), false);
+            }
+        } else cancelJobChange(player);
+    }
+
     /** 唯一结算入口：事务 id 和实际形态都一致才可扣等级并切换技能树。 */
     private static void completeJobChange(ServerPlayerEntity player, String transaction) {
         EvolutionComponent comp = get(player);
         if (!comp.isJobChanging() || !comp.getJobChangeId().equals(transaction)) return;
         EvolutionRoute targetRoute = EvolutionRegistry.INSTANCE.getRoute(comp.getJobChangeRoute());
         IForm current = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
-        if (targetRoute == null || current == null || !current.getFormID().equals(targetRoute.startForm)) return;
+        if (!matchesJobTarget(comp, targetRoute) || current == null || !current.getFormID().equals(targetRoute.startForm)) return;
         comp.setExp(EvolutionComponent.levelToTotalExp(comp.getJobChangeLevel()) * 2);
         // 切换到新路线：新技能树重开
         comp.setRoute(targetRoute.routeId);
+        comp.setRouteStartForm(targetRoute.startForm.toString());
         comp.setBranch("");
         comp.clearUnlockedNodes();
         if (targetRoute.getBaseNodeId() != null) {
@@ -469,6 +527,8 @@ public final class EvolutionManager {
     private static void cancelJobChange(ServerPlayerEntity player) {
         EvolutionComponent comp = get(player);
         ItemStack refund = comp.getJobChangePayment();
+        net.jackcooper.shapeShifterCurseAddon.compat.TransformSessionCleanup.cancelExpected(player,
+                Identifier.tryParse(comp.getJobChangeForm()));
         comp.clearJobChange();
         sync(player);
         if (!refund.isEmpty()) player.getInventory().offerOrDrop(refund);

@@ -24,7 +24,7 @@ import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkManager;
 import net.jackcooper.shapeShifterCurseAddon.util.SkillBlocker;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
-import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionTalents;
 import net.jackcooper.shapeShifterCurseAddon.spell.UniversalFormationManager;
 
 public class SscAddonConditions {
@@ -216,7 +216,7 @@ public class SscAddonConditions {
 						.add("talent_id", SerializableDataTypes.STRING),
 				(data, entity) -> {
 					if (entity instanceof PlayerEntity player) {
-						return RegEvolutionComponent.EVOLUTION.get(player).isUnlocked(data.getString("talent_id"));
+						return EvolutionTalents.isActive(player, data.getString("talent_id"));
 					}
 					return false;
 				}));

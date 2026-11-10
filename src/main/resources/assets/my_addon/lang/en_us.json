@@ -1,4 +1,9 @@
 {
+  "evolution.my_addon.purchase.throttled": "Too many requests. Please try again shortly.",
+  "evolution.my_addon.purchase.route_changed": "Your evolution route or node cost changed. Please select a node again.",
+  "evolution.my_addon.purchase.rejected": "Unlock requirements changed. Progress has been refreshed; check your points and prerequisites.",
+  "message.ssc_addon.evolution.reset.transforming": "Wait for the transformation to finish before resetting evolution progress.",
+  "message.ssc_addon.job_change.route_unavailable": "The job-change route is temporarily unavailable. Progress and payment are preserved. Restore the route to finish, or ask an administrator to reset evolution and refund the orb.",
   "message.ssc_addon.network.update_client": "Incompatible SSCA client. Update the client to %s or a compatible newer build (entity protocol %s).",
   "message.ssc_addon.network.update_server": "Incompatible SSCA server. Update the server to %s or a compatible newer build (entity protocol %s).",
   "power.my_addon.form_spider_moon_weaver_spell_weave.name": "Spellweaving",

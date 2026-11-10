@@ -364,7 +364,10 @@ public class SscAddonCommands {
 
 	private static int evolutionReset(CommandContext<ServerCommandSource> ctx, ServerPlayerEntity player) {
 		if (player == null) { ctx.getSource().sendError(Text.literal("目标玩家无效")); return 0; }
-		EvolutionManager.reset(player);
+		if (!EvolutionManager.reset(player)) {
+			ctx.getSource().sendError(Text.translatable("message.ssc_addon.evolution.reset.transforming"));
+			return 0;
+		}
 		ctx.getSource().sendFeedback(() -> Text.literal("已重置 " + player.getName().getString() + " 的 SSCA 进化数据"), true);
 		return 1;
 	}

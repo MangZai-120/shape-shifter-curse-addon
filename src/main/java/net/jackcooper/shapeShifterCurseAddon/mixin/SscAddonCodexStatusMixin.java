@@ -54,10 +54,10 @@ public class SscAddonCodexStatusMixin {
         List<EvolutionNode> nodes;
         String baseNodeId;
         if (FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(currentForm.getFormID())) {
-            nodes = FamiliarFoxTree.nodes();
+            nodes = FamiliarFoxTree.nodes(player.getWorld());
             baseNodeId = FamiliarFoxTree.NODE_BASE;
         } else if (FormIdentifiers.UPGRADE_AXOLOTL.equals(currentForm.getFormID())) {
-            nodes = AxolotlTree.nodes();
+            nodes = AxolotlTree.nodes(player.getWorld());
             baseNodeId = AxolotlTree.NODE_BASE;
         } else {
             return;
@@ -94,7 +94,7 @@ public class SscAddonCodexStatusMixin {
         dynamic.append(Text.translatable("text.ssc_addon.evolution.book.summary_title"));
         dynamic.append(Text.literal("\n"));
         dynamic.append(Text.translatable("text.ssc_addon.evolution.book.summary_stats",
-                unlockedCount, unlockableCount, comp.getPoints(), player.experienceLevel));
+                unlockedCount, unlockableCount, comp.getPoints(), comp.getEvoLevel()));
         // 逐个已解锁节点追加书页化叙述
         for (EvolutionNode node : nodes) {
             if (baseNodeId.equals(node.id)) {

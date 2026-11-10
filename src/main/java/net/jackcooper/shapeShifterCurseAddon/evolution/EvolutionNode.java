@@ -56,12 +56,12 @@ public class EvolutionNode {
         this.descKey = descKey;
         this.icon = icon;
         this.cost = cost;
-        this.prereqs = prereqs == null ? List.of() : prereqs;
+        this.prereqs = prereqs == null ? List.of() : List.copyOf(prereqs);
         this.col = col;
         this.row = row;
         this.autoUnlock = autoUnlock;
         this.branch = branch == null ? "" : branch;
-        this.grantsPowers = grantsPowers == null ? List.of() : grantsPowers;
+        this.grantsPowers = grantsPowers == null ? List.of() : List.copyOf(grantsPowers);
     }
 
     /**
@@ -87,14 +87,21 @@ public class EvolutionNode {
                 icon = Registries.ITEM.get(iconId);
             }
         }
-        int cost = o.has("cost") ? o.get("cost").getAsInt() : 1;
-        int col = o.has("col") ? o.get("col").getAsInt() : 0;
-        int row = o.has("row") ? o.get("row").getAsInt() : 0;
+        int cost = o.has("cost") ? readInt(o.get("cost")) : 1;
+        int col = o.has("col") ? readInt(o.get("col")) : 0;
+        int row = o.has("row") ? readInt(o.get("row")) : 0;
         boolean autoUnlock = o.has("auto_unlock") && o.get("auto_unlock").getAsBoolean();
         String branch = o.has("branch") ? o.get("branch").getAsString() : "";
         List<String> prereqs = parseStringList(o, "prereqs");
         List<String> grantsPowers = parseStringList(o, "grants_powers");
         return new EvolutionNode(id, nameKey, descKey, icon, cost, prereqs, col, row, autoUnlock, branch, grantsPowers);
+    }
+
+    static int readInt(JsonElement value) {
+        if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber())
+            throw new IllegalArgumentException("Expected an integer: " + value);
+        try { return value.getAsBigDecimal().intValueExact(); }
+        catch (ArithmeticException e) { throw new IllegalArgumentException("Integer out of range or fractional: " + value, e); }
     }
 
     private static List<String> parseStringList(JsonObject o, String key) {

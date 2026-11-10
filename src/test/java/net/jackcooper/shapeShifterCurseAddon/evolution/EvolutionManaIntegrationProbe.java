@@ -27,6 +27,9 @@ import net.onixary.shapeShifterCurseFabric.additional_power.ManaAttributePower;
 import net.onixary.shapeShifterCurseFabric.mana.ManaComponent;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.onixary.shapeShifterCurseFabric.mana.RegManaComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.NormalForm;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -46,6 +49,8 @@ public final class EvolutionManaIntegrationProbe {
         unsafeField.setAccessible(true);
         unsafe = (sun.misc.Unsafe) unsafeField.get(null);
         world = allocate(TestWorld.class);
+        var routes = EvolutionTestRoutes.production();
+        EvolutionTestRoutes.loadServer(routes);
         EntityConditions.register();
         SscAddonConditions.register();
         ModifierOperations.registerAll();
@@ -69,6 +74,19 @@ public final class EvolutionManaIntegrationProbe {
             near(player.mana.getMaxMana(), expected, "repeated ticks do not stack: " + TALENTS.get(i));
         }
         near(expected, 103, "fully unlocked maximum stays 103");
+        check(EvolutionTalents.isActive(player, "spark") && EvolutionTalents.isActive(player, "fire_ring"),
+                "fire ring does not revoke spark passive eligibility");
+        try {
+            EvolutionTestRoutes.loadServer(EvolutionTestRoutes.withoutNode(routes, "familiar_fox", "spark"));
+            tick(powers);
+            near(player.mana.getMaxMana(), 93, "removed node immediately withdraws only its own continuous bonus");
+            check(player.evolution.isUnlocked("spark"), "paused bonus retains acquisition");
+            EvolutionTestRoutes.loadServer(java.util.Map.of());
+            tick(powers);
+            near(player.mana.getMaxMana(), 33, "removed route withdraws every talent bonus");
+        } finally { EvolutionTestRoutes.loadServer(routes); }
+        tick(powers);
+        near(player.mana.getMaxMana(), 103, "restored route re-enables bonuses without repurchasing");
 
         var stored = player.mana.MaxManaModifierPlayerSide.getModifiers().get(
                 new Identifier("my_addon", "upgrade_familiar_fox_spark_mana_boost"));
@@ -80,6 +98,9 @@ public final class EvolutionManaIntegrationProbe {
         tick(powers);
         near(player.mana.getMaxMana(), 33, "reset revokes every talent bonus");
         player.evolution.unlock("spark");
+        tick(powers);
+        near(player.mana.getMaxMana(), 33, "orphan acquisition cannot bypass an absent current route");
+        player.evolution.setRoute("familiar_fox");
         tick(powers);
         near(player.mana.getMaxMana(), 43, "revoked talent can be unlocked again");
         powers.get(0).onLost();
@@ -136,6 +157,10 @@ public final class EvolutionManaIntegrationProbe {
         near(damage(shieldPlayer, shield, 10), 8.5, "shield reduces damage by15percent at exact threshold");
         shieldPlayer.mana.setMana(33);
         near(damage(shieldPlayer, shield, 20), 17, "shield stays15percent at full mana");
+        shieldPlayer.form.nowForm = new NormalForm(new Identifier("my_addon", "axolotl_upgrade"));
+        near(damage(shieldPlayer, shield, 20), 20, "JSON damage condition follows the actual form immediately");
+        shieldPlayer.form.nowForm = new NormalForm(EvolutionRegistry.INSTANCE.getRoute("familiar_fox").startForm);
+        near(damage(shieldPlayer, shield, 20), 17, "JSON damage condition resumes when eligibility returns");
         shieldPlayer.evolution.reset();
         near(damage(shieldPlayer, shield, 10), 10, "shield disabled after talent reset");
         System.out.println("Evolution mana integration: " + checks + " checks passed. Live gameplay NOT tested.");
@@ -191,9 +216,13 @@ public final class EvolutionManaIntegrationProbe {
         TestPlayer player = allocate(TestPlayer.class);
         player.mana = new ManaComponent(player);
         player.evolution = new EvolutionComponent();
+        player.evolution.setRoute("familiar_fox");
+        player.form = allocate(PlayerFormComponent.class);
+        player.form.nowForm = new NormalForm(EvolutionRegistry.INSTANCE.getRoute("familiar_fox").startForm);
         player.components = ComponentContainer.Factory.builder(TestPlayer.class)
                 .component(RegManaComponent.MANA, p -> p.mana)
                 .component(RegEvolutionComponent.EVOLUTION, p -> p.evolution)
+                .component(RegPlayerFormComponent.PLAYER_FORM, p -> p.form)
                 .build().createContainer(player);
         player.mana.setManaTypeID(net.onixary.shapeShifterCurseFabric.mana.ManaRegistries.FAMILIAR_FOX_MANA);
         return player;
@@ -208,6 +237,7 @@ public final class EvolutionManaIntegrationProbe {
     public static final class TestPlayer extends ServerPlayerEntity implements ComponentProvider {
         ManaComponent mana;
         EvolutionComponent evolution;
+        PlayerFormComponent form;
         ComponentContainer components;
         private TestPlayer() { super(null, null, new GameProfile(UUID.randomUUID(), "evolution-mana-test")); }
         @Override public World getWorld() { return world; }

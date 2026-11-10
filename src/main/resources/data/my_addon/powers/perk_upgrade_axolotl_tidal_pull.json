@@ -5,6 +5,10 @@
   "type": "apoli:multiple",
   "charge": {
     "type": "shape-shifter-curse:charge_action",
+    "condition": {
+      "type": "ssc_addon:has_talent",
+      "talent_id": "vortex_guide"
+    },
     "key": {
       "key": "key.shape-shifter-curse.active_skill_3",
       "continuous": true
