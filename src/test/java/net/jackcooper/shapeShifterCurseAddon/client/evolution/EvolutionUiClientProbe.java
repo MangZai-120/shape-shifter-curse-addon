@@ -8,6 +8,7 @@ import net.jackcooper.shapeShifterCurseAddon.ability.VortexGuideManager;
 import net.jackcooper.shapeShifterCurseAddon.entity.ThrownWaterSpearEntity;
 import net.jackcooper.shapeShifterCurseAddon.power.ConditionalManaAttributePower;
 import io.github.apace100.apoli.component.PowerHolderComponent;
+import io.github.apace100.apoli.power.PowerType;
 import io.github.apace100.apoli.power.PowerTypeRegistry;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.util.Identifier;
@@ -312,7 +313,7 @@ public final class EvolutionUiClientProbe {
         } finally { EvolutionTestRoutes.loadServer(routes); }
 
         var holder = PowerHolderComponent.KEY.get(player);
-        var chargeType = PowerTypeRegistry.get(new Identifier("my_addon", "perk_upgrade_axolotl_tidal_pull_charge"));
+        PowerType<?> chargeType = PowerTypeRegistry.get(new Identifier("my_addon", "perk_upgrade_axolotl_tidal_pull_charge"));
         var source = new Identifier("test", "effective_talent_lifecycle");
         holder.addPower(chargeType, source);
         // Manual fixture grants must publish the holder before SSC sends per-power charge NBT.
