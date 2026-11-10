@@ -99,12 +99,12 @@
     video.dataset.failed='true';el('loading').hidden=true;set('play-video',words().error);el('play-video').hidden=false;
   }
   function startVideo(){
-    const lesson=current();state.soundBlocked=false;el('play-video').hidden=true;el('loading').hidden=false;
-    clearVideo();const generation=mediaGeneration;let sourceErrors=0;video.dataset.failed='false';video.poster='media/'+lesson.media+'.jpg';video.muted=state.userMuted;video.volume=state.volume;
+    const lesson=current(),revision=lesson.media_version?'?v='+encodeURIComponent(lesson.media_version):'';state.soundBlocked=false;el('play-video').hidden=true;el('loading').hidden=false;
+    clearVideo();const generation=mediaGeneration;let sourceErrors=0;video.dataset.failed='false';video.poster='media/'+lesson.media+'.jpg'+revision;video.muted=state.userMuted;video.volume=state.volume;
     video.hidden=Boolean(lesson.pending);
     if(lesson.pending){video.removeAttribute('poster');set('loading',words().pending);el('loading').hidden=false;el('play-video').hidden=true;return;}
     for(const [extension,type] of [['webm','video/webm'],['mp4','video/mp4']]){
-      const source=document.createElement('source');source.src='media/'+lesson.media+'.'+extension;source.type=type;
+      const source=document.createElement('source');source.src='media/'+lesson.media+'.'+extension+revision;source.type=type;
       source.onerror=()=>{if(generation===mediaGeneration&&++sourceErrors===2)mediaFailed();};video.append(source);
     }
     video.load();
