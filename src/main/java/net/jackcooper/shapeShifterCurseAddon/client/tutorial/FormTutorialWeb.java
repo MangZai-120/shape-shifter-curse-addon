@@ -38,6 +38,8 @@ public final class FormTutorialWeb {
             Map.entry(new Identifier("my_addon", "ocelot_nova"), "nova"),
             Map.entry(new Identifier("my_addon", "anubis_wolf_netherjudge"), "netherjudge"),
             Map.entry(new Identifier("my_addon", "anubis_wolf_golden_sandstorm"), "golden-sandstorm"),
+            Map.entry(new Identifier("my_addon", "axolotl_upgrade"), "upgrade-axolotl"),
+            Map.entry(new Identifier("my_addon", "familiar_fox_upgrade"), "upgrade-familiar"),
             Map.entry(new Identifier("my_addon", "bat_desmodus"), "desmodus"),
             Map.entry(new Identifier("my_addon", "bat_parasitic_fruit"), "parasitic-fruit"),
             Map.entry(new Identifier("my_addon", "spider_moon_weaver"), "moon-weaver"),

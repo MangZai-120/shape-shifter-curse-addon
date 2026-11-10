@@ -1661,6 +1661,24 @@
       "diagram": "RESOURCE",
       "icon": "my_addon:textures/gui/skill_icons/jump_kill.png",
       "focus": "SELF"
+    },
+    "evolution_exp": {
+      "kind": "TRAIT",
+      "diagram": "EVOLUTION",
+      "icon": "my_addon:textures/gui/skill_icons/fire_spark.png",
+      "focus": "SELF"
+    },
+    "evolution_branches": {
+      "kind": "TRAIT",
+      "diagram": "EVOLUTION",
+      "icon": "my_addon:textures/gui/skill_icons/contract_mark.png",
+      "focus": "SELF"
+    },
+    "upgrade_health": {
+      "kind": "TRAIT",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/vortex_guide.png",
+      "focus": "SELF"
     }
   },
   "forms": {
@@ -1677,16 +1695,18 @@
       "tidal_cost"
     ],
     "my_addon:axolotl_upgrade": [
+      "evolution_exp",
       "evolution",
-      "upgrade_spear",
-      "vortex_guide",
-      "upgrade_dash",
       "aquatic_unlock",
       "water_propel",
+      "upgrade_dash",
+      "upgrade_spear",
+      "vortex_guide",
       "moisture",
       "water_merge",
+      "upgrade_health",
       "tidal_cost",
-      "no_helmet"
+      "evolution_branches"
     ],
     "my_addon:axolotl_fluorescent": [
       "fluorescent_laser",
@@ -1750,17 +1770,18 @@
       "red_food"
     ],
     "my_addon:familiar_fox_upgrade": [
+      "evolution_exp",
       "evolution",
       "upgrade_mana",
       "spark",
       "fire_rocket",
-      "upgrade_ring",
       "familiar_absorb",
       "upgrade_immunity",
       "alchemy",
       "spirit_vision",
+      "upgrade_ring",
       "familiar_affinity",
-      "armor_legs"
+      "evolution_branches"
     ],
     "my_addon:familiar_fox_mancianima": [
       "contract_mark",
