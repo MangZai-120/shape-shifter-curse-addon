@@ -207,7 +207,10 @@ public final class NeoSpiderSpellLinkProbe {
             var rolls=ledger(fallingCaster).getCompound(snapshot.getUuid("SscaWeaveCast").toString()).getList("Targets",8);
             check(rolls.size()==1&&rolls.getString(0).equals(direct.getUuidAsString()),"Meteor rolls cocoon only for direct target, never its splash victims");
             sibling.discard();
-            System.out.println("Neo spider spell link checks passed: "+checks+"; native cocoon wins: "+sampled);t.complete();
+            net.jackcooper.shapeShifterCurseAddon.ability.SpiderTutorialMechanicsProbe.run(t,()->{
+                net.jackcooper.shapeShifterCurseAddon.block.WebMembraneLifetimeProbe.run(t);
+                System.out.println("Neo spider spell link checks passed: "+checks+"; native cocoon wins: "+sampled);t.complete();
+            });
         }catch(Exception e){throw new RuntimeException(e);}});
     }
 }

@@ -63,6 +63,7 @@ public final class VenomSkillManager {
 		int ticks = 0;
 		Vec3d dir;
 		boolean hitDone;
+		final java.util.Set<UUID> collisionTargets = new java.util.HashSet<>();
 	}
 
 	private VenomSkillManager() {}
@@ -177,8 +178,10 @@ public final class VenomSkillManager {
 						&& !WhitelistUtils.isProtected(player, e));
 		if (!hits.isEmpty()) {
 			for (LivingEntity t : hits) {
-				t.damage(t.getDamageSources().indirectMagic(player, player),
-						NpcCombatEnhancements.scale(player, t, (float) (BAL.d("dash_hit_damage", DASH_HIT_DAMAGE) * d.damageMultiplier), "salticidae_secondary_damage", 1.5));
+				if (t.damage(t.getDamageSources().indirectMagic(player, player),
+						NpcCombatEnhancements.scale(player, t, (float) (BAL.d("dash_hit_damage", DASH_HIT_DAMAGE) * d.damageMultiplier), "salticidae_secondary_damage", 1.5))) {
+					d.collisionTargets.add(t.getUuid());
+				}
 			}
 			d.hitDone = true; // 本 tick 结束后停下
 		}
@@ -206,7 +209,14 @@ public final class VenomSkillManager {
 		int baseDur = BAL.i("burst_poison_duration", BURST_POISON_DURATION);
 		int dur = gland ? Math.round(baseDur * net.jackcooper.shapeShifterCurseAddon.item.VenomGlandItem.DURATION_SCALE) : baseDur;
 		for (LivingEntity t : targets) {
-			t.damage(t.getDamageSources().indirectMagic(player, player), NpcCombatEnhancements.scale(player, t, (float) (BAL.d("burst_damage", BURST_DAMAGE) * d.damageMultiplier), "salticidae_secondary_damage", 1.5));
+			// 本次冲刺的碰撞与毒爆是两笔伤害，仅绕过自己的碰撞免疫帧。
+			int previousRegen = t.timeUntilRegen;
+			if (d.collisionTargets.contains(t.getUuid())) t.timeUntilRegen = 0;
+			try {
+				t.damage(t.getDamageSources().indirectMagic(player, player), NpcCombatEnhancements.scale(player, t, (float) (BAL.d("burst_damage", BURST_DAMAGE) * d.damageMultiplier), "salticidae_secondary_damage", 1.5));
+			} finally {
+				t.timeUntilRegen = Math.max(previousRegen, t.timeUntilRegen);
+			}
 			t.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, dur, amp, false, true, true), player);
 		}
 		// AOE 反馈：毒爆粒子环 + 女巫泼溅

@@ -64,21 +64,31 @@ public class WebMembraneBlock extends MultifaceGrowthBlock {
 	@Override
 	public void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
 		super.onBlockAdded(state, world, pos, oldState, notify);
-		if (!world.isClient) {
+		if (world instanceof ServerWorld serverWorld) {
 			int life = LIFESPAN_MIN + world.getRandom().nextInt(LIFESPAN_MAX - LIFESPAN_MIN + 1);
+			WebMembraneLifetimes.placed(serverWorld, pos, life);
 			world.scheduleBlockTick(pos, this, life);
 		}
 	}
 
 	@Override
 	public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
-		if (!world.isClient && !newState.isOf(this)) WebMembraneOwners.remove(world, pos);
+		if (!world.isClient && !newState.isOf(this)) {
+			WebMembraneOwners.remove(world, pos);
+			if (world instanceof ServerWorld serverWorld) WebMembraneLifetimes.removed(serverWorld, pos);
+		}
 		super.onStateReplaced(state, world, pos, newState, moved);
 	}
 
 	@Override
 	public void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
 		if (state.isOf(this)) {
+			// 旧网留下的计划 tick 不能提前删除同坐标新铺的网。
+			long remaining = WebMembraneLifetimes.remaining(world, pos);
+			if (remaining > 0) {
+				world.scheduleBlockTick(pos, this, (int) Math.min(Integer.MAX_VALUE, remaining));
+				return;
+			}
 			world.setBlockState(pos, Blocks.AIR.getDefaultState());
 			WebMembraneOwners.remove(world, pos);
 		}

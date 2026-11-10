@@ -1577,6 +1577,90 @@
       "diagram": "RESOURCE",
       "icon": "my_addon:textures/gui/skill_icons/parasitic_seed.png",
       "focus": "SELF"
+    },
+    "web_mode": {
+      "kind": "ACTIVE",
+      "diagram": "WEB",
+      "icon": "my_addon:textures/gui/skill_icons/moon_web.png",
+      "focus": "SELF"
+    },
+    "web_tether": {
+      "kind": "ACTIVE",
+      "diagram": "WEB",
+      "icon": "my_addon:textures/gui/skill_icons/moon_web.png",
+      "focus": "TARGET"
+    },
+    "web_jump": {
+      "kind": "ACTIVE",
+      "diagram": "WEB",
+      "icon": "my_addon:textures/gui/skill_icons/moon_web.png",
+      "focus": "TARGET"
+    },
+    "web_membrane": {
+      "kind": "PASSIVE",
+      "diagram": "WEB",
+      "icon": "my_addon:textures/gui/skill_icons/moon_web.png",
+      "focus": "TARGET"
+    },
+    "web_lifetime": {
+      "kind": "PASSIVE",
+      "diagram": "WEB",
+      "icon": "my_addon:textures/gui/skill_icons/moon_web.png",
+      "focus": "TARGET"
+    },
+    "jump_lock": {
+      "kind": "ACTIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/jump_kill.png",
+      "focus": "TARGET"
+    },
+    "silk_limits": {
+      "kind": "TRAIT",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/jump_kill.png",
+      "focus": "TARGET"
+    },
+    "venom_fang": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/jump_kill.png",
+      "focus": "SELF"
+    },
+    "spider_melee": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/jump_kill.png",
+      "focus": "SELF"
+    },
+    "spider_jump": {
+      "kind": "ACTIVE",
+      "diagram": "DASH",
+      "icon": "my_addon:textures/gui/skill_icons/jump_kill.png",
+      "focus": "TARGET"
+    },
+    "spider_health": {
+      "kind": "TRAIT",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/jump_kill.png",
+      "focus": "SELF"
+    },
+    "spider_curse": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/jump_kill.png",
+      "focus": "SELF"
+    },
+    "curse_fallback": {
+      "kind": "PASSIVE",
+      "diagram": "SPELL",
+      "icon": "my_addon:textures/gui/skill_icons/jump_kill.png",
+      "focus": "SELF"
+    },
+    "salt_diet": {
+      "kind": "TRAIT",
+      "diagram": "RESOURCE",
+      "icon": "my_addon:textures/gui/skill_icons/jump_kill.png",
+      "focus": "SELF"
     }
   },
   "forms": {
@@ -1864,37 +1948,34 @@
       "fruit_health"
     ],
     "my_addon:spider_moon_weaver": [
+      "web_mode",
       "web_shot",
       "web_bridge",
       "web_swing",
+      "web_tether",
       "web_affinity",
       "moon_poison",
       "cocoon_hunter",
+      "web_jump",
+      "web_membrane",
+      "web_lifetime",
       "spell_weave",
-      "silk_energy",
-      "lunar_affinity",
-      "spider_limbs",
-      "spider_faction",
-      "climb",
-      "fire_fragile",
-      "armor_light"
+      "lunar_affinity"
     ],
     "my_addon:spider_salticidae": [
       "jump_kill",
+      "jump_lock",
       "safety_silk",
+      "silk_limits",
       "venom",
       "venom_dash",
-      "venom_fangs",
-      "predator_strength",
-      "double_jump",
-      "leap_curse",
-      "curse_affinity",
-      "spider_limbs",
-      "spider_faction",
-      "climb",
-      "fall_immunity",
-      "fire_fragile",
-      "armor_light"
+      "venom_fang",
+      "spider_melee",
+      "spider_jump",
+      "spider_health",
+      "spider_curse",
+      "curse_fallback",
+      "salt_diet"
     ]
   }
 }

@@ -122,10 +122,10 @@ public final class JumpKillManager {
 		return FormUtils.isForm(player, FormIdentifiers.SPIDER_SALTICIDAE);
 	}
 
-	/** 客户端按下 sp_primary：优先判「安全丝拉回」（6s 窗口内，绕过 CD——跳杀 CD 8~12s 必然覆盖窗口）；否则开始蓄力。 */
+	/** 客户端按下 sp_primary：优先判「安全丝拉回」（8s 窗口内，绕过 CD——跳杀 CD 8~12s 必然覆盖窗口）；否则开始蓄力。 */
 	public static void startCharge(ServerPlayerEntity player) {
 		if (!isSalticidae(player)) return;
-		// 安全丝拉回：跳杀结束后 6s 内再按主键 → 快速拽回锚点（不进蓄力、不受 CD 阻挡）
+		// 安全丝拉回：跳杀结束后 8s 内再按主键 → 快速拽回锚点（不进蓄力、不受 CD 阻挡）
 		SilkAnchor anchor = ANCHORS.get(player.getUuid());
 		if (anchor != null) {
 			if (player.getServerWorld().getTime() > anchor.validUntil
@@ -501,6 +501,12 @@ public final class JumpKillManager {
         State finishing = STATES.get(player.getUuid());
         if (finishing == null) return;
 		PlayerGravityLease.release(player, SKILL_ID);
+		// 飞行时间不占用落地后的拉回窗口；已被遮挡或超距切断的丝不能重新生成。
+		SilkAnchor anchor = ANCHORS.get(player.getUuid());
+		if (anchor != null) {
+			ANCHORS.put(player.getUuid(), new SilkAnchor(anchor.pos, player.getServerWorld().getTime() + RECALL_WINDOW));
+			SscAddonNetworking.syncJumpKillSilk(player, true, anchor.pos.x, anchor.pos.y, anchor.pos.z, RECALL_WINDOW);
+		}
 		// 扑中 = 成功 CD（cooldown），扑空 = 失败 CD（fail_cooldown）
 		if (hit) net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, finishing.castId);
 		else net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.failed(player, SKILL_ID, finishing.castId);
