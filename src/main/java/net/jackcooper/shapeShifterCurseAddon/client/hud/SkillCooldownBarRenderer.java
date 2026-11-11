@@ -110,6 +110,10 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 				continue;
 			}
 			double internalReady = readInternalReady(player, skill);
+            if (formId.equals(FormIdentifiers.BAT_PARASITIC_FRUIT) && skill.primary()) {
+                internalReady = net.jackcooper.shapeShifterCurseAddon.state.RegParasiticFruitStateComponent.STATE.maybeGet(player)
+                        .map(c -> c.chargeFraction()).orElse(-1.0);
+            }
 			if (formId.equals(FormIdentifiers.SNOW_FOX_FROSTSPINE) && !skill.primary()) {
 				// 凝棘（次技能）蓄力进度：读每 tick 缓存的法阵实体 PROGRESS（服务端权威，0-100 tick）
 				// 无缓存值（未蓄力/已被强停）= -1，侧边条不显示

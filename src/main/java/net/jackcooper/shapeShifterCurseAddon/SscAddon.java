@@ -699,6 +699,8 @@ public class SscAddon implements ModInitializer {
 		net.jackcooper.shapeShifterCurseAddon.ability.BeepSheepFormManager.init();
 		InfectionSporeManager.init();
 		ParasiticSeedFieldManager.init();
+        net.jackcooper.shapeShifterCurseAddon.ability.fruit.ParasiticFruitAbility.init();
+        net.jackcooper.shapeShifterCurseAddon.ability.fruit.ParasiticFruitLayers.init();
 		ParasiticCombatTracker.init();
 		ParasiticAbsorptionManager.init();
 		ParasiticSeedEnergyRegen.init();

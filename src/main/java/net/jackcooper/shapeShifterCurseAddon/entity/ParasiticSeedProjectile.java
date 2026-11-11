@@ -36,6 +36,17 @@ public class ParasiticSeedProjectile extends ThrownItemEntity {
     private static final BalanceReader BAL = new BalanceReader("abilities.parasitic_seed_projectile");
     /** 是否装备双生种荷（命中/落地时启用扩散：额外寄生 1 人，无人则叠 2 层）。 */
     private boolean twinPod = false;
+    private net.jackcooper.shapeShifterCurseAddon.ability.fruit.FruitSelection selection = net.jackcooper.shapeShifterCurseAddon.ability.fruit.FruitSelection.AUTO;
+    public void setSelection(net.jackcooper.shapeShifterCurseAddon.ability.fruit.FruitSelection value) { selection = value; }
+    public net.jackcooper.shapeShifterCurseAddon.ability.fruit.FruitSelection getSelection() { return selection; }
+    @Override public void writeCustomDataToNbt(net.minecraft.nbt.NbtCompound nbt) {
+        super.writeCustomDataToNbt(nbt); nbt.putInt("FruitSelection", selection.ordinal()); nbt.putBoolean("TwinPod", twinPod);
+    }
+    @Override public void readCustomDataFromNbt(net.minecraft.nbt.NbtCompound nbt) {
+        super.readCustomDataFromNbt(nbt);
+        selection = net.jackcooper.shapeShifterCurseAddon.ability.fruit.FruitSelection.fromId(nbt.getInt("FruitSelection"));
+        twinPod = nbt.getBoolean("TwinPod");
+    }
 
     public void setTwinPod(boolean twinPod) {
         this.twinPod = twinPod;
@@ -78,12 +89,12 @@ public class ParasiticSeedProjectile extends ThrownItemEntity {
                 && ehr.getEntity() instanceof LivingEntity host
                 && host.isAlive() && caster != null) {
             // 命中生物：在宿主身上种下灵果种子（双生种荷时扩散额外 1 人/无人叠 2 层）
-            ParasiticFruitSeedPower.plantSeedSpread(caster, host, twinPod);
+            ParasiticFruitSeedPower.plantSeedSpread(caster, host, twinPod, selection);
         } else if (hitResult.getType() == HitResult.Type.BLOCK
                 && this.getWorld() instanceof ServerWorld sw && caster != null) {
             // 落地：生成灵果种子圈（绿色治疗环 + 核心图标，进圈生物触发；双生种荷时核心为双生种荷）
             net.jackcooper.shapeShifterCurseAddon.ability.ParasiticSeedFieldManager
-                    .spawnField(caster, sw, hitResult.getPos().add(0, 0.05, 0), BAL.i("default_field_life", DEFAULT_FIELD_LIFE), twinPod);
+                    .spawnField(caster, sw, hitResult.getPos().add(0, 0.05, 0), BAL.i("default_field_life", DEFAULT_FIELD_LIFE), twinPod, selection);
         }
         this.discard();
     }

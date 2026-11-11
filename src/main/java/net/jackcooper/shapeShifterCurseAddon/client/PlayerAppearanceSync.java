@@ -13,7 +13,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
 
-/** Repairs remote rendering only; never rebuilds the local player's authoritative powers. */
+/** Repairs remote rendering; preserves existing powers when an Origin registry is replaced. */
 public final class PlayerAppearanceSync {
     private record Appearance(UUID uuid, String form, boolean keepOriginal, boolean color,
                               int primary, int accent1, int accent2, int eyeA, int eyeB,
@@ -67,7 +67,7 @@ public final class PlayerAppearanceSync {
     }
 
     private static void apply(MinecraftClient client, PlayerEntity player, Appearance a) {
-        // Origin.setOrigin can remove powers. Local player state remains entirely on the CCA path.
+        // The local player's authoritative state remains entirely on the CCA path.
         if (player == client.player) return;
         Identifier fid = a.form.isEmpty() ? null : Identifier.tryParse(a.form);
         if (fid != null) {
@@ -84,7 +84,12 @@ public final class PlayerAppearanceSync {
                         if (origin != null) {
                             var oc = (net.onixary.shapeShifterCurseFabric.integration.origins.component.OriginComponent)
                                     net.onixary.shapeShifterCurseFabric.integration.origins.registry.ModComponents.ORIGIN.get(player);
-                            oc.setOrigin(layer, origin);
+                            // Registry sync replaces Origin objects without changing their IDs.
+                            // SSC's setter compares references, then removes the old source after
+                            // granting the new one. Reapplying the same ID would erase both.
+                            var current = oc.getOrigin(layer);
+                            if (current == null || !current.getIdentifier().equals(origin.getIdentifier()))
+                                oc.setOrigin(layer, origin);
                         }
                     }
                 } catch (Throwable ignored) {

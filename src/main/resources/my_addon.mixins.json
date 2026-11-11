@@ -35,6 +35,7 @@
         "StepHeightScaleWritesMixin",
         "CrawlingScaleWritesMixin",
         "entity.BatSpellDebuffMixin",
+        "entity.ParasiticFruitStatusMixin",
         "entity.CollapseBodyYawMixin",
     "entity.NightmareSpellEffectMixin",
         "entity.SpellHomingProjectileMixin",

@@ -213,7 +213,13 @@ public final class SkillHudCatalog {
                 skill("summon_wolves", "form_anubis_wolf_sp_summon_wolves", false)));
         // 纯能力标识（wither_brewing 凋零酿造）同上移出技能栏（无 CD 无交互，进化树可见）。
         pair("bat_desmodus", "blood_mist", "form_bat_desmodus_mist_form", "sonic_wave", "form_bat_desmodus_sonic_wave");
-        pair("bat_parasitic_fruit", "parasitic_seed", "form_bat_parasitic_fruit_parasitic_seed", "spore_bomb", "form_bat_parasitic_fruit_spore_bomb");
+        FORMS.put("bat_parasitic_fruit", List.of(
+                skill("parasitic_seed", "form_bat_parasitic_fruit_parasitic_seed", true),
+                skill("spore_bomb", "form_bat_parasitic_fruit_spore_bomb", false),
+                new Skill(new Identifier("my_addon", "textures/gui/skill_icons/fruit_auto.png"), null, null, 0, null, false, null,
+                        p -> new Identifier("my_addon", "textures/gui/skill_icons/fruit_" +
+                                net.jackcooper.shapeShifterCurseAddon.state.RegParasiticFruitStateComponent.STATE.maybeGet(p)
+                                        .map(c -> c.selection().key()).orElse("auto") + ".png"))));
         pair("golden_sandstorm_sp", "wither_sand", "form_golden_sandstorm_sp_wither_sand", "brand_detonation", "form_golden_sandstorm_sp_erosion_brand");
         pair("ocelot_nova", "nova_explosion", "form_ocelot_nova_charge", "spirit_leap", "form_ocelot_nova_leap");
         pair("ocelot_wind_spirit", "wind_dash", "form_ocelot_wind_spirit_wind_dash", "wind_claws", "form_ocelot_wind_spirit_claw_buff");

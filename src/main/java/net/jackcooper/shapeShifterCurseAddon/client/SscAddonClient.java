@@ -652,6 +652,7 @@ public class SscAddonClient implements ClientModInitializer {
 		DeathFinaleClient.register();
 		// SSCA 月织蜷「织网术」- 主键检测器（潜行切换 / 蓄力 / 释放）
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverWebClient.register();
+        ParasiticFruitClient.register();
 		// SSCA 寒棘狐「冰刺」- 主键检测器（长按蕠力 / 点按发射）
 		net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeClient.register();		// SSCA 寒棘狐主技能蓄力 - 客户端镜像粒子生成（S2C 状态包驱动，零持续粒子包）
 		// SSCA 跳蛛「跳杀」- 主键检测器（长按蓄力 / 松开跳扑）

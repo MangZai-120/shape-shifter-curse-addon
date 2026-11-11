@@ -26,6 +26,7 @@ import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.power.ParasiticFruitSeedPower;
 
+import net.jackcooper.shapeShifterCurseAddon.ability.fruit.FruitSelection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -60,8 +61,9 @@ public final class ParasiticSeedFieldManager {
         final long endTick;
         final UUID standUuid;
         final boolean twinPod;
+        final FruitSelection selection;
 
-        SeedField(UUID casterUuid, RegistryKey<World> worldKey, Vec3d pos, long spawnTick, long endTick, UUID standUuid, boolean twinPod) {
+        SeedField(UUID casterUuid, RegistryKey<World> worldKey, Vec3d pos, long spawnTick, long endTick, UUID standUuid, boolean twinPod, FruitSelection selection) {
             this.casterUuid = casterUuid;
             this.worldKey = worldKey;
             this.pos = pos;
@@ -69,6 +71,7 @@ public final class ParasiticSeedFieldManager {
             this.endTick = endTick;
             this.standUuid = standUuid;
             this.twinPod = twinPod;
+            this.selection = selection;
         }
     }
 
@@ -89,6 +92,9 @@ public final class ParasiticSeedFieldManager {
 
     /** 投掷物落地时调用：在落点生成一个灵果种子圈，寿命 = lifeTicks。双生种荷时核心图标为双生种荷。 */
     public static void spawnField(ServerPlayerEntity caster, ServerWorld world, Vec3d pos, int lifeTicks, boolean twinPod) {
+        spawnField(caster, world, pos, lifeTicks, twinPod, ParasiticFruitSeedPower.selection(caster));
+    }
+    public static void spawnField(ServerPlayerEntity caster, ServerWorld world, Vec3d pos, int lifeTicks, boolean twinPod, FruitSelection selection) {
         long now = world.getTime();
         // 悬浮的核心图标（small armor_stand 头戴，仿 RC4 healing_crystal）：双生种荷时为双生种荷，否则火把花种子
         ArmorStandEntity stand = new ArmorStandEntity(world, pos.x, pos.y, pos.z);
@@ -107,7 +113,7 @@ public final class ParasiticSeedFieldManager {
                 : Items.TORCHFLOWER_SEEDS));
         stand.addCommandTag("ssca_seed_field");
         SeedField field = new SeedField(caster.getUuid(), world.getRegistryKey(), pos, now,
-                now + Math.max(20, lifeTicks), stand.getUuid(), twinPod);
+                now + Math.max(20, lifeTicks), stand.getUuid(), twinPod, selection);
         FIELDS.add(field);
         if (!world.spawnEntity(stand)) { FIELDS.remove(field); return; }
         world.playSound(null, pos.x, pos.y, pos.z, SoundEvents.BLOCK_GRASS_PLACE, SoundCategory.PLAYERS, 0.8f, 1.2f);
@@ -150,11 +156,11 @@ public final class ParasiticSeedFieldManager {
                     // Spread once: overlapping pickups must not plant the same twin pair twice.
                     LivingEntity picker = nearby.stream().min(java.util.Comparator.comparingDouble(
                             e -> e.squaredDistanceTo(f.pos))).orElseThrow();
-                    ParasiticFruitSeedPower.plantSeedSpread(caster, picker, true);
+                    ParasiticFruitSeedPower.plantSeedSpread(caster, picker, true, f.selection);
                 } else {
                     // Preserve the ordinary field's simultaneous-pickup behavior.
                     for (LivingEntity picker : nearby) {
-                        ParasiticFruitSeedPower.plantSeedSpread(caster, picker, false);
+                        ParasiticFruitSeedPower.plantSeedSpread(caster, picker, false, f.selection);
                     }
                 }
                 spawnPickupParticles(world, f.pos);

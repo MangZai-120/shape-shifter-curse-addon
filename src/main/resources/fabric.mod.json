@@ -53,6 +53,7 @@
       "net.jackcooper.shapeShifterCurseAddon.state.RegInstinctAnchorComponent",
       "net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent",
       "net.jackcooper.shapeShifterCurseAddon.state.RegSpiderMoonWeaverStateComponent",
+      "net.jackcooper.shapeShifterCurseAddon.state.RegParasiticFruitStateComponent",
       "net.jackcooper.shapeShifterCurseAddon.spell.RegFormationKnowledgeComponent"
     ]
   },
@@ -86,6 +87,7 @@
       "ssc_addon:instinct_anchor",
       "ssc_addon:evolution",
       "ssc_addon:spider_moon_weaver_state",
+      "ssc_addon:parasitic_fruit_selection",
       "ssc_addon:formation_knowledge"
     ]
   }

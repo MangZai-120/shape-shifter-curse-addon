@@ -34,6 +34,7 @@ public final class ControlledAbilityInterruption {
                 && !SscAddonActions.PLAY_DEAD_SKILL_ID.equals(c.skillId)).toList();
         SpellChannelManager.onFullyControlled(player);
         VortexChargeManager.cancel(player);
+        net.jackcooper.shapeShifterCurseAddon.ability.fruit.ParasiticFruitAbility.cancel(player);
         SpiderMoonWeaverWebManager.cancel(player);
         SpiderMoonWeaverSwingManager.interruptControl(player);
         WaterSpearLeapManager.cancel(player);
