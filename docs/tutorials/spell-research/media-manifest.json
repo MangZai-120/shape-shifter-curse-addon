@@ -1,0 +1,384 @@
+{
+  "version": "8.0.0-neomagic.126",
+  "lessons": {
+    "02-interface": {
+      "duration": 18.366667,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "02-interface.mp4": {
+          "bytes": 2005282,
+          "sha256": "834c749c45ebe703e1601371fc055b4436ffbddb42235f10d2b80c9b5dd192e2"
+        },
+        "02-interface.webm": {
+          "bytes": 844298,
+          "sha256": "25b8beef61905102adb250cc07b07c0798cb2483f0cb69d72956c6427a391837"
+        },
+        "02-interface.jpg": {
+          "bytes": 164798,
+          "sha256": "3bf8bb5913cb94643d218f486d43280551f74545628726a87b3ec5eb7d6e77f6"
+        }
+      }
+    },
+    "03-analysis": {
+      "duration": 24.633333,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "03-analysis.mp4": {
+          "bytes": 2472735,
+          "sha256": "52e66071c91664b983f022aecc60a5b7b128cd2db4a87e6b0b16b4152546893e"
+        },
+        "03-analysis.webm": {
+          "bytes": 982797,
+          "sha256": "4b59611e2dea6dc8a74f5f11246530c88e9c50ab3951f411c2ef4a7a4f2bcd02"
+        },
+        "03-analysis.jpg": {
+          "bytes": 165955,
+          "sha256": "766fcbc75a544908f7d1935441cef29f05767693b67ab00f93f23660c12f2e4f"
+        }
+      }
+    },
+    "04-identify": {
+      "duration": 21.066667,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "04-identify.mp4": {
+          "bytes": 2782149,
+          "sha256": "26778cb5f21a235c4da2212d53ffb4efb1b93d8f86ec9fbe51044dc84d1880bf"
+        },
+        "04-identify.webm": {
+          "bytes": 1196991,
+          "sha256": "41d7d62d055e894566d937fdfb4e3c7f24bebab8f923c1e9bb94458569b3927d"
+        },
+        "04-identify.jpg": {
+          "bytes": 165679,
+          "sha256": "914d5f218c92c26b2f455e836388b7da99ec8b16b2b186009aba6f37bfb1e06d"
+        }
+      }
+    },
+    "05-projection": {
+      "duration": 20.833333,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "05-projection.mp4": {
+          "bytes": 2591269,
+          "sha256": "bb88723a499be577d8ae83b60f300c652a1930be2459946296b79a42423fc8f9"
+        },
+        "05-projection.webm": {
+          "bytes": 999137,
+          "sha256": "74ab93d6f3bb368c791ccbbc0c9713544a667fb0e81dfe68db7572dcf6f3de34"
+        },
+        "05-projection.jpg": {
+          "bytes": 166587,
+          "sha256": "28b4c6c3913a33ca7fd26894c790ba87b9f8aaff30683cddbcd5b4c293b816ec"
+        }
+      }
+    },
+    "06-craft": {
+      "duration": 20.5,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "06-craft.mp4": {
+          "bytes": 2606172,
+          "sha256": "d31f4368c4dba1283e1db7a77b55f24971b63964895a80c774e28f1e77471106"
+        },
+        "06-craft.webm": {
+          "bytes": 1036619,
+          "sha256": "3f29431ace94a7ece4f7f2f2d2ecfe436eba7d3267962b0afcc4019f7e7c5ea6"
+        },
+        "06-craft.jpg": {
+          "bytes": 165886,
+          "sha256": "c01b556e998cc8112c6b084d27c584edb46c2b24886b0db234d2af34e4342f19"
+        }
+      }
+    },
+    "09-training": {
+      "duration": 17.0,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "09-training.mp4": {
+          "bytes": 2380381,
+          "sha256": "c8768e35310fbe6cdae1fe961ff0699cbda3aaff28646d6d4953ffb403c4a192"
+        },
+        "09-training.webm": {
+          "bytes": 1058373,
+          "sha256": "712dee45ff487c48971efc1cc1d9e6ea8b7c6c6b922a793cfb74d72d00667bf3"
+        },
+        "09-training.jpg": {
+          "bytes": 164936,
+          "sha256": "f640a4ba60e8ef8f205272a733d90abf9294518c71cac8cba77dac033fcd946b"
+        }
+      }
+    },
+    "10-upgrade": {
+      "duration": 26.933333,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "10-upgrade.mp4": {
+          "bytes": 3544702,
+          "sha256": "8404cd19ebb68ee1a651acddf3964a2622a8018dff3783f6cb034a868a8e2324"
+        },
+        "10-upgrade.webm": {
+          "bytes": 1592830,
+          "sha256": "0703b50b3d0d51cf5ea3474d5ea8c51071b25dee6b4b99e642a0f973fdfb2b41"
+        },
+        "10-upgrade.jpg": {
+          "bytes": 165298,
+          "sha256": "b25351cb0ae5276fd2fb9d7166499e320f613ef37099dfedcd81c3b1ca1d84ce"
+        }
+      }
+    },
+    "11-enhancement": {
+      "duration": 33.166667,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "11-enhancement.mp4": {
+          "bytes": 4476117,
+          "sha256": "2b731c50762582d4a4ecc42a545abcbb42ed9c97c830a83020ee1a8488cc4b59"
+        },
+        "11-enhancement.webm": {
+          "bytes": 1958626,
+          "sha256": "93dc2f05ca629f0900bc0eb349d8a172a02d5e681f754ceb04477f72e94278a6"
+        },
+        "11-enhancement.jpg": {
+          "bytes": 166494,
+          "sha256": "8f165cc49dec235bda8536465ba722aacea96a372d591cedaa609faf168e891a"
+        }
+      }
+    },
+    "13-tier3": {
+      "duration": 31.7,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "13-tier3.mp4": {
+          "bytes": 4374072,
+          "sha256": "5ee6a43069e4e2572c6508462ff249b7e6ba605d2d1642d7ab6a07a5569cef5d"
+        },
+        "13-tier3.webm": {
+          "bytes": 2037029,
+          "sha256": "d0854af303511e5fe3a0d0c2546f02bfa0012b40b8a03b5d6357d732344ccab8"
+        },
+        "13-tier3.jpg": {
+          "bytes": 166872,
+          "sha256": "6db3953bb2e1d274fcf3e3a6f48e6655d7641487a219d1d4c8b7a04fb82c6727"
+        }
+      }
+    },
+    "14-tier4": {
+      "duration": 35.0,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "14-tier4.mp4": {
+          "bytes": 5027150,
+          "sha256": "792338b9088ce5c19a5e210c74223fd0ef5ed4f692a1099947eda7f9d48724c1"
+        },
+        "14-tier4.webm": {
+          "bytes": 2506213,
+          "sha256": "53fdf92fd4d08fd96f017a6b832470a2d016d4ab65628d9ef1a64a9fbced16d7"
+        },
+        "14-tier4.jpg": {
+          "bytes": 165888,
+          "sha256": "f93da12a73e0ec851ef17fd03fdfb2bc46efabc40b9f2a3bb1fe9956fd67c927"
+        }
+      }
+    },
+    "15-tier5": {
+      "duration": 39.433333,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "15-tier5.mp4": {
+          "bytes": 5984772,
+          "sha256": "95c905cbc5c95c0f0ca9877bf900f6818e1561d07351c2ffa518a15d9ac939bf"
+        },
+        "15-tier5.webm": {
+          "bytes": 3090335,
+          "sha256": "2326acd417e8c9f94f0a4273b9eb7b9adb9be6452b47857cd244e68421f6438a"
+        },
+        "15-tier5.jpg": {
+          "bytes": 168681,
+          "sha256": "8c48267a7cf5d7ce3ce59cb60dbf93068cc5c1d6c426e11c4cbbd3a615130a6d"
+        }
+      }
+    },
+    "16-formations": {
+      "duration": 35.866667,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "16-formations.mp4": {
+          "bytes": 4995475,
+          "sha256": "107458520a1e74ee09032ea087a1e1dfa8363959656b670fab0438b723258b3e"
+        },
+        "16-formations.webm": {
+          "bytes": 2073400,
+          "sha256": "6ad121d27be12a346dc4e68f3f21c943d9f45260e46fbf9c3edcb5181a266762"
+        },
+        "16-formations.jpg": {
+          "bytes": 173347,
+          "sha256": "84940d17dbf61312e837abe43091844197267a19d038e8ef06397916d17bb22d"
+        }
+      }
+    },
+    "08-collapse": {
+      "duration": 50.766667,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "08-collapse.mp4": {
+          "bytes": 15881514,
+          "sha256": "cf5483c9d46e76b3230e99582f20d32de0e825f9a4fc6e7730b68ceb9a7e0048"
+        },
+        "08-collapse.webm": {
+          "bytes": 4710624,
+          "sha256": "6879ec71a10456ccd11758625d0b8aca718fc542a6f6c46b756311264b524863"
+        },
+        "08-collapse.jpg": {
+          "bytes": 171800,
+          "sha256": "f146236f3231bd933cbd5f22c6001640953498ee08ba6d82ea0fab9288bd5377"
+        }
+      }
+    },
+    "17-cost-errors": {
+      "duration": 62.721029,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "17-cost-errors.mp4": {
+          "bytes": 8158964,
+          "sha256": "fa7313e26006571941faf821880da8185fbb9ba5a0c313a621e5385ff5e8a244"
+        },
+        "17-cost-errors.webm": {
+          "bytes": 3490694,
+          "sha256": "c53ac2123b93773f46867f1cdaf2c54ef36e66193f4d27a3692bc0b82b1ad86e"
+        },
+        "17-cost-errors.jpg": {
+          "bytes": 164173,
+          "sha256": "2f8210fcde402fad368d358647ab949f9741f8a2cfc3976400f0b930b6d09758"
+        }
+      }
+    },
+    "18-layout-errors": {
+      "duration": 50.133333,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "18-layout-errors.mp4": {
+          "bytes": 6589687,
+          "sha256": "5775e87d38ccb3c8c27175a161416837d12c1667aa2b79ab75faffb2ece75b3d"
+        },
+        "18-layout-errors.webm": {
+          "bytes": 2886667,
+          "sha256": "c6da3f6f2cbe4c176e43672637bfc94a8af2e48b5931829630191afa518ba2f9"
+        },
+        "18-layout-errors.jpg": {
+          "bytes": 166991,
+          "sha256": "a913dbacc4f231010a5137fb22f6fd925b3a89a6e3a2da61f9f4b4cc54fdf726"
+        }
+      }
+    },
+    "01-preparation": {
+      "duration": 20.933333,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "01-preparation.mp4": {
+          "bytes": 2758862,
+          "sha256": "6050adc9fa274acae0cd2558520975bc729a1b935566200df78601e956f866e4"
+        },
+        "01-preparation.webm": {
+          "bytes": 858863,
+          "sha256": "fc2ed513307dc4a94523ca5ef57bebc5c525b6538f46ba00befaeaacc5ce2011"
+        },
+        "01-preparation.jpg": {
+          "bytes": 168740,
+          "sha256": "4bd8dee100838f4d31fa1001ecf9a9182894e01a669e880494254cf132e0fd33"
+        }
+      }
+    },
+    "07-casting": {
+      "duration": 35.7,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "07-casting.mp4": {
+          "bytes": 8869191,
+          "sha256": "edd663962542adc6ccd77eccaecc2facc415e98897a859c7a68b342d085504eb"
+        },
+        "07-casting.webm": {
+          "bytes": 3220260,
+          "sha256": "32557685e733de99280c861546f9b26ca781b0f0a14ee3b0cc2d24e4f91a87a8"
+        },
+        "07-casting.jpg": {
+          "bytes": 182535,
+          "sha256": "f74b2a7c4219b611c023b3cd64381f5a550e7cf14414be119de9a2f51d3dc9ca"
+        }
+      }
+    },
+    "12-imprint": {
+      "duration": 88.154362,
+      "width": 2560,
+      "height": 1440,
+      "fps": 30,
+      "audio_codec": "aac",
+      "files": {
+        "12-imprint.mp4": {
+          "bytes": 20696230,
+          "sha256": "a11ca793e99dbbe9b5cad4cac6e7fccd283f6c04b470209940bf5f89b496735b"
+        },
+        "12-imprint.webm": {
+          "bytes": 7430049,
+          "sha256": "8e4d37e68c26be7256daf7d804ee7f526deb0b809b2a8bc0712cc0b3a55097b7"
+        },
+        "12-imprint.jpg": {
+          "bytes": 168874,
+          "sha256": "fe64cc4ec54629948032929bcd86e4b4f6b121ed2bc2bab16c64c1c4689c32d2"
+        }
+      }
+    }
+  },
+  "source": "native gameplay with process-only game audio"
+}

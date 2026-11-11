@@ -17,6 +17,7 @@ extra_javascript:
   - assets/js/language-switcher.js
 
 nav:
+- 法术研究台视频教程: tutorials/spell-research/index.html
 - 实机技能教程:
   - 灵界之主（图文与视频）: tutorials/spirit-realm-lord/index.html
   - 深渊霸主（图文与视频）: tutorials/abyssal-overlord/index.html
