@@ -32,29 +32,36 @@ The Parasitic Fruit Bat is a supportive bat variant born from the **Evolution St
 
 ## Addon Abilities and Changes
 
-### 1. Parasitic Seed: Friends and Enemies
+### 1. Parasitic Seed: Charging, Selection, and Friendly Support
 
-Aim and press the primary key to hit a living target with an arcing seed.
+Aim and hold the primary key for 0.5–1.5 seconds, then release to throw. More charge increases launch speed and range. A cue sounds at minimum charge and another at full charge; a full charge can be held. Releasing too soon, opening a screen, or being interrupted cancels charge.
 
-Costs one seed energy and has a one-second cooldown. Root for one second, then bear fruit every 1.25 seconds by default. Friends receive Haste, Speed, healing or absorption based on combat and health; enemies receive adaptive Slowness, Weakness, Glowing or Poison.
+Quickly double tap the primary key to cycle **Automatic, Vine, Bitter, Rotten, Sour**. The lower HUD slot shows the selection. Automatic decides from movement, attacking, health, and armor on impact; manual modes fix the hostile fruit type. Selection survives reconnecting and respawning, and resets on changing form.
 
-Outside combat, friends above seventy percent health receive Haste I; otherwise they heal two health. In combat, above eighty percent gives Speed II, fifty to eighty gives Absorption I plus two health, and below fifty gives Absorption II plus four health. Fruit effects only affect the host.
+| Hostile fruit | Effect |
+| --- | --- |
+| Vine | Slowness; slows airborne hosts and pulls them downward |
+| Bitter | Weakness and Glowing |
+| Rotten | Poison on ordinary living hosts; Slowness and Weakness on undead |
+| Sour | Slowness and Glowing |
 
-### 2. Ground Seed Fields
+A successful throw costs one seed energy and starts a one-second cooldown. Seeds root for one second, then fruit every 1.25 seconds by default. Friends always receive support based on health and combat state, regardless of manual hostile-fruit selection.
 
-Throw the primary seed onto the ground, then enter its green ring.
+Outside combat, friends above seventy percent health receive Haste I; otherwise they heal two health. In combat, above eighty percent gives Speed II, fifty to eighty gives Absorption I plus two health, and below fifty gives Absorption II plus four health. Healing and absorption do not multiply with layers.
 
-A seed that lands without hitting a living host creates a pickup field. Any player within one block can collect it and become a host for its remaining lifetime.
+### 2. Ground Seed Fields and Pickup
 
-A miss still costs energy and starts the normal cooldown. The field disappears when collected or expired. Waiting longer before pickup leaves less parasitism time.
+A seed that misses living targets leaves a green field, lasting twelve seconds by default. Valid living hosts within one block can pick it up, including players, mobs, animals, and the caster. The caster must wait half a second after the seed lands before triggering it.
 
-### 3. Stacks, Lifetime and Host Limit
+Pickup grants a **fresh full five- or fifteen-second duration**, based on the host's current combat state; waiting time on the ground is not deducted. Seeds retain their manual fruit choice. Missing still spends energy and starts cooldown. A field disappears on pickup or expiry.
 
-Hit the same host again or seed several different targets.
+### 3. Shared Layers, Independent Expiry, and Host Limit
 
-A host can reach three stacks. Another hit adds lifetime to the remaining duration and restarts rooting. Maintain up to three independent hosts; a fourth replaces the oldest.
+All casters share a cap of three layers on one host. Identical fruit types stack separately, and different types coexist. A fourth layer replaces the oldest. Each layer roots and expires independently; later hits do not add lifetime to old layers.
 
-Each application adds fifteen seconds outside combat or five seconds in combat, based on the host. Current lifetime does not vary with day, night or self-hosting. Full stacks gain faction-colored outlines, while infection outlines take display priority.
+Each hit gives its layer five seconds in combat or fifteen outside combat. Identical status effects use the highest applicable level. Friendly healing and absorption do not multiply with layers or caster count. Full layers have a faction-colored outline; infection outlines have higher display priority.
+
+Each caster can sustain at most three independent hosts. A fourth host removes only that caster's layers from their earliest host, preserving other casters' layers there.
 
 ### 4. Infection Spore Bomb
 
@@ -133,7 +140,7 @@ The clip switches between daylight and night. Equipment, extra attributes and ot
 | Trinket | Effect |
 | --- | --- |
 | Humus Ring | Hostile debuff fruit duration **+50%**; but allied buff fruit duration **-30%** |
-| Twin Pod | Each cast also parasitizes the nearest second target; but doubles Seed Charge cost and adds **+1s** cooldown |
+| Twin Pod | Also plants on another valid host within four blocks, or adds a layer to the first host if none is available. Costs **two seeds** with a **two-second** cooldown |
 
 ***
 
