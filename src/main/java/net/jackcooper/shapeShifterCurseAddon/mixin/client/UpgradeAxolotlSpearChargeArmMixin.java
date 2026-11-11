@@ -26,9 +26,10 @@ import net.jackcooper.shapeShifterCurseAddon.client.UpgradeAxolotlSpearRenderSta
 @Mixin(DefaultModelAnimationSystem.class)
 public class UpgradeAxolotlSpearChargeArmMixin {
 
-    // 保留现有举矛动作，以右利手为基准（弧度）；左利手镜像 yaw。
-    private static final float THROW_SPEAR_RIGHT_PITCH = -3.0F;
-    private static final float THROW_SPEAR_RIGHT_YAW = -0.875F;
+    // 配合手持物挂点的 -90° X 旋转和技能模型的 180° 翻转，矛杆水平朝身体正前方。
+    // 手臂不再向侧面偏转；形态骨骼和物品挂点共用这组姿势，左右利手均保持握点一致。
+    private static final float THROW_SPEAR_RIGHT_PITCH = -(float) Math.PI;
+    private static final float THROW_SPEAR_RIGHT_YAW = 0.0F;
     // 左臂改为「向前伸」（托住矛杆 / 指向前方），而非双手都举过肩
     private static final float LEFT_ARM_FORWARD_PITCH = -1.4F;   // 手臂近乎水平指向前方
     private static final float LEFT_ARM_FORWARD_YAW = -0.3F;     // 略内收

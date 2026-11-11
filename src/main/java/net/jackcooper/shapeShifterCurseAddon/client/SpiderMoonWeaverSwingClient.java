@@ -30,8 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *       本地物理 与 {@code SpiderMoonWeaverSwingRenderer} 渲染绳索使用。</li>
  * </ol>
  *
- * <p>本地玩家的 {@code ropeLen} 由物理 mixin 本地权威维护（收放绳即时响应）；服务端广播的 ropeLen
- * 仅在「刚进入摆荡」时用于初始化，之后本地忽略。其他玩家的 ropeLen 全用服务端广播值渲染。
+	 * <p>本地物理预测收放绳；服务端长度持续校正并限制预测领先，其他玩家直接渲染服务端长度。
  */
 @Environment(EnvType.CLIENT)
 public final class SpiderMoonWeaverSwingClient {
@@ -49,6 +48,7 @@ public final class SpiderMoonWeaverSwingClient {
 		public double ropeLen;
 		public boolean canExtend = true;
 		public int reelIntent; // 本 tick 收放意图：+1 收 / -1 放 / 0 无
+		public int lastSentIntent;
 		public Vec3d swingVel = Vec3d.ZERO; // 自维护的摆锤速度（绕开原版空气阻力，惯性守恒）
 		public boolean physicsStarted; // 是否已用玩家初速初始化摆锤速度
 	}
@@ -86,6 +86,8 @@ public final class SpiderMoonWeaverSwingClient {
 		wasSecondaryPressed = false;
 	}
 
+	public static void remove(UUID id) { DATA.remove(id); }
+
 	private static void onClientTick(MinecraftClient client) {
 		ClientPlayerEntity player = client.player;
 		if (player == null || client.world == null) return;
@@ -103,12 +105,12 @@ public final class SpiderMoonWeaverSwingClient {
 		}
 		wasSecondaryPressed = pressed;
 
-		// 摆荡中每 2 tick 上报一次绳长 + 收放意图（服务端权威扣 mana，成本按 2t 补偿）。
-		// 降频省 C2S 带宽：绳长断丝余量 3 格 >> 2t×0.16/t 的精度损失，无感。
+		// 两种连接均同步；意图变化立即发送，稳定输入每 2 tick 发送。
 		LocalSwing s = DATA.get(player.getUuid());
-		if (s != null && s.active && s.state == STATE_SWINGING) {
-			if ((player.age & 1) == 0) { // 偶数 tick 发，奇数 tick 跳过 → 频率减半
+		if (s != null && s.active && (s.state == STATE_SWINGING || s.state == STATE_TETHER)) {
+			if ((player.age & 1) == 0 || s.reelIntent != s.lastSentIntent) {
 				sendSync(s.ropeLen, s.reelIntent);
+				s.lastSentIntent = s.reelIntent;
 			}
 		}
 	}
@@ -144,10 +146,12 @@ public final class SpiderMoonWeaverSwingClient {
 		s.canExtend = canExtend;
 		s.tetherEntityId = tetherEntityId;
 		if (isLocal) {
-			// 本地玩家 ropeLen 本地权威：仅在刚进入摆荡/tether 时用广播值初始化
 			if (!wasActive && (state == STATE_SWINGING || state == STATE_TETHER)) {
 				s.ropeLen = ropeLen;
 				s.physicsStarted = false;
+			} else {
+				s.ropeLen = net.jackcooper.shapeShifterCurseAddon.ability.SwingReelAuthority.reconcile(
+						s.ropeLen, ropeLen, s.reelIntent, canExtend, state == STATE_TETHER);
 			}
 		} else {
 			s.ropeLen = ropeLen;

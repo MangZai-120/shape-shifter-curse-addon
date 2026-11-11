@@ -59,6 +59,8 @@ public final class WaterSpearLeapManager {
 	private WaterSpearLeapManager() {
 	}
 
+	public static boolean isCharging(ServerPlayerEntity player) { return STATES.containsKey(player.getUuid()); }
+
 	/** 客户端按主技能键（无 payload）。服务端校验、换水矛并起跃悬浮。 */
 	public static void onKeyPress(ServerPlayerEntity player) {
 		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return;

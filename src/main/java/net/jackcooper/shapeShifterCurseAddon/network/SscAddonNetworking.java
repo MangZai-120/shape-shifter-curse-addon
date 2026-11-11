@@ -274,6 +274,7 @@ public class SscAddonNetworking {
 		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
 		buf.writeUuid(player.getUuid());
 		buf.writeBoolean(charging);
+		buf.writeIdentifier(player.getWorld().getRegistryKey().getValue());
 		for (net.minecraft.server.network.ServerPlayerEntity viewer :
 				net.fabricmc.fabric.api.networking.v1.PlayerLookup.tracking(player)) {
 			ServerPlayNetworking.send(viewer, PACKET_SPEAR_CHARGE_STATE, net.fabricmc.fabric.api.networking.v1.PacketByteBufs.copy(buf));
@@ -286,11 +287,21 @@ public class SscAddonNetworking {
 		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
 		buf.writeUuid(player.getUuid());
 		buf.writeBoolean(charging);
+		buf.writeIdentifier(player.getWorld().getRegistryKey().getValue());
 		for (net.minecraft.server.network.ServerPlayerEntity viewer :
 				net.fabricmc.fabric.api.networking.v1.PlayerLookup.tracking(player)) {
 			ServerPlayNetworking.send(viewer, PACKET_FROST_SPIKE_CHARGE_STATE, net.fabricmc.fabric.api.networking.v1.PacketByteBufs.copy(buf));
 		}
 		ServerPlayNetworking.send(player, PACKET_FROST_SPIKE_CHARGE_STATE, buf);
+	}
+
+	private static void sendChargeState(ServerPlayerEntity observer, ServerPlayerEntity owner, Identifier channel, boolean charging) {
+		if (!ServerPlayNetworking.canSend(observer, channel)) return;
+		var buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
+		buf.writeUuid(owner.getUuid());
+		buf.writeBoolean(charging);
+		buf.writeIdentifier(owner.getWorld().getRegistryKey().getValue());
+		ServerPlayNetworking.send(observer, channel, buf);
 	}
 
 	/** S2C：向施法者发「高亮」（默认蓝色），令其客户端把 entityId 对应实体描边 duration tick。 */
@@ -367,6 +378,7 @@ public class SscAddonNetworking {
 		buf.writeVarInt(state);
 		buf.writeBoolean(canExtend);
 		buf.writeInt(tetherEntityId);
+		buf.writeIdentifier(player.getWorld().getRegistryKey().getValue());
 		for (ServerPlayerEntity viewer :
 				net.fabricmc.fabric.api.networking.v1.PlayerLookup.tracking(player)) {
 			ServerPlayNetworking.send(viewer, PACKET_SPIDER_MOON_WEAVER_SWING_STATE,
@@ -830,8 +842,20 @@ public class SscAddonNetworking {
                 (player, joined) -> sendEvolutionRoutes(player, !joined));
         // A newly tracked entity may appear long after login. Send its current skin as well as form.
         net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents.START_TRACKING.register((entity, observer) -> {
-            if (entity instanceof ServerPlayerEntity tracked && ServerPlayNetworking.canSend(observer, PACKET_BROADCAST_FORMS))
-                ServerPlayNetworking.send(observer, PACKET_BROADCAST_FORMS, formSnapshot(List.of(tracked)));
+            if (entity instanceof ServerPlayerEntity tracked) {
+                if (ServerPlayNetworking.canSend(observer, PACKET_BROADCAST_FORMS))
+                    ServerPlayNetworking.send(observer, PACKET_BROADCAST_FORMS, formSnapshot(List.of(tracked)));
+                sendChargeState(observer, tracked, PACKET_FROST_SPIKE_CHARGE_STATE,
+                        net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.isCharging(tracked));
+                sendChargeState(observer, tracked, PACKET_SPEAR_CHARGE_STATE,
+                        net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager.isCharging(tracked));
+            }
+        });
+        net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents.STOP_TRACKING.register((entity, observer) -> {
+            if (entity instanceof ServerPlayerEntity tracked) {
+                sendChargeState(observer, tracked, PACKET_FROST_SPIKE_CHARGE_STATE, false);
+                sendChargeState(observer, tracked, PACKET_SPEAR_CHARGE_STATE, false);
+            }
         });
     }
 

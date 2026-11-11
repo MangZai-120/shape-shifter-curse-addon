@@ -72,6 +72,7 @@ public final class SpiderMoonWeaverSwingManager {
 		double ropeLen = 0.0;
 		boolean canExtend = true;
 		int broadcastTick = 0;
+		int lastReelTick;
 		double lastPX = Double.NaN, lastPY = 0, lastPZ = 0; // 卡死检测：上 tick 玩家位置
 		int stuckTicks = 0;          // 被拉但连续不动的 tick 数
 	}
@@ -186,6 +187,7 @@ public final class SpiderMoonWeaverSwingManager {
 		s.tetherEntityId = -1;
 		s.ropeLen = MathHelper.clamp(torso(player).distanceTo(anchor), MIN_ROPE_LEN, MAX_ROPE_REACH);
 		s.canExtend = true;
+		s.lastReelTick = player.getServer().getTicks();
 		broadcastState(player, s);
 	}
 
@@ -208,6 +210,7 @@ public final class SpiderMoonWeaverSwingManager {
 		s.anchor = Vec3d.ZERO;
 		s.ropeLen = BAL.d("tether_max_len", TETHER_MAX_LEN); // 固定 16 格上限（不用拴住瞬间距离）：允许 0~16 自由，超 16 硬约束拉回、不可延长
 		s.canExtend = true;
+		s.lastReelTick = player.getServer().getTicks();
 		mana(player).consumeMana(BAL.d("tether_hit_mana_cost", TETHER_HIT_MANA_COST)); // 勾中生物瞬间额外扣 8 点 mana（自动 clamp 到 0 不会负、自动同步客户端 mana 条）
 		SscAddonNetworking.sendWebHighlight(player, target.getId(), 40, tetherHighlightColor(player, target)); // 仅施法者可见高光（友军绿/敌人蓝）
 		broadcastState(player, s);
@@ -366,35 +369,25 @@ public final class SpiderMoonWeaverSwingManager {
 		return inst != null ? MathHelper.clamp(inst.getValue(), 0.0, 1.0) : 0.0;
 	}
 
-	/**
-	 * 客户端每 2 tick 上报一次绳长 + 收放意图（+1 收 / -1 放 / 0）。服务端信任客户端 ropeLen（转发 + 断丝参考），
-	 * 放绳权威扣 mana（每包扣 2 tick 的量），mana 不足则 canExtend=false 广播阻止继续放绳。SWINGING / TETHER 均适用。
-	 */
+	/** 客户端预测长度仅是请求；服务端按经过的 tick、实际增长量和法力认可变化。 */
 	public static void onReelSync(ServerPlayerEntity player, double clientRopeLen, int reel) {
 		SwingState s = STATES.get(player.getUuid());
 		if (s == null || (s.state != STATE_SWINGING && s.state != STATE_TETHER)) return;
-		// tether 拴生物：最大间距 16 且禁止放绳延长；swinging 荡漾仍可到 32 并放绳
-		double maxLen = (s.state == STATE_TETHER) ? BAL.d("tether_max_len", TETHER_MAX_LEN) : MAX_ROPE_REACH;
-		s.ropeLen = MathHelper.clamp(clientRopeLen, MIN_ROPE_LEN, maxLen);
-		if (s.state == STATE_TETHER) reel = 0; // tether 不能延长蛛丝，忽略放绳意图
-		boolean prev = s.canExtend;
-		if (reel < 0) {
-			// 客户端每 2 tick 上报一次，每包扣 2 tick 的放绳量（REEL_SPEED 为每 tick 放绳长度），
-			// 保持与原每 tick 上报时相同的 mana 消耗速率
-			double cost = REEL_SPEED * 2.0 / BAL.d("mana_per_block", MANA_PER_BLOCK);
-			ManaComponent m = mana(player);
-			if (m.getMana() >= cost) {
-				m.consumeMana(cost);
-				s.canExtend = true;
-			} else {
-				s.canExtend = false;
-			}
-		} else {
-			s.canExtend = true;
-		}
-		if (s.canExtend != prev) {
-			broadcastState(player, s);
-		}
+		if (player.isDead() || !isSpiderMoonWeaver(player)
+				|| net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.fullyControlled(player)) return;
+		int now = player.getServer().getTicks(), elapsed = now - s.lastReelTick;
+		s.lastReelTick = now; // Multiple packets in one tick cannot buy more movement time.
+		boolean tether = s.state == STATE_TETHER;
+		double maxLen = tether ? BAL.d("tether_max_len", TETHER_MAX_LEN) : MAX_ROPE_REACH;
+		ManaComponent m = mana(player);
+		var result = SwingReelAuthority.apply(s.ropeLen, clientRopeLen, reel, elapsed,
+				MIN_ROPE_LEN, maxLen, tether, m.getMana(), BAL.d("mana_per_block", MANA_PER_BLOCK),
+				!tether && player.isOnGround() ? torso(player).distanceTo(s.anchor) : Double.NaN);
+		boolean changedPermission = s.canExtend != result.canExtend();
+		s.ropeLen = result.length();
+		s.canExtend = result.canExtend();
+		if (result.cost() > 0) m.consumeMana(result.cost());
+		if (changedPermission) broadcastState(player, s);
 	}
 
 	private static double computeObscuration(ServerPlayerEntity player, Vec3d from, Vec3d to) {

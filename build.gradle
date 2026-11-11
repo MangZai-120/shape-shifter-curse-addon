@@ -94,6 +94,13 @@ tasks.register('visualSampleHistoryTest', JavaExec) {
 }
 check.dependsOn visualSampleHistoryTest
 
+tasks.register('swingReelAuthorityTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.ability.SwingReelAuthorityTest'
+}
+check.dependsOn swingReelAuthorityTest
+
 tasks.register('parametricVisualTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath

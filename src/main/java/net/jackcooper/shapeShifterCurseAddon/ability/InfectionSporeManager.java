@@ -5,13 +5,15 @@
  */
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals;
+import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals.Kind;
+
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
-import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
@@ -22,7 +24,6 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
-import org.joml.Vector3f;
 
 import java.util.Iterator;
 import java.util.List;
@@ -315,8 +316,6 @@ public final class InfectionSporeManager {
     public static double cloudPurifyReach() {
         return BAL.d("cloud_purify_reach", CLOUD_PURIFY_REACH);
     }
-    /** 墨绿色中毒粒子（与感染孢子弹视觉一致） */
-    private static final DustParticleEffect CLOUD_POISON_DUST = new DustParticleEffect(new Vector3f(0.30f, 0.50f, 0.10f), 1.2f);
     /** 活跃的毒雾云列表（服务端权威） */
     private static final List<CloudData> CLOUDS = new CopyOnWriteArrayList<>();
 
@@ -345,7 +344,7 @@ public final class InfectionSporeManager {
                 world.getRegistryKey(),
                 center.x, center.y, center.z,
                 radius,
-                now + Math.max(20, durationTicks),
+                now, now + Math.max(20, durationTicks),
                 now + BAL.i("cloud_scan_interval", CLOUD_SCAN_INTERVAL)
         ));
     }
@@ -372,10 +371,10 @@ public final class InfectionSporeManager {
                 CLOUDS.remove(cloud);
                 continue;
             }
-            // 1) 粒子表现（服务端广播，多人一致）
-            if (now % CLOUD_PARTICLE_INTERVAL == 0) {
-                emitCloudParticles(world, cloud);
-            }
+            // Geometry and jitter run on clients; the server owns lifetime and target scans.
+            ParametricVisuals.touchWorld(world,cloud.visualId,Kind.SPORE_CLOUD,null,
+                    new Vec3d(cloud.x,cloud.y,cloud.z),cloud.startTick,
+                    (int)Math.min(1_000_000,cloud.endTick-cloud.startTick),cloud.radius,cloud.radius);
             // 2) 周期扫描：范围内每 1.5s 直接施加效果（站着才生效，离开即停）
             if (now >= cloud.nextScanTick) {
                 cloud.nextScanTick = now + BAL.i("cloud_scan_interval", CLOUD_SCAN_INTERVAL);
@@ -406,18 +405,9 @@ public final class InfectionSporeManager {
         }
     }
 
-    private static void emitCloudParticles(ServerWorld world, CloudData cloud) {
-        // 主体毒雾：贴地铺开的墨绿色中毒粒子
-        world.spawnParticles(CLOUD_POISON_DUST,
-                cloud.x, cloud.y + 0.5, cloud.z,
-                8, cloud.radius * 0.6, 0.45, cloud.radius * 0.6, 0.0);
-        // 低频飘散的孢子，增强"雾"的体积感
-        world.spawnParticles(ParticleTypes.SPORE_BLOSSOM_AIR,
-                cloud.x, cloud.y + 0.3, cloud.z,
-                2, cloud.radius * 0.5, 0.3, cloud.radius * 0.5, 0.0);
-    }
-
     private static final class CloudData {
+        final UUID visualId=UUID.randomUUID();
+        final long startTick;
         final UUID casterUuid;
         final RegistryKey<World> worldKey;
         final double x;
@@ -428,7 +418,8 @@ public final class InfectionSporeManager {
         long nextScanTick;
 
         CloudData(UUID casterUuid, RegistryKey<World> worldKey, double x, double y, double z,
-                  double radius, long endTick, long nextScanTick) {
+                  double radius, long startTick, long endTick, long nextScanTick) {
+            this.startTick = startTick;
             this.casterUuid = casterUuid;
             this.worldKey = worldKey;
             this.x = x;

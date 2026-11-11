@@ -10,6 +10,8 @@ import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaPrimary;
 import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaTeleport;
 import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionTalents;
+import net.jackcooper.shapeShifterCurseAddon.state.RegSpiderMoonWeaverStateComponent;
+import net.jackcooper.shapeShifterCurseAddon.state.SpiderMoonWeaverStateComponent;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
@@ -55,6 +57,7 @@ public final class SkillHudCatalog {
         public Identifier resolveIcon(PlayerEntity player) {
             return iconOverride == null ? icon : iconOverride.apply(player);
         }
+
     }
 
     /** 客户端读 balance 快照（同包 HUD 渲染器复用；快照未初始化回退默认值）。 */
@@ -95,6 +98,15 @@ public final class SkillHudCatalog {
             new Identifier("my_addon", "textures/gui/skill_icons/invisibility.png");
     private static final Identifier ICON_WEAKNESS =
             new Identifier("my_addon", "textures/gui/skill_icons/weakness_spot.png");
+    private static final Identifier ICON_WEB_BRIDGE =
+            new Identifier("my_addon", "textures/gui/skill_icons/moon_web_mode_bridge.png");
+    private static final Identifier ICON_WEB_ATTACK =
+            new Identifier("my_addon", "textures/gui/skill_icons/moon_web_mode_attack.png");
+
+    private static boolean moonWeaverAttackMode(PlayerEntity player) {
+        return RegSpiderMoonWeaverStateComponent.SPIDER_MOON_WEAVER_STATE.get(player).getMode()
+                == SpiderMoonWeaverStateComponent.MODE_ATTACK;
+    }
 
     private static final Map<String, List<Skill>> FORMS = new HashMap<>();
     /** Require the purchase record and granted power, restricted to the matching form. */
@@ -183,9 +195,13 @@ public final class SkillHudCatalog {
                 skill("soul_teleport", "form_familiar_fox_mancianima_soul_teleport",
                         "form_mancianima_link_cd", MancianimaTeleport.RED_LINK_CD_TICKS, null, false,
                         p -> hasMana(p, balanceInt("abilities.mancianima_teleport", "mana_cost", MancianimaTeleport.MANA_COST)))));
-        // 月织蛛：织网术起手（balance 可调）；蛛丝荡漾 1 mana
-        pair("spider_moon_weaver", "moon_web", "form_spider_moon_weaver_web", "web_swing", "form_spider_moon_weaver_swing",
-                p -> hasMana(p, net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.startManaForHud()), p -> hasMana(p, 1.0));
+        // 月织蛛：第三槽只显示服务端同步的织网模式，不挂冷却或魔力门槛。
+        FORMS.put("spider_moon_weaver", List.of(
+                skill("moon_web", "form_spider_moon_weaver_web", true,
+                        p -> hasMana(p, net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.startManaForHud())),
+                skill("web_swing", "form_spider_moon_weaver_swing", false, p -> hasMana(p, 1.0)),
+                new Skill(ICON_WEB_BRIDGE, null, null, 0, null, false, null,
+                        p -> moonWeaverAttackMode(p) ? ICON_WEB_ATTACK : ICON_WEB_BRIDGE)));
 
         FORMS.put("axolotl_fluorescent", List.of(
                 skill("fluorescent_laser", "form_axolotl_fluorescent_laser", "form_axolotl_fluorescent_shot_cd", net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.shotTicksForHud(), null, true),

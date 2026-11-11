@@ -171,6 +171,17 @@ public final class ParametricVisualClient {
                 });
             } catch(RuntimeException invalid) {client.execute(() -> malformedPackets++);}
         });
+        ClientPlayNetworking.registerGlobalReceiver(ParametricVisuals.ABILITY_BURST, (client, handler, buf, sender) -> {
+            try {
+                Identifier dimension=buf.readIdentifier();View view=View.read(buf);
+                if(view.key().kind()!=Kind.FOX_EXPLOSION || view.duration()!=1 || view.follows() || buf.isReadable())
+                    throw new IllegalArgumentException("Invalid ability burst");
+                client.execute(() -> {
+                    if(client.getNetworkHandler()!=handler || !acceptWorld(client,dimension) || client.player==null)return;
+                    emitSample(client,new Runtime(view,view.epoch()),view,0,view.epoch());
+                });
+            } catch(RuntimeException invalid) { client.execute(() -> malformedPackets++); }
+        });
         ClientPlayNetworking.registerGlobalReceiver(ParametricVisuals.CIRCLE, (client, handler, buf, sender) -> {
             try {
                 Identifier dimension = buf.readIdentifier(); Circle circle = Circle.read(buf);
@@ -296,6 +307,15 @@ public final class ParametricVisualClient {
             int sample = SceneRecipes.latestSampleAge(view, age);
             if (sample < 0 || sample <= runtime.lastSample) continue;
             runtime.lastSample = sample;
+            emitSample(client, runtime, view, sample, now);
+        }
+        while (budget > 0 && !circles.isEmpty()) {
+            CircleJob job = circles.peek(); long before = job.remaining();
+            renderCircle(client,job); queuedParticles -= before - job.remaining();
+            if (job.remaining() == 0) circles.remove(); else break;
+        }
+    }
+    private static void emitSample(MinecraftClient client, Runtime runtime, View view, int sample, long now) {
             long sampleTick = view.epoch() + sample, seed = ParametricVisuals.seed(view, sampleTick);
             runtime.recipeRandom.setSeed(seed);
             Vec3d origin = origin(runtime, now);
@@ -313,12 +333,6 @@ public final class ParametricVisualClient {
                         Runnable emission = () -> cloud(particle,view.key().kind().force,px,py,pz,count,dx,dy,dz,speed,runtime.jitterRandom);
                         if (projectile) FirstPersonParticles.emitProjectile(owner,emission); else FirstPersonParticles.emit(owner,emission);
                     });
-        }
-        while (budget > 0 && !circles.isEmpty()) {
-            CircleJob job = circles.peek(); long before = job.remaining();
-            renderCircle(client,job); queuedParticles -= before - job.remaining();
-            if (job.remaining() == 0) circles.remove(); else break;
-        }
     }
     private static Vec3d origin(Runtime runtime, long now) {
         if (!runtime.view.follows()) return runtime.view.position();

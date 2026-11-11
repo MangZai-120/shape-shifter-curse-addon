@@ -10,6 +10,10 @@ import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
 import dev.onyxstudios.cca.api.v3.component.ComponentContainer;
 import dev.onyxstudios.cca.api.v3.component.ComponentProvider;
+import dev.onyxstudios.cca.api.v3.component.ComponentKey;
+import dev.onyxstudios.cca.api.v3.component.sync.AutoSyncedComponent;
+import dev.onyxstudios.cca.api.v3.component.sync.ComponentPacketWriter;
+import io.netty.buffer.Unpooled;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import io.github.apace100.apoli.component.PowerHolderComponentImpl;
 import io.github.apace100.apoli.power.PowerType;
@@ -20,6 +24,10 @@ import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionTestRoutes;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
+import net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager;
+import net.jackcooper.shapeShifterCurseAddon.state.RegSpiderMoonWeaverStateComponent;
+import net.jackcooper.shapeShifterCurseAddon.state.SpiderMoonWeaverStateComponent;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
@@ -29,6 +37,13 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormCompon
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.packet.s2c.play.CustomPayloadS2CPacket;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.text.Text;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.additional_power.ChargePower;
@@ -99,7 +114,47 @@ public final class SkillHudIntegrationProbe {
         dynamicCatalog(unsafe, client, registrations);
         perkCooldownParity(unsafe, server, client);
         evolutionEligibility(unsafe, server, client, routes);
+        moonWeaverModeSynchronization(unsafe, server, client);
         System.out.println("Skill HUD Fabric integration: " + checks + " actual Mixin, NBT cooldown mirror, Perk unlock/revoke/form-switch and SSC/SSCA cooldown checks passed; live gameplay not tested.");
+    }
+
+    private static void moonWeaverModeSynchronization(sun.misc.Unsafe unsafe, TestWorld server,
+                                                       TestWorld client) throws Exception {
+        TestPlayer authority = player(unsafe, server, FormIdentifiers.SPIDER_MOON_WEAVER);
+        TestPlayer mirror = player(unsafe, client, FormIdentifiers.SPIDER_MOON_WEAVER);
+        authority.setUuid(UUID.randomUUID());
+        var position = net.minecraft.entity.Entity.class.getDeclaredField("pos");
+        unsafe.putObject(authority, unsafe.objectFieldOffset(position), Vec3d.ZERO);
+        authority.modeMirror = mirror;
+        var initial = entries(mirror);
+        check(initial.size() == 3 && initial.get(2).slot() == SkillHudLayout.Slot.LOWER,
+                "Moon Weaver mode uses only the third slot");
+        var indicator = initial.get(2).skill();
+        check(indicator.cooldown() == null && indicator.condition() == null,
+                "mode remains visible independently of mana and skill cooldowns");
+        check(indicator.resolveIcon(mirror).getPath().endsWith("/moon_web_mode_bridge.png"),
+                "default client mode displays the dedicated bridge icon");
+
+        // Invoke the actual server action; CCA dispatch writes its real sync payload to the mirror.
+        SpiderMoonWeaverWebManager.toggleMode(authority);
+        check(authority.modeSyncPackets == 1, "actual toggle sends a CCA mode synchronization packet");
+        check(mirror.moonWeaver.getMode() == SpiderMoonWeaverStateComponent.MODE_ATTACK,
+                "client receives the server's attack mode without reconnecting");
+        check(indicator.resolveIcon(mirror).getPath().endsWith("/moon_web_mode_attack.png"),
+                "already-cached HUD entry immediately resolves the attack icon");
+
+        SpiderMoonWeaverWebManager.toggleMode(authority);
+        check(authority.modeSyncPackets == 2 && mirror.moonWeaver.getMode() == SpiderMoonWeaverStateComponent.MODE_BRIDGE,
+                "switching back synchronizes bridge mode");
+        check(indicator.resolveIcon(mirror).getPath().endsWith("/moon_web_mode_bridge.png"),
+                "switching back restores the bridge icon in the same entry");
+        var updated = entries(mirror);
+        check(initial.get(0).equals(updated.get(0)) && initial.get(1).equals(updated.get(1)),
+                "mode switches preserve both main skill slots");
+        authority.form.nowForm = new NormalForm(FormIdentifiers.SPIDER_SALTICIDAE);
+        SpiderMoonWeaverWebManager.toggleMode(authority);
+        check(authority.modeSyncPackets == 2 && authority.moonWeaver.getMode() == SpiderMoonWeaverStateComponent.MODE_BRIDGE,
+                "a different form cannot switch or synchronize Moon Weaver mode");
     }
 
     private static void evolutionEligibility(sun.misc.Unsafe unsafe, TestWorld server, TestWorld client,
@@ -355,9 +410,11 @@ public final class SkillHudIntegrationProbe {
         if (route != null) player.evolution.setRoute(route.routeId);
         player.evolution.setUnlockAll(true);
         player.powers = new PowerHolderComponentImpl(player);
+        player.moonWeaver = new SpiderMoonWeaverStateComponent();
         player.components = ComponentContainer.Factory.builder(TestPlayer.class)
                 .component(RegPlayerFormComponent.PLAYER_FORM, p -> p.form)
                 .component(RegEvolutionComponent.EVOLUTION, p -> p.evolution)
+                .component(RegSpiderMoonWeaverStateComponent.SPIDER_MOON_WEAVER_STATE, p -> p.moonWeaver)
                 .component(PowerHolderComponent.KEY, p -> p.powers).build().createContainer(player);
         return player;
     }
@@ -374,6 +431,8 @@ public final class SkillHudIntegrationProbe {
         long now;
         private TestWorld() { super(null, null, null, null, World.OVERWORLD, null, null, false, 0, List.of(), false, null); }
         @Override public long getTime() { return now; }
+        @Override public void playSound(PlayerEntity except, double x, double y, double z,
+                                        SoundEvent sound, SoundCategory category, float volume, float pitch) {}
     }
     public static final class TestOwner extends ArmorStandEntity {
         World testWorld;
@@ -388,10 +447,28 @@ public final class SkillHudIntegrationProbe {
         EvolutionComponent evolution;
         PowerHolderComponentImpl powers;
         ComponentContainer components;
+        SpiderMoonWeaverStateComponent moonWeaver;
+        TestPlayer modeMirror;
+        int modeSyncPackets;
         private TestPlayer() { super(null, null, new GameProfile(UUID.randomUUID(), "hud-test")); }
         @Override public World getWorld() { return testWorld; }
         @Override public ComponentContainer getComponentContainer() { return components; }
-        @Override public Iterable<ServerPlayerEntity> getRecipientsForComponentSync() { return List.of(); }
+        @Override public Iterable<ServerPlayerEntity> getRecipientsForComponentSync() {
+            return modeMirror == null ? List.of() : List.of(this);
+        }
+        @Override public void sendMessage(Text message, boolean overlay) {}
+        @Override public <C extends AutoSyncedComponent> CustomPayloadS2CPacket toComponentPacket(
+                ComponentKey<? super C> key, ComponentPacketWriter writer, ServerPlayerEntity recipient) {
+            if (modeMirror != null && key.equals(RegSpiderMoonWeaverStateComponent.SPIDER_MOON_WEAVER_STATE)) {
+                var packet = new PacketByteBuf(Unpooled.buffer());
+                try {
+                    writer.writeSyncPacket(packet, recipient);
+                    modeMirror.moonWeaver.applySyncPacket(packet);
+                    modeSyncPackets++;
+                } finally { packet.release(); }
+            }
+            return null;
+        }
     }
     private static void check(boolean value, String reason) { checks++; if (!value) throw new AssertionError(reason); }
 }

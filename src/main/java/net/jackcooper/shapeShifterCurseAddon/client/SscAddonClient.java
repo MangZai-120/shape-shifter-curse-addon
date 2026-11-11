@@ -186,8 +186,13 @@ public class SscAddonClient implements ClientModInitializer {
 					int state = buf.readVarInt();
 					boolean canExtend = buf.readBoolean();
 					int tetherEntityId = buf.readInt();
-					client.execute(() -> net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverSwingClient
-							.onStateSync(uuid, active, ax, ay, az, ropeLen, state, canExtend, tetherEntityId));
+                    var dimension = buf.isReadable() ? buf.readIdentifier() : null;
+					var receivedWorld = client.world;
+					client.execute(() -> {
+						if (client.getNetworkHandler() != handler || client.world == null || (dimension == null ? client.world != receivedWorld : !dimension.equals(client.world.getRegistryKey().getValue()))) return;
+						AbilityVisualLifecycle.ensureWorld(client.world);
+						SpiderMoonWeaverSwingClient.onStateSync(uuid, active, ax, ay, az, ropeLen, state, canExtend, tetherEntityId);
+					});
 				});
 
 		// 修复跨存档颜色变白：cloth-config 里的自定义颜色是全局存储，但服务端 PlayerSkinComponent 按存档独立。
@@ -379,11 +384,14 @@ public class SscAddonClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_SPEAR_CHARGE_STATE, (client, handler, buf, responseSender) -> {
             java.util.UUID id = buf.readUuid();
             boolean charging = buf.readBoolean();
+            var dimension = buf.isReadable() ? buf.readIdentifier() : null;
 
             var receivedWorld = client.world;
             client.execute(() -> {
-                if (client.getNetworkHandler() == handler && client.world != null && client.world == receivedWorld)
+                if (client.getNetworkHandler() == handler && client.world != null && (dimension == null ? client.world == receivedWorld : dimension.equals(client.world.getRegistryKey().getValue()))) {
+                    AbilityVisualLifecycle.ensureWorld(client.world);
                     UpgradeAxolotlSpearRenderState.set(id, charging);
+                }
             });
         });
 
@@ -391,13 +399,17 @@ public class SscAddonClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_FROST_SPIKE_CHARGE_STATE, (client, handler, buf, responseSender) -> {
             java.util.UUID id = buf.readUuid();
             boolean charging = buf.readBoolean();
+            var dimension = buf.isReadable() ? buf.readIdentifier() : null;
             var receivedWorld = client.world;
             client.execute(() -> {
-                if (client.getNetworkHandler() == handler && client.world != null && client.world == receivedWorld)
+                if (client.getNetworkHandler() == handler && client.world != null && (dimension == null ? client.world == receivedWorld : dimension.equals(client.world.getRegistryKey().getValue()))) {
+                    AbilityVisualLifecycle.ensureWorld(client.world);
                     net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeClientState.setCharging(id, charging);
+                }
             });
         });
         net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeClientState.register();
+        AbilityVisualLifecycle.register();
         // 断线/换服清理蓄力镜像，防残留
         ClientPlayConnectionEvents.DISCONNECT.register((h, c) -> net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeClientState.clearAll());
 

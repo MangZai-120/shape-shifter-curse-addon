@@ -126,6 +126,8 @@ public final class SpiderMoonWeaverWebManager {
 		if (CHARGING.containsKey(player.getUuid())) return;
 		int next = (getMode(player) == MODE_ATTACK) ? MODE_BRIDGE : MODE_ATTACK;
 		RegSpiderMoonWeaverStateComponent.SPIDER_MOON_WEAVER_STATE.get(player).setMode(next);
+		// CCA 不会在字段赋值后自行发包；切换时同步，供客户端模式图标读取。
+		RegSpiderMoonWeaverStateComponent.SPIDER_MOON_WEAVER_STATE.sync(player);
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_WOOL_PLACE, SoundCategory.PLAYERS, 0.8f, next == MODE_ATTACK ? 1.4f : 0.9f);

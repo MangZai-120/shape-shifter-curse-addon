@@ -24,9 +24,11 @@ public final class ParametricVisualTest {
             case SSC_WEB_TRAIL -> new double[]{3};
             case MIST_FORM_AMBIENT -> new double[]{.1,0};
             case MIST_FORM_CHARGE -> new double[]{20,.1,0,0};
+            case FOX_EXPLOSION -> new double[]{6};
+            case FOX_RING, SPORE_CLOUD -> new double[]{2};
             default -> new double[0];
         };
-        int duration = switch(kind) {case CORRUPT_MIST->220;case METEOR_WARNING->10;case DOMAIN_EDGE->96;case DOMAIN_AMBIENT->150;case MIST_FORM_CHARGE->20;default->0;};
+        int duration = switch(kind) {case FOX_EXPLOSION->1;case FOX_RING->7;case CORRUPT_MIST->220;case METEOR_WARNING->10;case DOMAIN_EDGE->96;case DOMAIN_AMBIENT->150;case MIST_FORM_CHARGE->20;default->0;};
         return new View(new Key(EVENT,kind),ANCHOR,301,OWNER,new Vec3d(1.25,64.5,-2.75),
                 new Vec3d(.125,-.25,.5),1000,duration,true,.6f,1.6f,6,p);
     }
@@ -35,8 +37,11 @@ public final class ParametricVisualTest {
                 "Existing 68 recipe ordinals remain stable");
         for(Kind kind:Kind.values())check(ParametricVisuals.supportsKind(kind,false)==(kind.ordinal()<8),
                 "A peer without the mist visual capability never receives a newly appended kind: "+kind);
-        for(Kind kind:Kind.values())check(ParametricVisuals.supportsKind(kind,true),
-                "Capability registration supports the new mist recipes: "+kind);
+        for(Kind kind:Kind.values()) {
+            check(ParametricVisuals.supportsKind(kind,true)==(kind.ordinal()<10),
+                    "Old mist peers do not receive ability kinds: "+kind);
+            check(ParametricVisuals.supportsKind(kind,true,true),"Full capability supports all kinds: "+kind);
+        }
         for(Kind k:Kind.values()) {
             View a=view(k);var b=new PacketByteBuf(Unpooled.buffer());
             try {
@@ -184,7 +189,39 @@ public final class ParametricVisualTest {
     }
     public static void main(String[] args) {
         SharedConstants.createGameVersion();Bootstrap.initialize();wire();endpoints();observers();churn();
+        abilityRecipes();
         checks+=MistFormRecipeTest.run();
         System.out.println("Parametric visual codec/timeline/20-observer sampling PASS: "+checks+" checks");
+    }
+
+    private static void abilityRecipes() {
+        int[] counts={0,0};
+        SceneRecipes.emit(view(Kind.FOX_EXPLOSION),0,1000,new Random(127),
+                (particle,x,y,z,count,dx,dy,dz,speed,decoration,projectile)->{
+                    counts[0]++;counts[1]+=count;
+                    check(decoration&&projectile,"Fox burst keeps projectile first-person scope");
+                    if(counts[0]<=130)check(x*x+y*y+z*z<=36+1e-9,"Fox samples stay inside original six-block sphere");
+                });
+        check(counts[0]==152&&counts[1]==679,"Original fox explosion keeps 152 batches and 679 particles");
+        for(int age=0;age<7;age++) {
+            int current=age;double radius=Math.max(.1,2*((age+1)/7f));int[] ring={0};
+            SceneRecipes.emit(view(Kind.FOX_RING),age,1000+age,new Random(127),
+                    (particle,x,y,z,count,dx,dy,dz,speed,decoration,projectile)->{
+                        ring[0]++;check(Math.abs(Math.hypot(x,z)-radius)<1e-8,"Original seven-frame ring radius "+current);
+                        check(count==1&&decoration&&projectile,"Ring particle density and scope preserved");
+                    });
+            check(ring[0]>0,"Ring frame emitted");
+        }
+        check(!SceneRecipes.active(view(Kind.FOX_RING),7),"Ring ends after seven original frames");
+        for(int tick=1000;tick<1010;tick++) {
+            int[] cloud={0};
+            SceneRecipes.emit(view(Kind.SPORE_CLOUD),tick-1000,tick,new Random(127),
+                    (particle,x,y,z,count,dx,dy,dz,speed,decoration,projectile)->{
+                        cloud[0]+=count;check(!decoration&&!projectile,"Cloud remains visible to its owner");
+                        if(particle instanceof net.minecraft.particle.DustParticleEffect dust)
+                            check(dust.getColor().equals(new org.joml.Vector3f(.30f,.50f,.10f))&&dust.getScale()==1.2f,"Original poison cloud color and size");
+                    });
+            check(cloud[0]==(tick%2==0?10:0),"Cloud preserves original world-clock cadence");
+        }
     }
 }

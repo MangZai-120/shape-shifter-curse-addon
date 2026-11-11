@@ -83,6 +83,11 @@ public final class FrostSpikeManager {
 		}
 	}
 
+	public static boolean isCharging(ServerPlayerEntity player) {
+		State s = STATES.get(player.getUuid());
+		return s != null && s.charging;
+	}
+
 	/** 客户端「点按」→ 按生成顺序（最旧优先）发射一根冰锥。 */
 	public static void fire(ServerPlayerEntity player) {
 		if (!isFrostspine(player)) return;
@@ -121,7 +126,7 @@ public final class FrostSpikeManager {
 		if (s == null) return;
 		cleanupDead(s);
 		if (countThorns(s) == 0) return; // 无环绕冰锥：按次键无效
-		s.charging = false; s.chargeTicks = 0; // 清主技能蓄力
+		stopCharge(player); // 同时结束所有观察者的主蓄力视觉。
 		s.secondaryCharging = true;
 		s.secondaryTicks = 0;
 		s.secondaryLevel = 0;
@@ -271,6 +276,7 @@ public final class FrostSpikeManager {
 	 * 飞行中的冰锥直接清空（不持久化）。重进后由 onJoin 按存档重建。
 	 */
 	public static void onDisconnect(ServerPlayerEntity player) {
+		stopCharge(player);
 		State s = STATES.remove(player.getUuid());
 		if (s != null) endSecondaryCharge(player, s);
 		FrostSpikeState state = FrostSpikeState.get(player.getServer());

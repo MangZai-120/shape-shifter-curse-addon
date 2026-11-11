@@ -27,6 +27,7 @@ public final class SceneRecipes {
         switch (v.key().kind()) {
             case CORRUPT_MIST -> { period = 5; offset = Math.floorMod((int)v.parameter(1), 5); first = offset == 0 ? 5 : offset; }
             case BLUE_FIRE_RING -> period = 4;
+            case SPORE_CLOUD -> { period = 2; offset = Math.floorMod((int)-v.epoch(),2); first = offset; }
             case MIST_FORM_CHARGE -> { period = 2; first = (int)v.parameter(3); }
             case DOMAIN_AMBIENT -> {
                 period = 5;
@@ -52,6 +53,7 @@ public final class SceneRecipes {
             case DOMAIN_AMBIENT -> MistMeteorDomainRecipes.domainAmbient((long)v.parameter(1)+age*(long)v.parameter(2),v.parameter(0),random,sink);
             case MIST_FORM_AMBIENT -> MistFormRecipes.ambient(v.parameter(0),(int)v.parameter(1),sink);
             case MIST_FORM_CHARGE -> MistFormRecipes.charge(age,(int)v.parameter(0),v.parameter(1),(int)v.parameter(2),random::nextDouble,sink);
+            case FOX_EXPLOSION, FOX_RING, PARASITIC_SEED_TRAIL, SPORE_CLOUD -> AbilityParticleRecipes.emit(v,age,tick,random,sink);
             default -> BlueTrailRecipes.emit(v.key().kind(),age,tick,v.width(),v.eyeHeight(),v.parameters(),random,sink);
         }
     }

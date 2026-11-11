@@ -14,8 +14,6 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
-import net.minecraft.particle.DustColorTransitionParticleEffect;
-import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
@@ -34,8 +32,9 @@ import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerManager;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
-import org.joml.Vector3f;
 
+import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals;
+import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals.Kind;
 import java.util.List;
 
 /**
@@ -76,7 +75,8 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
     private boolean exploded = false;
     private boolean empowered = false;
     private boolean exploding = false;           // 爆炸后停止移动、等待所有火环播完即消失
-    private final java.util.List<float[]> activeRings = new java.util.ArrayList<>();   // 活跃火环 [cx,cy,cz,已播放tick]
+    private record ActiveRing(java.util.UUID id, float[] frame) {}
+    private final java.util.List<ActiveRing> activeRings = new java.util.ArrayList<>();   // 活跃火环 [cx,cy,cz,已播放tick]
     private final java.util.Set<java.util.UUID> piercedEntities = new java.util.HashSet<>();
 
     public FoxFireballEntity(EntityType<? extends FoxFireballEntity> type, World world) {
@@ -379,7 +379,7 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
     /** 额外爆炸：被影响者腰部火环扩散 + 2 格内连锁伤害（不再二次连锁）；穿透段与爆炸段共用。 */
     private void triggerExtraExplosion(ServerWorld w, LivingEntity owner, LivingEntity center) {
         double cx = center.getX(), cy = center.getY() + center.getHeight() * 0.5, cz = center.getZ();
-        activeRings.add(new float[]{(float) cx, (float) cy, (float) cz, 0f});   // 腰部火环，由 tick 逐帧播放
+        activeRings.add(new ActiveRing(java.util.UUID.randomUUID(), new float[]{(float) cx, (float) cy, (float) cz, 0f}));   // 腰部火环，由 tick 逐帧播放
         double chainRadius = BAL.d("chain_radius", CHAIN_RADIUS);
         double chainRadiusSq = chainRadius * chainRadius;
         Box box = new Box(cx - chainRadius, cy - chainRadius, cz - chainRadius,
@@ -412,66 +412,22 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
     /** 推进并绘制所有活跃火环（穿透/爆炸触发），播完移除。 */
     private void updateActiveRings(ServerWorld w) {
         int ringDuration = BAL.i("ring_duration", RING_DURATION);
-        java.util.Iterator<float[]> it = activeRings.iterator();
+        java.util.Iterator<ActiveRing> it = activeRings.iterator();
         while (it.hasNext()) {
-            float[] r = it.next();
+            ActiveRing ring = it.next();
+            float[] r = ring.frame();
             r[3] += 1f;
-            float progress = r[3] / (float) ringDuration;
-            spawnWaistRing(w, r[0], r[1], r[2], progress);
+            ParametricVisuals.touchWorld(w, ring.id(), Kind.FOX_RING, getOwner()==null?null:getOwner().getUuid(),
+                    new Vec3d(r[0],r[1],r[2]),w.getTime()-(int)r[3]+1,ringDuration,
+                    BAL.d("chain_radius",CHAIN_RADIUS),BAL.d("chain_radius",CHAIN_RADIUS));
             if (r[3] >= ringDuration) it.remove();
         }
     }
 
     /** 6 格球爆炸粒子：80% 红 dust + 20% 狐火，附加少量 lava 黑渣。owner 作用域：仅本人第一人称避让。 */
     private void spawnExplosionParticles(ServerWorld w, double x, double y, double z) {
-        double explodeRadius = BAL.d("explode_radius", EXPLODE_RADIUS);
-        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticleScope.runProjectile(getOwner() instanceof LivingEntity le ? le : null, () -> {
-            Random rnd = this.random;
-            DustParticleEffect red = new DustParticleEffect(new Vector3f(0.85f, 0.1f, 0.05f), 1.3f);
-            for (int i = 0; i < 130; i++) {
-                Vec3d p = randomInSphere(explodeRadius, rnd);
-                double px = x + p.x, py = y + p.y, pz = z + p.z;
-                if (rnd.nextDouble() < 0.8) {
-                    w.spawnParticles(red, px, py, pz, 1, 0, 0, 0, 0);
-                } else {
-                    w.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME, px, py, pz, 1, 0, 0, 0, 0.01);
-                }
-            }
-            for (int i = 0; i < 16; i++) {
-                Vec3d p = randomInSphere(explodeRadius * 0.6, rnd);
-                w.spawnParticles(ParticleTypes.LAVA, x + p.x, y + p.y + 1.0, z + p.z, 1, 0, 0, 0, 0);
-            }
-            // === RC4 奥术手雷爆炸特效（放大 1.5 倍版：扩散范围与 dust 尺寸 ×1.5，数量与速度不变） ===
-            w.spawnParticles(ParticleTypes.EXPLOSION, x, y + 0.3, z, 3, 0.3, 0.3, 0.3, 1.0);
-            w.spawnParticles(ParticleTypes.LAVA, x, y + 0.8, z, 20, 0.45, 0.45, 0.45, 0.2);
-            // 紫红→暗红渐变粉尘（dust 尺寸 1→1.5）
-            DustColorTransitionParticleEffect arcaneDust = new DustColorTransitionParticleEffect(
-                    new Vector3f(0.322f, 0.0f, 0.149f), new Vector3f(0.149f, 0.012f, 0.039f), 1.5f);
-            w.spawnParticles(arcaneDust, x, y + 0.3, z, 300, 1.05, 1.8, 1.05, 0.01);
-            w.spawnParticles(ParticleTypes.FLAME, x, y + 0.3, z, 80, 0.75, 1.2, 0.75, 0.1);
-            w.spawnParticles(ParticleTypes.SQUID_INK, x, y + 0.3, z, 5, 0.45, 0.45, 0.45, 0.1);
-            w.spawnParticles(ParticleTypes.FALLING_LAVA, x, y + 0.1, z, 125, 1.5, 0.75, 1.5, 0.2);
-        });
-    }
-
-    /** 腰部火环扩散动画：每帧画半径递增的环（0→连锁半径），仅火焰 + 灵魂火粒子（无红色粉尘）。owner 作用域：仅本人避让。 */
-    private void spawnWaistRing(ServerWorld w, double x, double y, double z, float progress) {
-        net.jackcooper.shapeShifterCurseAddon.network.DecorationParticleScope.runProjectile(getOwner() instanceof LivingEntity le ? le : null, () -> {
-            double chainRadius = BAL.d("chain_radius", CHAIN_RADIUS);
-            double radius = Math.max(0.1, chainRadius * progress);
-            int pts = Math.max(2, (int) ((12 + 26 * progress) * 0.2));  // 粒子量减至原 20%
-            double rot = progress * 0.6;                                // 轻微旋转更灵动
-            double upward = 0.02 + progress * 0.04;                     // 火苗向上飘
-            for (int i = 0; i < pts; i++) {
-                double a = 2 * Math.PI * i / pts + rot;
-                double px = x + radius * Math.cos(a);
-                double pz = z + radius * Math.sin(a);
-                w.spawnParticles(ParticleTypes.FLAME, px, y, pz, 1, 0, upward, 0, 0.0);
-                if (i % 2 == 0) {
-                    w.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME, px, y + 0.05, pz, 1, 0, upward, 0, 0.01);
-                }
-            }
-        });
+        ParametricVisuals.burst(w,getOwner()==null?null:getOwner().getUuid(),Kind.FOX_EXPLOSION,
+                new Vec3d(x,y,z),BAL.d("explode_radius",EXPLODE_RADIUS));
     }
 
     private Vec3d randomInSphere(double r, Random rnd) {

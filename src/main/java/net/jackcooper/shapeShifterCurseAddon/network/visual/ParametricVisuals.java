@@ -28,6 +28,7 @@ public final class ParametricVisuals {
     public static final Identifier DELTA = new Identifier("ssc_addon", "visual_delta_v1");
     public static final Identifier MOTION = new Identifier("ssc_addon", "visual_motion_v1");
     public static final Identifier CIRCLE = new Identifier("ssc_addon", "visual_circle_v1");
+    public static final Identifier ABILITY_BURST = new Identifier("ssc_addon", "ability_visuals_v1");
     /** Receiver registration is the capability; no periodic capability packet is sent. */
     public static final Identifier MIST_FORM_CAPABILITY = new Identifier("ssc_addon", "mist_form_visuals_v1");
     public static final int PAGE_SIZE = 128, MAX_PAGES = 128, MAX_PARAMETERS = 16;
@@ -36,7 +37,8 @@ public final class ParametricVisuals {
         CORRUPT_MIST(32, false), METEOR_WARNING(32, false), DOMAIN_EDGE(512, true),
         DOMAIN_AMBIENT(512, true), BLUE_FIRE_RING(512, true), SSC_WEB_TRAIL(32, false),
         FIRE_BOLT_TRAIL(512, true), LUNAR_BOLT_TRAIL(32, false),
-        MIST_FORM_AMBIENT(512, true), MIST_FORM_CHARGE(512, true);
+        MIST_FORM_AMBIENT(512, true), MIST_FORM_CHARGE(512, true),
+        FOX_EXPLOSION(32, false), FOX_RING(32, false), PARASITIC_SEED_TRAIL(32, false), SPORE_CLOUD(32, false);
         public final double range;
         public final boolean force;
         Kind(double range, boolean force) { this.range = range; this.force = force; }
@@ -64,6 +66,8 @@ public final class ParametricVisuals {
             UUID owner = b.readBoolean() ? b.readUuid() : null;
             Vec3d pos = vector(b), velocity = motion(b); long epoch = b.readLong();
             int duration = bounded(b.readVarInt(), 0, 1_000_000);
+            if (key.kind == Kind.FOX_RING && duration == 0 || key.kind == Kind.FOX_EXPLOSION && duration != 1)
+                throw new IllegalArgumentException("Invalid ability visual duration");
             boolean follows = b.readBoolean(); float width = b.readFloat(), eye = b.readFloat();
             double extent = finite(b.readDouble());
             if (!Float.isFinite(width) || !Float.isFinite(eye) || width < 0 || eye < 0 || extent < 0 || extent > 65536)
@@ -105,9 +109,9 @@ public final class ParametricVisuals {
     private static final Map<UUID, Audience> AUDIENCES = new HashMap<>();
     private static boolean initialized;
     private static int sequence;
-    private static long circleSequence, statePackets, deltaPackets, motionPackets, circlePackets, legacyPackets;
+    private static long circleSequence, statePackets, deltaPackets, motionPackets, circlePackets, legacyPackets, burstPackets;
     public record Metrics(int scenes, int audiences, long statePackets, long deltaPackets,
-                          long motionPackets, long circlePackets, long legacyPackets) {}
+                          long motionPackets, long circlePackets, long legacyPackets, long burstPackets) {}
     private ParametricVisuals() {}
 
     public static void init() {
@@ -119,8 +123,8 @@ public final class ParametricVisuals {
         });
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> { ACTIVE.clear(); AUDIENCES.clear(); sequence = 0; });
     }
-    public static Metrics metrics() { return new Metrics(ACTIVE.size(), AUDIENCES.size(), statePackets, deltaPackets, motionPackets, circlePackets, legacyPackets); }
-    public static void resetMetrics() { statePackets = deltaPackets = motionPackets = circlePackets = legacyPackets = 0; }
+    public static Metrics metrics() { return new Metrics(ACTIVE.size(), AUDIENCES.size(), statePackets, deltaPackets, motionPackets, circlePackets, legacyPackets, burstPackets); }
+    public static void resetMetrics() { statePackets = deltaPackets = motionPackets = circlePackets = legacyPackets = burstPackets = 0; }
     public static void touch(Entity anchor, UUID eventId, Kind kind, UUID decorationOwner, Vec3d origin,
                              boolean follows, long epoch, int duration, double extent, double... parameters) {
         if (!(anchor.getWorld() instanceof ServerWorld world)) return;
@@ -140,21 +144,50 @@ public final class ParametricVisuals {
     }
     public static void stop(UUID eventId, Kind kind) { ACTIVE.remove(new Key(eventId, kind)); }
 
+    /** Fixed effects can outlive their source entity, and still expire when no longer touched. */
+    public static void touchWorld(ServerWorld world, UUID eventId, Kind kind, UUID owner, Vec3d origin,
+                                  long epoch, int duration, double extent, double... parameters) {
+        if (DecorationParticleScope.isProtected()) owner = null;
+        Key key=new Key(eventId,kind);
+        Entry e=ACTIVE.computeIfAbsent(key,ignored->new Entry());
+        e.anchor=null;e.world=world;e.touched=world.getServer().getTicks();
+        e.view=new View(key,eventId,-1,owner,origin,Vec3d.ZERO,epoch,duration,false,0,0,extent,parameters);
+    }
+
+    /** One-shot cosmetic event; old clients retain the original particle fallback. */
+    public static void burst(ServerWorld world, UUID owner, Kind kind, Vec3d origin, double radius) {
+        if(kind!=Kind.FOX_EXPLOSION)throw new IllegalArgumentException("Not a burst kind");
+        if (DecorationParticleScope.isProtected()) owner = null;
+        UUID id=UUID.randomUUID();
+        View v=new View(new Key(id,kind),id,-1,owner,origin,Vec3d.ZERO,world.getTime(),1,false,0,0,radius,new double[]{radius});
+        Entry e=new Entry();e.world=world;e.view=v;
+        for(ServerPlayerEntity viewer:world.getPlayers()) {
+            double range=kind.range+radius+4;
+            if(viewer.squaredDistanceTo(origin)>range*range)continue;
+            if(ServerPlayNetworking.canSend(viewer,ABILITY_BURST)) {
+                var b=PacketByteBufs.create();b.writeIdentifier(world.getRegistryKey().getValue());v.write(b);
+                ServerPlayNetworking.send(viewer,ABILITY_BURST,b);
+                burstPackets++;
+            } else legacy(e,viewer);
+        }
+    }
+
     private static void flush(MinecraftServer server) {
         int tick = server.getTicks();
-        ACTIVE.values().removeIf(e -> e.touched < tick || e.anchor.isRemoved() || e.anchor.getWorld() != e.world);
+        ACTIVE.values().removeIf(e -> e.touched < tick || e.anchor != null && (e.anchor.isRemoved() || e.anchor.getWorld() != e.world));
         if (ACTIVE.isEmpty() && AUDIENCES.isEmpty()) return;
         Map<UUID, Collection<ServerPlayerEntity>> tracking = new HashMap<>();
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
             boolean modern = ServerPlayNetworking.canSend(player, STATE) && ServerPlayNetworking.canSend(player, CIRCLE);
             boolean mistForm = modern && ServerPlayNetworking.canSend(player, MIST_FORM_CAPABILITY);
+            boolean abilityVisuals = modern && ServerPlayNetworking.canSend(player, ABILITY_BURST);
             List<View> visible = new ArrayList<>();
             for (Entry e : ACTIVE.values()) {
                 View v = e.view; double range = v.key.kind.range + v.extent + 4;
                 if (e.world != player.getWorld() || (!player.getUuid().equals(v.decorationOwner)
                         && player.squaredDistanceTo(v.position) > range * range)) continue;
                 // The protocol is bounded. Extreme cosmetic overload must not abort a server tick.
-                if (modern && supportsKind(v.key.kind, mistForm)) { if (visible.size() < MAX_SCENES) visible.add(v); }
+                if (modern && supportsKind(v.key.kind, mistForm, abilityVisuals)) { if (visible.size() < MAX_SCENES) visible.add(v); }
                 else legacy(e, player);
             }
             if (!modern) { AUDIENCES.remove(player.getUuid()); continue; }
@@ -292,7 +325,14 @@ public final class ParametricVisuals {
                 : player.getBlockPos().isWithinDistance(pos, kind.range);
     }
     public static boolean supportsKind(Kind kind, boolean mistFormCapability) {
-        return mistFormCapability || kind != Kind.MIST_FORM_AMBIENT && kind != Kind.MIST_FORM_CHARGE;
+        return supportsKind(kind,mistFormCapability,false);
+    }
+    public static boolean supportsKind(Kind kind, boolean mistFormCapability, boolean abilityCapability) {
+        return switch(kind) {
+            case FOX_EXPLOSION, FOX_RING, PARASITIC_SEED_TRAIL, SPORE_CLOUD -> abilityCapability;
+            case MIST_FORM_AMBIENT, MIST_FORM_CHARGE -> mistFormCapability;
+            default -> true;
+        };
     }
     public static boolean exactRange(Kind kind) {
         return kind == Kind.FIRE_BOLT_TRAIL || kind == Kind.DOMAIN_EDGE || kind == Kind.DOMAIN_AMBIENT
@@ -350,9 +390,12 @@ public final class ParametricVisuals {
             case MIST_FORM_AMBIENT -> 2;
             case MIST_FORM_CHARGE -> 4;
             case SSC_WEB_TRAIL -> 1;
+            case FOX_EXPLOSION, FOX_RING, SPORE_CLOUD -> 1;
             default -> 0;
         };
         if (p.length < minimum) throw new IllegalArgumentException("Incomplete visual recipe: " + kind);
+        if ((kind == Kind.FOX_EXPLOSION || kind == Kind.FOX_RING || kind == Kind.SPORE_CLOUD)
+                && (p[0] < 0 || p[0] > 65536)) throw new IllegalArgumentException("Invalid ability visual radius");
         // Decoding a finite radius must not authorize an unbounded loop on the client tick.
         if (kind == Kind.CORRUPT_MIST && Math.max(10, p[0] * p[0] * 4) > 65536
                 || kind == Kind.METEOR_WARNING && Math.max(12, p[0] * 10) > 65536)

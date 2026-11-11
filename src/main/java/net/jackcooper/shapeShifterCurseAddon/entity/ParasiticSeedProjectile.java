@@ -11,7 +11,6 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.projectile.thrown.ThrownItemEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
-import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.hit.EntityHitResult;
@@ -20,7 +19,8 @@ import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.power.ParasiticFruitSeedPower;
-import org.joml.Vector3f;
+import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals;
+import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals.Kind;
 
 /**
  * 寄生果蝠主技能「灵果寄生」的投掷物（抛物线，速度同孢子炸弹）。
@@ -29,8 +29,6 @@ import org.joml.Vector3f;
  * 全部判定在服务端执行，确保多人环境主客机一致。
  */
 public class ParasiticSeedProjectile extends ThrownItemEntity {
-    /** 飞行尾迹：灵果绿色粒子 */
-    private static final DustParticleEffect SEED_TRAIL = new DustParticleEffect(new Vector3f(0.35f, 0.95f, 0.30f), 1.0f);
     /** 落地种子圈寿命（tick，匹配主技能 duration 默认 240=12s） */
     private static final int DEFAULT_FIELD_LIFE = 240;
 
@@ -61,9 +59,9 @@ public class ParasiticSeedProjectile extends ThrownItemEntity {
     public void tick() {
         super.tick();
         if (this.getWorld().isClient) return;
-        // 飞行尾迹：绿色灵果粒子（轻量，每 tick 2 个）
+        // 飞行尾迹：绿色灵果粒子（客户端按同步时钟生成，每 tick 2 个）
         if (this.getWorld() instanceof ServerWorld sw) {
-            sw.spawnParticles(SEED_TRAIL, this.getX(), this.getY() + 0.1, this.getZ(), 2, 0.05, 0.05, 0.05, 0.0);
+            ParametricVisuals.touch(this,getUuid(),Kind.PARASITIC_SEED_TRAIL,null,getPos(),true,sw.getTime()-age,0,0);
         }
     }
 
