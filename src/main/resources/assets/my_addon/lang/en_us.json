@@ -3651,5 +3651,7 @@
   "tutorial.ssc_addon.form.lesson.upgrade_health.title": "Fixed health and dehydration",
   "tutorial.ssc_addon.form.lesson.upgrade_health.trigger": "Remain an Evolved Axolotl and compare high and low moisture.",
   "tutorial.ssc_addon.form.lesson.upgrade_health.effect": "The form adds two fixed maximum health without the original moisture-dependent health bonus.",
-  "tutorial.ssc_addon.form.lesson.upgrade_health.note": "Empty moisture still causes dehydration damage. The fixed health bonus does not replace hydration."
+  "tutorial.ssc_addon.form.lesson.upgrade_health.note": "Empty moisture still causes dehydration damage. The fixed health bonus does not replace hydration.",
+  "tutorial.ssc_addon.web.title": "Spell Research Video Tutorial",
+  "tutorial.ssc_addon.web.body": "Watch real gameplay from scroll analysis to rank V. Open it in your system browser, or replay it from the research table at any time."
 }

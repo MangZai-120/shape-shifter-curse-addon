@@ -785,6 +785,18 @@ public final class FormationResearchIntegrationTest {
             check(table.getStack(3).isEmpty()&&table.getStack(0).getCount()==2,"analysis not early");
             table.advanceAnalysis(world);var diagram=table.getStack(3);
             check(diagram.isOf(SscAddon.ANALYZED_SPELL_DIAGRAM)&&table.getStack(0).getCount()==1,"analysis diagram and one paper");
+            check(ScrollData.isScroll(scroll),"actual registered scroll remains accepted by spellbook classification");
+            check(ScrollData.getSpell(diagram)!=null&&!ScrollData.isScroll(diagram),"analysis diagram carries spell metadata but is not a scroll");
+            var paper=new ItemStack(Items.PAPER);paper.getOrCreateNbt().putString("Spell","fire_bolt");
+            check(!ScrollData.isScroll(paper),"spell metadata on an ordinary item cannot turn it into a scroll");
+            var scheme=new ItemStack(SscAddon.SPELL_FORMATION);scheme.getOrCreateNbt().putString("Spell","fire_bolt");
+            check(!ScrollData.isScroll(scheme),"rune imprint scheme is not a castable scroll");
+            var backpack=new net.minecraft.entity.player.PlayerInventory(null);
+            var book=new ItemStack(SscAddon.MOON_DUST_SPELLBOOK);backpack.setStack(0,book);
+            var bookHandler=new net.jackcooper.shapeShifterCurseAddon.screen.SpellbookScreenHandler(1,backpack,book);
+            check(bookHandler.getSlot(0).canInsert(scroll)&&!bookHandler.getSlot(0).canInsert(diagram)
+                    &&!bookHandler.getSlot(0).canInsert(scheme)&&!bookHandler.getSlot(0).canInsert(paper),
+                    "real spellbook slot accepts actual scrolls and rejects diagrams schemes and metadata-bearing paper");
             check(ItemStack.areEqual(table.getStack(5),scroll),"analysis retains scroll and NBT");
             check(net.jackcooper.shapeShifterCurseAddon.block.SpellResearchTableBlockEntity.analysisStatus(table).name().equals("OUTPUT_FULL"),"collect output status");
             check(net.jackcooper.shapeShifterCurseAddon.item.AnalyzedSpellDiagramItem.valid(diagram,world.worldId()),"diagram world binding");

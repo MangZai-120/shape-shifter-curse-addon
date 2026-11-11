@@ -91,9 +91,10 @@ public final class ScrollData {
 		return world.getTime() < getCooldownEnd(stack);
 	}
 
-	/** 是否为魔法卷轴（绑定了有效魔法）。 */
+	/** Only actual scroll items may enter a spellbook; diagrams and schemes also carry Spell data. */
 	public static boolean isScroll(ItemStack stack) {
-		return getSpell(stack) != null;
+		return stack != null && stack.getItem() instanceof net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem
+				&& getSpell(stack) != null;
 	}
 
 	/** 魔法等级（1-5；无字段或缺省时为 1，与旧存档卷轴兼容）。 */

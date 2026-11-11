@@ -3651,5 +3651,7 @@
   "tutorial.ssc_addon.form.lesson.upgrade_health.title": "固定生命与脱水",
   "tutorial.ssc_addon.form.lesson.upgrade_health.trigger": "保持进化美西螈形态，并比较充足与不足湿润度。",
   "tutorial.ssc_addon.form.lesson.upgrade_health.effect": "形态固定增加2点生命上限，不使用本体随湿润变化的生命上限加成。",
-  "tutorial.ssc_addon.form.lesson.upgrade_health.note": "湿润度耗尽仍然会脱水掉血；固定生命加成不会代替补湿。"
+  "tutorial.ssc_addon.form.lesson.upgrade_health.note": "湿润度耗尽仍然会脱水掉血；固定生命加成不会代替补湿。",
+  "tutorial.ssc_addon.web.title": "法术研究台视频教程",
+  "tutorial.ssc_addon.web.body": "观看从卷轴解析到五阶研究的实机教程。确认后将在系统浏览器打开；也可随时从研究台右上角重看。"
 }

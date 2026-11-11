@@ -8,10 +8,12 @@ import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.jackcooper.shapeShifterCurseAddon.tutorial.SpellTutorialManager;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
+import net.minecraft.client.gui.screen.ConfirmScreen;
+import net.minecraft.text.Text;
 
 /** 等待世界、加载遮罩与其它界面就绪；断线即丢弃本连接的待播请求。 */
 public final class SpellTutorialClient {
-    private record Offer(ClientPlayNetworkHandler connection,UUID nonce,UUID world,int[] glyphs) {}
+    private record Offer(ClientPlayNetworkHandler connection,UUID nonce,UUID world,boolean automatic) {}
     private static Offer pending;
     private static int delay;
     private SpellTutorialClient() {}
@@ -21,7 +23,7 @@ public final class SpellTutorialClient {
             UUID nonce=buf.readUuid(),world=buf.readUuid();boolean automatic=buf.readBoolean();
             int[] glyphs={buf.readUnsignedByte(),buf.readUnsignedByte(),buf.readUnsignedByte()};
             for(int glyph:glyphs)if(glyph>=18)return;
-            client.execute(()->{pending=new Offer(handler,nonce,world,glyphs);delay=automatic?60:0;});
+            client.execute(()->{pending=new Offer(handler,nonce,world,automatic);delay=automatic?60:0;});
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler,client)->{pending=null;delay=0;});
         ClientTickEvents.END_CLIENT_TICK.register(client->{
@@ -30,10 +32,22 @@ public final class SpellTutorialClient {
             if(client.world==null||client.player==null||!client.player.isAlive()||client.getOverlay()!=null||client.currentScreen!=null)return;
             if(delay>0){delay--;return;}
             Offer shown=pending;pending=null;
-            client.setScreen(new SpellTutorialScreen(shown.glyphs));
-            var ack=PacketByteBufs.create();ack.writeByte(1);ack.writeUuid(shown.nonce);
-            ClientPlayNetworking.send(SpellTutorialManager.ACTION,ack);
+            Runnable acknowledge=()->{
+                if(!valid(client,shown)||!ClientPlayNetworking.canSend(SpellTutorialManager.ACTION))return;
+                var ack=PacketByteBufs.create();ack.writeByte(1);ack.writeUuid(shown.nonce);
+                ClientPlayNetworking.send(SpellTutorialManager.ACTION,ack);
+            };
+            if(shown.automatic){
+                client.setScreen(new ConfirmScreen(confirmed->{
+                    client.setScreen(null);
+                    if(confirmed&&valid(client,shown))SpellTutorialWeb.open(client,acknowledge);
+                },Text.translatable("tutorial.ssc_addon.web.title"),Text.translatable("tutorial.ssc_addon.web.body"),
+                        FormTutorialScreen.text("web.prompt.confirm"),FormTutorialScreen.text("web.prompt.cancel")));
+            }else SpellTutorialWeb.open(client,acknowledge);
         });
+    }
+    private static boolean valid(MinecraftClient client,Offer offer){
+        return client.getNetworkHandler()==offer.connection&&client.world!=null&&client.player!=null&&client.player.isAlive();
     }
     public static void replay() {
         MinecraftClient client=MinecraftClient.getInstance();

@@ -6,7 +6,7 @@ import java.util.*;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.jackcooper.shapeShifterCurseAddon.block.*;
 import net.jackcooper.shapeShifterCurseAddon.client.screen.SpellResearchTableScreen;
-import net.jackcooper.shapeShifterCurseAddon.client.tutorial.SpellTutorialScreen;
+import net.jackcooper.shapeShifterCurseAddon.client.tutorial.SpellTutorialWeb;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.*;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -72,54 +72,34 @@ public final class SpellTutorialClientProbe {
             switch(stage){
                 case 0->{
                     if(mode.equals("fresh")){
-                        if(ticks==200&&!(client.currentScreen instanceof SpellTutorialScreen)){
-                            System.out.println("TUTORIAL_DELIVERY_DIAGNOSTIC pending="+field(net.jackcooper.shapeShifterCurseAddon.client.tutorial.SpellTutorialClient.class,"pending")
-                                    +" offered="+field(net.jackcooper.shapeShifterCurseAddon.tutorial.SpellTutorialManager.class,"REQUESTED")
-                                    +" queued="+field(net.jackcooper.shapeShifterCurseAddon.tutorial.SpellTutorialManager.class,"JOIN_QUEUE"));
-                        }
-                        if(!(client.currentScreen instanceof SpellTutorialScreen))return;
-                        check(state.tutorialPolicyInitialized&&state.tutorialAutoEnabled,"Actually created world opts into automatic tutorial");next();
+                        if(!(client.currentScreen instanceof ConfirmScreen))return;
+                        check(state.tutorialPolicyInitialized&&state.tutorialAutoEnabled,"Fresh world retains automatic tutorial policy");
+                        check(!state.player(client.player.getUuid()).spellTutorialSeen,"Showing prompt does not acknowledge browser handoff");
+                        check(client.currentScreen.getTitle().getString().equals(Text.translatable("tutorial.ssc_addon.web.title").getString()),"Spell video confirmation shown");
+                        shot(client,"01-video-prompt.png");click(client.currentScreen,"form.web.prompt.cancel");next();
                     }else{
-                        check(!(client.currentScreen instanceof SpellTutorialScreen),"Existing world does not auto-open tutorial");
                         if(ticks<120)return;
-                        check(state.tutorialPolicyInitialized,"Existing world records its tutorial policy");
-                        check(mode.equals("old")?!state.tutorialAutoEnabled:state.tutorialAutoEnabled,"Old policy is disabled; new-world policy persists after reload");
-                        check(mode.equals("old")?!state.player(client.player.getUuid()).spellTutorialSeen:state.player(client.player.getUuid()).spellTutorialSeen,
-                                "Old-save migration and returning player's viewing record are correct");
-                        openTable(client);stage=4;ticks=0;
+                        check(!(client.currentScreen instanceof ConfirmScreen),"Existing world does not auto-open video prompt");
+                        check(mode.equals("old")?!state.tutorialAutoEnabled:state.player(client.player.getUuid()).spellTutorialSeen,"Legacy policy and returning-player handoff record persist");
+                        openTable(client);stage=2;ticks=0;
                     }
                 }
-                case 1->{
-                    if(!state.player(client.player.getUuid()).spellTutorialSeen)return;
-                    if(ticks<245)return;
-                    check(true,"Real shown acknowledgement reached server");
-                    var screen=(SpellTutorialScreen)client.currentScreen;
-                    check((int)field(screen,"page")==1,"Tutorial advances automatically after one page duration");
-                    click(screen,"pause");check((boolean)field(screen,"paused"),"Pause toggles actual screen state");next();
-                }
-                case 2->{
-                    if(ticks<5)return;
-                    var screen=(SpellTutorialScreen)client.currentScreen;shot(client,"01-analysis.png");
-                    click(screen,"next");next();
-                }
-                case 3->{
-                    var screen=(SpellTutorialScreen)client.currentScreen;if(ticks<5)return;
-                    int page=(int)field(screen,"page");
-                    if(page==3||page==6||page==7)shot(client,"page-"+page+".png");
-                    check(screen.children().stream().filter(ButtonWidget.class::isInstance).map(ButtonWidget.class::cast)
-                            .allMatch(b->b.getX()>=0&&b.getY()>=0&&b.getX()+b.getWidth()<=screen.width&&b.getY()+b.getHeight()<=screen.height),"Controls fit the actual GUI scale");
-                    if(page<SpellTutorialScreen.PAGE_COUNT-1){click(screen,"next");ticks=0;return;}
-                    click(screen,"finish");check(client.currentScreen==null,"Finishing returns to the real world");openTable(client);next();
-                }
-                case 4->{if(!(client.currentScreen instanceof SpellResearchTableScreen)||ticks<6)return;
-                    shot(client,"02-replay-entry.png");click(client.currentScreen,"replay");next();}
-                case 5->{if(!(client.currentScreen instanceof SpellTutorialScreen)||ticks<6)return;
-                    check((int)field(client.currentScreen,"page")==0,"Research-table replay starts the tutorial from page one");
-                    shot(client,"03-replay.png");click(client.currentScreen,"skip");check(client.currentScreen==null,"Skip immediately returns to gameplay");next();}
-                case 6->{if(ticks<40)return;
-                    check(client.currentScreen==null,"Skipped tutorial does not reopen");
-                    check(state.player(client.player.getUuid()).spellTutorialSeen,"Skip/replay completion is persisted by actual acknowledgement");
-                    finished=true;Files.writeString(Path.of("tutorial-result.json"),NeoState.JSON.toJson(Map.of("passed",true,"mode",mode,"checks",checks,"screenshots",shots)));
+                case 1->{if(ticks<35)return;
+                    check(!state.player(client.player.getUuid()).spellTutorialSeen,"Cancelling leaves viewing record untouched");
+                    check(client.currentScreen==null,"Cancelling returns to gameplay");openTable(client);next();}
+                case 2->{if(!(client.currentScreen instanceof SpellResearchTableScreen)||ticks<10)return;
+                    var method=SpellTutorialWeb.class.getDeclaredMethod("url",MinecraftClient.class);method.setAccessible(true);
+                    var url=(java.net.URI)method.invoke(null,client);
+                    check(url.toString().contains("lang=")&&url.toString().contains("cast=")&&url.toString().contains("switch="),"URL includes language and actual casting key labels");
+                    check(url.getScheme().equals("http")&&url.getHost().equals("127.0.0.1"),"Synchronized page uses local loopback server");
+                    Files.writeString(Path.of("tutorial-browser-url.txt"),url.toString());shot(client,"02-video-entry.png");click(client.currentScreen,"replay");next();}
+                case 3->{if(ticks<35||!state.player(client.player.getUuid()).spellTutorialSeen)return;
+                    check(client.currentScreen==null,"Manual replay opens browser without the old slideshow");
+                    check(state.player(client.player.getUuid()).spellTutorialSeen,"Actual OS browser dispatch is acknowledged by server");
+                    shot(client,"03-browser-handoff.png");next();}
+                case 4->{if(ticks<60)return;
+                    check(client.currentScreen==null,"No native slideshow reopens after handoff");
+                    finished=true;Files.writeString(Path.of("tutorial-result.json"),NeoState.JSON.toJson(Map.of("passed",true,"mode",mode,"checks",checks,"screenshots",shots,"browser_handoff",true)));
                     System.out.println("SPELL_TUTORIAL_CLIENT_PASS mode="+mode+" checks="+checks);client.scheduleStop();}
             }
         }catch(Throwable error){finished=true;error.printStackTrace();

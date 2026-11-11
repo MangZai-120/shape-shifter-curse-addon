@@ -15,7 +15,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
 
-/** 新世界按玩家播放一次；只确认真实显示，不在登录时提前消耗观看记录。 */
+/** 新世界按玩家提示一次；浏览器接管后确认，不在登录或显示提示时提前消耗记录。 */
 public final class SpellTutorialManager {
     public static final Identifier OFFER=new Identifier("ssc_addon","spell_tutorial_offer");
     public static final Identifier ACTION=new Identifier("ssc_addon","spell_tutorial_action");
