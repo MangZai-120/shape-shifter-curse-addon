@@ -4,6 +4,14 @@
 
 欢迎来到 **幻形者诅咒扩展包 (Shape Shifter Curse Addon)** 的官方文档！
 
+## 实机视频教程
+
+点击下面的入口即可观看带操作说明的实机视频；其他形态请在左侧「实机技能教程」栏目中选择。手机上请先打开导航菜单。
+
+- [法术研究台：从入门到五阶](tutorials/spell-research/index.html) — 18 页实操：解析、辨识、制作、装书施法、进阶、升级、压印、法阵与常见错误。
+- [进化使魔：技能与进化加点](tutorials/upgrade-familiar/index.html) — 技能演示、进化经验与点数来源、加点操作和最终分支。
+- [进化美西螈：技能与进化加点](tutorials/upgrade-axolotl/index.html) — 技能演示、进化经验与点数来源、加点操作和最终分支。
+
 ---
 
 ## 关于本模组

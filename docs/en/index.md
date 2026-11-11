@@ -4,6 +4,14 @@
 
 Welcome to the official documentation of the **Shape Shifter Curse Addon**!
 
+## Gameplay Video Tutorials
+
+Open a tutorial below to watch recorded gameplay with step-by-step instructions. Other forms are listed under **实机技能教程** in the sidebar. On a phone, open the navigation menu first.
+
+- [Spell Research Table: Getting Started to Rank V](../tutorials/spell-research/index.html?lang=en_us) — 18 lessons covering analysis, identification, crafting, spellbook casting, progression, upgrades, imprinting, formations, and common mistakes.
+- [Upgrade Familiar: Skills and Evolution Points](../tutorials/upgrade-familiar/index.html?lang=en_us) — Skills, evolution experience and point sources, buying nodes, and final branches.
+- [Upgrade Axolotl: Skills and Evolution Points](../tutorials/upgrade-axolotl/index.html?lang=en_us) — Skills, evolution experience and point sources, buying nodes, and final branches.
+
 ---
 
 ## About This Mod

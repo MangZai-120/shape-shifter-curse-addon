@@ -4,6 +4,14 @@ This mod adds various utility items.
 
 ---
 
+## Spell Research Table
+
+[Watch the Spell Research Table gameplay tutorial: Getting Started to Rank V](../../tutorials/spell-research/index.html?lang=en_us)
+
+The 18 lessons demonstrate analysis, identification, crafting, spellbook setup and casting, research ranks I–V, upgrades, imprinting, formations, and common mistakes. You can also open it from the Wiki home page or the **实机技能教程** sidebar section.
+
+---
+
 ## Water Spear
 
 **Water Spear**
