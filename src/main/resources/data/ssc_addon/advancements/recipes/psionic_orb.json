@@ -1,0 +1,15 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_moondust_crystal": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [{ "items": ["shape-shifter-curse:moondust_crystal_shard"] }] }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": { "recipe": "ssc_addon:psionic_orb" }
+    }
+  },
+  "requirements": [["has_moondust_crystal", "has_the_recipe"]],
+  "rewards": { "recipes": ["ssc_addon:psionic_orb"] }
+}

@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "AMA",
+    "MEM",
+    "AMA"
+  ],
+  "key": {
+    "A": { "item": "minecraft:amethyst_shard" },
+    "M": { "item": "shape-shifter-curse:moondust_crystal_shard" },
+    "E": { "item": "minecraft:ender_pearl" }
+  },
+  "result": { "item": "ssc_addon:psionic_orb", "count": 1 }
+}
