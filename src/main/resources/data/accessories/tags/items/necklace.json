@@ -1,0 +1,55 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "shape-shifter-curse:charm_of_hollow_fang",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:charm_of_night_crystal",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:charm_of_reverse_thermometer",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:collar_of_tension",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:collar_of_whiskers",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:custom_trinket",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:charm_of_night_crystal_plus",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:charm_of_hollow_fang_plus",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:charm_of_reverse_thermometer_plus",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:collar_of_whiskers_plus",
+      "required": false
+    },
+    "ssc_addon:frost_amulet",
+    "ssc_addon:phantom_bell",
+    "ssc_addon:active_coral_necklace",
+    "ssc_addon:sea_crystal_pendant",
+    "ssc_addon:wind_spirit_stamina_necklace",
+    "ssc_addon:nova_revive_necklace",
+    "ssc_addon:anubis_crystal",
+    "ssc_addon:erosion_sand_prism",
+    "ssc_addon:blood_garnet",
+    "ssc_addon:frost_spine_collar"
+  ]
+}

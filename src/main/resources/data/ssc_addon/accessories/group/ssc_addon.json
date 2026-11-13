@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "order": 125,
+  "slots": [
+    "trinket_group_moonlit-spellbook"
+  ],
+  "icon": "ssc_addon:gui/slot/spellbook"
+}

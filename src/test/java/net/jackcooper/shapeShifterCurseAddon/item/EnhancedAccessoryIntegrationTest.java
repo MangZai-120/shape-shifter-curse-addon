@@ -52,6 +52,8 @@ public final class EnhancedAccessoryIntegrationTest {
                     .build().createContainer(player);
             player.age = 32;
 
+            net.jackcooper.shapeShifterCurseAddon.compat.AccessoriesCompatibilityChecks.initialize(player);
+
             var accessories = List.of(
                     RegCustomItem.CHARM_OF_NIGHT_CRYSTAL_PLUS, RegCustomItem.CHARM_OF_HOLLOW_FANG_PLUS,
                     RegCustomItem.ATTACH_HOOK_PLUS, RegCustomItem.CHARM_OF_REVERSE_THERMOMETER_PLUS,
@@ -96,6 +98,7 @@ public final class EnhancedAccessoryIntegrationTest {
                     var accessory = (AccessoryItem) item;
                     check(accessory.canEquip(new ItemStack(item), player, SLOT) == expected,
                             "real canEquip: " + form + " / " + Registries.ITEM.getId(item));
+                    net.jackcooper.shapeShifterCurseAddon.compat.AccessoriesCompatibilityChecks.equip(item, expected);
                     check(!Boolean.FALSE.equals(AddonExclusiveFormCheck.check(player, accessory)) == expected,
                             "server cleanup agrees with equip decision");
                     if (!expected) blocked++;
@@ -188,6 +191,7 @@ public final class EnhancedAccessoryIntegrationTest {
             player.form.nowForm = new NormalForm(FormIdentifiers.SPIDER_MOON_WEAVER);
             check(((AccessoryItem) RegCustomItem.VENOM_SPINDLE_PLUS).canEquip(
                     new ItemStack(RegCustomItem.VENOM_SPINDLE_PLUS), player, SLOT), "venom spindle plus allowed for moon weaver");
+            net.jackcooper.shapeShifterCurseAddon.compat.AccessoriesCompatibilityChecks.report();
             System.out.println("Enhanced accessory integration passed: " + checks
                     + " checks; 11 enhanced accessories x 25 forms, actual Mixin equip calls, login grace,"
                     + " transformation cleanup eligibility and ordinary accessory behavior.");

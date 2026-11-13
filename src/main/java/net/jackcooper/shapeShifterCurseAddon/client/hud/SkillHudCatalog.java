@@ -20,6 +20,7 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -258,7 +259,7 @@ public final class SkillHudCatalog {
                 skill("water_spear", "form_upgrade_axolotl_water_spear", null, 0, AxolotlTree.NODE_WATER_SPEAR, true,
                         p -> p.getAir() >= net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager.airCostForHud(p)),
                 skill("vortex_guide", "form_upgrade_axolotl_vortex_guide", null, 0, AxolotlTree.NODE_VORTEX_GUIDE, false),
-                skill("water_dash", "form_upgrade_axolotl_dash_hud_water", null, 0, AxolotlTree.NODE_WATER_SPURT, false),
+                skill("water_dash_upgrade_axolotl", "form_upgrade_axolotl_dash_hud_water", null, 0, AxolotlTree.NODE_WATER_SPURT, false),
                 skill("land_dash", "form_upgrade_axolotl_dash_hud_land", null, 0, AxolotlTree.NODE_WATER_SPURT, false,
                         p -> p.getAir() >= net.jackcooper.shapeShifterCurseAddon.ability.AxolotlWaterSpurtHandler.landAirCostForHud(p)),
                 skill("water_jump", "form_upgrade_axolotl_jump_out_water", null, 0, "aquatic_adapt", false)));
@@ -363,9 +364,28 @@ public final class SkillHudCatalog {
                 Identifier canonicalForm = FormIdMigration.canonical(form);
                 var learned = PERK_SKILLS.stream().filter(perk -> perk.isLearned(canonicalForm, component, holder))
                         .map(perk -> perk.forForm(canonicalForm)).filter(skill -> isAvailable(skill, player)).toList();
+                if (FormIdentifiers.UPGRADE_AXOLOTL.equals(canonicalForm)) {
+                        // Movement keys do not occupy the spear/healing pair. Keep the unlocked
+                        // underwater dash in the lower small slot, ahead of purchased Perks.
+                        var extras = new ArrayList<Skill>();
+                        unlocked.stream().filter(skill -> powerId("form_upgrade_axolotl_dash_hud_water")
+                                .equals(skill.cooldown())).forEach(extras::add);
+                        extras.addAll(learned);
+                        unlocked = unlocked.stream().filter(skill -> !upgradeAxolotlMovement(skill)).toList();
+                        learned = List.copyOf(extras);
+                }
                 var value = SkillHudLayout.select(unlocked, Skill::primary, SkillHudCatalog::extraEligible, learned);
                 HUD_CACHE.put(key, value);
                 return value;
+        }
+
+        private static boolean upgradeAxolotlMovement(Skill skill) {
+                if (skill.cooldown() == null) return false;
+                return switch (skill.cooldown().getPath()) {
+                        case "form_upgrade_axolotl_dash_hud_water", "form_upgrade_axolotl_dash_hud_land",
+                                "form_upgrade_axolotl_jump_out_water" -> true;
+                        default -> false;
+                };
         }
 
         private static boolean extraEligible(Skill skill) {

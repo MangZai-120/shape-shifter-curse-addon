@@ -1,4 +1,6 @@
 {
+  "msg.my_addon.accessory_duplicate": "Duplicate accessory",
+  "msg.my_addon.accessory_duplicate_detail": "Matching slots contain the same item. Only the Trinkets copy takes effect.",
   "evolution.my_addon.purchase.throttled": "Too many requests. Please try again shortly.",
   "evolution.my_addon.purchase.route_changed": "Your evolution route or node cost changed. Please select a node again.",
   "evolution.my_addon.purchase.rejected": "Unlock requirements changed. Progress has been refreshed; check your points and prerequisites.",
@@ -3659,5 +3661,7 @@
   "fruit.my_addon.bitter": "Bitter Fruit",
   "fruit.my_addon.rotten": "Rotten Fruit",
   "fruit.my_addon.sour": "Sour Fruit",
-  "message.my_addon.fruit_selection": "Fruit selection: %s"
+  "message.my_addon.fruit_selection": "Fruit selection: %s",
+  "accessories.slot.trinket_group_moonlit-spellbook": "Moon Dust Spellbook",
+  "accessories.slot_group.ssc_addon": "Moon Dust Spellbook"
 }

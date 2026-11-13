@@ -519,7 +519,22 @@ dependencies {
     // Apoli & Dependencies
     modImplementation "io.github.apace100:apoli:${project.apoli_version}"
     modImplementation "software.bernie.geckolib:geckolib-fabric-${project.minecraft_version}:${project.geckolib_version}"
-    modImplementation "dev.emi:trinkets:${project.trinkets_version}"
+    if (providers.gradleProperty('accessories_only_test').getOrElse('false').toBoolean()
+            || providers.gradleProperty('accessories_tclayer_test_jar').isPresent()) {
+        modCompileOnly "dev.emi:trinkets:${project.trinkets_version}"
+    } else {
+        modImplementation "dev.emi:trinkets:${project.trinkets_version}"
+    }
+    // Optional real-backend regression; never bundled or required by the release artifact.
+    if (providers.gradleProperty('accessories_test_jar').isPresent()) {
+        def accessoriesTestJar = file(providers.gradleProperty('accessories_test_jar').get())
+        modRuntimeOnly files(accessoriesTestJar)
+        // Local mod files have no Maven transitive metadata; Loom's dev remap omits nested libraries.
+        runtimeOnly zipTree(accessoriesTestJar).matching { include 'META-INF/jars/*.jar' }
+    }
+    if (providers.gradleProperty('accessories_tclayer_test_jar').isPresent()) {
+        modRuntimeOnly files(providers.gradleProperty('accessories_tclayer_test_jar').get())
+    }
 
     // Pehkui（碰撞箱缩放，原版 SSC 已依赖；附属用于幽雾化形碰撞箱缩放，替代 mixin）
     modApi("com.github.Virtuoel:Pehkui:${project.pehkui_version}", {
@@ -964,3 +979,20 @@ tasks.register('fruitLayerTest', JavaExec) {
     mainClass = 'net.jackcooper.shapeShifterCurseAddon.ability.fruit.FruitLayerLedgerTest'
 }
 check.dependsOn fruitLayerTest
+
+tasks.register('enhancedAccessoryIntegrationTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.item.EnhancedAccessoryIntegrationTest'
+    workingDir = layout.buildDirectory.dir('accessory-integration').get().asFile
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def cp = new File(workingDir, 'classpath.txt')
+        cp.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'accessory.testClasspathFile', cp.absolutePath
+    }
+}
+check.dependsOn enhancedAccessoryIntegrationTest

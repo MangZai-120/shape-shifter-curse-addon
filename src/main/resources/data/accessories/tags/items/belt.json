@@ -1,0 +1,28 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "shape-shifter-curse:withered_bandage",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:fountain_belt",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:custom_trinket",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:withered_bandage_plus",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:fountain_belt_plus",
+      "required": false
+    },
+    "ssc_addon:lifesaving_cat_tail",
+    "ssc_addon:twin_pod",
+    "ssc_addon:portable_moisturizer"
+  ]
+}

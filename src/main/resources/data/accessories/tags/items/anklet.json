@@ -1,0 +1,18 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "shape-shifter-curse:amulet_bracelet",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:custom_trinket",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:amulet_bracelet_plus",
+      "required": false
+    },
+    "ssc_addon:binding_anklet"
+  ]
+}

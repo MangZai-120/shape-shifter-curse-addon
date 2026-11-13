@@ -1,0 +1,29 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "shape-shifter-curse:attach_hook",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:frost_pawglove",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:resonant_core",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:custom_trinket",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:attach_hook_plus",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:frost_pawglove_plus",
+      "required": false
+    }
+  ]
+}

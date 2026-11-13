@@ -21,7 +21,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * 月尘魔法书（jackcooper）。装入自建 Trinkets 饰品槽 {@code moonlit/spellbook} 后可用快捷键释放书内魔法。
+ * 月尘魔法书。装入 Trinkets、Curios 或 Accessories 的独立法术书槽后可用快捷键释放书内魔法。
+ * Accessories 的数据槽名复用 tclayer 对 moonlit/spellbook 的转换结果，保留旧槽库存并避免重复槽。
  *
  * <p>书等级、升级经验、卷轴、法阵及冷却存书 NBT；满级后的精通存玩家档案。
  * 见 {@link SpellbookData}。任何形态均可佩戴（继承 {@link AccessoryItem}，canEquip 默认放行）。</p>

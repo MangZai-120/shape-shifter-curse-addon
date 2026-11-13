@@ -36,8 +36,15 @@ public final class MixinSelection {
         requireMod("client.CarryOnAnimationMixin", "carryon");
         // 饰品 Trinkets 桥接兜底（AddonTrinketBridgeMixin）：仅当 trinkets API 可用
         // （原生 Trinkets 或 tclayer 兼容层 provides "trinkets"）时应用；
-        // 与主包 TrinketImpl 的互斥见 shouldApplyMixin 内专门判定（最高优先级插件非 trinkets 才应用）。
+        // 原生 Trinkets / Accessories 由主包接管；其它后端仍保留原来的兜底。
         requireMod("item.AddonTrinketBridgeMixin", "trinkets");
+        requireMod("item.TrinketsInventoryMutationMixin", "trinkets");
+        yieldOnConflict("item.TrinketsInventoryMutationMixin", "tclayer");
+        requireMod("item.CuriosStackMutationMixin", "curios");
+        requireMod("item.CuriosSizeMutationMixin", "curios");
+        requireMod("item.CuriosInventoryMutationMixin", "curios");
+        requireMod("item.AccessoriesContainerMutationMixin", "accessories");
+        requireMod("item.AccessoriesHolderMutationMixin", "accessories");
 
         // ========== 扩展示例（需要时取消注释并按需修改）==========
         // ① 某 mixin 只在装了某可选 mod 时才应用（缺 mod 就跳过，防崩）：
@@ -62,8 +69,8 @@ public final class MixinSelection {
                                java.util.function.Supplier<String> highestBackend) {
         // 饰品桥接兜底：与主包 TrinketImpl 严格互斥——
         // 主包 plugin 在「最高优先级插件 == trinkets」时应用 TrinketImpl 并跳过我们；
-        // 反之（如 Kilt 转载的 curios 2000 抢占）主包跳过 TrinketImpl，此时我们才应用。
-        // 两边判定条件互补，保证同一目标类 AccessoryItem 永远只有一份 Trinket 接口实现。
+        // Accessories 3000 由主包原生桥接接管，不能再通过 tclayer 注册第二套回调。
+        // 其它后端（如 Kilt 的 curios 2000）保留既有兜底。
         // 条件加载：缺任一必需 mod → 跳过
         String[] required = REQUIRED_MODS.get(mixinClassName);
         if (required != null) {
@@ -76,8 +83,8 @@ public final class MixinSelection {
         }
         if (TRINKET_BRIDGE_MIXIN.equals(mixinClassName)) {
             String highest = highestBackend.get();
-            if ("trinkets".equals(highest)) {
-                LOGGER.info("[trinket-bridge] main SSC TrinketImpl active (highest=trinkets), skipping bridge mixin");
+            if ("trinkets".equals(highest) || "accessories".equals(highest)) {
+                LOGGER.info("[trinket-bridge] native SSC accessory implementation active (highest={}), skipping bridge mixin", highest);
                 return false;
             }
             LOGGER.info("[trinket-bridge] main SSC TrinketImpl skipped (highest={}), applying bridge mixin", highest);

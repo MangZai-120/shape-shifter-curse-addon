@@ -1,4 +1,6 @@
 {
+  "msg.my_addon.accessory_duplicate": "饰品重复",
+  "msg.my_addon.accessory_duplicate_detail": "对应槽位装备了相同饰品，仅 Trinkets 中的效果生效",
   "evolution.my_addon.purchase.throttled": "操作过快，请稍后再试。",
   "evolution.my_addon.purchase.route_changed": "进化路线或节点价格已变化，请重新选择节点。",
   "evolution.my_addon.purchase.rejected": "解锁条件已变化，进度已刷新，请检查点数和前置节点。",
@@ -3659,5 +3661,7 @@
   "fruit.my_addon.bitter": "苦涩果",
   "fruit.my_addon.rotten": "腐熟果",
   "fruit.my_addon.sour": "酸涩果",
-  "message.my_addon.fruit_selection": "灵果选择：%s"
+  "message.my_addon.fruit_selection": "灵果选择：%s",
+  "accessories.slot.trinket_group_moonlit-spellbook": "月尘魔法书",
+  "accessories.slot_group.ssc_addon": "月尘魔法书"
 }

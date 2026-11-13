@@ -114,8 +114,54 @@ public final class SkillHudIntegrationProbe {
         dynamicCatalog(unsafe, client, registrations);
         perkCooldownParity(unsafe, server, client);
         evolutionEligibility(unsafe, server, client, routes);
+        evolvedAxolotlDashSlot(unsafe, client, routes);
         moonWeaverModeSynchronization(unsafe, server, client);
         System.out.println("Skill HUD Fabric integration: " + checks + " actual Mixin, NBT cooldown mirror, Perk unlock/revoke/form-switch and SSC/SSCA cooldown checks passed; live gameplay not tested.");
+    }
+
+    private static void evolvedAxolotlDashSlot(sun.misc.Unsafe unsafe, TestWorld client,
+                                              Map<String, String> routes) throws Exception {
+        var player = player(unsafe, client, FormIdentifiers.UPGRADE_AXOLOTL);
+        player.evolution.setUnlockAll(false);
+        for (String node : List.of("axolotl_base", "aquatic_adapt", "water_propel")) player.evolution.unlock(node);
+        check(entries(player).isEmpty(), "movement never fills a missing main slot before dash is unlocked");
+        player.evolution.unlock("water_spurt");
+        var dashOnly = entries(player);
+        check(dashOnly.size() == 1 && dashOnly.get(0).slot() == SkillHudLayout.Slot.LOWER,
+                "newly unlocked Evolved Axolotl dash immediately uses the lower small slot");
+        var dash = dashOnly.get(0).skill();
+        check(dash.cooldown().getPath().equals("form_upgrade_axolotl_dash_hud_water")
+                && dash.icon().getPath().endsWith("/water_dash_upgrade_axolotl.png"),
+                "lower dash retains its real cooldown and uses the dedicated illustrated icon");
+        check(SkillHudIntegrationProbe.class.getClassLoader().getResource("assets/my_addon/" + dash.icon().getPath()) != null,
+                "dedicated Evolved Axolotl dash texture is packaged");
+        player.evolution.unlock("water_spear");
+        var spear = entries(player);
+        check(spear.size() == 2 && spear.get(0).slot() == SkillHudLayout.Slot.PRIMARY
+                && spear.get(1).slot() == SkillHudLayout.Slot.LOWER,
+                "spear uses primary while dash stays below and secondary remains empty");
+        player.evolution.unlock("vortex_guide");
+        var full = entries(player);
+        check(full.size() == 3 && full.get(1).slot() == SkillHudLayout.Slot.SECONDARY
+                && full.get(1).skill().cooldown().getPath().equals("form_upgrade_axolotl_vortex_guide")
+                && full.get(2).skill().equals(dash) && full.get(2).slot() == SkillHudLayout.Slot.LOWER,
+                "unlocking Vortex Guide never displaces the visible lower dash");
+        var perkId = new Identifier("my_addon", "perk_upgrade_axolotl_tidal_pull_charge");
+        player.form.formPerkMap.put(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Axolotl3PerkTree,
+                List.of(net.onixary.shapeShifterCurseFabric.perk.RegPerks.P_AxolotlTidalPull));
+        player.powers.addPower(PowerTypeRegistry.get(perkId), new Identifier("test", "dash_layout"));
+        var withPerk = entries(player);
+        check(withPerk.size() == 4 && withPerk.get(2).skill().equals(dash)
+                && withPerk.get(2).slot() == SkillHudLayout.Slot.LOWER
+                && withPerk.get(3).slot() == SkillHudLayout.Slot.UPPER
+                && perkId.equals(withPerk.get(3).skill().cooldown()),
+                "learned tidal pull uses the upper small slot without moving dash or the main pair");
+        try {
+            EvolutionRegistry.clearClient();
+            check(entries(player).isEmpty(), "unavailable evolution route hides the dash instead of leaving a phantom small slot");
+        } finally { EvolutionRegistry.CLIENT.applyClientSync(routes); }
+        check(entries(player).get(2).slot() == SkillHudLayout.Slot.LOWER,
+                "route restoration recovers dash in its lower slot");
     }
 
     private static void moonWeaverModeSynchronization(sun.misc.Unsafe unsafe, TestWorld server,

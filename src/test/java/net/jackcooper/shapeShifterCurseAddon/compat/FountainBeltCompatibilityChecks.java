@@ -2,6 +2,7 @@ package net.jackcooper.shapeShifterCurseAddon.compat;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
@@ -86,9 +87,9 @@ public final class FountainBeltCompatibilityChecks {
                 var originalPowers = data.layerPowerAddMap.get(new Identifier("origins:origin"))
                         .get(new Identifier("shape-shifter-curse:form_axolotl_3"));
                 check(originalPowers.equals(List.of(new Identifier(originalPower))), "original axolotl keeps its fountain " + suffix);
-                check(data.formPowerAdd.get(new Identifier("my_addon:axolotl_sp")).equals(List.of(new Identifier(addonPower))),
+                check(List.of(new Identifier(addonPower)).equals(data.formPowerAdd.get(FormIdentifiers.AXOLOTL_SP)),
                         "SP receives only its replacement fountain " + suffix);
-                check(data.formPowerRemove.get(new Identifier("my_addon:axolotl_sp")).contains(new Identifier("my_addon:form_axolotl_sp_water_ball")),
+                check(data.formPowerRemove.get(FormIdentifiers.AXOLOTL_SP).contains(new Identifier("my_addon:form_axolotl_sp_water_ball")),
                         "SP belt replaces its burst " + suffix);
                 check(data.layerPowerRemoveMap.get(new Identifier("origins:origin"))
                         .get(new Identifier("shape-shifter-curse:form_axolotl_3"))

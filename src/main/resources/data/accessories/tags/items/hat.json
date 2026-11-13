@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "shape-shifter-curse:custom_trinket",
+      "required": false
+    },
+    "ssc_addon:venom_gland"
+  ]
+}

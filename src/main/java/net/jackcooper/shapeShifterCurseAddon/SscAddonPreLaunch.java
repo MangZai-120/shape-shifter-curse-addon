@@ -12,7 +12,6 @@ public class SscAddonPreLaunch implements PreLaunchEntrypoint {
 
 	private static final String MIN_SSC_VERSION = "1.10.0";
 	private static final String MIN_GECKOLIB_VERSION = "4.8.4";
-	private static final String MIN_TRINKETS_VERSION = "3.7.2";
 
 	@Override
 	public void onPreLaunch() {
@@ -68,7 +67,6 @@ public class SscAddonPreLaunch implements PreLaunchEntrypoint {
 		String[][] deps = {
 				{"shape-shifter-curse", "幻型者诅咒本体 Shape Shifter's Curse", MIN_SSC_VERSION},
 				{"geckolib", "GeckoLib", MIN_GECKOLIB_VERSION},
-				{"trinkets", "Trinkets 饰品栏", MIN_TRINKETS_VERSION},
 		};
 		System.out.println("[SSC Addon][PreLaunch] ===== SSCA 前置依赖 / Required dependencies =====");
 		for (String[] dep : deps) {
@@ -80,6 +78,13 @@ public class SscAddonPreLaunch implements PreLaunchEntrypoint {
 				String status = isVersionBelow(cur, dep[2]) ? "[过低 TOO_OLD]" : "[OK]";
 				System.out.println("[SSC Addon][PreLaunch]   " + status + " " + dep[1] + " (" + dep[0] + ") required >= " + dep[2] + ", current v" + cur);
 			}
+		}
+		// 饰品接口由 SSC 按优先级选择；Trinkets 不是 Accessories 的必需前置。
+		for (String backend : new String[]{"accessories", "curios", "trinkets"}) {
+			var opt = FabricLoader.getInstance().getModContainer(backend);
+			String status = opt.map(mod -> "current v" + mod.getMetadata().getVersion().getFriendlyString())
+					.orElse("未安装 NOT_INSTALLED");
+			System.out.println("[SSC Addon][PreLaunch]   [可选 OPTIONAL] " + backend + ": " + status);
 		}
 		System.out.println("[SSC Addon][PreLaunch] ================================================");
 	}

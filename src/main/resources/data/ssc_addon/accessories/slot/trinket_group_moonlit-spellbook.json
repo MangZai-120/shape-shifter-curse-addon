@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "amount": 1,
+  "operation": "set",
+  "order": 100,
+  "icon": "ssc_addon:gui/slot/spellbook",
+  "validators": [
+    "accessories:tag",
+    "accessories:component"
+  ]
+}

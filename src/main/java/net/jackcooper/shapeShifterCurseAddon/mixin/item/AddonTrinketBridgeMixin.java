@@ -28,8 +28,8 @@ import java.util.HashMap;
  *
  * <p><b>互斥条件（防冲突关键）</b>：本 mixin 由 {@code SscAddonMixinConfigPlugin} 登记——
  * 仅当「trinkets API 可用（含 tclayer 兼容层）且主包 TrinketImpl 会被跳过」
- * （{@code AccessoryPriorityUtils.getHighestPriorityPlugin() != "trinkets"}）时应用。
- * 纯 Trinkets 环境主包 TrinketImpl 照常生效、本 mixin 不应用，二者严格互补互斥，
+ * 且未由原生 Accessories 接管时应用。
+ * 原生 Trinkets / Accessories 环境使用主包实现，本 mixin 不应用，
  * 绝不对同一目标类叠加两份 Trinket 接口实现。</p>
  *
  * <p>实现逐方法对齐主包 TrinketImpl（slotDataCache / getSlotData 逻辑一致），

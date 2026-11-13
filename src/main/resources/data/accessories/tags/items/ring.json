@@ -1,0 +1,23 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "shape-shifter-curse:digestion_fiber_ball",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:custom_trinket",
+      "required": false
+    },
+    {
+      "id": "shape-shifter-curse:digestion_fiber_ball_plus",
+      "required": false
+    },
+    "ssc_addon:blue_fire_amulet",
+    "ssc_addon:ankh_stone",
+    "ssc_addon:withered_sand_ring",
+    "ssc_addon:bloodlust_ring",
+    "ssc_addon:humus_ring",
+    "ssc_addon:nightmare_ring"
+  ]
+}
