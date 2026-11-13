@@ -206,8 +206,7 @@ public final class SkillHudCatalog {
 
         FORMS.put("axolotl_fluorescent", List.of(
                 skill("fluorescent_laser", "form_axolotl_fluorescent_laser", "form_axolotl_fluorescent_shot_cd", net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.shotTicksForHud(), null, true),
-                skill("tidal_wave", "form_axolotl_fluorescent_tidal", false),
-                skill("water_dash", "shape-shifter-curse:form_axolotl_2_water_spurt", false)));
+                skill("tidal_wave", "form_axolotl_fluorescent_tidal", false)));
         FORMS.put("axolotl_aling", FORMS.get("axolotl_fluorescent"));
         FORMS.put("anubis_wolf_sp", List.of(
                 skill("death_domain", "form_anubis_wolf_sp_death_domain", true),
@@ -250,19 +249,13 @@ public final class SkillHudCatalog {
                 // 涡流冲击：湿润度（air）≥每发消耗（balance 可调，服务端同源）
                 skill("vortex_impact", "form_axolotl_sp_vortex_charge", true, p -> p.getAir() >= net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.airPerHitForHud(p)),
                 skill("play_dead", "form_axolotl_sp_play_dead_activate", false),
-                skill("water_burst", "form_axolotl_sp_water_ball", false),
-                skill("water_spear_craft", "form_axolotl_sp_water_spear_craft_spear", false),
-                skill("water_jump", "form_axolotl_sp_jump_out_water", false),
-                skill("water_dash", "shape-shifter-curse:form_axolotl_2_water_spurt", false)));
+                skill("water_burst", "form_axolotl_sp_water_ball", false)));
         FORMS.put("upgrade_axolotl", List.of(
                 // 投掷水矛：湿润度（air）≥空气消耗（balance 可调，服务端同源）
                 skill("water_spear", "form_upgrade_axolotl_water_spear", null, 0, AxolotlTree.NODE_WATER_SPEAR, true,
                         p -> p.getAir() >= net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager.airCostForHud(p)),
                 skill("vortex_guide", "form_upgrade_axolotl_vortex_guide", null, 0, AxolotlTree.NODE_VORTEX_GUIDE, false),
-                skill("water_dash_upgrade_axolotl", "form_upgrade_axolotl_dash_hud_water", null, 0, AxolotlTree.NODE_WATER_SPURT, false),
-                skill("land_dash", "form_upgrade_axolotl_dash_hud_land", null, 0, AxolotlTree.NODE_WATER_SPURT, false,
-                        p -> p.getAir() >= net.jackcooper.shapeShifterCurseAddon.ability.AxolotlWaterSpurtHandler.landAirCostForHud(p)),
-                skill("water_jump", "form_upgrade_axolotl_jump_out_water", null, 0, "aquatic_adapt", false)));
+                skill("water_dash_upgrade_axolotl", "form_upgrade_axolotl_dash_hud_water", null, 0, AxolotlTree.NODE_WATER_SPURT, false)));
         FORMS.put("upgrade_familiar_fox", List.of(
                 // 火花/火环：has_mana 11；火箭：has_mana 2.5（副手持箭的 stick_fireball）
                 skill("fire_spark", "form_upgrade_familiar_fox_spark", null, 0, "spark", true,
@@ -302,13 +295,6 @@ public final class SkillHudCatalog {
 
     private static void pair(String form, String primaryIcon, String primaryId, String secondaryIcon, String secondaryId) {
         FORMS.put(form, List.of(skill(primaryIcon, primaryId, true), skill(secondaryIcon, secondaryId, false)));
-    }
-
-    private static void pair(String form, String primaryIcon, String primaryId, String secondaryIcon, String secondaryId,
-                             java.util.function.Predicate<PlayerEntity> primaryCond,
-                             java.util.function.Predicate<PlayerEntity> secondaryCond) {
-        FORMS.put(form, List.of(skill(primaryIcon, primaryId, true, primaryCond),
-                skill(secondaryIcon, secondaryId, false, secondaryCond)));
     }
 
     /** 寒棘狐凝棘门槛：每 tick 缓存的环绕冰锥存在性（DataTracker 同步，与服务端判定同源）。 */
@@ -374,24 +360,12 @@ public final class SkillHudCatalog {
                         unlocked = unlocked.stream().filter(skill -> !upgradeAxolotlMovement(skill)).toList();
                         learned = List.copyOf(extras);
                 }
-                var value = SkillHudLayout.select(unlocked, Skill::primary, SkillHudCatalog::extraEligible, learned);
+                var value = SkillHudLayout.select(unlocked, Skill::primary, ignored -> true, learned);
                 HUD_CACHE.put(key, value);
                 return value;
         }
 
         private static boolean upgradeAxolotlMovement(Skill skill) {
-                if (skill.cooldown() == null) return false;
-                return switch (skill.cooldown().getPath()) {
-                        case "form_upgrade_axolotl_dash_hud_water", "form_upgrade_axolotl_dash_hud_land",
-                                "form_upgrade_axolotl_jump_out_water" -> true;
-                        default -> false;
-                };
-        }
-
-        private static boolean extraEligible(Skill skill) {
-                String icon = skill.icon().getPath();
-                // Crafting is explicitly excluded. Existing jump/sprint triggers keep their old HUD behavior.
-                return !icon.endsWith("/water_spear_craft.png") && !icon.endsWith("/water_jump.png")
-                        && !icon.endsWith("/water_dash.png") && !icon.endsWith("/land_dash.png");
+                return powerId("form_upgrade_axolotl_dash_hud_water").equals(skill.cooldown());
         }
 }

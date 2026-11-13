@@ -87,10 +87,7 @@ public final class SkillHudIntegrationProbe {
         var perksField = SkillHudCatalog.class.getDeclaredField("PERK_SKILLS"); perksField.setAccessible(true);
         @SuppressWarnings("unchecked") var registrations = (List<SkillHudCatalog.PerkSkill>) perksField.get(null);
         var perks = registrations.stream().map(SkillHudCatalog.PerkSkill::skill).toList();
-        var eligible = SkillHudCatalog.class.getDeclaredMethod("extraEligible", SkillHudCatalog.Skill.class); eligible.setAccessible(true);
-        java.util.function.Predicate<SkillHudCatalog.Skill> accepts = skill -> {
-            try { return (boolean) eligible.invoke(null, skill); } catch (ReflectiveOperationException error) { throw new AssertionError(error); }
-        };
+        java.util.function.Predicate<SkillHudCatalog.Skill> accepts = ignored -> true;
         var axolotl = forms.get("axolotl_sp");
         var tidal = perks.stream().filter(skill -> skill.cooldown().getPath().equals("perk_axolotl_sp_tidal_pull_charge")).findFirst().orElseThrow();
         var base = SkillHudLayout.select(axolotl, SkillHudCatalog.Skill::primary, accepts, List.of());

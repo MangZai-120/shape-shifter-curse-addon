@@ -4,7 +4,7 @@
     "moisture": {
       "kind": "TRAIT",
       "diagram": "RESOURCE",
-      "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png",
+      "icon": "my_addon:textures/gui/skill_icons/water_burst.png",
       "focus": "SELF"
     },
     "wet_health": {
@@ -42,7 +42,7 @@
     "spear_craft": {
       "kind": "ACTIVE",
       "diagram": "PROJECTILE",
-      "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png",
+      "icon": "my_addon:textures/gui/skill_icons/water_spear.png",
       "focus": "TARGET"
     },
     "water_healing": {
@@ -54,7 +54,7 @@
     "tidal_cost": {
       "kind": "PASSIVE",
       "diagram": "SPELL",
-      "icon": "my_addon:textures/gui/skill_icons/water_dash.png",
+      "icon": "my_addon:textures/gui/skill_icons/tidal_wave.png",
       "focus": "TARGET"
     },
     "evolution": {
@@ -82,34 +82,34 @@
     "upgrade_dash": {
       "kind": "ACTIVE",
       "diagram": "DASH",
-      "icon": "my_addon:textures/gui/skill_icons/water_dash.png",
+      "icon": "my_addon:textures/gui/skill_icons/water_dash_upgrade_axolotl.png",
       "node": "water_spurt",
       "focus": "TARGET"
     },
     "aquatic_dash": {
       "kind": "ACTIVE",
       "diagram": "DASH",
-      "icon": "my_addon:textures/gui/skill_icons/water_dash.png",
+      "icon": "my_addon:textures/gui/skill_icons/water_dash_upgrade_axolotl.png",
       "focus": "TARGET"
     },
     "aquatic_unlock": {
       "kind": "PASSIVE",
       "diagram": "FLIGHT",
-      "icon": "my_addon:textures/gui/skill_icons/water_jump.png",
+      "icon": "my_addon:textures/gui/skill_icons/water_dash_upgrade_axolotl.png",
       "node": "aquatic_adapt",
       "focus": "SELF"
     },
     "water_propel": {
       "kind": "PASSIVE",
       "diagram": "DASH",
-      "icon": "my_addon:textures/gui/skill_icons/land_dash.png",
+      "icon": "my_addon:textures/gui/skill_icons/water_dash_upgrade_axolotl.png",
       "node": "water_propel",
       "focus": "TARGET"
     },
     "water_merge": {
       "kind": "PASSIVE",
       "diagram": "RESOURCE",
-      "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png",
+      "icon": "my_addon:textures/gui/skill_icons/vortex_guide.png",
       "node": "become_water",
       "focus": "SELF"
     },
@@ -156,7 +156,7 @@
     "fall_immunity": {
       "kind": "PASSIVE",
       "diagram": "FLIGHT",
-      "icon": "my_addon:textures/gui/skill_icons/water_jump.png",
+      "icon": "my_addon:textures/gui/skill_icons/water_dash_upgrade_axolotl.png",
       "focus": "SELF"
     },
     "projectile_boost": {
@@ -528,7 +528,7 @@
     "allay_flight": {
       "kind": "PASSIVE",
       "diagram": "FLIGHT",
-      "icon": "my_addon:textures/gui/skill_icons/water_jump.png",
+      "icon": "my_addon:textures/gui/skill_icons/purify.png",
       "focus": "SELF"
     },
     "allay_ranged": {
@@ -1234,7 +1234,7 @@
       "kind": "PASSIVE",
       "diagram": "WEATHER",
       "focus": "SELF",
-      "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png"
+      "icon": "my_addon:textures/gui/skill_icons/water_burst.png"
     },
     "natural_regen": {
       "kind": "PASSIVE",
@@ -1246,12 +1246,12 @@
       "kind": "PASSIVE",
       "diagram": "RESOURCE",
       "focus": "SELF",
-      "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png"
+      "icon": "my_addon:textures/gui/skill_icons/water_burst.png"
     },
     "fluorescent_moisture": {
       "kind": "TRAIT",
       "diagram": "RESOURCE",
-      "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png",
+      "icon": "my_addon:textures/gui/skill_icons/fluorescent_laser.png",
       "focus": "SELF"
     },
     "fluorescent_health": {
@@ -1269,7 +1269,7 @@
     "aling_moisture": {
       "kind": "TRAIT",
       "diagram": "RESOURCE",
-      "icon": "my_addon:textures/gui/skill_icons/water_spear_craft.png",
+      "icon": "my_addon:textures/gui/skill_icons/fluorescent_laser.png",
       "focus": "SELF"
     },
     "aling_health": {
