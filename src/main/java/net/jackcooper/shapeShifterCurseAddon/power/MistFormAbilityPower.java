@@ -275,7 +275,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 		Box box = entity.getBoundingBox().expand(aoeRadius());
 		double radiusSq = aoeRadius() * aoeRadius();
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class, box,
-				living -> living != entity && living.isAlive());
+				living -> living != entity && living.isAlive() && !living.isRemoved() && !living.isSpectator());
 		// 收集真正命中（非白名单）的目标，供血渴值「凝聚爆破命中 +12/6/3」结算
 		java.util.List<LivingEntity> hitTargets = new java.util.ArrayList<>();
 		for (LivingEntity target : targets) {
@@ -462,7 +462,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 					double auraSq = 2.0 * 2.0;
 					DamageSource auraSrc = entity.getDamageSources().magic();
 					List<LivingEntity> auraTargets = ((ServerWorld) entity.getWorld()).getEntitiesByClass(
-							LivingEntity.class, aura, t -> t != entity && t.isAlive());
+							LivingEntity.class, aura, t -> t != entity && t.isAlive() && !t.isRemoved() && !t.isSpectator());
 					for (LivingEntity t : auraTargets) {
 						if (entity.squaredDistanceTo(t) > auraSq) continue;
 						if (WhitelistUtils.isProtected(sp, t)) continue;

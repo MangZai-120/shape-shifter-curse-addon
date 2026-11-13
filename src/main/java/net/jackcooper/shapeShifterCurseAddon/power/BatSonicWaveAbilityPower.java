@@ -125,7 +125,7 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower implements net
 		Box box = new Box(eye.x - range, eye.y - range, eye.z - range,
 				eye.x + range, eye.y + range, eye.z + range);
 		List<LivingEntity> candidates = world.getEntitiesByClass(LivingEntity.class, box,
-				living -> living != entity && living.isAlive());
+				living -> living != entity && living.isAlive() && !living.isRemoved() && !living.isSpectator());
 
 		DamageSource source;
 		if (entity instanceof PlayerEntity player) {

@@ -93,7 +93,8 @@ public class SscAddonActions {
 						Box box = player.getBoundingBox().expand(25.0);
 
 						// Glow non-whitelisted
-						java.util.List<LivingEntity> entities = world.getEntitiesByClass(LivingEntity.class, box, e -> e != player && e.isAlive());
+						java.util.List<LivingEntity> entities = world.getEntitiesByClass(LivingEntity.class, box,
+								e -> e != player && e.isAlive() && !e.isRemoved() && !e.isSpectator());
 						for (LivingEntity e : entities) {
 							// 始终跳过：自己的驯服动物、自己的恕魔、劫掠阵营
 							if (e instanceof net.minecraft.entity.passive.TameableEntity tameable && player.getUuid().equals(tameable.getOwnerUuid())) {
@@ -207,7 +208,8 @@ public class SscAddonActions {
 					Vec3d eyePos = living.getEyePos();
 					Vec3d lookVec = living.getRotationVec(1.0F);
 					Box box = living.getBoundingBox().expand(distance).stretch(lookVec.multiply(distance));
-					living.getWorld().getEntitiesByClass(LivingEntity.class, box, target -> target != living).forEach(target -> {
+					living.getWorld().getEntitiesByClass(LivingEntity.class, box,
+							target -> target != living && target.isAlive() && !target.isRemoved() && !target.isSpectator()).forEach(target -> {
 						if (living instanceof ServerPlayerEntity sPlayer && WhitelistUtils.isProtected(sPlayer, target))
 							return;
 						Vec3d targetVec = target.getPos().add(0, target.getHeight() / 2, 0).subtract(eyePos).normalize();

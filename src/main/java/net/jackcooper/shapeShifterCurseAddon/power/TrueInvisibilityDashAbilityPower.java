@@ -147,7 +147,7 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 		world.getEntitiesByClass(LivingEntity.class, box, (e) -> {
 					// Filter Logic:
 					// 1. Not self
-					if (e == entity) return false;
+					if (e == entity || !e.isAlive() || e.isRemoved() || e.isSpectator()) return false;
 
 					// 2. Not other "Wild Cats" - check if they have the TrueInvisibility power
 					// This includes all wild cats, whether visible or not
