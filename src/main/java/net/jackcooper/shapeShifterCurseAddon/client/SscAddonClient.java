@@ -676,7 +676,7 @@ public class SscAddonClient implements ClientModInitializer {
 				net.jackcooper.shapeShifterCurseAddon.client.JumpKillSilkClient::render);
 		// SSCA 月织蛛动画调试 HUD - F6 切换（仅客户端调试用，显示当前动画/进度/二段跳状态）
 		net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverAnimDebugHud.register();
-		// SSCA 进化美西蟠水流冲刺 - 真正疾跑键上报器（区分双击 W/游泳自动疾跑）
+		// SSCA 进化美西螈水流冲刺：水陆均双击物理疾跑键，区分双击 W/游泳自动疾跑
 		net.jackcooper.shapeShifterCurseAddon.client.AxolotlSprintKeyClient.register();
 		// SSCA 月织蛛减速网「踩网蓝色高亮」- 客户端专属发光接收器
 		net.jackcooper.shapeShifterCurseAddon.client.WebHighlightClient.register();		// SSCA 食梦魔「入梦」目标屏幕粉色晕影（仿原版反胃绿框渲染）

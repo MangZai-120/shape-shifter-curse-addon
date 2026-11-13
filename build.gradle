@@ -980,6 +980,32 @@ tasks.register('fruitLayerTest', JavaExec) {
 }
 check.dependsOn fruitLayerTest
 
+tasks.register('doubleTapTriggerTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.ability.DoubleTapTriggerTest'
+}
+check.dependsOn doubleTapTriggerTest
+
+tasks.register('axolotlWaterSpurtWorldTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoWorldTest'
+    workingDir = layout.buildDirectory.dir('axolotl-water-spurt-world').get().asFile
+    maxHeapSize = '2G'
+    systemProperty 'neomagic.worldProbe', 'net.jackcooper.shapeShifterCurseAddon.ability.AxolotlWaterSpurtWorldProbe'
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def cpFile = new File(workingDir, 'classpath.txt')
+        cpFile.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', cpFile.absolutePath
+    }
+}
+check.dependsOn axolotlWaterSpurtWorldTest
+
 tasks.register('enhancedAccessoryIntegrationTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath

@@ -12,20 +12,18 @@ import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionTalents;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.DoubleTapTrigger;
 
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 进化美西螈「水流冲刺」（water_spurt 节点）—— 服务端可靠实现，水陆两套触发彻底隔离。
+ * 进化美西螈「水流冲刺」（water_spurt 节点）—— 水陆统一双击真正疾跑键。
  *
- * <p><b>水下冲刺</b>（同 SSC {@code form_axolotl_2_water_spurt}）：在水中按<b>疾跑键</b>（sprint 上升沿）→
- * 沿视线前冲，<b>不消耗湿润度</b>（与 SSC 一致），独立冷却 5 秒。</p>
- * <p><b>陆地冲刺</b>：在陆地上疾跑时按<b>潜行键</b>（sneak 上升沿且当前/上一 tick 处于疾跑）→
- * 同样的前冲位移，<b>消耗 {@link #LAND_MOISTURE_COST} 点湿润度(air)</b>，独立冷却 5 秒。</p>
- * <p>用 {@code isTouchingWater()} 区分水/陆，两分支互斥（水里只走疾跑冲刺、不响应潜行；陆地只走潜行冲刺、
- * 不响应疾跑），且各自独立冷却，互不干扰。已解锁 water_spurt 节点才生效。</p>
+ * <p>350ms 内按下、松开、再次按下疾跑键触发；长按、双击 W 和自动疾跑不触发。</p>
+ * <p>水下免费；陆地消耗湿润度。水陆仍分别使用原有 5 秒冷却和 HUD 资源，
+ * 已解锁 water_spurt 节点才生效。收包时识别按键边沿，避免同 tick 多个包被合并而漏判。</p>
  */
 public final class AxolotlWaterSpurtHandler {
 
@@ -45,16 +43,23 @@ public final class AxolotlWaterSpurtHandler {
 	/** balance 快照读取（快照未初始化回退默认常量） */
 	private static final BalanceReader BAL = new BalanceReader("abilities.axolotl_water_spurt");
 
-	/** 客户端上报的「真正疾跑键」按住状态（区分双击 W / 游泳自动疾跑，避免误触发冲刺）。 */
-	private static final Map<UUID, Boolean> CLIENT_SPRINT = new ConcurrentHashMap<>();
-	private static final Map<UUID, Boolean> WAS_CLIENT_SPRINT = new ConcurrentHashMap<>();
-	private static final Map<UUID, Boolean> WAS_SNEAKING = new ConcurrentHashMap<>();
+	public static final int DOUBLE_TAP_WINDOW_MILLIS = 350;
+	private static final Map<UUID, DoubleTapTrigger> SPRINT_INPUT = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> WATER_CD = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> LAND_CD = new ConcurrentHashMap<>();
 
 	/** 客户端发「疾跑键按住状态」包时调用（仅进化美西蟠本机会发；区分真正疾跑键与双击 W/游泳自动疾跑）。 */
 	public static void setClientSprintHeld(ServerPlayerEntity player, boolean held) {
-		CLIENT_SPRINT.put(player.getUuid(), held);
+		UUID id = player.getUuid();
+		if (!FormUtils.isUpgradeAxolotl(player)
+				|| !EvolutionTalents.isActive(player, AxolotlTree.NODE_WATER_SPURT)) {
+			SPRINT_INPUT.remove(id);
+			return;
+		}
+		if (SPRINT_INPUT.computeIfAbsent(id, key -> new DoubleTapTrigger(DOUBLE_TAP_WINDOW_MILLIS))
+				.update(held, System.nanoTime() / 1_000_000L)) {
+			tryDash(player);
+		}
 	}
 
 	private AxolotlWaterSpurtHandler() {
@@ -69,14 +74,10 @@ public final class AxolotlWaterSpurtHandler {
 		if (lcd > 0) LAND_CD.put(id, lcd - 1);
 
 		if (!FormUtils.isUpgradeAxolotl(player)) {
-			CLIENT_SPRINT.remove(id);
-			WAS_CLIENT_SPRINT.remove(id);
-			WAS_SNEAKING.remove(id);
+			SPRINT_INPUT.remove(id);
 			return;
 		}
 
-		// 用客户端上报的「真正疾跑键」状态，而非服务端 isSprinting()（后者会被双击 W / 游泳自动置真 → 误冲）
-		boolean sprintKey = CLIENT_SPRINT.getOrDefault(id, false);
 		// HUD 资源仅在 CD 活跃期同步（空闲稳态 wcd==lcd==0 零资源读写）：CD 归零后补发一次 0，
 		// 之后不再触碰资源；触发冲刺时在分支内直接写 HUD（值必变，无需比对）。
 		// 归零补发若因极端时序被应用层丢弃（换维度/传送瞬间实体未追踪），空闲期每 100t 低频对账
@@ -95,33 +96,26 @@ public final class AxolotlWaterSpurtHandler {
 			if (landCooling) PowerUtils.countDownAndSync(player, LAND_HUD, Math.max(0, lcd - 1));
 			else PowerUtils.setResourceValueAndSync(player, LAND_HUD, Math.max(0, lcd - 1));
 		}
-		boolean sneaking = player.isSneaking();
-		boolean wasSprintKey = WAS_CLIENT_SPRINT.getOrDefault(id, false);
-		boolean wasSneaking = WAS_SNEAKING.getOrDefault(id, false);
-		WAS_CLIENT_SPRINT.put(id, sprintKey);
-		WAS_SNEAKING.put(id, sneaking);
-
-		// 未解锁 water_spurt 节点：只更新状态、不触发任何冲刺
 		if (!EvolutionTalents.isActive(player, AxolotlTree.NODE_WATER_SPURT)) {
-			return;
+			SPRINT_INPUT.remove(id);
 		}
+	}
 
+	private static void tryDash(ServerPlayerEntity player) {
+		UUID id = player.getUuid();
 		boolean inWater = player.isTouchingWater();
 		int cdTicks = BAL.i("cd_ticks", CD_TICKS);
 
 		if (inWater) {
-			// ===== 水下冲刺：水里 + 按下真正疾跑键（上升沿）→ 前冲，免费（双击 W/游泳自动疾跑不触发）=====
-			if (sprintKey && !wasSprintKey && WATER_CD.getOrDefault(id, 0) <= 0) {
+			if (WATER_CD.getOrDefault(id, 0) <= 0) {
 				doDash(player);
 				WATER_CD.put(id, cdTicks);
 				PowerUtils.setResourceValueAndSync(player, WATER_HUD, cdTicks);
 			}
-			// 水里只响应疾跑键分支，隔离陆地潜行逻辑
 			return;
 		}
 
-		// ===== 陆地冲刺：陆地 + 按住真正疾跑键时按潜行（sneak 上升沿）→ 前冲，消耗湿润度 =====
-		if (sneaking && !wasSneaking && sprintKey && LAND_CD.getOrDefault(id, 0) <= 0) {
+		if (LAND_CD.getOrDefault(id, 0) <= 0) {
 			int landCost = landAirCostForHud(player);
 			if (player.getAir() < landCost) {
 				return; // 湿润度不足，不触发
@@ -154,9 +148,7 @@ public final class AxolotlWaterSpurtHandler {
 	}
 
 	public static void onPlayerDisconnect(UUID id) {
-		CLIENT_SPRINT.remove(id);
-		WAS_CLIENT_SPRINT.remove(id);
-		WAS_SNEAKING.remove(id);
+		SPRINT_INPUT.remove(id);
 		WATER_CD.remove(id);
 		LAND_CD.remove(id);
 	}
