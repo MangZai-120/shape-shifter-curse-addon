@@ -1,5 +1,8 @@
 {
   "type": "apoli:modify_food",
+  "condition": {
+    "type": "ssc_addon:food_habit_enabled"
+  },
   "food_modifier": {
     "name": "Decreased food points",
     "operation": "multiply_base_multiplicative",

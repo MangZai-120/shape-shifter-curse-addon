@@ -1,5 +1,8 @@
 {
     "type": "apoli:prevent_item_use",
+    "condition": {
+        "type": "ssc_addon:food_habit_enabled"
+    },
     "item_condition": {
         "type": "apoli:and",
         "conditions": [

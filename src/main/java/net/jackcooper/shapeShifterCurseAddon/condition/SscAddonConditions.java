@@ -14,6 +14,7 @@ import net.minecraft.registry.Registry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
+import net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.ability.AnubisWolfSpDeathDomain;
@@ -34,6 +35,11 @@ public class SscAddonConditions {
 	}
 
 	public static void register() {
+		// Gate intrinsic diets without granting the separate morph-scale food exemption.
+		register(new ConditionFactory<>(new Identifier("ssc_addon", "food_habit_enabled"),
+				new SerializableData(),
+				(data, entity) -> ShapeShifterCurseFabric.commonConfig.enableFoodHabitSystem));
+
 		register(new ConditionFactory<>(new Identifier("ssc_addon", "not_universal_formation_charging"),
 				new SerializableData(),
 				(data, entity) -> !(entity instanceof PlayerEntity player)
