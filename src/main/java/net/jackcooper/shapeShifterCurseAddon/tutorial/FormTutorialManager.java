@@ -12,7 +12,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 
-/** The client asks only with its book open; a displayed tutorial or an OS browser handoff records it. */
+/** Only explicit requests from the book offer a tutorial; a display or browser handoff records it. */
 public final class FormTutorialManager {
     public static final Identifier REQUEST = new Identifier("ssc_addon", "form_tutorial_request");
     public static final Identifier OFFER = new Identifier("ssc_addon", "form_tutorial_offer");
@@ -66,7 +66,7 @@ public final class FormTutorialManager {
     }
 
     private static boolean offer(ServerPlayerEntity player, Identifier requestedForm, boolean manual, UUID requestId) {
-        if (!isCurrentSession(player)) return false;
+        if (!manual || !isCurrentSession(player)) return false;
         Identifier form = FormIdMigration.canonical(requestedForm);
         if (!matchesForm(player, form) || !ServerPlayNetworking.canSend(player, OFFER)) return false;
         int now = player.getServer().getTicks();
@@ -74,7 +74,6 @@ public final class FormTutorialManager {
         Request last = REQUESTED.get(key);
         if (last != null && last.player == player && last.form.equals(form) && now >= last.tick && now - last.tick < 20) return false;
         REQUESTED.put(key, new Request(player, form, now));
-        if (!manual && FormTutorialState.get(player.getServer()).hasSeen(player.getUuid(), form)) return false;
         UUID nonce = UUID.randomUUID();
         PENDING.put(player.getUuid(), new Pending(player, nonce, form));
         var packet = PacketByteBufs.create();

@@ -11,7 +11,6 @@ import net.jackcooper.shapeShifterCurseAddon.tutorial.FormTutorialCatalog;
 import net.jackcooper.shapeShifterCurseAddon.tutorial.FormTutorialManager;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ConfirmScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
@@ -21,14 +20,12 @@ import net.onixary.shapeShifterCurseFabric.custom_ui.BookOfShapeShifterScreenV2_
 import net.onixary.shapeShifterCurseFabric.custom_ui.BookOfShapeShifterScreenV2_P2;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 
-/** Open only from the player's book, after init has finished and the server has checked its ledger. */
+/** Open tutorials only after the player presses the tutorial button in their own book. */
 public final class FormTutorialClient {
     private record Request(Screen book, ClientPlayNetworkHandler connection, Identifier form, boolean manual, UUID id) {}
     private record Offer(Request request, UUID nonce) {}
     private static Request queued, requested;
     private static Offer pending;
-    private static Screen lastBook;
-    private static Identifier lastForm;
     private static boolean registered;
 
     private FormTutorialClient() {}
@@ -61,11 +58,6 @@ public final class FormTutorialClient {
                 replay.active = ClientPlayNetworking.canSend(FormTutorialManager.REQUEST);
                 Screens.getButtons(screen).add(replay);
             }
-            if (lastBook != screen || !form.equals(lastForm)) {
-                lastBook = screen;
-                lastForm = form;
-                schedule(client, screen, false);
-            }
         });
         ClientPlayNetworking.registerGlobalReceiver(FormTutorialManager.OFFER, (client, handler, buf, sender) -> {
             final UUID requestId, nonce;
@@ -76,7 +68,7 @@ public final class FormTutorialClient {
                 nonce = buf.readUuid();
                 form = buf.readIdentifier();
                 manual = buf.readBoolean();
-                if (buf.isReadable() || !FormTutorialCatalog.supports(form)) return;
+                if (!manual || buf.isReadable() || !FormTutorialCatalog.supports(form)) return;
             } catch (IllegalArgumentException | IndexOutOfBoundsException malformed) {
                 return;
             }
@@ -91,8 +83,6 @@ public final class FormTutorialClient {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             queued = requested = null;
             pending = null;
-            lastBook = null;
-            lastForm = null;
         });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (queued != null) {
@@ -122,19 +112,7 @@ public final class FormTutorialClient {
                 ClientPlayNetworking.send(FormTutorialManager.ACTION, packet);
             };
             if (FormTutorialWeb.supports(offer.request.form)) {
-                if (offer.request.manual) {
-                    FormTutorialWeb.open(client, offer.request.form, acknowledge);
-                } else {
-                    client.setScreen(new ConfirmScreen(confirmed -> {
-                        if (!validContext(client, offer.request)) {
-                            client.setScreen(null);
-                            return;
-                        }
-                        client.setScreen(offer.request.book);
-                        if (confirmed) FormTutorialWeb.open(client, offer.request.form, acknowledge);
-                    }, FormTutorialScreen.text("web.prompt.title"), FormTutorialScreen.text("web.prompt.body"),
-                            FormTutorialScreen.text("web.prompt.confirm"), FormTutorialScreen.text("web.prompt.cancel")));
-                }
+                FormTutorialWeb.open(client, offer.request.form, acknowledge);
             } else {
                 client.setScreen(new FormTutorialScreen(offer.request.book, offer.request.form, acknowledge));
             }
