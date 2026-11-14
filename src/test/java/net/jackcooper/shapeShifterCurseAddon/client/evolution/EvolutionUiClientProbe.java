@@ -249,6 +249,36 @@ public final class EvolutionUiClientProbe {
                                 "actual client pauses eligibility without deleting synchronized acquisition");
                     } finally { EvolutionRegistry.CLIENT.applyClientSync(clientRoutes); }
                     check(EvolutionTalents.isActive(mc.player, "spark"), "actual client resumes after configuration returns");
+                    mc.setScreen(new SscaFormSelectScreen(screen));
+                    stage = 140;
+                } else if (stage == 140) {
+                    check(selectionPage(mc) == 0, "form selector starts on the familiar page");
+                    save(mc, "selection-familiar-gui5.png");
+                    beforePoints = comp.getPoints();
+                    clickSelection(mc, ">");
+                    check(selectionPage(mc) == 1 && comp.getPoints() == beforePoints, "painted next arrow changes page without choosing or spending");
+                    stage++;
+                } else if (stage == 141) {
+                    save(mc, "selection-axolotl-gui5.png");
+                    clickSelection(mc, ">");
+                    check(selectionPage(mc) == 0, "last form still wraps to the first");
+                    clickSelection(mc, "<");
+                    check(selectionPage(mc) == 1, "previous arrow still wraps to the last form");
+                    clickSelection(mc, net.minecraft.text.Text.translatable("gui.back").getString());
+                    check(mc.currentScreen == screen, "painted back button returns to the original parent");
+                    mc.options.getGuiScale().setValue(4); mc.onResolutionChanged();
+                    mc.setScreen(new SscaFormSelectScreen(screen)); stage++;
+                } else if (stage == 142) {
+                    save(mc, "selection-familiar-gui4.png"); clickSelection(mc, ">"); stage++;
+                } else if (stage == 143) {
+                    save(mc, "selection-axolotl-gui4.png");
+                    mc.options.getGuiScale().setValue(3); mc.onResolutionChanged(); stage++;
+                } else if (stage == 144) {
+                    check(selectionPage(mc) == 1, "GUI resize retains selected page");
+                    save(mc, "selection-axolotl-gui3.png");
+                    mc.options.getGuiScale().setValue(2); mc.onResolutionChanged(); stage++;
+                } else if (stage == 145) {
+                    save(mc, "selection-axolotl-gui2.png");
                     Files.writeString(Path.of("evolution-ui-result.json"), "{\"passed\":true,\"checks\":" + checks + ",\"gui_scales\":[2,3,4,5],\"wide_resolution\":[" + mc.getWindow().getWidth() + "," + mc.getWindow().getHeight() + "],\"minimum_card_gap\":40,\"complete_labels_inside_inner_frame\":true,\"shifted_scrollbar_drag\":true,\"real_server_purchase\":true,\"png_sprites\":" + (EvolutionArtwork.ICONS.size() + EvolutionArtwork.SKIN.size()) + ",\"themed_backgrounds\":2,\"actual_icon_resolution\":64}");
                     finished = true;
                     System.out.println("EVOLUTION_UI_CLIENT_PASS checks=" + checks);
@@ -256,6 +286,16 @@ public final class EvolutionUiClientProbe {
                 }
             } catch (Throwable e) { fail(e); }
         });
+    }
+    private static int selectionPage(MinecraftClient mc) throws Exception {
+        var field = SscaFormSelectScreen.class.getDeclaredField("page");
+        field.setAccessible(true); return field.getInt(mc.currentScreen);
+    }
+    private static void clickSelection(MinecraftClient mc, String label) {
+        var button = mc.currentScreen.children().stream().filter(child -> child instanceof net.minecraft.client.gui.widget.ButtonWidget)
+                .map(child -> (net.minecraft.client.gui.widget.ButtonWidget)child).filter(child -> child.getMessage().getString().equals(label)).findFirst().orElseThrow();
+        mc.currentScreen.mouseClicked(button.getX() + button.getWidth() / 2.0, button.getY() + button.getHeight() / 2.0, 0);
+        mc.currentScreen.mouseReleased(button.getX(), button.getY(), 0);
     }
     private static void effectiveTalentLifecycle(ServerPlayerEntity player) throws Exception {
         var routes = EvolutionTestRoutes.production();

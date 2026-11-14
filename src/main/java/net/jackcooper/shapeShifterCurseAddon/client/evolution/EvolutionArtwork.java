@@ -44,6 +44,16 @@ public final class EvolutionArtwork {
     static boolean hasSprite(String id) { return ICONS.contains(id); }
     static boolean loaded(String id) { return TEXTURES.containsKey(id) && !FAILED.contains(id); }
     static String decoration(String route) { return "decorations/" + route; }
+    /** Keep the selection page's centered content clear, using the existing painted side ornaments. */
+    static void selectionDecorations(DrawContext context, String route, int x, int y, int width, int height) {
+        String id = decoration(route);
+        if (MinecraftClient.getInstance().getResourceManager().getResource(resource(id)).isEmpty()) return;
+        Graphic g = texture(id);
+        if (g == null) return;
+        float margin = 100 * width / (float)g.width;
+        region(context, g, x, y, margin, height, 0, 0, 100, g.height);
+        region(context, g, x + width - margin, y, margin, height, 430, 0, 100, g.height);
+    }
     /** New routes supply only a transparent decorations/<route>.png on the shared 768x512 canvas. */
     static void decorations(DrawContext context, String route, int x, int y, int width, int height) {
         String id = decoration(route);

@@ -3,18 +3,13 @@ package net.jackcooper.shapeShifterCurseAddon.client.evolution;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.MultilineText;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionNode;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRoute;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
@@ -29,21 +24,22 @@ import java.util.List;
  * 「SSCA 进化路线」并确认后进入本界面。每一页展示一个可选的 SSCA 进化形态（图标 + 名称 + 描述），
  * 点击「选择此形态」即发包让服务端走 SSCA 进化路线并播放进化动画。</p>
  *
- * <p><b>当前阶段</b>：SSCA 进化形态只有「进化使魔」一个，故只有 1 页；界面已做成可翻页框架，
- * 以后在 {@link #FORMS} 列表追加形态即可自动支持翻页。</p>
+ * <p>使用进化树共用的羊皮纸与手绘头像，翻页和开局选择仍由已同步的路线数据驱动。</p>
  */
 public class SscaFormSelectScreen extends Screen {
 
     /** 一个可在开局选择的 SSCA 进化形态条目。 */
     private static final class StartForm {
         final Identifier formId;
-        final Item icon;
+        final String routeId;
+        final String portrait;
         final String nameKey;
         final String descKey;
 
-        StartForm(Identifier formId, Item icon, String nameKey, String descKey) {
+        StartForm(Identifier formId, String routeId, String portrait, String nameKey, String descKey) {
             this.formId = formId;
-            this.icon = icon;
+            this.routeId = routeId;
+            this.portrait = portrait;
             this.nameKey = nameKey;
             this.descKey = descKey;
         }
@@ -90,18 +86,11 @@ public class SscaFormSelectScreen extends Screen {
             Identifier resourceId = net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.legacy(fid);
             String ns = resourceId.getNamespace();
             String path = resourceId.getPath();
-            // 图标取初始节点图标；名称 / 描述按形态 id 推导对应 lang key
-            Item icon = Items.NETHER_STAR;
-            String baseId = route.getBaseNodeId();
-            if (baseId != null) {
-                EvolutionNode baseNode = route.getNode(baseId);
-                if (baseNode != null && baseNode.icon != null) {
-                    icon = baseNode.icon;
-                }
-            }
+            // 直接使用进化树左上角同一张 64x64 手绘头像。
+            String portrait = EvolutionArtwork.hasSprite(route.routeId) ? route.routeId : route.getBaseNodeId();
             String nameKey = "origin." + ns + ".form_" + path + ".name";
             String descKey = "evolution." + ns + ".start.form." + path + ".desc";
-            forms.add(new StartForm(fid, icon, nameKey, descKey));
+            forms.add(new StartForm(fid, route.routeId, portrait == null ? "mana_system" : portrait, nameKey, descKey));
         }
     }
 
@@ -128,32 +117,31 @@ public class SscaFormSelectScreen extends Screen {
     @Override
     protected void init() {
         buildForms();
+        page = Math.max(0, Math.min(page, forms.size() - 1));
         int px = panelX();
         int py = panelY();
         boolean multiPage = forms.size() > 1;
 
         // 翻页按钮（面板两侧中部）；仅有一页时禁用，体现可翻页框架
-        ButtonWidget prev = ButtonWidget.builder(Text.literal("<"), b -> prevPage())
-                .dimensions(px + 6, py + PANEL_H / 2 - 10, 20, 20).build();
+        ButtonWidget prev = new PaperButton(px + 40, py + PANEL_H / 2 - 10, 22, 22,
+                Text.literal("<"), b -> prevPage(), -1);
         prev.active = multiPage;
         this.addDrawableChild(prev);
 
-        ButtonWidget next = ButtonWidget.builder(Text.literal(">"), b -> nextPage())
-                .dimensions(px + PANEL_W - 26, py + PANEL_H / 2 - 10, 20, 20).build();
+        ButtonWidget next = new PaperButton(px + PANEL_W - 62, py + PANEL_H / 2 - 10, 22, 22,
+                Text.literal(">"), b -> nextPage(), 1);
         next.active = multiPage;
         this.addDrawableChild(next);
 
         // 选择此形态
-        this.addDrawableChild(ButtonWidget.builder(
-                Text.translatable("evolution.my_addon.start.select.choose"),
-                b -> chooseCurrentForm()
-        ).dimensions(this.width / 2 - 80, py + PANEL_H - 54, 160, 20).build());
+        ButtonWidget choose = new PaperButton(this.width / 2 - 80, py + PANEL_H - 54, 160, 20,
+                Text.translatable("evolution.my_addon.start.select.choose"), b -> chooseCurrentForm(), 0);
+        choose.active = !forms.isEmpty();
+        this.addDrawableChild(choose);
 
         // 返回
-        this.addDrawableChild(ButtonWidget.builder(
-                Text.translatable("gui.back"),
-                b -> this.close()
-        ).dimensions(this.width / 2 - 60, py + PANEL_H - 30, 120, 20).build());
+        this.addDrawableChild(new PaperButton(this.width / 2 - 60, py + PANEL_H - 30, 120, 20,
+                Text.translatable("gui.back"), b -> close(), 0));
     }
 
     private void prevPage() {
@@ -184,51 +172,87 @@ public class SscaFormSelectScreen extends Screen {
 
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
-        this.renderBackground(ctx);
-
         int px = panelX();
         int py = panelY();
-        // 面板背景 + 边框
-        ctx.fill(px, py, px + PANEL_W, py + PANEL_H, 0xE0140C08);
-        drawBorder(ctx, px, py, PANEL_W, PANEL_H, 0xFFB8893A);
+        ctx.getMatrices().push();
+        ctx.getMatrices().translate(0, 0, 400);
+        try {
+            ctx.fill(0, 0, width, height, 0x32000000);
+            EvolutionInk.paper(ctx, px, py, PANEL_W, PANEL_H);
+            ctx.getMatrices().translate(0, 0, 1);
+            if (!forms.isEmpty()) EvolutionArtwork.selectionDecorations(ctx, forms.get(page).routeId, px, py, PANEL_W, PANEL_H);
+            ctx.getMatrices().translate(0, 0, 10);
+            centered(ctx, this.title, width / 2, py + 12, PANEL_W - 64);
+            EvolutionInk.divider(ctx, px + 48, py + 36, PANEL_W - 96);
+            if (!forms.isEmpty()) {
+                // 页码
+                Text pageInfo = Text.translatable("evolution.my_addon.start.select.page", page + 1, forms.size());
+                centered(ctx, pageInfo, width / 2, py + 25, 64);
 
-        // 标题
-        ctx.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, py + 10, 0xFFE8C66A);
+                StartForm form = forms.get(page);
 
-        if (!forms.isEmpty()) {
-            // 页码
-            Text pageInfo = Text.translatable("evolution.my_addon.start.select.page", page + 1, forms.size());
-            ctx.drawCenteredTextWithShadow(this.textRenderer, pageInfo, this.width / 2, py + 24, 0xFFAAAAAA);
+                // 形态图标（放大）
+                int iconCenterX = this.width / 2;
+                int iconTopY = py + 44;
+                int side = 16 * ICON_SCALE;
+                EvolutionInk.frame(ctx, iconCenterX - side / 2 - 4, iconTopY - 3, side + 8, side + 6);
+                EvolutionInk.icon(ctx, form.portrait, iconCenterX - side / 2, iconTopY, side);
 
-            StartForm form = forms.get(page);
+                // 形态名称
+                Text name = Text.translatable(form.nameKey);
+                int nameWidth = Math.min(PANEL_W - 104, textRenderer.getWidth(plain(name)) + 20);
+                EvolutionInk.plaque(ctx, width / 2 - nameWidth / 2, iconTopY + side + 5, nameWidth, 17);
+                centered(ctx, name, width / 2, iconTopY + side + 10, nameWidth - 16);
 
-            // 形态图标（放大）
-            int iconCenterX = this.width / 2;
-            int iconTopY = py + 44;
-            ctx.getMatrices().push();
-            ctx.getMatrices().translate(iconCenterX - 8 * ICON_SCALE, iconTopY, 0);
-            ctx.getMatrices().scale(ICON_SCALE, ICON_SCALE, 1);
-            ctx.drawItem(new ItemStack(form.icon), 0, 0);
-            ctx.getMatrices().pop();
-
-            // 形态名称
-            Text name = Text.translatable(form.nameKey).formatted(Formatting.GOLD, Formatting.BOLD);
-            ctx.drawCenteredTextWithShadow(this.textRenderer, name, this.width / 2, iconTopY + 16 * ICON_SCALE + 8, 0xFFFFFFFF);
-
-            // 形态描述（多行居中）
-            MultilineText desc = MultilineText.create(this.textRenderer,
-                    Text.translatable(form.descKey).formatted(Formatting.GRAY), PANEL_W - 40);
-            desc.drawCenterWithShadow(ctx, this.width / 2, iconTopY + 16 * ICON_SCALE + 26);
-        }
-
-        super.render(ctx, mouseX, mouseY, delta);
+                // 形态描述（多行居中）
+                var lines = textRenderer.wrapLines(Text.literal(plain(Text.translatable(form.descKey))), PANEL_W - 100);
+                int descTop = iconTopY + side + 27, availableHeight = py + PANEL_H - 60 - descTop;
+                float scale = Math.min(1, availableHeight / (float)Math.max(1, lines.size() * 10));
+                ctx.enableScissor(px + 48, descTop, px + PANEL_W - 48, py + PANEL_H - 60);
+                for (int i = 0; i < lines.size(); i++) {
+                    var line = lines.get(i);
+                    ctx.getMatrices().push();
+                    ctx.getMatrices().translate(width / 2f - textRenderer.getWidth(line) * scale / 2, descTop + i * 10 * scale, 0);
+                    ctx.getMatrices().scale(scale, scale, 1);
+                    ctx.drawText(textRenderer, line, 0, 0, EvolutionInk.INK, false);
+                    ctx.getMatrices().pop();
+                }
+                ctx.disableScissor();
+            }
+            super.render(ctx, mouseX, mouseY, delta);
+        } finally { ctx.draw(); ctx.getMatrices().pop(); }
     }
-
-    private void drawBorder(DrawContext ctx, int x, int y, int w, int h, int color) {
-        ctx.fill(x, y, x + w, y + 1, color);
-        ctx.fill(x, y + h - 1, x + w, y + h, color);
-        ctx.fill(x, y, x + 1, y + h, color);
-        ctx.fill(x + w - 1, y, x + w, y + h, color);
+    private String plain(Text value) { return java.util.Objects.requireNonNullElse(Formatting.strip(value.getString()), ""); }
+    private void centered(DrawContext ctx, Text value, int cx, int y, int maxWidth) {
+        String text = plain(value);
+        float scale = Math.min(1, maxWidth / (float)Math.max(1, textRenderer.getWidth(text)));
+        ctx.getMatrices().push();
+        ctx.getMatrices().translate(cx - textRenderer.getWidth(text) * scale / 2, y, 0);
+        ctx.getMatrices().scale(scale, scale, 1);
+        ctx.drawText(textRenderer, text, 0, 0, EvolutionInk.INK, false);
+        ctx.getMatrices().pop();
+    }
+    private final class PaperButton extends ButtonWidget {
+        private final int arrow;
+        PaperButton(int x, int y, int w, int h, Text label, PressAction action, int arrow) {
+            super(x, y, w, h, label, action, DEFAULT_NARRATION_SUPPLIER);
+            this.arrow = arrow;
+        }
+        @Override public void renderButton(DrawContext ctx, int mx, int my, float delta) {
+            EvolutionInk.button(ctx, getX(), getY(), getWidth(), getHeight());
+            if (active && (isHovered() || isFocused())) EvolutionInk.frame(ctx, getX() + 2, getY() + 2, getWidth() - 4, getHeight() - 4);
+            if (arrow == 0) centered(ctx, getMessage(), getX() + getWidth() / 2, getY() + (getHeight() - 8) / 2, getWidth() - 14);
+            else {
+                ctx.getMatrices().push();
+                ctx.getMatrices().translate(getX() + (arrow > 0 ? getWidth() : 0), getY() + (arrow > 0 ? getHeight() : 0), 0);
+                // A half turn preserves the quad winding, so GUI face culling cannot hide the arrow.
+                if (arrow > 0) ctx.getMatrices().scale(-1, -1, 1);
+                EvolutionArtwork.draw(ctx, "back_arrow", (getWidth() - 14) / 2, (getHeight() - 14) / 2, 14);
+                ctx.getMatrices().pop();
+            }
+            if (!active) for (int x = getX() + 5; x < getX() + getWidth() - 4; x += 4)
+                ctx.fill(x, getY() + getHeight() - 4, x + 1, getY() + getHeight() - 3, EvolutionInk.INK);
+        }
     }
 
     @Override
