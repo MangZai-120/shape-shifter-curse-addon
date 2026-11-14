@@ -2,6 +2,7 @@ package net.jackcooper.shapeShifterCurseAddon.client.evolution;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.jackcooper.shapeShifterCurseAddon.client.JobChangeSelectScreen;
 import net.jackcooper.shapeShifterCurseAddon.evolution.*;
 import net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.VortexGuideManager;
@@ -11,6 +12,7 @@ import io.github.apace100.apoli.component.PowerHolderComponent;
 import io.github.apace100.apoli.power.PowerType;
 import io.github.apace100.apoli.power.PowerTypeRegistry;
 import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.additional_power.ChargePower;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
@@ -279,6 +281,42 @@ public final class EvolutionUiClientProbe {
                     mc.options.getGuiScale().setValue(2); mc.onResolutionChanged(); stage++;
                 } else if (stage == 145) {
                     save(mc, "selection-axolotl-gui2.png");
+                    mc.options.getGuiScale().setValue(5); mc.onResolutionChanged();
+                    mc.setScreen(new JobChangeSelectScreen()); stage++;
+                } else if (stage == 146) {
+                    check(selectionPage(mc) == 0 && !selectionButton(mc, Text.translatable("evolution.my_addon.start.select.choose").getString()).active,
+                            "job selector disables the player's current familiar form");
+                    save(mc, "job-change-familiar-current-gui5.png");
+                    beforePoints = comp.getPoints();
+                    var jobScreen = mc.currentScreen;
+                    clickSelection(mc, Text.translatable("evolution.my_addon.start.select.choose").getString());
+                    check(mc.currentScreen == jobScreen && comp.getPoints() == beforePoints,
+                            "clicking the current form neither submits nor spends points");
+                    clickSelection(mc, ">"); stage++;
+                } else if (stage == 147) {
+                    check(selectionPage(mc) == 1 && selectionButton(mc, Text.translatable("evolution.my_addon.start.select.choose").getString()).active,
+                            "job selector enables a different form after paging");
+                    save(mc, "job-change-axolotl-target-gui5.png");
+                    clickSelection(mc, ">");
+                    check(selectionPage(mc) == 0, "job next arrow wraps to first form");
+                    clickSelection(mc, "<");
+                    check(selectionPage(mc) == 1 && comp.getPoints() == beforePoints, "job previous arrow wraps without spending points");
+                    clickSelection(mc, Text.translatable("gui.back").getString());
+                    check(mc.currentScreen == null, "job back button closes to the game");
+                    mc.options.getGuiScale().setValue(4); mc.onResolutionChanged();
+                    mc.setScreen(new JobChangeSelectScreen()); stage++;
+                } else if (stage == 148) {
+                    save(mc, "job-change-familiar-current-gui4.png");
+                    clickSelection(mc, ">"); stage++;
+                } else if (stage == 149) {
+                    save(mc, "job-change-axolotl-target-gui4.png");
+                    mc.options.getGuiScale().setValue(3); mc.onResolutionChanged(); stage++;
+                } else if (stage == 150) {
+                    check(selectionPage(mc) == 1, "job GUI resize retains selected target");
+                    save(mc, "job-change-axolotl-target-gui3.png");
+                    mc.options.getGuiScale().setValue(2); mc.onResolutionChanged(); stage++;
+                } else if (stage == 151) {
+                    save(mc, "job-change-axolotl-target-gui2.png");
                     Files.writeString(Path.of("evolution-ui-result.json"), "{\"passed\":true,\"checks\":" + checks + ",\"gui_scales\":[2,3,4,5],\"wide_resolution\":[" + mc.getWindow().getWidth() + "," + mc.getWindow().getHeight() + "],\"minimum_card_gap\":40,\"complete_labels_inside_inner_frame\":true,\"shifted_scrollbar_drag\":true,\"real_server_purchase\":true,\"png_sprites\":" + (EvolutionArtwork.ICONS.size() + EvolutionArtwork.SKIN.size()) + ",\"themed_backgrounds\":2,\"actual_icon_resolution\":64}");
                     finished = true;
                     System.out.println("EVOLUTION_UI_CLIENT_PASS checks=" + checks);
@@ -288,14 +326,17 @@ public final class EvolutionUiClientProbe {
         });
     }
     private static int selectionPage(MinecraftClient mc) throws Exception {
-        var field = SscaFormSelectScreen.class.getDeclaredField("page");
+        var field = mc.currentScreen.getClass().getDeclaredField("page");
         field.setAccessible(true); return field.getInt(mc.currentScreen);
     }
-    private static void clickSelection(MinecraftClient mc, String label) {
-        var button = mc.currentScreen.children().stream().filter(child -> child instanceof net.minecraft.client.gui.widget.ButtonWidget)
+    private static net.minecraft.client.gui.widget.ButtonWidget selectionButton(MinecraftClient mc, String label) {
+        return mc.currentScreen.children().stream().filter(child -> child instanceof net.minecraft.client.gui.widget.ButtonWidget)
                 .map(child -> (net.minecraft.client.gui.widget.ButtonWidget)child).filter(child -> child.getMessage().getString().equals(label)).findFirst().orElseThrow();
+    }
+    private static void clickSelection(MinecraftClient mc, String label) {
+        var button = selectionButton(mc, label);
         mc.currentScreen.mouseClicked(button.getX() + button.getWidth() / 2.0, button.getY() + button.getHeight() / 2.0, 0);
-        mc.currentScreen.mouseReleased(button.getX(), button.getY(), 0);
+        if (mc.currentScreen != null) mc.currentScreen.mouseReleased(button.getX(), button.getY(), 0);
     }
     private static void effectiveTalentLifecycle(ServerPlayerEntity player) throws Exception {
         var routes = EvolutionTestRoutes.production();

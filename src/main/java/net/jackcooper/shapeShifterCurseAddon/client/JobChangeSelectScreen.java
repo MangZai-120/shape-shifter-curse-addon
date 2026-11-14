@@ -3,21 +3,15 @@ package net.jackcooper.shapeShifterCurseAddon.client;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.MultilineText;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
-import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionNode;
+import net.jackcooper.shapeShifterCurseAddon.client.evolution.EvolutionFormSelectionScreen;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRoute;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
@@ -35,18 +29,20 @@ import java.util.List;
  * <p>渲染布局与开局用的 SscaFormSelectScreen 一致（一页一形态、数据驱动 buildForms），但语义是「转职」而非
  * 「开局进入路线」，故独立成类、发不同的确认包，且不改动 onixary 侧原界面。</p>
  */
-public class JobChangeSelectScreen extends Screen {
+public class JobChangeSelectScreen extends EvolutionFormSelectionScreen {
 
     /** 一个可转职进入的进化形态条目。 */
     private static final class FormEntry {
         final Identifier formId;
-        final Item icon;
+        final String routeId;
+        final String portrait;
         final String nameKey;
         final String descKey;
 
-        FormEntry(Identifier formId, Item icon, String nameKey, String descKey) {
+        FormEntry(Identifier formId, String routeId, String portrait, String nameKey, String descKey) {
             this.formId = formId;
-            this.icon = icon;
+            this.routeId = routeId;
+            this.portrait = portrait;
             this.nameKey = nameKey;
             this.descKey = descKey;
         }
@@ -81,23 +77,12 @@ public class JobChangeSelectScreen extends Screen {
             Identifier resourceId = net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.legacy(fid);
             String ns = resourceId.getNamespace();
             String path = resourceId.getPath();
-            Item icon = Items.NETHER_STAR;
-            String baseId = route.getBaseNodeId();
-            if (baseId != null) {
-                EvolutionNode baseNode = route.getNode(baseId);
-                if (baseNode != null && baseNode.icon != null) {
-                    icon = baseNode.icon;
-                }
-            }
+            String portrait = portraitFor(route.routeId, route.getBaseNodeId());
             String nameKey = "origin." + ns + ".form_" + path + ".name";
             String descKey = "evolution." + ns + ".start.form." + path + ".desc";
-            forms.add(new FormEntry(fid, icon, nameKey, descKey));
+            forms.add(new FormEntry(fid, route.routeId, portrait, nameKey, descKey));
         }
     }
-
-    private static final int PANEL_W = 280;
-    private static final int PANEL_H = 210;
-    private static final int ICON_SCALE = 3;
 
     private int page = 0;
     /** 「选择此形态」按钮引用，翻到当前所处形态那页时置灰。 */
@@ -107,41 +92,31 @@ public class JobChangeSelectScreen extends Screen {
         super(Text.translatable("evolution.my_addon.job_change.select.title"));
     }
 
-    private int panelX() {
-        return (this.width - PANEL_W) / 2;
-    }
-
-    private int panelY() {
-        return (this.height - PANEL_H) / 2;
-    }
-
     @Override
     protected void init() {
         buildForms();
+        page = Math.max(0, Math.min(page, forms.size() - 1));
         int px = panelX();
         int py = panelY();
         boolean multiPage = forms.size() > 1;
 
-        ButtonWidget prev = ButtonWidget.builder(Text.literal("<"), b -> prevPage())
-                .dimensions(px + 6, py + PANEL_H / 2 - 10, 20, 20).build();
+        ButtonWidget prev = paperButton(px + 40, py + PANEL_H / 2 - 10, 22, 22,
+                Text.literal("<"), b -> prevPage(), -1);
         prev.active = multiPage;
         this.addDrawableChild(prev);
 
-        ButtonWidget next = ButtonWidget.builder(Text.literal(">"), b -> nextPage())
-                .dimensions(px + PANEL_W - 26, py + PANEL_H / 2 - 10, 20, 20).build();
+        ButtonWidget next = paperButton(px + PANEL_W - 62, py + PANEL_H / 2 - 10, 22, 22,
+                Text.literal(">"), b -> nextPage(), 1);
         next.active = multiPage;
         this.addDrawableChild(next);
 
-        this.chooseButton = ButtonWidget.builder(
-                Text.translatable("evolution.my_addon.start.select.choose"),
-                b -> chooseCurrentForm()
-        ).dimensions(this.width / 2 - 80, py + PANEL_H - 54, 160, 20).build();
+        this.chooseButton = paperButton(this.width / 2 - 80, py + PANEL_H - 54, 160, 20,
+                Text.translatable("evolution.my_addon.start.select.choose"), b -> chooseCurrentForm(), 0);
         this.addDrawableChild(this.chooseButton);
+        updateChooseButtonState();
 
-        this.addDrawableChild(ButtonWidget.builder(
-                Text.translatable("gui.back"),
-                b -> this.close()
-        ).dimensions(this.width / 2 - 60, py + PANEL_H - 30, 120, 20).build());
+        this.addDrawableChild(paperButton(this.width / 2 - 60, py + PANEL_H - 30, 120, 20,
+                Text.translatable("gui.back"), b -> close(), 0));
     }
 
     private void prevPage() {
@@ -161,7 +136,7 @@ public class JobChangeSelectScreen extends Screen {
     /** 翻到玩家当前所处形态那页时，置灰「选择此形态」按钮（可见但不可点）。 */
     private void updateChooseButtonState() {
         if (chooseButton != null) {
-            chooseButton.active = !isCurrentPageOwnForm();
+            chooseButton.active = !forms.isEmpty() && !isCurrentPageOwnForm();
         }
     }
 
@@ -196,51 +171,10 @@ public class JobChangeSelectScreen extends Screen {
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
         updateChooseButtonState();
-        this.renderBackground(ctx);
-
-        int px = panelX();
-        int py = panelY();
-        ctx.fill(px, py, px + PANEL_W, py + PANEL_H, 0xE0140C08);
-        drawBorder(ctx, px, py, PANEL_W, PANEL_H, 0xFFB8893A);
-
-        ctx.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, py + 10, 0xFFE8C66A);
-
-        if (!forms.isEmpty()) {
-            Text pageInfo = Text.translatable("evolution.my_addon.start.select.page", page + 1, forms.size());
-            ctx.drawCenteredTextWithShadow(this.textRenderer, pageInfo, this.width / 2, py + 24, 0xFFAAAAAA);
-
-            FormEntry form = forms.get(page);
-
-            int iconCenterX = this.width / 2;
-            int iconTopY = py + 44;
-            ctx.getMatrices().push();
-            ctx.getMatrices().translate(iconCenterX - 8 * ICON_SCALE, iconTopY, 0);
-            ctx.getMatrices().scale(ICON_SCALE, ICON_SCALE, 1);
-            ctx.drawItem(new ItemStack(form.icon), 0, 0);
-            ctx.getMatrices().pop();
-
-            Text name = Text.translatable(form.nameKey).formatted(Formatting.GOLD, Formatting.BOLD);
-            ctx.drawCenteredTextWithShadow(this.textRenderer, name, this.width / 2, iconTopY + 16 * ICON_SCALE + 8, 0xFFFFFFFF);
-
-            MultilineText desc = MultilineText.create(this.textRenderer,
-                    Text.translatable(form.descKey).formatted(Formatting.GRAY), PANEL_W - 40);
-            desc.drawCenterWithShadow(ctx, this.width / 2, iconTopY + 16 * ICON_SCALE + 26);
-
-            // 当前所处形态不可选，提示玩家
-            if (isCurrentPageOwnForm()) {
-                Text cur = Text.translatable("evolution.my_addon.job_change.current").formatted(Formatting.RED, Formatting.ITALIC);
-                ctx.drawCenteredTextWithShadow(this.textRenderer, cur, this.width / 2, py + PANEL_H - 68, 0xFFFF6666);
-            }
-        }
-
-        super.render(ctx, mouseX, mouseY, delta);
-    }
-
-    private void drawBorder(DrawContext ctx, int x, int y, int w, int h, int color) {
-        ctx.fill(x, y, x + w, y + 1, color);
-        ctx.fill(x, y + h - 1, x + w, y + h, color);
-        ctx.fill(x, y, x + 1, y + h, color);
-        ctx.fill(x + w - 1, y, x + w, y + h, color);
+        FormEntry form = forms.isEmpty() ? null : forms.get(page);
+        Text status = isCurrentPageOwnForm() ? Text.translatable("evolution.my_addon.job_change.current") : null;
+        renderFormPage(ctx, mouseX, mouseY, delta, page, forms.size(), form == null ? null :
+                new FormPage(form.routeId, form.portrait, Text.translatable(form.nameKey), Text.translatable(form.descKey)), status);
     }
 
     @Override
