@@ -94,8 +94,8 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 			var skill = entry.skill();
 			int x = skill.primary() ? layout.primaryX() : layout.secondaryX();
 			int y = skill.primary() ? layout.primaryY() : layout.secondaryY();
-			Cooldown cooldown = readCooldown(player, skill.cooldown(), skill.cooldownTotalTicks());
-            var authoritative = net.jackcooper.shapeShifterCurseAddon.client.SkillCooldownClient.get(skill.authorityId());
+			Cooldown cooldown = readCooldown(player, skill.resolveCooldown(player), skill.cooldownTotalTicks());
+            var authoritative = net.jackcooper.shapeShifterCurseAddon.client.SkillCooldownClient.get(skill.authorityId(player));
             if (authoritative != null) {
                 int remaining = authoritative.remainingNow(net.jackcooper.shapeShifterCurseAddon.client.SkillCooldownClient.now());
                 cooldown = new Cooldown(remaining, Math.min(1.0, remaining / (double)Math.max(1, authoritative.total())));

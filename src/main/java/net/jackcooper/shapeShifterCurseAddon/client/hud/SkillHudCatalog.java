@@ -26,6 +26,9 @@ import java.util.Map;
 
 @Environment(EnvType.CLIENT)
 public final class SkillHudCatalog {
+    private static final Identifier AXOLOTL_WATER_DASH_CD = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_water");
+    private static final Identifier AXOLOTL_LAND_DASH_CD = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_land");
+
     public record Skill(Identifier icon, Identifier cooldown, Identifier internalCooldown,
                         int internalTicks, String talent, boolean primary,
                         java.util.function.Predicate<PlayerEntity> condition,
@@ -42,9 +45,16 @@ public final class SkillHudCatalog {
             return internalTicks;
         }
 
-        /** 服务端冷却同步的技能 ID（= 条目登记的技能 power id）。 */
-        public String authorityId() {
-            return cooldown == null ? "" : cooldown.toString();
+        /** 水陆冲刺共用一个图标，渲染时读取当前环境真正使用的冷却资源。 */
+        public Identifier resolveCooldown(PlayerEntity player) {
+            return AXOLOTL_WATER_DASH_CD.equals(cooldown) && !player.isTouchingWater()
+                    ? AXOLOTL_LAND_DASH_CD : cooldown;
+        }
+
+        /** 服务端冷却同步的技能 ID，与当前显示的冷却资源保持一致。 */
+        public String authorityId(PlayerEntity player) {
+            Identifier id = resolveCooldown(player);
+            return id == null ? "" : id.toString();
         }
 
         public int cooldownTotalTicks() {

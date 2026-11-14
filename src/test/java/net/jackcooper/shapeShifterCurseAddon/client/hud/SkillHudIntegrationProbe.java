@@ -159,6 +159,59 @@ public final class SkillHudIntegrationProbe {
         } finally { EvolutionRegistry.CLIENT.applyClientSync(routes); }
         check(entries(player).get(2).slot() == SkillHudLayout.Slot.LOWER,
                 "route restoration recovers dash in its lower slot");
+        evolvedAxolotlDashCooldown(player, dash);
+    }
+
+    private static void evolvedAxolotlDashCooldown(TestPlayer player, SkillHudCatalog.Skill dash) throws Exception {
+        Identifier landId = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_land");
+        Identifier waterId = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_water");
+        var resources = data("my_addon/powers/form_upgrade_axolotl_dash_hud");
+        for (String part : List.of("land", "water")) {
+            Identifier id = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_" + part);
+            if (!PowerTypeRegistry.contains(id)) PowerTypeRegistry.register(id,
+                    new PowerType<>(id, io.github.apace100.apoli.power.ResourcePower.createFactory().read(resources.getAsJsonObject(part))));
+        }
+        PowerType<?> landType = PowerTypeRegistry.get(landId);
+        PowerType<?> waterType = PowerTypeRegistry.get(waterId);
+        Identifier source = new Identifier("test", "dash_cooldown");
+        player.powers.addPower(landType, source);
+        player.powers.addPower(waterType, source);
+        var land = (io.github.apace100.apoli.power.VariableIntPower) player.powers.getPower(landType);
+        var water = (io.github.apace100.apoli.power.VariableIntPower) player.powers.getPower(waterType);
+        var renderer = new SkillCooldownBarRenderer();
+        player.touchingWater = false;
+        land.setValue(100);
+        water.setValue(0);
+        check(dash.resolveCooldown(player).equals(landId) && dash.authorityId(player).equals(landId.toString()),
+                "land dash uses the land resource for both cooldown display and authority lookup");
+        check(dashRemaining(renderer, dash, player) == 100, "land dash HUD reads its actual five-second cooldown");
+        land.setValue(60);
+        check(dashRemaining(renderer, dash, player) == 60, "land countdown follows resource updates");
+        player.touchingWater = true;
+        water.setValue(75);
+        check(dash.resolveCooldown(player).equals(waterId) && dash.authorityId(player).equals(waterId.toString()),
+                "entering water switches both cooldown lookups on the already-cached skill");
+        check(dashRemaining(renderer, dash, player) == 75, "water dash retains its independent countdown");
+        player.touchingWater = false;
+        check(dashRemaining(renderer, dash, player) == 60, "leaving water immediately restores the land countdown");
+        land.setValue(0);
+        check(dashRemaining(renderer, dash, player) == 0, "completed land cooldown clears the HUD despite a water cooldown");
+        player.touchingWater = true;
+        check(dashRemaining(renderer, dash, player) == 75, "clearing land cooldown does not clear water cooldown");
+        water.setValue(0);
+        check(dashRemaining(renderer, dash, player) == 0, "completed water cooldown clears the HUD");
+        player.touchingWater = false;
+        check(entries(player).size() == 4 && entries(player).get(2).slot() == SkillHudLayout.Slot.LOWER,
+                "environment changes keep one dash icon in its existing lower slot");
+    }
+
+    private static int dashRemaining(SkillCooldownBarRenderer renderer, SkillHudCatalog.Skill dash, TestPlayer player) throws Exception {
+        var read = SkillCooldownBarRenderer.class.getDeclaredMethod("readCooldown", PlayerEntity.class, Identifier.class, int.class);
+        read.setAccessible(true);
+        Object cooldown = read.invoke(renderer, player, dash.resolveCooldown(player), dash.cooldownTotalTicks());
+        var remaining = cooldown.getClass().getDeclaredMethod("remaining");
+        remaining.setAccessible(true);
+        return (int) remaining.invoke(cooldown);
     }
 
     private static void moonWeaverModeSynchronization(sun.misc.Unsafe unsafe, TestWorld server,
@@ -493,8 +546,10 @@ public final class SkillHudIntegrationProbe {
         SpiderMoonWeaverStateComponent moonWeaver;
         TestPlayer modeMirror;
         int modeSyncPackets;
+        boolean touchingWater;
         private TestPlayer() { super(null, null, new GameProfile(UUID.randomUUID(), "hud-test")); }
         @Override public World getWorld() { return testWorld; }
+        @Override public boolean isTouchingWater() { return touchingWater; }
         @Override public ComponentContainer getComponentContainer() { return components; }
         @Override public Iterable<ServerPlayerEntity> getRecipientsForComponentSync() {
             return modeMirror == null ? List.of() : List.of(this);
