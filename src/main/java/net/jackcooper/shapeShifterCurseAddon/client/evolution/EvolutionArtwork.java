@@ -52,7 +52,17 @@ public final class EvolutionArtwork {
         if (g == null) return;
         float margin = 100 * width / (float)g.width;
         region(context, g, x, y, margin, height, 0, 0, 100, g.height);
-        region(context, g, x + width - margin, y, margin, height, 430, 0, 100, g.height);
+        float right = x + width - margin;
+        if (route.equals("axolotl")) {
+            // Move only the middle coral towards the paper edge; keep the lower cluster in place.
+            float sy = height / (float)g.height;
+            int bottom = CORAL_Y + CORAL_H;
+            region(context, g, right, y, margin, CORAL_Y * sy, 430, 0, 100, CORAL_Y);
+            region(context, g, right + 8 * width / (float)g.width, y + CORAL_Y * sy,
+                    margin, CORAL_H * sy, 430, CORAL_Y, 100, CORAL_H);
+            region(context, g, right, y + bottom * sy, margin, (g.height - bottom) * sy,
+                    430, bottom, 100, g.height - bottom);
+        } else region(context, g, right, y, margin, height, 430, 0, 100, g.height);
     }
     /** New routes supply only a transparent decorations/<route>.png on the shared 768x512 canvas. */
     static void decorations(DrawContext context, String route, int x, int y, int width, int height) {

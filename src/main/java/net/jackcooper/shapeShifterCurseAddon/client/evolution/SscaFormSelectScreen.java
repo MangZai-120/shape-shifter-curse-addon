@@ -240,7 +240,7 @@ public class SscaFormSelectScreen extends Screen {
         }
         @Override public void renderButton(DrawContext ctx, int mx, int my, float delta) {
             EvolutionInk.button(ctx, getX(), getY(), getWidth(), getHeight());
-            if (active && (isHovered() || isFocused())) EvolutionInk.frame(ctx, getX() + 2, getY() + 2, getWidth() - 4, getHeight() - 4);
+            if (active && (isHovered() || (arrow == 0 && isFocused()))) EvolutionInk.frame(ctx, getX() + 2, getY() + 2, getWidth() - 4, getHeight() - 4);
             if (arrow == 0) centered(ctx, getMessage(), getX() + getWidth() / 2, getY() + (getHeight() - 8) / 2, getWidth() - 14);
             else {
                 ctx.getMatrices().push();
