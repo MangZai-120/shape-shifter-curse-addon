@@ -38,6 +38,7 @@ public class BridgeWebBullet extends WebBullet {
 
 	@Override
 	public void onBlockHit(BlockHitResult blockHitResult) {
+		if (this.getWorld().isClient) return;
 		// 档位 → 原版天梯配置（数值与原版蜘蛛搭路一致）
 		WebBridgeAction.WebLadderConfig src = switch (this.Tier) {
 			case 3 -> ladderConfigTier3;
