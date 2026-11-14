@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.SpellFireBoltEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -29,6 +30,15 @@ public class FireBoltSpell extends Spell {
 	// 阶段 5：运行时快照读取（spells.fire_bolt；快照未初始化回退上方默认常量）
 	private static final BalanceReader BAL = new BalanceReader("spells.fire_bolt");
 
+    @Override
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        return SpellBacklash.Effects.burning(power, burnDuration(level));
+    }
+
+    private static int burnDuration(int level) { return RuneCastContext.current().duration(level >= 3
+				? BAL.i("fire_ticks_high", FIRE_TICKS_HIGH)
+				: BAL.i("fire_ticks_low", FIRE_TICKS_LOW),RuneModifiers.Stat.BURN); }
+
 	public FireBoltSpell() {
 		super(new Identifier("ssc_addon", "fire_bolt"), SpellRarity.WHITE);
 	}
@@ -46,9 +56,7 @@ public class FireBoltSpell extends Spell {
 		bolt.setExpBountyTen(ssc_addon$takePendingExp()); // exp_mode 1/2 挂起经验随弹射物走
 		bolt.setRefundCastId(solo ? null : ssc_addon$getRefundCastId());
 		// 低≤高跨字段约束由 balance schema 校验，运行时两值独立读取
-		bolt.setFireTicks(RuneCastContext.current().duration(level >= 3
-				? BAL.i("fire_ticks_high", FIRE_TICKS_HIGH)
-				: BAL.i("fire_ticks_low", FIRE_TICKS_LOW),RuneModifiers.Stat.BURN));
+		bolt.setFireTicks(burnDuration(level));
 		Vec3d look = caster.getRotationVec(1.0F);
 		bolt.setDirection(look, (float)RuneCastContext.current().scale(getSpeedMultiplier(level),RuneModifiers.Stat.SPEED));
 		caster.getWorld().spawnEntity(bolt);

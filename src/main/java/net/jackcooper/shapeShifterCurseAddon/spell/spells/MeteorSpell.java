@@ -6,6 +6,7 @@ import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.SpellMeteorEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
@@ -52,6 +53,13 @@ public class MeteorSpell extends Spell {
 		return BAL.d("base_radius", BASE_RADIUS);
 	}
 
+    @Override
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        return SpellBacklash.Effects.burning(power, burnDuration());
+    }
+
+    private static int burnDuration() { return RuneCastContext.current().duration(60,RuneModifiers.Stat.BURN); }
+
 	public MeteorSpell() {
 		super(new Identifier("ssc_addon", "meteor"), SpellRarity.PURPLE);
 	}
@@ -92,7 +100,7 @@ public class MeteorSpell extends Spell {
 		meteor.setExpBountyTen(ssc_addon$takePendingExp()); // exp_mode 1/2 挂起经验随落点体走
 		meteor.setRefundCastId(solo ? null : ssc_addon$getRefundCastId());
 		meteor.setRadius(getAimRadius(level));
-        meteor.setFireTicks(RuneCastContext.current().duration(60,RuneModifiers.Stat.BURN));
+        meteor.setFireTicks(burnDuration());
 		meteor.setImpactTarget(impact.x, impact.y, impact.z);
 		caster.getWorld().spawnEntity(meteor);
 		// 施法音效（召唤感）：烈焰人低吼 + 火焰附加

@@ -3,6 +3,7 @@ import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -33,6 +34,16 @@ public class FrostNovaSpell extends Spell {
 	// 阶段 5：运行时快照读取（spells.frost_nova；快照未初始化回退上方默认常量）
 	private static final BalanceReader BAL = new BalanceReader("spells.frost_nova");
 
+    @Override
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        int ticks = negativeDuration(level);
+        return SpellBacklash.Effects.debuffs(power,
+                new net.minecraft.entity.effect.StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.SLOWNESS, ticks, 1),
+                new net.minecraft.entity.effect.StatusEffectInstance(net.jackcooper.shapeShifterCurseAddon.SscAddon.FROST_SHATTER, ticks, 0));
+    }
+
+    private static int negativeDuration(int level) { return RuneCastContext.current().duration(80 + (level >= 3 ? 20 : 0) + (level >= 5 ? 20 : 0),RuneModifiers.Stat.NEGATIVE); }
+
 	public FrostNovaSpell() {
 		super(new Identifier("ssc_addon", "frost_nova"), SpellRarity.GREEN);
 	}
@@ -54,7 +65,7 @@ public class FrostNovaSpell extends Spell {
 			radius *= 1.25;
 		}
 		// 缓速 II，时长 4s（L1-2）/ 5s（L3-4）/ 6s（L5）
-		int slowTicks = RuneCastContext.current().duration(80 + (level >= 3 ? 20 : 0) + (level >= 5 ? 20 : 0),RuneModifiers.Stat.NEGATIVE);
+		int slowTicks = negativeDuration(level);
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
 				caster.getBoundingBox().expand(radius), e -> e != caster && e.isAlive());
 		int hitExpTen = ssc_addon$takePendingExp();

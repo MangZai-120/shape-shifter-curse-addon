@@ -116,14 +116,11 @@ public final class SpellCastManager {
 		level = FormAffinity.bonusSpellLevel(player, spellElement, level);
 		// 法阵加成：同系伤 +12%/级、对立系伤 -12%/级；同系 cd -5%/级；空间法阵只缩空间系 cd
 		// 形态亲和：伤害/耗蓝/CD 三乘区（与法阵独立叠加）
-		float damage = spell.getBaseDamage() * ratio * spell.getDamageMultiplier(level)
-				* FormationData.sumDamageMultiplier(book, spellElement)
-				* FormAffinity.damageMultiplier(player, spellElement);
+		float damage = SpellNumbers.finalPower(spell,book,player,level,scroll,false,runeModifiers);
 		// 阶段 B（§6.2）：统一冷却公式——多乘区 + 双层下限（绝对 floor + 0.2×等级基准），
 		// 与单独使用/客户端 HUD 共用同一实现（SpellNumbers）
 		float formationCdMul = FormationData.sumCooldownMultiplier(book, spellElement);
 		float affinityCdMul = FormAffinity.cooldownMultiplier(player, spellElement);
-		damage=runeModifiers.power(damage,RuneCapabilities.of(spell.getId().getPath()).contains(RuneModifiers.Stat.DAMAGE),RuneCapabilities.of(spell.getId().getPath()).contains(RuneModifiers.Stat.HEAL));
         final float runeDamage=damage;
         int cd = runeModifiers.cooldown(SpellNumbers.finalCooldownTicks(spell, level, ratio, formationCdMul, affinityCdMul));
 		if (cdPenalty != 1.0f) {
@@ -152,7 +149,7 @@ public final class SpellCastManager {
                     ScrollData.setCooldownEnd(scroll, end);
 					if (unchanged) SpellbookData.setScroll(book, slot, scroll);
 					SharedSpellCooldowns.record(player, spell, end);
-				}, ()->{}, runeModifiers);
+				}, ()->{}, runeModifiers, runeDamage);
 	}
 
 	private static void finishCast(ServerPlayerEntity player, ItemStack book, ItemStack scroll, Spell spell,
@@ -209,9 +206,7 @@ public final class SpellCastManager {
         if(!RuneScheme.validScroll(player,scroll,spell)||!RuneCastContext.with(modifiers,()->spell.canCast(player)))return false;
         if(!spell.prepareScroll(player,scroll))return false;
         float ratio=ScrollData.getDurabilityRatio(scroll);
-        float damage=spell.getBaseDamage()*ratio*spell.getDamageMultiplier(level)
-                *(hasBook?FormationData.sumDamageMultiplier(book,FormationElement.CURSE)*FormAffinity.damageMultiplier(player,FormationElement.CURSE):1);
-        damage=modifiers.power(damage,RuneCapabilities.of(spell.getId().getPath()).contains(RuneModifiers.Stat.DAMAGE),false);
+        float damage=SpellNumbers.finalPower(spell,book,player,level,scroll,false,modifiers);
         final float power=damage;
         int normalCost=hasBook?SpellNumbers.finalManaCost(spell,book,player,level,scroll)
                 :modifiers.mana(Math.round(spell.getManaCost()*spell.getConfig().manaCostMultiplier(level)));
@@ -227,7 +222,7 @@ public final class SpellCastManager {
                     long end=player.getWorld().getTime()+duration;
                     if(!free){scroll.getOrCreateNbt().putInt("RuneCdTotal",duration);ScrollData.setCooldownEnd(scroll,end);SpellbookData.setScroll(book,slot,scroll);}
                     SharedSpellCooldowns.record(player,spell,end);
-                },modifiers,trigger);
+                },modifiers,trigger,power);
     }
 
 	/** 独立卷轴和书内法术共用经验预算；命中经验仍由原实体桥一次性结算。 */

@@ -1,6 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.entity.LivingEntity;
@@ -35,6 +36,11 @@ public class FlameNovaSpell extends Spell {
 	private static int fireTicks() { var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot(); return s != null ? (int) s.getInt("spells.flame_nova", "fire_ticks") : FIRE_TICKS; }
 	private static double knockback() { var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot(); return s != null ? s.getDouble("spells.flame_nova", "knockback") : 0.8; }
 	private static double rarityRadiusMultiplier() { var s = net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.currentSnapshot(); return s != null ? s.getDouble("spells.flame_nova", "rarity_radius_multiplier") : 1.25; }
+
+    @Override
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        return SpellBacklash.Effects.burning(power, RuneCastContext.current().duration(fireTicks(), RuneModifiers.Stat.BURN));
+    }
 
 	public FlameNovaSpell() {
 		super(new Identifier("ssc_addon", "flame_nova"), SpellRarity.GREEN);

@@ -165,6 +165,8 @@ public final class SscViewerRecipes {
             brew("infinite_lingering", SscAddon.INFINITE_ENERGY_POTION_SPLASH, Items.DRAGON_BREATH, SscAddon.INFINITE_ENERGY_POTION_LINGERING),
             brew("universal_splash", SscAddon.UNIVERSAL_ENERGY_POTION, Items.GUNPOWDER, SscAddon.UNIVERSAL_ENERGY_POTION_SPLASH),
             brew("universal_lingering", SscAddon.UNIVERSAL_ENERGY_POTION_SPLASH, Items.DRAGON_BREATH, SscAddon.UNIVERSAL_ENERGY_POTION_LINGERING),
+            brew("wither_splash", SscAddon.WITHER_POTION, Items.GUNPOWDER, SscAddon.WITHER_POTION_SPLASH),
+            brew("wither_lingering", SscAddon.WITHER_POTION_SPLASH, Items.DRAGON_BREATH, SscAddon.WITHER_POTION_LINGERING),
             new Brewing(new Identifier("ssc_addon", "moon_dust_bottle"), PotionUtil.setPotion(new ItemStack(Items.POTION), Potions.AWKWARD),
                     new ItemStack(RegCustomItem.UNTREATED_MOONDUST), new ItemStack(MoonDustReliefItem.BOTTLE)),
             brew("moon_dust_splash", MoonDustReliefItem.BOTTLE, Items.GUNPOWDER, MoonDustReliefItem.SPLASH));

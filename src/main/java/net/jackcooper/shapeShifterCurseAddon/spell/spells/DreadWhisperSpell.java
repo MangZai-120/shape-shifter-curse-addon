@@ -3,6 +3,7 @@ import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.minecraft.entity.LivingEntity;
@@ -38,6 +39,21 @@ public class DreadWhisperSpell extends Spell {
 	// 阶段 5：运行时快照读取（spells.dread_whisper；快照未初始化回退上方默认常量）
 	private static final BalanceReader BAL = new BalanceReader("spells.dread_whisper");
 
+    @Override
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        int ticks = negativeDuration(caster, solo, level);
+        return SpellBacklash.Effects.debuffs(0,
+                new net.minecraft.entity.effect.StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.WEAKNESS, ticks, level >= 3 ? 1 : 0),
+                new net.minecraft.entity.effect.StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.SLOWNESS, ticks, level >= 3 ? 2 : 1));
+    }
+
+    private static int negativeDuration(ServerPlayerEntity caster, boolean solo, int level) {
+        int duration = BAL.i("duration_ticks", DURATION_TICKS) + (level - 1) * 20;
+        if (!solo) duration = net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, duration);
+        duration=RuneCastContext.current().duration(duration,RuneModifiers.Stat.NEGATIVE);
+        return duration;
+    }
+
 	public DreadWhisperSpell() {
 		super(new Identifier("ssc_addon", "dread_whisper"), SpellRarity.GREEN);
 	}
@@ -57,9 +73,7 @@ public class DreadWhisperSpell extends Spell {
 		// 锥形半角运行时读取（下方判定与演出共用局部变量，快照未初始化回退默认常量）
 		double halfAngleDeg = Math.min(85,RuneCastContext.current().scale(BAL.d("half_angle_deg", HALF_ANGLE_DEG),RuneModifiers.Stat.AREA));
 		// 控场时长：每级 +1s（L1=7s … L5=11s）；L3+ 升级为虚弱 II + 缓速 III
-		int duration = BAL.i("duration_ticks", DURATION_TICKS) + (level - 1) * 20;
-		if (!solo) duration = net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, duration);
-		duration=RuneCastContext.current().duration(duration,RuneModifiers.Stat.NEGATIVE);
+		int duration = negativeDuration(caster, solo, level);
         int weaknessAmp = level >= 3 ? 1 : 0;
 		int slownessAmp = level >= 3 ? 2 : 1;
 		Vec3d look = caster.getRotationVec(1.0F).normalize();

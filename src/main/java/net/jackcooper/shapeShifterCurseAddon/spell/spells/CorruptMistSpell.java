@@ -3,6 +3,7 @@ import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -38,6 +39,26 @@ public class CorruptMistSpell extends Spell {
 	public static int poisonTicks() {
 		return BAL.i("poison_ticks", POISON_TICKS);
 	}
+
+    @Override
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        // One poison damage tick, never the sum of the cloud's repeated applications.
+        return SpellBacklash.Effects.debuffs(1,
+                new net.minecraft.entity.effect.StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.POISON, poisonDuration(caster, solo), level >= 4 ? 1 : 0),
+                new net.minecraft.entity.effect.StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.SLOWNESS, slownessDuration(caster, solo), level >= 5 ? 1 : 0));
+    }
+
+    public static int poisonDuration(ServerPlayerEntity caster, boolean solo) {
+        int ticks = solo ? poisonTicks() : net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, poisonTicks());
+        if (!solo && net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isForm(caster,
+                net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SPIDER_SALTICIDAE)) ticks += 60;
+        return RuneCastContext.current().duration(ticks, RuneModifiers.Stat.NEGATIVE);
+    }
+
+    public static int slownessDuration(ServerPlayerEntity caster, boolean solo) {
+        return RuneCastContext.current().duration(solo ? 40
+                : net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, 40), RuneModifiers.Stat.NEGATIVE);
+    }
 
 	public CorruptMistSpell() {
 		super(new Identifier("ssc_addon", "corrupt_mist"), SpellRarity.BLUE);

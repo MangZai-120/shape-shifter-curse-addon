@@ -148,13 +148,8 @@ public class LunarSpiritBoltEntity extends ProjectileEntity {
 			}
 			// 伤害：月灵攻击力 + 变体倍率（粉×1.5 / 蓝×0.7 / 绿×1.0）；attacker 归因玩家主人（击杀 / 经验归玩家），
 			// source 标记为光弹本体，供 LunarSpiritTargetLink 区分「玩家亲手攻击」与「月灵光弹命中」
-			float damage = 3.0f;
 			int variant = getVariant();
-			if (variant == 0) {
-				damage *= 1.5f;
-			} else if (variant == 1) {
-				damage *= 0.7f;
-			}
+			float damage = damageForVariant(variant);
 			boolean damaged;
 			if (ownerPlayer != null) {
 				// 法术伤害专用类型；source 保持光弹本体（供 LunarSpiritTargetLink 区分玩家亲手攻击），attacker 归因主人
@@ -179,6 +174,10 @@ public class LunarSpiritBoltEntity extends ProjectileEntity {
             if (damaged) net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.hit(this, livingTarget);
 		}
 	}
+
+    public static float damageForVariant(int variant) {
+        return 3f * (variant == 0 ? 1.5f : variant == 1 ? .7f : 1f);
+    }
 
 	@Override
 	protected void onCollision(HitResult hitResult) {

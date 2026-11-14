@@ -16,6 +16,7 @@ import net.jackcooper.shapeShifterCurseAddon.compat.recipeviewer.SscViewerRecipe
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.screen.*;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import java.util.List;
 
@@ -48,7 +49,7 @@ public final class SSCA_EMIPlugin implements EmiPlugin {
     public static final class CraftingRecipe extends EmiCraftingRecipe {
         private final Crafting recipe;
         public CraftingRecipe(Crafting recipe) {
-            super(recipe.grid().stream().map(alts -> EmiIngredient.of(alts.stream().map(EmiStack::of).toList())).toList(),
+            super(recipe.grid().stream().map(CraftingRecipe::ingredient).toList(),
                 EmiStack.of(recipe.output()), recipe.id(), recipe.shapeless());
             this.recipe = recipe;
             // Compare only the level for upgrades, retaining arbitrary charge/name/custom NBT.
@@ -57,6 +58,13 @@ public final class SSCA_EMIPlugin implements EmiPlugin {
                 if (item.isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.PORTABLE_MOISTURIZER))
                     stack.comparison(Comparison.compareData(s -> net.jackcooper.shapeShifterCurseAddon.item.PortableMoisturizerItem.getLevel(s.getItemStack())));
             }
+        }
+        private static EmiIngredient ingredient(List<ItemStack> alternatives) {
+            var stacks = alternatives.stream().map(EmiStack::of).toList();
+            // Tag compression compares item keys and can replace potion variants with water bottles.
+            if (alternatives.stream().anyMatch(ItemStack::hasNbt))
+                return stacks.size() == 1 ? stacks.get(0) : new ListEmiIngredient(stacks, 1);
+            return EmiIngredient.of(stacks);
         }
         public Crafting recipe() { return recipe; }
         @Override public EmiRecipeCategory getCategory() { return SPECIAL_CRAFTING; }

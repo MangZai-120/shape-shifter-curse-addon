@@ -72,6 +72,11 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 		return getConfig().baseDamage;
 	}
 
+    /** Harmful payload of one normal hit, excluding healing, shields and successful-cast side effects. */
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        return SpellBacklash.Effects.NONE;
+    }
+
 	/** 基础冷却（tick）。 */
 	public int getBaseCooldownTicks() {
 		return getConfig().baseCooldownTicks;

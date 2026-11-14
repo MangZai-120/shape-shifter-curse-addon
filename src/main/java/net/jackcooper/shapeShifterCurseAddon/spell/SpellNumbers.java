@@ -21,6 +21,19 @@ public final class SpellNumbers {
 	// 平衡迁移（systems.casting）：磨损基准/相对下限运行时从快照读取；快照未初始化（测试环境）回退默认常量
 	private static final BalanceReader BAL = new BalanceReader("systems.casting");
 
+    /** Same normal power for the released spell and its failed-cast payload; level is already effective. */
+    public static float finalPower(Spell spell, net.minecraft.item.ItemStack book,
+            net.minecraft.server.network.ServerPlayerEntity player, int level, net.minecraft.item.ItemStack scroll,
+            boolean solo, net.jackcooper.shapeShifterCurseAddon.spell.research.RuneModifiers runes) {
+        float power = spell.getBaseDamage() * (solo ? spell.getSoloDamageMultiplier() : ScrollData.getDurabilityRatio(scroll))
+                * spell.getDamageMultiplier(level);
+        if (!solo && book != null && !book.isEmpty()) power *= FormationData.sumDamageMultiplier(book, spell.getElement())
+                * FormAffinity.damageMultiplier(player, spell.getElement());
+        var capabilities = net.jackcooper.shapeShifterCurseAddon.spell.research.RuneCapabilities.of(spell.getId().getPath());
+        return runes.power(power, capabilities.contains(net.jackcooper.shapeShifterCurseAddon.spell.research.RuneModifiers.Stat.DAMAGE),
+                capabilities.contains(net.jackcooper.shapeShifterCurseAddon.spell.research.RuneModifiers.Stat.HEAL));
+    }
+
 	public static int finalManaCost(Spell spell, net.minecraft.item.ItemStack book,
 	                               net.minecraft.entity.player.PlayerEntity player, int selectedLevel) {
 		int costLevel = FormAffinity.manaCostLevel(player, spell.getElement(), selectedLevel);

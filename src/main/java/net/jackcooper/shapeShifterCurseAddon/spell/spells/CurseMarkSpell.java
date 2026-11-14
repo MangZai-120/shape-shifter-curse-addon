@@ -3,6 +3,7 @@ import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.entity.SpellCurseMarkEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
@@ -21,6 +22,17 @@ public class CurseMarkSpell extends Spell {
 
 	@Override public double getProjectileRange(int level) { return SpellCurseMarkEntity.maxDistance(); }
 
+    @Override
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        return SpellBacklash.Effects.debuffs(0, new net.minecraft.entity.effect.StatusEffectInstance(net.jackcooper.shapeShifterCurseAddon.SscAddon.CURSE_MARK, markDuration(caster, solo, level), level - 1));
+    }
+
+    private static int markDuration(ServerPlayerEntity caster, boolean solo, int level) {
+        int durationTicks = 160 + (level - 1) * 40;
+        if (!solo) durationTicks = net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, durationTicks);
+        return RuneCastContext.current().duration(durationTicks, RuneModifiers.Stat.MARK, RuneModifiers.Stat.NEGATIVE);
+    }
+
 	public CurseMarkSpell() {
 		super(new Identifier("ssc_addon", "curse_mark"), SpellRarity.GREEN);
 	}
@@ -33,10 +45,9 @@ public class CurseMarkSpell extends Spell {
 	@Override
 	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level) {
 		// 标记时长：8s + 2s/级（L1=8s、L3=12s、L5=16s）
-		int durationTicks = 160 + (level - 1) * 40;
-		if (!solo) durationTicks = net.jackcooper.shapeShifterCurseAddon.spell.FormAffinity.curseDurationTicks(caster, durationTicks);
+		int durationTicks = markDuration(caster, solo, level);
 		SpellCurseMarkEntity mark = new SpellCurseMarkEntity(caster.getWorld(), caster);
-		mark.setDuration(RuneCastContext.current().duration(durationTicks,RuneModifiers.Stat.MARK,RuneModifiers.Stat.NEGATIVE));
+		mark.setDuration(durationTicks);
 		mark.setLevel(level);
 		mark.setRefundCastId(solo ? null : ssc_addon$getRefundCastId());
 		Vec3d look = caster.getRotationVec(1.0F);

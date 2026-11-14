@@ -7,6 +7,11 @@ import net.minecraft.util.Identifier;
 
 /** 死亡是一切的终点：虚无系 SPECIAL，统一禁动蓄力，完成后一次性结算。 */
 public final class DeathFinaleSpell extends Spell {
+    @Override
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        return SpellBacklash.Effects.hit(power);
+    }
+
     public DeathFinaleSpell() { super(new Identifier("ssc_addon", "death_finale"), SpellRarity.RED); }
 
     /** 领域内禁放死亡终点（2026-10-21 用户定稿，逐法术开关之一）。 */

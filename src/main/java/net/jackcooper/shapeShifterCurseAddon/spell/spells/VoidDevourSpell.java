@@ -3,6 +3,7 @@ import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -31,6 +32,13 @@ public class VoidDevourSpell extends Spell {
 
 	// 阶段 5：运行时快照读取（spells.void_devour；快照未初始化回退上方默认常量）
 	private static final BalanceReader BAL = new BalanceReader("spells.void_devour");
+
+    @Override
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        return SpellBacklash.Effects.debuffs(power, new net.minecraft.entity.effect.StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.BLINDNESS, negativeDuration(level), 0));
+    }
+
+    private static int negativeDuration(int level) { return RuneCastContext.current().duration(BAL.i("base_blindness_ticks", BASE_BLINDNESS_TICKS) + ((level - 1) / 2) * 20,RuneModifiers.Stat.NEGATIVE); }
 
 	public VoidDevourSpell() {
 		super(new Identifier("ssc_addon", "void_devour"), SpellRarity.BLUE);
@@ -111,7 +119,7 @@ public class VoidDevourSpell extends Spell {
 			hitExpTen = 0; // Only the first successful hit consumes the cast budget.
 			target.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
 					net.minecraft.entity.effect.StatusEffects.BLINDNESS,
-					RuneCastContext.current().duration(BAL.i("base_blindness_ticks", BASE_BLINDNESS_TICKS) + ((level - 1) / 2) * 20,RuneModifiers.Stat.NEGATIVE), 0));
+					negativeDuration(level), 0));
 			hitCount++;
 			// 命中演出：虚空爆裂
 			serverWorld.spawnParticles(ParticleTypes.SMOKE,

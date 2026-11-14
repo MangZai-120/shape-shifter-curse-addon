@@ -170,18 +170,24 @@ public final class SpellChannelManager {
     public static boolean start(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level,
             boolean solo, int token, int mana, int cooldown, BooleanSupplier sourceValid,
             Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers) {
-        return startInternal(player,spell,scroll,level,solo,token,mana,cooldown,sourceValid,effect,settleCooldown,consumeUse,modifiers,null);
+        return start(player,spell,scroll,level,solo,token,mana,cooldown,sourceValid,effect,settleCooldown,consumeUse,modifiers,
+                SpellNumbers.finalPower(spell,solo?null:SpellCastManager.getEquippedBook(player),player,level,scroll,solo,modifiers));
+    }
+    public static boolean start(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level,
+            boolean solo, int token, int mana, int cooldown, BooleanSupplier sourceValid,
+            Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers,float normalPower) {
+        return startInternal(player,spell,scroll,level,solo,token,mana,cooldown,sourceValid,effect,settleCooldown,consumeUse,modifiers,null,normalPower);
     }
     /** Native jump-hit proc shares payment, failure, effect, experience and CD settlement with normal casts. */
     public static boolean startTriggered(ServerPlayerEntity player,Spell spell,ItemStack scroll,int level,boolean solo,
             int mana,int cooldown,BooleanSupplier sourceValid,Consumer<Vec3d> effect,IntConsumer settleCooldown,
-            RuneModifiers modifiers,SpiderSpellLink.Trigger trigger) {
+            RuneModifiers modifiers,SpiderSpellLink.Trigger trigger,float normalPower) {
         return startInternal(player,spell,scroll,level,solo,-1,mana,trigger.cooldown(cooldown),sourceValid,
-                target->trigger.effect(player,()->effect.accept(target)),settleCooldown,()->{},modifiers,trigger);
+                target->trigger.effect(player,()->effect.accept(target)),settleCooldown,()->{},modifiers,trigger,normalPower);
     }
     private static boolean startInternal(ServerPlayerEntity player,Spell spell,ItemStack scroll,int level,
             boolean solo,int token,int mana,int cooldown,BooleanSupplier sourceValid,Consumer<Vec3d> effect,
-            IntConsumer settleCooldown,Runnable consumeUse,RuneModifiers modifiers,SpiderSpellLink.Trigger trigger) {
+            IntConsumer settleCooldown,Runnable consumeUse,RuneModifiers modifiers,SpiderSpellLink.Trigger trigger,float normalPower) {
         if (net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime.blocked(player)||net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.isCasting(player)) return false;
         if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.isTeleportSpell(spell)
                 && net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(player)) return false;
@@ -239,7 +245,7 @@ public final class SpellChannelManager {
 		double lockRange=RuneCastContext.with(modifiers,formationRange,()->spell.getCastingLockRange(player,level));
 		if(!style.pay())return false;
 		Channel channel = new Channel(player, spell, scroll, level, solo, token, mana, cooldown,
-                sourceValid, effect, settleCooldown, consumeUse,modifiers,style,lockRange,trigger==null?1:trigger.growth());
+                sourceValid, effect, settleCooldown, consumeUse,modifiers,style,lockRange,trigger==null?1:trigger.growth(),normalPower);
 		if(spell.requiresTargetBeforeChannel())channel.progress.release(token,initialTarget);
 		ACTIVE.put(player.getUuid(), channel);
 		RuneCastContext.run(channel.modifiers,channel.formationRange,()->spell.onChannelStarted(player, channel.progress.target()));
@@ -413,8 +419,10 @@ public final class SpellChannelManager {
 		if (ACTIVE.get(channel.player.getUuid()) != channel) return;
 		if (!ensureValid(channel)) return;
 		if (!channel.collapse.advance(channel.collapseAge)) {
+			double excess = SpellBacklashRules.excess(NeoRuntime.data(channel.player).burden, NeoRuntime.profile(channel.player).safety());
 			stop(channel.player, true, net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.text("failed"), true);
 			net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime.backlash(channel.player,channel.collapse.session.quote.actual());
+			if (channel.collapse.session.failed) channel.backlash.apply(channel.player, excess);
 			return;
 		}
 		if (!RuneCastContext.with(channel.modifiers,channel.formationRange,()->channel.spell.readyToRelease(channel.player, channel.scroll)) || !channel.progress.beginEffect()) return;
@@ -624,6 +632,7 @@ public final class SpellChannelManager {
 		final Runnable consumeUse;
 		final SpellCastingRules.Progress<Vec3d> progress;
 		final net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting collapse;
+        final SpellBacklash.Pending backlash;
 		final int beganTick;
 		int collapseAge;
 		int cancelTicks, continuousTicks, visualTicks;
@@ -634,7 +643,7 @@ public final class SpellChannelManager {
 
 		Channel(ServerPlayerEntity player, Spell spell, ItemStack scroll, int level, boolean solo, int token,
 				int mana, int cooldown, BooleanSupplier sourceValid,
-                Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers,FormSpellStyle style,double lockRange,double growthMultiplier) {
+                Consumer<Vec3d> effect, IntConsumer settleCooldown, Runnable consumeUse,RuneModifiers modifiers,FormSpellStyle style,double lockRange,double growthMultiplier,float normalPower) {
             this.style=style;
             this.lockRange=lockRange;
             this.guidanceLock=CastRangeGuard.entity(style.target,style.range);
@@ -646,6 +655,8 @@ public final class SpellChannelManager {
 			this.scroll = scroll;
 			this.level = level;
 			this.solo = solo;
+            this.backlash = RuneCastContext.with(modifiers,this.formationRange,()->new SpellBacklash.Pending(
+                    spell.backlashEffects(player,normalPower,solo,level),spell.getRarity(level)));
 			this.token = token;
 			this.cooldown = cooldown;
 			this.sourceValid = sourceValid;

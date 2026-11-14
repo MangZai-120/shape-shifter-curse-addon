@@ -3,6 +3,7 @@ import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.minecraft.entity.LivingEntity;
@@ -34,6 +35,16 @@ public class VoidErosionSpell extends Spell {
 	// 阶段 5：运行时快照读取（spells.void_erosion；快照未初始化回退上方默认常量）
 	private static final BalanceReader BAL = new BalanceReader("spells.void_erosion");
 
+    @Override
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        int ticks = negativeDuration(), amplifier = (level - 1) / 2;
+        return SpellBacklash.Effects.debuffs(0,
+                new net.minecraft.entity.effect.StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.MINING_FATIGUE, ticks, amplifier),
+                new net.minecraft.entity.effect.StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.WEAKNESS, ticks, 1 + amplifier));
+    }
+
+    private static int negativeDuration() { return RuneCastContext.current().duration(BAL.i("duration_ticks", DURATION_TICKS),RuneModifiers.Stat.NEGATIVE); }
+
 	public VoidErosionSpell() {
 		super(new Identifier("ssc_addon", "void_erosion"), SpellRarity.GREEN);
 	}
@@ -50,7 +61,7 @@ public class VoidErosionSpell extends Spell {
 		}
 		double radius = RuneCastContext.current().scale(BAL.d("base_radius", BASE_RADIUS) * getSpeedMultiplier(level),RuneModifiers.Stat.AREA);
 		// 减益时长运行时读取（下方两种减益共用局部变量，快照未初始化回退默认常量）
-		int durationTicks = RuneCastContext.current().duration(BAL.i("duration_ticks", DURATION_TICKS),RuneModifiers.Stat.NEGATIVE);
+		int durationTicks = negativeDuration();
 		List<LivingEntity> targets = serverWorld.getEntitiesByClass(LivingEntity.class,
 				caster.getBoundingBox().expand(radius), e -> e != caster && e.isAlive());
 		for (LivingEntity target : targets) {

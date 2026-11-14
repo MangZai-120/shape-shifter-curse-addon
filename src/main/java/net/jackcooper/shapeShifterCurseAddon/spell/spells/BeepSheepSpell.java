@@ -4,6 +4,7 @@ import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.BeepSheepEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
@@ -35,6 +36,17 @@ public class BeepSheepSpell extends Spell {
 	// 阶段 5：服务端权威快照读取（spells.beep_sheep；快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("spells.beep_sheep");
 
+    @Override
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        return SpellBacklash.Effects.debuffs(0, new net.minecraft.entity.effect.StatusEffectInstance(net.jackcooper.shapeShifterCurseAddon.SscAddon.SHEEP_FORM, negativeDuration(level), level - 1));
+    }
+
+    private static int negativeDuration(int level) {
+        int durationTicks = BAL.i("base_duration_ticks", BASE_DURATION_TICKS)
+                + (level - 1) * BAL.i("duration_per_level", DURATION_PER_LEVEL);
+        return RuneCastContext.current().duration(durationTicks, RuneModifiers.Stat.NEGATIVE);
+    }
+
 	public BeepSheepSpell() {
 		super(new Identifier("ssc_addon", "beep_sheep"), SpellRarity.WHITE); // NORMAL 五级品质走 JSON levels[].rarity（白→橙），基底回退白色
 	}
@@ -48,10 +60,9 @@ public class BeepSheepSpell extends Spell {
 	public void cast(ServerPlayerEntity caster, float power, boolean solo, int level) {
 		// 变羊时长：6s + 1.5s/级（L1=6s、L3=9s、L5=12s），balance 快照可覆盖；召唤系亲和
 		// （效果等级+1）由 FormAffinity.bonusSpellLevel 在 SpellCastManager 侧折算进 level。
-		int durationTicks = BAL.i("base_duration_ticks", BASE_DURATION_TICKS)
-				+ (level - 1) * BAL.i("duration_per_level", DURATION_PER_LEVEL);
+		int durationTicks = negativeDuration(level);
 		BeepSheepEntity bullet = new BeepSheepEntity(caster.getWorld(), caster);
-		bullet.setSheepDuration(RuneCastContext.current().duration(durationTicks,RuneModifiers.Stat.NEGATIVE));
+		bullet.setSheepDuration(durationTicks);
 		bullet.setSpellLevel(level);
 		bullet.setRefundCastId(solo ? null : ssc_addon$getRefundCastId());
 		// 朝准星方向以固定初速射出（重力由 ThrownItemEntity 自带 → 鸡蛋式抛物线；

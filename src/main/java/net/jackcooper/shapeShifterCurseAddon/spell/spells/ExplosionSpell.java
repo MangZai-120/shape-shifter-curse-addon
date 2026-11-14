@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 import net.jackcooper.shapeShifterCurseAddon.spell.ExplosionManager;
 import net.jackcooper.shapeShifterCurseAddon.spell.ExplosionRules;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellCastingRules;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -53,6 +54,12 @@ public class ExplosionSpell extends Spell {
 	public int getLockInTick() {
 		return ExplosionRules.SOUND_START_TICKS;
 	}
+
+    @Override
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        return SpellBacklash.Effects.burning(power, Math.max(net.jackcooper.shapeShifterCurseAddon.spell.ExplosionRules.fireTicksNear(),
+                net.jackcooper.shapeShifterCurseAddon.spell.ExplosionRules.fireTicksFar()));
+    }
 
 	public ExplosionSpell() {
 		super(new Identifier("ssc_addon", "explosion"), SpellRarity.RED);

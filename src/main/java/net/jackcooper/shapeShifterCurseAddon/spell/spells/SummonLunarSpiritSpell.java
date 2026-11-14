@@ -4,6 +4,7 @@ import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.LunarSpiritEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -39,6 +40,14 @@ public class SummonLunarSpiritSpell extends Spell {
 
 	/** 契约容量：同时存活的月灵总数上限（每只占 1；超出顶替最早召唤的）。 */
 	public static final int CONTRACT_CAPACITY = 6;
+
+    @Override
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        float hit = 0;
+        for (int variant = 0; variant < 3; variant++) hit = Math.max(hit,
+                net.jackcooper.shapeShifterCurseAddon.entity.LunarSpiritBoltEntity.damageForVariant(variant));
+        return SpellBacklash.Effects.hit(hit);
+    }
 
 	public SummonLunarSpiritSpell() {
 		super(new Identifier("ssc_addon", "summon_lunar_spirit"), SpellRarity.BLUE);

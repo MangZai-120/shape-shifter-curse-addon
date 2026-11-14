@@ -3,6 +3,7 @@ import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.entity.SpellFrostSpikeEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
@@ -24,6 +25,11 @@ import net.minecraft.util.math.Vec3d;
 public class FrostSpikeSpell extends Spell {
 
 	@Override public double getProjectileRange(int level) { return SpellFrostSpikeEntity.maxDistance(); }
+
+    @Override
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        return SpellBacklash.Effects.hit(power);
+    }
 
 	public FrostSpikeSpell() {
 		super(new Identifier("ssc_addon", "frost_spike"), SpellRarity.WHITE);

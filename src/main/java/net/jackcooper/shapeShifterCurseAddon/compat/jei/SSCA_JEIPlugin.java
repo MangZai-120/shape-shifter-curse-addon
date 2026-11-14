@@ -106,7 +106,7 @@ public class SSCA_JEIPlugin implements IModPlugin {
         registration.addRecipes(PROCESSING, SscViewerRecipes.processes());
         var factory = registration.getJeiHelpers().getVanillaRecipeFactory();
         registration.addRecipes(RecipeTypes.BREWING, SscViewerRecipes.brewing().stream().map(r ->
-            factory.createBrewingRecipe(List.of(r.input()), r.ingredient(), r.output(), r.id())).toList());
+            factory.createBrewingRecipe(List.of(r.ingredient()), r.input(), r.output(), r.id())).toList());
         for (var info : SscViewerRecipes.information()) registration.addItemStackInfo(info.stacks(), info.description());
     }
     private static void description(DrawContext context, Text text, int y, int width) {

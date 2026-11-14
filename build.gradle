@@ -952,6 +952,32 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
+tasks.register('spellBacklashRulesTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklashRulesTest'
+}
+check.dependsOn spellBacklashRulesTest
+
+tasks.register('spellBacklashWorldTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoWorldTest'
+    workingDir = layout.buildDirectory.dir('spell-backlash-world').get().asFile
+    maxHeapSize = '2G'
+    systemProperty 'neomagic.worldProbe', 'net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklashWorldProbe'
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(rootProject.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def cp = new File(workingDir, 'classpath.txt')
+        cp.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', cp.absolutePath
+    }
+}
+check.dependsOn spellBacklashWorldTest
+
 tasks.named('remapJar') {
     // A fixed release filename must not retain deleted resources from an earlier remap.
     doFirst {

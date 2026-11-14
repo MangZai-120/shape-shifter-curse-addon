@@ -4,6 +4,7 @@ import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.SpellFrostSpikeEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
@@ -33,6 +34,11 @@ public class IceBarrageSpell extends Spell {
 
 	// 阶段 5：运行时快照读取（spells.ice_barrage；快照未初始化回退上方默认常量）
 	private static final BalanceReader BAL = new BalanceReader("spells.ice_barrage");
+
+    @Override
+    public SpellBacklash.Effects backlashEffects(ServerPlayerEntity caster, float power, boolean solo, int level) {
+        return SpellBacklash.Effects.hit(power);
+    }
 
 	public IceBarrageSpell() {
 		super(new Identifier("ssc_addon", "ice_barrage"), SpellRarity.GREEN);
