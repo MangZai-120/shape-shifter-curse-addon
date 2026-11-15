@@ -90,6 +90,23 @@
 - The development of this mod has taken a great deal of my time and effort. If you'd like to support me in keeping it going, feel free to sponsor me via [Patreon](https://www.patreon.com/cw/JackCooper120) or [Afdian (爱发电)](https://ifdian.net/a/jackcooper120). Thank you in advance to everyone who supports me!
 - Sponsorship is entirely voluntary. Sponsors and non-sponsors receive **exactly the same** in-game content — sponsoring does not grant any additional features or privileges, nor does it have any effect on game balance or content.
 
+### 赞助名单 / Sponsors
+
+感谢以下赞助者对 SSCA 开发的支持！名单不分先后，核对日期：2026-11-15。
+
+Thank you to the following sponsors for supporting SSCA's development! Names are listed in no particular order. Last checked: 2026-11-15.
+
+#### 爱发电 / Afdian
+
+- 爱发电用户_f0ed4
+- 爱发电用户_Ug4s
+- 无痕秋白
+- 吽运挡头
+
+#### Patreon
+
+暂无赞助者。/ No sponsors yet.
+
 ## Q/A
 - Q:这个模组和Xu233的模组能不能共用？
 - A:可以共用，因为Xu233的模组写的很标准，完全可以和这个模组共用。
