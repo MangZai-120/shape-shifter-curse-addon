@@ -95,6 +95,10 @@ public final class CollapsePenalties {
             if (((LivingEntityTotemInvoker) player).sscAddon$tryUseTotem(source)) return;
         }
         player.setHealth(Math.max(0, player.getHealth() - amount));
+        // Direct health loss bypasses damage(), so explicitly notify the owner and trackers.
+        // The vanilla client handler supplies the hurt sound, flash and camera tilt without
+        // adding server-side invulnerability frames, knockback or a second damage application.
+        player.getWorld().sendEntityDamage(player, source);
         if (player.getHealth() <= 0) player.onDeath(source);
     }
 

@@ -25,6 +25,17 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormCompon
 /** Real ServerWorld: exact health loss, timing, revival, form migration and packet state. */
 public final class NeoCollapsePenaltyProbe {
     private static int checks;
+    private static final class FeedbackRecorder extends net.minecraft.server.network.ServerPlayNetworkHandler {
+        private final java.util.List<net.minecraft.network.packet.Packet<?>> packets = new ArrayList<>();
+        private FeedbackRecorder(ServerPlayerEntity player) {
+            super(player.getServer(), new net.minecraft.network.ClientConnection(net.minecraft.network.NetworkSide.SERVERBOUND), player);
+        }
+        @Override public void sendPacket(net.minecraft.network.packet.Packet<?> packet) { packets.add(packet); }
+        private long damagePackets(ServerPlayerEntity player) {
+            return packets.stream().filter(packet -> packet instanceof net.minecraft.network.packet.s2c.play.EntityDamageS2CPacket damage
+                    && damage.entityId() == player.getId()).count();
+        }
+    }
     private static void check(boolean ok, String why) { checks++; if (!ok) throw new AssertionError(why); }
     private static void near(double actual,double expected,String why) { check(Math.abs(actual-expected)<1e-5,why+": "+actual+" != "+expected); }
     private static ServerPlayerEntity player(TestContext t,Identifier form) throws Exception {
@@ -55,6 +66,8 @@ public final class NeoCollapsePenaltyProbe {
             check(CollapsePenalties.stage(4*n,n)==5,"Above 2N retains maximum penalty");
         }
         var p=player(t,new Identifier("shape-shifter-curse:original_shifter"));
+        var feedback = new FeedbackRecorder(p);
+        p.networkHandler = feedback;
         var speed=p.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);speed.setBaseValue(.1);
         for(int stage=0;stage<=5;stage++) {
             CollapsePenalties.clear(p);p.setHealth(20);burden(p,stage==0?1:1+(stage-.5)*.2);ticks(p,1);
@@ -80,13 +93,20 @@ public final class NeoCollapsePenaltyProbe {
             CollapsePenalties.clear(p);p.setHealth(20);p.setAbsorptionAmount(20);
             p.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE,200,4));
             burden(p,1+(stage-.5)*.2);int interval=stage==3?20:10;float loss=stage==5?2:1;
+            feedback.packets.clear();p.timeUntilRegen=7;var velocity=p.getVelocity();
             ticks(p,interval-1);near(p.getHealth(),20,"No early periodic damage "+stage);
+            check(feedback.damagePackets(p)==0,"No premature hurt feedback "+stage);
             ticks(p,1);near(p.getHealth(),20-loss,"Exact first health loss "+stage);
+            check(feedback.damagePackets(p)==1,"One vanilla hurt notification reaches the damaged player "+stage);
             ticks(p,interval);near(p.getHealth(),20-2*loss,"Exact second health loss "+stage);
+            check(feedback.damagePackets(p)==2,"Hurt feedback follows every periodic loss "+stage);
+            check(p.timeUntilRegen==7,"Feedback does not change server damage immunity "+stage);
+            check(p.getVelocity().equals(velocity),"Feedback adds no knockback "+stage);
             near(p.getAbsorptionAmount(),20,"Absorption cannot absorb code loss");
             check(!p.hasStatusEffect(StatusEffects.WITHER)&&!p.hasStatusEffect(StatusEffects.BLINDNESS)
                     &&!p.hasStatusEffect(StatusEffects.NAUSEA),"No convertible server potion carriers");
             burden(p,1);ticks(p,20);near(p.getHealth(),20-2*loss,"Damage stops upon recovery");near(speed.getValue(),.1,"Slow clears upon recovery");
+            check(feedback.damagePackets(p)==2,"Recovery stops hurt notifications "+stage);
             near(CollapsePenalties.bodyYawMovementThreshold(p,0.0025000002F),0.0025000002F,"Recovery restores vanilla body turning threshold");
         }
         p.removeStatusEffect(StatusEffects.RESISTANCE);p.setAbsorptionAmount(0);
