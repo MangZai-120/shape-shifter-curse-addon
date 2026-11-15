@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.jackcooper.shapeShifterCurseAddon.compat.EasyAuthBalanceCompatibility;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
@@ -53,6 +54,8 @@ public final class BalanceIntegration {
     private static java.util.Map<String, Object> pendingTree;
     private static BalanceSchema activeSchema;
     private static final java.util.Map<java.util.UUID, Long> lastResync = new java.util.HashMap<>();
+    private static final long RETRY_INTERVAL_NANOS = java.util.concurrent.TimeUnit.SECONDS.toNanos(10);
+    private static final java.util.Map<java.util.UUID, Long> lastSyncAttempt = new java.util.HashMap<>();
     /** 服务端最近一次提交的传输树 JSON（重载后为在线玩家重发）。 */
     private static String serverTreeJson;
 
@@ -69,6 +72,8 @@ public final class BalanceIntegration {
         server.commitDefaults();
         publishedServer = server.current();
         serverTreeJson = treeJsonOfDefaults();
+        lastSyncAttempt.clear();
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(BalanceIntegration::retryUnreadyPlayers);
         // Stage during apply; commit only at SERVER_STARTED or successful END_DATA_PACK_RELOAD.
         net.jackcooper.shapeShifterCurseAddon.balance.BalanceLoader.register(layers -> {
             onLayersLoaded(layers);
@@ -92,6 +97,7 @@ public final class BalanceIntegration {
                 serverTreeJson = treeJsonOfDefaults();
                 pendingTree = null;
                 lastResync.clear();
+                lastSyncAttempt.clear();
                 net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.clearServer();
             }
         });
@@ -129,23 +135,44 @@ public final class BalanceIntegration {
     public static synchronized void onPlayerLeft(ServerPlayerEntity player) {
         if (server != null) server.playerLeft(player.getUuid());
         lastResync.remove(player.getUuid());
+        lastSyncAttempt.remove(player.getUuid());
     }
 
     private static void broadcastToOnline(net.minecraft.server.MinecraftServer srv) {
         if (server == null || serverTreeJson == null) return;
-        for (ServerPlayerEntity p : PlayerLookup.all(srv)) {
+        for (ServerPlayerEntity p : List.copyOf(PlayerLookup.all(srv))) {
             sendSequenceTo(p);
         }
     }
 
+    private static synchronized void retryUnreadyPlayers(net.minecraft.server.MinecraftServer srv) {
+        if (server == null || srv.getTicks() % 20 != 0) return;
+        long now = System.nanoTime();
+        // A snapshot also tolerates connection callbacks changing the live player list.
+        for (ServerPlayerEntity player : List.copyOf(PlayerLookup.all(srv))) {
+            if (player.isDisconnected() || !EasyAuthBalanceCompatibility.canSynchronize(player)) continue;
+            if (server.isPlayerReady(player.getUuid())) continue;
+            Long previous = lastSyncAttempt.get(player.getUuid());
+            if (previous == null || now - previous >= RETRY_INTERVAL_NANOS) sendSequenceTo(player, true);
+        }
+    }
+
     private static void sendSequenceTo(ServerPlayerEntity player) {
+        sendSequenceTo(player, false);
+    }
+
+    private static void sendSequenceTo(ServerPlayerEntity player, boolean retry) {
+        if (player.isDisconnected() || !EasyAuthBalanceCompatibility.canSynchronize(player)) return;
+        lastSyncAttempt.put(player.getUuid(), System.nanoTime());
         if (!ServerPlayNetworking.canSend(player, PACKET_BALANCE_S2C)) {
             // Keep the player connected; readiness still requires a matching ACK.
             return;
         }
         // Queued before balance COMMIT, so its ACK also follows legacy spell application.
         net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.sendTo(player);
-        List<BalanceWire.Message> seq = server.buildSendSequence(player.getUuid(), serverTreeJson);
+        List<BalanceWire.Message> seq = retry
+                ? server.buildRetrySequence(player.getUuid(), serverTreeJson)
+                : server.buildSendSequence(player.getUuid(), serverTreeJson);
         for (BalanceWire.Message m : seq) {
             PacketByteBuf buf = PacketByteBufs.create();
             byte[] encoded = BalanceWire.encode(m);
@@ -160,8 +187,11 @@ public final class BalanceIntegration {
             long session = buf.readLong();
             long revision = buf.readLong();
             srv.execute(() -> {
-                if (player.networkHandler == handler && !player.isRemoved() && server != null)
+                if (player.networkHandler == handler && !player.isRemoved() && server != null
+                        && EasyAuthBalanceCompatibility.canSynchronize(player)) {
                     server.playerAcked(player.getUuid(), session, revision);
+                    if (server.isPlayerReady(player.getUuid())) lastSyncAttempt.remove(player.getUuid());
+                }
             });
         });
         ServerPlayNetworking.registerGlobalReceiver(PACKET_BALANCE_RESYNC, (srv, player, handler, buf, rs) -> {
@@ -251,6 +281,7 @@ public final class BalanceIntegration {
     public static boolean isClientThread() { return Thread.currentThread() == clientThread; }
     public static BalanceSnapshot currentSnapshot() { return isClientThread() ? publishedClient : publishedServer; }
     public static boolean isPlayerReady(ServerPlayerEntity player) {
+        if (!EasyAuthBalanceCompatibility.canSynchronize(player)) return false;
         return server == null || server.isPlayerReady(player.getUuid());
     }
 

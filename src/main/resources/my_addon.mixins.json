@@ -6,6 +6,7 @@
     "plugin": "net.jackcooper.shapeShifterCurseAddon.mixin.plugin.SscAddonMixinConfigPlugin",
     "refmap": "ssc-addon.refmap.json",
     "mixins": [
+    "EasyAuthPlayerMixin",
     "FormEyeHeightMixin",
     "item.TrinketsInventoryMutationMixin",
     "item.CuriosStackMutationMixin",

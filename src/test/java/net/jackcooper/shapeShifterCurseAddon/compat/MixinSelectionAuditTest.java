@@ -28,7 +28,10 @@ public final class MixinSelectionAuditTest {
             require(!MixinSelection.select(prefix+mutation,mod->false,()->null),"Absent backend skips "+mutation);
         require(MixinSelection.select(prefix+mutations[0],mod->mod.equals("trinkets"),()->null),"Native Trinkets mutation hook");
         require(!MixinSelection.select(prefix+mutations[0],mod->mod.equals("trinkets")||mod.equals("tclayer"),()->null),"Wrapped Trinkets uses Accessories mutation hook");
-        return 18;
+        String auth = "net.jackcooper.shapeShifterCurseAddon.mixin.EasyAuthPlayerMixin";
+        require(!MixinSelection.select(auth, mod -> false, () -> null), "EasyAuth absent skips its injected target");
+        require(MixinSelection.select(auth, mod -> mod.equals("easyauth"), () -> null), "EasyAuth present enables authentication bridge");
+        return 20;
     }
 
     private static void require(boolean condition, String message) {

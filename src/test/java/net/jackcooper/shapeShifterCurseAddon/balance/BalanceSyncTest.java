@@ -30,6 +30,8 @@ public final class BalanceSyncTest {
         wireRoundTrip();
         clientLocalNeverOverridesServer();
         treeChangeBumpsRevision();
+        automaticRetriesPreserveDelayedAck();
+        retryCannotReusePreviousRevisionOrLogin();
 
         System.out.println("Balance sync: " + checks + " checks, " + failures + " failures"
                 + (failures == 0 ? " — all passed." : " — FAILURES PRESENT."));
@@ -37,6 +39,51 @@ public final class BalanceSyncTest {
     }
 
     // ---- 场景 ----
+
+    private static void automaticRetriesPreserveDelayedAck() {
+        var server = newServer();
+        server.commitTree(treeOf(treeJsonOf(1, 8)), "retry");
+        UUID player = UUID.randomUUID();
+        server.playerJoined(player);
+        var initial = server.buildSendSequence(player, treeJsonOf(1, 8));
+        var first = ((BalanceWire.Hello) initial.get(0)).header();
+        var client = newClient();
+        deliver(client, initial); // The client applied the snapshot, but its ACK has not arrived.
+        for (int attempt = 0; attempt < 3; attempt++) {
+            var retry = server.buildRetrySequence(player, treeJsonOf(1, 8));
+            check(((BalanceWire.Hello) retry.get(0)).header().equals(first), "自动重试沿用当前版本和会话");
+            ClientBalanceState.Outcome outcome = null;
+            for (var message : retry) outcome = client.offer(message);
+            check(outcome instanceof ClientBalanceState.Committed ack && ack.sessionId() == first.sessionId(),
+                    "已应用配置的客户端可再次确认同会话重试");
+            check(!server.isPlayerReady(player), "重试发送本身不能跳过 ACK 门槛");
+        }
+        server.playerAcked(player, first.sessionId(), first.revision());
+        check(server.isPlayerReady(player), "首次发送的延迟 ACK 在多次重试后仍有效");
+    }
+
+    private static void retryCannotReusePreviousRevisionOrLogin() {
+        var server = newServer();
+        UUID player = UUID.randomUUID();
+        server.commitTree(treeOf(treeJsonOf(1, 8)), "before-reload");
+        server.playerJoined(player);
+        var old = ((BalanceWire.Hello) server.buildSendSequence(player, treeJsonOf(1, 8)).get(0)).header();
+        server.commitTree(treeOf(treeJsonOf(1, 9)), "after-reload");
+        var current = ((BalanceWire.Hello) server.buildRetrySequence(player, treeJsonOf(1, 9)).get(0)).header();
+        check(current.sessionId() != old.sessionId(), "配置版本变化后重试创建新会话");
+        server.playerAcked(player, old.sessionId(), old.revision());
+        check(!server.isPlayerReady(player), "旧版本 ACK 不能确认新配置");
+        server.playerAcked(player, current.sessionId(), current.revision());
+        check(server.isPlayerReady(player), "新版本 ACK 正常确认");
+        server.playerLeft(player); // EasyAuth logout and connection departure both clear this state.
+        server.playerJoined(player);
+        var relogin = ((BalanceWire.Hello) server.buildRetrySequence(player, treeJsonOf(1, 9)).get(0)).header();
+        check(relogin.sessionId() != current.sessionId(), "重新认证后重试不能复用之前的会话");
+        server.playerAcked(player, current.sessionId(), current.revision());
+        check(!server.isPlayerReady(player), "退出登录前的 ACK 无法恢复就绪");
+        server.playerAcked(player, relogin.sessionId(), relogin.revision());
+        check(server.isPlayerReady(player), "当前认证会话的 ACK 正常确认");
+    }
 
     private static void fullSyncFlowSameHash() {
         var server = newServer();

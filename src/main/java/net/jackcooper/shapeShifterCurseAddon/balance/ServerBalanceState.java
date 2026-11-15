@@ -24,6 +24,7 @@ public final class ServerBalanceState {
     private volatile long revision = 0;
     private final AtomicLong sessionSeq = new AtomicLong();
     private final Map<java.util.UUID, Long> sentSessions = new ConcurrentHashMap<>();
+    private final Map<java.util.UUID, Long> sentRevisions = new ConcurrentHashMap<>();
     private final Map<java.util.UUID, PlayerSync> players = new ConcurrentHashMap<>();
 
     public ServerBalanceState(BalanceSchema schema) {
@@ -62,11 +63,13 @@ public final class ServerBalanceState {
 
     public void playerJoined(java.util.UUID playerId) {
         sentSessions.remove(playerId);
+        sentRevisions.remove(playerId);
         players.put(playerId, PlayerSync.NOT_SENT);
     }
 
     public void playerLeft(java.util.UUID playerId) {
         sentSessions.remove(playerId);
+        sentRevisions.remove(playerId);
         players.remove(playerId);   // 退出清理：该连接的 ACK 状态一并移除
     }
 
@@ -90,8 +93,19 @@ public final class ServerBalanceState {
      * 传输树 = 生成快照的合并树（含 schema_version）；树转 JSON 由接线层/测试用 Gson。
      */
     public List<BalanceWire.Message> buildSendSequence(java.util.UUID playerId, String treeJson) {
+        return buildSequence(playerId, treeJson, false);
+    }
+
+    /** Retry the current transfer without invalidating an ACK still travelling from a slow client. */
+    public List<BalanceWire.Message> buildRetrySequence(java.util.UUID playerId, String treeJson) {
+        return buildSequence(playerId, treeJson, true);
+    }
+
+    private List<BalanceWire.Message> buildSequence(java.util.UUID playerId, String treeJson, boolean retry) {
         if (committed == null) throw new IllegalStateException("尚未提交快照");
-        long sessionId = sessionSeq.incrementAndGet();
+        Long previousSession = sentSessions.get(playerId);
+        long sessionId = retry && previousSession != null && java.util.Objects.equals(sentRevisions.get(playerId), revision)
+                ? previousSession : sessionSeq.incrementAndGet();
         byte[] bytes = treeJson.getBytes(java.nio.charset.StandardCharsets.UTF_8);
         var header = new BalanceWire.SnapshotHeader(sessionId, revision,
                 BalanceSchema.CURRENT_SCHEMA_VERSION, committed.hash(),
@@ -102,6 +116,7 @@ public final class ServerBalanceState {
                 BalanceSchema.CURRENT_SCHEMA_VERSION, committed.hash(),
                 chunks.size(), bytes.length);
         sentSessions.put(playerId, sessionId);
+        sentRevisions.put(playerId, revision);
         players.put(playerId, PlayerSync.SENT);
         List<BalanceWire.Message> out = new java.util.ArrayList<>(chunks.size() + 2);
         out.add(new BalanceWire.Hello(header));
