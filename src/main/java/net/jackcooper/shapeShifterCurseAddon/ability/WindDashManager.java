@@ -247,9 +247,7 @@ public final class WindDashManager {
 
     private static void enterHover(ServerPlayerEntity player, DashState s) {
         // 精确落到 targetY
-        player.setPosition(player.getX(), s.targetY, player.getZ());
-        player.setVelocity(0, 0, 0);
-        player.velocityModified = true;
+        settlePosition(player, player.getX(), s.targetY, player.getZ());
         s.phase = PHASE_HOVER;
         s.hoverTick = 0;
         SscAddonNetworking.syncDashState(player, s.phase, s.targetY, s.maxRange, s.landingRadius);
@@ -314,9 +312,7 @@ public final class WindDashManager {
         double groundY = findGroundY(sw, player.getX(), player.getZ(), curY);
         if (curY - stepY <= groundY + 0.01) {
             // 落地（超时落下：无伤害但有 CD）
-            player.setPosition(player.getX(), groundY, player.getZ());
-            player.setVelocity(0, 0, 0);
-            player.velocityModified = true;
+            settlePosition(player, player.getX(), groundY, player.getZ());
             // 落地小粒子
             net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD, player.getX(), player.getY(), player.getZ(),
                     10, 0.3, 0.0, 0.3, 0.02);
@@ -339,9 +335,7 @@ public final class WindDashManager {
     private static void enterLand(ServerPlayerEntity player, DashState s, boolean withDamage) {
         ServerWorld sw = (ServerWorld) player.getWorld();
         Vec3d land = s.dashTarget != null ? s.dashTarget : player.getPos();
-        player.setPosition(land.x, land.y, land.z);
-        player.setVelocity(0, 0, 0);
-        player.velocityModified = true;
+        settlePosition(player, land.x, land.y, land.z);
 
         // 落地音效（全员可听）
         sw.playSound(null, land.x, land.y, land.z,
@@ -380,6 +374,14 @@ public final class WindDashManager {
 
         enterCooldown(player);
         clear(player);
+    }
+
+    /** Reconcile exact phase endpoints with the owner and vanilla's movement/teleport acknowledgement. */
+    private static void settlePosition(ServerPlayerEntity player, double x, double y, double z) {
+        player.setVelocity(0, 0, 0);
+        player.velocityModified = true;
+        // setPosition updates observers but leaves the owning client's position and movement baseline stale.
+        player.requestTeleport(x, y, z);
     }
 
     /** 进入 CD（12 秒，on_end 结算点 = 落地）。超时落下也进 CD。 */

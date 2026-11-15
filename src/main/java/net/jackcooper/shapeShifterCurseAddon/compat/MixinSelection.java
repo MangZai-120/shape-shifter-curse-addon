@@ -24,6 +24,7 @@ public final class MixinSelection {
 
     static {
         requireMod("EasyAuthPlayerMixin", "easyauth");
+        requireMod("compat.RebornShapedRecipeSnapshotMixin", "reborncore");
         // Iron's Spellbooks（Forge mod，经 Sinytra Connector 加载；modId 已据其 jar 内
         // META-INF/mods.toml 确认为 "irons_spellbooks"）未装时，跳过施法动画拦截 mixin。
         // 该 mixin 仍保留 @Pseudo + 字符串 target（编译期附属无此 Forge 类，必须如此编译）；

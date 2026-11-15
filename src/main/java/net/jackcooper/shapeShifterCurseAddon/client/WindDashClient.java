@@ -41,6 +41,16 @@ public final class WindDashClient {
     }
 
     public static void register() {
+        ClientTickEvents.START_CLIENT_TICK.register(client -> {
+            ClientPlayerEntity player = client.player;
+            if (player != null && client.world != null && isWindSpirit(player)
+                    && DashClientState.phase == DashClientState.PHASE_HOVER) {
+                // Match the server's hover velocity before local travel applies last tick's gravity.
+                // No persistent gravity flag: FALL, cancellation and world cleanup immediately release this.
+                Vec3d velocity = player.getVelocity();
+                player.setVelocity(velocity.x, 0, velocity.z);
+            }
+        });
         ClientTickEvents.END_CLIENT_TICK.register(WindDashClient::onClientTick);
     }
 
