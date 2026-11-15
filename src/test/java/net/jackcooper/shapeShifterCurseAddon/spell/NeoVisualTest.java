@@ -8,6 +8,8 @@ public final class NeoVisualTest {
         String[] options={"--version","neomagic-visual","--accessToken","0","--username","NeoReview","--uuid","00000000000000000000000000000001","--assetsDir",System.getProperty("neomagic.assets"),"--assetIndex","1.20.1-5","--gameDir",new java.io.File(".").getAbsolutePath(),"--width","1440","--height","1000"};
         var knot=new net.fabricmc.loader.impl.launch.knot.Knot(net.fabricmc.api.EnvType.CLIENT);var loader=knot.init(options);
         Thread.currentThread().setContextClassLoader(loader);
+        String mixinConfig = System.getProperty("neomagic.mixinConfig");
+        if (mixinConfig != null) org.spongepowered.asm.mixin.Mixins.addConfiguration(mixinConfig);
         String probe=Boolean.getBoolean("neomagic.chargeSoundLive")?"net.jackcooper.shapeShifterCurseAddon.client.sound.NeoChargeSoundLiveProbe":Boolean.getBoolean("neomagic.courtLive")?"net.jackcooper.shapeShifterCurseAddon.client.NeoCourtLiveProbe":Boolean.getBoolean("neomagic.nightmareLive")?"net.jackcooper.shapeShifterCurseAddon.client.NeoNightmareLiveProbe":System.getProperty("neomagic.performance")!=null?"net.jackcooper.shapeShifterCurseAddon.client.perf.NeoCastingPerformanceProbe":"net.jackcooper.shapeShifterCurseAddon.spell.NeoVisualProbe";
         probe=System.getProperty("neomagic.clientProbe",probe);
         Class.forName(probe,true,loader).getMethod("install").invoke(null);

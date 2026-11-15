@@ -34,7 +34,6 @@ import net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
-import virtuoel.pehkui.api.ScaleData;
 import virtuoel.pehkui.api.ScaleTypes;
 
 import java.util.List;
@@ -129,24 +128,28 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 	// 雾化目标：宽 0.2、高 0.1、眼高 0.08，可钻 0.25 格缝隙。
 	// 用独立的 HITBOX_WIDTH / HITBOX_HEIGHT / EYE_HEIGHT 三个 ScaleType 分别设值，
 	// 克服 SSC 原版 ScalePower 宽高共用一个 scale 的限制。
-	// 不调用 setPersistence（默认 false）：玩家退出重连后 scale 重置为 1.0，
-	// 与「雾化效果重连后消失」的行为一致；tick 驱动保证效果消失后立即恢复，死亡无残留。
+	// 临时覆盖不持久化；结束时恢复进入雾化前的形态比例与持久化标记。
 	private static final float MIST_WIDTH_SCALE  = 0.2f / 0.6f;   // ≈0.333
 	private static final float MIST_HEIGHT_SCALE = 0.1f / 1.8f;   // ≈0.0556
 	private static final float MIST_EYE_SCALE    = 0.08f / 1.62f; // ≈0.0494
+	private final MistScaleSnapshot mistScale = new MistScaleSnapshot();
 
 	/** 根据雾化状态设置/恢复 Pehkui 碰撞箱缩放。每 tick 调用，Pehkui 内部脏标记优化，同值不产生网络开销。 */
 	private void refreshMistScale(boolean mist) {
-		float w = mist ? MIST_WIDTH_SCALE  : 1.0f;
-		float h = mist ? MIST_HEIGHT_SCALE : 1.0f;
-		float e = mist ? MIST_EYE_SCALE    : 1.0f;
-		ScaleData widthData  = ScaleTypes.HITBOX_WIDTH.getScaleData(entity);
-		ScaleData heightData = ScaleTypes.HITBOX_HEIGHT.getScaleData(entity);
-		ScaleData eyeData    = ScaleTypes.EYE_HEIGHT.getScaleData(entity);
-		// 仅在值变化时写入，避免无谓的同步开销
-		if (Math.abs(widthData.getScale() - w) > 1e-4f)  widthData.setScale(w);
-		if (Math.abs(heightData.getScale() - h) > 1e-4f) heightData.setScale(h);
-		if (Math.abs(eyeData.getScale() - e) > 1e-4f)    eyeData.setScale(e);
+		if (mist) {
+			// Cancel only the form's size here. External BASE scaling continues to scale the mist.
+			float width = ScaleTypes.WIDTH.getScaleData(entity).getBaseScale();
+			float height = ScaleTypes.HEIGHT.getScaleData(entity).getBaseScale();
+			mistScale.apply(entity, MIST_WIDTH_SCALE / width, MIST_HEIGHT_SCALE / height, MIST_EYE_SCALE / height);
+		} else {
+			mistScale.restore();
+		}
+	}
+
+	@Override
+	public void onRemoved() {
+		mistScale.restore();
+		super.onRemoved();
 	}
 
 	/** 读取当前雾血值（仅服务端有效） */
@@ -211,6 +214,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 		entity.addStatusEffect(new StatusEffectInstance(SscAddon.MIST_FORM, effectDuration, 0, false, false, true));
 		// 原版隐身：FormRenderFeature 在 isInvisible() 时跳过形态模型渲染，从而实现“模型消失”
 		entity.addStatusEffect(new StatusEffectInstance(StatusEffects.INVISIBILITY, effectDuration, 0, false, false, false));
+		refreshMistScale(true);
 		entity.calculateDimensions();
 		wasMist = true;
 		mistStartTime = entity.getWorld().getTime();
@@ -401,6 +405,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 				exitMist(true);
 				applyCooldown();
 			}
+			refreshMistScale(false);
 			charging = false;
 			if (entity.hasStatusEffect(SscAddon.MIST_CHARGING)) {
 				entity.removeStatusEffect(SscAddon.MIST_CHARGING);

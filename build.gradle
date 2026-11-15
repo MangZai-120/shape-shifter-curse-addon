@@ -865,6 +865,35 @@ tasks.register('foodHabitClientTest', JavaExec) {
     }
 }
 
+// Opt-in graphics regression: all addon models, their real eye vertices, and Pehkui scales.
+tasks.register('formCameraClientTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoVisualTest'
+    workingDir = layout.buildDirectory.dir('camera-audit/client').get().asFile
+    maxHeapSize = '3G'
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'neomagic.clientProbe', 'net.jackcooper.shapeShifterCurseAddon.client.camera.FormCameraClientProbe'
+    systemProperty 'neomagic.mixinConfig', 'ssca-camera-test.mixins.json'
+    systemProperty 'ssca.camera.verify', project.findProperty('cameraVerify') ?: 'true'
+    systemProperty 'neomagic.assets', new File(gradle.gradleUserHomeDir, 'caches/fabric-loom/assets').absolutePath
+    systemProperty 'fabric.remapClasspathFile', new File(gradle.startParameter.projectCacheDir ?: new File(project.projectDir, '.gradle'), 'loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        delete new File(workingDir, 'camera-complete.json')
+        def cp = new File(workingDir, 'classpath.txt')
+        cp.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', cp.absolutePath
+    }
+    doLast {
+        def report = new File(workingDir, 'camera-complete.json')
+        if (!report.isFile() || new groovy.json.JsonSlurper().parse(report).completed != true) {
+            throw new GradleException('Camera geometry audit did not complete; inspect its log.')
+        }
+    }
+}
+
 tasks.register('spiderJumpAnimationTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
