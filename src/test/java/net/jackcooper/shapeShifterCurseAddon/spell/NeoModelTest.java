@@ -71,8 +71,8 @@ public final class NeoModelTest {
         near(deviation.offset(),low.offset(),"Live-only deviation preserves its original probability");
         near(deviation.angle(),low.angle(),"Live-only deviation preserves its original angle");
         near(deviation.failure(),0,"Live deviation never recomputes a whole-cast failure chance");
-        Session passed=new Session(b,q);var passingDraw=new Draw(.5,0);double passingC=0;
-        for(int tick=0;tick<=40;tick++)passingC+=passed.advance(tick,tick==0?0:10000,new Profile(tick==0?1000:1,100,0,1,1,false),passingDraw);
+        Session passed=new Session(b,q);var passingDraw=new Draw(.5,0);
+        for(int tick=0;tick<=40;tick++)passed.advance(tick,tick==0?0:10000,new Profile(tick==0?1000:1,100,0,1,1,false),passingDraw);
         require(passed.complete&&!passed.failed&&passingDraw.draws==1&&passingDraw.times==0,"Later C spikes do not reroll a successful initial draw");
         Session projected=new Session(b,q);var projectedDraw=new Draw(0,19);
         projected.advance(0,70,neutral,projectedDraw);require(projected.failureProbability>0&&!projected.failed,"Projected unsafe payment can schedule failure while current C is safe");

@@ -52,7 +52,6 @@ public final class BalanceIntegration {
     private static volatile Thread clientThread;
     private static java.util.Map<String, Object> pendingTree;
     private static BalanceSchema activeSchema;
-    private static final java.util.Map<java.util.UUID, Long> syncDeadlines = new java.util.HashMap<>();
     private static final java.util.Map<java.util.UUID, Long> lastResync = new java.util.HashMap<>();
     /** 服务端最近一次提交的传输树 JSON（重载后为在线玩家重发）。 */
     private static String serverTreeJson;
@@ -92,22 +91,8 @@ public final class BalanceIntegration {
                 publishedServer = server.current();
                 serverTreeJson = treeJsonOfDefaults();
                 pendingTree = null;
-                syncDeadlines.clear();
                 lastResync.clear();
                 net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.clearServer();
-            }
-        });
-        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(srv -> {
-            if (srv.getTicks() % 20 != 0) return;
-            long now = System.nanoTime();
-            for (var player : PlayerLookup.all(srv)) {
-                Long deadline = syncDeadlines.get(player.getUuid());
-                if (deadline == null) continue;
-                if (isPlayerReady(player)) syncDeadlines.remove(player.getUuid());
-                else if (now > deadline) {
-                    syncDeadlines.remove(player.getUuid());
-                    player.networkHandler.disconnect(net.minecraft.text.Text.literal("SSCA configuration sync timed out; check client/server mod versions."));
-                }
             }
         });
     }
@@ -143,7 +128,6 @@ public final class BalanceIntegration {
 
     public static synchronized void onPlayerLeft(ServerPlayerEntity player) {
         if (server != null) server.playerLeft(player.getUuid());
-        syncDeadlines.remove(player.getUuid());
         lastResync.remove(player.getUuid());
     }
 
@@ -156,10 +140,9 @@ public final class BalanceIntegration {
 
     private static void sendSequenceTo(ServerPlayerEntity player) {
         if (!ServerPlayNetworking.canSend(player, PACKET_BALANCE_S2C)) {
-            player.networkHandler.disconnect(net.minecraft.text.Text.literal("This server requires a compatible SSCA balance sync client."));
+            // Keep the player connected; readiness still requires a matching ACK.
             return;
         }
-        syncDeadlines.putIfAbsent(player.getUuid(), System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(30));
         // Queued before balance COMMIT, so its ACK also follows legacy spell application.
         net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.sendTo(player);
         List<BalanceWire.Message> seq = server.buildSendSequence(player.getUuid(), serverTreeJson);
