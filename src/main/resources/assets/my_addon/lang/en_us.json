@@ -2241,7 +2241,7 @@
   "neomagic.book_bar": "Collapse %s / Safe %s",
   "neomagic.book_screen": "Lv%s  C %s / Safe %s",
   "neomagic.book_bonus": "Spellbook: formation safety +%1$s; burden recovery x%2$s",
-  "neomagic.book_help": "Use: scrolls and formations; sneak-use: new spell research",
+  "neomagic.book_help": "Use to equip; sneak + use to open the spellbook",
   "neomagic.book_mastery": "Book mastery %s: %s / %s (safety growth)",
   "neomagic.book_mastery_max": "Book mastery %s: safety +%s",
   "effect.ssca_neomagic.disorder": "Magic Disorder",

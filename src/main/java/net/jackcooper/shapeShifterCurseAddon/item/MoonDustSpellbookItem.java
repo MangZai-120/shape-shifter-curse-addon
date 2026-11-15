@@ -42,16 +42,15 @@ public class MoonDustSpellbookItem extends AccessoryItem {
 	@Override
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
 		ItemStack stack = user.getStackInHand(hand);
-		// 潜行 + 右键：寄生果蝠「播种」优先（耗 1 种子回 10 书法术值；未命中条件回落开配置界面）
-		if (user.isSneaking() && !world.isClient && user instanceof ServerPlayerEntity sp
-				&& net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.trySeedSow(sp, stack)) {
-			return TypedActionResult.success(stack);
+		// 普通右键交给饰品后端处理装备；槽位已满时也不误开配置界面。
+		if (!user.isSneaking()) {
+			return super.use(world, user, hand);
 		}
-		// 潜行 + 右键：播种未触发（非寄生果蝠/无种子/书满）时不回落开界面，保留潜行手势语义干净
-		if (user.isSneaking()) {
-            return TypedActionResult.success(stack,world.isClient);
+		// 保留寄生果蝠的播种回能，但不再吞掉潜行开书操作。
+		if (!world.isClient && user instanceof ServerPlayerEntity sp) {
+			net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.trySeedSow(sp, stack);
 		}
-		// 普通右键：打开魔法书配置界面（2026-09-17 由潜行右键改为右键，用户指定）
+		// 潜行 + 右键：打开魔法书配置界面。
 		if (!world.isClient) {
 			user.openHandledScreen(new ExtendedScreenHandlerFactory() {
 				@Override
@@ -76,7 +75,7 @@ public class MoonDustSpellbookItem extends AccessoryItem {
 				}
 			});
 		}
-		return TypedActionResult.success(stack);
+		return TypedActionResult.success(stack, world.isClient);
 	}
 
 	@Override
