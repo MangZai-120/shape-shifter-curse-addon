@@ -43,9 +43,6 @@ public class SscAddonClient implements ClientModInitializer {
 	public static final String CATEGORY = "key.categories.ssc_addon";
 	private static final Logger LOGGER = LoggerFactory.getLogger(SscAddonClient.class);
 
-	// 跨存档颜色重同步：JOIN 时置为正值倒数，归零时触发一次 sendUpdateCustomSetting
-	private static int joinResyncDelay = 0;
-
 	private void addSplitTooltip(List<Text> lines, String key) {
 		if (I18n.hasTranslation(key)) {
 			String translated = I18n.translate(key);
@@ -79,6 +76,7 @@ public class SscAddonClient implements ClientModInitializer {
 		net.jackcooper.shapeShifterCurseAddon.client.particle.FirstPersonParticles.init();
 		CountdownClient.init();
         SkillCooldownClient.init();
+		ClientConfigurationSync.register();
 		// balance 数据包数值同步（阶段 3）：客户端会话镜像 + S2C 接收器
 		net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.initClient(
 				net.jackcooper.shapeShifterCurseAddon.balance.SscBalanceSchema.create());
@@ -199,40 +197,6 @@ public class SscAddonClient implements ClientModInitializer {
 					});
 				});
 
-		// 修复跨存档颜色变白：cloth-config 里的自定义颜色是全局存储，但服务端 PlayerSkinComponent 按存档独立。
-		// 进入新世界/服务器时，主动把本地 cloth-config 的颜色状态重发给当前服务端，避免新存档拿到默认白色。
-		// 用一个静态倒计时 + 单次注册的 tick 监听，避免多次 JOIN 累积监听器。
-		ClientPlayConnectionEvents.INIT.register((handler, client) ->
-                net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.clearClient());
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
-            if (client.getNetworkHandler() == null || client.getNetworkHandler() == handler)
-                net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.clearClient();
-        });
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-			joinResyncDelay = 20; // 约 1 秒，等待网络通道 & 玩家实体就绪
-		});
-		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(c -> {
-			if (joinResyncDelay <= 0) return;
-			if (c.player == null || c.world == null) return;
-			if (--joinResyncDelay > 0) return;
-			try {
-				net.onixary.shapeShifterCurseFabric.networking.ModPacketsS2C.sendUpdateCustomSetting(true);
-				// 同时补发颜色包：SSC 主包的 sendUpdateCustomSetting 漏调 send，
-				// 不在此处手动发，新存档/服务器的 PlayerSkinComponent 颜色不会被同步。
-				net.jackcooper.shapeShifterCurseAddon.client.colorpicker.AdvancedColorBridge.sendColors(
-						net.jackcooper.shapeShifterCurseAddon.client.colorpicker.AdvancedColorBridge.snapshotFromConfig());
-				// 请求服务端把所有在场玩家的形态+皮肤同步过来（修复客机看其它玩家是默认白模型）。
-				net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
-						net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.canSend(
-								net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_REQUEST_FORM_SYNC_V2)
-								? net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_REQUEST_FORM_SYNC_V2
-								: net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_REQUEST_ALL_FORM_SYNC,
-						net.fabricmc.fabric.api.networking.v1.PacketByteBufs.empty());
-			} catch (Throwable t) {
-				LOGGER.error("[SSC_ADDON] 跨存档颜色重同步失败", t);
-			}
-		});
-
 		// 注册契灵准星射线追踪（每客户端 tick 更新当前瞄准目标）
 		try { MancianimaCrosshairTracker.register(); } catch (Throwable t) { LOGGER.error("[SSC_ADDON] CrosshairTracker register failed", t); }
 		// 注册「SSCA 进化路线定义同步」接收器：服务端把 routes JSON 同步过来，供进化树 UI（多人）渲染。
@@ -247,41 +211,6 @@ public class SscAddonClient implements ClientModInitializer {
                             screen.onPurchaseResult(request, status);
                     });
                 });
-		ClientPlayNetworking.registerGlobalReceiver(
-				net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_EVO_ROUTES_SYNC,
-				(client, handler, buf, responseSender) -> {
-					int count = buf.readInt();
-					if (count < 0 || count > 1000) return;
-					java.util.Map<String, String> raw = new java.util.LinkedHashMap<>();
-					for (int i = 0; i < count; i++) {
-						String routeId = buf.readString(256);
-						String json = buf.readString(2000000);
-						raw.put(routeId, json);
-					}
-					client.execute(() -> {
-                        if (client.getNetworkHandler() == handler)
-                            net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.CLIENT.applyClientSync(raw);
-                    });
-				});
-		// 注册「法术数值配置同步」接收器：服务端把 spells JSON 同步过来（多人环境客户端无 datapack），
-		// 保证卷轴 tooltip / HUD 数值与服务端施法判定一致。
-		ClientPlayNetworking.registerGlobalReceiver(
-				net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC,
-				(client, handler, buf, responseSender) -> {
-					int count = buf.readInt();
-					if (count < 0 || count > 1000) return; // 防恶意服务端 OOM
-					java.util.Map<String, String> raw = new java.util.LinkedHashMap<>();
-					for (int i = 0; i < count; i++) {
-						String spellPath = buf.readString(256);
-						String json = buf.readString(2000000);
-						raw.put(spellPath, json);
-					}
-					client.execute(() -> {
-                            if (client.getNetworkHandler() != handler) return;
-                            try { net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.applyClientSync(raw); }
-                            catch (RuntimeException invalid) { handler.getConnection().disconnect(net.minecraft.text.Text.literal("SSCA spell configuration mismatch: " + invalid.getMessage())); }
-                        });
-				});
 		// 注册「广播所有玩家形态」接收器：服务端把在场玩家的 formID + 皮肤数据直接广播过来，
 		// 客机按 UUID 直接写入其它玩家的 nowForm/nowFormID 与 PlayerSkinComponent（颜色/是否启用形态颜色等），
 		// 绕过 CCA 同步的不确定性，修复刚进游戏看其它玩家是「白色人类模型」（enableFormColor 未同步=渲染原版人类模型）。

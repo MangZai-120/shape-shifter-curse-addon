@@ -159,6 +159,7 @@ public final class SpellRegistry implements SimpleSynchronousResourceReloadListe
             if (!configs.containsKey(spell.getId().getPath()))
                 throw new IllegalArgumentException("Missing spell config: " + spell.getId());
         }
+        net.jackcooper.shapeShifterCurseAddon.network.JsonSnapshotWire.encode(loaded);
         pendingRaw = Map.copyOf(loaded);
         pendingConfigs = Map.copyOf(configs);
     }

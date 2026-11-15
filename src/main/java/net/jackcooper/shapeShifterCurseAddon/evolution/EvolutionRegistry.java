@@ -66,11 +66,12 @@ public final class EvolutionRegistry implements SimpleSynchronousResourceReloadL
                         + "; retaining the previous registry", e);
             }
         }
+        net.jackcooper.shapeShifterCurseAddon.network.JsonSnapshotWire.encode(loadedRaw);
         snapshot = validatedSnapshot(loaded, loadedRaw);
     }
 
     /** 客户端收到 S2C 同步后重建路线镜像（多人环境下客户端无 datapack 数据）。 */
-    public void applyClientSync(Map<String, String> raw) {
+    public boolean applyClientSync(Map<String, String> raw) {
         if (this != CLIENT) throw new IllegalStateException("Client sync cannot write the server registry");
         Map<String, EvolutionRoute> rebuilt = new LinkedHashMap<>();
         try {
@@ -79,9 +80,11 @@ public final class EvolutionRegistry implements SimpleSynchronousResourceReloadL
                 rebuilt.put(e.getKey(), EvolutionRoute.fromJson(e.getKey(), o));
             }
             snapshot = validatedSnapshot(rebuilt, raw);
+            return true;
         } catch (Exception ex) {
             System.err.println("[ssc_addon] Failed to apply synced evolution routes: " + ex);
             // Preserve the complete previous mirror on malformed snapshots.
+            return false;
         }
     }
 

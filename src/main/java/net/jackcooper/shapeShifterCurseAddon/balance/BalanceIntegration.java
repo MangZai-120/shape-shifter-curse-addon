@@ -9,6 +9,10 @@ import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.jackcooper.shapeShifterCurseAddon.compat.EasyAuthBalanceCompatibility;
+import net.jackcooper.shapeShifterCurseAddon.network.JsonSnapshotSync;
+import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry;
+import net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
@@ -162,17 +166,32 @@ public final class BalanceIntegration {
     }
 
     private static void sendSequenceTo(ServerPlayerEntity player, boolean retry) {
+        // A reload can change only spells/routes, without changing the balance revision.
+        // Revoke the previous ACK even when a required channel is temporarily unavailable.
+        if (!retry) server.playerJoined(player.getUuid());
         if (player.isDisconnected() || !EasyAuthBalanceCompatibility.canSynchronize(player)) return;
         lastSyncAttempt.put(player.getUuid(), System.nanoTime());
-        if (!ServerPlayNetworking.canSend(player, PACKET_BALANCE_S2C)) {
-            // Keep the player connected; readiness still requires a matching ACK.
+        var spells = SpellRegistry.INSTANCE.getRawJson();
+        var routes = EvolutionRegistry.INSTANCE.getRawJson();
+        if (!ServerPlayNetworking.canSend(player, PACKET_BALANCE_S2C)
+                || !JsonSnapshotSync.canSend(player, SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC, spells)
+                || !JsonSnapshotSync.canSend(player, SscAddonNetworking.PACKET_EVO_ROUTES_SYNC, routes)) {
+            // No partial transfer may unlock gameplay. Late channels are retried without kicking.
             return;
         }
-        // Queued before balance COMMIT, so its ACK also follows legacy spell application.
-        net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.sendTo(player);
         List<BalanceWire.Message> seq = retry
                 ? server.buildRetrySequence(player.getUuid(), serverTreeJson)
                 : server.buildSendSequence(player.getUuid(), serverTreeJson);
+        var header = ((BalanceWire.Hello) seq.get(0)).header();
+        if (ServerPlayNetworking.canSend(player, JsonSnapshotSync.BEGIN)) {
+            var begin = PacketByteBufs.create();
+            begin.writeLong(header.sessionId()); begin.writeLong(header.revision());
+            ServerPlayNetworking.send(player, JsonSnapshotSync.BEGIN, begin);
+        }
+        // Force both registries into this transfer, even if a previous connection or attempt received them.
+        // Client application is queued before balance COMMIT, which confirms the complete configuration.
+        JsonSnapshotSync.send(player, SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC, spells, true);
+        JsonSnapshotSync.send(player, SscAddonNetworking.PACKET_EVO_ROUTES_SYNC, routes, true);
         for (BalanceWire.Message m : seq) {
             PacketByteBuf buf = PacketByteBufs.create();
             byte[] encoded = BalanceWire.encode(m);
@@ -182,8 +201,19 @@ public final class BalanceIntegration {
     }
 
     public static synchronized void registerServerReceivers() {
+        net.fabricmc.fabric.api.networking.v1.S2CPlayChannelEvents.REGISTER.register((handler, sender, srv, channels) -> {
+            if (!channels.contains(PACKET_BALANCE_S2C) && !channels.contains(JsonSnapshotSync.CHUNKS)
+                    && !channels.contains(SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC)
+                    && !channels.contains(SscAddonNetworking.PACKET_EVO_ROUTES_SYNC)) return;
+            srv.execute(() -> {
+                var player = handler.player;
+                if (server != null && !player.isDisconnected() && srv.getPlayerManager().getPlayer(player.getUuid()) == player
+                        && !server.isPlayerReady(player.getUuid())) sendSequenceTo(player, true);
+            });
+        });
         // ACK：客户端确认后标记就绪（未 ACK 前服务端可拒绝依赖新配置的施法请求，阶段 4 接）
         ServerPlayNetworking.registerGlobalReceiver(PACKET_BALANCE_ACK, (srv, player, handler, buf, rs) -> {
+            if (buf.readableBytes() != 16) return;
             long session = buf.readLong();
             long revision = buf.readLong();
             srv.execute(() -> {
@@ -225,8 +255,12 @@ public final class BalanceIntegration {
                 BalanceWire.Message msg = BalanceWire.decode(bytes);
                 ClientBalanceState.Outcome outcome = client.offer(msg);
                 if (outcome instanceof ClientBalanceState.Committed committed) {
+                    if (!net.jackcooper.shapeShifterCurseAddon.client.ClientConfigurationSync.canCommit(
+                            committed.sessionId(), committed.revision()))
+                        throw new IllegalArgumentException("Required spell or evolution snapshot was not applied");
                     publishedClient = committed.committed();
                     sendAck(committed.sessionId(), committed.revision());
+                    net.jackcooper.shapeShifterCurseAddon.client.ClientConfigurationSync.committed(committed.sessionId());
                     net.jackcooper.shapeShifterCurseAddon.util.ClientResourceCache.invalidate();
                 } else if (outcome instanceof ClientBalanceState.Rejected rejected) {
                     handler.getConnection().disconnect(net.minecraft.text.Text.literal("SSCA balance: " + rejected.reason()));
