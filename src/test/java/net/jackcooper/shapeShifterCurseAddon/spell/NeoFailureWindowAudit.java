@@ -14,9 +14,12 @@ public final class NeoFailureWindowAudit {
             @Override public SpellCastingRules.Profile getCastingProfile(ServerPlayerEntity p,int level,boolean solo){return new SpellCastingRules.Profile(20,1,false);}
             @Override public void cast(ServerPlayerEntity p,float power,boolean solo){}
         };
+        boolean[] releaseLocked={false};
         var locking=new Spell(id,SpellRarity.WHITE){
             @Override public SpellCastingRules.Profile getCastingProfile(ServerPlayerEntity p,int level,boolean solo){return new SpellCastingRules.Profile(20,1,false);}
-            @Override public int getLockInTick(){return 5;}
+            @Override public int getLockInTick(){return 15;}
+            @Override public boolean isLockedIn(ServerPlayerEntity p){return releaseLocked[0];}
+            @Override public void tickChannel(ServerPlayerEntity p,int level,net.minecraft.item.ItemStack scroll,int ticks){if(ticks>=5)releaseLocked[0]=true;}
             @Override public void cast(ServerPlayerEntity p,float power,boolean solo){}
         };
         check(NeoRuntime.profile(risky).safety()==100&&NeoRuntime.profile(protectedPlayer).safety()==100,"Fixtures have N=100 and 2N=200");
@@ -27,6 +30,11 @@ public final class NeoFailureWindowAudit {
         t.waitAndRun(3,()->{
             check(SpellChannelManager.isCasting(risky)&&NeoRuntime.data(risky).burden<=100,"Actual server channel stays active inside safety");
             check(NeoNetwork.hudState(risky).getDouble("Failure")==0&&NeoNetwork.hudState(risky).getDouble("ForecastFailure")==1,"HUD distinguishes current safety from projected whole-cast risk");
+        });
+        t.waitAndRun(11,()->{
+            check(second.session.failureBoundary==15&&second.session.isFailureProtected(),"Live release state protects earlier than the predicted lock tick");
+            check(SpellChannelManager.isCasting(protectedPlayer)&&NeoRuntime.data(protectedPlayer).burden>100,"Protected release keeps paying through actual overload");
+            check(NeoNetwork.hudState(protectedPlayer).getDouble("Failure")==0,"HUD reports no failure risk in the live protected release stage");
         });
         t.waitAndRun(23,()->{
             check(first.session.failed&&NeoRuntime.data(risky).burden>100,"Actual ordinary channel fails only after crossing N");

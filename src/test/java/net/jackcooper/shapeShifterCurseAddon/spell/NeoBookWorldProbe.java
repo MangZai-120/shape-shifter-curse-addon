@@ -160,8 +160,8 @@ public final class NeoBookWorldProbe {
                 });
                 t.waitAndRun(34,()->{
                     check(!SpellChannelManager.isCasting(bad)&&badRecord.result.equals("failed")&&badRecord.failureDraws==1,"One initial failure result eventually interrupts preparation");
-                    check(badRecord.checks.get(badRecord.checks.size()-1).tick()<30,"Normal spell fails strictly before completion");
-                    check(badRecord.paid>=0&&badRecord.paid<badRecord.actual,"Failure retains paid C without charging remainder");
+                    check(badRecord.checks.get(badRecord.checks.size()-1).tick()<=30,"Ordinary preparation can fail through its final payment before effect release");
+                    check(badRecord.paid>=0&&badRecord.paid<=badRecord.actual,"Failure retains only the burden already paid, including a final-payment failure");
                     long remaining=SharedSpellCooldowns.getCooldownEndOf(bad,SpellRegistry.get("lunar_mend"))-bad.getWorld().getTime();
                     check(remaining>200,"Scheduled failure receives full quoted cooldown");
                     check(!changingCast.session.failed&&changingCast.session.failureDraws==1,"Rising live C never rerolls the initial failure result");

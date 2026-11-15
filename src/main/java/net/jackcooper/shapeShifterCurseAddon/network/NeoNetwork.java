@@ -95,7 +95,8 @@ public final class NeoNetwork {
         var session=legacy!=null?legacy.session:a==null?null:a.session;
         double forecast=session==null?failureChance(b,d.burden+q.actual(),q.actual(),profile):session.failureProbability;
         int age=legacy!=null?legacy.age:a==null?-1:a.age;
-        boolean protectedByLock=session!=null&&prep>0&&session.failureBoundary<prep&&age>=session.failureBoundary;
+        boolean protectedByLock=session!=null&&(session.isFailureProtected()
+                ||prep>0&&session.failureBoundary<prep&&age>=session.failureBoundary);
         double failure=d.burden<=profile.safety()||protectedByLock?0:forecast;
         n.putDouble("Q",q.actual());n.putDouble("Failure",failure);n.putDouble("ForecastFailure",forecast);n.putDouble("Offset",r.offset());
         n.putBoolean("HasSpell",hasSpell);

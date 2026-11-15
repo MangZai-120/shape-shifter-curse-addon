@@ -80,6 +80,14 @@ public final class NeoModelTest {
         for(int tick=0;tick<=200;tick++)longC+=locked.advance(tick,longC,new Profile(1,100,0,1,1,false),finalWindow,false);
         require(locked.failed&&locked.checkpoints.get(locked.checkpoints.size()-1).tick()==199,"Failure fires strictly before the lock boundary");
         require(finalWindow.draws==1&&finalWindow.times==1,"A long preparation still has one failure draw");
+        Session liveLocked=new Session(b,q,40,30);var liveDraw=new Draw(.5,17);double lockedC=10000;
+        for(int tick=0;tick<=60;tick++) {
+            if(tick==17)liveLocked.protectFromFailure();
+            lockedC+=liveLocked.advance(tick,lockedC,new Profile(1,100,0,1,1,false),liveDraw,false);
+        }
+        require(!liveLocked.failed&&liveLocked.isFailureProtected(),"Live lock cancels a scheduled failure on the transition tick and stays protected during holds");
+        near(liveLocked.paid,q.actual(),"Live release protection preserves full progressive payment");
+        require(liveDraw.draws==1&&liveDraw.times==1,"Release protection never redraws the failure outcome");
         Session instant=new Session(b(List.of(),0),q);near(instant.advance(0,0,safe,new Random(1)),25,"Instant prepays before checking");
         var instantFail=new Session(b(List.of(),0),q);instantFail.advance(0,10000,neutral,new Draw(.5,19));
         require(instantFail.failed&&instantFail.paid==25&&instantFail.failureDraws==1,"Instant failure pays and fires at zero");

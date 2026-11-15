@@ -146,6 +146,7 @@ public final class NeoModel {
         public boolean failed, complete, reversed, wrongTarget, hasShifted;
         private int previous = -1;
         private int failureAt = -1;
+        private boolean failureProtected;
         private final int duration;
         private final int latestFailureTick;
         public Session(Blueprint b, Quote q) { this(b,q,b.prep()); }
@@ -163,11 +164,17 @@ public final class NeoModel {
             return !failed&&!complete&&age>previous&&(failureDraws==0||age%10==0
                     ||failureAt>=0&&age>=failureAt&&age<=latestFailureTick);
         }
+        /** The spell's authoritative release lock permanently closes this cast's failure window. */
+        public void protectFromFailure() {
+            failureProtected=true;
+            failureAt=-1;
+        }
+        public boolean isFailureProtected() { return failureProtected; }
         private void drawFailure(double current, Profile form, RandomGenerator rng) {
             failureBasis=current+quote.actual;
             failureProbability=failureChance(blueprint,failureBasis,quote.actual,form);
             failureDraws=1;survival=1-failureProbability;
-            if(rng.nextDouble()<failureProbability) {
+            if(rng.nextDouble()<failureProbability&&!failureProtected) {
                 int earliest=firstUnsafeTick(current,form.safety);
                 if(earliest<=latestFailureTick)
                     failureAt=earliest+rng.nextInt(latestFailureTick-earliest+1);

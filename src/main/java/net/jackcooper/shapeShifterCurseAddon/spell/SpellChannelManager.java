@@ -418,6 +418,9 @@ public final class SpellChannelManager {
 	private static void advance(Channel channel) {
 		if (ACTIVE.get(channel.player.getUuid()) != channel) return;
 		if (!ensureValid(channel)) return;
+		// Use the same live release lock as interruption handling, including its transition tick.
+		// Payment and deviation continue, but an earlier failure draw cannot abort the release.
+		if (channel.spell.isLockedIn(channel.player)) channel.collapse.session.protectFromFailure();
 		if (!channel.collapse.advance(channel.collapseAge)) {
 			double excess = SpellBacklashRules.excess(NeoRuntime.data(channel.player).burden, NeoRuntime.profile(channel.player).safety());
 			stop(channel.player, true, net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.text("failed"), true);
