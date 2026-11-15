@@ -76,7 +76,6 @@ public class SscAddonClient implements ClientModInitializer {
 		net.jackcooper.shapeShifterCurseAddon.client.particle.FirstPersonParticles.init();
 		CountdownClient.init();
         SkillCooldownClient.init();
-		ClientConfigurationSync.register();
 		// balance 数据包数值同步（阶段 3）：客户端会话镜像 + S2C 接收器
 		net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.initClient(
 				net.jackcooper.shapeShifterCurseAddon.balance.SscBalanceSchema.create());
@@ -113,12 +112,10 @@ public class SscAddonClient implements ClientModInitializer {
             client2.execute(() -> net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.setClientImmobile(null));
 			ErosionBrandClientState.clear();
 			MancianimaMarkClientState.clear();
-			net.jackcooper.shapeShifterCurseAddon.client.renderer.TidalTetherBeamRenderer.clear();				net.jackcooper.shapeShifterCurseAddon.client.renderer.CurseMarkIconRenderer.clear();			UpgradeAxolotlSpearRenderState.clear();
-			// 摆荡客户端镜像清理（防换服残留旧绳索渲染）+ 蛛丝弹存活标记重置（断线不走逐实体 remove）
-			SpiderMoonWeaverSwingClient.clear();
+			net.jackcooper.shapeShifterCurseAddon.client.renderer.TidalTetherBeamRenderer.clear();
+			net.jackcooper.shapeShifterCurseAddon.client.renderer.CurseMarkIconRenderer.clear();
+			// 蛛丝弹存活标记重置（断线不走逐实体 remove）
 			net.jackcooper.shapeShifterCurseAddon.entity.SpiderSwingBullet.resetClientState();
-			// balance 会话镜像清理（阶段 3：换服/断线后旧回调与暂存不生效）
-			net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.onClientDisconnect();
 		});
 
 		// 进化美西螈「投掷水矛」蓄力期：客户端取消右键预测（放置方块 / 使用物品），避免鬼影
@@ -189,10 +186,7 @@ public class SscAddonClient implements ClientModInitializer {
 					boolean canExtend = buf.readBoolean();
 					int tetherEntityId = buf.readInt();
                     var dimension = buf.isReadable() ? buf.readIdentifier() : null;
-					var receivedWorld = client.world;
-					client.execute(() -> {
-						if (client.getNetworkHandler() != handler || client.world == null || (dimension == null ? client.world != receivedWorld : !dimension.equals(client.world.getRegistryKey().getValue()))) return;
-						AbilityVisualLifecycle.ensureWorld(client.world);
+                    AbilityVisualLifecycle.receive(client, handler, dimension, () -> {
 						SpiderMoonWeaverSwingClient.onStateSync(uuid, active, ax, ay, az, ropeLen, state, canExtend, tetherEntityId);
 					});
 				});
@@ -267,11 +261,9 @@ public class SscAddonClient implements ClientModInitializer {
 			float step = timed ? buf.readFloat() : 0;
 			long serverTime = timed ? buf.readLong() : 0;
 			var dimension = timed ? buf.readIdentifier() : null;
-			client.execute(() -> {
-				if (client.world != null && client.getNetworkHandler() == handler
-						&& (dimension == null || dimension.equals(client.world.getRegistryKey().getValue())))
-					ClawClientState.update(phase, progress, step, serverTime);
-			});
+            int entityId = buf.isReadable() ? buf.readVarInt() : -1;
+            AbilityVisualLifecycle.receiveOwner(client, handler, dimension, entityId,
+                    () -> ClawClientState.update(phase, progress, step, serverTime));
 		});
 
         // 风灵「风之冲刺」：接收阶段+目标悬浮Y，更新客户端镜像（驱动悬浮期绿色落点预览）
@@ -280,37 +272,30 @@ public class SscAddonClient implements ClientModInitializer {
             double targetY = buf.readDouble();
             double range = buf.readableBytes() >= 16 ? buf.readDouble() : 16.0;
             double radius = buf.readableBytes() >= 8 ? buf.readDouble() : 3.0;
-            var receivedWorld = client.world;
-            client.execute(() -> {
-                if (client.getNetworkHandler() == handler && client.world != null && client.world == receivedWorld)
-                    net.jackcooper.shapeShifterCurseAddon.client.DashClientState.update(phase, targetY, range, radius);
-            });
+            var dimension = buf.isReadable() ? buf.readIdentifier() : null;
+            int entityId = buf.isReadable() ? buf.readVarInt() : -1;
+            int hoverElapsed = buf.isReadable() ? buf.readVarInt() : -1;
+            AbilityVisualLifecycle.receiveOwner(client, handler, dimension, entityId,
+                    () -> net.jackcooper.shapeShifterCurseAddon.client.DashClientState.update(phase, targetY, range, radius, hoverElapsed));
         });
 
         // 朔望「灵跃闪身」：接收第 2 段窗口时长（>0 开启倒数锚，0 关闭），驱动次技能辅助栏
         ClientPlayNetworking.registerGlobalReceiver(net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_NOVA_LEAP_WINDOW, (client, handler, buf, responseSender) -> {
             int windowTicks = buf.readVarInt();
-            var receivedWorld = client.world;
-            client.execute(() -> {
-                if (client.world != null && client.world == receivedWorld && client.getNetworkHandler() == handler)
-                    net.jackcooper.shapeShifterCurseAddon.client.NovaLeapClientState.update(windowTicks, client.world.getTime());
-            });
+            var dimension = buf.isReadable() ? buf.readIdentifier() : null;
+            int entityId = buf.isReadable() ? buf.readVarInt() : -1;
+            int totalTicks = buf.isReadable() ? buf.readVarInt() : windowTicks;
+            AbilityVisualLifecycle.receiveOwner(client, handler, dimension, entityId,
+                    () -> net.jackcooper.shapeShifterCurseAddon.client.NovaLeapClientState.update(windowTicks, totalTicks, client.world.getTime()));
         });
 
         // 堕落悦灵「召唤恼鬼」：接收召唤物存活窗口（>0 开启倒数锚，0 关闭），驱动主技能辅助栏
         ClientPlayNetworking.registerGlobalReceiver(net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_FALLEN_ALLAY_VEX_WINDOW, (client, handler, buf, responseSender) -> {
             int windowTicks = buf.readVarInt();
-            var receivedWorld = client.world;
-            client.execute(() -> {
-                if (client.world != null && client.world == receivedWorld && client.getNetworkHandler() == handler)
-                    net.jackcooper.shapeShifterCurseAddon.client.FallenAllayVexClientState.update(windowTicks, client.world.getTime());
-            });
-        });
-        // 断线清理风之冲刺/灵跃窗口/恼鬼窗口镜像，防换服残留旧倒数
-        ClientPlayConnectionEvents.DISCONNECT.register((h, c) -> {
-            net.jackcooper.shapeShifterCurseAddon.client.DashClientState.reset();
-            net.jackcooper.shapeShifterCurseAddon.client.NovaLeapClientState.clear();
-            net.jackcooper.shapeShifterCurseAddon.client.FallenAllayVexClientState.clear();
+            var dimension = buf.isReadable() ? buf.readIdentifier() : null;
+            int entityId = buf.isReadable() ? buf.readVarInt() : -1;
+            AbilityVisualLifecycle.receiveOwner(client, handler, dimension, entityId,
+                    () -> net.jackcooper.shapeShifterCurseAddon.client.FallenAllayVexClientState.update(windowTicks, client.world.getTime()));
         });
 
         // 进化美西螈「投掷水矛」蓄力期手持水矛渲染状态（主机 + 客机一致）
@@ -319,13 +304,8 @@ public class SscAddonClient implements ClientModInitializer {
             boolean charging = buf.readBoolean();
             var dimension = buf.isReadable() ? buf.readIdentifier() : null;
 
-            var receivedWorld = client.world;
-            client.execute(() -> {
-                if (client.getNetworkHandler() == handler && client.world != null && (dimension == null ? client.world == receivedWorld : dimension.equals(client.world.getRegistryKey().getValue()))) {
-                    AbilityVisualLifecycle.ensureWorld(client.world);
-                    UpgradeAxolotlSpearRenderState.set(id, charging);
-                }
-            });
+            AbilityVisualLifecycle.receive(client, handler, dimension,
+                    () -> UpgradeAxolotlSpearRenderState.set(id, charging));
         });
 
         // 寒棘狐主技能蓄力状态（事件级）：客户端本地自算下个冰锥位汇聚流（零网络粒子包）
@@ -333,18 +313,11 @@ public class SscAddonClient implements ClientModInitializer {
             java.util.UUID id = buf.readUuid();
             boolean charging = buf.readBoolean();
             var dimension = buf.isReadable() ? buf.readIdentifier() : null;
-            var receivedWorld = client.world;
-            client.execute(() -> {
-                if (client.getNetworkHandler() == handler && client.world != null && (dimension == null ? client.world == receivedWorld : dimension.equals(client.world.getRegistryKey().getValue()))) {
-                    AbilityVisualLifecycle.ensureWorld(client.world);
-                    net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeClientState.setCharging(id, charging);
-                }
-            });
+            AbilityVisualLifecycle.receive(client, handler, dimension,
+                    () -> net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeClientState.setCharging(id, charging));
         });
         net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeClientState.register();
         AbilityVisualLifecycle.register();
-        // 断线/换服清理蓄力镜像，防残留
-        ClientPlayConnectionEvents.DISCONNECT.register((h, c) -> net.jackcooper.shapeShifterCurseAddon.client.FrostSpikeChargeClientState.clearAll());
 
 		// 注册白名单 GUI S2C 同步包接收器：收到后打开/刷新 WhitelistManageScreen
 		ClientPlayNetworking.registerGlobalReceiver(net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.PACKET_WHITELIST_GUI_SYNC, (client, handler, buf, responseSender) -> {

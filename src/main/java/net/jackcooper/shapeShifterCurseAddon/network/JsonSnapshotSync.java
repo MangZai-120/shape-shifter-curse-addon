@@ -14,6 +14,8 @@ import net.minecraft.util.Identifier;
 public final class JsonSnapshotSync {
     public static final Identifier CHUNKS = new Identifier("my_addon", "json_snapshot_v1");
     public static final Identifier BEGIN = new Identifier("my_addon", "configuration_begin_v1");
+    public static final Identifier SCOPED_CHUNKS = new Identifier("my_addon", "json_snapshot_v2");
+    public static final Identifier BEGIN_SCOPED = new Identifier("my_addon", "configuration_begin_v2");
     private record Key(UUID player, Identifier channel) {}
     private record Payload(Map<String, String> content, byte[] bytes) {}
     private record Sent(Object player, Object connection, Payload payload) {}
@@ -39,11 +41,29 @@ public final class JsonSnapshotSync {
     }
 
     public static boolean canSend(ServerPlayerEntity player, Identifier channel, Map<String, String> content) {
-        return ServerPlayNetworking.canSend(player, CHUNKS)
+        return supportsScoped(player) || ServerPlayNetworking.canSend(player, CHUNKS)
                 || ServerPlayNetworking.canSend(player, channel) && payload(channel, content).bytes.length <= JsonSnapshotWire.LEGACY_LIMIT;
     }
 
+    public static boolean supportsScoped(ServerPlayerEntity player) {
+        return ServerPlayNetworking.canSend(player, BEGIN_SCOPED) && ServerPlayNetworking.canSend(player, SCOPED_CHUNKS);
+    }
+
+    /** Called only by the complete configuration sender after its matching BEGIN. */
+    public static void sendScoped(ServerPlayerEntity player, Identifier channel, Map<String, String> content,
+                                  long session, long revision) {
+        JsonSnapshotWire.Kind kind = channel.equals(SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC)
+                ? JsonSnapshotWire.Kind.SPELLS : JsonSnapshotWire.Kind.EVOLUTION;
+        for (byte[] frame : JsonSnapshotWire.frames(kind, ++transferSequence, payload(channel, content).bytes)) {
+            var out = PacketByteBufs.create();
+            out.writeBytes(JsonSnapshotWire.scope(session, revision, frame));
+            ServerPlayNetworking.send(player, SCOPED_CHUNKS, out);
+        }
+    }
+
     public static boolean send(ServerPlayerEntity player, Identifier channel, Map<String, String> content, boolean force) {
+        // v2 registries belong to BalanceIntegration's complete transaction, including reloads and retries.
+        if (supportsScoped(player)) return false;
         if (!canSend(player, channel, content)) return false;
         Payload payload = payload(channel, content);
         Key key = new Key(player.getUuid(), channel);

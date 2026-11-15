@@ -9,7 +9,10 @@ import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
 import net.jackcooper.shapeShifterCurseAddon.client.colorpicker.AdvancedColorBridge;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry;
-import net.jackcooper.shapeShifterCurseAddon.network.ConfigurationReceipt;
+import net.jackcooper.shapeShifterCurseAddon.network.ClientConfigurationSession;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceSchema;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceSnapshot;
+import net.jackcooper.shapeShifterCurseAddon.balance.BalanceWire;
 import net.jackcooper.shapeShifterCurseAddon.network.JsonSnapshotSync;
 import net.jackcooper.shapeShifterCurseAddon.network.JsonSnapshotWire;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
@@ -21,19 +24,24 @@ import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.networking.ModPackets;
 import net.onixary.shapeShifterCurseFabric.networking.ModPacketsS2C;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
 
 /** Configuration completion is the authenticated point at which local appearance can be uploaded. */
 @Environment(EnvType.CLIENT)
 public final class ClientConfigurationSync {
-    private static final JsonSnapshotWire.Receiver CHUNKS = new JsonSnapshotWire.Receiver();
-    private static final ConfigurationReceipt RECEIPT = new ConfigurationReceipt();
+    private static ClientConfigurationSession session;
     private static boolean appearancePending;
     private static int appearanceDelay;
     private ClientConfigurationSync() {}
 
-    public static void register() {
+    public static void register(BalanceSchema schema) {
+        session = new ClientConfigurationSession(schema, ClientConfigurationSync::apply, completion -> {
+            var ack = PacketByteBufs.create();
+            ack.writeLong(completion.session()); ack.writeLong(completion.revision());
+            ClientPlayNetworking.send(BalanceIntegration.PACKET_BALANCE_ACK, ack);
+            if (completion.refreshAppearance()) { appearancePending = true; appearanceDelay = 0; }
+            net.jackcooper.shapeShifterCurseAddon.util.ClientResourceCache.invalidate();
+        });
         ClientPlayConnectionEvents.INIT.register((handler, client) -> clear());
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             if (client.getNetworkHandler() == null || client.getNetworkHandler() == handler) clear();
@@ -43,22 +51,22 @@ public final class ClientConfigurationSync {
             appearanceDelay = 20;
         });
         ClientTickEvents.END_CLIENT_TICK.register(ClientConfigurationSync::tickAppearance);
-        receive(JsonSnapshotSync.BEGIN, 16, (bytes) -> {
-            if (bytes.length != 16) throw new IllegalArgumentException("Invalid configuration announcement");
-            var data = ByteBuffer.wrap(bytes);
-            RECEIPT.begin(data.getLong(), data.getLong());
-        });
-        receive(JsonSnapshotSync.CHUNKS, JsonSnapshotWire.FRAME_HEADER_BYTES + JsonSnapshotWire.CHUNK_BYTES, bytes -> {
-            var received = CHUNKS.offer(bytes);
-            if (received != null) apply(received.kind(), received.content());
-        });
+        receive(JsonSnapshotSync.BEGIN, 16, ClientConfigurationSession.Part.BEGIN);
+        receive(JsonSnapshotSync.BEGIN_SCOPED, 16, ClientConfigurationSession.Part.BEGIN_SCOPED);
+        receive(JsonSnapshotSync.SCOPED_CHUNKS,
+                JsonSnapshotWire.SESSION_HEADER_BYTES + JsonSnapshotWire.FRAME_HEADER_BYTES + JsonSnapshotWire.CHUNK_BYTES,
+                ClientConfigurationSession.Part.CHUNKS_SCOPED);
+        receive(JsonSnapshotSync.CHUNKS, JsonSnapshotWire.FRAME_HEADER_BYTES + JsonSnapshotWire.CHUNK_BYTES,
+                ClientConfigurationSession.Part.CHUNKS);
         receive(SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC, JsonSnapshotWire.LEGACY_LIMIT,
-                bytes -> apply(JsonSnapshotWire.Kind.SPELLS, JsonSnapshotWire.decode(bytes)));
+                ClientConfigurationSession.Part.SPELLS);
         receive(SscAddonNetworking.PACKET_EVO_ROUTES_SYNC, JsonSnapshotWire.LEGACY_LIMIT,
-                bytes -> apply(JsonSnapshotWire.Kind.EVOLUTION, JsonSnapshotWire.decode(bytes)));
+                ClientConfigurationSession.Part.EVOLUTION);
+        receive(BalanceIntegration.PACKET_BALANCE_S2C, BalanceWire.MAX_CHUNK_BYTES + 1024,
+                ClientConfigurationSession.Part.BALANCE);
     }
 
-    private static void receive(Identifier channel, int maximum, java.util.function.Consumer<byte[]> consumer) {
+    private static void receive(Identifier channel, int maximum, ClientConfigurationSession.Part part) {
         ClientPlayNetworking.registerGlobalReceiver(channel, (client, handler, buffer, sender) -> {
             if (buffer.readableBytes() > maximum) {
                 client.execute(() -> fail(client, handler, "Configuration packet too large"));
@@ -67,7 +75,7 @@ public final class ClientConfigurationSync {
             byte[] bytes = new byte[buffer.readableBytes()]; buffer.readBytes(bytes);
             client.execute(() -> {
                 if (client.getNetworkHandler() != handler) return;
-                try { consumer.accept(bytes); }
+                try { session.accept(part, bytes); }
                 catch (RuntimeException invalid) { fail(client, handler, invalid.getMessage()); }
             });
         });
@@ -82,17 +90,10 @@ public final class ClientConfigurationSync {
         if (kind == JsonSnapshotWire.Kind.SPELLS) SpellRegistry.INSTANCE.applyClientSync(content);
         else if (!EvolutionRegistry.CLIENT.applyClientSync(content))
             throw new IllegalArgumentException("Invalid evolution snapshot");
-        RECEIPT.applied(kind);
     }
 
-    public static boolean canCommit(long session, long revision) { return RECEIPT.canCommit(session, revision); }
-
-    public static void committed(long session) {
-        if (RECEIPT.needsAppearanceRefresh(session)) {
-            appearancePending = true;
-            appearanceDelay = 0;
-        }
-    }
+    public static BalanceSnapshot snapshot() { return session == null ? null : session.snapshot(); }
+    public static boolean isReady() { return session != null && session.isReady(); }
 
     private static void tickAppearance(MinecraftClient client) {
         if (!appearancePending || client.player == null || client.world == null || client.getNetworkHandler() == null) return;
@@ -119,7 +120,7 @@ public final class ClientConfigurationSync {
     }
 
     private static void clear() {
-        CHUNKS.clear(); RECEIPT.clear(); EvolutionRegistry.clearClient();
+        session.clear(); EvolutionRegistry.clearClient(); SpellRegistry.INSTANCE.clearClient();
         appearancePending = false; appearanceDelay = 0;
     }
 }

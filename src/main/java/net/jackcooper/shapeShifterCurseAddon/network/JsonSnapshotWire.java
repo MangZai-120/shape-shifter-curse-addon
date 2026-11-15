@@ -16,6 +16,7 @@ public final class JsonSnapshotWire {
     public static final int MAX_TOTAL_BYTES = 16 * 1_048_576;
     public static final int CHUNK_BYTES = 32_768;
     public static final int FRAME_HEADER_BYTES = 58;
+    public static final int SESSION_HEADER_BYTES = 16;
     public static final int MAX_ENTRIES = 1000;
     private static final int MAX_JSON_CHARS = 2_000_000;
     private JsonSnapshotWire() {}
@@ -94,6 +95,27 @@ public final class JsonSnapshotWire {
     }
 
     public record Received(Kind kind, Map<String, String> content) {}
+
+    /** The v2 channel binds each bounded v1 frame to the complete configuration transaction. */
+    public record ScopedFrame(long session, long revision, byte[] frame) {}
+
+    public static byte[] scope(long session, long revision, byte[] frame) {
+        if (session < 0 || revision < 0 || frame.length < FRAME_HEADER_BYTES
+                || frame.length > FRAME_HEADER_BYTES + CHUNK_BYTES) throw invalid("Invalid scoped registry frame");
+        return ByteBuffer.allocate(SESSION_HEADER_BYTES + frame.length)
+                .putLong(session).putLong(revision).put(frame).array();
+    }
+
+    public static ScopedFrame unScope(byte[] packet) {
+        if (packet.length < SESSION_HEADER_BYTES + FRAME_HEADER_BYTES
+                || packet.length > SESSION_HEADER_BYTES + FRAME_HEADER_BYTES + CHUNK_BYTES)
+            throw invalid("Invalid scoped registry frame size");
+        var input = ByteBuffer.wrap(packet);
+        long session = input.getLong(), revision = input.getLong();
+        if (session < 0 || revision < 0) throw invalid("Invalid registry session");
+        byte[] frame = new byte[input.remaining()]; input.get(frame);
+        return new ScopedFrame(session, revision, frame);
+    }
 
     /** One connection, at most one bounded incomplete transfer per registry. */
     public static final class Receiver {

@@ -1,5 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.ability.fruit;
 
+import net.jackcooper.shapeShifterCurseAddon.network.ServerPacketExecutor;
+
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -47,7 +49,7 @@ public final class ParasiticFruitAbility {
     private static void receiver(Identifier id, Consumer<ServerPlayerEntity> action) {
         ServerPlayNetworking.registerGlobalReceiver(id, (server, player, handler, buf, sender) -> {
             if (buf.isReadable()) return;
-            server.execute(() -> {
+            ServerPacketExecutor.execute(server, player, handler, () -> {
                 if (server.getPlayerManager().getPlayer(player.getUuid()) == player && player.networkHandler == handler)
                     action.accept(player);
             });

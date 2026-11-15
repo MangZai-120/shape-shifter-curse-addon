@@ -94,6 +94,45 @@ tasks.register('jsonSnapshotWireTest', JavaExec) {
 }
 check.dependsOn jsonSnapshotWireTest
 
+tasks.register('multiplayerSyncWorldTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoWorldTest'
+    workingDir = layout.buildDirectory.dir('multiplayer-sync/world').get().asFile
+    maxHeapSize = '2G'
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'neomagic.worldProbe', 'net.jackcooper.shapeShifterCurseAddon.network.MultiplayerSyncWorldProbe'
+    systemProperty 'fabric.remapClasspathFile', new File(project.projectDir, '.gradle/loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def cp = new File(workingDir, 'classpath.txt')
+        cp.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', cp.absolutePath
+    }
+}
+check.dependsOn multiplayerSyncWorldTest
+
+// Opt-in native client regression; requires a desktop/OpenGL session.
+tasks.register('multiplayerSyncClientTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.spell.NeoVisualTest'
+    workingDir = layout.buildDirectory.dir('multiplayer-sync/client').get().asFile
+    maxHeapSize = '3G'
+    systemProperty 'fabric.development', 'true'
+    systemProperty 'neomagic.clientProbe', 'net.jackcooper.shapeShifterCurseAddon.client.MultiplayerSyncClientProbe'
+    systemProperty 'neomagic.assets', new File(gradle.gradleUserHomeDir, 'caches/fabric-loom/assets').absolutePath
+    systemProperty 'fabric.remapClasspathFile', new File(project.projectDir, '.gradle/loom-cache/remapClasspath.txt').absolutePath
+    systemProperty 'fabric.classPathGroups', (sourceSets.main.output.files + sourceSets.test.output.files).collect { it.absolutePath }.join(File.pathSeparator)
+    doFirst {
+        workingDir.mkdirs()
+        def cp = new File(workingDir, 'classpath.txt')
+        cp.setText(classpath.asPath, 'UTF-8')
+        systemProperty 'neomagic.testClasspathFile', cp.absolutePath
+    }
+}
+
 tasks.register('visualSampleHistoryTest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath

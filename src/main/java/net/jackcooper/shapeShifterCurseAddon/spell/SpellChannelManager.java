@@ -1,5 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.network.ServerPacketExecutor;
+
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
@@ -65,12 +67,12 @@ public final class SpellChannelManager {
 		});
 		ServerPlayNetworking.registerGlobalReceiver(RELEASE, (server, player, handler, buf, sender) -> {
 			int token = buf.readVarInt();
-			server.execute(() -> release(player, token, false));
+			ServerPacketExecutor.execute(server, player, handler, () -> release(player, token, false));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(CANCEL_HOLD, (server, player, handler, buf, sender) -> {
 			int token = buf.readVarInt();
 			boolean held = buf.readBoolean();
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, held, () -> {
 				Channel channel = ACTIVE.get(player.getUuid());
 				// 锁定态（如领域壳扩张后/爆裂红白球生成后，2026-09-23 用户定稿）忽略取消请求：
 				// 不置 cancelHeld → cancelTicks 不累加 → 校准包不带取消态，客户端不会一直显示「取消中」。

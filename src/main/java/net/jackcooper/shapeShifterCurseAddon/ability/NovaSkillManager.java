@@ -97,6 +97,14 @@ public final class NovaSkillManager {
     private NovaSkillManager() {
     }
 
+    public static void syncLeapWindow(ServerPlayerEntity player) {
+        LeapSession leap = LEAPS.get(player.getUuid());
+        if (leap == null) return;
+        int total = BAL.i("leap_window", LEAP_WINDOW);
+        long remaining = total - Math.max(0, player.getWorld().getTime() - leap.firstTick());
+        net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking.syncNovaLeapWindow(player, (int) Math.max(0, remaining), total);
+    }
+
     public static void init() {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {

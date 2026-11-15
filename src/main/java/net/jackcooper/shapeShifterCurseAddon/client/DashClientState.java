@@ -30,11 +30,15 @@ public final class DashClientState {
     }
 
     public static void update(int p, double y, double range, double radius) {
+        update(p, y, range, radius, -1);
+    }
+
+    public static void update(int p, double y, double range, double radius, int hoverElapsed) {
         net.minecraft.client.world.ClientWorld world =
                 net.minecraft.client.MinecraftClient.getInstance().world;
         // 刚进入 HOVER：记录客户端 tick 锚（辅助栏自此倒数 hover_ticks）
-        if (p == PHASE_HOVER && phase != PHASE_HOVER) {
-            hoverStartTick = world == null ? Long.MIN_VALUE : world.getTime();
+        if (p == PHASE_HOVER && (phase != PHASE_HOVER || hoverElapsed >= 0)) {
+            hoverStartTick = world == null ? Long.MIN_VALUE : world.getTime() - Math.max(0, hoverElapsed);
         }
         phase = p;
         targetY = y;

@@ -1,5 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.tutorial;
 
+import net.jackcooper.shapeShifterCurseAddon.network.ServerPacketExecutor;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -52,12 +54,12 @@ public final class FormTutorialManager {
             } catch (RuntimeException malformed) {
                 return;
             }
-            server.execute(() -> offer(player, form, manual, requestId));
+            ServerPacketExecutor.execute(server, player, handler, () -> offer(player, form, manual, requestId));
         });
         ServerPlayNetworking.registerGlobalReceiver(ACTION, (server, player, handler, buf, sender) -> {
             if (buf.readableBytes() != 16) return;
             UUID nonce = buf.readUuid();
-            server.execute(() -> acknowledge(player, nonce));
+            ServerPacketExecutor.execute(server, player, handler, () -> acknowledge(player, nonce));
         });
     }
 

@@ -45,6 +45,9 @@ public final class SkillCooldownSync {
                 SENT.put(player.getUuid(), new Snapshot(player, player.getWorld(), player.networkHandler, stamps));
                 var buf = PacketByteBufs.create();
                 SkillCooldownPacket.write(buf, views);
+                // Optional context trailer: old clients consume the original list.
+                buf.writeVarInt(player.getId());
+                buf.writeIdentifier(player.getWorld().getRegistryKey().getValue());
                 ServerPlayNetworking.send(player, ID, buf);
             }
         });

@@ -7,7 +7,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -54,9 +53,31 @@ public final class CountdownSync {
     private static final Map<UUID, Audience> AUDIENCES = new HashMap<>();
     private CountdownSync() {}
 
+    /** Validate before replacing the client's complete prediction snapshot. */
+    public static List<State> readStates(PacketByteBuf buf, long time) {
+        int count = buf.readVarInt();
+        // UUID + shortest identifier + entity/value/min varints + running flag.
+        // Bound work by actual packet bytes, without imposing a player-count limit.
+        if (count < 0 || count > buf.readableBytes() / 22)
+            throw new IllegalArgumentException("Invalid countdown snapshot size");
+        List<State> states = new ArrayList<>(count);
+        var keys = new java.util.HashSet<Key>();
+        for (int i = 0; i < count; i++) {
+            State state = State.read(buf, time);
+            if (!keys.add(state.key) || state.clock.value() < state.clock.minimum())
+                throw new IllegalArgumentException("Invalid countdown state");
+            states.add(state);
+        }
+        if (buf.isReadable()) throw new IllegalArgumentException("Trailing countdown data");
+        return states;
+    }
+
     public static void init() {
         ServerTickEvents.END_SERVER_TICK.register(CountdownSync::flush);
-        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> AUDIENCES.remove(handler.player.getUuid()));
+        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> {
+            AUDIENCES.remove(handler.player.getUuid());
+            ACTIVE.values().removeIf(entry -> entry.owner.networkHandler == handler);
+        });
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> { ACTIVE.clear(); AUDIENCES.clear(); });
     }
 

@@ -101,6 +101,11 @@ public final class WindDashManager {
     private WindDashManager() {
     }
 
+    public static void syncState(ServerPlayerEntity player) {
+        DashState state = STATES.get(player.getUuid());
+        if (state != null) SscAddonNetworking.syncDashState(player, state.phase, state.targetY, state.maxRange, state.landingRadius, state.hoverTick);
+    }
+
     /** 客户端按主技能键（无 payload）。服务端根据当前阶段分支。 */
     public static void onKeyPress(ServerPlayerEntity player) {
         if (!FormUtils.isOcelotSP(player)) {

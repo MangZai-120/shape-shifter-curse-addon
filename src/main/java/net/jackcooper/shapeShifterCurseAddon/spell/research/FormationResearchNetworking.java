@@ -1,5 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.research;
 
+import net.jackcooper.shapeShifterCurseAddon.network.ServerPacketExecutor;
+
 import net.fabricmc.fabric.api.networking.v1.*;
 import net.jackcooper.shapeShifterCurseAddon.spell.FormationKnowledgeComponent;
 import net.minecraft.nbt.NbtCompound;
@@ -17,7 +19,7 @@ public final class FormationResearchNetworking {
             final int syncId; final NbtCompound request;
             try { syncId = buf.readVarInt(); request = buf.readNbt(); if (request == null || buf.isReadable()) return; }
             catch (RuntimeException malformed) { return; }
-            server.execute(() -> {
+            ServerPacketExecutor.execute(server, player, handler, () -> {
                 long now = System.nanoTime(); long prior = LAST.getOrDefault(player.getUuid(), 0L);
                 int action = request.getInt("Action");
                 if (action < SlottedResearchManager.OPEN || action > SlottedResearchManager.INSPECT) return;

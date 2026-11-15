@@ -77,12 +77,17 @@ public final class BalanceReviewTest {
         // Two logical sides in the same process must not share the authoritative lookup.
         var threadField = BalanceIntegration.class.getDeclaredField("clientThread");
         var serverField = BalanceIntegration.class.getDeclaredField("publishedServer");
-        var clientField = BalanceIntegration.class.getDeclaredField("publishedClient");
+        var clientField = net.jackcooper.shapeShifterCurseAddon.client.ClientConfigurationSync.class.getDeclaredField("session");
         threadField.setAccessible(true); serverField.setAccessible(true); clientField.setAccessible(true);
         Object oldThread = threadField.get(null), oldServer = serverField.get(null), oldClient = clientField.get(null);
         try {
-            threadField.set(null, Thread.currentThread()); serverField.set(null, defaults); clientField.set(null, affinity);
-            check(BalanceIntegration.currentSnapshot() == affinity, "client reads connection mirror");
+            var connection = new net.jackcooper.shapeShifterCurseAddon.network.ClientConfigurationSession(schema, (kind, values) -> {}, completed -> {});
+            for (var message : newer) connection.accept(
+                    net.jackcooper.shapeShifterCurseAddon.network.ClientConfigurationSession.Part.BALANCE, BalanceWire.encode(message));
+            threadField.set(null, Thread.currentThread()); serverField.set(null, defaults); clientField.set(null, connection);
+            check(BalanceIntegration.currentSnapshot() == connection.snapshot()
+                    && BalanceIntegration.currentSnapshot().getDouble("abilities.bat_sonic_wave", "damage") == 9,
+                    "client reads committed connection mirror");
             var result = new java.util.concurrent.atomic.AtomicReference<BalanceSnapshot>();
             Thread integratedServer = new Thread(() -> result.set(BalanceIntegration.currentSnapshot()));
             integratedServer.start(); integratedServer.join();

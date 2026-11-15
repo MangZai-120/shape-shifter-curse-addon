@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -53,7 +52,6 @@ public final class BalanceIntegration {
     /** 服务端权威容器（仅物理服务端/集成服务端初始化； DedicatedServer 与单人 host 同一实例语义）。 */
     private static volatile ServerBalanceState server;
     private static volatile BalanceSnapshot publishedServer;
-    private static volatile BalanceSnapshot publishedClient;
     private static volatile Thread clientThread;
     private static java.util.Map<String, Object> pendingTree;
     private static BalanceSchema activeSchema;
@@ -62,9 +60,6 @@ public final class BalanceIntegration {
     private static final java.util.Map<java.util.UUID, Long> lastSyncAttempt = new java.util.HashMap<>();
     /** 服务端最近一次提交的传输树 JSON（重载后为在线玩家重发）。 */
     private static String serverTreeJson;
-
-    /** 客户端会话镜像容器（仅物理客户端初始化；单人物理端同进程也独立实例）。 */
-    private static ClientBalanceState client;
 
     private BalanceIntegration() {}
 
@@ -183,15 +178,22 @@ public final class BalanceIntegration {
                 ? server.buildRetrySequence(player.getUuid(), serverTreeJson)
                 : server.buildSendSequence(player.getUuid(), serverTreeJson);
         var header = ((BalanceWire.Hello) seq.get(0)).header();
-        if (ServerPlayNetworking.canSend(player, JsonSnapshotSync.BEGIN)) {
+        boolean scoped = JsonSnapshotSync.supportsScoped(player);
+        var beginChannel = scoped ? JsonSnapshotSync.BEGIN_SCOPED : JsonSnapshotSync.BEGIN;
+        if (ServerPlayNetworking.canSend(player, beginChannel)) {
             var begin = PacketByteBufs.create();
             begin.writeLong(header.sessionId()); begin.writeLong(header.revision());
-            ServerPlayNetworking.send(player, JsonSnapshotSync.BEGIN, begin);
+            ServerPlayNetworking.send(player, beginChannel, begin);
         }
         // Force both registries into this transfer, even if a previous connection or attempt received them.
         // Client application is queued before balance COMMIT, which confirms the complete configuration.
-        JsonSnapshotSync.send(player, SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC, spells, true);
-        JsonSnapshotSync.send(player, SscAddonNetworking.PACKET_EVO_ROUTES_SYNC, routes, true);
+        if (scoped) {
+            JsonSnapshotSync.sendScoped(player, SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC, spells, header.sessionId(), header.revision());
+            JsonSnapshotSync.sendScoped(player, SscAddonNetworking.PACKET_EVO_ROUTES_SYNC, routes, header.sessionId(), header.revision());
+        } else {
+            JsonSnapshotSync.send(player, SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC, spells, true);
+            JsonSnapshotSync.send(player, SscAddonNetworking.PACKET_EVO_ROUTES_SYNC, routes, true);
+        }
         for (BalanceWire.Message m : seq) {
             PacketByteBuf buf = PacketByteBufs.create();
             byte[] encoded = BalanceWire.encode(m);
@@ -203,6 +205,7 @@ public final class BalanceIntegration {
     public static synchronized void registerServerReceivers() {
         net.fabricmc.fabric.api.networking.v1.S2CPlayChannelEvents.REGISTER.register((handler, sender, srv, channels) -> {
             if (!channels.contains(PACKET_BALANCE_S2C) && !channels.contains(JsonSnapshotSync.CHUNKS)
+                    && !channels.contains(JsonSnapshotSync.BEGIN_SCOPED) && !channels.contains(JsonSnapshotSync.SCOPED_CHUNKS)
                     && !channels.contains(SscAddonNetworking.PACKET_SPELL_CONFIG_SYNC)
                     && !channels.contains(SscAddonNetworking.PACKET_EVO_ROUTES_SYNC)) return;
             srv.execute(() -> {
@@ -216,7 +219,7 @@ public final class BalanceIntegration {
             if (buf.readableBytes() != 16) return;
             long session = buf.readLong();
             long revision = buf.readLong();
-            srv.execute(() -> {
+            net.jackcooper.shapeShifterCurseAddon.network.ServerPacketExecutor.execute(srv, player, handler, () -> {
                 if (player.networkHandler == handler && !player.isRemoved() && server != null
                         && EasyAuthBalanceCompatibility.canSynchronize(player)) {
                     server.playerAcked(player.getUuid(), session, revision);
@@ -225,7 +228,7 @@ public final class BalanceIntegration {
             });
         });
         ServerPlayNetworking.registerGlobalReceiver(PACKET_BALANCE_RESYNC, (srv, player, handler, buf, rs) -> {
-            srv.execute(() -> {
+            net.jackcooper.shapeShifterCurseAddon.network.ServerPacketExecutor.execute(srv, player, handler, () -> {
                 if (server == null || player.networkHandler != handler || player.isRemoved()) return;
                 long now = System.nanoTime();
                 Long previous = lastResync.get(player.getUuid());
@@ -241,79 +244,27 @@ public final class BalanceIntegration {
     @Environment(EnvType.CLIENT)
     public static synchronized void initClient(BalanceSchema schema) {
         clientThread = Thread.currentThread();
-        client = new ClientBalanceState(schema, null);
-        ClientPlayNetworking.registerGlobalReceiver(PACKET_BALANCE_S2C, (c, handler, buf, rs) -> {
-            if (buf.readableBytes() > BalanceWire.MAX_CHUNK_BYTES + 1024) {
-                c.execute(() -> handler.getConnection().disconnect(net.minecraft.text.Text.literal("SSCA: balance packet too large")));
-                return;
-            }
-            byte[] bytes = new byte[buf.readableBytes()];
-            buf.readBytes(bytes);
-            c.execute(() -> {
-                if (client == null || c.getNetworkHandler() != handler) return;
-                try {
-                BalanceWire.Message msg = BalanceWire.decode(bytes);
-                ClientBalanceState.Outcome outcome = client.offer(msg);
-                if (outcome instanceof ClientBalanceState.Committed committed) {
-                    if (!net.jackcooper.shapeShifterCurseAddon.client.ClientConfigurationSync.canCommit(
-                            committed.sessionId(), committed.revision()))
-                        throw new IllegalArgumentException("Required spell or evolution snapshot was not applied");
-                    publishedClient = committed.committed();
-                    sendAck(committed.sessionId(), committed.revision());
-                    net.jackcooper.shapeShifterCurseAddon.client.ClientConfigurationSync.committed(committed.sessionId());
-                    net.jackcooper.shapeShifterCurseAddon.util.ClientResourceCache.invalidate();
-                } else if (outcome instanceof ClientBalanceState.Rejected rejected) {
-                    handler.getConnection().disconnect(net.minecraft.text.Text.literal("SSCA balance: " + rejected.reason()));
-                }
-                } catch (RuntimeException invalid) {
-                    handler.getConnection().disconnect(net.minecraft.text.Text.literal("SSCA balance sync failed: " + invalid.getMessage()));
-                }
-            });
-        });
+        net.jackcooper.shapeShifterCurseAddon.client.ClientConfigurationSync.register(schema);
     }
 
-    @Environment(EnvType.CLIENT)
-    private static void sendAck(long session, long revision) {
-        PacketByteBuf buf = PacketByteBufs.create();
-        buf.writeLong(session);
-        buf.writeLong(revision);
-        ClientPlayNetworking.send(PACKET_BALANCE_ACK, buf);
-    }
-
-    @Environment(EnvType.CLIENT)
-    private static void sendResync(String reason) {
-        PacketByteBuf buf = PacketByteBufs.create();
-        buf.writeString(reason, 1024);
-        ClientPlayNetworking.send(PACKET_BALANCE_RESYNC, buf);
-    }
-
-    /** 客户端当前镜像（未就绪 = null）。消费方（HUD/预检）阶段 5+ 读取。 */
     @Environment(EnvType.CLIENT)
     public static BalanceSnapshot clientSnapshot() {
-        return publishedClient;
+        return net.jackcooper.shapeShifterCurseAddon.client.ClientConfigurationSync.snapshot();
     }
 
     @Environment(EnvType.CLIENT)
     public static synchronized boolean clientReady() {
-        return client != null && client.isReady();
+        return net.jackcooper.shapeShifterCurseAddon.client.ClientConfigurationSync.isReady();
     }
 
-    /** 客户端断线清理（ClientPlayConnectionEvents.DISCONNECT 接线，阶段 4 补）。 */
-    @Environment(EnvType.CLIENT)
-    public static synchronized void onClientDisconnect() {
-        if (client != null) client.exitConnection();
-        publishedClient = null;
-        net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.clearClient();
-    }
-
-    /** 服务端当前权威快照（未初始化 = null；消费端须自行回退）。 */
+    /** Current authoritative server snapshot. */
     public static BalanceSnapshot serverSnapshot() {
         return publishedServer;
     }
 
     /** Logical side, including an integrated server in a client process. No per-read locks. */
     public static boolean isClientThread() { return Thread.currentThread() == clientThread; }
-    public static BalanceSnapshot currentSnapshot() { return isClientThread() ? publishedClient : publishedServer; }
+    public static BalanceSnapshot currentSnapshot() { return isClientThread() ? clientSnapshot() : publishedServer; }
     public static boolean isPlayerReady(ServerPlayerEntity player) {
         if (!EasyAuthBalanceCompatibility.canSynchronize(player)) return false;
         return server == null || server.isPlayerReady(player.getUuid());

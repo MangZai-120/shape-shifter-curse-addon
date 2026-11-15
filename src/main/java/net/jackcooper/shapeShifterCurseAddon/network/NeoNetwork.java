@@ -117,7 +117,7 @@ public final class NeoNetwork {
         return n;
     }
     public static void register() {
-        ServerPlayNetworking.registerGlobalReceiver(HUD_RESYNC_V2,(server,p,handler,buf,sender)->server.execute(()->{
+        ServerPlayNetworking.registerGlobalReceiver(HUD_RESYNC_V2,(server,p,handler,buf,sender)->ServerPacketExecutor.execute(server, p, handler, ()->{
             if(p.networkHandler!=handler||p.isRemoved())return;
             int now=server.getTicks();Integer last=HUD_RESYNC_REQUESTED.get(p.getUuid());
             if(last!=null&&now-last>=0&&now-last<20)return;

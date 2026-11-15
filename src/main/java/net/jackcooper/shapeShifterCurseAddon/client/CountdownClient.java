@@ -15,7 +15,6 @@ import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.nbt.NbtInt;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,9 +32,7 @@ public final class CountdownClient {
         ClientPlayNetworking.registerGlobalReceiver(CountdownSync.STATE, (client, handler, buf, sender) -> {
             var dimension = buf.readIdentifier();
             long time = buf.readLong();
-            int count = buf.readVarInt();
-            var incoming = new ArrayList<CountdownSync.State>();
-            for (int i = 0; i < count; i++) incoming.add(CountdownSync.State.read(buf, time));
+            var incoming = CountdownSync.readStates(buf, time);
             client.execute(() -> {
                 if (client.getNetworkHandler() != handler || client.world == null
                         || !client.world.getRegistryKey().getValue().equals(dimension)) return;
@@ -79,6 +76,11 @@ public final class CountdownClient {
     public static void nativeSync(LivingEntity entity, VariableIntPower power, int value) {
         if (applying || !entity.getWorld().isClient) return;
         var key = new CountdownSync.Key(entity.getUuid(), power.getType().getIdentifier());
+        // A newer native update can arrive before the entity/power binds. It must
+        // supersede that pending anchor, not be overwritten on the following tick.
+        var pending = PENDING.get(key);
+        if (entity.getWorld() == world && pending != null && pending.entityId() == entity.getId())
+            PENDING.remove(key);
         Prediction old = VALUES.get(key);
         if (old != null && old.owner == entity && entity.getWorld() == world) {
             VALUES.put(key, new Prediction(entity, power,

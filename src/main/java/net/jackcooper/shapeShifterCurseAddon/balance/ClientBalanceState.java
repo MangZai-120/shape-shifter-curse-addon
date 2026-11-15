@@ -87,6 +87,8 @@ public final class ClientBalanceState {
         return new Rejected(reason, true);
     }
     private void clearPending() { pending = null; chunks.clear(); receivedBytes = 0; }
+    /** A configuration BEGIN revokes readiness and incomplete work, retaining monotonic revision checks. */
+    public void suspendTransfer() { clearPending(); ready = false; }
     public void exitConnection() {
         clearPending(); current = null; ready = false;
         revision = Long.MIN_VALUE; latestSession = Long.MIN_VALUE;

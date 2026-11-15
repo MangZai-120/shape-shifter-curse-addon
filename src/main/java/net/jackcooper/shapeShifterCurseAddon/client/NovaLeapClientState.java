@@ -19,7 +19,11 @@ public final class NovaLeapClientState {
 
     /** 窗口开启（>0，anchorTick 为收到时的客户端 tick）或关闭（0）。 */
     public static void update(int ticks, long anchorTick) {
-        windowTicks = Math.max(0, ticks);
+        update(ticks, ticks, anchorTick);
+    }
+
+    public static void update(int ticks, int total, long anchorTick) {
+        windowTicks = Math.max(0, Math.max(ticks, total));
         windowEndTick = ticks > 0 ? anchorTick + ticks : Long.MIN_VALUE;
     }
 

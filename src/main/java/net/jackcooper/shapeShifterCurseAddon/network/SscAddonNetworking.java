@@ -238,6 +238,7 @@ public class SscAddonNetworking {
 		buf.writeFloat(recoveryStep);
 		buf.writeLong(player.getWorld().getTime());
 		buf.writeIdentifier(player.getWorld().getRegistryKey().getValue());
+		buf.writeVarInt(player.getId());
 		ServerPlayNetworking.send(player, PACKET_CLAW_STATE, buf);
 	}
 
@@ -247,18 +248,32 @@ public class SscAddonNetworking {
 	}
 
 	public static void syncDashState(net.minecraft.server.network.ServerPlayerEntity player, int phase, double targetY, double range, double radius) {
+		syncDashState(player, phase, targetY, range, radius, 0);
+	}
+
+	public static void syncDashState(ServerPlayerEntity player, int phase, double targetY, double range, double radius, int hoverElapsed) {
 		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
 		buf.writeInt(phase);
 		buf.writeDouble(targetY);
 		buf.writeDouble(range);
 		buf.writeDouble(radius);
+		buf.writeIdentifier(player.getWorld().getRegistryKey().getValue());
+		buf.writeVarInt(player.getId());
+		buf.writeVarInt(Math.max(0, hoverElapsed));
 		ServerPlayNetworking.send(player, PACKET_DASH_STATE, buf);
 	}
 
 	/** 朔望「灵跃闪身」：同步第 2 段灵跃窗口给施法者（>0 = 窗口时长开启倒数，0 = 窗口关闭）。 */
 	public static void syncNovaLeapWindow(net.minecraft.server.network.ServerPlayerEntity player, int windowTicks) {
+		syncNovaLeapWindow(player, windowTicks, windowTicks);
+	}
+
+	public static void syncNovaLeapWindow(ServerPlayerEntity player, int windowTicks, int totalTicks) {
 		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
 		buf.writeVarInt(windowTicks);
+		buf.writeIdentifier(player.getWorld().getRegistryKey().getValue());
+		buf.writeVarInt(player.getId());
+		buf.writeVarInt(Math.max(windowTicks, totalTicks));
 		ServerPlayNetworking.send(player, PACKET_NOVA_LEAP_WINDOW, buf);
 	}
 
@@ -266,6 +281,8 @@ public class SscAddonNetworking {
 	public static void syncFallenAllayVexWindow(net.minecraft.server.network.ServerPlayerEntity player, int windowTicks) {
 		net.minecraft.network.PacketByteBuf buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
 		buf.writeVarInt(windowTicks);
+		buf.writeIdentifier(player.getWorld().getRegistryKey().getValue());
+		buf.writeVarInt(player.getId());
 		ServerPlayNetworking.send(player, PACKET_FALLEN_ALLAY_VEX_WINDOW, buf);
 	}
 
@@ -430,17 +447,17 @@ public class SscAddonNetworking {
 		// 各技能 receiver 的 server.execute 体统一经 runSkillAction 包装。
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_MANCIANIMA_TELEPORT, (server, player, handler, buf, responseSender) -> {
 			byte mode = buf.readByte();
-			server.execute(() -> runSkillAction(player, () -> MancianimaTeleport.execute(player, mode)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> MancianimaTeleport.execute(player, mode)));
 		});
 
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_MANCIANIMA_PRIMARY, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> MancianimaPrimary.execute(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> MancianimaPrimary.execute(player)));
 		});
 
 		// 白名单 GUI - 添加
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_WHITELIST_GUI_ADD, (server, player, handler, buf, responseSender) -> {
 			UUID target = buf.readUuid();
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (isRateLimited(player)) return; // 防 spam
 				if (target.equals(player.getUuid())) return; // 不允许把自己加入自己的白名单
 				// 限制单玩家白名单总容量，防恶意客户端纯增加坚持性 tag 撑爆服务端存储
@@ -456,7 +473,7 @@ public class SscAddonNetworking {
 		// 白名单 GUI - 移除
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_WHITELIST_GUI_REMOVE, (server, player, handler, buf, responseSender) -> {
 			UUID target = buf.readUuid();
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (isRateLimited(player)) return;
 				String tag = AllaySPGroupHeal.WHITELIST_TAG_PREFIX + target.toString();
 				player.getCommandTags().remove(tag);
@@ -467,7 +484,7 @@ public class SscAddonNetworking {
 		// 白名单 GUI - 切换默认/自定义模式
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_WHITELIST_GUI_MODE, (server, player, handler, buf, responseSender) -> {
 			byte mode = buf.readByte();
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (isRateLimited(player)) return;
 				WhitelistUtils.setCustomMode(player, mode == 1);
 				sendWhitelistSync(player);
@@ -477,7 +494,7 @@ public class SscAddonNetworking {
 		// 白名单 GUI - 生物移除
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_WHITELIST_GUI_MOB_REMOVE, (server, player, handler, buf, responseSender) -> {
 			UUID mobUuid = buf.readUuid();
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (isRateLimited(player)) return;
 				WhitelistUtils.removeMobFromWhitelist(player, mobUuid);
 				// 同时清掉友军标记双写时写入的 player 前缀 tag，避免残留导致 count 不一致
@@ -488,7 +505,7 @@ public class SscAddonNetworking {
 
 		// SSCA 美西螈装死 - 提前结束（装死期间按 sp_secondary）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_PLAY_DEAD_END, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (!player.hasStatusEffect(net.jackcooper.shapeShifterCurseAddon.SscAddon.PLAYING_DEAD)) return;
 				player.removeStatusEffect(net.jackcooper.shapeShifterCurseAddon.SscAddon.PLAYING_DEAD);
 				player.removeStatusEffect(net.minecraft.entity.effect.StatusEffects.BLINDNESS);
@@ -509,27 +526,27 @@ public class SscAddonNetworking {
 
 		// SSCA 美西螈漩涡蓄力 - 开始 / 释放
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_VORTEX_START, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.start(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.start(player)));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_VORTEX_RELEASE, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillCleanup(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.release(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillCleanup(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.release(player)));
 		});
 
 		// SSCA 月尘魔法书 - 施法 / 切换选中槽
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPELL_CAST, (server, player, handler, buf, responseSender) -> {
 			int slot = buf.readVarInt();
 			int token = buf.readVarInt();
-			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.cast(player, slot, token));
+			ServerPacketExecutor.execute(server, player, handler, () -> net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.cast(player, slot, token));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPELL_SELECT, (server, player, handler, buf, responseSender) -> {
 			int slot = buf.readVarInt();
-			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.setSelected(player, slot));
+			ServerPacketExecutor.execute(server, player, handler, () -> net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.setSelected(player, slot));
 		});
 		// 月尘魔法书 - 设置卷轴施放档位（低阶选档，阶段 C §6.4）：服务端权威校验并写卷轴 NBT（经饰品同步）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPELL_SET_CAST_LEVEL, (server, player, handler, buf, responseSender) -> {
 			int slot = buf.readVarInt();
 			int castLevel = buf.readVarInt();
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (isRateLimited(player)) return;
 				net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.setCastLevel(player, slot, castLevel);
 			});
@@ -538,7 +555,7 @@ public class SscAddonNetworking {
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPELL_CAST_DOWNGRADED, (server, player, handler, buf, responseSender) -> {
 			int slot = buf.readVarInt();
 			int token = buf.readVarInt();
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (isRateLimited(player)) return;
 				net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.castDowngraded(player, slot, token);
 			});
@@ -546,7 +563,7 @@ public class SscAddonNetworking {
 
 		// SSCA 注魔台 - 点击「升级」按钮（服务端权威重验：书可升级 + 催化塑形核心 + 燃料纯晶）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_INFUSION_ALTAR_UPGRADE, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (player.currentScreenHandler instanceof InfusionAltarScreenHandler sh
 						&& !sh.isMaintenance() && sh.canUse(player) && sh.getInventory() instanceof InfusionAltarBlockEntity be) {
 					be.tryUpgrade(player);
@@ -556,17 +573,17 @@ public class SscAddonNetworking {
 
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FORMATION_SCRIBE, (server, player, handler, buf, responseSender) -> {
 			String element=buf.readString(64),variant=buf.readString(64);int level=buf.readVarInt();
-			server.execute(()->{if(!isRateLimited(player))net.jackcooper.shapeShifterCurseAddon.spell.ResearchTableManager.scribe(player,element,variant,level);});
+			ServerPacketExecutor.execute(server, player, handler, ()->{if(!isRateLimited(player))net.jackcooper.shapeShifterCurseAddon.spell.ResearchTableManager.scribe(player,element,variant,level);});
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FORMATION_LEARN, (server, player, handler, buf, responseSender) -> {
 			String element=buf.readString(64),variant=buf.readString(64);int level=buf.readVarInt();
-			server.execute(()->{if(!isRateLimited(player))net.jackcooper.shapeShifterCurseAddon.spell.ResearchTableManager.learn(player,element,variant,level,0);});
+			ServerPacketExecutor.execute(server, player, handler, ()->{if(!isRateLimited(player))net.jackcooper.shapeShifterCurseAddon.spell.ResearchTableManager.learn(player,element,variant,level,0);});
 		});
 		// SSCA 卷轴工坊四包（阶段 C，服务端权威重验 ScrollWorkshopManager）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SCROLL_CRAFT, (server, player, handler, buf, responseSender) -> {
 			String spellPath = buf.readString(64);
 			int level = buf.readVarInt();
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (isRateLimited(player)) return;
 				net.jackcooper.shapeShifterCurseAddon.spell.ScrollWorkshopManager.craft(player, spellPath, level);
 			});
@@ -574,20 +591,20 @@ public class SscAddonNetworking {
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SCROLL_UPGRADE, (server, player, handler, buf, responseSender) -> {
 			String spellPath = buf.readString(64);
 			int targetLevel = buf.readVarInt();
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (isRateLimited(player)) return;
 				net.jackcooper.shapeShifterCurseAddon.spell.ScrollWorkshopManager.upgrade(player, spellPath, targetLevel);
 			});
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SCROLL_REPAIR, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (isRateLimited(player)) return;
 				net.jackcooper.shapeShifterCurseAddon.spell.ScrollWorkshopManager.repair(player);
 			});
 		});
-		ServerPlayNetworking.registerGlobalReceiver(PACKET_SCROLL_IMPRINT,(server,player,handler,buf,sender)->server.execute(()->{if(!isRateLimited(player))net.jackcooper.shapeShifterCurseAddon.spell.ScrollWorkshopManager.imprint(player);}));
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_SCROLL_IMPRINT,(server,player,handler,buf,sender)->ServerPacketExecutor.execute(server, player, handler, ()->{if(!isRateLimited(player))net.jackcooper.shapeShifterCurseAddon.spell.ScrollWorkshopManager.imprint(player);}));
         ServerPlayNetworking.registerGlobalReceiver(PACKET_SCROLL_SALVAGE, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (isRateLimited(player)) return;
 				net.jackcooper.shapeShifterCurseAddon.spell.ScrollWorkshopManager.salvage(player);
 			});
@@ -595,77 +612,77 @@ public class SscAddonNetworking {
 
 		// SSCA 月织蛛「织网术」- 切换模式 / 开始蓄力 / 释放
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_TOGGLE, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.toggleMode(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.toggleMode(player)));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_CHARGE_START, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.start(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.start(player)));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_CHARGE_START_FLAT, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.startFlat(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.startFlat(player)));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_CHARGE_RELEASE, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillCleanup(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.release(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillCleanup(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.release(player)));
 		});
 		// SSCA 月织蛛二段跳 - 空中按跳跃键触发（跳跃由客户端原版 jump() 完成，此处仅广播音效粒子）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_DOUBLE_JUMP, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverDoubleJumpManager.onDoubleJump(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverDoubleJumpManager.onDoubleJump(player)));
 		});
 		// SSCA 月织蛛蛛丝荡漾 - 次键按下（发射 / 断丝切换）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_SWING_PRESS, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.onSecondaryPress(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.onSecondaryPress(player)));
 		});		// SSCA 寒棘狐冰刺 - 蕠力开始 / 停止 / 发射
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FROST_SPIKE_CHARGE_START, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.startCharge(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.startCharge(player)));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FROST_SPIKE_CHARGE_RELEASE, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillCleanup(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.stopCharge(player)));
+			ServerPacketExecutor.execute(server, player, handler, false, () -> runSkillCleanup(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.stopCharge(player)));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FROST_SPIKE_FIRE, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.fire(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.fire(player)));
 		});
 		// SSCA 寒棘狐凝棘（次技能） - 蓄力开始 / 发射
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FROST_SPIKE_SECONDARY_START, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.startSecondaryCharge(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.startSecondaryCharge(player)));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FROST_SPIKE_SECONDARY_RELEASE, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.releaseSecondary(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FrostSpikeManager.releaseSecondary(player)));
 		});
 		// SSCA 跳蛛跳杀 - 蓄力开始 / 松开跳杀
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_JUMP_KILL_CHARGE_START, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.startCharge(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.startCharge(player)));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_JUMP_KILL_CHARGE_RELEASE, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillCleanup(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.release(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillCleanup(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.JumpKillManager.release(player)));
 		});
 		// SSCA 跳蛛毒液（次技能） - 按下触发
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_VENOM_SKILL_PRESS, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.VenomSkillManager.onPress(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.VenomSkillManager.onPress(player)));
 		});
 		// SSCA 月织蛛蛛丝荡漾 - 摆荡中上报绳长 + 收放意图（服务端权威扣 mana）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SPIDER_MOON_WEAVER_SWING_SYNC, (server, player, handler, buf, responseSender) -> {
 			double ropeLen = buf.readDouble();
 			int reel = buf.readVarInt();
-			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.onReelSync(player, ropeLen, reel));
+			ServerPacketExecutor.execute(server, player, handler, () -> net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.onReelSync(player, ropeLen, reel));
 		});
 
 		// SSCA 进化美西蟠水流冲刺 - 真正疾跑键按住状态上报
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_AXOLOTL_SPRINT_KEY, (server, player, handler, buf, responseSender) -> {
 			boolean held = buf.readBoolean();
-			server.execute(() -> net.jackcooper.shapeShifterCurseAddon.ability.AxolotlWaterSpurtHandler.setClientSprintHeld(player, held));
+			ServerPacketExecutor.execute(server, player, handler, held, () -> net.jackcooper.shapeShifterCurseAddon.ability.AxolotlWaterSpurtHandler.setClientSprintHeld(player, held));
 		});
 
 		// SSCA 进化美西螈技能：主「投掷水矛」 / 次「涡流引导」
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_UPGRADE_AXOLOTL_SPEAR, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager.onKeyPress(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager.onKeyPress(player)));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_UPGRADE_AXOLOTL_VORTEX, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.VortexGuideManager.onKeyPress(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.VortexGuideManager.onKeyPress(player)));
 		});
 
 		// 风灵「疾风连爪」：客户端上报左键按住状态
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_CLAW_HOLD, (server, player, handler, buf, responseSender) -> {
 			boolean hold = buf.readBoolean();
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, hold, () -> {
                 if (!hold || net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.isPlayerReady(player)) {
                     if(hold&&!net.jackcooper.shapeShifterCurseAddon.spell.SpellChannelManager.onSkillAction(player))return;
                     net.jackcooper.shapeShifterCurseAddon.ability.WindSpiritClawManager.setHolding(player, hold);
@@ -675,20 +692,20 @@ public class SscAddonNetworking {
 
 		// 风灵副技能：sp_secondary 触发 +50% 增伤 buff
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_CLAW_BUFF, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.WindSpiritClawManager.activateSecondaryBuff(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.WindSpiritClawManager.activateSecondaryBuff(player)));
 		});
 
 		// 风灵「风之冲刺」：主技能键（服务端按当前阶段分支：起飞 / 悬浮中冲刺）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_WIND_DASH, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.WindDashManager.onKeyPress(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.WindDashManager.onKeyPress(player)));
 		});
 
 		// 荧光幼灵技能按键：主要（法阵激光）/ 次要（潮汐波动）
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FLUO_LASER, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.onKeyPress(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.onKeyPress(player)));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_FLUO_TIDAL, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FluorescentTidalManager.onKeyPress(player)));
+			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.FluorescentTidalManager.onKeyPress(player)));
 		});
 
 		// ===== SSCA 进化加点系统 =====
@@ -697,11 +714,11 @@ public class SscAddonNetworking {
 			String route = buf.readString(256);
 			String node = buf.readString(256);
 			int expectedCost = buf.readVarInt();
-			server.execute(() -> handleEvolutionPurchase(player, handler, server.getTicks(), request, route, node, expectedCost));
+			ServerPacketExecutor.execute(server, player, handler, () -> handleEvolutionPurchase(player, handler, server.getTicks(), request, route, node, expectedCost));
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_EVO_SELECT_ROUTE, (server, player, handler, buf, responseSender) -> {
 			String routeId = buf.readString(256);
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (player.networkHandler != handler || player.isRemoved()
                         || !EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.SELECT, server.getTicks())) return;
 				EvolutionManager.selectRoute(player, routeId);
@@ -710,7 +727,7 @@ public class SscAddonNetworking {
 
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_EVO_SELECT_BRANCH, (server, player, handler, buf, responseSender) -> {
 			String branchId = buf.readString(256);
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (player.networkHandler != handler || player.isRemoved()
                         || !EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.SELECT, server.getTicks())) return;
 				EvolutionManager.selectBranch(player, branchId);
@@ -719,7 +736,7 @@ public class SscAddonNetworking {
 
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_EVO_UNLOCK, (server, player, handler, buf, responseSender) -> {
 			String nodeId = buf.readString(256);
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (player.networkHandler != handler || player.isRemoved()
                         || !EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.PURCHASE, server.getTicks())) return;
 				EvolutionManager.tryUnlock(player, nodeId);
@@ -731,7 +748,7 @@ public class SscAddonNetworking {
             if (count < 0 || count > 64) return;
 			java.util.List<String> ids = new java.util.ArrayList<>(count);
 			for (int i = 0; i < count; i++) ids.add(buf.readString(256));
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (player.networkHandler != handler || player.isRemoved()
                         || !EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.PURCHASE, server.getTicks())) return;
 				EvolutionManager.tryUnlockBatch(player, ids);
@@ -741,7 +758,7 @@ public class SscAddonNetworking {
 		// 开局选形态界面：直接走 SSCA 进化路线进入选定形态
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_SSCA_START_ROUTE, (server, player, handler, buf, responseSender) -> {
 			String formId = buf.readString(256);
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (player.networkHandler != handler || player.isRemoved()
                         || !EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.START, server.getTicks())) return;
 				EvolutionManager.startSscaRoute(player, formId);
@@ -751,7 +768,7 @@ public class SscAddonNetworking {
 		// 灵能宝珠转职：玩家在转职界面选定目标进化形态并确认
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_JOB_CHANGE_CONFIRM, (server, player, handler, buf, responseSender) -> {
 			String formId = buf.readString(256);
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (player.networkHandler != handler || player.isRemoved()
                         || !EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.START, server.getTicks())) return;
 				EvolutionManager.startJobChange(player, formId);
@@ -760,7 +777,7 @@ public class SscAddonNetworking {
 
 		// 打开进化加点界面：检测旧存档并迁移到内置 exp 机制
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_EVO_OPEN, (server, player, handler, buf, responseSender) -> {
-			server.execute(() -> {
+			ServerPacketExecutor.execute(server, player, handler, () -> {
 				if (player.networkHandler != handler || player.isRemoved()
                         || !EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.OPEN, server.getTicks())) return;
 				EvolutionManager.checkAndMigrate(player);
@@ -770,10 +787,10 @@ public class SscAddonNetworking {
 		// Both protocol generations share one per-connection budget. A repair sends all
 		// forms to the requester and only that player's form to peers (linear payload).
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_REQUEST_ALL_FORM_SYNC, (server, player, handler, buf, responseSender) ->
-				server.execute(() -> { if (player.networkHandler == handler && !player.isRemoved()
+				ServerPacketExecutor.execute(server, player, handler, () -> { if (player.networkHandler == handler && !player.isRemoved()
 						&& FORM_REPAIR_BUDGET.accept(handler, server.getTicks())) repairForms(player); }));
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_REQUEST_FORM_SYNC_V2, (server, player, handler, buf, responseSender) ->
-				server.execute(() -> { if (player.networkHandler == handler && !player.isRemoved()
+				ServerPacketExecutor.execute(server, player, handler, () -> { if (player.networkHandler == handler && !player.isRemoved()
 						&& FORM_REPAIR_BUDGET.accept(handler, server.getTicks())) repairForms(player); }));
 	}
 
@@ -838,6 +855,13 @@ public class SscAddonNetworking {
 
     public static void registerEvolutionRouteSync() {
         JsonSnapshotSync.register();
+        net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register(
+                (player, origin, destination) -> {
+                    // These abilities may survive a teleport. Rebuild only their client mirrors;
+                    // leave their server-side lifetime and cooldown semantics unchanged.
+                    net.jackcooper.shapeShifterCurseAddon.ability.NovaSkillManager.syncLeapWindow(player);
+                    net.jackcooper.shapeShifterCurseAddon.ability.WindDashManager.syncState(player);
+                });
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.register(
                 (player, joined) -> sendEvolutionRoutes(player, !joined));
         // A newly tracked entity may appear long after login. Send its current skin as well as form.
