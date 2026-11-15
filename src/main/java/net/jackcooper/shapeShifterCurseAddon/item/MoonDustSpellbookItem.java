@@ -82,8 +82,6 @@ public class MoonDustSpellbookItem extends AccessoryItem {
 	public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
 		int level = SpellbookData.getLevel(stack);
 		int slots = SpellbookData.getSlotCount(stack);
-		int mana = SpellbookData.getMana(stack);
-		int maxMana = SpellbookData.getMaxMana(stack);
 		tooltip.add(Text.translatable("item.ssc_addon.moon_dust_spellbook.tip_level", level, slots).formatted(Formatting.AQUA));
 		tooltip.add(net.jackcooper.shapeShifterCurseAddon.spell.NeoMagic.text("book_bonus",String.format(java.util.Locale.ROOT,"%.1f",net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.safetyBonus(stack)),String.format(java.util.Locale.ROOT,"%.2f",net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting.recoveryMultiplier(stack))).formatted(Formatting.BLUE));
 		int need = SpellbookData.getExpToNext(stack);
