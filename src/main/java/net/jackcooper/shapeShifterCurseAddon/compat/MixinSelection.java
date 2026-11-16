@@ -62,7 +62,6 @@ public final class MixinSelection {
     }
 
     /** 登记「撞到冲突 mod 自动让路」规则。 */
-    @SuppressWarnings("unused")
     private static void yieldOnConflict(String simpleMixinName, String... mods) {
         CONFLICT_MODS.put(MIXIN_PREFIX + simpleMixinName, mods);
     }
