@@ -178,7 +178,14 @@ tasks.register('clientCodeAuditTest', JavaExec) {
     mainClass = 'net.jackcooper.shapeShifterCurseAddon.network.visual.VisualRecipeTestBootstrap'
     args 'net.jackcooper.shapeShifterCurseAddon.client.ClientCodeAuditTest'
 }
-['parametricVisualTest', 'mistMeteorDomainRecipeTest', 'blueTrailRecipeTest', 'clientFormSettingsMigrationTest', 'clientCodeAuditTest'].each { name ->
+tasks.register('sscPerkClientDataTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.jackcooper.shapeShifterCurseAddon.network.visual.VisualRecipeTestBootstrap'
+    args 'net.jackcooper.shapeShifterCurseAddon.client.SscPerkClientDataTest'
+    systemProperty 'mixin.debug.export', 'true'
+}
+['parametricVisualTest', 'mistMeteorDomainRecipeTest', 'blueTrailRecipeTest', 'clientFormSettingsMigrationTest', 'clientCodeAuditTest', 'sscPerkClientDataTest'].each { name ->
     tasks.named(name, JavaExec) {
         workingDir = layout.buildDirectory.dir('network-sync/' + name).get().asFile
         systemProperty 'fabric.development', 'true'
@@ -192,7 +199,7 @@ tasks.register('clientCodeAuditTest', JavaExec) {
         }
     }
 }
-check.dependsOn parametricVisualTest, mistMeteorDomainRecipeTest, blueTrailRecipeTest, clientFormSettingsMigrationTest, clientCodeAuditTest
+check.dependsOn parametricVisualTest, mistMeteorDomainRecipeTest, blueTrailRecipeTest, clientFormSettingsMigrationTest, clientCodeAuditTest, sscPerkClientDataTest
 
 tasks.register('neoMagicStressModelTest', JavaExec) {
     dependsOn testClasses

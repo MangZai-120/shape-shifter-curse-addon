@@ -86,7 +86,7 @@ public final class NeoScaleWriteProbe {
         for (int i = 0; i < 40; i++) crawlPower.tick();
         check(!eye.shouldSync() && !hitbox.shouldSync(), "Stable crawling does not mark eye/hitbox for sync");
         eye.setTargetScale(.9f); eye.markForSync(false); crawlPower.tick();
-        check(eye.shouldSync() && eye.getTargetScale() == .35f, "Crawl still overrides an externally changed animated target");
+        check(!eye.shouldSync() && eye.getTargetScale() == .9f, "Native crawling writes only on state transitions, preserving external animation between transitions");
         player.setSneaking(false); crawlPower.tick();
         check(eye.shouldSync() && hitbox.shouldSync() && eye.getBaseScale() == 1 && hitbox.getBaseScale() == 1, "Leaving crawl still restores both scales");
 

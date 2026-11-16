@@ -19,6 +19,11 @@ import static net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric.MOD_ID
  * SSC 新变形系统：继承原版 Form_FeralBase（NormalForm 子类，构造已设 FERAL 体型并提供共用四足动画控制器）
  */
 public abstract class AbstractFeralForm extends Form_FeralBase {
+    @Override
+    public net.minecraft.util.Pair<Identifier, Identifier> getFormLayer() {
+        return net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.originLayer(getFormID());
+    }
+
 	protected AnimationHolder anim_idle = AnimationHolder.EMPTY;
 	protected AnimationHolder anim_sneak_idle = AnimationHolder.EMPTY;
 	protected AnimationHolder anim_ride = AnimationHolder.EMPTY;

@@ -5,7 +5,6 @@ import net.onixary.shapeShifterCurseFabric.player_form.NormalForm;
 import net.onixary.shapeShifterCurseFabric.player_form.NormalGroup;
 import net.onixary.shapeShifterCurseFabric.player_form.PlayerFormBodyType;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
-import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_FeralCatSP;
 import net.onixary.shapeShifterCurseFabric.player_form.forms.Form_Ocelot3;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 

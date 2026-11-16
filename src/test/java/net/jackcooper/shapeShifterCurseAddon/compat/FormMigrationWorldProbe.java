@@ -62,6 +62,8 @@ public final class FormMigrationWorldProbe {
                 for (var entry : FormIdMigration.aliases().entrySet()) {
                     testForm(context, player, entry.getKey(), entry.getValue());
                 }
+                historySync(player);
+                net.jackcooper.shapeShifterCurseAddon.spell.NeoScaleWriteProbe.run(context);
                 IForm vanilla = RegPlayerForms.getPlayerForm(new Identifier("shape-shifter-curse", "allay_sp"));
                 check(vanilla != null && vanilla.getFormID().getPath().equals("allay_sp"),
                         "SSC's own similarly named form is unchanged");
@@ -77,6 +79,20 @@ public final class FormMigrationWorldProbe {
                 throw new RuntimeException(failure);
             }
         });
+    }
+
+    private static void historySync(ServerPlayerEntity player) {
+        var component = PlayerFormComponent.COMPONENT.get(player);
+        component.formHistory.clear();
+        var form = RegPlayerForms.getPlayerForm(FormIdentifiers.AXOLOTL_SP);
+        for (int i = 0; i < 20; i++) component.formHistory.add(form);
+        component.sync();
+        check(component.formHistory.size() == 20, "Sync preserves SSC's twenty-entry history instead of trimming it to three");
+        var saved = new NbtCompound();
+        component.writeToNbt(saved);
+        component.readFromNbt(saved);
+        component.readFromNbt(saved);
+        check(component.formHistory.size() == 20, "Repeated native NBT reads replace history rather than append duplicate entries");
     }
 
     private static void unchangedInput() {

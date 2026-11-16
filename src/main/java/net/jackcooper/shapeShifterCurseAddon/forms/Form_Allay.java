@@ -16,6 +16,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class Form_Allay extends NormalForm {
+    @Override
+    public net.minecraft.util.Pair<Identifier, Identifier> getFormLayer() {
+        return net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.originLayer(getFormID());
+    }
+
 	private static final String ANIM_NS = "my_addon";
 	public static final AbstractAnimStateController WALK_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_moving")), new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_sneaking_walk")));
 	public static final AbstractAnimStateController SPRINT_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_run")), new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_sneaking_walk")));

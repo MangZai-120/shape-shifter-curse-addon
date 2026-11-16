@@ -59,7 +59,10 @@ public class SscAddonClient implements ClientModInitializer {
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
 				net.jackcooper.shapeShifterCurseAddon.compat.DualAccessoryEquipment.clearCache());
 		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STARTED.register(
-				client -> net.jackcooper.shapeShifterCurseAddon.compat.OptionalAccessoryBridges.register());
+				client -> {
+					net.jackcooper.shapeShifterCurseAddon.compat.OptionalAccessoryBridges.register();
+					SscPerkClientData.register();
+				});
 		net.jackcooper.shapeShifterCurseAddon.client.renderer.AllaySkinColor.init();
 		net.jackcooper.shapeShifterCurseAddon.client.evolution.EvolutionArtwork.init();
 		NetworkCompatibilityClient.init();

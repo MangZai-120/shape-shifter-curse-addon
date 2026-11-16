@@ -7,6 +7,7 @@ import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Pair;
 
 /** Form names may change; the existing Origins, powers and their saved state must not. */
 public final class FormIdMigration {
@@ -73,6 +74,13 @@ public final class FormIdMigration {
     /** Stable resource identity: existing Origins/powers, models and cooldowns retain their IDs. */
     public static Identifier legacy(Identifier id) {
         return id == null ? null : LEGACY.getOrDefault(id, id);
+    }
+
+    /** SSCA-owned forms keep their existing Origin even when their display/registry ID changes. */
+    public static Pair<Identifier, Identifier> originLayer(Identifier formId) {
+        Identifier resource = legacy(formId);
+        return new Pair<>(new Identifier("origins", "origin"),
+                new Identifier(resource.getNamespace(), "form_" + resource.getPath()));
     }
 
     /** Copy on change: callers may also retain the original save or packet for another consumer. */

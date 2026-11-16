@@ -3,7 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.util;
 import java.util.Objects;
 import virtuoel.pehkui.api.ScaleData;
 
-/** Narrow no-op checks for SSC's instant, per-tick step/crawl scale assignments. */
+/** Narrow no-op checks for repeated native step-height and mist-form scale assignments. */
 public final class StableSscScaleWrites {
     private StableSscScaleWrites() {}
 

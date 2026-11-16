@@ -68,6 +68,18 @@ public final class MixinSelection {
 
     public static boolean select(String mixinClassName, java.util.function.Predicate<String> modLoaded,
                                java.util.function.Supplier<String> highestBackend) {
+        boolean connector = modLoaded.test("connectormod") || modLoaded.test("connector");
+        if ((MIXIN_PREFIX + "client.ConnectorMoistureHudVisibilityMixin").equals(mixinClassName)) {
+            return connector;
+        }
+        if ((MIXIN_PREFIX + "client.MoistureHudVisibilityMixin").equals(mixinClassName)) {
+            return !connector;
+        }
+        // Connector beta.49 moves this vanilla hook into an automatically generated renderArmor mixin.
+        // The actual Forge renderAir hook above provides the complete behavior instead.
+        if ((MIXIN_PREFIX + "client.adapter_generated_ForgeGui").equals(mixinClassName)) {
+            return false;
+        }
         // 饰品桥接兜底：与主包 TrinketImpl 严格互斥——
         // 主包 plugin 在「最高优先级插件 == trinkets」时应用 TrinketImpl 并跳过我们；
         // Accessories 3000 由主包原生桥接接管，不能再通过 tclayer 注册第二套回调。

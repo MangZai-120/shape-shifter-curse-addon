@@ -31,7 +31,20 @@ public final class MixinSelectionAuditTest {
         String auth = "net.jackcooper.shapeShifterCurseAddon.mixin.EasyAuthPlayerMixin";
         require(!MixinSelection.select(auth, mod -> false, () -> null), "EasyAuth absent skips its injected target");
         require(MixinSelection.select(auth, mod -> mod.equals("easyauth"), () -> null), "EasyAuth present enables authentication bridge");
-        return 20;
+        String hud = "net.jackcooper.shapeShifterCurseAddon.mixin.client.";
+        require(MixinSelection.select(hud + "MoistureHudVisibilityMixin", mod -> false, () -> null),
+                "Native Fabric retains its vanilla moisture HUD hook");
+        require(!MixinSelection.select(hud + "ConnectorMoistureHudVisibilityMixin", mod -> false, () -> null),
+                "Native Fabric never links the Forge GUI hook");
+        require(!MixinSelection.select(hud + "MoistureHudVisibilityMixin", mod -> mod.equals("connectormod"), () -> null),
+                "Connector selects its actual Forge air overlay");
+        require(MixinSelection.select(hud + "ConnectorMoistureHudVisibilityMixin", mod -> mod.equals("connectormod"), () -> null),
+                "Connector enables the Forge moisture HUD hook");
+        require(MixinSelection.select(hud + "ConnectorMoistureHudVisibilityMixin", mod -> mod.equals("connector"), () -> null),
+                "Connector loader alias selects the same hook");
+        require(!MixinSelection.select(hud + "adapter_generated_ForgeGui", mod -> mod.equals("connectormod"), () -> null),
+                "The incorrectly adapted renderArmor hook is replaced, not applied alongside renderAir");
+        return 26;
     }
 
     private static void require(boolean condition, String message) {
