@@ -22,20 +22,17 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import java.util.List;
 
-@JeiPlugin
+/** The Fabric entrypoint also feeds Connector's JEI bridge; a Forge annotation registers it twice. */
 public class SSCA_JEIPlugin implements IModPlugin {
     public static final RecipeType<Crafting> SPECIAL_CRAFTING = RecipeType.create("ssc_addon", "special_crafting", Crafting.class);
     public static final RecipeType<Process> PROCESSING = RecipeType.create("ssc_addon", "processing", Process.class);
     @Override public Identifier getPluginUid() { return new Identifier("ssc_addon", "jei_plugin"); }
     @Override public void registerItemSubtypes(ISubtypeRegistration registration) {
-        registration.registerSubtypeInterpreter(PotionTestTubes.FILLED, new mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter<ItemStack>() {
-            @Override public Object getSubtypeData(ItemStack stack, mezz.jei.api.ingredients.subtypes.UidContext context) {
-                return PotionTestTubes.subtypeData(stack);
-            }
-            @Override public String getLegacyStringSubtypeInfo(ItemStack stack, mezz.jei.api.ingredients.subtypes.UidContext context) {
-                return PotionTestTubes.subtypeData(stack).toString();
-            }
-        });
+        // Forge packs commonly use JEI 15.20; the newer ISubtypeInterpreter only
+        // exists in later JEI releases. This shared API keeps the same subtype key.
+        registration.registerSubtypeInterpreter(PotionTestTubes.FILLED,
+                (mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack>)
+                        (stack, context) -> PotionTestTubes.subtypeData(stack).toString());
     }
     @Override public void registerExtraIngredients(IExtraIngredientRegistration registration) {
         registration.addExtraItemStacks(PotionTestTubes.viewerStacks());

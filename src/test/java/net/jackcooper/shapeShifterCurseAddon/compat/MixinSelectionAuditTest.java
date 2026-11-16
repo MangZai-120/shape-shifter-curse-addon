@@ -44,7 +44,13 @@ public final class MixinSelectionAuditTest {
                 "Connector loader alias selects the same hook");
         require(!MixinSelection.select(hud + "adapter_generated_ForgeGui", mod -> mod.equals("connectormod"), () -> null),
                 "The incorrectly adapted renderArmor hook is replaced, not applied alongside renderAir");
-        return 26;
+        require(!MixinSelection.select(hud + "ConnectorConnectionSendMixin", mod -> false, () -> null),
+                "Native Fabric retains its existing network send path");
+        require(MixinSelection.select(hud + "ConnectorConnectionSendMixin", mod -> mod.equals("connectormod"), () -> null),
+                "Connector serializes protocol transitions on the network event loop");
+        require(MixinSelection.select(hud + "ConnectorConnectionSendMixin", mod -> mod.equals("connector"), () -> null),
+                "The Connector loader alias selects the same network fix");
+        return 29;
     }
 
     private static void require(boolean condition, String message) {

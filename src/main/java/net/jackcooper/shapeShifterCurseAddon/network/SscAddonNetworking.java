@@ -795,6 +795,14 @@ public class SscAddonNetworking {
 	}
 
 	private static void repairForms(ServerPlayerEntity player) {
+		// Restore the saved mode alongside the existing form repair on Connector. This
+		// post-configuration request runs after the client has a player/world, so it
+		// also provides an event-driven initial component sync after reconnecting.
+		var loader = net.fabricmc.loader.api.FabricLoader.getInstance();
+		if (loader.isModLoaded("connectormod") || loader.isModLoaded("connector")) {
+			net.jackcooper.shapeShifterCurseAddon.state.RegSpiderMoonWeaverStateComponent
+					.SPIDER_MOON_WEAVER_STATE.sync(player);
+		}
 		var players = player.getServer().getPlayerManager().getPlayerList();
 		PacketByteBuf full = formSnapshot(players);
 		PacketByteBuf single = formSnapshot(List.of(player));

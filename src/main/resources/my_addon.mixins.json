@@ -217,6 +217,7 @@
         "client.CreativeTabNeighborMixin",
         "client.MoistureHudVisibilityMixin",
         "client.ConnectorMoistureHudVisibilityMixin",
+        "client.ConnectorConnectionSendMixin",
         "client.UpgradeAxolotlSpearChargeArmMixin",
         "client.ClawCrosshairMixin",
         "client.NovaSprintLockMixin",

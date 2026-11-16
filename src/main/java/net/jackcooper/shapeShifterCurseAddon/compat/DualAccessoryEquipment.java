@@ -211,7 +211,11 @@ public final class DualAccessoryEquipment {
         for(var slot:slots(entity)) {
             if(!slot.name.equals(name)||slot.index!=index)continue;
             if(address!=null) {if(slot.backend.equals(address.backend)&&Objects.equals(slot.group,address.group))return slot;}
-            else if(Objects.equals(slot.group,group)) {if(!slot.stack.isEmpty())return slot;if(empty==null)empty=slot;}
+            // Accessories and Curios use global slot names; SSC passes legacy
+            // Trinkets groups such as "hand" even when those backends are active.
+            else if(!slot.backend.equals("trinkets")||Objects.equals(slot.group,group)) {
+                if(!slot.stack.isEmpty())return slot;if(empty==null)empty=slot;
+            }
         }
         return empty;
     }
