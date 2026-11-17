@@ -15,7 +15,7 @@ public final class IrisShadowPassDetector {
     private static Method isRenderingShadowPassMethod = null;
 
     /** 当前线程是否处于「需要跳过 Apoli feature 判断」的渲染上下文。 */
-    private static final ThreadLocal<Boolean> SUPPRESS_POWER_QUERY = ThreadLocal.withInitial(() -> Boolean.FALSE);
+    private static final ThreadLocal<SuppressionScope> SUPPRESS_POWER_QUERY = new ThreadLocal<>();
 
     private IrisShadowPassDetector() {}
 
@@ -48,16 +48,38 @@ public final class IrisShadowPassDetector {
 
     // ---- ThreadLocal 标志：供 mixin 在 LivingEntityRenderer.render 内设置 ----
 
-    public static void enterSuppressScope() {
-        SUPPRESS_POWER_QUERY.set(Boolean.TRUE);
+    public static SuppressionScope suppressFor(Object owner) {
+        var scope = new SuppressionScope(owner, SUPPRESS_POWER_QUERY.get());
+        SUPPRESS_POWER_QUERY.set(scope);
+        return scope;
     }
 
-    public static void exitSuppressScope() {
-        SUPPRESS_POWER_QUERY.set(Boolean.FALSE);
+    public static boolean hasSuppressScope() {
+        return SUPPRESS_POWER_QUERY.get() != null;
     }
 
     /** 供 PowerHolderComponent 查询 mixin 使用：当前是否应返回空 power 列表以绕开崩溃路径。 */
-    public static boolean shouldSuppressPowerQuery() {
-        return SUPPRESS_POWER_QUERY.get();
+    public static boolean shouldSuppressPowerQuery(Object owner) {
+        var scope = SUPPRESS_POWER_QUERY.get();
+        return owner != null && scope != null && scope.owner == owner;
+    }
+
+    public static final class SuppressionScope implements AutoCloseable {
+        private final Object owner;
+        private final SuppressionScope previous;
+        private boolean closed;
+
+        private SuppressionScope(Object owner, SuppressionScope previous) {
+            this.owner = owner;
+            this.previous = previous;
+        }
+
+        @Override
+        public void close() {
+            if (closed) return;
+            if (previous == null) SUPPRESS_POWER_QUERY.remove();
+            else SUPPRESS_POWER_QUERY.set(previous);
+            closed = true;
+        }
     }
 }

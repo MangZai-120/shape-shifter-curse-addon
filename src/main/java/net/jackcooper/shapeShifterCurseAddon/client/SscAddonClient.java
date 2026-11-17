@@ -56,6 +56,7 @@ public class SscAddonClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
+		CreativeTabLayout.register();
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
 				net.jackcooper.shapeShifterCurseAddon.compat.DualAccessoryEquipment.clearCache());
 		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STARTED.register(

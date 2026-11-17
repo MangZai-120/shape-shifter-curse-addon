@@ -1,8 +1,8 @@
 package net.jackcooper.shapeShifterCurseAddon.util;
 
 /**
- * 跟踪当前物品渲染上下文（GUI/GROUND vs 手持）。
- * 由 WaterSpearInventoryMixin 在 renderItem HEAD 设置，
+ * 跟踪水矛的 GUI 绘制上下文（地面/展示框/手持不经过 DrawContext）。
+ * 由 WaterSpearInventoryMixin 在统一 drawItem 调用期间设置并在 finally 恢复，
  * 由 held predicate 读取——GUI 上下文时强制返回 0（不触发 3D override）。
  * 使用 ThreadLocal 保证渲染线程隔离，避免嵌套渲染串扰。
  */

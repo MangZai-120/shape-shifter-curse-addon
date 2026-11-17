@@ -23,7 +23,9 @@ public class TransformRelatedItemsMixin {
 		IForm currentForm = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).nowForm;
 
 		// Block suppressor usage for SP form (special_form flag)
-		if (currentForm.getFormFlag().contains("special_form")) {
+		if (currentForm != null && currentForm.getFormID() != null
+				&& currentForm.getFormID().getNamespace().equals("my_addon")
+				&& currentForm.getFormFlag().contains("special_form")) {
 			player.sendMessage(Text.translatable("message.ssc_addon.inhibitor.fail.sp_form").formatted(Formatting.RED), true);
 			ci.cancel();
 		}
@@ -34,7 +36,9 @@ public class TransformRelatedItemsMixin {
 		IForm currentForm = player.getComponent(RegPlayerFormComponent.PLAYER_FORM).nowForm;
 
 		// Block suppressor usage for SP form (special_form flag)
-		if (currentForm.getFormFlag().contains("special_form")) {
+		if (currentForm != null && currentForm.getFormID() != null
+				&& currentForm.getFormID().getNamespace().equals("my_addon")
+				&& currentForm.getFormFlag().contains("special_form")) {
 			player.sendMessage(Text.translatable("message.ssc_addon.inhibitor.fail.sp_form").formatted(Formatting.RED), true);
 			ci.cancel();
 		}

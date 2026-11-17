@@ -19,11 +19,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 只发 spawn / 元数据 / 属性 / 装备 / 乘客包，<b>不含任何效果包</b>——玩家开始追踪一只
  * 带效果的 mob 时（退出重进、走远再走回、区块重载），客户端不知道它带着效果。变羊 NPC
  * 的渲染 mixin 判 {@code hasStatusEffect(SHEEP_FORM)}，客户端侧恒 false → 立刻画回原模型
- * （「玩家退出再回来羊立刻变回原型」的由来）。1.20.3+ 原版已在追踪包里补上效果同步，
- * 本 mixin 对齐该行为。</p>
+ * （「玩家退出再回来羊立刻变回原型」的由来）。</p>
  *
- * <p><b>影响面</b>：全量补发该实体当前所有效果（与 1.20.3+ 原版一致）——顺带修复其它
- * SSCA 效果（诅咒印记/潮汐减速/血雾形态等）在重追踪后客户端丢失显示的同类问题。
+ * <p><b>影响面</b>：仅补发 my_addon / ssc_addon 注册的效果，修复羊形态及其它
+ * SSCA 效果在重追踪后客户端丢失显示的问题；原版和其它模组效果保持原追踪行为。
  * 客户端按效果 id 覆盖式添加，重复补发幂等；效果到期时原版照常发移除包，最终一致。</p>
  */
 @Mixin(EntityTrackerEntry.class)
@@ -36,6 +35,11 @@ public abstract class EntityTrackerEntryEffectSyncMixin {
 	private void ssca$syncStatusEffects(ServerPlayerEntity player, CallbackInfo ci) {
 		if (entity instanceof LivingEntity living) {
 			for (StatusEffectInstance effect : living.getStatusEffects()) {
+				// Fabric START_TRACKING runs before the spawn packet; retain this post-spawn hook.
+				// Only SSCA-owned effects need our extra tracking synchronization.
+				var id = net.minecraft.registry.Registries.STATUS_EFFECT.getId(effect.getEffectType());
+				if (id == null || !(id.getNamespace().equals("ssc_addon")
+						|| id.getNamespace().equals("my_addon"))) continue;
 				player.networkHandler.sendPacket(new EntityStatusEffectS2CPacket(living.getId(), effect));
 			}
 		}

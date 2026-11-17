@@ -146,12 +146,14 @@ public final class SscAddonServerEvents {
 			FluorescentTidalManager.tickPendingCd(players);
 			for (ServerPlayerEntity player : players) {
 				net.jackcooper.shapeShifterCurseAddon.compat.MoistureWaterRecovery.restore(player);
+				net.jackcooper.shapeShifterCurseAddon.compat.ForcedSneakSync.tick(player);
 			}
 		});
 
 
 		// 月织蛛「织网术」/「蛛丝荡漾」/ 食梦魔「惊吓」：玩家掉线清理状态，防僵尸 UUID 残留
 		net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((netHandler, server) -> {
+			net.jackcooper.shapeShifterCurseAddon.compat.ForcedSneakSync.forget(netHandler.player);
 			net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverWebManager.onDisconnect(netHandler.player);
 			net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.onDisconnect(netHandler.player);
 			net.jackcooper.shapeShifterCurseAddon.ability.NightmareSpookManager.onDisconnect(netHandler.player);
@@ -180,6 +182,7 @@ public final class SscAddonServerEvents {
 		ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
 			net.jackcooper.shapeShifterCurseAddon.block.WebMembraneOwners.clear();
 			net.jackcooper.shapeShifterCurseAddon.compat.MoistureWaterRecovery.clear();
+			net.jackcooper.shapeShifterCurseAddon.compat.ForcedSneakSync.clear();
 		});
 	}
 

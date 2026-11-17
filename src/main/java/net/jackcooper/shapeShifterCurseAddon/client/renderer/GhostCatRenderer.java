@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.client.renderer;
+import net.jackcooper.shapeShifterCurseAddon.util.WeakEntityStateMap;
 
 import net.jackcooper.shapeShifterCurseAddon.client.model.GhostCatModel;
 import net.jackcooper.shapeShifterCurseAddon.entity.GhostCatEntity;

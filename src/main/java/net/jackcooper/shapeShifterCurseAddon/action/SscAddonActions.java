@@ -560,6 +560,7 @@ public class SscAddonActions {
 
 		// ==== 旋转圆环粒子（附属专用，仅 red 火环外圈使用，不影响主模组 spawn_particles_in_circle） ====
 		registerEntity(SpawnRotatingCircleAction.getFactory());
+		registerEntity(SpawnCircleVisualAction.getFactory());
 		registerEntity(new ActionFactory<>(new Identifier("my_addon", "tick_countdown"),
 				new SerializableData().add("resource", io.github.apace100.apoli.data.ApoliDataTypes.POWER_TYPE),
 				(data, entity) -> net.jackcooper.shapeShifterCurseAddon.network.CountdownSync.decrement(entity, data.get("resource"))));

@@ -81,7 +81,7 @@ public final class CollapsePenaltyClientProbe {
                 if(NeoClient.hud.getInt("CollapseStage")!=0||ticks<15)return;
                 check(!client.player.hasStatusEffect(StatusEffects.NAUSEA)&&!client.player.hasStatusEffect(StatusEffects.WITHER)&&!client.player.hasStatusEffect(StatusEffects.BLINDNESS),"All owned visuals disappear on recovery");
                 shot(client,"03-recovered.png");
-                var map=((net.jackcooper.shapeShifterCurseAddon.mixin.client.LivingEntityStatusEffectsAccessor)client.player).sscAddon$getActiveStatusEffects();
+                var map=client.player.getActiveStatusEffects();
                 var normal=new StatusEffectInstance(StatusEffects.BLINDNESS,400);map.put(StatusEffects.BLINDNESS,normal);
                 net.jackcooper.shapeShifterCurseAddon.client.hud.CollapsePenaltyClient.tick(client);
                 check(map.get(StatusEffects.BLINDNESS)==normal,"Ordinary blindness is never removed by collapse cleanup");

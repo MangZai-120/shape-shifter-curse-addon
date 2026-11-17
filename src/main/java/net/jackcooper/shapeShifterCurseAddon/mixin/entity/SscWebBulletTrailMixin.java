@@ -20,6 +20,9 @@ public abstract class SscWebBulletTrailMixin {
             double x, double y, double z, int count, double dx, double dy, double dz, double speed,
             Operation<Integer> original) {
         WebBullet bullet = (WebBullet) (Object) this;
+        if (!(bullet instanceof net.jackcooper.shapeShifterCurseAddon.entity.BridgeWebBullet)) {
+            return original.call(world, particle, x, y, z, count, dx, dy, dz, speed);
+        }
         if (bullet.isRemoved()) return 0;
         ParametricVisuals.touch(bullet, bullet.getUuid(), ParametricVisuals.Kind.SSC_WEB_TRAIL,
                 null, bullet.getPos(), true, world.getTime() - bullet.age, 0, 0, bullet.Tier);

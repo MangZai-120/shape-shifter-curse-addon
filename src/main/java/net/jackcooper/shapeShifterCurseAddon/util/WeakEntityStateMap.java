@@ -1,4 +1,4 @@
-package net.jackcooper.shapeShifterCurseAddon.client.renderer;
+package net.jackcooper.shapeShifterCurseAddon.util;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -7,11 +7,11 @@ import java.util.Map;
 import java.util.function.Function;
 
 /** Weak identity keys: vanilla Entity.equals compares numeric IDs, which can repeat in another world. */
-final class WeakEntityStateMap<K, V> {
+public final class WeakEntityStateMap<K, V> {
     private final ReferenceQueue<K> collected = new ReferenceQueue<>();
     private final Map<IdentityReference<K>, V> states = new HashMap<>();
 
-    V computeIfAbsent(K entity, Function<? super K, ? extends V> factory) {
+    public V computeIfAbsent(K entity, Function<? super K, ? extends V> factory) {
         purge();
         IdentityReference<K> lookup = new IdentityReference<>(entity, null);
         V state = states.get(lookup);
@@ -21,12 +21,22 @@ final class WeakEntityStateMap<K, V> {
         return state;
     }
 
-    V getOrDefault(K entity, V fallback) {
+    public V getOrDefault(K entity, V fallback) {
         purge();
         return states.getOrDefault(new IdentityReference<>(entity, null), fallback);
     }
 
-    void remove(K entity) {
+    public void put(K entity, V state) {
+        purge();
+        states.put(new IdentityReference<>(entity, collected), state);
+    }
+
+    public void clear() {
+        states.clear();
+        purge();
+    }
+
+    public void remove(K entity) {
         purge();
         states.remove(new IdentityReference<>(entity, null));
     }

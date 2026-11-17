@@ -151,8 +151,7 @@ public final class NightmareFearClient {
 		// 无光影时由 FearFogMixin 覆盖雾距/雾色。粉球壳 FearSphereWallRenderer 增强界限感。
 		if (client.player != null) {
 			Map<StatusEffect, StatusEffectInstance> effects =
-					((net.jackcooper.shapeShifterCurseAddon.mixin.client.LivingEntityStatusEffectsAccessor) client.player)
-							.sscAddon$getActiveStatusEffects();
+					client.player.getActiveStatusEffects();
 			updateBlindness(effects, feared);
 		} else {
 			clearFearBlindness();

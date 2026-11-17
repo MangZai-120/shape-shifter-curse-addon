@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * <p>重定向 {@code HeldItemFeatureRenderer.render} 里的 {@code entity.getMainHandStack()}：
  * 蓄力中返回带 {@code CustomModelData=1} 的水矛（恒定 3D）。覆盖左/右利手（该调用在两种利手分支各出现一次，
  * 只有实际利手那支执行）与<b>空手</b>情况（返回非空水矛使渲染分支不被 isEmpty 跳过）。
- * 举矛过肩姿势由 {@code UpgradeAxolotlSpearChargeArmMixin} 同步形态骨骼和原版手持物挂点。多人下对被追踪的
+ * 举矛过肩姿势由 {@code FormPoseOverrides} 同步形态骨骼和原版手持物挂点。多人下对被追踪的
  * 蓄力玩家同样生效（蓄力状态已广播给追踪端）。</p>
  */
 @Mixin(HeldItemFeatureRenderer.class)

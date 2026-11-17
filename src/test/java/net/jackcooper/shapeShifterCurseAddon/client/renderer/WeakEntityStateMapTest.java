@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.client.renderer;
+import net.jackcooper.shapeShifterCurseAddon.util.WeakEntityStateMap;
 
 public final class WeakEntityStateMapTest {
     private record EntityId(int id) {}
@@ -15,7 +16,14 @@ public final class WeakEntityStateMapTest {
         states.remove(oldWorld);
         require(states.getOrDefault(oldWorld, null) == null, "Removed instance releases its state");
         require(states.getOrDefault(newWorld, null) == newState, "Removal cannot erase a replacement instance");
-        return 5;
+        states.put(oldWorld, oldState);
+        states.put(newWorld, new int[]{8});
+        require(states.getOrDefault(oldWorld, null) == oldState, "Updating a replacement leaves the equal-ID old instance untouched");
+        require(states.getOrDefault(newWorld, null)[0] == 8, "Explicit writes use object identity too");
+        states.clear();
+        require(states.getOrDefault(oldWorld, null) == null && states.getOrDefault(newWorld, null) == null,
+                "Server shutdown clears every identity");
+        return 8;
     }
 
     private static void require(boolean value, String message) {

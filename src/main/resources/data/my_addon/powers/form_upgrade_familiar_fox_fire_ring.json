@@ -113,7 +113,7 @@
                 {
                     "type": "my_addon:self_decoration",
                     "entity_action": {
-                        "type": "shape-shifter-curse:spawn_particles_in_circle",
+                        "type": "my_addon:spawn_particles_in_circle",
                         "particle": "minecraft:flame",
                         "count": 1,
                         "speed": 0.01,
@@ -130,7 +130,7 @@
                 {
                     "type": "my_addon:self_decoration",
                     "entity_action": {
-                        "type": "shape-shifter-curse:spawn_particles_in_circle",
+                        "type": "my_addon:spawn_particles_in_circle",
                         "particle": "minecraft:flame",
                         "count": 1,
                         "speed": 0.04,

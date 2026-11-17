@@ -1,44 +1,27 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin.render;
 
-import net.minecraft.client.render.entity.LivingEntityRenderer;
-import net.minecraft.entity.LivingEntity;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import net.jackcooper.shapeShifterCurseAddon.util.IrisShadowPassDetector;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.entity.LivingEntityRenderer;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * 修复 Apoli LivingEntityRendererMixin.preventFeatureRendering 在 Iris 阴影
- * 渲染重入路径下触发的 NullPointerException 崩溃（sourceStage==null）。
- *
- * 原理：当 Iris 正在渲染阴影 pass 时，进入 LivingEntityRenderer.render 期间
- * 设置 ThreadLocal 标志，让 PowerHolderComponent.getPowers 暂时返回空列表，
- * 使 Apoli 的 anyMatch 判断短路为 false，从而跳过崩溃路径而不影响视觉
- * （阴影 pass 中玩家 feature 细节本就不可见）。
- *
- * 正常主渲染 pass 不受影响，Apoli 原功能完整保留。
- */
+/** Bounds the Iris/Apoli workaround to the entity currently being rendered. */
 @Mixin(LivingEntityRenderer.class)
 public class LivingEntityRendererShadowFixMixin {
-
-    @Inject(method = "render", at = @At("HEAD"), require = 0)
-    private void sscAddon$markShadowSuppressionStart(LivingEntity entity, float f, float g,
-                                                     net.minecraft.client.util.math.MatrixStack matrixStack,
-                                                     net.minecraft.client.render.VertexConsumerProvider vertexConsumerProvider,
-                                                     int i, CallbackInfo ci) {
-        if (IrisShadowPassDetector.isRenderingShadowPass()) {
-            IrisShadowPassDetector.enterSuppressScope();
+    @WrapMethod(method = "render(Lnet/minecraft/entity/LivingEntity;FFLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;I)V")
+    private void ssca$shadowScope(LivingEntity entity, float yaw, float tickDelta, MatrixStack matrices,
+                                 VertexConsumerProvider consumers, int light, Operation<Void> original) {
+        boolean shadow = IrisShadowPassDetector.isRenderingShadowPass();
+        if (!shadow && !IrisShadowPassDetector.hasSuppressScope()) {
+            original.call(entity, yaw, tickDelta, matrices, consumers, light);
+            return;
         }
-    }
-
-    @Inject(method = "render", at = @At("RETURN"), require = 0)
-    private void sscAddon$markShadowSuppressionEnd(LivingEntity entity, float f, float g,
-                                                   net.minecraft.client.util.math.MatrixStack matrixStack,
-                                                   net.minecraft.client.render.VertexConsumerProvider vertexConsumerProvider,
-                                                   int i, CallbackInfo ci) {
-        if (IrisShadowPassDetector.shouldSuppressPowerQuery()) {
-            IrisShadowPassDetector.exitSuppressScope();
+        try (var scope = IrisShadowPassDetector.suppressFor(shadow ? entity : null)) {
+            original.call(entity, yaw, tickDelta, matrices, consumers, light);
         }
     }
 }

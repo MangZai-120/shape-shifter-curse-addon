@@ -13,6 +13,7 @@ public final class ClientCodeAuditTest {
         brewingMixins();
         tidalOwnerSnapshot();
         shaderPreservation();
+        checks += MixinCleanupAuditTest.run();
         performanceCompletion();
         checks += net.jackcooper.shapeShifterCurseAddon.client.palette.PalettePresetStoreAuditTest.run();
         checks += net.jackcooper.shapeShifterCurseAddon.compat.MixinSelectionAuditTest.run();

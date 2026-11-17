@@ -24,6 +24,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import org.spongepowered.asm.mixin.injection.At;
@@ -42,25 +43,21 @@ public abstract class ScreenHandlerMixin {
 	@Shadow
 	public abstract ItemStack getCursorStack();
 
-	/** 当前点击处理链所属玩家（internalOnSlotClick HEAD 暂存、RETURN 清空；insertItem 无 player 参数，只能这样传）。 */
+	/** insertItem 没有玩家参数；仅在一次点击处理期间传入玩家，嵌套/异常退出均恢复上层。 */
 	@Unique
 	private PlayerEntity ssc_addon$clickPlayer;
 
-	@Inject(
-			method = "internalOnSlotClick(IILnet/minecraft/screen/slot/SlotActionType;Lnet/minecraft/entity/player/PlayerEntity;)V",
-			at = @At("HEAD")
-	)
-	private void ssc_addon$captureClickPlayer(int slotIndex, int button, SlotActionType actionType, PlayerEntity player, CallbackInfo ci) {
-		this.ssc_addon$clickPlayer = player;
-	}
-
-	@Inject(
-			method = "internalOnSlotClick(IILnet/minecraft/screen/slot/SlotActionType;Lnet/minecraft/entity/player/PlayerEntity;)V",
-			at = @At("RETURN")
-	)
-	private void ssc_addon$clearClickPlayer(int slotIndex, int button, SlotActionType actionType, PlayerEntity player, CallbackInfo ci) {
-		this.ssc_addon$clickPlayer = null;
-	}
+    @WrapMethod(method = "internalOnSlotClick(IILnet/minecraft/screen/slot/SlotActionType;Lnet/minecraft/entity/player/PlayerEntity;)V")
+    private void ssca$clickScope(int slotIndex, int button, SlotActionType actionType,
+                                PlayerEntity player, Operation<Void> original) {
+        PlayerEntity previous = this.ssc_addon$clickPlayer;
+        this.ssc_addon$clickPlayer = player;
+        try {
+            original.call(slotIndex, button, actionType, player);
+        } finally {
+            this.ssc_addon$clickPlayer = previous;
+        }
+    }
 
 	@Inject(method = "onSlotClick", at = @At("HEAD"), cancellable = true)
 	private void onSlotClick(int slotIndex, int button, SlotActionType actionType, PlayerEntity player, CallbackInfo ci) {

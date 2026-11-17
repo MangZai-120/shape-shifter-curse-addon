@@ -380,9 +380,7 @@ public final class MancianimaPassive {
 		// 把活动范围放大到 64 格，覆盖整个村庄；PatrolEntity 内部 home 距离判定也据此
 		r.setPositionTarget(center, 64);
 		r.setPatrolTarget(center);
-		// 激活巡逻 AI（默认 patrolling=false，PatrolGoal 不会触发主动移动）
-		((net.jackcooper.shapeShifterCurseAddon.mixin.entity.PatrolEntityAccessor) r)
-				.invokeSetPatrolling(true);
+		// setPatrolTarget already enables patrolling in vanilla 1.20.1.
 	}
 
 	/** 非 PatrolEntity 的 raider（Witch / Evoker / Ravager）只需设 home。 */

@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.client.renderer;
+import net.jackcooper.shapeShifterCurseAddon.util.WeakEntityStateMap;
 
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;

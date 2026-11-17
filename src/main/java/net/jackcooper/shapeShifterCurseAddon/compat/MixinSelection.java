@@ -33,9 +33,10 @@ public final class MixinSelection {
         // Iris（光影加载器）未装时跳过恐惧失明雾的内存补丁 mixin（目标类 ProgramSource 不存在会崩）。
         // 该 mixin 在 Iris 载入光影时把 DoBlindnessFog 内存替换为粉色 12→16 格版（不改光影文件）。
         requireMod("client.IrisShaderPackMixin", "iris");
+        requireMod("render.LivingEntityRendererShadowFixMixin", "iris");
+        requireMod("render.PowerHolderComponentShadowFixMixin", "iris");
         requireMod("client.AsyncParticleSyncBatchMixin", "asyncparticles");
         requireMod("client.AsyncParticleGpuEligibilityMixin", "asyncparticles");
-        requireMod("client.CarryOnAnimationMixin", "carryon");
         // 饰品 Trinkets 桥接兜底（AddonTrinketBridgeMixin）：仅当 trinkets API 可用
         // （原生 Trinkets 或 tclayer 兼容层 provides "trinkets"）时应用；
         // 原生 Trinkets / Accessories 由主包接管；其它后端仍保留原来的兜底。

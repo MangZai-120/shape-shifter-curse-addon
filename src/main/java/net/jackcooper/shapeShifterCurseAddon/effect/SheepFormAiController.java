@@ -1,8 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.effect;
 
-import net.jackcooper.shapeShifterCurseAddon.mixin.entity.GoalSelectorGoalsAccessor;
 import net.jackcooper.shapeShifterCurseAddon.mixin.entity.MobEntityGoalAccessor;
-import net.jackcooper.shapeShifterCurseAddon.mixin.entity.PrioritizedGoalAccessor;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.goal.EscapeDangerGoal;
 import net.minecraft.entity.ai.goal.EatGrassGoal;
@@ -176,9 +174,8 @@ public final class SheepFormAiController {
 	/** 从选择器读出全部（优先级，裸 Goal）对（快照拷贝）。 */
 	private static List<GoalEntry> snapshotGoals(GoalSelector selector) {
 		List<GoalEntry> list = new ArrayList<>();
-		for (PrioritizedGoal pg : ((GoalSelectorGoalsAccessor) selector).ssca$getGoals()) {
-			PrioritizedGoalAccessor pga = (PrioritizedGoalAccessor) pg;
-			list.add(new GoalEntry(pga.ssca$getPriority(), pga.ssca$getGoal()));
+		for (PrioritizedGoal pg : selector.getGoals()) {
+			list.add(new GoalEntry(pg.getPriority(), pg.getGoal()));
 		}
 		return list;
 	}
@@ -188,7 +185,7 @@ public final class SheepFormAiController {
 	 *  持锁，替换后新 Goal 抢不到 Move 控制权 → 站桩。stop 是 PrioritizedGoal 的 public
 	 *  方法，反编译已核实签名）。 */
 	private static void stopAndClear(GoalSelector selector) {
-		for (PrioritizedGoal pg : new ArrayList<>(((GoalSelectorGoalsAccessor) selector).ssca$getGoals())) {
+		for (PrioritizedGoal pg : new ArrayList<>(selector.getGoals())) {
 			if (pg.isRunning()) {
 				pg.stop();
 			}

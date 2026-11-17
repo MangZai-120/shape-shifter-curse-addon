@@ -1,7 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.client.hud;
 
 import java.util.Map;
-import net.jackcooper.shapeShifterCurseAddon.mixin.client.LivingEntityStatusEffectsAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -19,7 +18,7 @@ public final class CollapsePenaltyClient {
         if (client.world == null || client.player == null || !client.player.isAlive() || client.player.isSpectator()) {
             clear(); return;
         }
-        var current = ((LivingEntityStatusEffectsAccessor) client.player).sscAddon$getActiveStatusEffects();
+        var current = client.player.getActiveStatusEffects();
         if (effects != current) { clear(); effects = current; }
         var hud = NeoClient.hud;
         int stage = hud.getInt("PlayerId") == client.player.getId()

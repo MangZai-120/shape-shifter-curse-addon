@@ -26,6 +26,8 @@ public class SscPlayerEntityRendererMixin {
 		if (component != null) {
 			IForm currentForm = component.nowForm;
 			if (currentForm != null && currentForm.getFormID() != null) {
+				String namespace = currentForm.getFormID().getNamespace();
+				if (!namespace.equals("my_addon") && !namespace.equals("shape-shifter-curse")) return;
 				int phase = currentForm.getFormTier();
 				boolean isSpecial = currentForm.getFormFlag().contains("special_form");
 				String path = currentForm.getFormID().getPath();

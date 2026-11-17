@@ -23,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * <li><b>带 GeckoLib 兽形模型的人形形态（如美西螈，bodyType=NORMAL 但有兽形渲染）</b>：biped 手臂
  * 被隐藏且角度被 GeckoLib 动画覆盖，本 mixin 无效——由配套的
  * {@code SpellCastGeoPoseMixin}（DefaultModelAnimationSystem.processAnimation TAIL）直接覆盖
- * GeoBone 旋转（与 {@code UpgradeAxolotlSpearChargeArmMixin} 同链路同先例）；</li>
+ * GeoBone 旋转（由 {@code FormPoseOverrides} 与水矛姿势统一处理）；</li>
  * <li><b>FERAL 兽形</b>：不举手（用户要求）。</li>
  * </ul>
  * <p>
