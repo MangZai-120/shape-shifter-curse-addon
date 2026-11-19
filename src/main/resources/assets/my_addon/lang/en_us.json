@@ -1111,6 +1111,8 @@
   "trinkets.slot.moonlit.spellbook": "Moon Dust Spellbook",
   "curios.identifier.spellbook": "Moon Dust Spellbook",
   "key.ssc_addon.spell_switch": "Switch Spell (hold + scroll)",
+  "key.ssc_addon.spell_previous": "Previous Spell",
+  "key.ssc_addon.spell_next": "Next Spell",
   "key.ssc_addon.spell_cast": "Cast Current Spell",
   "key.ssc_addon.spell_cast_1": "Cast Spell Slot 1",
   "key.ssc_addon.spell_cast_2": "Cast Spell Slot 2",

@@ -104,7 +104,7 @@ final class OrcafisShoreAttack {
                 for (PlayerEntity p : world.getPlayers()) {
                     if (!OrcafisEntity.isHuntTarget(p) || nextContact.containsKey(p.getUuid())) continue;
                     if (OrcafisRollFootprint.distanceSquared(p.getBoundingBox(),rollOrigin,direction,previous,current) <= 1e-8
-                            && p.damage(boss.getDamageSources().mobAttack(boss),12))
+                            && p.damage(boss.getDamageSources().mobAttack(boss),21))
                         nextContact.put(p.getUuid(),motion.ticks);
                 }
             }
@@ -156,7 +156,7 @@ final class OrcafisShoreAttack {
             Vec3d delta = point.subtract(mouth);
             double d = delta.length();
             if (d > (t == end ? 2 : reach) || delta.dotProduct(direction) < CONE*d || !clear(boss,mouth,point)) continue;
-            if (t == end) p.damage(boss.getDamageSources().mobAttack(boss),10);
+            if (t == end) p.damage(boss.getDamageSources().mobAttack(boss),20);
             else if (d > .35) {
                 // Close the remaining distance during the draw, including players caught at the far end.
                 double inward = -p.getVelocity().dotProduct(delta)/d;
@@ -230,7 +230,7 @@ final class OrcafisShoreAttack {
             Box box = p.getBoundingBox().expand(.18);
             if (box.contains(mouth) || box.raycast(mouth,end).isPresent()) {
                 nextContact.put(p.getUuid(),t+10);
-                p.damage(boss.getDamageSources().mobAttack(boss),3);
+                p.damage(boss.getDamageSources().mobAttack(boss),7);
             }
         }
     }

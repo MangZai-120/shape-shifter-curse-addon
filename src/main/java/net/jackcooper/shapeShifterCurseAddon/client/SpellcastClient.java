@@ -24,8 +24,8 @@ import net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData;
 
 /**
  * 月尘魔法书施法客户端检测器（jackcooper）。仅在佩戴魔法书时生效。
- * <p>施法键 / 7 直达键：上升沿检测 → C2S 施法包（带槽 index）。切换键 + 滚轮：由
- * {@code SpellcastMouseScrollMixin} 调用 {@link #cycleSelected} 切换当前选中槽并同步服务端。</p>
+ * <p>施法键 / 7 直达键：上升沿检测 → C2S 施法包（带槽 index）。独立切换键和切换键 + 滚轮
+ * 共用 {@link #cycleSelected} 切换当前选中槽并同步服务端。</p>
  * <p><b>法力不足三连击降档（阶段 C §6.4 变体，用户 2026-09-18 定稿）</b>：选中槽为高阶卷轴且
  * 书法力不足时，1 秒内连按三次施法键 → 第三次改为发送「临时降档施放」包（服务端降到付得起的
  * 最高档，本次 CD ×1.2 惩罚）；不写卷轴 NBT、下次施法仍按原档。法力充足时第一次按键即正常施放。</p>
@@ -95,7 +95,7 @@ public final class SpellcastClient {
 		return selectedSlot;
 	}
 
-	/** 滚轮切换当前选中槽（首尾相连）。dir=+1 下一个，-1 上一个。由滚轮 mixin 调用。 */
+	/** 切换当前选中槽（首尾相连）。dir=+1 下一个，-1 上一个。 */
 	public static void cycleSelected(int dir) {
 		ItemStack book = getEquippedBook();
 		if (book == null || book.isEmpty()) {
@@ -151,6 +151,9 @@ public final class SpellcastClient {
 	}
 
 	private static void onClientTick(MinecraftClient client) {
+		// 每 tick 取出按键事件，短点按也能识别，菜单或未装备书时的输入不会留到之后。
+		int selectionSteps = consumePresses(SpellcastKeybindings.KEY_NEXT)
+				- consumePresses(SpellcastKeybindings.KEY_PREVIOUS);
 		ClientPlayerEntity player = client.player;
 		if (player == null || client.world == null) {
 			resetKeys();
@@ -179,7 +182,9 @@ public final class SpellcastClient {
 			gestureKey = -1;
 			inputGuard.block();
 		}
-		if (inputGuard.consume(anyPressed || client.currentScreen != null)) {
+		boolean screenOpen = client.currentScreen != null;
+		// 换槽后的施法松键保护只拦施法，连续点按切换键仍可逐次换槽。
+		if (inputGuard.consume(anyPressed || screenOpen) && (screenOpen || selectionSteps == 0)) {
 			updatePressedKeys(castPressed);
 			return;
 		}
@@ -222,6 +227,15 @@ public final class SpellcastClient {
 			if (first >= 0) {
 				selectedSlot = first;
 			}
+		}
+
+		if (selectionSteps != 0) {
+			int direction = Integer.signum(selectionSteps);
+			for (int i = 0; i < Math.abs(selectionSteps); i++) {
+				cycleSelected(direction);
+			}
+			updatePressedKeys(castPressed);
+			return;
 		}
 
 		var active = net.jackcooper.shapeShifterCurseAddon.client.hud.SpellCastHud.getState();
@@ -322,6 +336,14 @@ public final class SpellcastClient {
 	private static boolean keyPressed(int key) {
 		KeyBinding binding = key == 0 ? SpellcastKeybindings.KEY_CAST : SpellcastKeybindings.KEY_DIRECT[key - 1];
 		return binding != null && binding.isPressed();
+	}
+
+	private static int consumePresses(KeyBinding binding) {
+		int count = 0;
+		while (binding != null && binding.wasPressed()) {
+			count++;
+		}
+		return count;
 	}
 
 	private static void updatePressedKeys(boolean castPressed) {

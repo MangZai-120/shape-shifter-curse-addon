@@ -1111,6 +1111,8 @@
   "trinkets.slot.moonlit.spellbook": "月尘魔法书",
   "curios.identifier.spellbook": "月尘魔法书",
   "key.ssc_addon.spell_switch": "切换魔法（按住+滚轮）",
+  "key.ssc_addon.spell_previous": "上一法术",
+  "key.ssc_addon.spell_next": "下一法术",
   "key.ssc_addon.spell_cast": "释放当前魔法",
   "key.ssc_addon.spell_cast_1": "释放魔法槽 1",
   "key.ssc_addon.spell_cast_2": "释放魔法槽 2",
