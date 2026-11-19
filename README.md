@@ -34,6 +34,7 @@
 ## 添加模组
 
 - 将下载后的.jar文件放入游戏的 `mods` 文件夹，并确保你下载的是.jar格式的模组文件，而不是源代码。下载请到Releases(发行作品)或Actions(操作)里去找。
+- 在 Minecraft 1.20.1 的 Forge 实例里运行时，请安装 Sinytra Connector、对应的 SSC 信雅版本和 [Forgified Fabric API（1.20.1 Forge）](https://modrinth.com/mod/forgified-fabric-api/versions?g=1.20.1)。Connector Extras 是单独的兼容扩展。启动日志若同时提示缺少 `fabric-api-base`、`fabric-resource-loader-v0` 和 `fabric-rendering-v1`，请先检查该实例的 `mods` 中是否装好 Forgified Fabric API。
 
 ## 注意事项
 
@@ -51,7 +52,7 @@
 ## 许可协议 / License
 
 - **代码部分**：采用 [AGPL-3.0-or-later License](LICENSE) 进行许可。
-- **故事内容**（包括 `story/` 目录、游戏内书籍、Codex 叙事文本）：采用 [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/) 进行许可。
+- **故事内容**（包括 `story/` 目录、游戏内书籍、Codex 叙事文本）：采用 [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/) 进行许可。（可以翻译，但需保持原意）
   - 可自由转发，不得商用，不得修改内容。文本须按原样提供，但允许更改字体和字号。
 - **基于 SSC 制作的模型资产**：所有基于幻形者诅咒（SSC）制作的模型资产采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) 进行许可。
   - 可自由使用与修改，须署名，不得商用。

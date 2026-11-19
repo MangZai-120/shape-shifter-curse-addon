@@ -57,7 +57,6 @@ public class SscAddonClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		net.jackcooper.shapeShifterCurseAddon.client.sound.OrcafisWallSound.register();
-		CreativeTabLayout.register();
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
 				net.jackcooper.shapeShifterCurseAddon.compat.DualAccessoryEquipment.clearCache());
 		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STARTED.register(
@@ -605,7 +604,7 @@ public class SscAddonClient implements ClientModInitializer {
 		// 荧光幼灵技能按键检测器（主要=潮汐波动 / 次要=水盾）
 		FluorescentKeyClient.register();
 
-		// SSCA 进化加点系统 - 在幻形者之书界面注入「进化加点」入口按钮（使魔形态显示）
+		// 在幻形者之书首页显示当前进化路线的加点入口
 		net.jackcooper.shapeShifterCurseAddon.client.evolution.EvolutionBookHook.register();
 		net.jackcooper.shapeShifterCurseAddon.client.tutorial.FormTutorialClient.register();
 

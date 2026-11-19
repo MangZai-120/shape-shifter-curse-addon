@@ -80,7 +80,6 @@
         "PocketTerrainWorkerAccessor",
         "PocketSpaceBoundaryMixin",
         "PocketSpaceChunkFilterMixin",
-        "ItemGroupPositionAccessor",
         "effect.AllaySPTotemMixin",
         "entity.LivingEntityTotemInvoker",
         "effect.FrostArmorVanillaAbsorptionMixin",

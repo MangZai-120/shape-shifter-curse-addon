@@ -1,10 +1,12 @@
 package net.jackcooper.shapeShifterCurseAddon.compat;
 
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
 import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
@@ -84,11 +86,25 @@ public final class OptionalAccessoryBridges {
             if(FabricLoader.getInstance().isModLoaded("accessories")) {
                 register("accessories","io.wispforest.accessories.api.AccessoriesAPI","io.wispforest.accessories.api.Accessory","registerAccessory");
                 registerAccessoriesChanges();
+                registerAccessoriesRespawnSync();
             }
             registered=true;
         } catch(ReflectiveOperationException|LinkageError e) {
             throw new IllegalStateException("[SSCA] Unable to register accessory effect bridges",e);
         }
+    }
+    private static void registerAccessoriesRespawnSync() throws ReflectiveOperationException {
+        // The respawning player does not start tracking itself. Send Accessories' full
+        // inventory snapshot so empty slots also replace the previous client inventory.
+        Method sync=Class.forName("io.wispforest.accessories.impl.AccessoriesEventHandler")
+                .getMethod("onTracking", LivingEntity.class, ServerPlayerEntity.class);
+        ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, player, alive)->{
+            try {
+                sync.invoke(null,player,player);
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException("[SSCA] Unable to sync Accessories inventory after respawn",e);
+            }
+        });
     }
     @SuppressWarnings("unchecked")
     private static void registerAccessoriesChanges() throws ReflectiveOperationException {

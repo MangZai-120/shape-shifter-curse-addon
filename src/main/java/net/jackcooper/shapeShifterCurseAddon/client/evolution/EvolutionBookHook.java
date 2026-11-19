@@ -2,43 +2,22 @@ package net.jackcooper.shapeShifterCurseAddon.client.evolution;
 
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry;
+import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import net.onixary.shapeShifterCurseFabric.ShapeShifterCurseFabric;
 import net.onixary.shapeShifterCurseFabric.custom_ui.BookOfShapeShifterScreenV2_P1;
-import net.onixary.shapeShifterCurseFabric.player_form.IForm;
-import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
-import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry;
-import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRoute;
 
-/**
- * SSCA 进化加点系统 - 在幻形者之书界面内注入「进化加点」入口按钮。
- * 纯客户端，用 Fabric ScreenEvents 注入，不修改原版源码。
- *
- * 仅当玩家当前为「进化使魔」(upgrade_familiar_fox) 形态时显示，按钮位于书内形态模型预览框上方。
- */
+/** 在幻形者之书的模型预览框上方显示当前进化路线的加点入口。 */
 public final class EvolutionBookHook {
     private EvolutionBookHook() {
     }
 
-
-
-
-
     public static void register() {
         ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
             if (!(screen instanceof BookOfShapeShifterScreenV2_P1)) {
-                return;
-            }
-            if (client.player == null) {
-                return;
-            }
-            IForm currentForm = RegPlayerFormComponent.PLAYER_FORM.get(client.player).nowForm;
-            Identifier formId = (currentForm == null) ? null : currentForm.getFormID();
-            // 当前形态是某条「已开放」进化路线的起点形态时，显示进化加点入口
-            EvolutionRoute route = EvolutionRegistry.CLIENT.getRouteByStartForm(formId);
-            if (route == null || !route.enabled) {
                 return;
             }
             // 定位到书内形态模型预览框上方一点。书布局：BookSizeX=350/Y=220，预览框 in-book Pos(35,15) Size(70,66)。
@@ -54,8 +33,17 @@ public final class EvolutionBookHook {
                     Text.translatable("text.ssc_addon.evolution.book.button"),
                     b -> client.setScreen(new EvolutionScreen(screen))
             ).dimensions(btnX, btnY, btnW, btnH).build();
+            updateVisibility(client, button);
             Screens.getButtons(screen).add(button);
-
+            // 形态和服务端路线可能在开书后才同步，也可能在书页打开时变更。
+            ScreenEvents.afterTick(screen).register(book -> updateVisibility(client, button));
         });
+    }
+
+    private static void updateVisibility(MinecraftClient client, ButtonWidget button) {
+        var form = FormUtils.getCurrentForm(client.player);
+        var route = form == null ? null : EvolutionRegistry.CLIENT.getRouteByStartForm(form.getFormID());
+        button.visible = route != null && route.enabled;
+        button.active = button.visible;
     }
 }
