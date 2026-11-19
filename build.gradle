@@ -572,6 +572,8 @@ dependencies {
     // Apoli & Dependencies
     modImplementation "io.github.apace100:apoli:${project.apoli_version}"
     modImplementation "software.bernie.geckolib:geckolib-fabric-${project.minecraft_version}:${project.geckolib_version}"
+    // GeckoLib embeds mclib in its distributed jar. Expose the animation keyframe types to Loom's dev classpath.
+    implementation "com.eliotlash.mclib:mclib:20"
     if (providers.gradleProperty('accessories_only_test').getOrElse('false').toBoolean()
             || providers.gradleProperty('accessories_tclayer_test_jar').isPresent()) {
         modCompileOnly "dev.emi:trinkets:${project.trinkets_version}"

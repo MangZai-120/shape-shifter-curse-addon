@@ -8,7 +8,6 @@ import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.jackcooper.shapeShifterCurseAddon.anomaly.FrozenControl;
 import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
@@ -38,7 +37,7 @@ public final class FrozenAnimationState {
     public static void clear() { FRAMES.clear(); current = null; rendering = null; FrozenAnimationDrivers.clear(); }
     public static Entity renderingEntity() { return rendering; }
     private static boolean frozen(LivingEntity entity) {
-        return entity.deathTime == 0 && FrozenControl.blocked(entity);
+        return FrozenAnimationDrivers.paused(entity);
     }
     public static void render(Entity entity, float delta, Consumer<Float> draw) {
         Frame previous = current;

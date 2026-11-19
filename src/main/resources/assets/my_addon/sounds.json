@@ -1,0 +1,177 @@
+{
+  "orcafis.step": {
+    "subtitle": "subtitles.my_addon.orcafis.step",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/step_a",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "my_addon:orcafis/step_b",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.break_ground": {
+    "subtitle": "subtitles.my_addon.orcafis.break_ground",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/break_ground",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.land": {
+    "subtitle": "subtitles.my_addon.orcafis.land",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/land",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.sweep": {
+    "subtitle": "subtitles.my_addon.orcafis.sweep",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/sweep",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.plow": {
+    "subtitle": "subtitles.my_addon.orcafis.plow",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/plow",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.rush": {
+    "subtitle": "subtitles.my_addon.orcafis.rush",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/rush",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.breach": {
+    "subtitle": "subtitles.my_addon.orcafis.breach",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/breach",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.splash": {
+    "subtitle": "subtitles.my_addon.orcafis.splash",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/splash",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.slap": {
+    "subtitle": "subtitles.my_addon.orcafis.slap",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/slap",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.gather": {
+    "subtitle": "subtitles.my_addon.orcafis.gather",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/gather",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.wall": {
+    "subtitle": "subtitles.my_addon.orcafis.wall",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/wall",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.slap_snap": {
+    "subtitle": "subtitles.my_addon.orcafis.slap",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/slap_snap",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.slap_double": {
+    "subtitle": "subtitles.my_addon.orcafis.slap",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/slap_double",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.slap_draw": {
+    "subtitle": "subtitles.my_addon.orcafis.slap",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/slap_draw",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.slap_final": {
+    "subtitle": "subtitles.my_addon.orcafis.slap",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/slap_final",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.tide_pull": {
+    "subtitle": "subtitles.my_addon.orcafis.tide_pull",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/tide_pull",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.crest_pass": {
+    "subtitle": "subtitles.my_addon.orcafis.crest_pass",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/crest_pass",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.backwash": {
+    "subtitle": "subtitles.my_addon.orcafis.backwash",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/backwash",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.settle": {
+    "subtitle": "subtitles.my_addon.orcafis.settle",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/settle",
+        "attenuation_distance": 32
+      }
+    ]
+  }
+}

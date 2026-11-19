@@ -280,6 +280,7 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         for (LivingEntity t : found) {
             if (WhitelistUtils.isProtected(ownerUuid, sw, t)) continue; // 默认白名单豁免（owner 离线也保守保护玩家/宠物）
             if (t.getUuid().equals(ownerUuid)) continue;                          // 主人自己不被拴
+            if (t.getType().isIn(RegAddonEntities.PULL_IMMUNE) && !isAling && !isEnhanced) continue;
             tetheredTargets.add(t.getUuid());
         }
         if (owner != null && !tetheredTargets.isEmpty()) FluorescentAxolotlPerks.onTidalHit(owner);
@@ -400,6 +401,7 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
             Integer publishedId = snapshotEntityIds.get(id);
             if (publishedId == null || publishedId != t.getId()) tetherSnapshotDirty = true;
             if (WhitelistUtils.isProtected(ownerUuid, sw, t)) continue; // 白名单豁免（owner 离线也保守保护玩家/宠物）
+            if (t.getType().isIn(RegAddonEntities.PULL_IMMUNE)) continue;
             double tx = t.getX(), ty = t.getY() + t.getHeight() * 0.5, tz = t.getZ();
             double dx = tx - cx, dy = ty - cy, dz = tz - cz;
             double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
@@ -452,7 +454,7 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         // Keep the original non-enhanced visual tail during DELAY; this does not apply tether physics.
         if (phase == Phase.ATTRACTING || phase == Phase.DELAY && !isEnhanced) for (UUID id : tetheredTargets) {
             Entity target = sw.getEntity(id);
-            if (target != null && target.isAlive()) {
+            if (target != null && target.isAlive() && !target.getType().isIn(RegAddonEntities.PULL_IMMUNE)) {
                 ids.add(target.getId()); snapshotEntityIds.put(id, target.getId());
             }
         }

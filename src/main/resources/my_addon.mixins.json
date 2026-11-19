@@ -67,6 +67,7 @@
         "SoundRangeEntityPacketMixin",
         "SoundRangeCommandMixin",
         "SoundRangeActionMixin",
+        "ApoliPullImmunityMixin",
         "DecorationParticlePacketMixin",
         "DomainEntityBoundaryMixin",
         "DomainPlayerBoundaryMixin",

@@ -30,6 +30,9 @@ import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonServerConfig;
 import net.jackcooper.shapeShifterCurseAddon.effect.*;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.item.SpawnEggItem;
+import net.minecraft.item.ItemGroups;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities;
 import net.jackcooper.shapeShifterCurseAddon.entity.AllayClearMarkerEntity;
 import net.jackcooper.shapeShifterCurseAddon.entity.AllayFriendMarkerEntity;
 import net.jackcooper.shapeShifterCurseAddon.entity.FrostBallEntity;
@@ -307,6 +310,7 @@ public class SscAddon implements ModInitializer {
 			registerEntity("axolotl_shifter", SpawnGroup.AXOLOTLS, AxolotlShifterEntity::new, 0.6f, 1.8f, 64, 3);
 	// 美西螈幻形者怪物蛋（仿原版美西螈蛋：主色原版粉 #FBC1E3，次色淡蓝 #A6DCF0）
 	public static final Item AXOLOTL_SHIFTER_SPAWN_EGG = new SpawnEggItem(AXOLOTL_SHIFTER_ENTITY, 0xFBC1E3, 0xA6DCF0, new Item.Settings());
+	public static final Item ORCAFIS_SPAWN_EGG = new SpawnEggItem(RegAddonEntities.ORCAFIS, 0x383C4A, 0xA8C4C3, new Item.Settings());
 	// 无限压缩能量药水（饮用/喷溅/滞留三型；使用后空瓶自充能，效果同压缩能量药水 feed_potion）
 	public static final Item INFINITE_ENERGY_POTION = new InfiniteEnergyPotionItem(
 			new Item.Settings().maxCount(1), InfiniteEnergyPotionItem.Type.DRINK);
@@ -391,6 +395,7 @@ public class SscAddon implements ModInitializer {
 						entries.add(CLEAR_FRIEND_MARKER);
 						entries.add(WITCH_FAMILIAR_SPAWN_EGG);
 					entries.add(AXOLOTL_SHIFTER_SPAWN_EGG);
+						entries.add(ORCAFIS_SPAWN_EGG);
 						entries.add(INFINITE_ENERGY_POTION);
 						entries.add(INFINITE_ENERGY_POTION_SPLASH);
 					entries.add(INFINITE_ENERGY_POTION_LINGERING);					entries.add(UNIVERSAL_ENERGY_POTION);
@@ -620,6 +625,8 @@ public class SscAddon implements ModInitializer {
 		registerItem("clear_friend_marker", CLEAR_FRIEND_MARKER);
 		registerItem("witch_familiar_spawn_egg", WITCH_FAMILIAR_SPAWN_EGG);
 		registerItem("axolotl_shifter_spawn_egg", AXOLOTL_SHIFTER_SPAWN_EGG);
+		registerItem("orcafis_spawn_egg", ORCAFIS_SPAWN_EGG);
+		ItemGroupEvents.modifyEntriesEvent(ItemGroups.SPAWN_EGGS).register(entries -> entries.add(ORCAFIS_SPAWN_EGG));
 		registerItem("infinite_energy_potion", INFINITE_ENERGY_POTION);
 		registerItem("infinite_energy_potion_splash", INFINITE_ENERGY_POTION_SPLASH);
 		registerItem("infinite_energy_potion_lingering", INFINITE_ENERGY_POTION_LINGERING);

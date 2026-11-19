@@ -199,7 +199,8 @@ public final class SpiderMoonWeaverSwingManager {
 	/** 飞弹命中生物 → 连接进入 tether 拖拽。 */
 	public static void onBulletHitEntity(ServerPlayerEntity player, LivingEntity target, SpiderSwingBullet bullet) {
         if (!BULLET_IN_FLIGHT.remove(player.getUuid(), bullet)) return;
-		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.fullyControlled(player)) {
+		if (target.getType().isIn(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.PULL_IMMUNE)
+				|| net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.fullyControlled(player)) {
 			settleBreak(player);
 			return;
 		}
@@ -293,7 +294,8 @@ public final class SpiderMoonWeaverSwingManager {
 		player.fallDistance = 0.0f; // 服务端清摔落距离防 tether 拖拽落地摔伤
 		ServerWorld world = (ServerWorld) player.getWorld();
 		Entity target = world.getEntityById(s.tetherEntityId);
-		if (!(target instanceof LivingEntity living) || !living.isAlive()) {
+		if (!(target instanceof LivingEntity living) || !living.isAlive()
+				|| living.getType().isIn(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.PULL_IMMUNE)) {
 			breakWeb(player, s, true);
 			return;
 		}

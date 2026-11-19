@@ -6,6 +6,8 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.Identifier;
 
 /**
@@ -14,6 +16,20 @@ import net.minecraft.util.Identifier;
 public final class RegAddonEntities {
 
 	private RegAddonEntities() {}
+
+	public static final TagKey<EntityType<?>> PULL_IMMUNE =
+			TagKey.of(RegistryKeys.ENTITY_TYPE, new Identifier("my_addon", "pull_immune"));
+
+	public static final EntityType<OrcafisEntity> ORCAFIS = Registry.register(
+			Registries.ENTITY_TYPE, new Identifier("ssc_addon", "orcafis"),
+			FabricEntityTypeBuilder.<OrcafisEntity>create(SpawnGroup.CREATURE, OrcafisEntity::new)
+					.dimensions(EntityDimensions.fixed(2.4f, 5.8f)).trackRangeChunks(12).build());
+
+	public static final EntityType<OrcafisPartEntity> ORCAFIS_PART = Registry.register(
+			Registries.ENTITY_TYPE, new Identifier("ssc_addon", "orcafis_part"),
+			FabricEntityTypeBuilder.<OrcafisPartEntity>create(SpawnGroup.MISC, OrcafisPartEntity::new)
+					.dimensions(EntityDimensions.fixed(.1f,.1f)).trackRangeChunks(12).trackedUpdateRate(1)
+					.disableSaving().disableSummon().build());
 
 	/** 月织蛛「搭路模式」蛛丝弹：命中方块走附属移植版搭路（网膜让位），其余行为同原版 WebBullet。 */
 	public static final EntityType<BridgeWebBullet> BRIDGE_WEB_BULLET = Registry.register(
@@ -46,6 +62,7 @@ public final class RegAddonEntities {
 					.build());
 
 	public static void init() {
-		// 触发静态初始化即完成注册
+		OrcafisSounds.init();
+		net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(ORCAFIS, OrcafisEntity.attributes());
 	}
 }

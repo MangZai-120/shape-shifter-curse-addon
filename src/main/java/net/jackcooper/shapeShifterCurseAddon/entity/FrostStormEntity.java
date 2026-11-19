@@ -181,6 +181,7 @@ public class FrostStormEntity extends Entity {
 		ServerWorld pullWorld = this.getWorld() instanceof ServerWorld sw ? sw : null;
 
 		for (LivingEntity target : targets) {
+			if (target.getType().isIn(RegAddonEntities.PULL_IMMUNE)) continue;
 			Vec3d targetPos = target.getPos();
 			double dist = Math.sqrt(target.squaredDistanceTo(this.getX(), this.getY(), this.getZ()));
 

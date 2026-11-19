@@ -10,6 +10,7 @@ import dev.kosmx.playerAnim.impl.IAnimatedPlayer;
 import net.jackcooper.shapeShifterCurseAddon.mixin.client.FrozenAnimationStackAccessor;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.jackcooper.shapeShifterCurseAddon.anomaly.FrozenControl;
+import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -42,7 +43,8 @@ public final class FrozenAnimationDrivers {
     }
     public static void clear() { CLOCKS.clear(); STACKS.clear(); PLAYHEADS.clear(); GEO_OWNERS.clear(); GEO_RESUME.clear(); FrozenVanillaAnimations.clear(); }
     public static boolean paused(LivingEntity entity) {
-        return entity != null && entity.deathTime == 0 && FrozenControl.blocked(entity);
+        // Orcafis drives both animation controllers from its own synchronized action clock.
+        return entity != null && !(entity instanceof OrcafisEntity) && entity.deathTime == 0 && FrozenControl.blocked(entity);
     }
     public static void sample(Entity entity, float delta) {
         if (!(entity instanceof LivingEntity living)) return;

@@ -152,6 +152,7 @@ public final class NeoEffects {
             }
             int movedCount=0;
             for(LivingEntity traveler:movedTargets) {
+            if (traveler != p && traveler.getType().isIn(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.PULL_IMMUNE)) continue;
             // Unsafe endpoints are intentional: no snapping to solid ground or safe air pockets.
             Vec3d direction=Vec3d.fromPolar((float)(p.getPitch()+s.pitch),(float)(p.getYaw()+s.yaw));
             Vec3d to=traveler.getPos().add(direction.multiply(Math.min(b.range(),4*b.scale())*a.rangeMultiplier*s.attenuation*plan.retention()/plan.branches()));
