@@ -1,9 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.item;
 
 import java.util.*;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.*;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -13,7 +11,6 @@ import net.minecraft.test.TestContext;
 import net.onixary.shapeShifterCurseFabric.mana.ManaRegistries;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.onixary.shapeShifterCurseFabric.status_effects.RegOtherStatusEffects;
-import net.onixary.shapeShifterCurseFabric.status_effects.other_effects.FeedEffect;
 
 /** 在真实服务端世界中核对原版周期、瞬时取整及压缩能量三分之一剂量；由父探针调用。 */
 public final class PotionTubeDoseWorldProbe {
@@ -79,13 +76,15 @@ public final class PotionTubeDoseWorldProbe {
         near(player.getHungerManager().getSaturationLevel(), 2.4, "普通低proximity喷溅的饱和度沿用SSC原值");
         near(ManaUtils.getPlayerMana(player), 12.5, "普通低proximity喷溅的mana沿用SSC原值");
 
-        FeedEffect broken = new FeedEffect() {
-            @Override public void applyInstantEffect(Entity source, Entity attacker, LivingEntity target, int amplifier, double proximity) {
+        // Forge requires a registered effect. Fail while evaluating the real feed invocation
+        // inside the dose scope, after entering its try/finally.
+        StatusEffectInstance broken = new StatusEffectInstance(RegOtherStatusEffects.FEED_EFFECT) {
+            @Override public int getAmplifier() {
                 throw new IllegalStateException("dose-scope-test");
             }
         };
         try {
-            PotionTubeDose.applyInstant(new StatusEffectInstance(broken), player, player, 1.0 / 3);
+            PotionTubeDose.applyInstant(broken, player, player, 1.0 / 3);
             throw new AssertionError("故障探针必须抛出异常");
         } catch (IllegalStateException expected) {
             check("dose-scope-test".equals(expected.getMessage()), "保留原生效果异常");

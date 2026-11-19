@@ -15,7 +15,7 @@ public final class NeoBatStressProbe {
     private static final Map<PigEntity,Vec3d> fixtures=new LinkedHashMap<>();
     private static final List<PigEntity> roots=new ArrayList<>(),neighbors=new ArrayList<>();
     private static long idleNs,idleTicks,activeNs,activeTicks,quietQueries,initNs;
-    private static double idleUs;
+    private static long idleMeasuredNs,idleMeasuredTicks;
     private static boolean complete;
     private static void check(boolean ok,String why){if(!ok)throw new AssertionError(why);}
     public static void start(TestContext t){t.waitAndRun(70,()->{try{run(t);}catch(Exception e){throw new RuntimeException(e);}});}
@@ -26,7 +26,8 @@ public final class NeoBatStressProbe {
         idleNs=BatSpellLink.profileNanos;idleTicks=BatSpellLink.profileTicks;
         var record=new NeoState.Experiment();var spell=SpellRegistry.get("curse_mark");record.blueprint=NeoLegacyCasting.descriptor(spell,1,0);record.spell=spell.getId().toString();record.form=NeoRuntime.form(p);record.profile=NeoRuntime.profile(p);record.dimension=p.getWorld().getRegistryKey().getValue().toString();record.actual=25;record.paid=25;record.result="released";NeoRuntime.data(p).add(record);
         t.waitAndRun(60,()->{
-            idleUs=(BatSpellLink.profileNanos-idleNs)/1000.0/(BatSpellLink.profileTicks-idleTicks);
+            idleMeasuredNs=BatSpellLink.profileNanos-idleNs;
+            idleMeasuredTicks=BatSpellLink.profileTicks-idleTicks;
             for(int i=0;i<300;i++){
                 PigEntity mob=EntityType.PIG.create(p.getServerWorld());mob.setAiDisabled(true);mob.setNoGravity(true);mob.noClip=true;
                 Vec3d at=center.add((i%10)*.025,0,4+(i/10)*.025);mob.refreshPositionAndAngles(at.x,at.y,at.z,0,0);check(p.getServerWorld().spawnEntity(mob),"Dense fixture is loaded");fixtures.put(mob,at);(i<100?roots:neighbors).add(mob);
@@ -36,7 +37,19 @@ public final class NeoBatStressProbe {
         t.waitAndRun(70,()->{activeNs=BatSpellLink.profileNanos;activeTicks=BatSpellLink.profileTicks;BatSpellLink.profileMaxNanos=0;});
         t.waitAndRun(150,()->{check(record.sporeInfections==200,"One hundred initial roots each transmit to at most two of two hundred neighbors: infected="+record.sporeInfections+", roots alive="+roots.stream().filter(Entity::isAlive).count()+", neighbors alive="+neighbors.stream().filter(Entity::isAlive).count()+", queries="+BatSpellLink.queries+", attempts="+BatSpellLink.attempts);check(neighbors.stream().allMatch(mob->mob.hasStatusEffect(StatusEffects.WEAKNESS)),"All two hundred eligible neighbors actually infected");});
         t.waitAndRun(240,()->{
-            var result=new LinkedHashMap<String,Object>();result.put("entities",300);result.put("initial_roots",100);result.put("additional_infections",record.sporeInfections);result.put("baseline_callback_mean_us",idleUs);result.put("active_callback_mean_us",(BatSpellLink.profileNanos-activeNs)/1000.0/(BatSpellLink.profileTicks-activeTicks));result.put("active_callback_max_us",BatSpellLink.profileMaxNanos/1000.0);result.put("initial_application_ms",initNs/1e6);result.put("local_queries",BatSpellLink.queries);result.put("attempts",BatSpellLink.attempts);
+            var result=new LinkedHashMap<String,Object>();
+            result.put("entities",300);
+            result.put("initial_roots",100);
+            result.put("additional_infections",record.sporeInfections);
+            long measuredTicks=BatSpellLink.profileTicks-activeTicks;
+            result.put("timing_enabled",Boolean.getBoolean("neomagic.batProfile"));
+            if (Boolean.getBoolean("neomagic.batProfile")) {
+                check(idleMeasuredTicks>0 && measuredTicks>0,"Both timing windows recorded server ticks");
+                result.put("baseline_callback_mean_us",idleMeasuredNs/1000.0/idleMeasuredTicks);
+                result.put("active_callback_mean_us",(BatSpellLink.profileNanos-activeNs)/1000.0/measuredTicks);
+                result.put("active_callback_max_us",BatSpellLink.profileMaxNanos/1000.0);
+            }
+            result.put("initial_application_ms",initNs/1e6);result.put("local_queries",BatSpellLink.queries);result.put("attempts",BatSpellLink.attempts);
             try{Files.writeString(Path.of("bat-stress-result.json"),NeoState.JSON.toJson(result));}catch(Exception e){throw new RuntimeException(e);}System.out.println("NEO_BAT_STRESS "+NeoState.JSON.toJson(result));
         });
         t.waitAndRun(275,()->quietQueries=BatSpellLink.queries);

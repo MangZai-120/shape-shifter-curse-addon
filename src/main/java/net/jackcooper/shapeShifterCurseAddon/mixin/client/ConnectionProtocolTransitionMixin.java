@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /** Keep protocol changes and their read-interest updates on the same Netty event loop. */
 @Mixin(ClientConnection.class)
-public abstract class ConnectorConnectionSendMixin {
+public abstract class ConnectionProtocolTransitionMixin {
     @Shadow private Channel channel;
 
     @Shadow

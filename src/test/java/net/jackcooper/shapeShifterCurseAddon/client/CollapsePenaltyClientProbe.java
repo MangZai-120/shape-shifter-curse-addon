@@ -2,6 +2,7 @@ package net.jackcooper.shapeShifterCurseAddon.client;
 
 import net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime;
 import net.jackcooper.shapeShifterCurseAddon.spell.NeoState;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 
 import java.nio.file.*;
 import java.util.*;
@@ -13,7 +14,6 @@ import net.minecraft.client.util.ScreenshotRecorder;
 import net.minecraft.entity.effect.*;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.resource.DataConfiguration;
-import net.minecraft.util.Identifier;
 import net.minecraft.world.*;
 import net.minecraft.world.level.LevelInfo;
 import net.minecraft.world.gen.GeneratorOptions;
@@ -43,7 +43,7 @@ public final class CollapsePenaltyClientProbe {
                 p.changeGameMode(GameMode.SURVIVAL);p.setNoGravity(true);
                 p.teleport(server.getOverworld(),0,5,0,0,0);
                 net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils._setForm(p,
-                        net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms.getPlayerForm(new Identifier("my_addon:golden_sandstorm_sp")));
+                        net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms.getPlayerForm(FormIdentifiers.GOLDEN_SANDSTORM_SP));
                 NeoRuntime.refreshForm(p);ready=true;
             }
             var data=NeoRuntime.data(p);data.burden=NeoRuntime.profile(p).safety()*ratio;data.recovery=10000;
@@ -92,13 +92,13 @@ public final class CollapsePenaltyClientProbe {
                     p.addStatusEffect(new StatusEffectInstance(net.jackcooper.shapeShifterCurseAddon.SscAddon.SHEEP_FORM,200));
                 });next();
             }else if(phase==4){
-                if(!NeoClient.hud.getString("Form").equals("my_addon:sheep_spell_form")||ticks<15)return;
+                if(!NeoClient.hud.getString("Form").equals(FormIdentifiers.SHEEP_FORM.toString())||ticks<15)return;
                 check(Math.abs(NeoClient.hud.getDouble("S")-sheepSafety)<1e-5,"Real sheep transformation keeps pre-transform safety in actual HUD packets");
                 check(Math.abs(NeoClient.hud.getDouble("BodyS")-sheepSafety)<1e-5,"Sheep marker uses inherited base capacity");
                 shot(client,"04-sheep-inherited-safety.png");
                 client.getServer().execute(()->client.getServer().getPlayerManager().getPlayer(client.player.getUuid()).removeStatusEffect(net.jackcooper.shapeShifterCurseAddon.SscAddon.SHEEP_FORM));next();
             }else if(phase==5){
-                if(!NeoClient.hud.getString("Form").equals("my_addon:golden_sandstorm_sp")||ticks<10)return;
+                if(!NeoClient.hud.getString("Form").equals(FormIdentifiers.GOLDEN_SANDSTORM_SP.toString())||ticks<10)return;
                 check(Math.abs(NeoClient.hud.getDouble("S")-sheepSafety)<1e-5,"Expiration restores original form and safety");done=true;
                 Files.writeString(Path.of("collapse-result.json"),NeoState.JSON.toJson(Map.of("passed",true,"checks",checks,"screenshots",shots,"actual_hud_packets",true)));
                 client.scheduleStop();

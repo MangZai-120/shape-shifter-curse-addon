@@ -138,6 +138,7 @@
         "WanderingTraderTradeMixin"
     ],
     "client": [
+        "client.AccessoriesVanillaVertexConsumerMixin",
         "client.FormColorDataMigrationMixin",
         "client.FrozenAnimationRenderMixin",
         "client.FrozenPlayerAnimationTickMixin",
@@ -214,7 +215,7 @@
 
         "client.MoistureHudVisibilityMixin",
         "client.ConnectorMoistureHudVisibilityMixin",
-        "client.ConnectorConnectionSendMixin",
+        "client.ConnectionProtocolTransitionMixin",
 
         "client.ClawCrosshairMixin",
         "client.NovaSprintLockMixin",

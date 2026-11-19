@@ -70,8 +70,7 @@ public final class MixinSelection {
     public static boolean select(String mixinClassName, java.util.function.Predicate<String> modLoaded,
                                java.util.function.Supplier<String> highestBackend) {
         boolean connector = modLoaded.test("connectormod") || modLoaded.test("connector");
-        if ((MIXIN_PREFIX + "client.ConnectorMoistureHudVisibilityMixin").equals(mixinClassName)
-                || (MIXIN_PREFIX + "client.ConnectorConnectionSendMixin").equals(mixinClassName)) {
+        if ((MIXIN_PREFIX + "client.ConnectorMoistureHudVisibilityMixin").equals(mixinClassName)) {
             return connector;
         }
         if ((MIXIN_PREFIX + "client.MoistureHudVisibilityMixin").equals(mixinClassName)) {

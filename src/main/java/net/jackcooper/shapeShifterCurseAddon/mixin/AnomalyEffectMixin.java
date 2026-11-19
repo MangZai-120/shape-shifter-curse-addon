@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /** Status changes update a lazy cache; damage/heal never scan all status effects or world entities. */
 @Mixin(LivingEntity.class)
@@ -37,6 +38,13 @@ public abstract class AnomalyEffectMixin implements AnomalyEffectAccess {
     @Inject(method = "onStatusEffectRemoved", at = @At("TAIL"))
     private void ssca$anomalyRemoved(StatusEffectInstance effect, CallbackInfo ci) {
         if (AnomalyEffects.isManaged(effect.getEffectType()))
+            AnomalyEffects.refresh((LivingEntity)(Object)this);
+    }
+
+    @Inject(method = "clearStatusEffects", at = @At("RETURN"))
+    private void ssca$afterClearStatusEffects(CallbackInfoReturnable<Boolean> cir) {
+        // In bulk removal vanilla calls onStatusEffectRemoved before removing its map entry.
+        if (cir.getReturnValueZ() && ssca$anomalyEffects != null)
             AnomalyEffects.refresh((LivingEntity)(Object)this);
     }
 

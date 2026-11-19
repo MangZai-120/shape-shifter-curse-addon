@@ -96,16 +96,23 @@ public final class EvolutionUiClientProbe {
                     Object tree = field("tree");
                     screen.mouseScrolled(box(tree, "x") + 12, box(tree, "y") + 12, -4);
                     check(coordinate("nodeSize", node) == size && coordinate("cx", node) == x, "wheel scrolls without zoom or horizontal motion");
+                    center(EvolutionRegistry.CLIENT.getNode("axolotl", "vortex_guide"));
                     stage++;
                 } else if (stage == 2) {
                     save(mc, "axolotl-paper-scrolled.png");
                     var node = EvolutionRegistry.CLIENT.getRoute("axolotl").getNode("water_spear");
                     beforePoints = comp.getPoints();
                     var other = EvolutionRegistry.CLIENT.getRoute("axolotl").getNode("vortex_guide");
-                    Object card = card(other);
-                    screen.mouseClicked(box(card, "x") + box(card, "w") / 2.0, box(card, "bottom") - 4, 0);
+                    Object label = nodeBox("labelContent", other);
+                    Object tree = field("tree");
+                    int x = box(label, "x") + box(label, "w") / 2;
+                    int y = box(label, "y") + box(label, "h") / 2;
+                    check(x >= box(tree, "x") && x < box(tree, "right") && y >= box(tree, "y") && y < box(tree, "bottom"),
+                            "node label click lies inside the visible tree");
+                    screen.mouseClicked(x, y, 0);
                     check(Objects.equals(field("selectedId"), other.id), "node label inside the octagonal frame selects its ability");
                     check(comp.getPoints() == beforePoints, "framed-card selection does not spend points");
+                    center(node);
                     screen.mouseClicked(coordinate("cx", node), coordinate("cy", node), 0);
                     check(!comp.isUnlocked("water_spear"), "selection does not purchase");
                     check(comp.getPoints() == beforePoints, "selection does not spend points");

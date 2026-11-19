@@ -4,6 +4,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import org.objectweb.asm.tree.ClassNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongepowered.asm.mixin.transformer.meta.MixinMerged;
+import org.spongepowered.asm.util.Annotations;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
@@ -37,6 +39,9 @@ import java.util.Set;
 public class SscAddonMixinConfigPlugin implements IMixinConfigPlugin {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ssc-addon-mixin");
+    private static final String ACCESSORIES_VANILLA_CONSUMER =
+            "net.jackcooper.shapeShifterCurseAddon.mixin.client.AccessoriesVanillaVertexConsumerMixin";
+    private static final String SODIUM_WRITER = "net/caffeinemc/mods/sodium/api/vertex/buffer/VertexBufferWriter";
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -50,6 +55,12 @@ public class SscAddonMixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (ACCESSORIES_VANILLA_CONSUMER.equals(mixinClassName)) {
+            var loader = FabricLoader.getInstance();
+            return loader.isModLoaded("accessories") && !loader.isModLoaded("connectormod")
+                    && !loader.isModLoaded("sodium")
+                    && getClass().getClassLoader().getResource(SODIUM_WRITER + ".class") == null;
+        }
         return net.jackcooper.shapeShifterCurseAddon.compat.MixinSelection.select(mixinClassName, mod -> FabricLoader.getInstance().isModLoaded(mod),
                 () -> net.onixary.shapeShifterCurseFabric.util.Accessory.AccessoryPriorityUtils.getHighestPriorityPlugin());
     }
@@ -71,6 +82,13 @@ public class SscAddonMixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
-        // 无需处理
+        if (!ACCESSORIES_VANILLA_CONSUMER.equals(mixinClassName)) return;
+        // Fabric Accessories adds its Sodium interface and bridge even on vanilla clients.
+        // Remove just that upstream mixin's bridge. The original VertexConsumer collects the same vertices.
+        boolean removed = targetClass.methods.removeIf(method -> method.name.equals("push")
+                && method.desc.equals("(Lorg/lwjgl/system/MemoryStack;JILnet/caffeinemc/mods/sodium/api/vertex/format/VertexFormatDescription;)V")
+                && "io.wispforest.accessories.fabric.mixin.sodium.MPOATVConstructingVertexConsumerMixin_SodiumImpl"
+                    .equals(Annotations.getValue(Annotations.getVisible(method, MixinMerged.class), "mixin")));
+        if (removed) targetClass.interfaces.remove(SODIUM_WRITER);
     }
 }

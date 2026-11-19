@@ -26,6 +26,11 @@ public final class FormSpellStyle {
     public static CourtSpellLink.Cast currentCourt(){var style=EFFECT.get();return style==null?null:style.court;}
     public static BatSpellLink.Cast currentBat(){var style=EFFECT.get();return style==null?null:style.bat;}
     public static ServerPlayerEntity currentCaster(){var style=EFFECT.get();return style==null?null:style.player;}
+    /** Capture the paid cast while it still owns the projectile, even if tracking starts later. */
+    public static void bindWeaving(net.minecraft.entity.Entity owner, SpiderSpellLink.Impact impact) {
+        var style = EFFECT.get();
+        if (style != null && style.moonWeaver && style.player == owner) impact.enable(style.weave.id);
+    }
     public void bindBat(net.jackcooper.shapeShifterCurseAddon.spell.NeoState.Experiment record){if(spreading)bat=new BatSpellLink.Cast(player,record);record.bloodSpent=blood.spent();court=CourtSpellLink.create(player,record);}
     public static AllaySpellLink.Cast currentAllay(){var style=EFFECT.get();return style==null?null:style.allay;}
     public void bindAllay(double actual,net.jackcooper.shapeShifterCurseAddon.spell.NeoState.Experiment record,boolean directCurse){allay=AllaySpellLink.create(player,actual,record,directCurse);}
@@ -212,6 +217,7 @@ public final class FormSpellStyle {
             var cast=EFFECT.get();
             if(cast!=null&&entity instanceof ProjectileEntity projectile
                     &&projectile.getOwner()==cast.player&&entity instanceof HomingProjectile homing) {
+                // A caller may also construct its projectile before entering the cast scope.
                 if(cast.moonWeaver)((SpiderSpellLink.WebProjectile)projectile).ssca$weave().enable(cast.weave.id);
                 if(cast.projectileSpeed!=1||cast.projectileRange!=1)homing.ssca$flight(cast.projectileSpeed,cast.range);
                 if(cast.target!=null)homing.ssca$home(cast.target,cast.range);

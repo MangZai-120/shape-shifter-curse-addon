@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
@@ -54,6 +55,7 @@ import software.bernie.geckolib.cache.object.GeoBone;
 public final class FormColorCoverageClientProbe {
     private static final Path OUT = Path.of("color-coverage");
     private static final int MAGENTA = 0xffee00dd, GREEN = 0xff00ee22;
+    private static final int PALETTE_SYNC_TIMEOUT_TICKS = 100;
     private static final boolean REQUIRE_COMPLETE = Boolean.getBoolean("ssca.colorCoverage.requireComplete");
     private static final long START = System.nanoTime();
     private static final List<Map<String, Object>> RESULTS = new ArrayList<>();
@@ -61,7 +63,8 @@ public final class FormColorCoverageClientProbe {
     private static FormColorSelectMenuV2 menu;
     private static Map<String, Object> current;
     private static volatile boolean serverReady;
-    private static volatile FormTextureUtils.ColorSetting serverColor;
+    private static CompletableFuture<FormTextureUtils.ColorSetting> serverSample;
+    private static FormTextureUtils.ColorSetting lastServerColor;
     private static volatile Throwable failure;
     private static boolean starting, finished;
     private static int stage, ticks, index, checks;
@@ -362,7 +365,7 @@ public final class FormColorCoverageClientProbe {
     }
 
     private static void switchForm(MinecraftClient client) {
-        serverReady = false; serverColor = null;
+        serverReady = false;
         Identifier id = forms.get(index).getFormID();
         client.setScreen(null);
         client.getServer().execute(() -> {
@@ -384,14 +387,41 @@ public final class FormColorCoverageClientProbe {
         });
     }
 
-    private static void sampleServerColor(MinecraftClient client) {
-        serverColor = null;
-        client.getServer().execute(() -> {
-            try {
-                var player = client.getServer().getPlayerManager().getPlayerList().get(0);
-                serverColor = RegPlayerSkinComponent.SKIN_SETTINGS.get(player).getFormColor();
-            } catch (Throwable error) { failure = error; }
-        });
+    private static String describePalette(FormTextureUtils.ColorSetting color) {
+        if (color == null) return "no sample";
+        return String.format("%08X %08X %08X %08X %08X | reverse=%b,%b,%b",
+                color.primaryColor(), color.accentColor1(), color.accentColor2(), color.eyeColorA(), color.eyeColorB(),
+                color.primaryGreyReverse(), color.accent1GreyReverse(), color.accent2GreyReverse());
+    }
+
+    private static boolean awaitSavedPalette(MinecraftClient client, String name, FormTextureUtils.ColorSetting expected) {
+        if (serverSample != null && serverSample.isDone()) {
+            lastServerColor = serverSample.join();
+            serverSample = null;
+        }
+        var clientColor = RegPlayerSkinComponent.SKIN_SETTINGS.get(client.player).getFormColor();
+        boolean serverMatches = expected.equals(lastServerColor);
+        boolean clientMatches = expected.equals(clientColor);
+        if (ticks >= PALETTE_SYNC_TIMEOUT_TICKS || (ticks >= 4 && serverMatches && clientMatches)) {
+            var observed = Map.of("wait_ticks", ticks, "expected", describePalette(expected),
+                    "server", describePalette(lastServerColor), "client", describePalette(clientColor));
+            current.put(name + "_save_sync", observed);
+            String context = name + " form=" + forms.get(index).getFormID() + " " + observed;
+            check(serverMatches, "Server saved palette: " + context);
+            check(clientMatches, "Client synchronized saved palette: " + context);
+            lastServerColor = null;
+            serverSample = null;
+            return true;
+        }
+        if (serverSample == null) {
+            var server = client.getServer();
+            var uuid = client.player.getUuid();
+            serverSample = CompletableFuture.supplyAsync(() -> {
+                var player = server.getPlayerManager().getPlayer(uuid);
+                return player == null ? null : RegPlayerSkinComponent.SKIN_SETTINGS.get(player).getFormColor();
+            }, server);
+        }
+        return false;
     }
 
     private static void next(int nextStage) { stage = nextStage; ticks = 0; }
@@ -456,13 +486,10 @@ public final class FormColorCoverageClientProbe {
                     case 3 -> {
                         if (ticks < 4) return;
                         verifyRenderedTextures(client, MAGENTA, "preview_magenta_layers_verified");
-                        shot(client, "02-magenta-menu"); menu.close(); next(4);
+                        shot(client, "02-magenta-menu"); menu.close(); next(5);
                     }
-                    case 4 -> { if (ticks >= 8) { sampleServerColor(client); next(5); } }
                     case 5 -> {
-                        if (serverColor == null || ticks < 4) return;
-                        check(serverColor.equals(abgr(palette(MAGENTA))), "Magenta palette reaches the actual server player");
-                        check(RegPlayerSkinComponent.SKIN_SETTINGS.get(client.player).getFormColor().equals(serverColor), "Saved magenta palette synchronizes to client");
+                        if (!awaitSavedPalette(client, "magenta", abgr(palette(MAGENTA)))) return;
                         check(!FormTextureUtils.useTempFormTexture && !FormTextureUtils.useTempFormModel, "Closing menu releases preview overrides");
                         verifyRenderedTextures(client, MAGENTA, "saved_magenta_layers_verified");
                         client.setScreen(new ViewsScreen("保存后：洋红色")); next(6);
@@ -482,13 +509,10 @@ public final class FormColorCoverageClientProbe {
                     case 8 -> {
                         if (ticks < 4) return;
                         verifyRenderedTextures(client, GREEN, "preview_green_layers_verified");
-                        shot(client, "05-green-menu"); menu.close(); next(9);
+                        shot(client, "05-green-menu"); menu.close(); next(10);
                     }
-                    case 9 -> { if (ticks >= 8) { sampleServerColor(client); next(10); } }
                     case 10 -> {
-                        if (serverColor == null || ticks < 4) return;
-                        check(serverColor.equals(abgr(palette(GREEN))), "Green palette reaches actual server player");
-                        check(RegPlayerSkinComponent.SKIN_SETTINGS.get(client.player).getFormColor().equals(serverColor), "Saved green palette synchronizes to client");
+                        if (!awaitSavedPalette(client, "green", abgr(palette(GREEN)))) return;
                         verifyRenderedTextures(client, GREEN, "saved_green_layers_verified");
                         client.setScreen(new ViewsScreen("保存后：绿色")); next(11);
                     }
@@ -514,13 +538,10 @@ public final class FormColorCoverageClientProbe {
                     case 12 -> {
                         if (ticks < 4) return;
                         verifyRenderedTextures(client, distinctPalette(), "preview_distinct_layers_verified");
-                        shot(client, "01b-distinct-menu"); menu.close(); next(13);
+                        shot(client, "01b-distinct-menu"); menu.close(); next(14);
                     }
-                    case 13 -> { if (ticks >= 8) { sampleServerColor(client); next(14); } }
                     case 14 -> {
-                        if (serverColor == null || ticks < 4) return;
-                        check(serverColor.equals(abgr(distinctPalette())), "Five distinct colors reach the actual server player");
-                        check(RegPlayerSkinComponent.SKIN_SETTINGS.get(client.player).getFormColor().equals(serverColor), "Saved distinct palette synchronizes to client");
+                        if (!awaitSavedPalette(client, "distinct", abgr(distinctPalette()))) return;
                         verifyRenderedTextures(client, distinctPalette(), "saved_distinct_layers_verified");
                         current.put("distinct_palette_and_eyes_verified", true);
                         client.setScreen(new ViewsScreen("保存后：五色分区与两眼")); next(15);

@@ -8,6 +8,16 @@ import net.minecraft.test.TestContext;
 /** Actual progressive payment and cooldown callbacks, beyond the pure Session tests. */
 public final class NeoFailureWindowAudit {
     private static void check(boolean ok,String why){if(!ok)throw new AssertionError(why);}
+    public static void start(TestContext t) {
+        t.waitAndRun(70, () -> {
+            try {
+                start(t, NeoBookWorldProbe.player(t), NeoBookWorldProbe.player(t));
+                t.waitAndRun(24, t::complete);
+            } catch (Exception error) {
+                throw new RuntimeException(error);
+            }
+        });
+    }
     public static void start(TestContext t,ServerPlayerEntity risky,ServerPlayerEntity protectedPlayer) {
         var id=SpellRegistry.get("fire_bolt").getId();int[] effects={0,0},cooldowns={0,0};
         var ordinary=new Spell(id,SpellRarity.WHITE){

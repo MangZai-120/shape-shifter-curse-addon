@@ -141,9 +141,11 @@ public final class FrozenWorldProbe {
         PigEntity purified = target(context);
         double purifiedSpeed = purified.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED);
         frozen(purified);
+        purified.getServer().getCommandManager().executeWithPrefix(
+                purified.getCommandSource().withLevel(2).withSilent(), "effect clear @s");
         purified.addStatusEffect(new StatusEffectInstance(SscAddon.PURIFIED, 20));
         later(context, 2, () -> {
-            released(purified, "The real PurifiedEffect removes ice on its normal update");
+            released(purified, "Purification's release clears existing ice");
             near(purified.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED), purifiedSpeed,
                     "Purification restores movement immediately");
             check(!purified.hasStatusEffect(SscAddon.FROZEN_RECOVERY), "Purification is not a breaking damage hit");

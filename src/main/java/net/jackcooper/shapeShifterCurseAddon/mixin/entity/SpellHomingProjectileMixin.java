@@ -32,7 +32,8 @@ public abstract class SpellHomingProjectileMixin implements FormSpellStyle.Homin
     @Override public net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.Cast ssca$bat(){return ssca$bat;}
     @Override public void ssca$bat(net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.Cast cast){ssca$bat=cast;}
     @Inject(method="setOwner",at=@At("TAIL"))
-    private void ssca$bindBat(net.minecraft.entity.Entity owner,CallbackInfo ci){
+    private void ssca$bindCast(net.minecraft.entity.Entity owner,CallbackInfo ci){
+        FormSpellStyle.bindWeaving(owner, ssca$weave);
         var court=net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.current();
         if(owner!=null&&court!=null&&owner.getUuid().equals(court.owner))ssca$court=court;
         var cast=net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.current();

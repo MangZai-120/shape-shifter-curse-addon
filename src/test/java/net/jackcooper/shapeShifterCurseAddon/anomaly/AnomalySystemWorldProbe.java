@@ -676,9 +676,25 @@ public final class AnomalySystemWorldProbe {
         CHECK.near(slowTarget.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED), slowBase * .5,
                 "The stronger reaction slow immediately replaces weaker recovery slow");
         var purified = pig(center.add(0, 72, 0));
+        var singleMarker = pig(center.add(10, 72, 0));
+        AnomalyEffects.react("fire", "summon", singleMarker, context("summon", 500));
+        CHECK.that(AnomalyEffects.budgetSnapshot(singleMarker).fireHits() > 0, "The single fire-spirit marker has proc charges");
+        CHECK.that(singleMarker.clearStatusEffects() && !singleMarker.hasStatusEffect(AnomalyEffects.FLAME_SPIRIT)
+                        && AnomalyEffects.budgetSnapshot(singleMarker).fireHits() == 0,
+                "Bulk clearing the last fire-spirit marker immediately invalidates all its proc charges");
+        singleMarker.addStatusEffect(new StatusEffectInstance(AnomalyEffects.SPACE_BIND, 40));
+        CHECK.that(AnomalyEffects.teleportBlocked(singleMarker), "The single space-bind marker prevents teleportation");
+        CHECK.that(singleMarker.clearStatusEffects() && !AnomalyEffects.teleportBlocked(singleMarker),
+                "Bulk clearing the last space-bind marker immediately permits teleportation");
+        CHECK.near(singleMarker.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED), .25,
+                "Bulk clearing the last space-bind marker restores normal movement speed");
         AnomalyEffects.react("fire", "summon", purified, context("summon", 500));
         AnomalyEffects.react("fire", "space", purified, context("space", 500));
+        // The Allay release runs "effect clear @s" before applying the interruption marker.
+        purified.getServer().getCommandManager().executeWithPrefix(
+                purified.getCommandSource().withLevel(2).withSilent(), "effect clear @s");
         purified.addStatusEffect(new StatusEffectInstance(SscAddon.PURIFIED, 40));
+        purified.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, 40));
         long beforeEmpty = AnomalyManager.metrics().tracked();
         var empty = pig(center.add(0, 84, 0));
         add(empty, "space", 0);
@@ -725,7 +741,9 @@ public final class AnomalySystemWorldProbe {
         AnomalyProbeSupport.later(test, 2, () -> {
             CHECK.that(!purified.hasStatusEffect(AnomalyEffects.FLAME_SPIRIT)
                             && !purified.hasStatusEffect(AnomalyEffects.FIRE_ZONE),
-                    "Actual purification removes both proc and field markers");
+                    "Purification clears pre-existing proc and field markers");
+            CHECK.that(purified.hasStatusEffect(StatusEffects.WEAKNESS),
+                    "The NPC marker preserves effects applied after the release");
             CHECK.that(AnomalyEffects.budgetSnapshot(purified).fireHits() == 0,
                     "Purification invalidates the finite summon proc budget");
         });

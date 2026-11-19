@@ -16,7 +16,7 @@ import java.util.*;
 public final class NeoBookWorldProbe {
     private static int checks;
     private static void check(boolean ok,String why){checks++;if(!ok)throw new AssertionError(why);}
-    private static ServerPlayerEntity player(TestContext t) throws Exception {
+    static ServerPlayerEntity player(TestContext t) throws Exception {
         var p=t.createMockCreativeServerPlayerInWorld();p.setNoGravity(true);p.getAbilities().invulnerable=true;
         var f=BalanceIntegration.class.getDeclaredField("server");f.setAccessible(true);var state=(ServerBalanceState)f.get(null);
         state.buildSendSequence(p.getUuid(),"{}");state.playerAcked(p.getUuid(),state.revision());
