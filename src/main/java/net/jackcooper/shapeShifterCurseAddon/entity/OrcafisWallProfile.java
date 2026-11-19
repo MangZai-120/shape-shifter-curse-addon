@@ -14,9 +14,16 @@ public final class OrcafisWallProfile {
     public static float level(int band) { return LEVEL[band]; }
     public static float edge(int band, int side) { return CURL[band] + side * DEPTH[band]; }
     public static float width(float level) { return 6 * (1 - .14f * level); }
+    public static float remaining(float age) {
+        float end = OrcafisEntity.Motion.WAVE.ticks;
+        float t = MathHelper.clamp((end - OrcafisSounds.WALL_RELEASE - age) / (end - OrcafisSounds.WALL_RECEDES), 0, 1);
+        return t*t*(3 - 2*t);
+    }
+    public static float bottom(float age) { return MathHelper.lerp(remaining(age), -OFFSET_Y, BASE); }
     public static float crest(float lateral, float age) {
-        return Math.min(3.4f,.45f + age*.53f) + .25f*MathHelper.sin(lateral*1.35f + age*.17f)
+        float height = Math.min(3.4f,.45f + age*.53f) + .25f*MathHelper.sin(lateral*1.35f + age*.17f)
                 + .13f*MathHelper.sin(lateral*2.2f - age*.12f);
+        return MathHelper.lerp(remaining(age), -OFFSET_Y, height);
     }
     public static float front(float lateral, float age) {
         return OrcafisSounds.wallDistance(age) - lateral*lateral*.024f;
@@ -25,8 +32,10 @@ public final class OrcafisWallProfile {
     static boolean touches(int age, double x, double z, double radius, double baseY, Box body) {
         if (Math.abs(x) > 6 + radius) return false;
         float lateral = MathHelper.clamp((float)x,-6,6);
-        double bottom = baseY + OFFSET_Y + BASE;
-        double height = crest(lateral,age) - BASE;
+        float base = bottom(age);
+        double bottom = baseY + OFFSET_Y + base;
+        double height = crest(lateral,age) - base;
+        if (height <= 0) return false;
         double low = Math.max(0, (body.minY-bottom)/height);
         double high = Math.min(1, (body.maxY-bottom)/height);
         if (low > high) return false;

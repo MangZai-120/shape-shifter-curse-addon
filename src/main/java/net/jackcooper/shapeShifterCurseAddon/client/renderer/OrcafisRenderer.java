@@ -26,6 +26,7 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.cache.object.GeoBone;
 
 public final class OrcafisRenderer extends GeoEntityRenderer<OrcafisEntity> {
+    private final OrcafisWaterPoseBlend waterPose = new OrcafisWaterPoseBlend();
     private final org.joml.Matrix4f renderInverse = new org.joml.Matrix4f();
     private Vec3d upperLip, lowerLip;
     private static final Identifier WAKE = texture("ground_wake");
@@ -39,6 +40,16 @@ public final class OrcafisRenderer extends GeoEntityRenderer<OrcafisEntity> {
     public OrcafisRenderer(EntityRendererFactory.Context context) {
         super(context, new OrcafisModel());
         shadowRadius = 0;
+    }
+
+    @Override
+    protected void applyRotations(OrcafisEntity entity, MatrixStack matrices, float age, float bodyYaw,float partial) {
+        // The dash clip already turns the model around the course. Use its networked course bearing as the base.
+        switch (entity.motion()) {
+            case DASH, RETURN, WATER_LUNGE -> bodyYaw = MathHelper.lerpAngleDegrees(partial,entity.prevYaw,entity.getYaw());
+            default -> { }
+        }
+        super.applyRotations(entity,matrices,age,bodyYaw,partial);
     }
 
     @Override
@@ -84,6 +95,19 @@ public final class OrcafisRenderer extends GeoEntityRenderer<OrcafisEntity> {
             default -> { }
         }
         matrices.pop();
+    }
+
+    @Override
+    public void renderRecursively(MatrixStack matrices, OrcafisEntity entity, GeoBone bone, RenderLayer layer,
+                                  VertexConsumerProvider buffers, VertexConsumer buffer, boolean reRender, float partial,
+                                  int light, int overlay, float red, float green, float blue, float alpha) {
+        boolean blended = bone.getParent() == null && waterPose.apply(entity, bone, partial);
+        try {
+            super.renderRecursively(matrices, entity, bone, layer, buffers, buffer, reRender, partial,
+                    light, overlay, red, green, blue, alpha);
+        } finally {
+            if (blended) waterPose.restore();
+        }
     }
 
     @Override
@@ -141,10 +165,14 @@ public final class OrcafisRenderer extends GeoEntityRenderer<OrcafisEntity> {
     }
 
     private static void wall(MatrixStack m, VertexConsumerProvider provider, float age, float v, int light) {
-        VertexConsumer buf = provider.getBuffer(RenderLayer.getEntityTranslucent(WALL));
-        WaveSlice left = WaveSlice.at(0, age);
+        float remaining = OrcafisWallProfile.remaining(age);
+        if (remaining <= 0) return;
+        float opacity = Math.min(1, remaining * 3);
+        // Fading faces must not occlude the water surface when the world draws it after entities.
+        VertexConsumer buf = provider.getBuffer(opacity < 1 ? RenderLayer.getEntityNoOutline(WALL) : RenderLayer.getEntityTranslucent(WALL));
+        WaveSlice left = WaveSlice.at(0, age, opacity);
         for (int i = 1; i <= 20; i++) {
-            WaveSlice right = WaveSlice.at(i / 20f, age);
+            WaveSlice right = WaveSlice.at(i / 20f, age, opacity);
             for (int band = 0; band < OrcafisWallProfile.bands() - 1; band++) {
                 for (int side : SIDES) {
                     left.emit(buf, m, band, side, v, light);
@@ -220,19 +248,21 @@ public final class OrcafisRenderer extends GeoEntityRenderer<OrcafisEntity> {
     private static final int[] SIDES = {-1, 1};
     private static final int[] CAPS = {0, OrcafisWallProfile.bands() - 1};
 
-    private record WaveSlice(float u, float x, float crest, float centerZ) {
-        static WaveSlice at(float u, float age) {
+    private record WaveSlice(float u, float x, float base, float crest, float centerZ, float opacity) {
+        static WaveSlice at(float u, float age, float opacity) {
             float lateral = (u-.5f)*12;
-            return new WaveSlice(u,lateral,OrcafisWallProfile.crest(lateral,age),OrcafisWallProfile.front(lateral,age));
+            return new WaveSlice(u,lateral,OrcafisWallProfile.bottom(age),OrcafisWallProfile.crest(lateral,age),
+                    OrcafisWallProfile.front(lateral,age),opacity);
         }
 
         void emit(VertexConsumer buf, MatrixStack m, int band, int side, float frame, int light) {
             float level = OrcafisWallProfile.level(band);
-            float y = MathHelper.lerp(level, OrcafisWallProfile.BASE, crest);
+            float y = MathHelper.lerp(level, base, crest);
             float z = centerZ + OrcafisWallProfile.edge(band, side);
             float texU = .07f + .86f * u + side * .014f;
             float texV = frame + (.985f - .972f * level) / 12;
-            vertex(buf, m, x * OrcafisWallProfile.width(level) / 6, y, z, texU, texV, light, side > 0 ? 248 : 232);
+            vertex(buf, m, x * OrcafisWallProfile.width(level) / 6, y, z, texU, texV, light,
+                    Math.round(opacity * (side > 0 ? 248 : 232)));
         }
 
         void endCap(VertexConsumer buf, MatrixStack m, int band, float frame, int light) {

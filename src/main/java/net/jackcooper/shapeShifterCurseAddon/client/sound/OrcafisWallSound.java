@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisEntity;
 import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisSounds;
+import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisWallProfile;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.sound.MovingSoundInstance;
 import net.minecraft.sound.SoundEvent;
@@ -32,7 +33,7 @@ public final class OrcafisWallSound extends MovingSoundInstance {
         return switch (boss.motion()) {
             case WAVE -> t >= OrcafisSounds.WALL_RELEASE && t < OrcafisEntity.Motion.WAVE.ticks ? OrcafisSounds.WALL : null;
             case UNDERTOW -> t < OrcafisEntity.UNDERTOW_DRAW_TICKS && boss.drawingWater() ? OrcafisSounds.UNDERTOW_DRAW : null;
-            case WATER_JET -> t >= 14 && t < 54 && boss.jetLength() > 0 ? OrcafisSounds.JET_STREAM : null;
+            case WATER_JET -> t >= OrcafisEntity.JET_START && t < OrcafisEntity.JET_END && boss.jetLength() > 0 ? OrcafisSounds.JET_STREAM : null;
             default -> null;
         };
     }
@@ -52,8 +53,7 @@ public final class OrcafisWallSound extends MovingSoundInstance {
         float age = t - OrcafisSounds.WALL_RELEASE;
         Vec3d crest = boss.getPos().add(Vec3d.fromPolar(0,boss.bodyYaw).multiply(OrcafisSounds.wallDistance(age)));
         x = crest.x; y = crest.y + .8; z = crest.z;
-        float retreat = MathHelper.clamp((t-OrcafisSounds.WALL_RECEDES)/(OrcafisEntity.Motion.WAVE.ticks-OrcafisSounds.WALL_RECEDES),0,1);
-        volume = boss.isMotionPaused() ? 0 : 1.32f * MathHelper.clamp((age+1)/6,.12f,1) * (1-retreat*retreat*(3-2*retreat));
+        volume = boss.isMotionPaused() ? 0 : 1.32f * MathHelper.clamp((age+1)/6,.12f,1) * OrcafisWallProfile.remaining(age);
     }
 
     public static void register() {

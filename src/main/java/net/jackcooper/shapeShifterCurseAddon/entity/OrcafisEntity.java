@@ -50,6 +50,9 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
     private static final double ARMOR = 12, ARMOR_TOUGHNESS = 6;
     public static final int UNDERTOW_DRAW_TICKS = 100;
     static final int JET_RANGE_SQUARED = 18 * 18;
+    public static final int JET_START = 14, JET_END = JET_START + 40;
+    static final String SURFACE_JET_CLIP = "water_jet_surface";
+    private static final RawAnimation SURFACE_JET_ANIMATION = RawAnimation.begin().thenPlay("animation.orcafis." + SURFACE_JET_CLIP);
     public enum Motion {
         WALK("walk", 60), BURROW("burrow_swim", 80), BREACH("dolphin_breach", 166),
         SWEEP("tail_sweep", 51), DASH("water_dash", 83), WAVE("tidal_wall", 100),
@@ -59,7 +62,7 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
         WATER_LUNGE("water_lunge", 26), LAND_BITE("land_bite", 20), WATER_BITE("water_bite", 20),
         BURROW_ENTER("burrow_enter", 24), ROCK_TOSS("rock_toss", 56),
         ROLL_LEFT("roll_left", 46), ROLL_RIGHT("roll_right", 46),
-        UNDERTOW("undertow", UNDERTOW_DRAW_TICKS + 10), WATER_JET("water_jet", 60);
+        UNDERTOW("undertow", UNDERTOW_DRAW_TICKS + 10), WATER_JET("water_jet", JET_END + 16);
 
         public final String clip;
         public final int ticks;
@@ -74,6 +77,16 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
         boolean huntingAttack() {
             return this == POUNCE || this == PLOW || this == TIDE || this == WATER_LUNGE
                     || this == LAND_BITE || this == WATER_BITE;
+        }
+
+        Motion attackSkill() {
+            return switch (this) {
+                case ROLL_RIGHT -> ROLL_LEFT;
+                case WATER_LUNGE -> DASH;
+                case BREACH, SWEEP, DASH, WAVE, POUNCE, PLOW, TIDE, LAND_BITE, WATER_BITE,
+                        ROCK_TOSS, ROLL_LEFT, UNDERTOW, WATER_JET -> this;
+                default -> null;
+            };
         }
 
         static Motion fromName(String value) {
@@ -136,6 +149,19 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
     private static final TrackedData<Boolean> DRAWING_WATER = DataTracker.registerData(OrcafisEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
     private static final TrackedData<org.joml.Vector3f> JET_ORIGIN = DataTracker.registerData(OrcafisEntity.class, TrackedDataHandlerRegistry.VECTOR3F);
     private static final TrackedData<org.joml.Vector3f> JET_DIRECTION = DataTracker.registerData(OrcafisEntity.class, TrackedDataHandlerRegistry.VECTOR3F);
+    private static final TrackedData<Boolean> SURFACE_JET = DataTracker.registerData(OrcafisEntity.class,TrackedDataHandlerRegistry.BOOLEAN);
+
+    boolean surfaceJet() { return motion() == Motion.WATER_JET && dataTracker.get(SURFACE_JET); }
+    boolean canReleaseJet() {
+        PlayerEntity target = attackPlayer();
+        return solo != null || target != null && encounter.rangedTarget(target,JET_RANGE_SQUARED);
+    }
+    void recoverJet() { dataTracker.set(START,getWorld().getTime()-JET_END); }
+    void relaxJet(Vec3d aim,int elapsed) {
+        float remaining = MathHelper.clamp((Motion.WATER_JET.ticks-elapsed)/(float)(Motion.WATER_JET.ticks-JET_END),0,1);
+        dataTracker.set(JET_PITCH,(float)Math.asin(MathHelper.clamp(aim.y,-1,1))*remaining*remaining*(3-2*remaining));
+        pose = null;
+    }
 
     OrcafisCollisionRig.Pose bodyPose() {
         if (pose == null) pose = OrcafisCollisionRig.sample(this);
@@ -178,7 +204,6 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
     }
     private double startY, targetY;
     private OrcafisHuntingAttack hunt;
-    private long nextStrikeTick;
 
     static boolean isHuntTarget(PlayerEntity p) {
         return p.isAlive() && !p.isSpectator() && !p.isCreative();
@@ -197,8 +222,6 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
         return closest;
     }
 
-    boolean mayStartStrike() { return getWorld().getTime() >= nextStrikeTick; }
-    void markStrike() { nextStrikeTick = getWorld().getTime() + 40; }
 
     public OrcafisEntity(EntityType<? extends OrcafisEntity> type, World world) {
         super(type, world);
@@ -250,6 +273,7 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
         dataTracker.startTracking(WATERLINE, 0f);
         dataTracker.startTracking(JET_PITCH, 0f);
         dataTracker.startTracking(JET_LENGTH, 0f);
+        dataTracker.startTracking(SURFACE_JET,false);
         dataTracker.startTracking(DRAWING_WATER,false);
         dataTracker.startTracking(JET_ORIGIN,new org.joml.Vector3f());
         dataTracker.startTracking(JET_DIRECTION,new org.joml.Vector3f(0,0,1));
@@ -299,6 +323,7 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
     }
 
     boolean begin(Motion motion) {
+        if (!encounter.ready(motion)) return false;
         if (motion == Motion.BURROW) {
             if (motion() == Motion.BURROW_ENTER) {
                 if (motionTick(0) < Motion.BURROW_ENTER.ticks) return true;
@@ -307,12 +332,6 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
             }
         }
         PlayerEntity target = attackPlayer();
-        pose = null;
-        shoreAttack = OrcafisShoreAttack.start(this,motion,target);
-        if (motion == Motion.UNDERTOW) dataTracker.set(WATERLINE,(float)swimmingSurface());
-        dataTracker.set(JET_PITCH,0f);
-        dataTracker.set(JET_LENGTH,0f);
-        drawingWater(false);
         if (motion == Motion.WAVE && target != null) face(target.getPos().subtract(getPos()), 180);
         OrcafisHuntingAttack next = motion == Motion.RETURN && hunt != null ? hunt
                 : motion.huntingAttack() || motion == Motion.DASH || motion == Motion.RETURN
@@ -323,11 +342,27 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
             motion = Motion.WATER_LUNGE;
             next = OrcafisHuntingAttack.lock(this, target, motion);
         }
+        encounter.recordAttack(motion,getWorld().getTime());
+        pose = null;
+        shoreAttack = OrcafisShoreAttack.start(this,motion,target);
+        if (motion == Motion.UNDERTOW) dataTracker.set(WATERLINE,(float)swimmingSurface());
+        dataTracker.set(JET_PITCH,0f);
+        dataTracker.set(JET_LENGTH,0f);
+        drawingWater(false);
         hunt = next;
         if (motion == Motion.TIDE) dataTracker.set(WATERLINE, hunt.waterline());
         if (motion == Motion.POUNCE) dataTracker.set(SPLASH_POINTS, hunt.splashPoints());
         startY = targetY = getY();
         int duration = solo == null && motion == Motion.BURROW ? 120 : motion.ticks;
+        boolean surfaceJet = false;
+        if (motion == Motion.WATER_JET && waterAtFeet()) {
+            double surface = swimmingSurface();
+            double rise = surface-startY;
+            surfaceJet = rise >= -.01 && rise < 2 && !getWorld().getBlockCollisions(this,
+                    getBoundingBox().stretch(0,Math.max(0,rise),0).contract(.001)).iterator().hasNext();
+            if (surfaceJet) targetY = surface;
+        }
+        dataTracker.set(SURFACE_JET,surfaceJet);
         if (motion == Motion.DIVE || motion == Motion.SURFACE) {
             targetY = waterDestination(motion);
             duration = Math.max(duration, MathHelper.ceil(Math.abs(targetY - startY) * 4));
@@ -456,6 +491,11 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
         Motion motion = motion();
         int elapsed = (int)motionTick(0);
         int duration = dataTracker.get(DURATION);
+        if (surfaceJet()) {
+            double lift = elapsed < JET_START ? elapsed/(double)JET_START
+                    : MathHelper.clamp((duration-elapsed)/(double)(duration-JET_END),0,1);
+            setPosition(getX(),MathHelper.lerp(lift*lift*(3-2*lift),startY,targetY),getZ());
+        }
         if (shoreAttack != null && elapsed < duration) shoreAttack.tick(this,motion,elapsed);
         if (hunt != null && (elapsed < duration || motion == Motion.RETURN)) {
             hunt.tick((ServerWorld)getWorld(), this, motion, Math.min(elapsed, duration));
@@ -465,7 +505,7 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
             setPosition(getX(), MathHelper.lerp(t*t*(3-2*t), startY, targetY), getZ());
         }
         if (elapsed >= duration) {
-            begin(after(motion));
+            if (!begin(after(motion))) begin(solo == null ? (waterAtFeet() ? Motion.SWIM : Motion.WALK) : Motion.REST);
             return;
         }
         OrcafisSounds.tick(this, motion, elapsed, solo == Motion.WALK || beforeStep.squaredDistanceTo(getPos()) > .0001);
@@ -482,10 +522,13 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
     }
 
     public float moundStrength(float elapsed) {
-        if (motion() == Motion.BURROW) return 1;
-        if (motion() == Motion.BURROW_ENTER) return MathHelper.clamp((elapsed - 16) / 8, 0, 1);
-        if (motion() != Motion.PLOW || elapsed < 34 || elapsed >= 58) return 0;
-        return Math.min(1, Math.min((elapsed-33)/4, (58-elapsed)/6));
+        return switch (motion()) {
+            case BURROW_ENTER -> MathHelper.clamp((elapsed - 16) / 8, 0, 1);
+            case BURROW -> 1;
+            case BREACH -> MathHelper.clamp((OrcafisLandAttacks.LIFT - elapsed) / 6, 0, 1);
+            case PLOW -> MathHelper.clamp((Motion.PLOW.ticks - elapsed) / (Motion.PLOW.ticks - 62), 0, 1);
+            default -> 0;
+        };
     }
 
     public float burrowYaw(float partial) {
@@ -613,6 +656,7 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
         super.writeCustomDataToNbt(nbt);
         nbt.putBoolean("OrcafisBossAttributes", true);
         nbt.putBoolean("OrcafisHealth300", true);
+        nbt.put("OrcafisAttackUses",encounter.saveAttackUses());
         if (solo != null) nbt.putString("OrcafisAction", solo.clip);
         else nbt.put("OrcafisEncounter", encounter.save());
         if (dataTracker.get(START) >= 0) {
@@ -622,7 +666,7 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
             playback.putInt("Duration", dataTracker.get(DURATION));
             playback.putDouble("StartY", startY);
             playback.putDouble("TargetY", targetY);
-            playback.putInt("StrikeCooldown", (int)MathHelper.clamp(nextStrikeTick - getWorld().getTime(), 0L, 40L));
+            if (motion() == Motion.WATER_JET) playback.putBoolean("SurfaceJet",surfaceJet());
             if (hunt != null) playback.put("Hunt", hunt.save());
             if (shoreAttack != null) playback.put("ShoreAttack",shoreAttack.save());
             nbt.put("OrcafisPlayback", playback);
@@ -639,18 +683,25 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
         }
         solo = Motion.fromName(nbt.getString("OrcafisAction"));
         encounter.load(nbt.getCompound("OrcafisEncounter"));
+        encounter.loadAttackUses(nbt.getCompound("OrcafisAttackUses"));
         dataTracker.set(START, -1L);
         NbtCompound playback = nbt.getCompound("OrcafisPlayback");
         Motion saved = Motion.fromName(playback.getString("Motion"));
         if (saved != null && playback.getInt("Duration") > 0) {
             pose = null;
             shoreAttack = playback.contains("ShoreAttack") ? OrcafisShoreAttack.load(playback.getCompound("ShoreAttack")) : null;
-            if (shoreAttack != null && saved == Motion.WATER_JET) aimJet(shoreAttack.direction());
             if (saved == Motion.UNDERTOW) dataTracker.set(WATERLINE,(float)swimmingSurface());
-            nextStrikeTick = getWorld().getTime() + MathHelper.clamp(playback.getInt("StrikeCooldown"), 0, 40);
             hunt = playback.contains("Hunt") ? OrcafisHuntingAttack.load(playback.getCompound("Hunt")) : null;
             int duration = playback.getInt("Duration");
             int elapsed = playback.getInt("Elapsed");
+            if (saved == Motion.WATER_JET) {
+                dataTracker.set(SURFACE_JET,playback.getBoolean("SurfaceJet"));
+                if (duration == 60) duration = saved.ticks;
+                if (shoreAttack != null) {
+                    aimJet(shoreAttack.direction());
+                    if (elapsed >= JET_END) relaxJet(shoreAttack.direction(),elapsed);
+                }
+            }
             if (saved == Motion.UNDERTOW && duration == 40) {
                 elapsed = elapsed < 30 ? elapsed * UNDERTOW_DRAW_TICKS / 30 : elapsed + UNDERTOW_DRAW_TICKS - 30;
                 duration = saved.ticks;
@@ -681,6 +732,11 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
             dataTracker.set(ACTION, saved.ordinal());
             dataTracker.set(DURATION, duration);
             dataTracker.set(START, getWorld().getTime() - MathHelper.clamp(elapsed, 0, duration));
+            if (!nbt.contains("OrcafisAttackUses")) {
+                long start = dataTracker.get(START);
+                if (saved == Motion.RETURN) encounter.recordAttack(Motion.DASH,start-Motion.DASH.ticks);
+                else encounter.recordAttack(saved,start);
+            }
         }
     }
 
@@ -712,7 +768,7 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
                 RawAnimation turn = motion == Motion.WATER_LUNGE ? Motion.DASH.animation : motion.animation;
                 return state.setAndContinue(turnLayer ? turn : Motion.SWIM.animation);
             }
-            return turnLayer ? PlayState.STOP : state.setAndContinue(motion.animation);
+            return turnLayer ? PlayState.STOP : state.setAndContinue(surfaceJet() ? SURFACE_JET_ANIMATION : motion.animation);
         }) {
             @Override protected double adjustTick(double tick) {
                 double local = super.adjustTick(tick);
@@ -728,7 +784,9 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
     }
 
     static double animationTick(Motion motion,double elapsed,boolean turnLayer,int duration) {
-        if (turnLayer) return motion == Motion.WATER_LUNGE ? elapsed * 1.5 : elapsed;
+        if (turnLayer && motion == Motion.WATER_LUNGE)
+            return elapsed <= 20 ? Math.min(13,elapsed*1.5) : Math.max(0,13*(26-elapsed)/6);
+        if (turnLayer) return elapsed;
         return switch (motion) {
             case BURROW -> elapsed % 40;
             case WALK -> elapsed % 60;

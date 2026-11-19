@@ -1,4 +1,11 @@
 {
+  "orcafis.rock_impact": {
+    "subtitle": "subtitles.my_addon.orcafis.rock_impact",
+    "sounds": [
+      "my_addon:orcafis/rock_impact_a",
+      "my_addon:orcafis/rock_impact_b"
+    ]
+  },
   "orcafis.undertow_draw": {
     "subtitle": "subtitles.my_addon.orcafis.undertow_draw",
     "sounds": [

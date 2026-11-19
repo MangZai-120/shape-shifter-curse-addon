@@ -10,7 +10,6 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
@@ -52,8 +51,7 @@ public final class OrcafisRockEntity extends ProjectileEntity implements FlyingI
                 setPosition(impact);
                 world.spawnParticles(new BlockStateParticleEffect(ParticleTypes.BLOCK,Blocks.TUFF.getDefaultState()),
                         impact.x,impact.y+.2,impact.z,55,.65,.22,.65,.25);
-                playSound(SoundEvents.BLOCK_STONE_BREAK,2,.65f);
-                if (getOwner() instanceof OrcafisEntity boss) boss.markStrike();
+                playSound(OrcafisSounds.ROCK_IMPACT, 2f, 1f);
                 for (var player : world.getPlayers()) {
                     if (OrcafisEntity.isHuntTarget(player) && player.squaredDistanceTo(impact) <= 9)
                         player.damage(getDamageSources().thrown(this,getOwner()),10);

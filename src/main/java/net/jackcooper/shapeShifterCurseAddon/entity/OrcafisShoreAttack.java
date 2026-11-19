@@ -18,6 +18,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
+import net.minecraft.world.World;
 import static net.jackcooper.shapeShifterCurseAddon.entity.OrcafisEntity.Motion;
 
 final class OrcafisShoreAttack {
@@ -35,10 +36,10 @@ final class OrcafisShoreAttack {
 
     static OrcafisShoreAttack start(OrcafisEntity boss, Motion motion, PlayerEntity target) {
         switch (motion) {
-            case ROCK_TOSS, UNDERTOW -> {
+            case ROCK_TOSS -> {
                 if (target != null) boss.face(target.getPos().subtract(boss.getPos()),180);
             }
-            case WATER_JET, ROLL_LEFT, ROLL_RIGHT -> { }
+            case UNDERTOW, WATER_JET, ROLL_LEFT, ROLL_RIGHT -> { }
             default -> { return null; }
         }
         var attack = new OrcafisShoreAttack(Vec3d.fromPolar(0,boss.getYaw()));
@@ -78,14 +79,12 @@ final class OrcafisShoreAttack {
                 }
                 if (t >= OrcafisRockEntity.RELEASE) {
                     released = true;
-                    boss.markStrike();
                     OrcafisRockEntity.toss(boss,mouth,target.getPos());
                     boss.playSound(SoundEvents.BLOCK_ROOTED_DIRT_BREAK,2,.7f);
                 }
             }
             case ROLL_LEFT, ROLL_RIGHT -> {
                 if (t < ROLL_RELEASE || t > ROLL_LAND) return;
-                boss.markStrike();
                 if (t == ROLL_RELEASE) {
                     boss.playSound(SoundEvents.ENTITY_RAVAGER_STEP,2,.65f);
                     return;
@@ -127,6 +126,8 @@ final class OrcafisShoreAttack {
             direction = turnTowards(facing,aim.subtract(mouth),Math.toRadians(65));
         }
         boolean wet = inWater(world,mouth);
+        double reach = aim == null ? 8 : MathHelper.clamp(aim.distanceTo(mouth)+.5,8,OrcafisTidePulse.RANGE);
+        boss.jetLength((float)reach);
         boss.drawingWater(wet && t < end);
         boss.trackMouth(mouth.subtract(boss.getPos()),direction);
         if (!wet) return;
@@ -136,44 +137,46 @@ final class OrcafisShoreAttack {
             Vec3d up = direction.crossProduct(side);
             var random = boss.getRandom();
             for (int i = 0; i < 8; i++) {
-                double along = .5 + random.nextDouble()*7.3;
+                double along = .5 + random.nextDouble()*(reach-.7);
                 double angle = random.nextDouble()*Math.PI*2;
                 double spread = Math.sqrt(random.nextDouble())*along*.68;
                 Vec3d point = mouth.add(direction.multiply(along))
                         .add(side.multiply(spread*Math.cos(angle))).add(up.multiply(spread*Math.sin(angle)));
-                if (point.squaredDistanceTo(mouth) > 64 || !inWater(world,point) || !clear(boss,mouth,point)) continue;
+                if (point.squaredDistanceTo(mouth) > reach*reach || !inWater(world,point) || !clear(boss,mouth,point)) continue;
                 Vec3d flow = mouth.subtract(point).normalize().multiply(.07+strength*.087);
                 world.spawnParticles(ParticleTypes.BUBBLE,point.x,point.y,point.z,0,flow.x,flow.y,flow.z,1);
             }
         } else {
-            boss.markStrike();
             OrcafisSounds.mouthSound(boss,mouth,OrcafisSounds.UNDERTOW_BITE,1.35f);
         }
         for (PlayerEntity p : world.getPlayers()) {
-            if (!OrcafisEntity.isHuntTarget(p) || !p.isTouchingWater()) continue;
+            if (!OrcafisEntity.isHuntTarget(p)) continue;
             Vec3d point = wetTarget(world,p);
             if (point == null) continue;
             Vec3d delta = point.subtract(mouth);
             double d = delta.length();
-            if (d > (t == end ? 2 : 8) || delta.dotProduct(direction) < CONE*d || !clear(boss,mouth,point)) continue;
+            if (d > (t == end ? 2 : reach) || delta.dotProduct(direction) < CONE*d || !clear(boss,mouth,point)) continue;
             if (t == end) p.damage(boss.getDamageSources().mobAttack(boss),10);
             else if (d > .35) {
-                Vec3d pull = delta.multiply(-(.014+.065*strength)/d);
+                // Close the remaining distance during the draw, including players caught at the far end.
+                double inward = -p.getVelocity().dotProduct(delta)/d;
+                double desired = Math.min(d-.35, Math.max(.06,1.35*(d-.35)/(end-t)));
+                double impulse = MathHelper.clamp(desired-inward,0,.24+.16*strength);
+                Vec3d pull = delta.multiply(-impulse/d);
                 p.addVelocity(pull.x,pull.y,pull.z);
                 p.velocityModified = true;
             }
         }
     }
 
-    private static Vec3d wetTarget(ServerWorld world, PlayerEntity p) {
-        if (!p.isTouchingWater()) return null;
+    static Vec3d wetTarget(World world, PlayerEntity p) {
         Vec3d point = p.getBoundingBox().getCenter();
         if (inWater(world,point)) return point;
-        point = p.getPos().add(0,.03,0);
+        point = p.getPos().add(0,.001,0);
         return inWater(world,point) ? point : null;
     }
 
-    private static boolean inWater(ServerWorld world, Vec3d point) {
+    private static boolean inWater(World world, Vec3d point) {
         BlockPos pos = BlockPos.ofFloored(point);
         var fluid = world.getFluidState(pos);
         return fluid.isIn(FluidTags.WATER) && point.y < pos.getY()+fluid.getHeight(world,pos);
@@ -200,8 +203,9 @@ final class OrcafisShoreAttack {
     }
 
     private void jet(OrcafisEntity boss, ServerWorld world, int t) {
-        if (t >= 54) {
-            if (t == 54) OrcafisSounds.mouthSound(boss,boss.bodyPose().mouth(),OrcafisSounds.JET_RELEASE,1.06f);
+        if (t >= OrcafisEntity.JET_END) {
+            boss.relaxJet(direction,t);
+            if (t == OrcafisEntity.JET_END) OrcafisSounds.mouthSound(boss,boss.bodyPose().mouth(),OrcafisSounds.JET_RELEASE,1.06f);
             boss.jetLength(0);
             return;
         }
@@ -213,8 +217,8 @@ final class OrcafisShoreAttack {
             mouth = boss.bodyPose().mouth();
         }
         if (t == 1) OrcafisSounds.mouthSound(boss,mouth,OrcafisSounds.JET_CHARGE,1.12f);
-        if (t < 14) { boss.trackMouth(mouth.subtract(boss.getPos()),direction); return; }
-        boss.markStrike();
+        if (t < OrcafisEntity.JET_START) { boss.trackMouth(mouth.subtract(boss.getPos()),direction); return; }
+        if (t == OrcafisEntity.JET_START && !boss.canReleaseJet()) { boss.recoverJet(); return; }
         Vec3d offset = mouth.subtract(boss.getPos());
         double along = offset.dotProduct(direction);
         double length = Math.max(0,Math.sqrt(Math.max(0,along*along+OrcafisEntity.JET_RANGE_SQUARED-offset.lengthSquared()))-along);

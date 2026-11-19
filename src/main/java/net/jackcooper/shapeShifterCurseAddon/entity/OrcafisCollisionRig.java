@@ -41,22 +41,22 @@ final class OrcafisCollisionRig {
     static Pose sample(OrcafisEntity boss) {
         return sample(boss.motion(), boss.getPos(), boss.bodyYaw,
                 boss.animationTick(boss.motionTick(0), false), boss.animationTick(boss.motionTick(0), true),
-                boss.jetElevation(), boss.undertowOffset());
+                boss.jetElevation(), boss.undertowOffset(),boss.surfaceJet());
     }
 
     static Pose local(OrcafisEntity.Motion motion, int tick) {
         return sample(motion,Vec3d.ZERO,0,OrcafisEntity.animationTick(motion,tick,false,motion.ticks),
-                OrcafisEntity.animationTick(motion,tick,true,motion.ticks),0,0);
+                OrcafisEntity.animationTick(motion,tick,true,motion.ticks),0,0,false);
     }
 
     private static Pose sample(OrcafisEntity.Motion motion, Vec3d origin, float yaw,
-                               double bodyTick, double turnTick, float neckPitch, float waterOffset) {
+                               double bodyTick, double turnTick, float neckPitch, float waterOffset, boolean surfaceJet) {
         var turn = switch (motion) {
             case WATER_LUNGE, DASH -> OrcafisEntity.Motion.DASH;
             case RETURN -> OrcafisEntity.Motion.RETURN;
             default -> null;
         };
-        Map<String,BoneAnimation> body = CLIPS.get(turn == null ? motion.clip : "swim");
+        Map<String,BoneAnimation> body = CLIPS.get(surfaceJet ? OrcafisEntity.SURFACE_JET_CLIP : turn == null ? motion.clip : "swim");
         Map<String,BoneAnimation> overlay = turn == null ? Map.of() : CLIPS.get(turn.clip);
         Matrix4f worldYaw = new Matrix4f().rotateY((180 - yaw)*MathHelper.RADIANS_PER_DEGREE);
         Matrix4f[] matrices = new Matrix4f[BONES.size()];

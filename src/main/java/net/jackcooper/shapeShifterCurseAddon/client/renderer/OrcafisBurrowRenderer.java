@@ -52,7 +52,8 @@ final class OrcafisBurrowRenderer {
                     Point c = point(x+u+.5,z+v+.5,origin,forward,age,strength);
                     Point d = point(x+u+.5,z+v,origin,forward,age,strength);
                     float rise = Math.max(Math.max(a.rise,b.rise),Math.max(c.rise,d.rise));
-                    if (rise < .035f) continue;
+                    // Trim the shoulders in proportion to the mound, including its last emergence frame.
+                    if (rise <= .035f * strength) continue;
                     float shade = MathHelper.clamp(.83f + (a.rise+d.rise-b.rise-c.rise)*.44f, .60f, 1f);
                     tile(terrain,matrices,a,y,sprite,u,v,color,shade,light);
                     tile(terrain,matrices,b,y,sprite,u,v+.5f,color,shade,light);

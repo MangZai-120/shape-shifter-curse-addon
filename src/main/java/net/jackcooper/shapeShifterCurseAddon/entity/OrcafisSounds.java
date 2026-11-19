@@ -15,6 +15,7 @@ public final class OrcafisSounds {
     private static final SoundEvent GATHER = event("gather");
     private static final SoundEvent BREAK_GROUND = event("break_ground");
     private static final SoundEvent LAND = event("land");
+    static final SoundEvent ROCK_IMPACT = event("rock_impact");
     private static final SoundEvent SWEEP = event("sweep");
     private static final SoundEvent PLOW = event("plow");
     private static final SoundEvent RUSH = event("rush");

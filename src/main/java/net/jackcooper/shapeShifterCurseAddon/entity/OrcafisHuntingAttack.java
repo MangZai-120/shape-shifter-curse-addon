@@ -204,6 +204,9 @@ final class OrcafisHuntingAttack {
         Vec3d lead = velocity.multiply(Math.min(12,travel));
         if (lead.lengthSquared()>9) lead = lead.normalize().multiply(3);
         Vec3d aim = now.add(lead);
+        // A last-moment dodge behind the animal cannot reverse a charge that is already wound up.
+        Vec3d bearing = aim.subtract(origin).multiply(1,0,1).normalize();
+        if (bearing.dotProduct(forward) < .5) return;
         if (motion == Motion.WATER_LUNGE) {
             focus = aim;
             Vec3d delta = aim.subtract(origin);
@@ -216,6 +219,7 @@ final class OrcafisHuntingAttack {
                 Vec3d facing = new Vec3d(Math.sin(angle),0,Math.cos(angle));
                 Vec3d side = new Vec3d(facing.z,0,-facing.x);
                 Vec3d end = aim.subtract(facing.multiply(mouth.z)).subtract(side.multiply(mouth.x)).add(0,-mouth.y,0);
+                if (end.subtract(origin).dotProduct(facing) <= 0) continue;
                 if (end.distanceTo(origin) > .65*(tick-7) || !openWater((ServerWorld)boss.getWorld(),BlockPos.ofFloored(end))
                         || !hasBodyRoom(boss,end)) continue;
                 forward = facing;
@@ -227,7 +231,7 @@ final class OrcafisHuntingAttack {
         var plan = new OrcafisHuntingAttack(origin,now,forward);
         plan.planDash(boss,aim);
         if (!plan.hasDashRoute() && lead.lengthSquared()>.001) plan.planDash(boss,now);
-        if (!plan.hasDashRoute()) return;
+        if (!plan.hasDashRoute() || plan.forward.dotProduct(forward) < .5) return;
         focus=plan.focus; forward=plan.forward; right=plan.right;
         dashScale=plan.dashScale; dashAimDistance=plan.dashAimDistance; dashRise=plan.dashRise;
     }
@@ -288,12 +292,13 @@ final class OrcafisHuntingAttack {
                 : swimmingOut ? swimAfterSplash(world,boss,t) : path(world,motion,t);
         boss.setPosition(pos.x,pos.y,pos.z);
         Vec3d heading = pos.subtract(prev);
-        if (motion == Motion.DASH || motion == Motion.RETURN || motion == Motion.WATER_LUNGE
+        if (motion == Motion.DASH || motion == Motion.RETURN || (motion == Motion.WATER_LUNGE && heading.horizontalLengthSquared() < .0001)
                 || (motion == Motion.POUNCE && !swimmingOut) || motion == Motion.BREACH || motion == Motion.SWEEP) heading = forward;
         if (motion==Motion.PLOW && t>=24 && t<34) heading=right;
         if (heading.horizontalLengthSquared()>.0001) {
             float yaw=(float)Math.toDegrees(Math.atan2(-heading.x,heading.z));
-            boss.setYaw(MathHelper.stepUnwrappedAngleTowards(boss.getYaw(),yaw, motion==Motion.PLOW && t<34 ? 23 : 15));
+            boolean charging = motion == Motion.DASH && t >= 12 || motion == Motion.WATER_LUNGE && t >= 7;
+            boss.setYaw(charging ? yaw : MathHelper.stepUnwrappedAngleTowards(boss.getYaw(),yaw, motion==Motion.PLOW && t<34 ? 23 : 15));
         }
         boss.setBodyYaw(boss.getYaw());
         boss.setHeadYaw(boss.getYaw());
@@ -320,9 +325,7 @@ final class OrcafisHuntingAttack {
             case WATER_LUNGE -> t>=8 && t<=20;
             default -> false;
         };
-        if (!contact || (!strikeStarted && !boss.mayStartStrike())) return;
-        strikeStarted=true;
-        boss.markStrike();
+        if (!contact) return;
         double height = switch (motion) {
             case DASH, WATER_LUNGE -> MathHelper.clamp(focus.y - origin.y,.55,2.35);
             case PLOW -> .55;
@@ -346,11 +349,9 @@ final class OrcafisHuntingAttack {
 
     private void landingWaves(ServerWorld world, OrcafisEntity boss, int tick) {
         int age = tick-OrcafisSplashWave.IMPACT;
-        if (age < 0 || age >= OrcafisSplashWave.MAIN.duration || (!strikeStarted && !boss.mayStartStrike())) return;
+        if (age < 0 || age >= OrcafisSplashWave.MAIN.duration) return;
         Vec3d center = boss.splashPoint(true);
         if (center == null) return;
-        strikeStarted=true;
-        boss.markStrike();
         double reach = OrcafisSplashWave.MAIN.range;
         Box area = new Box(center,center).expand(reach,2,reach);
         for (PlayerEntity player : world.getEntitiesByClass(PlayerEntity.class,area,OrcafisEntity::isHuntTarget)) {
@@ -370,9 +371,8 @@ final class OrcafisHuntingAttack {
             double speed = aquatic ? .18 : .11;
             boss.move(net.minecraft.entity.MovementType.SELF,forward.multiply(speed));
         }
-        if (tick != BITE_IMPACT || strikeStarted || !boss.mayStartStrike()) return;
+        if (tick != BITE_IMPACT || strikeStarted) return;
         strikeStarted = true;
-        boss.markStrike();
         double height = MathHelper.clamp(focus.y+.55-boss.getY(),.4,aquatic ? 2.8 : 2);
         Vec3d start = boss.getPos().add(0,height,0);
         Vec3d intended = start.add(forward.multiply(BITE_REACH));
@@ -414,9 +414,7 @@ final class OrcafisHuntingAttack {
 
     private void tidalWall(ServerWorld world, OrcafisEntity boss, int tick) {
         int age = tick - OrcafisSounds.WALL_RELEASE;
-        if (age < 0 || (!strikeStarted && !boss.mayStartStrike())) return;
-        strikeStarted = true;
-        boss.markStrike();
+        if (age < 0) return;
         Vec3d center = origin.add(forward.multiply(OrcafisSounds.wallDistance(age)));
         Box area = new Box(center,center).expand(8,5,8);
         for (PlayerEntity player : world.getEntitiesByClass(PlayerEntity.class,area,OrcafisEntity::isHuntTarget)) {
@@ -440,9 +438,6 @@ final class OrcafisHuntingAttack {
                     age == 0 ? 75 : 36,1.1,.14,1.1,.18);
         }
         if (leap ? age<0 || age>30 : t<18 || t>34) return;
-        if (!strikeStarted && !boss.mayStartStrike()) return;
-        strikeStarted = true;
-        boss.markStrike();
         Vec3d center = leap ? focus : origin;
         double reach = leap ? OrcafisLandAttacks.SHOCK_RANGE+.6 : 6.8;
         for (PlayerEntity player : world.getEntitiesByClass(PlayerEntity.class,new Box(center,center).expand(reach,4,reach),OrcafisEntity::isHuntTarget)) {
@@ -508,9 +503,6 @@ final class OrcafisHuntingAttack {
                 }
             }
         }
-        if (!strikeStarted && !boss.mayStartStrike()) return;
-        strikeStarted = true;
-        boss.markStrike();
         double far = Math.min(OrcafisTidePulse.RANGE, crest + OrcafisTidePulse.HALF_WIDTH);
         double near = Math.max(0, crest - OrcafisTidePulse.HALF_WIDTH);
         Box band = new Box(focus.x - far, focus.y - 1, focus.z - far, focus.x + far, focus.y + .12, focus.z + far);

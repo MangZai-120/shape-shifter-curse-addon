@@ -1,6 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
 /** Forward and lateral offsets in blocks along the authored swimming turn. */
@@ -33,8 +32,8 @@ final class OrcafisDashPath {
     }
 
     static Vec3d offset(double tick) {
-        if (tick <= 12.6) return new Vec3d(0, 0, -.75 * Math.min(tick / 8.4, 1));
-        if (tick <= 23) return new Vec3d(0, 0, MathHelper.lerp((tick - 12.6) / 10.4, -.75, 14.875));
+        if (tick <= 12.6) return Vec3d.ZERO;
+        if (tick <= 23) return new Vec3d(0, 0, 14.875 * (tick-12.6)/10.4);
         double start = 23, x = 0, z = 14.875;
         for (Bend b : BENDS) {
             if (tick <= b.end) {
