@@ -15,6 +15,7 @@ public final class PocketSpaceLayoutTest {
 	public static void main(String[] args) throws Exception {
 		net.minecraft.SharedConstants.createGameVersion();
 		net.minecraft.Bootstrap.initialize();
+		PocketTerrainFilterTest.verify();
 		for (int level = 1; level <= 5; level++) {
 			PocketSpaceLayout layout = new PocketSpaceLayout(7, level);
 			int interiorCount = 0;

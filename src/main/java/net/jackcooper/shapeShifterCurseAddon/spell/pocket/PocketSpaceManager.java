@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.block.BedBlock;
@@ -100,6 +101,7 @@ public final class PocketSpaceManager {
 	}
 
 	public static void init() {
+		ServerWorldEvents.LOAD.register((server, world) -> PocketTerrainFilter.onWorldLoad(world));
 		ServerLifecycleEvents.SERVER_STARTING.register(PocketSpaceManager::ensureServer);
 		ServerTickEvents.END_SERVER_TICK.register(PocketSpaceManager::tick);
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {

@@ -76,6 +76,8 @@
         "DomainExplosionBoundaryMixin",
         "DomainChestLootMixin",
         "ThreadedAnvilChunkStorageAccessor",
+        "PocketTerrainRegionMixin",
+        "PocketTerrainWorkerAccessor",
         "PocketSpaceBoundaryMixin",
         "PocketSpaceChunkFilterMixin",
         "ItemGroupPositionAccessor",
