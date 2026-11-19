@@ -418,6 +418,7 @@ public class SscAddonClient implements ClientModInitializer {
 		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.BRIDGE_WEB_BULLET, FlyingItemEntityRenderer::new);
 		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.ORCAFIS, net.jackcooper.shapeShifterCurseAddon.client.renderer.OrcafisRenderer::new);
 		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.ORCAFIS_PART, EmptyEntityRenderer::new);
+		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.ORCAFIS_ROCK, net.jackcooper.shapeShifterCurseAddon.client.renderer.OrcafisRockRenderer::new);
 		// 月织蛛蓄力蛛丝弹：用 FlyingItemEntityRenderer 渲染蛛丝弹物品精灵（复用原版 web_projectile 物品）
 		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.WEB_MEMBRANE_BULLET, FlyingItemEntityRenderer::new);
 		// 月织蛛蛛丝荡漾飞弹：同样用 FlyingItemEntityRenderer

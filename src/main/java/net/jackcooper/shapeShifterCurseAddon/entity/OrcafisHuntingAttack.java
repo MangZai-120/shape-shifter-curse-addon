@@ -32,7 +32,11 @@ import static net.jackcooper.shapeShifterCurseAddon.entity.OrcafisEntity.Motion;
 final class OrcafisHuntingAttack {
     static final int BITE_IMPACT = 8;
     static final double BITE_REACH = 5;
-    private final Vec3d origin, focus, forward, right;
+    private final Vec3d origin;
+    private Vec3d focus, forward, right;
+    private double dashRise, dashAimDistance = 1;
+    private Vec3d priorMouth;
+    private Vec3d lungeEnd;
     private Vec3d launch;
     private double dashScale = 1;
     private final Set<UUID> struck = new HashSet<>();
@@ -107,7 +111,11 @@ final class OrcafisHuntingAttack {
                 if (d == reach) break;
             }
         }
-        if (motion == Motion.DASH) {
+        if (target != null && (motion == Motion.DASH || motion == Motion.WATER_LUNGE))
+            attack.focus = target.getBoundingBox().getCenter();
+        if (motion == Motion.DASH && target != null) {
+            attack.planDash(boss,attack.focus);
+        } else if (motion == Motion.DASH) {
             while (attack.dashScale > 0 && !attack.dashFits(boss)) attack.dashScale -= .125;
         }
         return attack;
@@ -147,16 +155,94 @@ final class OrcafisHuntingAttack {
         return !boss.getWorld().getBlockCollisions(boss,body).iterator().hasNext();
     }
 
+    /** Fit the posed snout to the interception point before validating the entire outgoing and return route. */
+    private void planDash(OrcafisEntity boss, Vec3d aim) {
+        Vec3d target = aim.subtract(origin);
+        double distance = target.horizontalLength();
+        if (distance < .01) { dashScale = 0; return; }
+        BlockPos water = BlockPos.ofFloored(aim);
+        if (!boss.getWorld().getFluidState(water).isIn(FluidTags.WATER)) water = water.down();
+        if (!boss.getWorld().getFluidState(water).isIn(FluidTags.WATER)) { dashScale = 0; return; }
+        BlockPos floor = water;
+        while (floor.getY() > boss.getWorld().getBottomY()
+                && boss.getWorld().getFluidState(floor.down()).isIn(FluidTags.WATER)) floor = floor.down();
+        for (dashScale=1; dashScale>0; dashScale-=.125) {
+            int hitTick = 13;
+            Vec3d local = OrcafisDashPath.offset(hitTick).multiply(dashScale);
+            Vec3d contact = local.add(OrcafisDashPath.mouth(hitTick));
+            while (contact.horizontalLength() < distance && hitTick < 49) {
+                local = OrcafisDashPath.offset(++hitTick).multiply(dashScale);
+                contact = local.add(OrcafisDashPath.mouth(hitTick));
+            }
+            if (contact.horizontalLength()+2 < distance && local.horizontalLength()+2 < distance) break;
+            // Near the bed the snout cannot dive below the floor. Drive the body through the swimmer instead.
+            boolean useBody = aim.y-OrcafisDashPath.mouth(hitTick).y < floor.getY();
+            if (useBody) {
+                hitTick = 13;
+                while (hitTick < 49 && OrcafisDashPath.offset(hitTick).horizontalLength()*dashScale < distance) hitTick++;
+                local = OrcafisDashPath.offset(hitTick).multiply(dashScale);
+                if (local.horizontalLength()+2 < distance) break;
+                contact = local.add(0,MathHelper.clamp(aim.y-origin.y,.55,2.35),0);
+            }
+            double angle = Math.atan2(target.x,target.z)-Math.atan2(contact.x,contact.z);
+            forward = new Vec3d(Math.sin(angle),0,Math.cos(angle));
+            right = new Vec3d(forward.z,0,-forward.x);
+            dashAimDistance = Math.max(1,local.z);
+            dashRise = Math.max(floor.getY()+.03,aim.y-contact.y)-origin.y;
+            if (dashFits(boss)) { focus = aim; return; }
+        }
+        dashScale = 0;
+    }
+
+    private void lockCharge(OrcafisEntity boss,Motion motion,int windup) {
+        PlayerEntity player = boss.attackPlayer();
+        if (player == null) return;
+        Vec3d now = player.getBoundingBox().getCenter();
+        Vec3d velocity = now.subtract(focus).multiply(1d/windup);
+        double travel = motion == Motion.DASH ? Math.max(1,(origin.distanceTo(now)-4)/(1.5*Math.max(.125,dashScale)))
+                : Math.min(12,origin.distanceTo(now)/.65);
+        Vec3d lead = velocity.multiply(Math.min(12,travel));
+        if (lead.lengthSquared()>9) lead = lead.normalize().multiply(3);
+        Vec3d aim = now.add(lead);
+        if (motion == Motion.WATER_LUNGE) {
+            focus = aim;
+            Vec3d delta = aim.subtract(origin);
+            double range = delta.horizontalLength();
+            if (range < .01) return;
+            forward = delta.multiply(1,0,1).normalize();
+            for (int tick=8; tick<=20; tick++) {
+                Vec3d mouth = OrcafisDashPath.lungeMouth(tick);
+                double angle = Math.atan2(delta.x,delta.z)-Math.asin(MathHelper.clamp(mouth.x/range,-1,1));
+                Vec3d facing = new Vec3d(Math.sin(angle),0,Math.cos(angle));
+                Vec3d side = new Vec3d(facing.z,0,-facing.x);
+                Vec3d end = aim.subtract(facing.multiply(mouth.z)).subtract(side.multiply(mouth.x)).add(0,-mouth.y,0);
+                if (end.distanceTo(origin) > .65*(tick-7) || !openWater((ServerWorld)boss.getWorld(),BlockPos.ofFloored(end))
+                        || !hasBodyRoom(boss,end)) continue;
+                forward = facing;
+                lungeEnd = end;
+                break;
+            }
+            return;
+        }
+        var plan = new OrcafisHuntingAttack(origin,now,forward);
+        plan.planDash(boss,aim);
+        if (!plan.hasDashRoute() && lead.lengthSquared()>.001) plan.planDash(boss,now);
+        if (!plan.hasDashRoute()) return;
+        focus=plan.focus; forward=plan.forward; right=plan.right;
+        dashScale=plan.dashScale; dashAimDistance=plan.dashAimDistance; dashRise=plan.dashRise;
+    }
+
     private Vec3d dashPosition(int tick) {
         Vec3d local = OrcafisDashPath.offset(tick).multiply(dashScale);
-        return origin.add(right.multiply(local.x)).add(forward.multiply(local.z));
+        return origin.add(right.multiply(local.x)).add(forward.multiply(local.z))
+                .add(0,dashRise*MathHelper.clamp(local.z/dashAimDistance,0,1),0);
     }
 
     private boolean dashFits(OrcafisEntity boss) {
         for (int t = 0; t <= 133; t++) {
             Vec3d at = dashPosition(t);
             BlockPos p = BlockPos.ofFloored(at);
-            if (!boss.getWorld().getFluidState(p).isIn(FluidTags.WATER) || !boss.getWorld().getFluidState(p.up()).isIn(FluidTags.WATER)
+            if (!boss.getWorld().getFluidState(p).isIn(FluidTags.WATER)
                     || !hasBodyRoom(boss,at)) return false;
         }
         return true;
@@ -194,6 +280,8 @@ final class OrcafisHuntingAttack {
             tidalWall(world,boss,t);
             return;
         }
+        if ((motion == Motion.DASH && t == 12) || (motion == Motion.WATER_LUNGE && t == 7))
+            lockCharge(boss,motion,t);
         boolean swimmingOut = motion == Motion.POUNCE && t > 66;
         Vec3d prev = boss.getPos();
         Vec3d pos = motion == Motion.WATER_LUNGE ? shortLunge(world,boss,t)
@@ -218,8 +306,15 @@ final class OrcafisHuntingAttack {
             return;
         }
         effects(world,boss,motion,t,pos);
+        if (motion == Motion.POUNCE && t > OrcafisSplashWave.IMPACT) {
+            landingWaves(world,boss,t);
+            return;
+        }
+        boolean dash = motion == Motion.DASH || motion == Motion.WATER_LUNGE;
+        Vec3d lastMouth = priorMouth;
+        if (dash) priorMouth = boss.bodyPose().mouth();
         boolean contact = switch (motion) {
-            case POUNCE -> t==66;
+            case POUNCE -> t==OrcafisSplashWave.IMPACT;
             case PLOW -> t>=34 && t<=52;
             case DASH -> dashScale > 0 && t>=13 && t<=49;
             case WATER_LUNGE -> t>=8 && t<=20;
@@ -229,17 +324,43 @@ final class OrcafisHuntingAttack {
         strikeStarted=true;
         boss.markStrike();
         double height = switch (motion) {
-            case DASH, WATER_LUNGE -> MathHelper.clamp(focus.y + .45 - origin.y,.55,2.35);
+            case DASH, WATER_LUNGE -> MathHelper.clamp(focus.y - origin.y,.55,2.35);
             case PLOW -> .55;
             default -> 2;
         };
         Vec3d a = prev.add(0,height,0), b = pos.add(0,height,0);
-        double radius = motion==Motion.POUNCE ? 1.9 : 1.5;
-        Box swept = new Box(a,b).expand(radius);
+        double radius = dash ? 2.0 : motion == Motion.POUNCE ? 1.9 : 1.5;
+        double vertical = dash ? 1.5 : motion == Motion.PLOW ? .45 : 1.25;
+        Box swept = new Box(a,b).expand(radius,vertical,radius);
+        if (dash && lastMouth != null) swept = swept.union(new Box(lastMouth,priorMouth).expand(radius,vertical,radius));
         for (PlayerEntity player : world.getEntitiesByClass(PlayerEntity.class,swept,OrcafisEntity::isHuntTarget)) {
-            Box body=player.getBoundingBox().expand(radius,motion==Motion.PLOW ? .45 : 1.25,radius);
-            if (!(body.contains(a)||body.contains(b)||body.raycast(a,b).isPresent()) || !struck.add(player.getUuid())) continue;
+            Box body=player.getBoundingBox().expand(radius,vertical,radius);
+            boolean hit = body.contains(a) || body.contains(b) || body.raycast(a,b).isPresent();
+            if (!hit && dash && lastMouth != null)
+                hit = body.contains(priorMouth) || body.contains(lastMouth) || body.raycast(lastMouth,priorMouth).isPresent();
+            if (!hit || !struck.add(player.getUuid())) continue;
             player.damage(world.getDamageSources().mobAttack(boss),motion==Motion.PLOW ? 10 : 12);
+        }
+        if (motion == Motion.POUNCE) landingWaves(world,boss,t);
+    }
+
+    private void landingWaves(ServerWorld world, OrcafisEntity boss, int tick) {
+        int age = tick-OrcafisSplashWave.IMPACT;
+        if (age < 0 || age >= OrcafisSplashWave.MAIN.duration || (!strikeStarted && !boss.mayStartStrike())) return;
+        Vec3d center = boss.splashPoint(true);
+        if (center == null) return;
+        strikeStarted=true;
+        boss.markStrike();
+        double reach = OrcafisSplashWave.MAIN.range;
+        Box area = new Box(center,center).expand(reach,2,reach);
+        for (PlayerEntity player : world.getEntitiesByClass(PlayerEntity.class,area,OrcafisEntity::isHuntTarget)) {
+            if (struck.contains(player.getUuid()) || !world.getFluidState(
+                    BlockPos.ofFloored(player.getX(),center.y-.5,player.getZ())).isIn(FluidTags.WATER)) continue;
+            Box relative = player.getBoundingBox().offset(-center.x,-center.y,-center.z);
+            if (OrcafisSplashWave.MAIN.touches(age,relative) || OrcafisSplashWave.FOLLOW.touches(age,relative)) {
+                struck.add(player.getUuid());
+                player.damage(world.getDamageSources().mobAttack(boss),8);
+            }
         }
     }
 
@@ -283,7 +404,8 @@ final class OrcafisHuntingAttack {
     private Vec3d shortLunge(ServerWorld world, OrcafisEntity boss, int t) {
         Vec3d current = boss.getPos();
         if (t < 8 || t > 20) return current;
-        Vec3d delta = focus.subtract(current);
+        Vec3d end = lungeEnd != null ? lungeEnd : focus.add(0,-.55,0);
+        Vec3d delta = end.subtract(current);
         Vec3d next = current.add(delta.normalize().multiply(Math.min(delta.length(), .65)));
         if (openWater(world, BlockPos.ofFloored(next)) && hasBodyRoom(boss, next)) return next;
         Vec3d level = new Vec3d(next.x, current.y, next.z);
@@ -425,6 +547,13 @@ final class OrcafisHuntingAttack {
         n.putDouble("DirX",forward.x); n.putDouble("DirZ",forward.z);
         n.putDouble("LaunchX", launch.x); n.putDouble("LaunchY", launch.y); n.putDouble("LaunchZ", launch.z);
         n.putDouble("DashScale", dashScale);
+        n.putDouble("DashRise",dashRise); n.putDouble("DashAimDistance",dashAimDistance);
+        if (lungeEnd != null) {
+            n.putDouble("LungeX",lungeEnd.x); n.putDouble("LungeY",lungeEnd.y); n.putDouble("LungeZ",lungeEnd.z);
+        }
+        if (priorMouth != null) {
+            n.putDouble("MouthX",priorMouth.x); n.putDouble("MouthY",priorMouth.y); n.putDouble("MouthZ",priorMouth.z);
+        }
         n.putBoolean("StrikeStarted",strikeStarted);
         n.putInt("LastPulse", lastPulse);
         NbtList victims=new NbtList();
@@ -449,6 +578,10 @@ final class OrcafisHuntingAttack {
         run.lastPulse = n.contains("LastPulse") ? n.getInt("LastPulse") : -1;
         if (n.contains("LaunchX")) run.launch = new Vec3d(n.getDouble("LaunchX"), n.contains("LaunchY") ? n.getDouble("LaunchY") : run.focus.y, n.getDouble("LaunchZ"));
         if (n.contains("DashScale")) run.dashScale = MathHelper.clamp(n.getDouble("DashScale"), 0, 1);
+        run.dashRise = n.getDouble("DashRise");
+        run.dashAimDistance = Math.max(1,n.getDouble("DashAimDistance"));
+        if (n.contains("LungeX")) run.lungeEnd = new Vec3d(n.getDouble("LungeX"),n.getDouble("LungeY"),n.getDouble("LungeZ"));
+        if (n.contains("MouthX")) run.priorMouth = new Vec3d(n.getDouble("MouthX"),n.getDouble("MouthY"),n.getDouble("MouthZ"));
         for(NbtElement element:n.getList("WallHits",NbtElement.COMPOUND_TYPE)) {
             NbtCompound hit=(NbtCompound)element;
             if(hit.containsUuid("Player")) run.wallHits.put(hit.getUuid("Player"),hit.getInt("Next"));

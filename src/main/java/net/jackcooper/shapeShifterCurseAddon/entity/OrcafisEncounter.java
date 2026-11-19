@@ -8,6 +8,7 @@ import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 
@@ -19,7 +20,7 @@ final class OrcafisEncounter {
     private final OrcafisEntity boss;
     private final OrcafisHabitat habitat = new OrcafisHabitat();
     private UUID opponent;
-    private boolean retreat, inland, lastAttackWasBite;
+    private boolean retreat, inland, lastAttackWasBite, surfacingForJet;
     private int healIn, landAttack, seaAttack;
 
     OrcafisEncounter(OrcafisEntity boss) { this.boss = boss; }
@@ -57,7 +58,13 @@ final class OrcafisEncounter {
         boss.setTarget(player);
         habitat.clearRoute();
         lastAttackWasBite = false;
-        boss.begin(travel(player));
+        boss.begin(canToss(player) ? Motion.ROCK_TOSS : travel(player));
+    }
+
+    private boolean canToss(PlayerEntity player) {
+        double d = boss.squaredDistanceTo(player);
+        return d >= 64 && d <= 324 && !boss.waterAtFeet() && !isWaterTarget(player)
+                && boss.mayStartStrike() && clearAttackLine(player);
     }
 
     private Motion travel(PlayerEntity player) {
@@ -142,13 +149,22 @@ final class OrcafisEncounter {
         double range = delta.horizontalLength();
         Motion terrain = travel(target);
         int age = (int)boss.motionTick(0);
+        if (motion == Motion.SWIM && !isWaterTarget(target) && boss.waterAtFeet()
+                && boss.swimmingSurface()-boss.getY() <= 1.5 && rangedTarget(target,OrcafisEntity.JET_RANGE_SQUARED)
+                && range > OrcafisHuntingAttack.BITE_REACH && boss.mayStartStrike() && clearAttackLine(target)) {
+            surfacingForJet = true;
+            boss.begin(Motion.SURFACE);
+            return;
+        }
         if ((terrain == Motion.SWIM) != (motion == Motion.SWIM)) { boss.begin(terrain); return; }
         if (motion == Motion.SWIM) {
             huntFromWater(target,goal,delta,range,age);
             return;
         }
         if (motion == Motion.WALK) {
-            if (!isWaterTarget(target) && age >= 5 && range <= OrcafisHuntingAttack.BITE_REACH
+            if (canToss(target)) {
+                boss.begin(Motion.ROCK_TOSS);
+            } else if (!isWaterTarget(target) && age >= 5 && range <= OrcafisHuntingAttack.BITE_REACH
                     && Math.abs(delta.y) <= 2.2 && !lastAttackWasBite && boss.mayStartStrike() && clearAttackLine(target)) {
                 boss.begin(Motion.LAND_BITE);
                 lastAttackWasBite = true;
@@ -174,7 +190,10 @@ final class OrcafisEncounter {
 
     private void huntFromWater(PlayerEntity target, Vec3d goal, Vec3d delta, double range, int age) {
         boolean wet = isWaterTarget(target);
-        if (age >= 5 && range <= 24 && Math.abs(delta.y) < 12 && boss.mayStartStrike() && clearAttackLine(target)) {
+        boolean jetFromSurface = age >= 10 && Math.floorMod(seaAttack,7) == 5 && rangedTarget(target,OrcafisEntity.JET_RANGE_SQUARED)
+                && delta.horizontalLengthSquared() + MathHelper.square(goal.y-boss.swimmingSurface()) <= OrcafisEntity.JET_RANGE_SQUARED;
+        if (age >= 5 && range <= 24 && (Math.abs(delta.y) < 12 || jetFromSurface)
+                && boss.mayStartStrike() && clearAttackLine(target)) {
             if (range <= OrcafisHuntingAttack.BITE_REACH && Math.abs(delta.y) <= 2.8
                     && (!lastAttackWasBite || !wet)) {
                 boss.begin(Motion.WATER_BITE);
@@ -182,12 +201,16 @@ final class OrcafisEncounter {
                 return;
             }
             if (wet && age >= 10) {
-                int choice = seaAttack++ % 5;
+                int choice = Math.floorMod(seaAttack++,7);
                 boolean nearSurface = target.getWorld().getFluidState(target.getBlockPos().up(2)).isEmpty();
+                surfacingForJet = choice == 5 && jetFromSurface;
                 Motion attack = switch (choice) {
                     case 1 -> nearSurface ? Motion.POUNCE : Motion.DASH;
                     case 2 -> nearSurface && range <= 20 ? Motion.SURFACE : Motion.DASH;
                     case 4 -> nearSurface ? Motion.TIDE : Motion.DASH;
+                    case 3, 6 -> target.isTouchingWater() && rangedTarget(target,144)
+                            ? Motion.UNDERTOW : Motion.DASH;
+                    case 5 -> surfacingForJet ? Motion.SURFACE : Motion.DASH;
                     default -> Motion.DASH;
                 };
                 boss.face(delta,16);
@@ -207,6 +230,11 @@ final class OrcafisEncounter {
         }
     }
 
+    private boolean rangedTarget(PlayerEntity target,double maxSquared) {
+        Vec3d delta = target.getPos().subtract(boss.getPos());
+        return delta.horizontalLengthSquared() >= 64 && delta.lengthSquared() <= maxSquared;
+    }
+
     private boolean clearAttackLine(PlayerEntity target) {
         Vec3d end = target.getBoundingBox().getCenter();
         return clearAttackLine(boss.getPos().add(0,.65,0),end) || clearAttackLine(boss.getPos().add(0,1.45,0),end);
@@ -220,10 +248,17 @@ final class OrcafisEncounter {
     Motion after(Motion motion) {
         PlayerEntity target = (PlayerEntity)boss.getTarget();
         return switch (motion) {
-            case BREACH -> Motion.RISE;
+            case BREACH -> OrcafisShoreAttack.afterProne(boss);
+            case ROCK_TOSS -> travel(target);
             case DASH -> Motion.RETURN;
             case WAVE, TIDE -> Motion.DIVE;
-            case SURFACE -> isWaterTarget(target) ? Motion.WAVE : travel(target);
+            case SURFACE -> {
+                boolean jet = surfacingForJet;
+                surfacingForJet = false;
+                if (jet) yield boss.waterAtFeet() && rangedTarget(target,OrcafisEntity.JET_RANGE_SQUARED)
+                        ? Motion.WATER_JET : travel(target);
+                yield isWaterTarget(target) ? Motion.WAVE : travel(target);
+            }
             case SWEEP -> Motion.BURROW;
             case PLOW, BURROW -> isWaterTarget(target) ? travel(target) : Motion.WALK;
             default -> travel(target);
@@ -236,6 +271,7 @@ final class OrcafisEncounter {
         nbt.putBoolean("Retreat",retreat);
         nbt.putBoolean("Inland",inland);
         nbt.putBoolean("LastAttackWasBite",lastAttackWasBite);
+        nbt.putBoolean("SurfacingForJet",surfacingForJet);
         nbt.putInt("HealIn",healIn);
         nbt.putInt("LandAttack",landAttack);
         nbt.putInt("SeaAttack",seaAttack);
@@ -248,6 +284,7 @@ final class OrcafisEncounter {
         retreat = nbt.getBoolean("Retreat");
         inland = nbt.getBoolean("Inland");
         lastAttackWasBite = nbt.getBoolean("LastAttackWasBite");
+        surfacingForJet = nbt.getBoolean("SurfacingForJet");
         healIn = nbt.getInt("HealIn");
         landAttack = nbt.getInt("LandAttack");
         seaAttack = nbt.getInt("SeaAttack");

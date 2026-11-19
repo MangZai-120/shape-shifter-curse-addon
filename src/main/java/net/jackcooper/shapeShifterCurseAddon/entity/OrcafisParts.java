@@ -13,7 +13,7 @@ final class OrcafisParts {
             return;
         }
         ServerWorld world = (ServerWorld)boss.getWorld();
-        Box[] boxes = OrcafisCollisionRig.boxes(boss);
+        Box[] boxes = boss.bodyPose().boxes();
         for (int index = 0; index < boxes.length; index++) {
             Box box = boxes[index];
             if (box == null) continue;

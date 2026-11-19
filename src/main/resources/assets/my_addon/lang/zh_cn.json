@@ -1,4 +1,9 @@
 {
+  "subtitles.my_addon.orcafis.undertow_draw": "蛇鲸龙吸入急流",
+  "subtitles.my_addon.orcafis.undertow_bite": "蛇鲸龙合颚吞水",
+  "subtitles.my_addon.orcafis.jet_charge": "蛇鲸龙喉中蓄水",
+  "subtitles.my_addon.orcafis.jet_stream": "蛇鲸龙喷射水柱",
+  "subtitles.my_addon.orcafis.jet_release": "蛇鲸龙收息，水花散落",
   "subtitles.my_addon.orcafis.backwash": "浪墙破碎，海水回落",
   "subtitles.my_addon.orcafis.tide_pull": "蛇鲸龙抬鳍吸水",
   "subtitles.my_addon.orcafis.crest_pass": "浪峰从身边掠过",
@@ -15,6 +20,7 @@
   "subtitles.my_addon.orcafis.slap": "蛇鲸龙拍击水面",
   "subtitles.my_addon.orcafis.wall": "蛇鲸龙的浪墙轰鸣",
   "entity.ssc_addon.orcafis": "蛇鲸龙",
+  "entity.ssc_addon.orcafis_rock": "蛇鲸龙抛出的土石",
   "item.ssc_addon.orcafis_spawn_egg": "蛇鲸龙刷怪蛋",
   "msg.my_addon.accessory_duplicate": "饰品重复",
   "msg.my_addon.accessory_duplicate_detail": "对应槽位装备了相同饰品，仅 Trinkets 中的效果生效",

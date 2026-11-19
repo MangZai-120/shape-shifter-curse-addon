@@ -6,7 +6,9 @@ import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisWallProfile;
 import net.jackcooper.shapeShifterCurseAddon.client.model.OrcafisModel;
 import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisEntity;
 import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisTidePulse;
+import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisSplashWave;
 import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisLandAttacks;
+import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisRockEntity;
 import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -24,6 +26,8 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.cache.object.GeoBone;
 
 public final class OrcafisRenderer extends GeoEntityRenderer<OrcafisEntity> {
+    private final org.joml.Matrix4f renderInverse = new org.joml.Matrix4f();
+    private Vec3d upperLip, lowerLip;
     private static final Identifier WAKE = texture("ground_wake");
     private static final Identifier RING = texture("impact_ring");
     static final Identifier WALL = texture("tidal_wall");
@@ -40,10 +44,25 @@ public final class OrcafisRenderer extends GeoEntityRenderer<OrcafisEntity> {
     @Override
     public void render(OrcafisEntity entity, float yaw, float partial, MatrixStack matrices,
                        VertexConsumerProvider buffers, int light) {
+        boolean waterAttack = entity.motion() == OrcafisEntity.Motion.UNDERTOW || entity.motion() == OrcafisEntity.Motion.WATER_JET;
+        upperLip = lowerLip = null;
+        boolean tossing = entity.motion() == OrcafisEntity.Motion.ROCK_TOSS;
+        if (waterAttack || tossing) renderInverse.set(matrices.peek().getPositionMatrix()).invert();
         if (entity.motion() != OrcafisEntity.Motion.BURROW) super.render(entity, yaw, partial, matrices, buffers, light);
         float tick = entity.motionTick(partial);
         float v = ((int)(tick / 2) % 12) / 12f;
         matrices.push();
+        if (tossing && tick >= OrcafisRockEntity.PICKUP && tick < OrcafisRockEntity.RELEASE && upperLip != null && lowerLip != null) {
+            Vec3d center = OrcafisRockEntity.carriedCenter(upperLip.lerp(lowerLip,.5),
+                    MathHelper.lerpAngleDegrees(partial,entity.prevBodyYaw,entity.bodyYaw));
+            matrices.push();
+            matrices.translate(center.x,center.y,center.z);
+            OrcafisRockRenderer.draw(matrices,buffers,light,0);
+            matrices.pop();
+        }
+        if (waterAttack && upperLip != null && lowerLip != null) {
+            OrcafisWaterFlow.render(entity,upperLip.lerp(lowerLip,.5),tick,partial,matrices,buffers,light);
+        }
         OrcafisAttackWaves.render(entity, matrices, buffers, tick, partial, v, light);
         if (entity.hasBurrowMound()) OrcafisBurrowRenderer.render(entity,matrices,buffers,WAKE,tick,partial,v,light);
         float facing = -MathHelper.lerpAngleDegrees(partial, entity.prevBodyYaw, entity.bodyYaw);
@@ -71,6 +90,15 @@ public final class OrcafisRenderer extends GeoEntityRenderer<OrcafisEntity> {
     public void renderCubesOfBone(MatrixStack matrices, GeoBone bone, VertexConsumer buffer, int light,
                                   int overlay, float red, float green, float blue, float alpha) {
         OrcafisEntity entity = getAnimatable();
+        if (entity != null && (entity.motion() == OrcafisEntity.Motion.UNDERTOW || entity.motion() == OrcafisEntity.Motion.WATER_JET || entity.motion() == OrcafisEntity.Motion.ROCK_TOSS)
+                && (bone.getName().equals("Head") || bone.getName().equals("shore_jaw"))) {
+            // GeckoLib has already applied this frame's jaw, neck and body transforms to the stack.
+            var lip = new org.joml.Vector3f(0,100.79703f/16,3.28202f/16);
+            matrices.peek().getPositionMatrix().transformPosition(lip);
+            Vec3d offset = new Vec3d(renderInverse.transformPosition(lip));
+            if (bone.getName().equals("Head")) upperLip = offset;
+            else lowerLip = offset;
+        }
         if (entity != null && entity.motion() == OrcafisEntity.Motion.PLOW && entity.motionTick(0) < 62
                 && !bone.getName().equals("dorsal_fin") && !bone.getName().equals("dorsal_fin2")) return;
         super.renderCubesOfBone(matrices, bone, buffer, light, overlay, red, green, blue, alpha);
@@ -151,8 +179,8 @@ public final class OrcafisRenderer extends GeoEntityRenderer<OrcafisEntity> {
                          float partial, float age, float duration, float range, float height, float frame, int light, boolean ground) {
         if (center == null || age < 0 || age >= duration) return;
         float phase = age * OrcafisTidePulse.PERIOD / duration;
-        float radius = ground ? OrcafisLandAttacks.shockRadius(age) : OrcafisTidePulse.radius(phase) * range / OrcafisTidePulse.RANGE;
-        float envelope = Math.min(1, .35f + phase*.32f) * Math.min(1, (20 - phase)*.6f);
+        float radius = ground ? OrcafisLandAttacks.shockRadius(age) : OrcafisSplashWave.radius(phase,range);
+        float envelope = OrcafisSplashWave.envelope(phase);
         Vec3d translation = center.subtract(entity.getLerpedPos(partial));
         m.push();
         m.translate(translation.x,translation.y,translation.z);
@@ -182,7 +210,7 @@ public final class OrcafisRenderer extends GeoEntityRenderer<OrcafisEntity> {
 
     private static void waveVertex(VertexConsumer buf, MatrixStack m, float angle, int band,
                                    float radius, float phase, float envelope, float range, float height, float frame, int light) {
-        float ripple = .12f*MathHelper.sin(9*angle + phase*.24f) + .06f*MathHelper.sin(17*angle - phase*.32f);
+        float ripple = OrcafisSplashWave.ripple(angle,phase);
         float r = MathHelper.clamp(radius + WAVE_OFFSET[band] * height + ripple*height, 0, range);
         float h = WAVE_HEIGHT[band] * height * envelope * (1 + ripple) * (1 - .22f*radius/range);
         vertex(buf,m,r*MathHelper.cos(angle),h,r*MathHelper.sin(angle),angle*8/MathHelper.TAU,

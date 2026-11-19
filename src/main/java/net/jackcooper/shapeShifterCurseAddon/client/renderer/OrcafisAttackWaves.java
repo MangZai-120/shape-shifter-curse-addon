@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.client.renderer;
 import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisEntity;
 import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisLandAttacks;
 import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisTidePulse;
+import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisSplashWave;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -24,8 +25,9 @@ final class OrcafisAttackWaves {
             }
             case POUNCE -> {
                 OrcafisRenderer.waveRing(boss,m,buffers,boss.splashPoint(false),partial,tick-24,22,6,.68f,frame,light);
-                OrcafisRenderer.waveRing(boss,m,buffers,boss.splashPoint(true),partial,tick-66,29,10,1.2f,frame,light);
-                OrcafisRenderer.waveRing(boss,m,buffers,boss.splashPoint(true),partial,tick-72,22,6,.46f,frame,light);
+                for (var wave : OrcafisSplashWave.values())
+                    OrcafisRenderer.waveRing(boss,m,buffers,boss.splashPoint(true),partial,
+                            tick-OrcafisSplashWave.IMPACT-wave.delay,wave.duration,wave.range,wave.height,frame,light);
             }
             case WAVE -> OrcafisRenderer.waveRing(boss,m,buffers,boss.getPos(),partial,tick-40,20,7,.50f,frame,light);
             case BREACH -> OrcafisRenderer.waveRing(boss,m,buffers,boss.getPos(),partial,

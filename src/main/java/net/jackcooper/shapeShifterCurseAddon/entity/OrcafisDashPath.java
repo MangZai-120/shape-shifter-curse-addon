@@ -18,6 +18,20 @@ final class OrcafisDashPath {
             new Bend(133, 0, -.5, 0, 0, 0, 0)
     };
 
+    private static final Vec3d[] MOUTH = new Vec3d[50];
+    private static final Vec3d[] LUNGE_MOUTH = new Vec3d[21];
+
+    static Vec3d mouth(int tick) {
+        if (MOUTH[tick] == null) MOUTH[tick] = OrcafisCollisionRig.local(OrcafisEntity.Motion.DASH,tick).mouth();
+        return MOUTH[tick];
+    }
+
+    static Vec3d lungeMouth(int tick) {
+        if (LUNGE_MOUTH[tick] == null)
+            LUNGE_MOUTH[tick] = OrcafisCollisionRig.local(OrcafisEntity.Motion.WATER_LUNGE,tick).mouth();
+        return LUNGE_MOUTH[tick];
+    }
+
     static Vec3d offset(double tick) {
         if (tick <= 12.6) return new Vec3d(0, 0, -.75 * Math.min(tick / 8.4, 1));
         if (tick <= 23) return new Vec3d(0, 0, MathHelper.lerp((tick - 12.6) / 10.4, -.75, 14.875));

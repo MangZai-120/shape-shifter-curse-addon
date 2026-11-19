@@ -28,11 +28,21 @@ public final class OrcafisSounds {
     private static final SoundEvent BACKWASH = event("backwash");
     private static final SoundEvent SETTLE = event("settle");
     public static final SoundEvent WALL = event("wall");
+    public static final SoundEvent UNDERTOW_DRAW = event("undertow_draw");
+    static final SoundEvent UNDERTOW_BITE = event("undertow_bite");
+    static final SoundEvent JET_CHARGE = event("jet_charge");
+    public static final SoundEvent JET_STREAM = event("jet_stream");
+    static final SoundEvent JET_RELEASE = event("jet_release");
     public static final int WALL_RELEASE = 40;
     public static final int WALL_RECEDES = 90;
 
     private OrcafisSounds() {}
     static void init() {}
+
+    static void mouthSound(OrcafisEntity boss, Vec3d mouth, SoundEvent sound, float volume) {
+        if (!boss.isSilent())
+            boss.getWorld().playSound(null,mouth.x,mouth.y,mouth.z,sound,boss.getSoundCategory(),volume,1f);
+    }
 
     private static SoundEvent event(String key) {
         Identifier id = new Identifier("my_addon","orcafis." + key);

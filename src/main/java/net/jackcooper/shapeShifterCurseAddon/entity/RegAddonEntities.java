@@ -25,6 +25,11 @@ public final class RegAddonEntities {
 			FabricEntityTypeBuilder.<OrcafisEntity>create(SpawnGroup.CREATURE, OrcafisEntity::new)
 					.dimensions(EntityDimensions.fixed(2.4f, 5.8f)).trackRangeChunks(12).build());
 
+	public static final EntityType<OrcafisRockEntity> ORCAFIS_ROCK = Registry.register(
+			Registries.ENTITY_TYPE, new Identifier("ssc_addon", "orcafis_rock"),
+			FabricEntityTypeBuilder.<OrcafisRockEntity>create(SpawnGroup.MISC, OrcafisRockEntity::new)
+					.dimensions(EntityDimensions.fixed(1.6f,1.2f)).trackedUpdateRate(1).trackRangeChunks(8).build());
+
 	public static final EntityType<OrcafisPartEntity> ORCAFIS_PART = Registry.register(
 			Registries.ENTITY_TYPE, new Identifier("ssc_addon", "orcafis_part"),
 			FabricEntityTypeBuilder.<OrcafisPartEntity>create(SpawnGroup.MISC, OrcafisPartEntity::new)

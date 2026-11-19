@@ -1,4 +1,49 @@
 {
+  "orcafis.undertow_draw": {
+    "subtitle": "subtitles.my_addon.orcafis.undertow_draw",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/undertow_draw",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.undertow_bite": {
+    "subtitle": "subtitles.my_addon.orcafis.undertow_bite",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/undertow_bite",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.jet_charge": {
+    "subtitle": "subtitles.my_addon.orcafis.jet_charge",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/jet_charge",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.jet_stream": {
+    "subtitle": "subtitles.my_addon.orcafis.jet_stream",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/jet_stream",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "orcafis.jet_release": {
+    "subtitle": "subtitles.my_addon.orcafis.jet_release",
+    "sounds": [
+      {
+        "name": "my_addon:orcafis/jet_release",
+        "attenuation_distance": 32
+      }
+    ]
+  },
   "orcafis.step": {
     "subtitle": "subtitles.my_addon.orcafis.step",
     "sounds": [

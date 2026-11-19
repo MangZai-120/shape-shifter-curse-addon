@@ -1,4 +1,9 @@
 {
+  "subtitles.my_addon.orcafis.undertow_draw": "Orcafis draws in a current",
+  "subtitles.my_addon.orcafis.undertow_bite": "Orcafis snaps its jaws shut",
+  "subtitles.my_addon.orcafis.jet_charge": "Water gathers in Orcafis’s throat",
+  "subtitles.my_addon.orcafis.jet_stream": "Orcafis blasts a jet of water",
+  "subtitles.my_addon.orcafis.jet_release": "The jet breaks into spray",
   "subtitles.my_addon.orcafis.backwash": "Foam washes back",
   "subtitles.my_addon.orcafis.tide_pull": "Orcafis draws up water",
   "subtitles.my_addon.orcafis.crest_pass": "A wave crest rushes past",
@@ -15,6 +20,7 @@
   "subtitles.my_addon.orcafis.slap": "Orcafis slaps the surface",
   "subtitles.my_addon.orcafis.wall": "Orcafis wave roars",
   "entity.ssc_addon.orcafis": "Orcafis",
+  "entity.ssc_addon.orcafis_rock": "Orcafis Boulder",
   "item.ssc_addon.orcafis_spawn_egg": "Orcafis Spawn Egg",
   "msg.my_addon.accessory_duplicate": "Duplicate accessory",
   "msg.my_addon.accessory_duplicate_detail": "Matching slots contain the same item. Only the Trinkets copy takes effect.",
