@@ -216,6 +216,7 @@
         "client.MoistureHudVisibilityMixin",
         "client.ConnectorMoistureHudVisibilityMixin",
         "client.ConnectionProtocolTransitionMixin",
+        "client.IntegratedLoginDisconnectMixin",
 
         "client.ClawCrosshairMixin",
         "client.NovaSprintLockMixin",

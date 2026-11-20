@@ -16,6 +16,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class ConnectionProtocolTransitionMixin {
     @Shadow private Channel channel;
 
+    @Shadow public abstract boolean isLocal();
+
     @Shadow
     private void sendImmediately(Packet<?> packet, @Nullable PacketCallbacks callbacks) {
         throw new AssertionError();
@@ -27,7 +29,9 @@ public abstract class ConnectionProtocolTransitionMixin {
         // Vanilla disables auto-read on the caller thread before scheduling the write. During
         // login, that can clear OP_READ after the event loop has already re-enabled auto-read.
         // Queue the whole operation so its disable/change-protocol/enable sequence cannot race.
-        if (!channel.eventLoop().inEventLoop()) {
+        // In-process connections have no socket read interest. Kilt's local login
+        // queries rely on vanilla dispatch on the caller thread.
+        if (!isLocal() && !channel.eventLoop().inEventLoop()) {
             channel.eventLoop().execute(() -> sendImmediately(packet, callbacks));
             ci.cancel();
         }
