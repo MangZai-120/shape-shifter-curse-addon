@@ -52,31 +52,11 @@ public class EnergyExtractorBlock extends BlockWithEntity {
 	);
 
 	/** 各朝向的舱壳形状（由基准形状绕 Y 旋转生成）。 */
-	private static final EnumMap<Direction, VoxelShape> SHAPES = new EnumMap<>(Direction.class);
-
-	static {
-		for (Direction dir : Direction.Type.HORIZONTAL) {
-			SHAPES.put(dir, rotateShape(Direction.NORTH, dir, SHAPE_NORTH));
-		}
-	}
+	private static final EnumMap<Direction, VoxelShape> SHAPES = HorizontalBlockShapes.fromNorth(SHAPE_NORTH);
 
 	public EnergyExtractorBlock(Settings settings) {
 		super(settings);
 		setDefaultState(getStateManager().getDefaultState().with(FACING, Direction.NORTH));
-	}
-
-	/** 绕 Y 轴把 VoxelShape 从 from 旋转到 to（社区通用实现）。 */
-	private static VoxelShape rotateShape(Direction from, Direction to, VoxelShape shape) {
-		VoxelShape[] buffer = new VoxelShape[]{shape, VoxelShapes.empty()};
-		int times = (to.getHorizontal() - from.getHorizontal() + 4) % 4;
-		for (int i = 0; i < times; i++) {
-			buffer[0].forEachBox((minX, minY, minZ, maxX, maxY, maxZ) ->
-					buffer[1] = VoxelShapes.union(buffer[1],
-							VoxelShapes.cuboid(1 - maxZ, minY, minX, 1 - minZ, maxY, maxX)));
-			buffer[0] = buffer[1];
-			buffer[1] = VoxelShapes.empty();
-		}
-		return buffer[0];
 	}
 
 	@Override

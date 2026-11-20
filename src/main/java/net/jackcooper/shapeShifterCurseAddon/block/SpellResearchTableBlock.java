@@ -52,13 +52,7 @@ public class SpellResearchTableBlock extends BlockWithEntity {
 	);
 
 	/** 各朝向形状（与 blockstate 的 y 旋转约定一致，绕 Y 轴由基准形状生成）。 */
-	private static final EnumMap<Direction, VoxelShape> SHAPES = new EnumMap<>(Direction.class);
-
-	static {
-		for (Direction dir : Direction.Type.HORIZONTAL) {
-			SHAPES.put(dir, rotateShape(Direction.NORTH, dir, SHAPE_NORTH));
-		}
-	}
+	private static final EnumMap<Direction, VoxelShape> SHAPES = HorizontalBlockShapes.fromNorth(SHAPE_NORTH);
 
 	public SpellResearchTableBlock(Settings settings) {
 		super(settings);
@@ -74,20 +68,6 @@ public class SpellResearchTableBlock extends BlockWithEntity {
 	public BlockState getPlacementState(ItemPlacementContext ctx) {
 		// 背板朝向玩家对面：FACING 直接取玩家水平朝向（桌面/斜面书正对放置者）
 		return this.getDefaultState().with(FACING, ctx.getHorizontalPlayerFacing());
-	}
-
-	/** 绕 Y 轴把 VoxelShape 从 from 旋转到 to，单次旋转与 blockstate "y": 90 等价（社区通用实现，同 EnergyExtractorBlock）。 */
-	private static VoxelShape rotateShape(Direction from, Direction to, VoxelShape shape) {
-		VoxelShape[] buffer = new VoxelShape[]{shape, VoxelShapes.empty()};
-		int times = (to.getHorizontal() - from.getHorizontal() + 4) % 4;
-		for (int i = 0; i < times; i++) {
-			buffer[0].forEachBox((minX, minY, minZ, maxX, maxY, maxZ) ->
-					buffer[1] = VoxelShapes.union(buffer[1],
-							VoxelShapes.cuboid(1 - maxZ, minY, minX, 1 - minZ, maxY, maxX)));
-			buffer[0] = buffer[1];
-			buffer[1] = VoxelShapes.empty();
-		}
-		return buffer[0];
 	}
 
 	@Override
