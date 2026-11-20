@@ -1,7 +1,7 @@
 {
     "type": "apoli:multiple",
     "craft_spear": {
-        "type": "apoli:active_self",
+        "type": "my_addon:water_spear_craft",
         "cooldown": 70,
         "hud_render": {
             "should_render": false
@@ -99,11 +99,8 @@
                     "compare_to": 0
                 }
             ]
-        },
-        "key": {
-            "key": "key.use"
         }
     },
     "name": "Water Spear Crafting",
-    "description": "Right-click while holding an arrow in offhand to craft a Water Spear. Costs 10% wetness and 1 arrow. Water Spear disappears on hit or landing, deals area damage and applies Slowness II for 5 seconds."
+    "description": "With an empty main hand and arrows in your offhand, press Use to craft a Water Spear for 15 Moisture and 1 arrow. Block and creature interactions take priority. The spear disappears on hit or landing, deals area damage and applies Slowness II for 5 seconds."
 }

@@ -20,6 +20,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaPassive;
+import net.jackcooper.shapeShifterCurseAddon.power.WaterSpearCraftPower;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 
@@ -110,65 +111,8 @@ public final class SscAddonInteractionEvents {
 		});
 
 
-		// SP美西螈：选中快捷栏(主手)为空 + 副手持箭 + 右键 → 消耗 1 支箭“合成”获得水矛（5 秒CD；身上最多 1 把）
-		// 注：主手为空时 MC 只触发副手(OFF_HAND)交互，故用副手回调
-		net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.register((player, world, hand) -> {
-			boolean axo = net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isAxolotlSP(player);
-			net.minecraft.item.ItemStack mainStack = player.getMainHandStack();
-			net.minecraft.item.ItemStack offStack = player.getOffHandStack();
-			boolean arrowCd = player.getItemCooldownManager().isCoolingDown(net.minecraft.item.Items.ARROW);
-			int spearCount = 0;
-			if (axo) {
-				net.minecraft.entity.player.PlayerInventory inv = player.getInventory();
-				for (int i = 0; i < inv.size(); i++) {
-					if (inv.getStack(i).isOf(SscAddon.WATER_SPEAR)) spearCount++;
-				}
-			}
-			if (hand != net.minecraft.util.Hand.OFF_HAND || !axo || !mainStack.isEmpty()
-					|| !offStack.isOf(net.minecraft.item.Items.ARROW)) {
-				return net.minecraft.util.TypedActionResult.pass(player.getStackInHand(hand));
-			}
-			// 身上最多一把水矛：背包已有则不合成
-			if (spearCount > 0) {
-				return net.minecraft.util.TypedActionResult.pass(player.getStackInHand(hand));
-			}
-			if (world.isClient()) {
-				return arrowCd ? net.minecraft.util.TypedActionResult.pass(player.getStackInHand(hand))
-						: net.minecraft.util.TypedActionResult.success(player.getStackInHand(hand));
-			}
-			if (player instanceof net.minecraft.server.network.ServerPlayerEntity sp) {
-				int slot = sp.getInventory().selectedSlot;
-				net.minecraft.item.ItemStack selStack = sp.getInventory().getStack(slot);
-				int srvSpears = 0;
-				for (int i = 0; i < sp.getInventory().size(); i++) {
-					if (sp.getInventory().getStack(i).isOf(SscAddon.WATER_SPEAR)) srvSpears++;
-				}
-				long now = sp.getServer().getTicks();
-				Long until = SscAddon.WATER_SPEAR_CRAFT_CD.get(sp.getUuid());
-				boolean cooling = until != null && now < until;
-				if (cooling) {
-					return net.minecraft.util.TypedActionResult.pass(sp.getStackInHand(hand));
-				}
-				// 服务端二次硬校验（防御）：选中槽必须真空、且身上无水矛
-				if (!selStack.isEmpty()) {
-					return net.minecraft.util.TypedActionResult.pass(sp.getStackInHand(hand));
-				}
-				if (srvSpears > 0) {
-					return net.minecraft.util.TypedActionResult.pass(sp.getStackInHand(hand));
-				}
-				sp.getOffHandStack().decrement(1);
-				net.minecraft.item.ItemStack spear = new net.minecraft.item.ItemStack(SscAddon.WATER_SPEAR);
-				sp.getInventory().setStack(slot, spear);
-				sp.getInventory().markDirty();
-				if (sp.getWorld() instanceof net.minecraft.server.world.ServerWorld sw) {
-					sw.playSound(null, sp.getX(), sp.getY(), sp.getZ(),
-							net.minecraft.sound.SoundEvents.ITEM_BOTTLE_FILL, sp.getSoundCategory(), 0.8f, 1.0f);
-					net.jackcooper.shapeShifterCurseAddon.util.ParticleUtils.spawnWaterBurst(sw, sp.getX(), sp.getY() + 1.0, sp.getZ(), 0.5);
-				}
-				return net.minecraft.util.TypedActionResult.success(sp.getStackInHand(hand));
-			}
-			return net.minecraft.util.TypedActionResult.pass(player.getStackInHand(hand));
-		});
+		// 只有方块或实体未接收右键时，原版才会尝试使用副手的箭。
+		UseItemCallback.EVENT.register(WaterSpearCraftPower::useArrow);
 		// SP阿努比斯吃凋零玫瑰：进食效果由 custom_edible(form_anubis_wolf_sp_eat_wither_rose) + eatFood mixin 处理。
 		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
 			// SP阿努比斯手持凋零玫瑰看向方块右键时，原版会放置花；返回 FAIL 取消放置，

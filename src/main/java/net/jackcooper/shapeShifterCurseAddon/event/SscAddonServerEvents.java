@@ -10,7 +10,7 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Identifier;
+import net.jackcooper.shapeShifterCurseAddon.power.WaterSpearCraftPower;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.action.SscAddonActions;
@@ -223,13 +223,9 @@ public final class SscAddonServerEvents {
 					Integer wsPrev = SscAddon.WS_LAST_SPEAR_COUNT.put(player.getUuid(), wsCnt);
 
 					// 水矛从「有」变「无」(扛出/消耗) → 重启 Apoli 合成冷却，使「合成CD」从水矛消失那刻起算
-					// 否则持矛期间 active_self 的 cooldown 会走完，扛出后可立即秒合成（用户反馈的 bug）
 					if (wsPrev != null && wsPrev > 0 && wsCnt == 0) {
-						long wsT = server.getTicks();
-						SscAddon.WATER_SPEAR_CRAFT_CD.put(player.getUuid(), wsT + SscAddon.WATER_SPEAR_CRAFT_CD_TICKS);
 						player.getItemCooldownManager().set(Items.ARROW, SscAddon.WATER_SPEAR_CRAFT_CD_TICKS);
-						PowerUtils.resetCooldown(player,
-								new Identifier("my_addon", "form_axolotl_sp_water_spear_craft_spear"));
+						PowerUtils.resetCooldown(player, WaterSpearCraftPower.ID);
 					}
 				}
 				// 性能：STUN 孤儿校正降频到每 10 tick——孤儿修正多残留 0.5s 无感知，

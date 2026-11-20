@@ -262,9 +262,6 @@ public class SscAddon implements ModInitializer {
 	public static final Item WATER_SPEAR = new WaterSpearItem(new Item.Settings().maxCount(1).maxDamage(60));
 	// 冰刺冰锥的渲染载体物品（不进创造栏，仅供 FrostThornEntityRenderer 渲染 3D 模型）
 	public static final Item FROST_THORN = new Item(new Item.Settings().maxCount(1));
-	// SP美西螈水矛合成内部冷却（服务端权威）：UUID -> 冷却结束的服务器 tick；与箭冷却条显示同步
-	// 注：以下 4 个水矛调试/冷却字段为 public，供拆分出去的事件类（水矛监测/合成逻辑）跨类访问
-	public static final Map<UUID, Long> WATER_SPEAR_CRAFT_CD = new ConcurrentHashMap<>();
 	public static final int WATER_SPEAR_CRAFT_CD_TICKS = 70; // 3.5 秒（与 Apoli 合成能力 cooldown 对齐；水矛消失后起算）
 	// 每玩家上次水矛数（服务端权威：检测水矛从「有」变「无」以重启合成 CD）
 	public static final Map<UUID, Integer> WS_LAST_SPEAR_COUNT = new ConcurrentHashMap<>();
