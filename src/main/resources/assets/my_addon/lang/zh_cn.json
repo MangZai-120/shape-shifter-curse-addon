@@ -50,6 +50,7 @@
   "item.ssc_addon.active_coral_necklace.desc": "装死时将治疗改为5颗心，并补充黄心至总量最多20颗；完整效果需装死6秒。",
   "item.ssc_addon.active_coral_necklace.tooltip.exclusive": "SP美西螈形态专属",
   "item.ssc_addon.portable_moisturizer": "美西螈加湿器",
+  "item.ssc_addon.portable_moisturizer.tier": "%s（%s级）",
   "message.ssc_addon.moisturizer.info": "美西螈加湿器 · %s级　使用时间 %s / %s",
   "message.ssc_addon.totem.activated": "§a图腾守护已激活",
   "message.ssc_addon.totem.deactivated": "§e图腾守护已关闭",

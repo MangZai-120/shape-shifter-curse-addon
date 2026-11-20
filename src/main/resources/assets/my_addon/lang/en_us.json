@@ -49,6 +49,7 @@
   "effect.ssc_addon.frost_freeze": "Frost Freeze",
   "effect.ssc_addon.frost_fall": "Frost Fall",
   "item.ssc_addon.portable_moisturizer": "Axolotl Humidifier",
+  "item.ssc_addon.portable_moisturizer.tier": "%s (Level %s)",
   "message.ssc_addon.moisturizer.info": "Axolotl Humidifier · Lv.%s  Time %s / %s",
   "message.ssc_addon.totem.activated": "Totem Guard Activated",
   "message.ssc_addon.totem.deactivated": "Totem Guard Deactivated",

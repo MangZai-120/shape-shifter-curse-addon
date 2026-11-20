@@ -6,6 +6,7 @@
     "plugin": "net.jackcooper.shapeShifterCurseAddon.mixin.plugin.SscAddonMixinConfigPlugin",
     "refmap": "ssc-addon.refmap.json",
     "mixins": [
+        "item.MoisturizerRecipePlacementMixin",
     "EasyAuthPlayerMixin",
     "compat.RebornShapedRecipeSnapshotMixin",
     "FormEyeHeightMixin",
@@ -138,6 +139,7 @@
         "WanderingTraderTradeMixin"
     ],
     "client": [
+        "client.MoisturizerRecipeBookMixin",
         "client.AccessoriesVanillaVertexConsumerMixin",
         "client.FormColorDataMigrationMixin",
         "client.FrozenAnimationRenderMixin",

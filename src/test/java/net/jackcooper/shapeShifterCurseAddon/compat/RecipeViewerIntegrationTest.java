@@ -69,6 +69,7 @@ public final class RecipeViewerIntegrationTest {
             manager.setRecipes(List.of());
             check(SscViewerRecipes.crafting(manager).isEmpty(), "disabled recipes are never advertised");
             poison((VenomGlandRecipe) recipes.get(0));
+            moisturizerBook();
             stateful((UpgradeMoisturizerRecipe) recipes.get(4), (RefillMoisturizerRecipe) recipes.get(3),
                 (ReloadSnowballLauncherRecipe) recipes.get(5), (BlizzardTankRechargeRecipe) recipes.get(6));
             transferEdges((VenomGlandRecipe) recipes.get(0));
@@ -114,6 +115,42 @@ public final class RecipeViewerIntegrationTest {
             var wrong = PotionUtil.setPotion(new ItemStack(Items.POTION), Potions.HEALING);
             check(!SscViewerRecipes.matches(wrong, display.grid().get(4).get(0)), "unrelated potion rejected");
         }
+        private static void moisturizerBook() {
+            var serializers = List.of(SscAddon.MOISTURIZER_TO_2, SscAddon.MOISTURIZER_TO_3);
+            for (int level = 1; level <= serializers.size(); level++) {
+                var serializer = serializers.get(level - 1);
+                var id = id("humidifier_to_" + (level + 1));
+                var json = new com.google.gson.JsonObject();
+                json.addProperty("category", "equipment");
+                var server = serializer.read(id, json);
+                var buf = new net.minecraft.network.PacketByteBuf(io.netty.buffer.Unpooled.buffer());
+                UpgradeMoisturizerRecipe client;
+                try {
+                    serializer.write(buf, server);
+                    client = serializer.read(id, buf);
+                } finally {
+                    buf.release();
+                }
+                check(!client.isIgnoredInRecipeBook() && client.getSerializer() == serializer, "tier survives recipe sync");
+                check(client.getCategory() == CraftingRecipeCategory.EQUIPMENT && client.getIngredients().size() == 9, "book shows full equipment grid");
+                check(PortableMoisturizerItem.getLevel(client.getIngredients().get(4).getMatchingStacks()[0]) == level, "book previews required center level");
+                check(PortableMoisturizerItem.getLevel(client.getOutput(REGISTRY)) == level + 1, "book previews output level");
+                var displays = SscViewerRecipes.examples(client);
+                check(displays.size() == 1, "one upgrade per viewer entry");
+                var inv = input(displays.get(0).grid(), 3);
+                var center = inv.getStack(4);
+                if (level == 1) center.setNbt(null);
+                center.setCustomName(Text.literal("Retain name"));
+                PortableMoisturizerItem.setCharge(center, 777);
+                check(server.matches(inv, null), "named or legacy humidifier can upgrade");
+                var result = server.craft(inv, REGISTRY);
+                check(PortableMoisturizerItem.getLevel(result) == level + 1 && PortableMoisturizerItem.getCharge(result) == 777
+                        && result.getName().equals(center.getName()), "upgrade retains charge and name");
+                PortableMoisturizerItem.setLevel(center, level == 1 ? 2 : 1);
+                check(!server.matches(inv, null) && server.craft(inv, REGISTRY).isEmpty(), "wrong center level rejected");
+            }
+        }
+
         private static void stateful(UpgradeMoisturizerRecipe upgrade, RefillMoisturizerRecipe refill,
                                      ReloadSnowballLauncherRecipe reload, BlizzardTankRechargeRecipe recharge) {
             for (var example : SscViewerRecipes.examples(upgrade)) {

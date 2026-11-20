@@ -89,12 +89,11 @@ public final class SscViewerRecipes {
                 PortableMoisturizerItem.setFullCharge(output);
                 result.add(example(recipe, "level_" + level, pair(input, new ItemStack(Items.AXOLOTL_BUCKET)), output, true, true, "refill"));
             }
-        } else if (recipe instanceof UpgradeMoisturizerRecipe) {
-            for (int level = 1; level < 3; level++) {
-                var grid = emptyGrid(9);
-                for (int i : new int[]{0, 2, 6, 8}) grid.set(i, List.of(new ItemStack(level == 1 ? Items.WET_SPONGE : Items.HEART_OF_THE_SEA)));
-                for (int i : new int[]{1, 3, 5, 7}) grid.set(i, List.of(new ItemStack(level == 1 ? Items.GOLD_INGOT : Items.DIAMOND)));
-                grid.set(4, List.of(moisturizer(level)));
+        } else if (recipe instanceof UpgradeMoisturizerRecipe upgrade) {
+            for (int level = 1; level < PortableMoisturizerItem.MAX_LEVEL; level++) {
+                if (!upgrade.acceptsLevel(level)) continue;
+                var grid = UpgradeMoisturizerRecipe.ingredientsForLevel(level).stream()
+                        .map(ingredient -> List.of(ingredient.getMatchingStacks())).toList();
                 result.add(example(recipe, "level_" + level, grid, moisturizer(level + 1), false, true, "upgrade_moisturizer"));
             }
         } else if (recipe instanceof ReloadSnowballLauncherRecipe) {
@@ -123,10 +122,11 @@ public final class SscViewerRecipes {
     }
 
     public static ItemStack moisturizer(int level) {
-        ItemStack stack = new ItemStack(SscAddon.PORTABLE_MOISTURIZER);
-        PortableMoisturizerItem.setLevel(stack, level);
-        PortableMoisturizerItem.setCharge(stack, 0);
-        return stack;
+        return PortableMoisturizerItem.preview(level);
+    }
+
+    public static List<ItemStack> upgradedMoisturizers() {
+        return List.of(moisturizer(2), moisturizer(3));
     }
 
     public static List<ItemStack> potions(Potion... potions) {

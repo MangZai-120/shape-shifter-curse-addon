@@ -1,0 +1,18 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_material_or_humidifier": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [{ "items": ["minecraft:iron_ingot", "minecraft:wet_sponge", "ssc_addon:portable_moisturizer"] }]
+      }
+    }
+  },
+  "rewards": {
+    "recipes": [
+      "ssc_addon:portable_moisturizer",
+      "ssc_addon:portable_moisturizer_upgrade",
+      "ssc_addon:portable_moisturizer_upgrade_3"
+    ]
+  }
+}

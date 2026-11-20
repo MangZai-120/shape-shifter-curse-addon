@@ -31,6 +31,18 @@ public class PortableMoisturizerItem extends AccessoryItem {
 		super(settings);
 	}
 
+	@Override
+	public Text getName(ItemStack stack) {
+		return Text.translatable("item.ssc_addon.portable_moisturizer.tier", super.getName(stack), getLevel(stack));
+	}
+
+	public static ItemStack preview(int level) {
+		ItemStack stack = new ItemStack(SscAddon.PORTABLE_MOISTURIZER);
+		setLevel(stack, level);
+		setCharge(stack, 0);
+		return stack;
+	}
+
 	/** 各级使用时间上限（charge，1 charge = 1 秒）：一级 5400、二级 8100(+50%)、三级 10800(+100%)。 */
 	public static int getMaxCharge(int level) {
 		return switch (level) {

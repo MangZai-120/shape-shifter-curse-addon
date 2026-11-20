@@ -14,6 +14,10 @@ import net.jackcooper.shapeShifterCurseAddon.compat.recipeviewer.SscViewerRecipe
 import net.jackcooper.shapeShifterCurseAddon.compat.recipeviewer.SscViewerRecipes.*;
 import net.jackcooper.shapeShifterCurseAddon.compat.recipeviewer.SscViewerRecipes.Process;
 import net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes;
+import net.jackcooper.shapeShifterCurseAddon.item.PortableMoisturizerItem;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.recipe.UpgradeMoisturizerRecipe;
+import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.item.*;
@@ -33,13 +37,25 @@ public class SSCA_JEIPlugin implements IModPlugin {
         registration.registerSubtypeInterpreter(PotionTestTubes.FILLED,
                 (mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack>)
                         (stack, context) -> PotionTestTubes.subtypeData(stack).toString());
+        registration.registerSubtypeInterpreter(SscAddon.PORTABLE_MOISTURIZER,
+                (mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack>)
+                        (stack, context) -> Integer.toString(PortableMoisturizerItem.getLevel(stack)));
     }
     @Override public void registerExtraIngredients(IExtraIngredientRegistration registration) {
         registration.addExtraItemStacks(PotionTestTubes.viewerStacks());
+        registration.addExtraItemStacks(SscViewerRecipes.upgradedMoisturizers());
     }
     @Override public void registerCategories(IRecipeCategoryRegistration registration) {
         var gui = registration.getJeiHelpers().getGuiHelper();
         registration.addRecipeCategories(new CraftingCategory(gui), new ProcessingCategory(gui));
+    }
+    @Override public void onRuntimeAvailable(IJeiRuntime runtime) {
+        // JEI also indexes book-visible special recipes as generic shapeless crafting.
+        // Our category supplies the fixed layout and preserves the center item's level during transfer.
+        var manager = runtime.getRecipeManager();
+        var duplicates = manager.createRecipeLookup(RecipeTypes.CRAFTING).get()
+                .filter(UpgradeMoisturizerRecipe.class::isInstance).toList();
+        manager.hideRecipes(RecipeTypes.CRAFTING, duplicates);
     }
     @Override public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
         registration.addRecipeTransferHandler(new SscClickTransferHandler<>(CraftingScreenHandler.class, registration.getTransferHelper()), SPECIAL_CRAFTING);

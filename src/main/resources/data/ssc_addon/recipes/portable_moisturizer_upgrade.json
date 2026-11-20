@@ -1,3 +1,4 @@
 {
-  "type": "ssc_addon:upgrade_moisturizer"
+  "type": "ssc_addon:upgrade_moisturizer_to_2",
+  "category": "equipment"
 }

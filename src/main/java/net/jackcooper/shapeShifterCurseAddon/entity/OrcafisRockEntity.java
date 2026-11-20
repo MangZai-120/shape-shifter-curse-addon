@@ -54,7 +54,7 @@ public final class OrcafisRockEntity extends ProjectileEntity implements FlyingI
                 playSound(OrcafisSounds.ROCK_IMPACT, 2f, 1f);
                 for (var player : world.getPlayers()) {
                     if (OrcafisEntity.isHuntTarget(player) && player.squaredDistanceTo(impact) <= 9)
-                        player.damage(getDamageSources().thrown(this,getOwner()),20);
+                        player.damage(getDamageSources().thrown(this,getOwner()),36);
                 }
                 discard();
                 return;

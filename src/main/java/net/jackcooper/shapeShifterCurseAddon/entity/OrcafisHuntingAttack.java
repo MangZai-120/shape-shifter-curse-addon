@@ -32,6 +32,7 @@ import static net.jackcooper.shapeShifterCurseAddon.entity.OrcafisEntity.Motion;
 final class OrcafisHuntingAttack {
     static final int BITE_IMPACT = 8;
     static final double BITE_REACH = 5;
+    private static final float SLAM_DIRECT_DAMAGE = 36;
     private final Vec3d origin;
     private Vec3d focus, forward, right;
     private double dashRise, dashAimDistance = 1;
@@ -342,7 +343,12 @@ final class OrcafisHuntingAttack {
             if (!hit && dash && lastMouth != null)
                 hit = body.contains(priorMouth) || body.contains(lastMouth) || body.raycast(lastMouth,priorMouth).isPresent();
             if (!hit || !struck.add(player.getUuid())) continue;
-            player.damage(world.getDamageSources().mobAttack(boss),motion==Motion.PLOW ? 20 : 21);
+            float damage = switch (motion) {
+                case POUNCE -> SLAM_DIRECT_DAMAGE;
+                case DASH -> 23;
+                default -> 22; // Shore plow or short water lunge.
+            };
+            player.damage(world.getDamageSources().mobAttack(boss), damage);
         }
         if (motion == Motion.POUNCE) landingWaves(world,boss,t);
     }
@@ -360,7 +366,7 @@ final class OrcafisHuntingAttack {
             Box relative = player.getBoundingBox().offset(-center.x,-center.y,-center.z);
             if (OrcafisSplashWave.MAIN.touches(age,relative) || OrcafisSplashWave.FOLLOW.touches(age,relative)) {
                 struck.add(player.getUuid());
-                player.damage(world.getDamageSources().mobAttack(boss),19);
+                player.damage(world.getDamageSources().mobAttack(boss),26);
             }
         }
     }
@@ -398,7 +404,7 @@ final class OrcafisHuntingAttack {
                 nearest = distance;
             }
         }
-        if (victim != null) victim.damage(world.getDamageSources().mobAttack(boss),19);
+        if (victim != null) victim.damage(world.getDamageSources().mobAttack(boss),25);
     }
 
     private Vec3d shortLunge(ServerWorld world, OrcafisEntity boss, int t) {
@@ -423,7 +429,7 @@ final class OrcafisHuntingAttack {
             double radius = player.getWidth()*.5*(Math.abs(forward.x)+Math.abs(forward.z));
             if (!OrcafisWallProfile.touches(age,delta.dotProduct(right),delta.dotProduct(forward),radius,origin.y,player.getBoundingBox())) continue;
             wallHits.put(player.getUuid(),tick+20);
-            player.damage(world.getDamageSources().mobAttack(boss),11);
+            player.damage(world.getDamageSources().mobAttack(boss),13);
             player.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS,40,0));
         }
     }
@@ -446,16 +452,16 @@ final class OrcafisHuntingAttack {
             float damage;
             if (leap) {
                 double distance=delta.horizontalLength();
-                if (age==0 && distance<=2.05 && delta.y<=2.8 && player.getBoundingBox().maxY>=center.y-.4) damage=24;
+                if (age==0 && distance<=2.05 && delta.y<=2.8 && player.getBoundingBox().maxY>=center.y-.4) damage=SLAM_DIRECT_DAMAGE;
                 else {
                     if (distance>OrcafisLandAttacks.SHOCK_RANGE || Math.abs(distance-OrcafisLandAttacks.shockRadius(age))>.65) continue;
                     double ground=groundY(world,player.getX(),player.getZ(),center.y);
                     if (player.getY()>ground+1.000001 || player.getBoundingBox().maxY<ground-.1) continue;
-                    damage=19;
+                    damage=26;
                 }
             } else {
                 if (delta.y>3.6 || player.getBoundingBox().maxY<origin.y+.3 || !sweptByTail(delta,t)) continue;
-                damage=20;
+                damage=22;
             }
             struck.add(player.getUuid());
             player.damage(world.getDamageSources().mobAttack(boss),damage);
@@ -512,7 +518,7 @@ final class OrcafisHuntingAttack {
             if (distance < near*near || distance > far*far || !player.isTouchingWater()) continue;
             BlockPos surface = BlockPos.ofFloored(player.getX(), focus.y - .5, player.getZ());
             if (world.getFluidState(surface).isIn(FluidTags.WATER) && struck.add(player.getUuid()))
-                player.damage(world.getDamageSources().mobAttack(boss), 6);
+                player.damage(world.getDamageSources().mobAttack(boss), 9);
         }
     }
 

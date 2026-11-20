@@ -43,6 +43,7 @@ public final class SSCA_EMIPlugin implements EmiPlugin {
         registry.addRecipeHandler(null, new CraftingHandler<PlayerScreenHandler>(true));
         registry.setDefaultComparison(net.jackcooper.shapeShifterCurseAddon.SscAddon.PORTABLE_MOISTURIZER,
             Comparison.compareData(s -> net.jackcooper.shapeShifterCurseAddon.item.PortableMoisturizerItem.getLevel(s.getItemStack())));
+        for (var stack : SscViewerRecipes.upgradedMoisturizers()) registry.addEmiStack(EmiStack.of(stack));
         registry.addExclusionArea(SlottedFormationScreen.class, (screen, consumer) -> consumer.accept(new Bounds(0, 0, screen.width, screen.height)));
     }
 

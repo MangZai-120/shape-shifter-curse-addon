@@ -10,6 +10,8 @@ import me.shedaniel.rei.plugin.common.displays.brewing.DefaultBrewingDisplay;
 import me.shedaniel.rei.plugin.common.displays.DefaultInformationDisplay;
 import net.jackcooper.shapeShifterCurseAddon.compat.recipeviewer.SscViewerRecipes;
 import net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes;
+import net.jackcooper.shapeShifterCurseAddon.item.PortableMoisturizerItem;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import me.shedaniel.rei.api.common.entry.comparison.EntryComparator;
 import me.shedaniel.rei.api.common.entry.comparison.ItemComparatorRegistry;
 import me.shedaniel.rei.api.client.registry.entry.EntryRegistry;
@@ -21,9 +23,11 @@ public class SSCA_REIPlugin implements REIClientPlugin {
     @Override public void registerItemComparators(ItemComparatorRegistry registry) {
         var nbt = EntryComparator.nbt();
         registry.register((context, stack) -> nbt.hash(context, PotionTestTubes.subtypeData(stack)), PotionTestTubes.FILLED);
+        registry.register((context, stack) -> PortableMoisturizerItem.getLevel(stack), SscAddon.PORTABLE_MOISTURIZER);
     }
     @Override public void registerEntries(EntryRegistry registry) {
         registry.addEntries(PotionTestTubes.viewerStacks().stream().map(EntryStacks::of).toList());
+        registry.addEntries(SscViewerRecipes.upgradedMoisturizers().stream().map(EntryStacks::of).toList());
     }
     @Override public void registerTransferHandlers(TransferHandlerRegistry registry) {
         registry.register(new SscSpecialRecipeTransferHandler());

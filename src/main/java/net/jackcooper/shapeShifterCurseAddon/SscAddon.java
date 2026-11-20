@@ -253,6 +253,8 @@ public class SscAddon implements ModInitializer {
 	public static final Item TWIN_POD = new TwinPodItem(new Item.Settings().maxCount(1).fireproof());
 	public static final RecipeSerializer<RefillMoisturizerRecipe> REFILL_MOISTURIZER_SERIALIZER = new SpecialRecipeSerializer<>(RefillMoisturizerRecipe::new);
 	public static final RecipeSerializer<UpgradeMoisturizerRecipe> UPGRADE_MOISTURIZER_SERIALIZER = new SpecialRecipeSerializer<>(UpgradeMoisturizerRecipe::new);
+	public static final RecipeSerializer<UpgradeMoisturizerRecipe> MOISTURIZER_TO_2 = new SpecialRecipeSerializer<>((id, category) -> new UpgradeMoisturizerRecipe(id, category, 1));
+	public static final RecipeSerializer<UpgradeMoisturizerRecipe> MOISTURIZER_TO_3 = new SpecialRecipeSerializer<>((id, category) -> new UpgradeMoisturizerRecipe(id, category, 2));
 	public static final RecipeSerializer<ReloadSnowballLauncherRecipe> RELOAD_SNOWBALL_LAUNCHER_SERIALIZER = new SpecialRecipeSerializer<>(ReloadSnowballLauncherRecipe::new);
 	public static final RecipeSerializer<BlizzardTankRechargeRecipe> BLIZZARD_TANK_RECHARGE_SERIALIZER = new SpecialRecipeSerializer<>(BlizzardTankRechargeRecipe::new);
 	public static final RecipeSerializer<SpUpgradeRecipe> SP_UPGRADE_SERIALIZER = new SpecialRecipeSerializer<>(SpUpgradeRecipe::new);
@@ -645,6 +647,8 @@ public class SscAddon implements ModInitializer {
 	private void registerRecipeSerializers() {
 		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "refill_moisturizer"), REFILL_MOISTURIZER_SERIALIZER);
 		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "upgrade_moisturizer"), UPGRADE_MOISTURIZER_SERIALIZER);
+		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "upgrade_moisturizer_to_2"), MOISTURIZER_TO_2);
+		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "upgrade_moisturizer_to_3"), MOISTURIZER_TO_3);
 		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "reload_snowball_launcher"), RELOAD_SNOWBALL_LAUNCHER_SERIALIZER);
 		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "blizzard_tank_recharge"), BLIZZARD_TANK_RECHARGE_SERIALIZER);
 		Registry.register(Registries.RECIPE_SERIALIZER, new Identifier("ssc_addon", "sp_upgrade_crafting"), SP_UPGRADE_SERIALIZER);
