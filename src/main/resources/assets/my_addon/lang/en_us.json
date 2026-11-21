@@ -225,6 +225,7 @@
   "text.ssc_addon.keybind.unbound": "Unbound",
   "text.ssc_addon.keybind.hint": "Click a key button then press any key/mouse button to bind; ESC to unbind",
   "text.ssc_addon.evolution.book.button": "Evolution",
+  "text.ssc_addon.evolution.book.instinct_hint": "Beneath the Cursed Moon, take the Moon Essence Cross in hand. If your shadow sheds its shape before you do, hold fast. Some say that if you press an Evolution Stone to your ear, you can hear the heartbeat of the body yet to be yours.",
   "text.ssc_addon.evolution.book.summary_title": "[Evolution] Unlocked Extra Abilities",
   "evolution.my_addon.familiar_fox.node.mana_system.book": "The mana system awakens within you. You now possess an independent mana reserve (max 33, regenerating 1 per second after 5s out of combat (paused in combat)); right-clicking creatures drains energy by type, restoring hunger and mana. When mana is plentiful (>50%), overflowing spiritual energy shields you from 15% damage; conversely, depleted mana leaves you weak.",
   "evolution.my_addon.familiar_fox.node.spark.book": "You have grasped a weakened fire ring — Spark. It costs 11 mana, erupts in a 3×3×3 area ahead, dealing 4 true damage and igniting non-whitelisted creatures. It is the seed of the full Fire Ring, to be replaced once you master it.",

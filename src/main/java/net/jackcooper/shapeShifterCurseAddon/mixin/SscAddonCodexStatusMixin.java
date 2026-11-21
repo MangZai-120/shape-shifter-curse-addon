@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin;
 
+import net.jackcooper.shapeShifterCurseAddon.SpUpgradeItem;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -20,25 +21,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 
-/**
- * 幻形者之书「外观」段动态化：对进化使魔 / 进化美西螈，在静态外观描述后追加
- * 已解锁加点节点的书页化叙述，让书内 appearance 段随加点状态实时变化。
- *
- * <p><b>历史</b>：本 mixin 最初由 0299132 提交引入，含两个 @Inject——
- * {@code getPlayerStatusText}(按形态返回固定 status) 与 {@code appendEvolutionToAppearance}(动态追加加点)。
- * 前者会覆盖原版的诅咒之月 / 变身中状态显示(status bug)，故 349b435 提交将整个 mixin 删除。
- * 现仅恢复 {@code appendEvolutionToAppearance} 这一无 bug 的功能，{@code getPlayerStatusText} 走原版逻辑不动。</p>
- *
- * <p>仅对进化使魔({@code UPGRADE_FAMILIAR_FOX}) / 进化美西螈({@code UPGRADE_AXOLOTL}) 的
- * {@code APPEARANCE} 类型生效；其它形态 / 其它 ContentType 完全走原版。</p>
- */
+/** 在幻形者之书的本能栏补充永久形态的进化线索，在外观栏记录已解锁的进化节点。 */
 @Mixin(CodexData.class)
 public class SscAddonCodexStatusMixin {
 
     @Inject(method = "getContentText", at = @At("RETURN"), cancellable = true, require = 0)
-    private static void appendEvolutionToAppearance(CodexData.ContentType type, PlayerEntity player,
-                                                    CallbackInfoReturnable<Text> cir) {
-        if (type != CodexData.ContentType.APPEARANCE) {
+    private static void appendEvolutionText(CodexData.ContentType type, PlayerEntity player,
+                                            CallbackInfoReturnable<Text> cir) {
+        if (type != CodexData.ContentType.APPEARANCE && type != CodexData.ContentType.INSTINCTS) {
             return;
         }
         PlayerFormComponent component = RegPlayerFormComponent.PLAYER_FORM.get(player);
@@ -47,6 +37,15 @@ public class SscAddonCodexStatusMixin {
         }
         IForm currentForm = component.nowForm;
         if (currentForm == null || currentForm.getFormID() == null) {
+            return;
+        }
+        if (type == CodexData.ContentType.INSTINCTS) {
+            if (currentForm.getFormTier() == 4 && SpUpgradeItem.getEvolutionTarget(currentForm.getFormID()) != null) {
+                Text hint = Text.translatable("text.ssc_addon.evolution.book.instinct_hint");
+                Text original = cir.getReturnValue();
+                cir.setReturnValue(original == null || original.getString().isBlank()
+                        ? hint : original.copy().append("\n\n").append(hint));
+            }
             return;
         }
 

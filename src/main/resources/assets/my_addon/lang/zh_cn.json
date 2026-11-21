@@ -221,6 +221,7 @@
   "text.ssc_addon.keybind.unbound": "未绑定",
   "text.ssc_addon.keybind.hint": "点击键位按钮后按任意键/鼠标键绑定，ESC 解绑",
   "text.ssc_addon.evolution.book.button": "进化加点",
+  "text.ssc_addon.evolution.book.instinct_hint": "诅咒之月下，握紧月髓十字环。若影子先你一步蜕去旧形，别松手。还有人说，贴近进化石，能听见自己下一副身躯的心跳。",
   "text.ssc_addon.evolution.book.summary_title": "【进化加点】已解锁额外能力",
   "text.autoconfig.ssc_addon_client.title": "客户端配置",
   "text.autoconfig.ssc_addon_server.option.bookLanguage": "故事书语言",

@@ -104,7 +104,7 @@ public class SpUpgradeItem extends Item {
 			if (TideSpiritStoryManager.tryFreeRevertFromAling(player)) {
 				return stack;
 			}
-			Identifier targetFormId = getTargetFormId(player);
+			Identifier targetFormId = getEvolutionTarget(getPlayerFormID(player));
 			// 进化形态门控（使魔 / 美西螈等所有 SSCA 进化路线起点形态）：必须先解锁全部分支才能用月髃环继续进化
 			if (targetFormId != null && player instanceof ServerPlayerEntity spEvo
 					&& !EvolutionManager.canUpgradeFoxEvolve(spEvo)) {
@@ -221,17 +221,8 @@ public class SpUpgradeItem extends Item {
 		return currentForm != null ? currentForm.getFormID() : null;
 	}
 
-	private Identifier getTargetFormId(PlayerEntity player) {
-		Identifier playerFormID = getPlayerFormID(player);
-		// playerFormID为null时，直接返回null，不进入遍历
-		if (playerFormID == null) return null;
-		for (Map.Entry<Identifier, Identifier> entry : UPGRADE_MAP.entrySet()) {
-			Identifier currentFormId = entry.getKey();
-			if (playerFormID.equals(currentFormId)) {
-				return entry.getValue();
-			}
-		}
-		return null;
+	public static @Nullable Identifier getEvolutionTarget(@Nullable Identifier formId) {
+		return UPGRADE_MAP.get(formId);
 	}
 
 	@Override
