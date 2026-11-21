@@ -8,7 +8,7 @@ This mod adds various utility items.
 
 [Watch the Spell Research Table gameplay tutorial: Getting Started to Rank V](../../tutorials/spell-research/index.html?lang=en_us)
 
-The 18 lessons demonstrate analysis, identification, crafting, spellbook setup and casting, research ranks I–V, upgrades, imprinting, formations, and common mistakes. You can also open it from the Wiki home page or the **实机技能教程** sidebar section.
+The 18 lessons demonstrate analysis, identification, crafting, spellbook setup and casting, research ranks I–V, upgrades, imprinting, formations, and common mistakes. See [Spellcasting and Rune Research](../spells/guide.md) for the written steps and default costs.
 
 ---
 
@@ -20,13 +20,29 @@ Exclusive weapon of the SP Axolotl form.
 
 ### Acquisition
 
-In SP Axolotl form, right-click with an arrow in the off-hand to obtain a Water Spear.
+As the Abyssal Overlord, leave your main hand empty, hold a normal arrow in your off hand, and right-click while carrying no Water Spear. This uses one arrow. In **8.0.1 development builds**, block and entity interactions take priority. Aim at empty space and have at least 15 moisture.
 
 ### Effect
 
-- Duration: **1 minute**
+- **60 durability**, losing one point per second in the Abyssal Overlord's inventory. It can be stored in a container.
 - Hits deal damage and apply **Slowness**
 - Enemies within a small radius also take **splash damage**
+
+## Potion Test Tubes { #potion-test-tubes }
+
+Place an eligible drinkable potion and three [empty test tubes](https://www.mcmod.cn/item/1040542.html) in four separate crafting slots. This yields three [filled tubes](https://www.mcmod.cn/item/1040543.html) and returns the glass bottle. Duration is one third of the original, rounded up to a tick, and the effect level carries over. Supported instant effects use a third of the dose, subject to the effect's rounding rules. A tube takes 40% of the bottle's use time, rounded up, and returns the empty tube after drinking.
+
+Filled tubes stack to 3 by default or 16 with the applicable potion-stacking ability. Splash, lingering, form-changing, and unsupported instant-effect potions cannot be split. Tubes cannot be put in a brewing stand.
+
+## Moon Dust Potions { #moon-dust-potions }
+
+| Item | Default effect |
+| --- | --- |
+| [Moon Dust Vial](https://www.mcmod.cn/item/1040545.html) | Takes 0.8 seconds to drink, removes 20 disintegration, and returns the empty tube. |
+| [Bottled Moon Dust Potion](https://www.mcmod.cn/item/1040544.html) | Takes 2 seconds to drink, removes 60 disintegration, and returns the glass bottle. |
+| [Moon Dust Support Potion](https://www.mcmod.cn/item/1040546.html) | Reduces disintegration for players within about four blocks, up to 35 at the center with falloff by distance. |
+
+These potions remove existing [disintegration](../spells/collapse.md). Safety comes from your form, player casting XP, and formations.
 
 ---
 

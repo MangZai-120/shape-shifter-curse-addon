@@ -129,3 +129,8 @@ The shield-fruit effect the Parasitic Fruit Bat plants on allies.
 - **Source**: Parasitic Fruit Bat's Parasitic Spiritfruit (allied host)
 - **Effect**: Grants extra absorption health (yellow hearts) to soak damage
 - **Note**: A separate custom absorption effect; some "no-buff" forms (e.g. SP Familiar Fox) are immune to it
+
+## Other Buffs
+
+- [Frost Armor](https://www.mcmod.cn/item/1038988.html) provides 8, 12, 16, 20, or 24 points of absorption by spell tier for 20 seconds by default.
+- [Energy Overflow](https://www.mcmod.cn/item/1038991.html) delivers the immediate energy restoration of splash and lingering universal energy potions. The amount depends on potion strength and the current form's resources.

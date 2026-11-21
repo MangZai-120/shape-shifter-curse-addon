@@ -33,6 +33,8 @@
 
 **进化之钥**：使用 [月髓十字环](items/evolution_items.md#月髓十字环) 或 [进化石](items/evolution_items.md#进化石)，在对应条件下让你的形态进化为更高级的 SP 形态，感受魔力的重塑与融合。
 
+**法术研究**：解析收集到的卷轴、辨识本存档的符文，再用[月尘魔法书](spells/guide.md)配置法术与增强法阵。施法时留意[崩解度](spells/collapse.md)，命中敌人可积累[元素异常](spells/anomalies.md)。
+
 ---
 
 ## SP 形态一览
@@ -43,7 +45,7 @@
 | [红](sp_forms/sp_familiar_fox_red.md) | 灵界之主分支 | 高风险火环 / 强化吐息 |
 | [契灵](sp_forms/sp_familiar_fox_mancianima.md) | 禁忌兵器 | 单体猎杀 / 烙印真伤 |
 | [SP雪狐](sp_forms/sp_snow_fox.md) | 寒霜之灵 | 玻璃大炮 / 冰霜控场 |
-| [SP美西蟠](sp_forms/sp_axolotl.md) | 深渊霸主 | 水下霸主 / 生存专家 |
+| [SP美西螈](sp_forms/sp_axolotl.md) | 深渊霸主 | 水下霸主 / 生存专家 |
 | [SP野猫](sp_forms/sp_wild_cat.md) | 月光魅影 | 隐身刺客 / 暗夜猎手 |
 | [SP悦灵](sp_forms/sp_allay.md) | 水晶之音 | 空中支援 / 超级奶妈 |
 | [SP堕落悦灵](sp_forms/sp_fallen_allay.md) | 堕落之灵 | 远程骚扰 / 劫掠阵营 |
@@ -51,6 +53,8 @@
 | [金沙岚](sp_forms/sp_golden_sandstorm.md) | 金沙岚 | 烙印爆发 / 凋零续航 |
 | [吸血蝙蝠](sp_forms/sp_bat_desmodus.md) | 嗜血者 | 高机动近战 / 血渴吸血 |
 | [寄生果蝠](sp_forms/sp_bat_parasitic_fruit.md) | 移动果园 | 团队辅助 / 持续控场 |
+
+更多可玩形态、进化条件与路线见[形态概述](sp_forms/overview.md)。
 
 ---
 
@@ -67,9 +71,11 @@
 ## 快速导航
 
 - **新手入门** → [安装指南](getting_started/installation.md)
-- **物品资料** → [进化用品](items/evolution_items.md) | [材料](items/materials.md) | [饰品](items/trinkets.md)
+- **物品资料** → [进化用品](items/evolution_items.md) | [材料](items/materials.md) | [道具](items/tools.md) | [饰品](items/trinkets.md)
+- **法术资料** → [法术入门与研究](spells/guide.md) | [七系法术一览](spells/catalog.md)
 - **SP形态详解** → [SP形态概述](sp_forms/overview.md)
 - **状态效果** → [增益效果](effects/buffs.md) | [减益效果](effects/debuffs.md)
+- **生物** → [模组生物](entities/overview.md)
 - **指令** → [可用指令](commands/commands.md)
 - **背景故事** → [世界观与故事](lore/background.md)
 - **更新日志** → [版本更新记录](update_log/update_log.md)

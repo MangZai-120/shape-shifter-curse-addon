@@ -33,6 +33,8 @@ Tired of plain animal instincts? Time to break through!
 
 **Keys of Evolution**: Use the [Moon Essence Cross](items/evolution_items.md#moon-essence-cross) or the [Evolution Stone](items/evolution_items.md#evolution-stone) under the right conditions to evolve your current form into an advanced SP form, and feel the reshaping and fusion of magic.
 
+**Spell Research**: Analyze scrolls, identify your world's runes, and equip spells and formations in a [Moon Dust Spellbook](spells/guide.md). Casting builds [disintegration](spells/collapse.md), while hits can build [elemental anomalies](spells/anomalies.md) on the target.
+
 ---
 
 ## SP Forms at a Glance
@@ -52,6 +54,8 @@ Tired of plain animal instincts? Time to break through!
 | [Desmodus](sp_forms/sp_bat_desmodus.md) | Bloodthirster | High-mobility Melee / Blood Thirst Lifesteal |
 | [Parasitic Fruit Bat](sp_forms/sp_bat_parasitic_fruit.md) | Moving Orchard | Team Support / Sustained Control |
 
+See the [forms overview](sp_forms/overview.md) for the full roster and evolution paths.
+
 ---
 
 ## Mod Highlights
@@ -67,12 +71,14 @@ Tired of plain animal instincts? Time to break through!
 ## Quick Navigation
 
 - **Getting Started** → [Installation Guide](getting_started/installation.md)
-- **Items** → [Evolution Items](items/evolution_items.md) | [Materials](items/materials.md) | [Trinkets](items/trinkets.md)
+- **Items** → [Evolution Items](items/evolution_items.md) | [Materials](items/materials.md) | [Tools](items/tools.md) | [Trinkets](items/trinkets.md)
+- **Spells** → [Spellcasting and Rune Research](spells/guide.md) | [Spell Catalog](spells/catalog.md)
 - **SP Forms in Detail** → [Forms Overview](sp_forms/overview.md)
 - **Status Effects** → [Buffs](effects/buffs.md) | [Debuffs](effects/debuffs.md)
+- **Creatures** → [Creature Guide](entities/overview.md)
 - **Commands** → [Available Commands](commands/commands.md)
 - **Lore** → [Worldbuilding & Stories](lore/background.md)
-- **Update Log** → [Version History](../update_log/update_log.md)
+- **Update Log** → [Version History](update_log/update_log.md)
 
 ---
 

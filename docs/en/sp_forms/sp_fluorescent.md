@@ -63,9 +63,16 @@ Inherited axolotl instincts — water breathing, underwater vision, swim speed, 
 
 ***
 
-## Story Form: Aling
+## Story Form: Aling { #aling }
 
-After evolving into Fluorescent, collect the 7 *Azure Port Chronicle* books from loot chests, earn the "Fluorescent" advancement, then sleep on a Cursed Moon night to permanently transform into the story form **Aling**: slower land moisture drain (~25%), innate triple-laser (1.2× range/damage/hitbox of pendant Fluorescent), +20% tidal ball duration with damage-over-time while tethered, +2 max HP, and free Moon Essence Cross reversion to Fluorescent.
+As Fluorescent, collect the seven *Azure Port Chronicle* books from loot chests and earn the Fluorescent advancement. On a Cursed Moon night, stay asleep for **100 ticks (5 seconds)** to transform permanently into **Aling**. Waking early cancels that attempt. You can later use the Moon Essence Cross to return to Fluorescent without consuming the item.
+
+- On dry ground Aling loses 3 moisture every 27 ticks, compared with every 20 ticks for Fluorescent. The Vegetation perk cuts that loss to 1 per interval.
+- Aling has the triple Array Laser without the pendant. Its range, damage, and hit radius are 1.2 times those of the pendant-equipped Fluorescent version.
+- The normal tidal orb flies and tethers for 20% longer. During a tether it attempts 4 physical damage per second, or 6 against unprotected non-player targets. The pendant changes this into a detonation and slow.
+- The form grants +2 maximum health. Inherited moisture thresholds also affect the total.
+
+[Aling gameplay tutorial](../../tutorials/aling/index.html?lang=en_us) · [MCMod entry](https://www.mcmod.cn/item/984308.html)
 
 ***
 

@@ -122,21 +122,25 @@ Exclusive trinket of the Parasitic Fruit Bat form, strengthening coverage.
 
 ***
 
-## Non-Equippable Trinkets
-
 ### Axolotl Humidifier
 
 **Axolotl Humidifier**
 
-A lifesaver item for the SP Axolotl form.
+The [Axolotl Humidifier](https://www.mcmod.cn/item/920744.html) is a belt accessory for Abyssal Overlord, Upgrade Axolotl, Fluorescent, and Aling. It works automatically while equipped. Hold and right-click to check its charge.
 
-* **Form**: SP Axolotl
-* **Crafting**: Iron Ingot + Redstone + Sponge
-* **Usage**: Hold and right-click to toggle on/off, maintains moisture while out of water
-* **Charging**: Craft with an Axolotl Bucket to refill energy
-* **Duration**: Up to 90 minutes
+| Level | Maximum moisture restored per second | Charge capacity |
+| --- | ---: | ---: |
+| I | 2% | 90 minutes |
+| II | 3% | 135 minutes |
+| III | 4% | 180 minutes |
+
+Moisture restoration rounds up and spends one second of charge when moisture is below maximum. In rain, the humidifier pauses its restoration and replenishes one second of charge every two seconds. Equipping level III grants 15% extra damage by default, even when its charge is depleted.
+
+The level-I recipe uses seven Iron Ingots, a Wet Sponge in the center, and Redstone Dust at the bottom. It starts with 600 seconds of charge. Craft it with an Axolotl Bucket for a full charge. For upgrades, put the old item in the center. Use Wet Sponges in the corners and Gold Ingots along the edges for I→II, or Hearts of the Sea in the corners and Diamonds along the edges for II→III. Upgrades preserve remaining charge.
 
 ***
+
+## Non-Equippable Trinkets
 
 ### Snowball Launcher
 

@@ -111,3 +111,18 @@ The sustained debuff and contagion state caused by the Parasitic Fruit Bat's Inf
     - All damage dealt is **reduced by 15%**
     - Spreads to non-whitelisted creatures within 1.5 blocks
 - **Cleanse**: The Allay's Purify clears the infection and dissipates the cloud
+
+## Spider Web Bound
+
+Moon Weaver's webs can slow unprotected targets by 50%. The effect refreshes two-second Mining Fatigue I and Weakness I, which can briefly remain after the web effect ends. [MCMod entry](https://www.mcmod.cn/item/987035.html)
+
+## Other Spell and Form Effects
+
+| Effect | Use |
+| --- | --- |
+| [Erosion Brand I–III](https://www.mcmod.cn/item/942559.html) | Displays the number of brands applied by [Golden Sandstorm](../sp_forms/sp_golden_sandstorm.md). |
+| [Frost Shatter](https://www.mcmod.cn/item/1017632.html) | Frost Nova halves armor by default. A new hit refreshes the effect. |
+| [Curse Mark](https://www.mcmod.cn/item/1017633.html) | Increases damage taken and reduces damage dealt. Strength and duration scale with spell tier. |
+| [Sheep Form](https://www.mcmod.cn/item/1038990.html) | Beep Sheep temporarily changes the target's appearance and restricts attacking and block interactions. |
+
+[Elemental anomalies](../spells/anomalies.md) produce Freeze, Lunar Eclipse, Curse Weakness, and other reactions. Disorder, Disintegration, and Breakdown remain registered for older data. In 8.0.0, movement and health penalties use the [current overload tier](../spells/collapse.md).

@@ -10,16 +10,28 @@ The main command prefix of this mod.
 /ssc_addon <subcommand> [args]
 ```
 
-### Description
+## Player commands
 
-This command manages and operates various features of this addon, including but not limited to:
+| Command | Use |
+| --- | --- |
+| `/ssc_addon my_whitelist` | Open your whitelist manager. |
+| `/ssc_addon debug form / mana / anim` | Inspect your current form, energy, or animation diagnostics. |
+| `/ssc_addon palette export` | Export your current form colors as a share code. |
+| `/ssc_addon palette apply <code>` | Apply a form color share code to yourself. |
 
-- Form management
-- Debug functions
-- Config tweaks
+## Operator commands
 
-!!! note "Permission"
-    Some subcommands may require operator (OP) permission.
+These commands require permission level 2.
+
+| Command | Use |
+| --- | --- |
+| `/ssc_addon set_mana <player> <nonnegative integer>` | Set existing form resources such as SSC mana, Frost, Allay magic, Mist Blood, and Anubis soul energy, capped per resource. |
+| `/ssc_addon mark_owner <entity>` | Mark the executor as the owner of the selected entity for effects that need attack attribution. |
+| `/ssc_addon evolution unlock_all / reset [player]` | Unlock or reset SSCA evolution talents. |
+| `/ssc_addon get_book <book ID> [language]` | Give a story book. Use `zh_cn` or `en_us` for language. |
+| `/ssc_addon reload` | Reload the SSCA configuration. |
+
+[MCMod command reference](https://www.mcmod.cn/item/922952.html)
 
 ---
 

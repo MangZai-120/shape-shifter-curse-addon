@@ -30,7 +30,7 @@ Red has two acquisition paths: a **limited-time random branch** and the **Power 
 | Trigger | During the Cursed Moon |
 | Branch check | First check per Cursed Moon has a **5%** chance to convert to Red |
 | Duration | Receives the `ssc_addon_red_expire` tag, lasts **12000 ticks (10 minutes)**, then reverts to SP Familiar Fox |
-| Note | The Moon Essence Cross upgrade code also has a Red branch check, but still proceeds to standard SP conversion afterwards; this path documents the stable Cursed-Moon SP conversion logic |
+| Alternate trigger | When the base mod's permanent Familiar Fox evolves with the Moon Essence Cross on a Cursed Moon night, the cross has a 5% chance to grant temporary Red. It returns to Spirit Realm Lord after ten minutes by default |
 
 ### Path 2: Power of the Moon Scar Story Path (Permanent)
 
@@ -39,7 +39,7 @@ Red has two acquisition paths: a **limited-time random branch** and the **Power 
 | Prerequisite form | SP Familiar Fox (`my_addon:form_familiar_fox_sp`) |
 | Prerequisite advancement | Unlock the hidden advancement "**Power of the Moon Scar**" — collect all books related to the Lord of the Spirit Realm: Moon Scar: Lord of the Spirit Realm Chapters 1–8 + Epilogue (9 books) plus the Familiar Research Record FF-E-013 |
 | Guidance hint | Once the advancement is unlocked while in SP Familiar Fox form, you receive a one-time whisper hint guiding you to sleep |
-| Trigger | **Sleep during a Cursed Moon night**: the SP Familiar Fox truly falls asleep (using the feral sleeping animation) and transforms into Red upon waking |
+| Trigger | **Stay asleep for 100 ticks (5 seconds) on a Cursed Moon night**. The player automatically wakes and transforms into Red |
 | Duration | **Permanent** — it does not expire and revert like the limited-time branch |
 | Reversion | While in the story Red state, use the **Moon Essence Cross** at any time to freely revert to SP Familiar Fox (without consuming the item) |
 | Note | This path does not apply the `ssc_addon_red_expire` tag, so it is never reverted by the limited-time branch's expiry logic; the two paths are independent |

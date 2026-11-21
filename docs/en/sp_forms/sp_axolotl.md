@@ -58,11 +58,7 @@ Manually enter a 6-second Playing Dead state:
 
 ### Water Spear Crafting
 
-Right-click with an arrow in offhand:
-
-* Costs **10% moisture** and **1 arrow**.
-* Only crafts when no Water Spear in inventory.
-* **5 second** cooldown.
+Leave your main hand empty, hold a normal arrow in your off hand, and right-click while carrying no [Water Spear](../items/tools.md#water-spear). This uses one arrow. In 8.0.0, the crafting cooldown is **3.5 seconds** after the spear is gone. In 8.0.1 development builds, block and entity interactions take priority, and crafting also costs 15 moisture.
 
 ### Enhanced Water Burst
 
@@ -85,7 +81,7 @@ Restore an extra **0.75 HP every 40 ticks (2 seconds)**, independently of normal
 
 ### Moisture Loop
 
-Primary skill, burst, and Water Spear all consume moisture. On land, use rain, the Axolotl Humidifier, or water bodies — otherwise the active loop stalls.
+Vortex and Water Burst consume moisture. Restore it on land with rain, the Axolotl Humidifier, or nearby water.
 
 ### Base Axolotl Abilities
 

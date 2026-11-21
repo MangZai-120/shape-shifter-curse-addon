@@ -32,23 +32,20 @@ Craft on a crafting table:
 | Netherite Ingot | 1 |
 
 !!! note "Layout"
-    All materials other than Gold Ingots and the Shaping Core can be arranged freely. Gold Ingots go in the four corners; Shaping Core goes in the center.
+    Put Gold Ingots in the corners and the Shaping Core in the center. Put the Emerald at the top, Redstone Dust on the left, Moondust Pure Crystal on the right, and Netherite Ingot at the bottom.
 
 ### Usage Conditions & Effects
 
-This item is used for evolutions related to the Cursed Moon. The player must meet **both** conditions to use it successfully:
+Hold right-click for approximately 1.6 seconds. These are the normal Survival outcomes. See the [forms overview](../sp_forms/overview.md) for the available paths.
 
 | Condition Combination | Effect |
 |-----------------------|--------|
-| Neither condition met | No effect, Moon Essence Cross is consumed |
-| Only Cursed Moon condition met | No effect, Moon Essence Cross is consumed |
-| Only permanent form condition met | No effect, Moon Essence Cross is consumed |
-| **Both met** | **Evolve into SP form, Moon Essence Cross is consumed** |
-| Already SP form + no Cursed Moon | No effect, Moon Essence Cross is consumed |
-| Already SP form + Cursed Moon active | Block-destroying explosion (no damage in Peaceful; on other difficulties deals 100000 damage / lethal) |
+| Cursed Moon night and a form eligible for evolution | Starts the corresponding transformation and consumes the cross |
+| Cursed Moon night and a form subject to the repeat-use penalty | Creates a block-breaking explosion. Outside Peaceful, the user also takes 100,000 base damage |
+| Cursed Moon night and an unsupported form | Consumes the cross. Deals 10 base erosion damage and applies Slowness II, Weakness II, and Mining Fatigue II for 20 seconds |
+| Other times | Consumes the cross without starting a normal evolution |
 
-!!! warning "Danger"
-    The Moon Essence Cross explosion is similar to an End Crystal. It deals **100000 damage** to the player using it. A Totem of Undying can protect against the lethal explosion, so it can serve as an emergency burst-damage option.
+An Upgrade Familiar or Upgrade Axolotl with unfinished branches keeps the cross. Aling can use the cross to [return to Fluorescent](../sp_forms/sp_fluorescent.md#aling) at no item cost.
 
 ### Applicable Forms
 
@@ -57,6 +54,7 @@ This item is used for evolutions related to the Cursed Moon. The player must mee
 - SP Fallen Allay (Spirit of the Fallen)
 - SP Anubis Wolf (Netherjudge)
 - Desmodus (Bloodthirster)
+- Wind Spirit, Frostspine, Moon Weaver, and Nightmare
 
 ---
 
@@ -78,22 +76,23 @@ This item is used for evolutions related to the Cursed Moon. The player must mee
 
 ### Crafting Recipe
 
-Crafted on a crafting table from the five [Evolution Shards](materials.md):
+Shapeless crafting recipe:
 
 | Material | Quantity |
 |----------|----------|
-| Hunt Shard | 1 |
-| Sculk Shard | 1 |
-| Ender Shard | 1 |
-| Night Vision Shard | 1 |
-| Shadow Shard | 1 |
+| Amethyst Shard | 2 |
+| Echo Shard | 2 |
+| Diamond | 2 |
+| Shaping Core | 1 |
+| Moondust Pure Crystal | 1 |
+| Netherite Ingot | 1 |
 
 ### Usage
 
 Hold right-click to use. Used for evolutions **not requiring the Cursed Moon**.
 
 - For a **non-target form** use: failure prompt, nothing happens
-- For a **target form** use: success prompt, Evolution Stone is consumed
+- For an **eligible form**: starts transformation and consumes one stone in Survival. Upgrade Familiar and Upgrade Axolotl must meet their branch requirements first.
 
 ### Applicable Forms
 
@@ -103,3 +102,14 @@ Hold right-click to use. Used for evolutions **not requiring the Cursed Moon**.
 - Golden Sandstorm (SP)
 - Mancianima (Forbidden Weapon)
 - Parasitic Fruit Bat (Moving Orchard)
+- Fluorescent Axolotl, Nova, and Salticidae
+
+## Psionic Orb
+
+Hold use to change between the two upgrade forms. The switch requires at least three unspent talent points and rolls back three progression milestones. Craft it with Amethyst Shards in the corners, Moondust Pure Crystals on the four edges, and an Ender Pearl in the center. [MCMod entry](https://www.mcmod.cn/item/987028.html)
+
+## Instinct Anchor and Release
+
+- The [Instinct Anchor](https://www.mcmod.cn/item/1040540.html) is consumed on successful use. It fixes your current form and instinct value through respawn and relogging. It applies to forms with variable instinct that SSC has left unlocked.
+- Use the [release item](https://www.mcmod.cn/item/1040541.html) to remove the anchor's lock. Native SSC locks remain under SSC's control.
+- Applying or releasing the lock is unavailable during the Overworld's Cursed Moon or while transforming.

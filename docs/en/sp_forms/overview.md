@@ -17,8 +17,12 @@ The Moon Essence Cross route requires the **night of the Cursed Moon**, plus the
 | Vanilla Allay form | [SP Fallen Allay (Spirit of the Fallen)](sp_fallen_allay.md) |
 | Anubis Wolf Stage 3 | [SP Anubis Wolf (Netherjudge)](sp_anubis_wolf.md) |
 | Bat Stage 3 | [Desmodus (Bloodthirster)](sp_bat_desmodus.md) |
+| Ocelot Stage 3 | [Wind Spirit](sp_ocelot_wind_spirit.md) |
+| Snow Fox Stage 3 | [Frostspine](sp_frostspine.md) |
+| Spider Stage 3 | [Moon Weaver](sp_moon_weaver.md) |
+| Vanilla Wild Cat SP | [Nightmare](sp_nightmare.md) |
 
-Familiar Fox (Red) is **not** a stable Moon Essence Cross target; instead, an SP Familiar Fox under the Cursed Moon has a **5%** chance of a temporary transformation into Red, lasting **12000 ticks (10 minutes)** before reverting back to SP Familiar Fox.
+When the base mod's permanent Familiar Fox uses the cross to evolve on a Cursed Moon night, it has a **5%** chance to become Red first. Spirit Realm Lord also has a default **5%** chance on its first check during each Cursed Moon. Both temporary transformations last **12,000 ticks (10 minutes)** by default before reverting to Spirit Realm Lord.
 
 ### Evolution Stone
 
@@ -26,12 +30,24 @@ The Evolution Stone route does not require a Cursed Moon — long-press to use i
 
 | Base Form | Target Form |
 | --- | --- |
-| Vanilla Wild Cat SP / Ocelot branch | [Wild Cat (SP) (Moonlight Phantom)](sp_wild_cat.md) |
+| Vanilla Wild Cat SP | [Wild Cat (SP) (Moonlight Phantom)](sp_wild_cat.md) |
+| Ocelot Stage 3 | [Nova](sp_ocelot_nova.md) |
 | Snow Fox Stage 3 | [SP Snow Fox (Frost Spirit)](sp_snow_fox.md) |
 | Vanilla Allay form | [SP Allay (Crystal Sound)](sp_allay.md) |
 | Anubis Wolf Stage 3 | [Golden Sandstorm (SP)](sp_golden_sandstorm.md) |
-| Familiar Fox (Red Fox) special branch | [Mancianima (Forbidden Weapon)](sp_familiar_fox_mancianima.md) |
+| Familiar Fox Stage 3 | [Mancianima (Forbidden Weapon)](sp_familiar_fox_mancianima.md) |
 | Bat Stage 3 | [Parasitic Fruit Bat (Moving Orchard)](sp_bat_parasitic_fruit.md) |
+| Axolotl Stage 3 | [Fluorescent Axolotl](sp_fluorescent.md) |
+| Spider Stage 3 | [Salticidae](sp_salticidae.md) |
+
+### Independent evolution paths
+
+When first opening the Shapeshifter's Book, choose a starting form under SSCA Evolution. Spend talent points to unlock abilities. Reach evolution level 50 and meet the branch requirements before using the corresponding evolution item.
+
+| Starting form | Moon Essence Cross | Evolution Stone |
+| --- | --- | --- |
+| [Upgrade Familiar](upgrade_familiar_fox.md) | [Spirit Realm Lord](sp_familiar_fox.md) | [Mancianima](sp_familiar_fox_mancianima.md) |
+| [Upgrade Axolotl](upgrade_axolotl.md) | [Abyssal Overlord](sp_axolotl.md) | [Fluorescent Axolotl](sp_fluorescent.md) |
 
 ---
 
@@ -40,7 +56,7 @@ The Evolution Stone route does not require a Cursed Moon — long-press to use i
 | Form | Title | Evolution | Combat Role |
 | --- | --- | --- | --- |
 | [SP Familiar Fox](sp_familiar_fox.md) | Spirit Realm Lord | Moon Essence Cross | Mana Mage / Sustained AOE |
-| [Familiar Fox · Red](sp_familiar_fox_red.md) | Spirit Realm Lord variant | SP Familiar Fox temporary form under Cursed Moon | High-risk Fire Ring / Empowered Breath |
+| [Familiar Fox · Red](sp_familiar_fox_red.md) | Spirit Realm Lord variant | Rare Moon Essence Cross evolution or story unlock | High-risk Fire Ring / Empowered Breath |
 | [Mancianima](sp_familiar_fox_mancianima.md) | Forbidden Weapon | Evolution Stone special branch | Single-target Hunter / Brand True Damage |
 | [SP Axolotl](sp_axolotl.md) | Abyssal Overlord | Moon Essence Cross | Aquatic Control / Close-range Burst |
 | [Wild Cat (SP)](sp_wild_cat.md) | Moonlight Phantom | Evolution Stone | True Stealth / Reveal Burst |
@@ -51,6 +67,14 @@ The Evolution Stone route does not require a Cursed Moon — long-press to use i
 | [Golden Sandstorm](sp_golden_sandstorm.md) | Golden Sandstorm | Evolution Stone | Brand Burst / Wither Sustain |
 | [Desmodus](sp_bat_desmodus.md) | Bloodthirster | Moon Essence Cross | High-mobility Melee / Blood Thirst Lifesteal |
 | [Parasitic Fruit Bat](sp_bat_parasitic_fruit.md) | Moving Orchard | Evolution Stone | Team Support / Sustained Control |
+| [Wind Spirit](sp_ocelot_wind_spirit.md) | Wind Hunter | Moon Essence Cross | Claw combos / Aerial dash |
+| [Nova](sp_ocelot_nova.md) | Nine Lives | Evolution Stone | Revival / Self-detonation |
+| [Frostspine](sp_frostspine.md) | Ice Spine | Moon Essence Cross | Orbiting thorns / Projectile burst |
+| [Nightmare](sp_nightmare.md) | Dream Hunter | Moon Essence Cross | Debuffs / Dream attacks |
+| [Moon Weaver](sp_moon_weaver.md) | Moonlit Weaver | Moon Essence Cross | Web control / Silk movement |
+| [Salticidae](sp_salticidae.md) | Jumping Spider | Evolution Stone | Charged pounce / Venom |
+| [Fluorescent Axolotl](sp_fluorescent.md) | Deep Sea Glow | Evolution Stone | Tidal control / Array Laser |
+| [Aling](sp_fluorescent.md#aling) | Azure Port guardian | Story advancement and Cursed Moon sleep | Enhanced Tidal Surge / Triple Array Laser |
 
 ---
 
@@ -76,4 +100,8 @@ SP Allay is the closest thing to a pure support: purify, heal, totem guard, and 
 
 ## Whitelist Notes
 
-Most AOE damage, control, healing, and summon-targeting plugs into the SSCA whitelist logic: protected targets are not friendly-fired, and buff skills also use a buff-side whitelist to decide who can be healed. Boundaries vary slightly per skill — see each form's page for the authoritative description.
+Use [`/ssc_addon my_whitelist`](../commands/commands.md) to manage your whitelist.
+
+- An **empty list** treats other players, pets tamed by players in the same world, and creatures with recognized owner tags as friendly.
+- A **nonempty list** protects listed players and creatures and the recognized pets and summons of listed players. Adding a creature alone switches to this mode.
+- Offensive abilities using the whitelist skip protected targets. Healing or buffing abilities that use ally filtering can affect the caster and eligible allies. Individual spells can have their own rules, such as the indiscriminate [EXPLOSION](../spells/catalog.md).

@@ -44,6 +44,11 @@ nav:
 - 首页: index.md
 - 新手上路:
   - 安装指南: getting_started/installation.md
+- 法术与研究:
+  - 法术入门与符文研究: spells/guide.md
+  - 法术一览: spells/catalog.md
+  - 崩解度机制: spells/collapse.md
+  - 法术异常与元素反应: spells/anomalies.md
 - SP形态:
   - 形态概述: sp_forms/overview.md
   - SP使魔（灵界之主）: sp_forms/sp_familiar_fox.md
@@ -75,6 +80,7 @@ nav:
 - 效果:
   - 增益效果: effects/buffs.md
   - 减益效果: effects/debuffs.md
+- 生物: entities/overview.md
 - 指令: commands/commands.md
 - 开发者文档:
   - 进化加点 · 数据驱动加形态: dev/evolution_data_driven.md
@@ -96,6 +102,11 @@ nav:
   - Home: en/index.md
   - Getting Started:
     - Installation Guide: en/getting_started/installation.md
+  - Spells and Research:
+    - Spellcasting and Rune Research: en/spells/guide.md
+    - Spell Catalog: en/spells/catalog.md
+    - Disintegration: en/spells/collapse.md
+    - Spell Anomalies and Elemental Reactions: en/spells/anomalies.md
   - SP Forms:
     - Forms Overview: en/sp_forms/overview.md
     - SP Familiar Fox (Spirit Realm Lord): en/sp_forms/sp_familiar_fox.md
@@ -127,6 +138,7 @@ nav:
   - Effects:
     - Buffs: en/effects/buffs.md
     - Debuffs: en/effects/debuffs.md
+  - Creatures: en/entities/overview.md
   - Commands: en/commands/commands.md
   - Developer:
     - "Evolution Talents · Data-Driven Form Trees": en/dev/evolution_data_driven.md
