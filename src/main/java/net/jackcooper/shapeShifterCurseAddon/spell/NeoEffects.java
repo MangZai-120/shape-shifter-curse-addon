@@ -1,5 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.spell.spells.TaotieSovereignSpell;
+
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.entity.*;
@@ -248,7 +250,7 @@ public final class NeoEffects {
         boolean effective=false;
         switch(core) {
             case LUNAR -> {if(healing)target.heal((float)budget);else effective=target.damage(invertedSelf?p.getDamageSources().magic():p.getDamageSources().indirectMagic(p,p),(float)budget);}
-            case THERMAL -> effective=target.damage(p.getDamageSources().indirectMagic(p,p),(float)budget);
+            case THERMAL -> effective=target.damage(p.getDamageSources().indirectMagic(p,p), TaotieSovereignSpell.outgoingFire(p, target, (float)budget));
             case FROST -> {if(effective=target.damage(p.getDamageSources().indirectMagic(p,p),(float)(budget*.5)))net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(a.style==null?null:a.style.bat,()->target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS,(int)(budget*12),Math.min(3,(int)(budget/6))),p));}
             case CURSE -> {if(effective=target.damage(p.getDamageSources().indirectMagic(p,p),(float)(budget*.4)))net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(a.style==null?null:a.style.bat,()->target.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS,Math.round((int)(budget*20)*a.curseDurationMultiplier),0),p));}
             case VOID -> {if(effective=target.damage(p.getDamageSources().indirectMagic(p,p),(float)(budget*.8)))target.setAbsorptionAmount(Math.max(0,target.getAbsorptionAmount()-(float)(budget*.2)));}

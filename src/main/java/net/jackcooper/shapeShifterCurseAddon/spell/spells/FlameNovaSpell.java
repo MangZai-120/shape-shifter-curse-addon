@@ -74,7 +74,7 @@ public class FlameNovaSpell extends Spell {
 				continue;
 			}
 			// 公共命中结算（白名单豁免 → 法术伤害 → 经验补发；FIRE 系钩子为聚合语义，循环外调）：见 SpellHitHelper
-			var hit = net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.hitRaw(
+			var hit = net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.hitFire(
 					caster, target, power, hitExpTen);
 			if (hit != net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.HIT) {
 				continue;

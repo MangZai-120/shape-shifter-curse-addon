@@ -1271,6 +1271,8 @@
   "spell.ssc_addon.lunar_veil.description": "Unfurls a veil of moonlight around you,\ngranting resistance and slow falling\nto players and tamed pets inside.",
   "spell.ssc_addon.curse_mark.name": "Curse Mark",
   "spell.ssc_addon.curse_mark.description": "Marks the target with a curse:\nthey take more damage and deal less\n(stronger at higher levels);\ncan be cleansed by Lunar Mend.",
+  "spell.ssc_addon.taotie_sovereign.name": "Taotie Sovereign",
+  "spell.ssc_addon.taotie_sovereign.description": "Hold to aim at one target within 24 blocks. Release to set yourself and the target on fire for 6/7/8/9/10 seconds from white to orange.\nWhile burning during this time, take 10/20/30/40/50% less burning damage and deal 20/30/40/50/60% more fire damage.",
   "spell.ssc_addon.wrath_mark.name": "Wrath Mark",
   "spell.ssc_addon.wrath_mark.description": "Hold to aim within 24 blocks. A white outline and overhead arrow mark your target. Release to cast.\nBlind the target for 10/10/8/7/5 seconds. Hitting any white-outlined target lifts the curse immediately.\nIf time runs out, the target takes spell damage once. Base spellbook damage is 2/4/6/8/10 from white to orange. Only the cursed player sees the targets outlined for breaking the curse.\nCursed mobs attack the nearest eligible target. Purification lifts the curse.",
   "spell.ssc_addon.dread_whisper.name": "Dread Whisper",

@@ -219,7 +219,7 @@ public final class NeoRuntime {
             if(online!=null&&online.networkHandler!=handler)return;
             cancel(handler.player,"disconnected");net.jackcooper.shapeShifterCurseAddon.spell.CollapsePenalties.clear(handler.player);NeoEffects.clearStored(handler.player.getUuid());dirty(handler.player);NeoNetwork.close(handler.player);
         }));
-        ServerPlayerEvents.AFTER_RESPAWN.register((old,p,alive)->{cancel(old,"death");net.jackcooper.shapeShifterCurseAddon.spell.CollapsePenalties.clear(old);var d=data(p);d.burden=0;d.recovery=0;NeoEffects.clearStored(p.getUuid());dirty(p);});
+        ServerPlayerEvents.AFTER_RESPAWN.register((old,p,alive)->{cancel(old,"death");net.jackcooper.shapeShifterCurseAddon.spell.CollapsePenalties.clear(old);var d=data(p);if (!alive) { d.taotieTier=0; d.taotieUntil=0; } d.burden=0;d.recovery=0;NeoEffects.clearStored(p.getUuid());dirty(p);});
         ServerLifecycleEvents.SERVER_STOPPING.register(server->{
             for(var p:server.getPlayerManager().getPlayerList()){cancel(p,"server_stopped");net.jackcooper.shapeShifterCurseAddon.spell.CollapsePenalties.clear(p);}
             NeoEffects.clear();for(var p:server.getPlayerManager().getPlayerList())dirty(p);NeoNetwork.clear();ACTIVE.clear();

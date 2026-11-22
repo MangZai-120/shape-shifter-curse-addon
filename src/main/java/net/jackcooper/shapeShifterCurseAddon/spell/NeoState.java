@@ -36,6 +36,8 @@ public final class NeoState extends PersistentState {
         public List<Measurement> measurements = new ArrayList<>();
     }
     public static final class PlayerData {
+        public long taotieUntil;
+        public int taotieTier;
         public boolean spellTutorialSeen;
         public double burden;
         /** 玩家精通经验（十分之一点）；独立于每个法术的减耗熟练度。 */

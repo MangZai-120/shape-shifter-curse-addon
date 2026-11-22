@@ -1,5 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.spell.spells.TaotieSovereignSpell;
+
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -52,6 +54,7 @@ public final class SpellHitHelper {
     public static HitResult projectileHit(Entity owner, LivingEntity target, float damage,
             FormationElement element, UUID refundCastId, int expBounty,
             net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext anomaly) {
+		if (element == FormationElement.FIRE) damage = TaotieSovereignSpell.outgoingFire(AllaySpellLink.owner(owner), target, damage);
 		HitResult result = hitRaw(owner, target, damage, expBounty,anomaly);
 		if (result != HitResult.HIT) return result;
 		owner=AllaySpellLink.owner(owner);
@@ -66,6 +69,10 @@ public final class SpellHitHelper {
 	 * 基础命中结算（白名单豁免 → 法术伤害 → 经验补发，<b>不调流派钩子</b>）。
 	 * 供需要聚合钩子的场合（FIRE 系击杀/燃烧判定）在循环内使用，钩子由调用方循环外聚合调用。
 	 */
+	public static HitResult hitFire(Entity owner, LivingEntity target, float damage, int expBounty) {
+		return hitRaw(owner, target, TaotieSovereignSpell.outgoingFire(AllaySpellLink.owner(owner), target, damage), expBounty);
+	}
+
 	public static HitResult hitRaw(Entity owner, LivingEntity target, float damage, int expBounty) {
         return hitRaw(owner,target,damage,expBounty,
                 net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.context(owner));

@@ -72,7 +72,7 @@ public class MagicScrollItem extends Item {
 			if (user instanceof ServerPlayerEntity player) SpellChannelManager.playFailureSound(player);
 			return TypedActionResult.fail(stack);
 		}
-        boolean selectOnHold=spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.WrathMarkSpell;
+        boolean selectOnHold=spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.LockedTargetSpell;
         if (user instanceof ServerPlayerEntity sp) {
             if (selectOnHold) {
                 if (SpellChannelManager.isCasting(sp) || !RuneScheme.validScroll(sp,stack,spell)) return TypedActionResult.fail(stack);
@@ -120,7 +120,7 @@ public class MagicScrollItem extends Item {
 	public void onStoppedUsing(ItemStack stack, World world, net.minecraft.entity.LivingEntity user, int remainingUseTicks) {
 		if (user instanceof ServerPlayerEntity player) {
             Spell spell=ScrollData.getSpell(stack);
-            if (spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.WrathMarkSpell) {
+            if (spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.LockedTargetSpell) {
                 Hand hand=player.getActiveHand();
                 if (player.isAlive() && player.getStackInHand(hand)==stack && ScrollData.getUses(stack)>0
                         && !net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)

@@ -107,6 +107,7 @@ public final class AnomalyRules implements SimpleSynchronousResourceReloadListen
         JsonObject spells = new JsonObject();
         put(spells, "fire_bolt", 120, 153, 185, 218, 250);
         put(spells, "flame_nova", 180, 215, 250, 285, 320);
+        put(spells, "taotie_sovereign", 160, 190, 220, 250, 280);
         put(spells, "meteor", 240, 275, 310, 345, 380);
         put(spells, "explosion", 500);
         put(spells, "frost_spike", 180, 210, 240, 270, 300);

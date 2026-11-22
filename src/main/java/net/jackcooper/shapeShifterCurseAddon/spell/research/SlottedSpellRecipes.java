@@ -14,6 +14,7 @@ public final class SlottedSpellRecipes {
     private static final List<Recipe> RECIPES = List.of(
             new Recipe("fire_bolt",0,RuneRole.SOURCE,RuneRole.STORE),
             new Recipe("flame_nova",0,RuneRole.GAIN,RuneRole.STORE),
+            new Recipe("taotie_sovereign",0,RuneRole.INSIGHT,RuneRole.STORE),
             new Recipe("meteor",0,RuneRole.CONVERT,RuneRole.STORE),
             new Recipe("frost_spike",1,RuneRole.SOURCE,RuneRole.GAIN),
             new Recipe("ice_barrage",1,RuneRole.SPLIT,RuneRole.GAIN),

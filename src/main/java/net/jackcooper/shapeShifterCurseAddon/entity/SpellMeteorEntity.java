@@ -236,7 +236,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 				continue;
 			}
 			// 公共命中结算（白名单豁免 → 法术伤害 → 经验补发；流派钩子为聚合语义，循环外调）：见 SpellHitHelper
-			var hit = net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.hitRaw(
+			var hit = net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.hitFire(
 					this, target, dmg, hitAnyTarget ? 0 : expBountyTen);
 			if (hit != net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.HIT) {
 				continue;

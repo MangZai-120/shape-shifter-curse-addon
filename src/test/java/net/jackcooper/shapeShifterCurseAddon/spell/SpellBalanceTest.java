@@ -39,7 +39,7 @@ public final class SpellBalanceTest {
 		checkAttachedEffectScope();
 		// classpath 无目录列举能力：用已知法术 id 清单（与 SpellRegistry 注册序一致）
 		String[] ids = {
-				"fire_bolt", "flame_nova", "meteor", "explosion",
+				"fire_bolt", "flame_nova", "meteor", "explosion", "taotie_sovereign",
 				"frost_spike", "ice_barrage", "frost_nova", "frost_armor",
 				"moonlight_arrow", "lunar_mend", "lunar_veil", "lunar_phase",
 				"curse_mark", "wrath_mark", "dread_whisper", "corrupt_mist",

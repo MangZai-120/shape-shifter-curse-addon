@@ -4,6 +4,7 @@
   "spells": {
     "ssc_addon:fire_bolt": [120, 153, 185, 218, 250],
     "ssc_addon:flame_nova": [180, 215, 250, 285, 320],
+    "ssc_addon:taotie_sovereign": [160, 190, 220, 250, 280],
     "ssc_addon:meteor": [240, 275, 310, 345, 380],
     "ssc_addon:explosion": [500],
     "ssc_addon:frost_spike": [180, 210, 240, 270, 300],

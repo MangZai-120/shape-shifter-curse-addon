@@ -518,7 +518,7 @@ public class SscAddon implements ModInitializer {
 		// SSCA 纯否决型伤害分支（跳蛛跳杀腾空免疫 / 朔望复活无敌与闪避；由 SscAddonLivingEntityMixin 迁出）
 		net.jackcooper.shapeShifterCurseAddon.event.SscaDamageVetoHandler.register();
 		net.jackcooper.shapeShifterCurseAddon.spell.CalamityPact.register();
-        net.jackcooper.shapeShifterCurseAddon.spell.spells.WrathMarkSpell.registerAimCheck();
+        net.jackcooper.shapeShifterCurseAddon.spell.spells.LockedTargetSpell.registerAimCheck();
 		StorySleepTimeGuardHandler.register();
 		// SSCA 进化路线数据驱动加载器（datapack reload，扫描 data/<ns>/ssca_evolution/routes/*.json）
 		ResourceManagerHelper.get(ResourceType.SERVER_DATA)

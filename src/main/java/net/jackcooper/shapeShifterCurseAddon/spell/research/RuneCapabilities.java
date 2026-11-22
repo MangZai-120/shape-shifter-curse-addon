@@ -9,6 +9,7 @@ public final class RuneCapabilities {
     public static EnumSet<RuneModifiers.Stat> of(String spell) {
         return switch (spell) {
             case "fire_bolt" -> EnumSet.of(POWER, DAMAGE, SPEED, BURN);
+            case "taotie_sovereign" -> EnumSet.of(DISTANCE, BURN);
             case "flame_nova" -> EnumSet.of(POWER, DAMAGE, AREA, BURN);
             case "frost_armor" -> EnumSet.of(POWER, SHIELD_DURATION);
             case "meteor" -> EnumSet.of(POWER,DAMAGE,AREA,DISTANCE,BURN);

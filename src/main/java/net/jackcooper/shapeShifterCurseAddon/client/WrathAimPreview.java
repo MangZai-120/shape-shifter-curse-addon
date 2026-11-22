@@ -6,7 +6,7 @@ import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneCastContext;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme;
-import net.jackcooper.shapeShifterCurseAddon.spell.spells.WrathMarkSpell;
+import net.jackcooper.shapeShifterCurseAddon.spell.spells.LockedTargetSpell;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
@@ -22,7 +22,7 @@ public final class WrathAimPreview {
     private static boolean allowed;
 
     static void register() {
-        ClientPlayNetworking.registerGlobalReceiver(WrathMarkSpell.AIM_CHECK,(client,handler,buf,sender)->{
+        ClientPlayNetworking.registerGlobalReceiver(LockedTargetSpell.AIM_CHECK,(client,handler,buf,sender)->{
             int reply=buf.readVarInt();
             boolean accepted=buf.readBoolean();
             client.execute(()->{ if (client.getNetworkHandler()==handler && reply==sequence) allowed=accepted; });
@@ -34,9 +34,9 @@ public final class WrathAimPreview {
         var player=client.player;
         ItemStack held=player!=null && player.isAlive() && client.currentScreen==null ? SpellcastClient.heldAimScroll(player) : ItemStack.EMPTY;
         LivingEntity next=null;
-        if (!held.isEmpty() && ScrollData.getSpell(held) instanceof WrathMarkSpell) {
+        if (!held.isEmpty() && ScrollData.getSpell(held) instanceof LockedTargetSpell) {
             int level=player.isUsingItem() && held==player.getActiveItem() ? ScrollData.getLevel(held) : ScrollData.getCastLevel(held);
-            next=RuneCastContext.with(RuneScheme.modifiers(player,held,level),()->WrathMarkSpell.aim(player));
+            next=RuneCastContext.with(RuneScheme.modifiers(player,held,level),()->LockedTargetSpell.aim(player));
         }
         boolean changed=next!=candidate || viewer!=player || scroll!=held;
         viewer=player; candidate=next; scroll=held;
@@ -44,7 +44,8 @@ public final class WrathAimPreview {
         if (next!=null && (changed || player.age%10==0)) {
             var buf=PacketByteBufs.create();
             buf.writeVarInt(next.getId()); buf.writeVarInt(sequence);
-            ClientPlayNetworking.send(WrathMarkSpell.AIM_CHECK,buf);
+            buf.writeIdentifier(ScrollData.getSpell(held).getId());
+            ClientPlayNetworking.send(LockedTargetSpell.AIM_CHECK,buf);
         }
     }
 

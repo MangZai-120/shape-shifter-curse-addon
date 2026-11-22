@@ -1,5 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.spell.spells.TaotieSovereignSpell;
+
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -231,7 +233,8 @@ public final class ExplosionManager {
 			boolean burning = target.getFireTicks() > 0;
 			// Deliberately no ally whitelist or caster exclusion (confirmed friendly fire).
             float healthBefore=target.getHealth();
-			if (!CourtSpellLink.damage(sequence.court,owner,target,()->target.damage(source, (float) (sequence.power * factor)))) continue;
+			float damage = TaotieSovereignSpell.outgoingFire(owner, target, (float) (sequence.power * factor));
+			if (!CourtSpellLink.damage(sequence.court,owner,target,()->target.damage(source, damage))) continue;
             if(owner!=null&&sequence.allay!=null)sequence.allay.damage(owner,target,Math.max(0,healthBefore-target.getHealth()));
             net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.hit(sequence.anomaly,target);
 			if (target != owner && !(target instanceof net.minecraft.entity.decoration.ArmorStandEntity)) {

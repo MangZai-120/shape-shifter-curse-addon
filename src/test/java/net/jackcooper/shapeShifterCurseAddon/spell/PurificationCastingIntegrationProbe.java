@@ -20,7 +20,7 @@ public final class PurificationCastingIntegrationProbe {
 
     public static void run() throws Exception {
         SpellRegistry.init();
-        check(SpellRegistry.all().size() == 29, "all 29 registered spell behaviors are covered");
+        check(SpellRegistry.all().size() == 30, "all 30 registered spell behaviors are covered");
         for (Spell spell : SpellRegistry.all()) {
             spell.ssc_addon$applyConfig(SpellConfig.fromJson(json("ssc_addon/spells/" + spell.getId().getPath())));
             for (int level = 1; level <= spell.getMaxLevel(); level++) {

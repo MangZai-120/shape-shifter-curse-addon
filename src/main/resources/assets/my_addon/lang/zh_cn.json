@@ -1271,6 +1271,8 @@
   "spell.ssc_addon.lunar_veil.description": "以自身为圆心展开月光辉幕，\n范围内的玩家与驯服宠物获得抗性与缓降。",
   "spell.ssc_addon.curse_mark.name": "诅咒标记",
   "spell.ssc_addon.curse_mark.description": "诅咒目标：其受到的伤害增加、\n造成的伤害减少（高等级更强）；\n可用月华治愈净化。",
+  "spell.ssc_addon.taotie_sovereign.name": "饕餮魁首",
+  "spell.ssc_addon.taotie_sovereign.description": "按住瞄准 24 格内的一个目标，松手点燃自己和目标。白、绿、蓝、紫、橙分别持续 6、7、8、9、10 秒。\n着火期间，自身受到的持续燃烧伤害降低 10%/20%/30%/40%/50%，造成的火焰伤害提高 20%/30%/40%/50%/60%。",
   "spell.ssc_addon.wrath_mark.name": "暴怒刻印",
   "spell.ssc_addon.wrath_mark.description": "按住瞄准 24 格内的目标，白色描边与头顶箭头表示已选中。松手施咒。\n使目标失明，白、绿、蓝、紫、橙分别持续 10、10、8、7、5 秒。\n中咒者命中任一白色高亮目标，立即解咒。到期仍未命中，自身受到一次法术伤害。\n魔法书基础伤害：白 2、绿 4、蓝 6、紫 8、橙 10。\n只有中咒玩家能看见解咒目标的白色轮廓。中咒生物会攻击最近的可选目标。净化可提前解除。",
   "spell.ssc_addon.dread_whisper.name": "恐惧低语",

@@ -160,10 +160,11 @@ public final class SpellBacklashWorldProbe {
         checkWrathPersistence(p);
         checkWrathTimeoutDamage(p);
         checkLegacyWrathScrolls();
+        TaotieSovereignWorldChecks.run(p);
         t.getWorld().getServer().setPvpEnabled(false);
         var damaging=Set.of("fire_bolt","flame_nova","frost_spike","ice_barrage","frost_nova","moonlight_arrow","meteor","void_devour","explosion","death_finale","corrupt_mist","summon_lunar_spirit");
         var negative=Set.of("frost_nova","wrath_mark","curse_mark","dread_whisper","void_erosion","void_devour","corrupt_mist","beep_sheep");
-        var burning=Set.of("fire_bolt","flame_nova","meteor","explosion");
+        var burning=Set.of("fire_bolt","flame_nova","meteor","explosion","taotie_sovereign");
         for(var spell:SpellRegistry.all())for(int level=1;level<=spell.getMaxLevel();level++) {
             var e=spell.backlashEffects(p,20,false,level);String id=spell.getId().getPath();
             check((e.normalHit()>0)==damaging.contains(id),"Damage classification "+id+" L"+level);

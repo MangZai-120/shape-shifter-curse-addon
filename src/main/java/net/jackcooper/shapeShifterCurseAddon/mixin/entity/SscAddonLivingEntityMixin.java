@@ -1,5 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.spell.spells.TaotieSovereignSpell;
+
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityGroup;
@@ -85,6 +87,7 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, ordinal = 0)
 	private float ssca$npcCombatDamage(float amount, DamageSource source) {
 		LivingEntity target = (LivingEntity) (Object) this;
+		amount = TaotieSovereignSpell.modifyFireDamage(target, source, amount);
 		return net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyEffects.modifyDamage(target, source,
 				NpcCombatEnhancements.modifyDamage(target, source, amount));
 	}

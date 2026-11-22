@@ -31,7 +31,7 @@ public final class MagicScrollLoot {
 	private record Drop(String spell, int weight) {}
 	private static final Drop[] SPELL_DROPS = {
 			new Drop("frost_spike", 30), new Drop("fire_bolt", 22), new Drop("flame_nova", 14),
-			new Drop("meteor", 8), new Drop("ice_barrage", 18), new Drop("frost_nova", 14),
+			new Drop("meteor", 8), new Drop("taotie_sovereign", 8), new Drop("ice_barrage", 18), new Drop("frost_nova", 14),
 			new Drop("frost_armor", 10), new Drop("moonlight_arrow", 16), new Drop("lunar_mend", 12),
 			new Drop("lunar_veil", 14), new Drop("lunar_phase", 12), new Drop("curse_mark", 8),
 			new Drop("dread_whisper", 10), new Drop("wrath_mark", 8), new Drop("corrupt_mist", 8), new Drop("summon_lunar_spirit", 6),
