@@ -84,11 +84,6 @@ public class AnkhStoneItem extends AccessoryItem {
 	}
 
 	@Override
-	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-		return net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.canEquip(entity, FormUtils::isAnubisWolfSP);
-	}
-
-	@Override
 	public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
 		tooltip.add(Text.translatable("item.ssc_addon.ankh_stone.tooltip_1").formatted(Formatting.LIGHT_PURPLE));
 		tooltip.add(Text.translatable("item.ssc_addon.ankh_stone.tooltip_2").formatted(Formatting.GRAY));

@@ -91,7 +91,7 @@ public final class AccessoriesCompatibilityChecks {
         if (nativeCanEquip != null) {
             check(nativeLookup.invoke(null, item) == item, "item is registered with the native Accessories API");
             check(Boolean.valueOf(allowed).equals(nativeCanEquip.invoke(item, new ItemStack(item), nativeSlot)),
-                    "native Accessories preserves form-specific restrictions: " + item);
+                    "native Accessories accepts the equip decision: " + item);
         }
     }
 

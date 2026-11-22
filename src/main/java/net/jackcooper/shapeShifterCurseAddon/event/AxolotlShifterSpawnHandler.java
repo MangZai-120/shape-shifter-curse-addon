@@ -32,6 +32,11 @@ public final class AxolotlShifterSpawnHandler {
 
 	private AxolotlShifterSpawnHandler() {}
 
+	/** Egg spawns are player-created. Persist the decision across chunk reloads. */
+	public static void skipEggCompanion(Entity entity) {
+		if (entity instanceof AxolotlEntity) entity.addCommandTag(CHECKED_TAG);
+	}
+
 	public static void register() {
 		SpawnRestriction.register(SscAddon.AXOLOTL_SHIFTER_ENTITY, SpawnRestriction.Location.IN_WATER,
 				Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, AxolotlShifterEntity::canSpawnInWater);

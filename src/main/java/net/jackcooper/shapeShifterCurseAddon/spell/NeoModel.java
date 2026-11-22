@@ -50,12 +50,24 @@ public final class NeoModel {
         };
     }
     public static List<String> errors(Blueprint b) {
+        return errors(b, true);
+    }
+
+    static boolean validRecordedBlueprint(Blueprint b, String spell) {
+        if (b == null || spell == null) return false;
+        // Book spells describe their own targeting. Only a constructed blueprint has to
+        // choose its carrier from the research table's core/carrier combinations.
+        boolean bookSpell = !spell.isEmpty() && b.controls().isEmpty();
+        return errors(b, !bookSpell).isEmpty();
+    }
+
+    private static List<String> errors(Blueprint b, boolean requireSupportedCarrier) {
         List<String> e = new ArrayList<>();
         if (b.name.length() > 32) e.add("name");
         if (!Double.isFinite(b.scale) || b.scale < .5 || b.scale > 4) e.add("scale");
         if (b.prep < 0 || b.prep > 80) e.add("prep");
         if (!Double.isFinite(b.range) || b.range < 1 || b.range > (b.controls.contains(Control.BRIDGE) ? 64 : 32)) e.add("range");
-        if (!supports(b.core, b.carrier) || !supports(b.output(), b.carrier)) e.add("carrier");
+        if (requireSupportedCarrier && (!supports(b.core, b.carrier) || !supports(b.output(), b.carrier))) e.add("carrier");
         if (b.controls.size() > 6) e.add("capacity");
         for (Control c : List.of(Control.STORE, Control.CONVERT, Control.BRIDGE))
             if (b.count(c) > 1) e.add("repeat");

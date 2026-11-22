@@ -47,10 +47,27 @@ public final class NeoIntegrationProbe {
         check(a.mastery(other)==0,"Different structure has independent adaptation");
         var stronger=new Blueprint("test",Core.THERMAL,Carrier.PROJECTILE,blueprint.controls(),Core.FROST,4,35,24);
         check(a.mastery(stronger)==0,"Low working range does not fully train high output");
+        var witchcraft = new net.jackcooper.shapeShifterCurseAddon.spell.spells.FalseWitchcraftSpell();
+        witchcraft.ssc_addon$applyConfig(net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig.fromJson(
+                json("data/ssc_addon/spells/false_witchcraft.json")));
+        var cast = new NeoState.Experiment();
+        cast.spell = witchcraft.getId().toString();
+        cast.blueprint = NeoLegacyCasting.descriptor(witchcraft, 2, 50);
+        cast.form = "shape-shifter-curse:axolotl_3";
+        a.add(cast);
+        check(cast.blueprint.core() == Core.VOID && cast.blueprint.carrier() == Carrier.SELF,
+                "False witchcraft records its actual self target");
+        check(errors(cast.blueprint).contains("carrier") && !validRecordedBlueprint(cast.blueprint, ""),
+                "Void/self is still invalid for a research draft or an unnamed blueprint cast");
+        var malformed = new Blueprint("false_witchcraft", Core.VOID, Carrier.SELF, List.of(), Core.FROST, 9, 50, 32);
+        check(!validRecordedBlueprint(malformed, cast.spell), "Book cast history still validates descriptor bounds");
         var encoded=state.writeNbt(new NbtCompound());
         check(encoded.getInt("Version")==2&&encoded.getCompound("Players").getKeys().size()==2,"Versioned persistent save");
         var method=NeoState.class.getDeclaredMethod("read",NbtCompound.class);method.setAccessible(true);
         var restored=(NeoState)method.invoke(null,encoded);
+        var archived = restored.player(playerA).records.get(0);
+        check(archived.id.equals(cast.id) && archived.spell.equals(cast.spell) && archived.blueprint.equals(cast.blueprint),
+                "False witchcraft history survives the actual save reader with its original identity and targeting");
         check(restored.tutorialPolicyInitialized&&restored.tutorialAutoEnabled,"New-world tutorial policy survives reload");
         check(restored.player(playerA).spellTutorialSeen&&!restored.player(playerB).spellTutorialSeen,"Tutorial viewing is isolated per player and persists");
         check(!new NeoState().player(playerA).spellTutorialSeen,"Another world does not inherit tutorial completion");

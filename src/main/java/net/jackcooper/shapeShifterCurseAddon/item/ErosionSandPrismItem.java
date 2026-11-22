@@ -15,7 +15,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
-import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -50,11 +49,6 @@ public class ErosionSandPrismItem extends AccessoryItem {
 				tableBuilder.pool(poolBuilder);
 			}
 		});
-	}
-
-	@Override
-	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-		return net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.canEquip(entity, FormUtils::isGoldenSandstormSP);
 	}
 
 	@Override

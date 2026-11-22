@@ -2,7 +2,6 @@ package net.jackcooper.shapeShifterCurseAddon.item;
 
 import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.minecraft.client.item.TooltipContext;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.loot.LootPool;
 import net.minecraft.loot.condition.RandomChanceLootCondition;
@@ -14,7 +13,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
-import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -48,14 +46,6 @@ public class SeaCrystalPendantItem extends AccessoryItem {
 					.with(ItemEntry.builder(SscAddon.SEA_CRYSTAL_PENDANT));
 			tableBuilder.pool(pool);
 		});
-	}
-
-	@Override
-	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-		// 专属限制：只有荧光幼灵（含阿澪）能装备。
-		// 登录装载瞬间（age==0）宽容放行（防重开世界被 Curios/Trinkets 校验吐出），
-		// 形态不符的由 AddonAccessoryGuard.tick 全局兜底自动卸下归还。
-		return AddonAccessoryGuard.canEquip(entity, FormUtils::isAxolotlFluorescent);
 	}
 
 	@Override

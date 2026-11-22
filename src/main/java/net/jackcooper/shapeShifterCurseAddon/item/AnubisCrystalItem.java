@@ -3,7 +3,6 @@ package net.jackcooper.shapeShifterCurseAddon.item;
 import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.minecraft.client.item.TooltipContext;
 import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.loot.LootPool;
 import net.minecraft.loot.condition.RandomChanceLootCondition;
@@ -14,7 +13,6 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
-import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -42,11 +40,6 @@ public class AnubisCrystalItem extends AccessoryItem {
 				tableBuilder.pool(poolBuilder);
 			}
 		});
-	}
-
-	@Override
-	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-		return net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.canEquip(entity, FormUtils::isAnubisWolfSP);
 	}
 
 	@Override

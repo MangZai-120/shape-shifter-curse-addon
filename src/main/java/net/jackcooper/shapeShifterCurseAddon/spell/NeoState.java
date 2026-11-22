@@ -116,7 +116,7 @@ public final class NeoState extends PersistentState {
         for(var entry:d.progress.entrySet())if(entry.getKey()==null||entry.getKey().length()>256||entry.getValue()==null||entry.getValue().length!=4
                 ||Arrays.stream(entry.getValue()).anyMatch(v->!Double.isFinite(v)||v<0||v>100000))throw new IllegalStateException("Invalid adaptation ledger");
         if(d.cooldowns.entrySet().stream().anyMatch(e->e.getKey()==null||e.getValue()==null||e.getValue()<0))throw new IllegalStateException("Invalid cooldown ledger");
-        for(var record:d.records)if(record==null||record.blueprint==null||!errors(record.blueprint).isEmpty()||record.id==null||record.result==null
+        for(var record:d.records)if(record==null||!validRecordedBlueprint(record.blueprint,record.spell)||record.id==null||record.result==null
                 ||record.id.length()<8||record.form==null||record.version==null||record.target==null||record.spell==null||record.spell.length()>256||record.failureReason==null||record.failureReason.length()>64||record.preparation<0||record.omittedChecks<0||record.moistureSpent<0||record.frostThornsSpent<0||record.frostLifetimeTicksSpent<0
                 ||!Double.isFinite(record.failureBasis+record.failureProbability+record.allaySurcharge+record.allayHealing)||record.allaySurcharge<0||record.allayHealing<0||record.fallenChains<0||record.fallenChains>1||record.bloodSpent<0||record.sporeInfections<0||record.failureBasis<0||record.failureProbability<0||record.failureProbability>1||record.failureDraws<0||record.failureDraws>1||record.failureBoundary<0
                 ||!Double.isFinite(record.initial+record.actual+record.normal+record.paid+record.arrived+record.damage+record.healing+record.absorbed+record.yaw+record.pitch)

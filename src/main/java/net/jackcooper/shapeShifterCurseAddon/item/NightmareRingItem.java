@@ -14,8 +14,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
-import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -58,11 +56,6 @@ public class NightmareRingItem extends AccessoryItem {
 	/** 佩戴者是否正戴着梦魇戒指（框架无关检测：SSC 抽象层 + Curios 反射兜底，统一走 TrinketUtils.isWearingAuto）。 */
 	public static boolean isWearingBy(LivingEntity entity) {
 		return net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils.isWearingAuto(entity, SscAddon.NIGHTMARE_RING);
-	}
-
-	@Override
-	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-		return AddonAccessoryGuard.canEquip(entity, e -> FormUtils.isForm(e, FormIdentifiers.WILD_CAT_NIGHTMARE));
 	}
 
 	@Override

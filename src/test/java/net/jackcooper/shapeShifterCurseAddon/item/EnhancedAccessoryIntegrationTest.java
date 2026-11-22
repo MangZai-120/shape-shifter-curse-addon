@@ -20,6 +20,7 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormCompon
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 /** Exercises actual transformed SSC items against CCA form state; no running world. */
 public final class EnhancedAccessoryIntegrationTest {
@@ -73,128 +74,57 @@ public final class EnhancedAccessoryIntegrationTest {
                     FormIdentifiers.WILD_CAT_SP, FormIdentifiers.WILD_CAT_NIGHTMARE,
                     new Identifier("shape-shifter-curse", "bat_3"),
                     new Identifier("shape-shifter-curse", "familiar_fox_3"),
-                    new Identifier("shape-shifter-curse", "snow_fox_3"));
-            int blocked = 0;
-            for (Identifier form : forms) {
-                player.form.nowForm = new NormalForm(form);
-                for (Item item : accessories) {
-                    check(Registries.ITEM.getRawId(item) >= 0, "actual SSC item is registered");
-                    boolean expected = !((form.equals(FormIdentifiers.BAT_PARASITIC_FRUIT)
-                            && item == RegCustomItem.CHARM_OF_NIGHT_CRYSTAL_PLUS)
-                            || (form.equals(FormIdentifiers.FAMILIAR_FOX_MANCIANIMA)
-                            && item == RegCustomItem.AMULET_BRACELET_PLUS)
-                            || (form.equals(FormIdentifiers.SNOW_FOX_SP)
-                            && item == RegCustomItem.FROST_PAWGLOVE_PLUS)
-                            || (form.equals(FormIdentifiers.BAT_DESMODUS)
-                            && item == RegCustomItem.ATTACH_HOOK_PLUS)
-                            || (item == RegCustomItem.FOUNTAIN_BELT_PLUS
-                            && !form.equals(FormIdentifiers.AXOLOTL_SP))
-                            || (form.equals(FormIdentifiers.OCELOT_NOVA)
-                            && item == RegCustomItem.COLLAR_OF_WHISKERS_PLUS)
-                            || (form.equals(FormIdentifiers.GOLDEN_SANDSTORM_SP)
-                            && item == RegCustomItem.WITHERED_BANDAGE_PLUS)
-                            || (form.equals(FormIdentifiers.SPIDER_SALTICIDAE)
-                            && item == RegCustomItem.VENOM_SPINDLE_PLUS));
-                    var accessory = (AccessoryItem) item;
-                    check(accessory.canEquip(new ItemStack(item), player, SLOT) == expected,
-                            "real canEquip: " + form + " / " + Registries.ITEM.getId(item));
-                    net.jackcooper.shapeShifterCurseAddon.compat.AccessoriesCompatibilityChecks.equip(item, expected);
-                    check(!Boolean.FALSE.equals(AddonExclusiveFormCheck.check(player, accessory)) == expected,
-                            "server cleanup agrees with equip decision");
-                    if (!expected) blocked++;
+                    new Identifier("shape-shifter-curse", "snow_fox_3"),
+                    new Identifier("shape-shifter-curse", "axolotl_0"), new Identifier("shape-shifter-curse", "axolotl_1"),
+                    new Identifier("shape-shifter-curse", "axolotl_2"), new Identifier("shape-shifter-curse", "axolotl_3"),
+                    new Identifier("shape-shifter-curse", "ocelot_3"), new Identifier("shape-shifter-curse", "spider_3"),
+                    new Identifier("shape-shifter-curse", "anubis_wolf_3"));
+            var wearable = new java.util.LinkedHashSet<Item>(accessories);
+            wearable.add(RegCustomItem.CHARM_OF_NIGHT_CRYSTAL);
+            for (var field : net.jackcooper.shapeShifterCurseAddon.SscAddon.class.getFields()) {
+                if (Item.class.isAssignableFrom(field.getType()) && field.get(null) instanceof AccessoryItem accessory) {
+                    wearable.add(accessory);
                 }
             }
-            check(blocked == 31, "only the requested item/form combinations are denied (7 specific + 24 non-SP forms for fountain belt plus)");
-
-            Item[] limited = {RegCustomItem.CHARM_OF_NIGHT_CRYSTAL_PLUS,
-                    RegCustomItem.AMULET_BRACELET_PLUS, RegCustomItem.FROST_PAWGLOVE_PLUS,
-                    RegCustomItem.ATTACH_HOOK_PLUS};
-            Identifier[] deniedForms = {FormIdentifiers.BAT_PARASITIC_FRUIT,
-                    FormIdentifiers.FAMILIAR_FOX_MANCIANIMA, FormIdentifiers.SNOW_FOX_SP,
-                    FormIdentifiers.BAT_DESMODUS};
-            // 喷泉腰带＋：SP 允许，其它形态拒绝（含进化/荧光/阿澪），登录宽限后恢复拒绝
-            player.form.nowForm = new NormalForm(FormIdentifiers.UPGRADE_AXOLOTL);
-            check(!((AccessoryItem) RegCustomItem.FOUNTAIN_BELT_PLUS).canEquip(
-                    new ItemStack(RegCustomItem.FOUNTAIN_BELT_PLUS), player, SLOT), "fountain belt plus denied for upgrade axolotl");
-            player.form.nowForm = new NormalForm(FormIdentifiers.AXOLOTL_FLUORESCENT);
-            check(!((AccessoryItem) RegCustomItem.FOUNTAIN_BELT_PLUS).canEquip(
-                    new ItemStack(RegCustomItem.FOUNTAIN_BELT_PLUS), player, SLOT), "fountain belt plus denied for fluorescent axolotl");
-            player.form.nowForm = new NormalForm(FormIdentifiers.AXOLOTL_ALING);
-            check(!((AccessoryItem) RegCustomItem.FOUNTAIN_BELT_PLUS).canEquip(
-                    new ItemStack(RegCustomItem.FOUNTAIN_BELT_PLUS), player, SLOT), "fountain belt plus denied for aling");
-            player.form.nowForm = new NormalForm(FormIdentifiers.AXOLOTL_SP);
-            check(((AccessoryItem) RegCustomItem.FOUNTAIN_BELT_PLUS).canEquip(
-                    new ItemStack(RegCustomItem.FOUNTAIN_BELT_PLUS), player, SLOT), "fountain belt plus allowed only for axolotl SP");
-            player.age = 0;
-            check(((AccessoryItem) RegCustomItem.FOUNTAIN_BELT_PLUS).canEquip(
-                    new ItemStack(RegCustomItem.FOUNTAIN_BELT_PLUS), player, SLOT), "login grace lets belt load");
-            player.age = 32;
-            for (int i = 0; i < limited.length; i++) {
-                var accessory = (AccessoryItem) limited[i];
-                var stack = new ItemStack(limited[i]);
-                player.form.nowForm = new NormalForm(deniedForms[i]);
-                player.age = 0;
-                check(accessory.canEquip(stack, player, SLOT), "login restoration grace");
-                player.age = 32;
-                check(!accessory.canEquip(stack, player, SLOT), "restored restricted form is rejected");
-                player.form.nowForm = new NormalForm(FormIdentifiers.SHEEP_FORM);
-                check(accessory.canEquip(stack, player, SLOT), "allowed form accepts existing item");
-                player.form.nowForm = new NormalForm(deniedForms[i]);
-                check(Boolean.FALSE.equals(AddonExclusiveFormCheck.check(player, accessory)),
-                        "wear before transforming becomes eligible for server removal");
+            check(wearable.size() >= accessories.size() + 23, "SSCA form accessories included");
+            var dormant = Map.of(RegCustomItem.CHARM_OF_NIGHT_CRYSTAL_PLUS, FormIdentifiers.BAT_PARASITIC_FRUIT,
+                    RegCustomItem.AMULET_BRACELET_PLUS, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA,
+                    RegCustomItem.FROST_PAWGLOVE_PLUS, FormIdentifiers.SNOW_FOX_SP,
+                    RegCustomItem.ATTACH_HOOK_PLUS, FormIdentifiers.BAT_DESMODUS,
+                    RegCustomItem.COLLAR_OF_WHISKERS_PLUS, FormIdentifiers.OCELOT_NOVA,
+                    RegCustomItem.WITHERED_BANDAGE_PLUS, FormIdentifiers.GOLDEN_SANDSTORM_SP);
+            for (Identifier form : forms) {
+                player.form.nowForm = new NormalForm(form);
+                for (Item item : wearable) {
+                    var accessory = (AccessoryItem) item;
+                    check(accessory.canEquip(new ItemStack(item), player, SLOT),
+                            "physical equip: " + form + " / " + item.getClass().getSimpleName());
+                    net.jackcooper.shapeShifterCurseAddon.compat.AccessoriesCompatibilityChecks.equip(item, true);
+                }
+                var current = AccessoryFormEffects.formOf(player);
+                for (var pair : dormant.entrySet()) {
+                    var itemId = Registries.ITEM.getId(pair.getKey());
+                    check(AccessoryFormEffects.allows(current, itemId) == !form.equals(pair.getValue()),
+                            "form-specific effect override: " + itemId + " / " + form);
+                }
+                check(AccessoryFormEffects.allows(current, Registries.ITEM.getId(RegCustomItem.VENOM_SPINDLE_PLUS))
+                        == (form.equals(FormIdentifiers.SPIDER_MOON_WEAVER) || form.equals(new Identifier("shape-shifter-curse:spider_3"))),
+                        "spindle web projectile effect");
+                check(AccessoryFormEffects.allows(current, new Identifier("ssc_addon:venom_gland"))
+                        == form.equals(FormIdentifiers.SPIDER_SALTICIDAE), "jumping spider venom gland");
+                check(AccessoryFormEffects.allows(current, new Identifier("ssc_addon:erosion_sand_prism"))
+                        == form.equals(FormIdentifiers.GOLDEN_SANDSTORM_SP), "sand prism");
+                check(AccessoryFormEffects.allows(current, new Identifier("ssc_addon:moon_dust_spellbook")),
+                        "universal spellbook");
+                check(AccessoryFormEffects.allows(current, Registries.ITEM.getId(RegCustomItem.CHARM_OF_NIGHT_CRYSTAL))
+                        == !form.equals(FormIdentifiers.BAT_PARASITIC_FRUIT), "fruit bat night crystal");
+                check(AccessoryFormEffects.allows(current, Registries.ITEM.getId(RegCustomItem.FOUNTAIN_BELT_PLUS))
+                        == (!form.getNamespace().equals("my_addon") || form.equals(FormIdentifiers.AXOLOTL_SP)),
+                        "SSC applies its native belt tier rules and SSCA activates it on SP");
             }
-
-            player.form.nowForm = new NormalForm(FormIdentifiers.UPGRADE_AXOLOTL);
-            check(((AccessoryItem) RegCustomItem.FOUNTAIN_BELT).canEquip(
-                    new ItemStack(RegCustomItem.FOUNTAIN_BELT), player, SLOT), "ordinary fountain belt stays equipable (no restriction on ordinary version)");
-            player.form.nowForm = new NormalForm(FormIdentifiers.BAT_DESMODUS);
-            check(((AccessoryItem) RegCustomItem.ATTACH_HOOK).canEquip(
-                    new ItemStack(RegCustomItem.ATTACH_HOOK), player, SLOT), "ordinary attach hook still equipable");
-            player.form.nowForm = new NormalForm(FormIdentifiers.BAT_PARASITIC_FRUIT);
-            check(((AccessoryItem) RegCustomItem.ATTACH_HOOK).canEquip(
-                    new ItemStack(RegCustomItem.ATTACH_HOOK), player, SLOT), "ordinary attach hook still equipable for fruit bat");
-            player.form.nowForm = new NormalForm(FormIdentifiers.FAMILIAR_FOX_MANCIANIMA);
-            check(((AccessoryItem) RegCustomItem.AMULET_BRACELET).canEquip(
-                    new ItemStack(RegCustomItem.AMULET_BRACELET), player, SLOT), "ordinary bracelet still equipable");
-            player.form.nowForm = new NormalForm(FormIdentifiers.SNOW_FOX_SP);
-            check(((AccessoryItem) RegCustomItem.FROST_PAWGLOVE).canEquip(
-                    new ItemStack(RegCustomItem.FROST_PAWGLOVE), player, SLOT), "ordinary pawglove still equipable");
-            player.form.nowForm = new NormalForm(FormIdentifiers.BAT_PARASITIC_FRUIT);
-            check(!((AccessoryItem) RegCustomItem.CHARM_OF_NIGHT_CRYSTAL).canEquip(
-                    new ItemStack(RegCustomItem.CHARM_OF_NIGHT_CRYSTAL), player, SLOT), "ordinary night charm remains denied");
-            // 朔望禁戴颈环＋；风灵放行；普通版颈环不限戴
-            player.form.nowForm = new NormalForm(FormIdentifiers.OCELOT_NOVA);
-            check(!((AccessoryItem) RegCustomItem.COLLAR_OF_WHISKERS_PLUS).canEquip(
-                    new ItemStack(RegCustomItem.COLLAR_OF_WHISKERS_PLUS), player, SLOT), "whisker collar plus denied for nova");
-            check(Boolean.FALSE.equals(AddonExclusiveFormCheck.check(player,
-                    (AccessoryItem) RegCustomItem.COLLAR_OF_WHISKERS_PLUS)), "nova wearing collar becomes eligible for removal");
-            check(((AccessoryItem) RegCustomItem.COLLAR_OF_WHISKERS).canEquip(
-                    new ItemStack(RegCustomItem.COLLAR_OF_WHISKERS), player, SLOT), "ordinary whisker collar stays equipable");
-            player.form.nowForm = new NormalForm(FormIdentifiers.OCELOT_SP);
-            check(((AccessoryItem) RegCustomItem.COLLAR_OF_WHISKERS_PLUS).canEquip(
-                    new ItemStack(RegCustomItem.COLLAR_OF_WHISKERS_PLUS), player, SLOT), "whisker collar plus allowed for wind spirit");
-            // 金沙岚禁戴裹布＋；冥裁者放行
-            player.form.nowForm = new NormalForm(FormIdentifiers.GOLDEN_SANDSTORM_SP);
-            check(!((AccessoryItem) RegCustomItem.WITHERED_BANDAGE_PLUS).canEquip(
-                    new ItemStack(RegCustomItem.WITHERED_BANDAGE_PLUS), player, SLOT), "withered bandage plus denied for golden sandstorm");
-            check(Boolean.FALSE.equals(AddonExclusiveFormCheck.check(player,
-                    (AccessoryItem) RegCustomItem.WITHERED_BANDAGE_PLUS)), "sandstorm wearing bandage becomes eligible for removal");
-            player.form.nowForm = new NormalForm(FormIdentifiers.ANUBIS_WOLF_SP);
-            check(((AccessoryItem) RegCustomItem.WITHERED_BANDAGE_PLUS).canEquip(
-                    new ItemStack(RegCustomItem.WITHERED_BANDAGE_PLUS), player, SLOT), "withered bandage plus allowed for anubis wolf SP");
-            // 跳蛛禁戴纺锤＋；月织蛛放行
-            player.form.nowForm = new NormalForm(FormIdentifiers.SPIDER_SALTICIDAE);
-            check(!((AccessoryItem) RegCustomItem.VENOM_SPINDLE_PLUS).canEquip(
-                    new ItemStack(RegCustomItem.VENOM_SPINDLE_PLUS), player, SLOT), "venom spindle plus denied for salticidae");
-            check(Boolean.FALSE.equals(AddonExclusiveFormCheck.check(player,
-                    (AccessoryItem) RegCustomItem.VENOM_SPINDLE_PLUS)), "salticidae wearing spindle becomes eligible for removal");
-            player.form.nowForm = new NormalForm(FormIdentifiers.SPIDER_MOON_WEAVER);
-            check(((AccessoryItem) RegCustomItem.VENOM_SPINDLE_PLUS).canEquip(
-                    new ItemStack(RegCustomItem.VENOM_SPINDLE_PLUS), player, SLOT), "venom spindle plus allowed for moon weaver");
             net.jackcooper.shapeShifterCurseAddon.compat.AccessoriesCompatibilityChecks.report();
             System.out.println("Enhanced accessory integration passed: " + checks
-                    + " checks; 11 enhanced accessories x 25 forms, actual Mixin equip calls, login grace,"
-                    + " transformation cleanup eligibility and ordinary accessory behavior.");
+                    + " checks; " + wearable.size() + " wearable accessories x " + forms.size() + " forms.");
         }
 
         private static void check(boolean success, String message) {

@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 当环境装有 Kilt 转载的 Forge Curios 时 {@code isModLoaded("curios")} 恒真 →
  * {@code Active Accessory IO: curios}，但主包 Curios 侧实现（CurioUtils）是<b>空壳 stub</b>
  * （getEntitySlots 返回空表、setEntitySlot 无操作）→ 所有走 "auto" 的饰品查询
- * （附属 19 个饰品的效果判定、AddonAccessoryGuard 兜底卸下）全部失效。</p>
+ * （附属饰品的效果判定）全部失效。</p>
  *
  * <p><b>方案</b>：在 {@code reCalcAccessoryMod()} 完成后（RETURN）检查：若激活的 IO 是
  * curios 但它是「空壳」（实现类即主包 CurioUtils 匿名类，非第三方真实实现），且

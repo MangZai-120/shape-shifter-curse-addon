@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.jackcooper.shapeShifterCurseAddon.item.AccessoryFormEffects;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -62,6 +63,7 @@ public final class DualAccessoryEquipment {
         }
     }
     private static final class View {
+        final @Nullable Identifier form;
         final List<Slot> physical;
         final Map<String,Observed> observed = new HashMap<>();
         final Set<String> preferred;
@@ -71,7 +73,8 @@ public final class DualAccessoryEquipment {
         Map<Pair<String,String>,List<ItemStack>> merged;
         List<Pair<AccessoryItem.SlotData,ItemStack>> all;
 
-        View(List<Slot> physical) {
+        View(@Nullable Identifier form, List<Slot> physical) {
+            this.form = form;
             this.physical = physical;
             this.preferred = preferred(physical);
             var effective = new ArrayList<Slot>();
@@ -80,7 +83,7 @@ public final class DualAccessoryEquipment {
                 observed.put(slot.address(),new Observed(slot.stack));
                 if (slot.stack.isEmpty()) continue;
                 if (suppressed(slot, preferred)) conflicts.add(duplicateKey(slot));
-                else {
+                else if (AccessoryFormEffects.allows(form, Registries.ITEM.getId(slot.stack.getItem()))) {
                     effective.add(slot);
                     if (manages(slot.stack)) equipped.put(slot.address(), slot);
                 }
@@ -89,11 +92,12 @@ public final class DualAccessoryEquipment {
         }
     }
     private static View view(LivingEntity entity) {
-        if (entity == null) return new View(List.of());
+        if (entity == null) return new View(null, List.of());
         var cache = VIEWS.get();
         View previous = cache.get(entity);
-        if (previous != null) return previous;
-        View current = new View(slots(entity));
+        Identifier form = AccessoryFormEffects.formOf(entity);
+        if (previous != null && Objects.equals(previous.form, form)) return previous;
+        View current = new View(form, slots(entity));
         cache.put(entity, current);
         return current;
     }
@@ -106,6 +110,7 @@ public final class DualAccessoryEquipment {
         // Drain only notified players. There is no timer, expiry or periodic inventory scan.
         ServerTickEvents.END_SERVER_TICK.register(server->flushPendingChanges());
         ServerPlayConnectionEvents.JOIN.register((handler,sender,server)->changed(handler.player));
+        SSCEvent.FORM_CHANGE_END.register((player, previous, current) -> changed(player));
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer,newPlayer,alive)->{
             STATES.remove(oldPlayer);DIRTY.remove(oldPlayer);invalidate(oldPlayer);changed(newPlayer);
         });
@@ -181,6 +186,7 @@ public final class DualAccessoryEquipment {
         return view(entity).effective;
     }
     public static boolean effective(LivingEntity entity,String backend,AccessoryItem.SlotData data,ItemStack stack) {
+        if (!AccessoryFormEffects.allows(AccessoryFormEffects.formOf(entity), Registries.ITEM.getId(stack.getItem()))) return false;
         if(!backend.equals("curios"))return true;
         var candidate=new Slot(backend,null,data.slot().getPath(),data.index(),stack);
         return !suppressed(candidate,view(entity).preferred);
@@ -271,7 +277,6 @@ public final class DualAccessoryEquipment {
             SSCEvent.ACCESSORY_EQUIP.invoker().onEvent(player,id,"ssca");
         }
         if(!conflicts.isEmpty()&&!conflicts.equals(state.conflicts)) {
-            // Match the small red form-restriction warning used by AddonAccessoryGuard.
             player.sendMessage(Text.translatable("msg.my_addon.accessory_duplicate_detail")
                     .formatted(Formatting.RED), true);
         }

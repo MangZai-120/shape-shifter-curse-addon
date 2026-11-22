@@ -34,7 +34,7 @@ import java.util.List;
  * 绑定脚环（Binding Anklet）—— 契灵首个专属饰品。
  *
  * 槽位：复用 SSC 守御脚环的 trinkets:feet/aglet 槽（与守御脚环互斥）。
- * 装备限制：仅契灵形态可装备，其他形态拒绝。
+ * 仅契灵形态激活该饰品的效果。
  * 被动效果：在 16 格范围内为其他**劫掠阵营 NPC**（pillager / vindicator / evoker /
  *           illusioner / ravager / witch）提供 +20% 造成伤害加成；
  *           佩戴者本人（玩家/契灵）不享受此加成。
@@ -52,17 +52,6 @@ public class BindingAnkletItem extends AccessoryItem {
 
 	public BindingAnkletItem(Settings settings) {
 		super(settings);
-	}
-
-	/* ------------------------------------------------------------ */
-	/*  装备限制                                                       */
-	/* ------------------------------------------------------------ */
-
-	@Override
-	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-		// 仅契灵形态可装备；登录装载瞬间（age==0）宽容放行，由 AddonAccessoryGuard.tick 兜底卸下
-		return net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.canEquip(entity,
-				e -> FormUtils.isForm(e, FormIdentifiers.FAMILIAR_FOX_MANCIANIMA));
 	}
 
 	/* ------------------------------------------------------------ */

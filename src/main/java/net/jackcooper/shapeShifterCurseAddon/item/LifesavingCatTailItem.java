@@ -5,7 +5,6 @@ import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.item.TooltipContext;
 import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.loot.LootPool;
 import net.minecraft.loot.entry.ItemEntry;
@@ -14,7 +13,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
-import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -38,13 +36,6 @@ public class LifesavingCatTailItem extends AccessoryItem {
 				tableBuilder.pool(poolBuilder);
 			}
 		});
-	}
-
-	@Override
-	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-		// 野猫（月光魅影）与食梦魔（Nightmare）均可佩戴保命猫尾（被动对齐）
-		return net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.canEquip(entity,
-				e -> FormUtils.isWildCatSP(e) || FormUtils.isForm(e, net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.WILD_CAT_NIGHTMARE));
 	}
 
 	/**

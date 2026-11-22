@@ -6,14 +6,11 @@
 package net.jackcooper.shapeShifterCurseAddon.item;
 
 import net.minecraft.client.item.TooltipContext;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.World;
 import net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem;
-import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
-import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -22,13 +19,6 @@ import java.util.List;
 public class NovaReviveNecklaceItem extends AccessoryItem {
     public NovaReviveNecklaceItem(Settings settings) {
         super(settings);
-    }
-
-    @Override
-	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-        // 朔望专属；登录装载瞬间（age==0）宽容放行，由 AddonAccessoryGuard.tick 兜底卸下
-        return net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.canEquip(entity,
-                e -> FormUtils.isForm(e, FormIdentifiers.OCELOT_NOVA));
     }
 
     @Override

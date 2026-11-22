@@ -87,12 +87,6 @@ public class PortableMoisturizerItem extends AccessoryItem {
 		stack.getOrCreateNbt().putInt("Charge", getMaxCharge(getLevel(stack)));
 	}
 
-	// ===== 装备限制：仅美西螈系可佩戴 =====
-	@Override
-	public boolean canEquip(ItemStack stack, LivingEntity entity, AccessoryItem.SlotData slotData) {
-		return net.jackcooper.shapeShifterCurseAddon.item.AddonAccessoryGuard.canEquip(entity, FormUtils::isMoistureDependent);
-	}
-
 	// ===== 右键：显示当前状态（饰品自动生效，无需开关） =====
 	@Override
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
