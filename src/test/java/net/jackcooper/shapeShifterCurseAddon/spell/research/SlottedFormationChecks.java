@@ -65,6 +65,7 @@ public final class SlottedFormationChecks {
         semanticRules.put("beep_sheep",new RuneRole[]{RuneRole.SOURCE,RuneRole.CONVERT});       // 单体直投+命中变羊
         semanticRules.put("void_devour",new RuneRole[]{RuneRole.CONVERT,RuneRole.STORE});       // 锁定蓄力+致盲封存
         semanticRules.put("void_erosion",new RuneRole[]{RuneRole.GAIN,RuneRole.CONVERT});       // 自身扩散+虚弱疲劳
+        semanticRules.put("false_witchcraft",new RuneRole[]{RuneRole.RECOVER,RuneRole.STORE}); // 缩短正在冷却的法术
         semanticRules.put("space_blink",new RuneRole[]{RuneRole.BRIDGE,RuneRole.SOURCE});       // 贯通两点+立即生效
         semanticRules.put("space_stride",new RuneRole[]{RuneRole.BRIDGE,RuneRole.STABLE});      // 贯通两点+持续生效
         semanticRules.put("space_recall",new RuneRole[]{RuneRole.BRIDGE,RuneRole.INSIGHT});     // 贯通两点+锚定重生点

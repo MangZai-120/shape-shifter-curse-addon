@@ -115,6 +115,7 @@ public final class NeoLegacyCasting {
         String path=spell.getId().getPath();
         Carrier carrier=switch(core){
             case SPACE->Carrier.LOCK;case SUMMON->Carrier.AREA;
+            case VOID->path.equals("false_witchcraft")?Carrier.SELF:spell.getAimMaxRange(level)>0?Carrier.AREA:Carrier.PROJECTILE;
             case LUNAR->path.equals("lunar_mend")||path.equals("lunar_veil")?Carrier.SELF:spell.getAimMaxRange(level)>0?Carrier.LOCK:Carrier.PROJECTILE;
             case CURSE->Carrier.LOCK;default->spell.getAimMaxRange(level)>0?Carrier.AREA:Carrier.PROJECTILE;};
         return new Blueprint(path.length()>32?path.substring(0,32):path,core,carrier,List.of(),Core.FROST,

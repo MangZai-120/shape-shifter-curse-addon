@@ -31,6 +31,7 @@ public final class SlottedSpellRecipes {
             new Recipe("beep_sheep",4,RuneRole.SOURCE,RuneRole.CONVERT),
             new Recipe("void_devour",5,RuneRole.CONVERT,RuneRole.STORE),
             new Recipe("void_erosion",5,RuneRole.GAIN,RuneRole.CONVERT),
+            new Recipe("false_witchcraft",5,RuneRole.RECOVER,RuneRole.STORE),
             new Recipe("space_blink",6,RuneRole.BRIDGE,RuneRole.SOURCE),
             new Recipe("space_stride",6,RuneRole.BRIDGE,RuneRole.STABLE),
             new Recipe("space_recall",6,RuneRole.BRIDGE,RuneRole.INSIGHT),
@@ -63,6 +64,9 @@ public final class SlottedSpellRecipes {
     }
     private SlottedSpellRecipes() {}
     public static List<Recipe> all() { return RECIPES; }
+    public static List<Recipe> availableAt(int level) {
+        return RECIPES.stream().filter(recipe -> available(recipe, level)).toList();
+    }
     public static Recipe get(String id) { return RECIPES.stream().filter(recipe -> recipe.spell.equals(id)).findFirst().orElse(null); }
     public static boolean available(Recipe recipe, int level) {
         Spell spell = recipe == null ? null : SpellRegistry.get(recipe.spell);

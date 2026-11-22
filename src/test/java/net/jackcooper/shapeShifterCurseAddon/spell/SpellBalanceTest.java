@@ -44,7 +44,7 @@ public final class SpellBalanceTest {
 				"moonlight_arrow", "lunar_mend", "lunar_veil", "lunar_phase",
 				"curse_mark", "dread_whisper", "corrupt_mist",
 				"summon_lunar_spirit", "companion_resonance", "beep_sheep",
-				"void_devour", "void_erosion", "death_finale",
+				"void_devour", "void_erosion", "false_witchcraft", "death_finale",
 				"space_blink", "space_stride", "space_recall", "pocket_space", "domain"
 		};
 		for (String id : ids) {
@@ -558,15 +558,16 @@ public final class SpellBalanceTest {
 						|| o.get("interrupt_mode").getAsInt() != 3 || !o.get("spell_tier").getAsString().equals("custom")) fail(id, "领域施法配置不符");
 				return;
 			}
-			if (levels.size() != 5) {
-				fail(id, "levels 长度 != 5 (" + levels.size() + ")");
+			int maxLevel = id.equals("false_witchcraft") ? 4 : 5;
+			if (levels.size() != maxLevel) {
+				fail(id, "expected " + maxLevel + " levels, got " + levels.size());
 				return;
 			}
 			// 逐级取倍率（缺省 1.0）
-			float[] manaMul = new float[5];
-			float[] cdMul = new float[5];
-			float[] dmgMul = new float[5];
-			for (int i = 0; i < 5; i++) {
+			float[] manaMul = new float[maxLevel];
+			float[] cdMul = new float[maxLevel];
+			float[] dmgMul = new float[maxLevel];
+			for (int i = 0; i < maxLevel; i++) {
 				JsonObject lv = levels.get(i).isJsonObject() ? levels.get(i).getAsJsonObject() : null;
 				manaMul[i] = lv != null && lv.has("mana_cost_multiplier") ? lv.get("mana_cost_multiplier").getAsFloat() : 1f;
 				cdMul[i] = lv != null && lv.has("cooldown_multiplier") ? lv.get("cooldown_multiplier").getAsFloat() : 1f;
@@ -587,23 +588,23 @@ public final class SpellBalanceTest {
 				}
 			}
 			if (baseMana > 0) {
-				for (int i = 1; i < 5; i++) {
+				for (int i = 1; i < maxLevel; i++) {
 					if (manaMul[i] <= manaMul[i - 1]) {
 						fail(id, "耗蓝倍率 Lv" + (i + 1) + "(" + manaMul[i] + ") 未高于 Lv" + i + "(" + manaMul[i - 1] + ")");
 					}
 				}
 			}
 			// 断言 2：CD 倍率逐级不增 + Lv5 严格 < Lv1
-			for (int i = 1; i < 5; i++) {
+			for (int i = 1; i < maxLevel; i++) {
 				if (cdMul[i] > cdMul[i - 1] + 1e-6) {
 					fail(id, "CD 倍率 Lv" + (i + 1) + "(" + cdMul[i] + ") 高于 Lv" + i + "(" + cdMul[i - 1] + ")");
 				}
 			}
-			if (cdMul[4] >= cdMul[0] - 1e-6) {
-				fail(id, "Lv5 CD 倍率(" + cdMul[4] + ") 未严格低于 Lv1(" + cdMul[0] + ")");
+			if (cdMul[maxLevel - 1] >= cdMul[0] - 1e-6) {
+				fail(id, "满级 CD 倍率未严格低于 Lv1");
 			}
 			// 断言 3：伤害倍率不随等级下降
-			for (int i = 1; i < 5; i++) {
+			for (int i = 1; i < maxLevel; i++) {
 				if (dmgMul[i] < dmgMul[i - 1] - 1e-6) {
 					fail(id, "伤害倍率 Lv" + (i + 1) + "(" + dmgMul[i] + ") 低于 Lv" + i + "(" + dmgMul[i - 1] + ")");
 				}
@@ -612,9 +613,9 @@ public final class SpellBalanceTest {
 			if (floor < 0) {
 				fail(id, "cooldown_floor_ticks < 0");
 			}
-			int lv5Cd = Math.round(baseCd * cdMul[4]);
-			if (floor > lv5Cd) {
-				fail(id, "floor(" + floor + "t) 高于 Lv5 实际 CD(" + lv5Cd + "t)——floor 会吞掉等级收益");
+			int maxLevelCd = Math.round(baseCd * cdMul[maxLevel - 1]);
+			if (floor > maxLevelCd) {
+				fail(id, "floor(" + floor + "t) 高于满级 CD(" + maxLevelCd + "t)");
 			}
 		}
 	}

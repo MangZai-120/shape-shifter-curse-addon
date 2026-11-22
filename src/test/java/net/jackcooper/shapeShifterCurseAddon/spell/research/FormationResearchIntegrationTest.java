@@ -78,7 +78,7 @@ public final class FormationResearchIntegrationTest {
             check(bundle.getWidth(null)==74&&bundle.getHeight()==86,"empty reference bundle geometry");
             contents.set(0,new ItemStack(SscAddon.ANALYZED_SPELL_DIAGRAM));
             check(bundle.getWidth(null)==74&&bundle.getHeight()==86,"occupied reference bundle geometry unchanged");
-            System.out.println("Formation research integration passed: "+checks+" checks; 55 enhancements, 115 slotted recipes, timed analysis, exact costs, replay, rejection, old-data migration and reference bundle.");
+            System.out.println("Formation research integration passed: "+checks+" checks covering enhancements, slotted recipes, timed analysis, exact costs, replay, rejection, old-data migration and reference bundle.");
         }
         private static void checkResearchOutput(WorldRuneState world,List<Item> inks){
             var table=new SimpleInventory(SpellResearchTableBlockEntity.SLOT_COUNT);var bag=slotMaterials(inks);var knowledge=ready(world);
@@ -201,7 +201,7 @@ public final class FormationResearchIntegrationTest {
             check(lines.contains("已激活：蓄能爆发（每圈一次）")&&lines.contains("已激活：重型投射（每圈一次）"),
                     "all active resonance families are visible without revealing a spell foundation");
             var original=summary.copy();
-            for(var recipe:SlottedSpellRecipes.all())for(int level=1;level<=5;level++){
+            for(int level=1;level<=5;level++)for(var recipe:SlottedSpellRecipes.availableAt(level)){
                 var plain=RuneBuildEvaluator.evaluate(level,RuneLayout.foundation(recipe,level,language),language,SlottedSpellRecipes.all());
                 var defaults=RuneSummary.preview(plain,level,null).getCompound("Costs");
                 check(!defaults.getBoolean("Equipped")&&defaults.getInt("BaseMana")==defaults.getInt("Mana")
@@ -398,7 +398,7 @@ public final class FormationResearchIntegrationTest {
         private static void checkRandomRuneLoot(WorldRuneState world,WorldRuneState other,
                 java.lang.reflect.Constructor<WorldRuneState> load) throws Exception {
             var language=world.language();var worldBefore=world.writeNbt(new NbtCompound());
-            for(var recipe:SlottedSpellRecipes.all())for(int level=1;level<=5;level++) {
+            for(int level=1;level<=5;level++)for(var recipe:SlottedSpellRecipes.availableAt(level)) {
                 for(int seed=0;seed<4;seed++) {
                     var scroll=net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll(world,recipe.spell(),level,seed);
                     check(!scroll.isEmpty()&&ArcaneAnalysis.isUnanalyzed(scroll),"natural plain scroll keeps analysis requirement");
@@ -494,7 +494,7 @@ public final class FormationResearchIntegrationTest {
         private static void checkPlainRuneScrolls(WorldRuneState world,WorldRuneState other,List<Item> inks,
                                                 java.lang.reflect.Constructor<WorldRuneState> load) throws Exception {
             var beforeWorld=world.writeNbt(new NbtCompound());
-            for(var recipe:SlottedSpellRecipes.all())for(int level=1;level<=5;level++){
+            for(int level=1;level<=5;level++)for(var recipe:SlottedSpellRecipes.availableAt(level)){
                 int[] slots=RuneLayout.foundation(recipe,level,world.language());
                 var table=new SimpleInventory(SpellResearchTableBlockEntity.SLOT_COUNT);var bag=slotMaterials(inks);var knowledge=ready(world);
                 table.setStack(0,new ItemStack(SscAddon.BLANK_FORMATION_PAPER));
@@ -708,6 +708,7 @@ public final class FormationResearchIntegrationTest {
             check(net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll("does_not_exist",1).isEmpty(),"invalid command spell rejected");
             check(net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll("fire_bolt",6).isEmpty(),"invalid command level rejected");
             check(net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll("domain",2).isEmpty(),"single-level command spell cannot exceed max");
+            check(net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll("false_witchcraft",5).isEmpty(),"witchcraft cannot generate a fifth-tier scroll");
             var dispatcher=new com.mojang.brigadier.CommandDispatcher<net.minecraft.server.command.ServerCommandSource>();
             net.jackcooper.shapeShifterCurseAddon.command.SscAddonCommands.register(dispatcher);
             var command=dispatcher.getRoot().getChild("ssc_addon").getChild("give_unanalyzed_scroll");
@@ -723,7 +724,9 @@ public final class FormationResearchIntegrationTest {
             Set<String> supported=new HashSet<>();
             for(var recipe:SlottedSpellRecipes.all()){
                 check(SpellRegistry.get(recipe.spell())!=null,"registered recipe "+recipe.spell());supported.add(recipe.spell());
-                for(int level=1;level<=5;level++){
+                int maxLevel = SpellRegistry.get(recipe.spell()).getMaxLevel();
+                check(!SlottedSpellRecipes.available(recipe,maxLevel+1),"recipe rejects unsupported levels");
+                for(int level=1;level<=maxLevel;level++){
                     check(SlottedSpellRecipes.available(recipe,level),"ordinary spell supports level "+recipe.spell());
                     int[] slots=SlottedSpellRecipes.glyphs(recipe,level,world.language());
                     check(SlottedSpellRecipes.identify(level,slots,world.language()).equals(recipe),"actual recipe identifies uniquely");

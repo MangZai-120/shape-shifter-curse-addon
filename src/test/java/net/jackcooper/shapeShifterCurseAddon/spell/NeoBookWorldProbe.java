@@ -23,7 +23,7 @@ public final class NeoBookWorldProbe {
         check(BalanceIntegration.isPlayerReady(p),"Mock client acknowledged server configuration");
         NeoRuntime.refreshForm(p);return p;
     }
-    private static ItemStack book(ServerPlayerEntity p) {
+    static ItemStack book(ServerPlayerEntity p) {
         var b=new ItemStack(SscAddon.MOON_DUST_SPELLBOOK);SpellbookData.setMana(b,0);
         var slots=TrinketsApi.getTrinketComponent(p).orElseThrow().getInventory();var group=slots.get("moonlit");
         if(group==null||!group.containsKey("spellbook"))throw new AssertionError("Book trinket slot missing: "+slots.keySet());

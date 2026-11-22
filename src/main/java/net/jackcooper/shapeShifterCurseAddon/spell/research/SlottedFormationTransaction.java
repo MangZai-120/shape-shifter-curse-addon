@@ -25,7 +25,7 @@ public final class SlottedFormationTransaction {
         var progress=knowledge.research();
         if(enhanced&&!world.worldId().equals(progress.world))return new Result("invalid",-1);
         if(!progress.completionToken.equals(operation))return new Result("duplicate",-1);
-        var evaluation=enhanced?RuneBuildEvaluator.evaluate(level,slots,world.language(),SlottedSpellRecipes.all()):null;
+        var evaluation=enhanced?RuneBuildEvaluator.evaluate(level,slots,world.language(),SlottedSpellRecipes.availableAt(level)):null;
         var recipe=enhanced?(evaluation.valid()?evaluation.recipe():null):SlottedSpellRecipes.identify(level,slots,world.language());
         if(recipe==null)return new Result("invalid",-1);
         if(progress.rank<level)return new Result("rank",-1);
@@ -53,7 +53,7 @@ public final class SlottedFormationTransaction {
         ResearchProgress progress=knowledge.research();
         if(!world.worldId().equals(progress.world))return new Result("invalid",-1);
         if(!progress.completionToken.equals(operation))return new Result("duplicate",-1);
-        var evaluation=RuneBuildEvaluator.evaluate(level,slots,world.language(),SlottedSpellRecipes.all());
+        var evaluation=RuneBuildEvaluator.evaluate(level,slots,world.language(),SlottedSpellRecipes.availableAt(level));
         if(!evaluation.valid())return new Result("invalid",-1);
         var recipe=evaluation.recipe();
         if(progress.rank<level)return new Result("rank",-1);

@@ -214,6 +214,33 @@ NbtCompound durations=new NbtCompound();totals.forEach((player,values)->{NbtComp
 		}
 	}
 
+	/** Shorten existing shared cooldowns by the allocated ticks and sync them together. */
+	public static void reduceFor(ServerPlayerEntity player, Map<Spell, Integer> reductions) {
+		SharedSpellCooldowns state = get(player.getServer());
+		if (state == null || reductions.isEmpty()) return;
+		UUID owner = player.getUuid();
+		var ends = state.data.get(owner);
+		if (ends == null) return;
+		var durations = state.totals.get(owner);
+		long now = player.getWorld().getTime();
+		for (var entry : reductions.entrySet()) {
+			String path = entry.getKey().getId().getPath();
+			Long end = ends.get(path);
+			if (end == null) continue;
+			long reducedEnd = end - entry.getValue();
+			if (reducedEnd > now) {
+				ends.put(path, reducedEnd);
+			} else {
+				ends.remove(path);
+				if (durations != null) durations.remove(path);
+			}
+		}
+		if (ends.isEmpty()) state.data.remove(owner);
+		if (durations != null && durations.isEmpty()) state.totals.remove(owner);
+		state.markDirty();
+		sync(player);
+	}
+
 	/** 取共享冷却结束时刻（供被拦截时回写卷轴 NBT 同步 HUD；无表 = 0）。 */
 	public static long getCooldownEndOf(ServerPlayerEntity player, Spell spell) {
 		if (player == null || spell == null) {

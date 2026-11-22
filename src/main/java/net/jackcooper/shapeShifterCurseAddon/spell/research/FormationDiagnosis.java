@@ -18,9 +18,7 @@ public final class FormationDiagnosis {
 
     /** 服务端入口：按当前等级的真实可用配方（含稀有度/最大等级过滤）做诊断。 */
     public static int[] diagnose(int level, int[] slots, RuneLanguage language) {
-        List<SlottedSpellRecipes.Recipe> recipes = new ArrayList<>();
-        for (var recipe : SlottedSpellRecipes.all()) if (SlottedSpellRecipes.available(recipe, level)) recipes.add(recipe);
-        return diagnose(level, slots, language, recipes);
+        return diagnose(level, slots, language, SlottedSpellRecipes.availableAt(level));
     }
 
     /**

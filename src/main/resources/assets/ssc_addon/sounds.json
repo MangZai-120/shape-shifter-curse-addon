@@ -1,4 +1,7 @@
 {
+  "false_witchcraft_refresh": {
+    "sounds": ["ssc_addon:false_witchcraft_refresh"]
+  },
   "allay_heal_music": {
     "sounds": [
       {

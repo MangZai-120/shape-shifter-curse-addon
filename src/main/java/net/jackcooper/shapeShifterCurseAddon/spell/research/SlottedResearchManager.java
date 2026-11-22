@@ -29,7 +29,7 @@ public final class SlottedResearchManager {
         else if(!RuneLayout.validDraft(level,slots)){key="invalid";}
         else{
             progress.runeDrafts.put(level,slots.clone());
-            var evaluation=RuneBuildEvaluator.evaluate(level,slots,world.language(),SlottedSpellRecipes.all());
+            var evaluation=RuneBuildEvaluator.evaluate(level,slots,world.language(),SlottedSpellRecipes.availableAt(level));
             var recipe=evaluation.valid()?evaluation.recipe():null;
             switch(action){
                 case SAVE -> key="saved";
@@ -69,7 +69,7 @@ public final class SlottedResearchManager {
         if(diagnosis.length>0)state.putIntArray("Diagnosis",diagnosis);
         int[] meanings=new int[18],schools=new int[18];Arrays.fill(meanings,-1);
         for(int glyph=0;glyph<18;glyph++){if(progress.knows(glyph))meanings[glyph]=world.language().meaning(glyph).ordinal();schools[glyph]=SlottedFormation.school(world.language(),glyph);}
-        if(RuneLayout.validDraft(level,slots)){var evaluated=RuneBuildEvaluator.evaluate(level,slots,world.language(),SlottedSpellRecipes.all());
+        if(RuneLayout.validDraft(level,slots)){var evaluated=RuneBuildEvaluator.evaluate(level,slots,world.language(),SlottedSpellRecipes.availableAt(level));
             state.putInt("Stability",evaluated.stability());state.putBoolean("RuneValid",evaluated.valid());state.put("Modifiers",evaluated.modifiers().write());
             state.put("RuneTooltipState",RuneSlotTooltips.write(evaluated));
             state.put("RuneSummary",RuneSummary.preview(evaluated,level,player));
