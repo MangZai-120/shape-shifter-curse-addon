@@ -36,7 +36,7 @@ public final class SpellNumbers {
 
 	public static int finalManaCost(Spell spell, net.minecraft.item.ItemStack book,
 	                               net.minecraft.entity.player.PlayerEntity player, int selectedLevel) {
-		int costLevel = FormAffinity.manaCostLevel(player, spell.getElement(), selectedLevel);
+		int costLevel = FormAffinity.manaCostLevel(player, spell, selectedLevel);
 		int manaCost = manaCost(spell.getConfig(), costLevel, FormationData.sumManaCostMultiplier(book, spell.getElement()),
 				FormAffinity.manaCostMultiplier(player));
 		return FormCastingStyle.applyTidalDiscount(player, spell.getElement(), manaCost);
@@ -84,7 +84,7 @@ public final class SpellNumbers {
 	/** NBT 版最终耗蓝（法阵系别/等级从书 NBT Formations 直读，与 ItemStack 版同式）。 */
 	static int finalManaCostNbt(Spell spell, NbtCompound bookNbt,
 	                            net.minecraft.entity.player.PlayerEntity player, int selectedLevel) {
-		int costLevel = FormAffinity.manaCostLevel(player, spell.getElement(), selectedLevel);
+		int costLevel = FormAffinity.manaCostLevel(player, spell, selectedLevel);
 		int manaCost = manaCost(spell.getConfig(), costLevel,
 				FormationData.sumManaCostMultiplierNbt(bookNbt, spell.getElement()),
 				FormAffinity.manaCostMultiplier(player));

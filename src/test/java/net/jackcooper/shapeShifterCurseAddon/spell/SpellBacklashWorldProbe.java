@@ -27,7 +27,7 @@ public final class SpellBacklashWorldProbe {
     private static int checks;
     private static void check(boolean ok,String why) { checks++; if(!ok)throw new AssertionError(why); }
     private static void near(double actual,double expected,String why) { check(Math.abs(actual-expected)<1e-4,why+": "+actual+" != "+expected); }
-    private static ServerPlayerEntity player(TestContext t) {
+    static ServerPlayerEntity player(TestContext t) {
         var p=new ServerPlayerEntity(t.getWorld().getServer(),t.getWorld(),new com.mojang.authlib.GameProfile(UUID.randomUUID(),"backlash-probe"));
         p.getServer().getPlayerManager().onPlayerConnect(new net.minecraft.network.ClientConnection(net.minecraft.network.NetworkSide.SERVERBOUND),p);
         p.changeGameMode(GameMode.SURVIVAL);p.setNoGravity(true);p.getAbilities().invulnerable=false;
@@ -69,11 +69,100 @@ public final class SpellBacklashWorldProbe {
     public static void start(TestContext t) {
         t.waitAndRun(70,()->{try { run(t); }catch(Exception e){throw new RuntimeException(e);}});
     }
+    private static void checkWrathPersistence(ServerPlayerEntity caster) {
+        var world = caster.getServerWorld();
+        var victim = net.minecraft.entity.EntityType.PIG.create(world);
+        check(WrathMark.apply(caster, victim, 100, 3), "Wrath applies without a status effect");
+        check(!victim.hasStatusEffect(StatusEffects.BLINDNESS) && !victim.hasStatusEffect(StatusEffects.GLOWING),
+                "Wrath installs neither blindness nor glowing");
+        victim.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, 100));
+        var save = victim.writeNbt(new net.minecraft.nbt.NbtCompound());
+        victim.clearStatusEffects();
+        check(WrathMark.isActive(victim), "Ordinary effect removal leaves the mark intact");
+
+        var restored = net.minecraft.entity.EntityType.PIG.create(world);
+        restored.readNbt(save);
+        check(WrathMark.isActive(restored) && restored.hasStatusEffect(StatusEffects.BLINDNESS),
+                "Independent blindness and the current mark survive together");
+        restored.addStatusEffect(new StatusEffectInstance(SscAddon.PURIFIED, 20));
+        check(!WrathMark.isActive(restored), "Explicit purification clears the mark");
+
+        save.getCompound("SscaWrathMark").putBoolean("OwnsBlindness", true);
+        var legacy = net.minecraft.entity.EntityType.PIG.create(world);
+        legacy.readNbt(save);
+        check(WrathMark.isActive(legacy) && !legacy.hasStatusEffect(StatusEffects.BLINDNESS),
+                "Loading a dev.26 mark removes only its legacy blindness carrier");
+        victim.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, 240, 1));
+        var stacked = victim.writeNbt(new net.minecraft.nbt.NbtCompound());
+        stacked.getCompound("SscaWrathMark").putBoolean("OwnsBlindness", true);
+        legacy.readNbt(stacked);
+        check(legacy.getStatusEffect(StatusEffects.BLINDNESS).getAmplifier() == 1,
+                "A stronger independent blindness survives legacy migration");
+    }
+
+    private static void checkWrathTimeoutDamage(ServerPlayerEntity caster) {
+        var spell = SpellRegistry.get("wrath_mark");
+        var book = new ItemStack(SscAddon.MOON_DUST_SPELLBOOK);
+        float[] expected = {2, 4, 6, 8, 10};
+        SpellRarity[] rarities = {SpellRarity.WHITE, SpellRarity.GREEN, SpellRarity.BLUE, SpellRarity.PURPLE, SpellRarity.ORANGE};
+        check(spell.getMaxLevel() == expected.length, "Wrath has five scroll tiers");
+        for (int level = 1; level <= expected.length; level++) {
+            var scroll = ScrollData.create("wrath_mark", level);
+            check(ScrollData.getLevel(scroll) == level && ScrollData.getCastLevel(scroll) == level
+                    && spell.getRarity(level) == rarities[level - 1], "New Wrath scroll rarity at level " + level);
+            for (boolean solo : new boolean[]{false, true}) {
+                var victim = net.minecraft.entity.EntityType.COW.create(caster.getServerWorld());
+                victim.setAiDisabled(true);
+                victim.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH).setBaseValue(40);
+                victim.setHealth(40);
+                float power = SpellNumbers.finalPower(spell, solo ? ItemStack.EMPTY : book, caster, level,
+                        scroll, solo, RuneModifiers.NONE);
+                check(WrathMark.apply(caster, victim, 2, power), "Wrath mark applied");
+                var state = (WrathMark.Access) victim;
+                state.ssca$getWrathMark().tick(victim);
+                near(victim.getHealth(), 40, "No damage before Wrath expires");
+                state.ssca$getWrathMark().tick(victim);
+                near(40 - victim.getHealth(), expected[level - 1] * (solo ? 0.5f : 1f),
+                        "Wrath timeout damage at level " + level + ", solo=" + solo);
+                check(!WrathMark.isActive(victim), "Wrath expires after a single penalty");
+            }
+        }
+    }
+
+    private static void checkLegacyWrathScrolls() {
+        var book = new ItemStack(SscAddon.MOON_DUST_SPELLBOOK);
+        for (int oldLevel = 1; oldLevel <= 4; oldLevel++) {
+            var scroll = new ItemStack(SscAddon.MAGIC_SCROLL);
+            var tag = scroll.getOrCreateNbt();
+            tag.putString(ScrollData.NBT_SPELL, "wrath_mark");
+            tag.putInt(ScrollData.NBT_LEVEL, oldLevel);
+            tag.putInt(ScrollData.NBT_CAST_LEVEL, 1);
+            tag.putInt(ScrollData.NBT_USES, 3);
+            var original = tag.copy();
+            SpellbookData.setScroll(book, 0, scroll);
+            scroll = SpellbookData.getScroll(book, 0);
+            check(ScrollData.getLevel(scroll) == oldLevel + 1 && ScrollData.getCastLevel(scroll) == 2,
+                    "Legacy Wrath scroll and selected green tier survive book load");
+            check(original.equals(scroll.getNbt()), "Reading legacy Wrath scrolls preserves item data");
+            ScrollData.setLevel(scroll, oldLevel + 1);
+            check(ScrollData.getLevel(scroll) == oldLevel + 1 && ScrollData.getCastLevel(scroll) == 2,
+                    "Writing a legacy Wrath scroll preserves its selected tier");
+            ScrollData.setCastLevel(scroll, 1);
+            SpellbookData.setScroll(book, 0, scroll);
+            var reloaded = SpellbookData.getScroll(book, 0);
+            check(ScrollData.getLevel(reloaded) == oldLevel + 1 && ScrollData.getCastLevel(reloaded) == 1
+                    && ScrollData.getUses(reloaded) == 3, "White can be selected without shifting rarity or uses");
+        }
+    }
+
     private static void run(TestContext t) throws Exception {
         var p=player(t);
+        checkWrathPersistence(p);
+        checkWrathTimeoutDamage(p);
+        checkLegacyWrathScrolls();
         t.getWorld().getServer().setPvpEnabled(false);
         var damaging=Set.of("fire_bolt","flame_nova","frost_spike","ice_barrage","frost_nova","moonlight_arrow","meteor","void_devour","explosion","death_finale","corrupt_mist","summon_lunar_spirit");
-        var negative=Set.of("frost_nova","curse_mark","dread_whisper","void_erosion","void_devour","corrupt_mist","beep_sheep");
+        var negative=Set.of("frost_nova","wrath_mark","curse_mark","dread_whisper","void_erosion","void_devour","corrupt_mist","beep_sheep");
         var burning=Set.of("fire_bolt","flame_nova","meteor","explosion");
         for(var spell:SpellRegistry.all())for(int level=1;level<=spell.getMaxLevel();level++) {
             var e=spell.backlashEffects(p,20,false,level);String id=spell.getId().getPath();

@@ -129,10 +129,13 @@ public class LunarPhaseSpell extends Spell {
 	 *  maxDistance/命中位语义——旧实现把 AIM_RANGE² 传给 float 参数且用 getPos() 判墙距，
 	 *  服务端判定可能恒空（「锁不到人」根因）。 */
 	public static LivingEntity raycastEntity(PlayerEntity caster) {
-		Vec3d eye = caster.getEyePos();
-		Vec3d look = caster.getRotationVec(1.0F);
-		double aimRange = RuneCastContext.current().scale(aimRange(),RuneModifiers.Stat.DISTANCE); // 同方法多处使用，读一次局部化（双端一致几何）
-		Vec3d end = eye.add(look.multiply(aimRange));
+        return raycastEntity(caster, RuneCastContext.current().scale(aimRange(), RuneModifiers.Stat.DISTANCE), aimTolerance());
+    }
+
+    public static LivingEntity raycastEntity(PlayerEntity caster, double aimRange, double tolerance) {
+        Vec3d eye = caster.getEyePos();
+        Vec3d look = caster.getRotationVec(1.0F);
+        Vec3d end = eye.add(look.multiply(aimRange));
 		HitResult blockHit = caster.getWorld().raycast(new RaycastContext(eye, end,
 				RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, caster));
 		double maxDist = blockHit.getType() == HitResult.Type.MISS
@@ -152,7 +155,7 @@ public class LunarPhaseSpell extends Spell {
 			if (eye.distanceTo(visiblePoint) > aimRange || caster.getWorld().raycast(new RaycastContext(
 					eye, visiblePoint, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, caster))
 					.getType() != HitResult.Type.MISS) continue;
-			Box aimBox = bounds.expand(aimTolerance());
+			Box aimBox = bounds.expand(tolerance);
 			var hit = aimBox.raycast(eye, end);
 			if (hit.isPresent()) {
 				double dist = eye.distanceTo(hit.get());

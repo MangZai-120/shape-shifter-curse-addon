@@ -70,6 +70,7 @@ public final class SpellcastClient {
 				net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.applyClientSnapshot(null));
 		net.jackcooper.shapeShifterCurseAddon.client.hud.SpellCastHud.register();
 		ClientTickEvents.END_CLIENT_TICK.register(SpellcastClient::onClientTick);
+        WrathAimPreview.register();
 	}
 
 	/** 客户端当前佩戴的魔法书（未装备返回 null；每 tick 缓存，tick 检测与 HUD 帧渲染共读）。 */
@@ -380,11 +381,17 @@ public final class SpellcastClient {
 
 	private static void updateLunarTarget(ClientPlayerEntity player) {
 		lunarTarget = null;
-		if (selectingTarget && gestureKey >= 0 && keyPressed(gestureKey)
-				&& ScrollData.getSpell(targetingScroll) instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarPhaseSpell) {
-			lunarTarget = RuneCastContext.with(RuneScheme.modifiers(player,targetingScroll,ScrollData.getCastLevel(targetingScroll)),()->net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarPhaseSpell.raycastEntity(player));
-		}
+        if (selectingTarget && gestureKey>=0 && keyPressed(gestureKey)
+                && ScrollData.getSpell(targetingScroll) instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarPhaseSpell) {
+            lunarTarget=RuneCastContext.with(RuneScheme.modifiers(player,targetingScroll,targetingLevel),
+                    ()->net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarPhaseSpell.raycastEntity(player));
+        }
 	}
+
+    static ItemStack heldAimScroll(ClientPlayerEntity player) {
+        if (selectingTarget && gestureKey>=0 && keyPressed(gestureKey) && player.getWorld()==targetingWorld) return targetingScroll;
+        return player.isUsingItem() ? player.getActiveItem() : ItemStack.EMPTY;
+    }
 
 	/** Exact current selection, with immediate release/screen/world invalidation. */
 	public static boolean isLunarTarget(net.minecraft.entity.Entity entity) {
@@ -406,7 +413,9 @@ public final class SpellcastClient {
 	}
 
 	/** Local-only preview; nothing about this aim stage is broadcast to observers. */
-	public static Vec3d targetSelectionPreview() {
+	public static Vec3d targetSelectionPreview(float tickDelta) {
+		var entity = WrathAimPreview.target();
+		if (entity != null) return entity.getLerpedPos(tickDelta).add(0, entity.getHeight() + 0.12, 0);
 		var client = MinecraftClient.getInstance();
 		if (!selectingTarget || client.player == null || client.world == null || client.world != targetingWorld || client.currentScreen != null
 				|| gestureKey < 0 || !keyPressed(gestureKey)) return null;
@@ -414,7 +423,11 @@ public final class SpellcastClient {
 		if (book == null || book.isEmpty() || selectedSlot != gestureSlot
 				|| !ItemStack.areEqual(SpellbookData.getScroll(book, gestureSlot), targetingScroll)) return null;
 		Spell spell = ScrollData.getSpell(targetingScroll);
-		return spell == null ? null : RuneCastContext.with(RuneScheme.modifiers(client.player,targetingScroll,targetingLevel),()->Spell.computeAimImpact(client.player, spell.getAimMaxRange(client.player,targetingLevel)));
+		if (spell == null) return null;
+		return RuneCastContext.with(RuneScheme.modifiers(client.player, targetingScroll, targetingLevel), () -> {
+			double range = spell.getAimMaxRange(client.player, targetingLevel);
+			return range > 0 ? Spell.computeAimImpact(client.player, range) : null;
+		});
 	}
 
 	/** 当前槽是否为按住瞄准型法术（getAimMaxRange>0，如陨火术）。 */

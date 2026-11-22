@@ -28,7 +28,11 @@ public class EntityWebGlowMixin {
 
 	@Inject(method = "getTeamColorValue", at = @At("HEAD"), cancellable = true, require = 0)
 	private void ssca$webHighlightColor(CallbackInfoReturnable<Integer> cir) {
-		if (net.jackcooper.shapeShifterCurseAddon.client.SpellcastClient.isLunarTarget((Entity) (Object) this)) {
+		if (net.jackcooper.shapeShifterCurseAddon.client.WrathMarkClient.hasOutline((Entity)(Object)this) || net.jackcooper.shapeShifterCurseAddon.client.WrathAimPreview.isTarget((Entity)(Object)this)) {
+            cir.setReturnValue(0xFFFFFF);
+            return;
+        }
+        if (net.jackcooper.shapeShifterCurseAddon.client.SpellcastClient.isLunarTarget((Entity) (Object) this)) {
 			cir.setReturnValue(net.jackcooper.shapeShifterCurseAddon.spell.spells.LunarPhaseSpell.HIGHLIGHT_COLOR);
 			return;
 		}

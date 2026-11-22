@@ -113,10 +113,12 @@ public final class SpellRegistry implements SimpleSynchronousResourceReloadListe
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.CurseMarkSpell());       // 诅咒标记
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.DreadWhisperSpell());    // 恐惧低语
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.CorruptMistSpell());     // 腐蚀之雾
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.WrathMarkSpell());
 		// —— 召唤系（对立虚无）——
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.SummonLunarSpiritSpell()); // 召唤月灵
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.CompanionResonanceSpell()); // 伙伴共鸣
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.BeepSheepSpell());        // 羊了个羊（鸡蛋式咩弹，命中变羊）
+		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.CalamityPactSpell());
 		// —— 虚无系（对立召唤）——
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.VoidDevourSpell());      // 虚空吞噬
 		register(new net.jackcooper.shapeShifterCurseAddon.spell.spells.VoidErosionSpell());     // 虚空侵蚀

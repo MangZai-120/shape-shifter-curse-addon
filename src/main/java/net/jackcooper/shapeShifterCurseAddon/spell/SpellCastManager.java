@@ -113,7 +113,7 @@ public final class SpellCastManager {
 		float ratio = ScrollData.getDurabilityRatio(scroll);   // 1=满次数, 越低惩罚越大
 		// 形态亲和等级加成（荧光幼灵/阿澪：召唤系 +1，上限 5）——叠加在施放档位上
 		// （耗蓝已按档位结算完毕；亲和只加强效果等级，不推高耗蓝，语义与旧版一致）
-		level = FormAffinity.bonusSpellLevel(player, spellElement, level);
+		level = FormAffinity.effectiveSpellLevel(player, spell, level);
 		// 法阵加成：同系伤 +12%/级、对立系伤 -12%/级；同系 cd -5%/级；空间法阵只缩空间系 cd
 		// 形态亲和：伤害/耗蓝/CD 三乘区（与法阵独立叠加）
 		float damage = SpellNumbers.finalPower(spell,book,player,level,scroll,false,runeModifiers);

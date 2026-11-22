@@ -33,6 +33,7 @@ public final class MixinSelection {
         // Iris（光影加载器）未装时跳过恐惧失明雾的内存补丁 mixin（目标类 ProgramSource 不存在会崩）。
         // 该 mixin 在 Iris 载入光影时把 DoBlindnessFog 内存替换为粉色 12→16 格版（不改光影文件）。
         requireMod("client.IrisShaderPackMixin", "iris");
+        requireMod("client.IrisWrathBlindnessMixin", "iris");
         requireMod("render.LivingEntityRendererShadowFixMixin", "iris");
         requireMod("render.PowerHolderComponentShadowFixMixin", "iris");
         requireMod("client.AsyncParticleSyncBatchMixin", "asyncparticles");

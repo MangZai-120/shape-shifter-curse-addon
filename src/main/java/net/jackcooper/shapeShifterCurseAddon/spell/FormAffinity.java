@@ -123,6 +123,21 @@ public final class FormAffinity {
 		return level;
 	}
 
+	public static int effectiveSpellLevel(PlayerEntity player, Spell spell, int selectedLevel) {
+		return Math.min(spell.getMaxLevel(), bonusSpellLevel(player, spell.getElement(), selectedLevel));
+	}
+
+	public static int manaCostLevel(PlayerEntity player, Spell spell, int level) {
+		int billed = manaCostLevel(player, spell.getElement(), level);
+		int previous = spell.getMaxLevel() - 1;
+		// Four-tier summon scrolls reach their full effect at tier three with summon affinity.
+		if (spell.getElement() == FormationElement.SUMMON && spell.getMaxLevel() < 5 && previous > 0
+				&& billed > previous && effectiveSpellLevel(player, spell, previous) == spell.getMaxLevel()) {
+			return previous;
+		}
+		return billed;
+	}
+
 	public static int manaCostLevel(PlayerEntity player, FormationElement element, int level) {
 		return element == FormationElement.SUMMON
 				? SpellCastingRules.summonManaLevel(level, bonusSpellLevel(player, element, 1) > 1) : level;

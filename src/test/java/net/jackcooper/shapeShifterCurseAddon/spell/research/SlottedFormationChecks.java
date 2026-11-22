@@ -60,8 +60,10 @@ public final class SlottedFormationChecks {
         semanticRules.put("curse_mark",new RuneRole[]{RuneRole.INSIGHT,RuneRole.GAIN});         // 指向印记+易伤
         semanticRules.put("dread_whisper",new RuneRole[]{RuneRole.SPLIT,RuneRole.CONVERT});     // 锥形多路+虚弱缓速
         semanticRules.put("corrupt_mist",new RuneRole[]{RuneRole.STABLE,RuneRole.STORE});       // 雾驻周身+中毒延时
+        semanticRules.put("wrath_mark",new RuneRole[]{RuneRole.INSIGHT,RuneRole.CONVERT});
         semanticRules.put("summon_lunar_spirit",new RuneRole[]{RuneRole.MERGE,RuneRole.STABLE});// 聚合实体+驻留持续
         semanticRules.put("companion_resonance",new RuneRole[]{RuneRole.MERGE,RuneRole.GAIN});  // 联结宠物+伤害提升
+        semanticRules.put("calamity_pact",new RuneRole[]{RuneRole.STABLE,RuneRole.MERGE});
         semanticRules.put("beep_sheep",new RuneRole[]{RuneRole.SOURCE,RuneRole.CONVERT});       // 单体直投+命中变羊
         semanticRules.put("void_devour",new RuneRole[]{RuneRole.CONVERT,RuneRole.STORE});       // 锁定蓄力+致盲封存
         semanticRules.put("void_erosion",new RuneRole[]{RuneRole.GAIN,RuneRole.CONVERT});       // 自身扩散+虚弱疲劳

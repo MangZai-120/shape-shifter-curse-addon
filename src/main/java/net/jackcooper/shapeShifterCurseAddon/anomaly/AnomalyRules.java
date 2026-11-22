@@ -114,6 +114,7 @@ public final class AnomalyRules implements SimpleSynchronousResourceReloadListen
         put(spells, "frost_nova", 280, 315, 350, 385, 420);
         put(spells, "moonlight_arrow", 140, 170, 200, 230, 260);
         put(spells, "curse_mark", 160, 190, 220, 250, 280);
+        put(spells, "wrath_mark", 160, 190, 220, 250, 280);
         put(spells, "dread_whisper", 200, 235, 270, 305, 340);
         put(spells, "corrupt_mist", 60, 70, 80, 90, 100);
         put(spells, "beep_sheep", 220, 255, 290, 325, 360);

@@ -42,8 +42,8 @@ public final class SpellBalanceTest {
 				"fire_bolt", "flame_nova", "meteor", "explosion",
 				"frost_spike", "ice_barrage", "frost_nova", "frost_armor",
 				"moonlight_arrow", "lunar_mend", "lunar_veil", "lunar_phase",
-				"curse_mark", "dread_whisper", "corrupt_mist",
-				"summon_lunar_spirit", "companion_resonance", "beep_sheep",
+				"curse_mark", "wrath_mark", "dread_whisper", "corrupt_mist",
+				"summon_lunar_spirit", "companion_resonance", "calamity_pact", "beep_sheep",
 				"void_devour", "void_erosion", "false_witchcraft", "death_finale",
 				"space_blink", "space_stride", "space_recall", "pocket_space", "domain"
 		};
@@ -558,7 +558,7 @@ public final class SpellBalanceTest {
 						|| o.get("interrupt_mode").getAsInt() != 3 || !o.get("spell_tier").getAsString().equals("custom")) fail(id, "领域施法配置不符");
 				return;
 			}
-			int maxLevel = id.equals("false_witchcraft") ? 4 : 5;
+			int maxLevel = (id.equals("false_witchcraft") || id.equals("calamity_pact")) ? 4 : 5;
 			if (levels.size() != maxLevel) {
 				fail(id, "expected " + maxLevel + " levels, got " + levels.size());
 				return;

@@ -28,14 +28,17 @@ public final class MagicScrollLoot {
 
 	/** 各等级生成权重（index = level-1）。 */
 	private static final int[] LEVEL_WEIGHTS = {30, 28, 22, 13, 7};
-	/** 各法术生成权重（与下方法顺序一致；新法术比冰锥稍稀有，AOE/防御类再低一档）。 */
-	private static final int[] SPELL_WEIGHTS = {30, 22, 14, 8, 18, 14, 10, 16, 12, 14, 12, 8, 10, 8, 6, 10, 10, 8, 10, 8, 6, 6, 8, 8};
-	/** 参与宝箱抽取的法术 id 列表（顺序与权重一致）：冰锥/火球/烈焰新星/陨火/冰锥齐射/冰霜新星/霜甲/月光箭/月华治愈/月幕/月相/诅咒标记/恐惧低语/腐蚀之雾/召唤月灵/伙伴共鸣/虚空吞噬/虚空侵蚀/空间跳跃/空间漫步/空间归途/随身空间/羊了个羊。 */
-	private static final String[] SPELL_PATHS = {
-			"frost_spike", "fire_bolt", "flame_nova", "meteor", "ice_barrage", "frost_nova", "frost_armor",
-			"moonlight_arrow", "lunar_mend", "lunar_veil", "lunar_phase", "curse_mark", "dread_whisper", "corrupt_mist",
-			"summon_lunar_spirit", "companion_resonance", "void_devour", "void_erosion",
-			"space_blink", "space_stride", "space_recall", "pocket_space", "beep_sheep", "false_witchcraft"
+	private record Drop(String spell, int weight) {}
+	private static final Drop[] SPELL_DROPS = {
+			new Drop("frost_spike", 30), new Drop("fire_bolt", 22), new Drop("flame_nova", 14),
+			new Drop("meteor", 8), new Drop("ice_barrage", 18), new Drop("frost_nova", 14),
+			new Drop("frost_armor", 10), new Drop("moonlight_arrow", 16), new Drop("lunar_mend", 12),
+			new Drop("lunar_veil", 14), new Drop("lunar_phase", 12), new Drop("curse_mark", 8),
+			new Drop("dread_whisper", 10), new Drop("wrath_mark", 8), new Drop("corrupt_mist", 8), new Drop("summon_lunar_spirit", 6),
+			new Drop("companion_resonance", 10), new Drop("void_devour", 10), new Drop("void_erosion", 8),
+			new Drop("space_blink", 10), new Drop("space_stride", 8), new Drop("space_recall", 6),
+			new Drop("pocket_space", 6), new Drop("beep_sheep", 8), new Drop("false_witchcraft", 8),
+			new Drop("calamity_pact", 8)
 	};
 	/** 每个箱子生成魔法卷轴的概率。 */
 	private static final float CHANCE = 0.05F;
@@ -89,10 +92,10 @@ public final class MagicScrollLoot {
 			LootPool.Builder pool = LootPool.builder()
 					.rolls(ConstantLootNumberProvider.create(1.0F))
 					.conditionally(RandomChanceLootCondition.builder(CHANCE));
-			for (int s = 0; s < SPELL_PATHS.length; s++) {
-				int maxLevel = Math.min(LEVEL_WEIGHTS.length, SpellRegistry.get(SPELL_PATHS[s]).getMaxLevel());
+			for (Drop drop : SPELL_DROPS) {
+				int maxLevel = Math.min(LEVEL_WEIGHTS.length, SpellRegistry.get(drop.spell()).getMaxLevel());
 				for (int level = 1; level <= maxLevel; level++) {
-					pool.with(scrollEntry(SPELL_PATHS[s], level, LEVEL_WEIGHTS[level - 1] * SPELL_WEIGHTS[s]));
+					pool.with(scrollEntry(drop.spell(), level, LEVEL_WEIGHTS[level - 1] * drop.weight()));
 				}
 			}
 			tableBuilder.pool(pool);

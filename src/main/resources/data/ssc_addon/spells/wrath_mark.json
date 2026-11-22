@@ -1,0 +1,23 @@
+{
+  "debuff": true,
+  "projectile": false,
+  "spell_tier": "instant",
+  "interrupt_mode": 3,
+  "base_damage": 2.0,
+  "base_cooldown_ticks": 1000,
+  "cooldown_floor_ticks": 60,
+  "base_cast_time_ticks": 0,
+  "mana_cost": 30,
+  "solo_damage_multiplier": 0.5,
+  "solo_cooldown_multiplier": 2.0,
+  "solo_cast_time_multiplier": 2.0,
+  "element": "curse",
+  "exp_mode": 0,
+  "levels": [
+    { "rarity": "white", "mana_cost_multiplier": 0.83333333 },
+    { "rarity": "green", "damage_multiplier": 2.0 },
+    { "rarity": "blue", "damage_multiplier": 3.0, "mana_cost_multiplier": 1.16666667, "cooldown_multiplier": 0.91666667 },
+    { "rarity": "purple", "damage_multiplier": 4.0, "mana_cost_multiplier": 1.33333333, "cooldown_multiplier": 0.83333333 },
+    { "rarity": "orange", "damage_multiplier": 5.0, "mana_cost_multiplier": 1.5, "cooldown_multiplier": 0.75 }
+  ]
+}

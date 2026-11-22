@@ -50,8 +50,8 @@ public final class RuneSummary {
         if (spell == null) return n;
         ItemStack book = player == null ? ItemStack.EMPTY : SpellCastManager.getEquippedBook(player);
         if (book == null) book = ItemStack.EMPTY;
-        int effectiveLevel = FormAffinity.bonusSpellLevel(player,spell.getElement(),level);
-        int mana = player == null ? SpellNumbers.manaCost(spell.getConfig(),FormAffinity.manaCostLevel(null,spell.getElement(),level),
+        int effectiveLevel = FormAffinity.effectiveSpellLevel(player,spell,level);
+        int mana = player == null ? SpellNumbers.manaCost(spell.getConfig(),FormAffinity.manaCostLevel(null,spell,level),
                 FormationData.sumManaCostMultiplier(book,spell.getElement()),1) : SpellNumbers.finalManaCost(spell,book,player,level);
         int cooldown = SpellNumbers.finalCooldownTicks(spell,effectiveLevel,1,
                 FormationData.sumCooldownMultiplier(book,spell.getElement()),FormAffinity.cooldownMultiplier(player,spell.getElement()));

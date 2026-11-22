@@ -15,6 +15,7 @@
     "ssc_addon:lunar_veil": [0, 0, 0, 0, 0],
     "ssc_addon:lunar_phase": [0, 0, 0, 0, 0],
     "ssc_addon:curse_mark": [160, 190, 220, 250, 280],
+    "ssc_addon:wrath_mark": [160, 190, 220, 250, 280],
     "ssc_addon:dread_whisper": [200, 235, 270, 305, 340],
     "ssc_addon:corrupt_mist": [60, 70, 80, 90, 100],
     "ssc_addon:summon_lunar_spirit": [0, 0, 0, 0, 0],

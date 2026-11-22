@@ -20,6 +20,8 @@ public final class ScrollData {
 	public static final String NBT_LEVEL = "Level";
 	/** 低阶选档施放档位（阶段 C / 计划书 §6.4）：0 = 未设置（用卷轴等级）；1-5 须 ≤ Level。 */
 	public static final String NBT_CAST_LEVEL = "CastLevel";
+	// Older Wrath Mark scrolls used level 1 for green. White now occupies that slot.
+	private static final String NBT_WRATH_FIVE_TIERS = "WrathFiveTiers";
 
 	/** 魔法等级上限。 */
 	public static final int MAX_SPELL_LEVEL = 5;
@@ -102,17 +104,18 @@ public final class ScrollData {
 		Spell spell = getSpell(stack);
 		int maxLevel = spell == null ? MAX_SPELL_LEVEL : spell.getMaxLevel();
 		NbtCompound nbt = stack.getNbt();
-		if (nbt != null && nbt.contains(NBT_LEVEL)) {
-			return Math.max(1, Math.min(maxLevel, nbt.getInt(NBT_LEVEL)));
+		int stored = nbt == null ? 1 : nbt.getInt(NBT_LEVEL);
+		if (usesOldWrathLevels(nbt)) {
+			return 1 + Math.max(1, Math.min(4, stored));
 		}
-		return 1;
+		return Math.max(1, Math.min(maxLevel, stored));
 	}
 
 	/** 写入魔法等级（内部工具/战利品生成用；等级固定不可升级，正常游玩无升级途径）。 */
 	public static void setLevel(ItemStack stack, int level) {
 		Spell spell = getSpell(stack);
 		int maxLevel = spell == null ? MAX_SPELL_LEVEL : spell.getMaxLevel();
-		stack.getOrCreateNbt().putInt(NBT_LEVEL, Math.max(1, Math.min(maxLevel, level)));
+		prepareLevelWrite(stack).putInt(NBT_LEVEL, Math.max(1, Math.min(maxLevel, level)));
 	}
 
 	// ---- 低阶选档施放（阶段 C / 计划书 §6.4） ----
@@ -122,8 +125,9 @@ public final class ScrollData {
 		NbtCompound nbt = stack.getNbt();
 		if (nbt != null && nbt.contains(NBT_CAST_LEVEL)) {
 			int cl = nbt.getInt(NBT_CAST_LEVEL);
-			if (cl >= 1 && cl <= getLevel(stack)) {
-				return cl;
+			int offset = usesOldWrathLevels(nbt) ? 1 : 0;
+			if (cl >= 1 && cl <= getLevel(stack) - offset) {
+				return cl + offset;
 			}
 		}
 		return getLevel(stack);
@@ -131,14 +135,33 @@ public final class ScrollData {
 
 	/** 写入施放档位（0 = 重置为跟随卷轴等级；自动夹到 [0, Level]）。 */
 	public static void setCastLevel(ItemStack stack, int castLevel) {
-		int cl = Math.max(0, Math.min(getLevel(stack), castLevel));
-		if (cl == 0) {
-			stack.getOrCreateNbt().remove(NBT_CAST_LEVEL);
-		} else if (cl != getLevel(stack)) {
-			stack.getOrCreateNbt().putInt(NBT_CAST_LEVEL, cl);
+		NbtCompound nbt = prepareLevelWrite(stack);
+		int level = getLevel(stack);
+		if (castLevel > 0 && castLevel < level) {
+			nbt.putInt(NBT_CAST_LEVEL, castLevel);
 		} else {
-			stack.getOrCreateNbt().remove(NBT_CAST_LEVEL);
+			nbt.remove(NBT_CAST_LEVEL);
 		}
+	}
+
+	private static boolean usesOldWrathLevels(NbtCompound nbt) {
+		return nbt != null && "wrath_mark".equals(nbt.getString(NBT_SPELL)) && !nbt.getBoolean(NBT_WRATH_FIVE_TIERS);
+	}
+
+	private static NbtCompound prepareLevelWrite(ItemStack stack) {
+		NbtCompound nbt = stack.getOrCreateNbt();
+		if (usesOldWrathLevels(nbt)) {
+			int level = getLevel(stack);
+			int castLevel = getCastLevel(stack);
+			nbt.putInt(NBT_LEVEL, level);
+			if (castLevel < level) {
+				nbt.putInt(NBT_CAST_LEVEL, castLevel);
+			} else {
+				nbt.remove(NBT_CAST_LEVEL);
+			}
+			nbt.putBoolean(NBT_WRATH_FIVE_TIERS, true);
+		}
+		return nbt;
 	}
 
 	/** 新建一张绑定指定魔法的卷轴（次数按品质上限；可选指定等级，0/缺省=1）。 */
@@ -146,6 +169,9 @@ public final class ScrollData {
 		ItemStack stack = new ItemStack(net.jackcooper.shapeShifterCurseAddon.SscAddon.MAGIC_SCROLL);
 		Spell spell = SpellRegistry.get(spellPath);
 		stack.getOrCreateNbt().putString(NBT_SPELL, spellPath);
+		if ("wrath_mark".equals(spellPath)) {
+			stack.getOrCreateNbt().putBoolean(NBT_WRATH_FIVE_TIERS, true);
+		}
 		int lv = Math.max(1, Math.min(spell == null ? MAX_SPELL_LEVEL : spell.getMaxLevel(), level));
 		stack.getOrCreateNbt().putInt(NBT_LEVEL, lv);
 		stack.getOrCreateNbt().putInt(NBT_USES, spell == null ? 0 : spell.getRarity(lv).soloUses);

@@ -24,7 +24,7 @@ public final class NeoEffects {
     private static final Map<UUID,Stored> STORED=new HashMap<>();
     private static final List<Bolt> BOLTS=new ArrayList<>();
     private static final Map<WolfEntity,Integer> SUMMONS=new HashMap<>();
-    private static final String SUMMON_TAG="ssca_neomagic_summon";
+    static final String SUMMON_TAG="ssca_neomagic_summon";
     private static final class Bolt {
         final net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.Impact weave=new net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.Impact();
         final ServerPlayerEntity caster; final ServerWorld world; final NeoRuntime.Active active;

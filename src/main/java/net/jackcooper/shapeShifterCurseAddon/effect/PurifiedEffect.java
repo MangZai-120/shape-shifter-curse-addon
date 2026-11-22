@@ -30,6 +30,7 @@ public class PurifiedEffect extends StatusEffect {
 	@Override
 	public void onApplied(LivingEntity entity, AttributeContainer attributes, int amplifier) {
 		super.onApplied(entity, attributes, amplifier);
+		net.jackcooper.shapeShifterCurseAddon.spell.WrathMark.purify(entity);
 		// Interrupt immediately, before a last-tick release or its cooldown can win the tick order.
 		interruptCasting(entity);
 	}

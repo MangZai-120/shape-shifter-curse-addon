@@ -132,6 +132,8 @@
         "entity.SscAddonEntityIgnitionMixin",
         "entity.SeedEnergyEatFoodMixin",
         "entity.SscAddonLivingEntityMixin",
+        "entity.WrathMarkMixin",
+        "player.WrathCriticalHitMixin",
         "SscAddonTargetPredicateMixin",
         "effect.SscAddonTravelMixin",
         "player.SscPlayerMixin",
@@ -210,6 +212,8 @@
         "client.LunarTargetColorMixin",
         "client.EntityGlowPowerMixin",
         "client.FearFogMixin",
+        "client.WrathFogMixin",
+        "client.IrisWrathBlindnessMixin",
         "client.FearHideRendererMixin",
         "client.SpookGhostVisibleMixin",
 

@@ -10,6 +10,7 @@ import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.world.ClientWorld;
 import net.jackcooper.shapeShifterCurseAddon.client.CastingVisualState;
 import net.jackcooper.shapeShifterCurseAddon.client.ExplosionEffects;
+import net.jackcooper.shapeShifterCurseAddon.client.WrathAimPreview;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
@@ -201,7 +202,7 @@ public final class ExplosionRenderer {
 	private static void render(WorldRenderContext context) {
 		if (context.world() == null) return;
 		Vec3d camera = context.camera().getPos();
-		Vec3d selected = net.jackcooper.shapeShifterCurseAddon.client.SpellcastClient.targetSelectionPreview();
+		Vec3d selected = net.jackcooper.shapeShifterCurseAddon.client.SpellcastClient.targetSelectionPreview(context.tickDelta());
 		// 常态早退：无目标指针、无施法者法阵、无爆炸序列时不动渲染状态机，
 		// 直接 return（省 BUFFER.begin + 7 次 RenderSystem 切换 + 空绘制）。
 		boolean anyCaster = false;
@@ -218,6 +219,10 @@ public final class ExplosionRenderer {
 			var matrices = context.matrixStack();
 			matrices.push();
 			matrices.translate(selected.x - camera.x, selected.y - camera.y, selected.z - camera.z);
+			if (WrathAimPreview.target() != null) {
+				// Fit the 1 × 8/3 × 1 pointer into a player's 8 × 8 × 8 pixel head size.
+				matrices.scale(0.5f, 3f / 16f, 0.5f);
+			}
 			drawTargetPointer(vertices, matrices.peek().getPositionMatrix());
 			matrices.pop();
 		}

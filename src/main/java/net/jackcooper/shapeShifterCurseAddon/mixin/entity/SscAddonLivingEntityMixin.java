@@ -409,6 +409,8 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 		ServerPlayerEntity owner = SpiderMoonWeaverSwingManager.getTetheringPlayer(self);
 		if (owner != null && owner != self) {
 			if (WhitelistUtils.isProtected(owner, self)) {
+				// The summon is already paying its share. Sending it back would trigger the same pact again.
+				if (source.isOf(net.jackcooper.shapeShifterCurseAddon.spell.CalamityPact.TRANSFER)) return amount;
 				// 拴住友军：友军只受 50%，另 50% 转移给拴主代为承担。
 				// 转移伤害延迟到主线程下一任务施加，避免在 damage 调用栈内同步重入 damage
 				// （重入会污染 MC/Apoli 伤害中间状态或抛异常，导致友军 damage 异常返回 → 表现为无敌打不动）。
@@ -621,6 +623,13 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 		}
 		if (best != null) {
 			net.jackcooper.shapeShifterCurseAddon.ability.AnubisWolfSpSoulEnergy.registerWitherSource(self, best, effect.getDuration());
+		}
+	}
+
+	@ModifyArgs(method = "damage", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;applyDamage(Lnet/minecraft/entity/damage/DamageSource;F)V"))
+	private void ssc_addon$shareCalamityPactHit(Args args) {
+		if ((Object) this instanceof ServerPlayerEntity player) {
+			args.set(1, net.jackcooper.shapeShifterCurseAddon.spell.CalamityPact.distributeDamage(player, args.get(0), args.get(1)));
 		}
 	}
 

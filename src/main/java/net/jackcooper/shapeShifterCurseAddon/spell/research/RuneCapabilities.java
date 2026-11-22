@@ -15,6 +15,7 @@ public final class RuneCapabilities {
             case "frost_spike", "moonlight_arrow" -> EnumSet.of(POWER,DAMAGE,SPEED);
             case "ice_barrage" -> EnumSet.of(POWER,DAMAGE,SPEED,AREA);
             case "frost_nova" -> EnumSet.of(POWER,DAMAGE,AREA,NEGATIVE);
+            case "wrath_mark" -> EnumSet.of(POWER,DAMAGE,DISTANCE,NEGATIVE);
             case "lunar_mend" -> EnumSet.of(POWER,HEAL);
             case "lunar_veil", "companion_resonance" -> EnumSet.of(AREA,ALLY_DURATION);
             case "lunar_phase", "space_blink" -> EnumSet.of(DISTANCE);
@@ -24,7 +25,7 @@ public final class RuneCapabilities {
             case "summon_lunar_spirit" -> EnumSet.of(SUMMON_DURATION);
             case "beep_sheep" -> EnumSet.of(SPEED,NEGATIVE);
             case "void_devour" -> EnumSet.of(POWER,DAMAGE,AREA,DISTANCE,NEGATIVE);
-            case "space_stride" -> EnumSet.of(ALLY_DURATION);
+            case "space_stride", "calamity_pact" -> EnumSet.of(ALLY_DURATION);
             case "space_recall", "pocket_space" -> EnumSet.noneOf(RuneModifiers.Stat.class);
             default -> EnumSet.noneOf(RuneModifiers.Stat.class);
         };

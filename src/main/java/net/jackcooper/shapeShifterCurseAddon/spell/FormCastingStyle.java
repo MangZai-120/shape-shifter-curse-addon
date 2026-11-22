@@ -227,6 +227,7 @@ public final class FormCastingStyle {
 
 	/** 目标是否带任意负面状态效果（噬咒判定用）。 */
 	public static boolean hasHarmfulEffect(LivingEntity target) {
+		if (WrathMark.isActive(target)) return true;
 		for (var instance : target.getStatusEffects()) {
 			if (instance.getEffectType().getCategory() == net.minecraft.entity.effect.StatusEffectCategory.HARMFUL) {
 				return true;

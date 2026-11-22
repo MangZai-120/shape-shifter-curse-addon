@@ -31,7 +31,9 @@ public abstract class NovaSprintLockMixin {
     // 禁止开始疾跑
     @Inject(method = "canStartSprinting", at = @At("HEAD"), cancellable = true, require = 0)
     private void ssca$novaBlockSprintStart(CallbackInfoReturnable<Boolean> cir) {
-        if (ssca$novaCharging()||net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.windLocked((ClientPlayerEntity)(Object)this)) {
+        ClientPlayerEntity player = (ClientPlayerEntity)(Object)this;
+        if (ssca$novaCharging() || net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.windLocked(player)
+                || net.jackcooper.shapeShifterCurseAddon.client.WrathMarkClient.blindnessStrength(player) > 0) {
             cir.setReturnValue(false);
         }
     }

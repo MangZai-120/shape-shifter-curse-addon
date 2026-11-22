@@ -72,38 +72,44 @@ public class MagicScrollItem extends Item {
 			if (user instanceof ServerPlayerEntity player) SpellChannelManager.playFailureSound(player);
 			return TypedActionResult.fail(stack);
 		}
-		if (!world.isClient && user instanceof ServerPlayerEntity sp) {
-			if (SpellChannelManager.isCasting(sp)||!RuneScheme.validScroll(sp,stack,spell)) return TypedActionResult.fail(stack);
+        boolean selectOnHold=spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.WrathMarkSpell;
+        if (user instanceof ServerPlayerEntity sp) {
+            if (selectOnHold) {
+                if (SpellChannelManager.isCasting(sp) || !RuneScheme.validScroll(sp,stack,spell)) return TypedActionResult.fail(stack);
+            } else if (!startSolo(sp,hand,stack,spell)) return TypedActionResult.fail(stack);
+        }
+        user.setCurrentHand(hand);
+        return TypedActionResult.consume(stack);
+    }
+
+    private static boolean startSolo(ServerPlayerEntity sp,Hand hand,ItemStack stack,Spell spell) {
+		if (SpellChannelManager.isCasting(sp)||!RuneScheme.validScroll(sp,stack,spell)) return false;
             int level = ScrollData.getLevel(stack);
             RuneModifiers runeModifiers=RuneScheme.modifiers(sp,stack,level);
-			if (spell.getCastingMode() == SpellCastingRules.Mode.AUTOMATIC && !RuneCastContext.with(runeModifiers,()->spell.canCast(sp))) {
-				SpellChannelManager.playFailureSound(sp);
-				sp.sendMessage(spell.getCastFailureMessage(sp), true);
-				return TypedActionResult.fail(stack);
-			}
-			if (!spell.prepareScroll(sp, stack)) {
-				SpellChannelManager.playFailureSound(sp);
-				return TypedActionResult.fail(stack);
-			}
-			float damage = net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers.finalPower(spell,null,sp,level,stack,true,runeModifiers);
-			// 阶段 B（§6.2）：统一冷却公式（solo 惩罚倍率并入等级基准；双层下限与书内一致）
-			int cd = runeModifiers.cooldown(net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers.finalSoloCooldownTicks(spell, level));
-			ItemStack snapshot = stack.copy();
-			boolean started = SpellChannelManager.start(sp, spell, snapshot, level, true, hand.ordinal(), 0, cd,
-					() -> sp.getStackInHand(hand) == stack && ItemStack.areEqual(stack, snapshot),
-					target -> net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.castSoloEffect(sp, spell, snapshot, level, damage, target),
-					duration -> {
-						long end = sp.getWorld().getTime() + duration;
-						stack.getOrCreateNbt().putInt("RuneCdTotal",duration);
-                    ScrollData.setCooldownEnd(stack, end);
-						net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.record(sp, spell, end);
-					},
-					() -> { if (ScrollData.consumeSoloUse(stack)) stack.decrement(1); }, runeModifiers, damage);
-			if (!started) return TypedActionResult.fail(stack);
+		if (spell.getCastingMode() == SpellCastingRules.Mode.AUTOMATIC && !RuneCastContext.with(runeModifiers,()->spell.canCast(sp))) {
+			SpellChannelManager.playFailureSound(sp);
+			sp.sendMessage(spell.getCastFailureMessage(sp), true);
+			return false;
 		}
-		user.setCurrentHand(hand);
-		return TypedActionResult.consume(stack);
-	}
+		if (!spell.prepareScroll(sp, stack)) {
+			SpellChannelManager.playFailureSound(sp);
+			return false;
+		}
+		float damage = net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers.finalPower(spell,null,sp,level,stack,true,runeModifiers);
+		// 阶段 B（§6.2）：统一冷却公式（solo 惩罚倍率并入等级基准；双层下限与书内一致）
+		int cd = runeModifiers.cooldown(net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers.finalSoloCooldownTicks(spell, level));
+		ItemStack snapshot = stack.copy();
+		return SpellChannelManager.start(sp, spell, snapshot, level, true, hand.ordinal(), 0, cd,
+				() -> sp.getStackInHand(hand) == stack && ItemStack.areEqual(stack, snapshot),
+				target -> net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.castSoloEffect(sp, spell, snapshot, level, damage, target),
+				duration -> {
+					long end = sp.getWorld().getTime() + duration;
+					stack.getOrCreateNbt().putInt("RuneCdTotal",duration);
+                    ScrollData.setCooldownEnd(stack, end);
+					net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.record(sp, spell, end);
+				},
+				() -> { if (ScrollData.consumeSoloUse(stack)) stack.decrement(1); }, runeModifiers, damage);
+    }
 
 	@Override
 	public int getMaxUseTime(ItemStack stack) {
@@ -113,7 +119,14 @@ public class MagicScrollItem extends Item {
 	@Override
 	public void onStoppedUsing(ItemStack stack, World world, net.minecraft.entity.LivingEntity user, int remainingUseTicks) {
 		if (user instanceof ServerPlayerEntity player) {
-			SpellChannelManager.release(player, player.getActiveHand().ordinal(), true);
+            Spell spell=ScrollData.getSpell(stack);
+            if (spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.WrathMarkSpell) {
+                Hand hand=player.getActiveHand();
+                if (player.isAlive() && player.getStackInHand(hand)==stack && ScrollData.getUses(stack)>0
+                        && !net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)
+                        && world.getTime()>=net.jackcooper.shapeShifterCurseAddon.spell.SharedSpellCooldowns.getEffectiveCooldownEnd(player,stack))
+                    startSolo(player,hand,stack,spell);
+            } else SpellChannelManager.release(player, player.getActiveHand().ordinal(), true);
 		}
 	}
 
