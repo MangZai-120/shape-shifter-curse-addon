@@ -129,12 +129,12 @@ public final class SpellBacklashWorldProbe {
         }
     }
 
-    private static void checkLegacyWrathScrolls() {
+    private static void checkLegacyScrolls(String id) {
         var book = new ItemStack(SscAddon.MOON_DUST_SPELLBOOK);
         for (int oldLevel = 1; oldLevel <= 4; oldLevel++) {
             var scroll = new ItemStack(SscAddon.MAGIC_SCROLL);
             var tag = scroll.getOrCreateNbt();
-            tag.putString(ScrollData.NBT_SPELL, "wrath_mark");
+            tag.putString(ScrollData.NBT_SPELL, id);
             tag.putInt(ScrollData.NBT_LEVEL, oldLevel);
             tag.putInt(ScrollData.NBT_CAST_LEVEL, 1);
             tag.putInt(ScrollData.NBT_USES, 3);
@@ -142,11 +142,11 @@ public final class SpellBacklashWorldProbe {
             SpellbookData.setScroll(book, 0, scroll);
             scroll = SpellbookData.getScroll(book, 0);
             check(ScrollData.getLevel(scroll) == oldLevel + 1 && ScrollData.getCastLevel(scroll) == 2,
-                    "Legacy Wrath scroll and selected green tier survive book load");
-            check(original.equals(scroll.getNbt()), "Reading legacy Wrath scrolls preserves item data");
+                    "Legacy scroll and selected green tier survive book load");
+            check(original.equals(scroll.getNbt()), "Reading legacy scrolls preserves item data");
             ScrollData.setLevel(scroll, oldLevel + 1);
             check(ScrollData.getLevel(scroll) == oldLevel + 1 && ScrollData.getCastLevel(scroll) == 2,
-                    "Writing a legacy Wrath scroll preserves its selected tier");
+                    "Writing a legacy scroll preserves its selected tier");
             ScrollData.setCastLevel(scroll, 1);
             SpellbookData.setScroll(book, 0, scroll);
             var reloaded = SpellbookData.getScroll(book, 0);
@@ -155,11 +155,27 @@ public final class SpellBacklashWorldProbe {
         }
     }
 
+    private static void checkBaseCosts(ServerPlayerEntity caster) {
+        var book = new ItemStack(SscAddon.MOON_DUST_SPELLBOOK);
+        var expected = Map.of("false_witchcraft", new int[]{30,40,50,60,70}, "calamity_pact", new int[]{25,30,35,40,45},
+                "wrath_mark", new int[]{38,45,53,60,68}, "taotie_sovereign", new int[]{30,36,42,48,54});
+        expected.forEach((id, costs) -> {
+            var spell = SpellRegistry.get(id);
+            for (int level = 1; level <= costs.length; level++) {
+                var scroll = ScrollData.create(id, level);
+                int cost = SpellNumbers.finalManaCost(spell, book, caster, level, scroll);
+                check(cost == costs[level-1], "Base cost " + id + " L" + level + " got " + cost);
+                near(NeoLegacyCasting.quote(caster, spell, level, 0, cost).actual(), cost, "Unmodified collapse quote " + id);
+            }
+        });
+    }
+
     private static void run(TestContext t) throws Exception {
         var p=player(t);
         checkWrathPersistence(p);
         checkWrathTimeoutDamage(p);
-        checkLegacyWrathScrolls();
+        for (String id : new String[]{"wrath_mark", "false_witchcraft", "calamity_pact"}) checkLegacyScrolls(id);
+        checkBaseCosts(p);
         TaotieSovereignWorldChecks.run(p);
         t.getWorld().getServer().setPvpEnabled(false);
         var damaging=Set.of("fire_bolt","flame_nova","frost_spike","ice_barrage","frost_nova","moonlight_arrow","meteor","void_devour","explosion","death_finale","corrupt_mist","summon_lunar_spirit");

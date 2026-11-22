@@ -14,7 +14,7 @@ public final class RuneTooltips {
     public static void append(ItemStack stack,List<Text> lines){
         if(!RuneScheme.isModified(stack))return;
         var n=stack.getNbt().getCompound(RuneScheme.KEY);
-        lines.add(Text.translatable("research.ssc_addon.runes.profile_level",n.getInt("Level")).formatted(Formatting.GOLD));
+        lines.add(Text.translatable("research.ssc_addon.runes.profile_level",net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.researchScrollLevel(n)).formatted(Formatting.GOLD));
         lines.add(Text.translatable("research.ssc_addon.runes.stability",n.getInt("Stability")).formatted(Formatting.GRAY));
         var modifiers=RuneModifiers.read(n.getCompound("Modifiers"));
         if(n.contains("Summary"))lines.add(Text.translatable("research.ssc_addon.runes.summary.raw").formatted(Formatting.DARK_GRAY));

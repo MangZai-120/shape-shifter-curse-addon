@@ -50,18 +50,18 @@ public final class CalamityPactWorldProbe {
         var first = summon(player, player.getUuid());
         var second = summon(player, player.getUuid());
         second.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, 1000, 1));
-        for (int tier = 1; tier <= 4; tier++) {
+        for (int tier = 1; tier <= 5; tier++) {
             first.setHealth(100);
             second.setHealth(100);
             spell.cast(player, 0, false, tier);
             player.setHealth(100);
-            float each = (3 + tier) / 2F;
+            float each = (2 + tier) / 2F;
             hit(player, 10);
             near(first.getHealth(), 100 - each, "first share at tier " + tier);
             near(second.getHealth(), 100 - each, "second share with resistance at tier " + tier);
             hit(player, 10);
             near(first.getHealth(), 100 - 2 * each, "consecutive transfers both count");
-            near(player.getHealth(), 100 - 2 * (7 - tier), "caster pays only the remainder at tier " + tier);
+            near(player.getHealth(), 100 - 2 * (8 - tier), "caster pays only the remainder at tier " + tier);
             require(player.hurtTime > 0 && first.hurtTime > 0 && second.hurtTime > 0, "vanilla hurt animation starts for all recipients");
         }
         near(outsider.getHealth(), 100, "other owner's summon is untouched");
@@ -96,35 +96,35 @@ public final class CalamityPactWorldProbe {
                     > world.getTime(), "book cast starts cooldown");
             float hp = replacement.getHealth();
             hit(player, 10);
-            near(replacement.getHealth(), hp - 4, "green book cast transfers four through the real pipeline");
+            near(replacement.getHealth(), hp - 3, "white book cast transfers three through the real pipeline");
             checkExpiry(t, player, replacement, 1);
         });
     }
 
     private static void checkExpiry(TestContext t, ServerPlayerEntity p, LunarSpiritEntity summon, int tier) {
         SpellRegistry.get(ID).cast(p, 0, false, tier);
-        int duration = (7 + tier) * 20;
+        int duration = (6 + tier) * 20;
         t.waitAndRun(duration - 1, () -> {
             float hp = summon.getHealth();
             hit(p, 10);
-            near(summon.getHealth(), hp - (3 + tier), "pact active one tick before expiry at tier " + tier);
+            near(summon.getHealth(), hp - (2 + tier), "pact active one tick before expiry at tier " + tier);
         });
         t.waitAndRun(duration, () -> {
             float hp = p.getHealth();
             hit(p, 10);
             near(p.getHealth(), hp - 10, "normal damage on the expiry tick at tier " + tier);
-            if (tier < 4) {
+            if (tier < 5) {
                 p.setHealth(100);
                 checkExpiry(t, p, summon, tier + 1);
             } else {
                 var form = RegPlayerFormComponent.PLAYER_FORM.get(p);
                 form.nowForm = RegPlayerForms.playerForms.get(FormIdentifiers.ALLAY_SP);
                 var spell = SpellRegistry.get(ID);
-                require(FormAffinity.effectiveSpellLevel(p, spell, 3) == 4 && FormAffinity.effectiveSpellLevel(p, spell, 4) == 4,
+                require(FormAffinity.effectiveSpellLevel(p, spell, 4) == 5 && FormAffinity.effectiveSpellLevel(p, spell, 5) == 5,
                         "summon affinity caps the pact at orange");
                 var book = SpellCastManager.getEquippedBook(p);
-                int purple = SpellNumbers.finalManaCost(spell, book, p, 3);
-                int orange = SpellNumbers.finalManaCost(spell, book, p, 4);
+                int purple = SpellNumbers.finalManaCost(spell, book, p, 4);
+                int orange = SpellNumbers.finalManaCost(spell, book, p, 5);
                 require(purple > 0 && orange == purple, "two equivalent affinity tiers have the same quote");
                 System.out.println("CALAMITY_PACT_EQUAL_SHARES_AND_EXPIRY_WORLD_PASS");
                 t.complete();
@@ -158,7 +158,7 @@ public final class CalamityPactWorldProbe {
         tether(p, wolf);
         require(SpiderMoonWeaverSwingManager.isTethering(p, wolf) && WhitelistUtils.isProtected(p, wolf),
                 "friendly spider tether is actually active on a pact recipient");
-        spell.cast(p, 0, false, 2);
+        spell.cast(p, 0, false, 3);
         hit(p, 10);
         near(p.getHealth(), 95, "blue caster pays five alongside mixed summons");
         for (var ally : allies) {

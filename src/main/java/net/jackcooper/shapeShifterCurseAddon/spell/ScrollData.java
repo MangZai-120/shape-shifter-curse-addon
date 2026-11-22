@@ -22,6 +22,7 @@ public final class ScrollData {
 	public static final String NBT_CAST_LEVEL = "CastLevel";
 	// Older Wrath Mark scrolls used level 1 for green. White now occupies that slot.
 	private static final String NBT_WRATH_FIVE_TIERS = "WrathFiveTiers";
+	private static final String NBT_FIVE_TIERS = "FiveScrollTiers";
 
 	/** 魔法等级上限。 */
 	public static final int MAX_SPELL_LEVEL = 5;
@@ -105,7 +106,7 @@ public final class ScrollData {
 		int maxLevel = spell == null ? MAX_SPELL_LEVEL : spell.getMaxLevel();
 		NbtCompound nbt = stack.getNbt();
 		int stored = nbt == null ? 1 : nbt.getInt(NBT_LEVEL);
-		if (usesOldWrathLevels(nbt)) {
+		if (usesOldFourTiers(nbt)) {
 			return 1 + Math.max(1, Math.min(4, stored));
 		}
 		return Math.max(1, Math.min(maxLevel, stored));
@@ -125,7 +126,7 @@ public final class ScrollData {
 		NbtCompound nbt = stack.getNbt();
 		if (nbt != null && nbt.contains(NBT_CAST_LEVEL)) {
 			int cl = nbt.getInt(NBT_CAST_LEVEL);
-			int offset = usesOldWrathLevels(nbt) ? 1 : 0;
+			int offset = usesOldFourTiers(nbt) ? 1 : 0;
 			if (cl >= 1 && cl <= getLevel(stack) - offset) {
 				return cl + offset;
 			}
@@ -144,22 +145,43 @@ public final class ScrollData {
 		}
 	}
 
-	private static boolean usesOldWrathLevels(NbtCompound nbt) {
-		return nbt != null && "wrath_mark".equals(nbt.getString(NBT_SPELL)) && !nbt.getBoolean(NBT_WRATH_FIVE_TIERS);
+	private static boolean usesOldFourTiers(NbtCompound nbt) {
+		if (nbt == null) return false;
+		return "wrath_mark".equals(nbt.getString(NBT_SPELL))
+				? !nbt.getBoolean(NBT_WRATH_FIVE_TIERS) : legacyPactOrWitchcraft(nbt);
+	}
+
+	private static boolean legacyPactOrWitchcraft(NbtCompound nbt) {
+		String spell = nbt.getString(NBT_SPELL);
+		return ("calamity_pact".equals(spell) || "false_witchcraft".equals(spell)) && !nbt.getBoolean(NBT_FIVE_TIERS);
+	}
+
+	/** Rune layouts retain their original slot count. Translate only the scroll tier required by old plans. */
+	public static int researchScrollLevel(NbtCompound plan) {
+		int level = plan.getInt(NBT_LEVEL);
+		return level >= 1 && level <= 4 && legacyPactOrWitchcraft(plan) ? level + 1 : level;
+	}
+
+	public static void writeNewSpellLevel(NbtCompound nbt, String spellPath, int level) {
+		nbt.putString(NBT_SPELL, spellPath);
+		nbt.putInt(NBT_LEVEL, level);
+		switch (spellPath) {
+			case "wrath_mark" -> nbt.putBoolean(NBT_WRATH_FIVE_TIERS, true);
+			case "calamity_pact", "false_witchcraft" -> nbt.putBoolean(NBT_FIVE_TIERS, true);
+		}
 	}
 
 	private static NbtCompound prepareLevelWrite(ItemStack stack) {
 		NbtCompound nbt = stack.getOrCreateNbt();
-		if (usesOldWrathLevels(nbt)) {
+		if (usesOldFourTiers(nbt)) {
 			int level = getLevel(stack);
 			int castLevel = getCastLevel(stack);
-			nbt.putInt(NBT_LEVEL, level);
+			writeNewSpellLevel(nbt, nbt.getString(NBT_SPELL), level);
 			if (castLevel < level) {
 				nbt.putInt(NBT_CAST_LEVEL, castLevel);
 			} else {
 				nbt.remove(NBT_CAST_LEVEL);
 			}
-			nbt.putBoolean(NBT_WRATH_FIVE_TIERS, true);
 		}
 		return nbt;
 	}
@@ -168,12 +190,8 @@ public final class ScrollData {
 	public static ItemStack create(String spellPath, int level) {
 		ItemStack stack = new ItemStack(net.jackcooper.shapeShifterCurseAddon.SscAddon.MAGIC_SCROLL);
 		Spell spell = SpellRegistry.get(spellPath);
-		stack.getOrCreateNbt().putString(NBT_SPELL, spellPath);
-		if ("wrath_mark".equals(spellPath)) {
-			stack.getOrCreateNbt().putBoolean(NBT_WRATH_FIVE_TIERS, true);
-		}
 		int lv = Math.max(1, Math.min(spell == null ? MAX_SPELL_LEVEL : spell.getMaxLevel(), level));
-		stack.getOrCreateNbt().putInt(NBT_LEVEL, lv);
+		writeNewSpellLevel(stack.getOrCreateNbt(), spellPath, lv);
 		stack.getOrCreateNbt().putInt(NBT_USES, spell == null ? 0 : spell.getRarity(lv).soloUses);
 		return stack;
 	}

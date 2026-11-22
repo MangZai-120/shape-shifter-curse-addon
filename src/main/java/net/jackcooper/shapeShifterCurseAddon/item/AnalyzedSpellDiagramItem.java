@@ -19,7 +19,7 @@ public final class AnalyzedSpellDiagramItem extends Item {
         if(!SlottedSpellRecipes.available(recipe,level))return ItemStack.EMPTY;
         ItemStack stack=new ItemStack(SscAddon.ANALYZED_SPELL_DIAGRAM);var data=stack.getOrCreateNbt();
         data.putUuid("World",world.worldId());data.putInt("Version",RuneLayout.VERSION);
-        data.putString("Spell",spell);data.putInt("Level",level);data.putInt("CustomModelData",level);
+        ScrollData.writeNewSpellLevel(data,spell,level);data.putInt("CustomModelData",level);
         data.putIntArray("Slots",RuneLayout.foundation(recipe,level,world.language()));return stack;
     }
     public static ItemStack create(WorldRuneState world,ItemStack scroll){
@@ -54,13 +54,16 @@ public final class AnalyzedSpellDiagramItem extends Item {
                 &&Arrays.stream(Arrays.copyOf(data.getIntArray("Slots"),data.getInt("Version")==1?SlottedFormation.size(data.getInt("Level")):RuneLayout.baseSize(data.getInt("Level"),data.getInt("Version")))).allMatch(glyph->glyph>=0)
                 &&SlottedSpellRecipes.available(SlottedSpellRecipes.get(data.getString("Spell")),data.getInt("Level"));
     }
+    private static int diagramTier(NbtCompound data) {
+        return ScrollData.researchScrollLevel(data.contains(RuneScheme.KEY) ? data.getCompound(RuneScheme.KEY) : data);
+    }
     @Override public Text getName(ItemStack stack){
         var data=stack.getNbt();Spell spell=data==null?null:SpellRegistry.get(data.getString("Spell"));
         if(spell==null)return super.getName(stack);
         var element=spell.getElement();
         return (element==null?Text.translatable("research.ssc_addon.slotted.diagram_format",Text.translatable(spell.getNameKey()))
             :Text.translatable("research.ssc_addon.slotted.diagram_format_element",Text.translatable(spell.getNameKey()),Text.translatable(element.getNameKey())))
-            .formatted(spell.getRarity(Math.max(1,Math.min(5,data.getInt("Level")))).color);
+            .formatted(spell.getRarity(Math.max(1,Math.min(5,diagramTier(data)))).color);
     }
     @Override public Optional<TooltipData> getTooltipData(ItemStack stack){
         var data=stack.getNbt();Spell spell=data==null?null:SpellRegistry.get(data.getString("Spell"));
@@ -69,7 +72,7 @@ public final class AnalyzedSpellDiagramItem extends Item {
     @Override public void appendTooltip(ItemStack stack,World world,List<Text> lines,TooltipContext context){
         var data=stack.getNbt();Spell spell=data==null?null:SpellRegistry.get(data.getString("Spell"));
         if(spell!=null){
-            SpellRarity rarity=spell.getRarity(Math.max(1,Math.min(5,data.getInt("Level"))));
+            SpellRarity rarity=spell.getRarity(Math.max(1,Math.min(5,diagramTier(data))));
             lines.add(Text.translatable("item.ssc_addon.magic_scroll.rarity_tier",Text.translatable(rarity.getTranslationKey()).formatted(rarity.color),
                     Text.translatable("spell.ssc_addon.tier."+spell.getConfig().spellTier.name().toLowerCase(Locale.ROOT)).formatted(Formatting.GRAY)));
             for(String line:Text.translatable(spell.getDescKey()).getString().split("\n"))lines.add(Text.literal(line).formatted(Formatting.GRAY));

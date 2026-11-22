@@ -557,6 +557,28 @@ public final class FormationResearchIntegrationTest {
             check(RuneScheme.authoritative(world,changed)==null,"item mirror cannot forge server snapshot");
             var saved=load.newInstance(world.writeNbt(new NbtCompound()));
             check(RuneScheme.authoritative(saved,mirror)!=null,"scheme registry survives save and load");
+            for (String spellId : List.of("false_witchcraft", "calamity_pact")) {
+                // A saved four-tier blue plan uses a level-two layout and requires a blue scroll.
+                var oldPlan = mirror.copy();
+                oldPlan.remove("Id");
+                oldPlan.putString("Spell", spellId);
+                oldPlan.putUuid("Id", world.registerScheme(oldPlan));
+                var paper = new ItemStack(SscAddon.SPELL_FORMATION);
+                paper.getOrCreateNbt().put(RuneScheme.KEY, oldPlan);
+                var bench = new SimpleInventory(4);
+                bench.setStack(0, paper);
+                bench.setStack(3, ScrollData.create(spellId, 2));
+                check(RuneScheme.imprint(bench, world) == 3, "green cannot accept an old blue plan");
+                var blue = ScrollData.create(spellId, 3);
+                bench.setStack(3, blue);
+                check(RuneScheme.imprint(bench, world) == 0 && RuneScheme.authoritativeScroll(world, blue) != null,
+                        "old blue plan still imprints onto blue");
+                check(RuneScheme.modifiers(null, blue, 2) == RuneModifiers.NONE
+                                && RuneScheme.modifiers(null, blue, 3).get(RuneModifiers.Stat.DAMAGE) == 26,
+                        "downgraded casts use the old plan's original color threshold");
+                var newPaper = net.jackcooper.shapeShifterCurseAddon.item.SpellFormationItem.create(world, spellId, 2, slots);
+                check(ScrollData.getLevel(newPaper) == 2, "new green paper keeps the new tier numbering");
+            }
             var scroll=ScrollData.create("fire_bolt",2);ScrollData.setUses(scroll,2);ScrollData.setCooldownEnd(scroll,123456);
             scroll.getOrCreateNbt().putString("PocketBinding","retained");var original=scroll.getNbt().copy();
             table.setStack(0,scheme);table.setStack(3,scroll);
@@ -708,7 +730,13 @@ public final class FormationResearchIntegrationTest {
             check(net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll("does_not_exist",1).isEmpty(),"invalid command spell rejected");
             check(net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll("fire_bolt",6).isEmpty(),"invalid command level rejected");
             check(net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll("domain",2).isEmpty(),"single-level command spell cannot exceed max");
-            check(net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll("false_witchcraft",5).isEmpty(),"witchcraft cannot generate a fifth-tier scroll");
+            for (String id : List.of("false_witchcraft", "calamity_pact")) {
+                for (int level = 1; level <= 5; level++) {
+                    var loot = net.jackcooper.shapeShifterCurseAddon.loot.MagicScrollLoot.createNaturalScroll(id,level);
+                    check(!loot.isEmpty() && ScrollData.getLevel(loot) == level && ArcaneAnalysis.isUnanalyzed(loot),
+                            "all five tiers can drop as unidentified scrolls: " + id);
+                }
+            }
             var dispatcher=new com.mojang.brigadier.CommandDispatcher<net.minecraft.server.command.ServerCommandSource>();
             net.jackcooper.shapeShifterCurseAddon.command.SscAddonCommands.register(dispatcher);
             var command=dispatcher.getRoot().getChild("ssc_addon").getChild("give_unanalyzed_scroll");

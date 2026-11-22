@@ -24,8 +24,9 @@ public final class RuneScheme {
         if (!result.valid()) throw new IllegalArgumentException("Invalid rune scheme");
         NbtCompound n = new NbtCompound();
         n.putUuid("World", world.worldId()); n.putInt("Version", RuneLayout.VERSION);
-        n.putInt("Rules", RuneBuildEvaluator.RULE_VERSION); n.putString("Spell", result.recipe().spell());
-        n.putInt("Level", level); n.putIntArray("Slots", slots); n.putInt("Stability", result.stability());
+        n.putInt("Rules", RuneBuildEvaluator.RULE_VERSION);
+        ScrollData.writeNewSpellLevel(n, result.recipe().spell(), level);
+        n.putIntArray("Slots", slots); n.putInt("Stability", result.stability());
         n.put("Modifiers", result.modifiers().write());
         n.put("Summary", RuneSummary.write(result));
         n.putUuid("Id", world.registerScheme(n)); return n;
@@ -42,7 +43,7 @@ public final class RuneScheme {
         if (scroll.getNbt() == null || !scroll.getNbt().contains(KEY)) return true;
         NbtCompound saved = authoritative(WorldRuneState.get(player.getServer()), scroll.getNbt().getCompound(KEY));
         boolean valid = saved != null && saved.getString("Spell").equals(spell.getId().getPath())
-                && saved.getInt("Level") >= 1 && saved.getInt("Level") <= ScrollData.getLevel(scroll);
+                && saved.getInt("Level") >= 1 && ScrollData.researchScrollLevel(saved) <= ScrollData.getLevel(scroll);
         if (valid) normalizeUnmodified(scroll, saved);
         if (!valid) player.sendMessage(Text.translatable("research.ssc_addon.runes.invalid_scheme"), true);
         return valid;
@@ -52,7 +53,7 @@ public final class RuneScheme {
         NbtCompound saved = authoritative(world, scroll.getNbt().getCompound(KEY));
         Spell spell = ScrollData.getSpell(scroll);
         return saved != null && spell != null && saved.getString("Spell").equals(spell.getId().getPath())
-                && saved.getInt("Level") >= 1 && saved.getInt("Level") <= ScrollData.getLevel(scroll) ? saved : null;
+                && saved.getInt("Level") >= 1 && ScrollData.researchScrollLevel(saved) <= ScrollData.getLevel(scroll) ? saved : null;
     }
     /** Strip only an authorized legacy foundation-only profile, preserving every ordinary scroll field. */
     public static boolean normalizeUnmodified(WorldRuneState world, ItemStack scroll) {
@@ -72,7 +73,7 @@ public final class RuneScheme {
             if (n == null) return RuneModifiers.NONE;
         }
         if (!hasEnhancements(n)) return RuneModifiers.NONE;
-        if (selectedLevel <= 1 || selectedLevel < n.getInt("Level")) return RuneModifiers.NONE;
+        if (selectedLevel <= 1 || selectedLevel < ScrollData.researchScrollLevel(n)) return RuneModifiers.NONE;
         return RuneModifiers.read(n.getCompound("Modifiers"));
     }
     public static int imprint(net.minecraft.inventory.Inventory table, WorldRuneState world) {
@@ -86,7 +87,7 @@ public final class RuneScheme {
         NbtCompound mirror = scheme.getNbt().getCompound(KEY), saved = authoritative(world, mirror);
         Spell spell = ScrollData.getSpell(scroll);
         if (saved == null || spell == null) return 2;
-        if (!spell.getId().getPath().equals(saved.getString("Spell")) || ScrollData.getLevel(scroll) != saved.getInt("Level")) return 3;
+        if (!spell.getId().getPath().equals(saved.getString("Spell")) || ScrollData.getLevel(scroll) != ScrollData.researchScrollLevel(saved)) return 3;
         // All checks precede both mutations. Keep uses, selected level, cooldown and spatial bindings intact.
         if (hasEnhancements(saved)) scroll.getOrCreateNbt().put(KEY, mirror.copy());
         else scroll.getOrCreateNbt().remove(KEY);

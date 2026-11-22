@@ -558,7 +558,7 @@ public final class SpellBalanceTest {
 						|| o.get("interrupt_mode").getAsInt() != 3 || !o.get("spell_tier").getAsString().equals("custom")) fail(id, "领域施法配置不符");
 				return;
 			}
-			int maxLevel = (id.equals("false_witchcraft") || id.equals("calamity_pact")) ? 4 : 5;
+			int maxLevel = 5;
 			if (levels.size() != maxLevel) {
 				fail(id, "expected " + maxLevel + " levels, got " + levels.size());
 				return;

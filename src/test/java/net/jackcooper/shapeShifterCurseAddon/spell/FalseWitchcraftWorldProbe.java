@@ -24,7 +24,7 @@ public final class FalseWitchcraftWorldProbe {
         var p = NeoBookWorldProbe.player(t);
         var book = NeoBookWorldProbe.book(p);
         SpellbookData.setLevel(book, 3);
-        SpellbookData.setScroll(book, 0, ScrollData.create(WITCH, 4));
+        SpellbookData.setScroll(book, 0, ScrollData.create(WITCH, 5));
         SpellbookData.setScroll(book, 1, ArcaneAnalysis.markUnanalyzed(ScrollData.create("void_devour")));
         String[] spells = {HEAL, HEAL, "lunar_veil", "void_erosion", "fire_bolt"};
         for (int i = 0; i < spells.length; i++) SpellbookData.setScroll(book, i+2, ScrollData.create(spells[i]));
@@ -36,7 +36,7 @@ public final class FalseWitchcraftWorldProbe {
         require(!SpellChannelManager.isCasting(p) && NeoRuntime.data(p).records.isEmpty(), "ready, expired and unidentified spells cannot start a paid cast");
         setEnd(book, 0, later);
         int[] distinctSlots = {2, 4, 5, 6};
-        for (int level = 1; level <= 4; level++) {
+        for (int level = 1; level <= 5; level++) {
             for (int slot : new int[]{2,3,5,6}) setEnd(book, slot, later);
             SharedSpellCooldowns.record(p, SpellRegistry.get(HEAL), later);
             SharedSpellCooldowns.record(p, SpellRegistry.get("lunar_veil"), later);
@@ -47,7 +47,7 @@ public final class FalseWitchcraftWorldProbe {
                 require(reduction == 0 || reduction == 200, "equal shares when targets have long cooldowns");
                 if (reduction > 0) shortened++;
             }
-            require(shortened == level, "each tier shares its 200/400/600/800 ticks among up to one spell per level");
+            require(shortened == new int[]{1, 1, 2, 3, 4}[level - 1], "white through orange shorten 1/1/2/3/4 distinct cooldowns");
             require(remaining(p, book, 2) == remaining(p, book, 3), "duplicate scrolls share one draw");
             require(remaining(p, book, 0) == later - now && remaining(p, book, 1) == later - now,
                     "self and unidentified scrolls never receive a share");
@@ -58,7 +58,7 @@ public final class FalseWitchcraftWorldProbe {
         setEnd(book, 2, now + 10);
         setEnd(book, 3, now + 100);
         SharedSpellCooldowns.record(p, SpellRegistry.get("lunar_veil"), now + 1600);
-        witch.cast(p, 0, false, 4);
+        witch.cast(p, 0, false, 5);
         require(remaining(p, book, 2) <= 0 && remaining(p, book, 3) <= 0,
                 "the longer duplicate determines the spell's share even if the shorter duplicate comes first");
         require(remaining(p, book, 4) == 900, "two targets with 5s and 80s left end at 0s and 45s");
@@ -68,7 +68,7 @@ public final class FalseWitchcraftWorldProbe {
         setEnd(book, 3, now + 1600);
         setEnd(book, 5, now + 1600);
         SharedSpellCooldowns.record(p, SpellRegistry.get("lunar_veil"), now + 1600);
-        witch.cast(p, 0, false, 4);
+        witch.cast(p, 0, false, 5);
         long usedTicks = 0;
         for (int slot : new int[]{2, 4, 5}) {
             long used = 1600 - remaining(p, book, slot);
@@ -120,7 +120,7 @@ public final class FalseWitchcraftWorldProbe {
             require(remaining(p,book,2)>0 && remaining(p,book,3)>0, "next cast starts ordinary scroll and shared cooldowns");
             require(ScrollData.getUses(loose) == uses - 1 && latest(solo).paid > 0
                     && ScrollData.getCooldownEnd(SpellbookData.getScroll(soloBook, 0)) == later - 200,
-                    "standalone green witchcraft shortens one long cooldown by precisely ten seconds and pays its costs");
+                    "standalone white witchcraft shortens one long cooldown by precisely ten seconds and pays its costs");
             System.out.println("FALSE_WITCHCRAFT_SHARED_REDUCTION_WORLD_PASS");
             t.complete();
         });

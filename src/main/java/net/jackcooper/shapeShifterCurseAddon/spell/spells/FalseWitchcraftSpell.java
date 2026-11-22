@@ -14,13 +14,11 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 public final class FalseWitchcraftSpell extends Spell {
-    private static final int REDUCTION_TICKS_PER_LEVEL = 10 * 20;
+    private static final int TICKS_PER_SHARE = 10 * 20;
 
     public FalseWitchcraftSpell() {
-        super(new Identifier("ssc_addon", "false_witchcraft"), SpellRarity.GREEN);
+        super(new Identifier("ssc_addon", "false_witchcraft"), SpellRarity.WHITE);
     }
-
-    @Override public int getMaxLevel() { return 4; }
 
     @Override public Identifier getIconTexture() {
         return new Identifier("ssc_addon", "textures/item/scroll_mask_base.png");
@@ -60,7 +58,8 @@ public final class FalseWitchcraftSpell extends Spell {
         var pool = new ArrayList<>(remaining.keySet());
         if (pool.isEmpty()) return;
         int spellLevel = Math.max(1, Math.min(level, getMaxLevel()));
-        int count = Math.min(spellLevel, pool.size());
+        int shares = Math.max(1, spellLevel - 1);
+        int count = Math.min(shares, pool.size());
         var selected = new ArrayList<Spell>(count);
         for (int i = 0; i < count; i++) {
             selected.add(pool.remove(caster.getRandom().nextInt(pool.size())));
@@ -68,7 +67,7 @@ public final class FalseWitchcraftSpell extends Spell {
 
         // Settle the shortest cooldown first so its unused share goes to the remaining spells.
         selected.sort(Comparator.comparingLong(remaining::get));
-        int budget = spellLevel * REDUCTION_TICKS_PER_LEVEL;
+        int budget = shares * TICKS_PER_SHARE;
         var reductions = new HashMap<Spell, Integer>();
         for (int i = 0; i < count; i++) {
             Spell spell = selected.get(i);
