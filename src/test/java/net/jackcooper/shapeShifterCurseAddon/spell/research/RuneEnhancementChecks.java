@@ -9,6 +9,9 @@ public final class RuneEnhancementChecks {
     private static int checks;
     private static void check(boolean condition,String label){checks++;if(!condition)throw new AssertionError(label);}
     public static void run(){
+        int[][] stabilityCosts = {{104,0},{100,0},{97,0},{96,1},{95,1},{93,1},{92,2},{56,11},{20,20}};
+        for (int[] example : stabilityCosts)
+            check(RuneBuildEvaluator.stabilityCollapseCost(example[0]) == example[1], "flat collapse at stability " + example[0]);
         for(int seed=0;seed<64;seed++){
             RuneLanguage language=RuneLanguage.generate(seed);
             check(new HashSet<>(Arrays.stream(language.meanings()).boxed().toList()).size()==18,"all glyphs unique");

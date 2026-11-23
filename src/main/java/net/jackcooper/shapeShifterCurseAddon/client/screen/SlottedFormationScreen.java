@@ -333,7 +333,7 @@ public final class SlottedFormationScreen extends HandledScreen<SpellResearchTab
         else if(!notes&&mouseX>=x+244&&mouseX<x+305&&mouseY>=y+65&&mouseY<y+84){
             List<Text> lines=new ArrayList<>();
             if(evaluatedRevision!=revision)lines.add(Text.translatable("research.ssc_addon.runes.slot_pending"));
-            else{lines.add(Text.translatable("research.ssc_addon.runes.stability_detail",stability));lines.addAll(RuneSummary.effects(runeSummary,false));}
+            else{lines.add(Text.translatable("research.ssc_addon.runes.stability_detail",stability));lines.add(RuneTooltips.stabilityCost(stability));lines.addAll(RuneSummary.effects(runeSummary,false));}
             List<net.minecraft.text.OrderedText> wrapped=new ArrayList<>();
             for(Text line:lines)wrapped.addAll(textRenderer.wrapLines(line,Math.max(1,Math.min(260,width-24))));
             context.drawOrderedTooltip(textRenderer,wrapped,mouseX,mouseY);

@@ -677,7 +677,7 @@ public final class SpellChannelManager {
 			this.beganTick = player.getServer().getTicks();
 			int cost = solo ? modifiers.mana(Math.round(spell.getManaCost()*spell.getConfig().manaCostMultiplier(level))) : mana;
 			this.collapse = new net.jackcooper.shapeShifterCurseAddon.spell.NeoLegacyCasting(player,spell,level,this.profile.ticks(),cost,
-                    style.timing.lockTick(),style.collapseMultiplier*growthMultiplier);
+                    style.timing.lockTick(),style.collapseMultiplier*growthMultiplier,modifiers.stabilityCollapseCost);
             this.collapse.record.moistureSpent=style.paidMoisture();
             style.bindAllay(this.collapse.session.quote.actual(),this.collapse.record,spell.getElement()==FormationElement.CURSE&&spell.supportsCurseChain());
             style.bindBat(this.collapse.record);

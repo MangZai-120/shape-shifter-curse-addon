@@ -22,6 +22,7 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -363,7 +364,8 @@ public class InfusionAltarScreen extends HandledScreen<InfusionAltarScreenHandle
 				lines.add(label("preview_cost_unavailable", name).copy().formatted(Formatting.GRAY));
 				continue;
 			}
-			var line = label("preview_spell", name, level, oldCost, cost).copy();
+			int extra = RuneScheme.modifiers(this.client.player, scroll, level).stabilityCollapseCost;
+			var line = label("preview_spell", name, level, oldCost + extra, cost + extra).copy();
 
 			lines.add(line);
 		}

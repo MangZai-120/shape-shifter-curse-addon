@@ -11,8 +11,7 @@ import java.util.UUID;
  * 定身（ROOTED）效果：荧光幼灵法阵激光蓄力/释放期使用。
  *
  * <p>与 STUN 的区别：ROOTED <b>只锁移动</b>（-100% 移速 + 由 {@code StunnedKeyBindingMixin}
- * 屏蔽移动/跳跃键），<b>不锁视角</b>（不触发 STUN 的相机/鼠标锁）。释放期的视角限速由
- * 专门的 {@code ViewRateLimitMixin} 依 laser_state 资源单独处理。
+ * 屏蔽移动/跳跃键），<b>不锁视角</b>（不触发 STUN 的相机/鼠标锁）。法阵激光的朝向由激光实体单独更新。
  */
 public class RootedEffect extends StatusEffect {
 	/** 固定 UUID，供孤儿清理按 UUID 精确移除。 */

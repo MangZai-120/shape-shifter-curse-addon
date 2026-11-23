@@ -36,7 +36,11 @@ public final class NeoModel {
         public static Tuning defaults() {return new Tuning(1,0,0,0);}
     }
     public record Plan(int branches, double retention, double load, boolean focused, boolean stored, int constraints) {}
-    public record Quote(double normal, double actual, double floor, Plan plan) {}
+    public record Quote(double normal, double actual, double floor, Plan plan) {
+        public Quote withFlatCost(int extra) {
+            return extra == 0 ? this : new Quote(normal + extra, actual + extra, floor, plan);
+        }
+    }
     public record Risk(double excess, double failure, double offset, double angle) {}
     public record Checkpoint(int tick, double burden, double paid, Risk risk, boolean failed, boolean shifted,
                              double yaw, double pitch, double attenuation, boolean reversed, boolean wrongTarget) {}

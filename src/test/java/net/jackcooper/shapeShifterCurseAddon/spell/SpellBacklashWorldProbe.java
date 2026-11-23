@@ -7,6 +7,12 @@ import java.util.Set;
 import java.util.UUID;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.enchantment.RegAddonEnchantments;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneBuildEvaluator;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneLayout;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneRole;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.SlottedSpellRecipes;
+import net.jackcooper.shapeShifterCurseAddon.spell.research.WorldRuneState;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneCastContext;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneModifiers;
 import net.minecraft.entity.EquipmentSlot;
@@ -68,6 +74,31 @@ public final class SpellBacklashWorldProbe {
     }
     public static void start(TestContext t) {
         t.waitAndRun(70,()->{try { run(t); }catch(Exception e){throw new RuntimeException(e);}});
+    }
+    private static void checkStabilityCost(TestContext t) {
+        var p = player(t);
+        var world = WorldRuneState.get(p.getServer());
+        var recipe = SlottedSpellRecipes.get("fire_bolt");
+        var slots = RuneLayout.foundation(recipe, 2, world.language());
+        var ring = new RuneRole[]{RuneRole.SOURCE, RuneRole.STORE, RuneRole.FIRE, RuneRole.STABLE, RuneRole.GAIN};
+        for (int i = 0; i < ring.length; i++) slots[RuneLayout.baseSize(2) + i] = world.language().glyph(ring[i]);
+        var result = RuneBuildEvaluator.evaluate(2, slots, world.language(), SlottedSpellRecipes.all());
+        check(result.valid() && result.stability() == 56, "Tutorial Fire Bolt has 56 stability");
+        var scroll = ScrollData.create("fire_bolt", 2);
+        scroll.getOrCreateNbt().put(RuneScheme.KEY, RuneScheme.create(world, 2, slots, result));
+        p.setStackInHand(net.minecraft.util.Hand.MAIN_HAND, scroll);
+        var spell = SpellRegistry.get("fire_bolt");
+        NeoRuntime.data(p).progress.put("spell:" + spell.getId(), new double[]{10000,10000,10000,10000});
+        var preview = net.jackcooper.shapeShifterCurseAddon.network.NeoNetwork.hudState(p);
+        check(SpellChannelManager.start(p, spell, scroll, 2, true, 17, 0, 20, () -> true, at -> {}, cd -> {}), "Imprinted scroll starts");
+        var cast = NeoLegacyCasting.active(p);
+        int cost = result.modifiers().mana(Math.round(spell.getManaCost() * spell.getConfig().manaCostMultiplier(2)));
+        var base = NeoLegacyCasting.quote(p, spell, 2, cast.duration, cost);
+        check(base.actual() < base.normal(), "Mastery reduces ordinary collapse in fixture");
+        near(cast.session.quote.actual(), base.actual() + 11, "Mastery leaves the full stability surcharge");
+        near(cast.session.quote.normal(), base.normal() + 11, "Unadapted quote includes the same surcharge");
+        near(preview.getDouble("Q"), cast.session.quote.actual(), "Idle scroll HUD matches accepted cast");
+        SpellChannelManager.cancelSelf(p);
     }
     private static void checkWrathPersistence(ServerPlayerEntity caster) {
         var world = caster.getServerWorld();
@@ -172,6 +203,7 @@ public final class SpellBacklashWorldProbe {
 
     private static void run(TestContext t) throws Exception {
         var p=player(t);
+        checkStabilityCost(t);
         checkWrathPersistence(p);
         checkWrathTimeoutDamage(p);
         for (String id : new String[]{"wrath_mark", "false_witchcraft", "calamity_pact"}) checkLegacyScrolls(id);

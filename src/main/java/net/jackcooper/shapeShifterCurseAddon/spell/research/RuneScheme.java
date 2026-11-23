@@ -74,7 +74,8 @@ public final class RuneScheme {
         }
         if (!hasEnhancements(n)) return RuneModifiers.NONE;
         if (selectedLevel <= 1 || selectedLevel < ScrollData.researchScrollLevel(n)) return RuneModifiers.NONE;
-        return RuneModifiers.read(n.getCompound("Modifiers"));
+        int extra = n.contains("Stability", NbtElement.NUMBER_TYPE) ? RuneBuildEvaluator.stabilityCollapseCost(n.getInt("Stability")) : 0;
+        return RuneModifiers.read(n.getCompound("Modifiers"), extra);
     }
     public static int imprint(net.minecraft.inventory.Inventory table, WorldRuneState world) {
         return imprint(table, world, 0, 3);

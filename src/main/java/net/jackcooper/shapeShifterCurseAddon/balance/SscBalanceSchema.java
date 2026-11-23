@@ -123,7 +123,7 @@ public final class SscBalanceSchema {
                 .intParam("window_ticks", 100, 20, 1200, AB + "FluorescentLaserManager", "WINDOW_TICKS")
                 .intParam("shot_ticks", 8, 1, 100, AB + "FluorescentLaserManager", "SHOT_TICKS")
                 .intParam("shot_damage_interval", 2, 1, 20, AB + "FluorescentLaserManager", "SHOT_DAMAGE_INTERVAL")
-                .doubleParam("shot_damage", 12.0, 0.0, 1000.0, AB + "FluorescentLaserManager", "SHOT_DAMAGE")
+                .doubleParam("shot_damage", 15.0, 0.0, 1000.0, AB + "FluorescentLaserManager", "SHOT_DAMAGE")
                 .doubleParam("speed_penalty", -0.5, -4.0, 0.0, AB + "FluorescentLaserManager", "SPEED_PENALTY")
                 .doubleParam("enh_beam_length", 24.0, 4.0, 64.0, AB + "FluorescentLaserManager", "ENH_BEAM_LENGTH")
                 .doubleParam("enh_beam_radius", 0.75, 0.1, 8.0, AB + "FluorescentLaserManager", "ENH_BEAM_RADIUS")
@@ -137,12 +137,12 @@ public final class SscBalanceSchema {
                 .intParam("charge_ticks", 140, 1, 1200, EN + "LaserBeamEntity", "CHARGE_TICKS")
                 .intParam("release_ticks", 60, 1, 600, EN + "LaserBeamEntity", "RELEASE_TICKS")
                 .intParam("fade_ticks", 30, 1, 200, EN + "LaserBeamEntity", "FADE_TICKS")
-                .doubleParam("beam_length", 32.0, 4.0, 128.0, EN + "LaserBeamEntity", "BEAM_LENGTH")
+                .doubleParam("beam_length", 48.0, 4.0, 128.0, EN + "LaserBeamEntity", "BEAM_LENGTH")
                 .doubleParam("beam_radius", 2.5, 0.5, 16.0, EN + "LaserBeamEntity", "BEAM_RADIUS")
                 .doubleParam("enh_beam_radius", 0.75, 0.1, 8.0, EN + "LaserBeamEntity", "ENH_BEAM_RADIUS")
                 .intParam("enh_shot_ticks", 8, 1, 100, EN + "LaserBeamEntity", "ENH_SHOT_TICKS")
                 .intParam("damage_interval", 10, 1, 100, EN + "LaserBeamEntity", "DAMAGE_INTERVAL")
-                .doubleParam("damage", 20.0, 0.0, 1000.0, EN + "LaserBeamEntity", "DAMAGE");
+                .doubleParam("damage", 40.0, 0.0, 1000.0, EN + "LaserBeamEntity", "DAMAGE");
         // 契灵标记（MancianimaMarkManager；OUT_OF_COMBAT_TICKS 属脱战去抖一并登记供调）
         b.scope("abilities.mancianima_mark")
                 .intParam("mark_duration_ticks", 300, 20, 4800, AB + "MancianimaMarkManager", "MARK_DURATION_TICKS")

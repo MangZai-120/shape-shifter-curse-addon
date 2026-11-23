@@ -11,11 +11,15 @@ public final class RuneTooltips {
         String signed=value>0?"+"+value:Integer.toString(value);
         return Text.translatable("research.ssc_addon.runes.stat."+stat.name().toLowerCase(Locale.ROOT),signed);
     }
+    public static Text stabilityCost(int stability) {
+        return Text.translatable("research.ssc_addon.runes.stability_cost", RuneBuildEvaluator.stabilityCollapseCost(stability)).formatted(Formatting.GRAY);
+    }
     public static void append(ItemStack stack,List<Text> lines){
         if(!RuneScheme.isModified(stack))return;
         var n=stack.getNbt().getCompound(RuneScheme.KEY);
         lines.add(Text.translatable("research.ssc_addon.runes.profile_level",net.jackcooper.shapeShifterCurseAddon.spell.ScrollData.researchScrollLevel(n)).formatted(Formatting.GOLD));
         lines.add(Text.translatable("research.ssc_addon.runes.stability",n.getInt("Stability")).formatted(Formatting.GRAY));
+        if (n.contains("Stability", net.minecraft.nbt.NbtElement.NUMBER_TYPE)) lines.add(stabilityCost(n.getInt("Stability")));
         var modifiers=RuneModifiers.read(n.getCompound("Modifiers"));
         if(n.contains("Summary"))lines.add(Text.translatable("research.ssc_addon.runes.summary.raw").formatted(Formatting.DARK_GRAY));
         for(var stat:RuneModifiers.Stat.values())if(modifiers.get(stat)!=0)

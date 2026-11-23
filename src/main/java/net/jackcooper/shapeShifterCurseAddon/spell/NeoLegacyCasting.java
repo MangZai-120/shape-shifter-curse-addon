@@ -125,9 +125,12 @@ public final class NeoLegacyCasting {
         this(p,spell,level,duration,normalCost,spell.getLockInTick(),FormSpellStyle.collapseMultiplier(p,spell.getConfig().projectile,spell.getElement()==FormationElement.ICE,spell.getConfig().debuff&&spell.getRarity(level)!=SpellRarity.RED));
     }
     public NeoLegacyCasting(ServerPlayerEntity p,Spell spell,int level,int duration,int normalCost,int lockTick,double growthMultiplier) {
+        this(p,spell,level,duration,normalCost,lockTick,growthMultiplier,0);
+    }
+    public NeoLegacyCasting(ServerPlayerEntity p,Spell spell,int level,int duration,int normalCost,int lockTick,double growthMultiplier,int stabilityCollapseCost) {
         player=p;random=new Random(p.getRandom().nextLong());this.duration=duration;form=NeoRuntime.form(p);key="spell:"+spell.getId();
         var d=NeoRuntime.data(p);var b=descriptor(spell,level,duration);band=b.band();
-        Quote quote=quote(p,spell,level,duration,normalCost,growthMultiplier);double normal=quote.normal();
+        Quote quote=quote(p,spell,level,duration,normalCost,growthMultiplier).withFlatCost(stabilityCollapseCost);double normal=quote.normal();
         session=new Session(b,quote,duration,lockTick);
         record=new NeoState.Experiment();record.blueprint=b;record.spell=spell.getId().toString();record.preparation=duration;
         record.checks=session.checkpoints; // One owner per cast; the saved record shares its bounded event list.

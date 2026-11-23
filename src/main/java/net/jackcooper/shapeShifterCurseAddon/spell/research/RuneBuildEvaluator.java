@@ -17,6 +17,10 @@ public final class RuneBuildEvaluator {
         public boolean valid() { return recipe != null && problems.isEmpty() && stability >= MIN_STABILITY; }
     }
     private RuneBuildEvaluator() {}
+
+    public static int stabilityCollapseCost(int stability) {
+        return (int)(Math.max(0L, (long)BASE_STABILITY - stability) / 4);
+    }
     public static Result evaluate(int level, int[] slots, RuneLanguage language, List<SlottedSpellRecipes.Recipe> candidates) {
         List<Problem> problems = new ArrayList<>();
         BitSet inactive = new BitSet(), synergy = new BitSet(), suppressed = new BitSet();

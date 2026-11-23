@@ -9,16 +9,24 @@ public final class RuneModifiers {
         SHIELD_DURATION, SUMMON_DURATION, ALLY_DURATION, MANA, TIME, CD, FLAT_MANA }
     public static final RuneModifiers NONE = new RuneModifiers(new int[Stat.values().length]);
     private final int[] values;
+    public final int stabilityCollapseCost;
     public RuneModifiers(int[] values) {
+        this(values, 0);
+    }
+    private RuneModifiers(int[] values, int stabilityCollapseCost) {
         if (values.length != Stat.values().length || Arrays.stream(values).anyMatch(v -> v < -10000 || v > 10000))
             throw new IllegalArgumentException("Rune modifiers");
         this.values = values.clone();
+        this.stabilityCollapseCost = stabilityCollapseCost;
     }
     public int get(Stat stat) { return values[stat.ordinal()]; }
     public int[] values() { return values.clone(); }
     public NbtCompound write() { NbtCompound n = new NbtCompound(); n.putIntArray("Values", values); return n; }
     public static RuneModifiers read(NbtCompound n) {
-        try { return new RuneModifiers(n.getIntArray("Values")); }
+        return read(n, 0);
+    }
+    static RuneModifiers read(NbtCompound n, int stabilityCollapseCost) {
+        try { return new RuneModifiers(n.getIntArray("Values"), stabilityCollapseCost); }
         catch (IllegalArgumentException malformed) { return NONE; }
     }
     public static int rounded(long numerator, long denominator) {

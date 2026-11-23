@@ -511,8 +511,8 @@ public final class AxolotlSpPerkIntegrationProbe {
             check(FluorescentAxolotlPerks.laserChargeTicks(20, true) == 1, "configured short charge never goes below one tick");
             check(Math.abs(FluorescentAxolotlPerks.tidalFlightSpeed(0.2, true) - 0.25) < 1e-9, "tidal base speed gains 25 percent");
             check(Math.abs(FluorescentAxolotlPerks.tidalFlightSpeed(0.31, true) - 0.3875) < 1e-9, "tidal accessory bonus composes with Perk");
-            check(Math.abs(FluorescentAxolotlPerks.enhancedLaserDamage(12, true) - 15) < 1e-5, "enhanced fluorescent shot damage 12 to 15");
-            check(Math.abs(FluorescentAxolotlPerks.enhancedLaserDamage(14.4f, true) - 18) < 1e-5, "innate Aling shot damage 14.4 to 18");
+            check(Math.abs(FluorescentAxolotlPerks.enhancedLaserDamage(15, true) - 18.75) < 1e-5, "enhanced fluorescent shot damage 15 to 18.75");
+            check(Math.abs(FluorescentAxolotlPerks.enhancedLaserDamage(20, true) - 25) < 1e-5, "innate Aling shot damage 20 to 25");
         }
     }
 

@@ -62,12 +62,10 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 		Entity owner = entity.getWorld().getEntityById(entity.getTrackedOwnerId());
 		if (owner == null) return;
 
-		float oyaw = MathHelper.lerp(tickDelta, owner.prevYaw, owner.getYaw());
-		float opitch = MathHelper.lerp(tickDelta, owner.prevPitch, owner.getPitch());
-		double yawR = Math.toRadians(oyaw), pitchR = Math.toRadians(opitch);
-		double ax = -Math.sin(yawR) * Math.cos(pitchR);
-		double ay = -Math.sin(pitchR);
-		double az = Math.cos(yawR) * Math.cos(pitchR);
+		Vec3d aim = entity.getBeamAim(tickDelta);
+		if (aim.lengthSquared() == 0) return;
+		float beamYaw = (float) Math.toDegrees(Math.atan2(-aim.x, aim.z));
+		float beamPitch = (float) Math.toDegrees(Math.atan2(-aim.y, aim.horizontalLength()));
 		double d = LaserBeamEntity.arrayDist();
 
 		double ox = MathHelper.lerp(tickDelta, owner.prevX, owner.getX());
@@ -78,11 +76,10 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 		double ez = MathHelper.lerp(tickDelta, entity.prevZ, entity.getZ());
 
 		matrices.push();
-		// 平移到法阵位置（玩家眼部 + 准星 * arrayDist）
-		matrices.translate((ox - ex) + ax * d, (oy - ey) + ay * d, (oz - ez) + az * d);
-		// 朝向准星：旋转后本地 +Z = 准星方向
-		matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-oyaw));
-		matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(opitch));
+		// The circle, charge lines and beam share the server's firing direction.
+		matrices.translate((ox - ex) + aim.x * d, (oy - ey) + aim.y * d, (oz - ez) + aim.z * d);
+		matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-beamYaw));
+		matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(beamPitch));
 
 		int phaseId = entity.getPhaseId();
 		float pt = entity.getPhaseTick() + tickDelta;
@@ -91,7 +88,7 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 		// 法阵/光柱用 lightning 渲染层（天然双面、发光、无视光照，任意角度可见）
 		VertexConsumer buf = vcp.getBuffer(RenderLayer.getLightning());
 
-		// === 法阵（XY 平面，法线 +Z=准星）===
+		// === 法阵（XY 平面，法线 +Z 沿光柱）===
 		drawArray(buf, matrices.peek().getPositionMatrix(), matrices.peek().getNormalMatrix(), age);
 
 		// === 蓄力期四条白线（客户端绘制，无粒子残留）===
@@ -100,7 +97,7 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 					pt * 140f / entity.getChargeTicks(), entity.beamLength());
 			// 法阵核心发光粒子（END_ROD）：仅在非第一人称视角下生成
 			// 第一人称下法阵紧贴相机，中央粒子会遮挡视线；第三人称（含自己按 F5 切换）可见
-			spawnArrayCoreParticleIfThirdPerson(ox + ax * d, oy + ay * d, oz + az * d);
+			spawnArrayCoreParticleIfThirdPerson(ox + aim.x * d, oy + aim.y * d, oz + aim.z * d);
 		}
 
 		// === 光柱（release / fade）沿 +Z ===
@@ -114,8 +111,8 @@ public class FluorescentLaserRenderer extends EntityRenderer<LaserBeamEntity> {
 						radius, (float) entity.beamLength());
 				// 螺旋粒子客户端自绘：逐行照抄服务端 spawnBeamSpiral（白+青双螺旋 + s%3 芯部 END_ROD，
 				// 全参数原样）；tick 门控保证每实体 tick 一次=服务端原频，RELEASE/FADE 期与光柱 mesh 同段触发
-				spawnBeamSpiralClient(entity, ox + ax * d, oy + ay * d, oz + az * d,
-						new Vec3d(ax, ay, az), radius, entity.getPhaseTick());
+				spawnBeamSpiralClient(entity, ox + aim.x * d, oy + aim.y * d, oz + aim.z * d,
+						aim, radius, entity.getPhaseTick());
 			}
 		}
 

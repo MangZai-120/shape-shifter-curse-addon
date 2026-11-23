@@ -235,6 +235,7 @@ public final class FormationResearchIntegrationTest {
             var scroll=ScrollData.create("fire_bolt",4);var table=new SimpleInventory(7);table.setStack(0,product);table.setStack(3,scroll);
             check(RuneScheme.imprint(table,world)==0&&RuneScheme.authoritativeScroll(restored,scroll)!=null
                     &&RuneScheme.modifiers(null,scroll,4).power(100,true,false)==160
+                    &&RuneScheme.modifiers(null,scroll,4).stabilityCollapseCost==RuneBuildEvaluator.stabilityCollapseCost(result.stability())
                     &&RuneScheme.modifiers(null,scroll,4).cooldown(100)==133,"imprint transfers the exact effects and costs into the real scroll path");
             check(RuneScheme.modifiers(null,scroll,3)==RuneModifiers.NONE,"lower selected level suspends new resonances and their costs together");
             int[] oldSlots=RuneLayout.foundation(SlottedSpellRecipes.get("fire_bolt"),2,language);
@@ -249,6 +250,8 @@ public final class FormationResearchIntegrationTest {
             var before=oldScroll.getNbt().copy();restored=load.newInstance(world.writeNbt(new NbtCompound()));
             check(RuneScheme.authoritativeScroll(restored,oldScroll)!=null&&before.equals(oldScroll.getNbt())
                     &&RuneScheme.modifiers(null,oldScroll,2).effectivePower(true,false)==20
+                    &&RuneScheme.modifiers(null,oldScroll,2).stabilityCollapseCost==3
+                    &&RuneScheme.modifiers(null,oldScroll,1).stabilityCollapseCost==0
                     &&RuneScheme.modifiers(null,oldScroll,2).get(RuneModifiers.Stat.SPEED)==30
                     &&RuneScheme.modifiers(null,oldScroll,2).cooldown(100)==100,
                     "rule-three full-ring scrolls keep every original effect and cost despite new adjacency semantics");

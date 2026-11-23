@@ -8,6 +8,8 @@ import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
+import org.joml.Vector3f;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
@@ -26,6 +28,7 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.compat.FluorescentAxolotlPerks;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
+import net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserAim;
 import net.jackcooper.shapeShifterCurseAddon.util.EntityDisplayClock;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -39,10 +42,10 @@ import java.util.UUID;
  * <p>阶段：
  * <ul>
  *   <li>CHARGE（0~7s=140t）：玩家定身（ROOTED，仅锁移动/跳跃、视角自由）。前方放法阵；
- *       0~2.5s 四条 END_ROD 白线从法阵四角延伸到 24 格；2.5~6.5s 四线随法阵旋转 + 加速向中心聚拢、
+ *       0~2.5s 四条白线从法阵四角延伸至光柱末端；2.5~6.5s 四线随法阵旋转 + 加速向中心聚拢、
  *       末尾聚到较小间隔并慢慢停转；6.5~7s 停稳。可被净化打断（取消、无 CD）。</li>
- *   <li>RELEASE（7~10s=60t）：视角限速 5°/s（LASER_STATE=2 由 ViewRateLimitMixin 处理）。
- *       沿朝向发射直径 5 格、长 24 格的穿墙光柱，每 4t 造成 6 点魔法伤害（默认白名单）；
+ *   <li>RELEASE（7~10s=60t）：光柱以 5°/s 追向准星。
+ *       沿朝向发射直径 5 格、长 48 格的穿墙光柱，每 10t 造成 40 点基础魔法伤害（默认白名单）；
  *       周围白/青螺旋粒子沿光柱前进。不可被打断。</li>
  *   <li>FADE（10~11.5s=30t）：光柱半径 1.5s 内缩小后随法阵消失；结束后设 20s CD。</li>
  * </ul>
@@ -60,7 +63,7 @@ public class LaserBeamEntity extends Entity {
 
 	// ===== 几何 =====
 	private static final double ARRAY_DIST = 3.0;     // 法阵在玩家前方距离
-	private static final double BEAM_LENGTH = 32.0;    // 光柱/四线长度
+	private static final double BEAM_LENGTH = 48.0;    // 光柱/四线长度
 	private static final double BEAM_RADIUS = 2.5;     // 光柱半径（直径 5 格）
 
 	// ===== 海晶荧光坠增强（三连发单道视觉）=====
@@ -71,7 +74,7 @@ public class LaserBeamEntity extends Entity {
 
 	// ===== 伤害 =====
 	private static final int DAMAGE_INTERVAL = 10;      // 每 10t 结算
-	private static final float DAMAGE = 20.0f;          // 每次 20 魔法伤害（释放 60t 共 6 次 = 120）
+	private static final float DAMAGE = 40.0f;          // 每次 40 魔法伤害（释放 60t 共 6 次 = 240）
 
 	// 阶段 5：运行时快照读取（abilities.laser_beam；快照未初始化回退默认常量；
 	// 几何 ARRAY_DIST 与装饰 ENH_ARRAY_SCALE 不迁移）
@@ -95,6 +98,11 @@ public class LaserBeamEntity extends Entity {
 	private static final TrackedData<Float> LOCK_Y = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.FLOAT);
 	private static final TrackedData<Float> LOCK_Z = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.FLOAT);
 
+	private static final TrackedData<Vector3f> BEAM_AIM = DataTracker.registerData(LaserBeamEntity.class, TrackedDataHandlerRegistry.VECTOR3F);
+	private Vec3d beamAim = Vec3d.ZERO;
+	private Vec3d previousBeamAim = Vec3d.ZERO;
+	private Vec3d turnVelocity = Vec3d.ZERO;
+
 	private enum Phase { CHARGE, RELEASE, FADE }
 
 	private Phase phase = Phase.CHARGE;
@@ -117,6 +125,7 @@ public class LaserBeamEntity extends Entity {
 	public LaserBeamEntity(World world, ServerPlayerEntity owner) {
 		super(SscAddon.LASER_BEAM_ENTITY, world);
 		this.ownerUuid = owner.getUuid();
+		setBeamAim(owner.getRotationVector().normalize());
 		this.casterForm = net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils.getPlayerForm(owner).getFormID();
 		this.setPosition(owner.getX(), owner.getEyeY(), owner.getZ());
 		this.dataTracker.set(OWNER_ID, owner.getId());
@@ -199,6 +208,7 @@ public class LaserBeamEntity extends Entity {
 		this.dataTracker.startTracking(LOCK_X, 0f);
 		this.dataTracker.startTracking(LOCK_Y, 0f);
 		this.dataTracker.startTracking(LOCK_Z, 0f);
+		this.dataTracker.startTracking(BEAM_AIM, new Vector3f());
 	}
 
 	// ===== 渲染器读取 =====
@@ -272,7 +282,8 @@ public class LaserBeamEntity extends Entity {
 	@Override
 	public Box getVisibilityBoundingBox() {
 		// 增强单道光柱最长 24 格、起点在玩家斜后方，扩大可见盒避免视锥剔除导致法阵/光柱整体不渲染
-		return this.dataTracker.get(ENHANCED) ? this.getBoundingBox().expand(48.0) : super.getVisibilityBoundingBox();
+		if (isEnhanced()) return getBoundingBox().expand(48.0);
+		return getBoundingBox().stretch(beamAim.multiply(ARRAY_DIST + beamLength())).expand(ARRAY_DIST);
 	}
 
 	@Override
@@ -297,7 +308,10 @@ public class LaserBeamEntity extends Entity {
 			return;
 		}
 		if (this.getWorld().isClient) {
-			return;   // 渲染由 FluorescentLaserRenderer 负责；粒子由服务端生成
+			previousBeamAim = beamAim;
+			beamAim = new Vec3d(dataTracker.get(BEAM_AIM)).normalize();
+			if (previousBeamAim.lengthSquared() == 0) previousBeamAim = beamAim;
+			return;
 		}
 		if (!(this.getWorld() instanceof ServerWorld sw)) return;
 
@@ -314,10 +328,15 @@ public class LaserBeamEntity extends Entity {
 		// 跟随玩家眼部（法阵在前方由 aim 计算）
 		this.setPosition(owner.getX(), owner.getEyeY(), owner.getZ());
 
-		// 定身：每 tick 刷新 ROOTED（仅锁移动，视角自由；释放期视角限速由 mixin 处理）
+		// 定身只锁移动。施法者可以自由转头，法阵单独追向准星。
 		owner.addStatusEffect(new StatusEffectInstance(SscAddon.ROOTED, 8, 0, false, false, false));
 
-		Vec3d aim = owner.getRotationVec(1.0f).normalize();
+		Vec3d target = owner.getRotationVector().normalize();
+		double degreesPerSecond = phase == Phase.CHARGE ? 25.0 - 0.5 * MathHelper.clamp(phaseTicks - 100, 0, 40) : 5.0;
+		var turn = FluorescentLaserAim.advance(beamAim, target, turnVelocity, degreesPerSecond);
+		setBeamAim(turn.direction());
+		turnVelocity = turn.angularVelocity();
+		Vec3d aim = beamAim;
 		Vec3d arrayPos = new Vec3d(owner.getX(), owner.getEyeY(), owner.getZ()).add(aim.multiply(ARRAY_DIST));
 
 		phaseTicks++;
@@ -327,6 +346,17 @@ public class LaserBeamEntity extends Entity {
 			case FADE -> tickFade(sw, owner, aim, arrayPos);
 		}
 		syncPhaseClock();
+	}
+
+	private void setBeamAim(Vec3d direction) {
+		previousBeamAim = beamAim.lengthSquared() == 0 ? direction : beamAim;
+		beamAim = direction;
+		dataTracker.set(BEAM_AIM, direction.toVector3f());
+	}
+
+	public Vec3d getBeamAim(float tickDelta) {
+		if (beamAim.lengthSquared() == 0) return new Vec3d(dataTracker.get(BEAM_AIM)).normalize();
+		return previousBeamAim.lerp(beamAim, tickDelta).normalize();
 	}
 
 	// ==================== LASER_STATE 去重同步 ====================
@@ -384,7 +414,7 @@ public class LaserBeamEntity extends Entity {
 	private void tickRelease(ServerWorld sw, ServerPlayerEntity owner, Vec3d aim, Vec3d arrayPos) {
 		syncLaserStateDedup(owner, 2);
 		// 螺旋粒子已移到客户端渲染器自绘（逐行照抄未改参数，网络包归零）
-		// 伤害：每 4t 一次，5 格直径穿墙圆柱
+		// 伤害沿穿墙光柱的轴线按配置间隔结算。
 		if (phaseTicks % BAL.i("damage_interval", DAMAGE_INTERVAL) == 0) {
 			beamDamage(sw, owner, arrayPos, aim, BAL.d("beam_radius", BEAM_RADIUS));
 		}
@@ -501,14 +531,13 @@ public class LaserBeamEntity extends Entity {
 	public static final Identifier LASER_STATE =
 			new Identifier("my_addon", "form_axolotl_fluorescent_laser_state");
 
-	/** 客户端查询某玩家的活跃激光实体（供视角限速读取 phase/phaseTick）。 */
+	/** Find the owner's normal laser; enhanced arrays have independent aiming. */
+	@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 	public static LaserBeamEntity getActiveForClient(net.minecraft.client.network.ClientPlayerEntity player) {
-		net.minecraft.client.world.ClientWorld w = net.minecraft.client.MinecraftClient.getInstance().world;
-		if (w == null) return null;
-		for (Entity e : w.getEntities()) {
-			if (e instanceof LaserBeamEntity laser && !laser.isEnhanced()) {
-				if (player != null && player.getId() == laser.getTrackedOwnerId()) return laser;
-			}
+		if (player == null || !(player.getWorld() instanceof net.minecraft.client.world.ClientWorld world)) return null;
+		for (Entity entity : world.getEntities()) {
+			if (entity instanceof LaserBeamEntity beam && !beam.isRemoved() && !beam.isEnhanced()
+					&& beam.getTrackedOwnerId() == player.getId()) return beam;
 		}
 		return null;
 	}
@@ -519,12 +548,26 @@ public class LaserBeamEntity extends Entity {
 		nbt.putInt("PhaseTicks", phaseTicks);
 		nbt.putInt("ChargeTicks", getChargeTicks());
 		nbt.putLong("CooldownCastId", cooldownCastId);
+		if (beamAim.lengthSquared() > 0) nbt.put("BeamAim", toNbtList(beamAim.x, beamAim.y, beamAim.z));
+		if (turnVelocity.lengthSquared() > 0) nbt.put("BeamTurnVelocity", toNbtList(turnVelocity.x, turnVelocity.y, turnVelocity.z));
 		if (casterForm != null) nbt.putString("CasterForm", casterForm.toString());
 		if (ownerUuid != null) nbt.putUuid("Owner", ownerUuid);
 	}
 
 	@Override
 	public void readCustomDataFromNbt(NbtCompound nbt) {
+		var savedAim = nbt.getList("BeamAim", NbtElement.DOUBLE_TYPE);
+		if (savedAim.size() == 3) {
+			var direction = new Vec3d(savedAim.getDouble(0), savedAim.getDouble(1), savedAim.getDouble(2));
+			if (Double.isFinite(direction.lengthSquared()) && direction.lengthSquared() > 1.0e-8) setBeamAim(direction.normalize());
+		}
+		turnVelocity = Vec3d.ZERO;
+		var savedVelocity = nbt.getList("BeamTurnVelocity", NbtElement.DOUBLE_TYPE);
+		if (savedAim.size() == 3 && savedVelocity.size() == 3) {
+			var v = new Vec3d(savedVelocity.getDouble(0), savedVelocity.getDouble(1), savedVelocity.getDouble(2));
+			if (Double.isFinite(v.lengthSquared()) && v.length() <= Math.toRadians(25.0 / 20) + 1e-9)
+				turnVelocity = v.subtract(beamAim.multiply(v.dotProduct(beamAim)));
+		}
 		int p = nbt.contains("Phase") ? nbt.getInt("Phase") : 0;
 		phase = Phase.values()[MathHelper.clamp(p, 0, Phase.values().length - 1)];
 		phaseTicks = nbt.contains("PhaseTicks") ? nbt.getInt("PhaseTicks") : 0;

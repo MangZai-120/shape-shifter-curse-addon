@@ -84,7 +84,7 @@ public final class NeoNetwork {
                 prep=net.jackcooper.shapeShifterCurseAddon.spell.FormSpellStyle.timing(p,original,modifiers.time(original),spell.getLockInTick()).duration();
                 b=NeoLegacyCasting.descriptor(spell,level,prep);
                 int normal=solo?modifiers.mana(Math.round(spell.getManaCost()*spell.getConfig().manaCostMultiplier(level))):net.jackcooper.shapeShifterCurseAddon.spell.SpellNumbers.finalManaCost(spell,book,p,level,scroll);
-                q=NeoLegacyCasting.quote(p,spell,level,prep,normal);legacyName=spell.getId().toString();
+                q=NeoLegacyCasting.quote(p,spell,level,prep,normal).withFlatCost(modifiers.stabilityCollapseCost);legacyName=spell.getId().toString();
             } else {
                 b=d.draft;
                 q=NeoLegacyCasting.blueprintQuote(p,b,book);

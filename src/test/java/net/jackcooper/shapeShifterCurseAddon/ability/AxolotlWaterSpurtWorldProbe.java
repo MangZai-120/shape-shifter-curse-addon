@@ -29,6 +29,7 @@ public final class AxolotlWaterSpurtWorldProbe {
             try {
                 if (io.github.apace100.apoli.Apoli.config == null)
                     io.github.apace100.apoli.Apoli.config = new io.github.apace100.apoli.util.ApoliConfig();
+                FluorescentLaserWorldChecks.run(test);
                 var player = NeoFormCastingProbe.player(test, FormIdentifiers.UPGRADE_AXOLOTL, 0);
                 net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils.setForm(player,
                     RegPlayerForms.playerForms.get(FormIdentifiers.UPGRADE_AXOLOTL));

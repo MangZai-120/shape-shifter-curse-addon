@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p><b>普通</b>（未装备海晶荧光坠）：按 sp_primary → 生成 {@link LaserBeamEntity}（原蓄力/释放/消退单发，全程定身）。
  *
  * <p><b>海晶荧光坠增强</b>：按 sp_primary 展开斜后方三法阵进入 combo；之后窗口内每按一次从一个法阵朝准星发射一道
- * 缩型激光（8t、范围缩到原 30%、每目标 12 点物理只结算 1 次），消耗 1 法阵 + 累加 6s CD + 重置 5s 窗口；
+ * 缩型激光（8t、每发对每个目标只结算一次物理伤害），消耗 1 法阵 + 累加 6s CD + 重置 5s 窗口；
  * 3 法阵用尽或 5s 未再发射则结束，按累积 CD 起算。整段移速 -50%（视角不受限）。
  */
 public final class FluorescentLaserManager {
@@ -49,7 +49,8 @@ public final class FluorescentLaserManager {
 	private static final net.minecraft.util.Identifier SHOT_HUD =
 			new net.minecraft.util.Identifier("my_addon", "form_axolotl_fluorescent_shot_cd");
 	private static final int SHOT_DAMAGE_INTERVAL = 2;     // 每 2t 判定一次（共 4 次）
-	private static final float SHOT_DAMAGE = 12.0f;        // 每道 12 点物理（每目标每道只 1 次）
+	private static final float SHOT_DAMAGE = 15.0f;        // 佩坠三连发的每发基础物理伤害
+	private static final float ALING_SHOT_DAMAGE = 20.0f;
 	/** 技能 ID（= 荷光幼灵/阿漪挂载的激光 power）；增强版每发累加 extra_cooldowns.per_shot。 */
 	public static final String SKILL_ID = "my_addon:form_axolotl_fluorescent_laser";
 	private static final double SPEED_PENALTY = -0.5;      // 整段移速 -50%
@@ -76,7 +77,7 @@ public final class FluorescentLaserManager {
         long castId = -1;
         int perShotCooldown;
 		boolean active = false;
-		boolean isAling = false;        // 阿澪：伤害/射程/判定半径 ×1.2
+		boolean isAling = false;        // 阿澪：射程与判定半径 ×1.2
 		boolean efficient;
 		int arraysLeft = ARRAY_COUNT;
 		int windowTicks = 0;
@@ -298,20 +299,24 @@ public final class FluorescentLaserManager {
 		}
 	}
 
+	/** Both variants retain the server's shot_damage scaling; the efficiency perk applies last. */
+	static float damagePerShot(boolean aling, boolean efficient) {
+		double base = BAL.d("shot_damage", SHOT_DAMAGE);
+		if (aling) base = base * ALING_SHOT_DAMAGE / SHOT_DAMAGE;
+		return FluorescentAxolotlPerks.enhancedLaserDamage((float)base, efficient);
+	}
+
 	private static void shotDamage(ServerWorld sw, ServerPlayerEntity player, ComboSession s) {
 		if (s.fireLock == null) return;
 		Vec3d origin = arrayPos(player, s.firingIdx);   // 当前法阵位置（随玩家移动）
 		Vec3d end = s.fireLock;                          // 固定世界锁定点
 		Vec3d diff = end.subtract(origin);
-		double len = diff.length();
-		if (len < 1.0e-4) return;
-		Vec3d dir = diff.multiply(1.0 / len);
+		double lengthSquared = diff.lengthSquared();
+		if (lengthSquared < 1.0e-8) return;
 		// 阿澪：判定半径 ×1.2
 		double enhBeamRadius = BAL.d("enh_beam_radius", ENH_BEAM_RADIUS);
 		double radius = s.isAling ? enhBeamRadius * 1.2 : enhBeamRadius;
-		float shotDamageBase = (float) BAL.d("shot_damage", SHOT_DAMAGE);
-		float dmg = s.isAling ? shotDamageBase * 1.2f : shotDamageBase;   // 阿澪伤害 ×1.2（12→14.4）
-		dmg = FluorescentAxolotlPerks.enhancedLaserDamage(dmg, s.efficient);
+		float dmg = damagePerShot(s.isAling, s.efficient);
 		Box box = new Box(origin, end).expand(radius);
 		List<LivingEntity> targets = sw.getEntitiesByClass(LivingEntity.class, box,
 				e -> e.isAlive() && !e.isSpectator() && !e.getUuid().equals(player.getUuid()));
@@ -319,11 +324,12 @@ public final class FluorescentLaserManager {
 			if (s.damagedThisShot.contains(t.getUuid())) continue;   // 每道每目标只 1 次
 			if (WhitelistUtils.isProtected(player, t)) continue;      // 默认白名单
 			Vec3d center = t.getPos().add(0, t.getHeight() * 0.5, 0);
-			double proj = center.subtract(origin).dotProduct(dir);
-			if (proj < 0 || proj > len) continue;
-			Vec3d closest = origin.add(dir.multiply(proj));
+			// Compare in squared-length units so a target centered exactly at fireLock is included.
+			double projection = center.subtract(origin).dotProduct(diff);
+			if (projection < 0 || projection > lengthSquared) continue;
+			Vec3d closest = origin.add(diff.multiply(projection / lengthSquared));
 			if (center.squaredDistanceTo(closest) > radius * radius) continue;
-			if (t.damage(t.getDamageSources().playerAttack(player), dmg)) {   // 12 点物理（阿澪 14.4）
+			if (t.damage(t.getDamageSources().playerAttack(player), dmg)) {
 				FluorescentAxolotlPerks.onLaserHit(player);
 				t.timeUntilRegen = 10;   // 主要技能：受击无敌 20→10 减半，令目标更快可再次受击
 			}

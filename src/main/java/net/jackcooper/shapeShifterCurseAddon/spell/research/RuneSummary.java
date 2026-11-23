@@ -97,6 +97,7 @@ public final class RuneSummary {
     public static List<Text> lines(NbtCompound n) {
         List<Text> lines = effects(n,true);
         lines.add(text("stability",n.getInt("Stability"),signed(n.getInt("InteractionStability"))).copy().formatted(Formatting.GRAY));
+        if (n.contains("Stability",NbtElement.NUMBER_TYPE)) lines.add(RuneTooltips.stabilityCost(n.getInt("Stability")));
         if (!n.contains("Costs",NbtElement.COMPOUND_TYPE)) return lines;
         var c = n.getCompound("Costs");
         lines.add(text(c.getBoolean("Equipped")?"equipped":"unequipped").copy().formatted(Formatting.GOLD));
