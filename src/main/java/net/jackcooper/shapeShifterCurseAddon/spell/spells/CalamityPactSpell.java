@@ -14,10 +14,6 @@ public final class CalamityPactSpell extends Spell {
         super(new Identifier("ssc_addon", "calamity_pact"), SpellRarity.WHITE);
     }
 
-    @Override public Identifier getIconTexture() {
-        return new Identifier("ssc_addon", "textures/item/scroll_mask_base.png");
-    }
-
     @Override public boolean canCast(ServerPlayerEntity caster) {
         return CalamityPact.hasSummon(caster);
     }

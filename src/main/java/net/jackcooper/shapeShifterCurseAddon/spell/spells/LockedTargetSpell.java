@@ -27,7 +27,6 @@ public abstract class LockedTargetSpell extends Spell {
         super(new Identifier("ssc_addon", path), SpellRarity.WHITE);
     }
 
-    @Override public Identifier getIconTexture() { return new Identifier("ssc_addon", "textures/item/scroll_mask_base.png"); }
     @Override public boolean requiresTargetBeforeChannel() { return true; }
     @Override public SpellCastingRules.Mode getCastingMode() { return SpellCastingRules.Mode.RELEASE; }
     @Override public Text getCastFailureMessage(ServerPlayerEntity caster) { return Text.translatable("message.ssc_addon.spellbook.no_entity_target"); }

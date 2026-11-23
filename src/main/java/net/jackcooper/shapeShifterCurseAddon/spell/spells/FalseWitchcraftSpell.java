@@ -20,10 +20,6 @@ public final class FalseWitchcraftSpell extends Spell {
         super(new Identifier("ssc_addon", "false_witchcraft"), SpellRarity.WHITE);
     }
 
-    @Override public Identifier getIconTexture() {
-        return new Identifier("ssc_addon", "textures/item/scroll_mask_base.png");
-    }
-
     private Map<Spell, Long> remainingCooldowns(ServerPlayerEntity caster, ItemStack book) {
         var remaining = new LinkedHashMap<Spell, Long>();
         if (book != null && !book.isEmpty()) {
