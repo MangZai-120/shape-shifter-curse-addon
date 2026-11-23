@@ -31,6 +31,7 @@
     "ssc_addon:deafen",
     "ssc_addon:bat_regen",
     "ssc_addon:bat_poison",
-    "ssc_addon:bat_absorption"
+    "ssc_addon:bat_absorption",
+    "ssc_addon:frost_shatter"
   ]
 }

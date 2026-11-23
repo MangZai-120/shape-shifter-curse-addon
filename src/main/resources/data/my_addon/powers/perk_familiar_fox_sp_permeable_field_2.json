@@ -10,6 +10,6 @@
     "minecraft:nausea", "minecraft:blindness", "minecraft:saturation", "minecraft:slow_falling",
     "minecraft:levitation", "ssc_addon:fox_fire_burn", "ssc_addon:frost_freeze", "ssc_addon:frost_fall",
     "ssc_addon:sand_blind", "ssc_addon:deafen", "ssc_addon:bat_regen", "ssc_addon:bat_poison",
-    "ssc_addon:bat_absorption"
+    "ssc_addon:bat_absorption", "ssc_addon:frost_shatter"
   ]
 }
