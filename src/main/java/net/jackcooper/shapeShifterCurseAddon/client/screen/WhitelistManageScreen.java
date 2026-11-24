@@ -617,6 +617,7 @@ public class WhitelistManageScreen extends Screen {
 
 	@Override
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) return super.keyPressed(keyCode, scanCode, modifiers);
 		if (this.searchField != null && this.searchField.isFocused()) {
 			return this.searchField.keyPressed(keyCode, scanCode, modifiers)
 					|| this.searchField.isActive() || super.keyPressed(keyCode, scanCode, modifiers);

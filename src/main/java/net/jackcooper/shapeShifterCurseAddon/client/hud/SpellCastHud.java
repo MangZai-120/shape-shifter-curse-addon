@@ -74,7 +74,7 @@ public final class SpellCastHud {
 	private static boolean localCancelling;
 
 	public static void clear() {
-		if (state != null) net.jackcooper.shapeShifterCurseAddon.client.sound.SpellChargeSoundInstance.stopFor(state.casterUuid());
+		net.jackcooper.shapeShifterCurseAddon.client.sound.SpellChargeSoundInstance.stopCurrent();
 		state = null;
 		slideInAt = null;
 		endAt = null;

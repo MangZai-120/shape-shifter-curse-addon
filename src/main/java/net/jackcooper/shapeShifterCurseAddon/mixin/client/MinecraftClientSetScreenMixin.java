@@ -4,6 +4,7 @@ import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.jackcooper.shapeShifterCurseAddon.client.colorpicker.AdvancedColorScreen;
+import net.jackcooper.shapeShifterCurseAddon.client.colorpicker.ColorPreviewTextures;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,53 +25,17 @@ public abstract class MinecraftClientSetScreenMixin {
         SSCAddonClientConfig cfg = AutoConfig.getConfigHolder(SSCAddonClientConfig.class).getConfig();
         if (!cfg.enableColorEditor) return;
         if (!"net.onixary.shapeShifterCurseFabric.custom_ui.FormColorSelectMenu".equals(screen.getClass().getName())) return;
-        // 关键：FormColorSelectMenu 的构造函数已经把 SSC 的 instance / useTempTexture / tempTextureProcessor 三个全局
-        // 状态置位，如果这里直接 cancel 而不清理，screen.close() 永远不会被调用，下次再开就触发：
-        //   "FormColorSelectMenu is already in use, only one instance is allowed"
-        // 因此先反射把这三个静态字段还原，再 cancel + 用我们自己的界面替换。
-        cleanupSscColorMenuState(screen);
-        // 不把 this 赋给局部 MinecraftClient 变量：MinecraftClient 间接实现 AutoCloseable，
-        // 局部变量会被 IDE 判为未关闭资源而告警（原先靠 @SuppressWarnings("resource") 压制）。
-        // 直接内联强转调用，资源分析没有附着点，告警自然消失。
+        // SSC acquires its preview processors in the constructor. Its removal hook releases only those it owns.
+        if (screen != ((MinecraftClient) (Object) this).currentScreen) screen.removed();
         Screen parent = ((MinecraftClient) (Object) this).currentScreen;
         ((MinecraftClient) (Object) this).setScreen(new AdvancedColorScreen(parent));
         ci.cancel();
     }
-    /**
-     * 反射方式清理 SSC 的 FormColorSelectMenu / FormTextureUtils 静态状态，使其表现得像 close() 已经被调用。
-     * 这里不直接调用 screen.close()，因为 close() 会顺带保存、发包、嵌套 setScreen(parsetScreen)，副作用太大。
-     * 注意：避免对 SSC 类的硬编译依赖，附属包仍兼容旧版本 SSC（没有 FormColorSelectMenu 的版本）。
-     */
-    @org.spongepowered.asm.mixin.Unique
-    private static void cleanupSscColorMenuState(Screen formColorSelectMenu) {
-        try {
-            Class<?> menuCls = formColorSelectMenu.getClass();
-            // 1) 还原 isUsingTempTexture（实例字段，避免 instance 重用时 close() 误清第二次）
-            try {
-                java.lang.reflect.Field iu = menuCls.getDeclaredField("isUsingTempTexture");
-                iu.setAccessible(true);
-                iu.setBoolean(formColorSelectMenu, false);
-            } catch (NoSuchFieldException ignored) {}
-            // 2) 清 static instance
-            try {
-                java.lang.reflect.Field inst = menuCls.getDeclaredField("instance");
-                inst.setAccessible(true);
-                inst.set(null, null);
-            } catch (NoSuchFieldException ignored) {}
-            // 3) 清 FormTextureUtils.useTempTexture / tempTextureProcessor
-            Class<?> texUtils = Class.forName("net.onixary.shapeShifterCurseFabric.util.FormTextureUtils");
-            try {
-                java.lang.reflect.Field useTT = texUtils.getDeclaredField("useTempTexture");
-                useTT.setAccessible(true);
-                useTT.setBoolean(null, false);
-            } catch (NoSuchFieldException ignored) {}
-            try {
-                java.lang.reflect.Field proc = texUtils.getDeclaredField("tempTextureProcessor");
-                proc.setAccessible(true);
-                proc.set(null, null);
-            } catch (NoSuchFieldException ignored) {}
-        } catch (Throwable ignored) {
-            // 反射失败不应阻断界面切换
-        }
+
+    @Inject(method = "setScreen", at = @At(value = "FIELD",
+            target = "Lnet/minecraft/client/MinecraftClient;currentScreen:Lnet/minecraft/client/gui/screen/Screen;",
+            opcode = org.objectweb.asm.Opcodes.PUTFIELD))
+    private void ssca$changeColorPreview(Screen next, CallbackInfo ci) {
+        ColorPreviewTextures.changeScreen(next);
     }
 }

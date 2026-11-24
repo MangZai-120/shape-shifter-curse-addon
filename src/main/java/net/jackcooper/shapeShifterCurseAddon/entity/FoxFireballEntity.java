@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -219,7 +220,7 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
                         && !piercedEntities.contains(e.getUuid()));
         for (LivingEntity e : list) {
             if (this.getOwner() instanceof ServerPlayerEntity op && WhitelistUtils.isProtected(op, e)) {
-                net.jackcooper.shapeShifterCurseAddon.util.FireballDebugLog.log("PIERCE skipped (whitelist) target=" + e.getType().toString());
+                net.jackcooper.shapeShifterCurseAddon.util.FireballDebugLog.LOGGER.debug("PIERCE skipped (whitelist) target={}", e.getType());
                 continue;
             }
             float hpBefore = e.getHealth();
@@ -230,9 +231,8 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
             float dmg = scaleFor(e, pierceDmg);
             boolean dmgOk = KillEmpowerManager.damage(e, magicSource(e, owner), dmg, !empowered);
             if (dmgOk) e.timeUntilRegen = 0;   // 命中后清：不留无敌帧反吞普攻
-            net.jackcooper.shapeShifterCurseAddon.util.FireballDebugLog.log("PIERCE target=" + e.getType().toString()
-                    + " amount=" + pierceDmg + " returned=" + dmgOk
-                    + " hp " + hpBefore + " -> " + e.getHealth());
+            net.jackcooper.shapeShifterCurseAddon.util.FireballDebugLog.LOGGER.debug("PIERCE target={} amount={} returned={} hp {} -> {}",
+                    e.getType(), pierceDmg, dmgOk, hpBefore, e.getHealth());
             piercedEntities.add(e.getUuid());
             applyFoxFireBurn(e);
             double ex = e.getX(), ey = e.getY() + e.getHeight() * 0.5, ez = e.getZ();
@@ -242,7 +242,7 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
                 world.spawnParticles(ParticleTypes.SOUL_FIRE_FLAME, ex, ey, ez, 8, 0.3, 0.3, 0.3, 0.02);
                 world.spawnParticles(ParticleTypes.FLAME, ex, ey, ez, 6, 0.25, 0.25, 0.25, 0.02);
             });
-            world.playSound(null, ex, ey, ez, SoundEvents.ENTITY_BLAZE_HURT, SoundCategory.PLAYERS, 0.4f, 1.6f);
+            AddonSoundRange.play(world, null, ex, ey, ez, SoundEvents.ENTITY_BLAZE_HURT, SoundCategory.PLAYERS, 0.4f, 1.6f);
             triggerExtraExplosion(world, owner, e);   // 穿透段也触发额外爆炸（腰部火环 + 连锁）
         }
     }
@@ -323,7 +323,7 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
 
         // 爆炸粒子 + 音效
         spawnExplosionParticles(w, x, y, z);
-        w.playSound(null, x, y, z, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 0.8f, 1.4f);
+        AddonSoundRange.play(w, null, x, y, z, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 0.8f, 1.4f);
 
         // 6 格球范围物理伤害；视线被方块阻挡的目标不受伤（爆炸不穿墙）
         double explodeRadius = BAL.d("explode_radius", EXPLODE_RADIUS);
@@ -354,9 +354,8 @@ public class FoxFireballEntity extends ProjectileEntity implements net.minecraft
             float scaledExplode = scaleFor(e, dmg);
             boolean dmgOk = KillEmpowerManager.damage(e, physicalSource(e, owner), scaledExplode, !empowered);
             if (dmgOk) e.timeUntilRegen = 0;   // 命中后清：不留无敌帧反吞普攻
-            net.jackcooper.shapeShifterCurseAddon.util.FireballDebugLog.log("EXPLODE target=" + e.getType().toString()
-                    + " amount=" + dmg + " returned=" + dmgOk
-                    + " hp " + hpBefore + " -> " + e.getHealth());
+            net.jackcooper.shapeShifterCurseAddon.util.FireballDebugLog.LOGGER.debug("EXPLODE target={} amount={} returned={} hp {} -> {}",
+                    e.getType(), dmg, dmgOk, hpBefore, e.getHealth());
             applyFoxFireBurn(e);
         }
         // 仅“直接碰到火球”的生物触发额外爆破（腰部火环 + 2 格连锁）；主爆炸范围内其他生物不触发；碰墙无直接目标则不触发

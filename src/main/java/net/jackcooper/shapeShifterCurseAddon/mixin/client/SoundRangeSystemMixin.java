@@ -15,6 +15,6 @@ public abstract class SoundRangeSystemMixin {
             target = "Lnet/minecraft/client/sound/Sound;getAttenuation()I"))
     private int ssca$extendAttenuation(int distance, @Local(argsOnly = true) SoundInstance sound) {
         boolean extended = sound instanceof ExtendedRangeSound ranged && ranged.ssca$hasExtendedRange();
-        return extended || SoundRangeRules.isAddonPlayback() ? distance * SoundRangeRules.MULTIPLIER : distance;
+        return extended || SoundRangeRules.inActionScope() ? distance * SoundRangeRules.MULTIPLIER : distance;
     }
 }

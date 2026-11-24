@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
@@ -94,7 +95,7 @@ public class VoidErosionSpell extends Spell {
 				caster.getX(), caster.getY() + 0.2, caster.getZ(), radius * 0.6, 20);
 		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.ring(serverWorld, caster, ParticleTypes.PORTAL,
 				caster.getX(), caster.getY() + 0.4, caster.getZ(), radius, 28);
-		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_WARDEN_AMBIENT, SoundCategory.PLAYERS, 0.6f, 0.6f);
 	}
 }

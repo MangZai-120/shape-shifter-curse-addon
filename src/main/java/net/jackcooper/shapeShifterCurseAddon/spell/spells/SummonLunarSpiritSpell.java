@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
@@ -114,9 +115,9 @@ public class SummonLunarSpiritSpell extends Spell {
 			serverWorld.spawnParticles(ParticleTypes.END_ROD,
 					spirit.getX(), spirit.getBodyY(0.5), spirit.getZ(), 16, 0.3, 0.4, 0.3, 0.05);
 		}
-		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE, SoundCategory.PLAYERS, 1.0f, 1.4f);
-		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.BLOCK_AMETHYST_BLOCK_RESONATE, SoundCategory.PLAYERS, 1.0f, 1.2f);
 	}
 }

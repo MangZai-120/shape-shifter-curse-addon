@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
@@ -237,12 +238,12 @@ public final class MancianimaPrimary {
 			world.spawnParticles(ParticleTypes.LARGE_SMOKE, px, cy - 0.5, pz, 1, 0, 0.1, 0, 0);
 			world.spawnParticles(ParticleTypes.FLAME, px, cy, pz, 1, 0, 0.05, 0, 0);
 		}
-		world.playSound(null, target.getX(), target.getY(), target.getZ(),
+		AddonSoundRange.play(world, null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 1.0f, 1.0f);
-		world.playSound(null, target.getX(), target.getY(), target.getZ(),
+		AddonSoundRange.play(world, null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.ENTITY_WITHER_BREAK_BLOCK, SoundCategory.PLAYERS, 0.8f, 0.8f);
 		// 龙振翅音效：以 marker 为中心广播，渲染“斩杀”气氛
-		world.playSound(null, marker.getX(), marker.getY(), marker.getZ(),
+		AddonSoundRange.play(world, null, marker.getX(), marker.getY(), marker.getZ(),
 				SoundEvents.ENTITY_ENDER_DRAGON_FLAP, SoundCategory.PLAYERS, 1.2f, 0.8f);
 		// 成功 CD +15s
 		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.force(marker, SKILL_ID,

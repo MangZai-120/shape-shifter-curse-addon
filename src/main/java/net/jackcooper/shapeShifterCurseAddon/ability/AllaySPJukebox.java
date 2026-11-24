@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.minecraft.entity.LivingEntity;
 
@@ -9,14 +10,12 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.packet.s2c.play.PlaySoundFromEntityS2CPacket;
 import net.minecraft.network.packet.s2c.play.StopSoundS2CPacket;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
@@ -123,7 +122,7 @@ public class AllaySPJukebox {
             audience.networkHandler.sendPacket(new StopSoundS2CPacket(SscAddon.ALLAY_HEAL_MUSIC_ID, SoundCategory.RECORDS));
             audience.networkHandler.sendPacket(new StopSoundS2CPacket(SscAddon.ALLAY_SPEED_MUSIC_ID, SoundCategory.RECORDS));
             // 音量 0.12（原 0.06 的 2 倍）；用实体跟踪音效包，让音乐声源跟随持有者移动（而非钉在释放位置）
-            audience.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(entry, SoundCategory.RECORDS,
+            audience.networkHandler.sendPacket(AddonSoundRange.trackingPacket(entry, SoundCategory.RECORDS,
                     player, 0.25f, 1.0f, seed));
         }
 

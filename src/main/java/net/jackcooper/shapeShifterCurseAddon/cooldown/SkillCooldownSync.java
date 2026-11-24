@@ -39,9 +39,9 @@ public final class SkillCooldownSync {
                 var previous = SENT.get(player.getUuid());
                 boolean unchanged = previous != null && previous.player == player && previous.world == player.getWorld()
                         && previous.connection == player.networkHandler && stamps.equals(previous.stamps);
-                // Empty lists have no clock to calibrate. Still send the transition to empty once,
-                // and always establish a fresh baseline after reconnect, respawn, dimension or reload.
-                if (unchanged && (stamps.isEmpty() || server.getTicks() % 20 != 0)) continue;
+                // Changed states are sent immediately. Idle skills have no running clock to calibrate.
+                if (unchanged && (server.getTicks() % 20 != 0
+                        || stamps.stream().noneMatch(s -> s.end() > 0 || s.phase() != SkillCastManager.PHASE_IDLE))) continue;
                 SENT.put(player.getUuid(), new Snapshot(player, player.getWorld(), player.networkHandler, stamps));
                 var buf = PacketByteBufs.create();
                 SkillCooldownPacket.write(buf, views);

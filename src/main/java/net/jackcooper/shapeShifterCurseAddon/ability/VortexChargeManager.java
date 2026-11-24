@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -141,9 +142,9 @@ public final class VortexChargeManager {
         CHARGING.put(player.getUuid(), s);
 		PowerUtils.setResourceValueAndSync(player, VORTEX_STATE, 1); // 标记蓄力中（客户端读 >0）
 		ServerWorld sw = (ServerWorld) player.getWorld();
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_PLAYER_SPLASH_HIGH_SPEED, SoundCategory.PLAYERS, 1.5f, 0.5f);
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_ELDER_GUARDIAN_CURSE, SoundCategory.PLAYERS, 0.6f, 1.5f);
 		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.BUBBLE, player.getX(), player.getY() + 1, player.getZ(), 40, 0.6, 0.6, 0.6, 0.6);
 		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.BUBBLE_POP, player.getX(), player.getY() + 1, player.getZ(), 5, 0.3, 0.3, 0.3, 0.1);
@@ -190,7 +191,7 @@ public final class VortexChargeManager {
 				ServerWorld sw = (ServerWorld) player.getWorld();
 				net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.BUBBLE,
 						player.getX(), player.getY() + 1, player.getZ(), 40, 0.6, 0.6, 0.6, 0.6);
-				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+				AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.ENTITY_FISHING_BOBBER_SPLASH, SoundCategory.PLAYERS, 0.8f, 0.6f);
 			} else {
 				release(player); // air 不足或已扣满 60 → 自动释放
@@ -222,9 +223,9 @@ public final class VortexChargeManager {
 		double radius = BAL.d("radius", RADIUS);
 		int damage = s.hits * BAL.i("damage_per_hit", DAMAGE_PER_HIT);
 		ServerWorld sw = (ServerWorld) player.getWorld();
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 1.0f, 1.2f);
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_AXOLOTL_SPLASH, SoundCategory.PLAYERS, 1.5f, 0.5f);
 		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.SPLASH, player.getX(), player.getY() + 1, player.getZ(),
 				150, radius, 1.0, radius, 1.0);
@@ -261,7 +262,7 @@ public final class VortexChargeManager {
 		if (s == null) return;
 		PowerUtils.setResourceValueAndSync(player, VORTEX_STATE, 0);
 		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.interruptedFull(player, SKILL_ID, s.castId);
-		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.5f);
 	}
 

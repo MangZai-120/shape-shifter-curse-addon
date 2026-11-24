@@ -5,6 +5,7 @@
  */
 package net.jackcooper.shapeShifterCurseAddon.power;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import io.github.apace100.apoli.data.ApoliDataTypes;
 import io.github.apace100.apoli.power.Active;
 import io.github.apace100.apoli.power.ActiveCooldownPower;
@@ -96,7 +97,7 @@ public class ParasiticSporeBombPower extends ActiveCooldownPower implements net.
         // 能量检查：不足则播放失败音效
         int energyCost = BAL.i("energy_cost", ENERGY_COST);
         if (!PowerUtils.hasResource(caster, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY, energyCost)) {
-            caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+            AddonSoundRange.play(caster.getWorld(), null, caster.getX(), caster.getY(), caster.getZ(),
                     SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.4f, 1.7f);
             return;
         }
@@ -116,7 +117,7 @@ public class ParasiticSporeBombPower extends ActiveCooldownPower implements net.
         bomb.setVelocity(bomb.getVelocity().add(ownerVel.x, caster.isOnGround() ? 0.0 : ownerVel.y, ownerVel.z));
         caster.getWorld().spawnEntity(bomb);
 
-        caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+        AddonSoundRange.play(caster.getWorld(), null, caster.getX(), caster.getY(), caster.getZ(),
                 SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.PLAYERS, 0.6f, 1.6f);
 
         internalCooldownEndTime = entity.getWorld().getTime() + cooldownTicks;

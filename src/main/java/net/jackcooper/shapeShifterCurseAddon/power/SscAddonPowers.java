@@ -5,8 +5,12 @@ import net.minecraft.registry.Registry;
 
 public class SscAddonPowers {
 	public static void register() {
+		SeedEnergyResourcePower.register();
 		var waterSpearCraft = WaterSpearCraftPower.createFactory();
 		Registry.register(ApoliRegistries.POWER_FACTORY, waterSpearCraft.getSerializerId(), waterSpearCraft);
+		var bloodThirst = BloodThirstResourcePower.createFactory();
+		Registry.register(ApoliRegistries.POWER_FACTORY, bloodThirst.getSerializerId(), bloodThirst);
+		Registry.register(ApoliRegistries.POWER_FACTORY, BeaconActivePower.FACTORY_ID, BeaconActivePower.createFactory());
 		Registry.register(ApoliRegistries.POWER_FACTORY, BlueFireRingVisualPower.createFactory().getSerializerId(), BlueFireRingVisualPower.createFactory());
 		Registry.register(ApoliRegistries.POWER_FACTORY, ConditionalManaAttributePower.createFactory().getSerializerId(), ConditionalManaAttributePower.createFactory());
 		Registry.register(ApoliRegistries.POWER_FACTORY, FamiliarSkillPower.createFactory().getSerializerId(), FamiliarSkillPower.createFactory());

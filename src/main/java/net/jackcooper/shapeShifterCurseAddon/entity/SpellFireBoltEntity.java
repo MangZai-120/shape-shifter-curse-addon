@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.FlyingItemEntity;
@@ -170,7 +171,7 @@ public class SpellFireBoltEntity extends ProjectileEntity implements FlyingItemE
 	protected void onCollision(HitResult hitResult) {
 		super.onCollision(hitResult);
 		if (!this.getWorld().isClient) {
-			this.getWorld().playSound(null, this.getX(), this.getY(), this.getZ(),
+			AddonSoundRange.play(this.getWorld(), null, this.getX(), this.getY(), this.getZ(),
 					SoundEvents.ENTITY_BLAZE_SHOOT, SoundCategory.PLAYERS, 1.0f, 1.4f);
 			if (this.getWorld() instanceof ServerWorld serverWorld) {
 				ParticleUtils.spawnParticles(serverWorld, ParticleTypes.FLAME,
@@ -199,7 +200,7 @@ public class SpellFireBoltEntity extends ProjectileEntity implements FlyingItemE
 			}
 			// 点燃目标（伤害数值外的固定附加效果；时长由法术按等级写入）
 			livingTarget.setFireTicks(fireTicks);
-			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
+			AddonSoundRange.play(this.getWorld(), null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.ENTITY_PLAYER_HURT_ON_FIRE, SoundCategory.PLAYERS, 1.0f, 1.0f);
 		}
 	}

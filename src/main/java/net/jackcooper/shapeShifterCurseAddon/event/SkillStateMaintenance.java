@@ -20,6 +20,7 @@ public final class SkillStateMaintenance {
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
             MancianimaAggroTracker.forget(entity.getUuid());
             if (entity instanceof ServerPlayerEntity player) {
+                NightmareFearManager.onCasterRemoved(player);
                 ControlledAbilityInterruption.cancelTransient(player);
                 AnubisWolfSpDeathDomain.clearPlayer(player);
             }
@@ -28,6 +29,8 @@ public final class SkillStateMaintenance {
                 MancianimaAggroTracker.forget(entity.getUuid()));
         ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
             if (entity instanceof LivingEntity living) {
+                NightmareFearManager.removeOrphanedSlow(living);
+                if (living instanceof net.minecraft.entity.passive.MerchantEntity merchant) MancianimaPassive.removeFleeSlow(merchant);
                 AnubisWolfSpDeathDomain.removeLegacyHealthReduction(living);
                 CompanionResonanceManager.removeLegacyModifier(living);
             }
@@ -50,6 +53,8 @@ public final class SkillStateMaintenance {
             AllaySPRangedHitPassive.clearAll();
             AnubisWolfSpSoulEnergy.clearSources();
             NightmareFearManager.clearAll();
+            MancianimaPassive.clearFleeTracking();
+            PlayerGravityLease.clearAll();
             MancianimaAggroTracker.clearAll();
             WindSpiritWindPressureManager.clearAll();
             CompanionResonanceManager.clearAll();

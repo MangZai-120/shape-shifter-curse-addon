@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -125,7 +126,7 @@ public class FrostStormEntity extends Entity {
 
 			// 播放环境音效
 			if (ticksAlive % 40 == 0) {
-				this.getWorld().playSound(null, this.getX(), this.getY(), this.getZ(),
+				AddonSoundRange.play(this.getWorld(), null, this.getX(), this.getY(), this.getZ(),
 						SoundEvents.ENTITY_SNOW_GOLEM_AMBIENT, SoundCategory.HOSTILE, 0.5f, 0.5f);
 			}
 		}
@@ -141,7 +142,7 @@ public class FrostStormEntity extends Entity {
 
 		List<LivingEntity> targets = world.getEntitiesByClass(
 				LivingEntity.class, damageBox,
-				entity -> entity.getUuid() != ownerUuid && entity.isAlive()
+				entity -> !entity.getUuid().equals(ownerUuid) && entity.isAlive()
 		);
 
 		PlayerEntity owner = ownerUuid != null ? world.getPlayerByUuid(ownerUuid) : null;
@@ -174,7 +175,7 @@ public class FrostStormEntity extends Entity {
 
 		List<LivingEntity> targets = this.getWorld().getEntitiesByClass(
 				LivingEntity.class, pullBox,
-				entity -> entity.getUuid() != ownerUuid && entity.isAlive()
+				entity -> !entity.getUuid().equals(ownerUuid) && entity.isAlive()
 		);
 
 		Vec3d center = new Vec3d(this.getX(), this.getY(), this.getZ());

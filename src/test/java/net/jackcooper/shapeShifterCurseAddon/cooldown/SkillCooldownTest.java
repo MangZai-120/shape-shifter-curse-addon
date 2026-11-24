@@ -66,6 +66,14 @@ public final class SkillCooldownTest {
         long cancelled = tuned.begin(tunedOwner, "test:skill", new SkillCastManager.ResolvedConfig(100, 50, "on_end"), 1200);
         tuned.abort(null, cancelled);
         check(remaining(tuned, tunedOwner, 1200) == 0 && tuned.control(tunedOwner, "test:skill") == null, "cancel frees without cooldown");
+        var onCast = new SkillCastManager.ResolvedConfig(100, 50, "on_cast");
+        long opening = tuned.begin(tunedOwner, "test:skill", onCast, 1300);
+        tuned.abort(null, opening);
+        check(remaining(tuned, tunedOwner, 1301) == 0, "aborting clears the cooldown started by this cast");
+        long retry = tuned.begin(tunedOwner, "test:skill", onCast, 1301);
+        tuned.force(tunedOwner, "test:skill", 70, 1302);
+        tuned.abort(null, retry);
+        check(remaining(tuned, tunedOwner, 1302) == 70, "aborting preserves a later externally imposed cooldown");
         check(new SkillCastManager.ResolvedConfig(-5, -1, "typo").cooldown == 0, "invalid runtime values do not throw");
         System.out.println("Skill cooldown: modes, callbacks, failures, interruption/disconnect, fire-ring resources, retune/force/reset/cancel PASS; live multiplayer NOT tested.");
     }

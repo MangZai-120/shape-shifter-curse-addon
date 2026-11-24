@@ -5,6 +5,7 @@
  */
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.projectile.thrown.ThrownItemEntity;
@@ -107,7 +108,7 @@ public class InfectionSporeBombEntity extends ThrownItemEntity {
         world.spawnParticles(itemFx, pos.x, pos.y, pos.z, 18, 0.4, 0.4, 0.4, 0.15);
         world.spawnParticles(POISON_DUST, pos.x, pos.y + 0.2, pos.z, 30, 0.6, 0.4, 0.6, 0.05);
         world.spawnParticles(POISON_DUST, pos.x, pos.y + 0.2, pos.z, 25, 1.5, 1.0, 1.5, 0.0);
-        world.playSound(null, this.getX(), this.getY(), this.getZ(),
+        AddonSoundRange.play(world, null, this.getX(), this.getY(), this.getZ(),
                 SoundEvents.BLOCK_SLIME_BLOCK_BREAK, SoundCategory.PLAYERS, 0.8f, 1.4f);
 
         // 仅当发射者是服务端玩家时进行白名单判定与感染

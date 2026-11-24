@@ -5,9 +5,10 @@
  */
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
@@ -32,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * 机制：<b>被动死亡触发</b>——致死伤害时若剩余命数 &gt; 0，消耗 1 命并原地复活
  * （回 6 血 + 6 颗黄心吸收 30s + 1s 无敌 + 全员可闻的复活音效/特效）；触发后 3s 内再死亡不触发（真死）。
- * 命数上限 9；<b>脱离战斗</b>（10s 未受伤/未攻击）后每 20s 回 1 命；真死重生后回满 9 命。
+ * 默认可额外复活 8 次；<b>脱离战斗</b>（10s 未受伤/未攻击）后每 20s 回 1 命；重生后补至配置上限。
  * 全部判定在服务端，多人一致。
  */
 public final class NineLivesManager {
@@ -75,7 +76,7 @@ public final class NineLivesManager {
             REGEN_ACC.remove(id);
             RESPAWN_REFILL.remove(id);
         });
-        // 真死重生后回满 9 命（延迟到 tick 里设，确保重生后 power 已授予）
+        // 留到服务端 tick 补满，等待重生玩家的九命资源就绪。
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) ->
                 RESPAWN_REFILL.put(newPlayer.getUuid(), Boolean.TRUE));
     }
@@ -148,7 +149,7 @@ public final class NineLivesManager {
         net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.onNineLivesRevive(player);
         markCombat(player);
         // 复活音效：全员可闻（第一参 null），音量适中（0.6）避免过响
-        player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ITEM_TOTEM_USE, SoundCategory.PLAYERS, 0.6F, 1.2F);
         if (player.getWorld() instanceof ServerWorld sw) {
             net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.TOTEM_OF_UNDYING,
@@ -178,41 +179,39 @@ public final class NineLivesManager {
         }
         // owner 打标：仅本人第一人称避让，他人视角原样
         net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.SWEEP_ATTACK, player.getX(), player.getY() + 0.5, player.getZ(), 8, 1.5, 0.3, 1.5, 0.0);
-        sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 1.0F, 0.8F);
     }
 
     private static void tickPlayer(ServerPlayerEntity player) {
-        boolean isNova = FormUtils.isForm(player, FormIdentifiers.OCELOT_NOVA);
-        int maxLives = BAL.i("max_lives", MAX_LIVES);
-        // 重生回满 9 命
-        if (Boolean.TRUE.equals(RESPAWN_REFILL.get(player.getUuid()))) {
-            if (isNova && PowerUtils.hasResource(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES, 0)) {
-                PowerUtils.setResourceValueAndSync(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES, maxLives);
-                RESPAWN_REFILL.remove(player.getUuid());
-            } else if (!isNova) {
-                RESPAWN_REFILL.remove(player.getUuid());
-            }
-        }
-        int lives = PowerUtils.getResourceValue(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES);
-        if (!isNova || lives <= 0) {
-            REGEN_ACC.remove(player.getUuid());
+        UUID id = player.getUuid();
+        if (!FormUtils.isForm(player, FormIdentifiers.OCELOT_NOVA)) {
+            RESPAWN_REFILL.remove(id);
+            REGEN_ACC.remove(id);
             return;
         }
-        // 上方守卫原为 hasResource(...,0)（内部又读一次同一资源），
-        // 现改为一次 getResourceValue 同时充当存在性（<=0 视为无资源/无命）与数值判定，每 tick 少一次扫描。
+        int maxLives = BAL.i("max_lives", MAX_LIVES);
+        if (RESPAWN_REFILL.containsKey(id) && ResourceBars.hasPowerId(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES)) {
+            PowerUtils.setResourceValueAndSync(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES, maxLives);
+            RESPAWN_REFILL.remove(id);
+        }
+        int lives = PowerUtils.getResourceValue(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES);
+        if (lives <= 0) {
+            REGEN_ACC.remove(id);
+            return;
+        }
         if (lives >= maxLives) {
-            REGEN_ACC.put(player.getUuid(), 0);
+            REGEN_ACC.put(id, 0);
             return;
         }
         if (!isOutOfCombat(player)) {
             return; // 战斗中不恢复
         }
-        int acc = REGEN_ACC.getOrDefault(player.getUuid(), 0) + 1;
+        int acc = REGEN_ACC.getOrDefault(id, 0) + 1;
         if (acc >= BAL.i("regen_interval", REGEN_INTERVAL)) {
             PowerUtils.changeResourceValueAndSync(player, FormIdentifiers.OCELOT_NOVA_NINE_LIVES, 1);
             acc = 0;
         }
-        REGEN_ACC.put(player.getUuid(), acc);
+        REGEN_ACC.put(id, acc);
     }
 }

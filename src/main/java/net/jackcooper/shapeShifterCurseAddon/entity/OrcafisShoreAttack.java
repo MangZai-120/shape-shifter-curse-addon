@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -80,13 +81,13 @@ final class OrcafisShoreAttack {
                 if (t >= OrcafisRockEntity.RELEASE) {
                     released = true;
                     OrcafisRockEntity.toss(boss,mouth,target.getPos());
-                    boss.playSound(SoundEvents.BLOCK_ROOTED_DIRT_BREAK,2,.7f);
+                    AddonSoundRange.play(boss, SoundEvents.BLOCK_ROOTED_DIRT_BREAK,2,.7f);
                 }
             }
             case ROLL_LEFT, ROLL_RIGHT -> {
                 if (t < ROLL_RELEASE || t > ROLL_LAND) return;
                 if (t == ROLL_RELEASE) {
-                    boss.playSound(SoundEvents.ENTITY_RAVAGER_STEP,2,.65f);
+                    AddonSoundRange.play(boss, SoundEvents.ENTITY_RAVAGER_STEP,2,.65f);
                     return;
                 }
                 double step = 2.7*Math.sin(Math.PI*(t-ROLL_RELEASE-.5)/(ROLL_LAND-ROLL_RELEASE))

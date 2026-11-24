@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
@@ -168,7 +169,7 @@ public class LunarSpiritEntity extends PathAwareEntity implements GeoEntity,
 		// 发射演出：光弹凝聚 + 轻音效（自己听清瞭不吵）
 		serverWorld.spawnParticles(ParticleTypes.END_ROD,
 				this.getX(), this.getBodyY(0.6), this.getZ(), 4, 0.1, 0.1, 0.1, 0.02);
-		serverWorld.playSound(null, this.getX(), this.getY(), this.getZ(),
+		AddonSoundRange.play(serverWorld, null, this.getX(), this.getY(), this.getZ(),
 				SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 0.4f, 1.8f);
 	}
 
@@ -564,7 +565,7 @@ public class LunarSpiritEntity extends PathAwareEntity implements GeoEntity,
 		this.ownerVelocity = Vec3d.ZERO;
 		serverWorld.spawnParticles(ParticleTypes.END_ROD,
 				dest.x, dest.y + this.getHeight() * 0.5, dest.z, 8, 0.2, 0.2, 0.2, 0.03);
-		serverWorld.playSound(null, dest.x, dest.y, dest.z,
+		AddonSoundRange.play(serverWorld, null, dest.x, dest.y, dest.z,
 				SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 0.3f, 1.6f);
 	}
 
@@ -572,7 +573,7 @@ public class LunarSpiritEntity extends PathAwareEntity implements GeoEntity,
 	private void expire(ServerWorld serverWorld) {
 		serverWorld.spawnParticles(ParticleTypes.END_ROD,
 				this.getX(), this.getBodyY(0.5), this.getZ(), 16, 0.4, 0.4, 0.4, 0.05);
-		serverWorld.playSound(null, this.getX(), this.getY(), this.getZ(),
+		AddonSoundRange.play(serverWorld, null, this.getX(), this.getY(), this.getZ(),
 				SoundEvents.BLOCK_AMETHYST_BLOCK_RESONATE, SoundCategory.PLAYERS, 0.8f, 1.8f);
 		this.discard();
 	}

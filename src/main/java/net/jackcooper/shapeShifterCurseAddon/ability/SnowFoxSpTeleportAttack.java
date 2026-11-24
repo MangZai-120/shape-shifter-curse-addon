@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -68,7 +69,7 @@ public class SnowFoxSpTeleportAttack {
 		int currentMana = net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.get(player,
 				net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX);
 		if (currentMana < BAL.i("mana_cost_fail", MANA_COST_FAIL)) {
-			player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
+			AddonSoundRange.play(player, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
 			FailAwareActiveSelfPower.markFail();
 			return false;
 		}
@@ -76,7 +77,7 @@ public class SnowFoxSpTeleportAttack {
 		List<LivingEntity> targets = findTargets(player);
 
 		if (targets.isEmpty()) {
-			player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0f, 1.0f);
+			AddonSoundRange.play(player, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0f, 1.0f);
 			net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.consume(player,
 					net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.SNOW_FOX, BAL.i("mana_cost_fail", MANA_COST_FAIL));
 			setRegenCooldown(player, BAL.i("regen_lock_ticks", TELEPORT_REGEN_LOCK_TICKS));
@@ -85,7 +86,7 @@ public class SnowFoxSpTeleportAttack {
 		}
 
 		if (currentMana < BAL.i("mana_cost_success", MANA_COST_SUCCESS)) {
-			player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
+			AddonSoundRange.play(player, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
 			FailAwareActiveSelfPower.markFail();
 			return false;
 		}
@@ -194,7 +195,7 @@ public class SnowFoxSpTeleportAttack {
 		player.setYaw(yaw);
 		player.setPitch(0);
 
-		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0f, 1.0f);
 
 		if (player.getWorld() instanceof ServerWorld serverWorld) {
@@ -228,7 +229,7 @@ public class SnowFoxSpTeleportAttack {
 					1, 0, 0, 0, 0);
 		}
 
-		player.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
+		AddonSoundRange.play(player.getWorld(), null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 1.0f, 1.2f);
 	}
 
@@ -245,7 +246,7 @@ public class SnowFoxSpTeleportAttack {
 		player.setVelocity(0, 0, 0);
 		player.velocityModified = true;
 
-		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0f, 0.8f);
 
 		if (player.getWorld() instanceof ServerWorld serverWorld) {

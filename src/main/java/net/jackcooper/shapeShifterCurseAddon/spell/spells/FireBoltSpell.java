@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.entity.SpellFireBoltEntity;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
@@ -60,7 +61,7 @@ public class FireBoltSpell extends Spell {
 		Vec3d look = caster.getRotationVec(1.0F);
 		bolt.setDirection(look, (float)RuneCastContext.current().scale(getSpeedMultiplier(level),RuneModifiers.Stat.SPEED));
 		caster.getWorld().spawnEntity(bolt);
-		caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(caster.getWorld(), null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_BLAZE_SHOOT, SoundCategory.PLAYERS, 1.0f, 1.2f);
 	}
 }

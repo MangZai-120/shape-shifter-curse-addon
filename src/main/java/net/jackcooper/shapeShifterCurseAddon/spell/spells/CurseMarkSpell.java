@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.entity.SpellCurseMarkEntity;
@@ -53,7 +54,7 @@ public class CurseMarkSpell extends Spell {
 		Vec3d look = caster.getRotationVec(1.0F);
 		mark.setDirection(look,(float)RuneCastContext.current().scale(getSpeedMultiplier(level),RuneModifiers.Stat.SPEED));
 		caster.getWorld().spawnEntity(mark);
-		caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(caster.getWorld(), null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_EVOKER_CAST_SPELL, SoundCategory.PLAYERS, 0.8f, 0.6f);
 	}
 }

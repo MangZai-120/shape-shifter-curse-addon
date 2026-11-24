@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -135,9 +136,9 @@ public final class AxolotlWaterSpurtHandler {
 		player.velocityModified = true;
 
 		ServerWorld sw = (ServerWorld) player.getWorld();
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_PLAYER_SPLASH_HIGH_SPEED, SoundCategory.PLAYERS, 1.2f, 1.0f);
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_AXOLOTL_SPLASH, SoundCategory.PLAYERS, 1.3f, 0.7f);
 		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.SPLASH, player.getX(), player.getY() + 0.6, player.getZ(),
 				60, 0.6, 0.4, 0.6, 0.6);

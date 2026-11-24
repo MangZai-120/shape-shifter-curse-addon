@@ -1,10 +1,13 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -87,49 +90,32 @@ public final class RedFormTickManager {
 					player.addCommandTag("ssc_addon_red_expire:" + expireTime);
 
 					player.sendMessage(Text.translatable("message.ssc_addon.red_transformation_special").formatted(Formatting.GREEN), false);
-					player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 1.0F, 1.0F);
+					AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 1.0F, 1.0F);
 					return; // 变身成功后直接返回
 				}
 			}
 		}
 
-		// 两轮独立背包扫描合并为单轮（同一次循环内按形态三元处理三类物品），
-		// 每 20t 少扫一整轮 41 格；行为等价（三物品互不重叠，回收逻辑照旧）。
 		boolean isAllaySp = currentForm != null && currentForm.getFormID().equals(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.ALLAY_SP);
 		if (isAllaySp) {
-			placeFormItemSafe(player, 0, net.jackcooper.shapeShifterCurseAddon.SscAddon.ALLAY_HEAL_WAND);
-			placeFormItemSafe(player, 1, net.jackcooper.shapeShifterCurseAddon.SscAddon.ALLAY_JUKEBOX);
-		} else {
-			for (int i = 0; i < player.getInventory().size(); ++i) {
-				ItemStack stack = player.getInventory().getStack(i);
-				if (stack.isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.ALLAY_HEAL_WAND)) {
-					player.getInventory().setStack(i, ItemStack.EMPTY);
-				} else if (stack.isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.ALLAY_JUKEBOX)) {
-					player.getInventory().setStack(i, ItemStack.EMPTY);
-				}
+			placeFormItemSafe(player, 0, SscAddon.ALLAY_HEAL_WAND);
+			placeFormItemSafe(player, 1, SscAddon.ALLAY_JUKEBOX);
+		}
+
+		PlayerInventory inventory = player.getInventory();
+		for (int slot = 0; slot < inventory.size(); ++slot) {
+			ItemStack stack = inventory.getStack(slot);
+			if (!isAllaySp && (stack.isOf(SscAddon.ALLAY_HEAL_WAND) || stack.isOf(SscAddon.ALLAY_JUKEBOX))) {
+				inventory.setStack(slot, ItemStack.EMPTY);
+			} else if (!isRedForm && stack.isOf(SscAddon.POTION_BAG)) {
+				dropBagContents(player, stack);
+				inventory.setStack(slot, ItemStack.EMPTY);
 			}
 		}
 
-		// 红使魔：自动发放药水袋(8)；非该形态则回收（倒出内容物后移除）
+		// 先回收悦灵物品，再给红使魔发袋；腾出的空位可接收原第九格物品。
 		if (isRedForm) {
-			placeFormItemSafe(player, 8, net.jackcooper.shapeShifterCurseAddon.SscAddon.POTION_BAG);
-		} else {
-			for (int i = 0; i < player.getInventory().size(); ++i) {
-				ItemStack stack = player.getInventory().getStack(i);
-				if (stack.isOf(net.jackcooper.shapeShifterCurseAddon.SscAddon.POTION_BAG)) {
-					if (stack.getNbt() != null && stack.hasNbt() && stack.getNbt().contains("Items", 9)) {
-						NbtList list = stack.getNbt().getList("Items", 10);
-						for (int j = 0; j < list.size(); ++j) {
-							NbtCompound itemTag = list.getCompound(j);
-							ItemStack contentStack = ItemStack.fromNbt(itemTag);
-							if (!contentStack.isEmpty()) {
-								player.dropItem(contentStack, false, true);
-							}
-						}
-					}
-					player.getInventory().setStack(i, ItemStack.EMPTY);
-				}
-			}
+			placeFormItemSafe(player, 8, SscAddon.POTION_BAG);
 		}
 
 		// 红使魔超时回退
@@ -185,6 +171,16 @@ public final class RedFormTickManager {
 		}
 	}
 
+	private static void dropBagContents(ServerPlayerEntity player, ItemStack bag) {
+		NbtCompound nbt = bag.getNbt();
+		if (nbt == null) return;
+		NbtList contents = nbt.getList("Items", NbtElement.COMPOUND_TYPE);
+		for (int i = 0; i < contents.size(); ++i) {
+			ItemStack stack = ItemStack.fromNbt(contents.getCompound(i));
+			if (!stack.isEmpty()) player.dropItem(stack, false, true);
+		}
+	}
+
 	/**
 	 * 安全地把指定形态物品放进固定槽位，避免覆盖玩家原有物品：
 	 * ①目标槽已是该物品则不动；②原物品合并进背包同种堆；③剩余找空槽；④仍剩余丢地上，绝不静默删除。
@@ -223,7 +219,9 @@ public final class RedFormTickManager {
 			}
 
 			if (!moved.isEmpty()) {
-				player.dropItem(moved, false, true);
+				// 背包已满。整袋禁止丢弃，其他形态占位的旧袋必须在这里倒出。
+				if (moved.isOf(SscAddon.POTION_BAG)) dropBagContents(player, moved);
+				else player.dropItem(moved, false, true);
 			}
 		}
 

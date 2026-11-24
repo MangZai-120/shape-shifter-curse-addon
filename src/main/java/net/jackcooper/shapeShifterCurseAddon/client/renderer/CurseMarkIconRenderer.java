@@ -58,7 +58,7 @@ public final class CurseMarkIconRenderer {
 		if (client.world == null || client.player == null) return;
 
 		long now = client.world.getTime();
-		if (now != lastScanTick && now % 10 == 0) {
+		if (lastScanTick < 0 || now < lastScanTick || now - lastScanTick >= 10) {
 			scanMarkedEntities(client);
 			lastScanTick = now;
 		}

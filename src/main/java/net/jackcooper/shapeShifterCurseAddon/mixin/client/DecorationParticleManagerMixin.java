@@ -67,6 +67,19 @@ public abstract class DecorationParticleManagerMixin {
     @Unique
     private static MinecraftClient client() { return MinecraftClient.getInstance(); }
 
+    @Inject(method = "setWorld", at = @At("HEAD"))
+    private void ssca$clearWorldRouting(net.minecraft.client.world.ClientWorld world, CallbackInfo ci) {
+        ssca$frameParticles = null;
+        ssca$clearRouting();
+    }
+
+    @Unique
+    private void ssca$clearRouting() {
+        ssca$routingResult = null;
+        ssca$routingCamera = null;
+        ssca$routingEye = null;
+    }
+
     // Tag before AsyncParticles chooses a CPU/GPU queue; also covers directly created particles.
     @Inject(method = "addParticle(Lnet/minecraft/client/particle/Particle;)V", at = @At("HEAD"))
     private void ssca$tag(Particle particle, CallbackInfo ci) {
@@ -98,7 +111,10 @@ public abstract class DecorationParticleManagerMixin {
         if (client.player == null || camera.getFocusedEntity() != client.player || camera.isThirdPerson()
                 || !client.options.getPerspective().isFirstPerson()
                 || AutoConfig.getConfigHolder(SSCAddonClientConfig.class).getConfig().firstPersonParticleAvoidance
-                    == ParticleAvoidance.Strength.OFF) return;
+                    == ParticleAvoidance.Strength.OFF) {
+            ssca$clearRouting();
+            return;
+        }
         AsyncParticleCompatibility.begin(camera, tickDelta);
         // OFF 检查已过：本帧快照一次强度，cameraVisibility 帧内直读（end() 会连同失效）
         AsyncParticleCompatibility.snapshotStrength(

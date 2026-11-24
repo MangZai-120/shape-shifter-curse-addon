@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.power;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import io.github.apace100.apoli.data.ApoliDataTypes;
 import io.github.apace100.apoli.power.Active;
 import io.github.apace100.apoli.power.ActiveCooldownPower;
@@ -160,7 +161,7 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower implements net
 
 		// 直线粒子表现：从眼睛沿视角方向喷射 SONIC_BOOM
 		spawnBeamParticles(world, eye, look);
-		world.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+		AddonSoundRange.play(world, null, entity.getX(), entity.getY(), entity.getZ(),
 				SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 0.6f, 1.6f);
 
 		// 命中触发血渴值结算

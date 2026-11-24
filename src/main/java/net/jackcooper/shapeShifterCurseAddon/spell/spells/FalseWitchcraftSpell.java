@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -87,7 +88,7 @@ public final class FalseWitchcraftSpell extends Spell {
             }
         }
         SharedSpellCooldowns.reduceFor(caster, reductions);
-        caster.getServerWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+        AddonSoundRange.play(caster.getServerWorld(), null, caster.getX(), caster.getY(), caster.getZ(),
                 SscAddon.FALSE_WITCHCRAFT_REFRESH_EVENT, SoundCategory.PLAYERS, 0.8F, 1.0F);
     }
 }

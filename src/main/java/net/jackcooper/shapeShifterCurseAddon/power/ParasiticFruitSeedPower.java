@@ -5,6 +5,7 @@
  */
 package net.jackcooper.shapeShifterCurseAddon.power;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import io.github.apace100.apoli.data.ApoliDataTypes;
 import io.github.apace100.apoli.power.Active;
 import io.github.apace100.apoli.power.ActiveCooldownPower;
@@ -129,7 +130,7 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower implements net.
         }
         if (!spawned) return false;
         applyCooldown(twinPod ? spec.extra("twin_pod") : cooldownTicks);
-        caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+        AddonSoundRange.play(caster.getWorld(), null, caster.getX(), caster.getY(), caster.getZ(),
                 SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.PLAYERS, 0.6f, 1.5f);
         return true;
     }
@@ -360,13 +361,13 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower implements net.
                 16 + extra, 0.35, 0.45, 0.35, 0.02);
         ParticleUtils.spawnParticles(world, SEED_DUST, host.getX(), y, host.getZ(),
                 8 + extra / 2, 0.25, 0.35, 0.25, 0.01);
-        world.playSound(null, host.getX(), host.getY(), host.getZ(),
+        AddonSoundRange.play(world, null, host.getX(), host.getY(), host.getZ(),
                 SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.0875f, 1.8f);
     }
 
     private void playFailFeedback(ServerPlayerEntity caster) {
         ServerWorld world = caster.getServerWorld();
-        world.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+        AddonSoundRange.play(world, null, caster.getX(), caster.getY(), caster.getZ(),
                 SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.4f, 1.7f);
     }
 

@@ -8,7 +8,10 @@ package net.jackcooper.shapeShifterCurseAddon.ability;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.power.SeedEnergyResourcePower;
+import net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
 import java.util.Map;
@@ -28,13 +31,11 @@ public final class ParasiticSeedEnergyRegen {
     private static final int INTERVAL_PEACE = 100;
     /** 交战回复间隔（tick）：8s */
     private static final int INTERVAL_COMBAT = 160;
-    /** 能量上限 */
-    private static final int MAX_ENERGY = 10;
 
     /** balance 快照读取（快照未初始化回退默认常量） */
     private static final BalanceReader BAL = new BalanceReader("abilities.parasitic_seed_system");
 
-    /** 玩家 UUID -> 距上次回复已累计 tick 数 */
+    /** 仅保存已有进度的玩家；没有条目即累计 0 tick。 */
     private static final Map<UUID, Integer> ACCUM = new ConcurrentHashMap<>();
 
     private ParasiticSeedEnergyRegen() {
@@ -49,31 +50,23 @@ public final class ParasiticSeedEnergyRegen {
     }
 
     private static void tickPlayer(ServerPlayerEntity player) {
-        // 仅果蝠形态持有种子量能量资源；非该形态直接清理累计并跳过。
-        // 注意：必须用 hasPowerId（是否持有 power），不能用 hasResource(...,0)——
-        // 后者对无 power 玩家 = 0>=0 恒真，守卫完全失效，会导致全玩家每 tick 白跑
-        // 且周期性白发 PowerHolderComponent.sync 全量同步包。
-        // 先用便宜的形态组件读（单次）挡掉绝大多数非果蝠玩家，
-        // 再做 O(power数) 的 power 检测；果蝠形态才可能挂该 power，两层判定结果等价。
-        if (!net.jackcooper.shapeShifterCurseAddon.util.FormUtils.isBatParasiticFruit(player)
-                || !net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.hasPowerId(
-                        player, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY)) {
-            ACCUM.remove(player.getUuid());
-            return;
-        }
-        int current = PowerUtils.getResourceValue(player, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY);
-        if (current >= BAL.i("max_energy", MAX_ENERGY)) {
-            ACCUM.put(player.getUuid(), 0);
+        UUID id = player.getUuid();
+        var energy = FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY;
+        // 缺少 power 时读取值也会返回 0，先确认持有，才能开始计时。
+        if (!FormUtils.isBatParasiticFruit(player) || !ResourceBars.hasPowerId(player, energy)
+                || PowerUtils.getResourceValue(player, energy) >= SeedEnergyResourcePower.CAPACITY) {
+            if (ACCUM.containsKey(id)) ACCUM.remove(id);
             return;
         }
         int interval = ParasiticCombatTracker.isInCombat(player)
                 ? BAL.i("regen_interval_combat", INTERVAL_COMBAT)
                 : BAL.i("regen_interval_peace", INTERVAL_PEACE);
-        int acc = ACCUM.getOrDefault(player.getUuid(), 0) + 1;
+        int acc = ACCUM.getOrDefault(id, 0) + 1;
         if (acc >= interval) {
-            PowerUtils.changeResourceValueAndSync(player, FormIdentifiers.BAT_PARASITIC_FRUIT_SEED_ENERGY, 1);
-            acc = 0;
+            PowerUtils.changeResourceValueAndSync(player, energy, 1);
+            ACCUM.remove(id);
+        } else {
+            ACCUM.put(id, acc);
         }
-        ACCUM.put(player.getUuid(), acc);
     }
 }

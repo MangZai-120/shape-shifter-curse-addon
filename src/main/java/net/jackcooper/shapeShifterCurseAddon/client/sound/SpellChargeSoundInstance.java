@@ -1,6 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.client.sound;
 
 import net.jackcooper.shapeShifterCurseAddon.client.hud.SpellCastHud;
+import net.jackcooper.shapeShifterCurseAddon.sound.ExtendedRangeSound;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.sound.MovingSoundInstance;
 import net.minecraft.sound.SoundCategory;
@@ -25,8 +26,11 @@ import net.minecraft.util.math.random.Random;
  * 当前空间衰减半径 16 格。周围玩家没有循环声启动包。驱动：{@link SpellCastHud}
  * STATE 沿调用 {@link #onChannelStart}。</p>
  */
-public class SpellChargeSoundInstance extends MovingSoundInstance {
+public class SpellChargeSoundInstance extends MovingSoundInstance implements ExtendedRangeSound {
 	private static SpellChargeSoundInstance current;
+
+	@Override
+	public boolean ssca$hasExtendedRange() { return true; }
 
 	/** 基准音量（施法者本人处响度）。 */
 	private static final float BASE_VOLUME = 1.2F;
@@ -63,6 +67,11 @@ public class SpellChargeSoundInstance extends MovingSoundInstance {
 	/** Audio ends at the authoritative end packet, independently of the HUD's exit animation. */
 	public static void stopFor(java.util.UUID caster) {
 		if (current == null || !current.caster.getUuid().equals(caster)) return;
+		stopCurrent();
+	}
+
+	public static void stopCurrent() {
+		if (current == null) return;
 		MinecraftClient.getInstance().getSoundManager().stop(current);
 		current = null;
 	}
@@ -72,6 +81,7 @@ public class SpellChargeSoundInstance extends MovingSoundInstance {
 		// 施法已结束（HUD 状态清除或进入退场）→ 立即停（修复「释放后还在响」）
 		if (SpellCastHud.getState() == null) {
 			this.setDone();
+			if (current == this) current = null;
 			return;
 		}
 		// 空间广播：每帧跟随施法者坐标（声音从玩家位置发出、随移动同步）

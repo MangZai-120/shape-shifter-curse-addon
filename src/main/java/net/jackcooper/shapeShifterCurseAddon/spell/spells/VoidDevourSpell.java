@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
@@ -132,10 +133,10 @@ public class VoidDevourSpell extends Spell {
 				impact.x, impact.y + 0.4, impact.z, radius, 24);
 		serverWorld.spawnParticles(ParticleTypes.PORTAL,
 				impact.x, impact.y + 0.5, impact.z, 20, 0.3, 0.5, 0.3, 0.15);
-		serverWorld.playSound(null, impact.x, impact.y, impact.z,
+		AddonSoundRange.play(serverWorld, null, impact.x, impact.y, impact.z,
 				SoundEvents.ENTITY_PHANTOM_BITE, SoundCategory.PLAYERS, 0.8f, 0.7f);
 		if (hitCount > 0) {
-			serverWorld.playSound(null, impact.x, impact.y, impact.z,
+			AddonSoundRange.play(serverWorld, null, impact.x, impact.y, impact.z,
 					SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 0.5f, 1.6f);
 		}
 	}

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.pocket;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
@@ -80,7 +81,7 @@ public final class PocketSpaceManager {
 					PocketChannelRules.SPEED_MULTIPLIER - 1.0, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
 		}
 		if (!room.initialized()) GENERATIONS.computeIfAbsent(room.layout().index(), ignored -> new Generation(room));
-		player.getServerWorld().playSound(null, player.getBlockPos(), SoundEvents.BLOCK_BEACON_ACTIVATE,
+		AddonSoundRange.play(player.getServerWorld(), null, player.getBlockPos(), SoundEvents.BLOCK_BEACON_ACTIVATE,
 				SoundCategory.PLAYERS, 0.6f, 1.6f);
 	}
 
@@ -505,7 +506,7 @@ public final class PocketSpaceManager {
 				layout.minZ() - 2, 0, 0);
 		player.setVelocity(Vec3d.ZERO);
 		player.fallDistance = 0;
-		pocket.playSound(null, player.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT,
+		AddonSoundRange.play(pocket, null, player.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT,
 				SoundCategory.PLAYERS, 0.7f, 1.2f);
 	}
 
@@ -537,7 +538,7 @@ public final class PocketSpaceManager {
 		player.fallDistance = 0;
 		visit.clear();
 		PocketSpaceStorage.save(player.getServer());
-		destination.playSound(null, player.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT,
+		AddonSoundRange.play(destination, null, player.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT,
 				SoundCategory.PLAYERS, 0.7f, 1.0f);
 	}
 

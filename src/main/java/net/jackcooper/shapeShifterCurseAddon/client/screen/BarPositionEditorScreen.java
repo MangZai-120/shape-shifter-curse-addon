@@ -912,16 +912,7 @@ public class BarPositionEditorScreen extends Screen {
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
         MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.world != null && mc.player != null) {
-            // 世界已由游戏主循环实时渲染到画面；这里叠加真实完整 HUD（含真实的能量条 / 本能条）
-            if (!mc.options.hudHidden) {
-                try {
-                    mc.inGameHud.render(ctx, delta);
-                } catch (Exception ignored) {
-                    drawHudReference(ctx);
-                }
-            }
-        } else {
+        if (mc.world == null || mc.player == null) {
             // 主菜单等无世界场景：暗背景 + HUD 参照兑底
             this.renderBackground(ctx);
             drawHudReference(ctx);

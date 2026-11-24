@@ -64,6 +64,7 @@ public class SscAddonClient implements ClientModInitializer {
 					net.jackcooper.shapeShifterCurseAddon.compat.OptionalAccessoryBridges.register();
 					SscPerkClientData.register();
 				});
+        net.jackcooper.shapeShifterCurseAddon.client.colorpicker.ColorPreviewTextures.register();
 		net.jackcooper.shapeShifterCurseAddon.client.renderer.AllaySkinColor.init();
 		net.jackcooper.shapeShifterCurseAddon.client.evolution.EvolutionArtwork.init();
 		NetworkCompatibilityClient.init();
@@ -76,6 +77,7 @@ public class SscAddonClient implements ClientModInitializer {
 		FrozenAnimationState.init();
 		AnomalyClient.init();
         WrathMarkClient.init();
+        DeathDomainOutlineClient.register();
 		net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(
 				net.jackcooper.shapeShifterCurseAddon.client.renderer.AnomalyBadgeRenderer::render);
 		net.jackcooper.shapeShifterCurseAddon.client.particle.FirstPersonParticles.init();

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.FlyingItemEntity;
@@ -51,7 +52,7 @@ public final class OrcafisRockEntity extends ProjectileEntity implements FlyingI
                 setPosition(impact);
                 world.spawnParticles(new BlockStateParticleEffect(ParticleTypes.BLOCK,Blocks.TUFF.getDefaultState()),
                         impact.x,impact.y+.2,impact.z,55,.65,.22,.65,.25);
-                playSound(OrcafisSounds.ROCK_IMPACT, 2f, 1f);
+                AddonSoundRange.play(this, OrcafisSounds.ROCK_IMPACT, 2f, 1f);
                 for (var player : world.getPlayers()) {
                     if (OrcafisEntity.isHuntTarget(player) && player.squaredDistanceTo(impact) <= 9)
                         player.damage(getDamageSources().thrown(this,getOwner()),36);

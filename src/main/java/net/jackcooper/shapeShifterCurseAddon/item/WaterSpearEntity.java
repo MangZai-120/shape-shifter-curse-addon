@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.item;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -108,7 +109,7 @@ public class WaterSpearEntity extends TridentEntity {
 		}
 
 		// Play splash sound and particles
-		world.playSound(null, x, y, z, SoundEvents.ENTITY_GENERIC_SPLASH, SoundCategory.PLAYERS, 1.0F, 0.8F);
+		AddonSoundRange.play(world, null, x, y, z, SoundEvents.ENTITY_GENERIC_SPLASH, SoundCategory.PLAYERS, 1.0F, 0.8F);
 
 		// Spawn particles on server - 落地水花爆开（仿 RC-4 药水破碎特效）
 		if (world instanceof net.minecraft.server.world.ServerWorld serverWorld) {

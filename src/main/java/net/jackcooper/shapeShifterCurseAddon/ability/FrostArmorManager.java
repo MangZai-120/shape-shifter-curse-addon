@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
@@ -126,11 +127,11 @@ public final class FrostArmorManager {
 						victim), burstDamage);
 			});
 			// 棘爆反馈：碎冰音 + 雪花爆裂粒子（攻击者处）
-			sw.playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(),
+			AddonSoundRange.play(sw, null, attacker.getX(), attacker.getY(), attacker.getZ(),
 					SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.8f, 0.7f);
 			sw.spawnParticles(ParticleTypes.SNOWFLAKE,
 					attacker.getX(), attacker.getBodyY(0.5), attacker.getZ(), 18, 0.3, 0.4, 0.3, 0.05);
-			sw.playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(),
+			AddonSoundRange.play(sw, null, attacker.getX(), attacker.getY(), attacker.getZ(),
 					SoundEvents.ENTITY_PLAYER_HURT_FREEZE, SoundCategory.PLAYERS, 0.7f, 1.0f);
 		} else {
 			// 叠层反馈：缓慢 I 2.5s（随层递增显示）+ 少量雪花粒子

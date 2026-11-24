@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
@@ -49,9 +50,9 @@ public class FrostArmorSpell extends Spell {
 		if (caster.getWorld() instanceof ServerWorld serverWorld) {
 			net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, caster, ParticleTypes.SNOWFLAKE,
 					caster.getX(), caster.getY() + 1.0, caster.getZ(), 24, 0.4, 0.6, 0.4, 0.05);
-			serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+			AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 					SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.6f, 1.6f);
-			serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+			AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 					SoundEvents.ENTITY_PLAYER_HURT_FREEZE, SoundCategory.PLAYERS, 0.8f, 1.4f);
 		}
 	}

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
 
 import net.minecraft.entity.Entity;
@@ -217,7 +218,7 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         }
         // 飞行环境音（每 10 tick 一次轻水波）
         if (ticksAlive % 10 == 0) {
-            sw.playSound(null, getX(), getY(), getZ(),
+            AddonSoundRange.play(sw, null, getX(), getY(), getZ(),
                     SoundEvents.ENTITY_AXOLOTL_SWIM, SoundCategory.PLAYERS, 0.6f, 1.1f);
         }
 
@@ -285,10 +286,10 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         }
         if (owner != null && !tetheredTargets.isEmpty()) FluorescentAxolotlPerks.onTidalHit(owner);
         // 落点「潮汐降临」：一次清晰潮涌音（球位置 + 主人位置，不重叠）
-        sw.playSound(null, cx, cy, cz,
+        AddonSoundRange.play(sw, null, cx, cy, cz,
                 SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 1.0f, 1.1f);
         if (owner != null) {
-            sw.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
+            AddonSoundRange.play(sw, null, owner.getX(), owner.getY(), owner.getZ(),
                     SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.1f);
         }
         // 落点水柱爆开 + 6 格束缚环
@@ -371,7 +372,7 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         // 爆炸表现 + 立即破裂（跳过 8.5 秒拴人）
         sw.spawnParticles(ParticleTypes.EXPLOSION, cx, cy + 0.5, cz, 3, 0.3, 0.3, 0.3, 0.0);
         sw.spawnParticles(ParticleTypes.SPLASH, cx, cy, cz, 80, 1.5, 1.0, 1.5, 0.5);
-        sw.playSound(null, cx, cy, cz, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 1.0f, 1.3f);
+        AddonSoundRange.play(sw, null, cx, cy, cz, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 1.0f, 1.3f);
         this.tetheredTargets.clear();
         this.dataTracker.set(TETHER_ACTIVE, false);   // 爆炸后不再显示拴人束缚环
         phase = Phase.DELAY;
@@ -525,10 +526,10 @@ public class TidalOrbEntity extends Entity implements net.minecraft.entity.Flyin
         sw.spawnParticles(ParticleTypes.EXPLOSION, x, y, z, 3, 0.3, 0.3, 0.3, 0.0);
         sw.spawnParticles(ParticleTypes.BUBBLE_COLUMN_UP, x, y - 0.3, z, 40, 0.8, 0.3, 0.8, 0.4);
         // 破裂：单一清晰水灵音（球位置 + 主人位置，不重叠）
-        sw.playSound(null, x, y, z, SoundEvents.ENTITY_AXOLOTL_SPLASH, SoundCategory.PLAYERS, 1.3f, 0.9f);
+        AddonSoundRange.play(sw, null, x, y, z, SoundEvents.ENTITY_AXOLOTL_SPLASH, SoundCategory.PLAYERS, 1.3f, 0.9f);
         ServerPlayerEntity owner = getOwner(sw);
         if (owner != null) {
-            sw.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
+            AddonSoundRange.play(sw, null, owner.getX(), owner.getY(), owner.getZ(),
                     SoundEvents.ENTITY_AXOLOTL_SPLASH, SoundCategory.PLAYERS, 0.6f, 0.9f);
         }
         // 通知技能管理器：球已消失，可开始 CD

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.effect;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
@@ -47,7 +48,7 @@ public class SheepFormEffect extends StatusEffect {
 		}
 		// 变羊期间随机咩叫（演出）：约每 6~9 秒一声，客户端听到的是服务端广播的实体音
 		if (!entity.getWorld().isClient && entity.age % 140 == 0 && entity.getRandom().nextFloat() < 0.5f) {
-			entity.getWorld().playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+			AddonSoundRange.play(entity.getWorld(), null, entity.getX(), entity.getY(), entity.getZ(),
 					net.minecraft.sound.SoundEvents.ENTITY_SHEEP_AMBIENT,
 					net.minecraft.sound.SoundCategory.NEUTRAL, 0.9f,
 					0.9f + entity.getRandom().nextFloat() * 0.2f);

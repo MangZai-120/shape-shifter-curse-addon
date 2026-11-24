@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.effect;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
@@ -46,7 +47,7 @@ public class PreInvisibilityEffect extends StatusEffect {
 					20, 0.5, 0.5, 0.5, 0.1);
 
 			// 2. Play Extinguish Sound
-			serverWorld.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+			AddonSoundRange.play(serverWorld, null, entity.getX(), entity.getY(), entity.getZ(),
 					SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0f, 1.0f);
 
 			// 3. Find Power to get duration

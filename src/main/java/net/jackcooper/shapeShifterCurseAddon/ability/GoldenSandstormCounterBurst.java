@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -99,7 +100,7 @@ public class GoldenSandstormCounterBurst {
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.GOLDEN_SANDSTORM_COUNTER_BURST_CD, BAL.i("cooldown_ticks", COOLDOWN_TICKS));
 
 		// 音效和粒子（无论是否命中都播放，提示玩家触发了反噬）
-		serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(serverWorld, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_WITHER_SHOOT, SoundCategory.PLAYERS, 0.5f, 1.2f);
 		ParticleUtils.spawnDecorationParticles(serverWorld, player, ParticleTypes.SOUL_FIRE_FLAME,
 				player.getX(), player.getY() + 1.0, player.getZ(),

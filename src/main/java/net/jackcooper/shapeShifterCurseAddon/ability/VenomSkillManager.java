@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
@@ -112,9 +113,9 @@ public final class VenomSkillManager {
 		// 反馈：毒液喷溅粒子（区域中心）+ 喷吐音效
 		sw.spawnParticles(ParticleTypes.WITCH, center.x, center.y, center.z,
 				24, areaSize / 2, areaSize / 2, areaSize / 2, 0.1);
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_SPIDER_AMBIENT, SoundCategory.PLAYERS, 0.8f, 0.5f);
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_WITCH_THROW, SoundCategory.PLAYERS, 0.8f, 0.6f);
 	}
 
@@ -128,9 +129,9 @@ public final class VenomSkillManager {
 		DASHING.put(player.getUuid(), d);
 		player.fallDistance = 0.0f;
 		// 冲刺起手：蛛鸣 + 破空
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_SPIDER_AMBIENT, SoundCategory.PLAYERS, 0.9f, 1.4f);
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 0.7f, 1.2f);
 		// 丝线强化提示：消耗丝线（冲刺沿丝荡出，锚点清除）
 		JumpKillManager.consumeSilk(player);
@@ -224,9 +225,9 @@ public final class VenomSkillManager {
 				60, burstRadius * 0.7, 0.6, burstRadius * 0.7, 0.2);
 		sw.spawnParticles(ParticleTypes.CLOUD, c.x, c.y + 0.3, c.z,
 				16, 0.6, 0.3, 0.6, 0.05);
-		sw.playSound(null, c.x, c.y, c.z,
+		AddonSoundRange.play(sw, null, c.x, c.y, c.z,
 				SoundEvents.ENTITY_WITCH_DRINK, SoundCategory.PLAYERS, 1.0f, 0.9f);
-		sw.playSound(null, c.x, c.y, c.z,
+		AddonSoundRange.play(sw, null, c.x, c.y, c.z,
 				SoundEvents.ENTITY_SPIDER_AMBIENT, SoundCategory.PLAYERS, 0.8f, 0.7f);
 	}
 

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -187,7 +188,7 @@ public class SpellCurseMarkEntity extends ProjectileEntity implements FlyingItem
                         net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.CURSE,refundCastId,before);
                 return changed;
             });
-			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
+			AddonSoundRange.play(this.getWorld(), null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.ENTITY_EVOKER_PREPARE_SUMMON, SoundCategory.PLAYERS, 1.0f, 1.2f);
 		}
 	}

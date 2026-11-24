@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.ability.CompanionResonanceManager;
@@ -103,7 +104,7 @@ public class CompanionResonanceSpell extends Spell {
 			caster.sendMessage(net.minecraft.text.Text.translatable("message.ssc_addon.spell.companion_buffed", buffed)
 					.formatted(net.minecraft.util.Formatting.GREEN), true);
 		}
-		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 0.5f, 1.8f);
 	}
 }

@@ -1,6 +1,7 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin.client;
 
 import net.jackcooper.shapeShifterCurseAddon.client.WebHighlightClient;
+import net.jackcooper.shapeShifterCurseAddon.client.DeathDomainOutlineClient;
 import net.minecraft.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -39,6 +40,8 @@ public class EntityWebGlowMixin {
 		int id = ((Entity) (Object) this).getId();
 		if (WebHighlightClient.isHighlighted(id)) {
 			cir.setReturnValue(WebHighlightClient.getHighlightColor(id)); // 高亮描边颜色（踩网/敌人蓝、拴住友军绿）
+		} else if (DeathDomainOutlineClient.highlights((Entity) (Object) this) && !((Entity) (Object) this).isGlowing()) {
+			cir.setReturnValue(net.minecraft.util.Formatting.DARK_PURPLE.getColorValue());
 		}
 	}
 }

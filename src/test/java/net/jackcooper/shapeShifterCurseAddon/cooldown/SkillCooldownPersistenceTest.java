@@ -13,6 +13,7 @@ final class SkillCooldownPersistenceTest {
     static void run() throws Exception {
         parsing();
         staleCallbacksAndRetune();
+        pruneExpired();
         UUID owner = UUID.randomUUID(), other = UUID.randomUUID(), entity = UUID.randomUUID();
         var m = new SkillCastManager();
         m.force(owner, "test:cooldown", 100, 1000);
@@ -20,7 +21,13 @@ final class SkillCooldownPersistenceTest {
         m.onPlayerRemoved(owner, 1020, ignored -> null);
         check(m.cooldown(owner, "test:cooldown").remaining(9000) == 80, "offline time is frozen");
         check(m.cooldown(other, "test:cooldown").remaining(1100) == 0, "other player still ticks");
+        m.force(other, "test:other_only", 60, 1020);
+        check(m.snapshot(owner, 1030).equals(List.of(new SkillCastManager.View("test:cooldown", 0, 80, 100))),
+                "An owner snapshot includes only their own paused cooldown");
         var restored = roundTrip(m);
+        check(restored.snapshot(other, 1020).stream().map(SkillCastManager.View::skill).toList()
+                        .equals(List.of("test:cooldown", "test:other_only")),
+                "Per-player snapshots retain sorted skill IDs after loading the legacy flat NBT format");
         restored.onServerStarted(9000);
         check(restored.cooldown(owner, "test:cooldown").remaining(9000) == 80, "startup cannot delete paused CD");
         restored.onPlayerJoined(owner, 9000);
@@ -49,7 +56,7 @@ final class SkillCooldownPersistenceTest {
         m = new SkillCastManager();
         long charging = m.begin(owner, "test:charge", new SkillCastManager.ResolvedConfig(100, 0, "on_cast"), 1000);
         restored = roundTrip(m);
-        check(restored.control(owner, "test:charge") == null && restored.cooldown(owner, "test:charge").remaining(1000) == 0,
+        check(restored.control(owner, "test:charge") == null && restored.cooldown(owner, "test:charge") == null,
                 "unrecoverable charging applies zero failure after restart");
         restored.onPlayerJoined(owner, 2000);
         check(restored.begin(owner, "test:charge", new SkillCastManager.ResolvedConfig(100, 0, "on_cast"), 2000) > charging,
@@ -75,6 +82,58 @@ final class SkillCooldownPersistenceTest {
             rejects(() -> SkillCooldownPacket.read(buf));
         } finally { buf.release(); }
         System.out.println("Cooldown parsing, NBT binary round trips, offline resume, persistent effect binding, shared domain and wire codec PASS.");
+    }
+
+    private static void pruneExpired() throws Exception {
+        var manager = new SkillCastManager();
+        UUID owner = UUID.randomUUID(), offline = UUID.randomUUID();
+        String spark = "my_addon:form_upgrade_familiar_fox_spark";
+        String ring = SkillCastManager.domain(spark);
+        var config = new SkillCastManager.ResolvedConfig(10, 0, "on_cast");
+        long cast = manager.begin(owner, spark, config, 100);
+        manager.force(owner, "test:expired", 10, 100);
+        manager.force(offline, "test:paused", 40, 100);
+        manager.onPlayerRemoved(offline, 105, ignored -> null);
+        manager.onPlayerJoined(owner, 109);
+        check(manager.cooldown(owner, "test:expired").remaining(109) == 1, "keep final cooldown tick");
+        manager.setDirty(false);
+        manager.onPlayerJoined(owner, 110);
+        check(manager.isDirty() && manager.cooldown(owner, "test:expired") == null, "expiry schedules a save");
+        check(manager.snapshot(owner, 110).equals(List.of(new SkillCastManager.View(ring, 1, 0, 10))),
+                "charging shared-domain cast stays visible after its cooldown expires");
+        manager.released(cast, 111);
+        manager.bindEntity(cast, UUID.randomUUID());
+        manager.onPlayerRemoved(owner, 112, ignored -> null);
+        var restored = roundTrip(manager);
+        check(restored.control(owner, ring).castId == cast && restored.snapshot(owner, 9000).get(0).phase() == 2,
+                "persistent effect with zero frozen ticks survives disconnection and reload");
+        restored.finish(cast, 9000);
+        var saved = restored.writeNbt(new NbtCompound()).getCompound("cooldowns");
+        check(restored.snapshot(owner, 9000).isEmpty() && saved.getSize() == 1,
+                "offline settlement drops the last expired row from memory and NBT");
+        check(restored.cooldown(offline, "test:paused").remaining(9000) == 35, "another owner's offline clock survives pruning");
+        restored.onPlayerJoined(offline, 9050);
+        restored.onPlayerJoined(offline, 9085);
+        check(restored.snapshot(offline, 9085).isEmpty(), "resumed clock is removed exactly at expiry");
+        long next = restored.begin(owner, ring, config, 9100);
+        restored.finish(cast, 9101);
+        check(next > cast && restored.control(owner, spark).castId == next, "pruning preserves stale-callback protection");
+
+        var legacy = manager.writeNbt(new NbtCompound());
+        var rows = legacy.getCompound("cooldowns");
+        var old = new NbtCompound();
+        old.putLong("end", 105);
+        old.putInt("total", 5);
+        rows.put(owner + "\u0000test:legacy_expired", old);
+        var frozenZero = old.copy();
+        frozenZero.putInt("paused", 0);
+        rows.put(offline + "\u0000test:legacy_zero", frozenZero);
+        var loaded = SkillCastManager.fromNbt(legacy);
+        loaded.onServerStarted(9000);
+        check(loaded.cooldown(owner, "test:legacy_expired") == null && loaded.cooldown(offline, "test:legacy_zero") == null
+                        && loaded.cooldown(offline, "test:paused").remaining(9000) == 35,
+                "startup migrates expired legacy rows while keeping frozen cooldowns");
+        System.out.println("Expired cooldown pruning, dirty flag, active shared domain, frozen owner, legacy NBT and recast PASS.");
     }
 
     private static void staleCallbacksAndRetune() throws Exception {

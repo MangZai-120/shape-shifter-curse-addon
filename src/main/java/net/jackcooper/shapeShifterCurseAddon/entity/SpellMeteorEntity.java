@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.FlyingItemEntity;
 import net.minecraft.entity.EntityType;
@@ -152,7 +153,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 			if (ticksAlive >= BAL.i("delay_ticks", DELAY_TICKS)) {
 				falling = true;
 				if (!this.getWorld().isClient) {
-					this.getWorld().playSound(null, this.getX(), this.getY(), this.getZ(),
+					AddonSoundRange.play(this.getWorld(), null, this.getX(), this.getY(), this.getZ(),
 							SoundEvents.ENTITY_BLAZE_SHOOT, SoundCategory.PLAYERS, 1.0f, 0.6f);
 				}
 			}
@@ -267,9 +268,9 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 		serverWorld.spawnParticles(ParticleTypes.EXPLOSION_EMITTER, ix, iy + 0.5, iz, 1, 0, 0, 0, 0);
 		serverWorld.spawnParticles(ParticleTypes.FLAME, ix, iy + 0.5, iz, 40, (double) (radius * 0.6), 0.4, (double) (radius * 0.6), 0.15);
 		serverWorld.spawnParticles(ParticleTypes.LARGE_SMOKE, ix, iy + 0.5, iz, 20, (double) (radius * 0.5), 0.3, (double) (radius * 0.5), 0.1);
-		this.getWorld().playSound(null, ix, iy, iz,
+		AddonSoundRange.play(this.getWorld(), null, ix, iy, iz,
 				SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 1.2f, 1.1f);
-		this.getWorld().playSound(null, ix, iy, iz,
+		AddonSoundRange.play(this.getWorld(), null, ix, iy, iz,
 				SoundEvents.ENTITY_BLAZE_SHOOT, SoundCategory.PLAYERS, 1.0f, 0.5f);
         if(ground!=null&&this.getOwner() instanceof ServerPlayerEntity caster&&caster.getWorld()==serverWorld)weave.ground(caster,ground);
 		this.discard();

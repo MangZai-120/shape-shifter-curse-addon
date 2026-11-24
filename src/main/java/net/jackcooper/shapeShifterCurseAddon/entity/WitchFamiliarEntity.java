@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -220,9 +221,9 @@ private static final float FIRE_RING_DAMAGE = 6.0f;     // 瞬间伤害（受护
 		double z = this.getZ();
 
 		// 音效
-		serverWorld.playSound(null, x, y, z, SoundEvents.ITEM_FIRECHARGE_USE, SoundCategory.HOSTILE, 0.5f, 1.0f);
-		serverWorld.playSound(null, x, y, z, SoundEvents.BLOCK_FIRE_AMBIENT, SoundCategory.HOSTILE, 0.5f, 1.0f);
-		serverWorld.playSound(null, x, y, z, SoundEvents.ENTITY_EVOKER_PREPARE_SUMMON, SoundCategory.HOSTILE, 0.5f, 1.0f);
+		AddonSoundRange.play(serverWorld, null, x, y, z, SoundEvents.ITEM_FIRECHARGE_USE, SoundCategory.HOSTILE, 0.5f, 1.0f);
+		AddonSoundRange.play(serverWorld, null, x, y, z, SoundEvents.BLOCK_FIRE_AMBIENT, SoundCategory.HOSTILE, 0.5f, 1.0f);
+		AddonSoundRange.play(serverWorld, null, x, y, z, SoundEvents.ENTITY_EVOKER_PREPARE_SUMMON, SoundCategory.HOSTILE, 0.5f, 1.0f);
 
 		// 粒子效果 - 外圈火焰（半径4格，64个采样点）
 		for (int i = 0; i < 64; i++) {
@@ -452,7 +453,7 @@ private static final float FIRE_RING_DAMAGE = 6.0f;     // 瞬间伤害（受护
 		this.heal(20.0f);
 
 		// 播放音效
-		serverWorld.playSound(null, this.getX(), this.getY(), this.getZ(),
+		AddonSoundRange.play(serverWorld, null, this.getX(), this.getY(), this.getZ(),
 				SoundEvents.ENTITY_ENDER_EYE_DEATH, SoundCategory.NEUTRAL, 1.0f, 1.0f);
 
 		// 玩家自伤1HP

@@ -7,7 +7,5 @@ package net.jackcooper.shapeShifterCurseAddon.util;
 public final class FireballDebugLog {
 	private FireballDebugLog() {}
 
-	public static void log(String msg) {
-		System.out.println("[FireballDebug] " + msg);
-	}
+	public static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger("ssc_addon/FireballDebug");
 }

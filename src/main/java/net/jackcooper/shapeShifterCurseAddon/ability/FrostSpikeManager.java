@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.entity.FrostThornEntity;
 import net.jackcooper.shapeShifterCurseAddon.entity.FrostArrayEntity;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
@@ -104,7 +105,7 @@ public final class FrostSpikeManager {
 		// 从冰锥当前(环绕)位置发射；飞行中自然靠拢到发射瞬间的准星射线，汇入后沿射线继续飞
 		thorn.launch(player.getEyePos(), player.getRotationVector());
 		ServerWorld sw = (ServerWorld) player.getWorld();
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_AMETHYST_BLOCK_HIT, SoundCategory.PLAYERS, 0.9f, 1.4f);
 		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.instant(player, SKILL_ID);
 	}
@@ -137,7 +138,7 @@ public final class FrostSpikeManager {
 			sw.spawnEntity(array);
 			s.arrayEntity = array;
 			// 潮涌核心蓄力启动音
-			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 0.9f, 1.0f);
 			// 按下瞬间的汇聚波已移到客户端：法阵实体生成包即客户端开始本地自算（零网络粒子包）
 		}
@@ -165,7 +166,7 @@ public final class FrostSpikeManager {
 		// （若先 spawn，生成包捕获的是构造器位置+朝向 0°，客户端起步姿态错误 → 起飞瞬间甩转）
 		thorn.launchEnhanced(origin, flyDir, level, player.getEyePos(), dir);
 		sw.spawnEntity(thorn);
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_WARDEN_ROAR, SoundCategory.PLAYERS, 1.0f, 1.0f);
 	}
 
@@ -215,7 +216,7 @@ public final class FrostSpikeManager {
 			s.secondaryTicks++;
 			// 潮涌核心蓄力氛围音（循环嗡鸣，充能感；压低避免盖住每秒的紫水晶消耗钟声）
 			if (player.age % 25 == 0 && player.getWorld() instanceof ServerWorld amb) {
-				amb.playSound(null, player.getX(), player.getY(), player.getZ(),
+				AddonSoundRange.play(amb, null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.BLOCK_CONDUIT_AMBIENT, SoundCategory.PLAYERS, 0.35f, 1.0f);
 			}
 			// 持续汇聚已移到客户端（法阵实体 tick 本地自算，零网络粒子包）
@@ -236,9 +237,9 @@ public final class FrostSpikeManager {
 					if (player.getWorld() instanceof ServerWorld sw) {
 							// 双音：经验球叮声本身响亮（主音）+ 紫水晶 CHIME 作水晶泛音。
 							// CHIME 原版响度极低且 volume>1 只扩可闻距离不增源响度，单提音量无效
-							sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+							AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 									SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1.2f, pitch);
-							sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+							AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 									SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 1.8f, pitch);
 					}
 				}
@@ -381,7 +382,7 @@ public final class FrostSpikeManager {
 		// 服务端预测点与客户端插值位置的错位彻底消失
 		int count = countThorns(s);
 		float pitch = 0.9f + count * 0.12f; // 紫水晶凝聚音，pitch 随冰锥数递增
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_AMETHYST_BLOCK_STEP, SoundCategory.PLAYERS, 1.0f, pitch);
 	}
 

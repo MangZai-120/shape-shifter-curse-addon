@@ -54,6 +54,7 @@ public class ColorTutorialOverlay extends Screen {
     public ColorTutorialOverlay(Screen background, Runnable onFinish, List<TutorialStep> steps) {
         super(Text.translatable("text.ssc_addon.adv_color.tutorial.title"));
         this.background = background;
+        ColorPreviewTextures.attach(this, background);
         this.onFinish = onFinish;
         this.steps.addAll(steps);
         ACTIVE = true;
@@ -80,6 +81,7 @@ public class ColorTutorialOverlay extends Screen {
                 int[] r = step.targetRect().get();
                 if (r != null && mouseX >= r[0] && mouseX <= r[0] + r[2]
                         && mouseY >= r[1] && mouseY <= r[1] + r[3]) {
+                    if (onFinish != null) onFinish.run();
                     step.clickTargetAction().run();
                 }
                 return true;

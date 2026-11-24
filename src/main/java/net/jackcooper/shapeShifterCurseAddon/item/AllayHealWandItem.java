@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.item;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import io.github.apace100.apoli.power.Power;
 import io.github.apace100.apoli.power.PowerType;
@@ -196,9 +197,9 @@ public class AllayHealWandItem extends Item {
 
 					// Play heal sound
 					// User hears private sound
-					serverPlayer.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1.0f, 1.5f);
+					AddonSoundRange.play(serverPlayer, SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1.0f, 1.5f);
 					// Target and nearby players hear positional sound (exclude user to avoid double sound)
-					world.playSound(serverPlayer, target.getX(), target.getY(), target.getZ(),
+					AddonSoundRange.play(world, serverPlayer, target.getX(), target.getY(), target.getZ(),
 							SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1.0f, 1.5f);
 
 					// Set cooldown

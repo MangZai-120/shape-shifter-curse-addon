@@ -177,12 +177,12 @@ public final class ExplosionManager {
 	private static void tick(MinecraftServer server) {
 		if (SEQUENCES.isEmpty()) return;
 		boolean removed = false;
-		var iterator = SEQUENCES.values().iterator();
-		while (iterator.hasNext()) {
-			Sequence sequence = iterator.next();
+		// Damage callbacks can cancel another player's charge while this batch is running.
+		for (Sequence sequence : java.util.List.copyOf(SEQUENCES.values())) {
+			if (!SEQUENCES.containsKey(sequence.id)) continue;
 			if (sequence.suppressedAt >= 0) {
 				if (sequence.realElapsed() - sequence.suppressedAt > ExplosionRules.AFTER_GLOW_TICKS) {
-					iterator.remove();
+					SEQUENCES.remove(sequence.id);
 					removed = true;
 				}
 				continue;
@@ -194,7 +194,7 @@ public final class ExplosionManager {
 			if ((!sequence.exploded && !isChargingOwner(server, sequence))
 					|| (sequence.exploded && sequence.pendingTargets.isEmpty()
 					&& elapsed > ExplosionRules.EXPLODE_TICKS + ExplosionRules.AFTER_GLOW_TICKS)) {
-				iterator.remove();
+				SEQUENCES.remove(sequence.id);
 				removed = true;
 			}
 		}

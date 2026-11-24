@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -63,7 +64,7 @@ public class LunarMendSpell extends Spell {
 					caster.getX(), caster.getY() + 1.2, caster.getZ(), 20, 0.4, 0.6, 0.4, 0.03);
 			serverWorld.spawnParticles(ParticleTypes.HEART,
 					caster.getX(), caster.getY() + 1.0, caster.getZ(), 3, 0.3, 0.3, 0.3, 0.0);
-			serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+			AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 					SoundEvents.BLOCK_AMETHYST_BLOCK_RESONATE, SoundCategory.PLAYERS, 1.0f, 1.6f);
 		}
 	}

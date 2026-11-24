@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageType;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -98,7 +99,7 @@ public final class KillEmpowerCast {
 		if (state.hasRing()) {
 			player.removeStatusEffect(SscAddon.BLUE_FIRE_RING);
 			KillEmpowerManager.writeState(player, state.stopRing());
-			world.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(world, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
 			return true;
 		}
@@ -113,7 +114,7 @@ public final class KillEmpowerCast {
 			PowerUtils.setResourceValueAndSync(player, new Identifier("my_addon", ringPower + "_toggle_state"), 0);
 			// 关哪套环就按该火环 JSON 的 cooldown 起算
 			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, "my_addon:" + ringPower + "_key_activation");
-			world.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(world, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
 			return true; // 本次按键只关环；赋能仍在（下次按键开赋能环）
 		}
@@ -127,7 +128,7 @@ public final class KillEmpowerCast {
 		if (ringEffect == null || ringEffect.getDuration() <= 0) return true;
 		PowerUtils.setResourceValueAndSync(player, FormIdentifiers.EMPOWER_RING_DURATION, ringEffect.getDuration());
 		KillEmpowerManager.writeState(player, state.startRing(ringEffect.getDuration()));
-		world.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(world, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ITEM_FIRECHARGE_USE, SoundCategory.PLAYERS, 0.5f, 1.0f);
 		return true;
 	}
@@ -154,9 +155,9 @@ public final class KillEmpowerCast {
 
 		if (redForm) {
 			net.jackcooper.shapeShifterCurseAddon.action.SscAddonActions.launchFoxFireball(player, true);
-			world.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(world, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.ITEM_FIRECHARGE_USE, SoundCategory.PLAYERS, 1.0f, 1.0f);
-			world.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(world, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.ENTITY_FOX_SCREECH, SoundCategory.PLAYERS, 1.0f, 1.0f);
 			return true;
 		}
@@ -189,9 +190,9 @@ public final class KillEmpowerCast {
 					player.getX() + look.x * d, player.getY() + 1.2, player.getZ() + look.z * d,
 					4 + d * 3, spread, 0.4 + spread * 0.5, spread, 0.04);
 		}
-		world.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(world, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ITEM_FIRECHARGE_USE, SoundCategory.PLAYERS, 1.0f, 1.0f);
-		world.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(world, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_FOX_SCREECH, SoundCategory.PLAYERS, 1.0f, 1.0f);
 		return true;
 	}

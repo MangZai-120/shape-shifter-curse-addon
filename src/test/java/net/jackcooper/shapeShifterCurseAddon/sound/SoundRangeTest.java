@@ -36,6 +36,7 @@ public final class SoundRangeTest {
                 root + "mixin.SoundRangePacketMixin", root + "sound.AddonSoundRange", root + "screen.SpellResearchTableScreenHandler"})
             check(!SoundRangeRules.isAddonSource(name), "unrelated source stays unchanged: " + name);
         check(!SoundRangeRules.isAddonPlayback(), "ordinary caller stays unscaled");
+        checkExplicitEmitters();
         method("net/minecraft/server/world/ServerWorld", "playSound",
                 "(Lnet/minecraft/entity/player/PlayerEntity;DDDLnet/minecraft/registry/entry/RegistryEntry;Lnet/minecraft/sound/SoundCategory;FFJ)V");
         method("net/minecraft/server/world/ServerWorld", "playSoundFromEntity",
@@ -58,6 +59,29 @@ public final class SoundRangeTest {
             var result = new ClassNode();
             new ClassReader(input).accept(result, 0);
             return result;
+        }
+    }
+
+    /** New form/spell emitters must take the same explicit path even when playing a vanilla resource. */
+    private static void checkExplicitEmitters() throws Exception {
+        var classes = java.nio.file.Path.of(SoundRangeRules.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        try (var files = java.nio.file.Files.walk(classes.resolve("net/jackcooper/shapeShifterCurseAddon"))) {
+            for (var file : files.filter(p -> p.toString().endsWith(".class")).toList()) {
+                String path = classes.relativize(file).toString().replace(java.io.File.separatorChar, '/');
+                String name = path.substring(0, path.length() - ".class".length());
+                if (!SoundRangeRules.isAddonSource(name.replace('/', '.'))) continue;
+                for (var method : read(name).methods) {
+                    for (var instruction : method.instructions) {
+                        if (!(instruction instanceof MethodInsnNode call)) continue;
+                        boolean rawSound = (call.name.equals("playSound") || call.name.equals("playSoundFromEntity"))
+                                && (call.desc.contains("Lnet/minecraft/sound/SoundEvent;")
+                                || call.desc.contains("Lnet/minecraft/registry/entry/RegistryEntry;"));
+                        boolean rawPacket = call.name.equals("<init>") && (call.owner.endsWith("/PlaySoundS2CPacket")
+                                || call.owner.endsWith("/PlaySoundFromEntityS2CPacket"));
+                        if (rawSound || rawPacket) throw new AssertionError("Use AddonSoundRange in " + name + "." + method.name);
+                    }
+                }
+            }
         }
     }
 

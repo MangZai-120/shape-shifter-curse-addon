@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
@@ -90,9 +91,9 @@ public class FrostNovaSpell extends Spell {
 		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.sphere(serverWorld, caster,
 				caster.getX(), caster.getY() + 1.0, caster.getZ(), radius,
 				ParticleTypes.SNOWFLAKE, ParticleTypes.SNOWFLAKE, ParticleTypes.CLOUD, 8);
-		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_PLAYER_HURT_FREEZE, SoundCategory.PLAYERS, 1.0f, 0.8f);
-		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.8f, 0.6f);
 	}
 }

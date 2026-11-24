@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.minecraft.entity.Entity;
@@ -95,7 +96,7 @@ public class BeepSheepEntity extends ThrownItemEntity {
 		// Boss / 大型生物免疫（用户定稿：不允许变 boss 类生物，只能变小型生物）
 		if (isImmuneTarget(livingTarget)) {
 			// 免疫演出：咩一声 + 粒子弹开（幽默反馈：羊魔法对大块头无效）
-			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
+			AddonSoundRange.play(this.getWorld(), null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.ENTITY_SHEEP_AMBIENT, SoundCategory.PLAYERS, 1.0f, 0.6f);
 			if (this.getWorld() instanceof ServerWorld serverWorld) {
 				serverWorld.spawnParticles(ParticleTypes.SNEEZE,
@@ -121,7 +122,7 @@ public class BeepSheepEntity extends ThrownItemEntity {
 					net.jackcooper.shapeShifterCurseAddon.spell.FormationElement.SUMMON, refundCastId, hadHarmfulEffect);
 		}
 		// 变身演出：咩！+ 羊毛爆散
-		this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
+		AddonSoundRange.play(this.getWorld(), null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.ENTITY_SHEEP_AMBIENT, SoundCategory.PLAYERS, 1.0f, 1.0f);
 		if (this.getWorld() instanceof ServerWorld serverWorld) {
 			serverWorld.spawnParticles(ParticleTypes.POOF,

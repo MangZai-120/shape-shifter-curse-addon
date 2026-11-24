@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
@@ -392,7 +393,7 @@ public class FrostThornEntity extends ProjectileEntity {
 				if (flyTicks % FLIGHT_SOUND_INTERVAL == 1) {
 					// 高速划破空气音：用 FromEntity 包让声源跟随冰锥移动（非钉在播放坐标）
 					RegistryEntry<SoundEvent> entry = Registries.SOUND_EVENT.getEntry(SoundEvents.ITEM_TRIDENT_RIPTIDE_3);
-					PlaySoundFromEntityS2CPacket pkt = new PlaySoundFromEntityS2CPacket(entry, SoundCategory.PLAYERS, this, 0.8f, 1.0f, this.random.nextLong());
+					PlaySoundFromEntityS2CPacket pkt = AddonSoundRange.trackingPacket(entry, SoundCategory.PLAYERS, this, 0.8f, 1.0f, this.random.nextLong());
 					for (ServerPlayerEntity p : sw.getPlayers()) {
 						if (p.squaredDistanceTo(this) < 64.0 * 64.0) p.networkHandler.sendPacket(pkt);
 					}
@@ -497,7 +498,7 @@ public class FrostThornEntity extends ProjectileEntity {
 				this.setPosition(at.x, at.y, at.z); // 同步刷新，结冰/音效也用真实位
 			}
 			sw.spawnParticles(ParticleTypes.ITEM_SNOWBALL, at.x, at.y, at.z, 12, 0.15, 0.15, 0.15, 0.05);
-			sw.playSound(null, at.x, at.y, at.z, SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.7f, 1.3f);
+			AddonSoundRange.play(sw, null, at.x, at.y, at.z, SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.7f, 1.3f);
 			// 寒冰入体：碎裂点周园结冰——水→冰、岩浆源→黑曜石、流动岩浆→圆石（同原版水+岩浆碰撞性质）
 			freezeAround(sw);
 		}
@@ -529,7 +530,7 @@ public class FrostThornEntity extends ProjectileEntity {
 			}
 		}
 		if (any) {
-			sw.playSound(null, getX(), getY(), getZ(), SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.5f, 0.6f);
+			AddonSoundRange.play(sw, null, getX(), getY(), getZ(), SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.5f, 0.6f);
 		}
 	}
 

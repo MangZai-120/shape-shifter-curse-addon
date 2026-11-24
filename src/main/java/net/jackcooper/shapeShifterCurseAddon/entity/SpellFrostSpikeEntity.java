@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.FlyingItemEntity;
@@ -188,7 +189,7 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 				}
 				return;
 			}
-			this.getWorld().playSound(null, this.getX(), this.getY(), this.getZ(),
+			AddonSoundRange.play(this.getWorld(), null, this.getX(), this.getY(), this.getZ(),
 					SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.0f, 1.5f);
 			if (this.getWorld() instanceof ServerWorld serverWorld) {
 				ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SNOWFLAKE,
@@ -215,7 +216,7 @@ public class SpellFrostSpikeEntity extends ProjectileEntity implements FlyingIte
 			if (hit == net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.PROTECTED) {
 				return; // 白名单豁免：不结算穿刺
 			}
-			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
+			AddonSoundRange.play(this.getWorld(), null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.ENTITY_PLAYER_HURT_FREEZE, SoundCategory.PLAYERS, 1.0f, 1.2f);
 			// 穿刺结算（齐射来源 pierceRemaining>0）：记入已命中表并递减；
 			// 递减后仍 >0 → 置旗穿过继续飞，否则本次为最后一次命中、照常碎裂。

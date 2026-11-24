@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.block.SpellResearchTableBlockEntity;
 import net.jackcooper.shapeShifterCurseAddon.item.BlankFormationPaperItem;
 import net.jackcooper.shapeShifterCurseAddon.item.FormationInkItem;
@@ -38,7 +39,7 @@ public final class ResearchTableManager {
         }
         if(!scribing)FormationKnowledgeComponent.sync(player);
         handler.sendContentUpdates();
-        player.getWorld().playSound(null,table.getPos(),scribing?SoundEvents.ITEM_BOOK_PAGE_TURN:SoundEvents.UI_TOAST_CHALLENGE_COMPLETE,SoundCategory.BLOCKS,.5f,1.2f);
+        AddonSoundRange.play(player.getWorld(), null,table.getPos(),scribing?SoundEvents.ITEM_BOOK_PAGE_TURN:SoundEvents.UI_TOAST_CHALLENGE_COMPLETE,SoundCategory.BLOCKS,.5f,1.2f);
         player.sendMessage(Text.translatable("message.ssc_addon.research."+(scribing?"scribed":"learned"),Text.translatable(element.getNameKey()),level).formatted(Formatting.GREEN),true);
     }
 

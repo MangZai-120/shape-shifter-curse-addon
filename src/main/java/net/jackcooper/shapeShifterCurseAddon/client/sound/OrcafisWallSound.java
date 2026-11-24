@@ -58,6 +58,7 @@ public final class OrcafisWallSound extends MovingSoundInstance {
 
     public static void register() {
         Map<OrcafisEntity,OrcafisWallSound> tracked = new IdentityHashMap<>();
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> tracked.clear());
         ClientEntityEvents.ENTITY_LOAD.register((entity,world) -> {
             if (entity instanceof OrcafisEntity boss) tracked.put(boss,null);
         });
@@ -67,10 +68,16 @@ public final class OrcafisWallSound extends MovingSoundInstance {
         });
         ClientTickEvents.END_WORLD_TICK.register(world -> {
             var manager = MinecraftClient.getInstance().getSoundManager();
-            for (var entry : tracked.entrySet()) {
+            var entries = tracked.entrySet().iterator();
+            while (entries.hasNext()) {
+                var entry = entries.next();
                 var boss = entry.getKey();
                 var sound = entry.getValue();
-                if (boss.getWorld() != world) continue;
+                if (boss.getWorld() != world) {
+                    if (sound != null) manager.stop(sound);
+                    entries.remove();
+                    continue;
+                }
                 SoundEvent desired = current(boss);
                 if (desired != null) {
                     if (sound == null || sound.event != desired || (world.getTime()%20 == 0 && !manager.isPlaying(sound))) {

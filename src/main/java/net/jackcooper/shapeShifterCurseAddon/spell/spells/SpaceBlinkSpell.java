@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
@@ -118,7 +119,7 @@ public class SpaceBlinkSpell extends Spell {
 		// 终点汇聚演出
 		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, caster, ParticleTypes.END_ROD,
 				dest.x, dest.y + 1.0, dest.z, 16, 0.3, 0.5, 0.3, 0.05);
-		serverWorld.playSound(null, dest.x, dest.y, dest.z,
+		AddonSoundRange.play(serverWorld, null, dest.x, dest.y, dest.z,
 				SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0f, 1.4f);
 	}
 

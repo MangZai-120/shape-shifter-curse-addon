@@ -2,15 +2,51 @@ package net.jackcooper.shapeShifterCurseAddon.sound;
 
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.packet.s2c.play.PlaySoundFromEntityS2CPacket;
+import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.sound.SoundEvent;
+import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import org.apache.commons.lang3.tuple.Pair;
 
 /** A direct sound entry carries its doubled broadcast radius through the vanilla sound packet. */
 public final class AddonSoundRange {
     private static final String PREFIX = "sound_range_x2/";
     private AddonSoundRange() {}
+
+    /** Keep vanilla's recipient selection, random seed and entity overrides. Mark only this playback. */
+    public static void play(World world, PlayerEntity except, double x, double y, double z,
+                            SoundEvent event, SoundCategory category, float volume, float pitch) {
+        SoundRangeRules.withActionScope(() -> world.playSound(except, x, y, z, event, category, volume, pitch));
+    }
+
+    public static void play(World world, PlayerEntity except, BlockPos pos,
+                            SoundEvent event, SoundCategory category, float volume, float pitch) {
+        SoundRangeRules.withActionScope(() -> world.playSound(except, pos, event, category, volume, pitch));
+    }
+
+    public static void play(PlayerEntity player, SoundEvent event, SoundCategory category, float volume, float pitch) {
+        SoundRangeRules.withActionScope(() -> player.playSound(event, category, volume, pitch));
+    }
+
+    public static void play(Entity source, SoundEvent event, float volume, float pitch) {
+        SoundRangeRules.withActionScope(() -> source.playSound(event, volume, pitch));
+    }
+
+    public static PlaySoundS2CPacket positionedPacket(RegistryEntry<SoundEvent> event, SoundCategory category,
+                                                      double x, double y, double z, float volume, float pitch, long seed) {
+        return new PlaySoundS2CPacket(extend(event, volume), category, x, y, z, volume, pitch, seed);
+    }
+
+    public static PlaySoundFromEntityS2CPacket trackingPacket(RegistryEntry<SoundEvent> event, SoundCategory category,
+                                                             Entity source, float volume, float pitch, long seed) {
+        return new PlaySoundFromEntityS2CPacket(extend(event, volume), category, source, volume, pitch, seed);
+    }
 
     public static boolean isAddonActionTarget(Object target) {
         if (target instanceof LivingEntity living) {
@@ -43,7 +79,12 @@ public final class AddonSoundRange {
     }
 
     public static RegistryEntry<SoundEvent> extendPlayback(RegistryEntry<SoundEvent> event, float callVolume) {
-        if (!SoundRangeRules.isAddonPlayback() || isExtended(event.value(), callVolume)) return event;
-        return RegistryEntry.of(extend(event.value(), callVolume));
+        return SoundRangeRules.inActionScope() ? extend(event, callVolume) : event;
+    }
+
+    private static RegistryEntry<SoundEvent> extend(RegistryEntry<SoundEvent> entry, float volume) {
+        SoundEvent original = entry.value();
+        SoundEvent extended = extend(original, volume);
+        return extended == original ? entry : RegistryEntry.of(extended);
     }
 }

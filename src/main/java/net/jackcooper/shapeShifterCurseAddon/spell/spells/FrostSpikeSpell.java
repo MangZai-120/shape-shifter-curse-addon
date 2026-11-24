@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.entity.SpellFrostSpikeEntity;
@@ -50,7 +51,7 @@ public class FrostSpikeSpell extends Spell {
 		Vec3d look = caster.getRotationVec(1.0F);
 		spike.setDirection(look,(float)RuneCastContext.current().scale(getSpeedMultiplier(level),RuneModifiers.Stat.SPEED));
 		caster.getWorld().spawnEntity(spike);
-		caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(caster.getWorld(), null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.PLAYERS, 1.0f, 0.8f);
 	}
 }

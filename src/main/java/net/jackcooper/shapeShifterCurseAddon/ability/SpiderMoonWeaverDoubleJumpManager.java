@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -32,9 +33,9 @@ public final class SpiderMoonWeaverDoubleJumpManager {
 	private static void playEffects(ServerPlayerEntity player, boolean lunge, boolean moonWeaver) {
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		// 音效：沿用原版蜘蛛跳跃广播声（山羊长跳 + 青蛙长跳，与 form_spider_3 一致）
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_GOAT_LONG_JUMP, SoundCategory.PLAYERS, 0.6f, 1.0f);
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_FROG_LONG_JUMP, SoundCategory.PLAYERS, 0.6f, 0.8f);
 		// 粒子：跑跳前扑用更多云雾（对齐原版蜘蛛 16 个）；月织蛛额外加紫色魔法粒子
 		int cloudCount = lunge ? 20 : 12;

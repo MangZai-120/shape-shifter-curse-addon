@@ -34,6 +34,11 @@ public final class SoundRangeIntegrationProbe {
             var normal = new PlaySoundS2CPacket(Registries.SOUND_EVENT.getEntry(original), SoundCategory.PLAYERS,
                     10, 64, 20, volume, 0.73f, 1234567L);
             check(normal.getSound().value() == original, "ordinary packet remains a registry reference");
+            var direct = AddonSoundRange.positionedPacket(Registries.SOUND_EVENT.getEntry(original), SoundCategory.PLAYERS,
+                    10, 64, 20, volume, 0.73f, 1234567L);
+            check(direct.getSound().value().getDistanceToTravel(volume) == original.getDistanceToTravel(volume) * 2
+                            && AddonSoundRange.originalId(direct.getSound().value().getId()).equals(original.getId()),
+                    "an explicitly targeted vanilla cue is extended without an action scope");
             final PlaySoundS2CPacket[] captured = new PlaySoundS2CPacket[1];
             SoundRangeRules.withActionScope(() -> captured[0] = new PlaySoundS2CPacket(
                     Registries.SOUND_EVENT.getEntry(original), SoundCategory.PLAYERS, 10, 64, 20, volume, 0.73f, 1234567L));

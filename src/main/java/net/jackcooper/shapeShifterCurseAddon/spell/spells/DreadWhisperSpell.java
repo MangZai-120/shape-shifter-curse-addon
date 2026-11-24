@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
@@ -144,9 +145,9 @@ public class DreadWhisperSpell extends Spell {
 		// 演出：锥形低语波——沿视线方向的锥面螺旋采样（贴合真实锥形判定几何：
 		// 距离 d 处锥面半径 = tan(半角)×d，点随距离扩散；随视线俯仰，不再是水平环）
 		spawnCone(serverWorld, origin, look, range, halfAngleDeg);
-		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.PARTICLE_SOUL_ESCAPE, SoundCategory.PLAYERS, 2.0f, 0.7f);
-		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_WARDEN_HEARTBEAT, SoundCategory.PLAYERS, 1.0f, 1.4f);
 	}
 

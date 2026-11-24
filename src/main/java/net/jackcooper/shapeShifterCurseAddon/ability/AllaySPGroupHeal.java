@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
@@ -99,7 +100,7 @@ public class AllaySPGroupHeal {
 		PowerUtils.setResourceValueAndSync(player, CHARGE_TIMER_ID, 0);
 		PowerUtils.setResourceValueAndSync(player, HEAL_EXECUTE_ID, 0);
 		player.removeStatusEffect(StatusEffects.SLOWNESS);
-		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.5f);
 		return castId;
 	}
@@ -125,7 +126,7 @@ public class AllaySPGroupHeal {
 		}
 		spawnHealParticles(world, allayPlayer);
 		// 只有SP悦灵自己能听见
-		allayPlayer.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
+		AddonSoundRange.play(allayPlayer, SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
 
 		// 获取范围内所有活体
 		Box box = allayPlayer.getBoundingBox().expand(healRadius);
@@ -139,8 +140,8 @@ public class AllaySPGroupHeal {
 				entity.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, resistanceTicks, 0, false, true, true));
 				spawnHealParticles(world, entity);
 				// 播放声音：治疗者听见私有声音，其他人听见空间声音
-				allayPlayer.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
-				world.playSound(allayPlayer, entity.getX(), entity.getY(), entity.getZ(),
+				AddonSoundRange.play(allayPlayer, SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
+				AddonSoundRange.play(world, allayPlayer, entity.getX(), entity.getY(), entity.getZ(),
 						SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 0.5f, 1.0f);
 			}
 		}

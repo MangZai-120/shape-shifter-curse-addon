@@ -15,6 +15,7 @@ import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -101,6 +102,7 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_AXOLOTL_SPRINT_KEY = new Identifier("my_addon", "axolotl_sprint_key");
 	/** S2C：踩网蓝色高亮——仅向施法者发送，令其客户端把受害者描蓝边。payload: varint entityId + varint duration。 */
 	public static final Identifier PACKET_WEB_HIGHLIGHT = new Identifier("my_addon", "web_highlight");
+	public static final Identifier PACKET_DEATH_DOMAIN_OUTLINES = new Identifier("my_addon", "death_domain_outlines");
 	/** S2C：食梦魔「入梦」目标屏幕粉色晕影——仅向入梦目标本人发送。payload: varint durationTicks（<=0 = 该食梦魔的入梦关系结束）+ UUID nightmareUuid（入梦你的食梦魔）。 */
 	public static final Identifier PACKET_DREAM_VEIL = new Identifier("my_addon", "dream_veil");
 	/** S2C：食梦魔「恐惧」状态——仅向恐惧目标本人发送。payload: varint durationTicks（<=0 = 恐惧结束）。驱动粉雾淡入/心跳节奏/出梦表现。 */
@@ -319,6 +321,23 @@ public class SscAddonNetworking {
 		buf.writeBoolean(charging);
 		buf.writeIdentifier(owner.getWorld().getRegistryKey().getValue());
 		ServerPlayNetworking.send(observer, channel, buf);
+	}
+
+	public static void syncDeathDomainOutlines(ServerPlayerEntity owner, Set<UUID> before, Set<UUID> after) {
+		if (owner.networkHandler == null || !ServerPlayNetworking.canSend(owner, PACKET_DEATH_DOMAIN_OUTLINES)) return;
+		sendDeathDomainOutlines(owner, false, before.stream().filter(id -> !after.contains(id)).toList());
+		sendDeathDomainOutlines(owner, true, after.stream().filter(id -> !before.contains(id)).toList());
+	}
+
+	private static void sendDeathDomainOutlines(ServerPlayerEntity owner, boolean add, List<UUID> targets) {
+		for (List<UUID> batch : com.google.common.collect.Lists.partition(targets, 256)) {
+			PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
+			buf.writeIdentifier(owner.getWorld().getRegistryKey().getValue());
+			buf.writeVarInt(owner.getId());
+			buf.writeBoolean(add);
+			buf.writeCollection(batch, PacketByteBuf::writeUuid);
+			ServerPlayNetworking.send(owner, PACKET_DEATH_DOMAIN_OUTLINES, buf);
+		}
 	}
 
 	/** S2C：向施法者发「高亮」（默认蓝色），令其客户端把 entityId 对应实体描边 duration tick。 */

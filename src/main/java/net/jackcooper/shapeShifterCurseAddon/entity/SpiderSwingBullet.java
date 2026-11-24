@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -101,7 +102,7 @@ public class SpiderSwingBullet extends WebBullet {
 		if (this.getWorld() instanceof ServerWorld sw && this.owner instanceof ServerPlayerEntity sp) {
 			Vec3d anchor = hit.getPos();
 			SpiderMoonWeaverSwingManager.onBulletHitBlock(sp, anchor, this);
-			sw.playSound(null, anchor.x, anchor.y, anchor.z,
+			AddonSoundRange.play(sw, null, anchor.x, anchor.y, anchor.z,
 					SoundEvents.BLOCK_TRIPWIRE_ATTACH, SoundCategory.PLAYERS, 0.9f, 1.4f);
 		}
 		this.discard();
@@ -113,7 +114,7 @@ public class SpiderSwingBullet extends WebBullet {
 		if (this.getWorld() instanceof ServerWorld sw && this.owner instanceof ServerPlayerEntity sp
 				&& e instanceof LivingEntity living && living != sp) {
 			SpiderMoonWeaverSwingManager.onBulletHitEntity(sp, living, this);
-			sw.playSound(null, living.getX(), living.getY(), living.getZ(),
+			AddonSoundRange.play(sw, null, living.getX(), living.getY(), living.getZ(),
 					SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.PLAYERS, 0.9f, 1.6f); // 叮！
 			this.discard();
 		}
@@ -123,7 +124,7 @@ public class SpiderSwingBullet extends WebBullet {
 	private void fadeOut(ServerWorld sw) {
 		sw.spawnParticles(ParticleTypes.CLOUD, this.getX(), this.getY(), this.getZ(),
 				12, 0.2, 0.2, 0.2, 0.02);
-		sw.playSound(null, this.getX(), this.getY(), this.getZ(),
+		AddonSoundRange.play(sw, null, this.getX(), this.getY(), this.getZ(),
 				SoundEvents.BLOCK_WOOL_BREAK, SoundCategory.NEUTRAL, 0.5f, 1.2f);
 	}
 

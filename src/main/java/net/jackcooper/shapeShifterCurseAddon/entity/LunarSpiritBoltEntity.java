@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -169,7 +170,7 @@ public class LunarSpiritBoltEntity extends ProjectileEntity {
 				livingTarget.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
 						net.minecraft.entity.effect.StatusEffects.POISON, 60, 0));
 			}
-			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
+			AddonSoundRange.play(this.getWorld(), null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 0.7f, 1.6f);
             if (damaged) net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.hit(this, livingTarget);
 		}

@@ -63,7 +63,8 @@ public final class PalettePreviewRenderer {
         }
 
         try {
-            drawEntityFollowMouse(context, x, y, size, mouseX, mouseY, player);
+            net.jackcooper.shapeShifterCurseAddon.client.colorpicker.ColorPreviewTextures.drawPreset(swapped,
+                    () -> drawEntityFollowMouse(context, x, y, size, mouseX, mouseY, player));
         } finally {
             if (swapped) {
                 skin.setFormColor(backupColor);

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.particle.ParticleTypes;
@@ -53,9 +54,9 @@ public final class VortexGuideManager {
 
 		CHANNELING.put(player.getUuid(), new ChannelState(net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID)));
 		ServerWorld sw = (ServerWorld) player.getWorld();
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_ELDER_GUARDIAN_CURSE, SoundCategory.PLAYERS, 0.7f, 1.4f);
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_AXOLOTL_SPLASH, SoundCategory.PLAYERS, 1.0f, 1.2f);
 	}
 
@@ -79,7 +80,7 @@ public final class VortexGuideManager {
 		// 周期回血（共 6 心）
 		if (tick % healInterval == 0) {
 			player.heal((float) BAL.d("heal_per_tick", HEAL_PER_TICK));
-			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.ENTITY_FISHING_BOBBER_SPLASH, SoundCategory.PLAYERS, 0.6f, 1.4f);
 		}
 
@@ -104,7 +105,7 @@ public final class VortexGuideManager {
 		player.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, BAL.i("absorption_duration", ABSORPTION_DURATION), 0, false, false, true));
 		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, SKILL_ID, state.castId);
 		ServerWorld sw = (ServerWorld) player.getWorld();
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 0.7f, 1.6f);
 		// owner 打标：仅本人第一人称避让
 		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.SPLASH, player.getX(), player.getY() + 1.0, player.getZ(),

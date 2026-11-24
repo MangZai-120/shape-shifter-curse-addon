@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.power;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import io.github.apace100.apoli.data.ApoliDataTypes;
 import io.github.apace100.apoli.power.Active;
@@ -99,7 +100,7 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 		entity.addStatusEffect(new StatusEffectInstance(net.minecraft.entity.effect.StatusEffects.SLOWNESS, 20, 2, false, false, false));
 
 		// Play Cat Hiss Sound (周围人能听见)
-		entity.getWorld().playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+		AddonSoundRange.play(entity.getWorld(), null, entity.getX(), entity.getY(), entity.getZ(),
 				SoundEvents.ENTITY_CAT_HISS, SoundCategory.PLAYERS, 1.0f, 1.0f);
 
 		// Dash forward 5 blocks
@@ -175,7 +176,7 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 				entity.getX(), entity.getY(), entity.getZ(), 10, 0.5, 0.1, 0.5, 0.05);
 
 		// Play additional sound when stun triggers
-		world.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+		AddonSoundRange.play(world, null, entity.getX(), entity.getY(), entity.getZ(),
 				SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 0.5f, 1.5f);
 
 

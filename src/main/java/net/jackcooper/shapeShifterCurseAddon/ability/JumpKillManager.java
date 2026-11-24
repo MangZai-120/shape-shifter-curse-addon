@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
@@ -152,7 +153,7 @@ public final class JumpKillManager {
 		applyChargeSlow(player);
 		if (player.getWorld() instanceof ServerWorld sw) {
 			// 蓄力起手：低沉蜘蛛嘶鸣（蓄势）
-			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.ENTITY_SPIDER_AMBIENT, SoundCategory.PLAYERS, 0.8f, 0.6f);
 		}
 	}
@@ -217,9 +218,9 @@ public final class JumpKillManager {
 		pushVelocity(player);
 
 		// 起跳音效：蜘蛛扑击嘶鸣 + 破空
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_SPIDER_AMBIENT, SoundCategory.PLAYERS, 1.0f, 1.5f);
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 0.7f, 0.8f);
 	}
 
@@ -266,9 +267,9 @@ public final class JumpKillManager {
 		player.fallDistance = 0.0f;
 		if (player.getWorld() instanceof ServerWorld sw) {
 			// 拉回起手：蛛鸣 + 三叉戟拖拽声
-			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.ENTITY_SPIDER_AMBIENT, SoundCategory.PLAYERS, 0.9f, 1.3f);
-			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.ITEM_TRIDENT_RIPTIDE_1, SoundCategory.PLAYERS, 0.9f, 1.5f);
 		}
 	}
@@ -330,7 +331,7 @@ public final class JumpKillManager {
 
 	/** 丝断反馈：绳结断裂音 + 白色丝线粒子。 */
 	private static void snapSilk(ServerPlayerEntity player, ServerWorld sw, SilkAnchor anchor) {
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_WOOL_BREAK, SoundCategory.PLAYERS, 0.9f, 1.4f);
 		// owner 打标：仅本人第一人称避让，他人视角原样
 		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, net.minecraft.particle.ParticleTypes.CLOUD, player.getX(), player.getBodyY(0.5), player.getZ(),
@@ -371,7 +372,7 @@ public final class JumpKillManager {
 		if (player.getWorld() instanceof ServerWorld sw) {
 			if (anchor != null) snapSilk(player, sw, anchor); // 丝线拉完耗尽：同样断裂反馈
 			if (arrived) {
-				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+				AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.ENTITY_GOAT_LONG_JUMP, SoundCategory.PLAYERS, 0.7f, 1.2f);
 			}
 		}
@@ -488,9 +489,9 @@ public final class JumpKillManager {
 		int stunTicks = NpcCombatEnhancements.duration(player, target, BAL.i("stun_duration", STUN_DURATION), "salticidae_primary_duration", 2.0);
 		target.addStatusEffect(new StatusEffectInstance(SscAddon.STUN, stunTicks, 0, false, false, false), player);
         if(damaged)net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.onJumpHit(player,target);
-		sw.playSound(null, target.getX(), target.getY(), target.getZ(),
+		AddonSoundRange.play(sw, null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, SoundCategory.PLAYERS, 1.0f, 0.9f);
-		sw.playSound(null, target.getX(), target.getY(), target.getZ(),
+		AddonSoundRange.play(sw, null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.ENTITY_SPIDER_AMBIENT, SoundCategory.PLAYERS, 0.9f, 0.7f);
 		sw.spawnParticles(ParticleTypes.CRIT, target.getX(), target.getBodyY(0.6), target.getZ(),
 				18, 0.3, 0.3, 0.3, 0.4);

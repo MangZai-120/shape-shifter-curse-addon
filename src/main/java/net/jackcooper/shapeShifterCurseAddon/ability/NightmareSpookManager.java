@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -135,7 +136,7 @@ public final class NightmareSpookManager {
 		// 入梦时间重置为 20 秒满额（不强制退出；与恐惧的重置同额）
 		NightmareDreamManager.resetDream(caster.getUuid(), target.getUuid(), now);
 		// 声效与粒子（生物无客户端屏幕：全员可闻的低沉猫啦 + 目标位置烟雾）
-		world.playSound(null, target.getX(), target.getY(), target.getZ(),
+		AddonSoundRange.play(world, null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.ENTITY_CAT_HISS, net.minecraft.sound.SoundCategory.HOSTILE, 1.0f, 0.85f);
 		world.spawnParticles(ParticleTypes.CLOUD,
 				target.getX(), target.getBodyY(0.5), target.getZ(), 6, 0.3, 0.3, 0.3, 0.02);
@@ -148,7 +149,7 @@ public final class NightmareSpookManager {
 	private static void playSoundAt(ServerPlayerEntity target, SoundEvent sound, double x, double y, double z,
 	                                float volume, float pitch) {
 		RegistryEntry<SoundEvent> entry = Registries.SOUND_EVENT.getEntry(sound);
-		target.networkHandler.sendPacket(new PlaySoundS2CPacket(
+		target.networkHandler.sendPacket(AddonSoundRange.positionedPacket(
 				entry, SoundCategory.HOSTILE, x, y, z, volume, pitch, target.getRandom().nextLong()));
 	}
 

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -174,7 +175,7 @@ public class SpellMoonlightArrowEntity extends ProjectileEntity {
 			if (hit == net.jackcooper.shapeShifterCurseAddon.spell.SpellHitHelper.HitResult.PROTECTED) {
 				return; // 白名单豁免：不播音
 			}
-			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
+			AddonSoundRange.play(this.getWorld(), null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 1.0f, 1.5f);
 		}
 	}

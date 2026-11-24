@@ -19,7 +19,7 @@ public abstract class SoundRangeActionMixin {
                                       Operation<Void> original) {
         if (SoundRangeRules.inActionScope()) {
             original.call(effect, data, target);
-        } else if (AddonSoundRange.isAddonActionTarget(target)) {
+        } else if (SoundRangeRules.isAddonSourceType(effect.getClass()) || AddonSoundRange.isAddonActionTarget(target)) {
             SoundRangeRules.withActionScope(() -> original.call(effect, data, target));
         } else {
             original.call(effect, data, target);

@@ -6,6 +6,12 @@ public final class SoundRangeRules {
     private static final String ROOT = "net.jackcooper.shapeShifterCurseAddon.";
     private static final StackWalker WALKER = StackWalker.getInstance();
     private static final ThreadLocal<Boolean> ACTION_SCOPE = ThreadLocal.withInitial(() -> false);
+    private static final ClassValue<Boolean> ADDON_SOURCE_TYPE = new ClassValue<>() {
+        @Override protected Boolean computeValue(Class<?> type) {
+            return isAddonSource(type.getNestHost().getName())
+                    || type.getSuperclass() != null && get(type.getSuperclass());
+        }
+    };
 
     private SoundRangeRules() {}
 
@@ -13,13 +19,13 @@ public final class SoundRangeRules {
     public static boolean inActionScope() { return ACTION_SCOPE.get(); }
 
     public static void withActionScope(Runnable action) {
-        boolean previous = ACTION_SCOPE.get();
+        if (inActionScope()) {
+            action.run();
+            return;
+        }
         ACTION_SCOPE.set(true);
         try { action.run(); }
-        finally {
-            if (previous) ACTION_SCOPE.set(true);
-            else ACTION_SCOPE.remove();
-        }
+        finally { ACTION_SCOPE.set(false); }
     }
 
     public static boolean isAddonSource(String className) {
@@ -35,7 +41,22 @@ public final class SoundRangeRules {
                 || name.equals("client.sound.SpellChargeSoundInstance");
     }
 
+    /** An addon's entity may delegate movement or impact audio to a vanilla superclass. */
+    public static boolean isInheritedEntityPlayback(Class<?> type) {
+        return !inActionScope() && isAddonSourceType(type) && isAddonPlayback();
+    }
+
+    public static boolean isAddonSourceType(Class<?> type) {
+        return ADDON_SOURCE_TYPE.get(type);
+    }
+
+    /** Compatibility for sound delegated to commands, damage handlers or entity superclasses. */
     public static boolean isAddonPlayback() {
         return inActionScope() || WALKER.walk(frames -> frames.anyMatch(frame -> isAddonSource(frame.getClassName())));
+    }
+
+    public static void withInheritedSource(Runnable action) {
+        if (isAddonPlayback()) withActionScope(action);
+        else action.run();
     }
 }

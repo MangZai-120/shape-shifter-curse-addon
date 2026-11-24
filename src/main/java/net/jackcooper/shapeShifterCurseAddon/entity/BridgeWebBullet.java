@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.ability.AddonWebBridgeAction;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -63,7 +64,7 @@ public class BridgeWebBullet extends WebBullet {
 			serverWorld.spawnParticles(ParticleTypes.CLOUD,
 					this.getX(), this.getY(), this.getZ(),
 					20, 0.3, 0.3, 0.3, 0.05);
-			serverWorld.playSound(null, this.getX(), this.getY(), this.getZ(),
+			AddonSoundRange.play(serverWorld, null, this.getX(), this.getY(), this.getZ(),
 					SoundEvents.BLOCK_WET_GRASS_BREAK, SoundCategory.NEUTRAL, 1.0f, 0.8f + this.random.nextFloat() * 0.4f);
 		}
 	}

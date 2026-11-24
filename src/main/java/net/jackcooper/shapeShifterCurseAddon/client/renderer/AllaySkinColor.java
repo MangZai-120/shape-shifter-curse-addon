@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.jackcooper.shapeShifterCurseAddon.client.colorpicker.FormColorPreviewState;
+import net.jackcooper.shapeShifterCurseAddon.client.colorpicker.ColorPreviewTextures;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
@@ -55,10 +56,28 @@ public final class AllaySkinColor {
         }
         if (colors == null || colors.accentColor2() >>> 24 == 0) return original;
         Key key = new Key(original, colors.accentColor2(), colors.accent2GreyReverse());
+        var session = ColorPreviewTextures.active();
+        if (session != null && player == MinecraftClient.getInstance().player && !FormTextureUtils.useTempFormTexture) {
+            return session.texture(colors, original, null, false, () -> bake(key));
+        }
         Identifier cached = TINTED.get(key);
         if (cached != null) return cached;
-        Source source = source(original);
-        if (source == null) return original;
+        var image = bake(key);
+        if (image == null) return original;
+        Identifier result = MinecraftClient.getInstance().getTextureManager().registerDynamicTexture("ssca_allay_skin", image);
+        TINTED.put(key, result);
+        while (TINTED.size() > 64) {
+            var iterator = TINTED.entrySet().iterator();
+            var oldest = iterator.next();
+            MinecraftClient.getInstance().getTextureManager().destroyTexture(oldest.getValue());
+            iterator.remove();
+        }
+        return result;
+    }
+
+    private static NativeImageBackedTexture bake(Key key) {
+        Source source = source(key.texture);
+        if (source == null) return null;
         NativeImage recolored = new NativeImage(source.image.getWidth(), source.image.getHeight(), false);
         try {
             for (int y = 0; y < recolored.getHeight(); y++) for (int x = 0; x < recolored.getWidth(); x++) {
@@ -66,16 +85,8 @@ public final class AllaySkinColor {
                 int tinted = FormTextureUtils.ProcessMaskChannel(pixel, 255, key.color, source.average, key.reverse);
                 recolored.setColor(x, y, (pixel & 0xff000000) | (tinted & 0xffffff));
             }
-            Identifier result = MinecraftClient.getInstance().getTextureManager().registerDynamicTexture(
-                    "ssca_allay_skin", new NativeImageBackedTexture(recolored));
+            var result = new NativeImageBackedTexture(recolored);
             recolored = null;
-            TINTED.put(key, result);
-            while (TINTED.size() > 64) {
-                var iterator = TINTED.entrySet().iterator();
-                var oldest = iterator.next();
-                MinecraftClient.getInstance().getTextureManager().destroyTexture(oldest.getValue());
-                iterator.remove();
-            }
             return result;
         } finally {
             if (recolored != null) recolored.close();

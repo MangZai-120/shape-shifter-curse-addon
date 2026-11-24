@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.action;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import io.github.apace100.apoli.power.factory.action.ActionFactory;
 import io.github.apace100.apoli.registry.ApoliRegistries;
 import io.github.apace100.calio.data.SerializableData;
@@ -87,7 +88,7 @@ public class SscAddonActions {
 						net.minecraft.server.world.ServerWorld world = (net.minecraft.server.world.ServerWorld) player.getWorld();
 
 // Particle and sound（owner 打标：仅本人第一人称避让）
-					world.playSound(null, player.getX(), player.getY(), player.getZ(), net.minecraft.sound.SoundEvents.ENTITY_ENDER_DRAGON_GROWL, net.minecraft.sound.SoundCategory.PLAYERS, 1.0f, 1.2f);
+					AddonSoundRange.play(world, null, player.getX(), player.getY(), player.getZ(), net.minecraft.sound.SoundEvents.ENTITY_ENDER_DRAGON_GROWL, net.minecraft.sound.SoundCategory.PLAYERS, 1.0f, 1.2f);
 					net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.forced(world, player, net.minecraft.particle.ParticleTypes.SONIC_BOOM, player.getX(), player.getY() + 1.0, player.getZ(), 10, 0.5, 0.5, 0.5, 0.1, 512);
 
 						Box box = player.getBoundingBox().expand(25.0);
@@ -259,7 +260,7 @@ public class SscAddonActions {
 				int dur = gland ? 60 : 100;
 					living.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
 							net.minecraft.entity.effect.StatusEffects.POISON, dur, amp, false, true, true), player);
-					player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+					AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
 							net.minecraft.sound.SoundEvents.ENTITY_SPIDER_AMBIENT,
 							net.minecraft.sound.SoundCategory.PLAYERS, 0.4f, 1.6f);
 				}));
@@ -345,7 +346,7 @@ public class SscAddonActions {
 						int currentMana = PowerUtils.getResourceValue(player, FormIdentifiers.SNOW_FOX_RESOURCE);
 						int manaCost = 15;
 						if (currentMana < manaCost) {
-							player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
+							AddonSoundRange.play(player, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
 							FailAwareActiveSelfPower.markFail();
 							return;
 						}
@@ -360,7 +361,7 @@ public class SscAddonActions {
 						player.getWorld().spawnEntity(frostBall);
 
 						// 播放发射音效
-						player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+						AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
 								SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.PLAYERS, 1.0f, 0.8f);
 					}
 				}));

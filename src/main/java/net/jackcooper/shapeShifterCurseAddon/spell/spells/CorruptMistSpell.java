@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
@@ -87,9 +88,9 @@ public class CorruptMistSpell extends Spell {
 			net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.ring(serverWorld, caster, ParticleTypes.DRAGON_BREATH,
 					caster.getX(), caster.getY() + 0.15, caster.getZ(), r, 16);
 		}
-		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_EVOKER_PREPARE_ATTACK, SoundCategory.PLAYERS, 0.8f, 0.5f);
-		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.BLOCK_BREWING_STAND_BREW, SoundCategory.PLAYERS, 0.7f, 0.6f);
 	}
 }

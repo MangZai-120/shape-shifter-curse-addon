@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
@@ -81,7 +82,7 @@ public class AnubisWolfSpSoulEnergy {
 			max = BAL.i("max_energy", MAX_ENERGY); // power 未就绪/查询失败的回退上限（旧版行为）
 		}
 		int current = getEnergy(player);
-		int newValue = Math.min(current + amount, max);
+		int newValue = (int) Math.min((long) current + amount, max);
 		if (newValue != current) {
 			ResourceBars.set(player, BarKeys.ANUBIS_SOUL, newValue);
 		}
@@ -91,7 +92,8 @@ public class AnubisWolfSpSoulEnergy {
 	 * 检查灵魂能量是否已满
 	 */
 	public static boolean isFullEnergy(ServerPlayerEntity player) {
-		return getEnergy(player) >= ResourceBars.maxOf(player, BarKeys.ANUBIS_SOUL);
+		int max = ResourceBars.maxOf(player, BarKeys.ANUBIS_SOUL);
+		return max > 0 && getEnergy(player) >= max;
 	}
 
 	/**
@@ -171,7 +173,7 @@ public class AnubisWolfSpSoulEnergy {
 	private static final net.jackcooper.shapeShifterCurseAddon.resource.BarTrigger ANUBIS_FULL_TRIGGER =
 			(player, oldV, newV, max) -> {
 				if (oldV < max && newV >= max) {
-					player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+					AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
 							SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 0.6f, 1.2f);
 				}
 			};

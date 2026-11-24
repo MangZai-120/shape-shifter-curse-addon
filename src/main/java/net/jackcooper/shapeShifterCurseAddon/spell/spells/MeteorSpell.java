@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
@@ -104,7 +105,7 @@ public class MeteorSpell extends Spell {
 		meteor.setImpactTarget(impact.x, impact.y, impact.z);
 		caster.getWorld().spawnEntity(meteor);
 		// 施法音效（召唤感）：烈焰人低吼 + 火焰附加
-		caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(caster.getWorld(), null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_BLAZE_AMBIENT, SoundCategory.PLAYERS, 1.0f, 0.5f);
 	}
 }

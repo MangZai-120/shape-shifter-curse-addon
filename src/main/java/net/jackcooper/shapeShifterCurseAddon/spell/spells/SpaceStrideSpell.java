@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
@@ -57,7 +58,7 @@ public class SpaceStrideSpell extends Spell {
 				caster.getX(), caster.getY() + 0.2, caster.getZ(), 8, 0.4, 0.1, 0.4, 0.02);
 		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, caster, ParticleTypes.END_ROD,
 				caster.getX(), caster.getY() + 1.0, caster.getZ(), 10, 0.3, 0.5, 0.3, 0.03);
-		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_RABBIT_JUMP, SoundCategory.PLAYERS, 0.8f, 1.2f);
 	}
 

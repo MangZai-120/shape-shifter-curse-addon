@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -43,9 +44,9 @@ public class GoldenSandstormDetonate {
 		}
 
 		// 释放音效
-		serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(serverWorld, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_WITHER_BREAK_BLOCK, SoundCategory.PLAYERS, 1.0f, 1.0f);
-		serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(serverWorld, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_SAND_BREAK, SoundCategory.PLAYERS, 1.5f, 0.8f);
 
 		// 自身周围粒子提示

@@ -1,9 +1,14 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import io.github.apace100.apoli.component.PowerHolderComponent;
+import io.github.apace100.apoli.power.PowerTypeRegistry;
+import io.github.apace100.apoli.power.VariableIntPower;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.jackcooper.shapeShifterCurseAddon.power.BeaconActivePower;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.minecraft.entity.LivingEntity;
@@ -13,6 +18,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -23,7 +29,9 @@ import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /** Server-owned portable beacon: one payment clock and a whitelisted Haste II aura per owner. */
@@ -36,6 +44,9 @@ public final class AllaySPPortableBeacon {
     private static final int EFFECT_INTERVAL = 80;
     private static final double RANGE = 20.0;
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
+    private static Set<UUID> flagsToCheck = new HashSet<>();
+    private static final Set<UUID> RETAINED_FLAG_OWNERS = new HashSet<>();
+    private static boolean pollOverriddenFlag;
     // Cumulative active ticks belong to the owner, so toggling or swapping beacons cannot reset payment.
     private static final Map<UUID, Integer> DRAIN_TICKS = new HashMap<>();
 
@@ -51,16 +62,59 @@ public final class AllaySPPortableBeacon {
 
     public static void init() {
         UseItemCallback.EVENT.register(AllaySPPortableBeacon::onUseItem);
-        ServerTickEvents.END_SERVER_TICK.register(server -> {
-            for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) tick(player);
+        ServerLifecycleEvents.SERVER_STARTED.register(AllaySPPortableBeacon::checkFlagDefinition);
+        ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, manager, success) -> {
+            if (success) checkFlagDefinition(server);
         });
+        ServerTickEvents.END_SERVER_TICK.register(AllaySPPortableBeacon::tickPlayers);
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> clearPlayer(handler.player));
-        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> clearPlayer(handler.player));
+        net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> {
+            RETAINED_FLAG_OWNERS.remove(handler.player.getUuid());
+            clearPlayer(handler.player);
+        });
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) clearPlayer(player);
             SESSIONS.clear();
+            flagsToCheck.clear();
+            RETAINED_FLAG_OWNERS.clear();
             DRAIN_TICKS.clear();
         });
+    }
+
+    private static void checkFlagDefinition(MinecraftServer server) {
+        // Data packs may replace this power with a plain Apoli resource that cannot notify us.
+        RETAINED_FLAG_OWNERS.clear();
+        pollOverriddenFlag = false;
+        if (!PowerTypeRegistry.contains(ACTIVE)) return;
+        var definition = PowerTypeRegistry.get(ACTIVE).getFactory().getFactory().getSerializerId();
+        pollOverriddenFlag = !BeaconActivePower.FACTORY_ID.equals(definition);
+        if (!pollOverriddenFlag) {
+            // Apoli can retain the previous power instance on an online player after a reload.
+            for (var player : server.getPlayerManager().getPlayerList()) RETAINED_FLAG_OWNERS.add(player.getUuid());
+        }
+    }
+
+    private static boolean hasRetainedFlag(ServerPlayerEntity player) {
+        if (!RETAINED_FLAG_OWNERS.contains(player.getUuid())) return false;
+        var flag = PowerHolderComponent.KEY.get(player).getPower(PowerTypeRegistry.get(ACTIVE));
+        if (flag instanceof VariableIntPower && !(flag instanceof BeaconActivePower)) return true;
+        RETAINED_FLAG_OWNERS.remove(player.getUuid());
+        return false;
+    }
+
+    public static void flagRaised(ServerPlayerEntity player) {
+        if (!SESSIONS.containsKey(player.getUuid())) flagsToCheck.add(player.getUuid());
+    }
+
+    private static void tickPlayers(MinecraftServer server) {
+        if (SESSIONS.isEmpty() && flagsToCheck.isEmpty() && RETAINED_FLAG_OWNERS.isEmpty() && !pollOverriddenFlag) return;
+        Set<UUID> raised = flagsToCheck;
+        // Writes during someone's tick must still be checked if their owner already took a turn.
+        if (!raised.isEmpty()) flagsToCheck = new HashSet<>();
+        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+            UUID owner = player.getUuid();
+            if (pollOverriddenFlag || SESSIONS.containsKey(owner) || raised.contains(owner) || hasRetainedFlag(player)) tick(player);
+        }
     }
 
     private static TypedActionResult<ItemStack> onUseItem(PlayerEntity player, World world, Hand hand) {
@@ -98,16 +152,15 @@ public final class AllaySPPortableBeacon {
         PowerUtils.setResourceValueAndSync(player, ACTIVE, 1);
         player.getInventory().markDirty();
         applyAura(player);
-        player.playSound(SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 1.0f, 1.0f);
+        AddonSoundRange.play(player, SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 1.0f, 1.0f);
         player.sendMessage(Text.translatable("message.ssc_addon.beacon.activated"), true);
     }
 
     private static void tick(ServerPlayerEntity player) {
         Session session = SESSIONS.get(player.getUuid());
         if (session == null) {
-            // Old saved flags and transferred marked stacks never activate a recipient implicitly.
+            // An old resource flag can survive without a live session.
             if (PowerUtils.getResourceValue(player, ACTIVE) != 0) clearPlayer(player);
-            else clearMarkers(player);
             return;
         }
         ItemStack carried = findCarried(player, session);
@@ -118,7 +171,7 @@ public final class AllaySPPortableBeacon {
             return;
         }
         if (session.stack != carried) {
-            clearStack(session.stack);
+            clearSessionStack(player.getUuid(), session);
             session.stack = carried;
         }
         session.ticks++;
@@ -145,8 +198,7 @@ public final class AllaySPPortableBeacon {
     private static ItemStack findCarried(java.util.List<ItemStack> stacks, UUID owner, Session session) {
         for (int slot = 0; slot < stacks.size(); slot++) {
             ItemStack stack = stacks.get(slot);
-            if (isActiveStack(stack) && stack.getNbt().getUuid(OWNER_TAG).equals(owner)
-                    && stack.getNbt().getUuid(SESSION_TAG).equals(session.id)) return stack;
+            if (belongsToSession(stack, owner, session)) return stack;
         }
         return ItemStack.EMPTY;
     }
@@ -169,14 +221,14 @@ public final class AllaySPPortableBeacon {
         boolean wasActive = SESSIONS.containsKey(player.getUuid()) || PowerUtils.getResourceValue(player, ACTIVE) == 1;
         clearPlayer(player);
         if (wasActive) {
-            player.playSound(SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 1.0f, 1.0f);
+            AddonSoundRange.play(player, SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 1.0f, 1.0f);
             player.sendMessage(Text.translatable("message.ssc_addon.beacon.deactivated"), true);
         }
     }
 
     private static void clearPlayer(ServerPlayerEntity player) {
         Session session = SESSIONS.remove(player.getUuid());
-        if (session != null) clearStack(session.stack);
+        if (session != null) clearSessionStack(player.getUuid(), session);
         PowerUtils.setResourceValueAndSync(player, ACTIVE, 0);
         clearMarkers(player);
         if (player.currentScreenHandler != null) clearStack(player.currentScreenHandler.getCursorStack());
@@ -205,6 +257,25 @@ public final class AllaySPPortableBeacon {
     public static boolean isActiveStack(ItemStack stack) {
         return !stack.isEmpty() && stack.isOf(Items.BEACON) && stack.hasNbt()
                 && stack.getNbt().containsUuid(SESSION_TAG) && stack.getNbt().containsUuid(OWNER_TAG);
+    }
+
+    private static boolean belongsToSession(ItemStack stack, UUID owner, Session session) {
+        return isActiveStack(stack) && stack.getNbt().getUuid(OWNER_TAG).equals(owner)
+                && stack.getNbt().getUuid(SESSION_TAG).equals(session.id);
+    }
+
+    private static void clearSessionStack(UUID owner, Session session) {
+        // The same stack may already have been transferred and activated by its new owner.
+        if (belongsToSession(session.stack, owner, session)) clearStack(session.stack);
+    }
+
+    /** Called by the beacon's ordinary inventory tick, including armor and offhand slots. */
+    public static void clearStaleCarriedMarker(ServerPlayerEntity holder, ItemStack stack) {
+        if (!isActiveStack(stack)) return;
+        Session session = SESSIONS.get(holder.getUuid());
+        if (session != null && belongsToSession(stack, holder.getUuid(), session)) return;
+        clearStack(stack);
+        holder.getInventory().markDirty();
     }
 
     /** Clear only our visual marker; real enchantments and unrelated NBT remain intact. */

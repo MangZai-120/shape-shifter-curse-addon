@@ -1,6 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.sound;
 
-/** Client marker for sounds whose packet already carries the doubled server distance. */
+/** Client sound instances with explicit addon attenuation, including sounds decoded from marked packets. */
 public interface ExtendedRangeSound {
     boolean ssca$hasExtendedRange();
 }

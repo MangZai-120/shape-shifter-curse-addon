@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.entity.Entity;
@@ -203,7 +204,7 @@ public class GoldenSandstormErosionBrand {
 			}
 
 			// 爆发音效和粒子
-			serverWorld.playSound(null, target.getX(), target.getY(), target.getZ(),
+			AddonSoundRange.play(serverWorld, null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.ENTITY_WITHER_BREAK_BLOCK, SoundCategory.PLAYERS, 0.38f, 1.2f);
 			ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SOUL_FIRE_FLAME,
 					target.getX(), target.getY() + target.getHeight() * 0.5, target.getZ(),
@@ -241,7 +242,7 @@ public class GoldenSandstormErosionBrand {
 				5 * state.stacks, 0.2, 0.2, 0.2, 0.05);
 
 		// 叠加音效
-		serverWorld.playSound(null, target.getX(), target.getY(), target.getZ(),
+		AddonSoundRange.play(serverWorld, null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE, SoundCategory.PLAYERS, 0.5f, 0.8f + state.stacks * 0.2f);
 	}
 
@@ -531,7 +532,7 @@ public class GoldenSandstormErosionBrand {
 		// 延迟处理满3层的爆发（避免遍历中修改状态冲突）
 		for (LivingEntity burstTarget : burstTargets) {
 			triggerPassiveBurst(player, burstTarget, serverWorld);
-			serverWorld.playSound(null, burstTarget.getX(), burstTarget.getY(), burstTarget.getZ(),
+			AddonSoundRange.play(serverWorld, null, burstTarget.getX(), burstTarget.getY(), burstTarget.getZ(),
 					SoundEvents.ENTITY_WITHER_BREAK_BLOCK, SoundCategory.PLAYERS, 0.38f, 1.2f);
 			ParticleUtils.spawnParticles(serverWorld, ParticleTypes.SOUL_FIRE_FLAME,
 					burstTarget.getX(), burstTarget.getY() + burstTarget.getHeight() * 0.5, burstTarget.getZ(),
@@ -544,7 +545,7 @@ public class GoldenSandstormErosionBrand {
 		markDirty(playerUuid);
 
 		if (hitCount > 0) {
-			serverWorld.playSound(null, center.x, center.y, center.z,
+			AddonSoundRange.play(serverWorld, null, center.x, center.y, center.z,
 					SoundEvents.BLOCK_SAND_BREAK, SoundCategory.PLAYERS, 0.6f, 0.6f);
 		}
 	}

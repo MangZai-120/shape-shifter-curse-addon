@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -164,7 +165,7 @@ public final class KillEmpowerManager {
 
 	/** 赋能火环结束/中断的火焰熄灭声（与手动关环、正常环关环音效一致）。 */
 	private static void playExtinguish(ServerPlayerEntity player) {
-		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
 	}
 }

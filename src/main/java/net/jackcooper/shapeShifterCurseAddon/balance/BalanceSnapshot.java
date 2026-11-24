@@ -86,6 +86,8 @@ public final class BalanceSnapshot {
             // scope 下未知字段 = 疑似拼写错误 → 拒绝（文档 §5 第 2 步「未知ID」）
             if (scopeTree != null) {
                 for (String key : scopeTree.keySet()) {
+                    // Older packs set a separate regeneration cap. Keep their other overrides on upgrade.
+                    if (scope.id().equals("abilities.parasitic_seed_system") && key.equals("max_energy")) continue;
                     if (!scope.params().containsKey(key)) {
                         throw new BalanceRejectException("未知字段 " + key + "（不在 " + scope.id() + " 的 schema 登记内）", source, scope.id() + "." + key);
                     }

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
@@ -185,7 +186,7 @@ public final class NightmareFearManager {
 		if (attr != null) {
 			float slowRatio = (float) BAL.d("slow_ratio", FEAR_SLOW_RATIO);
 			attr.removeModifier(FEAR_SLOW_UUID);
-			attr.addPersistentModifier(new EntityAttributeModifier(
+			attr.addTemporaryModifier(new EntityAttributeModifier(
 					FEAR_SLOW_UUID, FEAR_SLOW_NAME, -slowRatio, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
 		}
 		// 客户端包（粉雾淡入 + 心跳启动 + 本地失明驱动），仅目标本人（时长随戒指快照变化）
@@ -193,7 +194,7 @@ public final class NightmareFearManager {
 			SscAddonNetworking.sendFearState(sp, duration);
 		}
 		// 施加过渡音效：低沉梦境震颤（目标位置，全员可闻但音量克制）+ 目标本人听到尖啸耳鸣
-		world.playSound(null, target.getX(), target.getY(), target.getZ(),
+		AddonSoundRange.play(world, null, target.getX(), target.getY(), target.getZ(),
 				net.minecraft.sound.SoundEvents.BLOCK_AMETHYST_BLOCK_RESONATE,
 				net.minecraft.sound.SoundCategory.PLAYERS, 1.4f, 0.45f);
 		if (target instanceof ServerPlayerEntity sp) {
@@ -223,16 +224,21 @@ public final class NightmareFearManager {
 			UUID tid = e.getKey();
 			FearState v = e.getValue();
 			// 仅施恐惧的梦魔本人的 tick 推进该条目（去重）
-			if (isCasterTick && !v.casterUuid.equals(player.getUuid())) continue;
-			if (!isCasterTick && !tid.equals(player.getUuid())) continue;
+			boolean caster = v.casterUuid.equals(player.getUuid());
+			if (!caster && !tid.equals(player.getUuid())) continue;
+			if (caster && !isCasterTick) {
+				it.remove();
+				endFear(world, tid, now, true);
+				continue;
+			}
 			if (v.endTick <= now) {
 				it.remove();
-				endFear(world, tid, v.casterUuid, now, true);
+				endFear(world, tid, now, true);
 				continue;
 			}
 			if (!(world.getEntity(tid) instanceof LivingEntity target) || !target.isAlive()) {
 				it.remove();
-				endFear(world, tid, v.casterUuid, now, false);
+				endFear(world, tid, now, false);
 				continue;
 			}
 			// 规格②：恐惧期间入梦时间持续锁定回 20s
@@ -300,13 +306,15 @@ public final class NightmareFearManager {
 	}
 
 	/** 恐惧结束：移除减速、发结束包、强制出梦 + 免疫。applyImmune=false 用于目标死亡场景。 */
-	private static void endFear(ServerWorld world, UUID tid, UUID casterUuid, long now, boolean applyImmune) {
-		if (world.getEntity(tid) instanceof LivingEntity target) {
-			EntityAttributeInstance attr = target.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
-			if (attr != null) attr.removeModifier(FEAR_SLOW_UUID);
+	private static void endFear(ServerWorld world, UUID tid, long now, boolean applyImmune) {
+		for (ServerWorld candidate : world.getServer().getWorlds()) {
+			if (!(candidate.getEntity(tid) instanceof LivingEntity target)) continue;
+			world = candidate;
+			removeFearSlow(target);
 			if (target instanceof ServerPlayerEntity sp) {
 				SscAddonNetworking.sendFearState(sp, 0);
 			}
+			break;
 		}
 		clearPairs(tid);
 		// 强制出梦（由施恐惧的梦魔的入梦表移除该目标；其它梦魔若也入梦了它则一并清——恐惧结束强制全出）
@@ -325,7 +333,7 @@ public final class NightmareFearManager {
 			Map.Entry<UUID, FearState> e = it.next();
 			if (e.getValue().casterUuid.equals(caster.getUuid())) {
 				it.remove();
-				endFear(world, e.getKey(), caster.getUuid(), now, true);
+				endFear(world, e.getKey(), now, true);
 			}
 		}
 	}
@@ -393,8 +401,19 @@ public final class NightmareFearManager {
 		return false;
 	}
 
+	public static void removeOrphanedSlow(LivingEntity target) {
+		if (!FEARING.containsKey(target.getUuid())) removeFearSlow(target);
+	}
+
+	private static void removeFearSlow(LivingEntity target) {
+		EntityAttributeInstance speed = target.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
+		if (speed != null) speed.removeModifier(FEAR_SLOW_UUID);
+	}
+
 	/** 目标断线清理。 */
-	public static void onTargetDisconnect(UUID targetUuid) {
+	public static void onTargetDisconnect(ServerPlayerEntity target) {
+		UUID targetUuid = target.getUuid();
+		removeFearSlow(target);
 		FEARING.remove(targetUuid);
 		DREAM_IMMUNE.remove(targetUuid);
 		clearPairs(targetUuid);

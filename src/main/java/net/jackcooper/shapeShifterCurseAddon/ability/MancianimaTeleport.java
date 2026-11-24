@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particle.ParticleTypes;
@@ -146,7 +147,7 @@ public final class MancianimaTeleport {
 		ParticleUtils.spawnDecorationParticles(world, player, ParticleTypes.REVERSE_PORTAL,
 				player.getX(), player.getY() + 1.0, player.getZ(),
 				20, 0.3, 0.5, 0.3, 0.05);
-		world.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(world, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0f, 1.2f);
 
 		// 执行传送（保留视角方向）
@@ -159,7 +160,7 @@ public final class MancianimaTeleport {
 		ParticleUtils.spawnDecorationParticles(world, player, ParticleTypes.REVERSE_PORTAL,
 				targetFeet.x, targetFeet.y + 1.0, targetFeet.z,
 				20, 0.3, 0.5, 0.3, 0.05);
-		world.playSound(null, targetFeet.x, targetFeet.y, targetFeet.z,
+		AddonSoundRange.play(world, null, targetFeet.x, targetFeet.y, targetFeet.z,
 				SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0f, 1.0f);
 
 		// 扣除法力 + 设置CD
@@ -249,7 +250,7 @@ public final class MancianimaTeleport {
 		boolean wasAlive = target.isAlive();
 		target.damage(world.getDamageSources().playerAttack(marker), dmg);
 		// 广播暴击音效
-		world.playSound(null, target.getX(), target.getY(), target.getZ(),
+		AddonSoundRange.play(world, null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, SoundCategory.PLAYERS, 1.0f, 1.0f);
 		// 设置 CD + 暂停回蓝：普通闪现只进 3.5s 常规 CD；联动攻击进独立的 10s 联动 CD（期间可普通闪现、不可再联动）
 		net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(marker, SKILL_ID, castId);

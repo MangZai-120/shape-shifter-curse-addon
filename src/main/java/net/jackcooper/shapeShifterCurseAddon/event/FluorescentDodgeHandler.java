@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.event;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
@@ -44,7 +45,7 @@ public final class FluorescentDodgeHandler {
 				if (self.getWorld() instanceof ServerWorld sw) {
 					net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, self, ParticleTypes.SPLASH, self.getX(), self.getY() + 1.0, self.getZ(), 16, 0.4, 0.6, 0.4, 0.3);
 					net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, self, ParticleTypes.BUBBLE, self.getX(), self.getY() + 1.0, self.getZ(), 8, 0.4, 0.6, 0.4, 0.1);
-					sw.playSound(null, self.getX(), self.getY() + 1.0, self.getZ(),
+					AddonSoundRange.play(sw, null, self.getX(), self.getY() + 1.0, self.getZ(),
 							SoundEvents.ENTITY_PLAYER_SPLASH_HIGH_SPEED, SoundCategory.PLAYERS, 0.6f, 1.5f);
 				}
 				return false;

@@ -2,6 +2,7 @@ package net.jackcooper.shapeShifterCurseAddon.mixin.client;
 
 import net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverSwingClient;
 import net.jackcooper.shapeShifterCurseAddon.client.SpiderMoonWeaverSwingClient.LocalSwing;
+import net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.SwingMotion;
 import net.minecraft.client.input.Input;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -182,7 +183,7 @@ public abstract class SwingPhysicsMixin {
 			return;
 		}
 		final double MIN = net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.MIN_ROPE_LEN;
-		final double REEL = net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.REEL_SPEED;
+		final double REEL = SpiderMoonWeaverSwingManager.tetherReelSpeed();
 
 		Vec3d pPos = self.getPos().add(0, 1.0, 0);
 		Vec3d tPos = target.getPos().add(0, target.getHeight() * 0.5, 0);
@@ -209,9 +210,9 @@ public abstract class SwingPhysicsMixin {
 		sw.reelIntent = reelIntent;
 
 		double ropeLen = Math.max(sw.ropeLen, MIN); // 硬上限（初始 16）
-		double softLen = Math.max(MIN, ropeLen - net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.TETHER_SOFT_BUFFER); // 软拉阈值（初始 12）
-		final double PULL_GAIN = net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.TETHER_PULL_GAIN;
-		final double HARD_GAIN = net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager.TETHER_HARD_GAIN;
+		double softLen = Math.max(MIN, ropeLen - SpiderMoonWeaverSwingManager.tetherSoftBuffer()); // 软拉阈值（初始 12）
+		final double PULL_GAIN = SpiderMoonWeaverSwingManager.tetherPullGain();
+		final double HARD_GAIN = SpiderMoonWeaverSwingManager.tetherHardGain();
 		double resist = 0.0;
 		if (target instanceof net.minecraft.entity.LivingEntity livingR) {
 			net.minecraft.entity.attribute.EntityAttributeInstance instR =

@@ -29,7 +29,7 @@ public class AdvancedColorScreen extends Screen {
 
     private AdvancedColorBridge.WorkingState working;
     private AdvancedColorBridge.WorkingState initialSnapshot;
-    private AdvancedColorBridge.PreviewBackup previewBackup;
+    private final ColorPreviewTextures previewTextures;
 
     private int editingIdx = AdvancedColorBridge.IDX_PRIMARY;
 
@@ -61,15 +61,16 @@ public class AdvancedColorScreen extends Screen {
     public AdvancedColorScreen(Screen parent) {
         super(Text.translatable("text.ssc_addon.adv_color.title"));
         this.parent = parent;
+        this.previewTextures = ColorPreviewTextures.attach(this, null);
     }
 
     @Override
     protected void init() {
+        previewTextures.beginEdit();
         // 首次进入时备份 + 取 snapshot
         if (working == null) {
             this.initialSnapshot = AdvancedColorBridge.snapshotFromConfig();
             this.working = initialSnapshot.copy();
-            this.previewBackup = AdvancedColorBridge.backupPreview();
             AdvancedColorBridge.applyPreview(working); // 进入时立即把工作态推到本地预览
         }
 
@@ -249,6 +250,7 @@ public class AdvancedColorScreen extends Screen {
                 Text.translatable("text.ssc_addon.adv_color.tutorial.prompt.body"),
                 Text.translatable("text.ssc_addon.adv_color.tutorial.prompt.yes"),
                 Text.translatable("text.ssc_addon.adv_color.tutorial.prompt.no"));
+        ColorPreviewTextures.attach(confirm, this);
         this.client.setScreen(confirm);
     }
 
@@ -547,7 +549,7 @@ public class AdvancedColorScreen extends Screen {
         if (working == null) {
             this.initialSnapshot = AdvancedColorBridge.snapshotFromConfig();
             this.working = initialSnapshot.copy();
-            this.previewBackup = AdvancedColorBridge.backupPreview();
+            previewTextures.beginEdit();
         }
         working.enabled = true;
         working.colorsARGB[AdvancedColorBridge.IDX_PRIMARY] = rgbaToArgb(data.primaryRGBA());
@@ -616,12 +618,13 @@ public class AdvancedColorScreen extends Screen {
     }
 
     private void performCancel() {
-        AdvancedColorBridge.restoreFromBackup(previewBackup);
+        previewTextures.endEdit(false);
         MinecraftClient.getInstance().setScreen(parent);
     }
 
     private void doSave() {
         AdvancedColorBridge.commitSave(working);
+        previewTextures.endEdit(true);
         // 提交后 PlayerSkinComponent 会被服务端同步覆写，无需手动 restoreFromBackup
         MinecraftClient.getInstance().setScreen(parent);
     }
@@ -693,6 +696,7 @@ public class AdvancedColorScreen extends Screen {
         protected UnsavedConfirmScreen(AdvancedColorScreen owner) {
             super(Text.translatable("text.ssc_addon.adv_color.confirm.unsaved_title"));
             this.owner = owner;
+            ColorPreviewTextures.attach(this, owner);
         }
 
         @Override

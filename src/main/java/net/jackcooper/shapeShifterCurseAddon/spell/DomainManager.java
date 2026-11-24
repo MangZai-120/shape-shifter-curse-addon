@@ -309,7 +309,12 @@ public final class DomainManager {
 		}
 		return false;
 	}
+	public static boolean hasFields(World world) {
+		return world instanceof ServerWorld && !FIELDS.isEmpty();
+	}
+
 	public static Vec3d limitMovement(Entity entity, Vec3d movement) {
+		if (!hasFields(entity.getWorld())) return movement;
 		Vec3d feet = entity.getPos();
 		double padding = entity.getWidth() * 0.5;
 		if (!blocksPath(entity.getWorld(), feet, feet.add(movement), padding)) return movement;
@@ -318,6 +323,7 @@ public final class DomainManager {
 	}
 
 	public static Vec3d finishMovement(Entity entity, Vec3d movement) {
+		if (!hasFields(entity.getWorld())) return movement;
 		if (!blocksPath(entity.getWorld(), entity.getPos(), entity.getPos().add(movement), entity.getWidth() * 0.5)) return movement;
 		if (entity instanceof ProjectileEntity) { entity.discard(); return Vec3d.ZERO; }
 		return DomainCollision.finishMovement(entity, movement, movementShells(entity.getWorld()));

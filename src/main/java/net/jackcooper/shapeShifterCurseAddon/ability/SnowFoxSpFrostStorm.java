@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -58,7 +59,7 @@ public class SnowFoxSpFrostStorm {
         // 检查霜寒值
         int currentMana = getResourceValue(player);
         if (currentMana < BAL.i("mana_cost", MANA_COST)) {
-            player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
+            AddonSoundRange.play(player, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
             FailAwareActiveSelfPower.markFail();
             return false;
         }
@@ -72,7 +73,7 @@ public class SnowFoxSpFrostStorm {
         CHARGING_PLAYERS.put(player.getUuid(), new ChargingData(0, net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID)));
         
         // 播放蓄力开始音效
-        player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
             SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.5f);
         
         return true;
@@ -86,7 +87,7 @@ public class SnowFoxSpFrostStorm {
         if (data != null) {
             net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.failed(player, SKILL_ID, data.castId);
             // 播放打断音效
-            player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+            AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.5f);
         }
     }
@@ -182,7 +183,7 @@ public class SnowFoxSpFrostStorm {
         player.getWorld().spawnEntity(storm);
         
         // 播放释放音效
-        player.getWorld().playSound(null, targetPos.x, targetPos.y, targetPos.z,
+        AddonSoundRange.play(player.getWorld(), null, targetPos.x, targetPos.y, targetPos.z,
             SoundEvents.ENTITY_EVOKER_PREPARE_SUMMON, SoundCategory.PLAYERS, 1.0f, 0.8f);
         
         // 生成释放粒子

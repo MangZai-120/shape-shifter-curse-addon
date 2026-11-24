@@ -1,14 +1,8 @@
 {
     "type": "apoli:multiple",
     "name": "血渴值",
-    "description": "战斗中每秒+1；普攻命中+8(0.3s内CD)；凝聚爆破命中+12/6/3；击杀+15。脱战12s后每秒-4。0-25：减伤15%；50-75：吸血30%；75-100：伤害+15%且吸血52.5%。",
+    "description": "普攻命中+8(0.3s内CD)；凝聚爆破命中+12/6/3；击杀+15。脱战12s后每秒-4。血渴低于上限的25%时减伤15%，达到50%时吸血30%，达到75%时伤害+15%且吸血52.5%。",
     "resource": {
-        "type": "apoli:resource",
-        "min": 0,
-        "max": 100,
-        "start_value": 0,
-        "hud_render": {
-            "should_render": false
-        }
+        "type": "ssc_addon:blood_thirst_resource"
     }
 }

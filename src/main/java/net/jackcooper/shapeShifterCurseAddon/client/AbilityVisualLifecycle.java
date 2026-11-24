@@ -25,6 +25,7 @@ public final class AbilityVisualLifecycle {
             SpiderMoonWeaverSwingClient.clear();
         }
         if (next != world || nextPlayer != player) {
+            DeathDomainOutlineClient.clear();
             ClawClientState.reset();
             DashClientState.reset();
             NovaLeapClientState.clear();
@@ -76,6 +77,7 @@ public final class AbilityVisualLifecycle {
     }
 
     private static void clear() {
+        DeathDomainOutlineClient.clear();
         FrostSpikeChargeClientState.clearAll();
         UpgradeAxolotlSpearRenderState.clear();
         SpiderMoonWeaverSwingClient.clear();

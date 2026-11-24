@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
@@ -73,7 +74,7 @@ public class IceBarrageSpell extends Spell {
 			spike.setDirection(dir, speedMul);
 			caster.getWorld().spawnEntity(spike);
 		}
-		caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(caster.getWorld(), null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.PLAYERS, 1.0f, 1.3f);
 	}
 

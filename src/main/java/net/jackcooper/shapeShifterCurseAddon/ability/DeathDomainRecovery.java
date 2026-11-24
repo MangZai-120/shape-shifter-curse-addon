@@ -2,6 +2,7 @@ package net.jackcooper.shapeShifterCurseAddon.ability;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.NbtCompound;
@@ -48,19 +49,28 @@ public final class DeathDomainRecovery {
             for (ServerWorld world : server.getWorlds()) recoverLoaded(world, state);
         });
         ServerChunkEvents.CHUNK_LOAD.register((world, chunk) -> recoverChunk(world, chunk.getPos()));
+        ServerTickEvents.END_WORLD_TICK.register(world -> {
+            if (world.getTime() % 20 == 0) retryVacated(world);
+        });
         ServerLifecycleEvents.SERVER_STOPPED.register(SERVERS::remove);
     }
 
     /** False means no terrain in this ring may be changed. */
     public static boolean record(ServerWorld world, UUID domain, Map<BlockPos, Change> changes) {
-        if (changes.isEmpty()) return true;
+        return record(world, domain, changes, false);
+    }
+
+    static boolean record(ServerWorld world, UUID domain, Map<BlockPos, Change> changes, boolean opening) {
         State state = state(world.getServer());
         if (state.failed) return false;
+        // Natural soul sand can open an enhanced domain without any blocks to replace.
+        // Persist that first ring before granting summons, even when its block list is empty.
+        if (changes.isEmpty() && !opening) return true;
         UUID id = UUID.randomUUID();
         Log log = new Log(id, domain, world.getRegistryKey().getValue(), new LinkedHashMap<>(changes));
         try {
             write(state.directory, log);
-            log.active = true;
+            log.active = !log.complete;
             state.logs.put(id, log);
             return true;
         } catch (IOException error) {
@@ -148,20 +158,51 @@ public final class DeathDomainRecovery {
         }
     }
 
+    static void defer(ServerWorld world, BlockPos pos, Change change) {
+        state(world.getServer()).deferred.computeIfAbsent(world.getRegistryKey().getValue(), ignored -> new HashMap<>())
+                .put(pos, change);
+    }
+
+    private static void retryVacated(ServerWorld world) {
+        State state = SERVERS.get(world.getServer());
+        if (state == null) return;
+        var pending = state.deferred.get(world.getRegistryKey().getValue());
+        if (pending == null || pending.isEmpty()) return;
+        Set<ChunkPos> ready = new HashSet<>();
+        pending.entrySet().removeIf(entry -> {
+            var pos = entry.getKey();
+            var chunk = new ChunkPos(pos);
+            if (!world.isChunkLoaded(chunk.x, chunk.z)) return false;
+            if (world.getBlockState(pos).equals(entry.getValue().expected)
+                    && DeathDomainTerrainRestore.occupied(world, pos, entry.getValue())) return false;
+            ready.add(chunk);
+            return true;
+        });
+        for (ChunkPos chunk : ready) recoverChunk(world, chunk);
+    }
+
     private static void recoverChunk(ServerWorld world, ChunkPos chunk) {
         State state = state(world.getServer());
         if (!world.isChunkLoaded(chunk.x, chunk.z)) return;
+        var deferred = state.deferred.getOrDefault(world.getRegistryKey().getValue(), Map.of());
         for (Log log : state.logs.values()) {
             if (log.active || !log.dimension.equals(world.getRegistryKey().getValue())) continue;
+            var batch = new DeathDomainTerrainRestore(world);
+            var processed = new java.util.ArrayList<BlockPos>();
             for (var entry : log.changes.entrySet()) {
                 BlockPos pos = entry.getKey();
                 if (pos.getX() >> 4 != chunk.x || pos.getZ() >> 4 != chunk.z || log.resolved.contains(pos)) continue;
                 Change change = entry.getValue();
                 // A different current block belongs to later gameplay and must be preserved.
                 if (world.getBlockState(pos).equals(change.expected)) {
-                    world.setBlockState(pos, change.original, Block.NOTIFY_LISTENERS | Block.FORCE_STATE);
+                    if (deferred.containsKey(pos)) continue;
+                    batch.restore(pos, change.original, change.expected, Block.NOTIFY_LISTENERS | Block.FORCE_STATE);
                 }
-                if (!world.getBlockState(pos).equals(change.expected)) log.resolved.add(pos);
+                processed.add(pos);
+            }
+            batch.finish();
+            for (var pos : processed) {
+                if (!world.getBlockState(pos).equals(log.changes.get(pos).expected)) log.resolved.add(pos);
             }
             compactResolved(log);
         }
@@ -233,12 +274,14 @@ public final class DeathDomainRecovery {
             this.domain = domain;
             this.dimension = dimension;
             this.changes = changes;
+            this.complete = changes.isEmpty();
         }
     }
 
     private static final class State {
         final Path directory;
         final Map<UUID, Log> logs = new HashMap<>();
+        final Map<Identifier, Map<BlockPos, Change>> deferred = new HashMap<>();
         boolean failed;
         State(Path directory) { this.directory = directory; }
     }

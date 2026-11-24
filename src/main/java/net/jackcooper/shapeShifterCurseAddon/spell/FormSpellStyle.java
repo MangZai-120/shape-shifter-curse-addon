@@ -5,6 +5,7 @@ import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.compat.MoistureWaterRecovery;
 import net.jackcooper.shapeShifterCurseAddon.resource.BarKeys;
 import net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars;
+import net.jackcooper.shapeShifterCurseAddon.sound.SoundRangeRules;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -173,7 +174,11 @@ public final class FormSpellStyle {
     public void effect(Runnable action) {
         endCloak();
         var previous=EFFECT.get();EFFECT.set(this);
-        try{action.run();}finally{if(previous==null)EFFECT.remove();else EFFECT.set(previous);}
+        try {
+            SoundRangeRules.withActionScope(action);
+        } finally {
+            if (previous == null) EFFECT.remove(); else EFFECT.set(previous);
+        }
     }
     /** 仅法术的生命回复进入此处；原生装死、自然回血和反转伤害沿用原结算。 */
     public static void heal(ServerPlayerEntity caster,LivingEntity target,float amount) {

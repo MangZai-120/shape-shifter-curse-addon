@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
@@ -100,9 +101,9 @@ public class FlameNovaSpell extends Spell {
 		net.jackcooper.shapeShifterCurseAddon.util.SpellFxUtils.sphere(serverWorld, caster,
 				caster.getX(), caster.getY() + 1.0, caster.getZ(), radius,
 				ParticleTypes.FLAME, ParticleTypes.LAVA, ParticleTypes.CAMPFIRE_COSY_SMOKE, 6);
-		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_BLAZE_SHOOT, SoundCategory.PLAYERS, 1.2f, 0.7f);
-		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ITEM_FIRECHARGE_USE, SoundCategory.PLAYERS, 1.0f, 0.9f);
 	}
 }

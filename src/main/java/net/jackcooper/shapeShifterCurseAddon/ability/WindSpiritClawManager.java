@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
@@ -246,7 +247,7 @@ public final class WindSpiritClawManager {
 
         player.addExhaustion((float) BAL.d("exhaustion_per_hit", EXHAUSTION_PER_HIT));
 
-        sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 0.7f, 1.4f);
     }
 
@@ -334,7 +335,7 @@ public final class WindSpiritClawManager {
         net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.instant(player, SKILL_ID);
         BUFF_TICKS.put(player.getUuid(), BAL.i("buff_duration", BUFF_DURATION));
         ServerWorld sw = (ServerWorld) player.getWorld();
-        sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_PLAYER_ATTACK_STRONG, SoundCategory.PLAYERS, 0.8f, 1.6f);
         // owner 打标：仅本人第一人称避让
         net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CRIT, player.getX(), player.getY() + 1.0, player.getZ(), 20, 0.4, 0.5, 0.4, 0.2);

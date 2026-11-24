@@ -34,6 +34,10 @@ public final class PlayerGravityLease {
         ACTIVE.remove(player.getUuid());
     }
 
+    public static void clearAll() {
+        ACTIVE.clear();
+    }
+
     /** Autosaving an in-flight player must not persist a temporary movement flag. */
     public static void writePersistentGravity(ServerPlayerEntity player, NbtCompound nbt) {
         Lease lease = ACTIVE.get(player.getUuid());

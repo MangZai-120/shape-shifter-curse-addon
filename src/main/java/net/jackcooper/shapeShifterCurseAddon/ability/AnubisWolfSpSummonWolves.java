@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
@@ -138,7 +139,7 @@ public class AnubisWolfSpSummonWolves {
 		if (aliveCount >= maxWolves) {
 			// 已达上限：按 fail_cooldown 结算 + 失败音效
 			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.penalizeAttempt(player, SKILL_ID);
-			player.getServerWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(player.getServerWorld(), null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_NOTE_BLOCK_BASS.value(), SoundCategory.PLAYERS, 0.8f, 0.5f);
 			return false;
 		}
@@ -160,7 +161,7 @@ public class AnubisWolfSpSummonWolves {
 
 		// 播放狼嚎叫声
 		ServerWorld world = player.getServerWorld();
-		world.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(world, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_WOLF_HOWL, SoundCategory.PLAYERS, 1.5f, 0.6f);
 
 		// 应用减速
@@ -314,7 +315,7 @@ public class AnubisWolfSpSummonWolves {
 			data.ticksElapsed = 0;
 
 			// 播放召唤音效
-			world.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(world, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.ENTITY_WITHER_SPAWN, SoundCategory.PLAYERS, 0.5f, 1.5f);
 		}
 	}
@@ -430,7 +431,7 @@ public class AnubisWolfSpSummonWolves {
 		}
 
 		// 播放出现音效
-		world.playSound(null, wolf.getX(), wolf.getY(), wolf.getZ(),
+		AddonSoundRange.play(world, null, wolf.getX(), wolf.getY(), wolf.getZ(),
 				SoundEvents.ENTITY_WOLF_GROWL, SoundCategory.NEUTRAL, 1.0f, 0.7f);
 		return wolf;
 	}
@@ -463,7 +464,7 @@ public class AnubisWolfSpSummonWolves {
 				ParticleUtils.spawnParticles(world, ParticleTypes.SMOKE,
 						wolf.getX(), wolf.getY() + 0.3, wolf.getZ(), 8, 0.3, 0.4, 0.3, 0.02);
 				// 播放消散音效
-				world.playSound(null, wolf.getX(), wolf.getY(), wolf.getZ(),
+				AddonSoundRange.play(world, null, wolf.getX(), wolf.getY(), wolf.getZ(),
 						SoundEvents.PARTICLE_SOUL_ESCAPE, SoundCategory.NEUTRAL, 0.8f, 0.8f);
 				// 从IPlayerEntityMinion系统移除并销毁
 				if (player instanceof IPlayerEntityMinion minionPlayer) {

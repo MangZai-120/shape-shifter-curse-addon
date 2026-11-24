@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -374,7 +375,7 @@ public class LaserBeamEntity extends Entity {
 		// 净化打断：取消，返还 40% CD（进 60% CD）
 		if (owner.hasStatusEffect(SscAddon.PURIFIED)) {
 			cancelWithInterruptCd(owner);
-			sw.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
+			AddonSoundRange.play(sw, null, owner.getX(), owner.getY(), owner.getZ(),
 					SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0f, 1.2f);
 			this.discard();
 			return;
@@ -385,12 +386,12 @@ public class LaserBeamEntity extends Entity {
 		// 蓄力音效（volume=3.0：反编译实证客户端 clamp 到 1，近处响度不变不震耳；
 		// 可闻半径 16×3=48 格=光柱射程 32 格+16 格富余，OpenAL 距离线性衰减到 48 格归零）
 		if (phaseTicks == 1) {
-			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
+			AddonSoundRange.play(sw, null, arrayPos.x, arrayPos.y, arrayPos.z,
 					SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 3.0f, 0.8f);
 		}
 		if (phaseTicks % 12 == 0) {
 			float p = phaseTicks / (float) chargeTicks;
-			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
+			AddonSoundRange.play(sw, null, arrayPos.x, arrayPos.y, arrayPos.z,
 					SoundEvents.BLOCK_CONDUIT_AMBIENT, SoundCategory.PLAYERS, 3.0f, 0.8f + p * 0.8f);
 		}
 
@@ -403,9 +404,9 @@ public class LaserBeamEntity extends Entity {
 			this.dataTracker.set(PHASE, 1);
 			syncLaserStateDedup(owner, 2);
 				// 发射音（volume=3.0：48 格可闻=射程+16，距离衰减归零；近处 clamp 到 1 不震耳）
-				sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
+				AddonSoundRange.play(sw, null, arrayPos.x, arrayPos.y, arrayPos.z,
 						SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 3.0f, 1.0f);
-				sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
+				AddonSoundRange.play(sw, null, arrayPos.x, arrayPos.y, arrayPos.z,
 						SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 3.0f, 0.7f);
 		}
 	}
@@ -419,7 +420,7 @@ public class LaserBeamEntity extends Entity {
 			beamDamage(sw, owner, arrayPos, aim, BAL.d("beam_radius", BEAM_RADIUS));
 		}
 		if (phaseTicks % 8 == 0) {
-			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
+			AddonSoundRange.play(sw, null, arrayPos.x, arrayPos.y, arrayPos.z,
 					SoundEvents.BLOCK_BEACON_AMBIENT, SoundCategory.PLAYERS, 3.0f, 1.4f);
 		}
 		if (phaseTicks >= releaseTicks) {
@@ -439,7 +440,7 @@ public class LaserBeamEntity extends Entity {
 			syncLaserStateDedup(owner, 0);
 			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(owner,
 					net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserManager.SKILL_ID, cooldownCastId);
-			sw.playSound(null, arrayPos.x, arrayPos.y, arrayPos.z,
+			AddonSoundRange.play(sw, null, arrayPos.x, arrayPos.y, arrayPos.z,
 					SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 3.0f, 1.0f);
 			this.discard();
 		}

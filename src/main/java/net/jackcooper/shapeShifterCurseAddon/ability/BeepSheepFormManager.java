@@ -2,18 +2,27 @@ package net.jackcooper.shapeShifterCurseAddon.ability;
 
 import io.github.apace100.apoli.power.CooldownPower;
 import io.github.apace100.apoli.power.Power;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
+import net.onixary.shapeShifterCurseFabric.event.SSCEvent;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.TransformManager;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -39,6 +48,8 @@ public final class BeepSheepFormManager {
 
 	/** 玩家 UUID → 变羊快照（原 FormID + Apoli CD 快照 + 变羊时刻）。 */
 	private static final Map<UUID, SheepSnapshot> SNAPSHOTS = new HashMap<>();
+	// 与持久快照分开：旧存档可能没有快照，离线玩家也可能还有待写盘的快照。
+	private static final Set<UUID> ONLINE_SHEEP = new HashSet<>();
 
 	private record SheepSnapshot(String originalFormId, Map<String, Integer> cooldowns, long sheepStartTime) {}
 
@@ -131,17 +142,20 @@ public final class BeepSheepFormManager {
 		}
 	}
 
-	/** 兜底扫描（挂 END_SERVER_TICK）：效果没了但还卡在羊形态 → 切回。
-	 *  覆盖：牛奶外的一切非正常路径（死亡重生清效果/指令清效果/reload 清效果等）。 */
-	public static void tickSweep(net.minecraft.server.MinecraftServer server) {
-		for (var world : server.getWorlds()) {
-			for (ServerPlayerEntity sp : world.getPlayers()) {
-				IForm form = FormUtils.getPlayerForm(sp);
-				if (isSheepForm(form) && !sp.hasStatusEffect(SscAddon.SHEEP_FORM)) {
-					onSheepEnd(sp); // 效果已无但形态还是羊：恢复
-				}
+	/** 效果未走 onRemoved 的兜底。恢复会同步触发形态事件，故在遍历后切换。 */
+	public static void tickSweep(MinecraftServer server) {
+		if (ONLINE_SHEEP.isEmpty()) return;
+		ArrayList<ServerPlayerEntity> toRestore = null;
+		for (var it = ONLINE_SHEEP.iterator(); it.hasNext();) {
+			ServerPlayerEntity player = server.getPlayerManager().getPlayer(it.next());
+			if (player == null || !isSheepForm(FormUtils.getPlayerForm(player))) {
+				it.remove();
+			} else if (!player.hasStatusEffect(SscAddon.SHEEP_FORM)) {
+				if (toRestore == null) toRestore = new ArrayList<>();
+				toRestore.add(player);
 			}
 		}
+		if (toRestore != null) toRestore.forEach(BeepSheepFormManager::onSheepEnd);
 	}
 
 	/** 玩家数据持久化（PersistentState 语义）：写 NBT（断线/停服不丢原形态记录）。 */
@@ -181,11 +195,23 @@ public final class BeepSheepFormManager {
 		// JOIN：变羊中重进（效果与形态都在玩家数据里，天然续走）；此处兜底两种异常：
 		// ① 卡羊形态但效果已无（停服期间到期未走 onRemoved）→ 切回原形态；
 		// ② 快照丢失但处于羊形态（旧存档）→ 切回人形防卡死。
-		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
+		SSCEvent.FORM_CHANGE_END.register((player, previous, current) -> {
+			if (player instanceof ServerPlayerEntity sp) {
+				if (isSheepForm(current)) ONLINE_SHEEP.add(sp.getUuid());
+				else if (isSheepForm(previous)) ONLINE_SHEEP.remove(sp.getUuid());
+			}
+		});
+		ServerPlayerEvents.AFTER_RESPAWN.register((previous, player, alive) -> {
+			if (isSheepForm(FormUtils.getPlayerForm(player))) ONLINE_SHEEP.add(player.getUuid());
+			else ONLINE_SHEEP.remove(player.getUuid());
+		});
+		ServerTickEvents.END_SERVER_TICK.register(BeepSheepFormManager::tickSweep);
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
 				server.execute(() -> {
 					ServerPlayerEntity player = handler.player;
 					IForm form = FormUtils.getPlayerForm(player);
 					if (isSheepForm(form)) {
+						ONLINE_SHEEP.add(player.getUuid());
 						// 重进后立刻修 fallback：存档里的 fallbackFormID 可能是上一会话
 						// onTransform_Finish 污染的人形值；用快照原形态覆盖，防登录链任何
 						// applyFallback 把变羊中的玩家变人类。
@@ -201,12 +227,12 @@ public final class BeepSheepFormManager {
 						}
 					}
 				}));
-		// 注意：**不能**注册 DISCONNECT 清空快照（2026-09-29 实测问题2真因）：Fabric DISCONNECT
-		// 事件在 onDisconnected HEAD 触发，早于 PlayerManager.remove → savePlayerData →
-		// writeCustomDataToNbt 存盘——先清内存表会让 SSCA.SheepForm 从未写进 NBT，重进后
-		// readPlayerNbt 无数据 → 到期 onSheepEnd 走人形兜底（「变羊退出回来直接变人」）。
-		// 内存表无泄漏风险：重进时 readPlayerNbt 按 UUID 覆盖、到期 onSheepEnd 已 remove、
-		// 停服进程结束自然清空。
+		// DISCONNECT 先于玩家 NBT 存盘，只移除在线检查项。停服存盘完成后再释放快照。
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> ONLINE_SHEEP.remove(handler.player.getUuid()));
+		ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+			ONLINE_SHEEP.clear();
+			SNAPSHOTS.clear();
+		});
 	}
 
 	/** NBT 写：由 mixin（PlayerEntity.writeCustomDataToNbt 末尾）调用。 */

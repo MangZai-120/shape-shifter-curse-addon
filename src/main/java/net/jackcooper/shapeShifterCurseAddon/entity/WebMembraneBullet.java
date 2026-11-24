@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.block.WebMembraneBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -192,7 +193,7 @@ public class WebMembraneBullet extends WebBullet {
 	private void playHit(ServerWorld world) {
 		world.spawnParticles(ParticleTypes.CLOUD, this.getX(), this.getY(), this.getZ(),
 				24, 0.35, 0.35, 0.35, 0.05);
-		world.playSound(null, this.getX(), this.getY(), this.getZ(),
+		AddonSoundRange.play(world, null, this.getX(), this.getY(), this.getZ(),
 				SoundEvents.BLOCK_WET_GRASS_BREAK, SoundCategory.NEUTRAL, 1.0f, 0.7f + this.random.nextFloat() * 0.3f);
 	}
 }

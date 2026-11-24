@@ -32,7 +32,7 @@ public abstract class DomainEntityBoundaryMixin {
 	@Inject(method = "setPosition(DDD)V", at = @At("HEAD"), cancellable = true)
 	private void ssca$domainPosition(double x, double y, double z, CallbackInfo ci) {
 		Entity entity = (Entity) (Object) this;
-		if (entity.getWorld() instanceof ServerWorld world && world.getEntityById(entity.getId()) == entity
+		if (entity.getWorld() instanceof ServerWorld world && DomainManager.hasFields(world) && world.getEntityById(entity.getId()) == entity
 				&& DomainManager.blocksTeleport(entity, world, new Vec3d(x, y, z))) {
 			if (entity instanceof net.minecraft.entity.projectile.ProjectileEntity) entity.discard();
 			ci.cancel();

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
@@ -84,7 +85,7 @@ public class SnowFoxSpMeleeAbility {
         data.castId = net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.currentCastId(player, SKILL_ID);
 		DASHING_PLAYERS.put(player.getUuid(), data);
 
-		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ITEM_TRIDENT_RIPTIDE_1, SoundCategory.PLAYERS, 1.0f, 1.2f);
 
 		return true;
@@ -155,7 +156,7 @@ public class SnowFoxSpMeleeAbility {
 					ParticleUtils.spawnHitParticles(serverWorld, new Vec3d(target.getX(), target.getY() + target.getHeight() / 2, target.getZ()));
 				}
 
-				player.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
+				AddonSoundRange.play(player.getWorld(), null, target.getX(), target.getY(), target.getZ(),
 						SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 0.8f, 1.5f);
 			}
 		}

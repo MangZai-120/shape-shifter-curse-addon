@@ -5,6 +5,7 @@
  */
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
@@ -116,7 +117,7 @@ public final class ParasiticSeedFieldManager {
                 now + Math.max(20, lifeTicks), stand.getUuid(), twinPod, selection);
         FIELDS.add(field);
         if (!world.spawnEntity(stand)) { FIELDS.remove(field); return; }
-        world.playSound(null, pos.x, pos.y, pos.z, SoundEvents.BLOCK_GRASS_PLACE, SoundCategory.PLAYERS, 0.8f, 1.2f);
+        AddonSoundRange.play(world, null, pos.x, pos.y, pos.z, SoundEvents.BLOCK_GRASS_PLACE, SoundCategory.PLAYERS, 0.8f, 1.2f);
         world.spawnParticles(ParticleTypes.WARPED_SPORE, pos.x, pos.y + 0.2, pos.z, 30, 0.5, 0.3, 0.5, 0.02);
     }
 
@@ -181,13 +182,13 @@ public final class ParasiticSeedFieldManager {
     }
 
     private static void spawnPickupParticles(ServerWorld world, Vec3d pos) {
-        world.playSound(null, pos.x, pos.y, pos.z, SoundEvents.ITEM_BONE_MEAL_USE, SoundCategory.PLAYERS, 0.9f, 1.3f);
+        AddonSoundRange.play(world, null, pos.x, pos.y, pos.z, SoundEvents.ITEM_BONE_MEAL_USE, SoundCategory.PLAYERS, 0.9f, 1.3f);
         world.spawnParticles(ParticleTypes.HAPPY_VILLAGER, pos.x, pos.y + 0.3, pos.z, 18, 0.4, 0.5, 0.4, 0.0);
         world.spawnParticles(ParticleTypes.WARPED_SPORE, pos.x, pos.y + 0.3, pos.z, 20, 0.5, 0.4, 0.5, 0.02);
     }
 
     private static void spawnDisappearParticles(ServerWorld world, Vec3d pos) {
-        world.playSound(null, pos.x, pos.y, pos.z, SoundEvents.BLOCK_GRASS_BREAK, SoundCategory.PLAYERS, 0.6f, 0.9f);
+        AddonSoundRange.play(world, null, pos.x, pos.y, pos.z, SoundEvents.BLOCK_GRASS_BREAK, SoundCategory.PLAYERS, 0.6f, 0.9f);
         world.spawnParticles(ParticleTypes.WARPED_SPORE, pos.x, pos.y + 0.2, pos.z, 24, 0.5, 0.3, 0.5, 0.03);
         world.spawnParticles(ParticleTypes.HAPPY_VILLAGER, pos.x, pos.y + 0.2, pos.z, 10, 0.4, 0.3, 0.4, 0.0);
     }

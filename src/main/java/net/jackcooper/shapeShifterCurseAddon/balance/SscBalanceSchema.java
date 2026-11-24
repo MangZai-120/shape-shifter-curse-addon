@@ -624,7 +624,6 @@ public final class SscBalanceSchema {
         b.scope("abilities.parasitic_seed_system")         // ParasiticSeedEnergyRegen / SeedField / Absorption / CombatTracker / EatingHandler
                 .intParam("regen_interval_peace", 100, 20, 1200, AB + "ParasiticSeedEnergyRegen", "INTERVAL_PEACE")
                 .intParam("regen_interval_combat", 160, 20, 1200, AB + "ParasiticSeedEnergyRegen", "INTERVAL_COMBAT")
-                .intParam("max_energy", 10, 1, 100, AB + "ParasiticSeedEnergyRegen", "MAX_ENERGY")
                 .doubleParam("field_radius", 1.0, 0.5, 8.0, AB + "ParasiticSeedFieldManager", "FIELD_RADIUS")
                 .intParam("absorption_max_duration", 300, 20, 2400, AB + "ParasiticAbsorptionManager", "MAX_DURATION")
                 .intParam("combat_ticks", 200, 20, 1200, AB + "ParasiticCombatTracker", "COMBAT_TICKS")

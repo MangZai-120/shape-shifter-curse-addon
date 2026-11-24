@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.entity.BridgeWebBullet;
 import net.jackcooper.shapeShifterCurseAddon.entity.WebMembraneBullet;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
@@ -129,7 +130,7 @@ public final class SpiderMoonWeaverWebManager {
 		// CCA 不会在字段赋值后自行发包；切换时同步，供客户端模式图标读取。
 		RegSpiderMoonWeaverStateComponent.SPIDER_MOON_WEAVER_STATE.sync(player);
 		ServerWorld sw = (ServerWorld) player.getWorld();
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_WOOL_PLACE, SoundCategory.PLAYERS, 0.8f, next == MODE_ATTACK ? 1.4f : 0.9f);
 		player.sendMessage(Text.translatable(next == MODE_ATTACK
 				? "message.my_addon.spider_moon_weaver.mode.attack"
@@ -145,7 +146,7 @@ public final class SpiderMoonWeaverWebManager {
 		CHARGING.put(player.getUuid(), new ChargeState(player));
 		FLAT_CHARGING.remove(player.getUuid()); // 普通蓄力 → 蛛丝弹
 		ServerWorld sw = (ServerWorld) player.getWorld();
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_WOOL_HIT, SoundCategory.PLAYERS, 0.7f, 1.2f);
 	}
 
@@ -157,7 +158,7 @@ public final class SpiderMoonWeaverWebManager {
 		CHARGING.put(player.getUuid(), new ChargeState(player));
 		FLAT_CHARGING.add(player.getUuid()); // 平铺蓄力 → 脚下平铺
 		ServerWorld sw = (ServerWorld) player.getWorld();
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_WOOL_HIT, SoundCategory.PLAYERS, 0.7f, 1.0f);
 	}
 
@@ -191,9 +192,9 @@ public final class SpiderMoonWeaverWebManager {
 			float chime = tierChimePitch(s);
 			if (chime > 0f) {
 				// 跨档瞬间：靠齐原版 SSC 蓄力完成音效（note_block hat+snare 升调）+ cloud 粒子
-				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+				AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.BLOCK_NOTE_BLOCK_HAT.value(), SoundCategory.PLAYERS, 0.8f, chime);
-				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+				AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.BLOCK_NOTE_BLOCK_SNARE.value(), SoundCategory.PLAYERS, 0.8f, chime);
 				net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD, player.getX(), player.getY() + 1.0, player.getZ(),
 						10, 0.5, 0.5, 0.5, 0.0);
@@ -260,7 +261,7 @@ public final class SpiderMoonWeaverWebManager {
 		bullet.setVelocity(player, player.getPitch(), player.getYaw(), 0.0f, 1.6f, 1.0f);
 		player.getWorld().spawnEntity(bullet);
 		ServerWorld sw = (ServerWorld) player.getWorld();
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.PLAYERS, 0.9f, 0.7f);
 	}
 
@@ -272,7 +273,7 @@ public final class SpiderMoonWeaverWebManager {
 		AddonWebBridgeAction.BuildWebBridge(player.getWorld(), pos, dir,
 				new AddonWebBridgeAction.WebBridgeConfig(length, 0), RegCustomBlock.TEMP_WEB_BRIDGE);
 		ServerWorld sw = (ServerWorld) player.getWorld();
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_GRASS_PLACE, SoundCategory.PLAYERS, 0.6f, 0.8f);
 		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD, player.getX(), player.getY() + 0.5, player.getZ(),
 				40, 1.0, 0.5, 1.0, 0.0);

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.UUID;
@@ -54,7 +55,7 @@ public final class WrathMark {
         mark.updateTargets(victim,caster);
         var world=caster.getServerWorld();
         world.spawnParticles(ParticleTypes.ANGRY_VILLAGER,victim.getX(),victim.getBodyY(.85),victim.getZ(),5,.25,.12,.25,0);
-        world.playSound(null,victim.getBlockPos(),SoundEvents.ENTITY_EVOKER_CAST_SPELL,SoundCategory.PLAYERS,.9F,.7F);
+        AddonSoundRange.play(world, null,victim.getBlockPos(),SoundEvents.ENTITY_EVOKER_CAST_SPELL,SoundCategory.PLAYERS,.9F,.7F);
         return true;
     }
 
@@ -65,7 +66,7 @@ public final class WrathMark {
         if(attacker instanceof ServerPlayerEntity && (mark.sent==null || !mark.sent.contains(hit.getUuid()))) return;
         if(!mark.candidate(owner,attacker,hit)) return;
         purify(attacker);
-        world.playSound(null,attacker.getBlockPos(),SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME,SoundCategory.PLAYERS,.7F,1.35F);
+        AddonSoundRange.play(world, null,attacker.getBlockPos(),SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME,SoundCategory.PLAYERS,.7F,1.35F);
     }
 
     public void tick(LivingEntity victim) {
@@ -82,7 +83,7 @@ public final class WrathMark {
         if(--remaining<=0) {
             clear(victim);
             victim.damage(SpellDamageSource.of(world.getDamageSources()),penalty);
-            world.playSound(null,victim.getBlockPos(),SoundEvents.ENTITY_WARDEN_HEARTBEAT,SoundCategory.PLAYERS,.75F,1.25F);
+            AddonSoundRange.play(world, null,victim.getBlockPos(),SoundEvents.ENTITY_WARDEN_HEARTBEAT,SoundCategory.PLAYERS,.75F,1.25F);
         }
 
     }

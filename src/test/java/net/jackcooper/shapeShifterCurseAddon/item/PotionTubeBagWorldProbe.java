@@ -3,7 +3,9 @@ package net.jackcooper.shapeShifterCurseAddon.item;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import io.github.apace100.apoli.power.PowerTypeRegistry;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.ability.RedFormTickManager;
 import net.jackcooper.shapeShifterCurseAddon.screen.PotionBagScreenHandler;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.projectile.thrown.PotionEntity;
 import net.minecraft.entity.effect.StatusEffects;
@@ -18,6 +20,8 @@ import net.minecraft.util.hit.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.GameMode;
+import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.spell.NeoRuntime;
 
 /** 药水袋真实槽位、shift、嵌套NBT与饮用入口回归。 */
@@ -180,8 +184,30 @@ public final class PotionTubeBagWorldProbe {
         p.getInventory().setStack(8, bag.copy());
         check(!ownedScreen.canUse(p), "相同NBT的另一只袋子不能继续操作原袋子界面");
         ownedScreen.onClosed(p);
+        checkFullInventoryBagRecovery(p);
         System.out.println("POTION_TUBE_BAG_WORLD_PASS checks=" + checks);
         return checks;
+    }
+
+    private static void checkFullInventoryBagRecovery(ServerPlayerEntity player) {
+        var inventory = player.getInventory();
+        inventory.clear();
+        RegPlayerFormComponent.PLAYER_FORM.get(player).setForm(RegPlayerForms.getPlayerForm(FormIdentifiers.ALLAY_SP));
+        for (int i = 0; i < inventory.main.size(); i++) inventory.setStack(i, new ItemStack(Items.STONE, 64));
+        var bag = new ItemStack(SscAddon.POTION_BAG);
+        var contents = PotionUtil.setPotion(new ItemStack(Items.POTION, 3), Potions.HEALING);
+        contents.getOrCreateNbt().putUuid("RecoveryTest", player.getUuid());
+        PotionBagScreenHandler.setStoredStack(bag, 0, contents);
+        inventory.setStack(0, bag);
+        player.age = 20;
+        RedFormTickManager.tick(player);
+        player.age = 40;
+        RedFormTickManager.tick(player);
+        var drops = player.getServerWorld().getEntitiesByClass(ItemEntity.class, player.getBoundingBox().expand(4),
+                entity -> ItemStack.areEqual(entity.getStack(), contents));
+        check(drops.size() == 1, "满背包回收占位药水袋时，只掉落一次原数量和标签的药水");
+        check(inventory.getStack(0).isOf(SscAddon.ALLAY_HEAL_WAND) && inventory.getStack(1).isOf(SscAddon.ALLAY_JUKEBOX)
+                && inventory.count(SscAddon.POTION_BAG) == 0, "回收后专属物品进入指定位置，旧袋子已移除");
     }
 
     private static ItemStack equippedBag(ServerPlayerEntity p, ItemStack potion) {

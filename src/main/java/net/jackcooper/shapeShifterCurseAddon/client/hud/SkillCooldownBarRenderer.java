@@ -16,6 +16,8 @@ import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
+import net.jackcooper.shapeShifterCurseAddon.client.SkillCooldownClient;
+import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownHolder;
 import net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerCast;
 import net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerState;
@@ -94,12 +96,7 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 			var skill = entry.skill();
 			int x = skill.primary() ? layout.primaryX() : layout.secondaryX();
 			int y = skill.primary() ? layout.primaryY() : layout.secondaryY();
-			Cooldown cooldown = readCooldown(player, skill.resolveCooldown(player), skill.cooldownTotalTicks());
-            var authoritative = net.jackcooper.shapeShifterCurseAddon.client.SkillCooldownClient.get(skill.authorityId(player));
-            if (authoritative != null) {
-                int remaining = authoritative.remainingNow(net.jackcooper.shapeShifterCurseAddon.client.SkillCooldownClient.now());
-                cooldown = new Cooldown(remaining, Math.min(1.0, remaining / (double)Math.max(1, authoritative.total())));
-            }
+			Cooldown cooldown = readCooldown(player, skill.resolveCooldown(player), skill.cooldownTotalTicks(), true);
 			// 释放条件未满足 → 半透明黑色遮罩；遮罩期间跳过 CD 渐变阴影，只保留倒计时数字
 			boolean conditionBlocked = skill.condition() != null && !skill.condition().test(player);
 			if (entry.slot().extra()) {
@@ -220,7 +217,7 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 				boolean ringActive = skill.primary() && (KillEmpowerCast.isNormalRingActive(player)
 						|| empowerRing);
 				if (skill.primary()) {
-					Cooldown activation = readCooldown(player, skill.internalCooldown(), 0);
+					Cooldown activation = readCooldown(player, skill.internalCooldown(), 0, false);
 					if (activation.remaining() > cooldown.remaining()) {
 						cooldownShade = activation.fraction();
 						cooldownSeconds = (int) Math.ceil(activation.remaining() / 20.0);
@@ -284,7 +281,7 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 		if (!(power instanceof CooldownPower) && !(power instanceof VariableIntPower)) {
 			value = -1;
 		} else {
-			value = 1.0 - readCooldown(player, id, 0).remaining() / (double) skill.internalTicks();
+			value = 1.0 - readCooldown(player, id, 0, false).remaining() / (double) skill.internalTicks();
 		}
 		internalReadyCache.put(id, value);
 		return value;
@@ -310,10 +307,17 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 
 	private record Cooldown(int remaining, double fraction) {}
 
-	private Cooldown readCooldown(PlayerEntity player, Identifier id, int authoritativeTotal) {
-		if (id == null || !PowerTypeRegistry.contains(id)) return new Cooldown(0, 0);
-		io.github.apace100.apoli.power.PowerType<?> type = PowerTypeRegistry.get(id);
-		Power power = PowerHolderComponent.KEY.get(player).getPower(type);
+	private Cooldown readCooldown(PlayerEntity player, Identifier id, int authoritativeTotal, boolean skillSlot) {
+		if (id == null) return new Cooldown(0, 0);
+		io.github.apace100.apoli.power.PowerType<?> type = PowerTypeRegistry.contains(id) ? PowerTypeRegistry.get(id) : null;
+		Power power = type == null ? null : PowerHolderComponent.KEY.get(player).getPower(type);
+		if (skillSlot) {
+			var state = SkillCooldownClient.get(id.toString(), power instanceof SkillCooldownHolder);
+			if (state != null) {
+				int remaining = state.remainingNow(SkillCooldownClient.now());
+				return new Cooldown(remaining, Math.min(1.0, remaining / (double) Math.max(1, state.total())));
+			}
+		}
 		if (power instanceof CooldownPower cooldown) {
 			int remaining = Math.max(0, cooldown.getRemainingTicks());
 			return new Cooldown(remaining, remaining / (double) Math.max(1, cooldown.cooldownDuration));

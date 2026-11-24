@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.network.ServerPacketExecutor;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
@@ -498,15 +499,15 @@ public final class SpellChannelManager {
 	}
 
 	public static void playFailureSound(ServerPlayerEntity player) {
-		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_NOTE_BLOCK_BASS.value(), SoundCategory.PLAYERS, 0.8f, 0.6f);
-		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.7f, 0.65f);
 	}
 
 	/** 法力不足专用音（2026-09-19 用户定稿）：火焰熄灭嘶声——「法力枯竭」语义，与通用失败音区分。 */
 	public static void playNoManaSound(ServerPlayerEntity player) {
-		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_GENERIC_EXTINGUISH_FIRE, SoundCategory.PLAYERS, 0.9f, 0.9f);
 	}
 
@@ -515,14 +516,14 @@ public final class SpellChannelManager {
 				|| !SpellCastingRules.playsChargeStartSound(channel.profile.ticks())) return;
 		ServerPlayerEntity player = channel.player;
 		// One authoritative start cue reaches the caster and nearby listeners alike.
-		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), SoundCategory.PLAYERS, 0.75f, 1.2f);
 		if (!SpellCastingRules.playsChargeSound(channel.profile.ticks())) return;
 		if (channel.spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.DeathFinaleSpell) return;
 		if (channel.spell instanceof net.jackcooper.shapeShifterCurseAddon.spell.spells.DomainSpell) return;
 		// 蓄力嗡嗡声已迁至客户端循环音实例（SpellChargeSoundInstance，HUD STATE 沿驱动，
 		// 可截断/可淡出/可立即停）；长蓄力另外保留起手信标激活短音。
-		player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 0.7f, 0.65f);
 	}
 

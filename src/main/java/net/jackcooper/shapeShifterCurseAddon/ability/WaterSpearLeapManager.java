@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -95,11 +96,11 @@ public final class WaterSpearLeapManager {
 
 		ServerWorld sw = (ServerWorld) player.getWorld();
 		// 起手蓄力音效：海晶核激活（魔法水涌，音量拉大做明显）+ 高速水花 + 美西螈入水（全员可闻 null）
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 2.0f, 1.2f);
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_PLAYER_SPLASH_HIGH_SPEED, SoundCategory.PLAYERS, 1.0f, 1.1f);
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_AXOLOTL_SPLASH, SoundCategory.PLAYERS, 1.2f, 0.8f);
 		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.SPLASH, player.getX(), player.getY() + 0.2, player.getZ(),
 				30, 0.4, 0.2, 0.4, 0.3);
@@ -133,14 +134,14 @@ public final class WaterSpearLeapManager {
 			if (s.tick % 5 == 0) {
 				float progress = (float) s.tick / (float) chargeTicks;
 				float pitch = 0.8f + progress * 0.9f;
-				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+				AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.BLOCK_BUBBLE_COLUMN_UPWARDS_INSIDE, SoundCategory.PLAYERS, 0.7f, pitch);
-				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+				AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.ENTITY_GENERIC_SPLASH, SoundCategory.PLAYERS, 0.35f, pitch);
 			}
 			// 蓄满前瞬间（最后 3 tick）：海晶核短鸣提示「即将投出」
 			if (s.tick == chargeTicks - 3) {
-				sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+				AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 						SoundEvents.BLOCK_CONDUIT_AMBIENT_SHORT, SoundCategory.PLAYERS, 0.9f, 1.4f);
 			}
 		} else {
@@ -160,9 +161,9 @@ public final class WaterSpearLeapManager {
 		sw.spawnEntity(spear);
 		// 不 swingHand：与 vanilla 水矛（三叉戟）投掷一致——矛从举矛蓄力姿势直接飞出、手臂落回正常，
 		// 而非普通攻击挥手（TridentItem.onStoppedUsing 同样不挥手）。
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ITEM_TRIDENT_THROW, SoundCategory.PLAYERS, 1.2f, 1.1f);
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_PLAYER_SPLASH, SoundCategory.PLAYERS, 1.0f, 0.9f);
 	}
 

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
@@ -127,7 +128,7 @@ public class AllaySPTotem {
 
 		if (deactivatedAny) {
 			player.sendMessage(Text.translatable("message.ssc_addon.totem.deactivated"), true);
-			player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 0.5f);
+			AddonSoundRange.play(player, SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 0.5f);
 		}
 	}
 
@@ -187,7 +188,7 @@ public class AllaySPTotem {
 			deactivateTotem(stack);
 
 			player.sendMessage(Text.translatable("message.ssc_addon.totem.deactivated"), true);
-			player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 0.5f);
+			AddonSoundRange.play(player, SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 0.5f);
 
 			if (player instanceof ServerPlayerEntity serverPlayer) {
 				updateActiveTotemTracking(serverPlayer, false);
@@ -202,14 +203,14 @@ public class AllaySPTotem {
 			Long lastActivate = ACTIVATE_COOLDOWNS.get(player.getUuid());
 			if (lastActivate != null && now - lastActivate < cooldownTicks) {
 				player.sendMessage(Text.translatable("message.ssc_addon.totem.cooldown"), true);
-				player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
+				AddonSoundRange.play(player, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
 				return TypedActionResult.fail(stack);
 			}
 
 			// R2 背包全局唯一：已持有任一激活图腾则拒绝激活第二个
 			if (hasAnyActiveTotem(player)) {
 				player.sendMessage(Text.translatable("message.ssc_addon.totem.already_active"), true);
-				player.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
+				AddonSoundRange.play(player, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
 				return TypedActionResult.fail(stack);
 			}
 
@@ -223,7 +224,7 @@ public class AllaySPTotem {
 			ACTIVATE_COOLDOWNS.put(player.getUuid(), now);
 
 			player.sendMessage(Text.translatable("message.ssc_addon.totem.activated"), true);
-			player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 2.0f);
+			AddonSoundRange.play(player, SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.PLAYERS, 1.0f, 2.0f);
 
 			if (player instanceof ServerPlayerEntity serverPlayer) {
 				updateActiveTotemTracking(serverPlayer, true);

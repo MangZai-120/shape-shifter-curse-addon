@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -88,8 +89,8 @@ public final class CalamityPact {
         if (!hasSummon(caster)) return;
         ServerWorld world = caster.getServerWorld();
         active.put(caster, new Pact(world, world.getTime() + ticks, fraction));
-        world.playSound(null, caster.getBlockPos(), SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE, SoundCategory.PLAYERS, 0.8F, 0.95F);
-        world.playSound(null, caster.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 0.9F, 0.7F);
+        AddonSoundRange.play(world, null, caster.getBlockPos(), SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE, SoundCategory.PLAYERS, 0.8F, 0.95F);
+        AddonSoundRange.play(world, null, caster.getBlockPos(), SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 0.9F, 0.7F);
         world.spawnParticles(ParticleTypes.ENCHANT, caster.getX(), caster.getBodyY(0.6), caster.getZ(), 20, 0.4, 0.35, 0.4, 0.1);
     }
 
@@ -118,7 +119,7 @@ public final class CalamityPact {
             }
         }
         if (paidShares == 0) return amount;
-        pact.world.playSound(null, player.getBlockPos(), SoundEvents.BLOCK_AMETHYST_CLUSTER_HIT,
+        AddonSoundRange.play(pact.world, null, player.getBlockPos(), SoundEvents.BLOCK_AMETHYST_CLUSTER_HIT,
                 SoundCategory.PLAYERS, 0.75F, 0.8F);
         // The original hit continues through vanilla armor, absorption and hurt feedback.
         return amount * (1.0F - pact.fraction * paidShares / recipients.size());

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.block.InfusionAltarBlockEntity;
 import net.jackcooper.shapeShifterCurseAddon.screen.InfusionAltarScreenHandler;
@@ -122,7 +123,7 @@ public final class ScrollWorkshopManager {
 		dust.decrement(repairDust);
 		ScrollData.setUses(scroll, max);
 		be.markDirty();
-		player.getWorld().playSound(null, be.getPos(), SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE,
+		AddonSoundRange.play(player.getWorld(), null, be.getPos(), SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE,
 				SoundCategory.BLOCKS, 0.8f, 1.6f);
 		player.sendMessage(Text.translatable("message.ssc_addon.workshop.repaired",
 				Text.translatable(spell.getNameKey())).formatted(Formatting.GREEN), true);
@@ -159,7 +160,7 @@ public final class ScrollWorkshopManager {
 			player.dropItem(dust, false);
 		}
 		be.markDirty();
-		player.getWorld().playSound(null, be.getPos(), SoundEvents.BLOCK_GRINDSTONE_USE,
+		AddonSoundRange.play(player.getWorld(), null, be.getPos(), SoundEvents.BLOCK_GRINDSTONE_USE,
 				SoundCategory.BLOCKS, 1.0f, 0.8f);
 		player.sendMessage(Text.translatable("message.ssc_addon.workshop.salvaged",
 				Text.translatable(spell.getNameKey()), refund).formatted(Formatting.GREEN), true);
@@ -169,6 +170,6 @@ public final class ScrollWorkshopManager {
         var table=context(player);if(table==null)return;
         int result=net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme.imprint(table,net.jackcooper.shapeShifterCurseAddon.spell.research.WorldRuneState.get(player.getServer()),InfusionAltarScreenHandler.MAINTENANCE_SCHEME,InfusionAltarScreenHandler.MAINTENANCE_SCROLL);
         player.sendMessage(Text.translatable("research.ssc_addon.runes.imprint."+result),true);
-        if(result==0){player.currentScreenHandler.sendContentUpdates();player.getWorld().playSound(null,table.getPos(),SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE,SoundCategory.BLOCKS,.8f,1.1f);}
+        if(result==0){player.currentScreenHandler.sendContentUpdates();AddonSoundRange.play(player.getWorld(), null,table.getPos(),SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE,SoundCategory.BLOCKS,.8f,1.1f);}
     }
 }

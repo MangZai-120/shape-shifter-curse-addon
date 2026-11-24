@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -268,7 +269,7 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 		BlockState state = this.getWorld().getBlockState(pos);
 		if (!CaveVines.hasBerries(state)) return;
 		this.getWorld().setBlockState(pos, state.with(Properties.BERRIES, false), Block.NOTIFY_LISTENERS);
-		this.getWorld().playSound(null, pos, SoundEvents.BLOCK_CAVE_VINES_PICK_BERRIES,
+		AddonSoundRange.play(this.getWorld(), null, pos, SoundEvents.BLOCK_CAVE_VINES_PICK_BERRIES,
 				SoundCategory.NEUTRAL, 1.0f, 0.8f + this.getRandom().nextFloat() * 0.4f);
 		this.moisture = Math.min(MAX_MOISTURE, this.moisture + EAT_MOISTURE_GAIN);
 		this.heal(EAT_HEAL);
@@ -451,8 +452,8 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 		double z = this.getZ();
 
 		// 音效（原版 power：splash + wither.break_block）
-		serverWorld.playSound(null, x, y, z, SoundEvents.ENTITY_AXOLOTL_SPLASH, SoundCategory.NEUTRAL, 0.5f, 0.8f);
-		serverWorld.playSound(null, x, y, z, SoundEvents.ENTITY_WITHER_BREAK_BLOCK, SoundCategory.NEUTRAL, 0.5f, 0.8f);
+		AddonSoundRange.play(serverWorld, null, x, y, z, SoundEvents.ENTITY_AXOLOTL_SPLASH, SoundCategory.NEUTRAL, 0.5f, 0.8f);
+		AddonSoundRange.play(serverWorld, null, x, y, z, SoundEvents.ENTITY_WITHER_BREAK_BLOCK, SoundCategory.NEUTRAL, 0.5f, 0.8f);
 
 		// 粒子：雨滴 + 深蓝尘埃（原版 spread x2 y0.5/1 z2，count 32）
 		ParticleUtils.spawnParticles(serverWorld, ParticleTypes.RAIN, x, y + 0.5, z, 32, 2.0, 0.5, 2.0, 0.0);
@@ -548,7 +549,7 @@ public class AxolotlShifterEntity extends PathAwareEntity implements GeoEntity {
 
 		if (this.isSprinting() && !this.isTouchingWater() && this.moisture > 0) {
 			// 音效 + 粒子（原版：rain 8 + 深蓝尘 8，splash 0.5/0.8；击退增强已移除）
-			this.playSound(SoundEvents.ENTITY_AXOLOTL_SPLASH, 0.5f, 0.8f);
+			AddonSoundRange.play(this, SoundEvents.ENTITY_AXOLOTL_SPLASH, 0.5f, 0.8f);
 			if (this.getWorld() instanceof ServerWorld serverWorld) {
 				ParticleUtils.spawnParticles(serverWorld, ParticleTypes.RAIN,
 						target.getX(), target.getBodyY(0.5), target.getZ(), 8, 0.5, 0.5, 0.5, 0.0);

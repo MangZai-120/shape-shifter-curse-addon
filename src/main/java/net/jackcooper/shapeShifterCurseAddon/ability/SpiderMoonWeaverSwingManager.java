@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.entity.SpiderSwingBullet;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -57,6 +58,22 @@ public final class SpiderMoonWeaverSwingManager {
 	/** 服务端断丝阈值：max_rope_reach 快照值 + 3 格余量（与常量版 BREAK_OVERSTRETCH = MAX_ROPE_REACH + 3.0 等价）。 */
 	private static double breakOverstretch() {
 		return BAL.d("max_rope_reach", MAX_ROPE_REACH) + 3.0;
+	}
+
+	public static double tetherReelSpeed() {
+		return BAL.d("reel_speed", REEL_SPEED);
+	}
+
+	public static double tetherSoftBuffer() {
+		return BAL.d("tether_soft_buffer", TETHER_SOFT_BUFFER);
+	}
+
+	public static double tetherPullGain() {
+		return BAL.d("tether_pull_gain", TETHER_PULL_GAIN);
+	}
+
+	public static double tetherHardGain() {
+		return BAL.d("tether_hard_gain", TETHER_HARD_GAIN);
 	}
 
 	// ==== 状态 ====
@@ -167,7 +184,7 @@ public final class SpiderMoonWeaverSwingManager {
 		player.getWorld().spawnEntity(bullet);
 		BULLET_IN_FLIGHT.put(player.getUuid(), bullet);
 		ServerWorld sw = (ServerWorld) player.getWorld();
-		sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_SPIDER_AMBIENT, SoundCategory.PLAYERS, 0.6f, 1.3f);
 	}
 
@@ -236,7 +253,7 @@ public final class SpiderMoonWeaverSwingManager {
 		s.lastPX = Double.NaN;
 		if (wasActive) {
 			ServerWorld sw = (ServerWorld) player.getWorld();
-			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_WOOL_BREAK, SoundCategory.PLAYERS, 0.7f, 1.1f);
 			if (giveCd) {
 				settleBreak(player);
@@ -311,17 +328,17 @@ public final class SpiderMoonWeaverSwingManager {
 			return;
 		}
 		double ropeLen = Math.max(s.ropeLen, MIN_ROPE_LEN); // 硬上限（初始 16）
-		double softLen = Math.max(MIN_ROPE_LEN, ropeLen - TETHER_SOFT_BUFFER); // 软拉阈值（初始 12）
+		double softLen = Math.max(MIN_ROPE_LEN, ropeLen - tetherSoftBuffer()); // 软拉阈值（初始 12）
 		// 牵引：12~16 线性加大（over×PULL_GAIN），超 16 吸收远离 + 额外大力牵引（强拉回、防冲出 16）；纯速度不改位置。
 		if (dist > softLen) {
 			double resist = knockbackResist(living);
 			Vec3d dir = pPos.subtract(tPos).normalize(); // 目标 → 玩家
 			Vec3d tv = living.getVelocity();
 			double over = dist - softLen; // 12 格=0，16 格=4
-			double pull = over * TETHER_PULL_GAIN; // 12 起线性加大牵引
+			double pull = over * tetherPullGain(); // 12 起线性加大牵引
 			double cap = 0.55;
 			if (dist > ropeLen) {
-				pull += (dist - ropeLen) * TETHER_HARD_GAIN; // 超 16 额外大力（线性更陡，靠牵引力防过远、不硬吸收速度、不卡）
+				pull += (dist - ropeLen) * tetherHardGain(); // 超 16 额外大力（线性更陡，靠牵引力防过远、不硬吸收速度、不卡）
 				cap = 0.9; // 放宽速度上限给大力
 			}
 			pull *= (1.0 - resist); // 按抗性：轻目标主要拉目标，重目标靠客户端把玩家拉过去

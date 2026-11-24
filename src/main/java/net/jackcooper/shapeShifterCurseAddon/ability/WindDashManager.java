@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -145,9 +146,9 @@ public final class WindDashManager {
         STATES.put(player.getUuid(), s);
         ServerWorld sw = (ServerWorld) player.getWorld();
         // 起飞音效（全员可听）：用短促上升音，避免循环/长音在落地后残留 1-2 秒
-        sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_FIREWORK_ROCKET_LAUNCH, SoundCategory.PLAYERS, 0.9f, 0.8f);
-        sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ITEM_TRIDENT_THROW, SoundCategory.PLAYERS, 0.5f, 1.8f);
         // 同步阶段给客户端（驱动落点预览/音效）
         SscAddonNetworking.syncDashState(player, s.phase, s.targetY, s.maxRange, s.landingRadius);
@@ -178,9 +179,9 @@ public final class WindDashManager {
                     1, 0.1, 0.1, 0.1, 0.0);
         }
         // 冲刺音效
-        sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 1.0f, 1.8f);
-        sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_FIREWORK_ROCKET_BLAST, SoundCategory.PLAYERS, 0.6f, 1.4f);
         SscAddonNetworking.syncDashState(player, s.phase, 0, s.maxRange, s.landingRadius);
     }
@@ -316,7 +317,7 @@ public final class WindDashManager {
             // 落地小粒子
             net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.CLOUD, player.getX(), player.getY(), player.getZ(),
                     10, 0.3, 0.0, 0.3, 0.02);
-            sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+            AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.BLOCK_SAND_PLACE, SoundCategory.PLAYERS, 0.5f, 1.2f);
             enterCooldown(player);
             clear(player);
@@ -338,9 +339,9 @@ public final class WindDashManager {
         settlePosition(player, land.x, land.y, land.z);
 
         // 落地音效（全员可听）
-        sw.playSound(null, land.x, land.y, land.z,
+        AddonSoundRange.play(sw, null, land.x, land.y, land.z,
                 SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 0.7f, 1.4f);
-        sw.playSound(null, land.x, land.y, land.z,
+        AddonSoundRange.play(sw, null, land.x, land.y, land.z,
                 SoundEvents.ENTITY_PLAYER_BIG_FALL, SoundCategory.PLAYERS, 0.8f, 0.8f);
 
         if (withDamage) {

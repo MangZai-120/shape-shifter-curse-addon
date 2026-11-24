@@ -71,6 +71,7 @@ public final class AdvancedColorBridge {
 
     /** 备份打开 Screen 时的客户端 PlayerSkinComponent 状态（颜色 + enable），用于取消时回滚预览。 */
     public static final class PreviewBackup {
+        ClientPlayerEntity player;
         FormTextureUtils.ColorSetting colorABGR;
         boolean enabled;
     }
@@ -81,6 +82,7 @@ public final class AdvancedColorBridge {
         if (p == null) return null;
         PlayerSkinComponent skin = RegPlayerSkinComponent.SKIN_SETTINGS.get(p);
         PreviewBackup b = new PreviewBackup();
+        b.player = p;
         b.colorABGR = skin.getFormColor();
         b.enabled = skin.isEnableFormColor();
         return b;
@@ -108,7 +110,7 @@ public final class AdvancedColorBridge {
     public static void restoreFromBackup(PreviewBackup b) {
         if (b == null) return;
         ClientPlayerEntity p = MinecraftClient.getInstance().player;
-        if (p == null) return;
+        if (p != b.player) return;
         PlayerSkinComponent skin = RegPlayerSkinComponent.SKIN_SETTINGS.get(p);
         skin.setFormColor(b.colorABGR);
         skin.setEnableFormColor(b.enabled);

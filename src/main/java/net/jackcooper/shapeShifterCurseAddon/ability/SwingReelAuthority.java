@@ -5,7 +5,9 @@ public final class SwingReelAuthority {
     public static final int MAX_INPUT_TICKS = 4;
     public static final double CLIMB_PER_TICK = 0.169;
     public static final double DESCEND_PER_TICK = 0.15;
-    public static final double TETHER_PER_TICK = 0.16 * 1.5;
+    private static double maxTetherReelPerTick() {
+        return SpiderMoonWeaverSwingManager.tetherReelSpeed() * 1.5;
+    }
     private SwingReelAuthority() {}
 
     public record Result(double length, double cost, boolean canExtend) {}
@@ -24,7 +26,7 @@ public final class SwingReelAuthority {
         int ticks = Math.max(0, Math.min(MAX_INPUT_TICKS, elapsed));
         double target = Math.max(min, Math.min(max, requested));
         if (intent > 0 && target < length) {
-            length -= Math.min(length - target, ticks * (tether ? TETHER_PER_TICK : CLIMB_PER_TICK));
+            length -= Math.min(length - target, ticks * (tether ? maxTetherReelPerTick() : CLIMB_PER_TICK));
         } else if (intent < 0 && canExtend && target > length) {
             double change = Math.min(target - length, ticks * DESCEND_PER_TICK);
             change = Math.min(change, available * blocksPerMana);
@@ -38,7 +40,7 @@ public final class SwingReelAuthority {
     public static double reconcile(double predicted, double authoritative, int intent,
                                    boolean canExtend, boolean tether) {
         if (!Double.isFinite(predicted) || intent == 0 || intent < 0 && !canExtend) return authoritative;
-        double lead = MAX_INPUT_TICKS * (tether ? TETHER_PER_TICK : intent > 0 ? CLIMB_PER_TICK : DESCEND_PER_TICK);
+        double lead = MAX_INPUT_TICKS * (tether ? maxTetherReelPerTick() : intent > 0 ? CLIMB_PER_TICK : DESCEND_PER_TICK);
         return intent > 0 ? Math.max(authoritative - lead, Math.min(authoritative, predicted))
                 : Math.min(authoritative + lead, Math.max(authoritative, predicted));
     }

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.research;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.fabricmc.fabric.api.networking.v1.*;
 import net.jackcooper.shapeShifterCurseAddon.spell.*;
 import net.minecraft.nbt.NbtCompound;
@@ -54,8 +55,8 @@ public final class SlottedResearchManager {
                     key=result.key();
                     if(result.success()){
                         player.currentScreenHandler.sendContentUpdates();
-                        player.getWorld().playSound(null,table.getPos(),SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE,SoundCategory.BLOCKS,.7f,.9f);
-                        player.getWorld().playSound(null,table.getPos(),SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME,SoundCategory.BLOCKS,.8f,1.15f);
+                        AddonSoundRange.play(player.getWorld(), null,table.getPos(),SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE,SoundCategory.BLOCKS,.7f,.9f);
+                        AddonSoundRange.play(player.getWorld(), null,table.getPos(),SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME,SoundCategory.BLOCKS,.8f,1.15f);
                     }
                 }
                 default -> {return;}

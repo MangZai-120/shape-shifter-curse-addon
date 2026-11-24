@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
@@ -77,7 +78,7 @@ public class BeepSheepSpell extends Spell {
 				horiz == 0 ? 0 : cosE * (dir.z / horiz)).multiply(RuneCastContext.current().scale(0.9,RuneModifiers.Stat.SPEED));
 		bullet.setVelocity(velocity.x, velocity.y, velocity.z);
 		caster.getWorld().spawnEntity(bullet);
-		caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(caster.getWorld(), null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.ENTITY_SHEEP_AMBIENT, SoundCategory.PLAYERS, 0.9f, 1.4f);
 	}
 }

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.block;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -187,7 +188,7 @@ public class WebMembraneBlock extends MultifaceGrowthBlock {
 			WebMembraneOwners.remove(world, pos);
 			if (world instanceof ServerWorld sw) {
 				// 踩网音效
-				sw.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+				AddonSoundRange.play(sw, null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
 						SoundEvents.BLOCK_WET_GRASS_BREAK, SoundCategory.BLOCKS, 0.5f, 1.1f);
 				// 蓝色高亮：仅通知施法者本机给受害者描蓝边
 				if (casterId != null) {

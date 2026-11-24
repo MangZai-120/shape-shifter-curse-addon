@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -59,7 +60,7 @@ public final class DeathFinaleManager {
 
     public static void begin(ServerPlayerEntity caster, int duration) {
         ACTIVE.put(caster.getUuid(), new Sequence(caster, duration));
-        caster.getWorld().playSound(null, caster.getBlockPos(), SoundEvents.BLOCK_RESPAWN_ANCHOR_CHARGE,
+        AddonSoundRange.play(caster.getWorld(), null, caster.getBlockPos(), SoundEvents.BLOCK_RESPAWN_ANCHOR_CHARGE,
                 SoundCategory.PLAYERS, 1.1f, 0.55f);
         sync(caster.getServer(), true);
     }
@@ -72,9 +73,9 @@ public final class DeathFinaleManager {
         // Movement and jumping use the shared channel lock; gravity/knockback remain vanilla.
         int remaining = s.duration - ticks;
         if (remaining > 0 && ticks % (remaining <= 60 ? 10 : 20) == 0) {
-            s.world.playSound(null, s.center().x, s.center().y, s.center().z, SoundEvents.ENTITY_WARDEN_HEARTBEAT,
+            AddonSoundRange.play(s.world, null, s.center().x, s.center().y, s.center().z, SoundEvents.ENTITY_WARDEN_HEARTBEAT,
                     SoundCategory.PLAYERS, 1.3f, 0.65f + 0.45f * ticks / s.duration);
-            if (ticks % 20 == 0) s.world.playSound(null, s.center().x, s.center().y, s.center().z,
+            if (ticks % 20 == 0) AddonSoundRange.play(s.world, null, s.center().x, s.center().y, s.center().z,
                     SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.PLAYERS, 0.65f, 0.55f);
         }
     }
@@ -111,9 +112,9 @@ public final class DeathFinaleManager {
             if (SpellHitHelper.projectileHit(caster, target, power, FormationElement.VOID, refundId, exp,s.anomaly)
                     == SpellHitHelper.HitResult.HIT) exp = 0;
         }
-        s.world.playSound(null, s.center().x, s.center().y, s.center().z, SoundEvents.ENTITY_WARDEN_SONIC_BOOM,
+        AddonSoundRange.play(s.world, null, s.center().x, s.center().y, s.center().z, SoundEvents.ENTITY_WARDEN_SONIC_BOOM,
                 SoundCategory.PLAYERS, 2f, 0.65f);
-        s.world.playSound(null, s.center().x, s.center().y, s.center().z, SoundEvents.BLOCK_RESPAWN_ANCHOR_DEPLETE.value(),
+        AddonSoundRange.play(s.world, null, s.center().x, s.center().y, s.center().z, SoundEvents.BLOCK_RESPAWN_ANCHOR_DEPLETE.value(),
                 SoundCategory.PLAYERS, 1.5f, 0.6f);
         sync(caster.getServer(), true);
     }

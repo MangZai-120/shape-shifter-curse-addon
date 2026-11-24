@@ -101,7 +101,7 @@ public class SkillCastManager extends PersistentState {
     }
 
     // ===== 存储 =====
-    private final Map<String, CooldownState> cooldowns = new ConcurrentHashMap<>();
+    private final Map<UUID, Map<String, CooldownState>> cooldowns = new ConcurrentHashMap<>();
     private final Map<String, Cast> activeCasts = new ConcurrentHashMap<>();
 
     private static volatile SkillCastManager instance;
@@ -157,10 +157,9 @@ public class SkillCastManager extends PersistentState {
     public void onPlayerJoined(UUID player, long now) {
         lastWorldTick = now;
         boolean changed = offline.remove(player);
-        String prefix = player + "\u0000";
-        for (var entry : cooldowns.entrySet()) {
-            var cd = entry.getValue();
-            if (entry.getKey().startsWith(prefix) && cd.pausedRemaining >= 0) {
+        pruneExpired(player, now);
+        for (var cd : cooldowns.getOrDefault(player, Map.of()).values()) {
+            if (cd.pausedRemaining >= 0) {
                 cd.endTick = now + cd.pausedRemaining;
                 cd.pausedRemaining = -1;
                 changed = true;
@@ -191,7 +190,7 @@ public class SkillCastManager extends PersistentState {
 
     public long begin(UUID player, String skillId, ResolvedConfig config, long now) {
         String k = key(player, skillId);
-        CooldownState cd = cooldowns.get(k);
+        CooldownState cd = cooldown(player, skillId);
         if (cd != null && cd.isActive(now)) return -1;
         if (activeCasts.containsKey(k)) return -1;
 
@@ -200,7 +199,7 @@ public class SkillCastManager extends PersistentState {
         lastWorldTick = now;
         Cast cast = new Cast(nextCastId(), player, skillId, config, now);
         activeCasts.put(k, cast);
-        cooldowns.computeIfAbsent(k, ignored -> new CooldownState());
+        ensureCooldown(player, skillId);
         markDirty();
 
         if (START_ON_CAST.equals(config.cooldownStart)) {
@@ -267,7 +266,7 @@ public class SkillCastManager extends PersistentState {
         if (cast.config.failCooldown > 0) {
             startCooldown(cast.playerId, cast.skillId, cast.config.failCooldown, castId, now);
         } else if (cast.cooldownStarted) {
-            CooldownState cd = cooldowns.get(key(cast.playerId, cast.skillId));
+            CooldownState cd = cooldown(cast.playerId, cast.skillId);
             if (cd != null) {
                 cd.endTick = 0;
                 cd.totalTicks = 0;
@@ -302,6 +301,8 @@ public class SkillCastManager extends PersistentState {
     public void abort(ServerPlayerEntity player, long castId) {
         Cast cast = findCast(castId);
         if (cast == null || cast.settled) return;
+        CooldownState cd = cooldown(cast.playerId, cast.skillId);
+        if (cast.cooldownStarted && cd != null && cd.lastCastId == castId) reset(cast.playerId, cast.skillId);
         cast.settled = true;
         activeCasts.remove(key(cast.playerId, cast.skillId), cast);
         markDirty();
@@ -314,7 +315,7 @@ public class SkillCastManager extends PersistentState {
 
     /** 清除冷却（击杀刷新等）。 */
     public void reset(UUID player, String skillId) {
-        CooldownState cd = cooldowns.get(key(player, skillId));
+        CooldownState cd = cooldown(player, skillId);
         if (cd == null) return;
         cd.endTick = 0;
         cd.totalTicks = 0;
@@ -338,7 +339,7 @@ public class SkillCastManager extends PersistentState {
         int ticks = Math.max(0, actualCooldown);
         cast.retune(ticks);
         markDirty();
-        CooldownState cd = cooldowns.get(key(cast.playerId, cast.skillId));
+        CooldownState cd = cooldown(cast.playerId, cast.skillId);
         if (cast.cooldownStarted && cd != null && cd.lastCastId == castId) {
             if (cd.pausedRemaining >= 0) cd.pausedRemaining = Math.max(0, cd.pausedRemaining - cd.totalTicks + ticks);
             cd.endTick = cd.endTick - cd.totalTicks + ticks;
@@ -349,18 +350,34 @@ public class SkillCastManager extends PersistentState {
 
     /** 查询冷却（服务端权威；HUD/同步用）。 */
     public CooldownState cooldown(UUID player, String skillId) {
-        return cooldowns.get(key(player, skillId));
+        return cooldowns.getOrDefault(player, Map.of()).get(domain(skillId));
+    }
+
+    private CooldownState ensureCooldown(UUID player, String skillId) {
+        return cooldowns.computeIfAbsent(player, ignored -> new ConcurrentHashMap<>())
+                .computeIfAbsent(domain(skillId), ignored -> new CooldownState());
+    }
+
+    private void pruneExpired(UUID player, long now) {
+        var skills = cooldowns.get(player);
+        if (skills == null) return;
+        if (skills.entrySet().removeIf(entry -> !entry.getValue().isActive(now)
+                && control(player, entry.getKey()) == null)) {
+            if (skills.isEmpty()) cooldowns.remove(player, skills);
+            markDirty();
+        }
     }
 
     public record View(String skill, int phase, int remaining, int total) {}
 
     public java.util.List<View> snapshot(UUID player, long now) {
-        String prefix = player + "\u0000";
-        java.util.List<View> result = new java.util.ArrayList<>();
-        cooldowns.forEach((k, cd) -> {
-            if (!k.startsWith(prefix)) return;
-            Cast cast = activeCasts.get(k);
-            result.add(new View(k.substring(prefix.length()), cast == null ? PHASE_IDLE : cast.phase,
+        var skills = cooldowns.get(player);
+        if (skills == null) return java.util.List.of();
+        java.util.List<View> result = new java.util.ArrayList<>(skills.size());
+        String prefix = activeCasts.isEmpty() ? null : player + "\u0000";
+        skills.forEach((skill, cd) -> {
+            Cast cast = prefix == null ? null : activeCasts.get(prefix + skill);
+            result.add(new View(skill, cast == null ? PHASE_IDLE : cast.phase,
                     cd.remaining(now), cd.totalTicks));
         });
         result.sort(java.util.Comparator.comparing(View::skill));
@@ -372,14 +389,14 @@ public class SkillCastManager extends PersistentState {
         if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return false;
         long now = now(player);
         restoreOnlineClock(player, skillId, now);
-        CooldownState cd = cooldowns.get(key(player.getUuid(), skillId));
+        CooldownState cd = cooldown(player.getUuid(), skillId);
         return !activeCasts.containsKey(key(player.getUuid(), skillId))
                 && (cd == null || !cd.isActive(now));
     }
 
     /** Repair a legacy frozen clock only for the currently connected player, preserving its remaining CD. */
     private void restoreOnlineClock(ServerPlayerEntity player, String skillId, long now) {
-        CooldownState cd = cooldowns.get(key(player.getUuid(), skillId));
+        CooldownState cd = cooldown(player.getUuid(), skillId);
         if (!offline.contains(player.getUuid()) && (cd == null || cd.pausedRemaining < 0)) return;
         if (player.networkHandler != null && player.networkHandler.isConnectionOpen()
                 && player.getServer().getPlayerManager().getPlayer(player.getUuid()) == player) {
@@ -397,19 +414,23 @@ public class SkillCastManager extends PersistentState {
         }
         lastWorldTick = now;
         offline.add(player);
-        String prefix = player + "\u0000";
-        cooldowns.forEach((k, cd) -> {
-            if (k.startsWith(prefix)) cd.pausedRemaining = cd.remaining(now);
-        });
+        pruneExpired(player, now);
+        for (var cd : cooldowns.getOrDefault(player, Map.of()).values()) {
+            cd.pausedRemaining = cd.remaining(now);
+        }
         markDirty();
     }
 
     /** 冷启动：清已过期冷却（不重置未到期冷却；存 endTick 绝对值，离线不扣减自动成立）。 */
     public void onServerStarted(long currentTick) {
         if (!needsClockRestore) return;
-        cooldowns.forEach((k, cd) -> {
-            if (cd.pausedRemaining < 0) cd.pausedRemaining = cd.remaining(currentTick);
-            offline.add(UUID.fromString(k.substring(0, k.indexOf('\u0000'))));
+        cooldowns.forEach((player, skills) -> {
+            pruneExpired(player, currentTick);
+            if (skills.isEmpty()) return;
+            offline.add(player);
+            for (var cd : skills.values()) {
+                if (cd.pausedRemaining < 0) cd.pausedRemaining = cd.remaining(currentTick);
+            }
         });
         lastWorldTick = currentTick;
         needsClockRestore = false;
@@ -419,7 +440,7 @@ public class SkillCastManager extends PersistentState {
     // ===== 内部 =====
 
     private void startCooldown(UUID player, String skillId, int ticks, long castId, long now) {
-        CooldownState cd = cooldowns.computeIfAbsent(key(player, skillId), k -> new CooldownState());
+        CooldownState cd = ensureCooldown(player, skillId);
         lastWorldTick = now;
         cd.endTick = now + ticks;
         cd.pausedRemaining = offline.contains(player) ? ticks : -1;
@@ -452,8 +473,8 @@ public class SkillCastManager extends PersistentState {
             cd.lastCastId = entry.getLong("cast");
             cd.pausedRemaining = entry.contains("paused") ? entry.getInt("paused") : -1;
             UUID owner = UUID.fromString(k.substring(0, k.indexOf('\u0000')));
-            String canonical = key(owner, k.substring(k.indexOf('\u0000') + 1));
-            mgr.cooldowns.merge(canonical, cd, (a, b) ->
+            String canonical = domain(k.substring(k.indexOf('\u0000') + 1));
+            mgr.cooldowns.computeIfAbsent(owner, ignored -> new ConcurrentHashMap<>()).merge(canonical, cd, (a, b) ->
                     a.remaining(nbt.getLong("savedAt")) >= b.remaining(nbt.getLong("savedAt")) ? a : b);
             if (cd.pausedRemaining >= 0) mgr.offline.add(owner);
         }
@@ -470,7 +491,7 @@ public class SkillCastManager extends PersistentState {
             if (entry.containsUuid("entity")) cast.persistentEntity = entry.getUuid("entity");
             if (persistentEffect(cast)) {
                 mgr.activeCasts.put(key(cast.playerId, cast.skillId), cast);
-                mgr.cooldowns.computeIfAbsent(key(cast.playerId, cast.skillId), ignored -> new CooldownState());
+                mgr.ensureCooldown(cast.playerId, cast.skillId);
                 mgr.offline.add(cast.playerId);
                 continue;
             }
@@ -488,15 +509,16 @@ public class SkillCastManager extends PersistentState {
     @Override
     public NbtCompound writeNbt(NbtCompound nbt) {
         NbtCompound map = new NbtCompound();
-        for (Map.Entry<String, CooldownState> e : cooldowns.entrySet()) {
-            if (e.getValue().endTick == 0 && e.getValue().pausedRemaining < 0) continue;
+        // A save may precede the next online sweep, or follow an effect ending offline.
+        cooldowns.keySet().forEach(player -> pruneExpired(player, lastWorldTick));
+        cooldowns.forEach((player, skills) -> skills.forEach((skill, cd) -> {
             NbtCompound entry = new NbtCompound();
-            entry.putInt("total", e.getValue().totalTicks);
-            entry.putLong("end", e.getValue().endTick);
-            entry.putLong("cast", e.getValue().lastCastId);
-            entry.putInt("paused", e.getValue().pausedRemaining);
-            map.put(e.getKey(), entry);
-        }
+            entry.putInt("total", cd.totalTicks);
+            entry.putLong("end", cd.endTick);
+            entry.putLong("cast", cd.lastCastId);
+            entry.putInt("paused", cd.pausedRemaining);
+            map.put(key(player, skill), entry);
+        }));
         nbt.put("cooldowns", map);
         nbt.putLong("sequence", castIdSeq);
         nbt.putLong("savedAt", lastWorldTick);

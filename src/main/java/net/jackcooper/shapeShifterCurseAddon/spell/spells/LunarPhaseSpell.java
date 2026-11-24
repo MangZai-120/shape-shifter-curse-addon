@@ -1,4 +1,5 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.*;
 
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration;
@@ -177,7 +178,7 @@ public class LunarPhaseSpell extends Spell {
 		if (entity == null) return; // 理论不可达（start 前 canCast 已验）：安全跳过
 		CHANNEL_TARGETS.put(caster.getUuid(), entity.getUuid());
 		spawnPreparationParticles(caster, 0);
-		caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(caster.getWorld(), null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE, SoundCategory.PLAYERS, 0.7f, 1.6f);
 	}
 
@@ -235,7 +236,7 @@ public class LunarPhaseSpell extends Spell {
 		// Normal completion calls this BEFORE cast(); retain the target until settlement.
 		if (interrupted) {
 			CHANNEL_TARGETS.remove(caster.getUuid());
-			if(!suppressed)caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+			if(!suppressed)AddonSoundRange.play(caster.getWorld(), null, caster.getX(), caster.getY(), caster.getZ(),
 					SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.7f);
 		}
 	}
@@ -270,9 +271,9 @@ public class LunarPhaseSpell extends Spell {
 		caster.setHealth(newSelf);
 		target.setHealth(newTarget);
 		// 完成音画：施法者附魔台音 + 目标信标音 + 双方脚下月辉粒子爆发环
-		caster.getWorld().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(caster.getWorld(), null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE, SoundCategory.PLAYERS, 0.9f, 1.6f);
-		caster.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
+		AddonSoundRange.play(caster.getWorld(), null, target.getX(), target.getY(), target.getZ(),
 				SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.PLAYERS, 0.8f, 1.8f);
 		if (caster.getWorld() instanceof ServerWorld world) {
 			spawnBurstRing(world, caster, caster.getPos());

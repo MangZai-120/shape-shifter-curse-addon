@@ -4,6 +4,8 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
+import net.jackcooper.shapeShifterCurseAddon.resource.BarKeys;
+import net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
@@ -16,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 吸血蝙蝠 - 血渴值（Blood Thirst）系统。
- * 复用现有 Apoli 资源 my_addon:form_bat_desmodus_blood_resource (0~100)。
+ * 复用 Apoli 资源 my_addon:form_bat_desmodus_blood_resource，默认上限为 100。
  *
  * 累积:
  *   - 普攻命中非白名单生物 +8 (内部冷却 0.3s)
@@ -30,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class BatDesmodusBloodThirst {
 
-    /** 最大值（与 JSON resource 上限一致） */
+    /** 未加载平衡配置时采用的默认上限。 */
     public static final int MAX_BLOOD = 100;
     /** 普攻命中获得 +8 */
     private static final int ATTACK_HIT_GAIN = 8;
@@ -44,8 +46,6 @@ public final class BatDesmodusBloodThirst {
     /** 衰减速率：每秒 -4 */
     private static final int DECAY_PER_SEC = 4;
 
-    // 阶段 5：运行时快照读取（abilities.blood_thirst_resource；快照未初始化回退默认常量；
-    // ATTACK_HIT_CD 去抖与 getStage 阶段阈值 25/50/75 不迁移）
     private static final BalanceReader BAL = new BalanceReader("abilities.blood_thirst_resource");
 
     /** 玩家UUID -> 上次进入战斗的世界 tick */
@@ -60,7 +60,7 @@ public final class BatDesmodusBloodThirst {
 
     /**
      * 伤害加成抑制标志：在该标志为 true 期间发生的伤害
-     * 将不受 75-100 阶段 +15% 加成加成。合适使用于“被动/光环型”伤害（如血雾光环）。
+     * 将不受最高血渴档位的 +15% 加成。适用于被动或光环伤害（如血雾光环）。
      * 仅服务端使用，在伤害调用前后以 try/finally 配对设置。
      */
     public static final ThreadLocal<Boolean> SUPPRESS_OUTGOING_BUFF = ThreadLocal.withInitial(() -> false);
@@ -83,36 +83,33 @@ public final class BatDesmodusBloodThirst {
 
     /** 读取血渴值（仅蝙蝠形态有效）。经统一资源条门面（SSCA-ResourceKit）。 */
     private static int getBlood(ServerPlayerEntity player) {
-        return net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.get(player,
-                net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.BAT_BLOOD);
+        return ResourceBars.get(player, BarKeys.BAT_BLOOD);
     }
 
     /** 设置血渴值（自动夹取 0~MAX，并同步）。经统一资源条门面。 */
     private static void setBlood(ServerPlayerEntity player, int value) {
-        net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.set(player,
-                net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.BAT_BLOOD, value);
+        ResourceBars.set(player, BarKeys.BAT_BLOOD, value);
     }
 
     private static void changeBlood(ServerPlayerEntity player, int delta) {
         if (delta == 0) return;
-        net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.gain(player,
-                net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.BAT_BLOOD, delta);
+        ResourceBars.gain(player, BarKeys.BAT_BLOOD, delta);
     }
 
-    /** 当前血渴值阶段：0=0-25, 1=25-50, 2=50-75, 3=75-100 */
+    public static int maxBlood() {
+        return BAL.i("max_blood", MAX_BLOOD);
+    }
+
+    /** 血渴达到资源上限的 25%、50%、75% 时进入下一档。 */
     public static int getStage(ServerPlayerEntity player) {
         if (!isBat(player)) return -1;
-        int b = getBlood(player);
-        if (b < 25) return 0;
-        if (b < 50) return 1;
-        if (b < 75) return 2;
-        return 3;
+        int max = ResourceBars.maxOf(player, BarKeys.BAT_BLOOD);
+        return max <= 0 ? 0 : (int) Math.min(3, 4L * getBlood(player) / max);
     }
 
     /** 战斗打点累积（命中/技能/击杀共用）。经统一门面 gain。 */
     static void gainBlood(ServerPlayerEntity player, int amount) {
-        net.jackcooper.shapeShifterCurseAddon.resource.ResourceBars.gain(player,
-                net.jackcooper.shapeShifterCurseAddon.resource.BarKeys.BAT_BLOOD, amount);
+        ResourceBars.gain(player, BarKeys.BAT_BLOOD, amount);
     }
 
     // ==================== 战斗打点 ====================

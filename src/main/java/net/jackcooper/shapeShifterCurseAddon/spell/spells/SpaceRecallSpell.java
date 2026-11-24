@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
 import net.minecraft.particle.ParticleTypes;
@@ -60,7 +61,7 @@ public class SpaceRecallSpell extends Spell {
 		// 起手演出：星门环绕
 		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(serverWorld, caster, ParticleTypes.PORTAL,
 				caster.getX(), caster.getBodyY(0.8), caster.getZ(), 30, 0.5, 0.8, 0.5, 0.2);
-		serverWorld.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+		AddonSoundRange.play(serverWorld, null, caster.getX(), caster.getY(), caster.getZ(),
 				SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 0.6f, 1.6f);
 	}
 

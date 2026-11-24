@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits;
 import net.jackcooper.shapeShifterCurseAddon.spell.*;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneCastContext;
@@ -52,7 +53,7 @@ public final class TaotieSovereignSpell extends LockedTargetSpell {
         for (LivingEntity entity : new LivingEntity[]{caster, target}) {
             world.spawnParticles(ParticleTypes.FLAME, entity.getX(), entity.getBodyY(0.5), entity.getZ(),
                     12, entity.getWidth() * 0.4, entity.getHeight() * 0.25, entity.getWidth() * 0.4, 0.02);
-            world.playSound(null, entity.getBlockPos(), SoundEvents.ITEM_FIRECHARGE_USE, SoundCategory.PLAYERS, 0.75f, 0.85f);
+            AddonSoundRange.play(world, null, entity.getBlockPos(), SoundEvents.ITEM_FIRECHARGE_USE, SoundCategory.PLAYERS, 0.75f, 0.85f);
         }
     }
 

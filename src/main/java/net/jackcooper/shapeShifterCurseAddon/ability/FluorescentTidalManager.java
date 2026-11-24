@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -87,11 +88,11 @@ public final class FluorescentTidalManager {
         applyChargeSpeed(player, true);
         ServerWorld sw = (ServerWorld) player.getWorld();
         // 起手：多层音效（潮涌充能 + 海守诅咒 + 水花）
-        sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.BLOCK_CONDUIT_AMBIENT_SHORT, SoundCategory.PLAYERS, 1.0f, 0.8f);
-        sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.8f);
-        sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_PLAYER_SPLASH, SoundCategory.PLAYERS, 0.7f, 1.4f);
         net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.BUBBLE, player.getX(), player.getY() + 1, player.getZ(), 30, 0.5, 0.8, 0.5, 0.15);
         net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.SPLASH, player.getX(), player.getY() + 1, player.getZ(), 15, 0.5, 0.5, 0.5, 0.1);
@@ -126,9 +127,9 @@ public final class FluorescentTidalManager {
             if (s.chargeTicks % 5 == 0) {
                 ServerWorld sw = (ServerWorld) player.getWorld();
                 float prog = s.chargeTicks / (float) chargeTicks;
-                sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+                AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
                         SoundEvents.BLOCK_NOTE_BLOCK_BIT.value(), SoundCategory.PLAYERS, 0.4f, 0.8f + prog * 0.8f);
-                sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+                AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
                         SoundEvents.ENTITY_FISHING_BOBBER_SPLASH, SoundCategory.PLAYERS, 0.5f, 0.8f + prog * 0.6f);
             }
             // 蓄力粒子（围绕玩家收缩的水环）
@@ -162,9 +163,9 @@ public final class FluorescentTidalManager {
         s.orb = orb;
         net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.released(player, SKILL_ID, s.castId);
         // 发射：清爽的水灵发射音（溺尸投掷 + 潮涌激活，两种不重叠）
-        sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_DROWNED_SHOOT, SoundCategory.PLAYERS, 1.0f, 1.0f);
-        sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 0.7f, 1.3f);
         net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.SPLASH, player.getX(), player.getY() + 1, player.getZ(), 40, 0.6, 0.8, 0.6, 0.3);
         net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.BUBBLE, player.getX(), player.getY() + 1, player.getZ(), 30, 0.5, 0.5, 0.5, 0.25);
@@ -192,7 +193,7 @@ public final class FluorescentTidalManager {
         s.chargeTicks = 0;
         PowerUtils.setResourceValueAndSync(player, TIDAL_STATE, 0);
         net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.failed(player, SKILL_ID, s.castId);
-        player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 0.5f, 1.5f);
     }
 

@@ -39,7 +39,7 @@ public final class NeoPortableBeaconProbe {
             var stale=beacon.copy();stale.getOrCreateNbt().putUuid("ssca_beacon_session",java.util.UUID.randomUUID());stale.getOrCreateNbt().putUuid("ssca_beacon_owner",p.getUuid());
             stacks.set(stacks.size()-1,stale);
         }
-        tick.invoke(null,p);
+        p.getInventory().updateItems();
         for(var stacks:java.util.List.of(p.getInventory().main,p.getInventory().armor,p.getInventory().offHand))check(!AllaySPPortableBeacon.isActiveStack(stacks.get(stacks.size()-1)),"Stale marker removed from each native inventory section without delay");
         powers.removeAllPowersFromSource(source);
         System.out.println("NeoPortableBeaconProbe: "+checks+" checks passed");

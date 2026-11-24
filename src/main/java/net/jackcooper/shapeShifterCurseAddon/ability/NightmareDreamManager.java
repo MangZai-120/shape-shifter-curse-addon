@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
@@ -122,9 +123,9 @@ public final class NightmareDreamManager {
 			sendVeilToTarget(player, target, fixedTicks);
 			// 入梦音效：低沉梦境钟声（全员可闻 null）+ 梦魇低语
 			net.minecraft.server.world.ServerWorld sw = (net.minecraft.server.world.ServerWorld) player.getWorld();
-			sw.playSound(null, target.getX(), target.getY(), target.getZ(),
+			AddonSoundRange.play(sw, null, target.getX(), target.getY(), target.getZ(),
 					net.minecraft.sound.SoundEvents.BLOCK_AMETHYST_BLOCK_RESONATE, net.minecraft.sound.SoundCategory.PLAYERS, 1.2f, 0.6f);
-			sw.playSound(null, target.getX(), target.getY(), target.getZ(),
+			AddonSoundRange.play(sw, null, target.getX(), target.getY(), target.getZ(),
 					net.minecraft.sound.SoundEvents.ENTITY_WARDEN_HEARTBEAT, net.minecraft.sound.SoundCategory.PLAYERS, 0.8f, 1.6f);
 			// 粒子：紫色梦境迷雾环绕目标
 			sw.spawnParticles(net.minecraft.particle.ParticleTypes.WITCH,

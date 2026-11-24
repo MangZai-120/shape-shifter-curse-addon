@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -10,7 +11,6 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.MinecraftServer;
@@ -434,13 +434,13 @@ public final class MancianimaMarkManager {
 
 	public static void playSoundToPlayer(ServerPlayerEntity player, SoundEvent sound, float volume, float pitch) {
 		RegistryEntry<SoundEvent> entry = Registries.SOUND_EVENT.getEntry(sound);
-		player.networkHandler.sendPacket(new PlaySoundS2CPacket(
+		player.networkHandler.sendPacket(AddonSoundRange.positionedPacket(
 				entry, SoundCategory.PLAYERS,
 				player.getX(), player.getY(), player.getZ(),
 				volume, pitch, player.getRandom().nextLong()));
 	}
 
 	public static void broadcastSoundAtEntity(ServerWorld world, Entity entity, SoundEvent sound, float volume, float pitch) {
-		world.playSound(null, entity.getX(), entity.getY(), entity.getZ(), sound, SoundCategory.PLAYERS, volume, pitch);
+		AddonSoundRange.play(world, null, entity.getX(), entity.getY(), entity.getZ(), sound, SoundCategory.PLAYERS, volume, pitch);
 	}
 }

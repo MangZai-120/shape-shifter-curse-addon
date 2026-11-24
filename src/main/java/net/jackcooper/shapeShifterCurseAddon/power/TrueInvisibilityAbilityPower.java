@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.power;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import io.github.apace100.apoli.data.ApoliDataTypes;
 import io.github.apace100.apoli.power.Active;
@@ -116,7 +117,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower implements
 		if (wasInvisible && !isInvisible && !isPrecasting && lastAmplifier == 0 && !entity.isDead()) {
 			applyUniversalCooldown();
 			// Play glass break sound for natural expiration
-			entity.getWorld().playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+			AddonSoundRange.play(entity.getWorld(), null, entity.getX(), entity.getY(), entity.getZ(),
 					SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
 		}
 
@@ -273,7 +274,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower implements
 		// player.sendMessage(Text.of("§c隐身被打破!"), true);
 		if (byKey) {
 			// Key Cancel: Cat Hiss
-			serverWorld.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+			AddonSoundRange.play(serverWorld, null, entity.getX(), entity.getY(), entity.getZ(),
 					SoundEvents.ENTITY_CAT_HISS, SoundCategory.PLAYERS, 1.0f, 1.0f);
 
 			// Add Buffs: Guaranteed Crit & Speed II for 5 seconds
@@ -282,7 +283,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower implements
 
 		} else {
 			// Action Break: Glass Break
-			serverWorld.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+			AddonSoundRange.play(serverWorld, null, entity.getX(), entity.getY(), entity.getZ(),
 					SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.0f, 1.0f);
 		}
 

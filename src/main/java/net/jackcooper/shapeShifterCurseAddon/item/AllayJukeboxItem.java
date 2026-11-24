@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.item;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
@@ -111,12 +112,12 @@ public class AllayJukeboxItem extends Item {
 					// Default mode: speed (加速)
 					setMode(stack, MODE_SPEED);
 					serverPlayer.sendMessage(Text.translatable("item.ssc_addon.allay_jukebox.activated").formatted(Formatting.GREEN), true);
-					world.playSound(null, user.getX(), user.getY(), user.getZ(),
+					AddonSoundRange.play(world, null, user.getX(), user.getY(), user.getZ(),
 							SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), SoundCategory.PLAYERS, 1.0f, 1.2f);
 				} else {
 					setActive(stack, false);
 					serverPlayer.sendMessage(Text.translatable("item.ssc_addon.allay_jukebox.deactivated").formatted(Formatting.YELLOW), true);
-					world.playSound(null, user.getX(), user.getY(), user.getZ(),
+					AddonSoundRange.play(world, null, user.getX(), user.getY(), user.getZ(),
 							SoundEvents.BLOCK_NOTE_BLOCK_BASS.value(), SoundCategory.PLAYERS, 1.0f, 0.8f);
 				}
 				return TypedActionResult.success(stack);
@@ -132,7 +133,7 @@ public class AllayJukeboxItem extends Item {
 
 					String modeKey = newMode == MODE_SPEED ? "item.ssc_addon.allay_jukebox.mode_speed" : "item.ssc_addon.allay_jukebox.mode_heal";
 					serverPlayer.sendMessage(Text.translatable(modeKey).formatted(Formatting.AQUA), true);
-					world.playSound(null, user.getX(), user.getY(), user.getZ(),
+					AddonSoundRange.play(world, null, user.getX(), user.getY(), user.getZ(),
 							SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.PLAYERS, 1.0f, newMode == MODE_SPEED ? 1.2f : 0.8f);
 
 					user.getItemCooldownManager().set(this, MODE_SWITCH_COOLDOWN);

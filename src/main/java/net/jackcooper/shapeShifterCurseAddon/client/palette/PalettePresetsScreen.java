@@ -76,6 +76,7 @@ public class PalettePresetsScreen extends Screen {
     public PalettePresetsScreen(Screen parent) {
         super(Text.translatable("text.ssc_addon.palette.title"));
         this.parent = parent;
+        net.jackcooper.shapeShifterCurseAddon.client.colorpicker.ColorPreviewTextures.attach(this, parent);
     }
 
     @Override

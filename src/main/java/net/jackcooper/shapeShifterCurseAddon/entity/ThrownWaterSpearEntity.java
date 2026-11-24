@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -176,7 +177,7 @@ public class ThrownWaterSpearEntity extends ProjectileEntity {
 	/** 命中点 2 格半径范围伤害 + 水花特效音效（服务端）。 */
 	private void explodeAoe(Entity directTarget) {
 		if (!(this.getWorld() instanceof ServerWorld sw)) return;
-		sw.playSound(null, this.getX(), this.getY(), this.getZ(),
+		AddonSoundRange.play(sw, null, this.getX(), this.getY(), this.getZ(),
 				SoundEvents.ENTITY_PLAYER_SPLASH_HIGH_SPEED, SoundCategory.PLAYERS, 1.2f, 0.9f);
 		ParticleUtils.spawnWaterBurst(sw, this.getX(), this.getY(), this.getZ(), 1.2);
 		net.minecraft.server.network.ServerPlayerEntity ownerP =

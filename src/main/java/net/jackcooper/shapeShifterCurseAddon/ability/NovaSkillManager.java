@@ -5,6 +5,9 @@
  */
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.entity.LivingEntity;
@@ -28,9 +31,12 @@ import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
+import net.onixary.shapeShifterCurseFabric.event.SSCEvent;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -76,6 +82,8 @@ public final class NovaSkillManager {
     private static final String LEAP_SKILL_ID = "my_addon:form_ocelot_nova_leap";
     private static final String EXPLODE_SKILL_ID = "my_addon:form_ocelot_nova_charge";
 
+    // 服务端线程维护。离开朔望仍保留到 tick 末，让旧窗口和蓄力按原顺序收尾。
+    private static final Set<UUID> TRACKED_PLAYERS = new HashSet<>();
     private static final Map<UUID, Float> DODGE = new ConcurrentHashMap<>();
     private static final Map<UUID, Long> DODGE_EXPIRE = new ConcurrentHashMap<>();
     private static final Map<UUID, LeapSession> LEAPS = new ConcurrentHashMap<>();
@@ -106,21 +114,36 @@ public final class NovaSkillManager {
     }
 
     public static void init() {
+        SSCEvent.FORM_CHANGE_END.register((player, previous, current) -> {
+            if (player instanceof ServerPlayerEntity sp && current != null
+                    && FormIdentifiers.OCELOT_NOVA.equals(current.getFormID())) {
+                TRACKED_PLAYERS.add(sp.getUuid());
+            }
+        });
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> trackIfNova(handler.player));
+        ServerPlayerEvents.AFTER_RESPAWN.register((previous, player, alive) -> trackIfNova(player));
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> TRACKED_PLAYERS.clear());
         ServerTickEvents.END_SERVER_TICK.register(server -> {
+            if (TRACKED_PLAYERS.isEmpty()) return;
             for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
-                tickPlayer(p);
+                if (TRACKED_PLAYERS.contains(p.getUuid())) tickPlayer(p);
             }
         });
         // 断线清理状态表，避免重连后残留旧窗口和蓄力起点。
         net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> {
             interruptControl(handler.player);
             UUID id = handler.player.getUuid();
+            TRACKED_PLAYERS.remove(id);
             DODGE.remove(id);
             DODGE_EXPIRE.remove(id);
             LEAPS.remove(id);
             LEAP_LAST_INPUT.remove(id);
             CHARGE_START.remove(id);
         });
+    }
+
+    private static void trackIfNova(ServerPlayerEntity player) {
+        if (FormUtils.isForm(player, FormIdentifiers.OCELOT_NOVA)) TRACKED_PLAYERS.add(player.getUuid());
     }
 
     // ==== 闪避 ====
@@ -154,6 +177,7 @@ public final class NovaSkillManager {
         // 记录最近一次「收到触发」的 tick（无论如何都更新）；若距上次触发 < GAP，视为同一次按住的重复 → 忽略。
         // 这样按住/单击只认第一次，松开（停止触发）后再按才算新的一次，正确区分单击与连按。
         Long lastInput = LEAP_LAST_INPUT.put(player.getUuid(), now);
+        TRACKED_PLAYERS.add(player.getUuid());
         if (lastInput != null && now - lastInput < LEAP_INPUT_GAP) {
             return;
         }
@@ -202,9 +226,9 @@ public final class NovaSkillManager {
                     10, 0.3, 0.3, 0.3, 0.35);
         }
         // 灵跃：幻影闪现（幻术师镜像瞬移）+ 轻盈破空，敏捷灵动
-        player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_ILLUSIONER_MIRROR_MOVE, SoundCategory.PLAYERS, 0.8F, 1.4F);
-        player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 0.5F, 1.8F);
         if (count >= 2) {
             net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ended(player, LEAP_SKILL_ID, leap.castId());
@@ -229,14 +253,15 @@ public final class NovaSkillManager {
                 BAL.i("max_radius", MAX_RADIUS),
                 (float) BAL.d("max_damage", MAX_DAMAGE), NpcCombatEnhancements.novaMaxDamage());
         CHARGE_START.put(player.getUuid(), session);
+        TRACKED_PLAYERS.add(player.getUuid());
         // 代码减速 70%（属性修改器 MULTIPLY_TOTAL -0.70，精确非药水缓慢）+ 抗性 III
         applyChargeSlow(player);
         player.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE,
                 session.chargeTime(), 2, false, false, true));
         // 蓄力起手：深沉能量汇聚（导管激活低调版）+ TNT 点燃引信声，预示危险充能
-        player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 1.0F, 0.6F);
-        player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_TNT_PRIMED, SoundCategory.PLAYERS, 1.2F, 1.0F);
         // 标记蓄力中 → 同步客户端，供门控版 sneaking_speed_up 判断（蓄力期禁 shift 潜行加速）
         PowerUtils.setResourceValueAndSync(player, FormIdentifiers.OCELOT_NOVA_CHARGING, 1);
@@ -314,11 +339,11 @@ public final class NovaSkillManager {
         net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.EXPLOSION_EMITTER, player.getX(), player.getY() + 0.5, player.getZ(), 1, 0, 0, 0, 0);
         net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(sw, player, ParticleTypes.LARGE_SMOKE, player.getX(), player.getY() + 0.5, player.getZ(), 30, 1.5, 1.0, 1.5, 0.1);
         // 自爆引爆：音爆冲击 + 厚重爆炸 + 末影龙余威，三层叠出毁灭感
-        player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 1.0F, 0.9F);
-        player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 1.8F, 0.7F);
-        player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+        AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENTITY_ENDER_DRAGON_GROWL, SoundCategory.PLAYERS, 0.7F, 1.0F);
         // 舍身：自己也被炸倒，九命必定复活（绕过复活 cd 与闪避、净耗 1 命）——浴火重生
         NineLivesManager.reviveForSelfDetonate(player);
@@ -357,7 +382,9 @@ public final class NovaSkillManager {
     // ==== tick ====
 
     private static void tickPlayer(ServerPlayerEntity player) {
-        if (!player.isAlive() || !FormUtils.isForm(player, FormIdentifiers.OCELOT_NOVA)) {
+        boolean nova = FormUtils.isForm(player, FormIdentifiers.OCELOT_NOVA);
+        if (!nova || !player.isAlive()) {
+            if (!nova) TRACKED_PLAYERS.remove(player.getUuid());
             LeapSession leap = LEAPS.remove(player.getUuid());
             if (leap != null) {
                 net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.cancelled(player, LEAP_SKILL_ID, leap.castId());
@@ -400,19 +427,19 @@ public final class NovaSkillManager {
                 // 蓄力充能音：导管低鸣底噪，每 0.5s 一次、随进度升调（音量压低让位 TNT 引信声）
                 if ((now - cs) % 10 == 0) {
                     float pitch = 0.7F + 0.8F * (float) chargeProgress;
-                    player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
                             SoundEvents.BLOCK_CONDUIT_AMBIENT, SoundCategory.PLAYERS, 0.4F, pitch);
                 }
                 // TNT 引信「滴滴」声：每 0.6s 一次，随进度渐响渐急（点燃后持续燃烧感）
                 if ((now - cs) % 12 == 0) {
                     float fuseVol = 0.5F + 0.4F * (float) chargeProgress;
                     float fusePitch = 1.0F + 0.3F * (float) chargeProgress;
-                    player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
                             SoundEvents.ENTITY_TNT_PRIMED, SoundCategory.PLAYERS, fuseVol, fusePitch);
                 }
                 // 临爆前 1 秒：监守者心跳预警（每 0.5s），提示即将引爆
                 if (now - cs >= chargeTime - 20 && (now - cs) % 10 == 0) {
-                    player.getWorld().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    AddonSoundRange.play(player.getWorld(), null, player.getX(), player.getY(), player.getZ(),
                             SoundEvents.ENTITY_WARDEN_HEARTBEAT, SoundCategory.PLAYERS, 1.0F, 0.8F);
                 }
             }

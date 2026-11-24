@@ -7,7 +7,9 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.jackcooper.shapeShifterCurseAddon.ability.BatDesmodusBloodThirst;
 import net.jackcooper.shapeShifterCurseAddon.compat.EasyAuthBalanceCompatibility;
+import net.jackcooper.shapeShifterCurseAddon.power.BloodThirstResourcePower;
 import net.jackcooper.shapeShifterCurseAddon.network.JsonSnapshotSync;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry;
@@ -116,10 +118,14 @@ public final class BalanceIntegration {
     public static synchronized void onServerReload(net.minecraft.server.MinecraftServer srv) {
         if (server == null) return;
         if (pendingTree != null) {
+            int previousBloodMax = BatDesmodusBloodThirst.maxBlood();
             server.commitTree(pendingTree, "datapack-balance");
             serverTreeJson = GSON.toJson(pendingTree);
             publishedServer = server.current();
             pendingTree = null;
+            if (BatDesmodusBloodThirst.maxBlood() < previousBloodMax) {
+                BloodThirstResourcePower.clampOnlinePlayers(srv);
+            }
         }
         net.jackcooper.shapeShifterCurseAddon.spell.SpellRegistry.INSTANCE.commitPending();
         broadcastToOnline(srv);

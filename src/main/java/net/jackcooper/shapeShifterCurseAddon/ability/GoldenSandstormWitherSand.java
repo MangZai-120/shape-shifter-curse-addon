@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
@@ -90,7 +91,7 @@ public class GoldenSandstormWitherSand {
 		applyChargeSlow(player);
 
 		// 蓄力开始音效
-		serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(serverWorld, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_SAND_BREAK, SoundCategory.PLAYERS, 1.0f, 0.5f);
 
 		return true;
@@ -122,7 +123,7 @@ public class GoldenSandstormWitherSand {
 			cancelCharge(player, true);
 			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.failed(player, SKILL_ID, state.castId);
 
-			serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(serverWorld, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_SAND_FALL, SoundCategory.PLAYERS, 1.0f, 0.3f);
 			return;
 		}
@@ -153,9 +154,9 @@ public class GoldenSandstormWitherSand {
 		double radius = BAL.d("radius", RADIUS);
 
 		// 释放音效
-		serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(serverWorld, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ENTITY_WITHER_SHOOT, SoundCategory.PLAYERS, 1.0f, 0.7f);
-		serverWorld.playSound(null, player.getX(), player.getY(), player.getZ(),
+		AddonSoundRange.play(serverWorld, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_SAND_BREAK, SoundCategory.PLAYERS, 1.5f, 0.5f);
 
 		// 大量粒子效果：金色沙尘风暴

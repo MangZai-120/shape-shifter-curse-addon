@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
@@ -113,8 +114,6 @@ public final class MancianimaPassive {
 		if (raiderCount > 0) {
 			ManaUtils.gainPlayerMana(player, Math.min(raiderCount, 5));
 		}
-		// 2. 过期卸载驱逃修饰符
-		cleanupExpiredFlee(player.getWorld().getTime());
 	}
 
 	/** 敷鼎袭击触发入口：敷钟后调用。返回是否成功触发。 */
@@ -159,7 +158,7 @@ public final class MancianimaPassive {
 		// 注：冷却仅在 onAssaultTargetDeath 袭击成功完成后才记入，走远/下线/重启不扭冷却
 		player.sendMessage(Text.translatable("ssc_addon.mancianima.assault.preparing_msg", villagerTargets.size()), false);
 		if (player.getWorld() instanceof ServerWorld sw) {
-			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.EVENT_RAID_HORN.value(), player.getSoundCategory(), 1.0f, 0.9f);
 		}
 		return true;
@@ -186,7 +185,7 @@ public final class MancianimaPassive {
 			// -25% 移速（乘法修饰，幂等衡）
 			EntityAttributeInstance attr = m.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
 			if (attr != null && attr.getModifier(MANCIANIMA_FEAR_SLOW_UUID) == null) {
-				attr.addPersistentModifier(new EntityAttributeModifier(MANCIANIMA_FEAR_SLOW_UUID,
+				attr.addTemporaryModifier(new EntityAttributeModifier(MANCIANIMA_FEAR_SLOW_UUID,
 						"Mancianima fear slow", -0.25,
 						EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
 			}
@@ -194,38 +193,28 @@ public final class MancianimaPassive {
 		}
 	}
 
-	/** 超过 linger 未刷新 → 移除修饰。 */
-	private static void cleanupExpiredFlee(long now) {
-		Iterator<Map.Entry<UUID, Long>> it = FLEE_AFFECTED.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry<UUID, Long> e = it.next();
-			if (now - e.getValue() <= FLEE_LINGER_TICKS) continue;
-			it.remove();
-		}
-		// 注意：attr modifier 的实际移除需要在 entity 存在时才能做，由 onMerchantTickRemove 处理不可行。
-		// 改为：下一轮 tickFlee 没有重新加入时，依靠下面的 maybeRemoveFleeModifier 反向扫描。
+	public static void removeFleeSlow(MerchantEntity merchant) {
+		EntityAttributeInstance speed = merchant.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
+		if (speed != null) speed.removeModifier(MANCIANIMA_FEAR_SLOW_UUID);
 	}
 
-	/** 外部调用（每驱逃 tick 后）：对不再被追踪的实体移除 modifier。这里由 SscAddon 每秒扫一次全世界不现实，
-	 * 	改为在 tickFlee 中在 +modifier 同时记录 last seen，手动在 LivingEntityTickEvent 中检查。
-	 * 	为避免额外 mixin，这里提供一个 static helper，由正在 tick 的商人自己调用。。。
-	 * 	简化：这里不主动卸载；改用 SscAddon 服务器 tick 中调用下面的方法。 */
 	public static void serverGlobalFleeCleanup(net.minecraft.server.MinecraftServer server) {
-		long now = server.getOverworld().getTime();
 		if (FLEE_AFFECTED.isEmpty()) return;
-		for (ServerWorld world : server.getWorlds()) {
-			for (UUID id : new ArrayList<>(FLEE_AFFECTED.keySet())) {
-				if (now - FLEE_AFFECTED.getOrDefault(id, 0L) <= FLEE_LINGER_TICKS) continue;
-				net.minecraft.entity.Entity ent = world.getEntity(id);
-				if (ent instanceof LivingEntity le) {
-					EntityAttributeInstance attr = le.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
-					if (attr != null && attr.getModifier(MANCIANIMA_FEAR_SLOW_UUID) != null) {
-						attr.removeModifier(MANCIANIMA_FEAR_SLOW_UUID);
-					}
-					FLEE_AFFECTED.remove(id);
+		long now = server.getOverworld().getTime();
+		FLEE_AFFECTED.entrySet().removeIf(entry -> {
+			if (now - entry.getValue() <= FLEE_LINGER_TICKS) return false;
+			for (ServerWorld world : server.getWorlds()) {
+				if (world.getEntity(entry.getKey()) instanceof MerchantEntity merchant) {
+					removeFleeSlow(merchant);
+					break;
 				}
 			}
-		}
+			return true;
+		});
+	}
+
+	public static void clearFleeTracking() {
+		FLEE_AFFECTED.clear();
 	}
 
 	private static int countNearbyRaiders(PlayerEntity player, double radius) {
@@ -278,7 +267,7 @@ public final class MancianimaPassive {
 		spawnRaiders(player);
 		player.sendMessage(Text.translatable("ssc_addon.mancianima.assault.start", data.targets.size()), false);
 		if (player.getWorld() instanceof ServerWorld sw) {
-			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.EVENT_RAID_HORN.value(), player.getSoundCategory(), 1.5f, 0.85f);
 		}
 	}
@@ -519,7 +508,7 @@ public final class MancianimaPassive {
 					dropAssaultRewards(p);
 					p.sendMessage(Text.translatable("ssc_addon.mancianima.assault.complete"), false);
 					if (p.getWorld() instanceof ServerWorld sw) {
-						sw.playSound(null, p.getX(), p.getY(), p.getZ(),
+						AddonSoundRange.play(sw, null, p.getX(), p.getY(), p.getZ(),
 								SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, p.getSoundCategory(), 1.0f, 1.0f);
 					}
 				}

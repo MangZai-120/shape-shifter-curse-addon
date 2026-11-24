@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.FlyingItemEntity;
@@ -116,7 +117,7 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
 
 		// 检查是否超过最大飞行距离（局部变量化：本函数内只读一次快照）
 		double maxDistance = BAL.d("max_distance", MAX_DISTANCE);
-		if (startPos != null && this.squaredDistanceTo(startPos) > maxDistance * maxDistance) {
+		if (!getWorld().isClient && startPos != null && this.squaredDistanceTo(startPos) > maxDistance * maxDistance) {
 			this.discard();
 			return;
 		}
@@ -141,7 +142,7 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
 
 		if (!this.getWorld().isClient) {
 			// 播放击中音效
-			this.getWorld().playSound(null, this.getX(), this.getY(), this.getZ(),
+			AddonSoundRange.play(this.getWorld(), null, this.getX(), this.getY(), this.getZ(),
 					SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.0f, 1.5f);
 
 			// 生成爆炸粒子
@@ -179,7 +180,7 @@ public class FrostBallEntity extends ProjectileEntity implements FlyingItemEntit
 				net.jackcooper.shapeShifterCurseAddon.spell.FrostSpellLink.onNativeHit(caster,livingTarget);
 
 			// 播放击中音效
-			this.getWorld().playSound(null, target.getX(), target.getY(), target.getZ(),
+			AddonSoundRange.play(this.getWorld(), null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.ENTITY_PLAYER_HURT_FREEZE, SoundCategory.PLAYERS, 1.0f, 1.2f);
 
 			// 霜之护符逻辑：如果是玩家发射的，且不是分裂的子弹，且装备了护符

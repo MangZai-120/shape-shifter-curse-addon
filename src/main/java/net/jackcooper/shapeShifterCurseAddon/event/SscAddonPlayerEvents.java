@@ -167,10 +167,9 @@ public final class SscAddonPlayerEvents {
             var online = server.getPlayerManager().getPlayer(uuid);
             // A respawn may replace the entity while retaining the handler. A reconnect replaces the handler.
             if (online != null && online.networkHandler != handler) return;
-			System.out.println("[SSC_ADDON] DISCONNECT event fired for player: " + handler.player.getName().getString());
 			// 食梦魔「恐惧」：梦魔断线结束其恐惧；目标断线清恐惧/免疫表
 			net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager.onCasterRemoved(handler.player);
-			net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager.onTargetDisconnect(uuid);
+			net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager.onTargetDisconnect(handler.player);
 			SnowFoxSpMeleeAbility.clearPlayer(uuid);
 			SnowFoxSpTeleportAttack.clearPlayer(uuid);
 			SnowFoxSpFrostStorm.clearPlayer(uuid);
@@ -187,7 +186,7 @@ public final class SscAddonPlayerEvents {
 			net.jackcooper.shapeShifterCurseAddon.ability.VortexGuideManager.onPlayerDisconnect(uuid);
 			net.jackcooper.shapeShifterCurseAddon.ability.AxolotlWaterSpurtHandler.onPlayerDisconnect(uuid);
 			net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager.onPlayerDisconnect(handler.player);
-			AnubisWolfSpDeathDomain.clearPlayer(handler.player);
+			AnubisWolfSpDeathDomain.restoreOnDisconnect(handler.player);
 			AnubisWolfSpSummonWolves.clearPlayer(uuid);
 			AllaySPTotem.clearPlayer(handler.player);
 			GoldenSandstormErosionBrand.clearPlayer(handler.player);
@@ -224,6 +223,5 @@ public final class SscAddonPlayerEvents {
 			net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.onPlayerDisconnect(uuid);
 			// balance 数据包数值（阶段 3）：清该连接的 ACK/就绪状态
 			net.jackcooper.shapeShifterCurseAddon.balance.BalanceIntegration.onPlayerLeft(handler.player);
-			System.out.println("[SSC_ADDON] DISCONNECT cleanup completed");
 	}
 }

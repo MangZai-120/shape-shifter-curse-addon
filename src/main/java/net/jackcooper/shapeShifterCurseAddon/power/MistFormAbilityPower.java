@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.power;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import io.github.apace100.apoli.data.ApoliDataTypes;
 import io.github.apace100.apoli.power.Active;
 import io.github.apace100.apoli.power.ActiveCooldownPower;
@@ -82,7 +83,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 	private double[] ambientVisualParameters, chargeVisualParameters;
 	// 血雾红色尘埃粒子（体现“血”雾）
 	private static final DustParticleEffect BLOOD_DUST = MistFormRecipes.BLOOD_DUST;
-	// 雾血资源相关（0~100）
+	// 雾血消耗按点数结算
 	private static final int BLOOD_ENTER_COST = 0;     // 进入雾化起手消耗（无消耗）
 	@SuppressWarnings("unused") // 预留可调参数：后续若要恢复雾化期间的每秒持续消耗，把值改回正数并恢复 tick() 内对应分支
 	private static final int BLOOD_PER_SECOND_COST = 0; // 雾化期间每秒持续消耗（当前 0 = 无消耗）
@@ -160,11 +161,10 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 		return 0;
 	}
 
-	/** 设置雾血值并同步（自动夹取 0~100） */
+	/** 资源本身按当前配置的上限夹取。 */
 	private void setBlood(int value) {
 		if (entity instanceof ServerPlayerEntity serverPlayer) {
-			int v = Math.max(0, Math.min(100, value));
-			PowerUtils.setResourceValueAndSync(serverPlayer, FormIdentifiers.BAT_BLOOD_RESOURCE, v);
+			PowerUtils.setResourceValueAndSync(serverPlayer, FormIdentifiers.BAT_BLOOD_RESOURCE, value);
 		}
 	}
 
@@ -235,7 +235,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 		// 红色血雾点缀
 		ParticleUtils.spawnDecorationParticles(serverWorld,entity, BLOOD_DUST,
 				cx, cy, cz, 30, 0.5, 0.7, 0.5, 0.0);
-		serverWorld.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+		AddonSoundRange.play(serverWorld, null, entity.getX(), entity.getY(), entity.getZ(),
 				SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0f, 0.8f);
 		// 进入雾化：开启服务端飞行豁免，防 vanilla 服务器飞行检测踢人
 		setFlightExempt(true);
@@ -260,7 +260,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 			ParticleUtils.spawnDecorationParticles(serverWorld,entity, ParticleTypes.CAMPFIRE_COSY_SMOKE,
 					entity.getX(), entity.getY() + entity.getHeight() * 0.5, entity.getZ(),
 					25, 0.4, 0.6, 0.4, 0.02);
-			serverWorld.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+			AddonSoundRange.play(serverWorld, null, entity.getX(), entity.getY(), entity.getZ(),
 					SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.8f, 1.2f);
 		}
 	}
@@ -308,7 +308,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 		ParticleUtils.spawnDecorationParticles(serverWorld,entity, BLOOD_DUST,
 				entity.getX(), entity.getY() + entity.getHeight() * 0.5, entity.getZ(),
 				50, 0.1, 0.1, 0.1, 0.7);
-		serverWorld.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+		AddonSoundRange.play(serverWorld, null, entity.getX(), entity.getY(), entity.getZ(),
 				SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 1.0f, 1.2f);
 	}
 
@@ -327,7 +327,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 			entity.addStatusEffect(new StatusEffectInstance(StatusEffects.INVISIBILITY, chargeDuration() + 5, 0, false, false, false));
 		}
 		if (entity.getWorld() instanceof ServerWorld sw) {
-			sw.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+			AddonSoundRange.play(sw, null, entity.getX(), entity.getY(), entity.getZ(),
 					SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 0.8f, 1.6f);
 		}
 	}
@@ -448,7 +448,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 			setFlightExempt(false);
 			entity.calculateDimensions();
 			if (entity.getWorld() instanceof ServerWorld serverWorld) {
-				serverWorld.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+				AddonSoundRange.play(serverWorld, null, entity.getX(), entity.getY(), entity.getZ(),
 						SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.8f, 1.2f);
 			}
 			wasMist = false;
@@ -460,7 +460,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 			if (entity.getWorld().getTime() - lastBloodDrainTime >= 20) {
 				lastBloodDrainTime = entity.getWorld().getTime();
 				// 雾血每秒消耗已取消（BLOOD_PER_SECOND_COST=0）；若后续要恢复可以在这里重新加回「扣血 + 耀尽强退」逻辑
-				// 75-100 血渴值阶段：血雾光环每秒对周围 2 格内非白名单生物造成 2 点伤害，每命中一次回吸血蝙蝠 2 点生命
+				// 最高血渴档位：血雾光环每秒对周围 2 格内非白名单生物造成 2 点伤害，每命中一次回吸血蝙蝠 2 点生命
 				if (entity instanceof ServerPlayerEntity sp
 						&& net.jackcooper.shapeShifterCurseAddon.ability.BatDesmodusBloodThirst.getStage(sp) == 3) {
 					Box aura = entity.getBoundingBox().expand(2.0, 2.0, 2.0);

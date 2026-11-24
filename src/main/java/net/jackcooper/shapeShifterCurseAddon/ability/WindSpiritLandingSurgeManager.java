@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -157,9 +158,9 @@ public final class WindSpiritLandingSurgeManager {
                 4, radius * 0.3, 0.2, radius * 0.3, 0.0);
 
         // 音效（全员可听）
-        world.playSound(null, center.x, center.y, center.z,
+        AddonSoundRange.play(world, null, center.x, center.y, center.z,
                 SoundEvents.ENTITY_PLAYER_BIG_FALL, SoundCategory.PLAYERS, 0.6f, 1.3f);
-        world.playSound(null, center.x, center.y, center.z,
+        AddonSoundRange.play(world, null, center.x, center.y, center.z,
                 SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 0.4f, 1.5f);
 
         // 设置 CD

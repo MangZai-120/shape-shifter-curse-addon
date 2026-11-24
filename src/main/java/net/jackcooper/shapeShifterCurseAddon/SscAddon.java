@@ -705,10 +705,7 @@ public class SscAddon implements ModInitializer {
 		// 变羊换血兜底扫描（羊了个羊：效果被非正常路径清除时恢复原血量上限/移速，5t 节流）
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK
 				.register(net.jackcooper.shapeShifterCurseAddon.effect.SheepFormRestoreHandler::tickSweep);
-		// 变羊形态切换兜底扫描（羊了个羊：效果没了但还卡在羊形态 → 切回原形态；与换血扫描同节流）
-		net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK
-				.register(net.jackcooper.shapeShifterCurseAddon.ability.BeepSheepFormManager::tickSweep);
-		// 变羊原形态记录持久化（玩家 NBT 读写 + 退出清理，断线重进不丢）
+		// 变羊形态恢复、重登矫正与在线羊形态跟踪。
 		net.jackcooper.shapeShifterCurseAddon.ability.BeepSheepFormManager.init();
 		InfectionSporeManager.init();
 		ParasiticSeedFieldManager.init();

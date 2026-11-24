@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
@@ -156,9 +157,9 @@ public final class FluorescentLaserManager {
 			e.setArraysLeft(ARRAY_COUNT);
 			sw.spawnEntity(e);
 			s.laser = e;
-			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 1.0f, 1.3f);
-			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.PLAYERS, 0.6f, 1.6f);
 		} else if (s.arraysLeft > 0 && s.shotTicks <= 0) {
 			// 窗口内再按：发射一道
@@ -187,9 +188,9 @@ public final class FluorescentLaserManager {
 			s.laser.setArraysLeft(s.arraysLeft);
 		}
 		Vec3d origin = arrayPos(player, idx);
-		sw.playSound(null, origin.x, origin.y, origin.z,
+		AddonSoundRange.play(sw, null, origin.x, origin.y, origin.z,
 				SoundEvents.ENTITY_WARDEN_SONIC_BOOM, SoundCategory.PLAYERS, 0.8f, 1.5f);
-		sw.playSound(null, origin.x, origin.y, origin.z,
+		AddonSoundRange.play(sw, null, origin.x, origin.y, origin.z,
 				SoundEvents.BLOCK_CONDUIT_ACTIVATE, SoundCategory.PLAYERS, 0.8f, 1.2f);
 	}
 
@@ -354,7 +355,7 @@ public final class FluorescentLaserManager {
 		// 结束音效：三发射尽 / 窗口超时失效 / 被 SP 悦灵净化打断 等所有结束路径统一播放
 		// （信标失活，与开场 BLOCK_BEACON_ACTIVATE 呼应；全员可闻）
 		if (player.getWorld() instanceof ServerWorld sw) {
-			sw.playSound(null, player.getX(), player.getY(), player.getZ(),
+			AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_BEACON_DEACTIVATE, SoundCategory.PLAYERS, 1.0f, 1.6f);
 		}
 		if (s.laser != null) { s.laser.discard(); s.laser = null; }

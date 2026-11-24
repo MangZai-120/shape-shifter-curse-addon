@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -70,9 +71,9 @@ public final class SpaceRecallManager {
 		// 终点光柱与音效（落点在 destWorld；跨维度时粒子必须发到落点维度，修复此前发进起点维度的预存在 bug）
 		net.jackcooper.shapeShifterCurseAddon.network.DecorationParticles.spawn(destWorld, player, ParticleTypes.END_ROD,
 				tx, ty + 1.0, tz, 20, 0.4, 0.6, 0.4, 0.05);
-		destWorld.playSound(null, tx, ty, tz,
+		AddonSoundRange.play(destWorld, null, tx, ty, tz,
 				SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1.0f, 1.0f);
-		destWorld.playSound(null, tx, ty, tz,
+		AddonSoundRange.play(destWorld, null, tx, ty, tz,
 				SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.PLAYERS, 0.8f, 1.4f);
 	}
 }

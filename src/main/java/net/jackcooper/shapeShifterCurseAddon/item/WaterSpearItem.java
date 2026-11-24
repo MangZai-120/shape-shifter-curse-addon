@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.item;
 
+import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.entity.Entity;
@@ -54,8 +55,8 @@ public class WaterSpearItem extends TridentItem {
 					waterSpear.setVelocity(playerEntity, playerEntity.getPitch(), playerEntity.getYaw(), 0.0F, m, 1.0F);
 					stack.decrement(1);
 					world.spawnEntity(waterSpear);
-					world.playSound(null, playerEntity.getX(), playerEntity.getY(), playerEntity.getZ(), SoundEvents.ITEM_TRIDENT_THROW, SoundCategory.PLAYERS, 1.0F, 1.0F);
-					world.playSound(null, playerEntity.getX(), playerEntity.getY(), playerEntity.getZ(), SoundEvents.ENTITY_GENERIC_SPLASH, SoundCategory.PLAYERS, 0.5F, 1.2F);
+					AddonSoundRange.play(world, null, playerEntity.getX(), playerEntity.getY(), playerEntity.getZ(), SoundEvents.ITEM_TRIDENT_THROW, SoundCategory.PLAYERS, 1.0F, 1.0F);
+					AddonSoundRange.play(world, null, playerEntity.getX(), playerEntity.getY(), playerEntity.getZ(), SoundEvents.ENTITY_GENERIC_SPLASH, SoundCategory.PLAYERS, 0.5F, 1.2F);
 				}
 
 				playerEntity.incrementStat(Stats.USED.getOrCreateStat(this));
@@ -103,7 +104,7 @@ public class WaterSpearItem extends TridentItem {
 				}
 			}
 
-			world.playSound(null, x, y, z, SoundEvents.ENTITY_GENERIC_SPLASH, SoundCategory.PLAYERS, 1.0F, 0.8F);
+			AddonSoundRange.play(world, null, x, y, z, SoundEvents.ENTITY_GENERIC_SPLASH, SoundCategory.PLAYERS, 1.0F, 0.8F);
 		}
 
 		stack.damage(1, attacker, e -> e.sendToolBreakStatus(attacker.getActiveHand()));
