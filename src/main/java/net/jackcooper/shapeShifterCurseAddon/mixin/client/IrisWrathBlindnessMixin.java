@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 abstract class IrisWrathBlindnessMixin {
     @Inject(method = "getBlindness", at = @At("RETURN"), cancellable = true, require = 0)
     private static void ssca$wrathBlindness(CallbackInfoReturnable<Float> cir) {
-        float strength = WrathMarkClient.blindnessStrength(MinecraftClient.getInstance().getCameraEntity());
+        float strength = WrathMarkClient.addonBlindnessStrength(MinecraftClient.getInstance().getCameraEntity());
         if (strength > cir.getReturnValueF()) cir.setReturnValue(strength);
     }
 }

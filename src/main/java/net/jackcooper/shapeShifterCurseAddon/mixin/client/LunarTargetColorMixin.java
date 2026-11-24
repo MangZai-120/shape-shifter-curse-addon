@@ -17,7 +17,7 @@ public class LunarTargetColorMixin {
     @Inject(method = "hasBlindnessOrDarkness", at = @At("RETURN"), cancellable = true)
     private void ssca$wrathSky(net.minecraft.client.render.Camera camera,
             org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Boolean> cir) {
-        if (net.jackcooper.shapeShifterCurseAddon.client.WrathMarkClient.blindnessStrength(camera.getFocusedEntity()) > 0)
+        if (net.jackcooper.shapeShifterCurseAddon.client.WrathMarkClient.addonBlindnessStrength(camera.getFocusedEntity()) > 0)
             cir.setReturnValue(true);
     }
 

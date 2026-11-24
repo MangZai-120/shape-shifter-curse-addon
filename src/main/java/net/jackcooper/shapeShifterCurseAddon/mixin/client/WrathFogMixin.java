@@ -24,7 +24,7 @@ abstract class WrathFogMixin {
     @Inject(method = "applyFog", at = @At("TAIL"))
     private static void ssca$wrathFog(Camera camera, BackgroundRenderer.FogType type, float distance,
                                        boolean thick, float tickDelta, CallbackInfo ci) {
-        float strength = WrathMarkClient.blindnessStrength(camera.getFocusedEntity());
+        float strength = WrathMarkClient.addonBlindnessStrength(camera.getFocusedEntity());
         if (strength <= 0 || camera.getSubmersionType() == CameraSubmersionType.LAVA
                 || camera.getSubmersionType() == CameraSubmersionType.POWDER_SNOW) return;
         float range = MathHelper.lerp(strength, distance, 5f);
@@ -36,7 +36,7 @@ abstract class WrathFogMixin {
     @Inject(method = "render", at = @At("TAIL"))
     private static void ssca$wrathFogColor(Camera camera, float tickDelta, ClientWorld world,
                                             int viewDistance, float skyDarkness, CallbackInfo ci) {
-        float strength = WrathMarkClient.blindnessStrength(camera.getFocusedEntity());
+        float strength = WrathMarkClient.addonBlindnessStrength(camera.getFocusedEntity());
         if (strength <= 0 || camera.getSubmersionType() == CameraSubmersionType.LAVA
                 || camera.getSubmersionType() == CameraSubmersionType.POWDER_SNOW) return;
         var ordinary = ((LivingEntity) camera.getFocusedEntity()).getStatusEffect(StatusEffects.BLINDNESS);

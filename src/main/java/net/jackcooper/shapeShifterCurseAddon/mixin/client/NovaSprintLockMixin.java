@@ -33,7 +33,7 @@ public abstract class NovaSprintLockMixin {
     private void ssca$novaBlockSprintStart(CallbackInfoReturnable<Boolean> cir) {
         ClientPlayerEntity player = (ClientPlayerEntity)(Object)this;
         if (ssca$novaCharging() || net.jackcooper.shapeShifterCurseAddon.spell.OcelotSpellLink.windLocked(player)
-                || net.jackcooper.shapeShifterCurseAddon.client.WrathMarkClient.blindnessStrength(player) > 0) {
+                || net.jackcooper.shapeShifterCurseAddon.client.WrathMarkClient.addonBlindnessStrength(player) > 0) {
             cir.setReturnValue(false);
         }
     }

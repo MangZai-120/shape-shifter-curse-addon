@@ -3,22 +3,24 @@ package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellRarity;
+import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.registry.Registries;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 
-import java.util.List;
+import java.util.Comparator;
 
 /**
- * 月华治愈（月辉系，白色基底，jackcooper）：净化自身——回复生命 + 移除一个负面状态效果。
+ * 月华治愈（月辉系，白色基底，jackcooper）：回复生命，按法术等级净化自身负面效果。
  * 无伤害魔法，power 语义 = 回复生命值。
  *
  * <p>数值外置 {@code data/ssc_addon/spells/lunar_mend.json}：
- * 基准回 5 HP / cd 12s / 耗蓝 20；L3 起额外移除第二个负面效果。</p>
+ * 基准回 5 HP / cd 12s / 耗蓝 20。每解除一级负面效果消耗一点净化预算。</p>
  */
 public class LunarMendSpell extends Spell {
 
@@ -45,17 +47,19 @@ public class LunarMendSpell extends Spell {
 		// 移除一个 amplifier=n 的负面效果消耗 n+1 点（一级 debuff 消耗 1，二级消耗 2，以此类推）；
 		// 预算不足以移除下一个（如剩 1 点遇到二级）则跳过继续找可移除的，预算耗尽停止。
 		int budget = level;
-		for (StatusEffectInstance instance : List.copyOf(caster.getStatusEffects())) {
+		// 不同游戏进程的效果集合迭代顺序可能不同。用注册标识固定预算的分配顺序。
+		var harmful = caster.getStatusEffects().stream()
+				.filter(instance -> instance.getEffectType().getCategory() == StatusEffectCategory.HARMFUL)
+				.sorted(Comparator.comparing(instance -> Registries.STATUS_EFFECT.getId(instance.getEffectType())))
+				.toList();
+		for (StatusEffectInstance instance : harmful) {
 			if (budget <= 0) {
 				break;
 			}
-			if (instance.getEffectType().getCategory() == net.minecraft.entity.effect.StatusEffectCategory.HARMFUL) {
-				int cost = instance.getAmplifier() + 1;
-				if (cost <= budget) {
-					caster.removeStatusEffect(instance.getEffectType());
-					budget -= cost;
-				}
-				// 预算不够（如剩 1 遇到二级）：跳过找更便宜的，不停止整个净化
+			int cost = instance.getAmplifier() + 1;
+			if (cost <= budget) {
+				caster.removeStatusEffect(instance.getEffectType());
+				budget -= cost;
 			}
 		}
 		// 演出：月光洒落 + 治愈音效

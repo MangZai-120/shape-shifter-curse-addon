@@ -115,6 +115,7 @@ public final class NeoMoistureHealingProbe {
             caster.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS,200));
             spell.cast(caster,4,false,1);near(caster.getHealth(),11,"Real named spell uses the scoped healing trait");seenAir[0]=caster.getAir();
             check(caster.getStatusEffects().stream().filter(e->e.getEffectType().getCategory()==net.minecraft.entity.effect.StatusEffectCategory.HARMFUL).count()==1,"Purification count does not gain the healing multiplier");
+            check(!caster.hasStatusEffect(StatusEffects.SLOWNESS) && caster.hasStatusEffect(StatusEffects.WEAKNESS),"A one-point cleanse uses stable effect registry order");
         },cd->{}),"Actual named healing channel starts");
         record[0]=NeoLegacyCasting.active(caster).record;
         check(record[0].moistureSpent==0,"Preparation has not paid wetness");

@@ -2,6 +2,8 @@ package net.jackcooper.shapeShifterCurseAddon.entity;
 
 import java.util.Locale;
 
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.ability.NightmareFearManager;
 import net.jackcooper.shapeShifterCurseAddon.anomaly.FrozenControl;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.Entity;
@@ -209,12 +211,18 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
         return p.isAlive() && !p.isSpectator() && !p.isCreative();
     }
 
+    boolean canPursue(PlayerEntity player) {
+        return isHuntTarget(player) && !player.hasStatusEffect(SscAddon.PLAYING_DEAD)
+                && !player.hasStatusEffect(SscAddon.TRUE_INVISIBILITY)
+                && NightmareFearManager.isMobAggroAllowed(this, player);
+    }
+
     PlayerEntity nearbyTarget() {
         PlayerEntity closest = null;
         double range = 24 * 24;
         for (PlayerEntity p : getWorld().getPlayers()) {
             double d = squaredDistanceTo(p);
-            if (d <= range && isHuntTarget(p)) {
+            if (d <= range && canPursue(p)) {
                 range = d;
                 closest = p;
             }

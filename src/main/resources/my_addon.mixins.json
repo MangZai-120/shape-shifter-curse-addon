@@ -217,6 +217,7 @@
         "client.EntityGlowPowerMixin",
         "client.FearFogMixin",
         "client.WrathFogMixin",
+        "client.AccessorySlotTooltipMixin",
         "client.IrisWrathBlindnessMixin",
         "client.FearHideRendererMixin",
         "client.SpookGhostVisibleMixin",

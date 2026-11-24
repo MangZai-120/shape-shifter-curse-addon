@@ -5,10 +5,12 @@ import java.util.Set;
 import java.util.UUID;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.spell.WrathMark;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 
 public final class WrathMarkClient {
     private static ClientPlayerEntity recipient;
@@ -48,6 +50,14 @@ public final class WrathMarkClient {
     /** Vanilla blindness fades over its final twenty ticks. */
     public static float blindnessStrength(Entity viewer) {
         return viewer != null && viewer == recipient ? Math.min(1f, remainingTicks() / 20f) : 0f;
+    }
+
+    public static float addonBlindnessStrength(Entity viewer) {
+        float wrath = blindnessStrength(viewer);
+        if (!(viewer instanceof LivingEntity living)) return wrath;
+        var sand = living.getStatusEffect(SscAddon.SAND_BLIND);
+        if (sand == null) return wrath;
+        return sand.isInfinite() ? 1f : Math.max(wrath, Math.min(1f, sand.getDuration() / 20f));
     }
 
     public static boolean hasOutline(Entity entity) {

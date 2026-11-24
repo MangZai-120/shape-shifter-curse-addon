@@ -50,7 +50,14 @@ public final class MixinSelectionAuditTest {
                 "Connector serializes protocol transitions on the network event loop");
         require(MixinSelection.select(hud + "ConnectionProtocolTransitionMixin", mod -> mod.equals("connector"), () -> null),
                 "The Connector loader alias selects the same network fix");
-        return 29;
+        require(!MixinSelection.select(hud + "ConnectionProtocolTransitionMixin", mod -> mod.equals("kilt"), () -> null),
+                "Kilt owns its socket read-interest scheduling during FML login");
+        String tooltip = hud + "AccessorySlotTooltipMixin";
+        require(!MixinSelection.select(tooltip, mod -> mod.equals("accessories"), () -> null), "Accessories alone");
+        require(!MixinSelection.select(tooltip, mod -> mod.equals("curios"), () -> null), "Curios alone");
+        require(MixinSelection.select(tooltip, mod -> mod.equals("accessories") || mod.equals("curios"), () -> null),
+                "Both slot tooltip providers are present");
+        return 33;
     }
 
     private static void require(boolean condition, String message) {

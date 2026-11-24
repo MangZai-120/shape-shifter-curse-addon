@@ -8,8 +8,6 @@ import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.ParticleTypes;
@@ -20,7 +18,7 @@ import java.util.UUID;
 /**
  * 致盲效果 - 金沙岚SP的凋零金沙技能施加的debuff
  * 效果：
- * - 视野限制（通过同时施加原版失明效果实现）
+ * - 沙盲自身提供失明视野、禁起跑与禁暴击
  * - 移动速度 -20%
  * - 非玩家生物的警戒和攻击距离减少至5格（通过修改FOLLOW_RANGE属性实现）
  * - 头部周围生成沙尘和黑色粒子
@@ -41,11 +39,6 @@ public class SandBlindEffect extends StatusEffect {
 	@Override
 	public void onApplied(LivingEntity entity, AttributeContainer attributes, int amplifier) {
 		super.onApplied(entity, attributes, amplifier);
-
-		// 施加原版失明效果（视野限制）
-		StatusEffectInstance currentSandBlind = entity.getStatusEffect(this);
-		int blindDuration = currentSandBlind != null ? currentSandBlind.getDuration() : 60;
-		entity.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, blindDuration, 0, false, false, false));
 
 		// 移动速度 -20%
 		EntityAttributeInstance speedAttr = entity.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
@@ -82,9 +75,6 @@ public class SandBlindEffect extends StatusEffect {
 	@Override
 	public void onRemoved(LivingEntity entity, AttributeContainer attributes, int amplifier) {
 		super.onRemoved(entity, attributes, amplifier);
-
-		// 移除原版失明效果
-		entity.removeStatusEffect(StatusEffects.BLINDNESS);
 
 		// 移除速度修正
 		EntityAttributeInstance speedAttr = entity.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);

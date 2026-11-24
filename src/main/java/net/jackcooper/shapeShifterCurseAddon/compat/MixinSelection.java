@@ -38,6 +38,10 @@ public final class MixinSelection {
         requireMod("render.PowerHolderComponentShadowFixMixin", "iris");
         requireMod("client.AsyncParticleSyncBatchMixin", "asyncparticles");
         requireMod("client.AsyncParticleGpuEligibilityMixin", "asyncparticles");
+        requireMod("client.AccessorySlotTooltipMixin", "accessories", "curios");
+        // Kilt's ConnectionInject already schedules the socket read-interest change on Netty.
+        // Queuing the entire send as well can stall its remote FML login negotiation.
+        yieldOnConflict("client.ConnectionProtocolTransitionMixin", "kilt");
         // 饰品 Trinkets 桥接兜底（AddonTrinketBridgeMixin）：仅当 trinkets API 可用
         // （原生 Trinkets 或 tclayer 兼容层 provides "trinkets"）时应用；
         // 原生 Trinkets / Accessories 由主包接管；其它后端仍保留原来的兜底。

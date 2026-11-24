@@ -42,7 +42,7 @@ final class OrcafisEncounter {
     }
 
     void retaliate(PlayerEntity player) {
-        if (retreat || opponent != null || !OrcafisEntity.isHuntTarget(player)) return;
+        if (retreat || opponent != null || !boss.canPursue(player)) return;
         if (onCoast(player)) {
             engage(player, false);
         } else if (withinInlandRange(player)) {
@@ -57,10 +57,11 @@ final class OrcafisEncounter {
     }
 
     private void engage(PlayerEntity player, boolean inland) {
+        boss.setTarget(player);
+        if (boss.getTarget() != player) return;
         this.inland = inland;
         tideAfterUndertow = false;
         opponent = player.getUuid();
-        boss.setTarget(player);
         habitat.clearRoute();
         boss.begin(travel(player));
     }
@@ -103,6 +104,7 @@ final class OrcafisEncounter {
 
     private void disengage() {
         tideAfterUndertow = false;
+        surfacingForJet = false;
         opponent = null;
         boss.setTarget(null);
         retreat = true;
@@ -115,7 +117,7 @@ final class OrcafisEncounter {
         if (retreat) return reset(frozen);
         ServerWorld world = (ServerWorld)boss.getWorld();
         PlayerEntity target = opponent == null ? null : world.getPlayerByUuid(opponent);
-        if (opponent != null && (target == null || !OrcafisEntity.isHuntTarget(target))) {
+        if (opponent != null && (target == null || !boss.canPursue(target))) {
             if (frozen) {
                 disengage();
                 return reset(true);
@@ -141,6 +143,10 @@ final class OrcafisEncounter {
         }
         if (frozen) return true;
         if (boss.getTarget() != target) boss.setTarget(target);
+        if (boss.getTarget() != target) {
+            disengage();
+            return reset(false);
+        }
         Motion motion = boss.motion();
         if (motion == Motion.WALK || motion == Motion.BURROW || motion == Motion.SWIM) pursue(target, motion);
         return false;
@@ -323,7 +329,10 @@ final class OrcafisEncounter {
     }
 
     Motion after(Motion motion) {
-        PlayerEntity target = (PlayerEntity)boss.getTarget();
+        if (!(boss.getTarget() instanceof PlayerEntity target) || !boss.canPursue(target)) {
+            disengage();
+            return boss.waterAtFeet() ? Motion.SWIM : Motion.REST;
+        }
         return switch (motion) {
             case UNDERTOW -> {
                 boolean followUp = tideAfterUndertow;
