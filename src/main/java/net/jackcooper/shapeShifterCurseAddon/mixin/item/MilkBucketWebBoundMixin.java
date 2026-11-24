@@ -1,36 +1,34 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin.item;
 
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.effect.RegAddonEffects;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.MilkBucketItem;
+import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
 
 /**
- * 让「蛛网缠身」防牛奶：牛奶清状态效果时把该 debuff 保留下来（其余效果照常清除）。
- *
- * <p>用 {@code @WrapOperation} 取代原先的 {@code @Redirect}——{@code @Redirect} 与其它 mod /
- * SSC 主包对同位置 {@code clearStatusEffects()} 的注入会硬冲突（{@code InjectionError} 崩溃），
- * 而 {@code @WrapOperation} 支持多 mod 链式叠加：先记下蛛网 debuff、放行原 {@code clearStatusEffects}、
- * 再把蛛网 debuff 重新挂回。</p>
+ * 牛奶保留蛛网缠身和变羊。Fabric 与 Forge 的牛奶净化调用签名不同，
+ * 但两端完成饮用的入口相同，让各自的净化逻辑处理其余效果和物品栈。
  */
 @Mixin(MilkBucketItem.class)
-public class MilkBucketWebBoundMixin {
+public abstract class MilkBucketWebBoundMixin {
 
-	@WrapOperation(method = "finishUsing", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;clearStatusEffects()Z"), require = 0)
-	private boolean ssca$keepWebBound(LivingEntity entity, Operation<Boolean> original) {
+	@WrapMethod(method = "finishUsing")
+	private ItemStack ssca$keepMilkResistantEffects(ItemStack stack, World world, LivingEntity entity, Operation<ItemStack> original) {
+		if (world.isClient) return original.call(stack, world, entity);
 		StatusEffectInstance web = entity.getStatusEffect(RegAddonEffects.SPIDER_WEB_BOUND);
-		// 变羊（2026-09-29 用户定稿「牛奶无法净化」）：同蛛网缠身一并保留
-		StatusEffectInstance sheep = entity.getStatusEffect(net.jackcooper.shapeShifterCurseAddon.SscAddon.SHEEP_FORM);
-		boolean result = original.call(entity);
-		if (web != null) {
-			entity.addStatusEffect(new StatusEffectInstance(web));
+		StatusEffectInstance sheep = entity.getStatusEffect(SscAddon.SHEEP_FORM);
+		ItemStack result = original.call(stack, world, entity);
+		if (web != null && !entity.hasStatusEffect(RegAddonEffects.SPIDER_WEB_BOUND)) {
+			entity.addStatusEffect(web);
 		}
-		if (sheep != null) {
-			entity.addStatusEffect(new StatusEffectInstance(sheep));
+		if (sheep != null && !entity.hasStatusEffect(SscAddon.SHEEP_FORM)) {
+			entity.addStatusEffect(sheep);
 		}
 		return result;
 	}
