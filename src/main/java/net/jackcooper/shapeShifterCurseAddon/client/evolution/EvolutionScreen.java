@@ -7,6 +7,9 @@ import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import me.shedaniel.autoconfig.AutoConfig;
+import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonClientConfig;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.OrderedText;
@@ -36,7 +39,16 @@ public class EvolutionScreen extends Screen {
     private int minDepth, minLane, maxLane, treeContentHeight, detailContentHeight;
     private Box paper = Box.EMPTY, tree = Box.EMPTY, details = Box.EMPTY, detailBody = Box.EMPTY;
     private Box header = Box.EMPTY;
-    private Box confirm = Box.EMPTY, back = Box.EMPTY;
+    private Box confirm = Box.EMPTY, back = Box.EMPTY, experienceBar = Box.EMPTY;
+    private Box plus = Box.EMPTY, custom = Box.EMPTY, maximum = Box.EMPTY;
+    private TextFieldWidget amount;
+    private int paymentRequest, paymentAmount;
+    private long paymentSince, saveAmountAt, feedbackUntil;
+    private Text paymentFeedback = Text.empty();
+
+    private int typedAmount() {
+        return amount.getText().isEmpty() ? 0 : Integer.parseInt(amount.getText());
+    }
 
     public EvolutionScreen(Screen parent) {
         super(Text.translatable("evolution.my_addon.screen.title"));
@@ -61,6 +73,16 @@ public class EvolutionScreen extends Screen {
     }
     @Override protected void init() {
         layout();
+        var config = AutoConfig.getConfigHolder(SSCAddonClientConfig.class).getConfig();
+        String previous = amount == null ? config.evolutionCustomExperience : amount.getText();
+        amount = addSelectableChild(new TextFieldWidget(textRenderer, custom.x, custom.y, custom.w, custom.h,
+                Text.translatable("evolution.my_addon.invest.custom")));
+        amount.setDrawsBackground(false);
+        amount.setEditableColor(INK);
+        amount.setMaxLength(5);
+        amount.setTextPredicate(s -> s.length() <= 5 && s.chars().allMatch(c -> c >= '0' && c <= '9'));
+        if (previous != null) amount.setText(previous);
+        amount.setChangedListener(s -> saveAmountAt = Util.getMeasuringTimeMs() + 500);
         if (!opened) {
             ClientPlayNetworking.send(SscAddonNetworking.PACKET_EVO_OPEN, PacketByteBufs.empty());
             opened = true;
@@ -82,6 +104,17 @@ public class EvolutionScreen extends Screen {
         int hx = Math.max(ix + Math.max(12, pw * 3 / 100), tree.x), hy = iy + Math.max(10, ph * 25 / 1000);
         header = new Box(hx, hy, Math.max(1, tree.right() - hx), 51);
         back = new Box(tree.right() - 50, hy, 47, 16);
+        boolean compact = header.w < 217;
+        int rowY = hy + 25, barX = hx + (compact ? 19 : 77);
+        int fieldWidth = 39, maxWidth = Math.max(24, textRenderer.getWidth(tr("evolution.my_addon.invest.max")) + 7);
+        int barWidth = Math.max(8, Math.min(126, tree.right() - barX - fieldWidth - maxWidth - 28));
+        experienceBar = new Box(barX, rowY, barWidth, 9);
+        plus = new Box(experienceBar.right() + 3, rowY - 3, 14, 15);
+        custom = new Box(plus.right() + 4, rowY, fieldWidth, 12);
+        maximum = new Box(custom.right() + 4, plus.y, maxWidth, plus.h);
+        if (amount != null) {
+            amount.setX(custom.x); amount.setY(custom.y); amount.setWidth(custom.w);
+        }
         refreshRoute();
         layoutRows();
         clampScroll();
@@ -184,6 +217,13 @@ public class EvolutionScreen extends Screen {
                 || comp.isOnSscaRoute() && !comp.isJobChanging() && !n.autoUnlock && !comp.isUnlocked(n.id) && preMet(comp, n) && comp.getPoints() >= n.cost);
     }
     @Override public void tick() {
+        if (amount != null) amount.tick();
+        long now = Util.getMeasuringTimeMs();
+        if (saveAmountAt > 0 && now >= saveAmountAt) rememberAmount();
+        if (paymentAmount > 0 && now - paymentSince >= 5000) {
+            paymentAmount = 0;
+            feedback(Text.translatable("evolution.my_addon.invest.timeout"));
+        }
         EvolutionComponent comp = component();
         if (waitingId == null || comp == null) return;
         if (comp.isUnlocked(waitingId)) {
@@ -192,6 +232,14 @@ public class EvolutionScreen extends Screen {
         } else if (Util.getMeasuringTimeMs() - waitingSince > 3000) waitingId = null;
     }
     public void onPurchaseResult(int request, int status) {
+        if (paymentAmount > 0 && request == paymentRequest) {
+            if (status == 0) {
+                feedback(Text.translatable("evolution.my_addon.invest.paid", paymentAmount));
+                if (client.player != null) client.player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, .5f, 1f);
+            } else feedback(Text.translatable(status == 1 ? "evolution.my_addon.purchase.throttled" : "evolution.my_addon.invest.rejected"));
+            paymentAmount = 0;
+            return;
+        }
         if (waitingId == null || waitingRequest != request) return;
         waitingId = null;
         if (client == null || client.player == null) return;
@@ -218,23 +266,31 @@ public class EvolutionScreen extends Screen {
                 EvolutionArtwork.attachedCoral(ctx, paper.x, paper.y, paper.w, paper.h, treeThumb.w > 0 ? treeThumb.x + 1 : -1);
             // Foreground and opaque paper must occupy different depth planes.
             ctx.getMatrices().translate(0, 0, 10);
-            drawHeader(ctx, comp);
+            drawHeader(ctx, comp, mx, my, delta);
             EvolutionInk.line(ctx, details.x - 7, details.y, details.x - 7, details.bottom());
             drawTree(ctx, comp);
             drawDetails(ctx, comp, mx, my);
             button(ctx, back, tr("gui.back"), true, back.contains(mx, my));
             int hintY = paper.bottom() - Math.max(8, paper.h * 3 / 100) - 12;
-            text(ctx, fit(tr("evolution.my_addon.paper.scroll"), tree.w - 12), tree.x, hintY);
+            String hint = Util.getMeasuringTimeMs() < feedbackUntil ? paymentFeedback.getString() : tr("evolution.my_addon.paper.scroll");
+            text(ctx, fit(hint, tree.w - 12), tree.x, hintY);
+            if (custom.contains(mx, my) || plus.contains(mx, my) || maximum.contains(mx, my)) {
+                int limit = canInvest(comp) ? EvolutionExperience.available(client.player, comp) : 0;
+                ctx.drawTooltip(textRenderer, List.of(Text.translatable("evolution.my_addon.invest.rate"),
+                        Text.translatable("evolution.my_addon.invest.available", limit)), mx, my);
+            }
         } finally {
             ctx.draw();
             ctx.getMatrices().pop();
         }
     }
-    private void drawHeader(DrawContext ctx, EvolutionComponent comp) {
+    private void drawHeader(DrawContext ctx, EvolutionComponent comp, int mx, int my, float delta) {
         int x = header.x, y = header.y;
-        EvolutionInk.frame(ctx, x, y, 44, 45);
-        EvolutionInk.icon(ctx, displayedRoute == null ? "" : displayedRoute.routeId, x + 5, y + 5, 34);
-        int tx = x + 51;
+        boolean compact = header.w < 217;
+        int icon = compact ? 14 : 44, inset = compact ? 1 : 5;
+        EvolutionInk.frame(ctx, x, y, icon, compact ? icon : 45);
+        EvolutionInk.icon(ctx, displayedRoute == null ? "" : displayedRoute.routeId, x + inset, y + inset, icon - 2 * inset);
+        int tx = x + (compact ? 17 : 51);
         String title = displayedRoute == null ? clean(getTitle()) : tr(displayedRoute.displayNameKey);
         int titleScale = tree.right() - tx >= 220 ? 2 : 1;
         int titleWidth = Math.max(20, (back.x - tx - 46) / titleScale);
@@ -248,10 +304,10 @@ public class EvolutionScreen extends Screen {
         badge = fit(badge, Math.max(1, back.x - badgeX - 14));
         EvolutionInk.plaque(ctx, badgeX, y + 2, textRenderer.getWidth(badge) + 8, 12);
         text(ctx, badge, badgeX + 4, y + 4);
-        int orbY = y + 15;
-        EvolutionInk.orb(ctx, tx, orbY, 22);
-        centerText(ctx, Integer.toString(comp == null ? 0 : comp.getPoints()), tx + 11, orbY + 7);
-        int bx = tx + 26, bw = Math.max(8, Math.min(126, tree.right() - bx - 3));
+        int orbY = experienceBar.y - 3, orbX = compact ? x : tx, orbSize = compact ? 16 : 22;
+        EvolutionInk.orb(ctx, orbX, orbY, orbSize);
+        centerText(ctx, Integer.toString(comp == null ? 0 : comp.getPoints()), orbX + orbSize / 2, orbY + (orbSize - 8) / 2);
+        int bx = experienceBar.x, bw = experienceBar.w;
         int previous = 0, next = -1;
         if (displayedRoute != null && comp != null) for (int milestone : displayedRoute.getLevelMilestones()) {
             if (!comp.hasGrantedLevel(milestone)) { next = milestone; break; }
@@ -263,7 +319,22 @@ public class EvolutionScreen extends Screen {
         double progress = next < 0 ? 1 : Math.max(0, Math.min(1, (exp - floor) / (double)Math.max(1, goal - floor)));
         ctx.fill(bx + 3, orbY + 6, bx + 3 + (int)((bw - 6) * progress), orbY + 9, INK);
         EvolutionArtwork.nine(ctx, "experience_bar", bx, orbY + 3, bw, 9);
-        drawWrapped(ctx, next < 0 ? tr("evolution.my_addon.paper.points_complete") : tr("evolution.my_addon.paper.next_point", Math.max(0, goal - exp)), bx, orbY + 14, bw, 2);
+        int limit = canInvest(comp) && paymentAmount == 0 ? EvolutionExperience.available(client.player, comp) : 0;
+        int typed = typedAmount();
+        button(ctx, plus, "+", typed > 0 && typed <= limit, plus.contains(mx, my));
+        if (amount.getText().isEmpty() && !amount.isFocused()) {
+            text(ctx, tr("evolution.my_addon.invest.custom"), custom.x, custom.y);
+        } else {
+            ctx.getMatrices().push();
+            ctx.getMatrices().translate(custom.x, custom.y - 8, 0);
+            ctx.getMatrices().scale(.75f, .75f, 1);
+            text(ctx, tr("evolution.my_addon.invest.custom"), 0, 0);
+            ctx.getMatrices().pop();
+        }
+        amount.render(ctx, mx, my, delta);
+        ctx.fill(custom.x, custom.bottom() - 2, custom.right(), custom.bottom() - 1, INK);
+        button(ctx, maximum, tr("evolution.my_addon.invest.max"), limit > 0, maximum.contains(mx, my));
+        drawWrapped(ctx, next < 0 ? tr("evolution.my_addon.paper.points_complete") : tr("evolution.my_addon.paper.next_point", Math.max(0, goal - exp)), bx, custom.bottom() + 2, tree.right() - bx, 2);
         EvolutionInk.line(ctx, tree.x, tree.y - 4, tree.right(), tree.y - 4);
     }
     private void drawTree(DrawContext ctx, EvolutionComponent comp) {
@@ -431,9 +502,56 @@ public class EvolutionScreen extends Screen {
         clickSound();
     }
     private void clickSound() { if (client != null && client.player != null) client.player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), .35f, 1f); }
+    private void feedback(Text message) {
+        paymentFeedback = message;
+        feedbackUntil = Util.getMeasuringTimeMs() + 3000;
+    }
+    private void rememberAmount() {
+        saveAmountAt = 0;
+        if (amount == null) return;
+        var holder = AutoConfig.getConfigHolder(SSCAddonClientConfig.class);
+        if (!amount.getText().equals(holder.getConfig().evolutionCustomExperience)) {
+            holder.getConfig().evolutionCustomExperience = amount.getText();
+            holder.save();
+        }
+    }
+    @Override public void removed() {
+        rememberAmount();
+        super.removed();
+    }
+    private void invest(boolean all) {
+        EvolutionComponent comp = component();
+        if (!canInvest(comp) || paymentAmount > 0) return;
+        int limit = EvolutionExperience.available(client.player, comp);
+        int value = all ? limit : typedAmount();
+        if (value <= 0 || value > limit) return;
+        rememberAmount();
+        paymentAmount = value;
+        paymentRequest = ++nextRequest;
+        paymentSince = Util.getMeasuringTimeMs();
+        var buf = PacketByteBufs.create();
+        buf.writeVarInt(paymentRequest);
+        buf.writeString(comp.getRoute());
+        buf.writeVarInt(comp.getExp());
+        buf.writeVarInt(value);
+        ClientPlayNetworking.send(SscAddonNetworking.PACKET_EVO_INVEST, buf);
+    }
+    private boolean canInvest(EvolutionComponent comp) {
+        return comp != null && displayedRoute != null && displayedRoute.routeId.equals(comp.getRoute())
+                && comp.hasStarted() && !comp.isJobChanging() && client.getNetworkHandler() != null
+                && ClientPlayNetworking.canSend(SscAddonNetworking.PACKET_EVO_INVEST);
+    }
     @Override public boolean mouseClicked(double mx, double my, int button) {
         layout();
         if (button == 0) {
+            if (custom.contains(mx, my)) {
+                setFocused(amount);
+                amount.mouseClicked(mx, my, button);
+                return true;
+            }
+            if (amount.isFocused()) setFocused(null);
+            if (plus.contains(mx, my)) { invest(false); return true; }
+            if (maximum.contains(mx, my)) { invest(true); return true; }
             if (back.contains(mx, my)) { close(); return true; }
             if (confirm.contains(mx, my)) { buySelected(); return true; }
             Box treeThumb = scrollbarThumb(tree, treeScroll, treeContentHeight);
@@ -490,6 +608,13 @@ public class EvolutionScreen extends Screen {
         return super.mouseScrolled(mx, my, amount);
     }
     @Override public boolean keyPressed(int key, int scanCode, int modifiers) {
+        if (amount.isFocused()) {
+            if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER || key == GLFW.GLFW_KEY_TAB) {
+                setFocused(null);
+                return true;
+            }
+            return super.keyPressed(key, scanCode, modifiers);
+        }
         if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) { buySelected(); return true; }
         if (key == GLFW.GLFW_KEY_HOME) { treeScroll = 0; return true; }
         if (key == GLFW.GLFW_KEY_END) { treeScroll = treeContentHeight; clampScroll(); return true; }

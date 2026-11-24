@@ -156,6 +156,7 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_EVO_UNLOCK = new Identifier("my_addon", "evo_unlock");
 	/** Route-bound purchase and correlated authoritative response (request id, status). */
 	public static final Identifier PACKET_EVO_PURCHASE = new Identifier("my_addon", "evo_purchase");
+    public static final Identifier PACKET_EVO_INVEST = new Identifier("my_addon", "evo_invest");
 	public static final Identifier PACKET_EVO_RESULT = new Identifier("my_addon", "evo_result");
 	/** C2S：一次性提交多个待确认节点（按点击顺序），服务端限频一次后顺序逐个解锁。payload: int count + count*String */
 	public static final Identifier PACKET_EVO_UNLOCK_BATCH = new Identifier("my_addon", "evo_unlock_batch");
@@ -728,6 +729,19 @@ public class SscAddonNetworking {
 		});
 
 		// ===== SSCA 进化加点系统 =====
+        ServerPlayNetworking.registerGlobalReceiver(PACKET_EVO_INVEST, (server, player, handler, buf, responseSender) -> {
+            int request = buf.readVarInt();
+            String route = buf.readString(256);
+            int previous = buf.readVarInt();
+            int amount = buf.readVarInt();
+            ServerPacketExecutor.execute(server, player, handler, () -> {
+                int status;
+                if (!EVOLUTION_BUDGET.accept(handler, EvolutionRequestBudget.Action.INVEST, server.getTicks())) status = 1;
+                else status = EvolutionManager.investExperience(player, route, previous, amount) ? 0 : 3;
+                if (status == 3) EvolutionManager.sync(player);
+                sendEvolutionResult(player, request, status);
+            });
+        });
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_EVO_PURCHASE, (server, player, handler, buf, responseSender) -> {
 			int request = buf.readVarInt();
 			String route = buf.readString(256);
@@ -872,6 +886,10 @@ public class SscAddonNetworking {
             status = comp.getRoute().equals(routeId) && comp.isUnlocked(nodeId) ? 0 : 3;
         } else status = EvolutionManager.tryUnlock(player, nodeId) ? 0 : 3;
         if (status > 1) net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent.EVOLUTION.sync(player);
+        sendEvolutionResult(player, request, status);
+    }
+
+    private static void sendEvolutionResult(ServerPlayerEntity player, int request, int status) {
         if (ServerPlayNetworking.canSend(player, PACKET_EVO_RESULT)) {
             PacketByteBuf result = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();
             result.writeVarInt(request);

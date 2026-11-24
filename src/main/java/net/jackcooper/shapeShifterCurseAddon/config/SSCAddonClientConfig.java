@@ -14,6 +14,9 @@ public class SSCAddonClientConfig implements ConfigData {
 	@ConfigEntry.Gui.Excluded
 	public boolean showSscItemStoreHud = true;
 
+	@ConfigEntry.Gui.Excluded
+	public String evolutionCustomExperience = "";
+
 	/** Stable HUD IDs -> local percentage; missing old-config entries keep the current 100% design. */
 	@ConfigEntry.Gui.Excluded
 	public java.util.Map<String, Integer> hudScalePercent = new java.util.HashMap<>();

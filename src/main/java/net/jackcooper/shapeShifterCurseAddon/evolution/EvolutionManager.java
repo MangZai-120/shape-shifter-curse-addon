@@ -122,7 +122,6 @@ public final class EvolutionManager {
             comp.unlock(route.getBaseNodeId());
         }
         comp.markMigrated();
-        comp.setLastTotalExp(player.totalExperience);
         sync(player);
         var server = player.getServer();
         var playerId = player.getUuid();
@@ -266,27 +265,31 @@ public final class EvolutionManager {
         // 用 started 标志避免变身动画期间（route 已设但尚未变成起点形态）误重置。
         if (!onOwnStartForm) return; // A changed start_form requires an explicit migration.
 
-        // 迁移必须先于首次新经验累计，而不能依赖玩家何时打开界面。
-        if (onOwnStartForm) checkAndMigrate(player);
-
-        // 进化 exp 累积（不用 mixin）：用原版总经验的正增量，只算获得、天然排除花费（附魔/铁砧）与死亡掉落。
-        int curTotalExp = Math.max(0, player.totalExperience);
-        int lastExp = comp.getLastTotalExp();
-        if (lastExp < 0) {
-            comp.setLastTotalExp(curTotalExp); // 首次：以当前为基准，从此刻起算增量
-        } else if (curTotalExp != lastExp) {
-            comp.setLastTotalExp(curTotalExp);
-            if (curTotalExp > lastExp) {
-                comp.addExp(curTotalExp - lastExp);
-                sync(player);
-            }
-        }
+        checkAndMigrate(player);
 
         // 性能优化：XP 里程碑 / 自动分支解锁检查降频到每 20t（XP 变化低频，升级解锁最多晚 1s，肉眼不可察）。
         // 上方「自动进入路线 / 离开起点形态重置」保持每 tick 即时响应变身，不受此节流影响。
         if (player.age % 20 != 0) {
             return;
         }
+        if (applyLevelRewards(comp, route)) sync(player);
+    }
+
+    public static boolean investExperience(ServerPlayerEntity player, String expectedRoute, int expectedExp, int amount) {
+        EvolutionComponent comp = get(player);
+        EvolutionRoute route = currentRoute(player);
+        if (route == null || !route.routeId.equals(expectedRoute) || comp.isJobChanging()
+                || !comp.hasStarted() || amount <= 0) return false;
+        checkAndMigrate(player);
+        if (comp.getExp() != expectedExp || amount > EvolutionExperience.available(player, comp)
+                || !EvolutionExperience.spend(player, amount)) return false;
+        comp.addExp(amount);
+        applyLevelRewards(comp, route);
+        sync(player);
+        return true;
+    }
+
+    private static boolean applyLevelRewards(EvolutionComponent comp, EvolutionRoute route) {
         int level = comp.getEvoLevel();
         boolean changed = grantMilestonePoints(comp, route, level);
         int autoBranchLevel = (route != null) ? route.autoBranchLevel : 50;
@@ -301,9 +304,7 @@ public final class EvolutionManager {
                 }
             }
         } while (unlocked);
-        if (changed) {
-            sync(player);
-        }
+        return changed;
     }
 
     /** 管理指令：把目标玩家进化路线设为全解锁。 */
@@ -561,7 +562,6 @@ public final class EvolutionManager {
         int floor = totalPoints <= 0 ? 0 : milestones[Math.min(totalPoints, milestones.length) - 1];
         boolean restored = totalPoints > 0 && (comp.getExp() == 0 || comp.getEvoLevel() < floor);
         if (restored) comp.setExp(Math.max(comp.getExp(), EvolutionComponent.levelToTotalExp(level) * 2));
-        if (comp.getLastTotalExp() < 0) comp.setLastTotalExp(player.totalExperience);
         comp.markMigrated();
         sync(player);
         if (restored) player.sendMessage(Text.translatable("message.ssc_addon.evolution.migrated", comp.getEvoLevel()).formatted(Formatting.GOLD), false);

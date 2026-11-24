@@ -25,7 +25,7 @@ public class EvolutionComponent implements AutoSyncedComponent {
     private String routeStartForm = "";
     /** 已选择的 SP 分支 id（空字符串 = 未选择）。 */
     private String branch = "";
-    /** 累积的原版经验值（玩家在进化路线上获得经验时累加；进化 exp = 该值 / 2，见 {@link #getEvoLevel()}）。 */
+    /** 已投入的原版经验点数；旧存档累计的进度沿用同一单位。 */
     private int exp = 0;
     /** 已解锁的天赋节点 id 集合。 */
     private final Set<String> unlockedNodes = new HashSet<>();
@@ -49,11 +49,10 @@ public class EvolutionComponent implements AutoSyncedComponent {
     private boolean migrated = false;
     /** 旧版 migrated=true 也可能跳过恢复，升级后按新版本再核对一次。 */
     private int expMigrationVersion = 0;
-    /** 上次记录的原版总经验（按正增量累积进化 exp，只算获得、排除花费/死亡）。-1 = 未初始化。 */
-    private int lastTotalExp = -1;
 
     /** 进化等级上限。 */
     public static final int EVO_LEVEL_CAP = 50;
+    public static final int MAX_INVESTED_XP = levelToTotalExp(EVO_LEVEL_CAP) * 2;
 
     // ---------------- 路线 / 分支 ----------------
 
@@ -100,12 +99,12 @@ public class EvolutionComponent implements AutoSyncedComponent {
      * 当前进化等级：由累积经验换算（每 2 点原版经验 = 1 点进化 exp，即用 exp/2 走原版经验曲线），封顶 {@link #EVO_LEVEL_CAP}。
      */
     public int getEvoLevel() {
-        return exp >= levelToTotalExp(EVO_LEVEL_CAP) * 2 ? EVO_LEVEL_CAP : expToLevel(this.exp / 2);
+        return exp >= MAX_INVESTED_XP ? EVO_LEVEL_CAP : expToLevel(this.exp / 2);
     }
 
     /** 原版经验曲线：从 level 升到 level+1 需要的经验（1.20.1，与 PlayerEntity#getNextLevelExperience 一致）。 */
-    private static int levelUpCost(int level) {
-        if (level >= 30) return 112 + (level - 30) * 9;
+    static long levelUpCost(int level) {
+        if (level >= 30) return 112 + (level - 30) * 9L;
         if (level >= 15) return 37 + (level - 15) * 5;
         return 7 + level * 2;
     }
@@ -272,14 +271,6 @@ public class EvolutionComponent implements AutoSyncedComponent {
         this.expMigrationVersion = 1;
     }
 
-    public int getLastTotalExp() {
-        return lastTotalExp;
-    }
-
-    public void setLastTotalExp(int lastTotalExp) {
-        this.lastTotalExp = lastTotalExp;
-    }
-
     /** 重置全部进化数据（/ssc_addon evolution reset）。 */
     public void reset() {
         this.route = "";
@@ -292,7 +283,6 @@ public class EvolutionComponent implements AutoSyncedComponent {
         this.grantedLevels.clear();
         this.started = false;
         clearJobChange();
-        this.lastTotalExp = -1;
         // migrated 保持：重置后仍是内置 exp 机制，无需再次迁移
     }
 
@@ -319,7 +309,6 @@ public class EvolutionComponent implements AutoSyncedComponent {
         this.started = nbt.getBoolean("started");
         this.migrated = nbt.getBoolean("migrated");
         this.expMigrationVersion = nbt.getInt("expMigrationVersion");
-        this.lastTotalExp = nbt.contains("lastTotalExp") ? Math.max(-1, nbt.getInt("lastTotalExp")) : -1;
         this.jobChangeId = nbt.getString("jobChangeId");
         this.jobChangeRoute = nbt.getString("jobChangeRoute");
         this.jobChangeForm = net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.canonical(nbt.getString("jobChangeForm"));
@@ -352,7 +341,6 @@ public class EvolutionComponent implements AutoSyncedComponent {
         nbt.putBoolean("started", this.started);
         nbt.putBoolean("migrated", this.migrated);
         nbt.putInt("expMigrationVersion", this.expMigrationVersion);
-        nbt.putInt("lastTotalExp", this.lastTotalExp);
         if (isJobChanging()) {
             nbt.putString("jobChangeId", this.jobChangeId);
             nbt.putString("jobChangeRoute", this.jobChangeRoute);

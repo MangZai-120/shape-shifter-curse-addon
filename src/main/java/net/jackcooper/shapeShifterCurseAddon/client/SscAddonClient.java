@@ -207,8 +207,8 @@ public class SscAddonClient implements ClientModInitializer {
                     int request = buf.readVarInt();
                     int status = buf.readUnsignedByte();
                     client.execute(() -> {
-                        if (client.getNetworkHandler() == handler
-                                && client.currentScreen instanceof net.jackcooper.shapeShifterCurseAddon.client.evolution.EvolutionScreen screen)
+                        if (client.getNetworkHandler() != handler) return;
+                        if (client.currentScreen instanceof net.jackcooper.shapeShifterCurseAddon.client.evolution.EvolutionScreen screen)
                             screen.onPurchaseResult(request, status);
                     });
                 });

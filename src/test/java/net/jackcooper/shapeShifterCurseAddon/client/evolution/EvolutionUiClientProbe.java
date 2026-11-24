@@ -570,7 +570,7 @@ public final class EvolutionUiClientProbe {
         var route = EvolutionRegistry.INSTANCE.getRoute(routeId);
         FormUtils._setForm(player, RegPlayerForms.getPlayerForm(route.startForm));
         var comp = RegEvolutionComponent.EVOLUTION.get(player);
-        comp.reset(); comp.setRoute(routeId); comp.markMigrated(); comp.setLastTotalExp(player.totalExperience);
+        comp.reset(); comp.setRoute(routeId); comp.markMigrated();
         comp.unlock(route.getBaseNodeId()); comp.setExp(EvolutionComponent.levelToTotalExp(25) * 2 + 40);
         for (int level : route.getLevelMilestones()) if (level <= 25) comp.markGrantedLevel(level);
         comp.setPoints(4);

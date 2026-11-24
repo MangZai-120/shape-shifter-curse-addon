@@ -6,7 +6,7 @@ import java.util.WeakHashMap;
 
 /** Server-thread only; unrelated operations and new connections never consume each other's budget. */
 public final class EvolutionRequestBudget {
-    public enum Action { OPEN, PURCHASE, SELECT, START }
+    public enum Action { OPEN, PURCHASE, SELECT, START, INVEST }
     private final Map<Object, EnumMap<Action, Integer>> accepted = new WeakHashMap<>();
 
     public boolean accept(Object connection, Action action, int tick) {

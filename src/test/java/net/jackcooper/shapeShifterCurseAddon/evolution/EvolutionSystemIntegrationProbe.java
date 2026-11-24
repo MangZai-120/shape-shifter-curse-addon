@@ -99,8 +99,23 @@ public final class EvolutionSystemIntegrationProbe {
             TestPlayer player = player(route);
             EvolutionManager.tickPlayer(player);
             check(player.evolution.hasMigrated() && player.evolution.hasStarted(), route.routeId + " initializes fresh progression");
-            player.totalExperience = EvolutionComponent.levelToTotalExp(50) * 2;
+            player.setExperienceLevel(66);
+            player.totalExperience = 15000;
             EvolutionManager.tickPlayer(player);
+            check(player.evolution.getExp() == 0, "receiving stored or new XP makes no automatic progress");
+            check(!EvolutionManager.investExperience(player, route.routeId, 0, -1)
+                    && !EvolutionManager.investExperience(player, "other", 0, 1), "invalid payment leaves balance untouched");
+            check(EvolutionManager.investExperience(player, route.routeId, 0, 1), "can invest a single XP");
+            check(player.evolution.getExp() == 1 && player.experienceLevel == 65 && player.totalExperience == 14999,
+                    "one point deducted across the level boundary; odd contribution retained");
+            check(!EvolutionManager.investExperience(player, route.routeId, 0, 1), "a repeated request cannot debit twice");
+            int maximum = EvolutionExperience.available(player, player.evolution);
+            check(maximum == 10689 && !EvolutionManager.investExperience(player, route.routeId, 1, maximum + 1),
+                    "maximum is limited by remaining evolution progress");
+            check(EvolutionManager.investExperience(player, route.routeId, 1, maximum), "investing maximum fills to cap");
+            check(player.experienceLevel == 17 && Math.round(player.experienceProgress * player.getNextLevelExperience()) == 13,
+                    "unused vanilla XP remains after reaching cap");
+            check(!EvolutionManager.investExperience(player, route.routeId, 10690, 1), "full progress accepts no further XP");
             check(player.evolution.getEvoLevel() == 50, route.routeId + " reaches level 50");
             check(player.evolution.getPoints() == route.getLevelMilestones().length, route.routeId + " awards exact budget");
             List<String> paid = route.nodes.stream().filter(n -> !n.autoUnlock).map(n -> n.id).collect(java.util.stream.Collectors.toCollection(ArrayList::new));
@@ -127,7 +142,7 @@ public final class EvolutionSystemIntegrationProbe {
         for (EvolutionRoute route : EvolutionRegistry.INSTANCE.all().values()) {
             TestPlayer player = player(route);
             EvolutionManager.tickPlayer(player);
-            player.totalExperience = EvolutionComponent.levelToTotalExp(50) * 2;
+            player.evolution.setExp(EvolutionComponent.MAX_INVESTED_XP);
             EvolutionManager.tickPlayer(player);
             var requested = route.nodes.stream().filter(node -> !node.autoUnlock).map(node -> node.id).toList();
             var order = EvolutionSelection.resolve(route, player.evolution, requested);
@@ -203,9 +218,14 @@ public final class EvolutionSystemIntegrationProbe {
             EvolutionManager.tickPlayer(player);
             check(player.evolution.hasMigrated() && player.evolution.getEvoLevel() == 30, "legacy migration before UI with prior XP=" + gained);
             check(player.evolution.getPoints() == 3 && player.evolution.isUnlocked("mana_system"), "migration preserves spent and unspent points");
-            player.totalExperience += 2;
+            player.totalExperience = 9000; // stale lifetime counter, empty spendable bar
+            check(!EvolutionManager.investExperience(player, player.evolution.getRoute(), player.evolution.getExp(), 2),
+                    "lifetime XP after spending cannot pay from an empty bar");
+            player.setExperiencePoints(2);
+            check(EvolutionManager.investExperience(player, player.evolution.getRoute(), player.evolution.getExp(), 2),
+                    "manual investment after legacy restoration");
             EvolutionManager.tickPlayer(player);
-            check(player.evolution.getExp() == EvolutionComponent.levelToTotalExp(30) * 2 + 2, "new XP accumulates after legacy restoration");
+            check(player.evolution.getExp() == EvolutionComponent.levelToTotalExp(30) * 2 + 2, "paid XP accumulates after legacy restoration");
             EvolutionManager.checkAndMigrate(player);
             check(player.evolution.getExp() == EvolutionComponent.levelToTotalExp(30) * 2 + 2, "reopening UI does not repeat migration");
         }
