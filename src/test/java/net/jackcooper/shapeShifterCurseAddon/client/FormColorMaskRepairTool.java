@@ -137,18 +137,6 @@ public final class FormColorMaskRepairTool {
         return new Mesh(used, eyes, originalAuditFootprint);
     }
 
-    private static int nearestEye(int index, int width, int[] mask, int[] reference) {
-        int best = Integer.MAX_VALUE, result = 0;
-        for (int i = 0; i < mask.length; i++) {
-            int candidate = eye(mask[i]) ? mask[i] : reference != null && eye(reference[i]) ? reference[i] : 0;
-            if (candidate == 0) continue;
-            int dx = i % width - index % width, dy = i / width - index / width;
-            int distance = dx * dx + dy * dy;
-            if (distance < best) { best = distance; result = candidate & 0xff000000; }
-        }
-        return result;
-    }
-
     private void writeMask(String id, int width, int height, int[] values) throws Exception {
         if (!id.startsWith("my_addon:") || !id.endsWith("_colormask.png")) throw new AssertionError("Only own packed masks may change: " + id);
         BufferedImage packed = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -201,9 +189,9 @@ public final class FormColorMaskRepairTool {
             int fills = 0, eyeFills = 0;
             for (int i = 0; i < colors.length; i++) {
                 if (colors[i] >>> 24 == 0 || geo && !mesh.used[i] || active(original[i])) continue;
+                // SSC intentionally leaves parts of each eye in the appearance texture's original color.
+                if (geo && mesh.eyes[i]) continue;
                 int marker = 0;
-                if (geo && mesh.eyes[i]) marker = nearestEye(i, width, original,
-                        layer.equals("texture") ? bodyReference : completedBody);
                 if (marker == 0 && !layer.equals("texture") && geo && completedBody != null) marker = completedBody[i];
                 if (marker == 0 && layer.equals("texture") && bodyReference != null && active(bodyReference[i])) marker = bodyReference[i];
                 if (!active(marker)) marker = ACCENT2;

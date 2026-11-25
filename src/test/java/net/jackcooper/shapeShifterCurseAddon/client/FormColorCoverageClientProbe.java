@@ -75,8 +75,8 @@ public final class FormColorCoverageClientProbe {
     }
 
     private static FormTextureUtils.ColorSetting distinctPalette() {
-        return new FormTextureUtils.ColorSetting(0xffe04040, 0xff30b060, 0xff4060d0,
-                0xffffcc00, 0xff20ccff, false, false, false);
+        return new FormTextureUtils.ColorSetting(0xffeeeeee, 0xffffbd36, 0xff39dbe0,
+                0xffff00ff, 0xffff0000, false, false, false);
     }
 
     private static boolean repairedForm() {
@@ -189,8 +189,16 @@ public final class FormColorCoverageClientProbe {
         for (GeoBone child : bone.getChildBones()) markBone(child, width, height, bones);
     }
 
+    private static int maskChannel(int mask) {
+        int alpha = mask >>> 24;
+        if (alpha == 1 || alpha == 2) return alpha << 24;
+        if ((mask & 0xff0000) != 0) return mask & 0xff0000;
+        if ((mask & 0xff00) != 0) return mask & 0xff00;
+        return mask & 0xff;
+    }
+
     private static Map<String, Object> coverageLayer(FormModel model, boolean slim, String name,
-                                                    Identifier texture, Identifier mask) throws Exception {
+                                                    Identifier texture, Identifier mask, Identifier prototypeMask) throws Exception {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("layer", name); result.put("texture", texture.toString());
         result.put("mask", mask == null ? null : mask.toString());
@@ -221,6 +229,16 @@ public final class FormColorCoverageClientProbe {
             int visible = 0, meshVisible = 0, meshFixed = 0, noMask = 0;
             int[] rawMask = null;
             if (mask != null) try (NativeImage image = FormTextureUtils.toNativeImage(mask)) { rawMask = pixels(image); }
+            int[] reference = null;
+            if (prototypeMask != null) try (NativeImage image = FormTextureUtils.toNativeImage(prototypeMask)) {
+                check(image.getWidth() == w && image.getHeight() == h, "Prototype mask uses the same eye UV layout");
+                reference = pixels(image);
+            }
+            int fixedEyes = 0;
+            boolean[] eyes = new boolean[w * h];
+            for (var bone : bones.entrySet()) if (bone.getKey().startsWith("eyeRoot")) {
+                for (int i = 0; i < eyes.length; i++) eyes[i] |= bone.getValue()[i];
+            }
             List<List<Integer>> fixedCoordinates = new ArrayList<>();
             boolean[] fixed = new boolean[w * h];
             for (int i = 0; i < base.length; i++) {
@@ -228,6 +246,14 @@ public final class FormColorCoverageClientProbe {
                 visible++;
                 if (!used[i]) continue;
                 meshVisible++;
+                if (REQUIRE_COMPLETE && repairedForm()) {
+                    int actual = maskChannel(rawMask[i]);
+                    int expected = reference == null ? 0 : maskChannel(reference[i]);
+                    if (eyes[i] || (!geo && (actual >>> 24 != 0 || expected >>> 24 != 0))) {
+                        check(actual == expected, "SSC eye channel differs at " + texture + " (" + i % w + "," + i / w + ")");
+                        if (expected == 0) fixedEyes++;
+                    }
+                }
                 fixed[i] = base[i] == pink[i] && base[i] == green[i];
                 if (fixed[i]) {
                     meshFixed++;
@@ -257,7 +283,9 @@ public final class FormColorCoverageClientProbe {
                 if (channel >= 0) channels[channel]++;
             }
             result.put("used_pixels_by_channel", channels);
-            if (REQUIRE_COMPLETE && repairedForm()) check(noMask == 0, "No visible model UV pixel retains an unassigned original material: " + texture);
+            result.put("fixed_prototype_eye_pixels", fixedEyes);
+            if (REQUIRE_COMPLETE && repairedForm() && texture.getNamespace().equals("my_addon"))
+                check(noMask == fixedEyes, "Every other visible addon pixel has a material: " + texture);
         }
         return result;
     }
@@ -285,16 +313,34 @@ public final class FormColorCoverageClientProbe {
                 model.FullBrightTextureMaskResource, model.EmissiveTextureMaskResource};
     }
 
+    private static FormModel prototypeModel(IForm form) {
+        var families = Map.of("axolotl", "axolotl_3", "familiar_fox", "familiar_fox_3", "snow_fox", "snow_fox_3",
+                "anubis_wolf", "anubis_wolf_3", "ocelot", "ocelot_3", "bat", "bat_3", "spider", "spider_3",
+                "allay", "allay_sp", "wild_cat", "feral_cat_sp");
+        for (var family : families.entrySet()) {
+            if (form.getFormID().getPath().startsWith(family.getKey() + "_")) {
+                var id = new Identifier("shape-shifter-curse", "form_" + family.getValue());
+                return FormRenderUtils.getFormRenderer(new Identifier("origins", "origin"), id).realModel;
+            }
+        }
+        throw new AssertionError("Missing SSC prototype for " + form.getFormID());
+    }
+
     private static void coverage(MinecraftClient client) throws Exception {
         FormModel model = model(client);
         List<Map<String, Object>> layers = new ArrayList<>();
         if (model != null) {
             boolean slim = model.useSlim(client.player.getModel().equals("slim"));
             Identifier[] textures = textures(model, slim), masks = masks(model, slim);
+            Identifier[] reference = new Identifier[4];
+            if (REQUIRE_COMPLETE && repairedForm()) {
+                FormModel prototype = prototypeModel(forms.get(index));
+                reference = masks(prototype, prototype.useSlim(slim));
+            }
             String[] names = {"texture", "overlay", "fullbright_texture", "emissive_overlay"};
             for (int l = 0; l < names.length; l++) {
                 if (textures[l] == null || textures[l].getPath().equals("textures/missing.png")) continue;
-                layers.add(coverageLayer(model, slim, names[l], textures[l], masks[l]));
+                layers.add(coverageLayer(model, slim, names[l], textures[l], masks[l], reference[l]));
             }
         }
         current.put("layers", layers);
@@ -304,7 +350,11 @@ public final class FormColorCoverageClientProbe {
                 int[] counts = (int[]) layer.get("used_pixels_by_channel");
                 for (int i = 0; i < 5; i++) channels[i] += counts[i];
             }
-            for (int i = 0; i < 5; i++) check(channels[i] > 0, "Every color slot controls visible model pixels: slot " + i);
+            boolean spider = forms.get(index).getFormID().getPath().startsWith("spider_");
+            for (int i = 0; i < 5; i++) {
+                // SSC's spider uses accent 2 on the body and only eye B on the emissive layer.
+                check(spider && i == 3 ? channels[i] == 0 : channels[i] > 0, "Expected visible pixels for slot " + i);
+            }
         }
     }
 
@@ -359,8 +409,8 @@ public final class FormColorCoverageClientProbe {
                     if ((pixel & 255) > 100 && (pixel >>> 16 & 255) > 100) unexpected++;
                 }
             }
-            current.put("unexpected_original_color_framebuffer_pixels", unexpected);
-            check(unexpected == 0, "Rendered green model has no bright original-color pixels, including point-UV claws and skin cuffs");
+            current.put("unexpected_non_eye_framebuffer_pixels", unexpected);
+            check(unexpected == 0, "Rendered addon body has no stray bright pixels outside the eyes");
         }
     }
 
@@ -518,8 +568,18 @@ public final class FormColorCoverageClientProbe {
                     }
                     case 11 -> {
                         if (ticks < 4) return;
-                        if (REQUIRE_COMPLETE && repairedForm()) verifyGreenFramebuffer(client);
                         shot(client, "06-green-saved-four-views");
+                        if (REQUIRE_COMPLETE && repairedForm() && model(client).TextureResource.getNamespace().equals("my_addon")) {
+                            ((ViewsScreen)client.currentScreen).hideEyes = true;
+                            next(16);
+                        } else next(17);
+                    }
+                    case 16 -> {
+                        if (ticks < 4) return;
+                        verifyGreenFramebuffer(client);
+                        next(17);
+                    }
+                    case 17 -> {
                         current.put("save_roundtrip_verified", true); RESULTS.add(current);
                         Files.writeString(folder().resolve("coverage.json"), new GsonBuilder().setPrettyPrinting().serializeNulls().create().toJson(current));
                         System.out.println("COLOR_COVERAGE_FORM_COMPLETE " + forms.get(index).getFormID());
@@ -528,7 +588,7 @@ public final class FormColorCoverageClientProbe {
                         if (index < forms.size()) { switchForm(client); next(1); }
                         else {
                             var report = Map.of("completed", true, "scope", "SSCA my_addon forms only", "registered_forms", forms.size(), "checks", checks,
-                                    "require_complete", REQUIRE_COMPLETE, "repaired_forms", REQUIRE_COMPLETE ? 20 : 0,
+                                    "require_complete", REQUIRE_COMPLETE, "repaired_forms", RESULTS.stream().filter(r -> r.containsKey("distinct_palette_and_eyes_verified")).count(),
                                     "run_token", System.getProperty("ssca.colorCoverage.runToken", "manual"),
                                     "world", worldName, "palettes_argb", List.of("FFEE00DD", "FF00EE22"), "forms", RESULTS);
                             Files.writeString(OUT.resolve("result.json"), new GsonBuilder().setPrettyPrinting().serializeNulls().create().toJson(report));
@@ -579,6 +639,7 @@ public final class FormColorCoverageClientProbe {
 
     /** Renders the actual saved player through the normal inventory renderer from four angles. */
     private static final class ViewsScreen extends Screen {
+        boolean hideEyes;
         ViewsScreen(String title) { super(Text.literal(title)); }
         @Override public boolean shouldPause() { return false; }
         @Override public void render(DrawContext context, int mouseX, int mouseY, float delta) {
@@ -594,7 +655,18 @@ public final class FormColorCoverageClientProbe {
             player.setStackInHand(net.minecraft.util.Hand.OFF_HAND, net.minecraft.item.ItemStack.EMPTY);
             float yaw = player.getYaw(), pitch = player.getPitch(), body = player.bodyYaw, prevBody = player.prevBodyYaw;
             float head = player.headYaw, prevHead = player.prevHeadYaw;
+            Map<GeoBone, Boolean> hidden = new LinkedHashMap<>();
             try {
+                if (hideEyes) {
+                    FormModel model = model(client);
+                    for (String name : List.of("eyeRoot", "eyeRoot2")) {
+                        GeoBone eye = model.getCachedGeoBone(name);
+                        if (eye != null) {
+                            hidden.put(eye, eye.isHidden());
+                            eye.setHidden(true);
+                        }
+                    }
+                }
                 for (int view = 0; view < 4; view++) {
                     int cx = width * (view % 2 * 2 + 1) / 4;
                     int bottom = height * (view / 2 + 1) / 2 - 12;
@@ -606,6 +678,7 @@ public final class FormColorCoverageClientProbe {
                     InventoryScreen.drawEntity(context, cx, bottom, size, rotation, null, player);
                 }
             } finally {
+                hidden.forEach(GeoBone::setHidden);
                 player.setYaw(yaw); player.setPitch(pitch); player.bodyYaw = body; player.prevBodyYaw = prevBody;
                 player.headYaw = head; player.prevHeadYaw = prevHead;
                 player.setStackInHand(net.minecraft.util.Hand.MAIN_HAND, mainHand);
