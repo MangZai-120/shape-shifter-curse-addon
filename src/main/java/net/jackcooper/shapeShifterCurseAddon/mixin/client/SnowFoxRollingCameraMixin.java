@@ -1,6 +1,10 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin.client;
 
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import net.jackcooper.shapeShifterCurseAddon.client.SnowFoxEvolutionClient;
+import net.jackcooper.shapeShifterCurseAddon.client.renderer.DomainRenderer;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.render.Camera;
 import net.minecraft.entity.Entity;
@@ -10,22 +14,26 @@ import net.minecraft.world.BlockView;
 import net.minecraft.world.RaycastContext;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value=Camera.class,priority=1100)
 abstract class SnowFoxRollingCameraMixin {
     @Shadow protected abstract void setPos(Vec3d pos);
     @Shadow protected abstract void setRotation(float yaw,float pitch);
+    @Shadow private boolean thirdPerson;
 
-    @Inject(method="update",at=@At("TAIL"))
-    private void ssca$followShell(BlockView world,Entity entity,boolean third,boolean inverse,float delta,CallbackInfo ci) {
-        if (!third || !(entity instanceof ClientPlayerEntity player) || !SnowFoxEvolutionClient.cameraActive()) return;
+    @WrapMethod(method="update")
+    private void ssca$followShell(BlockView world, Entity entity, boolean third, boolean inverse, float delta, Operation<Void> original) {
+        // Other cameras can supply both a position and a free-look rotation, then cancel update.
+        original.call(world, entity, third, inverse, delta);
+        if (!(entity instanceof ClientPlayerEntity player) || !SnowFoxEvolutionClient.controlsCamera(player)) return;
+        Camera camera = (Camera)(Object)this;
+        var mc = MinecraftClient.getInstance();
+        if (mc.player != player || mc.gameRenderer.getCamera() != camera) return;
         Vec3d eye=player.getCameraPosVec(delta);
-        Vec3d offset=SnowFoxEvolutionClient.cameraOffset(player,delta,((Camera)(Object)this).getPos().subtract(eye));
-        float front=SnowFoxEvolutionClient.frontWeight(player,delta);
-        if (front>0) setRotation(player.getYaw(delta)+180*front,player.getPitch(delta)*(1-2*front));
+        var pose = SnowFoxEvolutionClient.shellCamera(camera, player, eye, delta);
+        if (pose == null) return;
+        setRotation(pose.yaw(), pose.pitch());
+        Vec3d offset = pose.offset();
         double length=offset.length();
         if (length < .001) { setPos(eye); return; }
         double fraction=1;
@@ -35,6 +43,10 @@ abstract class SnowFoxRollingCameraMixin {
                     RaycastContext.FluidHandling.NONE,entity));
             if (hit.getType()!=HitResult.Type.MISS) fraction=Math.min(fraction,Math.max(0,from.distanceTo(hit.getPos())-.02)/length);
         }
-        setPos(eye.add(offset.multiply(fraction)));
+        Vec3d target = eye.add(offset.multiply(fraction));
+        Vec3d insideDomain = DomainRenderer.projectInside(eye, target);
+        Vec3d position = insideDomain == null ? target : insideDomain;
+        setPos(position);
+        if (!third && position.squaredDistanceTo(eye) > .16) thirdPerson = true;
     }
 }

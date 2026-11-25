@@ -356,7 +356,7 @@ public class EvolutionScreen extends Screen {
                 Box card = nodeCard(node);
                 if (card.y > tree.bottom() || card.bottom() < tree.y) continue;
                 EvolutionInk.frame(ctx, card.x, card.y, card.w, card.h);
-                EvolutionInk.icon(ctx, node.id, x, y, size);
+                EvolutionInk.icon(ctx, EvolutionArtwork.nodeSprite(displayedRoute.routeId, node.id), x, y, size);
                 if (comp.isUnlocked(node.id)) EvolutionInk.check(ctx, x, y, size);
                 drawNodeLabel(ctx, node);
                 if (node.id.equals(selectedId)) {
@@ -391,7 +391,7 @@ public class EvolutionScreen extends Screen {
         EvolutionNode node = selected();
         if (node == null || comp == null) return;
         int iconSize = Math.min(38, Math.max(24, details.w / 3));
-        EvolutionInk.icon(ctx, node.id, details.x, details.y + 2, iconSize);
+        EvolutionInk.icon(ctx, EvolutionArtwork.nodeSprite(displayedRoute.routeId, node.id), details.x, details.y + 2, iconSize);
         if (comp.isUnlocked(node.id)) EvolutionInk.check(ctx, details.x, details.y + 2, iconSize);
         int titleScale = details.w >= 140 ? 2 : 1;
         ctx.getMatrices().push();

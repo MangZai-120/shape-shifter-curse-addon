@@ -96,7 +96,7 @@ public class SscAddonCodexStatusMixin {
             dynamic.append(Text.translatable(node.nameKey));
             dynamic.append(Text.literal("\n"));
             String bookKey = node.descKey.substring(0, node.descKey.length() - 5) + ".book";
-            dynamic.append(Text.translatable(FormIdentifiers.UPGRADE_SNOW_FOX.equals(currentForm.getFormID()) ? node.descKey : bookKey));
+            dynamic.append(Text.translatableWithFallback(bookKey, Text.translatable(node.descKey).getString()));
         }
         cir.setReturnValue(dynamic);
     }

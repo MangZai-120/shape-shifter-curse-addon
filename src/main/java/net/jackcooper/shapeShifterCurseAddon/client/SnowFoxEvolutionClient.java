@@ -13,6 +13,7 @@ import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.Perspective;
+import net.minecraft.client.render.Camera;
 import net.minecraft.client.input.Input;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
@@ -24,7 +25,7 @@ public final class SnowFoxEvolutionClient {
     private static boolean primary, secondary;
     private static Perspective previous;
     private static ClientPlayerEntity viewed;
-    private static Vec3d initialOffset = Vec3d.ZERO;
+    private static CameraPose entry, lastPose, recoveryStart;
     private static int lastX = -200, lastZ = -200;
 
     public static void register() {
@@ -53,12 +54,20 @@ public final class SnowFoxEvolutionClient {
         }
         var state = SnowFoxMotion.STATE.get(p);
         boolean shell = state.phase() == SnowFoxState.Phase.SHELL;
-        if (shell && previous == null) {
-            previous = mc.options.getPerspective();
-            initialOffset = mc.gameRenderer.getCamera().getPos().subtract(p.getCameraPosVec(mc.getTickDelta()));
-            mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
-            lastX = lastZ = -200;
-        } else if (previous != null && !shell && state.phase() != SnowFoxState.Phase.RECOVERY) restore(mc);
+        if (shell) {
+            if (previous == null) {
+                previous = mc.options.getPerspective();
+                entry = CameraPose.current(mc.gameRenderer.getCamera(), p.getCameraPosVec(mc.getTickDelta()));
+                lastPose = entry;
+                lastX = lastZ = -200;
+            }
+            if (mc.options.getPerspective() != Perspective.THIRD_PERSON_BACK)
+                mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+        } else if (previous != null) {
+            if (state.phase() != SnowFoxState.Phase.RECOVERY) restore(mc);
+            else if (mc.options.getPerspective() != previous)
+                mc.options.setPerspective(previous);
+        }
         var a = SscAddonKeybindings.getPrimaryKey();
         var b = SscAddonKeybindings.getSecondaryKey();
         boolean pressedA = mc.currentScreen == null && a != null && a.isPressed();
@@ -71,6 +80,7 @@ public final class SnowFoxEvolutionClient {
     private static void restore(MinecraftClient mc) {
         if (previous != null) mc.options.setPerspective(previous);
         previous = null;
+        entry = lastPose = recoveryStart = null;
     }
 
     public static void movement(Input input) {
@@ -79,8 +89,10 @@ public final class SnowFoxEvolutionClient {
         var state = SnowFoxMotion.STATE.get(mc.player);
         if (state.phase() == SnowFoxState.Phase.IDLE || state.phase() == SnowFoxState.Phase.RECOVERY) return;
         if (state.phase() == SnowFoxState.Phase.SHELL) {
-            double yaw = Math.toRadians(mc.player.getYaw());
-            double f = input.movementForward, s = input.movementSideways;
+            double yaw = Math.toRadians(mc.gameRenderer.getCamera().getYaw());
+            // Shoulder cameras may already have rotated the movement impulses into body space.
+            int f = (input.pressingForward ? 1 : 0) - (input.pressingBack ? 1 : 0);
+            int s = (input.pressingLeft ? 1 : 0) - (input.pressingRight ? 1 : 0);
             int x = (int)Math.round(90*(s*Math.cos(yaw)-f*Math.sin(yaw)));
             int z = (int)Math.round(90*(f*Math.cos(yaw)+s*Math.sin(yaw)));
             if (x!=lastX || z!=lastZ || mc.player.age%10==0) {
@@ -93,28 +105,39 @@ public final class SnowFoxEvolutionClient {
         input.movementForward=0; input.movementSideways=0; input.jumping=false; input.sneaking=false;
     }
 
-    public static boolean cameraActive() { return previous != null; }
-    public static float frontWeight(ClientPlayerEntity player,float delta) {
-        if (previous!=Perspective.THIRD_PERSON_FRONT) return 0;
-        return 1-cameraProgress(SnowFoxMotion.STATE.get(player),delta);
+    public record CameraPose(Vec3d offset, float yaw, float pitch) {
+        static CameraPose current(Camera camera, Vec3d eye) {
+            return new CameraPose(camera.getPos().subtract(eye), camera.getYaw(), camera.getPitch());
+        }
+
+        CameraPose blend(CameraPose end, float progress) {
+            if (progress <= 0) return this;
+            if (progress >= 1) return end;
+            float t = progress * progress * (3 - 2 * progress);
+            float angle = MathHelper.lerpAngleDegrees(t, yaw, end.yaw);
+            // Rotate around the focus when moving from a front view to a rear view.
+            Vec3d a = offset.rotateY((yaw - angle) * MathHelper.RADIANS_PER_DEGREE);
+            Vec3d b = end.offset.rotateY((end.yaw - angle) * MathHelper.RADIANS_PER_DEGREE);
+            return new CameraPose(a.lerp(b, t), angle, MathHelper.lerp(t, pitch, end.pitch));
+        }
     }
-    private static float cameraProgress(SnowFoxState state,float delta) {
-        float time=state.phase()==SnowFoxState.Phase.RECOVERY ? 1-state.age(delta)/6 : state.age(delta)/8;
-        float t=MathHelper.clamp(time,0,1);
-        return t*t*(3-2*t);
+
+    public static boolean controlsCamera(ClientPlayerEntity player) {
+        return previous != null && viewed == player;
     }
-    public static Vec3d cameraOffset(ClientPlayerEntity player,float delta,Vec3d normalBack) {
-        var state=SnowFoxMotion.STATE.get(player);
-        float t = cameraProgress(state,delta);
-        Vec3d origin = previous==Perspective.FIRST_PERSON ? Vec3d.ZERO :
-                state.phase()==SnowFoxState.Phase.RECOVERY ?
-                        normalBack.multiply(previous==Perspective.THIRD_PERSON_FRONT ? -1 : 1) : initialOffset;
-        double size = MathHelper.clamp((state.mass()-10)/40,0,1);
-        // Pehkui scales the normal third-person offset to the fox body. Use the visible shell
-        // diameter to frame the entire ball and keep the ground ahead visible at maximum size.
-        Vec3d direction = Vec3d.fromPolar(player.getPitch(delta), player.getYaw(delta));
-        Vec3d follow = direction.multiply(-(4.9 + 4.5 * size)).add(0, 1.15 + 1.65 * size, 0);
-        return origin.lerp(follow,t);
+
+    public static CameraPose shellCamera(Camera camera, ClientPlayerEntity player, Vec3d eye, float delta) {
+        var state = SnowFoxMotion.STATE.get(player);
+        if (state.phase() == SnowFoxState.Phase.SHELL) {
+            double size = MathHelper.clamp((state.mass() - 10) / 40, 0, 1);
+            Vec3d look = Vec3d.fromPolar(camera.getPitch(), camera.getYaw());
+            Vec3d offset = look.multiply(-(4.9 + 4.5 * size)).add(0, 1.15 + 1.65 * size, 0);
+            lastPose = entry.blend(new CameraPose(offset, camera.getYaw(), camera.getPitch()), state.age(delta) / 8);
+            return lastPose;
+        }
+        if (state.phase() != SnowFoxState.Phase.RECOVERY) return null;
+        if (recoveryStart == null) recoveryStart = lastPose;
+        return recoveryStart.blend(CameraPose.current(camera, eye), state.age(delta) / 6);
     }
 
     private static void hud(DrawContext draw,float delta) {

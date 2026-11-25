@@ -500,10 +500,14 @@ public final class EvolutionUiClientProbe {
         check((double)field("treeScroll") == 0, "wheel over shifted rail returns to top");
     }
     private static void artwork(MinecraftClient mc) throws Exception {
-        for (String routeId : List.of("axolotl", "familiar_fox")) {
+        for (String routeId : List.of("axolotl", "familiar_fox", "snow_fox")) {
             check(EvolutionArtwork.hasSprite(routeId), "PNG portrait: " + routeId);
             for (var node : EvolutionRegistry.CLIENT.getRoute(routeId).nodes)
-                check(EvolutionArtwork.hasSprite(node.id), "PNG mapped for node " + node.id);
+                check(EvolutionArtwork.hasSprite(EvolutionArtwork.nodeSprite(routeId, node.id)), "PNG mapped for " + routeId + "/" + node.id);
+        }
+        for (String id : List.of("branch_moon_ring", "branch_stone")) {
+            check(EvolutionArtwork.nodeSprite("axolotl", id).equals(id)
+                    && EvolutionArtwork.nodeSprite("snow_fox", id).equals("snow_fox_" + id), "separate final form portraits for " + id);
         }
         Set<String> ids = new TreeSet<>(EvolutionArtwork.ICONS);
         ids.addAll(EvolutionArtwork.SKIN);
@@ -530,7 +534,8 @@ public final class EvolutionUiClientProbe {
             check((image.getColor(384, 256) >>> 24) == 255 && (image.getColor(0, 0) >>> 24) == 0, "shared sheet is opaque with transparent outer corners");
         }
         long previousHash = 0;
-        for (String id : List.of(EvolutionArtwork.decoration("axolotl"), EvolutionArtwork.decoration("familiar_fox"))) {
+        for (String route : List.of("axolotl", "familiar_fox", "snow_fox")) {
+            String id = EvolutionArtwork.decoration(route);
             try (var stream = mc.getResourceManager().getResource(EvolutionArtwork.resource(id)).orElseThrow().getInputStream();
                  var image = net.minecraft.client.texture.NativeImage.read(stream)) {
                 check(image.getWidth() == 768 && image.getHeight() == 512, "route ornaments use the shared canvas: " + id);

@@ -213,6 +213,7 @@
         "client.DomainCameraWallMixin",
         "client.SnowFoxRollingInputMixin",
         "client.SnowFoxRollingCameraMixin",
+        "client.SnowFoxRollingHandMixin",
         "client.EntityWebGlowMixin",
         "client.LunarTargetOutlineMixin",
         "client.LunarTargetColorMixin",

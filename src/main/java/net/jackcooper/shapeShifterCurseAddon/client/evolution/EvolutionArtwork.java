@@ -21,8 +21,9 @@ public final class EvolutionArtwork {
             "water_spurt", "water_spear", "vortex_guide", "become_water", "branch_moon_ring", "branch_stone",
             "experience_orb", "unlocked_check", "familiar_fox", "familiar_fox_base", "mana_system", "spark",
             "rocket", "buff_immunity", "alchemy", "spirit_vision", "fire_ring", "branch_spirit_lord",
-            "branch_mancianima", "back_arrow", "snow_fox_base", "running_jumps", "air_control",
-            "snowball_throw", "ground_rebound", "falling_strike", "snowball_freeze", "super_dive", "rolling_charge");
+            "branch_mancianima", "back_arrow", "snow_fox", "snow_fox_base", "running_jumps", "air_control",
+            "snowball_throw", "ground_rebound", "falling_strike", "snowball_freeze", "super_dive", "rolling_charge",
+            "snow_fox_branch_moon_ring", "snow_fox_branch_stone");
     static final Set<String> SKIN = Set.of("node_frame", "selected_frame", "label_frame", "confirm_frame",
             "scroll_track", "scroll_thumb", "scroll_grip", "line_horizontal", "line_vertical", "point_boundary",
             "experience_bar", "divider_ornament", "leaf_ornament");
@@ -43,6 +44,10 @@ public final class EvolutionArtwork {
         TEXTURES.clear(); FAILED.clear(); EvolutionInk.paperFailed = false;
     }
     static boolean hasSprite(String id) { return ICONS.contains(id); }
+    static String nodeSprite(String routeId, String nodeId) {
+        String formSprite = routeId + "_" + nodeId;
+        return hasSprite(formSprite) ? formSprite : nodeId;
+    }
     static boolean loaded(String id) { return TEXTURES.containsKey(id) && !FAILED.contains(id); }
     static String decoration(String route) { return "decorations/" + route; }
     /** Keep the selection page's centered content clear, using the existing painted side ornaments. */
