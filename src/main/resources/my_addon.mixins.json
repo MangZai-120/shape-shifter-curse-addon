@@ -211,6 +211,8 @@
         "client.DomainSoundBarrierMixin",
         "client.DomainClientWallMixin",
         "client.DomainCameraWallMixin",
+        "client.SnowFoxRollingInputMixin",
+        "client.SnowFoxRollingCameraMixin",
         "client.EntityWebGlowMixin",
         "client.LunarTargetOutlineMixin",
         "client.LunarTargetColorMixin",

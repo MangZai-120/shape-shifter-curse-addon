@@ -18,6 +18,7 @@ public abstract class SpellCastGeoPoseMixin {
     private void ssca$poses(FormRenderer formRenderer, FormModel model, PlayerEntityRenderer renderer,
             PlayerEntity player, float limbAngle, float limbDistance, float tickDelta,
             float animationProgress, float headYaw, float headPitch, CallbackInfo ci) {
+        FormPoseOverrides.snowFox(model, player, tickDelta);
         FormPoseOverrides.spear(formRenderer, model, renderer, player, limbAngle, limbDistance,
                 tickDelta, animationProgress, headYaw, headPitch);
         FormPoseOverrides.casting(formRenderer, model, renderer, player, limbAngle, limbDistance,

@@ -225,5 +225,59 @@
         "attenuation_distance": 32
       }
     ]
+  },
+  "snow_fox.gather": {
+    "subtitle": "subtitles.my_addon.snow_fox.gather",
+    "sounds": [
+      {
+        "name": "my_addon:snow_fox/gather",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "snow_fox.plunge": {
+    "subtitle": "subtitles.my_addon.snow_fox.plunge",
+    "sounds": [
+      {
+        "name": "my_addon:snow_fox/plunge",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "snow_fox.ridge_impact": {
+    "subtitle": "subtitles.my_addon.snow_fox.ridge_impact",
+    "sounds": [
+      {
+        "name": "my_addon:snow_fox/ridge_impact",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "snow_fox.pack": {
+    "subtitle": "subtitles.my_addon.snow_fox.pack",
+    "sounds": [
+      {
+        "name": "my_addon:snow_fox/pack",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "snow_fox.rolling": {
+    "subtitle": "subtitles.my_addon.snow_fox.rolling",
+    "sounds": [
+      {
+        "name": "my_addon:snow_fox/rolling",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "snow_fox.shatter": {
+    "subtitle": "subtitles.my_addon.snow_fox.shatter",
+    "sounds": [
+      {
+        "name": "my_addon:snow_fox/shatter",
+        "attenuation_distance": 32
+      }
+    ]
   }
 }

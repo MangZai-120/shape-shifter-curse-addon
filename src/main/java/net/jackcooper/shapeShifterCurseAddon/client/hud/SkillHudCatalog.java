@@ -260,6 +260,9 @@ public final class SkillHudCatalog {
                 skill("vortex_impact", "form_axolotl_sp_vortex_charge", true, p -> p.getAir() >= net.jackcooper.shapeShifterCurseAddon.ability.VortexChargeManager.airPerHitForHud(p)),
                 skill("play_dead", "form_axolotl_sp_play_dead_activate", false),
                 skill("water_burst", "form_axolotl_sp_water_ball", false)));
+        FORMS.put("snow_fox_upgrade", List.of(
+                skill("frost_spikes", "snow_fox_super_dive", null, 0, "super_dive", true),
+                skill("snow_ball", "snow_fox_rolling_charge", null, 0, "rolling_charge", false)));
         FORMS.put("upgrade_axolotl", List.of(
                 // 投掷水矛：湿润度（air）≥空气消耗（balance 可调，服务端同源）
                 skill("water_spear", "form_upgrade_axolotl_water_spear", null, 0, AxolotlTree.NODE_WATER_SPEAR, true,

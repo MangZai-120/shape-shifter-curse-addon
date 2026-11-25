@@ -8,10 +8,8 @@ import net.onixary.shapeShifterCurseFabric.data.CodexData;
 import net.onixary.shapeShifterCurseFabric.player_form.IForm;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
 import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent;
-import net.jackcooper.shapeShifterCurseAddon.evolution.AxolotlTree;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionNode;
-import net.jackcooper.shapeShifterCurseAddon.evolution.FamiliarFoxTree;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import org.spongepowered.asm.mixin.Mixin;
@@ -50,17 +48,11 @@ public class SscAddonCodexStatusMixin {
         }
 
         // 根据当前形态选择对应的加点树；非进化形态不处理
-        List<EvolutionNode> nodes;
-        String baseNodeId;
-        if (FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(currentForm.getFormID())) {
-            nodes = FamiliarFoxTree.nodes(player.getWorld());
-            baseNodeId = FamiliarFoxTree.NODE_BASE;
-        } else if (FormIdentifiers.UPGRADE_AXOLOTL.equals(currentForm.getFormID())) {
-            nodes = AxolotlTree.nodes(player.getWorld());
-            baseNodeId = AxolotlTree.NODE_BASE;
-        } else {
-            return;
-        }
+        var route = net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionRegistry.forWorld(player.getWorld())
+                .getRouteByStartForm(currentForm.getFormID());
+        if (route == null) return;
+        List<EvolutionNode> nodes = route.nodes;
+        String baseNodeId = route.getBaseNodeId();
         if (nodes.isEmpty()) {
             return;  // route 未加载，跳过
         }
@@ -78,9 +70,7 @@ public class SscAddonCodexStatusMixin {
         int unlockableCount = 0;
         int unlockedCount = 0;
         for (EvolutionNode node : nodes) {
-            if (baseNodeId.equals(node.id)) {
-                continue;
-            }
+            if (baseNodeId.equals(node.id) || (FormIdentifiers.UPGRADE_SNOW_FOX.equals(currentForm.getFormID()) && node.autoUnlock)) continue;
             unlockableCount++;
             if (comp.isUnlocked(node.id)) {
                 unlockedCount++;
@@ -106,7 +96,7 @@ public class SscAddonCodexStatusMixin {
             dynamic.append(Text.translatable(node.nameKey));
             dynamic.append(Text.literal("\n"));
             String bookKey = node.descKey.substring(0, node.descKey.length() - 5) + ".book";
-            dynamic.append(Text.translatable(bookKey));
+            dynamic.append(Text.translatable(FormIdentifiers.UPGRADE_SNOW_FOX.equals(currentForm.getFormID()) ? node.descKey : bookKey));
         }
         cir.setReturnValue(dynamic);
     }

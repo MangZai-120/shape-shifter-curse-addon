@@ -21,7 +21,8 @@ public final class EvolutionArtwork {
             "water_spurt", "water_spear", "vortex_guide", "become_water", "branch_moon_ring", "branch_stone",
             "experience_orb", "unlocked_check", "familiar_fox", "familiar_fox_base", "mana_system", "spark",
             "rocket", "buff_immunity", "alchemy", "spirit_vision", "fire_ring", "branch_spirit_lord",
-            "branch_mancianima", "back_arrow");
+            "branch_mancianima", "back_arrow", "snow_fox_base", "running_jumps", "air_control",
+            "snowball_throw", "ground_rebound", "falling_strike", "snowball_freeze", "super_dive", "rolling_charge");
     static final Set<String> SKIN = Set.of("node_frame", "selected_frame", "label_frame", "confirm_frame",
             "scroll_track", "scroll_thumb", "scroll_grip", "line_horizontal", "line_vertical", "point_boundary",
             "experience_bar", "divider_ornament", "leaf_ornament");

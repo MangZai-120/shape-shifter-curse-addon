@@ -106,7 +106,14 @@ public final class SscAddonForms {
 		RegPlayerForms.registerPlayerForm(snowFoxForm);
 		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_snow_fox_sp")).registerForm(1, 7, snowFoxForm));
 
-		// 寒棘狐（Frostspine）- 雪狐线月髓环进化形态（原版雪狐 snow_fox_3 经月髓环进化），复用原版雪狐模型/贴图，能力完全等同原版雪狐
+		// 进化雪狐沿用雪狐体型，主动技能由路线节点解锁。
+		Form_SnowFoxSP evolvedSnowFox = new Form_SnowFoxSP(FormIdentifiers.UPGRADE_SNOW_FOX);
+		evolvedSnowFox.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
+		evolvedSnowFox.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.55f, 0.6f)).OverwriteEyeScale(0.6f);
+		RegPlayerForms.registerPlayerForm(evolvedSnowFox);
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_snow_fox_upgrade")).registerForm(1, 7, evolvedSnowFox));
+
+		// 寒棘狐为进化雪狐的月髓环分支。
 		Form_SnowFoxSP frostspineForm = new Form_SnowFoxSP(FormIdentifiers.SNOW_FOX_FROSTSPINE);
 		frostspineForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 缩放与雪狐SP一致（对齐原版 SNOW_FOX_3 体型 0.55，eye_scale 0.6 支持潜行过半格）

@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
+import net.jackcooper.shapeShifterCurseAddon.ability.snowfox.SnowFoxMotion;
 import net.jackcooper.shapeShifterCurseAddon.ability.AllaySPGroupHeal;
 import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaTeleport;
 import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaPrimary;
@@ -692,6 +693,15 @@ public class SscAddonNetworking {
 		});
 
 		// SSCA 进化美西螈技能：主「投掷水矛」 / 次「涡流引导」
+        ServerPlayNetworking.registerGlobalReceiver(SnowFoxMotion.DIVE, (server, player, handler, buf, sender) ->
+                ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> SnowFoxMotion.STATE.get(player).start(player, false))));
+        ServerPlayNetworking.registerGlobalReceiver(SnowFoxMotion.ROLL, (server, player, handler, buf, sender) ->
+                ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> SnowFoxMotion.STATE.get(player).start(player, true))));
+        ServerPlayNetworking.registerGlobalReceiver(SnowFoxMotion.STEER, (server, player, handler, buf, sender) -> {
+            double x = buf.readByte() / 90.0, z = buf.readByte() / 90.0;
+            ServerPacketExecutor.execute(server, player, handler, () -> SnowFoxMotion.STATE.get(player).steer(x, z));
+        });
+
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_UPGRADE_AXOLOTL_SPEAR, (server, player, handler, buf, responseSender) -> {
 			ServerPacketExecutor.execute(server, player, handler, () -> runSkillAction(player, () -> net.jackcooper.shapeShifterCurseAddon.ability.WaterSpearLeapManager.onKeyPress(player)));
 		});

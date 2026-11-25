@@ -50,6 +50,7 @@
       "net.jackcooper.shapeShifterCurseAddon.compat.emi.SSCA_EMIPlugin"
     ],
     "cardinal-components-entity": [
+      "net.jackcooper.shapeShifterCurseAddon.ability.snowfox.SnowFoxMotion",
       "net.jackcooper.shapeShifterCurseAddon.state.RegInstinctAnchorComponent",
       "net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent",
       "net.jackcooper.shapeShifterCurseAddon.state.RegSpiderMoonWeaverStateComponent",
@@ -90,6 +91,7 @@
   ],
   "custom": {
     "cardinal-components": [
+      "ssc_addon:snow_fox_motion",
       "ssc_addon:instinct_anchor",
       "ssc_addon:evolution",
       "ssc_addon:spider_moon_weaver_state",

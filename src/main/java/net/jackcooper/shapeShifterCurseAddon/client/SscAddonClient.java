@@ -420,6 +420,7 @@ public class SscAddonClient implements ClientModInitializer {
 		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.BRIDGE_WEB_BULLET, FlyingItemEntityRenderer::new);
 		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.ORCAFIS, net.jackcooper.shapeShifterCurseAddon.client.renderer.OrcafisRenderer::new);
 		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.ORCAFIS_PART, EmptyEntityRenderer::new);
+		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.SNOW_FOX_SHELL, EmptyEntityRenderer::new);
 		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.ORCAFIS_ROCK, net.jackcooper.shapeShifterCurseAddon.client.renderer.OrcafisRockRenderer::new);
 		// 月织蛛蓄力蛛丝弹：用 FlyingItemEntityRenderer 渲染蛛丝弹物品精灵（复用原版 web_projectile 物品）
 		EntityRendererRegistry.register(net.jackcooper.shapeShifterCurseAddon.entity.RegAddonEntities.WEB_MEMBRANE_BULLET, FlyingItemEntityRenderer::new);
@@ -600,6 +601,7 @@ public class SscAddonClient implements ClientModInitializer {
 		// SSCA 食梦魔次要技能「惊吓」客户端幻影（假苦力怕/复制品，仅目标可见）
 		net.jackcooper.shapeShifterCurseAddon.client.NightmareSpookClient.register();		// SSCA 进化美西螈技能 - 主「投掷水矛」/ 次「涡流引导」按键检测器
 		UpgradeAxolotlSkillClient.register();
+		SnowFoxEvolutionClient.register();
 		// 风灵「疾风连爪」 - 左键按住检测器
 		net.jackcooper.shapeShifterCurseAddon.client.WindSpiritClawClient.register();
 		// 风灵「风之冲刺」 - 主技能键检测器 + 悬浮期绿色落点预览

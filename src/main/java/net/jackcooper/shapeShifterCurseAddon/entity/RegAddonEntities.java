@@ -30,6 +30,12 @@ public final class RegAddonEntities {
 			FabricEntityTypeBuilder.<OrcafisRockEntity>create(SpawnGroup.MISC, OrcafisRockEntity::new)
 					.dimensions(EntityDimensions.fixed(1.6f,1.2f)).trackedUpdateRate(1).trackRangeChunks(8).build());
 
+	public static final EntityType<SnowFoxShellEntity> SNOW_FOX_SHELL = Registry.register(
+			Registries.ENTITY_TYPE, new Identifier("ssc_addon", "snow_fox_shell"),
+			FabricEntityTypeBuilder.<SnowFoxShellEntity>create(SpawnGroup.MISC, SnowFoxShellEntity::new)
+					.dimensions(EntityDimensions.fixed(.1f,.1f)).trackRangeChunks(12).trackedUpdateRate(1)
+					.disableSaving().disableSummon().build());
+
 	public static final EntityType<OrcafisPartEntity> ORCAFIS_PART = Registry.register(
 			Registries.ENTITY_TYPE, new Identifier("ssc_addon", "orcafis_part"),
 			FabricEntityTypeBuilder.<OrcafisPartEntity>create(SpawnGroup.MISC, OrcafisPartEntity::new)

@@ -459,6 +459,7 @@ public class SscAddon implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		net.jackcooper.shapeShifterCurseAddon.ability.snowfox.SnowFoxMotion.register();
 		net.jackcooper.shapeShifterCurseAddon.compat.DualAccessoryEquipment.init();
 		net.jackcooper.shapeShifterCurseAddon.network.NetworkCompatibility.init();
 		registerConfig();

@@ -57,8 +57,12 @@ public class EvolutionStoneItem extends Item {
 					targetFormId = FormIdentifiers.WILD_CAT_SP;
 					canEvolve = true;
 				}
-				// Allow Snow Fox 3 (permanent phase) to evolve to Snow Fox SP
+				// Snow foxes enter their progression before choosing a final form.
 				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "snow_fox_3"))) {
+					targetFormId = FormIdentifiers.UPGRADE_SNOW_FOX;
+					canEvolve = true;
+				}
+				else if (playerFormID.equals(FormIdentifiers.UPGRADE_SNOW_FOX)) {
 					targetFormId = FormIdentifiers.SNOW_FOX_SP;
 					canEvolve = true;
 				}

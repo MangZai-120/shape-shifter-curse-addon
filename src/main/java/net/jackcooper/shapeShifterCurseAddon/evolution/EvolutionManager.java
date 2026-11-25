@@ -45,7 +45,8 @@ public final class EvolutionManager {
             // Missing configuration must not turn an existing evolution gate into a free upgrade.
             return !get(player).isOnSscaRoute()
                     && !net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.UPGRADE_FAMILIAR_FOX.equals(nowFormId)
-                    && !net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.UPGRADE_AXOLOTL.equals(nowFormId);
+                    && !net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.UPGRADE_AXOLOTL.equals(nowFormId)
+                    && !net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.UPGRADE_SNOW_FOX.equals(nowFormId);
         }
         EvolutionComponent comp = get(player);
         if (!route.routeId.equals(comp.getRoute()) || comp.isJobChanging()) {

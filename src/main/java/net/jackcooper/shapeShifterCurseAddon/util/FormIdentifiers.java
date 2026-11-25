@@ -10,6 +10,7 @@ public class FormIdentifiers {
 	public static final Identifier UPGRADE_FAMILIAR_FOX = new Identifier("my_addon", "familiar_fox_upgrade");
 	public static final Identifier FAMILIAR_FOX_RED = new Identifier("my_addon", "familiar_fox_red");
 	public static final Identifier FAMILIAR_FOX_MANCIANIMA = new Identifier("my_addon", "familiar_fox_mancianima");
+	public static final Identifier UPGRADE_SNOW_FOX = new Identifier("my_addon", "snow_fox_upgrade");
 	public static final Identifier SNOW_FOX_SP = new Identifier("my_addon", "snow_fox_frost_spirit");
 	// 寒棘狐（Frostspine）——雪狐线月髓环进化形态（原版雪狐 snow_fox_3 经月髓环进化）；复用原版雪狐模型/贴图，能力完全等同原版雪狐
 	public static final Identifier SNOW_FOX_FROSTSPINE = new Identifier("my_addon", "snow_fox_frostspine");

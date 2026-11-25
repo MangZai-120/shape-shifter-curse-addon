@@ -17,6 +17,33 @@ public final class FormPoseOverrides {
     private FormPoseOverrides() {}
 
 
+    public static void snowFox(FormModel model, PlayerEntity player, float delta) {
+        if (player == null) return;
+        var state = net.jackcooper.shapeShifterCurseAddon.ability.snowfox.SnowFoxMotion.STATE.get(player);
+        float age = state.age(delta);
+        float tuck;
+        float pitch;
+        switch (state.phase()) {
+            case CHARGE -> { tuck = MathHelper.clamp(age / 6, 0, 1); pitch = -.15f * tuck; }
+            case DIVE -> { tuck = 1 - MathHelper.clamp(age / 2, 0, 1); pitch = -.7f; }
+            case SHELL -> { tuck = MathHelper.clamp(age / 5, 0, 1); pitch = .22f * tuck; }
+            case RECOVERY -> { tuck = 1 - MathHelper.clamp(age / 6, 0, 1); pitch = .22f * tuck; }
+            default -> { return; }
+        }
+        pitch(model, "bipedBody", pitch);
+        pitch(model, "bipedLeftArm", -.8f * tuck);
+        pitch(model, "bipedRightArm", -.8f * tuck);
+        pitch(model, "bipedLeftLeg", .92f * tuck);
+        pitch(model, "bipedRightLeg", .92f * tuck);
+        var tail = model.getCachedGeoBone("tail_0");
+        if (tail != null) tail.setRotY(tail.getRotY() + tuck * 1.15f);
+    }
+
+    private static void pitch(FormModel model, String name, float offset) {
+        var bone = model.getCachedGeoBone(name);
+        if (bone != null) bone.setRotX(bone.getRotX() + offset);
+    }
+
     private static final float THROW_SPEAR_RIGHT_PITCH = -(float) Math.PI;
     private static final float THROW_SPEAR_RIGHT_YAW = 0.0F;
 

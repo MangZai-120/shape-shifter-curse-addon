@@ -31,7 +31,7 @@ public final class FormEyeHeights {
             Map.entry(AXOLOTL_FLUORESCENT, AXOLOTL), Map.entry(AXOLOTL_ALING, AXOLOTL),
             Map.entry(FAMILIAR_FOX_SP, FERAL), Map.entry(UPGRADE_FAMILIAR_FOX, FERAL),
             Map.entry(FAMILIAR_FOX_MANCIANIMA, FERAL), Map.entry(FAMILIAR_FOX_RED, FERAL),
-            Map.entry(SNOW_FOX_SP, FERAL), Map.entry(SNOW_FOX_FROSTSPINE, FERAL),
+            Map.entry(UPGRADE_SNOW_FOX, FERAL), Map.entry(SNOW_FOX_SP, FERAL), Map.entry(SNOW_FOX_FROSTSPINE, FERAL),
             Map.entry(WILD_CAT_SP, FERAL), Map.entry(WILD_CAT_NIGHTMARE, FERAL),
             Map.entry(OCELOT_SP, FERAL), Map.entry(OCELOT_NOVA, FERAL),
             Map.entry(ANUBIS_WOLF_SP, FERAL), Map.entry(GOLDEN_SANDSTORM_SP, FERAL),
