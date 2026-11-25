@@ -3746,9 +3746,5 @@
   "evolution.my_addon.snow_fox.node.branch_stone.name": "寒霜之灵",
   "evolution.my_addon.snow_fox.node.branch_stone.desc": "50级点满技能后，可使用进化石继续进化。",
   "subtitles.my_addon.snow_fox.gather": "寒霜凝聚",
-  "subtitles.my_addon.snow_fox.plunge": "雪狐俯冲",
-  "subtitles.my_addon.snow_fox.ridge_impact": "冰脊破土",
-  "subtitles.my_addon.snow_fox.pack": "积雪裹身",
-  "subtitles.my_addon.snow_fox.rolling": "雪球碾过地面",
-  "subtitles.my_addon.snow_fox.shatter": "球壳碎裂"
+  "subtitles.my_addon.snow_fox.plunge": "雪狐俯冲"
 }

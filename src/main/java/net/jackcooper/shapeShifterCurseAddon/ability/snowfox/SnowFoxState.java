@@ -17,6 +17,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.packet.s2c.play.PositionFlag;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
@@ -78,7 +79,7 @@ public final class SnowFoxState implements AutoSyncedComponent, ServerTickingCom
             }
         }
         change(player, rolling ? Phase.SHELL : Phase.CHARGE);
-        SnowFoxSounds.play(player, position, rolling ? SnowFoxSounds.PACK : SnowFoxSounds.GATHER, .85f, 1f);
+        if (rolling) SnowFoxSounds.play(player, position, SoundEvents.BLOCK_SNOW_BREAK, .85f, 1f);
     }
 
     private void change(ServerPlayerEntity player, Phase next) {
@@ -110,7 +111,7 @@ public final class SnowFoxState implements AutoSyncedComponent, ServerTickingCom
         Vec3d center = position.add(0, r, 0);
         castWorld.spawnParticles(ParticleTypes.SNOWFLAKE, center.x, center.y, center.z,
                 broken ? 28 : 14, r * .54, r * .38, r * .54, broken ? .1 : .045);
-        SnowFoxSounds.play(player, center, broken ? SnowFoxSounds.SHATTER : net.minecraft.sound.SoundEvents.BLOCK_POWDER_SNOW_BREAK,
+        SnowFoxSounds.play(player, center, SoundEvents.BLOCK_SNOW_BREAK,
                 broken ? .82f : .65f, broken ? 1.18f : .85f);
     }
 

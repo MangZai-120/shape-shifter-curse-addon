@@ -1,9 +1,9 @@
 package net.jackcooper.shapeShifterCurseAddon.client.renderer;
 
-import com.google.gson.Gson;
-import java.io.IOException;
-import net.jackcooper.shapeShifterCurseAddon.client.sound.SnowFoxRollSound;
 import net.minecraft.block.Blocks;
+import net.jackcooper.shapeShifterCurseAddon.client.sound.SnowFoxGatherSound;
+import java.util.Collections;
+import java.util.Set;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.DustParticleEffect;
@@ -13,16 +13,12 @@ import java.util.List;
 import java.util.WeakHashMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.jackcooper.shapeShifterCurseAddon.ability.snowfox.SnowFoxMotion;
 import net.jackcooper.shapeShifterCurseAddon.ability.snowfox.SnowFoxState;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
@@ -33,25 +29,7 @@ import org.joml.Vector3f;
 
 public final class SnowFoxEffects {
     public record Tip(Vec3d feet, float angle) {}
-    private record Spike(Tip tip,long birth) {}
-    private static final class Part {
-        float delay;
-        float[][] vertices;
-        int[][] faces;
-        transient Vector3f[] normals;
-        transient float top;
-        void bake() {
-            for (var vertex : vertices) top = Math.max(top, vertex[1]);
-            normals = new Vector3f[faces.length];
-            for (int i=0;i<faces.length;i++) {
-                int[] face=faces[i];
-                var a=vertices[face[0]]; var b=vertices[face[1]]; var c=vertices[face[2]];
-                normals[i]=new Vector3f(b[0]-a[0],b[1]-a[1],b[2]-a[2])
-                        .cross(c[0]-a[0],c[1]-a[1],c[2]-a[2]).normalize();
-            }
-        }
-    }
-    private record Mesh(Part[] parts) {}
+    private record Spike(Tip tip, long birth, float width, float height, float lean, float riseOffset) {}
     private static final List<Spike> SPIKES=new ArrayList<>();
     private static final WeakHashMap<PlayerEntity,Rotation> ROTATIONS=new WeakHashMap<>();
     private static final Identifier SNOW=new Identifier("minecraft","textures/block/snow.png");
@@ -59,12 +37,13 @@ public final class SnowFoxEffects {
     private static final DustParticleEffect FROST = new DustParticleEffect(new Vector3f(.41f,.87f,.93f), .65f);
     private static final BlockStateParticleEffect SNOW_GRAINS = new BlockStateParticleEffect(ParticleTypes.BLOCK, Blocks.SNOW_BLOCK.getDefaultState());
     private static final BlockStateParticleEffect ICE_CHIPS = new BlockStateParticleEffect(ParticleTypes.BLOCK, Blocks.PACKED_ICE.getDefaultState());
+    private static final Set<PlayerEntity> CHARGING = Collections.newSetFromMap(new WeakHashMap<>());
     private static ClientWorld scene;
-    private static Mesh spikes, shell;
+    private static final SnowFoxEffectModel SPIKE_MODEL = new SnowFoxEffectModel("ice_spikes", true);
+    private static final SnowFoxEffectModel SHELL_MODEL = new SnowFoxEffectModel("snow_shell", false);
 
     private static final class Rotation {
         Vec3d position;
-        SnowFoxRollSound sound;
         Quaternionf old=new Quaternionf(), now=new Quaternionf();
         Rotation(Vec3d position) { this.position=position; }
         void update(Vec3d next,float radius) {
@@ -78,28 +57,20 @@ public final class SnowFoxEffects {
     }
 
     public static void register() {
-        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
-            public Identifier getFabricId() { return new Identifier("my_addon","snow_fox_meshes"); }
-            public void reload(ResourceManager resources) {
-                spikes=load(resources,"ice_spikes"); shell=load(resources,"snow_shell");
-            }
-        });
         ClientTickEvents.END_WORLD_TICK.register(world -> {
             setWorld(world);
             SPIKES.removeIf(s -> world.getTime()-s.birth>=13);
             for (var p:world.getPlayers()) {
                 var state=SnowFoxMotion.STATE.get(p);
+                if (state.phase() == SnowFoxState.Phase.CHARGE) {
+                    if (CHARGING.add(p)) MinecraftClient.getInstance().getSoundManager().play(new SnowFoxGatherSound(p, state.age(0)));
+                } else CHARGING.remove(p);
                 if (state.phase()==SnowFoxState.Phase.SHELL) {
                     var rotation = ROTATIONS.computeIfAbsent(p, k -> new Rotation(k.getPos()));
                     Vec3d moved = p.getPos().subtract(rotation.position);
                     float r = radius(state.mass());
                     rotation.update(p.getPos(), r);
                     if (p.squaredDistanceTo(MinecraftClient.getInstance().gameRenderer.getCamera().getPos()) < 64 * 64) {
-                        var sounds = MinecraftClient.getInstance().getSoundManager();
-                        if (rotation.sound == null || (p.age % 20 == 0 && !sounds.isPlaying(rotation.sound))) {
-                            rotation.sound = new SnowFoxRollSound(p);
-                            sounds.play(rotation.sound);
-                        }
                         if (state.age(0) < 8) swirl(world, p.getPos().add(0, r, 0), state.age(0), 8, r + .15);
                         else if (moved.horizontalLengthSquared() > .0025 && moved.horizontalLengthSquared() < 4
                                 && !world.getBlockState(p.getBlockPos().down()).isAir()) spray(world, p.getPos(), moved, r);
@@ -135,24 +106,19 @@ public final class SnowFoxEffects {
         }
     }
 
-    private static Mesh load(ResourceManager resources,String name) {
-        var id=new Identifier("my_addon","models/effect/snow_fox/"+name+".json");
-        try (var reader=resources.getResourceOrThrow(id).getReader()) {
-            Mesh mesh = new Gson().fromJson(reader,Mesh.class);
-            for (Part part : mesh.parts) part.bake();
-            return mesh;
-        }
-        catch (IOException e) { throw new IllegalStateException("Could not read "+id,e); }
-    }
-
     private static void setWorld(ClientWorld world) {
-        if (world!=scene) { scene=world; SPIKES.clear(); ROTATIONS.clear(); }
+        if (world!=scene) { scene=world; SPIKES.clear(); ROTATIONS.clear(); CHARGING.clear(); }
     }
     public static void spawn(ClientWorld world,List<Tip> tips) {
         setWorld(world);
         int index = 0;
         for (var tip:tips) {
-            SPIKES.add(new Spike(tip,world.getTime()));
+            // Derive proportions once from the shared placement so observers see the same tooth.
+            long seed = Double.doubleToLongBits(tip.feet().x) ^ Long.rotateLeft(Double.doubleToLongBits(tip.feet().z), 23)
+                    ^ Float.floatToIntBits(tip.angle());
+            var variation = net.minecraft.util.math.random.Random.create(seed);
+            SPIKES.add(new Spike(tip, world.getTime(), .78f + .46f * variation.nextFloat(),
+                    .68f + .66f * variation.nextFloat(), -8f + 19f * variation.nextFloat(), .8f * variation.nextFloat()));
             if (index++ % 3 != 0) continue;
             Vec3d at = tip.feet();
             double vx = Math.cos(tip.angle())*.065, vz = Math.sin(tip.angle())*.065;
@@ -165,27 +131,28 @@ public final class SnowFoxEffects {
     private static float smooth(float t) { t=MathHelper.clamp(t,0,1); return t*t*(3-2*t); }
 
     public static void render(WorldRenderContext ctx) {
-        if (ctx.consumers()==null || spikes==null || shell==null) return;
+        if (ctx.consumers()==null) return;
         setWorld(ctx.world());
         var cam=ctx.camera().getPos();
         var ms=ctx.matrixStack();
         float delta=ctx.tickDelta();
         if (!SPIKES.isEmpty()) {
             var ice=ctx.consumers().getBuffer(RenderLayer.getEntityCutoutNoCull(ICE));
+            var sections = SPIKE_MODEL.sections();
             for (var s:SPIKES) {
                 Vec3d pos=s.tip.feet();
                 if (cam.squaredDistanceTo(pos)>4096) continue;
-                float age=scene.getTime()-s.birth+delta;
+                float age=scene.getTime()-s.birth+delta+s.riseOffset;
+                float exposure = smooth(age / 3.5f) * (1 - smooth((age - 6) / 5));
+                if (exposure < .001f) continue;
                 ms.push(); ms.translate(pos.x-cam.x,pos.y-cam.y,pos.z-cam.z);
                 ms.multiply(RotationAxis.POSITIVE_Y.rotation(-s.tip.angle()));
-                for (var shard:spikes.parts) {
-                    float rise=smooth((age-shard.delay)/3.5f), fade=smooth((age-6-shard.delay)/5);
-                    float height=rise*(1-fade);
-                    if (height<.001f) continue;
+                ms.scale(s.width, s.height, s.width);
+                for (var shard : sections) {
                     ms.push();
-                    // Slide rigid blocks through the ground plane while the wave travels.
-                    ms.translate(0, shard.top * (height - 1), 0);
-                    draw(ms,ice,shard,0x00e000e0,true);
+                    ms.translate(0, shard.height() * (exposure - 1), 0);
+                    ms.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(s.lean));
+                    shard.draw(ms,ice,0x00e000e0);
                     ms.pop();
                 }
                 ms.pop();
@@ -228,7 +195,7 @@ public final class SnowFoxEffects {
             if (rot!=null) ms.multiply(new Quaternionf(rot.old).slerp(rot.now,delta));
             var buf=ctx.consumers().getBuffer(RenderLayer.getEntityCutoutNoCull(SNOW));
             int light=WorldRenderer.getLightmapCoordinates(scene,BlockPos.ofFloored(pos.add(0,r,0)));
-            for (var part:shell.parts) draw(ms,buf,part,light,false);
+            for (var section : SHELL_MODEL.sections()) section.draw(ms, buf, light);
             ms.pop();
         }
     }
@@ -243,33 +210,6 @@ public final class SnowFoxEffects {
                 float r=corner==0||corner==3?radius:radius-width;
                 buffer.vertex(matrix,MathHelper.cos(angle)*r,0,MathHelper.sin(angle)*r)
                         .color(181,234,255,(int)((45+7*i)*(.4f+.6f*progress))).next();
-            }
-        }
-    }
-
-    private static void draw(MatrixStack ms,VertexConsumer buf,Part part,int light,boolean crystal) {
-        var mat=ms.peek();
-        for (int index=0;index<part.faces.length;index++) {
-            var face=part.faces[index];
-            var n=part.normals[index];
-            for (int i=0;i<4;i++) {
-                var v=part.vertices[face[Math.min(i,face.length-1)]];
-                // Project the frost grain at block scale across adjacent steps.
-                float u, texV;
-                int red, green;
-                if (crystal) {
-                    u = .5f + (n.x == 0 ? v[0] : v[2]);
-                    texV = n.y == 0 ? 1 - v[1] : .5f + v[2];
-                    red = (int)(158 + 97 * v[1]);
-                    green = (int)(209 + 46 * v[1]);
-                } else {
-                    u = i==0 || i==3 ? 0f : 1f;
-                    texV = i<2 ? 0f : 1f;
-                    red = 220; green = 246;
-                }
-                buf.vertex(mat.getPositionMatrix(),v[0],v[1],v[2]).color(red,green,255,255)
-                        .texture(u,texV).overlay(OverlayTexture.DEFAULT_UV).light(light)
-                        .normal(mat.getNormalMatrix(),n.x,n.y,n.z).next();
             }
         }
     }

@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.block.Blocks;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -13,40 +14,98 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
+import net.minecraft.util.math.random.Random;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-/** Each radial path follows its own terrain. Damage and models use exactly the same front. */
+/** Damage lanes and individual visual spikes follow terrain at the same outward speed. */
 final class SnowFoxWave {
     private static final int RAYS = 48;
+    private static final double RADIUS = 6;
+    private static final double SPEED = RADIUS / 20;
+    private static final double MIN_SPACING = .68;
     private final Vec3d origin;
     private final Vec3d[] tips = new Vec3d[RAYS];
     private final Set<UUID> touched = new HashSet<>();
     private final Set<UUID> shock = new HashSet<>();
+    private final List<VisualPath> pendingSpikes = new ArrayList<>();
+    private final Random random;
     private int tick;
+
+    private static final class VisualPath {
+        final double distance, dx, dz;
+        final Vec3d target;
+        Vec3d feet;
+
+        VisualPath(Vec3d origin, double distance, double angle) {
+            this.distance = distance;
+            dx = Math.cos(angle);
+            dz = Math.sin(angle);
+            target = origin.add(dx * distance, 0, dz * distance);
+            feet = origin;
+        }
+    }
+
+    private void scatterSpikes() {
+        // Only the first and last points are timed explicitly. Every other point is
+        // sampled over the area of the disk; its actual distance determines its arrival.
+        pendingSpikes.add(new VisualPath(origin, .08 + .18 * random.nextDouble(), random.nextDouble() * Math.PI * 2));
+        pendingSpikes.add(new VisualPath(origin, RADIUS, random.nextDouble() * Math.PI * 2));
+        int count = 56 + random.nextInt(13);
+        for (int attempt = 0; attempt < count * 12 && pendingSpikes.size() < count; attempt++) {
+            var candidate = new VisualPath(origin, RADIUS * Math.sqrt(random.nextDouble()), random.nextDouble() * Math.PI * 2);
+            boolean overlaps = false;
+            for (var placed : pendingSpikes) {
+                if (candidate.target.squaredDistanceTo(placed.target) < MIN_SPACING * MIN_SPACING) {
+                    overlaps = true;
+                    break;
+                }
+            }
+            if (!overlaps) pendingSpikes.add(candidate);
+        }
+    }
+
+    private void advanceSpikes(ServerPlayerEntity owner, double radius) {
+        List<Vec3d> revealed = new ArrayList<>();
+        for (var it = pendingSpikes.iterator(); it.hasNext();) {
+            var spike = it.next();
+            double r = Math.min(spike.distance, radius);
+            spike.feet = ground(owner.getServerWorld(), owner, spike.feet, origin.x + spike.dx * r, origin.z + spike.dz * r);
+            if (spike.feet == null) {
+                it.remove();
+            } else if (spike.distance <= radius) {
+                revealed.add(spike.feet);
+                it.remove();
+            }
+        }
+        for (int start = 0; start < revealed.size(); start += 48)
+            send(owner, revealed.subList(start, Math.min(start + 48, revealed.size())));
+    }
 
     SnowFoxWave(ServerPlayerEntity p, Vec3d origin) {
         this.origin = origin;
+        random = Random.create(p.getRandom().nextLong());
+        scatterSpikes();
         java.util.Arrays.fill(tips,origin);
         var world = p.getServerWorld();
         for (var t : world.getEntitiesByClass(LivingEntity.class,SnowFoxRoll.bounds(origin,2),e -> SnowFoxRoll.enemy(p,e))) {
             if (SnowFoxRoll.nearest(t.getBoundingBox(),origin).squaredDistanceTo(origin) <= 4
                     && t.damage(p.getDamageSources().playerAttack(p),8)) shock.add(t.getUuid());
         }
-        SnowFoxSounds.play(p, origin, SnowFoxSounds.IMPACT, 1.2f, 1f);
+        SnowFoxSounds.play(p, origin, SoundEvents.ENTITY_GENERIC_EXPLODE, .76f, 1.08f);
+        SnowFoxSounds.play(p, origin, Blocks.ICE.getDefaultState().getSoundGroup().getBreakSound(), 1f, 1f);
         for (int i=0;i<16;i++) {
             double angle = Math.PI*2*i/16;
             world.spawnParticles(ParticleTypes.CLOUD,origin.x,origin.y+.12,origin.z,0,Math.cos(angle),.05,Math.sin(angle),.22);
         }
-        send(p,java.util.List.of(origin));
     }
 
     boolean tick(ServerPlayerEntity p) {
-        double radius = ++tick * .3;
+        double radius = ++tick * SPEED;
         var world = p.getServerWorld();
-        var visible = new ArrayList<Vec3d>();
         var targets = world.getEntitiesByClass(LivingEntity.class,new Box(origin.add(-radius-1,-22,-radius-1),
                 origin.add(radius+1,23,radius+1)),e -> SnowFoxRoll.enemy(p,e) && !touched.contains(e.getUuid()));
         for (int i=0;i<RAYS;i++) {
@@ -71,13 +130,18 @@ final class SnowFoxWave {
                 t.damage(p.getDamageSources().playerAttack(p),6);
                 t.timeUntilRegen = Math.max(oldRegen,t.timeUntilRegen);
             }
-            int stride = radius < 1.5 ? 8 : radius < 3 ? 4 : 2;
-            if (tick % 2 == 0 && i % stride == (tick/2)%stride) visible.add(next);
         }
-        if (!visible.isEmpty()) {
-            send(p,visible);
-            if (tick == 8 || tick == 16)
-                SnowFoxSounds.play(p, visible.get(visible.size()/2), SoundEvents.BLOCK_AMETHYST_CLUSTER_HIT, .48f, tick == 8 ? .95f : 1.25f);
+        advanceSpikes(p, radius);
+        if (tick == 5 || tick == 12 || tick == 19) {
+            int lane = random.nextInt(RAYS);
+            for (int i = 0; i < RAYS; i++) {
+                var tip = tips[(lane + i) % RAYS];
+                if (tip != null) {
+                    SnowFoxSounds.play(p, tip, Blocks.ICE.getDefaultState().getSoundGroup().getBreakSound(),
+                            .26f, .94f + random.nextFloat() * .16f);
+                    break;
+                }
+            }
         }
         return tick < 20;
     }
@@ -93,12 +157,12 @@ final class SnowFoxWave {
         return hit.getType() == HitResult.Type.MISS || Math.abs(hit.getPos().y-old.y)>1.0001 ? null : hit.getPos();
     }
 
-    private void send(ServerPlayerEntity p, java.util.List<Vec3d> spikes) {
+    private void send(ServerPlayerEntity p, List<Vec3d> spikes) {
         var buffer = PacketByteBufs.create();
         buffer.writeVarInt(spikes.size());
         for (var tip : spikes) {
             buffer.writeDouble(tip.x); buffer.writeDouble(tip.y); buffer.writeDouble(tip.z);
-            buffer.writeFloat((float)Math.atan2(tip.z-origin.z,tip.x-origin.x));
+            buffer.writeFloat(random.nextFloat() * (float)(2 * Math.PI));
         }
         for (var peer : PlayerLookup.around(p.getServerWorld(),origin,64))
             ServerPlayNetworking.send(peer,SnowFoxMotion.SPIKES,PacketByteBufs.copy(buffer));

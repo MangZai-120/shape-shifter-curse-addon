@@ -6,6 +6,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.hit.HitResult;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -17,6 +18,7 @@ final class SnowFoxRoll {
     private Vec3d velocity = Vec3d.ZERO;
     private Vec3d input;
     private double fallSpeed;
+    private double snowHitDistance = .9;
     private boolean wasSteered;
 
     SnowFoxRoll(ServerPlayerEntity player) {
@@ -85,6 +87,15 @@ final class SnowFoxRoll {
             double distance = contact.squaredDistanceTo(feet.add(0,radius,0));
             if (distance < closest) { closest = distance; first = target; }
         }
+        if (first == null && fallSpeed == 0) {
+            snowHitDistance += velocity.horizontalLength();
+            if (snowHitDistance >= 1.5) {
+                snowHitDistance %= 1.5;
+                float size = (float)fraction(mass);
+                SnowFoxSounds.play(p, next, SoundEvents.BLOCK_SNOW_HIT, .48f + .2f * size,
+                        1f - .16f * size + p.getRandom().nextFloat() * .08f);
+            }
+        }
         return new Step(next, first == null ? null : nearest(first.getBoundingBox(),center), first);
     }
 
@@ -127,6 +138,7 @@ final class SnowFoxRoll {
         var chips = new net.minecraft.particle.BlockStateParticleEffect(ParticleTypes.BLOCK,
                 net.minecraft.block.Blocks.SNOW_BLOCK.getDefaultState());
         world.spawnParticles(chips, contact.x, contact.y, contact.z, (int)(12 + 22 * size), .38, .3, .38, .19);
-        SnowFoxSounds.play(p, contact, SnowFoxSounds.SHATTER, (float)(.85 + .35 * size), (float)(1.12 - .3 * size));
+        SnowFoxSounds.play(p, contact, SoundEvents.BLOCK_SNOW_BREAK, (float)(.85 + .35 * size), (float)(1.12 - .3 * size));
+        SnowFoxSounds.play(p, contact, SoundEvents.ENTITY_GENERIC_EXPLODE, (float)(.52 + .2 * size), 1.13f);
     }
 }

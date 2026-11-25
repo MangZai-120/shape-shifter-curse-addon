@@ -3715,7 +3715,7 @@
   "codex.form.my_addon.snow_fox_upgrade.name": "Evolved Snow Fox",
   "origin.my_addon.form_snow_fox_upgrade.name": "Evolved Snow Fox",
   "my_addon.form_snow_fox_upgrade.model_name": "Evolved Snow Fox",
-  "evolution.my_addon.start.form.snow_fox_upgrade.desc": "Master six snow fox instincts, then learn Super Snow Fox Dive and Rolling Charge.",
+  "evolution.my_addon.start.form.snow_fox_upgrade.desc": "Master six snow fox instincts, then learn super foxdive and Rolling Charge.",
   "evolution.my_addon.snow_fox.name": "Evolved Snow Fox",
   "origin.my_addon.form_snow_fox_upgrade.description": "Retain the snow fox’s body, diet and vulnerability to heat.",
   "hud.my_addon.snow_fox.mass": "Shell mass  %s / 50",
@@ -3733,9 +3733,9 @@
   "evolution.my_addon.snow_fox.node.falling_strike.desc": "Falling melee critical hits scale with fall distance.",
   "evolution.my_addon.snow_fox.node.snowball_freeze.name": "Freezing Snowballs",
   "evolution.my_addon.snow_fox.node.snowball_freeze.desc": "Snowball projectiles freeze water and solidify lava.",
-  "evolution.my_addon.snow_fox.node.super_dive.name": "Super Snow Fox Dive",
+  "evolution.my_addon.snow_fox.node.super_dive.name": "super foxdive",
   "evolution.my_addon.snow_fox.node.super_dive.desc": "Charge in midair for 0.5 seconds, then slam down. A 2-block shockwave deals 8 damage; spikes spread 6 blocks in one second for 6 damage. Cooldown: 10 seconds.",
-  "power.my_addon.snow_fox_super_dive.name": "Super Snow Fox Dive",
+  "power.my_addon.snow_fox_super_dive.name": "super foxdive",
   "power.my_addon.snow_fox_super_dive.description": "Charge in midair for 0.5 seconds, then slam down. A 2-block shockwave deals 8 damage; spikes spread 6 blocks in one second for 6 damage. Cooldown: 10 seconds.",
   "evolution.my_addon.snow_fox.node.rolling_charge.name": "Rolling Charge",
   "evolution.my_addon.snow_fox.node.rolling_charge.desc": "Steer a growing snowball. Begin with 10 mass and grow to 50. Incoming damage consumes mass. Crash to deal 6–18 damage in 3 blocks, or press again to exit. Cooldown: 12 seconds.",
@@ -3746,9 +3746,5 @@
   "evolution.my_addon.snow_fox.node.branch_stone.name": "Frost Spirit",
   "evolution.my_addon.snow_fox.node.branch_stone.desc": "At level 50 with both skills, use an Evolution Stone.",
   "subtitles.my_addon.snow_fox.gather": "Frost gathers",
-  "subtitles.my_addon.snow_fox.plunge": "Snow fox dives",
-  "subtitles.my_addon.snow_fox.ridge_impact": "Ice ridge erupts",
-  "subtitles.my_addon.snow_fox.pack": "Snow packs together",
-  "subtitles.my_addon.snow_fox.rolling": "Snowball rumbles",
-  "subtitles.my_addon.snow_fox.shatter": "Snow shell shatters"
+  "subtitles.my_addon.snow_fox.plunge": "Snow fox dives"
 }

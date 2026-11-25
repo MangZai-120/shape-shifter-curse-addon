@@ -10,12 +10,8 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 
 public final class SnowFoxSounds {
-    static final SoundEvent GATHER = event("gather");
+    public static final SoundEvent GATHER = event("gather");
     static final SoundEvent PLUNGE = event("plunge");
-    static final SoundEvent IMPACT = event("ridge_impact");
-    static final SoundEvent PACK = event("pack");
-    public static final SoundEvent ROLLING = event("rolling");
-    static final SoundEvent SHATTER = event("shatter");
 
     private SnowFoxSounds() {}
     static void init() {}
