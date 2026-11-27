@@ -541,11 +541,15 @@ public final class EvolutionUiClientProbe {
                 check(image.getWidth() == 768 && image.getHeight() == 512, "route ornaments use the shared canvas: " + id);
                 check((image.getColor(384, 256) >>> 24) == 0 && (image.getColor(0, 0) >>> 24) == 0, "route layer has a transparent center and corner: " + id);
                 int visible = 0, paperPixels = 0;
+                boolean singleInk = true;
                 for (int y = 0; y < 512; y++) for (int x = 0; x < 768; x++) {
                     int pixel = image.getColor(x, y);
-                    if ((pixel >>> 24) != 0) visible++;
+                    if ((pixel >>> 24) == 0) continue;
+                    visible++;
+                    singleInk &= (pixel | 0xFF000000) == EvolutionArtwork.INK_ABGR;
                     if (pixel == 0xFFA9D4E9) paperPixels++;
                 }
+                check(singleInk, "route ornaments use only the book's brown ink: " + id);
                 check(visible > 100 && visible < 20000 && paperPixels == 0, "ornaments contain no baked paper fill: " + id);
                 long hash = 17;
                 for (int y = 0; y < 512; y += 2) for (int x = 0; x < 768; x += 2) hash = hash * 31 + image.getColor(x, y);
