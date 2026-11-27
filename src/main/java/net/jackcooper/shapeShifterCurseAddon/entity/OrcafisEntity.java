@@ -55,10 +55,11 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
     public static final int JET_START = 14, JET_END = JET_START + 40;
     static final String SURFACE_JET_CLIP = "water_jet_surface";
     private static final RawAnimation SURFACE_JET_ANIMATION = RawAnimation.begin().thenPlay("animation.orcafis." + SURFACE_JET_CLIP);
+    private static final int STUDY_REST_TICKS = 25;
     public enum Motion {
         WALK("walk", 60), BURROW("burrow_swim", 80), BREACH("dolphin_breach", 166),
         SWEEP("tail_sweep", 51), DASH("water_dash", 83), WAVE("tidal_wall", 100),
-        SWIM("swim", 100), REST("idle", 25), DIVE("dive", 32),
+        SWIM("swim", 100), REST("idle", 100), DIVE("dive", 32),
         RETURN("swim_return", 50), SURFACE("surface", 32),
         POUNCE("water_pounce", 166), PLOW("shore_plow", 74), TIDE("tidal_pulse", 146), RISE("breach_rise", 14),
         WATER_LUNGE("water_lunge", 26), LAND_BITE("land_bite", 20), WATER_BITE("water_bite", 20),
@@ -102,6 +103,7 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
     }
 
     private static final TrackedData<Integer> ACTION = DataTracker.registerData(OrcafisEntity.class, TrackedDataHandlerRegistry.INTEGER);
+    private Motion trackedMotion;
     private static final TrackedData<Long> START = DataTracker.registerData(OrcafisEntity.class, TrackedDataHandlerRegistry.LONG);
     private static final TrackedData<Integer> DURATION = DataTracker.registerData(OrcafisEntity.class, TrackedDataHandlerRegistry.INTEGER);
     private static final TrackedData<Integer> PAUSED_TICK = DataTracker.registerData(OrcafisEntity.class, TrackedDataHandlerRegistry.INTEGER);
@@ -276,7 +278,8 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
     @Override
     protected void initDataTracker() {
         super.initDataTracker();
-        dataTracker.startTracking(ACTION, Motion.WALK.ordinal());
+        trackedMotion = Motion.WALK;
+        dataTracker.startTracking(ACTION, trackedMotion.ordinal());
         dataTracker.startTracking(START, -1L);
         dataTracker.startTracking(WATERLINE, 0f);
         dataTracker.startTracking(JET_PITCH, 0f);
@@ -293,7 +296,7 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
     }
 
     public Motion motion() {
-        return Motion.values()[dataTracker.get(ACTION)];
+        return trackedMotion;
     }
 
     public float motionTick(float partialTick) {
@@ -361,7 +364,7 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
         if (motion == Motion.TIDE) dataTracker.set(WATERLINE, hunt.waterline());
         if (motion == Motion.POUNCE) dataTracker.set(SPLASH_POINTS, hunt.splashPoints());
         startY = targetY = getY();
-        int duration = solo == null && motion == Motion.BURROW ? 120 : motion.ticks;
+        int duration = motionDuration(motion);
         boolean surfaceJet = false;
         if (motion == Motion.WATER_JET && waterAtFeet()) {
             double surface = swimmingSurface();
@@ -380,6 +383,13 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
         dataTracker.set(START, getWorld().getTime());
         pose = null;
         return true;
+    }
+
+    private int motionDuration(Motion motion) {
+        if (motion == Motion.BURROW && solo == null) return 120;
+        // The pause between demonstrations is shorter than the full five-second idle clip.
+        if (motion == Motion.REST && solo != null && solo != Motion.REST) return STUDY_REST_TICKS;
+        return motion.ticks;
     }
 
     boolean waterAtFeet() {
@@ -590,6 +600,7 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
     }
 
     @Override public void onTrackedDataSet(TrackedData<?> data) {
+        if (data.equals(ACTION)) trackedMotion = Motion.values()[dataTracker.get(ACTION)];
         super.onTrackedDataSet(data);
         if (data.equals(BURROW_STATE) || data.equals(BURROW_YAW)) setBoundingBox(calculateBoundingBox());
     }
@@ -702,6 +713,7 @@ public final class OrcafisEntity extends PathAwareEntity implements GeoEntity {
             hunt = playback.contains("Hunt") ? OrcafisHuntingAttack.load(playback.getCompound("Hunt")) : null;
             int duration = playback.getInt("Duration");
             int elapsed = playback.getInt("Elapsed");
+            if (saved == Motion.REST && duration == STUDY_REST_TICKS) duration = motionDuration(saved);
             if (saved == Motion.WATER_JET) {
                 dataTracker.set(SURFACE_JET,playback.getBoolean("SurfaceJet"));
                 if (duration == 60) duration = saved.ticks;

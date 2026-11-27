@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class StoryBookLoot implements ConfigChangeListener {
 
@@ -146,7 +147,7 @@ public class StoryBookLoot implements ConfigChangeListener {
 		loadBooks();
 		List<net.minecraft.item.ItemStack> stacks = new ArrayList<>();
 		for (BookData book : loadedBooks) {
-			stacks.add(createBookStack(book.id, book.title, book.author, book.content));
+			stacks.add(createBookStack(book));
 		}
 		return stacks;
 	}
@@ -178,7 +179,7 @@ public class StoryBookLoot implements ConfigChangeListener {
 
 		for (BookData book : sourceBooks) {
 			if (book.id.equals(bookId)) {
-				return createBookStack(book.id, book.title, book.author, book.content);
+				return createBookStack(book);
 			}
 		}
 
@@ -208,35 +209,25 @@ public class StoryBookLoot implements ConfigChangeListener {
 		return null;
 	}
 
-	private static net.minecraft.item.ItemStack createBookStack(String id, String title, String author, String content) {
+	private static net.minecraft.item.ItemStack createBookStack(BookData book) {
 		net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(Items.WRITTEN_BOOK);
-		stack.setNbt(createBookNbt(id, title, author, content));
+		stack.setNbt(createBookNbt(book));
 		return stack;
 	}
 
-	private static NbtCompound createBookNbt(String id, String title, String author, String content) {
+	private static NbtCompound createBookNbt(BookData book) {
 		NbtCompound nbt = new NbtCompound();
 		// Truncate title to 32 chars max (Vanilla limit)
-		String safeTitle = title;
+		String safeTitle = book.title;
 		if (safeTitle.length() > 32) {
 			safeTitle = safeTitle.substring(0, 32);
 		}
 		nbt.putString("title", safeTitle);
-		nbt.putString("author", author);
+		nbt.putString("author", book.author);
 		nbt.putInt("generation", 0);
 		// 写入语言无关的唯一书籍标识（不受标题32字符截断影响），供成就(inventory_changed)精确匹配章节
-		nbt.putString("ssc_book_id", id);
-
-		NbtList pages = new NbtList();
-		// Split content into pages
-		List<String> contentList = splitIntoPages(content);
-		for (String pageText : contentList) {
-			// Use Gson to create a safe JSON object string for the page
-			JsonObject pageJson = new JsonObject();
-			pageJson.addProperty("text", pageText);
-			pages.add(NbtString.of(pageJson.toString()));
-		}
-		nbt.put("pages", pages);
+		nbt.putString("ssc_book_id", book.id);
+		nbt.put("pages", book.copyPages());
 		return nbt;
 	}
 
@@ -251,7 +242,7 @@ public class StoryBookLoot implements ConfigChangeListener {
 						.conditionally(net.minecraft.loot.condition.RandomChanceLootCondition.builder(chance));
 
 				for (BookData book : loadedBooks) {
-					addBookToPool(poolBuilder, book.id, book.title, book.author, book.content);
+					addBookToPool(poolBuilder, book);
 				}
 
 				tableBuilder.pool(poolBuilder);
@@ -259,7 +250,7 @@ public class StoryBookLoot implements ConfigChangeListener {
 		});
 	}
 
-	private static boolean isTargetChest(Identifier id) {
+	public static boolean isTargetChest(Identifier id) {
 		String path = id.getPath();
 		return path.startsWith("chests/village") ||
 				path.equals("chests/abandoned_mineshaft") ||
@@ -274,9 +265,9 @@ public class StoryBookLoot implements ConfigChangeListener {
 
 	// 1.20.1 vanilla 中 SetNbtLootFunction.builder(NbtCompound) 是唯一可用重载，仍标记 @Deprecated 但无替代
 	@SuppressWarnings("deprecation")
-	private static void addBookToPool(LootPool.Builder pool, String id, String title, String author, String content) {
+	private static void addBookToPool(LootPool.Builder pool, BookData book) {
 		pool.with(ItemEntry.builder(Items.WRITTEN_BOOK)
-				.apply(SetNbtLootFunction.builder(createBookNbt(id, title, author, content)))
+				.apply(SetNbtLootFunction.builder(createBookNbt(book)))
 				.weight(1)); // Equal weight for each book
 	}
 
@@ -522,6 +513,25 @@ public class StoryBookLoot implements ConfigChangeListener {
 		public String title;
 		public String author;
 		public String content;
+
+		private transient String paginatedContent;
+		private transient NbtList encodedPages;
+
+		private synchronized NbtList copyPages() {
+			String text = content;
+			if (encodedPages == null || !Objects.equals(paginatedContent, text)) {
+				NbtList pages = new NbtList();
+				for (String page : splitIntoPages(text)) {
+					JsonObject json = new JsonObject();
+					json.addProperty("text", page);
+					pages.add(NbtString.of(json.toString()));
+				}
+				encodedPages = pages;
+				paginatedContent = text;
+			}
+			// Each loot entry and book gets its own editable list; NbtString values are immutable.
+			return encodedPages.copy();
+		}
 	}
 
 }

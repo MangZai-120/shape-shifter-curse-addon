@@ -5,6 +5,7 @@ import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisWallProfile;
 
 import net.jackcooper.shapeShifterCurseAddon.client.model.OrcafisModel;
 import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisEntity;
+import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisEntity.Motion;
 import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisTidePulse;
 import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisSplashWave;
 import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisLandAttacks;
@@ -55,14 +56,14 @@ public final class OrcafisRenderer extends GeoEntityRenderer<OrcafisEntity> {
     @Override
     public void render(OrcafisEntity entity, float yaw, float partial, MatrixStack matrices,
                        VertexConsumerProvider buffers, int light) {
-        boolean waterAttack = entity.motion() == OrcafisEntity.Motion.UNDERTOW || entity.motion() == OrcafisEntity.Motion.WATER_JET;
+        Motion motion = entity.motion();
+        boolean waterAttack = motion == Motion.UNDERTOW || motion == Motion.WATER_JET;
         upperLip = lowerLip = null;
-        boolean tossing = entity.motion() == OrcafisEntity.Motion.ROCK_TOSS;
+        boolean tossing = motion == Motion.ROCK_TOSS;
         if (waterAttack || tossing) renderInverse.set(matrices.peek().getPositionMatrix()).invert();
-        if (entity.motion() != OrcafisEntity.Motion.BURROW) super.render(entity, yaw, partial, matrices, buffers, light);
+        if (motion != Motion.BURROW) super.render(entity, yaw, partial, matrices, buffers, light);
         float tick = entity.motionTick(partial);
         float v = ((int)(tick / 2) % 12) / 12f;
-        matrices.push();
         if (tossing && tick >= OrcafisRockEntity.PICKUP && tick < OrcafisRockEntity.RELEASE && upperLip != null && lowerLip != null) {
             Vec3d center = OrcafisRockEntity.carriedCenter(upperLip.lerp(lowerLip,.5),
                     MathHelper.lerpAngleDegrees(partial,entity.prevBodyYaw,entity.bodyYaw));
@@ -76,9 +77,12 @@ public final class OrcafisRenderer extends GeoEntityRenderer<OrcafisEntity> {
         }
         OrcafisAttackWaves.render(entity, matrices, buffers, tick, partial, v, light);
         if (entity.hasBurrowMound()) OrcafisBurrowRenderer.render(entity,matrices,buffers,WAKE,tick,partial,v,light);
+        motion = entity.motion();
+        if (motion != Motion.PLOW && motion != Motion.BREACH && motion != Motion.WAVE) return;
+        matrices.push();
         float facing = -MathHelper.lerpAngleDegrees(partial, entity.prevBodyYaw, entity.bodyYaw);
         matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(facing));
-        switch (entity.motion()) {
+        switch (motion) {
             case PLOW -> {
                 if (tick < 34) ground(entity, matrices, buffers, WAKE, 0, 0, .78f,
                         1.4f, facing, v, light,
@@ -114,7 +118,8 @@ public final class OrcafisRenderer extends GeoEntityRenderer<OrcafisEntity> {
     public void renderCubesOfBone(MatrixStack matrices, GeoBone bone, VertexConsumer buffer, int light,
                                   int overlay, float red, float green, float blue, float alpha) {
         OrcafisEntity entity = getAnimatable();
-        if (entity != null && (entity.motion() == OrcafisEntity.Motion.UNDERTOW || entity.motion() == OrcafisEntity.Motion.WATER_JET || entity.motion() == OrcafisEntity.Motion.ROCK_TOSS)
+        Motion motion = entity == null ? null : entity.motion();
+        if ((motion == Motion.UNDERTOW || motion == Motion.WATER_JET || motion == Motion.ROCK_TOSS)
                 && (bone.getName().equals("Head") || bone.getName().equals("shore_jaw"))) {
             // GeckoLib has already applied this frame's jaw, neck and body transforms to the stack.
             var lip = new org.joml.Vector3f(0,100.79703f/16,3.28202f/16);
@@ -123,7 +128,7 @@ public final class OrcafisRenderer extends GeoEntityRenderer<OrcafisEntity> {
             if (bone.getName().equals("Head")) upperLip = offset;
             else lowerLip = offset;
         }
-        if (entity != null && entity.motion() == OrcafisEntity.Motion.PLOW && entity.motionTick(0) < 62
+        if (motion == Motion.PLOW && entity.motionTick(0) < 62
                 && !bone.getName().equals("dorsal_fin") && !bone.getName().equals("dorsal_fin2")) return;
         super.renderCubesOfBone(matrices, bone, buffer, light, overlay, red, green, blue, alpha);
     }

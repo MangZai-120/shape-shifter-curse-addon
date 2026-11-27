@@ -7,6 +7,8 @@ package net.jackcooper.shapeShifterCurseAddon.client.mana;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.jackcooper.shapeShifterCurseAddon.client.hud.HudScaling;
+import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.entity.player.PlayerEntity;
@@ -76,26 +78,20 @@ public abstract class SimpleResourceBarRenderer implements net.fabricmc.fabric.a
 
 	@Override
 	public void onHudRender(DrawContext context, float tickDelta) {
-        net.jackcooper.shapeShifterCurseAddon.client.hud.HudScaling.render(context, 1, () -> renderUnscaled(context, tickDelta));
-    }
-
-    private void renderUnscaled(DrawContext context, float tickDelta) {
-		if (MC.options.hudHidden || MC.player == null) return;
+		if (!SSCAddonConfig.client().showManaBar || MC.options.hudHidden || MC.player == null) return;
 		PlayerEntity player = MC.player;
-
-		if (requirePower() && !ClientResourceCache.has(player, resourceId())) return;
-
-		int[] valMax = PowerUtils.getClientResourceValueAndMax(player, resourceId());
+		Identifier resource = resourceId();
+		boolean needsPower = requirePower();
+		if (needsPower && !ClientResourceCache.has(player, resource)) return;
+		int[] valMax = PowerUtils.getClientResourceValueAndMax(player, resource);
 		int current = valMax[0];
 		int max = valMax[1];
-		if (!requirePower()) {
-			// 旧语义：无该资源（current=0 且 max<=1）时不渲染
-			if (current <= 0 && max <= 1) return;
-		}
-		if (current < 0) current = 0;
-		if (max <= 0) return;
-		double percent = (double) current / (double) max;
+		if (max <= 0 || (!needsPower && current <= 0 && max <= 1)) return;
+		double percent = (double) Math.max(0, current) / max;
+		HudScaling.render(context, 1, () -> drawBar(context, percent));
+	}
 
+	private void drawBar(DrawContext context, double percent) {
 		int[] mp = manaBarPosArgs();
 		Pair<Integer, Integer> pos = UIPositionUtils.getCorrectPosition(mp[0], mp[1], mp[2]);
 		int x = barX(pos);
@@ -106,7 +102,7 @@ public abstract class SimpleResourceBarRenderer implements net.fabricmc.fabric.a
 		// 底层：空槽
 		context.drawTexture(texEmpty(), x, y, 0, 0, w, h, w, h);
 		// 顶层：满层按百分比横向裁剪
-		if (current > 0) {
+		if (percent > 0) {
 			int filledWidth = (int) Math.ceil(w * percent);
 			filledWidth = Math.max(0, Math.min(w, filledWidth));
 			if (filledWidth > 0) {

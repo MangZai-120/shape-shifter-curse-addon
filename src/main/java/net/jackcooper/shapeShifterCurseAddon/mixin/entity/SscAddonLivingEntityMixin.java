@@ -37,6 +37,7 @@ import net.jackcooper.shapeShifterCurseAddon.item.BindingAnkletItem;
 import net.jackcooper.shapeShifterCurseAddon.ability.SpiderMoonWeaverSwingManager;
 import net.jackcooper.shapeShifterCurseAddon.event.LoginHealthRestoreHandler;
 import net.jackcooper.shapeShifterCurseAddon.event.LoginResourceRestoreHandler;
+import net.jackcooper.shapeShifterCurseAddon.effect.SheepFormRestoreHandler;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 import net.jackcooper.shapeShifterCurseAddon.effect.FrostFreezeEffect;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
@@ -58,7 +59,23 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(LivingEntity.class)
-public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess {
+public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess, SheepFormRestoreHandler.MobSnapshotAccess {
+	@org.spongepowered.asm.mixin.Unique
+	private SheepFormRestoreHandler.MobSnapshot ssca$pendingSheepSnapshot;
+
+	@Override
+	public void ssca$resumeSheepSnapshot() {
+		if (ssca$pendingSheepSnapshot != null) {
+			SheepFormRestoreHandler.resumeMobSnapshot((LivingEntity)(Object)this, ssca$pendingSheepSnapshot);
+			ssca$pendingSheepSnapshot = null;
+		}
+	}
+
+	@Override
+	public void ssca$suspendSheepSnapshot() {
+		if (ssca$pendingSheepSnapshot == null && !((Object)this instanceof PlayerEntity))
+			ssca$pendingSheepSnapshot = SheepFormRestoreHandler.suspendMobSnapshot((LivingEntity)(Object)this);
+	}
 	@org.spongepowered.asm.mixin.Unique
 	private NpcCombatState ssca$npcCombatState;
 
@@ -225,8 +242,14 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
                         LoginResourceRestoreHandler.recordSnapshot(player.getUuid(), nbt);
                         // 变羊原形态快照恢复（羊了个羊形态切换架构）：重进后 SNAPSHOTS 表重建，
                         // 到期切回/CD 回写有据可依；无记录时 no-op（未变羊玩家零开销）
-                        net.jackcooper.shapeShifterCurseAddon.ability.BeepSheepFormManager.onReadNbt(player, nbt);
-                }
+                         net.jackcooper.shapeShifterCurseAddon.ability.BeepSheepFormManager.onReadNbt(player, nbt);
+                 } else {
+                         LivingEntity self = (LivingEntity)(Object)this;
+                         if (!(self instanceof PlayerEntity) && self.getWorld() instanceof net.minecraft.server.world.ServerWorld world) {
+                                 ssca$pendingSheepSnapshot = SheepFormRestoreHandler.readMobSnapshot(self, nbt);
+                                 if (ssca$pendingSheepSnapshot != null && world.getEntity(self.getUuid()) == self) ssca$resumeSheepSnapshot();
+                         }
+                 }
         }
 
 	/**
@@ -237,6 +260,10 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess 
 	private void ssca$writeSheepFormSnapshot(NbtCompound nbt, CallbackInfo ci) {
 		if ((Object) this instanceof ServerPlayerEntity player) {
 			net.jackcooper.shapeShifterCurseAddon.ability.BeepSheepFormManager.onWriteNbt(player, nbt);
+		} else {
+			LivingEntity self = (LivingEntity)(Object)this;
+			if (!(self instanceof PlayerEntity) && !self.getWorld().isClient)
+				SheepFormRestoreHandler.writeMobSnapshot(self, nbt, ssca$pendingSheepSnapshot);
 		}
 	}
 

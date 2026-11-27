@@ -51,6 +51,9 @@ public final class NeoDomainSuppressionProbe {
         // An overlapping circle edge alone is insufficient; its center must actually be covered.
         var p=player(t);int[] outcome=startExplosion(p);Object seq=sequence(p);Vec3d target=(Vec3d)field(seq,"center");
         var owner=domain(t,target.add(.8,0,0),DomainRules.expandStartTick());
+        var nether=owner.getServer().getWorld(net.minecraft.world.World.NETHER);
+        check(nether!=null && DomainManager.hasFields(owner.getWorld()) && !DomainManager.hasFields(nether),
+                "A charging overworld field leaves entities in the Nether on the ordinary movement path");
         check(!DomainManager.enclosedTrapping(p.getWorld(),target),"Initial 0.75-radius domain does not cover center at 0.8 distance");
         check(validate(p)&&SpellChannelManager.isCasting(p),"Circle overlap without center coverage keeps casting");
         cleanup(owner);cleanup(p);

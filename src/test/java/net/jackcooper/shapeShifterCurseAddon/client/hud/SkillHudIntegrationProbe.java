@@ -18,6 +18,7 @@ import io.github.apace100.apoli.component.PowerHolderComponent;
 import io.github.apace100.apoli.component.PowerHolderComponentImpl;
 import io.github.apace100.apoli.power.PowerType;
 import io.github.apace100.apoli.power.PowerTypeRegistry;
+import io.github.apace100.apoli.power.ResourcePower;
 import io.github.apace100.apoli.power.factory.PowerFactory;
 import io.github.apace100.calio.data.SerializableData;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionComponent;
@@ -40,6 +41,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.packet.s2c.play.CustomPayloadS2CPacket;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.text.Text;
@@ -111,7 +113,17 @@ public final class SkillHudIntegrationProbe {
         dynamicCatalog(unsafe, client, registrations);
         perkCooldownParity(unsafe, server, client);
         evolutionEligibility(unsafe, server, client, routes);
-        evolvedAxolotlDashSlot(unsafe, client, routes);
+        // This headless fixture has no connection or synced cooldown snapshot.
+        // Supply the client singleton so the skill slot exercises its native Apoli fallback.
+        var instance = MinecraftClient.class.getDeclaredField("instance");
+        instance.setAccessible(true);
+        var previousClient = MinecraftClient.getInstance();
+        try {
+            if (previousClient == null) instance.set(null, unsafe.allocateInstance(MinecraftClient.class));
+            evolvedAxolotlDashSlot(unsafe, client, routes);
+        } finally {
+            instance.set(null, previousClient);
+        }
         moonWeaverModeSynchronization(unsafe, server, client);
         System.out.println("Skill HUD Fabric integration: " + checks + " actual Mixin, NBT cooldown mirror, Perk unlock/revoke/form-switch and SSC/SSCA cooldown checks passed; live gameplay not tested.");
     }
@@ -168,8 +180,10 @@ public final class SkillHudIntegrationProbe {
         var resources = data("my_addon/powers/form_upgrade_axolotl_dash_hud");
         for (String part : List.of("land", "water")) {
             Identifier id = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_" + part);
-            if (!PowerTypeRegistry.contains(id)) PowerTypeRegistry.register(id,
-                    new PowerType<>(id, io.github.apace100.apoli.power.ResourcePower.createFactory().read(resources.getAsJsonObject(part))));
+            if (!PowerTypeRegistry.contains(id)) {
+                PowerFactory<?> factory = ResourcePower.createFactory();
+                PowerTypeRegistry.register(id, new PowerType<>(id, factory.read(resources.getAsJsonObject(part))));
+            }
         }
         PowerType<?> landType = PowerTypeRegistry.get(landId);
         PowerType<?> waterType = PowerTypeRegistry.get(waterId);
@@ -206,9 +220,9 @@ public final class SkillHudIntegrationProbe {
     }
 
     private static int dashRemaining(SkillCooldownBarRenderer renderer, SkillHudCatalog.Skill dash, TestPlayer player) throws Exception {
-        var read = SkillCooldownBarRenderer.class.getDeclaredMethod("readCooldown", PlayerEntity.class, Identifier.class, int.class);
+        var read = SkillCooldownBarRenderer.class.getDeclaredMethod("readCooldown", PlayerEntity.class, Identifier.class, int.class, boolean.class);
         read.setAccessible(true);
-        Object cooldown = read.invoke(renderer, player, dash.resolveCooldown(player), dash.cooldownTotalTicks());
+        Object cooldown = read.invoke(renderer, player, dash.resolveCooldown(player), dash.cooldownTotalTicks(), true);
         var remaining = cooldown.getClass().getDeclaredMethod("remaining");
         remaining.setAccessible(true);
         return (int) remaining.invoke(cooldown);

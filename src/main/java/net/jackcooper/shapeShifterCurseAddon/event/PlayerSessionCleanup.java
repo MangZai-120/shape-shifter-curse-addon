@@ -3,6 +3,7 @@ package net.jackcooper.shapeShifterCurseAddon.event;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.ServerTask;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,10 +39,15 @@ public final class PlayerSessionCleanup {
     }
 
     public static void disconnect(ServerPlayNetworkHandler handler, MinecraftServer server) {
-        if (!server.isOnThread()) {
-            server.execute(() -> disconnect(handler, server));
-            return;
+        if (server.isOnThread()) {
+            cleanConnection(handler, server);
+        } else if (!server.isStopped()) {
+            // execute() may run inline after shutdown. Queue work for the owning thread only.
+            server.send(new ServerTask(server.getTicks(), () -> cleanConnection(handler, server)));
         }
+    }
+
+    private static void cleanConnection(ServerPlayNetworkHandler handler, MinecraftServer server) {
         var online = server.getPlayerManager().getPlayer(handler.player.getUuid());
         if (online != null && online.networkHandler != handler) return;
         if (!CLEANED.add(handler)) return;

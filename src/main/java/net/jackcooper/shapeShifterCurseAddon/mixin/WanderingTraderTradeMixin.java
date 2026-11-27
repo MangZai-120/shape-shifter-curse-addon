@@ -6,14 +6,15 @@ import net.minecraft.item.Items;
 import net.minecraft.village.TradeOffer;
 import net.minecraft.village.TradeOfferList;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.spell.WanderingSpellTrades;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * 流浪商人交易注入 - 1%概率售卖阿努比斯权杖上的水晶
- * 价格：约20个钻石 + 约32个绿宝石（±5随机浮动）
+ * 流浪商人的阿努比斯水晶与已解析卷轴分别抽取，均为追加报价。
  */
 @Mixin(WanderingTraderEntity.class)
 public abstract class WanderingTraderTradeMixin {
@@ -24,14 +25,20 @@ public abstract class WanderingTraderTradeMixin {
 	 * （占用 5+1 交易槽、概率被池大小稀释），无法等价「填充后独立 1% 额外追加、不占槽」的原语义。
 	 */
 	@Inject(method = "fillRecipes", at = @At("TAIL"), require = 0)
-	private void sscAddon$injectAnubisCrystalTrade(CallbackInfo ci) {
+	private void sscAddon$addTrades(CallbackInfo ci) {
 		WanderingTraderEntity trader = (WanderingTraderEntity) (Object) this;
 		TradeOfferList offers = trader.getOffers();
 		if (offers == null) return;
 
 		// 1%概率
-		if (trader.getRandom().nextFloat() >= 0.01f) return;
+		if (trader.getRandom().nextFloat() < 0.01f) {
+			sscAddon$addCrystalOffer(trader, offers);
+		}
+		WanderingSpellTrades.addOffers(offers, trader.getRandom());
+	}
 
+	@Unique
+	private static void sscAddon$addCrystalOffer(WanderingTraderEntity trader, TradeOfferList offers) {
 		// 随机价格：钻石 20±5, 绿宝石 32±5
 		int diamondCount = 20 + trader.getRandom().nextBetween(-5, 5);
 		int emeraldCount = 32 + trader.getRandom().nextBetween(-5, 5);

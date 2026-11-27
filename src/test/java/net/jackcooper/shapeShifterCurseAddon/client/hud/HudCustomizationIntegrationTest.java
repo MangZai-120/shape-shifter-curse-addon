@@ -18,10 +18,13 @@ public final class HudCustomizationIntegrationTest {
         var knot = new net.fabricmc.loader.impl.launch.knot.Knot(net.fabricmc.api.EnvType.CLIENT);
         var loader = knot.init(new String[]{"--version", "hud-customization-test", "--accessToken", "0"});
         Thread.currentThread().setContextClassLoader(loader);
-        run(loader);
+        Class.forName(HudCustomizationIntegrationTest.class.getName(), true, loader)
+                .getMethod("run", ClassLoader.class).invoke(null, loader);
     }
 
     public static void run(ClassLoader loader) throws Exception {
+        net.minecraft.SharedConstants.createGameVersion();
+        net.minecraft.Bootstrap.initialize();
         String root = "net.onixary.shapeShifterCurseFabric.";
         verifyGate(loader, root + "magic.MagicGUIRender");
         verifyGate(loader, root + "mana.FamiliarFoxManaBar");
@@ -45,10 +48,26 @@ public final class HudCustomizationIntegrationTest {
             }
             check(cleanup >= 0 && gate > cleanup, "charge exit cleanup advances before the visibility gate");
         }
-        ClassNode book = read(loader, addon + "SpellbookHudRenderer.class");
-        check(book.methods.stream().anyMatch(m -> m.name.equals("renderUnscaled") && reads(m, "showSpellbookHud")),
-                "spellbook rendering honors its own visibility setting");
+        verifyEarlyVisibility(read(loader, addon + "SpellbookHudRenderer.class"), "showSpellbookHud", "getSlotCount");
+        verifyEarlyVisibility(read(loader, addon + "SkillCooldownBarRenderer.class"), "showCdBar", "entriesForHud");
+        verifyEarlyVisibility(read(loader, "net/jackcooper/shapeShifterCurseAddon/client/mana/SimpleResourceBarRenderer.class"),
+                "showManaBar", "getClientResourceValueAndMax");
         System.out.println("HUD customization integration: " + checks + " actual Fabric/Mixin checks passed. No live GUI acceptance.");
+    }
+
+    private static void verifyEarlyVisibility(ClassNode widget, String setting, String contentsQuery) {
+        MethodNode render = widget.methods.stream().filter(m -> m.name.equals("onHudRender")).findFirst().orElseThrow();
+        boolean readSetting = false, readContents = false, skippedLayout = false;
+        for (var insn : render.instructions) {
+            if (insn instanceof FieldInsnNode field && field.name.equals(setting)) readSetting = true;
+            if (insn instanceof MethodInsnNode call && call.name.equals(contentsQuery)) readContents = true;
+            if (readContents && insn.getOpcode() == org.objectweb.asm.Opcodes.RETURN) skippedLayout = true;
+            if (insn instanceof MethodInsnNode call && call.owner.endsWith("/HudScaling") && call.name.equals("render")) {
+                check(readSetting && skippedLayout, widget.name + " checks visibility and empty content before layout");
+                return;
+            }
+        }
+        throw new AssertionError(widget.name + " missing visible HUD scaling");
     }
 
     private static void verifyGate(ClassLoader loader, String target) throws Exception {

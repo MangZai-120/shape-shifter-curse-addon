@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.ability.snowfox.SnowFoxSounds;
 import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -11,7 +12,6 @@ import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -127,7 +127,7 @@ public class FrostStormEntity extends Entity {
 			// 播放环境音效
 			if (ticksAlive % 40 == 0) {
 				AddonSoundRange.play(this.getWorld(), null, this.getX(), this.getY(), this.getZ(),
-						SoundEvents.ENTITY_SNOW_GOLEM_AMBIENT, SoundCategory.HOSTILE, 0.5f, 0.5f);
+						SnowFoxSounds.FROST_STORM, SoundCategory.HOSTILE, 0.5f, 0.5f);
 			}
 		}
 	}

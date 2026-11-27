@@ -71,7 +71,7 @@ public class EnergyBottlerBlockEntity extends BlockEntity
 	/** 客户端槽位镜像（仅渲染用）：索引 0~5 对应输入 0~2 / 输出 0~2。 */
 	private final DefaultedList<ItemStack> clientItems = DefaultedList.ofSize(LINES * 2, ItemStack.EMPTY);
 	/** 上 tick 槽位非空快照（服务端，对比用，炼药台同款思路）。 */
-	private final boolean[] slotsFilledLastTick = new boolean[LINES * 2];
+	private int filledSlotsLastTick;
 
 	/** 同步给客户端 GUI 的属性：0=网络能量 1=网络上限 2/3/4=三线进度 5=是否自动。 */
 	private final PropertyDelegate propertyDelegate = new PropertyDelegate() {
@@ -118,7 +118,7 @@ public class EnergyBottlerBlockEntity extends BlockEntity
 		}
 		boolean dirty = false;
 		for (int i = 0; i < LINES; i++) {
-			if (be.canCraft(i) && (be.autoMode || be.manualRequested[i])) {
+			if ((be.autoMode || be.manualRequested[i]) && be.canCraft(i)) {
 				be.progress[i]++;
 				if (be.progress[i] >= CRAFT_TIME) {
 					be.craftOne(i);
@@ -132,7 +132,7 @@ public class EnergyBottlerBlockEntity extends BlockEntity
 			} else if (be.progress[i] != 0) {
 				be.progress[i] = 0;
 				dirty = true;
-			} else if (be.manualRequested[i] && !be.canCraft(i)) {
+			} else if (be.manualRequested[i]) {
 				be.manualRequested[i] = false;
 				dirty = true;
 			}
@@ -141,12 +141,12 @@ public class EnergyBottlerBlockEntity extends BlockEntity
 			be.markDirty();
 		}
 		// 槽位快照对比（炼药台同款）：任一槽位空↔非空变化时同步给客户端渲染瓶子
-		boolean[] filled = new boolean[LINES * 2];
+		int filled = 0;
 		for (int i = 0; i < LINES * 2; i++) {
-			filled[i] = !be.items.get(i).isEmpty();
+			if (!be.items.get(i).isEmpty()) filled |= 1 << i;
 		}
-		if (!java.util.Arrays.equals(filled, be.slotsFilledLastTick)) {
-			System.arraycopy(filled, 0, be.slotsFilledLastTick, 0, filled.length);
+		if (filled != be.filledSlotsLastTick) {
+			be.filledSlotsLastTick = filled;
 			be.syncItemsToClient();
 		}
 	}
@@ -165,14 +165,12 @@ public class EnergyBottlerBlockEntity extends BlockEntity
 
 	/** 第 i 条线是否可合成：网络能量≥25、该输入槽有空玻璃瓶、该输出槽能容纳一瓶能量瓶。 */
 	public boolean canCraft(int line) {
-		if (EnergyNetwork.getTotalEnergy(getEnergyNetwork()) < ENERGY_PER_BOTTLE) {
-			return false;
-		}
 		if (!items.get(line).isOf(Items.GLASS_BOTTLE)) {
 			return false;
 		}
 		ItemStack out = items.get(LINES + line);
-		return out.isEmpty() || (isEnergyBottle(out) && out.getCount() < OUTPUT_MAX);
+		return (out.isEmpty() || (isEnergyBottle(out) && out.getCount() < OUTPUT_MAX))
+				&& EnergyNetwork.getTotalEnergy(getEnergyNetwork()) >= ENERGY_PER_BOTTLE;
 	}
 
 	/** 结算第 i 条线一瓶：从网络抽 25 能量、耗 1 空瓶、输出槽 +1 瓶通用能量药水。 */

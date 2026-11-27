@@ -608,6 +608,7 @@ public class SscAddonClient implements ClientModInitializer {
 		net.jackcooper.shapeShifterCurseAddon.client.WindDashClient.register();
 		// 荧光幼灵技能按键检测器（主要=潮汐波动 / 次要=水盾）
 		FluorescentKeyClient.register();
+		ClientLaserBeams.register();
 
 		// 在幻形者之书首页显示当前进化路线的加点入口
 		net.jackcooper.shapeShifterCurseAddon.client.evolution.EvolutionBookHook.register();

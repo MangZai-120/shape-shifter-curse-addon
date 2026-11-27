@@ -8,11 +8,13 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.jackcooper.shapeShifterCurseAddon.spell.DomainManager;
 import net.jackcooper.shapeShifterCurseAddon.spell.DomainRules;
+import net.jackcooper.shapeShifterCurseAddon.util.IrisShadowPassDetector;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
 
@@ -246,8 +248,9 @@ public final class DomainRenderer {
 	}
 
 	private static void render(WorldRenderContext context) {
-		if (!valid() || context.consumers() == null) return;
+		if (!valid() || fields.isEmpty() || context.consumers() == null) return;
 		Vec3d camera = context.camera().getPos();
+		var frustum = context.frustum();
 		var matrices = context.matrixStack();
 		VertexConsumer vertices = context.consumers().getBuffer(RenderLayer.getDebugQuads());
 		for (View field : fields) {
@@ -260,12 +263,15 @@ public final class DomainRenderer {
 			double shellRadius = field.active
 				? field.innerRadius
 				: field.expansionRadius(Math.min(elapsed, field.chargeTicks()));
-			if (field.active) {
-				sphere(vertices, matrices.peek().getPositionMatrix(), field.innerRadius);
-				sphere(vertices, matrices.peek().getPositionMatrix(), field.outerRadius);
-			} else if (shellRadius > 0.1) {
-				sphere(vertices, matrices.peek().getPositionMatrix(), shellRadius);
-				sphere(vertices, matrices.peek().getPositionMatrix(), shellRadius + 1);
+			if (field.active || shellRadius > 0.1) {
+				double outer = field.active ? field.outerRadius : shellRadius + 1;
+				double diameter = 2 * Math.max(shellRadius, outer) + 0.02;
+				Box bounds = Box.of(field.center, diameter, diameter, diameter);
+				if (frustum == null || bounds.contains(camera) || frustum.isVisible(bounds)
+						|| IrisShadowPassDetector.isRenderingShadowPass()) {
+					sphere(vertices, matrices.peek().getPositionMatrix(), shellRadius);
+					sphere(vertices, matrices.peek().getPositionMatrix(), outer);
+				}
 			}
 			float alpha = field.active ? 0.9f : Math.min(1, elapsed / 12f);
 			CastingCircleRenderer.drawGround(vertices, matrices, field.innerRadius, 0.04,

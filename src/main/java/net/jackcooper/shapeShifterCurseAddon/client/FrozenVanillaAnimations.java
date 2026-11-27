@@ -1,8 +1,10 @@
 package net.jackcooper.shapeShifterCurseAddon.client;
 
 import java.lang.ref.WeakReference;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 import net.jackcooper.shapeShifterCurseAddon.mixin.client.FrozenNativeStateAccessor;
 import net.minecraft.client.render.entity.animation.Animation;
@@ -12,12 +14,16 @@ import net.minecraft.entity.LivingEntity;
 /** Client visual clocks only. Never changes physics, AI timers or synchronized entity state. */
 public final class FrozenVanillaAnimations {
     private static final Map<AnimationState, Playback> CLIPS = new WeakHashMap<>();
+    private static final Map<LivingEntity, Set<AnimationState>> ENTITY_STATES = new WeakHashMap<>();
     private static final Map<LivingEntity, Map<String, Countdown>> TIMERS = new WeakHashMap<>();
     private FrozenVanillaAnimations() {}
-    public static void clear() { CLIPS.clear(); TIMERS.clear(); }
+    public static void clear() { CLIPS.clear(); ENTITY_STATES.clear(); TIMERS.clear(); }
     public static void sample(LivingEntity entity,float time) {
-        if (!FrozenAnimationDrivers.paused(entity)) return;
-        CLIPS.forEach((state,clip) -> { if (clip.owner.get()==entity) clip.freeze(state,time); });
+        var states = ENTITY_STATES.get(entity);
+        if (states != null) for (var state : states) {
+            Playback clip = CLIPS.get(state);
+            if (clip != null && clip.owner.get() == entity) clip.freeze(state, time);
+        }
         var timers=TIMERS.get(entity);
         if (timers!=null) timers.values().forEach(timer -> timer.freeze());
     }
@@ -25,7 +31,12 @@ public final class FrozenVanillaAnimations {
     public static Sample select(AnimationState state,Animation animation,float time) {
         if (!(FrozenAnimationState.renderingEntity() instanceof LivingEntity entity)) return new Sample(state,time);
         if (!entity.isAlive() || entity.deathTime>0) { CLIPS.remove(state); return new Sample(state,entity.age); }
-        Playback clip=CLIPS.computeIfAbsent(state,ignored -> new Playback(entity,animation));
+        Playback clip = CLIPS.get(state);
+        if (clip == null) {
+            clip = new Playback(entity, animation);
+            CLIPS.put(state, clip);
+            ENTITY_STATES.computeIfAbsent(entity, ignored -> Collections.newSetFromMap(new WeakHashMap<>())).add(state);
+        }
         if (FrozenAnimationDrivers.paused(entity)) clip.freeze(state,time);
         if (clip.resume!=null) {
             if (FrozenAnimationDrivers.paused(entity) || clip.resume.getTimeRunning()<clip.end)

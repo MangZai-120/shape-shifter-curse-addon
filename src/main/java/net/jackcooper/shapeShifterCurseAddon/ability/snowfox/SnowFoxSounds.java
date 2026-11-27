@@ -11,6 +11,7 @@ import net.minecraft.util.math.Vec3d;
 
 public final class SnowFoxSounds {
     public static final SoundEvent GATHER = event("gather");
+    public static final SoundEvent FROST_STORM = event("frost_storm");
     static final SoundEvent PLUNGE = event("plunge");
 
     private SnowFoxSounds() {}

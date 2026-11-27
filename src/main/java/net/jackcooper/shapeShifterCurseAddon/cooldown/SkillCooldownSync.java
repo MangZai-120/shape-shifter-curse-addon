@@ -2,7 +2,6 @@ package net.jackcooper.shapeShifterCurseAddon.cooldown;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.util.Identifier;
@@ -11,9 +10,44 @@ import java.util.*;
 /** Owner-only snapshots: state transitions immediately, running clocks every second. */
 public final class SkillCooldownSync {
     public static final Identifier ID = new Identifier("my_addon", "skill_cooldowns_v1");
-    private static final Map<UUID, Snapshot> SENT = new HashMap<>();
+    private static final Map<UUID, Audience> SENT = new HashMap<>();
     private record Stamp(String skill, int phase, long end, int total) {}
-    private record Snapshot(Object player, Object world, Object connection, List<Stamp> stamps) {}
+    private record Audience(Object player, Object world, Object connection, ClockSnapshot clock) {}
+
+    static final class ClockSnapshot {
+        private List<Stamp> stamps;
+        private long revision, sampledAt, nextChange;
+        private boolean running;
+
+        /** Returns the existing wire-format rows only when the client needs an update. */
+        List<SkillCastManager.View> update(SkillCastManager manager, UUID owner, long now, boolean heartbeat) {
+            long currentRevision = manager.snapshotRevision(owner);
+            if (stamps != null && currentRevision == revision && now >= sampledAt && now < nextChange
+                    && !(heartbeat && running)) return null;
+
+            var views = manager.snapshot(owner, now);
+            List<Stamp> current = new ArrayList<>(views.size());
+            nextChange = Long.MAX_VALUE;
+            running = false;
+            for (var view : views) {
+                long end = view.remaining() > 0 ? now + view.remaining() : 0;
+                current.add(new Stamp(view.skill(), view.phase(), end, view.total()));
+                if (view.remaining() > 0) {
+                    // A paused or int-clamped clock has a moving wire deadline until normal timing resumes.
+                    boolean fixedRemaining = manager.cooldown(owner, view.skill()).pausedRemaining >= 0
+                            || view.remaining() == Integer.MAX_VALUE;
+                    nextChange = Math.min(nextChange, fixedRemaining ? now + 1 : end);
+                }
+                if (end > 0 || view.phase() != SkillCastManager.PHASE_IDLE) running = true;
+            }
+            boolean send = !current.equals(stamps) || heartbeat && running;
+            stamps = current;
+            revision = currentRevision;
+            sampledAt = now;
+            return send ? views : null;
+        }
+    }
+
     public static void init() {
         net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> server.execute(() -> {
             var online = server.getPlayerManager().getPlayer(handler.player.getUuid());
@@ -29,20 +63,20 @@ public final class SkillCooldownSync {
             if (server.getTicks() % 20 == 0) SkillCooldowns.sweep(server);
             var mgr = SkillCastManager.get(server.getOverworld());
             long now = server.getOverworld().getTime();
+            boolean heartbeat = server.getTicks() % 20 == 0;
             for (var player : server.getPlayerManager().getPlayerList()) {
                 // An already connected player must not retain a paused clock, even before pressing a key.
-                if (server.getTicks() % 20 == 0) recoverOnlineClock(mgr, player, now);
+                if (heartbeat) recoverOnlineClock(mgr, player, now);
                 if (!ServerPlayNetworking.canSend(player, ID)) continue;
-                var views = mgr.snapshot(player.getUuid(), now);
-                var stamps = views.stream().map(v -> new Stamp(v.skill(), v.phase(),
-                        v.remaining() > 0 ? now + v.remaining() : 0, v.total())).toList();
-                var previous = SENT.get(player.getUuid());
-                boolean unchanged = previous != null && previous.player == player && previous.world == player.getWorld()
-                        && previous.connection == player.networkHandler && stamps.equals(previous.stamps);
-                // Changed states are sent immediately. Idle skills have no running clock to calibrate.
-                if (unchanged && (server.getTicks() % 20 != 0
-                        || stamps.stream().noneMatch(s -> s.end() > 0 || s.phase() != SkillCastManager.PHASE_IDLE))) continue;
-                SENT.put(player.getUuid(), new Snapshot(player, player.getWorld(), player.networkHandler, stamps));
+                UUID owner = player.getUuid();
+                Audience audience = SENT.get(owner);
+                if (audience == null || audience.player != player || audience.world != player.getWorld()
+                        || audience.connection != player.networkHandler) {
+                    audience = new Audience(player, player.getWorld(), player.networkHandler, new ClockSnapshot());
+                    SENT.put(owner, audience);
+                }
+                var views = audience.clock.update(mgr, owner, now, heartbeat);
+                if (views == null) continue;
                 var buf = PacketByteBufs.create();
                 SkillCooldownPacket.write(buf, views);
                 // Optional context trailer: old clients consume the original list.

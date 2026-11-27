@@ -3,6 +3,8 @@ package net.jackcooper.shapeShifterCurseAddon.client;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
@@ -31,11 +33,14 @@ public final class ClientTickCache {
 
 	/** 缓存锚定的客户端 tick（world.getTime()）。 */
 	private static long cachedTick = Long.MIN_VALUE;
+	private static ClientWorld cachedWorld;
+	private static ClientPlayerEntity cachedPlayer;
 	@Nullable
 	private static ItemStack equippedBook;
 	private static final Map<Item, Boolean> WEARING = new ConcurrentHashMap<>();
 	private static float frostForgeProgress = -1f;
-	private static boolean hasHoverThorn;
+	private static boolean frostProgressRead;
+	private static boolean hoverCountRead;
 	private static int hoverThornCount;
 	/** 荧光幼灵/阿澪：潮汐球拴人剩余占比（-1 无拴人球；每 tick 扫一次，避免 HUD 每帧实体盒扫描）。 */
 	private static double tidalTetherFraction = -1.0;
@@ -51,7 +56,9 @@ public final class ClientTickCache {
 			return;
 		}
 		long now = client.world.getTime();
-		if (now == cachedTick) return; // 同一 tick 多次回调只刷一次
+		if (now == cachedTick && client.world == cachedWorld && client.player == cachedPlayer) return;
+		cachedWorld = client.world;
+		cachedPlayer = client.player;
 		cachedTick = now;
 		// 佩戴魔法书（含 null 负缓存：未佩戴玩家不做二次扫描）
 		ItemStack book = TrinketUtils.findFirstEquipped(client.player,
@@ -63,21 +70,10 @@ public final class ClientTickCache {
 				TrinketUtils.isWearing(client.player, net.jackcooper.shapeShifterCurseAddon.SscAddon.SEA_CRYSTAL_PENDANT));
 		WEARING.put(net.jackcooper.shapeShifterCurseAddon.SscAddon.BLUE_FIRE_AMULET,
 				TrinketUtils.isWearing(client.player, net.jackcooper.shapeShifterCurseAddon.SscAddon.BLUE_FIRE_AMULET));
-		// 寒棘狐：法阵实体进度（-1 无实体）与环绕冰锥存在性/数量（一次扫描同时取三者）
+		// 寒棘狐数据在对应 HUD 首次读取时查询，其他形态不遍历实体。
 		frostForgeProgress = -1f;
-		hasHoverThorn = false;
 		hoverThornCount = 0;
-		var arrays = client.world.getEntitiesByClass(net.jackcooper.shapeShifterCurseAddon.entity.FrostArrayEntity.class,
-				client.player.getBoundingBox().expand(4.0),
-				a -> a.getTrackedOwnerId() == client.player.getId());
-		if (!arrays.isEmpty()) {
-			frostForgeProgress = Math.max(0f, Math.min(1f, arrays.get(0).getProgress() / 100f));
-		}
-		var thorns = client.world.getEntitiesByClass(net.jackcooper.shapeShifterCurseAddon.entity.FrostThornEntity.class,
-				client.player.getBoundingBox().expand(3.0),
-				t -> t.isHover() && client.player.getUuid().equals(t.getOwnerUuid().orElse(null)));
-		hasHoverThorn = !thorns.isEmpty();
-		hoverThornCount = thorns.size();
+		frostProgressRead = hoverCountRead = false;
 		// 荧光幼灵/阿澪：潮汐球拴人剩余（仅拴人阶段；分母 = 拴人总时长，阿澪 +20% 与服务端同源）
 		tidalTetherFraction = -1.0;
 		var form = client.player.getComponent(net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormComponent.PLAYER_FORM).nowForm;
@@ -96,12 +92,14 @@ public final class ClientTickCache {
 		}
 	}
 
-	private static void invalidate() {
+	static void invalidate() {
 		cachedTick = Long.MIN_VALUE;
+		cachedWorld = null;
+		cachedPlayer = null;
 		equippedBook = null;
 		WEARING.clear();
 		frostForgeProgress = -1f;
-		hasHoverThorn = false;
+		frostProgressRead = hoverCountRead = false;
 		hoverThornCount = 0;
 		tidalTetherFraction = -1.0;
 	}
@@ -122,18 +120,29 @@ public final class ClientTickCache {
 	/** 寒棘狐法阵蓄力进度（0-1；无实体 -1）。 */
 	public static float frostForgeProgress() {
 		ensureFresh();
+		if (cachedPlayer != null && !frostProgressRead) {
+			var arrays = cachedWorld.getEntitiesByClass(net.jackcooper.shapeShifterCurseAddon.entity.FrostArrayEntity.class,
+					cachedPlayer.getBoundingBox().expand(4.0), a -> a.getTrackedOwnerId() == cachedPlayer.getId());
+			if (!arrays.isEmpty()) frostForgeProgress = Math.max(0f, Math.min(1f, arrays.get(0).getProgress() / 100f));
+			frostProgressRead = true;
+		}
 		return frostForgeProgress;
 	}
 
 	/** 寒棘狐环绕冰锥是否存在（凝棘门槛）。 */
 	public static boolean hasHoverThorn() {
-		ensureFresh();
-		return hasHoverThorn;
+		return hoverThornCount() > 0;
 	}
 
 	/** 寒棘狐环绕冰锥数量（主技能辅助栏：每根 +1/5）。 */
 	public static int hoverThornCount() {
 		ensureFresh();
+		if (cachedPlayer != null && !hoverCountRead) {
+			hoverThornCount = cachedWorld.getEntitiesByClass(net.jackcooper.shapeShifterCurseAddon.entity.FrostThornEntity.class,
+					cachedPlayer.getBoundingBox().expand(3.0),
+					t -> t.isHover() && cachedPlayer.getUuid().equals(t.getOwnerUuid().orElse(null))).size();
+			hoverCountRead = true;
+		}
 		return hoverThornCount;
 	}
 
@@ -150,6 +159,6 @@ public final class ClientTickCache {
 			invalidate();
 			return;
 		}
-		if (cachedTick != client.world.getTime()) refresh(client);
+		if (cachedTick != client.world.getTime() || cachedWorld != client.world || cachedPlayer != client.player) refresh(client);
 	}
 }

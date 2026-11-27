@@ -166,7 +166,7 @@ public final class SpectatorSkillWorldProbe {
         // GameTest's creative mock hardcodes isSpectator() to false. Use the
         // actual ServerPlayerEntity and interaction manager for both game modes.
         var target = new ServerPlayerEntity(world.getServer(), world,
-                new GameProfile(UUID.randomUUID(), "observer-" + mode.getName()));
+                new GameProfile(UUID.randomUUID(), "obs-" + mode.getName()));
         world.getServer().getPlayerManager().onPlayerConnect(new ClientConnection(NetworkSide.SERVERBOUND), target);
         FormUtils.setForm(target, RegPlayerForms.playerForms.get(FormIdentifiers.SHEEP_FORM));
         target.changeGameMode(mode);

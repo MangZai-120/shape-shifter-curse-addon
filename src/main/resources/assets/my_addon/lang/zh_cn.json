@@ -341,6 +341,7 @@
   "item.ssc_addon.ankh_stone.tooltip_4": "触发后物品消耗",
   "item.ssc_addon.ankh_stone.tooltip_5": "无法合成，仅在沙漠神殿箱子中概率获得",
   "entity.ssc_addon.witch_familiar": "女巫使魔",
+  "entity.ssc_addon.ghost_cat": "幽灵野猫",
   "item.ssc_addon.witch_familiar_spawn_egg": "女巫使魔蛋",
   "origin.my_addon.form_golden_sandstorm_sp.name": "金沙岚",
   "origin.my_addon.form_golden_sandstorm_sp.description": "胡狼的特殊变体形态，凋零的本质在金色沙暴的力量下得到了极致的升华。",
@@ -3763,5 +3764,6 @@
   "evolution.my_addon.snow_fox.node.branch_stone.name": "寒霜之灵",
   "evolution.my_addon.snow_fox.node.branch_stone.desc": "50级点满技能后，可使用进化石继续进化。",
   "subtitles.my_addon.snow_fox.gather": "寒霜凝聚",
+  "subtitles.my_addon.snow_fox.frost_storm": "霜暴中雪粒翻卷",
   "subtitles.my_addon.snow_fox.plunge": "雪狐俯冲"
 }

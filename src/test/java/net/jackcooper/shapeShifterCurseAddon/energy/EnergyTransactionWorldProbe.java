@@ -4,12 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
+import net.jackcooper.shapeShifterCurseAddon.block.EnergyBottlerBlockEntity;
 import net.jackcooper.shapeShifterCurseAddon.block.EnergyConverterBlock;
 import net.jackcooper.shapeShifterCurseAddon.block.EnergyConverterBlockEntity;
 import net.jackcooper.shapeShifterCurseAddon.block.EnergyExtractorBlockEntity;
 import net.jackcooper.shapeShifterCurseAddon.block.EnergyStorageTankBlockEntity;
 import net.jackcooper.shapeShifterCurseAddon.block.RegAddonBlocks;
 import net.minecraft.block.Blocks;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.test.TestContext;
 import net.minecraft.util.math.BlockPos;
@@ -63,6 +66,7 @@ public final class EnergyTransactionWorldProbe {
         }
         try {
             networkTransfers();
+            manualBottlerLines();
             nestedRollback();
             childRollback();
             deepTransactions(false);
@@ -134,6 +138,28 @@ public final class EnergyTransactionWorldProbe {
         check(EnergyNetwork.insert(List.of(), Integer.MAX_VALUE) == 0
                 && EnergyNetwork.extract(List.of(), Integer.MAX_VALUE) == 0,
                 "empty member lists transfer no energy");
+    }
+
+    private static void manualBottlerLines() {
+        clearFixture();
+        world.setBlockState(origin.east(), RegAddonBlocks.ENERGY_STORAGE_TANK.getDefaultState());
+        world.setBlockState(origin, RegAddonBlocks.ENERGY_BOTTLER.getDefaultState());
+        var tank = (EnergyStorageTankBlockEntity) world.getBlockEntity(origin.east());
+        var bottler = (EnergyBottlerBlockEntity) world.getBlockEntity(origin);
+        tank.setStoredEnergy(EnergyBottlerBlockEntity.ENERGY_PER_BOTTLE);
+        for (int line = 0; line < 3; line++) bottler.setStack(line, new ItemStack(Items.GLASS_BOTTLE));
+        bottler.requestManualCraft();
+        for (int i = 0; i < EnergyBottlerBlockEntity.CRAFT_TIME; i++) {
+            EnergyBottlerBlockEntity.tick(world, origin, bottler.getCachedState(), bottler);
+        }
+        check(tank.getStoredEnergy() == 0 && EnergyBottlerBlockEntity.isEnergyBottle(bottler.getStack(3))
+                && bottler.getStack(4).isEmpty() && bottler.getStack(5).isEmpty(),
+                "only the first of three finishing lines receives the last 25 energy");
+        var saved = bottler.createNbt();
+        check(saved.getInt("ManualMask") == 6 && java.util.Arrays.equals(saved.getIntArray("Progress"), new int[3]),
+                "interrupted lines first clear progress, retaining their pending requests for one tick");
+        EnergyBottlerBlockEntity.tick(world, origin, bottler.getCachedState(), bottler);
+        check(bottler.createNbt().getInt("ManualMask") == 0, "the next unfunded tick cancels pending requests");
     }
 
     private static void nestedRollback() {

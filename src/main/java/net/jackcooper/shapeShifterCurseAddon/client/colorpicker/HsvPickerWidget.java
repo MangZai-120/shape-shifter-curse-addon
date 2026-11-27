@@ -1,9 +1,14 @@
 package net.jackcooper.shapeShifterCurseAddon.client.colorpicker;
 
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.Selectable;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
+import net.minecraft.client.texture.NativeImage;
+import net.minecraft.client.texture.NativeImageBackedTexture;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.math.ColorHelper;
 
 import java.util.function.IntConsumer;
 
@@ -22,6 +27,9 @@ public class HsvPickerWidget implements Element, Selectable {
     private final int hueBarW;       // H 竖条宽
     private final int gap = 4;
     private final IntConsumer onChange; // 回调 0x00RRGGBB
+    private NativeImageBackedTexture palette;
+    private Identifier paletteId;
+    private float bakedHue = Float.NaN;
 
     private float hue = 0f;          // [0,1)
     private float sat = 1f;          // [0,1]
@@ -51,19 +59,9 @@ public class HsvPickerWidget implements Element, Selectable {
     }
 
     public void render(DrawContext ctx, int mouseX, int mouseY) {
-        // SV 方块：先填当前色相的纯色作为底，再两层渐变叠出 S/V
-        int baseHue = hsvToRgb(hue, 1f, 1f) | 0xFF000000;
-        ctx.fill(x, y, x + svSize, y + svSize, baseHue);
-        // 横向白→透明（饱和度）
-        ctx.fillGradient(x, y, x + svSize, y + svSize, 0xFFFFFFFF, 0x00FFFFFF);
-        // 实际饱和度需要由左到右：左白右透明 → 然而 fillGradient 是上下渐变。退化为分段填色：
-        // 重新实现：行模式逐列填色，开销 svSize 次 fill，可接受（svSize ~ 96）
-        // 上一行 fillGradient 实际无法实现横向渐变，撤销并改逐列绘制：
-        // 这里用另一种思路：水平 gradient → 把方块绘制成 2 层：白色横渐变 + 黑色纵渐变
-        // Vanilla DrawContext.fillGradient 只支持纵向；改用 enableScissor + 像素列 fill
-        // 为减小开销且不引入像素扫描，使用 2x2 网格采样法绘制：把 SV 网格切成 16x16 网格，每格 fill 当前颜色
-        // 真实实现：逐块 sample 颜色填充
-        drawSvSampled(ctx);
+        updatePalette();
+        ctx.draw();
+        ctx.drawTexture(paletteId, x, y, 0, 0, svSize, svSize, svSize + 1, svSize);
         // 在 SV 上画一个 + 形指示器
         int curX = x + Math.round(sat * (svSize - 1));
         int curY = y + Math.round((1f - val) * (svSize - 1));
@@ -75,40 +73,51 @@ public class HsvPickerWidget implements Element, Selectable {
 
         // 色相竖条
         int hx = x + svSize + gap;
-        drawHueBar(ctx, hx, y, hueBarW, svSize);
+        ctx.drawTexture(paletteId, hx, y, hueBarW, svSize, svSize, 0, 1, svSize, svSize + 1, svSize);
         int hY = y + Math.round(hue * (svSize - 1));
         ctx.fill(hx - 2, hY,     hx + hueBarW + 2, hY + 1, 0xFF000000);
         ctx.fill(hx - 2, hY + 1, hx + hueBarW + 2, hY + 2, 0xFFFFFFFF);
         drawBorder(ctx, hx - 1, y - 1, hueBarW + 2, svSize + 2, 0xFF000000);
     }
 
-    /** SV 方块用 24x24 采样块绘制，避免逐像素 fill 性能压力。 */
-    private void drawSvSampled(DrawContext ctx) {
+    private void updatePalette() {
+        if (palette != null && hue == bakedHue) return;
+        if (palette == null) {
+            palette = new NativeImageBackedTexture(svSize + 1, svSize, false);
+            paletteId = MinecraftClient.getInstance().getTextureManager().registerDynamicTexture("ssca_hsv_picker", palette);
+        }
+        NativeImage pixels = palette.getImage();
         final int cells = 24;
         for (int cx = 0; cx < cells; cx++) {
             for (int cy = 0; cy < cells; cy++) {
                 float s = (cx + 0.5f) / cells;
                 float v = 1f - (cy + 0.5f) / cells;
-                int rgb = hsvToRgb(hue, s, v) | 0xFF000000;
-                int x0 = x + cx * svSize / cells;
-                int y0 = y + cy * svSize / cells;
-                int x1 = x + (cx + 1) * svSize / cells;
-                int y1 = y + (cy + 1) * svSize / cells;
-                ctx.fill(x0, y0, x1, y1, rgb);
+                int x0 = cx * svSize / cells, x1 = (cx + 1) * svSize / cells;
+                int y0 = cy * svSize / cells, y1 = (cy + 1) * svSize / cells;
+                pixels.fillRect(x0, y0, x1 - x0, y1 - y0, opaqueAbgr(hsvToRgb(hue, s, v)));
             }
         }
+        if (Float.isNaN(bakedHue)) {
+            for (int i = 0; i < 32; i++) {
+                int y0 = i * svSize / 32, y1 = (i + 1) * svSize / 32;
+                int color = opaqueAbgr(hsvToRgb((i + 0.5f) / 32, 1f, 1f));
+                pixels.fillRect(svSize, y0, 1, y1 - y0, color);
+            }
+        }
+        palette.upload();
+        bakedHue = hue;
     }
 
-    private void drawHueBar(DrawContext ctx, int hx, int hy, int hw, int hh) {
-        // 32 段近似
-        final int seg = 32;
-        for (int i = 0; i < seg; i++) {
-            float h = (i + 0.5f) / seg;
-            int rgb = hsvToRgb(h, 1f, 1f) | 0xFF000000;
-            int y0 = hy + i * hh / seg;
-            int y1 = hy + (i + 1) * hh / seg;
-            ctx.fill(hx, y0, hx + hw, y1, rgb);
-        }
+    private static int opaqueAbgr(int rgb) {
+        return ColorHelper.Abgr.getAbgr(255, rgb & 255, (rgb >> 8) & 255, (rgb >> 16) & 255);
+    }
+
+    void releaseTexture() {
+        if (paletteId == null) return;
+        MinecraftClient.getInstance().getTextureManager().destroyTexture(paletteId);
+        paletteId = null;
+        palette = null;
+        bakedHue = Float.NaN;
     }
 
     private void drawBorder(DrawContext ctx, int bx, int by, int bw, int bh, int color) {

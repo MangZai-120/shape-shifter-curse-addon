@@ -106,7 +106,7 @@ public final class SnowFoxEffects {
         }
     }
 
-    private static void setWorld(ClientWorld world) {
+    public static void setWorld(ClientWorld world) {
         if (world!=scene) { scene=world; SPIKES.clear(); ROTATIONS.clear(); CHARGING.clear(); }
     }
     public static void spawn(ClientWorld world,List<Tip> tips) {

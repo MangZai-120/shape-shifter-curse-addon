@@ -80,6 +80,7 @@
         "DomainProjectileBoundaryMixin",
         "DomainExplosionBoundaryMixin",
         "DomainChestLootMixin",
+        "compat.LootrChestLootMixin",
         "ThreadedAnvilChunkStorageAccessor",
         "PocketTerrainRegionMixin",
         "PocketTerrainWorkerAccessor",
@@ -145,10 +146,12 @@
         "WanderingTraderTradeMixin"
     ],
     "client": [
+        "compat.RerClientLootMixin",
         "client.MoisturizerRecipeBookMixin",
         "client.AccessoriesVanillaVertexConsumerMixin",
         "client.FormColorDataMigrationMixin",
         "client.FrozenAnimationRenderMixin",
+        "client.FrozenStatusTrackingMixin",
         "client.FrozenPlayerAnimationTickMixin",
         "client.FrozenPlayerAnimationStackMixin",
         "client.FrozenAnimationStackAccessor",
@@ -204,6 +207,7 @@
         "client.MinecraftClientSetScreenMixin",
         "client.SoundManagerDeafenMixin",
         "client.SpellbookHudLayerMixin",
+        "client.ConnectorSpellbookHudLayerMixin",
         "client.SoundRangePositionedMixin",
         "client.SoundRangeIdMixin",
         "client.SoundRangeTrackingMixin",

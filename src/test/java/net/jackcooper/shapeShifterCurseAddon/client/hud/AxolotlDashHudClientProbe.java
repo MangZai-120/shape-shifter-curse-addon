@@ -110,9 +110,9 @@ public final class AxolotlDashHudClientProbe implements ClientModInitializer {
                 check(dash.resolveCooldown(mc.player).equals(expected()), "Rendered dash selects its current environment resource");
                 check(dash.authorityId(mc.player).equals(expected().toString()), "Authority lookup selects the same cooldown");
                 var read = SkillCooldownBarRenderer.class.getDeclaredMethod("readCooldown", net.minecraft.entity.player.PlayerEntity.class,
-                        Identifier.class, int.class);
+                        Identifier.class, int.class, boolean.class);
                 read.setAccessible(true);
-                Object cd = read.invoke(new SkillCooldownBarRenderer(), mc.player, dash.resolveCooldown(mc.player), dash.cooldownTotalTicks());
+                Object cd = read.invoke(new SkillCooldownBarRenderer(), mc.player, dash.resolveCooldown(mc.player), dash.cooldownTotalTicks(), true);
                 var remaining = cd.getClass().getDeclaredMethod("remaining"); remaining.setAccessible(true);
                 int shown = (int) remaining.invoke(cd);
                 check(shown == active, "Renderer reads the native synchronized countdown");

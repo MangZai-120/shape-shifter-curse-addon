@@ -33,8 +33,10 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class PocketSpaceManager {
@@ -49,7 +51,6 @@ public final class PocketSpaceManager {
 	private static final Map<Integer, Wipe> WIPES = new HashMap<>();
 	private static final Map<Integer, UUID> COMPLETED_WIPES = new HashMap<>();
 	private static final UUID CHANNEL_SLOW_ID = UUID.fromString("9d17b640-476a-4bdc-a396-8a729fbd5ced");
-	private static final int EVICTION_TICKS = 100;
 	private static boolean generating;
 	private static MinecraftServer activeServer;
 	private static boolean recoveredTasks;
@@ -344,63 +345,56 @@ public final class PocketSpaceManager {
 	 */
 	private static void census(MinecraftServer server, ServerWorld pocket) {
 		PocketSpaceStorage.Registry registry = PocketSpaceStorage.registry(server);
-		if (registry.rooms().isEmpty()) return;
+		Set<UUID> registered = registry.byScroll.keySet();
+		if (registered.isEmpty()) return;
 		long now = server.getOverworld().getTime();
-		java.util.Set<UUID> seen = new java.util.HashSet<>();
+		Set<UUID> seen = new HashSet<>();
 		for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-			for (int i = 0; i < player.getInventory().size(); i++) collectScroll(player.getInventory().getStack(i), seen);
+			for (int i = 0; i < player.getInventory().size() && seen.size() < registered.size(); i++) {
+				collectScroll(player.getInventory().getStack(i), registered, seen);
+			}
+			if (seen.size() == registered.size()) break;
 			ItemStack book = net.jackcooper.shapeShifterCurseAddon.spell.SpellCastManager.getEquippedBook(player);
 			if (book != null) {
-				for (int slot = 0; slot < net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.getSlotCount(book); slot++) {
-					collectScroll(net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.getScroll(book, slot), seen);
+				int slots = net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.getSlotCount(book);
+				for (int slot = 0; slot < slots && seen.size() < registered.size(); slot++) {
+					collectScroll(net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.getScroll(book, slot), registered, seen);
 				}
 			}
 		}
 		for (ServerWorld world : server.getWorlds()) {
+			if (seen.size() == registered.size()) break;
 			for (net.minecraft.entity.Entity entity : world.iterateEntities()) {
-				if (entity instanceof net.minecraft.entity.ItemEntity item) collectScroll(item.getStack(), seen);
+				if (entity instanceof net.minecraft.entity.ItemEntity item) {
+					collectScroll(item.getStack(), registered, seen);
+					if (seen.size() == registered.size()) break;
+				}
 			}
 		}
-		for (PocketSpaceStorage.Room room : new java.util.ArrayList<>(registry.rooms())) {
-			if (seen.contains(room.scrollId)) {
-				room.touch(now);
-				registry.markDirty();
-			}
+		if (seen.isEmpty()) return;
+		if (registry.bySlot.size() == registered.size()) {
+			for (UUID id : seen) registry.byScroll.get(id).touch(now);
+		} else {
+			// An older registry can contain two room slots with the same scroll ID.
+			for (var room : registry.rooms()) if (seen.contains(room.scrollId)) room.touch(now);
 		}
+		registry.markDirty();
 	}
 
-	private static void collectScroll(ItemStack stack, java.util.Set<UUID> seen) {
+	private static void collectScroll(ItemStack stack, Set<UUID> registered, Set<UUID> seen) {
 		if (stack.isEmpty()) return;
 		net.minecraft.nbt.NbtCompound nbt = stack.getNbt();
-		if (nbt != null && nbt.containsUuid(PocketSpaceStorage.SCROLL_ID)) seen.add(nbt.getUuid(PocketSpaceStorage.SCROLL_ID));
+		if (nbt == null) return;
+		if (nbt.containsUuid(PocketSpaceStorage.SCROLL_ID)) {
+			UUID id = nbt.getUuid(PocketSpaceStorage.SCROLL_ID);
+			if (registered.contains(id)) seen.add(id);
+		}
 		// 卷轴装在别的容器物品里（如魔法书在背包而非佩戴）：递归扫 Items 列表
-		if (nbt != null && nbt.contains(net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.NBT_ITEMS, 9)) {
+		if (seen.size() < registered.size() && nbt.contains(net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.NBT_ITEMS, 9)) {
 			net.minecraft.nbt.NbtList list = nbt.getList(net.jackcooper.shapeShifterCurseAddon.spell.SpellbookData.NBT_ITEMS, 10);
-			for (int i = 0; i < list.size(); i++) collectScroll(ItemStack.fromNbt(list.getCompound(i)), seen);
-		}
-	}
-
-	/** 开始消除：房内无人立即清空；有人则屏幕中央提示 5 秒后送回再清空。 */
-	private static void beginEviction(MinecraftServer server, ServerWorld pocket, PocketSpaceStorage.Room room) {
-		java.util.List<ServerPlayerEntity> inside = playersInRoom(server, room);
-		if (inside.isEmpty()) {
-			wipe(server, pocket, room);
-			return;
-		}
-		room.collapsing = true;
-		PocketSpaceStorage.registry(server).markDirty();
-		if (!PocketSpaceStorage.persistRegistry(server)) {
-			room.collapsing = false;
-			PocketSpaceStorage.registry(server).markDirty();
-			return;
-		}
-		EVICTIONS.put(room.layout().index(), new Eviction(room.scrollId, EVICTION_TICKS));
-		for (ServerPlayerEntity player : inside) {
-			player.networkHandler.sendPacket(new net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket(5, 90, 10));
-			player.networkHandler.sendPacket(new net.minecraft.network.packet.s2c.play.TitleS2CPacket(
-					Text.translatable("message.ssc_addon.pocket_space.collapse_title")));
-			player.networkHandler.sendPacket(new net.minecraft.network.packet.s2c.play.SubtitleS2CPacket(
-					Text.translatable("message.ssc_addon.pocket_space.collapse_subtitle", EVICTION_TICKS / 20)));
+			for (int i = 0; i < list.size() && seen.size() < registered.size(); i++) {
+				collectScroll(ItemStack.fromNbt(list.getCompound(i)), registered, seen);
+			}
 		}
 	}
 

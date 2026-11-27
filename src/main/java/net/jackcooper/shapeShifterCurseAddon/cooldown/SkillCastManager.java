@@ -103,6 +103,18 @@ public class SkillCastManager extends PersistentState {
     // ===== 存储 =====
     private final Map<UUID, Map<String, CooldownState>> cooldowns = new ConcurrentHashMap<>();
     private final Map<String, Cast> activeCasts = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> snapshotRevisions = new java.util.HashMap<>();
+    private long nextSnapshotRevision;
+
+    long snapshotRevision(UUID player) {
+        return snapshotRevisions.getOrDefault(player, 0L);
+    }
+
+    private void markSkillsChanged(UUID player) {
+        if (cooldowns.containsKey(player)) snapshotRevisions.put(player, ++nextSnapshotRevision);
+        else snapshotRevisions.remove(player);
+        markDirty();
+    }
 
     private static volatile SkillCastManager instance;
     private static long castIdSeq = 0;
@@ -165,7 +177,7 @@ public class SkillCastManager extends PersistentState {
                 changed = true;
             }
         }
-        if (changed) markDirty();
+        if (changed) markSkillsChanged(player);
     }
 
     private static String key(UUID player, String skillId) {
@@ -200,7 +212,7 @@ public class SkillCastManager extends PersistentState {
         Cast cast = new Cast(nextCastId(), player, skillId, config, now);
         activeCasts.put(k, cast);
         ensureCooldown(player, skillId);
-        markDirty();
+        markSkillsChanged(player);
 
         if (START_ON_CAST.equals(config.cooldownStart)) {
             startCooldown(player, skillId, config.cooldown, cast.castId, now);
@@ -225,7 +237,7 @@ public class SkillCastManager extends PersistentState {
             cast.cooldownStarted = true;
         }
         cast.phase = PHASE_ACTIVE;
-        markDirty();
+        markSkillsChanged(cast.playerId);
     }
 
     /**
@@ -249,7 +261,7 @@ public class SkillCastManager extends PersistentState {
         }
         cast.settled = true;
         activeCasts.remove(key(cast.playerId, cast.skillId), cast);
-        markDirty();
+        markSkillsChanged(cast.playerId);
     }
 
     /**
@@ -276,7 +288,7 @@ public class SkillCastManager extends PersistentState {
         }
         cast.settled = true;
         activeCasts.remove(key(cast.playerId, cast.skillId), cast);
-        markDirty();
+        markSkillsChanged(cast.playerId);
     }
 
     /** 净化等强制中断：从中断时刻起结算完整 CD，不执行释放效果，也不沿用失败 CD。 */
@@ -286,7 +298,7 @@ public class SkillCastManager extends PersistentState {
         startCooldown(cast.playerId, cast.skillId, cast.config.cooldown, castId, now);
         cast.settled = true;
         activeCasts.remove(key(cast.playerId, cast.skillId), cast);
-        markDirty();
+        markSkillsChanged(cast.playerId);
     }
 
     /** 中断时按实际阶段结算；重复清理与旧回调均不重置冷却。 */
@@ -305,7 +317,7 @@ public class SkillCastManager extends PersistentState {
         if (cast.cooldownStarted && cd != null && cd.lastCastId == castId) reset(cast.playerId, cast.skillId);
         cast.settled = true;
         activeCasts.remove(key(cast.playerId, cast.skillId), cast);
-        markDirty();
+        markSkillsChanged(cast.playerId);
     }
 
     /** 不经施放流程直接上 CD（外部联动用）。 */
@@ -319,8 +331,8 @@ public class SkillCastManager extends PersistentState {
         if (cd == null) return;
         cd.endTick = 0;
         cd.totalTicks = 0;
-                if (cd.pausedRemaining >= 0) cd.pausedRemaining = 0;
-        markDirty();
+        if (cd.pausedRemaining >= 0) cd.pausedRemaining = 0;
+        markSkillsChanged(player);
     }
 
     public java.util.List<Cast> activeCasts() {
@@ -344,7 +356,7 @@ public class SkillCastManager extends PersistentState {
             if (cd.pausedRemaining >= 0) cd.pausedRemaining = Math.max(0, cd.pausedRemaining - cd.totalTicks + ticks);
             cd.endTick = cd.endTick - cd.totalTicks + ticks;
             cd.totalTicks = ticks;
-            markDirty();
+            markSkillsChanged(cast.playerId);
         }
     }
 
@@ -364,7 +376,7 @@ public class SkillCastManager extends PersistentState {
         if (skills.entrySet().removeIf(entry -> !entry.getValue().isActive(now)
                 && control(player, entry.getKey()) == null)) {
             if (skills.isEmpty()) cooldowns.remove(player, skills);
-            markDirty();
+            markSkillsChanged(player);
         }
     }
 
@@ -418,7 +430,7 @@ public class SkillCastManager extends PersistentState {
         for (var cd : cooldowns.getOrDefault(player, Map.of()).values()) {
             cd.pausedRemaining = cd.remaining(now);
         }
-        markDirty();
+        markSkillsChanged(player);
     }
 
     /** 冷启动：清已过期冷却（不重置未到期冷却；存 endTick 绝对值，离线不扣减自动成立）。 */
@@ -431,6 +443,7 @@ public class SkillCastManager extends PersistentState {
             for (var cd : skills.values()) {
                 if (cd.pausedRemaining < 0) cd.pausedRemaining = cd.remaining(currentTick);
             }
+            markSkillsChanged(player);
         });
         lastWorldTick = currentTick;
         needsClockRestore = false;
@@ -446,7 +459,7 @@ public class SkillCastManager extends PersistentState {
         cd.pausedRemaining = offline.contains(player) ? ticks : -1;
         cd.totalTicks = ticks;
         cd.lastCastId = castId;
-        markDirty();
+        markSkillsChanged(player);
     }
 
     private Cast findCast(long castId) {
@@ -503,6 +516,8 @@ public class SkillCastManager extends PersistentState {
             }
         }
         mgr.needsClockRestore = true;
+        // Revisions are local to this manager and never change the on-disk format.
+        mgr.cooldowns.keySet().forEach(owner -> mgr.snapshotRevisions.put(owner, ++mgr.nextSnapshotRevision));
         return mgr;
     }
 

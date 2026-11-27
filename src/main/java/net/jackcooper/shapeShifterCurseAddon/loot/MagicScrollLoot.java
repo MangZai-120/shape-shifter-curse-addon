@@ -1,12 +1,19 @@
 package net.jackcooper.shapeShifterCurseAddon.loot;
 
 import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
+import net.minecraft.block.entity.ChestBlockEntity;
+import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.inventory.Inventory;
 import net.minecraft.loot.LootPool;
 import net.minecraft.loot.condition.RandomChanceLootCondition;
 import net.minecraft.loot.entry.ItemEntry;
 import net.minecraft.loot.function.SetNbtLootFunction;
 import net.minecraft.loot.provider.number.ConstantLootNumberProvider;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.ItemScatterer;
+import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.spell.ScrollData;
 import net.jackcooper.shapeShifterCurseAddon.spell.ArcaneAnalysis;
@@ -129,6 +136,47 @@ public final class MagicScrollLoot {
 		var spell = SpellRegistry.get(spellPath);
 		if (spell == null || level < 1 || level > spell.getMaxLevel()) return ItemStack.EMPTY;
 		return ArcaneAnalysis.markUnanalyzed(ScrollData.create(spellPath, level));
+	}
+
+	/** Roll once after the loot table fills this particular chest inventory. */
+	public static void rollDimensionScroll(ChestBlockEntity chest, Inventory inventory, @Nullable PlayerEntity personalOwner) {
+		World world = chest.getWorld();
+		if (world == null || world.isClient) return;
+		String spell;
+		float chance;
+		if (world.getRegistryKey().equals(World.END)) {
+			spell = "domain";
+			chance = 0.02F;
+		} else if (world.getRegistryKey().equals(World.NETHER)) {
+			spell = "explosion";
+			chance = 0.03F;
+		} else if (world.getRegistryKey().equals(World.OVERWORLD)) {
+			spell = "death_finale";
+			chance = 0.02F;
+		} else {
+			return;
+		}
+		if (world.random.nextFloat() >= chance) return;
+		ItemStack scroll = createNaturalScroll(spell, 1);
+		if (scroll.isEmpty()) return;
+		var empty = new java.util.ArrayList<Integer>();
+		for (int slot = 0; slot < inventory.size(); slot++) {
+			if (inventory.getStack(slot).isEmpty()) empty.add(slot);
+		}
+		if (!empty.isEmpty()) {
+			inventory.setStack(empty.get(world.random.nextInt(empty.size())), scroll);
+		} else {
+			var pos = chest.getPos();
+			if (personalOwner == null) {
+				ItemScatterer.spawn(world, pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5, scroll);
+			} else {
+				ItemEntity drop = new ItemEntity(world, pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5, scroll);
+				drop.setOwner(personalOwner.getUuid());
+				drop.setToDefaultPickupDelay();
+				world.spawnEntity(drop);
+			}
+		}
+		chest.markDirty();
 	}
 
 	public static ItemStack createNaturalScroll(WorldRuneState world, String spellPath, int level, long seed) {

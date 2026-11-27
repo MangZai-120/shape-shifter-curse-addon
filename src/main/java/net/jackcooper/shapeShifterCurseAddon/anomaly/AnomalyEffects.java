@@ -370,7 +370,11 @@ public final class AnomalyEffects {
                     && target.hasStatusEffect(SPIRIT_MOON)) {
                 ServerPlayerEntity owner = proc.world().getServer().getPlayerManager().getPlayer(proc.summoner().casterUUID());
                 if (owner != null && owner.isAlive() && owner.getWorld() == proc.world()) {
-                    float before = owner.getHealth(); owner.heal((float)Math.min(1, proc.healing().remaining));
+                    float before = owner.getHealth();
+                    float limit = before + (float) proc.healing().remaining;
+                    owner.heal((float) Math.min(1, proc.healing().remaining));
+                    // A pack can amplify this heal. The reaction can restore at most its remaining budget.
+                    if (owner.getHealth() > limit) owner.setHealth(limit);
                     proc.healing().remaining = Math.max(0, proc.healing().remaining - Math.max(0, owner.getHealth() - before));
                     if (proc.healing().remaining <= 0) target.removeStatusEffect(SPIRIT_MOON);
                 }

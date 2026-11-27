@@ -27,6 +27,7 @@ import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Environment(EnvType.CLIENT)
@@ -58,10 +59,9 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 
 	@Override
 	public void onHudRender(DrawContext context, float tickDelta) {
-        net.jackcooper.shapeShifterCurseAddon.client.hud.HudScaling.render(context, 2, () -> renderUnscaled(context, tickDelta));
-    }
-
-    private void renderUnscaled(DrawContext context, float tickDelta) {
+		SSCAddonClientConfig config = SSCAddonConfig.client();
+		if (!config.showCdBar) return;
+		config.migrateSkillHudLayout();
 		PlayerEntity player = mc.player;
 		if (player != lastPlayer || mc.world != lastWorld) {
 			trackedMaxValues.clear();
@@ -77,12 +77,14 @@ public class SkillCooldownBarRenderer implements HudRenderCallback {
 			lastFormId = formId;
 			novaChargeAnchor = Long.MIN_VALUE; // 换形态重置朔望蓄力锚（防残留锚跨形态误算）
 		}
-		if (formId == null || !SSCA_FORM_NAMESPACE.equals(formId.getNamespace())) return;
-		SSCAddonClientConfig config = SSCAddonConfig.client();
-		if (mc.options.hudHidden || !config.showCdBar) return;
-		config.migrateSkillHudLayout();
+		if (formId == null || !SSCA_FORM_NAMESPACE.equals(formId.getNamespace()) || mc.options.hudHidden) return;
 		var skills = SkillHudCatalog.entriesForHud(formId, player);
 		if (skills.isEmpty()) return;
+		HudScaling.render(context, 2, () -> drawSkills(context, player, formId, config, skills));
+	}
+
+	private void drawSkills(DrawContext context, PlayerEntity player, Identifier formId,
+	                        SSCAddonClientConfig config, List<SkillHudLayout.Entry<SkillHudCatalog.Skill>> skills) {
 		int extras = SkillHudLayout.extraCount(skills);
 		var anchor = net.onixary.shapeShifterCurseFabric.util.UIPositionUtils
 				.getCorrectPosition(config.cdBarPosType, 0, 0);

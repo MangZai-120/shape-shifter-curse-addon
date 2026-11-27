@@ -9,7 +9,9 @@ import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
 import net.jackcooper.shapeShifterCurseAddon.spell.*;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneScheme;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -76,6 +78,14 @@ public class SpellbookHudRenderer implements HudRenderCallback {
     private static int snapSlot = -1;
     private static TickSnapshot snapshot;
 
+    public static void clearSnapshot() {
+        snapWorld = null;
+        snapBook = null;
+        snapTick = Long.MIN_VALUE;
+        snapSlot = -1;
+        snapshot = null;
+    }
+
     /** Cache scroll decoding, rune/formation queries and formatted labels once per game tick. */
     private static TickSnapshot snapshotOf(MinecraftClient mc, ItemStack book, int selected) {
         long tick = mc.world.getTime();
@@ -136,21 +146,20 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 
     @Override
     public void onHudRender(DrawContext context, float tickDelta) {
-        net.jackcooper.shapeShifterCurseAddon.client.hud.HudScaling.render(context, 3, () -> renderUnscaled(context, tickDelta));
-    }
-
-    private void renderUnscaled(DrawContext context, float tickDelta) {
         MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.player == null || mc.world == null || mc.options.hudHidden
-                || !SSCAddonConfig.client().showSpellbookHud) return;
-        ItemStack book = SpellcastClient.getEquippedBook();
-        if (book == null || book.isEmpty() || SpellbookData.getSlotCount(book) <= 0) return;
         var cfg = SSCAddonConfig.client();
-        var anchor = UIPositionUtils.getCorrectPosition(cfg.spellbookHudPosType,
-                cfg.spellbookHudPosOffsetX, cfg.spellbookHudPosOffsetY);
-        int selected = Math.max(0, Math.min(SpellcastClient.getSelectedSlot(), SpellbookData.getSlotCount(book) - 1));
-        draw(context, clampX(anchor.getLeft(), mc.getWindow().getScaledWidth()),
-                clampY(anchor.getRight(), mc.getWindow().getScaledHeight()), snapshotOf(mc, book, selected));
+        if (!cfg.showSpellbookHud || mc.player == null || mc.world == null || mc.options.hudHidden) return;
+        ItemStack book = SpellcastClient.getEquippedBook();
+        if (book == null || book.isEmpty()) return;
+        int slots = SpellbookData.getSlotCount(book);
+        if (slots <= 0) return;
+        HudScaling.render(context, 3, () -> {
+            var anchor = UIPositionUtils.getCorrectPosition(cfg.spellbookHudPosType,
+                    cfg.spellbookHudPosOffsetX, cfg.spellbookHudPosOffsetY);
+            int selected = Math.max(0, Math.min(SpellcastClient.getSelectedSlot(), slots - 1));
+            draw(context, clampX(anchor.getLeft(), mc.getWindow().getScaledWidth()),
+                    clampY(anchor.getRight(), mc.getWindow().getScaledHeight()), snapshotOf(mc, book, selected));
+        });
     }
 
     /** Actual textures in the position editor, also usable without a book or player. */
@@ -262,13 +271,17 @@ public class SpellbookHudRenderer implements HudRenderCallback {
         var font = MinecraftClient.getInstance().textRenderer;
         // The outline is plain so formatted text retains a dark contour, including the blue level tag.
         String plain = text.getString();
-        // 同一段描边和字面一起提交，仍保持四个描边在前、字面在后的顺序。
-        context.draw(() -> {
-            context.drawText(font, plain, x - 1, y, OUTLINE, false);
-            context.drawText(font, plain, x + 1, y, OUTLINE, false);
-            context.drawText(font, plain, x, y - 1, OUTLINE, false);
-            context.drawText(font, plain, x, y + 1, OUTLINE, false);
-            context.drawText(font, text, x, y, color, false);
-        });
+        // Keep earlier HUD layers separate, then submit the outline and face as one text batch.
+        context.draw();
+        var matrix = context.getMatrices().peek().getPositionMatrix();
+        var vertices = context.getVertexConsumers();
+        var layer = TextRenderer.TextLayerType.NORMAL;
+        int light = LightmapTextureManager.MAX_LIGHT_COORDINATE;
+        font.draw(plain, x - 1, y, OUTLINE, false, matrix, vertices, layer, 0, light);
+        font.draw(plain, x + 1, y, OUTLINE, false, matrix, vertices, layer, 0, light);
+        font.draw(plain, x, y - 1, OUTLINE, false, matrix, vertices, layer, 0, light);
+        font.draw(plain, x, y + 1, OUTLINE, false, matrix, vertices, layer, 0, light);
+        font.draw(text.asOrderedText(), x, y, color, false, matrix, vertices, layer, 0, light);
+        context.draw();
     }
 }

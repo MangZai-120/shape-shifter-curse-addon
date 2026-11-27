@@ -14,6 +14,7 @@ final class SkillCooldownPersistenceTest {
         parsing();
         staleCallbacksAndRetune();
         pruneExpired();
+        snapshotScheduling();
         UUID owner = UUID.randomUUID(), other = UUID.randomUUID(), entity = UUID.randomUUID();
         var m = new SkillCastManager();
         m.force(owner, "test:cooldown", 100, 1000);
@@ -175,6 +176,60 @@ final class SkillCooldownPersistenceTest {
         restored.finish(cast, 1100);
         check(restored.cooldown(owner, skill).remaining(1100) == 47, "restored end uses retuned duration");
         System.out.println("Duplicate/stale callbacks and on_end retune dirty/NBT persistence PASS.");
+    }
+
+    private static void snapshotScheduling() throws Exception {
+        class CountedManager extends SkillCastManager {
+            int snapshots;
+            @Override public List<View> snapshot(UUID player, long now) {
+                snapshots++;
+                return super.snapshot(player, now);
+            }
+        }
+        var manager = new CountedManager();
+        var clock = new SkillCooldownSync.ClockSnapshot();
+        UUID owner = UUID.randomUUID(), other = UUID.randomUUID();
+        String skill = "test:clock";
+        check(clock.update(manager, owner, 1000, true).isEmpty(), "new session sends an empty baseline");
+        manager.force(other, skill, 70, 1000);
+        check(clock.update(manager, owner, 1001, false) == null && manager.snapshots == 1,
+                "another owner cannot invalidate an idle snapshot");
+        manager.force(owner, skill, 43, 1001);
+        for (int tick = 1001; tick <= 1044; tick++) {
+            var sent = clock.update(manager, owner, tick, tick % 20 == 0);
+            if (tick == 1001 || tick == 1020 || tick == 1040 || tick == 1044) {
+                check(sent != null && sent.equals(List.of(new SkillCastManager.View(skill, 0, 1044 - tick, 43))),
+                        "send immediately on force, heartbeat and natural expiry at " + tick);
+            } else check(sent == null, "running clock skipped at " + tick);
+        }
+        check(manager.snapshots == 5, "only the baseline, two transitions and two heartbeats built snapshots");
+        manager.onPlayerJoined(owner, 1060);
+        check(clock.update(manager, owner, 1060, true).isEmpty(), "expiry pruning sends the clearing snapshot");
+        check(clock.update(manager, owner, 1080, true) == null && manager.snapshots == 6,
+                "idle heartbeats do not rebuild snapshots");
+
+        long cast = manager.begin(owner, skill, new SkillCastManager.ResolvedConfig(50, 5, "on_cast"), 1081);
+        check(clock.update(manager, owner, 1081, false).get(0).phase() == 1, "charging visible immediately");
+        manager.retune(cast, 30);
+        check(clock.update(manager, owner, 1082, false).get(0).remaining() == 29, "retuning refreshes deadline");
+        manager.released(cast, 1083);
+        check(clock.update(manager, owner, 1083, false).get(0).phase() == 2, "release updates phase");
+        manager.abort(null, cast);
+        check(clock.update(manager, owner, 1084, false).get(0).remaining() == 0, "abort clears the running clock");
+        manager.force(owner, skill, 100, 1085);
+        check(clock.update(manager, owner, 1085, false).get(0).remaining() == 100, "force after abort updates client");
+        manager.reset(owner, skill);
+        check(clock.update(manager, owner, 1085, false).get(0).total() == 0, "same-tick reset is visible");
+
+        manager.force(owner, skill, 60, 1100);
+        manager.onPlayerRemoved(owner, 1105, ignored -> null);
+        var loaded = roundTrip(manager);
+        var afterReload = new SkillCooldownSync.ClockSnapshot();
+        check(afterReload.update(loaded, owner, 2000, false).get(0).remaining() == 55, "new session sees frozen saved remainder");
+        check(afterReload.update(loaded, owner, 2001, false).get(0).remaining() == 55, "paused wire deadline is recalibrated");
+        loaded.onPlayerJoined(owner, 2002);
+        check(afterReload.update(loaded, owner, 2002, false).get(0).remaining() == 55, "resume transmits the new deadline");
+        check(afterReload.update(loaded, owner, 2003, false) == null, "resumed clock predicts normally");
     }
 
     private static void parsing() {

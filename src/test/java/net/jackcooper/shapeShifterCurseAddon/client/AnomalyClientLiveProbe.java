@@ -96,6 +96,8 @@ public final class AnomalyClientLiveProbe {
     private static long pauseWorldTime;
     private static boolean pauseVerified;
     private static AnomalySnapshot pauseBaseline;
+    private static PigEntity offscreenPig;
+    private static int offscreenFreezeStep;
 
     private AnomalyClientLiveProbe() {}
 
@@ -138,6 +140,11 @@ public final class AnomalyClientLiveProbe {
         if (disconnectRequested) {
             if (client.world == null && ++disconnectTicks >= 4) {
                 check(AnomalyClient.trackedCount() == 0, "Real disconnect clears the client anomaly mirror");
+                check(offscreenFreezeStep == 3, "Offscreen freeze and thaw were sampled through production client ticks");
+                checkReleased(net.jackcooper.shapeShifterCurseAddon.client.renderer.SnowFoxEffects.class, "scene");
+                checkReleased(net.jackcooper.shapeShifterCurseAddon.client.hud.SpellbookHudRenderer.class, "snapWorld");
+                checkReleased(net.jackcooper.shapeShifterCurseAddon.client.hud.SkillHudCatalog.class, "hudCachePlayer");
+                checkReleased(net.jackcooper.shapeShifterCurseAddon.util.ClientResourceCache.class, "cachedPlayer");
                 disconnected = true; finish(client);
             }
             return;
@@ -169,6 +176,7 @@ public final class AnomalyClientLiveProbe {
             return;
         }
         if (client.world == null || client.player == null) return;
+        if (clientRenderTicks > 20 && offscreenFreezeStep < 3) checkOffscreenFreeze(client);
         if (pauseTick(client)) return;
         if (client.currentScreen != null) client.setScreen(null);
         if (clientRenderTicks > 20) {
@@ -206,6 +214,37 @@ public final class AnomalyClientLiveProbe {
         if (perfScene >= 0 && perfScene < SCENES.length) {
             client.player.setYaw(0); client.player.setPitch(22);
         }
+    }
+
+    private static void checkReleased(Class<?> type, String fieldName) throws Exception {
+        var field = type.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        check(field.get(null) == null, "Disconnect releases " + type.getSimpleName() + "." + fieldName);
+    }
+
+    private static void checkOffscreenFreeze(MinecraftClient client) {
+        // Keep a tracked entity in the same chunk column, far above the camera. Fix its age at
+        // each END callback so tick-range differences between clients do not enter the assertion.
+        if (offscreenFreezeStep == 0) {
+            offscreenPig = new PigEntity(EntityType.PIG, client.world);
+            offscreenPig.setPosition(client.player.getX(), client.player.getY() + 2048, client.player.getZ());
+            offscreenPig.age = 500;
+            int id = -200000;
+            while (client.world.getEntityById(id) != null) id--;
+            offscreenPig.setId(id);
+            client.world.addEntity(id, offscreenPig);
+            offscreenPig.setStatusEffect(new StatusEffectInstance(SscAddon.FROZEN, 100), null);
+        } else if (offscreenFreezeStep == 1) {
+            check(FrozenAnimationDrivers.vanillaTime(offscreenPig, 600) == 500, "Unrendered target freezes on the first END tick");
+            offscreenPig.age = 504;
+            offscreenPig.removeStatusEffectInternal(SscAddon.FROZEN);
+        } else {
+            check(FrozenAnimationDrivers.vanillaTime(offscreenPig, 511) == 507, "Packet-style removal preserves four unseen frozen ticks");
+            client.world.removeEntity(offscreenPig.getId(), Entity.RemovalReason.DISCARDED);
+            check(FrozenAnimationDrivers.vanillaTime(offscreenPig, 511) == 511, "Unload releases the frozen animation timeline");
+            offscreenPig = null;
+        }
+        offscreenFreezeStep++;
     }
 
     private static void observeStage(MinecraftClient client, int observed) throws Exception {
@@ -334,7 +373,7 @@ public final class AnomalyClientLiveProbe {
             publish(4);
         }
         if (serverTicks == 145) {
-            requireClientStage(4); primary.addStatusEffect(new StatusEffectInstance(SscAddon.PURIFIED, 20));
+            requireClientStage(4); purify(primary);
         }
         if (serverTicks == 148) publish(5);
         if (serverTicks == 170) {
@@ -343,7 +382,7 @@ public final class AnomalyClientLiveProbe {
             AnomalyManager.drain(server); publish(6);
         }
         if (serverTicks == 195) {
-            requireClientStage(6); primary.addStatusEffect(new StatusEffectInstance(SscAddon.PURIFIED, 20));
+            requireClientStage(6); purify(primary);
         }
         if (serverTicks == 198) publish(7);
         if (serverTicks == 225) {
@@ -444,6 +483,12 @@ public final class AnomalyClientLiveProbe {
         expected = AnomalyManager.snapshot(primary); stage = nextStage;
     }
 
+    private static void purify(LivingEntity target) {
+        // The Allay release clears the NPC's existing effects once before applying its marker.
+        target.clearStatusEffects();
+        target.addStatusEffect(new StatusEffectInstance(SscAddon.PURIFIED, 20));
+    }
+
     private static void requireClientStage(int needed) {
         check(clientObservedStage >= needed, "Real client observed acceptance stage " + needed + " before the next server action");
     }
@@ -517,6 +562,9 @@ public final class AnomalyClientLiveProbe {
                 "Every state, timer, freeze, shatter, purification, reaction and unload observation completed");
         var report = new LinkedHashMap<String, Object>();
         report.put("kind", "native-integrated-client-flat-world");
+        report.put("run_token", System.getProperty("ssca.anomaly.runToken", ""));
+        report.put("offscreen_freeze_verified", offscreenFreezeStep == 3);
+        report.put("hud_caches_released", disconnected);
         report.put("checks", CHECKS.get()); report.put("targets", TARGETS);
         report.put("render_scratch_checks", renderScratchChecks);
         report.put("pause_countdown_verified", pauseVerified);

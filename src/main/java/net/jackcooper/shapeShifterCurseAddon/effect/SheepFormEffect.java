@@ -60,10 +60,6 @@ public class SheepFormEffect extends StatusEffect {
 		super.onApplied(entity, attributes, amplifier);
 		if (entity.getWorld().isClient) return;
 		SheepFormRestoreHandler.onSheepStart(entity);
-		// 玩家：切空壳羊形态（技能/被动/魔法天然失效，2026-09-29 用户定稿；mob 维持效果路线）
-		if (entity instanceof net.minecraft.server.network.ServerPlayerEntity serverPlayer) {
-			net.jackcooper.shapeShifterCurseAddon.ability.BeepSheepFormManager.onSheepStart(serverPlayer);
-		}
 	}
 
 	@Override
@@ -71,9 +67,5 @@ public class SheepFormEffect extends StatusEffect {
 		super.onRemoved(entity, attributes, amplifier);
 		if (entity.getWorld().isClient) return;
 		SheepFormRestoreHandler.onSheepEnd(entity);
-		// 玩家：切回原形态 + 回写 Apoli CD 快照（CD 正常续走不重算，用户定稿）
-		if (entity instanceof net.minecraft.server.network.ServerPlayerEntity serverPlayer) {
-			net.jackcooper.shapeShifterCurseAddon.ability.BeepSheepFormManager.onSheepEnd(serverPlayer);
-		}
 	}
 }

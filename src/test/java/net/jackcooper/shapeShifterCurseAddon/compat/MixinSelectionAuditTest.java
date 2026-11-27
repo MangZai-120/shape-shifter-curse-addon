@@ -57,7 +57,10 @@ public final class MixinSelectionAuditTest {
         require(!MixinSelection.select(tooltip, mod -> mod.equals("curios"), () -> null), "Curios alone");
         require(MixinSelection.select(tooltip, mod -> mod.equals("accessories") || mod.equals("curios"), () -> null),
                 "Both slot tooltip providers are present");
-        return 33;
+        String rer = "net.jackcooper.shapeShifterCurseAddon.mixin.compat.RerClientLootMixin";
+        require(!MixinSelection.select(rer, mod -> false, () -> null), "No RER skips the loot cache hook");
+        require(MixinSelection.select(rer, "roughlyenoughresources"::equals, () -> null), "RER selects the loot cache hook");
+        return 35;
     }
 
     private static void require(boolean condition, String message) {

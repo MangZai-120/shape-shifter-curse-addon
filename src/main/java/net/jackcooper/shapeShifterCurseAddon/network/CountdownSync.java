@@ -149,23 +149,26 @@ public final class CountdownSync {
         ACTIVE.values().removeIf(e -> e.owner.isRemoved() || e.owner.getWorld() != e.world
                 || PowerHolderComponent.KEY.get(e.owner).getPower(e.power.getType()) != e.power);
         if (ACTIVE.isEmpty() && AUDIENCES.isEmpty()) return;
-        Map<Key, State> states = new LinkedHashMap<>();
+        Map<ServerPlayerEntity, List<State>> visibleByPlayer = new HashMap<>();
+        List<Key> stopped = new ArrayList<>();
         Map<UUID, Collection<ServerPlayerEntity>> tracking = new HashMap<>();
         ACTIVE.forEach((key, entry) -> {
             int value = entry.power.getValue();
             boolean running = entry.touched == tick && value > entry.power.getMin();
-            states.put(key, new State(key, entry.owner.getId(),
-                    new CountdownValue(value, entry.world.getTime(), entry.power.getMin(), running)));
-            tracking.computeIfAbsent(key.owner, ignored -> PlayerLookup.tracking(entry.owner));
+            State state = new State(key, entry.owner.getId(),
+                    new CountdownValue(value, entry.world.getTime(), entry.power.getMin(), running));
+            if (!running) stopped.add(key);
+            // Append in ACTIVE order so overlapping tracking sets produce stable per-viewer snapshots.
+            visibleByPlayer.computeIfAbsent(entry.owner, ignored -> new ArrayList<>()).add(state);
+            for (ServerPlayerEntity viewer : tracking.computeIfAbsent(key.owner, ignored -> PlayerLookup.tracking(entry.owner))) {
+                if (viewer != entry.owner && viewer.getWorld() == entry.world)
+                    visibleByPlayer.computeIfAbsent(viewer, ignored -> new ArrayList<>()).add(state);
+            }
         });
+        // Include previous observers that just left tracking, to clear their predictions.
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
             if (!ServerPlayNetworking.canSend(player, STATE)) continue;
-            List<State> visible = new ArrayList<>();
-            states.forEach((key, state) -> {
-                Entry entry = ACTIVE.get(key);
-                if (entry.world == player.getWorld() && (entry.owner == player || tracking.get(key.owner).contains(player)))
-                    visible.add(state);
-            });
+            List<State> visible = visibleByPlayer.getOrDefault(player, List.of());
             Audience previous = AUDIENCES.get(player.getUuid());
             if (visible.isEmpty() && previous == null) continue;
             boolean changed = previous == null || previous.player != player || previous.world != player.getWorld()
@@ -180,7 +183,7 @@ public final class CountdownSync {
             else AUDIENCES.put(player.getUuid(), new Audience(player, player.getServerWorld(), tick, visible));
         }
         // A final non-running anchor was just delivered. Native Apoli sync handles later manual changes.
-        ACTIVE.entrySet().removeIf(e -> !states.get(e.getKey()).clock.running());
+        stopped.forEach(ACTIVE::remove);
     }
 
     static boolean sameState(List<State> previous, List<State> current) {

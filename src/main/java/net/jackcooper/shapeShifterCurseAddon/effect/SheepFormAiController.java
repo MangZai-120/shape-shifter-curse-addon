@@ -15,7 +15,7 @@ import net.minecraft.entity.ai.goal.WanderAroundFarGoal;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.nbt.NbtCompound;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,6 +65,24 @@ public final class SheepFormAiController {
 		}
 	}
 
+	static void writeCaster(UUID target, NbtCompound tag) {
+		if (!FLEE_FROM.containsKey(target)) return;
+		tag.putBoolean("SheepAi", true);
+		UUID caster = FLEE_FROM.get(target);
+		if (caster != null) tag.putUuid("Caster", caster);
+	}
+
+	static void readCaster(LivingEntity entity, NbtCompound tag) {
+		UUID target = entity.getUuid();
+		if (hasStaleBackupFor(entity)) BACKUPS.remove(target);
+		if (tag.containsUuid("Caster")) setFleeFrom(target, tag.getUuid("Caster"));
+		else if (tag.getBoolean("SheepAi")) FLEE_FROM.put(target, null); // 旧存档有变羊效果但没有施法者身份。
+		else {
+			restoreGoals(entity);
+			FLEE_FROM.remove(target);
+		}
+	}
+
 	/** 变羊结束：清登记（Goal 回放由 {@link #restoreGoals} 承担，须在 clear 之前调用）。 */
 	public static void clear(UUID target) {
 		if (target != null) {
@@ -90,14 +108,7 @@ public final class SheepFormAiController {
 		if (prev != null && prev.mobRef() == mob) {
 			return; // 同一实例已替换过（幂等挡板）；实例已换则继续走自愈重备
 		}
-		UUID casterId = FLEE_FROM.get(mob.getUuid());
-		if (casterId == null || !(mob.getWorld() instanceof ServerWorld world)) {
-			return;
-		}
-		var caster = world.getEntity(casterId);
-		if (!(caster instanceof LivingEntity casterLiving)) {
-			return;
-		}
+		if (!FLEE_FROM.containsKey(mob.getUuid())) return; // 单独用指令赋予效果时不换原生 AI。
 		MobEntityGoalAccessor acc = (MobEntityGoalAccessor) mob;
 		GoalSelector goalSelector = acc.ssca$getGoalSelector();
 		GoalSelector targetSelector = acc.ssca$getTargetSelector();
@@ -134,9 +145,9 @@ public final class SheepFormAiController {
 		if (pathMob != null) {
 			FleeEntityGoal<LivingEntity> flee = new FleeEntityGoal<>(
 					pathMob, LivingEntity.class,
-					(LivingEntity target) -> target == casterLiving,
+					(LivingEntity target) -> target.getUuid().equals(FLEE_FROM.get(mob.getUuid())),
 					12.0F, 1.0, 1.2,
-					(LivingEntity target) -> target == casterLiving);
+					(LivingEntity target) -> target.getUuid().equals(FLEE_FROM.get(mob.getUuid())));
 			goalSelector.add(0, flee);
 		}
 		// ④ targetSelector 留空：羊不索敌不记仇

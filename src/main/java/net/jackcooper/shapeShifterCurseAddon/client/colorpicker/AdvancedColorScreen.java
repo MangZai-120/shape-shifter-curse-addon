@@ -151,6 +151,7 @@ public class AdvancedColorScreen extends Screen {
         int hueW   = 12;
         // 右栏整体居中
         int hsvX = rightX + Math.max(0, (colW - (svSize + 4 + hueW)) / 2);
+        if (hsvPicker != null) hsvPicker.releaseTexture();
         hsvPicker = new HsvPickerWidget(hsvX, lineY, svSize, hueW, rgb -> {
             if (suppressCallbacks) return;
             // HSV 只改 RGB，不改 Alpha
@@ -589,6 +590,12 @@ public class AdvancedColorScreen extends Screen {
     }
 
     // ====== 关闭 / 保存 / 取消 ======
+    @Override
+    public void removed() {
+        if (hsvPicker != null) hsvPicker.releaseTexture();
+        super.removed();
+    }
+
 
     @Override
     public void close() {

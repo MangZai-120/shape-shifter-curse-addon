@@ -5,10 +5,13 @@ import io.github.apace100.apoli.power.Power;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.effect.SheepFormRestoreHandler;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
@@ -155,7 +158,7 @@ public final class BeepSheepFormManager {
 				toRestore.add(player);
 			}
 		}
-		if (toRestore != null) toRestore.forEach(BeepSheepFormManager::onSheepEnd);
+		if (toRestore != null) toRestore.forEach(SheepFormRestoreHandler::onSheepEnd);
 	}
 
 	/** 玩家数据持久化（PersistentState 语义）：写 NBT（断线/停服不丢原形态记录）。 */
@@ -165,6 +168,7 @@ public final class BeepSheepFormManager {
 		NbtCompound tag = new NbtCompound();
 		tag.putString("OriginalForm", snapshot.originalFormId());
 		tag.putLong("SheepStart", snapshot.sheepStartTime());
+		SheepFormRestoreHandler.writePlayerModifiers(player, tag);
 		NbtCompound cds = new NbtCompound();
 		snapshot.cooldowns().forEach(cds::putInt);
 		tag.put("Cooldowns", cds);
@@ -181,6 +185,8 @@ public final class BeepSheepFormManager {
 		SNAPSHOTS.put(player.getUuid(), new SheepSnapshot(
 				net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.canonical(tag.getString("OriginalForm")),
 				cds, tag.getLong("SheepStart")));
+		float savedHealth = nbt.contains("Health", NbtElement.NUMBER_TYPE) ? nbt.getFloat("Health") : player.getHealth();
+		SheepFormRestoreHandler.resumePlayerModifiers(player, tag, savedHealth);
 	}
 
 	/** 玩家彻底退出（不留尸体数据）：清内存记录。 */
@@ -206,6 +212,12 @@ public final class BeepSheepFormManager {
 			else ONLINE_SHEEP.remove(player.getUuid());
 		});
 		ServerTickEvents.END_SERVER_TICK.register(BeepSheepFormManager::tickSweep);
+		ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
+			if (entity instanceof SheepFormRestoreHandler.MobSnapshotAccess saved) saved.ssca$resumeSheepSnapshot();
+		});
+		ServerEntityEvents.ENTITY_UNLOAD.register((entity, world) -> {
+			if (entity instanceof SheepFormRestoreHandler.MobSnapshotAccess saved) saved.ssca$suspendSheepSnapshot();
+		});
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
 				server.execute(() -> {
 					ServerPlayerEntity player = handler.player;
@@ -223,7 +235,7 @@ public final class BeepSheepFormManager {
 									.get(player).setFallbackForm(original.getFormID());
 						}
 						if (!player.hasStatusEffect(SscAddon.SHEEP_FORM)) {
-							onSheepEnd(player); // 无快照时内部兜底切人形
+							SheepFormRestoreHandler.onSheepEnd(player); // 无快照时内部兜底切人形
 						}
 					}
 				}));
@@ -232,6 +244,7 @@ public final class BeepSheepFormManager {
 		ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
 			ONLINE_SHEEP.clear();
 			SNAPSHOTS.clear();
+			SheepFormRestoreHandler.onServerStopped();
 		});
 	}
 

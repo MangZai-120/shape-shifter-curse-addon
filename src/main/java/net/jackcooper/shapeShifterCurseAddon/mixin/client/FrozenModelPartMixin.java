@@ -12,12 +12,20 @@ import org.spongepowered.asm.mixin.Mixin;
 public abstract class FrozenModelPartMixin {
     @WrapMethod(method = "rotate")
     private void ssca$holdAttachment(MatrixStack matrices, Operation<Void> original) {
+        if (!FrozenAnimationState.hasActivePose()) {
+            original.call(matrices);
+            return;
+        }
         ModelPart part = (ModelPart)(Object)this;
         FrozenAnimationState.part(part, () -> FrozenAnimationState.transform(part, matrices, () -> original.call(matrices)));
     }
     @WrapMethod(method = "render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;IIFFFF)V")
     private void ssca$holdPart(MatrixStack matrices,VertexConsumer vertices,int light,int overlay,
                                float r,float g,float b,float a,Operation<Void> original) {
+        if (!FrozenAnimationState.hasActivePose()) {
+            original.call(matrices, vertices, light, overlay, r, g, b, a);
+            return;
+        }
         FrozenAnimationState.part((ModelPart)(Object)this,() -> original.call(matrices,vertices,light,overlay,r,g,b,a));
     }
 }

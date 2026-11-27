@@ -19,6 +19,10 @@ public interface FrozenGeoMixin {
     private void ssca$holdBone(MatrixStack matrices,GeoAnimatable animatable,GeoBone bone,RenderLayer layer,
                                VertexConsumerProvider consumers,VertexConsumer buffer,boolean rerender,float delta,
                                int light,int overlay,float r,float g,float b,float a,Operation<Void> original) {
+        if (!FrozenAnimationState.hasActivePose()) {
+            original.call(matrices, animatable, bone, layer, consumers, buffer, rerender, delta, light, overlay, r, g, b, a);
+            return;
+        }
         FrozenAnimationState.bone(bone,() -> FrozenAnimationState.matrix(bone,matrices,() -> original.call(matrices,animatable,bone,layer,consumers,buffer,
                 rerender,delta,light,overlay,r,g,b,a)));
     }

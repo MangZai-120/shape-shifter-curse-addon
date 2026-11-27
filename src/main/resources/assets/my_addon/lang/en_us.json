@@ -352,6 +352,7 @@
   "item.ssc_addon.ankh_stone.tooltip_4": "Consumed on trigger",
   "item.ssc_addon.ankh_stone.tooltip_5": "Cannot be crafted, only found in desert temple chests",
   "entity.ssc_addon.witch_familiar": "Witch Familiar",
+  "entity.ssc_addon.ghost_cat": "Ghostly Wild Cat",
   "item.ssc_addon.witch_familiar_spawn_egg": "Witch Familiar Spawn Egg",
   "origin.my_addon.form_golden_sandstorm_sp.name": "Golden Sandstorm",
   "origin.my_addon.form_golden_sandstorm_sp.description": "The special variant form of the Jackal. The essence of wither has been elevated to the extreme under the power of the golden sandstorm.",
@@ -3763,5 +3764,6 @@
   "evolution.my_addon.snow_fox.node.branch_stone.name": "Frost Spirit",
   "evolution.my_addon.snow_fox.node.branch_stone.desc": "At level 50 with both skills, use an Evolution Stone.",
   "subtitles.my_addon.snow_fox.gather": "Frost gathers",
+  "subtitles.my_addon.snow_fox.frost_storm": "Snow swirls in frost storm",
   "subtitles.my_addon.snow_fox.plunge": "Snow fox dives"
 }

@@ -1,6 +1,12 @@
 package net.jackcooper.shapeShifterCurseAddon.client;
 
+import com.google.gson.JsonParser;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import net.jackcooper.shapeShifterCurseAddon.client.colorpicker.AdvancedColorBridge;
+import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisEntity.Motion;
 
 /** Protocol, shader preservation, optional dependency and preset persistence regressions. */
 public final class ClientCodeAuditTest {
@@ -12,11 +18,13 @@ public final class ClientCodeAuditTest {
         colorProtocol();
         brewingMixins();
         tidalOwnerSnapshot();
+        orcafisIdleClip();
         shaderPreservation();
         checks += MixinCleanupAuditTest.run();
         performanceCompletion();
         checks += net.jackcooper.shapeShifterCurseAddon.client.palette.PalettePresetStoreAuditTest.run();
         checks += net.jackcooper.shapeShifterCurseAddon.compat.MixinSelectionAuditTest.run();
+        checks += net.jackcooper.shapeShifterCurseAddon.compat.rei.RerStoryBookTagsTest.run();
         checks += net.jackcooper.shapeShifterCurseAddon.client.renderer.WeakEntityStateMapTest.run();
         System.out.println("Client code audit regressions PASS: " + checks + " checks");
     }
@@ -29,6 +37,17 @@ public final class ClientCodeAuditTest {
             rejected=expected.getMessage().contains("before producing complete measurements");
         }
         require(rejected,"An unfinished performance run must fail verification");
+    }
+
+    private static void orcafisIdleClip() throws IOException {
+        var stream = ClientCodeAuditTest.class.getResourceAsStream("/assets/my_addon/animations/orcafis.animation.json");
+        try (var reader = new InputStreamReader(Objects.requireNonNull(stream), StandardCharsets.UTF_8)) {
+            var animations = JsonParser.parseReader(reader).getAsJsonObject().getAsJsonObject("animations");
+            var idle = animations.getAsJsonObject("animation.orcafis." + Motion.REST.clip);
+            require(idle.get("loop").getAsBoolean(), "Orcafis uses a looping idle clip");
+            require(idle.get("animation_length").getAsDouble() * 20 == Motion.REST.ticks,
+                    "Orcafis must finish the authored idle loop before restarting");
+        }
     }
 
     private static void tidalOwnerSnapshot() {

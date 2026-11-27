@@ -48,8 +48,17 @@ public final class DeathDomainRecovery {
             State state = state(server);
             for (ServerWorld world : server.getWorlds()) recoverLoaded(world, state);
         });
-        ServerChunkEvents.CHUNK_LOAD.register((world, chunk) -> recoverChunk(world, chunk.getPos()));
+        ServerChunkEvents.CHUNK_LOAD.register((world, chunk) -> {
+            State state = SERVERS.get(world.getServer());
+            if (state == null) return;
+            Identifier dimension = world.getRegistryKey().getValue();
+            Set<ChunkPos> waiting = state.waiting.get(dimension);
+            if (waiting != null && waiting.contains(chunk.getPos())) {
+                state.ready.computeIfAbsent(dimension, ignored -> new HashSet<>()).add(chunk.getPos());
+            }
+        });
         ServerTickEvents.END_WORLD_TICK.register(world -> {
+            recoverReady(world);
             if (world.getTime() % 20 == 0) retryVacated(world);
         });
         ServerLifecycleEvents.SERVER_STOPPED.register(SERVERS::remove);
@@ -153,9 +162,31 @@ public final class DeathDomainRecovery {
                 }
             }
         }
-        for (ChunkPos chunk : chunks) {
-            if (world.isChunkLoaded(chunk.x, chunk.z)) recoverChunk(world, chunk);
-        }
+        Identifier dimension = world.getRegistryKey().getValue();
+        state.waiting.put(dimension, chunks);
+        chunks.removeIf(chunk -> recoverIfPublished(world, state, dimension, chunk));
+        if (chunks.isEmpty()) state.waiting.remove(dimension);
+    }
+
+    private static void recoverReady(ServerWorld world) {
+        State state = SERVERS.get(world.getServer());
+        if (state == null || state.ready.isEmpty()) return;
+        Identifier dimension = world.getRegistryKey().getValue();
+        Set<ChunkPos> ready = state.ready.remove(dimension);
+        Set<ChunkPos> waiting = state.waiting.get(dimension);
+        if (ready == null || waiting == null) return;
+        for (ChunkPos chunk : ready)
+            if (waiting.contains(chunk) && recoverIfPublished(world, state, dimension, chunk)) waiting.remove(chunk);
+        if (waiting.isEmpty()) state.waiting.remove(dimension);
+    }
+
+    private static boolean recoverIfPublished(ServerWorld world, State state, Identifier dimension, ChunkPos chunk) {
+        // Connector can fire CHUNK_LOAD before the FULL chunk future is published.
+        // getWorldChunk only returns a published chunk and never requests one.
+        if (world.getChunkManager().getWorldChunk(chunk.x, chunk.z) != null) return recoverChunk(world, chunk);
+        if (world.isChunkLoaded(chunk.x, chunk.z))
+            state.ready.computeIfAbsent(dimension, ignored -> new HashSet<>()).add(chunk);
+        return false;
     }
 
     static void defer(ServerWorld world, BlockPos pos, Change change) {
@@ -166,25 +197,30 @@ public final class DeathDomainRecovery {
     private static void retryVacated(ServerWorld world) {
         State state = SERVERS.get(world.getServer());
         if (state == null) return;
-        var pending = state.deferred.get(world.getRegistryKey().getValue());
+        Identifier dimension = world.getRegistryKey().getValue();
+        var pending = state.deferred.get(dimension);
         if (pending == null || pending.isEmpty()) return;
         Set<ChunkPos> ready = new HashSet<>();
         pending.entrySet().removeIf(entry -> {
             var pos = entry.getKey();
             var chunk = new ChunkPos(pos);
-            if (!world.isChunkLoaded(chunk.x, chunk.z)) return false;
+            if (world.getChunkManager().getWorldChunk(chunk.x, chunk.z) == null) return false;
             if (world.getBlockState(pos).equals(entry.getValue().expected)
                     && DeathDomainTerrainRestore.occupied(world, pos, entry.getValue())) return false;
             ready.add(chunk);
             return true;
         });
-        for (ChunkPos chunk : ready) recoverChunk(world, chunk);
+        Set<ChunkPos> waiting = state.waiting.get(dimension);
+        for (ChunkPos chunk : ready)
+            if (recoverChunk(world, chunk) && waiting != null) waiting.remove(chunk);
+        if (waiting != null && waiting.isEmpty()) state.waiting.remove(dimension);
+        if (pending.isEmpty()) state.deferred.remove(dimension);
     }
 
-    private static void recoverChunk(ServerWorld world, ChunkPos chunk) {
+    private static boolean recoverChunk(ServerWorld world, ChunkPos chunk) {
         State state = state(world.getServer());
-        if (!world.isChunkLoaded(chunk.x, chunk.z)) return;
         var deferred = state.deferred.getOrDefault(world.getRegistryKey().getValue(), Map.of());
+        boolean complete = true;
         for (Log log : state.logs.values()) {
             if (log.active || !log.dimension.equals(world.getRegistryKey().getValue())) continue;
             var batch = new DeathDomainTerrainRestore(world);
@@ -195,7 +231,10 @@ public final class DeathDomainRecovery {
                 Change change = entry.getValue();
                 // A different current block belongs to later gameplay and must be preserved.
                 if (world.getBlockState(pos).equals(change.expected)) {
-                    if (deferred.containsKey(pos)) continue;
+                    if (deferred.containsKey(pos)) {
+                        complete = false;
+                        continue;
+                    }
                     batch.restore(pos, change.original, change.expected, Block.NOTIFY_LISTENERS | Block.FORCE_STATE);
                 }
                 processed.add(pos);
@@ -203,9 +242,11 @@ public final class DeathDomainRecovery {
             batch.finish();
             for (var pos : processed) {
                 if (!world.getBlockState(pos).equals(log.changes.get(pos).expected)) log.resolved.add(pos);
+                else complete = false;
             }
             compactResolved(log);
         }
+        return complete;
     }
 
     private static void compactResolved(Log log) {
@@ -282,6 +323,8 @@ public final class DeathDomainRecovery {
         final Path directory;
         final Map<UUID, Log> logs = new HashMap<>();
         final Map<Identifier, Map<BlockPos, Change>> deferred = new HashMap<>();
+        final Map<Identifier, Set<ChunkPos>> waiting = new HashMap<>();
+        final Map<Identifier, Set<ChunkPos>> ready = new HashMap<>();
         boolean failed;
         State(Path directory) { this.directory = directory; }
     }

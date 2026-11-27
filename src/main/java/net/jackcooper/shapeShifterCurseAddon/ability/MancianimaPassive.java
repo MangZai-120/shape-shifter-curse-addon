@@ -641,8 +641,12 @@ public final class MancianimaPassive {
 		TradeOfferList offers = merchant.getOffers();
 		boolean droppedSomething = false;
 		if (offers != null && !offers.isEmpty()) {
-			int picks = Math.min(2, offers.size());
 			List<TradeOffer> shuffled = new ArrayList<>(offers);
+			if (merchant instanceof WanderingTraderEntity) {
+				shuffled.removeIf(offer -> offer.isDisabled() && offer.getSellItem().isOf(
+						net.jackcooper.shapeShifterCurseAddon.SscAddon.MAGIC_SCROLL));
+			}
+			int picks = Math.min(2, shuffled.size());
 			Collections.shuffle(shuffled, RNG);
 			for (int i = 0; i < picks; i++) {
 				ItemStack sell = shuffled.get(i).getSellItem();

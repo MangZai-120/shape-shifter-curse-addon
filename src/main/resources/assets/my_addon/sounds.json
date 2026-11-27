@@ -226,6 +226,12 @@
       }
     ]
   },
+  "snow_fox.frost_storm": {
+    "subtitle": "subtitles.my_addon.snow_fox.frost_storm",
+    "sounds": [
+      { "name": "minecraft:block.powder_snow.break", "type": "event" }
+    ]
+  },
   "snow_fox.gather": {
     "subtitle": "subtitles.my_addon.snow_fox.gather",
     "sounds": [

@@ -1,7 +1,9 @@
 package net.jackcooper.shapeShifterCurseAddon.client;
 
 import java.lang.ref.WeakReference;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 import dev.kosmx.playerAnim.api.layered.AnimationStack;
 import dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer;
@@ -9,6 +11,7 @@ import dev.kosmx.playerAnim.api.layered.ModifierLayer;
 import dev.kosmx.playerAnim.impl.IAnimatedPlayer;
 import net.jackcooper.shapeShifterCurseAddon.mixin.client.FrozenAnimationStackAccessor;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents;
 import net.jackcooper.shapeShifterCurseAddon.anomaly.FrozenControl;
 import net.jackcooper.shapeShifterCurseAddon.entity.OrcafisEntity;
 import net.minecraft.entity.Entity;
@@ -23,25 +26,48 @@ import software.bernie.geckolib.model.GeoModel;
 /** Pauses playback state as well as the rendered pose. No entity age is rewritten. */
 public final class FrozenAnimationDrivers {
     private static final Map<LivingEntity, Timeline> CLOCKS = new WeakHashMap<>();
+    private static final Set<LivingEntity> TICKING = Collections.newSetFromMap(new WeakHashMap<>());
     private static final Map<AnimationStack, StackOwner> STACKS = new WeakHashMap<>();
     private static final Map<AnimatableManager<?>, Double> PLAYHEADS = new WeakHashMap<>();
     private static final Map<AnimationController<?>, WeakReference<LivingEntity>> GEO_OWNERS = new WeakHashMap<>();
+    private static final Map<LivingEntity, Set<AnimationController<?>>> GEO_CONTROLLERS = new WeakHashMap<>();
     private static final Map<AnimationController<?>, Boolean> GEO_RESUME = new WeakHashMap<>();
     private FrozenAnimationDrivers() {}
     public static void init() {
+        ClientEntityEvents.ENTITY_LOAD.register((entity, world) -> {
+            if (entity instanceof LivingEntity living) observeFreeze(living);
+        });
+        ClientEntityEvents.ENTITY_UNLOAD.register((entity, world) -> {
+            if (entity instanceof LivingEntity living) {
+                CLOCKS.remove(living);
+                TICKING.remove(living);
+            }
+            if (entity instanceof IAnimatedPlayer player) STACKS.remove(player.getAnimationStack());
+        });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            // Track freeze time even when a target is outside the camera and is never rendered.
-            if (client.world != null) for (Entity entity : client.world.getEntities())
-                if (entity instanceof LivingEntity living && (paused(living) || CLOCKS.containsKey(living)))
-                    sample(living,0);
-            CLOCKS.keySet().removeIf(entity -> entity.getWorld() != client.world || entity.isRemoved() || !entity.isAlive());
-            STACKS.values().removeIf(owner -> {
-                LivingEntity entity = owner.entity.get();
-                return entity == null || entity.isRemoved() || entity.getWorld() != client.world;
-            });
+            // Freeze can start and end off screen. The final thaw sample preserves the cumulative offset.
+            for (var it = TICKING.iterator(); it.hasNext();) {
+                var living = it.next();
+                if (living.getWorld() != client.world || living.isRemoved() || !living.isAlive() || living.deathTime > 0) {
+                    CLOCKS.remove(living);
+                    it.remove();
+                    continue;
+                }
+                if (client.world.getEntityById(living.getId()) != living) {
+                    it.remove(); // Render-only previews do not receive world ticks.
+                    continue;
+                }
+                boolean frozen = paused(living);
+                Timeline clock = frozen ? CLOCKS.computeIfAbsent(living, ignored -> new Timeline()) : CLOCKS.get(living);
+                if (clock != null) sample(living, 0, clock, frozen);
+                if (!frozen) it.remove(); // Keep the offset in CLOCKS until death or unload.
+            }
         });
     }
-    public static void clear() { CLOCKS.clear(); STACKS.clear(); PLAYHEADS.clear(); GEO_OWNERS.clear(); GEO_RESUME.clear(); FrozenVanillaAnimations.clear(); }
+    public static void clear() { TICKING.clear(); CLOCKS.clear(); STACKS.clear(); PLAYHEADS.clear(); GEO_OWNERS.clear(); GEO_CONTROLLERS.clear(); GEO_RESUME.clear(); FrozenVanillaAnimations.clear(); }
+    public static void observeFreeze(LivingEntity living) {
+        if (living.getWorld().isClient && (paused(living) || CLOCKS.containsKey(living))) TICKING.add(living);
+    }
     public static boolean paused(LivingEntity entity) {
         // Orcafis drives both animation controllers from its own synchronized action clock.
         return entity != null && !(entity instanceof OrcafisEntity) && entity.deathTime == 0 && FrozenControl.blocked(entity);
@@ -49,14 +75,29 @@ public final class FrozenAnimationDrivers {
     public static void sample(Entity entity, float delta) {
         if (!(entity instanceof LivingEntity living)) return;
         if (!living.isAlive() || living.deathTime > 0) { CLOCKS.remove(living); return; }
-        Timeline clock = CLOCKS.get(living);
-        if (clock == null && paused(living)) { clock = new Timeline(); CLOCKS.put(living,clock); }
-        if (clock != null) clock.sample(entity.age + (double)delta, paused(living));
-        if (paused(living)) FrozenVanillaAnimations.sample(living,vanillaTime(living,entity.age+delta));
-        if (paused(living)) GEO_OWNERS.forEach((controller,owner) -> {
-            if (owner.get() == living && controller.getCurrentAnimation() != null && !controller.hasAnimationFinished())
-                GEO_RESUME.put(controller,true);
-        });
+        boolean frozen = paused(living);
+        Timeline clock = frozen ? CLOCKS.computeIfAbsent(living, ignored -> new Timeline()) : CLOCKS.get(living);
+        if (clock != null) sample(living, delta, clock, frozen);
+    }
+    private static void sample(LivingEntity living, float delta, Timeline clock, boolean frozen) {
+        double time = clock.sample(living.age + (double)delta, frozen);
+        if (!frozen) return;
+        FrozenVanillaAnimations.sample(living, (float)time);
+        var controllers = GEO_CONTROLLERS.get(living);
+        if (controllers != null) for (var controller : controllers)
+            if (controller.getCurrentAnimation() != null && !controller.hasAnimationFinished())
+                GEO_RESUME.put(controller, true);
+    }
+    private static void bindController(LivingEntity living, AnimationController<?> controller) {
+        var old = GEO_OWNERS.get(controller);
+        LivingEntity previous = old == null ? null : old.get();
+        if (previous == living) return;
+        if (previous != null) {
+            var priorControllers = GEO_CONTROLLERS.get(previous);
+            if (priorControllers != null) priorControllers.remove(controller);
+        }
+        GEO_OWNERS.put(controller, new WeakReference<>(living));
+        GEO_CONTROLLERS.computeIfAbsent(living, ignored -> Collections.newSetFromMap(new WeakHashMap<>())).add(controller);
     }
     public static double animationTime(double raw) {
         Entity entity = FrozenAnimationState.renderingEntity();
@@ -73,7 +114,7 @@ public final class FrozenAnimationDrivers {
         PLAYHEADS.put(manager,time);
         if (FrozenAnimationState.renderingEntity() instanceof LivingEntity living)
             for (var controller : manager.getAnimationControllers().values())
-                GEO_OWNERS.put(controller,new WeakReference<>(living));
+                bindController(living, controller);
         return time;
     }
     /** Keep the old predicate selection until the resumed clip (or current loop cycle) completes. */
@@ -135,7 +176,7 @@ public final class FrozenAnimationDrivers {
         var manager = animatable.getAnimatableInstanceCache().getManagerForId(id);
         if (manager.isFirstTick()) return false; // Initialize an unseen model once, then pause its existing controller.
         for (var controller : manager.getAnimationControllers().values()) {
-            GEO_OWNERS.put(controller,new WeakReference<>(living));
+            bindController(living, controller);
             if (controller.getCurrentAnimation() != null && !controller.hasAnimationFinished()) GEO_RESUME.put(controller,true);
         }
         var snapshots = manager.getBoneSnapshotCollection();

@@ -8,8 +8,6 @@ import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.loot.LootTable;
 import net.minecraft.loot.context.LootContextParameterSet;
-import net.minecraft.util.ItemScatterer;
-import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
@@ -20,26 +18,8 @@ public abstract class DomainChestLootMixin {
 	private void ssca$domainLoot(LootTable table, Inventory inventory, LootContextParameterSet parameters,
 	                             long seed, Operation<Void> original) {
 		original.call(table, inventory, parameters, seed);
-		if (!((Object) this instanceof ChestBlockEntity chest) || chest.getWorld() == null) return;
-		World world = chest.getWorld();
-		// 末地 2%：领域（空间系红色）；下界 3%：爆裂魔法（烈焰系红色，2026-09-22）；
-		// 主世界 2%：死亡是一切的终点（虚无系红色，2026-10-05 用户定稿）。
-		String spell = null;
-		if (world.getRegistryKey().equals(World.END) && world.random.nextFloat() < 0.02f) {
-			spell = "domain";
-		} else if (world.getRegistryKey().equals(World.NETHER) && world.random.nextFloat() < 0.03f) {
-			spell = "explosion";
-		} else if (world.getRegistryKey().equals(World.OVERWORLD) && world.random.nextFloat() < 0.02f) {
-			spell = "death_finale";
+		if ((Object) this instanceof ChestBlockEntity chest) {
+			MagicScrollLoot.rollDimensionScroll(chest, inventory, null);
 		}
-		if (spell == null) return;
-		var scroll = MagicScrollLoot.createNaturalScroll(spell, 1);
-		if (scroll.isEmpty()) return;
-		var empty = new java.util.ArrayList<Integer>();
-		for (int slot = 0; slot < inventory.size(); slot++) if (inventory.getStack(slot).isEmpty()) empty.add(slot);
-		if (!empty.isEmpty()) inventory.setStack(empty.get(world.random.nextInt(empty.size())), scroll);
-		else ItemScatterer.spawn(world, chest.getPos().getX() + 0.5, chest.getPos().getY() + 1,
-				chest.getPos().getZ() + 0.5, scroll);
-		chest.markDirty();
 	}
 }

@@ -5,6 +5,10 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.jackcooper.shapeShifterCurseAddon.client.hud.SkillHudCatalog;
+import net.jackcooper.shapeShifterCurseAddon.client.hud.SpellbookHudRenderer;
+import net.jackcooper.shapeShifterCurseAddon.client.renderer.SnowFoxEffects;
+import net.jackcooper.shapeShifterCurseAddon.util.ClientResourceCache;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.world.ClientWorld;
@@ -20,11 +24,13 @@ public final class AbilityVisualLifecycle {
     public static void ensureWorld(ClientWorld next) {
         var nextPlayer = MinecraftClient.getInstance().player;
         if (next != world) {
+            SnowFoxEffects.setWorld(next);
             FrostSpikeChargeClientState.clearAll();
             UpgradeAxolotlSpearRenderState.clear();
             SpiderMoonWeaverSwingClient.clear();
         }
         if (next != world || nextPlayer != player) {
+            clearHudCaches();
             DeathDomainOutlineClient.clear();
             ClawClientState.reset();
             DashClientState.reset();
@@ -76,7 +82,16 @@ public final class AbilityVisualLifecycle {
         });
     }
 
+    private static void clearHudCaches() {
+        SkillHudCatalog.clearHudCache();
+        SpellbookHudRenderer.clearSnapshot();
+        ClientResourceCache.clear();
+        ClientTickCache.invalidate();
+    }
+
     private static void clear() {
+        SnowFoxEffects.setWorld(null);
+        clearHudCaches();
         DeathDomainOutlineClient.clear();
         FrostSpikeChargeClientState.clearAll();
         UpgradeAxolotlSpearRenderState.clear();

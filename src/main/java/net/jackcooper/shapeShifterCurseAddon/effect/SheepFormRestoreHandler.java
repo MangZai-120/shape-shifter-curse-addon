@@ -1,11 +1,16 @@
 package net.jackcooper.shapeShifterCurseAddon.effect;
 
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.ability.BeepSheepFormManager;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,8 +32,7 @@ import java.util.UUID;
  *       不重复换血（百分比已按羊上限对齐，直接沿用）；</li>
  *   <li>死亡：效果随实体清除不走 onRemoved——sweep 扫描兜底 + 修饰符本就不进 NBT，
  *       重生/重进存档后原版 clamp 回原属性，状态表清掉即可；</li>
- *   <li>断线（玩家）：同上，sweep（每 5t）发现效果已无即恢复；修饰符 addTemporary 不进
- *       NBT，重进存档天然回原上限；</li>
+ *   <li>断线（玩家）：变羊快照保存原生命上限和本效果的两个倍率，登录时恢复临时修饰符。</li>
  *   <li>牛奶清除：走原版 onRemoved 正常恢复。</li>
  * </ul>
  */
@@ -66,29 +70,141 @@ public final class SheepFormRestoreHandler {
 	/** 上次 sweep 的世界时间（5t 节流）。 */
 	private static long lastSweep = -1;
 
+	/** Chunk data can be deserialized before a mob is tracked. Keep its snapshot on that instance until then. */
+	public interface MobSnapshotAccess {
+		void ssca$resumeSheepSnapshot();
+		void ssca$suspendSheepSnapshot();
+	}
+	public record MobSnapshot(NbtCompound data, float health) {}
+	private static final String MOB_SNAPSHOT_KEY = "SSCA.SheepForm";
+
+	public static MobSnapshot readMobSnapshot(LivingEntity entity, NbtCompound nbt) {
+		if (!entity.hasStatusEffect(SscAddon.SHEEP_FORM)) return null;
+		NbtCompound tag = nbt.getCompound(MOB_SNAPSHOT_KEY).copy();
+		if (!nbt.contains(MOB_SNAPSHOT_KEY, NbtElement.COMPOUND_TYPE)) tag.putBoolean("SheepAi", true);
+		float health = nbt.contains("Health", NbtElement.NUMBER_TYPE) ? nbt.getFloat("Health") : entity.getHealth();
+		return new MobSnapshot(tag, health);
+	}
+
+	public static void writeMobSnapshot(LivingEntity entity, NbtCompound nbt, MobSnapshot pending) {
+		if (!entity.hasStatusEffect(SscAddon.SHEEP_FORM)) return;
+		MobSnapshot snapshot = pending != null ? pending : captureMobSnapshot(entity);
+		nbt.put(MOB_SNAPSHOT_KEY, snapshot.data().copy());
+		nbt.putFloat("Health", snapshot.health());
+	}
+
+	private static MobSnapshot captureMobSnapshot(LivingEntity entity) {
+		NbtCompound tag = new NbtCompound();
+		writeModifiers(entity, tag);
+		SheepFormAiController.writeCaster(entity.getUuid(), tag);
+		return new MobSnapshot(tag, entity.getHealth());
+	}
+
+	public static MobSnapshot suspendMobSnapshot(LivingEntity entity) {
+		if (!entity.isAlive() || !entity.hasStatusEffect(SscAddon.SHEEP_FORM)) return null;
+		MobSnapshot snapshot = captureMobSnapshot(entity);
+		// The same instance can become tracked again without a disk reload. Leave its native goals in place.
+		SheepFormAiController.restoreGoals(entity);
+		SheepFormAiController.clear(entity.getUuid());
+		ORIGINAL_MAX_HEALTH.remove(entity.getUuid());
+		return snapshot;
+	}
+
+	public static void resumeMobSnapshot(LivingEntity entity, MobSnapshot snapshot) {
+		if (!entity.hasStatusEffect(SscAddon.SHEEP_FORM)) return;
+		resumeModifiers(entity, snapshot.data(), snapshot.health());
+		SheepFormAiController.readCaster(entity, snapshot.data());
+	}
+
 	/** 变羊开始（SheepFormEffect.onApplied 服务端调用）。 */
 	public static void onSheepStart(LivingEntity entity) {
 		if (ORIGINAL_MAX_HEALTH.containsKey(entity.getUuid())) {
+			if (entity instanceof ServerPlayerEntity player) BeepSheepFormManager.onSheepStart(player);
 			return; // 效果刷新（重复施法）：百分比已按羊上限对齐，不重复换血
 		}
 		double originalMax = entity.getMaxHealth();
 		double ratio = originalMax > 0 ? entity.getHealth() / originalMax : 1.0;
 		double sheepMax = sheepMaxHealthFor(originalMax);
-
-		EntityAttributeInstance healthAttr = entity.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH);
-		if (healthAttr != null) {
-			// 按公式上限压缩：MULTIPLY_TOTAL 系数 = 目标上限/原值 - 1（例 24 血 → 18/24-1）
-			double factor = sheepMax / Math.max(0.01, originalMax) - 1.0;
-			healthAttr.removeModifier(HEALTH_MODIFIER_UUID);
-			healthAttr.addTemporaryModifier(new EntityAttributeModifier(HEALTH_MODIFIER_UUID,
-					"SSCA Sheep Form Health", factor, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
-		}
+		ORIGINAL_MAX_HEALTH.put(entity.getUuid(), originalMax);
+		applySpeedUniform(entity);
+		// 切形态会移除原形态的生命属性。先保存比例，再按羊形态实际属性计算修饰符。
+		if (entity instanceof ServerPlayerEntity player) BeepSheepFormManager.onSheepStart(player);
+		setSheepMaxHealth(entity, sheepMax, originalMax);
 		// 按百分比重设当前血（挂完上限修饰符后 setHealth 自动 clamp 到羊上限）
 		entity.setHealth((float) (sheepMax * Math.max(0.0, Math.min(1.0, ratio))));
-		// 记录原值（恢复基准）
-		ORIGINAL_MAX_HEALTH.put(entity.getUuid(), originalMax);
+	}
 
-		applySpeedUniform(entity);
+	private static void setSheepMaxHealth(LivingEntity entity, double sheepMax, double originalMax) {
+		EntityAttributeInstance health = entity.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH);
+		if (health == null) return;
+		health.removeModifier(HEALTH_MODIFIER_UUID);
+		double base = entity instanceof ServerPlayerEntity ? health.getValue() : originalMax;
+		double factor = sheepMax / Math.max(0.01, base) - 1.0;
+		health.addTemporaryModifier(new EntityAttributeModifier(HEALTH_MODIFIER_UUID,
+				"SSCA Sheep Form Health", factor, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
+	}
+
+	/** 只随正在变羊的玩家快照保存。记录倍率，装备和其他模组的属性仍在各自的生命周期生效。 */
+	public static void writePlayerModifiers(ServerPlayerEntity player, NbtCompound tag) {
+		writeModifiers(player, tag);
+	}
+
+	private static void writeModifiers(LivingEntity entity, NbtCompound tag) {
+		Double originalMax = ORIGINAL_MAX_HEALTH.get(entity.getUuid());
+		if (originalMax == null || !entity.hasStatusEffect(SscAddon.SHEEP_FORM)) return;
+		EntityAttributeInstance health = entity.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH);
+		EntityAttributeModifier modifier = health == null ? null : health.getModifier(HEALTH_MODIFIER_UUID);
+		if (modifier == null) return;
+		tag.putDouble("OriginalMaxHealth", originalMax);
+		tag.putDouble("HealthScale", modifier.getValue());
+		EntityAttributeInstance speed = entity.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
+		EntityAttributeModifier speedModifier = speed == null ? null : speed.getModifier(SPEED_MODIFIER_UUID);
+		if (speedModifier != null) tag.putDouble("SpeedScale", speedModifier.getValue());
+	}
+
+	/** 原版已经读入活动效果和装备前的属性。续用保存的倍率，血量继续使用存档中的绝对值。 */
+	public static void resumePlayerModifiers(ServerPlayerEntity player, NbtCompound tag, float savedHealth) {
+		resumeModifiers(player, tag, savedHealth);
+	}
+
+	private static void resumeModifiers(LivingEntity entity, NbtCompound tag, float savedHealth) {
+		if (!entity.hasStatusEffect(SscAddon.SHEEP_FORM)) return;
+		EntityAttributeInstance health = entity.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH);
+		if (health == null) return;
+		health.removeModifier(HEALTH_MODIFIER_UUID);
+		double originalMax = tag.getDouble("OriginalMaxHealth");
+		double healthScale = tag.getDouble("HealthScale");
+		boolean saved = Double.isFinite(originalMax) && originalMax > 0
+				&& tag.contains("HealthScale", NbtElement.NUMBER_TYPE) && Double.isFinite(healthScale) && healthScale > -1;
+		if (saved) {
+			health.addTemporaryModifier(new EntityAttributeModifier(HEALTH_MODIFIER_UUID,
+					"SSCA Sheep Form Health", healthScale, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
+		} else {
+			// 旧档没有变羊前的形态属性。用当前可恢复的基础与其他属性选档（14 和 20 均为 16）。
+			originalMax = health.getValue();
+			setSheepMaxHealth(entity, sheepMaxHealthFor(originalMax), originalMax);
+		}
+		ORIGINAL_MAX_HEALTH.put(entity.getUuid(), originalMax);
+		// 原版已按缺少临时修饰符的上限读取 Health。补回同一条存档的血量仍由 setHealth 钳制。
+		if (Float.isFinite(savedHealth)) entity.setHealth(savedHealth);
+		EntityAttributeInstance speed = entity.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
+		if (speed == null) return;
+		speed.removeModifier(SPEED_MODIFIER_UUID);
+		if (!saved) {
+			applySpeedUniform(entity);
+		} else if (tag.contains("SpeedScale", NbtElement.NUMBER_TYPE)) {
+			double scale = tag.getDouble("SpeedScale");
+			if (Double.isFinite(scale) && scale > -1 && scale < 0) {
+				speed.addTemporaryModifier(new EntityAttributeModifier(SPEED_MODIFIER_UUID,
+						"SSCA Sheep Form Speed", scale, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
+			}
+		}
+	}
+
+	public static void onServerStopped() {
+		for (UUID id : ORIGINAL_MAX_HEALTH.keySet()) SheepFormAiController.clearOffline(id);
+		ORIGINAL_MAX_HEALTH.clear();
+		lastSweep = -1;
 	}
 
 	/** 变羊结束（onRemoved 服务端调用）。 */
@@ -118,16 +234,8 @@ public final class SheepFormRestoreHandler {
 		Double originalMax = ORIGINAL_MAX_HEALTH.get(entity.getUuid());
 		if (originalMax == null) return;
 		double sheepMax = sheepMaxHealthFor(originalMax);
-		EntityAttributeInstance healthAttr = entity.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH);
-		if (healthAttr != null) {
-			double factor = sheepMax / Math.max(0.01, originalMax) - 1.0;
-			healthAttr.removeModifier(HEALTH_MODIFIER_UUID);
-			healthAttr.addTemporaryModifier(new EntityAttributeModifier(HEALTH_MODIFIER_UUID,
-					"SSCA Sheep Form Health", factor, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
-			if (entity.getHealth() > sheepMax) {
-				entity.setHealth((float) sheepMax);
-			}
-		}
+		setSheepMaxHealth(entity, sheepMax, originalMax);
+		if (entity.getHealth() > sheepMax) entity.setHealth((float) sheepMax);
 		applySpeedUniform(entity);
 	}
 
@@ -150,6 +258,9 @@ public final class SheepFormRestoreHandler {
 	/** 恢复原属性（幂等）：移除修饰符 → 按变羊期间百分比 × 原上限重设当前血。 */
 	private static void restore(LivingEntity entity) {
 		Double originalMax = ORIGINAL_MAX_HEALTH.remove(entity.getUuid());
+		double sheepMax = originalMax != null && !(entity instanceof ServerPlayerEntity)
+				? sheepMaxHealthFor(originalMax) : entity.getMaxHealth();
+		double sheepRatio = sheepMax > 0 ? entity.getHealth() / sheepMax : 1.0;
 		// 变羊结束：恢复 mob 原生 Goal 集（initGoals 重造），再清「受惊逃离施法者」记录。
 		// ⚠ 顺序不能反（2026-09-29 实测「变回来不恢复原 AI」根因）：clear 会先删 SWAPPED 表项，
 		// restoreGoals 里按 SWAPPED.remove 判断是否执行 initGoals——先 clear 后 restore 恒为
@@ -161,13 +272,14 @@ public final class SheepFormRestoreHandler {
 		EntityAttributeInstance speedAttr = entity.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED);
 		if (speedAttr != null) speedAttr.removeModifier(SPEED_MODIFIER_UUID);
 		removeAttackModifier(entity); // sweep 不经过 StatusEffect.onRemoved，也必须恢复攻击力
+		if (entity instanceof ServerPlayerEntity player && (BeepSheepFormManager.originalFormId(player) != null
+				|| BeepSheepFormManager.isSheepForm(FormUtils.getPlayerForm(player)))) {
+			BeepSheepFormManager.onSheepEnd(player);
+		}
 		if (originalMax == null) return; // 没换过血（理论不可达）只清修饰符
 
 		if (entity.isAlive()) {
-			// 修饰符移除后 getMaxHealth 已回原值；按「变羊期间血量百分比」逆向换算当前血
-			// （isAlive 已涵盖活体判定；羊上限按记录的原值重算，与变羊时同一公式）
-			double sheepMax = originalMax != null ? sheepMaxHealthFor(originalMax) : SHEEP_BASE_MAX_HEALTH;
-			double sheepRatio = sheepMax > 0 ? entity.getHealth() / sheepMax : 1.0;
+			// 恢复形态之后再读上限，保留变羊期间真实剩余的血量比例。
 			entity.setHealth((float) (entity.getMaxHealth() * Math.max(0.0, Math.min(1.0, sheepRatio))));
 		}
 	}

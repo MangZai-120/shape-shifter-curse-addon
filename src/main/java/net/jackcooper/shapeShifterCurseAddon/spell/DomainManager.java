@@ -17,14 +17,20 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class DomainManager {
 	public static final Identifier STATE = new Identifier("ssc_addon", "domain_state");
 	public static final Identifier SOUND = new Identifier("ssc_addon", "domain_sound");
 	private static final Map<UUID, Field> FIELDS = new LinkedHashMap<>();
+	// The live field (including its moving center) stays in FIELDS. Keep the same owner order per world.
+	private static final Map<ServerWorld, Set<UUID>> OWNERS_BY_WORLD = new IdentityHashMap<>();
     private static final net.jackcooper.shapeShifterCurseAddon.network.SnapshotAudience AUDIENCE =
             new net.jackcooper.shapeShifterCurseAddon.network.SnapshotAudience();
     private record Pressure(net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext pulse, int intervalTicks) {}
@@ -61,7 +67,7 @@ public final class DomainManager {
             try { remove(handler.player); }
             finally { AUDIENCE.disconnect(handler.player.getUuid(), handler); }
         });
-		ServerLifecycleEvents.SERVER_STOPPED.register(server -> { FIELDS.clear(); PRESSURES.clear(); CHARGE_ANCHORS.clear(); AUDIENCE.clear(); });
+		ServerLifecycleEvents.SERVER_STOPPED.register(server -> { FIELDS.clear(); OWNERS_BY_WORLD.clear(); PRESSURES.clear(); CHARGE_ANCHORS.clear(); AUDIENCE.clear(); });
 		// 方块跨界隔离（2026-09-21 需求）：领域内无法干涉外界方块（破坏/放置/右键/攻击），
 		// 外界同样无法干涉领域内方块。玩家眼睛坐标 ↔ 目标方块中心分属壳内外即拒绝。
 		net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
@@ -86,8 +92,8 @@ public final class DomainManager {
 	 * 壳间（内层~外层）算内，与 enclosedComplete 语义一致；扩张期壳同样适用。
 	 */
 	public static boolean blocksCrossBoundary(ServerWorld world, Vec3d from, Vec3d to) {
-		for (Field field : FIELDS.values()) {
-			if (field.world != world) continue;
+		for (UUID owner : ownersIn(world)) {
+			Field field = FIELDS.get(owner);
 			double inner = field.active ? field.innerRadius : field.chargingRadius();
 			if (inner <= 0.1) continue;
 			if (DomainRules.separates(from.subtract(field.center), to.subtract(field.center), inner + 1)) return true;
@@ -114,8 +120,8 @@ public final class DomainManager {
 		return enclosedForTargeting(world, source.getPos()) || enclosedForTargeting(target.getWorld(), target.getPos());
 	}
 	private static boolean enclosedForTargeting(World world, Vec3d position) {
-		for (Field field : FIELDS.values()) {
-			if (field.world != world) continue;
+		for (UUID owner : ownersIn(world)) {
+			Field field = FIELDS.get(owner);
 			double inner = field.active ? field.innerRadius : field.chargingRadius();
 			if (inner > 0.1 && field.center.squaredDistanceTo(position) <= (inner + 1) * (inner + 1)) return true;
 		}
@@ -136,7 +142,10 @@ public final class DomainManager {
 				timing==null?DomainRules.chargeTicks():timing.duration(), DomainRules.durationTicks(),
 				timing==null?DomainRules.expandStartTick():timing.preparation(), DomainRules.expandDurationTicks(),
 				DomainRules.maxCastDisplacement());
-		FIELDS.put(player.getUuid(), field);
+		UUID owner = player.getUuid();
+		Field previous = FIELDS.put(owner, field);
+		if (previous != null && previous.world != field.world) unindex(previous);
+		OWNERS_BY_WORLD.computeIfAbsent(field.world, ignored -> new LinkedHashSet<>()).add(owner);
 		if (SpellCastingRules.playsChargeSound(field.chargeTicks)) broadcast(field, SoundEvents.BLOCK_BEACON_ACTIVATE, 0.65f, 1.0f);
 		sync(player.getServer());
 	}
@@ -186,8 +195,19 @@ public final class DomainManager {
 		CHARGE_ANCHORS.remove(player.getUuid());
 		Field field = FIELDS.remove(player.getUuid());
 		if (field == null) return;
+		unindex(field);
 		if (field.active) broadcast(field, SoundEvents.BLOCK_BEACON_DEACTIVATE, 0.6f, 1.0f);
 		sync(player.getServer());
+	}
+	private static void unindex(Field field) {
+		var owners = OWNERS_BY_WORLD.get(field.world);
+		owners.remove(field.owner.getUuid());
+		if (owners.isEmpty()) OWNERS_BY_WORLD.remove(field.world);
+	}
+
+	private static Set<UUID> ownersIn(World world) {
+		return world instanceof ServerWorld serverWorld
+				? OWNERS_BY_WORLD.getOrDefault(serverWorld, Collections.emptySet()) : Collections.emptySet();
 	}
 
 	/** 仅向同维度 64 格内发送音效事件；客户端按施法者距离更新音量，避免原版二次衰减与音量钳制。
@@ -269,8 +289,8 @@ public final class DomainManager {
 		if (server == null) return;
 		for (ServerPlayerEntity viewer : server.getPlayerManager().getPlayerList()) {
 			if (!ServerPlayNetworking.canSend(viewer, STATE)) continue;
-			var visible = FIELDS.values().stream().filter(field -> field.world == viewer.getWorld()
-					&& viewer.getPos().squaredDistanceTo(field.center) < 256 * 256).toList();
+			var visible = ownersIn(viewer.getWorld()).stream().map(FIELDS::get)
+					.filter(field -> viewer.getPos().squaredDistanceTo(field.center) < 256 * 256).toList();
             if (!AUDIENCE.shouldSend(viewer.getUuid(), viewer.networkHandler, !visible.isEmpty())) continue;
 			var buf = PacketByteBufs.create();
 			buf.writeIdentifier(viewer.getWorld().getRegistryKey().getValue());
@@ -294,9 +314,9 @@ public final class DomainManager {
 		}
 	}
 	public static boolean blocksPath(World world, Vec3d from, Vec3d to, double padding) {
-		if (FIELDS.isEmpty() || !(world instanceof ServerWorld) || from.equals(to)) return false;
-		for (Field field : FIELDS.values()) {
-			if (field.world != world) continue;
+		if (from.equals(to)) return false;
+		for (UUID owner : ownersIn(world)) {
+			Field field = FIELDS.get(owner);
 			Vec3d start = from.subtract(field.center), end = to.subtract(field.center);
 			if (field.active) {
 				if (DomainRules.crosses(start.x, start.y, start.z, end.x, end.y, end.z, padding,
@@ -310,7 +330,7 @@ public final class DomainManager {
 		return false;
 	}
 	public static boolean hasFields(World world) {
-		return world instanceof ServerWorld && !FIELDS.isEmpty();
+		return world instanceof ServerWorld && OWNERS_BY_WORLD.containsKey(world);
 	}
 
 	public static Vec3d limitMovement(Entity entity, Vec3d movement) {
@@ -330,9 +350,10 @@ public final class DomainManager {
 	}
 
 	private static java.util.List<DomainRules.Shell> movementShells(World world) {
-		java.util.List<DomainRules.Shell> shells = new java.util.ArrayList<>(FIELDS.size());
-		for (Field field : FIELDS.values()) {
-			if (field.world != world) continue;
+		var owners = ownersIn(world);
+		java.util.List<DomainRules.Shell> shells = new java.util.ArrayList<>(owners.size());
+		for (UUID owner : owners) {
+			Field field = FIELDS.get(owner);
 			double radius = field.active ? field.innerRadius : field.chargingRadius();
 			if (radius > 0) shells.add(new DomainRules.Shell(field.center, radius, field.outerRadius, field.active));
 		}
@@ -370,9 +391,8 @@ public final class DomainManager {
 
 	/** 出发侧拦截（含扩张期）：扩张中壳内实体也不许跨维度逃离。 */
 	public static boolean enclosedTrapping(World world, Vec3d position) {
-		if (FIELDS.isEmpty() || !(world instanceof ServerWorld)) return false;
-		for (Field field : FIELDS.values()) {
-			if (field.world != world) continue;
+		for (UUID owner : ownersIn(world)) {
+			Field field = FIELDS.get(owner);
 			if (field.active) {
 				if (field.center.squaredDistanceTo(position) <= field.outerRadius * field.outerRadius) return true;
 			} else {
@@ -385,15 +405,18 @@ public final class DomainManager {
 
 	/** 完全体判定：仅 active 的领域算完全展开（目标侧阻止进入用）。 */
 	public static boolean enclosedComplete(World world, Vec3d position) {
-		if (!(world instanceof ServerWorld)) return false;
-		for (Field field : FIELDS.values()) {
-			if (field.active && field.world == world && field.center.squaredDistanceTo(position)
+		for (UUID owner : ownersIn(world)) {
+			Field field = FIELDS.get(owner);
+			if (field.active && field.center.squaredDistanceTo(position)
 					<= field.outerRadius * field.outerRadius) return true;
 		}
 		return false;
 	}
 	public static boolean hasActive(World world) {
-		return world instanceof ServerWorld && FIELDS.values().stream().anyMatch(field -> field.active && field.world == world);
+		for (UUID owner : ownersIn(world)) {
+			if (FIELDS.get(owner).active) return true;
+		}
+		return false;
 	}
 	public static Entity setEffectSource(Entity source) {
 		Entity previous = EFFECT_SOURCE.get();
@@ -433,8 +456,9 @@ public final class DomainManager {
 		return amount;
 	}
 	private static Field fieldAt(Entity entity) {
-		for (Field field : FIELDS.values()) {
-			if (field.active && field.world == entity.getWorld()
+		for (UUID owner : ownersIn(entity.getWorld())) {
+			Field field = FIELDS.get(owner);
+			if (field.active
 					&& field.center.squaredDistanceTo(entity.getPos()) <= field.innerRadius * field.innerRadius) return field;
 		}
 		return null;

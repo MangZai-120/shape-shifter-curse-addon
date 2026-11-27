@@ -5,6 +5,11 @@ import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.BufferRenderer;
+import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.texture.NativeImage;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.resource.ResourceManager;
@@ -136,13 +141,38 @@ public final class EvolutionArtwork {
         if (g == null || width < 1 || height < 1) return;
         int sx = Math.min(12, g.w / 3), sy = Math.min(12, g.h / 3);
         int dx = Math.min(6, width / 3), dy = Math.min(6, height / 3);
-        int[] sourceX = {g.left, g.left + sx, g.left + g.w - sx};
-        int[] sourceY = {g.top, g.top + sy, g.top + g.h - sy};
-        int[] sourceW = {sx, g.w - sx * 2, sx}, sourceH = {sy, g.h - sy * 2, sy};
-        int[] destX = {x, x + dx, x + width - dx}, destY = {y, y + dy, y + height - dy};
-        int[] destW = {dx, width - dx * 2, dx}, destH = {dy, height - dy * 2, dy};
-        for (int row = 0; row < 3; row++) for (int col = 0; col < 3; col++)
-            region(context, g, destX[col], destY[row], destW[col], destH[row], sourceX[col], sourceY[row], sourceW[col], sourceH[row]);
+        context.draw();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderTexture(0, g.texture);
+        RenderSystem.setShader(GameRenderer::getPositionTexProgram);
+        var matrix = context.getMatrices().peek().getPositionMatrix();
+        var buffer = Tessellator.getInstance().getBuffer();
+        buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
+        int top = y, v = g.top;
+        for (int row = 0; row < 3; row++) {
+            int h = row == 1 ? height - 2 * dy : dy;
+            int sh = row == 1 ? g.h - 2 * sy : sy;
+            int left = x, u = g.left;
+            for (int col = 0; col < 3; col++) {
+                int w = col == 1 ? width - 2 * dx : dx;
+                int sw = col == 1 ? g.w - 2 * sx : sx;
+                if (w > 0 && h > 0 && sw > 0 && sh > 0) {
+                    float u0 = (float)u / g.width, u1 = (float)(u + sw) / g.width;
+                    float v0 = (float)v / g.height, v1 = (float)(v + sh) / g.height;
+                    buffer.vertex(matrix, left, top, 0).texture(u0, v0).next();
+                    buffer.vertex(matrix, left, top + h, 0).texture(u0, v1).next();
+                    buffer.vertex(matrix, left + w, top + h, 0).texture(u1, v1).next();
+                    buffer.vertex(matrix, left + w, top, 0).texture(u1, v0).next();
+                }
+                left += w;
+                u += sw;
+            }
+            top += h;
+            v += sh;
+        }
+        BufferRenderer.drawWithGlobalProgram(buffer.end());
+        RenderSystem.disableBlend();
     }
     private static void region(DrawContext ctx, Graphic g, float x, float y, float width, float height, int u, int v, int sw, int sh) {
         if (width < 1 || height < 1 || sw < 1 || sh < 1) return;

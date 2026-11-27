@@ -185,20 +185,42 @@ public final class FrozenRenderScratchProbe {
     private void partAndThaw() {
         var part = new ModelPart(List.of(), Map.of());
         part.pitch = 0.4f;
+        render(() -> check(FrozenAnimationState.hasActivePose(), "Frozen entity has a pose"));
         render(() -> FrozenAnimationState.part(part, () -> near(part.pitch, 0.4f, "Capture frozen part")));
         part.pitch = 1.2f;
         render(() -> FrozenAnimationState.part(part, () -> near(part.pitch, 0.4f, "Frozen part ignores live pitch")));
         near(part.pitch, 1.2f, "Frozen part restores live pitch");
         render(() -> fails(() -> FrozenAnimationState.part(part, () -> { throw expectedFailure; })));
         near(part.pitch, 1.2f, "Part exception restores live pitch");
+        var other = new PigEntity(EntityType.PIG, pig.getWorld());
+        render(() -> {
+            FrozenAnimationState.render(other, 0, ignored -> {
+                check(!FrozenAnimationState.hasActivePose(), "Nested healthy entity uses live pose");
+                checkRotation(part, 1.2f);
+            });
+            check(FrozenAnimationState.hasActivePose(), "Nested draw restores parent pose");
+            checkRotation(part, 0.4f);
+        });
         pig.removeStatusEffect(SscAddon.FROZEN);
         int thawAge = pig.age;
-        for (int tick : new int[]{0, 2, 4}) {
+        for (int tick = 0; tick <= 4; tick++) {
             pig.age = thawAge + tick;
-            float expected = tick == 0 ? 0.4f : tick == 2 ? 0.8f : 1.2f;
-            render(() -> FrozenAnimationState.part(part, () -> near(part.pitch, expected, "Four-tick thaw at " + tick)));
+            int elapsed = tick;
+            float expected = 0.4f + tick * 0.2f;
+            render(() -> {
+                check(FrozenAnimationState.hasActivePose() == (elapsed < 4), "Pose lifetime at " + elapsed);
+                FrozenAnimationState.part(part, () -> near(part.pitch, expected, "Four-tick thaw at " + elapsed));
+                checkRotation(part, expected);
+            });
             near(part.pitch, 1.2f, "Thaw restores live pitch at " + tick);
         }
+    }
+
+    private void checkRotation(ModelPart part, float pitch) {
+        var matrices = new MatrixStack();
+        part.rotate(matrices);
+        check(new Matrix4f().rotationX(pitch).equals(matrices.peek().getPositionMatrix(), 0.0001f),
+                "Live ModelPart.rotate renders pitch " + pitch);
     }
 
     private static MatrixStack translated(double x, double y, double z) {

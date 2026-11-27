@@ -23,7 +23,25 @@ public final class NeoWorldProbe {
     private static int checks;
     private static void check(boolean value,String message){checks++;if(!value)throw new AssertionError(message);}
     public static void run() throws Exception {
-        for(ModInitializer mod:FabricLoader.getInstance().getEntrypoints("main",ModInitializer.class))mod.onInitialize();
+        if (Boolean.getBoolean("ssca.qa.recordEntrypointOrder")) {
+            // This standalone server runs mod initializers itself. Vanilla 1.20.1 saves effects by numeric ID.
+            // Reopen the disposable world with the exact same registration order used to write those IDs.
+            Path order = Path.of("main-entrypoints.txt");
+            Map<String, ModInitializer> entries = new LinkedHashMap<>();
+            for (var entry : FabricLoader.getInstance().getEntrypointContainers("main", ModInitializer.class)) {
+                var mod = entry.getEntrypoint();
+                String key = entry.getProvider().getMetadata().getId() + " " + mod.getClass().getName();
+                if (entries.putIfAbsent(key, mod) != null) throw new IllegalStateException("Duplicate entry " + key);
+            }
+            if (!Boolean.getBoolean("neomagic.resume")) Files.write(order, entries.keySet());
+            var sequence = Files.readAllLines(order);
+            if (sequence.size() != entries.size() || !entries.keySet().equals(new HashSet<>(sequence))) {
+                throw new IllegalStateException("GameTest mod entrypoints changed since saving");
+            }
+            for (String key : sequence) entries.get(key).onInitialize();
+        } else {
+            for(ModInitializer mod:FabricLoader.getInstance().getEntrypoints("main",ModInitializer.class))mod.onInitialize();
+        }
         if(Boolean.getBoolean("neomagic.formScale"))NeoFormScaleProbe.capture();
         boolean stability=Boolean.getBoolean("neomagic.stability"),resume=Boolean.getBoolean("neomagic.resume");
         Path marker=Path.of("last-world.txt");

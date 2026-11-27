@@ -343,6 +343,12 @@ public final class SkillHudCatalog {
         private static long hudCacheTick = Long.MIN_VALUE;
         private static PlayerEntity hudCachePlayer;
 
+        public static void clearHudCache() {
+                hudCachePlayer = null;
+                hudCacheTick = Long.MIN_VALUE;
+                HUD_CACHE.clear();
+        }
+
         public static List<Skill> forHud(Identifier form, PlayerEntity player) {
                 return entriesForHud(form, player).stream().map(SkillHudLayout.Entry::skill).toList();
         }

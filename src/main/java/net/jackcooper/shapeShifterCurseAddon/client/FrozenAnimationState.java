@@ -36,6 +36,10 @@ public final class FrozenAnimationState {
     }
     public static void clear() { FRAMES.clear(); current = null; rendering = null; FrozenAnimationDrivers.clear(); }
     public static Entity renderingEntity() { return rendering; }
+
+    /** The currently rendered entity is frozen or is blending out of its frozen pose. */
+    public static boolean hasActivePose() { return current != null; }
+
     private static boolean frozen(LivingEntity entity) {
         return FrozenAnimationDrivers.paused(entity);
     }

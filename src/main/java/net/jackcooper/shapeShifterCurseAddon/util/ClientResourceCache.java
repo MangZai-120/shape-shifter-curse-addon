@@ -30,6 +30,12 @@ public final class ClientResourceCache {
     /** Invalidate immediately when a packet changes a value within the same render tick. */
     public static void invalidate() { cachedTick = Long.MIN_VALUE; }
 
+    public static void clear() {
+        cachedPlayer = null;
+        cachedTick = Long.MIN_VALUE;
+        CACHE.clear();
+    }
+
     private static void rebuild(PlayerEntity player, long tick) {
         cachedPlayer = player;
         cachedTick = tick;

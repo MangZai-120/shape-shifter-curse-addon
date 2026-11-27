@@ -535,12 +535,7 @@ public class LaserBeamEntity extends Entity {
 	/** Find the owner's normal laser; enhanced arrays have independent aiming. */
 	@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 	public static LaserBeamEntity getActiveForClient(net.minecraft.client.network.ClientPlayerEntity player) {
-		if (player == null || !(player.getWorld() instanceof net.minecraft.client.world.ClientWorld world)) return null;
-		for (Entity entity : world.getEntities()) {
-			if (entity instanceof LaserBeamEntity beam && !beam.isRemoved() && !beam.isEnhanced()
-					&& beam.getTrackedOwnerId() == player.getId()) return beam;
-		}
-		return null;
+		return net.jackcooper.shapeShifterCurseAddon.client.ClientLaserBeams.find(player);
 	}
 
 	@Override
