@@ -1,5 +1,9 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.effect.SpellPoison;
+import net.jackcooper.shapeShifterCurseAddon.util.SscIgnitedEntityAccessor;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -162,13 +166,12 @@ public class LunarSpiritBoltEntity extends ProjectileEntity {
 			}
 			// 变体 debuff：粉=点燃 3s / 蓝=缓速 I 3s / 绿=中毒 I 3s
 			if (variant == 0) {
-				livingTarget.setFireTicks(60);
+				SscIgnitedEntityAccessor.setSpellFire(livingTarget, 60, ownerPlayer);
 			} else if (variant == 1) {
 				livingTarget.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
 						net.minecraft.entity.effect.StatusEffects.SLOWNESS, 60, 0));
 			} else {
-				livingTarget.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
-						net.minecraft.entity.effect.StatusEffects.POISON, 60, 0));
+				livingTarget.addStatusEffect(SpellPoison.fromCaster(new StatusEffectInstance(StatusEffects.POISON, 60, 0), ownerPlayer));
 			}
 			AddonSoundRange.play(this.getWorld(), null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 0.7f, 1.6f);

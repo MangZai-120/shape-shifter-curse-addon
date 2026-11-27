@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.effect.SpellPoison;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
@@ -136,7 +137,8 @@ public final class CorruptMistManager {
 				continue;
 			}
 			boolean hadHarmfulEffect = net.jackcooper.shapeShifterCurseAddon.spell.FormCastingStyle.hasHarmfulEffect(target);
-            boolean applied=net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.with(mist.court,()->net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(mist.caster,()->net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(mist.bat,()->target.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON,mist.poisonTicks,poisonAmplifier)))));
+            var poison = SpellPoison.fromCaster(new StatusEffectInstance(StatusEffects.POISON, mist.poisonTicks, poisonAmplifier), mist.caster);
+            boolean applied=net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.with(mist.court,()->net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(mist.caster,()->net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(mist.bat,()->target.addStatusEffect(poison))));
             boolean slowed=net.jackcooper.shapeShifterCurseAddon.spell.CourtSpellLink.with(mist.court,()->net.jackcooper.shapeShifterCurseAddon.spell.NightmareSpellLink.with(mist.caster,()->net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.with(mist.bat,()->target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS,mist.slownessTicks,slownessAmplifier)))));
             applied|=slowed;
             if (applied || net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyHits.acceptedStatus(target,StatusEffects.POISON,mist.poisonTicks,poisonAmplifier,false)

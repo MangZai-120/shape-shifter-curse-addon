@@ -454,6 +454,7 @@ public class SscAddonNetworking {
 	}
 
 	public static void registerServerReceivers() {
+		AbyssalExtinguish.registerServerReceiver();
         registerEvolutionRouteSync();
         net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> {
             FORM_REPAIR_BUDGET.remove(handler);

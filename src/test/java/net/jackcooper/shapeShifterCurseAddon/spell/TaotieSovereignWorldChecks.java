@@ -67,6 +67,9 @@ final class TaotieSovereignWorldChecks {
                 spell.cast(caster, 0, false, level);
                 check(caster.getFireTicks() == (5 + level) * 20 && target.getFireTicks() == caster.getFireTicks(), "both burn for tier duration");
                 check(bystander.getFireTicks() <= 0, "nearby bystander untouched");
+                target.timeUntilRegen = 0;
+                target.baseTick();
+                check(target.getAttacker() == caster, "Target's burn is attributed to the caster");
                 hit(caster, sources.onFire(), 10, 10 - level);
                 hit(caster, sources.inFire(), 4, 4);
                 hit(target, sources.onFire(), 1, 1);

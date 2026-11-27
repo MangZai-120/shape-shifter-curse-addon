@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.effect.SpellPoison;
 import net.jackcooper.shapeShifterCurseAddon.enchantment.RegAddonEnchantments;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneBuildEvaluator;
 import net.jackcooper.shapeShifterCurseAddon.spell.research.RuneLayout;
@@ -156,6 +157,7 @@ public final class SpellBacklashWorldProbe {
                 near(40 - victim.getHealth(), expected[level - 1] * (solo ? 0.5f : 1f),
                         "Wrath timeout damage at level " + level + ", solo=" + solo);
                 check(!WrathMark.isActive(victim), "Wrath expires after a single penalty");
+                check(victim.getAttacker() == caster, "Wrath timeout records the casting player");
             }
         }
     }
@@ -199,6 +201,37 @@ public final class SpellBacklashWorldProbe {
                 near(NeoLegacyCasting.quote(caster, spell, level, 0, cost).actual(), cost, "Unmodified collapse quote " + id);
             }
         });
+    }
+
+    private static void checkPoisonLayers(ServerPlayerEntity caster, ServerPlayerEntity otherCaster) {
+        var victim = net.minecraft.entity.EntityType.COW.create(caster.getServerWorld());
+        var weak = SpellPoison.fromCaster(new StatusEffectInstance(StatusEffects.POISON, 125, 0), caster);
+        victim.addStatusEffect(weak);
+        victim.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, 2, 1));
+        var saved = victim.getStatusEffect(StatusEffects.POISON).writeNbt(new net.minecraft.nbt.NbtCompound());
+        victim.clearStatusEffects();
+        var restored = StatusEffectInstance.fromNbt(saved);
+        victim.addStatusEffect(restored);
+        check(((SpellPoison) restored).ssca$getPoisonCaster() == null, "Stronger natural poison keeps its own source");
+        restored.update(victim, () -> {});
+        restored.update(victim, () -> {});
+        check(caster.getUuid().equals(((SpellPoison) restored).ssca$getPoisonCaster()), "Saved hidden poison regains its caster");
+        restored.applyUpdateEffect(victim);
+        check(victim.getAttacker() == caster, "Promoted spell poison damage belongs to the caster");
+        victim.addStatusEffect(new StatusEffectInstance(StatusEffects.POISON, 200, 0));
+        check(((SpellPoison) restored).ssca$getPoisonCaster() == null, "Longer natural poison replaces spell ownership");
+        victim.clearStatusEffects();
+        victim.addStatusEffect(SpellPoison.fromCaster(new StatusEffectInstance(StatusEffects.POISON, 125, 0), caster));
+        victim.addStatusEffect(SpellPoison.fromCaster(new StatusEffectInstance(StatusEffects.POISON, 2, 1), otherCaster));
+        var layered = victim.getStatusEffect(StatusEffects.POISON);
+        victim.timeUntilRegen = 0;
+        layered.applyUpdateEffect(victim);
+        check(victim.getAttacker() == otherCaster, "Stronger poison credits the second player");
+        layered.update(victim, () -> {});
+        layered.update(victim, () -> {});
+        victim.timeUntilRegen = 0;
+        layered.applyUpdateEffect(victim);
+        check(victim.getAttacker() == caster, "Weaker poison resumes crediting the first player");
     }
 
     private static void run(TestContext t) throws Exception {
@@ -273,6 +306,7 @@ public final class SpellBacklashWorldProbe {
         check(net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(sheep),"Sheep retains action restrictions");
         sheep.removeStatusEffect(SscAddon.SHEEP_FORM);
         check(RegPlayerFormComponent.PLAYER_FORM.get(sheep).nowForm==original,"Sheep cleanup restores original form");
+        checkPoisonLayers(p, sheep);
         Files.writeString(Path.of("backlash-result.json"),NeoState.JSON.toJson(Map.of("passed",true,"checks",checks,"world","disposable survival GameTest","original_instance_gameplay_verified",false)));
         System.out.println("Spell backlash GameTest: "+checks+" checks passed.");t.complete();
     }

@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.util.SscIgnitedEntityAccessor;
 import net.jackcooper.shapeShifterCurseAddon.spell.spells.TaotieSovereignSpell;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -243,7 +244,7 @@ public final class ExplosionManager {
 				if (!target.isAlive()) killed = target;
 			}
 			int fire = fireTicks(sequence, distance);
-			if (fire > 0) target.setFireTicks(Math.max(target.getFireTicks(), fire));
+			if (fire > 0 && fire > target.getFireTicks()) SscIgnitedEntityAccessor.setSpellFire(target, fire, owner);
 			Vec3d direction = target.getPos().subtract(center).multiply(1, 0, 1).normalize();
 			double strength = knockbackStrength(sequence, distance);
 			target.addVelocity(direction.x * strength, 0.35 + strength * 0.25, direction.z * strength);

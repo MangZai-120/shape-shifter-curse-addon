@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.effect.SpellPoison;
 import net.jackcooper.shapeShifterCurseAddon.spell.spells.TaotieSovereignSpell;
 
 import io.github.apace100.apoli.component.PowerHolderComponent;
@@ -909,7 +910,7 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess,
 				newDuration = effect.getDuration();
 			}
 
-			return new StatusEffectInstance(
+			return SpellPoison.copyOwner(effect, new StatusEffectInstance(
 					effect.getEffectType(),
 					newDuration,
 					0, // Always force to Level 1 (amplifier 0)
@@ -918,7 +919,7 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess,
 					effect.shouldShowIcon(),
 					null,
 					effect.getFactorCalculationData()
-			);
+			));
 		}
 		return effect;
 	}

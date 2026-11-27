@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.util.SscIgnitedEntityAccessor;
 import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -199,7 +200,7 @@ public class SpellFireBoltEntity extends ProjectileEntity implements FlyingItemE
 				return; // 白名单豁免：不点燃、不播音
 			}
 			// 点燃目标（伤害数值外的固定附加效果；时长由法术按等级写入）
-			livingTarget.setFireTicks(fireTicks);
+			SscIgnitedEntityAccessor.setSpellFire(livingTarget, fireTicks, getOwner());
 			AddonSoundRange.play(this.getWorld(), null, target.getX(), target.getY(), target.getZ(),
 					SoundEvents.ENTITY_PLAYER_HURT_ON_FIRE, SoundCategory.PLAYERS, 1.0f, 1.0f);
 		}

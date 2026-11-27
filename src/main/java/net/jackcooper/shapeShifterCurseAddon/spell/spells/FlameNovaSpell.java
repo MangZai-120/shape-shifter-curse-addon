@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell.spells;
 
+import net.jackcooper.shapeShifterCurseAddon.util.SscIgnitedEntityAccessor;
 import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.jackcooper.shapeShifterCurseAddon.spell.Spell;
 import net.jackcooper.shapeShifterCurseAddon.spell.SpellBacklash;
@@ -84,7 +85,7 @@ public class FlameNovaSpell extends Spell {
 			lastHitTarget = target;
 			hitBurningTarget |= target.getFireTicks() > 0;
 			if (!target.isAlive()) killedTarget = target;
-			target.setFireTicks(RuneCastContext.current().duration(fireTicks(),RuneModifiers.Stat.BURN));
+			SscIgnitedEntityAccessor.setSpellFire(target, RuneCastContext.current().duration(fireTicks(), RuneModifiers.Stat.BURN), caster);
 			// 击退：远离施法者（强度 balance 可调）
 			Vec3d knock = new Vec3d(target.getX() - caster.getX(), 0.1, target.getZ() - caster.getZ())
 					.normalize().multiply(knockback());

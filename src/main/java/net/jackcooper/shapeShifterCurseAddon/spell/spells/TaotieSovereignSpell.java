@@ -41,8 +41,8 @@ public final class TaotieSovereignSpell extends LockedTargetSpell {
         int tier = MathHelper.clamp(level, 1, getMaxLevel());
         int ticks = duration(tier);
         boolean wasBurning = target.isOnFire();
-        ignite(caster, ticks);
-        ignite(target, ticks);
+        ignite(caster, caster, ticks);
+        ignite(target, caster, ticks);
         var data = NeoRuntime.data(caster);
         data.taotieTier = tier;
         data.taotieUntil = caster.getServer().getOverworld().getTime() + ticks;
@@ -57,10 +57,8 @@ public final class TaotieSovereignSpell extends LockedTargetSpell {
         }
     }
 
-    private static void ignite(LivingEntity entity, int duration) {
-        // A fresh vanilla burn has no attacker, including on entities previously ignited by a fox-fire ability.
-        if (entity.getFireTicks() <= 0) ((SscIgnitedEntityAccessor) entity).sscAddon$setIgniterUuid(null);
-        entity.setFireTicks(Math.max(entity.getFireTicks(), duration));
+    private static void ignite(LivingEntity entity, ServerPlayerEntity caster, int duration) {
+        if (duration > entity.getFireTicks()) SscIgnitedEntityAccessor.setSpellFire(entity, duration, caster);
     }
 
     private static int burningTier(Entity entity) {

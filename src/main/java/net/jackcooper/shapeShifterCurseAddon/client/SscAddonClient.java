@@ -70,6 +70,7 @@ public class SscAddonClient implements ClientModInitializer {
 		NetworkCompatibilityClient.init();
 		SscForceSneakClient.register();
 		MoistureWaterRecoveryClient.register();
+		AbyssalExtinguishClient.register();
 		FormationResearchClient.register();
 		SustainedVisualClient.init();
 		ParametricVisualClient.init();

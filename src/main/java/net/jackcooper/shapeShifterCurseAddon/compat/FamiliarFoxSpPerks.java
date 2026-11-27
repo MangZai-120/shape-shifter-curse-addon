@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.compat;
 
+import net.jackcooper.shapeShifterCurseAddon.effect.SpellPoison;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import io.github.apace100.apoli.power.PowerTypeRegistry;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
@@ -109,8 +110,8 @@ public final class FamiliarFoxSpPerks {
     }
 
     public static StatusEffectInstance levelOneWithOriginalDuration(StatusEffectInstance effect) {
-        return new StatusEffectInstance(effect.getEffectType(), effect.getDuration(), 0, effect.isAmbient(),
-                effect.shouldShowParticles(), effect.shouldShowIcon(), null, effect.getFactorCalculationData());
+        return SpellPoison.copyOwner(effect, new StatusEffectInstance(effect.getEffectType(), effect.getDuration(), 0, effect.isAmbient(),
+                effect.shouldShowParticles(), effect.shouldShowIcon(), null, effect.getFactorCalculationData()));
     }
 
     public static boolean canUsePotionCharm(Identifier form) {

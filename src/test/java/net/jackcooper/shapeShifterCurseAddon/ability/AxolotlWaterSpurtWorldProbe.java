@@ -1,16 +1,20 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import io.github.apace100.apoli.component.PowerHolderComponent;
 import java.util.List;
+import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionManager;
 import net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent;
 import net.jackcooper.shapeShifterCurseAddon.spell.NeoFormCastingProbe;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.minecraft.block.Blocks;
+import net.minecraft.entity.MovementType;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.test.TestContext;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import net.onixary.shapeShifterCurseFabric.additional_power.ModifyStepHeightPower;
 import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 
 /** Real server world: input gates, native velocity, moisture and cooldown resources. */
@@ -24,6 +28,17 @@ public final class AxolotlWaterSpurtWorldProbe {
         AxolotlWaterSpurtHandler.setClientSprintHeld(player, true);
     }
     private static void doubleTap(ServerPlayerEntity player) { tap(player); tap(player); }
+
+    private static void approachStep(ServerPlayerEntity player, BlockPos start, boolean shouldClimb, String label) {
+        player.refreshPositionAndAngles(start.getX() + 0.5, start.getY(), start.getZ() + 0.5, 0, 0);
+        player.setOnGround(true);
+        // Tick the form's equipped powers, then let vanilla resolve a purely horizontal move.
+        PowerHolderComponent.KEY.get(player).getPowers(ModifyStepHeightPower.class, true).forEach(ModifyStepHeightPower::tick);
+        player.move(MovementType.SELF, new Vec3d(1, 0, 0));
+        BlockPos expected = shouldClimb ? start.east().up() : start;
+        check(player.getBlockPos().equals(expected), label + ": expected " + expected + ", reached " + player.getPos());
+    }
+
     public static void start(TestContext test) {
         test.waitAndRun(70, () -> {
             try {
@@ -39,7 +54,28 @@ public final class AxolotlWaterSpurtWorldProbe {
                 var progress = RegEvolutionComponent.EVOLUTION.get(player);
                 progress.setRoute("axolotl");
                 progress.setRouteStartForm(FormIdentifiers.UPGRADE_AXOLOTL.toString());
-                for (String node : List.of("axolotl_base", "aquatic_adapt", "water_propel", "water_spurt")) progress.unlock(node);
+                progress.unlock("axolotl_base");
+                BlockPos start = test.getAbsolutePos(new BlockPos(2, 5, 2));
+                test.getWorld().setBlockState(start.down(), Blocks.STONE.getDefaultState());
+                test.getWorld().setBlockState(start.east(), Blocks.STONE.getDefaultState());
+                // ServerPlayerEntity has a 1.0 base step for movement validation; the moving client has 0.6.
+                player.setStepHeight(0.6F);
+                player.setAir(300);
+                player.setSprinting(true);
+                approachStep(player, start, false, "Locked Water Propulsion cannot climb a full block");
+                progress.addPoints(1);
+                check(EvolutionManager.tryUnlock(player, "water_propel"), "Purchase Water Propulsion on the current form");
+                approachStep(player, start, true, "Water Propulsion climbs a full block without jumping");
+                player.setSprinting(false);
+                approachStep(player, start, false, "Walking restores the ordinary step height");
+                player.setSprinting(true);
+                player.setAir(0);
+                approachStep(player, start, false, "Dehydration disables the sprint step");
+                player.setAir(300);
+                test.getWorld().setBlockState(start.east().up(), Blocks.STONE.getDefaultState());
+                approachStep(player, start, false, "Water Propulsion cannot climb a two-block wall");
+
+                for (String node : List.of("aquatic_adapt", "water_spurt")) progress.unlock(node);
                 player.setAir(300);
                 player.setSprinting(true); player.setSneaking(true);
                 AxolotlWaterSpurtHandler.tick(player);

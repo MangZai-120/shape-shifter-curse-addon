@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.effect.SpellPoison;
 import net.jackcooper.shapeShifterCurseAddon.ability.NightmareDreamManager;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.util.*;
@@ -34,7 +35,7 @@ public final class NightmareSpellLink {
         if(effect.getEffectType().getCategory()!=StatusEffectCategory.HARMFUL||effect.getDuration()<=0)return effect;
         double factor=multiplier(current(),target);if(factor==1)return effect;
         int duration=(int)Math.min(Integer.MAX_VALUE,Math.ceil(effect.getDuration()*factor-1e-9));
-        return new StatusEffectInstance(effect.getEffectType(),duration,effect.getAmplifier(),effect.isAmbient(),
-                effect.shouldShowParticles(),effect.shouldShowIcon(),null,effect.getFactorCalculationData());
+        return SpellPoison.copyOwner(effect, new StatusEffectInstance(effect.getEffectType(),duration,effect.getAmplifier(),effect.isAmbient(),
+                effect.shouldShowParticles(),effect.shouldShowIcon(),null,effect.getFactorCalculationData()));
     }
 }

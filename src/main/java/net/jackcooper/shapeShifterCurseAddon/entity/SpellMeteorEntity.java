@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.entity;
 
+import net.jackcooper.shapeShifterCurseAddon.util.SscIgnitedEntityAccessor;
 import net.jackcooper.shapeShifterCurseAddon.sound.AddonSoundRange;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.FlyingItemEntity;
@@ -251,7 +252,7 @@ public class SpellMeteorEntity extends ProjectileEntity implements FlyingItemEnt
 				killedTarget = target;
 			}
 			// 点燃 3s + 轻微击退（离开爆心方向）
-			target.setFireTicks(runeFireTicks);
+			SscIgnitedEntityAccessor.setSpellFire(target, runeFireTicks, getOwner());
 			Vec3d knock = new Vec3d(target.getX() - ix, 0.1, target.getZ() - iz).normalize().multiply(0.6);
 			target.addVelocity(knock.x, knock.y, knock.z);
 			target.velocityModified = true;

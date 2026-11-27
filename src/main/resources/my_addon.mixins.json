@@ -46,6 +46,8 @@
         "EmptyLevitateSyncMixin",
         "StepHeightScaleWritesMixin",
         "entity.BatSpellDebuffMixin",
+        "entity.SpellPoisonInstanceMixin",
+        "entity.SpellPoisonDamageMixin",
         "entity.ParasiticFruitStatusMixin",
         "entity.CollapseBodyYawMixin",
     "entity.NightmareSpellEffectMixin",

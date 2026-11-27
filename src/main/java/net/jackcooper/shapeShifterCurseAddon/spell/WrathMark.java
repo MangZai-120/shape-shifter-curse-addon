@@ -82,7 +82,7 @@ public final class WrathMark {
         if(((Access)victim).ssca$getWrathMark()!=this) return;
         if(--remaining<=0) {
             clear(victim);
-            victim.damage(SpellDamageSource.of(world.getDamageSources()),penalty);
+            victim.damage(SpellDamageSource.of(world.getDamageSources(), player), penalty);
             AddonSoundRange.play(world, null,victim.getBlockPos(),SoundEvents.ENTITY_WARDEN_HEARTBEAT,SoundCategory.PLAYERS,.75F,1.25F);
         }
 

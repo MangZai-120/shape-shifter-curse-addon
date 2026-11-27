@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.ability;
 
+import net.jackcooper.shapeShifterCurseAddon.effect.SpellPoison;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.spell.DomainManager;
@@ -84,9 +85,9 @@ public final class NpcCombatEnhancements {
         if (!isEnemyNpc(source, target) || !FormUtils.isForm((LivingEntity) source, FormIdentifiers.BAT_PARASITIC_FRUIT)
                 || effect.getEffectType().getCategory() != StatusEffectCategory.HARMFUL) return effect;
         var cast=net.jackcooper.shapeShifterCurseAddon.spell.BatSpellLink.current();
-        return new StatusEffectInstance(effect.getEffectType(), effect.getDuration(),
+        return SpellPoison.copyOwner(effect, new StatusEffectInstance(effect.getEffectType(), effect.getDuration(),
                 effect.getAmplifier() + (cast==null?fruitDebuffLevelBonus():cast.npcBonus), effect.isAmbient(),
-                effect.shouldShowParticles(), effect.shouldShowIcon(), null, effect.getFactorCalculationData());
+                effect.shouldShowParticles(), effect.shouldShowIcon(), null, effect.getFactorCalculationData()));
     }
 
     public static int fruitDebuffLevelBonus(){return BAL.i("fruit_debuff_level_bonus",1);}

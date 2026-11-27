@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.spell;
 
+import net.jackcooper.shapeShifterCurseAddon.effect.SpellPoison;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.resource.*;
@@ -25,7 +26,7 @@ public final class BatSpellLink {
     public static boolean transmitting(){return Boolean.TRUE.equals(PROPAGATING.get());}
     private static boolean copy(LivingEntity target,StatusEffectInstance effect,ServerPlayerEntity owner){
         Boolean previous=PROPAGATING.get();PROPAGATING.set(true);
-        try{return with(null,()->target.addStatusEffect(effect,owner));}finally{if(previous==null)PROPAGATING.remove();else PROPAGATING.set(previous);}
+        try{return with(null,()->target.addStatusEffect(SpellPoison.fromCaster(effect, owner),owner));}finally{if(previous==null)PROPAGATING.remove();else PROPAGATING.set(previous);}
     }
     public static long queries,attempts;
     private static final boolean PROFILE=Boolean.getBoolean("neomagic.batProfile");
