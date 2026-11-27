@@ -6,7 +6,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.jackcooper.shapeShifterCurseAddon.network.AbyssalExtinguish;
-import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
@@ -43,7 +42,7 @@ final class AbyssalExtinguishClient {
         }
         // Keep an exhausted burn latched until the fire clears, even across form changes.
         if (attemptsLeft == 0) return;
-        if (!FormUtils.isAxolotlSP(player)) {
+        if (AbyssalExtinguish.powerForForm(player) == null) {
             ticksUntilRequest = 0;
             return;
         }
